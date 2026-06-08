@@ -116,12 +116,15 @@ describe('RecipeDetailScreen', () => {
 
   test('renders 5 tab buttons after loading', async () => {
     mockApiFetch.mockResolvedValue(makeRecipeDetail());
-    const {findByText} = render(wrap(<RecipeDetailScreen {...makeProps()} />));
-    expect(await findByText('Overview')).toBeTruthy();
-    expect(await findByText('Ingredients')).toBeTruthy();
-    expect(await findByText('Instructions')).toBeTruthy();
-    expect(await findByText('Notes')).toBeTruthy();
-    expect(await findByText('Nutrition')).toBeTruthy();
+    const {findByText, getByText} = render(
+      wrap(<RecipeDetailScreen {...makeProps()} />),
+    );
+    // Wait for the data to load once, then check remaining tabs synchronously
+    await findByText('Overview');
+    expect(getByText('Ingredients')).toBeTruthy();
+    expect(getByText('Instructions')).toBeTruthy();
+    expect(getByText('Notes')).toBeTruthy();
+    expect(getByText('Nutrition')).toBeTruthy();
   });
 
   test('switches to Ingredients tab on press', async () => {

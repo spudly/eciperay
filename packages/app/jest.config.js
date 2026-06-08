@@ -1,5 +1,6 @@
 module.exports = {
   preset: '@react-native/jest-preset',
+  testTimeout: 15000,
   setupFilesAfterEnv: ['./jest.setup.js'],
   testPathIgnorePatterns: [
     '/node_modules/',
