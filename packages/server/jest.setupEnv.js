@@ -14,11 +14,14 @@ if (globalThis.WebSocket === undefined) {
   globalThis.WebSocket.CLOSED = 3;
 }
 
-// Provide placeholder env vars so modules like supabase.ts can initialise
-// without throwing when no .env file is present (e.g. in CI).
+// Provide placeholder env vars so SDK clients initialise without throwing
+// when no .env file is present (e.g. in CI). All real HTTP calls are
+// intercepted by nock, so the values only need to be non-empty/valid-looking.
 // jest.setup.ts loads the real .env with override:true, so local runs still
 // use the actual values from that file.
 process.env['SUPABASE_URL'] =
-  process.env['SUPABASE_URL'] || 'http://localhost:54321';
+  process.env['SUPABASE_URL'] || 'https://test.supabase.co';
 process.env['SUPABASE_SECRET_KEY'] =
   process.env['SUPABASE_SECRET_KEY'] || 'test-placeholder-key';
+process.env['ANTHROPIC_API_KEY'] =
+  process.env['ANTHROPIC_API_KEY'] || 'test-placeholder-anthropic-key';
