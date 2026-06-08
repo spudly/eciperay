@@ -58,7 +58,7 @@ const callClaude = async (
 ) => {
   const response = await createClaudeMessage(recipe, history, userMessage);
   const content = response.content[0];
-  /* c8 ignore next */
+  /* c8 ignore next 3 */
   if (content?.type !== 'text') {
     throw new Error('Unexpected Claude response');
   }

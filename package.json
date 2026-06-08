@@ -25,7 +25,7 @@
     "lint:fix": "eslint packages --fix",
     "lint:unused-rules": "tsx scripts/findUnusedEslintRules.ts",
     "validate:node-version": "tsx scripts/validateNodeVersion.ts",
-    "ci": "npm run validate:node-version && npm run typecheck && npm run lint && npm run lint:unused-rules && npm run test:coverage",
+    "ci": "concurrently --group --names validate,typecheck,lint,lint-rules,test --prefix-colors white,blue,yellow,cyan,green \"npm run validate:node-version\" \"npm run typecheck\" \"npm run lint\" \"npm run lint:unused-rules\" \"npm run test:coverage\"",
     "test": "TURBO_TELEMETRY_DISABLED=1 turbo test",
     "test:coverage": "TURBO_TELEMETRY_DISABLED=1 turbo test:coverage",
     "start:server": "npm run start --workspace=packages/server",
