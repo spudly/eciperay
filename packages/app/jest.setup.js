@@ -1,6 +1,21 @@
 // Mocks for native modules that have no Jest implementation.
 // This file runs via setupFilesAfterEnv after the test framework is loaded.
 
+// TanStack Query v5 defaults to setTimeout(fn, 0) for its notification
+// scheduler. That fires in a later event-loop tick, after RNTL's wrapAsync has
+// already restored IS_REACT_ACT_ENVIRONMENT = true, so React 19 sees the state
+// update as "outside act()" and logs a console.error warning.
+//
+// queueMicrotask fires before any timers, during the await-suspension window
+// when IS_REACT_ACT_ENVIRONMENT is still false (set by waitFor/findBy helpers).
+// React therefore sees the update as "inside act()" — no warning.
+//
+// Unlike the synchronous fn => fn() scheduler, queueMicrotask defers past
+// React's passive-effects phase, so it never triggers the re-entrant flush
+// loop that caused timeouts with React 19's act(async) on slow CI runners.
+const {notifyManager} = require('@tanstack/react-query');
+notifyManager.setScheduler(queueMicrotask);
+
 jest.mock('react-native-keep-awake', () => ({
   activate: jest.fn(),
   deactivate: jest.fn(),
