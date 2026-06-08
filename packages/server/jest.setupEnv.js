@@ -19,9 +19,9 @@ if (globalThis.WebSocket === undefined) {
 // intercepted by nock, so the values only need to be non-empty/valid-looking.
 // jest.setup.ts loads the real .env with override:true, so local runs still
 // use the actual values from that file.
-process.env['SUPABASE_URL'] =
-  process.env['SUPABASE_URL'] || 'https://test.supabase.co';
-process.env['SUPABASE_SECRET_KEY'] =
-  process.env['SUPABASE_SECRET_KEY'] || 'test-placeholder-key';
-process.env['ANTHROPIC_API_KEY'] =
-  process.env['ANTHROPIC_API_KEY'] || 'test-placeholder-anthropic-key';
+process.env.SUPABASE_URL =
+  process.env.SUPABASE_URL || 'https://test.supabase.co';
+process.env.SUPABASE_SECRET_KEY =
+  process.env.SUPABASE_SECRET_KEY || 'test-placeholder-key';
+process.env.ANTHROPIC_API_KEY =
+  process.env.ANTHROPIC_API_KEY || 'test-placeholder-anthropic-key';

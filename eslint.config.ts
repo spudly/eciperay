@@ -996,6 +996,8 @@ export default tseslint.config(
         beforeEach: 'readonly',
         afterEach: 'readonly',
         require: 'readonly', // allowed in jest.mock() factories and setup files
+        process: 'readonly', // Node.js global; not in the `n` plugin scope for .js setup files
+        queueMicrotask: 'readonly', // browser/Node.js 11+ global used in jest.setup.js
       },
     },
     rules: {

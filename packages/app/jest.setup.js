@@ -14,6 +14,7 @@
 // React's passive-effects phase, so it never triggers the re-entrant flush
 // loop that caused timeouts with React 19's act(async) on slow CI runners.
 const {notifyManager} = require('@tanstack/react-query');
+
 notifyManager.setScheduler(queueMicrotask);
 
 jest.mock('react-native-keep-awake', () => ({
