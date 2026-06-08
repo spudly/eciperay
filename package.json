@@ -1,0 +1,70 @@
+{
+  "name": "recipoo",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "npm@10.8.2",
+  "engines": {
+    "node": ">= 22.0.0"
+  },
+  "workspaces": [
+    "packages/types",
+    "packages/server",
+    "packages/app"
+  ],
+  "scripts": {
+    "turbo": "TURBO_TELEMETRY_DISABLED=1 turbo",
+    "dev": "concurrently --names server,metro --prefix-colors cyan,yellow \"npm run dev --workspace=packages/server\" \"npm run start --workspace=packages/app\"",
+    "dev:ios": "concurrently --names server,metro,ios --prefix-colors cyan,yellow,blue --delay 5000 \"npm run dev --workspace=packages/server\" \"npm run start --workspace=packages/app\" \"npm run ios --workspace=packages/app -- --no-packager\"",
+    "dev:android": "concurrently --names server,metro,android --prefix-colors cyan,yellow,green --delay 5000 \"npm run dev --workspace=packages/server\" \"npm run start --workspace=packages/app\" \"npm run android --workspace=packages/app -- --no-packager\"",
+    "dev:all": "concurrently --names server,metro,ios,android --prefix-colors cyan,yellow,blue,green --delay 5000 \"npm run dev --workspace=packages/server\" \"npm run start --workspace=packages/app\" \"npm run ios --workspace=packages/app -- --no-packager\" \"npm run android --workspace=packages/app -- --no-packager\"",
+    "typecheck": "tsc -b tsconfig.json packages/types packages/server && npm run typecheck --workspace=packages/app",
+    "prettier": "prettier --write .",
+    "prettier:check": "prettier --check .",
+    "lint": "eslint packages --max-warnings 0",
+    "lint:fix": "eslint packages --fix",
+    "lint:unused-rules": "tsx scripts/findUnusedEslintRules.ts",
+    "validate:node-version": "tsx scripts/validateNodeVersion.ts",
+    "ci": "npm run validate:node-version && npm run typecheck && npm run lint && npm run lint:unused-rules && npm run test:coverage",
+    "test": "TURBO_TELEMETRY_DISABLED=1 turbo test",
+    "test:coverage": "TURBO_TELEMETRY_DISABLED=1 turbo test:coverage",
+    "start:server": "npm run start --workspace=packages/server",
+    "postinstall": "patch-package",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "prettier --write",
+      "eslint --max-warnings 0 --fix --no-warn-ignored"
+    ],
+    "*.{js,json,yml,yaml,md}": "prettier --write"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/nock": "^10.0.3",
+    "@types/node": "^22.0.0",
+    "concurrently": "^9.2.1",
+    "eslint": "^9.0.0",
+    "eslint-config-prettier": "^10.0.0",
+    "eslint-plugin-import-x": "^4.0.0",
+    "eslint-plugin-jest": "^28.0.0",
+    "eslint-plugin-n": "^17.0.0",
+    "eslint-plugin-react": "^7.37.0",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "eslint-plugin-react-native": "^5.0.0",
+    "eslint-plugin-unicorn": "^56.0.0",
+    "husky": "^9.0.0",
+    "jest": "^30.0.0",
+    "jiti": "^2.7.0",
+    "lint-staged": "^16.0.0",
+    "nock": "^14.0.15",
+    "patch-package": "^8.0.1",
+    "prettier": "^3.0.0",
+    "prettier-plugin-jsdoc": "^1.0.0",
+    "ts-jest": "^29.0.0",
+    "tsx": "^4.0.0",
+    "turbo": "^2.9.16",
+    "typescript": "^5.8.0",
+    "typescript-eslint": "^8.0.0"
+  }
+}
