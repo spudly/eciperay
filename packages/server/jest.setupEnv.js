@@ -13,3 +13,12 @@ if (globalThis.WebSocket === undefined) {
   globalThis.WebSocket.CLOSING = 2;
   globalThis.WebSocket.CLOSED = 3;
 }
+
+// Provide placeholder env vars so modules like supabase.ts can initialise
+// without throwing when no .env file is present (e.g. in CI).
+// jest.setup.ts loads the real .env with override:true, so local runs still
+// use the actual values from that file.
+process.env['SUPABASE_URL'] =
+  process.env['SUPABASE_URL'] || 'http://localhost:54321';
+process.env['SUPABASE_SECRET_KEY'] =
+  process.env['SUPABASE_SECRET_KEY'] || 'test-placeholder-key';

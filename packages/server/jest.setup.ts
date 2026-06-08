@@ -5,11 +5,12 @@ import {afterEach} from '@jest/globals';
 import {config} from 'dotenv';
 import nock from 'nock';
 
-// Load root .env so SUPABASE_URL and other vars are available when modules
-// like supabase.ts initialise at import time.
-// jest.setup.ts is at packages/server/ — two levels up reaches the repo root
+// Load root .env so SUPABASE_URL and other vars are available for tests.
+// override:true ensures real values from .env take precedence over the
+// placeholder fallbacks set in jest.setupEnv.js (which runs before this file).
 config({
   path: resolve(dirname(fileURLToPath(import.meta.url)), '../../.env'),
+  override: true,
   quiet: true,
 });
 
