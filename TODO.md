@@ -23,3 +23,4 @@
 - [ ] when using istanbul-ignore comments it should include a reason
 - [ ] never use @ts-ignore or @ts-expecte-error
 - [ ] when using eslint ignore comments it should include a reason
+- [ ] when using c8 ignore comments it should include a reason

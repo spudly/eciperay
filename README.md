@@ -62,7 +62,7 @@ SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SECRET_KEY=your-service-role-key
 DATABASE_URL=postgresql://postgres:[password]@db.your-project.supabase.co:5432/postgres
 ANTHROPIC_API_KEY=your-anthropic-key
-PORT=3000
+PORT=8080
 NODE_ENV=development
 ```
 
@@ -80,10 +80,10 @@ npm run migrate --workspace=packages/server
 npm run start --workspace=packages/server
 ```
 
-The server runs at `http://localhost:3000`. Test it with:
+The server runs at `http://localhost:8080`. Test it with:
 
 ```sh
-curl http://localhost:3000/health
+curl http://localhost:8080/health
 ```
 
 ### 5. Start the mobile app

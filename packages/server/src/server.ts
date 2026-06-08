@@ -10,7 +10,7 @@ import {createImportRouter} from './routes/import/router.js';
 import {createRecipesRouter} from './routes/recipes/router.js';
 import {createTagsRouter} from './routes/tags/router.js';
 
-const DEFAULT_PORT = 3000;
+const DEFAULT_PORT = 8080;
 
 type AppDeps = {query: typeof defaultQuery};
 
