@@ -1,15 +1,6 @@
 // Mocks for native modules that have no Jest implementation.
 // This file runs via setupFilesAfterEnv after the test framework is loaded.
 
-// TanStack Query's notifyManager batches state updates via setTimeout by default.
-// In tests this creates open handles that prevent Jest from exiting cleanly.
-// Wrap notifications in act() so React processes them inside the test renderer context.
-const {notifyManager} = require('@tanstack/react-query');
-
-// Use synchronous scheduling so TanStack Query state updates fire immediately
-// rather than via setTimeout, eliminating open handles between tests.
-notifyManager.setScheduler(fn => fn());
-
 jest.mock('react-native-keep-awake', () => ({
   activate: jest.fn(),
   deactivate: jest.fn(),
