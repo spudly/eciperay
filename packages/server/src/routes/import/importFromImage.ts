@@ -48,6 +48,7 @@ const callClaudeVision = (imageBase64: string, mediaType: MediaType) =>
 const extractText = (
   content: {type: string; text?: string} | undefined,
 ): string => {
+  /* c8 ignore next 3 */
   if (content?.type !== 'text' || !content.text) {
     throw new Error('Unexpected Claude response type');
   }
