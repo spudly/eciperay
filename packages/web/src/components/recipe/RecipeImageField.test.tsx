@@ -131,6 +131,51 @@ describe('RecipeImageField', () => {
     expect(onImageFile).not.toHaveBeenCalled();
   });
 
+  test('calls onGenerateImage when generate is clicked', async () => {
+    const onGenerateImage = vi.fn();
+    render(
+      <RecipeImageField
+        {...defaultProps}
+        onGenerateImage={onGenerateImage}
+      />,
+    );
+    await userEvent.click(screen.getByText('Generate with AI'));
+    expect(onGenerateImage).toHaveBeenCalled();
+  });
+
+  test('disables generate when title is missing or image is busy', () => {
+    const onGenerateImage = vi.fn();
+    render(
+      <RecipeImageField
+        {...defaultProps}
+        canGenerateImage={false}
+        onGenerateImage={onGenerateImage}
+      />,
+    );
+    expect(screen.getByText('Generate with AI')).toBeDisabled();
+    fireEvent.click(screen.getByText('Generate with AI'));
+    expect(onGenerateImage).not.toHaveBeenCalled();
+  });
+
+  test('shows generating state and blocks file input', () => {
+    const onImageFile = vi.fn();
+    render(
+      <RecipeImageField
+        {...defaultProps}
+        imageGenerating
+        onImageFile={onImageFile}
+        onGenerateImage={vi.fn()}
+      />,
+    );
+    expect(screen.getByText('Generating…')).toBeInTheDocument();
+    expect(screen.getByLabelText('Browse images')).toBeDisabled();
+    const file = new File(['pixels'], 'recipe.png', {type: 'image/png'});
+    fireEvent.drop(screen.getByLabelText('Recipe image drop zone'), {
+      dataTransfer: {files: [file], items: []},
+    });
+    expect(onImageFile).not.toHaveBeenCalled();
+  });
+
   test('ignores files while an upload is in progress', () => {
     const onImageFile = vi.fn();
     render(

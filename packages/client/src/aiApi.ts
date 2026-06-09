@@ -6,6 +6,14 @@ type Substitution = {ingredient: string; suggestions: string[]};
 
 type ChatResult = {assistantMessage: string; draft: RecipeDraft};
 
+type GenerateImageInput = {
+  title: string;
+  description?: string | null;
+  ingredients?: string[];
+};
+
+type GenerateImageResult = {imageBase64: string; contentType: string};
+
 export const createAiApi = (client: ApiClient) => ({
   getConversation: (recipeId: string) =>
     client.fetch<AiConversation>(`/recipes/${recipeId}/ai/conversation`),
@@ -29,4 +37,9 @@ export const createAiApi = (client: ApiClient) => ({
       `/recipes/${recipeId}/ai/substitutions?${params.toString()}`,
     );
   },
+  generateImage: (input: GenerateImageInput) =>
+    client.fetch<GenerateImageResult>('/recipes/ai/generate-image', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
 });

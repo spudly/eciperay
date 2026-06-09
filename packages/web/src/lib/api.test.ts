@@ -8,6 +8,15 @@ describe('api', () => {
     expect(recipes[0]?.title).toBe('Test Recipe');
   });
 
+  test('generates a recipe image via the API', async () => {
+    const image = await recipoo.ai.generateImage({
+      title: 'Soup',
+      description: 'Warm soup',
+      ingredients: ['broth'],
+    });
+    expect(image).toEqual({imageBase64: 'aGVsbG8=', contentType: 'image/png'});
+  });
+
   test('getToken returns null without session', async () => {
     vi.mocked(supabase.auth.getSession).mockResolvedValueOnce({
       data: {session: null},
