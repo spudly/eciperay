@@ -117,6 +117,9 @@ export const handlers = [
       {ingredient: 'Salt', suggestions: ['Soy sauce', 'Miso']},
     ]),
   ),
+  http.post(`${API}/recipes/ai/generate-image`, () =>
+    HttpResponse.json({imageBase64: 'aGVsbG8=', contentType: 'image/png'}),
+  ),
   http.get(`${API}/recipes/:id/drafts`, () =>
     HttpResponse.json([
       {
