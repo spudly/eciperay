@@ -7,10 +7,13 @@ import {
 } from '@recipoo/client';
 import type {RecipeInput} from '@recipoo/types';
 
+import {recipoo} from '../../lib/api.js';
 import {makeRecipeDetail} from '../../test/fixtures/recipe.js';
 import {renderWithProviders} from '../../test/testUtils.js';
 
 import {RecipeForm} from './RecipeForm.js';
+
+vi.mock('../../lib/api.js', () => ({recipoo: {ai: {generateImage: vi.fn()}}}));
 
 vi.mock('@recipoo/client', async importOriginal => {
   const actual = await importOriginal<typeof import('@recipoo/client')>();
@@ -23,6 +26,7 @@ vi.mock('@recipoo/client', async importOriginal => {
 
 const mockUploadRecipeImage = vi.mocked(uploadRecipeImage);
 const mockValidateRecipeImageFile = vi.mocked(validateRecipeImageFile);
+const mockGenerateImage = vi.mocked(recipoo.ai.generateImage);
 
 type OnSubmit = (input: RecipeInput, pendingImage?: File) => Promise<void>;
 
@@ -32,6 +36,11 @@ describe('RecipeForm', () => {
   beforeEach(() => {
     mockUploadRecipeImage.mockReset();
     mockUploadRecipeImage.mockResolvedValue('https://cdn.example/recipe.png');
+    mockGenerateImage.mockReset();
+    mockGenerateImage.mockResolvedValue({
+      imageBase64: btoa('pixels'),
+      contentType: 'image/png',
+    });
     mockValidateRecipeImageFile.mockReset();
     mockValidateRecipeImageFile.mockImplementation(file => {
       if (
@@ -382,6 +391,140 @@ describe('RecipeForm', () => {
       clipboardData: {files: [], items: []},
     });
     expect(mockUploadRecipeImage).not.toHaveBeenCalled();
+  });
+
+  test('generates an image with AI and uploads it when editing', async () => {
+    await renderWithProviders(
+      <RecipeForm
+        initial={recipeDetailToInput(makeRecipeDetail())}
+        recipeId="recipe-uuid-1"
+        submitLabel="Save"
+        onSubmit={vi.fn()}
+      />,
+    );
+    await userEvent.click(screen.getByText('Generate with AI'));
+    await waitFor(() => {
+      expect(mockGenerateImage).toHaveBeenCalledWith({
+        title: 'Test Recipe',
+        description: 'A test recipe',
+        ingredients: ['Flour', 'Salt'],
+      });
+    });
+    await waitFor(() => {
+      expect(mockUploadRecipeImage).toHaveBeenCalled();
+    });
+  });
+
+  test('defers AI-generated images on create until submit', async () => {
+    const onSubmit = mockOnSubmit();
+    await renderWithProviders(
+      <RecipeForm
+        initial={{
+          title: 'New Recipe',
+          servings: 4,
+          ingredients: [],
+          instructions: [],
+          tagIds: [],
+        }}
+        submitLabel="Create"
+        onSubmit={onSubmit}
+      />,
+    );
+    await userEvent.click(screen.getByText('Generate with AI'));
+    await waitFor(() => {
+      expect(mockGenerateImage).toHaveBeenCalled();
+    });
+    expect(mockUploadRecipeImage).not.toHaveBeenCalled();
+    expect(screen.getByAltText('Recipe preview')).toBeInTheDocument();
+  });
+
+  test('requires a title before generating an image', async () => {
+    await renderWithProviders(
+      <RecipeForm
+        initial={{
+          title: '',
+          servings: 4,
+          ingredients: [],
+          instructions: [],
+          tagIds: [],
+        }}
+        submitLabel="Create"
+        onSubmit={vi.fn()}
+      />,
+    );
+    expect(screen.getByText('Generate with AI')).toBeDisabled();
+    await userEvent.click(screen.getByText('Generate with AI'));
+    expect(mockGenerateImage).not.toHaveBeenCalled();
+  });
+
+  test('requires sign-in before generating an image', async () => {
+    await renderWithProviders(
+      <RecipeForm
+        initial={recipeDetailToInput(makeRecipeDetail())}
+        recipeId="recipe-uuid-1"
+        submitLabel="Save"
+        onSubmit={vi.fn()}
+      />,
+      {withAuth: false},
+    );
+    await userEvent.click(screen.getByText('Generate with AI'));
+    expect(
+      await screen.findByText('Sign in to generate images'),
+    ).toBeInTheDocument();
+  });
+
+  test('uses a jpg filename for jpeg image content types', async () => {
+    mockGenerateImage.mockResolvedValueOnce({
+      imageBase64: btoa('pixels'),
+      contentType: 'image/jpeg',
+    });
+    await renderWithProviders(
+      <RecipeForm
+        initial={recipeDetailToInput(makeRecipeDetail())}
+        recipeId="recipe-uuid-1"
+        submitLabel="Save"
+        onSubmit={vi.fn()}
+      />,
+    );
+    await userEvent.click(screen.getByText('Generate with AI'));
+    await waitFor(() => {
+      expect(mockUploadRecipeImage).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({name: 'recipe.jpg', type: 'image/jpeg'}),
+        'user-1',
+        'recipe-uuid-1',
+      );
+    });
+  });
+
+  test('shows a generation error when AI image creation fails', async () => {
+    mockGenerateImage.mockRejectedValueOnce(new Error('OpenAI unavailable'));
+    await renderWithProviders(
+      <RecipeForm
+        initial={recipeDetailToInput(makeRecipeDetail())}
+        recipeId="recipe-uuid-1"
+        submitLabel="Save"
+        onSubmit={vi.fn()}
+      />,
+    );
+    await userEvent.click(screen.getByText('Generate with AI'));
+    expect(await screen.findByText('OpenAI unavailable')).toBeInTheDocument();
+  });
+
+  test('shows a generic generation error for non-Error throws', async () => {
+    mockGenerateImage.mockRejectedValueOnce('bad');
+    await renderWithProviders(
+      <RecipeForm
+        initial={recipeDetailToInput(makeRecipeDetail())}
+        recipeId="recipe-uuid-1"
+        submitLabel="Save"
+        onSubmit={vi.fn()}
+      />,
+    );
+    await userEvent.click(screen.getByText('Generate with AI'));
+    expect(
+      await screen.findByText('Failed to generate image'),
+    ).toBeInTheDocument();
   });
 
   test('shows generic error for non-Error throws', async () => {

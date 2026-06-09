@@ -99,6 +99,12 @@ export const SyncUserSchema = z.object({
   displayName: z.string().max(100).optional(),
 });
 
+export const GenerateRecipeImageSchema = z.object({
+  title: z.string().min(1),
+  description: z.string().nullish(),
+  ingredients: z.array(z.string()).default([]),
+});
+
 // ─── AI response shapes ────────────────────────────────────────────────────────
 
 const RecipeDiffSchema = z.object({

@@ -64,6 +64,11 @@ describe('createRecipooClient', () => {
     await client.ai.cleanup('r1');
     await client.ai.nutrition('r1');
     await client.ai.substitutions('r1', ['flour', 'salt']);
+    await client.ai.generateImage({
+      title: 'Soup',
+      description: 'Warm soup',
+      ingredients: ['broth'],
+    });
     await client.drafts.listPending('r1');
     await client.drafts.approve('r1', 'd1');
     await client.drafts.reject('r1', 'd1');
@@ -109,6 +114,10 @@ describe('createRecipooClient', () => {
     expect(api.fetch).toHaveBeenCalledWith('/recipes/r1/ai/nutrition');
     expect(api.fetch).toHaveBeenCalledWith(
       '/recipes/r1/ai/substitutions?missing=flour&missing=salt',
+    );
+    expect(api.fetch).toHaveBeenCalledWith(
+      '/recipes/ai/generate-image',
+      expect.objectContaining({method: 'POST'}),
     );
     expect(api.fetch).toHaveBeenCalledWith('/recipes/r1/drafts?status=pending');
     expect(api.fetch).toHaveBeenCalledWith(

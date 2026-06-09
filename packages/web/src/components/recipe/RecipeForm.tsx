@@ -15,6 +15,8 @@ import {
   getImageFileFromDataTransfer,
   shouldIgnoreImagePaste,
 } from '../../lib/recipeImageInput.js';
+import {recipoo} from '../../lib/api.js';
+import {imageBase64ToFile} from '../../lib/imageBase64ToFile.js';
 import {supabase} from '../../lib/supabase.js';
 
 import {RecipeImageField} from './RecipeImageField.js';
@@ -81,6 +83,7 @@ export const RecipeForm = ({
   const [error, setError] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
   const [imageUploading, setImageUploading] = useState(false);
+  const [imageGenerating, setImageGenerating] = useState(false);
 
   const clearPendingImage = () => {
     if (previewUrl) {
@@ -134,6 +137,41 @@ export const RecipeForm = ({
     setImageUrl('');
     setPendingImageFile(file);
     setPreviewUrl(URL.createObjectURL(file));
+  };
+
+  const handleGenerateImage = async () => {
+    const trimmedTitle = title.trim();
+    /* c8 ignore next 4 -- generate button is disabled when title is empty */
+    if (!trimmedTitle) {
+      setImageError('Add a title before generating an image');
+      return;
+    }
+    if (!session?.user.id) {
+      setImageError('Sign in to generate images');
+      return;
+    }
+    setImageError(null);
+    setImageGenerating(true);
+    try {
+      const ingredientNames = ingredients
+        .map(ingredient => ingredient.name.trim())
+        .filter(Boolean);
+      const {imageBase64, contentType} = await recipoo.ai.generateImage({
+        title: trimmedTitle,
+        description: description || null,
+        ingredients: ingredientNames,
+      });
+      const extension = contentType === 'image/jpeg' ? 'jpg' : 'png';
+      await processImageFile(
+        imageBase64ToFile(imageBase64, contentType, `recipe.${extension}`),
+      );
+    } catch (error_) {
+      setImageError(
+        error_ instanceof Error ? error_.message : 'Failed to generate image',
+      );
+    } finally {
+      setImageGenerating(false);
+    }
   };
 
   const handleFormPaste = (e: React.ClipboardEvent) => {
@@ -296,8 +334,11 @@ export const RecipeForm = ({
       <RecipeImageField
         imagePreview={imagePreview || null}
         imageUploading={imageUploading}
+        imageGenerating={imageGenerating}
         imageError={imageError}
+        canGenerateImage={title.trim().length > 0}
         onImageFile={processImageFile}
+        onGenerateImage={handleGenerateImage}
         onRemove={() => {
           clearPendingImage();
           setImageUrl('');

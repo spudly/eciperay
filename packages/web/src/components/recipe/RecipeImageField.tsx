@@ -9,22 +9,29 @@ import {
 type Props = {
   imagePreview: string | null;
   imageUploading: boolean;
+  imageGenerating?: boolean;
   imageError: string | null;
+  canGenerateImage?: boolean;
   onImageFile: (file: File) => void | Promise<void>;
+  onGenerateImage?: () => void | Promise<void>;
   onRemove: () => void;
 };
 
 export const RecipeImageField = ({
   imagePreview,
   imageUploading,
+  imageGenerating = false,
   imageError,
+  canGenerateImage = true,
   onImageFile,
+  onGenerateImage,
   onRemove,
 }: Props) => {
   const [isDragging, setIsDragging] = useState(false);
+  const imageBusy = imageUploading || imageGenerating;
 
   const acceptImage = (file: File | null) => {
-    if (!file || imageUploading) {
+    if (!file || imageBusy) {
       return;
     }
     void onImageFile(file);
@@ -87,8 +94,8 @@ export const RecipeImageField = ({
           />
         ) : (
           <p className="text-muted text-center text-sm">
-            Drag and drop an image here, paste from your clipboard, or browse
-            below
+            Drag and drop an image here, paste from your clipboard, browse
+            below, or generate one with AI
           </p>
         )}
       </div>
@@ -102,12 +109,28 @@ export const RecipeImageField = ({
         >
           {imageUploading ? 'Uploading…' : 'Browse images'}
         </label>
+        {onGenerateImage ? (
+          <button
+            type="button"
+            className="
+              border-primary text-primary inline-flex rounded-lg border bg-white
+              px-4 py-2 text-sm font-medium
+              disabled:cursor-not-allowed disabled:opacity-50
+            "
+            disabled={imageBusy || !canGenerateImage}
+            onClick={() => {
+              void onGenerateImage();
+            }}
+          >
+            {imageGenerating ? 'Generating…' : 'Generate with AI'}
+          </button>
+        ) : null}
         <input
           id="recipe-image-upload"
           type="file"
           accept="image/jpeg,image/png,image/gif,image/webp"
           className="hidden"
-          disabled={imageUploading}
+          disabled={imageBusy}
           onChange={e => {
             acceptImage(e.target.files?.[0] ?? null);
             e.target.value = '';
