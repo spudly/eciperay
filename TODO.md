@@ -24,3 +24,6 @@
 - [ ] never use @ts-ignore or @ts-expecte-error
 - [ ] when using eslint ignore comments it should include a reason
 - [ ] when using c8 ignore comments it should include a reason
+- [ ] rich text recipe input
+- [ ] vite port should come from .env
+- [ ] why are we using vitest instead of jest for packages/web

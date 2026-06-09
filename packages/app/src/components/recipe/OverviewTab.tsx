@@ -5,45 +5,26 @@ import type {RecipeDetail} from '@recipoo/types';
 import {printRecipe} from '../../lib/printRecipe';
 import {shareRecipe} from '../../lib/shareRecipe';
 
-type Props = {recipe: RecipeDetail; onStartCooking: () => void};
+type Props = {
+  recipe: RecipeDetail;
+  onStartCooking: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+};
 
 const StatBadge = ({label, value}: {label: string; value: string}) => (
   <View className="items-center">
     <Text className="text-base font-semibold text-gray-900">{value}</Text>
-    <Text className="text-xs text-muted">{label}</Text>
+    <Text className="text-muted text-xs">{label}</Text>
   </View>
 );
 
-const ActionRow = ({
+export const OverviewTab = ({
   recipe,
   onStartCooking,
-}: {
-  recipe: RecipeDetail;
-  onStartCooking: () => void;
-}) => (
-  <View className="mb-4 flex-row gap-3">
-    <TouchableOpacity
-      className="flex-1 items-center rounded-xl bg-primary py-3"
-      onPress={onStartCooking}
-    >
-      <Text className="font-semibold text-white">Start Cooking</Text>
-    </TouchableOpacity>
-    <TouchableOpacity
-      className="w-12 items-center justify-center rounded-xl bg-gray-100"
-      onPress={() => void printRecipe(recipe)}
-    >
-      <Text className="text-gray-700">🖨</Text>
-    </TouchableOpacity>
-    <TouchableOpacity
-      className="w-12 items-center justify-center rounded-xl bg-gray-100"
-      onPress={() => void shareRecipe(recipe)}
-    >
-      <Text className="text-gray-700">↗</Text>
-    </TouchableOpacity>
-  </View>
-);
-
-export const OverviewTab = ({recipe, onStartCooking}: Props) => (
+  onEdit,
+  onDelete,
+}: Props) => (
   <View className="p-4">
     {recipe.imageUrl ? (
       <Image
@@ -76,10 +57,38 @@ export const OverviewTab = ({recipe, onStartCooking}: Props) => (
         />
       ) : null}
     </View>
-    <ActionRow
-      recipe={recipe}
-      onStartCooking={onStartCooking}
-    />
+    <View className="mb-4 flex-row flex-wrap gap-3">
+      <TouchableOpacity
+        className="bg-primary min-w-[40%] flex-1 items-center rounded-xl py-3"
+        onPress={onStartCooking}
+      >
+        <Text className="font-semibold text-white">Start Cooking</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        className="w-12 items-center justify-center rounded-xl bg-gray-100"
+        onPress={() => void printRecipe(recipe)}
+      >
+        <Text className="text-gray-700">🖨</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        className="w-12 items-center justify-center rounded-xl bg-gray-100"
+        onPress={() => void shareRecipe(recipe)}
+      >
+        <Text className="text-gray-700">↗</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        className="rounded-xl bg-gray-100 px-4 py-3"
+        onPress={onEdit}
+      >
+        <Text className="text-sm font-medium text-gray-700">Edit</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        className="rounded-xl bg-red-50 px-4 py-3"
+        onPress={onDelete}
+      >
+        <Text className="text-sm font-medium text-red-600">Delete</Text>
+      </TouchableOpacity>
+    </View>
     <View className="flex-row flex-wrap gap-2">
       {recipe.tags.map(tag => (
         <View

@@ -1,27 +1,42 @@
 import React from 'react';
-import {render, fireEvent, waitFor} from '@testing-library/react-native';
-
-import {supabase} from '../lib/supabase';
+import {render, fireEvent} from '@testing-library/react-native';
 
 import {ProfileScreen} from './ProfileScreen';
 
-jest.mock('../lib/supabase', () => ({
-  supabase: {auth: {signOut: jest.fn().mockResolvedValue({})}},
+const mockUseAuth = jest.fn((): {session: {user: {email: string}} | null} => ({
+  session: {user: {email: 'user@test.com'}},
 }));
 
-const mockSignOut = supabase.auth.signOut as jest.Mock;
+jest.mock('@recipoo/client', () => ({useAuth: () => mockUseAuth()}));
+
+jest.mock('../lib/supabase', () => ({supabase: {auth: {signOut: jest.fn()}}}));
+
+const mockNavigate = jest.fn();
+const navigation = {navigate: mockNavigate} as never;
 
 describe('ProfileScreen', () => {
-  test('renders sign out button', () => {
-    const {getByText} = render(<ProfileScreen />);
+  test('renders without email when session is missing', () => {
+    mockUseAuth.mockReturnValueOnce({session: null});
+    const {queryByText} = render(<ProfileScreen navigation={navigation} />);
+    expect(queryByText('user@test.com')).toBeNull();
+  });
+
+  test('renders email and sign out button', () => {
+    const {getByText} = render(<ProfileScreen navigation={navigation} />);
+    expect(getByText('user@test.com')).toBeTruthy();
     expect(getByText('Sign Out')).toBeTruthy();
   });
 
-  test('calls supabase.auth.signOut when sign out button pressed', async () => {
-    const {getByText} = render(<ProfileScreen />);
+  test('signs out on button press', () => {
+    const {supabase} = require('../lib/supabase');
+    const {getByText} = render(<ProfileScreen navigation={navigation} />);
     fireEvent.press(getByText('Sign Out'));
-    await waitFor(() => {
-      expect(mockSignOut).toHaveBeenCalled();
-    });
+    expect(supabase.auth.signOut).toHaveBeenCalled();
+  });
+
+  test('navigates to Tags', () => {
+    const {getByText} = render(<ProfileScreen navigation={navigation} />);
+    fireEvent.press(getByText('Manage Tags'));
+    expect(mockNavigate).toHaveBeenCalledWith('Tags');
   });
 });

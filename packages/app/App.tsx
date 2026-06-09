@@ -1,16 +1,17 @@
 import './global.css';
 
-import React from 'react';
+import {AuthProvider} from '@recipoo/client';
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
+import React from 'react';
 
-import {AuthProvider} from './src/context/AuthContext';
 import {RootNavigator} from './src/navigation/RootNavigator';
+import {supabase} from './src/lib/supabase';
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <AuthProvider>
+    <AuthProvider supabase={supabase}>
       <RootNavigator />
     </AuthProvider>
   </QueryClientProvider>

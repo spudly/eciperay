@@ -5,6 +5,7 @@ import {
   ImportImageSchema,
   ImportUrlSchema,
   RecipeInputSchema,
+  RecipeNoteInputSchema,
   RecipeUpdateSchema,
   SyncUserSchema,
   TagInputSchema,
@@ -62,6 +63,20 @@ describe('TagInputSchema', () => {
 
   test('rejects empty name', () => {
     expect(() => TagInputSchema.parse({name: ''})).toThrow(z.ZodError);
+  });
+});
+
+describe('RecipeNoteInputSchema', () => {
+  test('accepts non-empty content', () => {
+    expect(() =>
+      RecipeNoteInputSchema.parse({content: 'Delicious'}),
+    ).not.toThrow();
+  });
+
+  test('rejects empty content', () => {
+    expect(() => RecipeNoteInputSchema.parse({content: ''})).toThrow(
+      z.ZodError,
+    );
   });
 });
 

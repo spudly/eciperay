@@ -1,8 +1,8 @@
 import React, {useState} from 'react';
 import {Alert, Text, TextInput, TouchableOpacity, View} from 'react-native';
+import {errorMessage} from '@recipoo/client';
 
 import {supabase} from '../../lib/supabase';
-import {errorMessage} from '../../lib/errorMessage';
 
 type ForgotProps = {navigation: {goBack: () => void}};
 
@@ -35,7 +35,7 @@ export const ForgotPasswordScreen = ({navigation}: ForgotProps) => {
       <Text className="mb-4 text-3xl font-bold text-gray-900">
         Reset password
       </Text>
-      <Text className="mb-8 text-muted">
+      <Text className="text-muted mb-8">
         {"We'll send a reset link to your email."}
       </Text>
       <TextInput
@@ -47,7 +47,7 @@ export const ForgotPasswordScreen = ({navigation}: ForgotProps) => {
         keyboardType="email-address"
       />
       <TouchableOpacity
-        className="items-center rounded-lg bg-primary py-4"
+        className="bg-primary items-center rounded-lg py-4"
         onPress={() => void handleReset()}
         disabled={loading}
       >

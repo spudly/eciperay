@@ -1,0 +1,4 @@
+ignores:
+  - '@recipoo/theme' # Imported via @import in index.css; depcheck does not trace CSS imports
+  - '@vitest/coverage-v8' # Used by vitest coverage config, not imported in source
+  - tailwindcss # Used by @tailwindcss/vite and index.css; depcheck does not trace CSS imports

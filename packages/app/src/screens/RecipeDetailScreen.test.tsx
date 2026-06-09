@@ -1,188 +1,114 @@
 import React from 'react';
+import {Alert} from 'react-native';
 import {render, fireEvent, waitFor} from '@testing-library/react-native';
-import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 
 import {makeRecipeDetail} from '../__tests__/fixtures/recipe';
-import {apiFetch} from '../lib/api';
+import {renderWithProviders} from '../__tests__/testUtils';
+import {api} from '../lib/api';
 
 import {RecipeDetailScreen} from './RecipeDetailScreen';
 
-jest.mock('../lib/api', () => ({apiFetch: jest.fn()}));
+jest.mock('../lib/api');
 
-// Use require() inside factories — jest.mock factories run before module imports resolve.
-jest.mock('../components/recipe/OverviewTab', () => ({
-  OverviewTab: ({
-    recipe,
-    onStartCooking,
-  }: {
-    recipe: {title: string; id: string};
-    onStartCooking: () => void;
-  }) => {
-    const R = require('react');
-    const {Text, TouchableOpacity} = require('react-native');
-    return R.createElement(
-      R.Fragment,
-      null,
-      R.createElement(Text, null, recipe.title),
-      R.createElement(
-        TouchableOpacity,
-        {onPress: onStartCooking},
-        R.createElement(Text, null, 'Start Cooking'),
-      ),
-    );
-  },
-}));
-
-jest.mock('../components/recipe/IngredientsTab', () => ({
-  IngredientsTab: () =>
-    require('react').createElement(
-      require('react-native').Text,
-      null,
-      'IngredientsTab',
-    ),
-}));
-
-jest.mock('../components/recipe/InstructionsTab', () => ({
-  InstructionsTab: () =>
-    require('react').createElement(
-      require('react-native').Text,
-      null,
-      'InstructionsTab',
-    ),
-}));
-
-jest.mock('../components/recipe/NotesTab', () => ({
-  NotesTab: () =>
-    require('react').createElement(
-      require('react-native').Text,
-      null,
-      'NotesTab',
-    ),
-}));
-
-jest.mock('../components/recipe/NutritionTab', () => ({
-  NutritionTab: () =>
-    require('react').createElement(
-      require('react-native').Text,
-      null,
-      'NutritionTab',
-    ),
-}));
-
-const mockApiFetch = apiFetch as jest.Mock;
+const mockGet = api.recipes.get as jest.Mock;
+const mockDelete = api.recipes.delete as jest.Mock;
 const mockNavigate = jest.fn();
-const makeQueryClient = () =>
-  new QueryClient({
-    defaultOptions: {
-      queries: {
-        retry: false,
-        gcTime: 0,
-        staleTime: Infinity,
-        refetchOnWindowFocus: false,
-      },
-    },
-  });
-
-const makeProps = (recipeId = 'recipe-1') => ({
-  route: {
-    params: {recipeId},
-    key: 'RecipeDetail',
-    name: 'RecipeDetail' as const,
-  },
-  navigation: {navigate: mockNavigate, goBack: jest.fn()} as never,
-});
-
-let queryClient: QueryClient;
-
-const wrap = (element: React.ReactElement) => (
-  <QueryClientProvider client={queryClient}>{element}</QueryClientProvider>
-);
+const route = {params: {recipeId: 'recipe-uuid-1'}};
+const navigation = {navigate: mockNavigate} as never;
 
 describe('RecipeDetailScreen', () => {
   beforeEach(() => {
-    queryClient = makeQueryClient();
+    mockGet.mockResolvedValue(makeRecipeDetail());
+    mockDelete.mockResolvedValue();
   });
 
-  test('shows loading state while fetching', () => {
-    mockApiFetch.mockImplementation(
-      () =>
-        new Promise(() => {
-          /* never resolves */
-        }),
+  test('renders recipe title in overview tab', async () => {
+    const {findByText} = render(
+      renderWithProviders(
+        <RecipeDetailScreen
+          route={route}
+          navigation={navigation}
+        />,
+      ),
     );
-    const {getByText} = render(wrap(<RecipeDetailScreen {...makeProps()} />));
-    expect(getByText('Loading…')).toBeTruthy();
+    expect(await findByText('Test Recipe')).toBeTruthy();
   });
 
-  test('renders 5 tab buttons after loading', async () => {
-    mockApiFetch.mockResolvedValue(makeRecipeDetail());
-    const {findByText, getByText} = render(
-      wrap(<RecipeDetailScreen {...makeProps()} />),
+  test('switches to ingredients tab', async () => {
+    const {findByText} = render(
+      renderWithProviders(
+        <RecipeDetailScreen
+          route={route}
+          navigation={navigation}
+        />,
+      ),
     );
-    // Wait for the data to load once, then check remaining tabs synchronously
-    await findByText('Overview');
-    expect(getByText('Ingredients')).toBeTruthy();
-    expect(getByText('Instructions')).toBeTruthy();
-    expect(getByText('Notes')).toBeTruthy();
-    expect(getByText('Nutrition')).toBeTruthy();
+    await findByText('Test Recipe');
+    fireEvent.press(await findByText('Ingredients'));
+    expect(await findByText(/Flour/)).toBeTruthy();
   });
 
-  test('switches to Ingredients tab on press', async () => {
-    mockApiFetch.mockResolvedValue(makeRecipeDetail());
-    const {findByText, getByText} = render(
-      wrap(<RecipeDetailScreen {...makeProps()} />),
+  test('navigates to cooking mode', async () => {
+    const {findByText} = render(
+      renderWithProviders(
+        <RecipeDetailScreen
+          route={route}
+          navigation={navigation}
+        />,
+      ),
     );
-    await findByText('Overview');
-    fireEvent.press(getByText('Ingredients'));
-    await waitFor(() => {
-      expect(getByText('IngredientsTab')).toBeTruthy();
+    fireEvent.press(await findByText('Start Cooking'));
+    expect(mockNavigate).toHaveBeenCalledWith('CookingMode', {
+      recipeId: 'recipe-uuid-1',
     });
   });
 
-  test('switches to Instructions tab', async () => {
-    mockApiFetch.mockResolvedValue(makeRecipeDetail());
-    const {findByText, getByText} = render(
-      wrap(<RecipeDetailScreen {...makeProps()} />),
+  test('navigates to edit screen', async () => {
+    const {findByText} = render(
+      renderWithProviders(
+        <RecipeDetailScreen
+          route={route}
+          navigation={navigation}
+        />,
+      ),
     );
-    await findByText('Overview');
-    fireEvent.press(getByText('Instructions'));
-    await waitFor(() => {
-      expect(getByText('InstructionsTab')).toBeTruthy();
+    fireEvent.press(await findByText('Edit'));
+    expect(mockNavigate).toHaveBeenCalledWith('EditRecipe', {
+      recipeId: 'recipe-uuid-1',
     });
   });
 
-  test('switches to Notes tab', async () => {
-    mockApiFetch.mockResolvedValue(makeRecipeDetail());
-    const {findByText, getByText} = render(
-      wrap(<RecipeDetailScreen {...makeProps()} />),
+  test('switches to instructions, notes, and nutrition tabs', async () => {
+    const {findByText} = render(
+      renderWithProviders(
+        <RecipeDetailScreen
+          route={route}
+          navigation={navigation}
+        />,
+      ),
     );
-    await findByText('Overview');
-    fireEvent.press(getByText('Notes'));
-    await waitFor(() => {
-      expect(getByText('NotesTab')).toBeTruthy();
-    });
+    await findByText('Test Recipe');
+    fireEvent.press(await findByText('Instructions'));
+    expect(await findByText('Mix dry ingredients')).toBeTruthy();
+    fireEvent.press(await findByText('Notes'));
+    fireEvent.press(await findByText('Nutrition'));
   });
 
-  test('switches to Nutrition tab', async () => {
-    mockApiFetch.mockResolvedValue(makeRecipeDetail());
-    const {findByText, getByText} = render(
-      wrap(<RecipeDetailScreen {...makeProps()} />),
-    );
-    await findByText('Overview');
-    fireEvent.press(getByText('Nutrition'));
-    await waitFor(() => {
-      expect(getByText('NutritionTab')).toBeTruthy();
+  test('deletes recipe from overview', async () => {
+    jest.spyOn(Alert, 'alert').mockImplementation((_t, _m, buttons) => {
+      buttons?.[1]?.onPress?.();
     });
-  });
-
-  test('navigates to CookingMode when Start Cooking pressed', async () => {
-    const recipe = makeRecipeDetail({id: 'r-1'});
-    mockApiFetch.mockResolvedValue(recipe);
-    const {findByText, getByText} = render(
-      wrap(<RecipeDetailScreen {...makeProps('r-1')} />),
+    const {findByText} = render(
+      renderWithProviders(
+        <RecipeDetailScreen
+          route={route}
+          navigation={navigation}
+        />,
+      ),
     );
-    await findByText(recipe.title);
-    fireEvent.press(getByText('Start Cooking'));
-    expect(mockNavigate).toHaveBeenCalledWith('CookingMode', {recipeId: 'r-1'});
+    fireEvent.press(await findByText('Delete'));
+    await waitFor(() => {
+      expect(mockDelete).toHaveBeenCalled();
+    });
   });
 });

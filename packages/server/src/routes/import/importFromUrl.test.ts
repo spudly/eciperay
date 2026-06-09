@@ -2,6 +2,8 @@ import nock from 'nock';
 import request from 'supertest';
 
 import {createApp} from '../../server.js';
+import {makeRecipeDetailRow} from '../../test/fixtures/recipeRow.js';
+import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {createMockQuery} from '../../test/mockQuery.js';
 import {nockAnthropicMessage} from '../../test/mockNockAnthropic.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
@@ -39,28 +41,43 @@ const CLAUDE_RESPONSE = JSON.stringify({
   instructions: [{stepNumber: 1, body: 'Cook pasta'}],
 });
 
+const mockSaveFlow = () => {
+  mockQuery
+    .mockResolvedValueOnce(makeQueryResult([{id: 'recipe-uuid-1'}]))
+    .mockResolvedValue(
+      makeQueryResult([makeRecipeDetailRow({title: 'Pasta'})]),
+    );
+};
+
 describe('POST /recipes/import/url', () => {
-  test('returns recipe from schema.org JSON-LD when present', async () => {
+  test('returns 201 RecipeDetail from schema.org JSON-LD when present', async () => {
     nockSupabaseGetUser('user-uuid-1');
     nock('https://recipe.example.com').get('/').reply(200, SCHEMA_ORG_HTML);
+    mockSaveFlow();
     const res = await request(app)
       .post('/recipes/import/url')
       .set('Authorization', 'Bearer valid-token')
       .send({url: 'https://recipe.example.com/'});
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(201);
     expect(res.body.title).toBe('Pasta');
     expect(res.body.servings).toBe(4);
+    expect(res.body.userId).toBe('user-uuid-1');
   });
 
   test('falls back to Claude when no schema.org Recipe found', async () => {
     nockSupabaseGetUser('user-uuid-1');
     nock('https://recipe.example.com').get('/plain').reply(200, PLAIN_HTML);
     nockAnthropicMessage(CLAUDE_RESPONSE);
+    mockQuery
+      .mockResolvedValueOnce(makeQueryResult([{id: 'recipe-uuid-1'}]))
+      .mockResolvedValue(
+        makeQueryResult([makeRecipeDetailRow({title: 'AI Parsed Pasta'})]),
+      );
     const res = await request(app)
       .post('/recipes/import/url')
       .set('Authorization', 'Bearer valid-token')
       .send({url: 'https://recipe.example.com/plain'});
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(201);
     expect(res.body.title).toBe('AI Parsed Pasta');
   });
 

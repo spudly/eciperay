@@ -2,19 +2,18 @@ import React from 'react';
 import {Alert} from 'react-native';
 import {act, render, fireEvent, waitFor} from '@testing-library/react-native';
 
+import {api} from '../../lib/api';
 import {supabase} from '../../lib/supabase';
-import {apiFetch} from '../../lib/api';
 
 import {SignInScreen} from './SignInScreen';
 
 jest.mock('../../lib/supabase', () => ({
   supabase: {auth: {signInWithPassword: jest.fn()}},
 }));
-
-jest.mock('../../lib/api', () => ({apiFetch: jest.fn().mockResolvedValue({})}));
+jest.mock('../../lib/api');
 
 const mockSignIn = supabase.auth.signInWithPassword as jest.Mock;
-const mockApiFetch = apiFetch as jest.Mock;
+const mockSyncUser = api.auth.syncUser as jest.Mock;
 const mockAlert = jest.spyOn(Alert, 'alert').mockReturnValue();
 const mockNavigate = jest.fn();
 const nav = {navigate: mockNavigate};
@@ -28,14 +27,14 @@ describe('SignInScreen', () => {
 
   test('calls signInWithPassword on submit', async () => {
     mockSignIn.mockResolvedValue({error: null});
+    mockSyncUser.mockResolvedValue();
     const {getByPlaceholderText, getByText} = render(
       <SignInScreen navigation={nav} />,
     );
-    // Flush React 19 concurrent state updates from the text inputs before pressing
     await act(async () => {
       fireEvent.changeText(getByPlaceholderText('Email'), 'user@test.com');
       fireEvent.changeText(getByPlaceholderText('Password'), 'secret');
-      await Promise.resolve(); // flush React 19 concurrent state updates
+      await Promise.resolve();
     });
     fireEvent.press(getByText('Sign In'));
     await waitFor(() => {
@@ -46,15 +45,13 @@ describe('SignInScreen', () => {
     });
   });
 
-  test('calls apiFetch /auth/sync on successful sign-in', async () => {
+  test('calls auth sync on successful sign-in', async () => {
     mockSignIn.mockResolvedValue({error: null});
+    mockSyncUser.mockResolvedValue();
     const {getByText} = render(<SignInScreen navigation={nav} />);
     fireEvent.press(getByText('Sign In'));
     await waitFor(() => {
-      expect(mockApiFetch).toHaveBeenCalledWith(
-        '/auth/sync',
-        expect.any(Object),
-      );
+      expect(mockSyncUser).toHaveBeenCalled();
     });
   });
 

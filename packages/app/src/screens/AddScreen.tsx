@@ -1,9 +1,16 @@
+import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import React from 'react';
 import {Text, TouchableOpacity, View} from 'react-native';
 
-type AddProps = {navigation: {navigate: (screen: string) => void}};
+import type {AddStackParamList} from '../navigation/types';
 
-type AddOption = {label: string; description: string; screen: string};
+type AddProps = NativeStackScreenProps<AddStackParamList, 'AddScreen'>;
+
+type AddOption = {
+  label: string;
+  description: string;
+  screen: keyof Omit<AddStackParamList, 'AddScreen' | 'ImportReview'>;
+};
 
 const OPTIONS: AddOption[] = [
   {
@@ -37,7 +44,7 @@ const OptionButton = ({
     <Text className="text-base font-semibold text-gray-900">
       {option.label}
     </Text>
-    <Text className="mt-1 text-sm text-muted">{option.description}</Text>
+    <Text className="text-muted mt-1 text-sm">{option.description}</Text>
   </TouchableOpacity>
 );
 

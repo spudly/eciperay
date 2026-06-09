@@ -1,9 +1,9 @@
+import {errorMessage} from '@recipoo/client';
 import React, {useState} from 'react';
 import {Alert, Text, TextInput, TouchableOpacity, View} from 'react-native';
 
+import {api} from '../../lib/api';
 import {supabase} from '../../lib/supabase';
-import {apiFetch} from '../../lib/api';
-import {errorMessage} from '../../lib/errorMessage';
 
 type SignInProps = {navigation: {navigate: (screen: string) => void}};
 
@@ -12,7 +12,7 @@ const signIn = async (email: string, password: string) => {
   if (error) {
     throw error;
   }
-  await apiFetch('/auth/sync', {method: 'POST', body: JSON.stringify({email})});
+  await api.auth.syncUser();
 };
 
 export const SignInScreen = ({navigation}: SignInProps) => {
@@ -52,7 +52,7 @@ export const SignInScreen = ({navigation}: SignInProps) => {
         secureTextEntry
       />
       <TouchableOpacity
-        className="items-center rounded-lg bg-primary py-4"
+        className="bg-primary items-center rounded-lg py-4"
         onPress={() => void handleSignIn()}
         disabled={loading}
       >
@@ -66,7 +66,7 @@ export const SignInScreen = ({navigation}: SignInProps) => {
           navigation.navigate('SignUp');
         }}
       >
-        <Text className="text-base text-primary">Create an account</Text>
+        <Text className="text-primary text-base">Create an account</Text>
       </TouchableOpacity>
       <TouchableOpacity
         className="mt-2 items-center"
@@ -74,7 +74,7 @@ export const SignInScreen = ({navigation}: SignInProps) => {
           navigation.navigate('ForgotPassword');
         }}
       >
-        <Text className="text-sm text-muted">Forgot password?</Text>
+        <Text className="text-muted text-sm">Forgot password?</Text>
       </TouchableOpacity>
     </View>
   );

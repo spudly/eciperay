@@ -1,3 +1,6 @@
+import {queryKeys} from '@recipoo/client';
+import type {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {useQuery} from '@tanstack/react-query';
 import React, {useEffect, useState} from 'react';
 import {
   GestureResponderEvent,
@@ -5,12 +8,10 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import {useQuery} from '@tanstack/react-query';
-import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {RecipeDetail} from '@recipoo/types';
 import KeepAwake from 'react-native-keep-awake';
 
-import {apiFetch} from '../lib/api';
+import {api} from '../lib/api';
 import type {RecipesStackParamList} from '../navigation/types';
 
 type CookingProps = NativeStackScreenProps<
@@ -19,8 +20,6 @@ type CookingProps = NativeStackScreenProps<
 >;
 
 type Step = RecipeDetail['instructions'][number];
-
-const fetchRecipe = (id: string) => apiFetch<RecipeDetail>(`/recipes/${id}`);
 
 const ProgressDots = ({total, current}: {total: number; current: number}) => (
   <View className="mb-6 flex-row justify-center gap-2">
@@ -105,8 +104,8 @@ export const CookingModeScreen = ({route, navigation}: CookingProps) => {
   const {recipeId} = route.params;
   const [step, setStep] = useState(0);
   const {data: recipe} = useQuery({
-    queryKey: ['recipe', recipeId],
-    queryFn: () => fetchRecipe(recipeId),
+    queryKey: queryKeys.recipe(recipeId),
+    queryFn: () => api.recipes.get(recipeId),
   });
 
   useEffect(() => {
