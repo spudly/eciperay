@@ -113,6 +113,39 @@ describe('POST /recipes/import/text', () => {
     expect(res.status).toBe(400);
   });
 
+  test('accepts bloated HTML when stripped text is within limits', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    nockAnthropicMessage(CLAUDE_RESPONSE);
+    mockSaveFlow();
+    const res = await request(app)
+      .post('/recipes/import/text')
+      .set('Authorization', 'Bearer valid-token')
+      .send({text: `<div>${'<span>Pasta</span>'.repeat(20_000)}</div>`});
+    expect(res.status).toBe(201);
+  });
+
+  test('returns 400 when HTML contains no recipe text', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    const res = await request(app)
+      .post('/recipes/import/text')
+      .set('Authorization', 'Bearer valid-token')
+      .send({text: '<div><img src="https://example.com/photo.jpg" /></div>'});
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe(
+      'No recipe text found after removing formatting',
+    );
+  });
+
+  test('returns 400 when stripped text exceeds the plain-text limit', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    const res = await request(app)
+      .post('/recipes/import/text')
+      .set('Authorization', 'Bearer valid-token')
+      .send({text: 'a'.repeat(100_001)});
+    expect(res.status).toBe(400);
+    expect(res.body.issues[0]?.path).toBe('text');
+  });
+
   test('returns 401 without auth token', async () => {
     const res = await request(app)
       .post('/recipes/import/text')

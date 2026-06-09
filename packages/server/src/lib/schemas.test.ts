@@ -124,8 +124,20 @@ describe('ImportTextSchema', () => {
     expect(() => ImportTextSchema.parse({text: 'Pasta recipe'})).not.toThrow();
   });
 
+  test('accepts large pasted HTML within the raw limit', () => {
+    expect(() =>
+      ImportTextSchema.parse({text: `<p>${'x'.repeat(200_000)}</p>`}),
+    ).not.toThrow();
+  });
+
   test('rejects empty text', () => {
     expect(() => ImportTextSchema.parse({text: ''})).toThrow(z.ZodError);
+  });
+
+  test('rejects raw text above the pasted HTML limit', () => {
+    expect(() => ImportTextSchema.parse({text: 'x'.repeat(500_001)})).toThrow(
+      z.ZodError,
+    );
   });
 });
 
