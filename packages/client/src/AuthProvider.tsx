@@ -10,29 +10,43 @@ const AuthContext = createContext<AuthContextValue>({
 
 export const useAuth = () => useContext(AuthContext);
 
-type AuthProviderProps = {supabase: SupabaseClient; children: React.ReactNode};
+type AuthProviderProps = {
+  supabase: SupabaseClient;
+  children: React.ReactNode;
+  onAuthenticated?: (session: Session) => Promise<void>;
+};
 
-export const AuthProvider = ({supabase, children}: AuthProviderProps) => {
+export const AuthProvider = ({
+  supabase,
+  children,
+  onAuthenticated,
+}: AuthProviderProps) => {
   const [auth, setAuth] = useState<AuthContextValue>({
     session: null,
     isLoading: true,
   });
 
   useEffect(() => {
-    void supabase.auth.getSession().then(({data}) => {
+    void supabase.auth.getSession().then(async ({data}) => {
       setAuth({session: data.session, isLoading: false});
+      if (data.session) {
+        await onAuthenticated?.(data.session);
+      }
     });
 
     const {data: listener} = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setAuth(prev => ({...prev, session}));
+        if (session) {
+          void onAuthenticated?.(session);
+        }
       },
     );
 
     return () => {
       listener.subscription.unsubscribe();
     };
-  }, [supabase]);
+  }, [supabase, onAuthenticated]);
 
   return <AuthContext.Provider value={auth}>{children}</AuthContext.Provider>;
 };

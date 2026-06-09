@@ -3,8 +3,13 @@ import {Alert} from 'react-native';
 import {render, fireEvent, waitFor} from '@testing-library/react-native';
 
 import {makeRecipeDetail} from '../__tests__/fixtures/recipe';
-import {makeQueryClient, renderWithProviders} from '../__tests__/testUtils';
+import {
+  makeQueryClient,
+  makeStackProps,
+  renderWithProviders,
+} from '../__tests__/testUtils';
 import {api} from '../lib/api';
+import type {RecipesStackParamList} from '../navigation/types';
 
 import {RecipesScreen} from './RecipesScreen';
 
@@ -13,19 +18,37 @@ jest.mock('../lib/api');
 const mockList = api.recipes.list as jest.Mock;
 const mockDelete = api.recipes.delete as jest.Mock;
 const mockNavigate = jest.fn();
-const nav = {navigate: mockNavigate} as never;
+const stackProps = makeStackProps<RecipesStackParamList, 'RecipesList'>(
+  'RecipesList',
+  undefined,
+  {navigate: mockNavigate},
+);
 
 describe('RecipesScreen', () => {
   beforeEach(() => {
     mockList.mockResolvedValue([]);
-    mockDelete.mockResolvedValue();
+    mockDelete.mockImplementation(async () => {});
   });
 
   test('renders search input', async () => {
     const {findByPlaceholderText} = render(
-      renderWithProviders(<RecipesScreen navigation={nav} />),
+      renderWithProviders(<RecipesScreen {...stackProps} />),
     );
     expect(await findByPlaceholderText('Search recipes…')).toBeTruthy();
+  });
+
+  test('shows recipe thumbnail when imageUrl is present', async () => {
+    mockList.mockResolvedValue([
+      makeRecipeDetail({
+        title: 'Cake',
+        imageUrl: 'https://cdn.example/cake.jpg',
+      }),
+    ]);
+    const {findByText, UNSAFE_getByType} = render(
+      renderWithProviders(<RecipesScreen {...stackProps} />),
+    );
+    await findByText('Cake');
+    expect(UNSAFE_getByType(require('react-native').Image)).toBeTruthy();
   });
 
   test('shows recipes from API with cook time', async () => {
@@ -33,7 +56,7 @@ describe('RecipesScreen', () => {
       makeRecipeDetail({title: 'Pasta', cookTimeMin: 25}),
     ]);
     const {findByText} = render(
-      renderWithProviders(<RecipesScreen navigation={nav} />),
+      renderWithProviders(<RecipesScreen {...stackProps} />),
     );
     expect(await findByText(/25 min/)).toBeTruthy();
   });
@@ -43,7 +66,7 @@ describe('RecipesScreen', () => {
       makeRecipeDetail({title: 'Salad', cookTimeMin: null}),
     ]);
     const {findByText, queryByText} = render(
-      renderWithProviders(<RecipesScreen navigation={nav} />),
+      renderWithProviders(<RecipesScreen {...stackProps} />),
     );
     expect(await findByText('Salad')).toBeTruthy();
     expect(queryByText(/min/)).toBeNull();
@@ -54,7 +77,7 @@ describe('RecipesScreen', () => {
       makeRecipeDetail({title: 'Pasta', cookTimeMin: null}),
     ]);
     const {findByText} = render(
-      renderWithProviders(<RecipesScreen navigation={nav} />),
+      renderWithProviders(<RecipesScreen {...stackProps} />),
     );
     expect(await findByText('Pasta')).toBeTruthy();
   });
@@ -64,7 +87,7 @@ describe('RecipesScreen', () => {
       makeRecipeDetail({id: 'recipe-1', title: 'Tacos'}),
     ]);
     const {findByText} = render(
-      renderWithProviders(<RecipesScreen navigation={nav} />),
+      renderWithProviders(<RecipesScreen {...stackProps} />),
     );
     fireEvent.press(await findByText('Tacos'));
     expect(mockNavigate).toHaveBeenCalledWith('RecipeDetail', {
@@ -80,7 +103,7 @@ describe('RecipesScreen', () => {
         }),
     );
     const {getByText} = render(
-      renderWithProviders(<RecipesScreen navigation={nav} />),
+      renderWithProviders(<RecipesScreen {...stackProps} />),
     );
     expect(getByText('Loading…')).toBeTruthy();
   });
@@ -88,7 +111,7 @@ describe('RecipesScreen', () => {
   test('shows empty state when no recipes match search', async () => {
     mockList.mockResolvedValue([makeRecipeDetail({title: 'Pasta'})]);
     const {findByText, getByText, getByPlaceholderText} = render(
-      renderWithProviders(<RecipesScreen navigation={nav} />),
+      renderWithProviders(<RecipesScreen {...stackProps} />),
     );
     await findByText('Pasta');
     fireEvent.changeText(
@@ -107,7 +130,7 @@ describe('RecipesScreen', () => {
     mockList.mockResolvedValue([makeRecipeDetail({title: 'Soup'})]);
     const client = makeQueryClient();
     const {findByText} = render(
-      renderWithProviders(<RecipesScreen navigation={nav} />, client),
+      renderWithProviders(<RecipesScreen {...stackProps} />, client),
     );
     fireEvent.press(await findByText('Delete'));
     await waitFor(() => {

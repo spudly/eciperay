@@ -1,3 +1,4 @@
 ignores:
+  - '@types/node' # Referenced in tsconfig compilerOptions.types for test typechecking
   - '@types/jest' # Type definitions for jest; hoisted from root workspace
   - jest-environment-jsdom # Referenced by jest.config.cjs testEnvironment, not imported in source

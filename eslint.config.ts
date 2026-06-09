@@ -10,6 +10,8 @@ import eslintCommentsPlugin from '@eslint-community/eslint-plugin-eslint-comment
 import betterTailwindPlugin from 'eslint-plugin-better-tailwindcss';
 import prettier from 'eslint-config-prettier';
 
+import coverageIgnorePlugin from './eslint-rules/coverage-ignore-require-description.ts';
+
 // eslint-disable-next-line @typescript-eslint/no-deprecated -- tseslint.config() provides precise TypeScript types for plugin rule configs; ESLint core's defineConfig() lacks the same inference
 export default tseslint.config(
   {
@@ -409,7 +411,10 @@ export default tseslint.config(
       '@typescript-eslint/adjacent-overload-signatures': 'warn',
       '@typescript-eslint/array-type': 'warn',
       '@typescript-eslint/await-thenable': 'error',
-      '@typescript-eslint/ban-ts-comment': 'error',
+      '@typescript-eslint/ban-ts-comment': [
+        'error',
+        {'ts-expect-error': true, 'ts-ignore': true, 'ts-nocheck': true},
+      ],
       '@typescript-eslint/ban-tslint-comment': 'warn',
       '@typescript-eslint/class-literal-property-style': 'warn',
       '@typescript-eslint/class-methods-use-this': 'off', // no classes in this project
@@ -1238,7 +1243,13 @@ export default tseslint.config(
     },
   },
 
-  // ─── 10. eslint-comments — require a reason on every inline disable ─────────
+  // ─── 10. Coverage ignores — istanbul/c8 must include `-- reason` ───────────
+  {
+    plugins: {'coverage-ignore': coverageIgnorePlugin},
+    rules: {'coverage-ignore/require-description': 'error'},
+  },
+
+  // ─── 11. eslint-comments — require a reason on every inline disable ─────────
   // Enforces `// eslint-disable-next-line rule -- reason` so suppressions are
   // always self-documenting. Applies everywhere.
   {
@@ -1256,6 +1267,6 @@ export default tseslint.config(
     },
   },
 
-  // ─── 11. Prettier — last, disables formatting conflicts ───────────────────
+  // ─── 12. Prettier — last, disables formatting conflicts ───────────────────
   prettier,
 );

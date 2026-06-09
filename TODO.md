@@ -20,11 +20,17 @@
 - [x] use turbo for fast monorepo management
 - [x] create a repo-level start script that starts both the server and the app
       (both android and ios at the same time if that's possible)
-- [ ] when using istanbul-ignore comments it should include a reason
-- [ ] never use @ts-ignore or @ts-expecte-error
-- [ ] when using eslint ignore comments it should include a reason
-- [ ] when using c8 ignore comments it should include a reason
-- [ ] rich text recipe input
-- [ ] vite port should come from .env
-- [ ] why are we using vitest instead of jest for packages/web
+- [x] when using istanbul-ignore comments it should include a reason - use
+      eslint to enforce
+- [x] never use @ts-ignore or @ts-expecte-error - use eslint to enforce
+- [x] when using eslint ignore comments it should include a reason - use eslint
+      to enforce
+- [x] when using c8 ignore comments it should include a reason - use eslint to
+      enforce
+- [x] support rich text recipe import - I should be able to paste rich text
+      (from word documents, html pages, etc) and it'll parse that data. Any
+      missing data should be computed using AI
+- [x] vite port (8081) should come from .env
+- [x] why are we using vitest instead of jest for packages/web
 - [x] make tests fail on console.error
+- [ ] use clsx for constructing className props

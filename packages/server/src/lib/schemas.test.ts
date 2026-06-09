@@ -3,6 +3,7 @@ import {z} from 'zod';
 import {
   ChatMessageSchema,
   ImportImageSchema,
+  ImportTextSchema,
   ImportUrlSchema,
   RecipeInputSchema,
   RecipeNoteInputSchema,
@@ -118,15 +119,29 @@ describe('ImportImageSchema', () => {
   });
 });
 
+describe('ImportTextSchema', () => {
+  test('accepts non-empty text', () => {
+    expect(() => ImportTextSchema.parse({text: 'Pasta recipe'})).not.toThrow();
+  });
+
+  test('rejects empty text', () => {
+    expect(() => ImportTextSchema.parse({text: ''})).toThrow(z.ZodError);
+  });
+});
+
 describe('SyncUserSchema', () => {
-  test('accepts a valid email', () => {
+  test('accepts an empty body', () => {
+    expect(() => SyncUserSchema.parse({})).not.toThrow();
+  });
+
+  test('accepts an optional display name', () => {
     expect(() =>
-      SyncUserSchema.parse({email: 'test@example.com'}),
+      SyncUserSchema.parse({displayName: 'Test User'}),
     ).not.toThrow();
   });
 
-  test('rejects an invalid email', () => {
-    expect(() => SyncUserSchema.parse({email: 'not-an-email'})).toThrow(
+  test('rejects a display name that is too long', () => {
+    expect(() => SyncUserSchema.parse({displayName: 'x'.repeat(101)})).toThrow(
       z.ZodError,
     );
   });

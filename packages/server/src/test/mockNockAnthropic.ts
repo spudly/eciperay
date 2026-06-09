@@ -24,7 +24,7 @@ export const nockAnthropicMessage = (responseText: string): void => {
     type: 'message',
     role: 'assistant',
     content: [{type: 'text', text: responseText}],
-    model: 'claude-3-5-haiku-20241022',
+    model: 'claude-haiku-4-5',
     stop_reason: 'end_turn',
     stop_sequence: null,
     usage: {input_tokens: 10, output_tokens: 10},

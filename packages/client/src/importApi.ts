@@ -13,4 +13,9 @@ export const createImportApi = (client: ApiClient) => ({
       method: 'POST',
       body: JSON.stringify({imageBase64}),
     }),
+  importText: (text: string) =>
+    client.fetch<RecipeDetail>('/recipes/import/text', {
+      method: 'POST',
+      body: JSON.stringify({text}),
+    }),
 });

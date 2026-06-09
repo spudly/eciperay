@@ -1,9 +1,9 @@
 ---
 name: recipoo-testing
 description:
-  Testing best practices for the Recipoo monorepo (Express server + React Native
-  app). Use when writing or reviewing tests, setting up coverage, or deciding
-  what to mock.
+  Testing best practices for the Recipoo monorepo (Express server, Vite web app,
+  React Native app, shared client). Use when writing or reviewing tests, setting
+  up coverage, or deciding what to mock.
 disable-model-invocation: true
 ---
 
@@ -11,10 +11,20 @@ disable-model-invocation: true
 
 ## Stack
 
-| Package           | Test runner                           | Key libraries                   |
-| ----------------- | ------------------------------------- | ------------------------------- |
-| `packages/server` | Jest 30 + ts-jest (ESM)               | supertest, nock                 |
-| `packages/app`    | Jest 29 + `@react-native/jest-preset` | `@testing-library/react-native` |
+| Package           | Test runner                           | Key libraries                           |
+| ----------------- | ------------------------------------- | --------------------------------------- |
+| `packages/server` | Jest 30 + ts-jest (ESM)               | supertest, nock                         |
+| `packages/client` | Jest 30 + ts-jest (ESM)               | `@testing-library/react` (AuthProvider) |
+| `packages/web`    | Vitest 3 + Vite config                | `@testing-library/react`, MSW, `jsdom`  |
+| `packages/app`    | Jest 29 + `@react-native/jest-preset` | `@testing-library/react-native`         |
+
+### Why Vitest for web (not Jest)
+
+`packages/web` is Vite + native ESM. Vitest reuses the same transform pipeline,
+aliases, and env handling as `vite.config.ts`, so tests match dev/build module
+resolution. Jest would require a second config layer for a stack that already
+uses Jest elsewhere (server, client, app). Use Vitest only for web; use Jest for
+Node and React Native packages.
 
 ## Naming conventions
 
@@ -100,9 +110,21 @@ const queryClient = new QueryClient({defaultOptions: {queries: {retry: 0}}});
 render(<QueryClientProvider client={queryClient}><RecipesScreen /></QueryClientProvider>);
 ```
 
+## Web: mocking strategy
+
+| What            | How                                                 |
+| --------------- | --------------------------------------------------- |
+| **HTTP API**    | MSW handlers in `src/test/msw/`                     |
+| **Supabase**    | `vi.mock` in `src/test/setup.ts`                    |
+| **Auth/routes** | `renderWithProviders()` in `src/test/testUtils.tsx` |
+
+Setup lives in `src/test/setup.ts`. Tests fail on `console.error` via shared
+`test/failOnConsoleError.cjs`.
+
 ## Coverage thresholds
 
-Both packages require **100%** on branches, functions, lines, and statements.
+All code packages require **100%** on branches, functions, lines, and
+statements.
 
 Run coverage: `npm run test:coverage` (at monorepo root via Turbo)
 

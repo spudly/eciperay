@@ -25,8 +25,8 @@ const draft = {
 
 describe('DraftReviewCard', () => {
   beforeEach(() => {
-    mockApprove.mockResolvedValue();
-    mockReject.mockResolvedValue();
+    mockApprove.mockImplementation(async () => {});
+    mockReject.mockImplementation(async () => {});
   });
 
   test('renders draft and approves', async () => {

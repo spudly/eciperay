@@ -52,7 +52,17 @@ export const createApiClient = (opts: ApiClientOptions): ApiClient => {
       headers: mergeHeaders(token, options.headers),
     });
     if (!response.ok) {
-      throw new Error(`API error ${response.status}: ${path}`);
+      let message = `API error ${response.status}: ${path}`;
+      try {
+        const body = await response.text();
+        const json = JSON.parse(body) as {error?: string};
+        if (json.error) {
+          message = json.error;
+        }
+      } catch {
+        // keep default message when the body is not JSON
+      }
+      throw new Error(message);
     }
     if (response.status === 204) {
       return undefined as unknown as T;

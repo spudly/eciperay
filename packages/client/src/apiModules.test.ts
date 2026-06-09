@@ -52,6 +52,7 @@ describe('createRecipooClient', () => {
     const {api, client} = makeClient();
     await client.import.importUrl('https://example.com');
     await client.import.importImage('base64');
+    await client.import.importText('Pasta recipe');
     await client.auth.syncUser();
     await client.tags.list();
     await client.tags.create('Dinner', '#fff');
@@ -72,6 +73,10 @@ describe('createRecipooClient', () => {
     );
     expect(api.fetch).toHaveBeenCalledWith(
       '/recipes/import/image',
+      expect.any(Object),
+    );
+    expect(api.fetch).toHaveBeenCalledWith(
+      '/recipes/import/text',
       expect.any(Object),
     );
     expect(api.fetch).toHaveBeenCalledWith(

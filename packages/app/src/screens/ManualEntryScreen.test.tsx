@@ -3,8 +3,13 @@ import React from 'react';
 import {fireEvent, render, waitFor} from '@testing-library/react-native';
 
 import {makeRecipeDetail} from '../__tests__/fixtures/recipe';
-import {makeQueryClient, renderWithProviders} from '../__tests__/testUtils';
+import {
+  makeQueryClient,
+  makeStackProps,
+  renderWithProviders,
+} from '../__tests__/testUtils';
 import {api} from '../lib/api';
+import type {AddStackParamList} from '../navigation/types';
 
 import {ManualEntryScreen} from './ManualEntryScreen';
 
@@ -13,7 +18,11 @@ jest.mock('../lib/api');
 const mockCreate = api.recipes.create as jest.Mock;
 const mockListTags = api.tags.list as jest.Mock;
 const mockGetParent = jest.fn().mockReturnValue({navigate: jest.fn()});
-const navigation = {getParent: mockGetParent} as never;
+const stackProps = makeStackProps<AddStackParamList, 'ManualEntry'>(
+  'ManualEntry',
+  undefined,
+  {getParent: mockGetParent},
+);
 
 describe('ManualEntryScreen', () => {
   beforeEach(() => {
@@ -28,10 +37,7 @@ describe('ManualEntryScreen', () => {
       queryFn: () => mockListTags(),
     });
     const {getAllByPlaceholderText, getByText} = render(
-      renderWithProviders(
-        <ManualEntryScreen navigation={navigation} />,
-        queryClient,
-      ),
+      renderWithProviders(<ManualEntryScreen {...stackProps} />, queryClient),
     );
     const inputs = getAllByPlaceholderText('Name');
     fireEvent.changeText(inputs[0], 'Flour');

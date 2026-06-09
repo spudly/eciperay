@@ -2,8 +2,11 @@ import {jest} from '@jest/globals';
 import nock from 'nock';
 import type {Response} from 'express';
 
+import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {createMockQuery} from '../../test/mockQuery.js';
 import {nockAnthropicMessage} from '../../test/mockNockAnthropic.js';
+
+const mockQuery = createMockQuery();
 
 class RecipeImportError extends Error {
   constructor(message: string) {
@@ -20,11 +23,12 @@ jest.unstable_mockModule('../../lib/recipeImportToInput.js', () => ({
 }));
 
 const {importFromImage} = await import('./importFromImage.js');
+const {importFromText} = await import('./importFromText.js');
 const {importFromUrl} = await import('./importFromUrl.js');
 
 const RECIPE_JSON = JSON.stringify({
   title: 'Soup',
-  description: null,
+  description: 'A hearty soup.',
   servings: 4,
   prepTimeMin: null,
   cookTimeMin: null,
@@ -55,6 +59,11 @@ const makeRes = () => {
 };
 
 describe('import handlers RecipeImportError handling', () => {
+  beforeEach(() => {
+    mockQuery.mockReset();
+    mockQuery.mockResolvedValue(makeQueryResult([]));
+  });
+
   test('importFromUrl returns 422 when recipe import is invalid', async () => {
     nock('https://recipe.example.com')
       .get('/plain')
@@ -67,7 +76,7 @@ describe('import handlers RecipeImportError handling', () => {
         body: {url: 'https://recipe.example.com/plain'},
       } as never,
       res,
-      createMockQuery(),
+      mockQuery,
     );
     expect(res.statusCode).toBe(422);
     expect(res.json).toHaveBeenCalledWith({error: 'servings is required'});
@@ -79,7 +88,19 @@ describe('import handlers RecipeImportError handling', () => {
     await importFromImage(
       {userId: 'user-uuid-1', body: {imageBase64: 'abc'}} as never,
       res,
-      createMockQuery(),
+      mockQuery,
+    );
+    expect(res.statusCode).toBe(422);
+    expect(res.json).toHaveBeenCalledWith({error: 'servings is required'});
+  });
+
+  test('importFromText returns 422 when recipe import is invalid', async () => {
+    nockAnthropicMessage(RECIPE_JSON);
+    const res = makeRes();
+    await importFromText(
+      {userId: 'user-uuid-1', body: {text: 'Pasta recipe'}} as never,
+      res,
+      mockQuery,
     );
     expect(res.statusCode).toBe(422);
     expect(res.json).toHaveBeenCalledWith({error: 'servings is required'});

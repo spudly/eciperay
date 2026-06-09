@@ -1,15 +1,32 @@
 import {buildShareText} from '@recipoo/client';
 import type {RecipeDetail} from '@recipoo/types';
 
-export const shareRecipe = async (recipe: RecipeDetail) => {
+export type ShareRecipeResult = 'shared' | 'copied';
+
+const recipePageUrl = (recipe: RecipeDetail) =>
+  `${window.location.origin}/recipes/${recipe.id}`;
+
+export const shareRecipe = async (
+  recipe: RecipeDetail,
+): Promise<ShareRecipeResult> => {
   const text = buildShareText(recipe);
+  const url = recipe.sourceUrl ?? recipePageUrl(recipe);
+
   if (typeof navigator.share === 'function') {
-    await navigator.share({
-      title: recipe.title,
-      text,
-      url: recipe.sourceUrl ?? undefined,
-    });
-    return;
+    try {
+      await navigator.share({title: recipe.title, text, url});
+      return 'shared';
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        throw error;
+      }
+    }
   }
-  await navigator.clipboard.writeText(text);
+
+  await navigator.clipboard.writeText(
+    recipe.sourceUrl
+      ? `${text}\n\n${url}`
+      : `${text}\n\n${recipePageUrl(recipe)}`,
+  );
+  return 'copied';
 };

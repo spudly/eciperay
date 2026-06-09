@@ -9,6 +9,39 @@ import {renderWithProviders} from '../test/testUtils.js';
 import {RecipesPage} from './RecipesPage.js';
 
 describe('RecipesPage', () => {
+  test('shows recipe thumbnails when imageUrl is present', async () => {
+    server.use(
+      http.get('http://localhost:8080/recipes', () =>
+        HttpResponse.json([
+          {
+            id: '3',
+            title: 'Cake',
+            servings: 8,
+            cookTimeMin: 45,
+            userId: 'u',
+            description: null,
+            prepTimeMin: null,
+            imageUrl: 'https://cdn.example/cake.jpg',
+            starRating: null,
+            sourceUrl: null,
+            createdAt: '',
+            updatedAt: '',
+            ingredients: [],
+            instructions: [],
+            tags: [],
+          },
+        ]),
+      ),
+    );
+    await renderWithProviders(<RecipesPage />);
+    await waitFor(() => {
+      expect(screen.getByRole('img', {name: 'Cake'})).toHaveAttribute(
+        'src',
+        'https://cdn.example/cake.jpg',
+      );
+    });
+  });
+
   test('lists recipes without cook time', async () => {
     server.use(
       http.get('http://localhost:8080/recipes', () =>

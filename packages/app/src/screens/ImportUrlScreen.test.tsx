@@ -2,8 +2,9 @@ import React from 'react';
 import {fireEvent, render, waitFor} from '@testing-library/react-native';
 
 import {makeRecipeDetail} from '../__tests__/fixtures/recipe';
-import {renderWithProviders} from '../__tests__/testUtils';
+import {makeStackProps, renderWithProviders} from '../__tests__/testUtils';
 import {api} from '../lib/api';
+import type {AddStackParamList} from '../navigation/types';
 
 import {ImportUrlScreen} from './ImportUrlScreen';
 
@@ -11,12 +12,16 @@ jest.mock('../lib/api');
 
 const mockImportUrl = api.import.importUrl as jest.Mock;
 const mockNavigate = jest.fn();
-const navigation = {navigate: mockNavigate} as never;
+const stackProps = makeStackProps<AddStackParamList, 'ImportUrl'>(
+  'ImportUrl',
+  undefined,
+  {navigate: mockNavigate},
+);
 
 describe('ImportUrlScreen', () => {
   test('does not import when URL is empty', async () => {
     const {getByText} = render(
-      renderWithProviders(<ImportUrlScreen navigation={navigation} />),
+      renderWithProviders(<ImportUrlScreen {...stackProps} />),
     );
     fireEvent.press(getByText('Import'));
     expect(mockImportUrl).not.toHaveBeenCalled();
@@ -25,7 +30,7 @@ describe('ImportUrlScreen', () => {
   test('imports URL and navigates to review', async () => {
     mockImportUrl.mockResolvedValue(makeRecipeDetail({id: 'imported-1'}));
     const {getByPlaceholderText, getByText} = render(
-      renderWithProviders(<ImportUrlScreen navigation={navigation} />),
+      renderWithProviders(<ImportUrlScreen {...stackProps} />),
     );
     fireEvent.changeText(
       getByPlaceholderText('https://example.com/recipe'),
@@ -42,7 +47,7 @@ describe('ImportUrlScreen', () => {
   test('shows generic error on non-Error failure', async () => {
     mockImportUrl.mockRejectedValue('nope');
     const {getByPlaceholderText, getByText, findByText} = render(
-      renderWithProviders(<ImportUrlScreen navigation={navigation} />),
+      renderWithProviders(<ImportUrlScreen {...stackProps} />),
     );
     fireEvent.changeText(
       getByPlaceholderText('https://example.com/recipe'),
@@ -55,7 +60,7 @@ describe('ImportUrlScreen', () => {
   test('shows error on failure', async () => {
     mockImportUrl.mockRejectedValue(new Error('Import failed'));
     const {getByPlaceholderText, getByText, findByText} = render(
-      renderWithProviders(<ImportUrlScreen navigation={navigation} />),
+      renderWithProviders(<ImportUrlScreen {...stackProps} />),
     );
     fireEvent.changeText(
       getByPlaceholderText('https://example.com/recipe'),

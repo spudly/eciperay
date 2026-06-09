@@ -55,10 +55,83 @@ describe('parseWithClaude', () => {
     ).rejects.toThrow();
   });
 
+  test('accepts responses that omit sourceUrl', async () => {
+    const {sourceUrl, ...withoutSourceUrl} = VALID_RECIPE;
+    void sourceUrl;
+    const client = makeClient([
+      {type: 'text', text: JSON.stringify(withoutSourceUrl)},
+    ]);
+    const result = await parseWithClaude('some page text', null, client);
+    expect(result.title).toBe('Pasta');
+    expect(result.sourceUrl).toBeNull();
+  });
+
+  test('parses JSON wrapped in markdown code fences', async () => {
+    const client = makeClient([
+      {
+        type: 'text',
+        text: `\`\`\`json\n${JSON.stringify(VALID_RECIPE)}\n\`\`\``,
+      },
+    ]);
+    const result = await parseWithClaude(
+      'some page text',
+      'https://example.com',
+      client,
+    );
+    expect(result.title).toBe('Pasta');
+  });
+
   test('throws when Anthropic returns an empty content array', async () => {
     const client = makeClient([]);
     await expect(
       parseWithClaude('text', 'https://example.com', client),
     ).rejects.toThrow();
+  });
+
+  test('leaves description null when generated description is blank', async () => {
+    const create = jest
+      .fn<() => Promise<Anthropic.Message>>()
+      .mockResolvedValueOnce({
+        content: [{type: 'text', text: JSON.stringify(VALID_RECIPE)}],
+      } as unknown as Anthropic.Message)
+      .mockResolvedValueOnce({
+        content: [{type: 'text', text: '   '}],
+      } as unknown as Anthropic.Message);
+    const client = {messages: {create}} as unknown as Anthropic;
+    const result = await parseWithClaude('some page text', null, client);
+    expect(result.description).toBeNull();
+  });
+
+  test('leaves description null when description generation returns non-text', async () => {
+    const create = jest
+      .fn<() => Promise<Anthropic.Message>>()
+      .mockResolvedValueOnce({
+        content: [{type: 'text', text: JSON.stringify(VALID_RECIPE)}],
+      } as unknown as Anthropic.Message)
+      .mockResolvedValueOnce({
+        content: [{type: 'tool_use', id: 'x'}],
+      } as unknown as Anthropic.Message);
+    const client = {messages: {create}} as unknown as Anthropic;
+    const result = await parseWithClaude('some page text', null, client);
+    expect(result.description).toBeNull();
+  });
+
+  test('generates a description when the parsed recipe has none', async () => {
+    const create = jest
+      .fn<() => Promise<Anthropic.Message>>()
+      .mockResolvedValueOnce({
+        content: [{type: 'text', text: JSON.stringify(VALID_RECIPE)}],
+      } as unknown as Anthropic.Message)
+      .mockResolvedValueOnce({
+        content: [
+          {type: 'text', text: 'A simple pasta dish boiled to perfection.'},
+        ],
+      } as unknown as Anthropic.Message);
+    const client = {messages: {create}} as unknown as Anthropic;
+    const result = await parseWithClaude('some page text', null, client);
+    expect(result.description).toBe(
+      'A simple pasta dish boiled to perfection.',
+    );
+    expect(create).toHaveBeenCalledTimes(2);
   });
 });

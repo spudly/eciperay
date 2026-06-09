@@ -205,3 +205,14 @@ export const deleteRecipeById = (
   queryFn: QueryFn,
 ) =>
   queryFn('delete from recipes where id=$1 and user_id=$2', [recipeId, userId]);
+
+export const setRecipeImageUrl = (
+  recipeId: string,
+  userId: string,
+  imageUrl: string,
+  queryFn: QueryFn,
+) =>
+  queryFn(
+    'update recipes set image_url = $3 where id = $1 and user_id = $2 returning id',
+    [recipeId, userId, imageUrl],
+  );

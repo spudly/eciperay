@@ -60,7 +60,7 @@ export const RecipeForm = ({initial, submitLabel, onSubmit}: Props) => {
       ? ''
       : String(initial.cookTimeMin),
   );
-  const [imageUrl, setImageUrl] = useState(initial.imageUrl ?? '');
+  const [imageUrl] = useState(initial.imageUrl ?? '');
   const [sourceUrl, setSourceUrl] = useState(initial.sourceUrl ?? '');
   const [ingredients, setIngredients] = useState<FormIngredient[]>(
     initial.ingredients.length > 0 ? initial.ingredients : [emptyIngredient(0)],
@@ -177,16 +177,6 @@ export const RecipeForm = ({initial, submitLabel, onSubmit}: Props) => {
               onChangeText={setCookTimeMin}
             />
           </View>
-        </View>
-        <View>
-          <Text className="mb-1 text-sm font-medium text-gray-700">
-            Image URL
-          </Text>
-          <TextInput
-            className="rounded-lg border border-gray-300 px-4 py-2"
-            value={imageUrl}
-            onChangeText={setImageUrl}
-          />
         </View>
         <View>
           <Text className="mb-1 text-sm font-medium text-gray-700">

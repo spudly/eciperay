@@ -23,7 +23,7 @@ const PLAIN_HTML =
 
 const CLAUDE_RESPONSE = JSON.stringify({
   title: 'AI Parsed Pasta',
-  description: null,
+  description: 'A simple pasta dish.',
   servings: 2,
   prepTimeMin: null,
   cookTimeMin: null,
@@ -43,6 +43,7 @@ const CLAUDE_RESPONSE = JSON.stringify({
 
 const mockSaveFlow = () => {
   mockQuery
+    .mockResolvedValueOnce(makeQueryResult([]))
     .mockResolvedValueOnce(makeQueryResult([{id: 'recipe-uuid-1'}]))
     .mockResolvedValue(
       makeQueryResult([makeRecipeDetailRow({title: 'Pasta'})]),
@@ -69,6 +70,7 @@ describe('POST /recipes/import/url', () => {
     nock('https://recipe.example.com').get('/plain').reply(200, PLAIN_HTML);
     nockAnthropicMessage(CLAUDE_RESPONSE);
     mockQuery
+      .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([{id: 'recipe-uuid-1'}]))
       .mockResolvedValue(
         makeQueryResult([makeRecipeDetailRow({title: 'AI Parsed Pasta'})]),

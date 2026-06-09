@@ -36,6 +36,7 @@ describe('POST /recipes/import/image', () => {
     nockSupabaseGetUser('user-uuid-1');
     nockAnthropicMessage(RECIPE_JSON);
     mockQuery
+      .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([{id: 'recipe-uuid-1'}]))
       .mockResolvedValue(
         makeQueryResult([

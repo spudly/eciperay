@@ -59,7 +59,7 @@ describe('POST /recipes/:id/ai/cleanup (error paths)', () => {
         type: 'message',
         role: 'assistant',
         content: [{type: 'tool_use', id: 'x', name: 'y', input: {}}],
-        model: 'claude-3-5-haiku-20241022',
+        model: 'claude-haiku-4-5',
         stop_reason: 'tool_use',
         usage: {input_tokens: 10, output_tokens: 5},
       });

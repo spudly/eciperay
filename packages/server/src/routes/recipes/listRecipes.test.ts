@@ -1,7 +1,6 @@
 import request from 'supertest';
 
 import {createApp} from '../../server.js';
-import {makeRecipe} from '../../test/fixtures/recipe.js';
 import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {createMockQuery} from '../../test/mockQuery.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
@@ -12,12 +11,34 @@ const app = createApp({query: mockQuery});
 describe('GET /recipes', () => {
   test('returns 200 with recipe list', async () => {
     nockSupabaseGetUser('user-uuid-1');
-    mockQuery.mockResolvedValue(makeQueryResult([makeRecipe()]));
+    mockQuery.mockResolvedValue(
+      makeQueryResult([
+        {
+          id: 'recipe-uuid-1',
+          title: 'Test Recipe',
+          description: 'A test recipe',
+          servings: 4,
+          prep_time_min: 15,
+          cook_time_min: 30,
+          image_url: null,
+          star_rating: null,
+          source_url: null,
+          created_at: '2024-01-01T00:00:00.000Z',
+          updated_at: '2024-01-01T00:00:00.000Z',
+          tags: [],
+        },
+      ]),
+    );
     const res = await request(app)
       .get('/recipes')
       .set('Authorization', 'Bearer valid-token');
     expect(res.status).toBe(200);
     expect(res.body).toHaveLength(1);
+    expect(res.body[0]).toMatchObject({
+      title: 'Test Recipe',
+      imageUrl: null,
+      cookTimeMin: 30,
+    });
   });
 
   test('returns 401 without auth token', async () => {
