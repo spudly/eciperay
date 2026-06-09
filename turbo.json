@@ -1,0 +1,30 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "tasks": {
+    "typecheck": {
+      "dependsOn": ["^typecheck"],
+      "inputs": ["src/**/*.ts", "tsconfig.json", "../../tsconfig.base.json"],
+      "outputs": []
+    },
+    "lint": {
+      "inputs": ["src/**/*.{ts,tsx}", "../../eslint.config.ts"],
+      "outputs": []
+    },
+    "test": {
+      "dependsOn": ["^typecheck"],
+      "inputs": ["src/**/*.{ts,tsx}"],
+      "outputs": []
+    },
+    "test:coverage": {
+      "dependsOn": ["^typecheck"],
+      "inputs": ["src/**/*.{ts,tsx}"],
+      "outputs": ["coverage/**"]
+    },
+    "build": {
+      "dependsOn": ["^build"],
+      "inputs": ["src/**/*.ts"],
+      "outputs": ["dist/**"]
+    },
+    "dev": {"cache": false, "persistent": true}
+  }
+}
