@@ -1,9 +1,9 @@
-import {recipeDetailToInput} from '@recipoo/client';
+import {queryKeys, recipeDetailToInput} from '@recipoo/client';
 import React from 'react';
 import {fireEvent, render, waitFor} from '@testing-library/react-native';
 
 import {makeRecipeDetail} from '../../__tests__/fixtures/recipe';
-import {renderWithProviders} from '../../__tests__/testUtils';
+import {makeQueryClient, renderWithProviders} from '../../__tests__/testUtils';
 import {api} from '../../lib/api';
 
 import {RecipeForm} from './RecipeForm';
@@ -13,11 +13,12 @@ jest.mock('../../lib/api');
 const mockListTags = api.tags.list as jest.Mock;
 
 const renderForm = async (ui: React.ReactElement) => {
-  const screen = render(renderWithProviders(ui));
-  await waitFor(() => {
-    expect(screen.queryByText('Loading tags…')).toBeNull();
+  const queryClient = makeQueryClient();
+  await queryClient.prefetchQuery({
+    queryKey: queryKeys.tags(),
+    queryFn: () => mockListTags(),
   });
-  return screen;
+  return render(renderWithProviders(ui, queryClient));
 };
 
 describe('RecipeForm', () => {
