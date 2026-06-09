@@ -1,0 +1,4 @@
+npx lint-staged
+npm run typecheck
+# Run only changed tests in each package that has a test script
+npm run test --workspaces --if-present -- --onlyChanged

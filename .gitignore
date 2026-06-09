@@ -1,0 +1,34 @@
+# deps
+node_modules
+.npm
+
+# env
+.env
+.env.*
+!.env.example
+
+# build output
+dist
+build
+coverage
+*.tsbuildinfo
+
+# cache
+.turbo
+.eslintcache
+
+# React Native
+ios/Pods
+android/.gradle
+android/build
+*.keystore
+!debug.keystore
+packages/app/env-shim.js
+
+# editors
+.vscode
+.idea
+
+# OS
+.DS_Store
+Thumbs.db
