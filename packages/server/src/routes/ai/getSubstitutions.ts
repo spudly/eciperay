@@ -13,7 +13,7 @@ Return ONLY JSON array: [{"ingredient": string, "suggestions": [string, string, 
     messages: [{role: 'user', content: prompt}],
   });
   const content = response.content[0];
-  /* c8 ignore next 3 */
+  /* c8 ignore next 3 -- Claude returns non-text blocks only on API errors */
   if (content?.type !== 'text') {
     throw new Error('Unexpected Claude response');
   }

@@ -111,7 +111,8 @@ export const NotesTab = ({recipeId}: {recipeId: string}) => {
     <KeyboardAvoidingView
       className="flex-1"
       behavior={
-        /* istanbul ignore next */ Platform.OS === 'ios' ? 'padding' : undefined
+        /* istanbul ignore next -- android KeyboardAvoidingView behavior is undefined */
+        Platform.OS === 'ios' ? 'padding' : undefined
       }
     >
       <ScrollView className="flex-1 p-4">

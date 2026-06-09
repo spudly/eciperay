@@ -8,6 +8,7 @@ import {EditRecipeScreen} from '../screens/EditRecipeScreen';
 import {HomeScreen} from '../screens/HomeScreen';
 import {ImportImageScreen} from '../screens/ImportImageScreen';
 import {ImportReviewScreen} from '../screens/ImportReviewScreen';
+import {ImportTextScreen} from '../screens/ImportTextScreen';
 import {ImportUrlScreen} from '../screens/ImportUrlScreen';
 import {ManualEntryScreen} from '../screens/ManualEntryScreen';
 import {ProfileScreen} from '../screens/ProfileScreen';
@@ -73,6 +74,11 @@ const AddStackNavigator = () => (
       name="ImportImage"
       component={ImportImageScreen}
       options={{title: 'Import from Image'}}
+    />
+    <AddStack.Screen
+      name="ImportText"
+      component={ImportTextScreen}
+      options={{title: 'Import from Text'}}
     />
     <AddStack.Screen
       name="ImportReview"

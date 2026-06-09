@@ -5,6 +5,12 @@ export {buildShareText} from './buildShareText.js';
 export {recipeDetailToInput} from './recipeDetailToInput.js';
 export {createApiClient, type ApiClient} from './createApiClient.js';
 export {createSupabaseClient} from './createSupabaseClient.js';
+export {validateRecipeImageFile} from './validateRecipeImageFile.js';
+export {
+  RECIPE_IMAGES_BUCKET,
+  recipeImageStoragePath,
+  uploadRecipeImage,
+} from './uploadRecipeImage.js';
 export {AuthProvider, useAuth} from './AuthProvider.js';
 export {queryKeys} from './queryKeys.js';
 export {invalidateRecipeQueries} from './invalidateRecipeQueries.js';

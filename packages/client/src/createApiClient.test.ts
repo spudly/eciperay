@@ -29,12 +29,18 @@ describe('createApiClient', () => {
   });
 
   test('throws on non-ok response', async () => {
-    global.fetch = jest.fn().mockResolvedValue({ok: false, status: 404});
+    global.fetch = jest
+      .fn()
+      .mockResolvedValue({
+        ok: false,
+        status: 404,
+        text: async () => JSON.stringify({error: 'Not found'}),
+      });
     const client = createApiClient({
       baseUrl: 'http://localhost:8080',
       getToken: async () => null,
     });
-    await expect(client.fetch('/missing')).rejects.toThrow('API error 404');
+    await expect(client.fetch('/missing')).rejects.toThrow('Not found');
   });
 
   test('returns undefined for 204 responses', async () => {

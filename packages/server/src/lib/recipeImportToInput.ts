@@ -7,11 +7,15 @@ export class RecipeImportError extends Error {
   }
 }
 
-type RecipeImportOptions = {sourceUrl?: string | null};
+export type RecipeImportOptions = {
+  sourceUrl?: string | null;
+  imageUrl?: string | null;
+  tagIds?: string[];
+};
 
 export const recipeImportToInput = (
   recipe: RecipeImport,
-  {sourceUrl}: RecipeImportOptions = {},
+  {sourceUrl, imageUrl, tagIds}: RecipeImportOptions = {},
 ): RecipeInput => {
   if (recipe.servings === null) {
     throw new RecipeImportError('servings is required');
@@ -22,7 +26,7 @@ export const recipeImportToInput = (
     servings: recipe.servings,
     prepTimeMin: recipe.prepTimeMin,
     cookTimeMin: recipe.cookTimeMin,
-    imageUrl: null,
+    imageUrl: imageUrl ?? null,
     starRating: null,
     sourceUrl: recipe.sourceUrl ?? sourceUrl ?? null,
     ingredients: recipe.ingredients.map((ing, index) => ({
@@ -33,6 +37,6 @@ export const recipeImportToInput = (
       ...ins,
       stepNumber: index + 1,
     })),
-    tagIds: [],
+    tagIds: tagIds ?? [],
   };
 };

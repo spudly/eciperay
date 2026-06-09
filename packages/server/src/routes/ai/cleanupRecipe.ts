@@ -26,7 +26,7 @@ const callClaude = async (recipeContext: string) => {
     ],
   });
   const content = response.content[0];
-  /* c8 ignore next 3 */
+  /* c8 ignore next 3 -- Claude returns non-text blocks only on API errors */
   if (content?.type !== 'text') {
     throw new Error('Unexpected Claude response');
   }

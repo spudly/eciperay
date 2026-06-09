@@ -5,10 +5,8 @@ import {query as defaultQuery} from '../../db/query.js';
 import type {AuthedRequest} from '../../middleware/requireAuth.js';
 import {parseSchemaOrg} from '../../lib/parseSchemaOrg.js';
 import {parseWithClaude} from '../../lib/parseWithClaude.js';
-import {
-  RecipeImportError,
-  recipeImportToInput,
-} from '../../lib/recipeImportToInput.js';
+import {RecipeImportError} from '../../lib/recipeImportToInput.js';
+import {prepareImportedRecipeInput} from '../../lib/prepareImportedRecipeInput.js';
 import {saveRecipeFromInput} from '../../lib/saveRecipeFromInput.js';
 import {ImportUrlSchema, validate} from '../../lib/schemas.js';
 
@@ -48,7 +46,12 @@ export const importFromUrl = async (
   const html = await fetchPage(url);
   const parsed = await parseFromHtml(html, url);
   try {
-    const input = recipeImportToInput(parsed, {sourceUrl: url});
+    const input = await prepareImportedRecipeInput({
+      recipe: parsed,
+      userId: req.userId,
+      queryFn,
+      options: {sourceUrl: url},
+    });
     const detail = await saveRecipeFromInput(
       {userId: req.userId, input},
       queryFn,

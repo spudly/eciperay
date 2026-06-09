@@ -1,4 +1,5 @@
 import {queryKeys, recipeDetailToInput} from '@recipoo/client';
+import type {RecipeInput} from '@recipoo/types';
 import React from 'react';
 import {fireEvent, render, waitFor} from '@testing-library/react-native';
 
@@ -11,6 +12,15 @@ import {RecipeForm} from './RecipeForm';
 jest.mock('../../lib/api');
 
 const mockListTags = api.tags.list as jest.Mock;
+
+type OnSubmit = (input: RecipeInput) => Promise<void>;
+
+const mockOnSubmit = (): jest.MockedFunction<OnSubmit> =>
+  jest
+    .fn()
+    .mockImplementation(() =>
+      Promise.resolve(),
+    ) as jest.MockedFunction<OnSubmit>;
 
 const renderForm = async (ui: React.ReactElement) => {
   const queryClient = makeQueryClient();
@@ -27,7 +37,7 @@ describe('RecipeForm', () => {
   });
 
   test('submits recipe input', async () => {
-    const onSubmit = jest.fn().mockResolvedValue();
+    const onSubmit = mockOnSubmit();
     const {getByText} = await renderForm(
       <RecipeForm
         initial={recipeDetailToInput(makeRecipeDetail())}
@@ -68,7 +78,7 @@ describe('RecipeForm', () => {
   });
 
   test('adds and removes ingredients and instructions', async () => {
-    const onSubmit = jest.fn().mockResolvedValue();
+    const onSubmit = mockOnSubmit();
     const {getAllByText, getByText, getAllByPlaceholderText} = await renderForm(
       <RecipeForm
         initial={recipeDetailToInput(makeRecipeDetail())}
@@ -104,7 +114,7 @@ describe('RecipeForm', () => {
   });
 
   test('submits string quantity as a number', async () => {
-    const onSubmit = jest.fn().mockResolvedValue();
+    const onSubmit = mockOnSubmit();
     const {getByText, getAllByPlaceholderText} = await renderForm(
       <RecipeForm
         initial={recipeDetailToInput(makeRecipeDetail())}
@@ -125,13 +135,15 @@ describe('RecipeForm', () => {
       makeRecipeDetail({
         ingredients: [
           {
+            id: 'i-salt',
+            recipeId: 'recipe-uuid-1',
             sortOrder: 0,
             name: 'Salt',
             quantity: null,
             unit: null,
             notes: null,
             isOptional: false,
-          } as const,
+          },
         ],
       }),
     );

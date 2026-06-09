@@ -47,7 +47,7 @@ describe('ImportUrlPage', () => {
     );
     await userEvent.click(screen.getByText('Import'));
     await waitFor(() => {
-      expect(screen.getByText(/API error 500/i)).toBeInTheDocument();
+      expect(screen.getByText('bad')).toBeInTheDocument();
     });
   });
 

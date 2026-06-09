@@ -28,7 +28,7 @@ describe('SignUpScreen', () => {
 
   test('syncs user when session is returned', async () => {
     mockSignUp.mockResolvedValue({data: {session: {}}, error: null});
-    mockSyncUser.mockResolvedValue();
+    mockSyncUser.mockImplementation(async () => {});
     const {getByText} = render(<SignUpScreen navigation={nav} />);
     fireEvent.press(getByText('Create Account'));
     await waitFor(() => {

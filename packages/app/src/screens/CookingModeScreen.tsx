@@ -130,7 +130,10 @@ export const CookingModeScreen = ({route, navigation}: CookingProps) => {
   return (
     <View
       className="flex-1 justify-center bg-gray-900 px-6"
-      onStartShouldSetResponder={/* istanbul ignore next */ () => true}
+      onStartShouldSetResponder={
+        /* istanbul ignore next -- touch responder required for swipe gestures */
+        () => true
+      }
       onResponderGrant={onStart}
       onResponderRelease={onEnd}
     >

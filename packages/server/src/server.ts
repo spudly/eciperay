@@ -2,8 +2,10 @@ import './loadEnv.js';
 
 import {fileURLToPath} from 'node:url';
 
+import Anthropic from '@anthropic-ai/sdk';
 import cors from 'cors';
 import express from 'express';
+import type {NextFunction, Request, Response} from 'express';
 
 import {query as defaultQuery} from './db/query.js';
 import {createAuthRouter} from './routes/auth/router.js';
@@ -20,6 +22,10 @@ export const createApp = ({
   query: queryFn = defaultQuery,
 }: Partial<AppDeps> = {}) => {
   const app = express();
+  app.locals['query'] = queryFn;
+  if (process.env['NODE_ENV'] === 'test') {
+    app.locals['skipUserUpsert'] = true;
+  }
   const corsOrigins = (process.env['CORS_ORIGINS'] ?? DEFAULT_CORS_ORIGINS)
     .split(',')
     .map(origin => origin.trim());
@@ -32,12 +38,24 @@ export const createApp = ({
   app.use('/recipes/import', createImportRouter(queryFn));
   app.use('/recipes', createRecipesRouter(queryFn));
   app.use('/tags', createTagsRouter(queryFn));
+  app.use((err: unknown, _req: Request, res: Response, next: NextFunction) => {
+    void next;
+    if (res.headersSent) {
+      return;
+    }
+    if (err instanceof Anthropic.APIError) {
+      res.status(502).json({error: 'AI service error'});
+      return;
+    }
+    if (process.env['NODE_ENV'] !== 'test') {
+      console.error(err);
+    }
+    res.status(500).json({error: 'Internal server error'});
+  });
   return app;
 };
 
-// startServer and the entry-point guard are excluded from test coverage:
-// tests import createApp directly and never invoke the HTTP listener.
-/* c8 ignore next 11 */
+/* c8 ignore next 11 -- HTTP listener; tests import createApp via supertest only */
 const startServer = () => {
   const app = createApp();
   const port = Number(process.env['PORT'] ?? DEFAULT_PORT);

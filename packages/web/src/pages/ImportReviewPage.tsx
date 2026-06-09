@@ -39,6 +39,7 @@ export const ImportReviewPage = () => {
       </p>
       <RecipeForm
         initial={recipeDetailToInput(recipe)}
+        recipeId={recipeId}
         submitLabel="Save Recipe"
         onSubmit={handleSubmit}
       />

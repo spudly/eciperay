@@ -33,6 +33,18 @@ describe('recipeImportToInput', () => {
     expect(input.instructions[0]?.stepNumber).toBe(1);
   });
 
+  test('uses provided tagIds', () => {
+    const input = recipeImportToInput(baseImport, {tagIds: ['tag-1', 'tag-2']});
+    expect(input.tagIds).toEqual(['tag-1', 'tag-2']);
+  });
+
+  test('uses provided imageUrl', () => {
+    const input = recipeImportToInput(baseImport, {
+      imageUrl: 'https://example.com/photo.jpg',
+    });
+    expect(input.imageUrl).toBe('https://example.com/photo.jpg');
+  });
+
   test('prefers import sourceUrl over option', () => {
     const input = recipeImportToInput(
       {...baseImport, sourceUrl: 'https://import.example.com'},

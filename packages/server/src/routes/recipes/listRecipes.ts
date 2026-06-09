@@ -2,6 +2,7 @@ import type {Response} from 'express';
 
 import {query as defaultQuery} from '../../db/query.js';
 import type {AuthedRequest} from '../../middleware/requireAuth.js';
+import {mapRowToRecipeListItem} from '../../lib/mapRowToRecipeDetail.js';
 
 import {LIST_RECIPES_SQL} from './queries.js';
 
@@ -21,5 +22,11 @@ export const listRecipes = async (
 ) => {
   const {limit, offset} = parseListParams(req);
   const result = await queryFn(LIST_RECIPES_SQL, [req.userId, limit, offset]);
-  res.json(result.rows);
+  res.json(
+    result.rows.map(row =>
+      mapRowToRecipeListItem(
+        row as Parameters<typeof mapRowToRecipeListItem>[0],
+      ),
+    ),
+  );
 };

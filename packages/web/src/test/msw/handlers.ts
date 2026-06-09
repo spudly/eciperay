@@ -19,6 +19,10 @@ export const handlers = [
     const body = (await request.json()) as object;
     return HttpResponse.json({...recipe, id: params['id'], ...body});
   }),
+  http.patch(`${API}/recipes/:id`, async ({params, request}) => {
+    const body = (await request.json()) as object;
+    return HttpResponse.json({...recipe, id: params['id'], ...body});
+  }),
   http.delete(
     `${API}/recipes/:id`,
     () => new HttpResponse(null, {status: 204}),
@@ -28,6 +32,9 @@ export const handlers = [
   ),
   http.post(`${API}/recipes/import/image`, () =>
     HttpResponse.json({...recipe, id: 'imported-image-id'}),
+  ),
+  http.post(`${API}/recipes/import/text`, () =>
+    HttpResponse.json({...recipe, id: 'imported-text-id'}),
   ),
   http.get(`${API}/recipes/:id/notes`, () =>
     HttpResponse.json([

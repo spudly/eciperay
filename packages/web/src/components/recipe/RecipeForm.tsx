@@ -1,17 +1,30 @@
 /* eslint-disable max-lines -- shared recipe form with dynamic ingredient/instruction lists */
+import {
+  uploadRecipeImage,
+  useAuth,
+  validateRecipeImageFile,
+} from '@recipoo/client';
 import type {
   IngredientInput,
   InstructionInput,
   RecipeInput,
 } from '@recipoo/types';
-import {useState} from 'react';
+import {useEffect, useState} from 'react';
 
+import {
+  getImageFileFromDataTransfer,
+  shouldIgnoreImagePaste,
+} from '../../lib/recipeImageInput.js';
+import {supabase} from '../../lib/supabase.js';
+
+import {RecipeImageField} from './RecipeImageField.js';
 import {TagPicker} from './TagPicker.js';
 
 type Props = {
   initial: RecipeInput;
+  recipeId?: string;
   submitLabel: string;
-  onSubmit: (input: RecipeInput) => Promise<void>;
+  onSubmit: (input: RecipeInput, pendingImage?: File) => Promise<void>;
 };
 
 type FormIngredient = Omit<IngredientInput, 'quantity'> & {
@@ -39,7 +52,13 @@ const emptyInstruction = (stepNumber: number): InstructionInput => ({
   body: '',
 });
 
-export const RecipeForm = ({initial, submitLabel, onSubmit}: Props) => {
+export const RecipeForm = ({
+  initial,
+  recipeId,
+  submitLabel,
+  onSubmit,
+}: Props) => {
+  const {session} = useAuth();
   const [title, setTitle] = useState(initial.title);
   const [description, setDescription] = useState(initial.description ?? '');
   const [servings, setServings] = useState(initial.servings);
@@ -56,8 +75,78 @@ export const RecipeForm = ({initial, submitLabel, onSubmit}: Props) => {
       : [emptyInstruction(1)],
   );
   const [tagIds, setTagIds] = useState<string[]>(initial.tagIds);
+  const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const [imageUploading, setImageUploading] = useState(false);
+
+  const clearPendingImage = () => {
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+    setPreviewUrl(null);
+    setPendingImageFile(null);
+  };
+
+  useEffect(
+    () => () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    },
+    [previewUrl],
+  );
+
+  const processImageFile = async (file: File) => {
+    const userId = session?.user.id;
+    if (!userId) {
+      setImageError('Sign in to upload images');
+      return;
+    }
+    setImageError(null);
+    try {
+      validateRecipeImageFile(file);
+    } catch (error_) {
+      setImageError(
+        error_ instanceof Error ? error_.message : 'Failed to read image',
+      );
+      return;
+    }
+
+    if (recipeId) {
+      setImageUploading(true);
+      try {
+        clearPendingImage();
+        setImageUrl(await uploadRecipeImage(supabase, file, userId, recipeId));
+      } catch (error_) {
+        setImageError(
+          error_ instanceof Error ? error_.message : 'Failed to upload image',
+        );
+      } finally {
+        setImageUploading(false);
+      }
+      return;
+    }
+
+    clearPendingImage();
+    setImageUrl('');
+    setPendingImageFile(file);
+    setPreviewUrl(URL.createObjectURL(file));
+  };
+
+  const handleFormPaste = (e: React.ClipboardEvent) => {
+    if (shouldIgnoreImagePaste(e.target)) {
+      return;
+    }
+    const file = getImageFileFromDataTransfer(e.clipboardData);
+    if (!file) {
+      return;
+    }
+    e.preventDefault();
+    void processImageFile(file);
+  };
 
   const updateIngredient = (
     index: number,
@@ -75,30 +164,29 @@ export const RecipeForm = ({initial, submitLabel, onSubmit}: Props) => {
     );
   };
 
+  const buildInput = (): RecipeInput => ({
+    title,
+    description: description || null,
+    servings,
+    prepTimeMin: prepTimeMin === '' ? null : Number(prepTimeMin),
+    cookTimeMin: cookTimeMin === '' ? null : Number(cookTimeMin),
+    imageUrl: pendingImageFile ? null : imageUrl || null,
+    sourceUrl: sourceUrl || null,
+    ingredients: ingredients.map((ing, i) => ({
+      ...ing,
+      sortOrder: i,
+      quantity: toQuantity(ing.quantity),
+    })),
+    instructions: instructions.map((ins, i) => ({...ins, stepNumber: i + 1})),
+    tagIds,
+  });
+
   const handleSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
     try {
-      await onSubmit({
-        title,
-        description: description || null,
-        servings,
-        prepTimeMin: prepTimeMin === '' ? null : Number(prepTimeMin),
-        cookTimeMin: cookTimeMin === '' ? null : Number(cookTimeMin),
-        imageUrl: imageUrl || null,
-        sourceUrl: sourceUrl || null,
-        ingredients: ingredients.map((ing, i) => ({
-          ...ing,
-          sortOrder: i,
-          quantity: toQuantity(ing.quantity),
-        })),
-        instructions: instructions.map((ins, i) => ({
-          ...ins,
-          stepNumber: i + 1,
-        })),
-        tagIds,
-      });
+      await onSubmit(buildInput(), pendingImageFile ?? undefined);
     } catch (error_) {
       setError(error_ instanceof Error ? error_.message : 'Failed to save');
     } finally {
@@ -106,11 +194,14 @@ export const RecipeForm = ({initial, submitLabel, onSubmit}: Props) => {
     }
   };
 
+  const imagePreview = previewUrl ?? imageUrl;
+
   return (
     <form
       onSubmit={e => {
         void handleSubmit(e);
       }}
+      onPaste={handleFormPaste}
       className="space-y-6"
     >
       <div>
@@ -202,22 +293,17 @@ export const RecipeForm = ({initial, submitLabel, onSubmit}: Props) => {
           />
         </div>
       </div>
-      <div>
-        <label
-          htmlFor="imageUrl"
-          className="mb-1 block text-sm font-medium text-gray-700"
-        >
-          Image URL
-        </label>
-        <input
-          id="imageUrl"
-          className="w-full rounded-lg border border-gray-300 px-4 py-2"
-          value={imageUrl}
-          onChange={e => {
-            setImageUrl(e.target.value);
-          }}
-        />
-      </div>
+      <RecipeImageField
+        imagePreview={imagePreview || null}
+        imageUploading={imageUploading}
+        imageError={imageError}
+        onImageFile={processImageFile}
+        onRemove={() => {
+          clearPendingImage();
+          setImageUrl('');
+          setImageError(null);
+        }}
+      />
       <div>
         <label
           htmlFor="sourceUrl"

@@ -7,7 +7,7 @@ export const api = {
     patch: jest.fn(),
     delete: jest.fn(),
   },
-  import: {importUrl: jest.fn(), importImage: jest.fn()},
+  import: {importUrl: jest.fn(), importImage: jest.fn(), importText: jest.fn()},
   auth: {syncUser: jest.fn()},
   tags: {list: jest.fn(), create: jest.fn(), delete: jest.fn()},
   notes: {list: jest.fn(), create: jest.fn()},

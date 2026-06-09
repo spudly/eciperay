@@ -27,7 +27,7 @@ export const RecipeImportSchema = z.object({
   servings: z.number().int().positive(),
   prepTimeMin: z.number().int().nonnegative().nullable(),
   cookTimeMin: z.number().int().nonnegative().nullable(),
-  sourceUrl: z.url().nullable(),
+  sourceUrl: z.url().nullish(),
   ingredients: z.array(IngredientInputSchema),
   instructions: z.array(InstructionInputSchema),
 });
@@ -91,8 +91,11 @@ export const ImportImageSchema = z.object({
     .optional(),
 });
 
+export const ImportTextSchema = z.object({
+  text: z.string().min(1).max(100_000),
+});
+
 export const SyncUserSchema = z.object({
-  email: z.email(),
   displayName: z.string().max(100).optional(),
 });
 

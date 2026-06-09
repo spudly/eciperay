@@ -3,8 +3,9 @@ import {Alert} from 'react-native';
 import {render, fireEvent, waitFor} from '@testing-library/react-native';
 
 import {makeRecipeDetail} from '../__tests__/fixtures/recipe';
-import {renderWithProviders} from '../__tests__/testUtils';
+import {makeStackProps, renderWithProviders} from '../__tests__/testUtils';
 import {api} from '../lib/api';
+import type {RecipesStackParamList} from '../navigation/types';
 
 import {RecipeDetailScreen} from './RecipeDetailScreen';
 
@@ -17,13 +18,16 @@ const mockGetConversation = api.ai.getConversation as jest.Mock;
 const mockListNotes = api.notes.list as jest.Mock;
 const mockListDrafts = api.drafts.listPending as jest.Mock;
 const mockNavigate = jest.fn();
-const route = {params: {recipeId: 'recipe-uuid-1'}};
-const navigation = {navigate: mockNavigate} as never;
+const stackProps = makeStackProps<RecipesStackParamList, 'RecipeDetail'>(
+  'RecipeDetail',
+  {recipeId: 'recipe-uuid-1'},
+  {navigate: mockNavigate},
+);
 
 describe('RecipeDetailScreen', () => {
   beforeEach(() => {
     mockGet.mockResolvedValue(makeRecipeDetail());
-    mockDelete.mockResolvedValue();
+    mockDelete.mockImplementation(async () => {});
     mockNutrition.mockResolvedValue({
       calories: 250,
       proteinG: 10,
@@ -40,24 +44,14 @@ describe('RecipeDetailScreen', () => {
 
   test('renders recipe title in overview tab', async () => {
     const {findByText} = render(
-      renderWithProviders(
-        <RecipeDetailScreen
-          route={route}
-          navigation={navigation}
-        />,
-      ),
+      renderWithProviders(<RecipeDetailScreen {...stackProps} />),
     );
     expect(await findByText('Test Recipe')).toBeTruthy();
   });
 
   test('switches to ingredients tab', async () => {
     const {findByText} = render(
-      renderWithProviders(
-        <RecipeDetailScreen
-          route={route}
-          navigation={navigation}
-        />,
-      ),
+      renderWithProviders(<RecipeDetailScreen {...stackProps} />),
     );
     await findByText('Test Recipe');
     fireEvent.press(await findByText('Ingredients'));
@@ -66,12 +60,7 @@ describe('RecipeDetailScreen', () => {
 
   test('navigates to cooking mode', async () => {
     const {findByText} = render(
-      renderWithProviders(
-        <RecipeDetailScreen
-          route={route}
-          navigation={navigation}
-        />,
-      ),
+      renderWithProviders(<RecipeDetailScreen {...stackProps} />),
     );
     fireEvent.press(await findByText('Start Cooking'));
     expect(mockNavigate).toHaveBeenCalledWith('CookingMode', {
@@ -81,12 +70,7 @@ describe('RecipeDetailScreen', () => {
 
   test('navigates to edit screen', async () => {
     const {findByText} = render(
-      renderWithProviders(
-        <RecipeDetailScreen
-          route={route}
-          navigation={navigation}
-        />,
-      ),
+      renderWithProviders(<RecipeDetailScreen {...stackProps} />),
     );
     fireEvent.press(await findByText('Edit'));
     expect(mockNavigate).toHaveBeenCalledWith('EditRecipe', {
@@ -96,12 +80,7 @@ describe('RecipeDetailScreen', () => {
 
   test('switches to instructions, notes, and nutrition tabs', async () => {
     const {findByText} = render(
-      renderWithProviders(
-        <RecipeDetailScreen
-          route={route}
-          navigation={navigation}
-        />,
-      ),
+      renderWithProviders(<RecipeDetailScreen {...stackProps} />),
     );
     await findByText('Test Recipe');
     fireEvent.press(await findByText('Instructions'));
@@ -116,12 +95,7 @@ describe('RecipeDetailScreen', () => {
       buttons?.[1]?.onPress?.();
     });
     const {findByText} = render(
-      renderWithProviders(
-        <RecipeDetailScreen
-          route={route}
-          navigation={navigation}
-        />,
-      ),
+      renderWithProviders(<RecipeDetailScreen {...stackProps} />),
     );
     fireEvent.press(await findByText('Delete'));
     await waitFor(() => {

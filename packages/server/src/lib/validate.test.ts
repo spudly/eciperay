@@ -2,7 +2,7 @@ import type {Request, Response} from 'express';
 import {jest} from '@jest/globals';
 import {z} from 'zod';
 
-import {parseAiJson, validate} from './validate.js';
+import {extractJsonFromAiText, parseAiJson, validate} from './validate.js';
 
 const TestSchema = z.object({name: z.string().min(1)});
 
@@ -47,9 +47,22 @@ describe('validate', () => {
   });
 });
 
+describe('extractJsonFromAiText', () => {
+  test('strips markdown json code fences', () => {
+    expect(extractJsonFromAiText('```json\n{"name":"Bob"}\n```')).toBe(
+      '{"name":"Bob"}',
+    );
+  });
+});
+
 describe('parseAiJson', () => {
   test('returns parsed and validated data for valid input', () => {
     const data = parseAiJson(TestSchema, '{"name":"Bob"}');
+    expect(data).toEqual({name: 'Bob'});
+  });
+
+  test('parses JSON wrapped in markdown code fences', () => {
+    const data = parseAiJson(TestSchema, '```json\n{"name":"Bob"}\n```');
     expect(data).toEqual({name: 'Bob'});
   });
 

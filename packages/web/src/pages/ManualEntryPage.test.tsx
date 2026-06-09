@@ -1,3 +1,4 @@
+import {uploadRecipeImage} from '@recipoo/client';
 import {screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {Route, Routes} from 'react-router-dom';
@@ -6,7 +7,19 @@ import {renderWithProviders} from '../test/testUtils.js';
 
 import {ManualEntryPage} from './ManualEntryPage.js';
 
+vi.mock('@recipoo/client', async importOriginal => {
+  const actual = await importOriginal<typeof import('@recipoo/client')>();
+  return {...actual, uploadRecipeImage: vi.fn()};
+});
+
+const mockUploadRecipeImage = vi.mocked(uploadRecipeImage);
+
 describe('ManualEntryPage', () => {
+  beforeEach(() => {
+    mockUploadRecipeImage.mockReset();
+    mockUploadRecipeImage.mockResolvedValue('https://cdn.example/recipe.png');
+  });
+
   test('creates recipe', async () => {
     await renderWithProviders(
       <Routes>
@@ -26,6 +39,40 @@ describe('ManualEntryPage', () => {
     const textareas = screen.getAllByRole('textbox');
     await userEvent.type(textareas.at(-1)!, 'Mix ingredients');
     await userEvent.click(screen.getByText('Create Recipe'));
+    await waitFor(() => {
+      expect(screen.getByText('Recipe Created')).toBeInTheDocument();
+    });
+  });
+
+  test('uploads a pending image after the recipe is created', async () => {
+    await renderWithProviders(
+      <Routes>
+        <Route
+          path="/add/manual"
+          element={<ManualEntryPage />}
+        />
+        <Route
+          path="/recipes/:recipeId"
+          element={<div>Recipe Created</div>}
+        />
+      </Routes>,
+      {route: '/add/manual'},
+    );
+    await userEvent.type(screen.getByLabelText('Title'), 'New Recipe');
+    await userEvent.type(screen.getAllByPlaceholderText('Name')[0]!, 'Flour');
+    const textareas = screen.getAllByRole('textbox');
+    await userEvent.type(textareas.at(-1)!, 'Mix ingredients');
+    const file = new File(['pixels'], 'recipe.png', {type: 'image/png'});
+    await userEvent.upload(screen.getByLabelText('Browse images'), file);
+    await userEvent.click(screen.getByText('Create Recipe'));
+    await waitFor(() => {
+      expect(mockUploadRecipeImage).toHaveBeenCalledWith(
+        expect.anything(),
+        file,
+        'user-1',
+        'new-recipe-id',
+      );
+    });
     await waitFor(() => {
       expect(screen.getByText('Recipe Created')).toBeInTheDocument();
     });

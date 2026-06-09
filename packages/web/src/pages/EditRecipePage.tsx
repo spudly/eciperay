@@ -36,6 +36,7 @@ export const EditRecipePage = () => {
       <h1 className="mb-6 text-2xl font-bold text-gray-900">Edit Recipe</h1>
       <RecipeForm
         initial={recipeDetailToInput(recipe)}
+        recipeId={recipeId}
         submitLabel="Save Changes"
         onSubmit={handleSubmit}
       />

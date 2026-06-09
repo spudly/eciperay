@@ -4,12 +4,29 @@ import type {RecipeDetail} from '@recipoo/types';
 export const printRecipe = (recipe: RecipeDetail) => {
   const html = buildPrintHtml(recipe);
   const frame = document.createElement('iframe');
-  frame.style.display = 'none';
-  frame.srcdoc = html;
-  frame.onload = () => {
-    frame.contentWindow?.focus();
-    frame.contentWindow?.print();
-    document.body.removeChild(frame);
-  };
+  frame.style.position = 'fixed';
+  frame.style.width = '0';
+  frame.style.height = '0';
+  frame.style.border = 'none';
   document.body.appendChild(frame);
+
+  const cleanup = () => {
+    if (frame.parentNode) {
+      document.body.removeChild(frame);
+    }
+  };
+
+  frame.onload = () => {
+    const win = frame.contentWindow;
+    if (!win) {
+      cleanup();
+      return;
+    }
+    win.addEventListener('afterprint', cleanup, {once: true});
+    win.focus();
+    win.print();
+    window.setTimeout(cleanup, 60_000);
+  };
+
+  frame.srcdoc = html;
 };

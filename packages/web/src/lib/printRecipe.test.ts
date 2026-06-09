@@ -11,15 +11,22 @@ describe('printRecipe', () => {
 
     const frame = appendChild.mock.calls[0]?.[0] as HTMLIFrameElement;
     expect(frame.srcdoc).toContain('Test Recipe');
-    expect(frame.style.display).toBe('none');
 
     const focus = vi.fn();
     const print = vi.fn();
-    Object.defineProperty(frame, 'contentWindow', {value: {focus, print}});
+    const addEventListener = vi.fn();
+    Object.defineProperty(frame, 'contentWindow', {
+      value: {focus, print, addEventListener},
+    });
     frame.onload!(new Event('load'));
 
     expect(focus).toHaveBeenCalled();
     expect(print).toHaveBeenCalled();
-    expect(removeChild).toHaveBeenCalledWith(frame);
+    expect(addEventListener).toHaveBeenCalledWith(
+      'afterprint',
+      expect.any(Function),
+      {once: true},
+    );
+    expect(removeChild).not.toHaveBeenCalled();
   });
 });

@@ -28,7 +28,16 @@ export const validate = <T>(
   return {ok: true, data: result.data};
 };
 
+export const extractJsonFromAiText = (text: string): string => {
+  const fenceMatch = /```(?:json)?\s*\n([\s\S]*?)\n```/i.exec(text);
+  const fenced = fenceMatch?.[1];
+  if (fenced) {
+    return fenced.trim();
+  }
+  return text.trim();
+};
+
 export const parseAiJson = <T>(schema: z.ZodType<T>, text: string): T =>
-  schema.parse(JSON.parse(text) as unknown);
+  schema.parse(JSON.parse(extractJsonFromAiText(text)) as unknown);
 
 export type Infer<S extends z.ZodType> = z.infer<S>;
