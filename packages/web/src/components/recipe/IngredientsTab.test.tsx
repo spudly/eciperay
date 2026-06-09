@@ -10,7 +10,7 @@ describe('IngredientsTab', () => {
   const onServingsChange = vi.fn();
 
   test('renders ingredients and adjusts servings', async () => {
-    renderWithProviders(
+    await renderWithProviders(
       <IngredientsTab
         recipe={makeRecipeDetail()}
         scaleFactor={1}
@@ -26,7 +26,7 @@ describe('IngredientsTab', () => {
   });
 
   test('shows substitutions for missing ingredients', async () => {
-    renderWithProviders(
+    await renderWithProviders(
       <IngredientsTab
         recipe={makeRecipeDetail()}
         scaleFactor={1}

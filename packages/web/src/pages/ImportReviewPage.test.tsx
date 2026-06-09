@@ -8,7 +8,7 @@ import {ImportReviewPage} from './ImportReviewPage.js';
 
 describe('ImportReviewPage', () => {
   test('reviews and saves imported recipe', async () => {
-    renderWithProviders(
+    await renderWithProviders(
       <Routes>
         <Route
           path="/import/review/:recipeId"

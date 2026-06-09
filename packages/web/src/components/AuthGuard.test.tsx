@@ -14,9 +14,9 @@ vi.mock('@recipoo/client', async importOriginal => {
 });
 
 describe('AuthGuard', () => {
-  test('shows loading state', () => {
+  test('shows loading state', async () => {
     mockUseAuth.mockReturnValue({session: null, isLoading: true});
-    renderWithProviders(
+    await renderWithProviders(
       <Routes>
         <Route
           element={<AuthGuard />}
@@ -33,9 +33,9 @@ describe('AuthGuard', () => {
     expect(screen.getByText('Loading…')).toBeInTheDocument();
   });
 
-  test('redirects when no session', () => {
+  test('redirects when no session', async () => {
     mockUseAuth.mockReturnValue({session: null, isLoading: false});
-    renderWithProviders(
+    await renderWithProviders(
       <Routes>
         <Route
           path="/login"
@@ -56,12 +56,12 @@ describe('AuthGuard', () => {
     expect(screen.getByText('Login')).toBeInTheDocument();
   });
 
-  test('renders outlet when session exists', () => {
+  test('renders outlet when session exists', async () => {
     mockUseAuth.mockReturnValue({
       session: {access_token: 't'},
       isLoading: false,
     });
-    renderWithProviders(
+    await renderWithProviders(
       <Routes>
         <Route
           element={<AuthGuard />}

@@ -8,8 +8,7 @@ import {NutritionTab} from './NutritionTab.js';
 
 describe('NutritionTab', () => {
   test('shows nutrition data', async () => {
-    renderWithProviders(<NutritionTab recipeId="recipe-uuid-1" />);
-    expect(screen.getByText('Estimating nutrition…')).toBeInTheDocument();
+    await renderWithProviders(<NutritionTab recipeId="recipe-uuid-1" />);
     await waitFor(() => {
       expect(screen.getByText('250')).toBeInTheDocument();
     });
@@ -22,7 +21,7 @@ describe('NutritionTab', () => {
         HttpResponse.json(null),
       ),
     );
-    const {container} = renderWithProviders(
+    const {container} = await renderWithProviders(
       <NutritionTab recipeId="recipe-uuid-1" />,
     );
     await waitFor(() => {
@@ -49,7 +48,7 @@ describe('NutritionTab', () => {
         }),
       ),
     );
-    renderWithProviders(<NutritionTab recipeId="recipe-uuid-1" />);
+    await renderWithProviders(<NutritionTab recipeId="recipe-uuid-1" />);
     await waitFor(() => {
       expect(screen.getByText('100')).toBeInTheDocument();
     });

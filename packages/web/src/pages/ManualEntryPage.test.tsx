@@ -8,7 +8,7 @@ import {ManualEntryPage} from './ManualEntryPage.js';
 
 describe('ManualEntryPage', () => {
   test('creates recipe', async () => {
-    renderWithProviders(
+    await renderWithProviders(
       <Routes>
         <Route
           path="/add/manual"

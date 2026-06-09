@@ -8,7 +8,7 @@ import {RecipeDetailPage} from './RecipeDetailPage.js';
 
 describe('RecipeDetailPage', () => {
   test('renders tabs and switches between them', async () => {
-    renderWithProviders(
+    await renderWithProviders(
       <Routes>
         <Route
           path="/recipes/:recipeId"

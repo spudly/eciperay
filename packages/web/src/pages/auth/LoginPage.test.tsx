@@ -19,17 +19,17 @@ describe('LoginPage', () => {
     mockUseAuth.mockReturnValue({session: null, isLoading: false});
   });
 
-  test('redirects when session exists', () => {
+  test('redirects when session exists', async () => {
     mockUseAuth.mockReturnValue({
       session: {access_token: 't'},
       isLoading: false,
     });
-    renderWithProviders(<LoginPage />, {withAuth: false});
+    await renderWithProviders(<LoginPage />, {withAuth: false});
     expect(screen.queryByText('Welcome back')).not.toBeInTheDocument();
   });
 
   test('signs in successfully', async () => {
-    renderWithProviders(<LoginPage />, {withAuth: false});
+    await renderWithProviders(<LoginPage />, {withAuth: false});
     await userEvent.type(screen.getByPlaceholderText('Email'), 'a@b.com');
     await userEvent.type(screen.getByPlaceholderText('Password'), 'pass');
     await userEvent.click(screen.getByText('Sign In'));
@@ -46,7 +46,7 @@ describe('LoginPage', () => {
       }) as never,
       data: {user: null, session: null},
     });
-    renderWithProviders(<LoginPage />, {withAuth: false});
+    await renderWithProviders(<LoginPage />, {withAuth: false});
     await userEvent.type(screen.getByPlaceholderText('Email'), 'a@b.com');
     await userEvent.type(screen.getByPlaceholderText('Password'), 'wrong');
     await userEvent.click(screen.getByText('Sign In'));

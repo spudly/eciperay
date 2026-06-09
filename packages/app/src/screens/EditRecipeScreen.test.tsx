@@ -11,6 +11,7 @@ jest.mock('../lib/api');
 
 const mockGet = api.recipes.get as jest.Mock;
 const mockPut = api.recipes.put as jest.Mock;
+const mockListTags = api.tags.list as jest.Mock;
 const mockNavigate = jest.fn();
 const route = {params: {recipeId: 'recipe-uuid-1'}};
 const navigation = {navigate: mockNavigate} as never;
@@ -19,6 +20,7 @@ describe('EditRecipeScreen', () => {
   beforeEach(() => {
     mockGet.mockResolvedValue(makeRecipeDetail());
     mockPut.mockResolvedValue(makeRecipeDetail());
+    mockListTags.mockResolvedValue([]);
   });
 
   test('loads recipe and saves changes', async () => {

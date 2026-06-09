@@ -8,7 +8,7 @@ import {EditRecipePage} from './EditRecipePage.js';
 
 describe('EditRecipePage', () => {
   test('loads and saves recipe', async () => {
-    renderWithProviders(
+    await renderWithProviders(
       <Routes>
         <Route
           path="/recipes/:recipeId/edit"

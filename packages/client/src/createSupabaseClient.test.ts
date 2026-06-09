@@ -20,7 +20,7 @@ describe('createSupabaseClient', () => {
 
   test('uses default auth options when omitted', () => {
     const client = createSupabaseClient({
-      url: 'https://example.supabase.co',
+      url: 'https://other-example.supabase.co',
       anonKey:
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSJ9.test',
     });

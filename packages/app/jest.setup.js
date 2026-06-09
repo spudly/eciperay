@@ -61,6 +61,12 @@ jest.mock('@react-navigation/bottom-tabs', () => ({
   }),
 }));
 
+const {
+  installFailOnConsoleError,
+} = require('../../test/failOnConsoleError.cjs');
+
+installFailOnConsoleError();
+
 // Global afterEach cleanup
 afterEach(() => {
   jest.clearAllMocks();

@@ -9,7 +9,7 @@ import {ImportImagePage} from './ImportImagePage.js';
 
 describe('ImportImagePage', () => {
   test('imports from image file', async () => {
-    renderWithProviders(
+    await renderWithProviders(
       <Routes>
         <Route
           path="/add/image"
@@ -31,7 +31,7 @@ describe('ImportImagePage', () => {
   });
 
   test('ignores empty file selection', async () => {
-    renderWithProviders(<ImportImagePage />, {route: '/add/image'});
+    await renderWithProviders(<ImportImagePage />, {route: '/add/image'});
     const input = screen.getByLabelText('Upload recipe image');
     fireEvent.change(input, {target: {files: []}});
     expect(screen.queryByText('Importing…')).not.toBeInTheDocument();
@@ -46,7 +46,7 @@ describe('ImportImagePage', () => {
       }
     }
     vi.stubGlobal('FileReader', FailingReader);
-    renderWithProviders(<ImportImagePage />, {route: '/add/image'});
+    await renderWithProviders(<ImportImagePage />, {route: '/add/image'});
     const file = new File(['test'], 'recipe.png', {type: 'image/png'});
     await userEvent.upload(screen.getByLabelText('Upload recipe image'), file);
     await waitFor(() => {
@@ -64,7 +64,7 @@ describe('ImportImagePage', () => {
       }
     }
     vi.stubGlobal('FileReader', RawReader);
-    renderWithProviders(
+    await renderWithProviders(
       <Routes>
         <Route
           path="/add/image"
@@ -88,7 +88,7 @@ describe('ImportImagePage', () => {
 
   test('shows generic error on import failure', async () => {
     vi.spyOn(recipoo.import, 'importImage').mockRejectedValueOnce('nope');
-    renderWithProviders(<ImportImagePage />, {route: '/add/image'});
+    await renderWithProviders(<ImportImagePage />, {route: '/add/image'});
     await userEvent.upload(
       screen.getByLabelText('Upload recipe image'),
       new File(['test'], 'recipe.png', {type: 'image/png'}),

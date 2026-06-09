@@ -1,4 +1,4 @@
-import {screen, waitFor} from '@testing-library/react';
+import {act, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {vi} from 'vitest';
 
@@ -15,9 +15,9 @@ vi.mock('@recipoo/client', async importOriginal => {
 });
 
 describe('ResetPasswordPage', () => {
-  test('redirects when no session', () => {
+  test('redirects when no session', async () => {
     mockUseAuth.mockReturnValue({session: null, isLoading: false});
-    renderWithProviders(<ResetPasswordPage />, {withAuth: false});
+    await renderWithProviders(<ResetPasswordPage />, {withAuth: false});
     expect(screen.queryByText('New password')).not.toBeInTheDocument();
   });
 
@@ -27,7 +27,7 @@ describe('ResetPasswordPage', () => {
       session: {access_token: 't'},
       isLoading: false,
     });
-    renderWithProviders(<ResetPasswordPage />, {withAuth: false});
+    await renderWithProviders(<ResetPasswordPage />, {withAuth: false});
     await userEvent.type(
       screen.getByPlaceholderText('New password'),
       'newpass',
@@ -39,7 +39,9 @@ describe('ResetPasswordPage', () => {
     const redirectCall = timeoutSpy.mock.calls.find(call => call[1] === 2000);
     const callback = redirectCall?.[0];
     if (typeof callback === 'function') {
-      callback();
+      act(() => {
+        callback();
+      });
     }
     timeoutSpy.mockRestore();
   });
@@ -56,7 +58,7 @@ describe('ResetPasswordPage', () => {
       }) as never,
       data: {user: null},
     });
-    renderWithProviders(<ResetPasswordPage />, {withAuth: false});
+    await renderWithProviders(<ResetPasswordPage />, {withAuth: false});
     await userEvent.type(
       screen.getByPlaceholderText('New password'),
       'newpass',

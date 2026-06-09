@@ -14,6 +14,28 @@ describe('createApp', () => {
     expect(() => createApp()).not.toThrow();
   });
 
+  test('uses default CORS origins when env unset', () => {
+    const previous = process.env['CORS_ORIGINS'];
+    delete process.env['CORS_ORIGINS'];
+    expect(() => createApp()).not.toThrow();
+    if (previous === undefined) {
+      delete process.env['CORS_ORIGINS'];
+    } else {
+      process.env['CORS_ORIGINS'] = previous;
+    }
+  });
+
+  test('uses CORS_ORIGINS from env', () => {
+    const previous = process.env['CORS_ORIGINS'];
+    process.env['CORS_ORIGINS'] = 'http://a.com,http://b.com';
+    expect(() => createApp()).not.toThrow();
+    if (previous === undefined) {
+      delete process.env['CORS_ORIGINS'];
+    } else {
+      process.env['CORS_ORIGINS'] = previous;
+    }
+  });
+
   test('returns 404 for unknown routes', async () => {
     const app = createApp();
     const res = await request(app).get('/does-not-exist');

@@ -6,8 +6,8 @@ import {renderWithProviders} from '../test/testUtils.js';
 import {AppShell} from './AppShell.js';
 
 describe('AppShell', () => {
-  test('renders navigation and outlet', () => {
-    renderWithProviders(
+  test('renders navigation and outlet', async () => {
+    await renderWithProviders(
       <Routes>
         <Route
           element={<AppShell />}

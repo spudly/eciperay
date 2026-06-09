@@ -1,8 +1,19 @@
 import '@testing-library/jest-dom/vitest';
+import {createRequire} from 'node:module';
+
+import {notifyManager} from '@tanstack/react-query';
 import {cleanup} from '@testing-library/react';
 import {afterAll, afterEach, beforeAll, vi} from 'vitest';
 
 import {server} from './msw/server.js';
+
+const require = createRequire(import.meta.url);
+const {
+  installFailOnConsoleError,
+} = require('../../../../test/failOnConsoleError.cjs');
+
+notifyManager.setScheduler(queueMicrotask);
+installFailOnConsoleError();
 
 vi.stubEnv('VITE_API_BASE_URL', 'http://localhost:8080');
 vi.stubEnv('VITE_SUPABASE_URL', 'https://test.supabase.co');

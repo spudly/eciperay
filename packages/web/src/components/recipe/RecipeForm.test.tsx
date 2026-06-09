@@ -10,7 +10,7 @@ import {RecipeForm} from './RecipeForm.js';
 describe('RecipeForm', () => {
   test('submits recipe input', async () => {
     const onSubmit = vi.fn().mockResolvedValue();
-    renderWithProviders(
+    await renderWithProviders(
       <RecipeForm
         initial={recipeDetailToInput(makeRecipeDetail())}
         submitLabel="Save"
@@ -27,7 +27,7 @@ describe('RecipeForm', () => {
   });
 
   test('updates instruction text', async () => {
-    renderWithProviders(
+    await renderWithProviders(
       <RecipeForm
         initial={recipeDetailToInput(makeRecipeDetail())}
         submitLabel="Save"
@@ -44,7 +44,7 @@ describe('RecipeForm', () => {
 
   test('adds and removes ingredients and instructions', async () => {
     const onSubmit = vi.fn().mockResolvedValue();
-    renderWithProviders(
+    await renderWithProviders(
       <RecipeForm
         initial={recipeDetailToInput(makeRecipeDetail())}
         submitLabel="Save"
@@ -62,7 +62,7 @@ describe('RecipeForm', () => {
 
   test('shows error on failed submit', async () => {
     const onSubmit = vi.fn().mockRejectedValue(new Error('Save failed'));
-    renderWithProviders(
+    await renderWithProviders(
       <RecipeForm
         initial={recipeDetailToInput(makeRecipeDetail())}
         submitLabel="Save"
@@ -76,7 +76,7 @@ describe('RecipeForm', () => {
   });
 
   test('renders empty initial state and updates servings', async () => {
-    renderWithProviders(
+    await renderWithProviders(
       <RecipeForm
         initial={{
           title: '',
@@ -97,7 +97,7 @@ describe('RecipeForm', () => {
 
   test('updates optional fields and ingredient quantities', async () => {
     const onSubmit = vi.fn().mockResolvedValue();
-    renderWithProviders(
+    await renderWithProviders(
       <RecipeForm
         initial={recipeDetailToInput(makeRecipeDetail())}
         submitLabel="Save"
@@ -134,7 +134,7 @@ describe('RecipeForm', () => {
 
   test('shows generic error for non-Error throws', async () => {
     const onSubmit = vi.fn().mockRejectedValue('bad');
-    renderWithProviders(
+    await renderWithProviders(
       <RecipeForm
         initial={recipeDetailToInput(makeRecipeDetail())}
         submitLabel="Save"

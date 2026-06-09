@@ -11,7 +11,7 @@ import {ImportUrlPage} from './ImportUrlPage.js';
 
 describe('ImportUrlPage', () => {
   test('imports from url', async () => {
-    renderWithProviders(
+    await renderWithProviders(
       <Routes>
         <Route
           path="/add/url"
@@ -40,7 +40,7 @@ describe('ImportUrlPage', () => {
         HttpResponse.json({error: 'bad'}, {status: 500}),
       ),
     );
-    renderWithProviders(<ImportUrlPage />, {route: '/add/url'});
+    await renderWithProviders(<ImportUrlPage />, {route: '/add/url'});
     await userEvent.type(
       screen.getByPlaceholderText('https://example.com/recipe'),
       'https://example.com/recipe',
@@ -53,7 +53,7 @@ describe('ImportUrlPage', () => {
 
   test('shows generic error for non-Error throws', async () => {
     vi.spyOn(recipoo.import, 'importUrl').mockRejectedValueOnce('nope');
-    renderWithProviders(<ImportUrlPage />, {route: '/add/url'});
+    await renderWithProviders(<ImportUrlPage />, {route: '/add/url'});
     await userEvent.type(
       screen.getByPlaceholderText('https://example.com/recipe'),
       'https://example.com/recipe',

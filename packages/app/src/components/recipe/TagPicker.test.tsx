@@ -1,7 +1,10 @@
 import React from 'react';
 import {fireEvent, render, waitFor} from '@testing-library/react-native';
 
-import {renderWithProviders} from '../../__tests__/testUtils';
+import {
+  renderWithProviders,
+  settleAsyncUpdates,
+} from '../../__tests__/testUtils';
 import {api} from '../../lib/api';
 
 import {TagPicker} from './TagPicker';
@@ -54,14 +57,14 @@ describe('TagPicker', () => {
     });
   });
 
-  test('shows loading state', () => {
+  test('shows loading state', async () => {
     mockList.mockImplementation(
       () =>
         new Promise(() => {
           /* never resolves */
         }),
     );
-    const {getByText} = render(
+    const {getByText, unmount} = render(
       renderWithProviders(
         <TagPicker
           selectedIds={[]}
@@ -70,5 +73,7 @@ describe('TagPicker', () => {
       ),
     );
     expect(getByText('Loading tags…')).toBeTruthy();
+    unmount();
+    await settleAsyncUpdates();
   });
 });

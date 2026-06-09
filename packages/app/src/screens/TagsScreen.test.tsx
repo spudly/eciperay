@@ -51,9 +51,10 @@ describe('TagsScreen', () => {
   });
 
   test('ignores empty tag name', async () => {
-    const {getByText} = render(
+    const {getByText, findByText} = render(
       renderWithProviders(<TagsScreen navigation={navigation} />),
     );
+    await findByText('Dinner');
     fireEvent.press(getByText('Add'));
     expect(mockCreate).not.toHaveBeenCalled();
   });

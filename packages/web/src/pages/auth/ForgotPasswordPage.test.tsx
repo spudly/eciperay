@@ -9,7 +9,7 @@ import {ForgotPasswordPage} from './ForgotPasswordPage.js';
 
 describe('ForgotPasswordPage', () => {
   test('sends reset email', async () => {
-    renderWithProviders(<ForgotPasswordPage />);
+    await renderWithProviders(<ForgotPasswordPage />);
     await userEvent.type(screen.getByPlaceholderText('Email'), 'a@b.com');
     await userEvent.click(screen.getByText('Send reset link'));
     await waitFor(() => {
@@ -26,7 +26,7 @@ describe('ForgotPasswordPage', () => {
       }) as never,
       data: {},
     });
-    renderWithProviders(<ForgotPasswordPage />);
+    await renderWithProviders(<ForgotPasswordPage />);
     await userEvent.type(screen.getByPlaceholderText('Email'), 'a@b.com');
     await userEvent.click(screen.getByText('Send reset link'));
     await waitFor(() => {

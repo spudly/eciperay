@@ -8,7 +8,7 @@ import {CookingModePage} from './CookingModePage.js';
 
 describe('CookingModePage', () => {
   test('navigates steps with buttons and keyboard', async () => {
-    renderWithProviders(
+    await renderWithProviders(
       <Routes>
         <Route
           path="/recipes/:recipeId/cook"
@@ -35,7 +35,7 @@ describe('CookingModePage', () => {
   });
 
   test('done button navigates back', async () => {
-    renderWithProviders(
+    await renderWithProviders(
       <Routes>
         <Route
           path="/recipes/:recipeId/cook"

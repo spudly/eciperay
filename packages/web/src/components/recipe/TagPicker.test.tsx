@@ -8,7 +8,7 @@ import {TagPicker} from './TagPicker.js';
 describe('TagPicker', () => {
   test('loads and toggles tags', async () => {
     const onChange = vi.fn();
-    renderWithProviders(
+    await renderWithProviders(
       <TagPicker
         selectedIds={[]}
         onChange={onChange}
@@ -23,7 +23,7 @@ describe('TagPicker', () => {
 
   test('deselects tag', async () => {
     const onChange = vi.fn();
-    renderWithProviders(
+    await renderWithProviders(
       <TagPicker
         selectedIds={['tag-1']}
         onChange={onChange}

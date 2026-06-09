@@ -7,7 +7,7 @@ import {TagsPage} from './TagsPage.js';
 
 describe('TagsPage', () => {
   test('lists, creates, and deletes tags', async () => {
-    renderWithProviders(<TagsPage />);
+    await renderWithProviders(<TagsPage />);
     await waitFor(() => {
       expect(screen.getByText('Dinner')).toBeInTheDocument();
     });
@@ -21,7 +21,7 @@ describe('TagsPage', () => {
   });
 
   test('ignores empty tag name and updates color', async () => {
-    renderWithProviders(<TagsPage />);
+    await renderWithProviders(<TagsPage />);
     await waitFor(() => {
       expect(screen.getByText('Dinner')).toBeInTheDocument();
     });

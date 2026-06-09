@@ -11,6 +11,7 @@ jest.mock('../lib/api');
 
 const mockGet = api.recipes.get as jest.Mock;
 const mockPut = api.recipes.put as jest.Mock;
+const mockListTags = api.tags.list as jest.Mock;
 const mockGetParent = jest.fn().mockReturnValue({navigate: jest.fn()});
 const route = {params: {recipeId: 'recipe-uuid-1'}};
 const navigation = {getParent: mockGetParent} as never;
@@ -19,6 +20,7 @@ describe('ImportReviewScreen', () => {
   beforeEach(() => {
     mockGet.mockResolvedValue(makeRecipeDetail());
     mockPut.mockResolvedValue(makeRecipeDetail());
+    mockListTags.mockResolvedValue([]);
   });
 
   test('loads recipe and saves on submit', async () => {

@@ -19,7 +19,7 @@ const draft = {
 
 describe('DraftReviewCard', () => {
   test('renders draft and approves', async () => {
-    renderWithProviders(
+    await renderWithProviders(
       <DraftReviewCard
         recipeId="recipe-uuid-1"
         draft={draft}
@@ -33,7 +33,7 @@ describe('DraftReviewCard', () => {
   });
 
   test('rejects draft', async () => {
-    renderWithProviders(
+    await renderWithProviders(
       <DraftReviewCard
         recipeId="recipe-uuid-1"
         draft={draft}

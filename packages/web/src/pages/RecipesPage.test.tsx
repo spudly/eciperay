@@ -33,7 +33,7 @@ describe('RecipesPage', () => {
         ]),
       ),
     );
-    renderWithProviders(<RecipesPage />);
+    await renderWithProviders(<RecipesPage />);
     await waitFor(() => {
       expect(screen.getByText('Salad')).toBeInTheDocument();
     });
@@ -41,7 +41,7 @@ describe('RecipesPage', () => {
   });
 
   test('lists recipes and searches', async () => {
-    renderWithProviders(<RecipesPage />);
+    await renderWithProviders(<RecipesPage />);
     await waitFor(() => {
       expect(screen.getByText('Test Recipe')).toBeInTheDocument();
     });
@@ -56,7 +56,7 @@ describe('RecipesPage', () => {
 
   test('deletes recipe on confirm', async () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);
-    renderWithProviders(<RecipesPage />);
+    await renderWithProviders(<RecipesPage />);
     await waitFor(() => {
       expect(screen.getByText('Delete')).toBeInTheDocument();
     });

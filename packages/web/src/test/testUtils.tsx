@@ -1,6 +1,11 @@
 import {AuthProvider} from '@recipoo/client';
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
-import {render, type RenderOptions} from '@testing-library/react';
+import {
+  act,
+  render,
+  type RenderOptions,
+  type RenderResult,
+} from '@testing-library/react';
 import type {ReactElement, ReactNode} from 'react';
 import {MemoryRouter, type MemoryRouterProps} from 'react-router-dom';
 
@@ -51,11 +56,22 @@ export const createWrapper = ({
   return {Wrapper, queryClient};
 };
 
-export const renderWithProviders = (
+export const renderWithProviders = async (
   ui: ReactElement,
   options: WrapperOptions & Omit<RenderOptions, 'wrapper'> = {},
-) => {
+): Promise<RenderResult> => {
   const {route, routerProps, queryClient, withAuth, ...renderOptions} = options;
   const {Wrapper} = createWrapper({route, routerProps, queryClient, withAuth});
-  return render(ui, {wrapper: Wrapper, ...renderOptions});
+  let view!: RenderResult;
+  await act(async () => {
+    view = render(ui, {wrapper: Wrapper, ...renderOptions});
+    await Promise.resolve();
+  });
+  return view;
+};
+
+export const settleAsyncUpdates = async () => {
+  await act(async () => {
+    await Promise.resolve();
+  });
 };

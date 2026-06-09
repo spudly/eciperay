@@ -3,7 +3,10 @@ import React from 'react';
 import {fireEvent, render, waitFor} from '@testing-library/react-native';
 
 import {makeRecipeDetail} from '../../__tests__/fixtures/recipe';
-import {renderWithProviders} from '../../__tests__/testUtils';
+import {
+  renderWithProviders,
+  settleAsyncUpdates,
+} from '../../__tests__/testUtils';
 import {api} from '../../lib/api';
 
 import {RecipeForm} from './RecipeForm';
@@ -12,6 +15,15 @@ jest.mock('../../lib/api');
 
 const mockListTags = api.tags.list as jest.Mock;
 
+const renderForm = async (ui: React.ReactElement) => {
+  const screen = render(renderWithProviders(ui));
+  await waitFor(() => {
+    expect(mockListTags).toHaveBeenCalled();
+  });
+  await settleAsyncUpdates();
+  return screen;
+};
+
 describe('RecipeForm', () => {
   beforeEach(() => {
     mockListTags.mockResolvedValue([]);
@@ -19,14 +31,12 @@ describe('RecipeForm', () => {
 
   test('submits recipe input', async () => {
     const onSubmit = jest.fn().mockResolvedValue();
-    const {getByText} = render(
-      renderWithProviders(
-        <RecipeForm
-          initial={recipeDetailToInput(makeRecipeDetail())}
-          submitLabel="Save"
-          onSubmit={onSubmit}
-        />,
-      ),
+    const {getByText} = await renderForm(
+      <RecipeForm
+        initial={recipeDetailToInput(makeRecipeDetail())}
+        submitLabel="Save"
+        onSubmit={onSubmit}
+      />,
     );
     fireEvent.press(getByText('Save'));
     await waitFor(() => {
@@ -36,14 +46,12 @@ describe('RecipeForm', () => {
 
   test('shows generic error on non-Error failure', async () => {
     const onSubmit = jest.fn().mockRejectedValue('nope');
-    const {getByText, findByText} = render(
-      renderWithProviders(
-        <RecipeForm
-          initial={recipeDetailToInput(makeRecipeDetail())}
-          submitLabel="Save"
-          onSubmit={onSubmit}
-        />,
-      ),
+    const {getByText, findByText} = await renderForm(
+      <RecipeForm
+        initial={recipeDetailToInput(makeRecipeDetail())}
+        submitLabel="Save"
+        onSubmit={onSubmit}
+      />,
     );
     fireEvent.press(getByText('Save'));
     expect(await findByText('Failed to save')).toBeTruthy();
@@ -51,14 +59,12 @@ describe('RecipeForm', () => {
 
   test('shows error on failed submit', async () => {
     const onSubmit = jest.fn().mockRejectedValue(new Error('Save failed'));
-    const {getByText, findByText} = render(
-      renderWithProviders(
-        <RecipeForm
-          initial={recipeDetailToInput(makeRecipeDetail())}
-          submitLabel="Save"
-          onSubmit={onSubmit}
-        />,
-      ),
+    const {getByText, findByText} = await renderForm(
+      <RecipeForm
+        initial={recipeDetailToInput(makeRecipeDetail())}
+        submitLabel="Save"
+        onSubmit={onSubmit}
+      />,
     );
     fireEvent.press(getByText('Save'));
     expect(await findByText('Save failed')).toBeTruthy();
@@ -66,14 +72,12 @@ describe('RecipeForm', () => {
 
   test('adds and removes ingredients and instructions', async () => {
     const onSubmit = jest.fn().mockResolvedValue();
-    const {getAllByText, getByText, getAllByPlaceholderText} = render(
-      renderWithProviders(
-        <RecipeForm
-          initial={recipeDetailToInput(makeRecipeDetail())}
-          submitLabel="Save"
-          onSubmit={onSubmit}
-        />,
-      ),
+    const {getAllByText, getByText, getAllByPlaceholderText} = await renderForm(
+      <RecipeForm
+        initial={recipeDetailToInput(makeRecipeDetail())}
+        submitLabel="Save"
+        onSubmit={onSubmit}
+      />,
     );
     fireEvent.changeText(getAllByPlaceholderText('Qty')[0], '3');
     fireEvent.changeText(getAllByPlaceholderText('Qty')[0], '');
@@ -89,15 +93,13 @@ describe('RecipeForm', () => {
     });
   });
 
-  test('updates instruction body text', () => {
-    const {getByDisplayValue} = render(
-      renderWithProviders(
-        <RecipeForm
-          initial={recipeDetailToInput(makeRecipeDetail())}
-          submitLabel="Save"
-          onSubmit={jest.fn()}
-        />,
-      ),
+  test('updates instruction body text', async () => {
+    const {getByDisplayValue} = await renderForm(
+      <RecipeForm
+        initial={recipeDetailToInput(makeRecipeDetail())}
+        submitLabel="Save"
+        onSubmit={jest.fn()}
+      />,
     );
     const step = getByDisplayValue('Mix dry ingredients');
     fireEvent.changeText(step, 'Updated step');
@@ -106,14 +108,12 @@ describe('RecipeForm', () => {
 
   test('submits string quantity as a number', async () => {
     const onSubmit = jest.fn().mockResolvedValue();
-    const {getByText, getAllByPlaceholderText} = render(
-      renderWithProviders(
-        <RecipeForm
-          initial={recipeDetailToInput(makeRecipeDetail())}
-          submitLabel="Save"
-          onSubmit={onSubmit}
-        />,
-      ),
+    const {getByText, getAllByPlaceholderText} = await renderForm(
+      <RecipeForm
+        initial={recipeDetailToInput(makeRecipeDetail())}
+        submitLabel="Save"
+        onSubmit={onSubmit}
+      />,
     );
     fireEvent.changeText(getAllByPlaceholderText('Qty')[0], '1.5');
     fireEvent.press(getByText('Save'));
@@ -123,7 +123,7 @@ describe('RecipeForm', () => {
     expect(onSubmit.mock.calls[0]?.[0]?.ingredients[0]?.quantity).toBe(1.5);
   });
 
-  test('renders null quantity ingredient as empty qty field', () => {
+  test('renders null quantity ingredient as empty qty field', async () => {
     const recipe = recipeDetailToInput(
       makeRecipeDetail({
         ingredients: [
@@ -138,33 +138,29 @@ describe('RecipeForm', () => {
         ],
       }),
     );
-    const {getAllByPlaceholderText} = render(
-      renderWithProviders(
-        <RecipeForm
-          initial={recipe}
-          submitLabel="Save"
-          onSubmit={jest.fn()}
-        />,
-      ),
+    const {getAllByPlaceholderText} = await renderForm(
+      <RecipeForm
+        initial={recipe}
+        submitLabel="Save"
+        onSubmit={jest.fn()}
+      />,
     );
     expect(getAllByPlaceholderText('Qty')[0].props.value).toBe('');
   });
 
-  test('renders empty initial state and updates metadata fields', () => {
-    const {getAllByDisplayValue} = render(
-      renderWithProviders(
-        <RecipeForm
-          initial={{
-            title: '',
-            servings: 4,
-            ingredients: [],
-            instructions: [],
-            tagIds: [],
-          }}
-          submitLabel="Save"
-          onSubmit={jest.fn()}
-        />,
-      ),
+  test('renders empty initial state and updates metadata fields', async () => {
+    const {getAllByDisplayValue} = await renderForm(
+      <RecipeForm
+        initial={{
+          title: '',
+          servings: 4,
+          ingredients: [],
+          instructions: [],
+          tagIds: [],
+        }}
+        submitLabel="Save"
+        onSubmit={jest.fn()}
+      />,
     );
     const titleInput = getAllByDisplayValue('')[0];
     fireEvent.changeText(titleInput, 'New Title');

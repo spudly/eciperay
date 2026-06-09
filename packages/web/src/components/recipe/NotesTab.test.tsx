@@ -7,7 +7,7 @@ import {NotesTab} from './NotesTab.js';
 
 describe('NotesTab', () => {
   test('renders notes, chat, and drafts', async () => {
-    renderWithProviders(<NotesTab recipeId="recipe-uuid-1" />);
+    await renderWithProviders(<NotesTab recipeId="recipe-uuid-1" />);
     await waitFor(() => {
       expect(screen.getByText('Great recipe')).toBeInTheDocument();
     });
@@ -16,7 +16,7 @@ describe('NotesTab', () => {
   });
 
   test('sends chat message', async () => {
-    renderWithProviders(<NotesTab recipeId="recipe-uuid-1" />);
+    await renderWithProviders(<NotesTab recipeId="recipe-uuid-1" />);
     await waitFor(() => {
       expect(
         screen.getByPlaceholderText('Ask AI to tweak this recipe…'),
@@ -31,7 +31,7 @@ describe('NotesTab', () => {
   });
 
   test('creates note and runs cleanup', async () => {
-    renderWithProviders(<NotesTab recipeId="recipe-uuid-1" />);
+    await renderWithProviders(<NotesTab recipeId="recipe-uuid-1" />);
     await waitFor(() => {
       expect(screen.getByPlaceholderText('Add a note…')).toBeInTheDocument();
     });
@@ -41,7 +41,7 @@ describe('NotesTab', () => {
   });
 
   test('disables send buttons when input is empty', async () => {
-    renderWithProviders(<NotesTab recipeId="recipe-uuid-1" />);
+    await renderWithProviders(<NotesTab recipeId="recipe-uuid-1" />);
     await waitFor(() => {
       expect(screen.getByText('↑')).toBeDisabled();
     });

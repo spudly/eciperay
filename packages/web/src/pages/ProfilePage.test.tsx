@@ -17,7 +17,7 @@ vi.mock('@recipoo/client', async importOriginal => {
 describe('ProfilePage', () => {
   test('shows email and signs out', async () => {
     mockUseAuth.mockReturnValue({session: {user: {email: 'test@example.com'}}});
-    renderWithProviders(<ProfilePage />, {withAuth: false});
+    await renderWithProviders(<ProfilePage />, {withAuth: false});
     expect(screen.getByText('test@example.com')).toBeInTheDocument();
     await userEvent.click(screen.getByText('Sign Out'));
     expect(supabase.auth.signOut).toHaveBeenCalled();

@@ -27,3 +27,4 @@
 - [ ] rich text recipe input
 - [ ] vite port should come from .env
 - [ ] why are we using vitest instead of jest for packages/web
+- [x] make tests fail on console.error
