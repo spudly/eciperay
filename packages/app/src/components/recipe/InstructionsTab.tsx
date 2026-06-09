@@ -14,11 +14,17 @@ const StepCard = ({
   onPress: () => void;
 }) => (
   <TouchableOpacity
-    className={`p-4 mb-3 rounded-xl border ${isActive ? 'bg-primary/5 border-primary' : 'bg-white border-gray-100'}`}
+    className={`
+      mb-3 rounded-xl border p-4
+      ${isActive ? `border-primary bg-primary/5` : `border-gray-100 bg-white`}
+    `}
     onPress={onPress}
   >
     <Text
-      className={`text-xs font-semibold mb-1 ${isActive ? 'text-primary' : 'text-muted'}`}
+      className={`
+        mb-1 text-xs font-semibold
+        ${isActive ? 'text-primary' : `text-muted`}
+      `}
     >
       Step {step.stepNumber}
     </Text>

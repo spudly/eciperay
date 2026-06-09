@@ -27,9 +27,9 @@ const sendChat = (recipeId: string, message: string) =>
   });
 
 const NoteCard = ({note}: {note: RecipeNote}) => (
-  <View className="bg-yellow-50 border border-yellow-100 rounded-lg p-3 mb-3">
+  <View className="mb-3 rounded-lg border border-yellow-100 bg-yellow-50 p-3">
     <Text className="text-gray-800">{note.content}</Text>
-    <Text className="text-xs text-muted mt-1">
+    <Text className="mt-1 text-xs text-muted">
       {new Date(note.createdAt).toLocaleDateString()}
     </Text>
   </View>
@@ -37,10 +37,16 @@ const NoteCard = ({note}: {note: RecipeNote}) => (
 
 const MessageBubble = ({role, content}: {role: string; content: string}) => (
   <View
-    className={`mb-3 max-w-4/5 ${role === 'user' ? 'self-end' : 'self-start'}`}
+    className={`
+      mb-3 max-w-[80%]
+      ${role === 'user' ? 'self-end' : 'self-start'}
+    `}
   >
     <View
-      className={`px-4 py-3 rounded-2xl ${role === 'user' ? 'bg-primary' : 'bg-gray-100'}`}
+      className={`
+        rounded-2xl px-4 py-3
+        ${role === 'user' ? 'bg-primary' : `bg-gray-100`}
+      `}
     >
       <Text className={role === 'user' ? 'text-white' : 'text-gray-900'}>
         {content}
@@ -93,20 +99,24 @@ export const NotesTab = ({recipeId}: {recipeId: string}) => {
           />
         ))}
       </ScrollView>
-      <View className="flex-row items-end p-3 border-t border-gray-200 gap-2">
+      <View className="flex-row items-end gap-2 border-t border-gray-200 p-3">
         <TextInput
-          className="flex-1 bg-gray-100 rounded-2xl px-4 py-3 text-base max-h-24"
+          className="
+            max-h-24 flex-1 rounded-2xl bg-gray-100 px-4 py-3 text-base
+          "
           placeholder="Ask AI to tweak this recipe…"
           value={message}
           onChangeText={setMessage}
           multiline
         />
         <TouchableOpacity
-          className="bg-primary rounded-full w-10 h-10 items-center justify-center"
+          className="
+            size-10 items-center justify-center rounded-full bg-primary
+          "
           onPress={() => void handleSend()}
           disabled={!message.trim()}
         >
-          <Text className="text-white font-bold">↑</Text>
+          <Text className="font-bold text-white">↑</Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>

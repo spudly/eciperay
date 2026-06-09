@@ -31,19 +31,19 @@ const OptionButton = ({
   onPress: () => void;
 }) => (
   <TouchableOpacity
-    className="bg-white rounded-xl p-4 mb-3 border border-gray-100"
+    className="mb-3 rounded-xl border border-gray-100 bg-white p-4"
     onPress={onPress}
   >
-    <Text className="font-semibold text-gray-900 text-base">
+    <Text className="text-base font-semibold text-gray-900">
       {option.label}
     </Text>
-    <Text className="text-sm text-muted mt-1">{option.description}</Text>
+    <Text className="mt-1 text-sm text-muted">{option.description}</Text>
   </TouchableOpacity>
 );
 
 export const AddScreen = ({navigation}: AddProps) => (
   <View className="flex-1 bg-gray-50 px-4 pt-8">
-    <Text className="text-2xl font-bold text-gray-900 mb-6">Add Recipe</Text>
+    <Text className="mb-6 text-2xl font-bold text-gray-900">Add Recipe</Text>
     {OPTIONS.map(option => (
       <OptionButton
         key={option.screen}

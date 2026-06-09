@@ -21,21 +21,21 @@ const ActionRow = ({
   recipe: RecipeDetail;
   onStartCooking: () => void;
 }) => (
-  <View className="flex-row gap-3 mb-4">
+  <View className="mb-4 flex-row gap-3">
     <TouchableOpacity
-      className="flex-1 bg-primary rounded-xl py-3 items-center"
+      className="flex-1 items-center rounded-xl bg-primary py-3"
       onPress={onStartCooking}
     >
-      <Text className="text-white font-semibold">Start Cooking</Text>
+      <Text className="font-semibold text-white">Start Cooking</Text>
     </TouchableOpacity>
     <TouchableOpacity
-      className="w-12 bg-gray-100 rounded-xl items-center justify-center"
+      className="w-12 items-center justify-center rounded-xl bg-gray-100"
       onPress={() => void printRecipe(recipe)}
     >
       <Text className="text-gray-700">🖨</Text>
     </TouchableOpacity>
     <TouchableOpacity
-      className="w-12 bg-gray-100 rounded-xl items-center justify-center"
+      className="w-12 items-center justify-center rounded-xl bg-gray-100"
       onPress={() => void shareRecipe(recipe)}
     >
       <Text className="text-gray-700">↗</Text>
@@ -48,17 +48,17 @@ export const OverviewTab = ({recipe, onStartCooking}: Props) => (
     {recipe.imageUrl ? (
       <Image
         source={{uri: recipe.imageUrl}}
-        className="w-full h-48 rounded-xl mb-4"
+        className="mb-4 h-48 w-full rounded-xl"
         resizeMode="cover"
       />
     ) : null}
-    <Text className="text-2xl font-bold text-gray-900 mb-2">
+    <Text className="mb-2 text-2xl font-bold text-gray-900">
       {recipe.title}
     </Text>
     {recipe.description ? (
-      <Text className="text-gray-600 mb-4">{recipe.description}</Text>
+      <Text className="mb-4 text-gray-600">{recipe.description}</Text>
     ) : null}
-    <View className="flex-row justify-around bg-gray-50 rounded-xl py-4 mb-4">
+    <View className="mb-4 flex-row justify-around rounded-xl bg-gray-50 py-4">
       <StatBadge
         label="Servings"
         value={String(recipe.servings)}
@@ -84,7 +84,7 @@ export const OverviewTab = ({recipe, onStartCooking}: Props) => (
       {recipe.tags.map(tag => (
         <View
           key={tag.id}
-          className="px-3 py-1 rounded-full"
+          className="rounded-full px-3 py-1"
           style={{backgroundColor: `${tag.color}22`}}
         >
           <Text

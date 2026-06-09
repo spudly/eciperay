@@ -14,7 +14,7 @@ const NutritionRow = ({
   value: number;
   unit: string;
 }) => (
-  <View className="flex-row justify-between py-3 border-b border-gray-100">
+  <View className="flex-row justify-between border-b border-gray-100 py-3">
     <Text className="text-base text-gray-700">{label}</Text>
     <Text className="text-base font-semibold text-gray-900">
       {value}
@@ -39,7 +39,11 @@ export const NutritionTab = ({recipeId}: {recipeId: string}) => {
   }
   return (
     <View className="p-4">
-      <Text className="text-sm font-semibold text-gray-500 mb-2 uppercase tracking-wide">
+      <Text
+        className="
+          mb-2 text-sm font-semibold uppercase tracking-wide text-gray-500
+        "
+      >
         Per Serving
       </Text>
       <NutritionRow
@@ -76,7 +80,7 @@ export const NutritionTab = ({recipeId}: {recipeId: string}) => {
           unit="mg"
         />
       ) : null}
-      <Text className="text-xs text-muted mt-4">{data.disclaimer}</Text>
+      <Text className="mt-4 text-xs text-muted">{data.disclaimer}</Text>
     </View>
   );
 };

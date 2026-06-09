@@ -7,6 +7,7 @@ import importXPlugin from 'eslint-plugin-import-x';
 import jestPlugin from 'eslint-plugin-jest';
 import unicornPlugin from 'eslint-plugin-unicorn';
 import eslintCommentsPlugin from '@eslint-community/eslint-plugin-eslint-comments';
+import betterTailwindPlugin from 'eslint-plugin-better-tailwindcss';
 import prettier from 'eslint-config-prettier';
 
 // eslint-disable-next-line @typescript-eslint/no-deprecated -- tseslint.config() provides precise TypeScript types for plugin rule configs; ESLint core's defineConfig() lacks the same inference
@@ -1088,7 +1089,32 @@ export default tseslint.config(
     },
   },
 
-  // ─── 8. TSX component overrides — relax line limits for JSX ──────────────
+  // ─── 8. NativeWind / Tailwind — app only ─────────────────────────────────
+  {
+    files: ['packages/app/**/*.{ts,tsx}'],
+    plugins: {'better-tailwindcss': betterTailwindPlugin},
+    settings: {
+      'better-tailwindcss': {tailwindConfig: 'packages/app/tailwind.config.js'},
+    },
+    rules: {
+      'better-tailwindcss/enforce-canonical-classes': 'error',
+      'better-tailwindcss/enforce-consistent-class-order': 'error',
+      'better-tailwindcss/enforce-consistent-important-position': 'error',
+      'better-tailwindcss/enforce-consistent-line-wrapping': 'error',
+      'better-tailwindcss/enforce-consistent-variant-order': 'error',
+      'better-tailwindcss/enforce-consistent-variable-syntax': 'error',
+      'better-tailwindcss/enforce-logical-properties': 'error',
+      'better-tailwindcss/enforce-shorthand-classes': 'error',
+      'better-tailwindcss/no-conflicting-classes': 'error',
+      'better-tailwindcss/no-deprecated-classes': 'error',
+      'better-tailwindcss/no-duplicate-classes': 'error',
+      'better-tailwindcss/no-restricted-classes': 'error',
+      'better-tailwindcss/no-unknown-classes': 'error',
+      'better-tailwindcss/no-unnecessary-whitespace': 'error',
+    },
+  },
+
+  // ─── 9. TSX component overrides — relax line limits for JSX ──────────────
   // JSX component functions return multi-line render trees by nature. The
   // 15-line limit applies to pure logic; components get a higher ceiling.
   {
@@ -1103,7 +1129,7 @@ export default tseslint.config(
     },
   },
 
-  // ─── 9. eslint-comments — require a reason on every inline disable ─────────
+  // ─── 10. eslint-comments — require a reason on every inline disable ─────────
   // Enforces `// eslint-disable-next-line rule -- reason` so suppressions are
   // always self-documenting. Applies everywhere.
   {
@@ -1121,6 +1147,6 @@ export default tseslint.config(
     },
   },
 
-  // ─── 10. Prettier — last, disables formatting conflicts ───────────────────
+  // ─── 11. Prettier — last, disables formatting conflicts ───────────────────
   prettier,
 );

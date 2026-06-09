@@ -22,18 +22,15 @@ type Step = RecipeDetail['instructions'][number];
 
 const fetchRecipe = (id: string) => apiFetch<RecipeDetail>(`/recipes/${id}`);
 
-const Dot = ({active}: {active: boolean}) => (
-  <View
-    className={`w-2 h-2 rounded-full ${active ? 'bg-white' : 'bg-white/40'}`}
-  />
-);
-
 const ProgressDots = ({total, current}: {total: number; current: number}) => (
-  <View className="flex-row justify-center gap-2 mb-6">
+  <View className="mb-6 flex-row justify-center gap-2">
     {Array.from({length: total}).map((_, i) => (
-      <Dot
+      <View
         key={i}
-        active={i === current}
+        className={`
+          size-2 rounded-full
+          ${i === current ? 'bg-white' : 'bg-white/40'}
+        `}
       />
     ))}
   </View>
@@ -64,10 +61,10 @@ type StepDisplayProps = {
 };
 const StepDisplay = ({step, steps, current}: StepDisplayProps) => (
   <>
-    <Text className="text-white/60 text-sm uppercase tracking-widest mb-4">
+    <Text className="mb-4 text-sm uppercase tracking-widest text-white/60">
       Step {current ? current.stepNumber : 1} of {steps.length}
     </Text>
-    <Text className="text-white text-2xl leading-relaxed mb-8">
+    <Text className="mb-8 text-2xl leading-relaxed text-white">
       {current ? current.body : ''}
     </Text>
     <ProgressDots
@@ -77,37 +74,32 @@ const StepDisplay = ({step, steps, current}: StepDisplayProps) => (
   </>
 );
 
-type NavBtnProps = {label: string; onPress: () => void; disabled: boolean};
-const NavBtn = ({label, onPress, disabled}: NavBtnProps) => (
-  <TouchableOpacity
-    className={`px-6 py-3 rounded-xl bg-white/10 ${disabled ? 'opacity-30' : ''}`}
-    onPress={onPress}
-    disabled={disabled}
-  >
-    <Text className="text-white text-base">{label}</Text>
-  </TouchableOpacity>
-);
-
 type NavButtonsProps = {
   step: number;
   total: number;
   onNext: () => void;
   onPrev: () => void;
 };
-const NavButtons = ({step, total, onNext, onPrev}: NavButtonsProps) => (
-  <View className="flex-row justify-between">
-    <NavBtn
-      label="← Back"
-      onPress={onPrev}
-      disabled={step === 0}
-    />
-    <NavBtn
-      label="Next →"
-      onPress={onNext}
-      disabled={step === total - 1}
-    />
-  </View>
-);
+const NavButtons = ({step, total, onNext, onPrev}: NavButtonsProps) => {
+  const renderBtn = (label: string, onPress: () => void, disabled: boolean) => (
+    <TouchableOpacity
+      className={`
+        rounded-xl bg-white/10 px-6 py-3
+        ${disabled ? 'opacity-30' : ''}
+      `}
+      onPress={onPress}
+      disabled={disabled}
+    >
+      <Text className="text-base text-white">{label}</Text>
+    </TouchableOpacity>
+  );
+  return (
+    <View className="flex-row justify-between">
+      {renderBtn('← Back', onPrev, step === 0)}
+      {renderBtn('Next →', onNext, step === total - 1)}
+    </View>
+  );
+};
 
 export const CookingModeScreen = ({route, navigation}: CookingProps) => {
   const {recipeId} = route.params;
@@ -138,16 +130,16 @@ export const CookingModeScreen = ({route, navigation}: CookingProps) => {
 
   return (
     <View
-      className="flex-1 bg-gray-900 px-6 justify-center"
+      className="flex-1 justify-center bg-gray-900 px-6"
       onStartShouldSetResponder={/* istanbul ignore next */ () => true}
       onResponderGrant={onStart}
       onResponderRelease={onEnd}
     >
       <TouchableOpacity
-        className="absolute top-12 right-6 bg-white/10 rounded-full px-4 py-2"
+        className="absolute right-6 top-12 rounded-full bg-white/10 px-4 py-2"
         onPress={navigation.goBack}
       >
-        <Text className="text-white text-sm">Done</Text>
+        <Text className="text-sm text-white">Done</Text>
       </TouchableOpacity>
       <StepDisplay
         step={step}

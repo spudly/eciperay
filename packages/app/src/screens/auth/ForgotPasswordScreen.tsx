@@ -32,14 +32,14 @@ export const ForgotPasswordScreen = ({navigation}: ForgotProps) => {
 
   return (
     <View className="flex-1 bg-white px-6 pt-20">
-      <Text className="text-3xl font-bold text-gray-900 mb-4">
+      <Text className="mb-4 text-3xl font-bold text-gray-900">
         Reset password
       </Text>
-      <Text className="text-muted mb-8">
+      <Text className="mb-8 text-muted">
         {"We'll send a reset link to your email."}
       </Text>
       <TextInput
-        className="border border-gray-300 rounded-lg px-4 py-3 mb-6 text-base"
+        className="mb-6 rounded-lg border border-gray-300 px-4 py-3 text-base"
         placeholder="Email"
         value={email}
         onChangeText={setEmail}
@@ -47,11 +47,11 @@ export const ForgotPasswordScreen = ({navigation}: ForgotProps) => {
         keyboardType="email-address"
       />
       <TouchableOpacity
-        className="bg-primary rounded-lg py-4 items-center"
+        className="items-center rounded-lg bg-primary py-4"
         onPress={() => void handleReset()}
         disabled={loading}
       >
-        <Text className="text-white font-semibold text-base">
+        <Text className="text-base font-semibold text-white">
           {loading ? 'Sending…' : 'Send Reset Link'}
         </Text>
       </TouchableOpacity>

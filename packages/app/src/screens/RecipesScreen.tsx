@@ -22,13 +22,13 @@ const RecipeCard = ({
   onPress: () => void;
 }) => (
   <TouchableOpacity
-    className="bg-white rounded-xl p-4 mb-3 shadow-sm"
+    className="mb-3 rounded-xl bg-white p-4 shadow-sm"
     onPress={onPress}
   >
     <Text className="text-base font-semibold text-gray-900">
       {recipe.title}
     </Text>
-    <Text className="text-sm text-muted mt-1">
+    <Text className="mt-1 text-sm text-muted">
       {recipe.servings} servings
       {recipe.cookTimeMin ? ` · ${recipe.cookTimeMin} min` : ''}
     </Text>
@@ -56,16 +56,18 @@ export const RecipesScreen = ({navigation}: RecipesProps) => {
 
   return (
     <View className="flex-1 bg-gray-50">
-      <View className="px-4 pt-4 pb-2">
+      <View className="px-4 pb-2 pt-4">
         <TextInput
-          className="bg-white border border-gray-200 rounded-xl px-4 py-3 text-base"
+          className="
+            rounded-xl border border-gray-200 bg-white px-4 py-3 text-base
+          "
           placeholder="Search recipes…"
           value={search}
           onChangeText={setSearch}
         />
       </View>
       {isLoading ? (
-        <Text className="text-center text-muted mt-8">Loading…</Text>
+        <Text className="mt-8 text-center text-muted">Loading…</Text>
       ) : (
         <FlatList
           data={filtered}
@@ -80,7 +82,7 @@ export const RecipesScreen = ({navigation}: RecipesProps) => {
             />
           )}
           ListEmptyComponent={
-            <Text className="text-center text-muted mt-8">
+            <Text className="mt-8 text-center text-muted">
               No recipes found.
             </Text>
           }

@@ -33,11 +33,11 @@ export const SignInScreen = ({navigation}: SignInProps) => {
 
   return (
     <View className="flex-1 bg-white px-6 pt-20">
-      <Text className="text-3xl font-bold text-gray-900 mb-8">
+      <Text className="mb-8 text-3xl font-bold text-gray-900">
         Welcome back
       </Text>
       <TextInput
-        className="border border-gray-300 rounded-lg px-4 py-3 mb-4 text-base"
+        className="mb-4 rounded-lg border border-gray-300 px-4 py-3 text-base"
         placeholder="Email"
         value={email}
         onChangeText={setEmail}
@@ -45,18 +45,18 @@ export const SignInScreen = ({navigation}: SignInProps) => {
         keyboardType="email-address"
       />
       <TextInput
-        className="border border-gray-300 rounded-lg px-4 py-3 mb-6 text-base"
+        className="mb-6 rounded-lg border border-gray-300 px-4 py-3 text-base"
         placeholder="Password"
         value={password}
         onChangeText={setPassword}
         secureTextEntry
       />
       <TouchableOpacity
-        className="bg-primary rounded-lg py-4 items-center"
+        className="items-center rounded-lg bg-primary py-4"
         onPress={() => void handleSignIn()}
         disabled={loading}
       >
-        <Text className="text-white font-semibold text-base">
+        <Text className="text-base font-semibold text-white">
           {loading ? 'Signing in…' : 'Sign In'}
         </Text>
       </TouchableOpacity>
@@ -66,7 +66,7 @@ export const SignInScreen = ({navigation}: SignInProps) => {
           navigation.navigate('SignUp');
         }}
       >
-        <Text className="text-primary text-base">Create an account</Text>
+        <Text className="text-base text-primary">Create an account</Text>
       </TouchableOpacity>
       <TouchableOpacity
         className="mt-2 items-center"
@@ -74,7 +74,7 @@ export const SignInScreen = ({navigation}: SignInProps) => {
           navigation.navigate('ForgotPassword');
         }}
       >
-        <Text className="text-muted text-sm">Forgot password?</Text>
+        <Text className="text-sm text-muted">Forgot password?</Text>
       </TouchableOpacity>
     </View>
   );

@@ -29,6 +29,38 @@ type DetailProps = NativeStackScreenProps<
 
 const fetchRecipe = (id: string) => apiFetch<RecipeDetail>(`/recipes/${id}`);
 
+const TabBar = ({
+  activeTab,
+  onSelect,
+}: {
+  activeTab: Tab;
+  onSelect: (tab: Tab) => void;
+}) => (
+  <View className="flex-row border-b border-gray-200">
+    {TABS.map(tab => (
+      <TouchableOpacity
+        key={tab.key}
+        className={`
+          flex-1 items-center py-3
+          ${activeTab === tab.key ? `border-b-2 border-primary` : ''}
+        `}
+        onPress={() => {
+          onSelect(tab.key);
+        }}
+      >
+        <Text
+          className={`
+            text-xs font-medium
+            ${activeTab === tab.key ? `text-primary` : `text-muted`}
+          `}
+        >
+          {tab.label}
+        </Text>
+      </TouchableOpacity>
+    ))}
+  </View>
+);
+
 export const RecipeDetailScreen = ({route, navigation}: DetailProps) => {
   const {recipeId} = route.params;
   const [activeTab, setActiveTab] = useState<Tab>('overview');
@@ -48,23 +80,10 @@ export const RecipeDetailScreen = ({route, navigation}: DetailProps) => {
   const scaleFactor = currentServings / recipe.servings;
   return (
     <View className="flex-1 bg-white">
-      <View className="flex-row border-b border-gray-200">
-        {TABS.map(tab => (
-          <TouchableOpacity
-            key={tab.key}
-            className={`flex-1 py-3 items-center ${activeTab === tab.key ? 'border-b-2 border-primary' : ''}`}
-            onPress={() => {
-              setActiveTab(tab.key);
-            }}
-          >
-            <Text
-              className={`text-xs font-medium ${activeTab === tab.key ? 'text-primary' : 'text-muted'}`}
-            >
-              {tab.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      <TabBar
+        activeTab={activeTab}
+        onSelect={setActiveTab}
+      />
       <ScrollView className="flex-1">
         {activeTab === 'overview' && (
           <OverviewTab
