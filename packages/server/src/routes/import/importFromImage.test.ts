@@ -2,6 +2,8 @@ import nock from 'nock';
 import request from 'supertest';
 
 import {createApp} from '../../server.js';
+import {makeRecipeDetailRow} from '../../test/fixtures/recipeRow.js';
+import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {createMockQuery} from '../../test/mockQuery.js';
 import {nockAnthropicMessage} from '../../test/mockNockAnthropic.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
@@ -30,14 +32,21 @@ const RECIPE_JSON = JSON.stringify({
 });
 
 describe('POST /recipes/import/image', () => {
-  test('returns parsed recipe from image via Claude vision', async () => {
+  test('returns 201 RecipeDetail from image via Claude vision', async () => {
     nockSupabaseGetUser('user-uuid-1');
     nockAnthropicMessage(RECIPE_JSON);
+    mockQuery
+      .mockResolvedValueOnce(makeQueryResult([{id: 'recipe-uuid-1'}]))
+      .mockResolvedValue(
+        makeQueryResult([
+          makeRecipeDetailRow({title: 'Scanned Cake', servings: 8}),
+        ]),
+      );
     const res = await request(app)
       .post('/recipes/import/image')
       .set('Authorization', 'Bearer valid-token')
       .send({imageBase64: 'base64encodedimage=='});
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(201);
     expect(res.body.title).toBe('Scanned Cake');
     expect(res.body.servings).toBe(8);
   });

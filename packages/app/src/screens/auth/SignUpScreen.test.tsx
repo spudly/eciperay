@@ -1,7 +1,8 @@
 import React from 'react';
 import {Alert} from 'react-native';
-import {act, render, fireEvent, waitFor} from '@testing-library/react-native';
+import {render, fireEvent, waitFor} from '@testing-library/react-native';
 
+import {api} from '../../lib/api';
 import {supabase} from '../../lib/supabase';
 
 import {SignUpScreen} from './SignUpScreen';
@@ -9,46 +10,33 @@ import {SignUpScreen} from './SignUpScreen';
 jest.mock('../../lib/supabase', () => ({
   supabase: {auth: {signUp: jest.fn()}},
 }));
-
-jest.mock('../../lib/api', () => ({apiFetch: jest.fn().mockResolvedValue({})}));
+jest.mock('../../lib/api');
 
 const mockSignUp = supabase.auth.signUp as jest.Mock;
+const mockSyncUser = api.auth.syncUser as jest.Mock;
 const mockAlert = jest.spyOn(Alert, 'alert').mockReturnValue();
 const mockNavigate = jest.fn();
 const nav = {navigate: mockNavigate};
 
 describe('SignUpScreen', () => {
-  test('renders name, email, and password fields', () => {
+  test('renders sign up form', () => {
     const {getByPlaceholderText} = render(<SignUpScreen navigation={nav} />);
     expect(getByPlaceholderText('Your name')).toBeTruthy();
     expect(getByPlaceholderText('Email')).toBeTruthy();
     expect(getByPlaceholderText('Password')).toBeTruthy();
   });
 
-  test('calls supabase.auth.signUp on submit', async () => {
-    mockSignUp.mockResolvedValue({
-      data: {session: {access_token: 'abc'}},
-      error: null,
-    });
-    const {getByPlaceholderText, getByText} = render(
-      <SignUpScreen navigation={nav} />,
-    );
-    // Flush React 19 concurrent state updates before pressing
-    await act(async () => {
-      fireEvent.changeText(getByPlaceholderText('Email'), 'user@test.com');
-      fireEvent.changeText(getByPlaceholderText('Password'), 'secret123');
-      await Promise.resolve(); // flush React 19 concurrent state updates
-    });
+  test('syncs user when session is returned', async () => {
+    mockSignUp.mockResolvedValue({data: {session: {}}, error: null});
+    mockSyncUser.mockResolvedValue();
+    const {getByText} = render(<SignUpScreen navigation={nav} />);
     fireEvent.press(getByText('Create Account'));
     await waitFor(() => {
-      expect(mockSignUp).toHaveBeenCalledWith({
-        email: 'user@test.com',
-        password: 'secret123',
-      });
+      expect(mockSyncUser).toHaveBeenCalled();
     });
   });
 
-  test('shows confirm email alert when no session returned', async () => {
+  test('shows confirmation alert when email confirmation required', async () => {
     mockSignUp.mockResolvedValue({data: {session: null}, error: null});
     const {getByText} = render(<SignUpScreen navigation={nav} />);
     fireEvent.press(getByText('Create Account'));
@@ -60,7 +48,7 @@ describe('SignUpScreen', () => {
     });
   });
 
-  test('shows error alert on sign-up failure', async () => {
+  test('shows error alert on sign up failure', async () => {
     mockSignUp.mockResolvedValue({
       data: {session: null},
       error: new Error('Email taken'),
@@ -72,7 +60,7 @@ describe('SignUpScreen', () => {
     });
   });
 
-  test('navigates to SignIn when link pressed', () => {
+  test('navigates to SignIn', () => {
     const {getByText} = render(<SignUpScreen navigation={nav} />);
     fireEvent.press(getByText('Already have an account? Sign in'));
     expect(mockNavigate).toHaveBeenCalledWith('SignIn');

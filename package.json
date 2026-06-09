@@ -9,16 +9,20 @@
   },
   "workspaces": [
     "packages/types",
+    "packages/theme",
+    "packages/client",
     "packages/server",
-    "packages/app"
+    "packages/app",
+    "packages/web"
   ],
   "scripts": {
     "turbo": "TURBO_TELEMETRY_DISABLED=1 turbo",
     "dev": "concurrently --names server,metro --prefix-colors cyan,yellow \"npm run dev --workspace=packages/server\" \"npm run start --workspace=packages/app\"",
+    "dev:web": "concurrently --names server,web --prefix-colors cyan,green \"npm run dev --workspace=packages/server\" \"npm run dev --workspace=packages/web\"",
     "dev:ios": "concurrently --names server,metro,ios --prefix-colors cyan,yellow,blue --delay 5000 \"npm run dev --workspace=packages/server\" \"npm run start --workspace=packages/app\" \"npm run ios --workspace=packages/app -- --no-packager\"",
     "dev:android": "concurrently --names server,metro,android --prefix-colors cyan,yellow,green --delay 5000 \"npm run dev --workspace=packages/server\" \"npm run start --workspace=packages/app\" \"npm run android --workspace=packages/app -- --no-packager\"",
     "dev:all": "concurrently --names server,metro,ios,android --prefix-colors cyan,yellow,blue,green --delay 5000 \"npm run dev --workspace=packages/server\" \"npm run start --workspace=packages/app\" \"npm run ios --workspace=packages/app -- --no-packager\" \"npm run android --workspace=packages/app -- --no-packager\"",
-    "typecheck": "tsc -b tsconfig.json packages/types packages/server && npm run typecheck --workspace=packages/app",
+    "typecheck": "tsc -b tsconfig.json packages/types packages/server && npm run typecheck --workspace=packages/client && npm run typecheck --workspace=packages/web && npm run typecheck --workspace=packages/app",
     "prettier": "prettier --write .",
     "prettier:check": "prettier --check .",
     "lint": "eslint packages --max-warnings 0",
@@ -71,5 +75,8 @@
     "turbo": "^2.9.16",
     "typescript": "^5.8.0",
     "typescript-eslint": "^8.0.0"
+  },
+  "overrides": {
+    "uuid": "^11.1.1"
   }
 }

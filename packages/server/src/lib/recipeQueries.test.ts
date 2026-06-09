@@ -1,4 +1,5 @@
 import {makeRecipeDetail} from '../test/fixtures/recipe.js';
+import {makeRecipeDetailRow} from '../test/fixtures/recipeRow.js';
 import {makeQueryResult} from '../test/fixtures/queryResult.js';
 import {createMockQuery} from '../test/mockQuery.js';
 
@@ -6,15 +7,14 @@ import {fetchRecipeDetail} from './recipeQueries.js';
 
 describe('fetchRecipeDetail', () => {
   test('returns RecipeDetail when a row is found', async () => {
-    const detail = makeRecipeDetail();
     const mockQuery = createMockQuery();
-    mockQuery.mockResolvedValue(makeQueryResult([detail]));
+    mockQuery.mockResolvedValue(makeQueryResult([makeRecipeDetailRow()]));
     const result = await fetchRecipeDetail(
       'recipe-uuid-1',
       'user-uuid-1',
       mockQuery,
     );
-    expect(result).toEqual(detail);
+    expect(result).toEqual(makeRecipeDetail());
     expect(mockQuery).toHaveBeenCalledTimes(1);
   });
 

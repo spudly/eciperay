@@ -4,15 +4,28 @@ import {createNativeStackNavigator} from '@react-navigation/native-stack';
 
 import {AddScreen} from '../screens/AddScreen';
 import {CookingModeScreen} from '../screens/CookingModeScreen';
+import {EditRecipeScreen} from '../screens/EditRecipeScreen';
 import {HomeScreen} from '../screens/HomeScreen';
+import {ImportImageScreen} from '../screens/ImportImageScreen';
+import {ImportReviewScreen} from '../screens/ImportReviewScreen';
+import {ImportUrlScreen} from '../screens/ImportUrlScreen';
+import {ManualEntryScreen} from '../screens/ManualEntryScreen';
 import {ProfileScreen} from '../screens/ProfileScreen';
 import {RecipeDetailScreen} from '../screens/RecipeDetailScreen';
 import {RecipesScreen} from '../screens/RecipesScreen';
+import {TagsScreen} from '../screens/TagsScreen';
 
-import type {RecipesStackParamList, RootTabParamList} from './types';
+import type {
+  AddStackParamList,
+  ProfileStackParamList,
+  RecipesStackParamList,
+  RootTabParamList,
+} from './types';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 const RecipesStack = createNativeStackNavigator<RecipesStackParamList>();
+const AddStack = createNativeStackNavigator<AddStackParamList>();
+const ProfileStack = createNativeStackNavigator<ProfileStackParamList>();
 
 const RecipesStackNavigator = () => (
   <RecipesStack.Navigator>
@@ -31,7 +44,57 @@ const RecipesStackNavigator = () => (
       component={CookingModeScreen}
       options={{headerShown: false, presentation: 'fullScreenModal'}}
     />
+    <RecipesStack.Screen
+      name="EditRecipe"
+      component={EditRecipeScreen}
+      options={{title: 'Edit Recipe'}}
+    />
   </RecipesStack.Navigator>
+);
+
+const AddStackNavigator = () => (
+  <AddStack.Navigator>
+    <AddStack.Screen
+      name="AddScreen"
+      component={AddScreen}
+      options={{title: 'Add Recipe'}}
+    />
+    <AddStack.Screen
+      name="ManualEntry"
+      component={ManualEntryScreen}
+      options={{title: 'Manual Entry'}}
+    />
+    <AddStack.Screen
+      name="ImportUrl"
+      component={ImportUrlScreen}
+      options={{title: 'Import from URL'}}
+    />
+    <AddStack.Screen
+      name="ImportImage"
+      component={ImportImageScreen}
+      options={{title: 'Import from Image'}}
+    />
+    <AddStack.Screen
+      name="ImportReview"
+      component={ImportReviewScreen}
+      options={{title: 'Review Import'}}
+    />
+  </AddStack.Navigator>
+);
+
+const ProfileStackNavigator = () => (
+  <ProfileStack.Navigator>
+    <ProfileStack.Screen
+      name="Profile"
+      component={ProfileScreen}
+      options={{title: 'Profile'}}
+    />
+    <ProfileStack.Screen
+      name="Tags"
+      component={TagsScreen}
+      options={{title: 'Tags'}}
+    />
+  </ProfileStack.Navigator>
 );
 
 export const TabNavigator = () => (
@@ -43,14 +106,17 @@ export const TabNavigator = () => (
     <Tab.Screen
       name="Recipes"
       component={RecipesStackNavigator}
+      options={{headerShown: false}}
     />
     <Tab.Screen
       name="Add"
-      component={AddScreen}
+      component={AddStackNavigator}
+      options={{headerShown: false}}
     />
     <Tab.Screen
       name="Profile"
-      component={ProfileScreen}
+      component={ProfileStackNavigator}
+      options={{headerShown: false}}
     />
   </Tab.Navigator>
 );

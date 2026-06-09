@@ -1,0 +1,56 @@
+/**
+ * Fail the current test when console.error is called.
+ * Works with Jest and Vitest (globals: true).
+ */
+
+const formatConsoleArgs = args =>
+  args
+    .map(arg => {
+      if (typeof arg === 'string') {
+        return arg;
+      }
+      if (arg instanceof Error) {
+        return arg.stack ?? arg.message;
+      }
+      try {
+        return JSON.stringify(arg);
+      } catch {
+        return String(arg);
+      }
+    })
+    .join(' ');
+
+const installFailOnConsoleError = () => {
+  if (typeof beforeEach !== 'function' || typeof afterEach !== 'function') {
+    throw new Error(
+      'installFailOnConsoleError must run from Jest/Vitest setupFilesAfterEnv',
+    );
+  }
+  const originalConsoleError = console.error;
+  /** @type {unknown[][]} */
+  const errors = [];
+
+  beforeEach(() => {
+    errors.length = 0;
+    console.error = (...args) => {
+      errors.push(args);
+      originalConsoleError.apply(console, args);
+    };
+  });
+
+  afterEach(() => {
+    console.error = originalConsoleError;
+    if (errors.length === 0) {
+      return;
+    }
+    const testName = expect.getState().currentTestName ?? '(unknown test)';
+    const details = errors
+      .map((args, index) => `  [${index + 1}] ${formatConsoleArgs(args)}`)
+      .join('\n');
+    throw new Error(
+      `console.error was called during "${testName}":\n${details}`,
+    );
+  });
+};
+
+module.exports = {formatConsoleArgs, installFailOnConsoleError};

@@ -1,7 +1,9 @@
 import request from 'supertest';
 
 import {createApp} from '../../server.js';
+import {makeRecipeDetail} from '../../test/fixtures/recipe.js';
 import {makeRecipeDiff} from '../../test/fixtures/recipeDraft.js';
+import {makeRecipeDetailRow} from '../../test/fixtures/recipeRow.js';
 import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {createMockQuery} from '../../test/mockQuery.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
@@ -16,16 +18,42 @@ const pendingDraft = {
 };
 
 describe('POST /recipes/:id/drafts/:draftId/approve', () => {
-  test('returns {status: approved} on success', async () => {
+  test('returns RecipeDetail on success', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([pendingDraft]))
-      .mockResolvedValue(makeQueryResult([]));
+      .mockResolvedValue(makeQueryResult([makeRecipeDetailRow()]));
     const res = await request(app)
       .post('/recipes/recipe-uuid-1/drafts/draft-uuid-1/approve')
       .set('Authorization', 'Bearer valid-token');
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({status: 'approved'});
+    expect(res.body).toEqual(makeRecipeDetail());
+  });
+
+  test('applies ingredient and instruction diffs when present', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    const diff = makeRecipeDiff({
+      ingredients: [
+        {
+          sortOrder: 0,
+          name: 'Salt',
+          quantity: 1,
+          unit: 'tsp',
+          notes: null,
+          isOptional: false,
+        },
+      ],
+      instructions: [{stepNumber: 1, body: 'Season well'}],
+    });
+    mockQuery
+      .mockResolvedValueOnce(
+        makeQueryResult([{...pendingDraft, diff_json: diff}]),
+      )
+      .mockResolvedValue(makeQueryResult([makeRecipeDetailRow()]));
+    const res = await request(app)
+      .post('/recipes/recipe-uuid-1/drafts/draft-uuid-1/approve')
+      .set('Authorization', 'Bearer valid-token');
+    expect(res.status).toBe(200);
   });
 
   test('returns 404 when draft is not found', async () => {
@@ -33,6 +61,17 @@ describe('POST /recipes/:id/drafts/:draftId/approve', () => {
     mockQuery.mockResolvedValue(makeQueryResult([]));
     const res = await request(app)
       .post('/recipes/recipe-uuid-1/drafts/missing/approve')
+      .set('Authorization', 'Bearer valid-token');
+    expect(res.status).toBe(404);
+  });
+
+  test('returns 404 when recipe detail is missing after approve', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockQuery
+      .mockResolvedValueOnce(makeQueryResult([pendingDraft]))
+      .mockResolvedValue(makeQueryResult([]));
+    const res = await request(app)
+      .post('/recipes/recipe-uuid-1/drafts/draft-uuid-1/approve')
       .set('Authorization', 'Bearer valid-token');
     expect(res.status).toBe(404);
   });

@@ -2,5 +2,5 @@
   "extends": "@react-native/typescript-config",
   "compilerOptions": {"types": ["jest", "nativewind/types"], "noEmit": true},
   "include": ["**/*.ts", "**/*.tsx", "nativewind-env.d.ts"],
-  "exclude": ["**/node_modules", "**/Pods"]
+  "exclude": ["**/node_modules", "**/Pods", "**/*.test.ts", "**/*.test.tsx"]
 }

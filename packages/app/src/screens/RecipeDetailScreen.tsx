@@ -1,15 +1,15 @@
-import React, {useState} from 'react';
-import {ScrollView, Text, TouchableOpacity, View} from 'react-native';
-import {useQuery} from '@tanstack/react-query';
+import {queryKeys} from '@recipoo/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import type {RecipeDetail} from '@recipoo/types';
+import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
+import React, {useState} from 'react';
+import {Alert, ScrollView, Text, TouchableOpacity, View} from 'react-native';
 
-import {apiFetch} from '../lib/api';
 import {IngredientsTab} from '../components/recipe/IngredientsTab';
 import {InstructionsTab} from '../components/recipe/InstructionsTab';
 import {NotesTab} from '../components/recipe/NotesTab';
 import {NutritionTab} from '../components/recipe/NutritionTab';
 import {OverviewTab} from '../components/recipe/OverviewTab';
+import {api} from '../lib/api';
 import type {RecipesStackParamList} from '../navigation/types';
 
 type Tab = 'overview' | 'ingredients' | 'instructions' | 'notes' | 'nutrition';
@@ -27,8 +27,6 @@ type DetailProps = NativeStackScreenProps<
   'RecipeDetail'
 >;
 
-const fetchRecipe = (id: string) => apiFetch<RecipeDetail>(`/recipes/${id}`);
-
 const TabBar = ({
   activeTab,
   onSelect,
@@ -42,7 +40,7 @@ const TabBar = ({
         key={tab.key}
         className={`
           flex-1 items-center py-3
-          ${activeTab === tab.key ? `border-b-2 border-primary` : ''}
+          ${activeTab === tab.key ? `border-primary border-b-2` : ''}
         `}
         onPress={() => {
           onSelect(tab.key);
@@ -65,10 +63,38 @@ export const RecipeDetailScreen = ({route, navigation}: DetailProps) => {
   const {recipeId} = route.params;
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [servings, setServings] = useState<number | null>(null);
+  const queryClient = useQueryClient();
+
   const {data: recipe, isLoading} = useQuery({
-    queryKey: ['recipe', recipeId],
-    queryFn: () => fetchRecipe(recipeId),
+    queryKey: queryKeys.recipe(recipeId),
+    queryFn: () => api.recipes.get(recipeId),
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: () => api.recipes.delete(recipeId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({queryKey: queryKeys.recipes()});
+      navigation.navigate('RecipesList');
+    },
+  });
+
+  const handleDelete = () => {
+    /* istanbul ignore next -- delete only rendered when recipe is loaded */
+    if (!recipe) {
+      return;
+    }
+    Alert.alert('Delete recipe', `Delete "${recipe.title}"?`, [
+      {text: 'Cancel', style: 'cancel'},
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: () => {
+          deleteMutation.mutate();
+        },
+      },
+    ]);
+  };
+
   if (isLoading || !recipe) {
     return (
       <View className="flex-1 items-center justify-center">
@@ -76,8 +102,10 @@ export const RecipeDetailScreen = ({route, navigation}: DetailProps) => {
       </View>
     );
   }
+
   const currentServings = servings ?? recipe.servings;
   const scaleFactor = currentServings / recipe.servings;
+
   return (
     <View className="flex-1 bg-white">
       <TabBar
@@ -91,6 +119,10 @@ export const RecipeDetailScreen = ({route, navigation}: DetailProps) => {
             onStartCooking={() => {
               navigation.navigate('CookingMode', {recipeId: recipe.id});
             }}
+            onEdit={() => {
+              navigation.navigate('EditRecipe', {recipeId: recipe.id});
+            }}
+            onDelete={handleDelete}
           />
         )}
         {activeTab === 'ingredients' && (

@@ -2,8 +2,9 @@ import request from 'supertest';
 
 import {createApp} from '../../server.js';
 import {makeAiMessage} from '../../test/fixtures/aiMessage.js';
-import {makeRecipeDetail} from '../../test/fixtures/recipe.js';
+import {makeRecipeDetailRow} from '../../test/fixtures/recipeRow.js';
 import {makeRecipeDraft} from '../../test/fixtures/recipeDraft.js';
+import {makeRecipeDraftRow} from '../../test/fixtures/recipeDraftRow.js';
 import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {createMockQuery} from '../../test/mockQuery.js';
 import {nockAnthropicMessage} from '../../test/mockNockAnthropic.js';
@@ -19,20 +20,19 @@ const AI_RESPONSE = JSON.stringify({
 });
 
 describe('POST /recipes/:id/ai/chat', () => {
-  test('returns draft and assistantMessage on success', async () => {
+  test('returns mapped draft and assistantMessage on success', async () => {
     nockSupabaseGetUser('user-uuid-1');
     nockAnthropicMessage(AI_RESPONSE);
-    const draft = makeRecipeDraft();
     const priorMessage = makeAiMessage({
       role: 'user',
       content: 'Previous message',
     });
     mockQuery
-      .mockResolvedValueOnce(makeQueryResult([makeRecipeDetail()])) // fetchRecipeDetail
+      .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
       .mockResolvedValueOnce(
         makeQueryResult([{id: 'convo-1', messages: [priorMessage]}]),
-      ) // getOrCreate conversation (with history)
-      .mockResolvedValue(makeQueryResult([draft])); // appendMessage x2 + saveDraft
+      )
+      .mockResolvedValue(makeQueryResult([makeRecipeDraftRow()]));
 
     const res = await request(app)
       .post('/recipes/recipe-uuid-1/ai/chat')
@@ -40,7 +40,7 @@ describe('POST /recipes/:id/ai/chat', () => {
       .send({message: 'Make it less salty'});
 
     expect(res.status).toBe(200);
-    expect(res.body).toHaveProperty('draft');
+    expect(res.body.draft).toEqual(makeRecipeDraft());
     expect(res.body).toHaveProperty('assistantMessage');
   });
 
@@ -70,12 +70,38 @@ describe('POST /recipes/:id/ai/chat', () => {
     expect(res.status).toBe(401);
   });
 
+  test('returns 500 when saveDraft returns no row', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    nockAnthropicMessage(AI_RESPONSE);
+    mockQuery
+      .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          {
+            id: 'convo-1',
+            recipe_id: 'recipe-uuid-1',
+            user_id: 'user-uuid-1',
+            messages: [],
+            created_at: '2024-01-01T00:00:00.000Z',
+            updated_at: '2024-01-01T00:00:00.000Z',
+          },
+        ]),
+      )
+      .mockResolvedValue(makeQueryResult([]));
+
+    const res = await request(app)
+      .post('/recipes/recipe-uuid-1/ai/chat')
+      .set('Authorization', 'Bearer valid-token')
+      .send({message: 'Make it spicier'});
+    expect(res.status).toBe(500);
+  });
+
   test('returns 500 when conversation upsert returns no rows', async () => {
     nockSupabaseGetUser('user-uuid-1');
     nockAnthropicMessage(AI_RESPONSE);
     mockQuery
-      .mockResolvedValueOnce(makeQueryResult([makeRecipeDetail()])) // fetchRecipeDetail
-      .mockResolvedValue(makeQueryResult([])); // getOrCreate returns no rows → throws
+      .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
+      .mockResolvedValue(makeQueryResult([]));
 
     await expect(
       request(app)

@@ -6,7 +6,18 @@ export type RecipesStackParamList = {
   RecipesList: undefined;
   RecipeDetail: {recipeId: string};
   CookingMode: {recipeId: string};
+  EditRecipe: {recipeId: string};
 };
+
+export type AddStackParamList = {
+  AddScreen: undefined;
+  ManualEntry: undefined;
+  ImportUrl: undefined;
+  ImportImage: undefined;
+  ImportReview: {recipeId: string};
+};
+
+export type ProfileStackParamList = {Profile: undefined; Tags: undefined};
 
 export type RootTabParamList = {
   Home: undefined;
