@@ -17,6 +17,12 @@ const mockLaunchLibrary = launchImageLibrary as jest.Mock;
 const mockNavigate = jest.fn();
 const navigation = {navigate: mockNavigate} as never;
 
+const press = (label: string, screen: ReturnType<typeof render>) => {
+  act(() => {
+    fireEvent.press(screen.getByText(label));
+  });
+};
+
 describe('ImportImageScreen', () => {
   beforeEach(() => {
     mockNavigate.mockReset();
@@ -29,21 +35,21 @@ describe('ImportImageScreen', () => {
   });
 
   test('shows importing while processing', async () => {
-    let resolvePicker: (value: {assets: {base64: string}[]}) => void = () => {};
-    mockLaunchCamera.mockReturnValue(
+    let resolveImport!: (value: ReturnType<typeof makeRecipeDetail>) => void;
+    mockImportImage.mockReturnValue(
       new Promise(resolve => {
-        resolvePicker = resolve;
+        resolveImport = resolve;
       }),
     );
-    const {getByText, findByText} = render(
+    const screen = render(
       renderWithProviders(<ImportImageScreen navigation={navigation} />),
     );
-    await act(async () => {
-      fireEvent.press(getByText('Take Photo'));
+    press('Take Photo', screen);
+    await waitFor(() => {
+      expect(screen.queryByText('Importing…')).toBeTruthy();
     });
-    expect(await findByText('Importing…')).toBeTruthy();
     await act(async () => {
-      resolvePicker({assets: [{base64: 'abc123'}]});
+      resolveImport(makeRecipeDetail({id: 'img-1'}));
     });
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalled();
@@ -51,12 +57,10 @@ describe('ImportImageScreen', () => {
   });
 
   test('imports from camera', async () => {
-    const {getByText} = render(
+    const screen = render(
       renderWithProviders(<ImportImageScreen navigation={navigation} />),
     );
-    await act(async () => {
-      fireEvent.press(getByText('Take Photo'));
-    });
+    press('Take Photo', screen);
     await waitFor(() => {
       expect(mockLaunchCamera).toHaveBeenCalled();
     });
@@ -68,12 +72,10 @@ describe('ImportImageScreen', () => {
   });
 
   test('imports from library', async () => {
-    const {getByText} = render(
+    const screen = render(
       renderWithProviders(<ImportImageScreen navigation={navigation} />),
     );
-    await act(async () => {
-      fireEvent.press(getByText('Choose from Library'));
-    });
+    press('Choose from Library', screen);
     await waitFor(() => {
       expect(mockLaunchLibrary).toHaveBeenCalled();
     });
@@ -84,12 +86,10 @@ describe('ImportImageScreen', () => {
 
   test('ignores picker with no assets', async () => {
     mockLaunchCamera.mockResolvedValue({assets: []});
-    const {getByText} = render(
+    const screen = render(
       renderWithProviders(<ImportImageScreen navigation={navigation} />),
     );
-    await act(async () => {
-      fireEvent.press(getByText('Take Photo'));
-    });
+    press('Take Photo', screen);
     await waitFor(() => {
       expect(mockLaunchCamera).toHaveBeenCalled();
     });
@@ -99,12 +99,10 @@ describe('ImportImageScreen', () => {
 
   test('ignores cancelled picker', async () => {
     mockLaunchCamera.mockResolvedValue({didCancel: true});
-    const {getByText} = render(
+    const screen = render(
       renderWithProviders(<ImportImageScreen navigation={navigation} />),
     );
-    await act(async () => {
-      fireEvent.press(getByText('Take Photo'));
-    });
+    press('Take Photo', screen);
     await waitFor(() => {
       expect(mockLaunchCamera).toHaveBeenCalled();
     });
@@ -114,12 +112,10 @@ describe('ImportImageScreen', () => {
 
   test('imports when base64 is missing on asset', async () => {
     mockLaunchLibrary.mockResolvedValue({assets: [{}]});
-    const {getByText} = render(
+    const screen = render(
       renderWithProviders(<ImportImageScreen navigation={navigation} />),
     );
-    await act(async () => {
-      fireEvent.press(getByText('Choose from Library'));
-    });
+    press('Choose from Library', screen);
     await waitFor(() => {
       expect(mockImportImage).toHaveBeenCalledWith('');
     });
@@ -128,25 +124,23 @@ describe('ImportImageScreen', () => {
   test('shows generic error on non-Error failure', async () => {
     const alertSpy = jest.spyOn(Alert, 'alert').mockReturnValue();
     mockImportImage.mockRejectedValue('nope');
-    const {getByText, findByText} = render(
+    const screen = render(
       renderWithProviders(<ImportImageScreen navigation={navigation} />),
     );
-    await act(async () => {
-      fireEvent.press(getByText('Choose from Library'));
+    press('Choose from Library', screen);
+    await waitFor(() => {
+      expect(screen.getByText('Import failed')).toBeTruthy();
     });
-    expect(await findByText('Import failed')).toBeTruthy();
     expect(alertSpy).toHaveBeenCalled();
   });
 
   test('shows alert on import failure', async () => {
     const alertSpy = jest.spyOn(Alert, 'alert').mockReturnValue();
     mockImportImage.mockRejectedValue(new Error('Import failed'));
-    const {getByText} = render(
+    const screen = render(
       renderWithProviders(<ImportImageScreen navigation={navigation} />),
     );
-    await act(async () => {
-      fireEvent.press(getByText('Choose from Library'));
-    });
+    press('Choose from Library', screen);
     await waitFor(() => {
       expect(alertSpy).toHaveBeenCalled();
     });
