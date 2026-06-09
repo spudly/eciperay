@@ -5,6 +5,7 @@ export const imageBase64ToFile = (
 ): File => {
   const bytes = Uint8Array.from(
     atob(imageBase64),
+    /* c8 ignore next -- codePointAt(0) is always defined for decoded base64 characters */
     char => char.codePointAt(0) ?? 0,
   );
   return new File([bytes], filename, {type: contentType});
