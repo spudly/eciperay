@@ -63,6 +63,49 @@ describe('AuthProvider', () => {
     expect(result.current.session).toEqual(newSession);
   });
 
+  test('calls onAuthenticated when auth state changes to a session', async () => {
+    const {client, onAuthStateChange} = makeSupabase();
+    const onAuthenticated = jest.fn(async () => {});
+    const wrapper = ({children}: {children: React.ReactNode}) => (
+      <AuthProvider
+        supabase={client}
+        onAuthenticated={onAuthenticated}
+      >
+        {children}
+      </AuthProvider>
+    );
+    renderHook(() => useAuth(), {wrapper});
+    await act(async () => {
+      await Promise.resolve();
+    });
+    const callback = onAuthStateChange.mock.calls[0][0];
+    const newSession = {access_token: 'xyz', user: {id: 'u2'}};
+    act(() => {
+      callback('SIGNED_IN', newSession);
+    });
+    expect(onAuthenticated).toHaveBeenCalledWith(newSession);
+  });
+
+  test('calls onAuthenticated when session is restored', async () => {
+    const {client, getSession} = makeSupabase();
+    const session = {access_token: 'abc', user: {id: 'u1'}};
+    getSession.mockResolvedValue({data: {session}});
+    const onAuthenticated = jest.fn(async () => {});
+    const wrapper = ({children}: {children: React.ReactNode}) => (
+      <AuthProvider
+        supabase={client}
+        onAuthenticated={onAuthenticated}
+      >
+        {children}
+      </AuthProvider>
+    );
+    renderHook(() => useAuth(), {wrapper});
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(onAuthenticated).toHaveBeenCalledWith(session);
+  });
+
   test('unsubscribes on unmount', async () => {
     const {client, unsubscribe} = makeSupabase();
     const wrapper = ({children}: {children: React.ReactNode}) => (

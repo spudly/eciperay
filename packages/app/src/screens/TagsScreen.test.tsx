@@ -11,7 +11,6 @@ jest.mock('../lib/api');
 const mockList = api.tags.list as jest.Mock;
 const mockCreate = api.tags.create as jest.Mock;
 const mockDelete = api.tags.delete as jest.Mock;
-const navigation = {} as never;
 
 describe('TagsScreen', () => {
   beforeEach(() => {
@@ -25,12 +24,12 @@ describe('TagsScreen', () => {
       },
     ]);
     mockCreate.mockResolvedValue({});
-    mockDelete.mockResolvedValue();
+    mockDelete.mockImplementation(async () => {});
   });
 
   test('lists tags and creates new tag', async () => {
     const {findByText, getByPlaceholderText, getByText} = render(
-      renderWithProviders(<TagsScreen navigation={navigation} />),
+      renderWithProviders(<TagsScreen />),
     );
     expect(await findByText('Dinner')).toBeTruthy();
     fireEvent.changeText(getByPlaceholderText('Tag name'), 'Lunch');
@@ -41,9 +40,7 @@ describe('TagsScreen', () => {
   });
 
   test('deletes tag', async () => {
-    const {findByText} = render(
-      renderWithProviders(<TagsScreen navigation={navigation} />),
-    );
+    const {findByText} = render(renderWithProviders(<TagsScreen />));
     fireEvent.press(await findByText('Delete'));
     await waitFor(() => {
       expect(mockDelete).toHaveBeenCalledWith('t1');
@@ -51,9 +48,7 @@ describe('TagsScreen', () => {
   });
 
   test('ignores empty tag name', async () => {
-    const {getByText, findByText} = render(
-      renderWithProviders(<TagsScreen navigation={navigation} />),
-    );
+    const {getByText, findByText} = render(renderWithProviders(<TagsScreen />));
     await findByText('Dinner');
     fireEvent.press(getByText('Add'));
     expect(mockCreate).not.toHaveBeenCalled();

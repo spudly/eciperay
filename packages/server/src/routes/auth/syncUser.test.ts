@@ -1,3 +1,4 @@
+import nock from 'nock';
 import request from 'supertest';
 
 import {createApp} from '../../server.js';
@@ -22,15 +23,13 @@ describe('POST /auth/sync', () => {
     const res = await request(app)
       .post('/auth/sync')
       .set('Authorization', 'Bearer valid-token')
-      .send({email: 'test@example.com', displayName: 'Test User'});
+      .send({displayName: 'Test User'});
     expect(res.status).toBe(200);
     expect(mockQuery).toHaveBeenCalledTimes(1);
   });
 
   test('returns 401 when Authorization header is missing', async () => {
-    const res = await request(app)
-      .post('/auth/sync')
-      .send({email: 'test@example.com'});
+    const res = await request(app).post('/auth/sync').send({});
     expect(res.status).toBe(401);
     expect(res.body).toMatchObject({error: 'Missing authorization token'});
   });
@@ -40,7 +39,7 @@ describe('POST /auth/sync', () => {
     const res = await request(app)
       .post('/auth/sync')
       .set('Authorization', 'Bearer bad-token')
-      .send({email: 'test@example.com'});
+      .send({});
     expect(res.status).toBe(401);
     expect(res.body).toMatchObject({error: 'Invalid or expired token'});
   });
@@ -50,7 +49,7 @@ describe('POST /auth/sync', () => {
     const res = await request(app)
       .post('/auth/sync')
       .set('Authorization', 'Bearer valid-token')
-      .send({email: 'test@example.com'});
+      .send({});
     expect(res.status).toBe(200);
   });
 
@@ -59,8 +58,20 @@ describe('POST /auth/sync', () => {
     const res = await request(app)
       .post('/auth/sync')
       .set('Authorization', 'Bearer valid-token')
-      .send({email: 'not-an-email'});
+      .send({displayName: 'x'.repeat(101)});
     expect(res.status).toBe(400);
     expect(res.body).toMatchObject({error: 'Validation failed'});
+  });
+
+  test('returns 400 when the authenticated user has no email', async () => {
+    const supabaseUrl =
+      process.env['SUPABASE_URL'] ?? 'http://supabase-test.local';
+    nock(supabaseUrl).get('/auth/v1/user').reply(200, {id: 'user-uuid-1'});
+    const res = await request(app)
+      .post('/auth/sync')
+      .set('Authorization', 'Bearer valid-token')
+      .send({});
+    expect(res.status).toBe(400);
+    expect(res.body).toMatchObject({error: 'Authenticated user has no email'});
   });
 });

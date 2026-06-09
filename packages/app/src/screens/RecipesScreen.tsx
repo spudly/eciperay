@@ -5,6 +5,7 @@ import React, {useState} from 'react';
 import {
   Alert,
   FlatList,
+  Image,
   StyleSheet,
   Text,
   TextInput,
@@ -21,6 +22,17 @@ type RecipesProps = NativeStackScreenProps<
   'RecipesList'
 >;
 
+const RecipeThumbnail = ({recipe}: {recipe: RecipeDetail}) =>
+  recipe.imageUrl ? (
+    <Image
+      source={{uri: recipe.imageUrl}}
+      className="size-16 rounded-lg bg-gray-50"
+      resizeMode="cover"
+    />
+  ) : (
+    <View className="size-16 rounded-lg bg-gray-100" />
+  );
+
 const RecipeCard = ({
   recipe,
   onPress,
@@ -30,9 +42,16 @@ const RecipeCard = ({
   onPress: () => void;
   onDelete: () => void;
 }) => (
-  <View className="mb-3 flex-row items-center rounded-xl bg-white p-4 shadow-sm">
+  <View
+    className="
+      mb-3 flex-row items-center gap-3 rounded-xl bg-white p-4 shadow-sm
+    "
+  >
+    <TouchableOpacity onPress={onPress}>
+      <RecipeThumbnail recipe={recipe} />
+    </TouchableOpacity>
     <TouchableOpacity
-      className="flex-1"
+      className="min-w-0 flex-1"
       onPress={onPress}
     >
       <Text className="text-base font-semibold text-gray-900">

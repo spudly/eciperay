@@ -16,6 +16,11 @@ const OPTIONS = [
     description: 'Upload a photo of a recipe',
     to: '/add/image',
   },
+  {
+    label: 'Import from text',
+    description: 'Paste rich text from Word or the web',
+    to: '/add/text',
+  },
 ];
 
 export const AddPage = () => (

@@ -6,6 +6,20 @@ import type {RecipeDetail} from '@recipoo/types';
 
 import {recipoo} from '../lib/api.js';
 
+const RecipeThumbnail = ({recipe}: {recipe: RecipeDetail}) =>
+  recipe.imageUrl ? (
+    <img
+      src={recipe.imageUrl}
+      alt={recipe.title}
+      className="size-16 shrink-0 rounded-lg bg-gray-50 object-cover"
+    />
+  ) : (
+    <div
+      aria-hidden
+      className="size-16 shrink-0 rounded-lg bg-gray-100"
+    />
+  );
+
 const RecipeCard = ({
   recipe,
   onDelete,
@@ -13,10 +27,18 @@ const RecipeCard = ({
   recipe: RecipeDetail;
   onDelete: (id: string) => void;
 }) => (
-  <div className="mb-3 flex items-center rounded-xl bg-white p-4 shadow-sm">
+  <div className="
+    mb-3 flex items-center gap-3 rounded-xl bg-white p-4 shadow-sm
+  ">
     <Link
       to={`/recipes/${recipe.id}`}
-      className="flex-1"
+      className="shrink-0"
+    >
+      <RecipeThumbnail recipe={recipe} />
+    </Link>
+    <Link
+      to={`/recipes/${recipe.id}`}
+      className="min-w-0 flex-1"
     >
       <p className="text-base font-semibold text-gray-900">{recipe.title}</p>
       <p className="text-muted mt-1 text-sm">

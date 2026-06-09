@@ -10,5 +10,6 @@ describe('AddPage', () => {
     expect(screen.getByText('Manual entry')).toBeInTheDocument();
     expect(screen.getByText('Import from URL')).toBeInTheDocument();
     expect(screen.getByText('Import from image')).toBeInTheDocument();
+    expect(screen.getByText('Import from text')).toBeInTheDocument();
   });
 });

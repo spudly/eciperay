@@ -13,6 +13,7 @@ improve recipes with AI assistance.
 | Shared theme  | `@recipoo/theme` — Tailwind v4 design tokens                      |
 | Backend       | Node.js, Express v5, TypeScript                                   |
 | Database      | Supabase Postgres (raw SQL via `pg`)                              |
+| File storage  | Supabase Storage (`recipe-images` bucket for recipe photos)       |
 | Auth          | Supabase Auth                                                     |
 | AI            | Anthropic Claude (Haiku + Sonnet)                                 |
 
@@ -72,6 +73,11 @@ auth (password reset).
 npm run migrate --workspace=packages/server
 ```
 
+This also creates the public `recipe-images` Supabase Storage bucket and RLS
+policies (migration `003_recipe_images_storage.sql`). Recipe photos upload
+directly from the browser to `{supabase-user-id}/{recipe-id}`; only the public
+URL is stored in `recipes.image_url`.
+
 ### 4. Start development
 
 ```sh
@@ -103,6 +109,25 @@ npm run dev:ios
 
 All code packages (`client`, `web`, `app`, `server`) enforce **100%** test
 coverage. Run `npm run ci` before opening a PR.
+
+### Test runners
+
+| Package           | Runner | Why                                                                   |
+| ----------------- | ------ | --------------------------------------------------------------------- |
+| `packages/server` | Jest   | Node/Express integration tests with supertest and nock                |
+| `packages/client` | Jest   | Shared TypeScript library; same ESM Jest setup as server              |
+| `packages/app`    | Jest   | React Native preset and native-module mocks                           |
+| `packages/web`    | Vitest | Shares Vite's transform pipeline, aliases, and ESM config (see below) |
+
+**Why Vitest for web, not Jest?** `packages/web` is a Vite 6 ESM app. Vitest
+runs on the same config as dev and build (`vitest.config.ts` reuses Vite
+plugins, path aliases, and `envDir`), so tests resolve modules the same way the
+app does. Jest would need a parallel transform/alias setup (e.g. `vite-jest` or
+custom `moduleNameMapper`) on top of the Jest 29/30 configs already used by app,
+server, and client. Vitest also fits the web stack (`vi` mocks, `jsdom`, MSW,
+`@vitest/coverage-v8`) without extra bridging. We keep Jest where it is the
+natural fit (Node API, React Native); we use Vitest only for the Vite web
+package.
 
 ### PR smoke checklist
 

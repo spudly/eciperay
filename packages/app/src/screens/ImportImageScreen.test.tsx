@@ -4,8 +4,9 @@ import {fireEvent, render, waitFor} from '@testing-library/react-native';
 import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 
 import {makeRecipeDetail} from '../__tests__/fixtures/recipe';
-import {renderWithProviders} from '../__tests__/testUtils';
+import {makeStackProps, renderWithProviders} from '../__tests__/testUtils';
 import {api} from '../lib/api';
+import type {AddStackParamList} from '../navigation/types';
 
 import {ImportImageScreen} from './ImportImageScreen';
 
@@ -15,7 +16,11 @@ const mockImportImage = api.import.importImage as jest.Mock;
 const mockLaunchCamera = launchCamera as jest.Mock;
 const mockLaunchLibrary = launchImageLibrary as jest.Mock;
 const mockNavigate = jest.fn();
-const navigation = {navigate: mockNavigate} as never;
+const stackProps = makeStackProps<AddStackParamList, 'ImportImage'>(
+  'ImportImage',
+  undefined,
+  {navigate: mockNavigate},
+);
 
 describe('ImportImageScreen', () => {
   beforeEach(() => {
@@ -30,7 +35,7 @@ describe('ImportImageScreen', () => {
 
   test('imports from camera', async () => {
     const {getByText} = render(
-      renderWithProviders(<ImportImageScreen navigation={navigation} />),
+      renderWithProviders(<ImportImageScreen {...stackProps} />),
     );
     fireEvent.press(getByText('Take Photo'));
     await waitFor(() => {
@@ -43,7 +48,7 @@ describe('ImportImageScreen', () => {
 
   test('imports from library', async () => {
     const {getByText} = render(
-      renderWithProviders(<ImportImageScreen navigation={navigation} />),
+      renderWithProviders(<ImportImageScreen {...stackProps} />),
     );
     fireEvent.press(getByText('Choose from Library'));
     await waitFor(() => {
@@ -55,7 +60,7 @@ describe('ImportImageScreen', () => {
   test('ignores picker with no assets', async () => {
     mockLaunchCamera.mockResolvedValue({assets: []});
     const {getByText} = render(
-      renderWithProviders(<ImportImageScreen navigation={navigation} />),
+      renderWithProviders(<ImportImageScreen {...stackProps} />),
     );
     fireEvent.press(getByText('Take Photo'));
     await waitFor(() => {
@@ -68,7 +73,7 @@ describe('ImportImageScreen', () => {
   test('ignores cancelled picker', async () => {
     mockLaunchCamera.mockResolvedValue({didCancel: true});
     const {getByText} = render(
-      renderWithProviders(<ImportImageScreen navigation={navigation} />),
+      renderWithProviders(<ImportImageScreen {...stackProps} />),
     );
     fireEvent.press(getByText('Take Photo'));
     await waitFor(() => {
@@ -81,7 +86,7 @@ describe('ImportImageScreen', () => {
   test('imports when base64 is missing on asset', async () => {
     mockLaunchLibrary.mockResolvedValue({assets: [{}]});
     const {getByText} = render(
-      renderWithProviders(<ImportImageScreen navigation={navigation} />),
+      renderWithProviders(<ImportImageScreen {...stackProps} />),
     );
     fireEvent.press(getByText('Choose from Library'));
     await waitFor(() => {
@@ -93,7 +98,7 @@ describe('ImportImageScreen', () => {
     const alertSpy = jest.spyOn(Alert, 'alert').mockReturnValue();
     mockImportImage.mockRejectedValue('nope');
     const {getByText, findByText} = render(
-      renderWithProviders(<ImportImageScreen navigation={navigation} />),
+      renderWithProviders(<ImportImageScreen {...stackProps} />),
     );
     fireEvent.press(getByText('Choose from Library'));
     expect(await findByText('Import failed')).toBeTruthy();
@@ -104,7 +109,7 @@ describe('ImportImageScreen', () => {
     const alertSpy = jest.spyOn(Alert, 'alert').mockReturnValue();
     mockImportImage.mockRejectedValue(new Error('Import failed'));
     const {getByText} = render(
-      renderWithProviders(<ImportImageScreen navigation={navigation} />),
+      renderWithProviders(<ImportImageScreen {...stackProps} />),
     );
     fireEvent.press(getByText('Choose from Library'));
     await waitFor(() => {

@@ -3,10 +3,8 @@ import type {Response} from 'express';
 import {query as defaultQuery} from '../../db/query.js';
 import type {AuthedRequest} from '../../middleware/requireAuth.js';
 import {anthropic, SONNET} from '../../lib/anthropic.js';
-import {
-  RecipeImportError,
-  recipeImportToInput,
-} from '../../lib/recipeImportToInput.js';
+import {RecipeImportError} from '../../lib/recipeImportToInput.js';
+import {prepareImportedRecipeInput} from '../../lib/prepareImportedRecipeInput.js';
 import {saveRecipeFromInput} from '../../lib/saveRecipeFromInput.js';
 import {
   ImportImageSchema,
@@ -56,7 +54,7 @@ const callClaudeVision = (imageBase64: string, mediaType: MediaType) =>
 const extractText = (
   content: {type: string; text?: string} | undefined,
 ): string => {
-  /* c8 ignore next 3 */
+  /* c8 ignore next 3 -- Claude returns non-text blocks only on API errors */
   if (content?.type !== 'text' || !content.text) {
     throw new Error('Unexpected Claude response type');
   }
@@ -77,7 +75,11 @@ export const importFromImage = async (
   const text = extractText(message.content[0]);
   const parsed = parseAiJson(RecipeImportSchema, text);
   try {
-    const input = recipeImportToInput(parsed);
+    const input = await prepareImportedRecipeInput({
+      recipe: {...parsed, sourceUrl: parsed.sourceUrl ?? null},
+      userId: req.userId,
+      queryFn,
+    });
     const detail = await saveRecipeFromInput(
       {userId: req.userId, input},
       queryFn,

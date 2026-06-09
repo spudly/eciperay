@@ -1,9 +1,10 @@
-import {Router} from 'express';
+import {Router, type NextFunction, type Request, type Response} from 'express';
 
 import {query as defaultQuery} from '../../db/query.js';
 import {requireAuth, type AuthedRequest} from '../../middleware/requireAuth.js';
 
 import {importFromImage} from './importFromImage.js';
+import {importFromText} from './importFromText.js';
 import {importFromUrl} from './importFromUrl.js';
 
 type QueryFn = typeof defaultQuery;
@@ -13,11 +14,26 @@ export const createImportRouter = (queryFn: QueryFn = defaultQuery) => {
   const asAuthed = (req: Parameters<typeof requireAuth>[0]) =>
     req as AuthedRequest;
 
-  router.post('/url', requireAuth, (req, res) =>
-    importFromUrl(asAuthed(req), res, queryFn),
+  const runImport =
+    (handler: (req: AuthedRequest, res: Response) => Promise<void>) =>
+    (req: Request, res: Response, next: NextFunction) => {
+      void handler(asAuthed(req), res).catch(next);
+    };
+
+  router.post(
+    '/url',
+    requireAuth,
+    runImport((req, res) => importFromUrl(req, res, queryFn)),
   );
-  router.post('/image', requireAuth, (req, res) =>
-    importFromImage(asAuthed(req), res, queryFn),
+  router.post(
+    '/image',
+    requireAuth,
+    runImport((req, res) => importFromImage(req, res, queryFn)),
+  );
+  router.post(
+    '/text',
+    requireAuth,
+    runImport((req, res) => importFromText(req, res, queryFn)),
   );
 
   return router;

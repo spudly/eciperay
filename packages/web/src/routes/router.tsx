@@ -9,6 +9,7 @@ import {ForgotPasswordPage} from '../pages/auth/ForgotPasswordPage.js';
 import {HomePage} from '../pages/HomePage.js';
 import {ImportImagePage} from '../pages/ImportImagePage.js';
 import {ImportReviewPage} from '../pages/ImportReviewPage.js';
+import {ImportTextPage} from '../pages/ImportTextPage.js';
 import {ImportUrlPage} from '../pages/ImportUrlPage.js';
 import {LoginPage} from '../pages/auth/LoginPage.js';
 import {ManualEntryPage} from '../pages/ManualEntryPage.js';
@@ -39,6 +40,7 @@ export const router = createBrowserRouter([
           {path: '/add/manual', element: <ManualEntryPage />},
           {path: '/add/url', element: <ImportUrlPage />},
           {path: '/add/image', element: <ImportImagePage />},
+          {path: '/add/text', element: <ImportTextPage />},
           {path: '/import/review/:recipeId', element: <ImportReviewPage />},
           {path: '/profile', element: <ProfilePage />},
           {path: '/tags', element: <TagsPage />},

@@ -3,22 +3,32 @@ import {fileURLToPath} from 'node:url';
 
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
-import {defineConfig} from 'vite';
+import {defineConfig, loadEnv} from 'vite';
 
 const pkgRoot = path.dirname(fileURLToPath(import.meta.url));
 const monoRoot = path.resolve(pkgRoot, '../..');
 
-export default defineConfig({
-  plugins: [react(), tailwindcss()],
-  envDir: '../..',
-  resolve: {
-    dedupe: ['react', 'react-dom', '@tanstack/react-query'],
-    alias: {
-      'react': path.join(pkgRoot, 'node_modules/react'),
-      'react-dom': path.join(pkgRoot, 'node_modules/react-dom'),
-      '@recipoo/client': path.join(monoRoot, 'packages/client/src/index.ts'),
-      '@recipoo/types': path.join(monoRoot, 'packages/types/src/index.ts'),
+export default defineConfig(({mode}) => {
+  const env = loadEnv(mode, monoRoot, '');
+  const port = Number(env['VITE_PORT'] ?? 8081);
+  const apiPort = env['PORT'] ?? '8080';
+  const apiTarget = `http://localhost:${apiPort}`;
+
+  return {
+    plugins: [react(), tailwindcss()],
+    envDir: '../..',
+    server: {
+      port,
+      proxy: {'/auth': apiTarget, '/recipes': apiTarget, '/tags': apiTarget},
     },
-  },
-  server: {port: 8081},
+    resolve: {
+      dedupe: ['react', 'react-dom', '@tanstack/react-query'],
+      alias: {
+        'react': path.join(pkgRoot, 'node_modules/react'),
+        'react-dom': path.join(pkgRoot, 'node_modules/react-dom'),
+        '@recipoo/client': path.join(monoRoot, 'packages/client/src/index.ts'),
+        '@recipoo/types': path.join(monoRoot, 'packages/types/src/index.ts'),
+      },
+    },
+  };
 });

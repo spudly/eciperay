@@ -28,6 +28,11 @@ const OPTIONS: AddOption[] = [
     description: 'Take a photo or use your library',
     screen: 'ImportImage',
   },
+  {
+    label: 'Import from text',
+    description: 'Paste rich text from Word or the web',
+    screen: 'ImportText',
+  },
 ];
 
 const OptionButton = ({

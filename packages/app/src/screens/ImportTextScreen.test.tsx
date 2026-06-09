@@ -1,0 +1,72 @@
+import React from 'react';
+import {fireEvent, render, waitFor} from '@testing-library/react-native';
+
+import {makeRecipeDetail} from '../__tests__/fixtures/recipe';
+import {makeStackProps, renderWithProviders} from '../__tests__/testUtils';
+import {api} from '../lib/api';
+import type {AddStackParamList} from '../navigation/types';
+
+import {ImportTextScreen} from './ImportTextScreen';
+
+jest.mock('../lib/api');
+
+const mockImportText = api.import.importText as jest.Mock;
+const mockNavigate = jest.fn();
+const stackProps = makeStackProps<AddStackParamList, 'ImportText'>(
+  'ImportText',
+  undefined,
+  {navigate: mockNavigate},
+);
+
+describe('ImportTextScreen', () => {
+  test('does not import when text is empty', async () => {
+    const {getByText} = render(
+      renderWithProviders(<ImportTextScreen {...stackProps} />),
+    );
+    fireEvent.press(getByText('Import'));
+    expect(mockImportText).not.toHaveBeenCalled();
+  });
+
+  test('imports text and navigates to review', async () => {
+    mockImportText.mockResolvedValue(makeRecipeDetail({id: 'imported-1'}));
+    const {getByPlaceholderText, getByText} = render(
+      renderWithProviders(<ImportTextScreen {...stackProps} />),
+    );
+    fireEvent.changeText(
+      getByPlaceholderText('Paste your recipe here…'),
+      'Pasta\n\nBoil water.',
+    );
+    fireEvent.press(getByText('Import'));
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('ImportReview', {
+        recipeId: 'imported-1',
+      });
+    });
+  });
+
+  test('shows generic error on non-Error failure', async () => {
+    mockImportText.mockRejectedValue('nope');
+    const {getByPlaceholderText, getByText, findByText} = render(
+      renderWithProviders(<ImportTextScreen {...stackProps} />),
+    );
+    fireEvent.changeText(
+      getByPlaceholderText('Paste your recipe here…'),
+      'bad',
+    );
+    fireEvent.press(getByText('Import'));
+    expect(await findByText('Import failed')).toBeTruthy();
+  });
+
+  test('shows error on failure', async () => {
+    mockImportText.mockRejectedValue(new Error('Parse failed'));
+    const {getByPlaceholderText, getByText, findByText} = render(
+      renderWithProviders(<ImportTextScreen {...stackProps} />),
+    );
+    fireEvent.changeText(
+      getByPlaceholderText('Paste your recipe here…'),
+      'bad',
+    );
+    fireEvent.press(getByText('Import'));
+    expect(await findByText('Parse failed')).toBeTruthy();
+  });
+});

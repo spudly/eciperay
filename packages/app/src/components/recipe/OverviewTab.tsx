@@ -29,8 +29,8 @@ export const OverviewTab = ({
     {recipe.imageUrl ? (
       <Image
         source={{uri: recipe.imageUrl}}
-        className="mb-4 h-48 w-full rounded-xl"
-        resizeMode="cover"
+        className="mb-4 max-h-64 w-full rounded-xl bg-gray-50"
+        resizeMode="contain"
       />
     ) : null}
     <Text className="mb-2 text-2xl font-bold text-gray-900">

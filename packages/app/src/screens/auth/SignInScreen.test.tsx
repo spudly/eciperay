@@ -27,7 +27,7 @@ describe('SignInScreen', () => {
 
   test('calls signInWithPassword on submit', async () => {
     mockSignIn.mockResolvedValue({error: null});
-    mockSyncUser.mockResolvedValue();
+    mockSyncUser.mockImplementation(async () => {});
     const {getByPlaceholderText, getByText} = render(
       <SignInScreen navigation={nav} />,
     );
@@ -47,7 +47,7 @@ describe('SignInScreen', () => {
 
   test('calls auth sync on successful sign-in', async () => {
     mockSignIn.mockResolvedValue({error: null});
-    mockSyncUser.mockResolvedValue();
+    mockSyncUser.mockImplementation(async () => {});
     const {getByText} = render(<SignInScreen navigation={nav} />);
     fireEvent.press(getByText('Sign In'));
     await waitFor(() => {
