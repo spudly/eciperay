@@ -20,15 +20,12 @@ const formatConsoleArgs = args =>
     })
     .join(' ');
 
-const resolveTestHooks = () => {
-  if (typeof beforeEach === 'function' && typeof afterEach === 'function') {
-    return {beforeEach, afterEach, expect};
-  }
-  return require('@jest/globals');
-};
-
 const installFailOnConsoleError = () => {
-  const {beforeEach, afterEach, expect} = resolveTestHooks();
+  if (typeof beforeEach !== 'function' || typeof afterEach !== 'function') {
+    throw new Error(
+      'installFailOnConsoleError must run from Jest/Vitest setupFilesAfterEnv',
+    );
+  }
   const originalConsoleError = console.error;
   /** @type {unknown[][]} */
   const errors = [];

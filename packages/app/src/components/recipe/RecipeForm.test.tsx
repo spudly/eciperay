@@ -3,10 +3,7 @@ import React from 'react';
 import {fireEvent, render, waitFor} from '@testing-library/react-native';
 
 import {makeRecipeDetail} from '../../__tests__/fixtures/recipe';
-import {
-  renderWithProviders,
-  settleAsyncUpdates,
-} from '../../__tests__/testUtils';
+import {renderWithProviders} from '../../__tests__/testUtils';
 import {api} from '../../lib/api';
 
 import {RecipeForm} from './RecipeForm';
@@ -18,9 +15,8 @@ const mockListTags = api.tags.list as jest.Mock;
 const renderForm = async (ui: React.ReactElement) => {
   const screen = render(renderWithProviders(ui));
   await waitFor(() => {
-    expect(mockListTags).toHaveBeenCalled();
+    expect(screen.queryByText('Loading tags…')).toBeNull();
   });
-  await settleAsyncUpdates();
   return screen;
 };
 

@@ -2,7 +2,7 @@ import React from 'react';
 import {fireEvent, render, waitFor} from '@testing-library/react-native';
 
 import {makeRecipeDetail} from '../__tests__/fixtures/recipe';
-import {renderWithProviders, settleAsyncUpdates} from '../__tests__/testUtils';
+import {renderWithProviders} from '../__tests__/testUtils';
 import {api} from '../lib/api';
 
 import {ManualEntryScreen} from './ManualEntryScreen';
@@ -21,13 +21,12 @@ describe('ManualEntryScreen', () => {
 
   test('creates recipe on submit', async () => {
     mockCreate.mockResolvedValue(makeRecipeDetail({id: 'new-id'}));
-    const {getAllByPlaceholderText, getByText} = render(
+    const {getAllByPlaceholderText, getByText, queryByText} = render(
       renderWithProviders(<ManualEntryScreen navigation={navigation} />),
     );
     await waitFor(() => {
-      expect(mockListTags).toHaveBeenCalled();
+      expect(queryByText('Loading tags…')).toBeNull();
     });
-    await settleAsyncUpdates();
     const inputs = getAllByPlaceholderText('Name');
     fireEvent.changeText(inputs[0], 'Flour');
     fireEvent.press(getByText('Create Recipe'));
