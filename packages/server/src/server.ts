@@ -38,21 +38,28 @@ export const createApp = ({
   app.use('/recipes/import', createImportRouter(queryFn));
   app.use('/recipes', createRecipesRouter(queryFn));
   app.use('/tags', createTagsRouter(queryFn));
-  app.use((err: unknown, _req: Request, res: Response, next: NextFunction) => {
-    void next;
-    if (res.headersSent) {
-      return;
-    }
-    if (err instanceof Anthropic.APIError) {
-      res.status(502).json({error: 'AI service error'});
-      return;
-    }
-    if (process.env['NODE_ENV'] !== 'test') {
-      console.error(err);
-    }
-    res.status(500).json({error: 'Internal server error'});
-  });
+  app.use(handleUnexpectedError);
   return app;
+};
+
+export const handleUnexpectedError = (
+  err: unknown,
+  _req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  void next;
+  if (res.headersSent) {
+    return;
+  }
+  if (err instanceof Anthropic.APIError) {
+    res.status(502).json({error: 'AI service error'});
+    return;
+  }
+  if (process.env['NODE_ENV'] !== 'test') {
+    console.error(err);
+  }
+  res.status(500).json({error: 'Internal server error'});
 };
 
 /* c8 ignore next 11 -- HTTP listener; tests import createApp via supertest only */

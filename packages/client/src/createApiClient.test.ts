@@ -28,6 +28,23 @@ describe('createApiClient', () => {
     );
   });
 
+  test('throws default message when error body is not JSON', async () => {
+    global.fetch = jest
+      .fn()
+      .mockResolvedValue({
+        ok: false,
+        status: 500,
+        text: async () => 'Internal Server Error',
+      });
+    const client = createApiClient({
+      baseUrl: 'http://localhost:8080',
+      getToken: async () => null,
+    });
+    await expect(client.fetch('/broken')).rejects.toThrow(
+      'API error 500: /broken',
+    );
+  });
+
   test('throws on non-ok response', async () => {
     global.fetch = jest
       .fn()

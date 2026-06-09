@@ -17,6 +17,7 @@ type AppLocals = {query?: typeof defaultQuery; skipUserUpsert?: boolean};
 
 const resolveQuery = (req: Request) => {
   const locals = req.app.locals as AppLocals;
+  /* c8 ignore next -- createApp always sets app.locals.query in production and tests */
   return locals.query ?? defaultQuery;
 };
 

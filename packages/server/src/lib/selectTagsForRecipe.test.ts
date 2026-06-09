@@ -75,4 +75,16 @@ describe('selectTagIdsForRecipe', () => {
       selectTagIdsForRecipe(recipe, availableTags, client),
     ).resolves.toEqual([]);
   });
+
+  test('returns an empty array when AI returns a non-text block', async () => {
+    const create = jest
+      .fn<() => Promise<Anthropic.Message>>()
+      .mockResolvedValue({
+        content: [{type: 'tool_use', id: 'x'}],
+      } as unknown as Anthropic.Message);
+    const client = {messages: {create}} as unknown as Anthropic;
+    await expect(
+      selectTagIdsForRecipe(recipe, availableTags, client),
+    ).resolves.toEqual([]);
+  });
 });

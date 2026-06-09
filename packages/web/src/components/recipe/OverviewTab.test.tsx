@@ -1,4 +1,4 @@
-import {render, screen} from '@testing-library/react';
+import {act, render, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {MemoryRouter} from 'react-router-dom';
 import {vi} from 'vitest';
@@ -33,6 +33,74 @@ describe('OverviewTab', () => {
     expect(
       await screen.findByText('Recipe copied to clipboard'),
     ).toBeInTheDocument();
+  });
+
+  test('shows a shared confirmation message', async () => {
+    vi.mocked(shareRecipeModule.shareRecipe).mockResolvedValueOnce('shared');
+    render(
+      <MemoryRouter>
+        <OverviewTab recipe={makeRecipeDetail()} />
+      </MemoryRouter>,
+    );
+    await userEvent.click(screen.getByLabelText('Share recipe'));
+    expect(await screen.findByText('Recipe shared')).toBeInTheDocument();
+  });
+
+  test('ignores share cancellation', async () => {
+    vi.mocked(shareRecipeModule.shareRecipe).mockRejectedValueOnce(
+      new DOMException('cancelled', 'AbortError'),
+    );
+    render(
+      <MemoryRouter>
+        <OverviewTab recipe={makeRecipeDetail()} />
+      </MemoryRouter>,
+    );
+    await userEvent.click(screen.getByLabelText('Share recipe'));
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+  });
+
+  test('shows an error when sharing fails', async () => {
+    vi.mocked(shareRecipeModule.shareRecipe).mockRejectedValueOnce(
+      new Error('share failed'),
+    );
+    render(
+      <MemoryRouter>
+        <OverviewTab recipe={makeRecipeDetail()} />
+      </MemoryRouter>,
+    );
+    await userEvent.click(screen.getByLabelText('Share recipe'));
+    expect(
+      await screen.findByText('Could not share recipe'),
+    ).toBeInTheDocument();
+  });
+
+  test('clears the action message after a delay', async () => {
+    let clearMessage: (() => void) | undefined;
+    const realSetTimeout = window.setTimeout.bind(window);
+    const setTimeoutSpy = vi.spyOn(window, 'setTimeout').mockImplementation(((
+      handler: TimerHandler,
+      delay?: number,
+    ) => {
+      if (delay === 2500) {
+        clearMessage = handler as () => void;
+        return 0;
+      }
+      return realSetTimeout(handler, delay ?? 0);
+    }) as typeof window.setTimeout);
+    render(
+      <MemoryRouter>
+        <OverviewTab recipe={makeRecipeDetail()} />
+      </MemoryRouter>,
+    );
+    await userEvent.click(screen.getByLabelText('Share recipe'));
+    expect(
+      await screen.findByText('Recipe copied to clipboard'),
+    ).toBeInTheDocument();
+    await act(async () => {
+      clearMessage?.();
+    });
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    setTimeoutSpy.mockRestore();
   });
 
   test('renders without optional fields', () => {

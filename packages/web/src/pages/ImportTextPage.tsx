@@ -3,14 +3,24 @@ import {useNavigate} from 'react-router-dom';
 
 import {recipoo} from '../lib/api.js';
 
-const getEditorPlainText = (el: HTMLDivElement | null): string =>
-  (el?.textContent ?? el?.innerText ?? '').trim();
+const getEditorPlainText = (el: HTMLDivElement | null): string => {
+  /* c8 ignore next 3 -- editor ref is mounted before any handler calls this helper */
+  if (!el) {
+    return '';
+  }
+  const text = el.textContent;
+  return (text && text.length > 0 ? text : el.innerText || '').trim();
+};
 
 const isEditorEmpty = (el: HTMLDivElement | null): boolean =>
   getEditorPlainText(el) === '';
 
 const getEditorContent = (el: HTMLDivElement | null): string => {
-  if (!el || isEditorEmpty(el)) {
+  /* c8 ignore next 3 -- editor ref is mounted before import runs */
+  if (!el) {
+    return '';
+  }
+  if (isEditorEmpty(el)) {
     return '';
   }
   return el.innerHTML.trim();

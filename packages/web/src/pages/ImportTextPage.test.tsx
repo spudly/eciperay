@@ -59,6 +59,43 @@ describe('ImportTextPage', () => {
     });
   });
 
+  test('reads editor text from innerText when textContent is empty', async () => {
+    await renderWithProviders(<ImportTextPage />, {route: '/add/text'});
+    const editor = getEditor();
+    Object.defineProperty(editor, 'textContent', {
+      get: () => '',
+      configurable: true,
+    });
+    Object.defineProperty(editor, 'innerText', {
+      get: () => 'Pasta',
+      configurable: true,
+    });
+    fireEvent.input(editor);
+    expect(screen.getByText('Import')).not.toBeDisabled();
+  });
+
+  test('reads editor text from innerText when textContent is unavailable', async () => {
+    await renderWithProviders(<ImportTextPage />, {route: '/add/text'});
+    const editor = getEditor();
+    Object.defineProperty(editor, 'textContent', {
+      get: () => null,
+      configurable: true,
+    });
+    Object.defineProperty(editor, 'innerText', {
+      get: () => 'Pasta',
+      configurable: true,
+    });
+    fireEvent.input(editor);
+    expect(screen.getByText('Import')).not.toBeDisabled();
+  });
+
+  test('does not import when the editor is empty', async () => {
+    const importText = vi.spyOn(recipoo.import, 'importText');
+    await renderWithProviders(<ImportTextPage />, {route: '/add/text'});
+    fireEvent.submit(screen.getByText('Import').closest('form')!);
+    expect(importText).not.toHaveBeenCalled();
+  });
+
   test('shows generic error for non-Error throws', async () => {
     vi.spyOn(recipoo.import, 'importText').mockRejectedValueOnce('nope');
     await renderWithProviders(<ImportTextPage />, {route: '/add/text'});

@@ -50,7 +50,7 @@
     "@types/jest": "^30.0.0",
     "@types/nock": "^10.0.3",
     "@types/node": "^22.0.0",
-    "concurrently": "^9.2.1",
+    "concurrently": "^10.0.3",
     "depcheck": "^1.4.7",
     "eslint": "^9.0.0",
     "eslint-config-prettier": "^10.0.0",

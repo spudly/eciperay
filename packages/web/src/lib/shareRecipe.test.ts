@@ -27,6 +27,25 @@ describe('shareRecipe', () => {
     expect(writeText).toHaveBeenCalled();
   });
 
+  test('copies the recipe page URL when share is unavailable and sourceUrl is null', async () => {
+    const writeText = vi.fn(async () => {});
+    vi.stubGlobal('navigator', {clipboard: {writeText}});
+    await expect(
+      shareRecipe(makeRecipeDetail({sourceUrl: null})),
+    ).resolves.toBe('copied');
+    expect(writeText).toHaveBeenCalledWith(
+      expect.stringContaining('http://localhost:8081/recipes/recipe-uuid-1'),
+    );
+  });
+
+  test('falls back to clipboard when share fails with a non-abort error', async () => {
+    const share = vi.fn().mockRejectedValue(new Error('share failed'));
+    const writeText = vi.fn(async () => {});
+    vi.stubGlobal('navigator', {share, clipboard: {writeText}});
+    await expect(shareRecipe(makeRecipeDetail())).resolves.toBe('copied');
+    expect(writeText).toHaveBeenCalled();
+  });
+
   test('uses sourceUrl when provided', async () => {
     const share = vi.fn(async () => {});
     vi.stubGlobal('navigator', {share, clipboard: {writeText: vi.fn()}});

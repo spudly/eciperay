@@ -10,6 +10,14 @@ describe('getImageFileFromDataTransfer', () => {
     expect(getImageFileFromDataTransfer(dataTransfer)).toBe(file);
   });
 
+  test('returns null when the dropped file list is empty', () => {
+    const dataTransfer = {
+      files: {length: 1, 0: undefined},
+      items: [],
+    } as unknown as DataTransfer;
+    expect(getImageFileFromDataTransfer(dataTransfer)).toBeNull();
+  });
+
   test('returns an image item from the clipboard', () => {
     const file = new File(['pixels'], 'recipe.png', {type: 'image/png'});
     const dataTransfer = {
@@ -37,5 +45,9 @@ describe('shouldIgnoreImagePaste', () => {
   test('allows paste on non-input elements', () => {
     const div = document.createElement('div');
     expect(shouldIgnoreImagePaste(div)).toBe(false);
+  });
+
+  test('allows paste when the event target is not an element', () => {
+    expect(shouldIgnoreImagePaste(null)).toBe(false);
   });
 });

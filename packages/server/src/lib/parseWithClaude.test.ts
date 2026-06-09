@@ -88,6 +88,34 @@ describe('parseWithClaude', () => {
     ).rejects.toThrow();
   });
 
+  test('leaves description null when generated description is blank', async () => {
+    const create = jest
+      .fn<() => Promise<Anthropic.Message>>()
+      .mockResolvedValueOnce({
+        content: [{type: 'text', text: JSON.stringify(VALID_RECIPE)}],
+      } as unknown as Anthropic.Message)
+      .mockResolvedValueOnce({
+        content: [{type: 'text', text: '   '}],
+      } as unknown as Anthropic.Message);
+    const client = {messages: {create}} as unknown as Anthropic;
+    const result = await parseWithClaude('some page text', null, client);
+    expect(result.description).toBeNull();
+  });
+
+  test('leaves description null when description generation returns non-text', async () => {
+    const create = jest
+      .fn<() => Promise<Anthropic.Message>>()
+      .mockResolvedValueOnce({
+        content: [{type: 'text', text: JSON.stringify(VALID_RECIPE)}],
+      } as unknown as Anthropic.Message)
+      .mockResolvedValueOnce({
+        content: [{type: 'tool_use', id: 'x'}],
+      } as unknown as Anthropic.Message);
+    const client = {messages: {create}} as unknown as Anthropic;
+    const result = await parseWithClaude('some page text', null, client);
+    expect(result.description).toBeNull();
+  });
+
   test('generates a description when the parsed recipe has none', async () => {
     const create = jest
       .fn<() => Promise<Anthropic.Message>>()
