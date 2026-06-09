@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import {useState} from 'react';
 
 import {
@@ -70,14 +71,13 @@ export const RecipeImageField = ({
           }
         }}
         onDrop={handleDrop}
-        className={`
-          mb-3 rounded-lg border-2 border-dashed p-4 transition-colors
-          ${
-            isDragging
-              ? 'border-primary bg-primary/5'
-              : 'border-gray-300 bg-gray-50'
-          }
-        `}
+        className={clsx(
+          `mb-3 rounded-lg border-2 border-dashed p-4 transition-colors`,
+          {
+            'border-primary bg-primary/5': isDragging,
+            'border-gray-300 bg-gray-50': !isDragging,
+          },
+        )}
       >
         {imagePreview ? (
           <img

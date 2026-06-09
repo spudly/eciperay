@@ -1,9 +1,12 @@
+import clsx from 'clsx';
 import {NavLink, Outlet} from 'react-router-dom';
 
 const navLinkClass = ({isActive}: {isActive: boolean}) =>
-  `rounded-lg px-3 py-2 text-sm font-medium ${
-    isActive ? 'bg-primary text-white' : 'text-gray-700 hover:bg-gray-100'
-  }`;
+  clsx('rounded-lg px-3 py-2 text-sm font-medium', {
+    'bg-primary text-white': isActive,
+    'text-gray-700': !isActive,
+    'hover:bg-gray-100': !isActive,
+  });
 
 export const AppShell = () => (
   <div className="flex min-h-screen flex-col">

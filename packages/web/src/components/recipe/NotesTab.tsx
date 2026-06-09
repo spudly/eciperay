@@ -1,5 +1,6 @@
 /* eslint-disable max-lines -- notes list, compose, chat, and draft review */
 import {invalidateRecipeQueries, queryKeys} from '@recipoo/client';
+import clsx from 'clsx';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useState} from 'react';
 import type {RecipeNote} from '@recipoo/types';
@@ -19,20 +20,16 @@ const NoteCard = ({note}: {note: RecipeNote}) => (
 
 const MessageBubble = ({role, content}: {role: string; content: string}) => (
   <div
-    className={`
-      mb-3 max-w-[80%]
-      ${role === 'user' ? 'ms-auto' : 'me-auto'}
-    `}
+    className={clsx('mb-3 max-w-[80%]', {
+      'ms-auto': role === 'user',
+      'me-auto': role !== 'user',
+    })}
   >
     <div
-      className={`
-        rounded-2xl px-4 py-3
-        ${
-          role === 'user'
-            ? 'bg-primary text-white'
-            : 'bg-gray-100 text-gray-900'
-        }
-      `}
+      className={clsx('rounded-2xl px-4 py-3', {
+        'bg-primary text-white': role === 'user',
+        'bg-gray-100 text-gray-900': role !== 'user',
+      })}
     >
       {content}
     </div>

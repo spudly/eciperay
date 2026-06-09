@@ -1,5 +1,6 @@
 import {queryKeys} from '@recipoo/client';
 import {useQuery} from '@tanstack/react-query';
+import clsx from 'clsx';
 import React from 'react';
 import {Text, TouchableOpacity, View} from 'react-native';
 
@@ -32,10 +33,9 @@ export const TagPicker = ({selectedIds, onChange}: Props) => {
         return (
           <TouchableOpacity
             key={tag.id}
-            className={`
-              rounded-full px-3 py-1
-              ${selected ? 'border-primary border-2' : ''}
-            `}
+            className={clsx('rounded-full px-3 py-1', {
+              'border-primary border-2': selected,
+            })}
             style={{backgroundColor: `${tag.color}22`}}
             onPress={() => {
               toggle(tag.id);
