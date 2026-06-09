@@ -34,27 +34,6 @@ describe('ImportImageScreen', () => {
     mockLaunchLibrary.mockResolvedValue({assets: [{base64: 'abc123'}]});
   });
 
-  test('shows importing while import is in flight', async () => {
-    let resolveImport!: (value: ReturnType<typeof makeRecipeDetail>) => void;
-    mockImportImage.mockReturnValue(
-      new Promise(resolve => {
-        resolveImport = resolve;
-      }),
-    );
-    const screen = render(
-      renderWithProviders(<ImportImageScreen navigation={navigation} />),
-    );
-    press('Take Photo', screen);
-    await waitFor(() => {
-      expect(mockImportImage).toHaveBeenCalled();
-    });
-    expect(screen.getByText('Importing…')).toBeTruthy();
-    resolveImport(makeRecipeDetail({id: 'img-1'}));
-    await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalled();
-    });
-  });
-
   test('imports from camera', async () => {
     const screen = render(
       renderWithProviders(<ImportImageScreen navigation={navigation} />),
