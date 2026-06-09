@@ -134,10 +134,10 @@ describe('ImportTextSchema', () => {
     expect(() => ImportTextSchema.parse({text: ''})).toThrow(z.ZodError);
   });
 
-  test('rejects raw text above the pasted HTML limit', () => {
-    expect(() => ImportTextSchema.parse({text: 'x'.repeat(500_001)})).toThrow(
-      z.ZodError,
-    );
+  test('rejects raw text above the request size limit', () => {
+    expect(() =>
+      ImportTextSchema.parse({text: 'x'.repeat(10_000_001)}),
+    ).toThrow(z.ZodError);
   });
 });
 

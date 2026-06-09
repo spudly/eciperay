@@ -2,8 +2,8 @@ import type {Response} from 'express';
 
 import {query as defaultQuery} from '../../db/query.js';
 import type {AuthedRequest} from '../../middleware/requireAuth.js';
-import {extractImageUrlFromHtml} from '../../lib/extractImageFromHtml.js';
 import {htmlToText} from '../../lib/htmlToText.js';
+import {normalizePastedRecipeHtml} from '../../lib/normalizePastedRecipeHtml.js';
 import {mapRowToRecipeDetail} from '../../lib/mapRowToRecipeDetail.js';
 import {parseWithClaude} from '../../lib/parseWithClaude.js';
 import {RecipeImportError} from '../../lib/recipeImportToInput.js';
@@ -28,9 +28,8 @@ export const importFromText = async (
   if (!body.ok) {
     return;
   }
-  const rawText = body.data.text;
-  const imageCandidate = extractImageUrlFromHtml(rawText);
-  const plainText = htmlToText(rawText);
+  const {html, imageCandidate} = normalizePastedRecipeHtml(body.data.text);
+  const plainText = htmlToText(html);
   if (plainText.length === 0) {
     res
       .status(400)

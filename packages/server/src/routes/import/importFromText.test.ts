@@ -136,6 +136,34 @@ describe('POST /recipes/import/text', () => {
     );
   });
 
+  test('accepts pasted HTML with a large embedded base64 image', async () => {
+    const bucketUrl =
+      'https://storage.supabase.co/object/public/recipe-images/user-uuid-1/recipe-uuid-1';
+    const dataUrl = `data:image/png;base64,${'A'.repeat(469_000)}`;
+    resolveImportedImageUrl.mockResolvedValueOnce(bucketUrl);
+    nockSupabaseGetUser('user-uuid-1');
+    nockAnthropicMessage(CLAUDE_RESPONSE);
+    mockQuery
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([{id: 'recipe-uuid-1'}]))
+      .mockResolvedValue(
+        makeQueryResult([
+          makeRecipeDetailRow({title: 'Pasted Pasta', image_url: bucketUrl}),
+        ]),
+      );
+    const res = await request(app)
+      .post('/recipes/import/text')
+      .set('Authorization', 'Bearer valid-token')
+      .send({text: `<h1>Pasta</h1><img src="${dataUrl}" /><p>Boil pasta.</p>`});
+    expect(res.status).toBe(201);
+    expect(res.body.imageUrl).toBe(bucketUrl);
+    expect(resolveImportedImageUrl).toHaveBeenCalledWith(
+      dataUrl,
+      'user-uuid-1',
+      'recipe-uuid-1',
+    );
+  });
+
   test('returns 400 when stripped text exceeds the plain-text limit', async () => {
     nockSupabaseGetUser('user-uuid-1');
     const res = await request(app)
