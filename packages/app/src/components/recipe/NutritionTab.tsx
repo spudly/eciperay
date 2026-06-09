@@ -1,9 +1,9 @@
+import {queryKeys} from '@recipoo/client';
+import {useQuery} from '@tanstack/react-query';
 import React from 'react';
 import {Text, View} from 'react-native';
-import {useQuery} from '@tanstack/react-query';
-import type {NutritionInfo} from '@recipoo/types';
 
-import {apiFetch} from '../../lib/api';
+import {api} from '../../lib/api';
 
 const NutritionRow = ({
   label,
@@ -23,16 +23,14 @@ const NutritionRow = ({
   </View>
 );
 
-const fetchNutrition = (recipeId: string) =>
-  apiFetch<NutritionInfo>(`/recipes/${recipeId}/ai/nutrition`);
-
 export const NutritionTab = ({recipeId}: {recipeId: string}) => {
   const {data, isLoading} = useQuery({
-    queryKey: ['nutrition', recipeId],
-    queryFn: () => fetchNutrition(recipeId),
+    queryKey: queryKeys.nutrition(recipeId),
+    queryFn: () => api.ai.nutrition(recipeId),
   });
+
   if (isLoading) {
-    return <Text className="p-4 text-muted">Estimating nutrition…</Text>;
+    return <Text className="text-muted p-4">Estimating nutrition…</Text>;
   }
   if (!data) {
     return null;
@@ -80,7 +78,7 @@ export const NutritionTab = ({recipeId}: {recipeId: string}) => {
           unit="mg"
         />
       ) : null}
-      <Text className="mt-4 text-xs text-muted">{data.disclaimer}</Text>
+      <Text className="text-muted mt-4 text-xs">{data.disclaimer}</Text>
     </View>
   );
 };

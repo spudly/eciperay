@@ -74,6 +74,10 @@ export const TagInputSchema = z.object({
     .optional(),
 });
 
+export const RecipeNoteInputSchema = z.object({
+  content: z.string().min(1).max(4000),
+});
+
 export const ChatMessageSchema = z.object({
   message: z.string().min(1).max(4000),
 });

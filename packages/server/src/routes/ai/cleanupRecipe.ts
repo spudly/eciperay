@@ -7,6 +7,7 @@ import {buildRecipeContext} from '../../lib/buildRecipeContext.js';
 import {getParam} from '../../lib/getParam.js';
 import {fetchRecipeDetail} from '../../lib/recipeQueries.js';
 import {AiCleanupResponseSchema, parseAiJson} from '../../lib/schemas.js';
+import {mapRowToRecipeDraft} from '../../lib/mapRowToRecipeDraft.js';
 import {saveDraft} from '../../lib/saveDraft.js';
 
 type QueryFn = typeof defaultQuery;
@@ -52,7 +53,11 @@ const processCleanup = async (
     },
     queryFn,
   );
-  return draft.rows[0];
+  const row = draft.rows[0];
+  if (!row) {
+    throw new Error('Failed to save draft');
+  }
+  return mapRowToRecipeDraft(row as Parameters<typeof mapRowToRecipeDraft>[0]);
 };
 
 export const cleanupRecipe = async (

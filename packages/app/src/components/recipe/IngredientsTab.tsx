@@ -1,8 +1,10 @@
+import {queryKeys, scaleQuantity} from '@recipoo/client';
+import {useQuery} from '@tanstack/react-query';
 import React, {useState} from 'react';
 import {Text, TouchableOpacity, View} from 'react-native';
-import type {RecipeDetail, Ingredient} from '@recipoo/types';
+import type {Ingredient, RecipeDetail} from '@recipoo/types';
 
-import {scaleQuantity} from '../../lib/scaleQuantity';
+import {api} from '../../lib/api';
 
 type Props = {
   recipe: RecipeDetail;
@@ -40,6 +42,16 @@ const ServingsStepper = ({
   </View>
 );
 
+const toggleSet = (id: string, prev: Set<string>): Set<string> => {
+  const next = new Set(prev);
+  if (next.has(id)) {
+    next.delete(id);
+  } else {
+    next.add(id);
+  }
+  return next;
+};
+
 const IngredientRow = ({
   ingredient,
   scaleFactor,
@@ -56,27 +68,17 @@ const IngredientRow = ({
       flex-row items-center border-b border-gray-100 py-3
       ${missing ? `opacity-40` : ''}
     `}
-    onLongPress={onToggle}
+    onPress={onToggle}
   >
     <Text className="flex-1 text-base text-gray-900">
       {scaleQuantity(ingredient.quantity, ingredient.unit, scaleFactor)}{' '}
       {ingredient.name}
     </Text>
     {ingredient.isOptional ? (
-      <Text className="ms-2 text-xs text-muted">optional</Text>
+      <Text className="text-muted ms-2 text-xs">optional</Text>
     ) : null}
   </TouchableOpacity>
 );
-
-const toggleSet = (id: string, prev: Set<string>): Set<string> => {
-  const next = new Set(prev);
-  if (next.has(id)) {
-    next.delete(id);
-  } else {
-    next.add(id);
-  }
-  return next;
-};
 
 export const IngredientsTab = ({
   recipe,
@@ -85,9 +87,20 @@ export const IngredientsTab = ({
   onServingsChange,
 }: Props) => {
   const [missing, setMissing] = useState<Set<string>>(new Set());
+  const missingNames = recipe.ingredients
+    .filter(ing => missing.has(ing.id))
+    .map(ing => ing.name);
+
+  const {data: substitutions = []} = useQuery({
+    queryKey: [...queryKeys.recipe(recipe.id), 'substitutions', missingNames],
+    queryFn: () => api.ai.substitutions(recipe.id, missingNames),
+    enabled: missingNames.length > 0,
+  });
+
   const toggle = (id: string) => {
     setMissing(prev => toggleSet(id, prev));
   };
+
   return (
     <View className="p-4">
       <ServingsStepper
@@ -106,10 +119,29 @@ export const IngredientsTab = ({
         />
       ))}
       {missing.size > 0 ? (
-        <Text className="mt-3 text-sm text-muted">
-          Long-press an ingredient to mark it missing. Go to Notes tab to get
-          substitutions.
+        <Text className="text-muted mt-3 text-sm">
+          Tap an ingredient to mark it missing and see substitutions below.
         </Text>
+      ) : null}
+      {substitutions.length > 0 ? (
+        <View className="mt-4 rounded-xl bg-blue-50 p-4">
+          <Text className="mb-2 text-sm font-semibold text-blue-900">
+            Substitutions
+          </Text>
+          {substitutions.map(sub => (
+            <View
+              key={sub.ingredient}
+              className="mb-2"
+            >
+              <Text className="text-sm font-medium text-gray-900">
+                {sub.ingredient}
+              </Text>
+              <Text className="text-sm text-gray-600">
+                {sub.suggestions.join(', ')}
+              </Text>
+            </View>
+          ))}
+        </View>
       ) : null}
     </View>
   );

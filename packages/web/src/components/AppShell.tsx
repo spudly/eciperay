@@ -1,0 +1,61 @@
+import {NavLink, Outlet} from 'react-router-dom';
+
+const navLinkClass = ({isActive}: {isActive: boolean}) =>
+  `rounded-lg px-3 py-2 text-sm font-medium ${
+    isActive ? 'bg-primary text-white' : 'text-gray-700 hover:bg-gray-100'
+  }`;
+
+export const AppShell = () => (
+  <div className="flex min-h-screen flex-col">
+    <header className="border-b border-gray-200 bg-white">
+      <div
+        className="
+          mx-auto flex max-w-5xl items-center justify-between px-4 py-3
+        "
+      >
+        <NavLink
+          to="/"
+          className="text-primary text-lg font-bold"
+        >
+          Recipoo
+        </NavLink>
+        <nav className="flex gap-1">
+          <NavLink
+            to="/"
+            end
+            className={navLinkClass}
+          >
+            Home
+          </NavLink>
+          <NavLink
+            to="/recipes"
+            className={navLinkClass}
+          >
+            Recipes
+          </NavLink>
+          <NavLink
+            to="/add"
+            className={navLinkClass}
+          >
+            Add
+          </NavLink>
+          <NavLink
+            to="/tags"
+            className={navLinkClass}
+          >
+            Tags
+          </NavLink>
+          <NavLink
+            to="/profile"
+            className={navLinkClass}
+          >
+            Profile
+          </NavLink>
+        </nav>
+      </div>
+    </header>
+    <main className="mx-auto w-full max-w-5xl flex-1 p-4">
+      <Outlet />
+    </main>
+  </div>
+);

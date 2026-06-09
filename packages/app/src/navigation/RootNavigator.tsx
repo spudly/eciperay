@@ -1,8 +1,7 @@
-import React from 'react';
+import {useAuth} from '@recipoo/client';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
-
-import {useAuth} from '../context/AuthContext';
+import React from 'react';
 
 import {AuthNavigator} from './AuthNavigator';
 import {TabNavigator} from './TabNavigator';

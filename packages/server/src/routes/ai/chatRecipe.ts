@@ -13,6 +13,7 @@ import {
   parseAiJson,
   validate,
 } from '../../lib/schemas.js';
+import {mapRowToRecipeDraft} from '../../lib/mapRowToRecipeDraft.js';
 import {saveDraft} from '../../lib/saveDraft.js';
 
 import {appendMessage, getOrCreateConversation} from './conversation.js';
@@ -102,7 +103,16 @@ const runChatAndSaveDraft = async (
     },
     queryFn,
   );
-  return {draft: draft.rows[0], assistantMessage: result.reasoning};
+  const row = draft.rows[0];
+  if (!row) {
+    throw new Error('Failed to save draft');
+  }
+  return {
+    draft: mapRowToRecipeDraft(
+      row as Parameters<typeof mapRowToRecipeDraft>[0],
+    ),
+    assistantMessage: result.reasoning,
+  };
 };
 
 const processChatForRecipe = async (opts: ChatOptions, queryFn: QueryFn) => {

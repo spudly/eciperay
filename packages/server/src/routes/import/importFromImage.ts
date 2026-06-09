@@ -1,13 +1,21 @@
 import type {Response} from 'express';
 
+import {query as defaultQuery} from '../../db/query.js';
 import type {AuthedRequest} from '../../middleware/requireAuth.js';
 import {anthropic, SONNET} from '../../lib/anthropic.js';
+import {
+  RecipeImportError,
+  recipeImportToInput,
+} from '../../lib/recipeImportToInput.js';
+import {saveRecipeFromInput} from '../../lib/saveRecipeFromInput.js';
 import {
   ImportImageSchema,
   RecipeImportSchema,
   parseAiJson,
   validate,
 } from '../../lib/schemas.js';
+
+type QueryFn = typeof defaultQuery;
 
 const SYSTEM_PROMPT = `You are a recipe OCR parser. Extract the recipe from the image and return
 ONLY valid JSON (no markdown):
@@ -55,7 +63,11 @@ const extractText = (
   return content.text;
 };
 
-export const importFromImage = async (req: AuthedRequest, res: Response) => {
+export const importFromImage = async (
+  req: AuthedRequest,
+  res: Response,
+  queryFn: QueryFn,
+) => {
   const body = validate(ImportImageSchema, req, res);
   if (!body.ok) {
     return;
@@ -63,5 +75,19 @@ export const importFromImage = async (req: AuthedRequest, res: Response) => {
   const {imageBase64, mediaType = 'image/jpeg'} = body.data;
   const message = await callClaudeVision(imageBase64, mediaType);
   const text = extractText(message.content[0]);
-  res.json(parseAiJson(RecipeImportSchema, text));
+  const parsed = parseAiJson(RecipeImportSchema, text);
+  try {
+    const input = recipeImportToInput(parsed);
+    const detail = await saveRecipeFromInput(
+      {userId: req.userId, input},
+      queryFn,
+    );
+    res.status(201).json(detail);
+  } catch (error) {
+    if (error instanceof RecipeImportError) {
+      res.status(422).json({error: error.message});
+      return;
+    }
+    throw error;
+  }
 };

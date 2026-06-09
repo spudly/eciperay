@@ -2,6 +2,7 @@ import './loadEnv.js';
 
 import {fileURLToPath} from 'node:url';
 
+import cors from 'cors';
 import express from 'express';
 
 import {query as defaultQuery} from './db/query.js';
@@ -11,6 +12,7 @@ import {createRecipesRouter} from './routes/recipes/router.js';
 import {createTagsRouter} from './routes/tags/router.js';
 
 const DEFAULT_PORT = 8080;
+const DEFAULT_CORS_ORIGINS = 'http://localhost:8081';
 
 type AppDeps = {query: typeof defaultQuery};
 
@@ -18,13 +20,17 @@ export const createApp = ({
   query: queryFn = defaultQuery,
 }: Partial<AppDeps> = {}) => {
   const app = express();
-  app.use(express.json());
+  const corsOrigins = (process.env['CORS_ORIGINS'] ?? DEFAULT_CORS_ORIGINS)
+    .split(',')
+    .map(origin => origin.trim());
+  app.use(cors({origin: corsOrigins}));
+  app.use(express.json({limit: '10mb'}));
   app.get('/health', (_req, res) => {
     res.json({status: 'ok'});
   });
   app.use('/auth', createAuthRouter(queryFn));
+  app.use('/recipes/import', createImportRouter(queryFn));
   app.use('/recipes', createRecipesRouter(queryFn));
-  app.use('/recipes/import', createImportRouter());
   app.use('/tags', createTagsRouter(queryFn));
   return app;
 };

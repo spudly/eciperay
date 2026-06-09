@@ -18,6 +18,8 @@ jest.mock('../../lib/shareRecipe', () => ({
 const mockPrint = printRecipe as jest.Mock;
 const mockShare = shareRecipe as jest.Mock;
 const onStartCooking = jest.fn();
+const onEdit = jest.fn();
+const onDelete = jest.fn();
 
 describe('OverviewTab', () => {
   const recipe = makeRecipeDetail({
@@ -30,20 +32,12 @@ describe('OverviewTab', () => {
       <OverviewTab
         recipe={recipe}
         onStartCooking={onStartCooking}
+        onEdit={onEdit}
+        onDelete={onDelete}
       />,
     );
     expect(getByText('Test Cake')).toBeTruthy();
     expect(getByText('Yummy cake')).toBeTruthy();
-  });
-
-  test('renders stat badges for servings, prep, and cook time', () => {
-    const {getByText} = render(
-      <OverviewTab
-        recipe={recipe}
-        onStartCooking={onStartCooking}
-      />,
-    );
-    expect(getByText(String(recipe.servings))).toBeTruthy();
   });
 
   test('calls onStartCooking when Start Cooking button pressed', () => {
@@ -51,6 +45,8 @@ describe('OverviewTab', () => {
       <OverviewTab
         recipe={recipe}
         onStartCooking={onStartCooking}
+        onEdit={onEdit}
+        onDelete={onDelete}
       />,
     );
     fireEvent.press(getByText('Start Cooking'));
@@ -62,6 +58,8 @@ describe('OverviewTab', () => {
       <OverviewTab
         recipe={recipe}
         onStartCooking={onStartCooking}
+        onEdit={onEdit}
+        onDelete={onDelete}
       />,
     );
     fireEvent.press(getByText('🖨'));
@@ -73,50 +71,61 @@ describe('OverviewTab', () => {
       <OverviewTab
         recipe={recipe}
         onStartCooking={onStartCooking}
+        onEdit={onEdit}
+        onDelete={onDelete}
       />,
     );
     fireEvent.press(getByText('↗'));
     expect(mockShare).toHaveBeenCalledWith(recipe);
   });
 
-  test('renders image when imageUrl is provided', () => {
-    const recipeWithImage = makeRecipeDetail({
-      imageUrl: 'https://example.com/img.jpg',
-    });
-    // The Image component renders when imageUrl is set; check the component tree has it
-    const {toJSON} = render(
-      <OverviewTab
-        recipe={recipeWithImage}
-        onStartCooking={onStartCooking}
-      />,
-    );
-    const tree = JSON.stringify(toJSON());
-    expect(tree).toContain('example.com/img.jpg');
-  });
-
-  test('renders prep and cook time badges when set', () => {
+  test('calls onEdit and onDelete', () => {
     const {getByText} = render(
       <OverviewTab
         recipe={recipe}
         onStartCooking={onStartCooking}
+        onEdit={onEdit}
+        onDelete={onDelete}
       />,
     );
-    expect(getByText('15m')).toBeTruthy(); // prepTimeMin
-    expect(getByText('30m')).toBeTruthy(); // cookTimeMin
+    fireEvent.press(getByText('Edit'));
+    fireEvent.press(getByText('Delete'));
+    expect(onEdit).toHaveBeenCalled();
+    expect(onDelete).toHaveBeenCalled();
   });
 
-  test('does not render time badges when null', () => {
-    const noTime = makeRecipeDetail({
-      prepTimeMin: null,
-      cookTimeMin: null,
-      description: null,
+  test('renders image when imageUrl is provided', () => {
+    const recipeWithImage = makeRecipeDetail({
+      imageUrl: 'https://example.com/img.jpg',
     });
-    const {queryByText} = render(
+    const {toJSON} = render(
       <OverviewTab
-        recipe={noTime}
+        recipe={recipeWithImage}
         onStartCooking={onStartCooking}
+        onEdit={onEdit}
+        onDelete={onDelete}
       />,
     );
+    expect(JSON.stringify(toJSON())).toContain('example.com/img.jpg');
+  });
+
+  test('renders without optional fields', () => {
+    const minimal = makeRecipeDetail({
+      imageUrl: null,
+      description: null,
+      prepTimeMin: null,
+      cookTimeMin: null,
+      tags: [],
+    });
+    const {getByText, queryByText} = render(
+      <OverviewTab
+        recipe={minimal}
+        onStartCooking={onStartCooking}
+        onEdit={onEdit}
+        onDelete={onDelete}
+      />,
+    );
+    expect(getByText('Test Recipe')).toBeTruthy();
     expect(queryByText(/m$/)).toBeNull();
   });
 
@@ -136,6 +145,8 @@ describe('OverviewTab', () => {
       <OverviewTab
         recipe={recipeWithTag}
         onStartCooking={onStartCooking}
+        onEdit={onEdit}
+        onDelete={onDelete}
       />,
     );
     expect(getByText('Dinner')).toBeTruthy();

@@ -1,5 +1,9 @@
+import {queryKeys} from '@recipoo/client';
+import type {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import React, {useState} from 'react';
 import {
+  Alert,
   FlatList,
   StyleSheet,
   Text,
@@ -7,37 +11,46 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import {useQuery} from '@tanstack/react-query';
-import type {Recipe} from '@recipoo/types';
+import type {RecipeDetail} from '@recipoo/types';
 
-import {apiFetch} from '../lib/api';
+import {api} from '../lib/api';
+import type {RecipesStackParamList} from '../navigation/types';
 
-const fetchRecipes = () => apiFetch<Recipe[]>('/recipes');
+type RecipesProps = NativeStackScreenProps<
+  RecipesStackParamList,
+  'RecipesList'
+>;
 
 const RecipeCard = ({
   recipe,
   onPress,
+  onDelete,
 }: {
-  recipe: Recipe;
+  recipe: RecipeDetail;
   onPress: () => void;
+  onDelete: () => void;
 }) => (
-  <TouchableOpacity
-    className="mb-3 rounded-xl bg-white p-4 shadow-sm"
-    onPress={onPress}
-  >
-    <Text className="text-base font-semibold text-gray-900">
-      {recipe.title}
-    </Text>
-    <Text className="mt-1 text-sm text-muted">
-      {recipe.servings} servings
-      {recipe.cookTimeMin ? ` · ${recipe.cookTimeMin} min` : ''}
-    </Text>
-  </TouchableOpacity>
+  <View className="mb-3 flex-row items-center rounded-xl bg-white p-4 shadow-sm">
+    <TouchableOpacity
+      className="flex-1"
+      onPress={onPress}
+    >
+      <Text className="text-base font-semibold text-gray-900">
+        {recipe.title}
+      </Text>
+      <Text className="text-muted mt-1 text-sm">
+        {recipe.servings} servings
+        {recipe.cookTimeMin ? ` · ${recipe.cookTimeMin} min` : ''}
+      </Text>
+    </TouchableOpacity>
+    <TouchableOpacity
+      className="ms-3 rounded-lg bg-red-50 px-3 py-1"
+      onPress={onDelete}
+    >
+      <Text className="text-sm text-red-600">Delete</Text>
+    </TouchableOpacity>
+  </View>
 );
-
-type RecipesProps = {
-  navigation: {navigate: (screen: string, params: object) => void};
-};
 
 const styles = StyleSheet.create({
   listContent: {paddingHorizontal: 16, paddingBottom: 32},
@@ -45,14 +58,36 @@ const styles = StyleSheet.create({
 
 export const RecipesScreen = ({navigation}: RecipesProps) => {
   const [search, setSearch] = useState('');
+  const queryClient = useQueryClient();
+
   const {data: recipes = [], isLoading} = useQuery({
-    queryKey: ['recipes'],
-    queryFn: fetchRecipes,
+    queryKey: queryKeys.recipes(),
+    queryFn: () => api.recipes.list(),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => api.recipes.delete(id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({queryKey: queryKeys.recipes()});
+    },
   });
 
   const filtered = recipes.filter(r =>
     r.title.toLowerCase().includes(search.toLowerCase()),
   );
+
+  const confirmDelete = (recipe: RecipeDetail) => {
+    Alert.alert('Delete recipe', `Delete "${recipe.title}"?`, [
+      {text: 'Cancel', style: 'cancel'},
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: () => {
+          deleteMutation.mutate(recipe.id);
+        },
+      },
+    ]);
+  };
 
   return (
     <View className="flex-1 bg-gray-50">
@@ -67,7 +102,7 @@ export const RecipesScreen = ({navigation}: RecipesProps) => {
         />
       </View>
       {isLoading ? (
-        <Text className="mt-8 text-center text-muted">Loading…</Text>
+        <Text className="text-muted mt-8 text-center">Loading…</Text>
       ) : (
         <FlatList
           data={filtered}
@@ -79,10 +114,13 @@ export const RecipesScreen = ({navigation}: RecipesProps) => {
               onPress={() => {
                 navigation.navigate('RecipeDetail', {recipeId: item.id});
               }}
+              onDelete={() => {
+                confirmDelete(item);
+              }}
             />
           )}
           ListEmptyComponent={
-            <Text className="mt-8 text-center text-muted">
+            <Text className="text-muted mt-8 text-center">
               No recipes found.
             </Text>
           }

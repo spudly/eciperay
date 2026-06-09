@@ -1,24 +1,23 @@
+import {errorMessage} from '@recipoo/client';
 import React, {useState} from 'react';
 import {Alert, Text, TextInput, TouchableOpacity, View} from 'react-native';
 
+import {api} from '../../lib/api';
 import {supabase} from '../../lib/supabase';
-import {apiFetch} from '../../lib/api';
-import {errorMessage} from '../../lib/errorMessage';
 
 type SignUpProps = {navigation: {navigate: (screen: string) => void}};
 
 const signUp = async (email: string, password: string, displayName: string) => {
-  const {data, error} = await supabase.auth.signUp({email, password});
+  const {data, error} = await supabase.auth.signUp({
+    email,
+    password,
+    options: {data: {display_name: displayName}},
+  });
   if (error) {
     throw error;
   }
-  // If email confirmation is enabled, session is null until the user clicks the
-  // confirmation link. In that case, /auth/sync is called on first sign-in instead.
   if (data.session) {
-    await apiFetch('/auth/sync', {
-      method: 'POST',
-      body: JSON.stringify({email, displayName}),
-    });
+    await api.auth.syncUser();
   } else {
     return 'confirm-email';
   }
@@ -81,7 +80,7 @@ export const SignUpScreen = ({navigation}: SignUpProps) => {
         secureTextEntry
       />
       <TouchableOpacity
-        className="items-center rounded-lg bg-primary py-4"
+        className="bg-primary items-center rounded-lg py-4"
         onPress={handleSignUp}
         disabled={loading}
       >
@@ -95,7 +94,7 @@ export const SignUpScreen = ({navigation}: SignUpProps) => {
           navigation.navigate('SignIn');
         }}
       >
-        <Text className="text-base text-primary">
+        <Text className="text-primary text-base">
           Already have an account? Sign in
         </Text>
       </TouchableOpacity>

@@ -1,18 +1,20 @@
 # Recipoo
 
-A recipe management app for iOS and Android. Store, scale, and improve recipes
-with AI assistance.
+A recipe management app for iOS, Android, and web. Store, scale, import, and
+improve recipes with AI assistance.
 
 ## Tech Stack
 
-| Layer         | Technology                                                              |
-| ------------- | ----------------------------------------------------------------------- |
-| Mobile app    | React Native (bare), NativeWind v4, React Navigation v7, TanStack Query |
-| Backend       | Node.js, Express v5, TypeScript                                         |
-| Database      | Supabase Postgres (raw SQL via `pg`)                                    |
-| Auth          | Supabase Auth                                                           |
-| Image storage | Supabase Storage                                                        |
-| AI            | Anthropic Claude (Haiku + Sonnet)                                       |
+| Layer         | Technology                                                        |
+| ------------- | ----------------------------------------------------------------- |
+| Mobile app    | React Native, NativeWind v5, Tailwind CSS v4, React Navigation v7 |
+| Web app       | Vite 6, React 19, React Router 7, Tailwind CSS v4, Vitest, MSW    |
+| Shared client | `@recipoo/client` — API, auth, query keys, recipe utils           |
+| Shared theme  | `@recipoo/theme` — Tailwind v4 design tokens                      |
+| Backend       | Node.js, Express v5, TypeScript                                   |
+| Database      | Supabase Postgres (raw SQL via `pg`)                              |
+| Auth          | Supabase Auth                                                     |
+| AI            | Anthropic Claude (Haiku + Sonnet)                                 |
 
 ## Monorepo Structure
 
@@ -20,21 +22,24 @@ with AI assistance.
 recipoo/
 ├── packages/
 │   ├── app/        # React Native app (iOS + Android)
+│   ├── web/        # Vite web app
+│   ├── client/     # Shared API client, auth, utils
+│   ├── theme/      # Shared Tailwind v4 tokens
 │   ├── server/     # Express API server
-│   └── shared/     # Shared TypeScript types
+│   └── types/      # Shared TypeScript types
 ├── scripts/
-│   └── find-unused-eslint-rules.ts
+│   └── findUnusedEslintRules.ts
 ├── eslint.config.ts
 ├── tsconfig.base.json
-└── package.json    # npm workspaces root
+└── package.json
 ```
 
 ## Prerequisites
 
 - Node.js 22+
 - npm 10+
-- [React Native environment set up](https://reactnative.dev/docs/set-up-your-environment)
-  (Xcode for iOS, Android Studio for Android)
+- [React Native environment](https://reactnative.dev/docs/set-up-your-environment)
+  (for mobile)
 - A [Supabase](https://supabase.com) project
 - An [Anthropic](https://console.anthropic.com) API key
 
@@ -48,128 +53,67 @@ npm install
 
 ### 2. Configure environment variables
 
-Create a free [Supabase](https://supabase.com) project, then:
+Copy the example env to the repo root (used by server, Metro, and Vite):
 
 ```sh
-cp .env.example packages/server/.env
+cp .env.example .env
 ```
 
-Edit `packages/server/.env` and fill in your credentials:
+Fill in Supabase, Anthropic, and URL values. Web requires `VITE_*` prefixed
+vars; the mobile app uses `API_BASE_URL` and `SUPABASE_*` via the Metro env
+shim.
 
-```
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SECRET_KEY=your-service-role-key
-DATABASE_URL=postgresql://postgres:[password]@db.your-project.supabase.co:5432/postgres
-ANTHROPIC_API_KEY=your-anthropic-key
-PORT=8080
-NODE_ENV=development
-```
+Add `http://localhost:8081/**` to your Supabase project's redirect URLs for web
+auth (password reset).
 
 ### 3. Run database migrations
-
-This creates all tables and seeds the preset recipe tags:
 
 ```sh
 npm run migrate --workspace=packages/server
 ```
 
-### 4. Start the API server
+### 4. Start development
 
 ```sh
-npm run start --workspace=packages/server
-```
+# API + Metro (mobile)
+npm run dev
 
-The server runs at `http://localhost:8080`. Test it with:
+# API + Vite (web) — http://localhost:8081
+npm run dev:web
 
-```sh
-curl http://localhost:8080/health
-```
-
-### 5. Start the mobile app
-
-In a separate terminal, start the Metro bundler:
-
-```sh
-npm run start --workspace=packages/app
-```
-
-Then in another terminal, run on your chosen platform:
-
-```sh
-# iOS (requires Xcode + CocoaPods)
-npm run ios --workspace=packages/app
-
-# Android (requires Android Studio + emulator or device)
-npm run android --workspace=packages/app
-```
-
-#### iOS — first time setup
-
-Install CocoaPods (only needed once per machine):
-
-```sh
-bundle install
-```
-
-Then install pod dependencies (required after first clone and after any native
-dep changes):
-
-```sh
-cd packages/app/ios && bundle exec pod install
+# API + Metro + iOS simulator
+npm run dev:ios
 ```
 
 ## Development Scripts
 
-Run from the **repo root** unless noted:
+| Command                 | Description                               |
+| ----------------------- | ----------------------------------------- |
+| `npm run dev`           | API server + Metro bundler                |
+| `npm run dev:web`       | API server + Vite web app                 |
+| `npm run dev:ios`       | Server + Metro + iOS simulator            |
+| `npm run dev:android`   | Server + Metro + Android emulator         |
+| `npm run typecheck`     | TypeScript check all packages             |
+| `npm run lint`          | ESLint across all packages                |
+| `npm run ci`            | Full CI (typecheck, lint, audit, tests)   |
+| `npm test`              | Run all package tests                     |
+| `npm run test:coverage` | All packages with 100% coverage threshold |
 
-| Command                     | Description                                       |
-| --------------------------- | ------------------------------------------------- |
-| `npm run dev`               | Start API server + Metro bundler                  |
-| `npm run dev:ios`           | Server + Metro + iOS simulator                    |
-| `npm run dev:android`       | Server + Metro + Android emulator                 |
-| `npm run dev:all`           | Server + Metro + iOS + Android simultaneously     |
-| `npm run typecheck`         | TypeScript check on server + types packages       |
-| `npm run lint`              | ESLint across all packages                        |
-| `npm run lint:fix`          | ESLint with auto-fix                              |
-| `npm run lint:unused-rules` | Report any ESLint rules not explicitly configured |
-| `npm run prettier`          | Format all files                                  |
-| `npm run prettier:check`    | Check formatting without writing                  |
-| `npm test`                  | Run Jest (server + types), with coverage          |
-| `npm run test:watch`        | Jest in watch mode                                |
+## Testing
 
-## ESLint
+All code packages (`client`, `web`, `app`, `server`) enforce **100%** test
+coverage. Run `npm run ci` before opening a PR.
 
-The project uses ESLint v9 flat config (`eslint.config.ts`). Every rule from
-every plugin is **explicitly configured** — no `plugin/recommended` preset
-spreads. Run `npm run lint:unused-rules` after installing a new plugin to find
-rules that need to be added to the config.
+### PR smoke checklist
 
-Plugins in use: `@typescript-eslint`, `eslint-plugin-react`,
-`eslint-plugin-react-hooks`, `eslint-plugin-react-native`, `eslint-plugin-n`,
-`eslint-plugin-import-x`, `eslint-plugin-jest`, `eslint-plugin-unicorn`,
-`eslint-config-prettier`.
-
-Pre-commit hooks (via Husky + lint-staged) run Prettier and ESLint on staged
-files, then Jest on changed files.
-
-## Design Principles
-
-- **Small functions** — ideally fewer than 15 lines, single responsibility, max
-  4 parameters (use an options object for more)
-- **Small modules** — ideally fewer than 100 lines; each utility in its own file
-- **No classes** — use plain functions and objects; native built-ins (`Map`,
-  `Set`, `Error`, etc.) are fine
-- **Functional style** — prefer pure functions and immutable data transforms
+- [ ] `npm run ci` passes
+- [ ] `npm run dev:web` — sign in, list recipes, import, edit, delete
+- [ ] iOS/Android — auth persistence, add flow, recipe detail tabs
 
 ## Architecture Notes
 
-- **Images** upload directly from the app to Supabase Storage; the server never
-  handles binary image data
+- **Import flows** save a draft recipe server-side, then open ImportReview for
+  edit or discard (delete)
+- **AI drafts** from chat/cleanup require explicit approve/reject
 - **Recipe scaling** is client-side only and never persisted
-- **AI draft/approval** — all AI-suggested recipe changes produce a `pending`
-  draft; the user must explicitly approve or reject before the recipe is
-  modified
-- **AI conversation history** is stored per recipe per user in
-  `ai_conversations`, giving Claude full context of past cooking notes and
-  tweaks
+- **Tags** are managed per user; preset tags are read-only

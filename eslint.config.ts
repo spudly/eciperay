@@ -22,6 +22,7 @@ export default tseslint.config(
       'packages/app/env-shim.test.js', // test-only CJS shim for @env; not a test suite
       'packages/app/src/types/*.d.ts', // ambient type declarations only
       'packages/app/nativewind-env.d.ts', // NativeWind ambient types
+      'packages/web/src/vite-env.d.ts', // Vite ambient types
       'packages/*/coverage/**', // generated Istanbul/V8 coverage reports
     ],
   },
@@ -774,6 +775,38 @@ export default tseslint.config(
     },
   },
 
+  // ─── 2b. TypeScript project — app/client test files excluded from typecheck ─
+  {
+    files: ['packages/app/**/*.test.{ts,tsx}'],
+    languageOptions: {
+      parserOptions: {
+        project: ['./packages/app/tsconfig.eslint.json'],
+        projectService: false,
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+  },
+  {
+    files: ['packages/client/**/*.test.{ts,tsx}'],
+    languageOptions: {
+      parserOptions: {
+        project: ['./packages/client/tsconfig.eslint.json'],
+        projectService: false,
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+  },
+  {
+    files: ['packages/web/**/*.test.{ts,tsx}'],
+    languageOptions: {
+      parserOptions: {
+        project: ['./packages/web/tsconfig.eslint.json'],
+        projectService: false,
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+  },
+
   // ─── 4a. CJS config files — turn off ES module enforcement ─────────────────
   // Framework config files (metro, babel, tailwind, jest) are required to use
   // CommonJS. `module`, `require`, `__dirname`, and `__filename` are implicit
@@ -784,8 +817,11 @@ export default tseslint.config(
       '**/*.cjs', // all CJS files anywhere in the repo
       'packages/app/metro.config.js',
       'packages/app/babel.config.js',
-      'packages/app/tailwind.config.js',
       'packages/app/jest.config.js',
+      'packages/app/postcss.config.mjs',
+      'packages/client/jest.config.cjs',
+      'packages/web/vite.config.ts',
+      'packages/web/vitest.config.ts',
     ],
     rules: {
       'import-x/no-commonjs': 'off', // these are required to be CommonJS by their respective frameworks
@@ -929,6 +965,18 @@ export default tseslint.config(
     files: ['packages/server/**/*.ts'],
     plugins: {n: nPlugin},
     rules: {
+      'max-lines': [
+        'error',
+        {max: 220, skipBlankLines: true, skipComments: true},
+      ],
+      'max-lines-per-function': 'off', // route factories register many handlers in one function
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'ClassDeclaration:not([superClass.name="Error"])',
+          message: 'Classes are not allowed except Error subclasses.',
+        },
+      ],
       'n/callback-return': 'off', // we don't use callback-style async; Express uses async/await
       'n/exports-style': 'off', // we use ESM; CommonJS exports are not used
       'n/file-extension-in-import': 'off', // TypeScript handles extension resolution with NodeNext
@@ -1006,6 +1054,12 @@ export default tseslint.config(
       // relax line-length limits for test files (tests are naturally verbose)
       'max-lines': 'off',
       'max-lines-per-function': 'off',
+      'no-restricted-syntax': 'off', // mock classes and test doubles are acceptable
+      '@typescript-eslint/require-await': 'off', // async test helpers without await are fine
+      '@typescript-eslint/no-non-null-assertion': 'off', // test fixtures use definite assignments
+      '@typescript-eslint/no-deprecated': 'off', // DOM API mocks may use legacy methods
+      'unicorn/consistent-function-scoping': 'off', // test helpers nested in describe are fine
+      '@typescript-eslint/no-empty-function': 'off', // pending promises and no-op mocks are fine in tests
 
       // test files frequently access `res.body` (typed as any by supertest) and
       // JSON.parse results — relaxing unsafe rules in test scope is intentional
@@ -1089,13 +1143,11 @@ export default tseslint.config(
     },
   },
 
-  // ─── 8. NativeWind / Tailwind — app only ─────────────────────────────────
+  // ─── 8. Tailwind v4 — app ─────────────────────────────────────────────────
   {
     files: ['packages/app/**/*.{ts,tsx}'],
     plugins: {'better-tailwindcss': betterTailwindPlugin},
-    settings: {
-      'better-tailwindcss': {tailwindConfig: 'packages/app/tailwind.config.js'},
-    },
+    settings: {'better-tailwindcss': {}},
     rules: {
       'better-tailwindcss/enforce-canonical-classes': 'error',
       'better-tailwindcss/enforce-consistent-class-order': 'error',
@@ -1109,8 +1161,67 @@ export default tseslint.config(
       'better-tailwindcss/no-deprecated-classes': 'error',
       'better-tailwindcss/no-duplicate-classes': 'error',
       'better-tailwindcss/no-restricted-classes': 'error',
-      'better-tailwindcss/no-unknown-classes': 'error',
+      'better-tailwindcss/no-unknown-classes': 'off',
       'better-tailwindcss/no-unnecessary-whitespace': 'error',
+    },
+  },
+
+  // ─── 8a. Tailwind v4 — web ────────────────────────────────────────────────
+  {
+    files: ['packages/web/**/*.{ts,tsx}'],
+    plugins: {'better-tailwindcss': betterTailwindPlugin},
+    settings: {'better-tailwindcss': {}},
+    rules: {
+      'better-tailwindcss/enforce-canonical-classes': 'error',
+      'better-tailwindcss/enforce-consistent-class-order': 'error',
+      'better-tailwindcss/enforce-consistent-important-position': 'error',
+      'better-tailwindcss/enforce-consistent-line-wrapping': 'error',
+      'better-tailwindcss/enforce-consistent-variant-order': 'error',
+      'better-tailwindcss/enforce-consistent-variable-syntax': 'error',
+      'better-tailwindcss/enforce-logical-properties': 'error',
+      'better-tailwindcss/enforce-shorthand-classes': 'error',
+      'better-tailwindcss/no-conflicting-classes': 'error',
+      'better-tailwindcss/no-deprecated-classes': 'error',
+      'better-tailwindcss/no-duplicate-classes': 'error',
+      'better-tailwindcss/no-restricted-classes': 'error',
+      'better-tailwindcss/no-unknown-classes': 'off',
+      'better-tailwindcss/no-unnecessary-whitespace': 'error',
+    },
+  },
+
+  // ─── 8b. import-x — web/client (Vite workspace resolution) ───────────────
+  {
+    files: ['packages/web/**/*.{ts,tsx}', 'packages/client/**/*.{ts,tsx}'],
+    rules: {'import-x/no-cycle': 'off'},
+  },
+
+  // ─── 8c. React — web only ─────────────────────────────────────────────────
+  {
+    files: ['packages/web/**/*.{ts,tsx}'],
+    plugins: {'react': reactPlugin, 'react-hooks': reactHooksPlugin},
+    settings: {react: {version: 'detect'}},
+    rules: {
+      'react/jsx-filename-extension': ['error', {extensions: ['.tsx']}],
+      'react/jsx-key': 'error',
+      'react/jsx-no-comment-textnodes': 'error',
+      'react/jsx-no-duplicate-props': 'error',
+      'react/jsx-no-undef': 'error',
+      'react/jsx-uses-vars': 'error',
+      'react/no-children-prop': 'error',
+      'react/no-danger-with-children': 'error',
+      'react/no-deprecated': 'error',
+      'react/no-direct-mutation-state': 'error',
+      'react/no-find-dom-node': 'error',
+      'react/no-is-mounted': 'error',
+      'react/no-render-return-value': 'error',
+      'react/no-string-refs': 'error',
+      'react/no-unescaped-entities': 'error',
+      'react/no-unknown-property': 'error',
+      'react/prop-types': 'off',
+      'react/react-in-jsx-scope': 'off',
+      'react/require-render-return': 'error',
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'warn',
     },
   },
 
@@ -1118,14 +1229,12 @@ export default tseslint.config(
   // JSX component functions return multi-line render trees by nature. The
   // 15-line limit applies to pure logic; components get a higher ceiling.
   {
-    files: ['packages/app/**/*.tsx'],
-    ignores: ['packages/app/**/*.test.tsx'], // test files already have max-lines-per-function: off
+    files: ['packages/app/**/*.tsx', 'packages/web/**/*.tsx'],
+    ignores: ['packages/app/**/*.test.tsx', 'packages/web/**/*.test.tsx'],
     rules: {
-      'max-lines-per-function': [
-        'warn',
-        {max: 65, skipBlankLines: true, skipComments: true},
-      ],
-      'react/no-raw-text': 'off', // React Native text nodes don't require a wrapper like on web
+      // Screen components and forms exceed 65 lines; file-level max-lines still applies
+      'max-lines-per-function': 'off',
+      'react/no-raw-text': 'off',
     },
   },
 

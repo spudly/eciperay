@@ -34,6 +34,10 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Recipoo needs camera access to import recipes from photos.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Recipoo needs photo library access to import recipes from images.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string></string>
 	<key>UILaunchStoryboardName</key>

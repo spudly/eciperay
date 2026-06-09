@@ -1,85 +1,94 @@
 import React from 'react';
+import {Alert} from 'react-native';
 import {render, fireEvent, waitFor} from '@testing-library/react-native';
-import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 
-import {apiFetch} from '../lib/api';
+import {makeRecipeDetail} from '../__tests__/fixtures/recipe';
+import {makeQueryClient, renderWithProviders} from '../__tests__/testUtils';
+import {api} from '../lib/api';
 
 import {RecipesScreen} from './RecipesScreen';
 
-jest.mock('../lib/api', () => ({apiFetch: jest.fn()}));
+jest.mock('../lib/api');
 
-const mockApiFetch = apiFetch as jest.Mock;
+const mockList = api.recipes.list as jest.Mock;
+const mockDelete = api.recipes.delete as jest.Mock;
 const mockNavigate = jest.fn();
-const nav = {navigate: mockNavigate};
-
-const makeQueryClient = () =>
-  new QueryClient({
-    defaultOptions: {
-      queries: {
-        retry: false,
-        gcTime: 0,
-        staleTime: Infinity,
-        refetchOnWindowFocus: false,
-      },
-    },
-  });
-
-let queryClient: QueryClient;
-
-const wrap = (component: React.ReactElement) => (
-  <QueryClientProvider client={queryClient}>{component}</QueryClientProvider>
-);
+const nav = {navigate: mockNavigate} as never;
 
 describe('RecipesScreen', () => {
   beforeEach(() => {
-    queryClient = makeQueryClient();
+    mockList.mockResolvedValue([]);
+    mockDelete.mockResolvedValue();
   });
 
   test('renders search input', async () => {
-    mockApiFetch.mockResolvedValue([]);
     const {findByPlaceholderText} = render(
-      wrap(<RecipesScreen navigation={nav} />),
+      renderWithProviders(<RecipesScreen navigation={nav} />),
     );
     expect(await findByPlaceholderText('Search recipes…')).toBeTruthy();
   });
 
-  test('shows recipes from API', async () => {
-    mockApiFetch.mockResolvedValue([
-      {id: '1', title: 'Pasta', servings: 4, cookTimeMin: null},
+  test('shows recipes from API with cook time', async () => {
+    mockList.mockResolvedValue([
+      makeRecipeDetail({title: 'Pasta', cookTimeMin: 25}),
     ]);
-    const {findByText} = render(wrap(<RecipesScreen navigation={nav} />));
+    const {findByText} = render(
+      renderWithProviders(<RecipesScreen navigation={nav} />),
+    );
+    expect(await findByText(/25 min/)).toBeTruthy();
+  });
+
+  test('shows recipes without cook time', async () => {
+    mockList.mockResolvedValue([
+      makeRecipeDetail({title: 'Salad', cookTimeMin: null}),
+    ]);
+    const {findByText, queryByText} = render(
+      renderWithProviders(<RecipesScreen navigation={nav} />),
+    );
+    expect(await findByText('Salad')).toBeTruthy();
+    expect(queryByText(/min/)).toBeNull();
+  });
+
+  test('shows recipes from API', async () => {
+    mockList.mockResolvedValue([
+      makeRecipeDetail({title: 'Pasta', cookTimeMin: null}),
+    ]);
+    const {findByText} = render(
+      renderWithProviders(<RecipesScreen navigation={nav} />),
+    );
     expect(await findByText('Pasta')).toBeTruthy();
   });
 
   test('navigates to RecipeDetail on card press', async () => {
-    mockApiFetch.mockResolvedValue([
-      {id: 'recipe-1', title: 'Tacos', servings: 2, cookTimeMin: 20},
+    mockList.mockResolvedValue([
+      makeRecipeDetail({id: 'recipe-1', title: 'Tacos'}),
     ]);
-    const {findByText} = render(wrap(<RecipesScreen navigation={nav} />));
-    const card = await findByText('Tacos');
-    fireEvent.press(card);
+    const {findByText} = render(
+      renderWithProviders(<RecipesScreen navigation={nav} />),
+    );
+    fireEvent.press(await findByText('Tacos'));
     expect(mockNavigate).toHaveBeenCalledWith('RecipeDetail', {
       recipeId: 'recipe-1',
     });
   });
 
   test('shows loading state while fetching', () => {
-    mockApiFetch.mockImplementation(
+    mockList.mockImplementation(
       () =>
         new Promise(() => {
           /* never resolves */
         }),
     );
-    const {getByText} = render(wrap(<RecipesScreen navigation={nav} />));
+    const {getByText} = render(
+      renderWithProviders(<RecipesScreen navigation={nav} />),
+    );
     expect(getByText('Loading…')).toBeTruthy();
   });
 
   test('shows empty state when no recipes match search', async () => {
-    mockApiFetch.mockResolvedValue([
-      {id: '1', title: 'Pasta', servings: 4, cookTimeMin: null},
-    ]);
+    mockList.mockResolvedValue([makeRecipeDetail({title: 'Pasta'})]);
     const {findByText, getByText, getByPlaceholderText} = render(
-      wrap(<RecipesScreen navigation={nav} />),
+      renderWithProviders(<RecipesScreen navigation={nav} />),
     );
     await findByText('Pasta');
     fireEvent.changeText(
@@ -88,6 +97,21 @@ describe('RecipesScreen', () => {
     );
     await waitFor(() => {
       expect(getByText('No recipes found.')).toBeTruthy();
+    });
+  });
+
+  test('deletes recipe after confirmation', async () => {
+    jest.spyOn(Alert, 'alert').mockImplementation((_t, _m, buttons) => {
+      buttons?.[1]?.onPress?.();
+    });
+    mockList.mockResolvedValue([makeRecipeDetail({title: 'Soup'})]);
+    const client = makeQueryClient();
+    const {findByText} = render(
+      renderWithProviders(<RecipesScreen navigation={nav} />, client),
+    );
+    fireEvent.press(await findByText('Delete'));
+    await waitFor(() => {
+      expect(mockDelete).toHaveBeenCalled();
     });
   });
 });

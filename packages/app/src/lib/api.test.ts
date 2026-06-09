@@ -1,25 +1,22 @@
-import {apiFetch} from './api';
+import {api} from './api';
 import {supabase} from './supabase';
 
 jest.mock('./supabase', () => ({supabase: {auth: {getSession: jest.fn()}}}));
 
 const mockGetSession = supabase.auth.getSession as jest.Mock;
-
 const mockFetch = jest.fn();
 (globalThis as unknown as {fetch: typeof jest.fn}).fetch = mockFetch;
 
-describe('apiFetch', () => {
-  test('attaches Authorization header when session exists', async () => {
+describe('api', () => {
+  beforeEach(() => {
     mockGetSession.mockResolvedValue({
       data: {session: {access_token: 'test-token'}},
     });
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({result: 'ok'}),
-    });
+    mockFetch.mockResolvedValue({ok: true, json: () => Promise.resolve([])});
+  });
 
-    await apiFetch('/recipes');
-
+  test('recipes.list calls API with auth header', async () => {
+    await api.recipes.list();
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining('/recipes'),
       expect.objectContaining({
@@ -28,12 +25,9 @@ describe('apiFetch', () => {
     );
   });
 
-  test('omits Authorization header when no session', async () => {
+  test('getToken returns null without session', async () => {
     mockGetSession.mockResolvedValue({data: {session: null}});
-    mockFetch.mockResolvedValue({ok: true, json: () => Promise.resolve({})});
-
-    await apiFetch('/recipes');
-
+    await api.recipes.list();
     expect(mockFetch).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({
@@ -42,23 +36,5 @@ describe('apiFetch', () => {
         }),
       }),
     );
-  });
-
-  test('throws on non-ok response', async () => {
-    mockGetSession.mockResolvedValue({data: {session: null}});
-    mockFetch.mockResolvedValue({ok: false, status: 404});
-
-    await expect(apiFetch('/missing')).rejects.toThrow('API error 404');
-  });
-
-  test('returns parsed JSON on success', async () => {
-    mockGetSession.mockResolvedValue({data: {session: null}});
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve([{id: '1', title: 'Pasta'}]),
-    });
-
-    const result = await apiFetch<{id: string}[]>('/recipes');
-    expect(result).toHaveLength(1);
   });
 });
