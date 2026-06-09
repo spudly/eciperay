@@ -1,4 +1,5 @@
 import {queryKeys} from '@recipoo/client';
+import clsx from 'clsx';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import React, {useState} from 'react';
@@ -38,19 +39,18 @@ const TabBar = ({
     {TABS.map(tab => (
       <TouchableOpacity
         key={tab.key}
-        className={`
-          flex-1 items-center py-3
-          ${activeTab === tab.key ? `border-primary border-b-2` : ''}
-        `}
+        className={clsx('flex-1 items-center py-3', {
+          'border-primary border-b-2': activeTab === tab.key,
+        })}
         onPress={() => {
           onSelect(tab.key);
         }}
       >
         <Text
-          className={`
-            text-xs font-medium
-            ${activeTab === tab.key ? `text-primary` : `text-muted`}
-          `}
+          className={clsx('text-xs font-medium', {
+            'text-primary': activeTab === tab.key,
+            'text-muted': activeTab !== tab.key,
+          })}
         >
           {tab.label}
         </Text>

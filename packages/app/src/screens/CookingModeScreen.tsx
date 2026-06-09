@@ -1,4 +1,5 @@
 import {queryKeys} from '@recipoo/client';
+import clsx from 'clsx';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useQuery} from '@tanstack/react-query';
 import React, {useEffect, useState} from 'react';
@@ -26,10 +27,10 @@ const ProgressDots = ({total, current}: {total: number; current: number}) => (
     {Array.from({length: total}).map((_, i) => (
       <View
         key={i}
-        className={`
-          size-2 rounded-full
-          ${i === current ? 'bg-white' : 'bg-white/40'}
-        `}
+        className={clsx('size-2 rounded-full', {
+          'bg-white': i === current,
+          'bg-white/40': i !== current,
+        })}
       />
     ))}
   </View>
@@ -82,10 +83,9 @@ type NavButtonsProps = {
 const NavButtons = ({step, total, onNext, onPrev}: NavButtonsProps) => {
   const renderBtn = (label: string, onPress: () => void, disabled: boolean) => (
     <TouchableOpacity
-      className={`
-        rounded-xl bg-white/10 px-6 py-3
-        ${disabled ? 'opacity-30' : ''}
-      `}
+      className={clsx('rounded-xl bg-white/10 px-6 py-3', {
+        'opacity-30': disabled,
+      })}
       onPress={onPress}
       disabled={disabled}
     >

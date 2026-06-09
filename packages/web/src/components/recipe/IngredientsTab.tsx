@@ -2,6 +2,7 @@ import {queryKeys, scaleQuantity} from '@recipoo/client';
 import {useQuery} from '@tanstack/react-query';
 import {useState} from 'react';
 import type {Ingredient, RecipeDetail} from '@recipoo/types';
+import clsx from 'clsx';
 
 import {recipoo} from '../../lib/api.js';
 
@@ -72,10 +73,10 @@ const IngredientRow = ({
 }) => (
   <button
     type="button"
-    className={`
-      flex w-full items-center border-b border-gray-100 py-3 text-start
-      ${missing ? 'opacity-40' : ''}
-    `}
+    className={clsx(
+      'flex w-full items-center border-b border-gray-100 py-3 text-start',
+      {'opacity-40': missing},
+    )}
     onClick={onToggle}
   >
     <span className="flex-1 text-base text-gray-900">

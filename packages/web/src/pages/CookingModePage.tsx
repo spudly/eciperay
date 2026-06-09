@@ -1,4 +1,5 @@
 import {queryKeys} from '@recipoo/client';
+import clsx from 'clsx';
 import {useQuery} from '@tanstack/react-query';
 import {useEffect, useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
@@ -10,10 +11,10 @@ const ProgressDots = ({total, current}: {total: number; current: number}) => (
     {Array.from({length: total}).map((_, i) => (
       <div
         key={i}
-        className={`
-          size-2 rounded-full
-          ${i === current ? 'bg-white' : 'bg-white/40'}
-        `}
+        className={clsx('size-2 rounded-full', {
+          'bg-white': i === current,
+          'bg-white/40': i !== current,
+        })}
       />
     ))}
   </div>
@@ -88,10 +89,10 @@ export const CookingModePage = () => {
       <div className="flex justify-between">
         <button
           type="button"
-          className={`
-            rounded-xl bg-white/10 px-6 py-3 text-base text-white
-            ${step === 0 ? 'opacity-30' : ''}
-          `}
+          className={clsx(
+            `rounded-xl bg-white/10 px-6 py-3 text-base text-white`,
+            {'opacity-30': step === 0},
+          )}
           disabled={step === 0}
           onClick={goPrev}
         >
@@ -99,10 +100,10 @@ export const CookingModePage = () => {
         </button>
         <button
           type="button"
-          className={`
-            rounded-xl bg-white/10 px-6 py-3 text-base text-white
-            ${step === steps.length - 1 ? 'opacity-30' : ''}
-          `}
+          className={clsx(
+            `rounded-xl bg-white/10 px-6 py-3 text-base text-white`,
+            {'opacity-30': step === steps.length - 1},
+          )}
           disabled={step === steps.length - 1}
           onClick={goNext}
         >

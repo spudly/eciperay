@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import React, {useState} from 'react';
 import {Text, TouchableOpacity, View} from 'react-native';
 import type {RecipeDetail} from '@recipoo/types';
@@ -14,17 +15,17 @@ const StepCard = ({
   onPress: () => void;
 }) => (
   <TouchableOpacity
-    className={`
-      mb-3 rounded-xl border p-4
-      ${isActive ? `border-primary bg-primary/5` : `border-gray-100 bg-white`}
-    `}
+    className={clsx('mb-3 rounded-xl border p-4', {
+      'border-primary bg-primary/5': isActive,
+      'border-gray-100 bg-white': !isActive,
+    })}
     onPress={onPress}
   >
     <Text
-      className={`
-        mb-1 text-xs font-semibold
-        ${isActive ? 'text-primary' : `text-muted`}
-      `}
+      className={clsx('mb-1 text-xs font-semibold', {
+        'text-primary': isActive,
+        'text-muted': !isActive,
+      })}
     >
       Step {step.stepNumber}
     </Text>

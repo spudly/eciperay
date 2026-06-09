@@ -33,4 +33,4 @@
 - [x] vite port (8081) should come from .env
 - [x] why are we using vitest instead of jest for packages/web
 - [x] make tests fail on console.error
-- [ ] use clsx for constructing className props
+- [x] use clsx for constructing className props
