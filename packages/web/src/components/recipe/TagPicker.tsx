@@ -1,4 +1,5 @@
 import {queryKeys} from '@recipoo/client';
+import clsx from 'clsx';
 import {useQuery} from '@tanstack/react-query';
 
 import {recipoo} from '../../lib/api.js';
@@ -31,10 +32,9 @@ export const TagPicker = ({selectedIds, onChange}: Props) => {
           <button
             key={tag.id}
             type="button"
-            className={`
-              rounded-full px-3 py-1 text-xs font-medium
-              ${selected ? 'ring-primary ring-2' : ''}
-            `}
+            className={clsx('rounded-full px-3 py-1 text-xs font-medium', {
+              'ring-primary ring-2': selected,
+            })}
             style={{backgroundColor: `${tag.color}22`, color: tag.color}}
             onClick={() => {
               toggle(tag.id);

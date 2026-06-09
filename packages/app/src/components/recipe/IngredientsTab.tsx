@@ -1,4 +1,5 @@
 import {queryKeys, scaleQuantity} from '@recipoo/client';
+import clsx from 'clsx';
 import {useQuery} from '@tanstack/react-query';
 import React, {useState} from 'react';
 import {Text, TouchableOpacity, View} from 'react-native';
@@ -64,10 +65,9 @@ const IngredientRow = ({
   onToggle: () => void;
 }) => (
   <TouchableOpacity
-    className={`
-      flex-row items-center border-b border-gray-100 py-3
-      ${missing ? `opacity-40` : ''}
-    `}
+    className={clsx('flex-row items-center border-b border-gray-100 py-3', {
+      'opacity-40': missing,
+    })}
     onPress={onToggle}
   >
     <Text className="flex-1 text-base text-gray-900">

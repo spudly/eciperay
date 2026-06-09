@@ -1,4 +1,5 @@
 import {queryKeys} from '@recipoo/client';
+import clsx from 'clsx';
 import {useQuery} from '@tanstack/react-query';
 import {useState} from 'react';
 import {useParams} from 'react-router-dom';
@@ -49,14 +50,10 @@ export const RecipeDetailPage = () => {
           <button
             key={tab.key}
             type="button"
-            className={`
-              flex-1 py-3 text-xs font-medium
-              ${
-                activeTab === tab.key
-                  ? 'border-primary text-primary border-b-2'
-                  : 'text-muted'
-              }
-            `}
+            className={clsx('flex-1 py-3 text-xs font-medium', {
+              'border-primary text-primary border-b-2': activeTab === tab.key,
+              'text-muted': activeTab !== tab.key,
+            })}
             onClick={() => {
               setActiveTab(tab.key);
             }}

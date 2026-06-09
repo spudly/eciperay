@@ -1,6 +1,7 @@
 /* eslint-disable max-lines -- notes list, compose, chat, and draft review */
 import {invalidateRecipeQueries, queryKeys} from '@recipoo/client';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
+import clsx from 'clsx';
 import React, {useState} from 'react';
 import {
   KeyboardAvoidingView,
@@ -28,18 +29,23 @@ const NoteCard = ({note}: {note: RecipeNote}) => (
 
 const MessageBubble = ({role, content}: {role: string; content: string}) => (
   <View
-    className={`
-      mb-3 max-w-[80%]
-      ${role === 'user' ? 'self-end' : 'self-start'}
-    `}
+    className={clsx('mb-3 max-w-[80%]', {
+      'self-end': role === 'user',
+      'self-start': role !== 'user',
+    })}
   >
     <View
-      className={`
-        rounded-2xl px-4 py-3
-        ${role === 'user' ? 'bg-primary' : `bg-gray-100`}
-      `}
+      className={clsx('rounded-2xl px-4 py-3', {
+        'bg-primary': role === 'user',
+        'bg-gray-100': role !== 'user',
+      })}
     >
-      <Text className={role === 'user' ? 'text-white' : 'text-gray-900'}>
+      <Text
+        className={clsx({
+          'text-white': role === 'user',
+          'text-gray-900': role !== 'user',
+        })}
+      >
         {content}
       </Text>
     </View>
