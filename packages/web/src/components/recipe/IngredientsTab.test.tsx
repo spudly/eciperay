@@ -25,6 +25,55 @@ describe('IngredientsTab', () => {
     expect(onServingsChange).toHaveBeenCalledWith(3);
   });
 
+  test('renders ingredients sorted by sort order', async () => {
+    await renderWithProviders(
+      <IngredientsTab
+        recipe={makeRecipeDetail({
+          ingredients: [
+            {
+              id: 'i-3',
+              recipeId: 'recipe-uuid-1',
+              sortOrder: 2,
+              name: 'Salt',
+              quantity: 1,
+              unit: 'tsp',
+              notes: null,
+              isOptional: false,
+            },
+            {
+              id: 'i-1',
+              recipeId: 'recipe-uuid-1',
+              sortOrder: 0,
+              name: 'Flour',
+              quantity: 2,
+              unit: 'cups',
+              notes: null,
+              isOptional: false,
+            },
+            {
+              id: 'i-2',
+              recipeId: 'recipe-uuid-1',
+              sortOrder: 1,
+              name: 'Sugar',
+              quantity: 1,
+              unit: 'cup',
+              notes: null,
+              isOptional: false,
+            },
+          ],
+        })}
+        scaleFactor={1}
+        servings={4}
+        onServingsChange={onServingsChange}
+      />,
+    );
+    const names = screen
+      .getAllByRole('button')
+      .map(button => button.textContent || '')
+      .filter(text => /Flour|Sugar|Salt/.test(text));
+    expect(names).toEqual(['2 cups Flour', '1 cup Sugar', '1 tsp Salt']);
+  });
+
   test('shows substitutions for missing ingredients', async () => {
     await renderWithProviders(
       <IngredientsTab

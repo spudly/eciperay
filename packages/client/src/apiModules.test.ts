@@ -11,6 +11,8 @@ describe('createRecipooClient', () => {
   test('recipes api methods', async () => {
     const {api, client} = makeClient();
     await client.recipes.list();
+    await client.recipes.list({});
+    await client.recipes.list({search: 'pasta', limit: 50, offset: 10});
     await client.recipes.get('r1');
     await client.recipes.create({
       title: 'T',
@@ -29,6 +31,9 @@ describe('createRecipooClient', () => {
     await client.recipes.patch('r1', {title: 'New'});
     await client.recipes.delete('r1');
     expect(api.fetch).toHaveBeenCalledWith('/recipes');
+    expect(api.fetch).toHaveBeenCalledWith(
+      '/recipes?search=pasta&limit=50&offset=10',
+    );
     expect(api.fetch).toHaveBeenCalledWith('/recipes/r1');
     expect(api.fetch).toHaveBeenCalledWith(
       '/recipes',
@@ -67,7 +72,13 @@ describe('createRecipooClient', () => {
     await client.ai.generateImage({
       title: 'Soup',
       description: 'Warm soup',
+      ingredients: [{name: 'broth', quantity: 4, unit: 'cups'}],
+      instructions: ['Simmer broth'],
+    });
+    await client.ai.generateDescription({
+      title: 'Soup',
       ingredients: ['broth'],
+      instructions: ['Simmer'],
     });
     await client.drafts.listPending('r1');
     await client.drafts.approve('r1', 'd1');
@@ -117,6 +128,10 @@ describe('createRecipooClient', () => {
     );
     expect(api.fetch).toHaveBeenCalledWith(
       '/recipes/ai/generate-image',
+      expect.objectContaining({method: 'POST'}),
+    );
+    expect(api.fetch).toHaveBeenCalledWith(
+      '/recipes/ai/generate-description',
       expect.objectContaining({method: 'POST'}),
     );
     expect(api.fetch).toHaveBeenCalledWith('/recipes/r1/drafts?status=pending');

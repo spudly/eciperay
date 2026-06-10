@@ -87,6 +87,78 @@ describe('RecipesPage', () => {
     });
   });
 
+  test('loads more recipes when the sentinel is visible', async () => {
+    const firstPage = Array.from({length: 20}, (_, index) => ({
+      id: `recipe-${index}`,
+      title: `Recipe ${index}`,
+      servings: 4,
+      cookTimeMin: null,
+      userId: 'u',
+      description: null,
+      prepTimeMin: null,
+      imageUrl: null,
+      starRating: null,
+      sourceUrl: null,
+      createdAt: '',
+      updatedAt: '',
+      ingredients: [],
+      instructions: [],
+      tags: [],
+    }));
+    server.use(
+      http.get('http://localhost:8080/recipes', ({request}) => {
+        const offset = Number(
+          new URL(request.url).searchParams.get('offset') ?? 0,
+        );
+        if (offset === 0) {
+          return HttpResponse.json(firstPage);
+        }
+        return HttpResponse.json([
+          {
+            id: 'recipe-20',
+            title: 'Recipe 20',
+            servings: 4,
+            cookTimeMin: null,
+            userId: 'u',
+            description: null,
+            prepTimeMin: null,
+            imageUrl: null,
+            starRating: null,
+            sourceUrl: null,
+            createdAt: '',
+            updatedAt: '',
+            ingredients: [],
+            instructions: [],
+            tags: [],
+          },
+        ]);
+      }),
+    );
+    const observers: IntersectionObserverCallback[] = [];
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class {
+        constructor(callback: IntersectionObserverCallback) {
+          observers.push(callback);
+        }
+        observe() {}
+        disconnect() {}
+        unobserve() {}
+      },
+    );
+    await renderWithProviders(<RecipesPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Recipe 0')).toBeInTheDocument();
+    });
+    observers.at(-1)?.(
+      [{isIntersecting: true}] as IntersectionObserverEntry[],
+      {} as IntersectionObserver,
+    );
+    await waitFor(() => {
+      expect(screen.getByText('Recipe 20')).toBeInTheDocument();
+    });
+  });
+
   test('deletes recipe on confirm', async () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     await renderWithProviders(<RecipesPage />);
