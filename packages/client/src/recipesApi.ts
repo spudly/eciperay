@@ -1,9 +1,19 @@
-import type {RecipeDetail, RecipeInput} from '@recipoo/types';
+import type {
+  RecipeDetail,
+  RecipeExportBundle,
+  RecipeInput,
+} from '@recipoo/types';
 
 import type {ApiClient} from './createApiClient.js';
+import {fetchAllRecipePages} from './fetchAllRecipePages.js';
+import {buildListUrl, type RecipeListParams} from './recipesListUrl.js';
+
+export type {RecipeListParams} from './recipesListUrl.js';
 
 export const createRecipesApi = (client: ApiClient) => ({
-  list: () => client.fetch<RecipeDetail[]>('/recipes'),
+  list: (params?: RecipeListParams) =>
+    client.fetch<RecipeDetail[]>(buildListUrl(params)),
+  listAll: () => fetchAllRecipePages(client),
   get: (id: string) => client.fetch<RecipeDetail>(`/recipes/${id}`),
   create: (input: RecipeInput) =>
     client.fetch<RecipeDetail>('/recipes', {
@@ -22,4 +32,9 @@ export const createRecipesApi = (client: ApiClient) => ({
     }),
   delete: (id: string) =>
     client.fetch<undefined>(`/recipes/${id}`, {method: 'DELETE'}),
+  exportRecipes: (recipeIds: string[]) =>
+    client.fetch<RecipeExportBundle>('/recipes/export', {
+      method: 'POST',
+      body: JSON.stringify({recipeIds}),
+    }),
 });

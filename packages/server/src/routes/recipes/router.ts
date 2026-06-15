@@ -8,6 +8,7 @@ import {createAiRouter} from '../ai/router.js';
 
 import {approveDraft, rejectDraft} from './approveDraft.js';
 import {createRecipe} from './createRecipe.js';
+import {exportRecipes} from './exportRecipes.js';
 import {generateRecipeImage} from './generateRecipeImage.js';
 import {deleteRecipe} from './deleteRecipe.js';
 import {getRecipe} from './getRecipe.js';
@@ -22,6 +23,9 @@ const a = (req: Parameters<typeof requireAuth>[0]) => req as AuthedRequest;
 export const createRecipesRouter = (queryFn: QueryFn) => {
   const router = Router();
   router.get('/', requireAuth, (req, res) => listRecipes(a(req), res, queryFn));
+  router.post('/export', requireAuth, (req, res) =>
+    exportRecipes(a(req), res, queryFn),
+  );
   router.post('/', requireAuth, (req, res) =>
     createRecipe(a(req), res, queryFn),
   );

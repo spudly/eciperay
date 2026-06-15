@@ -12,4 +12,12 @@ export type {AiConversation, AiMessage, AiRole} from './aiMessage.js';
 export type {NutritionInfo} from './nutrition.js';
 export type {RecipeImport} from './recipeImport.js';
 export type {RecipeNote} from './recipeNote.js';
+export type {
+  BulkImportError,
+  BulkImportResult,
+  RecipeExportBundle,
+  RecipeExportImage,
+  RecipeExportRecord,
+  RecipeExportTag,
+} from './recipeExport.js';
 export type {User} from './user.js';

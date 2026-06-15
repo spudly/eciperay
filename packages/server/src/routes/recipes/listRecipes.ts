@@ -9,11 +9,15 @@ import {LIST_RECIPES_SQL} from './queries.js';
 type QueryFn = typeof defaultQuery;
 
 const DEFAULT_LIMIT = 20;
+const MAX_LIMIT = 500;
 
-const parseListParams = (req: AuthedRequest) => ({
-  limit: Number(req.query['limit'] ?? DEFAULT_LIMIT),
-  offset: Number(req.query['offset'] ?? 0),
-});
+const parseListParams = (req: AuthedRequest) => {
+  const requestedLimit = Number(req.query['limit'] ?? DEFAULT_LIMIT);
+  return {
+    limit: Math.min(Math.max(requestedLimit, 1), MAX_LIMIT),
+    offset: Math.max(Number(req.query['offset'] ?? 0), 0),
+  };
+};
 
 export const listRecipes = async (
   req: AuthedRequest,

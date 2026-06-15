@@ -77,6 +77,20 @@ const downloadRemoteImage = async (
 
 type ResolveImportedImageDeps = {uploadFn?: UploadBufferFn; fetchFn?: FetchFn};
 
+export const fetchImageAsBase64 = async (
+  url: string,
+  fetchFn: FetchFn = fetch,
+) => {
+  const downloaded = await downloadRemoteImage(url, fetchFn);
+  if (!downloaded) {
+    return null;
+  }
+  return {
+    base64: downloaded.buffer.toString('base64'),
+    contentType: downloaded.contentType,
+  };
+};
+
 export const resolveImportedImageUrl = async (
   candidate: string,
   supabaseUid: string,

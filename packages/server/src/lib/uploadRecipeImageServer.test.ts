@@ -11,7 +11,7 @@ jest.unstable_mockModule('../supabase.js', () => ({
   },
 }));
 
-const {resolveImportedImageUrl, uploadRecipeImageBuffer} =
+const {fetchImageAsBase64, resolveImportedImageUrl, uploadRecipeImageBuffer} =
   await import('./uploadRecipeImageServer.js');
 
 const makeFetchResponse = (buffer: Buffer, contentType: string, ok = true) => ({
@@ -211,5 +211,37 @@ describe('resolveImportedImageUrl', () => {
       ),
     ).resolves.toBeNull();
     expect(uploadFn).not.toHaveBeenCalled();
+  });
+});
+
+describe('fetchImageAsBase64', () => {
+  test('returns base64 payload for a remote image', async () => {
+    const fetchFn = jest
+      .fn<typeof fetch>()
+      .mockResolvedValue(
+        makeFetchResponse(
+          Buffer.from('pixels'),
+          'image/png',
+        ) as unknown as Response,
+      );
+    await expect(
+      fetchImageAsBase64('https://example.com/photo.png', fetchFn),
+    ).resolves.toEqual({
+      base64: Buffer.from('pixels').toString('base64'),
+      contentType: 'image/png',
+    });
+  });
+
+  test('returns null when download fails', async () => {
+    const fetchFn = jest
+      .fn<typeof fetch>()
+      .mockResolvedValue({
+        ok: false,
+        headers: {get: () => null},
+        arrayBuffer: async () => Buffer.alloc(0),
+      } as unknown as Response);
+    await expect(
+      fetchImageAsBase64('https://example.com/missing.png', fetchFn),
+    ).resolves.toBeNull();
   });
 });

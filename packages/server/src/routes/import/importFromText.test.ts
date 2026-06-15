@@ -12,6 +12,7 @@ const resolveImportedImageUrl = jest.fn<() => Promise<string | null>>();
 jest.unstable_mockModule('../../lib/uploadRecipeImageServer.js', () => ({
   uploadRecipeImageBuffer: jest.fn(),
   resolveImportedImageUrl,
+  fetchImageAsBase64: jest.fn(),
 }));
 
 const {createApp} = await import('../../server.js');
