@@ -43,6 +43,7 @@ export const importBulk = async (
 
   for (let index = 0; index < body.data.recipes.length; index++) {
     const record = body.data.recipes[index];
+    /* c8 ignore next 3 -- validated schema guarantees dense recipe arrays */
     if (!record) {
       continue;
     }

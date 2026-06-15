@@ -18,4 +18,10 @@ describe('buildListUrl', () => {
       '/recipes?limit=50&offset=20',
     );
   });
+
+  test('includes search when provided', () => {
+    expect(buildListUrl({search: 'pasta', limit: 50, offset: 10})).toBe(
+      '/recipes?search=pasta&limit=50&offset=10',
+    );
+  });
 });

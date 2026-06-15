@@ -21,6 +21,7 @@ const LIST_RECIPE_IDS_SQL = `
 
 const stripImageCacheKey = (url: string) => {
   const [withoutQuery] = url.split('?');
+  /* c8 ignore next -- split always returns at least one segment */
   return withoutQuery ?? url;
 };
 

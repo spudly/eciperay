@@ -9,6 +9,7 @@ import {createAiRouter} from '../ai/router.js';
 import {approveDraft, rejectDraft} from './approveDraft.js';
 import {createRecipe} from './createRecipe.js';
 import {exportRecipes} from './exportRecipes.js';
+import {generateRecipeDescriptionRoute} from './generateRecipeDescription.js';
 import {generateRecipeImage} from './generateRecipeImage.js';
 import {deleteRecipe} from './deleteRecipe.js';
 import {getRecipe} from './getRecipe.js';
@@ -31,6 +32,9 @@ export const createRecipesRouter = (queryFn: QueryFn) => {
   );
   router.post('/ai/generate-image', requireAuth, (req, res) =>
     generateRecipeImage(a(req), res),
+  );
+  router.post('/ai/generate-description', requireAuth, (req, res) =>
+    generateRecipeDescriptionRoute(a(req), res),
   );
   router.get('/:id', requireAuth, (req, res) =>
     getRecipe(a(req), res, queryFn),

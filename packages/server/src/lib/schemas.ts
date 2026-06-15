@@ -91,8 +91,16 @@ export const ImportImageSchema = z.object({
     .optional(),
 });
 
+/**
+ * Max request size for pasted content. Embedded base64 images are stripped
+ * before recipe text is validated, but the raw payload can be much larger.
+ */
+export const IMPORT_TEXT_REQUEST_MAX = 10_000_000;
+/** Max length of recipe content after HTML is stripped. */
+export const IMPORT_TEXT_PLAIN_MAX = 100_000;
+
 export const ImportTextSchema = z.object({
-  text: z.string().min(1).max(100_000),
+  text: z.string().min(1).max(IMPORT_TEXT_REQUEST_MAX),
 });
 
 // ─── Bulk export / import ─────────────────────────────────────────────────────
@@ -137,10 +145,25 @@ export const SyncUserSchema = z.object({
   displayName: z.string().max(100).optional(),
 });
 
+export const GenerateRecipeImageIngredientSchema = z.object({
+  name: z.string().min(1),
+  quantity: z.number().nullable().optional(),
+  unit: z.string().nullable().optional(),
+});
+
 export const GenerateRecipeImageSchema = z.object({
   title: z.string().min(1),
   description: z.string().nullish(),
+  ingredients: z.array(GenerateRecipeImageIngredientSchema).default([]),
+  instructions: z.array(z.string()).default([]),
+});
+
+export const GenerateRecipeDescriptionSchema = z.object({
+  title: z.string().min(1),
   ingredients: z.array(z.string()).default([]),
+  instructions: z.array(z.string()).default([]),
+  prepTimeMin: z.number().int().nonnegative().nullish(),
+  cookTimeMin: z.number().int().nonnegative().nullish(),
 });
 
 // ─── AI response shapes ────────────────────────────────────────────────────────

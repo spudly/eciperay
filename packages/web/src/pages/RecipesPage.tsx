@@ -1,6 +1,10 @@
-import {queryKeys} from '@recipoo/client';
-import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
-import {useState} from 'react';
+import {queryKeys, recipeListInfiniteQueryOptions} from '@recipoo/client';
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+} from '@tanstack/react-query';
+import {useDeferredValue, useEffect, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
 import type {RecipeDetail} from '@recipoo/types';
 
@@ -62,12 +66,35 @@ const RecipeCard = ({
 
 export const RecipesPage = () => {
   const [search, setSearch] = useState('');
+  const deferredSearch = useDeferredValue(search.trim());
   const queryClient = useQueryClient();
+  const loadMoreRef = useRef<HTMLDivElement>(null);
 
-  const {data: recipes = [], isLoading} = useQuery({
-    queryKey: queryKeys.recipes(),
-    queryFn: () => recipoo.recipes.list(),
-  });
+  const {data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage} =
+    useInfiniteQuery(
+      recipeListInfiniteQueryOptions(
+        params => recipoo.recipes.list(params),
+        deferredSearch,
+      ),
+    );
+
+  const recipes = data?.pages.flat() ?? [];
+
+  useEffect(() => {
+    const element = loadMoreRef.current;
+    if (!element || !hasNextPage || isFetchingNextPage) {
+      return;
+    }
+    const observer = new IntersectionObserver(entries => {
+      if (entries[0]?.isIntersecting) {
+        void fetchNextPage();
+      }
+    });
+    observer.observe(element);
+    return () => {
+      observer.disconnect();
+    };
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage, recipes.length]);
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => recipoo.recipes.delete(id),
@@ -75,10 +102,6 @@ export const RecipesPage = () => {
       void queryClient.invalidateQueries({queryKey: queryKeys.recipes()});
     },
   });
-
-  const filtered = recipes.filter(r =>
-    r.title.toLowerCase().includes(search.toLowerCase()),
-  );
 
   return (
     <div>
@@ -96,18 +119,28 @@ export const RecipesPage = () => {
       />
       {isLoading ? (
         <p className="text-muted mt-8 text-center">Loading…</p>
-      ) : filtered.length === 0 ? (
+      ) : recipes.length === 0 ? (
         <p className="text-muted mt-8 text-center">No recipes found.</p>
       ) : (
-        filtered.map(recipe => (
-          <RecipeCard
-            key={recipe.id}
-            recipe={recipe}
-            onDelete={id => {
-              deleteMutation.mutate(id);
-            }}
-          />
-        ))
+        <>
+          {recipes.map(recipe => (
+            <RecipeCard
+              key={recipe.id}
+              recipe={recipe}
+              onDelete={id => {
+                deleteMutation.mutate(id);
+              }}
+            />
+          ))}
+          <div
+            ref={loadMoreRef}
+            className="py-4 text-center"
+          >
+            {isFetchingNextPage ? (
+              <p className="text-muted text-sm">Loading more…</p>
+            ) : null}
+          </div>
+        </>
       )}
     </div>
   );
