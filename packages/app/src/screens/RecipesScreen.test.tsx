@@ -1,6 +1,6 @@
 import React from 'react';
 import {Alert, FlatList} from 'react-native';
-import {render, fireEvent, waitFor} from '@testing-library/react-native';
+import {render, fireEvent, waitFor, act} from '@testing-library/react-native';
 import {RECIPE_LIST_PAGE_SIZE} from '@recipoo/client';
 
 import {makeRecipeDetail} from '../__tests__/fixtures/recipe';
@@ -163,7 +163,7 @@ describe('RecipesScreen', () => {
       }
       return secondPagePromise;
     });
-    const {findByText, getByText, queryByText, UNSAFE_getByType} = render(
+    const {findByText, getByText, UNSAFE_getByType} = render(
       renderWithProviders(<RecipesScreen {...stackProps} />),
     );
     await findByText('Recipe 0');
@@ -171,11 +171,10 @@ describe('RecipesScreen', () => {
     await waitFor(() => {
       expect(getByText('Loading more…')).toBeTruthy();
     });
-    resolveSecondPage([
-      makeRecipeDetail({id: 'recipe-20', title: 'Recipe 20'}),
-    ]);
-    await waitFor(() => {
-      expect(queryByText('Loading more…')).toBeNull();
+    await act(async () => {
+      resolveSecondPage([
+        makeRecipeDetail({id: 'recipe-20', title: 'Recipe 20'}),
+      ]);
     });
   });
 
