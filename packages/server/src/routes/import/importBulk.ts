@@ -13,7 +13,7 @@ import {GET_RECIPE_DETAIL_SQL, setRecipeImageUrl} from '../recipes/queries.js';
 
 type QueryFn = typeof defaultQuery;
 
-const refreshRecipeDetail = async (
+export const refreshRecipeDetail = async (
   recipeId: string,
   userId: string,
   queryFn: QueryFn,

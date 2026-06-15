@@ -45,4 +45,11 @@ describe('recipeDetailToExportRecord', () => {
       expect.objectContaining({image}),
     );
   });
+
+  test('omits tag color when absent', () => {
+    const detail = makeRecipeDetail({
+      tags: [makeTag({name: 'Dinner', color: ''})],
+    });
+    expect(recipeDetailToExportRecord(detail).tags).toEqual([{name: 'Dinner'}]);
+  });
 });

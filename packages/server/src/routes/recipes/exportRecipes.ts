@@ -18,7 +18,10 @@ const LIST_RECIPE_IDS_SQL = `
   order by updated_at desc
 `;
 
-const stripImageCacheKey = (url: string) => url.split('?')[0] ?? url;
+const stripImageCacheKey = (url: string) => {
+  const [withoutQuery] = url.split('?');
+  return withoutQuery ?? url;
+};
 
 export const exportRecipes = async (
   req: AuthedRequest,

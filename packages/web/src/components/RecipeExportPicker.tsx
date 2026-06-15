@@ -47,9 +47,6 @@ export const RecipeExportPicker = ({
   );
 
   const handleExport = async () => {
-    if (selectedIds.size === 0) {
-      return;
-    }
     setExporting(true);
     onError(null);
     try {

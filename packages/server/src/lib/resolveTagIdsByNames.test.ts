@@ -44,4 +44,34 @@ describe('resolveTagIdsByNames', () => {
       ['user-uuid-1', 'Weeknight', '#ff0000'],
     );
   });
+
+  test('skips tags when insert returns no row', async () => {
+    const mockQuery = createMockQuery();
+    mockQuery
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([]));
+
+    const tagIds = await resolveTagIdsByNames(
+      'user-uuid-1',
+      [{name: 'Weeknight'}],
+      mockQuery,
+    );
+
+    expect(tagIds).toEqual([]);
+  });
+
+  test('uses default color when creating a tag without color', async () => {
+    const mockQuery = createMockQuery();
+    mockQuery
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([{id: NEW_TAG_ID}]));
+
+    await resolveTagIdsByNames('user-uuid-1', [{name: 'Weeknight'}], mockQuery);
+
+    expect(mockQuery).toHaveBeenNthCalledWith(
+      2,
+      expect.stringContaining('insert into tags'),
+      ['user-uuid-1', 'Weeknight', '#6b7280'],
+    );
+  });
 });

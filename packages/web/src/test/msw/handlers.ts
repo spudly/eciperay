@@ -36,6 +36,47 @@ export const handlers = [
   http.post(`${API}/recipes/import/text`, () =>
     HttpResponse.json({...recipe, id: 'imported-text-id'}),
   ),
+  http.post(`${API}/recipes/export`, async ({request}) => {
+    const body = (await request.json()) as {recipeIds: string[]};
+    return HttpResponse.json({
+      formatVersion: 1,
+      exportedAt: '2024-01-01T00:00:00.000Z',
+      recipes: body.recipeIds.map(() => ({
+        title: recipe.title,
+        description: recipe.description,
+        servings: recipe.servings,
+        prepTimeMin: recipe.prepTimeMin,
+        cookTimeMin: recipe.cookTimeMin,
+        starRating: recipe.starRating,
+        sourceUrl: recipe.sourceUrl,
+        tags: recipe.tags.map(tag => ({name: tag.name, color: tag.color})),
+        ingredients: recipe.ingredients.map(
+          ({sortOrder, name, quantity, unit, notes, isOptional}) => ({
+            sortOrder,
+            name,
+            quantity,
+            unit,
+            notes,
+            isOptional,
+          }),
+        ),
+        instructions: recipe.instructions.map(({stepNumber, body: text}) => ({
+          stepNumber,
+          body: text,
+        })),
+      })),
+    });
+  }),
+  http.post(`${API}/recipes/import/bulk`, async ({request}) => {
+    const body = (await request.json()) as {recipes: {title: string}[]};
+    return HttpResponse.json({
+      created: body.recipes.map((item, index) => ({
+        id: `imported-${index}`,
+        title: item.title,
+      })),
+      errors: [],
+    });
+  }),
   http.get(`${API}/recipes/:id/notes`, () =>
     HttpResponse.json([
       {
