@@ -13,7 +13,9 @@ import {renderWithProviders} from '../../test/testUtils.js';
 
 import {RecipeForm} from './RecipeForm.js';
 
-vi.mock('../../lib/api.js', () => ({recipoo: {ai: {generateImage: vi.fn()}}}));
+vi.mock('../../lib/api.js', () => ({
+  recipoo: {ai: {generateImage: vi.fn(), generateDescription: vi.fn()}},
+}));
 
 vi.mock('@recipoo/client', async importOriginal => {
   const actual = await importOriginal<typeof import('@recipoo/client')>();
@@ -27,6 +29,11 @@ vi.mock('@recipoo/client', async importOriginal => {
 const mockUploadRecipeImage = vi.mocked(uploadRecipeImage);
 const mockValidateRecipeImageFile = vi.mocked(validateRecipeImageFile);
 const mockGenerateImage = vi.mocked(recipoo.ai.generateImage);
+const mockGenerateDescription = vi.mocked(recipoo.ai.generateDescription);
+const imageGenerateButton = () =>
+  screen.getByRole('button', {name: 'Generate image with AI'});
+const descriptionGenerateButton = () =>
+  screen.getByRole('button', {name: 'Generate description with AI'});
 
 type OnSubmit = (input: RecipeInput, pendingImage?: File) => Promise<void>;
 
@@ -40,6 +47,10 @@ describe('RecipeForm', () => {
     mockGenerateImage.mockResolvedValue({
       imageBase64: btoa('pixels'),
       contentType: 'image/png',
+    });
+    mockGenerateDescription.mockReset();
+    mockGenerateDescription.mockResolvedValue({
+      description: 'A fresh AI-written description.',
     });
     mockValidateRecipeImageFile.mockReset();
     mockValidateRecipeImageFile.mockImplementation(file => {
@@ -84,6 +95,171 @@ describe('RecipeForm', () => {
     await userEvent.clear(instructionArea);
     await userEvent.type(instructionArea, 'Updated step');
     expect(instructionArea).toHaveValue('Updated step');
+  });
+
+  test('initializes ingredients sorted by sort order', async () => {
+    const detail = makeRecipeDetail({
+      ingredients: [
+        {
+          id: 'i-3',
+          recipeId: 'recipe-uuid-1',
+          sortOrder: 2,
+          name: 'Salt',
+          quantity: 1,
+          unit: 'tsp',
+          notes: null,
+          isOptional: false,
+        },
+        {
+          id: 'i-1',
+          recipeId: 'recipe-uuid-1',
+          sortOrder: 0,
+          name: 'Flour',
+          quantity: 2,
+          unit: 'cups',
+          notes: null,
+          isOptional: false,
+        },
+        {
+          id: 'i-2',
+          recipeId: 'recipe-uuid-1',
+          sortOrder: 1,
+          name: 'Sugar',
+          quantity: 1,
+          unit: 'cup',
+          notes: null,
+          isOptional: false,
+        },
+      ],
+    });
+    await renderWithProviders(
+      <RecipeForm
+        initial={recipeDetailToInput(detail)}
+        submitLabel="Save"
+        onSubmit={vi.fn()}
+      />,
+    );
+    const nameInputs = screen.getAllByPlaceholderText('Name');
+    expect(nameInputs.map(input => (input as HTMLInputElement).value)).toEqual([
+      'Flour',
+      'Sugar',
+      'Salt',
+    ]);
+  });
+
+  test('moves an ingredient up', async () => {
+    const onSubmit = mockOnSubmit();
+    await renderWithProviders(
+      <RecipeForm
+        initial={recipeDetailToInput(makeRecipeDetail())}
+        submitLabel="Save"
+        onSubmit={onSubmit}
+      />,
+    );
+    await userEvent.click(
+      screen.getByRole('button', {name: 'Move ingredient 2 up'}),
+    );
+    await userEvent.click(screen.getByText('Save'));
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalled();
+    });
+    const submitted = onSubmit.mock.calls[0]?.[0];
+    expect(submitted?.ingredients.map(ing => ing.name)).toEqual([
+      'Salt',
+      'Flour',
+    ]);
+  });
+
+  test('reorders ingredients before submit', async () => {
+    const onSubmit = mockOnSubmit();
+    await renderWithProviders(
+      <RecipeForm
+        initial={recipeDetailToInput(makeRecipeDetail())}
+        submitLabel="Save"
+        onSubmit={onSubmit}
+      />,
+    );
+    await userEvent.click(
+      screen.getByRole('button', {name: 'Move ingredient 1 down'}),
+    );
+    await userEvent.click(screen.getByText('Save'));
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalled();
+    });
+    const submitted = onSubmit.mock.calls[0]?.[0];
+    expect(submitted?.ingredients.map(ing => ing.name)).toEqual([
+      'Salt',
+      'Flour',
+    ]);
+    expect(submitted?.ingredients.map(ing => ing.sortOrder)).toEqual([0, 1]);
+  });
+
+  test('initializes instructions sorted by step number', async () => {
+    const detail = makeRecipeDetail({
+      instructions: [
+        {id: 'ins-3', recipeId: 'recipe-uuid-1', stepNumber: 3, body: 'Serve'},
+        {id: 'ins-1', recipeId: 'recipe-uuid-1', stepNumber: 1, body: 'Prep'},
+        {id: 'ins-2', recipeId: 'recipe-uuid-1', stepNumber: 2, body: 'Cook'},
+      ],
+    });
+    await renderWithProviders(
+      <RecipeForm
+        initial={recipeDetailToInput(detail)}
+        submitLabel="Save"
+        onSubmit={vi.fn()}
+      />,
+    );
+    const instructionAreas = screen
+      .getAllByRole('textbox')
+      .filter(el => (el as HTMLTextAreaElement).rows === 2);
+    expect(
+      instructionAreas.map(area => (area as HTMLTextAreaElement).value),
+    ).toEqual(['Prep', 'Cook', 'Serve']);
+  });
+
+  test('moves an instruction up', async () => {
+    const onSubmit = mockOnSubmit();
+    await renderWithProviders(
+      <RecipeForm
+        initial={recipeDetailToInput(makeRecipeDetail())}
+        submitLabel="Save"
+        onSubmit={onSubmit}
+      />,
+    );
+    await userEvent.click(screen.getByRole('button', {name: 'Move step 2 up'}));
+    await userEvent.click(screen.getByText('Save'));
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalled();
+    });
+    const submitted = onSubmit.mock.calls[0]?.[0];
+    expect(submitted?.instructions.map(ins => ins.body)).toEqual([
+      'Bake at 350°F',
+      'Mix dry ingredients',
+    ]);
+  });
+
+  test('reorders instructions before submit', async () => {
+    const onSubmit = mockOnSubmit();
+    await renderWithProviders(
+      <RecipeForm
+        initial={recipeDetailToInput(makeRecipeDetail())}
+        submitLabel="Save"
+        onSubmit={onSubmit}
+      />,
+    );
+    await userEvent.click(
+      screen.getByRole('button', {name: 'Move step 1 down'}),
+    );
+    await userEvent.click(screen.getByText('Save'));
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalled();
+    });
+    const submitted = onSubmit.mock.calls[0]?.[0];
+    expect(submitted?.instructions.map(ins => ins.body)).toEqual([
+      'Bake at 350°F',
+      'Mix dry ingredients',
+    ]);
+    expect(submitted?.instructions.map(ins => ins.stepNumber)).toEqual([1, 2]);
   });
 
   test('adds and removes ingredients and instructions', async () => {
@@ -194,10 +370,37 @@ describe('RecipeForm', () => {
         'recipe-uuid-1',
       );
     });
-    expect(screen.getByAltText('Recipe preview')).toHaveAttribute(
-      'src',
-      'https://cdn.example/recipe.png',
+    expect(screen.getByAltText('Recipe preview').getAttribute('src')).toMatch(
+      /^https:\/\/cdn\.example\/recipe\.png\?v=\d+$/,
     );
+  });
+
+  test('updates the preview cache key when re-uploading to the same URL', async () => {
+    await renderWithProviders(
+      <RecipeForm
+        initial={recipeDetailToInput(makeRecipeDetail())}
+        recipeId="recipe-uuid-1"
+        submitLabel="Save"
+        onSubmit={vi.fn()}
+      />,
+    );
+    const file = new File(['pixels'], 'recipe.png', {type: 'image/png'});
+    await userEvent.upload(screen.getByLabelText('Browse images'), file);
+    await waitFor(() => {
+      expect(screen.getByAltText('Recipe preview').getAttribute('src')).toMatch(
+        /^https:\/\/cdn\.example\/recipe\.png\?v=\d+$/,
+      );
+    });
+    const firstSrc = screen.getByAltText('Recipe preview').getAttribute('src');
+    await userEvent.click(screen.getByText('Remove image'));
+    await userEvent.upload(screen.getByLabelText('Browse images'), file);
+    await waitFor(() => {
+      const secondSrc = screen
+        .getByAltText('Recipe preview')
+        .getAttribute('src');
+      expect(secondSrc).toMatch(/^https:\/\/cdn\.example\/recipe\.png\?v=\d+$/);
+      expect(secondSrc).not.toBe(firstSrc);
+    });
   });
 
   test('defers image upload on create until submit', async () => {
@@ -402,12 +605,16 @@ describe('RecipeForm', () => {
         onSubmit={vi.fn()}
       />,
     );
-    await userEvent.click(screen.getByText('Generate with AI'));
+    await userEvent.click(imageGenerateButton());
     await waitFor(() => {
       expect(mockGenerateImage).toHaveBeenCalledWith({
         title: 'Test Recipe',
         description: 'A test recipe',
-        ingredients: ['Flour', 'Salt'],
+        ingredients: [
+          {name: 'Flour', quantity: 2, unit: 'cups'},
+          {name: 'Salt', quantity: null, unit: null},
+        ],
+        instructions: ['Mix dry ingredients', 'Bake at 350°F'],
       });
     });
     await waitFor(() => {
@@ -430,7 +637,7 @@ describe('RecipeForm', () => {
         onSubmit={onSubmit}
       />,
     );
-    await userEvent.click(screen.getByText('Generate with AI'));
+    await userEvent.click(imageGenerateButton());
     await waitFor(() => {
       expect(mockGenerateImage).toHaveBeenCalled();
     });
@@ -452,8 +659,9 @@ describe('RecipeForm', () => {
         onSubmit={vi.fn()}
       />,
     );
-    expect(screen.getByText('Generate with AI')).toBeDisabled();
-    await userEvent.click(screen.getByText('Generate with AI'));
+    expect(imageGenerateButton()).toBeDisabled();
+    expect(descriptionGenerateButton()).toBeDisabled();
+    await userEvent.click(imageGenerateButton());
     expect(mockGenerateImage).not.toHaveBeenCalled();
   });
 
@@ -467,7 +675,7 @@ describe('RecipeForm', () => {
       />,
       {withAuth: false},
     );
-    await userEvent.click(screen.getByText('Generate with AI'));
+    await userEvent.click(imageGenerateButton());
     expect(
       await screen.findByText('Sign in to generate images'),
     ).toBeInTheDocument();
@@ -486,7 +694,7 @@ describe('RecipeForm', () => {
         onSubmit={vi.fn()}
       />,
     );
-    await userEvent.click(screen.getByText('Generate with AI'));
+    await userEvent.click(imageGenerateButton());
     await waitFor(() => {
       expect(mockUploadRecipeImage).toHaveBeenCalledWith(
         expect.anything(),
@@ -507,7 +715,7 @@ describe('RecipeForm', () => {
         onSubmit={vi.fn()}
       />,
     );
-    await userEvent.click(screen.getByText('Generate with AI'));
+    await userEvent.click(imageGenerateButton());
     expect(await screen.findByText('OpenAI unavailable')).toBeInTheDocument();
   });
 
@@ -521,9 +729,112 @@ describe('RecipeForm', () => {
         onSubmit={vi.fn()}
       />,
     );
-    await userEvent.click(screen.getByText('Generate with AI'));
+    await userEvent.click(imageGenerateButton());
     expect(
       await screen.findByText('Failed to generate image'),
+    ).toBeInTheDocument();
+  });
+
+  test('generates a description from recipe details', async () => {
+    await renderWithProviders(
+      <RecipeForm
+        initial={recipeDetailToInput(makeRecipeDetail())}
+        submitLabel="Save"
+        onSubmit={vi.fn()}
+      />,
+    );
+    await userEvent.click(descriptionGenerateButton());
+    await waitFor(() => {
+      expect(mockGenerateDescription).toHaveBeenCalledWith({
+        title: 'Test Recipe',
+        ingredients: ['Flour', 'Salt'],
+        instructions: ['Mix dry ingredients', 'Bake at 350°F'],
+        prepTimeMin: 15,
+        cookTimeMin: 30,
+      });
+    });
+    expect(
+      screen.getByDisplayValue('A fresh AI-written description.'),
+    ).toBeInTheDocument();
+  });
+
+  test('sends null timing values when prep and cook are empty', async () => {
+    await renderWithProviders(
+      <RecipeForm
+        initial={{
+          title: 'New Recipe',
+          servings: 4,
+          ingredients: [
+            {
+              sortOrder: 0,
+              name: 'Flour',
+              quantity: null,
+              unit: null,
+              notes: null,
+              isOptional: false,
+            },
+          ],
+          instructions: [{stepNumber: 1, body: 'Mix'}],
+          tagIds: [],
+        }}
+        submitLabel="Create"
+        onSubmit={vi.fn()}
+      />,
+    );
+    await userEvent.click(descriptionGenerateButton());
+    await waitFor(() => {
+      expect(mockGenerateDescription).toHaveBeenCalledWith({
+        title: 'New Recipe',
+        ingredients: ['Flour'],
+        instructions: ['Mix'],
+        prepTimeMin: null,
+        cookTimeMin: null,
+      });
+    });
+  });
+
+  test('requires sign-in before generating a description', async () => {
+    await renderWithProviders(
+      <RecipeForm
+        initial={recipeDetailToInput(makeRecipeDetail())}
+        submitLabel="Save"
+        onSubmit={vi.fn()}
+      />,
+      {withAuth: false},
+    );
+    await userEvent.click(descriptionGenerateButton());
+    expect(
+      await screen.findByText('Sign in to generate descriptions'),
+    ).toBeInTheDocument();
+  });
+
+  test('shows a generation error when AI description creation fails', async () => {
+    mockGenerateDescription.mockRejectedValueOnce(
+      new Error('Claude unavailable'),
+    );
+    await renderWithProviders(
+      <RecipeForm
+        initial={recipeDetailToInput(makeRecipeDetail())}
+        submitLabel="Save"
+        onSubmit={vi.fn()}
+      />,
+    );
+    await userEvent.click(descriptionGenerateButton());
+    expect(await screen.findByText('Claude unavailable')).toBeInTheDocument();
+  });
+
+  test('shows a generic description generation error for non-Error throws', async () => {
+    mockGenerateDescription.mockRejectedValueOnce('bad');
+    await renderWithProviders(
+      <RecipeForm
+        initial={recipeDetailToInput(makeRecipeDetail())}
+        submitLabel="Save"
+        onSubmit={vi.fn()}
+      />,
+    );
+    await userEvent.click(descriptionGenerateButton());
+    expect(
+      await screen.findByText('Failed to generate description'),
     ).toBeInTheDocument();
   });
 

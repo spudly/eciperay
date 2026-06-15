@@ -31,7 +31,11 @@ describe('POST /recipes/ai/generate-image', () => {
       .send({
         title: 'Pasta',
         description: 'Fresh basil pasta',
-        ingredients: ['pasta', 'basil'],
+        ingredients: [
+          {name: 'pasta', quantity: 200, unit: 'g'},
+          {name: 'basil'},
+        ],
+        instructions: ['Boil pasta', 'Toss with basil'],
       });
     expect(res.status).toBe(200);
     expect(res.body).toEqual({

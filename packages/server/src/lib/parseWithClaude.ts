@@ -17,6 +17,7 @@ and return ONLY valid JSON matching this exact shape (no markdown, no explanatio
   "ingredients": [{"sortOrder": number, "name": string, "quantity": number|null, "unit": string|null, "notes": string|null, "isOptional": false}],
   "instructions": [{"stepNumber": number, "body": string}]
 }
+Preserve the original ingredient and instruction order from the source text. Number ingredients with sortOrder starting at 0 and steps starting at 1 in sequence.
 If the source text does not include a description, write a brief appetizing 1-2 sentence summary based on the recipe contents.`;
 
 const callClaude = (text: string, client: AnthropicClient) =>

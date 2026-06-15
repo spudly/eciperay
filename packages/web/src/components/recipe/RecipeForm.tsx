@@ -17,6 +17,10 @@ import {
 } from '../../lib/recipeImageInput.js';
 import {recipoo} from '../../lib/api.js';
 import {imageBase64ToFile} from '../../lib/imageBase64ToFile.js';
+import {
+  stripImageCacheKey,
+  withImageCacheKey,
+} from '../../lib/recipeImagePreviewUrl.js';
 import {supabase} from '../../lib/supabase.js';
 
 import {RecipeImageField} from './RecipeImageField.js';
@@ -68,14 +72,24 @@ export const RecipeForm = ({
   const [cookTimeMin, setCookTimeMin] = useState(initial.cookTimeMin ?? '');
   const [imageUrl, setImageUrl] = useState(initial.imageUrl ?? '');
   const [sourceUrl, setSourceUrl] = useState(initial.sourceUrl ?? '');
-  const [ingredients, setIngredients] = useState<FormIngredient[]>(
-    initial.ingredients.length > 0 ? initial.ingredients : [emptyIngredient(0)],
-  );
-  const [instructions, setInstructions] = useState<InstructionInput[]>(
-    initial.instructions.length > 0
-      ? initial.instructions
-      : [emptyInstruction(1)],
-  );
+  const [ingredients, setIngredients] = useState<FormIngredient[]>(() => {
+    const sorted = [...initial.ingredients].sort(
+      (a, b) => a.sortOrder - b.sortOrder,
+    );
+    if (sorted.length > 0) {
+      return sorted;
+    }
+    return [emptyIngredient(0)];
+  });
+  const [instructions, setInstructions] = useState<InstructionInput[]>(() => {
+    const sorted = [...initial.instructions].sort(
+      (a, b) => a.stepNumber - b.stepNumber,
+    );
+    if (sorted.length > 0) {
+      return sorted;
+    }
+    return [emptyInstruction(1)];
+  });
   const [tagIds, setTagIds] = useState<string[]>(initial.tagIds);
   const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -84,6 +98,9 @@ export const RecipeForm = ({
   const [imageError, setImageError] = useState<string | null>(null);
   const [imageUploading, setImageUploading] = useState(false);
   const [imageGenerating, setImageGenerating] = useState(false);
+  const [imageCacheKey, setImageCacheKey] = useState(0);
+  const [descriptionGenerating, setDescriptionGenerating] = useState(false);
+  const [descriptionError, setDescriptionError] = useState<string | null>(null);
 
   const clearPendingImage = () => {
     if (previewUrl) {
@@ -122,7 +139,12 @@ export const RecipeForm = ({
       setImageUploading(true);
       try {
         clearPendingImage();
-        setImageUrl(await uploadRecipeImage(supabase, file, userId, recipeId));
+        setImageUrl(
+          stripImageCacheKey(
+            await uploadRecipeImage(supabase, file, userId, recipeId),
+          ),
+        );
+        setImageCacheKey(Date.now());
       } catch (error_) {
         setImageError(
           error_ instanceof Error ? error_.message : 'Failed to upload image',
@@ -139,6 +161,46 @@ export const RecipeForm = ({
     setPreviewUrl(URL.createObjectURL(file));
   };
 
+  const handleGenerateDescription = async () => {
+    const trimmedTitle = title.trim();
+    /* c8 ignore next 4 -- generate button is disabled when title is empty */
+    if (!trimmedTitle) {
+      setDescriptionError('Add a title before generating a description');
+      return;
+    }
+    if (!session?.user.id) {
+      setDescriptionError('Sign in to generate descriptions');
+      return;
+    }
+    setDescriptionError(null);
+    setDescriptionGenerating(true);
+    try {
+      const ingredientNames = ingredients
+        .map(ingredient => ingredient.name.trim())
+        .filter(Boolean);
+      const instructionBodies = instructions
+        .map(instruction => instruction.body.trim())
+        .filter(Boolean);
+      const {description: generatedDescription} =
+        await recipoo.ai.generateDescription({
+          title: trimmedTitle,
+          ingredients: ingredientNames,
+          instructions: instructionBodies,
+          prepTimeMin: prepTimeMin === '' ? null : Number(prepTimeMin),
+          cookTimeMin: cookTimeMin === '' ? null : Number(cookTimeMin),
+        });
+      setDescription(generatedDescription);
+    } catch (error_) {
+      setDescriptionError(
+        error_ instanceof Error
+          ? error_.message
+          : 'Failed to generate description',
+      );
+    } finally {
+      setDescriptionGenerating(false);
+    }
+  };
+
   const handleGenerateImage = async () => {
     const trimmedTitle = title.trim();
     /* c8 ignore next 4 -- generate button is disabled when title is empty */
@@ -153,13 +215,21 @@ export const RecipeForm = ({
     setImageError(null);
     setImageGenerating(true);
     try {
-      const ingredientNames = ingredients
-        .map(ingredient => ingredient.name.trim())
+      const imageIngredients = ingredients
+        .map(ingredient => ({
+          name: ingredient.name.trim(),
+          quantity: toQuantity(ingredient.quantity),
+          unit: ingredient.unit,
+        }))
+        .filter(ingredient => ingredient.name);
+      const instructionBodies = instructions
+        .map(instruction => instruction.body.trim())
         .filter(Boolean);
       const {imageBase64, contentType} = await recipoo.ai.generateImage({
         title: trimmedTitle,
         description: description || null,
-        ingredients: ingredientNames,
+        ingredients: imageIngredients,
+        instructions: instructionBodies,
       });
       const extension = contentType === 'image/jpeg' ? 'jpg' : 'png';
       await processImageFile(
@@ -202,13 +272,53 @@ export const RecipeForm = ({
     );
   };
 
+  const moveIngredient = (index: number, direction: -1 | 1) => {
+    const target = index + direction;
+    /* c8 ignore next 3 -- reorder buttons are disabled at list bounds */
+    if (target < 0 || target >= ingredients.length) {
+      return;
+    }
+    setIngredients(prev => {
+      const next = [...prev];
+      const current = next[index];
+      const other = next[target];
+      /* c8 ignore next 3 -- array indices are valid after bounds check */
+      if (current === undefined || other === undefined) {
+        return prev;
+      }
+      next[index] = other;
+      next[target] = current;
+      return next;
+    });
+  };
+
+  const moveInstruction = (index: number, direction: -1 | 1) => {
+    const target = index + direction;
+    /* c8 ignore next 3 -- reorder buttons are disabled at list bounds */
+    if (target < 0 || target >= instructions.length) {
+      return;
+    }
+    setInstructions(prev => {
+      const next = [...prev];
+      const current = next[index];
+      const other = next[target];
+      /* c8 ignore next 3 -- array indices are valid after bounds check */
+      if (current === undefined || other === undefined) {
+        return prev;
+      }
+      next[index] = other;
+      next[target] = current;
+      return next;
+    });
+  };
+
   const buildInput = (): RecipeInput => ({
     title,
     description: description || null,
     servings,
     prepTimeMin: prepTimeMin === '' ? null : Number(prepTimeMin),
     cookTimeMin: cookTimeMin === '' ? null : Number(cookTimeMin),
-    imageUrl: pendingImageFile ? null : imageUrl || null,
+    imageUrl: pendingImageFile ? null : stripImageCacheKey(imageUrl) || null,
     sourceUrl: sourceUrl || null,
     ingredients: ingredients.map((ing, i) => ({
       ...ing,
@@ -232,7 +342,11 @@ export const RecipeForm = ({
     }
   };
 
-  const imagePreview = previewUrl ?? imageUrl;
+  const imagePreview =
+    previewUrl ??
+    (imageUrl && imageCacheKey > 0
+      ? withImageCacheKey(imageUrl, imageCacheKey)
+      : imageUrl);
 
   return (
     <form
@@ -260,12 +374,29 @@ export const RecipeForm = ({
         />
       </div>
       <div>
-        <label
-          htmlFor="description"
-          className="mb-1 block text-sm font-medium text-gray-700"
-        >
-          Description
-        </label>
+        <div className="mb-1 flex items-center justify-between gap-3">
+          <label
+            htmlFor="description"
+            className="text-sm font-medium text-gray-700"
+          >
+            Description
+          </label>
+          <button
+            type="button"
+            aria-label="Generate description with AI"
+            className="
+              border-primary text-primary inline-flex shrink-0 rounded-lg border
+              bg-white px-3 py-1 text-sm font-medium
+              disabled:cursor-not-allowed disabled:opacity-50
+            "
+            disabled={!title.trim() || descriptionGenerating}
+            onClick={() => {
+              void handleGenerateDescription();
+            }}
+          >
+            {descriptionGenerating ? 'Generating…' : 'Generate with AI'}
+          </button>
+        </div>
         <textarea
           id="description"
           className="w-full rounded-lg border border-gray-300 px-4 py-2"
@@ -275,6 +406,9 @@ export const RecipeForm = ({
             setDescription(e.target.value);
           }}
         />
+        {descriptionError ? (
+          <p className="mt-2 text-sm text-red-600">{descriptionError}</p>
+        ) : null}
       </div>
       <div className="grid grid-cols-3 gap-4">
         <div>
@@ -342,6 +476,7 @@ export const RecipeForm = ({
         onRemove={() => {
           clearPendingImage();
           setImageUrl('');
+          setImageCacheKey(0);
           setImageError(null);
         }}
       />
@@ -412,7 +547,7 @@ export const RecipeForm = ({
             />
             <input
               className="
-                col-span-6 rounded border border-gray-300 px-2 py-1 text-sm
+                col-span-4 rounded border border-gray-300 px-2 py-1 text-sm
               "
               placeholder="Name"
               required
@@ -421,6 +556,38 @@ export const RecipeForm = ({
                 updateIngredient(i, 'name', e.target.value);
               }}
             />
+            <div className="col-span-2 flex flex-col gap-1">
+              <button
+                type="button"
+                aria-label={`Move ingredient ${i + 1} up`}
+                className="
+                  rounded border border-gray-300 px-2 py-0.5 text-xs
+                  text-gray-700
+                  disabled:cursor-not-allowed disabled:opacity-40
+                "
+                disabled={i === 0}
+                onClick={() => {
+                  moveIngredient(i, -1);
+                }}
+              >
+                ↑
+              </button>
+              <button
+                type="button"
+                aria-label={`Move ingredient ${i + 1} down`}
+                className="
+                  rounded border border-gray-300 px-2 py-0.5 text-xs
+                  text-gray-700
+                  disabled:cursor-not-allowed disabled:opacity-40
+                "
+                disabled={i === ingredients.length - 1}
+                onClick={() => {
+                  moveIngredient(i, 1);
+                }}
+              >
+                ↓
+              </button>
+            </div>
             <button
               type="button"
               className="col-span-2 text-sm text-red-600"
@@ -466,6 +633,38 @@ export const RecipeForm = ({
                 updateInstruction(i, e.target.value);
               }}
             />
+            <div className="flex flex-col gap-1 pt-1">
+              <button
+                type="button"
+                aria-label={`Move step ${i + 1} up`}
+                className="
+                  rounded border border-gray-300 px-2 py-0.5 text-xs
+                  text-gray-700
+                  disabled:cursor-not-allowed disabled:opacity-40
+                "
+                disabled={i === 0}
+                onClick={() => {
+                  moveInstruction(i, -1);
+                }}
+              >
+                ↑
+              </button>
+              <button
+                type="button"
+                aria-label={`Move step ${i + 1} down`}
+                className="
+                  rounded border border-gray-300 px-2 py-0.5 text-xs
+                  text-gray-700
+                  disabled:cursor-not-allowed disabled:opacity-40
+                "
+                disabled={i === instructions.length - 1}
+                onClick={() => {
+                  moveInstruction(i, 1);
+                }}
+              >
+                ↓
+              </button>
+            </div>
             <button
               type="button"
               className="text-sm text-red-600"

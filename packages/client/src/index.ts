@@ -13,6 +13,11 @@ export {
 } from './uploadRecipeImage.js';
 export {AuthProvider, useAuth} from './AuthProvider.js';
 export {queryKeys} from './queryKeys.js';
+export {
+  getRecipeListNextPageParam,
+  RECIPE_LIST_PAGE_SIZE,
+  recipeListInfiniteQueryOptions,
+} from './recipeListQuery.js';
 export {invalidateRecipeQueries} from './invalidateRecipeQueries.js';
 export {createRecipesApi} from './recipesApi.js';
 export {createImportApi} from './importApi.js';
