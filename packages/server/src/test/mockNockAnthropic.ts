@@ -11,7 +11,7 @@ import {anthropic} from '../lib/anthropic.js';
 // resetMocks:true in jest.config.cjs calls .mockReset() between tests,
 // clearing the implementation so each test must call nockAnthropicMessage()
 // to re-arm it with mockResolvedValueOnce.
-const createSpy = jest.spyOn(anthropic.messages, 'create');
+export const anthropicCreateSpy = jest.spyOn(anthropic.messages, 'create');
 
 /**
  * Arms `anthropic.messages.create` to resolve once with a text message whose
@@ -19,7 +19,7 @@ const createSpy = jest.spyOn(anthropic.messages, 'create');
  * action under test.
  */
 export const nockAnthropicMessage = (responseText: string): void => {
-  createSpy.mockResolvedValueOnce({
+  anthropicCreateSpy.mockResolvedValueOnce({
     id: 'msg-test',
     type: 'message',
     role: 'assistant',

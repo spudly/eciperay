@@ -23,6 +23,61 @@ const baseImport: RecipeImport = {
 };
 
 describe('recipeImportToInput', () => {
+  test('sorts ingredients by sortOrder before renumbering', () => {
+    const input = recipeImportToInput({
+      ...baseImport,
+      ingredients: [
+        {
+          sortOrder: 2,
+          name: 'salt',
+          quantity: 1,
+          unit: 'tsp',
+          notes: null,
+          isOptional: false,
+        },
+        {
+          sortOrder: 0,
+          name: 'flour',
+          quantity: 2,
+          unit: 'cups',
+          notes: null,
+          isOptional: false,
+        },
+        {
+          sortOrder: 1,
+          name: 'sugar',
+          quantity: 1,
+          unit: 'cup',
+          notes: null,
+          isOptional: false,
+        },
+      ],
+    });
+    expect(input.ingredients.map(ing => ing.name)).toEqual([
+      'flour',
+      'sugar',
+      'salt',
+    ]);
+    expect(input.ingredients.map(ing => ing.sortOrder)).toEqual([0, 1, 2]);
+  });
+
+  test('sorts instructions by stepNumber before renumbering', () => {
+    const input = recipeImportToInput({
+      ...baseImport,
+      instructions: [
+        {stepNumber: 3, body: 'Serve'},
+        {stepNumber: 1, body: 'Prep'},
+        {stepNumber: 2, body: 'Cook'},
+      ],
+    });
+    expect(input.instructions.map(ins => ins.body)).toEqual([
+      'Prep',
+      'Cook',
+      'Serve',
+    ]);
+    expect(input.instructions.map(ins => ins.stepNumber)).toEqual([1, 2, 3]);
+  });
+
   test('converts import to input with empty tagIds and normalized ordering', () => {
     const input = recipeImportToInput(baseImport, {
       sourceUrl: 'https://example.com/soup',

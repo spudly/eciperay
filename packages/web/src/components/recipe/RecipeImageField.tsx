@@ -112,6 +112,7 @@ export const RecipeImageField = ({
         {onGenerateImage ? (
           <button
             type="button"
+            aria-label="Generate image with AI"
             className="
               border-primary text-primary inline-flex rounded-lg border bg-white
               px-4 py-2 text-sm font-medium

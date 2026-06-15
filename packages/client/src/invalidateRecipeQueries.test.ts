@@ -8,7 +8,7 @@ describe('invalidateRecipeQueries', () => {
     const spy = jest.spyOn(queryClient, 'invalidateQueries');
     await invalidateRecipeQueries(queryClient, 'recipe-1');
     expect(spy).toHaveBeenCalledTimes(6);
-    expect(spy).toHaveBeenCalledWith({queryKey: ['recipes']});
+    expect(spy).toHaveBeenCalledWith({queryKey: ['recipes', {search: ''}]});
     expect(spy).toHaveBeenCalledWith({queryKey: ['recipe', 'recipe-1']});
     expect(spy).toHaveBeenCalledWith({queryKey: ['notes', 'recipe-1']});
     expect(spy).toHaveBeenCalledWith({queryKey: ['conversation', 'recipe-1']});

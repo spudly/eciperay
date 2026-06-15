@@ -12,9 +12,21 @@ describe('api', () => {
     const image = await recipoo.ai.generateImage({
       title: 'Soup',
       description: 'Warm soup',
-      ingredients: ['broth'],
+      ingredients: [{name: 'broth', quantity: 4, unit: 'cups'}],
+      instructions: ['Simmer broth'],
     });
     expect(image).toEqual({imageBase64: 'aGVsbG8=', contentType: 'image/png'});
+  });
+
+  test('generates a recipe description via the API', async () => {
+    const result = await recipoo.ai.generateDescription({
+      title: 'Soup',
+      ingredients: ['broth'],
+      instructions: ['Simmer broth'],
+    });
+    expect(result).toEqual({
+      description: 'A delicious AI-generated description.',
+    });
   });
 
   test('getToken returns null without session', async () => {

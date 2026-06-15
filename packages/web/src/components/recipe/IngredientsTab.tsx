@@ -116,17 +116,19 @@ export const IngredientsTab = ({
         servings={servings}
         onChange={onServingsChange}
       />
-      {recipe.ingredients.map(ing => (
-        <IngredientRow
-          key={ing.id}
-          ingredient={ing}
-          scaleFactor={scaleFactor}
-          missing={missing.has(ing.id)}
-          onToggle={() => {
-            toggle(ing.id);
-          }}
-        />
-      ))}
+      {[...recipe.ingredients]
+        .sort((a, b) => a.sortOrder - b.sortOrder)
+        .map(ing => (
+          <IngredientRow
+            key={ing.id}
+            ingredient={ing}
+            scaleFactor={scaleFactor}
+            missing={missing.has(ing.id)}
+            onToggle={() => {
+              toggle(ing.id);
+            }}
+          />
+        ))}
       {missing.size > 0 ? (
         <p className="text-muted mt-3 text-sm">
           Click an ingredient to mark it missing and see substitutions below.

@@ -7,7 +7,16 @@ const API = 'http://localhost:8080';
 const recipe = makeRecipeDetail();
 
 export const handlers = [
-  http.get(`${API}/recipes`, () => HttpResponse.json([recipe])),
+  http.get(`${API}/recipes`, ({request}) => {
+    const url = new URL(request.url);
+    const search = url.searchParams.get('search')?.trim();
+    if (search && !recipe.title.toLowerCase().includes(search.toLowerCase())) {
+      return HttpResponse.json([]);
+    }
+    const offset = Number(url.searchParams.get('offset') ?? 0);
+    const limit = Number(url.searchParams.get('limit') ?? 100);
+    return HttpResponse.json([recipe].slice(offset, offset + limit));
+  }),
   http.get(`${API}/recipes/:id`, ({params}) =>
     HttpResponse.json({...recipe, id: params['id']}),
   ),
@@ -119,6 +128,9 @@ export const handlers = [
   ),
   http.post(`${API}/recipes/ai/generate-image`, () =>
     HttpResponse.json({imageBase64: 'aGVsbG8=', contentType: 'image/png'}),
+  ),
+  http.post(`${API}/recipes/ai/generate-description`, () =>
+    HttpResponse.json({description: 'A delicious AI-generated description.'}),
   ),
   http.get(`${API}/recipes/:id/drafts`, () =>
     HttpResponse.json([

@@ -107,10 +107,25 @@ export const SyncUserSchema = z.object({
   displayName: z.string().max(100).optional(),
 });
 
+export const GenerateRecipeImageIngredientSchema = z.object({
+  name: z.string().min(1),
+  quantity: z.number().nullable().optional(),
+  unit: z.string().nullable().optional(),
+});
+
 export const GenerateRecipeImageSchema = z.object({
   title: z.string().min(1),
   description: z.string().nullish(),
+  ingredients: z.array(GenerateRecipeImageIngredientSchema).default([]),
+  instructions: z.array(z.string()).default([]),
+});
+
+export const GenerateRecipeDescriptionSchema = z.object({
+  title: z.string().min(1),
   ingredients: z.array(z.string()).default([]),
+  instructions: z.array(z.string()).default([]),
+  prepTimeMin: z.number().int().nonnegative().nullish(),
+  cookTimeMin: z.number().int().nonnegative().nullish(),
 });
 
 // ─── AI response shapes ────────────────────────────────────────────────────────

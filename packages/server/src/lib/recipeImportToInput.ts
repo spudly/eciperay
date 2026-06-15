@@ -29,14 +29,12 @@ export const recipeImportToInput = (
     imageUrl: imageUrl ?? null,
     starRating: null,
     sourceUrl: recipe.sourceUrl ?? sourceUrl ?? null,
-    ingredients: recipe.ingredients.map((ing, index) => ({
-      ...ing,
-      sortOrder: index,
-    })),
-    instructions: recipe.instructions.map((ins, index) => ({
-      ...ins,
-      stepNumber: index + 1,
-    })),
+    ingredients: [...recipe.ingredients]
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .map((ing, index) => ({...ing, sortOrder: index})),
+    instructions: [...recipe.instructions]
+      .sort((a, b) => a.stepNumber - b.stepNumber)
+      .map((ins, index) => ({...ins, stepNumber: index + 1})),
     tagIds: tagIds ?? [],
   };
 };
