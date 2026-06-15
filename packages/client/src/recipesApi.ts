@@ -1,30 +1,19 @@
-import type {RecipeDetail, RecipeInput} from '@recipoo/types';
+import type {
+  RecipeDetail,
+  RecipeExportBundle,
+  RecipeInput,
+} from '@recipoo/types';
 
 import type {ApiClient} from './createApiClient.js';
+import {fetchAllRecipePages} from './fetchAllRecipePages.js';
+import {buildListUrl, type RecipeListParams} from './recipesListUrl.js';
 
-type ListRecipesParams = {search?: string; limit?: number; offset?: number};
-
-const buildListRecipesPath = (params?: ListRecipesParams): string => {
-  if (!params) {
-    return '/recipes';
-  }
-  const query = new URLSearchParams();
-  if (params.search) {
-    query.set('search', params.search);
-  }
-  if (params.limit !== undefined) {
-    query.set('limit', String(params.limit));
-  }
-  if (params.offset !== undefined) {
-    query.set('offset', String(params.offset));
-  }
-  const qs = query.toString();
-  return qs.length > 0 ? `/recipes?${qs}` : '/recipes';
-};
+export type {RecipeListParams} from './recipesListUrl.js';
 
 export const createRecipesApi = (client: ApiClient) => ({
-  list: (params?: ListRecipesParams) =>
-    client.fetch<RecipeDetail[]>(buildListRecipesPath(params)),
+  list: (params?: RecipeListParams) =>
+    client.fetch<RecipeDetail[]>(buildListUrl(params)),
+  listAll: () => fetchAllRecipePages(client),
   get: (id: string) => client.fetch<RecipeDetail>(`/recipes/${id}`),
   create: (input: RecipeInput) =>
     client.fetch<RecipeDetail>('/recipes', {
@@ -43,4 +32,9 @@ export const createRecipesApi = (client: ApiClient) => ({
     }),
   delete: (id: string) =>
     client.fetch<undefined>(`/recipes/${id}`, {method: 'DELETE'}),
+  exportRecipes: (recipeIds: string[]) =>
+    client.fetch<RecipeExportBundle>('/recipes/export', {
+      method: 'POST',
+      body: JSON.stringify({recipeIds}),
+    }),
 });

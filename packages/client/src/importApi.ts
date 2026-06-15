@@ -1,4 +1,8 @@
-import type {RecipeDetail} from '@recipoo/types';
+import type {
+  BulkImportResult,
+  RecipeDetail,
+  RecipeExportBundle,
+} from '@recipoo/types';
 
 import type {ApiClient} from './createApiClient.js';
 
@@ -17,5 +21,12 @@ export const createImportApi = (client: ApiClient) => ({
     client.fetch<RecipeDetail>('/recipes/import/text', {
       method: 'POST',
       body: JSON.stringify({text}),
+    }),
+  importBulk: (
+    bundle: RecipeExportBundle | Pick<RecipeExportBundle, 'recipes'>,
+  ) =>
+    client.fetch<BulkImportResult>('/recipes/import/bulk', {
+      method: 'POST',
+      body: JSON.stringify(bundle),
     }),
 });

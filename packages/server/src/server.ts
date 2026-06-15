@@ -30,7 +30,7 @@ export const createApp = ({
     .split(',')
     .map(origin => origin.trim());
   app.use(cors({origin: corsOrigins}));
-  app.use(express.json({limit: '10mb'}));
+  app.use(express.json({limit: '50mb'}));
   app.get('/health', (_req, res) => {
     res.json({status: 'ok'});
   });
