@@ -31,9 +31,9 @@ const RecipeCard = ({
   recipe: RecipeDetail;
   onDelete: (id: string) => void;
 }) => (
-  <div
-    className="mb-3 flex items-center gap-3 rounded-xl bg-white p-4 shadow-sm"
-  >
+  <div className="
+    mb-3 flex items-center gap-3 rounded-xl bg-white p-4 shadow-sm
+  ">
     <Link
       to={`/recipes/${recipe.id}`}
       className="shrink-0"

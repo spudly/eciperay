@@ -1,9 +1,9 @@
 import type {Request, Response} from 'express';
-import type {z} from 'zod';
+import type {infer as ZodInfer, ZodError, ZodType} from 'zod';
 
 type ValidateResult<T> = {ok: true; data: T} | {ok: false};
 
-const sendValidationError = (res: Response, error: z.ZodError) => {
+const sendValidationError = (res: Response, error: ZodError) => {
   res
     .status(400)
     .json({
@@ -16,7 +16,7 @@ const sendValidationError = (res: Response, error: z.ZodError) => {
 };
 
 export const validate = <T>(
-  schema: z.ZodType<T>,
+  schema: ZodType<T>,
   req: Request,
   res: Response,
 ): ValidateResult<T> => {
@@ -37,7 +37,7 @@ export const extractJsonFromAiText = (text: string): string => {
   return text.trim();
 };
 
-export const parseAiJson = <T>(schema: z.ZodType<T>, text: string): T =>
+export const parseAiJson = <T>(schema: ZodType<T>, text: string): T =>
   schema.parse(JSON.parse(extractJsonFromAiText(text)) as unknown);
 
-export type Infer<S extends z.ZodType> = z.infer<S>;
+export type Infer<S extends ZodType> = ZodInfer<S>;

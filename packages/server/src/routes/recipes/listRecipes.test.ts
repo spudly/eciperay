@@ -102,6 +102,35 @@ describe('GET /recipes', () => {
     ]);
   });
 
+  test('passes limit and offset query params', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockQuery.mockResolvedValue(makeQueryResult([]));
+    const res = await request(app)
+      .get('/recipes?limit=500&offset=40')
+      .set('Authorization', 'Bearer valid-token');
+    expect(res.status).toBe(200);
+    expect(mockQuery).toHaveBeenCalledWith(expect.any(String), [
+      'user-uuid-1',
+      500,
+      40,
+      null,
+    ]);
+  });
+
+  test('caps limit at 500', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockQuery.mockResolvedValue(makeQueryResult([]));
+    await request(app)
+      .get('/recipes?limit=9999')
+      .set('Authorization', 'Bearer valid-token');
+    expect(mockQuery).toHaveBeenCalledWith(expect.any(String), [
+      'user-uuid-1',
+      500,
+      0,
+      null,
+    ]);
+  });
+
   test('returns 401 without auth token', async () => {
     const res = await request(app).get('/recipes');
     expect(res.status).toBe(401);

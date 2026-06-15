@@ -4,6 +4,7 @@ import {query as defaultQuery} from '../../db/query.js';
 import {requireAuth, type AuthedRequest} from '../../middleware/requireAuth.js';
 
 import {importFromImage} from './importFromImage.js';
+import {importBulk} from './importBulk.js';
 import {importFromText} from './importFromText.js';
 import {importFromUrl} from './importFromUrl.js';
 
@@ -34,6 +35,11 @@ export const createImportRouter = (queryFn: QueryFn = defaultQuery) => {
     '/text',
     requireAuth,
     runImport((req, res) => importFromText(req, res, queryFn)),
+  );
+  router.post(
+    '/bulk',
+    requireAuth,
+    runImport((req, res) => importBulk(req, res, queryFn)),
   );
 
   return router;

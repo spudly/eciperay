@@ -2,10 +2,32 @@ import {jest} from '@jest/globals';
 
 import {generateRecipeImageWithOpenAi} from './generateRecipeImageWithOpenAi.js';
 
-const mockFetch = (
-  response: Partial<Response> & {json?: () => Promise<unknown>},
-) =>
-  jest
+type MockFetchResponse = Partial<Response> & {json?: () => Promise<unknown>};
+
+type MockFetchOptions =
+  | MockFetchResponse
+  | {dalleImageResponse: MockFetchResponse};
+
+const isDalleFetchOptions = (
+  options: MockFetchOptions,
+): options is {dalleImageResponse: MockFetchResponse} =>
+  'dalleImageResponse' in options;
+
+const mockFetch = (options: MockFetchOptions = {}) => {
+  if (isDalleFetchOptions(options)) {
+    return jest
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce({
+        ok: true,
+        text: async () => '',
+        json: async () => ({
+          data: [{url: 'https://example.com/generated.png'}],
+        }),
+      } as Response)
+      .mockResolvedValueOnce(options.dalleImageResponse as Response);
+  }
+
+  return jest
     .fn<typeof fetch>()
     .mockResolvedValue({
       ok: true,
@@ -14,8 +36,9 @@ const mockFetch = (
         data: [{b64_json: 'aGVsbG8='}],
         output_format: 'png',
       }),
-      ...response,
+      ...options,
     } as Response);
+};
 
 const parseRequestBody = (body: string | null | undefined) => {
   if (typeof body !== 'string') {
@@ -78,20 +101,13 @@ describe('generateRecipeImageWithOpenAi', () => {
   test('defaults content type when a dall-e image URL omits headers', async () => {
     process.env['OPENAI_API_KEY'] = 'test-key';
     process.env['OPENAI_IMAGE_MODEL'] = 'dall-e-3';
-    const fetchFn = jest
-      .fn<typeof fetch>()
-      .mockResolvedValueOnce({
-        ok: true,
-        text: async () => '',
-        json: async () => ({
-          data: [{url: 'https://example.com/generated.png'}],
-        }),
-      } as Response)
-      .mockResolvedValueOnce({
+    const fetchFn = mockFetch({
+      dalleImageResponse: {
         ok: true,
         headers: new Headers(),
         arrayBuffer: async () => Uint8Array.from([1]).buffer,
-      } as Response);
+      },
+    });
     const result = await generateRecipeImageWithOpenAi('Pasta', fetchFn);
     expect(result.contentType).toBe('image/png');
   });
@@ -99,20 +115,13 @@ describe('generateRecipeImageWithOpenAi', () => {
   test('downloads image URLs for dall-e responses', async () => {
     process.env['OPENAI_API_KEY'] = 'test-key';
     process.env['OPENAI_IMAGE_MODEL'] = 'dall-e-3';
-    const fetchFn = jest
-      .fn<typeof fetch>()
-      .mockResolvedValueOnce({
-        ok: true,
-        text: async () => '',
-        json: async () => ({
-          data: [{url: 'https://example.com/generated.png'}],
-        }),
-      } as Response)
-      .mockResolvedValueOnce({
+    const fetchFn = mockFetch({
+      dalleImageResponse: {
         ok: true,
         headers: new Headers({'content-type': 'image/png'}),
         arrayBuffer: async () => Uint8Array.from([1, 2, 3]).buffer,
-      } as Response);
+      },
+    });
     const result = await generateRecipeImageWithOpenAi('Pasta', fetchFn);
     expect(result).toEqual({imageBase64: 'AQID', contentType: 'image/png'});
   });
@@ -143,16 +152,7 @@ describe('generateRecipeImageWithOpenAi', () => {
   test('throws when a dall-e image URL cannot be downloaded', async () => {
     process.env['OPENAI_API_KEY'] = 'test-key';
     process.env['OPENAI_IMAGE_MODEL'] = 'dall-e-3';
-    const fetchFn = jest
-      .fn<typeof fetch>()
-      .mockResolvedValueOnce({
-        ok: true,
-        text: async () => '',
-        json: async () => ({
-          data: [{url: 'https://example.com/generated.png'}],
-        }),
-      } as Response)
-      .mockResolvedValueOnce({ok: false} as Response);
+    const fetchFn = mockFetch({dalleImageResponse: {ok: false}});
     await expect(
       generateRecipeImageWithOpenAi('Pasta', fetchFn),
     ).rejects.toThrow('Image generation returned an unreadable image URL');
@@ -161,20 +161,13 @@ describe('generateRecipeImageWithOpenAi', () => {
   test('throws when a downloaded dall-e image is empty', async () => {
     process.env['OPENAI_API_KEY'] = 'test-key';
     process.env['OPENAI_IMAGE_MODEL'] = 'dall-e-3';
-    const fetchFn = jest
-      .fn<typeof fetch>()
-      .mockResolvedValueOnce({
-        ok: true,
-        text: async () => '',
-        json: async () => ({
-          data: [{url: 'https://example.com/generated.png'}],
-        }),
-      } as Response)
-      .mockResolvedValueOnce({
+    const fetchFn = mockFetch({
+      dalleImageResponse: {
         ok: true,
         headers: new Headers({'content-type': 'image/jpeg'}),
         arrayBuffer: async () => new ArrayBuffer(0),
-      } as Response);
+      },
+    });
     await expect(
       generateRecipeImageWithOpenAi('Pasta', fetchFn),
     ).rejects.toThrow('Image generation returned an empty image');

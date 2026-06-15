@@ -12,6 +12,7 @@ describe('createRecipooClient', () => {
     const {api, client} = makeClient();
     await client.recipes.list();
     await client.recipes.list({});
+    await client.recipes.list({limit: 50, offset: 10});
     await client.recipes.list({search: 'pasta', limit: 50, offset: 10});
     await client.recipes.get('r1');
     await client.recipes.create({
@@ -30,7 +31,11 @@ describe('createRecipooClient', () => {
     });
     await client.recipes.patch('r1', {title: 'New'});
     await client.recipes.delete('r1');
+    await client.recipes.exportRecipes([
+      'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    ]);
     expect(api.fetch).toHaveBeenCalledWith('/recipes');
+    expect(api.fetch).toHaveBeenCalledWith('/recipes?limit=50&offset=10');
     expect(api.fetch).toHaveBeenCalledWith(
       '/recipes?search=pasta&limit=50&offset=10',
     );
@@ -51,6 +56,17 @@ describe('createRecipooClient', () => {
       '/recipes/r1',
       expect.objectContaining({method: 'DELETE'}),
     );
+    expect(api.fetch).toHaveBeenCalledWith(
+      '/recipes/export',
+      expect.objectContaining({method: 'POST'}),
+    );
+  });
+
+  test('recipes listAll fetches all pages', async () => {
+    const fetch = jest.fn().mockResolvedValue([]);
+    const client = createRecipooClient({fetch});
+    await client.recipes.listAll();
+    expect(fetch).toHaveBeenCalledWith('/recipes?limit=100&offset=0');
   });
 
   test('import, auth, tags, notes, ai, drafts apis', async () => {
@@ -58,6 +74,11 @@ describe('createRecipooClient', () => {
     await client.import.importUrl('https://example.com');
     await client.import.importImage('base64');
     await client.import.importText('Pasta recipe');
+    await client.import.importBulk({
+      formatVersion: 1,
+      exportedAt: '2024-01-01T00:00:00.000Z',
+      recipes: [],
+    });
     await client.auth.syncUser();
     await client.tags.list();
     await client.tags.create('Dinner', '#fff');
@@ -94,6 +115,10 @@ describe('createRecipooClient', () => {
     expect(api.fetch).toHaveBeenCalledWith(
       '/recipes/import/text',
       expect.any(Object),
+    );
+    expect(api.fetch).toHaveBeenCalledWith(
+      '/recipes/import/bulk',
+      expect.objectContaining({method: 'POST'}),
     );
     expect(api.fetch).toHaveBeenCalledWith(
       '/auth/sync',

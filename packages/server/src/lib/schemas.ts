@@ -103,6 +103,44 @@ export const ImportTextSchema = z.object({
   text: z.string().min(1).max(IMPORT_TEXT_REQUEST_MAX),
 });
 
+// ─── Bulk export / import ─────────────────────────────────────────────────────
+
+export const RecipeExportImageSchema = z.object({
+  base64: z.string().min(1),
+  contentType: z.enum(['image/jpeg', 'image/png', 'image/gif', 'image/webp']),
+});
+
+export const RecipeExportTagSchema = z.object({
+  name: z.string().min(1).max(50),
+  color: z
+    .string()
+    .regex(/^#[\da-f]{6}$/i)
+    .optional(),
+});
+
+export const RecipeExportRecordSchema = z.object({
+  title: z.string().min(1),
+  description: z.string().nullable(),
+  servings: z.number().int().positive(),
+  prepTimeMin: z.number().int().nonnegative().nullable(),
+  cookTimeMin: z.number().int().nonnegative().nullable(),
+  starRating: StarRating.nullable(),
+  sourceUrl: z.url().nullable(),
+  tags: z.array(RecipeExportTagSchema),
+  ingredients: z.array(IngredientInputSchema),
+  instructions: z.array(InstructionInputSchema),
+  image: RecipeExportImageSchema.optional(),
+});
+
+export const BulkImportSchema = z.object({
+  formatVersion: z.literal(1).optional(),
+  exportedAt: z.string().optional(),
+  recipes: z.array(RecipeExportRecordSchema).min(1),
+});
+
+export type {ExportRecipesInput} from './exportRecipesSchema.js';
+export {ExportRecipesSchema} from './exportRecipesSchema.js';
+
 export const SyncUserSchema = z.object({
   displayName: z.string().max(100).optional(),
 });
