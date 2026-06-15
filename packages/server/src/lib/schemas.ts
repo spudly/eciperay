@@ -91,8 +91,16 @@ export const ImportImageSchema = z.object({
     .optional(),
 });
 
+/**
+ * Max request size for pasted content. Embedded base64 images are stripped
+ * before recipe text is validated, but the raw payload can be much larger.
+ */
+export const IMPORT_TEXT_REQUEST_MAX = 10_000_000;
+/** Max length of recipe content after HTML is stripped. */
+export const IMPORT_TEXT_PLAIN_MAX = 100_000;
+
 export const ImportTextSchema = z.object({
-  text: z.string().min(1).max(100_000),
+  text: z.string().min(1).max(IMPORT_TEXT_REQUEST_MAX),
 });
 
 export const SyncUserSchema = z.object({
