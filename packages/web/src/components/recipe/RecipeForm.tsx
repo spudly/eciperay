@@ -282,6 +282,7 @@ export const RecipeForm = ({
       const next = [...prev];
       const current = next[index];
       const other = next[target];
+      /* c8 ignore next 3 -- array indices are valid after bounds check */
       if (current === undefined || other === undefined) {
         return prev;
       }
@@ -301,6 +302,7 @@ export const RecipeForm = ({
       const next = [...prev];
       const current = next[index];
       const other = next[target];
+      /* c8 ignore next 3 -- array indices are valid after bounds check */
       if (current === undefined || other === undefined) {
         return prev;
       }

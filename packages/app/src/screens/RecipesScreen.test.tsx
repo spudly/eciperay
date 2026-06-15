@@ -133,6 +133,77 @@ describe('RecipesScreen', () => {
     });
   });
 
+  test('does not load more when there is no next page', async () => {
+    mockList.mockResolvedValue([makeRecipeDetail({title: 'Only Recipe'})]);
+    const {findByText, UNSAFE_getByType} = render(
+      renderWithProviders(<RecipesScreen {...stackProps} />),
+    );
+    await findByText('Only Recipe');
+    UNSAFE_getByType(FlatList).props.onEndReached?.();
+    await waitFor(() => {
+      expect(mockList).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  test('shows loading footer while fetching next page', async () => {
+    const firstPage = Array.from({length: 20}, (_, index) =>
+      makeRecipeDetail({id: `recipe-${index}`, title: `Recipe ${index}`}),
+    );
+    let resolveSecondPage!: (
+      value: ReturnType<typeof makeRecipeDetail>[],
+    ) => void;
+    const secondPagePromise = new Promise<
+      ReturnType<typeof makeRecipeDetail>[]
+    >(resolve => {
+      resolveSecondPage = resolve;
+    });
+    mockList.mockImplementation(async (params?: {offset?: number}) => {
+      if (params?.offset === 0) {
+        return firstPage;
+      }
+      return secondPagePromise;
+    });
+    const {findByText, getByText, queryByText, UNSAFE_getByType} = render(
+      renderWithProviders(<RecipesScreen {...stackProps} />),
+    );
+    await findByText('Recipe 0');
+    UNSAFE_getByType(FlatList).props.onEndReached?.();
+    await waitFor(() => {
+      expect(getByText('Loading more…')).toBeTruthy();
+    });
+    resolveSecondPage([
+      makeRecipeDetail({id: 'recipe-20', title: 'Recipe 20'}),
+    ]);
+    await waitFor(() => {
+      expect(queryByText('Loading more…')).toBeNull();
+    });
+  });
+
+  test('does not fetch again while already loading more', async () => {
+    const firstPage = Array.from({length: 20}, (_, index) =>
+      makeRecipeDetail({id: `recipe-${index}`, title: `Recipe ${index}`}),
+    );
+    mockList.mockImplementation(async (params?: {offset?: number}) => {
+      if (params?.offset === 0) {
+        return firstPage;
+      }
+      return new Promise(() => {
+        /* never resolves */
+      });
+    });
+    const {findByText, UNSAFE_getByType} = render(
+      renderWithProviders(<RecipesScreen {...stackProps} />),
+    );
+    await findByText('Recipe 0');
+    const list = UNSAFE_getByType(FlatList);
+    list.props.onEndReached?.();
+    await waitFor(() => {
+      expect(mockList).toHaveBeenCalledTimes(2);
+    });
+    list.props.onEndReached?.();
+    expect(mockList).toHaveBeenCalledTimes(2);
+  });
+
   test('shows empty state when no recipes match search', async () => {
     mockList.mockImplementation(async (params?: {search?: string}) => {
       if (params?.search === 'Nonexistent Recipe') {
