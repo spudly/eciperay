@@ -130,9 +130,8 @@ export const BulkImportSchema = z.object({
   recipes: z.array(RecipeExportRecordSchema).min(1),
 });
 
-export const ExportRecipesSchema = z.object({
-  recipeIds: z.array(z.uuid()).min(1),
-});
+export type {ExportRecipesInput} from './exportRecipesSchema.js';
+export {ExportRecipesSchema} from './exportRecipesSchema.js';
 
 export const SyncUserSchema = z.object({
   displayName: z.string().max(100).optional(),

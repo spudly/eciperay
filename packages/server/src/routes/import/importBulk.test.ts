@@ -12,6 +12,11 @@ const fetchImageAsBase64 =
   jest.fn<() => Promise<{base64: string; contentType: string} | null>>();
 const resolveImportedImageUrl = jest.fn<() => Promise<string | null>>();
 
+jest.unstable_mockModule('../../lib/remoteImageDownload.js', () => ({
+  downloadRemoteImage: jest.fn(),
+  fetchImageAsBase64,
+}));
+
 jest.unstable_mockModule('../../lib/uploadRecipeImageServer.js', () => ({
   uploadRecipeImageBuffer: jest.fn(),
   fetchImageAsBase64,

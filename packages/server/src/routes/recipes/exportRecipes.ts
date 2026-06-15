@@ -5,8 +5,9 @@ import {query as defaultQuery} from '../../db/query.js';
 import type {AuthedRequest} from '../../middleware/requireAuth.js';
 import {mapRowToRecipeDetail} from '../../lib/mapRowToRecipeDetail.js';
 import {recipeDetailToExportRecord} from '../../lib/recipeDetailToExportRecord.js';
-import {ExportRecipesSchema, validate} from '../../lib/schemas.js';
-import {fetchImageAsBase64} from '../../lib/uploadRecipeImageServer.js';
+import {fetchImageAsBase64} from '../../lib/remoteImageDownload.js';
+import {ExportRecipesSchema} from '../../lib/exportRecipesSchema.js';
+import {validate} from '../../lib/validate.js';
 
 import {GET_RECIPE_DETAIL_SQL} from './queries.js';
 
@@ -49,11 +50,12 @@ export const exportRecipes = async (
     const detail = mapRowToRecipeDetail(
       detailRow as Parameters<typeof mapRowToRecipeDetail>[0],
     );
-    let image;
+    let image: {base64: string; contentType: string} | undefined;
     if (detail.imageUrl) {
-      image =
-        (await fetchImageAsBase64(stripImageCacheKey(detail.imageUrl))) ??
-        undefined;
+      const fetched = await fetchImageAsBase64(
+        stripImageCacheKey(detail.imageUrl),
+      );
+      image = fetched ?? undefined;
     }
     recipes.push(recipeDetailToExportRecord(detail, image));
   }

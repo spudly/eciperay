@@ -1,7 +1,10 @@
 import {supabase} from '../supabase.js';
 
+import {downloadRemoteImage} from './remoteImageDownload.js';
+
+export {fetchImageAsBase64} from './remoteImageDownload.js';
+
 const RECIPE_IMAGES_BUCKET = 'recipe-images';
-const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 
 const recipeImageStoragePath = (supabaseUid: string, recipeId: string) =>
   `${supabaseUid}/${recipeId}`;
@@ -46,50 +49,7 @@ type UploadBufferFn = (
 
 type FetchFn = typeof fetch;
 
-const downloadRemoteImage = async (
-  url: string,
-  fetchFn: FetchFn,
-): Promise<{buffer: Buffer; contentType: string} | null> => {
-  try {
-    const response = await fetchFn(url, {
-      headers: {'User-Agent': 'Recipoo/1.0'},
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!response.ok) {
-      return null;
-    }
-    const contentType = response.headers
-      .get('content-type')
-      ?.split(';')[0]
-      ?.trim();
-    if (!contentType?.startsWith('image/')) {
-      return null;
-    }
-    const buffer = Buffer.from(await response.arrayBuffer());
-    if (buffer.length === 0 || buffer.length > MAX_IMAGE_BYTES) {
-      return null;
-    }
-    return {buffer, contentType};
-  } catch {
-    return null;
-  }
-};
-
 type ResolveImportedImageDeps = {uploadFn?: UploadBufferFn; fetchFn?: FetchFn};
-
-export const fetchImageAsBase64 = async (
-  url: string,
-  fetchFn: FetchFn = fetch,
-) => {
-  const downloaded = await downloadRemoteImage(url, fetchFn);
-  if (!downloaded) {
-    return null;
-  }
-  return {
-    base64: downloaded.buffer.toString('base64'),
-    contentType: downloaded.contentType,
-  };
-};
 
 export const resolveImportedImageUrl = async (
   candidate: string,
