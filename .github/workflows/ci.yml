@@ -8,10 +8,11 @@ on:
 
 jobs:
   setup:
-    name: Discover test packages
+    name: Discover packages
     runs-on: ubuntu-latest
     outputs:
-      test-packages: ${{ steps.test-packages.outputs.packages }}
+      test-packages: ${{ steps.discover-packages.outputs.test-packages }}
+      lint-packages: ${{ steps.discover-packages.outputs.lint-packages }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -21,15 +22,47 @@ jobs:
         with:
           node-version: 22
 
-      - name: Discover packages with tests
-        id: test-packages
+      - name: Discover workspace packages
+        id: discover-packages
         run: |
-          packages=$(node --input-type=module -e "
-            import { readFileSync, existsSync } from 'node:fs';
+          node --input-type=module -e "
+            import { readFileSync, existsSync, readdirSync } from 'node:fs';
+            import { appendFileSync } from 'node:fs';
             import { join } from 'node:path';
 
+            const lintableExtension = /\.(ts|tsx|js|cjs|mjs)$/u;
+            const skippedDirs = new Set([
+              'node_modules',
+              'coverage',
+              'ios',
+              'android',
+              '.turbo',
+            ]);
+
+            const hasLintableFiles = (dir) => {
+              if (!existsSync(dir)) {
+                return false;
+              }
+
+              for (const entry of readdirSync(dir, { withFileTypes: true })) {
+                const fullPath = join(dir, entry.name);
+                if (entry.isDirectory()) {
+                  if (skippedDirs.has(entry.name)) {
+                    continue;
+                  }
+                  if (hasLintableFiles(fullPath)) {
+                    return true;
+                  }
+                } else if (lintableExtension.test(entry.name)) {
+                  return true;
+                }
+              }
+
+              return false;
+            };
+
             const { workspaces = [] } = JSON.parse(readFileSync('package.json', 'utf8'));
-            const withTests = workspaces.filter((ws) => {
+            const testPackages = workspaces.filter((ws) => {
               const pkgPath = join(ws, 'package.json');
               if (!existsSync(pkgPath)) {
                 return false;
@@ -37,9 +70,11 @@ jobs:
               const { scripts = {} } = JSON.parse(readFileSync(pkgPath, 'utf8'));
               return scripts['test:coverage'] ?? scripts.test;
             });
-            process.stdout.write(JSON.stringify(withTests));
-          ")
-          echo "packages=$packages" >> "$GITHUB_OUTPUT"
+            const lintPackages = workspaces.filter((ws) => hasLintableFiles(ws));
+
+            appendFileSync(process.env.GITHUB_OUTPUT, 'test-packages=' + JSON.stringify(testPackages) + '\n');
+            appendFileSync(process.env.GITHUB_OUTPUT, 'lint-packages=' + JSON.stringify(lintPackages) + '\n');
+          "
 
   install:
     name: Install dependencies
@@ -87,9 +122,13 @@ jobs:
         run: npm run typecheck
 
   lint:
-    name: lint
-    needs: install
+    name: lint (${{ matrix.package }})
+    needs: [install, setup]
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package: ${{ fromJson(needs.setup.outputs.lint-packages) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -99,8 +138,23 @@ jobs:
         with:
           skip-install-on-cache-hit: 'true'
 
+      - name: Restore ESLint cache
+        uses: actions/cache@v5
+        with:
+          path: .eslintcache
+          key:
+            eslint-${{ runner.os }}-${{ matrix.package }}-${{
+            hashFiles('eslint.config.ts', 'package-lock.json',
+            'eslint-rules/**') }}-${{ hashFiles(format('{0}/**',
+            matrix.package)) }}
+          restore-keys: |
+            eslint-${{ runner.os }}-${{ matrix.package }}-${{ hashFiles('eslint.config.ts', 'package-lock.json', 'eslint-rules/**') }}-
+            eslint-${{ runner.os }}-${{ matrix.package }}-
+
       - name: Lint
-        run: npm run lint
+        run:
+          npx eslint ${{ matrix.package }} --max-warnings 0 --cache
+          --cache-location .eslintcache --cache-strategy content
 
   lint-rules:
     name: lint-rules
