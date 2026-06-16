@@ -7,24 +7,221 @@ on:
     branches: [master]
 
 jobs:
-  ci:
-    name: Typecheck, Lint, Test
+  setup:
+    name: Discover packages
     runs-on: ubuntu-latest
-
+    outputs:
+      test-packages: ${{ steps.discover-packages.outputs.test-packages }}
+      lint-packages: ${{ steps.discover-packages.outputs.lint-packages }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 22
-          cache: npm
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Discover workspace packages
+        id: discover-packages
+        run: |
+          node --input-type=module -e "
+            import { readFileSync, existsSync, readdirSync } from 'node:fs';
+            import { appendFileSync } from 'node:fs';
+            import { join } from 'node:path';
 
-      - name: CI checks
-        run: npm run ci
+            const lintableExtension = /\.(ts|tsx|js|cjs|mjs)$/u;
+            const skippedDirs = new Set([
+              'node_modules',
+              'coverage',
+              'ios',
+              'android',
+              '.turbo',
+            ]);
+
+            const hasLintableFiles = (dir) => {
+              if (!existsSync(dir)) {
+                return false;
+              }
+
+              for (const entry of readdirSync(dir, { withFileTypes: true })) {
+                const fullPath = join(dir, entry.name);
+                if (entry.isDirectory()) {
+                  if (skippedDirs.has(entry.name)) {
+                    continue;
+                  }
+                  if (hasLintableFiles(fullPath)) {
+                    return true;
+                  }
+                } else if (lintableExtension.test(entry.name)) {
+                  return true;
+                }
+              }
+
+              return false;
+            };
+
+            const { workspaces = [] } = JSON.parse(readFileSync('package.json', 'utf8'));
+            const testPackages = workspaces.filter((ws) => {
+              const pkgPath = join(ws, 'package.json');
+              if (!existsSync(pkgPath)) {
+                return false;
+              }
+              const { scripts = {} } = JSON.parse(readFileSync(pkgPath, 'utf8'));
+              return scripts['test:coverage'] ?? scripts.test;
+            });
+            const lintPackages = workspaces.filter((ws) => hasLintableFiles(ws));
+
+            appendFileSync(process.env.GITHUB_OUTPUT, 'test-packages=' + JSON.stringify(testPackages) + '\n');
+            appendFileSync(process.env.GITHUB_OUTPUT, 'lint-packages=' + JSON.stringify(lintPackages) + '\n');
+          "
+
+  install:
+    name: Install dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup and install
+        uses: ./.github/actions/ci-setup
+        with:
+          install-command: npm ci
+          skip-install-on-cache-hit: 'true'
+
+  validate:
+    name: validate
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup
+        uses: ./.github/actions/ci-setup
+        with:
+          skip-install-on-cache-hit: 'true'
+
+      - name: Validate Node version
+        run: npm run validate:node-version
+
+  typecheck:
+    name: typecheck
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup
+        uses: ./.github/actions/ci-setup
+        with:
+          skip-install-on-cache-hit: 'true'
+
+      - name: Typecheck
+        run: npm run typecheck
+
+  lint:
+    name: lint (${{ matrix.package }})
+    needs: [install, setup]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package: ${{ fromJson(needs.setup.outputs.lint-packages) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup
+        uses: ./.github/actions/ci-setup
+        with:
+          skip-install-on-cache-hit: 'true'
+
+      - name: Restore ESLint cache
+        uses: actions/cache@v5
+        with:
+          path: .eslintcache
+          key:
+            eslint-${{ runner.os }}-${{ matrix.package }}-${{
+            hashFiles('eslint.config.ts', 'package-lock.json',
+            'eslint-rules/**') }}-${{ hashFiles(format('{0}/**',
+            matrix.package)) }}
+          restore-keys: |
+            eslint-${{ runner.os }}-${{ matrix.package }}-${{ hashFiles('eslint.config.ts', 'package-lock.json', 'eslint-rules/**') }}-
+            eslint-${{ runner.os }}-${{ matrix.package }}-
+
+      - name: Lint
+        run:
+          npx eslint ${{ matrix.package }} --max-warnings 0 --cache
+          --cache-location .eslintcache --cache-strategy content
+
+  lint-rules:
+    name: lint-rules
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup
+        uses: ./.github/actions/ci-setup
+        with:
+          skip-install-on-cache-hit: 'true'
+
+      - name: Lint unused rules
+        run: npm run lint:unused-rules
+
+  audit:
+    name: audit
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup
+        uses: ./.github/actions/ci-setup
+        with:
+          skip-install-on-cache-hit: 'true'
+
+      - name: Audit
+        run: npm run audit
+
+  depcheck:
+    name: depcheck
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup
+        uses: ./.github/actions/ci-setup
+        with:
+          skip-install-on-cache-hit: 'true'
+
+      - name: Depcheck
+        run: npm run depcheck
+
+  test:
+    name: test (${{ matrix.package }})
+    needs: [install, setup]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package: ${{ fromJson(needs.setup.outputs.test-packages) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup
+        uses: ./.github/actions/ci-setup
+        with:
+          skip-install-on-cache-hit: 'true'
+
+      - name: Test with coverage
+        run: npm run test:coverage --workspace=${{ matrix.package }}
         env:
           CI: true

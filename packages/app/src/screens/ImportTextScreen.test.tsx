@@ -1,5 +1,5 @@
 import React from 'react';
-import {fireEvent, render, waitFor} from '@testing-library/react-native';
+import {fireEvent, waitFor} from '@testing-library/react-native';
 
 import {makeRecipeDetail} from '../__tests__/fixtures/recipe';
 import {makeStackProps, renderWithProviders} from '../__tests__/testUtils';
@@ -20,8 +20,8 @@ const stackProps = makeStackProps<AddStackParamList, 'ImportText'>(
 
 describe('ImportTextScreen', () => {
   test('does not import when text is empty', async () => {
-    const {getByText} = render(
-      renderWithProviders(<ImportTextScreen {...stackProps} />),
+    const {getByText} = renderWithProviders(
+      <ImportTextScreen {...stackProps} />,
     );
     fireEvent.press(getByText('Import'));
     expect(mockImportText).not.toHaveBeenCalled();
@@ -29,8 +29,8 @@ describe('ImportTextScreen', () => {
 
   test('imports text and navigates to review', async () => {
     mockImportText.mockResolvedValue(makeRecipeDetail({id: 'imported-1'}));
-    const {getByPlaceholderText, getByText} = render(
-      renderWithProviders(<ImportTextScreen {...stackProps} />),
+    const {getByPlaceholderText, getByText} = renderWithProviders(
+      <ImportTextScreen {...stackProps} />,
     );
     fireEvent.changeText(
       getByPlaceholderText('Paste your recipe here…'),
@@ -46,8 +46,8 @@ describe('ImportTextScreen', () => {
 
   test('shows generic error on non-Error failure', async () => {
     mockImportText.mockRejectedValue('nope');
-    const {getByPlaceholderText, getByText, findByText} = render(
-      renderWithProviders(<ImportTextScreen {...stackProps} />),
+    const {getByPlaceholderText, getByText, findByText} = renderWithProviders(
+      <ImportTextScreen {...stackProps} />,
     );
     fireEvent.changeText(
       getByPlaceholderText('Paste your recipe here…'),
@@ -59,8 +59,8 @@ describe('ImportTextScreen', () => {
 
   test('shows error on failure', async () => {
     mockImportText.mockRejectedValue(new Error('Parse failed'));
-    const {getByPlaceholderText, getByText, findByText} = render(
-      renderWithProviders(<ImportTextScreen {...stackProps} />),
+    const {getByPlaceholderText, getByText, findByText} = renderWithProviders(
+      <ImportTextScreen {...stackProps} />,
     );
     fireEvent.changeText(
       getByPlaceholderText('Paste your recipe here…'),

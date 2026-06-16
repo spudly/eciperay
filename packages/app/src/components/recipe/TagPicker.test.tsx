@@ -1,5 +1,5 @@
 import React from 'react';
-import {fireEvent, render, waitFor} from '@testing-library/react-native';
+import {fireEvent, waitFor} from '@testing-library/react-native';
 
 import {
   renderWithProviders,
@@ -28,13 +28,11 @@ describe('TagPicker', () => {
   });
 
   test('renders tags and toggles selection', async () => {
-    const {findByText} = render(
-      renderWithProviders(
-        <TagPicker
-          selectedIds={[]}
-          onChange={onChange}
-        />,
-      ),
+    const {findByText} = renderWithProviders(
+      <TagPicker
+        selectedIds={[]}
+        onChange={onChange}
+      />,
     );
     fireEvent.press(await findByText('Dinner'));
     await waitFor(() => {
@@ -43,13 +41,11 @@ describe('TagPicker', () => {
   });
 
   test('deselects tag when already selected', async () => {
-    const {findByText} = render(
-      renderWithProviders(
-        <TagPicker
-          selectedIds={['t1']}
-          onChange={onChange}
-        />,
-      ),
+    const {findByText} = renderWithProviders(
+      <TagPicker
+        selectedIds={['t1']}
+        onChange={onChange}
+      />,
     );
     fireEvent.press(await findByText('Dinner'));
     await waitFor(() => {
@@ -64,13 +60,11 @@ describe('TagPicker', () => {
           /* never resolves */
         }),
     );
-    const {getByText, unmount} = render(
-      renderWithProviders(
-        <TagPicker
-          selectedIds={[]}
-          onChange={onChange}
-        />,
-      ),
+    const {getByText, unmount} = renderWithProviders(
+      <TagPicker
+        selectedIds={[]}
+        onChange={onChange}
+      />,
     );
     expect(getByText('Loading tags…')).toBeTruthy();
     unmount();

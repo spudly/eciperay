@@ -1,5 +1,5 @@
 import React from 'react';
-import {render, waitFor} from '@testing-library/react-native';
+import {waitFor} from '@testing-library/react-native';
 
 import {
   renderWithProviders,
@@ -21,8 +21,8 @@ describe('NutritionTab', () => {
           /* never resolves */
         }),
     );
-    const {getByText, unmount} = render(
-      renderWithProviders(<NutritionTab recipeId="r-1" />),
+    const {getByText, unmount} = renderWithProviders(
+      <NutritionTab recipeId="r-1" />,
     );
     expect(getByText('Estimating nutrition…')).toBeTruthy();
     unmount();
@@ -31,9 +31,7 @@ describe('NutritionTab', () => {
 
   test('returns null when no data', async () => {
     mockNutrition.mockResolvedValue(null);
-    const {queryByText} = render(
-      renderWithProviders(<NutritionTab recipeId="r-1" />),
-    );
+    const {queryByText} = renderWithProviders(<NutritionTab recipeId="r-1" />);
     await waitFor(() => {
       expect(queryByText('Estimating nutrition…')).toBeNull();
     });
@@ -49,8 +47,8 @@ describe('NutritionTab', () => {
       sodiumMg: null,
       disclaimer: 'Estimate',
     });
-    const {findByText, queryByText} = render(
-      renderWithProviders(<NutritionTab recipeId="r-1" />),
+    const {findByText, queryByText} = renderWithProviders(
+      <NutritionTab recipeId="r-1" />,
     );
     expect(await findByText('200')).toBeTruthy();
     expect(queryByText('Fiber')).toBeNull();
@@ -66,9 +64,7 @@ describe('NutritionTab', () => {
       sodiumMg: 500,
       disclaimer: 'Estimate only',
     });
-    const {findByText} = render(
-      renderWithProviders(<NutritionTab recipeId="r-1" />),
-    );
+    const {findByText} = renderWithProviders(<NutritionTab recipeId="r-1" />);
     expect(await findByText('250')).toBeTruthy();
     expect(await findByText('Estimate only')).toBeTruthy();
   });

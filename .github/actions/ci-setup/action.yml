@@ -1,0 +1,42 @@
+name: CI setup
+description: Setup Node.js and restore cached node_modules for CI jobs
+
+inputs:
+  install-command:
+    description: npm install command to run after restoring cache
+    required: false
+    default: npm ci --prefer-offline
+  skip-install-on-cache-hit:
+    description: Skip install when node_modules cache is restored
+    required: false
+    default: 'false'
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v6
+      with:
+        node-version: 22
+        cache: npm
+
+    - name: Restore node_modules cache
+      id: node-modules-cache
+      uses: actions/cache@v5
+      with:
+        path: |
+          node_modules
+          packages/*/node_modules
+        key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+        restore-keys: |
+          node-modules-${{ runner.os }}-
+
+    - name: Install dependencies
+      if:
+        inputs.skip-install-on-cache-hit != 'true' ||
+        steps.node-modules-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: ${{ inputs.install-command }}
+      env:
+        CI: true
+        HUSKY: 0

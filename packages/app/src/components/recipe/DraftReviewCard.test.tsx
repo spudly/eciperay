@@ -1,8 +1,12 @@
 import React from 'react';
-import {fireEvent, render, waitFor} from '@testing-library/react-native';
+import {fireEvent, waitFor} from '@testing-library/react-native';
 
 import {makeRecipeDetail} from '../../__tests__/fixtures/recipe';
-import {renderWithProviders} from '../../__tests__/testUtils';
+import {
+  flushQueryClient,
+  makeQueryClient,
+  renderWithProviders,
+} from '../../__tests__/testUtils';
 import {api} from '../../lib/api';
 
 import {DraftReviewCard} from './DraftReviewCard';
@@ -30,33 +34,35 @@ describe('DraftReviewCard', () => {
   });
 
   test('renders draft and approves', async () => {
-    const {getByText} = render(
-      renderWithProviders(
-        <DraftReviewCard
-          recipeId="recipe-uuid-1"
-          draft={draft}
-        />,
-      ),
+    const queryClient = makeQueryClient();
+    const {getByText} = renderWithProviders(
+      <DraftReviewCard
+        recipeId="recipe-uuid-1"
+        draft={draft}
+      />,
+      queryClient,
     );
     expect(getByText('Added garlic')).toBeTruthy();
     fireEvent.press(getByText('Approve'));
     await waitFor(() => {
       expect(mockApprove).toHaveBeenCalledWith('recipe-uuid-1', 'draft-1');
     });
+    await flushQueryClient(queryClient);
   });
 
   test('rejects draft', async () => {
-    const {getByText} = render(
-      renderWithProviders(
-        <DraftReviewCard
-          recipeId="recipe-uuid-1"
-          draft={draft}
-        />,
-      ),
+    const queryClient = makeQueryClient();
+    const {getByText} = renderWithProviders(
+      <DraftReviewCard
+        recipeId="recipe-uuid-1"
+        draft={draft}
+      />,
+      queryClient,
     );
     fireEvent.press(getByText('Reject'));
     await waitFor(() => {
       expect(mockReject).toHaveBeenCalledWith('recipe-uuid-1', 'draft-1');
     });
+    await flushQueryClient(queryClient);
   });
 });
