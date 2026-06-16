@@ -169,3 +169,5 @@ jobs:
 
       - name: Test with coverage
         run: npm run test:coverage --workspace=${{ matrix.package }}
+        env:
+          CI: true

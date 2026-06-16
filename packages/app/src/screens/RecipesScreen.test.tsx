@@ -5,6 +5,7 @@ import {RECIPE_LIST_PAGE_SIZE} from '@recipoo/client';
 
 import {makeRecipeDetail} from '../__tests__/fixtures/recipe';
 import {
+  flushQueryClient,
   makeQueryClient,
   makeStackProps,
   renderWithProviders,
@@ -236,5 +237,6 @@ describe('RecipesScreen', () => {
     await waitFor(() => {
       expect(mockDelete).toHaveBeenCalled();
     });
+    await flushQueryClient(client);
   });
 });

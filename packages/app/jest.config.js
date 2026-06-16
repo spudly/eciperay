@@ -2,6 +2,9 @@ module.exports = {
   preset: '@react-native/jest-preset',
   testTimeout: 15_000,
   setupFilesAfterEnv: ['./jest.setup.js'],
+  // Teardown clears QueryClients, but React Native / TanStack Query can still
+  // leave handles open on Linux CI; forceExit avoids a ~5 minute hang there.
+  forceExit: !!process.env.CI,
   testPathIgnorePatterns: [
     '/node_modules/',
     'env-shim.test.js', // env shim for moduleNameMapper; not a test suite
