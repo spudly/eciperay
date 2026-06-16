@@ -8,6 +8,7 @@ ignores:
   - '@types/react-test-renderer' # Type definitions for react-test-renderer; no direct imports in app source
   - patch-package # Patches are applied from the root postinstall script, not imported in app source
   - '@tailwindcss/postcss' # Used by postcss.config.mjs, not imported in app source
+  - tailwindcss # Imported via @import in global.css; depcheck does not trace CSS imports
   - postcss # Used by postcss.config.mjs, not imported in app source
   - react-native-css # NativeWind v5 peer dependency; loaded by Metro, not imported in app source
   - react-native-safe-area-context # Required peer dependency of @react-navigation; autolinked without direct imports
