@@ -10,6 +10,14 @@ import {createApiProxy} from './viteProxy.js';
 const pkgRoot = path.dirname(fileURLToPath(import.meta.url));
 const monoRoot = path.resolve(pkgRoot, '../..');
 
+const esbuildDestructuringSupport = {
+  supported: {
+    // esbuild 0.28+ errors when lowering destructuring for Vite's default
+    // browser targets; our minimums are modern enough to run it natively.
+    destructuring: true,
+  },
+} as const;
+
 export default defineConfig(({mode}) => {
   const env = loadEnv(mode, monoRoot, '');
   const port = Number(env['VITE_PORT'] ?? 8081);
@@ -19,6 +27,8 @@ export default defineConfig(({mode}) => {
   return {
     plugins: [react(), tailwindcss()],
     envDir: '../..',
+    esbuild: esbuildDestructuringSupport,
+    optimizeDeps: {esbuildOptions: esbuildDestructuringSupport},
     server: {
       port,
       proxy: {
