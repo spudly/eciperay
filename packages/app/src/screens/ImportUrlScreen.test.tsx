@@ -1,5 +1,5 @@
 import React from 'react';
-import {fireEvent, render, waitFor} from '@testing-library/react-native';
+import {fireEvent, waitFor} from '@testing-library/react-native';
 
 import {makeRecipeDetail} from '../__tests__/fixtures/recipe';
 import {makeStackProps, renderWithProviders} from '../__tests__/testUtils';
@@ -20,8 +20,8 @@ const stackProps = makeStackProps<AddStackParamList, 'ImportUrl'>(
 
 describe('ImportUrlScreen', () => {
   test('does not import when URL is empty', async () => {
-    const {getByText} = render(
-      renderWithProviders(<ImportUrlScreen {...stackProps} />),
+    const {getByText} = renderWithProviders(
+      <ImportUrlScreen {...stackProps} />,
     );
     fireEvent.press(getByText('Import'));
     expect(mockImportUrl).not.toHaveBeenCalled();
@@ -29,8 +29,8 @@ describe('ImportUrlScreen', () => {
 
   test('imports URL and navigates to review', async () => {
     mockImportUrl.mockResolvedValue(makeRecipeDetail({id: 'imported-1'}));
-    const {getByPlaceholderText, getByText} = render(
-      renderWithProviders(<ImportUrlScreen {...stackProps} />),
+    const {getByPlaceholderText, getByText} = renderWithProviders(
+      <ImportUrlScreen {...stackProps} />,
     );
     fireEvent.changeText(
       getByPlaceholderText('https://example.com/recipe'),
@@ -46,8 +46,8 @@ describe('ImportUrlScreen', () => {
 
   test('shows generic error on non-Error failure', async () => {
     mockImportUrl.mockRejectedValue('nope');
-    const {getByPlaceholderText, getByText, findByText} = render(
-      renderWithProviders(<ImportUrlScreen {...stackProps} />),
+    const {getByPlaceholderText, getByText, findByText} = renderWithProviders(
+      <ImportUrlScreen {...stackProps} />,
     );
     fireEvent.changeText(
       getByPlaceholderText('https://example.com/recipe'),
@@ -59,8 +59,8 @@ describe('ImportUrlScreen', () => {
 
   test('shows error on failure', async () => {
     mockImportUrl.mockRejectedValue(new Error('Import failed'));
-    const {getByPlaceholderText, getByText, findByText} = render(
-      renderWithProviders(<ImportUrlScreen {...stackProps} />),
+    const {getByPlaceholderText, getByText, findByText} = renderWithProviders(
+      <ImportUrlScreen {...stackProps} />,
     );
     fireEvent.changeText(
       getByPlaceholderText('https://example.com/recipe'),

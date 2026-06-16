@@ -1,7 +1,7 @@
 import {queryKeys, recipeDetailToInput} from '@recipoo/client';
 import type {RecipeInput} from '@recipoo/types';
 import React from 'react';
-import {fireEvent, render, waitFor} from '@testing-library/react-native';
+import {fireEvent, waitFor} from '@testing-library/react-native';
 
 import {makeRecipeDetail} from '../../__tests__/fixtures/recipe';
 import {makeQueryClient, renderWithProviders} from '../../__tests__/testUtils';
@@ -28,7 +28,7 @@ const renderForm = async (ui: React.ReactElement) => {
     queryKey: queryKeys.tags(),
     queryFn: () => mockListTags(),
   });
-  return render(renderWithProviders(ui, queryClient));
+  return renderWithProviders(ui, queryClient);
 };
 
 describe('RecipeForm', () => {

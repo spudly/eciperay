@@ -1,6 +1,6 @@
 import {queryKeys} from '@recipoo/client';
 import React from 'react';
-import {fireEvent, render, waitFor} from '@testing-library/react-native';
+import {fireEvent, waitFor} from '@testing-library/react-native';
 
 import {makeRecipeDetail} from '../__tests__/fixtures/recipe';
 import {
@@ -36,8 +36,9 @@ describe('ManualEntryScreen', () => {
       queryKey: queryKeys.tags(),
       queryFn: () => mockListTags(),
     });
-    const {getAllByPlaceholderText, getByText} = render(
-      renderWithProviders(<ManualEntryScreen {...stackProps} />, queryClient),
+    const {getAllByPlaceholderText, getByText} = renderWithProviders(
+      <ManualEntryScreen {...stackProps} />,
+      queryClient,
     );
     const inputs = getAllByPlaceholderText('Name');
     fireEvent.changeText(inputs[0], 'Flour');

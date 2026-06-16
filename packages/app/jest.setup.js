@@ -14,8 +14,12 @@
 // React's passive-effects phase, so it never triggers the re-entrant flush
 // loop that caused timeouts with React 19's act(async) on slow CI runners.
 const {notifyManager} = require('@tanstack/react-query');
+const {setTestQueryScheduler} = require('./src/__tests__/testUtils.tsx');
 
-notifyManager.setScheduler(queueMicrotask);
+const testQueryScheduler = queueMicrotask;
+
+notifyManager.setScheduler(testQueryScheduler);
+setTestQueryScheduler(testQueryScheduler);
 
 jest.mock('react-native-keep-awake', () => ({
   activate: jest.fn(),
@@ -67,7 +71,9 @@ const {
 
 installFailOnConsoleError();
 
-// Global afterEach cleanup
-afterEach(() => {
+const {cleanupTestProviders} = require('./src/__tests__/testUtils.tsx');
+
+afterEach(async () => {
   jest.clearAllMocks();
+  await cleanupTestProviders();
 });

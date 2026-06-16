@@ -1,5 +1,5 @@
 import React from 'react';
-import {render, fireEvent, waitFor} from '@testing-library/react-native';
+import {fireEvent, waitFor} from '@testing-library/react-native';
 
 import {renderWithProviders} from '../../__tests__/testUtils';
 import {api} from '../../lib/api';
@@ -35,8 +35,8 @@ describe('NotesTab', () => {
   });
 
   test('renders message input placeholder', async () => {
-    const {findByPlaceholderText} = render(
-      renderWithProviders(<NotesTab recipeId="r-1" />),
+    const {findByPlaceholderText} = renderWithProviders(
+      <NotesTab recipeId="r-1" />,
     );
     expect(
       await findByPlaceholderText('Ask AI to tweak this recipe…'),
@@ -44,9 +44,7 @@ describe('NotesTab', () => {
   });
 
   test('does not send when message is empty', async () => {
-    const {findByText} = render(
-      renderWithProviders(<NotesTab recipeId="r-1" />),
-    );
+    const {findByText} = renderWithProviders(<NotesTab recipeId="r-1" />);
     const sendBtn = await findByText('↑');
     const callsBefore = mockChat.mock.calls.length;
     fireEvent.press(sendBtn);
@@ -64,16 +62,14 @@ describe('NotesTab', () => {
     mockListDrafts.mockResolvedValue([
       {id: 'd-1', summaryOfChanges: 'Added garlic'},
     ]);
-    const {findByText} = render(
-      renderWithProviders(<NotesTab recipeId="r-1" />),
-    );
+    const {findByText} = renderWithProviders(<NotesTab recipeId="r-1" />);
     expect(await findByText('This was great!')).toBeTruthy();
     expect(await findByText('Added garlic')).toBeTruthy();
   });
 
   test('sends chat message when send button pressed', async () => {
-    const {findByPlaceholderText, getByText} = render(
-      renderWithProviders(<NotesTab recipeId="r-1" />),
+    const {findByPlaceholderText, getByText} = renderWithProviders(
+      <NotesTab recipeId="r-1" />,
     );
     const input = await findByPlaceholderText('Ask AI to tweak this recipe…');
     fireEvent.changeText(input, 'Make it less salty');
@@ -90,16 +86,14 @@ describe('NotesTab', () => {
         {role: 'assistant', content: 'Hello'},
       ]),
     );
-    const {findByText} = render(
-      renderWithProviders(<NotesTab recipeId="r-1" />),
-    );
+    const {findByText} = renderWithProviders(<NotesTab recipeId="r-1" />);
     expect(await findByText('Hi')).toBeTruthy();
     expect(await findByText('Hello')).toBeTruthy();
   });
 
   test('creates note and runs cleanup', async () => {
-    const {findByPlaceholderText, getByText} = render(
-      renderWithProviders(<NotesTab recipeId="r-1" />),
+    const {findByPlaceholderText, getByText} = renderWithProviders(
+      <NotesTab recipeId="r-1" />,
     );
     const noteInput = await findByPlaceholderText('Add a note…');
     fireEvent.changeText(noteInput, 'My note');
@@ -112,9 +106,7 @@ describe('NotesTab', () => {
   });
 
   test('does not create note when content is empty', async () => {
-    const {findByText} = render(
-      renderWithProviders(<NotesTab recipeId="r-1" />),
-    );
+    const {findByText} = renderWithProviders(<NotesTab recipeId="r-1" />);
     fireEvent.press(await findByText('Save Note'));
     expect(mockCreateNote).not.toHaveBeenCalled();
   });
