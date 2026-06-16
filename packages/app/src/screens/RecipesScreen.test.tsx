@@ -26,6 +26,14 @@ const stackProps = makeStackProps<RecipesStackParamList, 'RecipesList'>(
   {navigate: mockNavigate},
 );
 
+const triggerEndReached = async (list: {
+  props: {onEndReached?: () => void};
+}) => {
+  await act(async () => {
+    list.props.onEndReached?.();
+  });
+};
+
 describe('RecipesScreen', () => {
   beforeEach(() => {
     mockList.mockResolvedValue([]);
@@ -117,7 +125,7 @@ describe('RecipesScreen', () => {
     );
     await findByText('Recipe 0');
     const list = UNSAFE_getByType(FlatList);
-    list.props.onEndReached?.();
+    await triggerEndReached(list);
     await waitFor(() => {
       expect(mockList).toHaveBeenCalledWith({
         limit: RECIPE_LIST_PAGE_SIZE,
@@ -132,7 +140,7 @@ describe('RecipesScreen', () => {
       <RecipesScreen {...stackProps} />,
     );
     await findByText('Only Recipe');
-    UNSAFE_getByType(FlatList).props.onEndReached?.();
+    await triggerEndReached(UNSAFE_getByType(FlatList));
     await waitFor(() => {
       expect(mockList).toHaveBeenCalledTimes(1);
     });
@@ -156,11 +164,13 @@ describe('RecipesScreen', () => {
       }
       return secondPagePromise;
     });
+    const client = makeQueryClient();
     const {findByText, getByText, UNSAFE_getByType} = renderWithProviders(
       <RecipesScreen {...stackProps} />,
+      client,
     );
     await findByText('Recipe 0');
-    UNSAFE_getByType(FlatList).props.onEndReached?.();
+    await triggerEndReached(UNSAFE_getByType(FlatList));
     await waitFor(() => {
       expect(getByText('Loading more…')).toBeTruthy();
     });
@@ -169,6 +179,7 @@ describe('RecipesScreen', () => {
         makeRecipeDetail({id: 'recipe-20', title: 'Recipe 20'}),
       ]);
     });
+    await flushQueryClient(client);
   });
 
   test('does not fetch again while already loading more', async () => {
@@ -188,11 +199,11 @@ describe('RecipesScreen', () => {
     );
     await findByText('Recipe 0');
     const list = UNSAFE_getByType(FlatList);
-    list.props.onEndReached?.();
+    await triggerEndReached(list);
     await waitFor(() => {
       expect(mockList).toHaveBeenCalledTimes(2);
     });
-    list.props.onEndReached?.();
+    await triggerEndReached(list);
     expect(mockList).toHaveBeenCalledTimes(2);
   });
 
