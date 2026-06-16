@@ -1,5 +1,5 @@
 import React from 'react';
-import {fireEvent, render, waitFor} from '@testing-library/react-native';
+import {fireEvent, waitFor} from '@testing-library/react-native';
 
 import {makeRecipeDetail} from '../__tests__/fixtures/recipe';
 import {makeStackProps, renderWithProviders} from '../__tests__/testUtils';
@@ -28,8 +28,8 @@ describe('EditRecipeScreen', () => {
   });
 
   test('loads recipe and saves changes', async () => {
-    const {findByText, getByText} = render(
-      renderWithProviders(<EditRecipeScreen {...stackProps} />),
+    const {findByText, getByText} = renderWithProviders(
+      <EditRecipeScreen {...stackProps} />,
     );
     expect(await findByText('Edit Recipe')).toBeTruthy();
     fireEvent.press(getByText('Save Changes'));

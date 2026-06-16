@@ -1,5 +1,5 @@
 import React from 'react';
-import {fireEvent, render, waitFor} from '@testing-library/react-native';
+import {fireEvent, waitFor} from '@testing-library/react-native';
 
 import {renderWithProviders} from '../__tests__/testUtils';
 import {api} from '../lib/api';
@@ -28,8 +28,8 @@ describe('TagsScreen', () => {
   });
 
   test('lists tags and creates new tag', async () => {
-    const {findByText, getByPlaceholderText, getByText} = render(
-      renderWithProviders(<TagsScreen />),
+    const {findByText, getByPlaceholderText, getByText} = renderWithProviders(
+      <TagsScreen />,
     );
     expect(await findByText('Dinner')).toBeTruthy();
     fireEvent.changeText(getByPlaceholderText('Tag name'), 'Lunch');
@@ -40,7 +40,7 @@ describe('TagsScreen', () => {
   });
 
   test('deletes tag', async () => {
-    const {findByText} = render(renderWithProviders(<TagsScreen />));
+    const {findByText} = renderWithProviders(<TagsScreen />);
     fireEvent.press(await findByText('Delete'));
     await waitFor(() => {
       expect(mockDelete).toHaveBeenCalledWith('t1');
@@ -48,7 +48,7 @@ describe('TagsScreen', () => {
   });
 
   test('ignores empty tag name', async () => {
-    const {getByText, findByText} = render(renderWithProviders(<TagsScreen />));
+    const {getByText, findByText} = renderWithProviders(<TagsScreen />);
     await findByText('Dinner');
     fireEvent.press(getByText('Add'));
     expect(mockCreate).not.toHaveBeenCalled();

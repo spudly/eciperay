@@ -25,8 +25,8 @@
     "typecheck": "tsc -b tsconfig.json packages/types packages/server && npm run typecheck --workspace=packages/client && npm run typecheck --workspace=packages/web && npm run typecheck --workspace=packages/app",
     "prettier": "prettier --write .",
     "prettier:check": "prettier --check .",
-    "lint": "eslint packages --max-warnings 0",
-    "lint:fix": "eslint packages --fix",
+    "lint": "eslint packages --max-warnings 0 --cache --cache-location .eslintcache --cache-strategy content",
+    "lint:fix": "eslint packages --fix --cache --cache-location .eslintcache --cache-strategy content",
     "lint:unused-rules": "tsx scripts/findUnusedEslintRules.ts",
     "validate:node-version": "tsx scripts/validateNodeVersion.ts",
     "audit": "npm audit --audit-level=low",
@@ -41,7 +41,7 @@
   "lint-staged": {
     "*.{ts,tsx}": [
       "prettier --write",
-      "eslint --max-warnings 0 --fix --no-warn-ignored"
+      "eslint --max-warnings 0 --fix --no-warn-ignored --cache --cache-location .eslintcache --cache-strategy content"
     ],
     "*.{js,json,yml,yaml,md}": "prettier --write"
   },

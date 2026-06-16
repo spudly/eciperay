@@ -1,5 +1,5 @@
 import React from 'react';
-import {render, fireEvent, waitFor} from '@testing-library/react-native';
+import {fireEvent, waitFor} from '@testing-library/react-native';
 
 import {makeRecipeDetail} from '../__tests__/fixtures/recipe';
 import {makeStackProps, renderWithProviders} from '../__tests__/testUtils';
@@ -24,15 +24,15 @@ describe('CookingModeScreen', () => {
   });
 
   test('renders first instruction step', async () => {
-    const {findByText} = render(
-      renderWithProviders(<CookingModeScreen {...stackProps} />),
+    const {findByText} = renderWithProviders(
+      <CookingModeScreen {...stackProps} />,
     );
     expect(await findByText('Mix dry ingredients')).toBeTruthy();
   });
 
   test('advances to next step', async () => {
-    const {findByText} = render(
-      renderWithProviders(<CookingModeScreen {...stackProps} />),
+    const {findByText} = renderWithProviders(
+      <CookingModeScreen {...stackProps} />,
     );
     await findByText('Mix dry ingredients');
     fireEvent.press(await findByText('Next →'));
@@ -40,8 +40,8 @@ describe('CookingModeScreen', () => {
   });
 
   test('goes to previous step', async () => {
-    const {findByText} = render(
-      renderWithProviders(<CookingModeScreen {...stackProps} />),
+    const {findByText} = renderWithProviders(
+      <CookingModeScreen {...stackProps} />,
     );
     await findByText('Mix dry ingredients');
     fireEvent.press(await findByText('Next →'));
@@ -50,8 +50,8 @@ describe('CookingModeScreen', () => {
   });
 
   test('goes back on Done press', async () => {
-    const {findByText} = render(
-      renderWithProviders(<CookingModeScreen {...stackProps} />),
+    const {findByText} = renderWithProviders(
+      <CookingModeScreen {...stackProps} />,
     );
     fireEvent.press(await findByText('Done'));
     await waitFor(() => {

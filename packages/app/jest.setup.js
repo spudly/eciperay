@@ -1,6 +1,17 @@
 // Mocks for native modules that have no Jest implementation.
 // This file runs via setupFilesAfterEnv after the test framework is loaded.
 
+const {notifyManager} = require('@tanstack/react-query');
+
+const {
+  installFailOnConsoleError,
+} = require('../../test/failOnConsoleError.cjs');
+
+const {
+  cleanupTestProviders,
+  setTestQueryScheduler,
+} = require('./src/__tests__/testUtils.tsx');
+
 // TanStack Query v5 defaults to setTimeout(fn, 0) for its notification
 // scheduler. That fires in a later event-loop tick, after RNTL's wrapAsync has
 // already restored IS_REACT_ACT_ENVIRONMENT = true, so React 19 sees the state
@@ -13,9 +24,10 @@
 // Unlike the synchronous fn => fn() scheduler, queueMicrotask defers past
 // React's passive-effects phase, so it never triggers the re-entrant flush
 // loop that caused timeouts with React 19's act(async) on slow CI runners.
-const {notifyManager} = require('@tanstack/react-query');
+const testQueryScheduler = queueMicrotask;
 
-notifyManager.setScheduler(queueMicrotask);
+notifyManager.setScheduler(testQueryScheduler);
+setTestQueryScheduler(testQueryScheduler);
 
 jest.mock('react-native-keep-awake', () => ({
   activate: jest.fn(),
@@ -61,13 +73,9 @@ jest.mock('@react-navigation/bottom-tabs', () => ({
   }),
 }));
 
-const {
-  installFailOnConsoleError,
-} = require('../../test/failOnConsoleError.cjs');
-
 installFailOnConsoleError();
 
-// Global afterEach cleanup
-afterEach(() => {
+afterEach(async () => {
   jest.clearAllMocks();
+  await cleanupTestProviders();
 });

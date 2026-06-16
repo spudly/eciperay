@@ -1,8 +1,10 @@
 module.exports = {
   preset: '@react-native/jest-preset',
   testTimeout: 15_000,
-  maxWorkers: process.env.CI ? 1 : '50%',
   setupFilesAfterEnv: ['./jest.setup.js'],
+  // Teardown clears QueryClients, but React Native / TanStack Query can still
+  // leave handles open on Linux CI; forceExit avoids a ~5 minute hang there.
+  forceExit: !!process.env.CI,
   testPathIgnorePatterns: [
     '/node_modules/',
     'env-shim.test.js', // env shim for moduleNameMapper; not a test suite
@@ -16,6 +18,7 @@ module.exports = {
     '!src/lib/env.ts', // typeof branch unreachable when shim always provides a string
     '!src/lib/supabase.ts', // createSupabaseClient wrapper; tested via supabase.test.ts
     '!src/navigation/*.tsx', // React Navigation setup; no business logic to unit-test
+    '!src/__tests__/testUtils.tsx', // shared render/query helpers; not app code
   ],
   coverageThreshold: {
     global: {branches: 100, functions: 100, lines: 100, statements: 100},
