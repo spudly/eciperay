@@ -14,8 +14,6 @@ export default defineConfig({
   resolve: {
     dedupe: ['react', 'react-dom', '@tanstack/react-query'],
     alias: {
-      'react': path.join(monoRoot, 'node_modules/react'),
-      'react-dom': path.join(monoRoot, 'node_modules/react-dom'),
       '@eciperay/client': path.join(monoRoot, 'packages/client/src/index.ts'),
       '@eciperay/types': path.join(monoRoot, 'packages/types/src/index.ts'),
     },
