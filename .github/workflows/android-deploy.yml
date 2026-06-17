@@ -1,10 +1,11 @@
 name: Android Deploy
 
 on:
-  workflow_run:
-    workflows: [CI]
-    types: [completed]
-    branches: [master]
+  # Automatic deploy after CI on master — uncomment when release signing is ready.
+  # workflow_run:
+  #   workflows: [CI]
+  #   types: [completed]
+  #   branches: [master]
   workflow_dispatch:
 
 concurrency:

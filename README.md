@@ -217,8 +217,10 @@ Release APKs bundle production API and Supabase config at **build time** via the
 Metro `@env` shim. Debug/Metro builds keep using `.env` (localhost).
 
 The **Android Deploy** workflow (`.github/workflows/android-deploy.yml`) builds
-a signed release APK after CI passes on `master`, or on manual dispatch from the
-Actions tab.
+a signed release APK on manual dispatch from the Actions tab (**Android Deploy**
+→ **Run workflow**). Automatic deploy after CI on `master` is disabled until
+release signing secrets are configured (see commented `workflow_run` in the
+workflow file).
 
 Add these repository secrets (Settings → Secrets and variables → Actions):
 
