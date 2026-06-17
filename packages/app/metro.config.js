@@ -1,5 +1,4 @@
 const path = require('node:path');
-const fs = require('node:fs');
 
 const {getDefaultConfig, mergeConfig} = require('@react-native/metro-config');
 const {
@@ -7,7 +6,8 @@ const {
 } = require('@expo/metro-config/build/serializer/sourceMap');
 const {withNativewind} = require('nativewind/metro');
 const {resolve: metroResolve} = require('metro-resolver');
-const dotenv = require('dotenv');
+
+const {writeEnvShim} = require('./scripts/envShim');
 
 // NativeWind uses @expo/metro-config's transformer, which stores packed source maps
 // instead of Babel tuple arrays. Metro's standalone .map endpoint (used by DevTools)
@@ -17,18 +17,11 @@ patchMetroSourceMapStringForPackedMaps();
 const projectRoot = __dirname; // packages/app/
 const monorepoRoot = path.resolve(projectRoot, '../..'); // repo root
 
-// Read the root .env and generate env-shim.js with real values so Metro can
-// resolve @env imports at bundle time (no Babel transform needed).
-const {parsed: envVars = {}} = dotenv.config({
-  path: path.resolve(monorepoRoot, '.env'),
+// Bake only mobile client env into env-shim.js for @env imports at bundle time.
+writeEnvShim({
+  monorepoRoot,
+  outputPath: path.resolve(projectRoot, 'env-shim.js'),
 });
-const shimLines = Object.entries(envVars).map(
-  ([key, val]) => `exports.${key} = ${JSON.stringify(val)};`,
-);
-fs.writeFileSync(
-  path.resolve(projectRoot, 'env-shim.js'),
-  `${shimLines.join('\n')}\n`,
-);
 
 const resolveTypeScriptEsmImport = (context, moduleName, platform) => {
   try {

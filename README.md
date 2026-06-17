@@ -61,8 +61,8 @@ cp .env.example .env
 ```
 
 Fill in Supabase, Anthropic, and URL values. Web requires `VITE_*` prefixed
-vars; the mobile app uses `API_BASE_URL` and `SUPABASE_*` via the Metro env
-shim.
+vars; the mobile app uses `API_BASE_URL` and `SUPABASE_*` via the Metro env shim
+(`.env` for development, `.env.production` for release APKs).
 
 Add `http://localhost:8081/**` to your Supabase project's redirect URLs for web
 auth (password reset).
@@ -102,8 +102,9 @@ npm run start
 ```
 
 The server serves the API under `/api/*` and the compiled Vite app for all other
-routes. Set `API_BASE_URL=https://eciperay.com/api` for mobile and
-`VITE_API_BASE_URL=/api` when building the web app (default in `.env.example`).
+routes. Set `VITE_API_BASE_URL=/api` when building the web app (default in
+`.env.example`). Mobile release builds use `.env.production` with
+`API_BASE_URL=https://eciperay.com/api`.
 
 ### Deploy to Fly.io
 
@@ -185,7 +186,7 @@ Point DNS at the addresses `fly certs add` prints (usually `A` + `AAAA` to Fly).
 **6. Post-deploy**
 
 - Supabase → Authentication → URL configuration: add `https://eciperay.com/**`
-- Mobile `.env`: `API_BASE_URL=https://eciperay.com/api`
+- Android release builds: use `.env.production` (see below) — not the dev `.env`
 
 Migrations run automatically on each deploy via `release_command` in `fly.toml`.
 The default machine config uses **512MB RAM** and **auto-stop** when idle to
@@ -211,6 +212,48 @@ and the API (`8080`). Keep `API_BASE_URL=http://localhost:8080/api` in `.env`.
 If multiple phones are connected, set `ANDROID_SERIAL` to the device id from
 `adb devices`.
 
+### Android release builds
+
+Release APKs bundle production API and Supabase config at **build time** via the
+Metro `@env` shim. Debug/Metro builds keep using `.env` (localhost).
+
+**1. Create production env** at the repo root:
+
+```sh
+cp .env.production.example .env.production
+# Edit: API_BASE_URL, SUPABASE_URL, SUPABASE_ANON_KEY
+```
+
+Typical production values:
+
+```sh
+API_BASE_URL=https://eciperay.com/api
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your-anon-key
+```
+
+**2. Build release APK**
+
+```sh
+npm run android:release
+# or: ./scripts/android-release.sh
+```
+
+The script sets `APP_ENV=production`, validates env vars, writes `env-shim.js`,
+and runs `./gradlew assembleRelease`. Output:
+`packages/app/android/app/build/outputs/apk/release/app-release.apk`.
+
+**3. Install on a device** (USB debugging on):
+
+```sh
+adb install -r packages/app/android/app/build/outputs/apk/release/app-release.apk
+```
+
+Verify the app hits `https://eciperay.com/api` (not localhost) — e.g. sign in
+against production Supabase.
+
+CI verifies production shim generation on every PR (no full APK build).
+
 ## Development Scripts
 
 | Command                   | Description                               |
@@ -222,6 +265,7 @@ If multiple phones are connected, set `ANDROID_SERIAL` to the device id from
 | `npm run dev:web`         | API server + Vite web app                 |
 | `npm run dev:ios`         | Server + Metro + iOS simulator            |
 | `npm run dev:android`     | Server + Metro + physical Android device  |
+| `npm run android:release` | Production-env Android release APK        |
 | `npm run android:device`  | Build/install app on connected phone only |
 | `npm run typecheck`       | TypeScript check all packages             |
 | `npm run lint`            | ESLint across all packages                |

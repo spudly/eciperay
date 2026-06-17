@@ -225,3 +225,23 @@ jobs:
         run: npm run test:coverage --workspace=${{ matrix.package }}
         env:
           CI: true
+
+  android-release-env:
+    name: android release env shim
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup
+        uses: ./.github/actions/ci-setup
+        with:
+          skip-install-on-cache-hit: 'true'
+
+      - name: Verify production env is baked into release shim
+        run: |
+          cp .env.production.example .env.production
+          APP_ENV=production node packages/app/scripts/writeEnvShim.js
+          grep -q 'https://eciperay.com/api' packages/app/env-shim.js
+          grep -q 'your-project.supabase.co' packages/app/env-shim.js
