@@ -5,64 +5,9 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import {useDeferredValue, useEffect, useRef, useState} from 'react';
-import {Link} from 'react-router-dom';
-import type {RecipeDetail} from '@eciperay/types';
 
+import {RecipeListCard} from '../components/RecipeListCard.js';
 import {eciperay} from '../lib/api.js';
-
-const RecipeThumbnail = ({recipe}: {recipe: RecipeDetail}) =>
-  recipe.imageUrl ? (
-    <img
-      src={recipe.imageUrl}
-      alt={recipe.title}
-      className="size-16 shrink-0 rounded-lg bg-gray-50 object-cover"
-    />
-  ) : (
-    <div
-      aria-hidden
-      className="size-16 shrink-0 rounded-lg bg-gray-100"
-    />
-  );
-
-const RecipeCard = ({
-  recipe,
-  onDelete,
-}: {
-  recipe: RecipeDetail;
-  onDelete: (id: string) => void;
-}) => (
-  <div
-    className="mb-3 flex items-center gap-3 rounded-xl bg-white p-4 shadow-sm"
-  >
-    <Link
-      to={`/recipes/${recipe.id}`}
-      className="shrink-0"
-    >
-      <RecipeThumbnail recipe={recipe} />
-    </Link>
-    <Link
-      to={`/recipes/${recipe.id}`}
-      className="min-w-0 flex-1"
-    >
-      <p className="text-base font-semibold text-gray-900">{recipe.title}</p>
-      <p className="text-muted mt-1 text-sm">
-        {recipe.servings} servings
-        {recipe.cookTimeMin ? ` · ${recipe.cookTimeMin} min` : ''}
-      </p>
-    </Link>
-    <button
-      type="button"
-      className="ms-3 rounded-lg bg-red-50 px-3 py-1 text-sm text-red-600"
-      onClick={() => {
-        if (window.confirm(`Delete "${recipe.title}"?`)) {
-          onDelete(recipe.id);
-        }
-      }}
-    >
-      Delete
-    </button>
-  </div>
-);
 
 export const RecipesPage = () => {
   const [search, setSearch] = useState('');
@@ -124,7 +69,7 @@ export const RecipesPage = () => {
       ) : (
         <>
           {recipes.map(recipe => (
-            <RecipeCard
+            <RecipeListCard
               key={recipe.id}
               recipe={recipe}
               onDelete={id => {

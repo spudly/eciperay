@@ -1,8 +1,8 @@
-import {queryKeys} from '@eciperay/client';
+import {queryKeys, recordRecipeView, removeRecipeView} from '@eciperay/client';
 import clsx from 'clsx';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
-import React, {useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {Alert, ScrollView, Text, TouchableOpacity, View} from 'react-native';
 
 import {IngredientsTab} from '../components/recipe/IngredientsTab';
@@ -11,6 +11,7 @@ import {NotesTab} from '../components/recipe/NotesTab';
 import {NutritionTab} from '../components/recipe/NutritionTab';
 import {OverviewTab} from '../components/recipe/OverviewTab';
 import {api} from '../lib/api';
+import {recipeViewHistoryStorage} from '../lib/recipeViewHistoryStorage';
 import type {RecipesStackParamList} from '../navigation/types';
 
 type Tab = 'overview' | 'ingredients' | 'instructions' | 'notes' | 'nutrition';
@@ -65,13 +66,28 @@ export const RecipeDetailScreen = ({route, navigation}: DetailProps) => {
   const [servings, setServings] = useState<number | null>(null);
   const queryClient = useQueryClient();
 
+  const invalidateRecentlyViewed = useCallback(() => {
+    void queryClient.invalidateQueries({
+      queryKey: queryKeys.recipes('home-recently-viewed'),
+    });
+  }, [queryClient]);
+
+  useEffect(() => {
+    void recordRecipeView(recipeViewHistoryStorage, recipeId).then(() => {
+      invalidateRecentlyViewed();
+    });
+  }, [recipeId, invalidateRecentlyViewed]);
+
   const {data: recipe, isLoading} = useQuery({
     queryKey: queryKeys.recipe(recipeId),
     queryFn: () => api.recipes.get(recipeId),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: () => api.recipes.delete(recipeId),
+    mutationFn: async () => {
+      await api.recipes.delete(recipeId);
+      await removeRecipeView(recipeViewHistoryStorage, recipeId);
+    },
     onSuccess: () => {
       void queryClient.invalidateQueries({queryKey: queryKeys.recipes()});
       navigation.navigate('RecipesList');

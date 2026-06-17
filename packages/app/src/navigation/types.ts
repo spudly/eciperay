@@ -2,6 +2,8 @@
 // Each screen's component should use NativeStackScreenProps<ParamList, ScreenName>
 // or BottomTabScreenProps<ParamList, ScreenName> for its route/navigation props.
 
+import type {NavigatorScreenParams} from '@react-navigation/native';
+
 export type RecipesStackParamList = {
   RecipesList: undefined;
   RecipeDetail: {recipeId: string};
@@ -22,7 +24,7 @@ export type ProfileStackParamList = {ProfileHome: undefined; Tags: undefined};
 
 export type RootTabParamList = {
   Home: undefined;
-  Recipes: undefined;
-  Add: undefined;
-  Profile: undefined;
+  Recipes: NavigatorScreenParams<RecipesStackParamList>;
+  Add: NavigatorScreenParams<AddStackParamList>;
+  Profile: NavigatorScreenParams<ProfileStackParamList>;
 };

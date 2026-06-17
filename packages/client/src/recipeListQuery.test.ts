@@ -3,9 +3,12 @@ import type {RecipeDetail} from '@eciperay/types';
 import {makeRecipeDetail} from './test/fixtures/recipe.js';
 import {
   getRecipeListNextPageParam,
+  homeRecentlyViewedRecipesQueryOptions,
   RECIPE_LIST_PAGE_SIZE,
   recipeListInfiniteQueryOptions,
 } from './recipeListQuery.js';
+import type {RecipeViewHistoryStorage} from './recipeViewHistory.js';
+import {recordRecipeView, getRecentRecipeIds} from './recipeViewHistory.js';
 
 const makeListItem = (id: string): RecipeDetail =>
   makeRecipeDetail({id, title: `Recipe ${id}`});
@@ -45,5 +48,59 @@ describe('recipeListQuery', () => {
       limit: RECIPE_LIST_PAGE_SIZE,
       offset: 0,
     });
+  });
+
+  test('builds home recently viewed query options from local history', async () => {
+    const storage: RecipeViewHistoryStorage = {
+      getItem: async () =>
+        JSON.stringify([
+          {recipeId: 'recipe-b', viewedAt: 2},
+          {recipeId: 'recipe-a', viewedAt: 1},
+        ]),
+      setItem: async () => {},
+      removeItem: async () => {},
+    };
+    const getRecipe = jest
+      .fn()
+      .mockImplementation(async (id: string) => makeListItem(id));
+    const options = homeRecentlyViewedRecipesQueryOptions(getRecipe, storage);
+
+    expect(options.queryKey).toEqual([
+      'recipes',
+      {search: 'home-recently-viewed'},
+    ]);
+    const recipes = await options.queryFn();
+    expect(getRecipe).toHaveBeenCalledWith('recipe-b');
+    expect(getRecipe).toHaveBeenCalledWith('recipe-a');
+    expect(recipes.map(recipe => recipe.id)).toEqual(['recipe-b', 'recipe-a']);
+  });
+
+  test('removes missing recipes from local history when fetch fails', async () => {
+    const storage = {
+      map: new Map<string, string>(),
+      getItem(key: string) {
+        return this.map.get(key) ?? null;
+      },
+      setItem(key: string, value: string) {
+        this.map.set(key, value);
+      },
+      removeItem(key: string) {
+        this.map.delete(key);
+      },
+    };
+    await recordRecipeView(storage, 'recipe-a');
+    await recordRecipeView(storage, 'recipe-b');
+
+    const getRecipe = jest.fn().mockImplementation(async (id: string) => {
+      if (id === 'recipe-b') {
+        throw new Error('not found');
+      }
+      return makeListItem(id);
+    });
+    const options = homeRecentlyViewedRecipesQueryOptions(getRecipe, storage);
+    const recipes = await options.queryFn();
+
+    expect(recipes.map(recipe => recipe.id)).toEqual(['recipe-a']);
+    expect(await getRecentRecipeIds(storage, 5)).toEqual(['recipe-a']);
   });
 });
