@@ -22,7 +22,6 @@
     "dev:ios": "concurrently --names server,metro,ios --prefix-colors cyan,yellow,blue --delay 5000 \"npm run dev --workspace=packages/server\" \"npm run start --workspace=packages/app\" \"npm run ios --workspace=packages/app -- --no-packager\"",
     "dev:android": "tsx scripts/setupAndroidDevice.ts && concurrently --kill-others-on-fail --names server,metro,android --prefix-colors cyan,yellow,green --delay 5000 \"npm run dev --workspace=packages/server\" \"npm run start --workspace=packages/app\" \"npm run android --workspace=packages/app -- --no-packager\"",
     "android:device": "tsx scripts/setupAndroidDevice.ts && npm run android --workspace=packages/app",
-    "android:release": "bash scripts/android-release.sh",
     "dev:all": "concurrently --names server,metro,ios,android --prefix-colors cyan,yellow,blue,green --delay 5000 \"npm run dev --workspace=packages/server\" \"npm run start --workspace=packages/app\" \"npm run ios --workspace=packages/app -- --no-packager\" \"npm run android --workspace=packages/app -- --no-packager\"",
     "build": "npm run build --workspace=packages/web",
     "start": "npm run start --workspace=packages/server",

@@ -62,9 +62,8 @@ jobs:
           echo "${ANDROID_KEYSTORE_BASE64}" | base64 -d > packages/app/android/app/upload-keystore.jks
 
       - name: Build release APK
-        run:
-          bash scripts/android-release.sh -PVERSION_CODE=${{ github.run_number
-          }}
+        working-directory: packages/app/android
+        run: ./gradlew assembleRelease -PVERSION_CODE=${{ github.run_number }}
         env:
           APP_ENV: production
           API_BASE_URL: https://eciperay.com/api
@@ -74,13 +73,6 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-
-      - name: Verify production API URL is baked into bundle
-        run: |
-          grep -q 'https://eciperay.com/api' packages/app/env-shim.js
-          grep -q "${SUPABASE_URL}" packages/app/env-shim.js
-        env:
-          SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
 
       - name: Upload release APK
         uses: actions/upload-artifact@v4

@@ -62,7 +62,7 @@ cp .env.example .env
 
 Fill in Supabase, Anthropic, and URL values. Web requires `VITE_*` prefixed
 vars; the mobile app uses `API_BASE_URL` and `SUPABASE_*` via the Metro env shim
-(`.env` for development; export vars for release builds).
+(`.env` for Metro debug; release APKs are built in GitHub Actions).
 
 Add `http://localhost:8081/**` to your Supabase project's redirect URLs for web
 auth (password reset).
@@ -103,7 +103,7 @@ npm run start
 
 The server serves the API under `/api/*` and the compiled Vite app for all other
 routes. Set `VITE_API_BASE_URL=/api` when building the web app (default in
-`.env.example`). Mobile release builds export production env vars (see below).
+`.env.example`). Android release APKs are built via GitHub Actions (see below).
 
 ### Deploy to Fly.io
 
@@ -185,8 +185,7 @@ Point DNS at the addresses `fly certs add` prints (usually `A` + `AAAA` to Fly).
 **6. Post-deploy**
 
 - Supabase → Authentication → URL configuration: add `https://eciperay.com/**`
-- Android release builds: use GitHub Actions or export production env vars
-  locally
+- Android: run the **Android Deploy** workflow (see below) and install the APK
 
 Migrations run automatically on each deploy via `release_command` in `fly.toml`.
 The default machine config uses **512MB RAM** and **auto-stop** when idle to
@@ -212,47 +211,14 @@ and the API (`8080`). Keep `API_BASE_URL=http://localhost:8080/api` in `.env`.
 If multiple phones are connected, set `ANDROID_SERIAL` to the device id from
 `adb devices`.
 
-### Android release builds
+### Deploy Android (GitHub Actions)
 
 Release APKs bundle production API and Supabase config at **build time** via the
 Metro `@env` shim. Debug/Metro builds keep using `.env` (localhost).
 
-**1. Export production env vars**
-
-```sh
-export APP_ENV=production
-export API_BASE_URL=https://eciperay.com/api
-export SUPABASE_URL=https://your-project.supabase.co
-export SUPABASE_ANON_KEY=your-anon-key
-```
-
-**2. Build release APK**
-
-```sh
-npm run android:release
-# or: ./scripts/android-release.sh
-```
-
-The script validates env vars, writes `env-shim.js`, and runs
-`./gradlew assembleRelease`. Output:
-`packages/app/android/app/build/outputs/apk/release/app-release.apk`.
-
-**3. Install on a device** (USB debugging on):
-
-```sh
-adb install -r packages/app/android/app/build/outputs/apk/release/app-release.apk
-```
-
-Verify the app hits `https://eciperay.com/api` (not localhost) — e.g. sign in
-against production Supabase.
-
-CI verifies production shim generation on every PR (no full APK build).
-
-### Deploy Android via GitHub Actions
-
 The **Android Deploy** workflow (`.github/workflows/android-deploy.yml`) builds
 a signed release APK after CI passes on `master`, or on manual dispatch from the
-Actions tab. It uses **GitHub secrets**.
+Actions tab.
 
 Add these repository secrets (Settings → Secrets and variables → Actions):
 
@@ -297,7 +263,6 @@ before Android deploys (same as Fly web deploy).
 | `npm run dev:web`         | API server + Vite web app                 |
 | `npm run dev:ios`         | Server + Metro + iOS simulator            |
 | `npm run dev:android`     | Server + Metro + physical Android device  |
-| `npm run android:release` | Production-env Android release APK        |
 | `npm run android:device`  | Build/install app on connected phone only |
 | `npm run typecheck`       | TypeScript check all packages             |
 | `npm run lint`            | ESLint across all packages                |

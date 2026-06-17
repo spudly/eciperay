@@ -828,7 +828,6 @@ export default tseslint.config(
       'packages/app/react-native.config.js',
       'packages/app/jest.config.js',
       'packages/app/scripts/envShim.js',
-      'packages/app/scripts/writeEnvShim.js',
       'packages/app/postcss.config.mjs',
       'packages/client/jest.config.cjs',
       'packages/web/vite.config.ts',
