@@ -1,7 +1,9 @@
 import React, {useState} from 'react';
-import {Alert, Text, TextInput, TouchableOpacity, View} from 'react-native';
-import {errorMessage} from '@recipoo/client';
+import {Alert, Text, TouchableOpacity, View} from 'react-native';
+import {errorMessage} from '@eciperay/client';
 
+import {AuthTextField} from '../../components/auth/AuthTextField';
+import {normalizeAuthEmail} from '../../lib/normalizeAuthInput';
 import {supabase} from '../../lib/supabase';
 
 type ForgotProps = {navigation: {goBack: () => void}};
@@ -20,7 +22,7 @@ export const ForgotPasswordScreen = ({navigation}: ForgotProps) => {
   const handleReset = async () => {
     setLoading(true);
     try {
-      await sendReset(email);
+      await sendReset(normalizeAuthEmail(email));
       Alert.alert('Check your email', 'A password reset link has been sent.');
       navigation.goBack();
     } catch (error) {
@@ -38,13 +40,14 @@ export const ForgotPasswordScreen = ({navigation}: ForgotProps) => {
       <Text className="text-muted mb-8">
         {"We'll send a reset link to your email."}
       </Text>
-      <TextInput
-        className="mb-6 rounded-lg border border-gray-300 px-4 py-3 text-base"
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
+      <AuthTextField
         autoCapitalize="none"
+        autoComplete="email"
         keyboardType="email-address"
+        label="Email"
+        onChangeText={setEmail}
+        textContentType="emailAddress"
+        value={email}
       />
       <TouchableOpacity
         className="bg-primary items-center rounded-lg py-4"

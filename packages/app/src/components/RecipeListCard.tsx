@@ -1,6 +1,6 @@
 import React from 'react';
 import {Image, Text, TouchableOpacity, View} from 'react-native';
-import type {RecipeDetail} from '@recipoo/types';
+import type {RecipeDetail} from '@eciperay/types';
 
 const RecipeThumbnail = ({recipe}: {recipe: RecipeDetail}) =>
   recipe.imageUrl ? (

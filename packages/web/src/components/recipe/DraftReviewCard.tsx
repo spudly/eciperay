@@ -1,8 +1,8 @@
-import {invalidateRecipeQueries, queryKeys} from '@recipoo/client';
+import {invalidateRecipeQueries, queryKeys} from '@eciperay/client';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
-import type {RecipeDraft} from '@recipoo/types';
+import type {RecipeDraft} from '@eciperay/types';
 
-import {recipoo} from '../../lib/api.js';
+import {eciperay} from '../../lib/api.js';
 
 type Props = {recipeId: string; draft: RecipeDraft};
 
@@ -14,14 +14,14 @@ export const DraftReviewCard = ({recipeId, draft}: Props) => {
   };
 
   const approve = useMutation({
-    mutationFn: () => recipoo.drafts.approve(recipeId, draft.id),
+    mutationFn: () => eciperay.drafts.approve(recipeId, draft.id),
     onSuccess: () => {
       void invalidate();
     },
   });
 
   const reject = useMutation({
-    mutationFn: () => recipoo.drafts.reject(recipeId, draft.id),
+    mutationFn: () => eciperay.drafts.reject(recipeId, draft.id),
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: queryKeys.drafts(recipeId),

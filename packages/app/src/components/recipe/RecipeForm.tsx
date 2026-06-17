@@ -3,7 +3,7 @@ import type {
   IngredientInput,
   InstructionInput,
   RecipeInput,
-} from '@recipoo/types';
+} from '@eciperay/types';
 import React, {useState} from 'react';
 import {
   ScrollView,

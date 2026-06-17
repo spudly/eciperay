@@ -1,4 +1,4 @@
-import {queryKeys, recipeListInfiniteQueryOptions} from '@recipoo/client';
+import {queryKeys, recipeListInfiniteQueryOptions} from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {
   useInfiniteQuery,
@@ -7,7 +7,7 @@ import {
 } from '@tanstack/react-query';
 import React, {useDeferredValue, useState} from 'react';
 import {Alert, FlatList, StyleSheet, Text, TextInput, View} from 'react-native';
-import type {RecipeDetail} from '@recipoo/types';
+import type {RecipeDetail} from '@eciperay/types';
 
 import {RecipeListCard} from '../components/RecipeListCard';
 import {api} from '../lib/api';

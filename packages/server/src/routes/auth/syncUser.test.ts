@@ -21,7 +21,7 @@ describe('POST /auth/sync', () => {
   test('returns 200 and upserts user with valid token and body', async () => {
     nockSupabaseGetUser('user-uuid-1');
     const res = await request(app)
-      .post('/auth/sync')
+      .post('/api/auth/sync')
       .set('Authorization', 'Bearer valid-token')
       .send({displayName: 'Test User'});
     expect(res.status).toBe(200);
@@ -29,7 +29,7 @@ describe('POST /auth/sync', () => {
   });
 
   test('returns 401 when Authorization header is missing', async () => {
-    const res = await request(app).post('/auth/sync').send({});
+    const res = await request(app).post('/api/auth/sync').send({});
     expect(res.status).toBe(401);
     expect(res.body).toMatchObject({error: 'Missing authorization token'});
   });
@@ -37,7 +37,7 @@ describe('POST /auth/sync', () => {
   test('returns 401 when token is invalid', async () => {
     nockSupabaseGetUserError();
     const res = await request(app)
-      .post('/auth/sync')
+      .post('/api/auth/sync')
       .set('Authorization', 'Bearer bad-token')
       .send({});
     expect(res.status).toBe(401);
@@ -47,7 +47,7 @@ describe('POST /auth/sync', () => {
   test('returns 200 when displayName is omitted (uses null fallback)', async () => {
     nockSupabaseGetUser('user-uuid-1');
     const res = await request(app)
-      .post('/auth/sync')
+      .post('/api/auth/sync')
       .set('Authorization', 'Bearer valid-token')
       .send({});
     expect(res.status).toBe(200);
@@ -56,7 +56,7 @@ describe('POST /auth/sync', () => {
   test('returns 400 when body fails Zod validation', async () => {
     nockSupabaseGetUser('user-uuid-1');
     const res = await request(app)
-      .post('/auth/sync')
+      .post('/api/auth/sync')
       .set('Authorization', 'Bearer valid-token')
       .send({displayName: 'x'.repeat(101)});
     expect(res.status).toBe(400);
@@ -68,7 +68,7 @@ describe('POST /auth/sync', () => {
       process.env['SUPABASE_URL'] ?? 'http://supabase-test.local';
     nock(supabaseUrl).get('/auth/v1/user').reply(200, {id: 'user-uuid-1'});
     const res = await request(app)
-      .post('/auth/sync')
+      .post('/api/auth/sync')
       .set('Authorization', 'Bearer valid-token')
       .send({});
     expect(res.status).toBe(400);

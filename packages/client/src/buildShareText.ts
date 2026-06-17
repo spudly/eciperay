@@ -1,4 +1,4 @@
-import type {RecipeDetail} from '@recipoo/types';
+import type {RecipeDetail} from '@eciperay/types';
 
 export const buildShareText = (recipe: RecipeDetail): string => {
   const header = `🍴 ${recipe.title}\n(${recipe.servings} servings)`;

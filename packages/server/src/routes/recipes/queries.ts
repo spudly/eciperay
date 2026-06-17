@@ -1,4 +1,4 @@
-import type {RecipeInput} from '@recipoo/types';
+import type {RecipeInput} from '@eciperay/types';
 
 import {query as defaultQuery} from '../../db/query.js';
 

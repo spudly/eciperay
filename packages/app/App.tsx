@@ -1,8 +1,9 @@
 import './global.css';
 
-import {AuthProvider} from '@recipoo/client';
+import {AuthProvider} from '@eciperay/client';
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 import React from 'react';
+import {SafeAreaProvider} from 'react-native-safe-area-context';
 
 import {api} from './src/lib/api';
 import {RootNavigator} from './src/navigation/RootNavigator';
@@ -15,14 +16,16 @@ const syncAuthenticatedUser = async () => {
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider
-      supabase={supabase}
-      onAuthenticated={syncAuthenticatedUser}
-    >
-      <RootNavigator />
-    </AuthProvider>
-  </QueryClientProvider>
+  <SafeAreaProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider
+        supabase={supabase}
+        onAuthenticated={syncAuthenticatedUser}
+      >
+        <RootNavigator />
+      </AuthProvider>
+    </QueryClientProvider>
+  </SafeAreaProvider>
 );
 
 export default App;

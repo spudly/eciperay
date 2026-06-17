@@ -20,20 +20,20 @@ const nav = {navigate: mockNavigate};
 
 describe('SignInScreen', () => {
   test('renders email and password fields', () => {
-    const {getByPlaceholderText} = render(<SignInScreen navigation={nav} />);
-    expect(getByPlaceholderText('Email')).toBeTruthy();
-    expect(getByPlaceholderText('Password')).toBeTruthy();
+    const {getByLabelText} = render(<SignInScreen navigation={nav} />);
+    expect(getByLabelText('Email')).toBeTruthy();
+    expect(getByLabelText('Password')).toBeTruthy();
   });
 
   test('calls signInWithPassword on submit', async () => {
     mockSignIn.mockResolvedValue({error: null});
     mockSyncUser.mockImplementation(async () => {});
-    const {getByPlaceholderText, getByText} = render(
+    const {getByLabelText, getByText} = render(
       <SignInScreen navigation={nav} />,
     );
     await act(async () => {
-      fireEvent.changeText(getByPlaceholderText('Email'), 'user@test.com');
-      fireEvent.changeText(getByPlaceholderText('Password'), 'secret');
+      fireEvent.changeText(getByLabelText('Email'), 'user@test.com');
+      fireEvent.changeText(getByLabelText('Password'), 'secret');
       await Promise.resolve();
     });
     fireEvent.press(getByText('Sign In'));

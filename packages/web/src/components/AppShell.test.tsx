@@ -20,7 +20,7 @@ describe('AppShell', () => {
         </Route>
       </Routes>,
     );
-    expect(screen.getByText('Recipoo')).toBeInTheDocument();
+    expect(screen.getByText('Eciperay')).toBeInTheDocument();
     expect(screen.getByText('Recipes')).toBeInTheDocument();
     expect(screen.getByText('Page Content')).toBeInTheDocument();
   });

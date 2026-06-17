@@ -1,4 +1,4 @@
-import type {RecipeDetail} from '@recipoo/types';
+import type {RecipeDetail} from '@eciperay/types';
 
 import {query as defaultQuery} from '../db/query.js';
 import {GET_RECIPE_DETAIL_SQL} from '../routes/recipes/queries.js';

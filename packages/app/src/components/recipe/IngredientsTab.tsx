@@ -1,9 +1,9 @@
-import {queryKeys, scaleQuantity} from '@recipoo/client';
+import {queryKeys, scaleQuantity} from '@eciperay/client';
 import clsx from 'clsx';
 import {useQuery} from '@tanstack/react-query';
 import React, {useState} from 'react';
 import {Text, TouchableOpacity, View} from 'react-native';
-import type {Ingredient, RecipeDetail} from '@recipoo/types';
+import type {Ingredient, RecipeDetail} from '@eciperay/types';
 
 import {api} from '../../lib/api';
 

@@ -1,5 +1,5 @@
 {
-  "name": "@recipoo/server",
+  "name": "@eciperay/server",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -13,13 +13,14 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.37.0",
-    "@recipoo/types": "*",
+    "@eciperay/types": "*",
     "@supabase/supabase-js": "^2.0.0",
     "cheerio": "^1.0.0",
     "cors": "^2.8.5",
     "dotenv": "^17.0.0",
     "express": "^5.0.0",
     "pg": "^8.0.0",
+    "tsx": "^4.0.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {

@@ -44,7 +44,7 @@ describe('POST /recipes/import/image', () => {
         ]),
       );
     const res = await request(app)
-      .post('/recipes/import/image')
+      .post('/api/recipes/import/image')
       .set('Authorization', 'Bearer valid-token')
       .send({imageBase64: 'base64encodedimage=='});
     expect(res.status).toBe(201);
@@ -55,7 +55,7 @@ describe('POST /recipes/import/image', () => {
   test('returns 400 when imageBase64 is empty', async () => {
     nockSupabaseGetUser('user-uuid-1');
     const res = await request(app)
-      .post('/recipes/import/image')
+      .post('/api/recipes/import/image')
       .set('Authorization', 'Bearer valid-token')
       .send({imageBase64: ''});
     expect(res.status).toBe(400);
@@ -63,7 +63,7 @@ describe('POST /recipes/import/image', () => {
 
   test('returns 401 without auth token', async () => {
     const res = await request(app)
-      .post('/recipes/import/image')
+      .post('/api/recipes/import/image')
       .send({imageBase64: 'x'});
     expect(res.status).toBe(401);
   });
@@ -82,7 +82,7 @@ describe('POST /recipes/import/image', () => {
         usage: {input_tokens: 10, output_tokens: 5},
       });
     const res = await request(app)
-      .post('/recipes/import/image')
+      .post('/api/recipes/import/image')
       .set('Authorization', 'Bearer valid-token')
       .send({imageBase64: 'abc123'});
     expect(res.status).toBe(500);

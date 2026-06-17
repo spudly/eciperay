@@ -1,4 +1,4 @@
-import {useAuth} from '@recipoo/client';
+import {useAuth} from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import React from 'react';
 import {Text, TouchableOpacity, View} from 'react-native';
@@ -6,7 +6,7 @@ import {Text, TouchableOpacity, View} from 'react-native';
 import {supabase} from '../lib/supabase';
 import type {ProfileStackParamList} from '../navigation/types';
 
-type Props = NativeStackScreenProps<ProfileStackParamList, 'Profile'>;
+type Props = NativeStackScreenProps<ProfileStackParamList, 'ProfileHome'>;
 
 export const ProfileScreen = ({navigation}: Props) => {
   const {session} = useAuth();

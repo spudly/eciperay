@@ -1,5 +1,5 @@
-import {queryKeys, recipeDetailToInput} from '@recipoo/client';
-import type {RecipeInput} from '@recipoo/types';
+import {queryKeys, recipeDetailToInput} from '@eciperay/client';
+import type {RecipeInput} from '@eciperay/types';
 import React from 'react';
 import {fireEvent, waitFor} from '@testing-library/react-native';
 

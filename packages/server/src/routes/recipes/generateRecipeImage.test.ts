@@ -26,7 +26,7 @@ describe('POST /recipes/ai/generate-image', () => {
     nockSupabaseGetUser('user-uuid-1');
     nockAnthropicMessage('A plated pasta dish with basil');
     const res = await request(app)
-      .post('/recipes/ai/generate-image')
+      .post('/api/recipes/ai/generate-image')
       .set('Authorization', 'Bearer valid-token')
       .send({
         title: 'Pasta',
@@ -50,7 +50,7 @@ describe('POST /recipes/ai/generate-image', () => {
   test('returns 400 for invalid body', async () => {
     nockSupabaseGetUser('user-uuid-1');
     const res = await request(app)
-      .post('/recipes/ai/generate-image')
+      .post('/api/recipes/ai/generate-image')
       .set('Authorization', 'Bearer valid-token')
       .send({title: ''});
     expect(res.status).toBe(400);
@@ -58,7 +58,7 @@ describe('POST /recipes/ai/generate-image', () => {
 
   test('returns 401 without auth token', async () => {
     const res = await request(app)
-      .post('/recipes/ai/generate-image')
+      .post('/api/recipes/ai/generate-image')
       .send({title: 'Pasta'});
     expect(res.status).toBe(401);
   });
@@ -68,7 +68,7 @@ describe('POST /recipes/ai/generate-image', () => {
     nockAnthropicMessage('Prompt');
     mockGenerateImage.mockRejectedValueOnce(new Error('OpenAI unavailable'));
     const res = await request(app)
-      .post('/recipes/ai/generate-image')
+      .post('/api/recipes/ai/generate-image')
       .set('Authorization', 'Bearer valid-token')
       .send({title: 'Pasta'});
     expect(res.status).toBe(502);
@@ -80,7 +80,7 @@ describe('POST /recipes/ai/generate-image', () => {
     nockAnthropicMessage('Prompt');
     mockGenerateImage.mockRejectedValueOnce('broken');
     const res = await request(app)
-      .post('/recipes/ai/generate-image')
+      .post('/api/recipes/ai/generate-image')
       .set('Authorization', 'Bearer valid-token')
       .send({title: 'Pasta'});
     expect(res.status).toBe(502);

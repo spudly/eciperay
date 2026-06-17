@@ -1,11 +1,11 @@
-import type {BulkImportResult, RecipeExportBundle} from '@recipoo/types';
-import {queryKeys, useAuth} from '@recipoo/client';
+import type {BulkImportResult, RecipeExportBundle} from '@eciperay/types';
+import {queryKeys, useAuth} from '@eciperay/client';
 import {useQueryClient} from '@tanstack/react-query';
 import {useRef, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
 import {RecipeExportPicker} from '../components/RecipeExportPicker.js';
-import {recipoo} from '../lib/api.js';
+import {eciperay} from '../lib/api.js';
 import {supabase} from '../lib/supabase.js';
 
 const parseImportFile = async (file: File): Promise<RecipeExportBundle> => {
@@ -45,7 +45,7 @@ export const ProfilePage = () => {
     setImportSummary(null);
     try {
       const bundle = await parseImportFile(file);
-      const result = await recipoo.import.importBulk(bundle);
+      const result = await eciperay.import.importBulk(bundle);
       await queryClient.invalidateQueries({queryKey: queryKeys.recipes()});
       setImportSummary(formatImportSummary(result));
       if (result.errors.length > 0) {

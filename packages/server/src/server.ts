@@ -7,19 +7,22 @@ import cors from 'cors';
 import express from 'express';
 import type {NextFunction, Request, Response} from 'express';
 
+import {API_PREFIX} from './apiPrefix.js';
 import {query as defaultQuery} from './db/query.js';
 import {createAuthRouter} from './routes/auth/router.js';
 import {createImportRouter} from './routes/import/router.js';
 import {createRecipesRouter} from './routes/recipes/router.js';
 import {createTagsRouter} from './routes/tags/router.js';
+import {attachWebStatic, isWebDistAvailable} from './staticWeb.js';
 
 const DEFAULT_PORT = 8080;
 const DEFAULT_CORS_ORIGINS = 'http://localhost:8081';
 
-type AppDeps = {query: typeof defaultQuery};
+type AppDeps = {query: typeof defaultQuery; serveWeb: boolean};
 
 export const createApp = ({
   query: queryFn = defaultQuery,
+  serveWeb = process.env['NODE_ENV'] === 'production' && isWebDistAvailable(),
 }: Partial<AppDeps> = {}) => {
   const app = express();
   app.locals['query'] = queryFn;
@@ -31,14 +34,25 @@ export const createApp = ({
     .map(origin => origin.trim());
   app.use(cors({origin: corsOrigins}));
   app.use(express.json({limit: '50mb'}));
-  app.get('/health', (_req, res) => {
+
+  const api = express.Router();
+  api.get('/health', (_req, res) => {
     res.json({status: 'ok'});
   });
-  app.use('/auth', createAuthRouter(queryFn));
-  app.use('/recipes/import', createImportRouter(queryFn));
-  app.use('/recipes', createRecipesRouter(queryFn));
-  app.use('/tags', createTagsRouter(queryFn));
+  api.use('/auth', createAuthRouter(queryFn));
+  api.use('/recipes/import', createImportRouter(queryFn));
+  api.use('/recipes', createRecipesRouter(queryFn));
+  api.use('/tags', createTagsRouter(queryFn));
+  api.use((_req, res) => {
+    res.status(404).json({error: 'Not found'});
+  });
+  app.use(API_PREFIX, api);
   app.use(handleUnexpectedError);
+
+  if (serveWeb) {
+    attachWebStatic(app);
+  }
+
   return app;
 };
 
@@ -66,8 +80,9 @@ export const handleUnexpectedError = (
 const startServer = () => {
   const app = createApp();
   const port = Number(process.env['PORT'] ?? DEFAULT_PORT);
-  app.listen(port, () => {
-    console.log(`Server listening on port ${port}`);
+  const host = process.env['HOST'] ?? '0.0.0.0';
+  app.listen(port, host, () => {
+    console.log(`Server listening on http://${host}:${port}`);
   });
 };
 

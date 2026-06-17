@@ -1,5 +1,5 @@
 ignores:
-  - '@recipoo/theme' # Imported via @import in global.css; depcheck does not trace CSS imports
+  - '@eciperay/theme' # Imported via @import in global.css; depcheck does not trace CSS imports
   - '@babel/preset-env' # Babel preset used by React Native toolchain, not imported directly in app source
   - '@babel/runtime' # Babel runtime helpers injected by the compiler, not imported directly in app source
   - '@react-native-community/cli' # React Native CLI entry point; invoked via npm scripts (start, ios, android)

@@ -1,4 +1,4 @@
-import {queryKeys} from '@recipoo/client';
+import {queryKeys} from '@eciperay/client';
 import clsx from 'clsx';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useQuery} from '@tanstack/react-query';
@@ -9,7 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import type {RecipeDetail} from '@recipoo/types';
+import type {RecipeDetail} from '@eciperay/types';
 import KeepAwake from 'react-native-keep-awake';
 
 import {api} from '../lib/api';

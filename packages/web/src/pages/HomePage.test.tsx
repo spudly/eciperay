@@ -7,7 +7,7 @@ import {HomePage} from './HomePage.js';
 describe('HomePage', () => {
   test('renders welcome and links', async () => {
     await renderWithProviders(<HomePage />);
-    expect(screen.getByText('Welcome to Recipoo')).toBeInTheDocument();
+    expect(screen.getByText('Welcome to Eciperay')).toBeInTheDocument();
     expect(screen.getByText('Browse Recipes')).toBeInTheDocument();
   });
 });

@@ -34,3 +34,22 @@
 - [x] why are we using vitest instead of jest for packages/web
 - [x] make tests fail on console.error
 - [x] use clsx for constructing className props
+- [ ] option to support scale 2x, 3x, etc. instead of # servings
+- [ ] when scaling, cooking mode should use scaled amounts
+- [x] on android the email/password fields have no labels
+- [x] on android the password field text is either white or transparent so I
+      can't see it
+- [x] on android when I attempt to login with correct credentials I get "Sign in
+      failed Invalid login credentials"
+- [ ] on android "Home" page it says "your recipes will appear here" but shows
+      no recipes. If I click on the Recipes tab I do see them.
+- [ ] reset password doesn't work as expected. link from email takes me to
+      localhost:3000, and if I change the url to the correct port it shows me a
+      page that says "welcome to react native"
+- [ ] recipe image/description AI generation not available on android - should
+      be available everywhere
+- [ ] recipe reorder for ingredients/instruction is not available on android -
+      should be available everywhere
+- [ ] recipe reorder should be drag&drop everywhere, not buttons
+- [x] rename to Eciperay (eciperay.com)
+- [ ] setup web hosting on fly.io

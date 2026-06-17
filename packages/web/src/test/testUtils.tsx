@@ -1,4 +1,4 @@
-import {AuthProvider} from '@recipoo/client';
+import {AuthProvider} from '@eciperay/client';
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 import {
   act,

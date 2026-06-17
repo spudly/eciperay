@@ -6,22 +6,25 @@ import request from 'supertest';
 import {createApp, handleUnexpectedError} from './server.js';
 
 const withTestRoute = (path: string, handler: RequestHandler) => {
-  const app = createApp();
+  const app = createApp({serveWeb: false});
   app.get(path, handler);
   app.use(handleUnexpectedError);
   return app;
 };
 
 describe('createApp', () => {
-  test('GET /health returns {status: ok}', async () => {
+  test('GET /api/health returns {status: ok}', async () => {
     const app = createApp();
-    const res = await request(app).get('/health');
+    const res = await request(app).get('/api/health');
     expect(res.status).toBe(200);
     expect(res.body).toEqual({status: 'ok'});
   });
 
-  test('creates an app without throwing', () => {
-    expect(() => createApp()).not.toThrow();
+  test('serves the built web app when dist is present', async () => {
+    const app = createApp({serveWeb: true});
+    const res = await request(app).get('/recipes');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('root');
   });
 
   test('uses default CORS origins when env unset', () => {
@@ -44,6 +47,13 @@ describe('createApp', () => {
     } else {
       process.env['CORS_ORIGINS'] = previous;
     }
+  });
+
+  test('returns 404 JSON for unknown API routes', async () => {
+    const app = createApp();
+    const res = await request(app).get('/api/unknown');
+    expect(res.status).toBe(404);
+    expect(res.body).toEqual({error: 'Not found'});
   });
 
   test('returns 404 for unknown routes', async () => {

@@ -35,7 +35,7 @@ describe('POST /recipes/:id/ai/chat', () => {
       .mockResolvedValue(makeQueryResult([makeRecipeDraftRow()]));
 
     const res = await request(app)
-      .post('/recipes/recipe-uuid-1/ai/chat')
+      .post('/api/recipes/recipe-uuid-1/ai/chat')
       .set('Authorization', 'Bearer valid-token')
       .send({message: 'Make it less salty'});
 
@@ -48,7 +48,7 @@ describe('POST /recipes/:id/ai/chat', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue(makeQueryResult([]));
     const res = await request(app)
-      .post('/recipes/missing-id/ai/chat')
+      .post('/api/recipes/missing-id/ai/chat')
       .set('Authorization', 'Bearer valid-token')
       .send({message: 'hello'});
     expect(res.status).toBe(404);
@@ -57,7 +57,7 @@ describe('POST /recipes/:id/ai/chat', () => {
   test('returns 400 when message is empty', async () => {
     nockSupabaseGetUser('user-uuid-1');
     const res = await request(app)
-      .post('/recipes/recipe-uuid-1/ai/chat')
+      .post('/api/recipes/recipe-uuid-1/ai/chat')
       .set('Authorization', 'Bearer valid-token')
       .send({message: ''});
     expect(res.status).toBe(400);
@@ -65,7 +65,7 @@ describe('POST /recipes/:id/ai/chat', () => {
 
   test('returns 401 without auth token', async () => {
     const res = await request(app)
-      .post('/recipes/r/ai/chat')
+      .post('/api/recipes/r/ai/chat')
       .send({message: 'hi'});
     expect(res.status).toBe(401);
   });
@@ -90,7 +90,7 @@ describe('POST /recipes/:id/ai/chat', () => {
       .mockResolvedValue(makeQueryResult([]));
 
     const res = await request(app)
-      .post('/recipes/recipe-uuid-1/ai/chat')
+      .post('/api/recipes/recipe-uuid-1/ai/chat')
       .set('Authorization', 'Bearer valid-token')
       .send({message: 'Make it spicier'});
     expect(res.status).toBe(500);
@@ -105,7 +105,7 @@ describe('POST /recipes/:id/ai/chat', () => {
 
     await expect(
       request(app)
-        .post('/recipes/recipe-uuid-1/ai/chat')
+        .post('/api/recipes/recipe-uuid-1/ai/chat')
         .set('Authorization', 'Bearer valid-token')
         .send({message: 'Make it spicier'}),
     ).resolves.toMatchObject({status: 500});

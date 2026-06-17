@@ -25,7 +25,7 @@ describe('downloadRecipeExportBundle', () => {
     });
 
     expect(createObjectURL).toHaveBeenCalled();
-    expect(anchor.download).toBe('recipoo-recipes-2024-06-08.json');
+    expect(anchor.download).toBe('eciperay-recipes-2024-06-08.json');
     expect(click).toHaveBeenCalled();
     expect(revokeObjectURL).toHaveBeenCalledWith('blob:export');
     createElement.mockRestore();

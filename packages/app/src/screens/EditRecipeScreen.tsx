@@ -2,12 +2,12 @@ import {
   invalidateRecipeQueries,
   queryKeys,
   recipeDetailToInput,
-} from '@recipoo/client';
+} from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useQuery, useQueryClient} from '@tanstack/react-query';
 import React from 'react';
 import {Text, View} from 'react-native';
-import type {RecipeInput} from '@recipoo/types';
+import type {RecipeInput} from '@eciperay/types';
 
 import {RecipeForm} from '../components/recipe/RecipeForm';
 import {api} from '../lib/api';

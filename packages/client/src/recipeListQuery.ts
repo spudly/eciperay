@@ -1,4 +1,4 @@
-import type {RecipeDetail} from '@recipoo/types';
+import type {RecipeDetail} from '@eciperay/types';
 
 import {queryKeys} from './queryKeys.js';
 

@@ -1,4 +1,4 @@
-import {errorMessage, useAuth} from '@recipoo/client';
+import {errorMessage, useAuth} from '@eciperay/client';
 import {useState} from 'react';
 import {Navigate, useNavigate} from 'react-router-dom';
 

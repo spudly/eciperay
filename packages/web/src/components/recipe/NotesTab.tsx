@@ -1,11 +1,11 @@
 /* eslint-disable max-lines -- notes list, compose, chat, and draft review */
-import {invalidateRecipeQueries, queryKeys} from '@recipoo/client';
+import {invalidateRecipeQueries, queryKeys} from '@eciperay/client';
 import clsx from 'clsx';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useState} from 'react';
-import type {RecipeNote} from '@recipoo/types';
+import type {RecipeNote} from '@eciperay/types';
 
-import {recipoo} from '../../lib/api.js';
+import {eciperay} from '../../lib/api.js';
 
 import {DraftReviewCard} from './DraftReviewCard.js';
 
@@ -45,37 +45,37 @@ export const NotesTab = ({recipeId}: Props) => {
 
   const {data: convo} = useQuery({
     queryKey: queryKeys.conversation(recipeId),
-    queryFn: () => recipoo.ai.getConversation(recipeId),
+    queryFn: () => eciperay.ai.getConversation(recipeId),
   });
 
   const {data: notes = []} = useQuery({
     queryKey: queryKeys.notes(recipeId),
-    queryFn: () => recipoo.notes.list(recipeId),
+    queryFn: () => eciperay.notes.list(recipeId),
   });
 
   const {data: drafts = []} = useQuery({
     queryKey: queryKeys.drafts(recipeId),
-    queryFn: () => recipoo.drafts.listPending(recipeId),
+    queryFn: () => eciperay.drafts.listPending(recipeId),
   });
 
   const invalidate = () => invalidateRecipeQueries(queryClient, recipeId);
 
   const chatMutation = useMutation({
-    mutationFn: (text: string) => recipoo.ai.chat(recipeId, text),
+    mutationFn: (text: string) => eciperay.ai.chat(recipeId, text),
     onSuccess: () => {
       void invalidate();
     },
   });
 
   const cleanupMutation = useMutation({
-    mutationFn: () => recipoo.ai.cleanup(recipeId),
+    mutationFn: () => eciperay.ai.cleanup(recipeId),
     onSuccess: () => {
       void invalidate();
     },
   });
 
   const createNoteMutation = useMutation({
-    mutationFn: (content: string) => recipoo.notes.create(recipeId, content),
+    mutationFn: (content: string) => eciperay.notes.create(recipeId, content),
     onSuccess: () => {
       setNoteContent('');
       void queryClient.invalidateQueries({queryKey: queryKeys.notes(recipeId)});

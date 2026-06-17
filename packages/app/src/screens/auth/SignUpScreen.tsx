@@ -1,8 +1,13 @@
-import {errorMessage} from '@recipoo/client';
+import {errorMessage} from '@eciperay/client';
 import React, {useState} from 'react';
-import {Alert, Text, TextInput, TouchableOpacity, View} from 'react-native';
+import {Alert, Text, TouchableOpacity, View} from 'react-native';
 
+import {AuthTextField} from '../../components/auth/AuthTextField';
 import {api} from '../../lib/api';
+import {
+  normalizeAuthEmail,
+  normalizeAuthPassword,
+} from '../../lib/normalizeAuthInput';
 import {supabase} from '../../lib/supabase';
 
 type SignUpProps = {navigation: {navigate: (screen: string) => void}};
@@ -31,7 +36,11 @@ const runSignUp = async (
 ) => {
   setLoading(true);
   try {
-    const result = await signUp(email, password, displayName);
+    const result = await signUp(
+      normalizeAuthEmail(email),
+      normalizeAuthPassword(password),
+      displayName.trim(),
+    );
     if (result === 'confirm-email') {
       Alert.alert(
         'Check your email',
@@ -58,26 +67,29 @@ export const SignUpScreen = ({navigation}: SignUpProps) => {
       <Text className="mb-8 text-3xl font-bold text-gray-900">
         Create account
       </Text>
-      <TextInput
-        className="mb-4 rounded-lg border border-gray-300 px-4 py-3 text-base"
-        placeholder="Your name"
-        value={displayName}
+      <AuthTextField
+        label="Your name"
         onChangeText={setDisplayName}
+        textContentType="name"
+        value={displayName}
       />
-      <TextInput
-        className="mb-4 rounded-lg border border-gray-300 px-4 py-3 text-base"
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
+      <AuthTextField
         autoCapitalize="none"
+        autoComplete="email"
         keyboardType="email-address"
+        label="Email"
+        onChangeText={setEmail}
+        textContentType="emailAddress"
+        value={email}
       />
-      <TextInput
-        className="mb-6 rounded-lg border border-gray-300 px-4 py-3 text-base"
-        placeholder="Password"
-        value={password}
+      <AuthTextField
+        autoCapitalize="none"
+        autoComplete="password-new"
+        label="Password"
         onChangeText={setPassword}
         secureTextEntry
+        textContentType="newPassword"
+        value={password}
       />
       <TouchableOpacity
         className="bg-primary items-center rounded-lg py-4"

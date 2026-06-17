@@ -1,5 +1,5 @@
 import type {Response} from 'express';
-import type {RecipeDiff} from '@recipoo/types';
+import type {RecipeDiff} from '@eciperay/types';
 
 import {runTransactional} from '../../db/withTransaction.js';
 import {query as defaultQuery} from '../../db/query.js';

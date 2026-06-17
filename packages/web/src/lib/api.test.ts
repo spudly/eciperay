@@ -1,15 +1,15 @@
-import {recipoo} from './api.js';
+import {eciperay} from './api.js';
 import {supabase} from './supabase.js';
 
 describe('api', () => {
-  test('recipoo client fetches recipes', async () => {
-    const recipes = await recipoo.recipes.list();
+  test('eciperay client fetches recipes', async () => {
+    const recipes = await eciperay.recipes.list();
     expect(recipes).toHaveLength(1);
     expect(recipes[0]?.title).toBe('Test Recipe');
   });
 
   test('generates a recipe image via the API', async () => {
-    const image = await recipoo.ai.generateImage({
+    const image = await eciperay.ai.generateImage({
       title: 'Soup',
       description: 'Warm soup',
       ingredients: [{name: 'broth', quantity: 4, unit: 'cups'}],
@@ -19,7 +19,7 @@ describe('api', () => {
   });
 
   test('generates a recipe description via the API', async () => {
-    const result = await recipoo.ai.generateDescription({
+    const result = await eciperay.ai.generateDescription({
       title: 'Soup',
       ingredients: ['broth'],
       instructions: ['Simmer broth'],
@@ -34,7 +34,7 @@ describe('api', () => {
       data: {session: null},
       error: null,
     });
-    await recipoo.recipes.list();
+    await eciperay.recipes.list();
     expect(supabase.auth.getSession).toHaveBeenCalled();
   });
 });

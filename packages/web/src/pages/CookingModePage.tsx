@@ -1,10 +1,10 @@
-import {queryKeys} from '@recipoo/client';
+import {queryKeys} from '@eciperay/client';
 import clsx from 'clsx';
 import {useQuery} from '@tanstack/react-query';
 import {useEffect, useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
 
-import {recipoo} from '../lib/api.js';
+import {eciperay} from '../lib/api.js';
 
 const ProgressDots = ({total, current}: {total: number; current: number}) => (
   <div className="mb-6 flex justify-center gap-2">
@@ -27,7 +27,7 @@ export const CookingModePage = () => {
 
   const {data: recipe} = useQuery({
     queryKey: queryKeys.recipe(recipeId),
-    queryFn: () => recipoo.recipes.get(recipeId),
+    queryFn: () => eciperay.recipes.get(recipeId),
     enabled: recipeId.length > 0,
   });
 

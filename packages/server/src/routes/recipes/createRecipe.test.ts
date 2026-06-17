@@ -24,7 +24,7 @@ describe('POST /recipes', () => {
     mockCreateFlow();
 
     const res = await request(app)
-      .post('/recipes')
+      .post('/api/recipes')
       .set('Authorization', 'Bearer valid-token')
       .send(makeRecipeInput());
 
@@ -38,7 +38,7 @@ describe('POST /recipes', () => {
     mockCreateFlow();
 
     const res = await request(app)
-      .post('/recipes')
+      .post('/api/recipes')
       .set('Authorization', 'Bearer valid-token')
       .send(
         makeRecipeInput({
@@ -59,7 +59,7 @@ describe('POST /recipes', () => {
     mockCreateFlow();
 
     const res = await request(app)
-      .post('/recipes')
+      .post('/api/recipes')
       .set('Authorization', 'Bearer valid-token')
       .send(makeRecipeInput({tagIds: [TAG_ID]}));
 
@@ -69,14 +69,14 @@ describe('POST /recipes', () => {
   test('returns 400 when body is invalid', async () => {
     nockSupabaseGetUser('user-uuid-1');
     const res = await request(app)
-      .post('/recipes')
+      .post('/api/recipes')
       .set('Authorization', 'Bearer valid-token')
       .send({title: ''});
     expect(res.status).toBe(400);
   });
 
   test('returns 401 without auth token', async () => {
-    const res = await request(app).post('/recipes').send(makeRecipeInput());
+    const res = await request(app).post('/api/recipes').send(makeRecipeInput());
     expect(res.status).toBe(401);
   });
 });

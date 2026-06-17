@@ -1,6 +1,6 @@
 import React from 'react';
 import {Image, Text, TouchableOpacity, View} from 'react-native';
-import type {RecipeDetail} from '@recipoo/types';
+import type {RecipeDetail} from '@eciperay/types';
 
 import {printRecipe} from '../../lib/printRecipe';
 import {shareRecipe} from '../../lib/shareRecipe';

@@ -106,6 +106,20 @@ describe('AuthProvider', () => {
     expect(onAuthenticated).toHaveBeenCalledWith(session);
   });
 
+  test('sets isLoading false when getSession rejects', async () => {
+    const {client, getSession} = makeSupabase();
+    getSession.mockRejectedValue(new Error('network'));
+    const wrapper = ({children}: {children: React.ReactNode}) => (
+      <AuthProvider supabase={client}>{children}</AuthProvider>
+    );
+    const {result} = renderHook(() => useAuth(), {wrapper});
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(result.current.isLoading).toBe(false);
+    expect(result.current.session).toBeNull();
+  });
+
   test('unsubscribes on unmount', async () => {
     const {client, unsubscribe} = makeSupabase();
     const wrapper = ({children}: {children: React.ReactNode}) => (

@@ -1,4 +1,4 @@
-import type {RecipeDetail} from '@recipoo/types';
+import type {RecipeDetail} from '@eciperay/types';
 
 const CSS = `body{font-family:Georgia,serif;max-width:600px;margin:40px auto;padding:0 20px}
 h1{font-size:28px;margin-bottom:4px}.meta{color:#666;font-size:14px;margin-bottom:24px}

@@ -28,7 +28,7 @@ describe('GET /recipes/:id/ai/nutrition', () => {
     nockAnthropicMessage(NUTRITION_RESPONSE);
     mockQuery.mockResolvedValue(makeQueryResult([makeRecipeDetail()]));
     const res = await request(app)
-      .get('/recipes/recipe-uuid-1/ai/nutrition')
+      .get('/api/recipes/recipe-uuid-1/ai/nutrition')
       .set('Authorization', 'Bearer valid-token');
     expect(res.status).toBe(200);
     expect(res.body.calories).toBe(350);
@@ -39,13 +39,13 @@ describe('GET /recipes/:id/ai/nutrition', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue(makeQueryResult([]));
     const res = await request(app)
-      .get('/recipes/missing/ai/nutrition')
+      .get('/api/recipes/missing/ai/nutrition')
       .set('Authorization', 'Bearer valid-token');
     expect(res.status).toBe(404);
   });
 
   test('returns 401 without auth token', async () => {
-    const res = await request(app).get('/recipes/r/ai/nutrition');
+    const res = await request(app).get('/api/recipes/r/ai/nutrition');
     expect(res.status).toBe(401);
   });
 
@@ -57,7 +57,7 @@ describe('GET /recipes/:id/ai/nutrition', () => {
     });
     mockQuery.mockResolvedValue(makeQueryResult([detail]));
     const res = await request(app)
-      .get('/recipes/recipe-uuid-1/ai/nutrition')
+      .get('/api/recipes/recipe-uuid-1/ai/nutrition')
       .set('Authorization', 'Bearer valid-token');
     expect(res.status).toBe(200);
   });

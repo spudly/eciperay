@@ -1,4 +1,4 @@
-import type {User} from '@recipoo/types';
+import type {User} from '@eciperay/types';
 
 export const makeUser = (overrides: Partial<User> = {}): User => ({
   id: 'user-uuid-1',

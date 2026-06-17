@@ -1,4 +1,4 @@
-import type {RecipeDetail, Ingredient, Instruction} from '@recipoo/types';
+import type {RecipeDetail, Ingredient, Instruction} from '@eciperay/types';
 
 const toIngredientSummary = (i: Ingredient) => ({
   name: i.name,

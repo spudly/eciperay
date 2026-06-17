@@ -13,7 +13,7 @@ describe('DELETE /recipes/:id', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue({...makeQueryResult([{}]), rowCount: 1});
     const res = await request(app)
-      .delete('/recipes/recipe-uuid-1')
+      .delete('/api/recipes/recipe-uuid-1')
       .set('Authorization', 'Bearer valid-token');
     expect(res.status).toBe(204);
   });
@@ -22,13 +22,13 @@ describe('DELETE /recipes/:id', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue({...makeQueryResult([]), rowCount: 0});
     const res = await request(app)
-      .delete('/recipes/missing-id')
+      .delete('/api/recipes/missing-id')
       .set('Authorization', 'Bearer valid-token');
     expect(res.status).toBe(404);
   });
 
   test('returns 401 without auth token', async () => {
-    const res = await request(app).delete('/recipes/recipe-uuid-1');
+    const res = await request(app).delete('/api/recipes/recipe-uuid-1');
     expect(res.status).toBe(401);
   });
 });

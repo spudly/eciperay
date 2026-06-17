@@ -18,7 +18,7 @@ export type AddStackParamList = {
   ImportReview: {recipeId: string};
 };
 
-export type ProfileStackParamList = {Profile: undefined; Tags: undefined};
+export type ProfileStackParamList = {ProfileHome: undefined; Tags: undefined};
 
 export type RootTabParamList = {
   Home: undefined;

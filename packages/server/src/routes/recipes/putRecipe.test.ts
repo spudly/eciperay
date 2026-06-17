@@ -21,7 +21,7 @@ describe('PUT /recipes/:id', () => {
       .mockResolvedValue(makeQueryResult([makeRecipeDetailRow()]));
 
     const res = await request(app)
-      .put('/recipes/recipe-uuid-1')
+      .put('/api/recipes/recipe-uuid-1')
       .set('Authorization', 'Bearer valid-token')
       .send(makeRecipeInput({title: 'Updated Title'}));
 
@@ -33,7 +33,7 @@ describe('PUT /recipes/:id', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValueOnce({...makeQueryResult([]), rowCount: 0});
     const res = await request(app)
-      .put('/recipes/missing-id')
+      .put('/api/recipes/missing-id')
       .set('Authorization', 'Bearer valid-token')
       .send(makeRecipeInput());
     expect(res.status).toBe(404);
@@ -42,7 +42,7 @@ describe('PUT /recipes/:id', () => {
   test('returns 400 when body is invalid', async () => {
     nockSupabaseGetUser('user-uuid-1');
     const res = await request(app)
-      .put('/recipes/recipe-uuid-1')
+      .put('/api/recipes/recipe-uuid-1')
       .set('Authorization', 'Bearer valid-token')
       .send({title: ''});
     expect(res.status).toBe(400);
@@ -53,7 +53,7 @@ describe('PUT /recipes/:id', () => {
     mockQuery.mockRejectedValue(new Error('db down'));
     await expect(
       request(app)
-        .put('/recipes/recipe-uuid-1')
+        .put('/api/recipes/recipe-uuid-1')
         .set('Authorization', 'Bearer valid-token')
         .send(makeRecipeInput()),
     ).resolves.toMatchObject({status: 500});
@@ -61,7 +61,7 @@ describe('PUT /recipes/:id', () => {
 
   test('returns 401 without auth token', async () => {
     const res = await request(app)
-      .put('/recipes/recipe-uuid-1')
+      .put('/api/recipes/recipe-uuid-1')
       .send(makeRecipeInput());
     expect(res.status).toBe(401);
   });

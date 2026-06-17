@@ -1,4 +1,4 @@
-import type {RecipeDetail} from '@recipoo/types';
+import type {RecipeDetail} from '@eciperay/types';
 import {useState} from 'react';
 import {Link} from 'react-router-dom';
 
