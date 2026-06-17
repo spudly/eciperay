@@ -44,6 +44,7 @@ export const EditRecipeScreen = ({route, navigation}: Props) => {
       <Text className="mb-4 text-2xl font-bold text-gray-900">Edit Recipe</Text>
       <RecipeForm
         initial={recipeDetailToInput(recipe)}
+        recipeId={recipeId}
         submitLabel="Save Changes"
         onSubmit={handleSubmit}
       />

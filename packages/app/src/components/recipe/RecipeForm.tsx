@@ -1,4 +1,5 @@
 /* eslint-disable max-lines -- shared recipe form with dynamic ingredient/instruction lists */
+import {uploadRecipeImageFromBase64, useAuth} from '@eciperay/client';
 import type {
   IngredientInput,
   InstructionInput,
@@ -13,12 +14,27 @@ import {
   View,
 } from 'react-native';
 
+import {
+  deleteImagePreviewFile,
+  type PendingRecipeImage,
+  stripImageCacheKey,
+  withImageCacheKey,
+  writeBase64ImagePreview,
+} from '../../lib/recipeImageAsset';
+import {api} from '../../lib/api';
+import {supabase} from '../../lib/supabase';
+
+import {RecipeImageField} from './RecipeImageField';
 import {TagPicker} from './TagPicker';
 
 type Props = {
   initial: RecipeInput;
+  recipeId?: string;
   submitLabel: string;
-  onSubmit: (input: RecipeInput) => Promise<void>;
+  onSubmit: (
+    input: RecipeInput,
+    pendingImage?: PendingRecipeImage,
+  ) => Promise<void>;
 };
 
 type FormIngredient = Omit<IngredientInput, 'quantity'> & {
@@ -46,7 +62,13 @@ const emptyInstruction = (stepNumber: number): InstructionInput => ({
   body: '',
 });
 
-export const RecipeForm = ({initial, submitLabel, onSubmit}: Props) => {
+export const RecipeForm = ({
+  initial,
+  recipeId,
+  submitLabel,
+  onSubmit,
+}: Props) => {
+  const {session} = useAuth();
   const [title, setTitle] = useState(initial.title);
   const [description, setDescription] = useState(initial.description ?? '');
   const [servings, setServings] = useState(String(initial.servings));
@@ -60,7 +82,7 @@ export const RecipeForm = ({initial, submitLabel, onSubmit}: Props) => {
       ? ''
       : String(initial.cookTimeMin),
   );
-  const [imageUrl] = useState(initial.imageUrl ?? '');
+  const [imageUrl, setImageUrl] = useState(initial.imageUrl ?? '');
   const [sourceUrl, setSourceUrl] = useState(initial.sourceUrl ?? '');
   const [ingredients, setIngredients] = useState<FormIngredient[]>(
     initial.ingredients.length > 0 ? initial.ingredients : [emptyIngredient(0)],
@@ -71,8 +93,151 @@ export const RecipeForm = ({initial, submitLabel, onSubmit}: Props) => {
       : [emptyInstruction(1)],
   );
   const [tagIds, setTagIds] = useState<string[]>(initial.tagIds);
+  const [pendingImage, setPendingImage] = useState<PendingRecipeImage | null>(
+    null,
+  );
+  const [previewUri, setPreviewUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const [imageUploading, setImageUploading] = useState(false);
+  const [imageGenerating, setImageGenerating] = useState(false);
+  const [imageCacheKey, setImageCacheKey] = useState(0);
+  const [descriptionGenerating, setDescriptionGenerating] = useState(false);
+  const [descriptionError, setDescriptionError] = useState<string | null>(null);
+
+  const clearPendingImage = () => {
+    setPreviewUri(current => {
+      if (current) {
+        void deleteImagePreviewFile(current);
+      }
+      return null;
+    });
+    setPendingImage(null);
+  };
+
+  const processImage = async (image: PendingRecipeImage, preview: string) => {
+    const userId = session?.user.id;
+    if (!userId) {
+      setImageError('Sign in to upload images');
+      return;
+    }
+    setImageError(null);
+
+    if (recipeId) {
+      setImageUploading(true);
+      setPreviewUri(preview);
+      try {
+        const uploadedUrl = stripImageCacheKey(
+          await uploadRecipeImageFromBase64(
+            supabase,
+            image.base64,
+            image.contentType,
+            {userId, recipeId},
+          ),
+        );
+        void deleteImagePreviewFile(preview);
+        setPreviewUri(null);
+        setPendingImage(null);
+        setImageUrl(uploadedUrl);
+        setImageCacheKey(Date.now());
+      } catch (error_) {
+        setImageError(
+          error_ instanceof Error ? error_.message : 'Failed to upload image',
+        );
+      } finally {
+        setImageUploading(false);
+      }
+      return;
+    }
+
+    clearPendingImage();
+    setImageUrl('');
+    setPendingImage(image);
+    setPreviewUri(preview);
+  };
+
+  const handleGenerateDescription = async () => {
+    const trimmedTitle = title.trim();
+    /* istanbul ignore next 3 -- generate button is disabled when title is empty */
+    if (!trimmedTitle) {
+      setDescriptionError('Add a title before generating a description');
+      return;
+    }
+    if (!session?.user.id) {
+      setDescriptionError('Sign in to generate descriptions');
+      return;
+    }
+    setDescriptionError(null);
+    setDescriptionGenerating(true);
+    try {
+      const ingredientNames = ingredients
+        .map(ingredient => ingredient.name.trim())
+        .filter(Boolean);
+      const instructionBodies = instructions
+        .map(instruction => instruction.body.trim())
+        .filter(Boolean);
+      const {description: generatedDescription} =
+        await api.ai.generateDescription({
+          title: trimmedTitle,
+          ingredients: ingredientNames,
+          instructions: instructionBodies,
+          prepTimeMin: prepTimeMin === '' ? null : Number(prepTimeMin),
+          cookTimeMin: cookTimeMin === '' ? null : Number(cookTimeMin),
+        });
+      setDescription(generatedDescription);
+    } catch (error_) {
+      setDescriptionError(
+        error_ instanceof Error
+          ? error_.message
+          : 'Failed to generate description',
+      );
+    } finally {
+      setDescriptionGenerating(false);
+    }
+  };
+
+  const handleGenerateImage = async () => {
+    const trimmedTitle = title.trim();
+    /* istanbul ignore next 3 -- generate button is disabled when title is empty */
+    if (!trimmedTitle) {
+      setImageError('Add a title before generating an image');
+      return;
+    }
+    if (!session?.user.id) {
+      setImageError('Sign in to generate images');
+      return;
+    }
+    setImageError(null);
+    setImageGenerating(true);
+    try {
+      const imageIngredients = ingredients
+        .map(ingredient => ({
+          name: ingredient.name.trim(),
+          quantity: toQuantity(ingredient.quantity),
+          unit: ingredient.unit,
+        }))
+        .filter(ingredient => ingredient.name);
+      const instructionBodies = instructions
+        .map(instruction => instruction.body.trim())
+        .filter(Boolean);
+      const {imageBase64, contentType} = await api.ai.generateImage({
+        title: trimmedTitle,
+        description: description || null,
+        ingredients: imageIngredients,
+        instructions: instructionBodies,
+      });
+      const image: PendingRecipeImage = {base64: imageBase64, contentType};
+      const preview = await writeBase64ImagePreview(imageBase64, contentType);
+      await processImage(image, preview);
+    } catch (error_) {
+      setImageError(
+        error_ instanceof Error ? error_.message : 'Failed to generate image',
+      );
+    } finally {
+      setImageGenerating(false);
+    }
+  };
 
   const updateIngredient = (
     index: number,
@@ -90,29 +255,28 @@ export const RecipeForm = ({initial, submitLabel, onSubmit}: Props) => {
     );
   };
 
+  const buildInput = (): RecipeInput => ({
+    title,
+    description: description || null,
+    servings: Number(servings),
+    prepTimeMin: prepTimeMin === '' ? null : Number(prepTimeMin),
+    cookTimeMin: cookTimeMin === '' ? null : Number(cookTimeMin),
+    imageUrl: pendingImage ? null : stripImageCacheKey(imageUrl) || null,
+    sourceUrl: sourceUrl || null,
+    ingredients: ingredients.map((ing, i) => ({
+      ...ing,
+      sortOrder: i,
+      quantity: toQuantity(ing.quantity),
+    })),
+    instructions: instructions.map((ins, i) => ({...ins, stepNumber: i + 1})),
+    tagIds,
+  });
+
   const handleSubmit = async () => {
     setLoading(true);
     setError(null);
     try {
-      await onSubmit({
-        title,
-        description: description || null,
-        servings: Number(servings),
-        prepTimeMin: prepTimeMin === '' ? null : Number(prepTimeMin),
-        cookTimeMin: cookTimeMin === '' ? null : Number(cookTimeMin),
-        imageUrl: imageUrl || null,
-        sourceUrl: sourceUrl || null,
-        ingredients: ingredients.map((ing, i) => ({
-          ...ing,
-          sortOrder: i,
-          quantity: toQuantity(ing.quantity),
-        })),
-        instructions: instructions.map((ins, i) => ({
-          ...ins,
-          stepNumber: i + 1,
-        })),
-        tagIds,
-      });
+      await onSubmit(buildInput(), pendingImage ?? undefined);
     } catch (error_) {
       setError(error_ instanceof Error ? error_.message : 'Failed to save');
     } finally {
@@ -120,21 +284,45 @@ export const RecipeForm = ({initial, submitLabel, onSubmit}: Props) => {
     }
   };
 
+  const imagePreview =
+    previewUri ??
+    (imageUrl && imageCacheKey > 0
+      ? withImageCacheKey(imageUrl, imageCacheKey)
+      : imageUrl);
+
   return (
     <ScrollView className="flex-1">
       <View className="gap-4 pb-8">
         <View>
           <Text className="mb-1 text-sm font-medium text-gray-700">Title</Text>
           <TextInput
+            accessibilityLabel="Title"
             className="rounded-lg border border-gray-300 px-4 py-2"
             value={title}
             onChangeText={setTitle}
           />
         </View>
         <View>
-          <Text className="mb-1 text-sm font-medium text-gray-700">
-            Description
-          </Text>
+          <View className="mb-1 flex-row items-center justify-between gap-3">
+            <Text className="text-sm font-medium text-gray-700">
+              Description
+            </Text>
+            <TouchableOpacity
+              accessibilityLabel="Generate description with AI"
+              className="
+                border-primary rounded-lg border bg-white px-3 py-1
+                disabled:opacity-50
+              "
+              disabled={!title.trim() || descriptionGenerating}
+              onPress={() => {
+                void handleGenerateDescription();
+              }}
+            >
+              <Text className="text-primary text-sm font-medium">
+                {descriptionGenerating ? 'Generating…' : 'Generate with AI'}
+              </Text>
+            </TouchableOpacity>
+          </View>
           <TextInput
             className="rounded-lg border border-gray-300 px-4 py-2"
             multiline
@@ -142,6 +330,11 @@ export const RecipeForm = ({initial, submitLabel, onSubmit}: Props) => {
             value={description}
             onChangeText={setDescription}
           />
+          {descriptionError ? (
+            <Text className="mt-2 text-sm text-red-600">
+              {descriptionError}
+            </Text>
+          ) : null}
         </View>
         <View className="flex-row gap-3">
           <View className="flex-1">
@@ -178,6 +371,24 @@ export const RecipeForm = ({initial, submitLabel, onSubmit}: Props) => {
             />
           </View>
         </View>
+        <RecipeImageField
+          imagePreview={imagePreview || null}
+          imageUploading={imageUploading}
+          imageGenerating={imageGenerating}
+          imageError={imageError}
+          canGenerateImage={title.trim().length > 0}
+          onImagePicked={processImage}
+          onImageError={message => {
+            setImageError(message);
+          }}
+          onGenerateImage={handleGenerateImage}
+          onRemove={() => {
+            clearPendingImage();
+            setImageUrl('');
+            setImageCacheKey(0);
+            setImageError(null);
+          }}
+        />
         <View>
           <Text className="mb-1 text-sm font-medium text-gray-700">
             Source URL

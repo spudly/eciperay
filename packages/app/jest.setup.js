@@ -47,6 +47,18 @@ jest.mock('react-native-image-picker', () => ({
   launchImageLibrary: jest.fn(),
 }));
 
+jest.mock('react-native-blob-util', () => ({
+  __esModule: true,
+  default: {
+    fs: {
+      dirs: {CacheDir: '/cache'},
+      writeFile: jest.fn().mockResolvedValue(undefined),
+      unlink: jest.fn().mockResolvedValue(undefined),
+      exists: jest.fn().mockResolvedValue(true),
+    },
+  },
+}));
+
 jest.mock('react-native-url-polyfill/auto', () => ({}));
 
 jest.mock('@react-native-async-storage/async-storage', () =>
