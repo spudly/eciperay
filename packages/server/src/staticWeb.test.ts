@@ -1,11 +1,15 @@
-import {mkdirSync, mkdtempSync, writeFileSync} from 'node:fs';
+import {mkdirSync, mkdtempSync, rmSync, writeFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 
 import express from 'express';
 import request from 'supertest';
 
-import {attachWebStatic} from './staticWeb.js';
+import {
+  attachWebStatic,
+  isWebDistAvailable,
+  WEB_DIST_DIR,
+} from './staticWeb.js';
 
 const makeFixtureDist = (): string => {
   const dir = mkdtempSync(path.join(tmpdir(), 'eciperay-web-dist-'));
@@ -52,5 +56,33 @@ describe('attachWebStatic', () => {
 
     const missingApi = await request(app).get('/api/unknown');
     expect(missingApi.status).toBe(404);
+  });
+
+  test('serves SPA index for HEAD requests on client routes', async () => {
+    const distDir = makeFixtureDist();
+    const app = express();
+    attachWebStatic(app, distDir);
+
+    const res = await request(app).head('/recipes');
+    expect(res.status).toBe(200);
+  });
+
+  test('does not serve SPA fallback for non-GET/HEAD methods', async () => {
+    const distDir = makeFixtureDist();
+    const app = express();
+    attachWebStatic(app, distDir);
+
+    const res = await request(app).post('/recipes');
+    expect(res.status).toBe(404);
+  });
+
+  test('isWebDistAvailable reflects whether the default dist directory exists', () => {
+    expect(isWebDistAvailable()).toBe(false);
+    mkdirSync(WEB_DIST_DIR, {recursive: true});
+    try {
+      expect(isWebDistAvailable()).toBe(true);
+    } finally {
+      rmSync(WEB_DIST_DIR, {recursive: true, force: true});
+    }
   });
 });

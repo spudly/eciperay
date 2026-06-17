@@ -648,7 +648,10 @@ export default tseslint.config(
       'unicorn/explicit-length-check': 'error',
       'unicorn/filename-case': [
         'error',
-        {cases: {camelCase: true, pascalCase: true}},
+        {
+          cases: {camelCase: true, pascalCase: true},
+          ignore: [/^react-native\.config\.js$/u],
+        },
       ],
       'unicorn/import-index': 'off', // deprecated rule
       'unicorn/import-style': 'off', // too opinionated about named vs default vs namespace imports
@@ -822,6 +825,7 @@ export default tseslint.config(
       '**/*.cjs', // all CJS files anywhere in the repo
       'packages/app/metro.config.js',
       'packages/app/babel.config.js',
+      'packages/app/react-native.config.js',
       'packages/app/jest.config.js',
       'packages/app/postcss.config.mjs',
       'packages/client/jest.config.cjs',

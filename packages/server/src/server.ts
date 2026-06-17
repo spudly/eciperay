@@ -76,7 +76,7 @@ export const handleUnexpectedError = (
   res.status(500).json({error: 'Internal server error'});
 };
 
-/* c8 ignore next 11 -- HTTP listener; tests import createApp via supertest only */
+/* c8 ignore start -- HTTP listener entrypoint; tests import createApp via supertest only */
 const startServer = () => {
   const app = createApp();
   const port = Number(process.env['PORT'] ?? DEFAULT_PORT);
@@ -89,3 +89,4 @@ const startServer = () => {
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   startServer();
 }
+/* c8 ignore stop -- HTTP listener entrypoint */

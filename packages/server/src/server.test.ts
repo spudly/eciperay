@@ -1,9 +1,13 @@
+import {mkdirSync, rmSync, writeFileSync} from 'node:fs';
+import path from 'node:path';
+
 import {jest} from '@jest/globals';
 import Anthropic from '@anthropic-ai/sdk';
 import type {RequestHandler} from 'express';
 import request from 'supertest';
 
 import {createApp, handleUnexpectedError} from './server.js';
+import {WEB_DIST_DIR} from './staticWeb.js';
 
 const withTestRoute = (path: string, handler: RequestHandler) => {
   const app = createApp({serveWeb: false});
@@ -21,10 +25,40 @@ describe('createApp', () => {
   });
 
   test('serves the built web app when dist is present', async () => {
-    const app = createApp({serveWeb: true});
-    const res = await request(app).get('/recipes');
-    expect(res.status).toBe(200);
-    expect(res.text).toContain('root');
+    mkdirSync(WEB_DIST_DIR, {recursive: true});
+    writeFileSync(
+      path.join(WEB_DIST_DIR, 'index.html'),
+      '<!DOCTYPE html><html><body>root</body></html>',
+    );
+
+    try {
+      const app = createApp({serveWeb: true});
+      const res = await request(app).get('/recipes');
+      expect(res.status).toBe(200);
+      expect(res.text).toContain('root');
+    } finally {
+      rmSync(WEB_DIST_DIR, {recursive: true, force: true});
+    }
+  });
+
+  test('enables static web serving in production when dist is present', async () => {
+    const previousNodeEnv = process.env['NODE_ENV'];
+    mkdirSync(WEB_DIST_DIR, {recursive: true});
+    writeFileSync(
+      path.join(WEB_DIST_DIR, 'index.html'),
+      '<!DOCTYPE html><html><body>prod</body></html>',
+    );
+    process.env['NODE_ENV'] = 'production';
+
+    try {
+      const app = createApp();
+      const res = await request(app).get('/recipes');
+      expect(res.status).toBe(200);
+      expect(res.text).toContain('prod');
+    } finally {
+      process.env['NODE_ENV'] = previousNodeEnv;
+      rmSync(WEB_DIST_DIR, {recursive: true, force: true});
+    }
   });
 
   test('uses default CORS origins when env unset', () => {
