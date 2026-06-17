@@ -155,6 +155,24 @@ fly deploy \
   --build-arg VITE_SUPABASE_ANON_KEY=your-anon-key
 ```
 
+**GitHub Actions** (`.github/workflows/fly-deploy.yml`) deploys automatically
+after CI passes on `master`. You can also trigger a deploy manually from the
+Actions tab (**Deploy** → **Run workflow**).
+
+Add these repository secrets (Settings → Secrets and variables → Actions):
+
+| Secret                   | Purpose                                       |
+| ------------------------ | --------------------------------------------- |
+| `FLY_API_TOKEN`          | Fly deploy token (`fly tokens create deploy`) |
+| `VITE_SUPABASE_URL`      | Docker build arg for the web bundle           |
+| `VITE_SUPABASE_ANON_KEY` | Docker build arg for the web bundle           |
+
+Runtime secrets (`DATABASE_URL`, `SUPABASE_SECRET_KEY`, API keys, etc.) stay on
+Fly via `fly secrets set` — they are not needed in GitHub.
+
+Optional: create a **production** environment in GitHub to require approval
+before deploys.
+
 **5. Custom domain**
 
 ```sh
