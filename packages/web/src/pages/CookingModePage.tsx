@@ -1,27 +1,20 @@
-import {queryKeys} from '@eciperay/client';
+import {
+  queryKeys,
+  resolveRecipeServings,
+  scaleFactorFromServings,
+} from '@eciperay/client';
 import clsx from 'clsx';
 import {useQuery} from '@tanstack/react-query';
 import {useEffect, useState} from 'react';
-import {useNavigate, useParams} from 'react-router-dom';
+import {useNavigate, useParams, useSearchParams} from 'react-router-dom';
 
+import {ProgressDots} from '../components/cooking/ProgressDots.js';
+import {ScaledIngredientsList} from '../components/cooking/ScaledIngredientsList.js';
 import {eciperay} from '../lib/api.js';
-
-const ProgressDots = ({total, current}: {total: number; current: number}) => (
-  <div className="mb-6 flex justify-center gap-2">
-    {Array.from({length: total}).map((_, i) => (
-      <div
-        key={i}
-        className={clsx('size-2 rounded-full', {
-          'bg-white': i === current,
-          'bg-white/40': i !== current,
-        })}
-      />
-    ))}
-  </div>
-);
 
 export const CookingModePage = () => {
   const {recipeId = ''} = useParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
 
@@ -35,6 +28,13 @@ export const CookingModePage = () => {
     (a, b) => a.stepNumber - b.stepNumber,
   );
   const current = steps[step];
+  const servings = resolveRecipeServings(
+    searchParams.get('servings'),
+    recipe?.servings ?? 1,
+  );
+  const scaleFactor = recipe
+    ? scaleFactorFromServings(recipe.servings, servings)
+    : 1;
 
   const goNext = () => {
     setStep(s => Math.min(s + 1, steps.length - 1));
@@ -79,6 +79,13 @@ export const CookingModePage = () => {
       <p className="mb-4 text-sm uppercase tracking-widest text-white/60">
         Step {current ? current.stepNumber : 1} of {steps.length}
       </p>
+      {recipe ? (
+        <ScaledIngredientsList
+          recipe={recipe}
+          scaleFactor={scaleFactor}
+          servings={servings}
+        />
+      ) : null}
       <p className="mb-8 text-2xl leading-relaxed text-white">
         {current ? current.body : ''}
       </p>

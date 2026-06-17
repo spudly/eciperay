@@ -1,4 +1,8 @@
-import {queryKeys, scaleQuantity} from '@eciperay/client';
+import {
+  formatScaledIngredientLine,
+  queryKeys,
+  sortIngredientsByOrder,
+} from '@eciperay/client';
 import {useQuery} from '@tanstack/react-query';
 import {useState} from 'react';
 import type {Ingredient, RecipeDetail} from '@eciperay/types';
@@ -6,49 +10,15 @@ import clsx from 'clsx';
 
 import {eciperay} from '../../lib/api.js';
 
+import {ScaleMultiplierButtons} from './ScaleMultiplierButtons.js';
+import {ServingsStepper} from './ServingsStepper.js';
+
 type Props = {
   recipe: RecipeDetail;
   scaleFactor: number;
   servings: number;
   onServingsChange: (s: number) => void;
 };
-
-const ServingsStepper = ({
-  servings,
-  onChange,
-}: {
-  servings: number;
-  onChange: (n: number) => void;
-}) => (
-  <div className="mb-4 flex items-center gap-3">
-    <span className="text-sm font-medium text-gray-700">Servings:</span>
-    <button
-      type="button"
-      className="
-        flex size-8 items-center justify-center rounded-full bg-gray-100 text-lg
-        font-medium
-      "
-      onClick={() => {
-        onChange(Math.max(1, servings - 1));
-      }}
-    >
-      −
-    </button>
-    <span className="w-6 text-center text-base font-semibold">{servings}</span>
-    <button
-      type="button"
-      className="
-        flex size-8 items-center justify-center rounded-full bg-gray-100 text-lg
-        font-medium
-      "
-      onClick={() => {
-        onChange(servings + 1);
-      }}
-    >
-      +
-    </button>
-  </div>
-);
 
 const toggleSet = (id: string, prev: Set<string>): Set<string> => {
   const next = new Set(prev);
@@ -80,8 +50,7 @@ const IngredientRow = ({
     onClick={onToggle}
   >
     <span className="flex-1 text-base text-gray-900">
-      {scaleQuantity(ingredient.quantity, ingredient.unit, scaleFactor)}{' '}
-      {ingredient.name}
+      {formatScaledIngredientLine(ingredient, scaleFactor)}
     </span>
     {ingredient.isOptional ? (
       <span className="text-muted ms-2 text-xs">optional</span>
@@ -116,19 +85,22 @@ export const IngredientsTab = ({
         servings={servings}
         onChange={onServingsChange}
       />
-      {[...recipe.ingredients]
-        .sort((a, b) => a.sortOrder - b.sortOrder)
-        .map(ing => (
-          <IngredientRow
-            key={ing.id}
-            ingredient={ing}
-            scaleFactor={scaleFactor}
-            missing={missing.has(ing.id)}
-            onToggle={() => {
-              toggle(ing.id);
-            }}
-          />
-        ))}
+      <ScaleMultiplierButtons
+        baseServings={recipe.servings}
+        servings={servings}
+        onServingsChange={onServingsChange}
+      />
+      {sortIngredientsByOrder(recipe.ingredients).map(ing => (
+        <IngredientRow
+          key={ing.id}
+          ingredient={ing}
+          scaleFactor={scaleFactor}
+          missing={missing.has(ing.id)}
+          onToggle={() => {
+            toggle(ing.id);
+          }}
+        />
+      ))}
       {missing.size > 0 ? (
         <p className="text-muted mt-3 text-sm">
           Click an ingredient to mark it missing and see substitutions below.

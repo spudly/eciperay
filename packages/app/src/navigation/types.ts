@@ -7,7 +7,7 @@ import type {NavigatorScreenParams} from '@react-navigation/native';
 export type RecipesStackParamList = {
   RecipesList: undefined;
   RecipeDetail: {recipeId: string};
-  CookingMode: {recipeId: string};
+  CookingMode: {recipeId: string; servings?: number};
   EditRecipe: {recipeId: string};
 };
 

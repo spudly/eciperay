@@ -1,17 +1,19 @@
-import {queryKeys} from '@eciperay/client';
-import clsx from 'clsx';
+import {
+  queryKeys,
+  resolveRecipeServings,
+  scaleFactorFromServings,
+} from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useQuery} from '@tanstack/react-query';
 import React, {useEffect, useState} from 'react';
-import {
-  GestureResponderEvent,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
-import type {RecipeDetail} from '@eciperay/types';
+import {Text, TouchableOpacity, View} from 'react-native';
 import KeepAwake from 'react-native-keep-awake';
 
+import {
+  NavButtons,
+  StepDisplay,
+  useSwipeNav,
+} from '../components/cooking/CookingModeParts';
 import {api} from '../lib/api';
 import type {RecipesStackParamList} from '../navigation/types';
 
@@ -20,88 +22,8 @@ type CookingProps = NativeStackScreenProps<
   'CookingMode'
 >;
 
-type Step = RecipeDetail['instructions'][number];
-
-const ProgressDots = ({total, current}: {total: number; current: number}) => (
-  <View className="mb-6 flex-row justify-center gap-2">
-    {Array.from({length: total}).map((_, i) => (
-      <View
-        key={i}
-        className={clsx('size-2 rounded-full', {
-          'bg-white': i === current,
-          'bg-white/40': i !== current,
-        })}
-      />
-    ))}
-  </View>
-);
-
-/* istanbul ignore next -- swipe gesture handlers; tested via button navigation; not simulatable in RNTL */
-const useSwipeNav = (onNext: () => void, onPrev: () => void) => {
-  const [startX, setStartX] = useState(0);
-  const onStart = (e: GestureResponderEvent) => {
-    setStartX(e.nativeEvent.pageX);
-  };
-  const onEnd = (e: GestureResponderEvent) => {
-    const delta = startX - e.nativeEvent.pageX;
-    if (delta > 50) {
-      onNext();
-    }
-    if (delta < -50) {
-      onPrev();
-    }
-  };
-  return {onStart, onEnd};
-};
-
-type StepDisplayProps = {
-  step: number;
-  steps: Step[];
-  current: Step | undefined;
-};
-const StepDisplay = ({step, steps, current}: StepDisplayProps) => (
-  <>
-    <Text className="mb-4 text-sm uppercase tracking-widest text-white/60">
-      Step {current ? current.stepNumber : 1} of {steps.length}
-    </Text>
-    <Text className="mb-8 text-2xl leading-relaxed text-white">
-      {current ? current.body : ''}
-    </Text>
-    <ProgressDots
-      total={steps.length}
-      current={step}
-    />
-  </>
-);
-
-type NavButtonsProps = {
-  step: number;
-  total: number;
-  onNext: () => void;
-  onPrev: () => void;
-};
-const NavButtons = ({step, total, onNext, onPrev}: NavButtonsProps) => {
-  const renderBtn = (label: string, onPress: () => void, disabled: boolean) => (
-    <TouchableOpacity
-      className={clsx('rounded-xl bg-white/10 px-6 py-3', {
-        'opacity-30': disabled,
-      })}
-      onPress={onPress}
-      disabled={disabled}
-    >
-      <Text className="text-base text-white">{label}</Text>
-    </TouchableOpacity>
-  );
-  return (
-    <View className="flex-row justify-between">
-      {renderBtn('← Back', onPrev, step === 0)}
-      {renderBtn('Next →', onNext, step === total - 1)}
-    </View>
-  );
-};
-
 export const CookingModeScreen = ({route, navigation}: CookingProps) => {
-  const {recipeId} = route.params;
+  const {recipeId, servings: servingsOverride} = route.params;
   const [step, setStep] = useState(0);
   const {data: recipe} = useQuery({
     queryKey: queryKeys.recipe(recipeId),
@@ -119,6 +41,13 @@ export const CookingModeScreen = ({route, navigation}: CookingProps) => {
     (a, b) => a.stepNumber - b.stepNumber,
   );
   const current = steps[step];
+  const servings = resolveRecipeServings(
+    servingsOverride,
+    recipe?.servings ?? 1,
+  );
+  const scaleFactor = recipe
+    ? scaleFactorFromServings(recipe.servings, servings)
+    : 1;
   const goNext = () => {
     setStep(s => Math.min(s + 1, steps.length - 1));
   };
@@ -147,6 +76,9 @@ export const CookingModeScreen = ({route, navigation}: CookingProps) => {
         step={step}
         steps={steps}
         current={current}
+        recipe={recipe}
+        scaleFactor={scaleFactor}
+        servings={servings}
       />
       <NavButtons
         step={step}

@@ -49,6 +49,19 @@ describe('CookingModeScreen', () => {
     expect(await findByText('Mix dry ingredients')).toBeTruthy();
   });
 
+  test('shows scaled ingredients when servings are provided', async () => {
+    const scaledProps = makeStackProps<RecipesStackParamList, 'CookingMode'>(
+      'CookingMode',
+      {recipeId: 'recipe-uuid-1', servings: 8},
+      {goBack: mockGoBack},
+    );
+    const {findByText} = renderWithProviders(
+      <CookingModeScreen {...scaledProps} />,
+    );
+    expect(await findByText('4 cups Flour')).toBeTruthy();
+    expect(await findByText(/scaled to 8 servings/)).toBeTruthy();
+  });
+
   test('goes back on Done press', async () => {
     const {findByText} = renderWithProviders(
       <CookingModeScreen {...stackProps} />,

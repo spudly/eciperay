@@ -133,7 +133,10 @@ export const RecipeDetailScreen = ({route, navigation}: DetailProps) => {
           <OverviewTab
             recipe={recipe}
             onStartCooking={() => {
-              navigation.navigate('CookingMode', {recipeId: recipe.id});
+              navigation.navigate('CookingMode', {
+                recipeId: recipe.id,
+                servings: currentServings,
+              });
             }}
             onEdit={() => {
               navigation.navigate('EditRecipe', {recipeId: recipe.id});

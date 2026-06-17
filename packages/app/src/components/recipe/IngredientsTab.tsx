@@ -1,4 +1,8 @@
-import {queryKeys, scaleQuantity} from '@eciperay/client';
+import {
+  formatScaledIngredientLine,
+  queryKeys,
+  sortIngredientsByOrder,
+} from '@eciperay/client';
 import clsx from 'clsx';
 import {useQuery} from '@tanstack/react-query';
 import React, {useState} from 'react';
@@ -7,41 +11,15 @@ import type {Ingredient, RecipeDetail} from '@eciperay/types';
 
 import {api} from '../../lib/api';
 
+import {ScaleMultiplierButtons} from './ScaleMultiplierButtons';
+import {ServingsStepper} from './ServingsStepper';
+
 type Props = {
   recipe: RecipeDetail;
   scaleFactor: number;
   servings: number;
   onServingsChange: (s: number) => void;
 };
-
-const ServingsStepper = ({
-  servings,
-  onChange,
-}: {
-  servings: number;
-  onChange: (n: number) => void;
-}) => (
-  <View className="mb-4 flex-row items-center gap-3">
-    <Text className="text-sm font-medium text-gray-700">Servings:</Text>
-    <TouchableOpacity
-      className="size-8 items-center justify-center rounded-full bg-gray-100"
-      onPress={() => {
-        onChange(Math.max(1, servings - 1));
-      }}
-    >
-      <Text className="text-lg font-medium">−</Text>
-    </TouchableOpacity>
-    <Text className="w-6 text-center text-base font-semibold">{servings}</Text>
-    <TouchableOpacity
-      className="size-8 items-center justify-center rounded-full bg-gray-100"
-      onPress={() => {
-        onChange(servings + 1);
-      }}
-    >
-      <Text className="text-lg font-medium">+</Text>
-    </TouchableOpacity>
-  </View>
-);
 
 const toggleSet = (id: string, prev: Set<string>): Set<string> => {
   const next = new Set(prev);
@@ -71,8 +49,7 @@ const IngredientRow = ({
     onPress={onToggle}
   >
     <Text className="flex-1 text-base text-gray-900">
-      {scaleQuantity(ingredient.quantity, ingredient.unit, scaleFactor)}{' '}
-      {ingredient.name}
+      {formatScaledIngredientLine(ingredient, scaleFactor)}
     </Text>
     {ingredient.isOptional ? (
       <Text className="text-muted ms-2 text-xs">optional</Text>
@@ -107,7 +84,12 @@ export const IngredientsTab = ({
         servings={servings}
         onChange={onServingsChange}
       />
-      {recipe.ingredients.map(ing => (
+      <ScaleMultiplierButtons
+        baseServings={recipe.servings}
+        servings={servings}
+        onServingsChange={onServingsChange}
+      />
+      {sortIngredientsByOrder(recipe.ingredients).map(ing => (
         <IngredientRow
           key={ing.id}
           ingredient={ing}

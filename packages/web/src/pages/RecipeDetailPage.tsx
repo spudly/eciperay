@@ -79,7 +79,12 @@ export const RecipeDetailPage = () => {
           </button>
         ))}
       </div>
-      {activeTab === 'overview' && <OverviewTab recipe={recipe} />}
+      {activeTab === 'overview' && (
+        <OverviewTab
+          recipe={recipe}
+          servings={currentServings}
+        />
+      )}
       {activeTab === 'ingredients' && (
         <IngredientsTab
           recipe={recipe}
