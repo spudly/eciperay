@@ -52,8 +52,8 @@ jest.mock('react-native-blob-util', () => ({
   default: {
     fs: {
       dirs: {CacheDir: '/cache'},
-      writeFile: jest.fn().mockResolvedValue(undefined),
-      unlink: jest.fn().mockResolvedValue(undefined),
+      writeFile: jest.fn().mockResolvedValue(),
+      unlink: jest.fn().mockResolvedValue(),
       exists: jest.fn().mockResolvedValue(true),
     },
   },
