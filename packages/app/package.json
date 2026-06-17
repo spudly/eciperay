@@ -27,6 +27,7 @@
     "nativewind": "preview",
     "react": "19.2.3",
     "react-native": "0.85.3",
+    "react-native-blob-util": "^0.22.2",
     "react-native-css": "^3.0.0",
     "react-native-image-picker": "^7.0.0",
     "react-native-keep-awake": "^4.0.0",

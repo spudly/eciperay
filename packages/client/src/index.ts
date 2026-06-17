@@ -5,11 +5,18 @@ export {buildShareText} from './buildShareText.js';
 export {recipeDetailToInput} from './recipeDetailToInput.js';
 export {createApiClient, type ApiClient} from './createApiClient.js';
 export {createSupabaseClient} from './createSupabaseClient.js';
-export {validateRecipeImageFile} from './validateRecipeImageFile.js';
 export {
+  validateRecipeImageContent,
+  validateRecipeImageFile,
+} from './validateRecipeImageFile.js';
+export {
+  decodeBase64ToBytes,
   RECIPE_IMAGES_BUCKET,
   recipeImageStoragePath,
+  type RecipeImageUploadTarget,
   uploadRecipeImage,
+  uploadRecipeImageBytes,
+  uploadRecipeImageFromBase64,
 } from './uploadRecipeImage.js';
 export {AuthProvider, useAuth} from './AuthProvider.js';
 export {queryKeys} from './queryKeys.js';

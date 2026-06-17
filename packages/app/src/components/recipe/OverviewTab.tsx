@@ -5,6 +5,8 @@ import type {RecipeDetail} from '@eciperay/types';
 import {printRecipe} from '../../lib/printRecipe';
 import {shareRecipe} from '../../lib/shareRecipe';
 
+import {recipeImagePreviewStyles} from './recipeImagePreviewStyles';
+
 type Props = {
   recipe: RecipeDetail;
   onStartCooking: () => void;
@@ -27,11 +29,16 @@ export const OverviewTab = ({
 }: Props) => (
   <View className="p-4">
     {recipe.imageUrl ? (
-      <Image
-        source={{uri: recipe.imageUrl}}
-        className="mb-4 max-h-64 w-full rounded-xl bg-gray-50"
-        resizeMode="contain"
-      />
+      <View
+        className="mb-4 w-full overflow-hidden rounded-xl bg-gray-50"
+        style={recipeImagePreviewStyles.frame}
+      >
+        <Image
+          source={{uri: recipe.imageUrl}}
+          resizeMode="contain"
+          style={recipeImagePreviewStyles.image}
+        />
+      </View>
     ) : null}
     <Text className="mb-2 text-2xl font-bold text-gray-900">
       {recipe.title}
