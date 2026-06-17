@@ -254,6 +254,45 @@ against production Supabase.
 
 CI verifies production shim generation on every PR (no full APK build).
 
+### Deploy Android via GitHub Actions
+
+The **Android Deploy** workflow (`.github/workflows/android-deploy.yml`) builds
+a signed release APK after CI passes on `master`, or on manual dispatch from the
+Actions tab. It uses **GitHub secrets** (not `.env.production` on the runner).
+
+Add these repository secrets (Settings → Secrets and variables → Actions):
+
+| Secret                      | Purpose                                           |
+| --------------------------- | ------------------------------------------------- |
+| `VITE_SUPABASE_URL`         | Production Supabase URL (same as web deploy)      |
+| `VITE_SUPABASE_ANON_KEY`    | Production Supabase anon key (same as web deploy) |
+| `ANDROID_KEYSTORE_BASE64`   | Base64-encoded release `.jks` / `.keystore` file  |
+| `ANDROID_KEYSTORE_PASSWORD` | Keystore password                                 |
+| `ANDROID_KEY_ALIAS`         | Key alias                                         |
+| `ANDROID_KEY_PASSWORD`      | Key password                                      |
+
+`API_BASE_URL` is set to `https://eciperay.com/api` in the workflow. Env
+precedence in CI: exported secrets override any file on disk.
+
+Generate a keystore locally (once):
+
+```sh
+keytool -genkeypair -v -storetype PKCS12 \
+  -keystore upload-keystore.jks -alias eciperay \
+  -keyalg RSA -keysize 2048 -validity 10000
+base64 -i upload-keystore.jks | pbcopy   # paste into ANDROID_KEYSTORE_BASE64
+```
+
+Download the APK from the workflow run’s **Artifacts** tab
+(`eciperay-android-<run-number>`). Install with:
+
+```sh
+adb install -r app-release.apk
+```
+
+Optional: create a **production** environment in GitHub to require approval
+before Android deploys (same as Fly web deploy).
+
 ## Development Scripts
 
 | Command                   | Description                               |
