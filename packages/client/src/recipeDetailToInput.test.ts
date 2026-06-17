@@ -6,6 +6,7 @@ describe('recipeDetailToInput', () => {
     const input = recipeDetailToInput(makeRecipeDetail());
     expect(input.title).toBe('Test Recipe');
     expect(input.ingredients[0]).toEqual({
+      key: 'i-1',
       sortOrder: 0,
       name: 'Flour',
       quantity: 2,
@@ -14,6 +15,7 @@ describe('recipeDetailToInput', () => {
       isOptional: false,
     });
     expect(input.instructions[0]).toEqual({
+      key: 'ins-1',
       stepNumber: 1,
       body: 'Mix dry ingredients',
     });

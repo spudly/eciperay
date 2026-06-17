@@ -147,51 +147,21 @@ describe('RecipeForm', () => {
     ]);
   });
 
-  test('moves an ingredient up', async () => {
-    const onSubmit = mockOnSubmit();
+  test('renders drag handles for reordering ingredients and instructions', async () => {
     await renderWithProviders(
       <RecipeForm
         initial={recipeDetailToInput(makeRecipeDetail())}
         submitLabel="Save"
-        onSubmit={onSubmit}
+        onSubmit={vi.fn()}
       />,
     );
-    await userEvent.click(
-      screen.getByRole('button', {name: 'Move ingredient 2 up'}),
-    );
-    await userEvent.click(screen.getByText('Save'));
-    await waitFor(() => {
-      expect(onSubmit).toHaveBeenCalled();
-    });
-    const submitted = onSubmit.mock.calls[0]?.[0];
-    expect(submitted?.ingredients.map(ing => ing.name)).toEqual([
-      'Salt',
-      'Flour',
-    ]);
-  });
 
-  test('reorders ingredients before submit', async () => {
-    const onSubmit = mockOnSubmit();
-    await renderWithProviders(
-      <RecipeForm
-        initial={recipeDetailToInput(makeRecipeDetail())}
-        submitLabel="Save"
-        onSubmit={onSubmit}
-      />,
-    );
-    await userEvent.click(
-      screen.getByRole('button', {name: 'Move ingredient 1 down'}),
-    );
-    await userEvent.click(screen.getByText('Save'));
-    await waitFor(() => {
-      expect(onSubmit).toHaveBeenCalled();
-    });
-    const submitted = onSubmit.mock.calls[0]?.[0];
-    expect(submitted?.ingredients.map(ing => ing.name)).toEqual([
-      'Salt',
-      'Flour',
-    ]);
-    expect(submitted?.ingredients.map(ing => ing.sortOrder)).toEqual([0, 1]);
+    expect(
+      screen.getByRole('button', {name: 'Reorder ingredient 1'}),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', {name: 'Reorder step 1'}),
+    ).toBeInTheDocument();
   });
 
   test('initializes instructions sorted by step number', async () => {
@@ -215,51 +185,6 @@ describe('RecipeForm', () => {
     expect(
       instructionAreas.map(area => (area as HTMLTextAreaElement).value),
     ).toEqual(['Prep', 'Cook', 'Serve']);
-  });
-
-  test('moves an instruction up', async () => {
-    const onSubmit = mockOnSubmit();
-    await renderWithProviders(
-      <RecipeForm
-        initial={recipeDetailToInput(makeRecipeDetail())}
-        submitLabel="Save"
-        onSubmit={onSubmit}
-      />,
-    );
-    await userEvent.click(screen.getByRole('button', {name: 'Move step 2 up'}));
-    await userEvent.click(screen.getByText('Save'));
-    await waitFor(() => {
-      expect(onSubmit).toHaveBeenCalled();
-    });
-    const submitted = onSubmit.mock.calls[0]?.[0];
-    expect(submitted?.instructions.map(ins => ins.body)).toEqual([
-      'Bake at 350°F',
-      'Mix dry ingredients',
-    ]);
-  });
-
-  test('reorders instructions before submit', async () => {
-    const onSubmit = mockOnSubmit();
-    await renderWithProviders(
-      <RecipeForm
-        initial={recipeDetailToInput(makeRecipeDetail())}
-        submitLabel="Save"
-        onSubmit={onSubmit}
-      />,
-    );
-    await userEvent.click(
-      screen.getByRole('button', {name: 'Move step 1 down'}),
-    );
-    await userEvent.click(screen.getByText('Save'));
-    await waitFor(() => {
-      expect(onSubmit).toHaveBeenCalled();
-    });
-    const submitted = onSubmit.mock.calls[0]?.[0];
-    expect(submitted?.instructions.map(ins => ins.body)).toEqual([
-      'Bake at 350°F',
-      'Mix dry ingredients',
-    ]);
-    expect(submitted?.instructions.map(ins => ins.stepNumber)).toEqual([1, 2]);
   });
 
   test('adds and removes ingredients and instructions', async () => {

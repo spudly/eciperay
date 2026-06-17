@@ -1038,6 +1038,7 @@ export default tseslint.config(
       '**/*.test.{ts,js,tsx}',
       '**/*.spec.{ts,js}',
       'packages/*/jest.setup.{ts,js}',
+      'packages/*/jest.env.{ts,js}',
       'packages/*/jest.setupEnv.{ts,js}',
       'packages/app/src/__tests__/**/*.{ts,tsx}', // shared fixtures
       'packages/*/src/test/**/*.ts', // server test helpers and fixtures
