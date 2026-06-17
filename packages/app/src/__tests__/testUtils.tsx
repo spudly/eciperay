@@ -1,4 +1,5 @@
 import type {ParamListBase, RouteProp} from '@react-navigation/native';
+import type {BottomTabScreenProps} from '@react-navigation/bottom-tabs';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {
   notifyManager,
@@ -53,6 +54,21 @@ export const makeStackProps = <
   navigation: Record<string, unknown>,
 ): NativeStackScreenProps<ParamList, RouteName> => ({
   navigation: navigation as unknown as NativeStackScreenProps<
+    ParamList,
+    RouteName
+  >['navigation'],
+  route: makeRoute(name, params),
+});
+
+export const makeTabProps = <
+  ParamList extends ParamListBase,
+  RouteName extends keyof ParamList & string,
+>(
+  name: RouteName,
+  params: ParamList[RouteName],
+  navigation: Record<string, unknown>,
+): BottomTabScreenProps<ParamList, RouteName> => ({
+  navigation: navigation as unknown as BottomTabScreenProps<
     ParamList,
     RouteName
   >['navigation'],

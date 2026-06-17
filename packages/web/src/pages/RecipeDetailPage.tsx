@@ -1,7 +1,7 @@
-import {queryKeys} from '@eciperay/client';
+import {queryKeys, recordRecipeView} from '@eciperay/client';
 import clsx from 'clsx';
-import {useQuery} from '@tanstack/react-query';
-import {useState} from 'react';
+import {useQuery, useQueryClient} from '@tanstack/react-query';
+import {useCallback, useEffect, useState} from 'react';
 import {useParams} from 'react-router-dom';
 
 import {IngredientsTab} from '../components/recipe/IngredientsTab.js';
@@ -10,6 +10,7 @@ import {NotesTab} from '../components/recipe/NotesTab.js';
 import {NutritionTab} from '../components/recipe/NutritionTab.js';
 import {OverviewTab} from '../components/recipe/OverviewTab.js';
 import {eciperay} from '../lib/api.js';
+import {recipeViewHistoryStorage} from '../lib/recipeViewHistoryStorage.js';
 
 type Tab = 'overview' | 'ingredients' | 'instructions' | 'notes' | 'nutrition';
 
@@ -25,6 +26,22 @@ export const RecipeDetailPage = () => {
   const {recipeId = ''} = useParams();
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [servings, setServings] = useState<number | null>(null);
+  const queryClient = useQueryClient();
+
+  const invalidateRecentlyViewed = useCallback(() => {
+    void queryClient.invalidateQueries({
+      queryKey: queryKeys.recipes('home-recently-viewed'),
+    });
+  }, [queryClient]);
+
+  useEffect(() => {
+    if (!recipeId) {
+      return;
+    }
+    void recordRecipeView(recipeViewHistoryStorage, recipeId).then(() => {
+      invalidateRecentlyViewed();
+    });
+  }, [recipeId, invalidateRecentlyViewed]);
 
   const {data: recipe, isLoading} = useQuery({
     queryKey: queryKeys.recipe(recipeId),

@@ -15,9 +15,18 @@ export {AuthProvider, useAuth} from './AuthProvider.js';
 export {queryKeys} from './queryKeys.js';
 export {
   getRecipeListNextPageParam,
+  homeRecentlyViewedRecipesQueryOptions,
   RECIPE_LIST_PAGE_SIZE,
   recipeListInfiniteQueryOptions,
 } from './recipeListQuery.js';
+export {
+  getRecentRecipeIds,
+  recordRecipeView,
+  RECIPE_VIEW_HISTORY_KEY,
+  RECIPE_VIEW_HISTORY_MAX,
+  removeRecipeView,
+  type RecipeViewHistoryStorage,
+} from './recipeViewHistory.js';
 export {invalidateRecipeQueries} from './invalidateRecipeQueries.js';
 export {createRecipesApi} from './recipesApi.js';
 export {createImportApi} from './importApi.js';
@@ -30,3 +39,12 @@ export {
   createEciperayClient,
   type EciperayClient,
 } from './createEciperayClient.js';
+export {
+  HOME_ADD_LABEL,
+  HOME_BROWSE_LABEL,
+  HOME_EMPTY_MESSAGE,
+  HOME_RECENT_RECIPE_COUNT,
+  HOME_RECIPES_SECTION_TITLE,
+  HOME_SUBTITLE,
+  HOME_TITLE,
+} from './homeCopy.js';

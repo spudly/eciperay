@@ -249,5 +249,10 @@ describe('RecipesScreen', () => {
       expect(mockDelete).toHaveBeenCalled();
     });
     await flushQueryClient(client);
+    await act(async () => {
+      await new Promise<void>(resolve => {
+        setTimeout(resolve, 0);
+      });
+    });
   });
 });
