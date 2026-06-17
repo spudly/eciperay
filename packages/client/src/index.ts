@@ -1,4 +1,15 @@
 export {scaleQuantity} from './scaleQuantity.js';
+export {
+  formatScaleMultiplierLabel,
+  formatScaledIngredientLine,
+  isActiveScaleMultiplier,
+  RECIPE_SCALE_MULTIPLIERS,
+  type RecipeScaleMultiplier,
+  servingsForMultiplier,
+  resolveRecipeServings,
+  scaleFactorFromServings,
+  sortIngredientsByOrder,
+} from './recipeScaling.js';
 export {errorMessage} from './errorMessage.js';
 export {buildPrintHtml} from './buildPrintHtml.js';
 export {buildShareText} from './buildShareText.js';

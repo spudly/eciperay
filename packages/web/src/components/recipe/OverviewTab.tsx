@@ -5,7 +5,7 @@ import {Link} from 'react-router-dom';
 import {printRecipe} from '../../lib/printRecipe.js';
 import {shareRecipe} from '../../lib/shareRecipe.js';
 
-type Props = {recipe: RecipeDetail};
+type Props = {recipe: RecipeDetail; servings: number};
 
 const StatBadge = ({label, value}: {label: string; value: string}) => (
   <div className="text-center">
@@ -14,7 +14,7 @@ const StatBadge = ({label, value}: {label: string; value: string}) => (
   </div>
 );
 
-export const OverviewTab = ({recipe}: Props) => {
+export const OverviewTab = ({recipe, servings}: Props) => {
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
   const showActionMessage = (message: string) => {
@@ -71,7 +71,7 @@ export const OverviewTab = ({recipe}: Props) => {
       </div>
       <div className="mb-4 flex gap-3">
         <Link
-          to={`/recipes/${recipe.id}/cook`}
+          to={`/recipes/${recipe.id}/cook?servings=${servings}`}
           className="
             bg-primary flex-1 rounded-xl py-3 text-center font-semibold
             text-white

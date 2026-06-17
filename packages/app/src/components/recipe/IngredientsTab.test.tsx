@@ -54,6 +54,28 @@ describe('IngredientsTab', () => {
     expect(onServingsChange).toHaveBeenCalledWith(1);
   });
 
+  test('applies scale multipliers', () => {
+    const {getByText} = renderWithProviders(
+      <IngredientsTab
+        {...defaultProps}
+        servings={4}
+      />,
+    );
+    fireEvent.press(getByText('3×'));
+    expect(onServingsChange).toHaveBeenCalledWith(12);
+  });
+
+  test('shows scaled ingredient quantities', () => {
+    const {getByText} = renderWithProviders(
+      <IngredientsTab
+        {...defaultProps}
+        scaleFactor={2}
+        servings={8}
+      />,
+    );
+    expect(getByText('4 cups Flour')).toBeTruthy();
+  });
+
   test('tap marks ingredient missing and shows substitutions', async () => {
     mockSubstitutions.mockResolvedValue([
       {ingredient: 'Salt', suggestions: ['Soy sauce']},

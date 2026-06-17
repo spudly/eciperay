@@ -65,6 +65,22 @@ describe('RecipeDetailScreen', () => {
     fireEvent.press(await findByText('Start Cooking'));
     expect(mockNavigate).toHaveBeenCalledWith('CookingMode', {
       recipeId: 'recipe-uuid-1',
+      servings: 4,
+    });
+  });
+
+  test('passes scaled servings to cooking mode', async () => {
+    const {findByText, getByText} = renderWithProviders(
+      <RecipeDetailScreen {...stackProps} />,
+    );
+    await findByText('Test Recipe');
+    fireEvent.press(getByText('Ingredients'));
+    fireEvent.press(await findByText('2×'));
+    fireEvent.press(getByText('Overview'));
+    fireEvent.press(await findByText('Start Cooking'));
+    expect(mockNavigate).toHaveBeenCalledWith('CookingMode', {
+      recipeId: 'recipe-uuid-1',
+      servings: 8,
     });
   });
 
