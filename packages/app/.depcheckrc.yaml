@@ -1,5 +1,5 @@
 ignores:
-  - '@recipoo/theme' # Imported via @import in global.css; depcheck does not trace CSS imports
+  - '@eciperay/theme' # Imported via @import in global.css; depcheck does not trace CSS imports
   - '@babel/preset-env' # Babel preset used by React Native toolchain, not imported directly in app source
   - '@babel/runtime' # Babel runtime helpers injected by the compiler, not imported directly in app source
   - '@react-native-community/cli' # React Native CLI entry point; invoked via npm scripts (start, ios, android)
@@ -13,6 +13,8 @@ ignores:
   - react-native-css # NativeWind v5 peer dependency; loaded by Metro, not imported in app source
   - react-native-safe-area-context # Required peer dependency of @react-navigation; autolinked without direct imports
   - react-native-screens # Required peer dependency of @react-navigation; autolinked without direct imports
+  - metro-resolver # Used by metro.config.js; hoisted from @react-native/metro-config
+  - react-native-worklets # Peer dependency of react-native-reanimated; loaded by the native runtime
 specials:
   - babel
   - bin

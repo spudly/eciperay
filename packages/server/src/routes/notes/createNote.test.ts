@@ -21,7 +21,7 @@ describe('POST /recipes/:id/notes', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue(makeQueryResult([noteRow]));
     const res = await request(app)
-      .post('/recipes/recipe-uuid-1/notes')
+      .post('/api/recipes/recipe-uuid-1/notes')
       .set('Authorization', 'Bearer valid-token')
       .send({content: 'Tastes better the next day'});
     expect(res.status).toBe(201);
@@ -31,7 +31,7 @@ describe('POST /recipes/:id/notes', () => {
   test('returns 400 when content is empty', async () => {
     nockSupabaseGetUser('user-uuid-1');
     const res = await request(app)
-      .post('/recipes/recipe-uuid-1/notes')
+      .post('/api/recipes/recipe-uuid-1/notes')
       .set('Authorization', 'Bearer valid-token')
       .send({content: ''});
     expect(res.status).toBe(400);
@@ -41,7 +41,7 @@ describe('POST /recipes/:id/notes', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue(makeQueryResult([]));
     const res = await request(app)
-      .post('/recipes/recipe-uuid-1/notes')
+      .post('/api/recipes/recipe-uuid-1/notes')
       .set('Authorization', 'Bearer valid-token')
       .send({content: 'Note'});
     expect(res.status).toBe(500);
@@ -49,7 +49,7 @@ describe('POST /recipes/:id/notes', () => {
 
   test('returns 401 without auth token', async () => {
     const res = await request(app)
-      .post('/recipes/r/notes')
+      .post('/api/recipes/r/notes')
       .send({content: 'x'});
     expect(res.status).toBe(401);
   });

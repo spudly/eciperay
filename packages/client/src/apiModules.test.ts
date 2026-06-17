@@ -1,11 +1,11 @@
 import {createApiClient} from './createApiClient.js';
-import {createRecipooClient} from './createRecipooClient.js';
+import {createEciperayClient} from './createEciperayClient.js';
 import {makeRecipeDetail} from './test/fixtures/recipe.js';
 
-describe('createRecipooClient', () => {
+describe('createEciperayClient', () => {
   const makeClient = () => {
     const fetch = jest.fn().mockResolvedValue(makeRecipeDetail());
-    return {api: {fetch}, client: createRecipooClient({fetch})};
+    return {api: {fetch}, client: createEciperayClient({fetch})};
   };
 
   test('recipes api methods', async () => {
@@ -64,7 +64,7 @@ describe('createRecipooClient', () => {
 
   test('recipes listAll fetches all pages', async () => {
     const fetch = jest.fn().mockResolvedValue([]);
-    const client = createRecipooClient({fetch});
+    const client = createEciperayClient({fetch});
     await client.recipes.listAll();
     expect(fetch).toHaveBeenCalledWith('/recipes?limit=100&offset=0');
   });
@@ -182,7 +182,7 @@ describe('createRecipooClient', () => {
       baseUrl: 'http://localhost:8080',
       getToken: async () => 't',
     });
-    const client = createRecipooClient(api);
+    const client = createEciperayClient(api);
     await client.recipes.create({
       title: 'T',
       servings: 2,

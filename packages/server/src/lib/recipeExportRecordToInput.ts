@@ -1,4 +1,4 @@
-import type {RecipeExportRecord, RecipeInput} from '@recipoo/types';
+import type {RecipeExportRecord, RecipeInput} from '@eciperay/types';
 
 export const recipeExportRecordToInput = (
   record: RecipeExportRecord,

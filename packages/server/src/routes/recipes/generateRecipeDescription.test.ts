@@ -12,7 +12,7 @@ describe('POST /recipes/ai/generate-description', () => {
     nockSupabaseGetUser('user-uuid-1');
     nockAnthropicMessage('A hearty pasta with fresh basil and garlic.');
     const res = await request(app)
-      .post('/recipes/ai/generate-description')
+      .post('/api/recipes/ai/generate-description')
       .set('Authorization', 'Bearer valid-token')
       .send({
         title: 'Pasta',
@@ -30,7 +30,7 @@ describe('POST /recipes/ai/generate-description', () => {
   test('returns 400 for invalid body', async () => {
     nockSupabaseGetUser('user-uuid-1');
     const res = await request(app)
-      .post('/recipes/ai/generate-description')
+      .post('/api/recipes/ai/generate-description')
       .set('Authorization', 'Bearer valid-token')
       .send({title: ''});
     expect(res.status).toBe(400);
@@ -38,7 +38,7 @@ describe('POST /recipes/ai/generate-description', () => {
 
   test('returns 401 without auth token', async () => {
     const res = await request(app)
-      .post('/recipes/ai/generate-description')
+      .post('/api/recipes/ai/generate-description')
       .send({title: 'Pasta'});
     expect(res.status).toBe(401);
   });
@@ -50,7 +50,7 @@ describe('POST /recipes/ai/generate-description', () => {
       .spyOn(anthropic.messages, 'create')
       .mockRejectedValueOnce(new Error('Claude unavailable'));
     const res = await request(app)
-      .post('/recipes/ai/generate-description')
+      .post('/api/recipes/ai/generate-description')
       .set('Authorization', 'Bearer valid-token')
       .send({title: 'Pasta'});
     expect(res.status).toBe(502);
@@ -62,7 +62,7 @@ describe('POST /recipes/ai/generate-description', () => {
     const {anthropic} = await import('../../lib/anthropic.js');
     jest.spyOn(anthropic.messages, 'create').mockRejectedValueOnce('broken');
     const res = await request(app)
-      .post('/recipes/ai/generate-description')
+      .post('/api/recipes/ai/generate-description')
       .set('Authorization', 'Bearer valid-token')
       .send({title: 'Pasta'});
     expect(res.status).toBe(502);

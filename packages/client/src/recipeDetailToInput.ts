@@ -1,4 +1,4 @@
-import type {RecipeDetail, RecipeInput} from '@recipoo/types';
+import type {RecipeDetail, RecipeInput} from '@eciperay/types';
 
 export const recipeDetailToInput = (detail: RecipeDetail): RecipeInput => ({
   title: detail.title,

@@ -1,4 +1,4 @@
-import type {RecipeDetail, RecipeDiff, RecipeDraft} from '@recipoo/types';
+import type {RecipeDetail, RecipeDiff, RecipeDraft} from '@eciperay/types';
 
 type RecipeDraftRow = {
   id: string;

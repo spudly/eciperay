@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import {vi} from 'vitest';
 
 import {downloadRecipeExportBundle} from '../lib/downloadRecipeExport.js';
-import {recipoo} from '../lib/api.js';
+import {eciperay} from '../lib/api.js';
 import {renderWithProviders} from '../test/testUtils.js';
 
 import {RecipeExportPicker} from './RecipeExportPicker.js';
@@ -86,7 +86,7 @@ describe('RecipeExportPicker', () => {
 
   test('reports export failures', async () => {
     const onError = vi.fn();
-    vi.spyOn(recipoo.recipes, 'exportRecipes').mockRejectedValueOnce(
+    vi.spyOn(eciperay.recipes, 'exportRecipes').mockRejectedValueOnce(
       new Error('Export failed badly'),
     );
 
@@ -113,7 +113,7 @@ describe('RecipeExportPicker', () => {
 
   test('reports generic export failures', async () => {
     const onError = vi.fn();
-    vi.spyOn(recipoo.recipes, 'exportRecipes').mockRejectedValueOnce('nope');
+    vi.spyOn(eciperay.recipes, 'exportRecipes').mockRejectedValueOnce('nope');
 
     await renderWithProviders(
       <RecipeExportPicker

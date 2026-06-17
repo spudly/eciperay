@@ -1,4 +1,4 @@
-import type {RecipeDetail, RecipeInput} from '@recipoo/types';
+import type {RecipeDetail, RecipeInput} from '@eciperay/types';
 
 import {runTransactional} from '../db/withTransaction.js';
 import {query as defaultQuery} from '../db/query.js';

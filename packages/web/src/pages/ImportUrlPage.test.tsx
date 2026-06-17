@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import {http, HttpResponse} from 'msw';
 import {Route, Routes} from 'react-router-dom';
 
-import {recipoo} from '../lib/api.js';
+import {eciperay} from '../lib/api.js';
 import {server} from '../test/msw/server.js';
 import {renderWithProviders} from '../test/testUtils.js';
 
@@ -36,7 +36,7 @@ describe('ImportUrlPage', () => {
 
   test('shows error on failure', async () => {
     server.use(
-      http.post('http://localhost:8080/recipes/import/url', () =>
+      http.post('http://localhost:8080/api/recipes/import/url', () =>
         HttpResponse.json({error: 'bad'}, {status: 500}),
       ),
     );
@@ -52,7 +52,7 @@ describe('ImportUrlPage', () => {
   });
 
   test('shows generic error for non-Error throws', async () => {
-    vi.spyOn(recipoo.import, 'importUrl').mockRejectedValueOnce('nope');
+    vi.spyOn(eciperay.import, 'importUrl').mockRejectedValueOnce('nope');
     await renderWithProviders(<ImportUrlPage />, {route: '/add/url'});
     await userEvent.type(
       screen.getByPlaceholderText('https://example.com/recipe'),

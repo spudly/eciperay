@@ -4,21 +4,21 @@ import {
   recipeDetailToInput,
   uploadRecipeImage,
   validateRecipeImageFile,
-} from '@recipoo/client';
-import type {RecipeInput} from '@recipoo/types';
+} from '@eciperay/client';
+import type {RecipeInput} from '@eciperay/types';
 
-import {recipoo} from '../../lib/api.js';
+import {eciperay} from '../../lib/api.js';
 import {makeRecipeDetail} from '../../test/fixtures/recipe.js';
 import {renderWithProviders} from '../../test/testUtils.js';
 
 import {RecipeForm} from './RecipeForm.js';
 
 vi.mock('../../lib/api.js', () => ({
-  recipoo: {ai: {generateImage: vi.fn(), generateDescription: vi.fn()}},
+  eciperay: {ai: {generateImage: vi.fn(), generateDescription: vi.fn()}},
 }));
 
-vi.mock('@recipoo/client', async importOriginal => {
-  const actual = await importOriginal<typeof import('@recipoo/client')>();
+vi.mock('@eciperay/client', async importOriginal => {
+  const actual = await importOriginal<typeof import('@eciperay/client')>();
   return {
     ...actual,
     uploadRecipeImage: vi.fn(),
@@ -28,8 +28,8 @@ vi.mock('@recipoo/client', async importOriginal => {
 
 const mockUploadRecipeImage = vi.mocked(uploadRecipeImage);
 const mockValidateRecipeImageFile = vi.mocked(validateRecipeImageFile);
-const mockGenerateImage = vi.mocked(recipoo.ai.generateImage);
-const mockGenerateDescription = vi.mocked(recipoo.ai.generateDescription);
+const mockGenerateImage = vi.mocked(eciperay.ai.generateImage);
+const mockGenerateDescription = vi.mocked(eciperay.ai.generateDescription);
 const imageGenerateButton = () =>
   screen.getByRole('button', {name: 'Generate image with AI'});
 const descriptionGenerateButton = () =>

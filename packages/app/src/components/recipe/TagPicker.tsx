@@ -1,4 +1,4 @@
-import {queryKeys} from '@recipoo/client';
+import {queryKeys} from '@eciperay/client';
 import {useQuery} from '@tanstack/react-query';
 import clsx from 'clsx';
 import React from 'react';

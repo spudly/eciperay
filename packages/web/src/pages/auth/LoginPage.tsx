@@ -1,8 +1,8 @@
-import {errorMessage, useAuth} from '@recipoo/client';
+import {errorMessage, useAuth} from '@eciperay/client';
 import {useState} from 'react';
 import {Link, Navigate} from 'react-router-dom';
 
-import {recipoo} from '../../lib/api.js';
+import {eciperay} from '../../lib/api.js';
 import {supabase} from '../../lib/supabase.js';
 
 export const LoginPage = () => {
@@ -33,7 +33,7 @@ export const LoginPage = () => {
       if (signInError) {
         throw signInError;
       }
-      await recipoo.auth.syncUser();
+      await eciperay.auth.syncUser();
     } catch (error_) {
       setError(errorMessage(error_));
     } finally {

@@ -8,8 +8,8 @@ import {AuthGuard} from './AuthGuard.js';
 
 const mockUseAuth = vi.fn();
 
-vi.mock('@recipoo/client', async importOriginal => {
-  const actual = await importOriginal<typeof import('@recipoo/client')>();
+vi.mock('@eciperay/client', async importOriginal => {
+  const actual = await importOriginal<typeof import('@eciperay/client')>();
   return {...actual, useAuth: () => mockUseAuth()};
 });
 

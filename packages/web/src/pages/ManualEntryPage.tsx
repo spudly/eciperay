@@ -2,13 +2,13 @@ import {
   invalidateRecipeQueries,
   uploadRecipeImage,
   useAuth,
-} from '@recipoo/client';
+} from '@eciperay/client';
 import {useQueryClient} from '@tanstack/react-query';
 import {useNavigate} from 'react-router-dom';
-import type {RecipeInput} from '@recipoo/types';
+import type {RecipeInput} from '@eciperay/types';
 
 import {RecipeForm} from '../components/recipe/RecipeForm.js';
-import {recipoo} from '../lib/api.js';
+import {eciperay} from '../lib/api.js';
 import {supabase} from '../lib/supabase.js';
 
 const emptyInput: RecipeInput = {
@@ -25,7 +25,7 @@ export const ManualEntryPage = () => {
   const {session} = useAuth();
 
   const handleSubmit = async (input: RecipeInput, pendingImage?: File) => {
-    const recipe = await recipoo.recipes.create(input);
+    const recipe = await eciperay.recipes.create(input);
     if (pendingImage && session?.user.id) {
       const imageUrl = await uploadRecipeImage(
         supabase,
@@ -33,7 +33,7 @@ export const ManualEntryPage = () => {
         session.user.id,
         recipe.id,
       );
-      await recipoo.recipes.patch(recipe.id, {imageUrl});
+      await eciperay.recipes.patch(recipe.id, {imageUrl});
     }
     await invalidateRecipeQueries(queryClient, recipe.id);
     void navigate(`/recipes/${recipe.id}`);

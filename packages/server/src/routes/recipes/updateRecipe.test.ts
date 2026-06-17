@@ -18,7 +18,7 @@ describe('PATCH /recipes/:id', () => {
       .mockResolvedValue(makeQueryResult([detail]));
 
     const res = await request(app)
-      .patch('/recipes/recipe-uuid-1')
+      .patch('/api/recipes/recipe-uuid-1')
       .set('Authorization', 'Bearer valid-token')
       .send({title: 'Updated Title'});
 
@@ -30,7 +30,7 @@ describe('PATCH /recipes/:id', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue({...makeQueryResult([]), rowCount: 0});
     const res = await request(app)
-      .patch('/recipes/missing-id')
+      .patch('/api/recipes/missing-id')
       .set('Authorization', 'Bearer valid-token')
       .send({title: 'New'});
     expect(res.status).toBe(404);
@@ -38,7 +38,7 @@ describe('PATCH /recipes/:id', () => {
 
   test('returns 401 without auth token', async () => {
     const res = await request(app)
-      .patch('/recipes/recipe-uuid-1')
+      .patch('/api/recipes/recipe-uuid-1')
       .send({title: 'X'});
     expect(res.status).toBe(401);
   });

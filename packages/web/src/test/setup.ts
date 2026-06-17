@@ -18,7 +18,7 @@ installFailOnConsoleError();
 URL.createObjectURL = vi.fn(() => 'blob:preview');
 URL.revokeObjectURL = vi.fn();
 
-vi.stubEnv('VITE_API_BASE_URL', 'http://localhost:8080');
+vi.stubEnv('VITE_API_BASE_URL', 'http://localhost:8080/api');
 vi.stubEnv('VITE_SUPABASE_URL', 'https://test.supabase.co');
 vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'test-anon-key');
 

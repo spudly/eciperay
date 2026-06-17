@@ -15,7 +15,7 @@ describe('GET /recipes/:id/drafts', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue(makeQueryResult([makeRecipeDraftRow()]));
     const res = await request(app)
-      .get('/recipes/recipe-uuid-1/drafts?status=pending')
+      .get('/api/recipes/recipe-uuid-1/drafts?status=pending')
       .set('Authorization', 'Bearer valid-token');
     expect(res.status).toBe(200);
     expect(res.body).toEqual([makeRecipeDraft()]);
@@ -24,13 +24,13 @@ describe('GET /recipes/:id/drafts', () => {
   test('returns 400 for unsupported status', async () => {
     nockSupabaseGetUser('user-uuid-1');
     const res = await request(app)
-      .get('/recipes/recipe-uuid-1/drafts?status=approved')
+      .get('/api/recipes/recipe-uuid-1/drafts?status=approved')
       .set('Authorization', 'Bearer valid-token');
     expect(res.status).toBe(400);
   });
 
   test('returns 401 without auth token', async () => {
-    const res = await request(app).get('/recipes/r/drafts?status=pending');
+    const res = await request(app).get('/api/recipes/r/drafts?status=pending');
     expect(res.status).toBe(401);
   });
 });

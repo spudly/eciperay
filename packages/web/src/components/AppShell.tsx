@@ -20,7 +20,7 @@ export const AppShell = () => (
           to="/"
           className="text-primary text-lg font-bold"
         >
-          Recipoo
+          Eciperay
         </NavLink>
         <nav className="flex gap-1">
           <NavLink

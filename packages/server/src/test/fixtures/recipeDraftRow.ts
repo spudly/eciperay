@@ -1,4 +1,4 @@
-import type {RecipeDraft} from '@recipoo/types';
+import type {RecipeDraft} from '@eciperay/types';
 
 import {makeRecipeDraft} from './recipeDraft.js';
 

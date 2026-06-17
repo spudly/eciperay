@@ -1,4 +1,4 @@
-import {useAuth} from '@recipoo/client';
+import {useAuth} from '@eciperay/client';
 import {Navigate, Outlet} from 'react-router-dom';
 
 export const AuthGuard = () => {

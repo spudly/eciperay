@@ -1,4 +1,4 @@
-import {createApiClient, createRecipooClient} from '@recipoo/client';
+import {createApiClient, createEciperayClient} from '@eciperay/client';
 
 import {API_BASE_URL} from './env';
 import {supabase} from './supabase';
@@ -11,4 +11,4 @@ const client = createApiClient({
   },
 });
 
-export const api = createRecipooClient(client);
+export const api = createEciperayClient(client);

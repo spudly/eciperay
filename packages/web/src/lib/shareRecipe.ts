@@ -1,5 +1,5 @@
-import {buildShareText} from '@recipoo/client';
-import type {RecipeDetail} from '@recipoo/types';
+import {buildShareText} from '@eciperay/client';
+import type {RecipeDetail} from '@eciperay/types';
 
 export type ShareRecipeResult = 'shared' | 'copied';
 

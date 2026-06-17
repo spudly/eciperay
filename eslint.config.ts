@@ -595,7 +595,7 @@ export default tseslint.config(
       'import-x/no-named-export': 'off', // we primarily use named exports; this rule would always fire
       'import-x/no-namespace': 'off', // namespace imports are acceptable for type-only use
       'import-x/no-nodejs-modules': 'off', // server legitimately uses Node.js built-in modules
-      'import-x/no-relative-packages': 'off', // workspace packages use @recipoo/* scoped imports; not relative
+      'import-x/no-relative-packages': 'off', // workspace packages use @eciperay/* scoped imports; not relative
       'import-x/no-relative-parent-imports': 'off', // parent imports are acceptable in this project structure
       'import-x/no-rename-default': 'off', // renaming default imports is acceptable
       'import-x/no-restricted-paths': 'off', // no cross-package path restrictions needed
@@ -648,7 +648,10 @@ export default tseslint.config(
       'unicorn/explicit-length-check': 'error',
       'unicorn/filename-case': [
         'error',
-        {cases: {camelCase: true, pascalCase: true}},
+        {
+          cases: {camelCase: true, pascalCase: true},
+          ignore: [/^react-native\.config\.js$/u],
+        },
       ],
       'unicorn/import-index': 'off', // deprecated rule
       'unicorn/import-style': 'off', // too opinionated about named vs default vs namespace imports
@@ -822,6 +825,7 @@ export default tseslint.config(
       '**/*.cjs', // all CJS files anywhere in the repo
       'packages/app/metro.config.js',
       'packages/app/babel.config.js',
+      'packages/app/react-native.config.js',
       'packages/app/jest.config.js',
       'packages/app/postcss.config.mjs',
       'packages/client/jest.config.cjs',
@@ -991,7 +995,7 @@ export default tseslint.config(
       'n/no-callback-literal': 'off', // we don't use callback-style async
       'n/no-deprecated-api': 'error',
       'n/no-exports-assign': 'error',
-      'n/no-extraneous-import': 'off', // npm workspace symlinks cause false positives for @recipoo/* packages
+      'n/no-extraneous-import': 'off', // npm workspace symlinks cause false positives for @eciperay/* packages
       'n/no-extraneous-require': 'off', // we don't use require
       'n/no-hide-core-modules': 'off', // deprecated rule
       'n/no-missing-import': 'off', // TypeScript and NodeNext resolution handle this

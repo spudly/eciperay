@@ -20,10 +20,10 @@ const nav = {navigate: mockNavigate};
 
 describe('SignUpScreen', () => {
   test('renders sign up form', () => {
-    const {getByPlaceholderText} = render(<SignUpScreen navigation={nav} />);
-    expect(getByPlaceholderText('Your name')).toBeTruthy();
-    expect(getByPlaceholderText('Email')).toBeTruthy();
-    expect(getByPlaceholderText('Password')).toBeTruthy();
+    const {getByLabelText} = render(<SignUpScreen navigation={nav} />);
+    expect(getByLabelText('Your name')).toBeTruthy();
+    expect(getByLabelText('Email')).toBeTruthy();
+    expect(getByLabelText('Password')).toBeTruthy();
   });
 
   test('syncs user when session is returned', async () => {

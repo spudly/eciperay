@@ -2,7 +2,7 @@ import type {
   BulkImportResult,
   RecipeDetail,
   RecipeExportBundle,
-} from '@recipoo/types';
+} from '@eciperay/types';
 
 import type {ApiClient} from './createApiClient.js';
 

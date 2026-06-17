@@ -1,4 +1,4 @@
-import type {Tag} from '@recipoo/types';
+import type {Tag} from '@eciperay/types';
 
 import type {ApiClient} from './createApiClient.js';
 

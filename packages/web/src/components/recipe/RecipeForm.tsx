@@ -3,19 +3,19 @@ import {
   uploadRecipeImage,
   useAuth,
   validateRecipeImageFile,
-} from '@recipoo/client';
+} from '@eciperay/client';
 import type {
   IngredientInput,
   InstructionInput,
   RecipeInput,
-} from '@recipoo/types';
+} from '@eciperay/types';
 import {useEffect, useState} from 'react';
 
 import {
   getImageFileFromDataTransfer,
   shouldIgnoreImagePaste,
 } from '../../lib/recipeImageInput.js';
-import {recipoo} from '../../lib/api.js';
+import {eciperay} from '../../lib/api.js';
 import {imageBase64ToFile} from '../../lib/imageBase64ToFile.js';
 import {
   stripImageCacheKey,
@@ -182,7 +182,7 @@ export const RecipeForm = ({
         .map(instruction => instruction.body.trim())
         .filter(Boolean);
       const {description: generatedDescription} =
-        await recipoo.ai.generateDescription({
+        await eciperay.ai.generateDescription({
           title: trimmedTitle,
           ingredients: ingredientNames,
           instructions: instructionBodies,
@@ -225,7 +225,7 @@ export const RecipeForm = ({
       const instructionBodies = instructions
         .map(instruction => instruction.body.trim())
         .filter(Boolean);
-      const {imageBase64, contentType} = await recipoo.ai.generateImage({
+      const {imageBase64, contentType} = await eciperay.ai.generateImage({
         title: trimmedTitle,
         description: description || null,
         ingredients: imageIngredients,

@@ -1,4 +1,4 @@
-import type {RecipeExportTag} from '@recipoo/types';
+import type {RecipeExportTag} from '@eciperay/types';
 
 import {query as defaultQuery} from '../db/query.js';
 

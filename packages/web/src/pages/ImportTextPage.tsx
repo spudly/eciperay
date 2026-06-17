@@ -1,7 +1,7 @@
 import {useRef, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
-import {recipoo} from '../lib/api.js';
+import {eciperay} from '../lib/api.js';
 
 const getEditorPlainText = (el: HTMLDivElement | null): string => {
   /* c8 ignore next 3 -- editor ref is mounted before any handler calls this helper */
@@ -46,7 +46,7 @@ export const ImportTextPage = () => {
     setLoading(true);
     setError(null);
     try {
-      const recipe = await recipoo.import.importText(text);
+      const recipe = await eciperay.import.importText(text);
       void navigate(`/import/review/${recipe.id}`);
     } catch (error_) {
       setError(error_ instanceof Error ? error_.message : 'Import failed');

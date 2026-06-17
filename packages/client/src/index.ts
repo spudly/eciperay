@@ -27,6 +27,6 @@ export {createNotesApi} from './notesApi.js';
 export {createAiApi} from './aiApi.js';
 export {createDraftsApi} from './draftsApi.js';
 export {
-  createRecipooClient,
-  type RecipooClient,
-} from './createRecipooClient.js';
+  createEciperayClient,
+  type EciperayClient,
+} from './createEciperayClient.js';

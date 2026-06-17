@@ -1,4 +1,4 @@
-import {errorMessage} from '@recipoo/client';
+import {errorMessage} from '@eciperay/client';
 import {useState} from 'react';
 import {Link} from 'react-router-dom';
 

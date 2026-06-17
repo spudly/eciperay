@@ -1,4 +1,4 @@
-import type {AiConversation, AiMessage} from '@recipoo/types';
+import type {AiConversation, AiMessage} from '@eciperay/types';
 
 export const makeAiMessage = (
   overrides: Partial<AiMessage> = {},

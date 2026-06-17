@@ -1,4 +1,4 @@
-import type {RecipeDetail} from '@recipoo/types';
+import type {RecipeDetail} from '@eciperay/types';
 
 import {fetchAllRecipePages} from './fetchAllRecipePages.js';
 import {LIST_PAGE_SIZE} from './recipesListUrl.js';

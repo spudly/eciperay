@@ -1,4 +1,4 @@
-import type {RecipeDetail} from '@recipoo/types';
+import type {RecipeDetail} from '@eciperay/types';
 
 import {makeRecipeDetail} from './test/fixtures/recipe.js';
 import {

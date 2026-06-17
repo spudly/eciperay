@@ -1,4 +1,4 @@
-import {queryKeys} from '@recipoo/client';
+import {queryKeys} from '@eciperay/client';
 import clsx from 'clsx';
 import {useQuery} from '@tanstack/react-query';
 import {useState} from 'react';
@@ -9,7 +9,7 @@ import {InstructionsTab} from '../components/recipe/InstructionsTab.js';
 import {NotesTab} from '../components/recipe/NotesTab.js';
 import {NutritionTab} from '../components/recipe/NutritionTab.js';
 import {OverviewTab} from '../components/recipe/OverviewTab.js';
-import {recipoo} from '../lib/api.js';
+import {eciperay} from '../lib/api.js';
 
 type Tab = 'overview' | 'ingredients' | 'instructions' | 'notes' | 'nutrition';
 
@@ -28,7 +28,7 @@ export const RecipeDetailPage = () => {
 
   const {data: recipe, isLoading} = useQuery({
     queryKey: queryKeys.recipe(recipeId),
-    queryFn: () => recipoo.recipes.get(recipeId),
+    queryFn: () => eciperay.recipes.get(recipeId),
     enabled: recipeId.length > 0,
   });
 

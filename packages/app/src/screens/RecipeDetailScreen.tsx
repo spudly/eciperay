@@ -1,4 +1,4 @@
-import {queryKeys} from '@recipoo/client';
+import {queryKeys} from '@eciperay/client';
 import clsx from 'clsx';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';

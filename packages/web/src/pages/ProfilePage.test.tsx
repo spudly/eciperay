@@ -4,7 +4,7 @@ import {http, HttpResponse} from 'msw';
 import {vi} from 'vitest';
 
 import {downloadRecipeExportBundle} from '../lib/downloadRecipeExport.js';
-import {recipoo} from '../lib/api.js';
+import {eciperay} from '../lib/api.js';
 import {server} from '../test/msw/server.js';
 import {renderWithProviders} from '../test/testUtils.js';
 import {supabase} from '../lib/supabase.js';
@@ -13,8 +13,8 @@ import {ProfilePage} from './ProfilePage.js';
 
 const mockUseAuth = vi.fn();
 
-vi.mock('@recipoo/client', async importOriginal => {
-  const actual = await importOriginal<typeof import('@recipoo/client')>();
+vi.mock('@eciperay/client', async importOriginal => {
+  const actual = await importOriginal<typeof import('@eciperay/client')>();
   return {...actual, useAuth: () => mockUseAuth()};
 });
 
@@ -84,7 +84,7 @@ describe('ProfilePage', () => {
   });
 
   test('shows a generic import error for unexpected failures', async () => {
-    vi.spyOn(recipoo.import, 'importBulk').mockRejectedValueOnce('nope');
+    vi.spyOn(eciperay.import, 'importBulk').mockRejectedValueOnce('nope');
     await renderWithProviders(<ProfilePage />, {withAuth: false});
 
     const importJson = JSON.stringify({
@@ -168,7 +168,7 @@ describe('ProfilePage', () => {
 
   test('shows import errors returned by the API', async () => {
     server.use(
-      http.post('http://localhost:8080/recipes/import/bulk', () =>
+      http.post('http://localhost:8080/api/recipes/import/bulk', () =>
         HttpResponse.json({
           created: [],
           errors: [

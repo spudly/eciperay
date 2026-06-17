@@ -14,7 +14,7 @@ type QueryFn = typeof defaultQuery;
 
 const fetchPage = async (url: string): Promise<string> => {
   const response = await fetch(url, {
-    headers: {'User-Agent': 'RecipooBot/1.0'},
+    headers: {'User-Agent': 'EciperayBot/1.0'},
     signal: AbortSignal.timeout(10_000),
   });
   if (!response.ok) {

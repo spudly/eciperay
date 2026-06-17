@@ -25,10 +25,10 @@ module.exports = {
   },
   moduleNameMapper: {
     '^@env$': '<rootDir>/env-shim.test.js',
-    '^@recipoo/client$': '<rootDir>/../client/src/index.ts',
+    '^@eciperay/client$': '<rootDir>/../client/src/index.ts',
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(react-native|@react-native|@react-navigation|nativewind|react-native-css|react-native-css-interop|react-native-safe-area-context|react-native-screens|@tanstack/react-query|@recipoo)/)',
+    'node_modules/(?!(react-native|@react-native|@react-navigation|nativewind|react-native-css|react-native-css-interop|react-native-reanimated|react-native-worklets|react-native-safe-area-context|react-native-screens|@tanstack/react-query|@eciperay)/)',
   ],
 };

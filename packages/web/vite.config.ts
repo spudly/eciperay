@@ -29,21 +29,14 @@ export default defineConfig(({mode}) => {
     envDir: '../..',
     esbuild: esbuildDestructuringSupport,
     optimizeDeps: {esbuildOptions: esbuildDestructuringSupport},
-    server: {
-      port,
-      proxy: {
-        '/auth': createApiProxy(apiTarget),
-        '/recipes': createApiProxy(apiTarget),
-        '/tags': createApiProxy(apiTarget),
-      },
-    },
+    server: {port, proxy: {'/api': createApiProxy(apiTarget)}},
     resolve: {
       dedupe: ['react', 'react-dom', '@tanstack/react-query'],
       alias: {
         'react': path.join(pkgRoot, 'node_modules/react'),
         'react-dom': path.join(pkgRoot, 'node_modules/react-dom'),
-        '@recipoo/client': path.join(monoRoot, 'packages/client/src/index.ts'),
-        '@recipoo/types': path.join(monoRoot, 'packages/types/src/index.ts'),
+        '@eciperay/client': path.join(monoRoot, 'packages/client/src/index.ts'),
+        '@eciperay/types': path.join(monoRoot, 'packages/types/src/index.ts'),
       },
     },
   };
