@@ -1,10 +1,16 @@
 /* eslint-disable max-lines -- shared recipe form with dynamic ingredient/instruction lists */
-import {uploadRecipeImageFromBase64, useAuth} from '@eciperay/client';
-import type {
-  IngredientInput,
-  InstructionInput,
-  RecipeInput,
-} from '@eciperay/types';
+import {
+  ensureIngredientRowKeys,
+  ensureInstructionRowKeys,
+  toRecipeInputIngredients,
+  toRecipeInputInstructions,
+  uploadRecipeImageFromBase64,
+  useAuth,
+  type FormIngredientRow,
+  type FormInstructionRow,
+  type RecipeFormInitial,
+} from '@eciperay/client';
+import type {IngredientInput, RecipeInput} from '@eciperay/types';
 import React, {useState} from 'react';
 import {
   ScrollView,
@@ -25,10 +31,18 @@ import {api} from '../../lib/api';
 import {supabase} from '../../lib/supabase';
 
 import {RecipeImageField} from './RecipeImageField';
+import {
+  createEmptyIngredientRow,
+  SortableIngredientList,
+} from './SortableIngredientList';
+import {
+  createEmptyInstructionRow,
+  SortableInstructionList,
+} from './SortableInstructionList';
 import {TagPicker} from './TagPicker';
 
 type Props = {
-  initial: RecipeInput;
+  initial: RecipeFormInitial;
   recipeId?: string;
   submitLabel: string;
   onSubmit: (
@@ -37,18 +51,7 @@ type Props = {
   ) => Promise<void>;
 };
 
-type FormIngredient = Omit<IngredientInput, 'quantity'> & {
-  quantity: number | string | null;
-};
-
-const emptyIngredient = (sortOrder: number): FormIngredient => ({
-  sortOrder,
-  name: '',
-  quantity: null,
-  unit: null,
-  notes: null,
-  isOptional: false,
-});
+type FormIngredient = FormIngredientRow & {quantity: number | string | null};
 
 const toQuantity = (value: number | string | null): number | null => {
   if (value === null) {
@@ -56,11 +59,6 @@ const toQuantity = (value: number | string | null): number | null => {
   }
   return typeof value === 'number' ? value : Number(value);
 };
-
-const emptyInstruction = (stepNumber: number): InstructionInput => ({
-  stepNumber,
-  body: '',
-});
 
 export const RecipeForm = ({
   initial,
@@ -84,14 +82,24 @@ export const RecipeForm = ({
   );
   const [imageUrl, setImageUrl] = useState(initial.imageUrl ?? '');
   const [sourceUrl, setSourceUrl] = useState(initial.sourceUrl ?? '');
-  const [ingredients, setIngredients] = useState<FormIngredient[]>(
-    initial.ingredients.length > 0 ? initial.ingredients : [emptyIngredient(0)],
-  );
-  const [instructions, setInstructions] = useState<InstructionInput[]>(
-    initial.instructions.length > 0
-      ? initial.instructions
-      : [emptyInstruction(1)],
-  );
+  const [ingredients, setIngredients] = useState<FormIngredient[]>(() => {
+    const sorted = ensureIngredientRowKeys(
+      [...initial.ingredients].sort((a, b) => a.sortOrder - b.sortOrder),
+    );
+    if (sorted.length > 0) {
+      return sorted;
+    }
+    return [createEmptyIngredientRow(0)];
+  });
+  const [instructions, setInstructions] = useState<FormInstructionRow[]>(() => {
+    const sorted = ensureInstructionRowKeys(
+      [...initial.instructions].sort((a, b) => a.stepNumber - b.stepNumber),
+    );
+    if (sorted.length > 0) {
+      return sorted;
+    }
+    return [createEmptyInstructionRow(1)];
+  });
   const [tagIds, setTagIds] = useState<string[]>(initial.tagIds);
   const [pendingImage, setPendingImage] = useState<PendingRecipeImage | null>(
     null,
@@ -263,12 +271,13 @@ export const RecipeForm = ({
     cookTimeMin: cookTimeMin === '' ? null : Number(cookTimeMin),
     imageUrl: pendingImage ? null : stripImageCacheKey(imageUrl) || null,
     sourceUrl: sourceUrl || null,
-    ingredients: ingredients.map((ing, i) => ({
-      ...ing,
-      sortOrder: i,
-      quantity: toQuantity(ing.quantity),
-    })),
-    instructions: instructions.map((ins, i) => ({...ins, stepNumber: i + 1})),
+    ingredients: toRecipeInputIngredients(
+      ingredients.map(ingredient => ({
+        ...ingredient,
+        quantity: toQuantity(ingredient.quantity),
+      })),
+    ),
+    instructions: toRecipeInputInstructions(instructions),
     tagIds,
   });
 
@@ -406,106 +415,28 @@ export const RecipeForm = ({
             onChange={setTagIds}
           />
         </View>
-        <View>
-          <View className="mb-2 flex-row items-center justify-between">
-            <Text className="text-sm font-medium text-gray-700">
-              Ingredients
-            </Text>
-            <TouchableOpacity
-              onPress={() => {
-                setIngredients(prev => [...prev, emptyIngredient(prev.length)]);
-              }}
-            >
-              <Text className="text-primary text-sm">+ Add</Text>
-            </TouchableOpacity>
-          </View>
-          {ingredients.map((ing, i) => (
-            <View
-              key={i}
-              className="mb-2 flex-row gap-2"
-            >
-              <TextInput
-                className="
-                  w-14 rounded border border-gray-300 px-2 py-1 text-sm
-                "
-                placeholder="Qty"
-                value={ing.quantity === null ? '' : String(ing.quantity)}
-                onChangeText={val => {
-                  updateIngredient(i, 'quantity', val === '' ? null : val);
-                }}
-              />
-              <TextInput
-                className="
-                  w-16 rounded border border-gray-300 px-2 py-1 text-sm
-                "
-                placeholder="Unit"
-                value={ing.unit ?? ''}
-                onChangeText={val => {
-                  updateIngredient(i, 'unit', val || null);
-                }}
-              />
-              <TextInput
-                className="
-                  flex-1 rounded border border-gray-300 px-2 py-1 text-sm
-                "
-                placeholder="Name"
-                value={ing.name}
-                onChangeText={val => {
-                  updateIngredient(i, 'name', val);
-                }}
-              />
-              <TouchableOpacity
-                onPress={() => {
-                  setIngredients(prev => prev.filter((_, idx) => idx !== i));
-                }}
-              >
-                <Text className="text-sm text-red-600">Remove</Text>
-              </TouchableOpacity>
-            </View>
-          ))}
-        </View>
-        <View>
-          <View className="mb-2 flex-row items-center justify-between">
-            <Text className="text-sm font-medium text-gray-700">
-              Instructions
-            </Text>
-            <TouchableOpacity
-              onPress={() => {
-                setInstructions(prev => [
-                  ...prev,
-                  emptyInstruction(prev.length + 1),
-                ]);
-              }}
-            >
-              <Text className="text-primary text-sm">+ Add</Text>
-            </TouchableOpacity>
-          </View>
-          {instructions.map((ins, i) => (
-            <View
-              key={i}
-              className="mb-2 flex-row gap-2"
-            >
-              <Text className="text-muted pt-2 text-sm">{i + 1}.</Text>
-              <TextInput
-                className="
-                  flex-1 rounded border border-gray-300 px-2 py-1 text-sm
-                "
-                multiline
-                value={ins.body}
-                onChangeText={val => {
-                  updateInstruction(i, val);
-                }}
-              />
-              <TouchableOpacity
-                onPress={() => {
-                  setInstructions(prev => prev.filter((_, idx) => idx !== i));
-                }}
-              >
-                <Text className="text-sm text-red-600">Remove</Text>
-              </TouchableOpacity>
-            </View>
-          ))}
-        </View>
+        <SortableIngredientList
+          ingredients={ingredients}
+          onChange={setIngredients}
+          onUpdate={updateIngredient}
+          onAdd={() => {
+            setIngredients(prev => [
+              ...prev,
+              createEmptyIngredientRow(prev.length),
+            ]);
+          }}
+        />
+        <SortableInstructionList
+          instructions={instructions}
+          onChange={setInstructions}
+          onUpdate={updateInstruction}
+          onAdd={() => {
+            setInstructions(prev => [
+              ...prev,
+              createEmptyInstructionRow(prev.length + 1),
+            ]);
+          }}
+        />
         {error ? <Text className="text-sm text-red-600">{error}</Text> : null}
         <TouchableOpacity
           className="

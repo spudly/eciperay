@@ -1,14 +1,17 @@
 /* eslint-disable max-lines -- shared recipe form with dynamic ingredient/instruction lists */
 import {
+  ensureIngredientRowKeys,
+  ensureInstructionRowKeys,
+  toRecipeInputIngredients,
+  toRecipeInputInstructions,
   uploadRecipeImage,
   useAuth,
   validateRecipeImageFile,
+  type FormIngredientRow,
+  type FormInstructionRow,
+  type RecipeFormInitial,
 } from '@eciperay/client';
-import type {
-  IngredientInput,
-  InstructionInput,
-  RecipeInput,
-} from '@eciperay/types';
+import type {IngredientInput, RecipeInput} from '@eciperay/types';
 import {useEffect, useState} from 'react';
 
 import {
@@ -24,27 +27,24 @@ import {
 import {supabase} from '../../lib/supabase.js';
 
 import {RecipeImageField} from './RecipeImageField.js';
+import {
+  createEmptyIngredientRow,
+  SortableIngredientList,
+} from './SortableIngredientList.js';
+import {
+  createEmptyInstructionRow,
+  SortableInstructionList,
+} from './SortableInstructionList.js';
 import {TagPicker} from './TagPicker.js';
 
 type Props = {
-  initial: RecipeInput;
+  initial: RecipeFormInitial;
   recipeId?: string;
   submitLabel: string;
   onSubmit: (input: RecipeInput, pendingImage?: File) => Promise<void>;
 };
 
-type FormIngredient = Omit<IngredientInput, 'quantity'> & {
-  quantity: number | string | null;
-};
-
-const emptyIngredient = (sortOrder: number): FormIngredient => ({
-  sortOrder,
-  name: '',
-  quantity: null,
-  unit: null,
-  notes: null,
-  isOptional: false,
-});
+type FormIngredient = FormIngredientRow & {quantity: number | string | null};
 
 const toQuantity = (value: number | string | null): number | null => {
   if (value === null) {
@@ -52,11 +52,6 @@ const toQuantity = (value: number | string | null): number | null => {
   }
   return typeof value === 'number' ? value : Number(value);
 };
-
-const emptyInstruction = (stepNumber: number): InstructionInput => ({
-  stepNumber,
-  body: '',
-});
 
 export const RecipeForm = ({
   initial,
@@ -73,22 +68,22 @@ export const RecipeForm = ({
   const [imageUrl, setImageUrl] = useState(initial.imageUrl ?? '');
   const [sourceUrl, setSourceUrl] = useState(initial.sourceUrl ?? '');
   const [ingredients, setIngredients] = useState<FormIngredient[]>(() => {
-    const sorted = [...initial.ingredients].sort(
-      (a, b) => a.sortOrder - b.sortOrder,
+    const sorted = ensureIngredientRowKeys(
+      [...initial.ingredients].sort((a, b) => a.sortOrder - b.sortOrder),
     );
     if (sorted.length > 0) {
       return sorted;
     }
-    return [emptyIngredient(0)];
+    return [createEmptyIngredientRow(0)];
   });
-  const [instructions, setInstructions] = useState<InstructionInput[]>(() => {
-    const sorted = [...initial.instructions].sort(
-      (a, b) => a.stepNumber - b.stepNumber,
+  const [instructions, setInstructions] = useState<FormInstructionRow[]>(() => {
+    const sorted = ensureInstructionRowKeys(
+      [...initial.instructions].sort((a, b) => a.stepNumber - b.stepNumber),
     );
     if (sorted.length > 0) {
       return sorted;
     }
-    return [emptyInstruction(1)];
+    return [createEmptyInstructionRow(1)];
   });
   const [tagIds, setTagIds] = useState<string[]>(initial.tagIds);
   const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
@@ -272,46 +267,6 @@ export const RecipeForm = ({
     );
   };
 
-  const moveIngredient = (index: number, direction: -1 | 1) => {
-    const target = index + direction;
-    /* c8 ignore next 3 -- reorder buttons are disabled at list bounds */
-    if (target < 0 || target >= ingredients.length) {
-      return;
-    }
-    setIngredients(prev => {
-      const next = [...prev];
-      const current = next[index];
-      const other = next[target];
-      /* c8 ignore next 3 -- array indices are valid after bounds check */
-      if (current === undefined || other === undefined) {
-        return prev;
-      }
-      next[index] = other;
-      next[target] = current;
-      return next;
-    });
-  };
-
-  const moveInstruction = (index: number, direction: -1 | 1) => {
-    const target = index + direction;
-    /* c8 ignore next 3 -- reorder buttons are disabled at list bounds */
-    if (target < 0 || target >= instructions.length) {
-      return;
-    }
-    setInstructions(prev => {
-      const next = [...prev];
-      const current = next[index];
-      const other = next[target];
-      /* c8 ignore next 3 -- array indices are valid after bounds check */
-      if (current === undefined || other === undefined) {
-        return prev;
-      }
-      next[index] = other;
-      next[target] = current;
-      return next;
-    });
-  };
-
   const buildInput = (): RecipeInput => ({
     title,
     description: description || null,
@@ -320,12 +275,13 @@ export const RecipeForm = ({
     cookTimeMin: cookTimeMin === '' ? null : Number(cookTimeMin),
     imageUrl: pendingImageFile ? null : stripImageCacheKey(imageUrl) || null,
     sourceUrl: sourceUrl || null,
-    ingredients: ingredients.map((ing, i) => ({
-      ...ing,
-      sortOrder: i,
-      quantity: toQuantity(ing.quantity),
-    })),
-    instructions: instructions.map((ins, i) => ({...ins, stepNumber: i + 1})),
+    ingredients: toRecipeInputIngredients(
+      ingredients.map(ingredient => ({
+        ...ingredient,
+        quantity: toQuantity(ingredient.quantity),
+      })),
+    ),
+    instructions: toRecipeInputInstructions(instructions),
     tagIds,
   });
 
@@ -503,180 +459,28 @@ export const RecipeForm = ({
           onChange={setTagIds}
         />
       </div>
-      <div>
-        <div className="mb-2 flex items-center justify-between">
-          <p className="text-sm font-medium text-gray-700">Ingredients</p>
-          <button
-            type="button"
-            className="text-primary text-sm"
-            onClick={() => {
-              setIngredients(prev => [...prev, emptyIngredient(prev.length)]);
-            }}
-          >
-            + Add
-          </button>
-        </div>
-        {ingredients.map((ing, i) => (
-          <div
-            key={i}
-            className="mb-2 grid grid-cols-12 gap-2"
-          >
-            <input
-              className="
-                col-span-2 rounded border border-gray-300 px-2 py-1 text-sm
-              "
-              placeholder="Qty"
-              value={ing.quantity ?? ''}
-              onChange={e => {
-                updateIngredient(
-                  i,
-                  'quantity',
-                  e.target.value === '' ? null : e.target.value,
-                );
-              }}
-            />
-            <input
-              className="
-                col-span-2 rounded border border-gray-300 px-2 py-1 text-sm
-              "
-              placeholder="Unit"
-              value={ing.unit ?? ''}
-              onChange={e => {
-                updateIngredient(i, 'unit', e.target.value || null);
-              }}
-            />
-            <input
-              className="
-                col-span-4 rounded border border-gray-300 px-2 py-1 text-sm
-              "
-              placeholder="Name"
-              required
-              value={ing.name}
-              onChange={e => {
-                updateIngredient(i, 'name', e.target.value);
-              }}
-            />
-            <div className="col-span-2 flex flex-col gap-1">
-              <button
-                type="button"
-                aria-label={`Move ingredient ${i + 1} up`}
-                className="
-                  rounded border border-gray-300 px-2 py-0.5 text-xs
-                  text-gray-700
-                  disabled:cursor-not-allowed disabled:opacity-40
-                "
-                disabled={i === 0}
-                onClick={() => {
-                  moveIngredient(i, -1);
-                }}
-              >
-                ↑
-              </button>
-              <button
-                type="button"
-                aria-label={`Move ingredient ${i + 1} down`}
-                className="
-                  rounded border border-gray-300 px-2 py-0.5 text-xs
-                  text-gray-700
-                  disabled:cursor-not-allowed disabled:opacity-40
-                "
-                disabled={i === ingredients.length - 1}
-                onClick={() => {
-                  moveIngredient(i, 1);
-                }}
-              >
-                ↓
-              </button>
-            </div>
-            <button
-              type="button"
-              className="col-span-2 text-sm text-red-600"
-              onClick={() => {
-                setIngredients(prev => prev.filter((_, idx) => idx !== i));
-              }}
-            >
-              Remove
-            </button>
-          </div>
-        ))}
-      </div>
-      <div>
-        <div className="mb-2 flex items-center justify-between">
-          <p className="text-sm font-medium text-gray-700">Instructions</p>
-          <button
-            type="button"
-            className="text-primary text-sm"
-            onClick={() => {
-              setInstructions(prev => [
-                ...prev,
-                emptyInstruction(prev.length + 1),
-              ]);
-            }}
-          >
-            + Add
-          </button>
-        </div>
-        {instructions.map((ins, i) => (
-          <div
-            key={i}
-            className="mb-2 flex gap-2"
-          >
-            <span className="text-muted pt-2 text-sm">{i + 1}.</span>
-            <textarea
-              className="
-                flex-1 rounded border border-gray-300 px-2 py-1 text-sm
-              "
-              required
-              rows={2}
-              value={ins.body}
-              onChange={e => {
-                updateInstruction(i, e.target.value);
-              }}
-            />
-            <div className="flex flex-col gap-1 pt-1">
-              <button
-                type="button"
-                aria-label={`Move step ${i + 1} up`}
-                className="
-                  rounded border border-gray-300 px-2 py-0.5 text-xs
-                  text-gray-700
-                  disabled:cursor-not-allowed disabled:opacity-40
-                "
-                disabled={i === 0}
-                onClick={() => {
-                  moveInstruction(i, -1);
-                }}
-              >
-                ↑
-              </button>
-              <button
-                type="button"
-                aria-label={`Move step ${i + 1} down`}
-                className="
-                  rounded border border-gray-300 px-2 py-0.5 text-xs
-                  text-gray-700
-                  disabled:cursor-not-allowed disabled:opacity-40
-                "
-                disabled={i === instructions.length - 1}
-                onClick={() => {
-                  moveInstruction(i, 1);
-                }}
-              >
-                ↓
-              </button>
-            </div>
-            <button
-              type="button"
-              className="text-sm text-red-600"
-              onClick={() => {
-                setInstructions(prev => prev.filter((_, idx) => idx !== i));
-              }}
-            >
-              Remove
-            </button>
-          </div>
-        ))}
-      </div>
+      <SortableIngredientList
+        ingredients={ingredients}
+        onChange={setIngredients}
+        onUpdate={updateIngredient}
+        onAdd={() => {
+          setIngredients(prev => [
+            ...prev,
+            createEmptyIngredientRow(prev.length),
+          ]);
+        }}
+      />
+      <SortableInstructionList
+        instructions={instructions}
+        onChange={setInstructions}
+        onUpdate={updateInstruction}
+        onAdd={() => {
+          setInstructions(prev => [
+            ...prev,
+            createEmptyInstructionRow(prev.length + 1),
+          ]);
+        }}
+      />
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
       <button
         type="submit"

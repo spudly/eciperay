@@ -6,7 +6,7 @@ import {
 } from '@eciperay/client';
 import type {RecipeInput} from '@eciperay/types';
 import React from 'react';
-import {fireEvent, waitFor} from '@testing-library/react-native';
+import {act, fireEvent, waitFor} from '@testing-library/react-native';
 
 import {makeRecipeDetail} from '../../__tests__/fixtures/recipe';
 import {makeQueryClient, renderWithProviders} from '../../__tests__/testUtils';
@@ -87,6 +87,72 @@ describe('RecipeForm', () => {
     mockUploadRecipeImageFromBase64.mockResolvedValue(
       'https://cdn.example/recipe.png',
     );
+  });
+
+  test('renders drag handles for reordering ingredients and instructions', async () => {
+    const {getByLabelText} = await renderForm(
+      <RecipeForm
+        initial={recipeDetailToInput(makeRecipeDetail())}
+        submitLabel="Save"
+        onSubmit={mockOnSubmit()}
+      />,
+    );
+
+    expect(getByLabelText('Reorder ingredient 1')).toBeTruthy();
+    expect(getByLabelText('Reorder step 1')).toBeTruthy();
+  });
+
+  test('reorders ingredients before submit', async () => {
+    const onSubmit = mockOnSubmit();
+    const {getByLabelText, getByText} = await renderForm(
+      <RecipeForm
+        initial={recipeDetailToInput(makeRecipeDetail())}
+        submitLabel="Save"
+        onSubmit={onSubmit}
+      />,
+    );
+
+    await act(async () => {
+      fireEvent.press(getByLabelText('Mock reorder i-2'));
+    });
+    fireEvent.press(getByText('Save'));
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalled();
+    });
+    const submitted = onSubmit.mock.calls[0][0];
+    expect(submitted.ingredients.map(ingredient => ingredient.name)).toEqual([
+      'Salt',
+      'Flour',
+    ]);
+    expect(
+      submitted.ingredients.map(ingredient => ingredient.sortOrder),
+    ).toEqual([0, 1]);
+  });
+
+  test('reorders instructions before submit', async () => {
+    const onSubmit = mockOnSubmit();
+    const {getByLabelText, getByText} = await renderForm(
+      <RecipeForm
+        initial={recipeDetailToInput(makeRecipeDetail())}
+        submitLabel="Save"
+        onSubmit={onSubmit}
+      />,
+    );
+
+    fireEvent.press(getByLabelText('Mock reorder ins-2'));
+    fireEvent.press(getByText('Save'));
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalled();
+    });
+    const submitted = onSubmit.mock.calls[0][0];
+    expect(submitted.instructions.map(instruction => instruction.body)).toEqual(
+      ['Bake at 350°F', 'Mix dry ingredients'],
+    );
+    expect(
+      submitted.instructions.map(instruction => instruction.stepNumber),
+    ).toEqual([1, 2]);
   });
 
   test('submits recipe input', async () => {
@@ -180,7 +246,7 @@ describe('RecipeForm', () => {
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalled();
     });
-    expect(onSubmit.mock.calls[0]?.[0]?.ingredients[0]?.quantity).toBe(1.5);
+    expect(onSubmit.mock.calls[0][0].ingredients[0].quantity).toBe(1.5);
   });
 
   test('renders null quantity ingredient as empty qty field', async () => {

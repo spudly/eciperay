@@ -1,4 +1,15 @@
 export {scaleQuantity} from './scaleQuantity.js';
+export {reorderListItem, reorderRowsByKey} from './reorderList.js';
+export {createFormRowKey} from './createFormRowKey.js';
+export {
+  ensureIngredientRowKeys,
+  ensureInstructionRowKeys,
+  type FormIngredientRow,
+  type FormInstructionRow,
+  type RecipeFormInitial,
+  toRecipeInputIngredients,
+  toRecipeInputInstructions,
+} from './recipeFormRows.js';
 export {
   formatScaleMultiplierLabel,
   formatScaledIngredientLine,

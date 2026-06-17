@@ -1,6 +1,7 @@
 module.exports = {
   preset: '@react-native/jest-preset',
   testTimeout: 15_000,
+  setupFiles: ['<rootDir>/jest.env.js'],
   setupFilesAfterEnv: ['./jest.setup.js'],
   // Teardown clears QueryClients, but React Native / TanStack Query can still
   // leave handles open on Linux CI; forceExit avoids a ~5 minute hang there.
@@ -26,9 +27,11 @@ module.exports = {
   moduleNameMapper: {
     '^@env$': '<rootDir>/env-shim.test.js',
     '^@eciperay/client$': '<rootDir>/../client/src/index.ts',
+    '^react$': '<rootDir>/node_modules/react',
+    '^react-test-renderer$': '<rootDir>/node_modules/react-test-renderer',
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(react-native|@react-native|@react-navigation|nativewind|react-native-css|react-native-css-interop|react-native-reanimated|react-native-worklets|react-native-safe-area-context|react-native-screens|react-native-blob-util|@tanstack/react-query|@eciperay)/)',
+    'node_modules/(?!(react-native|@react-native|@react-navigation|nativewind|react-native-css|react-native-css-interop|react-native-reanimated|react-native-worklets|react-native-safe-area-context|react-native-screens|react-native-blob-util|react-native-gesture-handler|react-native-draggable-flatlist|@tanstack/react-query|@eciperay)/)',
   ],
 };
