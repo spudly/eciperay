@@ -651,7 +651,7 @@ export default tseslint.config(
         'error',
         {
           cases: {camelCase: true, pascalCase: true},
-          ignore: [/^react-native\.config\.js$/u],
+          ignore: [/^react-native\.config\.(?:js|cjs)$/u],
         },
       ],
       'unicorn/import-index': 'off', // deprecated rule
@@ -821,14 +821,7 @@ export default tseslint.config(
   // Section 1b re-enables `no-undef` for .js/.cjs/.mjs; Node globals cover
   // `require`, `module`, and `process` here. This block must come AFTER sections 3 and 4.
   {
-    files: [
-      '**/*.cjs',
-      'packages/app/metro.config.js',
-      'packages/app/babel.config.js',
-      'packages/app/react-native.config.js',
-      'packages/app/jest.config.js',
-      'packages/app/scripts/envShim.js',
-    ],
+    files: ['**/*.cjs'],
     languageOptions: {globals: globals.node},
     rules: {'import-x/no-commonjs': 'off', 'unicorn/prefer-module': 'off'},
   },

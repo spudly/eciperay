@@ -7,7 +7,7 @@ const {
 const {withNativewind} = require('nativewind/metro');
 const {resolve: metroResolve} = require('metro-resolver');
 
-const {writeEnvShim} = require('./scripts/envShim');
+const {writeEnvShim} = require('./scripts/envShim.cjs');
 
 // NativeWind uses @expo/metro-config's transformer, which stores packed source maps
 // instead of Babel tuple arrays. Metro's standalone .map endpoint (used by DevTools)

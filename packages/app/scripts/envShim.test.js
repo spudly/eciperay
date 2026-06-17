@@ -8,7 +8,7 @@ const {
   isProductionAppEnv,
   loadAppEnvVars,
   writeEnvShim,
-} = require('./envShim');
+} = require('./envShim.cjs');
 
 describe('envShim', () => {
   const originalEnv = {...process.env};
