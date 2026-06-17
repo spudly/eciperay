@@ -32,7 +32,7 @@ jobs:
 
       - name: Deploy
         run: |
-          fly deploy --remote-only \
+          flyctl deploy --remote-only \
             --build-arg "VITE_API_BASE_URL=${VITE_API_BASE_URL}" \
             --build-arg "VITE_SUPABASE_URL=${VITE_SUPABASE_URL}" \
             --build-arg "VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}"
