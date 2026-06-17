@@ -19,7 +19,10 @@ describe('OverviewTab', () => {
     const recipe = makeRecipeDetail({imageUrl: 'https://example.com/img.jpg'});
     render(
       <MemoryRouter>
-        <OverviewTab recipe={recipe} />
+        <OverviewTab
+          recipe={recipe}
+          servings={4}
+        />
       </MemoryRouter>,
     );
     expect(screen.getByText('Test Recipe')).toBeInTheDocument();
@@ -39,7 +42,10 @@ describe('OverviewTab', () => {
     vi.mocked(shareRecipeModule.shareRecipe).mockResolvedValueOnce('shared');
     render(
       <MemoryRouter>
-        <OverviewTab recipe={makeRecipeDetail()} />
+        <OverviewTab
+          recipe={makeRecipeDetail()}
+          servings={4}
+        />
       </MemoryRouter>,
     );
     await userEvent.click(screen.getByLabelText('Share recipe'));
@@ -52,7 +58,10 @@ describe('OverviewTab', () => {
     );
     render(
       <MemoryRouter>
-        <OverviewTab recipe={makeRecipeDetail()} />
+        <OverviewTab
+          recipe={makeRecipeDetail()}
+          servings={4}
+        />
       </MemoryRouter>,
     );
     await userEvent.click(screen.getByLabelText('Share recipe'));
@@ -65,7 +74,10 @@ describe('OverviewTab', () => {
     );
     render(
       <MemoryRouter>
-        <OverviewTab recipe={makeRecipeDetail()} />
+        <OverviewTab
+          recipe={makeRecipeDetail()}
+          servings={4}
+        />
       </MemoryRouter>,
     );
     await userEvent.click(screen.getByLabelText('Share recipe'));
@@ -89,7 +101,10 @@ describe('OverviewTab', () => {
     }) as typeof window.setTimeout);
     render(
       <MemoryRouter>
-        <OverviewTab recipe={makeRecipeDetail()} />
+        <OverviewTab
+          recipe={makeRecipeDetail()}
+          servings={4}
+        />
       </MemoryRouter>,
     );
     await userEvent.click(screen.getByLabelText('Share recipe'));
@@ -113,7 +128,10 @@ describe('OverviewTab', () => {
     });
     render(
       <MemoryRouter>
-        <OverviewTab recipe={recipe} />
+        <OverviewTab
+          recipe={recipe}
+          servings={4}
+        />
       </MemoryRouter>,
     );
     expect(screen.getByText('Test Recipe')).toBeInTheDocument();

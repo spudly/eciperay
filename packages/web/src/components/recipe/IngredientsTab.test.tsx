@@ -74,6 +74,20 @@ describe('IngredientsTab', () => {
     expect(names).toEqual(['2 cups Flour', '1 cup Sugar', '1 tsp Salt']);
   });
 
+  test('applies scale multipliers and scaled quantities', async () => {
+    await renderWithProviders(
+      <IngredientsTab
+        recipe={makeRecipeDetail()}
+        scaleFactor={2}
+        servings={8}
+        onServingsChange={onServingsChange}
+      />,
+    );
+    expect(screen.getByText('4 cups Flour')).toBeInTheDocument();
+    await userEvent.click(screen.getByText('2×'));
+    expect(onServingsChange).toHaveBeenCalledWith(8);
+  });
+
   test('shows substitutions for missing ingredients', async () => {
     await renderWithProviders(
       <IngredientsTab

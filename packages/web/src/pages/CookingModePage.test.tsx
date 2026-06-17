@@ -34,6 +34,22 @@ describe('CookingModePage', () => {
     fireEvent.keyDown(window, {key: 'Escape'});
   });
 
+  test('shows scaled ingredients when servings are provided', async () => {
+    await renderWithProviders(
+      <Routes>
+        <Route
+          path="/recipes/:recipeId/cook"
+          element={<CookingModePage />}
+        />
+      </Routes>,
+      {route: '/recipes/recipe-uuid-1/cook?servings=8'},
+    );
+    await waitFor(() => {
+      expect(screen.getByText('4 cups Flour')).toBeInTheDocument();
+      expect(screen.getByText(/scaled to 8 servings/)).toBeInTheDocument();
+    });
+  });
+
   test('done button navigates back', async () => {
     await renderWithProviders(
       <Routes>
