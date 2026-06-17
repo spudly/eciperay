@@ -59,6 +59,57 @@ jest.mock('react-native-blob-util', () => ({
   },
 }));
 
+jest.mock('react-native-gesture-handler', () => {
+  const React = require('react');
+  const {View} = require('react-native');
+  return {
+    GestureHandlerRootView: ({children}) =>
+      React.createElement(View, null, children),
+    Swipeable: View,
+    DrawerLayout: View,
+    State: {},
+    PanGestureHandler: View,
+    TapGestureHandler: View,
+    FlatList: require('react-native').FlatList,
+  };
+});
+
+jest.mock('react-native-draggable-flatlist', () => {
+  const React = require('react');
+  const {View, TouchableOpacity, Text} = require('react-native');
+  const noopDrag = () => {
+    /* drag noop for tests */
+  };
+  const DraggableFlatList = ({data, renderItem, keyExtractor, onDragEnd}) =>
+    React.createElement(
+      View,
+      null,
+      data.map((item, index) =>
+        React.createElement(
+          View,
+          {key: keyExtractor(item)},
+          renderItem({item, index, getIndex: () => index, drag: noopDrag}),
+          React.createElement(
+            TouchableOpacity,
+            {
+              accessibilityLabel: `Mock reorder ${keyExtractor(item)}`,
+              onPress: () => {
+                if (index > 0) {
+                  const next = [...data];
+                  const [moved] = next.splice(index, 1);
+                  next.splice(index - 1, 0, moved);
+                  onDragEnd({data: next, from: index, to: index - 1});
+                }
+              },
+            },
+            React.createElement(Text, null, 'Mock reorder up'),
+          ),
+        ),
+      ),
+    );
+  return {__esModule: true, default: DraggableFlatList};
+});
+
 jest.mock('react-native-url-polyfill/auto', () => ({}));
 
 jest.mock('@react-native-async-storage/async-storage', () =>

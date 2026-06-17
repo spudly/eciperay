@@ -1,6 +1,10 @@
-import type {RecipeDetail, RecipeInput} from '@eciperay/types';
+import type {RecipeDetail} from '@eciperay/types';
 
-export const recipeDetailToInput = (detail: RecipeDetail): RecipeInput => ({
+import type {RecipeFormInitial} from './recipeFormRows.js';
+
+export const recipeDetailToInput = (
+  detail: RecipeDetail,
+): RecipeFormInitial => ({
   title: detail.title,
   description: detail.description,
   servings: detail.servings,
@@ -11,7 +15,8 @@ export const recipeDetailToInput = (detail: RecipeDetail): RecipeInput => ({
   sourceUrl: detail.sourceUrl,
   ingredients: [...detail.ingredients]
     .sort((a, b) => a.sortOrder - b.sortOrder)
-    .map(({sortOrder, name, quantity, unit, notes, isOptional}) => ({
+    .map(({id, sortOrder, name, quantity, unit, notes, isOptional}) => ({
+      key: id,
       sortOrder,
       name,
       quantity,
@@ -21,6 +26,6 @@ export const recipeDetailToInput = (detail: RecipeDetail): RecipeInput => ({
     })),
   instructions: [...detail.instructions]
     .sort((a, b) => a.stepNumber - b.stepNumber)
-    .map(({stepNumber, body}) => ({stepNumber, body})),
+    .map(({id, stepNumber, body}) => ({key: id, stepNumber, body})),
   tagIds: detail.tags.map(tag => tag.id),
 });

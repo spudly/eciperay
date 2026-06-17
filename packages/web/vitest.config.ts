@@ -14,8 +14,8 @@ export default defineConfig({
   resolve: {
     dedupe: ['react', 'react-dom', '@tanstack/react-query'],
     alias: {
-      'react': path.join(pkgRoot, 'node_modules/react'),
-      'react-dom': path.join(pkgRoot, 'node_modules/react-dom'),
+      'react': path.join(monoRoot, 'node_modules/react'),
+      'react-dom': path.join(monoRoot, 'node_modules/react-dom'),
       '@eciperay/client': path.join(monoRoot, 'packages/client/src/index.ts'),
       '@eciperay/types': path.join(monoRoot, 'packages/types/src/index.ts'),
     },
@@ -24,7 +24,7 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
-    server: {deps: {inline: [/@tanstack/, /@eciperay/]}},
+    server: {deps: {inline: [/@tanstack/, /@eciperay/, /@dnd-kit/]}},
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],
