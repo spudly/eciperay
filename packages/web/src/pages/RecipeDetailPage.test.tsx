@@ -33,4 +33,17 @@ describe('RecipeDetailPage', () => {
       expect(screen.getByText('250')).toBeInTheDocument();
     });
   });
+
+  test('does not record a view when recipeId is missing', async () => {
+    await renderWithProviders(
+      <Routes>
+        <Route
+          path="/recipes"
+          element={<RecipeDetailPage />}
+        />
+      </Routes>,
+      {route: '/recipes'},
+    );
+    expect(screen.queryByText('Test Recipe')).not.toBeInTheDocument();
+  });
 });

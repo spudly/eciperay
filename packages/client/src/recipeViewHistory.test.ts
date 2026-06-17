@@ -72,4 +72,36 @@ describe('recipeViewHistory', () => {
 
     expect(await getRecentRecipeIds(storage, 5)).toEqual([]);
   });
+
+  test('ignores stored history that is not an array', async () => {
+    const storage = createMemoryStorage();
+    await storage.setItem(RECIPE_VIEW_HISTORY_KEY, '{"not":"array"}');
+
+    expect(await getRecentRecipeIds(storage, 5)).toEqual([]);
+  });
+
+  test('supports async storage adapters', async () => {
+    const map = new Map<string, string>();
+    const storage: RecipeViewHistoryStorage = {
+      getItem: async (key: string) => map.get(key) ?? null,
+      setItem: async (key: string, value: string) => {
+        map.set(key, value);
+      },
+      removeItem: async (key: string) => {
+        map.delete(key);
+      },
+    };
+
+    await recordRecipeView(storage, 'recipe-a');
+
+    expect(await getRecentRecipeIds(storage, 5)).toEqual(['recipe-a']);
+  });
+
+  test('does nothing when removing a recipe that is not in history', async () => {
+    const storage = createMemoryStorage();
+
+    await removeRecipeView(storage, 'missing-recipe');
+
+    expect(await getRecentRecipeIds(storage, 5)).toEqual([]);
+  });
 });

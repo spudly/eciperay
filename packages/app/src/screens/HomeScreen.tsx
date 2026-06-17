@@ -47,7 +47,9 @@ export const HomeScreen = ({navigation}: Props) => {
       await removeRecipeView(recipeViewHistoryStorage, id);
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({queryKey: queryKeys.recipes()});
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.recipes('home-recently-viewed'),
+      });
     },
   });
 

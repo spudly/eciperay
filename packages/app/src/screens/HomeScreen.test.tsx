@@ -1,11 +1,12 @@
 import React from 'react';
 import {Alert, TouchableOpacity} from 'react-native';
-import {fireEvent, waitFor} from '@testing-library/react-native';
+import {fireEvent, waitFor, act} from '@testing-library/react-native';
 import {
   HOME_ADD_LABEL,
   HOME_BROWSE_LABEL,
   HOME_RECENT_RECIPE_COUNT,
   HOME_TITLE,
+  queryKeys,
   recordRecipeView,
 } from '@eciperay/client';
 
@@ -37,9 +38,16 @@ jest.mock('../lib/recipeViewHistoryStorage', () => ({
   },
 }));
 
+let focusEffectCallback: (() => undefined | (() => void)) | undefined;
+
 jest.mock('@react-navigation/native', () => {
   const actual = jest.requireActual('@react-navigation/native');
-  return {...actual, useFocusEffect: () => {}};
+  return {
+    ...actual,
+    useFocusEffect: (callback: () => undefined | (() => void)) => {
+      focusEffectCallback = callback;
+    },
+  };
 });
 
 const mockGet = api.recipes.get as jest.Mock;
@@ -106,6 +114,18 @@ describe('HomeScreen', () => {
   test('shows empty state when there is no view history', async () => {
     const {findByText} = renderHome();
     expect(await findByText(/Recipes you view will appear here/)).toBeTruthy();
+  });
+
+  test('refreshes recently viewed recipes when screen gains focus', async () => {
+    const client = makeQueryClient();
+    const invalidateSpy = jest.spyOn(client, 'invalidateQueries');
+    renderWithProviders(<HomeScreen {...homeProps} />, client);
+    await act(async () => {
+      focusEffectCallback?.();
+    });
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: queryKeys.recipes('home-recently-viewed'),
+    });
   });
 
   test('navigates to recipe detail when a recipe is pressed', async () => {
