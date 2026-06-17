@@ -118,7 +118,9 @@ describe('HomeScreen', () => {
 
   test('refreshes recently viewed recipes when screen gains focus', async () => {
     const client = makeQueryClient();
-    const invalidateSpy = jest.spyOn(client, 'invalidateQueries');
+    const invalidateSpy = jest
+      .spyOn(client, 'invalidateQueries')
+      .mockResolvedValue();
     renderWithProviders(<HomeScreen {...homeProps} />, client);
     await act(async () => {
       focusEffectCallback?.();
