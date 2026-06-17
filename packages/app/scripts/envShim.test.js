@@ -46,17 +46,16 @@ describe('envShim', () => {
     });
   });
 
-  test('merges .env.production over .env for release bundles', () => {
+  test('requires exported env vars for release bundles', () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'env-shim-prod-'));
     fs.writeFileSync(
       path.join(root, '.env'),
       'API_BASE_URL=http://localhost:8080/api\nSUPABASE_URL=https://dev.supabase.co\nSUPABASE_ANON_KEY=dev-key\n',
     );
-    fs.writeFileSync(
-      path.join(root, '.env.production'),
-      'API_BASE_URL=https://eciperay.com/api\nSUPABASE_URL=https://prod.supabase.co\nSUPABASE_ANON_KEY=prod-key\n',
-    );
     process.env.NODE_ENV = 'production';
+    process.env.API_BASE_URL = 'https://eciperay.com/api';
+    process.env.SUPABASE_URL = 'https://prod.supabase.co';
+    process.env.SUPABASE_ANON_KEY = 'prod-key';
 
     expect(loadAppEnvVars(root)).toEqual({
       API_BASE_URL: 'https://eciperay.com/api',
@@ -65,13 +64,14 @@ describe('envShim', () => {
     });
   });
 
-  test('prefers process.env over files', () => {
+  test('prefers process.env over .env in development', () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'env-shim-env-'));
     fs.writeFileSync(
-      path.join(root, '.env.production'),
-      'API_BASE_URL=https://eciperay.com/api\nSUPABASE_URL=https://prod.supabase.co\nSUPABASE_ANON_KEY=prod-key\n',
+      path.join(root, '.env'),
+      'API_BASE_URL=http://localhost:8080/api\nSUPABASE_URL=https://dev.supabase.co\nSUPABASE_ANON_KEY=dev-key\n',
     );
-    process.env.NODE_ENV = 'production';
+    delete process.env.APP_ENV;
+    delete process.env.NODE_ENV;
     process.env.API_BASE_URL = 'https://override.example/api';
 
     expect(loadAppEnvVars(root).API_BASE_URL).toBe(
@@ -116,14 +116,13 @@ describe('envShim', () => {
     );
   });
 
-  test('writeEnvShim writes production bundle env', () => {
+  test('writeEnvShim writes production bundle env from exports', () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'env-shim-write-ok-'));
     const outputPath = path.join(root, 'env-shim.js');
-    fs.writeFileSync(
-      path.join(root, '.env.production'),
-      'API_BASE_URL=https://eciperay.com/api\nSUPABASE_URL=https://prod.supabase.co\nSUPABASE_ANON_KEY=prod-key\n',
-    );
     process.env.APP_ENV = 'production';
+    process.env.API_BASE_URL = 'https://eciperay.com/api';
+    process.env.SUPABASE_URL = 'https://prod.supabase.co';
+    process.env.SUPABASE_ANON_KEY = 'prod-key';
 
     writeEnvShim({monorepoRoot: root, outputPath});
 

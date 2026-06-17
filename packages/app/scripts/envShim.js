@@ -20,21 +20,15 @@ const isProductionAppEnv = () =>
  * @returns {Record<AppEnvKey, string | undefined>}
  */
 const loadAppEnvVars = monorepoRoot => {
-  const base =
-    dotenv.config({path: path.join(monorepoRoot, '.env'), processEnv: false})
-      .parsed ?? {};
-
-  const production = isProductionAppEnv()
-    ? (dotenv.config({
-        path: path.join(monorepoRoot, '.env.production'),
-        processEnv: false,
-      }).parsed ?? {})
-    : {};
+  const devVars = isProductionAppEnv()
+    ? {}
+    : (dotenv.config({path: path.join(monorepoRoot, '.env'), processEnv: false})
+        .parsed ?? {});
 
   /** @type {Record<AppEnvKey, string | undefined>} */
   const merged = {};
   for (const key of APP_ENV_KEYS) {
-    merged[key] = process.env[key] ?? production[key] ?? base[key];
+    merged[key] = process.env[key] ?? devVars[key];
   }
   return merged;
 };
@@ -63,7 +57,7 @@ const assertProductionEnvVars = vars => {
   if (missing.length > 0) {
     throw new Error(
       `Missing production mobile env for release bundle: ${missing.join(', ')}. ` +
-        'Set them in .env.production or export before building.',
+        'Export API_BASE_URL, SUPABASE_URL, and SUPABASE_ANON_KEY before building.',
     );
   }
 };

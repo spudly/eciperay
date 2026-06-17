@@ -241,7 +241,10 @@ jobs:
 
       - name: Verify production env is baked into release shim
         run: |
-          cp .env.production.example .env.production
-          APP_ENV=production node packages/app/scripts/writeEnvShim.js
+          APP_ENV=production \
+          API_BASE_URL=https://eciperay.com/api \
+          SUPABASE_URL=https://example.supabase.co \
+          SUPABASE_ANON_KEY=test-anon-key \
+          node packages/app/scripts/writeEnvShim.js
           grep -q 'https://eciperay.com/api' packages/app/env-shim.js
-          grep -q 'your-project.supabase.co' packages/app/env-shim.js
+          grep -q 'https://example.supabase.co' packages/app/env-shim.js

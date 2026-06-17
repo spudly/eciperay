@@ -62,7 +62,7 @@ cp .env.example .env
 
 Fill in Supabase, Anthropic, and URL values. Web requires `VITE_*` prefixed
 vars; the mobile app uses `API_BASE_URL` and `SUPABASE_*` via the Metro env shim
-(`.env` for development, `.env.production` for release APKs).
+(`.env` for development; export vars for release builds).
 
 Add `http://localhost:8081/**` to your Supabase project's redirect URLs for web
 auth (password reset).
@@ -103,8 +103,7 @@ npm run start
 
 The server serves the API under `/api/*` and the compiled Vite app for all other
 routes. Set `VITE_API_BASE_URL=/api` when building the web app (default in
-`.env.example`). Mobile release builds use `.env.production` with
-`API_BASE_URL=https://eciperay.com/api`.
+`.env.example`). Mobile release builds export production env vars (see below).
 
 ### Deploy to Fly.io
 
@@ -186,7 +185,8 @@ Point DNS at the addresses `fly certs add` prints (usually `A` + `AAAA` to Fly).
 **6. Post-deploy**
 
 - Supabase → Authentication → URL configuration: add `https://eciperay.com/**`
-- Android release builds: use `.env.production` (see below) — not the dev `.env`
+- Android release builds: use GitHub Actions or export production env vars
+  locally
 
 Migrations run automatically on each deploy via `release_command` in `fly.toml`.
 The default machine config uses **512MB RAM** and **auto-stop** when idle to
@@ -217,19 +217,13 @@ If multiple phones are connected, set `ANDROID_SERIAL` to the device id from
 Release APKs bundle production API and Supabase config at **build time** via the
 Metro `@env` shim. Debug/Metro builds keep using `.env` (localhost).
 
-**1. Create production env** at the repo root:
+**1. Export production env vars**
 
 ```sh
-cp .env.production.example .env.production
-# Edit: API_BASE_URL, SUPABASE_URL, SUPABASE_ANON_KEY
-```
-
-Typical production values:
-
-```sh
-API_BASE_URL=https://eciperay.com/api
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_ANON_KEY=your-anon-key
+export APP_ENV=production
+export API_BASE_URL=https://eciperay.com/api
+export SUPABASE_URL=https://your-project.supabase.co
+export SUPABASE_ANON_KEY=your-anon-key
 ```
 
 **2. Build release APK**
@@ -239,8 +233,8 @@ npm run android:release
 # or: ./scripts/android-release.sh
 ```
 
-The script sets `APP_ENV=production`, validates env vars, writes `env-shim.js`,
-and runs `./gradlew assembleRelease`. Output:
+The script validates env vars, writes `env-shim.js`, and runs
+`./gradlew assembleRelease`. Output:
 `packages/app/android/app/build/outputs/apk/release/app-release.apk`.
 
 **3. Install on a device** (USB debugging on):
@@ -258,7 +252,7 @@ CI verifies production shim generation on every PR (no full APK build).
 
 The **Android Deploy** workflow (`.github/workflows/android-deploy.yml`) builds
 a signed release APK after CI passes on `master`, or on manual dispatch from the
-Actions tab. It uses **GitHub secrets** (not `.env.production` on the runner).
+Actions tab. It uses **GitHub secrets**.
 
 Add these repository secrets (Settings → Secrets and variables → Actions):
 
@@ -271,8 +265,7 @@ Add these repository secrets (Settings → Secrets and variables → Actions):
 | `ANDROID_KEY_ALIAS`         | Key alias                                         |
 | `ANDROID_KEY_PASSWORD`      | Key password                                      |
 
-`API_BASE_URL` is set to `https://eciperay.com/api` in the workflow. Env
-precedence in CI: exported secrets override any file on disk.
+`API_BASE_URL` is set to `https://eciperay.com/api` in the workflow.
 
 Generate a keystore locally (once):
 
