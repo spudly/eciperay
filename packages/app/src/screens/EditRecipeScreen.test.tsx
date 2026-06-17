@@ -9,6 +9,19 @@ import type {RecipesStackParamList} from '../navigation/types';
 import {EditRecipeScreen} from './EditRecipeScreen';
 
 jest.mock('../lib/api');
+jest.mock('../lib/supabase', () => ({supabase: {}}));
+
+jest.mock('@eciperay/client', () => {
+  const actual = jest.requireActual('@eciperay/client');
+  return {
+    ...actual,
+    useAuth: jest.fn(() => ({
+      session: {user: {id: 'user-1'}},
+      isLoading: false,
+    })),
+    uploadRecipeImageFromBase64: jest.fn(),
+  };
+});
 
 const mockGet = api.recipes.get as jest.Mock;
 const mockPut = api.recipes.put as jest.Mock;

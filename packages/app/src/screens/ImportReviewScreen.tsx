@@ -51,6 +51,7 @@ export const ImportReviewScreen = ({route, navigation}: Props) => {
       </Text>
       <RecipeForm
         initial={recipeDetailToInput(recipe)}
+        recipeId={recipeId}
         submitLabel="Save Recipe"
         onSubmit={handleSubmit}
       />

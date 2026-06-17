@@ -29,6 +29,6 @@ module.exports = {
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(react-native|@react-native|@react-navigation|nativewind|react-native-css|react-native-css-interop|react-native-reanimated|react-native-worklets|react-native-safe-area-context|react-native-screens|@tanstack/react-query|@eciperay)/)',
+    'node_modules/(?!(react-native|@react-native|@react-navigation|nativewind|react-native-css|react-native-css-interop|react-native-reanimated|react-native-worklets|react-native-safe-area-context|react-native-screens|react-native-blob-util|@tanstack/react-query|@eciperay)/)',
   ],
 };
