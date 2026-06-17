@@ -17,7 +17,7 @@ describe('NutritionTab', () => {
 
   test('returns null when no data', async () => {
     server.use(
-      http.get('http://localhost:8080/recipes/:id/ai/nutrition', () =>
+      http.get('http://localhost:8080/api/recipes/:id/ai/nutrition', () =>
         HttpResponse.json(null),
       ),
     );
@@ -34,7 +34,7 @@ describe('NutritionTab', () => {
 
   test('omits optional fiber and sodium rows', async () => {
     server.use(
-      http.get('http://localhost:8080/recipes/:id/ai/nutrition', () =>
+      http.get('http://localhost:8080/api/recipes/:id/ai/nutrition', () =>
         HttpResponse.json({
           servings: 4,
           calories: 100,

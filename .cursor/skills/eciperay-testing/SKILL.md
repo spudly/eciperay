@@ -1,13 +1,13 @@
 ---
-name: recipoo-testing
+name: eciperay-testing
 description:
-  Testing best practices for the Recipoo monorepo (Express server, Vite web app,
-  React Native app, shared client). Use when writing or reviewing tests, setting
-  up coverage, or deciding what to mock.
+  Testing best practices for the Eciperay monorepo (Express server, Vite web
+  app, React Native app, shared client). Use when writing or reviewing tests,
+  setting up coverage, or deciding what to mock.
 disable-model-invocation: true
 ---
 
-# Recipoo Testing
+# Eciperay Testing
 
 ## Stack
 

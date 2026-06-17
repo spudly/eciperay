@@ -1,8 +1,8 @@
-import {queryKeys} from '@recipoo/client';
+import {queryKeys} from '@eciperay/client';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useState} from 'react';
 
-import {recipoo} from '../lib/api.js';
+import {eciperay} from '../lib/api.js';
 
 export const TagsPage = () => {
   const [name, setName] = useState('');
@@ -11,11 +11,11 @@ export const TagsPage = () => {
 
   const {data: tags = [], isLoading} = useQuery({
     queryKey: queryKeys.tags(),
-    queryFn: () => recipoo.tags.list(),
+    queryFn: () => eciperay.tags.list(),
   });
 
   const createMutation = useMutation({
-    mutationFn: () => recipoo.tags.create(name, color),
+    mutationFn: () => eciperay.tags.create(name, color),
     onSuccess: () => {
       setName('');
       void queryClient.invalidateQueries({queryKey: queryKeys.tags()});
@@ -23,7 +23,7 @@ export const TagsPage = () => {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => recipoo.tags.delete(id),
+    mutationFn: (id: string) => eciperay.tags.delete(id),
     onSuccess: () => {
       void queryClient.invalidateQueries({queryKey: queryKeys.tags()});
     },

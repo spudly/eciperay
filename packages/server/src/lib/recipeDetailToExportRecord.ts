@@ -2,7 +2,7 @@ import type {
   RecipeDetail,
   RecipeExportImage,
   RecipeExportRecord,
-} from '@recipoo/types';
+} from '@eciperay/types';
 
 export const recipeDetailToExportRecord = (
   detail: RecipeDetail,

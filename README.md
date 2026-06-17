@@ -1,4 +1,4 @@
-# Recipoo
+# Eciperay
 
 A recipe management app for iOS, Android, and web. Store, scale, import, and
 improve recipes with AI assistance.
@@ -9,8 +9,8 @@ improve recipes with AI assistance.
 | ------------- | ----------------------------------------------------------------- |
 | Mobile app    | React Native, NativeWind v5, Tailwind CSS v4, React Navigation v7 |
 | Web app       | Vite 6, React 19, React Router 7, Tailwind CSS v4, Vitest, MSW    |
-| Shared client | `@recipoo/client` — API, auth, query keys, recipe utils           |
-| Shared theme  | `@recipoo/theme` — Tailwind v4 design tokens                      |
+| Shared client | `@eciperay/client` — API, auth, query keys, recipe utils          |
+| Shared theme  | `@eciperay/theme` — Tailwind v4 design tokens                     |
 | Backend       | Node.js, Express v5, TypeScript                                   |
 | Database      | Supabase Postgres (raw SQL via `pg`)                              |
 | File storage  | Supabase Storage (`recipe-images` bucket for recipe photos)       |
@@ -20,7 +20,7 @@ improve recipes with AI assistance.
 ## Monorepo Structure
 
 ```
-recipoo/
+eciperay/
 ├── packages/
 │   ├── app/        # React Native app (iOS + Android)
 │   ├── web/        # Vite web app
@@ -89,21 +89,145 @@ npm run dev:web
 
 # API + Metro + iOS simulator
 npm run dev:ios
+
+# API + Metro + physical Android phone (USB)
+npm run dev:android
 ```
+
+### Production (API + web from one server)
+
+```sh
+npm run build
+npm run start
+```
+
+The server serves the API under `/api/*` and the compiled Vite app for all other
+routes. Set `API_BASE_URL=https://eciperay.com/api` for mobile and
+`VITE_API_BASE_URL=/api` when building the web app (default in `.env.example`).
+
+### Deploy to Fly.io
+
+One Fly app serves **API + static web** from the root `Dockerfile`.
+
+**1. Install the CLI and log in**
+
+```sh
+brew install flyctl   # or https://fly.io/docs/flyctl/install/
+fly auth login
+```
+
+**2. Create the app (once)**
+
+```sh
+fly apps create eciperay   # or edit `app` in fly.toml
+```
+
+**3. Set secrets** (runtime — not baked into the web bundle)
+
+```sh
+fly secrets set \
+  DATABASE_URL='postgresql://...' \
+  SUPABASE_URL='https://your-project.supabase.co' \
+  SUPABASE_SECRET_KEY='your-service-role-key' \
+  ANTHROPIC_API_KEY='your-anthropic-key' \
+  OPENAI_API_KEY='your-openai-key' \
+  CORS_ORIGINS='https://eciperay.com,https://www.eciperay.com'
+```
+
+`CORS_ORIGINS` is mainly for non-browser clients; same-origin web does not need
+it.
+
+**4. Deploy**
+
+`VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` from your local `.env` are
+passed as Docker build args (public anon key — expected in the client bundle):
+
+```sh
+./scripts/fly-deploy.sh
+```
+
+Or manually:
+
+```sh
+fly deploy \
+  --build-arg VITE_API_BASE_URL=/api \
+  --build-arg VITE_SUPABASE_URL=https://your-project.supabase.co \
+  --build-arg VITE_SUPABASE_ANON_KEY=your-anon-key
+```
+
+**GitHub Actions** (`.github/workflows/fly-deploy.yml`) deploys automatically
+after CI passes on `master`. You can also trigger a deploy manually from the
+Actions tab (**Deploy** → **Run workflow**).
+
+Add these repository secrets (Settings → Secrets and variables → Actions):
+
+| Secret                   | Purpose                                       |
+| ------------------------ | --------------------------------------------- |
+| `FLY_API_TOKEN`          | Fly deploy token (`fly tokens create deploy`) |
+| `VITE_SUPABASE_URL`      | Docker build arg for the web bundle           |
+| `VITE_SUPABASE_ANON_KEY` | Docker build arg for the web bundle           |
+
+Runtime secrets (`DATABASE_URL`, `SUPABASE_SECRET_KEY`, API keys, etc.) stay on
+Fly via `fly secrets set` — they are not needed in GitHub.
+
+Optional: create a **production** environment in GitHub to require approval
+before deploys.
+
+**5. Custom domain**
+
+```sh
+fly certs add eciperay.com
+fly certs add www.eciperay.com
+```
+
+Point DNS at the addresses `fly certs add` prints (usually `A` + `AAAA` to Fly).
+
+**6. Post-deploy**
+
+- Supabase → Authentication → URL configuration: add `https://eciperay.com/**`
+- Mobile `.env`: `API_BASE_URL=https://eciperay.com/api`
+
+Migrations run automatically on each deploy via `release_command` in `fly.toml`.
+The default machine config uses **512MB RAM** and **auto-stop** when idle to
+keep cost down (`min_machines_running = 0`). First request after idle may take a
+few seconds to cold-start.
+
+```sh
+fly logs
+fly status
+curl https://eciperay.com/api/health
+```
+
+### Android physical device
+
+1. Enable **Developer options** and **USB debugging** on your phone
+2. Connect via USB and accept the debugging prompt
+3. Verify: `adb devices` (should show your phone serial, not `emulator-XXXX`)
+4. Run `npm run dev:android`
+
+The setup script forwards ports over USB so the phone can reach Metro (`8081`)
+and the API (`8080`). Keep `API_BASE_URL=http://localhost:8080/api` in `.env`.
+
+If multiple phones are connected, set `ANDROID_SERIAL` to the device id from
+`adb devices`.
 
 ## Development Scripts
 
-| Command                 | Description                               |
-| ----------------------- | ----------------------------------------- |
-| `npm run dev`           | API server + Metro bundler                |
-| `npm run dev:web`       | API server + Vite web app                 |
-| `npm run dev:ios`       | Server + Metro + iOS simulator            |
-| `npm run dev:android`   | Server + Metro + Android emulator         |
-| `npm run typecheck`     | TypeScript check all packages             |
-| `npm run lint`          | ESLint across all packages                |
-| `npm run ci`            | Full CI (typecheck, lint, audit, tests)   |
-| `npm test`              | Run all package tests                     |
-| `npm run test:coverage` | All packages with 100% coverage threshold |
+| Command                   | Description                               |
+| ------------------------- | ----------------------------------------- |
+| `npm run build`           | Build web app into `packages/web/dist`    |
+| `npm run start`           | Production server (API + static web)      |
+| `./scripts/fly-deploy.sh` | Deploy API + web to Fly.io                |
+| `npm run dev`             | API server + Metro bundler                |
+| `npm run dev:web`         | API server + Vite web app                 |
+| `npm run dev:ios`         | Server + Metro + iOS simulator            |
+| `npm run dev:android`     | Server + Metro + physical Android device  |
+| `npm run android:device`  | Build/install app on connected phone only |
+| `npm run typecheck`       | TypeScript check all packages             |
+| `npm run lint`            | ESLint across all packages                |
+| `npm run ci`              | Full CI (typecheck, lint, audit, tests)   |
+| `npm test`                | Run all package tests                     |
+| `npm run test:coverage`   | All packages with 100% coverage threshold |
 
 ## Testing
 

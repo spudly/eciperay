@@ -1,4 +1,4 @@
-import {queryKeys, recipeListInfiniteQueryOptions} from '@recipoo/client';
+import {queryKeys, recipeListInfiniteQueryOptions} from '@eciperay/client';
 import {
   useInfiniteQuery,
   useMutation,
@@ -6,9 +6,9 @@ import {
 } from '@tanstack/react-query';
 import {useDeferredValue, useEffect, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
-import type {RecipeDetail} from '@recipoo/types';
+import type {RecipeDetail} from '@eciperay/types';
 
-import {recipoo} from '../lib/api.js';
+import {eciperay} from '../lib/api.js';
 
 const RecipeThumbnail = ({recipe}: {recipe: RecipeDetail}) =>
   recipe.imageUrl ? (
@@ -31,9 +31,9 @@ const RecipeCard = ({
   recipe: RecipeDetail;
   onDelete: (id: string) => void;
 }) => (
-  <div className="
-    mb-3 flex items-center gap-3 rounded-xl bg-white p-4 shadow-sm
-  ">
+  <div
+    className="mb-3 flex items-center gap-3 rounded-xl bg-white p-4 shadow-sm"
+  >
     <Link
       to={`/recipes/${recipe.id}`}
       className="shrink-0"
@@ -73,7 +73,7 @@ export const RecipesPage = () => {
   const {data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage} =
     useInfiniteQuery(
       recipeListInfiniteQueryOptions(
-        params => recipoo.recipes.list(params),
+        params => eciperay.recipes.list(params),
         deferredSearch,
       ),
     );
@@ -97,7 +97,7 @@ export const RecipesPage = () => {
   }, [fetchNextPage, hasNextPage, isFetchingNextPage, recipes.length]);
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => recipoo.recipes.delete(id),
+    mutationFn: (id: string) => eciperay.recipes.delete(id),
     onSuccess: () => {
       void queryClient.invalidateQueries({queryKey: queryKeys.recipes()});
     },

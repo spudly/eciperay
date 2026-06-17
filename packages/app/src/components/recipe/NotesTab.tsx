@@ -1,5 +1,5 @@
 /* eslint-disable max-lines -- notes list, compose, chat, and draft review */
-import {invalidateRecipeQueries, queryKeys} from '@recipoo/client';
+import {invalidateRecipeQueries, queryKeys} from '@eciperay/client';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import clsx from 'clsx';
 import React, {useState} from 'react';
@@ -12,7 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import type {RecipeNote} from '@recipoo/types';
+import type {RecipeNote} from '@eciperay/types';
 
 import {api} from '../../lib/api';
 

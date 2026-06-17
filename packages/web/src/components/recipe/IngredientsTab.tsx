@@ -1,10 +1,10 @@
-import {queryKeys, scaleQuantity} from '@recipoo/client';
+import {queryKeys, scaleQuantity} from '@eciperay/client';
 import {useQuery} from '@tanstack/react-query';
 import {useState} from 'react';
-import type {Ingredient, RecipeDetail} from '@recipoo/types';
+import type {Ingredient, RecipeDetail} from '@eciperay/types';
 import clsx from 'clsx';
 
-import {recipoo} from '../../lib/api.js';
+import {eciperay} from '../../lib/api.js';
 
 type Props = {
   recipe: RecipeDetail;
@@ -102,7 +102,7 @@ export const IngredientsTab = ({
 
   const {data: substitutions = []} = useQuery({
     queryKey: [...queryKeys.recipe(recipe.id), 'substitutions', missingNames],
-    queryFn: () => recipoo.ai.substitutions(recipe.id, missingNames),
+    queryFn: () => eciperay.ai.substitutions(recipe.id, missingNames),
     enabled: missingNames.length > 0,
   });
 

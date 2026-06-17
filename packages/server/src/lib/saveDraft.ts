@@ -1,4 +1,4 @@
-import type {RecipeDetail, RecipeDiff, DraftTrigger} from '@recipoo/types';
+import type {RecipeDetail, RecipeDiff, DraftTrigger} from '@eciperay/types';
 
 import {query as defaultQuery} from '../db/query.js';
 

@@ -1,4 +1,4 @@
-import type {RecipeImport, RecipeInput} from '@recipoo/types';
+import type {RecipeImport, RecipeInput} from '@eciperay/types';
 
 export class RecipeImportError extends Error {
   constructor(message: string) {

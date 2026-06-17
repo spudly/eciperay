@@ -1,4 +1,4 @@
-import {queryKeys} from '@recipoo/client';
+import {queryKeys} from '@eciperay/client';
 import {useQuery} from '@tanstack/react-query';
 import React from 'react';
 import {Text, View} from 'react-native';

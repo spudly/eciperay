@@ -14,13 +14,13 @@ describe('GET /tags', () => {
   test('returns 200 with tag list', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue(makeQueryResult([makeTag()]));
-    const res = await request(app).get('/tags').set('Authorization', AUTH);
+    const res = await request(app).get('/api/tags').set('Authorization', AUTH);
     expect(res.status).toBe(200);
     expect(res.body).toHaveLength(1);
   });
 
   test('returns 401 without auth token', async () => {
-    const res = await request(app).get('/tags');
+    const res = await request(app).get('/api/tags');
     expect(res.status).toBe(401);
   });
 });
@@ -30,7 +30,7 @@ describe('POST /tags', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue(makeQueryResult([makeTag({name: 'Lunch'})]));
     const res = await request(app)
-      .post('/tags')
+      .post('/api/tags')
       .set('Authorization', AUTH)
       .send({name: 'Lunch'});
     expect(res.status).toBe(201);
@@ -43,7 +43,7 @@ describe('DELETE /tags/:id', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue(makeQueryResult([makeTag()]));
     const res = await request(app)
-      .delete('/tags/tag-uuid-1')
+      .delete('/api/tags/tag-uuid-1')
       .set('Authorization', AUTH);
     expect(res.status).toBe(204);
   });
@@ -52,13 +52,13 @@ describe('DELETE /tags/:id', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue({...makeQueryResult([]), rowCount: 0});
     const res = await request(app)
-      .delete('/tags/missing-id')
+      .delete('/api/tags/missing-id')
       .set('Authorization', AUTH);
     expect(res.status).toBe(404);
   });
 
   test('returns 401 without auth token', async () => {
-    const res = await request(app).delete('/tags/tag-uuid-1');
+    const res = await request(app).delete('/api/tags/tag-uuid-1');
     expect(res.status).toBe(401);
   });
 });

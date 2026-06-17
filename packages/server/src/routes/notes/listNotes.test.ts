@@ -21,7 +21,7 @@ describe('GET /recipes/:id/notes', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue(makeQueryResult([noteRow]));
     const res = await request(app)
-      .get('/recipes/recipe-uuid-1/notes')
+      .get('/api/recipes/recipe-uuid-1/notes')
       .set('Authorization', 'Bearer valid-token');
     expect(res.status).toBe(200);
     expect(res.body).toEqual([
@@ -36,7 +36,7 @@ describe('GET /recipes/:id/notes', () => {
   });
 
   test('returns 401 without auth token', async () => {
-    const res = await request(app).get('/recipes/r/notes');
+    const res = await request(app).get('/api/recipes/r/notes');
     expect(res.status).toBe(401);
   });
 });

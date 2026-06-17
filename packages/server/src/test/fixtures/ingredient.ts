@@ -1,4 +1,4 @@
-import type {Ingredient, IngredientInput} from '@recipoo/types';
+import type {Ingredient, IngredientInput} from '@eciperay/types';
 
 export const makeIngredient = (
   overrides: Partial<Ingredient> = {},

@@ -1,5 +1,5 @@
 import {jest} from '@jest/globals';
-import type {RecipeImport} from '@recipoo/types';
+import type {RecipeImport} from '@eciperay/types';
 
 import {createMockQuery} from '../test/mockQuery.js';
 import {makeQueryResult} from '../test/fixtures/queryResult.js';

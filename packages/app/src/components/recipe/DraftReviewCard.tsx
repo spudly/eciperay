@@ -1,8 +1,8 @@
-import {invalidateRecipeQueries, queryKeys} from '@recipoo/client';
+import {invalidateRecipeQueries, queryKeys} from '@eciperay/client';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
 import React from 'react';
 import {Text, TouchableOpacity, View} from 'react-native';
-import type {RecipeDraft} from '@recipoo/types';
+import type {RecipeDraft} from '@eciperay/types';
 
 import {api} from '../../lib/api';
 

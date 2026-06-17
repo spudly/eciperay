@@ -1,4 +1,4 @@
-import type {Instruction, InstructionInput} from '@recipoo/types';
+import type {Instruction, InstructionInput} from '@eciperay/types';
 
 export const makeInstruction = (
   overrides: Partial<Instruction> = {},

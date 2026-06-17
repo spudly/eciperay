@@ -1,4 +1,4 @@
-import type {RecipeImport} from '@recipoo/types';
+import type {RecipeImport} from '@eciperay/types';
 
 import {RecipeImportError, recipeImportToInput} from './recipeImportToInput.js';
 

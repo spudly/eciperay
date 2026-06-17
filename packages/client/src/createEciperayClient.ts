@@ -7,7 +7,7 @@ import {createNotesApi} from './notesApi.js';
 import {createRecipesApi} from './recipesApi.js';
 import {createTagsApi} from './tagsApi.js';
 
-export const createRecipooClient = (api: ApiClient) => ({
+export const createEciperayClient = (api: ApiClient) => ({
   recipes: createRecipesApi(api),
   import: createImportApi(api),
   auth: createAuthApi(api),
@@ -17,4 +17,4 @@ export const createRecipooClient = (api: ApiClient) => ({
   drafts: createDraftsApi(api),
 });
 
-export type RecipooClient = ReturnType<typeof createRecipooClient>;
+export type EciperayClient = ReturnType<typeof createEciperayClient>;

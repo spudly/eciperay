@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import {http, HttpResponse} from 'msw';
 import {Route, Routes} from 'react-router-dom';
 
-import {recipoo} from '../lib/api.js';
+import {eciperay} from '../lib/api.js';
 import {server} from '../test/msw/server.js';
 import {renderWithProviders} from '../test/testUtils.js';
 
@@ -46,7 +46,7 @@ describe('ImportTextPage', () => {
 
   test('shows error on failure', async () => {
     server.use(
-      http.post('http://localhost:8080/recipes/import/text', () =>
+      http.post('http://localhost:8080/api/recipes/import/text', () =>
         HttpResponse.json({error: 'bad'}, {status: 500}),
       ),
     );
@@ -90,14 +90,14 @@ describe('ImportTextPage', () => {
   });
 
   test('does not import when the editor is empty', async () => {
-    const importText = vi.spyOn(recipoo.import, 'importText');
+    const importText = vi.spyOn(eciperay.import, 'importText');
     await renderWithProviders(<ImportTextPage />, {route: '/add/text'});
     fireEvent.submit(screen.getByText('Import').closest('form')!);
     expect(importText).not.toHaveBeenCalled();
   });
 
   test('shows generic error for non-Error throws', async () => {
-    vi.spyOn(recipoo.import, 'importText').mockRejectedValueOnce('nope');
+    vi.spyOn(eciperay.import, 'importText').mockRejectedValueOnce('nope');
     await renderWithProviders(<ImportTextPage />, {route: '/add/text'});
     await userEvent.click(getEditor());
     await userEvent.type(getEditor(), 'Some recipe');

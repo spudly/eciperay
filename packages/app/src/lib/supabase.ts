@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {createSupabaseClient} from '@recipoo/client';
+import {createSupabaseClient} from '@eciperay/client';
 
 import {SUPABASE_ANON_KEY, SUPABASE_URL} from './env';
 

@@ -27,7 +27,7 @@ describe('POST /recipes/:id/ai/cleanup', () => {
       .mockResolvedValue(makeQueryResult([makeRecipeDraftRow()]));
 
     const res = await request(app)
-      .post('/recipes/recipe-uuid-1/ai/cleanup')
+      .post('/api/recipes/recipe-uuid-1/ai/cleanup')
       .set('Authorization', 'Bearer valid-token');
 
     expect(res.status).toBe(200);
@@ -38,13 +38,13 @@ describe('POST /recipes/:id/ai/cleanup', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue(makeQueryResult([]));
     const res = await request(app)
-      .post('/recipes/missing/ai/cleanup')
+      .post('/api/recipes/missing/ai/cleanup')
       .set('Authorization', 'Bearer valid-token');
     expect(res.status).toBe(404);
   });
 
   test('returns 401 without auth token', async () => {
-    const res = await request(app).post('/recipes/r/ai/cleanup');
+    const res = await request(app).post('/api/recipes/r/ai/cleanup');
     expect(res.status).toBe(401);
   });
 });
@@ -65,7 +65,7 @@ describe('POST /recipes/:id/ai/cleanup (error paths)', () => {
       });
     mockQuery.mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]));
     const res = await request(app)
-      .post('/recipes/recipe-uuid-1/ai/cleanup')
+      .post('/api/recipes/recipe-uuid-1/ai/cleanup')
       .set('Authorization', 'Bearer valid-token');
     expect(res.status).toBe(500);
   });
@@ -77,7 +77,7 @@ describe('POST /recipes/:id/ai/cleanup (error paths)', () => {
       .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
       .mockResolvedValue(makeQueryResult([]));
     const res = await request(app)
-      .post('/recipes/recipe-uuid-1/ai/cleanup')
+      .post('/api/recipes/recipe-uuid-1/ai/cleanup')
       .set('Authorization', 'Bearer valid-token');
     expect(res.status).toBe(500);
   });

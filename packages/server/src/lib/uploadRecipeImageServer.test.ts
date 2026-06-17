@@ -77,7 +77,7 @@ describe('resolveImportedImageUrl', () => {
     ).resolves.toBe('https://cdn.example/recipe.jpg');
     expect(fetchFn).toHaveBeenCalledWith(
       'https://example.com/photo.jpg',
-      expect.objectContaining({headers: {'User-Agent': 'Recipoo/1.0'}}),
+      expect.objectContaining({headers: {'User-Agent': 'Eciperay/1.0'}}),
     );
     expect(uploadFn).toHaveBeenCalledWith(
       'user-uuid-1',

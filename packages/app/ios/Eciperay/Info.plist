@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>Recipoo</string>
+	<string>Eciperay</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -35,9 +35,9 @@
 		<true/>
 	</dict>
 	<key>NSCameraUsageDescription</key>
-	<string>Recipoo needs camera access to import recipes from photos.</string>
+	<string>Eciperay needs camera access to import recipes from photos.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Recipoo needs photo library access to import recipes from images.</string>
+	<string>Eciperay needs photo library access to import recipes from images.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string></string>
 	<key>UILaunchStoryboardName</key>

@@ -1,27 +1,64 @@
+import {mkdirSync, rmSync, writeFileSync} from 'node:fs';
+import path from 'node:path';
+
 import {jest} from '@jest/globals';
 import Anthropic from '@anthropic-ai/sdk';
 import type {RequestHandler} from 'express';
 import request from 'supertest';
 
 import {createApp, handleUnexpectedError} from './server.js';
+import {WEB_DIST_DIR} from './staticWeb.js';
 
 const withTestRoute = (path: string, handler: RequestHandler) => {
-  const app = createApp();
+  const app = createApp({serveWeb: false});
   app.get(path, handler);
   app.use(handleUnexpectedError);
   return app;
 };
 
 describe('createApp', () => {
-  test('GET /health returns {status: ok}', async () => {
+  test('GET /api/health returns {status: ok}', async () => {
     const app = createApp();
-    const res = await request(app).get('/health');
+    const res = await request(app).get('/api/health');
     expect(res.status).toBe(200);
     expect(res.body).toEqual({status: 'ok'});
   });
 
-  test('creates an app without throwing', () => {
-    expect(() => createApp()).not.toThrow();
+  test('serves the built web app when dist is present', async () => {
+    mkdirSync(WEB_DIST_DIR, {recursive: true});
+    writeFileSync(
+      path.join(WEB_DIST_DIR, 'index.html'),
+      '<!DOCTYPE html><html><body>root</body></html>',
+    );
+
+    try {
+      const app = createApp({serveWeb: true});
+      const res = await request(app).get('/recipes');
+      expect(res.status).toBe(200);
+      expect(res.text).toContain('root');
+    } finally {
+      rmSync(WEB_DIST_DIR, {recursive: true, force: true});
+    }
+  });
+
+  test('enables static web serving in production when dist is present', async () => {
+    const previousNodeEnv = process.env['NODE_ENV'];
+    mkdirSync(WEB_DIST_DIR, {recursive: true});
+    writeFileSync(
+      path.join(WEB_DIST_DIR, 'index.html'),
+      '<!DOCTYPE html><html><body>prod</body></html>',
+    );
+    process.env['NODE_ENV'] = 'production';
+
+    try {
+      const app = createApp();
+      const res = await request(app).get('/recipes');
+      expect(res.status).toBe(200);
+      expect(res.text).toContain('prod');
+    } finally {
+      process.env['NODE_ENV'] = previousNodeEnv;
+      rmSync(WEB_DIST_DIR, {recursive: true, force: true});
+    }
   });
 
   test('uses default CORS origins when env unset', () => {
@@ -44,6 +81,13 @@ describe('createApp', () => {
     } else {
       process.env['CORS_ORIGINS'] = previous;
     }
+  });
+
+  test('returns 404 JSON for unknown API routes', async () => {
+    const app = createApp();
+    const res = await request(app).get('/api/unknown');
+    expect(res.status).toBe(404);
+    expect(res.body).toEqual({error: 'Not found'});
   });
 
   test('returns 404 for unknown routes', async () => {

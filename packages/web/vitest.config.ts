@@ -16,15 +16,15 @@ export default defineConfig({
     alias: {
       'react': path.join(pkgRoot, 'node_modules/react'),
       'react-dom': path.join(pkgRoot, 'node_modules/react-dom'),
-      '@recipoo/client': path.join(monoRoot, 'packages/client/src/index.ts'),
-      '@recipoo/types': path.join(monoRoot, 'packages/types/src/index.ts'),
+      '@eciperay/client': path.join(monoRoot, 'packages/client/src/index.ts'),
+      '@eciperay/types': path.join(monoRoot, 'packages/types/src/index.ts'),
     },
   },
   test: {
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
-    server: {deps: {inline: [/@tanstack/, /@recipoo/]}},
+    server: {deps: {inline: [/@tanstack/, /@eciperay/]}},
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],

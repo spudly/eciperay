@@ -17,21 +17,21 @@ const nav = {goBack: mockGoBack};
 
 describe('ForgotPasswordScreen', () => {
   test('renders email field and send button', () => {
-    const {getByPlaceholderText, getByText} = render(
+    const {getByLabelText, getByText} = render(
       <ForgotPasswordScreen navigation={nav} />,
     );
-    expect(getByPlaceholderText('Email')).toBeTruthy();
+    expect(getByLabelText('Email')).toBeTruthy();
     expect(getByText('Send Reset Link')).toBeTruthy();
   });
 
   test('calls resetPasswordForEmail on submit', async () => {
     mockReset.mockResolvedValue({error: null});
-    const {getByPlaceholderText, getByText} = render(
+    const {getByLabelText, getByText} = render(
       <ForgotPasswordScreen navigation={nav} />,
     );
     // Flush React 19 concurrent state updates before pressing
     await act(async () => {
-      fireEvent.changeText(getByPlaceholderText('Email'), 'user@test.com');
+      fireEvent.changeText(getByLabelText('Email'), 'user@test.com');
       await Promise.resolve(); // flush React 19 concurrent state updates
     });
     fireEvent.press(getByText('Send Reset Link'));

@@ -5,7 +5,7 @@ const mockCreateSupabaseClient = jest.fn((opts: unknown) => {
   return {auth: {}};
 });
 
-jest.mock('@recipoo/client', () => ({
+jest.mock('@eciperay/client', () => ({
   createSupabaseClient: (opts: unknown) => mockCreateSupabaseClient(opts),
 }));
 

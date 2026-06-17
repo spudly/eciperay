@@ -7,7 +7,7 @@ const API = 'http://localhost:8080';
 const recipe = makeRecipeDetail();
 
 export const handlers = [
-  http.get(`${API}/recipes`, ({request}) => {
+  http.get(`${API}/api/recipes`, ({request}) => {
     const url = new URL(request.url);
     const search = url.searchParams.get('search')?.trim();
     if (search && !recipe.title.toLowerCase().includes(search.toLowerCase())) {
@@ -17,35 +17,35 @@ export const handlers = [
     const limit = Number(url.searchParams.get('limit') ?? 100);
     return HttpResponse.json([recipe].slice(offset, offset + limit));
   }),
-  http.get(`${API}/recipes/:id`, ({params}) =>
+  http.get(`${API}/api/recipes/:id`, ({params}) =>
     HttpResponse.json({...recipe, id: params['id']}),
   ),
-  http.post(`${API}/recipes`, async ({request}) => {
+  http.post(`${API}/api/recipes`, async ({request}) => {
     const body = (await request.json()) as object;
     return HttpResponse.json({...recipe, ...body, id: 'new-recipe-id'});
   }),
-  http.put(`${API}/recipes/:id`, async ({params, request}) => {
+  http.put(`${API}/api/recipes/:id`, async ({params, request}) => {
     const body = (await request.json()) as object;
     return HttpResponse.json({...recipe, id: params['id'], ...body});
   }),
-  http.patch(`${API}/recipes/:id`, async ({params, request}) => {
+  http.patch(`${API}/api/recipes/:id`, async ({params, request}) => {
     const body = (await request.json()) as object;
     return HttpResponse.json({...recipe, id: params['id'], ...body});
   }),
   http.delete(
-    `${API}/recipes/:id`,
+    `${API}/api/recipes/:id`,
     () => new HttpResponse(null, {status: 204}),
   ),
-  http.post(`${API}/recipes/import/url`, () =>
+  http.post(`${API}/api/recipes/import/url`, () =>
     HttpResponse.json({...recipe, id: 'imported-id'}),
   ),
-  http.post(`${API}/recipes/import/image`, () =>
+  http.post(`${API}/api/recipes/import/image`, () =>
     HttpResponse.json({...recipe, id: 'imported-image-id'}),
   ),
-  http.post(`${API}/recipes/import/text`, () =>
+  http.post(`${API}/api/recipes/import/text`, () =>
     HttpResponse.json({...recipe, id: 'imported-text-id'}),
   ),
-  http.post(`${API}/recipes/export`, async ({request}) => {
+  http.post(`${API}/api/recipes/export`, async ({request}) => {
     const body = (await request.json()) as {recipeIds: string[]};
     return HttpResponse.json({
       formatVersion: 1,
@@ -76,7 +76,7 @@ export const handlers = [
       })),
     });
   }),
-  http.post(`${API}/recipes/import/bulk`, async ({request}) => {
+  http.post(`${API}/api/recipes/import/bulk`, async ({request}) => {
     const body = (await request.json()) as {recipes: {title: string}[]};
     return HttpResponse.json({
       created: body.recipes.map((item, index) => ({
@@ -86,7 +86,7 @@ export const handlers = [
       errors: [],
     });
   }),
-  http.get(`${API}/recipes/:id/notes`, () =>
+  http.get(`${API}/api/recipes/:id/notes`, () =>
     HttpResponse.json([
       {
         id: 'note-1',
@@ -97,7 +97,7 @@ export const handlers = [
       },
     ]),
   ),
-  http.post(`${API}/recipes/:id/notes`, async ({request}) => {
+  http.post(`${API}/api/recipes/:id/notes`, async ({request}) => {
     const body = (await request.json()) as {content: string};
     return HttpResponse.json({
       id: 'note-new',
@@ -107,7 +107,7 @@ export const handlers = [
       createdAt: '2024-01-02T00:00:00.000Z',
     });
   }),
-  http.get(`${API}/recipes/:id/ai/conversation`, () =>
+  http.get(`${API}/api/recipes/:id/ai/conversation`, () =>
     HttpResponse.json({
       id: 'conv-1',
       recipeId: 'recipe-uuid-1',
@@ -120,7 +120,7 @@ export const handlers = [
       updatedAt: '2024-01-01',
     }),
   ),
-  http.post(`${API}/recipes/:id/ai/chat`, () =>
+  http.post(`${API}/api/recipes/:id/ai/chat`, () =>
     HttpResponse.json({
       assistantMessage: 'Sure!',
       draft: {
@@ -135,7 +135,7 @@ export const handlers = [
       },
     }),
   ),
-  http.post(`${API}/recipes/:id/ai/cleanup`, () =>
+  http.post(`${API}/api/recipes/:id/ai/cleanup`, () =>
     HttpResponse.json({
       draft: {
         id: 'draft-2',
@@ -149,7 +149,7 @@ export const handlers = [
       },
     }),
   ),
-  http.get(`${API}/recipes/:id/ai/nutrition`, () =>
+  http.get(`${API}/api/recipes/:id/ai/nutrition`, () =>
     HttpResponse.json({
       servings: 4,
       calories: 250,
@@ -162,18 +162,18 @@ export const handlers = [
       disclaimer: 'Estimates only',
     }),
   ),
-  http.get(`${API}/recipes/:id/ai/substitutions`, () =>
+  http.get(`${API}/api/recipes/:id/ai/substitutions`, () =>
     HttpResponse.json([
       {ingredient: 'Salt', suggestions: ['Soy sauce', 'Miso']},
     ]),
   ),
-  http.post(`${API}/recipes/ai/generate-image`, () =>
+  http.post(`${API}/api/recipes/ai/generate-image`, () =>
     HttpResponse.json({imageBase64: 'aGVsbG8=', contentType: 'image/png'}),
   ),
-  http.post(`${API}/recipes/ai/generate-description`, () =>
+  http.post(`${API}/api/recipes/ai/generate-description`, () =>
     HttpResponse.json({description: 'A delicious AI-generated description.'}),
   ),
-  http.get(`${API}/recipes/:id/drafts`, () =>
+  http.get(`${API}/api/recipes/:id/drafts`, () =>
     HttpResponse.json([
       {
         id: 'draft-1',
@@ -187,13 +187,13 @@ export const handlers = [
       },
     ]),
   ),
-  http.post(`${API}/recipes/:id/drafts/:draftId/approve`, ({params}) =>
+  http.post(`${API}/api/recipes/:id/drafts/:draftId/approve`, ({params}) =>
     HttpResponse.json({...recipe, id: params['id']}),
   ),
-  http.post(`${API}/recipes/:id/drafts/:draftId/reject`, () =>
+  http.post(`${API}/api/recipes/:id/drafts/:draftId/reject`, () =>
     HttpResponse.json({status: 'rejected'}),
   ),
-  http.get(`${API}/tags`, () =>
+  http.get(`${API}/api/tags`, () =>
     HttpResponse.json([
       {
         id: 'tag-1',
@@ -211,7 +211,7 @@ export const handlers = [
       },
     ]),
   ),
-  http.post(`${API}/tags`, async ({request}) => {
+  http.post(`${API}/api/tags`, async ({request}) => {
     const body = (await request.json()) as {name: string; color: string};
     return HttpResponse.json({
       id: 'tag-new',
@@ -221,6 +221,12 @@ export const handlers = [
       isPreset: false,
     });
   }),
-  http.delete(`${API}/tags/:id`, () => new HttpResponse(null, {status: 204})),
-  http.post(`${API}/auth/sync`, () => new HttpResponse(null, {status: 204})),
+  http.delete(
+    `${API}/api/tags/:id`,
+    () => new HttpResponse(null, {status: 204}),
+  ),
+  http.post(
+    `${API}/api/auth/sync`,
+    () => new HttpResponse(null, {status: 204}),
+  ),
 ];

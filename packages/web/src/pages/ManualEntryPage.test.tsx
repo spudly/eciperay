@@ -1,4 +1,4 @@
-import {uploadRecipeImage} from '@recipoo/client';
+import {uploadRecipeImage} from '@eciperay/client';
 import {screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {Route, Routes} from 'react-router-dom';
@@ -7,8 +7,8 @@ import {renderWithProviders} from '../test/testUtils.js';
 
 import {ManualEntryPage} from './ManualEntryPage.js';
 
-vi.mock('@recipoo/client', async importOriginal => {
-  const actual = await importOriginal<typeof import('@recipoo/client')>();
+vi.mock('@eciperay/client', async importOriginal => {
+  const actual = await importOriginal<typeof import('@eciperay/client')>();
   return {...actual, uploadRecipeImage: vi.fn()};
 });
 

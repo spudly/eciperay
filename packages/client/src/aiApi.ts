@@ -1,4 +1,4 @@
-import type {AiConversation, NutritionInfo, RecipeDraft} from '@recipoo/types';
+import type {AiConversation, NutritionInfo, RecipeDraft} from '@eciperay/types';
 
 import type {ApiClient} from './createApiClient.js';
 

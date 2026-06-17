@@ -1,7 +1,7 @@
 import React from 'react';
 import {Alert, FlatList} from 'react-native';
 import {fireEvent, waitFor, act} from '@testing-library/react-native';
-import {RECIPE_LIST_PAGE_SIZE} from '@recipoo/client';
+import {RECIPE_LIST_PAGE_SIZE} from '@eciperay/client';
 
 import {makeRecipeDetail} from '../__tests__/fixtures/recipe';
 import {

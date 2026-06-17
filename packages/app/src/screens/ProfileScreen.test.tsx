@@ -10,13 +10,13 @@ const mockUseAuth = jest.fn((): {session: {user: {email: string}} | null} => ({
   session: {user: {email: 'user@test.com'}},
 }));
 
-jest.mock('@recipoo/client', () => ({useAuth: () => mockUseAuth()}));
+jest.mock('@eciperay/client', () => ({useAuth: () => mockUseAuth()}));
 
 jest.mock('../lib/supabase', () => ({supabase: {auth: {signOut: jest.fn()}}}));
 
 const mockNavigate = jest.fn();
-const stackProps = makeStackProps<ProfileStackParamList, 'Profile'>(
-  'Profile',
+const stackProps = makeStackProps<ProfileStackParamList, 'ProfileHome'>(
+  'ProfileHome',
   undefined,
   {navigate: mockNavigate},
 );

@@ -11,6 +11,6 @@ describe('HomeScreen', () => {
 
   test('displays the app name', () => {
     const {getByText} = render(<HomeScreen />);
-    expect(getByText('Recipoo')).toBeTruthy();
+    expect(getByText('Eciperay')).toBeTruthy();
   });
 });

@@ -91,7 +91,7 @@ const AddStackNavigator = () => (
 const ProfileStackNavigator = () => (
   <ProfileStack.Navigator>
     <ProfileStack.Screen
-      name="Profile"
+      name="ProfileHome"
       component={ProfileScreen}
       options={{title: 'Profile'}}
     />

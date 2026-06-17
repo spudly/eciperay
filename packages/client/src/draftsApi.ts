@@ -1,4 +1,4 @@
-import type {RecipeDetail, RecipeDraft} from '@recipoo/types';
+import type {RecipeDetail, RecipeDraft} from '@eciperay/types';
 
 import type {ApiClient} from './createApiClient.js';
 

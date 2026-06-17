@@ -1,4 +1,4 @@
-import {queryKeys} from '@recipoo/client';
+import {queryKeys} from '@eciperay/client';
 import React from 'react';
 import {fireEvent, waitFor} from '@testing-library/react-native';
 

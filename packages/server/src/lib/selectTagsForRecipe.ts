@@ -1,4 +1,4 @@
-import type {RecipeImport} from '@recipoo/types';
+import type {RecipeImport} from '@eciperay/types';
 import {z} from 'zod';
 
 import {anthropic as defaultAnthropic, HAIKU} from './anthropic.js';

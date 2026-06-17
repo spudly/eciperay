@@ -8,7 +8,7 @@ export const downloadRemoteImage = async (
 ): Promise<{buffer: Buffer; contentType: string} | null> => {
   try {
     const response = await fetchFn(url, {
-      headers: {'User-Agent': 'Recipoo/1.0'},
+      headers: {'User-Agent': 'Eciperay/1.0'},
       signal: AbortSignal.timeout(10_000),
     });
     if (!response.ok) {

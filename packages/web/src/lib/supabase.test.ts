@@ -3,7 +3,7 @@ describe('supabase', () => {
     const createSupabaseClient = vi
       .fn()
       .mockReturnValue({auth: {getSession: vi.fn()}});
-    vi.doMock('@recipoo/client', () => ({createSupabaseClient}));
+    vi.doMock('@eciperay/client', () => ({createSupabaseClient}));
     vi.doMock('./env.js', () => ({
       SUPABASE_URL: 'https://test.supabase.co',
       SUPABASE_ANON_KEY: 'test-key',

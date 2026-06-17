@@ -1,5 +1,5 @@
 import type {Response} from 'express';
-import type {RecipeExportBundle} from '@recipoo/types';
+import type {RecipeExportBundle} from '@eciperay/types';
 
 import {query as defaultQuery} from '../../db/query.js';
 import type {AuthedRequest} from '../../middleware/requireAuth.js';

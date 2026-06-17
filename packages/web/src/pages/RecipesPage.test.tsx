@@ -11,7 +11,7 @@ import {RecipesPage} from './RecipesPage.js';
 describe('RecipesPage', () => {
   test('shows recipe thumbnails when imageUrl is present', async () => {
     server.use(
-      http.get('http://localhost:8080/recipes', () =>
+      http.get('http://localhost:8080/api/recipes', () =>
         HttpResponse.json([
           {
             id: '3',
@@ -44,7 +44,7 @@ describe('RecipesPage', () => {
 
   test('lists recipes without cook time', async () => {
     server.use(
-      http.get('http://localhost:8080/recipes', () =>
+      http.get('http://localhost:8080/api/recipes', () =>
         HttpResponse.json([
           {
             id: '2',
@@ -106,7 +106,7 @@ describe('RecipesPage', () => {
       tags: [],
     }));
     server.use(
-      http.get('http://localhost:8080/recipes', ({request}) => {
+      http.get('http://localhost:8080/api/recipes', ({request}) => {
         const offset = Number(
           new URL(request.url).searchParams.get('offset') ?? 0,
         );
@@ -166,7 +166,9 @@ describe('RecipesPage', () => {
       expect(screen.getByText('Delete')).toBeInTheDocument();
     });
     server.use(
-      http.get('http://localhost:8080/recipes', () => HttpResponse.json([])),
+      http.get('http://localhost:8080/api/recipes', () =>
+        HttpResponse.json([]),
+      ),
     );
     await userEvent.click(screen.getByText('Delete'));
     await waitFor(() => {

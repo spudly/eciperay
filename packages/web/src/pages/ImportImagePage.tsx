@@ -1,7 +1,7 @@
 import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
-import {recipoo} from '../lib/api.js';
+import {eciperay} from '../lib/api.js';
 
 const readFileAsBase64 = (file: File): Promise<string> =>
   new Promise((resolve, reject) => {
@@ -31,7 +31,7 @@ export const ImportImagePage = () => {
     setError(null);
     try {
       const base64 = await readFileAsBase64(file);
-      const recipe = await recipoo.import.importImage(base64);
+      const recipe = await eciperay.import.importImage(base64);
       void navigate(`/import/review/${recipe.id}`);
     } catch (error_) {
       setError(error_ instanceof Error ? error_.message : 'Import failed');

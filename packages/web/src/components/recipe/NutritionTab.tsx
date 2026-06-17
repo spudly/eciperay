@@ -1,7 +1,7 @@
-import {queryKeys} from '@recipoo/client';
+import {queryKeys} from '@eciperay/client';
 import {useQuery} from '@tanstack/react-query';
 
-import {recipoo} from '../../lib/api.js';
+import {eciperay} from '../../lib/api.js';
 
 const NutritionRow = ({
   label,
@@ -26,7 +26,7 @@ type Props = {recipeId: string};
 export const NutritionTab = ({recipeId}: Props) => {
   const {data, isLoading} = useQuery({
     queryKey: queryKeys.nutrition(recipeId),
-    queryFn: () => recipoo.ai.nutrition(recipeId),
+    queryFn: () => eciperay.ai.nutrition(recipeId),
   });
 
   if (isLoading) {

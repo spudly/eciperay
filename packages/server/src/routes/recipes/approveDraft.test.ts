@@ -24,7 +24,7 @@ describe('POST /recipes/:id/drafts/:draftId/approve', () => {
       .mockResolvedValueOnce(makeQueryResult([pendingDraft]))
       .mockResolvedValue(makeQueryResult([makeRecipeDetailRow()]));
     const res = await request(app)
-      .post('/recipes/recipe-uuid-1/drafts/draft-uuid-1/approve')
+      .post('/api/recipes/recipe-uuid-1/drafts/draft-uuid-1/approve')
       .set('Authorization', 'Bearer valid-token');
     expect(res.status).toBe(200);
     expect(res.body).toEqual(makeRecipeDetail());
@@ -51,7 +51,7 @@ describe('POST /recipes/:id/drafts/:draftId/approve', () => {
       )
       .mockResolvedValue(makeQueryResult([makeRecipeDetailRow()]));
     const res = await request(app)
-      .post('/recipes/recipe-uuid-1/drafts/draft-uuid-1/approve')
+      .post('/api/recipes/recipe-uuid-1/drafts/draft-uuid-1/approve')
       .set('Authorization', 'Bearer valid-token');
     expect(res.status).toBe(200);
   });
@@ -60,7 +60,7 @@ describe('POST /recipes/:id/drafts/:draftId/approve', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue(makeQueryResult([]));
     const res = await request(app)
-      .post('/recipes/recipe-uuid-1/drafts/missing/approve')
+      .post('/api/recipes/recipe-uuid-1/drafts/missing/approve')
       .set('Authorization', 'Bearer valid-token');
     expect(res.status).toBe(404);
   });
@@ -71,13 +71,13 @@ describe('POST /recipes/:id/drafts/:draftId/approve', () => {
       .mockResolvedValueOnce(makeQueryResult([pendingDraft]))
       .mockResolvedValue(makeQueryResult([]));
     const res = await request(app)
-      .post('/recipes/recipe-uuid-1/drafts/draft-uuid-1/approve')
+      .post('/api/recipes/recipe-uuid-1/drafts/draft-uuid-1/approve')
       .set('Authorization', 'Bearer valid-token');
     expect(res.status).toBe(404);
   });
 
   test('returns 401 without auth token', async () => {
-    const res = await request(app).post('/recipes/r/drafts/d/approve');
+    const res = await request(app).post('/api/recipes/r/drafts/d/approve');
     expect(res.status).toBe(401);
   });
 });
@@ -87,7 +87,7 @@ describe('POST /recipes/:id/drafts/:draftId/reject', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue({...makeQueryResult([{}]), rowCount: 1});
     const res = await request(app)
-      .post('/recipes/recipe-uuid-1/drafts/draft-uuid-1/reject')
+      .post('/api/recipes/recipe-uuid-1/drafts/draft-uuid-1/reject')
       .set('Authorization', 'Bearer valid-token');
     expect(res.status).toBe(200);
     expect(res.body).toEqual({status: 'rejected'});
@@ -97,7 +97,7 @@ describe('POST /recipes/:id/drafts/:draftId/reject', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue({...makeQueryResult([]), rowCount: 0});
     const res = await request(app)
-      .post('/recipes/recipe-uuid-1/drafts/missing/reject')
+      .post('/api/recipes/recipe-uuid-1/drafts/missing/reject')
       .set('Authorization', 'Bearer valid-token');
     expect(res.status).toBe(404);
   });

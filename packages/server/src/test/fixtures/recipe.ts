@@ -1,4 +1,4 @@
-import type {Recipe, RecipeDetail, RecipeInput} from '@recipoo/types';
+import type {Recipe, RecipeDetail, RecipeInput} from '@eciperay/types';
 
 import {makeIngredient, makeIngredientInput} from './ingredient.js';
 import {makeInstruction, makeInstructionInput} from './instruction.js';

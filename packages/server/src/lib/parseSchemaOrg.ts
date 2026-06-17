@@ -1,5 +1,5 @@
 import type {CheerioAPI} from 'cheerio';
-import type {RecipeImport} from '@recipoo/types';
+import type {RecipeImport} from '@eciperay/types';
 
 type SchemaRecipe = {
   '@type': string;

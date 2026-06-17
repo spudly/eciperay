@@ -1,7 +1,7 @@
 import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
-import {recipoo} from '../lib/api.js';
+import {eciperay} from '../lib/api.js';
 
 export const ImportUrlPage = () => {
   const [url, setUrl] = useState('');
@@ -14,7 +14,7 @@ export const ImportUrlPage = () => {
     setLoading(true);
     setError(null);
     try {
-      const recipe = await recipoo.import.importUrl(url);
+      const recipe = await eciperay.import.importUrl(url);
       void navigate(`/import/review/${recipe.id}`);
     } catch (error_) {
       setError(error_ instanceof Error ? error_.message : 'Import failed');

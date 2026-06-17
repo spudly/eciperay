@@ -1,5 +1,5 @@
-import {buildPrintHtml} from '@recipoo/client';
-import type {RecipeDetail} from '@recipoo/types';
+import {buildPrintHtml} from '@eciperay/client';
+import type {RecipeDetail} from '@eciperay/types';
 
 export const printRecipe = (recipe: RecipeDetail) => {
   const html = buildPrintHtml(recipe);

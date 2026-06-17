@@ -3,7 +3,7 @@ import {Link} from 'react-router-dom';
 export const HomePage = () => (
   <div className="py-8 text-center">
     <h1 className="mb-4 text-3xl font-bold text-gray-900">
-      Welcome to Recipoo
+      Welcome to Eciperay
     </h1>
     <p className="text-muted mb-8">Your personal recipe collection</p>
     <div className="flex justify-center gap-4">

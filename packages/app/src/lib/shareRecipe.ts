@@ -1,6 +1,6 @@
-import {buildShareText} from '@recipoo/client';
+import {buildShareText} from '@eciperay/client';
 import {Share} from 'react-native';
-import type {RecipeDetail} from '@recipoo/types';
+import type {RecipeDetail} from '@eciperay/types';
 
 export const shareRecipe = (recipe: RecipeDetail) =>
   Share.share({

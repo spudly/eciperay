@@ -69,7 +69,7 @@ describe('GET /recipes', () => {
       ]),
     );
     const res = await request(app)
-      .get('/recipes')
+      .get('/api/recipes')
       .set('Authorization', 'Bearer valid-token');
     expect(res.status).toBe(200);
     expect(res.body).toHaveLength(1);
@@ -90,7 +90,7 @@ describe('GET /recipes', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue(makeQueryResult([]));
     const res = await request(app)
-      .get('/recipes')
+      .get('/api/recipes')
       .query({search: 'pasta'})
       .set('Authorization', 'Bearer valid-token');
     expect(res.status).toBe(200);
@@ -106,7 +106,7 @@ describe('GET /recipes', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue(makeQueryResult([]));
     const res = await request(app)
-      .get('/recipes?limit=500&offset=40')
+      .get('/api/recipes?limit=500&offset=40')
       .set('Authorization', 'Bearer valid-token');
     expect(res.status).toBe(200);
     expect(mockQuery).toHaveBeenCalledWith(expect.any(String), [
@@ -121,7 +121,7 @@ describe('GET /recipes', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue(makeQueryResult([]));
     await request(app)
-      .get('/recipes?limit=9999')
+      .get('/api/recipes?limit=9999')
       .set('Authorization', 'Bearer valid-token');
     expect(mockQuery).toHaveBeenCalledWith(expect.any(String), [
       'user-uuid-1',
@@ -132,7 +132,7 @@ describe('GET /recipes', () => {
   });
 
   test('returns 401 without auth token', async () => {
-    const res = await request(app).get('/recipes');
+    const res = await request(app).get('/api/recipes');
     expect(res.status).toBe(401);
   });
 
@@ -141,7 +141,7 @@ describe('GET /recipes', () => {
       await import('../../test/mockNockSupabase.js');
     nockSupabaseGetUserError();
     const res = await request(app)
-      .get('/recipes')
+      .get('/api/recipes')
       .set('Authorization', 'Bearer bad-token');
     expect(res.status).toBe(401);
   });

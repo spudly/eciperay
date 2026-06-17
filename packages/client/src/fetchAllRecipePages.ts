@@ -1,4 +1,4 @@
-import type {RecipeDetail} from '@recipoo/types';
+import type {RecipeDetail} from '@eciperay/types';
 
 import type {ApiClient} from './createApiClient.js';
 import {buildListUrl, LIST_PAGE_SIZE} from './recipesListUrl.js';

@@ -1,8 +1,13 @@
-import {errorMessage} from '@recipoo/client';
+import {errorMessage} from '@eciperay/client';
 import React, {useState} from 'react';
-import {Alert, Text, TextInput, TouchableOpacity, View} from 'react-native';
+import {Alert, Text, TouchableOpacity, View} from 'react-native';
 
+import {AuthTextField} from '../../components/auth/AuthTextField';
 import {api} from '../../lib/api';
+import {
+  normalizeAuthEmail,
+  normalizeAuthPassword,
+} from '../../lib/normalizeAuthInput';
 import {supabase} from '../../lib/supabase';
 
 type SignInProps = {navigation: {navigate: (screen: string) => void}};
@@ -23,7 +28,7 @@ export const SignInScreen = ({navigation}: SignInProps) => {
   const handleSignIn = async () => {
     setLoading(true);
     try {
-      await signIn(email, password);
+      await signIn(normalizeAuthEmail(email), normalizeAuthPassword(password));
     } catch (error) {
       Alert.alert('Sign in failed', errorMessage(error));
     } finally {
@@ -36,20 +41,23 @@ export const SignInScreen = ({navigation}: SignInProps) => {
       <Text className="mb-8 text-3xl font-bold text-gray-900">
         Welcome back
       </Text>
-      <TextInput
-        className="mb-4 rounded-lg border border-gray-300 px-4 py-3 text-base"
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
+      <AuthTextField
         autoCapitalize="none"
+        autoComplete="email"
         keyboardType="email-address"
+        label="Email"
+        onChangeText={setEmail}
+        textContentType="emailAddress"
+        value={email}
       />
-      <TextInput
-        className="mb-6 rounded-lg border border-gray-300 px-4 py-3 text-base"
-        placeholder="Password"
-        value={password}
+      <AuthTextField
+        autoCapitalize="none"
+        autoComplete="password"
+        label="Password"
         onChangeText={setPassword}
         secureTextEntry
+        textContentType="password"
+        value={password}
       />
       <TouchableOpacity
         className="bg-primary items-center rounded-lg py-4"

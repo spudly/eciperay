@@ -24,7 +24,7 @@ module.exports = {
   extensionsToTreatAsEsm: ['.ts', '.tsx'],
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
-    '^@recipoo/types$': '<rootDir>/../types/src/index.ts',
+    '^@eciperay/types$': '<rootDir>/../types/src/index.ts',
   },
   transform: {
     '^.+\\.tsx?$': [

@@ -1,0 +1,30 @@
+.git
+.github
+.cursor
+.husky
+node_modules
+**/node_modules
+dist
+**/dist
+coverage
+**/.turbo
+.eslintcache
+.env
+.env.*
+!.env.example
+
+# React Native (not needed for the web server image)
+packages/app/ios
+packages/app/android
+packages/app/env-shim.js
+
+# Editor / OS
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+
+# Docs and local tooling
+*.md
+!README.md
+agent-transcripts

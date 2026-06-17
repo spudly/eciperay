@@ -1,7 +1,7 @@
 import {useQuery} from '@tanstack/react-query';
 import {useMemo, useState} from 'react';
 
-import {recipoo} from '../lib/api.js';
+import {eciperay} from '../lib/api.js';
 import {downloadRecipeExportBundle} from '../lib/downloadRecipeExport.js';
 
 import {RecipeExportList} from './RecipeExportList.js';
@@ -30,7 +30,7 @@ export const RecipeExportPicker = ({
 
   const {data: recipes = [], isLoading} = useQuery({
     queryKey: ['recipes', 'export-all'],
-    queryFn: () => recipoo.recipes.listAll(),
+    queryFn: () => eciperay.recipes.listAll(),
   });
 
   const filtered = useMemo(
@@ -50,7 +50,7 @@ export const RecipeExportPicker = ({
     setExporting(true);
     onError(null);
     try {
-      const bundle = await recipoo.recipes.exportRecipes([...selectedIds]);
+      const bundle = await eciperay.recipes.exportRecipes([...selectedIds]);
       downloadRecipeExportBundle(bundle);
     } catch (error) {
       onError(error instanceof Error ? error.message : 'Export failed');

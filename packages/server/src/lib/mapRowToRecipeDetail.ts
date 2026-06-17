@@ -1,4 +1,4 @@
-import type {Ingredient, Instruction, RecipeDetail, Tag} from '@recipoo/types';
+import type {Ingredient, Instruction, RecipeDetail, Tag} from '@eciperay/types';
 
 type RecipeDetailRow = {
   id: string;

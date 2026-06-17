@@ -1,15 +1,15 @@
-import {queryKeys} from '@recipoo/client';
+import {queryKeys} from '@eciperay/client';
 import clsx from 'clsx';
 import {useQuery} from '@tanstack/react-query';
 
-import {recipoo} from '../../lib/api.js';
+import {eciperay} from '../../lib/api.js';
 
 type Props = {selectedIds: string[]; onChange: (ids: string[]) => void};
 
 export const TagPicker = ({selectedIds, onChange}: Props) => {
   const {data: tags = [], isLoading} = useQuery({
     queryKey: queryKeys.tags(),
-    queryFn: () => recipoo.tags.list(),
+    queryFn: () => eciperay.tags.list(),
   });
 
   if (isLoading) {

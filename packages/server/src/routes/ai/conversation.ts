@@ -1,4 +1,4 @@
-import type {AiMessage} from '@recipoo/types';
+import type {AiMessage} from '@eciperay/types';
 
 import {query as defaultQuery} from '../../db/query.js';
 

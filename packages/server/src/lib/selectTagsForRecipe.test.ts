@@ -1,6 +1,6 @@
 import {jest} from '@jest/globals';
 import type Anthropic from '@anthropic-ai/sdk';
-import type {RecipeImport} from '@recipoo/types';
+import type {RecipeImport} from '@eciperay/types';
 
 import {selectTagIdsForRecipe} from './selectTagsForRecipe.js';
 

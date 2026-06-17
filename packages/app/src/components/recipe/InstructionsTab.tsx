@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import React, {useState} from 'react';
 import {Text, TouchableOpacity, View} from 'react-native';
-import type {RecipeDetail} from '@recipoo/types';
+import type {RecipeDetail} from '@eciperay/types';
 
 type Props = {recipe: RecipeDetail};
 

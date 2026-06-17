@@ -2,7 +2,7 @@ import {fireEvent, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {Route, Routes} from 'react-router-dom';
 
-import {recipoo} from '../lib/api.js';
+import {eciperay} from '../lib/api.js';
 import {renderWithProviders} from '../test/testUtils.js';
 
 import {ImportImagePage} from './ImportImagePage.js';
@@ -87,7 +87,7 @@ describe('ImportImagePage', () => {
   });
 
   test('shows generic error on import failure', async () => {
-    vi.spyOn(recipoo.import, 'importImage').mockRejectedValueOnce('nope');
+    vi.spyOn(eciperay.import, 'importImage').mockRejectedValueOnce('nope');
     await renderWithProviders(<ImportImagePage />, {route: '/add/image'});
     await userEvent.upload(
       screen.getByLabelText('Upload recipe image'),
