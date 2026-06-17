@@ -56,7 +56,7 @@ RUN npm ci --omit=dev --ignore-scripts \
   --include-workspace-root
 
 COPY --from=build /app/packages/types packages/types
-COPY --from=build /app/packages/server packages/server
+COPY packages/server packages/server
 COPY --from=build /app/packages/web/dist packages/web/dist
 
 EXPOSE 8080
