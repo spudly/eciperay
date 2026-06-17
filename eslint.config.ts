@@ -9,6 +9,7 @@ import unicornPlugin from 'eslint-plugin-unicorn';
 import eslintCommentsPlugin from '@eslint-community/eslint-plugin-eslint-comments';
 import betterTailwindPlugin from 'eslint-plugin-better-tailwindcss';
 import prettier from 'eslint-config-prettier';
+import globals from 'globals';
 
 import coverageIgnorePlugin from './eslint-rules/coverage-ignore-require-description.ts';
 
@@ -817,8 +818,8 @@ export default tseslint.config(
 
   // ─── 4a. CJS config files — turn off ES module enforcement ─────────────────
   // Metro, Babel, and Jest config files use CommonJS (`require` / `module.exports`).
-  // Section 1b re-enables `no-undef` for .js files without Node globals, so this
-  // block must come AFTER sections 3 and 4.
+  // Section 1b re-enables `no-undef` for .js/.cjs/.mjs; Node globals cover
+  // `require`, `module`, and `process` here. This block must come AFTER sections 3 and 4.
   {
     files: [
       '**/*.cjs',
@@ -828,11 +829,8 @@ export default tseslint.config(
       'packages/app/jest.config.js',
       'packages/app/scripts/envShim.js',
     ],
-    rules: {
-      'import-x/no-commonjs': 'off',
-      'unicorn/prefer-module': 'off',
-      'no-undef': 'off',
-    },
+    languageOptions: {globals: globals.node},
+    rules: {'import-x/no-commonjs': 'off', 'unicorn/prefer-module': 'off'},
   },
 
   // ─── 5. React / React Native — app only ───────────────────────────────────
