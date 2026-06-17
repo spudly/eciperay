@@ -816,27 +816,22 @@ export default tseslint.config(
   },
 
   // ─── 4a. CJS config files — turn off ES module enforcement ─────────────────
-  // Framework config files (metro, babel, tailwind, jest) are required to use
-  // CommonJS. `module`, `require`, `__dirname`, and `__filename` are implicit
-  // Node.js globals in CJS that ESLint does not recognise without explicit env.
-  // This section must come AFTER sections 3 and 4 so it overrides them.
+  // Metro, Babel, and Jest config files use CommonJS (`require` / `module.exports`).
+  // Section 1b re-enables `no-undef` for .js files without Node globals, so this
+  // block must come AFTER sections 3 and 4.
   {
     files: [
-      '**/*.cjs', // all CJS files anywhere in the repo
+      '**/*.cjs',
       'packages/app/metro.config.js',
       'packages/app/babel.config.js',
       'packages/app/react-native.config.js',
       'packages/app/jest.config.js',
       'packages/app/scripts/envShim.js',
-      'packages/app/postcss.config.mjs',
-      'packages/client/jest.config.cjs',
-      'packages/web/vite.config.ts',
-      'packages/web/vitest.config.ts',
     ],
     rules: {
-      'import-x/no-commonjs': 'off', // these are required to be CommonJS by their respective frameworks
-      'unicorn/prefer-module': 'off', // cannot use ESM syntax in CJS framework config files
-      'no-undef': 'off', // module/require/__dirname/__filename are implicit CJS globals; TypeScript isn't available here
+      'import-x/no-commonjs': 'off',
+      'unicorn/prefer-module': 'off',
+      'no-undef': 'off',
     },
   },
 

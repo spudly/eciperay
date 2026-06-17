@@ -94,13 +94,13 @@ describe('envShim', () => {
   });
 
   test('assertProductionEnvVars rejects missing values', () => {
-    expect(() =>
+    expect(() => {
       assertProductionEnvVars({
         API_BASE_URL: 'https://eciperay.com/api',
         SUPABASE_URL: '',
         SUPABASE_ANON_KEY: 'anon',
-      }),
-    ).toThrow(/SUPABASE_URL/);
+      });
+    }).toThrow(/SUPABASE_URL/);
   });
 
   test('writeEnvShim fails for incomplete production env', () => {
@@ -111,9 +111,9 @@ describe('envShim', () => {
     delete process.env.SUPABASE_URL;
     delete process.env.SUPABASE_ANON_KEY;
 
-    expect(() => writeEnvShim({monorepoRoot: root, outputPath})).toThrow(
-      /Missing production mobile env/,
-    );
+    expect(() => {
+      writeEnvShim({monorepoRoot: root, outputPath});
+    }).toThrow(/Missing production mobile env/);
   });
 
   test('writeEnvShim writes production bundle env from exports', () => {
