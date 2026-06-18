@@ -1,8 +1,8 @@
 import {afterEach, describe, expect, jest, test} from '@jest/globals';
+import nock from 'nock';
 
 import {
   initPostHogLogs,
-  resetPostHogLogsForTests,
   serverLog,
   shutdownPostHogLogs,
 } from './posthogLogs.js';
@@ -12,11 +12,12 @@ describe('posthogLogs', () => {
   const originalHost = process.env['POSTHOG_HOST'];
   const originalEnv = process.env['NODE_ENV'];
 
-  afterEach(() => {
+  afterEach(async () => {
+    nock('https://us.i.posthog.com').post('/i/v1/logs').reply(200, {});
+    await shutdownPostHogLogs();
     process.env['POSTHOG_KEY'] = originalKey;
     process.env['POSTHOG_HOST'] = originalHost;
     process.env['NODE_ENV'] = originalEnv;
-    resetPostHogLogsForTests();
   });
 
   test('falls back to console logging when PostHog is disabled', () => {

@@ -77,7 +77,3 @@ export const shutdownPostHogLogs = async () => {
   await loggerProvider.shutdown();
   loggerProvider = null;
 };
-
-export const resetPostHogLogsForTests = () => {
-  loggerProvider = null;
-};

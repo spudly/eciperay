@@ -1,10 +1,10 @@
 import {afterEach, describe, expect, jest, test} from '@jest/globals';
+import nock from 'nock';
 
 import {
   attachPostHogExpress,
   captureServerException,
   getPostHogClient,
-  resetPostHogForTests,
   shutdownPostHog,
 } from './posthog.js';
 
@@ -12,10 +12,15 @@ describe('posthog', () => {
   const originalKey = process.env['POSTHOG_KEY'];
   const originalHost = process.env['POSTHOG_HOST'];
 
-  afterEach(() => {
+  afterEach(async () => {
+    if (getPostHogClient()) {
+      nock('https://us.i.posthog.com')
+        .post(/\/batch\/?/)
+        .reply(200, {status: 1});
+      await shutdownPostHog();
+    }
     process.env['POSTHOG_KEY'] = originalKey;
     process.env['POSTHOG_HOST'] = originalHost;
-    resetPostHogForTests();
   });
 
   test('returns null when PostHog key is unset', async () => {

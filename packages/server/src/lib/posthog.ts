@@ -54,7 +54,3 @@ export const shutdownPostHog = async () => {
   await client.shutdown();
   client = null;
 };
-
-export const resetPostHogForTests = () => {
-  client = null;
-};

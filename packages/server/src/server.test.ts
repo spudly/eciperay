@@ -7,7 +7,7 @@ import type {RequestHandler} from 'express';
 import request from 'supertest';
 
 import {createApp, handleUnexpectedError} from './server.js';
-import {resetPostHogLogsForTests} from './lib/posthogLogs.js';
+import {shutdownPostHogLogs} from './lib/posthogLogs.js';
 import {WEB_DIST_DIR} from './staticWeb.js';
 
 const withTestRoute = (path: string, handler: RequestHandler) => {
@@ -145,7 +145,7 @@ describe('createApp', () => {
     const previousPostHogKey = process.env['POSTHOG_KEY'];
     process.env['NODE_ENV'] = 'production';
     process.env['POSTHOG_KEY'] = '';
-    resetPostHogLogsForTests();
+    await shutdownPostHogLogs();
     const consoleError = jest
       .spyOn(console, 'error')
       .mockImplementation(() => {});
@@ -171,7 +171,7 @@ describe('createApp', () => {
   test('logs unknown error values outside test mode', async () => {
     const previousNodeEnv = process.env['NODE_ENV'];
     process.env['NODE_ENV'] = 'production';
-    resetPostHogLogsForTests();
+    await shutdownPostHogLogs();
     const consoleError = jest
       .spyOn(console, 'error')
       .mockImplementation(() => {});
