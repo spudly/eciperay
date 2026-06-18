@@ -255,4 +255,52 @@ describe('RecipesScreen', () => {
       });
     });
   });
+
+  test('removes deleted recipe from filtered list without clearing search', async () => {
+    jest.spyOn(Alert, 'alert').mockImplementation((_t, _m, buttons) => {
+      buttons?.[1]?.onPress?.();
+    });
+    let deleted = false;
+    const soup = makeRecipeDetail({id: 'soup-id', title: 'Soup'});
+    const salad = makeRecipeDetail({id: 'salad-id', title: 'Salad'});
+    mockList.mockImplementation(async (params?: {search?: string}) => {
+      const items = [soup, salad].filter(
+        recipe => !deleted || recipe.id !== 'soup-id',
+      );
+      if (params?.search) {
+        return items.filter(recipe =>
+          recipe.title.toLowerCase().includes(params.search!.toLowerCase()),
+        );
+      }
+      return items;
+    });
+    mockDelete.mockImplementation(async () => {
+      deleted = true;
+    });
+    const client = makeQueryClient();
+    const {findByText, getByPlaceholderText, queryByText} = renderWithProviders(
+      <RecipesScreen {...stackProps} />,
+      client,
+    );
+    await findByText('Soup');
+    fireEvent.changeText(getByPlaceholderText('Search recipes…'), 'Soup');
+    await waitFor(() => {
+      expect(mockList).toHaveBeenCalledWith({
+        search: 'Soup',
+        limit: RECIPE_LIST_PAGE_SIZE,
+        offset: 0,
+      });
+    });
+    await findByText('Soup');
+    expect(queryByText('Salad')).toBeNull();
+    fireEvent.press(await findByText('Delete'));
+    await waitFor(() => {
+      expect(mockDelete).toHaveBeenCalledWith('soup-id');
+    });
+    await flushQueryClient(client);
+    await waitFor(() => {
+      expect(queryByText('Soup')).toBeNull();
+    });
+    expect(getByPlaceholderText('Search recipes…').props.value).toBe('Soup');
+  });
 });

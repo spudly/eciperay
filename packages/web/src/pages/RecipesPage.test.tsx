@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import {http, HttpResponse} from 'msw';
 import {vi} from 'vitest';
 
+import {makeRecipeDetail} from '../test/fixtures/recipe.js';
 import {server} from '../test/msw/server.js';
 import {renderWithProviders} from '../test/testUtils.js';
 
@@ -174,5 +175,50 @@ describe('RecipesPage', () => {
     await waitFor(() => {
       expect(screen.queryByText('Test Recipe')).not.toBeInTheDocument();
     });
+  });
+
+  test('removes deleted recipe from filtered list without clearing search', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    let deleted = false;
+    const soup = makeRecipeDetail({id: 'soup-id', title: 'Soup'});
+    const salad = makeRecipeDetail({id: 'salad-id', title: 'Salad'});
+    server.use(
+      http.get('http://localhost:8080/api/recipes', ({request}) => {
+        const url = new URL(request.url);
+        const search = url.searchParams.get('search')?.trim();
+        const items = [soup, salad].filter(
+          recipe => !deleted || recipe.id !== 'soup-id',
+        );
+        if (search) {
+          return HttpResponse.json(
+            items.filter(recipe =>
+              recipe.title.toLowerCase().includes(search.toLowerCase()),
+            ),
+          );
+        }
+        return HttpResponse.json(items);
+      }),
+      http.delete('http://localhost:8080/api/recipes/:id', () => {
+        deleted = true;
+        return new HttpResponse(null, {status: 204});
+      }),
+    );
+    await renderWithProviders(<RecipesPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Soup')).toBeInTheDocument();
+    });
+    await userEvent.type(
+      screen.getByPlaceholderText('Search recipes…'),
+      'Soup',
+    );
+    await waitFor(() => {
+      expect(screen.getByText('Soup')).toBeInTheDocument();
+      expect(screen.queryByText('Salad')).not.toBeInTheDocument();
+    });
+    await userEvent.click(screen.getByText('Delete'));
+    await waitFor(() => {
+      expect(screen.queryByText('Soup')).not.toBeInTheDocument();
+    });
+    expect(screen.getByPlaceholderText('Search recipes…')).toHaveValue('Soup');
   });
 });

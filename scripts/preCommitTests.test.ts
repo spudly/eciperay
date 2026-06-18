@@ -4,6 +4,8 @@ import {
 } from './preCommitTestRules.ts';
 import {
   assertNewSourceHasColocatedTests,
+  childProcessDepsFactory,
+  createDefaultChildProcessDeps,
   getStagedAddedFiles,
   getStagedFiles,
   isDirectRun,
@@ -226,10 +228,26 @@ describe('runPreCommitTestsCli', () => {
     expect(spawnSync).not.toHaveBeenCalled();
   });
 
-  it('uses default child_process deps when omitted', () => {
-    expect(() => {
-      runPreCommitTestsCli(root);
-    }).not.toThrow();
+  it('createDefaultChildProcessDeps returns child_process bindings', async () => {
+    const childProcess = await import('node:child_process');
+    expect(createDefaultChildProcessDeps()).toEqual({
+      execSync: childProcess.execSync,
+      spawnSync: childProcess.spawnSync,
+    });
+  });
+
+  it('runPreCommitTestsCli without deps uses childProcessDepsFactory', () => {
+    const execSync = jest.fn().mockReturnValue('');
+    const spawnSync = jest.fn();
+    const original = childProcessDepsFactory.create;
+    childProcessDepsFactory.create = () => ({execSync, spawnSync});
+    try {
+      runPreCommitTestsCli('/repo');
+      expect(execSync).toHaveBeenCalled();
+      expect(spawnSync).not.toHaveBeenCalled();
+    } finally {
+      childProcessDepsFactory.create = original;
+    }
   });
 });
 
