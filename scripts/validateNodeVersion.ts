@@ -1,67 +1,157 @@
 import {readFileSync, readdirSync} from 'node:fs';
 import {join} from 'node:path';
+import {fileURLToPath} from 'node:url';
 
 type PackageJson = {engines?: {node?: string}};
 
-const root = new URL('..', import.meta.url).pathname;
+export type ValidateFs = {
+  readFileSync: typeof readFileSync;
+  readdirSync: typeof readdirSync;
+};
 
-const extractMajor = (constraint: string) =>
-  constraint.replaceAll(/[^0-9.]/g, '').split('.')[0] ?? '';
+export const extractMajor = (constraint: string): string => {
+  const [major = ''] = constraint.replaceAll(/[^0-9.]/g, '').split('.');
+  return major;
+};
 
-const readJson = (path: string): PackageJson =>
-  JSON.parse(readFileSync(path, 'utf8')) as PackageJson;
+export type ValidateResult = {
+  ok: boolean;
+  errors: string[];
+  rootEngine: string;
+};
 
-const rootPkg = readJson(join(root, 'package.json'));
-const rootEngine = extractMajor(rootPkg.engines?.node ?? '');
+const readJson = (fs: ValidateFs, path: string): PackageJson =>
+  JSON.parse(fs.readFileSync(path, 'utf8')) as PackageJson;
 
-if (!rootEngine) {
-  console.error('FAIL: root package.json has no engines.node field');
-  process.exit(1);
-}
+const validateWorkspacePackages = (
+  root: string,
+  fs: ValidateFs,
+  rootEngine: string,
+  errors: string[],
+): void => {
+  const packageDirs = fs
+    .readdirSync(join(root, 'packages'), {withFileTypes: true})
+    .filter(d => d.isDirectory())
+    .map(d => join(root, 'packages', d.name, 'package.json'));
 
-let failed = false;
-
-// Check every workspace package.json
-const packageDirs = readdirSync(join(root, 'packages'), {withFileTypes: true})
-  .filter(d => d.isDirectory())
-  .map(d => join(root, 'packages', d.name, 'package.json'));
-
-for (const pkgPath of packageDirs) {
-  const pkg = readJson(pkgPath);
-  const major = extractMajor(pkg.engines?.node ?? '');
-  const rel = pkgPath.replace(root, '');
-  if (major !== rootEngine) {
-    console.error(
-      `FAIL: ${rel} engines.node (${major}) does not match root (${rootEngine})`,
-    );
-    failed = true;
+  for (const pkgPath of packageDirs) {
+    const pkg = readJson(fs, pkgPath);
+    const major = extractMajor(pkg.engines?.node ?? '');
+    const rel = pkgPath.replace(root, '');
+    if (major !== rootEngine) {
+      errors.push(
+        `FAIL: ${rel} engines.node (${major}) does not match root (${rootEngine})`,
+      );
+    }
   }
-}
+};
 
-// Check .nvmrc
-const nvmrc = readFileSync(join(root, '.nvmrc'), 'utf8').trim();
-if (nvmrc !== rootEngine) {
-  console.error(
-    `FAIL: .nvmrc (${nvmrc}) does not match root engines.node (${rootEngine})`,
+const CI_NODE_CONFIG_PATHS = [
+  '.github/workflows/ci.yml',
+  '.github/actions/ci-setup/action.yml',
+] as const;
+
+const readCiNodeMajor = (root: string, fs: ValidateFs): string => {
+  for (const relPath of CI_NODE_CONFIG_PATHS) {
+    const content = fs.readFileSync(join(root, relPath), 'utf8');
+    const match = /node-version:\s*['"]?(\d+)/.exec(content);
+    if (match?.[1]) {
+      return match[1];
+    }
+  }
+  return '';
+};
+
+const validatePinnedNodeVersions = (
+  root: string,
+  fs: ValidateFs,
+  rootEngine: string,
+  errors: string[],
+): void => {
+  const nvmrc = fs.readFileSync(join(root, '.nvmrc'), 'utf8').trim();
+  if (nvmrc !== rootEngine) {
+    errors.push(
+      `FAIL: .nvmrc (${nvmrc}) does not match root engines.node (${rootEngine})`,
+    );
+  }
+
+  const ciNode = readCiNodeMajor(root, fs);
+  if (!ciNode) {
+    errors.push(
+      'FAIL: no node-version found in .github/workflows/ci.yml or .github/actions/ci-setup/action.yml',
+    );
+    return;
+  }
+  if (ciNode !== rootEngine) {
+    errors.push(
+      `FAIL: CI node-version (${ciNode}) does not match root engines.node (${rootEngine})`,
+    );
+  }
+};
+
+export const validateNodeVersionConstraints = (
+  root: string,
+  fs: ValidateFs,
+): ValidateResult => {
+  const errors: string[] = [];
+  const rootPkg = readJson(fs, join(root, 'package.json'));
+  const rootEngine = extractMajor(rootPkg.engines?.node ?? '');
+
+  if (!rootEngine) {
+    return {
+      ok: false,
+      errors: ['FAIL: root package.json has no engines.node field'],
+      rootEngine: '',
+    };
+  }
+
+  validateWorkspacePackages(root, fs, rootEngine, errors);
+  validatePinnedNodeVersions(root, fs, rootEngine, errors);
+
+  return {ok: errors.length === 0, errors, rootEngine};
+};
+
+export const runValidateNodeVersion = (
+  root: string,
+  fs: ValidateFs,
+): number => {
+  const result = validateNodeVersionConstraints(root, fs);
+  if (!result.ok) {
+    for (const error of result.errors) {
+      console.error(error);
+    }
+    return 1;
+  }
+
+  console.log(
+    `OK: all engines.node constraints, .nvmrc, and CI node-version agree on Node ${result.rootEngine}`,
   );
-  failed = true;
-}
+  return 0;
+};
 
-// Check ci.yml node-version
-const ciYml = readFileSync(join(root, '.github/workflows/ci.yml'), 'utf8');
-const ciNodeMatch = /node-version:\s*['"]?(\d+)/.exec(ciYml);
-const ciNode = ciNodeMatch?.[1] ?? '';
-if (ciNode !== rootEngine) {
-  console.error(
-    `FAIL: ci.yml node-version (${ciNode}) does not match root engines.node (${rootEngine})`,
-  );
-  failed = true;
-}
+export const isDirectRun = (
+  argv: string[] = process.argv,
+  modulePath: string = fileURLToPath(import.meta.url),
+): boolean => {
+  const entry = argv[1];
+  if (!entry) {
+    return false;
+  }
+  return modulePath === entry;
+};
 
-if (failed) {
-  process.exit(1);
-}
+export const runValidateNodeVersionCli = (): never => {
+  const root = join(new URL('..', import.meta.url).pathname);
+  process.exit(runValidateNodeVersion(root, {readFileSync, readdirSync}));
+};
 
-console.log(
-  `OK: all engines.node constraints, .nvmrc, and ci.yml agree on Node ${rootEngine}`,
-);
+export const maybeRunValidateNodeVersionCli = (
+  directRun: boolean = isDirectRun(),
+  run: () => never = runValidateNodeVersionCli,
+): void => {
+  if (directRun) {
+    run();
+  }
+};
+
+maybeRunValidateNodeVersionCli();

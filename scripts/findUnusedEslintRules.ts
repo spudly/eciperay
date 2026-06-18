@@ -1,3 +1,5 @@
+import {fileURLToPath} from 'node:url';
+
 import {builtinRules} from 'eslint/use-at-your-own-risk';
 import tseslint from 'typescript-eslint';
 import reactPlugin from 'eslint-plugin-react';
@@ -11,7 +13,7 @@ import eslintCommentsPlugin from '@eslint-community/eslint-plugin-eslint-comment
 
 type Plugin = {rules?: Record<string, unknown>};
 
-const PLUGINS: Record<string, Plugin> = {
+export const PLUGINS: Record<string, Plugin> = {
   '@typescript-eslint': tseslint.plugin as Plugin,
   'react': reactPlugin,
   'react-hooks': reactHooksPlugin,
@@ -23,7 +25,7 @@ const PLUGINS: Record<string, Plugin> = {
   'eslint-comments': eslintCommentsPlugin,
 };
 
-const getConfiguredRules = async (): Promise<Set<string>> => {
+export const getConfiguredRules = async (): Promise<Set<string>> => {
   const {default: configs} = (await import('../eslint.config.ts')) as {
     default: {rules?: Record<string, unknown>}[];
   };
@@ -36,11 +38,12 @@ const getConfiguredRules = async (): Promise<Set<string>> => {
   return configured;
 };
 
-const checkPluginRules = (
+export const checkPluginRules = (
   configured: Set<string>,
+  plugins: Record<string, Plugin> = PLUGINS,
 ): {plugin: string; unused: string[]}[] => {
   const results: {plugin: string; unused: string[]}[] = [];
-  for (const [prefix, plugin] of Object.entries(PLUGINS)) {
+  for (const [prefix, plugin] of Object.entries(plugins)) {
     const available = Object.keys(plugin.rules ?? {}).map(
       r => `${prefix}/${r}`,
     );
@@ -50,42 +53,81 @@ const checkPluginRules = (
   return results;
 };
 
-const checkCoreRules = (configured: Set<string>): string[] => {
+export const checkCoreRules = (configured: Set<string>): string[] => {
   // eslint-disable-next-line @typescript-eslint/no-deprecated -- builtinRules is the only stable way to enumerate all ESLint core rules; no public replacement exists in ESLint 9
   const available = [...builtinRules.keys()];
   return available.filter(r => !configured.has(r));
 };
 
-const run = async () => {
-  const configured = await getConfiguredRules();
-  let totalUnused = 0;
+export type LintUnusedRulesResult = {
+  totalUnused: number;
+  coreUnused: string[];
+  pluginResults: {plugin: string; unused: string[]}[];
+};
 
+export const runLintUnusedRules = async (): Promise<LintUnusedRulesResult> => {
+  const configured = await getConfiguredRules();
   const coreUnused = checkCoreRules(configured);
-  if (coreUnused.length > 0) {
-    console.log(`\ncore ESLint: ${coreUnused.length} unconfigured rules`);
-    for (const rule of coreUnused) {
+  const pluginResults = checkPluginRules(configured);
+  const totalUnused =
+    coreUnused.length +
+    pluginResults.reduce((sum, {unused}) => sum + unused.length, 0);
+  return {totalUnused, coreUnused, pluginResults};
+};
+
+export const printLintUnusedRulesReport = (
+  result: LintUnusedRulesResult,
+): number => {
+  if (result.coreUnused.length > 0) {
+    console.log(
+      `\ncore ESLint: ${result.coreUnused.length} unconfigured rules`,
+    );
+    for (const rule of result.coreUnused) {
       console.log(`  ${rule}`);
     }
-    totalUnused += coreUnused.length;
   }
 
-  const pluginResults = checkPluginRules(configured);
-  for (const {plugin, unused} of pluginResults) {
+  for (const {plugin, unused} of result.pluginResults) {
     if (unused.length > 0) {
       console.log(`\n${plugin}: ${unused.length} unconfigured rules`);
       for (const rule of unused) {
         console.log(`  ${rule}`);
       }
-      totalUnused += unused.length;
     }
   }
 
-  if (totalUnused === 0) {
+  if (result.totalUnused === 0) {
     console.log('\nAll rules (core + plugins) are explicitly configured.');
-  } else {
-    console.log(`\nTotal unconfigured rules: ${totalUnused}`);
-    process.exitCode = 1;
+    return 0;
+  }
+
+  console.log(`\nTotal unconfigured rules: ${result.totalUnused}`);
+  return 1;
+};
+
+export const isDirectRun = (
+  argv: string[] = process.argv,
+  modulePath: string = fileURLToPath(import.meta.url),
+): boolean => {
+  const entry = argv[1];
+  if (!entry) {
+    return false;
+  }
+  return modulePath === entry;
+};
+
+export const runLintUnusedRulesCli = async (): Promise<void> => {
+  const result = await runLintUnusedRules();
+  process.exitCode = printLintUnusedRulesReport(result);
+};
+
+export const maybeRunLintUnusedRulesCli = async (
+  directRun: boolean = isDirectRun(),
+  run: () => Promise<void> = runLintUnusedRulesCli,
+): Promise<void> => {
+  if (directRun) {
+    await run();
   }
 };
 
-await run();
+await maybeRunLintUnusedRulesCli();

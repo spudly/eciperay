@@ -53,4 +53,20 @@ const installFailOnConsoleError = () => {
   });
 };
 
-module.exports = {formatConsoleArgs, installFailOnConsoleError};
+const installSilenceConsoleLog = () => {
+  if (typeof beforeEach !== 'function') {
+    throw new Error(
+      'installSilenceConsoleLog must run from Jest/Vitest setupFilesAfterEnv',
+    );
+  }
+
+  beforeEach(() => {
+    jest.spyOn(console, 'log').mockImplementation(() => {});
+  });
+};
+
+module.exports = {
+  formatConsoleArgs,
+  installFailOnConsoleError,
+  installSilenceConsoleLog,
+};

@@ -17,64 +17,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
+      - name: Setup
+        uses: ./.github/actions/ci-setup
         with:
-          node-version: 22
+          skip-install-on-cache-hit: 'true'
 
       - name: Discover workspace packages
         id: discover-packages
-        run: |
-          node --input-type=module -e "
-            import { readFileSync, existsSync, readdirSync } from 'node:fs';
-            import { appendFileSync } from 'node:fs';
-            import { join } from 'node:path';
-
-            const lintableExtension = /\.(ts|tsx|js|cjs|mjs)$/u;
-            const skippedDirs = new Set([
-              'node_modules',
-              'coverage',
-              'ios',
-              'android',
-              '.turbo',
-            ]);
-
-            const hasLintableFiles = (dir) => {
-              if (!existsSync(dir)) {
-                return false;
-              }
-
-              for (const entry of readdirSync(dir, { withFileTypes: true })) {
-                const fullPath = join(dir, entry.name);
-                if (entry.isDirectory()) {
-                  if (skippedDirs.has(entry.name)) {
-                    continue;
-                  }
-                  if (hasLintableFiles(fullPath)) {
-                    return true;
-                  }
-                } else if (lintableExtension.test(entry.name)) {
-                  return true;
-                }
-              }
-
-              return false;
-            };
-
-            const { workspaces = [] } = JSON.parse(readFileSync('package.json', 'utf8'));
-            const testPackages = workspaces.filter((ws) => {
-              const pkgPath = join(ws, 'package.json');
-              if (!existsSync(pkgPath)) {
-                return false;
-              }
-              const { scripts = {} } = JSON.parse(readFileSync(pkgPath, 'utf8'));
-              return scripts['test:coverage'] ?? scripts.test;
-            });
-            const lintPackages = workspaces.filter((ws) => hasLintableFiles(ws));
-
-            appendFileSync(process.env.GITHUB_OUTPUT, 'test-packages=' + JSON.stringify(testPackages) + '\n');
-            appendFileSync(process.env.GITHUB_OUTPUT, 'lint-packages=' + JSON.stringify(lintPackages) + '\n');
-          "
+        run: npm run discover:workspace-packages
 
   install:
     name: Install dependencies
