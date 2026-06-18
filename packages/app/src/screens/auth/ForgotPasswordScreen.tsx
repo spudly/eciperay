@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import {Alert, Text, TouchableOpacity, View} from 'react-native';
-import {errorMessage} from '@eciperay/client';
+import {AUTH_DEEP_LINK_REDIRECT_URL, errorMessage} from '@eciperay/client';
 
 import {AuthTextField} from '../../components/auth/AuthTextField';
 import {normalizeAuthEmail} from '../../lib/normalizeAuthInput';
@@ -9,7 +9,9 @@ import {supabase} from '../../lib/supabase';
 type ForgotProps = {navigation: {goBack: () => void}};
 
 const sendReset = async (email: string) => {
-  const {error} = await supabase.auth.resetPasswordForEmail(email);
+  const {error} = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: AUTH_DEEP_LINK_REDIRECT_URL,
+  });
   if (error) {
     throw error;
   }

@@ -1,4 +1,4 @@
-import {errorMessage} from '@eciperay/client';
+import {AUTH_DEEP_LINK_REDIRECT_URL, errorMessage} from '@eciperay/client';
 import React, {useState} from 'react';
 import {Alert, Text, TouchableOpacity, View} from 'react-native';
 
@@ -16,7 +16,10 @@ const signUp = async (email: string, password: string, displayName: string) => {
   const {data, error} = await supabase.auth.signUp({
     email,
     password,
-    options: {data: {display_name: displayName}},
+    options: {
+      data: {display_name: displayName},
+      emailRedirectTo: AUTH_DEEP_LINK_REDIRECT_URL,
+    },
   });
   if (error) {
     throw error;
