@@ -1,7 +1,7 @@
 const {
   installFailOnConsoleError,
   installSilenceConsoleLog,
-} = require('../test/failOnConsoleError.cjs');
+} = require('./failOnConsoleError.cjs');
 const jestGlobals = require('@jest/globals');
 
 globalThis.jest = jestGlobals.jest;

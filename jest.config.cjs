@@ -1,17 +1,21 @@
 /** @type {import('ts-jest').JestConfigWithTsJest} */
 module.exports = {
-  displayName: 'scripts',
+  displayName: 'root',
   testEnvironment: 'node',
-  roots: ['<rootDir>/scripts'],
-  testMatch: ['**/*.test.ts'],
-  setupFilesAfterEnv: ['<rootDir>/scripts/jest.setup.cjs'],
+  roots: ['<rootDir>/scripts', '<rootDir>/eslint-rules', '<rootDir>/test'],
+  testMatch: ['**/*.test.ts', '**/*.test.cjs'],
+  setupFilesAfterEnv: ['<rootDir>/test/jest.setup.cjs'],
   resetMocks: true,
   injectGlobals: true,
   coverageProvider: 'v8',
   collectCoverageFrom: [
     'scripts/**/*.ts',
+    'eslint-rules/**/*.ts',
+    'test/**/*.{ts,cjs}',
     '!**/*.test.ts',
-    '!scripts/jest.setup.cjs',
+    '!**/*.test.cjs',
+    '!**/*.config.{ts,cjs,js,mjs}',
+    '!test/jest.setup.cjs',
   ],
   coverageThreshold: {
     global: {branches: 100, functions: 100, lines: 100, statements: 100},

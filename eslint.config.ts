@@ -786,7 +786,7 @@ export default tseslint.config(
 
   // ─── 2b. TypeScript project — app/client test files excluded from typecheck ─
   {
-    files: ['scripts/**/*.test.ts'],
+    files: ['scripts/**/*.test.ts', 'eslint-rules/**/*.test.ts'],
     languageOptions: {
       parserOptions: {
         project: ['./scripts/tsconfig.eslint.json'],
@@ -1032,8 +1032,10 @@ export default tseslint.config(
   // ─── 7. Jest — test files and setup files ────────────────────────────────
   {
     files: [
-      '**/*.test.{ts,js,tsx}',
+      '**/*.test.{ts,js,tsx,cjs}',
       '**/*.spec.{ts,js}',
+      'test/jest.setup.cjs',
+      'test/failOnConsoleError.cjs',
       'packages/*/jest.setup.{ts,js}',
       'packages/*/jest.env.{ts,js}',
       'packages/*/jest.setupEnv.{ts,js}',
@@ -1067,6 +1069,7 @@ export default tseslint.config(
       '@typescript-eslint/no-deprecated': 'off', // DOM API mocks may use legacy methods
       'unicorn/consistent-function-scoping': 'off', // test helpers nested in describe are fine
       '@typescript-eslint/no-empty-function': 'off', // pending promises and no-op mocks are fine in tests
+      'no-empty-function': 'off', // jest mock implementations may intentionally be empty
 
       // test files frequently access `res.body` (typed as any by supertest) and
       // JSON.parse results — relaxing unsafe rules in test scope is intentional
