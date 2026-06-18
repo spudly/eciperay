@@ -1057,6 +1057,7 @@ export default tseslint.config(
       '@typescript-eslint/no-deprecated': 'off', // DOM API mocks may use legacy methods
       'unicorn/consistent-function-scoping': 'off', // test helpers nested in describe are fine
       '@typescript-eslint/no-empty-function': 'off', // pending promises and no-op mocks are fine in tests
+      '@typescript-eslint/no-floating-promises': 'off', // node:test describe() and fire-and-forget test runners
 
       // test files frequently access `res.body` (typed as any by supertest) and
       // JSON.parse results — relaxing unsafe rules in test scope is intentional
