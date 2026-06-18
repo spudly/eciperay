@@ -9,5 +9,5 @@
     "typeRoots": ["./types", "./node_modules/@types"]
   },
   "include": ["**/*.ts", "**/*.js", "**/*.cjs", "**/*.mjs", "**/*.tsx"],
-  "exclude": ["node_modules", "packages"]
+  "exclude": ["node_modules", "packages", "scripts/**/*.test.ts"]
 }

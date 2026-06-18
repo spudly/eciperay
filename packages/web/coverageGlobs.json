@@ -1,0 +1,9 @@
+{
+  "include": ["src/**/*.{ts,tsx}"],
+  "exclude": [
+    "src/main.tsx",
+    "src/lib/env.ts",
+    "src/vite-env.d.ts",
+    "src/test/testUtils.tsx"
+  ]
+}

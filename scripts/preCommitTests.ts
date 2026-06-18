@@ -8,10 +8,16 @@ import {
   type PackageName,
 } from './preCommitTestRules.ts';
 
-const root = join(new URL('..', import.meta.url).pathname);
+export type ChildProcessDeps = {
+  execSync: typeof execSync;
+  spawnSync: typeof spawnSync;
+};
 
-const getStagedFiles = (): string[] => {
-  const output = execSync('git diff --cached --name-only --diff-filter=ACMRT', {
+export const getStagedFiles = (
+  root: string,
+  exec: typeof execSync,
+): string[] => {
+  const output = exec('git diff --cached --name-only --diff-filter=ACMRT', {
     encoding: 'utf8',
     cwd: root,
   }).trim();
@@ -21,8 +27,11 @@ const getStagedFiles = (): string[] => {
   return output.split('\n');
 };
 
-const getStagedAddedFiles = (): string[] => {
-  const output = execSync('git diff --cached --name-only --diff-filter=A', {
+export const getStagedAddedFiles = (
+  root: string,
+  exec: typeof execSync,
+): string[] => {
+  const output = exec('git diff --cached --name-only --diff-filter=A', {
     encoding: 'utf8',
     cwd: root,
   }).trim();
@@ -32,9 +41,13 @@ const getStagedAddedFiles = (): string[] => {
   return output.split('\n');
 };
 
-const assertNewSourceHasColocatedTests = (
+export const assertNewSourceHasColocatedTests = (
+  root: string,
   addedFiles: string[],
   stagedFiles: string[],
+  exit: (code: number) => never = code => {
+    process.exit(code);
+  },
 ): void => {
   const failures = findMissingColocatedTests(root, addedFiles, stagedFiles);
   if (failures.length === 0) {
@@ -45,10 +58,17 @@ const assertNewSourceHasColocatedTests = (
   for (const failure of failures) {
     console.error(`  - ${failure}`);
   }
-  process.exit(1);
+  exit(1);
 };
 
-const runPackageCoverage = (packages: PackageName[]): void => {
+export const runPackageCoverage = (
+  root: string,
+  packages: PackageName[],
+  spawn: typeof spawnSync,
+  exit: (code: number) => never = code => {
+    process.exit(code);
+  },
+): void => {
   if (packages.length === 0) {
     console.log(
       'pre-commit: no src/ changes in test packages, skipping coverage',
@@ -66,30 +86,63 @@ const runPackageCoverage = (packages: PackageName[]): void => {
     'test:coverage',
     ...packages.flatMap(pkg => ['--filter', `@eciperay/${pkg}`]),
   ];
-  const result = spawnSync('npx', args, {cwd: root, stdio: 'inherit'});
+  const result = spawn('npx', args, {cwd: root, stdio: 'inherit'});
   if (result.status !== 0) {
-    process.exit(result.status ?? 1);
+    exit(result.status ?? 1);
   }
 };
 
-const main = () => {
-  const stagedFiles = getStagedFiles();
+export const main = (
+  root: string,
+  deps: ChildProcessDeps,
+  exit: (code: number) => never = code => {
+    process.exit(code);
+  },
+): void => {
+  const stagedFiles = getStagedFiles(root, deps.execSync);
   if (stagedFiles.length === 0) {
     return;
   }
 
-  assertNewSourceHasColocatedTests(getStagedAddedFiles(), stagedFiles);
-  runPackageCoverage(affectedCoveragePackages(stagedFiles));
+  assertNewSourceHasColocatedTests(
+    root,
+    getStagedAddedFiles(root, deps.execSync),
+    stagedFiles,
+    exit,
+  );
+  runPackageCoverage(
+    root,
+    affectedCoveragePackages(stagedFiles),
+    deps.spawnSync,
+    exit,
+  );
 };
 
-const isDirectRun = (): boolean => {
-  const entry = process.argv[1];
+export const isDirectRun = (
+  argv: string[] = process.argv,
+  modulePath: string = fileURLToPath(import.meta.url),
+): boolean => {
+  const entry = argv[1];
   if (!entry) {
     return false;
   }
-  return fileURLToPath(import.meta.url) === entry;
+  return modulePath === entry;
 };
 
-if (isDirectRun()) {
-  main();
-}
+export const runPreCommitTestsCli = (
+  root: string = join(new URL('..', import.meta.url).pathname),
+  deps?: ChildProcessDeps,
+): void => {
+  main(root, deps ?? {execSync, spawnSync});
+};
+
+export const maybeRunPreCommitTestsCli = (
+  directRun: boolean = isDirectRun(),
+  run: () => void = runPreCommitTestsCli,
+): void => {
+  if (directRun) {
+    run();
+  }
+};
+
+maybeRunPreCommitTestsCli();

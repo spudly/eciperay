@@ -1,7 +1,7 @@
 import {existsSync} from 'node:fs';
 import {basename, dirname, join, relative} from 'node:path';
 
-import {isCoverageExcluded} from './preCommitCoverageExclusions.ts';
+import {isCoverageCollected} from './packageCoveragePatterns.ts';
 
 export const PACKAGES_WITH_COVERAGE = [
   'app',
@@ -23,7 +23,11 @@ const isSourceFile = (path: string): boolean =>
  * tests.
  */
 export const requiresColocatedTest = (relPath: string): boolean => {
-  if (!isSourceFile(relPath) || isCoverageExcluded(relPath, isTestFile)) {
+  if (
+    !isSourceFile(relPath) ||
+    isTestFile(relPath) ||
+    !isCoverageCollected(relPath)
+  ) {
     return false;
   }
   if (relPath.startsWith('packages/web/src/')) {
