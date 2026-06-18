@@ -6,13 +6,23 @@ import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 import {makeRecipeDetail} from '../__tests__/fixtures/recipe';
 import {makeStackProps, renderWithProviders} from '../__tests__/testUtils';
 import {api} from '../lib/api';
+import {
+  confirmPhotoLibraryAccess,
+  ensureCameraPermission,
+} from '../lib/androidPermissions';
 import type {AddStackParamList} from '../navigation/types';
 
 import {ImportImageScreen} from './ImportImageScreen';
 
 jest.mock('../lib/api');
+jest.mock('../lib/androidPermissions', () => ({
+  ensureCameraPermission: jest.fn().mockResolvedValue(true),
+  confirmPhotoLibraryAccess: jest.fn().mockResolvedValue(true),
+}));
 
 const mockImportImage = api.import.importImage as jest.Mock;
+const mockEnsureCameraPermission = ensureCameraPermission as jest.Mock;
+const mockConfirmPhotoLibraryAccess = confirmPhotoLibraryAccess as jest.Mock;
 const mockLaunchCamera = launchCamera as jest.Mock;
 const mockLaunchLibrary = launchImageLibrary as jest.Mock;
 const mockNavigate = jest.fn();
@@ -28,9 +38,56 @@ describe('ImportImageScreen', () => {
     mockImportImage.mockClear();
     mockLaunchCamera.mockClear();
     mockLaunchLibrary.mockClear();
+    mockEnsureCameraPermission.mockResolvedValue(true);
+    mockConfirmPhotoLibraryAccess.mockResolvedValue(true);
     mockImportImage.mockResolvedValue(makeRecipeDetail({id: 'img-1'}));
     mockLaunchCamera.mockResolvedValue({assets: [{base64: 'abc123'}]});
     mockLaunchLibrary.mockResolvedValue({assets: [{base64: 'abc123'}]});
+  });
+
+  test('does not open camera when permission is denied', async () => {
+    mockEnsureCameraPermission.mockResolvedValue(false);
+    const {getByText} = renderWithProviders(
+      <ImportImageScreen {...stackProps} />,
+    );
+    fireEvent.press(getByText('Take Photo'));
+    await waitFor(() => {
+      expect(mockEnsureCameraPermission).toHaveBeenCalled();
+    });
+    expect(mockLaunchCamera).not.toHaveBeenCalled();
+  });
+
+  test('does not open library when rationale is dismissed', async () => {
+    mockConfirmPhotoLibraryAccess.mockResolvedValue(false);
+    const {getByText} = renderWithProviders(
+      <ImportImageScreen {...stackProps} />,
+    );
+    fireEvent.press(getByText('Choose from Library'));
+    await waitFor(() => {
+      expect(mockConfirmPhotoLibraryAccess).toHaveBeenCalled();
+    });
+    expect(mockLaunchLibrary).not.toHaveBeenCalled();
+  });
+
+  test('shows loading state while importing', async () => {
+    let resolveImport!: (value: ReturnType<typeof makeRecipeDetail>) => void;
+    mockImportImage.mockImplementation(
+      () =>
+        new Promise(resolve => {
+          resolveImport = resolve;
+        }),
+    );
+    const {getByText, findByText} = renderWithProviders(
+      <ImportImageScreen {...stackProps} />,
+    );
+    fireEvent.press(getByText('Choose from Library'));
+    expect(await findByText('Importing…')).toBeTruthy();
+    resolveImport(makeRecipeDetail({id: 'img-1'}));
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('ImportReview', {
+        recipeId: 'img-1',
+      });
+    });
   });
 
   test('imports from camera', async () => {

@@ -22,6 +22,9 @@ jest.mock('../../lib/api', () => ({
 }));
 jest.mock('../../lib/supabase', () => ({supabase: {}}));
 jest.mock('react-native-image-picker', () => ({launchImageLibrary: jest.fn()}));
+jest.mock('../../lib/androidPermissions', () => ({
+  confirmPhotoLibraryAccess: jest.fn().mockResolvedValue(true),
+}));
 
 jest.mock('@eciperay/client', () => {
   const actual = jest.requireActual('@eciperay/client');
