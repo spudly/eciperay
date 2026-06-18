@@ -13,18 +13,22 @@ import {ImportTextPage} from '../pages/ImportTextPage.js';
 import {ImportUrlPage} from '../pages/ImportUrlPage.js';
 import {LoginPage} from '../pages/auth/LoginPage.js';
 import {ManualEntryPage} from '../pages/ManualEntryPage.js';
+import {PrivacyPolicyPage} from '../pages/PrivacyPolicyPage.js';
 import {ProfilePage} from '../pages/ProfilePage.js';
 import {RecipeDetailPage} from '../pages/RecipeDetailPage.js';
 import {RecipesPage} from '../pages/RecipesPage.js';
 import {ResetPasswordPage} from '../pages/auth/ResetPasswordPage.js';
 import {SignupPage} from '../pages/auth/SignupPage.js';
 import {TagsPage} from '../pages/TagsPage.js';
+import {TermsOfServicePage} from '../pages/TermsOfServicePage.js';
 
 export const router = createBrowserRouter([
   {path: '/login', element: <LoginPage />},
   {path: '/signup', element: <SignupPage />},
   {path: '/forgot-password', element: <ForgotPasswordPage />},
   {path: '/reset-password', element: <ResetPasswordPage />},
+  {path: '/privacy', element: <PrivacyPolicyPage />},
+  {path: '/terms', element: <TermsOfServicePage />},
   {
     element: <AuthGuard />,
     children: [

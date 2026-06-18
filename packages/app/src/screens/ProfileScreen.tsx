@@ -3,6 +3,7 @@ import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import React from 'react';
 import {Text, TouchableOpacity, View} from 'react-native';
 
+import {LegalLinks} from '../components/LegalLinks';
 import {supabase} from '../lib/supabase';
 import type {ProfileStackParamList} from '../navigation/types';
 
@@ -27,6 +28,10 @@ export const ProfileScreen = ({navigation}: Props) => {
           Manage Tags
         </Text>
       </TouchableOpacity>
+      <View className="mb-8">
+        <Text className="mb-3 text-lg font-semibold text-gray-900">Legal</Text>
+        <LegalLinks />
+      </View>
       <TouchableOpacity
         className="items-center rounded-lg bg-red-500 py-4"
         onPress={() => {

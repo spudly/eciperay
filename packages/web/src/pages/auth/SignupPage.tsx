@@ -2,6 +2,7 @@ import {errorMessage, useAuth} from '@eciperay/client';
 import {useState} from 'react';
 import {Link, Navigate} from 'react-router-dom';
 
+import {LegalLinks} from '../../components/LegalLinks.js';
 import {eciperay} from '../../lib/api.js';
 import {supabase} from '../../lib/supabase.js';
 
@@ -50,8 +51,8 @@ export const SignupPage = () => {
 
   if (confirmationSent) {
     return (
-      <div className="mx-auto max-w-md px-6 pt-20 text-center">
-        <h1 className="mb-4 text-2xl font-bold text-gray-900">
+      <div className="pbs-20 max-inline-md mx-auto px-6 text-center">
+        <h1 className="mbe-4 text-2xl font-bold text-gray-900">
           Check your email
         </h1>
         <p className="text-muted">
@@ -59,7 +60,7 @@ export const SignupPage = () => {
         </p>
         <Link
           to="/login"
-          className="text-primary mt-6 inline-block"
+          className="text-primary mbs-6 inline-block"
         >
           Back to sign in
         </Link>
@@ -68,8 +69,8 @@ export const SignupPage = () => {
   }
 
   return (
-    <div className="mx-auto max-w-md px-6 pt-20">
-      <h1 className="mb-8 text-3xl font-bold text-gray-900">Create account</h1>
+    <div className="pbs-20 max-inline-md mx-auto px-6">
+      <h1 className="mbe-8 text-3xl font-bold text-gray-900">Create account</h1>
       <form
         onSubmit={e => {
           void handleSignUp(e);
@@ -78,7 +79,7 @@ export const SignupPage = () => {
       >
         <input
           className="
-            w-full rounded-lg border border-gray-300 px-4 py-3 text-base
+            inline-full rounded-lg border border-gray-300 px-4 py-3 text-base
           "
           placeholder="Display name"
           value={displayName}
@@ -88,7 +89,7 @@ export const SignupPage = () => {
         />
         <input
           className="
-            w-full rounded-lg border border-gray-300 px-4 py-3 text-base
+            inline-full rounded-lg border border-gray-300 px-4 py-3 text-base
           "
           placeholder="Email"
           type="email"
@@ -100,7 +101,7 @@ export const SignupPage = () => {
         />
         <input
           className="
-            w-full rounded-lg border border-gray-300 px-4 py-3 text-base
+            inline-full rounded-lg border border-gray-300 px-4 py-3 text-base
           "
           placeholder="Password"
           type="password"
@@ -115,16 +116,18 @@ export const SignupPage = () => {
           type="submit"
           disabled={loading}
           className="
-            bg-primary w-full rounded-lg py-4 text-base font-semibold text-white
+            bg-primary inline-full rounded-lg py-4 text-base font-semibold
+            text-white
             disabled:opacity-50
           "
         >
           {loading ? 'Creating account…' : 'Sign Up'}
         </button>
       </form>
+      <LegalLinks className="mbs-6" />
       <Link
         to="/login"
-        className="text-primary mt-4 block text-center text-base"
+        className="text-primary mbs-4 block text-center text-base"
       >
         Already have an account?
       </Link>
