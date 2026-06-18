@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- privacy policy sections are naturally long */
 import type {LegalSection} from '../../components/LegalDocumentPage.js';
 
 import {legalContactLink} from './legalContactLink.js';
@@ -41,8 +42,25 @@ export const privacyPolicySections: LegalSection[] = [
             recipe features and related draft data.
           </li>
           <li>
-            <strong>Usage data:</strong> basic technical information needed to
-            operate the service, such as authentication tokens and request logs.
+            <strong>Usage and diagnostic data:</strong> technical information
+            about how you use Eciperay, such as pages or screens viewed, actions
+            you take (for example creating, importing, or deleting recipes),
+            device and browser type, app version, approximate location derived
+            from IP address, timestamps, and server request logs.
+          </li>
+          <li>
+            <strong>Product analytics and reliability data:</strong> when you
+            are signed in, we may associate usage and diagnostic data with your
+            account using your user ID and email address. We also collect error
+            reports, crash information, and structured application logs to keep
+            the service reliable.
+          </li>
+          <li>
+            <strong>Session replays:</strong> on the web and mobile apps, we may
+            record how you interact with the interface (such as taps, clicks,
+            and navigation). Text you type into form fields is masked where
+            technically possible, but other on-screen content you view may
+            appear in a replay.
           </li>
         </ul>
         <p>
@@ -57,6 +75,14 @@ export const privacyPolicySections: LegalSection[] = [
     content: (
       <ul className="list-disc space-y-2 ps-6">
         <li>Provide, maintain, and improve the Eciperay service.</li>
+        <li>
+          Understand how features are used and measure product performance.
+        </li>
+        <li>
+          Diagnose errors, investigate reliability issues, and improve
+          stability.
+        </li>
+        <li>Run product experiments and roll out features gradually.</li>
         <li>Authenticate your account and keep it secure.</li>
         <li>Store and sync your recipes across your devices.</li>
         <li>Power AI-assisted recipe import, editing, and suggestions.</li>
@@ -83,11 +109,25 @@ export const privacyPolicySections: LegalSection[] = [
           <li>
             <strong>OpenAI</strong> for certain image-related AI features.
           </li>
+          <li>
+            <strong>PostHog</strong> for product analytics, session replay,
+            error tracking, application logging, and feature-flag or experiment
+            tooling. PostHog processes usage and diagnostic data on our behalf
+            to help us understand how Eciperay is used and to fix problems. When
+            you are signed in, analytics data may be linked to your account
+            identifier and email address. PostHog does not receive your recipe
+            content or AI chat messages unless that information appears on
+            screen during a session replay.
+          </li>
         </ul>
         <p>
           When you use AI features, relevant recipe context and your messages
-          may be sent to these providers to generate responses. Do not submit
-          sensitive personal information in recipe content or AI chats.
+          may be sent to Anthropic or OpenAI to generate responses. Do not
+          submit sensitive personal information in recipe content or AI chats.
+        </p>
+        <p>
+          We do not use these providers for third-party advertising, and we do
+          not sell your personal information.
         </p>
       </>
     ),
@@ -96,9 +136,12 @@ export const privacyPolicySections: LegalSection[] = [
     title: 'Data retention and security',
     content: (
       <p>
-        We retain your account and recipe data while your account is active. We
-        use industry-standard safeguards through our infrastructure providers,
-        but no method of transmission or storage is completely secure.
+        We retain your account and recipe data while your account is active.
+        Analytics, error, and log data are kept for a limited period needed to
+        operate, secure, and improve the service, after which it is deleted or
+        aggregated. We use industry-standard safeguards through our
+        infrastructure providers, but no method of transmission or storage is
+        completely secure.
       </p>
     ),
   },
@@ -113,6 +156,12 @@ export const privacyPolicySections: LegalSection[] = [
         <li>
           <strong>Deletion:</strong> to delete your account and associated data,
           contact us at {legalContactLink}.
+        </li>
+        <li>
+          <strong>Analytics:</strong> if you have questions about our use of
+          product analytics or session replay, or want to request deletion of
+          analytics data associated with your account, contact us at{' '}
+          {legalContactLink}.
         </li>
         <li>
           <strong>Camera and photos:</strong> the mobile app requests camera and
