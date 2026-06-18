@@ -22,6 +22,6 @@ describe('PrivacyPolicyPage', () => {
     ).toBeInTheDocument();
     expect(
       screen.getAllByRole('link', {name: LEGAL_CONTACT_EMAIL}),
-    ).toHaveLength(2);
+    ).toHaveLength(3);
   });
 });
