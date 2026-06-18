@@ -47,13 +47,25 @@ export {
   uploadRecipeImageFromBase64,
 } from './uploadRecipeImage.js';
 export {AuthProvider, useAuth} from './AuthProvider.js';
+export {AnalyticsErrorBoundaryProvider} from './AnalyticsErrorBoundary.js';
 export {AnalyticsProvider, useAnalytics} from './AnalyticsProvider.js';
 export {
   createAnalytics,
   createNoopAnalyticsAdapter,
   type AnalyticsAdapter,
   type AnalyticsClient,
+  type FeatureFlagValue,
+  type LogLevel,
 } from './createAnalytics.js';
+export {
+  useExperimentVariant,
+  useFeatureFlag,
+  useFeatureFlagEnabled,
+} from './useFeatureFlag.js';
+export {
+  useAnalyticsLogger,
+  type AnalyticsLogger,
+} from './useAnalyticsLogger.js';
 export {
   type AnalyticsEventName,
   type AnalyticsEventProperties,

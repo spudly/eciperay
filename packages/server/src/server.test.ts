@@ -7,6 +7,7 @@ import type {RequestHandler} from 'express';
 import request from 'supertest';
 
 import {createApp, handleUnexpectedError} from './server.js';
+import {resetPostHogLogsForTests} from './lib/posthogLogs.js';
 import {WEB_DIST_DIR} from './staticWeb.js';
 
 const withTestRoute = (path: string, handler: RequestHandler) => {
@@ -114,6 +115,22 @@ describe('createApp', () => {
     expect(res.body).toEqual({error: 'AI service error'});
   });
 
+  test('returns 502 when Anthropic error status is not numeric', async () => {
+    const app = withTestRoute('/test-ai-error-bad-status', () => {
+      const err = new Anthropic.APIError(
+        500,
+        undefined,
+        'AI failed',
+        undefined,
+      );
+      (err as {status: unknown}).status = 'bad';
+      throw err;
+    });
+    const res = await request(app).get('/test-ai-error-bad-status');
+    expect(res.status).toBe(502);
+    expect(res.body).toEqual({error: 'AI service error'});
+  });
+
   test('does not send a second response when headers were already sent', async () => {
     const app = withTestRoute('/test-headers-sent', (_req, res, next) => {
       res.status(200).end();
@@ -125,7 +142,10 @@ describe('createApp', () => {
 
   test('logs unexpected errors outside test mode', async () => {
     const previousNodeEnv = process.env['NODE_ENV'];
+    const previousPostHogKey = process.env['POSTHOG_KEY'];
     process.env['NODE_ENV'] = 'production';
+    process.env['POSTHOG_KEY'] = '';
+    resetPostHogLogsForTests();
     const consoleError = jest
       .spyOn(console, 'error')
       .mockImplementation(() => {});
@@ -135,6 +155,37 @@ describe('createApp', () => {
     const res = await request(app).get('/test-prod-error');
     expect(res.status).toBe(500);
     expect(consoleError).toHaveBeenCalled();
+    consoleError.mockRestore();
+    if (previousNodeEnv === undefined) {
+      delete process.env['NODE_ENV'];
+    } else {
+      process.env['NODE_ENV'] = previousNodeEnv;
+    }
+    if (previousPostHogKey === undefined) {
+      delete process.env['POSTHOG_KEY'];
+    } else {
+      process.env['POSTHOG_KEY'] = previousPostHogKey;
+    }
+  });
+
+  test('logs unknown error values outside test mode', async () => {
+    const previousNodeEnv = process.env['NODE_ENV'];
+    process.env['NODE_ENV'] = 'production';
+    resetPostHogLogsForTests();
+    const consoleError = jest
+      .spyOn(console, 'error')
+      .mockImplementation(() => {});
+    const app = withTestRoute(
+      '/test-prod-unknown-error',
+      (_req, _res, next) => {
+        next('not-an-error');
+      },
+    );
+    const res = await request(app).get('/test-prod-unknown-error');
+    expect(res.status).toBe(500);
+    expect(consoleError).toHaveBeenCalledWith('Unhandled server error', {
+      message: 'unknown error',
+    });
     consoleError.mockRestore();
     if (previousNodeEnv === undefined) {
       delete process.env['NODE_ENV'];

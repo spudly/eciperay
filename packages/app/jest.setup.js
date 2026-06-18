@@ -55,6 +55,19 @@ jest.mock('posthog-react-native', () => ({
       capture: jest.fn(),
       identify: jest.fn(),
       reset: jest.fn(),
+      isFeatureEnabled: jest.fn(),
+      getFeatureFlag: jest.fn(),
+      getFeatureFlagPayload: jest.fn(),
+      onFeatureFlags: jest.fn(() => jest.fn()),
+      reloadFeatureFlags: jest.fn(),
+      captureException: jest.fn(),
+      logger: {
+        info: jest.fn(),
+        warn: jest.fn(),
+        error: jest.fn(),
+        debug: jest.fn(),
+        trace: jest.fn(),
+      },
     })),
 }));
 

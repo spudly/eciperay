@@ -1,6 +1,7 @@
 import './global.css';
 
 import {
+  AnalyticsErrorBoundaryProvider,
   AnalyticsProvider,
   AuthProvider,
   identifyAnalyticsUser,
@@ -37,7 +38,9 @@ const App = () => (
             onAuthenticated={onAuthenticated}
             onSignedOut={onSignedOut}
           >
-            <RootNavigator />
+            <AnalyticsErrorBoundaryProvider>
+              <RootNavigator />
+            </AnalyticsErrorBoundaryProvider>
           </AuthProvider>
         </AnalyticsProvider>
       </QueryClientProvider>

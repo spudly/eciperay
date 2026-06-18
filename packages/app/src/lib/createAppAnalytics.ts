@@ -4,6 +4,7 @@ import {
   type AnalyticsAdapter,
   type AnalyticsClient,
   type AnalyticsPlatform,
+  type LogLevel,
 } from '@eciperay/client';
 import PostHog from 'posthog-react-native';
 import {Platform} from 'react-native';
@@ -19,28 +20,126 @@ export const resolveAppAnalyticsPlatform = (
   return 'android';
 };
 
+const posthogLog = (
+  client: PostHog,
+  level: LogLevel,
+  message: string,
+  attributes?: Record<string, unknown>,
+) => {
+  const logAttributes = attributes as Record<string, string | number | boolean>;
+  const logger = client.logger;
+  if (level === 'trace' && typeof logger.trace === 'function') {
+    logger.trace(message, logAttributes);
+    return;
+  }
+  if (level === 'debug' && typeof logger.debug === 'function') {
+    logger.debug(message, logAttributes);
+    return;
+  }
+  if (level === 'info') {
+    logger.info(message, logAttributes);
+    return;
+  }
+  if (level === 'warn') {
+    logger.warn(message, logAttributes);
+    return;
+  }
+  logger.error(message, logAttributes);
+};
+
+const getAppFeatureFlagPayload = (client: PostHog, key: string): unknown => {
+  if (typeof client.getFeatureFlagResult === 'function') {
+    const result = client.getFeatureFlagResult(key) as
+      | {payload?: unknown}
+      | undefined;
+    return result?.payload;
+  }
+  /* eslint-disable-next-line @typescript-eslint/no-deprecated -- older RN SDKs only expose getFeatureFlagPayload */
+  return client.getFeatureFlagPayload(key);
+};
+
+const createAppCaptureHandlers = (
+  client: PostHog,
+): Pick<
+  AnalyticsAdapter,
+  'capture' | 'identify' | 'reset' | 'isFeatureEnabled' | 'getFeatureFlag'
+> => ({
+  capture: (event, properties) => {
+    client.capture(
+      event,
+      properties as Record<string, string | number | boolean>,
+    );
+  },
+  identify: (userId, properties) => {
+    client.identify(
+      userId,
+      properties as Record<string, string | number | boolean>,
+    );
+  },
+  reset: () => {
+    client.reset();
+  },
+  isFeatureEnabled: key => client.isFeatureEnabled(key),
+  getFeatureFlag: key => client.getFeatureFlag(key),
+});
+
+const createAppDiagnosticsHandlers = (
+  client: PostHog,
+): Pick<
+  AnalyticsAdapter,
+  | 'getFeatureFlagPayload'
+  | 'onFeatureFlags'
+  | 'reloadFeatureFlags'
+  | 'captureException'
+  | 'log'
+> => ({
+  getFeatureFlagPayload: key => getAppFeatureFlagPayload(client, key),
+  onFeatureFlags: callback => client.onFeatureFlags(callback),
+  reloadFeatureFlags: () => {
+    client.reloadFeatureFlags();
+  },
+  captureException: (error, properties) => {
+    client.captureException(
+      error,
+      properties as Record<string, string | number | boolean>,
+    );
+  },
+  log: (level, message, attributes) => {
+    posthogLog(client, level, message, attributes);
+  },
+});
+
+const createAppPostHogAdapter = (client: PostHog): AnalyticsAdapter => ({
+  ...createAppCaptureHandlers(client),
+  ...createAppDiagnosticsHandlers(client),
+});
+
+const createAppPostHogClient = (
+  apiKey: string,
+  apiHost: string,
+  platform: AnalyticsPlatform,
+) => {
+  return new PostHog(apiKey, {
+    host: apiHost,
+    enableSessionReplay: true,
+    errorTracking: {
+      autocapture: {uncaughtExceptions: true, unhandledRejections: true},
+    },
+    logs: {
+      serviceName: 'eciperay-app',
+      environment: __DEV__ ? 'development' : 'production',
+      resourceAttributes: {platform},
+    },
+  });
+};
+
 export const createPostHogAdapter = (
   apiKey: string,
   apiHost: string,
+  platform: AnalyticsPlatform,
 ): AnalyticsAdapter => {
-  const client = new PostHog(apiKey, {host: apiHost});
-  return {
-    capture: (event, properties) => {
-      client.capture(
-        event,
-        properties as Record<string, string | number | boolean>,
-      );
-    },
-    identify: (userId, properties) => {
-      client.identify(
-        userId,
-        properties as Record<string, string | number | boolean>,
-      );
-    },
-    reset: () => {
-      client.reset();
-    },
-  };
+  const client = createAppPostHogClient(apiKey, apiHost, platform);
+  return createAppPostHogAdapter(client);
 };
 
 export const createAppAnalytics = (
@@ -52,7 +151,7 @@ export const createAppAnalytics = (
     return createAnalytics(createNoopAnalyticsAdapter(), platform);
   }
   return createAnalytics(
-    createPostHogAdapter(apiKey, apiHost || DEFAULT_POSTHOG_HOST),
+    createPostHogAdapter(apiKey, apiHost || DEFAULT_POSTHOG_HOST, platform),
     platform,
   );
 };

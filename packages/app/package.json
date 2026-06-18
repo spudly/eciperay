@@ -9,7 +9,7 @@
     "prestart": "tsx ../../scripts/freeDevPorts.ts 8081",
     "start": "react-native start",
     "test": "jest",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage --maxWorkers=1"
   },
   "dependencies": {
     "@eciperay/client": "*",
@@ -26,6 +26,7 @@
     "expo": "~56.0.5",
     "nativewind": "preview",
     "posthog-react-native": "^4.49.3",
+    "posthog-react-native-session-replay": "^1.6.0",
     "react": "19.2.3",
     "react-native": "0.85.3",
     "react-native-blob-util": "^0.22.2",

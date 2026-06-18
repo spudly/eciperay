@@ -1,4 +1,5 @@
 import {
+  AnalyticsErrorBoundaryProvider,
   AnalyticsProvider,
   AuthProvider,
   identifyAnalyticsUser,
@@ -40,7 +41,9 @@ if (root) {
             onAuthenticated={onAuthenticated}
             onSignedOut={onSignedOut}
           >
-            <RouterProvider router={router} />
+            <AnalyticsErrorBoundaryProvider>
+              <RouterProvider router={router} />
+            </AnalyticsErrorBoundaryProvider>
           </AuthProvider>
         </AnalyticsProvider>
       </QueryClientProvider>
