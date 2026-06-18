@@ -3,13 +3,28 @@ const path = require('node:path');
 
 const dotenv = require('dotenv');
 
-/** @typedef {'API_BASE_URL' | 'SUPABASE_URL' | 'SUPABASE_ANON_KEY'} AppEnvKey */
+/**
+ * @typedef {'API_BASE_URL'
+ *   | 'SUPABASE_URL'
+ *   | 'SUPABASE_ANON_KEY'
+ *   | 'POSTHOG_KEY'
+ *   | 'POSTHOG_HOST'} AppEnvKey
+ */
+
+/** @type {readonly AppEnvKey[]} */
+const REQUIRED_PRODUCTION_ENV_KEYS = Object.freeze([
+  'API_BASE_URL',
+  'SUPABASE_URL',
+  'SUPABASE_ANON_KEY',
+]);
 
 /** @type {readonly AppEnvKey[]} */
 const APP_ENV_KEYS = Object.freeze([
   'API_BASE_URL',
   'SUPABASE_URL',
   'SUPABASE_ANON_KEY',
+  'POSTHOG_KEY',
+  'POSTHOG_HOST',
 ]);
 
 const isProductionAppEnv = () =>
@@ -50,7 +65,7 @@ const buildEnvShimSource = vars => {
 
 /** @param {Record<AppEnvKey, string | undefined>} vars */
 const assertProductionEnvVars = vars => {
-  const missing = APP_ENV_KEYS.filter(key => {
+  const missing = REQUIRED_PRODUCTION_ENV_KEYS.filter(key => {
     const value = vars[key];
     return typeof value !== 'string' || value.length === 0;
   });
@@ -73,6 +88,7 @@ const writeEnvShim = ({monorepoRoot, outputPath}) => {
 
 module.exports = {
   APP_ENV_KEYS,
+  REQUIRED_PRODUCTION_ENV_KEYS,
   assertProductionEnvVars,
   buildEnvShimSource,
   isProductionAppEnv,

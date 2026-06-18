@@ -194,14 +194,19 @@ describe('RecipesScreen', () => {
         /* never resolves */
       });
     });
+    const client = makeQueryClient();
     const {findByText, UNSAFE_getByType} = renderWithProviders(
       <RecipesScreen {...stackProps} />,
+      client,
     );
     await findByText('Recipe 0');
     const list = UNSAFE_getByType(FlatList);
     await triggerEndReached(list);
     await waitFor(() => {
       expect(mockList).toHaveBeenCalledTimes(2);
+    });
+    await act(async () => {
+      await flushQueryClient(client);
     });
     await triggerEndReached(list);
     expect(mockList).toHaveBeenCalledTimes(2);
@@ -244,16 +249,12 @@ describe('RecipesScreen', () => {
       <RecipesScreen {...stackProps} />,
       client,
     );
-    fireEvent.press(await findByText('Delete'));
-    await waitFor(() => {
-      expect(mockDelete).toHaveBeenCalled();
-    });
-    await flushQueryClient(client);
+    const deleteButton = await findByText('Delete');
     await act(async () => {
-      await new Promise<void>(resolve => {
-        setTimeout(resolve, 0);
-      });
+      fireEvent.press(deleteButton);
+      await flushQueryClient(client);
     });
+    expect(mockDelete).toHaveBeenCalled();
   });
 
   test('removes deleted recipe from filtered list without clearing search', async () => {
@@ -293,11 +294,12 @@ describe('RecipesScreen', () => {
     });
     await findByText('Soup');
     expect(queryByText('Salad')).toBeNull();
-    fireEvent.press(await findByText('Delete'));
-    await waitFor(() => {
-      expect(mockDelete).toHaveBeenCalledWith('soup-id');
+    const deleteButton = await findByText('Delete');
+    await act(async () => {
+      fireEvent.press(deleteButton);
+      await flushQueryClient(client);
     });
-    await flushQueryClient(client);
+    expect(mockDelete).toHaveBeenCalledWith('soup-id');
     await waitFor(() => {
       expect(queryByText('Soup')).toBeNull();
     });

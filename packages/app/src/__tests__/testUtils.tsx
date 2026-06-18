@@ -2,6 +2,11 @@ import type {ParamListBase, RouteProp} from '@react-navigation/native';
 import type {BottomTabScreenProps} from '@react-navigation/bottom-tabs';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {
+  AnalyticsProvider,
+  createAnalytics,
+  createNoopAnalyticsAdapter,
+} from '@eciperay/client';
+import {
   notifyManager,
   QueryClient,
   QueryClientProvider,
@@ -13,6 +18,8 @@ import {
   type RenderOptions,
 } from '@testing-library/react-native';
 import React from 'react';
+
+const testAnalytics = createAnalytics(createNoopAnalyticsAdapter(), 'android');
 
 let testQueryScheduler: (callback: () => void) => void = callback => {
   callback();
@@ -114,7 +121,11 @@ export const renderWithProviders = (
   return render(ui, {
     ...options,
     wrapper: ({children}) => (
-      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+      <QueryClientProvider client={client}>
+        <AnalyticsProvider analytics={testAnalytics}>
+          {children}
+        </AnalyticsProvider>
+      </QueryClientProvider>
     ),
   });
 };

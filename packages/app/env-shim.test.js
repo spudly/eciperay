@@ -4,3 +4,5 @@ exports.SUPABASE_URL = 'http://localhost:54321';
 exports.SUPABASE_ANON_KEY = 'test-anon-key';
 exports.SUPABASE_SECRET_KEY = 'test-secret-key';
 exports.API_BASE_URL = 'http://localhost:8080';
+exports.POSTHOG_KEY = '';
+exports.POSTHOG_HOST = '';

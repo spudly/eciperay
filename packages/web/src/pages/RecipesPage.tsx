@@ -1,6 +1,7 @@
 import {
   invalidateRecipeQueries,
   recipeListInfiniteQueryOptions,
+  useAnalytics,
 } from '@eciperay/client';
 import {
   useInfiniteQuery,
@@ -17,6 +18,7 @@ export const RecipesPage = () => {
   const deferredSearch = useDeferredValue(search.trim());
   const queryClient = useQueryClient();
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  const analytics = useAnalytics();
 
   const {data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage} =
     useInfiniteQuery(
@@ -47,6 +49,7 @@ export const RecipesPage = () => {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => eciperay.recipes.delete(id),
     onSuccess: (_data, id) => {
+      analytics.track('recipe_deleted', {recipe_id: id});
       void invalidateRecipeQueries(queryClient, id);
     },
   });
