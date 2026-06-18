@@ -25,6 +25,7 @@ describe('supabase', () => {
       anonKey: 'test-anon-key',
       storage: AsyncStorage,
       persistSession: true,
+      flowType: 'pkce',
     });
   });
 });

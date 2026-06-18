@@ -8,4 +8,5 @@ export const supabase = createSupabaseClient({
   anonKey: SUPABASE_ANON_KEY,
   storage: AsyncStorage,
   persistSession: true,
+  flowType: 'pkce',
 });

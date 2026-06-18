@@ -64,8 +64,18 @@ Fill in Supabase, Anthropic, and URL values. Web requires `VITE_*` prefixed
 vars; the mobile app uses `API_BASE_URL` and `SUPABASE_*` via the Metro env shim
 (`.env` for Metro debug; release APKs are built in GitHub Actions).
 
-Add `http://localhost:8081/**` to your Supabase project's redirect URLs for web
-auth (password reset).
+Add these redirect URLs in your Supabase project's **Authentication → URL
+configuration**:
+
+| URL                            | Purpose                               |
+| ------------------------------ | ------------------------------------- |
+| `http://localhost:8081/**`     | Local web auth (password reset, etc.) |
+| `https://www.eciperay.com/**`  | Production web auth                   |
+| `https://eciperay.com/**`      | Production web auth (apex)            |
+| `com.eciperay://auth/callback` | Android/iOS auth email links          |
+
+Set **Site URL** to your production web origin (for example
+`https://www.eciperay.com`).
 
 ### 3. Run database migrations
 
@@ -184,8 +194,10 @@ Point DNS at the addresses `fly certs add` prints (usually `A` + `AAAA` to Fly).
 
 **6. Post-deploy**
 
-- Supabase → Authentication → URL configuration: add
-  `https://www.eciperay.com/**`
+- Supabase → Authentication → URL configuration:
+  - **Site URL:** `https://www.eciperay.com`
+  - **Additional redirect URLs:** `https://www.eciperay.com/**`,
+    `https://eciperay.com/**`, `com.eciperay://auth/callback`
 - Android: run the **Android Deploy** workflow (see below) and upload the AAB to
   Play Console
 
