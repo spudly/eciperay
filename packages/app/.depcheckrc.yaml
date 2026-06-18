@@ -13,7 +13,7 @@ ignores:
   - react-native-css # NativeWind v5 peer dependency; loaded by Metro, not imported in app source
   - react-native-safe-area-context # Required peer dependency of @react-navigation; autolinked without direct imports
   - react-native-screens # Required peer dependency of @react-navigation; autolinked without direct imports
-  - metro-resolver # Used by metro.config.js; hoisted from @react-native/metro-config
+  - metro-resolver # Used by metro.config.cjs; hoisted from @react-native/metro-config
   - react-native-worklets # Peer dependency of react-native-reanimated; loaded by the native runtime
 specials:
   - babel

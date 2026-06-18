@@ -23,7 +23,9 @@ android/.gradle
 android/build
 *.keystore
 !debug.keystore
+packages/app/android/app/upload-keystore.jks
 packages/app/env-shim.js
+packages/app/android/temp-deploy.sh
 
 # editors
 .vscode
