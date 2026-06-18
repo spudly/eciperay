@@ -47,6 +47,21 @@ export {
   uploadRecipeImageFromBase64,
 } from './uploadRecipeImage.js';
 export {AuthProvider, useAuth} from './AuthProvider.js';
+export {AnalyticsProvider, useAnalytics} from './AnalyticsProvider.js';
+export {
+  createAnalytics,
+  createNoopAnalyticsAdapter,
+  type AnalyticsAdapter,
+  type AnalyticsClient,
+} from './createAnalytics.js';
+export {
+  type AnalyticsEventName,
+  type AnalyticsEventProperties,
+  type AnalyticsPlatform,
+  type RecipeCreateSource,
+  type RecipeImportSource,
+} from './analyticsEvents.js';
+export {identifyAnalyticsUser} from './identifyAnalyticsUser.js';
 export {queryKeys} from './queryKeys.js';
 export {
   getRecipeListNextPageParam,

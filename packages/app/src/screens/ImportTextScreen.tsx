@@ -1,3 +1,4 @@
+import {useAnalytics} from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import React, {useState} from 'react';
 import {Text, TextInput, TouchableOpacity, View} from 'react-native';
@@ -11,6 +12,7 @@ export const ImportTextScreen = ({navigation}: Props) => {
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const analytics = useAnalytics();
 
   const handleImport = async () => {
     /* istanbul ignore next -- import button disabled when text is empty */
@@ -21,6 +23,10 @@ export const ImportTextScreen = ({navigation}: Props) => {
     setError(null);
     try {
       const recipe = await api.import.importText(text);
+      analytics.track('recipe_imported', {
+        recipe_id: recipe.id,
+        source: 'text',
+      });
       navigation.navigate('ImportReview', {recipeId: recipe.id});
     } catch (error_) {
       setError(error_ instanceof Error ? error_.message : 'Import failed');

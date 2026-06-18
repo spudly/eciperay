@@ -14,12 +14,25 @@ type AuthProviderProps = {
   supabase: SupabaseClient;
   children: React.ReactNode;
   onAuthenticated?: (session: Session) => Promise<void>;
+  onSignedOut?: () => Promise<void> | void;
+};
+
+const applyAuthSessionChange = (
+  prev: AuthContextValue,
+  session: Session | null,
+  onSignedOut?: () => Promise<void> | void,
+): AuthContextValue => {
+  if (prev.session && !session) {
+    void onSignedOut?.();
+  }
+  return {...prev, session};
 };
 
 const subscribeSupabaseAuth = (
   supabase: SupabaseClient,
   setAuth: React.Dispatch<React.SetStateAction<AuthContextValue>>,
   onAuthenticated?: (session: Session) => Promise<void>,
+  onSignedOut?: () => Promise<void> | void,
 ) => {
   void supabase.auth
     .getSession()
@@ -35,7 +48,7 @@ const subscribeSupabaseAuth = (
 
   const {data: listener} = supabase.auth.onAuthStateChange(
     (_event, session) => {
-      setAuth(prev => ({...prev, session}));
+      setAuth(prev => applyAuthSessionChange(prev, session, onSignedOut));
       if (session) {
         void onAuthenticated?.(session);
       }
@@ -50,6 +63,7 @@ const subscribeSupabaseAuth = (
 const useSupabaseAuth = (
   supabase: SupabaseClient,
   onAuthenticated?: (session: Session) => Promise<void>,
+  onSignedOut?: () => Promise<void> | void,
 ): AuthContextValue => {
   const [auth, setAuth] = useState<AuthContextValue>({
     session: null,
@@ -57,8 +71,13 @@ const useSupabaseAuth = (
   });
 
   useEffect(() => {
-    return subscribeSupabaseAuth(supabase, setAuth, onAuthenticated);
-  }, [supabase, onAuthenticated]);
+    return subscribeSupabaseAuth(
+      supabase,
+      setAuth,
+      onAuthenticated,
+      onSignedOut,
+    );
+  }, [supabase, onAuthenticated, onSignedOut]);
 
   return auth;
 };
@@ -67,7 +86,8 @@ export const AuthProvider = ({
   supabase,
   children,
   onAuthenticated,
+  onSignedOut,
 }: AuthProviderProps) => {
-  const auth = useSupabaseAuth(supabase, onAuthenticated);
+  const auth = useSupabaseAuth(supabase, onAuthenticated, onSignedOut);
   return <AuthContext.Provider value={auth}>{children}</AuthContext.Provider>;
 };

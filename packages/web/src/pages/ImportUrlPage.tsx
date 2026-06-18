@@ -1,3 +1,4 @@
+import {useAnalytics} from '@eciperay/client';
 import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
@@ -8,6 +9,7 @@ export const ImportUrlPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const analytics = useAnalytics();
 
   const handleImport = async (e: React.SubmitEvent) => {
     e.preventDefault();
@@ -15,6 +17,7 @@ export const ImportUrlPage = () => {
     setError(null);
     try {
       const recipe = await eciperay.import.importUrl(url);
+      analytics.track('recipe_imported', {recipe_id: recipe.id, source: 'url'});
       void navigate(`/import/review/${recipe.id}`);
     } catch (error_) {
       setError(error_ instanceof Error ? error_.message : 'Import failed');

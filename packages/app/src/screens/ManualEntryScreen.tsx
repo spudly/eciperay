@@ -1,6 +1,7 @@
 import {
   invalidateRecipeQueries,
   uploadRecipeImageFromBase64,
+  useAnalytics,
   useAuth,
 } from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
@@ -28,12 +29,14 @@ const emptyInput: RecipeInput = {
 export const ManualEntryScreen = ({navigation}: Props) => {
   const queryClient = useQueryClient();
   const {session} = useAuth();
+  const analytics = useAnalytics();
 
   const handleSubmit = async (
     input: RecipeInput,
     pendingImage?: PendingRecipeImage,
   ) => {
     const recipe = await api.recipes.create(input);
+    analytics.track('recipe_created', {recipe_id: recipe.id, source: 'manual'});
     if (pendingImage && session?.user.id) {
       const imageUrl = await uploadRecipeImageFromBase64(
         supabase,

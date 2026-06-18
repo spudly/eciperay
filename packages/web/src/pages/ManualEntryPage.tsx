@@ -1,6 +1,7 @@
 import {
   invalidateRecipeQueries,
   uploadRecipeImage,
+  useAnalytics,
   useAuth,
 } from '@eciperay/client';
 import {useQueryClient} from '@tanstack/react-query';
@@ -23,9 +24,11 @@ export const ManualEntryPage = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const {session} = useAuth();
+  const analytics = useAnalytics();
 
   const handleSubmit = async (input: RecipeInput, pendingImage?: File) => {
     const recipe = await eciperay.recipes.create(input);
+    analytics.track('recipe_created', {recipe_id: recipe.id, source: 'manual'});
     if (pendingImage && session?.user.id) {
       const imageUrl = await uploadRecipeImage(
         supabase,

@@ -43,6 +43,8 @@ describe('envShim', () => {
       API_BASE_URL: 'http://localhost:8080/api',
       SUPABASE_ANON_KEY: 'dev-key',
       SUPABASE_URL: 'https://dev.supabase.co',
+      POSTHOG_KEY: undefined,
+      POSTHOG_HOST: undefined,
     });
   });
 
@@ -61,6 +63,8 @@ describe('envShim', () => {
       API_BASE_URL: 'https://www.eciperay.com/api',
       SUPABASE_ANON_KEY: 'prod-key',
       SUPABASE_URL: 'https://prod.supabase.co',
+      POSTHOG_KEY: undefined,
+      POSTHOG_HOST: undefined,
     });
   });
 
@@ -89,7 +93,9 @@ describe('envShim', () => {
     ).toBe(
       'exports.API_BASE_URL = "https://www.eciperay.com/api";\n' +
         'exports.SUPABASE_URL = "https://prod.supabase.co";\n' +
-        'exports.SUPABASE_ANON_KEY = "anon";\n',
+        'exports.SUPABASE_ANON_KEY = "anon";\n' +
+        'exports.POSTHOG_KEY = undefined;\n' +
+        'exports.POSTHOG_HOST = undefined;\n',
     );
   });
 

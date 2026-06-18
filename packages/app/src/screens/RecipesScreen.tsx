@@ -1,6 +1,7 @@
 import {
   invalidateRecipeQueries,
   recipeListInfiniteQueryOptions,
+  useAnalytics,
 } from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {
@@ -29,6 +30,7 @@ export const RecipesScreen = ({navigation}: RecipesProps) => {
   const [search, setSearch] = useState('');
   const deferredSearch = useDeferredValue(search.trim());
   const queryClient = useQueryClient();
+  const analytics = useAnalytics();
 
   const {data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage} =
     useInfiniteQuery(
@@ -43,6 +45,7 @@ export const RecipesScreen = ({navigation}: RecipesProps) => {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api.recipes.delete(id),
     onSuccess: (_data, id) => {
+      analytics.track('recipe_deleted', {recipe_id: id});
       void invalidateRecipeQueries(queryClient, id);
     },
   });
