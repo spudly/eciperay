@@ -32,6 +32,7 @@
     "lint:fix": "eslint packages --fix --cache --cache-location .eslintcache --cache-strategy content",
     "lint:unused-rules": "tsx scripts/findUnusedEslintRules.ts",
     "validate:node-version": "tsx scripts/validateNodeVersion.ts",
+    "discover:workspace-packages": "tsx scripts/discoverWorkspacePackages.ts",
     "test:scripts": "NODE_OPTIONS='--experimental-vm-modules --no-warnings' jest --config jest.config.cjs --coverage",
     "precommit:test-coverage": "tsx scripts/preCommitTests.ts",
     "audit": "npm audit --audit-level=low",
@@ -52,6 +53,7 @@
   },
   "devDependencies": {
     "@eslint-community/eslint-plugin-eslint-comments": "^4.7.2",
+    "@jest/globals": "^30.0.0",
     "@types/jest": "^30.0.0",
     "@types/nock": "^10.0.3",
     "@types/node": "^22.0.0",

@@ -74,7 +74,7 @@ describe('validateNodeVersionConstraints', () => {
     expect(result.errors[0]).toContain('.nvmrc');
   });
 
-  it('reports ci.yml mismatches', () => {
+  it('reports CI node-version mismatches when config is missing', () => {
     const fs = makeFs({
       readFileSync: jest.fn((path: string) => {
         if (path === '/repo/package.json') {
@@ -83,7 +83,7 @@ describe('validateNodeVersionConstraints', () => {
         if (path.endsWith('.nvmrc')) {
           return '22';
         }
-        if (path.endsWith('ci.yml')) {
+        if (path.endsWith('ci.yml') || path.endsWith('action.yml')) {
           return 'no node version here';
         }
         return JSON.stringify({engines: {node: '>= 22.0.0'}});
@@ -93,7 +93,53 @@ describe('validateNodeVersionConstraints', () => {
 
     const result = validateNodeVersionConstraints('/repo', fs);
     expect(result.ok).toBe(false);
-    expect(result.errors[0]).toContain('ci.yml');
+    expect(result.errors[0]).toContain('node-version');
+  });
+
+  it('reports CI node-version mismatches when config disagrees with root', () => {
+    const fs = makeFs({
+      readFileSync: jest.fn((path: string) => {
+        if (path === '/repo/package.json') {
+          return JSON.stringify({engines: {node: '>= 22.0.0'}});
+        }
+        if (path.endsWith('.nvmrc')) {
+          return '22';
+        }
+        if (path.endsWith('ci.yml')) {
+          return 'node-version: 20';
+        }
+        return JSON.stringify({engines: {node: '>= 22.0.0'}});
+      }),
+      readdirSync: jest.fn().mockReturnValue([]),
+    });
+
+    const result = validateNodeVersionConstraints('/repo', fs);
+    expect(result.ok).toBe(false);
+    expect(result.errors[0]).toContain('CI node-version (20)');
+  });
+
+  it('accepts node-version from ci-setup when ci.yml omits it', () => {
+    const fs = makeFs({
+      readFileSync: jest.fn((path: string) => {
+        if (path.endsWith('package.json')) {
+          return JSON.stringify({engines: {node: '>= 22.0.0'}});
+        }
+        if (path.endsWith('.nvmrc')) {
+          return '22\n';
+        }
+        if (path.endsWith('ci.yml')) {
+          return 'uses: ./.github/actions/ci-setup';
+        }
+        if (path.endsWith('action.yml')) {
+          return 'node-version: 22';
+        }
+        return '';
+      }),
+      readdirSync: jest.fn().mockReturnValue([]),
+    });
+
+    const result = validateNodeVersionConstraints('/repo', fs);
+    expect(result).toEqual({ok: true, errors: [], rootEngine: '22'});
   });
 });
 
@@ -122,7 +168,7 @@ describe('runValidateNodeVersionCli', () => {
     expect(() => runValidateNodeVersionCli()).toThrow('exit');
     expect(console.log).toHaveBeenCalledWith(
       expect.stringMatching(
-        /^OK: all engines\.node constraints, \.nvmrc, and ci\.yml agree on Node \d+$/,
+        /^OK: all engines\.node constraints, \.nvmrc, and CI node-version agree on Node \d+$/,
       ),
     );
     exit.mockRestore();
@@ -166,7 +212,7 @@ describe('runValidateNodeVersion', () => {
     });
     expect(runValidateNodeVersion('/repo', fs)).toBe(0);
     expect(console.log).toHaveBeenCalledWith(
-      'OK: all engines.node constraints, .nvmrc, and ci.yml agree on Node 22',
+      'OK: all engines.node constraints, .nvmrc, and CI node-version agree on Node 22',
     );
   });
 

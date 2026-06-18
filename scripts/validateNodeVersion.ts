@@ -46,6 +46,22 @@ const validateWorkspacePackages = (
   }
 };
 
+const CI_NODE_CONFIG_PATHS = [
+  '.github/workflows/ci.yml',
+  '.github/actions/ci-setup/action.yml',
+] as const;
+
+const readCiNodeMajor = (root: string, fs: ValidateFs): string => {
+  for (const relPath of CI_NODE_CONFIG_PATHS) {
+    const content = fs.readFileSync(join(root, relPath), 'utf8');
+    const match = /node-version:\s*['"]?(\d+)/.exec(content);
+    if (match?.[1]) {
+      return match[1];
+    }
+  }
+  return '';
+};
+
 const validatePinnedNodeVersions = (
   root: string,
   fs: ValidateFs,
@@ -59,12 +75,16 @@ const validatePinnedNodeVersions = (
     );
   }
 
-  const ciYml = fs.readFileSync(join(root, '.github/workflows/ci.yml'), 'utf8');
-  const ciNodeMatch = /node-version:\s*['"]?(\d+)/.exec(ciYml);
-  const ciNode = ciNodeMatch?.[1] ?? '';
+  const ciNode = readCiNodeMajor(root, fs);
+  if (!ciNode) {
+    errors.push(
+      'FAIL: no node-version found in .github/workflows/ci.yml or .github/actions/ci-setup/action.yml',
+    );
+    return;
+  }
   if (ciNode !== rootEngine) {
     errors.push(
-      `FAIL: ci.yml node-version (${ciNode}) does not match root engines.node (${rootEngine})`,
+      `FAIL: CI node-version (${ciNode}) does not match root engines.node (${rootEngine})`,
     );
   }
 };
@@ -104,7 +124,7 @@ export const runValidateNodeVersion = (
   }
 
   console.log(
-    `OK: all engines.node constraints, .nvmrc, and ci.yml agree on Node ${result.rootEngine}`,
+    `OK: all engines.node constraints, .nvmrc, and CI node-version agree on Node ${result.rootEngine}`,
   );
   return 0;
 };

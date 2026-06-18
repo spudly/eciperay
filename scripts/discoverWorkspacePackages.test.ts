@@ -1,3 +1,6 @@
+import {readFileSync} from 'node:fs';
+import {join} from 'node:path';
+
 import {
   discoverWorkspacePackages,
   formatGithubOutput,
@@ -170,5 +173,15 @@ describe('maybeRunDiscoverWorkspacePackagesCli', () => {
     const run = jest.fn();
     maybeRunDiscoverWorkspacePackagesCli(true, run);
     expect(run).toHaveBeenCalled();
+  });
+});
+
+describe('ci workflow', () => {
+  it('discovers packages via npm script after installing dependencies', () => {
+    const repoRoot = new URL('..', import.meta.url).pathname;
+    const ci = readFileSync(join(repoRoot, '.github/workflows/ci.yml'), 'utf8');
+    expect(ci).toContain('uses: ./.github/actions/ci-setup');
+    expect(ci).toContain('npm run discover:workspace-packages');
+    expect(ci).not.toMatch(/run: tsx scripts\/discoverWorkspacePackages\.ts/u);
   });
 });
