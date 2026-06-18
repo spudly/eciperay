@@ -6,6 +6,7 @@ import {
   recipeImageFromAsset,
   type PendingRecipeImage,
 } from '../../lib/recipeImageAsset';
+import {confirmPhotoLibraryAccess} from '../../lib/androidPermissions';
 
 import {recipeImagePreviewStyles} from './recipeImagePreviewStyles';
 
@@ -38,6 +39,11 @@ export const RecipeImageField = ({
   const imageBusy = imageUploading || imageGenerating;
 
   const handlePick = async () => {
+    const confirmed = await confirmPhotoLibraryAccess();
+    if (!confirmed) {
+      return;
+    }
+
     const result = await launchImageLibrary({
       mediaType: 'photo',
       includeBase64: true,

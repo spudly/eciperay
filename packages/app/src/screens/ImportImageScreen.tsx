@@ -4,6 +4,10 @@ import {Alert, Text, TouchableOpacity, View} from 'react-native';
 import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 
 import {api} from '../lib/api';
+import {
+  confirmPhotoLibraryAccess,
+  ensureCameraPermission,
+} from '../lib/androidPermissions';
 import type {AddStackParamList} from '../navigation/types';
 
 type Props = NativeStackScreenProps<AddStackParamList, 'ImportImage'>;
@@ -13,6 +17,18 @@ export const ImportImageScreen = ({navigation}: Props) => {
   const [error, setError] = useState<string | null>(null);
 
   const handlePick = async (source: 'camera' | 'library') => {
+    if (source === 'camera') {
+      const granted = await ensureCameraPermission();
+      if (!granted) {
+        return;
+      }
+    } else {
+      const confirmed = await confirmPhotoLibraryAccess();
+      if (!confirmed) {
+        return;
+      }
+    }
+
     setLoading(true);
     setError(null);
     try {
