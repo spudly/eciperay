@@ -1,7 +1,6 @@
 npx lint-staged
 npm run typecheck
-# Run only changed tests in each package that has a test script
-npm run test --workspace=packages/app --if-present -- --onlyChanged --passWithNoTests
-npm run test --workspace=packages/client --if-present -- --onlyChanged --passWithNoTests
-npm run test --workspace=packages/server --if-present -- --onlyChanged --passWithNoTests
-npm run test --workspace=packages/web --if-present -- --changed
+npm run test:scripts
+npm run depcheck
+npm run audit
+npm run precommit:test-coverage

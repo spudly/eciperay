@@ -1,0 +1,6 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {"types": ["jest", "node"]},
+  "include": ["./**/*.ts", "../eslint-rules/**/*.ts"],
+  "exclude": []
+}
