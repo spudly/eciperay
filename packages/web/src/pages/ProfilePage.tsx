@@ -47,7 +47,7 @@ export const ProfilePage = () => {
     try {
       const bundle = await parseImportFile(file);
       const result = await eciperay.import.importBulk(bundle);
-      await queryClient.invalidateQueries({queryKey: queryKeys.recipes()});
+      await queryClient.invalidateQueries({queryKey: queryKeys.recipeLists()});
       setImportSummary(formatImportSummary(result));
       if (result.errors.length > 0) {
         const details = result.errors

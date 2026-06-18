@@ -1,4 +1,7 @@
-import {queryKeys, recipeListInfiniteQueryOptions} from '@eciperay/client';
+import {
+  invalidateRecipeQueries,
+  recipeListInfiniteQueryOptions,
+} from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {
   useInfiniteQuery,
@@ -39,8 +42,8 @@ export const RecipesScreen = ({navigation}: RecipesProps) => {
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api.recipes.delete(id),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({queryKey: queryKeys.recipes()});
+    onSuccess: (_data, id) => {
+      void invalidateRecipeQueries(queryClient, id);
     },
   });
 

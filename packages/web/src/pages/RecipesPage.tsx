@@ -1,4 +1,7 @@
-import {queryKeys, recipeListInfiniteQueryOptions} from '@eciperay/client';
+import {
+  invalidateRecipeQueries,
+  recipeListInfiniteQueryOptions,
+} from '@eciperay/client';
 import {
   useInfiniteQuery,
   useMutation,
@@ -43,8 +46,8 @@ export const RecipesPage = () => {
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => eciperay.recipes.delete(id),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({queryKey: queryKeys.recipes()});
+    onSuccess: (_data, id) => {
+      void invalidateRecipeQueries(queryClient, id);
     },
   });
 

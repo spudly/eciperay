@@ -13,6 +13,13 @@ export type ChildProcessDeps = {
   spawnSync: typeof spawnSync;
 };
 
+export const createDefaultChildProcessDeps = (): ChildProcessDeps => ({
+  execSync,
+  spawnSync,
+});
+
+export const childProcessDepsFactory = {create: createDefaultChildProcessDeps};
+
 export const getStagedFiles = (
   root: string,
   exec: typeof execSync,
@@ -133,7 +140,7 @@ export const runPreCommitTestsCli = (
   root: string = join(new URL('..', import.meta.url).pathname),
   deps?: ChildProcessDeps,
 ): void => {
-  main(root, deps ?? {execSync, spawnSync});
+  main(root, deps ?? childProcessDepsFactory.create());
 };
 
 export const maybeRunPreCommitTestsCli = (
