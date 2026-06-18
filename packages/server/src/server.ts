@@ -9,6 +9,8 @@ import type {NextFunction, Request, Response} from 'express';
 
 import {API_PREFIX} from './apiPrefix.js';
 import {query as defaultQuery} from './db/query.js';
+import {attachPostHogExpress, captureServerException} from './lib/posthog.js';
+import {initPostHogLogs, serverLog} from './lib/posthogLogs.js';
 import {createAuthRouter} from './routes/auth/router.js';
 import {createImportRouter} from './routes/import/router.js';
 import {createRecipesRouter} from './routes/recipes/router.js';
@@ -29,6 +31,7 @@ export const createApp = ({
   if (process.env['NODE_ENV'] === 'test') {
     app.locals['skipUserUpsert'] = true;
   }
+  attachPostHogExpress(app);
   const corsOrigins = (process.env['CORS_ORIGINS'] ?? DEFAULT_CORS_ORIGINS)
     .split(',')
     .map(origin => origin.trim());
@@ -67,17 +70,24 @@ export const handleUnexpectedError = (
     return;
   }
   if (err instanceof Anthropic.APIError) {
+    serverLog('warn', 'AI service error', {
+      status: typeof err.status === 'number' ? err.status : 0,
+    });
     res.status(502).json({error: 'AI service error'});
     return;
   }
+  captureServerException(err);
   if (process.env['NODE_ENV'] !== 'test') {
-    console.error(err);
+    serverLog('error', 'Unhandled server error', {
+      message: err instanceof Error ? err.message : 'unknown error',
+    });
   }
   res.status(500).json({error: 'Internal server error'});
 };
 
 /* c8 ignore start -- HTTP listener entrypoint; tests import createApp via supertest only */
 const startServer = () => {
+  initPostHogLogs();
   const app = createApp();
   const port = Number(process.env['PORT'] ?? DEFAULT_PORT);
   const host = process.env['HOST'] ?? '0.0.0.0';

@@ -1,5 +1,5 @@
 import type {BulkImportResult, RecipeExportBundle} from '@eciperay/types';
-import {queryKeys, useAuth} from '@eciperay/client';
+import {queryKeys, useAnalytics, useAuth} from '@eciperay/client';
 import {useQueryClient} from '@tanstack/react-query';
 import {useRef, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
@@ -30,6 +30,7 @@ export const ProfilePage = () => {
   const {session} = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const analytics = useAnalytics();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importing, setImporting] = useState(false);
   const [transferError, setTransferError] = useState<string | null>(null);
@@ -47,6 +48,12 @@ export const ProfilePage = () => {
     try {
       const bundle = await parseImportFile(file);
       const result = await eciperay.import.importBulk(bundle);
+      for (const recipe of result.created) {
+        analytics.track('recipe_imported', {
+          recipe_id: recipe.id,
+          source: 'bulk',
+        });
+      }
       await queryClient.invalidateQueries({queryKey: queryKeys.recipeLists()});
       setImportSummary(formatImportSummary(result));
       if (result.errors.length > 0) {

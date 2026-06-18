@@ -1,70 +1,38 @@
-import {queryKeys, recordRecipeView, removeRecipeView} from '@eciperay/client';
-import clsx from 'clsx';
+import {
+  queryKeys,
+  recordRecipeView,
+  removeRecipeView,
+  useAnalytics,
+} from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import React, {useCallback, useEffect, useState} from 'react';
-import {Alert, ScrollView, Text, TouchableOpacity, View} from 'react-native';
+import {Alert, ScrollView, Text, View} from 'react-native';
 
 import {IngredientsTab} from '../components/recipe/IngredientsTab';
 import {InstructionsTab} from '../components/recipe/InstructionsTab';
 import {NotesTab} from '../components/recipe/NotesTab';
 import {NutritionTab} from '../components/recipe/NutritionTab';
 import {OverviewTab} from '../components/recipe/OverviewTab';
+import {
+  RecipeDetailTabBar,
+  type RecipeDetailTab,
+} from '../components/recipe/RecipeDetailTabBar';
 import {api} from '../lib/api';
 import {recipeViewHistoryStorage} from '../lib/recipeViewHistoryStorage';
 import type {RecipesStackParamList} from '../navigation/types';
-
-type Tab = 'overview' | 'ingredients' | 'instructions' | 'notes' | 'nutrition';
-
-const TABS: {key: Tab; label: string}[] = [
-  {key: 'overview', label: 'Overview'},
-  {key: 'ingredients', label: 'Ingredients'},
-  {key: 'instructions', label: 'Instructions'},
-  {key: 'notes', label: 'Notes'},
-  {key: 'nutrition', label: 'Nutrition'},
-];
 
 type DetailProps = NativeStackScreenProps<
   RecipesStackParamList,
   'RecipeDetail'
 >;
 
-const TabBar = ({
-  activeTab,
-  onSelect,
-}: {
-  activeTab: Tab;
-  onSelect: (tab: Tab) => void;
-}) => (
-  <View className="flex-row border-b border-gray-200">
-    {TABS.map(tab => (
-      <TouchableOpacity
-        key={tab.key}
-        className={clsx('flex-1 items-center py-3', {
-          'border-primary border-b-2': activeTab === tab.key,
-        })}
-        onPress={() => {
-          onSelect(tab.key);
-        }}
-      >
-        <Text
-          className={clsx('text-xs font-medium', {
-            'text-primary': activeTab === tab.key,
-            'text-muted': activeTab !== tab.key,
-          })}
-        >
-          {tab.label}
-        </Text>
-      </TouchableOpacity>
-    ))}
-  </View>
-);
-
 export const RecipeDetailScreen = ({route, navigation}: DetailProps) => {
   const {recipeId} = route.params;
-  const [activeTab, setActiveTab] = useState<Tab>('overview');
+  const [activeTab, setActiveTab] = useState<RecipeDetailTab>('overview');
   const [servings, setServings] = useState<number | null>(null);
   const queryClient = useQueryClient();
+  const analytics = useAnalytics();
 
   const invalidateRecentlyViewed = useCallback(() => {
     void queryClient.invalidateQueries({
@@ -89,6 +57,7 @@ export const RecipeDetailScreen = ({route, navigation}: DetailProps) => {
       await removeRecipeView(recipeViewHistoryStorage, recipeId);
     },
     onSuccess: () => {
+      analytics.track('recipe_deleted', {recipe_id: recipeId});
       void queryClient.invalidateQueries({queryKey: queryKeys.recipeLists()});
       navigation.navigate('RecipesList');
     },
@@ -124,7 +93,7 @@ export const RecipeDetailScreen = ({route, navigation}: DetailProps) => {
 
   return (
     <View className="flex-1 bg-white">
-      <TabBar
+      <RecipeDetailTabBar
         activeTab={activeTab}
         onSelect={setActiveTab}
       />

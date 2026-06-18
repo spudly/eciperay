@@ -24,3 +24,4 @@ process.env.SUPABASE_SECRET_KEY =
   process.env.SUPABASE_SECRET_KEY || 'test-placeholder-key';
 process.env.ANTHROPIC_API_KEY =
   process.env.ANTHROPIC_API_KEY || 'test-placeholder-anthropic-key';
+process.env.POSTHOG_KEY = process.env.POSTHOG_KEY || '';

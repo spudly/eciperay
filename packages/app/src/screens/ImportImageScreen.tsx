@@ -1,3 +1,4 @@
+import {useAnalytics} from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import React, {useState} from 'react';
 import {Alert, Text, TouchableOpacity, View} from 'react-native';
@@ -15,6 +16,7 @@ type Props = NativeStackScreenProps<AddStackParamList, 'ImportImage'>;
 export const ImportImageScreen = ({navigation}: Props) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const analytics = useAnalytics();
 
   const handlePick = async (source: 'camera' | 'library') => {
     if (source === 'camera') {
@@ -47,6 +49,10 @@ export const ImportImageScreen = ({navigation}: Props) => {
       }
 
       const recipe = await api.import.importImage(asset.base64 ?? '');
+      analytics.track('recipe_imported', {
+        recipe_id: recipe.id,
+        source: 'image',
+      });
       navigation.navigate('ImportReview', {recipeId: recipe.id});
     } catch (error_) {
       const message =

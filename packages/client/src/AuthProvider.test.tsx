@@ -106,6 +106,33 @@ describe('AuthProvider', () => {
     expect(onAuthenticated).toHaveBeenCalledWith(session);
   });
 
+  test('calls onSignedOut when auth state changes to null', async () => {
+    const {client, onAuthStateChange} = makeSupabase();
+    const onSignedOut = jest.fn();
+    const wrapper = ({children}: {children: React.ReactNode}) => (
+      <AuthProvider
+        supabase={client}
+        onSignedOut={onSignedOut}
+      >
+        {children}
+      </AuthProvider>
+    );
+    const {result} = renderHook(() => useAuth(), {wrapper});
+    await act(async () => {
+      await Promise.resolve();
+    });
+    const callback = onAuthStateChange.mock.calls[0][0];
+    act(() => {
+      callback('SIGNED_IN', {access_token: 'xyz', user: {id: 'u2'}});
+    });
+    expect(result.current.session).not.toBeNull();
+    act(() => {
+      callback('SIGNED_OUT', null);
+    });
+    expect(onSignedOut).toHaveBeenCalled();
+    expect(result.current.session).toBeNull();
+  });
+
   test('sets isLoading false when getSession rejects', async () => {
     const {client, getSession} = makeSupabase();
     getSession.mockRejectedValue(new Error('network'));

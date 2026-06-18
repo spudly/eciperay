@@ -1,3 +1,4 @@
+import {useAnalytics} from '@eciperay/client';
 import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
@@ -21,6 +22,7 @@ export const ImportImagePage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const analytics = useAnalytics();
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -32,6 +34,10 @@ export const ImportImagePage = () => {
     try {
       const base64 = await readFileAsBase64(file);
       const recipe = await eciperay.import.importImage(base64);
+      analytics.track('recipe_imported', {
+        recipe_id: recipe.id,
+        source: 'image',
+      });
       void navigate(`/import/review/${recipe.id}`);
     } catch (error_) {
       setError(error_ instanceof Error ? error_.message : 'Import failed');

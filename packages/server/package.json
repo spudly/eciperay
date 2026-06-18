@@ -14,12 +14,17 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.37.0",
     "@eciperay/types": "*",
+    "@opentelemetry/api-logs": "^0.219.0",
+    "@opentelemetry/exporter-logs-otlp-http": "^0.219.0",
+    "@opentelemetry/resources": "^2.8.0",
+    "@opentelemetry/sdk-logs": "^0.219.0",
     "@supabase/supabase-js": "^2.0.0",
     "cheerio": "^1.0.0",
     "cors": "^2.8.5",
     "dotenv": "^17.0.0",
     "express": "^5.0.0",
     "pg": "^8.0.0",
+    "posthog-node": "^5.38.1",
     "tsx": "^4.0.0",
     "zod": "^4.4.3"
   },

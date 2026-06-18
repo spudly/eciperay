@@ -47,6 +47,30 @@ jest.mock('react-native-image-picker', () => ({
   launchImageLibrary: jest.fn(),
 }));
 
+jest.mock('posthog-react-native', () => ({
+  __esModule: true,
+  default: jest
+    .fn()
+    .mockImplementation(() => ({
+      capture: jest.fn(),
+      identify: jest.fn(),
+      reset: jest.fn(),
+      isFeatureEnabled: jest.fn(),
+      getFeatureFlag: jest.fn(),
+      getFeatureFlagPayload: jest.fn(),
+      onFeatureFlags: jest.fn(() => jest.fn()),
+      reloadFeatureFlags: jest.fn(),
+      captureException: jest.fn(),
+      logger: {
+        info: jest.fn(),
+        warn: jest.fn(),
+        error: jest.fn(),
+        debug: jest.fn(),
+        trace: jest.fn(),
+      },
+    })),
+}));
+
 jest.mock('react-native-blob-util', () => ({
   __esModule: true,
   default: {
