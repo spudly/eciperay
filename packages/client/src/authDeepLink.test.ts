@@ -34,6 +34,12 @@ describe('authDeepLink', () => {
     ).toBe('abc');
   });
 
+  test('returns empty params when callback URL has no hash or query', () => {
+    expect(
+      parseAuthDeepLinkParams('com.eciperay://auth/callback').toString(),
+    ).toBe('');
+  });
+
   test('exchanges PKCE auth codes for a session', async () => {
     const session = {access_token: 'token'};
     const exchangeCodeForSession = jest
@@ -71,5 +77,50 @@ describe('authDeepLink', () => {
       access_token: 'a',
       refresh_token: 'b',
     });
+  });
+
+  test('returns null when callback URL has no auth params', async () => {
+    const supabase = {
+      auth: {exchangeCodeForSession: jest.fn(), setSession: jest.fn()},
+    } as unknown as SupabaseClient;
+
+    await expect(
+      createSessionFromAuthDeepLink(supabase, 'com.eciperay://auth/callback'),
+    ).resolves.toEqual({session: null});
+  });
+
+  test('throws when PKCE exchange fails', async () => {
+    const exchangeCodeForSession = jest
+      .fn()
+      .mockResolvedValue({data: {session: null}, error: new Error('bad code')});
+    const supabase = {
+      auth: {exchangeCodeForSession, setSession: jest.fn()},
+    } as unknown as SupabaseClient;
+
+    await expect(
+      createSessionFromAuthDeepLink(
+        supabase,
+        'com.eciperay://auth/callback?code=abc',
+      ),
+    ).rejects.toThrow('bad code');
+  });
+
+  test('throws when implicit session setup fails', async () => {
+    const setSession = jest
+      .fn()
+      .mockResolvedValue({
+        data: {session: null},
+        error: new Error('bad token'),
+      });
+    const supabase = {
+      auth: {exchangeCodeForSession: jest.fn(), setSession},
+    } as unknown as SupabaseClient;
+
+    await expect(
+      createSessionFromAuthDeepLink(
+        supabase,
+        'com.eciperay://auth/callback#access_token=a&refresh_token=b',
+      ),
+    ).rejects.toThrow('bad token');
   });
 });

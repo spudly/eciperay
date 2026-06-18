@@ -7,6 +7,7 @@ import {ActivityIndicator, View} from 'react-native';
 import {useAuthDeepLink} from '../hooks/useAuthDeepLink';
 import {supabase} from '../lib/supabase';
 import {ResetPasswordScreen} from '../screens/auth/ResetPasswordScreen';
+
 import {AuthNavigator} from './AuthNavigator';
 import {TabNavigator} from './TabNavigator';
 
