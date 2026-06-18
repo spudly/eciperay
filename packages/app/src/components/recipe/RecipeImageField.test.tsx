@@ -7,12 +7,36 @@ import {renderWithProviders} from '../../__tests__/testUtils';
 import {RecipeImageField} from './RecipeImageField';
 
 jest.mock('react-native-image-picker', () => ({launchImageLibrary: jest.fn()}));
+jest.mock('../../lib/androidPermissions', () => ({
+  confirmPhotoLibraryAccess: jest.fn().mockResolvedValue(true),
+}));
 
 const mockLaunchImageLibrary = launchImageLibrary as jest.Mock;
 
 describe('RecipeImageField', () => {
   beforeEach(() => {
     mockLaunchImageLibrary.mockReset();
+  });
+
+  test('does not open picker when rationale is dismissed', async () => {
+    const {confirmPhotoLibraryAccess} = require('../../lib/androidPermissions');
+    confirmPhotoLibraryAccess.mockResolvedValueOnce(false);
+    const onImagePicked = jest.fn();
+    const {getByLabelText} = renderWithProviders(
+      <RecipeImageField
+        imagePreview={null}
+        imageUploading={false}
+        imageError={null}
+        onImagePicked={onImagePicked}
+        onRemove={jest.fn()}
+      />,
+    );
+    fireEvent.press(getByLabelText('Choose recipe image'));
+    await waitFor(() => {
+      expect(confirmPhotoLibraryAccess).toHaveBeenCalled();
+    });
+    expect(mockLaunchImageLibrary).not.toHaveBeenCalled();
+    expect(onImagePicked).not.toHaveBeenCalled();
   });
 
   test('calls onGenerateImage from the generate button', () => {

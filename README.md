@@ -236,6 +236,10 @@ keep using `.env` (localhost).
 (local). The upload keystore is gitignored — store it in a password manager and
 in GitHub secrets for CI.
 
+Android permissions, cleartext HTTP policy, and runtime rationale dialogs are
+documented in
+[`packages/app/android/PERMISSIONS.md`](packages/app/android/PERMISSIONS.md).
+
 #### GitHub Actions
 
 The **Android Deploy** workflow (`.github/workflows/android-deploy.yml`) builds
