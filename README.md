@@ -239,24 +239,43 @@ in GitHub secrets for CI.
 #### GitHub Actions
 
 The **Android Deploy** workflow (`.github/workflows/android-deploy.yml`) builds
-a signed release **AAB** on manual dispatch (**Android Deploy** → **Run
-workflow**). Automatic deploy after CI on `master` is disabled until release
-signing secrets are configured (see commented `workflow_run` in the workflow
-file).
+a signed release **AAB** and can optionally upload it to Google Play. Run it
+manually from **Actions → Android Deploy → Run workflow** and choose a **Play
+track**:
+
+| Track             | Play Console destination                          |
+| ----------------- | ------------------------------------------------- |
+| `build-only`      | Skip Play upload; download the AAB from Artifacts |
+| `internal`        | Internal testing                                  |
+| `alpha`           | Closed testing                                    |
+| `beta`            | Open testing                                      |
+| `production`      | Production                                        |
+| `internalsharing` | Internal app sharing (temporary download link)    |
+
+Automatic deploy after CI on `master` is disabled until release signing is
+configured (see commented `workflow_run` in the workflow file).
 
 Add these repository secrets (Settings → Secrets and variables → Actions, or the
 **production** environment):
 
-| Secret                      | Purpose                                           |
-| --------------------------- | ------------------------------------------------- |
-| `VITE_SUPABASE_URL`         | Production Supabase URL (same as web deploy)      |
-| `VITE_SUPABASE_ANON_KEY`    | Production Supabase anon key (same as web deploy) |
-| `ANDROID_KEYSTORE_BASE64`   | Base64-encoded release `.jks` / `.keystore` file  |
-| `ANDROID_KEYSTORE_PASSWORD` | Keystore password                                 |
-| `ANDROID_KEY_ALIAS`         | Key alias                                         |
-| `ANDROID_KEY_PASSWORD`      | Key password                                      |
+| Secret                             | Purpose                                            |
+| ---------------------------------- | -------------------------------------------------- |
+| `VITE_SUPABASE_URL`                | Production Supabase URL (same as web deploy)       |
+| `VITE_SUPABASE_ANON_KEY`           | Production Supabase anon key (same as web deploy)  |
+| `ANDROID_KEYSTORE_BASE64`          | Base64-encoded release `.jks` / `.keystore` file   |
+| `ANDROID_KEYSTORE_PASSWORD`        | Keystore password                                  |
+| `ANDROID_KEY_ALIAS`                | Key alias                                          |
+| `ANDROID_KEY_PASSWORD`             | Key password                                       |
+| `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` | Play Console API service account JSON (for upload) |
 
 `API_BASE_URL` is set to `https://www.eciperay.com/api` in the workflow.
+
+**Google Play service account (one-time):** enable the
+[Google Play Android Developer API](https://console.cloud.google.com/apis/library/androidpublisher.googleapis.com),
+create a service account in Google Cloud, download its JSON key, and invite that
+account under Play Console → **Users and permissions** with release permissions
+for `com.eciperay`. Store the JSON contents in
+`GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`.
 
 Generate a keystore locally (once):
 
@@ -268,7 +287,8 @@ base64 -i upload-keystore.jks | pbcopy   # paste into ANDROID_KEYSTORE_BASE64
 ```
 
 Download the AAB from the workflow run’s **Artifacts** tab
-(`eciperay-android-<run-number>`) and upload it to Google Play Console.
+(`eciperay-android-<run-number>`) when using `build-only`, or check Play Console
+for the release on the track you selected.
 
 #### Local release build
 
