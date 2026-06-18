@@ -4,6 +4,7 @@ import {useQueryClient} from '@tanstack/react-query';
 import {useRef, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
+import {LegalLinks} from '../components/LegalLinks.js';
 import {RecipeExportPicker} from '../components/RecipeExportPicker.js';
 import {eciperay} from '../lib/api.js';
 import {supabase} from '../lib/supabase.js';
@@ -68,14 +69,14 @@ export const ProfilePage = () => {
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-bold text-gray-900">Profile</h1>
-      <p className="mb-6 text-gray-700">{session?.user.email}</p>
+      <h1 className="mbe-6 text-2xl font-bold text-gray-900">Profile</h1>
+      <p className="mbe-6 text-gray-700">{session?.user.email}</p>
 
-      <section className="mb-8 rounded-xl bg-white p-4 shadow-sm">
-        <h2 className="mb-1 text-lg font-semibold text-gray-900">
+      <section className="mbe-8 rounded-xl bg-white p-4 shadow-sm">
+        <h2 className="mbe-1 text-lg font-semibold text-gray-900">
           Transfer recipes
         </h2>
-        <p className="text-muted mb-4 text-sm">
+        <p className="text-muted mbe-4 text-sm">
           Select recipes to export as JSON, then import them in another
           environment. Images and tags are included.
         </p>
@@ -83,7 +84,7 @@ export const ProfilePage = () => {
           disabled={importing}
           onError={setTransferError}
         />
-        <div className="mt-6 border-t border-gray-100 pt-4">
+        <div className="mbs-6 border-bs pbs-4 border-gray-100">
           <button
             type="button"
             className="
@@ -112,11 +113,16 @@ export const ProfilePage = () => {
           />
         </div>
         {importSummary ? (
-          <p className="mt-4 text-sm text-green-700">{importSummary}</p>
+          <p className="mbs-4 text-sm text-green-700">{importSummary}</p>
         ) : null}
         {transferError ? (
-          <p className="mt-4 text-sm text-red-600">{transferError}</p>
+          <p className="mbs-4 text-sm text-red-600">{transferError}</p>
         ) : null}
+      </section>
+
+      <section className="mbe-8 rounded-xl bg-white p-4 shadow-sm">
+        <h2 className="mbe-3 text-lg font-semibold text-gray-900">Legal</h2>
+        <LegalLinks variant="stacked" />
       </section>
 
       <button
