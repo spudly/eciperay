@@ -15,6 +15,19 @@ react {
     codegenDir = file("../../../../node_modules/@react-native/codegen")
     cliFile = file("../../../../node_modules/react-native/cli.js")
 
+    def hermesOs = {
+        def osName = System.getProperty("os.name").toLowerCase()
+        if (osName.contains("windows")) {
+            return "win64-bin"
+        }
+        if (osName.contains("mac")) {
+            return "osx-bin"
+        }
+        return "linux64-bin"
+    }()
+    // RN 0.85+ ships hermesc in the hermes-compiler package (not react-native/sdks).
+    hermesCommand = file("../../../../node_modules/hermes-compiler/hermesc/${hermesOs}/hermesc").absolutePath
+
     /* Variants */
     //   The list of variants to that are debuggable. For those we're going to
     //   skip the bundling of the JS bundle and the assets. Default is "debug", "debugOptimized".
@@ -70,6 +83,27 @@ def enableProguardInReleaseBuilds = false
  */
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 
+def loadSigningValue = { String envName, String propName ->
+    def envValue = System.getenv(envName)
+    if (envValue != null && !envValue.isEmpty()) {
+        return envValue
+    }
+    if (project.hasProperty(propName)) {
+        return project.property(propName)
+    }
+    return null
+}
+
+def releaseStoreFile = loadSigningValue("ANDROID_KEYSTORE_PATH", "ECIPERAY_UPLOAD_STORE_FILE")
+def releaseStorePassword = loadSigningValue("ANDROID_KEYSTORE_PASSWORD", "ECIPERAY_UPLOAD_STORE_PASSWORD")
+def releaseKeyAlias = loadSigningValue("ANDROID_KEY_ALIAS", "ECIPERAY_UPLOAD_KEY_ALIAS")
+def releaseKeyPassword = loadSigningValue("ANDROID_KEY_PASSWORD", "ECIPERAY_UPLOAD_KEY_PASSWORD")
+def hasReleaseSigning =
+    releaseStoreFile != null &&
+    releaseStorePassword != null &&
+    releaseKeyAlias != null &&
+    releaseKeyPassword != null
+
 android {
     ndkVersion rootProject.ext.ndkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
@@ -80,8 +114,8 @@ android {
         applicationId "com.eciperay"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode project.hasProperty("VERSION_CODE") ? VERSION_CODE.toInteger() : 1
+        versionName project.hasProperty("VERSION_NAME") ? VERSION_NAME : "1.0"
     }
     signingConfigs {
         debug {
@@ -90,15 +124,21 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        release {
+            if (hasReleaseSigning) {
+                storeFile file(releaseStoreFile)
+                storePassword releaseStorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
+            }
+        }
     }
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            signingConfig hasReleaseSigning ? signingConfigs.release : signingConfigs.debug
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }
