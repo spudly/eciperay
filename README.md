@@ -184,8 +184,10 @@ Point DNS at the addresses `fly certs add` prints (usually `A` + `AAAA` to Fly).
 
 **6. Post-deploy**
 
-- Supabase → Authentication → URL configuration: add `https://eciperay.com/**`
-- Android: run the **Android Deploy** workflow (see below) and install the APK
+- Supabase → Authentication → URL configuration: add
+  `https://www.eciperay.com/**`
+- Android: run the **Android Deploy** workflow (see below) and upload the AAB to
+  Play Console
 
 Migrations run automatically on each deploy via `release_command` in `fly.toml`.
 The default machine config uses **512MB RAM** and **auto-stop** when idle to
@@ -195,7 +197,7 @@ few seconds to cold-start.
 ```sh
 fly logs
 fly status
-curl https://eciperay.com/api/health
+curl https://www.eciperay.com/api/health
 ```
 
 ### Android physical device
@@ -211,18 +213,27 @@ and the API (`8080`). Keep `API_BASE_URL=http://localhost:8080/api` in `.env`.
 If multiple phones are connected, set `ANDROID_SERIAL` to the device id from
 `adb devices`.
 
-### Deploy Android (GitHub Actions)
+### Android release signing and deploy
 
-Release APKs bundle production API and Supabase config at **build time** via the
-Metro `@env` shim. Debug/Metro builds keep using `.env` (localhost).
+Release builds bundle production API and Supabase config at **build time** via
+the Metro `@env` shim (`packages/app/scripts/envShim.cjs`). Debug/Metro builds
+keep using `.env` (localhost).
+
+`packages/app/android/app/build.gradle` configures `signingConfigs.release` from
+`ANDROID_*` environment variables (CI) or `ECIPERAY_UPLOAD_*` Gradle properties
+(local). The upload keystore is gitignored — store it in a password manager and
+in GitHub secrets for CI.
+
+#### GitHub Actions
 
 The **Android Deploy** workflow (`.github/workflows/android-deploy.yml`) builds
-a signed release APK on manual dispatch from the Actions tab (**Android Deploy**
-→ **Run workflow**). Automatic deploy after CI on `master` is disabled until
-release signing secrets are configured (see commented `workflow_run` in the
-workflow file).
+a signed release **AAB** on manual dispatch (**Android Deploy** → **Run
+workflow**). Automatic deploy after CI on `master` is disabled until release
+signing secrets are configured (see commented `workflow_run` in the workflow
+file).
 
-Add these repository secrets (Settings → Secrets and variables → Actions):
+Add these repository secrets (Settings → Secrets and variables → Actions, or the
+**production** environment):
 
 | Secret                      | Purpose                                           |
 | --------------------------- | ------------------------------------------------- |
@@ -233,7 +244,7 @@ Add these repository secrets (Settings → Secrets and variables → Actions):
 | `ANDROID_KEY_ALIAS`         | Key alias                                         |
 | `ANDROID_KEY_PASSWORD`      | Key password                                      |
 
-`API_BASE_URL` is set to `https://eciperay.com/api` in the workflow.
+`API_BASE_URL` is set to `https://www.eciperay.com/api` in the workflow.
 
 Generate a keystore locally (once):
 
@@ -244,12 +255,52 @@ keytool -genkeypair -v -storetype PKCS12 \
 base64 -i upload-keystore.jks | pbcopy   # paste into ANDROID_KEYSTORE_BASE64
 ```
 
-Download the APK from the workflow run’s **Artifacts** tab
-(`eciperay-android-<run-number>`). Install with:
+Download the AAB from the workflow run’s **Artifacts** tab
+(`eciperay-android-<run-number>`) and upload it to Google Play Console.
+
+#### Local release build
+
+From `packages/app/android`, export production env and signing vars, then build.
+Avoid `./gradlew clean` — it wipes native-module prefab outputs under
+`node_modules`. Use `--rerun-tasks` on the bundle step when env vars change.
 
 ```sh
-adb install -r app-release.apk
+cd packages/app/android
+
+export APP_ENV=production
+export API_BASE_URL=https://www.eciperay.com/api
+export SUPABASE_URL=https://your-project.supabase.co
+export SUPABASE_ANON_KEY=your-anon-key
+export ANDROID_KEYSTORE_PATH=upload-keystore.jks
+export ANDROID_KEYSTORE_PASSWORD=...
+export ANDROID_KEY_ALIAS=eciperay
+export ANDROID_KEY_PASSWORD=...
+
+# Play Store upload (AAB)
+./gradlew :app:createBundleReleaseJsAndAssets --rerun-tasks
+./gradlew bundleRelease
+
+# Sideload onto a device (APK — same signing config)
+./gradlew assembleRelease
+adb install --no-streaming -r app/build/outputs/apk/release/app-release.apk
 ```
+
+Verify the production API URL is baked into the bundle before installing:
+
+```sh
+strings app/build/generated/assets/react/release/index.android.bundle \
+  | grep 'www.eciperay.com/api'
+```
+
+#### Google Play App Signing
+
+1. Create the app in Play Console with package name `com.eciperay`.
+2. Build a release AAB signed with your upload keystore (`bundleRelease` above).
+3. Upload to **Internal testing** (or another track). Play App Signing enrolls
+   on first upload — your `upload-keystore.jks` becomes the **upload key**;
+   Google holds the **app signing key** used for Play-distributed APKs.
+4. Do **not** use “Change signing key” on first setup — that flow is only for
+   replacing a lost or rotated upload key.
 
 Optional: create a **production** environment in GitHub to require approval
 before Android deploys (same as Fly web deploy).

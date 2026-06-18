@@ -53,12 +53,12 @@ describe('envShim', () => {
       'API_BASE_URL=http://localhost:8080/api\nSUPABASE_URL=https://dev.supabase.co\nSUPABASE_ANON_KEY=dev-key\n',
     );
     process.env.NODE_ENV = 'production';
-    process.env.API_BASE_URL = 'https://eciperay.com/api';
+    process.env.API_BASE_URL = 'https://www.eciperay.com/api';
     process.env.SUPABASE_URL = 'https://prod.supabase.co';
     process.env.SUPABASE_ANON_KEY = 'prod-key';
 
     expect(loadAppEnvVars(root)).toEqual({
-      API_BASE_URL: 'https://eciperay.com/api',
+      API_BASE_URL: 'https://www.eciperay.com/api',
       SUPABASE_ANON_KEY: 'prod-key',
       SUPABASE_URL: 'https://prod.supabase.co',
     });
@@ -82,12 +82,12 @@ describe('envShim', () => {
   test('buildEnvShimSource exports only mobile keys', () => {
     expect(
       buildEnvShimSource({
-        API_BASE_URL: 'https://eciperay.com/api',
+        API_BASE_URL: 'https://www.eciperay.com/api',
         SUPABASE_URL: 'https://prod.supabase.co',
         SUPABASE_ANON_KEY: 'anon',
       }),
     ).toBe(
-      'exports.API_BASE_URL = "https://eciperay.com/api";\n' +
+      'exports.API_BASE_URL = "https://www.eciperay.com/api";\n' +
         'exports.SUPABASE_URL = "https://prod.supabase.co";\n' +
         'exports.SUPABASE_ANON_KEY = "anon";\n',
     );
@@ -96,7 +96,7 @@ describe('envShim', () => {
   test('assertProductionEnvVars rejects missing values', () => {
     expect(() => {
       assertProductionEnvVars({
-        API_BASE_URL: 'https://eciperay.com/api',
+        API_BASE_URL: 'https://www.eciperay.com/api',
         SUPABASE_URL: '',
         SUPABASE_ANON_KEY: 'anon',
       });
@@ -120,14 +120,14 @@ describe('envShim', () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'env-shim-write-ok-'));
     const outputPath = path.join(root, 'env-shim.js');
     process.env.APP_ENV = 'production';
-    process.env.API_BASE_URL = 'https://eciperay.com/api';
+    process.env.API_BASE_URL = 'https://www.eciperay.com/api';
     process.env.SUPABASE_URL = 'https://prod.supabase.co';
     process.env.SUPABASE_ANON_KEY = 'prod-key';
 
     writeEnvShim({monorepoRoot: root, outputPath});
 
     expect(fs.readFileSync(outputPath, 'utf8')).toContain(
-      'https://eciperay.com/api',
+      'https://www.eciperay.com/api',
     );
   });
 });

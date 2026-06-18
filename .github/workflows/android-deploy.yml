@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   deploy:
-    name: Build Android release APK
+    name: Build Android release AAB
     if: >-
       github.event_name == 'workflow_dispatch' || (
         github.event.workflow_run.conclusion == 'success' &&
@@ -62,12 +62,12 @@ jobs:
           fi
           echo "${ANDROID_KEYSTORE_BASE64}" | base64 -d > packages/app/android/app/upload-keystore.jks
 
-      - name: Build release APK
+      - name: Build release AAB
         working-directory: packages/app/android
-        run: ./gradlew assembleRelease -PVERSION_CODE=${{ github.run_number }}
+        run: ./gradlew bundleRelease -PVERSION_CODE=${{ github.run_number }}
         env:
           APP_ENV: production
-          API_BASE_URL: https://eciperay.com/api
+          API_BASE_URL: https://www.eciperay.com/api
           SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           ANDROID_KEYSTORE_PATH: upload-keystore.jks
@@ -75,10 +75,10 @@ jobs:
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
 
-      - name: Upload release APK
+      - name: Upload release AAB
         uses: actions/upload-artifact@v4
         with:
           name: eciperay-android-${{ github.run_number }}
-          path: packages/app/android/app/build/outputs/apk/release/app-release.apk
+          path: packages/app/android/app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
           retention-days: 30

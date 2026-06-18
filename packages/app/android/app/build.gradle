@@ -25,7 +25,8 @@ react {
         }
         return "linux64-bin"
     }()
-    hermesCommand = file("../../../../node_modules/react-native/sdks/hermesc/${hermesOs}/hermesc").absolutePath
+    // RN 0.85+ ships hermesc in the hermes-compiler package (not react-native/sdks).
+    hermesCommand = file("../../../../node_modules/hermes-compiler/hermesc/${hermesOs}/hermesc").absolutePath
 
     /* Variants */
     //   The list of variants to that are debuggable. For those we're going to
