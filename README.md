@@ -327,11 +327,13 @@ strings app/build/generated/assets/react/release/index.android.bundle \
 #### Google Play App Signing
 
 1. Create the app in Play Console with package name `com.eciperay`.
-2. Build a release AAB signed with your upload keystore (`bundleRelease` above).
-3. Upload to **Internal testing** (or another track). Play App Signing enrolls
+2. Set the **Privacy policy URL** to `https://www.eciperay.com/privacy` under
+   **App content** (required for apps with auth and user content).
+3. Build a release AAB signed with your upload keystore (`bundleRelease` above).
+4. Upload to **Internal testing** (or another track). Play App Signing enrolls
    on first upload — your `upload-keystore.jks` becomes the **upload key**;
    Google holds the **app signing key** used for Play-distributed APKs.
-4. Do **not** use “Change signing key” on first setup — that flow is only for
+5. Do **not** use “Change signing key” on first setup — that flow is only for
    replacing a lost or rotated upload key.
 
 Optional: create a **production** environment in GitHub to require approval

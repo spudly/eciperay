@@ -75,6 +75,12 @@ export {
   type EciperayClient,
 } from './createEciperayClient.js';
 export {
+  LEGAL_CONTACT_EMAIL,
+  LEGAL_OPERATOR_NAME,
+  PRIVACY_POLICY_URL,
+  TERMS_OF_SERVICE_URL,
+} from './legalUrls.js';
+export {
   HOME_ADD_LABEL,
   HOME_BROWSE_LABEL,
   HOME_EMPTY_MESSAGE,
