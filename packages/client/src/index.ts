@@ -28,6 +28,12 @@ export {recipeDetailToInput} from './recipeDetailToInput.js';
 export {createApiClient, type ApiClient} from './createApiClient.js';
 export {createSupabaseClient} from './createSupabaseClient.js';
 export {
+  AUTH_DEEP_LINK_REDIRECT_URL,
+  AUTH_DEEP_LINK_SCHEME,
+  createSessionFromAuthDeepLink,
+  isAuthDeepLinkUrl,
+} from './authDeepLink.js';
+export {
   validateRecipeImageContent,
   validateRecipeImageFile,
 } from './validateRecipeImageFile.js';

@@ -36,7 +36,9 @@ describe('ForgotPasswordScreen', () => {
     });
     fireEvent.press(getByText('Send Reset Link'));
     await waitFor(() => {
-      expect(mockReset).toHaveBeenCalledWith('user@test.com');
+      expect(mockReset).toHaveBeenCalledWith('user@test.com', {
+        redirectTo: 'com.eciperay://auth/callback',
+      });
     });
   });
 
