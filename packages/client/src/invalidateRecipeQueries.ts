@@ -7,7 +7,7 @@ export const invalidateRecipeQueries = (
   recipeId: string,
 ) =>
   Promise.all([
-    queryClient.invalidateQueries({queryKey: queryKeys.recipes()}),
+    queryClient.invalidateQueries({queryKey: queryKeys.recipeLists()}),
     queryClient.invalidateQueries({queryKey: queryKeys.recipe(recipeId)}),
     queryClient.invalidateQueries({queryKey: queryKeys.notes(recipeId)}),
     queryClient.invalidateQueries({queryKey: queryKeys.conversation(recipeId)}),

@@ -2,6 +2,7 @@ import {queryKeys} from './queryKeys.js';
 
 describe('queryKeys', () => {
   test('returns stable key tuples', () => {
+    expect(queryKeys.recipeLists()).toEqual(['recipes']);
     expect(queryKeys.recipes()).toEqual(['recipes', {search: ''}]);
     expect(queryKeys.recipes('pasta')).toEqual(['recipes', {search: 'pasta'}]);
     expect(queryKeys.recipe('r1')).toEqual(['recipe', 'r1']);

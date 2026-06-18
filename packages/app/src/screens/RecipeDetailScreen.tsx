@@ -89,7 +89,7 @@ export const RecipeDetailScreen = ({route, navigation}: DetailProps) => {
       await removeRecipeView(recipeViewHistoryStorage, recipeId);
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({queryKey: queryKeys.recipes()});
+      void queryClient.invalidateQueries({queryKey: queryKeys.recipeLists()});
       navigation.navigate('RecipesList');
     },
   });
