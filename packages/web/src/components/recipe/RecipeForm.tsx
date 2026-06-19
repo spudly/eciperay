@@ -443,10 +443,10 @@ export const RecipeForm = ({
               type="button"
               aria-label="Generate description with AI"
               className="
-              border-primary text-primary inline-flex shrink-0 rounded-lg border
-              bg-white px-3 py-1 text-sm font-medium
-              disabled:cursor-not-allowed disabled:opacity-50
-            "
+                border-primary text-primary inline-flex shrink-0 rounded-lg
+                border bg-white px-3 py-1 text-sm font-medium
+                disabled:cursor-not-allowed disabled:opacity-50
+              "
               disabled={!title.trim() || descriptionGenerating}
               onClick={() => {
                 void handleGenerateDescription();
@@ -608,9 +608,9 @@ export const RecipeForm = ({
       {versionDiff?.ingredientsChanged ? (
         <div
           className="
-          flex items-center justify-between rounded-lg bg-amber-50 px-3 py-2
-          text-sm text-amber-900
-        "
+            flex items-center justify-between rounded-lg bg-amber-50 px-3 py-2
+            text-sm text-amber-900
+          "
         >
           <span>Ingredients changed from parent version</span>
           <button
@@ -644,9 +644,9 @@ export const RecipeForm = ({
       {versionDiff?.instructionsChanged ? (
         <div
           className="
-          flex items-center justify-between rounded-lg bg-amber-50 px-3 py-2
-          text-sm text-amber-900
-        "
+            flex items-center justify-between rounded-lg bg-amber-50 px-3 py-2
+            text-sm text-amber-900
+          "
         >
           <span>Instructions changed from parent version</span>
           <button
