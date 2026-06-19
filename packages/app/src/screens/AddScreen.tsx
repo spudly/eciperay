@@ -33,6 +33,11 @@ const OPTIONS: AddOption[] = [
     description: 'Paste rich text from Word or the web',
     screen: 'ImportText',
   },
+  {
+    label: 'Generate with AI',
+    description: 'Describe the recipe you want and let AI create it',
+    screen: 'GenerateAi',
+  },
 ];
 
 const OptionButton = ({

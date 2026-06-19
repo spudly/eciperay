@@ -21,6 +21,11 @@ const OPTIONS = [
     description: 'Paste rich text from Word or the web',
     to: '/add/text',
   },
+  {
+    label: 'Generate with AI',
+    description: 'Describe the recipe you want and let AI create it',
+    to: '/add/ai',
+  },
 ];
 
 export const AddPage = () => (

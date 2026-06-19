@@ -22,6 +22,7 @@ jest.unstable_mockModule('../../lib/recipeImportToInput.js', () => ({
   },
 }));
 
+const {importFromAi} = await import('./importFromAi.js');
 const {importFromImage} = await import('./importFromImage.js');
 const {importFromText} = await import('./importFromText.js');
 const {importFromUrl} = await import('./importFromUrl.js');
@@ -99,6 +100,21 @@ describe('import handlers RecipeImportError handling', () => {
     const res = makeRes();
     await importFromText(
       {userId: 'user-uuid-1', body: {text: 'Pasta recipe'}} as never,
+      res,
+      mockQuery,
+    );
+    expect(res.statusCode).toBe(422);
+    expect(res.json).toHaveBeenCalledWith({error: 'servings is required'});
+  });
+
+  test('importFromAi returns 422 when recipe import is invalid', async () => {
+    nockAnthropicMessage(RECIPE_JSON);
+    const res = makeRes();
+    await importFromAi(
+      {
+        userId: 'user-uuid-1',
+        body: {prompt: 'simple chocolate chip cookies for 12'},
+      } as never,
       res,
       mockQuery,
     );

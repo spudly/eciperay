@@ -15,13 +15,20 @@ describe('analyticsEvents', () => {
   });
 
   test('defines recipe source constants', () => {
-    expect(RECIPE_IMPORT_SOURCES).toEqual(['url', 'image', 'text', 'bulk']);
+    expect(RECIPE_IMPORT_SOURCES).toEqual([
+      'url',
+      'image',
+      'text',
+      'bulk',
+      'ai',
+    ]);
     expect(RECIPE_CREATE_SOURCES).toEqual([
       'manual',
       'url',
       'image',
       'text',
       'bulk',
+      'ai',
     ]);
   });
 

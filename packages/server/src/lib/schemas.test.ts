@@ -2,6 +2,7 @@ import {z} from 'zod';
 
 import {
   ChatMessageSchema,
+  ImportAiSchema,
   ImportImageSchema,
   ImportTextSchema,
   ImportUrlSchema,
@@ -138,6 +139,31 @@ describe('ImportTextSchema', () => {
     expect(() =>
       ImportTextSchema.parse({text: 'x'.repeat(10_000_001)}),
     ).toThrow(z.ZodError);
+  });
+});
+
+describe('ImportAiSchema', () => {
+  test('accepts a valid prompt', () => {
+    expect(() =>
+      ImportAiSchema.parse({prompt: 'quick weeknight vegetarian pasta for 4'}),
+    ).not.toThrow();
+  });
+
+  test('trims prompt whitespace', () => {
+    const result = ImportAiSchema.parse({
+      prompt: '  simple chocolate chip cookies for 12  ',
+    });
+    expect(result.prompt).toBe('simple chocolate chip cookies for 12');
+  });
+
+  test('rejects prompts shorter than 10 characters', () => {
+    expect(() => ImportAiSchema.parse({prompt: 'pasta'})).toThrow(z.ZodError);
+  });
+
+  test('rejects prompts above the max length', () => {
+    expect(() => ImportAiSchema.parse({prompt: 'x'.repeat(2001)})).toThrow(
+      z.ZodError,
+    );
   });
 });
 

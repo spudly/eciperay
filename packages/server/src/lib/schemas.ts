@@ -103,6 +103,12 @@ export const ImportTextSchema = z.object({
   text: z.string().min(1).max(IMPORT_TEXT_REQUEST_MAX),
 });
 
+export const IMPORT_AI_PROMPT_MAX = 2000;
+
+export const ImportAiSchema = z.object({
+  prompt: z.string().trim().min(10).max(IMPORT_AI_PROMPT_MAX),
+});
+
 // ─── Bulk export / import ─────────────────────────────────────────────────────
 
 export const RecipeExportImageSchema = z.object({

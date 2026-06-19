@@ -6,6 +6,7 @@ import {AddPage} from '../pages/AddPage.js';
 import {CookingModePage} from '../pages/CookingModePage.js';
 import {EditRecipePage} from '../pages/EditRecipePage.js';
 import {ForgotPasswordPage} from '../pages/auth/ForgotPasswordPage.js';
+import {GenerateAiPage} from '../pages/GenerateAiPage.js';
 import {HomePage} from '../pages/HomePage.js';
 import {ImportImagePage} from '../pages/ImportImagePage.js';
 import {ImportReviewPage} from '../pages/ImportReviewPage.js';
@@ -45,6 +46,7 @@ export const router = createBrowserRouter([
           {path: '/add/url', element: <ImportUrlPage />},
           {path: '/add/image', element: <ImportImagePage />},
           {path: '/add/text', element: <ImportTextPage />},
+          {path: '/add/ai', element: <GenerateAiPage />},
           {path: '/import/review/:recipeId', element: <ImportReviewPage />},
           {path: '/profile', element: <ProfilePage />},
           {path: '/tags', element: <TagsPage />},
