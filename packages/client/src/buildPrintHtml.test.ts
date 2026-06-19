@@ -1,4 +1,4 @@
-import {makeRecipeDetail} from './test/fixtures/recipe.js';
+import {makeRecipeDetail, VERSION_ID} from './test/fixtures/recipe.js';
 import {buildPrintHtml} from './buildPrintHtml.js';
 
 describe('buildPrintHtml', () => {
@@ -28,7 +28,7 @@ describe('buildPrintHtml', () => {
         ingredients: [
           {
             id: 'i-1',
-            recipeId: 'recipe-uuid-1',
+            recipeVersionId: VERSION_ID,
             sortOrder: 0,
             name: 'Sugar',
             quantity: 1,
@@ -62,7 +62,7 @@ describe('buildPrintHtml', () => {
         ingredients: [
           {
             id: 'i-1',
-            recipeId: 'recipe-uuid-1',
+            recipeVersionId: VERSION_ID,
             sortOrder: 0,
             name: 'Salt',
             quantity: null,
@@ -83,7 +83,7 @@ describe('buildPrintHtml', () => {
         ingredients: [
           {
             id: 'i-1',
-            recipeId: 'recipe-uuid-1',
+            recipeVersionId: VERSION_ID,
             sortOrder: 0,
             name: 'Eggs',
             quantity: 3,

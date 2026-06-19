@@ -1,7 +1,9 @@
 import type {
+  CreateRecipeResult,
   RecipeDetail,
   RecipeExportBundle,
   RecipeInput,
+  RecipeLifecycleStatus,
 } from '@eciperay/types';
 
 import type {ApiClient} from './createApiClient.js';
@@ -16,7 +18,7 @@ export const createRecipesApi = (client: ApiClient) => ({
   listAll: () => fetchAllRecipePages(client),
   get: (id: string) => client.fetch<RecipeDetail>(`/recipes/${id}`),
   create: (input: RecipeInput) =>
-    client.fetch<RecipeDetail>('/recipes', {
+    client.fetch<RecipeDetail & CreateRecipeResult>('/recipes', {
       method: 'POST',
       body: JSON.stringify(input),
     }),
@@ -25,10 +27,10 @@ export const createRecipesApi = (client: ApiClient) => ({
       method: 'PUT',
       body: JSON.stringify(input),
     }),
-  patch: (id: string, body: Partial<RecipeInput>) =>
+  patchLifecycle: (id: string, status: RecipeLifecycleStatus) =>
     client.fetch<RecipeDetail>(`/recipes/${id}`, {
       method: 'PATCH',
-      body: JSON.stringify(body),
+      body: JSON.stringify({status}),
     }),
   delete: (id: string) =>
     client.fetch<undefined>(`/recipes/${id}`, {method: 'DELETE'}),

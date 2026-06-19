@@ -1,5 +1,12 @@
-import {makeRecipeDetail} from './test/fixtures/recipe.js';
-import {recipeDetailToInput} from './recipeDetailToInput.js';
+import {
+  makeRecipeDetail,
+  makeRecipeVersionDetail,
+  VERSION_ID,
+} from './test/fixtures/recipe.js';
+import {
+  recipeDetailToInput,
+  recipeVersionDetailToInput,
+} from './recipeDetailToInput.js';
 
 describe('recipeDetailToInput', () => {
   test('maps detail to input without nested ids', () => {
@@ -28,7 +35,7 @@ describe('recipeDetailToInput', () => {
         ingredients: [
           {
             id: 'i-3',
-            recipeId: 'recipe-uuid-1',
+            recipeVersionId: VERSION_ID,
             sortOrder: 2,
             name: 'Salt',
             quantity: 1,
@@ -38,7 +45,7 @@ describe('recipeDetailToInput', () => {
           },
           {
             id: 'i-1',
-            recipeId: 'recipe-uuid-1',
+            recipeVersionId: VERSION_ID,
             sortOrder: 0,
             name: 'Flour',
             quantity: 2,
@@ -48,7 +55,7 @@ describe('recipeDetailToInput', () => {
           },
           {
             id: 'i-2',
-            recipeId: 'recipe-uuid-1',
+            recipeVersionId: VERSION_ID,
             sortOrder: 1,
             name: 'Sugar',
             quantity: 1,
@@ -72,12 +79,22 @@ describe('recipeDetailToInput', () => {
         instructions: [
           {
             id: 'ins-3',
-            recipeId: 'recipe-uuid-1',
+            recipeVersionId: VERSION_ID,
             stepNumber: 3,
             body: 'Serve',
           },
-          {id: 'ins-1', recipeId: 'recipe-uuid-1', stepNumber: 1, body: 'Prep'},
-          {id: 'ins-2', recipeId: 'recipe-uuid-1', stepNumber: 2, body: 'Cook'},
+          {
+            id: 'ins-1',
+            recipeVersionId: VERSION_ID,
+            stepNumber: 1,
+            body: 'Prep',
+          },
+          {
+            id: 'ins-2',
+            recipeVersionId: VERSION_ID,
+            stepNumber: 2,
+            body: 'Cook',
+          },
         ],
       }),
     );
@@ -86,5 +103,11 @@ describe('recipeDetailToInput', () => {
       'Cook',
       'Serve',
     ]);
+  });
+
+  test('maps version detail to input', () => {
+    const input = recipeVersionDetailToInput(makeRecipeVersionDetail());
+    expect(input.title).toBe('Test Recipe');
+    expect(input.tagIds).toEqual(['tag-1']);
   });
 });

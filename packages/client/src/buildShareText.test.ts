@@ -1,4 +1,4 @@
-import {makeRecipeDetail} from './test/fixtures/recipe.js';
+import {makeRecipeDetail, VERSION_ID} from './test/fixtures/recipe.js';
 import {buildShareText} from './buildShareText.js';
 
 describe('buildShareText', () => {
@@ -20,7 +20,7 @@ describe('buildShareText', () => {
         ingredients: [
           {
             id: 'i-2',
-            recipeId: 'recipe-uuid-1',
+            recipeVersionId: VERSION_ID,
             sortOrder: 0,
             name: 'Salt',
             quantity: null,

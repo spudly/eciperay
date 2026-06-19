@@ -29,7 +29,7 @@ describe('createEciperayClient', () => {
       instructions: [],
       tagIds: [],
     });
-    await client.recipes.patch('r1', {title: 'New'});
+    await client.recipes.patchLifecycle('r1', 'perfected');
     await client.recipes.delete('r1');
     await client.recipes.exportRecipes([
       'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
@@ -69,7 +69,7 @@ describe('createEciperayClient', () => {
     expect(fetch).toHaveBeenCalledWith('/recipes?limit=100&offset=0');
   });
 
-  test('import, auth, tags, notes, ai, drafts apis', async () => {
+  test('import, auth, tags, ai, versions, cookLogs apis', async () => {
     const {api, client} = makeClient();
     await client.import.importUrl('https://example.com');
     await client.import.importImage('base64');
@@ -84,11 +84,6 @@ describe('createEciperayClient', () => {
     await client.tags.list();
     await client.tags.create('Dinner', '#fff');
     await client.tags.delete('t1');
-    await client.notes.list('r1');
-    await client.notes.create('r1', 'note');
-    await client.ai.getConversation('r1');
-    await client.ai.chat('r1', 'hi');
-    await client.ai.cleanup('r1');
     await client.ai.nutrition('r1');
     await client.ai.substitutions('r1', ['flour', 'salt']);
     await client.ai.generateImage({
@@ -102,9 +97,20 @@ describe('createEciperayClient', () => {
       ingredients: ['broth'],
       instructions: ['Simmer'],
     });
-    await client.drafts.listPending('r1');
-    await client.drafts.approve('r1', 'd1');
-    await client.drafts.reject('r1', 'd1');
+    await client.versions.list('r1');
+    await client.versions.get('r1', 'v1');
+    await client.versions.create('r1');
+    await client.versions.put('r1', 'v1', {
+      title: 'T',
+      servings: 2,
+      ingredients: [],
+      instructions: [],
+      tagIds: [],
+    });
+    await client.versions.activate('r1', 'v1');
+    await client.versions.tweakWithAi('r1', 'make it spicier');
+    await client.cookLogs.list('r1', 'v1');
+    await client.cookLogs.create('r1', 'v1', {notes: 'Great'});
     expect(api.fetch).toHaveBeenCalledWith(
       '/recipes/import/url',
       expect.any(Object),
@@ -138,20 +144,6 @@ describe('createEciperayClient', () => {
       '/tags/t1',
       expect.objectContaining({method: 'DELETE'}),
     );
-    expect(api.fetch).toHaveBeenCalledWith('/recipes/r1/notes');
-    expect(api.fetch).toHaveBeenCalledWith(
-      '/recipes/r1/notes',
-      expect.objectContaining({method: 'POST'}),
-    );
-    expect(api.fetch).toHaveBeenCalledWith('/recipes/r1/ai/conversation');
-    expect(api.fetch).toHaveBeenCalledWith(
-      '/recipes/r1/ai/chat',
-      expect.objectContaining({method: 'POST'}),
-    );
-    expect(api.fetch).toHaveBeenCalledWith(
-      '/recipes/r1/ai/cleanup',
-      expect.objectContaining({method: 'POST'}),
-    );
     expect(api.fetch).toHaveBeenCalledWith('/recipes/r1/ai/nutrition');
     expect(api.fetch).toHaveBeenCalledWith(
       '/recipes/r1/ai/substitutions?missing=flour&missing=salt',
@@ -164,13 +156,27 @@ describe('createEciperayClient', () => {
       '/recipes/ai/generate-description',
       expect.objectContaining({method: 'POST'}),
     );
-    expect(api.fetch).toHaveBeenCalledWith('/recipes/r1/drafts?status=pending');
+    expect(api.fetch).toHaveBeenCalledWith('/recipes/r1/versions');
+    expect(api.fetch).toHaveBeenCalledWith('/recipes/r1/versions/v1');
     expect(api.fetch).toHaveBeenCalledWith(
-      '/recipes/r1/drafts/d1/approve',
+      '/recipes/r1/versions',
       expect.objectContaining({method: 'POST'}),
     );
     expect(api.fetch).toHaveBeenCalledWith(
-      '/recipes/r1/drafts/d1/reject',
+      '/recipes/r1/versions/v1',
+      expect.objectContaining({method: 'PUT'}),
+    );
+    expect(api.fetch).toHaveBeenCalledWith(
+      '/recipes/r1/versions/v1/activate',
+      expect.objectContaining({method: 'POST'}),
+    );
+    expect(api.fetch).toHaveBeenCalledWith(
+      '/recipes/r1/versions/ai',
+      expect.objectContaining({method: 'POST'}),
+    );
+    expect(api.fetch).toHaveBeenCalledWith('/recipes/r1/versions/v1/cooks');
+    expect(api.fetch).toHaveBeenCalledWith(
+      '/recipes/r1/versions/v1/cooks',
       expect.objectContaining({method: 'POST'}),
     );
   });
