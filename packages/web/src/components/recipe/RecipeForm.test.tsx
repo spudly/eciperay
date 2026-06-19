@@ -8,7 +8,7 @@ import {
 import type {RecipeInput} from '@eciperay/types';
 
 import {eciperay} from '../../lib/api.js';
-import {makeRecipeDetail} from '../../test/fixtures/recipe.js';
+import {makeRecipeDetail, VERSION_ID} from '../../test/fixtures/recipe.js';
 import {renderWithProviders} from '../../test/testUtils.js';
 
 import {RecipeForm} from './RecipeForm.js';
@@ -102,7 +102,7 @@ describe('RecipeForm', () => {
       ingredients: [
         {
           id: 'i-3',
-          recipeId: 'recipe-uuid-1',
+          recipeVersionId: VERSION_ID,
           sortOrder: 2,
           name: 'Salt',
           quantity: 1,
@@ -112,7 +112,7 @@ describe('RecipeForm', () => {
         },
         {
           id: 'i-1',
-          recipeId: 'recipe-uuid-1',
+          recipeVersionId: VERSION_ID,
           sortOrder: 0,
           name: 'Flour',
           quantity: 2,
@@ -122,7 +122,7 @@ describe('RecipeForm', () => {
         },
         {
           id: 'i-2',
-          recipeId: 'recipe-uuid-1',
+          recipeVersionId: VERSION_ID,
           sortOrder: 1,
           name: 'Sugar',
           quantity: 1,
@@ -167,9 +167,14 @@ describe('RecipeForm', () => {
   test('initializes instructions sorted by step number', async () => {
     const detail = makeRecipeDetail({
       instructions: [
-        {id: 'ins-3', recipeId: 'recipe-uuid-1', stepNumber: 3, body: 'Serve'},
-        {id: 'ins-1', recipeId: 'recipe-uuid-1', stepNumber: 1, body: 'Prep'},
-        {id: 'ins-2', recipeId: 'recipe-uuid-1', stepNumber: 2, body: 'Cook'},
+        {
+          id: 'ins-3',
+          recipeVersionId: VERSION_ID,
+          stepNumber: 3,
+          body: 'Serve',
+        },
+        {id: 'ins-1', recipeVersionId: VERSION_ID, stepNumber: 1, body: 'Prep'},
+        {id: 'ins-2', recipeVersionId: VERSION_ID, stepNumber: 2, body: 'Cook'},
       ],
     });
     await renderWithProviders(

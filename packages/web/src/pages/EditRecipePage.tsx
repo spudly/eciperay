@@ -21,9 +21,11 @@ export const EditRecipePage = () => {
     enabled: recipeId.length > 0,
   });
 
+  const versionId = recipe?.versionId;
+
   const handleSubmit = async (input: RecipeInput) => {
     await eciperay.recipes.put(recipeId, input);
-    await invalidateRecipeQueries(queryClient, recipeId);
+    await invalidateRecipeQueries(queryClient, recipeId, versionId);
     void navigate(`/recipes/${recipeId}`);
   };
 

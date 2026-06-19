@@ -1,7 +1,7 @@
 import {screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-import {makeRecipeDetail} from '../../test/fixtures/recipe.js';
+import {makeRecipeDetail, VERSION_ID} from '../../test/fixtures/recipe.js';
 import {renderWithProviders} from '../../test/testUtils.js';
 
 import {IngredientsTab} from './IngredientsTab.js';
@@ -32,7 +32,7 @@ describe('IngredientsTab', () => {
           ingredients: [
             {
               id: 'i-3',
-              recipeId: 'recipe-uuid-1',
+              recipeVersionId: VERSION_ID,
               sortOrder: 2,
               name: 'Salt',
               quantity: 1,
@@ -42,7 +42,7 @@ describe('IngredientsTab', () => {
             },
             {
               id: 'i-1',
-              recipeId: 'recipe-uuid-1',
+              recipeVersionId: VERSION_ID,
               sortOrder: 0,
               name: 'Flour',
               quantity: 2,
@@ -52,7 +52,7 @@ describe('IngredientsTab', () => {
             },
             {
               id: 'i-2',
-              recipeId: 'recipe-uuid-1',
+              recipeVersionId: VERSION_ID,
               sortOrder: 1,
               name: 'Sugar',
               quantity: 1,

@@ -1,11 +1,17 @@
-import type {RecipeDetail} from '@eciperay/types';
+import type {RecipeDetail, RecipeVersionSummary} from '@eciperay/types';
 import {useState} from 'react';
 import {Link} from 'react-router-dom';
 
 import {printRecipe} from '../../lib/printRecipe.js';
 import {shareRecipe} from '../../lib/shareRecipe.js';
 
-type Props = {recipe: RecipeDetail; servings: number};
+import {OverviewActions} from './OverviewActions.js';
+
+type Props = {
+  recipe: RecipeDetail;
+  servings: number;
+  versions: RecipeVersionSummary[];
+};
 
 const StatBadge = ({label, value}: {label: string; value: string}) => (
   <div className="text-center">
@@ -14,8 +20,12 @@ const StatBadge = ({label, value}: {label: string; value: string}) => (
   </div>
 );
 
-export const OverviewTab = ({recipe, servings}: Props) => {
+export const OverviewTab = ({recipe, servings, versions}: Props) => {
   const [actionMessage, setActionMessage] = useState<string | null>(null);
+
+  const isEditable =
+    recipe.lifecycleStatus !== 'perfected' &&
+    recipe.lifecycleStatus !== 'abandoned';
 
   const showActionMessage = (message: string) => {
     setActionMessage(message);
@@ -71,7 +81,7 @@ export const OverviewTab = ({recipe, servings}: Props) => {
       </div>
       <div className="mb-4 flex gap-3">
         <Link
-          to={`/recipes/${recipe.id}/cook?servings=${servings}`}
+          to={`/recipes/${recipe.id}/cook?versionId=${recipe.versionId}&servings=${servings}`}
           className="
             bg-primary flex-1 rounded-xl py-3 text-center font-semibold
             text-white
@@ -98,14 +108,16 @@ export const OverviewTab = ({recipe, servings}: Props) => {
         >
           ↗
         </button>
-        <Link
-          to={`/recipes/${recipe.id}/edit`}
-          className="
-            rounded-xl bg-gray-100 px-4 py-3 text-sm font-medium text-gray-700
-          "
-        >
-          Edit
-        </Link>
+        {isEditable ? (
+          <Link
+            to={`/recipes/${recipe.id}/edit`}
+            className="
+              rounded-xl bg-gray-100 px-4 py-3 text-sm font-medium text-gray-700
+            "
+          >
+            Edit
+          </Link>
+        ) : null}
       </div>
       {actionMessage ? (
         <p
@@ -115,6 +127,11 @@ export const OverviewTab = ({recipe, servings}: Props) => {
           {actionMessage}
         </p>
       ) : null}
+      <OverviewActions
+        recipe={recipe}
+        versions={versions}
+        onActionMessage={showActionMessage}
+      />
       <div className="flex flex-wrap gap-2">
         {recipe.tags.map(tag => (
           <span

@@ -1,6 +1,12 @@
 import {http, HttpResponse} from 'msw';
 
-import {makeRecipeDetail} from '../fixtures/recipe.js';
+import {
+  makeCookLog,
+  makeRecipeDetail,
+  makeRecipeVersionDetail,
+  makeRecipeVersionSummary,
+  VERSION_ID,
+} from '../fixtures/recipe.js';
 
 const API = 'http://localhost:8080';
 
@@ -22,28 +28,123 @@ export const handlers = [
   ),
   http.post(`${API}/api/recipes`, async ({request}) => {
     const body = (await request.json()) as object;
-    return HttpResponse.json({...recipe, ...body, id: 'new-recipe-id'});
+    return HttpResponse.json({
+      ...recipe,
+      ...body,
+      id: 'new-recipe-id',
+      recipeId: 'new-recipe-id',
+      versionId: VERSION_ID,
+    });
   }),
   http.put(`${API}/api/recipes/:id`, async ({params, request}) => {
     const body = (await request.json()) as object;
     return HttpResponse.json({...recipe, id: params['id'], ...body});
   }),
   http.patch(`${API}/api/recipes/:id`, async ({params, request}) => {
-    const body = (await request.json()) as object;
-    return HttpResponse.json({...recipe, id: params['id'], ...body});
+    const body = (await request.json()) as {status?: string};
+    return HttpResponse.json({
+      ...recipe,
+      id: params['id'],
+      lifecycleStatus: body.status ?? recipe.lifecycleStatus,
+    });
   }),
   http.delete(
     `${API}/api/recipes/:id`,
     () => new HttpResponse(null, {status: 204}),
   ),
+  http.get(`${API}/api/recipes/:id/versions`, () =>
+    HttpResponse.json([makeRecipeVersionSummary()]),
+  ),
+  http.get(`${API}/api/recipes/:id/versions/:versionId`, ({params}) =>
+    HttpResponse.json(
+      makeRecipeVersionDetail({
+        id: params['versionId'] as string,
+        recipeId: params['id'] as string,
+      }),
+    ),
+  ),
+  http.post(`${API}/api/recipes/:id/versions`, ({params}) =>
+    HttpResponse.json(
+      makeRecipeVersionDetail({
+        id: 'version-draft-1',
+        recipeId: params['id'] as string,
+        versionNumber: 2,
+        derivedRole: 'draft',
+        changeSummary: 'Manual tweak',
+      }),
+      {status: 201},
+    ),
+  ),
+  http.put(
+    `${API}/api/recipes/:id/versions/:versionId`,
+    async ({params, request}) => {
+      const body = (await request.json()) as object;
+      return HttpResponse.json(
+        makeRecipeVersionDetail({
+          id: params['versionId'] as string,
+          recipeId: params['id'] as string,
+          ...body,
+        }),
+      );
+    },
+  ),
+  http.post(`${API}/api/recipes/:id/versions/:versionId/activate`, ({params}) =>
+    HttpResponse.json({...recipe, id: params['id']}),
+  ),
+  http.post(`${API}/api/recipes/:id/versions/ai`, async ({request}) => {
+    const body = (await request.json()) as {prompt: string};
+    const version = makeRecipeVersionDetail({
+      id: 'version-ai-1',
+      versionNumber: 2,
+      derivedRole: 'draft',
+      changeSummary: `AI tweak: ${body.prompt}`,
+    });
+    return HttpResponse.json(
+      {versionId: version.id, changeSummary: version.changeSummary, version},
+      {status: 201},
+    );
+  }),
+  http.get(`${API}/api/recipes/:id/versions/:versionId/cooks`, () =>
+    HttpResponse.json([makeCookLog()]),
+  ),
+  http.post(
+    `${API}/api/recipes/:id/versions/:versionId/cooks`,
+    async ({request}) => {
+      const body = (await request.json()) as object;
+      return HttpResponse.json({...makeCookLog(), ...body}, {status: 201});
+    },
+  ),
   http.post(`${API}/api/recipes/import/url`, () =>
-    HttpResponse.json({...recipe, id: 'imported-id'}),
+    HttpResponse.json({
+      ...recipe,
+      id: 'imported-id',
+      recipeId: 'imported-id',
+      versionId: VERSION_ID,
+    }),
   ),
   http.post(`${API}/api/recipes/import/image`, () =>
-    HttpResponse.json({...recipe, id: 'imported-image-id'}),
+    HttpResponse.json({
+      ...recipe,
+      id: 'imported-image-id',
+      recipeId: 'imported-image-id',
+      versionId: VERSION_ID,
+    }),
   ),
   http.post(`${API}/api/recipes/import/text`, () =>
-    HttpResponse.json({...recipe, id: 'imported-text-id'}),
+    HttpResponse.json({
+      ...recipe,
+      id: 'imported-text-id',
+      recipeId: 'imported-text-id',
+      versionId: VERSION_ID,
+    }),
+  ),
+  http.post(`${API}/api/recipes/import/ai`, () =>
+    HttpResponse.json({
+      ...recipe,
+      id: 'imported-ai-id',
+      recipeId: 'imported-ai-id',
+      versionId: VERSION_ID,
+    }),
   ),
   http.post(`${API}/api/recipes/export`, async ({request}) => {
     const body = (await request.json()) as {recipeIds: string[]};
@@ -56,7 +157,6 @@ export const handlers = [
         servings: recipe.servings,
         prepTimeMin: recipe.prepTimeMin,
         cookTimeMin: recipe.cookTimeMin,
-        starRating: recipe.starRating,
         sourceUrl: recipe.sourceUrl,
         tags: recipe.tags.map(tag => ({name: tag.name, color: tag.color})),
         ingredients: recipe.ingredients.map(
@@ -86,69 +186,6 @@ export const handlers = [
       errors: [],
     });
   }),
-  http.get(`${API}/api/recipes/:id/notes`, () =>
-    HttpResponse.json([
-      {
-        id: 'note-1',
-        recipeId: 'recipe-uuid-1',
-        userId: 'user-uuid-1',
-        content: 'Great recipe',
-        createdAt: '2024-01-01T00:00:00.000Z',
-      },
-    ]),
-  ),
-  http.post(`${API}/api/recipes/:id/notes`, async ({request}) => {
-    const body = (await request.json()) as {content: string};
-    return HttpResponse.json({
-      id: 'note-new',
-      recipeId: 'recipe-uuid-1',
-      userId: 'user-uuid-1',
-      content: body.content,
-      createdAt: '2024-01-02T00:00:00.000Z',
-    });
-  }),
-  http.get(`${API}/api/recipes/:id/ai/conversation`, () =>
-    HttpResponse.json({
-      id: 'conv-1',
-      recipeId: 'recipe-uuid-1',
-      userId: 'user-uuid-1',
-      messages: [
-        {role: 'user', content: 'Make it spicier', createdAt: '2024-01-01'},
-        {role: 'assistant', content: 'Hello!', createdAt: '2024-01-01'},
-      ],
-      createdAt: '2024-01-01',
-      updatedAt: '2024-01-01',
-    }),
-  ),
-  http.post(`${API}/api/recipes/:id/ai/chat`, () =>
-    HttpResponse.json({
-      assistantMessage: 'Sure!',
-      draft: {
-        id: 'draft-1',
-        recipeId: 'recipe-uuid-1',
-        status: 'pending',
-        snapshotJson: recipe,
-        diffJson: {},
-        trigger: 'ai_chat',
-        summaryOfChanges: 'Added garlic',
-        createdAt: '2024-01-01',
-      },
-    }),
-  ),
-  http.post(`${API}/api/recipes/:id/ai/cleanup`, () =>
-    HttpResponse.json({
-      draft: {
-        id: 'draft-2',
-        recipeId: 'recipe-uuid-1',
-        status: 'pending',
-        snapshotJson: recipe,
-        diffJson: {},
-        trigger: 'ai_cleanup',
-        summaryOfChanges: 'Cleaned up steps',
-        createdAt: '2024-01-01',
-      },
-    }),
-  ),
   http.get(`${API}/api/recipes/:id/ai/nutrition`, () =>
     HttpResponse.json({
       servings: 4,
@@ -172,26 +209,6 @@ export const handlers = [
   ),
   http.post(`${API}/api/recipes/ai/generate-description`, () =>
     HttpResponse.json({description: 'A delicious AI-generated description.'}),
-  ),
-  http.get(`${API}/api/recipes/:id/drafts`, () =>
-    HttpResponse.json([
-      {
-        id: 'draft-1',
-        recipeId: 'recipe-uuid-1',
-        status: 'pending',
-        snapshotJson: recipe,
-        diffJson: {},
-        trigger: 'ai_chat',
-        summaryOfChanges: 'Added garlic',
-        createdAt: '2024-01-01',
-      },
-    ]),
-  ),
-  http.post(`${API}/api/recipes/:id/drafts/:draftId/approve`, ({params}) =>
-    HttpResponse.json({...recipe, id: params['id']}),
-  ),
-  http.post(`${API}/api/recipes/:id/drafts/:draftId/reject`, () =>
-    HttpResponse.json({status: 'rejected'}),
   ),
   http.get(`${API}/api/tags`, () =>
     HttpResponse.json([

@@ -1,9 +1,13 @@
-import {act, render, screen} from '@testing-library/react';
+import {act, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import {MemoryRouter} from 'react-router-dom';
+import {Route, Routes} from 'react-router-dom';
 import {vi} from 'vitest';
 
-import {makeRecipeDetail} from '../../test/fixtures/recipe.js';
+import {
+  makeRecipeDetail,
+  makeRecipeVersionSummary,
+} from '../../test/fixtures/recipe.js';
+import {renderWithProviders} from '../../test/testUtils.js';
 import * as printRecipeModule from '../../lib/printRecipe.js';
 import * as shareRecipeModule from '../../lib/shareRecipe.js';
 
@@ -14,17 +18,27 @@ vi.mock('../../lib/shareRecipe.js', () => ({
   shareRecipe: vi.fn().mockResolvedValue('copied'),
 }));
 
+const renderOverview = (recipe = makeRecipeDetail()) =>
+  renderWithProviders(
+    <Routes>
+      <Route
+        path="/"
+        element={
+          <OverviewTab
+            recipe={recipe}
+            servings={4}
+            versions={[makeRecipeVersionSummary()]}
+          />
+        }
+      />
+    </Routes>,
+    {route: '/'},
+  );
+
 describe('OverviewTab', () => {
   test('renders recipe details and actions', async () => {
     const recipe = makeRecipeDetail({imageUrl: 'https://example.com/img.jpg'});
-    render(
-      <MemoryRouter>
-        <OverviewTab
-          recipe={recipe}
-          servings={4}
-        />
-      </MemoryRouter>,
-    );
+    await renderOverview(recipe);
     expect(screen.getByText('Test Recipe')).toBeInTheDocument();
     expect(screen.getByText('A test recipe')).toBeInTheDocument();
     expect(screen.getByText('Start Cooking')).toBeInTheDocument();
@@ -40,14 +54,7 @@ describe('OverviewTab', () => {
 
   test('shows a shared confirmation message', async () => {
     vi.mocked(shareRecipeModule.shareRecipe).mockResolvedValueOnce('shared');
-    render(
-      <MemoryRouter>
-        <OverviewTab
-          recipe={makeRecipeDetail()}
-          servings={4}
-        />
-      </MemoryRouter>,
-    );
+    await renderOverview();
     await userEvent.click(screen.getByLabelText('Share recipe'));
     expect(await screen.findByText('Recipe shared')).toBeInTheDocument();
   });
@@ -56,14 +63,7 @@ describe('OverviewTab', () => {
     vi.mocked(shareRecipeModule.shareRecipe).mockRejectedValueOnce(
       new DOMException('cancelled', 'AbortError'),
     );
-    render(
-      <MemoryRouter>
-        <OverviewTab
-          recipe={makeRecipeDetail()}
-          servings={4}
-        />
-      </MemoryRouter>,
-    );
+    await renderOverview();
     await userEvent.click(screen.getByLabelText('Share recipe'));
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
@@ -72,14 +72,7 @@ describe('OverviewTab', () => {
     vi.mocked(shareRecipeModule.shareRecipe).mockRejectedValueOnce(
       new Error('share failed'),
     );
-    render(
-      <MemoryRouter>
-        <OverviewTab
-          recipe={makeRecipeDetail()}
-          servings={4}
-        />
-      </MemoryRouter>,
-    );
+    await renderOverview();
     await userEvent.click(screen.getByLabelText('Share recipe'));
     expect(
       await screen.findByText('Could not share recipe'),
@@ -99,14 +92,7 @@ describe('OverviewTab', () => {
       }
       return realSetTimeout(handler, delay ?? 0);
     }) as typeof window.setTimeout);
-    render(
-      <MemoryRouter>
-        <OverviewTab
-          recipe={makeRecipeDetail()}
-          servings={4}
-        />
-      </MemoryRouter>,
-    );
+    await renderOverview();
     await userEvent.click(screen.getByLabelText('Share recipe'));
     expect(
       await screen.findByText('Recipe copied to clipboard'),
@@ -118,7 +104,7 @@ describe('OverviewTab', () => {
     setTimeoutSpy.mockRestore();
   });
 
-  test('renders without optional fields', () => {
+  test('renders without optional fields', async () => {
     const recipe = makeRecipeDetail({
       imageUrl: null,
       description: null,
@@ -126,15 +112,13 @@ describe('OverviewTab', () => {
       cookTimeMin: null,
       tags: [],
     });
-    render(
-      <MemoryRouter>
-        <OverviewTab
-          recipe={recipe}
-          servings={4}
-        />
-      </MemoryRouter>,
-    );
+    await renderOverview(recipe);
     expect(screen.getByText('Test Recipe')).toBeInTheDocument();
     expect(screen.queryByText('A test recipe')).not.toBeInTheDocument();
+  });
+
+  test('hides edit link for perfected recipes', async () => {
+    await renderOverview(makeRecipeDetail({lifecycleStatus: 'perfected'}));
+    expect(screen.queryByText('Edit')).not.toBeInTheDocument();
   });
 });
