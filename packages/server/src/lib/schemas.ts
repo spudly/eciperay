@@ -1,5 +1,10 @@
 import {z} from 'zod';
 
+import {
+  normalizeAiIngredient,
+  normalizeAiInstruction,
+} from './normalizeAiRecipeDiff.js';
+
 export {validate, parseAiJson} from './validate.js';
 export type {Infer} from './validate.js';
 
@@ -174,25 +179,71 @@ export const GenerateRecipeDescriptionSchema = z.object({
 
 // ─── AI response shapes ────────────────────────────────────────────────────────
 
-const RecipeDiffSchema = z.object({
+const coerceNullableNumber = z.preprocess((value: unknown) => {
+  if (value === null || value === undefined || value === '') {
+    return null;
+  }
+  if (typeof value === 'number') {
+    return value;
+  }
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+  return value;
+}, z.number().nullable());
+
+const AiIngredientInputSchema = z.object({
+  sortOrder: z.number().int().nonnegative(),
+  name: z.string().min(1),
+  quantity: coerceNullableNumber,
+  unit: z.string().nullable(),
+  notes: z.string().nullable(),
+  isOptional: z.boolean(),
+});
+
+const AiInstructionInputSchema = z.object({
+  stepNumber: z.number().int().positive(),
+  body: z.string().min(1),
+});
+
+const AiIngredientsArraySchema = z.preprocess(
+  value =>
+    Array.isArray(value)
+      ? value.map((item, index) => normalizeAiIngredient(item, index))
+      : value,
+  z.array(AiIngredientInputSchema),
+);
+
+const AiInstructionsArraySchema = z.preprocess(
+  value =>
+    Array.isArray(value)
+      ? value.map((item, index) => normalizeAiInstruction(item, index))
+      : value,
+  z.array(AiInstructionInputSchema),
+);
+
+const AiRecipeDiffSchema = z.object({
   title: z.string().optional(),
   description: z.string().nullish(),
   servings: z.number().int().positive().optional(),
   prepTimeMin: z.number().int().nonnegative().nullish(),
   cookTimeMin: z.number().int().nonnegative().nullish(),
-  ingredients: z.array(IngredientInputSchema).optional(),
-  instructions: z.array(InstructionInputSchema).optional(),
+  ingredients: AiIngredientsArraySchema.optional(),
+  instructions: AiInstructionsArraySchema.optional(),
 });
 
 export const AiChatResponseSchema = z.object({
   reasoning: z.string(),
   summary_of_changes: z.string(),
-  diff: RecipeDiffSchema,
+  diff: AiRecipeDiffSchema,
 });
 
 export const AiCleanupResponseSchema = z.object({
   summary_of_changes: z.string(),
-  diff: RecipeDiffSchema,
+  diff: AiRecipeDiffSchema,
 });
 
 export const AiSubstitutionSchema = z.object({

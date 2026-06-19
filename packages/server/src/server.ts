@@ -11,6 +11,7 @@ import {API_PREFIX} from './apiPrefix.js';
 import {query as defaultQuery} from './db/query.js';
 import {attachPostHogExpress, captureServerException} from './lib/posthog.js';
 import {initPostHogLogs, serverLog} from './lib/posthogLogs.js';
+import {AiResponseParseError} from './lib/validate.js';
 import {createAuthRouter} from './routes/auth/router.js';
 import {createImportRouter} from './routes/import/router.js';
 import {createRecipesRouter} from './routes/recipes/router.js';
@@ -69,9 +70,15 @@ export const handleUnexpectedError = (
   if (res.headersSent) {
     return;
   }
-  if (err instanceof Anthropic.APIError) {
+  if (
+    err instanceof Anthropic.APIError ||
+    err instanceof AiResponseParseError
+  ) {
     serverLog('warn', 'AI service error', {
-      status: typeof err.status === 'number' ? err.status : 0,
+      status:
+        err instanceof Anthropic.APIError && typeof err.status === 'number'
+          ? err.status
+          : 0,
     });
     res.status(502).json({error: 'AI service error'});
     return;

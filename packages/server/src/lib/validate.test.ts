@@ -2,7 +2,12 @@ import type {Request, Response} from 'express';
 import {jest} from '@jest/globals';
 import {z} from 'zod';
 
-import {extractJsonFromAiText, parseAiJson, validate} from './validate.js';
+import {
+  AiResponseParseError,
+  extractJsonFromAiText,
+  parseAiJson,
+  validate,
+} from './validate.js';
 
 const TestSchema = z.object({name: z.string().min(1)});
 
@@ -66,11 +71,23 @@ describe('parseAiJson', () => {
     expect(data).toEqual({name: 'Bob'});
   });
 
-  test('throws on invalid JSON', () => {
-    expect(() => parseAiJson(TestSchema, 'not json')).toThrow();
+  test('throws AiResponseParseError on invalid JSON', () => {
+    expect(() => parseAiJson(TestSchema, 'not json')).toThrow(
+      AiResponseParseError,
+    );
   });
 
-  test('throws when JSON does not match schema', () => {
-    expect(() => parseAiJson(TestSchema, '{"name":""}')).toThrow();
+  test('throws AiResponseParseError when JSON does not match schema', () => {
+    expect(() => parseAiJson(TestSchema, '{"name":""}')).toThrow(
+      AiResponseParseError,
+    );
+  });
+
+  test('rethrows unexpected errors from JSON parsing', () => {
+    const parseSpy = jest.spyOn(JSON, 'parse').mockImplementation(() => {
+      throw new TypeError('unexpected parse failure');
+    });
+    expect(() => parseAiJson(TestSchema, '{"name":"Bob"}')).toThrow(TypeError);
+    parseSpy.mockRestore();
   });
 });
