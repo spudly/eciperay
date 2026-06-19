@@ -1,31 +1,39 @@
 import {queryKeys, recordRecipeView} from '@eciperay/client';
 import clsx from 'clsx';
 import {useQuery, useQueryClient} from '@tanstack/react-query';
-import {useCallback, useEffect, useState} from 'react';
-import {useParams} from 'react-router-dom';
+import {useCallback, useEffect, useMemo, useState} from 'react';
+import {useParams, useSearchParams} from 'react-router-dom';
 
-import {IngredientsTab} from '../components/recipe/IngredientsTab.js';
-import {InstructionsTab} from '../components/recipe/InstructionsTab.js';
-import {NotesTab} from '../components/recipe/NotesTab.js';
-import {NutritionTab} from '../components/recipe/NutritionTab.js';
-import {OverviewTab} from '../components/recipe/OverviewTab.js';
+import {LifecycleStatusBadge} from '../components/recipe/LifecycleStatusBadge.js';
+import {RecipeDetailTabPanel} from '../components/recipe/RecipeDetailTabPanel.js';
+import {VersionPicker} from '../components/recipe/VersionPicker.js';
 import {eciperay} from '../lib/api.js';
+import {mergeVersionIntoRecipe} from '../lib/mergeVersionIntoRecipe.js';
 import {recipeViewHistoryStorage} from '../lib/recipeViewHistoryStorage.js';
 
-type Tab = 'overview' | 'ingredients' | 'instructions' | 'notes' | 'nutrition';
+type Tab =
+  | 'overview'
+  | 'ingredients'
+  | 'instructions'
+  | 'history'
+  | 'nutrition';
 
 const TABS: {key: Tab; label: string}[] = [
   {key: 'overview', label: 'Overview'},
   {key: 'ingredients', label: 'Ingredients'},
   {key: 'instructions', label: 'Instructions'},
-  {key: 'notes', label: 'Notes'},
+  {key: 'history', label: 'Cook History'},
   {key: 'nutrition', label: 'Nutrition'},
 ];
 
 export const RecipeDetailPage = () => {
   const {recipeId = ''} = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [servings, setServings] = useState<number | null>(null);
+  const [selectedVersionId, setSelectedVersionId] = useState<string | null>(
+    () => searchParams.get('versionId'),
+  );
   const queryClient = useQueryClient();
 
   const invalidateRecentlyViewed = useCallback(() => {
@@ -49,7 +57,49 @@ export const RecipeDetailPage = () => {
     enabled: recipeId.length > 0,
   });
 
-  if (isLoading || !recipe) {
+  const activeVersionId = selectedVersionId ?? recipe?.versionId ?? '';
+
+  const {data: versions = []} = useQuery({
+    queryKey: queryKeys.versions(recipeId),
+    queryFn: () => eciperay.versions.list(recipeId),
+    enabled: recipeId.length > 0,
+  });
+
+  const viewingAlternateVersion =
+    recipe !== undefined && activeVersionId !== recipe.versionId;
+
+  const {data: versionDetail} = useQuery({
+    queryKey: queryKeys.version(recipeId, activeVersionId),
+    queryFn: () => eciperay.versions.get(recipeId, activeVersionId),
+    enabled: recipeId.length > 0 && viewingAlternateVersion,
+  });
+
+  const displayRecipe = useMemo(() => {
+    if (!recipe) {
+      return null;
+    }
+    if (viewingAlternateVersion && versionDetail) {
+      return mergeVersionIntoRecipe(recipe, versionDetail);
+    }
+    return recipe;
+  }, [recipe, viewingAlternateVersion, versionDetail]);
+
+  useEffect(() => {
+    setServings(null);
+  }, [activeVersionId]);
+
+  useEffect(() => {
+    const versionId = searchParams.get('versionId');
+    if (!versionId || !recipeId) {
+      return;
+    }
+    setSelectedVersionId(versionId);
+    const next = new URLSearchParams(searchParams);
+    next.delete('versionId');
+    setSearchParams(next, {replace: true});
+  }, [recipeId, searchParams, setSearchParams]);
+
+  if (isLoading || !recipe || !displayRecipe) {
     return (
       <div className="flex items-center justify-center py-16">
         <p>Loading…</p>
@@ -57,11 +107,27 @@ export const RecipeDetailPage = () => {
     );
   }
 
-  const currentServings = servings ?? recipe.servings;
-  const scaleFactor = currentServings / recipe.servings;
+  const currentServings = servings ?? displayRecipe.servings;
+  const scaleFactor = currentServings / displayRecipe.servings;
 
   return (
     <div className="rounded-xl bg-white shadow-sm">
+      <div
+        className="
+          flex flex-wrap items-center justify-between gap-2 border-b
+          border-gray-100 px-4 py-3
+        "
+      >
+        <div className="flex items-center gap-2">
+          <LifecycleStatusBadge status={recipe.lifecycleStatus} />
+          <VersionPicker
+            recipeId={recipeId}
+            versions={versions}
+            selectedVersionId={activeVersionId}
+            onSelect={setSelectedVersionId}
+          />
+        </div>
+      </div>
       <div className="flex border-b border-gray-200">
         {TABS.map(tab => (
           <button
@@ -79,23 +145,15 @@ export const RecipeDetailPage = () => {
           </button>
         ))}
       </div>
-      {activeTab === 'overview' && (
-        <OverviewTab
-          recipe={recipe}
-          servings={currentServings}
-        />
-      )}
-      {activeTab === 'ingredients' && (
-        <IngredientsTab
-          recipe={recipe}
-          scaleFactor={scaleFactor}
-          servings={currentServings}
-          onServingsChange={setServings}
-        />
-      )}
-      {activeTab === 'instructions' && <InstructionsTab recipe={recipe} />}
-      {activeTab === 'notes' && <NotesTab recipeId={recipe.id} />}
-      {activeTab === 'nutrition' && <NutritionTab recipeId={recipe.id} />}
+      <RecipeDetailTabPanel
+        activeTab={activeTab}
+        recipe={recipe}
+        displayRecipe={displayRecipe}
+        versions={versions}
+        currentServings={currentServings}
+        scaleFactor={scaleFactor}
+        onServingsChange={setServings}
+      />
     </div>
   );
 };

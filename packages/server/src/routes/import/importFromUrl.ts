@@ -7,7 +7,7 @@ import {parseSchemaOrg} from '../../lib/parseSchemaOrg.js';
 import {parseWithClaude} from '../../lib/parseWithClaude.js';
 import {RecipeImportError} from '../../lib/recipeImportToInput.js';
 import {prepareImportedRecipeInput} from '../../lib/prepareImportedRecipeInput.js';
-import {saveRecipeFromInput} from '../../lib/saveRecipeFromInput.js';
+import {saveNewRecipeFromInput} from '../../lib/saveRecipeFromInput.js';
 import {ImportUrlSchema, validate} from '../../lib/schemas.js';
 
 type QueryFn = typeof defaultQuery;
@@ -52,11 +52,11 @@ export const importFromUrl = async (
       queryFn,
       options: {sourceUrl: url},
     });
-    const detail = await saveRecipeFromInput(
-      {userId: req.userId, input},
+    const {recipeId, versionId, recipe} = await saveNewRecipeFromInput(
+      {userId: req.userId, input, createdVia: 'import_url'},
       queryFn,
     );
-    res.status(201).json(detail);
+    res.status(201).json({...recipe, recipeId, versionId});
   } catch (error) {
     if (error instanceof RecipeImportError) {
       res.status(422).json({error: error.message});

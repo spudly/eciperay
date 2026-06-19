@@ -5,12 +5,21 @@ import {queryKeys} from './queryKeys.js';
 export const invalidateRecipeQueries = (
   queryClient: QueryClient,
   recipeId: string,
+  versionId?: string,
 ) =>
   Promise.all([
     queryClient.invalidateQueries({queryKey: queryKeys.recipeLists()}),
     queryClient.invalidateQueries({queryKey: queryKeys.recipe(recipeId)}),
-    queryClient.invalidateQueries({queryKey: queryKeys.notes(recipeId)}),
-    queryClient.invalidateQueries({queryKey: queryKeys.conversation(recipeId)}),
+    queryClient.invalidateQueries({queryKey: queryKeys.versions(recipeId)}),
     queryClient.invalidateQueries({queryKey: queryKeys.nutrition(recipeId)}),
-    queryClient.invalidateQueries({queryKey: queryKeys.drafts(recipeId)}),
+    ...(versionId
+      ? [
+          queryClient.invalidateQueries({
+            queryKey: queryKeys.version(recipeId, versionId),
+          }),
+          queryClient.invalidateQueries({
+            queryKey: queryKeys.cookLogs(recipeId, versionId),
+          }),
+        ]
+      : []),
   ]);

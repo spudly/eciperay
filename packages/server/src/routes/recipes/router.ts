@@ -2,21 +2,34 @@ import {Router} from 'express';
 
 import {query as defaultQuery} from '../../db/query.js';
 import {requireAuth, type AuthedRequest} from '../../middleware/requireAuth.js';
-import {createNote} from '../notes/createNote.js';
-import {listNotes} from '../notes/listNotes.js';
 import {createAiRouter} from '../ai/router.js';
+import {createCookLog} from '../cooks/createCookLog.js';
+import {listCookLogs} from '../cooks/listCookLogs.js';
 
-import {approveDraft, rejectDraft} from './approveDraft.js';
+import {activateVersion} from './activateVersion.js';
 import {createRecipe} from './createRecipe.js';
+import {createVersion} from './createVersion.js';
 import {exportRecipes} from './exportRecipes.js';
 import {generateRecipeDescriptionRoute} from './generateRecipeDescription.js';
 import {generateRecipeImage} from './generateRecipeImage.js';
 import {deleteRecipe} from './deleteRecipe.js';
 import {getRecipe} from './getRecipe.js';
-import {listDrafts} from './listDrafts.js';
+import {getVersion} from './getVersion.js';
 import {listRecipes} from './listRecipes.js';
+import {listVersions} from './listVersions.js';
+import {patchRecipeLineage} from './patchRecipeLineage.js';
 import {putRecipe} from './putRecipe.js';
-import {updateRecipe} from './updateRecipe.js';
+import {putVersion} from './putVersion.js';
+import {
+  approveTweakAiPlan,
+  cancelTweakAiSession,
+  createTweakAiSession,
+  createVersionFromTweakAiSession,
+  getTweakAiSession,
+  implementTweakAiSession,
+  sendTweakAiMessage,
+} from './tweakAiSessions.js';
+import {tweakVersionWithAi} from './tweakVersionWithAi.js';
 
 type QueryFn = typeof defaultQuery;
 const a = (req: Parameters<typeof requireAuth>[0]) => req as AuthedRequest;
@@ -43,25 +56,65 @@ export const createRecipesRouter = (queryFn: QueryFn) => {
     putRecipe(a(req), res, queryFn),
   );
   router.patch('/:id', requireAuth, (req, res) =>
-    updateRecipe(a(req), res, queryFn),
+    patchRecipeLineage(a(req), res, queryFn),
   );
   router.delete('/:id', requireAuth, (req, res) =>
     deleteRecipe(a(req), res, queryFn),
   );
-  router.get('/:id/notes', requireAuth, (req, res) =>
-    listNotes(a(req), res, queryFn),
+  router.get('/:id/versions', requireAuth, (req, res) =>
+    listVersions(a(req), res, queryFn),
   );
-  router.post('/:id/notes', requireAuth, (req, res) =>
-    createNote(a(req), res, queryFn),
+  router.post('/:id/versions', requireAuth, (req, res) =>
+    createVersion(a(req), res, queryFn),
   );
-  router.get('/:id/drafts', requireAuth, (req, res) =>
-    listDrafts(a(req), res, queryFn),
+  router.post('/:id/versions/ai', requireAuth, (req, res) =>
+    tweakVersionWithAi(a(req), res, queryFn),
   );
-  router.post('/:id/drafts/:draftId/approve', requireAuth, (req, res) =>
-    approveDraft(a(req), res, queryFn),
+  router.post('/:id/tweak-ai-sessions', requireAuth, (req, res) =>
+    createTweakAiSession(a(req), res, queryFn),
   );
-  router.post('/:id/drafts/:draftId/reject', requireAuth, (req, res) =>
-    rejectDraft(a(req), res, queryFn),
+  router.get('/:id/tweak-ai-sessions/:sessionId', requireAuth, (req, res) =>
+    getTweakAiSession(a(req), res, queryFn),
+  );
+  router.post(
+    '/:id/tweak-ai-sessions/:sessionId/messages',
+    requireAuth,
+    (req, res) => sendTweakAiMessage(a(req), res, queryFn),
+  );
+  router.post(
+    '/:id/tweak-ai-sessions/:sessionId/approve-plan',
+    requireAuth,
+    (req, res) => approveTweakAiPlan(a(req), res, queryFn),
+  );
+  router.post(
+    '/:id/tweak-ai-sessions/:sessionId/implement',
+    requireAuth,
+    (req, res) => implementTweakAiSession(a(req), res, queryFn),
+  );
+  router.post(
+    '/:id/tweak-ai-sessions/:sessionId/create-version',
+    requireAuth,
+    (req, res) => createVersionFromTweakAiSession(a(req), res, queryFn),
+  );
+  router.post(
+    '/:id/tweak-ai-sessions/:sessionId/cancel',
+    requireAuth,
+    (req, res) => cancelTweakAiSession(a(req), res, queryFn),
+  );
+  router.get('/:id/versions/:versionId', requireAuth, (req, res) =>
+    getVersion(a(req), res, queryFn),
+  );
+  router.put('/:id/versions/:versionId', requireAuth, (req, res) =>
+    putVersion(a(req), res, queryFn),
+  );
+  router.post('/:id/versions/:versionId/activate', requireAuth, (req, res) =>
+    activateVersion(a(req), res, queryFn),
+  );
+  router.post('/:id/versions/:versionId/cooks', requireAuth, (req, res) =>
+    createCookLog(a(req), res, queryFn),
+  );
+  router.get('/:id/versions/:versionId/cooks', requireAuth, (req, res) =>
+    listCookLogs(a(req), res, queryFn),
   );
   router.use('/:id/ai', createAiRouter(queryFn));
   return router;

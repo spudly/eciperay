@@ -8,14 +8,14 @@ import {mapRowToRecipeDetail} from '../../lib/mapRowToRecipeDetail.js';
 import {parseWithClaude} from '../../lib/parseWithClaude.js';
 import {RecipeImportError} from '../../lib/recipeImportToInput.js';
 import {prepareImportedRecipeInput} from '../../lib/prepareImportedRecipeInput.js';
-import {saveRecipeFromInput} from '../../lib/saveRecipeFromInput.js';
+import {saveNewRecipeFromInput} from '../../lib/saveRecipeFromInput.js';
 import {
   IMPORT_TEXT_PLAIN_MAX,
   ImportTextSchema,
   validate,
 } from '../../lib/schemas.js';
 import {resolveImportedImageUrl} from '../../lib/uploadRecipeImageServer.js';
-import {GET_RECIPE_DETAIL_SQL, setRecipeImageUrl} from '../recipes/queries.js';
+import {GET_RECIPE_DETAIL_SQL, setVersionImageUrl} from '../recipes/queries.js';
 
 type QueryFn = typeof defaultQuery;
 
@@ -57,31 +57,33 @@ export const importFromText = async (
       userId: req.userId,
       queryFn,
     });
-    let detail = await saveRecipeFromInput(
-      {userId: req.userId, input},
+    const {recipeId, versionId, recipe} = await saveNewRecipeFromInput(
+      {userId: req.userId, input, createdVia: 'import_text'},
       queryFn,
     );
     if (imageCandidate) {
       const imageUrl = await resolveImportedImageUrl(
         imageCandidate,
         req.supabaseUid,
-        detail.id,
+        recipeId,
       );
       if (imageUrl) {
-        await setRecipeImageUrl(detail.id, req.userId, imageUrl, queryFn);
+        await setVersionImageUrl(versionId, imageUrl, queryFn);
         const refreshed = await queryFn(GET_RECIPE_DETAIL_SQL, [
-          detail.id,
+          recipeId,
           req.userId,
         ]);
         const row = refreshed.rows[0];
         if (row) {
-          detail = mapRowToRecipeDetail(
+          const detail = mapRowToRecipeDetail(
             row as Parameters<typeof mapRowToRecipeDetail>[0],
           );
+          res.status(201).json({...detail, recipeId, versionId});
+          return;
         }
       }
     }
-    res.status(201).json(detail);
+    res.status(201).json({...recipe, recipeId, versionId});
   } catch (error) {
     if (error instanceof RecipeImportError) {
       res.status(422).json({error: error.message});

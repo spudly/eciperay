@@ -6,10 +6,10 @@ describe('queryKeys', () => {
     expect(queryKeys.recipes()).toEqual(['recipes', {search: ''}]);
     expect(queryKeys.recipes('pasta')).toEqual(['recipes', {search: 'pasta'}]);
     expect(queryKeys.recipe('r1')).toEqual(['recipe', 'r1']);
-    expect(queryKeys.notes('r1')).toEqual(['notes', 'r1']);
-    expect(queryKeys.conversation('r1')).toEqual(['conversation', 'r1']);
+    expect(queryKeys.versions('r1')).toEqual(['versions', 'r1']);
+    expect(queryKeys.version('r1', 'v1')).toEqual(['version', 'r1', 'v1']);
+    expect(queryKeys.cookLogs('r1', 'v1')).toEqual(['cookLogs', 'r1', 'v1']);
     expect(queryKeys.nutrition('r1')).toEqual(['nutrition', 'r1']);
-    expect(queryKeys.drafts('r1')).toEqual(['drafts', 'r1']);
     expect(queryKeys.tags()).toEqual(['tags']);
   });
 });

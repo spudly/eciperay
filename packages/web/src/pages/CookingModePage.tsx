@@ -1,22 +1,25 @@
 import {
+  invalidateRecipeQueries,
   queryKeys,
   resolveRecipeServings,
   scaleFactorFromServings,
 } from '@eciperay/client';
-import clsx from 'clsx';
-import {useQuery} from '@tanstack/react-query';
+import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useState} from 'react';
 import {useNavigate, useParams, useSearchParams} from 'react-router-dom';
+import type {CookLogInput} from '@eciperay/types';
 
-import {ProgressDots} from '../components/cooking/ProgressDots.js';
-import {ScaledIngredientsList} from '../components/cooking/ScaledIngredientsList.js';
+import {CookLogForm} from '../components/cooking/CookLogForm.js';
+import {CookingModeView} from '../components/cooking/CookingModeView.js';
 import {eciperay} from '../lib/api.js';
 
 export const CookingModePage = () => {
   const {recipeId = ''} = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [step, setStep] = useState(0);
+  const [showCookLogForm, setShowCookLogForm] = useState(false);
 
   const {data: recipe} = useQuery({
     queryKey: queryKeys.recipe(recipeId),
@@ -24,28 +27,57 @@ export const CookingModePage = () => {
     enabled: recipeId.length > 0,
   });
 
-  const steps = [...(recipe?.instructions ?? [])].sort(
+  const versionId = searchParams.get('versionId') ?? recipe?.versionId ?? '';
+
+  const {data: versionRecipe} = useQuery({
+    queryKey: queryKeys.version(recipeId, versionId),
+    queryFn: () => eciperay.versions.get(recipeId, versionId),
+    enabled:
+      recipeId.length > 0 &&
+      versionId.length > 0 &&
+      versionId !== recipe?.versionId,
+  });
+
+  const displayRecipe =
+    versionRecipe && recipe
+      ? {
+          ...recipe,
+          title: versionRecipe.title,
+          description: versionRecipe.description,
+          servings: versionRecipe.servings,
+          prepTimeMin: versionRecipe.prepTimeMin,
+          cookTimeMin: versionRecipe.cookTimeMin,
+          ingredients: versionRecipe.ingredients,
+          instructions: versionRecipe.instructions,
+          versionId: versionRecipe.id,
+        }
+      : recipe;
+
+  const steps = [...(displayRecipe?.instructions ?? [])].sort(
     (a, b) => a.stepNumber - b.stepNumber,
   );
-  const current = steps[step];
   const servings = resolveRecipeServings(
     searchParams.get('servings'),
-    recipe?.servings ?? 1,
+    displayRecipe?.servings ?? 1,
   );
-  const scaleFactor = recipe
-    ? scaleFactorFromServings(recipe.servings, servings)
+  const scaleFactor = displayRecipe
+    ? scaleFactorFromServings(displayRecipe.servings, servings)
     : 1;
 
-  const goNext = () => {
-    setStep(s => Math.min(s + 1, steps.length - 1));
-  };
-
-  const goPrev = () => {
-    setStep(s => Math.max(s - 1, 0));
-  };
+  const cookLogMutation = useMutation({
+    mutationFn: (input: CookLogInput) =>
+      eciperay.cookLogs.create(recipeId, versionId, input),
+    onSuccess: async () => {
+      await invalidateRecipeQueries(queryClient, recipeId, versionId);
+      void navigate(-1);
+    },
+  });
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
+      if (showCookLogForm) {
+        return;
+      }
       if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
         setStep(s => Math.min(s + 1, steps.length - 1));
       }
@@ -53,70 +85,51 @@ export const CookingModePage = () => {
         setStep(s => Math.max(s - 1, 0));
       }
       if (e.key === 'Escape') {
-        void navigate(-1);
+        setShowCookLogForm(true);
       }
     };
     window.addEventListener('keydown', handleKey);
     return () => {
       window.removeEventListener('keydown', handleKey);
     };
-  }, [steps.length, navigate]);
+  }, [steps.length, showCookLogForm]);
+
+  if (showCookLogForm) {
+    return (
+      <div
+        className="
+          fixed inset-0 flex items-center justify-center bg-gray-900 px-6
+        "
+      >
+        <CookLogForm
+          isPending={cookLogMutation.isPending}
+          onSkip={() => {
+            void navigate(-1);
+          }}
+          onSubmit={input => {
+            cookLogMutation.mutate(input);
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
-    <div className="fixed inset-0 flex flex-col justify-center bg-gray-900 px-6">
-      <button
-        type="button"
-        className="
-          absolute right-6 top-6 rounded-full bg-white/10 px-4 py-2 text-sm
-          text-white
-        "
-        onClick={() => {
-          void navigate(-1);
-        }}
-      >
-        Done
-      </button>
-      <p className="mb-4 text-sm uppercase tracking-widest text-white/60">
-        Step {current ? current.stepNumber : 1} of {steps.length}
-      </p>
-      {recipe ? (
-        <ScaledIngredientsList
-          recipe={recipe}
-          scaleFactor={scaleFactor}
-          servings={servings}
-        />
-      ) : null}
-      <p className="mb-8 text-2xl leading-relaxed text-white">
-        {current ? current.body : ''}
-      </p>
-      <ProgressDots
-        total={steps.length}
-        current={step}
-      />
-      <div className="flex justify-between">
-        <button
-          type="button"
-          className={clsx(
-            `rounded-xl bg-white/10 px-6 py-3 text-base text-white`,
-            {'opacity-30': step === 0},
-          )}
-          disabled={step === 0}
-          onClick={goPrev}
-        >
-          ← Back
-        </button>
-        <button
-          type="button"
-          className={clsx(
-            `rounded-xl bg-white/10 px-6 py-3 text-base text-white`,
-            {'opacity-30': step === steps.length - 1},
-          )}
-          disabled={step === steps.length - 1}
-          onClick={goNext}
-        >
-          Next →
-        </button>
-      </div>
-    </div>
+    <CookingModeView
+      displayRecipe={displayRecipe}
+      steps={steps}
+      step={step}
+      scaleFactor={scaleFactor}
+      servings={servings}
+      onDone={() => {
+        setShowCookLogForm(true);
+      }}
+      onPrev={() => {
+        setStep(s => Math.max(s - 1, 0));
+      }}
+      onNext={() => {
+        setStep(s => Math.min(s + 1, steps.length - 1));
+      }}
+    />
   );
 };

@@ -25,6 +25,8 @@ describe('scale multiplier labels', () => {
   test('detects the active multiplier', () => {
     expect(isActiveScaleMultiplier(4, 8, 2)).toBe(true);
     expect(isActiveScaleMultiplier(4, 5, 2)).toBe(false);
+    expect(isActiveScaleMultiplier(1, 1, 1)).toBe(true);
+    expect(isActiveScaleMultiplier(1, 1, 0.5)).toBe(false);
   });
 });
 

@@ -25,9 +25,11 @@ export const ImportReviewScreen = ({route, navigation}: Props) => {
     enabled: recipeId.length > 0,
   });
 
+  const versionId = recipe?.versionId;
+
   const handleSubmit = async (input: RecipeInput) => {
     await api.recipes.put(recipeId, input);
-    await invalidateRecipeQueries(queryClient, recipeId);
+    await invalidateRecipeQueries(queryClient, recipeId, versionId);
     navigation
       .getParent()
       ?.navigate('Recipes', {screen: 'RecipeDetail', params: {recipeId}});

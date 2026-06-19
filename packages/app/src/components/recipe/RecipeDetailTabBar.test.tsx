@@ -14,7 +14,7 @@ describe('RecipeDetailTabBar', () => {
     expect(getByText('Overview')).toBeTruthy();
     expect(getByText('Ingredients')).toBeTruthy();
     expect(getByText('Instructions')).toBeTruthy();
-    expect(getByText('Notes')).toBeTruthy();
+    expect(getByText('Cook History')).toBeTruthy();
     expect(getByText('Nutrition')).toBeTruthy();
   });
 

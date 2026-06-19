@@ -27,7 +27,6 @@ export const recipeImportToInput = (
     prepTimeMin: recipe.prepTimeMin,
     cookTimeMin: recipe.cookTimeMin,
     imageUrl: imageUrl ?? null,
-    starRating: null,
     sourceUrl: recipe.sourceUrl ?? sourceUrl ?? null,
     ingredients: [...recipe.ingredients]
       .sort((a, b) => a.sortOrder - b.sortOrder)
