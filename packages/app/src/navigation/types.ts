@@ -17,6 +17,7 @@ export type AddStackParamList = {
   ImportUrl: undefined;
   ImportImage: undefined;
   ImportText: undefined;
+  GenerateAi: undefined;
   ImportReview: {recipeId: string};
 };
 

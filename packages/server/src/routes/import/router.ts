@@ -3,6 +3,7 @@ import {Router, type NextFunction, type Request, type Response} from 'express';
 import {query as defaultQuery} from '../../db/query.js';
 import {requireAuth, type AuthedRequest} from '../../middleware/requireAuth.js';
 
+import {importFromAi} from './importFromAi.js';
 import {importFromImage} from './importFromImage.js';
 import {importBulk} from './importBulk.js';
 import {importFromText} from './importFromText.js';
@@ -40,6 +41,11 @@ export const createImportRouter = (queryFn: QueryFn = defaultQuery) => {
     '/bulk',
     requireAuth,
     runImport((req, res) => importBulk(req, res, queryFn)),
+  );
+  router.post(
+    '/ai',
+    requireAuth,
+    runImport((req, res) => importFromAi(req, res, queryFn)),
   );
 
   return router;

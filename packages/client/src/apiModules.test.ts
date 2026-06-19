@@ -74,6 +74,7 @@ describe('createEciperayClient', () => {
     await client.import.importUrl('https://example.com');
     await client.import.importImage('base64');
     await client.import.importText('Pasta recipe');
+    await client.import.importAi('quick vegetarian pasta for 4');
     await client.import.importBulk({
       formatVersion: 1,
       exportedAt: '2024-01-01T00:00:00.000Z',
@@ -114,6 +115,10 @@ describe('createEciperayClient', () => {
     );
     expect(api.fetch).toHaveBeenCalledWith(
       '/recipes/import/text',
+      expect.any(Object),
+    );
+    expect(api.fetch).toHaveBeenCalledWith(
+      '/recipes/import/ai',
       expect.any(Object),
     );
     expect(api.fetch).toHaveBeenCalledWith(
