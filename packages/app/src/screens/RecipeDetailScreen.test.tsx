@@ -2,7 +2,13 @@ import React from 'react';
 import {Alert} from 'react-native';
 import {fireEvent, waitFor} from '@testing-library/react-native';
 
-import {makeRecipeDetail} from '../__tests__/fixtures/recipe';
+import {
+  makeCookLog,
+  makeRecipeDetail,
+  makeRecipeVersionDetail,
+  makeRecipeVersionSummary,
+  VERSION_ID,
+} from '../__tests__/fixtures/recipe';
 import {makeStackProps, renderWithProviders} from '../__tests__/testUtils';
 import {api} from '../lib/api';
 import type {RecipesStackParamList} from '../navigation/types';
@@ -13,10 +19,11 @@ jest.mock('../lib/api');
 
 const mockGet = api.recipes.get as jest.Mock;
 const mockDelete = api.recipes.delete as jest.Mock;
+const mockListVersions = api.versions.list as jest.Mock;
+const mockGetVersion = api.versions.get as jest.Mock;
+const mockCreateVersion = api.versions.create as jest.Mock;
 const mockNutrition = api.ai.nutrition as jest.Mock;
-const mockGetConversation = api.ai.getConversation as jest.Mock;
-const mockListNotes = api.notes.list as jest.Mock;
-const mockListDrafts = api.drafts.listPending as jest.Mock;
+const mockListCookLogs = api.cookLogs.list as jest.Mock;
 const mockNavigate = jest.fn();
 const stackProps = makeStackProps<RecipesStackParamList, 'RecipeDetail'>(
   'RecipeDetail',
@@ -28,6 +35,7 @@ describe('RecipeDetailScreen', () => {
   beforeEach(() => {
     mockGet.mockResolvedValue(makeRecipeDetail());
     mockDelete.mockImplementation(async () => {});
+    mockListVersions.mockResolvedValue([makeRecipeVersionSummary()]);
     mockNutrition.mockResolvedValue({
       calories: 250,
       proteinG: 10,
@@ -37,9 +45,7 @@ describe('RecipeDetailScreen', () => {
       sodiumMg: 500,
       disclaimer: 'Estimate only',
     });
-    mockGetConversation.mockResolvedValue({messages: []});
-    mockListNotes.mockResolvedValue([]);
-    mockListDrafts.mockResolvedValue([]);
+    mockListCookLogs.mockResolvedValue([]);
   });
 
   test('renders recipe title in overview tab', async () => {
@@ -58,13 +64,14 @@ describe('RecipeDetailScreen', () => {
     expect(await findByText(/Flour/)).toBeTruthy();
   });
 
-  test('navigates to cooking mode', async () => {
+  test('navigates to cooking mode with versionId', async () => {
     const {findByText} = renderWithProviders(
       <RecipeDetailScreen {...stackProps} />,
     );
     fireEvent.press(await findByText('Start Cooking'));
     expect(mockNavigate).toHaveBeenCalledWith('CookingMode', {
       recipeId: 'recipe-uuid-1',
+      versionId: VERSION_ID,
       servings: 4,
     });
   });
@@ -80,6 +87,7 @@ describe('RecipeDetailScreen', () => {
     fireEvent.press(await findByText('Start Cooking'));
     expect(mockNavigate).toHaveBeenCalledWith('CookingMode', {
       recipeId: 'recipe-uuid-1',
+      versionId: VERSION_ID,
       servings: 8,
     });
   });
@@ -94,14 +102,16 @@ describe('RecipeDetailScreen', () => {
     });
   });
 
-  test('switches to instructions, notes, and nutrition tabs', async () => {
+  test('switches to instructions, cook history, and nutrition tabs', async () => {
+    mockListCookLogs.mockResolvedValue([makeCookLog()]);
     const {findByText} = renderWithProviders(
       <RecipeDetailScreen {...stackProps} />,
     );
     await findByText('Test Recipe');
     fireEvent.press(await findByText('Instructions'));
     expect(await findByText('Mix dry ingredients')).toBeTruthy();
-    fireEvent.press(await findByText('Notes'));
+    fireEvent.press(await findByText('Cook History'));
+    expect(await findByText('Turned out great')).toBeTruthy();
     fireEvent.press(await findByText('Nutrition'));
     expect(await findByText('250')).toBeTruthy();
   });
@@ -116,6 +126,57 @@ describe('RecipeDetailScreen', () => {
     fireEvent.press(await findByText('Delete'));
     await waitFor(() => {
       expect(mockDelete).toHaveBeenCalled();
+    });
+  });
+
+  test('loads alternate version when selected in picker', async () => {
+    const alternateVersionId = 'version-uuid-2';
+    mockListVersions.mockResolvedValue([
+      makeRecipeVersionSummary(),
+      makeRecipeVersionSummary({
+        id: alternateVersionId,
+        versionNumber: 2,
+        derivedRole: 'archived',
+      }),
+    ]);
+    mockGetVersion.mockResolvedValue(
+      makeRecipeVersionDetail({
+        id: alternateVersionId,
+        versionNumber: 2,
+        title: 'Archived Recipe',
+        derivedRole: 'archived',
+      }),
+    );
+    const {findByText, getByLabelText, getByText} = renderWithProviders(
+      <RecipeDetailScreen {...stackProps} />,
+    );
+    await findByText('Test Recipe');
+    fireEvent.press(getByLabelText('Select version'));
+    fireEvent.press(getByText(/v2/));
+    expect(await findByText('Archived Recipe')).toBeTruthy();
+    expect(mockGetVersion).toHaveBeenCalledWith(
+      'recipe-uuid-1',
+      alternateVersionId,
+    );
+  });
+
+  test('navigates to tweak AI and edit version flows', async () => {
+    mockCreateVersion.mockResolvedValue(
+      makeRecipeVersionSummary({id: 'version-draft-1'}),
+    );
+    const {findByText} = renderWithProviders(
+      <RecipeDetailScreen {...stackProps} />,
+    );
+    fireEvent.press(await findByText('Tweak with AI'));
+    expect(mockNavigate).toHaveBeenCalledWith('TweakAi', {
+      recipeId: 'recipe-uuid-1',
+    });
+    fireEvent.press(await findByText('Tweak manually'));
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('EditVersion', {
+        recipeId: 'recipe-uuid-1',
+        versionId: 'version-draft-1',
+      });
     });
   });
 });

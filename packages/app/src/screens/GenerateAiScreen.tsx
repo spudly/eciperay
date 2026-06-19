@@ -27,8 +27,11 @@ export const GenerateAiScreen = ({navigation}: Props) => {
     setError(null);
     try {
       const recipe = await api.import.importAi(trimmed);
-      analytics.track('recipe_imported', {recipe_id: recipe.id, source: 'ai'});
-      navigation.navigate('ImportReview', {recipeId: recipe.id});
+      analytics.track('recipe_imported', {
+        recipe_id: recipe.recipeId,
+        source: 'ai',
+      });
+      navigation.navigate('ImportReview', {recipeId: recipe.recipeId});
     } catch (error_) {
       setError(
         error_ instanceof Error ? error_.message : 'Recipe generation failed',

@@ -15,7 +15,7 @@ import {ManualEntryScreen} from './ManualEntryScreen';
 
 jest.mock('../lib/api', () => ({
   api: {
-    recipes: {create: jest.fn(), patch: jest.fn()},
+    recipes: {create: jest.fn(), put: jest.fn()},
     tags: {list: jest.fn()},
     ai: {
       generateImage: jest
@@ -47,7 +47,7 @@ jest.mock('@eciperay/client', () => {
 });
 
 const mockCreate = api.recipes.create as jest.Mock;
-const mockPatch = api.recipes.patch as jest.Mock;
+const mockPut = api.recipes.put as jest.Mock;
 const mockListTags = api.tags.list as jest.Mock;
 const mockUploadRecipeImageFromBase64 =
   uploadRecipeImageFromBase64 as jest.Mock;
@@ -61,14 +61,17 @@ const stackProps = makeStackProps<AddStackParamList, 'ManualEntry'>(
 describe('ManualEntryScreen', () => {
   beforeEach(() => {
     mockListTags.mockResolvedValue([]);
-    mockPatch.mockResolvedValue(makeRecipeDetail({id: 'new-id'}));
+    mockPut.mockResolvedValue(makeRecipeDetail({id: 'new-id'}));
     mockUploadRecipeImageFromBase64.mockResolvedValue(
       'https://cdn.example/recipe.png',
     );
   });
 
   test('creates recipe on submit', async () => {
-    mockCreate.mockResolvedValue(makeRecipeDetail({id: 'new-id'}));
+    mockCreate.mockResolvedValue({
+      ...makeRecipeDetail({id: 'new-id'}),
+      recipeId: 'new-id',
+    });
     const queryClient = makeQueryClient();
     await queryClient.prefetchQuery({
       queryKey: queryKeys.tags(),
@@ -87,7 +90,10 @@ describe('ManualEntryScreen', () => {
   });
 
   test('uploads a pending image after the recipe is created', async () => {
-    mockCreate.mockResolvedValue(makeRecipeDetail({id: 'new-id'}));
+    mockCreate.mockResolvedValue({
+      ...makeRecipeDetail({id: 'new-id'}),
+      recipeId: 'new-id',
+    });
     const queryClient = makeQueryClient();
     const invalidateSpy = jest.spyOn(queryClient, 'invalidateQueries');
     await queryClient.prefetchQuery({
@@ -112,9 +118,14 @@ describe('ManualEntryScreen', () => {
         {userId: 'user-1', recipeId: 'new-id'},
       );
     });
-    expect(mockPatch).toHaveBeenCalledWith('new-id', {
-      imageUrl: 'https://cdn.example/recipe.png',
-    });
+    expect(mockPut).toHaveBeenCalledWith(
+      'new-id',
+      expect.objectContaining({
+        imageUrl: 'https://cdn.example/recipe.png',
+        title: 'New Recipe',
+        servings: 4,
+      }),
+    );
     expect(invalidateSpy).toHaveBeenCalled();
   });
 });

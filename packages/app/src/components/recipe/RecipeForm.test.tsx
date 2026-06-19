@@ -258,7 +258,7 @@ describe('RecipeForm', () => {
         ingredients: [
           {
             id: 'i-salt',
-            recipeId: 'recipe-uuid-1',
+            recipeVersionId: 'version-uuid-1',
             sortOrder: 0,
             name: 'Salt',
             quantity: null,

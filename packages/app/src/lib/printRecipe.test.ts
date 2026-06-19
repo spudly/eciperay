@@ -1,6 +1,6 @@
 import Print from 'react-native-print';
 
-import {makeRecipeDetail} from '../__tests__/fixtures/recipe';
+import {makeRecipeDetail, VERSION_ID} from '../__tests__/fixtures/recipe';
 
 import {printRecipe} from './printRecipe';
 
@@ -37,7 +37,7 @@ describe('printRecipe', () => {
       ingredients: [
         {
           id: 'i-1',
-          recipeId: 'r-1',
+          recipeVersionId: VERSION_ID,
           sortOrder: 0,
           name: 'Flour',
           quantity: 2,
@@ -64,7 +64,7 @@ describe('printRecipe', () => {
       ingredients: [
         {
           id: 'i-2',
-          recipeId: 'r-1',
+          recipeVersionId: VERSION_ID,
           sortOrder: 0,
           name: 'Salt',
           quantity: null,
@@ -82,7 +82,7 @@ describe('printRecipe', () => {
       ingredients: [
         {
           id: 'i-3',
-          recipeId: 'r-1',
+          recipeVersionId: VERSION_ID,
           sortOrder: 0,
           name: 'Eggs',
           quantity: 3,

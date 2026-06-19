@@ -36,23 +36,24 @@ export const ManualEntryScreen = ({navigation}: Props) => {
     pendingImage?: PendingRecipeImage,
   ) => {
     const recipe = await api.recipes.create(input);
-    analytics.track('recipe_created', {recipe_id: recipe.id, source: 'manual'});
+    analytics.track('recipe_created', {
+      recipe_id: recipe.recipeId,
+      source: 'manual',
+    });
+    const recipeId = recipe.recipeId;
     if (pendingImage && session?.user.id) {
       const imageUrl = await uploadRecipeImageFromBase64(
         supabase,
         pendingImage.base64,
         pendingImage.contentType,
-        {userId: session.user.id, recipeId: recipe.id},
+        {userId: session.user.id, recipeId},
       );
-      await api.recipes.patch(recipe.id, {imageUrl});
+      await api.recipes.put(recipeId, {...input, imageUrl});
     }
-    await invalidateRecipeQueries(queryClient, recipe.id);
+    await invalidateRecipeQueries(queryClient, recipeId, recipe.versionId);
     navigation
       .getParent()
-      ?.navigate('Recipes', {
-        screen: 'RecipeDetail',
-        params: {recipeId: recipe.id},
-      });
+      ?.navigate('Recipes', {screen: 'RecipeDetail', params: {recipeId}});
   };
 
   return (

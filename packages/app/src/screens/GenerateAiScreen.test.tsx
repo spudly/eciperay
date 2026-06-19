@@ -28,7 +28,10 @@ describe('GenerateAiScreen', () => {
   });
 
   test('generates a recipe and navigates to review', async () => {
-    mockImportAi.mockResolvedValue(makeRecipeDetail({id: 'recipe-ai-1'}));
+    mockImportAi.mockResolvedValue({
+      ...makeRecipeDetail({id: 'recipe-ai-1'}),
+      recipeId: 'recipe-ai-1',
+    });
     const {getByPlaceholderText, getByText} = renderWithProviders(
       <GenerateAiScreen {...stackProps} />,
     );

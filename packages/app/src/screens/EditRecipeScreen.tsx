@@ -27,7 +27,7 @@ export const EditRecipeScreen = ({route, navigation}: Props) => {
 
   const handleSubmit = async (input: RecipeInput) => {
     await api.recipes.put(recipeId, input);
-    await invalidateRecipeQueries(queryClient, recipeId);
+    await invalidateRecipeQueries(queryClient, recipeId, recipe?.versionId);
     navigation.navigate('RecipeDetail', {recipeId});
   };
 

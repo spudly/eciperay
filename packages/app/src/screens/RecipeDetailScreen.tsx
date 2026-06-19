@@ -1,25 +1,20 @@
-import {
-  queryKeys,
-  recordRecipeView,
-  removeRecipeView,
-  useAnalytics,
-} from '@eciperay/client';
+import {queryKeys, recordRecipeView} from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
-import React, {useCallback, useEffect, useState} from 'react';
-import {Alert, ScrollView, Text, View} from 'react-native';
+import {useQuery, useQueryClient} from '@tanstack/react-query';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import {ScrollView, Text, View} from 'react-native';
 
-import {IngredientsTab} from '../components/recipe/IngredientsTab';
-import {InstructionsTab} from '../components/recipe/InstructionsTab';
-import {NotesTab} from '../components/recipe/NotesTab';
-import {NutritionTab} from '../components/recipe/NutritionTab';
-import {OverviewTab} from '../components/recipe/OverviewTab';
+import {LifecycleStatusBadge} from '../components/recipe/LifecycleStatusBadge';
 import {
   RecipeDetailTabBar,
   type RecipeDetailTab,
 } from '../components/recipe/RecipeDetailTabBar';
+import {RecipeDetailTabPanel} from '../components/recipe/RecipeDetailTabPanel';
+import {VersionPicker} from '../components/recipe/VersionPicker';
 import {api} from '../lib/api';
+import {mergeVersionIntoRecipe} from '../lib/mergeVersionIntoRecipe';
 import {recipeViewHistoryStorage} from '../lib/recipeViewHistoryStorage';
+import {useDeleteRecipe} from '../lib/useDeleteRecipe';
 import type {RecipesStackParamList} from '../navigation/types';
 
 type DetailProps = NativeStackScreenProps<
@@ -31,8 +26,13 @@ export const RecipeDetailScreen = ({route, navigation}: DetailProps) => {
   const {recipeId} = route.params;
   const [activeTab, setActiveTab] = useState<RecipeDetailTab>('overview');
   const [servings, setServings] = useState<number | null>(null);
+  const [selectedVersionId, setSelectedVersionId] = useState<string | null>(
+    null,
+  );
   const queryClient = useQueryClient();
-  const analytics = useAnalytics();
+  const {confirmDelete} = useDeleteRecipe(recipeId, () => {
+    navigation.navigate('RecipesList');
+  });
 
   const invalidateRecentlyViewed = useCallback(() => {
     void queryClient.invalidateQueries({
@@ -51,36 +51,38 @@ export const RecipeDetailScreen = ({route, navigation}: DetailProps) => {
     queryFn: () => api.recipes.get(recipeId),
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: async () => {
-      await api.recipes.delete(recipeId);
-      await removeRecipeView(recipeViewHistoryStorage, recipeId);
-    },
-    onSuccess: () => {
-      analytics.track('recipe_deleted', {recipe_id: recipeId});
-      void queryClient.invalidateQueries({queryKey: queryKeys.recipeLists()});
-      navigation.navigate('RecipesList');
-    },
+  const activeVersionId = selectedVersionId ?? recipe?.versionId ?? '';
+
+  const {data: versions = []} = useQuery({
+    queryKey: queryKeys.versions(recipeId),
+    queryFn: () => api.versions.list(recipeId),
+    enabled: recipeId.length > 0,
   });
 
-  const handleDelete = () => {
-    /* istanbul ignore next -- delete only rendered when recipe is loaded */
-    if (!recipe) {
-      return;
-    }
-    Alert.alert('Delete recipe', `Delete "${recipe.title}"?`, [
-      {text: 'Cancel', style: 'cancel'},
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: () => {
-          deleteMutation.mutate();
-        },
-      },
-    ]);
-  };
+  const viewingAlternateVersion =
+    recipe !== undefined && activeVersionId !== recipe.versionId;
 
-  if (isLoading || !recipe) {
+  const {data: versionDetail} = useQuery({
+    queryKey: queryKeys.version(recipeId, activeVersionId),
+    queryFn: () => api.versions.get(recipeId, activeVersionId),
+    enabled: recipeId.length > 0 && viewingAlternateVersion,
+  });
+
+  const displayRecipe = useMemo(() => {
+    if (!recipe) {
+      return null;
+    }
+    if (viewingAlternateVersion && versionDetail) {
+      return mergeVersionIntoRecipe(recipe, versionDetail);
+    }
+    return recipe;
+  }, [recipe, viewingAlternateVersion, versionDetail]);
+
+  useEffect(() => {
+    setSelectedVersionId(null);
+  }, [recipe?.versionId]);
+
+  if (isLoading || !recipe || !displayRecipe) {
     return (
       <View className="flex-1 items-center justify-center">
         <Text>Loading…</Text>
@@ -88,42 +90,60 @@ export const RecipeDetailScreen = ({route, navigation}: DetailProps) => {
     );
   }
 
-  const currentServings = servings ?? recipe.servings;
-  const scaleFactor = currentServings / recipe.servings;
+  const currentServings = servings ?? displayRecipe.servings;
+  const scaleFactor = currentServings / displayRecipe.servings;
 
   return (
     <View className="flex-1 bg-white">
+      <View
+        className="
+          flex-row flex-wrap items-center gap-2 border-b border-gray-100 px-4
+          py-3
+        "
+      >
+        <LifecycleStatusBadge status={recipe.lifecycleStatus} />
+        <VersionPicker
+          versions={versions}
+          selectedVersionId={activeVersionId}
+          onSelect={setSelectedVersionId}
+        />
+      </View>
       <RecipeDetailTabBar
         activeTab={activeTab}
         onSelect={setActiveTab}
       />
       <ScrollView className="flex-1">
-        {activeTab === 'overview' && (
-          <OverviewTab
-            recipe={recipe}
-            onStartCooking={() => {
-              navigation.navigate('CookingMode', {
-                recipeId: recipe.id,
-                servings: currentServings,
-              });
-            }}
-            onEdit={() => {
-              navigation.navigate('EditRecipe', {recipeId: recipe.id});
-            }}
-            onDelete={handleDelete}
-          />
-        )}
-        {activeTab === 'ingredients' && (
-          <IngredientsTab
-            recipe={recipe}
-            scaleFactor={scaleFactor}
-            servings={currentServings}
-            onServingsChange={setServings}
-          />
-        )}
-        {activeTab === 'instructions' && <InstructionsTab recipe={recipe} />}
-        {activeTab === 'notes' && <NotesTab recipeId={recipe.id} />}
-        {activeTab === 'nutrition' && <NutritionTab recipeId={recipe.id} />}
+        <RecipeDetailTabPanel
+          activeTab={activeTab}
+          recipe={recipe}
+          displayRecipe={displayRecipe}
+          versions={versions}
+          currentServings={currentServings}
+          scaleFactor={scaleFactor}
+          onServingsChange={setServings}
+          onStartCooking={() => {
+            navigation.navigate('CookingMode', {
+              recipeId: recipe.id,
+              versionId: displayRecipe.versionId,
+              servings: currentServings,
+            });
+          }}
+          onEdit={() => {
+            navigation.navigate('EditRecipe', {recipeId: recipe.id});
+          }}
+          onDelete={() => {
+            confirmDelete(recipe);
+          }}
+          onTweakAi={() => {
+            navigation.navigate('TweakAi', {recipeId: recipe.id});
+          }}
+          onEditVersion={versionId => {
+            navigation.navigate('EditVersion', {
+              recipeId: recipe.id,
+              versionId,
+            });
+          }}
+        />
       </ScrollView>
     </View>
   );

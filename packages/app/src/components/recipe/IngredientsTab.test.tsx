@@ -1,7 +1,7 @@
 import React from 'react';
 import {fireEvent} from '@testing-library/react-native';
 
-import {makeRecipeDetail} from '../../__tests__/fixtures/recipe';
+import {makeRecipeDetail, VERSION_ID} from '../../__tests__/fixtures/recipe';
 import {renderWithProviders} from '../../__tests__/testUtils';
 import {api} from '../../lib/api';
 
@@ -103,7 +103,7 @@ describe('IngredientsTab', () => {
       ingredients: [
         {
           id: 'i-opt',
-          recipeId: 'r-1',
+          recipeVersionId: VERSION_ID,
           sortOrder: 0,
           name: 'Nuts',
           quantity: null,
