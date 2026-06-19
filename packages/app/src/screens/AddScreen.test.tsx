@@ -20,6 +20,7 @@ describe('AddScreen', () => {
     expect(getByText('Import from URL')).toBeTruthy();
     expect(getByText('Import from image')).toBeTruthy();
     expect(getByText('Import from text')).toBeTruthy();
+    expect(getByText('Generate with AI')).toBeTruthy();
   });
 
   test('navigates to ManualEntry on press', () => {
@@ -44,5 +45,11 @@ describe('AddScreen', () => {
     const {getByText} = render(<AddScreen {...stackProps} />);
     fireEvent.press(getByText('Import from text'));
     expect(mockNavigate).toHaveBeenCalledWith('ImportText');
+  });
+
+  test('navigates to GenerateAi on press', () => {
+    const {getByText} = render(<AddScreen {...stackProps} />);
+    fireEvent.press(getByText('Generate with AI'));
+    expect(mockNavigate).toHaveBeenCalledWith('GenerateAi');
   });
 });

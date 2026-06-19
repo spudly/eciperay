@@ -11,5 +11,6 @@ describe('AddPage', () => {
     expect(screen.getByText('Import from URL')).toBeInTheDocument();
     expect(screen.getByText('Import from image')).toBeInTheDocument();
     expect(screen.getByText('Import from text')).toBeInTheDocument();
+    expect(screen.getByText('Generate with AI')).toBeInTheDocument();
   });
 });

@@ -1,12 +1,13 @@
 export type AnalyticsPlatform = 'web' | 'ios' | 'android';
 
-export type RecipeImportSource = 'url' | 'image' | 'text' | 'bulk';
+export type RecipeImportSource = 'url' | 'image' | 'text' | 'bulk' | 'ai';
 
 export const RECIPE_IMPORT_SOURCES = [
   'url',
   'image',
   'text',
   'bulk',
+  'ai',
 ] as const satisfies readonly RecipeImportSource[];
 
 export type RecipeCreateSource = 'manual' | RecipeImportSource;
