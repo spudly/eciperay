@@ -8,6 +8,7 @@ import request from 'supertest';
 
 import {createApp, handleUnexpectedError} from './server.js';
 import {shutdownPostHogLogs} from './lib/posthogLogs.js';
+import {AiResponseParseError} from './lib/validate.js';
 import {WEB_DIST_DIR} from './staticWeb.js';
 
 const withTestRoute = (path: string, handler: RequestHandler) => {
@@ -111,6 +112,15 @@ describe('createApp', () => {
       throw new Anthropic.APIError(500, undefined, 'AI failed', undefined);
     });
     const res = await request(app).get('/test-ai-error');
+    expect(res.status).toBe(502);
+    expect(res.body).toEqual({error: 'AI service error'});
+  });
+
+  test('returns 502 for invalid AI response parsing', async () => {
+    const app = withTestRoute('/test-ai-parse-error', () => {
+      throw new AiResponseParseError(new Error('bad ai json'));
+    });
+    const res = await request(app).get('/test-ai-parse-error');
     expect(res.status).toBe(502);
     expect(res.body).toEqual({error: 'AI service error'});
   });

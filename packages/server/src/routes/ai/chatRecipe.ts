@@ -20,10 +20,17 @@ import {appendMessage, getOrCreateConversation} from './conversation.js';
 
 type QueryFn = typeof defaultQuery;
 
+const INGREDIENT_SHAPE =
+  '{"sortOrder": number, "name": string, "quantity": number|null, "unit": string|null, "notes": string|null, "isOptional": boolean}';
+const INSTRUCTION_SHAPE = '{"stepNumber": number, "body": string}';
+
 const SYSTEM = `You are a culinary assistant helping improve recipes. Given a recipe and a user
 request, respond with JSON only:
 {"reasoning": string, "summary_of_changes": string, "diff": {title?,description?,servings?,
 prepTimeMin?,cookTimeMin?,ingredients?,instructions?}}
+When returning ingredients or instructions, include the full updated arrays using this shape:
+ingredients: [${INGREDIENT_SHAPE}], instructions: [${INSTRUCTION_SHAPE}]
+Number ingredients with sortOrder starting at 0 and steps starting at 1.
 Return only the fields that change.`;
 
 const buildMessages = (
