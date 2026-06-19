@@ -32,6 +32,7 @@ describe('createAnalytics', () => {
   });
 
   test('exposes feature flags, experiments, errors, and logs', () => {
+    const captureException = jest.fn();
     const onFeatureFlags = jest.fn(() => jest.fn());
     const analytics = createAnalytics(
       {
@@ -44,7 +45,7 @@ describe('createAnalytics', () => {
         ),
         getFeatureFlagPayload: jest.fn().mockReturnValue({color: 'blue'}),
         onFeatureFlags,
-        captureException: jest.fn(),
+        captureException,
         log: jest.fn(),
       },
       'web',
@@ -53,7 +54,14 @@ describe('createAnalytics', () => {
     expect(analytics.getFeatureFlag('flag-a')).toBe('variant-a');
     expect(analytics.getExperimentVariant('flag-a')).toBe('variant-a');
     expect(analytics.getFeatureFlagPayload('flag-a')).toEqual({color: 'blue'});
-    analytics.captureException(new Error('boom'), {route: '/recipes'});
+    analytics.captureException(new Error('boom'), {
+      route: '/recipes',
+      password: 'secret',
+    });
+    expect(captureException).toHaveBeenCalledWith(new Error('boom'), {
+      route: '/recipes',
+      password: '[redacted]',
+    });
     analytics.log('info', 'hello', {count: 1});
     expect(onFeatureFlags).not.toHaveBeenCalled();
     analytics.reloadFeatureFlags();

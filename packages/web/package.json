@@ -27,6 +27,7 @@
     "react-router-dom": "^7.0.0"
   },
   "devDependencies": {
+    "@posthog/rollup-plugin": "^1.4.7",
     "@tailwindcss/vite": "^4.3.0",
     "@testing-library/jest-dom": "^6.0.0",
     "@testing-library/react": "^16.0.0",

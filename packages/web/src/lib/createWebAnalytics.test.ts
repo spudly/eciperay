@@ -137,4 +137,23 @@ describe('createWebAnalytics', () => {
       expect.objectContaining({api_host: 'https://us.i.posthog.com'}),
     );
   });
+
+  test('scrubs sensitive properties in before_send', () => {
+    createWebAnalytics('phc_test', 'https://us.i.posthog.com');
+    const {before_send} = posthogInit.mock.calls[0]![1] as {
+      before_send: (
+        event: {properties?: Record<string, unknown>} | null,
+      ) => {properties?: Record<string, unknown>} | null;
+    };
+    const sanitized = before_send({
+      properties: {password: 'secret', route: '/home'},
+    });
+    expect(sanitized?.properties).toEqual({
+      password: '[redacted]',
+      route: '/home',
+    });
+    expect(before_send(null)).toBeNull();
+    const eventWithoutProperties = {};
+    expect(before_send(eventWithoutProperties)).toBe(eventWithoutProperties);
+  });
 });
