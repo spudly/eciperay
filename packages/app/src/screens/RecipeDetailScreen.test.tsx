@@ -92,13 +92,37 @@ describe('RecipeDetailScreen', () => {
     });
   });
 
-  test('navigates to edit screen', async () => {
-    const {findByText} = renderWithProviders(
-      <RecipeDetailScreen {...stackProps} />,
+  test('navigates to edit draft screen', async () => {
+    const draftId = 'version-draft-1';
+    mockListVersions.mockResolvedValue([
+      makeRecipeVersionSummary(),
+      makeRecipeVersionSummary({
+        id: draftId,
+        versionNumber: 2,
+        derivedRole: 'draft',
+        isEditable: true,
+      }),
+    ]);
+    mockGetVersion.mockResolvedValue(
+      makeRecipeVersionDetail({
+        id: draftId,
+        versionNumber: 2,
+        derivedRole: 'draft',
+        isEditable: true,
+      }),
     );
-    fireEvent.press(await findByText('Edit'));
-    expect(mockNavigate).toHaveBeenCalledWith('EditRecipe', {
+    const draftProps = makeStackProps<RecipesStackParamList, 'RecipeDetail'>(
+      'RecipeDetail',
+      {recipeId: 'recipe-uuid-1', versionId: draftId},
+      {navigate: mockNavigate, setParams: jest.fn()},
+    );
+    const {findByText} = renderWithProviders(
+      <RecipeDetailScreen {...draftProps} />,
+    );
+    fireEvent.press(await findByText('Edit draft'));
+    expect(mockNavigate).toHaveBeenCalledWith('EditVersion', {
       recipeId: 'recipe-uuid-1',
+      versionId: draftId,
     });
   });
 
@@ -173,10 +197,7 @@ describe('RecipeDetailScreen', () => {
     });
     fireEvent.press(await findByText('Tweak manually'));
     await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('EditVersion', {
-        recipeId: 'recipe-uuid-1',
-        versionId: 'version-draft-1',
-      });
+      expect(mockCreateVersion).toHaveBeenCalled();
     });
   });
 });

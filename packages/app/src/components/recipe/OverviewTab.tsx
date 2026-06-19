@@ -7,40 +7,33 @@ import {shareRecipe} from '../../lib/shareRecipe';
 
 import {OverviewActions} from './OverviewActions';
 import {recipeImagePreviewStyles} from './recipeImagePreviewStyles';
+import {StatBadge} from './StatBadge';
 
 type Props = {
   recipe: RecipeDetail;
   servings: number;
   versions: RecipeVersionSummary[];
   onStartCooking: () => void;
-  onEdit: () => void;
   onDelete: () => void;
   onTweakAi: () => void;
+  onViewVersion: (versionId: string) => void;
   onEditVersion: (versionId: string) => void;
 };
-
-const StatBadge = ({label, value}: {label: string; value: string}) => (
-  <View className="items-center">
-    <Text className="text-base font-semibold text-gray-900">{value}</Text>
-    <Text className="text-muted text-xs">{label}</Text>
-  </View>
-);
 
 export const OverviewTab = ({
   recipe,
   servings,
   versions,
   onStartCooking,
-  onEdit,
   onDelete,
   onTweakAi,
+  onViewVersion,
   onEditVersion,
 }: Props) => {
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
-  const isEditable =
-    recipe.lifecycleStatus !== 'perfected' &&
-    recipe.lifecycleStatus !== 'abandoned';
+  const viewingVersion = versions.find(v => v.id === recipe.versionId);
+  const canEditDraft = viewingVersion?.isEditable ?? false;
 
   const showActionMessage = (message: string) => {
     setActionMessage(message);
@@ -106,12 +99,16 @@ export const OverviewTab = ({
         >
           <Text className="text-gray-700">↗</Text>
         </TouchableOpacity>
-        {isEditable ? (
+        {canEditDraft ? (
           <TouchableOpacity
             className="rounded-xl bg-gray-100 px-4 py-3"
-            onPress={onEdit}
+            onPress={() => {
+              onEditVersion(recipe.versionId);
+            }}
           >
-            <Text className="text-sm font-medium text-gray-700">Edit</Text>
+            <Text className="text-sm font-medium text-gray-700">
+              Edit draft
+            </Text>
           </TouchableOpacity>
         ) : null}
         <TouchableOpacity
@@ -134,7 +131,7 @@ export const OverviewTab = ({
         versions={versions}
         onActionMessage={showActionMessage}
         onTweakAi={onTweakAi}
-        onEditVersion={onEditVersion}
+        onViewVersion={onViewVersion}
       />
       <View className="flex-row flex-wrap gap-2">
         {recipe.tags.map(tag => (

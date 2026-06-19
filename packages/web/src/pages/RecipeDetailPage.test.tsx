@@ -101,4 +101,45 @@ describe('RecipeDetailPage', () => {
       expect(screen.getByText('Older version')).toBeInTheDocument();
     });
   });
+
+  test('selects version from versionId search param', async () => {
+    server.use(
+      http.get('http://localhost:8080/api/recipes/:id/versions', () =>
+        HttpResponse.json([
+          makeRecipeVersionSummary(),
+          makeRecipeVersionSummary({
+            id: 'version-uuid-2',
+            versionNumber: 2,
+            derivedRole: 'archived',
+            title: 'Older version',
+          }),
+        ]),
+      ),
+      http.get(
+        'http://localhost:8080/api/recipes/:id/versions/:versionId',
+        ({params}) =>
+          HttpResponse.json(
+            makeRecipeVersionDetail({
+              id: params['versionId'] as string,
+              title:
+                params['versionId'] === 'version-uuid-2'
+                  ? 'Older version'
+                  : 'Test Recipe',
+            }),
+          ),
+      ),
+    );
+    await renderWithProviders(
+      <Routes>
+        <Route
+          path="/recipes/:recipeId"
+          element={<RecipeDetailPage />}
+        />
+      </Routes>,
+      {route: '/recipes/recipe-uuid-1?versionId=version-uuid-2'},
+    );
+    await waitFor(() => {
+      expect(screen.getByText('Older version')).toBeInTheDocument();
+    });
+  });
 });

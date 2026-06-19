@@ -70,6 +70,8 @@ export const handlers = [
         recipeId: params['id'] as string,
         versionNumber: 2,
         derivedRole: 'draft',
+        isEditable: true,
+        childVersionCount: 0,
         changeSummary: 'Manual tweak',
       }),
       {status: 201},
@@ -97,6 +99,8 @@ export const handlers = [
       id: 'version-ai-1',
       versionNumber: 2,
       derivedRole: 'draft',
+      isEditable: true,
+      childVersionCount: 0,
       changeSummary: `AI tweak: ${body.prompt}`,
     });
     return HttpResponse.json(
@@ -104,6 +108,140 @@ export const handlers = [
       {status: 201},
     );
   }),
+  http.post(`${API}/api/recipes/:id/tweak-ai-sessions`, async ({request}) => {
+    const body = (await request.json()) as {prompt: string};
+    const plan = `Plan for: ${body.prompt}`;
+    return HttpResponse.json(
+      {
+        session: {
+          id: 'session-1',
+          recipeId: 'recipe-uuid-1',
+          phase: 'planning',
+          messages: [
+            {role: 'user', content: body.prompt},
+            {role: 'assistant', content: plan},
+          ],
+          approvedPlan: null,
+          proposedRecipe: null,
+          parentVersionId: VERSION_ID,
+          createdAt: '2024-01-01T00:00:00.000Z',
+          updatedAt: '2024-01-01T00:00:00.000Z',
+        },
+        plan,
+      },
+      {status: 201},
+    );
+  }),
+  http.post(
+    `${API}/api/recipes/:id/tweak-ai-sessions/:sessionId/messages`,
+    async ({request}) => {
+      const body = (await request.json()) as {content: string};
+      return HttpResponse.json({
+        session: {
+          id: 'session-1',
+          recipeId: 'recipe-uuid-1',
+          phase: 'planning',
+          messages: [
+            {role: 'user', content: 'make it spicier'},
+            {role: 'assistant', content: 'Plan for: make it spicier'},
+            {role: 'user', content: body.content},
+            {role: 'assistant', content: `Refined: ${body.content}`},
+          ],
+          approvedPlan: null,
+          proposedRecipe: null,
+          parentVersionId: VERSION_ID,
+          createdAt: '2024-01-01T00:00:00.000Z',
+          updatedAt: '2024-01-01T00:00:00.000Z',
+        },
+        reply: `Refined: ${body.content}`,
+      });
+    },
+  ),
+  http.post(`${API}/api/recipes/:id/tweak-ai-sessions/:sessionId/cancel`, () =>
+    HttpResponse.json({
+      session: {
+        id: 'session-1',
+        recipeId: 'recipe-uuid-1',
+        phase: 'cancelled',
+        messages: [],
+        approvedPlan: null,
+        proposedRecipe: null,
+        parentVersionId: VERSION_ID,
+        createdAt: '2024-01-01T00:00:00.000Z',
+        updatedAt: '2024-01-01T00:00:00.000Z',
+      },
+    }),
+  ),
+  http.post(
+    `${API}/api/recipes/:id/tweak-ai-sessions/:sessionId/approve-plan`,
+    () =>
+      HttpResponse.json({
+        session: {
+          id: 'session-1',
+          recipeId: 'recipe-uuid-1',
+          phase: 'plan_approved',
+          messages: [],
+          approvedPlan: 'Approved plan',
+          proposedRecipe: null,
+          parentVersionId: VERSION_ID,
+          createdAt: '2024-01-01T00:00:00.000Z',
+          updatedAt: '2024-01-01T00:00:00.000Z',
+        },
+      }),
+  ),
+  http.post(
+    `${API}/api/recipes/:id/tweak-ai-sessions/:sessionId/implement`,
+    () =>
+      HttpResponse.json({
+        session: {
+          id: 'session-1',
+          recipeId: 'recipe-uuid-1',
+          phase: 'preview_ready',
+          messages: [],
+          approvedPlan: 'Approved plan',
+          proposedRecipe: {
+            title: 'Updated Recipe',
+            ingredients: [],
+            instructions: [],
+          },
+          parentVersionId: VERSION_ID,
+          createdAt: '2024-01-01T00:00:00.000Z',
+          updatedAt: '2024-01-01T00:00:00.000Z',
+        },
+        changeSummary: 'AI tweak',
+        preview: {title: 'Updated Recipe', ingredients: [], instructions: []},
+      }),
+  ),
+  http.post(
+    `${API}/api/recipes/:id/tweak-ai-sessions/:sessionId/create-version`,
+    () => {
+      const version = makeRecipeVersionDetail({
+        id: 'version-ai-1',
+        versionNumber: 2,
+        derivedRole: 'draft',
+        isEditable: true,
+        childVersionCount: 0,
+      });
+      return HttpResponse.json(
+        {
+          session: {
+            id: 'session-1',
+            recipeId: 'recipe-uuid-1',
+            phase: 'completed',
+            messages: [],
+            approvedPlan: 'Approved plan',
+            proposedRecipe: null,
+            parentVersionId: VERSION_ID,
+            createdAt: '2024-01-01T00:00:00.000Z',
+            updatedAt: '2024-01-01T00:00:00.000Z',
+          },
+          versionId: version.id,
+          version,
+        },
+        {status: 201},
+      );
+    },
+  ),
   http.get(`${API}/api/recipes/:id/versions/:versionId/cooks`, () =>
     HttpResponse.json([makeCookLog()]),
   ),

@@ -2,7 +2,7 @@ import {queryKeys, recordRecipeView} from '@eciperay/client';
 import clsx from 'clsx';
 import {useQuery, useQueryClient} from '@tanstack/react-query';
 import {useCallback, useEffect, useMemo, useState} from 'react';
-import {useParams} from 'react-router-dom';
+import {useParams, useSearchParams} from 'react-router-dom';
 
 import {LifecycleStatusBadge} from '../components/recipe/LifecycleStatusBadge.js';
 import {RecipeDetailTabPanel} from '../components/recipe/RecipeDetailTabPanel.js';
@@ -28,10 +28,11 @@ const TABS: {key: Tab; label: string}[] = [
 
 export const RecipeDetailPage = () => {
   const {recipeId = ''} = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [servings, setServings] = useState<number | null>(null);
   const [selectedVersionId, setSelectedVersionId] = useState<string | null>(
-    null,
+    () => searchParams.get('versionId'),
   );
   const queryClient = useQueryClient();
 
@@ -84,8 +85,19 @@ export const RecipeDetailPage = () => {
   }, [recipe, viewingAlternateVersion, versionDetail]);
 
   useEffect(() => {
-    setSelectedVersionId(null);
-  }, [recipe?.versionId]);
+    setServings(null);
+  }, [activeVersionId]);
+
+  useEffect(() => {
+    const versionId = searchParams.get('versionId');
+    if (!versionId || !recipeId) {
+      return;
+    }
+    setSelectedVersionId(versionId);
+    const next = new URLSearchParams(searchParams);
+    next.delete('versionId');
+    setSearchParams(next, {replace: true});
+  }, [recipeId, searchParams, setSearchParams]);
 
   if (isLoading || !recipe || !displayRecipe) {
     return (

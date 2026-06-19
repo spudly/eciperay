@@ -9,15 +9,34 @@ type Props = {
   onSubmit: (input: CookLogInput) => void;
   onSkip: () => void;
   isPending: boolean;
+  variant?: 'dark' | 'light';
+  secondaryLabel?: string;
 };
 
-export const CookLogForm = ({onSubmit, onSkip, isPending}: Props) => {
+export const CookLogForm = ({
+  onSubmit,
+  onSkip,
+  isPending,
+  variant = 'dark',
+  secondaryLabel = 'Skip',
+}: Props) => {
   const [rating, setRating] = useState<1 | 2 | 3 | 4 | 5 | null>(null);
   const [notes, setNotes] = useState('');
+  const isLight = variant === 'light';
 
   return (
-    <View className="w-full rounded-2xl bg-white/10 p-6">
-      <Text className="mb-4 text-xl font-semibold text-white">
+    <View
+      className={clsx('w-full rounded-2xl p-6', {
+        'bg-white/10': !isLight,
+        'border border-gray-200 bg-gray-50': isLight,
+      })}
+    >
+      <Text
+        className={clsx('mb-4 text-xl font-semibold', {
+          'text-white': !isLight,
+          'text-gray-900': isLight,
+        })}
+      >
         How did it go?
       </Text>
       <View className="mb-4 flex-row justify-center gap-2">
@@ -32,7 +51,8 @@ export const CookLogForm = ({onSubmit, onSkip, isPending}: Props) => {
             <Text
               className={clsx('text-2xl', {
                 'text-yellow-400': rating !== null && star <= rating,
-                'text-white/30': rating === null || star > rating,
+                'text-white/30': !isLight && (rating === null || star > rating),
+                'text-gray-300': isLight && (rating === null || star > rating),
               })}
             >
               ★
@@ -41,19 +61,34 @@ export const CookLogForm = ({onSubmit, onSkip, isPending}: Props) => {
         ))}
       </View>
       <TextInput
-        className="mb-4 rounded-xl bg-white/10 px-4 py-3 text-base text-white"
+        className={clsx(
+          'mb-4 rounded-xl px-4 py-3 text-base',
+          isLight
+            ? 'border border-gray-300 bg-white text-gray-900'
+            : 'bg-white/10 text-white',
+        )}
         placeholder="Notes from this cook (optional)"
-        placeholderTextColor="rgba(255,255,255,0.5)"
+        placeholderTextColor={isLight ? '#9ca3af' : 'rgba(255,255,255,0.5)'}
         multiline
         value={notes}
         onChangeText={setNotes}
       />
       <View className="flex-row gap-3">
         <TouchableOpacity
-          className="flex-1 items-center rounded-xl bg-white/10 py-3"
+          className={clsx('flex-1 items-center rounded-xl py-3', {
+            'bg-white/10': !isLight,
+            'border border-gray-200 bg-white': isLight,
+          })}
           onPress={onSkip}
         >
-          <Text className="text-base text-white">Skip</Text>
+          <Text
+            className={clsx('text-base', {
+              'text-white': !isLight,
+              'text-gray-700': isLight,
+            })}
+          >
+            {secondaryLabel}
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity
           className={clsx(

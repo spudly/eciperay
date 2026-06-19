@@ -40,4 +40,19 @@ describe('CookLogForm', () => {
     fireEvent.press(getByText('Save'));
     expect(onSubmit).not.toHaveBeenCalled();
   });
+
+  test('renders light variant with custom secondary label', () => {
+    const onSkip = jest.fn();
+    const {getByText} = renderWithProviders(
+      <CookLogForm
+        variant="light"
+        secondaryLabel="Cancel"
+        onSubmit={jest.fn()}
+        onSkip={onSkip}
+        isPending={false}
+      />,
+    );
+    fireEvent.press(getByText('Cancel'));
+    expect(onSkip).toHaveBeenCalled();
+  });
 });

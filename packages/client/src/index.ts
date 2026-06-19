@@ -104,6 +104,16 @@ export {createTagsApi} from './tagsApi.js';
 export {createAiApi} from './aiApi.js';
 export {createVersionsApi, type TweakWithAiResult} from './versionsApi.js';
 export {createCookLogsApi} from './cookLogsApi.js';
+export {createTweakAiApi} from './tweakAiApi.js';
+export {
+  compareVersionToParent,
+  parentIngredientsInput,
+  parentInstructionsInput,
+  parentTagIds,
+  revertVersionScalar,
+  type VersionDiff,
+  type VersionScalarField,
+} from './compareVersionToParent.js';
 export {
   createEciperayClient,
   type EciperayClient,

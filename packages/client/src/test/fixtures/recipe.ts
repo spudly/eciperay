@@ -66,6 +66,8 @@ export const makeRecipeVersionSummary = (
   title: 'Test Recipe',
   derivedRole: 'active',
   cookLogCount: 0,
+  childVersionCount: 0,
+  isEditable: false,
   createdVia: 'manual',
   changeSummary: null,
   createdAt: '2024-01-01T00:00:00.000Z',
@@ -79,6 +81,7 @@ export const makeRecipeVersionDetail = (
   const recipe = makeRecipeDetail();
   return {
     ...makeRecipeVersionSummary(),
+    lifecycleStatus: 'evolving',
     description: recipe.description,
     servings: recipe.servings,
     prepTimeMin: recipe.prepTimeMin,

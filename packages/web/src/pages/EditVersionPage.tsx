@@ -21,20 +21,28 @@ export const EditVersionPage = () => {
     enabled: recipeId.length > 0 && versionId.length > 0,
   });
 
+  const parentVersionId = version?.derivedFromVersionId ?? '';
+
+  const {data: parentVersion} = useQuery({
+    queryKey: queryKeys.version(recipeId, parentVersionId),
+    queryFn: () => eciperay.versions.get(recipeId, parentVersionId),
+    enabled: recipeId.length > 0 && parentVersionId.length > 0,
+  });
+
   const handleSubmit = async (input: RecipeVersionInput) => {
     await eciperay.versions.put(recipeId, versionId, input);
     await invalidateRecipeQueries(queryClient, recipeId, versionId);
-    void navigate(`/recipes/${recipeId}`);
+    void navigate(`/recipes/${recipeId}?versionId=${versionId}`);
   };
 
   if (isLoading || !version) {
     return <p>Loading…</p>;
   }
 
-  if (version.derivedRole !== 'draft') {
+  if (!version.isEditable) {
     return (
       <div>
-        <p className="text-red-600">Only draft versions can be edited here.</p>
+        <p className="text-red-600">This version can no longer be edited.</p>
         <button
           type="button"
           className="text-primary mt-4 text-sm underline"
@@ -59,6 +67,7 @@ export const EditVersionPage = () => {
       <RecipeForm
         initial={recipeVersionDetailToInput(version)}
         recipeId={recipeId}
+        parentVersion={parentVersion}
         submitLabel="Save Draft"
         onSubmit={handleSubmit}
       />

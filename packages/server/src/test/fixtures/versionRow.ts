@@ -14,6 +14,7 @@ type VersionRowOverrides = Partial<RecipeVersionSummary> & {
   active_version_id?: string;
   active_version_number?: number;
   cook_log_count?: number;
+  child_version_count?: number;
   version_id?: string;
   description?: string | null;
   servings?: number;
@@ -45,6 +46,9 @@ export const makeVersionSummaryRow = (overrides: VersionRowOverrides = {}) => ({
   active_version_id: overrides.active_version_id ?? 'version-uuid-1',
   active_version_number: overrides.active_version_number ?? 1,
   cook_log_count: overrides.cookLogCount ?? overrides.cook_log_count ?? 0,
+  child_version_count:
+    overrides.childVersionCount ?? overrides.child_version_count ?? 0,
+  status: overrides.status ?? 'evolving',
 });
 
 export const makeVersionDetailRow = (overrides: VersionRowOverrides = {}) => {
@@ -66,12 +70,13 @@ export const makeVersionDetailRow = (overrides: VersionRowOverrides = {}) => {
     created_at: summary.created_at,
     updated_at: summary.updated_at,
     user_id: overrides.user_id ?? 'user-uuid-1',
-    status: overrides.status ?? 'idea',
+    status: overrides.status ?? summary.status,
     active_version_id: summary.active_version_id,
     active_version_number: summary.active_version_number,
     ingredients: overrides.ingredients ?? [makeIngredient()],
     instructions: overrides.instructions ?? [makeInstruction()],
     tags: overrides.tags ?? [makeTag()],
     cook_log_count: summary.cook_log_count,
+    child_version_count: summary.child_version_count,
   };
 };

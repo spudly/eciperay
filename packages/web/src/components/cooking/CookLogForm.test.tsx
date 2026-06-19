@@ -57,4 +57,19 @@ describe('CookLogForm', () => {
     expect(onSkip).toHaveBeenCalled();
     expect(onSubmit).not.toHaveBeenCalled();
   });
+
+  test('renders light variant with custom secondary label', async () => {
+    const onSkip = vi.fn();
+    await renderWithProviders(
+      <CookLogForm
+        variant="light"
+        secondaryLabel="Cancel"
+        onSubmit={() => {}}
+        onSkip={onSkip}
+        isPending={false}
+      />,
+    );
+    await userEvent.click(screen.getByText('Cancel'));
+    expect(onSkip).toHaveBeenCalled();
+  });
 });

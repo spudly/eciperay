@@ -40,7 +40,15 @@ export const isActiveScaleMultiplier = (
   baseServings: number,
   servings: number,
   multiplier: RecipeScaleMultiplier,
-): boolean => servings === servingsForMultiplier(baseServings, multiplier);
+): boolean => {
+  if (servings !== servingsForMultiplier(baseServings, multiplier)) {
+    return false;
+  }
+  if (servings === baseServings && multiplier !== 1) {
+    return false;
+  }
+  return true;
+};
 
 export const sortIngredientsByOrder = <T extends {sortOrder: number}>(
   ingredients: T[],

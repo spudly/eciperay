@@ -12,7 +12,7 @@ type Props = {
   versions: RecipeVersionSummary[];
   onActionMessage: (message: string) => void;
   onTweakAi: () => void;
-  onEditVersion: (versionId: string) => void;
+  onViewVersion: (versionId: string) => void;
 };
 
 export const OverviewActions = ({
@@ -20,7 +20,7 @@ export const OverviewActions = ({
   versions,
   onActionMessage,
   onTweakAi,
-  onEditVersion,
+  onViewVersion,
 }: Props) => {
   const queryClient = useQueryClient();
 
@@ -53,7 +53,8 @@ export const OverviewActions = ({
   const tweakManualMutation = useMutation({
     mutationFn: () => api.versions.create(recipe.id),
     onSuccess: version => {
-      onEditVersion(version.id);
+      void invalidate();
+      onViewVersion(version.id);
     },
   });
 

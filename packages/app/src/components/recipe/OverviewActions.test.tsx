@@ -39,7 +39,7 @@ describe('OverviewActions', () => {
         ]}
         onActionMessage={onActionMessage}
         onTweakAi={jest.fn()}
-        onEditVersion={jest.fn()}
+        onViewVersion={jest.fn()}
       />,
     );
     expect(getByText(/More spice/)).toBeTruthy();
@@ -56,7 +56,7 @@ describe('OverviewActions', () => {
         versions={[makeRecipeVersionSummary()]}
         onActionMessage={jest.fn()}
         onTweakAi={jest.fn()}
-        onEditVersion={jest.fn()}
+        onViewVersion={jest.fn()}
       />,
     );
     fireEvent.press(getByText('Mark perfected'));
@@ -76,19 +76,19 @@ describe('OverviewActions', () => {
   });
 
   test('creates manual tweak draft', async () => {
-    const onEditVersion = jest.fn();
+    const onViewVersion = jest.fn();
     const {getByText} = renderWithProviders(
       <OverviewActions
         recipe={makeRecipeDetail()}
         versions={[makeRecipeVersionSummary()]}
         onActionMessage={jest.fn()}
         onTweakAi={jest.fn()}
-        onEditVersion={onEditVersion}
+        onViewVersion={onViewVersion}
       />,
     );
     fireEvent.press(getByText('Tweak manually'));
     await waitFor(() => {
-      expect(onEditVersion).toHaveBeenCalledWith('version-draft-1');
+      expect(onViewVersion).toHaveBeenCalledWith('version-draft-1');
     });
   });
 
@@ -99,7 +99,7 @@ describe('OverviewActions', () => {
         versions={[makeRecipeVersionSummary({derivedRole: 'active'})]}
         onActionMessage={jest.fn()}
         onTweakAi={jest.fn()}
-        onEditVersion={jest.fn()}
+        onViewVersion={jest.fn()}
       />,
     );
     expect(queryByText('Tweak manually')).toBeNull();
@@ -116,7 +116,7 @@ describe('OverviewActions', () => {
         ]}
         onActionMessage={jest.fn()}
         onTweakAi={jest.fn()}
-        onEditVersion={jest.fn()}
+        onViewVersion={jest.fn()}
       />,
     );
     expect(getByText('Ready to activate')).toBeTruthy();

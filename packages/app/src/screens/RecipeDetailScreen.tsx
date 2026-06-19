@@ -23,11 +23,11 @@ type DetailProps = NativeStackScreenProps<
 >;
 
 export const RecipeDetailScreen = ({route, navigation}: DetailProps) => {
-  const {recipeId} = route.params;
+  const {recipeId, versionId: initialVersionId} = route.params;
   const [activeTab, setActiveTab] = useState<RecipeDetailTab>('overview');
   const [servings, setServings] = useState<number | null>(null);
   const [selectedVersionId, setSelectedVersionId] = useState<string | null>(
-    null,
+    initialVersionId ?? null,
   );
   const queryClient = useQueryClient();
   const {confirmDelete} = useDeleteRecipe(recipeId, () => {
@@ -79,8 +79,15 @@ export const RecipeDetailScreen = ({route, navigation}: DetailProps) => {
   }, [recipe, viewingAlternateVersion, versionDetail]);
 
   useEffect(() => {
-    setSelectedVersionId(null);
-  }, [recipe?.versionId]);
+    if (route.params.versionId) {
+      setSelectedVersionId(route.params.versionId);
+      navigation.setParams({versionId: undefined});
+    }
+  }, [navigation, route.params.versionId]);
+
+  useEffect(() => {
+    setServings(null);
+  }, [activeVersionId]);
 
   if (isLoading || !recipe || !displayRecipe) {
     return (
@@ -128,14 +135,14 @@ export const RecipeDetailScreen = ({route, navigation}: DetailProps) => {
               servings: currentServings,
             });
           }}
-          onEdit={() => {
-            navigation.navigate('EditRecipe', {recipeId: recipe.id});
-          }}
           onDelete={() => {
             confirmDelete(recipe);
           }}
           onTweakAi={() => {
             navigation.navigate('TweakAi', {recipeId: recipe.id});
+          }}
+          onViewVersion={versionId => {
+            setSelectedVersionId(versionId);
           }}
           onEditVersion={versionId => {
             navigation.navigate('EditVersion', {

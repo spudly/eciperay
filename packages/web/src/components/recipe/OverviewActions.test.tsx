@@ -129,6 +129,8 @@ describe('OverviewActions', () => {
             id: 'version-draft-1',
             versionNumber: 2,
             derivedRole: 'draft',
+            isEditable: true,
+            childVersionCount: 0,
           }),
           {status: 201},
         ),
@@ -147,13 +149,13 @@ describe('OverviewActions', () => {
           }
         />
         <Route
-          path="/recipes/:recipeId/versions/:versionId/edit"
-          element={<div>Edit draft</div>}
+          path="/recipes/:recipeId"
+          element={<div>Recipe detail</div>}
         />
       </Routes>,
       {route: '/'},
     );
     await userEvent.click(screen.getByText('Tweak manually'));
-    expect(await screen.findByText('Edit draft')).toBeInTheDocument();
+    expect(await screen.findByText('Recipe detail')).toBeInTheDocument();
   });
 });

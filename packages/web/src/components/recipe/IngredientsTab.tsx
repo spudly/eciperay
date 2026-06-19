@@ -69,11 +69,13 @@ export const IngredientsTab = ({
     .filter(ing => missing.has(ing.id))
     .map(ing => ing.name);
 
-  const {data: substitutions = []} = useQuery({
-    queryKey: [...queryKeys.recipe(recipe.id), 'substitutions', missingNames],
-    queryFn: () => eciperay.ai.substitutions(recipe.id, missingNames),
-    enabled: missingNames.length > 0,
-  });
+  const {data: substitutions = [], isFetching: substitutionsLoading} = useQuery(
+    {
+      queryKey: [...queryKeys.recipe(recipe.id), 'substitutions', missingNames],
+      queryFn: () => eciperay.ai.substitutions(recipe.id, missingNames),
+      enabled: missingNames.length > 0,
+    },
+  );
 
   const toggle = (id: string) => {
     setMissing(prev => toggleSet(id, prev));
@@ -105,6 +107,9 @@ export const IngredientsTab = ({
         <p className="text-muted mt-3 text-sm">
           Click an ingredient to mark it missing and see substitutions below.
         </p>
+      ) : null}
+      {missingNames.length > 0 && substitutionsLoading ? (
+        <p className="text-muted mt-4 text-sm">Finding substitutions…</p>
       ) : null}
       {substitutions.length > 0 ? (
         <div className="mt-4 rounded-xl bg-blue-50 p-4">

@@ -12,6 +12,7 @@ type Props = {
   imageGenerating?: boolean;
   imageError: string | null;
   canGenerateImage?: boolean;
+  headerAction?: React.ReactNode;
   onImageFile: (file: File) => void | Promise<void>;
   onGenerateImage?: () => void | Promise<void>;
   onRemove: () => void;
@@ -23,6 +24,7 @@ export const RecipeImageField = ({
   imageGenerating = false,
   imageError,
   canGenerateImage = true,
+  headerAction,
   onImageFile,
   onGenerateImage,
   onRemove,
@@ -55,23 +57,23 @@ export const RecipeImageField = ({
     acceptImage(getImageFileFromDataTransfer(e.dataTransfer));
   };
 
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
   return (
     <div onPaste={handlePaste}>
-      <p className="mb-1 block text-sm font-medium text-gray-700">
-        Recipe image
-      </p>
+      <div className="mb-1 flex items-center justify-between gap-2">
+        <p className="text-sm font-medium text-gray-700">Recipe image</p>
+        {headerAction}
+      </div>
       <div
         role="group"
         aria-label="Recipe image drop zone"
         tabIndex={0}
-        onDragOver={e => {
-          e.preventDefault();
-          setIsDragging(true);
-        }}
-        onDragEnter={e => {
-          e.preventDefault();
-          setIsDragging(true);
-        }}
+        onDragOver={handleDragEnter}
+        onDragEnter={handleDragEnter}
         onDragLeave={e => {
           if (!e.currentTarget.contains(e.relatedTarget as Node)) {
             setIsDragging(false);

@@ -28,7 +28,7 @@ describe('EditVersionPage', () => {
   test('blocks editing non-draft versions', async () => {
     await renderEditVersion('version-uuid-1');
     expect(
-      await screen.findByText('Only draft versions can be edited here.'),
+      await screen.findByText('This version can no longer be edited.'),
     ).toBeInTheDocument();
     await userEvent.click(screen.getByText('Back to recipe'));
     expect(await screen.findByText('Saved')).toBeInTheDocument();
@@ -43,6 +43,7 @@ describe('EditVersionPage', () => {
             makeRecipeVersionDetail({
               id: 'version-draft-1',
               derivedRole: 'draft',
+              isEditable: true,
               versionNumber: 2,
               changeSummary: 'Manual tweak',
             }),
@@ -69,6 +70,7 @@ describe('EditVersionPage', () => {
             makeRecipeVersionDetail({
               id: 'version-draft-1',
               derivedRole: 'draft',
+              isEditable: true,
               versionNumber: 2,
               changeSummary: null,
             }),
@@ -80,5 +82,38 @@ describe('EditVersionPage', () => {
       expect(screen.getByText('Edit Draft (v2)')).toBeInTheDocument();
     });
     expect(screen.queryByText('Manual tweak')).not.toBeInTheDocument();
+  });
+
+  test('loads parent version for diff UI when editing a derived draft', async () => {
+    server.use(
+      http.get(
+        'http://localhost:8080/api/recipes/:id/versions/:versionId',
+        ({params}) => {
+          if (params['versionId'] === 'version-draft-1') {
+            return HttpResponse.json(
+              makeRecipeVersionDetail({
+                id: 'version-draft-1',
+                derivedFromVersionId: 'version-uuid-1',
+                derivedRole: 'draft',
+                isEditable: true,
+                versionNumber: 2,
+                title: 'Changed draft title',
+              }),
+            );
+          }
+          return HttpResponse.json(
+            makeRecipeVersionDetail({
+              id: 'version-uuid-1',
+              title: 'Parent title',
+            }),
+          );
+        },
+      ),
+    );
+    await renderEditVersion();
+    await waitFor(() => {
+      expect(screen.getByLabelText('Title')).toHaveValue('Changed draft title');
+    });
+    expect(screen.getByRole('button', {name: 'Revert'})).toBeInTheDocument();
   });
 });

@@ -117,8 +117,38 @@ describe('OverviewTab', () => {
     expect(screen.queryByText('A test recipe')).not.toBeInTheDocument();
   });
 
-  test('hides edit link for perfected recipes', async () => {
+  test('hides edit draft link for active versions', async () => {
     await renderOverview(makeRecipeDetail({lifecycleStatus: 'perfected'}));
-    expect(screen.queryByText('Edit')).not.toBeInTheDocument();
+    expect(screen.queryByText('Edit draft')).not.toBeInTheDocument();
+  });
+
+  test('shows edit draft for editable draft versions', async () => {
+    await renderWithProviders(
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <OverviewTab
+              recipe={makeRecipeDetail({versionId: 'draft-1'})}
+              servings={4}
+              versions={[
+                makeRecipeVersionSummary({
+                  id: 'draft-1',
+                  derivedRole: 'draft',
+                  isEditable: true,
+                }),
+              ]}
+            />
+          }
+        />
+        <Route
+          path="/recipes/:recipeId/versions/:versionId/edit"
+          element={<div>Edit draft page</div>}
+        />
+      </Routes>,
+      {route: '/'},
+    );
+    await userEvent.click(screen.getByText('Edit draft'));
+    expect(await screen.findByText('Edit draft page')).toBeInTheDocument();
   });
 });

@@ -2,7 +2,12 @@ import type {Response} from 'express';
 
 import {query as defaultQuery} from '../../db/query.js';
 import type {AuthedRequest} from '../../middleware/requireAuth.js';
+import {fetchVersionDetail} from '../../lib/fetchVersionDetail.js';
 import {getParam} from '../../lib/getParam.js';
+import {
+  isVersionEditable,
+  versionEditBlockedError,
+} from '../../lib/isVersionEditable.js';
 import {
   RecipeNotFoundError,
   saveRecipeFromInput,
@@ -30,6 +35,20 @@ export const putRecipe = async (
     return;
   }
   const versionId = (row as {version_id: string}).version_id;
+  const activeVersion = await fetchVersionDetail(
+    versionId,
+    recipeId,
+    req.userId,
+    queryFn,
+  );
+  if (!activeVersion) {
+    res.status(404).json({error: 'Recipe not found'});
+    return;
+  }
+  if (!isVersionEditable(activeVersion, activeVersion.lifecycleStatus)) {
+    res.status(409).json({error: versionEditBlockedError()});
+    return;
+  }
   try {
     const detail = await saveRecipeFromInput(
       {userId: req.userId, input: body.data, recipeId, versionId},

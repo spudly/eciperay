@@ -26,9 +26,9 @@ const mockPatchLifecycle = api.recipes.patchLifecycle as jest.Mock;
 const mockActivate = api.versions.activate as jest.Mock;
 const mockCreateVersion = api.versions.create as jest.Mock;
 const onStartCooking = jest.fn();
-const onEdit = jest.fn();
 const onDelete = jest.fn();
 const onTweakAi = jest.fn();
+const onViewVersion = jest.fn();
 const onEditVersion = jest.fn();
 
 const defaultProps = () => ({
@@ -36,9 +36,9 @@ const defaultProps = () => ({
   servings: 4,
   versions: [makeRecipeVersionSummary()],
   onStartCooking,
-  onEdit,
   onDelete,
   onTweakAi,
+  onViewVersion,
   onEditVersion,
 });
 
@@ -83,19 +83,35 @@ describe('OverviewTab', () => {
     expect(mockShare).toHaveBeenCalled();
   });
 
-  test('calls onEdit, onDelete, and onTweakAi', () => {
+  test('calls onDelete and onTweakAi', () => {
     const {getByText} = renderWithProviders(
       <OverviewTab {...defaultProps()} />,
     );
-    fireEvent.press(getByText('Edit'));
     fireEvent.press(getByText('Delete'));
     fireEvent.press(getByText('Tweak with AI'));
-    expect(onEdit).toHaveBeenCalled();
     expect(onDelete).toHaveBeenCalled();
     expect(onTweakAi).toHaveBeenCalled();
   });
 
-  test('creates manual tweak version and navigates to edit', async () => {
+  test('shows edit draft for editable draft versions', () => {
+    const {getByText} = renderWithProviders(
+      <OverviewTab
+        {...defaultProps()}
+        recipe={makeRecipeDetail({versionId: 'draft-1'})}
+        versions={[
+          makeRecipeVersionSummary({
+            id: 'draft-1',
+            derivedRole: 'draft',
+            isEditable: true,
+          }),
+        ]}
+      />,
+    );
+    fireEvent.press(getByText('Edit draft'));
+    expect(onEditVersion).toHaveBeenCalledWith('draft-1');
+  });
+
+  test('creates manual tweak version and selects it', async () => {
     const {getByText, findByText} = renderWithProviders(
       <OverviewTab {...defaultProps()} />,
     );
@@ -103,7 +119,7 @@ describe('OverviewTab', () => {
     expect(await findByText('Tweak manually')).toBeTruthy();
     await waitFor(() => {
       expect(mockCreateVersion).toHaveBeenCalled();
-      expect(onEditVersion).toHaveBeenCalledWith('version-draft-1');
+      expect(onViewVersion).toHaveBeenCalledWith('version-draft-1');
     });
   });
 
@@ -181,13 +197,13 @@ describe('OverviewTab', () => {
     jest.useRealTimers();
   });
 
-  test('hides edit action for perfected recipes', () => {
+  test('hides edit draft for active versions', () => {
     const {queryByText} = renderWithProviders(
       <OverviewTab
         {...defaultProps()}
         recipe={makeRecipeDetail({lifecycleStatus: 'perfected'})}
       />,
     );
-    expect(queryByText('Edit')).toBeNull();
+    expect(queryByText('Edit draft')).toBeNull();
   });
 });

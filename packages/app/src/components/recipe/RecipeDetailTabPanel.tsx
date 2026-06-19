@@ -17,9 +17,9 @@ type Props = {
   scaleFactor: number;
   onServingsChange: (servings: number) => void;
   onStartCooking: () => void;
-  onEdit: () => void;
   onDelete: () => void;
   onTweakAi: () => void;
+  onViewVersion: (versionId: string) => void;
   onEditVersion: (versionId: string) => void;
 };
 
@@ -32,9 +32,9 @@ export const RecipeDetailTabPanel = ({
   scaleFactor,
   onServingsChange,
   onStartCooking,
-  onEdit,
   onDelete,
   onTweakAi,
+  onViewVersion,
   onEditVersion,
 }: Props) => {
   if (activeTab === 'overview') {
@@ -44,9 +44,9 @@ export const RecipeDetailTabPanel = ({
         servings={currentServings}
         versions={versions}
         onStartCooking={onStartCooking}
-        onEdit={onEdit}
         onDelete={onDelete}
         onTweakAi={onTweakAi}
+        onViewVersion={onViewVersion}
         onEditVersion={onEditVersion}
       />
     );

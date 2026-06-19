@@ -23,9 +23,8 @@ const StatBadge = ({label, value}: {label: string; value: string}) => (
 export const OverviewTab = ({recipe, servings, versions}: Props) => {
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
-  const isEditable =
-    recipe.lifecycleStatus !== 'perfected' &&
-    recipe.lifecycleStatus !== 'abandoned';
+  const viewingVersion = versions.find(v => v.id === recipe.versionId);
+  const canEditDraft = viewingVersion?.isEditable ?? false;
 
   const showActionMessage = (message: string) => {
     setActionMessage(message);
@@ -108,14 +107,14 @@ export const OverviewTab = ({recipe, servings, versions}: Props) => {
         >
           ↗
         </button>
-        {isEditable ? (
+        {canEditDraft ? (
           <Link
-            to={`/recipes/${recipe.id}/edit`}
+            to={`/recipes/${recipe.id}/versions/${recipe.versionId}/edit`}
             className="
               rounded-xl bg-gray-100 px-4 py-3 text-sm font-medium text-gray-700
             "
           >
-            Edit
+            Edit draft
           </Link>
         ) : null}
       </div>

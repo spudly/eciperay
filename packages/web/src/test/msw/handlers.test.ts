@@ -22,6 +22,12 @@ describe('msw handlers', () => {
       {notes: 'Great'},
     );
     expect(cookLog.notes).toBe('Great');
+    const tweaked = await eciperay.versions.tweakWithAi(
+      'recipe-uuid-1',
+      'make it spicier',
+    );
+    expect(tweaked.versionId).toBe('version-ai-1');
+    expect(tweaked.changeSummary).toContain('make it spicier');
   });
 
   test('covers lifecycle patch without an explicit status', async () => {

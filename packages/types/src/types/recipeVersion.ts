@@ -27,6 +27,8 @@ export type RecipeVersionSummary = {
   title: string;
   derivedRole: DerivedVersionRole;
   cookLogCount: number;
+  childVersionCount: number;
+  isEditable: boolean;
   createdVia: VersionCreatedVia;
   changeSummary: string | null;
   createdAt: string;
@@ -34,6 +36,7 @@ export type RecipeVersionSummary = {
 };
 
 export type RecipeVersionDetail = RecipeVersionSummary & {
+  lifecycleStatus: RecipeLifecycleStatus;
   description: string | null;
   servings: number;
   prepTimeMin: number | null;

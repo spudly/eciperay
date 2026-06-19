@@ -118,6 +118,14 @@ export const TweakAiSchema = z.object({
   prompt: z.string().trim().min(10).max(IMPORT_AI_PROMPT_MAX),
 });
 
+export const TweakAiStartSchema = z.object({
+  prompt: z.string().trim().min(10).max(IMPORT_AI_PROMPT_MAX),
+});
+
+export const TweakAiMessageSchema = z.object({
+  content: z.string().trim().min(1).max(IMPORT_AI_PROMPT_MAX),
+});
+
 // ─── Bulk export / import ─────────────────────────────────────────────────────
 
 export const RecipeExportImageSchema = z.object({

@@ -5,6 +5,7 @@ import {createCookLogsApi} from './cookLogsApi.js';
 import {createImportApi} from './importApi.js';
 import {createRecipesApi} from './recipesApi.js';
 import {createTagsApi} from './tagsApi.js';
+import {createTweakAiApi} from './tweakAiApi.js';
 import {createVersionsApi} from './versionsApi.js';
 
 export const createEciperayClient = (api: ApiClient) => ({
@@ -15,6 +16,7 @@ export const createEciperayClient = (api: ApiClient) => ({
   ai: createAiApi(api),
   versions: createVersionsApi(api),
   cookLogs: createCookLogsApi(api),
+  tweakAi: createTweakAiApi(api),
 });
 
 export type EciperayClient = ReturnType<typeof createEciperayClient>;

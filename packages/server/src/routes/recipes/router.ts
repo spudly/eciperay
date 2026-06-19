@@ -20,6 +20,15 @@ import {listVersions} from './listVersions.js';
 import {patchRecipeLineage} from './patchRecipeLineage.js';
 import {putRecipe} from './putRecipe.js';
 import {putVersion} from './putVersion.js';
+import {
+  approveTweakAiPlan,
+  cancelTweakAiSession,
+  createTweakAiSession,
+  createVersionFromTweakAiSession,
+  getTweakAiSession,
+  implementTweakAiSession,
+  sendTweakAiMessage,
+} from './tweakAiSessions.js';
 import {tweakVersionWithAi} from './tweakVersionWithAi.js';
 
 type QueryFn = typeof defaultQuery;
@@ -60,6 +69,37 @@ export const createRecipesRouter = (queryFn: QueryFn) => {
   );
   router.post('/:id/versions/ai', requireAuth, (req, res) =>
     tweakVersionWithAi(a(req), res, queryFn),
+  );
+  router.post('/:id/tweak-ai-sessions', requireAuth, (req, res) =>
+    createTweakAiSession(a(req), res, queryFn),
+  );
+  router.get('/:id/tweak-ai-sessions/:sessionId', requireAuth, (req, res) =>
+    getTweakAiSession(a(req), res, queryFn),
+  );
+  router.post(
+    '/:id/tweak-ai-sessions/:sessionId/messages',
+    requireAuth,
+    (req, res) => sendTweakAiMessage(a(req), res, queryFn),
+  );
+  router.post(
+    '/:id/tweak-ai-sessions/:sessionId/approve-plan',
+    requireAuth,
+    (req, res) => approveTweakAiPlan(a(req), res, queryFn),
+  );
+  router.post(
+    '/:id/tweak-ai-sessions/:sessionId/implement',
+    requireAuth,
+    (req, res) => implementTweakAiSession(a(req), res, queryFn),
+  );
+  router.post(
+    '/:id/tweak-ai-sessions/:sessionId/create-version',
+    requireAuth,
+    (req, res) => createVersionFromTweakAiSession(a(req), res, queryFn),
+  );
+  router.post(
+    '/:id/tweak-ai-sessions/:sessionId/cancel',
+    requireAuth,
+    (req, res) => cancelTweakAiSession(a(req), res, queryFn),
   );
   router.get('/:id/versions/:versionId', requireAuth, (req, res) =>
     getVersion(a(req), res, queryFn),

@@ -1,7 +1,12 @@
 /* eslint-disable max-lines -- shared recipe form with dynamic ingredient/instruction lists */
 import {
+  compareVersionToParent,
   ensureIngredientRowKeys,
   ensureInstructionRowKeys,
+  parentIngredientsInput,
+  parentInstructionsInput,
+  parentTagIds,
+  revertVersionScalar,
   toRecipeInputIngredients,
   toRecipeInputInstructions,
   uploadRecipeImage,
@@ -10,9 +15,15 @@ import {
   type FormIngredientRow,
   type FormInstructionRow,
   type RecipeFormInitial,
+  type VersionScalarField,
 } from '@eciperay/client';
-import type {IngredientInput, RecipeInput} from '@eciperay/types';
-import {useEffect, useState} from 'react';
+import type {
+  IngredientInput,
+  RecipeInput,
+  RecipeVersionDetail,
+} from '@eciperay/types';
+import clsx from 'clsx';
+import {useEffect, useMemo, useState} from 'react';
 
 import {
   getImageFileFromDataTransfer,
@@ -40,6 +51,7 @@ import {TagPicker} from './TagPicker.js';
 type Props = {
   initial: RecipeFormInitial;
   recipeId?: string;
+  parentVersion?: RecipeVersionDetail;
   submitLabel: string;
   onSubmit: (input: RecipeInput, pendingImage?: File) => Promise<void>;
 };
@@ -56,6 +68,7 @@ const toQuantity = (value: number | string | null): number | null => {
 export const RecipeForm = ({
   initial,
   recipeId,
+  parentVersion,
   submitLabel,
   onSubmit,
 }: Props) => {
@@ -285,6 +298,87 @@ export const RecipeForm = ({
     tagIds,
   });
 
+  const versionDiff = useMemo(() => {
+    if (!parentVersion) {
+      return null;
+    }
+    return compareVersionToParent(parentVersion, buildInput());
+    // buildInput is derived from the field state listed below
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional field snapshot
+  }, [
+    parentVersion,
+    title,
+    description,
+    servings,
+    prepTimeMin,
+    cookTimeMin,
+    imageUrl,
+    sourceUrl,
+    ingredients,
+    instructions,
+    tagIds,
+    pendingImageFile,
+  ]);
+
+  const scalarChanged = (field: VersionScalarField) =>
+    versionDiff?.changedScalars.includes(field) ?? false;
+
+  const changedFieldClass = (field: VersionScalarField) =>
+    clsx({'border-amber-400 bg-amber-50': scalarChanged(field)});
+
+  const revertScalar = (
+    parent: RecipeVersionDetail,
+    field: VersionScalarField,
+  ) => {
+    const value = revertVersionScalar(parent, field);
+    switch (field) {
+      case 'title': {
+        setTitle(String(value ?? ''));
+        break;
+      }
+      case 'description': {
+        setDescription(String(value ?? ''));
+        break;
+      }
+      case 'servings': {
+        setServings(Number(value ?? 1));
+        break;
+      }
+      case 'prepTimeMin': {
+        setPrepTimeMin(value === null ? '' : String(value));
+        break;
+      }
+      case 'cookTimeMin': {
+        setCookTimeMin(value === null ? '' : String(value));
+        break;
+      }
+      case 'imageUrl': {
+        clearPendingImage();
+        setImageUrl(String(value ?? ''));
+        break;
+      }
+      case 'sourceUrl': {
+        setSourceUrl(String(value ?? ''));
+        break;
+      }
+    }
+  };
+
+  const RevertButton = ({field}: {field: VersionScalarField}) =>
+    scalarChanged(field) ? (
+      <button
+        type="button"
+        className="text-xs font-medium text-amber-800 underline"
+        onClick={() => {
+          if (parentVersion) {
+            revertScalar(parentVersion, field);
+          }
+        }}
+      >
+        Revert
+      </button>
+    ) : null;
+
   const handleSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -313,16 +407,22 @@ export const RecipeForm = ({
       className="space-y-6"
     >
       <div>
-        <label
-          htmlFor="title"
-          className="mb-1 block text-sm font-medium text-gray-700"
-        >
-          Title
-        </label>
+        <div className="mb-1 flex items-center justify-between gap-3">
+          <label
+            htmlFor="title"
+            className="text-sm font-medium text-gray-700"
+          >
+            Title
+          </label>
+          <RevertButton field="title" />
+        </div>
         <input
           id="title"
           required
-          className="w-full rounded-lg border border-gray-300 px-4 py-2"
+          className={clsx(
+            'w-full rounded-lg border border-gray-300 px-4 py-2',
+            changedFieldClass('title'),
+          )}
           value={title}
           onChange={e => {
             setTitle(e.target.value);
@@ -337,25 +437,31 @@ export const RecipeForm = ({
           >
             Description
           </label>
-          <button
-            type="button"
-            aria-label="Generate description with AI"
-            className="
+          <div className="flex items-center gap-2">
+            <RevertButton field="description" />
+            <button
+              type="button"
+              aria-label="Generate description with AI"
+              className="
               border-primary text-primary inline-flex shrink-0 rounded-lg border
               bg-white px-3 py-1 text-sm font-medium
               disabled:cursor-not-allowed disabled:opacity-50
             "
-            disabled={!title.trim() || descriptionGenerating}
-            onClick={() => {
-              void handleGenerateDescription();
-            }}
-          >
-            {descriptionGenerating ? 'Generating…' : 'Generate with AI'}
-          </button>
+              disabled={!title.trim() || descriptionGenerating}
+              onClick={() => {
+                void handleGenerateDescription();
+              }}
+            >
+              {descriptionGenerating ? 'Generating…' : 'Generate with AI'}
+            </button>
+          </div>
         </div>
         <textarea
           id="description"
-          className="w-full rounded-lg border border-gray-300 px-4 py-2"
+          className={clsx(
+            'w-full rounded-lg border border-gray-300 px-4 py-2',
+            changedFieldClass('description'),
+          )}
           rows={3}
           value={description}
           onChange={e => {
@@ -368,18 +474,24 @@ export const RecipeForm = ({
       </div>
       <div className="grid grid-cols-3 gap-4">
         <div>
-          <label
-            htmlFor="servings"
-            className="mb-1 block text-sm font-medium text-gray-700"
-          >
-            Servings
-          </label>
+          <div className="mb-1 flex items-center justify-between gap-2">
+            <label
+              htmlFor="servings"
+              className="text-sm font-medium text-gray-700"
+            >
+              Servings
+            </label>
+            <RevertButton field="servings" />
+          </div>
           <input
             id="servings"
             type="number"
             min={1}
             required
-            className="w-full rounded-lg border border-gray-300 px-4 py-2"
+            className={clsx(
+              'w-full rounded-lg border border-gray-300 px-4 py-2',
+              changedFieldClass('servings'),
+            )}
             value={servings}
             onChange={e => {
               setServings(Number(e.target.value));
@@ -387,16 +499,22 @@ export const RecipeForm = ({
           />
         </div>
         <div>
-          <label
-            htmlFor="prep"
-            className="mb-1 block text-sm font-medium text-gray-700"
-          >
-            Prep (min)
-          </label>
+          <div className="mb-1 flex items-center justify-between gap-2">
+            <label
+              htmlFor="prep"
+              className="text-sm font-medium text-gray-700"
+            >
+              Prep (min)
+            </label>
+            <RevertButton field="prepTimeMin" />
+          </div>
           <input
             id="prep"
             type="number"
-            className="w-full rounded-lg border border-gray-300 px-4 py-2"
+            className={clsx(
+              'w-full rounded-lg border border-gray-300 px-4 py-2',
+              changedFieldClass('prepTimeMin'),
+            )}
             value={prepTimeMin}
             onChange={e => {
               setPrepTimeMin(e.target.value);
@@ -404,16 +522,22 @@ export const RecipeForm = ({
           />
         </div>
         <div>
-          <label
-            htmlFor="cook"
-            className="mb-1 block text-sm font-medium text-gray-700"
-          >
-            Cook (min)
-          </label>
+          <div className="mb-1 flex items-center justify-between gap-2">
+            <label
+              htmlFor="cook"
+              className="text-sm font-medium text-gray-700"
+            >
+              Cook (min)
+            </label>
+            <RevertButton field="cookTimeMin" />
+          </div>
           <input
             id="cook"
             type="number"
-            className="w-full rounded-lg border border-gray-300 px-4 py-2"
+            className={clsx(
+              'w-full rounded-lg border border-gray-300 px-4 py-2',
+              changedFieldClass('cookTimeMin'),
+            )}
             value={cookTimeMin}
             onChange={e => {
               setCookTimeMin(e.target.value);
@@ -427,6 +551,7 @@ export const RecipeForm = ({
         imageGenerating={imageGenerating}
         imageError={imageError}
         canGenerateImage={title.trim().length > 0}
+        headerAction={<RevertButton field="imageUrl" />}
         onImageFile={processImageFile}
         onGenerateImage={handleGenerateImage}
         onRemove={() => {
@@ -437,15 +562,21 @@ export const RecipeForm = ({
         }}
       />
       <div>
-        <label
-          htmlFor="sourceUrl"
-          className="mb-1 block text-sm font-medium text-gray-700"
-        >
-          Source URL
-        </label>
+        <div className="mb-1 flex items-center justify-between gap-2">
+          <label
+            htmlFor="sourceUrl"
+            className="text-sm font-medium text-gray-700"
+          >
+            Source URL
+          </label>
+          <RevertButton field="sourceUrl" />
+        </div>
         <input
           id="sourceUrl"
-          className="w-full rounded-lg border border-gray-300 px-4 py-2"
+          className={clsx(
+            'w-full rounded-lg border border-gray-300 px-4 py-2',
+            changedFieldClass('sourceUrl'),
+          )}
           value={sourceUrl}
           onChange={e => {
             setSourceUrl(e.target.value);
@@ -453,12 +584,52 @@ export const RecipeForm = ({
         />
       </div>
       <div>
-        <p className="mb-2 text-sm font-medium text-gray-700">Tags</p>
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <p className="text-sm font-medium text-gray-700">Tags</p>
+          {versionDiff?.tagsChanged ? (
+            <button
+              type="button"
+              className="text-xs font-medium text-amber-800 underline"
+              onClick={() => {
+                if (parentVersion) {
+                  setTagIds(parentTagIds(parentVersion));
+                }
+              }}
+            >
+              Revert tags
+            </button>
+          ) : null}
+        </div>
         <TagPicker
           selectedIds={tagIds}
           onChange={setTagIds}
         />
       </div>
+      {versionDiff?.ingredientsChanged ? (
+        <div
+          className="
+          flex items-center justify-between rounded-lg bg-amber-50 px-3 py-2
+          text-sm text-amber-900
+        "
+        >
+          <span>Ingredients changed from parent version</span>
+          <button
+            type="button"
+            className="font-medium underline"
+            onClick={() => {
+              if (parentVersion) {
+                setIngredients(
+                  ensureIngredientRowKeys(
+                    parentIngredientsInput(parentVersion),
+                  ),
+                );
+              }
+            }}
+          >
+            Revert
+          </button>
+        </div>
+      ) : null}
       <SortableIngredientList
         ingredients={ingredients}
         onChange={setIngredients}
@@ -470,6 +641,31 @@ export const RecipeForm = ({
           ]);
         }}
       />
+      {versionDiff?.instructionsChanged ? (
+        <div
+          className="
+          flex items-center justify-between rounded-lg bg-amber-50 px-3 py-2
+          text-sm text-amber-900
+        "
+        >
+          <span>Instructions changed from parent version</span>
+          <button
+            type="button"
+            className="font-medium underline"
+            onClick={() => {
+              if (parentVersion) {
+                setInstructions(
+                  ensureInstructionRowKeys(
+                    parentInstructionsInput(parentVersion),
+                  ),
+                );
+              }
+            }}
+          >
+            Revert
+          </button>
+        </div>
+      ) : null}
       <SortableInstructionList
         instructions={instructions}
         onChange={setInstructions}

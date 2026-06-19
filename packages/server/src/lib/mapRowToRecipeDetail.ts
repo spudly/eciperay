@@ -7,6 +7,7 @@ import type {
 } from '@eciperay/types';
 
 import {deriveVersionRole} from './deriveVersionRole.js';
+import {isVersionEditable} from './isVersionEditable.js';
 
 type RecipeDetailRow = {
   id: string;
@@ -73,6 +74,7 @@ type VersionDetailRow = {
   instructions: RecipeDetail['instructions'];
   tags: RecipeDetail['tags'];
   cook_log_count: number;
+  child_version_count: number;
 };
 
 type VersionSummaryRow = {
@@ -87,6 +89,8 @@ type VersionSummaryRow = {
   active_version_id: string;
   active_version_number: number;
   cook_log_count: number;
+  child_version_count: number;
+  status: RecipeLifecycleStatus;
 };
 
 export const mapRowToRecipeListItem = (row: RecipeListRow): RecipeDetail => ({
@@ -133,22 +137,34 @@ export const mapRowToRecipeDetail = (row: RecipeDetailRow): RecipeDetail => ({
 
 export const mapRowToVersionSummary = (
   row: VersionSummaryRow,
-): RecipeVersionSummary => ({
-  id: row.id,
-  recipeId: row.recipe_id,
-  versionNumber: row.version_number,
-  title: row.title,
-  derivedRole: deriveVersionRole(
+): RecipeVersionSummary => {
+  const derivedRole = deriveVersionRole(
     {id: row.id, versionNumber: row.version_number},
     {id: row.active_version_id, versionNumber: row.active_version_number},
     row.cook_log_count,
-  ),
-  cookLogCount: row.cook_log_count,
-  createdVia: row.created_via,
-  changeSummary: row.change_summary,
-  createdAt: row.created_at,
-  updatedAt: row.updated_at,
-});
+  );
+  return {
+    id: row.id,
+    recipeId: row.recipe_id,
+    versionNumber: row.version_number,
+    title: row.title,
+    derivedRole,
+    cookLogCount: row.cook_log_count,
+    childVersionCount: row.child_version_count,
+    isEditable: isVersionEditable(
+      {
+        derivedRole,
+        cookLogCount: row.cook_log_count,
+        childVersionCount: row.child_version_count,
+      },
+      row.status,
+    ),
+    createdVia: row.created_via,
+    changeSummary: row.change_summary,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+};
 
 export const mapRowToVersionDetail = (
   row: VersionDetailRow,
@@ -165,6 +181,8 @@ export const mapRowToVersionDetail = (
     active_version_id: row.active_version_id,
     active_version_number: row.active_version_number,
     cook_log_count: row.cook_log_count,
+    child_version_count: row.child_version_count,
+    status: row.status,
   }),
   description: row.description,
   servings: row.servings,
@@ -173,6 +191,7 @@ export const mapRowToVersionDetail = (
   imageUrl: row.image_url,
   sourceUrl: row.source_url,
   derivedFromVersionId: row.derived_from_version_id,
+  lifecycleStatus: row.status,
   ingredients: row.ingredients,
   instructions: row.instructions,
   tags: row.tags,

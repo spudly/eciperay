@@ -38,7 +38,9 @@ const stackProps = makeStackProps<RecipesStackParamList, 'EditVersion'>(
 
 describe('EditVersionScreen', () => {
   beforeEach(() => {
-    mockGet.mockResolvedValue(makeRecipeVersionDetail({derivedRole: 'draft'}));
+    mockGet.mockResolvedValue(
+      makeRecipeVersionDetail({derivedRole: 'draft', isEditable: true}),
+    );
     mockPut.mockResolvedValue(makeRecipeVersionDetail());
     mockListTags.mockResolvedValue([]);
   });
@@ -53,6 +55,7 @@ describe('EditVersionScreen', () => {
       expect(mockPut).toHaveBeenCalled();
       expect(mockNavigate).toHaveBeenCalledWith('RecipeDetail', {
         recipeId: 'recipe-uuid-1',
+        versionId: VERSION_ID,
       });
     });
   });
@@ -61,6 +64,7 @@ describe('EditVersionScreen', () => {
     mockGet.mockResolvedValue(
       makeRecipeVersionDetail({
         derivedRole: 'draft',
+        isEditable: true,
         changeSummary: 'Less sugar',
       }),
     );
@@ -70,13 +74,38 @@ describe('EditVersionScreen', () => {
     expect(await findByText('Less sugar')).toBeTruthy();
   });
 
-  test('shows error for non-draft version', async () => {
-    mockGet.mockResolvedValue(makeRecipeVersionDetail({derivedRole: 'active'}));
+  test('loads parent version for draft diffs', async () => {
+    mockGet.mockImplementation((_recipeId: string, id: string) => {
+      if (id === 'parent-1') {
+        return Promise.resolve(
+          makeRecipeVersionDetail({id: 'parent-1', versionNumber: 1}),
+        );
+      }
+      return Promise.resolve(
+        makeRecipeVersionDetail({
+          derivedRole: 'draft',
+          isEditable: true,
+          derivedFromVersionId: 'parent-1',
+          versionNumber: 2,
+        }),
+      );
+    });
+    const {findByText} = renderWithProviders(
+      <EditVersionScreen {...stackProps} />,
+    );
+    expect(await findByText('Edit Draft (v2)')).toBeTruthy();
+    expect(mockGet).toHaveBeenCalledWith('recipe-uuid-1', 'parent-1');
+  });
+
+  test('shows error for non-editable version', async () => {
+    mockGet.mockResolvedValue(
+      makeRecipeVersionDetail({derivedRole: 'active', isEditable: false}),
+    );
     const {findByText} = renderWithProviders(
       <EditVersionScreen {...stackProps} />,
     );
     expect(
-      await findByText('Only draft versions can be edited here.'),
+      await findByText('This version can no longer be edited.'),
     ).toBeTruthy();
     fireEvent.press(await findByText('Back to recipe'));
     expect(mockNavigate).toHaveBeenCalledWith('RecipeDetail', {

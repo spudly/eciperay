@@ -16,6 +16,14 @@ export type {
   VersionCreatedVia,
 } from './recipeVersion.js';
 export type {CookLog, CookLogInput} from './cookLog.js';
+export type {
+  CreateTweakAiSessionResult,
+  TweakAiApproveResult,
+  TweakAiImplementResult,
+  TweakAiMessage,
+  TweakAiPhase,
+  TweakAiSession,
+} from './tweakAiSession.js';
 export type {NutritionInfo} from './nutrition.js';
 export type {RecipeImport} from './recipeImport.js';
 export type {

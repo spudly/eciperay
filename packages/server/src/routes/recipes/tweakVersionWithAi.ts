@@ -13,6 +13,10 @@ import {buildTweakContext} from '../../lib/buildRecipeContext.js';
 import {fetchVersionDetail} from '../../lib/fetchVersionDetail.js';
 import {getParam} from '../../lib/getParam.js';
 import {prepareImportedRecipeInput} from '../../lib/prepareImportedRecipeInput.js';
+import {
+  ingredientsOrInstructionsChanged,
+  preserveTweakDescription,
+} from '../../lib/preserveTweakDescription.js';
 import {fetchRecipeDetail} from '../../lib/recipeQueries.js';
 import {RecipeImportError} from '../../lib/recipeImportToInput.js';
 import {
@@ -50,7 +54,9 @@ const TWEAK_SYSTEM = `You are a culinary assistant. Given a recipe with cook log
   "ingredients": [{"sortOrder": number, "name": string, "quantity": number|null, "unit": string|null, "notes": string|null, "isOptional": false}],
   "instructions": [{"stepNumber": number, "body": string}]
 }
-Respect the user's request while preserving what works. Number ingredients with sortOrder starting at 0 and steps starting at 1.`;
+Respect the user's request while preserving what works. Keep description as an appetizing summary — not a changelog of changes.
+Only change the description when ingredients or instructions meaningfully change.
+Number ingredients with sortOrder starting at 0 and steps starting at 1.`;
 
 const callClaudeForTweak = async (context: string, prompt: string) => {
   const response = await anthropic.messages.create({
@@ -74,17 +80,37 @@ const callClaudeForTweak = async (context: string, prompt: string) => {
 
 const recipeInputFromTweak = async (
   parsed: Awaited<ReturnType<typeof callClaudeForTweak>>,
-  recipe: RecipeInput,
-  userId: string,
-  queryFn: QueryFn,
+  context: {
+    activeVersion: NonNullable<Awaited<ReturnType<typeof fetchVersionDetail>>>;
+    recipe: RecipeInput;
+    userId: string;
+    queryFn: QueryFn;
+  },
 ): Promise<RecipeInput> => {
+  const contentChanged = ingredientsOrInstructionsChanged(
+    context.activeVersion,
+    parsed,
+  );
+  const description = preserveTweakDescription(
+    context.activeVersion.description,
+    parsed.description,
+    contentChanged,
+  );
   const prepared = await prepareImportedRecipeInput({
-    recipe: {...parsed, sourceUrl: recipe.sourceUrl ?? null},
-    userId,
-    queryFn,
-    options: {sourceUrl: recipe.sourceUrl ?? undefined},
+    recipe: {
+      ...parsed,
+      description,
+      sourceUrl: context.recipe.sourceUrl ?? null,
+    },
+    userId: context.userId,
+    queryFn: context.queryFn,
+    options: {sourceUrl: context.recipe.sourceUrl ?? undefined},
   });
-  return {...prepared, imageUrl: recipe.imageUrl, tagIds: recipe.tagIds};
+  return {
+    ...prepared,
+    imageUrl: context.activeVersion.imageUrl,
+    tagIds: context.activeVersion.tags.map(t => t.id),
+  };
 };
 
 export const tweakVersionWithAi = async (
@@ -129,9 +155,9 @@ export const tweakVersionWithAi = async (
       buildTweakContext(activeVersion, cookLogs),
       body.data.prompt,
     );
-    input = await recipeInputFromTweak(
-      parsed,
-      {
+    input = await recipeInputFromTweak(parsed, {
+      activeVersion,
+      recipe: {
         title: recipe.title,
         description: recipe.description,
         servings: recipe.servings,
@@ -143,9 +169,9 @@ export const tweakVersionWithAi = async (
         instructions: recipe.instructions,
         tagIds: recipe.tags.map(t => t.id),
       },
-      req.userId,
+      userId: req.userId,
       queryFn,
-    );
+    });
   } catch (error) {
     if (error instanceof RecipeImportError) {
       res.status(422).json({error: error.message});

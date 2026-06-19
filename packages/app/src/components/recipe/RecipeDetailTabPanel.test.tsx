@@ -23,9 +23,9 @@ describe('RecipeDetailTabPanel', () => {
         scaleFactor={1}
         onServingsChange={jest.fn()}
         onStartCooking={jest.fn()}
-        onEdit={jest.fn()}
         onDelete={jest.fn()}
         onTweakAi={jest.fn()}
+        onViewVersion={jest.fn()}
         onEditVersion={jest.fn()}
       />,
     );

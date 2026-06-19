@@ -5,6 +5,10 @@ import type {AuthedRequest} from '../../middleware/requireAuth.js';
 import {fetchVersionDetail} from '../../lib/fetchVersionDetail.js';
 import {getParam} from '../../lib/getParam.js';
 import {
+  isVersionEditable,
+  versionEditBlockedError,
+} from '../../lib/isVersionEditable.js';
+import {
   RecipeNotFoundError,
   saveRecipeFromInput,
 } from '../../lib/saveRecipeFromInput.js';
@@ -33,8 +37,8 @@ export const putVersion = async (
     res.status(404).json({error: 'Version not found'});
     return;
   }
-  if (existing.derivedRole !== 'draft') {
-    res.status(409).json({error: 'Only draft versions can be edited'});
+  if (!isVersionEditable(existing, existing.lifecycleStatus)) {
+    res.status(409).json({error: versionEditBlockedError()});
     return;
   }
   try {

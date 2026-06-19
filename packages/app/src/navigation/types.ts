@@ -6,7 +6,7 @@ import type {NavigatorScreenParams} from '@react-navigation/native';
 
 export type RecipesStackParamList = {
   RecipesList: undefined;
-  RecipeDetail: {recipeId: string};
+  RecipeDetail: {recipeId: string; versionId?: string};
   CookingMode: {recipeId: string; versionId?: string; servings?: number};
   EditRecipe: {recipeId: string};
   TweakAi: {recipeId: string};

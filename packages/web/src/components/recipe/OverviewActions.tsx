@@ -44,7 +44,8 @@ export const OverviewActions = ({recipe, versions, onActionMessage}: Props) => {
   const tweakManualMutation = useMutation({
     mutationFn: () => eciperay.versions.create(recipe.id),
     onSuccess: version => {
-      void navigate(`/recipes/${recipe.id}/versions/${version.id}/edit`);
+      void invalidate();
+      void navigate(`/recipes/${recipe.id}?versionId=${version.id}`);
     },
   });
 

@@ -8,15 +8,36 @@ type Props = {
   onSubmit: (input: CookLogInput) => void;
   onSkip: () => void;
   isPending: boolean;
+  variant?: 'dark' | 'light';
+  secondaryLabel?: string;
 };
 
-export const CookLogForm = ({onSubmit, onSkip, isPending}: Props) => {
+export const CookLogForm = ({
+  onSubmit,
+  onSkip,
+  isPending,
+  variant = 'dark',
+  secondaryLabel = 'Skip',
+}: Props) => {
   const [rating, setRating] = useState<1 | 2 | 3 | 4 | 5 | null>(null);
   const [notes, setNotes] = useState('');
+  const isLight = variant === 'light';
 
   return (
-    <div className="mx-auto w-full max-w-md rounded-2xl bg-white/10 p-6">
-      <h2 className="mb-4 text-xl font-semibold text-white">How did it go?</h2>
+    <div
+      className={clsx('mx-auto w-full max-w-md rounded-2xl p-6', {
+        'bg-white/10': !isLight,
+        'border border-gray-200 bg-gray-50': isLight,
+      })}
+    >
+      <h2
+        className={clsx('mb-4 text-xl font-semibold', {
+          'text-white': !isLight,
+          'text-gray-900': isLight,
+        })}
+      >
+        How did it go?
+      </h2>
       <div className="mb-4 flex justify-center gap-2">
         {STAR_RATINGS.map(star => (
           <button
@@ -25,7 +46,8 @@ export const CookLogForm = ({onSubmit, onSkip, isPending}: Props) => {
             aria-label={`${star} stars`}
             className={clsx('text-2xl', {
               'text-yellow-400': rating !== null && star <= rating,
-              'text-white/30': rating === null || star > rating,
+              'text-white/30': !isLight && (rating === null || star > rating),
+              'text-gray-300': isLight && (rating === null || star > rating),
             })}
             onClick={() => {
               setRating(star);
@@ -36,10 +58,18 @@ export const CookLogForm = ({onSubmit, onSkip, isPending}: Props) => {
         ))}
       </div>
       <textarea
-        className="
-          mb-4 w-full rounded-xl bg-white/10 px-4 py-3 text-base text-white
-          placeholder:text-white/50
-        "
+        className={clsx(
+          'mb-4 w-full rounded-xl px-4 py-3 text-base',
+          isLight
+            ? `
+              border border-gray-300 bg-white text-gray-900
+              placeholder:text-gray-400
+            `
+            : `
+              bg-white/10 text-white
+              placeholder:text-white/50
+            `,
+        )}
         placeholder="Notes from this cook (optional)"
         rows={3}
         value={notes}
@@ -50,10 +80,13 @@ export const CookLogForm = ({onSubmit, onSkip, isPending}: Props) => {
       <div className="flex gap-3">
         <button
           type="button"
-          className="flex-1 rounded-xl bg-white/10 py-3 text-base text-white"
+          className={clsx('flex-1 rounded-xl py-3 text-base', {
+            'bg-white/10 text-white': !isLight,
+            'border border-gray-200 bg-white text-gray-700': isLight,
+          })}
           onClick={onSkip}
         >
-          Skip
+          {secondaryLabel}
         </button>
         <button
           type="button"

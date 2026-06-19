@@ -10,7 +10,11 @@ import {
   type FormInstructionRow,
   type RecipeFormInitial,
 } from '@eciperay/client';
-import type {IngredientInput, RecipeInput} from '@eciperay/types';
+import type {
+  IngredientInput,
+  RecipeInput,
+  RecipeVersionDetail,
+} from '@eciperay/types';
 import React, {useState} from 'react';
 import {
   ScrollView,
@@ -44,6 +48,7 @@ import {TagPicker} from './TagPicker';
 type Props = {
   initial: RecipeFormInitial;
   recipeId?: string;
+  parentVersion?: RecipeVersionDetail;
   submitLabel: string;
   onSubmit: (
     input: RecipeInput,

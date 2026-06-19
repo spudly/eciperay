@@ -3,6 +3,10 @@ import type {Response} from 'express';
 import {runTransactional} from '../../db/withTransaction.js';
 import {query as defaultQuery} from '../../db/query.js';
 import type {AuthedRequest} from '../../middleware/requireAuth.js';
+import {
+  isRecipeEditable,
+  recipeEditBlockedError,
+} from '../../lib/assertRecipeEditable.js';
 import {fetchVersionDetail} from '../../lib/fetchVersionDetail.js';
 import {getParam} from '../../lib/getParam.js';
 import {mapRowToRecipeDetail} from '../../lib/mapRowToRecipeDetail.js';
@@ -27,6 +31,16 @@ export const activateVersion = async (
   );
   if (!version) {
     res.status(404).json({error: 'Version not found'});
+    return;
+  }
+  if (version.derivedRole !== 'candidate' || version.cookLogCount === 0) {
+    res
+      .status(409)
+      .json({error: 'Only candidate versions with cook logs can be activated'});
+    return;
+  }
+  if (!isRecipeEditable(version.lifecycleStatus)) {
+    res.status(409).json({error: recipeEditBlockedError()});
     return;
   }
   await runTransactional(queryFn, q =>

@@ -89,7 +89,8 @@ export const GET_VERSION_DETAIL_SQL = `
     coalesce(json_agg(distinct jsonb_build_object(
       'id', t.id, 'name', t.name, 'color', t.color
     )) filter (where t.id is not null), '[]') as tags,
-    (select count(*)::int from cook_logs cl where cl.recipe_version_id = rv.id) as cook_log_count
+    (select count(*)::int from cook_logs cl where cl.recipe_version_id = rv.id) as cook_log_count,
+    (select count(*)::int from recipe_versions cv where cv.derived_from_version_id = rv.id) as child_version_count
   from recipe_versions rv
   join recipes r on r.id = rv.recipe_id
   join recipe_versions av on av.id = r.active_version_id
@@ -103,7 +104,9 @@ export const LIST_VERSIONS_SQL = `
   select rv.id, rv.recipe_id, rv.version_number, rv.title, rv.created_via,
          rv.change_summary, rv.created_at, rv.updated_at,
          r.active_version_id, av.version_number as active_version_number,
-         (select count(*)::int from cook_logs cl where cl.recipe_version_id = rv.id) as cook_log_count
+         r.status,
+         (select count(*)::int from cook_logs cl where cl.recipe_version_id = rv.id) as cook_log_count,
+         (select count(*)::int from recipe_versions cv where cv.derived_from_version_id = rv.id) as child_version_count
   from recipe_versions rv
   join recipes r on r.id = rv.recipe_id
   join recipe_versions av on av.id = r.active_version_id
