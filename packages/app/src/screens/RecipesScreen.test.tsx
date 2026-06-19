@@ -170,7 +170,10 @@ describe('RecipesScreen', () => {
       client,
     );
     await findByText('Recipe 0');
-    await triggerEndReached(UNSAFE_getByType(FlatList));
+    const list = UNSAFE_getByType(FlatList);
+    await act(async () => {
+      list.props.onEndReached?.();
+    });
     await waitFor(() => {
       expect(getByText('Loading more…')).toBeTruthy();
     });
@@ -178,8 +181,8 @@ describe('RecipesScreen', () => {
       resolveSecondPage([
         makeRecipeDetail({id: 'recipe-20', title: 'Recipe 20'}),
       ]);
+      await flushQueryClient(client);
     });
-    await flushQueryClient(client);
   });
 
   test('does not fetch again while already loading more', async () => {

@@ -24,7 +24,10 @@ export {
 export {errorMessage} from './errorMessage.js';
 export {buildPrintHtml} from './buildPrintHtml.js';
 export {buildShareText} from './buildShareText.js';
-export {recipeDetailToInput} from './recipeDetailToInput.js';
+export {
+  recipeDetailToInput,
+  recipeVersionDetailToInput,
+} from './recipeDetailToInput.js';
 export {createApiClient, type ApiClient} from './createApiClient.js';
 export {createSupabaseClient} from './createSupabaseClient.js';
 export {
@@ -98,9 +101,28 @@ export {createRecipesApi} from './recipesApi.js';
 export {createImportApi} from './importApi.js';
 export {createAuthApi} from './authApi.js';
 export {createTagsApi} from './tagsApi.js';
-export {createNotesApi} from './notesApi.js';
 export {createAiApi} from './aiApi.js';
-export {createDraftsApi} from './draftsApi.js';
+export {createVersionsApi, type TweakWithAiResult} from './versionsApi.js';
+export {createCookLogsApi} from './cookLogsApi.js';
+export {createTweakAiApi} from './tweakAiApi.js';
+export {
+  compareVersionToParent,
+  formatParentListSummary,
+  formatParentScalarHint,
+  formatParentTagNames,
+  parentIngredientsInput,
+  parentInstructionsInput,
+  parentTagIds,
+  revertVersionScalar,
+  type VersionDiff,
+  type VersionScalarField,
+} from './compareVersionToParent.js';
+export {
+  parseProposedRecipe,
+  sortedPreviewIngredients,
+  sortedPreviewInstructions,
+} from './recipeInputPreview.js';
+export {truncateChangeSummary} from './truncateChangeSummary.js';
 export {
   createEciperayClient,
   type EciperayClient,

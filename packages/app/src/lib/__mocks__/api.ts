@@ -4,7 +4,7 @@ export const api = {
     get: jest.fn(),
     create: jest.fn(),
     put: jest.fn(),
-    patch: jest.fn(),
+    patchLifecycle: jest.fn(),
     delete: jest.fn(),
   },
   import: {
@@ -15,13 +15,19 @@ export const api = {
   },
   auth: {syncUser: jest.fn()},
   tags: {list: jest.fn(), create: jest.fn(), delete: jest.fn()},
-  notes: {list: jest.fn(), create: jest.fn()},
   ai: {
-    getConversation: jest.fn(),
-    chat: jest.fn(),
-    cleanup: jest.fn(),
     nutrition: jest.fn(),
     substitutions: jest.fn(),
+    generateImage: jest.fn(),
+    generateDescription: jest.fn(),
   },
-  drafts: {listPending: jest.fn(), approve: jest.fn(), reject: jest.fn()},
+  versions: {
+    list: jest.fn(),
+    get: jest.fn(),
+    create: jest.fn(),
+    put: jest.fn(),
+    activate: jest.fn(),
+    tweakWithAi: jest.fn(),
+  },
+  cookLogs: {list: jest.fn(), create: jest.fn()},
 };

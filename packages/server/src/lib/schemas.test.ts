@@ -1,19 +1,15 @@
 import {z} from 'zod';
 
 import {
-  AiChatResponseSchema,
-  ChatMessageSchema,
   ImportAiSchema,
   ImportImageSchema,
   ImportTextSchema,
   ImportUrlSchema,
   RecipeInputSchema,
-  RecipeNoteInputSchema,
   RecipeUpdateSchema,
   SyncUserSchema,
   TagInputSchema,
 } from './schemas.js';
-import {parseAiJson} from './validate.js';
 
 const validIngredient = {
   sortOrder: 0,
@@ -51,12 +47,14 @@ describe('RecipeInputSchema', () => {
 });
 
 describe('RecipeUpdateSchema', () => {
-  test('accepts partial update with just a title', () => {
-    expect(() => RecipeUpdateSchema.parse({title: 'New Title'})).not.toThrow();
+  test('accepts imageUrl update', () => {
+    expect(() =>
+      RecipeUpdateSchema.parse({imageUrl: 'https://example.com/img.jpg'}),
+    ).not.toThrow();
   });
 
-  test('rejects servings of 0 (must be positive)', () => {
-    expect(() => RecipeUpdateSchema.parse({servings: 0})).toThrow(z.ZodError);
+  test('rejects missing imageUrl', () => {
+    expect(() => RecipeUpdateSchema.parse({})).toThrow(z.ZodError);
   });
 });
 
@@ -67,32 +65,6 @@ describe('TagInputSchema', () => {
 
   test('rejects empty name', () => {
     expect(() => TagInputSchema.parse({name: ''})).toThrow(z.ZodError);
-  });
-});
-
-describe('RecipeNoteInputSchema', () => {
-  test('accepts non-empty content', () => {
-    expect(() =>
-      RecipeNoteInputSchema.parse({content: 'Delicious'}),
-    ).not.toThrow();
-  });
-
-  test('rejects empty content', () => {
-    expect(() => RecipeNoteInputSchema.parse({content: ''})).toThrow(
-      z.ZodError,
-    );
-  });
-});
-
-describe('ChatMessageSchema', () => {
-  test('accepts non-empty message', () => {
-    expect(() =>
-      ChatMessageSchema.parse({message: 'How do I reduce salt?'}),
-    ).not.toThrow();
-  });
-
-  test('rejects empty message', () => {
-    expect(() => ChatMessageSchema.parse({message: ''})).toThrow(z.ZodError);
   });
 });
 
@@ -184,140 +156,5 @@ describe('SyncUserSchema', () => {
     expect(() => SyncUserSchema.parse({displayName: 'x'.repeat(101)})).toThrow(
       z.ZodError,
     );
-  });
-});
-
-describe('AiChatResponseSchema', () => {
-  test('accepts ingredient diffs missing sortOrder and isOptional', () => {
-    const parsed = parseAiJson(
-      AiChatResponseSchema,
-      JSON.stringify({
-        reasoning: 'More moisture.',
-        summary_of_changes: 'Added yogurt.',
-        diff: {
-          ingredients: [
-            {name: 'Greek yogurt', quantity: 0.5, unit: 'cup', notes: null},
-          ],
-        },
-      }),
-    );
-    expect(parsed.diff.ingredients).toEqual([
-      {
-        sortOrder: 0,
-        name: 'Greek yogurt',
-        quantity: 0.5,
-        unit: 'cup',
-        notes: null,
-        isOptional: false,
-      },
-    ]);
-  });
-
-  test('accepts instruction diffs missing stepNumber', () => {
-    const parsed = parseAiJson(
-      AiChatResponseSchema,
-      JSON.stringify({
-        reasoning: 'Clearer steps.',
-        summary_of_changes: 'Rewrote steps.',
-        diff: {instructions: [{body: 'Mix and bake.'}]},
-      }),
-    );
-    expect(parsed.diff.instructions).toEqual([
-      {stepNumber: 1, body: 'Mix and bake.'},
-    ]);
-  });
-
-  test('coerces string ingredient quantities', () => {
-    const parsed = parseAiJson(
-      AiChatResponseSchema,
-      JSON.stringify({
-        reasoning: 'Adjusted flour.',
-        summary_of_changes: 'Less flour.',
-        diff: {
-          ingredients: [
-            {
-              sortOrder: 0,
-              name: 'flour',
-              quantity: '1.5',
-              unit: 'cups',
-              notes: null,
-              isOptional: false,
-            },
-          ],
-        },
-      }),
-    );
-    expect(parsed.diff.ingredients?.[0]?.quantity).toBe(1.5);
-  });
-
-  test('coerces empty string ingredient quantities to null', () => {
-    const parsed = parseAiJson(
-      AiChatResponseSchema,
-      JSON.stringify({
-        reasoning: 'Adjusted salt.',
-        summary_of_changes: 'To taste.',
-        diff: {
-          ingredients: [
-            {
-              sortOrder: 0,
-              name: 'salt',
-              quantity: '',
-              unit: null,
-              notes: null,
-              isOptional: false,
-            },
-          ],
-        },
-      }),
-    );
-    expect(parsed.diff.ingredients?.[0]?.quantity).toBeNull();
-  });
-
-  test('rejects non-numeric string ingredient quantities', () => {
-    expect(() =>
-      parseAiJson(
-        AiChatResponseSchema,
-        JSON.stringify({
-          reasoning: 'Adjusted flour.',
-          summary_of_changes: 'Less flour.',
-          diff: {
-            ingredients: [
-              {
-                sortOrder: 0,
-                name: 'flour',
-                quantity: 'not-a-number',
-                unit: 'cups',
-                notes: null,
-                isOptional: false,
-              },
-            ],
-          },
-        }),
-      ),
-    ).toThrow();
-  });
-
-  test('rejects non-array ingredient and instruction diffs', () => {
-    expect(() =>
-      parseAiJson(
-        AiChatResponseSchema,
-        JSON.stringify({
-          reasoning: 'Bad shape.',
-          summary_of_changes: 'Bad shape.',
-          diff: {ingredients: 'not-an-array'},
-        }),
-      ),
-    ).toThrow();
-
-    expect(() =>
-      parseAiJson(
-        AiChatResponseSchema,
-        JSON.stringify({
-          reasoning: 'Bad shape.',
-          summary_of_changes: 'Bad shape.',
-          diff: {instructions: 42},
-        }),
-      ),
-    ).toThrow();
   });
 });

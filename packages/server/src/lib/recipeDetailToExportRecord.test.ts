@@ -25,7 +25,7 @@ describe('recipeDetailToExportRecord', () => {
       servings: detail.servings,
       prepTimeMin: detail.prepTimeMin,
       cookTimeMin: detail.cookTimeMin,
-      starRating: detail.starRating,
+      starRating: null,
       sourceUrl: detail.sourceUrl,
       tags: [{name: 'Dinner', color: '#6366f1'}],
       ingredients: [

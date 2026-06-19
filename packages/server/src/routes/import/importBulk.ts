@@ -6,10 +6,10 @@ import type {AuthedRequest} from '../../middleware/requireAuth.js';
 import {mapRowToRecipeDetail} from '../../lib/mapRowToRecipeDetail.js';
 import {recipeExportRecordToInput} from '../../lib/recipeExportRecordToInput.js';
 import {resolveTagIdsByNames} from '../../lib/resolveTagIdsByNames.js';
-import {saveRecipeFromInput} from '../../lib/saveRecipeFromInput.js';
+import {saveNewRecipeFromInput} from '../../lib/saveRecipeFromInput.js';
 import {BulkImportSchema, validate} from '../../lib/schemas.js';
 import {resolveImportedImageUrl} from '../../lib/uploadRecipeImageServer.js';
-import {GET_RECIPE_DETAIL_SQL, setRecipeImageUrl} from '../recipes/queries.js';
+import {GET_RECIPE_DETAIL_SQL, setVersionImageUrl} from '../recipes/queries.js';
 
 type QueryFn = typeof defaultQuery;
 
@@ -54,22 +54,23 @@ export const importBulk = async (
         queryFn,
       );
       const input = recipeExportRecordToInput(record, tagIds);
-      let detail = await saveRecipeFromInput(
-        {userId: req.userId, input},
+      const {recipeId, versionId, recipe} = await saveNewRecipeFromInput(
+        {userId: req.userId, input, createdVia: 'import_bulk'},
         queryFn,
       );
 
+      let detail = recipe;
       if (record.image) {
         const dataUrl = `data:${record.image.contentType};base64,${record.image.base64}`;
         const imageUrl = await resolveImportedImageUrl(
           dataUrl,
           req.supabaseUid,
-          detail.id,
+          recipeId,
         );
         if (imageUrl) {
-          await setRecipeImageUrl(detail.id, req.userId, imageUrl, queryFn);
+          await setVersionImageUrl(versionId, imageUrl, queryFn);
           const refreshed = await refreshRecipeDetail(
-            detail.id,
+            recipeId,
             req.userId,
             queryFn,
           );

@@ -1,8 +1,8 @@
 export type Instruction = {
   id: string;
-  recipeId: string;
+  recipeVersionId: string;
   stepNumber: number;
   body: string;
 };
 
-export type InstructionInput = Omit<Instruction, 'id' | 'recipeId'>;
+export type InstructionInput = Omit<Instruction, 'id' | 'recipeVersionId'>;

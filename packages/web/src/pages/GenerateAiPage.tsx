@@ -20,8 +20,11 @@ export const GenerateAiPage = () => {
     setError(null);
     try {
       const recipe = await eciperay.import.importAi(prompt.trim());
-      analytics.track('recipe_imported', {recipe_id: recipe.id, source: 'ai'});
-      void navigate(`/import/review/${recipe.id}`);
+      analytics.track('recipe_imported', {
+        recipe_id: recipe.recipeId,
+        source: 'ai',
+      });
+      void navigate(`/import/review/${recipe.recipeId}`);
     } catch (error_) {
       setError(
         error_ instanceof Error ? error_.message : 'Recipe generation failed',

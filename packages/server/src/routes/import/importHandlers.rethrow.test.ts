@@ -9,7 +9,7 @@ import {nockAnthropicMessage} from '../../test/mockNockAnthropic.js';
 const mockQuery = createMockQuery();
 
 jest.unstable_mockModule('../../lib/saveRecipeFromInput.js', () => ({
-  saveRecipeFromInput: async () => {
+  saveNewRecipeFromInput: async () => {
     throw new Error('save failed');
   },
 }));

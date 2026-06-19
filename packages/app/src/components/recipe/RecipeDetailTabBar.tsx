@@ -6,14 +6,14 @@ export type RecipeDetailTab =
   | 'overview'
   | 'ingredients'
   | 'instructions'
-  | 'notes'
+  | 'history'
   | 'nutrition';
 
 const TABS: {key: RecipeDetailTab; label: string}[] = [
   {key: 'overview', label: 'Overview'},
   {key: 'ingredients', label: 'Ingredients'},
   {key: 'instructions', label: 'Instructions'},
-  {key: 'notes', label: 'Notes'},
+  {key: 'history', label: 'Cook History'},
   {key: 'nutrition', label: 'Nutrition'},
 ];
 

@@ -1,17 +1,27 @@
-import {fireEvent, screen, waitFor} from '@testing-library/react';
+import {fireEvent, screen, waitFor, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {
   recipeDetailToInput,
+  recipeVersionDetailToInput,
+  revertVersionScalar,
   uploadRecipeImage,
   validateRecipeImageFile,
 } from '@eciperay/client';
 import type {RecipeInput} from '@eciperay/types';
 
 import {eciperay} from '../../lib/api.js';
-import {makeRecipeDetail} from '../../test/fixtures/recipe.js';
+import {
+  makeRecipeDetail,
+  makeRecipeVersionDetail,
+  VERSION_ID,
+} from '../../test/fixtures/recipe.js';
 import {renderWithProviders} from '../../test/testUtils.js';
 
 import {RecipeForm} from './RecipeForm.js';
+
+const actualClient = vi.hoisted(() =>
+  vi.importActual<typeof import('@eciperay/client')>('@eciperay/client'),
+);
 
 vi.mock('../../lib/api.js', () => ({
   eciperay: {ai: {generateImage: vi.fn(), generateDescription: vi.fn()}},
@@ -23,11 +33,13 @@ vi.mock('@eciperay/client', async importOriginal => {
     ...actual,
     uploadRecipeImage: vi.fn(),
     validateRecipeImageFile: vi.fn(actual.validateRecipeImageFile),
+    revertVersionScalar: vi.fn(actual.revertVersionScalar),
   };
 });
 
 const mockUploadRecipeImage = vi.mocked(uploadRecipeImage);
 const mockValidateRecipeImageFile = vi.mocked(validateRecipeImageFile);
+const mockRevertVersionScalar = vi.mocked(revertVersionScalar);
 const mockGenerateImage = vi.mocked(eciperay.ai.generateImage);
 const mockGenerateDescription = vi.mocked(eciperay.ai.generateDescription);
 const imageGenerateButton = () =>
@@ -40,7 +52,10 @@ type OnSubmit = (input: RecipeInput, pendingImage?: File) => Promise<void>;
 const mockOnSubmit = () => vi.fn<OnSubmit>().mockResolvedValue();
 
 describe('RecipeForm', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
+    const actual = await actualClient;
+    mockRevertVersionScalar.mockReset();
+    mockRevertVersionScalar.mockImplementation(actual.revertVersionScalar);
     mockUploadRecipeImage.mockReset();
     mockUploadRecipeImage.mockResolvedValue('https://cdn.example/recipe.png');
     mockGenerateImage.mockReset();
@@ -102,7 +117,7 @@ describe('RecipeForm', () => {
       ingredients: [
         {
           id: 'i-3',
-          recipeId: 'recipe-uuid-1',
+          recipeVersionId: VERSION_ID,
           sortOrder: 2,
           name: 'Salt',
           quantity: 1,
@@ -112,7 +127,7 @@ describe('RecipeForm', () => {
         },
         {
           id: 'i-1',
-          recipeId: 'recipe-uuid-1',
+          recipeVersionId: VERSION_ID,
           sortOrder: 0,
           name: 'Flour',
           quantity: 2,
@@ -122,7 +137,7 @@ describe('RecipeForm', () => {
         },
         {
           id: 'i-2',
-          recipeId: 'recipe-uuid-1',
+          recipeVersionId: VERSION_ID,
           sortOrder: 1,
           name: 'Sugar',
           quantity: 1,
@@ -167,9 +182,14 @@ describe('RecipeForm', () => {
   test('initializes instructions sorted by step number', async () => {
     const detail = makeRecipeDetail({
       instructions: [
-        {id: 'ins-3', recipeId: 'recipe-uuid-1', stepNumber: 3, body: 'Serve'},
-        {id: 'ins-1', recipeId: 'recipe-uuid-1', stepNumber: 1, body: 'Prep'},
-        {id: 'ins-2', recipeId: 'recipe-uuid-1', stepNumber: 2, body: 'Cook'},
+        {
+          id: 'ins-3',
+          recipeVersionId: VERSION_ID,
+          stepNumber: 3,
+          body: 'Serve',
+        },
+        {id: 'ins-1', recipeVersionId: VERSION_ID, stepNumber: 1, body: 'Prep'},
+        {id: 'ins-2', recipeVersionId: VERSION_ID, stepNumber: 2, body: 'Cook'},
       ],
     });
     await renderWithProviders(
@@ -776,5 +796,257 @@ describe('RecipeForm', () => {
     await waitFor(() => {
       expect(screen.getByText('Failed to save')).toBeInTheDocument();
     });
+  });
+
+  test('shows parent version diff UI and reverts changed fields', async () => {
+    const parentVersion = makeRecipeVersionDetail({
+      title: 'Original Title',
+      description: 'Original description',
+      servings: 4,
+      prepTimeMin: 10,
+      cookTimeMin: 20,
+      sourceUrl: 'https://example.com/source',
+      tags: [
+        {
+          id: 'tag-1',
+          userId: null,
+          name: 'Dinner',
+          color: '#6366f1',
+          isPreset: false,
+        },
+      ],
+    });
+    const initial = {
+      ...recipeVersionDetailToInput(parentVersion),
+      title: 'Changed Title',
+      description: 'Changed description',
+      servings: 6,
+      prepTimeMin: 5,
+      cookTimeMin: 25,
+      sourceUrl: 'https://other.com',
+      tagIds: ['tag-2'],
+      ingredients: [
+        {
+          sortOrder: 0,
+          name: 'Changed flour',
+          quantity: 2,
+          unit: 'cups',
+          notes: null,
+          isOptional: false,
+        },
+      ],
+      instructions: [{stepNumber: 1, body: 'Changed step'}],
+    };
+
+    await renderWithProviders(
+      <RecipeForm
+        initial={initial}
+        parentVersion={parentVersion}
+        submitLabel="Save"
+        onSubmit={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByText(/Ingredients changed from parent version/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Instructions changed from parent version/),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Revert to: Dinner')).toBeInTheDocument();
+
+    const revertNearLabel = (label: string, hint?: string) => {
+      const labelEl = screen.getByText(label, {selector: 'label'});
+      const header = labelEl.parentElement!;
+      const name = hint ? `Revert to: ${hint}` : /^Revert to:/;
+      return within(header).getByRole('button', {name});
+    };
+
+    await userEvent.click(revertNearLabel('Title', 'Original Title'));
+    expect(screen.getByLabelText('Title')).toHaveValue('Original Title');
+    await userEvent.click(revertNearLabel('Description'));
+    expect(screen.getByLabelText('Description')).toHaveValue(
+      'Original description',
+    );
+    await userEvent.click(revertNearLabel('Servings'));
+    expect(screen.getByLabelText('Servings')).toHaveValue(4);
+    await userEvent.click(revertNearLabel('Prep (min)'));
+    expect(screen.getByLabelText('Prep (min)')).toHaveValue(10);
+    await userEvent.click(revertNearLabel('Cook (min)'));
+    expect(screen.getByLabelText('Cook (min)')).toHaveValue(20);
+    await userEvent.click(revertNearLabel('Source URL'));
+    expect(screen.getByLabelText('Source URL')).toHaveValue(
+      'https://example.com/source',
+    );
+
+    await userEvent.click(screen.getByText('Revert to: Dinner'));
+    await waitFor(() => {
+      expect(screen.queryByText('Revert to: Dinner')).not.toBeInTheDocument();
+    });
+
+    const ingredientRevert = screen
+      .getByText(/Ingredients changed from parent version/)
+      .closest('div')
+      ?.querySelector('button');
+    await userEvent.click(ingredientRevert!);
+    expect(screen.getAllByPlaceholderText('Name')[0]).toHaveValue('Flour');
+
+    const instructionRevert = screen
+      .getByText(/Instructions changed from parent version/)
+      .closest('div')
+      ?.querySelector('button');
+    await userEvent.click(instructionRevert!);
+    const instructionArea = screen
+      .getAllByRole('textbox')
+      .find(el => (el as HTMLTextAreaElement).rows === 2)!;
+    expect(instructionArea).toHaveValue('Mix dry ingredients');
+  });
+
+  test('reverts changed image URL and clears a pending upload', async () => {
+    const parentVersion = makeRecipeVersionDetail({
+      imageUrl: 'https://example.com/parent.jpg',
+    });
+    const initial = {
+      ...recipeVersionDetailToInput(parentVersion),
+      imageUrl: 'https://example.com/changed.jpg',
+    };
+
+    await renderWithProviders(
+      <RecipeForm
+        initial={initial}
+        parentVersion={parentVersion}
+        submitLabel="Save"
+        onSubmit={vi.fn()}
+      />,
+    );
+
+    const file = new File(['pixels'], 'recipe.png', {type: 'image/png'});
+    await userEvent.upload(screen.getByLabelText('Browse images'), file);
+    expect(screen.getByAltText('Recipe preview')).toBeInTheDocument();
+
+    const revertNearLabel = (label: string, hint?: string) => {
+      const labelEl = screen.getByText(label);
+      const header = labelEl.parentElement!;
+      const name = hint ? `Revert to: ${hint}` : /^Revert to:/;
+      return within(header).getByRole('button', {name});
+    };
+
+    await userEvent.click(revertNearLabel('Recipe image', 'parent.jpg'));
+    expect(screen.getByAltText('Recipe preview')).toHaveAttribute(
+      'src',
+      'https://example.com/parent.jpg',
+    );
+  });
+
+  test('reverts null parent prep and cook times to empty fields', async () => {
+    const parentVersion = makeRecipeVersionDetail({
+      prepTimeMin: null,
+      cookTimeMin: null,
+    });
+    const initial = {
+      ...recipeVersionDetailToInput(parentVersion),
+      prepTimeMin: 15,
+      cookTimeMin: 30,
+    };
+
+    await renderWithProviders(
+      <RecipeForm
+        initial={initial}
+        parentVersion={parentVersion}
+        submitLabel="Save"
+        onSubmit={vi.fn()}
+      />,
+    );
+
+    const revertNearLabel = (label: string, hint?: string) => {
+      const labelEl = screen.getByText(label, {selector: 'label'});
+      const header = labelEl.parentElement!;
+      const name = hint ? `Revert to: ${hint}` : /^Revert to:/;
+      return within(header).getByRole('button', {name});
+    };
+
+    await userEvent.click(revertNearLabel('Prep (min)', '(none)'));
+    expect(screen.getByLabelText('Prep (min)')).toHaveValue(null);
+    await userEvent.click(revertNearLabel('Cook (min)', '(none)'));
+    expect(screen.getByLabelText('Cook (min)')).toHaveValue(null);
+  });
+
+  test('reverts null description, image URL, and source URL from parent', async () => {
+    const parentVersion = makeRecipeVersionDetail({
+      description: null,
+      imageUrl: null,
+      sourceUrl: null,
+    });
+    const initial = {
+      ...recipeVersionDetailToInput(parentVersion),
+      description: 'Changed description',
+      imageUrl: 'https://example.com/changed.jpg',
+      sourceUrl: 'https://example.com/changed',
+    };
+
+    await renderWithProviders(
+      <RecipeForm
+        initial={initial}
+        parentVersion={parentVersion}
+        submitLabel="Save"
+        onSubmit={vi.fn()}
+      />,
+    );
+
+    const revertNearLabel = (label: string, hint?: string) => {
+      const labelEl = screen.getByText(label, {selector: 'label'});
+      const header = labelEl.parentElement!;
+      const name = hint ? `Revert to: ${hint}` : /^Revert to:/;
+      return within(header).getByRole('button', {name});
+    };
+
+    await userEvent.click(revertNearLabel('Description', '(empty)'));
+    expect(screen.getByLabelText('Description')).toHaveValue('');
+    await userEvent.click(
+      within(screen.getByText('Recipe image').parentElement!).getByRole(
+        'button',
+        {name: 'Revert to: (no image)'},
+      ),
+    );
+    expect(screen.queryByAltText('Recipe preview')).not.toBeInTheDocument();
+    await userEvent.click(revertNearLabel('Source URL', '(none)'));
+    expect(screen.getByLabelText('Source URL')).toHaveValue('');
+  });
+
+  test('uses fallback values when reverting null title and servings', async () => {
+    const actual = await actualClient;
+    const parentVersion = makeRecipeVersionDetail();
+    const initial = {
+      ...recipeVersionDetailToInput(parentVersion),
+      title: 'Changed title',
+      servings: 8,
+    };
+    mockRevertVersionScalar.mockImplementation((parent, field) => {
+      if (field === 'title' || field === 'servings') {
+        return null;
+      }
+      return actual.revertVersionScalar(parent, field);
+    });
+
+    await renderWithProviders(
+      <RecipeForm
+        initial={initial}
+        parentVersion={parentVersion}
+        submitLabel="Save"
+        onSubmit={vi.fn()}
+      />,
+    );
+
+    const revertNearLabel = (label: string, hint?: string) => {
+      const labelEl = screen.getByText(label, {selector: 'label'});
+      const header = labelEl.parentElement!;
+      const name = hint ? `Revert to: ${hint}` : /^Revert to:/;
+      return within(header).getByRole('button', {name});
+    };
+
+    await userEvent.click(revertNearLabel('Title'));
+    expect(screen.getByLabelText('Title')).toHaveValue('');
+    await userEvent.click(revertNearLabel('Servings'));
+    expect(screen.getByLabelText('Servings')).toHaveValue(1);
   });
 });

@@ -16,6 +16,7 @@ type Props = {
   imageGenerating?: boolean;
   imageError: string | null;
   canGenerateImage?: boolean;
+  headerAction?: React.ReactNode;
   onImagePicked: (
     image: PendingRecipeImage,
     previewUri: string,
@@ -31,6 +32,7 @@ export const RecipeImageField = ({
   imageGenerating = false,
   imageError,
   canGenerateImage = true,
+  headerAction,
   onImagePicked,
   onImageError,
   onGenerateImage,
@@ -67,9 +69,10 @@ export const RecipeImageField = ({
 
   return (
     <View>
-      <Text className="mb-1 text-sm font-medium text-gray-700">
-        Recipe image
-      </Text>
+      <View className="mb-1 flex-row items-center justify-between gap-2">
+        <Text className="text-sm font-medium text-gray-700">Recipe image</Text>
+        {headerAction}
+      </View>
       <View
         className="
           mb-3 overflow-hidden rounded-lg border-2 border-dashed border-gray-300

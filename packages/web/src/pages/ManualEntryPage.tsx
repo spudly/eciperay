@@ -28,18 +28,25 @@ export const ManualEntryPage = () => {
 
   const handleSubmit = async (input: RecipeInput, pendingImage?: File) => {
     const recipe = await eciperay.recipes.create(input);
-    analytics.track('recipe_created', {recipe_id: recipe.id, source: 'manual'});
+    analytics.track('recipe_created', {
+      recipe_id: recipe.recipeId,
+      source: 'manual',
+    });
     if (pendingImage && session?.user.id) {
       const imageUrl = await uploadRecipeImage(
         supabase,
         pendingImage,
         session.user.id,
-        recipe.id,
+        recipe.recipeId,
       );
-      await eciperay.recipes.patch(recipe.id, {imageUrl});
+      await eciperay.recipes.put(recipe.recipeId, {...input, imageUrl});
     }
-    await invalidateRecipeQueries(queryClient, recipe.id);
-    void navigate(`/recipes/${recipe.id}`);
+    await invalidateRecipeQueries(
+      queryClient,
+      recipe.recipeId,
+      recipe.versionId,
+    );
+    void navigate(`/recipes/${recipe.recipeId}`);
   };
 
   return (

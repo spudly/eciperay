@@ -29,6 +29,8 @@ describe('POST /recipes', () => {
       .send(makeRecipeInput());
 
     expect(res.status).toBe(201);
+    expect(res.body.recipeId).toBe('recipe-uuid-1');
+    expect(res.body.versionId).toBeDefined();
     expect(res.body.title).toBe('Test Recipe');
     expect(res.body.userId).toBe('user-uuid-1');
   });

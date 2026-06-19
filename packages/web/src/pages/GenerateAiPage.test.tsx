@@ -34,7 +34,11 @@ describe('GenerateAiPage', () => {
   });
 
   test('generates a recipe and navigates to review', async () => {
-    mockImportAi.mockResolvedValue({id: 'recipe-ai-1'});
+    mockImportAi.mockResolvedValue({
+      id: 'recipe-ai-1',
+      recipeId: 'recipe-ai-1',
+      versionId: 'version-uuid-1',
+    });
     const user = userEvent.setup();
     await renderWithProviders(<GenerateAiPage />);
     await user.type(

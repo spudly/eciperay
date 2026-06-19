@@ -5,6 +5,7 @@ import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {AddScreen} from '../screens/AddScreen';
 import {CookingModeScreen} from '../screens/CookingModeScreen';
 import {EditRecipeScreen} from '../screens/EditRecipeScreen';
+import {EditVersionScreen} from '../screens/EditVersionScreen';
 import {GenerateAiScreen} from '../screens/GenerateAiScreen';
 import {HomeScreen} from '../screens/HomeScreen';
 import {ImportImageScreen} from '../screens/ImportImageScreen';
@@ -16,6 +17,7 @@ import {ProfileScreen} from '../screens/ProfileScreen';
 import {RecipeDetailScreen} from '../screens/RecipeDetailScreen';
 import {RecipesScreen} from '../screens/RecipesScreen';
 import {TagsScreen} from '../screens/TagsScreen';
+import {TweakAiScreen} from '../screens/TweakAiScreen';
 
 import type {
   AddStackParamList,
@@ -50,6 +52,16 @@ const RecipesStackNavigator = () => (
       name="EditRecipe"
       component={EditRecipeScreen}
       options={{title: 'Edit Recipe'}}
+    />
+    <RecipesStack.Screen
+      name="TweakAi"
+      component={TweakAiScreen}
+      options={{title: 'Tweak with AI'}}
+    />
+    <RecipesStack.Screen
+      name="EditVersion"
+      component={EditVersionScreen}
+      options={{title: 'Edit Draft'}}
     />
   </RecipesStack.Navigator>
 );
