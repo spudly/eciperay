@@ -19,6 +19,16 @@ const AI_RESPONSE = JSON.stringify({
   diff: {title: 'Less Salty Pasta'},
 });
 
+const AI_INGREDIENT_RESPONSE = JSON.stringify({
+  reasoning: 'Added moisture and protein.',
+  summary_of_changes: 'Adjusted ingredients.',
+  diff: {
+    ingredients: [
+      {name: 'Greek yogurt', quantity: 0.5, unit: 'cup', notes: null},
+    ],
+  },
+});
+
 describe('POST /recipes/:id/ai/chat', () => {
   test('returns mapped draft and assistantMessage on success', async () => {
     nockSupabaseGetUser('user-uuid-1');
@@ -41,6 +51,36 @@ describe('POST /recipes/:id/ai/chat', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.draft).toEqual(makeRecipeDraft());
+    expect(res.body).toHaveProperty('assistantMessage');
+  });
+
+  test('accepts ingredient diffs without sortOrder from Claude', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    nockAnthropicMessage(AI_INGREDIENT_RESPONSE);
+    mockQuery
+      .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          {
+            id: 'convo-1',
+            recipe_id: 'recipe-uuid-1',
+            user_id: 'user-uuid-1',
+            messages: [],
+            created_at: '2024-01-01T00:00:00.000Z',
+            updated_at: '2024-01-01T00:00:00.000Z',
+          },
+        ]),
+      )
+      .mockResolvedValue(makeQueryResult([makeRecipeDraftRow()]));
+
+    const res = await request(app)
+      .post('/api/recipes/recipe-uuid-1/ai/chat')
+      .set('Authorization', 'Bearer valid-token')
+      .send({
+        message: 'The cake was dry and bland. Add more moisture and protein.',
+      });
+
+    expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('assistantMessage');
   });
 

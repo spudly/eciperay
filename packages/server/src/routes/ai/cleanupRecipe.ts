@@ -14,6 +14,10 @@ type QueryFn = typeof defaultQuery;
 
 const SYSTEM = `You are a culinary editor. Improve recipe structure and instructions for clarity.
 Return ONLY JSON: {"summary_of_changes": string, "diff": {title?,description?,ingredients?,instructions?}}
+When returning ingredients or instructions, include the full updated arrays using this shape:
+ingredients: [{"sortOrder": number, "name": string, "quantity": number|null, "unit": string|null, "notes": string|null, "isOptional": boolean}],
+instructions: [{"stepNumber": number, "body": string}]
+Number ingredients with sortOrder starting at 0 and steps starting at 1.
 Return only the fields that need improvement.`;
 
 const callClaude = async (recipeContext: string) => {

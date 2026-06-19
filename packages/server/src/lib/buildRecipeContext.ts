@@ -1,6 +1,7 @@
 import type {RecipeDetail, Ingredient, Instruction} from '@eciperay/types';
 
 const toIngredientSummary = (i: Ingredient) => ({
+  sortOrder: i.sortOrder,
   name: i.name,
   quantity: i.quantity,
   unit: i.unit,
