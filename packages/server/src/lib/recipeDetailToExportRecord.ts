@@ -13,7 +13,7 @@ export const recipeDetailToExportRecord = (
   servings: detail.servings,
   prepTimeMin: detail.prepTimeMin,
   cookTimeMin: detail.cookTimeMin,
-  starRating: detail.starRating,
+  starRating: null,
   sourceUrl: detail.sourceUrl,
   tags: detail.tags.map(({name, color}) => ({name, ...(color ? {color} : {})})),
   ingredients: [...detail.ingredients]

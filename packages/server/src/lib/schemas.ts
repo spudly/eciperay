@@ -1,10 +1,5 @@
 import {z} from 'zod';
 
-import {
-  normalizeAiIngredient,
-  normalizeAiInstruction,
-} from './normalizeAiRecipeDiff.js';
-
 export {validate, parseAiJson} from './validate.js';
 export type {Infer} from './validate.js';
 
@@ -54,22 +49,35 @@ export const RecipeInputSchema = z.object({
   prepTimeMin: z.number().int().nonnegative().nullish(),
   cookTimeMin: z.number().int().nonnegative().nullish(),
   imageUrl: z.url().nullish(),
-  starRating: StarRating.nullish(),
   sourceUrl: z.url().nullish(),
   ingredients: z.array(IngredientInputSchema),
   instructions: z.array(InstructionInputSchema),
   tagIds: z.array(z.uuid()),
 });
 
-export const RecipeUpdateSchema = z.object({
-  title: z.string().min(1).optional(),
+export const RecipeVersionInputSchema = z.object({
+  title: z.string().min(1),
   description: z.string().nullish(),
-  servings: z.number().int().positive().optional(),
+  servings: z.number().int().positive(),
   prepTimeMin: z.number().int().nonnegative().nullish(),
   cookTimeMin: z.number().int().nonnegative().nullish(),
   imageUrl: z.url().nullish(),
-  starRating: StarRating.nullish(),
+  sourceUrl: z.url().nullish(),
+  ingredients: z.array(IngredientInputSchema),
+  instructions: z.array(InstructionInputSchema),
+  tagIds: z.array(z.uuid()),
 });
+
+export const RecipeLifecyclePatchSchema = z.object({
+  status: z.enum(['idea', 'evolving', 'perfected', 'abandoned']),
+});
+
+export const CookLogInputSchema = z.object({
+  authorStarRating: StarRating.nullish(),
+  notes: z.string().max(4000).nullish(),
+});
+
+export const RecipeUpdateSchema = z.object({imageUrl: z.url()});
 
 export const TagInputSchema = z.object({
   name: z.string().min(1).max(50),
@@ -77,14 +85,6 @@ export const TagInputSchema = z.object({
     .string()
     .regex(/^#[\da-f]{6}$/i)
     .optional(),
-});
-
-export const RecipeNoteInputSchema = z.object({
-  content: z.string().min(1).max(4000),
-});
-
-export const ChatMessageSchema = z.object({
-  message: z.string().min(1).max(4000),
 });
 
 export const ImportUrlSchema = z.object({url: z.url()});
@@ -111,6 +111,10 @@ export const ImportTextSchema = z.object({
 export const IMPORT_AI_PROMPT_MAX = 2000;
 
 export const ImportAiSchema = z.object({
+  prompt: z.string().trim().min(10).max(IMPORT_AI_PROMPT_MAX),
+});
+
+export const TweakAiSchema = z.object({
   prompt: z.string().trim().min(10).max(IMPORT_AI_PROMPT_MAX),
 });
 
@@ -178,73 +182,6 @@ export const GenerateRecipeDescriptionSchema = z.object({
 });
 
 // ─── AI response shapes ────────────────────────────────────────────────────────
-
-const coerceNullableNumber = z.preprocess((value: unknown) => {
-  if (value === null || value === undefined || value === '') {
-    return null;
-  }
-  if (typeof value === 'number') {
-    return value;
-  }
-  if (typeof value === 'string') {
-    const parsed = Number(value);
-    if (Number.isFinite(parsed)) {
-      return parsed;
-    }
-  }
-  return value;
-}, z.number().nullable());
-
-const AiIngredientInputSchema = z.object({
-  sortOrder: z.number().int().nonnegative(),
-  name: z.string().min(1),
-  quantity: coerceNullableNumber,
-  unit: z.string().nullable(),
-  notes: z.string().nullable(),
-  isOptional: z.boolean(),
-});
-
-const AiInstructionInputSchema = z.object({
-  stepNumber: z.number().int().positive(),
-  body: z.string().min(1),
-});
-
-const AiIngredientsArraySchema = z.preprocess(
-  value =>
-    Array.isArray(value)
-      ? value.map((item, index) => normalizeAiIngredient(item, index))
-      : value,
-  z.array(AiIngredientInputSchema),
-);
-
-const AiInstructionsArraySchema = z.preprocess(
-  value =>
-    Array.isArray(value)
-      ? value.map((item, index) => normalizeAiInstruction(item, index))
-      : value,
-  z.array(AiInstructionInputSchema),
-);
-
-const AiRecipeDiffSchema = z.object({
-  title: z.string().optional(),
-  description: z.string().nullish(),
-  servings: z.number().int().positive().optional(),
-  prepTimeMin: z.number().int().nonnegative().nullish(),
-  cookTimeMin: z.number().int().nonnegative().nullish(),
-  ingredients: AiIngredientsArraySchema.optional(),
-  instructions: AiInstructionsArraySchema.optional(),
-});
-
-export const AiChatResponseSchema = z.object({
-  reasoning: z.string(),
-  summary_of_changes: z.string(),
-  diff: AiRecipeDiffSchema,
-});
-
-export const AiCleanupResponseSchema = z.object({
-  summary_of_changes: z.string(),
-  diff: AiRecipeDiffSchema,
-});
 
 export const AiSubstitutionSchema = z.object({
   ingredient: z.string(),

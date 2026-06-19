@@ -9,6 +9,8 @@ import {
 } from '../../lib/saveRecipeFromInput.js';
 import {RecipeInputSchema, validate} from '../../lib/schemas.js';
 
+import {GET_RECIPE_DETAIL_SQL} from './queries.js';
+
 type QueryFn = typeof defaultQuery;
 
 export const putRecipe = async (
@@ -20,9 +22,17 @@ export const putRecipe = async (
   if (!body.ok) {
     return;
   }
+  const recipeId = getParam(req, 'id');
+  const existing = await queryFn(GET_RECIPE_DETAIL_SQL, [recipeId, req.userId]);
+  const row = existing.rows[0];
+  if (!row) {
+    res.status(404).json({error: 'Recipe not found'});
+    return;
+  }
+  const versionId = (row as {version_id: string}).version_id;
   try {
     const detail = await saveRecipeFromInput(
-      {userId: req.userId, input: body.data, recipeId: getParam(req, 'id')},
+      {userId: req.userId, input: body.data, recipeId, versionId},
       queryFn,
     );
     res.json(detail);

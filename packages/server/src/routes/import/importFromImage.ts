@@ -5,7 +5,7 @@ import type {AuthedRequest} from '../../middleware/requireAuth.js';
 import {anthropic, SONNET} from '../../lib/anthropic.js';
 import {RecipeImportError} from '../../lib/recipeImportToInput.js';
 import {prepareImportedRecipeInput} from '../../lib/prepareImportedRecipeInput.js';
-import {saveRecipeFromInput} from '../../lib/saveRecipeFromInput.js';
+import {saveNewRecipeFromInput} from '../../lib/saveRecipeFromInput.js';
 import {
   ImportImageSchema,
   RecipeImportSchema,
@@ -80,11 +80,11 @@ export const importFromImage = async (
       userId: req.userId,
       queryFn,
     });
-    const detail = await saveRecipeFromInput(
-      {userId: req.userId, input},
+    const {recipeId, versionId, recipe} = await saveNewRecipeFromInput(
+      {userId: req.userId, input, createdVia: 'import_image'},
       queryFn,
     );
-    res.status(201).json(detail);
+    res.status(201).json({...recipe, recipeId, versionId});
   } catch (error) {
     if (error instanceof RecipeImportError) {
       res.status(422).json({error: error.message});
