@@ -11,6 +11,11 @@ import {Platform} from 'react-native';
 
 const DEFAULT_POSTHOG_HOST = 'https://us.i.posthog.com';
 
+const castPostHogProperties = (
+  properties?: Record<string, unknown>,
+): Record<string, string | number | boolean> =>
+  properties as Record<string, string | number | boolean>;
+
 export const resolveAppAnalyticsPlatform = (
   os: typeof Platform.OS,
 ): AnalyticsPlatform => {
@@ -58,60 +63,29 @@ const getAppFeatureFlagPayload = (client: PostHog, key: string): unknown => {
   return client.getFeatureFlagPayload(key);
 };
 
-const createAppCaptureHandlers = (
-  client: PostHog,
-): Pick<
-  AnalyticsAdapter,
-  'capture' | 'identify' | 'reset' | 'isFeatureEnabled' | 'getFeatureFlag'
-> => ({
+const createAppPostHogAdapter = (client: PostHog): AnalyticsAdapter => ({
   capture: (event, properties) => {
-    client.capture(
-      event,
-      properties as Record<string, string | number | boolean>,
-    );
+    client.capture(event, castPostHogProperties(properties));
   },
   identify: (userId, properties) => {
-    client.identify(
-      userId,
-      properties as Record<string, string | number | boolean>,
-    );
+    client.identify(userId, castPostHogProperties(properties));
   },
   reset: () => {
     client.reset();
   },
   isFeatureEnabled: key => client.isFeatureEnabled(key),
   getFeatureFlag: key => client.getFeatureFlag(key),
-});
-
-const createAppDiagnosticsHandlers = (
-  client: PostHog,
-): Pick<
-  AnalyticsAdapter,
-  | 'getFeatureFlagPayload'
-  | 'onFeatureFlags'
-  | 'reloadFeatureFlags'
-  | 'captureException'
-  | 'log'
-> => ({
   getFeatureFlagPayload: key => getAppFeatureFlagPayload(client, key),
   onFeatureFlags: callback => client.onFeatureFlags(callback),
   reloadFeatureFlags: () => {
     client.reloadFeatureFlags();
   },
   captureException: (error, properties) => {
-    client.captureException(
-      error,
-      properties as Record<string, string | number | boolean>,
-    );
+    client.captureException(error, castPostHogProperties(properties));
   },
   log: (level, message, attributes) => {
     posthogLog(client, level, message, attributes);
   },
-});
-
-const createAppPostHogAdapter = (client: PostHog): AnalyticsAdapter => ({
-  ...createAppCaptureHandlers(client),
-  ...createAppDiagnosticsHandlers(client),
 });
 
 const createAppPostHogClient = (
@@ -123,7 +97,11 @@ const createAppPostHogClient = (
     host: apiHost,
     enableSessionReplay: true,
     errorTracking: {
-      autocapture: {uncaughtExceptions: true, unhandledRejections: true},
+      autocapture: {
+        uncaughtExceptions: true,
+        unhandledRejections: true,
+        nativeCrashes: true,
+      },
     },
     logs: {
       serviceName: 'eciperay-app',

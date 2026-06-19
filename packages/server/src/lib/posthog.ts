@@ -3,6 +3,7 @@ import {
   setupExpressErrorHandler,
   setupExpressRequestContext,
 } from 'posthog-node';
+import {sanitizeAnalyticsProperties} from '@eciperay/client/sanitizeAnalyticsProperties';
 
 const DEFAULT_POSTHOG_HOST = 'https://us.i.posthog.com';
 
@@ -32,7 +33,11 @@ export const captureServerException = (
   if (!posthog) {
     return;
   }
-  posthog.captureException(error, distinctId, properties);
+  posthog.captureException(
+    error,
+    distinctId,
+    sanitizeAnalyticsProperties(properties),
+  );
 };
 
 export const attachPostHogExpress = (app: {

@@ -74,6 +74,10 @@ export {
   type RecipeImportSource,
 } from './analyticsEvents.js';
 export {identifyAnalyticsUser} from './identifyAnalyticsUser.js';
+export {
+  isSensitiveAnalyticsPropertyKey,
+  sanitizeAnalyticsProperties,
+} from './sanitizeAnalyticsProperties.js';
 export {queryKeys} from './queryKeys.js';
 export {
   getRecipeListNextPageParam,

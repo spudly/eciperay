@@ -141,6 +141,8 @@ fly secrets set \
   SUPABASE_SECRET_KEY='your-service-role-key' \
   ANTHROPIC_API_KEY='your-anthropic-key' \
   OPENAI_API_KEY='your-openai-key' \
+  POSTHOG_KEY='your-posthog-project-api-key' \
+  POSTHOG_HOST='https://us.i.posthog.com' \
   CORS_ORIGINS='https://eciperay.com,https://www.eciperay.com'
 ```
 
@@ -176,6 +178,13 @@ Add these repository secrets (Settings → Secrets and variables → Actions):
 | `FLY_API_TOKEN`          | Fly deploy token (`fly tokens create deploy`) |
 | `VITE_SUPABASE_URL`      | Docker build arg for the web bundle           |
 | `VITE_SUPABASE_ANON_KEY` | Docker build arg for the web bundle           |
+| `VITE_POSTHOG_KEY`       | Docker build arg for web analytics            |
+| `VITE_POSTHOG_HOST`      | Docker build arg for PostHog ingest host      |
+| `POSTHOG_API_KEY`        | Personal API key for web source map upload    |
+| `POSTHOG_PROJECT_ID`     | PostHog project ID for source map upload      |
+
+`POSTHOG_KEY` and `POSTHOG_HOST` for **server-side** exception capture are Fly
+runtime secrets (see step 3 above), not GitHub secrets.
 
 Runtime secrets (`DATABASE_URL`, `SUPABASE_SECRET_KEY`, API keys, etc.) stay on
 Fly via `fly secrets set` — they are not needed in GitHub.
@@ -266,6 +275,10 @@ Add these repository secrets (Settings → Secrets and variables → Actions, or
 | ---------------------------------- | -------------------------------------------------- |
 | `VITE_SUPABASE_URL`                | Production Supabase URL (same as web deploy)       |
 | `VITE_SUPABASE_ANON_KEY`           | Production Supabase anon key (same as web deploy)  |
+| `VITE_POSTHOG_KEY`                 | PostHog project API key (app runtime)              |
+| `VITE_POSTHOG_HOST`                | PostHog ingest host                                |
+| `POSTHOG_CLI_API_KEY`              | Personal API key for mobile source map upload      |
+| `POSTHOG_CLI_PROJECT_ID`           | PostHog project ID for mobile source map upload    |
 | `ANDROID_KEYSTORE_BASE64`          | Base64-encoded release `.jks` / `.keystore` file   |
 | `ANDROID_KEYSTORE_PASSWORD`        | Keystore password                                  |
 | `ANDROID_KEY_ALIAS`                | Key alias                                          |

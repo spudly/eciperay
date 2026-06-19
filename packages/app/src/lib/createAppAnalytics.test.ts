@@ -60,7 +60,11 @@ describe('createAppAnalytics', () => {
       host: 'https://us.i.posthog.com',
       enableSessionReplay: true,
       errorTracking: {
-        autocapture: {uncaughtExceptions: true, unhandledRejections: true},
+        autocapture: {
+          uncaughtExceptions: true,
+          unhandledRejections: true,
+          nativeCrashes: true,
+        },
       },
       logs: expect.objectContaining({
         serviceName: 'eciperay-app',
@@ -139,7 +143,11 @@ describe('createAppAnalytics', () => {
       host: 'https://us.i.posthog.com',
       enableSessionReplay: true,
       errorTracking: {
-        autocapture: {uncaughtExceptions: true, unhandledRejections: true},
+        autocapture: {
+          uncaughtExceptions: true,
+          unhandledRejections: true,
+          nativeCrashes: true,
+        },
       },
       logs: expect.objectContaining({serviceName: 'eciperay-app'}),
     });
