@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.37.0",
+    "@eciperay/client": "*",
     "@eciperay/types": "*",
     "@opentelemetry/api-logs": "^0.219.0",
     "@opentelemetry/exporter-logs-otlp-http": "^0.219.0",

@@ -28,4 +28,8 @@ fly deploy \
   --build-arg "VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}" \
   --build-arg "VITE_POSTHOG_KEY=${VITE_POSTHOG_KEY:-}" \
   --build-arg "VITE_POSTHOG_HOST=${VITE_POSTHOG_HOST:-https://us.i.posthog.com}" \
+  --build-arg "POSTHOG_API_KEY=${POSTHOG_API_KEY:-}" \
+  --build-arg "POSTHOG_PROJECT_ID=${POSTHOG_PROJECT_ID:-}" \
+  --build-arg "POSTHOG_HOST=${POSTHOG_HOST:-${VITE_POSTHOG_HOST:-https://us.i.posthog.com}}" \
+  --build-arg "GITHUB_SHA=$(git rev-parse HEAD)" \
   "$@"

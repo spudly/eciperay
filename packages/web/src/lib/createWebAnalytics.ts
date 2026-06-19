@@ -1,6 +1,7 @@
 import {
   createAnalytics,
   createNoopAnalyticsAdapter,
+  sanitizeAnalyticsProperties,
   type AnalyticsAdapter,
   type AnalyticsClient,
   type LogLevel,
@@ -57,6 +58,14 @@ const initWebPostHog = (apiKey: string, apiHost: string) => {
       capture_unhandled_rejections: true,
     },
     logs: {serviceName: 'eciperay-web', environment: import.meta.env.MODE},
+    before_send: event => {
+      if (!event) {
+        return event;
+      }
+      event.properties =
+        sanitizeAnalyticsProperties(event.properties) ?? event.properties;
+      return event;
+    },
   });
 };
 

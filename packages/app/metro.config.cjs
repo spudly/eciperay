@@ -6,6 +6,9 @@ const {
 } = require('@expo/metro-config/build/serializer/sourceMap');
 const {withNativewind} = require('nativewind/metro');
 const {resolve: metroResolve} = require('metro-resolver');
+const {
+  unstableBeforeAssetSerializationDebugIdPlugin,
+} = require('posthog-react-native/metro');
 
 const {writeEnvShim} = require('./scripts/envShim.cjs');
 
@@ -57,4 +60,16 @@ const config = mergeConfig(getDefaultConfig(projectRoot), {
   },
 });
 
-module.exports = withNativewind(config);
+const nativeWindConfig = withNativewind(config);
+
+module.exports = {
+  ...nativeWindConfig,
+  serializer: {
+    ...nativeWindConfig.serializer,
+    unstable_beforeAssetSerializationPlugins: [
+      ...(nativeWindConfig.serializer
+        ?.unstable_beforeAssetSerializationPlugins ?? []),
+      unstableBeforeAssetSerializationDebugIdPlugin,
+    ],
+  },
+};

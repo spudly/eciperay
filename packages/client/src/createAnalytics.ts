@@ -3,6 +3,7 @@ import type {
   AnalyticsEventProperties,
   AnalyticsPlatform,
 } from './analyticsEvents.js';
+import {sanitizeAnalyticsProperties} from './sanitizeAnalyticsProperties.js';
 
 export type FeatureFlagValue = boolean | string | undefined;
 
@@ -75,7 +76,7 @@ const createGetExperimentVariant = (adapter: AnalyticsAdapter) => {
 
 const createCaptureException = (adapter: AnalyticsAdapter) => {
   return (error: unknown, properties?: Record<string, unknown>) => {
-    adapter.captureException?.(error, properties);
+    adapter.captureException?.(error, sanitizeAnalyticsProperties(properties));
   };
 };
 
