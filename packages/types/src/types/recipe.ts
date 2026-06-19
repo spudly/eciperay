@@ -1,18 +1,25 @@
 import type {Ingredient, IngredientInput} from './ingredient.js';
 import type {Instruction, InstructionInput} from './instruction.js';
 import type {Tag} from './tag.js';
+import type {
+  RecipeLifecycleStatus,
+  VersionCreatedVia,
+} from './recipeVersion.js';
 
 export type Recipe = {
   id: string;
   userId: string;
+  lifecycleStatus: RecipeLifecycleStatus;
+  versionId: string;
+  versionNumber: number;
   title: string;
   description: string | null;
   servings: number;
   prepTimeMin: number | null;
   cookTimeMin: number | null;
   imageUrl: string | null;
-  starRating: 1 | 2 | 3 | 4 | 5 | null;
   sourceUrl: string | null;
+  createdVia: VersionCreatedVia;
   createdAt: string;
   updatedAt: string;
 };
@@ -30,9 +37,10 @@ export type RecipeInput = {
   prepTimeMin?: number | null;
   cookTimeMin?: number | null;
   imageUrl?: string | null;
-  starRating?: 1 | 2 | 3 | 4 | 5 | null;
   sourceUrl?: string | null;
   ingredients: IngredientInput[];
   instructions: InstructionInput[];
   tagIds: string[];
 };
+
+export type CreateRecipeResult = {recipeId: string; versionId: string};

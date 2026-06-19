@@ -4,7 +4,7 @@ export const makeIngredient = (
   overrides: Partial<Ingredient> = {},
 ): Ingredient => ({
   id: 'ingredient-uuid-1',
-  recipeId: 'recipe-uuid-1',
+  recipeVersionId: 'version-uuid-1',
   sortOrder: 0,
   name: 'Flour',
   quantity: 2,

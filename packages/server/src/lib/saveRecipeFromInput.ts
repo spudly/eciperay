@@ -1,19 +1,28 @@
-import type {RecipeDetail, RecipeInput} from '@eciperay/types';
+import type {
+  CreateRecipeResult,
+  RecipeDetail,
+  RecipeInput,
+  VersionCreatedVia,
+} from '@eciperay/types';
 
 import {runTransactional} from '../db/withTransaction.js';
 import {query as defaultQuery} from '../db/query.js';
 import {
   GET_RECIPE_DETAIL_SQL,
-  buildRecipeOptions,
-  deleteIngredientsByRecipeId,
-  deleteInstructionsByRecipeId,
-  deleteRecipeTagsByRecipeId,
+  deleteIngredientsByVersionId,
+  deleteInstructionsByVersionId,
+  deleteRecipeTagsByVersionId,
   insertIngredients,
   insertInstructions,
-  insertRecipe,
   linkTags,
-  updateRecipe,
 } from '../routes/recipes/queries.js';
+import {
+  buildVersionOptions,
+  insertLineage,
+  insertVersion,
+  setActiveVersion,
+  updateVersion,
+} from '../routes/recipes/versionQueries.js';
 
 import {mapRowToRecipeDetail} from './mapRowToRecipeDetail.js';
 
@@ -23,6 +32,8 @@ type SaveRecipeFromInputOptions = {
   userId: string;
   input: RecipeInput;
   recipeId?: string;
+  versionId?: string;
+  createdVia?: VersionCreatedVia;
 };
 
 export class RecipeNotFoundError extends Error {
@@ -32,71 +43,95 @@ export class RecipeNotFoundError extends Error {
   }
 }
 
-const replaceChildren = async (
-  recipeId: string,
+const replaceVersionChildren = async (
+  versionId: string,
   input: RecipeInput,
   queryFn: QueryFn,
 ) => {
-  await deleteIngredientsByRecipeId(recipeId, queryFn);
-  await deleteInstructionsByRecipeId(recipeId, queryFn);
-  await deleteRecipeTagsByRecipeId(recipeId, queryFn);
-  await insertIngredients(recipeId, input.ingredients, queryFn);
-  await insertInstructions(recipeId, input.instructions, queryFn);
-  await linkTags(recipeId, input.tagIds, queryFn);
+  await deleteIngredientsByVersionId(versionId, queryFn);
+  await deleteInstructionsByVersionId(versionId, queryFn);
+  await deleteRecipeTagsByVersionId(versionId, queryFn);
+  await insertIngredients(versionId, input.ingredients, queryFn);
+  await insertInstructions(versionId, input.instructions, queryFn);
+  await linkTags(versionId, input.tagIds, queryFn);
 };
 
-const createRecipe = async (
+const createLineageWithVersion = async (
   input: RecipeInput,
   userId: string,
+  createdVia: VersionCreatedVia,
   queryFn: QueryFn,
-) => {
-  const recipe = await insertRecipe(buildRecipeOptions(input, userId), queryFn);
-  const recipeId = (recipe.rows[0] as {id: string}).id;
-  await insertIngredients(recipeId, input.ingredients, queryFn);
-  await insertInstructions(recipeId, input.instructions, queryFn);
-  await linkTags(recipeId, input.tagIds, queryFn);
-  return recipeId;
+): Promise<CreateRecipeResult> => {
+  const lineage = await insertLineage(userId, queryFn);
+  const recipeId = lineage.rows[0]?.id;
+  if (!recipeId) {
+    throw new Error('Failed to create recipe lineage');
+  }
+  const version = await insertVersion(
+    buildVersionOptions({input, recipeId, versionNumber: 1, createdVia}),
+    queryFn,
+  );
+  const versionId = version.rows[0]?.id;
+  if (!versionId) {
+    throw new Error('Failed to create recipe version');
+  }
+  await setActiveVersion(recipeId, versionId, queryFn);
+  await insertIngredients(versionId, input.ingredients, queryFn);
+  await insertInstructions(versionId, input.instructions, queryFn);
+  await linkTags(versionId, input.tagIds, queryFn);
+  return {recipeId, versionId};
 };
 
-const updateExistingRecipe = async (
-  recipeId: string,
+const updateExistingVersion = async (
+  versionId: string,
   input: RecipeInput,
-  userId: string,
   queryFn: QueryFn,
 ) => {
-  const result = await updateRecipe(
-    recipeId,
-    buildRecipeOptions(input, userId),
+  const result = await updateVersion(
+    versionId,
+    buildVersionOptions({
+      input,
+      recipeId: '',
+      versionNumber: 0,
+      createdVia: 'manual',
+    }),
     queryFn,
   );
   if (result.rowCount === 0) {
     throw new RecipeNotFoundError();
   }
-  await replaceChildren(recipeId, input, queryFn);
-  return recipeId;
+  await replaceVersionChildren(versionId, input, queryFn);
+  return versionId;
 };
 
 const saveRecipe = async (
   opts: SaveRecipeFromInputOptions,
   queryFn: QueryFn,
-) => {
-  if (opts.recipeId) {
-    return updateExistingRecipe(
-      opts.recipeId,
-      opts.input,
-      opts.userId,
-      queryFn,
-    );
+): Promise<CreateRecipeResult> => {
+  if (opts.versionId) {
+    await updateExistingVersion(opts.versionId, opts.input, queryFn);
+    if (!opts.recipeId) {
+      throw new RecipeNotFoundError();
+    }
+    return {recipeId: opts.recipeId, versionId: opts.versionId};
   }
-  return createRecipe(opts.input, opts.userId, queryFn);
+  return createLineageWithVersion(
+    opts.input,
+    opts.userId,
+    opts.createdVia ?? 'manual',
+    queryFn,
+  );
 };
 
 export const saveRecipeFromInput = async (
   opts: SaveRecipeFromInputOptions,
   queryFn: QueryFn,
 ): Promise<RecipeDetail> => {
-  const recipeId = await runTransactional(queryFn, q => saveRecipe(opts, q));
-  const detail = await queryFn(GET_RECIPE_DETAIL_SQL, [recipeId, opts.userId]);
+  const ids = await runTransactional(queryFn, q => saveRecipe(opts, q));
+  const detail = await queryFn(GET_RECIPE_DETAIL_SQL, [
+    ids.recipeId,
+    opts.userId,
+  ]);
   const row = detail.rows[0];
   if (!row) {
     throw new RecipeNotFoundError();
@@ -104,4 +139,29 @@ export const saveRecipeFromInput = async (
   return mapRowToRecipeDetail(
     row as Parameters<typeof mapRowToRecipeDetail>[0],
   );
+};
+
+export const saveNewRecipeFromInput = async (
+  opts: Omit<SaveRecipeFromInputOptions, 'recipeId' | 'versionId'> & {
+    createdVia: VersionCreatedVia;
+  },
+  queryFn: QueryFn,
+): Promise<CreateRecipeResult & {recipe: RecipeDetail}> => {
+  const ids = await runTransactional(queryFn, q =>
+    createLineageWithVersion(opts.input, opts.userId, opts.createdVia, q),
+  );
+  const detail = await queryFn(GET_RECIPE_DETAIL_SQL, [
+    ids.recipeId,
+    opts.userId,
+  ]);
+  const row = detail.rows[0];
+  if (!row) {
+    throw new RecipeNotFoundError();
+  }
+  return {
+    ...ids,
+    recipe: mapRowToRecipeDetail(
+      row as Parameters<typeof mapRowToRecipeDetail>[0],
+    ),
+  };
 };

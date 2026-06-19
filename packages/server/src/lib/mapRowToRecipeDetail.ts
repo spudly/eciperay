@@ -1,49 +1,108 @@
-import type {Ingredient, Instruction, RecipeDetail, Tag} from '@eciperay/types';
+import type {
+  RecipeDetail,
+  RecipeLifecycleStatus,
+  RecipeVersionDetail,
+  RecipeVersionSummary,
+  VersionCreatedVia,
+} from '@eciperay/types';
+
+import {deriveVersionRole} from './deriveVersionRole.js';
 
 type RecipeDetailRow = {
   id: string;
   user_id: string;
+  status: RecipeLifecycleStatus;
+  active_version_id: string;
+  version_id: string;
+  version_number: number;
   title: string;
   description: string | null;
   servings: number;
   prep_time_min: number | null;
   cook_time_min: number | null;
   image_url: string | null;
-  star_rating: 1 | 2 | 3 | 4 | 5 | null;
   source_url: string | null;
+  created_via: VersionCreatedVia;
   created_at: string;
   updated_at: string;
-  ingredients: Ingredient[];
-  instructions: Instruction[];
-  tags: Tag[];
+  ingredients: RecipeDetail['ingredients'];
+  instructions: RecipeDetail['instructions'];
+  tags: RecipeDetail['tags'];
 };
 
 export type RecipeListRow = {
   id: string;
+  status: RecipeLifecycleStatus;
+  active_version_id: string;
+  version_id: string;
+  version_number: number;
   title: string;
   description: string | null;
   servings: number;
   prep_time_min: number | null;
   cook_time_min: number | null;
   image_url: string | null;
-  star_rating: 1 | 2 | 3 | 4 | 5 | null;
   source_url: string | null;
+  created_via: VersionCreatedVia;
   created_at: string;
   updated_at: string;
-  tags: Tag[];
+  tags: RecipeDetail['tags'];
+};
+
+type VersionDetailRow = {
+  version_id: string;
+  recipe_id: string;
+  version_number: number;
+  title: string;
+  description: string | null;
+  servings: number;
+  prep_time_min: number | null;
+  cook_time_min: number | null;
+  image_url: string | null;
+  source_url: string | null;
+  created_via: VersionCreatedVia;
+  change_summary: string | null;
+  derived_from_version_id: string | null;
+  created_at: string;
+  updated_at: string;
+  user_id: string;
+  status: RecipeLifecycleStatus;
+  active_version_id: string;
+  active_version_number: number;
+  ingredients: RecipeDetail['ingredients'];
+  instructions: RecipeDetail['instructions'];
+  tags: RecipeDetail['tags'];
+  cook_log_count: number;
+};
+
+type VersionSummaryRow = {
+  id: string;
+  recipe_id: string;
+  version_number: number;
+  title: string;
+  created_via: VersionCreatedVia;
+  change_summary: string | null;
+  created_at: string;
+  updated_at: string;
+  active_version_id: string;
+  active_version_number: number;
+  cook_log_count: number;
 };
 
 export const mapRowToRecipeListItem = (row: RecipeListRow): RecipeDetail => ({
   id: row.id,
   userId: '',
+  lifecycleStatus: row.status,
+  versionId: row.version_id,
+  versionNumber: row.version_number,
   title: row.title,
   description: row.description,
   servings: row.servings,
   prepTimeMin: row.prep_time_min,
   cookTimeMin: row.cook_time_min,
   imageUrl: row.image_url,
-  starRating: row.star_rating,
   sourceUrl: row.source_url,
+  createdVia: row.created_via,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
   ingredients: [],
@@ -54,16 +113,66 @@ export const mapRowToRecipeListItem = (row: RecipeListRow): RecipeDetail => ({
 export const mapRowToRecipeDetail = (row: RecipeDetailRow): RecipeDetail => ({
   id: row.id,
   userId: row.user_id,
+  lifecycleStatus: row.status,
+  versionId: row.version_id,
+  versionNumber: row.version_number,
   title: row.title,
   description: row.description,
   servings: row.servings,
   prepTimeMin: row.prep_time_min,
   cookTimeMin: row.cook_time_min,
   imageUrl: row.image_url,
-  starRating: row.star_rating,
   sourceUrl: row.source_url,
+  createdVia: row.created_via,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
+  ingredients: row.ingredients,
+  instructions: row.instructions,
+  tags: row.tags,
+});
+
+export const mapRowToVersionSummary = (
+  row: VersionSummaryRow,
+): RecipeVersionSummary => ({
+  id: row.id,
+  recipeId: row.recipe_id,
+  versionNumber: row.version_number,
+  title: row.title,
+  derivedRole: deriveVersionRole(
+    {id: row.id, versionNumber: row.version_number},
+    {id: row.active_version_id, versionNumber: row.active_version_number},
+    row.cook_log_count,
+  ),
+  cookLogCount: row.cook_log_count,
+  createdVia: row.created_via,
+  changeSummary: row.change_summary,
+  createdAt: row.created_at,
+  updatedAt: row.updated_at,
+});
+
+export const mapRowToVersionDetail = (
+  row: VersionDetailRow,
+): RecipeVersionDetail => ({
+  ...mapRowToVersionSummary({
+    id: row.version_id,
+    recipe_id: row.recipe_id,
+    version_number: row.version_number,
+    title: row.title,
+    created_via: row.created_via,
+    change_summary: row.change_summary,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+    active_version_id: row.active_version_id,
+    active_version_number: row.active_version_number,
+    cook_log_count: row.cook_log_count,
+  }),
+  description: row.description,
+  servings: row.servings,
+  prepTimeMin: row.prep_time_min,
+  cookTimeMin: row.cook_time_min,
+  imageUrl: row.image_url,
+  sourceUrl: row.source_url,
+  derivedFromVersionId: row.derived_from_version_id,
   ingredients: row.ingredients,
   instructions: row.instructions,
   tags: row.tags,

@@ -1,6 +1,6 @@
 export type Ingredient = {
   id: string;
-  recipeId: string;
+  recipeVersionId: string;
   sortOrder: number;
   name: string;
   quantity: number | null;
@@ -9,4 +9,4 @@ export type Ingredient = {
   isOptional: boolean;
 };
 
-export type IngredientInput = Omit<Ingredient, 'id' | 'recipeId'>;
+export type IngredientInput = Omit<Ingredient, 'id' | 'recipeVersionId'>;
