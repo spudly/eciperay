@@ -1,5 +1,10 @@
-import type {CookLog, RecipeDetail, RecipeVersionDetail} from '@eciperay/types';
-import type {Ingredient, Instruction} from '@eciperay/types';
+import type {
+  CookLog,
+  Ingredient,
+  Instruction,
+  RecipeDetail,
+  RecipeVersionDetail,
+} from '@eciperay/types';
 
 const toIngredientSummary = (i: Ingredient) => ({
   sortOrder: i.sortOrder,
