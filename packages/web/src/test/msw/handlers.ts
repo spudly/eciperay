@@ -174,20 +174,44 @@ export const handlers = [
   ),
   http.post(
     `${API}/api/recipes/:id/tweak-ai-sessions/:sessionId/approve-plan`,
-    () =>
-      HttpResponse.json({
+    () => {
+      const preview = {
+        title: 'Updated Recipe',
+        description: 'A tasty update',
+        servings: 4,
+        prepTimeMin: 10,
+        cookTimeMin: 20,
+        ingredients: [
+          {
+            sortOrder: 0,
+            name: 'pasta',
+            quantity: 400,
+            unit: 'g',
+            notes: null,
+            isOptional: false,
+          },
+        ],
+        instructions: [{stepNumber: 1, body: 'Cook pasta'}],
+        tagIds: [],
+        imageUrl: null,
+        sourceUrl: null,
+      };
+      return HttpResponse.json({
         session: {
           id: 'session-1',
           recipeId: 'recipe-uuid-1',
-          phase: 'plan_approved',
+          phase: 'preview_ready',
           messages: [],
           approvedPlan: 'Approved plan',
-          proposedRecipe: null,
+          proposedRecipe: preview,
           parentVersionId: VERSION_ID,
           createdAt: '2024-01-01T00:00:00.000Z',
           updatedAt: '2024-01-01T00:00:00.000Z',
         },
-      }),
+        changeSummary: 'AI tweak',
+        preview,
+      });
+    },
   ),
   http.post(
     `${API}/api/recipes/:id/tweak-ai-sessions/:sessionId/implement`,

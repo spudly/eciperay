@@ -151,3 +151,9 @@ export const parentInstructionsInput = (
 
 export const parentTagIds = (parent: RecipeVersionDetail): string[] =>
   parent.tags.map(tag => tag.id);
+
+export {
+  formatParentListSummary,
+  formatParentScalarHint,
+  formatParentTagNames,
+} from './parentHintFormatters.js';

@@ -1,10 +1,15 @@
 /* eslint-disable max-lines -- conversational tweak UI */
-import {errorMessage, invalidateRecipeQueries} from '@eciperay/client';
+import {
+  errorMessage,
+  invalidateRecipeQueries,
+  parseProposedRecipe,
+} from '@eciperay/client';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
 import {useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
 import type {TweakAiMessage, TweakAiSession} from '@eciperay/types';
 
+import {RecipeInputPreview} from '../components/recipe/RecipeInputPreview.js';
 import {eciperay} from '../lib/api.js';
 
 const PROMPT_PLACEHOLDER =
@@ -13,10 +18,7 @@ const PROMPT_PLACEHOLDER =
 const phaseLabel = (phase: TweakAiSession['phase']) => {
   switch (phase) {
     case 'planning': {
-      return 'Review the plan and refine it, or approve to continue.';
-    }
-    case 'plan_approved': {
-      return 'Plan approved — generate a draft preview next.';
+      return 'Review the plan and refine it, or approve to build a preview.';
     }
     case 'preview_ready': {
       return 'Preview ready — save as a draft version or go back to refine.';
@@ -76,24 +78,12 @@ export const TweakAiPage = () => {
     },
   });
 
-  const implementMutation = useMutation({
-    mutationFn: (sessionId: string) =>
-      eciperay.tweakAi.implement(recipeId, sessionId),
-    onSuccess: result => {
-      setSession(result.session);
-      setError(null);
-    },
-    onError: error_ => {
-      setError(errorMessage(error_));
-    },
-  });
-
   const createVersionMutation = useMutation({
     mutationFn: (sessionId: string) =>
       eciperay.tweakAi.createVersion(recipeId, sessionId),
     onSuccess: async result => {
       await invalidateRecipeQueries(queryClient, recipeId, result.versionId);
-      void navigate(`/recipes/${recipeId}?versionId=${result.versionId}`);
+      void navigate(`/recipes/${recipeId}/versions/${result.versionId}/edit`);
     },
     onError: error_ => {
       setError(errorMessage(error_));
@@ -112,8 +102,11 @@ export const TweakAiPage = () => {
     startMutation.isPending ||
     messageMutation.isPending ||
     approvePlanMutation.isPending ||
-    implementMutation.isPending ||
     createVersionMutation.isPending;
+
+  const previewRecipe = session?.proposedRecipe
+    ? parseProposedRecipe(session.proposedRecipe)
+    : null;
 
   const handleStart = (e: React.SubmitEvent) => {
     e.preventDefault();
@@ -248,45 +241,19 @@ export const TweakAiPage = () => {
                 approvePlanMutation.mutate(session.id);
               }}
             >
-              {approvePlanMutation.isPending ? 'Approving…' : 'Approve plan'}
+              {approvePlanMutation.isPending
+                ? 'Building preview…'
+                : 'Approve plan'}
             </button>
           </div>
         </form>
       ) : null}
-      {session.phase === 'plan_approved' ? (
-        <button
-          type="button"
-          disabled={busy}
-          className="
-            bg-primary rounded-lg px-4 py-3 text-sm font-semibold text-white
-            disabled:opacity-50
-          "
-          onClick={() => {
-            implementMutation.mutate(session.id);
-          }}
-        >
-          {implementMutation.isPending
-            ? 'Generating preview…'
-            : 'Generate preview'}
-        </button>
-      ) : null}
-      {session.phase === 'preview_ready' && session.proposedRecipe ? (
+      {session.phase === 'preview_ready' && previewRecipe ? (
         <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-          <p className="mb-2 text-sm font-semibold text-gray-900">
+          <p className="mb-3 text-sm font-semibold text-gray-900">
             Draft preview
           </p>
-          <p className="text-sm text-gray-700">
-            {(session.proposedRecipe as {title?: string}).title ??
-              'Updated recipe'}
-          </p>
-          <p className="text-muted mt-1 text-xs">
-            {(session.proposedRecipe as {ingredients?: unknown[]}).ingredients
-              ?.length ?? 0}{' '}
-            ingredients,{' '}
-            {(session.proposedRecipe as {instructions?: unknown[]}).instructions
-              ?.length ?? 0}{' '}
-            steps
-          </p>
+          <RecipeInputPreview recipe={previewRecipe} />
           <button
             type="button"
             disabled={busy}

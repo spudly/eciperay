@@ -1,4 +1,4 @@
-import {queryKeys} from '@eciperay/client';
+import {queryKeys, truncateChangeSummary} from '@eciperay/client';
 import {useQuery} from '@tanstack/react-query';
 import type {RecipeVersionSummary} from '@eciperay/types';
 
@@ -44,21 +44,29 @@ export const VersionPicker = ({
       <select
         className="rounded-lg border border-gray-200 px-2 py-1 text-sm"
         value={selectedVersionId}
+        title={
+          list.find(v => v.id === selectedVersionId)?.changeSummary ?? undefined
+        }
         onChange={e => {
           onSelect(e.target.value);
         }}
       >
         {[...list]
           .sort((a, b) => b.versionNumber - a.versionNumber)
-          .map(version => (
-            <option
-              key={version.id}
-              value={version.id}
-            >
-              v{version.versionNumber} — {ROLE_LABELS[version.derivedRole]}
-              {version.changeSummary ? `: ${version.changeSummary}` : ''}
-            </option>
-          ))}
+          .map(version => {
+            const summary = version.changeSummary
+              ? `: ${truncateChangeSummary(version.changeSummary)}`
+              : '';
+            return (
+              <option
+                key={version.id}
+                value={version.id}
+              >
+                v{version.versionNumber} — {ROLE_LABELS[version.derivedRole]}
+                {summary}
+              </option>
+            );
+          })}
       </select>
     </label>
   );

@@ -1,5 +1,9 @@
 /* eslint-disable max-lines -- conversational tweak UI */
-import {errorMessage, invalidateRecipeQueries} from '@eciperay/client';
+import {
+  errorMessage,
+  invalidateRecipeQueries,
+  parseProposedRecipe,
+} from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
 import React, {useState} from 'react';
@@ -13,6 +17,7 @@ import {
 import type {TweakAiMessage, TweakAiSession} from '@eciperay/types';
 
 import {api} from '../lib/api';
+import {RecipeInputPreview} from '../components/recipe/RecipeInputPreview';
 import type {RecipesStackParamList} from '../navigation/types';
 
 type Props = NativeStackScreenProps<RecipesStackParamList, 'TweakAi'>;
@@ -23,10 +28,7 @@ const PROMPT_PLACEHOLDER =
 const phaseLabel = (phase: TweakAiSession['phase']) => {
   switch (phase) {
     case 'planning': {
-      return 'Review the plan and refine it, or approve to continue.';
-    }
-    case 'plan_approved': {
-      return 'Plan approved — generate a draft preview next.';
+      return 'Review the plan and refine it, or approve to build a preview.';
     }
     case 'preview_ready': {
       return 'Preview ready — save as a draft version or go back to refine.';
@@ -82,24 +84,12 @@ export const TweakAiScreen = ({route, navigation}: Props) => {
     },
   });
 
-  const implementMutation = useMutation({
-    mutationFn: (sessionId: string) =>
-      api.tweakAi.implement(recipeId, sessionId),
-    onSuccess: result => {
-      setSession(result.session);
-      setError(null);
-    },
-    onError: error_ => {
-      setError(errorMessage(error_));
-    },
-  });
-
   const createVersionMutation = useMutation({
     mutationFn: (sessionId: string) =>
       api.tweakAi.createVersion(recipeId, sessionId),
     onSuccess: async result => {
       await invalidateRecipeQueries(queryClient, recipeId, result.versionId);
-      navigation.navigate('RecipeDetail', {
+      navigation.navigate('EditVersion', {
         recipeId,
         versionId: result.versionId,
       });
@@ -120,8 +110,11 @@ export const TweakAiScreen = ({route, navigation}: Props) => {
     startMutation.isPending ||
     messageMutation.isPending ||
     approvePlanMutation.isPending ||
-    implementMutation.isPending ||
     createVersionMutation.isPending;
+
+  const previewRecipe = session?.proposedRecipe
+    ? parseProposedRecipe(session.proposedRecipe)
+    : null;
 
   const renderMessage = (message: TweakAiMessage, index: number) => (
     <View
@@ -234,37 +227,20 @@ export const TweakAiScreen = ({route, navigation}: Props) => {
               }}
             >
               <Text className="text-sm font-medium text-white">
-                Approve plan
+                {approvePlanMutation.isPending
+                  ? 'Building preview…'
+                  : 'Approve plan'}
               </Text>
             </TouchableOpacity>
           </View>
         </View>
       ) : null}
-      {session.phase === 'plan_approved' ? (
-        <TouchableOpacity
-          className="
-            bg-primary mb-4 items-center rounded-lg px-4 py-3
-            disabled:opacity-50
-          "
-          disabled={busy}
-          onPress={() => {
-            implementMutation.mutate(session.id);
-          }}
-        >
-          <Text className="text-sm font-semibold text-white">
-            Generate preview
-          </Text>
-        </TouchableOpacity>
-      ) : null}
-      {session.phase === 'preview_ready' && session.proposedRecipe ? (
+      {session.phase === 'preview_ready' && previewRecipe ? (
         <View className="mb-4 rounded-xl border border-gray-200 bg-white p-4">
-          <Text className="mb-2 text-sm font-semibold text-gray-900">
+          <Text className="mb-3 text-sm font-semibold text-gray-900">
             Draft preview
           </Text>
-          <Text className="text-sm text-gray-700">
-            {(session.proposedRecipe as {title?: string}).title ??
-              'Updated recipe'}
-          </Text>
+          <RecipeInputPreview recipe={previewRecipe} />
           <TouchableOpacity
             className="
               bg-primary mt-4 items-center rounded-lg px-4 py-3

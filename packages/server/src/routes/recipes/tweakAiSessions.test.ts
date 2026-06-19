@@ -404,14 +404,23 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/messages', () => {
 });
 
 describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/approve-plan', () => {
-  test('returns 200 with plan approved session', async () => {
+  test('returns 200 with preview_ready session and preview recipe', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    nockAnthropicMessage(IMPLEMENT_JSON);
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([makeSessionRow()]))
       .mockResolvedValueOnce(makeQueryResult([makeSessionRow()]))
+      .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
+      .mockResolvedValueOnce(makeQueryResult([makeVersionDetailRow()]))
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(
         makeQueryResult([
-          makeSessionRow({phase: 'plan_approved', approved_plan: PLAN_TEXT}),
+          makeSessionRow({
+            phase: 'preview_ready',
+            approved_plan: PLAN_TEXT,
+            proposed_recipe: JSON.parse(IMPLEMENT_JSON),
+          }),
         ]),
       );
 
@@ -422,7 +431,9 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/approve-plan', () => {
       .set('Authorization', 'Bearer valid-token');
 
     expect(res.status).toBe(200);
-    expect(res.body.session.phase).toBe('plan_approved');
+    expect(res.body.session.phase).toBe('preview_ready');
+    expect(res.body.preview.title).toBe('Improved Pasta');
+    expect(res.body.changeSummary).toContain('AI tweak');
   });
 
   test('returns 404 when session is not found', async () => {
@@ -470,6 +481,26 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/approve-plan', () => {
     expect(res.status).toBe(422);
     expect(res.body.error).toBe('No plan to approve');
   });
+
+  test('returns 502 when implementation fails during approve', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockQuery
+      .mockResolvedValueOnce(makeQueryResult([makeSessionRow()]))
+      .mockResolvedValueOnce(makeQueryResult([makeSessionRow()]))
+      .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
+      .mockResolvedValueOnce(makeQueryResult([makeVersionDetailRow()]))
+      .mockResolvedValueOnce(makeQueryResult([]));
+    anthropicCreateSpy.mockRejectedValueOnce(new Error('AI down'));
+
+    const res = await request(app)
+      .post(
+        `/api/recipes/recipe-uuid-1/tweak-ai-sessions/${SESSION_ID}/approve-plan`,
+      )
+      .set('Authorization', 'Bearer valid-token');
+
+    expect(res.status).toBe(502);
+    expect(res.body.error).toBe('AI implementation failed');
+  });
 });
 
 describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/implement', () => {
@@ -481,11 +512,11 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/implement', () => {
     nockAnthropicMessage(IMPLEMENT_JSON);
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([approvedSession()]))
+      .mockResolvedValueOnce(makeQueryResult([approvedSession()]))
       .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([makeVersionDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([]))
-      .mockResolvedValueOnce(makeQueryResult([approvedSession()]))
       .mockResolvedValueOnce(
         makeQueryResult([
           makeSessionRow({
@@ -555,6 +586,7 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/implement', () => {
     nockAnthropicMessage('not valid recipe json');
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([approvedSession()]))
+      .mockResolvedValueOnce(makeQueryResult([approvedSession()]))
       .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([makeVersionDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([]));
@@ -571,6 +603,7 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/implement', () => {
   test('returns 502 when AI implementation fails', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery
+      .mockResolvedValueOnce(makeQueryResult([approvedSession()]))
       .mockResolvedValueOnce(makeQueryResult([approvedSession()]))
       .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([makeVersionDetailRow()]))
@@ -589,6 +622,7 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/implement', () => {
   test('returns 404 when recipe context cannot be loaded', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery
+      .mockResolvedValueOnce(makeQueryResult([approvedSession()]))
       .mockResolvedValueOnce(makeQueryResult([approvedSession()]))
       .mockResolvedValueOnce(makeQueryResult([]));
 
@@ -897,7 +931,7 @@ const previewSessionRow = () =>
   });
 
 describe('tweak AI session full conversational flow', () => {
-  test('creates session, refines plan, approves, implements, and saves version', async () => {
+  test('creates session, refines plan, approves with preview, and saves version', async () => {
     setupSessionFlowMocks();
     nockSupabaseGetUser('user-uuid-1');
     nockAnthropicMessage(PLAN_TEXT);
@@ -932,16 +966,8 @@ describe('tweak AI session full conversational flow', () => {
       )
       .set('Authorization', 'Bearer valid-token');
     expect(approveRes.status).toBe(200);
-    expect(approveRes.body.session.phase).toBe('plan_approved');
-
-    nockSupabaseGetUser('user-uuid-1');
-    const implementRes = await request(app)
-      .post(
-        `/api/recipes/recipe-uuid-1/tweak-ai-sessions/${SESSION_ID}/implement`,
-      )
-      .set('Authorization', 'Bearer valid-token');
-    expect(implementRes.status).toBe(200);
-    expect(implementRes.body.preview.title).toBe('Improved Pasta');
+    expect(approveRes.body.session.phase).toBe('preview_ready');
+    expect(approveRes.body.preview.title).toBe('Improved Pasta');
 
     mockQuery.mockImplementation(((sql: string) => {
       if (sql.includes('from ai_tweak_sessions')) {

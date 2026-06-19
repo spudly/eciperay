@@ -1,7 +1,15 @@
 /* eslint-disable max-lines -- shared recipe form with dynamic ingredient/instruction lists */
 import {
+  compareVersionToParent,
   ensureIngredientRowKeys,
   ensureInstructionRowKeys,
+  formatParentListSummary,
+  formatParentScalarHint,
+  formatParentTagNames,
+  parentIngredientsInput,
+  parentInstructionsInput,
+  parentTagIds,
+  revertVersionScalar,
   toRecipeInputIngredients,
   toRecipeInputInstructions,
   uploadRecipeImageFromBase64,
@@ -9,13 +17,15 @@ import {
   type FormIngredientRow,
   type FormInstructionRow,
   type RecipeFormInitial,
+  type VersionScalarField,
 } from '@eciperay/client';
 import type {
   IngredientInput,
   RecipeInput,
   RecipeVersionDetail,
 } from '@eciperay/types';
-import React, {useState} from 'react';
+import clsx from 'clsx';
+import React, {useMemo, useState} from 'react';
 import {
   ScrollView,
   Text,
@@ -68,6 +78,7 @@ const toQuantity = (value: number | string | null): number | null => {
 export const RecipeForm = ({
   initial,
   recipeId,
+  parentVersion,
   submitLabel,
   onSubmit,
 }: Props) => {
@@ -286,6 +297,88 @@ export const RecipeForm = ({
     tagIds,
   });
 
+  const versionDiff = useMemo(() => {
+    if (!parentVersion) {
+      return null;
+    }
+    return compareVersionToParent(parentVersion, buildInput());
+    // buildInput is derived from the field state listed below
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional field snapshot
+  }, [
+    parentVersion,
+    title,
+    description,
+    servings,
+    prepTimeMin,
+    cookTimeMin,
+    imageUrl,
+    sourceUrl,
+    ingredients,
+    instructions,
+    tagIds,
+    pendingImage,
+  ]);
+
+  const scalarChanged = (field: VersionScalarField) =>
+    versionDiff?.changedScalars.includes(field) ?? false;
+
+  const changedFieldClass = (field: VersionScalarField) =>
+    clsx('rounded-lg border border-gray-300 px-4 py-2', {
+      'border-amber-400 bg-amber-50': scalarChanged(field),
+    });
+
+  const revertScalar = (
+    parent: RecipeVersionDetail,
+    field: VersionScalarField,
+  ) => {
+    const value = revertVersionScalar(parent, field);
+    switch (field) {
+      case 'title': {
+        setTitle(String(value ?? ''));
+        break;
+      }
+      case 'description': {
+        setDescription(String(value ?? ''));
+        break;
+      }
+      case 'servings': {
+        setServings(String(value ?? 1));
+        break;
+      }
+      case 'prepTimeMin': {
+        setPrepTimeMin(value === null ? '' : String(value));
+        break;
+      }
+      case 'cookTimeMin': {
+        setCookTimeMin(value === null ? '' : String(value));
+        break;
+      }
+      case 'imageUrl': {
+        clearPendingImage();
+        setImageUrl(String(value ?? ''));
+        break;
+      }
+      case 'sourceUrl': {
+        setSourceUrl(String(value ?? ''));
+        break;
+      }
+    }
+  };
+
+  const RevertButton = ({field}: {field: VersionScalarField}) =>
+    scalarChanged(field) && parentVersion ? (
+      <TouchableOpacity
+        accessibilityRole="button"
+        onPress={() => {
+          revertScalar(parentVersion, field);
+        }}
+      >
+        <Text className="text-xs font-medium text-amber-800/80">
+          Revert to: {formatParentScalarHint(parentVersion, field)}
+        </Text>
+      </TouchableOpacity>
+    ) : null;
+
   const handleSubmit = async () => {
     setLoading(true);
     setError(null);
@@ -308,10 +401,13 @@ export const RecipeForm = ({
     <ScrollView className="flex-1">
       <View className="gap-4 pb-8">
         <View>
-          <Text className="mb-1 text-sm font-medium text-gray-700">Title</Text>
+          <View className="mb-1 flex-row items-center justify-between gap-3">
+            <Text className="text-sm font-medium text-gray-700">Title</Text>
+            <RevertButton field="title" />
+          </View>
           <TextInput
             accessibilityLabel="Title"
-            className="rounded-lg border border-gray-300 px-4 py-2"
+            className={changedFieldClass('title')}
             value={title}
             onChangeText={setTitle}
           />
@@ -321,24 +417,27 @@ export const RecipeForm = ({
             <Text className="text-sm font-medium text-gray-700">
               Description
             </Text>
-            <TouchableOpacity
-              accessibilityLabel="Generate description with AI"
-              className="
+            <View className="flex-row items-center gap-2">
+              <RevertButton field="description" />
+              <TouchableOpacity
+                accessibilityLabel="Generate description with AI"
+                className="
                 border-primary rounded-lg border bg-white px-3 py-1
                 disabled:opacity-50
               "
-              disabled={!title.trim() || descriptionGenerating}
-              onPress={() => {
-                void handleGenerateDescription();
-              }}
-            >
-              <Text className="text-primary text-sm font-medium">
-                {descriptionGenerating ? 'Generating…' : 'Generate with AI'}
-              </Text>
-            </TouchableOpacity>
+                disabled={!title.trim() || descriptionGenerating}
+                onPress={() => {
+                  void handleGenerateDescription();
+                }}
+              >
+                <Text className="text-primary text-sm font-medium">
+                  {descriptionGenerating ? 'Generating…' : 'Generate with AI'}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
           <TextInput
-            className="rounded-lg border border-gray-300 px-4 py-2"
+            className={changedFieldClass('description')}
             multiline
             numberOfLines={3}
             value={description}
@@ -352,33 +451,45 @@ export const RecipeForm = ({
         </View>
         <View className="flex-row gap-3">
           <View className="flex-1">
-            <Text className="mb-1 text-sm font-medium text-gray-700">
-              Servings
-            </Text>
+            <View className="mb-1 flex-row items-center justify-between gap-2">
+              <Text className="text-sm font-medium text-gray-700">
+                Servings
+              </Text>
+              <RevertButton field="servings" />
+            </View>
             <TextInput
-              className="rounded-lg border border-gray-300 px-4 py-2"
+              accessibilityLabel="Servings"
+              className={changedFieldClass('servings')}
               keyboardType="number-pad"
               value={servings}
               onChangeText={setServings}
             />
           </View>
           <View className="flex-1">
-            <Text className="mb-1 text-sm font-medium text-gray-700">
-              Prep (min)
-            </Text>
+            <View className="mb-1 flex-row items-center justify-between gap-2">
+              <Text className="text-sm font-medium text-gray-700">
+                Prep (min)
+              </Text>
+              <RevertButton field="prepTimeMin" />
+            </View>
             <TextInput
-              className="rounded-lg border border-gray-300 px-4 py-2"
+              accessibilityLabel="Prep (min)"
+              className={changedFieldClass('prepTimeMin')}
               keyboardType="number-pad"
               value={prepTimeMin}
               onChangeText={setPrepTimeMin}
             />
           </View>
           <View className="flex-1">
-            <Text className="mb-1 text-sm font-medium text-gray-700">
-              Cook (min)
-            </Text>
+            <View className="mb-1 flex-row items-center justify-between gap-2">
+              <Text className="text-sm font-medium text-gray-700">
+                Cook (min)
+              </Text>
+              <RevertButton field="cookTimeMin" />
+            </View>
             <TextInput
-              className="rounded-lg border border-gray-300 px-4 py-2"
+              accessibilityLabel="Cook (min)"
+              className={changedFieldClass('cookTimeMin')}
               keyboardType="number-pad"
               value={cookTimeMin}
               onChangeText={setCookTimeMin}
@@ -391,6 +502,7 @@ export const RecipeForm = ({
           imageGenerating={imageGenerating}
           imageError={imageError}
           canGenerateImage={title.trim().length > 0}
+          headerAction={<RevertButton field="imageUrl" />}
           onImagePicked={processImage}
           onImageError={message => {
             setImageError(message);
@@ -404,22 +516,67 @@ export const RecipeForm = ({
           }}
         />
         <View>
-          <Text className="mb-1 text-sm font-medium text-gray-700">
-            Source URL
-          </Text>
+          <View className="mb-1 flex-row items-center justify-between gap-2">
+            <Text className="text-sm font-medium text-gray-700">
+              Source URL
+            </Text>
+            <RevertButton field="sourceUrl" />
+          </View>
           <TextInput
-            className="rounded-lg border border-gray-300 px-4 py-2"
+            accessibilityLabel="Source URL"
+            className={changedFieldClass('sourceUrl')}
             value={sourceUrl}
             onChangeText={setSourceUrl}
           />
         </View>
         <View>
-          <Text className="mb-2 text-sm font-medium text-gray-700">Tags</Text>
+          <View className="mb-2 flex-row items-center justify-between gap-2">
+            <Text className="text-sm font-medium text-gray-700">Tags</Text>
+            {versionDiff?.tagsChanged && parentVersion ? (
+              <TouchableOpacity
+                accessibilityRole="button"
+                onPress={() => {
+                  setTagIds(parentTagIds(parentVersion));
+                }}
+              >
+                <Text className="text-xs font-medium text-amber-800/80">
+                  Revert to: {formatParentTagNames(parentVersion)}
+                </Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
           <TagPicker
             selectedIds={tagIds}
             onChange={setTagIds}
           />
         </View>
+        {versionDiff?.ingredientsChanged && parentVersion ? (
+          <View
+            className="
+              flex-row items-center justify-between rounded-lg bg-amber-50 px-3
+              py-2
+            "
+          >
+            <Text className="flex-1 text-sm text-amber-900">
+              Ingredients changed from parent version (
+              {formatParentListSummary(parentVersion, 'ingredients')})
+            </Text>
+            <TouchableOpacity
+              accessibilityRole="button"
+              onPress={() => {
+                setIngredients(
+                  ensureIngredientRowKeys(
+                    parentIngredientsInput(parentVersion),
+                  ),
+                );
+              }}
+            >
+              <Text className="text-sm font-medium text-amber-900 underline">
+                Revert
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
         <SortableIngredientList
           ingredients={ingredients}
           onChange={setIngredients}
@@ -431,6 +588,33 @@ export const RecipeForm = ({
             ]);
           }}
         />
+        {versionDiff?.instructionsChanged && parentVersion ? (
+          <View
+            className="
+              flex-row items-center justify-between rounded-lg bg-amber-50 px-3
+              py-2
+            "
+          >
+            <Text className="flex-1 text-sm text-amber-900">
+              Instructions changed from parent version (
+              {formatParentListSummary(parentVersion, 'instructions')})
+            </Text>
+            <TouchableOpacity
+              accessibilityRole="button"
+              onPress={() => {
+                setInstructions(
+                  ensureInstructionRowKeys(
+                    parentInstructionsInput(parentVersion),
+                  ),
+                );
+              }}
+            >
+              <Text className="text-sm font-medium text-amber-900 underline">
+                Revert
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
         <SortableInstructionList
           instructions={instructions}
           onChange={setInstructions}

@@ -848,20 +848,21 @@ describe('RecipeForm', () => {
     );
 
     expect(
-      screen.getByText('Ingredients changed from parent version'),
+      screen.getByText(/Ingredients changed from parent version/),
     ).toBeInTheDocument();
     expect(
-      screen.getByText('Instructions changed from parent version'),
+      screen.getByText(/Instructions changed from parent version/),
     ).toBeInTheDocument();
-    expect(screen.getByText('Revert tags')).toBeInTheDocument();
+    expect(screen.getByText('Revert to: Dinner')).toBeInTheDocument();
 
-    const revertNearLabel = (label: string) => {
+    const revertNearLabel = (label: string, hint?: string) => {
       const labelEl = screen.getByText(label, {selector: 'label'});
       const header = labelEl.parentElement!;
-      return within(header).getByRole('button', {name: 'Revert'});
+      const name = hint ? `Revert to: ${hint}` : /^Revert to:/;
+      return within(header).getByRole('button', {name});
     };
 
-    await userEvent.click(revertNearLabel('Title'));
+    await userEvent.click(revertNearLabel('Title', 'Original Title'));
     expect(screen.getByLabelText('Title')).toHaveValue('Original Title');
     await userEvent.click(revertNearLabel('Description'));
     expect(screen.getByLabelText('Description')).toHaveValue(
@@ -878,20 +879,20 @@ describe('RecipeForm', () => {
       'https://example.com/source',
     );
 
-    await userEvent.click(screen.getByText('Revert tags'));
+    await userEvent.click(screen.getByText('Revert to: Dinner'));
     await waitFor(() => {
-      expect(screen.queryByText('Revert tags')).not.toBeInTheDocument();
+      expect(screen.queryByText('Revert to: Dinner')).not.toBeInTheDocument();
     });
 
     const ingredientRevert = screen
-      .getByText('Ingredients changed from parent version')
+      .getByText(/Ingredients changed from parent version/)
       .closest('div')
       ?.querySelector('button');
     await userEvent.click(ingredientRevert!);
     expect(screen.getAllByPlaceholderText('Name')[0]).toHaveValue('Flour');
 
     const instructionRevert = screen
-      .getByText('Instructions changed from parent version')
+      .getByText(/Instructions changed from parent version/)
       .closest('div')
       ?.querySelector('button');
     await userEvent.click(instructionRevert!);
@@ -923,13 +924,14 @@ describe('RecipeForm', () => {
     await userEvent.upload(screen.getByLabelText('Browse images'), file);
     expect(screen.getByAltText('Recipe preview')).toBeInTheDocument();
 
-    const revertNearLabel = (label: string) => {
+    const revertNearLabel = (label: string, hint?: string) => {
       const labelEl = screen.getByText(label);
       const header = labelEl.parentElement!;
-      return within(header).getByRole('button', {name: 'Revert'});
+      const name = hint ? `Revert to: ${hint}` : /^Revert to:/;
+      return within(header).getByRole('button', {name});
     };
 
-    await userEvent.click(revertNearLabel('Recipe image'));
+    await userEvent.click(revertNearLabel('Recipe image', 'parent.jpg'));
     expect(screen.getByAltText('Recipe preview')).toHaveAttribute(
       'src',
       'https://example.com/parent.jpg',
@@ -956,15 +958,16 @@ describe('RecipeForm', () => {
       />,
     );
 
-    const revertNearLabel = (label: string) => {
+    const revertNearLabel = (label: string, hint?: string) => {
       const labelEl = screen.getByText(label, {selector: 'label'});
       const header = labelEl.parentElement!;
-      return within(header).getByRole('button', {name: 'Revert'});
+      const name = hint ? `Revert to: ${hint}` : /^Revert to:/;
+      return within(header).getByRole('button', {name});
     };
 
-    await userEvent.click(revertNearLabel('Prep (min)'));
+    await userEvent.click(revertNearLabel('Prep (min)', '(none)'));
     expect(screen.getByLabelText('Prep (min)')).toHaveValue(null);
-    await userEvent.click(revertNearLabel('Cook (min)'));
+    await userEvent.click(revertNearLabel('Cook (min)', '(none)'));
     expect(screen.getByLabelText('Cook (min)')).toHaveValue(null);
   });
 
@@ -990,22 +993,23 @@ describe('RecipeForm', () => {
       />,
     );
 
-    const revertNearLabel = (label: string) => {
+    const revertNearLabel = (label: string, hint?: string) => {
       const labelEl = screen.getByText(label, {selector: 'label'});
       const header = labelEl.parentElement!;
-      return within(header).getByRole('button', {name: 'Revert'});
+      const name = hint ? `Revert to: ${hint}` : /^Revert to:/;
+      return within(header).getByRole('button', {name});
     };
 
-    await userEvent.click(revertNearLabel('Description'));
+    await userEvent.click(revertNearLabel('Description', '(empty)'));
     expect(screen.getByLabelText('Description')).toHaveValue('');
     await userEvent.click(
       within(screen.getByText('Recipe image').parentElement!).getByRole(
         'button',
-        {name: 'Revert'},
+        {name: 'Revert to: (no image)'},
       ),
     );
     expect(screen.queryByAltText('Recipe preview')).not.toBeInTheDocument();
-    await userEvent.click(revertNearLabel('Source URL'));
+    await userEvent.click(revertNearLabel('Source URL', '(none)'));
     expect(screen.getByLabelText('Source URL')).toHaveValue('');
   });
 
@@ -1033,10 +1037,11 @@ describe('RecipeForm', () => {
       />,
     );
 
-    const revertNearLabel = (label: string) => {
+    const revertNearLabel = (label: string, hint?: string) => {
       const labelEl = screen.getByText(label, {selector: 'label'});
       const header = labelEl.parentElement!;
-      return within(header).getByRole('button', {name: 'Revert'});
+      const name = hint ? `Revert to: ${hint}` : /^Revert to:/;
+      return within(header).getByRole('button', {name});
     };
 
     await userEvent.click(revertNearLabel('Title'));

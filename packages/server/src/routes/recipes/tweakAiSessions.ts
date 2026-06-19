@@ -357,6 +357,85 @@ export const sendTweakAiMessage = async (
   res.json({session: updated, reply});
 };
 
+type ImplementCoreParams = {
+  sessionRow: SessionRow;
+  approvedPlan: string;
+  recipeId: string;
+  userId: string;
+  queryFn: QueryFn;
+};
+
+const implementTweakAiSessionCore = async ({
+  sessionRow,
+  approvedPlan,
+  recipeId,
+  userId,
+  queryFn,
+}: ImplementCoreParams): Promise<
+  | {error: string; status: number}
+  | {session: TweakAiSession; changeSummary: string; preview: RecipeInput}
+> => {
+  const loaded = await loadSessionContext(recipeId, userId, queryFn);
+  if ('error' in loaded) {
+    return loaded;
+  }
+  const {recipe, parentVersion, context} = loaded;
+
+  let parsed;
+  try {
+    const text = await callClaudeText(
+      IMPLEMENT_SYSTEM,
+      `Recipe and cook logs:\n${context}\n\nApproved plan:\n${approvedPlan}`,
+    );
+    parsed = parseAiJson(RecipeImportSchema, text);
+  } catch (error) {
+    if (error instanceof RecipeImportError) {
+      return {error: error.message, status: 422};
+    }
+    return {error: 'AI implementation failed', status: 502};
+  }
+
+  let input: RecipeInput;
+  try {
+    input = await recipeInputFromParsed({
+      parsed,
+      parentVersion,
+      recipe: {
+        title: recipe.title,
+        description: recipe.description,
+        servings: recipe.servings,
+        prepTimeMin: recipe.prepTimeMin,
+        cookTimeMin: recipe.cookTimeMin,
+        imageUrl: recipe.imageUrl,
+        sourceUrl: recipe.sourceUrl,
+        ingredients: recipe.ingredients,
+        instructions: recipe.instructions,
+        tagIds: recipe.tags.map(t => t.id),
+      },
+      userId,
+      queryFn,
+    });
+  } catch (error) {
+    if (error instanceof RecipeImportError) {
+      return {error: error.message, status: 422};
+    }
+    throw error;
+  }
+
+  const changeSummary = `AI tweak: ${approvedPlan.slice(0, 200)}`;
+  const updated = await persistSession(
+    sessionRow,
+    {
+      phase: 'preview_ready',
+      approved_plan: approvedPlan,
+      proposed_recipe: input,
+      change_summary: changeSummary,
+    },
+    queryFn,
+  );
+  return {session: updated, changeSummary, preview: input};
+};
+
 export const approveTweakAiPlan = async (
   req: AuthedRequest,
   res: Response,
@@ -387,12 +466,18 @@ export const approveTweakAiPlan = async (
   }
 
   const row = await queryFn(GET_SESSION_SQL, [sessionId, recipeId, req.userId]);
-  const updated = await persistSession(
-    row.rows[0] as SessionRow,
-    {phase: 'plan_approved', approved_plan: lastAssistant.content},
+  const result = await implementTweakAiSessionCore({
+    sessionRow: row.rows[0] as SessionRow,
+    approvedPlan: lastAssistant.content,
+    recipeId,
+    userId: req.userId,
     queryFn,
-  );
-  res.json({session: updated});
+  });
+  if ('error' in result) {
+    res.status(result.status).json({error: result.error});
+    return;
+  }
+  res.json(result);
 };
 
 export const implementTweakAiSession = async (
@@ -421,69 +506,19 @@ export const implementTweakAiSession = async (
     return;
   }
 
-  const loaded = await loadSessionContext(recipeId, req.userId, queryFn);
-  if ('error' in loaded) {
-    res.status(loaded.status).json({error: loaded.error});
-    return;
-  }
-  const {recipe, parentVersion, context} = loaded;
-
-  let parsed;
-  try {
-    const text = await callClaudeText(
-      IMPLEMENT_SYSTEM,
-      `Recipe and cook logs:\n${context}\n\nApproved plan:\n${session.approvedPlan}`,
-    );
-    parsed = parseAiJson(RecipeImportSchema, text);
-  } catch (error) {
-    if (error instanceof RecipeImportError) {
-      res.status(422).json({error: error.message});
-      return;
-    }
-    res.status(502).json({error: 'AI implementation failed'});
-    return;
-  }
-
-  let input: RecipeInput;
-  try {
-    input = await recipeInputFromParsed({
-      parsed,
-      parentVersion,
-      recipe: {
-        title: recipe.title,
-        description: recipe.description,
-        servings: recipe.servings,
-        prepTimeMin: recipe.prepTimeMin,
-        cookTimeMin: recipe.cookTimeMin,
-        imageUrl: recipe.imageUrl,
-        sourceUrl: recipe.sourceUrl,
-        ingredients: recipe.ingredients,
-        instructions: recipe.instructions,
-        tagIds: recipe.tags.map(t => t.id),
-      },
-      userId: req.userId,
-      queryFn,
-    });
-  } catch (error) {
-    if (error instanceof RecipeImportError) {
-      res.status(422).json({error: error.message});
-      return;
-    }
-    throw error;
-  }
-
-  const changeSummary = `AI tweak: ${session.approvedPlan.slice(0, 200)}`;
   const row = await queryFn(GET_SESSION_SQL, [sessionId, recipeId, req.userId]);
-  const updated = await persistSession(
-    row.rows[0] as SessionRow,
-    {
-      phase: 'preview_ready',
-      proposed_recipe: input,
-      change_summary: changeSummary,
-    },
+  const result = await implementTweakAiSessionCore({
+    sessionRow: row.rows[0] as SessionRow,
+    approvedPlan: session.approvedPlan,
+    recipeId,
+    userId: req.userId,
     queryFn,
-  );
-  res.json({session: updated, changeSummary, preview: input});
+  });
+  if ('error' in result) {
+    res.status(result.status).json({error: result.error});
+    return;
+  }
+  res.json(result);
 };
 
 export const createVersionFromTweakAiSession = async (

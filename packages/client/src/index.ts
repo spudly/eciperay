@@ -107,6 +107,9 @@ export {createCookLogsApi} from './cookLogsApi.js';
 export {createTweakAiApi} from './tweakAiApi.js';
 export {
   compareVersionToParent,
+  formatParentListSummary,
+  formatParentScalarHint,
+  formatParentTagNames,
   parentIngredientsInput,
   parentInstructionsInput,
   parentTagIds,
@@ -114,6 +117,12 @@ export {
   type VersionDiff,
   type VersionScalarField,
 } from './compareVersionToParent.js';
+export {
+  parseProposedRecipe,
+  sortedPreviewIngredients,
+  sortedPreviewInstructions,
+} from './recipeInputPreview.js';
+export {truncateChangeSummary} from './truncateChangeSummary.js';
 export {
   createEciperayClient,
   type EciperayClient,

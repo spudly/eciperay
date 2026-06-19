@@ -1,6 +1,8 @@
 import {
   queryKeys,
   recipeDetailToInput,
+  recipeVersionDetailToInput,
+  revertVersionScalar,
   uploadRecipeImageFromBase64,
   useAuth,
 } from '@eciperay/client';
@@ -8,7 +10,10 @@ import type {RecipeInput} from '@eciperay/types';
 import React from 'react';
 import {act, fireEvent, waitFor} from '@testing-library/react-native';
 
-import {makeRecipeDetail} from '../../__tests__/fixtures/recipe';
+import {
+  makeRecipeDetail,
+  makeRecipeVersionDetail,
+} from '../../__tests__/fixtures/recipe';
 import {makeQueryClient, renderWithProviders} from '../../__tests__/testUtils';
 import {api} from '../../lib/api';
 
@@ -35,6 +40,7 @@ jest.mock('@eciperay/client', () => {
       isLoading: false,
     })),
     uploadRecipeImageFromBase64: jest.fn(),
+    revertVersionScalar: jest.fn(actual.revertVersionScalar),
   };
 });
 
@@ -43,6 +49,7 @@ const mockGenerateImage = api.ai.generateImage as jest.Mock;
 const mockGenerateDescription = api.ai.generateDescription as jest.Mock;
 const mockUploadRecipeImageFromBase64 =
   uploadRecipeImageFromBase64 as jest.Mock;
+const mockRevertVersionScalar = revertVersionScalar as jest.Mock;
 const mockUseAuth = useAuth as jest.Mock;
 
 type OnSubmit = (
@@ -68,6 +75,8 @@ const renderForm = async (ui: React.ReactElement) => {
 
 describe('RecipeForm', () => {
   beforeEach(() => {
+    const actual = jest.requireActual('@eciperay/client');
+    mockRevertVersionScalar.mockImplementation(actual.revertVersionScalar);
     mockUseAuth.mockReturnValue({
       session: {user: {id: 'user-1'}},
       isLoading: false,
@@ -610,5 +619,151 @@ describe('RecipeForm', () => {
         {base64: btoa('pixels'), contentType: 'image/png'},
       );
     });
+  });
+
+  test('shows parent version diff UI and reverts changed title', async () => {
+    const parentVersion = makeRecipeVersionDetail({
+      title: 'Original Title',
+      description: 'Original description',
+      servings: 4,
+      prepTimeMin: 10,
+      cookTimeMin: 20,
+      sourceUrl: 'https://example.com/source',
+      imageUrl: 'https://example.com/parent.jpg',
+      tags: [
+        {
+          id: 'tag-1',
+          userId: null,
+          name: 'Dinner',
+          color: '#6366f1',
+          isPreset: false,
+        },
+      ],
+    });
+    const initial = {
+      ...recipeVersionDetailToInput(parentVersion),
+      title: 'Changed Title',
+      description: 'Changed description',
+      servings: 6,
+      prepTimeMin: 5,
+      cookTimeMin: 25,
+      sourceUrl: 'https://other.com',
+      imageUrl: 'https://example.com/changed.jpg',
+      tagIds: ['tag-2'],
+      ingredients: [
+        {
+          sortOrder: 0,
+          name: 'Changed flour',
+          quantity: 2,
+          unit: 'cups',
+          notes: null,
+          isOptional: false,
+        },
+      ],
+      instructions: [{stepNumber: 1, body: 'Changed step'}],
+    };
+
+    const {getByText, getByLabelText, queryByText, getAllByText} =
+      await renderForm(
+        <RecipeForm
+          initial={initial}
+          parentVersion={parentVersion}
+          submitLabel="Save"
+          onSubmit={mockOnSubmit()}
+        />,
+      );
+
+    expect(getByText(/Ingredients changed from parent version/)).toBeTruthy();
+    expect(getByText('Revert to: Dinner')).toBeTruthy();
+
+    fireEvent.press(getByText('Revert to: Original Title'));
+    expect(getByLabelText('Title')).toHaveProp('value', 'Original Title');
+    fireEvent.press(getByText('Revert to: Original description'));
+    fireEvent.press(getByText('Revert to: 4'));
+    fireEvent.press(getByText('Revert to: 10 min'));
+    fireEvent.press(getByText('Revert to: 20 min'));
+    fireEvent.press(getByText('Revert to: parent.jpg'));
+    fireEvent.press(getByText('Revert to: https://example.com/source'));
+
+    fireEvent.press(getByText('Revert to: Dinner'));
+    await waitFor(() => {
+      expect(queryByText('Revert to: Dinner')).toBeNull();
+    });
+
+    const listRevertButtons = getAllByText('Revert');
+    fireEvent.press(listRevertButtons[0]);
+    fireEvent.press(listRevertButtons[1]);
+  });
+
+  test('uses fallback values when reverting null title and servings', async () => {
+    mockRevertVersionScalar.mockImplementation((parent, field) => {
+      if (
+        field === 'title' ||
+        field === 'servings' ||
+        field === 'description' ||
+        field === 'imageUrl' ||
+        field === 'sourceUrl'
+      ) {
+        return null;
+      }
+      const actual = jest.requireActual('@eciperay/client');
+      return actual.revertVersionScalar(parent, field);
+    });
+    const parentVersion = makeRecipeVersionDetail({
+      description: null,
+      prepTimeMin: null,
+      cookTimeMin: null,
+      imageUrl: 'https://example.com/parent.jpg',
+      sourceUrl: 'https://example.com/source',
+    });
+    const {getByText, getByLabelText, getAllByText} = await renderForm(
+      <RecipeForm
+        initial={{
+          ...recipeVersionDetailToInput(parentVersion),
+          title: 'Changed title',
+          description: 'Changed description',
+          servings: 8,
+          prepTimeMin: 15,
+          cookTimeMin: 30,
+          imageUrl: 'https://example.com/changed.jpg',
+          sourceUrl: 'https://example.com/changed',
+        }}
+        parentVersion={parentVersion}
+        submitLabel="Save"
+        onSubmit={mockOnSubmit()}
+      />,
+    );
+
+    fireEvent.press(getByText('Revert to: Test Recipe'));
+    expect(getByLabelText('Title')).toHaveProp('value', '');
+    fireEvent.press(getByText('Revert to: 4'));
+    expect(getByLabelText('Servings')).toHaveProp('value', '1');
+    fireEvent.press(getByText('Revert to: (empty)'));
+    fireEvent.press(getByText('Revert to: parent.jpg'));
+    fireEvent.press(getByText('Revert to: https://example.com/source'));
+    fireEvent.press(getAllByText('Revert to: (none)')[0]);
+    expect(getByLabelText('Prep (min)')).toHaveProp('value', '');
+    fireEvent.press(getAllByText('Revert to: (none)')[0]);
+    expect(getByLabelText('Cook (min)')).toHaveProp('value', '');
+  });
+
+  test('reverts null cook time to an empty field', async () => {
+    const parentVersion = makeRecipeVersionDetail({
+      prepTimeMin: 10,
+      cookTimeMin: null,
+    });
+    const {getByText, getByLabelText} = await renderForm(
+      <RecipeForm
+        initial={{
+          ...recipeVersionDetailToInput(parentVersion),
+          cookTimeMin: 30,
+        }}
+        parentVersion={parentVersion}
+        submitLabel="Save"
+        onSubmit={mockOnSubmit()}
+      />,
+    );
+    fireEvent.press(getByText('Revert to: (none)'));
+    expect(getByLabelText('Cook (min)')).toHaveProp('value', '');
   });
 });

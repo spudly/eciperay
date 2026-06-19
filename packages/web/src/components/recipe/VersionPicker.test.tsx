@@ -57,4 +57,35 @@ describe('VersionPicker', () => {
       expect(screen.getByText('Version 1')).toBeInTheDocument();
     });
   });
+
+  test('truncates long change summaries in options', async () => {
+    const longSummary = 'A'.repeat(60);
+    await renderWithProviders(
+      <VersionPicker
+        recipeId="recipe-uuid-1"
+        versions={[
+          makeRecipeVersionSummary(),
+          makeRecipeVersionSummary({
+            id: 'version-uuid-2',
+            versionNumber: 2,
+            derivedRole: 'draft',
+            changeSummary: longSummary,
+          }),
+        ]}
+        selectedVersionId="version-uuid-1"
+        onSelect={() => {}}
+      />,
+    );
+    const select = screen.getByRole('combobox');
+    const option = [...select.querySelectorAll('option')].find(
+      optionEl => optionEl.value === 'version-uuid-2',
+    );
+    if (!option) {
+      throw new Error('expected version option');
+    }
+    expect(option.textContent).toContain('…');
+    expect(option.textContent.length).toBeLessThan(
+      `v2 — Draft: ${longSummary}`.length,
+    );
+  });
 });

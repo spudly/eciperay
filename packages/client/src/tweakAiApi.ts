@@ -1,6 +1,5 @@
 import type {
   CreateTweakAiSessionResult,
-  RecipeVersionInput,
   TweakAiApproveResult,
   TweakAiImplementResult,
   TweakAiSession,
@@ -25,12 +24,12 @@ export const createTweakAiApi = (client: ApiClient) => ({
       {method: 'POST', body: JSON.stringify({content})},
     ),
   approvePlan: (recipeId: string, sessionId: string) =>
-    client.fetch<{session: TweakAiSession}>(
+    client.fetch<TweakAiImplementResult>(
       `/recipes/${recipeId}/tweak-ai-sessions/${sessionId}/approve-plan`,
       {method: 'POST'},
     ),
   implement: (recipeId: string, sessionId: string) =>
-    client.fetch<TweakAiImplementResult & {preview: RecipeVersionInput}>(
+    client.fetch<TweakAiImplementResult>(
       `/recipes/${recipeId}/tweak-ai-sessions/${sessionId}/implement`,
       {method: 'POST'},
     ),

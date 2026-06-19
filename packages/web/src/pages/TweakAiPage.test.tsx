@@ -31,6 +31,10 @@ const renderTweakAi = () =>
         element={<TweakAiPage />}
       />
       <Route
+        path="/recipes/:recipeId/versions/:versionId/edit"
+        element={<div>Edit version</div>}
+      />
+      <Route
         path="/recipes/:recipeId"
         element={<div>Recipe detail</div>}
       />
@@ -39,7 +43,7 @@ const renderTweakAi = () =>
   );
 
 describe('TweakAiPage', () => {
-  test('runs the conversational tweak flow and navigates to recipe detail', async () => {
+  test('runs the conversational tweak flow and navigates to edit page', async () => {
     await renderTweakAi();
     await userEvent.type(
       screen.getByPlaceholderText(PROMPT),
@@ -50,9 +54,9 @@ describe('TweakAiPage', () => {
       await screen.findByText(/Plan for: make it spicier/),
     ).toBeInTheDocument();
     await userEvent.click(screen.getByText('Approve plan'));
-    await userEvent.click(screen.getByText('Generate preview'));
+    expect(await screen.findByText('Cook pasta')).toBeInTheDocument();
     await userEvent.click(screen.getByText('Save as draft'));
-    expect(await screen.findByText('Recipe detail')).toBeInTheDocument();
+    expect(await screen.findByText('Edit version')).toBeInTheDocument();
   });
 
   test('returns to recipe detail on cancel', async () => {
@@ -242,33 +246,31 @@ describe('TweakAiPage', () => {
     ).toBeInTheDocument();
   });
 
-  test('shows an error when generating the preview fails', async () => {
+  test('shows an error when building the preview fails', async () => {
     await renderTweakAi();
     await userEvent.type(
       screen.getByPlaceholderText(PROMPT),
       'make it spicier',
     );
     await userEvent.click(screen.getByText('Start planning'));
-    await userEvent.click(screen.getByText('Approve plan'));
-    vi.spyOn(eciperay.tweakAi, 'implement').mockRejectedValueOnce(
+    vi.spyOn(eciperay.tweakAi, 'approvePlan').mockRejectedValueOnce(
       new Error('Implementation failed hard'),
     );
-    await userEvent.click(screen.getByText('Generate preview'));
+    await userEvent.click(screen.getByText('Approve plan'));
     expect(
       await screen.findByText('Implementation failed hard'),
     ).toBeInTheDocument();
   });
 
-  test('shows a generic error when generating the preview fails', async () => {
+  test('shows a generic error when building the preview fails', async () => {
     await renderTweakAi();
     await userEvent.type(
       screen.getByPlaceholderText(PROMPT),
       'make it spicier',
     );
     await userEvent.click(screen.getByText('Start planning'));
+    vi.spyOn(eciperay.tweakAi, 'approvePlan').mockRejectedValueOnce('nope');
     await userEvent.click(screen.getByText('Approve plan'));
-    vi.spyOn(eciperay.tweakAi, 'implement').mockRejectedValueOnce('nope');
-    await userEvent.click(screen.getByText('Generate preview'));
     expect(
       await screen.findByText('An unexpected error occurred'),
     ).toBeInTheDocument();
@@ -282,7 +284,7 @@ describe('TweakAiPage', () => {
     );
     await userEvent.click(screen.getByText('Start planning'));
     await userEvent.click(screen.getByText('Approve plan'));
-    await userEvent.click(screen.getByText('Generate preview'));
+    await screen.findByText('Cook pasta');
     vi.spyOn(eciperay.tweakAi, 'createVersion').mockRejectedValueOnce(
       new Error('Save failed hard'),
     );
@@ -298,7 +300,7 @@ describe('TweakAiPage', () => {
     );
     await userEvent.click(screen.getByText('Start planning'));
     await userEvent.click(screen.getByText('Approve plan'));
-    await userEvent.click(screen.getByText('Generate preview'));
+    await screen.findByText('Cook pasta');
     vi.spyOn(eciperay.tweakAi, 'createVersion').mockRejectedValueOnce('nope');
     await userEvent.click(screen.getByText('Save as draft'));
     expect(
@@ -306,8 +308,8 @@ describe('TweakAiPage', () => {
     ).toBeInTheDocument();
   });
 
-  test('shows preview fallbacks when proposed recipe fields are missing', async () => {
-    vi.spyOn(eciperay.tweakAi, 'implement').mockResolvedValueOnce({
+  test('does not show preview when proposed recipe is invalid', async () => {
+    vi.spyOn(eciperay.tweakAi, 'approvePlan').mockResolvedValueOnce({
       session: {...baseSession, phase: 'preview_ready', proposedRecipe: {}},
       changeSummary: 'AI tweak',
       preview: {
@@ -325,8 +327,8 @@ describe('TweakAiPage', () => {
     );
     await userEvent.click(screen.getByText('Start planning'));
     await userEvent.click(screen.getByText('Approve plan'));
-    await userEvent.click(screen.getByText('Generate preview'));
-    expect(await screen.findByText('Updated recipe')).toBeInTheDocument();
-    expect(screen.getByText('0 ingredients, 0 steps')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByText('Draft preview')).not.toBeInTheDocument();
+    });
   });
 });

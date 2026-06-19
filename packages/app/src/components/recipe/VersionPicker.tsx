@@ -1,3 +1,4 @@
+import {truncateChangeSummary} from '@eciperay/client';
 import type {RecipeVersionSummary} from '@eciperay/types';
 import React, {useState} from 'react';
 import {Modal, Pressable, ScrollView, Text, View} from 'react-native';
@@ -11,7 +12,9 @@ const ROLE_LABELS: Record<RecipeVersionSummary['derivedRole'], string> = {
 
 const versionLabel = (version: RecipeVersionSummary) => {
   const role = ROLE_LABELS[version.derivedRole];
-  const summary = version.changeSummary ? `: ${version.changeSummary}` : '';
+  const summary = version.changeSummary
+    ? `: ${truncateChangeSummary(version.changeSummary)}`
+    : '';
   return `v${version.versionNumber} — ${role}${summary}`;
 };
 
@@ -52,7 +55,13 @@ export const VersionPicker = ({
       >
         <Text className="text-muted text-sm">Version</Text>
         <View className="rounded-lg border border-gray-200 px-2 py-1">
-          <Text className="text-sm">{versionLabel(selected)}</Text>
+          <Text
+            className="text-sm"
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
+            {versionLabel(selected)}
+          </Text>
         </View>
       </Pressable>
       <Modal
@@ -101,6 +110,8 @@ export const VersionPicker = ({
                         ? 'text-primary text-sm font-medium'
                         : 'text-sm text-gray-800'
                     }
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
                   >
                     {versionLabel(version)}
                   </Text>

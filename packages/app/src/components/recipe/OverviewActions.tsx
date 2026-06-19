@@ -1,4 +1,4 @@
-import {invalidateRecipeQueries} from '@eciperay/client';
+import {invalidateRecipeQueries, truncateChangeSummary} from '@eciperay/client';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
 import type {RecipeDetail, RecipeVersionSummary} from '@eciperay/types';
 import clsx from 'clsx';
@@ -121,7 +121,9 @@ export const OverviewActions = ({
             >
               <Text className="mb-2 text-sm text-gray-800">
                 v{version.versionNumber}
-                {version.changeSummary ? `: ${version.changeSummary}` : ''}
+                {version.changeSummary
+                  ? `: ${truncateChangeSummary(version.changeSummary)}`
+                  : ''}
               </Text>
               <TouchableOpacity
                 className={clsx(

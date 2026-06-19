@@ -27,6 +27,7 @@ export type CreateTweakAiSessionResult = {
 export type TweakAiImplementResult = {
   session: TweakAiSession;
   changeSummary: string;
+  preview: import('./recipeVersion.js').RecipeVersionInput;
 };
 
 export type TweakAiApproveResult = {

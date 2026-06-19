@@ -114,6 +114,8 @@ describe('EditVersionPage', () => {
     await waitFor(() => {
       expect(screen.getByLabelText('Title')).toHaveValue('Changed draft title');
     });
-    expect(screen.getByRole('button', {name: 'Revert'})).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', {name: /Revert to:/}),
+    ).toBeInTheDocument();
   });
 });

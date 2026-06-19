@@ -65,6 +65,7 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/implement import errors
     nockAnthropicMessage(IMPLEMENT_JSON);
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([approvedSession()]))
+      .mockResolvedValueOnce(makeQueryResult([approvedSession()]))
       .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([makeVersionDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([]));

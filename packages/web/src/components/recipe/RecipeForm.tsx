@@ -3,6 +3,9 @@ import {
   compareVersionToParent,
   ensureIngredientRowKeys,
   ensureInstructionRowKeys,
+  formatParentListSummary,
+  formatParentScalarHint,
+  formatParentTagNames,
   parentIngredientsInput,
   parentInstructionsInput,
   parentTagIds,
@@ -365,17 +368,15 @@ export const RecipeForm = ({
   };
 
   const RevertButton = ({field}: {field: VersionScalarField}) =>
-    scalarChanged(field) ? (
+    scalarChanged(field) && parentVersion ? (
       <button
         type="button"
-        className="text-xs font-medium text-amber-800 underline"
+        className="text-xs font-medium text-amber-800/80"
         onClick={() => {
-          if (parentVersion) {
-            revertScalar(parentVersion, field);
-          }
+          revertScalar(parentVersion, field);
         }}
       >
-        Revert
+        Revert to: {formatParentScalarHint(parentVersion, field)}
       </button>
     ) : null;
 
@@ -586,17 +587,15 @@ export const RecipeForm = ({
       <div>
         <div className="mb-2 flex items-center justify-between gap-2">
           <p className="text-sm font-medium text-gray-700">Tags</p>
-          {versionDiff?.tagsChanged ? (
+          {versionDiff?.tagsChanged && parentVersion ? (
             <button
               type="button"
-              className="text-xs font-medium text-amber-800 underline"
+              className="text-xs font-medium text-amber-800/80"
               onClick={() => {
-                if (parentVersion) {
-                  setTagIds(parentTagIds(parentVersion));
-                }
+                setTagIds(parentTagIds(parentVersion));
               }}
             >
-              Revert tags
+              Revert to: {formatParentTagNames(parentVersion)}
             </button>
           ) : null}
         </div>
@@ -605,25 +604,24 @@ export const RecipeForm = ({
           onChange={setTagIds}
         />
       </div>
-      {versionDiff?.ingredientsChanged ? (
+      {versionDiff?.ingredientsChanged && parentVersion ? (
         <div
           className="
             flex items-center justify-between rounded-lg bg-amber-50 px-3 py-2
             text-sm text-amber-900
           "
         >
-          <span>Ingredients changed from parent version</span>
+          <span>
+            Ingredients changed from parent version (
+            {formatParentListSummary(parentVersion, 'ingredients')})
+          </span>
           <button
             type="button"
             className="font-medium underline"
             onClick={() => {
-              if (parentVersion) {
-                setIngredients(
-                  ensureIngredientRowKeys(
-                    parentIngredientsInput(parentVersion),
-                  ),
-                );
-              }
+              setIngredients(
+                ensureIngredientRowKeys(parentIngredientsInput(parentVersion)),
+              );
             }}
           >
             Revert
@@ -641,25 +639,26 @@ export const RecipeForm = ({
           ]);
         }}
       />
-      {versionDiff?.instructionsChanged ? (
+      {versionDiff?.instructionsChanged && parentVersion ? (
         <div
           className="
             flex items-center justify-between rounded-lg bg-amber-50 px-3 py-2
             text-sm text-amber-900
           "
         >
-          <span>Instructions changed from parent version</span>
+          <span>
+            Instructions changed from parent version (
+            {formatParentListSummary(parentVersion, 'instructions')})
+          </span>
           <button
             type="button"
             className="font-medium underline"
             onClick={() => {
-              if (parentVersion) {
-                setInstructions(
-                  ensureInstructionRowKeys(
-                    parentInstructionsInput(parentVersion),
-                  ),
-                );
-              }
+              setInstructions(
+                ensureInstructionRowKeys(
+                  parentInstructionsInput(parentVersion),
+                ),
+              );
             }}
           >
             Revert

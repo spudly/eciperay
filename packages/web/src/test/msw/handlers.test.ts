@@ -28,6 +28,17 @@ describe('msw handlers', () => {
     );
     expect(tweaked.versionId).toBe('version-ai-1');
     expect(tweaked.changeSummary).toContain('make it spicier');
+    const approved = await eciperay.tweakAi.approvePlan(
+      'recipe-uuid-1',
+      'session-1',
+    );
+    expect(approved.session.phase).toBe('preview_ready');
+    expect(approved.preview.title).toBe('Updated Recipe');
+    const implemented = await eciperay.tweakAi.implement(
+      'recipe-uuid-1',
+      'session-1',
+    );
+    expect(implemented.preview.title).toBe('Updated Recipe');
   });
 
   test('covers lifecycle patch without an explicit status', async () => {

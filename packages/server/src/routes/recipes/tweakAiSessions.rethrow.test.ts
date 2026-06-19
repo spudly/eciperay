@@ -63,6 +63,40 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/implement unexpected er
           },
         ]),
       )
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          {
+            id: SESSION_ID,
+            recipe_id: 'recipe-uuid-1',
+            user_id: 'user-uuid-1',
+            phase: 'plan_approved',
+            messages: [],
+            approved_plan: PLAN_TEXT,
+            proposed_recipe: null,
+            parent_version_id: 'version-uuid-1',
+            change_summary: null,
+            created_at: '2024-01-01T00:00:00.000Z',
+            updated_at: '2024-01-01T00:00:00.000Z',
+          },
+        ]),
+      )
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          {
+            id: SESSION_ID,
+            recipe_id: 'recipe-uuid-1',
+            user_id: 'user-uuid-1',
+            phase: 'plan_approved',
+            messages: [],
+            approved_plan: PLAN_TEXT,
+            proposed_recipe: null,
+            parent_version_id: 'version-uuid-1',
+            change_summary: null,
+            created_at: '2024-01-01T00:00:00.000Z',
+            updated_at: '2024-01-01T00:00:00.000Z',
+          },
+        ]),
+      )
       .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([makeVersionDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([]));

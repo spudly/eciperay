@@ -115,4 +115,25 @@ describe('VersionPicker', () => {
     );
     expect(getByText(/v2/)).toBeTruthy();
   });
+
+  test('truncates long change summaries in the modal', () => {
+    const longSummary = 'B'.repeat(60);
+    const {getByLabelText, getByText} = renderWithProviders(
+      <VersionPicker
+        versions={[
+          makeRecipeVersionSummary(),
+          makeRecipeVersionSummary({
+            id: 'version-uuid-2',
+            versionNumber: 2,
+            derivedRole: 'draft',
+            changeSummary: longSummary,
+          }),
+        ]}
+        selectedVersionId="version-uuid-1"
+        onSelect={jest.fn()}
+      />,
+    );
+    fireEvent.press(getByLabelText('Select version'));
+    expect(getByText(/…/)).toBeTruthy();
+  });
 });

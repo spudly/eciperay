@@ -1,5 +1,5 @@
 import React from 'react';
-import {fireEvent, waitFor} from '@testing-library/react-native';
+import {fireEvent, waitFor, act} from '@testing-library/react-native';
 
 import {makeRecipeVersionSummary} from '../__tests__/fixtures/recipe';
 import {makeStackProps, renderWithProviders} from '../__tests__/testUtils';
@@ -14,7 +14,6 @@ jest.mock('../lib/api', () => ({
       start: jest.fn(),
       sendMessage: jest.fn(),
       approvePlan: jest.fn(),
-      implement: jest.fn(),
       createVersion: jest.fn(),
       cancel: jest.fn(),
     },
@@ -24,7 +23,6 @@ jest.mock('../lib/api', () => ({
 const mockStart = api.tweakAi.start as jest.Mock;
 const mockSendMessage = api.tweakAi.sendMessage as jest.Mock;
 const mockApprove = api.tweakAi.approvePlan as jest.Mock;
-const mockImplement = api.tweakAi.implement as jest.Mock;
 const mockCreateVersion = api.tweakAi.createVersion as jest.Mock;
 const mockCancel = api.tweakAi.cancel as jest.Mock;
 const mockNavigate = jest.fn();
@@ -34,6 +32,28 @@ const stackProps = makeStackProps<RecipesStackParamList, 'TweakAi'>(
   {recipeId: 'recipe-uuid-1'},
   {navigate: mockNavigate, goBack: mockGoBack},
 );
+
+const previewRecipe = {
+  title: 'Spicy Recipe',
+  description: 'Hot and tasty',
+  servings: 4,
+  prepTimeMin: 10,
+  cookTimeMin: 20,
+  ingredients: [
+    {
+      sortOrder: 0,
+      name: 'chili',
+      quantity: 2,
+      unit: 'tsp',
+      notes: null,
+      isOptional: false,
+    },
+  ],
+  instructions: [{stepNumber: 1, body: 'Add chili'}],
+  tagIds: [],
+  imageUrl: null,
+  sourceUrl: null,
+};
 
 const session = {
   id: 'session-1',
@@ -52,26 +72,17 @@ const session = {
 
 describe('TweakAiScreen', () => {
   beforeEach(() => {
+    jest.clearAllMocks();
     mockStart.mockResolvedValue({session, plan: 'Add more chili'});
     mockApprove.mockResolvedValue({
       session: {
         ...session,
-        phase: 'plan_approved',
-        approvedPlan: 'Add more chili',
-      },
-    });
-    mockImplement.mockResolvedValue({
-      session: {
-        ...session,
         phase: 'preview_ready',
-        proposedRecipe: {
-          title: 'Spicy Recipe',
-          ingredients: [],
-          instructions: [],
-        },
+        approvedPlan: 'Add more chili',
+        proposedRecipe: previewRecipe,
       },
       changeSummary: 'AI tweak',
-      preview: {title: 'Spicy Recipe', ingredients: [], instructions: []},
+      preview: previewRecipe,
     });
     mockCreateVersion.mockResolvedValue({
       versionId: 'version-draft-1',
@@ -80,7 +91,7 @@ describe('TweakAiScreen', () => {
     });
   });
 
-  test('runs conversational flow and navigates to recipe detail', async () => {
+  test('runs conversational flow and navigates to edit version', async () => {
     const {getByPlaceholderText, getByText} = renderWithProviders(
       <TweakAiScreen {...stackProps} />,
     );
@@ -88,7 +99,9 @@ describe('TweakAiScreen', () => {
       getByPlaceholderText(/make it vegetarian/i),
       'make it spicier',
     );
-    fireEvent.press(getByText('Start planning'));
+    await act(async () => {
+      fireEvent.press(getByText('Start planning'));
+    });
     await waitFor(() => {
       expect(mockStart).toHaveBeenCalledWith(
         'recipe-uuid-1',
@@ -96,17 +109,18 @@ describe('TweakAiScreen', () => {
       );
       expect(getByText('Approve plan')).toBeTruthy();
     });
-    fireEvent.press(getByText('Approve plan'));
-    await waitFor(() => {
-      expect(getByText('Generate preview')).toBeTruthy();
+    await act(async () => {
+      fireEvent.press(getByText('Approve plan'));
     });
-    fireEvent.press(getByText('Generate preview'));
     await waitFor(() => {
+      expect(getByText('1. Add chili')).toBeTruthy();
       expect(getByText('Save as draft')).toBeTruthy();
     });
-    fireEvent.press(getByText('Save as draft'));
+    await act(async () => {
+      fireEvent.press(getByText('Save as draft'));
+    });
     await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('RecipeDetail', {
+      expect(mockNavigate).toHaveBeenCalledWith('EditVersion', {
         recipeId: 'recipe-uuid-1',
         versionId: 'version-draft-1',
       });
@@ -180,8 +194,8 @@ describe('TweakAiScreen', () => {
   });
 
   test('shows errors for later session steps', async () => {
-    mockApprove.mockRejectedValue('nope');
-    const {getByPlaceholderText, getByText, findByText} = renderWithProviders(
+    mockApprove.mockRejectedValueOnce('nope');
+    const {getByPlaceholderText, getByText} = renderWithProviders(
       <TweakAiScreen {...stackProps} />,
     );
     fireEvent.changeText(
@@ -192,40 +206,35 @@ describe('TweakAiScreen', () => {
     await waitFor(() => {
       expect(getByText('Approve plan')).toBeTruthy();
     });
-    fireEvent.press(getByText('Approve plan'));
-    expect(await findByText('An unexpected error occurred')).toBeTruthy();
-
-    mockApprove.mockResolvedValue({
-      session: {...session, phase: 'plan_approved', approvedPlan: 'Add chili'},
+    await act(async () => {
+      fireEvent.press(getByText('Approve plan'));
     });
-    mockImplement.mockRejectedValue(new Error('Implementation failed'));
-    fireEvent.press(getByText('Approve plan'));
     await waitFor(() => {
-      expect(getByText('Generate preview')).toBeTruthy();
+      expect(getByText('An unexpected error occurred')).toBeTruthy();
     });
-    fireEvent.press(getByText('Generate preview'));
-    expect(await findByText('Implementation failed')).toBeTruthy();
 
-    mockImplement.mockResolvedValue({
+    mockApprove.mockResolvedValueOnce({
       session: {
         ...session,
         phase: 'preview_ready',
-        proposedRecipe: {
-          title: 'Spicy Recipe',
-          ingredients: [],
-          instructions: [],
-        },
+        proposedRecipe: previewRecipe,
       },
       changeSummary: 'AI tweak',
-      preview: {title: 'Spicy Recipe', ingredients: [], instructions: []},
+      preview: previewRecipe,
     });
-    mockCreateVersion.mockRejectedValue('nope');
-    fireEvent.press(getByText('Generate preview'));
+    mockCreateVersion.mockRejectedValueOnce('nope');
+    await act(async () => {
+      fireEvent.press(getByText('Approve plan'));
+    });
     await waitFor(() => {
       expect(getByText('Save as draft')).toBeTruthy();
     });
-    fireEvent.press(getByText('Save as draft'));
-    expect(await findByText('An unexpected error occurred')).toBeTruthy();
+    await act(async () => {
+      fireEvent.press(getByText('Save as draft'));
+    });
+    await waitFor(() => {
+      expect(getByText('An unexpected error occurred')).toBeTruthy();
+    });
   });
 
   test('shows generic message error', async () => {
@@ -249,37 +258,34 @@ describe('TweakAiScreen', () => {
     expect(await findByText('An unexpected error occurred')).toBeTruthy();
   });
 
-  test('shows preview fallbacks and generic implementation errors', async () => {
-    mockImplement.mockRejectedValueOnce('nope');
-    const {getByPlaceholderText, getByText, findByText} = renderWithProviders(
+  test('does not show preview when proposed recipe is invalid', async () => {
+    mockApprove.mockResolvedValueOnce({
+      session: {...session, phase: 'preview_ready', proposedRecipe: {}},
+      changeSummary: 'AI tweak',
+      preview: {
+        title: '',
+        servings: 0,
+        ingredients: [],
+        instructions: [],
+        tagIds: [],
+      },
+    });
+    const {getByPlaceholderText, getByText, queryByText} = renderWithProviders(
       <TweakAiScreen {...stackProps} />,
     );
     fireEvent.changeText(
       getByPlaceholderText(/make it vegetarian/i),
       'make it spicier',
     );
-    fireEvent.press(getByText('Start planning'));
+    await act(async () => {
+      fireEvent.press(getByText('Start planning'));
+    });
+    await act(async () => {
+      fireEvent.press(getByText('Approve plan'));
+    });
     await waitFor(() => {
-      expect(getByText('Approve plan')).toBeTruthy();
+      expect(queryByText('Draft preview')).toBeNull();
     });
-    fireEvent.press(getByText('Approve plan'));
-    await waitFor(() => {
-      expect(getByText('Generate preview')).toBeTruthy();
-    });
-    fireEvent.press(getByText('Generate preview'));
-    expect(await findByText('An unexpected error occurred')).toBeTruthy();
-
-    mockImplement.mockResolvedValueOnce({
-      session: {
-        ...session,
-        phase: 'preview_ready',
-        proposedRecipe: {ingredients: [], instructions: []},
-      },
-      changeSummary: 'AI tweak',
-      preview: {ingredients: [], instructions: []},
-    });
-    fireEvent.press(getByText('Generate preview'));
-    expect(await findByText('Updated recipe')).toBeTruthy();
   });
 
   test('renders empty phase label for completed sessions', async () => {
