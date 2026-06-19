@@ -142,8 +142,8 @@ export const TweakAiPage = () => {
     >
       <p
         className="
-        mb-1 text-xs font-semibold uppercase tracking-wide opacity-70
-      "
+          mb-1 text-xs font-semibold uppercase tracking-wide opacity-70
+        "
       >
         {message.role === 'user' ? 'You' : 'Plan'}
       </p>
