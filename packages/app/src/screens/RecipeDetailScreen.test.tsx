@@ -119,6 +119,9 @@ describe('RecipeDetailScreen', () => {
     const {findByText} = renderWithProviders(
       <RecipeDetailScreen {...draftProps} />,
     );
+    await waitFor(() => {
+      expect(mockGetVersion).toHaveBeenCalledWith('recipe-uuid-1', draftId);
+    });
     fireEvent.press(await findByText('Edit draft'));
     expect(mockNavigate).toHaveBeenCalledWith('EditVersion', {
       recipeId: 'recipe-uuid-1',

@@ -422,9 +422,9 @@ export const RecipeForm = ({
               <TouchableOpacity
                 accessibilityLabel="Generate description with AI"
                 className="
-                border-primary rounded-lg border bg-white px-3 py-1
-                disabled:opacity-50
-              "
+                  border-primary rounded-lg border bg-white px-3 py-1
+                  disabled:opacity-50
+                "
                 disabled={!title.trim() || descriptionGenerating}
                 onPress={() => {
                   void handleGenerateDescription();
