@@ -1,0 +1,106 @@
+name: Release
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: release-production
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: semantic-release
+    if: >-
+      github.event_name == 'workflow_dispatch' || (
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.head_repository.full_name == github.repository
+      )
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    outputs:
+      released: ${{ steps.semantic.outputs.new_release_published }}
+      version: ${{ steps.semantic.outputs.new_release_version }}
+      tag: ${{ steps.semantic.outputs.new_release_git_tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Setup Node.js and install dependencies
+        uses: ./.github/actions/ci-setup
+        with:
+          install-command: npm ci
+          skip-install-on-cache-hit: 'true'
+
+      - name: Release
+        id: semantic
+        uses: cycjimmy/semantic-release-action@v4
+        with:
+          extra_plugins: |
+            @semantic-release/exec
+            @semantic-release/git
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  resolve-deploy:
+    name: Resolve deploy targets
+    needs: release
+    if: needs.release.outputs.released == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      deploy_fly: ${{ steps.deploy.outputs.deploy_fly }}
+      deploy_android: ${{ steps.deploy.outputs.deploy_android }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.release.outputs.tag }}
+
+      - name: Setup Node.js and install dependencies
+        uses: ./.github/actions/ci-setup
+        with:
+          install-command: npm ci
+          skip-install-on-cache-hit: 'true'
+
+      - name: Resolve deploy targets
+        id: deploy
+        run: |
+          NEW_TAG='${{ needs.release.outputs.tag }}'
+          PREV_TAG=$(git tag -l 'v*' --sort=-v:refname | grep -v "^${NEW_TAG}$" | head -1 || true)
+          if [[ -z "${PREV_TAG}" ]]; then
+            npx tsx scripts/resolveDeployTargetsCli.ts --first-release "${NEW_TAG}"
+          else
+            npx tsx scripts/resolveDeployTargetsCli.ts "${PREV_TAG}" "${NEW_TAG}"
+          fi
+
+  deploy-fly:
+    name: Deploy Fly
+    needs: [release, resolve-deploy]
+    if: needs.resolve-deploy.outputs.deploy_fly == 'true'
+    uses: ./.github/workflows/fly-deploy.yml
+    with:
+      ref: ${{ needs.release.outputs.tag }}
+    secrets: inherit
+
+  deploy-android:
+    name: Deploy Android
+    needs: [release, resolve-deploy]
+    if: needs.resolve-deploy.outputs.deploy_android == 'true'
+    uses: ./.github/workflows/android-deploy.yml
+    with:
+      ref: ${{ needs.release.outputs.tag }}
+      version: ${{ needs.release.outputs.version }}
+      tag: ${{ needs.release.outputs.tag }}
+      play_track: build-only
+    secrets: inherit

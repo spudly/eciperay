@@ -1,11 +1,25 @@
 name: Android Deploy
 
 on:
-  # Automatic deploy after CI on master — uncomment when release signing is ready.
-  # workflow_run:
-  #   workflows: [CI]
-  #   types: [completed]
-  #   branches: [master]
+  workflow_call:
+    inputs:
+      ref:
+        description: Git ref to build
+        type: string
+        required: true
+      version:
+        description: App version from semantic-release
+        type: string
+        required: false
+      tag:
+        description: Git tag for the release
+        type: string
+        required: false
+      play_track:
+        description: Google Play track (build-only skips Play upload)
+        type: string
+        required: false
+        default: build-only
   workflow_dispatch:
     inputs:
       play_track:
@@ -25,30 +39,41 @@ on:
           - internalsharing
 
 concurrency:
-  group: android-deploy-${{ github.event.inputs.play_track || 'internal' }}
+  group:
+    android-deploy-${{ inputs.tag || github.event.inputs.play_track || 'manual'
+    }}
   cancel-in-progress: false
 
 jobs:
   deploy:
     name: Build Android release AAB
-    if: >-
-      github.event_name == 'workflow_dispatch' || (
-        github.event.workflow_run.conclusion == 'success' &&
-        github.event.workflow_run.head_repository.full_name == github.repository
-      )
     runs-on: ubuntu-latest
     environment: production
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          ref: ${{ inputs.ref || github.sha }}
 
       - name: Setup Node.js and install dependencies
         uses: ./.github/actions/ci-setup
         with:
           install-command: npm ci
           skip-install-on-cache-hit: 'true'
+
+      - name: Resolve app version
+        id: app_version
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          VERSION="${INPUT_VERSION}"
+          if [[ -z "${VERSION}" ]]; then
+            VERSION="$(node -p "require('./package.json').version")"
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "App version: ${VERSION}"
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -80,6 +105,7 @@ jobs:
 
       - name: Build release AAB
         working-directory: packages/app/android
+        # versionCode must increase on every Play upload; versionName comes from root package.json.
         run: ./gradlew bundleRelease -PVERSION_CODE=${{ github.run_number }}
         env:
           APP_ENV: production
@@ -96,16 +122,34 @@ jobs:
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
 
+      - name: Prepare release AAB filename
+        id: aab
+        run: |
+          SRC="packages/app/android/app/build/outputs/bundle/release/app-release.aab"
+          DEST="eciperay-${{ steps.app_version.outputs.version }}.aab"
+          cp "${SRC}" "${DEST}"
+          echo "path=${DEST}" >> "$GITHUB_OUTPUT"
+
       - name: Upload release AAB
         uses: actions/upload-artifact@v4
         with:
           name: eciperay-android-${{ github.run_number }}
-          path: packages/app/android/app/build/outputs/bundle/release/app-release.aab
+          path: ${{ steps.aab.outputs.path }}
           if-no-files-found: error
           retention-days: 30
 
+      - name: Upload AAB to GitHub Release
+        if: inputs.tag != ''
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag }}
+          files: ${{ steps.aab.outputs.path }}
+
       - name: Validate Google Play credentials
-        if: github.event.inputs.play_track != 'build-only'
+        if: >-
+          (inputs.play_track != '' && inputs.play_track != 'build-only') ||
+          (github.event_name == 'workflow_dispatch' &&
+          github.event.inputs.play_track != 'build-only')
         env:
           GOOGLE_PLAY_SERVICE_ACCOUNT_JSON:
             ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
@@ -116,12 +160,15 @@ jobs:
           fi
 
       - name: Upload to Google Play
-        if: github.event.inputs.play_track != 'build-only'
+        if: >-
+          (inputs.play_track != '' && inputs.play_track != 'build-only') ||
+          (github.event_name == 'workflow_dispatch' &&
+          github.event.inputs.play_track != 'build-only')
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText:
             ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: com.eciperay
-          releaseFiles: packages/app/android/app/build/outputs/bundle/release/app-release.aab
-          tracks: ${{ github.event.inputs.play_track }}
+          releaseFiles: ${{ steps.aab.outputs.path }}
+          tracks: ${{ inputs.play_track || github.event.inputs.play_track }}
           status: completed

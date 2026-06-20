@@ -1,10 +1,12 @@
 name: Deploy
 
 on:
-  workflow_run:
-    workflows: [CI]
-    types: [completed]
-    branches: [master]
+  workflow_call:
+    inputs:
+      ref:
+        description: Git ref to deploy
+        type: string
+        required: true
   workflow_dispatch:
 
 concurrency:
@@ -14,18 +16,13 @@ concurrency:
 jobs:
   deploy:
     name: Deploy to Fly.io
-    if: >-
-      github.event_name == 'workflow_dispatch' || (
-        github.event.workflow_run.conclusion == 'success' &&
-        github.event.workflow_run.head_repository.full_name == github.repository
-      )
     runs-on: ubuntu-latest
     environment: production
     steps:
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          ref: ${{ inputs.ref || github.sha }}
 
       - name: Setup Flyctl
         uses: superfly/flyctl-actions/setup-flyctl@master
@@ -52,4 +49,4 @@ jobs:
           POSTHOG_API_KEY: ${{ secrets.POSTHOG_API_KEY }}
           POSTHOG_PROJECT_ID: ${{ secrets.POSTHOG_PROJECT_ID }}
           POSTHOG_HOST: ${{ secrets.VITE_POSTHOG_HOST }}
-          GITHUB_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+          GITHUB_SHA: ${{ inputs.ref || github.sha }}
