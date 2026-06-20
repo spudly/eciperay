@@ -36,6 +36,7 @@ export const RecipeDetailTabPanel = ({
     return (
       <OverviewTab
         recipe={displayRecipe}
+        activeVersionId={recipe.versionId}
         servings={currentServings}
         versions={versions}
       />

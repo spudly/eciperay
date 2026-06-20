@@ -1,8 +1,14 @@
-import {useAnalytics} from '@eciperay/client';
+import {invalidateRecipeQueries, useAnalytics} from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import React, {useState} from 'react';
-import {Text, TextInput, TouchableOpacity, View} from 'react-native';
+import {useQueryClient} from '@tanstack/react-query';
+import React from 'react';
+import type {CreateAiRecipeResult, TweakAiPhase} from '@eciperay/types';
 
+import {
+  AiSessionFlow,
+  type AiSessionFlowApi,
+  type AiSessionState,
+} from '../components/ai/AiSessionFlow';
 import {api} from '../lib/api';
 import type {AddStackParamList} from '../navigation/types';
 
@@ -11,70 +17,80 @@ type Props = NativeStackScreenProps<AddStackParamList, 'GenerateAi'>;
 const PROMPT_PLACEHOLDER =
   'e.g. quick weeknight vegetarian pasta for 4, under 30 minutes';
 
+const phaseLabel = (phase: TweakAiPhase) => {
+  switch (phase) {
+    case 'planning': {
+      return 'Review the plan and refine it, or approve to build a preview.';
+    }
+    case 'preview_ready': {
+      return 'Preview ready — save the recipe or go back to refine the plan.';
+    }
+    default: {
+      return '';
+    }
+  }
+};
+
+const mapSession = (session: {
+  id: string;
+  phase: TweakAiPhase;
+  messages: AiSessionState['messages'];
+  proposedRecipe: Record<string, unknown> | null;
+}): AiSessionState => ({
+  id: session.id,
+  phase: session.phase,
+  messages: session.messages,
+  proposedRecipe: session.proposedRecipe,
+});
+
 export const GenerateAiScreen = ({navigation}: Props) => {
-  const [prompt, setPrompt] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
   const analytics = useAnalytics();
 
-  const handleGenerate = async () => {
-    const trimmed = prompt.trim();
-    /* istanbul ignore next -- generate button disabled when prompt is empty */
-    if (trimmed.length === 0) {
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    try {
-      const recipe = await api.import.importAi(trimmed);
-      analytics.track('recipe_imported', {
-        recipe_id: recipe.recipeId,
-        source: 'ai',
-      });
-      navigation.navigate('ImportReview', {recipeId: recipe.recipeId});
-    } catch (error_) {
-      setError(
-        error_ instanceof Error ? error_.message : 'Recipe generation failed',
-      );
-    } finally {
-      setLoading(false);
-    }
+  const flowApi: AiSessionFlowApi = {
+    start: async prompt => {
+      const result = await api.createAi.start(prompt);
+      return {session: mapSession(result.session)};
+    },
+    sendMessage: async (sessionId, content) => {
+      const result = await api.createAi.sendMessage(sessionId, content);
+      return {session: mapSession(result.session)};
+    },
+    approvePlan: async sessionId => {
+      const result = await api.createAi.approvePlan(sessionId);
+      return {session: mapSession(result.session)};
+    },
+    finalize: sessionId => api.createAi.createRecipe(sessionId),
+    cancel: sessionId => api.createAi.cancel(sessionId),
   };
 
   return (
-    <View className="flex-1 bg-gray-50 px-4 pt-4">
-      <Text className="mb-2 text-2xl font-bold text-gray-900">
-        Generate with AI
-      </Text>
-      <Text className="text-muted mb-4 text-sm">
-        Describe the recipe you want and AI will draft it for you to review.
-        Generation may take several seconds.
-      </Text>
-      <TextInput
-        className="mb-4 min-h-48 rounded-lg border border-gray-300 px-4 py-3"
-        placeholder={PROMPT_PLACEHOLDER}
-        value={prompt}
-        onChangeText={setPrompt}
-        multiline
-        textAlignVertical="top"
-      />
-      {error ? (
-        <Text className="mb-4 text-sm text-red-600">{error}</Text>
-      ) : null}
-      <TouchableOpacity
-        className="
-          bg-primary items-center rounded-lg py-3
-          disabled:opacity-50
-        "
-        disabled={loading || prompt.trim().length === 0}
-        onPress={() => {
-          void handleGenerate();
-        }}
-      >
-        <Text className="font-semibold text-white">
-          {loading ? 'Generating…' : 'Generate recipe'}
-        </Text>
-      </TouchableOpacity>
-    </View>
+    <AiSessionFlow
+      config={{
+        title: 'Generate with AI',
+        intro:
+          'Describe the recipe you want. AI will propose a plan for you to review before creating the recipe.',
+        promptPlaceholder: PROMPT_PLACEHOLDER,
+        startLabel: 'Start planning',
+        startPendingLabel: 'Planning…',
+        previewTitle: 'Recipe preview',
+        finalizeLabel: 'Save recipe',
+        finalizePendingLabel: 'Saving…',
+        phaseLabel,
+      }}
+      api={flowApi}
+      onEmptyCancel={() => {
+        navigation.goBack();
+      }}
+      onCancelSuccess={() => {
+        navigation.goBack();
+      }}
+      onFinalizeSuccess={async result => {
+        const {recipeId, versionId} = result as CreateAiRecipeResult;
+        analytics.track('recipe_imported', {recipe_id: recipeId, source: 'ai'});
+        await invalidateRecipeQueries(queryClient, recipeId, versionId);
+        navigation.navigate('ImportReview', {recipeId});
+      }}
+    />
   );
 };

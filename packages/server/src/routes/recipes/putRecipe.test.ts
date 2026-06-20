@@ -12,7 +12,7 @@ const mockQuery = createMockQuery();
 const app = createApp({query: mockQuery});
 
 describe('PUT /recipes/:id', () => {
-  test('returns 409 when active version is immutable', async () => {
+  test('returns 409 when content-locked version ingredient list changes', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
@@ -21,10 +21,26 @@ describe('PUT /recipes/:id', () => {
     const res = await request(app)
       .put('/api/recipes/recipe-uuid-1')
       .set('Authorization', 'Bearer valid-token')
-      .send(makeRecipeInput({title: 'Updated Title'}));
+      .send(
+        makeRecipeInput({
+          title: 'Updated Title',
+          ingredients: [
+            {
+              sortOrder: 0,
+              name: 'Changed',
+              quantity: 1,
+              unit: 'cup',
+              notes: null,
+              isOptional: false,
+            },
+          ],
+        }),
+      );
 
     expect(res.status).toBe(409);
-    expect(res.body.error).toBe('This version can no longer be edited');
+    expect(res.body.error).toBe(
+      'Ingredients and instructions are locked on this version',
+    );
   });
 
   test('returns 404 when recipe is not found', async () => {
@@ -50,16 +66,18 @@ describe('PUT /recipes/:id', () => {
     expect(res.body.error).toBe('Recipe not found');
   });
 
-  test('returns 404 when save throws RecipeNotFoundError', async () => {
+  test('returns 404 when metadata save update affects no rows', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
-      .mockResolvedValueOnce(makeQueryResult([makeVersionDetailRow()]));
+      .mockResolvedValueOnce(makeQueryResult([makeVersionDetailRow()]))
+      .mockResolvedValueOnce(makeQueryResult([]));
     const res = await request(app)
       .put('/api/recipes/recipe-uuid-1')
       .set('Authorization', 'Bearer valid-token')
       .send(makeRecipeInput());
-    expect(res.status).toBe(409);
+    expect(res.status).toBe(404);
+    expect(res.body.error).toBe('Recipe not found');
   });
 
   test('returns 400 when body is invalid', async () => {
@@ -71,11 +89,33 @@ describe('PUT /recipes/:id', () => {
     expect(res.status).toBe(400);
   });
 
-  test('propagates unexpected errors', async () => {
+  test('propagates unexpected errors from metadata save', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
-      .mockResolvedValueOnce(makeQueryResult([makeVersionDetailRow()]));
+      .mockResolvedValueOnce(makeQueryResult([makeVersionDetailRow()]))
+      .mockRejectedValueOnce(new Error('db down'));
+    const res = await request(app)
+      .put('/api/recipes/recipe-uuid-1')
+      .set('Authorization', 'Bearer valid-token')
+      .send(makeRecipeInput());
+    expect(res.status).toBe(500);
+  });
+
+  test('returns 409 when recipe lifecycle is perfected', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockQuery
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          makeRecipeDetailRow({
+            lifecycleStatus: 'perfected',
+            status: 'perfected',
+          }),
+        ]),
+      )
+      .mockResolvedValueOnce(
+        makeQueryResult([makeVersionDetailRow({status: 'perfected'})]),
+      );
     const res = await request(app)
       .put('/api/recipes/recipe-uuid-1')
       .set('Authorization', 'Bearer valid-token')

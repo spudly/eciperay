@@ -23,11 +23,6 @@ export const createImportApi = (client: ApiClient) => ({
       method: 'POST',
       body: JSON.stringify({text}),
     }),
-  importAi: (prompt: string) =>
-    client.fetch<RecipeDetail & CreateRecipeResult>('/recipes/import/ai', {
-      method: 'POST',
-      body: JSON.stringify({prompt}),
-    }),
   importBulk: (
     bundle: RecipeExportBundle | Pick<RecipeExportBundle, 'recipes'>,
   ) =>

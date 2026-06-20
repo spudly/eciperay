@@ -45,6 +45,7 @@ export const EditRecipeScreen = ({route, navigation}: Props) => {
       <RecipeForm
         initial={recipeDetailToInput(recipe)}
         recipeId={recipeId}
+        contentLocked
         submitLabel="Save Changes"
         onSubmit={handleSubmit}
       />

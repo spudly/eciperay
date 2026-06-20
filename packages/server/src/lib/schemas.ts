@@ -55,6 +55,17 @@ export const RecipeInputSchema = z.object({
   tagIds: z.array(z.uuid()),
 });
 
+export const RecipeMetadataInputSchema = z.object({
+  title: z.string().min(1),
+  description: z.string().nullish(),
+  servings: z.number().int().positive(),
+  prepTimeMin: z.number().int().nonnegative().nullish(),
+  cookTimeMin: z.number().int().nonnegative().nullish(),
+  imageUrl: z.url().nullish(),
+  sourceUrl: z.url().nullish(),
+  tagIds: z.array(z.uuid()),
+});
+
 export const RecipeVersionInputSchema = z.object({
   title: z.string().min(1),
   description: z.string().nullish(),

@@ -29,16 +29,19 @@ const onStartCooking = jest.fn();
 const onDelete = jest.fn();
 const onTweakAi = jest.fn();
 const onViewVersion = jest.fn();
+const onEditRecipe = jest.fn();
 const onEditVersion = jest.fn();
 
 const defaultProps = () => ({
   recipe: makeRecipeDetail({title: 'Test Cake', description: 'Yummy cake'}),
+  activeVersionId: makeRecipeDetail().versionId,
   servings: 4,
   versions: [makeRecipeVersionSummary()],
   onStartCooking,
   onDelete,
   onTweakAi,
   onViewVersion,
+  onEditRecipe,
   onEditVersion,
 });
 
@@ -91,6 +94,14 @@ describe('OverviewTab', () => {
     fireEvent.press(getByText('Tweak with AI'));
     expect(onDelete).toHaveBeenCalled();
     expect(onTweakAi).toHaveBeenCalled();
+  });
+
+  test('shows edit for content-locked active versions', () => {
+    const {getByText} = renderWithProviders(
+      <OverviewTab {...defaultProps()} />,
+    );
+    fireEvent.press(getByText('Edit'));
+    expect(onEditRecipe).toHaveBeenCalled();
   });
 
   test('shows edit draft for editable draft versions', () => {

@@ -13,6 +13,7 @@ export type TweakWithAiResult = {
   version: RecipeVersionDetail;
 };
 
+/* eslint-disable max-lines-per-function -- API method map */
 export const createVersionsApi = (client: ApiClient) => ({
   list: (recipeId: string) =>
     client.fetch<RecipeVersionSummary[]>(`/recipes/${recipeId}/versions`),
@@ -39,4 +40,9 @@ export const createVersionsApi = (client: ApiClient) => ({
       method: 'POST',
       body: JSON.stringify({prompt}),
     }),
+  startImportEdits: (recipeId: string) =>
+    client.fetch<RecipeVersionDetail>(
+      `/recipes/${recipeId}/import/start-edits`,
+      {method: 'POST'},
+    ),
 });

@@ -17,7 +17,10 @@ class RecipeNotFoundError extends Error {
 
 jest.unstable_mockModule('../../lib/isVersionEditable.js', () => ({
   isVersionEditable: () => true,
+  isVersionContentLocked: () => false,
   versionEditBlockedError: () => 'This version can no longer be edited',
+  versionContentLockedError: () =>
+    'Ingredients and instructions are locked on this version',
 }));
 
 jest.unstable_mockModule('../../lib/saveRecipeFromInput.js', () => ({

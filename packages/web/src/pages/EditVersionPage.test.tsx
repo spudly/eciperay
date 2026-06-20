@@ -84,6 +84,35 @@ describe('EditVersionPage', () => {
     expect(screen.queryByText('Manual tweak')).not.toBeInTheDocument();
   });
 
+  test('shows import review banner for import review drafts', async () => {
+    server.use(
+      http.get(
+        'http://localhost:8080/api/recipes/:id/versions/:versionId',
+        ({params}) => {
+          if (params['versionId'] === 'version-draft-1') {
+            return HttpResponse.json(
+              makeRecipeVersionDetail({
+                id: 'version-draft-1',
+                derivedFromVersionId: 'version-uuid-1',
+                derivedRole: 'draft',
+                isEditable: true,
+                versionNumber: 2,
+                createdVia: 'import_review',
+              }),
+            );
+          }
+          return HttpResponse.json(
+            makeRecipeVersionDetail({id: 'version-uuid-1', versionNumber: 1}),
+          );
+        },
+      ),
+    );
+    await renderEditVersion();
+    expect(
+      await screen.findByText(/Editing draft \(v2\) based on imported v1/),
+    ).toBeInTheDocument();
+  });
+
   test('loads parent version for diff UI when editing a derived draft', async () => {
     server.use(
       http.get(

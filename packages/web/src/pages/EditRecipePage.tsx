@@ -39,6 +39,7 @@ export const EditRecipePage = () => {
       <RecipeForm
         initial={recipeDetailToInput(recipe)}
         recipeId={recipeId}
+        contentLocked
         submitLabel="Save Changes"
         onSubmit={handleSubmit}
       />

@@ -144,6 +144,9 @@ export const RecipeDetailScreen = ({route, navigation}: DetailProps) => {
           onViewVersion={versionId => {
             setSelectedVersionId(versionId);
           }}
+          onEditRecipe={() => {
+            navigation.navigate('EditRecipe', {recipeId: recipe.id});
+          }}
           onEditVersion={versionId => {
             navigation.navigate('EditVersion', {
               recipeId: recipe.id,

@@ -14,8 +14,17 @@ describe('msw handlers', () => {
       'perfected',
     );
     expect(perfected.lifecycleStatus).toBe('perfected');
-    const imported = await eciperay.import.importAi('quick pasta');
-    expect(imported.recipeId).toBeTruthy();
+    const started = await eciperay.createAi.start('quick pasta');
+    expect(started.session.id).toBeTruthy();
+    const createApproved =
+      await eciperay.createAi.approvePlan('create-session-1');
+    expect(createApproved.session.phase).toBe('preview_ready');
+    const created = await eciperay.createAi.createRecipe('create-session-1');
+    expect(created.recipeId).toBeTruthy();
+    const accepted = await eciperay.recipes.acceptImport('recipe-uuid-1');
+    expect(accepted.lifecycleStatus).toBe('evolving');
+    const draft = await eciperay.versions.startImportEdits('recipe-uuid-1');
+    expect(draft.versionNumber).toBe(2);
     const cookLog = await eciperay.cookLogs.create(
       'recipe-uuid-1',
       'version-uuid-1',
@@ -28,12 +37,12 @@ describe('msw handlers', () => {
     );
     expect(tweaked.versionId).toBe('version-ai-1');
     expect(tweaked.changeSummary).toContain('make it spicier');
-    const approved = await eciperay.tweakAi.approvePlan(
+    const tweakApproved = await eciperay.tweakAi.approvePlan(
       'recipe-uuid-1',
       'session-1',
     );
-    expect(approved.session.phase).toBe('preview_ready');
-    expect(approved.preview.title).toBe('Updated Recipe');
+    expect(tweakApproved.session.phase).toBe('preview_ready');
+    expect(tweakApproved.preview.title).toBe('Updated Recipe');
     const implemented = await eciperay.tweakAi.implement(
       'recipe-uuid-1',
       'session-1',

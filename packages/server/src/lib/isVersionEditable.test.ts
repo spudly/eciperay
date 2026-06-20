@@ -1,4 +1,7 @@
-import {isVersionEditable} from './isVersionEditable.js';
+import {
+  isVersionContentLocked,
+  isVersionEditable,
+} from './isVersionEditable.js';
 
 const draftVersion = {
   derivedRole: 'draft' as const,
@@ -15,6 +18,16 @@ describe('isVersionEditable', () => {
     expect(
       isVersionEditable({...draftVersion, derivedRole: 'active'}, 'evolving'),
     ).toBe(false);
+  });
+
+  test('marks non-draft versions as content locked', () => {
+    expect(
+      isVersionContentLocked(
+        {...draftVersion, derivedRole: 'active'},
+        'evolving',
+      ),
+    ).toBe(true);
+    expect(isVersionContentLocked(draftVersion, 'evolving')).toBe(false);
   });
 
   test('blocks versions with cook logs or children', () => {

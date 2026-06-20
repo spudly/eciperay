@@ -26,6 +26,7 @@ const renderOverview = (recipe = makeRecipeDetail()) =>
         element={
           <OverviewTab
             recipe={recipe}
+            activeVersionId={recipe.versionId}
             servings={4}
             versions={[makeRecipeVersionSummary()]}
           />
@@ -122,6 +123,31 @@ describe('OverviewTab', () => {
     expect(screen.queryByText('Edit draft')).not.toBeInTheDocument();
   });
 
+  test('shows edit for content-locked active versions', async () => {
+    await renderWithProviders(
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <OverviewTab
+              recipe={makeRecipeDetail()}
+              activeVersionId={makeRecipeDetail().versionId}
+              servings={4}
+              versions={[makeRecipeVersionSummary()]}
+            />
+          }
+        />
+        <Route
+          path="/recipes/:recipeId/edit"
+          element={<div>Edit recipe page</div>}
+        />
+      </Routes>,
+      {route: '/'},
+    );
+    await userEvent.click(screen.getByText('Edit'));
+    expect(await screen.findByText('Edit recipe page')).toBeInTheDocument();
+  });
+
   test('shows edit draft for editable draft versions', async () => {
     await renderWithProviders(
       <Routes>
@@ -130,6 +156,7 @@ describe('OverviewTab', () => {
           element={
             <OverviewTab
               recipe={makeRecipeDetail({versionId: 'draft-1'})}
+              activeVersionId={makeRecipeDetail().versionId}
               servings={4}
               versions={[
                 makeRecipeVersionSummary({

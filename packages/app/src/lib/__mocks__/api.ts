@@ -6,12 +6,15 @@ export const api = {
     put: jest.fn(),
     patchLifecycle: jest.fn(),
     delete: jest.fn(),
+    acceptImport: jest.fn(),
   },
-  import: {
-    importUrl: jest.fn(),
-    importImage: jest.fn(),
-    importText: jest.fn(),
-    importAi: jest.fn(),
+  import: {importUrl: jest.fn(), importImage: jest.fn(), importText: jest.fn()},
+  createAi: {
+    start: jest.fn(),
+    sendMessage: jest.fn(),
+    approvePlan: jest.fn(),
+    createRecipe: jest.fn(),
+    cancel: jest.fn(),
   },
   auth: {syncUser: jest.fn()},
   tags: {list: jest.fn(), create: jest.fn(), delete: jest.fn()},
@@ -28,6 +31,7 @@ export const api = {
     put: jest.fn(),
     activate: jest.fn(),
     tweakWithAi: jest.fn(),
+    startImportEdits: jest.fn(),
   },
   cookLogs: {list: jest.fn(), create: jest.fn()},
 };

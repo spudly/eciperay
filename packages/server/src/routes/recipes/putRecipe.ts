@@ -2,17 +2,28 @@ import type {Response} from 'express';
 
 import {query as defaultQuery} from '../../db/query.js';
 import type {AuthedRequest} from '../../middleware/requireAuth.js';
+import {
+  isRecipeEditable,
+  recipeEditBlockedError,
+} from '../../lib/assertRecipeEditable.js';
 import {fetchVersionDetail} from '../../lib/fetchVersionDetail.js';
 import {getParam} from '../../lib/getParam.js';
 import {
+  isVersionContentLocked,
   isVersionEditable,
-  versionEditBlockedError,
+  versionContentLockedError,
 } from '../../lib/isVersionEditable.js';
+import {recipeContentUnchanged} from '../../lib/recipeContentEquals.js';
 import {
   RecipeNotFoundError,
   saveRecipeFromInput,
 } from '../../lib/saveRecipeFromInput.js';
-import {RecipeInputSchema, validate} from '../../lib/schemas.js';
+import {saveRecipeMetadata} from '../../lib/saveRecipeMetadata.js';
+import {
+  RecipeInputSchema,
+  RecipeMetadataInputSchema,
+  validate,
+} from '../../lib/schemas.js';
 
 import {GET_RECIPE_DETAIL_SQL} from './queries.js';
 
@@ -45,10 +56,47 @@ export const putRecipe = async (
     res.status(404).json({error: 'Recipe not found'});
     return;
   }
-  if (!isVersionEditable(activeVersion, activeVersion.lifecycleStatus)) {
-    res.status(409).json({error: versionEditBlockedError()});
+  if (!isRecipeEditable(activeVersion.lifecycleStatus)) {
+    res.status(409).json({error: recipeEditBlockedError()});
     return;
   }
+
+  const contentLocked = isVersionContentLocked(
+    activeVersion,
+    activeVersion.lifecycleStatus,
+  );
+
+  if (contentLocked) {
+    if (!recipeContentUnchanged(activeVersion, body.data)) {
+      res.status(409).json({error: versionContentLockedError()});
+      return;
+    }
+    const metadata = RecipeMetadataInputSchema.safeParse(body.data);
+    if (!metadata.success) {
+      res.status(400).json({error: metadata.error.message});
+      return;
+    }
+    try {
+      const detail = await saveRecipeMetadata(
+        {userId: req.userId, recipeId, versionId, input: metadata.data},
+        queryFn,
+      );
+      res.json(detail);
+    } catch (error) {
+      if (error instanceof RecipeNotFoundError) {
+        res.status(404).json({error: 'Recipe not found'});
+        return;
+      }
+      throw error;
+    }
+    return;
+  }
+
+  if (!isVersionEditable(activeVersion, activeVersion.lifecycleStatus)) {
+    res.status(409).json({error: versionContentLockedError()});
+    return;
+  }
+
   try {
     const detail = await saveRecipeFromInput(
       {userId: req.userId, input: body.data, recipeId, versionId},

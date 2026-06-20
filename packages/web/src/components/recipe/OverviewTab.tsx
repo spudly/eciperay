@@ -1,3 +1,8 @@
+/* eslint-disable max-lines -- recipe overview with primary actions and lifecycle controls */
+import {
+  canEditActiveRecipeMetadata,
+  canEditDraftVersion,
+} from '@eciperay/client';
 import type {RecipeDetail, RecipeVersionSummary} from '@eciperay/types';
 import {useState} from 'react';
 import {Link} from 'react-router-dom';
@@ -9,6 +14,7 @@ import {OverviewActions} from './OverviewActions.js';
 
 type Props = {
   recipe: RecipeDetail;
+  activeVersionId: string;
   servings: number;
   versions: RecipeVersionSummary[];
 };
@@ -20,11 +26,21 @@ const StatBadge = ({label, value}: {label: string; value: string}) => (
   </div>
 );
 
-export const OverviewTab = ({recipe, servings, versions}: Props) => {
+export const OverviewTab = ({
+  recipe,
+  activeVersionId,
+  servings,
+  versions,
+}: Props) => {
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
-  const viewingVersion = versions.find(v => v.id === recipe.versionId);
-  const canEditDraft = viewingVersion?.isEditable ?? false;
+  const canEditDraft = canEditDraftVersion(recipe.versionId, versions);
+  const canEditMetadata = canEditActiveRecipeMetadata(
+    recipe.lifecycleStatus,
+    recipe.versionId,
+    activeVersionId,
+    versions,
+  );
 
   const showActionMessage = (message: string) => {
     setActionMessage(message);
@@ -107,6 +123,16 @@ export const OverviewTab = ({recipe, servings, versions}: Props) => {
         >
           ↗
         </button>
+        {canEditMetadata ? (
+          <Link
+            to={`/recipes/${recipe.id}/edit`}
+            className="
+              rounded-xl bg-gray-100 px-4 py-3 text-sm font-medium text-gray-700
+            "
+          >
+            Edit
+          </Link>
+        ) : null}
         {canEditDraft ? (
           <Link
             to={`/recipes/${recipe.id}/versions/${recipe.versionId}/edit`}
