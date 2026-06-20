@@ -3,8 +3,35 @@ apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
 apply plugin: "com.posthog.android"
 
+import com.posthog.android.PostHogCliExecTask
+
 // PostHog JS source map upload (must be above the `android` block).
 apply from: new File(["node", "--print", "require('path').join(require('path').dirname(require.resolve('posthog-react-native')), '..', 'tooling', 'posthog.gradle')"].execute().text.trim())
+
+def resolvePostHogCliExecutable = { File rootDir ->
+    try {
+        def pkgJson = new File(["node", "--print", "require.resolve('@posthog/cli/package.json')"].execute(null, rootDir).text.trim())
+        def runner = new File(pkgJson.getParentFile(), "run-posthog-cli.js")
+        if (runner.exists()) {
+            return runner.absolutePath
+        }
+    } catch (Throwable ignored) {
+        // fall through to .bin / global posthog-cli
+    }
+
+    def bin = new File(rootDir, "node_modules/.bin/posthog-cli")
+    if (bin.exists()) {
+        return bin.absolutePath
+    }
+
+    return "posthog-cli"
+}
+
+def monorepoRoot = file("../../../../")
+
+tasks.withType(PostHogCliExecTask).configureEach {
+    postHogExecutable.set(resolvePostHogCliExecutable(monorepoRoot))
+}
 
 /**
  * This is the configuration block to customize your React Native Android app.
