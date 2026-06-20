@@ -97,6 +97,47 @@ describe('EditVersionScreen', () => {
     expect(mockGet).toHaveBeenCalledWith('recipe-uuid-1', 'parent-1');
   });
 
+  test('shows import review banner for import review drafts', async () => {
+    mockGet.mockImplementation((_recipeId: string, id: string) => {
+      if (id === 'parent-1') {
+        return Promise.resolve(
+          makeRecipeVersionDetail({id: 'parent-1', versionNumber: 1}),
+        );
+      }
+      return Promise.resolve(
+        makeRecipeVersionDetail({
+          derivedRole: 'draft',
+          isEditable: true,
+          derivedFromVersionId: 'parent-1',
+          versionNumber: 2,
+          createdVia: 'import_review',
+        }),
+      );
+    });
+    const {findByText} = renderWithProviders(
+      <EditVersionScreen {...stackProps} />,
+    );
+    expect(
+      await findByText(/Editing draft \(v2\) based on imported v1/),
+    ).toBeTruthy();
+  });
+
+  test('hides import review banner when parent version is unavailable', async () => {
+    mockGet.mockResolvedValue(
+      makeRecipeVersionDetail({
+        derivedRole: 'draft',
+        isEditable: true,
+        createdVia: 'import_review',
+        derivedFromVersionId: null,
+      }),
+    );
+    const {findByText, queryByText} = renderWithProviders(
+      <EditVersionScreen {...stackProps} />,
+    );
+    expect(await findByText('Edit Draft (v1)')).toBeTruthy();
+    expect(queryByText(/based on imported/)).toBeNull();
+  });
+
   test('shows error for non-editable version', async () => {
     mockGet.mockResolvedValue(
       makeRecipeVersionDetail({derivedRole: 'active', isEditable: false}),

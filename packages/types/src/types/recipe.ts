@@ -43,4 +43,15 @@ export type RecipeInput = {
   tagIds: string[];
 };
 
+export type RecipeMetadataInput = {
+  title: string;
+  description?: string | null;
+  servings: number;
+  prepTimeMin?: number | null;
+  cookTimeMin?: number | null;
+  imageUrl?: string | null;
+  sourceUrl?: string | null;
+  tagIds: string[];
+};
+
 export type CreateRecipeResult = {recipeId: string; versionId: string};

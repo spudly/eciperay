@@ -70,6 +70,16 @@ export const EditVersionScreen = ({route, navigation}: Props) => {
       <Text className="mb-2 text-2xl font-bold text-gray-900">
         Edit Draft (v{version.versionNumber})
       </Text>
+      {version.createdVia === 'import_review' && parentVersion ? (
+        <Text
+          className="
+          mb-4 rounded-lg bg-indigo-50 px-4 py-3 text-sm text-indigo-950
+        "
+        >
+          Editing draft (v{version.versionNumber}) based on imported v
+          {parentVersion.versionNumber}.
+        </Text>
+      ) : null}
       {version.changeSummary ? (
         <Text className="text-muted mb-6 text-sm">{version.changeSummary}</Text>
       ) : null}

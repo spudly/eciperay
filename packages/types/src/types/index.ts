@@ -6,6 +6,7 @@ export type {
   Recipe,
   RecipeDetail,
   RecipeInput,
+  RecipeMetadataInput,
 } from './recipe.js';
 export type {
   DerivedVersionRole,
@@ -24,6 +25,12 @@ export type {
   TweakAiPhase,
   TweakAiSession,
 } from './tweakAiSession.js';
+export type {
+  CreateAiImplementResult,
+  CreateAiRecipeResult,
+  CreateAiSession,
+  CreateAiSessionStartResult,
+} from './createAiSession.js';
 export type {NutritionInfo} from './nutrition.js';
 export type {RecipeImport} from './recipeImport.js';
 export type {

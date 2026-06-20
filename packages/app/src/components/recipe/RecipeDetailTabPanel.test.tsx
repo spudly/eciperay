@@ -26,6 +26,7 @@ describe('RecipeDetailTabPanel', () => {
         onDelete={jest.fn()}
         onTweakAi={jest.fn()}
         onViewVersion={jest.fn()}
+        onEditRecipe={jest.fn()}
         onEditVersion={jest.fn()}
       />,
     );

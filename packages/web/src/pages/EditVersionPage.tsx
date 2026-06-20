@@ -61,6 +61,16 @@ export const EditVersionPage = () => {
       <h1 className="mb-2 text-2xl font-bold text-gray-900">
         Edit Draft (v{version.versionNumber})
       </h1>
+      {version.createdVia === 'import_review' && parentVersion ? (
+        <p
+          className="
+          mb-4 rounded-lg bg-indigo-50 px-4 py-3 text-sm text-indigo-950
+        "
+        >
+          Editing draft (v{version.versionNumber}) based on imported v
+          {parentVersion.versionNumber}.
+        </p>
+      ) : null}
       {version.changeSummary ? (
         <p className="text-muted mb-6 text-sm">{version.changeSummary}</p>
       ) : null}

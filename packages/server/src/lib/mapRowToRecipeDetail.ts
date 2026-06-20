@@ -7,7 +7,10 @@ import type {
 } from '@eciperay/types';
 
 import {deriveVersionRole} from './deriveVersionRole.js';
-import {isVersionEditable} from './isVersionEditable.js';
+import {
+  isVersionContentLocked,
+  isVersionEditable,
+} from './isVersionEditable.js';
 
 type RecipeDetailRow = {
   id: string;
@@ -152,6 +155,14 @@ export const mapRowToVersionSummary = (
     cookLogCount: row.cook_log_count,
     childVersionCount: row.child_version_count,
     isEditable: isVersionEditable(
+      {
+        derivedRole,
+        cookLogCount: row.cook_log_count,
+        childVersionCount: row.child_version_count,
+      },
+      row.status,
+    ),
+    isContentLocked: isVersionContentLocked(
       {
         derivedRole,
         cookLogCount: row.cook_log_count,

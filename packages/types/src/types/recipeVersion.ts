@@ -18,7 +18,8 @@ export type VersionCreatedVia =
   | 'import_text'
   | 'import_bulk'
   | 'tweak_ai'
-  | 'tweak_manual';
+  | 'tweak_manual'
+  | 'import_review';
 
 export type RecipeVersionSummary = {
   id: string;
@@ -29,6 +30,7 @@ export type RecipeVersionSummary = {
   cookLogCount: number;
   childVersionCount: number;
   isEditable: boolean;
+  isContentLocked: boolean;
   createdVia: VersionCreatedVia;
   changeSummary: string | null;
   createdAt: string;
