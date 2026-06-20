@@ -64,8 +64,8 @@ export const EditVersionPage = () => {
       {version.createdVia === 'import_review' && parentVersion ? (
         <p
           className="
-          mb-4 rounded-lg bg-indigo-50 px-4 py-3 text-sm text-indigo-950
-        "
+            mb-4 rounded-lg bg-indigo-50 px-4 py-3 text-sm text-indigo-950
+          "
         >
           Editing draft (v{version.versionNumber}) based on imported v
           {parentVersion.versionNumber}.

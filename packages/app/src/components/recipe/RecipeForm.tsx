@@ -557,11 +557,9 @@ export const RecipeForm = ({
           />
         </View>
         {contentLocked ? (
-          <View
-            className="
+          <View className="
             rounded-lg border border-amber-200 bg-amber-50 px-3 py-2
-          "
-          >
+          ">
             <Text className="text-sm text-amber-900">
               Ingredients and instructions are locked on the active version.
               Create a draft to change them.
