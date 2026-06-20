@@ -92,6 +92,16 @@ describe('RecipeDetailScreen', () => {
     });
   });
 
+  test('navigates to edit recipe screen for active versions', async () => {
+    const {findByText} = renderWithProviders(
+      <RecipeDetailScreen {...stackProps} />,
+    );
+    fireEvent.press(await findByText('Edit'));
+    expect(mockNavigate).toHaveBeenCalledWith('EditRecipe', {
+      recipeId: 'recipe-uuid-1',
+    });
+  });
+
   test('navigates to edit draft screen', async () => {
     const draftId = 'version-draft-1';
     mockListVersions.mockResolvedValue([

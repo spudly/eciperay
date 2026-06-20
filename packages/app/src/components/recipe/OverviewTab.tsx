@@ -1,3 +1,8 @@
+/* eslint-disable max-lines -- recipe overview with primary actions and lifecycle controls */
+import {
+  canEditActiveRecipeMetadata,
+  canEditDraftVersion,
+} from '@eciperay/client';
 import type {RecipeDetail, RecipeVersionSummary} from '@eciperay/types';
 import React, {useState} from 'react';
 import {Image, Text, TouchableOpacity, View} from 'react-native';
@@ -11,29 +16,38 @@ import {StatBadge} from './StatBadge';
 
 type Props = {
   recipe: RecipeDetail;
+  activeVersionId: string;
   servings: number;
   versions: RecipeVersionSummary[];
   onStartCooking: () => void;
   onDelete: () => void;
   onTweakAi: () => void;
   onViewVersion: (versionId: string) => void;
+  onEditRecipe: () => void;
   onEditVersion: (versionId: string) => void;
 };
 
 export const OverviewTab = ({
   recipe,
+  activeVersionId,
   servings,
   versions,
   onStartCooking,
   onDelete,
   onTweakAi,
   onViewVersion,
+  onEditRecipe,
   onEditVersion,
 }: Props) => {
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
-  const viewingVersion = versions.find(v => v.id === recipe.versionId);
-  const canEditDraft = viewingVersion?.isEditable ?? false;
+  const canEditDraft = canEditDraftVersion(recipe.versionId, versions);
+  const canEditMetadata = canEditActiveRecipeMetadata(
+    recipe.lifecycleStatus,
+    recipe.versionId,
+    activeVersionId,
+    versions,
+  );
 
   const showActionMessage = (message: string) => {
     setActionMessage(message);
@@ -99,6 +113,14 @@ export const OverviewTab = ({
         >
           <Text className="text-gray-700">↗</Text>
         </TouchableOpacity>
+        {canEditMetadata ? (
+          <TouchableOpacity
+            className="rounded-xl bg-gray-100 px-4 py-3"
+            onPress={onEditRecipe}
+          >
+            <Text className="text-sm font-medium text-gray-700">Edit</Text>
+          </TouchableOpacity>
+        ) : null}
         {canEditDraft ? (
           <TouchableOpacity
             className="rounded-xl bg-gray-100 px-4 py-3"

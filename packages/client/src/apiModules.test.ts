@@ -74,7 +74,6 @@ describe('createEciperayClient', () => {
     await client.import.importUrl('https://example.com');
     await client.import.importImage('base64');
     await client.import.importText('Pasta recipe');
-    await client.import.importAi('quick vegetarian pasta for 4');
     await client.import.importBulk({
       formatVersion: 1,
       exportedAt: '2024-01-01T00:00:00.000Z',
@@ -109,6 +108,11 @@ describe('createEciperayClient', () => {
     });
     await client.versions.activate('r1', 'v1');
     await client.versions.tweakWithAi('r1', 'make it spicier');
+    await client.versions.startImportEdits('r1');
+    await client.recipes.acceptImport('r1');
+    await client.createAi.start('quick pasta');
+    await client.createAi.approvePlan('session-1');
+    await client.createAi.createRecipe('session-1');
     await client.cookLogs.list('r1', 'v1');
     await client.cookLogs.create('r1', 'v1', {notes: 'Great'});
     expect(api.fetch).toHaveBeenCalledWith(
@@ -121,10 +125,6 @@ describe('createEciperayClient', () => {
     );
     expect(api.fetch).toHaveBeenCalledWith(
       '/recipes/import/text',
-      expect.any(Object),
-    );
-    expect(api.fetch).toHaveBeenCalledWith(
-      '/recipes/import/ai',
       expect.any(Object),
     );
     expect(api.fetch).toHaveBeenCalledWith(
@@ -172,6 +172,26 @@ describe('createEciperayClient', () => {
     );
     expect(api.fetch).toHaveBeenCalledWith(
       '/recipes/r1/versions/ai',
+      expect.objectContaining({method: 'POST'}),
+    );
+    expect(api.fetch).toHaveBeenCalledWith(
+      '/recipes/r1/import/start-edits',
+      expect.objectContaining({method: 'POST'}),
+    );
+    expect(api.fetch).toHaveBeenCalledWith(
+      '/recipes/r1/import/accept',
+      expect.objectContaining({method: 'POST'}),
+    );
+    expect(api.fetch).toHaveBeenCalledWith(
+      '/recipes/import/ai/sessions',
+      expect.objectContaining({method: 'POST'}),
+    );
+    expect(api.fetch).toHaveBeenCalledWith(
+      '/recipes/import/ai/sessions/session-1/approve-plan',
+      expect.objectContaining({method: 'POST'}),
+    );
+    expect(api.fetch).toHaveBeenCalledWith(
+      '/recipes/import/ai/sessions/session-1/create-recipe',
       expect.objectContaining({method: 'POST'}),
     );
     expect(api.fetch).toHaveBeenCalledWith('/recipes/r1/versions/v1/cooks');

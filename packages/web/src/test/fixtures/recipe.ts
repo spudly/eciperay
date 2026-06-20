@@ -84,6 +84,7 @@ export const makeRecipeVersionSummary = (
   cookLogCount: 0,
   childVersionCount: 0,
   isEditable: false,
+  isContentLocked: true,
   createdVia: 'manual',
   changeSummary: null,
   createdAt: '2024-01-01T00:00:00.000Z',

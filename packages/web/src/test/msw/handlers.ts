@@ -300,14 +300,106 @@ export const handlers = [
       versionId: VERSION_ID,
     }),
   ),
-  http.post(`${API}/api/recipes/import/ai`, () =>
+  http.post(`${API}/api/recipes/import/ai/sessions`, async ({request}) => {
+    const body = (await request.json()) as {prompt: string};
+    const plan = `Plan for: ${body.prompt}`;
+    return HttpResponse.json(
+      {
+        session: {
+          id: 'create-session-1',
+          phase: 'planning',
+          messages: [
+            {role: 'user', content: body.prompt},
+            {role: 'assistant', content: plan},
+          ],
+          approvedPlan: null,
+          proposedRecipe: null,
+          createdAt: '2024-01-01T00:00:00.000Z',
+          updatedAt: '2024-01-01T00:00:00.000Z',
+        },
+        plan,
+      },
+      {status: 201},
+    );
+  }),
+  http.post(
+    `${API}/api/recipes/import/ai/sessions/:sessionId/approve-plan`,
+    () => {
+      const preview = {
+        title: 'AI Generated Pasta',
+        description: 'A quick pasta dish.',
+        servings: 4,
+        prepTimeMin: 10,
+        cookTimeMin: 20,
+        ingredients: [
+          {
+            sortOrder: 0,
+            name: 'pasta',
+            quantity: 400,
+            unit: 'g',
+            notes: null,
+            isOptional: false,
+          },
+        ],
+        instructions: [{stepNumber: 1, body: 'Cook pasta'}],
+        tagIds: [],
+        imageUrl: null,
+        sourceUrl: null,
+      };
+      return HttpResponse.json({
+        session: {
+          id: 'create-session-1',
+          phase: 'preview_ready',
+          messages: [],
+          approvedPlan: 'Approved plan',
+          proposedRecipe: preview,
+          createdAt: '2024-01-01T00:00:00.000Z',
+          updatedAt: '2024-01-01T00:00:00.000Z',
+        },
+        changeSummary: 'AI recipe',
+        preview,
+      });
+    },
+  ),
+  http.post(
+    `${API}/api/recipes/import/ai/sessions/:sessionId/create-recipe`,
+    () =>
+      HttpResponse.json(
+        {
+          session: {
+            id: 'create-session-1',
+            phase: 'completed',
+            messages: [],
+            approvedPlan: 'Approved plan',
+            proposedRecipe: null,
+            createdAt: '2024-01-01T00:00:00.000Z',
+            updatedAt: '2024-01-01T00:00:00.000Z',
+          },
+          recipeId: 'imported-ai-id',
+          versionId: VERSION_ID,
+          recipe: {...recipe, id: 'imported-ai-id', recipeId: 'imported-ai-id'},
+        },
+        {status: 201},
+      ),
+  ),
+  http.post(`${API}/api/recipes/:id/import/accept`, ({params}) =>
     HttpResponse.json({
       ...recipe,
-      id: 'imported-ai-id',
-      recipeId: 'imported-ai-id',
-      versionId: VERSION_ID,
+      id: params['id'],
+      lifecycleStatus: 'evolving',
     }),
   ),
+  http.post(`${API}/api/recipes/:id/import/start-edits`, () => {
+    const version = makeRecipeVersionDetail({
+      id: 'version-draft-2',
+      versionNumber: 2,
+      derivedRole: 'draft',
+      isEditable: true,
+      createdVia: 'import_review',
+      changeSummary: 'Import review edits',
+    });
+    return HttpResponse.json(version, {status: 201});
+  }),
   http.post(`${API}/api/recipes/export`, async ({request}) => {
     const body = (await request.json()) as {recipeIds: string[]};
     return HttpResponse.json({

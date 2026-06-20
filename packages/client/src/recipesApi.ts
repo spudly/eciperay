@@ -12,6 +12,7 @@ import {buildListUrl, type RecipeListParams} from './recipesListUrl.js';
 
 export type {RecipeListParams} from './recipesListUrl.js';
 
+/* eslint-disable max-lines-per-function -- API method map */
 export const createRecipesApi = (client: ApiClient) => ({
   list: (params?: RecipeListParams) =>
     client.fetch<RecipeDetail[]>(buildListUrl(params)),
@@ -38,5 +39,9 @@ export const createRecipesApi = (client: ApiClient) => ({
     client.fetch<RecipeExportBundle>('/recipes/export', {
       method: 'POST',
       body: JSON.stringify({recipeIds}),
+    }),
+  acceptImport: (id: string) =>
+    client.fetch<RecipeDetail>(`/recipes/${id}/import/accept`, {
+      method: 'POST',
     }),
 });

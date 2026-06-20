@@ -20,6 +20,7 @@ type Props = {
   onDelete: () => void;
   onTweakAi: () => void;
   onViewVersion: (versionId: string) => void;
+  onEditRecipe: () => void;
   onEditVersion: (versionId: string) => void;
 };
 
@@ -35,18 +36,21 @@ export const RecipeDetailTabPanel = ({
   onDelete,
   onTweakAi,
   onViewVersion,
+  onEditRecipe,
   onEditVersion,
 }: Props) => {
   if (activeTab === 'overview') {
     return (
       <OverviewTab
         recipe={displayRecipe}
+        activeVersionId={recipe.versionId}
         servings={currentServings}
         versions={versions}
         onStartCooking={onStartCooking}
         onDelete={onDelete}
         onTweakAi={onTweakAi}
         onViewVersion={onViewVersion}
+        onEditRecipe={onEditRecipe}
         onEditVersion={onEditVersion}
       />
     );

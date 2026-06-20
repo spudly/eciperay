@@ -59,6 +59,7 @@ type Props = {
   initial: RecipeFormInitial;
   recipeId?: string;
   parentVersion?: RecipeVersionDetail;
+  contentLocked?: boolean;
   submitLabel: string;
   onSubmit: (
     input: RecipeInput,
@@ -79,6 +80,7 @@ export const RecipeForm = ({
   initial,
   recipeId,
   parentVersion,
+  contentLocked = false,
   submitLabel,
   onSubmit,
 }: Props) => {
@@ -287,13 +289,17 @@ export const RecipeForm = ({
     cookTimeMin: cookTimeMin === '' ? null : Number(cookTimeMin),
     imageUrl: pendingImage ? null : stripImageCacheKey(imageUrl) || null,
     sourceUrl: sourceUrl || null,
-    ingredients: toRecipeInputIngredients(
-      ingredients.map(ingredient => ({
-        ...ingredient,
-        quantity: toQuantity(ingredient.quantity),
-      })),
-    ),
-    instructions: toRecipeInputInstructions(instructions),
+    ingredients: contentLocked
+      ? initial.ingredients
+      : toRecipeInputIngredients(
+          ingredients.map(ingredient => ({
+            ...ingredient,
+            quantity: toQuantity(ingredient.quantity),
+          })),
+        ),
+    instructions: contentLocked
+      ? initial.instructions
+      : toRecipeInputInstructions(instructions),
     tagIds,
   });
 
@@ -550,7 +556,17 @@ export const RecipeForm = ({
             onChange={setTagIds}
           />
         </View>
-        {versionDiff?.ingredientsChanged && parentVersion ? (
+        {contentLocked ? (
+          <View className="
+            rounded-lg border border-amber-200 bg-amber-50 px-3 py-2
+          ">
+            <Text className="text-sm text-amber-900">
+              Ingredients and instructions are locked on the active version.
+              Create a draft to change them.
+            </Text>
+          </View>
+        ) : null}
+        {versionDiff?.ingredientsChanged && parentVersion && !contentLocked ? (
           <View
             className="
               flex-row items-center justify-between rounded-lg bg-amber-50 px-3
@@ -577,18 +593,20 @@ export const RecipeForm = ({
             </TouchableOpacity>
           </View>
         ) : null}
-        <SortableIngredientList
-          ingredients={ingredients}
-          onChange={setIngredients}
-          onUpdate={updateIngredient}
-          onAdd={() => {
-            setIngredients(prev => [
-              ...prev,
-              createEmptyIngredientRow(prev.length),
-            ]);
-          }}
-        />
-        {versionDiff?.instructionsChanged && parentVersion ? (
+        {contentLocked ? null : (
+          <SortableIngredientList
+            ingredients={ingredients}
+            onChange={setIngredients}
+            onUpdate={updateIngredient}
+            onAdd={() => {
+              setIngredients(prev => [
+                ...prev,
+                createEmptyIngredientRow(prev.length),
+              ]);
+            }}
+          />
+        )}
+        {versionDiff?.instructionsChanged && parentVersion && !contentLocked ? (
           <View
             className="
               flex-row items-center justify-between rounded-lg bg-amber-50 px-3
@@ -615,17 +633,19 @@ export const RecipeForm = ({
             </TouchableOpacity>
           </View>
         ) : null}
-        <SortableInstructionList
-          instructions={instructions}
-          onChange={setInstructions}
-          onUpdate={updateInstruction}
-          onAdd={() => {
-            setInstructions(prev => [
-              ...prev,
-              createEmptyInstructionRow(prev.length + 1),
-            ]);
-          }}
-        />
+        {contentLocked ? null : (
+          <SortableInstructionList
+            instructions={instructions}
+            onChange={setInstructions}
+            onUpdate={updateInstruction}
+            onAdd={() => {
+              setInstructions(prev => [
+                ...prev,
+                createEmptyInstructionRow(prev.length + 1),
+              ]);
+            }}
+          />
+        )}
         {error ? <Text className="text-sm text-red-600">{error}</Text> : null}
         <TouchableOpacity
           className="

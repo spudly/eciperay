@@ -28,6 +28,11 @@ export {
   recipeDetailToInput,
   recipeVersionDetailToInput,
 } from './recipeDetailToInput.js';
+export {
+  canEditActiveRecipeMetadata,
+  canEditDraftVersion,
+  isRecipeLifecycleEditable,
+} from './recipeEditActions.js';
 export {createApiClient, type ApiClient} from './createApiClient.js';
 export {createSupabaseClient} from './createSupabaseClient.js';
 export {
@@ -105,6 +110,7 @@ export {createAiApi} from './aiApi.js';
 export {createVersionsApi, type TweakWithAiResult} from './versionsApi.js';
 export {createCookLogsApi} from './cookLogsApi.js';
 export {createTweakAiApi} from './tweakAiApi.js';
+export {createCreateAiApi} from './createAiApi.js';
 export {
   compareVersionToParent,
   formatParentListSummary,

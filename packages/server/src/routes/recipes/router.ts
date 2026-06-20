@@ -7,6 +7,7 @@ import {createCookLog} from '../cooks/createCookLog.js';
 import {listCookLogs} from '../cooks/listCookLogs.js';
 
 import {activateVersion} from './activateVersion.js';
+import {acceptImport} from './acceptImport.js';
 import {createRecipe} from './createRecipe.js';
 import {createVersion} from './createVersion.js';
 import {exportRecipes} from './exportRecipes.js';
@@ -20,6 +21,7 @@ import {listVersions} from './listVersions.js';
 import {patchRecipeLineage} from './patchRecipeLineage.js';
 import {putRecipe} from './putRecipe.js';
 import {putVersion} from './putVersion.js';
+import {startImportEdits} from './startImportEdits.js';
 import {
   approveTweakAiPlan,
   cancelTweakAiSession,
@@ -54,6 +56,12 @@ export const createRecipesRouter = (queryFn: QueryFn) => {
   );
   router.put('/:id', requireAuth, (req, res) =>
     putRecipe(a(req), res, queryFn),
+  );
+  router.post('/:id/import/accept', requireAuth, (req, res) =>
+    acceptImport(a(req), res, queryFn),
+  );
+  router.post('/:id/import/start-edits', requireAuth, (req, res) =>
+    startImportEdits(a(req), res, queryFn),
   );
   router.patch('/:id', requireAuth, (req, res) =>
     patchRecipeLineage(a(req), res, queryFn),
