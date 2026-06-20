@@ -104,5 +104,5 @@ jobs:
       ref: ${{ needs.release.outputs.tag }}
       version: ${{ needs.release.outputs.version }}
       tag: ${{ needs.release.outputs.tag }}
-      play_track: build-only
+      play_track: internal
     secrets: inherit
