@@ -5,6 +5,7 @@ ignores:
   - '@types/nock' # Type definitions for nock; used by server workspace tests, hoisted to root
   - concurrently # Referenced only in root package.json scripts (dev, ci), not imported in source
   - depcheck # Invoked via npm script CLI only, not imported in source
+  - github-actionlint # Invoked via npm scripts and lint-staged, not imported in source
   - nock # HTTP mocking library used by server workspace tests, hoisted to root
   - patch-package # Applied via root postinstall script, not imported in source
   - prettier-plugin-jsdoc # Loaded by Prettier via .prettierrc.json plugins field, not imported in source

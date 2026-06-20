@@ -38,10 +38,10 @@ on:
           - production
           - internalsharing
 
+# Prettier splits ${{ ... }} across lines, making concurrency.group invalid YAML
+# prettier-ignore
 concurrency:
-  group:
-    android-deploy-${{ inputs.tag || github.event.inputs.play_track || 'manual'
-    }}
+  group: android-deploy-${{ inputs.tag || github.event.inputs.play_track || 'manual' }}
   cancel-in-progress: false
 
 jobs:
