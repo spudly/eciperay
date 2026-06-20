@@ -108,6 +108,17 @@ def hasReleaseSigning =
     releaseKeyAlias != null &&
     releaseKeyPassword != null
 
+// Canonical versionName: root package.json (see VERSIONING.md).
+// Override at build time with -PVERSION_CODE / -PVERSION_NAME (CI sets VERSION_CODE).
+def rootPackageJson = file("../../../../package.json")
+def defaultVersionName = "1.0"
+if (rootPackageJson.exists()) {
+    def parsed = new groovy.json.JsonSlurper().parse(rootPackageJson)
+    if (parsed.version != null) {
+        defaultVersionName = parsed.version.toString()
+    }
+}
+
 android {
     ndkVersion rootProject.ext.ndkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
@@ -118,8 +129,12 @@ android {
         applicationId "com.eciperay"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode project.hasProperty("VERSION_CODE") ? VERSION_CODE.toInteger() : 1
-        versionName project.hasProperty("VERSION_NAME") ? VERSION_NAME : "1.0"
+        versionCode project.hasProperty("VERSION_CODE")
+            ? VERSION_CODE.toInteger()
+            : 1
+        versionName project.hasProperty("VERSION_NAME")
+            ? VERSION_NAME
+            : defaultVersionName
     }
     signingConfigs {
         debug {

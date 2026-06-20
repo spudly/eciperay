@@ -1,4 +1,6 @@
 ignores:
+  - '@commitlint/cli' # Invoked via Husky commit-msg hook, not imported in source
+  - '@commitlint/config-conventional' # Loaded by commitlint.config.cjs, not imported in source
   - '@types/jest' # Type definitions for jest; consumed by workspace jest configs/tests, hoisted to root
   - '@types/nock' # Type definitions for nock; used by server workspace tests, hoisted to root
   - concurrently # Referenced only in root package.json scripts (dev, ci), not imported in source

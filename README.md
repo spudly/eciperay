@@ -167,9 +167,10 @@ fly deploy \
   --build-arg VITE_SUPABASE_ANON_KEY=your-anon-key
 ```
 
-**GitHub Actions** (`.github/workflows/fly-deploy.yml`) deploys automatically
-after CI passes on `master`. You can also trigger a deploy manually from the
-Actions tab (**Deploy** → **Run workflow**).
+**GitHub Actions:** Fly deploys run from the **Release** workflow
+(`.github/workflows/release.yml`) when semantic-release publishes a version and
+commit scopes affect `web` or `server` (or shared packages that expand to them).
+You can also trigger **Deploy** manually from the Actions tab.
 
 Add these repository secrets (Settings → Secrets and variables → Actions):
 
@@ -249,12 +250,36 @@ Android permissions, cleartext HTTP policy, and runtime rationale dialogs are
 documented in
 [`packages/app/android/PERMISSIONS.md`](packages/app/android/PERMISSIONS.md).
 
-#### GitHub Actions
+Android `versionCode` / `versionName` and the Play Store release process are
+documented in
+[`packages/app/android/VERSIONING.md`](packages/app/android/VERSIONING.md). Root
+[`package.json`](package.json) `version` is the source of truth;
+semantic-release bumps all workspace packages together after conventional
+commits land on `master`.
 
-The **Android Deploy** workflow (`.github/workflows/android-deploy.yml`) builds
-a signed release **AAB** and can optionally upload it to Google Play. Run it
-manually from **Actions → Android Deploy → Run workflow** and choose a **Play
-track**:
+#### Releases and deploys
+
+After CI passes on `master`, the **Release** workflow
+(`.github/workflows/release.yml`) runs
+[semantic-release](https://semantic-release.gitbook.io/):
+
+1. Analyzes conventional commits since the last tag
+2. Bumps root + workspace `package.json` versions, tags `vX.Y.Z`, and creates a
+   GitHub Release
+3. Deploys **only** what scopes imply (see [Commits](#commits) below)
+
+| Changed scope    | Deploy                                 |
+| ---------------- | -------------------------------------- |
+| `web`, `server`  | Fly (API + web)                        |
+| `app`, `android` | Android AAB attached to GitHub Release |
+| `client`         | Fly + Android                          |
+| `types`          | Fly + Android (all consumers)          |
+| `theme`          | Fly + Android (web + app)              |
+
+Play Store upload is still manual: **Actions → Android Deploy → Run workflow**
+and pick a Play track.
+
+#### Android Deploy workflow
 
 | Track             | Play Console destination                          |
 | ----------------- | ------------------------------------------------- |
@@ -265,11 +290,7 @@ track**:
 | `production`      | Production                                        |
 | `internalsharing` | Internal app sharing (temporary download link)    |
 
-Automatic deploy after CI on `master` is disabled until release signing is
-configured (see commented `workflow_run` in the workflow file).
-
-Add these repository secrets (Settings → Secrets and variables → Actions, or the
-**production** environment):
+Add these repository secrets
 
 | Secret                             | Purpose                                            |
 | ---------------------------------- | -------------------------------------------------- |
@@ -325,9 +346,12 @@ export ANDROID_KEYSTORE_PASSWORD=...
 export ANDROID_KEY_ALIAS=eciperay
 export ANDROID_KEY_PASSWORD=...
 
-# Play Store upload (AAB)
+# Play Store upload (AAB) — set VERSION_CODE higher than the last Play upload
+VERSION_CODE=123 ./scripts/android-release.sh
+
+# Or manually:
 ./gradlew :app:createBundleReleaseJsAndAssets --rerun-tasks
-./gradlew bundleRelease
+./gradlew bundleRelease -PVERSION_CODE=123
 
 # Sideload onto a device (APK — same signing config)
 ./gradlew assembleRelease
@@ -403,6 +427,26 @@ package.
 - [ ] `npm run ci` passes
 - [ ] `npm run dev:web` — sign in, list recipes, import, edit, delete
 - [ ] iOS/Android — auth persistence, add flow, recipe detail tabs
+
+## Commits
+
+Commit messages use [Conventional Commits](https://www.conventionalcommits.org/)
+with a **required scope** matching the monorepo package you changed:
+
+```text
+feat(web): add recipe import drag target
+fix(server): validate image mime type
+feat(client): add shared query key
+```
+
+- Format rules and deploy impact:
+  [`.cursor/skills/eciperay-commits/SKILL.md`](.cursor/skills/eciperay-commits/SKILL.md)
+- Enforced locally by Husky `commit-msg` +
+  [`commitlint.config.cjs`](commitlint.config.cjs)
+- If you squash-merge PRs on GitHub, use the same format for the **PR title**
+
+Allowed scopes: `app`, `web`, `server`, `client`, `types`, `theme`, `android`,
+`deps`, `ci`, `release`
 
 ## Architecture Notes
 
