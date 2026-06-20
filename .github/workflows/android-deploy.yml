@@ -19,7 +19,7 @@ on:
         description: Google Play track (build-only skips Play upload)
         type: string
         required: false
-        default: build-only
+        default: internal
   workflow_dispatch:
     inputs:
       play_track:
