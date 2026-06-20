@@ -75,23 +75,8 @@ jobs:
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "App version: ${VERSION}"
 
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 17
-          cache: gradle
-
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install Android SDK packages
-        run: |
-          sdkmanager --install \
-            "platform-tools" \
-            "platforms;android-36" \
-            "build-tools;36.0.0" \
-            "ndk;27.1.12297006"
+      - name: Setup Android build environment
+        uses: ./.github/actions/android-build-setup
 
       - name: Decode release keystore
         env:
@@ -106,7 +91,9 @@ jobs:
       - name: Build release AAB
         working-directory: packages/app/android
         # versionCode must increase on every Play upload; versionName comes from root package.json.
-        run: ./gradlew bundleRelease -PVERSION_CODE=${{ github.run_number }}
+        run: >-
+          ./gradlew bundleRelease --build-cache -PVERSION_CODE=${{
+          github.run_number }} -PreactNativeArchitectures=arm64-v8a,armeabi-v7a
         env:
           APP_ENV: production
           API_BASE_URL: https://www.eciperay.com/api
