@@ -6,7 +6,7 @@
     [
       "@semantic-release/exec",
       {
-        "prepareCmd": "tsx scripts/syncPackageVersions.ts ${nextRelease.version}"
+        "prepareCmd": "npx tsx scripts/syncPackageVersions.ts ${nextRelease.version}"
       }
     ],
     [
