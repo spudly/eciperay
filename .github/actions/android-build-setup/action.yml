@@ -1,6 +1,6 @@
 name: Android build setup
 description:
-  Setup Java, Android SDK, and restore Gradle/native caches for release builds
+  Setup Java, Android SDK, and restore Gradle caches for release builds
 
 runs:
   using: composite
@@ -50,19 +50,3 @@ runs:
           'packages/app/android/gradle.properties') }}
         restore-keys: |
           gradle-${{ runner.os }}-
-
-    - name: Restore native build cache
-      uses: actions/cache@v5
-      with:
-        path: |
-          node_modules/react-native-reanimated/android/.cxx
-          node_modules/react-native-worklets/android/.cxx
-          node_modules/react-native-gesture-handler/android/.cxx
-          node_modules/react-native-screens/android/.cxx
-          packages/app/android/app/.cxx
-        key:
-          native-${{ runner.os }}-${{ hashFiles('package-lock.json',
-          'packages/app/android/**/*.gradle*',
-          'packages/app/android/gradle.properties') }}
-        restore-keys: |
-          native-${{ runner.os }}-
