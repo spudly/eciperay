@@ -154,6 +154,22 @@ jobs:
       - name: Depcheck
         run: npm run depcheck
 
+  workflows:
+    name: workflows
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup
+        uses: ./.github/actions/ci-setup
+        with:
+          skip-install-on-cache-hit: 'true'
+
+      - name: Lint GitHub Actions workflows
+        run: npm run workflows:lint
+
   test:
     name: test (${{ matrix.package }})
     needs: [install, setup]
