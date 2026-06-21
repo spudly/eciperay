@@ -64,10 +64,12 @@ COPY patches/ patches/
 
 RUN npm ci --omit=dev --ignore-scripts \
   --workspace=@eciperay/server \
+  --workspace=@eciperay/client \
   --workspace=@eciperay/types \
   --include-workspace-root
 
 COPY --from=build /app/packages/types packages/types
+COPY packages/client packages/client
 COPY packages/server packages/server
 COPY --from=build /app/packages/web/dist packages/web/dist
 
