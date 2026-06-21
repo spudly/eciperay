@@ -6,6 +6,7 @@ import {
   type AnalyticsPlatform,
   type LogLevel,
 } from '@eciperay/client';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import PostHog from 'posthog-react-native';
 import {Platform} from 'react-native';
 
@@ -95,6 +96,7 @@ const createAppPostHogClient = (
 ) => {
   return new PostHog(apiKey, {
     host: apiHost,
+    customStorage: AsyncStorage,
     enableSessionReplay: true,
     errorTracking: {
       autocapture: {

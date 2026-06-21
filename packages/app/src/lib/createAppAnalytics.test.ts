@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import PostHog from 'posthog-react-native';
 
 import {
@@ -58,6 +59,7 @@ describe('createAppAnalytics', () => {
     );
     expect(MockPostHog).toHaveBeenCalledWith('phc_test', {
       host: 'https://us.i.posthog.com',
+      customStorage: AsyncStorage,
       enableSessionReplay: true,
       errorTracking: {
         autocapture: {
@@ -141,6 +143,7 @@ describe('createAppAnalytics', () => {
     client.track('recipe_deleted', {recipe_id: 'recipe-1'});
     expect(MockPostHog).toHaveBeenCalledWith('phc_test', {
       host: 'https://us.i.posthog.com',
+      customStorage: AsyncStorage,
       enableSessionReplay: true,
       errorTracking: {
         autocapture: {
@@ -170,6 +173,7 @@ describe('createAppAnalytics', () => {
     expect(MockPostHog).toHaveBeenCalledWith(
       'phc_test',
       expect.objectContaining({
+        customStorage: AsyncStorage,
         logs: expect.objectContaining({environment: 'production'}),
       }),
     );
