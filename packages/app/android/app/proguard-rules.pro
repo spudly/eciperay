@@ -79,6 +79,13 @@
 -keep class com.zoontek.rnlocalize.** { *; }
 -keep class com.learnium.RNDeviceInfo.** { *; }
 
+# ---------- PostHog Android SDK + RN bridge modules ----------
+
+-keep class com.posthog.** { *; }
+-keep class com.posthogreactnativeplugin.** { *; }
+-keep class com.posthogreactnativesessionreplay.** { *; }
+-dontwarn com.posthog.**
+
 # ---------- Suppress benign warnings ----------
 
 -dontwarn com.facebook.react.**
