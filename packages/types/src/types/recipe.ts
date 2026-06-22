@@ -50,6 +50,7 @@ export type RecipeInput = {
   ingredients: IngredientInput[];
   instructions: InstructionInput[];
   tagIds: string[];
+  developmentStatus?: RecipeDevelopmentStatus;
 };
 
 export type RecipeMetadataInput = {
@@ -61,6 +62,7 @@ export type RecipeMetadataInput = {
   imageUrl?: string | null;
   sourceUrl?: string | null;
   tagIds: string[];
+  developmentStatus?: RecipeDevelopmentStatus;
 };
 
 export type RecipeSharingUpdateInput = {

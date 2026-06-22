@@ -28,6 +28,12 @@ describe('buildListUrl', () => {
       '/recipes?search=pasta&limit=50&offset=10',
     );
   });
+
+  test('includes development status when provided', () => {
+    expect(buildListUrl({developmentStatus: 'in_development'})).toBe(
+      '/recipes?developmentStatus=in_development',
+    );
+  });
 });
 
 describe('buildSharedWithMeUrl', () => {

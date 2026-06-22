@@ -3,8 +3,18 @@ import {queryKeys} from './queryKeys.js';
 describe('queryKeys', () => {
   test('returns stable key tuples', () => {
     expect(queryKeys.recipeLists()).toEqual(['recipes']);
-    expect(queryKeys.recipes()).toEqual(['recipes', {search: ''}]);
-    expect(queryKeys.recipes('pasta')).toEqual(['recipes', {search: 'pasta'}]);
+    expect(queryKeys.recipes()).toEqual([
+      'recipes',
+      {search: '', developmentStatus: ''},
+    ]);
+    expect(queryKeys.recipes('pasta')).toEqual([
+      'recipes',
+      {search: 'pasta', developmentStatus: ''},
+    ]);
+    expect(queryKeys.recipes('pasta', 'perfected')).toEqual([
+      'recipes',
+      {search: 'pasta', developmentStatus: 'perfected'},
+    ]);
     expect(queryKeys.recipe('r1')).toEqual(['recipe', 'r1']);
     expect(queryKeys.versions('r1')).toEqual(['versions', 'r1']);
     expect(queryKeys.version('r1', 'v1')).toEqual(['version', 'r1', 'v1']);

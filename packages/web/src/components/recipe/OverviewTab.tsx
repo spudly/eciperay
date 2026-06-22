@@ -11,6 +11,7 @@ import {printRecipe} from '../../lib/printRecipe.js';
 import {shareRecipe} from '../../lib/shareRecipe.js';
 
 import {OverviewActions} from './OverviewActions.js';
+import {DevelopmentStatusBadge} from './DevelopmentStatusBadge.js';
 import {RecipeVisibilityControls} from './RecipeVisibilityControls.js';
 
 type Props = {
@@ -74,6 +75,9 @@ export const OverviewTab = ({
         />
       ) : null}
       <h2 className="mb-2 text-2xl font-bold text-gray-900">{recipe.title}</h2>
+      <div className="mb-4">
+        <DevelopmentStatusBadge status={recipe.developmentStatus} />
+      </div>
       {recipe.description ? (
         <p className="mb-4 text-gray-600">{recipe.description}</p>
       ) : null}

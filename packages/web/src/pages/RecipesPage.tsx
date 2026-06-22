@@ -1,8 +1,13 @@
 import {
   invalidateRecipeQueries,
+  RECIPE_DEVELOPMENT_STATUS_FILTER_ALL,
+  RECIPE_DEVELOPMENT_STATUS_FILTER_LABEL,
+  RECIPE_DEVELOPMENT_STATUS_LABELS,
+  RECIPE_DEVELOPMENT_STATUS_OPTIONS,
   recipeListInfiniteQueryOptions,
   useAnalytics,
 } from '@eciperay/client';
+import type {RecipeDevelopmentStatus} from '@eciperay/types';
 import {
   useInfiniteQuery,
   useMutation,
@@ -15,6 +20,9 @@ import {eciperay} from '../lib/api.js';
 
 export const RecipesPage = () => {
   const [search, setSearch] = useState('');
+  const [developmentStatusFilter, setDevelopmentStatusFilter] = useState<
+    typeof RECIPE_DEVELOPMENT_STATUS_FILTER_ALL | RecipeDevelopmentStatus
+  >(RECIPE_DEVELOPMENT_STATUS_FILTER_ALL);
   const deferredSearch = useDeferredValue(search.trim());
   const queryClient = useQueryClient();
   const loadMoreRef = useRef<HTMLDivElement>(null);
@@ -25,6 +33,9 @@ export const RecipesPage = () => {
       recipeListInfiniteQueryOptions(
         params => eciperay.recipes.list(params),
         deferredSearch,
+        developmentStatusFilter === RECIPE_DEVELOPMENT_STATUS_FILTER_ALL
+          ? ''
+          : developmentStatusFilter,
       ),
     );
 
@@ -68,6 +79,37 @@ export const RecipesPage = () => {
           setSearch(e.target.value);
         }}
       />
+      <label className="mb-4 block">
+        <span className="mb-1 block text-sm font-medium text-gray-700">
+          {RECIPE_DEVELOPMENT_STATUS_FILTER_LABEL}
+        </span>
+        <select
+          className="
+            w-full rounded-xl border border-gray-200 bg-white px-4 py-3
+            text-base
+          "
+          value={developmentStatusFilter}
+          onChange={e => {
+            setDevelopmentStatusFilter(
+              e.target.value as
+                | typeof RECIPE_DEVELOPMENT_STATUS_FILTER_ALL
+                | RecipeDevelopmentStatus,
+            );
+          }}
+        >
+          <option value={RECIPE_DEVELOPMENT_STATUS_FILTER_ALL}>
+            All statuses
+          </option>
+          {RECIPE_DEVELOPMENT_STATUS_OPTIONS.map(status => (
+            <option
+              key={status}
+              value={status}
+            >
+              {RECIPE_DEVELOPMENT_STATUS_LABELS[status]}
+            </option>
+          ))}
+        </select>
+      </label>
       {isLoading ? (
         <p className="text-muted mt-8 text-center">Loading…</p>
       ) : recipes.length === 0 ? (

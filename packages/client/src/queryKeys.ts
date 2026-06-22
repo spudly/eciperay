@@ -1,6 +1,7 @@
 export const queryKeys = {
   recipeLists: () => ['recipes'] as const,
-  recipes: (search = '') => ['recipes', {search}] as const,
+  recipes: (search = '', developmentStatus = '') =>
+    ['recipes', {search, developmentStatus}] as const,
   recipe: (id: string) => ['recipe', id] as const,
   versions: (recipeId: string) => ['versions', recipeId] as const,
   version: (recipeId: string, versionId: string) =>

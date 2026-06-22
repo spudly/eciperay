@@ -32,6 +32,7 @@ const mapContentToFormInitial = (detail: {
   cookTimeMin: number | null;
   imageUrl: string | null;
   sourceUrl: string | null;
+  developmentStatus?: RecipeDetail['developmentStatus'];
   ingredients: RecipeDetail['ingredients'];
   instructions: RecipeDetail['instructions'];
   tags: RecipeDetail['tags'];
@@ -43,6 +44,7 @@ const mapContentToFormInitial = (detail: {
   cookTimeMin: detail.cookTimeMin,
   imageUrl: detail.imageUrl,
   sourceUrl: detail.sourceUrl,
+  developmentStatus: detail.developmentStatus ?? 'idea',
   ingredients: mapIngredients(detail.ingredients),
   instructions: mapInstructions(detail.instructions),
   tagIds: detail.tags.map(tag => tag.id),

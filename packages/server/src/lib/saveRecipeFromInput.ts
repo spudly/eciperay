@@ -25,8 +25,10 @@ import {
   updateRecipeSlug,
   updateVersion,
 } from '../routes/recipes/versionQueries.js';
+import {updateRecipeDevelopmentStatus} from '../routes/recipes/recipeDevelopmentStatusQueries.js';
 
 import {mapRowToRecipeDetail} from './mapRowToRecipeDetail.js';
+import {resolveDevelopmentStatus} from './resolveDevelopmentStatus.js';
 import {slugifyRecipeTitle} from './slugifyRecipeTitle.js';
 
 type QueryFn = typeof defaultQuery;
@@ -68,6 +70,7 @@ const createLineageWithVersion = async (
   const lineage = await insertLineage(
     userId,
     slugifyRecipeTitle(input.title),
+    resolveDevelopmentStatus(input),
     queryFn,
   );
   const recipeId = lineage.rows[0]?.id;
@@ -109,6 +112,11 @@ const updateExistingVersion = async (
     throw new RecipeNotFoundError();
   }
   await updateRecipeSlug(recipeId, slugifyRecipeTitle(input.title), queryFn);
+  await updateRecipeDevelopmentStatus(
+    recipeId,
+    resolveDevelopmentStatus(input),
+    queryFn,
+  );
   await incrementContentRevision(recipeId, queryFn);
   await replaceVersionChildren(versionId, input, queryFn);
   return versionId;

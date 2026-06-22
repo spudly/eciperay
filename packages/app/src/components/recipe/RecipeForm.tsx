@@ -44,6 +44,7 @@ import {
 import {api} from '../../lib/api';
 import {supabase} from '../../lib/supabase';
 
+import {DevelopmentStatusPicker} from './DevelopmentStatusPicker';
 import {RecipeImageField} from './RecipeImageField';
 import {
   createEmptyIngredientRow,
@@ -119,6 +120,9 @@ export const RecipeForm = ({
     return [createEmptyInstructionRow(1)];
   });
   const [tagIds, setTagIds] = useState<string[]>(initial.tagIds);
+  const [developmentStatus, setDevelopmentStatus] = useState(
+    initial.developmentStatus ?? 'idea',
+  );
   const [pendingImage, setPendingImage] = useState<PendingRecipeImage | null>(
     null,
   );
@@ -301,6 +305,7 @@ export const RecipeForm = ({
       ? initial.instructions
       : toRecipeInputInstructions(instructions),
     tagIds,
+    developmentStatus,
   });
 
   const versionDiff = useMemo(() => {
@@ -323,6 +328,7 @@ export const RecipeForm = ({
     instructions,
     tagIds,
     pendingImage,
+    developmentStatus,
   ]);
 
   const scalarChanged = (field: VersionScalarField) =>
@@ -418,6 +424,10 @@ export const RecipeForm = ({
             onChangeText={setTitle}
           />
         </View>
+        <DevelopmentStatusPicker
+          value={developmentStatus}
+          onChange={setDevelopmentStatus}
+        />
         <View>
           <View className="mb-1 flex-row items-center justify-between gap-3">
             <Text className="text-sm font-medium text-gray-700">

@@ -8,6 +8,7 @@ import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
 import {
   DEFAULT_RECIPE_LIST_LIMIT,
   MAX_RECIPE_LIST_LIMIT,
+  parseDevelopmentStatusFilter,
   parseListParams,
 } from './listRecipes.js';
 
@@ -20,6 +21,7 @@ describe('parseListParams', () => {
       limit: DEFAULT_RECIPE_LIST_LIMIT,
       offset: 0,
       search: null,
+      developmentStatus: null,
     });
   });
 
@@ -28,7 +30,12 @@ describe('parseListParams', () => {
       parseListParams({
         query: {search: '  pasta  ', limit: '9999', offset: '5'},
       }),
-    ).toEqual({limit: MAX_RECIPE_LIST_LIMIT, offset: 5, search: 'pasta'});
+    ).toEqual({
+      limit: MAX_RECIPE_LIST_LIMIT,
+      offset: 5,
+      search: 'pasta',
+      developmentStatus: null,
+    });
   });
 
   test('ignores blank and non-string search values', () => {
@@ -43,7 +50,14 @@ describe('parseListParams', () => {
       limit: DEFAULT_RECIPE_LIST_LIMIT,
       offset: 0,
       search: null,
+      developmentStatus: null,
     });
+  });
+
+  test('parses development status filter', () => {
+    expect(parseDevelopmentStatusFilter('perfected')).toBe('perfected');
+    expect(parseDevelopmentStatusFilter('')).toBeNull();
+    expect(parseDevelopmentStatusFilter('draft')).toBe('invalid');
   });
 });
 
@@ -83,6 +97,7 @@ describe('GET /recipes', () => {
       DEFAULT_RECIPE_LIST_LIMIT,
       0,
       null,
+      null,
     ]);
   });
 
@@ -99,7 +114,35 @@ describe('GET /recipes', () => {
       DEFAULT_RECIPE_LIST_LIMIT,
       0,
       'pasta',
+      null,
     ]);
+  });
+
+  test('passes development status filter to the query', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockQuery.mockResolvedValue(makeQueryResult([]));
+    const res = await request(app)
+      .get('/api/recipes')
+      .query({developmentStatus: 'in_development'})
+      .set('Authorization', 'Bearer valid-token');
+    expect(res.status).toBe(200);
+    expect(mockQuery).toHaveBeenCalledWith(expect.any(String), [
+      'user-uuid-1',
+      DEFAULT_RECIPE_LIST_LIMIT,
+      0,
+      null,
+      'in_development',
+    ]);
+  });
+
+  test('returns 400 for invalid development status filter', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    const res = await request(app)
+      .get('/api/recipes')
+      .query({developmentStatus: 'draft'})
+      .set('Authorization', 'Bearer valid-token');
+    expect(res.status).toBe(400);
+    expect(mockQuery).not.toHaveBeenCalled();
   });
 
   test('passes limit and offset query params', async () => {
@@ -114,6 +157,7 @@ describe('GET /recipes', () => {
       500,
       40,
       null,
+      null,
     ]);
   });
 
@@ -127,6 +171,7 @@ describe('GET /recipes', () => {
       'user-uuid-1',
       500,
       0,
+      null,
       null,
     ]);
   });

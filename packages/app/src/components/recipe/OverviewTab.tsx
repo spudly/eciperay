@@ -11,6 +11,7 @@ import {printRecipe} from '../../lib/printRecipe';
 import {shareRecipe} from '../../lib/shareRecipe';
 
 import {OverviewActions} from './OverviewActions';
+import {DevelopmentStatusBadge} from './DevelopmentStatusBadge';
 import {RecipeVisibilityControls} from './RecipeVisibilityControls';
 import {recipeImagePreviewStyles} from './recipeImagePreviewStyles';
 import {StatBadge} from './StatBadge';
@@ -74,6 +75,9 @@ export const OverviewTab = ({
       <Text className="mb-2 text-2xl font-bold text-gray-900">
         {recipe.title}
       </Text>
+      <View className="mb-4 self-start">
+        <DevelopmentStatusBadge status={recipe.developmentStatus} />
+      </View>
       {recipe.description ? (
         <Text className="mb-4 text-gray-600">{recipe.description}</Text>
       ) : null}

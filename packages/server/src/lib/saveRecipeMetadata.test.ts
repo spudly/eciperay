@@ -51,6 +51,10 @@ describe('saveRecipeMetadata', () => {
     );
 
     expect(detail.title).toBe('Updated');
+    expect(mockQuery).toHaveBeenCalledWith(
+      expect.stringContaining('development_status'),
+      ['recipe-uuid-1', 'idea'],
+    );
   });
 
   test('throws when refreshed recipe is missing', async () => {
