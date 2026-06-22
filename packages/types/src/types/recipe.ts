@@ -6,10 +6,19 @@ import type {
   VersionCreatedVia,
 } from './recipeVersion.js';
 
+export type RecipeVisibility = 'private' | 'unlisted' | 'public';
+
+export type RecipeDevelopmentStatus = 'idea' | 'in_development' | 'perfected';
+
 export type Recipe = {
   id: string;
   userId: string;
   lifecycleStatus: RecipeLifecycleStatus;
+  visibility: RecipeVisibility;
+  slug: string;
+  contentRevision: number;
+  developmentStatus: RecipeDevelopmentStatus;
+  clonedFromRecipeId: string | null;
   versionId: string;
   versionNumber: number;
   title: string;

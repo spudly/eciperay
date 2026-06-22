@@ -18,13 +18,16 @@ import {
 } from '../routes/recipes/queries.js';
 import {
   buildVersionOptions,
+  incrementContentRevision,
   insertLineage,
   insertVersion,
   setActiveVersion,
+  updateRecipeSlug,
   updateVersion,
 } from '../routes/recipes/versionQueries.js';
 
 import {mapRowToRecipeDetail} from './mapRowToRecipeDetail.js';
+import {slugifyRecipeTitle} from './slugifyRecipeTitle.js';
 
 type QueryFn = typeof defaultQuery;
 
@@ -62,7 +65,11 @@ const createLineageWithVersion = async (
   createdVia: VersionCreatedVia,
   queryFn: QueryFn,
 ): Promise<CreateRecipeResult> => {
-  const lineage = await insertLineage(userId, queryFn);
+  const lineage = await insertLineage(
+    userId,
+    slugifyRecipeTitle(input.title),
+    queryFn,
+  );
   const recipeId = lineage.rows[0]?.id;
   if (!recipeId) {
     throw new Error('Failed to create recipe lineage');
@@ -83,6 +90,7 @@ const createLineageWithVersion = async (
 };
 
 const updateExistingVersion = async (
+  recipeId: string,
   versionId: string,
   input: RecipeInput,
   queryFn: QueryFn,
@@ -100,6 +108,8 @@ const updateExistingVersion = async (
   if (result.rowCount === 0) {
     throw new RecipeNotFoundError();
   }
+  await updateRecipeSlug(recipeId, slugifyRecipeTitle(input.title), queryFn);
+  await incrementContentRevision(recipeId, queryFn);
   await replaceVersionChildren(versionId, input, queryFn);
   return versionId;
 };
@@ -109,10 +119,15 @@ const saveRecipe = async (
   queryFn: QueryFn,
 ): Promise<CreateRecipeResult> => {
   if (opts.versionId) {
-    await updateExistingVersion(opts.versionId, opts.input, queryFn);
     if (!opts.recipeId) {
       throw new RecipeNotFoundError();
     }
+    await updateExistingVersion(
+      opts.recipeId,
+      opts.versionId,
+      opts.input,
+      queryFn,
+    );
     return {recipeId: opts.recipeId, versionId: opts.versionId};
   }
   return createLineageWithVersion(

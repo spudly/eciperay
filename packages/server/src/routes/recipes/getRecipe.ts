@@ -4,6 +4,7 @@ import {query as defaultQuery} from '../../db/query.js';
 import type {AuthedRequest} from '../../middleware/requireAuth.js';
 import {getParam} from '../../lib/getParam.js';
 import {mapRowToRecipeDetail} from '../../lib/mapRowToRecipeDetail.js';
+import {canReadRecipe, toRecipeAccessRecord} from '../../lib/recipeAccess.js';
 
 import {GET_RECIPE_DETAIL_SQL} from './queries.js';
 
@@ -18,13 +19,12 @@ export const getRecipe = async (
     getParam(req, 'id'),
     req.userId,
   ]);
-  if (result.rows.length === 0) {
+  const row = result.rows[0] as
+    | Parameters<typeof mapRowToRecipeDetail>[0]
+    | undefined;
+  if (!row || !canReadRecipe(toRecipeAccessRecord(row), {userId: req.userId})) {
     res.status(404).json({error: 'Recipe not found'});
     return;
   }
-  res.json(
-    mapRowToRecipeDetail(
-      result.rows[0] as Parameters<typeof mapRowToRecipeDetail>[0],
-    ),
-  );
+  res.json(mapRowToRecipeDetail(row));
 };
