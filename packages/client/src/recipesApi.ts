@@ -2,6 +2,8 @@ import type {
   CreateRecipeResult,
   PublicRecipeDiscoveryItem,
   PublicRecipeResponse,
+  RecipeComment,
+  RecipeCommentInput,
   RecipeDetail,
   RecipeExportBundle,
   RecipeInput,
@@ -101,4 +103,28 @@ export const createRecipesApi = (client: ApiClient) => ({
     client.fetch<RecipeDetail & RecipeRatingSummary>(`/recipes/${id}/rating`, {
       method: 'DELETE',
     }),
+  listComments: (id: string) =>
+    client.fetch<RecipeComment[]>(`/recipes/${id}/comments`),
+  createComment: (id: string, input: RecipeCommentInput) =>
+    client.fetch<RecipeComment>(`/recipes/${id}/comments`, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
+  updateComment: (id: string, commentId: string, input: RecipeCommentInput) =>
+    client.fetch<RecipeComment>(`/recipes/${id}/comments/${commentId}`, {
+      method: 'PUT',
+      body: JSON.stringify(input),
+    }),
+  deleteComment: (id: string, commentId: string) =>
+    client.fetch<undefined>(`/recipes/${id}/comments/${commentId}`, {
+      method: 'DELETE',
+    }),
+  listPublicComments: (id: string, opts?: {shareToken?: string}) => {
+    const query = opts?.shareToken
+      ? `?t=${encodeURIComponent(opts.shareToken)}`
+      : '';
+    return client.fetch<RecipeComment[]>(
+      `/public/recipes/${id}/comments${query}`,
+    );
+  },
 });

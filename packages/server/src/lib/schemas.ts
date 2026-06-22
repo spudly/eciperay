@@ -76,6 +76,10 @@ export const RecipeMetadataInputSchema = z.object({
 
 export const RecipeRatingInputSchema = z.object({stars: StarRating});
 
+export const RecipeCommentInputSchema = z.object({
+  body: z.string().trim().min(1).max(4000),
+});
+
 export const RecipeVersionInputSchema = z.object({
   title: z.string().min(1),
   description: z.string().nullish(),

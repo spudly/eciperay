@@ -9,7 +9,9 @@ import {listCookLogs} from '../cooks/listCookLogs.js';
 import {activateVersion} from './activateVersion.js';
 import {acceptImport} from './acceptImport.js';
 import {cloneRecipe} from './cloneRecipe.js';
+import {createRecipeComment} from './createRecipeComment.js';
 import {createRecipe} from './createRecipe.js';
+import {deleteRecipeCommentRoute} from './deleteRecipeComment.js';
 import {createVersion} from './createVersion.js';
 import {exportRecipes} from './exportRecipes.js';
 import {generateRecipeDescriptionRoute} from './generateRecipeDescription.js';
@@ -17,6 +19,7 @@ import {generateRecipeImage} from './generateRecipeImage.js';
 import {deleteRecipe} from './deleteRecipe.js';
 import {getRecipe} from './getRecipe.js';
 import {getVersion} from './getVersion.js';
+import {listRecipeCommentsRoute} from './listRecipeComments.js';
 import {listRecipes} from './listRecipes.js';
 import {listSharedWithMe} from './listSharedWithMe.js';
 import {listVersions} from './listVersions.js';
@@ -37,6 +40,7 @@ import {
   sendTweakAiMessage,
 } from './tweakAiSessions.js';
 import {tweakVersionWithAi} from './tweakVersionWithAi.js';
+import {updateRecipeCommentRoute} from './updateRecipeComment.js';
 
 type QueryFn = typeof defaultQuery;
 const a = (req: Parameters<typeof requireAuth>[0]) => req as AuthedRequest;
@@ -70,6 +74,18 @@ export const createRecipesRouter = (queryFn: QueryFn) => {
   );
   router.delete('/:id/rating', requireAuth, (req, res) =>
     deleteRecipeRating(a(req), res, queryFn),
+  );
+  router.get('/:id/comments', requireAuth, (req, res) =>
+    listRecipeCommentsRoute(a(req), res, queryFn),
+  );
+  router.post('/:id/comments', requireAuth, (req, res) =>
+    createRecipeComment(a(req), res, queryFn),
+  );
+  router.put('/:id/comments/:commentId', requireAuth, (req, res) =>
+    updateRecipeCommentRoute(a(req), res, queryFn),
+  );
+  router.delete('/:id/comments/:commentId', requireAuth, (req, res) =>
+    deleteRecipeCommentRoute(a(req), res, queryFn),
   );
   router.post('/:id/import/accept', requireAuth, (req, res) =>
     acceptImport(a(req), res, queryFn),
