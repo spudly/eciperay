@@ -45,6 +45,33 @@ export const LIST_SHARED_WITH_ME_SQL = `
   limit $2 offset $3
 `;
 
+export const LIST_PUBLIC_RECIPES_SQL = `
+  select r.id, r.slug, r.visibility,
+         rv.title, rv.description, rv.servings, rv.prep_time_min,
+         rv.cook_time_min, rv.image_url, rv.updated_at,
+         u.display_name as author_display_name,
+         coalesce(
+           json_agg(
+             json_build_object('id', t.id, 'name', t.name, 'color', t.color)
+           ) filter (where t.id is not null),
+           '[]'
+         ) as tags
+  from recipes r
+  join recipe_versions rv on rv.id = r.active_version_id
+  join users u on u.id = r.user_id
+  left join recipe_tags rt on rt.recipe_version_id = rv.id
+  left join tags t on t.id = rt.tag_id
+  where r.visibility = 'public'
+    and (
+      $3::text is null
+      or rv.title ilike '%' || $3 || '%'
+      or coalesce(rv.description, '') ilike '%' || $3 || '%'
+    )
+  group by r.id, rv.id, u.display_name
+  order by rv.updated_at desc
+  limit $1 offset $2
+`;
+
 export const GET_RECIPE_DETAIL_SQL = `
   select r.id, r.user_id, r.status, r.visibility, r.slug, r.share_token_hash,
          r.content_revision, r.development_status, r.cloned_from_recipe_id,

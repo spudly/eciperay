@@ -75,6 +75,24 @@ export type RecipeShareGrantVia = 'link' | 'explicit';
 /** Recipe detail safe for anonymous viewers (no owner identifiers). */
 export type PublicRecipeDetail = Omit<RecipeDetail, 'userId'>;
 
+export type PublicRecipeDiscoverySort = 'newest' | 'rating';
+
+/** Summary card for public recipe browse/search results. */
+export type PublicRecipeDiscoveryItem = {
+  id: string;
+  slug: string;
+  title: string;
+  description: string | null;
+  servings: number;
+  prepTimeMin: number | null;
+  cookTimeMin: number | null;
+  imageUrl: string | null;
+  visibility: 'public';
+  authorDisplayName: string | null;
+  updatedAt: string;
+  tags: Tag[];
+};
+
 export type PublicRecipeResponse = {
   recipe: PublicRecipeDetail;
   canonicalSlug: string;

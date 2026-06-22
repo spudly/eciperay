@@ -1,5 +1,6 @@
 import type {
   CreateRecipeResult,
+  PublicRecipeDiscoveryItem,
   PublicRecipeResponse,
   RecipeDetail,
   RecipeExportBundle,
@@ -13,11 +14,16 @@ import type {ApiClient} from './createApiClient.js';
 import {fetchAllRecipePages} from './fetchAllRecipePages.js';
 import {
   buildListUrl,
+  buildPublicRecipesUrl,
   buildSharedWithMeUrl,
+  type PublicRecipeDiscoveryParams,
   type RecipeListParams,
 } from './recipesListUrl.js';
 
-export type {RecipeListParams} from './recipesListUrl.js';
+export type {
+  PublicRecipeDiscoveryParams,
+  RecipeListParams,
+} from './recipesListUrl.js';
 
 type PublicRecipeRequest = {slug?: string; shareToken?: string};
 
@@ -40,6 +46,8 @@ export const createRecipesApi = (client: ApiClient) => ({
   get: (id: string) => client.fetch<RecipeDetail>(`/recipes/${id}`),
   getPublic: (id: string, opts?: PublicRecipeRequest) =>
     client.fetch<PublicRecipeResponse>(buildPublicRecipePath(id, opts)),
+  listPublic: (params?: PublicRecipeDiscoveryParams) =>
+    client.fetch<PublicRecipeDiscoveryItem[]>(buildPublicRecipesUrl(params)),
   create: (input: RecipeInput) =>
     client.fetch<RecipeDetail & CreateRecipeResult>('/recipes', {
       method: 'POST',
