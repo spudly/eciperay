@@ -75,6 +75,13 @@ describe('msw handlers', () => {
     expect(unpaged[0]?.title).toBe('Shared Pasta');
   });
 
+  test('covers recipe clone endpoint', async () => {
+    const cloned = await eciperay.recipes.clone('recipe-uuid-1');
+    expect(cloned.id).toBe('cloned-recipe-id');
+    expect(cloned.clonedFromRecipeId).toBe('recipe-uuid-1');
+    expect(cloned.visibility).toBe('private');
+  });
+
   test('covers lifecycle patch without an explicit status', async () => {
     const response = await fetch(
       'http://localhost:8080/api/recipes/recipe-uuid-1',

@@ -51,6 +51,12 @@ export const privacyPolicySections: LegalSection[] = [
             receive viewer identities in the current version of the service.
           </li>
           <li>
+            <strong>Recipe clones:</strong> when you save a copy of someone
+            else&apos;s shared recipe, we store a private duplicate in your
+            account and record which recipe it was copied from. The original
+            author is not notified in the current version of the service.
+          </li>
+          <li>
             <strong>Images:</strong> photos you upload for recipes, stored in
             our file storage service.
           </li>

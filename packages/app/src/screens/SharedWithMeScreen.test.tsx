@@ -7,7 +7,11 @@ import {
 } from '@eciperay/client';
 
 import {makeRecipeDetail} from '../__tests__/fixtures/recipe';
-import {renderWithProviders} from '../__tests__/testUtils';
+import {
+  flushQueryClient,
+  makeQueryClient,
+  renderWithProviders,
+} from '../__tests__/testUtils';
 import {api} from '../lib/api';
 
 import {SharedWithMeScreen} from './SharedWithMeScreen';
@@ -85,18 +89,22 @@ describe('SharedWithMeScreen', () => {
         return secondPagePromise;
       },
     );
+    const client = makeQueryClient();
     const {findByText, getByText, UNSAFE_getByType} = renderWithProviders(
       <SharedWithMeScreen />,
+      client,
     );
     await findByText('Shared 0');
+    const list = UNSAFE_getByType(FlatList);
     await act(async () => {
-      UNSAFE_getByType(FlatList).props.onEndReached?.();
+      list.props.onEndReached?.();
     });
     await waitFor(() => {
       expect(getByText('Loading more…')).toBeTruthy();
     });
     await act(async () => {
       resolveSecondPage([]);
+      await flushQueryClient(client);
     });
   });
 
