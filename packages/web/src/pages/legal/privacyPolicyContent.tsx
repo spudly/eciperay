@@ -38,7 +38,10 @@ export const privacyPolicySections: LegalSection[] = [
             recipe via an unlisted link or make it public, anyone with the link
             (or anyone browsing public recipes) can view that recipe content
             without signing in. You can change visibility or rotate unlisted
-            links at any time.
+            links at any time. Anonymous viewers may access shared recipes
+            through our public recipe API; those requests are logged like other
+            server traffic (see usage and diagnostic data below) but are not
+            linked to a viewer account.
           </li>
           <li>
             <strong>Images:</strong> photos you upload for recipes, stored in

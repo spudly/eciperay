@@ -70,4 +70,13 @@ export type RecipeSharingUpdateInput = {
 
 export type RecipeSharingUpdateResult = RecipeDetail & {shareToken?: string};
 
+/** Recipe detail safe for anonymous viewers (no owner identifiers). */
+export type PublicRecipeDetail = Omit<RecipeDetail, 'userId'>;
+
+export type PublicRecipeResponse = {
+  recipe: PublicRecipeDetail;
+  canonicalSlug: string;
+  slugMismatch?: boolean;
+};
+
 export type CreateRecipeResult = {recipeId: string; versionId: string};

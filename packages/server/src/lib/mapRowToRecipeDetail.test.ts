@@ -2,6 +2,7 @@ import {makeRecipeDetail} from '../test/fixtures/recipe.js';
 import {makeRecipeDetailRow} from '../test/fixtures/recipeRow.js';
 
 import {
+  mapRowToPublicRecipeDetail,
   mapRowToRecipeDetail,
   mapRowToRecipeListItem,
 } from './mapRowToRecipeDetail.js';
@@ -11,6 +12,19 @@ describe('mapRowToRecipeDetail', () => {
     expect(mapRowToRecipeDetail(makeRecipeDetailRow())).toEqual(
       makeRecipeDetail(),
     );
+  });
+});
+
+describe('mapRowToPublicRecipeDetail', () => {
+  test('omits owner userId from mapped recipe', () => {
+    const mapped = mapRowToPublicRecipeDetail(
+      makeRecipeDetailRow({user_id: 'owner-uuid'}),
+    );
+    expect(mapped).toEqual({
+      ...makeRecipeDetail({userId: 'owner-uuid'}),
+      userId: undefined,
+    });
+    expect('userId' in mapped).toBe(false);
   });
 });
 

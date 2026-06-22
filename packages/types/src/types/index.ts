@@ -8,6 +8,8 @@ export type {
   RecipeDevelopmentStatus,
   RecipeInput,
   RecipeMetadataInput,
+  PublicRecipeDetail,
+  PublicRecipeResponse,
   RecipeSharingUpdateInput,
   RecipeSharingUpdateResult,
   RecipeVisibility,
