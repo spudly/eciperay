@@ -145,6 +145,42 @@ export const incrementContentRevision = (recipeId: string, queryFn: QueryFn) =>
     [recipeId],
   );
 
+const GET_RECIPE_SHARING_SQL = `
+  select id, user_id, visibility, share_token_hash
+  from recipes
+  where id = $1 and user_id = $2
+`;
+
+export type RecipeSharingRow = {
+  id: string;
+  user_id: string;
+  visibility: string;
+  share_token_hash: string | null;
+};
+
+export const getRecipeSharingRow = (
+  recipeId: string,
+  userId: string,
+  queryFn: QueryFn,
+) => queryFn<RecipeSharingRow>(GET_RECIPE_SHARING_SQL, [recipeId, userId]);
+
+export const updateRecipeVisibility = (
+  opts: {
+    recipeId: string;
+    userId: string;
+    visibility: string;
+    shareTokenHash: string | null;
+  },
+  queryFn: QueryFn,
+) =>
+  queryFn(
+    `update recipes
+     set visibility = $3, share_token_hash = $4
+     where id = $1 and user_id = $2
+     returning id`,
+    [opts.recipeId, opts.userId, opts.visibility, opts.shareTokenHash],
+  );
+
 export const cloneVersionChildren = async (
   sourceVersionId: string,
   targetVersionId: string,

@@ -19,7 +19,9 @@ import {getVersion} from './getVersion.js';
 import {listRecipes} from './listRecipes.js';
 import {listVersions} from './listVersions.js';
 import {patchRecipeLineage} from './patchRecipeLineage.js';
+import {patchRecipeSharing} from './patchRecipeSharing.js';
 import {putRecipe} from './putRecipe.js';
+import {rotateRecipeShareToken} from './rotateRecipeShareToken.js';
 import {putVersion} from './putVersion.js';
 import {startImportEdits} from './startImportEdits.js';
 import {
@@ -65,6 +67,12 @@ export const createRecipesRouter = (queryFn: QueryFn) => {
   );
   router.patch('/:id', requireAuth, (req, res) =>
     patchRecipeLineage(a(req), res, queryFn),
+  );
+  router.patch('/:id/sharing', requireAuth, (req, res) =>
+    patchRecipeSharing(a(req), res, queryFn),
+  );
+  router.post('/:id/sharing/rotate-token', requireAuth, (req, res) =>
+    rotateRecipeShareToken(a(req), res, queryFn),
   );
   router.delete('/:id', requireAuth, (req, res) =>
     deleteRecipe(a(req), res, queryFn),

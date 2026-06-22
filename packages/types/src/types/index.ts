@@ -8,6 +8,8 @@ export type {
   RecipeDevelopmentStatus,
   RecipeInput,
   RecipeMetadataInput,
+  RecipeSharingUpdateInput,
+  RecipeSharingUpdateResult,
   RecipeVisibility,
 } from './recipe.js';
 export type {

@@ -83,6 +83,11 @@ export const RecipeLifecyclePatchSchema = z.object({
   status: z.enum(['idea', 'evolving', 'perfected', 'abandoned']),
 });
 
+export const RecipeSharingPatchSchema = z.object({
+  visibility: z.enum(['private', 'unlisted', 'public']),
+  publishingConsent: z.boolean().optional(),
+});
+
 export const CookLogInputSchema = z.object({
   authorStarRating: StarRating.nullish(),
   notes: z.string().max(4000).nullish(),

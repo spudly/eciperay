@@ -11,6 +11,7 @@ import {printRecipe} from '../../lib/printRecipe.js';
 import {shareRecipe} from '../../lib/shareRecipe.js';
 
 import {OverviewActions} from './OverviewActions.js';
+import {RecipeVisibilityControls} from './RecipeVisibilityControls.js';
 
 type Props = {
   recipe: RecipeDetail;
@@ -155,6 +156,10 @@ export const OverviewTab = ({
       <OverviewActions
         recipe={recipe}
         versions={versions}
+        onActionMessage={showActionMessage}
+      />
+      <RecipeVisibilityControls
+        recipe={recipe}
         onActionMessage={showActionMessage}
       />
       <div className="flex flex-wrap gap-2">
