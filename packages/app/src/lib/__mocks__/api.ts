@@ -1,6 +1,7 @@
 export const api = {
   recipes: {
     list: jest.fn(),
+    listSharedWithMe: jest.fn(),
     get: jest.fn(),
     create: jest.fn(),
     put: jest.fn(),

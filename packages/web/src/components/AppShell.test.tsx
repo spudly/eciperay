@@ -22,6 +22,7 @@ describe('AppShell', () => {
     );
     expect(screen.getByText('Eciperay')).toBeInTheDocument();
     expect(screen.getByText('Recipes')).toBeInTheDocument();
+    expect(screen.getByText('Shared with me')).toBeInTheDocument();
     expect(screen.getByText('Page Content')).toBeInTheDocument();
   });
 });

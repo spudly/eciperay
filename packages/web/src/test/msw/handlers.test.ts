@@ -59,6 +59,22 @@ describe('msw handlers', () => {
     expect(bySlug.canonicalSlug).toBe('test-recipe');
   });
 
+  test('covers shared-with-me list endpoint', async () => {
+    const shared = await eciperay.recipes.listSharedWithMe({
+      limit: 10,
+      offset: 0,
+    });
+    expect(shared[0]?.title).toBe('Shared Pasta');
+    expect(shared[0]?.id).toBe('shared-recipe-1');
+
+    const response = await fetch(
+      'http://localhost:8080/api/recipes/shared-with-me',
+    );
+    expect(response.ok).toBe(true);
+    const unpaged = (await response.json()) as {title: string}[];
+    expect(unpaged[0]?.title).toBe('Shared Pasta');
+  });
+
   test('covers lifecycle patch without an explicit status', async () => {
     const response = await fetch(
       'http://localhost:8080/api/recipes/recipe-uuid-1',

@@ -16,6 +16,10 @@ import {ManualEntryScreen} from '../screens/ManualEntryScreen';
 import {ProfileScreen} from '../screens/ProfileScreen';
 import {RecipeDetailScreen} from '../screens/RecipeDetailScreen';
 import {RecipesScreen} from '../screens/RecipesScreen';
+import {
+  SharedWithMeScreen,
+  sharedWithMeScreenOptions,
+} from '../screens/SharedWithMeScreen';
 import {TagsScreen} from '../screens/TagsScreen';
 import {TweakAiScreen} from '../screens/TweakAiScreen';
 
@@ -37,6 +41,11 @@ const RecipesStackNavigator = () => (
       name="RecipesList"
       component={RecipesScreen}
       options={{title: 'Recipes'}}
+    />
+    <RecipesStack.Screen
+      name="SharedWithMe"
+      component={SharedWithMeScreen}
+      options={sharedWithMeScreenOptions}
     />
     <RecipesStack.Screen
       name="RecipeDetail"
