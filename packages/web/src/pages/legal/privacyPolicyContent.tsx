@@ -102,8 +102,8 @@ export const privacyPolicySections: LegalSection[] = [
         <li>Provide, maintain, and improve the Eciperay service.</li>
         <li>
           Understand how features are used and measure product performance,
-          including page views on public recipe pages and public recipe browse
-          traffic when you are not signed in.
+          including page views on our marketing landing page, public recipe
+          pages, and public recipe browse traffic when you are not signed in.
         </li>
         <li>
           Diagnose errors, investigate reliability issues, and improve
