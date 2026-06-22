@@ -100,4 +100,28 @@ describe('msw handlers', () => {
     const recipe = (await response.json()) as {lifecycleStatus: string};
     expect(recipe.lifecycleStatus).toBe('evolving');
   });
+
+  test('covers ratings and comments endpoints', async () => {
+    const comment = await eciperay.recipes.createComment('recipe-uuid-1', {
+      body: 'Nice!',
+    });
+    expect(comment.body).toBe('Nice!');
+    const comments = await eciperay.recipes.listComments('recipe-uuid-1');
+    expect(comments).toEqual([]);
+    const publicComments = await eciperay.recipes.listPublicComments(
+      'recipe-uuid-1',
+      {shareToken: 'tok'},
+    );
+    expect(publicComments).toEqual([]);
+    const rated = await eciperay.recipes.putRating('recipe-uuid-1', {stars: 4});
+    expect(rated.viewerRating).toBe(4);
+    const cleared = await eciperay.recipes.deleteRating('recipe-uuid-1');
+    expect(cleared.viewerRating).toBeNull();
+
+    const commentsViaSlug = await fetch(
+      'http://localhost:8080/api/public/recipes/recipe-uuid-1/comments',
+    );
+    expect(commentsViaSlug.ok).toBe(true);
+    expect(await commentsViaSlug.json()).toEqual([]);
+  });
 });

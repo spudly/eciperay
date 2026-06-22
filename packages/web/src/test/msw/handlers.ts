@@ -37,8 +37,54 @@ export const handlers = [
     return HttpResponse.json([sharedRecipe].slice(offset, offset + limit));
   }),
   http.get(`${API}/api/recipes/:id`, ({params}) =>
-    HttpResponse.json({...recipe, id: params['id']}),
+    HttpResponse.json({
+      ...recipe,
+      id: params['id'],
+      communityRating: null,
+      viewerRating: null,
+      viewerRatingIsStale: false,
+    }),
   ),
+  http.get(`${API}/api/recipes/:id/comments`, () => HttpResponse.json([])),
+  http.get(`${API}/api/public/recipes/:id/comments`, () =>
+    HttpResponse.json([]),
+  ),
+  http.put(`${API}/api/recipes/:id/rating`, async ({params, request}) => {
+    const body = (await request.json()) as {stars: number};
+    return HttpResponse.json({
+      ...recipe,
+      id: params['id'],
+      viewerRating: body.stars,
+      viewerRatingIsStale: false,
+      communityRating: null,
+    });
+  }),
+  http.delete(`${API}/api/recipes/:id/rating`, ({params}) =>
+    HttpResponse.json({
+      ...recipe,
+      id: params['id'],
+      viewerRating: null,
+      viewerRatingIsStale: false,
+      communityRating: null,
+    }),
+  ),
+  http.post(`${API}/api/recipes/:id/comments`, async ({request}) => {
+    const body = (await request.json()) as {body: string};
+    return HttpResponse.json(
+      {
+        id: 'comment-1',
+        recipeId: 'recipe-uuid-1',
+        authorUserId: 'user-uuid-1',
+        authorDisplayName: 'Test User',
+        body: body.body,
+        contentRevision: 1,
+        isStale: false,
+        createdAt: '2024-01-01T00:00:00.000Z',
+        updatedAt: '2024-01-01T00:00:00.000Z',
+      },
+      {status: 201},
+    );
+  }),
   http.get(`${API}/api/public/recipes`, ({request}) => {
     const url = new URL(request.url);
     const search = url.searchParams.get('search')?.trim();
@@ -68,6 +114,7 @@ export const handlers = [
       canonicalSlug: recipe.slug,
       communityRating: null,
       viewerRating: null,
+      viewerRatingIsStale: false,
     });
   }),
   http.get(`${API}/api/public/recipes/:id/:slug`, ({params}) => {
@@ -80,6 +127,7 @@ export const handlers = [
       canonicalSlug: recipe.slug,
       communityRating: null,
       viewerRating: null,
+      viewerRatingIsStale: false,
       ...(slugMismatch ? {slugMismatch: true} : {}),
     });
   }),

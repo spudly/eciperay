@@ -21,6 +21,7 @@ describe('loadRecipeRatingSummary', () => {
     );
 
     expect(summary.viewerRating).toBeNull();
+    expect(summary.viewerRatingIsStale).toBe(false);
   });
 
   test('returns owner star rating as viewer rating', async () => {
@@ -49,7 +50,9 @@ describe('loadRecipeRatingSummary', () => {
         return Promise.resolve(makeQueryResult([]));
       }
       if (sql.includes('where recipe_id = $1 and user_id = $2')) {
-        return Promise.resolve(makeQueryResult([{stars: 4}]));
+        return Promise.resolve(
+          makeQueryResult([{stars: 4, content_revision: 1}]),
+        );
       }
       return Promise.resolve(makeQueryResult([]));
     }) as typeof mockQuery);
@@ -66,5 +69,33 @@ describe('loadRecipeRatingSummary', () => {
     );
 
     expect(summary.viewerRating).toBe(4);
+    expect(summary.viewerRatingIsStale).toBe(true);
+  });
+
+  test('returns false viewerRatingIsStale when viewer has no rating', async () => {
+    const mockQuery = createMockQuery();
+    mockQuery.mockImplementation((sql: string) => {
+      if (sql.includes('rr.user_id <> r.user_id')) {
+        return Promise.resolve(makeQueryResult([]));
+      }
+      if (sql.includes('where recipe_id = $1 and user_id = $2')) {
+        return Promise.resolve(makeQueryResult([]));
+      }
+      return Promise.resolve(makeQueryResult([]));
+    });
+
+    const summary = await loadRecipeRatingSummary(
+      {
+        recipeId: 'recipe-uuid-1',
+        ownerUserId: 'owner-uuid',
+        contentRevision: 2,
+        ownerStarRating: null,
+        viewerUserId: 'viewer-uuid',
+      },
+      mockQuery,
+    );
+
+    expect(summary.viewerRating).toBeNull();
+    expect(summary.viewerRatingIsStale).toBe(false);
   });
 });

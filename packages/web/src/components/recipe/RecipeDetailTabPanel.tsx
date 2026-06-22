@@ -1,10 +1,15 @@
-import type {RecipeDetail, RecipeVersionSummary} from '@eciperay/types';
+import type {
+  RecipeDetail,
+  RecipeRatingSummary,
+  RecipeVersionSummary,
+} from '@eciperay/types';
 
 import {CookHistoryTab} from './CookHistoryTab.js';
 import {IngredientsTab} from './IngredientsTab.js';
 import {InstructionsTab} from './InstructionsTab.js';
 import {NutritionTab} from './NutritionTab.js';
 import {OverviewTab} from './OverviewTab.js';
+import {RecipeEngagementPanel} from './RecipeEngagementPanel.js';
 
 type Tab =
   | 'overview'
@@ -33,13 +38,24 @@ export const RecipeDetailTabPanel = ({
   onServingsChange,
 }: Props) => {
   if (activeTab === 'overview') {
+    const ratings = recipe as RecipeDetail & RecipeRatingSummary;
     return (
-      <OverviewTab
-        recipe={displayRecipe}
-        activeVersionId={recipe.versionId}
-        servings={currentServings}
-        versions={versions}
-      />
+      <>
+        <OverviewTab
+          recipe={displayRecipe}
+          activeVersionId={recipe.versionId}
+          servings={currentServings}
+          versions={versions}
+        />
+        <RecipeEngagementPanel
+          recipeId={recipe.id}
+          ownerUserId={recipe.userId}
+          communityRating={ratings.communityRating}
+          viewerRating={ratings.viewerRating}
+          viewerRatingIsStale={ratings.viewerRatingIsStale}
+          editableRatings
+        />
+      </>
     );
   }
   if (activeTab === 'ingredients') {

@@ -1,4 +1,5 @@
 import React from 'react';
+import {waitFor} from '@testing-library/react-native';
 
 import {
   makeRecipeDetail,
@@ -6,12 +7,20 @@ import {
 } from '../../__tests__/fixtures/recipe';
 import {renderWithProviders} from '../../__tests__/testUtils';
 
+import {api} from '../../lib/api';
+
 import {RecipeDetailTabPanel} from './RecipeDetailTabPanel';
 
 jest.mock('../../lib/api');
 
+const mockListComments = api.recipes.listComments as jest.Mock;
+
 describe('RecipeDetailTabPanel', () => {
-  test('renders overview tab content', () => {
+  beforeEach(() => {
+    mockListComments.mockResolvedValue([]);
+  });
+
+  test('renders overview tab content', async () => {
     const recipe = makeRecipeDetail();
     const {getByText} = renderWithProviders(
       <RecipeDetailTabPanel
@@ -31,5 +40,8 @@ describe('RecipeDetailTabPanel', () => {
       />,
     );
     expect(getByText('Test Recipe')).toBeTruthy();
+    await waitFor(() => {
+      expect(getByText('Community rating')).toBeTruthy();
+    });
   });
 });

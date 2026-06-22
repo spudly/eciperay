@@ -20,5 +20,8 @@ export const computeCommunityRating = (
   }
 
   const average = Math.round((weightedSum / weightTotal) * 10) / 10;
-  return {average, count: ratings.length};
+  const hasStaleRatings = ratings.some(
+    rating => rating.contentRevision < recipeContentRevision,
+  );
+  return {average, count: ratings.length, hasStaleRatings};
 };

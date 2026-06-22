@@ -78,6 +78,7 @@ export const getPublicRecipe = async (
     canonicalSlug,
     communityRating: ratings.communityRating,
     viewerRating: ratings.viewerRating,
+    viewerRatingIsStale: ratings.viewerRatingIsStale,
     ...(slugMismatch ? {slugMismatch: true} : {}),
   };
   res.json(body);

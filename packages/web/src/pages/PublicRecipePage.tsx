@@ -1,7 +1,9 @@
+/* eslint-disable max-lines -- public recipe page with tabbed read-only content */
 import {
   buildRecipePermalink,
   publicRecipeToRecipeDetail,
   queryKeys,
+  useAuth,
 } from '@eciperay/client';
 import clsx from 'clsx';
 import {useQuery} from '@tanstack/react-query';
@@ -12,6 +14,7 @@ import {IngredientsTab} from '../components/recipe/IngredientsTab.js';
 import {InstructionsTab} from '../components/recipe/InstructionsTab.js';
 import {PublicRecipeCtas} from '../components/recipe/PublicRecipeCtas.js';
 import {PublicRecipeOverview} from '../components/recipe/PublicRecipeOverview.js';
+import {RecipeEngagementPanel} from '../components/recipe/RecipeEngagementPanel.js';
 import {PublicPageLayout} from '../components/PublicPageLayout.js';
 import {PublicRecipeError} from '../components/PublicRecipeError.js';
 import {RecipePageHead} from '../components/RecipePageHead.js';
@@ -31,6 +34,7 @@ export const PublicRecipePage = () => {
   const shareToken = searchParams.get('t') ?? undefined;
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [servings, setServings] = useState<number | null>(null);
+  const {session} = useAuth();
 
   const {data, isLoading, error} = useQuery({
     queryKey: queryKeys.publicRecipe(id, slug, shareToken),
@@ -135,7 +139,19 @@ export const PublicRecipePage = () => {
           ))}
         </div>
         {activeTab === 'overview' ? (
-          <PublicRecipeOverview recipe={recipe} />
+          <>
+            <PublicRecipeOverview recipe={recipe} />
+            <RecipeEngagementPanel
+              recipeId={recipe.id}
+              communityRating={data.communityRating}
+              viewerRating={data.viewerRating}
+              viewerRatingIsStale={data.viewerRatingIsStale}
+              editableRatings={Boolean(session)}
+              shareToken={shareToken}
+              publicList
+              publicContext={{slug, shareToken}}
+            />
+          </>
         ) : null}
         {activeTab === 'ingredients' ? (
           <IngredientsTab

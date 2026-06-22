@@ -1,4 +1,8 @@
-import type {RecipeDetail, RecipeVersionSummary} from '@eciperay/types';
+import type {
+  RecipeDetail,
+  RecipeRatingSummary,
+  RecipeVersionSummary,
+} from '@eciperay/types';
 import React from 'react';
 
 import {CookHistoryTab} from './CookHistoryTab';
@@ -6,6 +10,7 @@ import {IngredientsTab} from './IngredientsTab';
 import {InstructionsTab} from './InstructionsTab';
 import {NutritionTab} from './NutritionTab';
 import {OverviewTab} from './OverviewTab';
+import {RecipeEngagementPanel} from './RecipeEngagementPanel';
 import type {RecipeDetailTab} from './RecipeDetailTabBar';
 
 type Props = {
@@ -40,19 +45,29 @@ export const RecipeDetailTabPanel = ({
   onEditVersion,
 }: Props) => {
   if (activeTab === 'overview') {
+    const ratings = recipe as RecipeDetail & RecipeRatingSummary;
     return (
-      <OverviewTab
-        recipe={displayRecipe}
-        activeVersionId={recipe.versionId}
-        servings={currentServings}
-        versions={versions}
-        onStartCooking={onStartCooking}
-        onDelete={onDelete}
-        onTweakAi={onTweakAi}
-        onViewVersion={onViewVersion}
-        onEditRecipe={onEditRecipe}
-        onEditVersion={onEditVersion}
-      />
+      <>
+        <OverviewTab
+          recipe={displayRecipe}
+          activeVersionId={recipe.versionId}
+          servings={currentServings}
+          versions={versions}
+          onStartCooking={onStartCooking}
+          onDelete={onDelete}
+          onTweakAi={onTweakAi}
+          onViewVersion={onViewVersion}
+          onEditRecipe={onEditRecipe}
+          onEditVersion={onEditVersion}
+        />
+        <RecipeEngagementPanel
+          recipeId={recipe.id}
+          ownerUserId={recipe.userId}
+          communityRating={ratings.communityRating}
+          viewerRating={ratings.viewerRating}
+          viewerRatingIsStale={ratings.viewerRatingIsStale}
+        />
+      </>
     );
   }
   if (activeTab === 'ingredients') {

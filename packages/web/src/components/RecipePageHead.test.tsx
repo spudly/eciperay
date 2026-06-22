@@ -86,7 +86,7 @@ describe('RecipePageHead', () => {
       <RecipePageHead
         recipe={recipe}
         canonicalUrl="https://www.eciperay.com/recipe/r3/rated-soup"
-        communityRating={{average: 4.2, count: 8}}
+        communityRating={{average: 4.2, count: 8, hasStaleRatings: false}}
       />,
       {withAuth: false},
     );

@@ -14,7 +14,7 @@ describe('computeCommunityRating', () => {
         ],
         2,
       ),
-    ).toEqual({average: 3, count: 2});
+    ).toEqual({average: 3, count: 2, hasStaleRatings: false});
   });
 
   test('applies half weight to stale revision ratings', () => {
@@ -26,6 +26,6 @@ describe('computeCommunityRating', () => {
         ],
         2,
       ),
-    ).toEqual({average: 3.7, count: 2});
+    ).toEqual({average: 3.7, count: 2, hasStaleRatings: true});
   });
 });
