@@ -60,3 +60,13 @@ export const recipeListInfiniteQueryOptions = (
   initialPageParam: 0,
   getNextPageParam: getRecipeListNextPageParam,
 });
+
+export const sharedWithMeInfiniteQueryOptions = (
+  listSharedWithMe: ListRecipesFn,
+) => ({
+  queryKey: queryKeys.sharedWithMe(),
+  queryFn: ({pageParam}: {pageParam: number}) =>
+    listSharedWithMe({limit: RECIPE_LIST_PAGE_SIZE, offset: pageParam}),
+  initialPageParam: 0,
+  getNextPageParam: getRecipeListNextPageParam,
+});

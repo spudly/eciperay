@@ -37,6 +37,12 @@ export const AppShell = () => (
             Recipes
           </NavLink>
           <NavLink
+            to="/shared-with-me"
+            className={navLinkClass}
+          >
+            Shared with me
+          </NavLink>
+          <NavLink
             to="/add"
             className={navLinkClass}
           >

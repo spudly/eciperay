@@ -21,6 +21,7 @@ import {ProfilePage} from '../pages/ProfilePage.js';
 import {PublicRecipePage} from '../pages/PublicRecipePage.js';
 import {RecipeDetailPage} from '../pages/RecipeDetailPage.js';
 import {RecipesPage} from '../pages/RecipesPage.js';
+import {SharedWithMePage} from '../pages/SharedWithMePage.js';
 import {ResetPasswordPage} from '../pages/auth/ResetPasswordPage.js';
 import {SignupPage} from '../pages/auth/SignupPage.js';
 import {TagsPage} from '../pages/TagsPage.js';
@@ -42,6 +43,7 @@ export const router = createBrowserRouter([
         children: [
           {path: '/', element: <HomePage />},
           {path: '/recipes', element: <RecipesPage />},
+          {path: '/shared-with-me', element: <SharedWithMePage />},
           {path: '/recipes/:recipeId', element: <RecipeDetailPage />},
           {path: '/recipes/:recipeId/edit', element: <EditRecipePage />},
           {

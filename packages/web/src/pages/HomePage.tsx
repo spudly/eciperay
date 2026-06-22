@@ -3,6 +3,7 @@ import {
   HOME_BROWSE_LABEL,
   HOME_EMPTY_MESSAGE,
   HOME_RECIPES_SECTION_TITLE,
+  HOME_SHARED_WITH_ME_LABEL,
   HOME_SUBTITLE,
   HOME_TITLE,
   homeRecentlyViewedRecipesQueryOptions,
@@ -57,6 +58,14 @@ export const HomePage = () => {
             "
           >
             {HOME_ADD_LABEL}
+          </Link>
+          <Link
+            to="/shared-with-me"
+            className="
+              rounded-xl bg-gray-100 px-6 py-3 font-semibold text-gray-700
+            "
+          >
+            {HOME_SHARED_WITH_ME_LABEL}
           </Link>
         </div>
       </div>

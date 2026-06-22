@@ -1,10 +1,11 @@
 import React from 'react';
-import {Alert, TouchableOpacity} from 'react-native';
+import {Alert} from 'react-native';
 import {fireEvent, waitFor} from '@testing-library/react-native';
 import {
   HOME_ADD_LABEL,
   HOME_BROWSE_LABEL,
   HOME_RECENT_RECIPE_COUNT,
+  HOME_SHARED_WITH_ME_LABEL,
   HOME_TITLE,
   queryKeys,
   recordRecipeView,
@@ -81,25 +82,33 @@ describe('HomeScreen', () => {
     expect(await findByText(HOME_TITLE)).toBeTruthy();
     expect(await findByText(HOME_BROWSE_LABEL)).toBeTruthy();
     expect(await findByText(HOME_ADD_LABEL)).toBeTruthy();
+    expect(await findByText(HOME_SHARED_WITH_ME_LABEL)).toBeTruthy();
     expect(await findByText('Recently viewed')).toBeTruthy();
   });
 
   test('navigates to Recipes tab from browse action', async () => {
-    const {findByText, UNSAFE_getAllByType} = renderHome();
+    const {findByText} = renderHome();
     await findByText(HOME_TITLE);
-    const [browseButton] = UNSAFE_getAllByType(TouchableOpacity);
-    fireEvent.press(browseButton);
+    fireEvent.press(await findByText(HOME_BROWSE_LABEL));
     expect(mockNavigate).toHaveBeenCalledWith('Recipes', {
       screen: 'RecipesList',
     });
   });
 
   test('navigates to Add tab from add action', async () => {
-    const {findByText, UNSAFE_getAllByType} = renderHome();
+    const {findByText} = renderHome();
     await findByText(HOME_TITLE);
-    const [, addButton] = UNSAFE_getAllByType(TouchableOpacity);
-    fireEvent.press(addButton);
+    fireEvent.press(await findByText(HOME_ADD_LABEL));
     expect(mockNavigate).toHaveBeenCalledWith('Add', {screen: 'AddScreen'});
+  });
+
+  test('navigates to Shared with me from home action', async () => {
+    const {findByText} = renderHome();
+    await findByText(HOME_TITLE);
+    fireEvent.press(await findByText(HOME_SHARED_WITH_ME_LABEL));
+    expect(mockNavigate).toHaveBeenCalledWith('Recipes', {
+      screen: 'SharedWithMe',
+    });
   });
 
   test('shows recently viewed recipes from local history', async () => {

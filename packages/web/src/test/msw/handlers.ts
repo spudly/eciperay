@@ -23,6 +23,19 @@ export const handlers = [
     const limit = Number(url.searchParams.get('limit') ?? 100);
     return HttpResponse.json([recipe].slice(offset, offset + limit));
   }),
+  http.get(`${API}/api/recipes/shared-with-me`, ({request}) => {
+    const url = new URL(request.url);
+    const offset = Number(url.searchParams.get('offset') ?? 0);
+    const limit = Number(url.searchParams.get('limit') ?? 100);
+    const sharedRecipe = makeRecipeDetail({
+      id: 'shared-recipe-1',
+      userId: 'other-user',
+      title: 'Shared Pasta',
+      slug: 'shared-pasta',
+      visibility: 'public',
+    });
+    return HttpResponse.json([sharedRecipe].slice(offset, offset + limit));
+  }),
   http.get(`${API}/api/recipes/:id`, ({params}) =>
     HttpResponse.json({...recipe, id: params['id']}),
   ),

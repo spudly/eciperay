@@ -6,6 +6,7 @@ import {
   homeRecentlyViewedRecipesQueryOptions,
   RECIPE_LIST_PAGE_SIZE,
   recipeListInfiniteQueryOptions,
+  sharedWithMeInfiniteQueryOptions,
 } from './recipeListQuery.js';
 import type {RecipeViewHistoryStorage} from './recipeViewHistory.js';
 import {recordRecipeView, getRecentRecipeIds} from './recipeViewHistory.js';
@@ -47,6 +48,20 @@ describe('recipeListQuery', () => {
     expect(list).toHaveBeenCalledWith({
       limit: RECIPE_LIST_PAGE_SIZE,
       offset: 0,
+    });
+  });
+
+  test('builds shared-with-me infinite query options with paging params', async () => {
+    const listSharedWithMe = jest.fn().mockResolvedValue([makeListItem('1')]);
+    const options = sharedWithMeInfiniteQueryOptions(listSharedWithMe);
+    expect(options.queryKey).toEqual([
+      'sharedWithMe',
+      {limit: null, offset: null},
+    ]);
+    await options.queryFn({pageParam: 20});
+    expect(listSharedWithMe).toHaveBeenCalledWith({
+      limit: RECIPE_LIST_PAGE_SIZE,
+      offset: 20,
     });
   });
 
