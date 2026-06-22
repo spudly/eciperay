@@ -53,6 +53,12 @@ describe('createEciperayClient', () => {
     await client.recipes.clone('r1', {shareToken: 'tok'});
     await client.recipes.putRating('r1', {stars: 4});
     await client.recipes.deleteRating('r1');
+    await client.recipes.listComments('r1');
+    await client.recipes.createComment('r1', {body: 'Nice!'});
+    await client.recipes.updateComment('r1', 'c1', {body: 'Updated'});
+    await client.recipes.deleteComment('r1', 'c1');
+    await client.recipes.listPublicComments('r1');
+    await client.recipes.listPublicComments('r1', {shareToken: 'tok'});
     expect(api.fetch).toHaveBeenCalledWith('/recipes');
     expect(api.fetch).toHaveBeenCalledWith('/recipes?limit=50&offset=10');
     expect(api.fetch).toHaveBeenCalledWith(
@@ -118,6 +124,27 @@ describe('createEciperayClient', () => {
       '/recipes/r1/rating',
       expect.objectContaining({method: 'DELETE'}),
     );
+    expect(api.fetch).toHaveBeenCalledWith('/recipes/r1/comments');
+    expect(api.fetch).toHaveBeenCalledWith(
+      '/recipes/r1/comments',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({body: 'Nice!'}),
+      }),
+    );
+    expect(api.fetch).toHaveBeenCalledWith(
+      '/recipes/r1/comments/c1',
+      expect.objectContaining({
+        method: 'PUT',
+        body: JSON.stringify({body: 'Updated'}),
+      }),
+    );
+    expect(api.fetch).toHaveBeenCalledWith(
+      '/recipes/r1/comments/c1',
+      expect.objectContaining({method: 'DELETE'}),
+    );
+    expect(api.fetch).toHaveBeenCalledWith('/public/recipes/r1/comments');
+    expect(api.fetch).toHaveBeenCalledWith('/public/recipes/r1/comments?t=tok');
   });
 
   test('recipes listAll fetches all pages', async () => {
