@@ -171,11 +171,26 @@ export {
 export {
   LEGAL_CONTACT_EMAIL,
   LEGAL_OPERATOR_NAME,
+  ANDROID_PLAY_STORE_URL,
+  IOS_APP_STORE_URL,
   MOBILE_APP_INSTALL_URL,
   PRIVACY_POLICY_URL,
   TERMS_OF_SERVICE_URL,
   WEB_APP_BASE_URL,
 } from './legalUrls.js';
+export {
+  getPrimaryMobileAppStoreUrl,
+  isMobileAppInstallDismissed,
+  isMobileUserAgent,
+  isMobileWebBrowser,
+  isStandaloneWebApp,
+  MOBILE_APP_INSTALL_DISMISSAL_KEY,
+  MOBILE_APP_INSTALL_DISMISSAL_MS,
+  MOBILE_WEB_INSTALL_BANNER_MESSAGE,
+  readMobileAppInstallDismissedUntil,
+  shouldShowMobileAppInstallPrompt,
+  writeMobileAppInstallDismissal,
+} from './mobileWebInstall.js';
 export {
   RECIPE_DEVELOPMENT_STATUS_FILTER_ALL,
   RECIPE_DEVELOPMENT_STATUS_FILTER_LABEL,

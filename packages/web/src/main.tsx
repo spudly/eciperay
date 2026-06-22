@@ -16,6 +16,7 @@ import {eciperay} from './lib/api.js';
 import {router} from './routes/router.js';
 import {supabase} from './lib/supabase.js';
 import {AnalyticsConsentBanner} from './components/AnalyticsConsentBanner.js';
+import {MobileAppInstallBanner} from './components/MobileAppInstallBanner.js';
 
 import './index.css';
 
@@ -46,6 +47,7 @@ if (root) {
             onSignedOut={onSignedOut}
           >
             <AnalyticsErrorBoundaryProvider>
+              <MobileAppInstallBanner />
               <RouterProvider router={router} />
               <AnalyticsConsentBanner />
             </AnalyticsErrorBoundaryProvider>
