@@ -70,6 +70,8 @@ export type RecipeSharingUpdateInput = {
 
 export type RecipeSharingUpdateResult = RecipeDetail & {shareToken?: string};
 
+export type RecipeShareGrantVia = 'link' | 'explicit';
+
 /** Recipe detail safe for anonymous viewers (no owner identifiers). */
 export type PublicRecipeDetail = Omit<RecipeDetail, 'userId'>;
 

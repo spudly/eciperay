@@ -26,3 +26,23 @@ export const buildListUrl = (params?: RecipeListParams) => {
   }
   return `/recipes?${query}`;
 };
+
+export const buildSharedWithMeUrl = (
+  params?: Omit<RecipeListParams, 'search'>,
+) => {
+  if (!params) {
+    return '/recipes/shared-with-me';
+  }
+  const search = new URLSearchParams();
+  if (params.limit !== undefined) {
+    search.set('limit', String(params.limit));
+  }
+  if (params.offset !== undefined) {
+    search.set('offset', String(params.offset));
+  }
+  const query = search.toString();
+  if (query.length === 0) {
+    return '/recipes/shared-with-me';
+  }
+  return `/recipes/shared-with-me?${query}`;
+};
