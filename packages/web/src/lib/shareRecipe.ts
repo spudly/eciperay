@@ -1,16 +1,20 @@
-import {buildShareText} from '@eciperay/client';
+import {buildRecipeShareUrl, buildShareText} from '@eciperay/client';
 import type {RecipeDetail} from '@eciperay/types';
 
 export type ShareRecipeResult = 'shared' | 'copied';
 
-const recipePageUrl = (recipe: RecipeDetail) =>
-  `${window.location.origin}/recipes/${recipe.id}`;
+type ShareRecipeOptions = {shareToken?: string};
 
 export const shareRecipe = async (
   recipe: RecipeDetail,
+  options: ShareRecipeOptions = {},
 ): Promise<ShareRecipeResult> => {
   const text = buildShareText(recipe);
-  const url = recipe.sourceUrl ?? recipePageUrl(recipe);
+  const url = buildRecipeShareUrl(
+    window.location.origin,
+    recipe,
+    options.shareToken,
+  );
 
   if (typeof navigator.share === 'function') {
     try {
@@ -23,10 +27,6 @@ export const shareRecipe = async (
     }
   }
 
-  await navigator.clipboard.writeText(
-    recipe.sourceUrl
-      ? `${text}\n\n${url}`
-      : `${text}\n\n${recipePageUrl(recipe)}`,
-  );
+  await navigator.clipboard.writeText(`${text}\n\n${url}`);
   return 'copied';
 };
