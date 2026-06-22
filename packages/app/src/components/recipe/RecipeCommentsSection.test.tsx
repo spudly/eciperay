@@ -43,7 +43,7 @@ describe('RecipeCommentsSection', () => {
       body: 'Updated',
       isStale: false,
     });
-    mockDeleteComment.mockResolvedValue(undefined);
+    mockDeleteComment.mockImplementation(async () => {});
   });
 
   test('renders comments with stale badges', async () => {
