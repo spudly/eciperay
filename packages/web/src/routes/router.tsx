@@ -10,7 +10,7 @@ import {TweakAiPage} from '../pages/TweakAiPage.js';
 import {DiscoverPage} from '../pages/DiscoverPage.js';
 import {ForgotPasswordPage} from '../pages/auth/ForgotPasswordPage.js';
 import {GenerateAiPage} from '../pages/GenerateAiPage.js';
-import {HomePage} from '../pages/HomePage.js';
+import {HomeEntry} from '../pages/HomeEntry.js';
 import {ImportImagePage} from '../pages/ImportImagePage.js';
 import {ImportReviewPage} from '../pages/ImportReviewPage.js';
 import {ImportTextPage} from '../pages/ImportTextPage.js';
@@ -37,13 +37,13 @@ export const router = createBrowserRouter([
   {path: '/terms', element: <TermsOfServicePage />},
   {path: '/recipe/:id/:slug', element: <PublicRecipePage />},
   {path: '/discover', element: <DiscoverPage />},
+  {path: '/', element: <HomeEntry />},
   {
     element: <AuthGuard />,
     children: [
       {
         element: <AppShell />,
         children: [
-          {path: '/', element: <HomePage />},
           {path: '/recipes', element: <RecipesPage />},
           {path: '/shared-with-me', element: <SharedWithMePage />},
           {path: '/recipes/:recipeId', element: <RecipeDetailPage />},
