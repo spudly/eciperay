@@ -100,6 +100,7 @@ export {queryKeys} from './queryKeys.js';
 export {
   getRecipeListNextPageParam,
   homeRecentlyViewedRecipesQueryOptions,
+  publicRecipeDiscoveryInfiniteQueryOptions,
   RECIPE_LIST_PAGE_SIZE,
   recipeListInfiniteQueryOptions,
   sharedWithMeInfiniteQueryOptions,
@@ -152,6 +153,12 @@ export {
   TERMS_OF_SERVICE_URL,
   WEB_APP_BASE_URL,
 } from './legalUrls.js';
+export {
+  DISCOVER_EMPTY_MESSAGE,
+  DISCOVER_NO_RATINGS_LABEL,
+  DISCOVER_SEARCH_PLACEHOLDER,
+  DISCOVER_TITLE,
+} from './discoverCopy.js';
 export {
   HOME_ADD_LABEL,
   HOME_BROWSE_LABEL,

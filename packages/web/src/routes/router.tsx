@@ -7,6 +7,7 @@ import {CookingModePage} from '../pages/CookingModePage.js';
 import {EditRecipePage} from '../pages/EditRecipePage.js';
 import {EditVersionPage} from '../pages/EditVersionPage.js';
 import {TweakAiPage} from '../pages/TweakAiPage.js';
+import {DiscoverPage} from '../pages/DiscoverPage.js';
 import {ForgotPasswordPage} from '../pages/auth/ForgotPasswordPage.js';
 import {GenerateAiPage} from '../pages/GenerateAiPage.js';
 import {HomePage} from '../pages/HomePage.js';
@@ -35,6 +36,7 @@ export const router = createBrowserRouter([
   {path: '/privacy', element: <PrivacyPolicyPage />},
   {path: '/terms', element: <TermsOfServicePage />},
   {path: '/recipe/:id/:slug', element: <PublicRecipePage />},
+  {path: '/discover', element: <DiscoverPage />},
   {
     element: <AuthGuard />,
     children: [
