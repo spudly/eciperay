@@ -20,8 +20,8 @@ export type InsertVersionOptions = {
 };
 
 const INSERT_LINEAGE_SQL = `
-  insert into recipes (user_id, status)
-  values ($1, 'idea')
+  insert into recipes (user_id, status, slug)
+  values ($1, 'idea', $2)
   returning id
 `;
 
@@ -38,8 +38,8 @@ const SET_ACTIVE_VERSION_SQL = `
   update recipes set active_version_id = $2 where id = $1
 `;
 
-export const insertLineage = (userId: string, queryFn: QueryFn) =>
-  queryFn<{id: string}>(INSERT_LINEAGE_SQL, [userId]);
+export const insertLineage = (userId: string, slug: string, queryFn: QueryFn) =>
+  queryFn<{id: string}>(INSERT_LINEAGE_SQL, [userId, slug]);
 
 export const insertVersion = (opts: InsertVersionOptions, queryFn: QueryFn) =>
   queryFn<{id: string}>(INSERT_VERSION_SQL, [
@@ -131,6 +131,18 @@ export const setLineageStatus = (
   queryFn(
     'update recipes set status = $3 where id = $1 and user_id = $2 returning id',
     [recipeId, userId, status],
+  );
+
+export const updateRecipeSlug = (
+  recipeId: string,
+  slug: string,
+  queryFn: QueryFn,
+) => queryFn('update recipes set slug = $2 where id = $1', [recipeId, slug]);
+
+export const incrementContentRevision = (recipeId: string, queryFn: QueryFn) =>
+  queryFn(
+    'update recipes set content_revision = content_revision + 1 where id = $1',
+    [recipeId],
   );
 
 export const cloneVersionChildren = async (

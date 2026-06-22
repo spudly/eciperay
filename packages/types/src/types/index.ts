@@ -5,8 +5,10 @@ export type {
   CreateRecipeResult,
   Recipe,
   RecipeDetail,
+  RecipeDevelopmentStatus,
   RecipeInput,
   RecipeMetadataInput,
+  RecipeVisibility,
 } from './recipe.js';
 export type {
   DerivedVersionRole,

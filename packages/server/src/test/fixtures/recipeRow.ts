@@ -9,6 +9,12 @@ export const makeRecipeDetailRow = (
   overrides: Partial<RecipeDetail> & {
     user_id?: string;
     status?: RecipeDetail['lifecycleStatus'];
+    visibility?: RecipeDetail['visibility'];
+    slug?: string;
+    share_token_hash?: string | null;
+    content_revision?: number;
+    development_status?: RecipeDetail['developmentStatus'];
+    cloned_from_recipe_id?: string | null;
     active_version_id?: string;
     version_id?: string;
     version_number?: number;
@@ -26,6 +32,14 @@ export const makeRecipeDetailRow = (
     id: detail.id,
     user_id: overrides.user_id ?? detail.userId,
     status: overrides.status ?? detail.lifecycleStatus,
+    visibility: overrides.visibility ?? detail.visibility,
+    slug: overrides.slug ?? detail.slug,
+    share_token_hash: overrides.share_token_hash ?? null,
+    content_revision: overrides.content_revision ?? detail.contentRevision,
+    development_status:
+      overrides.development_status ?? detail.developmentStatus,
+    cloned_from_recipe_id:
+      overrides.cloned_from_recipe_id ?? detail.clonedFromRecipeId,
     active_version_id: overrides.active_version_id ?? detail.versionId,
     version_id: overrides.version_id ?? detail.versionId,
     version_number: overrides.version_number ?? detail.versionNumber,
