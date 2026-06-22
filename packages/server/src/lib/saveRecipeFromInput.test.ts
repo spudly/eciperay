@@ -34,13 +34,17 @@ describe('saveRecipeFromInput', () => {
     const result = await saveRecipeFromInput(
       {
         userId: 'user-uuid-1',
-        input: makeRecipeInput(),
+        input: makeRecipeInput({developmentStatus: 'perfected'}),
         recipeId: 'recipe-uuid-1',
         versionId: 'version-uuid-1',
       },
       mockQuery,
     );
     expect(result.title).toBe('Test Recipe');
+    expect(mockQuery).toHaveBeenCalledWith(
+      expect.stringContaining('development_status'),
+      ['recipe-uuid-1', 'perfected'],
+    );
   });
 
   test('throws RecipeNotFoundError when update misses', async () => {

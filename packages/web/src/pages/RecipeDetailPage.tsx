@@ -4,6 +4,7 @@ import {useQuery, useQueryClient} from '@tanstack/react-query';
 import {useCallback, useEffect, useMemo, useState} from 'react';
 import {useParams, useSearchParams} from 'react-router-dom';
 
+import {DevelopmentStatusBadge} from '../components/recipe/DevelopmentStatusBadge.js';
 import {LifecycleStatusBadge} from '../components/recipe/LifecycleStatusBadge.js';
 import {RecipeDetailTabPanel} from '../components/recipe/RecipeDetailTabPanel.js';
 import {VersionPicker} from '../components/recipe/VersionPicker.js';
@@ -120,6 +121,7 @@ export const RecipeDetailPage = () => {
       >
         <div className="flex items-center gap-2">
           <LifecycleStatusBadge status={recipe.lifecycleStatus} />
+          <DevelopmentStatusBadge status={recipe.developmentStatus} />
           <VersionPicker
             recipeId={recipeId}
             versions={versions}

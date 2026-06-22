@@ -14,7 +14,7 @@ const API = 'http://localhost:8080';
 describe('RecipeVisibilityControls', () => {
   test('updates visibility after publishing consent', async () => {
     const onActionMessage = vi.fn();
-    const writeText = vi.fn().mockResolvedValue(undefined);
+    const writeText = vi.fn().mockImplementation(() => Promise.resolve());
     Object.assign(navigator, {clipboard: {writeText}});
     server.use(
       http.patch(`${API}/api/recipes/:id/sharing`, () =>
@@ -48,7 +48,7 @@ describe('RecipeVisibilityControls', () => {
 
   test('shows public warning and permalink copy for public recipes', async () => {
     const onActionMessage = vi.fn();
-    const writeText = vi.fn().mockResolvedValue(undefined);
+    const writeText = vi.fn().mockImplementation(() => Promise.resolve());
     Object.assign(navigator, {clipboard: {writeText}});
 
     await renderWithProviders(

@@ -16,6 +16,7 @@ export const LIST_RECIPES_SQL = `
   left join tags t on t.id = rt.tag_id
   where r.user_id = $1
     and ($4::text is null or rv.title ilike '%' || $4 || '%')
+    and ($5::text is null or r.development_status = $5)
   group by r.id, rv.id
   order by rv.updated_at desc
   limit $2 offset $3
@@ -62,6 +63,7 @@ export const LIST_PUBLIC_RECIPES_SQL = `
   left join recipe_tags rt on rt.recipe_version_id = rv.id
   left join tags t on t.id = rt.tag_id
   where r.visibility = 'public'
+    and r.development_status <> 'idea'
     and (
       $3::text is null
       or rv.title ilike '%' || $3 || '%'
@@ -77,6 +79,7 @@ export const LIST_PUBLIC_RECIPES_SITEMAP_SQL = `
   from recipes r
   join recipe_versions rv on rv.id = r.active_version_id
   where r.visibility = 'public'
+    and r.development_status <> 'idea'
   order by rv.updated_at desc
 `;
 

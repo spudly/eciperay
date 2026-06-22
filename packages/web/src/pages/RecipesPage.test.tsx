@@ -233,4 +233,45 @@ describe('RecipesPage', () => {
     });
     expect(screen.getByPlaceholderText('Search recipes…')).toHaveValue('Soup');
   });
+
+  test('filters recipes by development status', async () => {
+    const perfected = makeRecipeDetail({
+      id: 'perfected-id',
+      title: 'Perfected Soup',
+      developmentStatus: 'perfected',
+    });
+    const idea = makeRecipeDetail({
+      id: 'idea-id',
+      title: 'Idea Soup',
+      developmentStatus: 'idea',
+    });
+    server.use(
+      http.get('http://localhost:8080/api/recipes', ({request}) => {
+        const status = new URL(request.url).searchParams.get(
+          'developmentStatus',
+        );
+        const items = [perfected, idea];
+        if (status) {
+          return HttpResponse.json(
+            items.filter(recipe => recipe.developmentStatus === status),
+          );
+        }
+        return HttpResponse.json(items);
+      }),
+    );
+    const user = userEvent.setup();
+    await renderWithProviders(<RecipesPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Perfected Soup')).toBeInTheDocument();
+      expect(screen.getByText('Idea Soup')).toBeInTheDocument();
+    });
+    await user.selectOptions(
+      screen.getByLabelText('Development status'),
+      'perfected',
+    );
+    await waitFor(() => {
+      expect(screen.getByText('Perfected Soup')).toBeInTheDocument();
+      expect(screen.queryByText('Idea Soup')).not.toBeInTheDocument();
+    });
+  });
 });

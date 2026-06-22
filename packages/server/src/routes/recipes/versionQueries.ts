@@ -1,4 +1,8 @@
-import type {RecipeInput, VersionCreatedVia} from '@eciperay/types';
+import type {
+  RecipeDevelopmentStatus,
+  RecipeInput,
+  VersionCreatedVia,
+} from '@eciperay/types';
 
 import {query as defaultQuery} from '../../db/query.js';
 
@@ -20,8 +24,8 @@ export type InsertVersionOptions = {
 };
 
 const INSERT_LINEAGE_SQL = `
-  insert into recipes (user_id, status, slug)
-  values ($1, 'idea', $2)
+  insert into recipes (user_id, status, slug, development_status)
+  values ($1, 'idea', $2, $3)
   returning id
 `;
 
@@ -38,8 +42,13 @@ const SET_ACTIVE_VERSION_SQL = `
   update recipes set active_version_id = $2 where id = $1
 `;
 
-export const insertLineage = (userId: string, slug: string, queryFn: QueryFn) =>
-  queryFn<{id: string}>(INSERT_LINEAGE_SQL, [userId, slug]);
+export const insertLineage = (
+  userId: string,
+  slug: string,
+  developmentStatus: RecipeDevelopmentStatus,
+  queryFn: QueryFn,
+) =>
+  queryFn<{id: string}>(INSERT_LINEAGE_SQL, [userId, slug, developmentStatus]);
 
 const INSERT_CLONED_LINEAGE_SQL = `
   insert into recipes (user_id, status, slug, cloned_from_recipe_id, visibility)
