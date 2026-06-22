@@ -1,11 +1,18 @@
 import {readAnalyticsConsent} from '@eciperay/client';
 import {vi} from 'vitest';
 
-const mockEnablePostHog = vi.fn();
+const {mockEnablePostHog, mockIdentifyAnalyticsUser} = vi.hoisted(() => ({
+  mockEnablePostHog: vi.fn(),
+  mockIdentifyAnalyticsUser: vi.fn(),
+}));
 
 vi.mock('@eciperay/client', async importOriginal => {
   const actual = await importOriginal<typeof import('@eciperay/client')>();
-  return {...actual, readAnalyticsConsent: vi.fn(actual.readAnalyticsConsent)};
+  return {
+    ...actual,
+    identifyAnalyticsUser: mockIdentifyAnalyticsUser,
+    readAnalyticsConsent: vi.fn(actual.readAnalyticsConsent),
+  };
 });
 
 vi.mock('./createDeferredWebAnalytics.js', () => ({
@@ -18,6 +25,7 @@ vi.mock('./createDeferredWebAnalytics.js', () => ({
 describe('analytics', () => {
   beforeEach(() => {
     mockEnablePostHog.mockClear();
+    mockIdentifyAnalyticsUser.mockClear();
     vi.resetModules();
   });
 
@@ -30,5 +38,32 @@ describe('analytics', () => {
     vi.mocked(readAnalyticsConsent).mockReturnValue('accepted');
     await import('./analytics.js');
     expect(mockEnablePostHog).toHaveBeenCalled();
+  });
+
+  test('identifies the user when consent was accepted', async () => {
+    vi.mocked(readAnalyticsConsent).mockReturnValue('accepted');
+    const {identifyAnalyticsUserIfConsented} = await import('./analytics.js');
+    const session = {
+      user: {id: 'user-1', email: 'test@example.com'},
+    } as import('@supabase/supabase-js').Session;
+
+    identifyAnalyticsUserIfConsented(session);
+
+    expect(mockIdentifyAnalyticsUser).toHaveBeenCalledWith(
+      expect.objectContaining({platform: 'web'}),
+      session,
+    );
+  });
+
+  test('skips identify when consent was declined', async () => {
+    vi.mocked(readAnalyticsConsent).mockReturnValue('declined');
+    const {identifyAnalyticsUserIfConsented} = await import('./analytics.js');
+    const session = {
+      user: {id: 'user-1', email: 'test@example.com'},
+    } as import('@supabase/supabase-js').Session;
+
+    identifyAnalyticsUserIfConsented(session);
+
+    expect(mockIdentifyAnalyticsUser).not.toHaveBeenCalled();
   });
 });
