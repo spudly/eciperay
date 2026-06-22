@@ -51,3 +51,9 @@ export type {
   RecipeExportTag,
 } from './recipeExport.js';
 export type {User} from './user.js';
+export type {
+  RecipeCommunityRating,
+  RecipeRatingInput,
+  RecipeRatingSummary,
+  RecipeStarRating,
+} from './recipeRating.js';

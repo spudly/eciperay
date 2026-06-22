@@ -1,6 +1,6 @@
 export const LIST_RECIPES_SQL = `
   select r.id, r.status, r.visibility, r.slug, r.content_revision,
-         r.development_status, r.cloned_from_recipe_id, r.active_version_id,
+         r.development_status, r.cloned_from_recipe_id, r.star_rating, r.active_version_id,
          rv.id as version_id, rv.version_number, rv.title, rv.description,
          rv.servings, rv.prep_time_min, rv.cook_time_min, rv.image_url,
          rv.source_url, rv.created_via, rv.created_at, rv.updated_at,
@@ -24,7 +24,7 @@ export const LIST_RECIPES_SQL = `
 
 export const LIST_SHARED_WITH_ME_SQL = `
   select r.id, r.status, r.visibility, r.slug, r.content_revision,
-         r.development_status, r.cloned_from_recipe_id, r.active_version_id,
+         r.development_status, r.cloned_from_recipe_id, r.star_rating, r.active_version_id,
          rv.id as version_id, rv.version_number, rv.title, rv.description,
          rv.servings, rv.prep_time_min, rv.cook_time_min, rv.image_url,
          rv.source_url, rv.created_via, rv.created_at, rv.updated_at,
@@ -86,7 +86,7 @@ export const LIST_PUBLIC_RECIPES_SITEMAP_SQL = `
 export const GET_RECIPE_DETAIL_SQL = `
   select r.id, r.user_id, r.status, r.visibility, r.slug, r.share_token_hash,
          r.content_revision, r.development_status, r.cloned_from_recipe_id,
-         r.active_version_id,
+         r.star_rating, r.active_version_id,
          rv.id as version_id, rv.version_number, rv.title, rv.description,
          rv.servings, rv.prep_time_min, rv.cook_time_min, rv.image_url,
          rv.source_url, rv.created_via, rv.created_at, rv.updated_at,
@@ -126,7 +126,7 @@ export const GET_RECIPE_DETAIL_SQL = `
 export const GET_PUBLIC_RECIPE_DETAIL_SQL = `
   select r.id, r.user_id, r.status, r.visibility, r.slug, r.share_token_hash,
          r.content_revision, r.development_status, r.cloned_from_recipe_id,
-         r.active_version_id,
+         r.star_rating, r.active_version_id,
          rv.id as version_id, rv.version_number, rv.title, rv.description,
          rv.servings, rv.prep_time_min, rv.cook_time_min, rv.image_url,
          rv.source_url, rv.created_via, rv.created_at, rv.updated_at,

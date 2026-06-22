@@ -66,6 +66,8 @@ export const handlers = [
     return HttpResponse.json({
       recipe: {...publicRecipe, id: params['id'], visibility: 'public'},
       canonicalSlug: recipe.slug,
+      communityRating: null,
+      viewerRating: null,
     });
   }),
   http.get(`${API}/api/public/recipes/:id/:slug`, ({params}) => {
@@ -76,6 +78,8 @@ export const handlers = [
     return HttpResponse.json({
       recipe: {...publicRecipe, id: params['id'], visibility: 'public'},
       canonicalSlug: recipe.slug,
+      communityRating: null,
+      viewerRating: null,
       ...(slugMismatch ? {slugMismatch: true} : {}),
     });
   }),

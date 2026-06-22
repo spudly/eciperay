@@ -18,6 +18,7 @@ export const makeRecipeDetail = (
   contentRevision: 1,
   developmentStatus: 'idea',
   clonedFromRecipeId: null,
+  starRating: null,
   versionId: VERSION_ID,
   versionNumber: 1,
   title: 'Test Recipe',

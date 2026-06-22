@@ -51,6 +51,8 @@ describe('createEciperayClient', () => {
     ]);
     await client.recipes.clone('r1');
     await client.recipes.clone('r1', {shareToken: 'tok'});
+    await client.recipes.putRating('r1', {stars: 4});
+    await client.recipes.deleteRating('r1');
     expect(api.fetch).toHaveBeenCalledWith('/recipes');
     expect(api.fetch).toHaveBeenCalledWith('/recipes?limit=50&offset=10');
     expect(api.fetch).toHaveBeenCalledWith(
@@ -104,6 +106,17 @@ describe('createEciperayClient', () => {
         method: 'POST',
         body: JSON.stringify({shareToken: 'tok'}),
       }),
+    );
+    expect(api.fetch).toHaveBeenCalledWith(
+      '/recipes/r1/rating',
+      expect.objectContaining({
+        method: 'PUT',
+        body: JSON.stringify({stars: 4}),
+      }),
+    );
+    expect(api.fetch).toHaveBeenCalledWith(
+      '/recipes/r1/rating',
+      expect.objectContaining({method: 'DELETE'}),
     );
   });
 

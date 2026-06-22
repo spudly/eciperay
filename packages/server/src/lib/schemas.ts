@@ -74,6 +74,8 @@ export const RecipeMetadataInputSchema = z.object({
   developmentStatus: RecipeDevelopmentStatusSchema.optional(),
 });
 
+export const RecipeRatingInputSchema = z.object({stars: StarRating});
+
 export const RecipeVersionInputSchema = z.object({
   title: z.string().min(1),
   description: z.string().nullish(),

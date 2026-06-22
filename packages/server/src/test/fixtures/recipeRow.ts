@@ -15,6 +15,7 @@ export const makeRecipeDetailRow = (
     content_revision?: number;
     development_status?: RecipeDetail['developmentStatus'];
     cloned_from_recipe_id?: string | null;
+    star_rating?: RecipeDetail['starRating'];
     active_version_id?: string;
     version_id?: string;
     version_number?: number;
@@ -40,6 +41,7 @@ export const makeRecipeDetailRow = (
       overrides.development_status ?? detail.developmentStatus,
     cloned_from_recipe_id:
       overrides.cloned_from_recipe_id ?? detail.clonedFromRecipeId,
+    star_rating: overrides.star_rating ?? detail.starRating,
     active_version_id: overrides.active_version_id ?? detail.versionId,
     version_id: overrides.version_id ?? detail.versionId,
     version_number: overrides.version_number ?? detail.versionNumber,

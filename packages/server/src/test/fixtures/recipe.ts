@@ -13,6 +13,7 @@ export const makeRecipe = (overrides: Partial<Recipe> = {}): Recipe => ({
   contentRevision: 1,
   developmentStatus: 'idea',
   clonedFromRecipeId: null,
+  starRating: null,
   versionId: 'version-uuid-1',
   versionNumber: 1,
   title: 'Test Recipe',

@@ -15,16 +15,23 @@ const shareToken = 'public-share-token';
 const shareTokenHash = hashShareToken(shareToken);
 
 describe('GET /public/recipes/:id', () => {
+  const mockPublicRecipeQueries = (
+    row = makeRecipeDetailRow({
+      visibility: 'public',
+      slug: 'pasta',
+      user_id: 'owner-uuid',
+    }),
+  ) => {
+    mockQuery.mockImplementation(((sql: string) => {
+      if (sql.includes('recipe_ratings rr')) {
+        return Promise.resolve(makeQueryResult([]));
+      }
+      return Promise.resolve(makeQueryResult([row]));
+    }) as typeof mockQuery);
+  };
+
   test('returns public recipe without authentication', async () => {
-    mockQuery.mockResolvedValue(
-      makeQueryResult([
-        makeRecipeDetailRow({
-          visibility: 'public',
-          slug: 'pasta',
-          user_id: 'owner-uuid',
-        }),
-      ]),
-    );
+    mockPublicRecipeQueries();
 
     const res = await request(app).get('/api/public/recipes/recipe-uuid-1');
 
@@ -34,13 +41,13 @@ describe('GET /public/recipes/:id', () => {
     expect(res.body.recipe.userId).toBeUndefined();
     expect(res.body.canonicalSlug).toBe('pasta');
     expect(res.body.slugMismatch).toBeUndefined();
+    expect(res.body.communityRating).toBeNull();
+    expect(res.body.viewerRating).toBeNull();
   });
 
   test('returns slug mismatch hint when slug does not match', async () => {
-    mockQuery.mockResolvedValue(
-      makeQueryResult([
-        makeRecipeDetailRow({visibility: 'public', slug: 'pasta'}),
-      ]),
+    mockPublicRecipeQueries(
+      makeRecipeDetailRow({visibility: 'public', slug: 'pasta'}),
     );
 
     const res = await request(app).get(
@@ -105,14 +112,12 @@ describe('GET /public/recipes/:id', () => {
   });
 
   test('returns unlisted recipe with valid share token', async () => {
-    mockQuery.mockResolvedValue(
-      makeQueryResult([
-        makeRecipeDetailRow({
-          visibility: 'unlisted',
-          slug: 'secret-pasta',
-          share_token_hash: shareTokenHash,
-        }),
-      ]),
+    mockPublicRecipeQueries(
+      makeRecipeDetailRow({
+        visibility: 'unlisted',
+        slug: 'secret-pasta',
+        share_token_hash: shareTokenHash,
+      }),
     );
 
     const res = await request(app).get(
@@ -127,8 +132,17 @@ describe('GET /public/recipes/:id', () => {
 
   test('records share grant when an authenticated user opens a public recipe', async () => {
     nockSupabaseGetUser('viewer-uuid');
-    mockQuery
-      .mockResolvedValueOnce(
+    mockQuery.mockImplementation(((sql: string) => {
+      if (sql.includes('recipe_ratings rr')) {
+        return Promise.resolve(makeQueryResult([]));
+      }
+      if (sql === INSERT_SHARE_GRANT_SQL) {
+        return Promise.resolve(makeQueryResult([]));
+      }
+      if (sql.includes('recipe_share_grants')) {
+        return Promise.resolve(makeQueryResult([]));
+      }
+      return Promise.resolve(
         makeQueryResult([
           makeRecipeDetailRow({
             visibility: 'public',
@@ -136,9 +150,8 @@ describe('GET /public/recipes/:id', () => {
             user_id: 'owner-uuid',
           }),
         ]),
-      )
-      .mockResolvedValueOnce(makeQueryResult([]))
-      .mockResolvedValueOnce(makeQueryResult([]));
+      );
+    }) as typeof mockQuery);
 
     const res = await request(app)
       .get('/api/public/recipes/recipe-uuid-1/pasta')
@@ -154,8 +167,14 @@ describe('GET /public/recipes/:id', () => {
 
   test('allows authenticated users with an existing grant to open unlisted recipes', async () => {
     nockSupabaseGetUser('viewer-uuid');
-    mockQuery
-      .mockResolvedValueOnce(
+    mockQuery.mockImplementation(((sql: string) => {
+      if (sql.includes('recipe_ratings rr')) {
+        return Promise.resolve(makeQueryResult([]));
+      }
+      if (sql.includes('recipe_share_grants') && sql.includes('exists')) {
+        return Promise.resolve(makeQueryResult([{exists: 1}]));
+      }
+      return Promise.resolve(
         makeQueryResult([
           makeRecipeDetailRow({
             visibility: 'unlisted',
@@ -163,9 +182,8 @@ describe('GET /public/recipes/:id', () => {
             user_id: 'owner-uuid',
           }),
         ]),
-      )
-      .mockResolvedValueOnce(makeQueryResult([{exists: 1}]))
-      .mockResolvedValueOnce(makeQueryResult([]));
+      );
+    }) as typeof mockQuery);
 
     const res = await request(app)
       .get('/api/public/recipes/recipe-uuid-1/test-recipe')

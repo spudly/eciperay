@@ -3,8 +3,9 @@ import type {Response} from 'express';
 import {query as defaultQuery} from '../../db/query.js';
 import type {AuthedRequest} from '../../middleware/requireAuth.js';
 import {getParam} from '../../lib/getParam.js';
-import {mapRowToRecipeDetail} from '../../lib/mapRowToRecipeDetail.js';
+import {buildRecipeDetailWithRatings} from '../../lib/buildRecipeDetailWithRatings.js';
 import {canReadRecipe, toRecipeAccessRecord} from '../../lib/recipeAccess.js';
+import {mapRowToRecipeDetail} from '../../lib/mapRowToRecipeDetail.js';
 
 import {GET_RECIPE_DETAIL_SQL} from './queries.js';
 
@@ -26,5 +27,5 @@ export const getRecipe = async (
     res.status(404).json({error: 'Recipe not found'});
     return;
   }
-  res.json(mapRowToRecipeDetail(row));
+  res.json(await buildRecipeDetailWithRatings(row, req.userId, queryFn));
 };
