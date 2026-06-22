@@ -17,6 +17,7 @@ describe('HomePage', () => {
     await renderWithProviders(<HomePage />);
     expect(screen.getByText('Welcome to Eciperay')).toBeInTheDocument();
     expect(screen.getByText('Browse Recipes')).toBeInTheDocument();
+    expect(screen.getByText('Shared with me')).toBeInTheDocument();
     expect(screen.getByText('Recently viewed')).toBeInTheDocument();
     expect(
       screen.getByText('Recipes you view will appear here.'),

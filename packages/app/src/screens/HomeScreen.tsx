@@ -3,6 +3,7 @@ import {
   HOME_BROWSE_LABEL,
   HOME_EMPTY_MESSAGE,
   HOME_RECIPES_SECTION_TITLE,
+  HOME_SHARED_WITH_ME_LABEL,
   HOME_SUBTITLE,
   HOME_TITLE,
   homeRecentlyViewedRecipesQueryOptions,
@@ -99,6 +100,16 @@ export const HomeScreen = ({navigation}: Props) => {
           >
             <Text className="font-semibold text-gray-700">
               {HOME_ADD_LABEL}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            className="rounded-xl bg-gray-100 px-5 py-3"
+            onPress={() => {
+              navigation.navigate('Recipes', {screen: 'SharedWithMe'});
+            }}
+          >
+            <Text className="font-semibold text-gray-700">
+              {HOME_SHARED_WITH_ME_LABEL}
             </Text>
           </TouchableOpacity>
         </View>

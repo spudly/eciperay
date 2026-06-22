@@ -102,6 +102,7 @@ export {
   homeRecentlyViewedRecipesQueryOptions,
   RECIPE_LIST_PAGE_SIZE,
   recipeListInfiniteQueryOptions,
+  sharedWithMeInfiniteQueryOptions,
 } from './recipeListQuery.js';
 export {
   getRecentRecipeIds,
@@ -157,6 +158,9 @@ export {
   HOME_EMPTY_MESSAGE,
   HOME_RECENT_RECIPE_COUNT,
   HOME_RECIPES_SECTION_TITLE,
+  HOME_SHARED_WITH_ME_LABEL,
   HOME_SUBTITLE,
   HOME_TITLE,
+  SHARED_WITH_ME_EMPTY_MESSAGE,
+  SHARED_WITH_ME_TITLE,
 } from './homeCopy.js';
