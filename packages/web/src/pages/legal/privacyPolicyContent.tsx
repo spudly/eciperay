@@ -39,11 +39,13 @@ export const privacyPolicySections: LegalSection[] = [
             (or anyone browsing public recipes) can view that recipe content
             without signing in. Public recipes also appear in Eciperay&apos;s
             public browse and search results with your display name, title,
-            description, image, and related metadata. You can change visibility
-            or rotate unlisted links at any time. Anonymous viewers may access
-            shared recipes through our public recipe API; those requests are
-            logged like other server traffic (see usage and diagnostic data
-            below) but are not linked to a viewer account.
+            description, image, development status badge, and related metadata.
+            Recipes still marked as ideas are hidden from public browse even if
+            visibility is public. You can change visibility or rotate unlisted
+            links at any time. Anonymous viewers may access shared recipes
+            through our public recipe API; those requests are logged like other
+            server traffic (see usage and diagnostic data below) but are not
+            linked to a viewer account.
           </li>
           <li>
             <strong>Shared recipe access:</strong> when you are signed in and

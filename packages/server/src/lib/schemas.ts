@@ -19,6 +19,12 @@ export const InstructionInputSchema = z.object({
   body: z.string().min(1),
 });
 
+export const RecipeDevelopmentStatusSchema = z.enum([
+  'idea',
+  'in_development',
+  'perfected',
+]);
+
 // ─── Recipe import (from URL or image) ────────────────────────────────────────
 
 export const RecipeImportSchema = z.object({
@@ -53,6 +59,7 @@ export const RecipeInputSchema = z.object({
   ingredients: z.array(IngredientInputSchema),
   instructions: z.array(InstructionInputSchema),
   tagIds: z.array(z.uuid()),
+  developmentStatus: RecipeDevelopmentStatusSchema.optional(),
 });
 
 export const RecipeMetadataInputSchema = z.object({
@@ -64,6 +71,7 @@ export const RecipeMetadataInputSchema = z.object({
   imageUrl: z.url().nullish(),
   sourceUrl: z.url().nullish(),
   tagIds: z.array(z.uuid()),
+  developmentStatus: RecipeDevelopmentStatusSchema.optional(),
 });
 
 export const RecipeVersionInputSchema = z.object({

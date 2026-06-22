@@ -104,6 +104,10 @@ describe('GET /public/recipes', () => {
     ]);
   });
 
+  test('excludes idea recipes from public discovery SQL', () => {
+    expect(LIST_PUBLIC_RECIPES_SQL).toContain("r.development_status <> 'idea'");
+  });
+
   test('returns 400 for invalid sort', async () => {
     const res = await request(app).get('/api/public/recipes?sort=popular');
     expect(res.status).toBe(400);
