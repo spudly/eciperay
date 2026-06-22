@@ -63,4 +63,11 @@ export type RecipeMetadataInput = {
   tagIds: string[];
 };
 
+export type RecipeSharingUpdateInput = {
+  visibility: RecipeVisibility;
+  publishingConsent?: boolean;
+};
+
+export type RecipeSharingUpdateResult = RecipeDetail & {shareToken?: string};
+
 export type CreateRecipeResult = {recipeId: string; versionId: string};

@@ -11,6 +11,7 @@ import {printRecipe} from '../../lib/printRecipe';
 import {shareRecipe} from '../../lib/shareRecipe';
 
 import {OverviewActions} from './OverviewActions';
+import {RecipeVisibilityControls} from './RecipeVisibilityControls';
 import {recipeImagePreviewStyles} from './recipeImagePreviewStyles';
 import {StatBadge} from './StatBadge';
 
@@ -154,6 +155,10 @@ export const OverviewTab = ({
         onActionMessage={showActionMessage}
         onTweakAi={onTweakAi}
         onViewVersion={onViewVersion}
+      />
+      <RecipeVisibilityControls
+        recipe={recipe}
+        onActionMessage={showActionMessage}
       />
       <View className="flex-row flex-wrap gap-2">
         {recipe.tags.map(tag => (
