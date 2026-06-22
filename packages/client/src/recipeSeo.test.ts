@@ -74,7 +74,7 @@ describe('recipeSeo', () => {
     const jsonLd = buildRecipeJsonLd(
       recipe,
       'https://www.eciperay.com/recipe/r1/pasta',
-      {average: 4.5, count: 12},
+      {average: 4.5, count: 12, hasStaleRatings: false},
     );
     expect(jsonLd['aggregateRating']).toEqual({
       '@type': 'AggregateRating',

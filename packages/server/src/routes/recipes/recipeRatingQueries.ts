@@ -13,7 +13,7 @@ export const LIST_COMMUNITY_RATING_ROWS_SQL = `
 `;
 
 export const GET_VIEWER_COMMUNITY_RATING_SQL = `
-  select stars
+  select stars, content_revision
   from recipe_ratings
   where recipe_id = $1 and user_id = $2
 `;
@@ -47,12 +47,16 @@ export const getViewerCommunityRating = async (
   recipeId: string,
   userId: string,
   queryFn: QueryFn,
-): Promise<RecipeStarRating | null> => {
-  const result = await queryFn<{stars: RecipeStarRating}>(
-    GET_VIEWER_COMMUNITY_RATING_SQL,
-    [recipeId, userId],
-  );
-  return result.rows[0]?.stars ?? null;
+): Promise<{stars: RecipeStarRating; contentRevision: number} | null> => {
+  const result = await queryFn<{
+    stars: RecipeStarRating;
+    content_revision: number;
+  }>(GET_VIEWER_COMMUNITY_RATING_SQL, [recipeId, userId]);
+  const row = result.rows[0];
+  if (!row) {
+    return null;
+  }
+  return {stars: row.stars, contentRevision: row.content_revision};
 };
 
 export const upsertCommunityRating = (

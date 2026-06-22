@@ -27,6 +27,7 @@ describe('GET /recipes/:id', () => {
       ...makeRecipeDetail(),
       communityRating: null,
       viewerRating: null,
+      viewerRatingIsStale: false,
     });
   });
 

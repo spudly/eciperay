@@ -18,5 +18,6 @@ describe('buildRecipeDetailWithRatings', () => {
     expect(detail.starRating).toBe(4);
     expect(detail.communityRating).toBeNull();
     expect(detail.viewerRating).toBe(4);
+    expect(detail.viewerRatingIsStale).toBe(false);
   });
 });

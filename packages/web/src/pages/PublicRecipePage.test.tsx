@@ -93,6 +93,9 @@ describe('PublicRecipePage', () => {
     let requestUrl = '';
     server.use(
       http.get(`${API}/api/public/recipes/:id/:slug`, ({request}) => {
+        if (request.url.includes('/comments')) {
+          return HttpResponse.json([]);
+        }
         requestUrl = request.url;
         const {userId: _userId, ...publicRecipe} = makeRecipeDetail({
           visibility: 'public',
@@ -276,6 +279,9 @@ describe('PublicRecipePage', () => {
     let requestUrl = '';
     server.use(
       http.get(`${API}/api/public/recipes/:id/:slug`, ({request}) => {
+        if (request.url.includes('/comments')) {
+          return HttpResponse.json([]);
+        }
         requestUrl = request.url;
         const {userId: _userId, ...publicRecipe} = makeRecipeDetail({
           visibility: 'unlisted',

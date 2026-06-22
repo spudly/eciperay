@@ -36,17 +36,27 @@ export const loadRecipeRatingSummary = async (
   );
 
   if (!opts.viewerUserId) {
-    return {communityRating, viewerRating: null};
+    return {communityRating, viewerRating: null, viewerRatingIsStale: false};
   }
 
   if (opts.viewerUserId === opts.ownerUserId) {
-    return {communityRating, viewerRating: opts.ownerStarRating};
+    return {
+      communityRating,
+      viewerRating: opts.ownerStarRating,
+      viewerRatingIsStale: false,
+    };
   }
 
-  const viewerRating = await getViewerCommunityRating(
+  const viewerRatingRow = await getViewerCommunityRating(
     opts.recipeId,
     opts.viewerUserId,
     queryFn,
   );
-  return {communityRating, viewerRating};
+  return {
+    communityRating,
+    viewerRating: viewerRatingRow?.stars ?? null,
+    viewerRatingIsStale: viewerRatingRow
+      ? viewerRatingRow.contentRevision < opts.contentRevision
+      : false,
+  };
 };

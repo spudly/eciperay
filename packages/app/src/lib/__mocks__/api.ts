@@ -9,6 +9,12 @@ export const api = {
     delete: jest.fn(),
     clone: jest.fn(),
     acceptImport: jest.fn(),
+    putRating: jest.fn(),
+    deleteRating: jest.fn(),
+    listComments: jest.fn().mockResolvedValue([]),
+    createComment: jest.fn(),
+    updateComment: jest.fn(),
+    deleteComment: jest.fn(),
   },
   import: {importUrl: jest.fn(), importImage: jest.fn(), importText: jest.fn()},
   createAi: {

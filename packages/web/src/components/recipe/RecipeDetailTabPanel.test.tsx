@@ -26,6 +26,7 @@ describe('RecipeDetailTabPanel', () => {
       />,
     );
     expect(screen.getByText('Test Recipe')).toBeInTheDocument();
+    expect(screen.getByText('Community rating')).toBeInTheDocument();
   });
 
   test('renders ingredients tab content', async () => {

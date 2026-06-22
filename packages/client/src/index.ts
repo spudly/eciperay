@@ -108,6 +108,12 @@ export {
 } from './sanitizeAnalyticsProperties.js';
 export {queryKeys} from './queryKeys.js';
 export {
+  formatCommunityRatingLabel,
+  STALE_COMMENT_HINT,
+  STALE_COMMUNITY_RATING_HINT,
+  STALE_VIEWER_RATING_HINT,
+} from './recipeEngagement.js';
+export {
   getRecipeListNextPageParam,
   homeRecentlyViewedRecipesQueryOptions,
   publicRecipeDiscoveryInfiniteQueryOptions,
