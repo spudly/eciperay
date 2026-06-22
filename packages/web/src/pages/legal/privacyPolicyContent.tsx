@@ -44,6 +44,13 @@ export const privacyPolicySections: LegalSection[] = [
             linked to a viewer account.
           </li>
           <li>
+            <strong>Shared recipe access:</strong> when you are signed in and
+            open a valid share link, we record a grant associating your account
+            with that recipe so it can appear in your Shared with me list. These
+            grants are kept until your account is deleted. Recipe owners do not
+            receive viewer identities in the current version of the service.
+          </li>
+          <li>
             <strong>Images:</strong> photos you upload for recipes, stored in
             our file storage service.
           </li>
@@ -167,7 +174,8 @@ export const privacyPolicySections: LegalSection[] = [
           discovery. Unlisted links can be rotated to revoke prior links. When
           you share a recipe, recipients receive a link that exposes the full
           recipe content to anyone they forward it to, so review visibility
-          before sharing.
+          before sharing. Opening a share link while signed in adds the recipe
+          to your Shared with me list until you delete your account.
         </li>
         <li>
           <strong>Account settings:</strong> update your display name and manage

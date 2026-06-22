@@ -15,4 +15,6 @@ export const queryKeys = {
       id,
       {slug: slug ?? '', shareToken: shareToken ?? ''},
     ] as const,
+  sharedWithMe: (limit?: number, offset?: number) =>
+    ['sharedWithMe', {limit: limit ?? null, offset: offset ?? null}] as const,
 };

@@ -1,5 +1,5 @@
 import type {PublicRecipeResponse} from '@eciperay/types';
-import type {Request, Response} from 'express';
+import type {Response} from 'express';
 
 import {query as defaultQuery} from '../../db/query.js';
 import {getParam} from '../../lib/getParam.js';
@@ -9,12 +9,18 @@ import {
   resolvePublicRecipeAccess,
   toRecipeAccessRecord,
 } from '../../lib/recipeAccess.js';
+import {
+  recordShareGrant,
+  shouldAutoRecordShareGrant,
+  userHasShareGrant,
+} from '../../lib/shareGrant.js';
+import type {OptionalAuthedRequest} from '../../middleware/optionalAuth.js';
 import {GET_PUBLIC_RECIPE_DETAIL_SQL} from '../recipes/sqlConstants.js';
 
 type QueryFn = typeof defaultQuery;
 
 export const getPublicRecipe = async (
-  req: Request,
+  req: OptionalAuthedRequest,
   res: Response,
   queryFn: QueryFn,
 ) => {
@@ -32,8 +38,15 @@ export const getPublicRecipe = async (
     return;
   }
 
-  const denial = resolvePublicRecipeAccess(toRecipeAccessRecord(row), {
+  const accessRecord = toRecipeAccessRecord(row);
+  const hasShareGrant = req.userId
+    ? await userHasShareGrant(id, req.userId, queryFn)
+    : false;
+
+  const denial = resolvePublicRecipeAccess(accessRecord, {
     shareToken: getShareTokenFromQuery(req),
+    userId: req.userId,
+    hasShareGrant,
   });
 
   if (denial === 'not_found') {
@@ -44,6 +57,10 @@ export const getPublicRecipe = async (
   if (denial === 'forbidden') {
     res.status(403).json({error: 'Recipe access denied'});
     return;
+  }
+
+  if (shouldAutoRecordShareGrant(req.userId, row.user_id)) {
+    await recordShareGrant(id, req.userId, 'link', queryFn);
   }
 
   const recipe = mapRowToPublicRecipeDetail(row);

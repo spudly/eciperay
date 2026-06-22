@@ -93,5 +93,8 @@ describe('resolvePublicRecipeAccess', () => {
   test('returns null when public or unlisted access is allowed', () => {
     expect(resolvePublicRecipeAccess(publicRecipe)).toBeNull();
     expect(resolvePublicRecipeAccess(unlistedRecipe, {shareToken})).toBeNull();
+    expect(
+      resolvePublicRecipeAccess(unlistedRecipe, {hasShareGrant: true}),
+    ).toBeNull();
   });
 });

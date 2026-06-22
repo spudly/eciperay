@@ -17,6 +17,7 @@ import {deleteRecipe} from './deleteRecipe.js';
 import {getRecipe} from './getRecipe.js';
 import {getVersion} from './getVersion.js';
 import {listRecipes} from './listRecipes.js';
+import {listSharedWithMe} from './listSharedWithMe.js';
 import {listVersions} from './listVersions.js';
 import {patchRecipeLineage} from './patchRecipeLineage.js';
 import {patchRecipeSharing} from './patchRecipeSharing.js';
@@ -41,6 +42,9 @@ const a = (req: Parameters<typeof requireAuth>[0]) => req as AuthedRequest;
 export const createRecipesRouter = (queryFn: QueryFn) => {
   const router = Router();
   router.get('/', requireAuth, (req, res) => listRecipes(a(req), res, queryFn));
+  router.get('/shared-with-me', requireAuth, (req, res) =>
+    listSharedWithMe(a(req), res, queryFn),
+  );
   router.post('/export', requireAuth, (req, res) =>
     exportRecipes(a(req), res, queryFn),
   );

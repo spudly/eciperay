@@ -12,6 +12,7 @@ export type {
   PublicRecipeResponse,
   RecipeSharingUpdateInput,
   RecipeSharingUpdateResult,
+  RecipeShareGrantVia,
   RecipeVisibility,
 } from './recipe.js';
 export type {
