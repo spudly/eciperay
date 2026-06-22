@@ -76,4 +76,9 @@ export const createRecipesApi = (client: ApiClient) => ({
     client.fetch<RecipeDetail>(`/recipes/${id}/import/accept`, {
       method: 'POST',
     }),
+  clone: (id: string, opts?: {shareToken?: string}) =>
+    client.fetch<RecipeDetail & CreateRecipeResult>(`/recipes/${id}/clone`, {
+      method: 'POST',
+      body: JSON.stringify(opts ?? {}),
+    }),
 });

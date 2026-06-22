@@ -41,6 +41,24 @@ const SET_ACTIVE_VERSION_SQL = `
 export const insertLineage = (userId: string, slug: string, queryFn: QueryFn) =>
   queryFn<{id: string}>(INSERT_LINEAGE_SQL, [userId, slug]);
 
+const INSERT_CLONED_LINEAGE_SQL = `
+  insert into recipes (user_id, status, slug, cloned_from_recipe_id, visibility)
+  values ($1, 'idea', $2, $3, 'private')
+  returning id
+`;
+
+export const insertClonedLineage = (
+  userId: string,
+  slug: string,
+  clonedFromRecipeId: string,
+  queryFn: QueryFn,
+) =>
+  queryFn<{id: string}>(INSERT_CLONED_LINEAGE_SQL, [
+    userId,
+    slug,
+    clonedFromRecipeId,
+  ]);
+
 export const insertVersion = (opts: InsertVersionOptions, queryFn: QueryFn) =>
   queryFn<{id: string}>(INSERT_VERSION_SQL, [
     opts.recipeId,

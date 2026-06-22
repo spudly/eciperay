@@ -112,7 +112,10 @@ export const PublicRecipePage = () => {
 
   return (
     <PublicPageLayout>
-      <PublicRecipeCtas recipeId={recipe.id} />
+      <PublicRecipeCtas
+        recipeId={recipe.id}
+        shareToken={shareToken}
+      />
       <div className="rounded-xl bg-white shadow-sm">
         <div className="flex border-b border-gray-200">
           {TABS.map(tab => (

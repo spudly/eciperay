@@ -88,6 +88,10 @@ export const RecipeSharingPatchSchema = z.object({
   publishingConsent: z.boolean().optional(),
 });
 
+export const RecipeCloneSchema = z.object({
+  shareToken: z.string().min(1).optional(),
+});
+
 export const CookLogInputSchema = z.object({
   authorStarRating: StarRating.nullish(),
   notes: z.string().max(4000).nullish(),

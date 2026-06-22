@@ -84,6 +84,20 @@ export const handlers = [
     `${API}/api/recipes/:id`,
     () => new HttpResponse(null, {status: 204}),
   ),
+  http.post(`${API}/api/recipes/:id/clone`, ({params}) =>
+    HttpResponse.json(
+      {
+        ...recipe,
+        id: 'cloned-recipe-id',
+        recipeId: 'cloned-recipe-id',
+        userId: 'user-uuid-1',
+        visibility: 'private',
+        clonedFromRecipeId: params['id'],
+        versionId: VERSION_ID,
+      },
+      {status: 201},
+    ),
+  ),
   http.get(`${API}/api/recipes/:id/versions`, () =>
     HttpResponse.json([makeRecipeVersionSummary()]),
   ),
