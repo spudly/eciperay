@@ -1,4 +1,8 @@
-import type {RecipeDetail} from '@eciperay/types';
+import type {
+  PublicRecipeDiscoveryItem,
+  PublicRecipeDiscoverySort,
+  RecipeDetail,
+} from '@eciperay/types';
 
 import {HOME_RECENT_RECIPE_COUNT} from './homeCopy.js';
 import {queryKeys} from './queryKeys.js';
@@ -15,9 +19,9 @@ type ListRecipesParams = {search?: string; limit?: number; offset?: number};
 type ListRecipesFn = (params?: ListRecipesParams) => Promise<RecipeDetail[]>;
 type GetRecipeFn = (id: string) => Promise<RecipeDetail>;
 
-export const getRecipeListNextPageParam = (
-  lastPage: RecipeDetail[],
-  allPages: RecipeDetail[][],
+export const getRecipeListNextPageParam = <T>(
+  lastPage: T[],
+  allPages: T[][],
 ): number | undefined => {
   if (lastPage.length < RECIPE_LIST_PAGE_SIZE) {
     return undefined;
@@ -67,6 +71,30 @@ export const sharedWithMeInfiniteQueryOptions = (
   queryKey: queryKeys.sharedWithMe(),
   queryFn: ({pageParam}: {pageParam: number}) =>
     listSharedWithMe({limit: RECIPE_LIST_PAGE_SIZE, offset: pageParam}),
+  initialPageParam: 0,
+  getNextPageParam: getRecipeListNextPageParam,
+});
+
+type ListPublicRecipesFn = (params?: {
+  search?: string;
+  sort?: PublicRecipeDiscoverySort;
+  limit?: number;
+  offset?: number;
+}) => Promise<PublicRecipeDiscoveryItem[]>;
+
+export const publicRecipeDiscoveryInfiniteQueryOptions = (
+  listPublic: ListPublicRecipesFn,
+  search: string,
+  sort: PublicRecipeDiscoverySort = 'newest',
+) => ({
+  queryKey: queryKeys.publicRecipeDiscovery(search, sort),
+  queryFn: ({pageParam}: {pageParam: number}) =>
+    listPublic({
+      search: search || undefined,
+      sort,
+      limit: RECIPE_LIST_PAGE_SIZE,
+      offset: pageParam,
+    }),
   initialPageParam: 0,
   getNextPageParam: getRecipeListNextPageParam,
 });

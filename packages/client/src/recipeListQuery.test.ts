@@ -4,6 +4,7 @@ import {makeRecipeDetail} from './test/fixtures/recipe.js';
 import {
   getRecipeListNextPageParam,
   homeRecentlyViewedRecipesQueryOptions,
+  publicRecipeDiscoveryInfiniteQueryOptions,
   RECIPE_LIST_PAGE_SIZE,
   recipeListInfiniteQueryOptions,
   sharedWithMeInfiniteQueryOptions,
@@ -62,6 +63,37 @@ describe('recipeListQuery', () => {
     expect(listSharedWithMe).toHaveBeenCalledWith({
       limit: RECIPE_LIST_PAGE_SIZE,
       offset: 20,
+    });
+  });
+
+  test('builds public discovery infinite query options with paging params', async () => {
+    const listPublic = jest.fn().mockResolvedValue([{id: 'public-1'}]);
+    const options = publicRecipeDiscoveryInfiniteQueryOptions(
+      listPublic,
+      'curry',
+      'rating',
+    );
+    expect(options.queryKey).toEqual([
+      'publicRecipeDiscovery',
+      {search: 'curry', sort: 'rating'},
+    ]);
+    await options.queryFn({pageParam: 20});
+    expect(listPublic).toHaveBeenCalledWith({
+      search: 'curry',
+      sort: 'rating',
+      limit: RECIPE_LIST_PAGE_SIZE,
+      offset: 20,
+    });
+  });
+
+  test('omits search from public discovery when the query is empty', async () => {
+    const listPublic = jest.fn().mockResolvedValue([]);
+    const options = publicRecipeDiscoveryInfiniteQueryOptions(listPublic, '');
+    await options.queryFn({pageParam: 0});
+    expect(listPublic).toHaveBeenCalledWith({
+      sort: 'newest',
+      limit: RECIPE_LIST_PAGE_SIZE,
+      offset: 0,
     });
   });
 
