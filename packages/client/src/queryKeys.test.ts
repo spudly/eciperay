@@ -39,6 +39,16 @@ describe('queryKeys', () => {
       'sharedWithMe',
       {limit: null, offset: null},
     ]);
+    expect(queryKeys.recipeComments('r1')).toEqual([
+      'recipeComments',
+      'r1',
+      {shareToken: ''},
+    ]);
+    expect(queryKeys.recipeComments('r1', 'tok')).toEqual([
+      'recipeComments',
+      'r1',
+      {shareToken: 'tok'},
+    ]);
     expect(queryKeys.publicRecipeDiscovery()).toEqual([
       'publicRecipeDiscovery',
       {search: '', sort: 'newest'},

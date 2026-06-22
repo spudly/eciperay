@@ -41,4 +41,17 @@ describe('recipeRatingQueries', () => {
     );
     expect(rating).toBeNull();
   });
+
+  test('reads viewer community rating row', async () => {
+    const mockQuery = createMockQuery();
+    mockQuery.mockResolvedValue(
+      makeQueryResult([{stars: 4, content_revision: 2}]),
+    );
+    const rating = await getViewerCommunityRating(
+      'recipe-uuid-1',
+      'viewer-uuid',
+      mockQuery,
+    );
+    expect(rating).toEqual({stars: 4, contentRevision: 2});
+  });
 });

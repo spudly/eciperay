@@ -43,6 +43,7 @@ describe('GET /public/recipes/:id', () => {
     expect(res.body.slugMismatch).toBeUndefined();
     expect(res.body.communityRating).toBeNull();
     expect(res.body.viewerRating).toBeNull();
+    expect(res.body.viewerRatingIsStale).toBe(false);
   });
 
   test('returns slug mismatch hint when slug does not match', async () => {

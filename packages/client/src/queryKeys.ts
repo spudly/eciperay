@@ -18,6 +18,8 @@ export const queryKeys = {
     ] as const,
   sharedWithMe: (limit?: number, offset?: number) =>
     ['sharedWithMe', {limit: limit ?? null, offset: offset ?? null}] as const,
+  recipeComments: (recipeId: string, shareToken?: string) =>
+    ['recipeComments', recipeId, {shareToken: shareToken ?? ''}] as const,
   publicRecipeDiscovery: (search = '', sort = 'newest') =>
     ['publicRecipeDiscovery', {search, sort}] as const,
 };
