@@ -137,6 +137,38 @@ export const mapRowToRecipeListItem = (row: RecipeListRow): RecipeDetail => ({
   tags: row.tags,
 });
 
+export type PublicRecipeDiscoveryRow = {
+  id: string;
+  slug: string;
+  visibility: RecipeVisibility;
+  title: string;
+  description: string | null;
+  servings: number;
+  prep_time_min: number | null;
+  cook_time_min: number | null;
+  image_url: string | null;
+  updated_at: string;
+  author_display_name: string | null;
+  tags: RecipeDetail['tags'];
+};
+
+export const mapRowToPublicRecipeDiscoveryItem = (
+  row: PublicRecipeDiscoveryRow,
+) => ({
+  id: row.id,
+  slug: row.slug,
+  title: row.title,
+  description: row.description,
+  servings: row.servings,
+  prepTimeMin: row.prep_time_min,
+  cookTimeMin: row.cook_time_min,
+  imageUrl: row.image_url,
+  visibility: 'public' as const,
+  authorDisplayName: row.author_display_name,
+  updatedAt: row.updated_at,
+  tags: row.tags,
+});
+
 export const mapRowToRecipeDetail = (row: RecipeDetailRow): RecipeDetail => ({
   id: row.id,
   userId: row.user_id,

@@ -37,11 +37,13 @@ export const privacyPolicySections: LegalSection[] = [
             <strong>Recipe sharing settings:</strong> when you choose to share a
             recipe via an unlisted link or make it public, anyone with the link
             (or anyone browsing public recipes) can view that recipe content
-            without signing in. You can change visibility or rotate unlisted
-            links at any time. Anonymous viewers may access shared recipes
-            through our public recipe API; those requests are logged like other
-            server traffic (see usage and diagnostic data below) but are not
-            linked to a viewer account.
+            without signing in. Public recipes also appear in Eciperay&apos;s
+            public browse and search results with your display name, title,
+            description, image, and related metadata. You can change visibility
+            or rotate unlisted links at any time. Anonymous viewers may access
+            shared recipes through our public recipe API; those requests are
+            logged like other server traffic (see usage and diagnostic data
+            below) but are not linked to a viewer account.
           </li>
           <li>
             <strong>Shared recipe access:</strong> when you are signed in and
@@ -100,8 +102,8 @@ export const privacyPolicySections: LegalSection[] = [
         <li>Provide, maintain, and improve the Eciperay service.</li>
         <li>
           Understand how features are used and measure product performance,
-          including page views on public recipe pages when you are not signed
-          in.
+          including page views on public recipe pages and public recipe browse
+          traffic when you are not signed in.
         </li>
         <li>
           Diagnose errors, investigate reliability issues, and improve

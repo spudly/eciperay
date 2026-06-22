@@ -51,6 +51,11 @@ describe('msw handlers', () => {
   });
 
   test('covers public recipe read endpoints', async () => {
+    const listed = await eciperay.recipes.listPublic({search: 'pasta'});
+    expect(listed[0]?.title).toBe('Shared pasta');
+    expect(listed[0]?.authorDisplayName).toBe('Chef Alex');
+    const unfiltered = await eciperay.recipes.listPublic();
+    expect(unfiltered[0]?.title).toBe('Shared Pasta');
     const byId = await eciperay.recipes.getPublic('recipe-uuid-1');
     expect(byId.recipe.title).toBe('Test Recipe');
     const bySlug = await eciperay.recipes.getPublic('recipe-uuid-1', {
