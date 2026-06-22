@@ -1,5 +1,6 @@
 import {
   buildRecipePermalink,
+  buildRecipeShareUrl,
   isPublishedVisibility,
   recipeVisibilityDescriptions,
   recipeVisibilityLabels,
@@ -33,6 +34,37 @@ describe('recipeVisibility', () => {
         'token-123',
       ),
     ).toBe('https://www.eciperay.com/recipe/recipe-1/pasta?t=token-123');
+  });
+
+  test('builds share URLs for visibility and source links', () => {
+    const recipe = {
+      id: 'recipe-1',
+      slug: 'pasta',
+      visibility: 'private' as const,
+      sourceUrl: null,
+    };
+    expect(buildRecipeShareUrl('https://www.eciperay.com', recipe)).toBe(
+      'https://www.eciperay.com/recipes/recipe-1',
+    );
+    expect(
+      buildRecipeShareUrl('https://www.eciperay.com', {
+        ...recipe,
+        visibility: 'public',
+      }),
+    ).toBe('https://www.eciperay.com/recipe/recipe-1/pasta');
+    expect(
+      buildRecipeShareUrl(
+        'https://www.eciperay.com',
+        {...recipe, visibility: 'unlisted'},
+        'token-123',
+      ),
+    ).toBe('https://www.eciperay.com/recipe/recipe-1/pasta?t=token-123');
+    expect(
+      buildRecipeShareUrl('https://www.eciperay.com', {
+        ...recipe,
+        sourceUrl: 'https://example.com/original',
+      }),
+    ).toBe('https://example.com/original');
   });
 
   test('exposes labels and descriptions for each visibility level', () => {

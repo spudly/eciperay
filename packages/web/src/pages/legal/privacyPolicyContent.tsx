@@ -164,9 +164,15 @@ export const privacyPolicySections: LegalSection[] = [
         <li>
           <strong>Sharing:</strong> you control whether each recipe stays
           private, is shared via an unlisted link, or is published for public
-          discovery. Unlisted links can be rotated to revoke prior links.
+          discovery. Unlisted links can be rotated to revoke prior links. When
+          you share a recipe, recipients receive a link that exposes the full
+          recipe content to anyone they forward it to, so review visibility
+          before sharing.
         </li>
-        <li>profile page.</li>
+        <li>
+          <strong>Account settings:</strong> update your display name and manage
+          your session from the profile page.
+        </li>
         <li>
           <strong>Deletion:</strong> to delete your account and associated data,
           contact us at {legalContactLink}.
