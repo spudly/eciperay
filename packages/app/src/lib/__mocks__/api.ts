@@ -7,6 +7,7 @@ export const api = {
     put: jest.fn(),
     patchLifecycle: jest.fn(),
     delete: jest.fn(),
+    clone: jest.fn(),
     acceptImport: jest.fn(),
   },
   import: {importUrl: jest.fn(), importImage: jest.fn(), importText: jest.fn()},

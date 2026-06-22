@@ -9,3 +9,4 @@ export const HOME_SHARED_WITH_ME_LABEL = 'Shared with me';
 export const SHARED_WITH_ME_TITLE = 'Shared with me';
 export const SHARED_WITH_ME_EMPTY_MESSAGE =
   'Recipes others share with you will appear here. Open a share link while signed in to save recipes to this list.';
+export const SAVE_RECIPE_COPY_LABEL = 'Save a copy';

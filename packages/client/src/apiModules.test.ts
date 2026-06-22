@@ -42,6 +42,8 @@ describe('createEciperayClient', () => {
     await client.recipes.exportRecipes([
       'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
     ]);
+    await client.recipes.clone('r1');
+    await client.recipes.clone('r1', {shareToken: 'tok'});
     expect(api.fetch).toHaveBeenCalledWith('/recipes');
     expect(api.fetch).toHaveBeenCalledWith('/recipes?limit=50&offset=10');
     expect(api.fetch).toHaveBeenCalledWith(
@@ -80,6 +82,17 @@ describe('createEciperayClient', () => {
     expect(api.fetch).toHaveBeenCalledWith(
       '/recipes/export',
       expect.objectContaining({method: 'POST'}),
+    );
+    expect(api.fetch).toHaveBeenCalledWith(
+      '/recipes/r1/clone',
+      expect.objectContaining({method: 'POST', body: '{}'}),
+    );
+    expect(api.fetch).toHaveBeenCalledWith(
+      '/recipes/r1/clone',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({shareToken: 'tok'}),
+      }),
     );
   });
 

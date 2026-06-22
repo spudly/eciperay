@@ -8,6 +8,7 @@ import {listCookLogs} from '../cooks/listCookLogs.js';
 
 import {activateVersion} from './activateVersion.js';
 import {acceptImport} from './acceptImport.js';
+import {cloneRecipe} from './cloneRecipe.js';
 import {createRecipe} from './createRecipe.js';
 import {createVersion} from './createVersion.js';
 import {exportRecipes} from './exportRecipes.js';
@@ -68,6 +69,9 @@ export const createRecipesRouter = (queryFn: QueryFn) => {
   );
   router.post('/:id/import/start-edits', requireAuth, (req, res) =>
     startImportEdits(a(req), res, queryFn),
+  );
+  router.post('/:id/clone', requireAuth, (req, res) =>
+    cloneRecipe(a(req), res, queryFn),
   );
   router.patch('/:id', requireAuth, (req, res) =>
     patchRecipeLineage(a(req), res, queryFn),
