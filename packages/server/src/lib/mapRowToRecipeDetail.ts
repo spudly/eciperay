@@ -1,8 +1,11 @@
+/* eslint-disable max-lines -- recipe row mappers share lineage + version field shapes */
 import type {
   RecipeDetail,
+  RecipeDevelopmentStatus,
   RecipeLifecycleStatus,
   RecipeVersionDetail,
   RecipeVersionSummary,
+  RecipeVisibility,
   VersionCreatedVia,
 } from '@eciperay/types';
 
@@ -16,6 +19,12 @@ type RecipeDetailRow = {
   id: string;
   user_id: string;
   status: RecipeLifecycleStatus;
+  visibility: RecipeVisibility;
+  slug: string;
+  share_token_hash: string | null;
+  content_revision: number;
+  development_status: RecipeDevelopmentStatus;
+  cloned_from_recipe_id: string | null;
   active_version_id: string;
   version_id: string;
   version_number: number;
@@ -37,6 +46,11 @@ type RecipeDetailRow = {
 export type RecipeListRow = {
   id: string;
   status: RecipeLifecycleStatus;
+  visibility: RecipeVisibility;
+  slug: string;
+  content_revision: number;
+  development_status: RecipeDevelopmentStatus;
+  cloned_from_recipe_id: string | null;
   active_version_id: string;
   version_id: string;
   version_number: number;
@@ -100,6 +114,11 @@ export const mapRowToRecipeListItem = (row: RecipeListRow): RecipeDetail => ({
   id: row.id,
   userId: '',
   lifecycleStatus: row.status,
+  visibility: row.visibility,
+  slug: row.slug,
+  contentRevision: row.content_revision,
+  developmentStatus: row.development_status,
+  clonedFromRecipeId: row.cloned_from_recipe_id,
   versionId: row.version_id,
   versionNumber: row.version_number,
   title: row.title,
@@ -121,6 +140,11 @@ export const mapRowToRecipeDetail = (row: RecipeDetailRow): RecipeDetail => ({
   id: row.id,
   userId: row.user_id,
   lifecycleStatus: row.status,
+  visibility: row.visibility,
+  slug: row.slug,
+  contentRevision: row.content_revision,
+  developmentStatus: row.development_status,
+  clonedFromRecipeId: row.cloned_from_recipe_id,
   versionId: row.version_id,
   versionNumber: row.version_number,
   title: row.title,

@@ -19,6 +19,11 @@ describe('mapRowToRecipeListItem', () => {
     const mapped = mapRowToRecipeListItem({
       id: 'recipe-uuid-1',
       status: 'idea',
+      visibility: 'private',
+      slug: 'pasta',
+      content_revision: 1,
+      development_status: 'idea',
+      cloned_from_recipe_id: null,
       active_version_id: 'version-uuid-1',
       version_id: 'version-uuid-1',
       version_number: 1,

@@ -6,10 +6,14 @@ import {
   GET_RECIPE_DETAIL_SQL,
   linkTags,
 } from '../routes/recipes/queries.js';
-import {updateVersion} from '../routes/recipes/versionQueries.js';
+import {
+  updateRecipeSlug,
+  updateVersion,
+} from '../routes/recipes/versionQueries.js';
 
 import {mapRowToRecipeDetail} from './mapRowToRecipeDetail.js';
 import {RecipeNotFoundError} from './saveRecipeFromInput.js';
+import {slugifyRecipeTitle} from './slugifyRecipeTitle.js';
 
 type QueryFn = typeof defaultQuery;
 
@@ -38,6 +42,11 @@ export const saveRecipeMetadata = async (
   if (result.rowCount === 0) {
     throw new RecipeNotFoundError();
   }
+  await updateRecipeSlug(
+    opts.recipeId,
+    slugifyRecipeTitle(opts.input.title),
+    queryFn,
+  );
   await deleteRecipeTagsByVersionId(opts.versionId, queryFn);
   await linkTags(opts.versionId, opts.input.tagIds, queryFn);
   const detail = await queryFn(GET_RECIPE_DETAIL_SQL, [
