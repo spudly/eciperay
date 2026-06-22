@@ -1,6 +1,5 @@
 import {
   identifyAnalyticsUser,
-  PRIVACY_POLICY_URL,
   readAnalyticsConsent,
   useAuth,
   writeAnalyticsConsent,
@@ -54,7 +53,7 @@ export const AnalyticsConsentBanner = () => {
         <p className="text-sm text-gray-700">
           We use cookies and product analytics to improve Eciperay. See our{' '}
           <Link
-            to={PRIVACY_POLICY_URL}
+            to="/privacy"
             className="text-primary font-medium underline"
           >
             Privacy Policy
