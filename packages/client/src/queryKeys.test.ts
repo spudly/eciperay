@@ -29,5 +29,13 @@ describe('queryKeys', () => {
       'sharedWithMe',
       {limit: null, offset: null},
     ]);
+    expect(queryKeys.publicRecipeDiscovery()).toEqual([
+      'publicRecipeDiscovery',
+      {search: '', sort: 'newest'},
+    ]);
+    expect(queryKeys.publicRecipeDiscovery('curry', 'rating')).toEqual([
+      'publicRecipeDiscovery',
+      {search: 'curry', sort: 'rating'},
+    ]);
   });
 });
