@@ -9,6 +9,8 @@ export type {
   RecipeInput,
   RecipeMetadataInput,
   PublicRecipeDetail,
+  PublicRecipeDiscoveryItem,
+  PublicRecipeDiscoverySort,
   PublicRecipeResponse,
   RecipeSharingUpdateInput,
   RecipeSharingUpdateResult,

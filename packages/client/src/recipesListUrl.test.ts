@@ -1,4 +1,8 @@
-import {buildListUrl, buildSharedWithMeUrl} from './recipesListUrl.js';
+import {
+  buildListUrl,
+  buildPublicRecipesUrl,
+  buildSharedWithMeUrl,
+} from './recipesListUrl.js';
 
 describe('buildListUrl', () => {
   test('returns base path without params', () => {
@@ -36,5 +40,23 @@ describe('buildSharedWithMeUrl', () => {
     expect(buildSharedWithMeUrl({limit: 25, offset: 5})).toBe(
       '/recipes/shared-with-me?limit=25&offset=5',
     );
+  });
+});
+
+describe('buildPublicRecipesUrl', () => {
+  test('returns base public recipes path without params', () => {
+    expect(buildPublicRecipesUrl()).toBe('/public/recipes');
+    expect(buildPublicRecipesUrl({})).toBe('/public/recipes');
+  });
+
+  test('includes search, pagination, and sort when provided', () => {
+    expect(
+      buildPublicRecipesUrl({
+        search: 'pasta',
+        limit: 20,
+        offset: 5,
+        sort: 'rating',
+      }),
+    ).toBe('/public/recipes?search=pasta&limit=20&offset=5&sort=rating');
   });
 });

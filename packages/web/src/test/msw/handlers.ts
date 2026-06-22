@@ -39,6 +39,27 @@ export const handlers = [
   http.get(`${API}/api/recipes/:id`, ({params}) =>
     HttpResponse.json({...recipe, id: params['id']}),
   ),
+  http.get(`${API}/api/public/recipes`, ({request}) => {
+    const url = new URL(request.url);
+    const search = url.searchParams.get('search')?.trim();
+    const discoveryRecipe = {
+      id: 'public-recipe-1',
+      slug: 'shared-pasta',
+      title: search ? `Shared ${search}` : 'Shared Pasta',
+      description: 'A public recipe',
+      servings: 4,
+      prepTimeMin: 10,
+      cookTimeMin: 25,
+      imageUrl: null,
+      visibility: 'public' as const,
+      authorDisplayName: 'Chef Alex',
+      updatedAt: '2024-01-01T00:00:00.000Z',
+      tags: [],
+    };
+    const offset = Number(url.searchParams.get('offset') ?? 0);
+    const limit = Number(url.searchParams.get('limit') ?? 100);
+    return HttpResponse.json([discoveryRecipe].slice(offset, offset + limit));
+  }),
   http.get(`${API}/api/public/recipes/:id`, ({params}) => {
     const {userId: _userId, ...publicRecipe} = recipe;
     void _userId;
