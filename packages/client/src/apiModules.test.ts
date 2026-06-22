@@ -30,6 +30,11 @@ describe('createEciperayClient', () => {
       tagIds: [],
     });
     await client.recipes.patchLifecycle('r1', 'perfected');
+    await client.recipes.patchSharing('r1', {
+      visibility: 'unlisted',
+      publishingConsent: true,
+    });
+    await client.recipes.rotateShareToken('r1');
     await client.recipes.delete('r1');
     await client.recipes.exportRecipes([
       'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
@@ -51,6 +56,14 @@ describe('createEciperayClient', () => {
     expect(api.fetch).toHaveBeenCalledWith(
       '/recipes/r1',
       expect.objectContaining({method: 'PATCH'}),
+    );
+    expect(api.fetch).toHaveBeenCalledWith(
+      '/recipes/r1/sharing',
+      expect.objectContaining({method: 'PATCH'}),
+    );
+    expect(api.fetch).toHaveBeenCalledWith(
+      '/recipes/r1/sharing/rotate-token',
+      expect.objectContaining({method: 'POST'}),
     );
     expect(api.fetch).toHaveBeenCalledWith(
       '/recipes/r1',

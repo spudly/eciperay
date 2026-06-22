@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- barrel re-exports for the shared client package */
 export {scaleQuantity} from './scaleQuantity.js';
 export {reorderListItem, reorderRowsByKey} from './reorderList.js';
 export {createFormRowKey} from './createFormRowKey.js';
@@ -33,6 +34,13 @@ export {
   canEditDraftVersion,
   isRecipeLifecycleEditable,
 } from './recipeEditActions.js';
+export {
+  buildRecipePermalink,
+  isPublishedVisibility,
+  recipeVisibilityDescriptions,
+  recipeVisibilityLabels,
+  requiresPublishingConsent,
+} from './recipeVisibility.js';
 export {createApiClient, type ApiClient} from './createApiClient.js';
 export {createSupabaseClient} from './createSupabaseClient.js';
 export {
@@ -138,6 +146,7 @@ export {
   LEGAL_OPERATOR_NAME,
   PRIVACY_POLICY_URL,
   TERMS_OF_SERVICE_URL,
+  WEB_APP_BASE_URL,
 } from './legalUrls.js';
 export {
   HOME_ADD_LABEL,

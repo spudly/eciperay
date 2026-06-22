@@ -4,6 +4,8 @@ import type {
   RecipeExportBundle,
   RecipeInput,
   RecipeLifecycleStatus,
+  RecipeSharingUpdateInput,
+  RecipeSharingUpdateResult,
 } from '@eciperay/types';
 
 import type {ApiClient} from './createApiClient.js';
@@ -33,6 +35,16 @@ export const createRecipesApi = (client: ApiClient) => ({
       method: 'PATCH',
       body: JSON.stringify({status}),
     }),
+  patchSharing: (id: string, input: RecipeSharingUpdateInput) =>
+    client.fetch<RecipeSharingUpdateResult>(`/recipes/${id}/sharing`, {
+      method: 'PATCH',
+      body: JSON.stringify(input),
+    }),
+  rotateShareToken: (id: string) =>
+    client.fetch<RecipeSharingUpdateResult>(
+      `/recipes/${id}/sharing/rotate-token`,
+      {method: 'POST'},
+    ),
   delete: (id: string) =>
     client.fetch<undefined>(`/recipes/${id}`, {method: 'DELETE'}),
   exportRecipes: (recipeIds: string[]) =>

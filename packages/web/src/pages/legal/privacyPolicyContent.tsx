@@ -34,6 +34,13 @@ export const privacyPolicySections: LegalSection[] = [
             tags, ratings, and source URLs.
           </li>
           <li>
+            <strong>Recipe sharing settings:</strong> when you choose to share a
+            recipe via an unlisted link or make it public, anyone with the link
+            (or anyone browsing public recipes) can view that recipe content
+            without signing in. You can change visibility or rotate unlisted
+            links at any time.
+          </li>
+          <li>
             <strong>Images:</strong> photos you upload for recipes, stored in
             our file storage service.
           </li>
@@ -150,9 +157,11 @@ export const privacyPolicySections: LegalSection[] = [
     content: (
       <ul className="list-disc space-y-2 ps-6">
         <li>
-          <strong>Export:</strong> you can export your recipes as JSON from your
-          profile page.
+          <strong>Sharing:</strong> you control whether each recipe stays
+          private, is shared via an unlisted link, or is published for public
+          discovery. Unlisted links can be rotated to revoke prior links.
         </li>
+        <li>profile page.</li>
         <li>
           <strong>Deletion:</strong> to delete your account and associated data,
           contact us at {legalContactLink}.
