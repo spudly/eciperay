@@ -42,6 +42,16 @@ export {
   recipeVisibilityLabels,
   requiresPublishingConsent,
 } from './recipeVisibility.js';
+export {
+  buildRecipeJsonLd,
+  buildRecipeMetaDescription,
+  buildRecipePageTitle,
+  buildRecipeSocialMeta,
+  formatSchemaDuration,
+  RECIPE_SEO_SITE_NAME,
+  type RecipeCommunityRating,
+  type RecipeSocialMeta,
+} from './recipeSeo.js';
 export {publicRecipeToRecipeDetail} from './publicRecipe.js';
 export {createApiClient, type ApiClient} from './createApiClient.js';
 export {createSupabaseClient} from './createSupabaseClient.js';

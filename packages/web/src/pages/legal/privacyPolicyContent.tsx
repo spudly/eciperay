@@ -106,6 +106,11 @@ export const privacyPolicySections: LegalSection[] = [
           pages, and public recipe browse traffic when you are not signed in.
         </li>
         <li>
+          Allow search engines and social platforms to index public recipe pages
+          you publish, including titles, descriptions, images, and community
+          ratings when shown on those pages.
+        </li>
+        <li>
           Diagnose errors, investigate reliability issues, and improve
           stability.
         </li>
@@ -166,9 +171,11 @@ export const privacyPolicySections: LegalSection[] = [
         We retain your account and recipe data while your account is active.
         Analytics, error, and log data are kept for a limited period needed to
         operate, secure, and improve the service, after which it is deleted or
-        aggregated. We use industry-standard safeguards through our
-        infrastructure providers, but no method of transmission or storage is
-        completely secure.
+        aggregated. Public recipe content you publish may remain discoverable in
+        third-party search indexes after you change visibility or delete your
+        account until those services refresh their caches. We use
+        industry-standard safeguards through our infrastructure providers, but
+        no method of transmission or storage is completely secure.
       </p>
     ),
   },
@@ -183,7 +190,10 @@ export const privacyPolicySections: LegalSection[] = [
           you share a recipe, recipients receive a link that exposes the full
           recipe content to anyone they forward it to, so review visibility
           before sharing. Opening a share link while signed in adds the recipe
-          to your Shared with me list until you delete your account.
+          to your Shared with me list until you delete your account. Public
+          recipes may be indexed by search engines and appear in link previews
+          on social platforms; we do not apply <code>noindex</code> to public
+          recipe pages.
         </li>
         <li>
           <strong>Account settings:</strong> update your display name and manage

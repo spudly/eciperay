@@ -1,4 +1,8 @@
-import {publicRecipeToRecipeDetail, queryKeys} from '@eciperay/client';
+import {
+  buildRecipePermalink,
+  publicRecipeToRecipeDetail,
+  queryKeys,
+} from '@eciperay/client';
 import clsx from 'clsx';
 import {useQuery} from '@tanstack/react-query';
 import {useState} from 'react';
@@ -9,6 +13,8 @@ import {InstructionsTab} from '../components/recipe/InstructionsTab.js';
 import {PublicRecipeCtas} from '../components/recipe/PublicRecipeCtas.js';
 import {PublicRecipeOverview} from '../components/recipe/PublicRecipeOverview.js';
 import {PublicPageLayout} from '../components/PublicPageLayout.js';
+import {PublicRecipeError} from '../components/PublicRecipeError.js';
+import {RecipePageHead} from '../components/RecipePageHead.js';
 import {eciperay} from '../lib/api.js';
 
 type Tab = 'overview' | 'ingredients' | 'instructions';
@@ -18,21 +24,6 @@ const TABS: {key: Tab; label: string}[] = [
   {key: 'ingredients', label: 'Ingredients'},
   {key: 'instructions', label: 'Instructions'},
 ];
-
-const PublicRecipeError = ({
-  title,
-  message,
-}: {
-  title: string;
-  message: string;
-}) => (
-  <PublicPageLayout>
-    <div className="rounded-xl bg-white p-8 text-center shadow-sm">
-      <h1 className="mb-2 text-xl font-semibold text-gray-900">{title}</h1>
-      <p className="text-gray-600">{message}</p>
-    </div>
-  </PublicPageLayout>
-);
 
 export const PublicRecipePage = () => {
   const {id = '', slug = ''} = useParams();
@@ -109,9 +100,17 @@ export const PublicRecipePage = () => {
   const recipeDetail = publicRecipeToRecipeDetail(recipe);
   const currentServings = servings ?? recipe.servings;
   const scaleFactor = currentServings / recipe.servings;
+  const canonicalUrl = buildRecipePermalink(window.location.origin, {
+    id: recipe.id,
+    slug: data.canonicalSlug,
+  });
 
   return (
     <PublicPageLayout>
+      <RecipePageHead
+        recipe={recipe}
+        canonicalUrl={canonicalUrl}
+      />
       <PublicRecipeCtas
         recipeId={recipe.id}
         shareToken={shareToken}
