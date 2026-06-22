@@ -72,6 +72,14 @@ export const LIST_PUBLIC_RECIPES_SQL = `
   limit $1 offset $2
 `;
 
+export const LIST_PUBLIC_RECIPES_SITEMAP_SQL = `
+  select r.id, r.slug, rv.updated_at
+  from recipes r
+  join recipe_versions rv on rv.id = r.active_version_id
+  where r.visibility = 'public'
+  order by rv.updated_at desc
+`;
+
 export const GET_RECIPE_DETAIL_SQL = `
   select r.id, r.user_id, r.status, r.visibility, r.slug, r.share_token_hash,
          r.content_revision, r.development_status, r.cloned_from_recipe_id,

@@ -17,6 +17,7 @@ import {createAuthRouter} from './routes/auth/router.js';
 import {createImportRouter} from './routes/import/router.js';
 import {createPublicRecipesRouter} from './routes/public/router.js';
 import {createRecipesRouter} from './routes/recipes/router.js';
+import {attachSeoRoutes} from './routes/seo/attachSeoRoutes.js';
 import {createTagsRouter} from './routes/tags/router.js';
 import {attachWebStatic, isWebDistAvailable} from './staticWeb.js';
 
@@ -54,6 +55,7 @@ export const createApp = ({
     res.status(404).json({error: 'Not found'});
   });
   app.use(API_PREFIX, api);
+  attachSeoRoutes(app, queryFn);
   app.use(handleUnexpectedError);
 
   if (serveWeb) {
