@@ -69,6 +69,14 @@ export const privacyPolicySections: LegalSection[] = [
             separately and is not included in community averages.
           </li>
           <li>
+            <strong>Recipe comments:</strong> when you comment on a recipe you
+            can access, we store your comment text, account, display name, and
+            the recipe revision at the time you posted. Comments are visible to
+            others who can read the recipe. Recipe owners can delete comments on
+            their recipes. Do not include sensitive personal information in
+            comments.
+          </li>
+          <li>
             <strong>Images:</strong> photos you upload for recipes, stored in
             our file storage service.
           </li>
@@ -117,8 +125,8 @@ export const privacyPolicySections: LegalSection[] = [
         </li>
         <li>
           Allow search engines and social platforms to index public recipe pages
-          you publish, including titles, descriptions, images, and community
-          ratings when shown on those pages.
+          you publish, including titles, descriptions, images, community
+          ratings, and comments when shown on those pages.
         </li>
         <li>
           Diagnose errors, investigate reliability issues, and improve
@@ -223,6 +231,12 @@ export const privacyPolicySections: LegalSection[] = [
           <strong>Ratings:</strong> you can update or remove your star rating on
           recipes you can access. Owner personal ratings and community ratings
           are managed separately as described above.
+        </li>
+        <li>
+          <strong>Comments:</strong> you can edit or delete comments you posted.
+          Recipe owners can delete any comment on their recipes. Comments remain
+          stored until deleted by you, the recipe owner, or when your account is
+          removed.
         </li>
         <li>
           <strong>Camera and photos:</strong> the mobile app requests camera and

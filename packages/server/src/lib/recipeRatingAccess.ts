@@ -2,36 +2,11 @@ import type {Response} from 'express';
 
 import {query as defaultQuery} from '../db/query.js';
 import type {AuthedRequest} from '../middleware/requireAuth.js';
-import {GET_PUBLIC_RECIPE_DETAIL_SQL} from '../routes/recipes/sqlConstants.js';
-
 import {buildRecipeDetailWithRatings} from './buildRecipeDetailWithRatings.js';
 import {getParam} from './getParam.js';
-import {mapRowToRecipeDetail} from './mapRowToRecipeDetail.js';
-import {canReadRecipe, toRecipeAccessRecord} from './recipeAccess.js';
-import {userHasShareGrant} from './shareGrant.js';
+import {loadReadableRecipeRow} from './recipeReadAccess.js';
 
 type QueryFn = typeof defaultQuery;
-
-export const loadReadableRecipeRow = async (
-  recipeId: string,
-  userId: string,
-  queryFn: QueryFn,
-) => {
-  const result = await queryFn(GET_PUBLIC_RECIPE_DETAIL_SQL, [recipeId]);
-  const row = result.rows[0] as
-    | Parameters<typeof mapRowToRecipeDetail>[0]
-    | undefined;
-  if (!row) {
-    return null;
-  }
-
-  const hasShareGrant = await userHasShareGrant(recipeId, userId, queryFn);
-  if (!canReadRecipe(toRecipeAccessRecord(row), {userId, hasShareGrant})) {
-    return null;
-  }
-
-  return row;
-};
 
 export const respondWithRecipeAndRatings = async (
   recipeId: string,

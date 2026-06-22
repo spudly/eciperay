@@ -4,10 +4,8 @@ import {makeQueryResult} from '../test/fixtures/queryResult.js';
 import {createMockQuery} from '../test/mockQuery.js';
 import {makeRecipeDetailRow} from '../test/fixtures/recipeRow.js';
 
-import {
-  loadReadableRecipeRow,
-  respondWithRecipeAndRatings,
-} from './recipeRatingAccess.js';
+import {loadReadableRecipeRow} from './recipeReadAccess.js';
+import {respondWithRecipeAndRatings} from './recipeRatingAccess.js';
 
 describe('recipeRatingAccess', () => {
   test('returns null when the viewer cannot read the recipe', async () => {
