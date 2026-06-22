@@ -50,6 +50,12 @@ export type {
   RecipeExportRecord,
   RecipeExportTag,
 } from './recipeExport.js';
+export type {
+  AccountExportBundle,
+  AccountExportComment,
+  AccountExportCommunityRating,
+  AccountExportShareGrant,
+} from './accountExport.js';
 export type {User} from './user.js';
 export type {RecipeComment, RecipeCommentInput} from './recipeComment.js';
 export type {

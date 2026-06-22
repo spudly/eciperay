@@ -92,11 +92,20 @@ export const privacyPolicySections: LegalSection[] = [
             from IP address, timestamps, and server request logs.
           </li>
           <li>
-            <strong>Product analytics and reliability data:</strong> when you
-            are signed in, we may associate usage and diagnostic data with your
-            account using your user ID and email address. We also collect error
+            <strong>Product analytics and reliability data:</strong> on the web,
+            we ask for your consent before enabling product analytics cookies
+            and tools such as PostHog. If you accept, we may associate usage and
+            diagnostic data with your account using your user ID and email
+            address when you are signed in. If you decline, we do not load those
+            analytics tools in your browser session. We also collect error
             reports, crash information, and structured application logs to keep
             the service reliable.
+          </li>
+          <li>
+            <strong>Cookie and consent preferences:</strong> when you respond to
+            our analytics consent banner on the web, we store your choice in
+            your browser&apos;s local storage so we can remember it on future
+            visits. This preference is not sent to our servers.
           </li>
           <li>
             <strong>Session replays:</strong> on the web and mobile apps, we may
@@ -187,13 +196,16 @@ export const privacyPolicySections: LegalSection[] = [
     content: (
       <p>
         We retain your account and recipe data while your account is active.
-        Analytics, error, and log data are kept for a limited period needed to
-        operate, secure, and improve the service, after which it is deleted or
-        aggregated. Public recipe content you publish may remain discoverable in
-        third-party search indexes after you change visibility or delete your
-        account until those services refresh their caches. We use
-        industry-standard safeguards through our infrastructure providers, but
-        no method of transmission or storage is completely secure.
+        When you delete your account from the profile page, we remove your
+        profile, recipes, comments, ratings, share grants, and other associated
+        records from our application database. Public recipes you published are
+        removed from Eciperay when your account is deleted, but copies may
+        remain in third-party search indexes until those services refresh their
+        caches. Analytics, error, and log data are kept for a limited period
+        needed to operate, secure, and improve the service, after which it is
+        deleted or aggregated. We use industry-standard safeguards through our
+        infrastructure providers, but no method of transmission or storage is
+        completely secure.
       </p>
     ),
   },
@@ -215,17 +227,22 @@ export const privacyPolicySections: LegalSection[] = [
         </li>
         <li>
           <strong>Account settings:</strong> update your display name and manage
-          your session from the profile page.
+          your session from the profile page. You can also download a JSON copy
+          of your profile, recipes, share grants, community ratings, and
+          comments from the profile page.
         </li>
         <li>
-          <strong>Deletion:</strong> to delete your account and associated data,
-          contact us at {legalContactLink}.
+          <strong>Deletion:</strong> you can permanently delete your account and
+          associated application data from the profile page. This removes your
+          recipes (including public recipes), comments, ratings, and share
+          grants. If deletion of your authentication account fails after your
+          application data is removed, contact us at {legalContactLink}.
         </li>
         <li>
-          <strong>Analytics:</strong> if you have questions about our use of
-          product analytics or session replay, or want to request deletion of
-          analytics data associated with your account, contact us at{' '}
-          {legalContactLink}.
+          <strong>Analytics:</strong> on the web you can accept or decline
+          product analytics cookies when prompted. You can clear your browser
+          storage to see the prompt again. To request deletion of analytics data
+          already collected, contact us at {legalContactLink}.
         </li>
         <li>
           <strong>Ratings:</strong> you can update or remove your star rating on

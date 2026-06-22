@@ -619,4 +619,23 @@ export const handlers = [
     `${API}/api/auth/sync`,
     () => new HttpResponse(null, {status: 204}),
   ),
+  http.get(`${API}/api/account/export`, () =>
+    HttpResponse.json({
+      formatVersion: 1,
+      exportedAt: '2024-01-01T00:00:00.000Z',
+      profile: {
+        email: 'test@example.com',
+        displayName: null,
+        createdAt: '2024-01-01T00:00:00.000Z',
+      },
+      recipes: [],
+      shareGrants: [],
+      communityRatings: [],
+      comments: [],
+    }),
+  ),
+  http.delete(
+    `${API}/api/account`,
+    () => new HttpResponse(null, {status: 204}),
+  ),
 ];

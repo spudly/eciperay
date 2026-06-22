@@ -165,6 +165,8 @@ describe('createEciperayClient', () => {
       recipes: [],
     });
     await client.auth.syncUser();
+    await client.account.exportData();
+    await client.account.deleteAccount();
     await client.tags.list();
     await client.tags.create('Dinner', '#fff');
     await client.tags.delete('t1');
@@ -219,6 +221,11 @@ describe('createEciperayClient', () => {
     expect(api.fetch).toHaveBeenCalledWith(
       '/auth/sync',
       expect.objectContaining({method: 'POST'}),
+    );
+    expect(api.fetch).toHaveBeenCalledWith('/account/export');
+    expect(api.fetch).toHaveBeenCalledWith(
+      '/account',
+      expect.objectContaining({method: 'DELETE'}),
     );
     expect(api.fetch).toHaveBeenCalledWith('/tags');
     expect(api.fetch).toHaveBeenCalledWith(

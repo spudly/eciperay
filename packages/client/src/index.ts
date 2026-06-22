@@ -103,6 +103,12 @@ export {
 } from './analyticsEvents.js';
 export {identifyAnalyticsUser} from './identifyAnalyticsUser.js';
 export {
+  ANALYTICS_CONSENT_STORAGE_KEY,
+  readAnalyticsConsent,
+  writeAnalyticsConsent,
+  type AnalyticsConsentStatus,
+} from './analyticsConsent.js';
+export {
   isSensitiveAnalyticsPropertyKey,
   sanitizeAnalyticsProperties,
 } from './sanitizeAnalyticsProperties.js';
@@ -133,6 +139,7 @@ export {invalidateRecipeQueries} from './invalidateRecipeQueries.js';
 export {createRecipesApi} from './recipesApi.js';
 export {createImportApi} from './importApi.js';
 export {createAuthApi} from './authApi.js';
+export {createAccountApi} from './accountApi.js';
 export {createTagsApi} from './tagsApi.js';
 export {createAiApi} from './aiApi.js';
 export {createVersionsApi, type TweakWithAiResult} from './versionsApi.js';
