@@ -42,12 +42,20 @@ export const PublicPageLayout = ({children}: PublicPageLayoutProps) => {
           "
         >
           <p>Recipes shared on Eciperay may be viewed without an account.</p>
-          <Link
-            to="/privacy"
-            className="text-primary font-medium"
-          >
-            Privacy Policy
-          </Link>
+          <div className="flex flex-wrap gap-4">
+            <Link
+              to="/privacy"
+              className="text-primary font-medium"
+            >
+              Privacy Policy
+            </Link>
+            <Link
+              to="/terms"
+              className="text-primary font-medium"
+            >
+              Terms of Service
+            </Link>
+          </div>
         </div>
       </footer>
     </div>

@@ -25,4 +25,13 @@ describe('AppShell', () => {
     expect(screen.getByText('Shared with me')).toBeInTheDocument();
     expect(screen.getByText('Page Content')).toBeInTheDocument();
   });
+
+  test('renders children when provided instead of outlet', async () => {
+    await renderWithProviders(
+      <AppShell>
+        <div>Inline Content</div>
+      </AppShell>,
+    );
+    expect(screen.getByText('Inline Content')).toBeInTheDocument();
+  });
 });

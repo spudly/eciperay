@@ -26,5 +26,8 @@ describe('PublicPageLayout', () => {
       'href',
       '/privacy',
     );
+    expect(
+      screen.getByRole('link', {name: 'Terms of Service'}),
+    ).toHaveAttribute('href', '/terms');
   });
 });

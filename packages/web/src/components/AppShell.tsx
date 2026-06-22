@@ -1,3 +1,4 @@
+import type {ReactNode} from 'react';
 import clsx from 'clsx';
 import {NavLink, Outlet} from 'react-router-dom';
 
@@ -8,7 +9,9 @@ const navLinkClass = ({isActive}: {isActive: boolean}) =>
     'hover:bg-gray-100': !isActive,
   });
 
-export const AppShell = () => (
+type AppShellProps = {children?: ReactNode};
+
+export const AppShell = ({children}: AppShellProps) => (
   <div className="flex min-h-screen flex-col">
     <header className="border-b border-gray-200 bg-white">
       <div
@@ -64,7 +67,7 @@ export const AppShell = () => (
       </div>
     </header>
     <main className="mx-auto w-full max-w-5xl flex-1 p-4">
-      <Outlet />
+      {children ?? <Outlet />}
     </main>
   </div>
 );
