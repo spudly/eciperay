@@ -43,6 +43,27 @@ export const canReadRecipe = (
   return false;
 };
 
+export type PublicReadDenial = 'not_found' | 'forbidden';
+
+export const resolvePublicRecipeAccess = (
+  recipe: RecipeAccessRecord | null,
+  opts: ReadAccessOptions = {},
+): PublicReadDenial | null => {
+  if (!recipe) {
+    return 'not_found';
+  }
+
+  if (recipe.visibility === 'private') {
+    return 'not_found';
+  }
+
+  if (!canReadRecipe(recipe, opts)) {
+    return 'forbidden';
+  }
+
+  return null;
+};
+
 export const canWriteRecipe = (
   recipe: Pick<RecipeAccessRecord, 'ownerUserId'>,
   userId?: string,

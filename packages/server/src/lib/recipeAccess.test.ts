@@ -1,6 +1,7 @@
 import {
   canReadRecipe,
   canWriteRecipe,
+  resolvePublicRecipeAccess,
   toRecipeAccessRecord,
 } from './recipeAccess.js';
 import {hashShareToken} from './shareToken.js';
@@ -73,5 +74,24 @@ describe('toRecipeAccessRecord', () => {
         share_token_hash: shareTokenHash,
       }),
     ).toEqual(unlistedRecipe);
+  });
+});
+
+describe('resolvePublicRecipeAccess', () => {
+  test('returns not_found when recipe is missing or private', () => {
+    expect(resolvePublicRecipeAccess(null)).toBe('not_found');
+    expect(resolvePublicRecipeAccess(privateRecipe)).toBe('not_found');
+  });
+
+  test('returns forbidden for unlisted without valid access', () => {
+    expect(resolvePublicRecipeAccess(unlistedRecipe)).toBe('forbidden');
+    expect(
+      resolvePublicRecipeAccess(unlistedRecipe, {shareToken: 'bad-token'}),
+    ).toBe('forbidden');
+  });
+
+  test('returns null when public or unlisted access is allowed', () => {
+    expect(resolvePublicRecipeAccess(publicRecipe)).toBeNull();
+    expect(resolvePublicRecipeAccess(unlistedRecipe, {shareToken})).toBeNull();
   });
 });

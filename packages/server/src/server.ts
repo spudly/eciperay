@@ -15,6 +15,7 @@ import {logServerSecretsOnStartup} from './lib/serverSecrets.js';
 import {AiResponseParseError} from './lib/validate.js';
 import {createAuthRouter} from './routes/auth/router.js';
 import {createImportRouter} from './routes/import/router.js';
+import {createPublicRecipesRouter} from './routes/public/router.js';
 import {createRecipesRouter} from './routes/recipes/router.js';
 import {createTagsRouter} from './routes/tags/router.js';
 import {attachWebStatic, isWebDistAvailable} from './staticWeb.js';
@@ -46,6 +47,7 @@ export const createApp = ({
   });
   api.use('/auth', createAuthRouter(queryFn));
   api.use('/recipes/import', createImportRouter(queryFn));
+  api.use('/public/recipes', createPublicRecipesRouter(queryFn));
   api.use('/recipes', createRecipesRouter(queryFn));
   api.use('/tags', createTagsRouter(queryFn));
   api.use((_req, res) => {

@@ -61,6 +61,46 @@ export const GET_RECIPE_DETAIL_SQL = `
   group by r.id, rv.id
 `;
 
+export const GET_PUBLIC_RECIPE_DETAIL_SQL = `
+  select r.id, r.user_id, r.status, r.visibility, r.slug, r.share_token_hash,
+         r.content_revision, r.development_status, r.cloned_from_recipe_id,
+         r.active_version_id,
+         rv.id as version_id, rv.version_number, rv.title, rv.description,
+         rv.servings, rv.prep_time_min, rv.cook_time_min, rv.image_url,
+         rv.source_url, rv.created_via, rv.created_at, rv.updated_at,
+    coalesce((
+      select json_agg(
+        jsonb_build_object(
+          'id', i.id, 'recipeVersionId', i.recipe_version_id,
+          'sortOrder', i.sort_order, 'name', i.name,
+          'quantity', i.quantity, 'unit', i.unit, 'notes', i.notes,
+          'isOptional', i.is_optional
+        ) order by i.sort_order
+      )
+      from ingredients i
+      where i.recipe_version_id = rv.id
+    ), '[]') as ingredients,
+    coalesce((
+      select json_agg(
+        jsonb_build_object(
+          'id', ins.id, 'recipeVersionId', ins.recipe_version_id,
+          'stepNumber', ins.step_number, 'body', ins.body
+        ) order by ins.step_number
+      )
+      from instructions ins
+      where ins.recipe_version_id = rv.id
+    ), '[]') as instructions,
+    coalesce(json_agg(distinct jsonb_build_object(
+      'id', t.id, 'name', t.name, 'color', t.color
+    )) filter (where t.id is not null), '[]') as tags
+  from recipes r
+  join recipe_versions rv on rv.id = r.active_version_id
+  left join recipe_tags rt on rt.recipe_version_id = rv.id
+  left join tags t on t.id = rt.tag_id
+  where r.id = $1
+  group by r.id, rv.id
+`;
+
 export const GET_VERSION_DETAIL_SQL = `
   select rv.id as version_id, rv.recipe_id, rv.version_number, rv.title,
          rv.description, rv.servings, rv.prep_time_min, rv.cook_time_min,

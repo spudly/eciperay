@@ -1,5 +1,6 @@
 /* eslint-disable max-lines -- recipe row mappers share lineage + version field shapes */
 import type {
+  PublicRecipeDetail,
   RecipeDetail,
   RecipeDevelopmentStatus,
   RecipeLifecycleStatus,
@@ -161,6 +162,14 @@ export const mapRowToRecipeDetail = (row: RecipeDetailRow): RecipeDetail => ({
   instructions: row.instructions,
   tags: row.tags,
 });
+
+export const mapRowToPublicRecipeDetail = (
+  row: RecipeDetailRow,
+): PublicRecipeDetail => {
+  const {userId, ...recipe} = mapRowToRecipeDetail(row);
+  void userId;
+  return recipe;
+};
 
 export const mapRowToVersionSummary = (
   row: VersionSummaryRow,
