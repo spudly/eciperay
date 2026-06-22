@@ -110,6 +110,7 @@ export const PublicRecipePage = () => {
       <RecipePageHead
         recipe={recipe}
         canonicalUrl={canonicalUrl}
+        communityRating={data.communityRating}
       />
       <PublicRecipeCtas
         recipeId={recipe.id}

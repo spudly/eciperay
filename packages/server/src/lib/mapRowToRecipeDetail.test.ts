@@ -39,6 +39,7 @@ describe('mapRowToRecipeListItem', () => {
       content_revision: 1,
       development_status: 'idea',
       cloned_from_recipe_id: null,
+      star_rating: null,
       active_version_id: 'version-uuid-1',
       version_id: 'version-uuid-1',
       version_number: 1,

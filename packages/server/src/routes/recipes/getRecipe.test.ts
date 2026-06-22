@@ -13,12 +13,21 @@ const app = createApp({query: mockQuery});
 describe('GET /recipes/:id', () => {
   test('returns 200 with recipe detail when found', async () => {
     nockSupabaseGetUser('user-uuid-1');
-    mockQuery.mockResolvedValue(makeQueryResult([makeRecipeDetailRow()]));
+    mockQuery.mockImplementation(((sql: string) => {
+      if (sql.includes('recipe_ratings rr')) {
+        return Promise.resolve(makeQueryResult([]));
+      }
+      return Promise.resolve(makeQueryResult([makeRecipeDetailRow()]));
+    }) as typeof mockQuery);
     const res = await request(app)
       .get('/api/recipes/recipe-uuid-1')
       .set('Authorization', 'Bearer valid-token');
     expect(res.status).toBe(200);
-    expect(res.body).toEqual(makeRecipeDetail());
+    expect(res.body).toEqual({
+      ...makeRecipeDetail(),
+      communityRating: null,
+      viewerRating: null,
+    });
   });
 
   test('returns 404 when recipe is not found', async () => {

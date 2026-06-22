@@ -42,6 +42,10 @@ describe('saveRecipeFromInput', () => {
     );
     expect(result.title).toBe('Test Recipe');
     expect(mockQuery).toHaveBeenCalledWith(
+      expect.stringContaining('content_revision = content_revision + 1'),
+      ['recipe-uuid-1'],
+    );
+    expect(mockQuery).toHaveBeenCalledWith(
       expect.stringContaining('development_status'),
       ['recipe-uuid-1', 'perfected'],
     );

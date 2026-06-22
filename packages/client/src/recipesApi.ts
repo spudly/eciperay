@@ -6,6 +6,8 @@ import type {
   RecipeExportBundle,
   RecipeInput,
   RecipeLifecycleStatus,
+  RecipeRatingInput,
+  RecipeRatingSummary,
   RecipeSharingUpdateInput,
   RecipeSharingUpdateResult,
 } from '@eciperay/types';
@@ -43,7 +45,8 @@ export const createRecipesApi = (client: ApiClient) => ({
   listSharedWithMe: (params?: Omit<RecipeListParams, 'search'>) =>
     client.fetch<RecipeDetail[]>(buildSharedWithMeUrl(params)),
   listAll: () => fetchAllRecipePages(client),
-  get: (id: string) => client.fetch<RecipeDetail>(`/recipes/${id}`),
+  get: (id: string) =>
+    client.fetch<RecipeDetail & RecipeRatingSummary>(`/recipes/${id}`),
   getPublic: (id: string, opts?: PublicRecipeRequest) =>
     client.fetch<PublicRecipeResponse>(buildPublicRecipePath(id, opts)),
   listPublic: (params?: PublicRecipeDiscoveryParams) =>
@@ -88,5 +91,14 @@ export const createRecipesApi = (client: ApiClient) => ({
     client.fetch<RecipeDetail & CreateRecipeResult>(`/recipes/${id}/clone`, {
       method: 'POST',
       body: JSON.stringify(opts ?? {}),
+    }),
+  putRating: (id: string, input: RecipeRatingInput) =>
+    client.fetch<RecipeDetail & RecipeRatingSummary>(`/recipes/${id}/rating`, {
+      method: 'PUT',
+      body: JSON.stringify(input),
+    }),
+  deleteRating: (id: string) =>
+    client.fetch<RecipeDetail & RecipeRatingSummary>(`/recipes/${id}/rating`, {
+      method: 'DELETE',
     }),
 });

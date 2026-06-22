@@ -26,6 +26,7 @@ type RecipeDetailRow = {
   content_revision: number;
   development_status: RecipeDevelopmentStatus;
   cloned_from_recipe_id: string | null;
+  star_rating: RecipeDetail['starRating'];
   active_version_id: string;
   version_id: string;
   version_number: number;
@@ -52,6 +53,7 @@ export type RecipeListRow = {
   content_revision: number;
   development_status: RecipeDevelopmentStatus;
   cloned_from_recipe_id: string | null;
+  star_rating: RecipeDetail['starRating'];
   active_version_id: string;
   version_id: string;
   version_number: number;
@@ -120,6 +122,7 @@ export const mapRowToRecipeListItem = (row: RecipeListRow): RecipeDetail => ({
   contentRevision: row.content_revision,
   developmentStatus: row.development_status,
   clonedFromRecipeId: row.cloned_from_recipe_id,
+  starRating: row.star_rating ?? null,
   versionId: row.version_id,
   versionNumber: row.version_number,
   title: row.title,
@@ -178,6 +181,7 @@ export const mapRowToRecipeDetail = (row: RecipeDetailRow): RecipeDetail => ({
   contentRevision: row.content_revision,
   developmentStatus: row.development_status,
   clonedFromRecipeId: row.cloned_from_recipe_id,
+  starRating: row.star_rating ?? null,
   versionId: row.version_id,
   versionNumber: row.version_number,
   title: row.title,

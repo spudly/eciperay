@@ -61,6 +61,14 @@ export const privacyPolicySections: LegalSection[] = [
             author is not notified in the current version of the service.
           </li>
           <li>
+            <strong>Community ratings:</strong> when you rate someone
+            else&apos;s shared or public recipe, we store your star rating with
+            your account and the recipe revision you rated. Community averages
+            are shown on accessible recipes and may appear in search previews.
+            Your personal owner rating on recipes you created is stored
+            separately and is not included in community averages.
+          </li>
+          <li>
             <strong>Images:</strong> photos you upload for recipes, stored in
             our file storage service.
           </li>
@@ -210,6 +218,11 @@ export const privacyPolicySections: LegalSection[] = [
           product analytics or session replay, or want to request deletion of
           analytics data associated with your account, contact us at{' '}
           {legalContactLink}.
+        </li>
+        <li>
+          <strong>Ratings:</strong> you can update or remove your star rating on
+          recipes you can access. Owner personal ratings and community ratings
+          are managed separately as described above.
         </li>
         <li>
           <strong>Camera and photos:</strong> the mobile app requests camera and
