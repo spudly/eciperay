@@ -108,6 +108,14 @@ export const privacyPolicySections: LegalSection[] = [
             visits. This preference is not sent to our servers.
           </li>
           <li>
+            <strong>Mobile app install prompt:</strong> on mobile web browsers,
+            we may show a dismissible banner suggesting the native Eciperay app.
+            If you dismiss it, we store that preference in your browser&apos;s
+            local storage for about seven days. That preference is not sent to
+            our servers. Links in the banner go to the Apple App Store or Google
+            Play Store, where their privacy policies apply.
+          </li>
+          <li>
             <strong>Session replays:</strong> on the web and mobile apps, we may
             record how you interact with the interface (such as taps, clicks,
             and navigation). Text you type into form fields is masked where
