@@ -13,6 +13,7 @@ import {attachPostHogExpress, captureServerException} from './lib/posthog.js';
 import {initPostHogLogs, serverLog} from './lib/posthogLogs.js';
 import {logServerSecretsOnStartup} from './lib/serverSecrets.js';
 import {AiResponseParseError} from './lib/validate.js';
+import {createAccountRouter} from './routes/account/router.js';
 import {createAuthRouter} from './routes/auth/router.js';
 import {createImportRouter} from './routes/import/router.js';
 import {createPublicRecipesRouter} from './routes/public/router.js';
@@ -47,6 +48,7 @@ export const createApp = ({
     res.json({status: 'ok'});
   });
   api.use('/auth', createAuthRouter(queryFn));
+  api.use('/account', createAccountRouter(queryFn));
   api.use('/recipes/import', createImportRouter(queryFn));
   api.use('/public/recipes', createPublicRecipesRouter(queryFn));
   api.use('/recipes', createRecipesRouter(queryFn));

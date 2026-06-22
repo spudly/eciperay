@@ -1,4 +1,5 @@
 import type {ApiClient} from './createApiClient.js';
+import {createAccountApi} from './accountApi.js';
 import {createAiApi} from './aiApi.js';
 import {createAuthApi} from './authApi.js';
 import {createCookLogsApi} from './cookLogsApi.js';
@@ -10,6 +11,7 @@ import {createTweakAiApi} from './tweakAiApi.js';
 import {createVersionsApi} from './versionsApi.js';
 
 export const createEciperayClient = (api: ApiClient) => ({
+  account: createAccountApi(api),
   recipes: createRecipesApi(api),
   import: createImportApi(api),
   auth: createAuthApi(api),

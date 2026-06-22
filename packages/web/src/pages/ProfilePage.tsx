@@ -5,6 +5,7 @@ import {useRef, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
 import {LegalLinks} from '../components/LegalLinks.js';
+import {ProfileAccountDataSection} from '../components/ProfileAccountDataSection.js';
 import {RecipeExportPicker} from '../components/RecipeExportPicker.js';
 import {eciperay} from '../lib/api.js';
 import {supabase} from '../lib/supabase.js';
@@ -126,6 +127,8 @@ export const ProfilePage = () => {
           <p className="mbs-4 text-sm text-red-600">{transferError}</p>
         ) : null}
       </section>
+
+      <ProfileAccountDataSection />
 
       <section className="mbe-8 rounded-xl bg-white p-4 shadow-sm">
         <h2 className="mbe-3 text-lg font-semibold text-gray-900">Legal</h2>
