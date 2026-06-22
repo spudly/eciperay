@@ -11,6 +11,7 @@ import {API_PREFIX} from './apiPrefix.js';
 import {query as defaultQuery} from './db/query.js';
 import {attachPostHogExpress, captureServerException} from './lib/posthog.js';
 import {initPostHogLogs, serverLog} from './lib/posthogLogs.js';
+import {logServerSecretsOnStartup} from './lib/serverSecrets.js';
 import {AiResponseParseError} from './lib/validate.js';
 import {createAuthRouter} from './routes/auth/router.js';
 import {createImportRouter} from './routes/import/router.js';
@@ -87,6 +88,7 @@ export const handleUnexpectedError = (
   if (process.env['NODE_ENV'] !== 'test') {
     serverLog('error', 'Unhandled server error', {
       message: err instanceof Error ? err.message : 'unknown error',
+      ...(err instanceof Error && err.stack ? {stack: err.stack} : {}),
     });
   }
   res.status(500).json({error: 'Internal server error'});
@@ -95,6 +97,7 @@ export const handleUnexpectedError = (
 /* c8 ignore start -- HTTP listener entrypoint; tests import createApp via supertest only */
 const startServer = () => {
   initPostHogLogs();
+  logServerSecretsOnStartup();
   const app = createApp();
   const port = Number(process.env['PORT'] ?? DEFAULT_PORT);
   const host = process.env['HOST'] ?? '0.0.0.0';

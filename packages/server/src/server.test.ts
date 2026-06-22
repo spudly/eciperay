@@ -164,7 +164,10 @@ describe('createApp', () => {
     });
     const res = await request(app).get('/test-prod-error');
     expect(res.status).toBe(500);
-    expect(consoleError).toHaveBeenCalled();
+    expect(consoleError).toHaveBeenCalledWith('Unhandled server error', {
+      message: 'production failure',
+      stack: expect.stringContaining('production failure'),
+    });
     consoleError.mockRestore();
     if (previousNodeEnv === undefined) {
       delete process.env['NODE_ENV'];
