@@ -86,7 +86,9 @@ export const privacyPolicySections: LegalSection[] = [
       <ul className="list-disc space-y-2 ps-6">
         <li>Provide, maintain, and improve the Eciperay service.</li>
         <li>
-          Understand how features are used and measure product performance.
+          Understand how features are used and measure product performance,
+          including page views on public recipe pages when you are not signed
+          in.
         </li>
         <li>
           Diagnose errors, investigate reliability issues, and improve
