@@ -6,7 +6,6 @@ import {
   makeRecipeVersionSummary,
 } from '../../__tests__/fixtures/recipe';
 import {renderWithProviders} from '../../__tests__/testUtils';
-
 import {api} from '../../lib/api';
 
 import {RecipeDetailTabPanel} from './RecipeDetailTabPanel';
