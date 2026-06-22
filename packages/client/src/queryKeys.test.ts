@@ -11,5 +11,15 @@ describe('queryKeys', () => {
     expect(queryKeys.cookLogs('r1', 'v1')).toEqual(['cookLogs', 'r1', 'v1']);
     expect(queryKeys.nutrition('r1')).toEqual(['nutrition', 'r1']);
     expect(queryKeys.tags()).toEqual(['tags']);
+    expect(queryKeys.publicRecipe('r1', 'pasta', 'token')).toEqual([
+      'publicRecipe',
+      'r1',
+      {slug: 'pasta', shareToken: 'token'},
+    ]);
+    expect(queryKeys.publicRecipe('r1')).toEqual([
+      'publicRecipe',
+      'r1',
+      {slug: '', shareToken: ''},
+    ]);
   });
 });
