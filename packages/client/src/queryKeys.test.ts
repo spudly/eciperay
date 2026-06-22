@@ -21,5 +21,13 @@ describe('queryKeys', () => {
       'r1',
       {slug: '', shareToken: ''},
     ]);
+    expect(queryKeys.sharedWithMe(25, 5)).toEqual([
+      'sharedWithMe',
+      {limit: 25, offset: 5},
+    ]);
+    expect(queryKeys.sharedWithMe()).toEqual([
+      'sharedWithMe',
+      {limit: null, offset: null},
+    ]);
   });
 });

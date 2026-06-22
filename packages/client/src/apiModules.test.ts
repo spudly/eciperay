@@ -14,6 +14,7 @@ describe('createEciperayClient', () => {
     await client.recipes.list({});
     await client.recipes.list({limit: 50, offset: 10});
     await client.recipes.list({search: 'pasta', limit: 50, offset: 10});
+    await client.recipes.listSharedWithMe({limit: 25, offset: 5});
     await client.recipes.get('r1');
     await client.recipes.getPublic('r1');
     await client.recipes.getPublic('r1', {slug: 'pasta', shareToken: 'tok'});
@@ -45,6 +46,9 @@ describe('createEciperayClient', () => {
     expect(api.fetch).toHaveBeenCalledWith('/recipes?limit=50&offset=10');
     expect(api.fetch).toHaveBeenCalledWith(
       '/recipes?search=pasta&limit=50&offset=10',
+    );
+    expect(api.fetch).toHaveBeenCalledWith(
+      '/recipes/shared-with-me?limit=25&offset=5',
     );
     expect(api.fetch).toHaveBeenCalledWith('/recipes/r1');
     expect(api.fetch).toHaveBeenCalledWith('/public/recipes/r1');

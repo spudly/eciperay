@@ -11,7 +11,11 @@ import type {
 
 import type {ApiClient} from './createApiClient.js';
 import {fetchAllRecipePages} from './fetchAllRecipePages.js';
-import {buildListUrl, type RecipeListParams} from './recipesListUrl.js';
+import {
+  buildListUrl,
+  buildSharedWithMeUrl,
+  type RecipeListParams,
+} from './recipesListUrl.js';
 
 export type {RecipeListParams} from './recipesListUrl.js';
 
@@ -30,6 +34,8 @@ const buildPublicRecipePath = (
 export const createRecipesApi = (client: ApiClient) => ({
   list: (params?: RecipeListParams) =>
     client.fetch<RecipeDetail[]>(buildListUrl(params)),
+  listSharedWithMe: (params?: Omit<RecipeListParams, 'search'>) =>
+    client.fetch<RecipeDetail[]>(buildSharedWithMeUrl(params)),
   listAll: () => fetchAllRecipePages(client),
   get: (id: string) => client.fetch<RecipeDetail>(`/recipes/${id}`),
   getPublic: (id: string, opts?: PublicRecipeRequest) =>

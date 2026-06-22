@@ -5,6 +5,8 @@ import {makeRecipeDetailRow} from '../../test/fixtures/recipeRow.js';
 import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {createMockQuery} from '../../test/mockQuery.js';
 import {hashShareToken} from '../../lib/shareToken.js';
+import {INSERT_SHARE_GRANT_SQL} from '../../lib/shareGrant.js';
+import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
 
 const mockQuery = createMockQuery();
 const app = createApp({query: mockQuery});
@@ -121,5 +123,55 @@ describe('GET /public/recipes/:id', () => {
     expect(res.body.recipe.visibility).toBe('unlisted');
     expect(res.body.recipe.userId).toBeUndefined();
     expect(res.body.slugMismatch).toBeUndefined();
+  });
+
+  test('records share grant when an authenticated user opens a public recipe', async () => {
+    nockSupabaseGetUser('viewer-uuid');
+    mockQuery
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          makeRecipeDetailRow({
+            visibility: 'public',
+            slug: 'pasta',
+            user_id: 'owner-uuid',
+          }),
+        ]),
+      )
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([]));
+
+    const res = await request(app)
+      .get('/api/public/recipes/recipe-uuid-1/pasta')
+      .set('Authorization', 'Bearer valid-token');
+
+    expect(res.status).toBe(200);
+    expect(mockQuery).toHaveBeenCalledWith(INSERT_SHARE_GRANT_SQL, [
+      'recipe-uuid-1',
+      'viewer-uuid',
+      'link',
+    ]);
+  });
+
+  test('allows authenticated users with an existing grant to open unlisted recipes', async () => {
+    nockSupabaseGetUser('viewer-uuid');
+    mockQuery
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          makeRecipeDetailRow({
+            visibility: 'unlisted',
+            share_token_hash: shareTokenHash,
+            user_id: 'owner-uuid',
+          }),
+        ]),
+      )
+      .mockResolvedValueOnce(makeQueryResult([{exists: 1}]))
+      .mockResolvedValueOnce(makeQueryResult([]));
+
+    const res = await request(app)
+      .get('/api/public/recipes/recipe-uuid-1/test-recipe')
+      .set('Authorization', 'Bearer valid-token');
+
+    expect(res.status).toBe(200);
+    expect(res.body.recipe.visibility).toBe('unlisted');
   });
 });
