@@ -1,10 +1,12 @@
-import type {Ingredient, PublicRecipeDetail} from '@eciperay/types';
+import type {
+  Ingredient,
+  PublicRecipeDetail,
+  RecipeCommunityRating,
+} from '@eciperay/types';
 
 import {formatScaledIngredientLine} from './recipeScaling.js';
 
 export const RECIPE_SEO_SITE_NAME = 'Eciperay';
-
-export type RecipeCommunityRating = {average: number; count: number};
 
 export const buildRecipePageTitle = (title: string): string =>
   `${title} | ${RECIPE_SEO_SITE_NAME}`;
@@ -132,3 +134,5 @@ export const buildRecipeSocialMeta = (
   url: canonicalUrl,
   ...(recipe.imageUrl ? {imageUrl: recipe.imageUrl} : {}),
 });
+
+export {type RecipeCommunityRating} from '@eciperay/types';

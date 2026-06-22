@@ -23,6 +23,7 @@ import {listVersions} from './listVersions.js';
 import {patchRecipeLineage} from './patchRecipeLineage.js';
 import {patchRecipeSharing} from './patchRecipeSharing.js';
 import {putRecipe} from './putRecipe.js';
+import {deleteRecipeRating, putRecipeRating} from './putRecipeRating.js';
 import {rotateRecipeShareToken} from './rotateRecipeShareToken.js';
 import {putVersion} from './putVersion.js';
 import {startImportEdits} from './startImportEdits.js';
@@ -63,6 +64,12 @@ export const createRecipesRouter = (queryFn: QueryFn) => {
   );
   router.put('/:id', requireAuth, (req, res) =>
     putRecipe(a(req), res, queryFn),
+  );
+  router.put('/:id/rating', requireAuth, (req, res) =>
+    putRecipeRating(a(req), res, queryFn),
+  );
+  router.delete('/:id/rating', requireAuth, (req, res) =>
+    deleteRecipeRating(a(req), res, queryFn),
   );
   router.post('/:id/import/accept', requireAuth, (req, res) =>
     acceptImport(a(req), res, queryFn),

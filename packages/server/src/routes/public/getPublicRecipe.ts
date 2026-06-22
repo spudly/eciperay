@@ -2,6 +2,7 @@ import type {PublicRecipeResponse} from '@eciperay/types';
 import type {Response} from 'express';
 
 import {query as defaultQuery} from '../../db/query.js';
+import {buildRecipeDetailWithRatings} from '../../lib/buildRecipeDetailWithRatings.js';
 import {getParam} from '../../lib/getParam.js';
 import {getShareTokenFromQuery} from '../../lib/getShareTokenFromQuery.js';
 import {mapRowToPublicRecipeDetail} from '../../lib/mapRowToRecipeDetail.js';
@@ -70,9 +71,13 @@ export const getPublicRecipe = async (
     requestedSlug !== '' &&
     requestedSlug !== canonicalSlug;
 
+  const ratings = await buildRecipeDetailWithRatings(row, req.userId, queryFn);
+
   const body: PublicRecipeResponse = {
     recipe,
     canonicalSlug,
+    communityRating: ratings.communityRating,
+    viewerRating: ratings.viewerRating,
     ...(slugMismatch ? {slugMismatch: true} : {}),
   };
   res.json(body);

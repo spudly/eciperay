@@ -1,6 +1,7 @@
 import type {Ingredient, IngredientInput} from './ingredient.js';
 import type {Instruction, InstructionInput} from './instruction.js';
 import type {Tag} from './tag.js';
+import type {RecipeRatingSummary, RecipeStarRating} from './recipeRating.js';
 import type {
   RecipeLifecycleStatus,
   VersionCreatedVia,
@@ -19,6 +20,7 @@ export type Recipe = {
   contentRevision: number;
   developmentStatus: RecipeDevelopmentStatus;
   clonedFromRecipeId: string | null;
+  starRating: RecipeStarRating | null;
   versionId: string;
   versionNumber: number;
   title: string;
@@ -95,7 +97,7 @@ export type PublicRecipeDiscoveryItem = {
   tags: Tag[];
 };
 
-export type PublicRecipeResponse = {
+export type PublicRecipeResponse = RecipeRatingSummary & {
   recipe: PublicRecipeDetail;
   canonicalSlug: string;
   slugMismatch?: boolean;

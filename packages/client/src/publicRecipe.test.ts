@@ -12,6 +12,7 @@ describe('publicRecipeToRecipeDetail', () => {
       contentRevision: 1,
       developmentStatus: 'idea',
       clonedFromRecipeId: null,
+      starRating: null,
       versionId: 'version-1',
       versionNumber: 1,
       title: 'Pasta',

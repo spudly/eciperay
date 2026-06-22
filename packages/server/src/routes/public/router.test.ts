@@ -10,9 +10,14 @@ const app = createApp({query: mockQuery});
 
 describe('createPublicRecipesRouter', () => {
   test('registers GET /:id and GET /:id/:slug on /api/public/recipes', async () => {
-    mockQuery.mockResolvedValue(
-      makeQueryResult([makeRecipeDetailRow({visibility: 'public'})]),
-    );
+    mockQuery.mockImplementation(((sql: string) => {
+      if (sql.includes('recipe_ratings rr')) {
+        return Promise.resolve(makeQueryResult([]));
+      }
+      return Promise.resolve(
+        makeQueryResult([makeRecipeDetailRow({visibility: 'public'})]),
+      );
+    }) as typeof mockQuery);
 
     const byId = await request(app).get('/api/public/recipes/recipe-uuid-1');
     const bySlug = await request(app).get(
@@ -21,6 +26,6 @@ describe('createPublicRecipesRouter', () => {
 
     expect(byId.status).toBe(200);
     expect(bySlug.status).toBe(200);
-    expect(mockQuery).toHaveBeenCalledTimes(2);
+    expect(mockQuery.mock.calls.length).toBeGreaterThanOrEqual(2);
   });
 });
