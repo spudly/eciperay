@@ -1,0 +1,125 @@
+import request from 'supertest';
+
+import {createApp} from '../../server.js';
+import {makeRecipeDetailRow} from '../../test/fixtures/recipeRow.js';
+import {makeQueryResult} from '../../test/fixtures/queryResult.js';
+import {createMockQuery} from '../../test/mockQuery.js';
+import {hashShareToken} from '../../lib/shareToken.js';
+
+const mockQuery = createMockQuery();
+const app = createApp({query: mockQuery});
+
+const shareToken = 'public-share-token';
+const shareTokenHash = hashShareToken(shareToken);
+
+describe('GET /public/recipes/:id', () => {
+  test('returns public recipe without authentication', async () => {
+    mockQuery.mockResolvedValue(
+      makeQueryResult([
+        makeRecipeDetailRow({
+          visibility: 'public',
+          slug: 'pasta',
+          user_id: 'owner-uuid',
+        }),
+      ]),
+    );
+
+    const res = await request(app).get('/api/public/recipes/recipe-uuid-1');
+
+    expect(res.status).toBe(200);
+    expect(res.body.recipe.id).toBe('recipe-uuid-1');
+    expect(res.body.recipe.visibility).toBe('public');
+    expect(res.body.recipe.userId).toBeUndefined();
+    expect(res.body.canonicalSlug).toBe('pasta');
+    expect(res.body.slugMismatch).toBeUndefined();
+  });
+
+  test('returns slug mismatch hint when slug does not match', async () => {
+    mockQuery.mockResolvedValue(
+      makeQueryResult([
+        makeRecipeDetailRow({visibility: 'public', slug: 'pasta'}),
+      ]),
+    );
+
+    const res = await request(app).get(
+      '/api/public/recipes/recipe-uuid-1/old-slug',
+    );
+
+    expect(res.status).toBe(200);
+    expect(res.body.canonicalSlug).toBe('pasta');
+    expect(res.body.slugMismatch).toBe(true);
+  });
+
+  test('returns 404 for private recipes', async () => {
+    mockQuery.mockResolvedValue(
+      makeQueryResult([makeRecipeDetailRow({visibility: 'private'})]),
+    );
+
+    const res = await request(app).get('/api/public/recipes/recipe-uuid-1');
+
+    expect(res.status).toBe(404);
+    expect(res.body.error).toMatch(/not found/i);
+  });
+
+  test('returns 404 when recipe does not exist', async () => {
+    mockQuery.mockResolvedValue(makeQueryResult([]));
+
+    const res = await request(app).get('/api/public/recipes/missing-id');
+
+    expect(res.status).toBe(404);
+  });
+
+  test('returns 403 for unlisted recipe without token', async () => {
+    mockQuery.mockResolvedValue(
+      makeQueryResult([
+        makeRecipeDetailRow({
+          visibility: 'unlisted',
+          share_token_hash: shareTokenHash,
+        }),
+      ]),
+    );
+
+    const res = await request(app).get('/api/public/recipes/recipe-uuid-1');
+
+    expect(res.status).toBe(403);
+    expect(res.body.error).toMatch(/denied/i);
+  });
+
+  test('returns 403 for unlisted recipe with invalid token', async () => {
+    mockQuery.mockResolvedValue(
+      makeQueryResult([
+        makeRecipeDetailRow({
+          visibility: 'unlisted',
+          share_token_hash: shareTokenHash,
+        }),
+      ]),
+    );
+
+    const res = await request(app).get(
+      '/api/public/recipes/recipe-uuid-1?t=bad-token',
+    );
+
+    expect(res.status).toBe(403);
+  });
+
+  test('returns unlisted recipe with valid share token', async () => {
+    mockQuery.mockResolvedValue(
+      makeQueryResult([
+        makeRecipeDetailRow({
+          visibility: 'unlisted',
+          slug: 'secret-pasta',
+          share_token_hash: shareTokenHash,
+        }),
+      ]),
+    );
+
+    const res = await request(app).get(
+      `/api/public/recipes/recipe-uuid-1/secret-pasta?t=${shareToken}`,
+    );
+
+    expect(res.status).toBe(200);
+    expect(res.body.recipe.visibility).toBe('unlisted');
+    expect(res.body.recipe.userId).toBeUndefined();
+    expect(res.body.slugMismatch).toBeUndefined();
+  });
+});
