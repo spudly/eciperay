@@ -18,6 +18,7 @@ import {LoginPage} from '../pages/auth/LoginPage.js';
 import {ManualEntryPage} from '../pages/ManualEntryPage.js';
 import {PrivacyPolicyPage} from '../pages/PrivacyPolicyPage.js';
 import {ProfilePage} from '../pages/ProfilePage.js';
+import {PublicRecipePage} from '../pages/PublicRecipePage.js';
 import {RecipeDetailPage} from '../pages/RecipeDetailPage.js';
 import {RecipesPage} from '../pages/RecipesPage.js';
 import {ResetPasswordPage} from '../pages/auth/ResetPasswordPage.js';
@@ -32,6 +33,7 @@ export const router = createBrowserRouter([
   {path: '/reset-password', element: <ResetPasswordPage />},
   {path: '/privacy', element: <PrivacyPolicyPage />},
   {path: '/terms', element: <TermsOfServicePage />},
+  {path: '/recipe/:id/:slug', element: <PublicRecipePage />},
   {
     element: <AuthGuard />,
     children: [

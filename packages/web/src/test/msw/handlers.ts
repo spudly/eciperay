@@ -26,6 +26,25 @@ export const handlers = [
   http.get(`${API}/api/recipes/:id`, ({params}) =>
     HttpResponse.json({...recipe, id: params['id']}),
   ),
+  http.get(`${API}/api/public/recipes/:id`, ({params}) => {
+    const {userId: _userId, ...publicRecipe} = recipe;
+    void _userId;
+    return HttpResponse.json({
+      recipe: {...publicRecipe, id: params['id'], visibility: 'public'},
+      canonicalSlug: recipe.slug,
+    });
+  }),
+  http.get(`${API}/api/public/recipes/:id/:slug`, ({params}) => {
+    const {userId: _userId, ...publicRecipe} = recipe;
+    void _userId;
+    const slug = params['slug'] as string;
+    const slugMismatch = slug !== recipe.slug;
+    return HttpResponse.json({
+      recipe: {...publicRecipe, id: params['id'], visibility: 'public'},
+      canonicalSlug: recipe.slug,
+      ...(slugMismatch ? {slugMismatch: true} : {}),
+    });
+  }),
   http.post(`${API}/api/recipes`, async ({request}) => {
     const body = (await request.json()) as object;
     return HttpResponse.json({

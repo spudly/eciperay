@@ -50,6 +50,15 @@ describe('msw handlers', () => {
     expect(implemented.preview.title).toBe('Updated Recipe');
   });
 
+  test('covers public recipe read endpoints', async () => {
+    const byId = await eciperay.recipes.getPublic('recipe-uuid-1');
+    expect(byId.recipe.title).toBe('Test Recipe');
+    const bySlug = await eciperay.recipes.getPublic('recipe-uuid-1', {
+      slug: 'test-recipe',
+    });
+    expect(bySlug.canonicalSlug).toBe('test-recipe');
+  });
+
   test('covers lifecycle patch without an explicit status', async () => {
     const response = await fetch(
       'http://localhost:8080/api/recipes/recipe-uuid-1',
