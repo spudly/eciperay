@@ -2,6 +2,12 @@ import {makeRecipeDetail} from '../test/fixtures/recipe.js';
 
 import {shareRecipe} from './shareRecipe.js';
 
+const privateRecipeUrl = 'http://localhost:8081/recipes/recipe-uuid-1';
+const publicRecipeUrl =
+  'http://localhost:8081/recipe/recipe-uuid-1/test-recipe';
+const unlistedRecipeUrl =
+  'http://localhost:8081/recipe/recipe-uuid-1/test-recipe?t=share-token';
+
 describe('shareRecipe', () => {
   beforeEach(() => {
     vi.stubGlobal('window', {location: {origin: 'http://localhost:8081'}});
@@ -14,9 +20,30 @@ describe('shareRecipe', () => {
       shareRecipe(makeRecipeDetail({sourceUrl: null})),
     ).resolves.toBe('shared');
     expect(share).toHaveBeenCalledWith(
-      expect.objectContaining({
-        url: 'http://localhost:8081/recipes/recipe-uuid-1',
-      }),
+      expect.objectContaining({url: privateRecipeUrl}),
+    );
+  });
+
+  test('uses permalink URLs for published recipes', async () => {
+    const share = vi.fn(async () => {});
+    vi.stubGlobal('navigator', {share, clipboard: {writeText: vi.fn()}});
+    await shareRecipe(
+      makeRecipeDetail({visibility: 'public', sourceUrl: null}),
+    );
+    expect(share).toHaveBeenCalledWith(
+      expect.objectContaining({url: publicRecipeUrl}),
+    );
+  });
+
+  test('appends share token for unlisted recipes when provided', async () => {
+    const share = vi.fn(async () => {});
+    vi.stubGlobal('navigator', {share, clipboard: {writeText: vi.fn()}});
+    await shareRecipe(
+      makeRecipeDetail({visibility: 'unlisted', sourceUrl: null}),
+      {shareToken: 'share-token'},
+    );
+    expect(share).toHaveBeenCalledWith(
+      expect.objectContaining({url: unlistedRecipeUrl}),
     );
   });
 
@@ -27,14 +54,14 @@ describe('shareRecipe', () => {
     expect(writeText).toHaveBeenCalled();
   });
 
-  test('copies the recipe page URL when share is unavailable and sourceUrl is null', async () => {
+  test('copies formatted recipe text with share URL', async () => {
     const writeText = vi.fn(async () => {});
     vi.stubGlobal('navigator', {clipboard: {writeText}});
     await expect(
-      shareRecipe(makeRecipeDetail({sourceUrl: null})),
+      shareRecipe(makeRecipeDetail({sourceUrl: null, visibility: 'public'})),
     ).resolves.toBe('copied');
     expect(writeText).toHaveBeenCalledWith(
-      expect.stringContaining('http://localhost:8081/recipes/recipe-uuid-1'),
+      expect.stringContaining(publicRecipeUrl),
     );
   });
 

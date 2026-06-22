@@ -27,6 +27,33 @@ export const buildRecipePermalink = (
   return url.toString();
 };
 
+type RecipeShareLinkInput = {
+  id: string;
+  slug: string;
+  visibility: RecipeVisibility;
+  sourceUrl?: string | null;
+};
+
+export const buildRecipeShareUrl = (
+  baseUrl: string,
+  recipe: RecipeShareLinkInput,
+  shareToken?: string,
+): string => {
+  if (recipe.sourceUrl) {
+    return recipe.sourceUrl;
+  }
+
+  if (recipe.visibility === 'private') {
+    return `${baseUrl.replace(/\/$/, '')}/recipes/${recipe.id}`;
+  }
+
+  return buildRecipePermalink(
+    baseUrl,
+    recipe,
+    recipe.visibility === 'unlisted' ? shareToken : undefined,
+  );
+};
+
 export const recipeVisibilityLabels: Record<RecipeVisibility, string> = {
   private: 'Private',
   unlisted: 'Unlisted link',

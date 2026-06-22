@@ -36,6 +36,7 @@ export {
 } from './recipeEditActions.js';
 export {
   buildRecipePermalink,
+  buildRecipeShareUrl,
   isPublishedVisibility,
   recipeVisibilityDescriptions,
   recipeVisibilityLabels,
