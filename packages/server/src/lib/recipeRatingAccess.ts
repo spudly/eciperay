@@ -2,6 +2,7 @@ import type {Response} from 'express';
 
 import {query as defaultQuery} from '../db/query.js';
 import type {AuthedRequest} from '../middleware/requireAuth.js';
+
 import {buildRecipeDetailWithRatings} from './buildRecipeDetailWithRatings.js';
 import {getParam} from './getParam.js';
 import {loadReadableRecipeRow} from './recipeReadAccess.js';

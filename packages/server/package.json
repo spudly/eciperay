@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "NODE_OPTIONS='--experimental-vm-modules --no-warnings' jest",
-    "test:coverage": "NODE_OPTIONS='--experimental-vm-modules --no-warnings' jest --coverage",
+    "test": "NODE_OPTIONS='--experimental-vm-modules --no-warnings --max-old-space-size=4096' jest",
+    "test:coverage": "NODE_OPTIONS='--experimental-vm-modules --no-warnings --max-old-space-size=4096' jest --coverage",
     "start": "tsx src/server.ts",
     "dev": "tsx watch src/server.ts",
     "migrate": "tsx src/db/migrate.ts"
