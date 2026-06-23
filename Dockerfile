@@ -24,6 +24,7 @@ COPY packages/types packages/types
 COPY packages/theme packages/theme
 COPY packages/client packages/client
 COPY packages/web packages/web
+COPY scripts scripts
 COPY tsconfig.base.json tsconfig.json ./
 
 ARG VITE_API_BASE_URL=/api
