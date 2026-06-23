@@ -1,11 +1,12 @@
 import {useEffect, useState} from 'react';
 import {Alert, Linking} from 'react-native';
 import type {SupabaseClient} from '@supabase/supabase-js';
+import {errorMessage} from '@eciperay/client';
+
 import {
   createSessionFromAuthDeepLink,
-  errorMessage,
   isAuthDeepLinkUrl,
-} from '@eciperay/client';
+} from '../lib/authDeepLink';
 
 type AuthDeepLinkState = {
   needsPasswordReset: boolean;

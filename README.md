@@ -67,12 +67,17 @@ vars; the mobile app uses `API_BASE_URL` and `SUPABASE_*` via the Metro env shim
 Add these redirect URLs in your Supabase project's **Authentication → URL
 configuration**:
 
-| URL                            | Purpose                               |
-| ------------------------------ | ------------------------------------- |
-| `http://localhost:8081/**`     | Local web auth (password reset, etc.) |
-| `https://www.eciperay.com/**`  | Production web auth                   |
-| `https://eciperay.com/**`      | Production web auth (apex)            |
-| `com.eciperay://auth/callback` | Android/iOS auth email links          |
+| URL                                | Purpose                                                                 |
+| ---------------------------------- | ----------------------------------------------------------------------- |
+| `http://localhost:8081/**`         | Local web auth (password reset, etc.)                                   |
+| `https://www.eciperay.com/**`      | Production web auth                                                     |
+| `https://eciperay.com/**`          | Production web auth (apex)                                              |
+| `com.eciperay://auth/callback`     | Android/iOS release auth email links                                    |
+| `com.eciperay.dev://auth/callback` | Android/iOS **debug/dev** auth email links (`com.eciperay.dev` package) |
+
+Debug mobile builds install as **Eciperay Dev** (`com.eciperay.dev` on Android
+and iOS) so they can sit alongside the Play Store / TestFlight build. Release
+builds keep `com.eciperay` and the **Eciperay** display name.
 
 Set **Site URL** to your production web origin (for example
 `https://www.eciperay.com`).
