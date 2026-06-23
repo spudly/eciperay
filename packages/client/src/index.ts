@@ -56,6 +56,8 @@ export {publicRecipeToRecipeDetail} from './publicRecipe.js';
 export {createApiClient, type ApiClient} from './createApiClient.js';
 export {createSupabaseClient} from './createSupabaseClient.js';
 export {
+  AUTH_DEEP_LINK_CALLBACK_PATH,
+  AUTH_DEEP_LINK_HOST,
   AUTH_DEEP_LINK_REDIRECT_URL,
   AUTH_DEEP_LINK_SCHEME,
   createSessionFromAuthDeepLink,

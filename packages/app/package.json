@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "android": "tsx ../../scripts/setupAndroidDevice.ts && react-native run-android",
+    "android": "tsx ../../scripts/setupAndroidDevice.ts && react-native run-android --appIdSuffix dev",
     "ios": "react-native run-ios",
     "prestart": "tsx ../../scripts/freeDevPorts.ts 8081",
     "start": "react-native start",

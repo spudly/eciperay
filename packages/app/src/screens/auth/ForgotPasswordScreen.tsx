@@ -1,7 +1,8 @@
 import React, {useState} from 'react';
 import {Alert, Text, TouchableOpacity, View} from 'react-native';
-import {AUTH_DEEP_LINK_REDIRECT_URL, errorMessage} from '@eciperay/client';
+import {errorMessage} from '@eciperay/client';
 
+import {AUTH_DEEP_LINK_REDIRECT_URL} from '../../lib/authDeepLink';
 import {AuthTextField} from '../../components/auth/AuthTextField';
 import {normalizeAuthEmail} from '../../lib/normalizeAuthInput';
 import {supabase} from '../../lib/supabase';

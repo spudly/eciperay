@@ -1,7 +1,8 @@
-import {AUTH_DEEP_LINK_REDIRECT_URL, errorMessage} from '@eciperay/client';
 import React, {useState} from 'react';
 import {Alert, Text, TouchableOpacity, View} from 'react-native';
+import {errorMessage} from '@eciperay/client';
 
+import {AUTH_DEEP_LINK_REDIRECT_URL} from '../../lib/authDeepLink';
 import {LegalLinks} from '../../components/LegalLinks';
 import {AuthTextField} from '../../components/auth/AuthTextField';
 import {api} from '../../lib/api';

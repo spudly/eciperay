@@ -3,18 +3,29 @@ import {Alert, Linking, Text, TouchableOpacity, View} from 'react-native';
 import type {SupabaseClient} from '@supabase/supabase-js';
 import {act, fireEvent, render, waitFor} from '@testing-library/react-native';
 
+import {AUTH_DEEP_LINK_REDIRECT_URL} from '../lib/authDeepLink';
+
 import {useAuthDeepLink} from './useAuthDeepLink';
 
 const mockCreateSessionFromAuthDeepLink = jest.fn();
-const mockIsAuthDeepLinkUrl = jest.fn();
+
+jest.mock('../lib/authDeepLink', () => {
+  const actual = jest.requireActual('../lib/authDeepLink');
+  return {
+    ...actual,
+    createSessionFromAuthDeepLink: (...args: unknown[]) =>
+      mockCreateSessionFromAuthDeepLink(...args),
+  };
+});
 
 jest.mock('@eciperay/client', () => ({
-  createSessionFromAuthDeepLink: (...args: unknown[]) =>
-    mockCreateSessionFromAuthDeepLink(...args),
   errorMessage: (error: unknown) =>
     error instanceof Error ? error.message : 'Unknown error',
-  isAuthDeepLinkUrl: (url: string) => mockIsAuthDeepLinkUrl(url),
 }));
+
+const devAuthCallback = `${AUTH_DEEP_LINK_REDIRECT_URL}?code=abc`;
+const devAuthCallbackLive = `${AUTH_DEEP_LINK_REDIRECT_URL}?code=live`;
+const devAuthCallbackBad = `${AUTH_DEEP_LINK_REDIRECT_URL}?code=bad`;
 
 const makeSupabase = () => {
   const unsubscribe = jest.fn();
@@ -50,9 +61,6 @@ const HookProbe = ({supabase}: {supabase: SupabaseClient}) => {
 describe('useAuthDeepLink', () => {
   beforeEach(() => {
     linkListener = undefined;
-    mockIsAuthDeepLinkUrl.mockImplementation(url =>
-      url.startsWith('com.eciperay://'),
-    );
     mockCreateSessionFromAuthDeepLink.mockResolvedValue({session: null});
     jest.spyOn(Linking, 'getInitialURL').mockResolvedValue(null);
     jest.spyOn(Linking, 'addEventListener').mockImplementation((_event, cb) => {
@@ -96,16 +104,14 @@ describe('useAuthDeepLink', () => {
 
   test('handles the initial deep link URL', async () => {
     const {supabase} = makeSupabase();
-    jest
-      .spyOn(Linking, 'getInitialURL')
-      .mockResolvedValue('com.eciperay://auth/callback?code=abc');
+    jest.spyOn(Linking, 'getInitialURL').mockResolvedValue(devAuthCallback);
 
     render(<HookProbe supabase={supabase} />);
 
     await waitFor(() => {
       expect(mockCreateSessionFromAuthDeepLink).toHaveBeenCalledWith(
         supabase,
-        'com.eciperay://auth/callback?code=abc',
+        devAuthCallback,
       );
     });
   });
@@ -115,19 +121,18 @@ describe('useAuthDeepLink', () => {
     render(<HookProbe supabase={supabase} />);
 
     await act(async () => {
-      linkListener?.({url: 'com.eciperay://auth/callback?code=live'});
+      linkListener?.({url: devAuthCallbackLive});
       await Promise.resolve();
     });
 
     expect(mockCreateSessionFromAuthDeepLink).toHaveBeenCalledWith(
       supabase,
-      'com.eciperay://auth/callback?code=live',
+      devAuthCallbackLive,
     );
   });
 
   test('ignores null and non-auth URLs', async () => {
     const {supabase} = makeSupabase();
-    mockIsAuthDeepLinkUrl.mockReturnValue(false);
     render(<HookProbe supabase={supabase} />);
 
     await act(async () => {
@@ -144,7 +149,7 @@ describe('useAuthDeepLink', () => {
     render(<HookProbe supabase={supabase} />);
 
     await act(async () => {
-      linkListener?.({url: 'com.eciperay://auth/callback?code=bad'});
+      linkListener?.({url: devAuthCallbackBad});
       await Promise.resolve();
     });
 
