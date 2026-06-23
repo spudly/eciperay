@@ -164,6 +164,17 @@ jest.mock('@react-navigation/bottom-tabs', () => ({
   }),
 }));
 
+jest.mock('@expo/vector-icons/Feather', () => {
+  const React = require('react');
+  const {Text} = require('react-native');
+
+  return {
+    __esModule: true,
+    default: ({accessibilityLabel}) =>
+      React.createElement(Text, {accessibilityLabel}, 'icon'),
+  };
+});
+
 installFailOnConsoleError();
 
 afterEach(async () => {

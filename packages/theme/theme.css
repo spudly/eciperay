@@ -1,6 +1,9 @@
 @theme {
-  --color-primary: #6366f1;
-  --color-primary-dark: #4f46e5;
-  --color-surface: #ffffff;
-  --color-muted: #6b7280;
+  --color-primary: #0943ce;
+  --color-primary-dark: #04152d;
+  --color-surface: #eef2f6;
+  --color-muted: #62748c;
+  --color-brand-blue: #0943ce;
+  --color-brand-dark-blue: #04152d;
+  --color-brand-white: #eef2f6;
 }

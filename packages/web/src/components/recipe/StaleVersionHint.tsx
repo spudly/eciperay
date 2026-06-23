@@ -1,11 +1,13 @@
+import {Icon} from '../Icon.js';
+
 type Props = {label: string};
 
 export const StaleVersionHint = ({label}: Props) => (
-  <span
-    title={label}
+  <Icon
+    name="alert-triangle"
+    size={16}
+    className="text-amber-600"
     aria-label={label}
-    className="text-sm text-amber-600"
-  >
-    ⚠
-  </span>
+    title={label}
+  />
 );
