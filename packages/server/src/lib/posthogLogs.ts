@@ -51,13 +51,20 @@ export const serverLog = (
   message: string,
   attributes?: Record<string, string | number | boolean>,
 ) => {
+  const shouldLogToConsole = process.env['NODE_ENV'] !== 'test';
+  const consoleMethod = level === 'trace' ? 'debug' : level;
+
   if (!loggerProvider) {
-    if (process.env['NODE_ENV'] !== 'test') {
-      const consoleMethod = level === 'trace' ? 'debug' : level;
+    if (shouldLogToConsole) {
       // eslint-disable-next-line no-console -- fallback when PostHog logs are not configured
       console[consoleMethod](message, attributes);
     }
     return;
+  }
+
+  if (shouldLogToConsole && (level === 'warn' || level === 'error')) {
+    // eslint-disable-next-line no-console -- mirror important logs locally during development
+    console[consoleMethod](message, attributes);
   }
 
   const logger = logs.getLogger('eciperay-server');

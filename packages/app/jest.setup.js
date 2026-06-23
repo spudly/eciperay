@@ -164,7 +164,7 @@ jest.mock('@react-navigation/bottom-tabs', () => ({
   }),
 }));
 
-jest.mock('@expo/vector-icons/Feather', () => {
+jest.mock('react-native-vector-icons/Feather', () => {
   const React = require('react');
   const {Text} = require('react-native');
 

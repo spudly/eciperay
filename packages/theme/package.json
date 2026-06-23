@@ -4,7 +4,11 @@
   "private": true,
   "exports": {
     ".": "./theme.css",
+    "./fonts.css": "./fonts.css",
     "./logos/generated/*": "./logos/generated/*"
+  },
+  "dependencies": {
+    "@fontsource-variable/manrope": "^5.2.8"
   },
   "scripts": {
     "typecheck": "true"

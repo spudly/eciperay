@@ -56,6 +56,25 @@ describe('posthogLogs', () => {
     }).not.toThrow();
   });
 
+  test('mirrors warn and error logs to the console when PostHog is enabled', () => {
+    process.env['POSTHOG_KEY'] = 'phc_test';
+    process.env['POSTHOG_HOST'] = 'https://us.i.posthog.com/';
+    process.env['NODE_ENV'] = 'development';
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const infoSpy = jest.spyOn(console, 'info').mockImplementation(() => {});
+    initPostHogLogs();
+    serverLog('error', 'failed', {code: 500});
+    serverLog('warn', 'careful');
+    serverLog('info', 'started', {port: 8080});
+    expect(errorSpy).toHaveBeenCalledWith('failed', {code: 500});
+    expect(warnSpy).toHaveBeenCalledWith('careful', undefined);
+    expect(infoSpy).not.toHaveBeenCalled();
+    errorSpy.mockRestore();
+    warnSpy.mockRestore();
+    infoSpy.mockRestore();
+  });
+
   test('uses the default PostHog host when POSTHOG_HOST is unset', () => {
     process.env['POSTHOG_KEY'] = 'phc_test';
     delete process.env['POSTHOG_HOST'];

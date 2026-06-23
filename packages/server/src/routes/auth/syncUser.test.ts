@@ -74,4 +74,15 @@ describe('POST /auth/sync', () => {
     expect(res.status).toBe(400);
     expect(res.body).toMatchObject({error: 'Authenticated user has no email'});
   });
+
+  test('returns 500 when user upsert fails', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockQuery.mockRejectedValue(new Error('database unavailable'));
+    const res = await request(app)
+      .post('/api/auth/sync')
+      .set('Authorization', 'Bearer valid-token')
+      .send({displayName: 'Test User'});
+    expect(res.status).toBe(500);
+    expect(res.body).toMatchObject({error: 'Internal server error'});
+  });
 });

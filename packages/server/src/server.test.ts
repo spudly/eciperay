@@ -165,6 +165,8 @@ describe('createApp', () => {
     const res = await request(app).get('/test-prod-error');
     expect(res.status).toBe(500);
     expect(consoleError).toHaveBeenCalledWith('Unhandled server error', {
+      method: 'GET',
+      path: '/test-prod-error',
       message: 'production failure',
       stack: expect.stringContaining('production failure'),
     });
@@ -197,6 +199,8 @@ describe('createApp', () => {
     const res = await request(app).get('/test-prod-unknown-error');
     expect(res.status).toBe(500);
     expect(consoleError).toHaveBeenCalledWith('Unhandled server error', {
+      method: 'GET',
+      path: '/test-prod-unknown-error',
       message: 'unknown error',
     });
     consoleError.mockRestore();
