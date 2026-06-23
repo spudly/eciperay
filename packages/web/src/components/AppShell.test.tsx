@@ -20,7 +20,7 @@ describe('AppShell', () => {
         </Route>
       </Routes>,
     );
-    expect(screen.getByText('Eciperay')).toBeInTheDocument();
+    expect(screen.getByRole('img', {name: 'Eciperay'})).toBeInTheDocument();
     expect(screen.getByText('Recipes')).toBeInTheDocument();
     expect(screen.getByText('Shared with me')).toBeInTheDocument();
     expect(screen.getByText('Page Content')).toBeInTheDocument();

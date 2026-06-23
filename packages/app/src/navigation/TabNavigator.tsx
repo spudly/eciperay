@@ -1,7 +1,9 @@
-import React from 'react';
+/* eslint-disable max-lines -- tab navigator registers multiple nested stacks */
+import {tabIcons} from '@eciperay/icons';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 
+import {Icon} from '../components/Icon';
 import {AddScreen} from '../screens/AddScreen';
 import {CookingModeScreen} from '../screens/CookingModeScreen';
 import {EditRecipeScreen} from '../screens/EditRecipeScreen';
@@ -29,6 +31,9 @@ import type {
   RecipesStackParamList,
   RootTabParamList,
 } from './types';
+
+const PRIMARY = '#6366f1';
+const MUTED = '#6b7280';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 const RecipesStack = createNativeStackNavigator<RecipesStackParamList>();
@@ -131,7 +136,19 @@ const ProfileStackNavigator = () => (
 );
 
 export const TabNavigator = () => (
-  <Tab.Navigator>
+  <Tab.Navigator
+    screenOptions={({route}) => ({
+      tabBarActiveTintColor: PRIMARY,
+      tabBarInactiveTintColor: MUTED,
+      tabBarIcon: ({color, size}) => (
+        <Icon
+          name={tabIcons[route.name]}
+          size={size}
+          color={color}
+        />
+      ),
+    })}
+  >
     <Tab.Screen
       name="Home"
       component={HomeScreen}

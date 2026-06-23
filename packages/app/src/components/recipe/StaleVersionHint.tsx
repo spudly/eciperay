@@ -1,13 +1,14 @@
 import React from 'react';
-import {Text} from 'react-native';
+
+import {Icon} from '../Icon';
 
 type Props = {label: string};
 
 export const StaleVersionHint = ({label}: Props) => (
-  <Text
+  <Icon
+    name="alert-triangle"
+    size={16}
+    className="text-amber-600"
     accessibilityLabel={label}
-    className="text-sm text-amber-600"
-  >
-    ⚠
-  </Text>
+  />
 );

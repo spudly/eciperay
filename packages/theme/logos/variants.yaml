@@ -1,0 +1,38 @@
+variants:
+  - output: logo.svg
+    type: mark
+    bg: rounded
+    showGrid: true
+
+  - output: logo-minimal.svg
+    type: mark
+    bg: rounded
+    showGrid: false
+    chalk: false
+    theme:
+      logoSpoonFill: '#eef2f6'
+      logoSpoonStroke: none
+
+  - output: logo-circle.svg
+    type: mark
+    bg: circle
+    showGrid: true
+
+  - output: logo-text.svg
+    type: wordmark
+
+  - output: logo-horizontal.svg
+    type: combined
+    layout: horizontal
+    mark:
+      bg: rounded
+      showGrid: true
+    gap: 24
+
+  - output: logo-stacked.svg
+    type: combined
+    layout: stacked
+    mark:
+      bg: rounded
+      showGrid: true
+    gap: 16
