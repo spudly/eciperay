@@ -299,7 +299,9 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 3B4392A12AC88292D35C810B /* Pods-Eciperay.debug.xcconfig */;
 			buildSettings = {
+				APP_DISPLAY_NAME = "Eciperay Dev";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				AUTH_DEEP_LINK_SCHEME = "com.eciperay.dev";
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_BITCODE = NO;
@@ -315,7 +317,7 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.eciperay";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.eciperay.dev";
 				PRODUCT_NAME = Eciperay;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -329,7 +331,9 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 5709B34CF0A7D63546082F79 /* Pods-Eciperay.release.xcconfig */;
 			buildSettings = {
+				APP_DISPLAY_NAME = Eciperay;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				AUTH_DEEP_LINK_SCHEME = "com.eciperay";
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";

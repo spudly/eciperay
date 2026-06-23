@@ -3,6 +3,7 @@ import {Alert} from 'react-native';
 import {act, render, fireEvent, waitFor} from '@testing-library/react-native';
 
 import {supabase} from '../../lib/supabase';
+import {AUTH_DEEP_LINK_REDIRECT_URL} from '../../lib/authDeepLink';
 
 import {ForgotPasswordScreen} from './ForgotPasswordScreen';
 
@@ -37,7 +38,7 @@ describe('ForgotPasswordScreen', () => {
     fireEvent.press(getByText('Send Reset Link'));
     await waitFor(() => {
       expect(mockReset).toHaveBeenCalledWith('user@test.com', {
-        redirectTo: 'com.eciperay://auth/callback',
+        redirectTo: AUTH_DEEP_LINK_REDIRECT_URL,
       });
     });
   });
