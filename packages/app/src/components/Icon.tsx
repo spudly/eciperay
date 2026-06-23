@@ -1,6 +1,6 @@
-import React from 'react';
-import Feather from '@expo/vector-icons/Feather';
 import type {FeatherIconName} from '@eciperay/icons';
+import React from 'react';
+import Feather from 'react-native-vector-icons/Feather';
 
 type IconProps = {
   name: FeatherIconName;

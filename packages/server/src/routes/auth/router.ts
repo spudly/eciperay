@@ -10,9 +10,9 @@ type QueryFn = typeof defaultQuery;
 export const createAuthRouter = (queryFn: QueryFn) => {
   const router = Router();
 
-  router.post('/sync', requireAuth, (req, res) =>
-    syncUser(req as AuthedRequest, res, queryFn),
-  );
+  router.post('/sync', requireAuth, (req, res, next) => {
+    void syncUser(req as AuthedRequest, res, queryFn).catch(next);
+  });
 
   return router;
 };
