@@ -2,8 +2,19 @@ import type {ReactNode} from 'react';
 import clsx from 'clsx';
 import {NavLink, Outlet} from 'react-router-dom';
 
+import {Icon} from './Icon.js';
+
+const navItems = [
+  {to: '/', end: true, label: 'Home', icon: 'home' as const},
+  {to: '/recipes', label: 'Recipes', icon: 'book-open' as const},
+  {to: '/shared-with-me', label: 'Shared with me', icon: 'users' as const},
+  {to: '/add', label: 'Add', icon: 'plus' as const},
+  {to: '/tags', label: 'Tags', icon: 'tag' as const},
+  {to: '/profile', label: 'Profile', icon: 'user' as const},
+];
+
 const navLinkClass = ({isActive}: {isActive: boolean}) =>
-  clsx('rounded-lg px-3 py-2 text-sm font-medium', {
+  clsx('flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium', {
     'bg-primary text-white': isActive,
     'text-gray-700': !isActive,
     'hover:bg-gray-100': !isActive,
@@ -21,48 +32,29 @@ export const AppShell = ({children}: AppShellProps) => (
       >
         <NavLink
           to="/"
-          className="text-primary text-lg font-bold"
+          className="flex items-center"
         >
-          Eciperay
+          <img
+            src="/logo-horizontal.svg"
+            alt="Eciperay"
+            className="h-12"
+          />
         </NavLink>
         <nav className="flex gap-1">
-          <NavLink
-            to="/"
-            end
-            className={navLinkClass}
-          >
-            Home
-          </NavLink>
-          <NavLink
-            to="/recipes"
-            className={navLinkClass}
-          >
-            Recipes
-          </NavLink>
-          <NavLink
-            to="/shared-with-me"
-            className={navLinkClass}
-          >
-            Shared with me
-          </NavLink>
-          <NavLink
-            to="/add"
-            className={navLinkClass}
-          >
-            Add
-          </NavLink>
-          <NavLink
-            to="/tags"
-            className={navLinkClass}
-          >
-            Tags
-          </NavLink>
-          <NavLink
-            to="/profile"
-            className={navLinkClass}
-          >
-            Profile
-          </NavLink>
+          {navItems.map(({to, end, label, icon}) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={end}
+              className={navLinkClass}
+            >
+              <Icon
+                name={icon}
+                size={16}
+              />
+              {label}
+            </NavLink>
+          ))}
         </nav>
       </div>
     </header>

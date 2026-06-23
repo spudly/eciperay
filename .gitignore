@@ -12,6 +12,7 @@ dist
 build
 coverage
 *.tsbuildinfo
+packages/theme/logos/generated/
 
 # cache
 .turbo

@@ -3,7 +3,8 @@
   "version": "1.1.0",
   "private": true,
   "exports": {
-    ".": "./theme.css"
+    ".": "./theme.css",
+    "./logos/generated/*": "./logos/generated/*"
   },
   "scripts": {
     "typecheck": "true"
