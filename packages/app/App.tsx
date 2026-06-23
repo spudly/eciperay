@@ -29,7 +29,7 @@ const onSignedOut = () => {
 const queryClient = new QueryClient();
 
 const App = () => (
-  <GestureHandlerRootView className="flex-1">
+  <GestureHandlerRootView className="flex-1 font-sans">
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
         <AnalyticsProvider analytics={analytics}>

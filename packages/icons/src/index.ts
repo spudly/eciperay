@@ -1,6 +1,6 @@
 /**
  * Feather glyph names shared by web (`react-icons/fi`) and app
- * (`@expo/vector-icons/Feather`).
+ * (`react-native-vector-icons/Feather`).
  */
 export const featherIconNames = [
   'home',

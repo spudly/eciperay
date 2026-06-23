@@ -17,6 +17,7 @@ ignores:
   - react-native-worklets # Peer dependency of react-native-reanimated; loaded by the native runtime
   - '@posthog/cli' # Invoked by PostHog Gradle/Xcode source map upload scripts at release build time
   - '@posthog/react-native-plugin' # Native PostHog SDK; autolinked for native crash capture
+  - react-native-asset # Invoked by npm run link:fonts to link TTF assets into iOS/Android projects
 specials:
   - babel
   - bin

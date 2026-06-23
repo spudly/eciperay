@@ -98,6 +98,7 @@ describe('SharedWithMeScreen', () => {
     const list = UNSAFE_getByType(FlatList);
     await act(async () => {
       list.props.onEndReached?.();
+      await flushQueryClient(client);
     });
     await waitFor(() => {
       expect(getByText('Loading more…')).toBeTruthy();

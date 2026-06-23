@@ -69,7 +69,7 @@ export const createApp = ({
 
 export const handleUnexpectedError = (
   err: unknown,
-  _req: Request,
+  req: Request,
   res: Response,
   next: NextFunction,
 ) => {
@@ -82,6 +82,8 @@ export const handleUnexpectedError = (
     err instanceof AiResponseParseError
   ) {
     serverLog('warn', 'AI service error', {
+      method: req.method,
+      path: req.originalUrl,
       status:
         err instanceof Anthropic.APIError && typeof err.status === 'number'
           ? err.status
@@ -93,6 +95,8 @@ export const handleUnexpectedError = (
   captureServerException(err);
   if (process.env['NODE_ENV'] !== 'test') {
     serverLog('error', 'Unhandled server error', {
+      method: req.method,
+      path: req.originalUrl,
       message: err instanceof Error ? err.message : 'unknown error',
       ...(err instanceof Error && err.stack ? {stack: err.stack} : {}),
     });

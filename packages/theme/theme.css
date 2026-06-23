@@ -1,4 +1,7 @@
 @theme {
+  --font-sans:
+    'Manrope Variable', 'Manrope', system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', sans-serif;
   --color-primary: #0943ce;
   --color-primary-dark: #04152d;
   --color-surface: #eef2f6;
