@@ -13,7 +13,7 @@ export type AiSessionState = {
   proposedRecipe: Record<string, unknown> | null;
 };
 
-export type AiSessionFlowConfig = {
+type AiSessionFlowConfig = {
   title: string;
   intro: string;
   promptPlaceholder: string;

@@ -1,11 +1,10 @@
 import {z} from 'zod';
 
 export {validate, parseAiJson} from './validate.js';
-export type {Infer} from './validate.js';
 
 // ─── Ingredient / Instruction primitives ──────────────────────────────────────
 
-export const IngredientInputSchema = z.object({
+const IngredientInputSchema = z.object({
   sortOrder: z.number().int().nonnegative(),
   name: z.string().min(1),
   quantity: z.number().nullable(),
@@ -14,12 +13,12 @@ export const IngredientInputSchema = z.object({
   isOptional: z.boolean(),
 });
 
-export const InstructionInputSchema = z.object({
+const InstructionInputSchema = z.object({
   stepNumber: z.number().int().positive(),
   body: z.string().min(1),
 });
 
-export const RecipeStatusSchema = z.enum([
+const RecipeStatusSchema = z.enum([
   'idea',
   'evolving',
   'perfected',
@@ -133,7 +132,7 @@ export const ImportImageSchema = z.object({
  * Max request size for pasted content. Embedded base64 images are stripped
  * before recipe text is validated, but the raw payload can be much larger.
  */
-export const IMPORT_TEXT_REQUEST_MAX = 10_000_000;
+const IMPORT_TEXT_REQUEST_MAX = 10_000_000;
 /** Max length of recipe content after HTML is stripped. */
 export const IMPORT_TEXT_PLAIN_MAX = 100_000;
 
@@ -141,7 +140,7 @@ export const ImportTextSchema = z.object({
   text: z.string().min(1).max(IMPORT_TEXT_REQUEST_MAX),
 });
 
-export const IMPORT_AI_PROMPT_MAX = 2000;
+const IMPORT_AI_PROMPT_MAX = 2000;
 
 export const ImportAiSchema = z.object({
   prompt: z.string().trim().min(10).max(IMPORT_AI_PROMPT_MAX),
@@ -161,12 +160,12 @@ export const TweakAiMessageSchema = z.object({
 
 // ─── Bulk export / import ─────────────────────────────────────────────────────
 
-export const RecipeExportImageSchema = z.object({
+const RecipeExportImageSchema = z.object({
   base64: z.string().min(1),
   contentType: z.enum(['image/jpeg', 'image/png', 'image/gif', 'image/webp']),
 });
 
-export const RecipeExportTagSchema = z.object({
+const RecipeExportTagSchema = z.object({
   name: z.string().min(1).max(50),
   color: z
     .string()
@@ -174,7 +173,7 @@ export const RecipeExportTagSchema = z.object({
     .optional(),
 });
 
-export const RecipeExportRecordSchema = z.object({
+const RecipeExportRecordSchema = z.object({
   title: z.string().min(1),
   description: z.string().nullable(),
   servings: z.number().int().positive(),
@@ -194,14 +193,11 @@ export const BulkImportSchema = z.object({
   recipes: z.array(RecipeExportRecordSchema).min(1),
 });
 
-export type {ExportRecipesInput} from './exportRecipesSchema.js';
-export {ExportRecipesSchema} from './exportRecipesSchema.js';
-
 export const SyncUserSchema = z.object({
   displayName: z.string().max(100).optional(),
 });
 
-export const GenerateRecipeImageIngredientSchema = z.object({
+const GenerateRecipeImageIngredientSchema = z.object({
   name: z.string().min(1),
   quantity: z.number().nullable().optional(),
   unit: z.string().nullable().optional(),
@@ -224,7 +220,7 @@ export const GenerateRecipeDescriptionSchema = z.object({
 
 // ─── AI response shapes ────────────────────────────────────────────────────────
 
-export const AiSubstitutionSchema = z.object({
+const AiSubstitutionSchema = z.object({
   ingredient: z.string(),
   suggestions: z.array(z.string()),
 });

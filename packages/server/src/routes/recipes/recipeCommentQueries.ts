@@ -4,7 +4,7 @@ import {query as defaultQuery} from '../../db/query.js';
 
 type QueryFn = typeof defaultQuery;
 
-export const LIST_RECIPE_COMMENTS_SQL = `
+const LIST_RECIPE_COMMENTS_SQL = `
   select c.id, c.recipe_id, c.user_id, u.display_name as author_display_name,
          c.body, c.content_revision, c.created_at, c.updated_at
   from recipe_comments c
@@ -13,13 +13,13 @@ export const LIST_RECIPE_COMMENTS_SQL = `
   order by c.created_at asc
 `;
 
-export const INSERT_RECIPE_COMMENT_SQL = `
+const INSERT_RECIPE_COMMENT_SQL = `
   insert into recipe_comments (recipe_id, user_id, body, content_revision)
   values ($1, $2, $3, $4)
   returning id
 `;
 
-export const GET_RECIPE_COMMENT_SQL = `
+const GET_RECIPE_COMMENT_SQL = `
   select c.id, c.recipe_id, c.user_id, u.display_name as author_display_name,
          c.body, c.content_revision, c.created_at, c.updated_at
   from recipe_comments c
@@ -27,20 +27,20 @@ export const GET_RECIPE_COMMENT_SQL = `
   where c.id = $1 and c.recipe_id = $2
 `;
 
-export const UPDATE_RECIPE_COMMENT_SQL = `
+const UPDATE_RECIPE_COMMENT_SQL = `
   update recipe_comments
   set body = $3
   where id = $1 and recipe_id = $2 and user_id = $4
   returning id
 `;
 
-export const DELETE_RECIPE_COMMENT_SQL = `
+const DELETE_RECIPE_COMMENT_SQL = `
   delete from recipe_comments
   where id = $1 and recipe_id = $2 and user_id = $3
   returning id
 `;
 
-export const DELETE_RECIPE_COMMENT_BY_OWNER_SQL = `
+const DELETE_RECIPE_COMMENT_BY_OWNER_SQL = `
   delete from recipe_comments
   where id = $1 and recipe_id = $2
   returning id

@@ -47,7 +47,7 @@ const toIngredientData = (
   isOptional: ing.isOptional,
 });
 
-export const insertIngredient = (
+const insertIngredient = (
   versionId: string,
   sortOrder: number,
   data: IngredientData,
@@ -70,7 +70,7 @@ export const insertIngredients = (
     ),
   );
 
-export const insertInstruction = (
+const insertInstruction = (
   versionId: string,
   stepNumber: number,
   body: string,
@@ -92,7 +92,7 @@ export const insertInstructions = (
     ),
   );
 
-export const linkTag = (versionId: string, tagId: string, queryFn: QueryFn) =>
+const linkTag = (versionId: string, tagId: string, queryFn: QueryFn) =>
   queryFn(
     'insert into recipe_tags (recipe_version_id, tag_id) values ($1,$2) on conflict do nothing',
     [versionId, tagId],
