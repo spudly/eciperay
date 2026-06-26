@@ -1,0 +1,15 @@
+{
+  "threshold": 10,
+  "reporters": ["console"],
+  "ignore": [
+    "**/node_modules/**",
+    "**/coverage/**",
+    "**/*.test.{ts,tsx}",
+    "**/test/**",
+    "**/__tests__/**",
+    "packages/app/ios/**",
+    "packages/app/android/**"
+  ],
+  "absolute": true,
+  "gitignore": true
+}
