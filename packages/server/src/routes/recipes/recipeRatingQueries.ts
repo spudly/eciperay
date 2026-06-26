@@ -4,7 +4,7 @@ import {query as defaultQuery} from '../../db/query.js';
 
 type QueryFn = typeof defaultQuery;
 
-export const LIST_COMMUNITY_RATING_ROWS_SQL = `
+const LIST_COMMUNITY_RATING_ROWS_SQL = `
   select rr.stars, rr.content_revision
   from recipe_ratings rr
   join recipes r on r.id = rr.recipe_id
@@ -12,25 +12,25 @@ export const LIST_COMMUNITY_RATING_ROWS_SQL = `
     and rr.user_id <> r.user_id
 `;
 
-export const GET_VIEWER_COMMUNITY_RATING_SQL = `
+const GET_VIEWER_COMMUNITY_RATING_SQL = `
   select stars, content_revision
   from recipe_ratings
   where recipe_id = $1 and user_id = $2
 `;
 
-export const UPSERT_COMMUNITY_RATING_SQL = `
+const UPSERT_COMMUNITY_RATING_SQL = `
   insert into recipe_ratings (recipe_id, user_id, stars, content_revision)
   values ($1, $2, $3, $4)
   on conflict (recipe_id, user_id)
   do update set stars = excluded.stars, content_revision = excluded.content_revision
 `;
 
-export const DELETE_COMMUNITY_RATING_SQL = `
+const DELETE_COMMUNITY_RATING_SQL = `
   delete from recipe_ratings
   where recipe_id = $1 and user_id = $2
 `;
 
-export const UPDATE_OWNER_STAR_RATING_SQL = `
+const UPDATE_OWNER_STAR_RATING_SQL = `
   update recipes
   set star_rating = $3
   where id = $1 and user_id = $2

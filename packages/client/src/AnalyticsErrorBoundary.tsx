@@ -10,7 +10,7 @@ type AnalyticsErrorBoundaryProps = {
 
 type AnalyticsErrorBoundaryState = {error: Error | null};
 
-export class AnalyticsErrorBoundary extends React.Component<
+class AnalyticsErrorBoundary extends React.Component<
   AnalyticsErrorBoundaryProps & {captureException: (error: Error) => void},
   AnalyticsErrorBoundaryState
 > {

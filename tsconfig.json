@@ -8,7 +8,14 @@
     "allowImportingTsExtensions": true,
     "typeRoots": ["./types", "./node_modules/@types"]
   },
-  "include": ["**/*.ts", "**/*.js", "**/*.cjs", "**/*.mjs", "**/*.tsx"],
+  "include": [
+    "**/*.ts",
+    "**/*.js",
+    "**/*.cjs",
+    "**/*.mjs",
+    "**/*.tsx",
+    "nativewind-env.d.ts"
+  ],
   "exclude": [
     "node_modules",
     "packages",

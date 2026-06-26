@@ -15,13 +15,7 @@ import type {RecipeDetail} from '@eciperay/types';
 
 type Step = RecipeDetail['instructions'][number];
 
-export const ProgressDots = ({
-  total,
-  current,
-}: {
-  total: number;
-  current: number;
-}) => (
+const ProgressDots = ({total, current}: {total: number; current: number}) => (
   <View className="mb-6 flex-row justify-center gap-2">
     {Array.from({length: total}).map((_, i) => (
       <View
@@ -35,7 +29,7 @@ export const ProgressDots = ({
   </View>
 );
 
-export const ScaledIngredientsList = ({
+const ScaledIngredientsList = ({
   recipe,
   scaleFactor,
   servings,

@@ -1,5 +1,5 @@
 import type {Request, Response} from 'express';
-import type {infer as ZodInfer, ZodError, ZodType} from 'zod';
+import type {ZodError, ZodType} from 'zod';
 import {ZodError as ZodErrorClass} from 'zod';
 
 type ValidateResult<T> = {ok: true; data: T} | {ok: false};
@@ -56,5 +56,3 @@ export const parseAiJson = <T>(schema: ZodType<T>, text: string): T => {
     throw error;
   }
 };
-
-export type Infer<S extends ZodType> = ZodInfer<S>;
