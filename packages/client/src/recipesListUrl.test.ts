@@ -29,10 +29,8 @@ describe('buildListUrl', () => {
     );
   });
 
-  test('includes development status when provided', () => {
-    expect(buildListUrl({developmentStatus: 'in_development'})).toBe(
-      '/recipes?developmentStatus=in_development',
-    );
+  test('includes status when provided', () => {
+    expect(buildListUrl({status: 'evolving'})).toBe('/recipes?status=evolving');
   });
 });
 

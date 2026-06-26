@@ -4,22 +4,19 @@ import {vi} from 'vitest';
 
 import {renderWithProviders} from '../../test/testUtils.js';
 
-import {DevelopmentStatusPicker} from './DevelopmentStatusPicker.js';
+import {RecipeStatusPicker} from './RecipeStatusPicker.js';
 
-describe('DevelopmentStatusPicker', () => {
-  test('changes development status via select', async () => {
+describe('RecipeStatusPicker', () => {
+  test('changes status via select', async () => {
     const onChange = vi.fn();
     const user = userEvent.setup();
     await renderWithProviders(
-      <DevelopmentStatusPicker
+      <RecipeStatusPicker
         value="idea"
         onChange={onChange}
       />,
     );
-    await user.selectOptions(
-      screen.getByLabelText('Development status'),
-      'perfected',
-    );
+    await user.selectOptions(screen.getByLabelText('Status'), 'perfected');
     expect(onChange).toHaveBeenCalledWith('perfected');
   });
 });

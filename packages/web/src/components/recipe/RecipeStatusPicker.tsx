@@ -1,29 +1,26 @@
-import {
-  RECIPE_DEVELOPMENT_STATUS_LABELS,
-  RECIPE_DEVELOPMENT_STATUS_OPTIONS,
-} from '@eciperay/client';
-import type {RecipeDevelopmentStatus} from '@eciperay/types';
+import {RECIPE_STATUS_LABELS, RECIPE_STATUS_OPTIONS} from '@eciperay/client';
+import type {RecipeStatus} from '@eciperay/types';
 
 type Props = {
-  value: RecipeDevelopmentStatus;
-  onChange: (status: RecipeDevelopmentStatus) => void;
+  value: RecipeStatus;
+  onChange: (status: RecipeStatus) => void;
   disabled?: boolean;
 };
 
-export const DevelopmentStatusPicker = ({
+export const RecipeStatusPicker = ({
   value,
   onChange,
   disabled = false,
 }: Props) => (
   <div>
     <label
-      htmlFor="development-status"
+      htmlFor="status"
       className="mb-1 block text-sm font-medium text-gray-700"
     >
-      Development status
+      Status
     </label>
     <select
-      id="development-status"
+      id="status"
       className="
         w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-base
         disabled:cursor-not-allowed disabled:bg-gray-50
@@ -31,15 +28,15 @@ export const DevelopmentStatusPicker = ({
       value={value}
       disabled={disabled}
       onChange={event => {
-        onChange(event.target.value as RecipeDevelopmentStatus);
+        onChange(event.target.value as RecipeStatus);
       }}
     >
-      {RECIPE_DEVELOPMENT_STATUS_OPTIONS.map(status => (
+      {RECIPE_STATUS_OPTIONS.map(status => (
         <option
           key={status}
           value={status}
         >
-          {RECIPE_DEVELOPMENT_STATUS_LABELS[status]}
+          {RECIPE_STATUS_LABELS[status]}
         </option>
       ))}
     </select>

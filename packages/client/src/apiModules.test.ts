@@ -39,7 +39,7 @@ describe('createEciperayClient', () => {
       instructions: [],
       tagIds: [],
     });
-    await client.recipes.patchLifecycle('r1', 'perfected');
+    await client.recipes.patchStatus('r1', 'perfected');
     await client.recipes.patchSharing('r1', {
       visibility: 'unlisted',
       publishingConsent: true,

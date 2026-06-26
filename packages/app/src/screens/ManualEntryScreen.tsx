@@ -24,7 +24,7 @@ const emptyInput: RecipeInput = {
   ingredients: [],
   instructions: [],
   tagIds: [],
-  developmentStatus: 'idea',
+  status: 'idea',
 };
 
 export const ManualEntryScreen = ({navigation}: Props) => {

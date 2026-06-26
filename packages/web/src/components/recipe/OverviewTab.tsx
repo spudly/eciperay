@@ -11,7 +11,7 @@ import {printRecipe} from '../../lib/printRecipe.js';
 import {shareRecipe} from '../../lib/shareRecipe.js';
 
 import {OverviewActions} from './OverviewActions.js';
-import {DevelopmentStatusBadge} from './DevelopmentStatusBadge.js';
+import {RecipeStatusBadge} from './RecipeStatusBadge.js';
 import {RecipeVisibilityControls} from './RecipeVisibilityControls.js';
 
 type Props = {
@@ -38,7 +38,7 @@ export const OverviewTab = ({
 
   const canEditDraft = canEditDraftVersion(recipe.versionId, versions);
   const canEditMetadata = canEditActiveRecipeMetadata(
-    recipe.lifecycleStatus,
+    recipe.status,
     recipe.versionId,
     activeVersionId,
     versions,
@@ -76,7 +76,7 @@ export const OverviewTab = ({
       ) : null}
       <h2 className="mb-2 text-2xl font-bold text-gray-900">{recipe.title}</h2>
       <div className="mb-4">
-        <DevelopmentStatusBadge status={recipe.developmentStatus} />
+        <RecipeStatusBadge status={recipe.status} />
       </div>
       {recipe.description ? (
         <p className="mb-4 text-gray-600">{recipe.description}</p>

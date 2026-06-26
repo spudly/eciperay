@@ -19,10 +19,11 @@ export const InstructionInputSchema = z.object({
   body: z.string().min(1),
 });
 
-export const RecipeDevelopmentStatusSchema = z.enum([
+export const RecipeStatusSchema = z.enum([
   'idea',
-  'in_development',
+  'evolving',
   'perfected',
+  'abandoned',
 ]);
 
 // ─── Recipe import (from URL or image) ────────────────────────────────────────
@@ -59,7 +60,7 @@ export const RecipeInputSchema = z.object({
   ingredients: z.array(IngredientInputSchema),
   instructions: z.array(InstructionInputSchema),
   tagIds: z.array(z.uuid()),
-  developmentStatus: RecipeDevelopmentStatusSchema.optional(),
+  status: RecipeStatusSchema.optional(),
 });
 
 export const RecipeMetadataInputSchema = z.object({
@@ -71,7 +72,7 @@ export const RecipeMetadataInputSchema = z.object({
   imageUrl: z.url().nullish(),
   sourceUrl: z.url().nullish(),
   tagIds: z.array(z.uuid()),
-  developmentStatus: RecipeDevelopmentStatusSchema.optional(),
+  status: RecipeStatusSchema.optional(),
 });
 
 export const RecipeRatingInputSchema = z.object({stars: StarRating});
@@ -93,9 +94,7 @@ export const RecipeVersionInputSchema = z.object({
   tagIds: z.array(z.uuid()),
 });
 
-export const RecipeLifecyclePatchSchema = z.object({
-  status: z.enum(['idea', 'evolving', 'perfected', 'abandoned']),
-});
+export const RecipeStatusPatchSchema = z.object({status: RecipeStatusSchema});
 
 export const RecipeSharingPatchSchema = z.object({
   visibility: z.enum(['private', 'unlisted', 'public']),

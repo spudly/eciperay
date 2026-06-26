@@ -25,17 +25,16 @@ export const OverviewActions = ({
   const queryClient = useQueryClient();
 
   const isEditable =
-    recipe.lifecycleStatus !== 'perfected' &&
-    recipe.lifecycleStatus !== 'abandoned';
+    recipe.status !== 'perfected' && recipe.status !== 'abandoned';
 
   const candidates = versions.filter(v => v.derivedRole === 'candidate');
 
   const invalidate = () =>
     invalidateRecipeQueries(queryClient, recipe.id, recipe.versionId);
 
-  const lifecycleMutation = useMutation({
-    mutationFn: (status: RecipeDetail['lifecycleStatus']) =>
-      api.recipes.patchLifecycle(recipe.id, status),
+  const statusMutation = useMutation({
+    mutationFn: (status: RecipeDetail['status']) =>
+      api.recipes.patchStatus(recipe.id, status),
     onSuccess: () => {
       void invalidate();
     },
@@ -89,9 +88,9 @@ export const OverviewActions = ({
           </TouchableOpacity>
           <TouchableOpacity
             className="rounded-lg bg-green-100 px-3 py-2"
-            disabled={lifecycleMutation.isPending}
+            disabled={statusMutation.isPending}
             onPress={() => {
-              lifecycleMutation.mutate('perfected');
+              statusMutation.mutate('perfected');
             }}
           >
             <Text className="text-sm font-medium text-green-800">
@@ -100,9 +99,9 @@ export const OverviewActions = ({
           </TouchableOpacity>
           <TouchableOpacity
             className="rounded-lg bg-red-100 px-3 py-2"
-            disabled={lifecycleMutation.isPending}
+            disabled={statusMutation.isPending}
             onPress={() => {
-              lifecycleMutation.mutate('abandoned');
+              statusMutation.mutate('abandoned');
             }}
           >
             <Text className="text-sm font-medium text-red-800">Abandon</Text>

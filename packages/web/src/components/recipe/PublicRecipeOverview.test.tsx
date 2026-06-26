@@ -10,7 +10,7 @@ describe('PublicRecipeOverview', () => {
     const recipe = makeRecipeDetail({
       title: 'Public Pasta',
       description: 'Shared recipe',
-      developmentStatus: 'in_development',
+      status: 'evolving',
       imageUrl: 'https://cdn.example/pasta.jpg',
       prepTimeMin: 10,
       cookTimeMin: 20,
@@ -31,7 +31,7 @@ describe('PublicRecipeOverview', () => {
     expect(screen.getByText('10m')).toBeInTheDocument();
     expect(screen.getByText('20m')).toBeInTheDocument();
     expect(screen.getByText('Dinner')).toBeInTheDocument();
-    expect(screen.getByText('In development')).toBeInTheDocument();
+    expect(screen.getByText('Evolving')).toBeInTheDocument();
     expect(screen.queryByRole('link', {name: 'Edit'})).not.toBeInTheDocument();
   });
 

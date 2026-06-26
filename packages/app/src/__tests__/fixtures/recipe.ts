@@ -12,11 +12,10 @@ export const makeRecipeDetail = (
 ): RecipeDetail => ({
   id: 'recipe-uuid-1',
   userId: 'user-uuid-1',
-  lifecycleStatus: 'evolving',
+  status: 'evolving',
   visibility: 'private',
   slug: 'test-recipe',
   contentRevision: 1,
-  developmentStatus: 'idea',
   clonedFromRecipeId: null,
   starRating: null,
   versionId: VERSION_ID,
@@ -96,7 +95,7 @@ export const makeRecipeVersionDetail = (
   const recipe = makeRecipeDetail();
   return {
     ...makeRecipeVersionSummary(),
-    lifecycleStatus: 'evolving',
+    status: 'evolving',
     description: recipe.description,
     servings: recipe.servings,
     prepTimeMin: recipe.prepTimeMin,

@@ -1,15 +1,16 @@
 import {render, screen} from '@testing-library/react-native';
 import React from 'react';
 
-import {DevelopmentStatusBadge} from './DevelopmentStatusBadge';
+import {RecipeStatusBadge} from './RecipeStatusBadge';
 
-describe('DevelopmentStatusBadge', () => {
+describe('RecipeStatusBadge', () => {
   test.each([
     ['idea', 'Idea'],
-    ['in_development', 'In development'],
+    ['evolving', 'Evolving'],
     ['perfected', 'Perfected'],
+    ['abandoned', 'Abandoned'],
   ] as const)('renders %s label', (status, label) => {
-    render(<DevelopmentStatusBadge status={status} />);
+    render(<RecipeStatusBadge status={status} />);
     expect(screen.getByText(label)).toBeTruthy();
   });
 });

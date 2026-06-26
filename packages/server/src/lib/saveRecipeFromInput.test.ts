@@ -34,7 +34,7 @@ describe('saveRecipeFromInput', () => {
     const result = await saveRecipeFromInput(
       {
         userId: 'user-uuid-1',
-        input: makeRecipeInput({developmentStatus: 'perfected'}),
+        input: makeRecipeInput({status: 'perfected'}),
         recipeId: 'recipe-uuid-1',
         versionId: 'version-uuid-1',
       },
@@ -45,10 +45,10 @@ describe('saveRecipeFromInput', () => {
       expect.stringContaining('content_revision = content_revision + 1'),
       ['recipe-uuid-1'],
     );
-    expect(mockQuery).toHaveBeenCalledWith(
-      expect.stringContaining('development_status'),
-      ['recipe-uuid-1', 'perfected'],
-    );
+    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('status'), [
+      'recipe-uuid-1',
+      'perfected',
+    ]);
   });
 
   test('throws RecipeNotFoundError when update misses', async () => {

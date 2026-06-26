@@ -22,7 +22,7 @@ jest.mock('../../lib/shareRecipe', () => ({
 
 const mockPrint = printRecipe as jest.Mock;
 const mockShare = shareRecipe as jest.Mock;
-const mockPatchLifecycle = api.recipes.patchLifecycle as jest.Mock;
+const mockPatchStatus = api.recipes.patchStatus as jest.Mock;
 const mockActivate = api.versions.activate as jest.Mock;
 const mockCreateVersion = api.versions.create as jest.Mock;
 const onStartCooking = jest.fn();
@@ -47,7 +47,7 @@ const defaultProps = () => ({
 
 describe('OverviewTab', () => {
   beforeEach(() => {
-    mockPatchLifecycle.mockResolvedValue(makeRecipeDetail());
+    mockPatchStatus.mockResolvedValue(makeRecipeDetail());
     mockActivate.mockResolvedValue(makeRecipeDetail());
     mockCreateVersion.mockResolvedValue(
       makeRecipeVersionSummary({id: 'version-draft-1'}),
@@ -212,7 +212,7 @@ describe('OverviewTab', () => {
     const {queryByText} = renderWithProviders(
       <OverviewTab
         {...defaultProps()}
-        recipe={makeRecipeDetail({lifecycleStatus: 'perfected'})}
+        recipe={makeRecipeDetail({status: 'perfected'})}
       />,
     );
     expect(queryByText('Edit draft')).toBeNull();

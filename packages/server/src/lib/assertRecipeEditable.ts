@@ -1,14 +1,11 @@
-import type {RecipeLifecycleStatus} from '@eciperay/types';
+import type {RecipeStatus} from '@eciperay/types';
 
-const LOCKED_STATUSES = new Set<RecipeLifecycleStatus>([
-  'perfected',
-  'abandoned',
-]);
+const LOCKED_STATUSES = new Set<RecipeStatus>(['perfected', 'abandoned']);
 
-export const isRecipeEditable = (status: RecipeLifecycleStatus): boolean => {
+export const isRecipeEditable = (status: RecipeStatus): boolean => {
   return !LOCKED_STATUSES.has(status);
 };
 
 export const recipeEditBlockedError = (): string => {
-  return 'Recipe cannot be modified in its current lifecycle status';
+  return 'Recipe cannot be modified in its current status';
 };

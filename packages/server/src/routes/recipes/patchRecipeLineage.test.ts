@@ -10,7 +10,7 @@ const mockQuery = createMockQuery();
 const app = createApp({query: mockQuery});
 
 describe('PATCH /recipes/:id', () => {
-  test('returns 200 with updated lifecycle status', async () => {
+  test('returns 200 with updated recipe status', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery
       .mockResolvedValueOnce({
@@ -18,12 +18,7 @@ describe('PATCH /recipes/:id', () => {
         rowCount: 1,
       })
       .mockResolvedValue(
-        makeQueryResult([
-          makeRecipeDetailRow({
-            lifecycleStatus: 'evolving',
-            status: 'evolving',
-          }),
-        ]),
+        makeQueryResult([makeRecipeDetailRow({status: 'evolving'})]),
       );
 
     const res = await request(app)
@@ -32,7 +27,7 @@ describe('PATCH /recipes/:id', () => {
       .send({status: 'evolving'});
 
     expect(res.status).toBe(200);
-    expect(res.body.lifecycleStatus).toBe('evolving');
+    expect(res.body.status).toBe('evolving');
   });
 
   test('returns 404 when recipe is not found', async () => {

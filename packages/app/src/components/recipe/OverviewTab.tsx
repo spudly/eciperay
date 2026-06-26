@@ -11,7 +11,7 @@ import {printRecipe} from '../../lib/printRecipe';
 import {shareRecipe} from '../../lib/shareRecipe';
 
 import {OverviewActions} from './OverviewActions';
-import {DevelopmentStatusBadge} from './DevelopmentStatusBadge';
+import {RecipeStatusBadge} from './RecipeStatusBadge';
 import {RecipeVisibilityControls} from './RecipeVisibilityControls';
 import {recipeImagePreviewStyles} from './recipeImagePreviewStyles';
 import {StatBadge} from './StatBadge';
@@ -45,7 +45,7 @@ export const OverviewTab = ({
 
   const canEditDraft = canEditDraftVersion(recipe.versionId, versions);
   const canEditMetadata = canEditActiveRecipeMetadata(
-    recipe.lifecycleStatus,
+    recipe.status,
     recipe.versionId,
     activeVersionId,
     versions,
@@ -76,7 +76,7 @@ export const OverviewTab = ({
         {recipe.title}
       </Text>
       <View className="mb-4 self-start">
-        <DevelopmentStatusBadge status={recipe.developmentStatus} />
+        <RecipeStatusBadge status={recipe.status} />
       </View>
       {recipe.description ? (
         <Text className="mb-4 text-gray-600">{recipe.description}</Text>

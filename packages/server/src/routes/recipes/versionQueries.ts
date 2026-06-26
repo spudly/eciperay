@@ -1,5 +1,5 @@
 import type {
-  RecipeDevelopmentStatus,
+  RecipeStatus,
   RecipeInput,
   VersionCreatedVia,
 } from '@eciperay/types';
@@ -24,8 +24,8 @@ export type InsertVersionOptions = {
 };
 
 const INSERT_LINEAGE_SQL = `
-  insert into recipes (user_id, status, slug, development_status)
-  values ($1, 'idea', $2, $3)
+  insert into recipes (user_id, status, slug)
+  values ($1, $3, $2)
   returning id
 `;
 
@@ -45,10 +45,9 @@ const SET_ACTIVE_VERSION_SQL = `
 export const insertLineage = (
   userId: string,
   slug: string,
-  developmentStatus: RecipeDevelopmentStatus,
+  status: RecipeStatus,
   queryFn: QueryFn,
-) =>
-  queryFn<{id: string}>(INSERT_LINEAGE_SQL, [userId, slug, developmentStatus]);
+) => queryFn<{id: string}>(INSERT_LINEAGE_SQL, [userId, slug, status]);
 
 const INSERT_CLONED_LINEAGE_SQL = `
   insert into recipes (user_id, status, slug, cloned_from_recipe_id, visibility)

@@ -44,7 +44,7 @@ import {
 import {api} from '../../lib/api';
 import {supabase} from '../../lib/supabase';
 
-import {DevelopmentStatusPicker} from './DevelopmentStatusPicker';
+import {RecipeStatusPicker} from './RecipeStatusPicker';
 import {RecipeImageField} from './RecipeImageField';
 import {
   createEmptyIngredientRow,
@@ -120,9 +120,7 @@ export const RecipeForm = ({
     return [createEmptyInstructionRow(1)];
   });
   const [tagIds, setTagIds] = useState<string[]>(initial.tagIds);
-  const [developmentStatus, setDevelopmentStatus] = useState(
-    initial.developmentStatus ?? 'idea',
-  );
+  const [status, setStatus] = useState(initial.status ?? 'idea');
   const [pendingImage, setPendingImage] = useState<PendingRecipeImage | null>(
     null,
   );
@@ -305,7 +303,7 @@ export const RecipeForm = ({
       ? initial.instructions
       : toRecipeInputInstructions(instructions),
     tagIds,
-    developmentStatus,
+    status,
   });
 
   const versionDiff = useMemo(() => {
@@ -328,7 +326,7 @@ export const RecipeForm = ({
     instructions,
     tagIds,
     pendingImage,
-    developmentStatus,
+    status,
   ]);
 
   const scalarChanged = (field: VersionScalarField) =>
@@ -424,9 +422,9 @@ export const RecipeForm = ({
             onChangeText={setTitle}
           />
         </View>
-        <DevelopmentStatusPicker
-          value={developmentStatus}
-          onChange={setDevelopmentStatus}
+        <RecipeStatusPicker
+          value={status}
+          onChange={setStatus}
         />
         <View>
           <View className="mb-1 flex-row items-center justify-between gap-3">
@@ -567,9 +565,9 @@ export const RecipeForm = ({
           />
         </View>
         {contentLocked ? (
-          <View className="
-            rounded-lg border border-amber-200 bg-amber-50 px-3 py-2
-          ">
+          <View
+            className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2"
+          >
             <Text className="text-sm text-amber-900">
               Ingredients and instructions are locked on the active version.
               Create a draft to change them.

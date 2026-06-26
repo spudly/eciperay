@@ -4,7 +4,7 @@ import {query as defaultQuery} from '../../db/query.js';
 import type {AuthedRequest} from '../../middleware/requireAuth.js';
 import {getParam} from '../../lib/getParam.js';
 import {mapRowToRecipeDetail} from '../../lib/mapRowToRecipeDetail.js';
-import {RecipeLifecyclePatchSchema, validate} from '../../lib/schemas.js';
+import {RecipeStatusPatchSchema, validate} from '../../lib/schemas.js';
 
 import {GET_RECIPE_DETAIL_SQL} from './queries.js';
 import {setLineageStatus} from './versionQueries.js';
@@ -16,7 +16,7 @@ export const patchRecipeLineage = async (
   res: Response,
   queryFn: QueryFn,
 ) => {
-  const body = validate(RecipeLifecyclePatchSchema, req, res);
+  const body = validate(RecipeStatusPatchSchema, req, res);
   if (!body.ok) {
     return;
   }

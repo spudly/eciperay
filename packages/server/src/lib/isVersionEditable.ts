@@ -1,4 +1,4 @@
-import type {RecipeLifecycleStatus, RecipeVersionDetail} from '@eciperay/types';
+import type {RecipeStatus, RecipeVersionDetail} from '@eciperay/types';
 
 import {isRecipeEditable} from './assertRecipeEditable.js';
 
@@ -13,9 +13,9 @@ export const isVersionEditable = (
     RecipeVersionDetail,
     'derivedRole' | 'childVersionCount' | 'cookLogCount'
   >,
-  lifecycleStatus: RecipeLifecycleStatus,
+  status: RecipeStatus,
 ): boolean => {
-  if (!isRecipeEditable(lifecycleStatus)) {
+  if (!isRecipeEditable(status)) {
     return false;
   }
   if (version.derivedRole !== 'draft') {
@@ -35,5 +35,5 @@ export const isVersionContentLocked = (
     RecipeVersionDetail,
     'derivedRole' | 'childVersionCount' | 'cookLogCount'
   >,
-  lifecycleStatus: RecipeLifecycleStatus,
-): boolean => !isVersionEditable(version, lifecycleStatus);
+  status: RecipeStatus,
+): boolean => !isVersionEditable(version, status);

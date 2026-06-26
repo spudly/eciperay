@@ -10,11 +10,11 @@ import {
   updateRecipeSlug,
   updateVersion,
 } from '../routes/recipes/versionQueries.js';
-import {updateRecipeDevelopmentStatus} from '../routes/recipes/recipeDevelopmentStatusQueries.js';
+import {updateRecipeStatus} from '../routes/recipes/recipeStatusQueries.js';
 
 import {mapRowToRecipeDetail} from './mapRowToRecipeDetail.js';
 import {RecipeNotFoundError} from './saveRecipeFromInput.js';
-import {resolveDevelopmentStatus} from './resolveDevelopmentStatus.js';
+import {resolveStatus} from './resolveStatus.js';
 import {slugifyRecipeTitle} from './slugifyRecipeTitle.js';
 
 type QueryFn = typeof defaultQuery;
@@ -49,11 +49,7 @@ export const saveRecipeMetadata = async (
     slugifyRecipeTitle(opts.input.title),
     queryFn,
   );
-  await updateRecipeDevelopmentStatus(
-    opts.recipeId,
-    resolveDevelopmentStatus(opts.input),
-    queryFn,
-  );
+  await updateRecipeStatus(opts.recipeId, resolveStatus(opts.input), queryFn);
   await deleteRecipeTagsByVersionId(opts.versionId, queryFn);
   await linkTags(opts.versionId, opts.input.tagIds, queryFn);
   const detail = await queryFn(GET_RECIPE_DETAIL_SQL, [

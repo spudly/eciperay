@@ -2,7 +2,7 @@ import type {
   PublicRecipeDiscoveryItem,
   PublicRecipeDiscoverySort,
   RecipeDetail,
-  RecipeDevelopmentStatus,
+  RecipeStatus,
 } from '@eciperay/types';
 
 import {HOME_RECENT_RECIPE_COUNT} from './homeCopy.js';
@@ -17,7 +17,7 @@ export const RECIPE_LIST_PAGE_SIZE = 20;
 
 type ListRecipesParams = {
   search?: string;
-  developmentStatus?: RecipeDevelopmentStatus;
+  status?: RecipeStatus;
   limit?: number;
   offset?: number;
 };
@@ -59,13 +59,13 @@ export const homeRecentlyViewedRecipesQueryOptions = (
 export const recipeListInfiniteQueryOptions = (
   list: ListRecipesFn,
   search: string,
-  developmentStatus: RecipeDevelopmentStatus | '' = '',
+  status: RecipeStatus | '' = '',
 ) => ({
-  queryKey: queryKeys.recipes(search, developmentStatus),
+  queryKey: queryKeys.recipes(search, status),
   queryFn: ({pageParam}: {pageParam: number}) =>
     list({
       search: search || undefined,
-      developmentStatus: developmentStatus || undefined,
+      status: status || undefined,
       limit: RECIPE_LIST_PAGE_SIZE,
       offset: pageParam,
     }),

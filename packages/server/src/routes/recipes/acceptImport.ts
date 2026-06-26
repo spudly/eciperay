@@ -24,11 +24,11 @@ export const acceptImport = async (
     res.status(404).json({error: 'Recipe not found'});
     return;
   }
-  if (!isRecipeEditable(recipe.lifecycleStatus)) {
+  if (!isRecipeEditable(recipe.status)) {
     res.status(409).json({error: recipeEditBlockedError()});
     return;
   }
-  if (recipe.lifecycleStatus === 'idea') {
+  if (recipe.status === 'idea') {
     await setLineageStatus(recipeId, req.userId, 'evolving', queryFn);
   }
   const refreshed = await fetchRecipeDetail(recipeId, req.userId, queryFn);
