@@ -26,7 +26,7 @@ describe('RecipeDetailPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Test Recipe')).toBeInTheDocument();
     });
-    expect(screen.getByText('Evolving')).toBeInTheDocument();
+    expect(screen.getAllByText('Evolving')[0]).toBeInTheDocument();
     await userEvent.click(screen.getByText('Ingredients'));
     expect(screen.getByText(/Flour/)).toBeInTheDocument();
     await userEvent.click(screen.getByText('Instructions'));

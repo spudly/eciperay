@@ -1,13 +1,13 @@
 import {
   invalidateRecipeQueries,
-  RECIPE_DEVELOPMENT_STATUS_FILTER_ALL,
-  RECIPE_DEVELOPMENT_STATUS_FILTER_LABEL,
-  RECIPE_DEVELOPMENT_STATUS_LABELS,
-  RECIPE_DEVELOPMENT_STATUS_OPTIONS,
+  RECIPE_STATUS_FILTER_ALL,
+  RECIPE_STATUS_FILTER_LABEL,
+  RECIPE_STATUS_LABELS,
+  RECIPE_STATUS_OPTIONS,
   recipeListInfiniteQueryOptions,
   useAnalytics,
 } from '@eciperay/client';
-import type {RecipeDevelopmentStatus} from '@eciperay/types';
+import type {RecipeStatus} from '@eciperay/types';
 import {
   useInfiniteQuery,
   useMutation,
@@ -20,9 +20,9 @@ import {eciperay} from '../lib/api.js';
 
 export const RecipesPage = () => {
   const [search, setSearch] = useState('');
-  const [developmentStatusFilter, setDevelopmentStatusFilter] = useState<
-    typeof RECIPE_DEVELOPMENT_STATUS_FILTER_ALL | RecipeDevelopmentStatus
-  >(RECIPE_DEVELOPMENT_STATUS_FILTER_ALL);
+  const [statusFilter, setStatusFilter] = useState<
+    typeof RECIPE_STATUS_FILTER_ALL | RecipeStatus
+  >(RECIPE_STATUS_FILTER_ALL);
   const deferredSearch = useDeferredValue(search.trim());
   const queryClient = useQueryClient();
   const loadMoreRef = useRef<HTMLDivElement>(null);
@@ -33,9 +33,7 @@ export const RecipesPage = () => {
       recipeListInfiniteQueryOptions(
         params => eciperay.recipes.list(params),
         deferredSearch,
-        developmentStatusFilter === RECIPE_DEVELOPMENT_STATUS_FILTER_ALL
-          ? ''
-          : developmentStatusFilter,
+        statusFilter === RECIPE_STATUS_FILTER_ALL ? '' : statusFilter,
       ),
     );
 
@@ -81,31 +79,27 @@ export const RecipesPage = () => {
       />
       <label className="mb-4 block">
         <span className="mb-1 block text-sm font-medium text-gray-700">
-          {RECIPE_DEVELOPMENT_STATUS_FILTER_LABEL}
+          {RECIPE_STATUS_FILTER_LABEL}
         </span>
         <select
           className="
             w-full rounded-xl border border-gray-200 bg-white px-4 py-3
             text-base
           "
-          value={developmentStatusFilter}
+          value={statusFilter}
           onChange={e => {
-            setDevelopmentStatusFilter(
-              e.target.value as
-                | typeof RECIPE_DEVELOPMENT_STATUS_FILTER_ALL
-                | RecipeDevelopmentStatus,
+            setStatusFilter(
+              e.target.value as typeof RECIPE_STATUS_FILTER_ALL | RecipeStatus,
             );
           }}
         >
-          <option value={RECIPE_DEVELOPMENT_STATUS_FILTER_ALL}>
-            All statuses
-          </option>
-          {RECIPE_DEVELOPMENT_STATUS_OPTIONS.map(status => (
+          <option value={RECIPE_STATUS_FILTER_ALL}>All statuses</option>
+          {RECIPE_STATUS_OPTIONS.map(status => (
             <option
               key={status}
               value={status}
             >
-              {RECIPE_DEVELOPMENT_STATUS_LABELS[status]}
+              {RECIPE_STATUS_LABELS[status]}
             </option>
           ))}
         </select>

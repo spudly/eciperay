@@ -13,12 +13,12 @@ import {OverviewActions} from './OverviewActions';
 jest.mock('../../lib/api');
 
 const mockActivate = api.versions.activate as jest.Mock;
-const mockPatchLifecycle = api.recipes.patchLifecycle as jest.Mock;
+const mockPatchStatus = api.recipes.patchStatus as jest.Mock;
 const mockCreateVersion = api.versions.create as jest.Mock;
 
 describe('OverviewActions', () => {
   beforeEach(() => {
-    mockPatchLifecycle.mockResolvedValue(makeRecipeDetail());
+    mockPatchStatus.mockResolvedValue(makeRecipeDetail());
     mockCreateVersion.mockResolvedValue(
       makeRecipeVersionSummary({id: 'version-draft-1'}),
     );
@@ -49,7 +49,7 @@ describe('OverviewActions', () => {
     });
   });
 
-  test('updates lifecycle status to perfected or abandoned', async () => {
+  test('updates recipe status to perfected or abandoned', async () => {
     const {getByText} = renderWithProviders(
       <OverviewActions
         recipe={makeRecipeDetail()}
@@ -61,14 +61,14 @@ describe('OverviewActions', () => {
     );
     fireEvent.press(getByText('Mark perfected'));
     await waitFor(() => {
-      expect(mockPatchLifecycle).toHaveBeenCalledWith(
+      expect(mockPatchStatus).toHaveBeenCalledWith(
         'recipe-uuid-1',
         'perfected',
       );
     });
     fireEvent.press(getByText('Abandon'));
     await waitFor(() => {
-      expect(mockPatchLifecycle).toHaveBeenCalledWith(
+      expect(mockPatchStatus).toHaveBeenCalledWith(
         'recipe-uuid-1',
         'abandoned',
       );
@@ -95,7 +95,7 @@ describe('OverviewActions', () => {
   test('renders nothing for perfected recipes without candidates', () => {
     const {queryByText} = renderWithProviders(
       <OverviewActions
-        recipe={makeRecipeDetail({lifecycleStatus: 'perfected'})}
+        recipe={makeRecipeDetail({status: 'perfected'})}
         versions={[makeRecipeVersionSummary({derivedRole: 'active'})]}
         onActionMessage={jest.fn()}
         onTweakAi={jest.fn()}
@@ -109,7 +109,7 @@ describe('OverviewActions', () => {
   test('shows activation controls without tweak actions for perfected recipes', () => {
     const {getByText, queryByText} = renderWithProviders(
       <OverviewActions
-        recipe={makeRecipeDetail({lifecycleStatus: 'perfected'})}
+        recipe={makeRecipeDetail({status: 'perfected'})}
         versions={[
           makeRecipeVersionSummary({derivedRole: 'active'}),
           makeRecipeVersionSummary({id: 'v2', derivedRole: 'candidate'}),

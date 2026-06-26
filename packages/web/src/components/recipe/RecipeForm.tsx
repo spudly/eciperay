@@ -40,7 +40,7 @@ import {
 } from '../../lib/recipeImagePreviewUrl.js';
 import {supabase} from '../../lib/supabase.js';
 
-import {DevelopmentStatusPicker} from './DevelopmentStatusPicker.js';
+import {RecipeStatusPicker} from './RecipeStatusPicker.js';
 import {RecipeImageField} from './RecipeImageField.js';
 import {
   createEmptyIngredientRow,
@@ -105,9 +105,7 @@ export const RecipeForm = ({
     return [createEmptyInstructionRow(1)];
   });
   const [tagIds, setTagIds] = useState<string[]>(initial.tagIds);
-  const [developmentStatus, setDevelopmentStatus] = useState(
-    initial.developmentStatus ?? 'idea',
-  );
+  const [status, setStatus] = useState(initial.status ?? 'idea');
   const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -309,7 +307,7 @@ export const RecipeForm = ({
       ? initial.instructions
       : toRecipeInputInstructions(instructions),
     tagIds,
-    developmentStatus,
+    status,
   });
 
   const versionDiff = useMemo(() => {
@@ -332,7 +330,7 @@ export const RecipeForm = ({
     instructions,
     tagIds,
     pendingImageFile,
-    developmentStatus,
+    status,
   ]);
 
   const scalarChanged = (field: VersionScalarField) =>
@@ -442,9 +440,9 @@ export const RecipeForm = ({
           }}
         />
       </div>
-      <DevelopmentStatusPicker
-        value={developmentStatus}
-        onChange={setDevelopmentStatus}
+      <RecipeStatusPicker
+        value={status}
+        onChange={setStatus}
       />
       <div>
         <div className="mb-1 flex items-center justify-between gap-3">

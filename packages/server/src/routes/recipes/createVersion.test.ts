@@ -10,15 +10,9 @@ import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
 const mockQuery = createMockQuery();
 const app = createApp({query: mockQuery});
 
-const mockCreateVersionFlow = (
-  lifecycleStatus: 'idea' | 'evolving' = 'idea',
-) => {
+const mockCreateVersionFlow = (status: 'idea' | 'evolving' = 'idea') => {
   mockQuery
-    .mockResolvedValueOnce(
-      makeQueryResult([
-        makeRecipeDetailRow({lifecycleStatus, status: lifecycleStatus}),
-      ]),
-    )
+    .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow({status})]))
     .mockResolvedValueOnce(makeQueryResult([{max: 1}]))
     .mockResolvedValueOnce(makeQueryResult([{id: 'version-uuid-2'}]))
     .mockResolvedValueOnce(makeQueryResult([]))
@@ -79,12 +73,7 @@ describe('POST /recipes/:id/versions', () => {
   test('returns 409 when recipe is perfected', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue(
-      makeQueryResult([
-        makeRecipeDetailRow({
-          lifecycleStatus: 'perfected',
-          status: 'perfected',
-        }),
-      ]),
+      makeQueryResult([makeRecipeDetailRow({status: 'perfected'})]),
     );
 
     const res = await request(app)

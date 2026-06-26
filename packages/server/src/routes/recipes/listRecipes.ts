@@ -1,4 +1,4 @@
-import type {RecipeDevelopmentStatus} from '@eciperay/types';
+import type {RecipeStatus} from '@eciperay/types';
 import type {Response} from 'express';
 
 import {query as defaultQuery} from '../../db/query.js';
@@ -38,23 +38,24 @@ const parseOffset = (value: unknown): number => {
 
 type ListRecipesRequest = Pick<AuthedRequest, 'query'>;
 
-const DEVELOPMENT_STATUS_FILTERS = [
+const STATUS_FILTERS = [
   'idea',
-  'in_development',
+  'evolving',
   'perfected',
-] as const satisfies readonly RecipeDevelopmentStatus[];
+  'abandoned',
+] as const satisfies readonly RecipeStatus[];
 
-export const parseDevelopmentStatusFilter = (
+export const parseStatusFilter = (
   value: unknown,
-): RecipeDevelopmentStatus | null | 'invalid' => {
+): RecipeStatus | null | 'invalid' => {
   if (value === undefined || value === '') {
     return null;
   }
   if (
     typeof value === 'string' &&
-    (DEVELOPMENT_STATUS_FILTERS as readonly string[]).includes(value)
+    (STATUS_FILTERS as readonly string[]).includes(value)
   ) {
-    return value as RecipeDevelopmentStatus;
+    return value as RecipeStatus;
   }
   return 'invalid';
 };
@@ -63,9 +64,7 @@ export const parseListParams = (req: ListRecipesRequest) => ({
   limit: parseLimit(req.query['limit']),
   offset: parseOffset(req.query['offset']),
   search: parseOptionalSearch(req.query['search']),
-  developmentStatus: parseDevelopmentStatusFilter(
-    req.query['developmentStatus'],
-  ),
+  status: parseStatusFilter(req.query['status']),
 });
 
 export const listRecipes = async (
@@ -73,9 +72,9 @@ export const listRecipes = async (
   res: Response,
   queryFn: QueryFn,
 ) => {
-  const {limit, offset, search, developmentStatus} = parseListParams(req);
-  if (developmentStatus === 'invalid') {
-    res.status(400).json({error: 'Invalid development status filter'});
+  const {limit, offset, search, status} = parseListParams(req);
+  if (status === 'invalid') {
+    res.status(400).json({error: 'Invalid status filter'});
     return;
   }
   const result = await queryFn(LIST_RECIPES_SQL, [
@@ -83,7 +82,7 @@ export const listRecipes = async (
     limit,
     offset,
     search,
-    developmentStatus,
+    status,
   ]);
   res.json(
     result.rows.map(row =>

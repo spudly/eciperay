@@ -2,8 +2,7 @@
 import type {
   PublicRecipeDetail,
   RecipeDetail,
-  RecipeDevelopmentStatus,
-  RecipeLifecycleStatus,
+  RecipeStatus,
   RecipeVersionDetail,
   RecipeVersionSummary,
   RecipeVisibility,
@@ -19,12 +18,11 @@ import {
 type RecipeDetailRow = {
   id: string;
   user_id: string;
-  status: RecipeLifecycleStatus;
+  status: RecipeStatus;
   visibility: RecipeVisibility;
   slug: string;
   share_token_hash: string | null;
   content_revision: number;
-  development_status: RecipeDevelopmentStatus;
   cloned_from_recipe_id: string | null;
   star_rating: RecipeDetail['starRating'];
   active_version_id: string;
@@ -47,11 +45,10 @@ type RecipeDetailRow = {
 
 export type RecipeListRow = {
   id: string;
-  status: RecipeLifecycleStatus;
+  status: RecipeStatus;
   visibility: RecipeVisibility;
   slug: string;
   content_revision: number;
-  development_status: RecipeDevelopmentStatus;
   cloned_from_recipe_id: string | null;
   star_rating: RecipeDetail['starRating'];
   active_version_id: string;
@@ -87,7 +84,7 @@ type VersionDetailRow = {
   created_at: string;
   updated_at: string;
   user_id: string;
-  status: RecipeLifecycleStatus;
+  status: RecipeStatus;
   active_version_id: string;
   active_version_number: number;
   ingredients: RecipeDetail['ingredients'];
@@ -110,17 +107,16 @@ type VersionSummaryRow = {
   active_version_number: number;
   cook_log_count: number;
   child_version_count: number;
-  status: RecipeLifecycleStatus;
+  status: RecipeStatus;
 };
 
 export const mapRowToRecipeListItem = (row: RecipeListRow): RecipeDetail => ({
   id: row.id,
   userId: '',
-  lifecycleStatus: row.status,
+  status: row.status,
   visibility: row.visibility,
   slug: row.slug,
   contentRevision: row.content_revision,
-  developmentStatus: row.development_status,
   clonedFromRecipeId: row.cloned_from_recipe_id,
   starRating: row.star_rating ?? null,
   versionId: row.version_id,
@@ -175,11 +171,10 @@ export const mapRowToPublicRecipeDiscoveryItem = (
 export const mapRowToRecipeDetail = (row: RecipeDetailRow): RecipeDetail => ({
   id: row.id,
   userId: row.user_id,
-  lifecycleStatus: row.status,
+  status: row.status,
   visibility: row.visibility,
   slug: row.slug,
   contentRevision: row.content_revision,
-  developmentStatus: row.development_status,
   clonedFromRecipeId: row.cloned_from_recipe_id,
   starRating: row.star_rating ?? null,
   versionId: row.version_id,
@@ -271,7 +266,7 @@ export const mapRowToVersionDetail = (
   imageUrl: row.image_url,
   sourceUrl: row.source_url,
   derivedFromVersionId: row.derived_from_version_id,
-  lifecycleStatus: row.status,
+  status: row.status,
   ingredients: row.ingredients,
   instructions: row.instructions,
   tags: row.tags,

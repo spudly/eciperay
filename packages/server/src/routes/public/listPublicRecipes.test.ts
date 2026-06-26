@@ -105,7 +105,7 @@ describe('GET /public/recipes', () => {
   });
 
   test('excludes idea recipes from public discovery SQL', () => {
-    expect(LIST_PUBLIC_RECIPES_SQL).toContain("r.development_status <> 'idea'");
+    expect(LIST_PUBLIC_RECIPES_SQL).toContain("r.status <> 'idea'");
   });
 
   test('returns 400 for invalid sort', async () => {

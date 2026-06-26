@@ -152,7 +152,7 @@ const loadSessionContext = async (
   if (!recipe) {
     return {error: 'Recipe not found' as const, status: 404};
   }
-  if (!isRecipeEditable(recipe.lifecycleStatus)) {
+  if (!isRecipeEditable(recipe.status)) {
     return {error: recipeEditBlockedError(), status: 409};
   }
   const parentVersion = await fetchVersionDetail(
@@ -574,7 +574,7 @@ export const createVersionFromTweakAiSession = async (
     await insertIngredients(id, input.ingredients, q);
     await insertInstructions(id, input.instructions, q);
     await linkTags(id, input.tagIds, q);
-    if (recipe.lifecycleStatus === 'idea') {
+    if (recipe.status === 'idea') {
       await setLineageStatus(recipeId, req.userId, 'evolving', q);
     }
     return id;

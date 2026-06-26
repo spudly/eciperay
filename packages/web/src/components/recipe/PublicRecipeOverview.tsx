@@ -1,6 +1,6 @@
 import type {PublicRecipeDetail} from '@eciperay/types';
 
-import {DevelopmentStatusBadge} from './DevelopmentStatusBadge.js';
+import {RecipeStatusBadge} from './RecipeStatusBadge.js';
 
 type Props = {recipe: PublicRecipeDetail};
 
@@ -23,7 +23,7 @@ export const PublicRecipeOverview = ({recipe}: Props) => {
       ) : null}
       <h2 className="mb-2 text-2xl font-bold text-gray-900">{recipe.title}</h2>
       <div className="mb-4">
-        <DevelopmentStatusBadge status={recipe.developmentStatus} />
+        <RecipeStatusBadge status={recipe.status} />
       </div>
       {recipe.description ? (
         <p className="mb-4 text-gray-600">{recipe.description}</p>

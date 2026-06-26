@@ -1,8 +1,8 @@
-import type {RecipeDevelopmentStatus} from '@eciperay/types';
+import type {RecipeStatus} from '@eciperay/types';
 
 export type RecipeListParams = {
   search?: string;
-  developmentStatus?: RecipeDevelopmentStatus;
+  status?: RecipeStatus;
   limit?: number;
   offset?: number;
 };
@@ -21,8 +21,8 @@ export const buildListUrl = (params?: RecipeListParams) => {
   if (params.search) {
     search.set('search', params.search);
   }
-  if (params.developmentStatus) {
-    search.set('developmentStatus', params.developmentStatus);
+  if (params.status) {
+    search.set('status', params.status);
   }
   if (params.limit !== undefined) {
     search.set('limit', String(params.limit));

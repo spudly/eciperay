@@ -150,7 +150,7 @@ export const handlers = [
     return HttpResponse.json({
       ...recipe,
       id: params['id'],
-      lifecycleStatus: body.status ?? recipe.lifecycleStatus,
+      status: body.status ?? recipe.status,
     });
   }),
   http.delete(
@@ -502,11 +502,7 @@ export const handlers = [
       ),
   ),
   http.post(`${API}/api/recipes/:id/import/accept`, ({params}) =>
-    HttpResponse.json({
-      ...recipe,
-      id: params['id'],
-      lifecycleStatus: 'evolving',
-    }),
+    HttpResponse.json({...recipe, id: params['id'], status: 'evolving'}),
   ),
   http.post(`${API}/api/recipes/:id/import/start-edits`, () => {
     const version = makeRecipeVersionDetail({

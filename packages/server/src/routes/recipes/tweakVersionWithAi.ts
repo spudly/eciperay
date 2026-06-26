@@ -128,7 +128,7 @@ export const tweakVersionWithAi = async (
     res.status(404).json({error: 'Recipe not found'});
     return;
   }
-  if (!isRecipeEditable(recipe.lifecycleStatus)) {
+  if (!isRecipeEditable(recipe.status)) {
     res.status(409).json({error: recipeEditBlockedError()});
     return;
   }
@@ -200,7 +200,7 @@ export const tweakVersionWithAi = async (
     await insertIngredients(id, input.ingredients, q);
     await insertInstructions(id, input.instructions, q);
     await linkTags(id, input.tagIds, q);
-    if (recipe.lifecycleStatus === 'idea') {
+    if (recipe.status === 'idea') {
       await setLineageStatus(recipeId, req.userId, 'evolving', q);
     }
     return id;

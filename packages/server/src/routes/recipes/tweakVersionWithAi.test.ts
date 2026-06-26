@@ -81,12 +81,7 @@ describe('POST /recipes/:id/versions/ai', () => {
   test('returns 409 when recipe is perfected', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue(
-      makeQueryResult([
-        makeRecipeDetailRow({
-          lifecycleStatus: 'perfected',
-          status: 'perfected',
-        }),
-      ]),
+      makeQueryResult([makeRecipeDetailRow({status: 'perfected'})]),
     );
 
     const res = await request(app)

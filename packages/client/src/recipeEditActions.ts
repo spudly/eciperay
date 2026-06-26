@@ -1,12 +1,7 @@
-import type {
-  RecipeLifecycleStatus,
-  RecipeVersionSummary,
-} from '@eciperay/types';
+import type {RecipeStatus, RecipeVersionSummary} from '@eciperay/types';
 
-export const isRecipeLifecycleEditable = (
-  lifecycleStatus: RecipeLifecycleStatus,
-): boolean =>
-  lifecycleStatus !== 'perfected' && lifecycleStatus !== 'abandoned';
+export const isRecipeStatusEditable = (status: RecipeStatus): boolean =>
+  status !== 'perfected' && status !== 'abandoned';
 
 export const canEditDraftVersion = (
   versionId: string,
@@ -14,12 +9,12 @@ export const canEditDraftVersion = (
 ): boolean => versions.find(v => v.id === versionId)?.isEditable ?? false;
 
 export const canEditActiveRecipeMetadata = (
-  lifecycleStatus: RecipeLifecycleStatus,
+  status: RecipeStatus,
   displayVersionId: string,
   activeVersionId: string,
   versions: RecipeVersionSummary[],
 ): boolean => {
-  if (!isRecipeLifecycleEditable(lifecycleStatus)) {
+  if (!isRecipeStatusEditable(status)) {
     return false;
   }
   if (displayVersionId !== activeVersionId) {

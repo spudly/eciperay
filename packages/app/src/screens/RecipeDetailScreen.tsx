@@ -4,8 +4,7 @@ import {useQuery, useQueryClient} from '@tanstack/react-query';
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {ScrollView, Text, View} from 'react-native';
 
-import {DevelopmentStatusBadge} from '../components/recipe/DevelopmentStatusBadge';
-import {LifecycleStatusBadge} from '../components/recipe/LifecycleStatusBadge';
+import {RecipeStatusBadge} from '../components/recipe/RecipeStatusBadge';
 import {
   RecipeDetailTabBar,
   type RecipeDetailTab,
@@ -109,8 +108,7 @@ export const RecipeDetailScreen = ({route, navigation}: DetailProps) => {
           py-3
         "
       >
-        <LifecycleStatusBadge status={recipe.lifecycleStatus} />
-        <DevelopmentStatusBadge status={recipe.developmentStatus} />
+        <RecipeStatusBadge status={recipe.status} />
         <VersionPicker
           versions={versions}
           selectedVersionId={activeVersionId}

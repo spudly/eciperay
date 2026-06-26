@@ -16,7 +16,7 @@ describe('assertRecipeEditable', () => {
 
   test('returns user-facing blocked message', () => {
     expect(recipeEditBlockedError()).toBe(
-      'Recipe cannot be modified in its current lifecycle status',
+      'Recipe cannot be modified in its current status',
     );
   });
 });

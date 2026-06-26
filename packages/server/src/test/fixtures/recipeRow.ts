@@ -8,12 +8,11 @@ import {makeRecipeDetail} from './recipe.js';
 export const makeRecipeDetailRow = (
   overrides: Partial<RecipeDetail> & {
     user_id?: string;
-    status?: RecipeDetail['lifecycleStatus'];
+    status?: RecipeDetail['status'];
     visibility?: RecipeDetail['visibility'];
     slug?: string;
     share_token_hash?: string | null;
     content_revision?: number;
-    development_status?: RecipeDetail['developmentStatus'];
     cloned_from_recipe_id?: string | null;
     star_rating?: RecipeDetail['starRating'];
     active_version_id?: string;
@@ -32,13 +31,11 @@ export const makeRecipeDetailRow = (
   return {
     id: detail.id,
     user_id: overrides.user_id ?? detail.userId,
-    status: overrides.status ?? detail.lifecycleStatus,
+    status: overrides.status ?? detail.status,
     visibility: overrides.visibility ?? detail.visibility,
     slug: overrides.slug ?? detail.slug,
     share_token_hash: overrides.share_token_hash ?? null,
     content_revision: overrides.content_revision ?? detail.contentRevision,
-    development_status:
-      overrides.development_status ?? detail.developmentStatus,
     cloned_from_recipe_id:
       overrides.cloned_from_recipe_id ?? detail.clonedFromRecipeId,
     star_rating: overrides.star_rating ?? detail.starRating,
@@ -53,7 +50,7 @@ export const makeRecipeDetailRow = (
     image_url: overrides.image_url ?? detail.imageUrl,
     source_url: overrides.source_url ?? detail.sourceUrl,
     created_via: overrides.created_via ?? detail.createdVia,
-    created_at: overrides.created_at ?? detail.createdAt,
+    created_at: overrides.created_at ?? detail.updatedAt,
     updated_at: overrides.updated_at ?? detail.updatedAt,
     ingredients: overrides.ingredients ?? [makeIngredient()],
     instructions: overrides.instructions ?? [makeInstruction()],

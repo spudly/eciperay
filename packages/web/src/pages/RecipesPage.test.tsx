@@ -23,7 +23,7 @@ describe('RecipesPage', () => {
             description: null,
             prepTimeMin: null,
             imageUrl: 'https://cdn.example/cake.jpg',
-            lifecycleStatus: 'evolving',
+            status: 'evolving',
             versionId: 'version-1',
             versionNumber: 1,
             createdVia: 'manual',
@@ -59,7 +59,7 @@ describe('RecipesPage', () => {
             description: null,
             prepTimeMin: null,
             imageUrl: null,
-            lifecycleStatus: 'evolving',
+            status: 'evolving',
             versionId: 'version-1',
             versionNumber: 1,
             createdVia: 'manual',
@@ -104,7 +104,7 @@ describe('RecipesPage', () => {
       description: null,
       prepTimeMin: null,
       imageUrl: null,
-      lifecycleStatus: 'evolving' as const,
+      status: 'evolving' as const,
       versionId: 'version-1',
       versionNumber: 1,
       createdVia: 'manual' as const,
@@ -133,7 +133,7 @@ describe('RecipesPage', () => {
             description: null,
             prepTimeMin: null,
             imageUrl: null,
-            lifecycleStatus: 'evolving',
+            status: 'evolving',
             versionId: 'version-1',
             versionNumber: 1,
             createdVia: 'manual',
@@ -234,26 +234,24 @@ describe('RecipesPage', () => {
     expect(screen.getByPlaceholderText('Search recipes…')).toHaveValue('Soup');
   });
 
-  test('filters recipes by development status', async () => {
+  test('filters recipes by status', async () => {
     const perfected = makeRecipeDetail({
       id: 'perfected-id',
       title: 'Perfected Soup',
-      developmentStatus: 'perfected',
+      status: 'perfected',
     });
     const idea = makeRecipeDetail({
       id: 'idea-id',
       title: 'Idea Soup',
-      developmentStatus: 'idea',
+      status: 'idea',
     });
     server.use(
       http.get('http://localhost:8080/api/recipes', ({request}) => {
-        const status = new URL(request.url).searchParams.get(
-          'developmentStatus',
-        );
+        const status = new URL(request.url).searchParams.get('status');
         const items = [perfected, idea];
         if (status) {
           return HttpResponse.json(
-            items.filter(recipe => recipe.developmentStatus === status),
+            items.filter(recipe => recipe.status === status),
           );
         }
         return HttpResponse.json(items);
@@ -265,10 +263,7 @@ describe('RecipesPage', () => {
       expect(screen.getByText('Perfected Soup')).toBeInTheDocument();
       expect(screen.getByText('Idea Soup')).toBeInTheDocument();
     });
-    await user.selectOptions(
-      screen.getByLabelText('Development status'),
-      'perfected',
-    );
+    await user.selectOptions(screen.getByLabelText('Status'), 'perfected');
     await waitFor(() => {
       expect(screen.getByText('Perfected Soup')).toBeInTheDocument();
       expect(screen.queryByText('Idea Soup')).not.toBeInTheDocument();

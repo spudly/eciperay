@@ -9,11 +9,11 @@ describe('msw handlers', () => {
       'version-uuid-1',
     );
     expect(activated.id).toBe('recipe-uuid-1');
-    const perfected = await eciperay.recipes.patchLifecycle(
+    const perfected = await eciperay.recipes.patchStatus(
       'recipe-uuid-1',
       'perfected',
     );
-    expect(perfected.lifecycleStatus).toBe('perfected');
+    expect(perfected.status).toBe('perfected');
     const started = await eciperay.createAi.start('quick pasta');
     expect(started.session.id).toBeTruthy();
     const createApproved =
@@ -22,7 +22,7 @@ describe('msw handlers', () => {
     const created = await eciperay.createAi.createRecipe('create-session-1');
     expect(created.recipeId).toBeTruthy();
     const accepted = await eciperay.recipes.acceptImport('recipe-uuid-1');
-    expect(accepted.lifecycleStatus).toBe('evolving');
+    expect(accepted.status).toBe('evolving');
     const draft = await eciperay.versions.startImportEdits('recipe-uuid-1');
     expect(draft.versionNumber).toBe(2);
     const cookLog = await eciperay.cookLogs.create(
@@ -97,8 +97,8 @@ describe('msw handlers', () => {
       },
     );
     expect(response.ok).toBe(true);
-    const recipe = (await response.json()) as {lifecycleStatus: string};
-    expect(recipe.lifecycleStatus).toBe('evolving');
+    const recipe = (await response.json()) as {status: string};
+    expect(recipe.status).toBe('evolving');
   });
 
   test('covers ratings and comments endpoints', async () => {

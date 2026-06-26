@@ -32,7 +32,7 @@ export {
 export {
   canEditActiveRecipeMetadata,
   canEditDraftVersion,
-  isRecipeLifecycleEditable,
+  isRecipeStatusEditable,
 } from './recipeEditActions.js';
 export {
   buildRecipePermalink,
@@ -194,11 +194,11 @@ export {
   writeMobileAppInstallDismissal,
 } from './mobileWebInstall.js';
 export {
-  RECIPE_DEVELOPMENT_STATUS_FILTER_ALL,
-  RECIPE_DEVELOPMENT_STATUS_FILTER_LABEL,
-  RECIPE_DEVELOPMENT_STATUS_LABELS,
-  RECIPE_DEVELOPMENT_STATUS_OPTIONS,
-} from './developmentStatusCopy.js';
+  RECIPE_STATUS_FILTER_ALL,
+  RECIPE_STATUS_FILTER_LABEL,
+  RECIPE_STATUS_LABELS,
+  RECIPE_STATUS_OPTIONS,
+} from './recipeStatusCopy.js';
 export {
   DISCOVER_EMPTY_MESSAGE,
   DISCOVER_NO_RATINGS_LABEL,

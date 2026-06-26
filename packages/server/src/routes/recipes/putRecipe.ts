@@ -56,14 +56,14 @@ export const putRecipe = async (
     res.status(404).json({error: 'Recipe not found'});
     return;
   }
-  if (!isRecipeEditable(activeVersion.lifecycleStatus)) {
+  if (!isRecipeEditable(activeVersion.status)) {
     res.status(409).json({error: recipeEditBlockedError()});
     return;
   }
 
   const contentLocked = isVersionContentLocked(
     activeVersion,
-    activeVersion.lifecycleStatus,
+    activeVersion.status,
   );
 
   if (contentLocked) {
@@ -92,7 +92,7 @@ export const putRecipe = async (
     return;
   }
 
-  if (!isVersionEditable(activeVersion, activeVersion.lifecycleStatus)) {
+  if (!isVersionEditable(activeVersion, activeVersion.status)) {
     res.status(409).json({error: versionContentLockedError()});
     return;
   }

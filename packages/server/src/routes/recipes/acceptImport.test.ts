@@ -29,7 +29,7 @@ describe('POST /recipes/:id/import/accept', () => {
       .set('Authorization', 'Bearer valid-token')
       .send();
     expect(res.status).toBe(200);
-    expect(res.body.lifecycleStatus).toBe('evolving');
+    expect(res.body.status).toBe('evolving');
   });
 
   test('returns 404 when recipe not found', async () => {
@@ -45,12 +45,7 @@ describe('POST /recipes/:id/import/accept', () => {
   test('returns 409 when recipe lifecycle is locked', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValueOnce(
-      makeQueryResult([
-        makeRecipeDetailRow({
-          lifecycleStatus: 'perfected',
-          status: 'perfected',
-        }),
-      ]),
+      makeQueryResult([makeRecipeDetailRow({status: 'perfected'})]),
     );
     const res = await request(app)
       .post('/api/recipes/recipe-uuid-1/import/accept')
@@ -63,12 +58,7 @@ describe('POST /recipes/:id/import/accept', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery
       .mockResolvedValueOnce(
-        makeQueryResult([
-          makeRecipeDetailRow({
-            lifecycleStatus: 'evolving',
-            status: 'evolving',
-          }),
-        ]),
+        makeQueryResult([makeRecipeDetailRow({status: 'evolving'})]),
       )
       .mockResolvedValueOnce(makeQueryResult([]));
     const res = await request(app)

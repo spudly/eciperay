@@ -35,7 +35,7 @@ describe('recipeListQuery', () => {
     const options = recipeListInfiniteQueryOptions(list, 'pasta');
     expect(options.queryKey).toEqual([
       'recipes',
-      {search: 'pasta', developmentStatus: ''},
+      {search: 'pasta', status: ''},
     ]);
     await options.queryFn({pageParam: 40});
     expect(list).toHaveBeenCalledWith({
@@ -55,16 +55,16 @@ describe('recipeListQuery', () => {
     });
   });
 
-  test('passes development status filter to list requests', async () => {
+  test('passes status filter to list requests', async () => {
     const list = jest.fn().mockResolvedValue([]);
     const options = recipeListInfiniteQueryOptions(list, '', 'perfected');
     expect(options.queryKey).toEqual([
       'recipes',
-      {search: '', developmentStatus: 'perfected'},
+      {search: '', status: 'perfected'},
     ]);
     await options.queryFn({pageParam: 0});
     expect(list).toHaveBeenCalledWith({
-      developmentStatus: 'perfected',
+      status: 'perfected',
       limit: RECIPE_LIST_PAGE_SIZE,
       offset: 0,
     });
@@ -132,7 +132,7 @@ describe('recipeListQuery', () => {
 
     expect(options.queryKey).toEqual([
       'recipes',
-      {search: 'home-recently-viewed', developmentStatus: ''},
+      {search: 'home-recently-viewed', status: ''},
     ]);
     const recipes = await options.queryFn();
     expect(getRecipe).toHaveBeenCalledWith('recipe-b');
