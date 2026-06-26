@@ -113,7 +113,7 @@ const createAppPostHogClient = (
   });
 };
 
-export const createPostHogAdapter = (
+const createPostHogAdapter = (
   apiKey: string,
   apiHost: string,
   platform: AnalyticsPlatform,

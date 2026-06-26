@@ -1,6 +1,6 @@
 import {StyleSheet} from 'react-native';
 
-export const RECIPE_IMAGE_PREVIEW_HEIGHT = 256;
+const RECIPE_IMAGE_PREVIEW_HEIGHT = 256;
 
 export const recipeImagePreviewStyles = StyleSheet.create({
   frame: {height: RECIPE_IMAGE_PREVIEW_HEIGHT, width: '100%'},
