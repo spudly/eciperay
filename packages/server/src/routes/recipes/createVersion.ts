@@ -39,7 +39,7 @@ export const createVersion = async (
   const recipe = mapRowToRecipeDetail(
     recipeRow as Parameters<typeof mapRowToRecipeDetail>[0],
   );
-  if (!isRecipeEditable(recipe.lifecycleStatus)) {
+  if (!isRecipeEditable(recipe.status)) {
     res.status(409).json({error: recipeEditBlockedError()});
     return;
   }
@@ -68,7 +68,7 @@ export const createVersion = async (
       throw new Error('Failed to create version');
     }
     await cloneVersionChildren(activeVersionId, id, q);
-    if (recipe.lifecycleStatus === 'idea') {
+    if (recipe.status === 'idea') {
       await setLineageStatus(recipeId, req.userId, 'evolving', q);
     }
     return id;

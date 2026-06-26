@@ -1,6 +1,6 @@
 export const LIST_RECIPES_SQL = `
   select r.id, r.status, r.visibility, r.slug, r.content_revision,
-         r.development_status, r.cloned_from_recipe_id, r.star_rating, r.active_version_id,
+         r.cloned_from_recipe_id, r.star_rating, r.active_version_id,
          rv.id as version_id, rv.version_number, rv.title, rv.description,
          rv.servings, rv.prep_time_min, rv.cook_time_min, rv.image_url,
          rv.source_url, rv.created_via, rv.created_at, rv.updated_at,
@@ -16,7 +16,7 @@ export const LIST_RECIPES_SQL = `
   left join tags t on t.id = rt.tag_id
   where r.user_id = $1
     and ($4::text is null or rv.title ilike '%' || $4 || '%')
-    and ($5::text is null or r.development_status = $5)
+    and ($5::text is null or r.status = $5)
   group by r.id, rv.id
   order by rv.updated_at desc
   limit $2 offset $3
@@ -24,7 +24,7 @@ export const LIST_RECIPES_SQL = `
 
 export const LIST_SHARED_WITH_ME_SQL = `
   select r.id, r.status, r.visibility, r.slug, r.content_revision,
-         r.development_status, r.cloned_from_recipe_id, r.star_rating, r.active_version_id,
+         r.cloned_from_recipe_id, r.star_rating, r.active_version_id,
          rv.id as version_id, rv.version_number, rv.title, rv.description,
          rv.servings, rv.prep_time_min, rv.cook_time_min, rv.image_url,
          rv.source_url, rv.created_via, rv.created_at, rv.updated_at,
@@ -63,7 +63,7 @@ export const LIST_PUBLIC_RECIPES_SQL = `
   left join recipe_tags rt on rt.recipe_version_id = rv.id
   left join tags t on t.id = rt.tag_id
   where r.visibility = 'public'
-    and r.development_status <> 'idea'
+    and r.status <> 'idea'
     and (
       $3::text is null
       or rv.title ilike '%' || $3 || '%'
@@ -79,13 +79,13 @@ export const LIST_PUBLIC_RECIPES_SITEMAP_SQL = `
   from recipes r
   join recipe_versions rv on rv.id = r.active_version_id
   where r.visibility = 'public'
-    and r.development_status <> 'idea'
+    and r.status <> 'idea'
   order by rv.updated_at desc
 `;
 
 export const GET_RECIPE_DETAIL_SQL = `
   select r.id, r.user_id, r.status, r.visibility, r.slug, r.share_token_hash,
-         r.content_revision, r.development_status, r.cloned_from_recipe_id,
+         r.content_revision, r.cloned_from_recipe_id,
          r.star_rating, r.active_version_id,
          rv.id as version_id, rv.version_number, rv.title, rv.description,
          rv.servings, rv.prep_time_min, rv.cook_time_min, rv.image_url,
@@ -125,7 +125,7 @@ export const GET_RECIPE_DETAIL_SQL = `
 
 export const GET_PUBLIC_RECIPE_DETAIL_SQL = `
   select r.id, r.user_id, r.status, r.visibility, r.slug, r.share_token_hash,
-         r.content_revision, r.development_status, r.cloned_from_recipe_id,
+         r.content_revision, r.cloned_from_recipe_id,
          r.star_rating, r.active_version_id,
          rv.id as version_id, rv.version_number, rv.title, rv.description,
          rv.servings, rv.prep_time_min, rv.cook_time_min, rv.image_url,

@@ -16,17 +16,16 @@ export const OverviewActions = ({recipe, versions, onActionMessage}: Props) => {
   const queryClient = useQueryClient();
 
   const isEditable =
-    recipe.lifecycleStatus !== 'perfected' &&
-    recipe.lifecycleStatus !== 'abandoned';
+    recipe.status !== 'perfected' && recipe.status !== 'abandoned';
 
   const candidates = versions.filter(v => v.derivedRole === 'candidate');
 
   const invalidate = () =>
     invalidateRecipeQueries(queryClient, recipe.id, recipe.versionId);
 
-  const lifecycleMutation = useMutation({
-    mutationFn: (status: RecipeDetail['lifecycleStatus']) =>
-      eciperay.recipes.patchLifecycle(recipe.id, status),
+  const statusMutation = useMutation({
+    mutationFn: (status: RecipeDetail['status']) =>
+      eciperay.recipes.patchStatus(recipe.id, status),
     onSuccess: () => {
       void invalidate();
     },
@@ -87,9 +86,9 @@ export const OverviewActions = ({recipe, versions, onActionMessage}: Props) => {
               text-green-800
               disabled:opacity-50
             "
-            disabled={lifecycleMutation.isPending}
+            disabled={statusMutation.isPending}
             onClick={() => {
-              lifecycleMutation.mutate('perfected');
+              statusMutation.mutate('perfected');
             }}
           >
             Mark perfected
@@ -100,9 +99,9 @@ export const OverviewActions = ({recipe, versions, onActionMessage}: Props) => {
               rounded-lg bg-red-100 px-3 py-2 text-sm font-medium text-red-800
               disabled:opacity-50
             "
-            disabled={lifecycleMutation.isPending}
+            disabled={statusMutation.isPending}
             onClick={() => {
-              lifecycleMutation.mutate('abandoned');
+              statusMutation.mutate('abandoned');
             }}
           >
             Abandon

@@ -26,7 +26,7 @@ type VersionRowOverrides = Partial<RecipeVersionSummary> & {
   user_id?: string;
   status?: RecipeVersionDetail['derivedRole'] extends never
     ? never
-    : import('@eciperay/types').RecipeLifecycleStatus;
+    : import('@eciperay/types').RecipeStatus;
   ingredients?: RecipeVersionDetail['ingredients'];
   instructions?: RecipeVersionDetail['instructions'];
   tags?: RecipeVersionDetail['tags'];

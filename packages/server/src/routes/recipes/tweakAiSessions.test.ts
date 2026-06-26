@@ -210,12 +210,7 @@ describe('POST /recipes/:id/tweak-ai-sessions', () => {
   test('returns 409 when recipe is perfected', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue(
-      makeQueryResult([
-        makeRecipeDetailRow({
-          lifecycleStatus: 'perfected',
-          status: 'perfected',
-        }),
-      ]),
+      makeQueryResult([makeRecipeDetailRow({status: 'perfected'})]),
     );
 
     const res = await request(app)
@@ -734,9 +729,7 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/create-version', () => 
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([previewSession()]))
       .mockResolvedValueOnce(
-        makeQueryResult([
-          makeRecipeDetailRow({lifecycleStatus: 'idea', status: 'idea'}),
-        ]),
+        makeQueryResult([makeRecipeDetailRow({status: 'idea'})]),
       )
       .mockResolvedValueOnce(makeQueryResult([{max: 1}]))
       .mockResolvedValueOnce(makeQueryResult([{id: 'version-uuid-2'}]))

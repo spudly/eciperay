@@ -2,23 +2,17 @@ import type {Ingredient, IngredientInput} from './ingredient.js';
 import type {Instruction, InstructionInput} from './instruction.js';
 import type {Tag} from './tag.js';
 import type {RecipeRatingSummary, RecipeStarRating} from './recipeRating.js';
-import type {
-  RecipeLifecycleStatus,
-  VersionCreatedVia,
-} from './recipeVersion.js';
+import type {RecipeStatus, VersionCreatedVia} from './recipeVersion.js';
 
 export type RecipeVisibility = 'private' | 'unlisted' | 'public';
-
-export type RecipeDevelopmentStatus = 'idea' | 'in_development' | 'perfected';
 
 export type Recipe = {
   id: string;
   userId: string;
-  lifecycleStatus: RecipeLifecycleStatus;
+  status: RecipeStatus;
   visibility: RecipeVisibility;
   slug: string;
   contentRevision: number;
-  developmentStatus: RecipeDevelopmentStatus;
   clonedFromRecipeId: string | null;
   starRating: RecipeStarRating | null;
   versionId: string;
@@ -52,7 +46,7 @@ export type RecipeInput = {
   ingredients: IngredientInput[];
   instructions: InstructionInput[];
   tagIds: string[];
-  developmentStatus?: RecipeDevelopmentStatus;
+  status?: RecipeStatus;
 };
 
 export type RecipeMetadataInput = {
@@ -64,7 +58,7 @@ export type RecipeMetadataInput = {
   imageUrl?: string | null;
   sourceUrl?: string | null;
   tagIds: string[];
-  developmentStatus?: RecipeDevelopmentStatus;
+  status?: RecipeStatus;
 };
 
 export type RecipeSharingUpdateInput = {

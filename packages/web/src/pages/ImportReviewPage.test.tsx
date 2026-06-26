@@ -41,7 +41,7 @@ vi.mock('../lib/api.js', () => ({
         tagIds: [],
         imageUrl: null,
         sourceUrl: null,
-        lifecycleStatus: 'idea',
+        status: 'idea',
         createdVia: 'url',
         isContentLocked: true,
       })),
@@ -150,7 +150,7 @@ describe('ImportReviewPage', () => {
       tagIds: [],
       imageUrl: 'https://example.com/pasta.jpg',
       sourceUrl: null,
-      lifecycleStatus: 'idea',
+      status: 'idea',
       createdVia: 'url',
       isContentLocked: true,
     } as never);
@@ -185,7 +185,7 @@ describe('ImportReviewPage', () => {
       tagIds: [],
       imageUrl: null,
       sourceUrl: null,
-      lifecycleStatus: 'idea',
+      status: 'idea',
       createdVia: 'url',
       isContentLocked: true,
     } as never);

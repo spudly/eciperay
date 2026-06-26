@@ -39,7 +39,7 @@ export const activateVersion = async (
       .json({error: 'Only candidate versions with cook logs can be activated'});
     return;
   }
-  if (!isRecipeEditable(version.lifecycleStatus)) {
+  if (!isRecipeEditable(version.status)) {
     res.status(409).json({error: recipeEditBlockedError()});
     return;
   }

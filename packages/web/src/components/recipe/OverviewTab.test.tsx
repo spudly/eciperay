@@ -119,7 +119,7 @@ describe('OverviewTab', () => {
   });
 
   test('hides edit draft link for active versions', async () => {
-    await renderOverview(makeRecipeDetail({lifecycleStatus: 'perfected'}));
+    await renderOverview(makeRecipeDetail({status: 'perfected'}));
     expect(screen.queryByText('Edit draft')).not.toBeInTheDocument();
   });
 

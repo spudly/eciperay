@@ -3,7 +3,7 @@ import type {RecipeVersionSummary} from '@eciperay/types';
 import {
   canEditActiveRecipeMetadata,
   canEditDraftVersion,
-  isRecipeLifecycleEditable,
+  isRecipeStatusEditable,
 } from './recipeEditActions.js';
 
 describe('recipeEditActions', () => {
@@ -26,10 +26,10 @@ describe('recipeEditActions', () => {
     },
   ];
 
-  test('isRecipeLifecycleEditable excludes perfected and abandoned', () => {
-    expect(isRecipeLifecycleEditable('evolving')).toBe(true);
-    expect(isRecipeLifecycleEditable('perfected')).toBe(false);
-    expect(isRecipeLifecycleEditable('abandoned')).toBe(false);
+  test('isRecipeStatusEditable excludes perfected and abandoned', () => {
+    expect(isRecipeStatusEditable('evolving')).toBe(true);
+    expect(isRecipeStatusEditable('perfected')).toBe(false);
+    expect(isRecipeStatusEditable('abandoned')).toBe(false);
   });
 
   test('canEditDraftVersion reflects version isEditable', () => {

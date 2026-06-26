@@ -38,7 +38,7 @@ describe('OverviewActions', () => {
   test('renders nothing for non-editable recipes without candidates', async () => {
     const {container} = await renderWithProviders(
       <OverviewActions
-        recipe={makeRecipeDetail({lifecycleStatus: 'perfected'})}
+        recipe={makeRecipeDetail({status: 'perfected'})}
         versions={[]}
         onActionMessage={() => {}}
       />,
@@ -49,7 +49,7 @@ describe('OverviewActions', () => {
   test('shows only candidates for perfected recipes', async () => {
     await renderWithProviders(
       <OverviewActions
-        recipe={makeRecipeDetail({lifecycleStatus: 'perfected'})}
+        recipe={makeRecipeDetail({status: 'perfected'})}
         versions={[
           makeRecipeVersionSummary({
             id: 'v2',
@@ -97,8 +97,8 @@ describe('OverviewActions', () => {
   });
 
   test('marks recipe perfected and abandoned', async () => {
-    const patchLifecycle = vi
-      .spyOn(eciperay.recipes, 'patchLifecycle')
+    const patchStatus = vi
+      .spyOn(eciperay.recipes, 'patchStatus')
       .mockResolvedValue(makeRecipeDetail());
     await renderWithProviders(
       <Routes>
@@ -117,8 +117,8 @@ describe('OverviewActions', () => {
     );
     await userEvent.click(screen.getByText('Mark perfected'));
     await userEvent.click(screen.getByText('Abandon'));
-    expect(patchLifecycle).toHaveBeenCalledWith('recipe-uuid-1', 'perfected');
-    expect(patchLifecycle).toHaveBeenCalledWith('recipe-uuid-1', 'abandoned');
+    expect(patchStatus).toHaveBeenCalledWith('recipe-uuid-1', 'perfected');
+    expect(patchStatus).toHaveBeenCalledWith('recipe-uuid-1', 'abandoned');
   });
 
   test('creates a manual draft version', async () => {

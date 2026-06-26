@@ -2,11 +2,7 @@ import type {Ingredient, IngredientInput} from './ingredient.js';
 import type {Instruction, InstructionInput} from './instruction.js';
 import type {Tag} from './tag.js';
 
-export type RecipeLifecycleStatus =
-  | 'idea'
-  | 'evolving'
-  | 'perfected'
-  | 'abandoned';
+export type RecipeStatus = 'idea' | 'evolving' | 'perfected' | 'abandoned';
 
 export type DerivedVersionRole = 'active' | 'archived' | 'draft' | 'candidate';
 
@@ -38,7 +34,7 @@ export type RecipeVersionSummary = {
 };
 
 export type RecipeVersionDetail = RecipeVersionSummary & {
-  lifecycleStatus: RecipeLifecycleStatus;
+  status: RecipeStatus;
   description: string | null;
   servings: number;
   prepTimeMin: number | null;

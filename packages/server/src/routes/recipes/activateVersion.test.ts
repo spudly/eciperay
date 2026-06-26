@@ -94,7 +94,7 @@ describe('POST /recipes/:id/versions/:versionId/activate', () => {
 
     expect(res.status).toBe(409);
     expect(res.body.error).toBe(
-      'Recipe cannot be modified in its current lifecycle status',
+      'Recipe cannot be modified in its current status',
     );
   });
 

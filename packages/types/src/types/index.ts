@@ -5,7 +5,6 @@ export type {
   CreateRecipeResult,
   Recipe,
   RecipeDetail,
-  RecipeDevelopmentStatus,
   RecipeInput,
   RecipeMetadataInput,
   PublicRecipeDetail,
@@ -19,7 +18,7 @@ export type {
 } from './recipe.js';
 export type {
   DerivedVersionRole,
-  RecipeLifecycleStatus,
+  RecipeStatus,
   RecipeVersionDetail,
   RecipeVersionInput,
   RecipeVersionSummary,

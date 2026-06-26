@@ -106,12 +106,7 @@ describe('PUT /recipes/:id', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery
       .mockResolvedValueOnce(
-        makeQueryResult([
-          makeRecipeDetailRow({
-            lifecycleStatus: 'perfected',
-            status: 'perfected',
-          }),
-        ]),
+        makeQueryResult([makeRecipeDetailRow({status: 'perfected'})]),
       )
       .mockResolvedValueOnce(
         makeQueryResult([makeVersionDetailRow({status: 'perfected'})]),
