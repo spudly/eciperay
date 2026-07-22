@@ -46,7 +46,7 @@ const initWebPostHog = (apiKey: string, apiHost: string) => {
   posthog.init(apiKey, {
     api_host: apiHost,
     defaults: '2026-01-30',
-    capture_pageview: true,
+    capture_pageview: 'history_change',
     capture_pageleave: true,
     persistence: 'localStorage',
     person_profiles: 'identified_only',
