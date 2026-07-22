@@ -95,7 +95,7 @@ describe('createWebAnalytics', () => {
       'phc_test',
       expect.objectContaining({
         api_host: 'https://us.i.posthog.com',
-        capture_pageview: true,
+        capture_pageview: 'history_change',
         disable_web_experiments: false,
         capture_exceptions: expect.objectContaining({
           capture_unhandled_errors: true,
