@@ -6,6 +6,7 @@ import {useNavigate} from 'react-router-dom';
 
 import {LegalLinks} from '../components/LegalLinks.js';
 import {ProfileAccountDataSection} from '../components/ProfileAccountDataSection.js';
+import {ProfileFeedbackPreference} from '../components/ProfileFeedbackPreference.js';
 import {RecipeExportPicker} from '../components/RecipeExportPicker.js';
 import {eciperay} from '../lib/api.js';
 import {supabase} from '../lib/supabase.js';
@@ -129,6 +130,8 @@ export const ProfilePage = () => {
       </section>
 
       <ProfileAccountDataSection />
+
+      <ProfileFeedbackPreference />
 
       <section className="mbe-8 rounded-xl bg-white p-4 shadow-sm">
         <h2 className="mbe-3 text-lg font-semibold text-gray-900">Legal</h2>

@@ -4,6 +4,10 @@ import type {
   AnalyticsPlatform,
 } from './analyticsEvents.js';
 import {sanitizeAnalyticsProperties} from './sanitizeAnalyticsProperties.js';
+import {
+  submitUserFeedback as submitUserFeedbackImpl,
+  type SubmitUserFeedbackInput,
+} from './submitUserFeedback.js';
 
 export type FeatureFlagValue = boolean | string | undefined;
 
@@ -27,6 +31,9 @@ export type AnalyticsAdapter = {
     message: string,
     attributes?: Record<string, unknown>,
   ) => void;
+  ensureSessionRecordingForFeedback?: () => void | Promise<void>;
+  getSessionId?: () => string | undefined;
+  getSessionReplayUrl?: () => string | undefined;
 };
 
 const noopAnalyticsAction = () => {
@@ -108,6 +115,8 @@ export const createAnalytics = (
   },
   captureException: createCaptureException(adapter),
   log: createLog(adapter),
+  submitUserFeedback: (input: SubmitUserFeedbackInput) =>
+    submitUserFeedbackImpl(adapter, platform, input),
 });
 
 export type AnalyticsClient = ReturnType<typeof createAnalytics>;

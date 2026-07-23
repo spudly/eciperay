@@ -10,6 +10,7 @@ export const featherIconNames = [
   'tag',
   'user',
   'alert-triangle',
+  'message-circle',
 ] as const;
 
 export type FeatherIconName = (typeof featherIconNames)[number];
@@ -19,4 +20,5 @@ export const tabIcons = {
   Recipes: 'book-open',
   Add: 'plus',
   Profile: 'user',
+  Feedback: 'message-circle',
 } as const satisfies Record<string, FeatherIconName>;

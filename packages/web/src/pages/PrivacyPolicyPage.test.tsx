@@ -23,5 +23,11 @@ describe('PrivacyPolicyPage', () => {
     expect(
       screen.getAllByRole('link', {name: LEGAL_CONTACT_EMAIL}),
     ).toHaveLength(3);
+    expect(
+      screen.getAllByText(/Voluntary product feedback/i).length,
+    ).toBeGreaterThanOrEqual(1);
+    expect(
+      screen.getByText(/Feedback shortcut preference/i),
+    ).toBeInTheDocument();
   });
 });

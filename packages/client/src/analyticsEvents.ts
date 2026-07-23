@@ -21,6 +21,13 @@ export type AnalyticsEventProperties = {
   recipe_created: {recipe_id: string; source: RecipeCreateSource};
   recipe_deleted: {recipe_id: string};
   recipe_imported: {recipe_id: string; source: RecipeImportSource};
+  user_feedback: {
+    message: string;
+    is_bug: boolean;
+    route?: string;
+    session_id?: string;
+    replay_url?: string;
+  };
 };
 
 export type AnalyticsEventName = keyof AnalyticsEventProperties;
@@ -29,4 +36,5 @@ export const ANALYTICS_EVENT_NAMES = [
   'recipe_created',
   'recipe_deleted',
   'recipe_imported',
+  'user_feedback',
 ] as const satisfies readonly AnalyticsEventName[];
