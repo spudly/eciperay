@@ -12,6 +12,7 @@ import React from 'react';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
 
+import {AppFeedbackPreferenceProvider} from './src/context/AppFeedbackPreferenceProvider';
 import {api} from './src/lib/api';
 import {analytics} from './src/lib/analytics';
 import {RootNavigator} from './src/navigation/RootNavigator';
@@ -33,15 +34,17 @@ const App = () => (
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
         <AnalyticsProvider analytics={analytics}>
-          <AuthProvider
-            supabase={supabase}
-            onAuthenticated={onAuthenticated}
-            onSignedOut={onSignedOut}
-          >
-            <AnalyticsErrorBoundaryProvider>
-              <RootNavigator />
-            </AnalyticsErrorBoundaryProvider>
-          </AuthProvider>
+          <AppFeedbackPreferenceProvider>
+            <AuthProvider
+              supabase={supabase}
+              onAuthenticated={onAuthenticated}
+              onSignedOut={onSignedOut}
+            >
+              <AnalyticsErrorBoundaryProvider>
+                <RootNavigator />
+              </AnalyticsErrorBoundaryProvider>
+            </AuthProvider>
+          </AppFeedbackPreferenceProvider>
         </AnalyticsProvider>
       </QueryClientProvider>
     </SafeAreaProvider>

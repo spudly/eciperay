@@ -3,6 +3,7 @@ import {
   AuthProvider,
   createAnalytics,
   createNoopAnalyticsAdapter,
+  FeedbackPreferenceProvider,
 } from '@eciperay/client';
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 import {
@@ -52,12 +53,14 @@ export const createWrapper = ({
     return (
       <QueryClientProvider client={queryClient}>
         <AnalyticsProvider analytics={testAnalytics}>
-          <MemoryRouter
-            initialEntries={[route]}
-            {...routerProps}
-          >
-            {inner}
-          </MemoryRouter>
+          <FeedbackPreferenceProvider initialEnabled={false}>
+            <MemoryRouter
+              initialEntries={[route]}
+              {...routerProps}
+            >
+              {inner}
+            </MemoryRouter>
+          </FeedbackPreferenceProvider>
         </AnalyticsProvider>
       </QueryClientProvider>
     );

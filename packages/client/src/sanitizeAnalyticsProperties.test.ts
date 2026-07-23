@@ -29,4 +29,13 @@ describe('sanitizeAnalyticsProperties', () => {
       route: '/home',
     });
   });
+
+  test('preserves PostHog project token key', () => {
+    expect(
+      sanitizeAnalyticsProperties({
+        token: 'phc_project_key',
+        access_token: 'user-secret',
+      }),
+    ).toEqual({token: 'phc_project_key', access_token: '[redacted]'});
+  });
 });

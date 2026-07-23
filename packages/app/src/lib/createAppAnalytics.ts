@@ -87,6 +87,10 @@ const createAppPostHogAdapter = (client: PostHog): AnalyticsAdapter => ({
   log: (level, message, attributes) => {
     posthogLog(client, level, message, attributes);
   },
+  ensureSessionRecordingForFeedback: async () => {
+    await client.startSessionRecording(true);
+  },
+  getSessionId: () => client.getSessionId(),
 });
 
 const createAppPostHogClient = (

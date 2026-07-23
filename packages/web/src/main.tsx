@@ -2,6 +2,7 @@ import {
   AnalyticsErrorBoundaryProvider,
   AnalyticsProvider,
   AuthProvider,
+  FeedbackPreferenceProvider,
 } from '@eciperay/client';
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 import {StrictMode} from 'react';
@@ -31,7 +32,9 @@ if (root) {
             onSignedOut={onSignedOut}
           >
             <AnalyticsErrorBoundaryProvider>
-              <RouterProvider router={router} />
+              <FeedbackPreferenceProvider>
+                <RouterProvider router={router} />
+              </FeedbackPreferenceProvider>
             </AnalyticsErrorBoundaryProvider>
           </AuthProvider>
         </AnalyticsProvider>

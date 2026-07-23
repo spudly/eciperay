@@ -1,0 +1,56 @@
+import {render, screen} from '@testing-library/react-native';
+import React from 'react';
+
+import {FeedbackScreen} from './FeedbackScreen';
+
+const mockUseNavigationState = jest.fn();
+
+jest.mock('@react-navigation/native', () => ({
+  useNavigationState: (selector: (state: unknown) => string | undefined) =>
+    mockUseNavigationState(selector),
+}));
+
+jest.mock('../components/FeedbackForm.js', () => {
+  const ReactNative =
+    jest.requireActual<typeof import('react-native')>('react-native');
+  return {
+    FeedbackForm: ({route}: {route?: string}) => (
+      <ReactNative.Text testID="feedback-form-route">
+        {route ?? 'none'}
+      </ReactNative.Text>
+    ),
+  };
+});
+
+describe('FeedbackScreen', () => {
+  test('passes the active route to the feedback form', () => {
+    mockUseNavigationState.mockImplementation(selector =>
+      selector({routes: [{name: 'FeedbackHome'}], index: 0}),
+    );
+    render(<FeedbackScreen />);
+    expect(screen.getByTestId('feedback-form-route')).toHaveTextContent(
+      'FeedbackHome',
+    );
+  });
+
+  test('handles nested navigation state', () => {
+    mockUseNavigationState.mockImplementation(selector =>
+      selector({
+        routes: [
+          {name: 'Root', state: {routes: [{name: 'NestedFeedback'}], index: 0}},
+        ],
+        index: 0,
+      }),
+    );
+    render(<FeedbackScreen />);
+    expect(screen.getByTestId('feedback-form-route')).toHaveTextContent(
+      'NestedFeedback',
+    );
+  });
+
+  test('returns no route when navigation state is missing', () => {
+    mockUseNavigationState.mockImplementation(selector => selector());
+    render(<FeedbackScreen />);
+    expect(screen.getByTestId('feedback-form-route')).toHaveTextContent('none');
+  });
+});

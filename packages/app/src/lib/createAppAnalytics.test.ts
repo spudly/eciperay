@@ -21,7 +21,7 @@ describe('createAppAnalytics', () => {
     expect(MockPostHog).not.toHaveBeenCalled();
   });
 
-  test('captures events when PostHog key is configured', () => {
+  test('captures events when PostHog key is configured', async () => {
     const capture = jest.fn();
     const identify = jest.fn();
     const reset = jest.fn();
@@ -37,6 +37,8 @@ describe('createAppAnalytics', () => {
       debug: jest.fn(),
       trace: jest.fn(),
     };
+    const startSessionRecording = jest.fn().mockImplementation(async () => {});
+    const getSessionId = jest.fn().mockReturnValue('session-app-1');
     MockPostHog.mockImplementation(
       () =>
         ({
@@ -50,6 +52,8 @@ describe('createAppAnalytics', () => {
           reloadFeatureFlags,
           captureException,
           logger,
+          startSessionRecording,
+          getSessionId,
         }) as unknown as PostHog,
     );
     const client = createAppAnalytics(
@@ -103,6 +107,22 @@ describe('createAppAnalytics', () => {
     expect(logger.debug).toHaveBeenCalledWith('debugging', undefined);
     client.log('trace', 'tracing');
     expect(logger.trace).toHaveBeenCalledWith('tracing', undefined);
+    await client.submitUserFeedback({
+      message: 'Import screen hangs on my phone.',
+      is_bug: true,
+      route: 'ImportUrl',
+    });
+    expect(startSessionRecording).toHaveBeenCalledWith(true);
+    expect(capture).toHaveBeenCalledWith(
+      'user_feedback',
+      expect.objectContaining({
+        message: 'Import screen hangs on my phone.',
+        is_bug: true,
+        route: 'ImportUrl',
+        platform: 'ios',
+        session_id: 'session-app-1',
+      }),
+    );
   });
 
   test('reads feature flag payloads from getFeatureFlagResult when available', () => {

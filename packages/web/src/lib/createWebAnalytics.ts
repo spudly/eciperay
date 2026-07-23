@@ -1,7 +1,7 @@
 import {
   createAnalytics,
   createNoopAnalyticsAdapter,
-  sanitizeAnalyticsProperties,
+  sanitizePostHogEventProperties,
   type AnalyticsAdapter,
   type AnalyticsClient,
   type LogLevel,
@@ -63,11 +63,14 @@ const initWebPostHog = (apiKey: string, apiHost: string) => {
         return event;
       }
       event.properties =
-        sanitizeAnalyticsProperties(event.properties) ?? event.properties;
+        sanitizePostHogEventProperties(event.properties) ?? event.properties;
       return event;
     },
   });
 };
+
+const getWebSessionReplayUrl = () =>
+  posthog.get_session_replay_url({withTimestamp: true, timestampLookBack: 30});
 
 const createWebPostHogAdapter = (): AnalyticsAdapter => ({
   capture: (event, properties) => {
@@ -90,6 +93,11 @@ const createWebPostHogAdapter = (): AnalyticsAdapter => ({
     posthog.captureException(error, properties);
   },
   log: posthogLog,
+  ensureSessionRecordingForFeedback: () => {
+    posthog.startSessionRecording(true);
+  },
+  getSessionId: () => posthog.get_session_id(),
+  getSessionReplayUrl: getWebSessionReplayUrl,
 });
 
 export const createPostHogAdapter = (

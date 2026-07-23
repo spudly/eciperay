@@ -1,7 +1,11 @@
 import React from 'react';
 import {render, fireEvent} from '@testing-library/react-native';
 import {Linking} from 'react-native';
-import {PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL} from '@eciperay/client';
+import {
+  FeedbackPreferenceContextProvider,
+  PRIVACY_POLICY_URL,
+  TERMS_OF_SERVICE_URL,
+} from '@eciperay/client';
 
 import {makeStackProps} from '../__tests__/testUtils';
 import type {ProfileStackParamList} from '../navigation/types';
@@ -26,6 +30,18 @@ const stackProps = makeStackProps<ProfileStackParamList, 'ProfileHome'>(
   {navigate: mockNavigate},
 );
 
+const renderProfileScreen = () =>
+  render(<ProfileScreen {...stackProps} />, {
+    wrapper: ({children}) => (
+      <FeedbackPreferenceContextProvider
+        enabled={false}
+        setEnabled={jest.fn()}
+      >
+        {children}
+      </FeedbackPreferenceContextProvider>
+    ),
+  });
+
 describe('ProfileScreen', () => {
   beforeEach(() => {
     jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
@@ -36,31 +52,31 @@ describe('ProfileScreen', () => {
   });
   test('renders without email when session is missing', () => {
     mockUseAuth.mockReturnValueOnce({session: null});
-    const {queryByText} = render(<ProfileScreen {...stackProps} />);
+    const {queryByText} = renderProfileScreen();
     expect(queryByText('user@test.com')).toBeNull();
   });
 
   test('renders email and sign out button', () => {
-    const {getByText} = render(<ProfileScreen {...stackProps} />);
+    const {getByText} = renderProfileScreen();
     expect(getByText('user@test.com')).toBeTruthy();
     expect(getByText('Sign Out')).toBeTruthy();
   });
 
   test('signs out on button press', () => {
     const {supabase} = require('../lib/supabase');
-    const {getByText} = render(<ProfileScreen {...stackProps} />);
+    const {getByText} = renderProfileScreen();
     fireEvent.press(getByText('Sign Out'));
     expect(supabase.auth.signOut).toHaveBeenCalled();
   });
 
   test('navigates to Tags', () => {
-    const {getByText} = render(<ProfileScreen {...stackProps} />);
+    const {getByText} = renderProfileScreen();
     fireEvent.press(getByText('Manage Tags'));
     expect(mockNavigate).toHaveBeenCalledWith('Tags');
   });
 
   test('opens legal document URLs', () => {
-    const {getByText} = render(<ProfileScreen {...stackProps} />);
+    const {getByText} = renderProfileScreen();
     fireEvent.press(getByText('Privacy Policy'));
     expect(Linking.openURL).toHaveBeenCalledWith(PRIVACY_POLICY_URL);
     fireEvent.press(getByText('Terms of Service'));

@@ -11,6 +11,7 @@ describe('analyticsEvents', () => {
       'recipe_created',
       'recipe_deleted',
       'recipe_imported',
+      'user_feedback',
     ]);
   });
 
@@ -37,6 +38,11 @@ describe('analyticsEvents', () => {
       recipe_created: {recipe_id: 'recipe-1', source: 'manual'},
       recipe_deleted: {recipe_id: 'recipe-1'},
       recipe_imported: {recipe_id: 'recipe-1', source: 'url'},
+      user_feedback: {
+        message: 'Something broke',
+        is_bug: true,
+        route: '/recipes',
+      },
     };
     expect(payloads.recipe_created.source).toBe('manual');
   });

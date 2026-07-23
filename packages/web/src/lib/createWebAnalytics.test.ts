@@ -17,6 +17,9 @@ const {
   posthogLoggerDebug,
   posthogLoggerTrace,
   posthogOnFeatureFlags,
+  posthogStartSessionRecording,
+  posthogGetSessionId,
+  posthogGetSessionReplayUrl,
 } = vi.hoisted(() => ({
   posthogInit: vi.fn(),
   posthogCapture: vi.fn(),
@@ -35,6 +38,9 @@ const {
   posthogLoggerDebug: vi.fn(),
   posthogLoggerTrace: vi.fn(),
   posthogOnFeatureFlags: vi.fn(() => vi.fn()),
+  posthogStartSessionRecording: vi.fn(),
+  posthogGetSessionId: vi.fn(() => 'session-web-1'),
+  posthogGetSessionReplayUrl: vi.fn(() => 'https://posthog.example/replay'),
 }));
 
 vi.mock('posthog-js', () => ({
@@ -48,6 +54,9 @@ vi.mock('posthog-js', () => ({
     onFeatureFlags: posthogOnFeatureFlags,
     reloadFeatureFlags: posthogReloadFeatureFlags,
     captureException: posthogCaptureException,
+    startSessionRecording: posthogStartSessionRecording,
+    get_session_id: posthogGetSessionId,
+    get_session_replay_url: posthogGetSessionReplayUrl,
     logger: {
       info: posthogLoggerInfo,
       warn: posthogLoggerWarn,
@@ -79,7 +88,7 @@ describe('createWebAnalytics', () => {
     expect(posthogCapture).not.toHaveBeenCalled();
   });
 
-  test('initializes PostHog with replay, flags, errors, and logs', () => {
+  test('initializes PostHog with replay, flags, errors, and logs', async () => {
     const client = createWebAnalytics('phc_test', 'https://us.i.posthog.com');
     client.track('recipe_deleted', {recipe_id: 'recipe-1'});
     expect(posthogInit).toHaveBeenCalledWith(
@@ -127,6 +136,23 @@ describe('createWebAnalytics', () => {
     expect(posthogLoggerTrace).toHaveBeenCalledWith('tracing', undefined);
     client.onFeatureFlags(() => {});
     expect(posthogOnFeatureFlags).toHaveBeenCalled();
+    await client.submitUserFeedback({
+      message: 'The recipe list never loads for me.',
+      is_bug: true,
+      route: '/recipes',
+    });
+    expect(posthogStartSessionRecording).toHaveBeenCalledWith(true);
+    expect(posthogCapture).toHaveBeenCalledWith(
+      'user_feedback',
+      expect.objectContaining({
+        message: 'The recipe list never loads for me.',
+        is_bug: true,
+        route: '/recipes',
+        platform: 'web',
+        session_id: 'session-web-1',
+        replay_url: 'https://posthog.example/replay',
+      }),
+    );
   });
 
   test('uses the default PostHog host when host is empty', () => {
@@ -152,6 +178,11 @@ describe('createWebAnalytics', () => {
       password: '[redacted]',
       route: '/home',
     });
+    expect(
+      before_send({
+        properties: {token: 'phc_project_key', $lib: 'web', password: 'secret'},
+      })?.properties,
+    ).toEqual({token: 'phc_project_key', $lib: 'web', password: '[redacted]'});
     expect(before_send(null)).toBeNull();
     const eventWithoutProperties = {};
     expect(before_send(eventWithoutProperties)).toBe(eventWithoutProperties);

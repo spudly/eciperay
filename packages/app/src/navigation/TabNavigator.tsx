@@ -1,5 +1,6 @@
 /* eslint-disable max-lines -- tab navigator registers multiple nested stacks */
 import {tabIcons} from '@eciperay/icons';
+import {useFeedbackShortcutEnabled} from '@eciperay/client';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 
@@ -8,6 +9,7 @@ import {AddScreen} from '../screens/AddScreen';
 import {CookingModeScreen} from '../screens/CookingModeScreen';
 import {EditRecipeScreen} from '../screens/EditRecipeScreen';
 import {EditVersionScreen} from '../screens/EditVersionScreen';
+import {FeedbackScreen} from '../screens/FeedbackScreen';
 import {GenerateAiScreen} from '../screens/GenerateAiScreen';
 import {HomeScreen} from '../screens/HomeScreen';
 import {ImportImageScreen} from '../screens/ImportImageScreen';
@@ -24,6 +26,7 @@ import {
 } from '../screens/SharedWithMeScreen';
 import {TagsScreen} from '../screens/TagsScreen';
 import {TweakAiScreen} from '../screens/TweakAiScreen';
+import {POSTHOG_KEY} from '../lib/env';
 
 import type {
   AddStackParamList,
@@ -135,38 +138,54 @@ const ProfileStackNavigator = () => (
   </ProfileStack.Navigator>
 );
 
-export const TabNavigator = () => (
-  <Tab.Navigator
-    screenOptions={({route}) => ({
-      tabBarActiveTintColor: PRIMARY,
-      tabBarInactiveTintColor: MUTED,
-      tabBarIcon: ({color, size}) => (
-        <Icon
-          name={tabIcons[route.name]}
-          size={size}
-          color={color}
+export const TabNavigator = () => {
+  const {enabled: feedbackShortcutEnabled} = useFeedbackShortcutEnabled();
+  const showFeedbackTab = feedbackShortcutEnabled && POSTHOG_KEY.length > 0;
+
+  return (
+    <Tab.Navigator
+      screenOptions={({route}) => ({
+        tabBarActiveTintColor: PRIMARY,
+        tabBarInactiveTintColor: MUTED,
+        tabBarIcon: ({color, size}) => {
+          const iconName =
+            route.name in tabIcons ? tabIcons[route.name] : tabIcons.Profile;
+          return (
+            <Icon
+              name={iconName}
+              size={size}
+              color={color}
+            />
+          );
+        },
+      })}
+    >
+      <Tab.Screen
+        name="Home"
+        component={HomeScreen}
+      />
+      <Tab.Screen
+        name="Recipes"
+        component={RecipesStackNavigator}
+        options={{headerShown: false}}
+      />
+      <Tab.Screen
+        name="Add"
+        component={AddStackNavigator}
+        options={{headerShown: false}}
+      />
+      {showFeedbackTab ? (
+        <Tab.Screen
+          name="Feedback"
+          component={FeedbackScreen}
+          options={{title: 'Feedback'}}
         />
-      ),
-    })}
-  >
-    <Tab.Screen
-      name="Home"
-      component={HomeScreen}
-    />
-    <Tab.Screen
-      name="Recipes"
-      component={RecipesStackNavigator}
-      options={{headerShown: false}}
-    />
-    <Tab.Screen
-      name="Add"
-      component={AddStackNavigator}
-      options={{headerShown: false}}
-    />
-    <Tab.Screen
-      name="Profile"
-      component={ProfileStackNavigator}
-      options={{headerShown: false}}
-    />
-  </Tab.Navigator>
-);
+      ) : null}
+      <Tab.Screen
+        name="Profile"
+        component={ProfileStackNavigator}
+        options={{headerShown: false}}
+      />
+    </Tab.Navigator>
+  );
+};
