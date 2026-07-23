@@ -12,7 +12,7 @@ export const isSensitiveAnalyticsPropertyKey = (key: string): boolean => {
 };
 
 export const sanitizePostHogEventProperties = (
-  properties: Record<string, unknown> | undefined,
+  properties?: Record<string, unknown>,
 ): Record<string, unknown> | undefined => {
   if (!properties) {
     return undefined;
