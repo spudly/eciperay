@@ -2,7 +2,7 @@ import {sanitizePostHogEventProperties} from './sanitizeAnalyticsProperties.js';
 
 describe('sanitizePostHogEventProperties', () => {
   test('returns undefined when properties are missing', () => {
-    expect(sanitizePostHogEventProperties(undefined)).toBeUndefined();
+    expect(sanitizePostHogEventProperties()).toBeUndefined();
   });
 
   test('preserves PostHog system properties while scrubbing custom ones', () => {
