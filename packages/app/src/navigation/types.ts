@@ -31,4 +31,5 @@ export type RootTabParamList = {
   Recipes: NavigatorScreenParams<RecipesStackParamList>;
   Add: NavigatorScreenParams<AddStackParamList>;
   Profile: NavigatorScreenParams<ProfileStackParamList>;
+  Feedback: undefined;
 };

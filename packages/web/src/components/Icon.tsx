@@ -4,6 +4,7 @@ import {
   FiAlertTriangle,
   FiBookOpen,
   FiHome,
+  FiMessageCircle,
   FiPlus,
   FiTag,
   FiUser,
@@ -18,6 +19,7 @@ const featherIcons: Record<FeatherIconName, IconType> = {
   'tag': FiTag,
   'user': FiUser,
   'alert-triangle': FiAlertTriangle,
+  'message-circle': FiMessageCircle,
 };
 
 type IconProps = {

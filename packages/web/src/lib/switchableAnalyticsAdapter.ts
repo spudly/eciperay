@@ -31,6 +31,10 @@ export const createSwitchableAnalyticsAdapter = (
     log: (level, message, attributes) => {
       activeAdapter.log?.(level, message, attributes);
     },
+    ensureSessionRecordingForFeedback: () =>
+      activeAdapter.ensureSessionRecordingForFeedback?.(),
+    getSessionId: () => activeAdapter.getSessionId?.(),
+    getSessionReplayUrl: () => activeAdapter.getSessionReplayUrl?.(),
   };
 
   return {

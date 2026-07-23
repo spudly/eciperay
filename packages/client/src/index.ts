@@ -111,8 +111,26 @@ export {
   type AnalyticsConsentStatus,
 } from './analyticsConsent.js';
 export {
+  FEEDBACK_SHORTCUT_STORAGE_KEY,
+  readFeedbackShortcutEnabled,
+  writeFeedbackShortcutEnabled,
+} from './feedbackPreference.js';
+export {
+  FeedbackPreferenceContextProvider,
+  FeedbackPreferenceProvider,
+  useFeedbackShortcutEnabled,
+} from './FeedbackPreferenceContext.js';
+export {
+  submitUserFeedback,
+  validateUserFeedbackMessage,
+  USER_FEEDBACK_MESSAGE_MAX_LENGTH,
+  USER_FEEDBACK_MESSAGE_MIN_LENGTH,
+  type SubmitUserFeedbackInput,
+} from './submitUserFeedback.js';
+export {
   isSensitiveAnalyticsPropertyKey,
   sanitizeAnalyticsProperties,
+  sanitizePostHogEventProperties,
 } from './sanitizeAnalyticsProperties.js';
 export {queryKeys} from './queryKeys.js';
 export {

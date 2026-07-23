@@ -108,6 +108,22 @@ export const privacyPolicySections: LegalSection[] = [
             visits. This preference is not sent to our servers.
           </li>
           <li>
+            <strong>Feedback shortcut preference:</strong> when you turn the
+            feedback shortcut on or off in Profile settings, we store that
+            choice in your browser&apos;s local storage (web) or on-device
+            storage (mobile apps). This preference is not sent to our servers.
+          </li>
+          <li>
+            <strong>Voluntary product feedback:</strong> if you enable the
+            feedback shortcut in Profile settings and submit feedback, we
+            collect the message you write, whether you marked it as a bug, the
+            page or screen you were on, and related diagnostic context
+            (including a session identifier and, when available, a link to a
+            session replay). Feedback is sent to PostHog on our behalf. Do not
+            include passwords, tokens, or other sensitive personal information
+            in feedback messages.
+          </li>
+          <li>
             <strong>Mobile app install prompt:</strong> on mobile web browsers,
             we may show a dismissible banner suggesting the native Eciperay app.
             If you dismiss it, we store that preference in your browser&apos;s
@@ -118,9 +134,11 @@ export const privacyPolicySections: LegalSection[] = [
           <li>
             <strong>Session replays:</strong> on the web and mobile apps, we may
             record how you interact with the interface (such as taps, clicks,
-            and navigation). Text you type into form fields is masked where
-            technically possible, but other on-screen content you view may
-            appear in a replay.
+            and navigation). Submitting voluntary feedback starts or ensures a
+            session replay for that session, in addition to replays captured
+            under our normal analytics settings. Text you type into form fields
+            is masked where technically possible, but other on-screen content
+            you view may appear in a replay.
           </li>
         </ul>
         <p>
@@ -153,7 +171,15 @@ export const privacyPolicySections: LegalSection[] = [
         <li>Authenticate your account and keep it secure.</li>
         <li>Store and sync your recipes across your devices.</li>
         <li>Power AI-assisted recipe import, editing, and suggestions.</li>
-        <li>Respond to support requests and enforce our Terms of Service.</li>
+        <li>
+          Review voluntary product feedback, prioritize bug reports, and improve
+          reliability and usability (including using linked session replays to
+          understand what you experienced).
+        </li>
+        <li>
+          Respond to support requests, in-app feedback, and enforce our Terms of
+          Service.
+        </li>
       </ul>
     ),
   },
@@ -245,6 +271,15 @@ export const privacyPolicySections: LegalSection[] = [
           recipes (including public recipes), comments, ratings, and share
           grants. If deletion of your authentication account fails after your
           application data is removed, contact us at {legalContactLink}.
+        </li>
+        <li>
+          <strong>Product feedback:</strong> the feedback shortcut is off by
+          default. You can enable or disable it anytime in Profile settings. On
+          the web, submitting feedback also requires that you have accepted
+          product analytics cookies; if you decline analytics, the shortcut is
+          not available even if enabled. Feedback you submit is processed by
+          PostHog as described above; contact us at the email in Contact us to
+          request deletion of feedback already collected.
         </li>
         <li>
           <strong>Analytics:</strong> on the web you can accept or decline
