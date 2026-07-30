@@ -9,4 +9,9 @@ describe('RecipeStatusBadge', () => {
     await renderWithProviders(<RecipeStatusBadge status="evolving" />);
     expect(screen.getByText('Evolving')).toBeInTheDocument();
   });
+
+  test('falls back to idea for unknown status', async () => {
+    await renderWithProviders(<RecipeStatusBadge status={undefined} />);
+    expect(screen.getByText('Idea')).toBeInTheDocument();
+  });
 });
