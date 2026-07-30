@@ -1,5 +1,28 @@
 {
   "extends": "../../tsconfig.base.json",
-  "compilerOptions": {"types": ["node", "jest"], "noEmit": true},
-  "include": ["**/*.ts"]
+  "compilerOptions": {
+    "allowJs": true,
+    "jsx": "react-jsx",
+    "types": ["node", "jest"],
+    "noEmit": true
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "**/*.cts",
+    "**/*.mts",
+    "**/*.d.ts",
+    "**/*.d.mts",
+    "**/*.js",
+    "**/*.jsx",
+    "**/*.cjs",
+    "**/*.mjs"
+  ],
+  "exclude": [
+    "**/node_modules",
+    "**/dist",
+    "**/build",
+    "**/coverage",
+    "**/.turbo"
+  ]
 }
