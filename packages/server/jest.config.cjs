@@ -18,9 +18,13 @@ module.exports = {
     '!src/db/pool.ts', // pg.Pool constructor only
     '!src/db/query.ts', // thin pg.Pool.query wrapper; tested via the pg library itself
   ],
-  coverageThreshold: {
-    global: {branches: 100, functions: 100, lines: 100, statements: 100},
-  },
+  ...(process.env.JEST_SHARD_INDEX
+    ? {}
+    : {
+        coverageThreshold: {
+          global: {branches: 100, functions: 100, lines: 100, statements: 100},
+        },
+      }),
   extensionsToTreatAsEsm: ['.ts'],
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
