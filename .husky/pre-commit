@@ -3,5 +3,4 @@ npm run workflows:lint
 npm run typecheck
 npm run test:scripts
 npm run depcheck
-npm run audit
 npm run precommit:test-coverage

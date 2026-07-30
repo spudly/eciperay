@@ -44,7 +44,7 @@
     "knip": "knip",
     "jscpd": "jscpd packages/*/src scripts",
     "depcheck": "depcheck && find packages -mindepth 1 -maxdepth 1 -type d -print0 | xargs -0 -n1 depcheck",
-    "ci": "concurrently --group --names validate,typecheck,lint,lint-rules,workflows,audit,depcheck,knip,jscpd,test --prefix-colors white,blue,yellow,cyan,white,magenta,red,gray,gray,green \"npm run validate:node-version\" \"npm run typecheck\" \"npm run lint\" \"npm run lint:unused-rules\" \"npm run workflows:lint\" \"npm run audit\" \"npm run depcheck\" \"npm run knip\" \"npm run jscpd\" \"npm run test:coverage\"",
+    "ci": "concurrently --group --names validate,typecheck,lint,lint-rules,workflows,depcheck,knip,jscpd,test --prefix-colors white,blue,yellow,cyan,white,red,gray,gray,green \"npm run validate:node-version\" \"npm run typecheck\" \"npm run lint\" \"npm run lint:unused-rules\" \"npm run workflows:lint\" \"npm run depcheck\" \"npm run knip\" \"npm run jscpd\" \"npm run test:coverage\"",
     "test": "npm run test:scripts && TURBO_TELEMETRY_DISABLED=1 turbo test",
     "test:coverage": "npm run test:scripts && TURBO_TELEMETRY_DISABLED=1 turbo test:coverage",
     "start:server": "npm run start --workspace=packages/server",

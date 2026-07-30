@@ -399,7 +399,7 @@ before Android deploys (same as Fly web deploy).
 | `npm run android:device`  | Build/install app on connected phone only |
 | `npm run typecheck`       | TypeScript check all packages             |
 | `npm run lint`            | ESLint across all packages                |
-| `npm run ci`              | Full CI (typecheck, lint, audit, tests)   |
+| `npm run ci`              | Full CI (typecheck, lint, tests)          |
 | `npm test`                | Run all package tests                     |
 | `npm run test:coverage`   | All packages with 100% coverage threshold |
 

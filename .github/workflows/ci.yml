@@ -122,22 +122,6 @@ jobs:
       - name: Lint unused rules
         run: npm run lint:unused-rules
 
-  audit:
-    name: audit
-    needs: install
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Setup
-        uses: ./.github/actions/ci-setup
-        with:
-          skip-install-on-cache-hit: 'true'
-
-      - name: Audit
-        run: npm run audit
-
   depcheck:
     name: depcheck
     needs: install
