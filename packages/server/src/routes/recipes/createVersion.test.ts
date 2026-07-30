@@ -1,14 +1,14 @@
 import request from 'supertest';
 
-import {createApp} from '../../server.js';
 import {makeRecipeDetailRow} from '../../test/fixtures/recipeRow.js';
 import {makeVersionDetailRow} from '../../test/fixtures/versionRow.js';
 import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {createMockQuery} from '../../test/mockQuery.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
+import {lazyTestApp} from '../../test/lazyTestApp.js';
 
 const mockQuery = createMockQuery();
-const app = createApp({query: mockQuery});
+const getApp = lazyTestApp({query: mockQuery});
 
 const mockCreateVersionFlow = (status: 'idea' | 'evolving' = 'idea') => {
   mockQuery
@@ -39,7 +39,7 @@ describe('POST /recipes/:id/versions', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockCreateVersionFlow();
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/recipe-uuid-1/versions')
       .set('Authorization', 'Bearer valid-token');
 
@@ -52,7 +52,7 @@ describe('POST /recipes/:id/versions', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockCreateVersionFlow('idea');
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/recipe-uuid-1/versions')
       .set('Authorization', 'Bearer valid-token');
 
@@ -63,7 +63,7 @@ describe('POST /recipes/:id/versions', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue(makeQueryResult([]));
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/missing-id/versions')
       .set('Authorization', 'Bearer valid-token');
 
@@ -76,7 +76,7 @@ describe('POST /recipes/:id/versions', () => {
       makeQueryResult([makeRecipeDetailRow({status: 'perfected'})]),
     );
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/recipe-uuid-1/versions')
       .set('Authorization', 'Bearer valid-token');
 
@@ -94,7 +94,7 @@ describe('POST /recipes/:id/versions', () => {
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValue(makeQueryResult([]));
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/recipe-uuid-1/versions')
       .set('Authorization', 'Bearer valid-token');
 
@@ -102,7 +102,9 @@ describe('POST /recipes/:id/versions', () => {
   });
 
   test('returns 401 without auth token', async () => {
-    const res = await request(app).post('/api/recipes/recipe-uuid-1/versions');
+    const res = await request(getApp()).post(
+      '/api/recipes/recipe-uuid-1/versions',
+    );
     expect(res.status).toBe(401);
   });
 
@@ -114,7 +116,7 @@ describe('POST /recipes/:id/versions', () => {
       .mockResolvedValueOnce(makeQueryResult([]));
 
     await expect(
-      request(app)
+      request(getApp())
         .post('/api/recipes/recipe-uuid-1/versions')
         .set('Authorization', 'Bearer valid-token'),
     ).resolves.toMatchObject({status: 500});

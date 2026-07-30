@@ -7,6 +7,7 @@ import {makeRecipeDetailRow} from '../../test/fixtures/recipeRow.js';
 import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {createMockQuery} from '../../test/mockQuery.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
+import {lazyTestApp} from '../../test/lazyTestApp.js';
 
 const fetchImageAsBase64 =
   jest.fn<() => Promise<{base64: string; contentType: string} | null>>();
@@ -23,10 +24,8 @@ jest.unstable_mockModule('../../lib/uploadRecipeImageServer.js', () => ({
   resolveImportedImageUrl,
 }));
 
-const {createApp} = await import('../../server.js');
-
 const mockQuery = createMockQuery();
-const app = createApp({query: mockQuery});
+const getApp = lazyTestApp({query: mockQuery});
 
 const RECIPE_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 
@@ -56,7 +55,7 @@ describe('POST /recipes/export', () => {
         makeQueryResult([makeRecipeDetailRow({id: RECIPE_ID})]),
       );
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/export')
       .set('Authorization', 'Bearer valid-token')
       .send({recipeIds: [RECIPE_ID]});
@@ -85,7 +84,7 @@ describe('POST /recipes/export', () => {
         ]),
       );
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/export')
       .set('Authorization', 'Bearer valid-token')
       .send({recipeIds: [RECIPE_ID]});
@@ -114,7 +113,7 @@ describe('POST /recipes/export', () => {
         ]),
       );
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/export')
       .set('Authorization', 'Bearer valid-token')
       .send({recipeIds: [RECIPE_ID]});
@@ -129,7 +128,7 @@ describe('POST /recipes/export', () => {
       .mockResolvedValueOnce(makeQueryResult([{id: RECIPE_ID}]))
       .mockResolvedValueOnce(makeQueryResult([]));
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/export')
       .set('Authorization', 'Bearer valid-token')
       .send({recipeIds: [RECIPE_ID]});
@@ -140,7 +139,7 @@ describe('POST /recipes/export', () => {
 
   test('returns 400 when recipeIds is empty', async () => {
     nockSupabaseGetUser('user-uuid-1');
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/export')
       .set('Authorization', 'Bearer valid-token')
       .send({recipeIds: []});
@@ -148,7 +147,7 @@ describe('POST /recipes/export', () => {
   });
 
   test('returns 401 without auth token', async () => {
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/export')
       .send({recipeIds: [RECIPE_ID]});
     expect(res.status).toBe(401);
@@ -171,7 +170,7 @@ describe('POST /recipes/import/bulk', () => {
       .mockResolvedValueOnce(makeQueryResult([{id: 'recipe-uuid-1'}]))
       .mockResolvedValue(makeQueryResult([makeRecipeDetailRow()]));
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/import/bulk')
       .set('Authorization', 'Bearer valid-token')
       .send({formatVersion: 1, recipes: [exportRecord]});
@@ -194,7 +193,7 @@ describe('POST /recipes/import/bulk', () => {
       .mockResolvedValueOnce(makeQueryResult([{id: 'recipe-uuid-1'}]))
       .mockResolvedValue(makeQueryResult([makeRecipeDetailRow()]));
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/import/bulk')
       .set('Authorization', 'Bearer valid-token')
       .send({
@@ -218,7 +217,7 @@ describe('POST /recipes/import/bulk', () => {
       )
       .mockRejectedValueOnce(new Error('save failed'));
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/import/bulk')
       .set('Authorization', 'Bearer valid-token')
       .send({recipes: [exportRecord]});
@@ -234,7 +233,7 @@ describe('POST /recipes/import/bulk', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockRejectedValueOnce('save failed');
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/import/bulk')
       .set('Authorization', 'Bearer valid-token')
       .send({recipes: [exportRecord]});
@@ -247,7 +246,7 @@ describe('POST /recipes/import/bulk', () => {
 
   test('returns 400 when recipes array is empty', async () => {
     nockSupabaseGetUser('user-uuid-1');
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/import/bulk')
       .set('Authorization', 'Bearer valid-token')
       .send({recipes: []});
@@ -255,7 +254,7 @@ describe('POST /recipes/import/bulk', () => {
   });
 
   test('returns 401 without auth token', async () => {
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/import/bulk')
       .send({recipes: [exportRecord]});
     expect(res.status).toBe(401);

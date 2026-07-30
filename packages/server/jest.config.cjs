@@ -1,4 +1,4 @@
-/** @type {import('ts-jest').JestConfigWithTsJest} */
+/** @type {import('jest').Config} */
 module.exports = {
   displayName: 'server',
   testEnvironment: 'node',
@@ -21,7 +21,6 @@ module.exports = {
   coverageThreshold: {
     global: {branches: 100, functions: 100, lines: 100, statements: 100},
   },
-  preset: 'ts-jest/presets/default-esm',
   extensionsToTreatAsEsm: ['.ts'],
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
@@ -31,10 +30,13 @@ module.exports = {
   },
   transform: {
     '^.+\\.ts$': [
-      'ts-jest',
+      '@swc/jest',
       {
-        useESM: true,
-        tsconfig: {module: 'NodeNext', moduleResolution: 'nodenext'},
+        jsc: {
+          parser: {syntax: 'typescript', decorators: false},
+          target: 'es2022',
+        },
+        module: {type: 'es6'},
       },
     ],
   },

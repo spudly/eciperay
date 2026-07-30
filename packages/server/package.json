@@ -7,6 +7,8 @@
     "typecheck": "tsc --noEmit",
     "test": "NODE_OPTIONS='--experimental-vm-modules --no-warnings --max-old-space-size=4096' jest",
     "test:coverage": "NODE_OPTIONS='--experimental-vm-modules --no-warnings --max-old-space-size=4096' jest --coverage",
+    "test:coverage:ci": "NODE_OPTIONS='--experimental-vm-modules --no-warnings --max-old-space-size=4096' jest --coverage --coverageDirectory=coverage/shard-${JEST_SHARD_INDEX} --shard=${JEST_SHARD_INDEX}/${JEST_SHARD_TOTAL}",
+    "test:coverage:merge": "tsx scripts/mergeCoverage.ts",
     "start": "tsx src/server.ts",
     "dev": "tsx watch src/server.ts",
     "migrate": "tsx src/db/migrate.ts"
@@ -31,12 +33,17 @@
   },
   "devDependencies": {
     "@jest/globals": "^30.0.0",
+    "@swc/core": "^1.15.47",
+    "@swc/jest": "^0.2.39",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/jest": "^30.0.0",
     "@types/node": "^22.0.0",
     "@types/pg": "^8.0.0",
     "@types/supertest": "^7.0.0",
+    "istanbul-lib-coverage": "^3.2.2",
+    "istanbul-lib-report": "^3.0.1",
+    "istanbul-reports": "^3.2.0",
     "nock": "^14.0.15",
     "supertest": "^7.0.0"
   },

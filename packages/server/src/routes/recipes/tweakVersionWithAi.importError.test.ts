@@ -8,6 +8,7 @@ import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {createMockQuery} from '../../test/mockQuery.js';
 import {nockAnthropicMessage} from '../../test/mockNockAnthropic.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
+import {lazyTestApp} from '../../test/lazyTestApp.js';
 
 jest.unstable_mockModule('../../lib/prepareImportedRecipeInput.js', () => ({
   prepareImportedRecipeInput: async () => {
@@ -15,10 +16,8 @@ jest.unstable_mockModule('../../lib/prepareImportedRecipeInput.js', () => ({
   },
 }));
 
-const {createApp} = await import('../../server.js');
-
 const mockQuery = createMockQuery();
-const app = createApp({query: mockQuery});
+const getApp = lazyTestApp({query: mockQuery});
 
 const CLAUDE_RESPONSE = JSON.stringify({
   title: 'Improved Pasta',
@@ -48,7 +47,7 @@ describe('POST /recipes/:id/versions/ai import errors', () => {
       .mockResolvedValueOnce(makeQueryResult([makeVersionDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([]));
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/recipe-uuid-1/versions/ai')
       .set('Authorization', 'Bearer valid-token')
       .send({prompt: 'make this pasta creamier and easier to follow'});

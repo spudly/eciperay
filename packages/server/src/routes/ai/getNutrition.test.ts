@@ -1,15 +1,15 @@
 import request from 'supertest';
 
-import {createApp} from '../../server.js';
 import {makeIngredient} from '../../test/fixtures/ingredient.js';
 import {makeRecipeDetail} from '../../test/fixtures/recipe.js';
 import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {createMockQuery} from '../../test/mockQuery.js';
 import {nockAnthropicMessage} from '../../test/mockNockAnthropic.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
+import {lazyTestApp} from '../../test/lazyTestApp.js';
 
 const mockQuery = createMockQuery();
-const app = createApp({query: mockQuery});
+const getApp = lazyTestApp({query: mockQuery});
 
 const NUTRITION_RESPONSE = JSON.stringify({
   calories: 350,
@@ -27,7 +27,7 @@ describe('GET /recipes/:id/ai/nutrition', () => {
     nockSupabaseGetUser('user-uuid-1');
     nockAnthropicMessage(NUTRITION_RESPONSE);
     mockQuery.mockResolvedValue(makeQueryResult([makeRecipeDetail()]));
-    const res = await request(app)
+    const res = await request(getApp())
       .get('/api/recipes/recipe-uuid-1/ai/nutrition')
       .set('Authorization', 'Bearer valid-token');
     expect(res.status).toBe(200);
@@ -38,14 +38,14 @@ describe('GET /recipes/:id/ai/nutrition', () => {
   test('returns 404 when recipe is not found', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue(makeQueryResult([]));
-    const res = await request(app)
+    const res = await request(getApp())
       .get('/api/recipes/missing/ai/nutrition')
       .set('Authorization', 'Bearer valid-token');
     expect(res.status).toBe(404);
   });
 
   test('returns 401 without auth token', async () => {
-    const res = await request(app).get('/api/recipes/r/ai/nutrition');
+    const res = await request(getApp()).get('/api/recipes/r/ai/nutrition');
     expect(res.status).toBe(401);
   });
 
@@ -56,7 +56,7 @@ describe('GET /recipes/:id/ai/nutrition', () => {
       ingredients: [makeIngredient({quantity: null, unit: null, name: 'salt'})],
     });
     mockQuery.mockResolvedValue(makeQueryResult([detail]));
-    const res = await request(app)
+    const res = await request(getApp())
       .get('/api/recipes/recipe-uuid-1/ai/nutrition')
       .set('Authorization', 'Bearer valid-token');
     expect(res.status).toBe(200);

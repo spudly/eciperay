@@ -1,6 +1,5 @@
 import request from 'supertest';
 
-import {createApp} from '../../server.js';
 import {makeRecipeDetailRow} from '../../test/fixtures/recipeRow.js';
 import {makeVersionDetailRow} from '../../test/fixtures/versionRow.js';
 import {makeQueryResult} from '../../test/fixtures/queryResult.js';
@@ -10,9 +9,10 @@ import {
   nockAnthropicMessage,
 } from '../../test/mockNockAnthropic.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
+import {lazyTestApp} from '../../test/lazyTestApp.js';
 
 const mockQuery = createMockQuery();
-const app = createApp({query: mockQuery});
+const getApp = lazyTestApp({query: mockQuery});
 
 const SESSION_ID = 'session-uuid-1';
 const PROMPT = 'make this pasta creamier and easier to follow';
@@ -169,7 +169,7 @@ describe('POST /recipes/:id/tweak-ai-sessions', () => {
       makeQueryResult([makeSessionRow({messages: []})]),
     );
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/recipe-uuid-1/tweak-ai-sessions')
       .set('Authorization', 'Bearer valid-token')
       .send({prompt: PROMPT});
@@ -181,7 +181,7 @@ describe('POST /recipes/:id/tweak-ai-sessions', () => {
 
   test('returns 400 when prompt is too short', async () => {
     nockSupabaseGetUser('user-uuid-1');
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/recipe-uuid-1/tweak-ai-sessions')
       .set('Authorization', 'Bearer valid-token')
       .send({prompt: 'short'});
@@ -189,7 +189,7 @@ describe('POST /recipes/:id/tweak-ai-sessions', () => {
   });
 
   test('returns 401 without auth token', async () => {
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/recipe-uuid-1/tweak-ai-sessions')
       .send({prompt: PROMPT});
     expect(res.status).toBe(401);
@@ -199,7 +199,7 @@ describe('POST /recipes/:id/tweak-ai-sessions', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue(makeQueryResult([]));
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/missing-id/tweak-ai-sessions')
       .set('Authorization', 'Bearer valid-token')
       .send({prompt: PROMPT});
@@ -213,7 +213,7 @@ describe('POST /recipes/:id/tweak-ai-sessions', () => {
       makeQueryResult([makeRecipeDetailRow({status: 'perfected'})]),
     );
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/recipe-uuid-1/tweak-ai-sessions')
       .set('Authorization', 'Bearer valid-token')
       .send({prompt: PROMPT});
@@ -227,7 +227,7 @@ describe('POST /recipes/:id/tweak-ai-sessions', () => {
       .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([]));
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/recipe-uuid-1/tweak-ai-sessions')
       .set('Authorization', 'Bearer valid-token')
       .send({prompt: PROMPT});
@@ -241,7 +241,7 @@ describe('POST /recipes/:id/tweak-ai-sessions', () => {
     mockLoadContext();
     anthropicCreateSpy.mockRejectedValueOnce(new Error('AI down'));
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/recipe-uuid-1/tweak-ai-sessions')
       .set('Authorization', 'Bearer valid-token')
       .send({prompt: PROMPT});
@@ -264,7 +264,7 @@ describe('POST /recipes/:id/tweak-ai-sessions', () => {
       usage: {input_tokens: 10, output_tokens: 10},
     } as never);
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/recipe-uuid-1/tweak-ai-sessions')
       .set('Authorization', 'Bearer valid-token')
       .send({prompt: PROMPT});
@@ -278,7 +278,7 @@ describe('GET /recipes/:id/tweak-ai-sessions/:sessionId', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue(makeQueryResult([makeSessionRow()]));
 
-    const res = await request(app)
+    const res = await request(getApp())
       .get(`/api/recipes/recipe-uuid-1/tweak-ai-sessions/${SESSION_ID}`)
       .set('Authorization', 'Bearer valid-token');
 
@@ -290,7 +290,7 @@ describe('GET /recipes/:id/tweak-ai-sessions/:sessionId', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue(makeQueryResult([]));
 
-    const res = await request(app)
+    const res = await request(getApp())
       .get('/api/recipes/recipe-uuid-1/tweak-ai-sessions/missing')
       .set('Authorization', 'Bearer valid-token');
 
@@ -301,7 +301,7 @@ describe('GET /recipes/:id/tweak-ai-sessions/:sessionId', () => {
 describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/messages', () => {
   test('returns 400 when content is empty', async () => {
     nockSupabaseGetUser('user-uuid-1');
-    const res = await request(app)
+    const res = await request(getApp())
       .post(
         `/api/recipes/recipe-uuid-1/tweak-ai-sessions/${SESSION_ID}/messages`,
       )
@@ -316,7 +316,7 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/messages', () => {
       .mockResolvedValueOnce(makeQueryResult([makeSessionRow()]))
       .mockResolvedValueOnce(makeQueryResult([]));
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post(
         `/api/recipes/recipe-uuid-1/tweak-ai-sessions/${SESSION_ID}/messages`,
       )
@@ -337,7 +337,7 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/messages', () => {
       .mockResolvedValueOnce(makeQueryResult([makeSessionRow()]))
       .mockResolvedValueOnce(makeQueryResult([makeSessionRow()]));
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post(
         `/api/recipes/recipe-uuid-1/tweak-ai-sessions/${SESSION_ID}/messages`,
       )
@@ -352,7 +352,7 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/messages', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue(makeQueryResult([]));
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post(
         `/api/recipes/recipe-uuid-1/tweak-ai-sessions/${SESSION_ID}/messages`,
       )
@@ -368,7 +368,7 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/messages', () => {
       makeQueryResult([makeSessionRow({phase: 'plan_approved'})]),
     );
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post(
         `/api/recipes/recipe-uuid-1/tweak-ai-sessions/${SESSION_ID}/messages`,
       )
@@ -387,7 +387,7 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/messages', () => {
       .mockResolvedValueOnce(makeQueryResult([]));
     anthropicCreateSpy.mockRejectedValueOnce(new Error('AI down'));
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post(
         `/api/recipes/recipe-uuid-1/tweak-ai-sessions/${SESSION_ID}/messages`,
       )
@@ -419,7 +419,7 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/approve-plan', () => {
         ]),
       );
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post(
         `/api/recipes/recipe-uuid-1/tweak-ai-sessions/${SESSION_ID}/approve-plan`,
       )
@@ -435,7 +435,7 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/approve-plan', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue(makeQueryResult([]));
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post(
         `/api/recipes/recipe-uuid-1/tweak-ai-sessions/${SESSION_ID}/approve-plan`,
       )
@@ -450,7 +450,7 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/approve-plan', () => {
       makeQueryResult([makeSessionRow({phase: 'plan_approved'})]),
     );
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post(
         `/api/recipes/recipe-uuid-1/tweak-ai-sessions/${SESSION_ID}/approve-plan`,
       )
@@ -467,7 +467,7 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/approve-plan', () => {
       ]),
     );
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post(
         `/api/recipes/recipe-uuid-1/tweak-ai-sessions/${SESSION_ID}/approve-plan`,
       )
@@ -487,7 +487,7 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/approve-plan', () => {
       .mockResolvedValueOnce(makeQueryResult([]));
     anthropicCreateSpy.mockRejectedValueOnce(new Error('AI down'));
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post(
         `/api/recipes/recipe-uuid-1/tweak-ai-sessions/${SESSION_ID}/approve-plan`,
       )
@@ -522,7 +522,7 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/implement', () => {
         ]),
       );
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post(
         `/api/recipes/recipe-uuid-1/tweak-ai-sessions/${SESSION_ID}/implement`,
       )
@@ -537,7 +537,7 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/implement', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue(makeQueryResult([]));
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post(
         `/api/recipes/recipe-uuid-1/tweak-ai-sessions/${SESSION_ID}/implement`,
       )
@@ -550,7 +550,7 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/implement', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue(makeQueryResult([makeSessionRow()]));
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post(
         `/api/recipes/recipe-uuid-1/tweak-ai-sessions/${SESSION_ID}/implement`,
       )
@@ -567,7 +567,7 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/implement', () => {
       ]),
     );
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post(
         `/api/recipes/recipe-uuid-1/tweak-ai-sessions/${SESSION_ID}/implement`,
       )
@@ -586,7 +586,7 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/implement', () => {
       .mockResolvedValueOnce(makeQueryResult([makeVersionDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([]));
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post(
         `/api/recipes/recipe-uuid-1/tweak-ai-sessions/${SESSION_ID}/implement`,
       )
@@ -605,7 +605,7 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/implement', () => {
       .mockResolvedValueOnce(makeQueryResult([]));
     anthropicCreateSpy.mockRejectedValueOnce(new Error('AI down'));
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post(
         `/api/recipes/recipe-uuid-1/tweak-ai-sessions/${SESSION_ID}/implement`,
       )
@@ -621,7 +621,7 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/implement', () => {
       .mockResolvedValueOnce(makeQueryResult([approvedSession()]))
       .mockResolvedValueOnce(makeQueryResult([]));
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post(
         `/api/recipes/recipe-uuid-1/tweak-ai-sessions/${SESSION_ID}/implement`,
       )
@@ -664,7 +664,7 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/create-version', () => 
         makeQueryResult([makeSessionRow({phase: 'completed'})]),
       );
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post(
         `/api/recipes/recipe-uuid-1/tweak-ai-sessions/${SESSION_ID}/create-version`,
       )
@@ -715,7 +715,7 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/create-version', () => 
         makeQueryResult([makeSessionRow({phase: 'completed'})]),
       );
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post(
         `/api/recipes/recipe-uuid-1/tweak-ai-sessions/${SESSION_ID}/create-version`,
       )
@@ -751,7 +751,7 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/create-version', () => 
         makeQueryResult([makeSessionRow({phase: 'completed'})]),
       );
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post(
         `/api/recipes/recipe-uuid-1/tweak-ai-sessions/${SESSION_ID}/create-version`,
       )
@@ -764,7 +764,7 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/create-version', () => 
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue(makeQueryResult([]));
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post(
         `/api/recipes/recipe-uuid-1/tweak-ai-sessions/${SESSION_ID}/create-version`,
       )
@@ -777,7 +777,7 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/create-version', () => 
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue(makeQueryResult([makeSessionRow()]));
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post(
         `/api/recipes/recipe-uuid-1/tweak-ai-sessions/${SESSION_ID}/create-version`,
       )
@@ -792,7 +792,7 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/create-version', () => 
       .mockResolvedValueOnce(makeQueryResult([previewSession()]))
       .mockResolvedValueOnce(makeQueryResult([]));
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post(
         `/api/recipes/recipe-uuid-1/tweak-ai-sessions/${SESSION_ID}/create-version`,
       )
@@ -813,7 +813,7 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/create-version', () => 
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValue(mockQueryResultEmpty());
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post(
         `/api/recipes/recipe-uuid-1/tweak-ai-sessions/${SESSION_ID}/create-version`,
       )
@@ -831,7 +831,7 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/create-version', () => 
       .mockResolvedValueOnce(makeQueryResult([]));
 
     await expect(
-      request(app)
+      request(getApp())
         .post(
           `/api/recipes/recipe-uuid-1/tweak-ai-sessions/${SESSION_ID}/create-version`,
         )
@@ -852,7 +852,7 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/cancel', () => {
         makeQueryResult([makeSessionRow({phase: 'cancelled'})]),
       );
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post(`/api/recipes/recipe-uuid-1/tweak-ai-sessions/${SESSION_ID}/cancel`)
       .set('Authorization', 'Bearer valid-token');
 
@@ -870,7 +870,7 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/cancel', () => {
         makeQueryResult([{...preview, phase: 'cancelled'}]),
       );
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post(`/api/recipes/recipe-uuid-1/tweak-ai-sessions/${SESSION_ID}/cancel`)
       .set('Authorization', 'Bearer valid-token');
 
@@ -882,7 +882,7 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/cancel', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue(makeQueryResult([]));
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post(`/api/recipes/recipe-uuid-1/tweak-ai-sessions/${SESSION_ID}/cancel`)
       .set('Authorization', 'Bearer valid-token');
 
@@ -895,7 +895,7 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/cancel', () => {
       makeQueryResult([makeSessionRow({phase: 'completed'})]),
     );
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post(`/api/recipes/recipe-uuid-1/tweak-ai-sessions/${SESSION_ID}/cancel`)
       .set('Authorization', 'Bearer valid-token');
 
@@ -908,7 +908,7 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/cancel', () => {
       makeQueryResult([makeSessionRow({phase: 'cancelled'})]),
     );
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post(`/api/recipes/recipe-uuid-1/tweak-ai-sessions/${SESSION_ID}/cancel`)
       .set('Authorization', 'Bearer valid-token');
 
@@ -931,20 +931,20 @@ describe('tweak AI session full conversational flow', () => {
     nockAnthropicMessage(REFINED_REPLY);
     nockAnthropicMessage(IMPLEMENT_JSON);
 
-    const createRes = await request(app)
+    const createRes = await request(getApp())
       .post('/api/recipes/recipe-uuid-1/tweak-ai-sessions')
       .set('Authorization', 'Bearer valid-token')
       .send({prompt: PROMPT});
     expect(createRes.status).toBe(201);
 
     nockSupabaseGetUser('user-uuid-1');
-    const getRes = await request(app)
+    const getRes = await request(getApp())
       .get(`/api/recipes/recipe-uuid-1/tweak-ai-sessions/${SESSION_ID}`)
       .set('Authorization', 'Bearer valid-token');
     expect(getRes.status).toBe(200);
 
     nockSupabaseGetUser('user-uuid-1');
-    const messageRes = await request(app)
+    const messageRes = await request(getApp())
       .post(
         `/api/recipes/recipe-uuid-1/tweak-ai-sessions/${SESSION_ID}/messages`,
       )
@@ -953,7 +953,7 @@ describe('tweak AI session full conversational flow', () => {
     expect(messageRes.status).toBe(200);
 
     nockSupabaseGetUser('user-uuid-1');
-    const approveRes = await request(app)
+    const approveRes = await request(getApp())
       .post(
         `/api/recipes/recipe-uuid-1/tweak-ai-sessions/${SESSION_ID}/approve-plan`,
       )
@@ -1004,7 +1004,7 @@ describe('tweak AI session full conversational flow', () => {
     }) as typeof mockQuery);
 
     nockSupabaseGetUser('user-uuid-1');
-    const saveRes = await request(app)
+    const saveRes = await request(getApp())
       .post(
         `/api/recipes/recipe-uuid-1/tweak-ai-sessions/${SESSION_ID}/create-version`,
       )

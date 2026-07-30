@@ -1,14 +1,14 @@
 import nock from 'nock';
 import request from 'supertest';
 
-import {createApp} from '../../server.js';
 import {makeRecipeDetailRow} from '../../test/fixtures/recipeRow.js';
 import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {createMockQuery} from '../../test/mockQuery.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
+import {lazyTestApp} from '../../test/lazyTestApp.js';
 
 const mockQuery = createMockQuery();
-const app = createApp({query: mockQuery});
+const getApp = lazyTestApp({query: mockQuery});
 
 const recipeRow = makeRecipeDetailRow({
   user_id: 'owner-uuid',
@@ -48,7 +48,7 @@ describe('PUT /recipes/:id/rating', () => {
   });
 
   test('updates owner personal star rating', async () => {
-    const res = await request(app)
+    const res = await request(getApp())
       .put('/api/recipes/recipe-uuid-1/rating')
       .set('Authorization', 'Bearer valid-token')
       .send({stars: 5});
@@ -62,7 +62,7 @@ describe('PUT /recipes/:id/rating', () => {
 
   test('returns 404 when recipe is not readable', async () => {
     mockQuery.mockResolvedValue(makeQueryResult([]));
-    const res = await request(app)
+    const res = await request(getApp())
       .put('/api/recipes/missing-id/rating')
       .set('Authorization', 'Bearer valid-token')
       .send({stars: 5});
@@ -83,7 +83,7 @@ describe('PUT /recipes/:id/rating', () => {
       return Promise.resolve(makeQueryResult([]));
     }) as typeof mockQuery);
 
-    const res = await request(app)
+    const res = await request(getApp())
       .put('/api/recipes/recipe-uuid-1/rating')
       .set('Authorization', 'Bearer valid-token')
       .send({stars: 5});
@@ -92,7 +92,7 @@ describe('PUT /recipes/:id/rating', () => {
   });
 
   test('returns 400 for invalid stars', async () => {
-    const res = await request(app)
+    const res = await request(getApp())
       .put('/api/recipes/recipe-uuid-1/rating')
       .set('Authorization', 'Bearer valid-token')
       .send({stars: 6});
@@ -116,7 +116,7 @@ describe('PUT /recipes/:id/rating', () => {
       return Promise.resolve(makeQueryResult([recipeRow]));
     }) as typeof mockQuery);
 
-    const res = await request(app)
+    const res = await request(getApp())
       .put('/api/recipes/recipe-uuid-1/rating')
       .set('Authorization', 'Bearer valid-token')
       .send({stars: 4});
@@ -140,7 +140,7 @@ describe('DELETE /recipes/:id/rating', () => {
   });
 
   test('clears owner personal star rating', async () => {
-    const res = await request(app)
+    const res = await request(getApp())
       .delete('/api/recipes/recipe-uuid-1/rating')
       .set('Authorization', 'Bearer valid-token');
 
@@ -165,7 +165,7 @@ describe('DELETE /recipes/:id/rating', () => {
       return Promise.resolve(makeQueryResult([]));
     }) as typeof mockQuery);
 
-    const res = await request(app)
+    const res = await request(getApp())
       .delete('/api/recipes/recipe-uuid-1/rating')
       .set('Authorization', 'Bearer valid-token');
 
@@ -174,7 +174,7 @@ describe('DELETE /recipes/:id/rating', () => {
 
   test('returns 404 when recipe is not readable', async () => {
     mockQuery.mockResolvedValue(makeQueryResult([]));
-    const res = await request(app)
+    const res = await request(getApp())
       .delete('/api/recipes/missing-id/rating')
       .set('Authorization', 'Bearer valid-token');
     expect(res.status).toBe(404);
@@ -196,7 +196,7 @@ describe('DELETE /recipes/:id/rating', () => {
       return Promise.resolve(makeQueryResult([recipeRow]));
     }) as typeof mockQuery);
 
-    const res = await request(app)
+    const res = await request(getApp())
       .delete('/api/recipes/recipe-uuid-1/rating')
       .set('Authorization', 'Bearer valid-token');
 

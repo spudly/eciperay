@@ -1,15 +1,15 @@
 import request from 'supertest';
 
-import {createApp} from '../../server.js';
 import {makeIngredientInput} from '../../test/fixtures/ingredient.js';
 import {makeRecipeInput} from '../../test/fixtures/recipe.js';
 import {makeRecipeDetailRow} from '../../test/fixtures/recipeRow.js';
 import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {createMockQuery} from '../../test/mockQuery.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
+import {lazyTestApp} from '../../test/lazyTestApp.js';
 
 const mockQuery = createMockQuery();
-const app = createApp({query: mockQuery});
+const getApp = lazyTestApp({query: mockQuery});
 const TAG_ID = '11111111-1111-4111-8111-111111111111';
 
 const mockCreateFlow = () => {
@@ -23,7 +23,7 @@ describe('POST /recipes', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockCreateFlow();
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes')
       .set('Authorization', 'Bearer valid-token')
       .send(makeRecipeInput());
@@ -39,7 +39,7 @@ describe('POST /recipes', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockCreateFlow();
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes')
       .set('Authorization', 'Bearer valid-token')
       .send(
@@ -60,7 +60,7 @@ describe('POST /recipes', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockCreateFlow();
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes')
       .set('Authorization', 'Bearer valid-token')
       .send(makeRecipeInput({tagIds: [TAG_ID]}));
@@ -70,7 +70,7 @@ describe('POST /recipes', () => {
 
   test('returns 400 when body is invalid', async () => {
     nockSupabaseGetUser('user-uuid-1');
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes')
       .set('Authorization', 'Bearer valid-token')
       .send({title: ''});
@@ -78,7 +78,9 @@ describe('POST /recipes', () => {
   });
 
   test('returns 401 without auth token', async () => {
-    const res = await request(app).post('/api/recipes').send(makeRecipeInput());
+    const res = await request(getApp())
+      .post('/api/recipes')
+      .send(makeRecipeInput());
     expect(res.status).toBe(401);
   });
 });

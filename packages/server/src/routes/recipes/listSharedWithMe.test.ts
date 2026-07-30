@@ -1,15 +1,15 @@
 import request from 'supertest';
 
-import {createApp} from '../../server.js';
 import {makeRecipeDetailRow} from '../../test/fixtures/recipeRow.js';
 import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {createMockQuery} from '../../test/mockQuery.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
+import {lazyTestApp} from '../../test/lazyTestApp.js';
 
 import {LIST_SHARED_WITH_ME_SQL} from './sqlConstants.js';
 
 const mockQuery = createMockQuery();
-const app = createApp({query: mockQuery});
+const getApp = lazyTestApp({query: mockQuery});
 
 describe('GET /recipes/shared-with-me', () => {
   test('returns paginated recipes shared with the signed-in user', async () => {
@@ -24,7 +24,7 @@ describe('GET /recipes/shared-with-me', () => {
       ]),
     );
 
-    const res = await request(app)
+    const res = await request(getApp())
       .get('/api/recipes/shared-with-me?limit=25&offset=5')
       .set('Authorization', 'Bearer valid-token');
 
@@ -39,7 +39,7 @@ describe('GET /recipes/shared-with-me', () => {
   });
 
   test('requires authentication', async () => {
-    const res = await request(app).get('/api/recipes/shared-with-me');
+    const res = await request(getApp()).get('/api/recipes/shared-with-me');
     expect(res.status).toBe(401);
   });
 });

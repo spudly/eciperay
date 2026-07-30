@@ -1,14 +1,14 @@
 import nock from 'nock';
 import request from 'supertest';
 
-import {createApp} from '../../server.js';
 import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {makeRecipeDetailRow} from '../../test/fixtures/recipeRow.js';
 import {createMockQuery} from '../../test/mockQuery.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
+import {lazyTestApp} from '../../test/lazyTestApp.js';
 
 const mockQuery = createMockQuery();
-const app = createApp({query: mockQuery});
+const getApp = lazyTestApp({query: mockQuery});
 
 const recipeRow = makeRecipeDetailRow({
   user_id: 'owner-uuid',
@@ -42,7 +42,7 @@ describe('DELETE /recipes/:id/comments/:commentId', () => {
       return Promise.resolve(makeQueryResult([]));
     }) as typeof mockQuery);
 
-    const res = await request(app)
+    const res = await request(getApp())
       .delete('/api/recipes/recipe-uuid-1/comments/comment-uuid-1')
       .set('Authorization', 'Bearer valid-token');
 
@@ -71,7 +71,7 @@ describe('DELETE /recipes/:id/comments/:commentId', () => {
       return Promise.resolve(makeQueryResult([]));
     }) as typeof mockQuery);
 
-    const res = await request(app)
+    const res = await request(getApp())
       .delete('/api/recipes/recipe-uuid-1/comments/comment-uuid-1')
       .set('Authorization', 'Bearer valid-token');
 
@@ -92,7 +92,7 @@ describe('DELETE /recipes/:id/comments/:commentId', () => {
       return Promise.resolve(makeQueryResult([]));
     }) as typeof mockQuery);
 
-    const res = await request(app)
+    const res = await request(getApp())
       .delete('/api/recipes/recipe-uuid-1/comments/missing-comment')
       .set('Authorization', 'Bearer valid-token');
 
@@ -101,7 +101,7 @@ describe('DELETE /recipes/:id/comments/:commentId', () => {
 
   test('returns 404 when recipe is not readable', async () => {
     mockQuery.mockResolvedValue(makeQueryResult([]));
-    const res = await request(app)
+    const res = await request(getApp())
       .delete('/api/recipes/missing-id/comments/comment-uuid-1')
       .set('Authorization', 'Bearer valid-token');
     expect(res.status).toBe(404);

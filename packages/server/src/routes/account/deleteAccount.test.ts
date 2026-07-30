@@ -4,6 +4,7 @@ import request from 'supertest';
 import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {createMockQuery} from '../../test/mockQuery.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
+import {lazyTestApp} from '../../test/lazyTestApp.js';
 
 const mockDeleteAuthUser = jest.fn<() => Promise<void>>();
 
@@ -11,10 +12,8 @@ jest.unstable_mockModule('../../lib/deleteAuthUser.js', () => ({
   deleteAuthUser: mockDeleteAuthUser,
 }));
 
-const {createApp} = await import('../../server.js');
-
 const mockQuery = createMockQuery();
-const app = createApp({query: mockQuery});
+const getApp = lazyTestApp({query: mockQuery});
 
 describe('DELETE /account', () => {
   beforeEach(() => {
@@ -27,7 +26,7 @@ describe('DELETE /account', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValueOnce({...makeQueryResult([{}]), rowCount: 1});
 
-    const res = await request(app)
+    const res = await request(getApp())
       .delete('/api/account')
       .set('Authorization', 'Bearer valid-token');
 
@@ -39,7 +38,7 @@ describe('DELETE /account', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValueOnce({...makeQueryResult([]), rowCount: 0});
 
-    const res = await request(app)
+    const res = await request(getApp())
       .delete('/api/account')
       .set('Authorization', 'Bearer valid-token');
 
@@ -52,7 +51,7 @@ describe('DELETE /account', () => {
     mockQuery.mockResolvedValueOnce({...makeQueryResult([{}]), rowCount: 1});
     mockDeleteAuthUser.mockRejectedValueOnce(new Error('Auth delete failed'));
 
-    const res = await request(app)
+    const res = await request(getApp())
       .delete('/api/account')
       .set('Authorization', 'Bearer valid-token');
 
@@ -65,7 +64,7 @@ describe('DELETE /account', () => {
     mockQuery.mockResolvedValueOnce({...makeQueryResult([{}]), rowCount: 1});
     mockDeleteAuthUser.mockRejectedValueOnce('nope');
 
-    const res = await request(app)
+    const res = await request(getApp())
       .delete('/api/account')
       .set('Authorization', 'Bearer valid-token');
 
@@ -76,7 +75,7 @@ describe('DELETE /account', () => {
   });
 
   test('returns 401 without authorization', async () => {
-    const res = await request(app).delete('/api/account');
+    const res = await request(getApp()).delete('/api/account');
     expect(res.status).toBe(401);
   });
 });

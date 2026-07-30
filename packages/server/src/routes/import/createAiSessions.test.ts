@@ -1,6 +1,5 @@
 import request from 'supertest';
 
-import {createApp} from '../../server.js';
 import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {createMockQuery} from '../../test/mockQuery.js';
 import {
@@ -8,9 +7,10 @@ import {
   nockAnthropicMessage,
 } from '../../test/mockNockAnthropic.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
+import {lazyTestApp} from '../../test/lazyTestApp.js';
 
 const mockQuery = createMockQuery();
-const app = createApp({query: mockQuery});
+const getApp = lazyTestApp({query: mockQuery});
 
 const SESSION_ID = 'session-uuid-1';
 const PROMPT = 'simple chocolate chip cookies for 12';
@@ -75,7 +75,7 @@ describe('POST /recipes/import/ai/sessions', () => {
     nockSupabaseGetUser('user-uuid-1');
     nockAnthropicMessage(PLAN_TEXT);
     mockQuery.mockResolvedValueOnce(makeQueryResult([makeSessionRow()]));
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/import/ai/sessions')
       .set('Authorization', 'Bearer valid-token')
       .send({prompt: PROMPT});
@@ -86,7 +86,7 @@ describe('POST /recipes/import/ai/sessions', () => {
 
   test('returns 400 when prompt is too short', async () => {
     nockSupabaseGetUser('user-uuid-1');
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/import/ai/sessions')
       .set('Authorization', 'Bearer valid-token')
       .send({prompt: 'pasta'});
@@ -94,7 +94,7 @@ describe('POST /recipes/import/ai/sessions', () => {
   });
 
   test('returns 401 without auth token', async () => {
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/import/ai/sessions')
       .send({prompt: PROMPT});
     expect(res.status).toBe(401);
@@ -128,7 +128,7 @@ describe('POST /recipes/import/ai/sessions/:sessionId/approve-plan', () => {
       }
       return Promise.resolve(makeQueryResult([]));
     }) as typeof mockQuery);
-    const res = await request(app)
+    const res = await request(getApp())
       .post(`/api/recipes/import/ai/sessions/${SESSION_ID}/approve-plan`)
       .set('Authorization', 'Bearer valid-token')
       .send();
@@ -150,7 +150,7 @@ describe('POST /recipes/import/ai/sessions/:sessionId/create-recipe', () => {
         makeSessionRow({phase: 'planning', proposed_recipe: null}),
       ]),
     );
-    const res = await request(app)
+    const res = await request(getApp())
       .post(`/api/recipes/import/ai/sessions/${SESSION_ID}/create-recipe`)
       .set('Authorization', 'Bearer valid-token')
       .send();
@@ -167,7 +167,7 @@ describe('GET /recipes/import/ai/sessions/:sessionId', () => {
   test('returns session when found', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValueOnce(makeQueryResult([makeSessionRow()]));
-    const res = await request(app)
+    const res = await request(getApp())
       .get(`/api/recipes/import/ai/sessions/${SESSION_ID}`)
       .set('Authorization', 'Bearer valid-token');
     expect(res.status).toBe(200);
@@ -177,7 +177,7 @@ describe('GET /recipes/import/ai/sessions/:sessionId', () => {
   test('returns 404 when session not found', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValueOnce(makeQueryResult([]));
-    const res = await request(app)
+    const res = await request(getApp())
       .get('/api/recipes/import/ai/sessions/missing')
       .set('Authorization', 'Bearer valid-token');
     expect(res.status).toBe(404);
@@ -211,7 +211,7 @@ describe('POST /recipes/import/ai/sessions/:sessionId/messages', () => {
       }
       return Promise.resolve(makeQueryResult([]));
     }) as typeof mockQuery);
-    const res = await request(app)
+    const res = await request(getApp())
       .post(`/api/recipes/import/ai/sessions/${SESSION_ID}/messages`)
       .set('Authorization', 'Bearer valid-token')
       .send({content: FOLLOW_UP});
@@ -224,7 +224,7 @@ describe('POST /recipes/import/ai/sessions/:sessionId/messages', () => {
     mockQuery.mockResolvedValueOnce(
       makeQueryResult([makeSessionRow({phase: 'preview_ready'})]),
     );
-    const res = await request(app)
+    const res = await request(getApp())
       .post(`/api/recipes/import/ai/sessions/${SESSION_ID}/messages`)
       .set('Authorization', 'Bearer valid-token')
       .send({content: FOLLOW_UP});
@@ -250,7 +250,7 @@ describe('POST /recipes/import/ai/sessions/:sessionId/cancel', () => {
       }
       return Promise.resolve(makeQueryResult([]));
     }) as typeof mockQuery);
-    const res = await request(app)
+    const res = await request(getApp())
       .post(`/api/recipes/import/ai/sessions/${SESSION_ID}/cancel`)
       .set('Authorization', 'Bearer valid-token')
       .send();
@@ -263,7 +263,7 @@ describe('POST /recipes/import/ai/sessions/:sessionId/cancel', () => {
     mockQuery.mockResolvedValueOnce(
       makeQueryResult([makeSessionRow({phase: 'completed'})]),
     );
-    const res = await request(app)
+    const res = await request(getApp())
       .post(`/api/recipes/import/ai/sessions/${SESSION_ID}/cancel`)
       .set('Authorization', 'Bearer valid-token')
       .send();
@@ -280,7 +280,7 @@ describe('create AI session error paths', () => {
   test('returns 502 when planning fails', async () => {
     nockSupabaseGetUser('user-uuid-1');
     anthropicCreateSpy.mockRejectedValueOnce(new Error('AI down'));
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/import/ai/sessions')
       .set('Authorization', 'Bearer valid-token')
       .send({prompt: PROMPT});
@@ -289,7 +289,7 @@ describe('create AI session error paths', () => {
 
   test('returns 400 when message content is too short', async () => {
     nockSupabaseGetUser('user-uuid-1');
-    const res = await request(app)
+    const res = await request(getApp())
       .post(`/api/recipes/import/ai/sessions/${SESSION_ID}/messages`)
       .set('Authorization', 'Bearer valid-token')
       .send({content: ''});
@@ -299,7 +299,7 @@ describe('create AI session error paths', () => {
   test('returns 404 when sending message to missing session', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValueOnce(makeQueryResult([]));
-    const res = await request(app)
+    const res = await request(getApp())
       .post(`/api/recipes/import/ai/sessions/${SESSION_ID}/messages`)
       .set('Authorization', 'Bearer valid-token')
       .send({content: FOLLOW_UP});
@@ -309,7 +309,7 @@ describe('create AI session error paths', () => {
   test('returns 404 when approving missing session', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValueOnce(makeQueryResult([]));
-    const res = await request(app)
+    const res = await request(getApp())
       .post(`/api/recipes/import/ai/sessions/${SESSION_ID}/approve-plan`)
       .set('Authorization', 'Bearer valid-token')
       .send();
@@ -321,7 +321,7 @@ describe('create AI session error paths', () => {
     mockQuery.mockResolvedValueOnce(
       makeQueryResult([makeSessionRow({phase: 'preview_ready'})]),
     );
-    const res = await request(app)
+    const res = await request(getApp())
       .post(`/api/recipes/import/ai/sessions/${SESSION_ID}/approve-plan`)
       .set('Authorization', 'Bearer valid-token')
       .send();
@@ -335,7 +335,7 @@ describe('create AI session error paths', () => {
         makeSessionRow({messages: [{role: 'user', content: PROMPT}]}),
       ]),
     );
-    const res = await request(app)
+    const res = await request(getApp())
       .post(`/api/recipes/import/ai/sessions/${SESSION_ID}/approve-plan`)
       .set('Authorization', 'Bearer valid-token')
       .send();
@@ -346,7 +346,7 @@ describe('create AI session error paths', () => {
     nockSupabaseGetUser('user-uuid-1');
     anthropicCreateSpy.mockRejectedValueOnce(new Error('AI down'));
     mockQuery.mockResolvedValueOnce(makeQueryResult([makeSessionRow()]));
-    const res = await request(app)
+    const res = await request(getApp())
       .post(`/api/recipes/import/ai/sessions/${SESSION_ID}/messages`)
       .set('Authorization', 'Bearer valid-token')
       .send({content: FOLLOW_UP});
@@ -356,7 +356,7 @@ describe('create AI session error paths', () => {
   test('returns 404 when create-recipe session is missing', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValueOnce(makeQueryResult([]));
-    const res = await request(app)
+    const res = await request(getApp())
       .post(`/api/recipes/import/ai/sessions/${SESSION_ID}/create-recipe`)
       .set('Authorization', 'Bearer valid-token')
       .send();
@@ -372,7 +372,7 @@ describe('create AI session error paths', () => {
       }
       return Promise.resolve(makeQueryResult([]));
     }) as typeof mockQuery);
-    const res = await request(app)
+    const res = await request(getApp())
       .post(`/api/recipes/import/ai/sessions/${SESSION_ID}/approve-plan`)
       .set('Authorization', 'Bearer valid-token')
       .send();
@@ -383,7 +383,7 @@ describe('create AI session error paths', () => {
   test('returns 404 when cancelling missing session', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValueOnce(makeQueryResult([]));
-    const res = await request(app)
+    const res = await request(getApp())
       .post(`/api/recipes/import/ai/sessions/${SESSION_ID}/cancel`)
       .set('Authorization', 'Bearer valid-token')
       .send();

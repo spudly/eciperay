@@ -6,6 +6,7 @@ import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {createMockQuery} from '../../test/mockQuery.js';
 import {nockAnthropicMessage} from '../../test/mockNockAnthropic.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
+import {lazyTestApp} from '../../test/lazyTestApp.js';
 
 const resolveImportedImageUrl = jest.fn<() => Promise<string | null>>();
 
@@ -15,10 +16,8 @@ jest.unstable_mockModule('../../lib/uploadRecipeImageServer.js', () => ({
   fetchImageAsBase64: jest.fn(),
 }));
 
-const {createApp} = await import('../../server.js');
-
 const mockQuery = createMockQuery();
-const app = createApp({query: mockQuery});
+const getApp = lazyTestApp({query: mockQuery});
 
 const CLAUDE_RESPONSE = JSON.stringify({
   title: 'Pasted Pasta',
@@ -54,7 +53,7 @@ describe('POST /recipes/import/text', () => {
     nockSupabaseGetUser('user-uuid-1');
     nockAnthropicMessage(CLAUDE_RESPONSE);
     mockSaveFlow();
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/import/text')
       .set('Authorization', 'Bearer valid-token')
       .send({text: 'Pasta\n\nIngredients:\n200g pasta\n\nBoil pasta.'});
@@ -76,7 +75,7 @@ describe('POST /recipes/import/text', () => {
           makeRecipeDetailRow({title: 'Pasted Pasta', image_url: bucketUrl}),
         ]),
       );
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/import/text')
       .set('Authorization', 'Bearer valid-token')
       .send({
@@ -95,7 +94,7 @@ describe('POST /recipes/import/text', () => {
     nockSupabaseGetUser('user-uuid-1');
     nockAnthropicMessage(CLAUDE_RESPONSE);
     mockSaveFlow();
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/import/text')
       .set('Authorization', 'Bearer valid-token')
       .send({
@@ -107,7 +106,7 @@ describe('POST /recipes/import/text', () => {
 
   test('returns 400 when text is empty', async () => {
     nockSupabaseGetUser('user-uuid-1');
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/import/text')
       .set('Authorization', 'Bearer valid-token')
       .send({text: ''});
@@ -118,7 +117,7 @@ describe('POST /recipes/import/text', () => {
     nockSupabaseGetUser('user-uuid-1');
     nockAnthropicMessage(CLAUDE_RESPONSE);
     mockSaveFlow();
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/import/text')
       .set('Authorization', 'Bearer valid-token')
       .send({text: `<div>${'<span>Pasta</span>'.repeat(20_000)}</div>`});
@@ -127,7 +126,7 @@ describe('POST /recipes/import/text', () => {
 
   test('returns 400 when HTML contains no recipe text', async () => {
     nockSupabaseGetUser('user-uuid-1');
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/import/text')
       .set('Authorization', 'Bearer valid-token')
       .send({text: '<div><img src="https://example.com/photo.jpg" /></div>'});
@@ -152,7 +151,7 @@ describe('POST /recipes/import/text', () => {
           makeRecipeDetailRow({title: 'Pasted Pasta', image_url: bucketUrl}),
         ]),
       );
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/import/text')
       .set('Authorization', 'Bearer valid-token')
       .send({text: `<h1>Pasta</h1><img src="${dataUrl}" /><p>Boil pasta.</p>`});
@@ -167,7 +166,7 @@ describe('POST /recipes/import/text', () => {
 
   test('returns 400 when stripped text exceeds the plain-text limit', async () => {
     nockSupabaseGetUser('user-uuid-1');
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/import/text')
       .set('Authorization', 'Bearer valid-token')
       .send({text: 'a'.repeat(100_001)});
@@ -176,7 +175,7 @@ describe('POST /recipes/import/text', () => {
   });
 
   test('returns 401 without auth token', async () => {
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/import/text')
       .send({text: 'Some recipe'});
     expect(res.status).toBe(401);
@@ -187,7 +186,7 @@ describe('POST /recipes/import/text', () => {
     nockAnthropicMessage(CLAUDE_RESPONSE);
     mockQuery.mockReset();
     mockQuery.mockRejectedValue(new Error('db down'));
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/import/text')
       .set('Authorization', 'Bearer valid-token')
       .send({text: 'Pasta recipe'});
