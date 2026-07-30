@@ -216,6 +216,7 @@ export {
   RECIPE_STATUS_FILTER_LABEL,
   RECIPE_STATUS_LABELS,
   RECIPE_STATUS_OPTIONS,
+  normalizeRecipeStatus,
 } from './recipeStatusCopy.js';
 export {
   DISCOVER_EMPTY_MESSAGE,

@@ -9,7 +9,12 @@ import {
   makeRecipeVersionSummary,
   VERSION_ID,
 } from '../__tests__/fixtures/recipe';
-import {makeStackProps, renderWithProviders} from '../__tests__/testUtils';
+import {
+  makeStackProps,
+  makeQueryClient,
+  flushQueryClient,
+  renderWithProviders,
+} from '../__tests__/testUtils';
 import {api} from '../lib/api';
 import type {RecipesStackParamList} from '../navigation/types';
 
@@ -33,6 +38,7 @@ const stackProps = makeStackProps<RecipesStackParamList, 'RecipeDetail'>(
 
 describe('RecipeDetailScreen', () => {
   beforeEach(() => {
+    jest.clearAllMocks();
     mockGet.mockResolvedValue(makeRecipeDetail());
     mockDelete.mockImplementation(async () => {});
     mockListVersions.mockResolvedValue([makeRecipeVersionSummary()]);
@@ -121,17 +127,32 @@ describe('RecipeDetailScreen', () => {
         isEditable: true,
       }),
     );
+    const routeParams: RecipesStackParamList['RecipeDetail'] = {
+      recipeId: 'recipe-uuid-1',
+      versionId: draftId,
+    };
+    const mockSetParams = jest.fn(
+      (updates: Partial<RecipesStackParamList['RecipeDetail']>) => {
+        Object.assign(routeParams, updates);
+      },
+    );
+    const client = makeQueryClient();
     const draftProps = makeStackProps<RecipesStackParamList, 'RecipeDetail'>(
       'RecipeDetail',
-      {recipeId: 'recipe-uuid-1', versionId: draftId},
-      {navigate: mockNavigate, setParams: jest.fn()},
+      routeParams,
+      {navigate: mockNavigate, setParams: mockSetParams},
     );
     const {findByText} = renderWithProviders(
       <RecipeDetailScreen {...draftProps} />,
+      client,
     );
-    await waitFor(() => {
-      expect(mockGetVersion).toHaveBeenCalledWith('recipe-uuid-1', draftId);
-    });
+    await flushQueryClient(client);
+    await waitFor(
+      () => {
+        expect(mockGetVersion).toHaveBeenCalledWith('recipe-uuid-1', draftId);
+      },
+      {timeout: 5000},
+    );
     fireEvent.press(await findByText('Edit draft'));
     expect(mockNavigate).toHaveBeenCalledWith('EditVersion', {
       recipeId: 'recipe-uuid-1',

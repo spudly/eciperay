@@ -13,4 +13,9 @@ describe('RecipeStatusBadge', () => {
     render(<RecipeStatusBadge status={status} />);
     expect(screen.getByText(label)).toBeTruthy();
   });
+
+  test('falls back to idea for unknown status', () => {
+    render(<RecipeStatusBadge status={undefined} />);
+    expect(screen.getByText('Idea')).toBeTruthy();
+  });
 });
