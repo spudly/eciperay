@@ -1,15 +1,15 @@
 import request from 'supertest';
 
-import {createApp} from '../../server.js';
 import {makeRecipeDetailRow} from '../../test/fixtures/recipeRow.js';
 import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {createMockQuery} from '../../test/mockQuery.js';
 import {hashShareToken} from '../../lib/shareToken.js';
 import {INSERT_SHARE_GRANT_SQL} from '../../lib/shareGrant.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
+import {lazyTestApp} from '../../test/lazyTestApp.js';
 
 const mockQuery = createMockQuery();
-const app = createApp({query: mockQuery});
+const getApp = lazyTestApp({query: mockQuery});
 
 const shareToken = 'public-share-token';
 const shareTokenHash = hashShareToken(shareToken);
@@ -33,7 +33,9 @@ describe('GET /public/recipes/:id', () => {
   test('returns public recipe without authentication', async () => {
     mockPublicRecipeQueries();
 
-    const res = await request(app).get('/api/public/recipes/recipe-uuid-1');
+    const res = await request(getApp()).get(
+      '/api/public/recipes/recipe-uuid-1',
+    );
 
     expect(res.status).toBe(200);
     expect(res.body.recipe.id).toBe('recipe-uuid-1');
@@ -51,7 +53,7 @@ describe('GET /public/recipes/:id', () => {
       makeRecipeDetailRow({visibility: 'public', slug: 'pasta'}),
     );
 
-    const res = await request(app).get(
+    const res = await request(getApp()).get(
       '/api/public/recipes/recipe-uuid-1/old-slug',
     );
 
@@ -65,7 +67,9 @@ describe('GET /public/recipes/:id', () => {
       makeQueryResult([makeRecipeDetailRow({visibility: 'private'})]),
     );
 
-    const res = await request(app).get('/api/public/recipes/recipe-uuid-1');
+    const res = await request(getApp()).get(
+      '/api/public/recipes/recipe-uuid-1',
+    );
 
     expect(res.status).toBe(404);
     expect(res.body.error).toMatch(/not found/i);
@@ -74,7 +78,7 @@ describe('GET /public/recipes/:id', () => {
   test('returns 404 when recipe does not exist', async () => {
     mockQuery.mockResolvedValue(makeQueryResult([]));
 
-    const res = await request(app).get('/api/public/recipes/missing-id');
+    const res = await request(getApp()).get('/api/public/recipes/missing-id');
 
     expect(res.status).toBe(404);
   });
@@ -89,7 +93,9 @@ describe('GET /public/recipes/:id', () => {
       ]),
     );
 
-    const res = await request(app).get('/api/public/recipes/recipe-uuid-1');
+    const res = await request(getApp()).get(
+      '/api/public/recipes/recipe-uuid-1',
+    );
 
     expect(res.status).toBe(403);
     expect(res.body.error).toMatch(/denied/i);
@@ -105,7 +111,7 @@ describe('GET /public/recipes/:id', () => {
       ]),
     );
 
-    const res = await request(app).get(
+    const res = await request(getApp()).get(
       '/api/public/recipes/recipe-uuid-1?t=bad-token',
     );
 
@@ -121,7 +127,7 @@ describe('GET /public/recipes/:id', () => {
       }),
     );
 
-    const res = await request(app).get(
+    const res = await request(getApp()).get(
       `/api/public/recipes/recipe-uuid-1/secret-pasta?t=${shareToken}`,
     );
 
@@ -154,7 +160,7 @@ describe('GET /public/recipes/:id', () => {
       );
     }) as typeof mockQuery);
 
-    const res = await request(app)
+    const res = await request(getApp())
       .get('/api/public/recipes/recipe-uuid-1/pasta')
       .set('Authorization', 'Bearer valid-token');
 
@@ -186,7 +192,7 @@ describe('GET /public/recipes/:id', () => {
       );
     }) as typeof mockQuery);
 
-    const res = await request(app)
+    const res = await request(getApp())
       .get('/api/public/recipes/recipe-uuid-1/test-recipe')
       .set('Authorization', 'Bearer valid-token');
 

@@ -7,6 +7,7 @@ import {makeVersionDetailRow} from '../../test/fixtures/versionRow.js';
 import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {createMockQuery} from '../../test/mockQuery.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
+import {lazyTestApp} from '../../test/lazyTestApp.js';
 
 class RecipeNotFoundError extends Error {
   constructor() {
@@ -33,10 +34,8 @@ jest.unstable_mockModule('../../lib/saveRecipeFromInput.js', () => ({
   RecipeNotFoundError,
 }));
 
-const {createApp} = await import('../../server.js');
-
 const mockQuery = createMockQuery();
-const app = createApp({query: mockQuery});
+const getApp = lazyTestApp({query: mockQuery});
 
 describe('PUT /recipes/:id save not found', () => {
   test('returns 404 when saveRecipeFromInput throws RecipeNotFoundError', async () => {
@@ -45,7 +44,7 @@ describe('PUT /recipes/:id save not found', () => {
       .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([makeVersionDetailRow()]));
 
-    const res = await request(app)
+    const res = await request(getApp())
       .put('/api/recipes/recipe-uuid-1')
       .set('Authorization', 'Bearer valid-token')
       .send(makeRecipeInput());

@@ -13,7 +13,7 @@ disable-model-invocation: true
 
 | Package           | Test runner                           | Key libraries                           |
 | ----------------- | ------------------------------------- | --------------------------------------- |
-| `packages/server` | Jest 30 + ts-jest (ESM)               | supertest, nock                         |
+| `packages/server` | Jest 30 + @swc/jest (ESM)             | supertest, nock, lazyTestApp            |
 | `packages/client` | Jest 30 + ts-jest (ESM)               | `@testing-library/react` (AuthProvider) |
 | `packages/web`    | Vitest 3 + Vite config                | `@testing-library/react`, MSW, `jsdom`  |
 | `packages/app`    | Jest 29 + `@react-native/jest-preset` | `@testing-library/react-native`         |

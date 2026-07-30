@@ -1,13 +1,13 @@
 import request from 'supertest';
 
-import {createApp} from '../../server.js';
 import {hashShareToken} from '../../lib/shareToken.js';
 import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {makeRecipeDetailRow} from '../../test/fixtures/recipeRow.js';
 import {createMockQuery} from '../../test/mockQuery.js';
+import {lazyTestApp} from '../../test/lazyTestApp.js';
 
 const mockQuery = createMockQuery();
-const app = createApp({query: mockQuery});
+const getApp = lazyTestApp({query: mockQuery});
 
 const shareToken = 'public-share-token';
 const shareTokenHash = hashShareToken(shareToken);
@@ -40,7 +40,7 @@ describe('GET /public/recipes/:id/comments', () => {
       );
     }) as typeof mockQuery);
 
-    const res = await request(app).get(
+    const res = await request(getApp()).get(
       '/api/public/recipes/recipe-uuid-1/comments',
     );
 
@@ -56,7 +56,7 @@ describe('GET /public/recipes/:id/comments', () => {
       makeQueryResult([makeRecipeDetailRow({visibility: 'private'})]),
     );
 
-    const res = await request(app).get(
+    const res = await request(getApp()).get(
       '/api/public/recipes/recipe-uuid-1/comments',
     );
 
@@ -73,7 +73,7 @@ describe('GET /public/recipes/:id/comments', () => {
       ]),
     );
 
-    const res = await request(app).get(
+    const res = await request(getApp()).get(
       '/api/public/recipes/recipe-uuid-1/comments',
     );
 
@@ -83,7 +83,7 @@ describe('GET /public/recipes/:id/comments', () => {
   test('returns 404 when recipe does not exist', async () => {
     mockQuery.mockResolvedValue(makeQueryResult([]));
 
-    const res = await request(app).get(
+    const res = await request(getApp()).get(
       '/api/public/recipes/missing-id/comments',
     );
 

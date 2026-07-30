@@ -7,15 +7,14 @@ import {makeVersionDetailRow} from '../../test/fixtures/versionRow.js';
 import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {createMockQuery} from '../../test/mockQuery.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
+import {lazyTestApp} from '../../test/lazyTestApp.js';
 
 jest.unstable_mockModule('../../lib/saveRecipeMetadata.js', () => ({
   saveRecipeMetadata: async () => makeRecipeDetail({title: 'Metadata Updated'}),
 }));
 
-const {createApp} = await import('../../server.js');
-
 const mockQuery = createMockQuery();
-const app = createApp({query: mockQuery});
+const getApp = lazyTestApp({query: mockQuery});
 
 describe('PUT /recipes/:id metadata save', () => {
   test('returns 200 for metadata-only update on content-locked version', async () => {
@@ -24,7 +23,7 @@ describe('PUT /recipes/:id metadata save', () => {
       .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([makeVersionDetailRow()]));
 
-    const res = await request(app)
+    const res = await request(getApp())
       .put('/api/recipes/recipe-uuid-1')
       .set('Authorization', 'Bearer valid-token')
       .send(makeRecipeInput({title: 'Metadata Updated'}));

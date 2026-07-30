@@ -1,15 +1,15 @@
 import nock from 'nock';
 import request from 'supertest';
 
-import {createApp} from '../../server.js';
 import {makeRecipeDetailRow} from '../../test/fixtures/recipeRow.js';
 import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {createMockQuery} from '../../test/mockQuery.js';
 import {nockAnthropicMessage} from '../../test/mockNockAnthropic.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
+import {lazyTestApp} from '../../test/lazyTestApp.js';
 
 const mockQuery = createMockQuery();
-const app = createApp({query: mockQuery});
+const getApp = lazyTestApp({query: mockQuery});
 
 const RECIPE_JSON = JSON.stringify({
   title: 'Scanned Cake',
@@ -43,7 +43,7 @@ describe('POST /recipes/import/image', () => {
           makeRecipeDetailRow({title: 'Scanned Cake', servings: 8}),
         ]),
       );
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/import/image')
       .set('Authorization', 'Bearer valid-token')
       .send({imageBase64: 'base64encodedimage=='});
@@ -54,7 +54,7 @@ describe('POST /recipes/import/image', () => {
 
   test('returns 400 when imageBase64 is empty', async () => {
     nockSupabaseGetUser('user-uuid-1');
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/import/image')
       .set('Authorization', 'Bearer valid-token')
       .send({imageBase64: ''});
@@ -62,7 +62,7 @@ describe('POST /recipes/import/image', () => {
   });
 
   test('returns 401 without auth token', async () => {
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/import/image')
       .send({imageBase64: 'x'});
     expect(res.status).toBe(401);
@@ -81,7 +81,7 @@ describe('POST /recipes/import/image', () => {
         stop_reason: 'tool_use',
         usage: {input_tokens: 10, output_tokens: 5},
       });
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/import/image')
       .set('Authorization', 'Bearer valid-token')
       .send({imageBase64: 'abc123'});

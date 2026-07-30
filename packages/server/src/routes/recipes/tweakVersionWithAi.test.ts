@@ -1,15 +1,16 @@
 import request from 'supertest';
 
-import {createApp} from '../../server.js';
+import {makeCookLogRow} from '../../test/fixtures/cookLogRow.js';
 import {makeRecipeDetailRow} from '../../test/fixtures/recipeRow.js';
 import {makeVersionDetailRow} from '../../test/fixtures/versionRow.js';
 import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {createMockQuery} from '../../test/mockQuery.js';
 import {nockAnthropicMessage} from '../../test/mockNockAnthropic.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
+import {lazyTestApp} from '../../test/lazyTestApp.js';
 
 const mockQuery = createMockQuery();
-const app = createApp({query: mockQuery});
+const getApp = lazyTestApp({query: mockQuery});
 
 const CLAUDE_RESPONSE = JSON.stringify({
   title: 'Improved Pasta',
@@ -37,7 +38,7 @@ describe('POST /recipes/:id/versions/ai', () => {
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([makeVersionDetailRow()]))
-      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([makeCookLogRow()]))
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([{max: 1}]))
       .mockResolvedValueOnce(makeQueryResult([{id: 'version-uuid-2'}]))
@@ -56,7 +57,7 @@ describe('POST /recipes/:id/versions/ai', () => {
         ]),
       );
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/recipe-uuid-1/versions/ai')
       .set('Authorization', 'Bearer valid-token')
       .send({prompt: 'make this pasta creamier and easier to follow'});
@@ -70,7 +71,7 @@ describe('POST /recipes/:id/versions/ai', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue(makeQueryResult([]));
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/missing-id/versions/ai')
       .set('Authorization', 'Bearer valid-token')
       .send({prompt: 'make this pasta creamier and easier to follow'});
@@ -84,7 +85,7 @@ describe('POST /recipes/:id/versions/ai', () => {
       makeQueryResult([makeRecipeDetailRow({status: 'perfected'})]),
     );
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/recipe-uuid-1/versions/ai')
       .set('Authorization', 'Bearer valid-token')
       .send({prompt: 'make this pasta creamier and easier to follow'});
@@ -94,7 +95,7 @@ describe('POST /recipes/:id/versions/ai', () => {
 
   test('returns 400 when prompt is too short', async () => {
     nockSupabaseGetUser('user-uuid-1');
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/recipe-uuid-1/versions/ai')
       .set('Authorization', 'Bearer valid-token')
       .send({prompt: 'short'});
@@ -102,7 +103,7 @@ describe('POST /recipes/:id/versions/ai', () => {
   });
 
   test('returns 401 without auth token', async () => {
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/recipe-uuid-1/versions/ai')
       .send({prompt: 'make this pasta creamier and easier to follow'});
     expect(res.status).toBe(401);
@@ -114,7 +115,7 @@ describe('POST /recipes/:id/versions/ai', () => {
       .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([]));
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/recipe-uuid-1/versions/ai')
       .set('Authorization', 'Bearer valid-token')
       .send({prompt: 'make this pasta creamier and easier to follow'});
@@ -132,7 +133,7 @@ describe('POST /recipes/:id/versions/ai', () => {
       .mockResolvedValueOnce(makeQueryResult([]));
 
     await expect(
-      request(app)
+      request(getApp())
         .post('/api/recipes/recipe-uuid-1/versions/ai')
         .set('Authorization', 'Bearer valid-token')
         .send({prompt: 'make this pasta creamier and easier to follow'}),
@@ -155,7 +156,7 @@ describe('POST /recipes/:id/versions/ai', () => {
       .mockResolvedValueOnce(makeQueryResult([{id: 'recipe-uuid-1'}]))
       .mockResolvedValue(makeQueryResult([]));
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/recipe-uuid-1/versions/ai')
       .set('Authorization', 'Bearer valid-token')
       .send({prompt: 'make this pasta creamier and easier to follow'});
@@ -175,7 +176,7 @@ describe('POST /recipes/:id/versions/ai', () => {
       .mockResolvedValueOnce(makeQueryResult([]));
 
     await expect(
-      request(app)
+      request(getApp())
         .post('/api/recipes/recipe-uuid-1/versions/ai')
         .set('Authorization', 'Bearer valid-token')
         .send({prompt: 'make this pasta creamier and easier to follow'}),

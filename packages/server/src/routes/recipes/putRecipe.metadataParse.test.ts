@@ -8,10 +8,10 @@ import {makeVersionDetailRow} from '../../test/fixtures/versionRow.js';
 import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {createMockQuery} from '../../test/mockQuery.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
-import {createApp} from '../../server.js';
+import {lazyTestApp} from '../../test/lazyTestApp.js';
 
 const mockQuery = createMockQuery();
-const app = createApp({query: mockQuery});
+const getApp = lazyTestApp({query: mockQuery});
 
 describe('PUT /recipes/:id metadata parse guard', () => {
   afterEach(() => {
@@ -30,7 +30,7 @@ describe('PUT /recipes/:id metadata parse guard', () => {
       .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([makeVersionDetailRow()]));
 
-    const res = await request(app)
+    const res = await request(getApp())
       .put('/api/recipes/recipe-uuid-1')
       .set('Authorization', 'Bearer valid-token')
       .send(makeRecipeInput());

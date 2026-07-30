@@ -1,9 +1,9 @@
 import request from 'supertest';
 
-import {createApp} from '../../server.js';
 import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {createMockQuery} from '../../test/mockQuery.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
+import {lazyTestApp} from '../../test/lazyTestApp.js';
 
 import {
   DEFAULT_RECIPE_LIST_LIMIT,
@@ -13,7 +13,7 @@ import {
 } from './listRecipes.js';
 
 const mockQuery = createMockQuery();
-const app = createApp({query: mockQuery});
+const getApp = lazyTestApp({query: mockQuery});
 
 describe('parseListParams', () => {
   test('defaults limit, offset, and search', () => {
@@ -83,7 +83,7 @@ describe('GET /recipes', () => {
         },
       ]),
     );
-    const res = await request(app)
+    const res = await request(getApp())
       .get('/api/recipes')
       .set('Authorization', 'Bearer valid-token');
     expect(res.status).toBe(200);
@@ -105,7 +105,7 @@ describe('GET /recipes', () => {
   test('passes search to the query', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue(makeQueryResult([]));
-    const res = await request(app)
+    const res = await request(getApp())
       .get('/api/recipes')
       .query({search: 'pasta'})
       .set('Authorization', 'Bearer valid-token');
@@ -122,7 +122,7 @@ describe('GET /recipes', () => {
   test('passes status filter to the query', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue(makeQueryResult([]));
-    const res = await request(app)
+    const res = await request(getApp())
       .get('/api/recipes')
       .query({status: 'evolving'})
       .set('Authorization', 'Bearer valid-token');
@@ -138,7 +138,7 @@ describe('GET /recipes', () => {
 
   test('returns 400 for invalid status filter', async () => {
     nockSupabaseGetUser('user-uuid-1');
-    const res = await request(app)
+    const res = await request(getApp())
       .get('/api/recipes')
       .query({status: 'draft'})
       .set('Authorization', 'Bearer valid-token');
@@ -149,7 +149,7 @@ describe('GET /recipes', () => {
   test('passes limit and offset query params', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue(makeQueryResult([]));
-    const res = await request(app)
+    const res = await request(getApp())
       .get('/api/recipes?limit=500&offset=40')
       .set('Authorization', 'Bearer valid-token');
     expect(res.status).toBe(200);
@@ -165,7 +165,7 @@ describe('GET /recipes', () => {
   test('caps limit at 500', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue(makeQueryResult([]));
-    await request(app)
+    await request(getApp())
       .get('/api/recipes?limit=9999')
       .set('Authorization', 'Bearer valid-token');
     expect(mockQuery).toHaveBeenCalledWith(expect.any(String), [
@@ -178,7 +178,7 @@ describe('GET /recipes', () => {
   });
 
   test('returns 401 without auth token', async () => {
-    const res = await request(app).get('/api/recipes');
+    const res = await request(getApp()).get('/api/recipes');
     expect(res.status).toBe(401);
   });
 
@@ -186,7 +186,7 @@ describe('GET /recipes', () => {
     const {nockSupabaseGetUserError} =
       await import('../../test/mockNockSupabase.js');
     nockSupabaseGetUserError();
-    const res = await request(app)
+    const res = await request(getApp())
       .get('/api/recipes')
       .set('Authorization', 'Bearer bad-token');
     expect(res.status).toBe(401);

@@ -10,6 +10,11 @@ ignores:
   - patch-package # Applied via root postinstall script, not imported in source
   - prettier-plugin-jsdoc # Loaded by Prettier via .prettierrc.json plugins field, not imported in source
   - ts-jest # Jest transformer configured in workspace jest configs, not directly imported
+  - '@swc/core' # Jest transformer for packages/server, configured in jest.config.cjs
+  - '@swc/jest' # Jest transformer for packages/server, configured in jest.config.cjs
+  - istanbul-lib-coverage # Used by packages/server/scripts/mergeCoverage.ts
+  - istanbul-lib-report # Used by packages/server/scripts/mergeCoverage.ts
+  - istanbul-reports # Used by packages/server/scripts/mergeCoverage.ts
   - tsx # CLI for running TypeScript scripts (validateNodeVersion, findUnusedEslintRules)
   - turbo # Invoked via npm scripts only (test, test:coverage), not imported in source
 specials:

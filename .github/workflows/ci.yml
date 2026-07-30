@@ -162,6 +162,8 @@ jobs:
       fail-fast: false
       matrix:
         package: ${{ fromJson(needs.setup.outputs.test-packages) }}
+        exclude:
+          - package: packages/server
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -175,3 +177,57 @@ jobs:
         run: npm run test:coverage --workspace=${{ matrix.package }}
         env:
           CI: true
+
+  test-server:
+    name: test (packages/server, shard ${{ matrix.shard }}/3)
+    needs: install
+    runs-on: ubuntu-latest-4-cores
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup
+        uses: ./.github/actions/ci-setup
+        with:
+          skip-install-on-cache-hit: 'true'
+
+      - name: Test shard with coverage
+        run: npm run test:coverage:ci --workspace=packages/server
+        env:
+          CI: true
+          JEST_SHARD_INDEX: ${{ matrix.shard }}
+          JEST_SHARD_TOTAL: 3
+
+      - name: Upload shard coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-coverage-shard-${{ matrix.shard }}
+          path: packages/server/coverage/shard-${{ matrix.shard }}/
+          if-no-files-found: error
+
+  test-server-coverage:
+    name: test (packages/server, merge coverage)
+    needs: test-server
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup
+        uses: ./.github/actions/ci-setup
+        with:
+          skip-install-on-cache-hit: 'true'
+
+      - name: Download shard coverage
+        uses: actions/download-artifact@v4
+        with:
+          pattern: server-coverage-shard-*
+          path: packages/server/coverage
+          merge-multiple: false
+
+      - name: Merge coverage and verify thresholds
+        run: npm run test:coverage:merge --workspace=packages/server

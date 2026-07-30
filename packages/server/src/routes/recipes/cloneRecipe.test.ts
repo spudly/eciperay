@@ -1,6 +1,5 @@
 import request from 'supertest';
 
-import {createApp} from '../../server.js';
 import {FILTER_CLONABLE_TAG_IDS_SQL} from '../../lib/cloneRecipe.js';
 import {HAS_SHARE_GRANT_SQL} from '../../lib/shareGrant.js';
 import {hashShareToken} from '../../lib/shareToken.js';
@@ -8,9 +7,10 @@ import {makeRecipeDetailRow} from '../../test/fixtures/recipeRow.js';
 import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {createMockQuery} from '../../test/mockQuery.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
+import {lazyTestApp} from '../../test/lazyTestApp.js';
 
 const mockQuery = createMockQuery();
-const app = createApp({query: mockQuery});
+const getApp = lazyTestApp({query: mockQuery});
 
 const shareToken = 'clone-share-token';
 const shareTokenHash = hashShareToken(shareToken);
@@ -52,7 +52,7 @@ describe('POST /recipes/:id/clone', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockCloneFlow();
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/recipe-uuid-1/clone')
       .set('Authorization', 'Bearer valid-token')
       .send({});
@@ -77,7 +77,7 @@ describe('POST /recipes/:id/clone', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockCloneFlow({visibility: 'unlisted', share_token_hash: shareTokenHash});
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/recipe-uuid-1/clone')
       .set('Authorization', 'Bearer valid-token')
       .send({shareToken});
@@ -100,7 +100,7 @@ describe('POST /recipes/:id/clone', () => {
       )
       .mockResolvedValueOnce(makeQueryResult([]));
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/recipe-uuid-1/clone')
       .set('Authorization', 'Bearer valid-token')
       .send({});
@@ -113,7 +113,7 @@ describe('POST /recipes/:id/clone', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValueOnce(makeQueryResult([]));
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/missing-id/clone')
       .set('Authorization', 'Bearer valid-token')
       .send({});
@@ -127,7 +127,7 @@ describe('POST /recipes/:id/clone', () => {
       makeQueryResult([makeRecipeDetailRow({visibility: 'private'})]),
     );
 
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/recipe-uuid-1/clone')
       .set('Authorization', 'Bearer valid-token')
       .send({});
@@ -136,7 +136,7 @@ describe('POST /recipes/:id/clone', () => {
   });
 
   test('requires authentication', async () => {
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/recipe-uuid-1/clone')
       .send({});
     expect(res.status).toBe(401);
@@ -144,7 +144,7 @@ describe('POST /recipes/:id/clone', () => {
 
   test('returns 400 for invalid body', async () => {
     nockSupabaseGetUser('user-uuid-1');
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/recipe-uuid-1/clone')
       .set('Authorization', 'Bearer valid-token')
       .send({shareToken: ''});
@@ -156,7 +156,7 @@ describe('POST /recipes/:id/clone', () => {
     mockQuery.mockImplementation(() => {
       throw new Error('database unavailable');
     });
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/recipe-uuid-1/clone')
       .set('Authorization', 'Bearer valid-token')
       .send({});
