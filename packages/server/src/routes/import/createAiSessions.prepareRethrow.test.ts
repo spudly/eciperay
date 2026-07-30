@@ -8,14 +8,13 @@ import {
   nockAnthropicMessage,
 } from '../../test/mockNockAnthropic.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
+import {lazyTestApp} from '../../test/lazyTestApp.js';
 
 jest.unstable_mockModule('../../lib/prepareImportedRecipeInput.js', () => ({
   prepareImportedRecipeInput: async () => {
     throw new Error('prepare failed');
   },
 }));
-
-const {createApp} = await import('../../server.js');
 
 const SESSION_ID = 'session-uuid-1';
 const PROMPT = 'simple chocolate chip cookies for 12';
@@ -56,7 +55,7 @@ const IMPLEMENT_JSON = JSON.stringify({
 });
 
 const mockQuery = createMockQuery();
-const app = createApp({query: mockQuery});
+const getApp = lazyTestApp({query: mockQuery});
 
 describe('create AI session implement prepare rethrow', () => {
   beforeEach(() => {
@@ -73,7 +72,7 @@ describe('create AI session implement prepare rethrow', () => {
       }
       return Promise.resolve(makeQueryResult([]));
     }) as typeof mockQuery);
-    const res = await request(app)
+    const res = await request(getApp())
       .post(`/api/recipes/import/ai/sessions/${SESSION_ID}/approve-plan`)
       .set('Authorization', 'Bearer valid-token')
       .send();

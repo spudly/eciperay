@@ -1,12 +1,12 @@
 import request from 'supertest';
 
-import {createApp} from '../../server.js';
 import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {createMockQuery} from '../../test/mockQuery.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
+import {lazyTestApp} from '../../test/lazyTestApp.js';
 
 const mockQuery = createMockQuery();
-const app = createApp({query: mockQuery});
+const getApp = lazyTestApp({query: mockQuery});
 
 describe('GET /account/export', () => {
   beforeEach(() => {
@@ -30,7 +30,7 @@ describe('GET /account/export', () => {
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([]));
 
-    const res = await request(app)
+    const res = await request(getApp())
       .get('/api/account/export')
       .set('Authorization', 'Bearer valid-token');
 
@@ -95,7 +95,7 @@ describe('GET /account/export', () => {
         ]),
       );
 
-    const res = await request(app)
+    const res = await request(getApp())
       .get('/api/account/export')
       .set('Authorization', 'Bearer valid-token');
 
@@ -131,7 +131,7 @@ describe('GET /account/export', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValueOnce(makeQueryResult([]));
 
-    const res = await request(app)
+    const res = await request(getApp())
       .get('/api/account/export')
       .set('Authorization', 'Bearer valid-token');
 
@@ -140,7 +140,7 @@ describe('GET /account/export', () => {
   });
 
   test('returns 401 without authorization', async () => {
-    const res = await request(app).get('/api/account/export');
+    const res = await request(getApp()).get('/api/account/export');
     expect(res.status).toBe(401);
   });
 });

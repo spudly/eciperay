@@ -1,12 +1,12 @@
 import request from 'supertest';
 
-import {createApp} from '../../server.js';
 import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {createMockQuery} from '../../test/mockQuery.js';
 import {LIST_PUBLIC_RECIPES_SITEMAP_SQL} from '../recipes/sqlConstants.js';
+import {lazyTestApp} from '../../test/lazyTestApp.js';
 
 const mockQuery = createMockQuery();
-const app = createApp({query: mockQuery, serveWeb: false});
+const getApp = lazyTestApp({query: mockQuery, serveWeb: false});
 
 describe('attachSeoRoutes', () => {
   beforeEach(() => {
@@ -14,7 +14,7 @@ describe('attachSeoRoutes', () => {
   });
 
   test('GET /robots.txt allows public routes and references sitemap', async () => {
-    const res = await request(app).get('/robots.txt');
+    const res = await request(getApp()).get('/robots.txt');
     expect(res.status).toBe(200);
     expect(res.type).toMatch(/text\/plain/);
     expect(res.text).toContain('Allow: /recipe/');
@@ -32,7 +32,7 @@ describe('attachSeoRoutes', () => {
       ]),
     );
 
-    const res = await request(app).get('/sitemap.xml');
+    const res = await request(getApp()).get('/sitemap.xml');
     expect(res.status).toBe(200);
     expect(res.type).toMatch(/xml/);
     expect(res.text).toContain(

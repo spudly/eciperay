@@ -1,12 +1,12 @@
 import request from 'supertest';
 
-import {createApp} from '../../server.js';
 import {createMockQuery} from '../../test/mockQuery.js';
 import {nockAnthropicMessage} from '../../test/mockNockAnthropic.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
+import {lazyTestApp} from '../../test/lazyTestApp.js';
 
 const mockQuery = createMockQuery();
-const app = createApp({query: mockQuery});
+const getApp = lazyTestApp({query: mockQuery});
 
 const SUBS_RESPONSE = JSON.stringify([
   {
@@ -19,7 +19,7 @@ describe('GET /recipes/:id/ai/substitutions', () => {
   test('returns substitutions array', async () => {
     nockSupabaseGetUser('user-uuid-1');
     nockAnthropicMessage(SUBS_RESPONSE);
-    const res = await request(app)
+    const res = await request(getApp())
       .get('/api/recipes/recipe-uuid-1/ai/substitutions?missing=butter')
       .set('Authorization', 'Bearer valid-token');
     expect(res.status).toBe(200);
@@ -29,7 +29,7 @@ describe('GET /recipes/:id/ai/substitutions', () => {
 
   test('returns 400 when missing param is absent', async () => {
     nockSupabaseGetUser('user-uuid-1');
-    const res = await request(app)
+    const res = await request(getApp())
       .get('/api/recipes/recipe-uuid-1/ai/substitutions')
       .set('Authorization', 'Bearer valid-token');
     expect(res.status).toBe(400);
@@ -39,7 +39,7 @@ describe('GET /recipes/:id/ai/substitutions', () => {
   });
 
   test('returns 401 without auth token', async () => {
-    const res = await request(app).get(
+    const res = await request(getApp()).get(
       '/api/recipes/r/ai/substitutions?missing=x',
     );
     expect(res.status).toBe(401);

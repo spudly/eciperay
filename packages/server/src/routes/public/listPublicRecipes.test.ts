@@ -1,6 +1,5 @@
 import request from 'supertest';
 
-import {createApp} from '../../server.js';
 import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {createMockQuery} from '../../test/mockQuery.js';
 import {
@@ -8,11 +7,12 @@ import {
   MAX_RECIPE_LIST_LIMIT,
 } from '../recipes/listRecipes.js';
 import {LIST_PUBLIC_RECIPES_SQL} from '../recipes/sqlConstants.js';
+import {lazyTestApp} from '../../test/lazyTestApp.js';
 
 import {parseDiscoverySort} from './listPublicRecipes.js';
 
 const mockQuery = createMockQuery();
-const app = createApp({query: mockQuery});
+const getApp = lazyTestApp({query: mockQuery});
 
 describe('parseDiscoverySort', () => {
   test('defaults to newest', () => {
@@ -54,7 +54,7 @@ describe('GET /public/recipes', () => {
       ]),
     );
 
-    const res = await request(app).get('/api/public/recipes');
+    const res = await request(getApp()).get('/api/public/recipes');
 
     expect(res.status).toBe(200);
     expect(res.body).toHaveLength(1);
@@ -82,7 +82,7 @@ describe('GET /public/recipes', () => {
   test('passes search, pagination, and sort query params', async () => {
     mockQuery.mockResolvedValue(makeQueryResult([]));
 
-    const res = await request(app).get(
+    const res = await request(getApp()).get(
       '/api/public/recipes?search=pasta&limit=25&offset=10&sort=rating',
     );
 
@@ -96,7 +96,7 @@ describe('GET /public/recipes', () => {
 
   test('caps limit at 500', async () => {
     mockQuery.mockResolvedValue(makeQueryResult([]));
-    await request(app).get('/api/public/recipes?limit=9999');
+    await request(getApp()).get('/api/public/recipes?limit=9999');
     expect(mockQuery).toHaveBeenCalledWith(LIST_PUBLIC_RECIPES_SQL, [
       MAX_RECIPE_LIST_LIMIT,
       0,
@@ -109,7 +109,7 @@ describe('GET /public/recipes', () => {
   });
 
   test('returns 400 for invalid sort', async () => {
-    const res = await request(app).get('/api/public/recipes?sort=popular');
+    const res = await request(getApp()).get('/api/public/recipes?sort=popular');
     expect(res.status).toBe(400);
     expect(res.body.error).toMatch(/sort/i);
     expect(mockQuery).not.toHaveBeenCalled();

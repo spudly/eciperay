@@ -3,15 +3,15 @@ import request from 'supertest';
 
 import {nockAnthropicMessage} from '../../test/mockNockAnthropic.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
-import {createApp} from '../../server.js';
+import {lazyTestApp} from '../../test/lazyTestApp.js';
 
-const app = createApp();
+const getApp = lazyTestApp();
 
 describe('POST /recipes/ai/generate-description', () => {
   test('returns generated description', async () => {
     nockSupabaseGetUser('user-uuid-1');
     nockAnthropicMessage('A hearty pasta with fresh basil and garlic.');
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/ai/generate-description')
       .set('Authorization', 'Bearer valid-token')
       .send({
@@ -29,7 +29,7 @@ describe('POST /recipes/ai/generate-description', () => {
 
   test('returns 400 for invalid body', async () => {
     nockSupabaseGetUser('user-uuid-1');
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/ai/generate-description')
       .set('Authorization', 'Bearer valid-token')
       .send({title: ''});
@@ -37,7 +37,7 @@ describe('POST /recipes/ai/generate-description', () => {
   });
 
   test('returns 401 without auth token', async () => {
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/ai/generate-description')
       .send({title: 'Pasta'});
     expect(res.status).toBe(401);
@@ -49,7 +49,7 @@ describe('POST /recipes/ai/generate-description', () => {
     jest
       .spyOn(anthropic.messages, 'create')
       .mockRejectedValueOnce(new Error('Claude unavailable'));
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/ai/generate-description')
       .set('Authorization', 'Bearer valid-token')
       .send({title: 'Pasta'});
@@ -61,7 +61,7 @@ describe('POST /recipes/ai/generate-description', () => {
     nockSupabaseGetUser('user-uuid-1');
     const {anthropic} = await import('../../lib/anthropic.js');
     jest.spyOn(anthropic.messages, 'create').mockRejectedValueOnce('broken');
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/ai/generate-description')
       .set('Authorization', 'Bearer valid-token')
       .send({title: 'Pasta'});

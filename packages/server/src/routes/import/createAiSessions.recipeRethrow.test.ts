@@ -4,6 +4,7 @@ import request from 'supertest';
 import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {createMockQuery} from '../../test/mockQuery.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
+import {lazyTestApp} from '../../test/lazyTestApp.js';
 
 jest.unstable_mockModule('../../lib/saveRecipeFromInput.js', () => ({
   saveNewRecipeFromInput: async () => {
@@ -15,11 +16,9 @@ jest.unstable_mockModule('../../lib/saveRecipeFromInput.js', () => ({
   RecipeNotFoundError: class RecipeNotFoundError extends Error {},
 }));
 
-const {createApp} = await import('../../server.js');
-
 const SESSION_ID = 'session-uuid-1';
 const mockQuery = createMockQuery();
-const app = createApp({query: mockQuery});
+const getApp = lazyTestApp({query: mockQuery});
 
 const sessionRow = {
   id: SESSION_ID,
@@ -42,7 +41,7 @@ describe('POST /recipes/import/ai/sessions/:sessionId/create-recipe rethrow', ()
   test('propagates unexpected save errors', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValueOnce(makeQueryResult([sessionRow]));
-    const res = await request(app)
+    const res = await request(getApp())
       .post(`/api/recipes/import/ai/sessions/${SESSION_ID}/create-recipe`)
       .set('Authorization', 'Bearer valid-token')
       .send();

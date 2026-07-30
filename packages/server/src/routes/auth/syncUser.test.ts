@@ -1,17 +1,17 @@
 import nock from 'nock';
 import request from 'supertest';
 
-import {createApp} from '../../server.js';
 import {makeUser} from '../../test/fixtures/user.js';
 import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {createMockQuery} from '../../test/mockQuery.js';
+import {lazyTestApp} from '../../test/lazyTestApp.js';
 import {
   nockSupabaseGetUser,
   nockSupabaseGetUserError,
 } from '../../test/mockNockSupabase.js';
 
 const mockQuery = createMockQuery();
-const app = createApp({query: mockQuery});
+const getApp = lazyTestApp({query: mockQuery});
 
 describe('POST /auth/sync', () => {
   beforeEach(() => {
@@ -20,7 +20,7 @@ describe('POST /auth/sync', () => {
 
   test('returns 200 and upserts user with valid token and body', async () => {
     nockSupabaseGetUser('user-uuid-1');
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/auth/sync')
       .set('Authorization', 'Bearer valid-token')
       .send({displayName: 'Test User'});
@@ -29,14 +29,14 @@ describe('POST /auth/sync', () => {
   });
 
   test('returns 401 when Authorization header is missing', async () => {
-    const res = await request(app).post('/api/auth/sync').send({});
+    const res = await request(getApp()).post('/api/auth/sync').send({});
     expect(res.status).toBe(401);
     expect(res.body).toMatchObject({error: 'Missing authorization token'});
   });
 
   test('returns 401 when token is invalid', async () => {
     nockSupabaseGetUserError();
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/auth/sync')
       .set('Authorization', 'Bearer bad-token')
       .send({});
@@ -46,7 +46,7 @@ describe('POST /auth/sync', () => {
 
   test('returns 200 when displayName is omitted (uses null fallback)', async () => {
     nockSupabaseGetUser('user-uuid-1');
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/auth/sync')
       .set('Authorization', 'Bearer valid-token')
       .send({});
@@ -55,7 +55,7 @@ describe('POST /auth/sync', () => {
 
   test('returns 400 when body fails Zod validation', async () => {
     nockSupabaseGetUser('user-uuid-1');
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/auth/sync')
       .set('Authorization', 'Bearer valid-token')
       .send({displayName: 'x'.repeat(101)});
@@ -67,7 +67,7 @@ describe('POST /auth/sync', () => {
     const supabaseUrl =
       process.env['SUPABASE_URL'] ?? 'http://supabase-test.local';
     nock(supabaseUrl).get('/auth/v1/user').reply(200, {id: 'user-uuid-1'});
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/auth/sync')
       .set('Authorization', 'Bearer valid-token')
       .send({});
@@ -78,7 +78,7 @@ describe('POST /auth/sync', () => {
   test('returns 500 when user upsert fails', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockRejectedValue(new Error('database unavailable'));
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/auth/sync')
       .set('Authorization', 'Bearer valid-token')
       .send({displayName: 'Test User'});

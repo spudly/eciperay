@@ -1,15 +1,15 @@
 import nock from 'nock';
 import request from 'supertest';
 
-import {createApp} from '../../server.js';
 import {makeRecipeDetailRow} from '../../test/fixtures/recipeRow.js';
 import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {createMockQuery} from '../../test/mockQuery.js';
 import {nockAnthropicMessage} from '../../test/mockNockAnthropic.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
+import {lazyTestApp} from '../../test/lazyTestApp.js';
 
 const mockQuery = createMockQuery();
-const app = createApp({query: mockQuery});
+const getApp = lazyTestApp({query: mockQuery});
 
 const SCHEMA_ORG_HTML = `<html><head>
 <script type="application/ld+json">
@@ -55,7 +55,7 @@ describe('POST /recipes/import/url', () => {
     nockSupabaseGetUser('user-uuid-1');
     nock('https://recipe.example.com').get('/').reply(200, SCHEMA_ORG_HTML);
     mockSaveFlow();
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/import/url')
       .set('Authorization', 'Bearer valid-token')
       .send({url: 'https://recipe.example.com/'});
@@ -75,7 +75,7 @@ describe('POST /recipes/import/url', () => {
       .mockResolvedValue(
         makeQueryResult([makeRecipeDetailRow({title: 'AI Parsed Pasta'})]),
       );
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/import/url')
       .set('Authorization', 'Bearer valid-token')
       .send({url: 'https://recipe.example.com/plain'});
@@ -85,7 +85,7 @@ describe('POST /recipes/import/url', () => {
 
   test('returns 400 when URL is invalid', async () => {
     nockSupabaseGetUser('user-uuid-1');
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/import/url')
       .set('Authorization', 'Bearer valid-token')
       .send({url: 'not-a-url'});
@@ -93,7 +93,7 @@ describe('POST /recipes/import/url', () => {
   });
 
   test('returns 401 without auth token', async () => {
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/import/url')
       .send({url: 'https://x.com'});
     expect(res.status).toBe(401);
@@ -102,7 +102,7 @@ describe('POST /recipes/import/url', () => {
   test('returns 500 when fetched page returns a non-ok status', async () => {
     nockSupabaseGetUser('user-uuid-1');
     nock('https://recipe.example.com').get('/bad').reply(404, 'Not Found');
-    const res = await request(app)
+    const res = await request(getApp())
       .post('/api/recipes/import/url')
       .set('Authorization', 'Bearer valid-token')
       .send({url: 'https://recipe.example.com/bad'});

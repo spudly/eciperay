@@ -24,15 +24,17 @@ user explicitly says to skip it.
 
 The `CI` workflow (`.github/workflows/ci.yml`) runs on PRs to `master`:
 
-| Job                | What it runs                        |
-| ------------------ | ----------------------------------- |
-| `validate`         | `npm run validate:node-version`     |
-| `typecheck`        | `npm run typecheck`                 |
-| `lint (<package>)` | ESLint per workspace package        |
-| `lint-rules`       | `npm run lint:unused-rules`         |
-| `depcheck`         | `npm run depcheck`                  |
-| `workflows`        | `npm run workflows:lint`            |
-| `test (<package>)` | `npm run test:coverage` per package |
+| Job                                      | What it runs                                        |
+| ---------------------------------------- | --------------------------------------------------- |
+| `validate`                               | `npm run validate:node-version`                     |
+| `typecheck`                              | `npm run typecheck`                                 |
+| `lint (<package>)`                       | ESLint per workspace package                        |
+| `lint-rules`                             | `npm run lint:unused-rules`                         |
+| `depcheck`                               | `npm run depcheck`                                  |
+| `workflows`                              | `npm run workflows:lint`                            |
+| `test (<package>)`                       | `npm run test:coverage` per package (except server) |
+| `test (packages/server, shard N/3)`      | Sharded server tests on 4-core runners              |
+| `test (packages/server, merge coverage)` | Merges shard coverage and checks thresholds         |
 
 Deploy workflows (`fly-deploy`, `android-deploy`, `release`) are separate and
 usually not PR blockers unless the PR touches them.

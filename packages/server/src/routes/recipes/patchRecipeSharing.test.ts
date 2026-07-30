@@ -1,13 +1,13 @@
 import request from 'supertest';
 
-import {createApp} from '../../server.js';
 import {makeRecipeDetailRow} from '../../test/fixtures/recipeRow.js';
 import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {createMockQuery} from '../../test/mockQuery.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
+import {lazyTestApp} from '../../test/lazyTestApp.js';
 
 const mockQuery = createMockQuery();
-const app = createApp({query: mockQuery});
+const getApp = lazyTestApp({query: mockQuery});
 
 const sharingRow = {
   id: 'recipe-uuid-1',
@@ -34,7 +34,7 @@ describe('PATCH /recipes/:id/sharing', () => {
         ]),
       );
 
-    const res = await request(app)
+    const res = await request(getApp())
       .patch('/api/recipes/recipe-uuid-1/sharing')
       .set('Authorization', 'Bearer valid-token')
       .send({visibility: 'unlisted', publishingConsent: true});
@@ -48,7 +48,7 @@ describe('PATCH /recipes/:id/sharing', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue(makeQueryResult([sharingRow]));
 
-    const res = await request(app)
+    const res = await request(getApp())
       .patch('/api/recipes/recipe-uuid-1/sharing')
       .set('Authorization', 'Bearer valid-token')
       .send({visibility: 'public'});
@@ -61,7 +61,7 @@ describe('PATCH /recipes/:id/sharing', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue(makeQueryResult([]));
 
-    const res = await request(app)
+    const res = await request(getApp())
       .patch('/api/recipes/missing-id/sharing')
       .set('Authorization', 'Bearer valid-token')
       .send({visibility: 'private'});
@@ -71,7 +71,7 @@ describe('PATCH /recipes/:id/sharing', () => {
 
   test('returns 400 for invalid visibility body', async () => {
     nockSupabaseGetUser('user-uuid-1');
-    const res = await request(app)
+    const res = await request(getApp())
       .patch('/api/recipes/recipe-uuid-1/sharing')
       .set('Authorization', 'Bearer valid-token')
       .send({visibility: 'secret'});
@@ -96,7 +96,7 @@ describe('PATCH /recipes/:id/sharing', () => {
         ]),
       );
 
-    const res = await request(app)
+    const res = await request(getApp())
       .patch('/api/recipes/recipe-uuid-1/sharing')
       .set('Authorization', 'Bearer valid-token')
       .send({visibility: 'public'});
@@ -127,7 +127,7 @@ describe('PATCH /recipes/:id/sharing', () => {
         ]),
       );
 
-    const res = await request(app)
+    const res = await request(getApp())
       .patch('/api/recipes/recipe-uuid-1/sharing')
       .set('Authorization', 'Bearer valid-token')
       .send({visibility: 'unlisted'});
@@ -142,7 +142,7 @@ describe('PATCH /recipes/:id/sharing', () => {
       .mockResolvedValueOnce(makeQueryResult([sharingRow]))
       .mockResolvedValueOnce({...makeQueryResult([]), rowCount: 0});
 
-    const res = await request(app)
+    const res = await request(getApp())
       .patch('/api/recipes/recipe-uuid-1/sharing')
       .set('Authorization', 'Bearer valid-token')
       .send({visibility: 'private'});
@@ -160,7 +160,7 @@ describe('PATCH /recipes/:id/sharing', () => {
       })
       .mockResolvedValue(makeQueryResult([]));
 
-    const res = await request(app)
+    const res = await request(getApp())
       .patch('/api/recipes/recipe-uuid-1/sharing')
       .set('Authorization', 'Bearer valid-token')
       .send({visibility: 'private'});
