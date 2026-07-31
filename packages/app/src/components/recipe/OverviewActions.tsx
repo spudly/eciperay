@@ -1,4 +1,11 @@
-import {invalidateRecipeQueries, truncateChangeSummary} from '@eciperay/client';
+/* eslint-disable max-lines -- recipe overview actions with version lifecycle controls */
+import {
+  invalidateRecipeQueries,
+  makeRecipeDetail,
+  makeRecipeVersionSummary,
+  truncateChangeSummary,
+  type ShowcaseDemoRenderer,
+} from '@eciperay/client';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
 import type {RecipeDetail, RecipeVersionSummary} from '@eciperay/types';
 import clsx from 'clsx';
@@ -143,3 +150,27 @@ export const OverviewActions = ({
     </>
   );
 };
+
+if (__DEV__) {
+  const overviewActionsDemo: ShowcaseDemoRenderer = ({Frame}) => {
+    const recipe = makeRecipeDetail();
+    return (
+      <Frame>
+        <OverviewActions
+          recipe={recipe}
+          versions={[makeRecipeVersionSummary()]}
+          onActionMessage={() => {
+            void 0;
+          }}
+          onTweakAi={() => {
+            void 0;
+          }}
+          onViewVersion={() => {
+            void 0;
+          }}
+        />
+      </Frame>
+    );
+  };
+  OverviewActions.demo = overviewActionsDemo;
+}

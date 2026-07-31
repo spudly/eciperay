@@ -1,6 +1,6 @@
 import {HOME_TITLE, LANDING_HERO_TITLE} from '@eciperay/client';
-import {screen} from '@testing-library/react';
-import {vi} from 'vitest';
+import {act, screen} from '@testing-library/react';
+import {afterEach, beforeEach, vi} from 'vitest';
 
 import {renderWithProviders} from '../test/testUtils.js';
 
@@ -14,10 +14,24 @@ vi.mock('@eciperay/client', async importOriginal => {
 });
 
 describe('HomeEntry', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   test('shows loading state while auth resolves', async () => {
     mockUseAuth.mockReturnValue({session: null, isLoading: true});
     await renderWithProviders(<HomeEntry />, {withAuth: false});
-    expect(screen.getByText('Loading…')).toBeInTheDocument();
+    expect(screen.queryByRole('status')).toBeNull();
+
+    act(() => {
+      vi.advanceTimersByTime(100);
+    });
+
+    expect(screen.getByRole('status')).toBeInTheDocument();
   });
 
   test('shows marketing landing page when logged out', async () => {

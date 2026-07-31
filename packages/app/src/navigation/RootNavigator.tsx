@@ -2,9 +2,9 @@ import {useAuth} from '@eciperay/client';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import React from 'react';
-import {ActivityIndicator, View} from 'react-native';
+import {View} from 'react-native';
 
-import {useDelayedTrue} from '../hooks/useDelayedTrue';
+import {ScreenLoadingGate} from '../components/ScreenLoadingGate';
 import {useAuthDeepLink} from '../hooks/useAuthDeepLink';
 import {supabase} from '../lib/supabase';
 import {ResetPasswordScreen} from '../screens/auth/ResetPasswordScreen';
@@ -17,15 +17,12 @@ const Stack = createNativeStackNavigator();
 export const RootNavigator = () => {
   const {session, isLoading} = useAuth();
   const {needsPasswordReset, clearPasswordRecovery} = useAuthDeepLink(supabase);
-  const showLoading = useDelayedTrue(isLoading);
 
   if (isLoading) {
-    return showLoading ? (
-      <View className="flex-1 items-center justify-center bg-white">
-        <ActivityIndicator size="large" />
-      </View>
-    ) : (
-      <View className="flex-1 bg-white" />
+    return (
+      <ScreenLoadingGate pending>
+        <View />
+      </ScreenLoadingGate>
     );
   }
 

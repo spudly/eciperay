@@ -1,6 +1,7 @@
 import {
   affectedCoveragePackages,
   findMissingColocatedTests,
+  requiresColocatedTest,
 } from './preCommitTestRules.ts';
 import {
   assertNewSourceHasColocatedTests,
@@ -18,25 +19,37 @@ import {
 const root = new URL('..', import.meta.url).pathname;
 
 describe('findMissingColocatedTests', () => {
-  it('requires a colocated test for new app components', () => {
+  it('requires a colocated test for new app screens', () => {
     const failures = findMissingColocatedTests(
       root,
-      ['packages/app/src/components/NewExample.tsx'],
-      ['packages/app/src/components/NewExample.tsx'],
+      ['packages/app/src/screens/NewExampleScreen.tsx'],
+      ['packages/app/src/screens/NewExampleScreen.tsx'],
     );
     expect(failures).toEqual([
-      'packages/app/src/components/NewExample.tsx (expected packages/app/src/components/NewExample.test.ts or packages/app/src/components/NewExample.test.tsx)',
+      'packages/app/src/screens/NewExampleScreen.tsx (expected packages/app/src/screens/NewExampleScreen.test.ts or packages/app/src/screens/NewExampleScreen.test.tsx)',
     ]);
   });
 
   it('passes when the colocated test is staged', () => {
     const failures = findMissingColocatedTests(
       root,
-      ['packages/app/src/components/NewExample.tsx'],
+      ['packages/app/src/screens/NewExampleScreen.tsx'],
       [
-        'packages/app/src/components/NewExample.tsx',
-        'packages/app/src/components/NewExample.test.tsx',
+        'packages/app/src/screens/NewExampleScreen.tsx',
+        'packages/app/src/screens/NewExampleScreen.test.tsx',
       ],
+    );
+    expect(failures).toEqual([]);
+  });
+
+  it('does not require colocated tests for new app components', () => {
+    expect(
+      requiresColocatedTest('packages/app/src/components/NewExample.tsx'),
+    ).toBe(false);
+    const failures = findMissingColocatedTests(
+      root,
+      ['packages/app/src/components/NewExample.tsx'],
+      ['packages/app/src/components/NewExample.tsx'],
     );
     expect(failures).toEqual([]);
   });
@@ -117,8 +130,8 @@ describe('preCommitTests', () => {
     const exit = jest.fn() as (code: number) => never;
     assertNewSourceHasColocatedTests(
       root,
-      ['packages/app/src/components/MissingTest.tsx'],
-      ['packages/app/src/components/MissingTest.tsx'],
+      ['packages/app/src/screens/MissingTestScreen.tsx'],
+      ['packages/app/src/screens/MissingTestScreen.tsx'],
       exit,
     );
     expect(exit).toHaveBeenCalledWith(1);
@@ -132,8 +145,8 @@ describe('preCommitTests', () => {
       .mockImplementation((() => {}) as (code?: number) => never);
     assertNewSourceHasColocatedTests(
       root,
-      ['packages/app/src/components/MissingTest.tsx'],
-      ['packages/app/src/components/MissingTest.tsx'],
+      ['packages/app/src/screens/MissingTestScreen.tsx'],
+      ['packages/app/src/screens/MissingTestScreen.tsx'],
     );
     expect(exitSpy).toHaveBeenCalledWith(1);
     exitSpy.mockRestore();
@@ -197,8 +210,8 @@ describe('preCommitTests', () => {
     });
     const execSync = jest
       .fn()
-      .mockReturnValueOnce('packages/app/src/components/MissingTest.tsx')
-      .mockReturnValueOnce('packages/app/src/components/MissingTest.tsx');
+      .mockReturnValueOnce('packages/app/src/screens/MissingTestScreen.tsx')
+      .mockReturnValueOnce('packages/app/src/screens/MissingTestScreen.tsx');
     expect(() => {
       main('/repo', {execSync, spawnSync: jest.fn()});
     }).toThrow('exit');

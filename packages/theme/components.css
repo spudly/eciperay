@@ -1,0 +1,180 @@
+@utility ui-loading-center {
+  @apply flex items-center justify-center;
+}
+
+@utility ui-link {
+  @apply text-primary font-medium;
+  @variant web {
+    &:hover {
+      @apply underline;
+    }
+  }
+}
+
+@utility ui-inline-spinner {
+  @apply border-primary size-8 animate-spin rounded-full border-2 border-t-transparent;
+}
+
+@utility ui-screen-shell {
+  @apply flex-1 bg-gray-50 px-4 pt-4;
+}
+
+@utility ui-screen-shell-padded {
+  @apply flex-1 bg-gray-50 px-6 pt-8;
+}
+
+@utility ui-screen-shell-auth {
+  @apply flex-1 bg-white px-6 pt-20;
+}
+
+@utility ui-page-title {
+  @apply text-2xl font-bold text-gray-900;
+}
+
+@utility ui-page-title-lg {
+  @apply text-3xl font-bold text-gray-900;
+}
+
+@utility ui-section-title {
+  @apply text-xl font-bold text-gray-900;
+}
+
+@utility ui-primary-button {
+  @apply bg-primary items-center rounded-lg py-4;
+}
+
+@utility ui-primary-button-text {
+  @apply text-base font-semibold text-white;
+}
+
+@utility ui-secondary-button {
+  @apply items-center rounded-xl bg-gray-100 px-4 py-3;
+}
+
+@utility ui-secondary-button-text {
+  @apply font-semibold text-gray-700;
+}
+
+@utility ui-destructive-button {
+  @apply items-center rounded-lg bg-red-500 py-4;
+}
+
+@utility ui-text-field {
+  @apply rounded-lg border border-gray-300 bg-white px-4 py-3 text-base text-gray-900;
+}
+
+@utility ui-search-field {
+  @apply rounded-xl border border-gray-200 bg-white px-4 py-3 text-base;
+}
+
+@utility ui-select-field {
+  @apply w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-base;
+}
+
+@utility ui-tag-list-item {
+  @apply mb-2 flex-row items-center justify-between rounded-lg bg-white p-3 shadow-sm;
+}
+
+@utility ui-tag-pill {
+  @apply rounded-full px-3 py-1 text-sm font-medium;
+}
+
+@utility ui-tag-form-row {
+  @apply mb-6 flex-row gap-2;
+}
+
+@utility ui-profile-email {
+  @apply mb-6 text-gray-700;
+}
+
+@utility ui-profile-section {
+  @apply mb-8 rounded-xl bg-white p-4 shadow-sm;
+}
+
+@utility ui-profile-section-title {
+  @apply mb-3 text-lg font-semibold text-gray-900;
+}
+
+@utility ui-multiline-field {
+  @apply min-h-48 rounded-lg border border-gray-300 px-4 py-3 text-base;
+}
+
+@utility ui-error-text {
+  @apply text-sm text-red-600;
+}
+
+@utility ui-empty-message {
+  @apply text-muted text-center;
+}
+
+@utility ui-info-banner {
+  @apply rounded-lg bg-indigo-50 px-4 py-3 text-sm text-indigo-950;
+}
+
+@utility ui-option-card {
+  @apply mb-3 rounded-xl border border-gray-100 bg-white p-4;
+}
+
+@utility ui-auth-form-stack {
+  @apply space-y-4;
+}
+
+@utility ui-legal-prose-list {
+  @apply list-disc space-y-2 ps-6;
+}
+
+@utility ui-marketing-hero {
+  @apply rounded-2xl bg-white px-6 py-12 text-center shadow-sm;
+}
+
+@utility ui-marketing-feature-grid {
+  @apply mt-8 grid gap-4 sm:grid-cols-3;
+}
+
+@utility ui-marketing-feature-card {
+  @apply rounded-xl bg-white p-5 shadow-sm;
+}
+
+@utility ui-public-recipe-card {
+  @apply rounded-xl bg-white shadow-sm;
+}
+
+@utility ui-form-stack {
+  @apply space-y-4;
+}
+
+@utility ui-recipe-detail-card {
+  @apply rounded-xl bg-white shadow-sm;
+}
+
+@utility ui-recipe-detail-toolbar {
+  @apply flex flex-wrap items-center gap-2 border-b border-gray-100 px-4 py-3;
+}
+
+@utility ui-recipe-detail-tabs {
+  @apply flex border-b border-gray-200;
+}
+
+@utility ui-import-review-preview {
+  @apply mb-6 rounded-xl border border-gray-200 bg-white p-4;
+}
+
+@utility ui-import-review-actions {
+  @apply flex flex-wrap gap-3;
+}
+
+@utility ui-cooking-mode-overlay {
+  @apply flex-1 justify-center bg-gray-900 px-6;
+}
+
+@utility ui-cooking-mode-overlay-fixed {
+  @apply fixed inset-0 flex flex-col justify-center bg-gray-900 px-6;
+}
+
+@utility ui-cooking-mode-overlay-centered {
+  @apply items-center justify-center;
+}
+
+@utility ui-cooking-mode-done-button {
+  @apply absolute right-6 top-12 rounded-full bg-white/10 px-4 py-2;
+}

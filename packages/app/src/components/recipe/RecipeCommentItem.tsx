@@ -1,6 +1,6 @@
 import {STALE_COMMENT_HINT} from '@eciperay/client';
 import type {RecipeComment} from '@eciperay/types';
-import React from 'react';
+import React, {useState} from 'react';
 import {Text, TextInput, TouchableOpacity, View} from 'react-native';
 
 import {StaleVersionHint} from './StaleVersionHint';
@@ -94,3 +94,51 @@ export const RecipeCommentItem = ({
     </View>
   );
 };
+
+if (__DEV__) {
+  const mockRecipeComment: RecipeComment = {
+    id: 'comment-1',
+    recipeId: 'recipe-uuid-1',
+    authorUserId: 'user-uuid-1',
+    authorDisplayName: 'Chef Demo',
+    body: 'Doubled the garlic — excellent.',
+    contentRevision: 1,
+    isStale: true,
+    createdAt: '2024-01-01T00:00:00.000Z',
+    updatedAt: '2024-01-01T00:00:00.000Z',
+  };
+
+  const RecipeCommentItemDemo = () => {
+    const [editing, setEditing] = useState(false);
+    const [draft, setDraft] = useState(mockRecipeComment.body);
+
+    return (
+      <View>
+        <RecipeCommentItem
+          comment={mockRecipeComment}
+          currentUserId="user-uuid-1"
+          ownerUserId="user-uuid-1"
+          isEditing={editing}
+          editDraft={draft}
+          isUpdatePending={false}
+          isDeletePending={false}
+          onEditDraftChange={setDraft}
+          onStartEdit={() => {
+            setEditing(true);
+          }}
+          onCancelEdit={() => {
+            setEditing(false);
+          }}
+          onSaveEdit={() => {
+            setEditing(false);
+          }}
+          onDelete={() => {
+            void 0;
+          }}
+        />
+      </View>
+    );
+  };
+
+  RecipeCommentItem.demo = () => <RecipeCommentItemDemo />;
+}

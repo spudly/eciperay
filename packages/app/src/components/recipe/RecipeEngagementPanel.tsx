@@ -1,3 +1,4 @@
+import {makeRecipeDetail, type ShowcaseDemoRenderer} from '@eciperay/client';
 import type {RecipeCommunityRating, RecipeStarRating} from '@eciperay/types';
 import React from 'react';
 import {View} from 'react-native';
@@ -33,3 +34,21 @@ export const RecipeEngagementPanel = ({
     />
   </View>
 );
+
+if (__DEV__) {
+  const recipeEngagementPanelDemo: ShowcaseDemoRenderer = ({Frame}) => {
+    const recipe = makeRecipeDetail();
+    return (
+      <Frame>
+        <RecipeEngagementPanel
+          recipeId={recipe.id}
+          ownerUserId={recipe.userId}
+          communityRating={null}
+          viewerRating={null}
+          viewerRatingIsStale={false}
+        />
+      </Frame>
+    );
+  };
+  RecipeEngagementPanel.demo = recipeEngagementPanelDemo;
+}

@@ -7,7 +7,9 @@ import {useQuery, useQueryClient} from '@tanstack/react-query';
 import {useNavigate, useParams} from 'react-router-dom';
 import type {RecipeInput} from '@eciperay/types';
 
+import {EditRecipeView} from '../components/recipe/EditRecipeView.js';
 import {RecipeForm} from '../components/recipe/RecipeForm.js';
+import {ScreenLoadingGate} from '../components/ScreenLoadingGate.js';
 import {eciperay} from '../lib/api.js';
 
 export const EditRecipePage = () => {
@@ -30,12 +32,11 @@ export const EditRecipePage = () => {
   };
 
   if (isLoading || !recipe) {
-    return <p>Loading…</p>;
+    return <ScreenLoadingGate pending>{null}</ScreenLoadingGate>;
   }
 
   return (
-    <div>
-      <h1 className="mb-6 text-2xl font-bold text-gray-900">Edit Recipe</h1>
+    <EditRecipeView>
       <RecipeForm
         initial={recipeDetailToInput(recipe)}
         recipeId={recipeId}
@@ -43,6 +44,6 @@ export const EditRecipePage = () => {
         submitLabel="Save Changes"
         onSubmit={handleSubmit}
       />
-    </div>
+    </EditRecipeView>
   );
 };

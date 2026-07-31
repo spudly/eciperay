@@ -1,6 +1,13 @@
-import {queryKeys, truncateChangeSummary} from '@eciperay/client';
+import {
+  makeRecipeDetail,
+  makeRecipeVersionSummary,
+  queryKeys,
+  truncateChangeSummary,
+} from '@eciperay/client';
 import {useQuery} from '@tanstack/react-query';
 import type {RecipeVersionSummary} from '@eciperay/types';
+import type {ComponentType} from 'react';
+import type {ShowcaseFrameProps} from '@eciperay/client';
 
 import {eciperay} from '../../lib/api.js';
 
@@ -71,3 +78,33 @@ export const VersionPicker = ({
     </label>
   );
 };
+
+if (import.meta.env.DEV) {
+  VersionPicker.demo = function VersionPickerDemo({
+    Frame,
+  }: {
+    Frame: ComponentType<ShowcaseFrameProps>;
+  }) {
+    const mockRecipe = makeRecipeDetail();
+
+    return (
+      <Frame>
+        <VersionPicker
+          recipeId={mockRecipe.id}
+          versions={[
+            makeRecipeVersionSummary(),
+            makeRecipeVersionSummary({
+              id: 'version-uuid-2',
+              versionNumber: 2,
+              derivedRole: 'candidate',
+            }),
+          ]}
+          selectedVersionId={mockRecipe.versionId}
+          onSelect={() => {
+            void 0;
+          }}
+        />
+      </Frame>
+    );
+  };
+}

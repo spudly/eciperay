@@ -9,7 +9,18 @@ import {renderWithProviders} from '../test/testUtils.js';
 
 import {RecipesPage} from './RecipesPage.js';
 
+const mockNavigate = vi.fn();
+
+vi.mock('react-router-dom', async importOriginal => {
+  const actual = await importOriginal<typeof import('react-router-dom')>();
+  return {...actual, useNavigate: () => mockNavigate};
+});
+
 describe('RecipesPage', () => {
+  beforeEach(() => {
+    mockNavigate.mockReset();
+  });
+
   test('shows recipe thumbnails when imageUrl is present', async () => {
     server.use(
       http.get('http://localhost:8080/api/recipes', () =>
@@ -232,6 +243,15 @@ describe('RecipesPage', () => {
       expect(screen.queryByText('Soup')).not.toBeInTheDocument();
     });
     expect(screen.getByPlaceholderText('Search recipes…')).toHaveValue('Soup');
+  });
+
+  test('opens recipe detail from the list', async () => {
+    await renderWithProviders(<RecipesPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Test Recipe')).toBeInTheDocument();
+    });
+    await userEvent.click(screen.getByRole('button', {name: /Test Recipe/i}));
+    expect(mockNavigate).toHaveBeenCalledWith('/recipes/recipe-uuid-1');
   });
 
   test('filters recipes by status', async () => {

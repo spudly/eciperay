@@ -9,6 +9,8 @@ import {
   parentIngredientsInput,
   parentInstructionsInput,
   parentTagIds,
+  makeRecipeDetail,
+  recipeDetailToInput,
   revertVersionScalar,
   toRecipeInputIngredients,
   toRecipeInputInstructions,
@@ -18,6 +20,7 @@ import {
   type FormIngredientRow,
   type FormInstructionRow,
   type RecipeFormInitial,
+  type ShowcaseDemoRenderer,
   type VersionScalarField,
 } from '@eciperay/client';
 import type {
@@ -719,3 +722,16 @@ export const RecipeForm = ({
     </form>
   );
 };
+
+if (import.meta.env.DEV) {
+  const recipeFormDemo: ShowcaseDemoRenderer = ({Frame}) => (
+    <Frame>
+      <RecipeForm
+        initial={recipeDetailToInput(makeRecipeDetail())}
+        submitLabel="Save recipe"
+        onSubmit={() => Promise.resolve()}
+      />
+    </Frame>
+  );
+  RecipeForm.demo = recipeFormDemo;
+}

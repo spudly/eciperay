@@ -1,6 +1,7 @@
 import {useAuth} from '@eciperay/client';
 
 import {AppShell} from '../components/AppShell.js';
+import {ScreenLoadingGate} from '../components/ScreenLoadingGate.js';
 
 import {HomePage} from './HomePage.js';
 import {MarketingLandingPage} from './MarketingLandingPage.js';
@@ -10,9 +11,12 @@ export const HomeEntry = () => {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted">Loading…</p>
-      </div>
+      <ScreenLoadingGate
+        pending
+        backgroundClassName="min-h-screen"
+      >
+        {null}
+      </ScreenLoadingGate>
     );
   }
 

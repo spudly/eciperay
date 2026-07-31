@@ -1,4 +1,8 @@
-import {createFormRowKey, type FormIngredientRow} from '@eciperay/client';
+import {
+  createFormRowKey,
+  ensureIngredientRowKeys,
+  type FormIngredientRow,
+} from '@eciperay/client';
 import type {IngredientInput} from '@eciperay/types';
 import {
   DndContext,
@@ -13,6 +17,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
+import {useState} from 'react';
 
 import {SortableIngredientRow} from './SortableIngredientRow.js';
 import {createListDragEnd} from './sortableDrag.js';
@@ -96,3 +101,42 @@ export {
   handleKeyedDragEnd as applyIngredientDragEnd,
   createListDragEnd as ingredientListDragEnd,
 } from './sortableDrag.js';
+
+if (import.meta.env.DEV) {
+  const SortableIngredientListDemo = () => {
+    const [ingredients, setIngredients] = useState<FormIngredientRow[]>(() =>
+      ensureIngredientRowKeys([
+        {
+          ...createEmptyIngredientRow(0),
+          name: 'Flour',
+          quantity: 2,
+          unit: 'cups',
+        },
+      ]),
+    );
+
+    return (
+      <SortableIngredientList
+        ingredients={ingredients}
+        onChange={setIngredients}
+        onUpdate={(index, field, value) => {
+          setIngredients(prev =>
+            prev.map((row, rowIndex) =>
+              rowIndex === index ? {...row, [field]: value} : row,
+            ),
+          );
+        }}
+        onAdd={() => {
+          setIngredients(prev => [
+            ...prev,
+            createEmptyIngredientRow(prev.length),
+          ]);
+        }}
+      />
+    );
+  };
+
+  SortableIngredientList.demo = function SortableIngredientListDemoWrapper() {
+    return <SortableIngredientListDemo />;
+  };
+}

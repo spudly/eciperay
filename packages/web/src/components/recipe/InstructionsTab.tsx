@@ -1,3 +1,4 @@
+import {makeRecipeDetail} from '@eciperay/client';
 import type {RecipeDetail} from '@eciperay/types';
 
 type Props = {recipe: RecipeDetail};
@@ -16,3 +17,9 @@ export const InstructionsTab = ({recipe}: Props) => (
       ))}
   </ol>
 );
+
+if (import.meta.env.DEV) {
+  InstructionsTab.demo = function InstructionsTabDemo() {
+    return <InstructionsTab recipe={makeRecipeDetail()} />;
+  };
+}

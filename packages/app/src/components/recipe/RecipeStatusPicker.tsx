@@ -1,7 +1,7 @@
 import {RECIPE_STATUS_LABELS, RECIPE_STATUS_OPTIONS} from '@eciperay/client';
 import type {RecipeStatus} from '@eciperay/types';
 import clsx from 'clsx';
-import React from 'react';
+import React, {useState} from 'react';
 import {Pressable, Text, View} from 'react-native';
 
 type Props = {
@@ -51,3 +51,18 @@ export const RecipeStatusPicker = ({
     </View>
   </View>
 );
+
+if (__DEV__) {
+  const RecipeStatusPickerDemo = () => {
+    const [status, setStatus] = useState<RecipeStatus>('evolving');
+
+    return (
+      <RecipeStatusPicker
+        value={status}
+        onChange={setStatus}
+      />
+    );
+  };
+
+  RecipeStatusPicker.demo = () => <RecipeStatusPickerDemo />;
+}

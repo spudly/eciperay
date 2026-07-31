@@ -1,17 +1,16 @@
-import {queryKeys, recordRecipeView} from '@eciperay/client';
+import {
+  queryKeys,
+  recordRecipeView,
+  type RecipeDetailTab,
+} from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useQuery, useQueryClient} from '@tanstack/react-query';
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
-import {ScrollView, View} from 'react-native';
+import {useCallback, useEffect, useMemo, useState} from 'react';
+import {ScrollView} from 'react-native';
 
-import {RecipeStatusBadge} from '../components/recipe/RecipeStatusBadge';
-import {ScreenLoadingGate} from '../components/ScreenLoadingGate';
-import {
-  RecipeDetailTabBar,
-  type RecipeDetailTab,
-} from '../components/recipe/RecipeDetailTabBar';
+import {RecipeDetailChrome} from '../components/recipe/RecipeDetailChrome';
 import {RecipeDetailTabPanel} from '../components/recipe/RecipeDetailTabPanel';
-import {VersionPicker} from '../components/recipe/VersionPicker';
+import {ScreenLoadingGate} from '../components/ScreenLoadingGate';
 import {api} from '../lib/api';
 import {mergeVersionIntoRecipe} from '../lib/mergeVersionIntoRecipe';
 import {recipeViewHistoryStorage} from '../lib/recipeViewHistoryStorage';
@@ -91,36 +90,22 @@ export const RecipeDetailScreen = ({route, navigation}: DetailProps) => {
   }, [activeVersionId]);
 
   if (isLoading || !recipe || !displayRecipe) {
-    return (
-      <ScreenLoadingGate pending>
-        <View />
-      </ScreenLoadingGate>
-    );
+    return <ScreenLoadingGate pending>{null}</ScreenLoadingGate>;
   }
 
   const currentServings = servings ?? displayRecipe.servings;
   const scaleFactor = currentServings / displayRecipe.servings;
 
   return (
-    <View className="flex-1 bg-white">
-      <View
-        className="
-          flex-row flex-wrap items-center gap-2 border-b border-gray-100 px-4
-          py-3
-        "
-      >
-        <RecipeStatusBadge status={recipe.status} />
-        <VersionPicker
-          versions={versions}
-          selectedVersionId={activeVersionId}
-          onSelect={setSelectedVersionId}
-        />
-      </View>
-      <RecipeDetailTabBar
-        activeTab={activeTab}
-        onSelect={setActiveTab}
-      />
-      <ScrollView className="flex-1">
+    <RecipeDetailChrome
+      status={recipe.status}
+      versions={versions}
+      selectedVersionId={activeVersionId}
+      onSelectVersion={setSelectedVersionId}
+      activeTab={activeTab}
+      onSelectTab={setActiveTab}
+    >
+      <ScrollView>
         <RecipeDetailTabPanel
           activeTab={activeTab}
           recipe={recipe}
@@ -156,6 +141,6 @@ export const RecipeDetailScreen = ({route, navigation}: DetailProps) => {
           }}
         />
       </ScrollView>
-    </View>
+    </RecipeDetailChrome>
   );
 };

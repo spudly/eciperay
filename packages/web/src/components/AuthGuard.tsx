@@ -1,14 +1,19 @@
 import {useAuth} from '@eciperay/client';
 import {Navigate, Outlet} from 'react-router-dom';
 
+import {ScreenLoadingGate} from './ScreenLoadingGate.js';
+
 export const AuthGuard = () => {
   const {session, isLoading} = useAuth();
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted">Loading…</p>
-      </div>
+      <ScreenLoadingGate
+        pending
+        backgroundClassName="min-h-screen"
+      >
+        {null}
+      </ScreenLoadingGate>
     );
   }
 

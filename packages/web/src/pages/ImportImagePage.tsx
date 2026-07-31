@@ -2,6 +2,7 @@ import {useAnalytics} from '@eciperay/client';
 import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
+import {ImportImageView} from '../components/import/ImportImageView.js';
 import {eciperay} from '../lib/api.js';
 
 const readFileAsBase64 = (file: File): Promise<string> =>
@@ -24,11 +25,7 @@ export const ImportImagePage = () => {
   const navigate = useNavigate();
   const analytics = useAnalytics();
 
-  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) {
-      return;
-    }
+  const handleFile = async (file: File) => {
     setLoading(true);
     setError(null);
     try {
@@ -47,22 +44,12 @@ export const ImportImagePage = () => {
   };
 
   return (
-    <div>
-      <h1 className="mb-6 text-2xl font-bold text-gray-900">
-        Import from Image
-      </h1>
-      <input
-        id="image-upload"
-        type="file"
-        accept="image/*"
-        aria-label="Upload recipe image"
-        disabled={loading}
-        onChange={e => {
-          void handleFile(e);
-        }}
-      />
-      {loading ? <p className="text-muted mt-4">Importing…</p> : null}
-      {error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}
-    </div>
+    <ImportImageView
+      loading={loading}
+      error={error}
+      onFileSelected={file => {
+        void handleFile(file);
+      }}
+    />
   );
 };

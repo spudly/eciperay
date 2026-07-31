@@ -1,4 +1,10 @@
-import {invalidateRecipeQueries, queryKeys} from '@eciperay/client';
+import {
+  invalidateRecipeQueries,
+  makeRecipeDetail,
+  queryKeys,
+  VERSION_ID,
+  type ShowcaseDemoRenderer,
+} from '@eciperay/client';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import React, {useState} from 'react';
 import {Text, TouchableOpacity, View} from 'react-native';
@@ -97,3 +103,18 @@ export const CookHistoryTab = ({recipeId, versionId}: Props) => {
     </View>
   );
 };
+
+if (__DEV__) {
+  const cookHistoryTabDemo: ShowcaseDemoRenderer = ({Frame}) => {
+    const recipe = makeRecipeDetail();
+    return (
+      <Frame>
+        <CookHistoryTab
+          recipeId={recipe.id}
+          versionId={VERSION_ID}
+        />
+      </Frame>
+    );
+  };
+  CookHistoryTab.demo = cookHistoryTabDemo;
+}

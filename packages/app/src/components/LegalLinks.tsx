@@ -1,7 +1,9 @@
-import {PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL} from '@eciperay/client';
+import {
+  PRIVACY_POLICY_URL,
+  TERMS_OF_SERVICE_URL,
+  type LegalLinksProps,
+} from '@eciperay/client';
 import {Linking, Text, TouchableOpacity, View} from 'react-native';
-
-type LegalLinksProps = {variant?: 'inline' | 'stacked'};
 
 const openUrl = (url: string) => {
   void Linking.openURL(url);
@@ -13,7 +15,7 @@ export const LegalLinks = ({variant = 'stacked'}: LegalLinksProps) => {
       <Text className="text-muted mt-4 text-center text-sm leading-5">
         By creating an account, you agree to our{' '}
         <Text
-          className="text-primary font-medium"
+          className="ui-link"
           onPress={() => {
             openUrl(TERMS_OF_SERVICE_URL);
           }}
@@ -22,7 +24,7 @@ export const LegalLinks = ({variant = 'stacked'}: LegalLinksProps) => {
         </Text>{' '}
         and{' '}
         <Text
-          className="text-primary font-medium"
+          className="ui-link"
           onPress={() => {
             openUrl(PRIVACY_POLICY_URL);
           }}
@@ -41,19 +43,19 @@ export const LegalLinks = ({variant = 'stacked'}: LegalLinksProps) => {
           openUrl(PRIVACY_POLICY_URL);
         }}
       >
-        <Text className="text-primary text-base font-medium">
-          Privacy Policy
-        </Text>
+        <Text className="ui-link text-base">Privacy Policy</Text>
       </TouchableOpacity>
       <TouchableOpacity
         onPress={() => {
           openUrl(TERMS_OF_SERVICE_URL);
         }}
       >
-        <Text className="text-primary text-base font-medium">
-          Terms of Service
-        </Text>
+        <Text className="ui-link text-base">Terms of Service</Text>
       </TouchableOpacity>
     </View>
   );
 };
+
+if (__DEV__) {
+  LegalLinks.demo = () => <LegalLinks variant="stacked" />;
+}

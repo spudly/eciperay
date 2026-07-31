@@ -56,6 +56,12 @@ describe('ForgotPasswordScreen', () => {
     });
   });
 
+  test('goes back when back link is pressed', () => {
+    const {getByText} = render(<ForgotPasswordScreen navigation={nav} />);
+    fireEvent.press(getByText('Back to sign in'));
+    expect(mockGoBack).toHaveBeenCalled();
+  });
+
   test('shows error alert on failure', async () => {
     mockReset.mockResolvedValue({error: new Error('User not found')});
     const {getByText} = render(<ForgotPasswordScreen navigation={nav} />);

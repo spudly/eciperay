@@ -5,7 +5,7 @@ import {
   servingsForMultiplier,
 } from '@eciperay/client';
 import clsx from 'clsx';
-import React from 'react';
+import React, {useState} from 'react';
 import {Text, TouchableOpacity, View} from 'react-native';
 
 type Props = {
@@ -60,3 +60,19 @@ export const ScaleMultiplierButtons = ({
     ))}
   </View>
 );
+
+if (__DEV__) {
+  const ScaleMultiplierButtonsDemo = () => {
+    const [servings, setServings] = useState(4);
+
+    return (
+      <ScaleMultiplierButtons
+        baseServings={4}
+        servings={servings}
+        onServingsChange={setServings}
+      />
+    );
+  };
+
+  ScaleMultiplierButtons.demo = () => <ScaleMultiplierButtonsDemo />;
+}

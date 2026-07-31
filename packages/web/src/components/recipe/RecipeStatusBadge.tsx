@@ -24,3 +24,9 @@ export const RecipeStatusBadge = ({status}: Props) => {
     </span>
   );
 };
+
+if (import.meta.env.DEV) {
+  RecipeStatusBadge.demo = function RecipeStatusBadgeDemo() {
+    return <RecipeStatusBadge status="evolving" />;
+  };
+}

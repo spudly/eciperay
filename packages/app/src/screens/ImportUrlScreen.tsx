@@ -1,8 +1,8 @@
 import {useAnalytics} from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import React, {useState} from 'react';
-import {Text, TextInput, TouchableOpacity, View} from 'react-native';
+import {useState} from 'react';
 
+import {ImportUrlView} from '../components/import/ImportUrlView';
 import {api} from '../lib/api';
 import type {AddStackParamList} from '../navigation/types';
 
@@ -33,35 +33,14 @@ export const ImportUrlScreen = ({navigation}: Props) => {
   };
 
   return (
-    <View className="flex-1 bg-gray-50 px-4 pt-4">
-      <Text className="mb-6 text-2xl font-bold text-gray-900">
-        Import from URL
-      </Text>
-      <TextInput
-        className="mb-4 rounded-lg border border-gray-300 px-4 py-3"
-        placeholder="https://example.com/recipe"
-        value={url}
-        onChangeText={setUrl}
-        autoCapitalize="none"
-        keyboardType="url"
-      />
-      {error ? (
-        <Text className="mb-4 text-sm text-red-600">{error}</Text>
-      ) : null}
-      <TouchableOpacity
-        className="
-          bg-primary items-center rounded-lg py-3
-          disabled:opacity-50
-        "
-        disabled={loading || !url.trim()}
-        onPress={() => {
-          void handleImport();
-        }}
-      >
-        <Text className="font-semibold text-white">
-          {loading ? 'Importing…' : 'Import'}
-        </Text>
-      </TouchableOpacity>
-    </View>
+    <ImportUrlView
+      url={url}
+      onUrlChange={setUrl}
+      loading={loading}
+      error={error}
+      onSubmit={() => {
+        void handleImport();
+      }}
+    />
   );
 };

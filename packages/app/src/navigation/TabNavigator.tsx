@@ -28,6 +28,7 @@ import {TagsScreen} from '../screens/TagsScreen';
 import {TweakAiScreen} from '../screens/TweakAiScreen';
 import {POSTHOG_KEY} from '../lib/env';
 
+import {getComponentShowcaseScreen} from './getComponentShowcaseScreen';
 import type {
   AddStackParamList,
   ProfileStackParamList,
@@ -123,6 +124,8 @@ const AddStackNavigator = () => (
   </AddStack.Navigator>
 );
 
+const componentShowcaseScreen = getComponentShowcaseScreen();
+
 const ProfileStackNavigator = () => (
   <ProfileStack.Navigator>
     <ProfileStack.Screen
@@ -135,6 +138,13 @@ const ProfileStackNavigator = () => (
       component={TagsScreen}
       options={{title: 'Tags'}}
     />
+    {componentShowcaseScreen ? (
+      <ProfileStack.Screen
+        name="ComponentShowcase"
+        component={componentShowcaseScreen}
+        options={{title: 'Component Showcase'}}
+      />
+    ) : null}
   </ProfileStack.Navigator>
 );
 

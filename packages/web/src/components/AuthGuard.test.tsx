@@ -1,6 +1,6 @@
-import {screen} from '@testing-library/react';
+import {act, screen} from '@testing-library/react';
 import {Route, Routes} from 'react-router-dom';
-import {vi} from 'vitest';
+import {afterEach, beforeEach, vi} from 'vitest';
 
 import {renderWithProviders} from '../test/testUtils.js';
 
@@ -14,6 +14,14 @@ vi.mock('@eciperay/client', async importOriginal => {
 });
 
 describe('AuthGuard', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   test('shows loading state', async () => {
     mockUseAuth.mockReturnValue({session: null, isLoading: true});
     await renderWithProviders(
@@ -30,7 +38,13 @@ describe('AuthGuard', () => {
       </Routes>,
       {withAuth: false},
     );
-    expect(screen.getByText('Loading…')).toBeInTheDocument();
+    expect(screen.queryByRole('status')).toBeNull();
+
+    act(() => {
+      vi.advanceTimersByTime(100);
+    });
+
+    expect(screen.getByRole('status')).toBeInTheDocument();
   });
 
   test('redirects when no session', async () => {

@@ -1,3 +1,4 @@
+import {makeRecipeDetail, type ShowcaseDemoRenderer} from '@eciperay/client';
 import type {RecipeCommunityRating, RecipeStarRating} from '@eciperay/types';
 
 import {RecipeCommentsSection} from './RecipeCommentsSection.js';
@@ -43,3 +44,22 @@ export const RecipeEngagementPanel = ({
     />
   </div>
 );
+
+if (import.meta.env.DEV) {
+  const recipeEngagementPanelDemo: ShowcaseDemoRenderer = ({Frame}) => {
+    const recipe = makeRecipeDetail();
+    return (
+      <Frame>
+        <RecipeEngagementPanel
+          recipeId={recipe.id}
+          ownerUserId={recipe.userId}
+          communityRating={null}
+          viewerRating={null}
+          viewerRatingIsStale={false}
+          editableRatings
+        />
+      </Frame>
+    );
+  };
+  RecipeEngagementPanel.demo = recipeEngagementPanelDemo;
+}

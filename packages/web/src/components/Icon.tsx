@@ -49,3 +49,15 @@ export const Icon = ({
     />
   );
 };
+
+if (import.meta.env.DEV) {
+  Icon.demo = function IconDemo() {
+    return (
+      <Icon
+        name="book-open"
+        size={28}
+        aria-label="Recipes"
+      />
+    );
+  };
+}

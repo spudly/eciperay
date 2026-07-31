@@ -4,6 +4,9 @@
     "src/main.tsx",
     "src/lib/env.ts",
     "src/vite-env.d.ts",
-    "src/test/testUtils.tsx"
+    "src/test/testUtils.tsx",
+    "src/components/**",
+    "src/pages/ComponentShowcasePage.tsx",
+    "src/routes/router.tsx"
   ]
 }

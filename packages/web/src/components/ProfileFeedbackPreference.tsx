@@ -2,6 +2,8 @@ import {
   readAnalyticsConsent,
   useFeedbackShortcutEnabled,
 } from '@eciperay/client';
+import type {ComponentType} from 'react';
+import type {ShowcaseFrameProps} from '@eciperay/client';
 
 import {POSTHOG_KEY} from '../lib/env.js';
 
@@ -48,3 +50,17 @@ export const ProfileFeedbackPreference = () => {
     </section>
   );
 };
+
+if (import.meta.env.DEV) {
+  ProfileFeedbackPreference.demo = function ProfileFeedbackPreferenceDemo({
+    Frame,
+  }: {
+    Frame: ComponentType<ShowcaseFrameProps>;
+  }) {
+    return (
+      <Frame>
+        <ProfileFeedbackPreference />
+      </Frame>
+    );
+  };
+}

@@ -5,10 +5,9 @@ import {
 } from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useQuery, useQueryClient} from '@tanstack/react-query';
-import React from 'react';
-import {Text, View} from 'react-native';
 import type {RecipeInput} from '@eciperay/types';
 
+import {EditRecipeView} from '../components/recipe/EditRecipeView';
 import {RecipeForm} from '../components/recipe/RecipeForm';
 import {ScreenLoadingGate} from '../components/ScreenLoadingGate';
 import {api} from '../lib/api';
@@ -33,16 +32,11 @@ export const EditRecipeScreen = ({route, navigation}: Props) => {
   };
 
   if (isLoading || !recipe) {
-    return (
-      <ScreenLoadingGate pending>
-        <View />
-      </ScreenLoadingGate>
-    );
+    return <ScreenLoadingGate pending>{null}</ScreenLoadingGate>;
   }
 
   return (
-    <View className="flex-1 bg-gray-50 px-4 pt-4">
-      <Text className="mb-4 text-2xl font-bold text-gray-900">Edit Recipe</Text>
+    <EditRecipeView>
       <RecipeForm
         initial={recipeDetailToInput(recipe)}
         recipeId={recipeId}
@@ -50,6 +44,6 @@ export const EditRecipeScreen = ({route, navigation}: Props) => {
         submitLabel="Save Changes"
         onSubmit={handleSubmit}
       />
-    </View>
+    </EditRecipeView>
   );
 };

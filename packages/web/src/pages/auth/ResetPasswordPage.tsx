@@ -2,6 +2,7 @@ import {errorMessage, useAuth} from '@eciperay/client';
 import {useState} from 'react';
 import {Navigate, useNavigate} from 'react-router-dom';
 
+import {ResetPasswordView} from '../../components/auth/ResetPasswordView.js';
 import {supabase} from '../../lib/supabase.js';
 
 export const ResetPasswordPage = () => {
@@ -21,8 +22,7 @@ export const ResetPasswordPage = () => {
     );
   }
 
-  const handleSubmit = async (e: React.SubmitEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     setLoading(true);
     setError(null);
     try {
@@ -41,50 +41,16 @@ export const ResetPasswordPage = () => {
     }
   };
 
-  if (done) {
-    return (
-      <div className="mx-auto max-w-md px-6 pt-20 text-center">
-        <h1 className="mb-4 text-2xl font-bold text-gray-900">
-          Password updated
-        </h1>
-        <p className="text-muted">Redirecting…</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="mx-auto max-w-md px-6 pt-20">
-      <h1 className="mb-8 text-3xl font-bold text-gray-900">New password</h1>
-      <form
-        onSubmit={e => {
-          void handleSubmit(e);
-        }}
-        className="space-y-4"
-      >
-        <input
-          className="
-            w-full rounded-lg border border-gray-300 px-4 py-3 text-base
-          "
-          placeholder="New password"
-          type="password"
-          value={password}
-          onChange={e => {
-            setPassword(e.target.value);
-          }}
-          autoComplete="new-password"
-        />
-        {error ? <p className="text-sm text-red-600">{error}</p> : null}
-        <button
-          type="submit"
-          disabled={loading}
-          className="
-            bg-primary w-full rounded-lg py-4 text-base font-semibold text-white
-            disabled:opacity-50
-          "
-        >
-          {loading ? 'Updating…' : 'Update password'}
-        </button>
-      </form>
-    </div>
+    <ResetPasswordView
+      password={password}
+      onPasswordChange={setPassword}
+      loading={loading}
+      error={error}
+      done={done}
+      onSubmit={() => {
+        void handleSubmit();
+      }}
+    />
   );
 };

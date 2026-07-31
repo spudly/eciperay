@@ -1,4 +1,8 @@
-import {queryKeys} from '@eciperay/client';
+import {
+  makeRecipeDetail,
+  queryKeys,
+  type ShowcaseDemoRenderer,
+} from '@eciperay/client';
 import {useQuery} from '@tanstack/react-query';
 
 import {eciperay} from '../../lib/api.js';
@@ -84,3 +88,12 @@ export const NutritionTab = ({recipeId}: Props) => {
     </div>
   );
 };
+
+if (import.meta.env.DEV) {
+  const nutritionTabDemo: ShowcaseDemoRenderer = ({Frame}) => (
+    <Frame>
+      <NutritionTab recipeId={makeRecipeDetail().id} />
+    </Frame>
+  );
+  NutritionTab.demo = nutritionTabDemo;
+}

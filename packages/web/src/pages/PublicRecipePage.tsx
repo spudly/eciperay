@@ -5,7 +5,6 @@ import {
   queryKeys,
   useAuth,
 } from '@eciperay/client';
-import clsx from 'clsx';
 import {useQuery} from '@tanstack/react-query';
 import {useState} from 'react';
 import {Navigate, useParams, useSearchParams} from 'react-router-dom';
@@ -17,6 +16,7 @@ import {PublicRecipeOverview} from '../components/recipe/PublicRecipeOverview.js
 import {RecipeEngagementPanel} from '../components/recipe/RecipeEngagementPanel.js';
 import {PublicPageLayout} from '../components/PublicPageLayout.js';
 import {PublicRecipeError} from '../components/PublicRecipeError.js';
+import {PublicRecipePageShell} from '../components/public/PublicRecipePageShell.js';
 import {RecipePageHead} from '../components/RecipePageHead.js';
 import {eciperay} from '../lib/api.js';
 
@@ -43,6 +43,10 @@ export const PublicRecipePage = () => {
     retry: false,
   });
 
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab as Tab);
+  };
+
   if (!id || !slug) {
     return (
       <PublicRecipeError
@@ -66,9 +70,14 @@ export const PublicRecipePage = () => {
   if (isLoading) {
     return (
       <PublicPageLayout>
-        <div className="flex items-center justify-center py-16">
-          <p>Loading…</p>
-        </div>
+        <PublicRecipePageShell
+          loading
+          tabs={TABS}
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+        >
+          {null}
+        </PublicRecipePageShell>
       </PublicPageLayout>
     );
   }
@@ -120,24 +129,11 @@ export const PublicRecipePage = () => {
         recipeId={recipe.id}
         shareToken={shareToken}
       />
-      <div className="rounded-xl bg-white shadow-sm">
-        <div className="flex border-b border-gray-200">
-          {TABS.map(tab => (
-            <button
-              key={tab.key}
-              type="button"
-              className={clsx('flex-1 py-3 text-xs font-medium', {
-                'border-primary text-primary border-b-2': activeTab === tab.key,
-                'text-muted': activeTab !== tab.key,
-              })}
-              onClick={() => {
-                setActiveTab(tab.key);
-              }}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+      <PublicRecipePageShell
+        tabs={TABS}
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+      >
         {activeTab === 'overview' ? (
           <>
             <PublicRecipeOverview recipe={recipe} />
@@ -164,7 +160,7 @@ export const PublicRecipePage = () => {
         {activeTab === 'instructions' ? (
           <InstructionsTab recipe={recipeDetail} />
         ) : null}
-      </div>
+      </PublicRecipePageShell>
     </PublicPageLayout>
   );
 };

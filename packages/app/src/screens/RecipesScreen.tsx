@@ -9,12 +9,11 @@ import {
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query';
-import React, {useDeferredValue, useState} from 'react';
-import {Alert, FlatList, StyleSheet, Text, TextInput, View} from 'react-native';
+import {useDeferredValue, useState} from 'react';
+import {Alert} from 'react-native';
 import type {RecipeDetail} from '@eciperay/types';
 
-import {RecipeListCard} from '../components/RecipeListCard';
-import {InlineLoadingIndicator} from '../components/InlineLoadingIndicator';
+import {RecipesListView} from '../components/recipes/RecipesListView';
 import {api} from '../lib/api';
 import type {RecipesStackParamList} from '../navigation/types';
 
@@ -22,10 +21,6 @@ type RecipesProps = NativeStackScreenProps<
   RecipesStackParamList,
   'RecipesList'
 >;
-
-const styles = StyleSheet.create({
-  listContent: {paddingHorizontal: 16, paddingBottom: 32},
-});
 
 export const RecipesScreen = ({navigation}: RecipesProps) => {
   const [search, setSearch] = useState('');
@@ -71,54 +66,17 @@ export const RecipesScreen = ({navigation}: RecipesProps) => {
   };
 
   return (
-    <View className="flex-1 bg-gray-50">
-      <View className="px-4 pb-2 pt-4">
-        <TextInput
-          className="
-            rounded-xl border border-gray-200 bg-white px-4 py-3 text-base
-          "
-          placeholder="Search recipes…"
-          value={search}
-          onChangeText={setSearch}
-        />
-      </View>
-      {isLoading ? (
-        <InlineLoadingIndicator
-          loading
-          className="mt-8"
-        />
-      ) : (
-        <FlatList
-          data={recipes}
-          keyExtractor={r => r.id}
-          contentContainerStyle={styles.listContent}
-          renderItem={({item}) => (
-            <RecipeListCard
-              recipe={item}
-              onPress={() => {
-                navigation.navigate('RecipeDetail', {recipeId: item.id});
-              }}
-              onDelete={() => {
-                confirmDelete(item);
-              }}
-            />
-          )}
-          onEndReached={loadMore}
-          onEndReachedThreshold={0.4}
-          ListEmptyComponent={
-            <Text className="text-muted mt-8 text-center">
-              No recipes found.
-            </Text>
-          }
-          ListFooterComponent={
-            isFetchingNextPage ? (
-              <Text className="text-muted py-4 text-center text-sm">
-                Loading more…
-              </Text>
-            ) : null
-          }
-        />
-      )}
-    </View>
+    <RecipesListView
+      search={search}
+      onSearchChange={setSearch}
+      isLoading={isLoading}
+      recipes={recipes}
+      isFetchingNextPage={isFetchingNextPage}
+      onRecipePress={recipeId => {
+        navigation.navigate('RecipeDetail', {recipeId});
+      }}
+      onRecipeDelete={confirmDelete}
+      onLoadMore={loadMore}
+    />
   );
 };

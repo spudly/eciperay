@@ -1,4 +1,9 @@
-import {buildRecipePermalink, WEB_APP_BASE_URL} from '@eciperay/client';
+import {
+  buildRecipePermalink,
+  makeRecipeDetail,
+  type ShowcaseDemoRenderer,
+  WEB_APP_BASE_URL,
+} from '@eciperay/client';
 import React from 'react';
 import {Image, Linking, Text, TouchableOpacity, View} from 'react-native';
 import type {RecipeDetail} from '@eciperay/types';
@@ -42,3 +47,12 @@ export const SharedRecipeListCard = ({recipe}: Props) => {
     </TouchableOpacity>
   );
 };
+
+if (__DEV__) {
+  const sharedRecipeListCardDemo: ShowcaseDemoRenderer = ({Frame}) => (
+    <Frame>
+      <SharedRecipeListCard recipe={makeRecipeDetail()} />
+    </Frame>
+  );
+  SharedRecipeListCard.demo = sharedRecipeListCardDemo;
+}

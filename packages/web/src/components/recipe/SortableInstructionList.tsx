@@ -12,6 +12,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
+import {useState} from 'react';
 
 import {SortableInstructionRow} from './SortableInstructionRow.js';
 import {createListDragEnd} from './sortableDrag.js';
@@ -81,3 +82,35 @@ export {
   handleKeyedDragEnd as applyInstructionDragEnd,
   createListDragEnd as instructionListDragEnd,
 } from './sortableDrag.js';
+
+if (import.meta.env.DEV) {
+  const SortableInstructionListDemo = () => {
+    const [instructions, setInstructions] = useState<FormInstructionRow[]>(
+      () => [{...createEmptyInstructionRow(1), body: 'Mix dry ingredients.'}],
+    );
+
+    return (
+      <SortableInstructionList
+        instructions={instructions}
+        onChange={setInstructions}
+        onUpdate={(index, body) => {
+          setInstructions(prev =>
+            prev.map((row, rowIndex) =>
+              rowIndex === index ? {...row, body} : row,
+            ),
+          );
+        }}
+        onAdd={() => {
+          setInstructions(prev => [
+            ...prev,
+            createEmptyInstructionRow(prev.length + 1),
+          ]);
+        }}
+      />
+    );
+  };
+
+  SortableInstructionList.demo = function SortableInstructionListDemoWrapper() {
+    return <SortableInstructionListDemo />;
+  };
+}
