@@ -14,6 +14,7 @@ import {Alert, FlatList, StyleSheet, Text, TextInput, View} from 'react-native';
 import type {RecipeDetail} from '@eciperay/types';
 
 import {RecipeListCard} from '../components/RecipeListCard';
+import {InlineLoadingIndicator} from '../components/InlineLoadingIndicator';
 import {api} from '../lib/api';
 import type {RecipesStackParamList} from '../navigation/types';
 
@@ -82,7 +83,10 @@ export const RecipesScreen = ({navigation}: RecipesProps) => {
         />
       </View>
       {isLoading ? (
-        <Text className="text-muted mt-8 text-center">Loading…</Text>
+        <InlineLoadingIndicator
+          loading
+          className="mt-8"
+        />
       ) : (
         <FlatList
           data={recipes}

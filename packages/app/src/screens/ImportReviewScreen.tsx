@@ -5,6 +5,7 @@ import React from 'react';
 import {Image, Text, TouchableOpacity, View} from 'react-native';
 
 import {RecipeInputPreview} from '../components/recipe/RecipeInputPreview';
+import {ScreenLoadingGate} from '../components/ScreenLoadingGate';
 import {api} from '../lib/api';
 import type {AddStackParamList} from '../navigation/types';
 
@@ -55,9 +56,9 @@ export const ImportReviewScreen = ({route, navigation}: Props) => {
 
   if (isLoading || !recipe) {
     return (
-      <View className="flex-1 items-center justify-center">
-        <Text>Loading…</Text>
-      </View>
+      <ScreenLoadingGate pending>
+        <View />
+      </ScreenLoadingGate>
     );
   }
 

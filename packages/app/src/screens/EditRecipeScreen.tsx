@@ -10,6 +10,7 @@ import {Text, View} from 'react-native';
 import type {RecipeInput} from '@eciperay/types';
 
 import {RecipeForm} from '../components/recipe/RecipeForm';
+import {ScreenLoadingGate} from '../components/ScreenLoadingGate';
 import {api} from '../lib/api';
 import type {RecipesStackParamList} from '../navigation/types';
 
@@ -33,9 +34,9 @@ export const EditRecipeScreen = ({route, navigation}: Props) => {
 
   if (isLoading || !recipe) {
     return (
-      <View className="flex-1 items-center justify-center">
-        <Text>Loading…</Text>
-      </View>
+      <ScreenLoadingGate pending>
+        <View />
+      </ScreenLoadingGate>
     );
   }
 
