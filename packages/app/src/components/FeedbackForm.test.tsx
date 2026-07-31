@@ -3,12 +3,29 @@ import {
   createAnalytics,
   createNoopAnalyticsAdapter,
 } from '@eciperay/client';
-import {fireEvent, render, screen} from '@testing-library/react-native';
+import {act, fireEvent, render, screen} from '@testing-library/react-native';
 import React from 'react';
 
 import {FeedbackForm} from './FeedbackForm';
 
+let focusEffectCallback: (() => void) | undefined;
+
+jest.mock('@react-navigation/native', () => {
+  const React = require('react');
+  return {
+    useFocusEffect: (callback: () => void) => {
+      focusEffectCallback = callback;
+      React.useEffect(() => {
+        callback();
+      }, [callback]);
+    },
+  };
+});
+
 describe('FeedbackForm', () => {
+  beforeEach(() => {
+    focusEffectCallback = undefined;
+  });
   test('submits feedback with the bug flag', async () => {
     const submitUserFeedback = jest.fn().mockResolvedValue({error: null});
     const analytics = {
@@ -123,5 +140,33 @@ describe('FeedbackForm', () => {
     fireEvent.press(screen.getByText('Submit feedback'));
 
     expect(await screen.findByText('Could not submit feedback.')).toBeTruthy();
+  });
+
+  test('resets the form when the feedback screen is focused again', async () => {
+    const submitUserFeedback = jest.fn().mockResolvedValue({error: null});
+    const analytics = {
+      ...createAnalytics(createNoopAnalyticsAdapter(), 'android'),
+      submitUserFeedback,
+    };
+
+    render(<FeedbackForm route="Feedback" />, {
+      wrapper: ({children}) => (
+        <AnalyticsProvider analytics={analytics}>{children}</AnalyticsProvider>
+      ),
+    });
+
+    fireEvent.changeText(
+      screen.getByPlaceholderText(/Tell us what happened/i),
+      'First feedback submission.',
+    );
+    fireEvent.press(screen.getByText('Submit feedback'));
+    await screen.findByText(/Thanks — we got your feedback/i);
+
+    await act(async () => {
+      focusEffectCallback?.();
+    });
+
+    expect(screen.getByPlaceholderText(/Tell us what happened/i)).toBeTruthy();
+    expect(screen.queryByText(/Thanks — we got your feedback/i)).toBeNull();
   });
 });
