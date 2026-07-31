@@ -1,5 +1,8 @@
 import {Link} from 'react-router-dom';
 import type {RecipeDetail} from '@eciperay/types';
+import {makeRecipeDetail} from '@eciperay/client';
+import type {ComponentType} from 'react';
+import type {ShowcaseFrameProps} from '@eciperay/client';
 
 const RecipeThumbnail = ({recipe}: {recipe: RecipeDetail}) =>
   recipe.imageUrl ? (
@@ -32,3 +35,19 @@ export const SharedRecipeListCard = ({recipe}: SharedRecipeListCardProps) => (
     </div>
   </Link>
 );
+
+if (import.meta.env.DEV) {
+  SharedRecipeListCard.demo = function SharedRecipeListCardDemo({
+    Frame,
+  }: {
+    Frame: ComponentType<ShowcaseFrameProps>;
+  }) {
+    const mockRecipe = makeRecipeDetail();
+
+    return (
+      <Frame>
+        <SharedRecipeListCard recipe={mockRecipe} />
+      </Frame>
+    );
+  };
+}

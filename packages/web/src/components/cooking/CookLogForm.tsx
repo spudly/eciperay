@@ -105,3 +105,20 @@ export const CookLogForm = ({
     </div>
   );
 };
+
+if (import.meta.env.DEV) {
+  CookLogForm.demo = function CookLogFormDemo() {
+    return (
+      <CookLogForm
+        onSubmit={() => {
+          void 0;
+        }}
+        onSkip={() => {
+          void 0;
+        }}
+        isPending={false}
+        variant="light"
+      />
+    );
+  };
+}

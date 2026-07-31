@@ -1,8 +1,8 @@
 import {errorMessage, useAuth} from '@eciperay/client';
 import {useState} from 'react';
-import {Link, Navigate} from 'react-router-dom';
+import {Navigate} from 'react-router-dom';
 
-import {LegalLinks} from '../../components/LegalLinks.js';
+import {SignUpView} from '../../components/auth/SignUpView.js';
 import {eciperay} from '../../lib/api.js';
 import {supabase} from '../../lib/supabase.js';
 
@@ -24,8 +24,7 @@ export const SignupPage = () => {
     );
   }
 
-  const handleSignUp = async (e: React.SubmitEvent) => {
-    e.preventDefault();
+  const handleSignUp = async () => {
     setLoading(true);
     setError(null);
     try {
@@ -49,88 +48,21 @@ export const SignupPage = () => {
     }
   };
 
-  if (confirmationSent) {
-    return (
-      <div className="pbs-20 max-inline-md mx-auto px-6 text-center">
-        <h1 className="mbe-4 text-2xl font-bold text-gray-900">
-          Check your email
-        </h1>
-        <p className="text-muted">
-          We sent a confirmation link to {email}. Sign in after confirming.
-        </p>
-        <Link
-          to="/login"
-          className="text-primary mbs-6 inline-block"
-        >
-          Back to sign in
-        </Link>
-      </div>
-    );
-  }
-
   return (
-    <div className="pbs-20 max-inline-md mx-auto px-6">
-      <h1 className="mbe-8 text-3xl font-bold text-gray-900">Create account</h1>
-      <form
-        onSubmit={e => {
-          void handleSignUp(e);
-        }}
-        className="space-y-4"
-      >
-        <input
-          className="
-            inline-full rounded-lg border border-gray-300 px-4 py-3 text-base
-          "
-          placeholder="Display name"
-          value={displayName}
-          onChange={e => {
-            setDisplayName(e.target.value);
-          }}
-        />
-        <input
-          className="
-            inline-full rounded-lg border border-gray-300 px-4 py-3 text-base
-          "
-          placeholder="Email"
-          type="email"
-          value={email}
-          onChange={e => {
-            setEmail(e.target.value);
-          }}
-          autoComplete="email"
-        />
-        <input
-          className="
-            inline-full rounded-lg border border-gray-300 px-4 py-3 text-base
-          "
-          placeholder="Password"
-          type="password"
-          value={password}
-          onChange={e => {
-            setPassword(e.target.value);
-          }}
-          autoComplete="new-password"
-        />
-        {error ? <p className="text-sm text-red-600">{error}</p> : null}
-        <button
-          type="submit"
-          disabled={loading}
-          className="
-            bg-primary inline-full rounded-lg py-4 text-base font-semibold
-            text-white
-            disabled:opacity-50
-          "
-        >
-          {loading ? 'Creating account…' : 'Sign Up'}
-        </button>
-      </form>
-      <LegalLinks className="mbs-6" />
-      <Link
-        to="/login"
-        className="text-primary mbs-4 block text-center text-base"
-      >
-        Already have an account?
-      </Link>
-    </div>
+    <SignUpView
+      displayName={displayName}
+      email={email}
+      password={password}
+      onDisplayNameChange={setDisplayName}
+      onEmailChange={setEmail}
+      onPasswordChange={setPassword}
+      loading={loading}
+      error={error}
+      confirmationSent={confirmationSent}
+      onSubmit={() => {
+        void handleSignUp();
+      }}
+      signInTo="/login"
+    />
   );
 };

@@ -1,4 +1,9 @@
-import {queryKeys, useAuth} from '@eciperay/client';
+import {
+  makeRecipeDetail,
+  queryKeys,
+  useAuth,
+  type ShowcaseDemoRenderer,
+} from '@eciperay/client';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import React, {useState} from 'react';
 import {Text, TextInput, TouchableOpacity, View} from 'react-native';
@@ -117,3 +122,18 @@ export const RecipeCommentsSection = ({recipeId, ownerUserId}: Props) => {
     </View>
   );
 };
+
+if (__DEV__) {
+  const recipeCommentsSectionDemo: ShowcaseDemoRenderer = ({Frame}) => {
+    const recipe = makeRecipeDetail();
+    return (
+      <Frame>
+        <RecipeCommentsSection
+          recipeId={recipe.id}
+          ownerUserId={recipe.userId}
+        />
+      </Frame>
+    );
+  };
+  RecipeCommentsSection.demo = recipeCommentsSectionDemo;
+}

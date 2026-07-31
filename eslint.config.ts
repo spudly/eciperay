@@ -12,12 +12,14 @@ import prettier from 'eslint-config-prettier';
 import globals from 'globals';
 
 import coverageIgnorePlugin from './eslint-rules/coverage-ignore-require-description.ts';
+import noClassnameOutsideComponentsPlugin from './eslint-rules/no-classname-outside-components.ts';
 
 // eslint-disable-next-line @typescript-eslint/no-deprecated -- tseslint.config() provides precise TypeScript types for plugin rule configs; ESLint core's defineConfig() lacks the same inference
 export default tseslint.config(
   {
     ignores: [
       '**/node_modules/**',
+      '**/dist/**',
       'packages/app/ios/**',
       'packages/app/android/**',
       'packages/app/__tests__/**',
@@ -1248,10 +1250,25 @@ export default tseslint.config(
     },
   },
 
+  // ─── 9a. App components — custom Text wrappers (PageTitle, ErrorText, etc.) ─
+  {
+    files: ['packages/app/src/components/**/*.tsx'],
+    ignores: ['packages/app/src/components/**/*.test.tsx'],
+    rules: {'react-native/no-raw-text': 'off'},
+  },
+
   // ─── 10. Coverage ignores — istanbul/c8 must include `-- reason` ───────────
   {
     plugins: {'coverage-ignore': coverageIgnorePlugin},
     rules: {'coverage-ignore/require-description': 'error'},
+  },
+
+  // ─── 10a. UI — className only inside src/components ───────────────────────
+  {
+    files: ['packages/app/src/**/*.tsx', 'packages/web/src/**/*.tsx'],
+    ignores: ['**/src/components/**', '**/*.test.tsx'],
+    plugins: {'eciperay-ui': noClassnameOutsideComponentsPlugin},
+    rules: {'eciperay-ui/no-classname-outside-components': 'error'},
   },
 
   // ─── 11. eslint-comments — require a reason on every inline disable ─────────

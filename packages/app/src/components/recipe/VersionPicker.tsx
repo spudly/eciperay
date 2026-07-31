@@ -1,4 +1,9 @@
-import {truncateChangeSummary} from '@eciperay/client';
+import {
+  makeRecipeDetail,
+  makeRecipeVersionSummary,
+  type ShowcaseDemoRenderer,
+  truncateChangeSummary,
+} from '@eciperay/client';
 import type {RecipeVersionSummary} from '@eciperay/types';
 import React, {useState} from 'react';
 import {Modal, Pressable, ScrollView, Text, View} from 'react-native';
@@ -124,3 +129,25 @@ export const VersionPicker = ({
     </>
   );
 };
+
+if (__DEV__) {
+  const versionPickerDemo: ShowcaseDemoRenderer = ({Frame}) => (
+    <Frame>
+      <VersionPicker
+        versions={[
+          makeRecipeVersionSummary(),
+          makeRecipeVersionSummary({
+            id: 'version-uuid-2',
+            versionNumber: 2,
+            derivedRole: 'candidate',
+          }),
+        ]}
+        selectedVersionId={makeRecipeDetail().versionId}
+        onSelect={() => {
+          void 0;
+        }}
+      />
+    </Frame>
+  );
+  VersionPicker.demo = versionPickerDemo;
+}

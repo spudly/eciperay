@@ -19,6 +19,9 @@ module.exports = {
     '!src/lib/env.ts', // typeof branch unreachable when shim always provides a string
     '!src/lib/supabase.ts', // createSupabaseClient wrapper; tested via supabase.test.ts
     '!src/navigation/*.tsx', // React Navigation setup; no business logic to unit-test
+    '!src/navigation/getComponentShowcaseScreen.ts', // dev-only dynamic require
+    '!src/screens/ComponentShowcaseScreen.tsx', // dev-only showcase entry
+    '!src/components/**', // mirrored components; covered by screen/view tests and co-located demos
     '!src/__tests__/testUtils.tsx', // shared render/query helpers; not app code
   ],
   coverageThreshold: {

@@ -1,5 +1,6 @@
 import {RECIPE_STATUS_LABELS, RECIPE_STATUS_OPTIONS} from '@eciperay/client';
 import type {RecipeStatus} from '@eciperay/types';
+import {useState} from 'react';
 
 type Props = {
   value: RecipeStatus;
@@ -42,3 +43,16 @@ export const RecipeStatusPicker = ({
     </select>
   </div>
 );
+
+if (import.meta.env.DEV) {
+  RecipeStatusPicker.demo = function RecipeStatusPickerDemo() {
+    const [status, setStatus] = useState<RecipeStatus>('evolving');
+
+    return (
+      <RecipeStatusPicker
+        value={status}
+        onChange={setStatus}
+      />
+    );
+  };
+}

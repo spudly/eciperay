@@ -8,9 +8,17 @@ import {renderWithProviders} from '../test/testUtils.js';
 
 import {HomePage} from './HomePage.js';
 
+const mockNavigate = vi.fn();
+
+vi.mock('react-router-dom', async importOriginal => {
+  const actual = await importOriginal<typeof import('react-router-dom')>();
+  return {...actual, useNavigate: () => mockNavigate};
+});
+
 describe('HomePage', () => {
   beforeEach(async () => {
     localStorage.clear();
+    mockNavigate.mockReset();
   });
 
   test('renders welcome, actions, and recently viewed section', async () => {
@@ -42,5 +50,18 @@ describe('HomePage', () => {
     expect(
       screen.getByText('Recipes you view will appear here.'),
     ).toBeInTheDocument();
+  });
+
+  test('navigates from home actions and recently viewed recipes', async () => {
+    await recordRecipeView(recipeViewHistoryStorage, 'recipe-uuid-1');
+    await renderWithProviders(<HomePage />);
+    await userEvent.click(screen.getByText('Shared with me'));
+    expect(mockNavigate).toHaveBeenCalledWith('/shared-with-me');
+    await userEvent.click(screen.getByText('Browse Recipes'));
+    expect(mockNavigate).toHaveBeenCalledWith('/recipes');
+    await userEvent.click(screen.getByText('Add Recipe'));
+    expect(mockNavigate).toHaveBeenCalledWith('/add');
+    await userEvent.click(screen.getByRole('button', {name: /Test Recipe/i}));
+    expect(mockNavigate).toHaveBeenCalledWith('/recipes/recipe-uuid-1');
   });
 });

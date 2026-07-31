@@ -5,10 +5,9 @@ import {
 } from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useQuery, useQueryClient} from '@tanstack/react-query';
-import React from 'react';
-import {ScrollView, Text, TouchableOpacity, View} from 'react-native';
 import type {RecipeVersionInput} from '@eciperay/types';
 
+import {EditVersionView} from '../components/recipe/EditVersionView';
 import {RecipeForm} from '../components/recipe/RecipeForm';
 import {ScreenLoadingGate} from '../components/ScreenLoadingGate';
 import {api} from '../lib/api';
@@ -41,49 +40,22 @@ export const EditVersionScreen = ({route, navigation}: Props) => {
   };
 
   if (isLoading || !version) {
-    return (
-      <ScreenLoadingGate pending>
-        <View />
-      </ScreenLoadingGate>
-    );
-  }
-
-  if (!version.isEditable) {
-    return (
-      <View className="flex-1 bg-gray-50 px-4 pt-4">
-        <Text className="text-red-600">
-          This version can no longer be edited.
-        </Text>
-        <TouchableOpacity
-          className="mt-4"
-          onPress={() => {
-            navigation.navigate('RecipeDetail', {recipeId});
-          }}
-        >
-          <Text className="text-primary text-sm underline">Back to recipe</Text>
-        </TouchableOpacity>
-      </View>
-    );
+    return <ScreenLoadingGate pending>{null}</ScreenLoadingGate>;
   }
 
   return (
-    <ScrollView className="flex-1 bg-gray-50 px-4 pt-4">
-      <Text className="mb-2 text-2xl font-bold text-gray-900">
-        Edit Draft (v{version.versionNumber})
-      </Text>
-      {version.createdVia === 'import_review' && parentVersion ? (
-        <Text
-          className="
-            mb-4 rounded-lg bg-indigo-50 px-4 py-3 text-sm text-indigo-950
-          "
-        >
-          Editing draft (v{version.versionNumber}) based on imported v
-          {parentVersion.versionNumber}.
-        </Text>
-      ) : null}
-      {version.changeSummary ? (
-        <Text className="text-muted mb-6 text-sm">{version.changeSummary}</Text>
-      ) : null}
+    <EditVersionView
+      versionNumber={version.versionNumber}
+      changeSummary={version.changeSummary}
+      showImportBanner={
+        version.createdVia === 'import_review' && parentVersion !== undefined
+      }
+      parentVersionNumber={parentVersion?.versionNumber}
+      notEditable={!version.isEditable}
+      onBack={() => {
+        navigation.navigate('RecipeDetail', {recipeId});
+      }}
+    >
       <RecipeForm
         initial={recipeVersionDetailToInput(version)}
         recipeId={recipeId}
@@ -91,6 +63,6 @@ export const EditVersionScreen = ({route, navigation}: Props) => {
         submitLabel="Save Draft"
         onSubmit={handleSubmit}
       />
-    </ScrollView>
+    </EditVersionView>
   );
 };

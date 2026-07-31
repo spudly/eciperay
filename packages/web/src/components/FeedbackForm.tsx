@@ -1,14 +1,17 @@
 import {
   useAnalytics,
   validateUserFeedbackMessage,
+  type ShowcaseFrameProps,
   type SubmitUserFeedbackInput,
 } from '@eciperay/client';
 import clsx from 'clsx';
 import {useState} from 'react';
+import type {ComponentType} from 'react';
 
 type FeedbackFormProps = {
   route?: string;
-  onSubmitted: () => void;
+  /** Called after feedback is successfully submitted */
+  onSubmitted?: () => void;
   onCancel?: () => void;
   className?: string;
   submitLabel?: string;
@@ -47,7 +50,7 @@ export const FeedbackForm = ({
 
     setSubmitted(true);
     window.setTimeout(() => {
-      onSubmitted();
+      onSubmitted?.();
     }, 1500);
   };
 
@@ -118,3 +121,17 @@ export const FeedbackForm = ({
     </div>
   );
 };
+
+if (import.meta.env.DEV) {
+  FeedbackForm.demo = function FeedbackFormDemo({
+    Frame,
+  }: {
+    Frame: ComponentType<ShowcaseFrameProps>;
+  }) {
+    return (
+      <Frame>
+        <FeedbackForm route="/dev/components" />
+      </Frame>
+    );
+  };
+}

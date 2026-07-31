@@ -1,8 +1,14 @@
+import {
+  makeRecipeDetail,
+  makeRecipeVersionSummary,
+  type ShowcaseDemoRenderer,
+} from '@eciperay/client';
 import type {
   RecipeDetail,
   RecipeRatingSummary,
   RecipeVersionSummary,
 } from '@eciperay/types';
+import {useState} from 'react';
 
 import {CookHistoryTab} from './CookHistoryTab.js';
 import {IngredientsTab} from './IngredientsTab.js';
@@ -81,3 +87,28 @@ export const RecipeDetailTabPanel = ({
   }
   return <NutritionTab recipeId={recipe.id} />;
 };
+
+if (import.meta.env.DEV) {
+  const RecipeDetailTabPanelDemo = () => {
+    const recipe = makeRecipeDetail();
+    const [servings, setServings] = useState(recipe.servings);
+    return (
+      <RecipeDetailTabPanel
+        activeTab="overview"
+        recipe={recipe}
+        displayRecipe={recipe}
+        versions={[makeRecipeVersionSummary()]}
+        currentServings={servings}
+        scaleFactor={1}
+        onServingsChange={setServings}
+      />
+    );
+  };
+
+  const recipeDetailTabPanelDemo: ShowcaseDemoRenderer = ({Frame}) => (
+    <Frame>
+      <RecipeDetailTabPanelDemo />
+    </Frame>
+  );
+  RecipeDetailTabPanel.demo = recipeDetailTabPanelDemo;
+}

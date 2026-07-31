@@ -1,4 +1,10 @@
-import {queryKeys, useAuth} from '@eciperay/client';
+/* eslint-disable max-lines -- recipe comments with create/edit/delete flows */
+import {
+  makeRecipeDetail,
+  queryKeys,
+  useAuth,
+  type ShowcaseDemoRenderer,
+} from '@eciperay/client';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useState} from 'react';
 
@@ -143,3 +149,18 @@ export const RecipeCommentsSection = ({
     </div>
   );
 };
+
+if (import.meta.env.DEV) {
+  const recipeCommentsSectionDemo: ShowcaseDemoRenderer = ({Frame}) => {
+    const recipe = makeRecipeDetail();
+    return (
+      <Frame>
+        <RecipeCommentsSection
+          recipeId={recipe.id}
+          ownerUserId={recipe.userId}
+        />
+      </Frame>
+    );
+  };
+  RecipeCommentsSection.demo = recipeCommentsSectionDemo;
+}

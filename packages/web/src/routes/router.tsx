@@ -29,6 +29,40 @@ import {SignupPage} from '../pages/auth/SignupPage.js';
 import {TagsPage} from '../pages/TagsPage.js';
 import {TermsOfServicePage} from '../pages/TermsOfServicePage.js';
 
+const authenticatedAppRoutes = [
+  {path: '/recipes', element: <RecipesPage />},
+  {path: '/shared-with-me', element: <SharedWithMePage />},
+  {path: '/recipes/:recipeId', element: <RecipeDetailPage />},
+  {path: '/recipes/:recipeId/edit', element: <EditRecipePage />},
+  {
+    path: '/recipes/:recipeId/versions/:versionId/edit',
+    element: <EditVersionPage />,
+  },
+  {path: '/recipes/:recipeId/tweak-ai', element: <TweakAiPage />},
+  {path: '/recipes/:recipeId/cook', element: <CookingModePage />},
+  {path: '/add', element: <AddPage />},
+  {path: '/add/manual', element: <ManualEntryPage />},
+  {path: '/add/url', element: <ImportUrlPage />},
+  {path: '/add/image', element: <ImportImagePage />},
+  {path: '/add/text', element: <ImportTextPage />},
+  {path: '/add/ai', element: <GenerateAiPage />},
+  {path: '/import/review/:recipeId', element: <ImportReviewPage />},
+  {path: '/profile', element: <ProfilePage />},
+  {path: '/tags', element: <TagsPage />},
+  ...(import.meta.env.DEV
+    ? [
+        {
+          path: '/dev/components',
+          lazy: async () => {
+            const {ComponentShowcasePage} =
+              await import('../pages/ComponentShowcasePage.js');
+            return {Component: ComponentShowcasePage};
+          },
+        },
+      ]
+    : []),
+];
+
 export const router = createBrowserRouter([
   {
     element: <RootLayout />,
@@ -44,32 +78,7 @@ export const router = createBrowserRouter([
       {path: '/', element: <HomeEntry />},
       {
         element: <AuthGuard />,
-        children: [
-          {
-            element: <AppShell />,
-            children: [
-              {path: '/recipes', element: <RecipesPage />},
-              {path: '/shared-with-me', element: <SharedWithMePage />},
-              {path: '/recipes/:recipeId', element: <RecipeDetailPage />},
-              {path: '/recipes/:recipeId/edit', element: <EditRecipePage />},
-              {
-                path: '/recipes/:recipeId/versions/:versionId/edit',
-                element: <EditVersionPage />,
-              },
-              {path: '/recipes/:recipeId/tweak-ai', element: <TweakAiPage />},
-              {path: '/recipes/:recipeId/cook', element: <CookingModePage />},
-              {path: '/add', element: <AddPage />},
-              {path: '/add/manual', element: <ManualEntryPage />},
-              {path: '/add/url', element: <ImportUrlPage />},
-              {path: '/add/image', element: <ImportImagePage />},
-              {path: '/add/text', element: <ImportTextPage />},
-              {path: '/add/ai', element: <GenerateAiPage />},
-              {path: '/import/review/:recipeId', element: <ImportReviewPage />},
-              {path: '/profile', element: <ProfilePage />},
-              {path: '/tags', element: <TagsPage />},
-            ],
-          },
-        ],
+        children: [{element: <AppShell />, children: authenticatedAppRoutes}],
       },
     ],
   },

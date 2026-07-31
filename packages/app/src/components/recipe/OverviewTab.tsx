@@ -2,6 +2,9 @@
 import {
   canEditActiveRecipeMetadata,
   canEditDraftVersion,
+  makeRecipeDetail,
+  makeRecipeVersionSummary,
+  type ShowcaseDemoRenderer,
 } from '@eciperay/client';
 import type {RecipeDetail, RecipeVersionSummary} from '@eciperay/types';
 import React, {useState} from 'react';
@@ -183,3 +186,42 @@ export const OverviewTab = ({
     </View>
   );
 };
+
+if (__DEV__) {
+  const OverviewTabDemo = () => {
+    const recipe = makeRecipeDetail();
+    return (
+      <OverviewTab
+        recipe={recipe}
+        activeVersionId={recipe.versionId}
+        servings={recipe.servings}
+        versions={[makeRecipeVersionSummary()]}
+        onStartCooking={() => {
+          void 0;
+        }}
+        onDelete={() => {
+          void 0;
+        }}
+        onTweakAi={() => {
+          void 0;
+        }}
+        onViewVersion={() => {
+          void 0;
+        }}
+        onEditRecipe={() => {
+          void 0;
+        }}
+        onEditVersion={() => {
+          void 0;
+        }}
+      />
+    );
+  };
+
+  const overviewTabDemo: ShowcaseDemoRenderer = ({Frame}) => (
+    <Frame>
+      <OverviewTabDemo />
+    </Frame>
+  );
+  OverviewTab.demo = overviewTabDemo;
+}

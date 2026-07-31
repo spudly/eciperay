@@ -1,35 +1,20 @@
 import {queryKeys, recordRecipeView} from '@eciperay/client';
-import clsx from 'clsx';
+import type {RecipeDetailTab} from '@eciperay/client';
 import {useQuery, useQueryClient} from '@tanstack/react-query';
 import {useCallback, useEffect, useMemo, useState} from 'react';
 import {useParams, useSearchParams} from 'react-router-dom';
 
-import {RecipeStatusBadge} from '../components/recipe/RecipeStatusBadge.js';
+import {RecipeDetailChrome} from '../components/recipe/RecipeDetailChrome.js';
 import {RecipeDetailTabPanel} from '../components/recipe/RecipeDetailTabPanel.js';
-import {VersionPicker} from '../components/recipe/VersionPicker.js';
+import {ScreenLoadingGate} from '../components/ScreenLoadingGate.js';
 import {eciperay} from '../lib/api.js';
 import {mergeVersionIntoRecipe} from '../lib/mergeVersionIntoRecipe.js';
 import {recipeViewHistoryStorage} from '../lib/recipeViewHistoryStorage.js';
 
-type Tab =
-  | 'overview'
-  | 'ingredients'
-  | 'instructions'
-  | 'history'
-  | 'nutrition';
-
-const TABS: {key: Tab; label: string}[] = [
-  {key: 'overview', label: 'Overview'},
-  {key: 'ingredients', label: 'Ingredients'},
-  {key: 'instructions', label: 'Instructions'},
-  {key: 'history', label: 'Cook History'},
-  {key: 'nutrition', label: 'Nutrition'},
-];
-
 export const RecipeDetailPage = () => {
   const {recipeId = ''} = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState<Tab>('overview');
+  const [activeTab, setActiveTab] = useState<RecipeDetailTab>('overview');
   const [servings, setServings] = useState<number | null>(null);
   const [selectedVersionId, setSelectedVersionId] = useState<string | null>(
     () => searchParams.get('versionId'),
@@ -100,51 +85,22 @@ export const RecipeDetailPage = () => {
   }, [recipeId, searchParams, setSearchParams]);
 
   if (isLoading || !recipe || !displayRecipe) {
-    return (
-      <div className="flex items-center justify-center py-16">
-        <p>Loading…</p>
-      </div>
-    );
+    return <ScreenLoadingGate pending>{null}</ScreenLoadingGate>;
   }
 
   const currentServings = servings ?? displayRecipe.servings;
   const scaleFactor = currentServings / displayRecipe.servings;
 
   return (
-    <div className="rounded-xl bg-white shadow-sm">
-      <div
-        className="
-          flex flex-wrap items-center justify-between gap-2 border-b
-          border-gray-100 px-4 py-3
-        "
-      >
-        <div className="flex items-center gap-2">
-          <RecipeStatusBadge status={recipe.status} />
-          <VersionPicker
-            recipeId={recipeId}
-            versions={versions}
-            selectedVersionId={activeVersionId}
-            onSelect={setSelectedVersionId}
-          />
-        </div>
-      </div>
-      <div className="flex border-b border-gray-200">
-        {TABS.map(tab => (
-          <button
-            key={tab.key}
-            type="button"
-            className={clsx('flex-1 py-3 text-xs font-medium', {
-              'border-primary text-primary border-b-2': activeTab === tab.key,
-              'text-muted': activeTab !== tab.key,
-            })}
-            onClick={() => {
-              setActiveTab(tab.key);
-            }}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+    <RecipeDetailChrome
+      status={recipe.status}
+      recipeId={recipeId}
+      versions={versions}
+      selectedVersionId={activeVersionId}
+      onSelectVersion={setSelectedVersionId}
+      activeTab={activeTab}
+      onSelectTab={setActiveTab}
+    >
       <RecipeDetailTabPanel
         activeTab={activeTab}
         recipe={recipe}
@@ -154,6 +110,6 @@ export const RecipeDetailPage = () => {
         scaleFactor={scaleFactor}
         onServingsChange={setServings}
       />
-    </div>
+    </RecipeDetailChrome>
   );
 };

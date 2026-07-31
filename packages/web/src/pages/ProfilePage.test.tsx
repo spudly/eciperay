@@ -12,10 +12,16 @@ import {supabase} from '../lib/supabase.js';
 import {ProfilePage} from './ProfilePage.js';
 
 const mockUseAuth = vi.fn();
+const mockNavigate = vi.fn();
 
 vi.mock('@eciperay/client', async importOriginal => {
   const actual = await importOriginal<typeof import('@eciperay/client')>();
   return {...actual, useAuth: () => mockUseAuth()};
+});
+
+vi.mock('react-router-dom', async importOriginal => {
+  const actual = await importOriginal<typeof import('react-router-dom')>();
+  return {...actual, useNavigate: () => mockNavigate};
 });
 
 vi.mock('../lib/downloadRecipeExport.js', () => ({
@@ -25,6 +31,13 @@ vi.mock('../lib/downloadRecipeExport.js', () => ({
 describe('ProfilePage', () => {
   beforeEach(() => {
     mockUseAuth.mockReturnValue({session: {user: {email: 'test@example.com'}}});
+    mockNavigate.mockReset();
+  });
+
+  test('opens the component showcase in dev', async () => {
+    await renderWithProviders(<ProfilePage />, {withAuth: false});
+    await userEvent.click(screen.getByText('Component Showcase'));
+    expect(mockNavigate).toHaveBeenCalledWith('/dev/components');
   });
 
   test('shows email and signs out', async () => {

@@ -11,3 +11,9 @@ export const StaleVersionHint = ({label}: Props) => (
     title={label}
   />
 );
+
+if (import.meta.env.DEV) {
+  StaleVersionHint.demo = function StaleVersionHintDemo() {
+    return <StaleVersionHint label="Based on an older version" />;
+  };
+}

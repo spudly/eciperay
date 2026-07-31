@@ -1,6 +1,8 @@
 import {queryKeys} from '@eciperay/client';
 import clsx from 'clsx';
 import {useQuery} from '@tanstack/react-query';
+import type {ComponentType} from 'react';
+import type {ShowcaseFrameProps} from '@eciperay/client';
 
 import {eciperay} from '../../lib/api.js';
 
@@ -47,3 +49,22 @@ export const TagPicker = ({selectedIds, onChange}: Props) => {
     </div>
   );
 };
+
+if (import.meta.env.DEV) {
+  TagPicker.demo = function TagPickerDemo({
+    Frame,
+  }: {
+    Frame: ComponentType<ShowcaseFrameProps>;
+  }) {
+    return (
+      <Frame>
+        <TagPicker
+          selectedIds={['tag-1']}
+          onChange={() => {
+            void 0;
+          }}
+        />
+      </Frame>
+    );
+  };
+}

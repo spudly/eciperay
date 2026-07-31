@@ -5,6 +5,7 @@ import {
   servingsForMultiplier,
 } from '@eciperay/client';
 import clsx from 'clsx';
+import {useState} from 'react';
 
 type Props = {
   baseServings: number;
@@ -44,3 +45,17 @@ export const ScaleMultiplierButtons = ({
     ))}
   </div>
 );
+
+if (import.meta.env.DEV) {
+  ScaleMultiplierButtons.demo = function ScaleMultiplierButtonsDemo() {
+    const [servings, setServings] = useState(4);
+
+    return (
+      <ScaleMultiplierButtons
+        baseServings={4}
+        servings={servings}
+        onServingsChange={setServings}
+      />
+    );
+  };
+}

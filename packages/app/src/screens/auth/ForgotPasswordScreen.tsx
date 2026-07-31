@@ -1,9 +1,9 @@
-import React, {useState} from 'react';
-import {Alert, Text, TouchableOpacity, View} from 'react-native';
 import {errorMessage} from '@eciperay/client';
+import {useState} from 'react';
+import {Alert} from 'react-native';
 
+import {ForgotPasswordView} from '../../components/auth/ForgotPasswordView';
 import {AUTH_DEEP_LINK_REDIRECT_URL} from '../../lib/authDeepLink';
-import {AuthTextField} from '../../components/auth/AuthTextField';
 import {normalizeAuthEmail} from '../../lib/normalizeAuthInput';
 import {supabase} from '../../lib/supabase';
 
@@ -36,31 +36,16 @@ export const ForgotPasswordScreen = ({navigation}: ForgotProps) => {
   };
 
   return (
-    <View className="flex-1 bg-white px-6 pt-20">
-      <Text className="mb-4 text-3xl font-bold text-gray-900">
-        Reset password
-      </Text>
-      <Text className="text-muted mb-8">
-        {"We'll send a reset link to your email."}
-      </Text>
-      <AuthTextField
-        autoCapitalize="none"
-        autoComplete="email"
-        keyboardType="email-address"
-        label="Email"
-        onChangeText={setEmail}
-        textContentType="emailAddress"
-        value={email}
-      />
-      <TouchableOpacity
-        className="bg-primary items-center rounded-lg py-4"
-        onPress={() => void handleReset()}
-        disabled={loading}
-      >
-        <Text className="text-base font-semibold text-white">
-          {loading ? 'Sending…' : 'Send Reset Link'}
-        </Text>
-      </TouchableOpacity>
-    </View>
+    <ForgotPasswordView
+      email={email}
+      onEmailChange={setEmail}
+      loading={loading}
+      onSubmit={() => {
+        void handleReset();
+      }}
+      onBackPress={() => {
+        navigation.goBack();
+      }}
+    />
   );
 };

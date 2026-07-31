@@ -1,3 +1,9 @@
+/* Matches nativewind/theme.css — web-only styles (e.g. hover) skip React Native. */
+@custom-variant web (@supports selector(div > div));
+
+@import './components.css';
+@import './showcase.css';
+
 @theme {
   --font-sans:
     'Manrope Variable', 'Manrope', system-ui, -apple-system, BlinkMacSystemFont,

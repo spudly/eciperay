@@ -1,8 +1,8 @@
 import {errorMessage} from '@eciperay/client';
-import React, {useState} from 'react';
-import {Alert, Text, TouchableOpacity, View} from 'react-native';
+import {useState} from 'react';
+import {Alert} from 'react-native';
 
-import {AuthTextField} from '../../components/auth/AuthTextField';
+import {SignInView} from '../../components/auth/SignInView';
 import {api} from '../../lib/api';
 import {
   normalizeAuthEmail,
@@ -37,53 +37,21 @@ export const SignInScreen = ({navigation}: SignInProps) => {
   };
 
   return (
-    <View className="flex-1 bg-white px-6 pt-20">
-      <Text className="mb-8 text-3xl font-bold text-gray-900">
-        Welcome back
-      </Text>
-      <AuthTextField
-        autoCapitalize="none"
-        autoComplete="email"
-        keyboardType="email-address"
-        label="Email"
-        onChangeText={setEmail}
-        textContentType="emailAddress"
-        value={email}
-      />
-      <AuthTextField
-        autoCapitalize="none"
-        autoComplete="password"
-        label="Password"
-        onChangeText={setPassword}
-        secureTextEntry
-        textContentType="password"
-        value={password}
-      />
-      <TouchableOpacity
-        className="bg-primary items-center rounded-lg py-4"
-        onPress={() => void handleSignIn()}
-        disabled={loading}
-      >
-        <Text className="text-base font-semibold text-white">
-          {loading ? 'Signing in…' : 'Sign In'}
-        </Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        className="mt-4 items-center"
-        onPress={() => {
-          navigation.navigate('SignUp');
-        }}
-      >
-        <Text className="text-primary text-base">Create an account</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        className="mt-2 items-center"
-        onPress={() => {
-          navigation.navigate('ForgotPassword');
-        }}
-      >
-        <Text className="text-muted text-sm">Forgot password?</Text>
-      </TouchableOpacity>
-    </View>
+    <SignInView
+      email={email}
+      password={password}
+      onEmailChange={setEmail}
+      onPasswordChange={setPassword}
+      loading={loading}
+      onSubmit={() => {
+        void handleSignIn();
+      }}
+      onSignUpPress={() => {
+        navigation.navigate('SignUp');
+      }}
+      onForgotPasswordPress={() => {
+        navigation.navigate('ForgotPassword');
+      }}
+    />
   );
 };

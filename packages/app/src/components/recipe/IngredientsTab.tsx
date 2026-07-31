@@ -1,7 +1,9 @@
 import {
   formatScaledIngredientLine,
+  makeRecipeDetail,
   queryKeys,
   sortIngredientsByOrder,
+  type ShowcaseDemoRenderer,
 } from '@eciperay/client';
 import clsx from 'clsx';
 import {useQuery} from '@tanstack/react-query';
@@ -133,3 +135,25 @@ export const IngredientsTab = ({
     </View>
   );
 };
+
+if (__DEV__) {
+  const IngredientsTabDemo = () => {
+    const [servings, setServings] = useState(4);
+    const recipe = makeRecipeDetail();
+    return (
+      <IngredientsTab
+        recipe={recipe}
+        scaleFactor={1}
+        servings={servings}
+        onServingsChange={setServings}
+      />
+    );
+  };
+
+  const ingredientsTabDemo: ShowcaseDemoRenderer = ({Frame}) => (
+    <Frame>
+      <IngredientsTabDemo />
+    </Frame>
+  );
+  IngredientsTab.demo = ingredientsTabDemo;
+}

@@ -2,6 +2,9 @@
 import {
   canEditActiveRecipeMetadata,
   canEditDraftVersion,
+  makeRecipeDetail,
+  makeRecipeVersionSummary,
+  type ShowcaseDemoRenderer,
 } from '@eciperay/client';
 import type {RecipeDetail, RecipeVersionSummary} from '@eciperay/types';
 import {useState} from 'react';
@@ -180,3 +183,24 @@ export const OverviewTab = ({
     </div>
   );
 };
+
+if (import.meta.env.DEV) {
+  const OverviewTabDemo = () => {
+    const recipe = makeRecipeDetail();
+    return (
+      <OverviewTab
+        recipe={recipe}
+        activeVersionId={recipe.versionId}
+        servings={recipe.servings}
+        versions={[makeRecipeVersionSummary()]}
+      />
+    );
+  };
+
+  const overviewTabDemo: ShowcaseDemoRenderer = ({Frame}) => (
+    <Frame>
+      <OverviewTabDemo />
+    </Frame>
+  );
+  OverviewTab.demo = overviewTabDemo;
+}

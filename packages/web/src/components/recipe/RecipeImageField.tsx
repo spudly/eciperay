@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- recipe image upload, paste, and generate controls */
 import clsx from 'clsx';
 import {useState} from 'react';
 
@@ -155,3 +156,21 @@ export const RecipeImageField = ({
     </div>
   );
 };
+
+if (import.meta.env.DEV) {
+  RecipeImageField.demo = function RecipeImageFieldDemo() {
+    return (
+      <RecipeImageField
+        imagePreview={null}
+        imageUploading={false}
+        imageError={null}
+        onImageFile={() => {
+          void 0;
+        }}
+        onRemove={() => {
+          void 0;
+        }}
+      />
+    );
+  };
+}

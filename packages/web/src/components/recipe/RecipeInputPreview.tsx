@@ -2,6 +2,8 @@ import {
   formatScaledIngredientLine,
   sortedPreviewIngredients,
   sortedPreviewInstructions,
+  makeRecipeDetail,
+  recipeDetailToInput,
 } from '@eciperay/client';
 import type {RecipeVersionInput} from '@eciperay/types';
 
@@ -58,3 +60,11 @@ export const RecipeInputPreview = ({recipe}: Props) => {
     </div>
   );
 };
+
+if (import.meta.env.DEV) {
+  RecipeInputPreview.demo = function RecipeInputPreviewDemo() {
+    const mockPreviewRecipe = recipeDetailToInput(makeRecipeDetail());
+
+    return <RecipeInputPreview recipe={mockPreviewRecipe} />;
+  };
+}

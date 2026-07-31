@@ -1,6 +1,7 @@
 import {LEGAL_OPERATOR_NAME} from '@eciperay/client';
 
 import type {LegalSection} from '../../components/LegalDocumentPage.js';
+import {LegalProseList} from '../../components/legal/LegalProseList.js';
 
 import {legalContactLink} from './legalContactLink.js';
 import {legalOperatorIntro} from './legalOperatorIntro.js';
@@ -30,14 +31,14 @@ export const termsOfServiceSections: LegalSection[] = [
   {
     title: 'Your account',
     content: (
-      <ul className="list-disc space-y-2 ps-6">
+      <LegalProseList>
         <li>You must provide accurate account information.</li>
         <li>You are responsible for keeping your login credentials secure.</li>
         <li>
           You are responsible for activity that occurs under your account.
         </li>
         <li>You must be at least 13 years old to use Eciperay.</li>
-      </ul>
+      </LegalProseList>
     ),
   },
   {
@@ -73,7 +74,7 @@ export const termsOfServiceSections: LegalSection[] = [
   {
     title: 'Acceptable use',
     content: (
-      <ul className="list-disc space-y-2 ps-6">
+      <LegalProseList>
         <li>Do not use the service for unlawful purposes.</li>
         <li>Do not attempt to access other users&apos; accounts or data.</li>
         <li>
@@ -83,7 +84,7 @@ export const termsOfServiceSections: LegalSection[] = [
         <li>
           Do not upload malware or content that infringes others&apos; rights.
         </li>
-      </ul>
+      </LegalProseList>
     ),
   },
   {

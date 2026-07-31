@@ -76,6 +76,58 @@ export {
   uploadRecipeImageBytes,
   uploadRecipeImageFromBase64,
 } from './uploadRecipeImage.js';
+export {DEFAULT_LOADING_DELAY_MS, useDelayedTrue} from './useDelayedTrue.js';
+export type {
+  InlineLoadingIndicatorProps,
+  ScreenLoadingGateProps,
+} from './ui/loadingComponents.js';
+export type {LegalLinksProps} from './ui/legalLinks.js';
+export type {
+  ForgotPasswordViewProps,
+  ResetPasswordViewProps,
+  SignInViewProps,
+  SignUpViewProps,
+} from './ui/authComponents.js';
+export type {
+  AuthScreenLayoutProps,
+  DestructiveButtonProps,
+  EmptyMessageProps,
+  ErrorTextProps,
+  FormScreenLayoutProps,
+  InfoBannerProps,
+  ListLoadingFooterProps,
+  MultilineFieldProps,
+  OptionCardProps,
+  PageTitleProps,
+  PrimaryButtonProps,
+  ScreenContainerProps,
+  ScreenScrollProps,
+  SearchFieldProps,
+  SecondaryButtonProps,
+  TextFieldProps,
+  TextLinkButtonProps,
+} from './ui/layoutComponents.js';
+export type {
+  AddRecipeMenuOption,
+  AddRecipeMenuViewProps,
+  EditRecipeViewProps,
+  EditVersionViewProps,
+  FeedbackViewProps,
+  HomeViewProps,
+  ImportImageViewProps,
+  ImportReviewViewProps,
+  ImportTextViewProps,
+  ImportUrlViewProps,
+  ManualEntryViewProps,
+  ProfileViewProps,
+  RecipeDetailChromeProps,
+  RecipeDetailTab,
+  RecipesListViewProps,
+  RecipeStatusFilterValue,
+  SharedWithMeViewProps,
+  TagsViewProps,
+} from './ui/viewComponents.js';
+export {RECIPE_DETAIL_TABS} from './ui/viewComponents.js';
 export {AuthProvider, useAuth} from './AuthProvider.js';
 export {AnalyticsErrorBoundaryProvider} from './AnalyticsErrorBoundary.js';
 export {AnalyticsProvider, useAnalytics} from './AnalyticsProvider.js';
@@ -245,3 +297,23 @@ export {
   SHARED_WITH_ME_EMPTY_MESSAGE,
   SHARED_WITH_ME_TITLE,
 } from './homeCopy.js';
+export {
+  COMPONENT_SHOWCASE_CATALOG,
+  filterShowcaseEntries,
+  groupShowcaseEntriesByCategory,
+  type ComponentShowcaseEntry,
+  type ComponentShowcaseId,
+} from './dev/componentShowcaseCatalog.js';
+export {
+  createShowcaseAiSessionFlowApi,
+  makeRecipeDetail,
+  makeRecipeVersionSummary,
+  showcaseAiSessionConfig,
+  VERSION_ID,
+} from './dev/showcaseFixtures.js';
+export {
+  exportNameFromShowcaseId,
+  type ShowcaseDemoRenderer,
+  type ShowcaseFrameProps,
+  type WithShowcaseDemo,
+} from './dev/showcaseComponent.js';
