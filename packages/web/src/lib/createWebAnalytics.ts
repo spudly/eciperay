@@ -9,6 +9,7 @@ import {
 import posthog from 'posthog-js';
 
 const DEFAULT_POSTHOG_HOST = 'https://us.i.posthog.com';
+const POSTHOG_UI_HOST = 'https://us.posthog.com';
 
 type PostHogFlagResult = {value?: boolean | string; payload?: unknown};
 
@@ -45,6 +46,7 @@ const posthogLog = (
 const initWebPostHog = (apiKey: string, apiHost: string) => {
   posthog.init(apiKey, {
     api_host: apiHost,
+    ui_host: POSTHOG_UI_HOST,
     defaults: '2026-01-30',
     capture_pageview: 'history_change',
     capture_pageleave: true,

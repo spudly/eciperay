@@ -95,6 +95,7 @@ describe('createWebAnalytics', () => {
       'phc_test',
       expect.objectContaining({
         api_host: 'https://us.i.posthog.com',
+        ui_host: 'https://us.posthog.com',
         capture_pageview: 'history_change',
         disable_web_experiments: false,
         capture_exceptions: expect.objectContaining({
@@ -160,7 +161,10 @@ describe('createWebAnalytics', () => {
     client.track('recipe_deleted', {recipe_id: 'recipe-1'});
     expect(posthogInit).toHaveBeenCalledWith(
       'phc_test',
-      expect.objectContaining({api_host: 'https://us.i.posthog.com'}),
+      expect.objectContaining({
+        api_host: 'https://us.i.posthog.com',
+        ui_host: 'https://us.posthog.com',
+      }),
     );
   });
 
