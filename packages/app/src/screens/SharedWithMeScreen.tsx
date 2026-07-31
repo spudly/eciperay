@@ -8,6 +8,7 @@ import React from 'react';
 import {FlatList, StyleSheet, Text, View} from 'react-native';
 
 import {SharedRecipeListCard} from '../components/SharedRecipeListCard';
+import {InlineLoadingIndicator} from '../components/InlineLoadingIndicator';
 import {api} from '../lib/api';
 
 const styles = StyleSheet.create({
@@ -33,7 +34,10 @@ export const SharedWithMeScreen = () => {
   return (
     <View className="flex-1 bg-gray-50">
       {isLoading ? (
-        <Text className="text-muted mt-8 text-center">Loading…</Text>
+        <InlineLoadingIndicator
+          loading
+          className="mt-8"
+        />
       ) : (
         <FlatList
           data={recipes}

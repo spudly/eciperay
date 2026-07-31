@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 import React from 'react';
-import {Text, TouchableOpacity, View} from 'react-native';
+import {ScrollView, Text, TouchableOpacity} from 'react-native';
 
 export type RecipeDetailTab =
   | 'overview'
@@ -26,11 +26,16 @@ export const RecipeDetailTabBar = ({
   activeTab,
   onSelect,
 }: RecipeDetailTabBarProps) => (
-  <View className="flex-row border-b border-gray-200">
+  <ScrollView
+    horizontal
+    showsHorizontalScrollIndicator={false}
+    className="border-b border-gray-200"
+    contentContainerClassName="flex-row"
+  >
     {TABS.map(tab => (
       <TouchableOpacity
         key={tab.key}
-        className={clsx('flex-1 items-center py-3', {
+        className={clsx('items-center px-4 py-3', {
           'border-primary border-b-2': activeTab === tab.key,
         })}
         onPress={() => {
@@ -47,5 +52,5 @@ export const RecipeDetailTabBar = ({
         </Text>
       </TouchableOpacity>
     ))}
-  </View>
+  </ScrollView>
 );

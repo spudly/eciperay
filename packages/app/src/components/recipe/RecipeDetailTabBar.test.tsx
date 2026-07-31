@@ -1,5 +1,6 @@
 import React from 'react';
 import {fireEvent, render} from '@testing-library/react-native';
+import {ScrollView} from 'react-native';
 
 import {RecipeDetailTabBar} from './RecipeDetailTabBar';
 
@@ -28,5 +29,15 @@ describe('RecipeDetailTabBar', () => {
     );
     fireEvent.press(getByText('Ingredients'));
     expect(onSelect).toHaveBeenCalledWith('ingredients');
+  });
+
+  test('uses a horizontal scroll view so tabs are not cramped', () => {
+    const {UNSAFE_getByType} = render(
+      <RecipeDetailTabBar
+        activeTab="overview"
+        onSelect={jest.fn()}
+      />,
+    );
+    expect(UNSAFE_getByType(ScrollView).props.horizontal).toBe(true);
   });
 });

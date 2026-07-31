@@ -1,5 +1,6 @@
 import React from 'react';
-import {fireEvent, waitFor} from '@testing-library/react-native';
+import {ActivityIndicator} from 'react-native';
+import {act, fireEvent, waitFor} from '@testing-library/react-native';
 
 import {makeRecipeDetail} from '../__tests__/fixtures/recipe';
 import {makeStackProps, renderWithProviders} from '../__tests__/testUtils';
@@ -52,5 +53,27 @@ describe('EditRecipeScreen', () => {
         recipeId: 'recipe-uuid-1',
       });
     });
+  });
+
+  test('shows a delayed loading gate while the recipe is fetching', () => {
+    jest.useFakeTimers();
+    mockGet.mockImplementation(
+      () =>
+        new Promise(() => {
+          /* never resolves */
+        }),
+    );
+    const {UNSAFE_queryByType} = renderWithProviders(
+      <EditRecipeScreen {...stackProps} />,
+    );
+
+    expect(UNSAFE_queryByType(ActivityIndicator)).toBeNull();
+
+    act(() => {
+      jest.advanceTimersByTime(100);
+    });
+
+    expect(UNSAFE_queryByType(ActivityIndicator)).toBeTruthy();
+    jest.useRealTimers();
   });
 });

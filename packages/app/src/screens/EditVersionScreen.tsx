@@ -10,6 +10,7 @@ import {ScrollView, Text, TouchableOpacity, View} from 'react-native';
 import type {RecipeVersionInput} from '@eciperay/types';
 
 import {RecipeForm} from '../components/recipe/RecipeForm';
+import {ScreenLoadingGate} from '../components/ScreenLoadingGate';
 import {api} from '../lib/api';
 import type {RecipesStackParamList} from '../navigation/types';
 
@@ -41,9 +42,9 @@ export const EditVersionScreen = ({route, navigation}: Props) => {
 
   if (isLoading || !version) {
     return (
-      <View className="flex-1 items-center justify-center">
-        <Text>Loading…</Text>
-      </View>
+      <ScreenLoadingGate pending>
+        <View />
+      </ScreenLoadingGate>
     );
   }
 

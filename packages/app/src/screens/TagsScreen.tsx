@@ -3,6 +3,7 @@ import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import React, {useState} from 'react';
 import {Text, TextInput, TouchableOpacity, View} from 'react-native';
 
+import {InlineLoadingIndicator} from '../components/InlineLoadingIndicator';
 import {api} from '../lib/api';
 
 export const TagsScreen = (): React.JSX.Element => {
@@ -67,7 +68,7 @@ export const TagsScreen = (): React.JSX.Element => {
         </TouchableOpacity>
       </View>
       {isLoading ? (
-        <Text className="text-muted">Loading…</Text>
+        <InlineLoadingIndicator loading />
       ) : (
         tags.map(tag => (
           <View

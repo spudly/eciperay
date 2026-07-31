@@ -2,9 +2,10 @@ import {queryKeys, recordRecipeView} from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useQuery, useQueryClient} from '@tanstack/react-query';
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
-import {ScrollView, Text, View} from 'react-native';
+import {ScrollView, View} from 'react-native';
 
 import {RecipeStatusBadge} from '../components/recipe/RecipeStatusBadge';
+import {ScreenLoadingGate} from '../components/ScreenLoadingGate';
 import {
   RecipeDetailTabBar,
   type RecipeDetailTab,
@@ -91,9 +92,9 @@ export const RecipeDetailScreen = ({route, navigation}: DetailProps) => {
 
   if (isLoading || !recipe || !displayRecipe) {
     return (
-      <View className="flex-1 items-center justify-center">
-        <Text>Loading…</Text>
-      </View>
+      <ScreenLoadingGate pending>
+        <View />
+      </ScreenLoadingGate>
     );
   }
 

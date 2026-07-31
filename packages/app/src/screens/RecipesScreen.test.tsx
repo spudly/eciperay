@@ -100,14 +100,25 @@ describe('RecipesScreen', () => {
   });
 
   test('shows loading state while fetching', () => {
+    jest.useFakeTimers();
     mockList.mockImplementation(
       () =>
         new Promise(() => {
           /* never resolves */
         }),
     );
-    const {getByText} = renderWithProviders(<RecipesScreen {...stackProps} />);
-    expect(getByText('Loading…')).toBeTruthy();
+    const {UNSAFE_getByType} = renderWithProviders(
+      <RecipesScreen {...stackProps} />,
+    );
+
+    act(() => {
+      jest.advanceTimersByTime(100);
+    });
+
+    expect(
+      UNSAFE_getByType(require('react-native').ActivityIndicator),
+    ).toBeTruthy();
+    jest.useRealTimers();
   });
 
   test('loads more recipes when the list end is reached', async () => {

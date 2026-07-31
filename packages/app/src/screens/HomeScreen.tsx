@@ -18,6 +18,7 @@ import {Alert, ScrollView, Text, TouchableOpacity, View} from 'react-native';
 import type {RecipeDetail} from '@eciperay/types';
 
 import {RecipeListCard} from '../components/RecipeListCard';
+import {InlineLoadingIndicator} from '../components/InlineLoadingIndicator';
 import {api} from '../lib/api';
 import {recipeViewHistoryStorage} from '../lib/recipeViewHistoryStorage';
 import type {RootTabParamList} from '../navigation/types';
@@ -120,7 +121,10 @@ export const HomeScreen = ({navigation}: Props) => {
 
       <View className="px-4 pb-8">
         {isLoading ? (
-          <Text className="text-muted mt-8 text-center">Loading…</Text>
+          <InlineLoadingIndicator
+            loading
+            className="mt-8"
+          />
         ) : recipes.length === 0 ? (
           <Text className="text-muted text-center">{HOME_EMPTY_MESSAGE}</Text>
         ) : (
