@@ -10,7 +10,10 @@ import {useNavigate, useParams, useSearchParams} from 'react-router-dom';
 import type {CookLogInput} from '@eciperay/types';
 
 import {CookLogForm} from '../components/cooking/CookLogForm.js';
-import {CookingModeView} from '../components/cooking/CookingModeView.js';
+import {
+  CookingModeCookLogShell,
+  CookingModeView,
+} from '../components/cooking/CookingModeView.js';
 import {eciperay} from '../lib/api.js';
 
 export const CookingModePage = () => {
@@ -96,11 +99,7 @@ export const CookingModePage = () => {
 
   if (showCookLogForm) {
     return (
-      <div
-        className="
-          fixed inset-0 flex items-center justify-center bg-gray-900 px-6
-        "
-      >
+      <CookingModeCookLogShell>
         <CookLogForm
           isPending={cookLogMutation.isPending}
           onSkip={() => {
@@ -110,7 +109,7 @@ export const CookingModePage = () => {
             cookLogMutation.mutate(input);
           }}
         />
-      </div>
+      </CookingModeCookLogShell>
     );
   }
 

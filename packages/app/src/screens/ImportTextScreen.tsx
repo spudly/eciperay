@@ -1,24 +1,19 @@
 import {useAnalytics} from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import React, {useState} from 'react';
-import {Text, TextInput, TouchableOpacity, View} from 'react-native';
+import {useState} from 'react';
 
+import {ImportTextView} from '../components/import/ImportTextView';
 import {api} from '../lib/api';
 import type {AddStackParamList} from '../navigation/types';
 
 type Props = NativeStackScreenProps<AddStackParamList, 'ImportText'>;
 
 export const ImportTextScreen = ({navigation}: Props) => {
-  const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const analytics = useAnalytics();
 
-  const handleImport = async () => {
-    /* istanbul ignore next -- import button disabled when text is empty */
-    if (!text.trim()) {
-      return;
-    }
+  const handleImport = async (text: string) => {
     setLoading(true);
     setError(null);
     try {
@@ -36,38 +31,12 @@ export const ImportTextScreen = ({navigation}: Props) => {
   };
 
   return (
-    <View className="flex-1 bg-gray-50 px-4 pt-4">
-      <Text className="mb-2 text-2xl font-bold text-gray-900">
-        Import from text
-      </Text>
-      <Text className="text-muted mb-4 text-sm">
-        Paste a recipe from Word, a web page, or any rich text source.
-      </Text>
-      <TextInput
-        className="mb-4 min-h-48 rounded-lg border border-gray-300 px-4 py-3"
-        placeholder="Paste your recipe here…"
-        value={text}
-        onChangeText={setText}
-        multiline
-        textAlignVertical="top"
-      />
-      {error ? (
-        <Text className="mb-4 text-sm text-red-600">{error}</Text>
-      ) : null}
-      <TouchableOpacity
-        className="
-          bg-primary items-center rounded-lg py-3
-          disabled:opacity-50
-        "
-        disabled={loading || !text.trim()}
-        onPress={() => {
-          void handleImport();
-        }}
-      >
-        <Text className="font-semibold text-white">
-          {loading ? 'Importing…' : 'Import'}
-        </Text>
-      </TouchableOpacity>
-    </View>
+    <ImportTextView
+      loading={loading}
+      error={error}
+      onSubmit={text => {
+        void handleImport(text);
+      }}
+    />
   );
 };

@@ -1,9 +1,11 @@
+/* eslint-disable max-lines -- cooking mode shell aggregates native layout fragments */
 import {
   formatScaledIngredientLine,
   sortIngredientsByOrder,
 } from '@eciperay/client';
 import clsx from 'clsx';
-import React, {useState} from 'react';
+import type {ReactNode} from 'react';
+import {useState} from 'react';
 import {
   GestureResponderEvent,
   ScrollView,
@@ -12,6 +14,43 @@ import {
   View,
 } from 'react-native';
 import type {RecipeDetail} from '@eciperay/types';
+
+export const CookingModeShell = ({
+  children,
+  onResponderGrant,
+  onResponderRelease,
+}: {
+  children: ReactNode;
+  onResponderGrant?: (e: GestureResponderEvent) => void;
+  onResponderRelease?: (e: GestureResponderEvent) => void;
+}) => (
+  <View
+    className="ui-cooking-mode-overlay"
+    onStartShouldSetResponder={
+      /* istanbul ignore next -- touch responder required for swipe gestures */
+      () => true
+    }
+    onResponderGrant={onResponderGrant}
+    onResponderRelease={onResponderRelease}
+  >
+    {children}
+  </View>
+);
+
+export const CookingModeCookLogShell = ({children}: {children: ReactNode}) => (
+  <View className="ui-cooking-mode-overlay ui-cooking-mode-overlay-centered">
+    {children}
+  </View>
+);
+
+export const CookingModeDoneButton = ({onPress}: {onPress: () => void}) => (
+  <TouchableOpacity
+    className="ui-cooking-mode-done-button"
+    onPress={onPress}
+  >
+    <Text className="text-sm text-white">Done</Text>
+  </TouchableOpacity>
+);
 
 type Step = RecipeDetail['instructions'][number];
 

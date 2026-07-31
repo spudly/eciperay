@@ -4,12 +4,24 @@ import {useQueryClient} from '@tanstack/react-query';
 import {useRef, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
-import {LegalLinks} from '../components/LegalLinks.js';
 import {ProfileAccountDataSection} from '../components/ProfileAccountDataSection.js';
-import {ProfileFeedbackPreference} from '../components/ProfileFeedbackPreference.js';
-import {RecipeExportPicker} from '../components/RecipeExportPicker.js';
+import {ProfileView} from '../components/profile/ProfileView.js';
+import {ProfileTransferSection} from '../components/profile/ProfileTransferSection.js';
 import {eciperay} from '../lib/api.js';
 import {supabase} from '../lib/supabase.js';
+
+const createComponentShowcasePress = (
+  navigate: ReturnType<typeof useNavigate>,
+): (() => void) | undefined => {
+  /* v8 ignore start -- production-only branch (Vitest runs with DEV=true) */
+  if (!import.meta.env.DEV) {
+    return undefined;
+  }
+  /* v8 ignore stop */
+  return () => {
+    void navigate('/dev/components');
+  };
+};
 
 const parseImportFile = async (file: File): Promise<RecipeExportBundle> => {
   const text = await file.text();
@@ -77,78 +89,28 @@ export const ProfilePage = () => {
   };
 
   return (
-    <div>
-      <h1 className="mbe-6 text-2xl font-bold text-gray-900">Profile</h1>
-      <p className="mbe-6 text-gray-700">{session?.user.email}</p>
-
-      <section className="mbe-8 rounded-xl bg-white p-4 shadow-sm">
-        <h2 className="mbe-1 text-lg font-semibold text-gray-900">
-          Transfer recipes
-        </h2>
-        <p className="text-muted mbe-4 text-sm">
-          Select recipes to export as JSON, then import them in another
-          environment. Images and tags are included.
-        </p>
-        <RecipeExportPicker
-          disabled={importing}
-          onError={setTransferError}
+    <ProfileView
+      email={session?.user.email}
+      onComponentShowcasePress={createComponentShowcasePress(navigate)}
+      onSignOut={() => {
+        void handleSignOut();
+      }}
+      sectionsBeforeFeedback={
+        <ProfileTransferSection
+          importing={importing}
+          importSummary={importSummary}
+          transferError={transferError}
+          fileInputRef={fileInputRef}
+          onImportClick={() => {
+            fileInputRef.current?.click();
+          }}
+          onImportFile={file => {
+            void handleImportFile(file);
+          }}
+          onExportError={setTransferError}
         />
-        <div className="mbs-6 border-bs pbs-4 border-gray-100">
-          <button
-            type="button"
-            className="
-              rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm
-              font-medium text-gray-900
-              disabled:opacity-50
-            "
-            disabled={importing}
-            onClick={() => {
-              fileInputRef.current?.click();
-            }}
-          >
-            {importing ? 'Importing…' : 'Import recipes'}
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="application/json,.json"
-            className="hidden"
-            onChange={event => {
-              const file = event.target.files?.[0];
-              if (file) {
-                void handleImportFile(file);
-              }
-            }}
-          />
-        </div>
-        {importSummary ? (
-          <p className="mbs-4 text-sm text-green-700">{importSummary}</p>
-        ) : null}
-        {transferError ? (
-          <p className="mbs-4 text-sm text-red-600">{transferError}</p>
-        ) : null}
-      </section>
-
-      <ProfileAccountDataSection />
-
-      <ProfileFeedbackPreference />
-
-      <section className="mbe-8 rounded-xl bg-white p-4 shadow-sm">
-        <h2 className="mbe-3 text-lg font-semibold text-gray-900">Legal</h2>
-        <LegalLinks variant="stacked" />
-      </section>
-
-      <button
-        type="button"
-        className="
-          rounded-lg bg-red-50 px-4 py-2 text-sm font-medium text-red-600
-        "
-        onClick={() => {
-          void handleSignOut();
-        }}
-      >
-        Sign Out
-      </button>
-    </div>
+      }
+      sectionsAfterFeedback={<ProfileAccountDataSection />}
+    />
   );
 };

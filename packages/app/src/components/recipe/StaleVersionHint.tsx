@@ -12,3 +12,9 @@ export const StaleVersionHint = ({label}: Props) => (
     accessibilityLabel={label}
   />
 );
+
+if (__DEV__) {
+  StaleVersionHint.demo = () => (
+    <StaleVersionHint label="Based on an older version" />
+  );
+}

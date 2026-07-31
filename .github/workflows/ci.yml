@@ -55,6 +55,9 @@ jobs:
       - name: Validate Node version
         run: npm run validate:node-version
 
+      - name: Validate UI parity registry
+        run: npm run validate:ui-parity
+
   typecheck:
     name: typecheck
     needs: install

@@ -1,19 +1,11 @@
 import {
-  SHARED_WITH_ME_EMPTY_MESSAGE,
   SHARED_WITH_ME_TITLE,
   sharedWithMeInfiniteQueryOptions,
 } from '@eciperay/client';
 import {useInfiniteQuery} from '@tanstack/react-query';
-import React from 'react';
-import {FlatList, StyleSheet, Text, View} from 'react-native';
 
-import {SharedRecipeListCard} from '../components/SharedRecipeListCard';
-import {InlineLoadingIndicator} from '../components/InlineLoadingIndicator';
+import {SharedWithMeView} from '../components/shared/SharedWithMeView';
 import {api} from '../lib/api';
-
-const styles = StyleSheet.create({
-  listContent: {paddingHorizontal: 16, paddingBottom: 32},
-});
 
 export const SharedWithMeScreen = () => {
   const {data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage} =
@@ -32,35 +24,13 @@ export const SharedWithMeScreen = () => {
   };
 
   return (
-    <View className="flex-1 bg-gray-50">
-      {isLoading ? (
-        <InlineLoadingIndicator
-          loading
-          className="mt-8"
-        />
-      ) : (
-        <FlatList
-          data={recipes}
-          keyExtractor={r => r.id}
-          contentContainerStyle={styles.listContent}
-          renderItem={({item}) => <SharedRecipeListCard recipe={item} />}
-          onEndReached={loadMore}
-          onEndReachedThreshold={0.4}
-          ListEmptyComponent={
-            <Text className="text-muted mt-8 px-4 text-center">
-              {SHARED_WITH_ME_EMPTY_MESSAGE}
-            </Text>
-          }
-          ListFooterComponent={
-            isFetchingNextPage ? (
-              <Text className="text-muted py-4 text-center text-sm">
-                Loading more…
-              </Text>
-            ) : null
-          }
-        />
-      )}
-    </View>
+    <SharedWithMeView
+      isLoading={isLoading}
+      recipes={recipes}
+      isFetchingNextPage={isFetchingNextPage}
+      onLoadMore={loadMore}
+      showTitle={false}
+    />
   );
 };
 

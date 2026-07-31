@@ -1,18 +1,14 @@
-import clsx from 'clsx';
-import type {ReactNode} from 'react';
-import {ActivityIndicator, View} from 'react-native';
-
 import {
   DEFAULT_LOADING_DELAY_MS,
   useDelayedTrue,
-} from '../hooks/useDelayedTrue';
+  type ScreenLoadingGateProps,
+} from '@eciperay/client';
+import clsx from 'clsx';
+import {ActivityIndicator, View} from 'react-native';
+import {useState} from 'react';
 
-type ScreenLoadingGateProps = {
-  pending: boolean;
-  delayMs?: number;
-  children: ReactNode;
-  backgroundClassName?: string;
-};
+import {InfoBanner} from './ui/InfoBanner';
+import {PrimaryButton} from './ui/PrimaryButton';
 
 export const ScreenLoadingGate = ({
   pending,
@@ -31,13 +27,30 @@ export const ScreenLoadingGate = ({
   }
 
   return (
-    <View
-      className={clsx(
-        'flex-1 items-center justify-center',
-        backgroundClassName,
-      )}
-    >
+    <View className={clsx('ui-loading-center flex-1', backgroundClassName)}>
       <ActivityIndicator size="large" />
     </View>
   );
 };
+
+if (__DEV__) {
+  const ScreenLoadingGateDemo = () => {
+    const [pending, setPending] = useState(true);
+
+    return (
+      <>
+        <PrimaryButton
+          label={pending ? 'Mark ready' : 'Mark pending'}
+          onPress={() => {
+            setPending(current => !current);
+          }}
+        />
+        <ScreenLoadingGate pending={pending}>
+          <InfoBanner>Loaded content behind the gate.</InfoBanner>
+        </ScreenLoadingGate>
+      </>
+    );
+  };
+
+  ScreenLoadingGate.demo = () => <ScreenLoadingGateDemo />;
+}

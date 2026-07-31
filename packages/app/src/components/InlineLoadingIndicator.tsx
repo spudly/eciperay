@@ -1,16 +1,13 @@
-import clsx from 'clsx';
-import {ActivityIndicator, View} from 'react-native';
-
 import {
   DEFAULT_LOADING_DELAY_MS,
   useDelayedTrue,
-} from '../hooks/useDelayedTrue';
+  type InlineLoadingIndicatorProps,
+} from '@eciperay/client';
+import clsx from 'clsx';
+import {useState} from 'react';
+import {ActivityIndicator, View} from 'react-native';
 
-type InlineLoadingIndicatorProps = {
-  loading: boolean;
-  delayMs?: number;
-  className?: string;
-};
+import {PrimaryButton} from './ui/PrimaryButton';
 
 export const InlineLoadingIndicator = ({
   loading,
@@ -24,8 +21,31 @@ export const InlineLoadingIndicator = ({
   }
 
   return (
-    <View className={clsx('items-center', className)}>
+    <View className={clsx('ui-loading-center', className)}>
       <ActivityIndicator />
     </View>
   );
 };
+
+if (__DEV__) {
+  const InlineLoadingIndicatorDemo = () => {
+    const [loading, setLoading] = useState(true);
+
+    return (
+      <>
+        <PrimaryButton
+          label={loading ? 'Hide spinner' : 'Show spinner'}
+          onPress={() => {
+            setLoading(current => !current);
+          }}
+        />
+        <InlineLoadingIndicator
+          loading={loading}
+          className="mt-2"
+        />
+      </>
+    );
+  };
+
+  InlineLoadingIndicator.demo = () => <InlineLoadingIndicatorDemo />;
+}

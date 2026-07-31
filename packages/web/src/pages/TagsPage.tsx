@@ -2,6 +2,7 @@ import {queryKeys} from '@eciperay/client';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useState} from 'react';
 
+import {TagsView} from '../components/tags/TagsView.js';
 import {eciperay} from '../lib/api.js';
 
 export const TagsPage = () => {
@@ -29,8 +30,7 @@ export const TagsPage = () => {
     },
   });
 
-  const handleCreate = (e: React.SubmitEvent) => {
-    e.preventDefault();
+  const handleCreate = () => {
     if (!name.trim()) {
       return;
     }
@@ -38,70 +38,18 @@ export const TagsPage = () => {
   };
 
   return (
-    <div>
-      <h1 className="mb-6 text-2xl font-bold text-gray-900">Tags</h1>
-      <form
-        onSubmit={handleCreate}
-        className="mb-6 flex gap-2"
-      >
-        <input
-          className="flex-1 rounded-lg border border-gray-300 px-4 py-2"
-          placeholder="Tag name"
-          value={name}
-          onChange={e => {
-            setName(e.target.value);
-          }}
-        />
-        <input
-          type="color"
-          className="h-10 w-12 cursor-pointer rounded border border-gray-300"
-          value={color}
-          onChange={e => {
-            setColor(e.target.value);
-          }}
-        />
-        <button
-          type="submit"
-          disabled={!name.trim() || createMutation.isPending}
-          className="
-            bg-primary rounded-lg px-4 py-2 font-medium text-white
-            disabled:opacity-50
-          "
-        >
-          Add
-        </button>
-      </form>
-      {isLoading ? (
-        <p className="text-muted">Loading…</p>
-      ) : (
-        <div className="space-y-2">
-          {tags.map(tag => (
-            <div
-              key={tag.id}
-              className="
-                flex items-center justify-between rounded-lg bg-white p-3
-                shadow-sm
-              "
-            >
-              <span
-                className="rounded-full px-3 py-1 text-sm font-medium"
-                style={{backgroundColor: `${tag.color}22`, color: tag.color}}
-              >
-                {tag.name}
-              </span>
-              <button
-                type="button"
-                className="text-sm text-red-600"
-                onClick={() => {
-                  deleteMutation.mutate(tag.id);
-                }}
-              >
-                Delete
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+    <TagsView
+      tags={tags}
+      isLoading={isLoading}
+      name={name}
+      color={color}
+      onNameChange={setName}
+      onColorChange={setColor}
+      onCreate={handleCreate}
+      onDelete={id => {
+        deleteMutation.mutate(id);
+      }}
+      isCreating={createMutation.isPending}
+    />
   );
 };

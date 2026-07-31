@@ -1,4 +1,7 @@
-import {useFeedbackShortcutEnabled} from '@eciperay/client';
+import {
+  type ShowcaseDemoRenderer,
+  useFeedbackShortcutEnabled,
+} from '@eciperay/client';
 import {Switch, Text, View} from 'react-native';
 
 import {POSTHOG_KEY} from '../lib/env';
@@ -38,3 +41,12 @@ export const ProfileFeedbackPreference = () => {
     </View>
   );
 };
+
+if (__DEV__) {
+  const profileFeedbackPreferenceDemo: ShowcaseDemoRenderer = ({Frame}) => (
+    <Frame>
+      <ProfileFeedbackPreference />
+    </Frame>
+  );
+  ProfileFeedbackPreference.demo = profileFeedbackPreferenceDemo;
+}

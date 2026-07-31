@@ -1,8 +1,17 @@
 import clsx from 'clsx';
+import type {ReactNode} from 'react';
 import type {RecipeDetail} from '@eciperay/types';
 
 import {ProgressDots} from './ProgressDots.js';
 import {ScaledIngredientsList} from './ScaledIngredientsList.js';
+
+export const CookingModeCookLogShell = ({children}: {children: ReactNode}) => (
+  <div className="
+    ui-cooking-mode-overlay-fixed ui-cooking-mode-overlay-centered
+  ">
+    {children}
+  </div>
+);
 
 type Props = {
   displayRecipe: RecipeDetail | undefined;
@@ -28,13 +37,10 @@ export const CookingModeView = ({
   const current = steps[step];
 
   return (
-    <div className="fixed inset-0 flex flex-col justify-center bg-gray-900 px-6">
+    <div className="ui-cooking-mode-overlay-fixed">
       <button
         type="button"
-        className="
-          absolute right-6 top-6 rounded-full bg-white/10 px-4 py-2 text-sm
-          text-white
-        "
+        className="ui-cooking-mode-done-button text-sm text-white"
         onClick={onDone}
       >
         Done

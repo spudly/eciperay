@@ -6,10 +6,9 @@ import {
 } from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useQueryClient} from '@tanstack/react-query';
-import React from 'react';
-import {Text, View} from 'react-native';
 import type {RecipeInput} from '@eciperay/types';
 
+import {ManualEntryView} from '../components/recipe/ManualEntryView';
 import {RecipeForm} from '../components/recipe/RecipeForm';
 import type {PendingRecipeImage} from '../lib/recipeImageAsset';
 import {api} from '../lib/api';
@@ -58,15 +57,12 @@ export const ManualEntryScreen = ({navigation}: Props) => {
   };
 
   return (
-    <View className="flex-1 bg-gray-50 px-4 pt-4">
-      <Text className="mb-4 text-2xl font-bold text-gray-900">
-        Manual Entry
-      </Text>
+    <ManualEntryView>
       <RecipeForm
         initial={emptyInput}
         submitLabel="Create Recipe"
         onSubmit={handleSubmit}
       />
-    </View>
+    </ManualEntryView>
   );
 };

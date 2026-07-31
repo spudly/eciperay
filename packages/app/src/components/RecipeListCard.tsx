@@ -1,6 +1,7 @@
 import React from 'react';
 import {Image, Text, TouchableOpacity, View} from 'react-native';
 import type {RecipeDetail} from '@eciperay/types';
+import {makeRecipeDetail, type ShowcaseDemoRenderer} from '@eciperay/client';
 
 const RecipeThumbnail = ({recipe}: {recipe: RecipeDetail}) =>
   recipe.imageUrl ? (
@@ -44,3 +45,20 @@ export const RecipeListCard = ({recipe, onPress, onDelete}: Props) => (
     </TouchableOpacity>
   </View>
 );
+
+if (__DEV__) {
+  const recipeListCardDemo: ShowcaseDemoRenderer = ({Frame}) => (
+    <Frame>
+      <RecipeListCard
+        recipe={makeRecipeDetail()}
+        onPress={() => {
+          void 0;
+        }}
+        onDelete={() => {
+          void 0;
+        }}
+      />
+    </Frame>
+  );
+  RecipeListCard.demo = recipeListCardDemo;
+}

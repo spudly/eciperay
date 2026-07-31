@@ -1,5 +1,11 @@
 /* eslint-disable max-lines -- shared conversational AI session UI */
-import {errorMessage, parseProposedRecipe} from '@eciperay/client';
+import {
+  createShowcaseAiSessionFlowApi,
+  errorMessage,
+  parseProposedRecipe,
+  showcaseAiSessionConfig,
+  type ShowcaseDemoRenderer,
+} from '@eciperay/client';
 import {useMutation} from '@tanstack/react-query';
 import {useState} from 'react';
 import type {TweakAiMessage, TweakAiPhase} from '@eciperay/types';
@@ -298,3 +304,24 @@ export const AiSessionFlow = ({
     </div>
   );
 };
+
+if (import.meta.env.DEV) {
+  const aiSessionFlowDemo: ShowcaseDemoRenderer = ({Frame}) => (
+    <Frame>
+      <AiSessionFlow
+        config={showcaseAiSessionConfig}
+        api={createShowcaseAiSessionFlowApi()}
+        onEmptyCancel={() => {
+          void 0;
+        }}
+        onFinalizeSuccess={() => {
+          void 0;
+        }}
+        onCancelSuccess={() => {
+          void 0;
+        }}
+      />
+    </Frame>
+  );
+  AiSessionFlow.demo = aiSessionFlowDemo;
+}

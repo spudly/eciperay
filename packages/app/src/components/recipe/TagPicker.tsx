@@ -1,4 +1,4 @@
-import {queryKeys} from '@eciperay/client';
+import {queryKeys, type ShowcaseDemoRenderer} from '@eciperay/client';
 import {useQuery} from '@tanstack/react-query';
 import clsx from 'clsx';
 import React from 'react';
@@ -53,3 +53,17 @@ export const TagPicker = ({selectedIds, onChange}: Props) => {
     </View>
   );
 };
+
+if (__DEV__) {
+  const tagPickerDemo: ShowcaseDemoRenderer = ({Frame}) => (
+    <Frame>
+      <TagPicker
+        selectedIds={['tag-1']}
+        onChange={() => {
+          void 0;
+        }}
+      />
+    </Frame>
+  );
+  TagPicker.demo = tagPickerDemo;
+}

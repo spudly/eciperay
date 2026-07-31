@@ -1,9 +1,14 @@
+import {
+  makeRecipeDetail,
+  makeRecipeVersionSummary,
+  type ShowcaseDemoRenderer,
+} from '@eciperay/client';
 import type {
   RecipeDetail,
   RecipeRatingSummary,
   RecipeVersionSummary,
 } from '@eciperay/types';
-import React from 'react';
+import React, {useState} from 'react';
 
 import {CookHistoryTab} from './CookHistoryTab';
 import {IngredientsTab} from './IngredientsTab';
@@ -93,3 +98,46 @@ export const RecipeDetailTabPanel = ({
   }
   return <NutritionTab recipeId={recipe.id} />;
 };
+
+if (__DEV__) {
+  const RecipeDetailTabPanelDemo = () => {
+    const recipe = makeRecipeDetail();
+    const [servings, setServings] = useState(recipe.servings);
+    return (
+      <RecipeDetailTabPanel
+        activeTab="overview"
+        recipe={recipe}
+        displayRecipe={recipe}
+        versions={[makeRecipeVersionSummary()]}
+        currentServings={servings}
+        scaleFactor={1}
+        onServingsChange={setServings}
+        onStartCooking={() => {
+          void 0;
+        }}
+        onDelete={() => {
+          void 0;
+        }}
+        onTweakAi={() => {
+          void 0;
+        }}
+        onViewVersion={() => {
+          void 0;
+        }}
+        onEditRecipe={() => {
+          void 0;
+        }}
+        onEditVersion={() => {
+          void 0;
+        }}
+      />
+    );
+  };
+
+  const recipeDetailTabPanelDemo: ShowcaseDemoRenderer = ({Frame}) => (
+    <Frame>
+      <RecipeDetailTabPanelDemo />
+    </Frame>
+  );
+  RecipeDetailTabPanel.demo = recipeDetailTabPanelDemo;
+}

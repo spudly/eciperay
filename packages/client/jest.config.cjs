@@ -16,6 +16,9 @@ module.exports = {
     '!**/*.d.ts',
     '!src/index.ts',
     '!src/test/**',
+    '!src/ui/**',
+    '!src/dev/showcaseFixtures.ts', // showcase mock factories for dev previews
+    '!src/dev/showcaseComponent.ts', // showcase demo types and id helper
   ],
   coverageThreshold: {
     global: {branches: 100, functions: 100, lines: 100, statements: 100},

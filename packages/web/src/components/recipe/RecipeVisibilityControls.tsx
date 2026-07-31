@@ -2,10 +2,12 @@
 import {
   buildRecipePermalink,
   invalidateRecipeQueries,
+  makeRecipeDetail,
   PRIVACY_POLICY_URL,
   recipeVisibilityDescriptions,
   recipeVisibilityLabels,
   requiresPublishingConsent,
+  type ShowcaseDemoRenderer,
 } from '@eciperay/client';
 import type {RecipeDetail, RecipeVisibility} from '@eciperay/types';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
@@ -215,3 +217,17 @@ export const RecipeVisibilityControls = ({recipe, onActionMessage}: Props) => {
     </section>
   );
 };
+
+if (import.meta.env.DEV) {
+  const recipeVisibilityControlsDemo: ShowcaseDemoRenderer = ({Frame}) => (
+    <Frame>
+      <RecipeVisibilityControls
+        recipe={makeRecipeDetail()}
+        onActionMessage={() => {
+          void 0;
+        }}
+      />
+    </Frame>
+  );
+  RecipeVisibilityControls.demo = recipeVisibilityControlsDemo;
+}

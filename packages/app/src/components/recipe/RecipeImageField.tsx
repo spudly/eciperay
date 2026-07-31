@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- recipe image upload, paste, and generate controls */
 import React from 'react';
 import {Image, Text, TouchableOpacity, View} from 'react-native';
 import {launchImageLibrary} from 'react-native-image-picker';
@@ -147,3 +148,19 @@ export const RecipeImageField = ({
     </View>
   );
 };
+
+if (__DEV__) {
+  RecipeImageField.demo = () => (
+    <RecipeImageField
+      imagePreview={null}
+      imageUploading={false}
+      imageError={null}
+      onImagePicked={() => {
+        void 0;
+      }}
+      onRemove={() => {
+        void 0;
+      }}
+    />
+  );
+}

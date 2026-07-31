@@ -1,13 +1,3 @@
-import {LEGAL_CONTACT_EMAIL} from '@eciperay/client';
+import {LegalInlineLink} from '../../components/legal/LegalInlineLink.js';
 
-export const legalContactLink = (
-  <a
-    href={`mailto:${LEGAL_CONTACT_EMAIL}`}
-    className="
-      text-primary font-medium
-      hover:underline
-    "
-  >
-    {LEGAL_CONTACT_EMAIL}
-  </a>
-);
+export const legalContactLink = <LegalInlineLink />;

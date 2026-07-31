@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {Text, TouchableOpacity, View} from 'react-native';
 
 type Props = {servings: number; onChange: (n: number) => void};
@@ -25,3 +25,18 @@ export const ServingsStepper = ({servings, onChange}: Props) => (
     </TouchableOpacity>
   </View>
 );
+
+if (__DEV__) {
+  const ServingsStepperDemo = () => {
+    const [servings, setServings] = useState(4);
+
+    return (
+      <ServingsStepper
+        servings={servings}
+        onChange={setServings}
+      />
+    );
+  };
+
+  ServingsStepper.demo = () => <ServingsStepperDemo />;
+}

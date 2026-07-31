@@ -75,6 +75,12 @@ describe('ProfileScreen', () => {
     expect(mockNavigate).toHaveBeenCalledWith('Tags');
   });
 
+  test('opens the component showcase in dev', () => {
+    const {getByText} = renderProfileScreen();
+    fireEvent.press(getByText('Component Showcase'));
+    expect(mockNavigate).toHaveBeenCalledWith('ComponentShowcase');
+  });
+
   test('opens legal document URLs', () => {
     const {getByText} = renderProfileScreen();
     fireEvent.press(getByText('Privacy Policy'));

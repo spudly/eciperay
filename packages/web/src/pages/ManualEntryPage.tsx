@@ -8,6 +8,7 @@ import {useQueryClient} from '@tanstack/react-query';
 import {useNavigate} from 'react-router-dom';
 import type {RecipeInput} from '@eciperay/types';
 
+import {ManualEntryView} from '../components/recipe/ManualEntryView.js';
 import {RecipeForm} from '../components/recipe/RecipeForm.js';
 import {eciperay} from '../lib/api.js';
 import {supabase} from '../lib/supabase.js';
@@ -50,13 +51,12 @@ export const ManualEntryPage = () => {
   };
 
   return (
-    <div>
-      <h1 className="mb-6 text-2xl font-bold text-gray-900">Manual Entry</h1>
+    <ManualEntryView>
       <RecipeForm
         initial={emptyInput}
         submitLabel="Create Recipe"
         onSubmit={handleSubmit}
       />
-    </div>
+    </ManualEntryView>
   );
 };

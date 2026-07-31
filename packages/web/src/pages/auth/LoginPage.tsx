@@ -1,8 +1,8 @@
 import {errorMessage, useAuth} from '@eciperay/client';
 import {useState} from 'react';
-import {Link, Navigate} from 'react-router-dom';
+import {Navigate} from 'react-router-dom';
 
-import {LegalLinks} from '../../components/LegalLinks.js';
+import {SignInView} from '../../components/auth/SignInView.js';
 import {eciperay} from '../../lib/api.js';
 import {supabase} from '../../lib/supabase.js';
 
@@ -22,8 +22,7 @@ export const LoginPage = () => {
     );
   }
 
-  const handleSignIn = async (e: React.SubmitEvent) => {
-    e.preventDefault();
+  const handleSignIn = async () => {
     setLoading(true);
     setError(null);
     try {
@@ -43,67 +42,18 @@ export const LoginPage = () => {
   };
 
   return (
-    <div className="pbs-20 max-inline-md mx-auto px-6">
-      <h1 className="mbe-8 text-3xl font-bold text-gray-900">Welcome back</h1>
-      <form
-        onSubmit={e => {
-          void handleSignIn(e);
-        }}
-        className="space-y-4"
-      >
-        <input
-          className="
-            inline-full rounded-lg border border-gray-300 px-4 py-3 text-base
-          "
-          placeholder="Email"
-          type="email"
-          value={email}
-          onChange={e => {
-            setEmail(e.target.value);
-          }}
-          autoComplete="email"
-        />
-        <input
-          className="
-            inline-full rounded-lg border border-gray-300 px-4 py-3 text-base
-          "
-          placeholder="Password"
-          type="password"
-          value={password}
-          onChange={e => {
-            setPassword(e.target.value);
-          }}
-          autoComplete="current-password"
-        />
-        {error ? <p className="text-sm text-red-600">{error}</p> : null}
-        <button
-          type="submit"
-          disabled={loading}
-          className="
-            bg-primary inline-full rounded-lg py-4 text-base font-semibold
-            text-white
-            disabled:opacity-50
-          "
-        >
-          {loading ? 'Signing in…' : 'Sign In'}
-        </button>
-      </form>
-      <Link
-        to="/signup"
-        className="text-primary mbs-4 block text-center text-base"
-      >
-        Create an account
-      </Link>
-      <Link
-        to="/forgot-password"
-        className="text-muted mbs-2 block text-center text-sm"
-      >
-        Forgot password?
-      </Link>
-      <LegalLinks
-        className="mbs-6"
-        variant="stacked"
-      />
-    </div>
+    <SignInView
+      email={email}
+      password={password}
+      onEmailChange={setEmail}
+      onPasswordChange={setPassword}
+      loading={loading}
+      error={error}
+      onSubmit={() => {
+        void handleSignIn();
+      }}
+      signUpTo="/signup"
+      forgotPasswordTo="/forgot-password"
+    />
   );
 };

@@ -1,10 +1,9 @@
-import React, {useState} from 'react';
-import {Alert, Text, TouchableOpacity, View} from 'react-native';
 import {errorMessage} from '@eciperay/client';
+import {useState} from 'react';
+import {Alert} from 'react-native';
 
+import {SignUpView} from '../../components/auth/SignUpView';
 import {AUTH_DEEP_LINK_REDIRECT_URL} from '../../lib/authDeepLink';
-import {LegalLinks} from '../../components/LegalLinks';
-import {AuthTextField} from '../../components/auth/AuthTextField';
 import {api} from '../../lib/api';
 import {
   normalizeAuthEmail,
@@ -64,58 +63,22 @@ export const SignUpScreen = ({navigation}: SignUpProps) => {
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [loading, setLoading] = useState(false);
-  const handleSignUp = () =>
-    void runSignUp(email, password, displayName, setLoading);
 
   return (
-    <View className="flex-1 bg-white px-6 pt-20">
-      <Text className="mb-8 text-3xl font-bold text-gray-900">
-        Create account
-      </Text>
-      <AuthTextField
-        label="Your name"
-        onChangeText={setDisplayName}
-        textContentType="name"
-        value={displayName}
-      />
-      <AuthTextField
-        autoCapitalize="none"
-        autoComplete="email"
-        keyboardType="email-address"
-        label="Email"
-        onChangeText={setEmail}
-        textContentType="emailAddress"
-        value={email}
-      />
-      <AuthTextField
-        autoCapitalize="none"
-        autoComplete="password-new"
-        label="Password"
-        onChangeText={setPassword}
-        secureTextEntry
-        textContentType="newPassword"
-        value={password}
-      />
-      <TouchableOpacity
-        className="bg-primary items-center rounded-lg py-4"
-        onPress={handleSignUp}
-        disabled={loading}
-      >
-        <Text className="text-base font-semibold text-white">
-          {loading ? 'Creating account…' : 'Create Account'}
-        </Text>
-      </TouchableOpacity>
-      <LegalLinks variant="inline" />
-      <TouchableOpacity
-        className="mt-4 items-center"
-        onPress={() => {
-          navigation.navigate('SignIn');
-        }}
-      >
-        <Text className="text-primary text-base">
-          Already have an account? Sign in
-        </Text>
-      </TouchableOpacity>
-    </View>
+    <SignUpView
+      displayName={displayName}
+      email={email}
+      password={password}
+      onDisplayNameChange={setDisplayName}
+      onEmailChange={setEmail}
+      onPasswordChange={setPassword}
+      loading={loading}
+      onSubmit={() => {
+        void runSignUp(email, password, displayName, setLoading);
+      }}
+      onSignInPress={() => {
+        navigation.navigate('SignIn');
+      }}
+    />
   );
 };

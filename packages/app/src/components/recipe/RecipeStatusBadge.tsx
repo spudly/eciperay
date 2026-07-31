@@ -26,3 +26,7 @@ export const RecipeStatusBadge = ({status}: Props) => {
     </View>
   );
 };
+
+if (__DEV__) {
+  RecipeStatusBadge.demo = () => <RecipeStatusBadge status="evolving" />;
+}

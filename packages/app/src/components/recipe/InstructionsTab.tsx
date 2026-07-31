@@ -1,3 +1,4 @@
+import {makeRecipeDetail} from '@eciperay/client';
 import clsx from 'clsx';
 import React, {useState} from 'react';
 import {Text, TouchableOpacity, View} from 'react-native';
@@ -53,3 +54,7 @@ export const InstructionsTab = ({recipe}: Props) => {
     </View>
   );
 };
+
+if (__DEV__) {
+  InstructionsTab.demo = () => <InstructionsTab recipe={makeRecipeDetail()} />;
+}

@@ -7,7 +7,9 @@ import {useQuery, useQueryClient} from '@tanstack/react-query';
 import {useNavigate, useParams} from 'react-router-dom';
 import type {RecipeVersionInput} from '@eciperay/types';
 
+import {EditVersionView} from '../components/recipe/EditVersionView.js';
 import {RecipeForm} from '../components/recipe/RecipeForm.js';
+import {ScreenLoadingGate} from '../components/ScreenLoadingGate.js';
 import {eciperay} from '../lib/api.js';
 
 export const EditVersionPage = () => {
@@ -36,44 +38,22 @@ export const EditVersionPage = () => {
   };
 
   if (isLoading || !version) {
-    return <p>Loading…</p>;
-  }
-
-  if (!version.isEditable) {
-    return (
-      <div>
-        <p className="text-red-600">This version can no longer be edited.</p>
-        <button
-          type="button"
-          className="text-primary mt-4 text-sm underline"
-          onClick={() => {
-            void navigate(`/recipes/${recipeId}`);
-          }}
-        >
-          Back to recipe
-        </button>
-      </div>
-    );
+    return <ScreenLoadingGate pending>{null}</ScreenLoadingGate>;
   }
 
   return (
-    <div>
-      <h1 className="mb-2 text-2xl font-bold text-gray-900">
-        Edit Draft (v{version.versionNumber})
-      </h1>
-      {version.createdVia === 'import_review' && parentVersion ? (
-        <p
-          className="
-            mb-4 rounded-lg bg-indigo-50 px-4 py-3 text-sm text-indigo-950
-          "
-        >
-          Editing draft (v{version.versionNumber}) based on imported v
-          {parentVersion.versionNumber}.
-        </p>
-      ) : null}
-      {version.changeSummary ? (
-        <p className="text-muted mb-6 text-sm">{version.changeSummary}</p>
-      ) : null}
+    <EditVersionView
+      versionNumber={version.versionNumber}
+      changeSummary={version.changeSummary}
+      showImportBanner={
+        version.createdVia === 'import_review' && parentVersion !== undefined
+      }
+      parentVersionNumber={parentVersion?.versionNumber}
+      notEditable={!version.isEditable}
+      onBack={() => {
+        void navigate(`/recipes/${recipeId}`);
+      }}
+    >
       <RecipeForm
         initial={recipeVersionDetailToInput(version)}
         recipeId={recipeId}
@@ -81,6 +61,6 @@ export const EditVersionPage = () => {
         submitLabel="Save Draft"
         onSubmit={handleSubmit}
       />
-    </div>
+    </EditVersionView>
   );
 };

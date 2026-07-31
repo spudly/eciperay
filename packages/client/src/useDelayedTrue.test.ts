@@ -1,6 +1,6 @@
-import {renderHook, act} from '@testing-library/react-native';
+import {act, renderHook} from '@testing-library/react';
 
-import {DEFAULT_LOADING_DELAY_MS, useDelayedTrue} from './useDelayedTrue';
+import {DEFAULT_LOADING_DELAY_MS, useDelayedTrue} from './useDelayedTrue.js';
 
 describe('useDelayedTrue', () => {
   beforeEach(() => {

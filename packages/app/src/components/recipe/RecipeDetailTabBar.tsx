@@ -1,21 +1,9 @@
+import {RECIPE_DETAIL_TABS, type RecipeDetailTab} from '@eciperay/client';
 import clsx from 'clsx';
 import React from 'react';
 import {ScrollView, Text, TouchableOpacity} from 'react-native';
 
-export type RecipeDetailTab =
-  | 'overview'
-  | 'ingredients'
-  | 'instructions'
-  | 'history'
-  | 'nutrition';
-
-const TABS: {key: RecipeDetailTab; label: string}[] = [
-  {key: 'overview', label: 'Overview'},
-  {key: 'ingredients', label: 'Ingredients'},
-  {key: 'instructions', label: 'Instructions'},
-  {key: 'history', label: 'Cook History'},
-  {key: 'nutrition', label: 'Nutrition'},
-];
+const TABS = RECIPE_DETAIL_TABS;
 
 type RecipeDetailTabBarProps = {
   activeTab: RecipeDetailTab;
@@ -54,3 +42,5 @@ export const RecipeDetailTabBar = ({
     ))}
   </ScrollView>
 );
+
+export {type RecipeDetailTab} from '@eciperay/client';

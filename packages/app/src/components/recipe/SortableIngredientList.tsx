@@ -1,6 +1,11 @@
-import {createFormRowKey, type FormIngredientRow} from '@eciperay/client';
+/* eslint-disable max-lines -- draggable ingredient rows with showcase demo */
+import {
+  createFormRowKey,
+  ensureIngredientRowKeys,
+  type FormIngredientRow,
+} from '@eciperay/client';
 import type {IngredientInput} from '@eciperay/types';
-import React from 'react';
+import React, {useState} from 'react';
 import {Text, TextInput, TouchableOpacity, View} from 'react-native';
 import DraggableFlatList, {
   type RenderItemParams,
@@ -135,3 +140,40 @@ export const createEmptyIngredientRow = (
   notes: null,
   isOptional: false,
 });
+
+if (__DEV__) {
+  const SortableIngredientListDemo = () => {
+    const [ingredients, setIngredients] = useState<FormIngredientRow[]>(() =>
+      ensureIngredientRowKeys([
+        {
+          ...createEmptyIngredientRow(0),
+          name: 'Flour',
+          quantity: 2,
+          unit: 'cups',
+        },
+      ]),
+    );
+
+    return (
+      <SortableIngredientList
+        ingredients={ingredients}
+        onChange={setIngredients}
+        onUpdate={(index, field, value) => {
+          setIngredients(prev =>
+            prev.map((row, rowIndex) =>
+              rowIndex === index ? {...row, [field]: value} : row,
+            ),
+          );
+        }}
+        onAdd={() => {
+          setIngredients(prev => [
+            ...prev,
+            createEmptyIngredientRow(prev.length),
+          ]);
+        }}
+      />
+    );
+  };
+
+  SortableIngredientList.demo = () => <SortableIngredientListDemo />;
+}

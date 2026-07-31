@@ -1,5 +1,5 @@
 import {createFormRowKey, type FormInstructionRow} from '@eciperay/client';
-import React from 'react';
+import React, {useState} from 'react';
 import {Text, TextInput, TouchableOpacity, View} from 'react-native';
 import DraggableFlatList, {
   type RenderItemParams,
@@ -103,3 +103,33 @@ export const SortableInstructionList = ({
 export const createEmptyInstructionRow = (
   stepNumber: number,
 ): FormInstructionRow => ({key: createFormRowKey(), stepNumber, body: ''});
+
+if (__DEV__) {
+  const SortableInstructionListDemo = () => {
+    const [instructions, setInstructions] = useState<FormInstructionRow[]>(
+      () => [{...createEmptyInstructionRow(1), body: 'Mix dry ingredients.'}],
+    );
+
+    return (
+      <SortableInstructionList
+        instructions={instructions}
+        onChange={setInstructions}
+        onUpdate={(index, body) => {
+          setInstructions(prev =>
+            prev.map((row, rowIndex) =>
+              rowIndex === index ? {...row, body} : row,
+            ),
+          );
+        }}
+        onAdd={() => {
+          setInstructions(prev => [
+            ...prev,
+            createEmptyInstructionRow(prev.length + 1),
+          ]);
+        }}
+      />
+    );
+  };
+
+  SortableInstructionList.demo = () => <SortableInstructionListDemo />;
+}

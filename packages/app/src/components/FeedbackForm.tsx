@@ -1,13 +1,18 @@
 import {
   useAnalytics,
   validateUserFeedbackMessage,
+  type ShowcaseDemoRenderer,
   type SubmitUserFeedbackInput,
 } from '@eciperay/client';
 import {useFocusEffect} from '@react-navigation/native';
 import {useCallback, useState} from 'react';
 import {Switch, Text, TextInput, TouchableOpacity, View} from 'react-native';
 
-type FeedbackFormProps = {route?: string; onSubmitted?: () => void};
+type FeedbackFormProps = {
+  route?: string;
+  /** Called after feedback is successfully submitted */
+  onSubmitted?: () => void;
+};
 
 export const FeedbackForm = ({route, onSubmitted}: FeedbackFormProps) => {
   const analytics = useAnalytics();
@@ -104,3 +109,12 @@ export const FeedbackForm = ({route, onSubmitted}: FeedbackFormProps) => {
     </View>
   );
 };
+
+if (__DEV__) {
+  const feedbackFormDemo: ShowcaseDemoRenderer = ({Frame}) => (
+    <Frame>
+      <FeedbackForm route="/dev/components" />
+    </Frame>
+  );
+  FeedbackForm.demo = feedbackFormDemo;
+}

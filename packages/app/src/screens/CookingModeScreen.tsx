@@ -6,13 +6,15 @@ import {
 } from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
-import React, {useEffect, useState} from 'react';
-import {Text, TouchableOpacity, View} from 'react-native';
+import {useEffect, useState} from 'react';
 import KeepAwake from 'react-native-keep-awake';
 import type {CookLogInput} from '@eciperay/types';
 
 import {CookLogForm} from '../components/cooking/CookLogForm';
 import {
+  CookingModeCookLogShell,
+  CookingModeDoneButton,
+  CookingModeShell,
   NavButtons,
   StepDisplay,
   useSwipeNav,
@@ -105,7 +107,7 @@ export const CookingModeScreen = ({route, navigation}: CookingProps) => {
 
   if (showCookLogForm) {
     return (
-      <View className="flex-1 items-center justify-center bg-gray-900 px-6">
+      <CookingModeCookLogShell>
         <CookLogForm
           isPending={cookLogMutation.isPending}
           onSkip={navigation.goBack}
@@ -113,28 +115,20 @@ export const CookingModeScreen = ({route, navigation}: CookingProps) => {
             cookLogMutation.mutate(input);
           }}
         />
-      </View>
+      </CookingModeCookLogShell>
     );
   }
 
   return (
-    <View
-      className="flex-1 justify-center bg-gray-900 px-6"
-      onStartShouldSetResponder={
-        /* istanbul ignore next -- touch responder required for swipe gestures */
-        () => true
-      }
+    <CookingModeShell
       onResponderGrant={onStart}
       onResponderRelease={onEnd}
     >
-      <TouchableOpacity
-        className="absolute right-6 top-12 rounded-full bg-white/10 px-4 py-2"
+      <CookingModeDoneButton
         onPress={() => {
           setShowCookLogForm(true);
         }}
-      >
-        <Text className="text-sm text-white">Done</Text>
-      </TouchableOpacity>
+      />
       <StepDisplay
         step={step}
         steps={steps}
@@ -149,6 +143,6 @@ export const CookingModeScreen = ({route, navigation}: CookingProps) => {
         onNext={goNext}
         onPrev={goPrev}
       />
-    </View>
+    </CookingModeShell>
   );
 };

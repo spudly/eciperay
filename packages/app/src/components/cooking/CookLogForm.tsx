@@ -106,3 +106,18 @@ export const CookLogForm = ({
     </View>
   );
 };
+
+if (__DEV__) {
+  CookLogForm.demo = () => (
+    <CookLogForm
+      onSubmit={() => {
+        void 0;
+      }}
+      onSkip={() => {
+        void 0;
+      }}
+      isPending={false}
+      variant="light"
+    />
+  );
+}
