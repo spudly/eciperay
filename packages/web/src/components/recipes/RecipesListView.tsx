@@ -3,9 +3,9 @@ import {
   RECIPE_STATUS_FILTER_LABEL,
   RECIPE_STATUS_LABELS,
   RECIPE_STATUS_OPTIONS,
+  makeRecipeDetail,
   type RecipesListViewProps,
 } from '@eciperay/client';
-import {makeRecipeDetail} from '@eciperay/client';
 import {useState} from 'react';
 
 import {RecipeListCard} from '../RecipeListCard.js';

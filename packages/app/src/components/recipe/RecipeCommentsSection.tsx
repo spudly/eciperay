@@ -9,8 +9,8 @@ import React, {useState} from 'react';
 import {Text, TextInput, TouchableOpacity, View} from 'react-native';
 
 import {api} from '../../lib/api';
-
 import {BookLoadingSpinner} from '../ui/BookLoadingSpinner';
+
 import {RecipeCommentItem} from './RecipeCommentItem';
 
 type Props = {recipeId: string; ownerUserId: string};
