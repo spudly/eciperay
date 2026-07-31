@@ -31,7 +31,7 @@ const createPostHogSourceMapPlugin = (mode: string) => {
   return posthog({
     personalApiKey: apiKey,
     projectId,
-    host: process.env['POSTHOG_HOST'] ?? process.env['VITE_POSTHOG_HOST'],
+    host: process.env['POSTHOG_API_HOST'] ?? 'https://us.posthog.com',
     sourcemaps: {
       enabled: true,
       releaseName: 'eciperay-web',

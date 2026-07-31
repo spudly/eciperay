@@ -92,7 +92,10 @@ describe('createDeferredWebAnalytics', () => {
     enablePostHog();
     expect(posthogInit).toHaveBeenCalledWith(
       'phc_test',
-      expect.objectContaining({api_host: 'https://us.i.posthog.com'}),
+      expect.objectContaining({
+        api_host: 'https://us.i.posthog.com',
+        ui_host: 'https://us.posthog.com',
+      }),
     );
   });
 

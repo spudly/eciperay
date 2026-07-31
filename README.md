@@ -147,7 +147,7 @@ fly secrets set \
   ANTHROPIC_API_KEY='your-anthropic-key' \
   OPENAI_API_KEY='your-openai-key' \
   POSTHOG_KEY='your-posthog-project-api-key' \
-  POSTHOG_HOST='https://us.i.posthog.com' \
+  POSTHOG_HOST='https://a.eciperay.com' \
   CORS_ORIGINS='https://eciperay.com,https://www.eciperay.com'
 ```
 
@@ -179,15 +179,17 @@ You can also trigger **Deploy** manually from the Actions tab.
 
 Add these repository secrets (Settings → Secrets and variables → Actions):
 
-| Secret                   | Purpose                                       |
-| ------------------------ | --------------------------------------------- |
-| `FLY_API_TOKEN`          | Fly deploy token (`fly tokens create deploy`) |
-| `VITE_SUPABASE_URL`      | Docker build arg for the web bundle           |
-| `VITE_SUPABASE_ANON_KEY` | Docker build arg for the web bundle           |
-| `VITE_POSTHOG_KEY`       | Docker build arg for web analytics            |
-| `VITE_POSTHOG_HOST`      | Docker build arg for PostHog ingest host      |
-| `POSTHOG_API_KEY`        | Personal API key for web source map upload    |
-| `POSTHOG_PROJECT_ID`     | PostHog project ID for source map upload      |
+| Secret                   | Purpose                                             |
+| ------------------------ | --------------------------------------------------- |
+| `FLY_API_TOKEN`          | Fly deploy token (`fly tokens create deploy`)       |
+| `VITE_SUPABASE_URL`      | Docker build arg for the web bundle                 |
+| `VITE_SUPABASE_ANON_KEY` | Docker build arg for the web bundle                 |
+| `VITE_POSTHOG_KEY`       | Docker build arg for web analytics                  |
+| `VITE_POSTHOG_HOST`      | Docker build arg for PostHog ingest (reverse proxy) |
+| `POSTHOG_API_KEY`        | Personal API key for web source map upload          |
+| `POSTHOG_PROJECT_ID`     | PostHog project ID for source map upload            |
+
+Source map upload uses `https://us.posthog.com` in CI (not the ingest proxy).
 
 `POSTHOG_KEY` and `POSTHOG_HOST` for **server-side** exception capture are Fly
 runtime secrets (see step 3 above), not GitHub secrets.
@@ -302,7 +304,7 @@ Add these repository secrets
 | `VITE_SUPABASE_URL`                | Production Supabase URL (same as web deploy)       |
 | `VITE_SUPABASE_ANON_KEY`           | Production Supabase anon key (same as web deploy)  |
 | `VITE_POSTHOG_KEY`                 | PostHog project API key (app runtime)              |
-| `VITE_POSTHOG_HOST`                | PostHog ingest host                                |
+| `VITE_POSTHOG_HOST`                | PostHog ingest host (reverse proxy)                |
 | `POSTHOG_CLI_API_KEY`              | Personal API key for mobile source map upload      |
 | `POSTHOG_CLI_PROJECT_ID`           | PostHog project ID for mobile source map upload    |
 | `ANDROID_KEYSTORE_BASE64`          | Base64-encoded release `.jks` / `.keystore` file   |
