@@ -1,4 +1,10 @@
 import type {RecipesListViewProps} from '@eciperay/client';
+import {
+  RECIPE_STATUS_FILTER_ALL,
+  RECIPE_STATUS_FILTER_LABEL,
+  RECIPE_STATUS_LABELS,
+  RECIPE_STATUS_OPTIONS,
+} from '@eciperay/client';
 import {FlatList, StyleSheet, View} from 'react-native';
 import {makeRecipeDetail} from '@eciperay/client';
 import {useState} from 'react';
@@ -9,6 +15,7 @@ import {EmptyMessage} from '../ui/EmptyMessage';
 import {ListLoadingFooter} from '../ui/ListLoadingFooter';
 import {ScreenContainer} from '../ui/ScreenContainer';
 import {SearchField} from '../ui/SearchField';
+import {SelectField} from '../ui/SelectField';
 
 const styles = StyleSheet.create({
   listContent: {paddingHorizontal: 16, paddingBottom: 32},
@@ -23,6 +30,8 @@ export const RecipesListView = ({
   onRecipePress,
   onRecipeDelete,
   onLoadMore,
+  statusFilter,
+  onStatusFilterChange,
 }: RecipesListViewProps) => (
   <ScreenContainer variant="list">
     <View className="px-4 pb-2 pt-4">
@@ -30,6 +39,22 @@ export const RecipesListView = ({
         value={search}
         onChange={onSearchChange}
       />
+      {statusFilter !== undefined && onStatusFilterChange ? (
+        <SelectField
+          label={RECIPE_STATUS_FILTER_LABEL}
+          value={statusFilter}
+          options={[
+            {value: RECIPE_STATUS_FILTER_ALL, label: 'All statuses'},
+            ...RECIPE_STATUS_OPTIONS.map(status => ({
+              value: status,
+              label: RECIPE_STATUS_LABELS[status],
+            })),
+          ]}
+          onChange={next => {
+            onStatusFilterChange(next as typeof statusFilter);
+          }}
+        />
+      ) : null}
     </View>
     {isLoading ? (
       <InlineLoadingIndicator

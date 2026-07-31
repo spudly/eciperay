@@ -70,7 +70,7 @@ describe('RecipeVisibilityControls', () => {
   test('saves visibility after publishing consent', async () => {
     const {onActionMessage} = renderControls();
     fireEvent.press(screen.getByText('Unlisted link'));
-    fireEvent.press(screen.getByText(/I understand this recipe/i));
+    fireEvent(screen.getByLabelText('Publishing consent'), 'valueChange', true);
     fireEvent.press(screen.getByText('Save sharing settings'));
     await waitFor(() => {
       expect(mockPatchSharing).toHaveBeenCalled();

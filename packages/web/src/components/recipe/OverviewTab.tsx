@@ -16,6 +16,8 @@ import {shareRecipe} from '../../lib/shareRecipe.js';
 import {OverviewActions} from './OverviewActions.js';
 import {RecipeStatusBadge} from './RecipeStatusBadge.js';
 import {RecipeVisibilityControls} from './RecipeVisibilityControls.js';
+import {StatBadge, StatBadgeRow} from '../ui/StatBadge.js';
+import {TagPill} from '../ui/TagPill.js';
 
 type Props = {
   recipe: RecipeDetail;
@@ -23,13 +25,6 @@ type Props = {
   servings: number;
   versions: RecipeVersionSummary[];
 };
-
-const StatBadge = ({label, value}: {label: string; value: string}) => (
-  <div className="text-center">
-    <p className="text-base font-semibold text-gray-900">{value}</p>
-    <p className="text-muted text-xs">{label}</p>
-  </div>
-);
 
 export const OverviewTab = ({
   recipe,
@@ -84,7 +79,7 @@ export const OverviewTab = ({
       {recipe.description ? (
         <p className="mb-4 text-gray-600">{recipe.description}</p>
       ) : null}
-      <div className="mb-4 flex justify-around rounded-xl bg-gray-50 py-4">
+      <StatBadgeRow>
         <StatBadge
           label="Servings"
           value={String(recipe.servings)}
@@ -101,7 +96,7 @@ export const OverviewTab = ({
             value={`${recipe.cookTimeMin}m`}
           />
         ) : null}
-      </div>
+      </StatBadgeRow>
       <div className="mb-4 flex gap-3">
         <Link
           to={`/recipes/${recipe.id}/cook?versionId=${recipe.versionId}&servings=${servings}`}
@@ -171,13 +166,11 @@ export const OverviewTab = ({
       />
       <div className="flex flex-wrap gap-2">
         {recipe.tags.map(tag => (
-          <span
+          <TagPill
             key={tag.id}
-            className="rounded-full px-3 py-1 text-xs font-medium"
-            style={{backgroundColor: `${tag.color}22`, color: tag.color}}
-          >
-            {tag.name}
-          </span>
+            name={tag.name}
+            color={tag.color}
+          />
         ))}
       </div>
     </div>

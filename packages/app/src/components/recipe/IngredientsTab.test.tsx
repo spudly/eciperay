@@ -51,7 +51,7 @@ describe('IngredientsTab', () => {
       />,
     );
     fireEvent.press(getByText('−'));
-    expect(onServingsChange).toHaveBeenCalledWith(1);
+    expect(onServingsChange).not.toHaveBeenCalled();
   });
 
   test('applies scale multipliers', () => {

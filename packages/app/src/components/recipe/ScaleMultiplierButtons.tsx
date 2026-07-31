@@ -3,10 +3,12 @@ import {
   isActiveScaleMultiplier,
   RECIPE_SCALE_MULTIPLIERS,
   servingsForMultiplier,
+  type RecipeScaleMultiplier,
 } from '@eciperay/client';
-import clsx from 'clsx';
-import React, {useState} from 'react';
-import {Text, TouchableOpacity, View} from 'react-native';
+import {useMemo, useState} from 'react';
+import {Text, View} from 'react-native';
+
+import {ToggleChipGroup} from '../ui/ToggleChipGroup';
 
 type Props = {
   baseServings: number;
@@ -18,48 +20,41 @@ export const ScaleMultiplierButtons = ({
   baseServings,
   servings,
   onServingsChange,
-}: Props) => (
-  <View className="mb-4 flex-row flex-wrap items-center gap-2">
-    <Text className="text-sm font-medium text-gray-700">Scale:</Text>
-    {RECIPE_SCALE_MULTIPLIERS.map(multiplier => (
-      <TouchableOpacity
-        key={multiplier}
-        className={clsx('rounded-full px-3 py-1', {
-          'bg-primary': isActiveScaleMultiplier(
-            baseServings,
-            servings,
-            multiplier,
-          ),
-          'bg-gray-100': !isActiveScaleMultiplier(
-            baseServings,
-            servings,
-            multiplier,
-          ),
-        })}
-        onPress={() => {
-          onServingsChange(servingsForMultiplier(baseServings, multiplier));
+}: Props) => {
+  const options = useMemo(
+    () =>
+      RECIPE_SCALE_MULTIPLIERS.map(multiplier => ({
+        id: String(multiplier),
+        label: formatScaleMultiplierLabel(multiplier),
+      })),
+    [],
+  );
+
+  const selectedId =
+    RECIPE_SCALE_MULTIPLIERS.find(multiplier =>
+      isActiveScaleMultiplier(baseServings, servings, multiplier),
+    )?.toString() ?? String(RECIPE_SCALE_MULTIPLIERS[0]);
+
+  return (
+    <View className="mb-4 flex-row flex-wrap items-center gap-2">
+      <Text className="text-sm font-medium text-gray-700">Scale:</Text>
+      <ToggleChipGroup
+        options={options}
+        selectedId={selectedId}
+        onChange={value => {
+          if (typeof value === 'string') {
+            onServingsChange(
+              servingsForMultiplier(
+                baseServings,
+                Number(value) as RecipeScaleMultiplier,
+              ),
+            );
+          }
         }}
-      >
-        <Text
-          className={clsx('text-sm font-medium', {
-            'text-white': isActiveScaleMultiplier(
-              baseServings,
-              servings,
-              multiplier,
-            ),
-            'text-gray-700': !isActiveScaleMultiplier(
-              baseServings,
-              servings,
-              multiplier,
-            ),
-          })}
-        >
-          {formatScaleMultiplierLabel(multiplier)}
-        </Text>
-      </TouchableOpacity>
-    ))}
-  </View>
-);
+      />
+    </View>
+  );
+};
 
 if (__DEV__) {
   const ScaleMultiplierButtonsDemo = () => {

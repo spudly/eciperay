@@ -10,13 +10,12 @@ import {
 import type {RecipeCommunityRating, RecipeStarRating} from '@eciperay/types';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
 import React from 'react';
-import {Text, TouchableOpacity, View} from 'react-native';
+import {Text, View} from 'react-native';
 
 import {api} from '../../lib/api';
+import {StarRatingInput} from '../ui/StarRatingInput';
 
 import {StaleVersionHint} from './StaleVersionHint';
-
-const STAR_RATINGS = [1, 2, 3, 4, 5] as const;
 
 type Props = {
   recipeId: string;
@@ -45,11 +44,6 @@ export const RecipeRatingsSection = ({
       queryClient.setQueryData(queryKeys.recipe(recipeId), data);
     },
   });
-
-  const handleStarPress = (star: RecipeStarRating) => {
-    const next = viewerRating === star ? null : star;
-    ratingMutation.mutate(next);
-  };
 
   return (
     <View className="mb-4 rounded-xl bg-gray-50 p-4">
@@ -90,26 +84,13 @@ export const RecipeRatingsSection = ({
             Your rating
           </Text>
           <View className="flex-row items-center gap-2">
-            {STAR_RATINGS.map(star => (
-              <TouchableOpacity
-                key={star}
-                accessibilityLabel={`${star} stars`}
-                disabled={ratingMutation.isPending}
-                onPress={() => {
-                  handleStarPress(star);
-                }}
-              >
-                <Text
-                  className={
-                    viewerRating !== null && star <= viewerRating
-                      ? 'text-2xl text-yellow-400'
-                      : 'text-2xl text-gray-300'
-                  }
-                >
-                  ★
-                </Text>
-              </TouchableOpacity>
-            ))}
+            <StarRatingInput
+              value={viewerRating}
+              disabled={ratingMutation.isPending}
+              onChange={star => {
+                ratingMutation.mutate(star as RecipeStarRating | null);
+              }}
+            />
             {viewerRatingIsStale ? (
               <StaleVersionHint label={STALE_VIEWER_RATING_HINT} />
             ) : null}

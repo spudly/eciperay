@@ -4,9 +4,11 @@ import {makeRecipeDetail} from '@eciperay/client';
 import {useState} from 'react';
 
 import {InlineLoadingIndicator} from '../InlineLoadingIndicator';
+import {ColorPickerField} from '../ui/ColorPickerField';
 import {PageTitle} from '../ui/PageTitle';
 import {PrimaryButton} from '../ui/PrimaryButton';
 import {ScreenContainer} from '../ui/ScreenContainer';
+import {TagPill} from '../ui/TagPill';
 
 export const TagsView = ({
   tags,
@@ -28,12 +30,9 @@ export const TagsView = ({
         value={name}
         onChangeText={onNameChange}
       />
-      <TextInput
-        className="ui-text-field w-24 p-2"
-        placeholder="#6366f1"
+      <ColorPickerField
         value={color}
-        onChangeText={onColorChange}
-        autoCapitalize="none"
+        onChange={onColorChange}
       />
       <PrimaryButton
         label="Add"
@@ -50,17 +49,10 @@ export const TagsView = ({
           key={tag.id}
           className="ui-tag-list-item"
         >
-          <View
-            className="ui-tag-pill"
-            style={{backgroundColor: `${tag.color}22`}}
-          >
-            <Text
-              className="text-sm font-medium"
-              style={{color: tag.color}}
-            >
-              {tag.name}
-            </Text>
-          </View>
+          <TagPill
+            name={tag.name}
+            color={tag.color}
+          />
           <TouchableOpacity
             onPress={() => {
               onDelete(tag.id);

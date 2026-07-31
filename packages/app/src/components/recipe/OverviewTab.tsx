@@ -17,7 +17,8 @@ import {OverviewActions} from './OverviewActions';
 import {RecipeStatusBadge} from './RecipeStatusBadge';
 import {RecipeVisibilityControls} from './RecipeVisibilityControls';
 import {recipeImagePreviewStyles} from './recipeImagePreviewStyles';
-import {StatBadge} from './StatBadge';
+import {StatBadge, StatBadgeRow} from '../ui/StatBadge';
+import {TagPill} from '../ui/TagPill';
 
 type Props = {
   recipe: RecipeDetail;
@@ -84,7 +85,7 @@ export const OverviewTab = ({
       {recipe.description ? (
         <Text className="mb-4 text-gray-600">{recipe.description}</Text>
       ) : null}
-      <View className="mb-4 flex-row justify-around rounded-xl bg-gray-50 py-4">
+      <StatBadgeRow>
         <StatBadge
           label="Servings"
           value={String(servings)}
@@ -101,7 +102,7 @@ export const OverviewTab = ({
             value={`${recipe.cookTimeMin}m`}
           />
         ) : null}
-      </View>
+      </StatBadgeRow>
       <View className="mb-4 flex-row flex-wrap gap-3">
         <TouchableOpacity
           className="bg-primary min-w-[40%] flex-1 items-center rounded-xl py-3"
@@ -169,18 +170,11 @@ export const OverviewTab = ({
       />
       <View className="flex-row flex-wrap gap-2">
         {recipe.tags.map(tag => (
-          <View
+          <TagPill
             key={tag.id}
-            className="rounded-full px-3 py-1"
-            style={{backgroundColor: `${tag.color}22`}}
-          >
-            <Text
-              className="text-xs font-medium"
-              style={{color: tag.color}}
-            >
-              {tag.name}
-            </Text>
-          </View>
+            name={tag.name}
+            color={tag.color}
+          />
         ))}
       </View>
     </View>
