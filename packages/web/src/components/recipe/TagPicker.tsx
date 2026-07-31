@@ -5,6 +5,7 @@ import type {ShowcaseFrameProps} from '@eciperay/client';
 import {useMemo} from 'react';
 
 import {eciperay} from '../../lib/api.js';
+import {BookLoadingSpinner} from '../ui/BookLoadingSpinner.js';
 import {ToggleChipGroup} from '../ui/ToggleChipGroup.js';
 
 type Props = {selectedIds: string[]; onChange: (ids: string[]) => void};
@@ -21,7 +22,7 @@ export const TagPicker = ({selectedIds, onChange}: Props) => {
   );
 
   if (isLoading) {
-    return <p className="text-muted text-sm">Loading tags…</p>;
+    return <BookLoadingSpinner size="sm" />;
   }
 
   return (

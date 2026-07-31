@@ -1,17 +1,22 @@
 import type {CheckboxSelectListProps} from '@eciperay/client';
 import {useState} from 'react';
 
+import {BookLoadingSpinner} from './BookLoadingSpinner.js';
+
 export const CheckboxSelectList = ({
   items,
   selectedIds,
   onToggle,
   disabled = false,
   isLoading = false,
-  loadingMessage = 'Loading…',
   emptyMessage = 'No items found.',
 }: CheckboxSelectListProps) => {
   if (isLoading) {
-    return <p className="text-muted p-4 text-sm">{loadingMessage}</p>;
+    return (
+      <div className="ui-loading-center p-4">
+        <BookLoadingSpinner size="sm" />
+      </div>
+    );
   }
   if (items.length === 0) {
     return <p className="text-muted p-4 text-sm">{emptyMessage}</p>;

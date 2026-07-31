@@ -1,9 +1,10 @@
 import {queryKeys, type ShowcaseDemoRenderer} from '@eciperay/client';
 import {useQuery} from '@tanstack/react-query';
 import {useMemo} from 'react';
-import {Text} from 'react-native';
+import {View} from 'react-native';
 
 import {api} from '../../lib/api';
+import {BookLoadingSpinner} from '../ui/BookLoadingSpinner';
 import {ToggleChipGroup} from '../ui/ToggleChipGroup';
 
 type Props = {selectedIds: string[]; onChange: (ids: string[]) => void};
@@ -20,7 +21,11 @@ export const TagPicker = ({selectedIds, onChange}: Props) => {
   );
 
   if (isLoading) {
-    return <Text className="text-muted text-sm">Loading tags…</Text>;
+    return (
+      <View>
+        <BookLoadingSpinner size="sm" />
+      </View>
+    );
   }
 
   return (

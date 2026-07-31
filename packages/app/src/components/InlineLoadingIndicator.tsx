@@ -5,8 +5,9 @@ import {
 } from '@eciperay/client';
 import clsx from 'clsx';
 import {useState} from 'react';
-import {ActivityIndicator, View} from 'react-native';
+import {View} from 'react-native';
 
+import {BookLoadingSpinner} from './ui/BookLoadingSpinner';
 import {PrimaryButton} from './ui/PrimaryButton';
 
 export const InlineLoadingIndicator = ({
@@ -22,7 +23,7 @@ export const InlineLoadingIndicator = ({
 
   return (
     <View className={clsx('ui-loading-center', className)}>
-      <ActivityIndicator />
+      <BookLoadingSpinner size="md" />
     </View>
   );
 };

@@ -65,7 +65,7 @@ export type EmptyMessageProps = {
   spacing?: 'default' | 'list';
 };
 
-export type ListLoadingFooterProps = {loading: boolean; label?: string};
+export type ListLoadingFooterProps = {loading: boolean};
 
 export type AuthScreenLayoutProps = {children: ReactNode};
 

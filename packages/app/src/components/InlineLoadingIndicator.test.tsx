@@ -1,6 +1,5 @@
 import {act, render} from '@testing-library/react-native';
 import React from 'react';
-import {ActivityIndicator} from 'react-native';
 
 import {InlineLoadingIndicator} from './InlineLoadingIndicator';
 
@@ -14,19 +13,19 @@ describe('InlineLoadingIndicator', () => {
   });
 
   test('renders nothing until the delay elapses', () => {
-    const {UNSAFE_queryByType} = render(<InlineLoadingIndicator loading />);
+    const {queryByLabelText} = render(<InlineLoadingIndicator loading />);
 
-    expect(UNSAFE_queryByType(ActivityIndicator)).toBeNull();
+    expect(queryByLabelText('Loading')).toBeNull();
 
     act(() => {
       jest.advanceTimersByTime(100);
     });
 
-    expect(UNSAFE_queryByType(ActivityIndicator)).toBeTruthy();
+    expect(queryByLabelText('Loading')).toBeTruthy();
   });
 
   test('renders nothing when loading is false', () => {
-    const {UNSAFE_queryByType} = render(
+    const {queryByLabelText} = render(
       <InlineLoadingIndicator loading={false} />,
     );
 
@@ -34,6 +33,6 @@ describe('InlineLoadingIndicator', () => {
       jest.advanceTimersByTime(100);
     });
 
-    expect(UNSAFE_queryByType(ActivityIndicator)).toBeNull();
+    expect(queryByLabelText('Loading')).toBeNull();
   });
 });

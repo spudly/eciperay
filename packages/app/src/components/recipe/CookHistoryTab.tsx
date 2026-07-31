@@ -11,6 +11,7 @@ import {Text, TouchableOpacity, View} from 'react-native';
 import type {CookLogInput} from '@eciperay/types';
 
 import {CookLogForm} from '../cooking/CookLogForm';
+import {BookLoadingSpinner} from '../ui/BookLoadingSpinner';
 import {api} from '../../lib/api';
 
 type Props = {recipeId: string; versionId: string};
@@ -39,8 +40,8 @@ export const CookHistoryTab = ({recipeId, versionId}: Props) => {
 
   if (isLoading) {
     return (
-      <View className="p-4">
-        <Text className="text-muted text-sm">Loading cook history…</Text>
+      <View className="ui-loading-center p-4">
+        <BookLoadingSpinner size="sm" />
       </View>
     );
   }

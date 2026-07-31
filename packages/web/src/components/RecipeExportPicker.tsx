@@ -105,7 +105,6 @@ export const RecipeExportPicker = ({
           selectedIds={selectedIds}
           disabled={disabled || exporting}
           isLoading={isLoading}
-          loadingMessage="Loading recipes…"
           emptyMessage="No recipes found."
           onToggle={id => {
             setSelectedIds(previous => toggleId(previous, id));

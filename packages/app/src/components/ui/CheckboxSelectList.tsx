@@ -2,17 +2,22 @@ import type {CheckboxSelectListProps} from '@eciperay/client';
 import {useState} from 'react';
 import {Pressable, Text, View} from 'react-native';
 
+import {BookLoadingSpinner} from './BookLoadingSpinner';
+
 export const CheckboxSelectList = ({
   items,
   selectedIds,
   onToggle,
   disabled = false,
   isLoading = false,
-  loadingMessage = 'Loading…',
   emptyMessage = 'No items found.',
 }: CheckboxSelectListProps) => {
   if (isLoading) {
-    return <Text className="text-muted p-4 text-sm">{loadingMessage}</Text>;
+    return (
+      <View className="ui-loading-center p-4">
+        <BookLoadingSpinner size="sm" />
+      </View>
+    );
   }
   if (items.length === 0) {
     return <Text className="text-muted p-4 text-sm">{emptyMessage}</Text>;

@@ -60,13 +60,13 @@ describe('TagPicker', () => {
           /* never resolves */
         }),
     );
-    const {getByText, unmount} = renderWithProviders(
+    const {getByLabelText, unmount} = renderWithProviders(
       <TagPicker
         selectedIds={[]}
         onChange={onChange}
       />,
     );
-    expect(getByText('Loading tags…')).toBeTruthy();
+    expect(getByLabelText('Loading')).toBeTruthy();
     unmount();
     await settleAsyncUpdates();
   });

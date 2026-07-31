@@ -11,9 +11,6 @@
   }
 }
 
-@utility ui-inline-spinner {
-  @apply border-primary size-8 animate-spin rounded-full border-2 border-t-transparent;
-}
 
 @utility ui-screen-shell {
   @apply flex-1 bg-gray-50 px-4 pt-4;
@@ -290,4 +287,78 @@
 
 @utility ui-fixed-action-banner-bottom {
   @apply border-t;
+}
+
+@keyframes ui-book-loader-paging {
+  to {
+    transform: rotateY(-180deg);
+  }
+}
+
+.ui-book-loader {
+  --book-loader-scale: 0.65;
+  --book-loader-size: calc(1px * var(--book-loader-scale));
+  --book-loader-cover: #6b7280;
+  --book-loader-page: #ffffff;
+  --book-loader-line: #e5e7eb;
+  --book-loader-shadow: rgb(0 0 0 / 0.25);
+
+  width: calc(200 * var(--book-loader-size));
+  height: calc(140 * var(--book-loader-size));
+  background: var(--book-loader-cover);
+  box-sizing: border-box;
+  position: relative;
+  border-radius: calc(8 * var(--book-loader-size));
+  perspective: calc(1000 * var(--book-loader-size));
+  display: inline-block;
+}
+
+.ui-book-loader::before {
+  content: '';
+  position: absolute;
+  left: calc(10 * var(--book-loader-size));
+  right: calc(10 * var(--book-loader-size));
+  top: calc(10 * var(--book-loader-size));
+  bottom: calc(10 * var(--book-loader-size));
+  border-radius: calc(8 * var(--book-loader-size));
+  background: var(--book-loader-page) no-repeat;
+  background-size: calc(60 * var(--book-loader-size)) calc(10 * var(--book-loader-size));
+  background-image:
+    linear-gradient(var(--book-loader-line) calc(100 * var(--book-loader-size)), transparent 0),
+    linear-gradient(var(--book-loader-line) calc(100 * var(--book-loader-size)), transparent 0),
+    linear-gradient(var(--book-loader-line) calc(100 * var(--book-loader-size)), transparent 0),
+    linear-gradient(var(--book-loader-line) calc(100 * var(--book-loader-size)), transparent 0),
+    linear-gradient(var(--book-loader-line) calc(100 * var(--book-loader-size)), transparent 0),
+    linear-gradient(var(--book-loader-line) calc(100 * var(--book-loader-size)), transparent 0);
+  background-position:
+    calc(15 * var(--book-loader-size)) calc(30 * var(--book-loader-size)),
+    calc(15 * var(--book-loader-size)) calc(60 * var(--book-loader-size)),
+    calc(15 * var(--book-loader-size)) calc(90 * var(--book-loader-size)),
+    calc(105 * var(--book-loader-size)) calc(30 * var(--book-loader-size)),
+    calc(105 * var(--book-loader-size)) calc(60 * var(--book-loader-size)),
+    calc(105 * var(--book-loader-size)) calc(90 * var(--book-loader-size));
+  box-shadow: 0 0 calc(10 * var(--book-loader-size)) var(--book-loader-shadow);
+}
+
+.ui-book-loader::after {
+  content: '';
+  position: absolute;
+  width: calc(50% - calc(10 * var(--book-loader-size)));
+  right: calc(10 * var(--book-loader-size));
+  top: calc(10 * var(--book-loader-size));
+  bottom: calc(10 * var(--book-loader-size));
+  border-radius: calc(8 * var(--book-loader-size));
+  background: var(--book-loader-page) no-repeat;
+  background-size: calc(60 * var(--book-loader-size)) calc(10 * var(--book-loader-size));
+  background-image:
+    linear-gradient(var(--book-loader-line) calc(100 * var(--book-loader-size)), transparent 0),
+    linear-gradient(var(--book-loader-line) calc(100 * var(--book-loader-size)), transparent 0),
+    linear-gradient(var(--book-loader-line) calc(100 * var(--book-loader-size)), transparent 0);
+  background-position:
+    50% calc(30 * var(--book-loader-size)),
+    50% calc(60 * var(--book-loader-size)),
+    50% calc(90 * var(--book-loader-size));
+  transform: rotateY(0deg);
+  transform-origin: left center;
+  animation: ui-book-loader-paging 1s linear infinite;
 }
