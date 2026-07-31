@@ -12,13 +12,13 @@ import {Image, Text, TouchableOpacity, View} from 'react-native';
 
 import {printRecipe} from '../../lib/printRecipe';
 import {shareRecipe} from '../../lib/shareRecipe';
+import {StatBadge, StatBadgeRow} from '../ui/StatBadge';
+import {TagPill} from '../ui/TagPill';
 
 import {OverviewActions} from './OverviewActions';
 import {RecipeStatusBadge} from './RecipeStatusBadge';
 import {RecipeVisibilityControls} from './RecipeVisibilityControls';
 import {recipeImagePreviewStyles} from './recipeImagePreviewStyles';
-import {StatBadge, StatBadgeRow} from '../ui/StatBadge';
-import {TagPill} from '../ui/TagPill';
 
 type Props = {
   recipe: RecipeDetail;

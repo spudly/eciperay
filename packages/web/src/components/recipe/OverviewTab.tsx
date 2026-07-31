@@ -12,12 +12,12 @@ import {Link} from 'react-router-dom';
 
 import {printRecipe} from '../../lib/printRecipe.js';
 import {shareRecipe} from '../../lib/shareRecipe.js';
+import {StatBadge, StatBadgeRow} from '../ui/StatBadge.js';
+import {TagPill} from '../ui/TagPill.js';
 
 import {OverviewActions} from './OverviewActions.js';
 import {RecipeStatusBadge} from './RecipeStatusBadge.js';
 import {RecipeVisibilityControls} from './RecipeVisibilityControls.js';
-import {StatBadge, StatBadgeRow} from '../ui/StatBadge.js';
-import {TagPill} from '../ui/TagPill.js';
 
 type Props = {
   recipe: RecipeDetail;
