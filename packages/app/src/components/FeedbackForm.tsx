@@ -3,7 +3,8 @@ import {
   validateUserFeedbackMessage,
   type SubmitUserFeedbackInput,
 } from '@eciperay/client';
-import {useState} from 'react';
+import {useFocusEffect} from '@react-navigation/native';
+import {useCallback, useState} from 'react';
 import {Switch, Text, TextInput, TouchableOpacity, View} from 'react-native';
 
 type FeedbackFormProps = {route?: string; onSubmitted?: () => void};
@@ -15,6 +16,20 @@ export const FeedbackForm = ({route, onSubmitted}: FeedbackFormProps) => {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+
+  const resetForm = useCallback(() => {
+    setMessage('');
+    setIsBug(false);
+    setError(null);
+    setSubmitting(false);
+    setSubmitted(false);
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      resetForm();
+    }, [resetForm]),
+  );
 
   const handleSubmit = async () => {
     setSubmitting(true);

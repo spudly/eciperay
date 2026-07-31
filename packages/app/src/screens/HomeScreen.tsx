@@ -81,9 +81,9 @@ export const HomeScreen = ({navigation}: Props) => {
           {HOME_TITLE}
         </Text>
         <Text className="text-muted mb-6 text-center">{HOME_SUBTITLE}</Text>
-        <View className="mb-8 flex-row justify-center gap-3">
+        <View className="mb-8 gap-3">
           <TouchableOpacity
-            className="bg-primary rounded-xl px-5 py-3"
+            className="bg-primary items-center rounded-xl px-4 py-3"
             onPress={() => {
               navigation.navigate('Recipes', {screen: 'RecipesList'});
             }}
@@ -93,7 +93,7 @@ export const HomeScreen = ({navigation}: Props) => {
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            className="rounded-xl bg-gray-100 px-5 py-3"
+            className="items-center rounded-xl bg-gray-100 px-4 py-3"
             onPress={() => {
               navigation.navigate('Add', {screen: 'AddScreen'});
             }}
@@ -103,7 +103,7 @@ export const HomeScreen = ({navigation}: Props) => {
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            className="rounded-xl bg-gray-100 px-5 py-3"
+            className="items-center rounded-xl bg-gray-100 px-4 py-3"
             onPress={() => {
               navigation.navigate('Recipes', {screen: 'SharedWithMe'});
             }}
