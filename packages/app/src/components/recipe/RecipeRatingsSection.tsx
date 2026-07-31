@@ -9,7 +9,6 @@ import {
 } from '@eciperay/client';
 import type {RecipeCommunityRating, RecipeStarRating} from '@eciperay/types';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
-import React from 'react';
 import {Text, View} from 'react-native';
 
 import {api} from '../../lib/api';
