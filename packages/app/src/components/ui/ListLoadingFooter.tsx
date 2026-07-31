@@ -1,20 +1,18 @@
 import type {ListLoadingFooterProps} from '@eciperay/client';
-import {Text, View} from 'react-native';
 import {useState} from 'react';
+import {View} from 'react-native';
 
+import {BookLoadingSpinner} from './BookLoadingSpinner';
 import {PrimaryButton} from './PrimaryButton';
 
-export const ListLoadingFooter = ({
-  loading,
-  label = 'Loading more…',
-}: ListLoadingFooterProps) => {
+export const ListLoadingFooter = ({loading}: ListLoadingFooterProps) => {
   if (!loading) {
     return null;
   }
 
   return (
-    <View className="py-4">
-      <Text className="text-muted text-center text-sm">{label}</Text>
+    <View className="ui-loading-center py-4">
+      <BookLoadingSpinner size="sm" />
     </View>
   );
 };

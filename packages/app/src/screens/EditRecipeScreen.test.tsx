@@ -1,5 +1,4 @@
 import React from 'react';
-import {ActivityIndicator} from 'react-native';
 import {act, fireEvent, waitFor} from '@testing-library/react-native';
 
 import {makeRecipeDetail} from '../__tests__/fixtures/recipe';
@@ -63,17 +62,17 @@ describe('EditRecipeScreen', () => {
           /* never resolves */
         }),
     );
-    const {UNSAFE_queryByType} = renderWithProviders(
+    const {queryByLabelText} = renderWithProviders(
       <EditRecipeScreen {...stackProps} />,
     );
 
-    expect(UNSAFE_queryByType(ActivityIndicator)).toBeNull();
+    expect(queryByLabelText('Loading')).toBeNull();
 
     act(() => {
       jest.advanceTimersByTime(100);
     });
 
-    expect(UNSAFE_queryByType(ActivityIndicator)).toBeTruthy();
+    expect(queryByLabelText('Loading')).toBeTruthy();
     jest.useRealTimers();
   });
 });

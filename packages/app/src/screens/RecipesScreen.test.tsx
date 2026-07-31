@@ -107,7 +107,7 @@ describe('RecipesScreen', () => {
           /* never resolves */
         }),
     );
-    const {UNSAFE_getByType} = renderWithProviders(
+    const {getByLabelText} = renderWithProviders(
       <RecipesScreen {...stackProps} />,
     );
 
@@ -115,9 +115,7 @@ describe('RecipesScreen', () => {
       jest.advanceTimersByTime(100);
     });
 
-    expect(
-      UNSAFE_getByType(require('react-native').ActivityIndicator),
-    ).toBeTruthy();
+    expect(getByLabelText('Loading')).toBeTruthy();
     jest.useRealTimers();
   });
 
@@ -176,7 +174,7 @@ describe('RecipesScreen', () => {
       return secondPagePromise;
     });
     const client = makeQueryClient();
-    const {findByText, getByText, UNSAFE_getByType} = renderWithProviders(
+    const {findByText, getByLabelText, UNSAFE_getByType} = renderWithProviders(
       <RecipesScreen {...stackProps} />,
       client,
     );
@@ -186,7 +184,7 @@ describe('RecipesScreen', () => {
       list.props.onEndReached?.();
     });
     await waitFor(() => {
-      expect(getByText('Loading more…')).toBeTruthy();
+      expect(getByLabelText('Loading')).toBeTruthy();
     });
     await act(async () => {
       resolveSecondPage([

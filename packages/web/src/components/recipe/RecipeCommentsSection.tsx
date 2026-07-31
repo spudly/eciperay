@@ -10,6 +10,7 @@ import {useState} from 'react';
 
 import {eciperay} from '../../lib/api.js';
 
+import {BookLoadingSpinner} from '../ui/BookLoadingSpinner.js';
 import {RecipeCommentItem} from './RecipeCommentItem.js';
 
 type Props = {
@@ -76,7 +77,9 @@ export const RecipeCommentsSection = ({
     <div className="mb-4 rounded-xl border border-gray-100 p-4">
       <h3 className="mb-3 text-sm font-semibold text-gray-900">Comments</h3>
       {isLoading ? (
-        <p className="text-sm text-gray-600">Loading comments…</p>
+        <div className="ui-loading-center mb-3">
+          <BookLoadingSpinner size="sm" />
+        </div>
       ) : null}
       {!isLoading && comments.length === 0 ? (
         <p className="mb-3 text-sm text-gray-600">No comments yet</p>

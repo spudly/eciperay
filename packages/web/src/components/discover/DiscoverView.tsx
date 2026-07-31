@@ -1,6 +1,7 @@
 import type {PublicRecipeDiscoveryItem} from '@eciperay/types';
 
 import {EmptyMessage} from '../ui/EmptyMessage.js';
+import {InlineLoadingIndicator} from '../InlineLoadingIndicator.js';
 import {ListLoadingFooter} from '../ui/ListLoadingFooter.js';
 import {PageTitle} from '../ui/PageTitle.js';
 import {SearchField} from '../ui/SearchField.js';
@@ -37,7 +38,7 @@ export const DiscoverView = ({
       onChange={onSearchChange}
     />
     {loading ? (
-      <EmptyMessage spacing="list">Loading…</EmptyMessage>
+      <InlineLoadingIndicator loading />
     ) : recipes.length === 0 ? (
       <EmptyMessage spacing="list">{emptyMessage}</EmptyMessage>
     ) : (

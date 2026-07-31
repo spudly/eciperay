@@ -1,19 +1,17 @@
 import type {ListLoadingFooterProps} from '@eciperay/client';
 import {useState} from 'react';
 
+import {BookLoadingSpinner} from './BookLoadingSpinner.js';
 import {PrimaryButton} from './PrimaryButton.js';
 
-export const ListLoadingFooter = ({
-  loading,
-  label = 'Loading more…',
-}: ListLoadingFooterProps) => {
+export const ListLoadingFooter = ({loading}: ListLoadingFooterProps) => {
   if (!loading) {
     return null;
   }
 
   return (
-    <div className="py-4 text-center">
-      <p className="text-muted text-sm">{label}</p>
+    <div className="ui-loading-center py-4">
+      <BookLoadingSpinner size="sm" />
     </div>
   );
 };

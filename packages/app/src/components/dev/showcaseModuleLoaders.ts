@@ -23,6 +23,7 @@ export const showcaseModuleLoaders = {
   'tags/TagsView': () => import('../tags/TagsView'),
   'ui/AuthScreenLayout': () => import('../ui/AuthScreenLayout'),
   'ui/BulkSelectToolbar': () => import('../ui/BulkSelectToolbar'),
+  'ui/BookLoadingSpinner': () => import('../ui/BookLoadingSpinner'),
   'ui/CheckboxField': () => import('../ui/CheckboxField'),
   'ui/CheckboxSelectList': () => import('../ui/CheckboxSelectList'),
   'ui/ColorPickerField': () => import('../ui/ColorPickerField'),

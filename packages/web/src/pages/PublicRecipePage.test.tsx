@@ -225,7 +225,7 @@ describe('PublicRecipePage', () => {
       {route: '/recipe/recipe-uuid-1/test-recipe', withAuth: false},
     );
 
-    expect(screen.getByText('Loading…')).toBeInTheDocument();
+    expect(screen.getByRole('status', {name: 'Loading'})).toBeInTheDocument();
     await waitFor(() => {
       expect(screen.getByText('Test Recipe')).toBeInTheDocument();
     });

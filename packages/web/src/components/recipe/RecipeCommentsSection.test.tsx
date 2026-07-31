@@ -52,7 +52,7 @@ describe('RecipeCommentsSection', () => {
       />,
       {withAuth: true},
     );
-    expect(screen.getByText('Loading comments…')).toBeInTheDocument();
+    expect(screen.getByRole('status', {name: 'Loading'})).toBeInTheDocument();
 
     server.use(
       http.get(`${API}/api/recipes/:id/comments`, () => HttpResponse.json([])),

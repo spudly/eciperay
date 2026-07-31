@@ -67,6 +67,7 @@ const SHOWCASE_MIRROR_PATHS = [
   'tags/TagsView.tsx',
   'ui/AuthScreenLayout.tsx',
   'ui/BulkSelectToolbar.tsx',
+  'ui/BookLoadingSpinner.tsx',
   'ui/CheckboxField.tsx',
   'ui/CheckboxSelectList.tsx',
   'ui/ColorPickerField.tsx',

@@ -10,6 +10,7 @@ import {useState} from 'react';
 import type {CookLogInput} from '@eciperay/types';
 
 import {CookLogForm} from '../cooking/CookLogForm.js';
+import {BookLoadingSpinner} from '../ui/BookLoadingSpinner.js';
 import {eciperay} from '../../lib/api.js';
 
 type Props = {recipeId: string; versionId: string};
@@ -38,8 +39,8 @@ export const CookHistoryTab = ({recipeId, versionId}: Props) => {
 
   if (isLoading) {
     return (
-      <div className="p-4">
-        <p className="text-muted text-sm">Loading cook history…</p>
+      <div className="ui-loading-center p-4">
+        <BookLoadingSpinner size="sm" />
       </div>
     );
   }

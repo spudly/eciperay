@@ -6,16 +6,9 @@ import {
 import clsx from 'clsx';
 import {useState} from 'react';
 
+import {BookLoadingSpinner} from './ui/BookLoadingSpinner.js';
 import {PrimaryButton} from './ui/PrimaryButton.js';
 import {InfoBanner} from './ui/InfoBanner.js';
-
-const LoadingSpinner = () => (
-  <div
-    className="ui-inline-spinner"
-    role="status"
-    aria-label="Loading"
-  />
-);
 
 export const ScreenLoadingGate = ({
   pending,
@@ -35,7 +28,7 @@ export const ScreenLoadingGate = ({
 
   return (
     <div className={clsx('ui-loading-center min-h-full', backgroundClassName)}>
-      <LoadingSpinner />
+      <BookLoadingSpinner size="lg" />
     </div>
   );
 };

@@ -90,7 +90,7 @@ describe('SharedWithMeScreen', () => {
       },
     );
     const client = makeQueryClient();
-    const {findByText, getByText, UNSAFE_getByType} = renderWithProviders(
+    const {findByText, getByLabelText, UNSAFE_getByType} = renderWithProviders(
       <SharedWithMeScreen />,
       client,
     );
@@ -101,7 +101,7 @@ describe('SharedWithMeScreen', () => {
       await flushQueryClient(client);
     });
     await waitFor(() => {
-      expect(getByText('Loading more…')).toBeTruthy();
+      expect(getByLabelText('Loading')).toBeTruthy();
     });
     await act(async () => {
       resolveSecondPage([]);

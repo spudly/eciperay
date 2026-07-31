@@ -83,13 +83,13 @@ describe('CookHistoryTab', () => {
 
   test('renders loading state', () => {
     mockListCookLogs.mockImplementation(() => new Promise(() => {}));
-    const {getByText} = renderWithProviders(
+    const {getByLabelText} = renderWithProviders(
       <CookHistoryTab
         recipeId="recipe-uuid-1"
         versionId={VERSION_ID}
       />,
     );
-    expect(getByText('Loading cook history…')).toBeTruthy();
+    expect(getByLabelText('Loading')).toBeTruthy();
   });
 
   test('renders cook log without rating or notes', async () => {

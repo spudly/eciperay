@@ -33,11 +33,10 @@ describe('CheckboxSelectList', () => {
           void 0;
         }}
         isLoading
-        loadingMessage="Loading recipes…"
       />,
     );
 
-    expect(screen.getByText('Loading recipes…')).toBeInTheDocument();
+    expect(screen.getByRole('status', {name: 'Loading'})).toBeInTheDocument();
 
     rerender(
       <CheckboxSelectList

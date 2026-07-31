@@ -8,7 +8,6 @@ export type CheckboxSelectListProps = {
   onToggle: (id: string) => void;
   disabled?: boolean;
   isLoading?: boolean;
-  loadingMessage?: string;
   emptyMessage?: string;
 };
 
