@@ -4,8 +4,8 @@ import {useMemo, useState} from 'react';
 import {eciperay} from '../lib/api.js';
 import {downloadRecipeExportBundle} from '../lib/downloadRecipeExport.js';
 
-import {RecipeExportList} from './RecipeExportList.js';
-import {RecipeExportToolbar} from './RecipeExportToolbar.js';
+import {BulkSelectToolbar} from './ui/BulkSelectToolbar.js';
+import {CheckboxSelectList} from './ui/CheckboxSelectList.js';
 
 const toggleId = (ids: Set<string>, id: string) => {
   const next = new Set(ids);
@@ -46,6 +46,11 @@ export const RecipeExportPicker = ({
     [filtered],
   );
 
+  const items = useMemo(
+    () => filtered.map(recipe => ({id: recipe.id, label: recipe.title})),
+    [filtered],
+  );
+
   const handleExport = async () => {
     setExporting(true);
     onError(null);
@@ -59,15 +64,17 @@ export const RecipeExportPicker = ({
     }
   };
 
+  const busy = exporting || isLoading;
+
   return (
     <div>
-      <RecipeExportToolbar
+      <BulkSelectToolbar
         search={search}
+        searchPlaceholder="Search recipes to export…"
         selectedCount={selectedIds.size}
         filteredCount={filteredIds.length}
         disabled={disabled}
-        exporting={exporting}
-        isLoading={isLoading}
+        busy={busy}
         onSearchChange={setSearch}
         onSelectAll={() => {
           setSelectedIds(previous => {
@@ -93,12 +100,13 @@ export const RecipeExportPicker = ({
           mb-4 max-h-64 overflow-y-auto rounded-lg border border-gray-200
         "
       >
-        <RecipeExportList
-          recipes={filtered}
+        <CheckboxSelectList
+          items={items}
           selectedIds={selectedIds}
-          disabled={disabled}
-          exporting={exporting}
+          disabled={disabled || exporting}
           isLoading={isLoading}
+          loadingMessage="Loading recipes…"
+          emptyMessage="No recipes found."
           onToggle={id => {
             setSelectedIds(previous => toggleId(previous, id));
           }}

@@ -3,8 +3,10 @@ import {makeRecipeDetail} from '@eciperay/client';
 import {useState} from 'react';
 
 import {InlineLoadingIndicator} from '../InlineLoadingIndicator.js';
+import {ColorPickerField} from '../ui/ColorPickerField.js';
 import {PageTitle} from '../ui/PageTitle.js';
 import {PrimaryButton} from '../ui/PrimaryButton.js';
+import {TagPill} from '../ui/TagPill.js';
 
 export const TagsView = ({
   tags,
@@ -37,13 +39,9 @@ export const TagsView = ({
             onNameChange(event.target.value);
           }}
         />
-        <input
-          type="color"
-          className="h-10 w-12 cursor-pointer rounded border border-gray-300"
+        <ColorPickerField
           value={color}
-          onChange={event => {
-            onColorChange(event.target.value);
-          }}
+          onChange={onColorChange}
         />
         <PrimaryButton
           label="Add"
@@ -61,12 +59,10 @@ export const TagsView = ({
               key={tag.id}
               className="ui-tag-list-item flex"
             >
-              <span
-                className="ui-tag-pill"
-                style={{backgroundColor: `${tag.color}22`, color: tag.color}}
-              >
-                {tag.name}
-              </span>
+              <TagPill
+                name={tag.name}
+                color={tag.color}
+              />
               <button
                 type="button"
                 className="ui-error-text"

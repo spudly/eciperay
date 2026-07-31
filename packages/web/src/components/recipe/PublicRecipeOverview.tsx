@@ -1,15 +1,11 @@
 import type {PublicRecipeDetail} from '@eciperay/types';
 
+import {StatBadge, StatBadgeRow} from '../ui/StatBadge.js';
+import {TagPill} from '../ui/TagPill.js';
+
 import {RecipeStatusBadge} from './RecipeStatusBadge.js';
 
 type Props = {recipe: PublicRecipeDetail};
-
-const StatBadge = ({label, value}: {label: string; value: string}) => (
-  <div className="text-center">
-    <p className="text-base font-semibold text-gray-900">{value}</p>
-    <p className="text-muted text-xs">{label}</p>
-  </div>
-);
 
 export const PublicRecipeOverview = ({recipe}: Props) => {
   return (
@@ -28,7 +24,7 @@ export const PublicRecipeOverview = ({recipe}: Props) => {
       {recipe.description ? (
         <p className="mb-4 text-gray-600">{recipe.description}</p>
       ) : null}
-      <div className="mb-4 flex justify-around rounded-xl bg-gray-50 py-4">
+      <StatBadgeRow>
         <StatBadge
           label="Servings"
           value={String(recipe.servings)}
@@ -45,16 +41,14 @@ export const PublicRecipeOverview = ({recipe}: Props) => {
             value={`${recipe.cookTimeMin}m`}
           />
         ) : null}
-      </div>
+      </StatBadgeRow>
       <div className="flex flex-wrap gap-2">
         {recipe.tags.map(tag => (
-          <span
+          <TagPill
             key={tag.id}
-            className="rounded-full px-3 py-1 text-xs font-medium"
-            style={{backgroundColor: `${tag.color}22`, color: tag.color}}
-          >
-            {tag.name}
-          </span>
+            name={tag.name}
+            color={tag.color}
+          />
         ))}
       </div>
     </div>

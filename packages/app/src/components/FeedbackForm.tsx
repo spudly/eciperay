@@ -6,7 +6,9 @@ import {
 } from '@eciperay/client';
 import {useFocusEffect} from '@react-navigation/native';
 import {useCallback, useState} from 'react';
-import {Switch, Text, TextInput, TouchableOpacity, View} from 'react-native';
+import {Text, TextInput, TouchableOpacity, View} from 'react-native';
+
+import {CheckboxField} from './ui/CheckboxField';
 
 type FeedbackFormProps = {
   route?: string;
@@ -83,14 +85,11 @@ export const FeedbackForm = ({route, onSubmitted}: FeedbackFormProps) => {
           placeholder="Tell us what happened or what you'd like to see improved."
         />
       </View>
-      <View className="flex-row items-center justify-between">
-        <Text className="text-sm text-gray-700">This is a bug</Text>
-        <Switch
-          value={isBug}
-          onValueChange={setIsBug}
-          accessibilityLabel="This is a bug"
-        />
-      </View>
+      <CheckboxField
+        checked={isBug}
+        onChange={setIsBug}
+        label="This is a bug"
+      />
       {error ? <Text className="text-sm text-red-600">{error}</Text> : null}
       <TouchableOpacity
         className="

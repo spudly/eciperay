@@ -1,12 +1,16 @@
 import type {RecipeDetailChromeProps, RecipeDetailTab} from '@eciperay/client';
-import {makeRecipeDetail, makeRecipeVersionSummary} from '@eciperay/client';
+import {
+  makeRecipeDetail,
+  makeRecipeVersionSummary,
+  RECIPE_DETAIL_TABS,
+} from '@eciperay/client';
 import {useState} from 'react';
 import {View} from 'react-native';
 
 import {InfoBanner} from '../ui/InfoBanner';
+import {TabBar} from '../ui/TabBar';
 
 import {RecipeStatusBadge} from './RecipeStatusBadge';
-import {RecipeDetailTabBar} from './RecipeDetailTabBar';
 import {VersionPicker} from './VersionPicker';
 
 export const RecipeDetailChrome = ({
@@ -27,9 +31,12 @@ export const RecipeDetailChrome = ({
         onSelect={onSelectVersion}
       />
     </View>
-    <RecipeDetailTabBar
+    <TabBar
+      tabs={RECIPE_DETAIL_TABS}
       activeTab={activeTab}
-      onSelect={onSelectTab}
+      onTabChange={key => {
+        onSelectTab(key as RecipeDetailTab);
+      }}
     />
     {children}
   </View>

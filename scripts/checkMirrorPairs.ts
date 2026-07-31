@@ -144,6 +144,7 @@ export const validateChangedMirrorPairs = (
 };
 
 export const validateChangedComponentsRegistered = (
+  root: string,
   changedFiles: string[],
 ): string[] => {
   const errors: string[] = [];
@@ -151,6 +152,9 @@ export const validateChangedComponentsRegistered = (
   for (const file of changedFiles) {
     const relPath = toComponentRelPath(file);
     if (!relPath) {
+      continue;
+    }
+    if (!existsSync(join(root, file))) {
       continue;
     }
     const platform = file.startsWith('packages/app/') ? 'app' : 'web';
@@ -179,7 +183,7 @@ export const checkMirrorPairs = ({
   ...validatePlatformOnlyFilesExist(root),
   ...validateAllComponentsRegistered(root),
   ...validateChangedMirrorPairs(changedFiles),
-  ...validateChangedComponentsRegistered(changedFiles),
+  ...validateChangedComponentsRegistered(root, changedFiles),
 ];
 
 export const formatMirrorPairErrors = (errors: string[]): string =>

@@ -2,43 +2,34 @@ import {
   type ShowcaseDemoRenderer,
   useFeedbackShortcutEnabled,
 } from '@eciperay/client';
-import {Switch, Text, View} from 'react-native';
+import {Text} from 'react-native';
 
 import {POSTHOG_KEY} from '../lib/env';
+
+import {CheckboxField} from './ui/CheckboxField';
+import {SectionCard} from './ui/SectionCard';
 
 export const ProfileFeedbackPreference = () => {
   const {enabled, setEnabled} = useFeedbackShortcutEnabled();
   const analyticsConfigured = POSTHOG_KEY.length > 0;
 
   return (
-    <View className="mb-8 rounded-xl bg-white p-4 shadow-sm">
-      <Text className="mb-3 text-lg font-semibold text-gray-900">
-        Preferences
-      </Text>
-      <View className="flex-row items-start justify-between gap-4">
-        <View className="flex-1">
-          <Text className="text-sm font-medium text-gray-900">
-            Show feedback shortcut
-          </Text>
+    <SectionCard title="Preferences">
+      <CheckboxField
+        checked={enabled}
+        disabled={!analyticsConfigured}
+        onChange={setEnabled}
+        label="Show feedback shortcut"
+        description="Adds a Feedback tab so you can send product feedback. Submissions are sent to PostHog when you use it."
+      >
+        {analyticsConfigured ? null : (
           <Text className="text-muted mt-1 text-sm">
-            Adds a Feedback tab so you can send product feedback. Submissions
-            are sent to PostHog when you use it.
+            Feedback is unavailable because analytics is not configured in this
+            environment.
           </Text>
-          {analyticsConfigured ? null : (
-            <Text className="text-muted mt-1 text-sm">
-              Feedback is unavailable because analytics is not configured in
-              this environment.
-            </Text>
-          )}
-        </View>
-        <Switch
-          value={enabled}
-          disabled={!analyticsConfigured}
-          onValueChange={setEnabled}
-          accessibilityLabel="Show feedback shortcut"
-        />
-      </View>
-    </View>
+        )}
+      </CheckboxField>
+    </SectionCard>
   );
 };
 

@@ -14,6 +14,7 @@ import {EmptyMessage} from '../ui/EmptyMessage.js';
 import {ListLoadingFooter} from '../ui/ListLoadingFooter.js';
 import {PageTitle} from '../ui/PageTitle.js';
 import {SearchField} from '../ui/SearchField.js';
+import {SelectField} from '../ui/SelectField.js';
 
 export const RecipesListView = ({
   search,
@@ -34,28 +35,20 @@ export const RecipesListView = ({
       onChange={onSearchChange}
     />
     {statusFilter !== undefined && onStatusFilterChange ? (
-      <label className="mb-4 block">
-        <span className="mb-1 block text-sm font-medium text-gray-700">
-          {RECIPE_STATUS_FILTER_LABEL}
-        </span>
-        <select
-          className="ui-select-field"
-          value={statusFilter}
-          onChange={event => {
-            onStatusFilterChange(event.target.value as typeof statusFilter);
-          }}
-        >
-          <option value={RECIPE_STATUS_FILTER_ALL}>All statuses</option>
-          {RECIPE_STATUS_OPTIONS.map(status => (
-            <option
-              key={status}
-              value={status}
-            >
-              {RECIPE_STATUS_LABELS[status]}
-            </option>
-          ))}
-        </select>
-      </label>
+      <SelectField
+        label={RECIPE_STATUS_FILTER_LABEL}
+        value={statusFilter}
+        options={[
+          {value: RECIPE_STATUS_FILTER_ALL, label: 'All statuses'},
+          ...RECIPE_STATUS_OPTIONS.map(status => ({
+            value: status,
+            label: RECIPE_STATUS_LABELS[status],
+          })),
+        ]}
+        onChange={next => {
+          onStatusFilterChange(next as typeof statusFilter);
+        }}
+      />
     ) : null}
     {isLoading ? (
       <InlineLoadingIndicator

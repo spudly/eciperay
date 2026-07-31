@@ -1,10 +1,11 @@
 import {queryKeys} from '@eciperay/client';
-import clsx from 'clsx';
 import {useQuery} from '@tanstack/react-query';
 import type {ComponentType} from 'react';
 import type {ShowcaseFrameProps} from '@eciperay/client';
+import {useMemo} from 'react';
 
 import {eciperay} from '../../lib/api.js';
+import {ToggleChipGroup} from '../ui/ToggleChipGroup.js';
 
 type Props = {selectedIds: string[]; onChange: (ids: string[]) => void};
 
@@ -14,39 +15,26 @@ export const TagPicker = ({selectedIds, onChange}: Props) => {
     queryFn: () => eciperay.tags.list(),
   });
 
+  const options = useMemo(
+    () => tags.map(tag => ({id: tag.id, label: tag.name, color: tag.color})),
+    [tags],
+  );
+
   if (isLoading) {
     return <p className="text-muted text-sm">Loading tags…</p>;
   }
 
-  const toggle = (id: string) => {
-    if (selectedIds.includes(id)) {
-      onChange(selectedIds.filter(t => t !== id));
-    } else {
-      onChange([...selectedIds, id]);
-    }
-  };
-
   return (
-    <div className="flex flex-wrap gap-2">
-      {tags.map(tag => {
-        const selected = selectedIds.includes(tag.id);
-        return (
-          <button
-            key={tag.id}
-            type="button"
-            className={clsx('rounded-full px-3 py-1 text-xs font-medium', {
-              'ring-primary ring-2': selected,
-            })}
-            style={{backgroundColor: `${tag.color}22`, color: tag.color}}
-            onClick={() => {
-              toggle(tag.id);
-            }}
-          >
-            {tag.name}
-          </button>
-        );
-      })}
-    </div>
+    <ToggleChipGroup
+      multi
+      options={options}
+      selectedIds={new Set(selectedIds)}
+      onChange={value => {
+        if (Array.isArray(value)) {
+          onChange(value);
+        }
+      }}
+    />
   );
 };
 
