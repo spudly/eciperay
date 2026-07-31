@@ -11,8 +11,8 @@ import type {RecipeCommunityRating, RecipeStarRating} from '@eciperay/types';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
 
 import {eciperay} from '../../lib/api.js';
-
 import {StarRatingInput} from '../ui/StarRatingInput.js';
+
 import {StaleVersionHint} from './StaleVersionHint.js';
 
 type Props = {
