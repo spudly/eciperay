@@ -5,7 +5,7 @@ import {
   truncateChangeSummary,
 } from '@eciperay/client';
 import type {RecipeVersionSummary} from '@eciperay/types';
-import React, {useState} from 'react';
+import {useMemo, useState} from 'react';
 import {Modal, Pressable, ScrollView, Text, View} from 'react-native';
 
 const ROLE_LABELS: Record<RecipeVersionSummary['derivedRole'], string> = {
@@ -35,8 +35,9 @@ export const VersionPicker = ({
   onSelect,
 }: Props) => {
   const [open, setOpen] = useState(false);
-  const sorted = [...versions].sort(
-    (a, b) => b.versionNumber - a.versionNumber,
+  const sorted = useMemo(
+    () => [...versions].sort((a, b) => b.versionNumber - a.versionNumber),
+    [versions],
   );
   const selected = sorted.find(v => v.id === selectedVersionId) ?? sorted[0];
 

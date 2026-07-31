@@ -1,9 +1,8 @@
-/* eslint-disable max-lines -- cooking mode shell aggregates native layout fragments */
+ 
 import {
   formatScaledIngredientLine,
   sortIngredientsByOrder,
 } from '@eciperay/client';
-import clsx from 'clsx';
 import type {ReactNode} from 'react';
 import {useState} from 'react';
 import {
@@ -14,6 +13,9 @@ import {
   View,
 } from 'react-native';
 import type {RecipeDetail} from '@eciperay/types';
+
+import {PrevNextNav} from '../ui/PrevNextNav';
+import {ProgressDots} from '../ui/ProgressDots';
 
 export const CookingModeShell = ({
   children,
@@ -53,20 +55,6 @@ export const CookingModeDoneButton = ({onPress}: {onPress: () => void}) => (
 );
 
 type Step = RecipeDetail['instructions'][number];
-
-const ProgressDots = ({total, current}: {total: number; current: number}) => (
-  <View className="mb-6 flex-row justify-center gap-2">
-    {Array.from({length: total}).map((_, i) => (
-      <View
-        key={i}
-        className={clsx('size-2 rounded-full', {
-          'bg-white': i === current,
-          'bg-white/40': i !== current,
-        })}
-      />
-    ))}
-  </View>
-);
 
 const ScaledIngredientsList = ({
   recipe,
@@ -160,22 +148,11 @@ type NavButtonsProps = {
   onPrev: () => void;
 };
 
-export const NavButtons = ({step, total, onNext, onPrev}: NavButtonsProps) => {
-  const renderBtn = (label: string, onPress: () => void, disabled: boolean) => (
-    <TouchableOpacity
-      className={clsx('rounded-xl bg-white/10 px-6 py-3', {
-        'opacity-30': disabled,
-      })}
-      onPress={onPress}
-      disabled={disabled}
-    >
-      <Text className="text-base text-white">{label}</Text>
-    </TouchableOpacity>
-  );
-  return (
-    <View className="flex-row justify-between">
-      {renderBtn('← Back', onPrev, step === 0)}
-      {renderBtn('Next →', onNext, step === total - 1)}
-    </View>
-  );
-};
+export const NavButtons = ({step, total, onNext, onPrev}: NavButtonsProps) => (
+  <PrevNextNav
+    onBack={onPrev}
+    onNext={onNext}
+    disableBack={step === 0}
+    disableNext={step === total - 1}
+  />
+);

@@ -2,7 +2,7 @@ import clsx from 'clsx';
 import {useState} from 'react';
 import type {CookLogInput} from '@eciperay/types';
 
-const STAR_RATINGS = [1, 2, 3, 4, 5] as const;
+import {StarRatingInput} from '../ui/StarRatingInput.js';
 
 type Props = {
   onSubmit: (input: CookLogInput) => void;
@@ -38,24 +38,14 @@ export const CookLogForm = ({
       >
         How did it go?
       </h2>
-      <div className="mb-4 flex justify-center gap-2">
-        {STAR_RATINGS.map(star => (
-          <button
-            key={star}
-            type="button"
-            aria-label={`${star} stars`}
-            className={clsx('text-2xl', {
-              'text-yellow-400': rating !== null && star <= rating,
-              'text-white/30': !isLight && (rating === null || star > rating),
-              'text-gray-300': isLight && (rating === null || star > rating),
-            })}
-            onClick={() => {
-              setRating(star);
-            }}
-          >
-            ★
-          </button>
-        ))}
+      <div className="mb-4 flex justify-center">
+        <StarRatingInput
+          value={rating}
+          tone={isLight ? 'default' : 'dark'}
+          onChange={star => {
+            setRating(star as 1 | 2 | 3 | 4 | 5 | null);
+          }}
+        />
       </div>
       <textarea
         className={clsx(

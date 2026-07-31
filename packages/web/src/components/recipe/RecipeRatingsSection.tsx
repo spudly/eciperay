@@ -9,13 +9,11 @@ import {
 } from '@eciperay/client';
 import type {RecipeCommunityRating, RecipeStarRating} from '@eciperay/types';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
-import clsx from 'clsx';
 
 import {eciperay} from '../../lib/api.js';
 
+import {StarRatingInput} from '../ui/StarRatingInput.js';
 import {StaleVersionHint} from './StaleVersionHint.js';
-
-const STAR_RATINGS = [1, 2, 3, 4, 5] as const;
 
 type Props = {
   recipeId: string;
@@ -58,11 +56,6 @@ export const RecipeRatingsSection = ({
     },
   });
 
-  const handleStarClick = (star: RecipeStarRating) => {
-    const next = viewerRating === star ? null : star;
-    ratingMutation.mutate(next);
-  };
-
   return (
     <div className="mb-4 rounded-xl bg-gray-50 p-4">
       <div className="mb-3">
@@ -101,24 +94,13 @@ export const RecipeRatingsSection = ({
             Your rating
           </p>
           <div className="flex items-center gap-2">
-            {STAR_RATINGS.map(star => (
-              <button
-                key={star}
-                type="button"
-                aria-label={`${star} stars`}
-                className={clsx('text-2xl', {
-                  'text-yellow-400':
-                    viewerRating !== null && star <= viewerRating,
-                  'text-gray-300': viewerRating === null || star > viewerRating,
-                })}
-                disabled={ratingMutation.isPending}
-                onClick={() => {
-                  handleStarClick(star);
-                }}
-              >
-                ★
-              </button>
-            ))}
+            <StarRatingInput
+              value={viewerRating}
+              disabled={ratingMutation.isPending}
+              onChange={star => {
+                ratingMutation.mutate(star as RecipeStarRating | null);
+              }}
+            />
             {viewerRatingIsStale ? (
               <StaleVersionHint label={STALE_VIEWER_RATING_HINT} />
             ) : null}

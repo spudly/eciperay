@@ -14,6 +14,8 @@ import {useMutation, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useState} from 'react';
 
 import {eciperay} from '../../lib/api.js';
+import {CheckboxField} from '../ui/CheckboxField.js';
+import {RadioOptionGroup} from '../ui/RadioOptionGroup.js';
 
 type Props = {recipe: RecipeDetail; onActionMessage: (message: string) => void};
 
@@ -73,34 +75,19 @@ export const RecipeVisibilityControls = ({recipe, onActionMessage}: Props) => {
   return (
     <section className="mb-4 rounded-xl border border-gray-200 p-4">
       <h3 className="mb-2 text-sm font-semibold text-gray-900">Sharing</h3>
-      <div className="space-y-2">
-        {visibilityOptions.map(option => (
-          <label
-            key={option}
-            className="
-              flex cursor-pointer items-start gap-2 text-sm text-gray-700
-            "
-          >
-            <input
-              type="radio"
-              name={`visibility-${recipe.id}`}
-              checked={(pendingVisibility ?? recipe.visibility) === option}
-              disabled={sharingMutation.isPending}
-              onChange={() => {
-                setPendingVisibility(option);
-              }}
-            />
-            <span>
-              <span className="font-medium">
-                {recipeVisibilityLabels[option]}
-              </span>
-              <span className="mt-0.5 block text-xs text-gray-500">
-                {recipeVisibilityDescriptions[option]}
-              </span>
-            </span>
-          </label>
-        ))}
-      </div>
+      <RadioOptionGroup
+        name={`visibility-${recipe.id}`}
+        value={pendingVisibility ?? recipe.visibility}
+        disabled={sharingMutation.isPending}
+        options={visibilityOptions.map(option => ({
+          value: option,
+          title: recipeVisibilityLabels[option],
+          description: recipeVisibilityDescriptions[option],
+        }))}
+        onChange={value => {
+          setPendingVisibility(value as RecipeVisibility);
+        }}
+      />
       {pendingVisibility === 'public' ? (
         <p className="mt-3 text-sm text-amber-800">
           This recipe will be discoverable by anyone browsing Eciperay.
@@ -108,28 +95,26 @@ export const RecipeVisibilityControls = ({recipe, onActionMessage}: Props) => {
       ) : null}
       {pendingVisibility &&
       requiresPublishingConsent(recipe.visibility, pendingVisibility) ? (
-        <label className="mt-3 flex items-start gap-2 text-sm text-gray-700">
-          <input
-            type="checkbox"
-            checked={publishingConsent}
-            onChange={event => {
-              setPublishingConsent(event.target.checked);
-            }}
-          />
-          <span>
-            I understand this recipe may be viewed without signing in and I
-            agree to the{' '}
-            <a
-              href={PRIVACY_POLICY_URL}
-              className="text-primary underline"
-              target="_blank"
-              rel="noreferrer"
-            >
-              Privacy Policy
-            </a>
-            .
-          </span>
-        </label>
+        <CheckboxField
+          checked={publishingConsent}
+          onChange={setPublishingConsent}
+          label="Publishing consent"
+          description={
+            <>
+              I understand this recipe may be viewed without signing in and I
+              agree to the{' '}
+              <a
+                href={PRIVACY_POLICY_URL}
+                className="text-primary underline"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Privacy Policy
+              </a>
+              .
+            </>
+          }
+        />
       ) : null}
       {pendingVisibility && pendingVisibility !== recipe.visibility ? (
         <button

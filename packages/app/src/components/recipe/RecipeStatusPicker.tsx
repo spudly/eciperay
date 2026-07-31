@@ -1,8 +1,13 @@
-import {RECIPE_STATUS_LABELS, RECIPE_STATUS_OPTIONS} from '@eciperay/client';
+import {
+  RECIPE_STATUS_LABELS,
+  RECIPE_STATUS_OPTIONS,
+  type ToggleChipOption,
+} from '@eciperay/client';
 import type {RecipeStatus} from '@eciperay/types';
-import clsx from 'clsx';
-import React, {useState} from 'react';
-import {Pressable, Text, View} from 'react-native';
+import {useMemo, useState} from 'react';
+import {Text, View} from 'react-native';
+
+import {ToggleChipGroup} from '../ui/ToggleChipGroup';
 
 type Props = {
   value: RecipeStatus;
@@ -14,43 +19,32 @@ export const RecipeStatusPicker = ({
   value,
   onChange,
   disabled = false,
-}: Props) => (
-  <View>
-    <Text className="mb-2 text-sm font-medium text-gray-700">Status</Text>
-    <View className="flex-row flex-wrap gap-2">
-      {RECIPE_STATUS_OPTIONS.map(status => {
-        const selected = value === status;
-        return (
-          <Pressable
-            key={status}
-            accessibilityRole="button"
-            accessibilityState={{selected, disabled}}
-            disabled={disabled}
-            className={clsx(
-              'rounded-full border px-3 py-2',
-              selected
-                ? 'border-primary bg-primary/10'
-                : 'border-gray-200 bg-white',
-              disabled && 'opacity-50',
-            )}
-            onPress={() => {
-              onChange(status);
-            }}
-          >
-            <Text
-              className={clsx(
-                'text-sm font-medium',
-                selected ? 'text-primary' : 'text-gray-700',
-              )}
-            >
-              {RECIPE_STATUS_LABELS[status]}
-            </Text>
-          </Pressable>
-        );
-      })}
+}: Props) => {
+  const options = useMemo<ToggleChipOption[]>(
+    () =>
+      RECIPE_STATUS_OPTIONS.map(status => ({
+        id: status,
+        label: RECIPE_STATUS_LABELS[status],
+      })),
+    [],
+  );
+
+  return (
+    <View>
+      <Text className="mb-2 text-sm font-medium text-gray-700">Status</Text>
+      <ToggleChipGroup
+        options={options}
+        selectedId={value}
+        disabled={disabled}
+        onChange={next => {
+          if (typeof next === 'string') {
+            onChange(next as RecipeStatus);
+          }
+        }}
+      />
     </View>
-  </View>
-);
+  );
+};
 
 if (__DEV__) {
   const RecipeStatusPickerDemo = () => {

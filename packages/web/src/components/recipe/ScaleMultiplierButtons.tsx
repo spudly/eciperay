@@ -3,9 +3,11 @@ import {
   isActiveScaleMultiplier,
   RECIPE_SCALE_MULTIPLIERS,
   servingsForMultiplier,
+  type RecipeScaleMultiplier,
 } from '@eciperay/client';
-import clsx from 'clsx';
-import {useState} from 'react';
+import {useMemo, useState} from 'react';
+
+import {ToggleChipGroup} from '../ui/ToggleChipGroup.js';
 
 type Props = {
   baseServings: number;
@@ -17,34 +19,41 @@ export const ScaleMultiplierButtons = ({
   baseServings,
   servings,
   onServingsChange,
-}: Props) => (
-  <div className="mb-4 flex flex-wrap items-center gap-2">
-    <span className="text-sm font-medium text-gray-700">Scale:</span>
-    {RECIPE_SCALE_MULTIPLIERS.map(multiplier => (
-      <button
-        key={multiplier}
-        type="button"
-        className={clsx('rounded-full px-3 py-1 text-sm font-medium', {
-          'bg-primary text-white': isActiveScaleMultiplier(
-            baseServings,
-            servings,
-            multiplier,
-          ),
-          'bg-gray-100 text-gray-700': !isActiveScaleMultiplier(
-            baseServings,
-            servings,
-            multiplier,
-          ),
-        })}
-        onClick={() => {
-          onServingsChange(servingsForMultiplier(baseServings, multiplier));
+}: Props) => {
+  const options = useMemo(
+    () =>
+      RECIPE_SCALE_MULTIPLIERS.map(multiplier => ({
+        id: String(multiplier),
+        label: formatScaleMultiplierLabel(multiplier),
+      })),
+    [],
+  );
+
+  const selectedId =
+    RECIPE_SCALE_MULTIPLIERS.find(multiplier =>
+      isActiveScaleMultiplier(baseServings, servings, multiplier),
+    )?.toString() ?? String(RECIPE_SCALE_MULTIPLIERS[0]);
+
+  return (
+    <div className="mb-4 flex flex-wrap items-center gap-2">
+      <span className="text-sm font-medium text-gray-700">Scale:</span>
+      <ToggleChipGroup
+        options={options}
+        selectedId={selectedId}
+        onChange={value => {
+          if (typeof value === 'string') {
+            onServingsChange(
+              servingsForMultiplier(
+                baseServings,
+                Number(value) as RecipeScaleMultiplier,
+              ),
+            );
+          }
         }}
-      >
-        {formatScaleMultiplierLabel(multiplier)}
-      </button>
-    ))}
-  </div>
-);
+      />
+    </div>
+  );
+};
 
 if (import.meta.env.DEV) {
   ScaleMultiplierButtons.demo = function ScaleMultiplierButtonsDemo() {

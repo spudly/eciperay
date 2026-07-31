@@ -1,14 +1,15 @@
-import clsx from 'clsx';
 import type {ReactNode} from 'react';
 import type {RecipeDetail} from '@eciperay/types';
 
-import {ProgressDots} from './ProgressDots.js';
+import {PrevNextNav} from '../ui/PrevNextNav.js';
+import {ProgressDots} from '../ui/ProgressDots.js';
+
 import {ScaledIngredientsList} from './ScaledIngredientsList.js';
 
 export const CookingModeCookLogShell = ({children}: {children: ReactNode}) => (
-  <div className="
-    ui-cooking-mode-overlay-fixed ui-cooking-mode-overlay-centered
-  ">
+  <div
+    className="ui-cooking-mode-overlay-fixed ui-cooking-mode-overlay-centered"
+  >
     {children}
   </div>
 );
@@ -62,30 +63,12 @@ export const CookingModeView = ({
         total={steps.length}
         current={step}
       />
-      <div className="flex justify-between">
-        <button
-          type="button"
-          className={clsx(
-            `rounded-xl bg-white/10 px-6 py-3 text-base text-white`,
-            {'opacity-30': step === 0},
-          )}
-          disabled={step === 0}
-          onClick={onPrev}
-        >
-          ← Back
-        </button>
-        <button
-          type="button"
-          className={clsx(
-            `rounded-xl bg-white/10 px-6 py-3 text-base text-white`,
-            {'opacity-30': step === steps.length - 1},
-          )}
-          disabled={step === steps.length - 1}
-          onClick={onNext}
-        >
-          Next →
-        </button>
-      </div>
+      <PrevNextNav
+        onBack={onPrev}
+        onNext={onNext}
+        disableBack={step === 0}
+        disableNext={step === steps.length - 1}
+      />
     </div>
   );
 };

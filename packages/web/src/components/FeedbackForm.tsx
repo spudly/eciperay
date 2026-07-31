@@ -8,6 +8,8 @@ import clsx from 'clsx';
 import {useState} from 'react';
 import type {ComponentType} from 'react';
 
+import {CheckboxField} from './ui/CheckboxField.js';
+
 type FeedbackFormProps = {
   route?: string;
   /** Called after feedback is successfully submitted */
@@ -80,16 +82,11 @@ export const FeedbackForm = ({
           placeholder="Tell us what happened or what you'd like to see improved."
         />
       </label>
-      <label className="flex items-center gap-2 text-sm text-gray-700">
-        <input
-          type="checkbox"
-          checked={isBug}
-          onChange={event => {
-            setIsBug(event.target.checked);
-          }}
-        />
-        This is a bug
-      </label>
+      <CheckboxField
+        checked={isBug}
+        onChange={setIsBug}
+        label="This is a bug"
+      />
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
       <div className="flex gap-2">
         {onCancel ? (

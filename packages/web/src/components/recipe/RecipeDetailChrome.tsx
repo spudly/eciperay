@@ -1,20 +1,16 @@
 import type {RecipeDetailChromeProps, RecipeDetailTab} from '@eciperay/client';
-import {makeRecipeDetail, makeRecipeVersionSummary} from '@eciperay/client';
-import clsx from 'clsx';
+import {
+  makeRecipeDetail,
+  makeRecipeVersionSummary,
+  RECIPE_DETAIL_TABS,
+} from '@eciperay/client';
 import {useState} from 'react';
 
 import {InfoBanner} from '../ui/InfoBanner.js';
+import {TabBar} from '../ui/TabBar.js';
 
 import {RecipeStatusBadge} from './RecipeStatusBadge.js';
 import {VersionPicker} from './VersionPicker.js';
-
-const TABS: {key: RecipeDetailTab; label: string}[] = [
-  {key: 'overview', label: 'Overview'},
-  {key: 'ingredients', label: 'Ingredients'},
-  {key: 'instructions', label: 'Instructions'},
-  {key: 'history', label: 'Cook History'},
-  {key: 'nutrition', label: 'Nutrition'},
-];
 
 export const RecipeDetailChrome = ({
   status,
@@ -38,23 +34,13 @@ export const RecipeDetailChrome = ({
         />
       </div>
     </div>
-    <div className="ui-recipe-detail-tabs">
-      {TABS.map(tab => (
-        <button
-          key={tab.key}
-          type="button"
-          className={clsx('flex-1 py-3 text-xs font-medium', {
-            'border-primary text-primary border-b-2': activeTab === tab.key,
-            'text-muted': activeTab !== tab.key,
-          })}
-          onClick={() => {
-            onSelectTab(tab.key);
-          }}
-        >
-          {tab.label}
-        </button>
-      ))}
-    </div>
+    <TabBar
+      tabs={RECIPE_DETAIL_TABS}
+      activeTab={activeTab}
+      onTabChange={key => {
+        onSelectTab(key as RecipeDetailTab);
+      }}
+    />
     {children}
   </div>
 );
@@ -84,7 +70,5 @@ if (import.meta.env.DEV) {
     );
   };
 
-  RecipeDetailChrome.demo = function RecipeDetailChromeDemoWrapper() {
-    return <RecipeDetailChromeDemo />;
-  };
+  RecipeDetailChrome.demo = RecipeDetailChromeDemo;
 }

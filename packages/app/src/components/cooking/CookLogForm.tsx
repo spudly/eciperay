@@ -3,7 +3,7 @@ import React, {useState} from 'react';
 import {Text, TextInput, TouchableOpacity, View} from 'react-native';
 import type {CookLogInput} from '@eciperay/types';
 
-const STAR_RATINGS = [1, 2, 3, 4, 5] as const;
+import {StarRatingInput} from '../ui/StarRatingInput';
 
 type Props = {
   onSubmit: (input: CookLogInput) => void;
@@ -39,26 +39,14 @@ export const CookLogForm = ({
       >
         How did it go?
       </Text>
-      <View className="mb-4 flex-row justify-center gap-2">
-        {STAR_RATINGS.map(star => (
-          <TouchableOpacity
-            key={star}
-            accessibilityLabel={`${star} stars`}
-            onPress={() => {
-              setRating(star);
-            }}
-          >
-            <Text
-              className={clsx('text-2xl', {
-                'text-yellow-400': rating !== null && star <= rating,
-                'text-white/30': !isLight && (rating === null || star > rating),
-                'text-gray-300': isLight && (rating === null || star > rating),
-              })}
-            >
-              ★
-            </Text>
-          </TouchableOpacity>
-        ))}
+      <View className="mb-4 items-center">
+        <StarRatingInput
+          value={rating}
+          tone={isLight ? 'default' : 'dark'}
+          onChange={star => {
+            setRating(star as 1 | 2 | 3 | 4 | 5 | null);
+          }}
+        />
       </View>
       <TextInput
         className={clsx(

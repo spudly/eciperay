@@ -8,8 +8,10 @@ import {useQuery} from '@tanstack/react-query';
 import type {RecipeVersionSummary} from '@eciperay/types';
 import type {ComponentType} from 'react';
 import type {ShowcaseFrameProps} from '@eciperay/client';
+import {useMemo} from 'react';
 
 import {eciperay} from '../../lib/api.js';
+import {SelectField} from '../ui/SelectField.js';
 
 const ROLE_LABELS: Record<RecipeVersionSummary['derivedRole'], string> = {
   active: 'Active',
@@ -37,6 +39,22 @@ export const VersionPicker = ({
     initialData: versions.length > 0 ? versions : undefined,
   });
 
+  const options = useMemo(
+    () =>
+      [...list]
+        .sort((a, b) => b.versionNumber - a.versionNumber)
+        .map(version => {
+          const summary = version.changeSummary
+            ? `: ${truncateChangeSummary(version.changeSummary)}`
+            : '';
+          return {
+            value: version.id,
+            label: `v${version.versionNumber} — ${ROLE_LABELS[version.derivedRole]}${summary}`,
+          };
+        }),
+    [list],
+  );
+
   if (list.length <= 1) {
     return (
       <p className="text-muted text-xs">
@@ -46,36 +64,13 @@ export const VersionPicker = ({
   }
 
   return (
-    <label className="flex items-center gap-2 text-sm">
-      <span className="text-muted">Version</span>
-      <select
-        className="rounded-lg border border-gray-200 px-2 py-1 text-sm"
+    <div className="flex items-center gap-2 text-sm">
+      <SelectField
         value={selectedVersionId}
-        title={
-          list.find(v => v.id === selectedVersionId)?.changeSummary ?? undefined
-        }
-        onChange={e => {
-          onSelect(e.target.value);
-        }}
-      >
-        {[...list]
-          .sort((a, b) => b.versionNumber - a.versionNumber)
-          .map(version => {
-            const summary = version.changeSummary
-              ? `: ${truncateChangeSummary(version.changeSummary)}`
-              : '';
-            return (
-              <option
-                key={version.id}
-                value={version.id}
-              >
-                v{version.versionNumber} — {ROLE_LABELS[version.derivedRole]}
-                {summary}
-              </option>
-            );
-          })}
-      </select>
-    </label>
+        options={options}
+        onChange={onSelect}
+      />
+    </div>
   );
 };
 

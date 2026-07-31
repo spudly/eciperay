@@ -25,6 +25,12 @@ passed as props) belongs in `src/components/`. ESLint enforces this for
 `packages/app` and `packages/web`. Extract layout into view components
 (`HomeView`, `SignInView`) or shared primitives under `components/ui/`.
 
+Domain components orchestrate data and wire generic `ui/*` widgets via props
+from `@eciperay/client` (`formComponents.ts`, `selectionComponents.ts`,
+`layoutComponents.ts`). Keep API types, hooks, and domain models out of
+`components/ui/` — ui widgets accept only generic props (no `RecipeDetail`, no
+eciperay API clients).
+
 ### Mirrored components
 
 When a component exists on both platforms:

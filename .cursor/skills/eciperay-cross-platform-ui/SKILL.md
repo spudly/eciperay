@@ -26,11 +26,11 @@ Do not share JSX across platforms. Mirror components instead.
 
 ## Screens vs components
 
-| Layer          | Location                            | Uses `className`?                         |
-| -------------- | ----------------------------------- | ----------------------------------------- |
-| Screen / page  | `screens/`, `pages/`, `navigation/` | **No** — data, navigation, mutations only |
-| View component | `components/{domain}/*View.tsx`     | Yes                                       |
-| Primitive      | `components/ui/`                    | Yes                                       |
+| Layer          | Location                            | Uses `className`?                           |
+| -------------- | ----------------------------------- | ------------------------------------------- |
+| Screen / page  | `screens/`, `pages/`, `navigation/` | **No** — data, navigation, mutations only   |
+| View component | `components/{domain}/*View.tsx`     | Yes                                         |
+| Primitive      | `components/ui/`                    | Yes — generic, domain-agnostic widgets only |
 
 When a screen needs new styling, add or extend a component under
 `src/components/`. Use props like `spacing="list"` instead of passing
@@ -79,6 +79,32 @@ compile them for app/web.
 | RN-safe utilities in shared classes | No `grid`, no bare `hover:*` (use `@variant web`) |
 
 Platform layout differences stay in TSX: app `flex-1`, web `min-h-full`.
+
+## Generic `ui/*` widgets
+
+Shared prop types live in `@eciperay/client`:
+
+| Module                      | Examples                                                               |
+| --------------------------- | ---------------------------------------------------------------------- |
+| `ui/layoutComponents.ts`    | `TextField`, `SearchField`, `PageTitle`                                |
+| `ui/formComponents.ts`      | `CheckboxField`, `SelectField`, `SectionCard`, `StarRatingInput`       |
+| `ui/selectionComponents.ts` | `CheckboxSelectList`, `ToggleChipGroup`, `TabBar`, `ThumbnailListCard` |
+
+Mirrored implementations live in `packages/app/src/components/ui/` and
+`packages/web/src/components/ui/` with the same export name. Domain components
+(`recipe/*`, `tags/*`, etc.) compose these widgets — they fetch data, map domain
+models to generic `{id, label}` / option lists, and pass callbacks. **Do not**
+import recipe types or API clients inside `ui/*`.
+
+When adding a reusable widget:
+
+1. Add props to `formComponents.ts` or `selectionComponents.ts` (export from
+   `@eciperay/client`)
+2. Add `ui-*` classes to `packages/theme/components.css` when styling is shared
+3. Implement app + web mirrors under `components/ui/`
+4. Add Vitest tests on web (`ComponentName.test.tsx` colocated)
+5. Register in `MIRROR_PAIRS`, `SHOWCASE_MIRROR_PATHS`, both
+   `showcaseModuleLoaders.ts`, and add `.demo` on both mirrors
 
 ## UI parity registry
 

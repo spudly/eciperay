@@ -3,6 +3,8 @@ import {
   type ComponentShowcaseEntry,
 } from '@eciperay/client';
 
+import {SelectField} from '../ui/SelectField.js';
+
 export type ShowcasePickerProps = {
   value: string;
   onChange: (id: string) => void;
@@ -15,33 +17,16 @@ export const ShowcasePicker = ({
   entries,
 }: ShowcasePickerProps) => {
   const grouped = groupShowcaseEntriesByCategory(entries);
+  const options = Object.entries(grouped).flatMap(([, items]) =>
+    items.map(item => ({value: item.id, label: item.label})),
+  );
 
   return (
-    <label className="ui-showcase-picker-label">
-      Component
-      <select
-        className="ui-showcase-picker"
-        value={value}
-        onChange={event => {
-          onChange(event.target.value);
-        }}
-      >
-        {Object.entries(grouped).map(([category, items]) => (
-          <optgroup
-            key={category}
-            label={category}
-          >
-            {items.map(item => (
-              <option
-                key={item.id}
-                value={item.id}
-              >
-                {item.label}
-              </option>
-            ))}
-          </optgroup>
-        ))}
-      </select>
-    </label>
+    <SelectField
+      label="Component"
+      value={value}
+      options={options}
+      onChange={onChange}
+    />
   );
 };

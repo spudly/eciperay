@@ -1,4 +1,4 @@
-import {mkdtempSync, mkdirSync, writeFileSync} from 'node:fs';
+import {mkdtempSync, mkdirSync, unlinkSync, writeFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 
@@ -106,28 +106,48 @@ describe('validateChangedMirrorPairs', () => {
 });
 
 describe('validateChangedComponentsRegistered', () => {
-  test('flags unregistered changed components', () => {
-    const errors = validateChangedComponentsRegistered([
-      'packages/app/src/components/NewWidget.tsx',
-    ]);
+  const root = join(import.meta.dirname, '..');
 
-    expect(errors).toEqual([
-      'Changed component is not registered in uiParityRegistry: app:NewWidget.tsx',
-    ]);
+  test('flags unregistered changed components', () => {
+    const relPath = 'packages/app/src/components/_ParityTestWidget.tsx';
+    const fullPath = join(root, relPath);
+    writeFileSync(fullPath, 'export const ParityTestWidget = () => null;\n');
+    try {
+      const errors = validateChangedComponentsRegistered(root, [relPath]);
+
+      expect(errors).toEqual([
+        'Changed component is not registered in uiParityRegistry: app:_ParityTestWidget.tsx',
+      ]);
+    } finally {
+      unlinkSync(fullPath);
+    }
   });
 
   test('flags unregistered web components', () => {
-    const errors = validateChangedComponentsRegistered([
-      'packages/web/src/components/NewWidget.tsx',
+    const relPath = 'packages/web/src/components/_ParityTestWidget.tsx';
+    const fullPath = join(root, relPath);
+    writeFileSync(fullPath, 'export const ParityTestWidget = () => null;\n');
+    try {
+      const errors = validateChangedComponentsRegistered(root, [relPath]);
+
+      expect(errors).toEqual([
+        'Changed component is not registered in uiParityRegistry: web:_ParityTestWidget.tsx',
+      ]);
+    } finally {
+      unlinkSync(fullPath);
+    }
+  });
+
+  test('ignores deleted component paths', () => {
+    const errors = validateChangedComponentsRegistered(root, [
+      'packages/web/src/components/RecipeExportList.tsx',
     ]);
 
-    expect(errors).toEqual([
-      'Changed component is not registered in uiParityRegistry: web:NewWidget.tsx',
-    ]);
+    expect(errors).toEqual([]);
   });
 
   test('ignores test files and non-component paths', () => {
-    const errors = validateChangedComponentsRegistered([
+    const errors = validateChangedComponentsRegistered(root, [
       'packages/app/src/components/LegalLinks.test.tsx',
       'packages/app/src/screens/HomeScreen.tsx',
     ]);
@@ -136,7 +156,7 @@ describe('validateChangedComponentsRegistered', () => {
   });
 
   test('allows registered mirror and platform-only paths', () => {
-    const errors = validateChangedComponentsRegistered([
+    const errors = validateChangedComponentsRegistered(root, [
       'packages/app/src/components/LegalLinks.tsx',
       'packages/web/src/components/LegalLinks.tsx',
       'packages/app/src/components/auth/AuthTextField.tsx',
