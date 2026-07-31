@@ -217,9 +217,9 @@ Point DNS at the addresses `fly certs add` prints (usually `A` + `AAAA` to Fly).
   Play Console
 
 Migrations run automatically on each deploy via `release_command` in `fly.toml`.
-The default machine config uses **512MB RAM** and **auto-stop** when idle to
-keep cost down (`min_machines_running = 0`). First request after idle may take a
-few seconds to cold-start.
+The default machine config uses **512MB RAM** with **one machine always
+running** (`min_machines_running = 1`) so web and mobile API requests avoid cold
+starts.
 
 ```sh
 fly logs
