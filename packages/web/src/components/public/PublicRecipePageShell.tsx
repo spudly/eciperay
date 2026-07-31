@@ -1,6 +1,8 @@
 import clsx from 'clsx';
 import type {ReactNode} from 'react';
 
+import {BookLoadingSpinner} from '../ui/BookLoadingSpinner.js';
+
 type PublicRecipeTab = {key: string; label: string};
 
 export type PublicRecipePageShellProps = {
@@ -21,7 +23,7 @@ export const PublicRecipePageShell = ({
   if (loading) {
     return (
       <div className="ui-loading-center py-16">
-        <p>Loading…</p>
+        <BookLoadingSpinner size="lg" />
       </div>
     );
   }

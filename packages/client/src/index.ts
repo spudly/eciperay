@@ -78,6 +78,7 @@ export {
 } from './uploadRecipeImage.js';
 export {DEFAULT_LOADING_DELAY_MS, useDelayedTrue} from './useDelayedTrue.js';
 export type {
+  BookLoadingSpinnerProps,
   InlineLoadingIndicatorProps,
   ScreenLoadingGateProps,
 } from './ui/loadingComponents.js';

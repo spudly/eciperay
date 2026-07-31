@@ -6,15 +6,8 @@ import {
 import clsx from 'clsx';
 import {useState} from 'react';
 
+import {BookLoadingSpinner} from './ui/BookLoadingSpinner.js';
 import {PrimaryButton} from './ui/PrimaryButton.js';
-
-const LoadingSpinner = ({className}: {className?: string}) => (
-  <div
-    className={clsx('ui-inline-spinner', className)}
-    role="status"
-    aria-label="Loading"
-  />
-);
 
 export const InlineLoadingIndicator = ({
   loading,
@@ -29,7 +22,7 @@ export const InlineLoadingIndicator = ({
 
   return (
     <div className={clsx('ui-loading-center', className)}>
-      <LoadingSpinner />
+      <BookLoadingSpinner size="md" />
     </div>
   );
 };

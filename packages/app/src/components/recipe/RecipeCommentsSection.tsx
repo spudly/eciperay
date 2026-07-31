@@ -10,6 +10,7 @@ import {Text, TextInput, TouchableOpacity, View} from 'react-native';
 
 import {api} from '../../lib/api';
 
+import {BookLoadingSpinner} from '../ui/BookLoadingSpinner';
 import {RecipeCommentItem} from './RecipeCommentItem';
 
 type Props = {recipeId: string; ownerUserId: string};
@@ -62,7 +63,9 @@ export const RecipeCommentsSection = ({recipeId, ownerUserId}: Props) => {
     <View className="mb-4 rounded-xl border border-gray-100 p-4">
       <Text className="mb-3 text-sm font-semibold text-gray-900">Comments</Text>
       {isLoading ? (
-        <Text className="mb-3 text-sm text-gray-600">Loading comments…</Text>
+        <View className="ui-loading-center mb-3">
+          <BookLoadingSpinner size="sm" />
+        </View>
       ) : null}
       {!isLoading && comments.length === 0 ? (
         <Text className="mb-3 text-sm text-gray-600">No comments yet</Text>

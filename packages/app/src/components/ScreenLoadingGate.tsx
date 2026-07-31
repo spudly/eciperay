@@ -4,9 +4,10 @@ import {
   type ScreenLoadingGateProps,
 } from '@eciperay/client';
 import clsx from 'clsx';
-import {ActivityIndicator, View} from 'react-native';
 import {useState} from 'react';
+import {View} from 'react-native';
 
+import {BookLoadingSpinner} from './ui/BookLoadingSpinner';
 import {InfoBanner} from './ui/InfoBanner';
 import {PrimaryButton} from './ui/PrimaryButton';
 
@@ -28,7 +29,7 @@ export const ScreenLoadingGate = ({
 
   return (
     <View className={clsx('ui-loading-center flex-1', backgroundClassName)}>
-      <ActivityIndicator size="large" />
+      <BookLoadingSpinner size="lg" />
     </View>
   );
 };

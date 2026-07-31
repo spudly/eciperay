@@ -1,0 +1,30 @@
+import type {BookLoadingSpinnerProps} from '@eciperay/client';
+import clsx from 'clsx';
+import type {CSSProperties} from 'react';
+
+const BOOK_LOADER_SCALE = {sm: 0.45, md: 0.65, lg: 0.85} as const;
+
+export const BookLoadingSpinner = ({
+  size = 'md',
+  className,
+  accessibilityLabel = 'Loading',
+}: BookLoadingSpinnerProps) => (
+  <span
+    className={clsx('ui-book-loader', className)}
+    style={{'--book-loader-scale': BOOK_LOADER_SCALE[size]} as CSSProperties}
+    role="status"
+    aria-label={accessibilityLabel}
+  />
+);
+
+if (import.meta.env.DEV) {
+  BookLoadingSpinner.demo = function BookLoadingSpinnerDemo() {
+    return (
+      <div className="flex flex-col gap-6">
+        <BookLoadingSpinner size="sm" />
+        <BookLoadingSpinner size="md" />
+        <BookLoadingSpinner size="lg" />
+      </div>
+    );
+  };
+}

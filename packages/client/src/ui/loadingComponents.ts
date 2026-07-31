@@ -12,3 +12,9 @@ export type InlineLoadingIndicatorProps = {
   delayMs?: number;
   className?: string;
 };
+
+export type BookLoadingSpinnerProps = {
+  size?: 'sm' | 'md' | 'lg';
+  className?: string;
+  accessibilityLabel?: string;
+};

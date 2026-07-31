@@ -65,7 +65,7 @@ describe('RecipeCommentsSection', () => {
         ownerUserId="owner-uuid"
       />,
     );
-    expect(loading.getByText('Loading comments…')).toBeTruthy();
+    expect(loading.getByLabelText('Loading')).toBeTruthy();
 
     mockListComments.mockResolvedValue([]);
     const empty = renderWithProviders(
