@@ -5,7 +5,6 @@ import {query as defaultQuery} from '../../db/query.js';
 export {
   GET_RECIPE_DETAIL_SQL,
   GET_VERSION_DETAIL_SQL,
-  LIST_RECIPES_SQL,
   LIST_VERSIONS_SQL,
 } from './sqlConstants.js';
 
