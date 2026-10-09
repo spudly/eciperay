@@ -1,10 +1,6 @@
-import type {
-  PublicRecipeDiscoveryItem,
-  PublicRecipeDiscoverySort,
-  RecipeDetail,
-  RecipeStatus,
-} from '@eciperay/types';
+import type {PublicRecipeDiscoveryItem, RecipeDetail} from '@eciperay/types';
 
+import {assignDefined} from './assignDefined.js';
 import {HOME_RECENT_RECIPE_COUNT} from './homeCopy.js';
 import {queryKeys} from './queryKeys.js';
 import {
@@ -12,18 +8,17 @@ import {
   removeRecipeView,
   type RecipeViewHistoryStorage,
 } from './recipeViewHistory.js';
+import type {RecipeListFilters, RecipeListParams} from './recipesListUrl.js';
+
+export type {RecipeListFilters} from './recipesListUrl.js';
 
 export const RECIPE_LIST_PAGE_SIZE = 20;
 
-type ListRecipesParams = {
-  search?: string;
-  status?: RecipeStatus;
-  limit?: number;
-  offset?: number;
-};
-
-type ListRecipesFn = (params?: ListRecipesParams) => Promise<RecipeDetail[]>;
+type ListRecipesFn = (params?: RecipeListParams) => Promise<RecipeDetail[]>;
 type GetRecipeFn = (id: string) => Promise<RecipeDetail>;
+type ListPublicRecipesFn = (
+  params?: RecipeListParams,
+) => Promise<PublicRecipeDiscoveryItem[]>;
 
 export const getRecipeListNextPageParam = <T>(
   lastPage: T[],
@@ -56,52 +51,65 @@ export const homeRecentlyViewedRecipesQueryOptions = (
   },
 });
 
+const toListParams = (
+  filters: RecipeListFilters,
+  pageParam: number,
+): RecipeListParams => {
+  const params: RecipeListParams = {
+    limit: RECIPE_LIST_PAGE_SIZE,
+    offset: pageParam,
+  };
+  assignDefined(params, {
+    status: filters.status,
+    minCalories: filters.minCalories,
+    maxCalories: filters.maxCalories,
+    minProteinG: filters.minProteinG,
+    maxProteinG: filters.maxProteinG,
+    minSatiety: filters.minSatiety,
+    maxSatiety: filters.maxSatiety,
+    sort: filters.sort,
+    sortDir: filters.sortDir,
+  });
+  if (filters.search) {
+    params.search = filters.search;
+  }
+  if (filters.ingredient) {
+    params.ingredient = filters.ingredient;
+  }
+  return params;
+};
+
 export const recipeListInfiniteQueryOptions = (
   list: ListRecipesFn,
-  search: string,
-  status: RecipeStatus | '' = '',
+  filters: RecipeListFilters = {},
 ) => ({
-  queryKey: queryKeys.recipes(search, status),
+  queryKey: queryKeys.recipes(filters),
   queryFn: ({pageParam}: {pageParam: number}) =>
-    list({
-      search: search || undefined,
-      status: status || undefined,
-      limit: RECIPE_LIST_PAGE_SIZE,
-      offset: pageParam,
-    }),
+    list(toListParams(filters, pageParam)),
   initialPageParam: 0,
   getNextPageParam: getRecipeListNextPageParam,
 });
 
 export const sharedWithMeInfiniteQueryOptions = (
   listSharedWithMe: ListRecipesFn,
+  filters: RecipeListFilters = {},
 ) => ({
-  queryKey: queryKeys.sharedWithMe(),
+  queryKey: queryKeys.sharedWithMe(filters),
   queryFn: ({pageParam}: {pageParam: number}) =>
-    listSharedWithMe({limit: RECIPE_LIST_PAGE_SIZE, offset: pageParam}),
+    listSharedWithMe(toListParams(filters, pageParam)),
   initialPageParam: 0,
   getNextPageParam: getRecipeListNextPageParam,
 });
 
-type ListPublicRecipesFn = (params?: {
-  search?: string;
-  sort?: PublicRecipeDiscoverySort;
-  limit?: number;
-  offset?: number;
-}) => Promise<PublicRecipeDiscoveryItem[]>;
-
 export const publicRecipeDiscoveryInfiniteQueryOptions = (
   listPublic: ListPublicRecipesFn,
-  search: string,
-  sort: PublicRecipeDiscoverySort = 'newest',
+  filters: RecipeListFilters = {},
 ) => ({
-  queryKey: queryKeys.publicRecipeDiscovery(search, sort),
+  queryKey: queryKeys.publicRecipeDiscovery(filters),
   queryFn: ({pageParam}: {pageParam: number}) =>
     listPublic({
-      search: search || undefined,
-      sort,
-      limit: RECIPE_LIST_PAGE_SIZE,
-      offset: pageParam,
+      ...toListParams(filters, pageParam),
+      sort: filters.sort ?? 'newest',
     }),
   initialPageParam: 0,
   getNextPageParam: getRecipeListNextPageParam,

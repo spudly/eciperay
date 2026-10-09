@@ -72,7 +72,7 @@ describe('createEciperayClient', () => {
     expect(api.fetch).toHaveBeenCalledWith('/public/recipes/r1/pasta?t=tok');
     expect(api.fetch).toHaveBeenCalledWith('/public/recipes');
     expect(api.fetch).toHaveBeenCalledWith(
-      '/public/recipes?search=pasta&limit=20&offset=5&sort=newest',
+      '/public/recipes?search=pasta&sort=newest&limit=20&offset=5',
     );
     expect(api.fetch).toHaveBeenCalledWith(
       '/recipes',
@@ -171,6 +171,7 @@ describe('createEciperayClient', () => {
     await client.tags.create('Dinner', '#fff');
     await client.tags.delete('t1');
     await client.ai.nutrition('r1');
+    await client.ai.nutrition('r1', {refresh: true});
     await client.ai.substitutions('r1', ['flour', 'salt']);
     await client.ai.generateImage({
       title: 'Soup',
@@ -237,6 +238,9 @@ describe('createEciperayClient', () => {
       expect.objectContaining({method: 'DELETE'}),
     );
     expect(api.fetch).toHaveBeenCalledWith('/recipes/r1/ai/nutrition');
+    expect(api.fetch).toHaveBeenCalledWith(
+      '/recipes/r1/ai/nutrition?refresh=true',
+    );
     expect(api.fetch).toHaveBeenCalledWith(
       '/recipes/r1/ai/substitutions?missing=flour&missing=salt',
     );

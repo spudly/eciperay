@@ -1,9 +1,23 @@
 import {queryKeys} from './queryKeys.js';
 
+const emptyFilters = {
+  search: '',
+  status: '',
+  ingredient: '',
+  minCalories: null,
+  maxCalories: null,
+  minProteinG: null,
+  maxProteinG: null,
+  minSatiety: null,
+  maxSatiety: null,
+  sort: 'newest',
+  sortDir: 'desc',
+};
+
 describe('queryKeys', () => {
   test('returns stable key tuples', () => {
     expect(queryKeys.recipeLists()).toEqual(['recipes']);
-    expect(queryKeys.recipes()).toEqual(['recipes', {search: '', status: ''}]);
+    expect(queryKeys.recipes()).toEqual(['recipes', emptyFilters]);
     expect(queryKeys.recipes('pasta')).toEqual([
       'recipes',
       {search: 'pasta', status: ''},
@@ -11,6 +25,10 @@ describe('queryKeys', () => {
     expect(queryKeys.recipes('pasta', 'perfected')).toEqual([
       'recipes',
       {search: 'pasta', status: 'perfected'},
+    ]);
+    expect(queryKeys.recipes({search: 'pasta', sort: 'satiety'})).toEqual([
+      'recipes',
+      {...emptyFilters, search: 'pasta', sort: 'satiety'},
     ]);
     expect(queryKeys.recipe('r1')).toEqual(['recipe', 'r1']);
     expect(queryKeys.versions('r1')).toEqual(['versions', 'r1']);
@@ -28,14 +46,7 @@ describe('queryKeys', () => {
       'r1',
       {slug: '', shareToken: ''},
     ]);
-    expect(queryKeys.sharedWithMe(25, 5)).toEqual([
-      'sharedWithMe',
-      {limit: 25, offset: 5},
-    ]);
-    expect(queryKeys.sharedWithMe()).toEqual([
-      'sharedWithMe',
-      {limit: null, offset: null},
-    ]);
+    expect(queryKeys.sharedWithMe()).toEqual(['sharedWithMe', emptyFilters]);
     expect(queryKeys.recipeComments('r1')).toEqual([
       'recipeComments',
       'r1',
@@ -48,11 +59,11 @@ describe('queryKeys', () => {
     ]);
     expect(queryKeys.publicRecipeDiscovery()).toEqual([
       'publicRecipeDiscovery',
-      {search: '', sort: 'newest'},
+      emptyFilters,
     ]);
     expect(queryKeys.publicRecipeDiscovery('curry', 'rating')).toEqual([
       'publicRecipeDiscovery',
-      {search: 'curry', sort: 'rating'},
+      {...emptyFilters, search: 'curry', sort: 'rating'},
     ]);
   });
 });

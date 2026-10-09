@@ -30,6 +30,12 @@ export const makeRecipeDetail = (
   createdVia: 'manual',
   createdAt: '2024-01-01T00:00:00.000Z',
   updatedAt: '2024-01-01T00:00:00.000Z',
+  satietyScore: null,
+  nutritionStatus: null,
+  calories: null,
+  proteinG: null,
+  nutrition: null,
+  communityRating: null,
   ingredients: [
     {
       id: 'i-1',

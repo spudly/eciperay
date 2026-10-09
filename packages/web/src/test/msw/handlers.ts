@@ -101,6 +101,11 @@ export const handlers = [
       authorDisplayName: 'Chef Alex',
       updatedAt: '2024-01-01T00:00:00.000Z',
       tags: [],
+      communityRating: null,
+      satietyScore: null,
+      nutritionStatus: null,
+      calories: null,
+      proteinG: null,
     };
     const offset = Number(url.searchParams.get('offset') ?? 0);
     const limit = Number(url.searchParams.get('limit') ?? 100);

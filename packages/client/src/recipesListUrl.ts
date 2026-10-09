@@ -1,82 +1,72 @@
-import type {RecipeStatus} from '@eciperay/types';
+import type {
+  RecipeListSort,
+  RecipeListSortDir,
+  RecipeStatus,
+} from '@eciperay/types';
+
+import {setOptionalSearchParams} from './setOptionalSearchParams.js';
 
 export type RecipeListParams = {
   search?: string;
   status?: RecipeStatus;
+  ingredient?: string;
+  minCalories?: number;
+  maxCalories?: number;
+  minProteinG?: number;
+  maxProteinG?: number;
+  minSatiety?: number;
+  maxSatiety?: number;
+  sort?: RecipeListSort;
+  sortDir?: RecipeListSortDir;
   limit?: number;
   offset?: number;
 };
 
-export type PublicRecipeDiscoveryParams = RecipeListParams & {
-  sort?: 'newest' | 'rating';
-};
+export type RecipeListFilters = Omit<RecipeListParams, 'limit' | 'offset'>;
+
+export type PublicRecipeDiscoveryParams = RecipeListParams;
 
 export const LIST_PAGE_SIZE = 100;
 
-export const buildListUrl = (params?: RecipeListParams) => {
-  if (!params) {
-    return '/recipes';
-  }
-  const search = new URLSearchParams();
-  if (params.search) {
-    search.set('search', params.search);
-  }
-  if (params.status) {
-    search.set('status', params.status);
-  }
-  if (params.limit !== undefined) {
-    search.set('limit', String(params.limit));
-  }
-  if (params.offset !== undefined) {
-    search.set('offset', String(params.offset));
-  }
-  const query = search.toString();
-  if (query.length === 0) {
-    return '/recipes';
-  }
-  return `/recipes?${query}`;
-};
-
-export const buildSharedWithMeUrl = (
-  params?: Omit<RecipeListParams, 'search'>,
+const appendListParams = (
+  search: URLSearchParams,
+  params: RecipeListParams,
 ) => {
-  if (!params) {
-    return '/recipes/shared-with-me';
-  }
-  const search = new URLSearchParams();
-  if (params.limit !== undefined) {
-    search.set('limit', String(params.limit));
-  }
-  if (params.offset !== undefined) {
-    search.set('offset', String(params.offset));
-  }
-  const query = search.toString();
-  if (query.length === 0) {
-    return '/recipes/shared-with-me';
-  }
-  return `/recipes/shared-with-me?${query}`;
+  setOptionalSearchParams(search, {
+    search: params.search,
+    status: params.status,
+    ingredient: params.ingredient,
+    minCalories: params.minCalories,
+    maxCalories: params.maxCalories,
+    minProteinG: params.minProteinG,
+    maxProteinG: params.maxProteinG,
+    minSatiety: params.minSatiety,
+    maxSatiety: params.maxSatiety,
+    sort: params.sort,
+    sortDir: params.sortDir,
+    limit: params.limit,
+    offset: params.offset,
+  });
 };
 
-export const buildPublicRecipesUrl = (params?: PublicRecipeDiscoveryParams) => {
+const buildUrl = (path: string, params?: RecipeListParams) => {
   if (!params) {
-    return '/public/recipes';
+    return path;
   }
   const search = new URLSearchParams();
-  if (params.search) {
-    search.set('search', params.search);
-  }
-  if (params.limit !== undefined) {
-    search.set('limit', String(params.limit));
-  }
-  if (params.offset !== undefined) {
-    search.set('offset', String(params.offset));
-  }
-  if (params.sort) {
-    search.set('sort', params.sort);
-  }
+  appendListParams(search, params);
   const query = search.toString();
   if (query.length === 0) {
-    return '/public/recipes';
+    return path;
   }
-  return `/public/recipes?${query}`;
+  return `${path}?${query}`;
 };
+
+export const buildListUrl = (params?: RecipeListParams) =>
+  buildUrl('/recipes', params);
+
+export const buildSharedWithMeUrl = (params?: RecipeListParams) =>
+  buildUrl('/recipes/shared-with-me', params);
+
+export const buildPublicRecipesUrl = (params?: PublicRecipeDiscoveryParams) =>
+  buildUrl('/public/recipes', params);

@@ -62,6 +62,7 @@ const SHOWCASE_MIRROR_PATHS = [
   'auth/ResetPasswordView.tsx',
   'home/HomeView.tsx',
   'profile/ProfileView.tsx',
+  'recipes/RecipeListFiltersBar.tsx',
   'recipes/RecipesListView.tsx',
   'shared/SharedWithMeView.tsx',
   'tags/TagsView.tsx',

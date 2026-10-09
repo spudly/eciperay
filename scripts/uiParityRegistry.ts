@@ -24,6 +24,7 @@ export const MIRROR_PAIRS = [
   'auth/ResetPasswordView.tsx',
   'home/HomeView.tsx',
   'profile/ProfileView.tsx',
+  'recipes/RecipeListFiltersBar.tsx',
   'recipes/RecipesListView.tsx',
   'shared/SharedWithMeView.tsx',
   'tags/TagsView.tsx',
@@ -130,6 +131,18 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
     path: 'discover/DiscoverView.tsx',
     platform: 'web',
     reason: 'Public recipe catalog UI; discover is a web-only SEO surface.',
+  },
+  {
+    path: 'recipes/RecipeListNumberFilter.tsx',
+    platform: 'web',
+    reason:
+      'Web number-filter field extracted for max-lines; app inlines TextInput in RecipeListFiltersBar.',
+  },
+  {
+    path: 'recipes/RecipeListStatusIngredientFilters.tsx',
+    platform: 'web',
+    reason:
+      'Web status/ingredient filter row extracted for max-lines; app inlines those fields in RecipeListFiltersBar.',
   },
   {
     path: 'legal/LegalInlineLink.tsx',

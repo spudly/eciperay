@@ -1,55 +1,25 @@
-import {
-  RECIPE_STATUS_FILTER_ALL,
-  RECIPE_STATUS_FILTER_LABEL,
-  RECIPE_STATUS_LABELS,
-  RECIPE_STATUS_OPTIONS,
-  makeRecipeDetail,
-  type RecipesListViewProps,
-} from '@eciperay/client';
-import {useState} from 'react';
+import {type RecipesListViewProps} from '@eciperay/client';
 
 import {RecipeListCard} from '../RecipeListCard.js';
 import {InlineLoadingIndicator} from '../InlineLoadingIndicator.js';
 import {EmptyMessage} from '../ui/EmptyMessage.js';
 import {ListLoadingFooter} from '../ui/ListLoadingFooter.js';
 import {PageTitle} from '../ui/PageTitle.js';
-import {SearchField} from '../ui/SearchField.js';
-import {SelectField} from '../ui/SelectField.js';
+
+import {RecipeListFiltersBar} from './RecipeListFiltersBar.js';
 
 export const RecipesListView = ({
-  search,
-  onSearchChange,
   isLoading,
   recipes,
   isFetchingNextPage,
   onRecipePress,
   onRecipeDelete,
-  statusFilter,
-  onStatusFilterChange,
   loadMoreRef,
+  ...filterControls
 }: RecipesListViewProps) => (
   <>
     <PageTitle spacing="section">Recipes</PageTitle>
-    <SearchField
-      value={search}
-      onChange={onSearchChange}
-    />
-    {statusFilter !== undefined && onStatusFilterChange ? (
-      <SelectField
-        label={RECIPE_STATUS_FILTER_LABEL}
-        value={statusFilter}
-        options={[
-          {value: RECIPE_STATUS_FILTER_ALL, label: 'All statuses'},
-          ...RECIPE_STATUS_OPTIONS.map(status => ({
-            value: status,
-            label: RECIPE_STATUS_LABELS[status],
-          })),
-        ]}
-        onChange={next => {
-          onStatusFilterChange(next as typeof statusFilter);
-        }}
-      />
-    ) : null}
+    <RecipeListFiltersBar {...filterControls} />
     {isLoading ? (
       <InlineLoadingIndicator
         loading
@@ -84,29 +54,3 @@ export const RecipesListView = ({
     )}
   </>
 );
-
-if (import.meta.env.DEV) {
-  RecipesListView.demo = function RecipesListViewDemo() {
-    const [search, setSearch] = useState('');
-    const mockRecipe = makeRecipeDetail();
-
-    return (
-      <RecipesListView
-        search={search}
-        onSearchChange={setSearch}
-        isLoading={false}
-        recipes={[mockRecipe]}
-        isFetchingNextPage={false}
-        onRecipePress={() => {
-          void 0;
-        }}
-        onRecipeDelete={() => {
-          void 0;
-        }}
-        onLoadMore={() => {
-          void 0;
-        }}
-      />
-    );
-  };
-}

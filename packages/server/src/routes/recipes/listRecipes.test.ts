@@ -15,14 +15,27 @@ import {
 const mockQuery = createMockQuery();
 const getApp = lazyTestApp({query: mockQuery});
 
+const emptyFilterBinds = [null, null, null, null, null, null, null];
+
+const defaultParsedListParams = {
+  limit: DEFAULT_RECIPE_LIST_LIMIT,
+  offset: 0,
+  search: null,
+  status: null,
+  ingredient: null,
+  minCalories: null,
+  maxCalories: null,
+  minProteinG: null,
+  maxProteinG: null,
+  minSatiety: null,
+  maxSatiety: null,
+  sort: 'newest' as const,
+  sortDir: 'desc' as const,
+};
+
 describe('parseListParams', () => {
   test('defaults limit, offset, and search', () => {
-    expect(parseListParams({query: {}})).toEqual({
-      limit: DEFAULT_RECIPE_LIST_LIMIT,
-      offset: 0,
-      search: null,
-      status: null,
-    });
+    expect(parseListParams({query: {}})).toEqual(defaultParsedListParams);
   });
 
   test('parses search and caps limit', () => {
@@ -31,27 +44,22 @@ describe('parseListParams', () => {
         query: {search: '  pasta  ', limit: '9999', offset: '5'},
       }),
     ).toEqual({
+      ...defaultParsedListParams,
       limit: MAX_RECIPE_LIST_LIMIT,
       offset: 5,
       search: 'pasta',
-      status: null,
     });
   });
 
   test('ignores blank and non-string search values', () => {
     expect(parseListParams({query: {search: '   '}}).search).toBeNull();
-    expect(
-      parseListParams({query: {search: 123 as unknown as string}}).search,
-    ).toBeNull();
+    expect(parseListParams({query: {search: 123}}).search).toBeNull();
   });
 
   test('falls back for invalid limit and offset', () => {
-    expect(parseListParams({query: {limit: 'bad', offset: '-1'}})).toEqual({
-      limit: DEFAULT_RECIPE_LIST_LIMIT,
-      offset: 0,
-      search: null,
-      status: null,
-    });
+    expect(parseListParams({query: {limit: 'bad', offset: '-1'}})).toEqual(
+      defaultParsedListParams,
+    );
   });
 
   test('parses status filter', () => {
@@ -59,6 +67,26 @@ describe('parseListParams', () => {
     expect(parseStatusFilter('evolving')).toBe('evolving');
     expect(parseStatusFilter('')).toBeNull();
     expect(parseStatusFilter('draft')).toBe('invalid');
+  });
+
+  test('parses nutrition and sort filters', () => {
+    expect(
+      parseListParams({
+        query: {
+          ingredient: 'chicken',
+          minCalories: '100',
+          maxSatiety: '80',
+          sort: 'satiety',
+          sortDir: 'asc',
+        },
+      }),
+    ).toMatchObject({
+      ingredient: 'chicken',
+      minCalories: 100,
+      maxSatiety: 80,
+      sort: 'satiety',
+      sortDir: 'asc',
+    });
   });
 });
 
@@ -69,6 +97,11 @@ describe('GET /recipes', () => {
       makeQueryResult([
         {
           id: 'recipe-uuid-1',
+          status: 'evolving',
+          visibility: 'private',
+          slug: 'test-recipe',
+          content_revision: 1,
+          cloned_from_recipe_id: null,
           title: 'Test Recipe',
           description: 'A test recipe',
           servings: 4,
@@ -77,9 +110,27 @@ describe('GET /recipes', () => {
           image_url: null,
           star_rating: null,
           source_url: null,
+          active_version_id: 'version-uuid-1',
+          version_id: 'version-uuid-1',
+          version_number: 1,
+          created_via: 'manual',
           created_at: '2024-01-01T00:00:00.000Z',
           updated_at: '2024-01-01T00:00:00.000Z',
           tags: [],
+          calories: null,
+          protein_g: null,
+          carbs_g: null,
+          fat_g: null,
+          fiber_g: null,
+          sugar_g: null,
+          sodium_mg: null,
+          prepared_weight_g: null,
+          satiety_score: null,
+          nutrition_status: null,
+          nutrition_disclaimer: null,
+          nutrition_updated_at: null,
+          community_rating_average: null,
+          community_rating_count: 0,
         },
       ]),
     );
@@ -99,6 +150,7 @@ describe('GET /recipes', () => {
       0,
       null,
       null,
+      ...emptyFilterBinds,
     ]);
   });
 
@@ -116,6 +168,7 @@ describe('GET /recipes', () => {
       0,
       'pasta',
       null,
+      ...emptyFilterBinds,
     ]);
   });
 
@@ -133,6 +186,7 @@ describe('GET /recipes', () => {
       0,
       null,
       'evolving',
+      ...emptyFilterBinds,
     ]);
   });
 
@@ -143,6 +197,25 @@ describe('GET /recipes', () => {
       .query({status: 'draft'})
       .set('Authorization', 'Bearer valid-token');
     expect(res.status).toBe(400);
+    expect(mockQuery).not.toHaveBeenCalled();
+  });
+
+  test('returns 400 for invalid sort or sortDir', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    const badSort = await request(getApp())
+      .get('/api/recipes')
+      .query({sort: 'popular'})
+      .set('Authorization', 'Bearer valid-token');
+    expect(badSort.status).toBe(400);
+    expect(badSort.body.error).toMatch(/sort/i);
+
+    nockSupabaseGetUser('user-uuid-1');
+    const badDir = await request(getApp())
+      .get('/api/recipes')
+      .query({sortDir: 'sideways'})
+      .set('Authorization', 'Bearer valid-token');
+    expect(badDir.status).toBe(400);
+    expect(badDir.body.error).toMatch(/sortDir/i);
     expect(mockQuery).not.toHaveBeenCalled();
   });
 
@@ -159,6 +232,7 @@ describe('GET /recipes', () => {
       40,
       null,
       null,
+      ...emptyFilterBinds,
     ]);
   });
 
@@ -174,6 +248,7 @@ describe('GET /recipes', () => {
       0,
       null,
       null,
+      ...emptyFilterBinds,
     ]);
   });
 

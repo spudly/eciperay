@@ -1,15 +1,17 @@
 import {
   SHARED_WITH_ME_EMPTY_MESSAGE,
   SHARED_WITH_ME_TITLE,
+  demoRecipeListFilters,
+  makeRecipeDetail,
   type SharedWithMeViewProps,
 } from '@eciperay/client';
-import {makeRecipeDetail} from '@eciperay/client';
 
 import {SharedRecipeListCard} from '../SharedRecipeListCard.js';
 import {InlineLoadingIndicator} from '../InlineLoadingIndicator.js';
 import {EmptyMessage} from '../ui/EmptyMessage.js';
 import {ListLoadingFooter} from '../ui/ListLoadingFooter.js';
 import {PageTitle} from '../ui/PageTitle.js';
+import {RecipeListFiltersBar} from '../recipes/RecipeListFiltersBar.js';
 
 export const SharedWithMeView = ({
   isLoading,
@@ -17,11 +19,13 @@ export const SharedWithMeView = ({
   isFetchingNextPage,
   showTitle = true,
   loadMoreRef,
+  ...filterControls
 }: SharedWithMeViewProps) => (
   <>
     {showTitle ? (
       <PageTitle spacing="section">{SHARED_WITH_ME_TITLE}</PageTitle>
     ) : null}
+    <RecipeListFiltersBar {...filterControls} />
     {isLoading ? (
       <InlineLoadingIndicator
         loading
@@ -54,6 +58,7 @@ if (import.meta.env.DEV) {
 
     return (
       <SharedWithMeView
+        {...demoRecipeListFilters()}
         isLoading={false}
         recipes={[mockRecipe]}
         isFetchingNextPage={false}

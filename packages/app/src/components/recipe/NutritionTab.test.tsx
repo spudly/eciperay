@@ -29,12 +29,16 @@ describe('NutritionTab', () => {
     await settleAsyncUpdates();
   });
 
-  test('returns null when no data', async () => {
+  test('shows estimate CTA when no data', async () => {
     mockNutrition.mockResolvedValue(null);
-    const {queryByText} = renderWithProviders(<NutritionTab recipeId="r-1" />);
+    const {getByText, queryByText} = renderWithProviders(
+      <NutritionTab recipeId="r-1" />,
+    );
     await waitFor(() => {
       expect(queryByText('Estimating nutrition…')).toBeNull();
     });
+    expect(getByText('Nutrition is not available yet.')).toBeTruthy();
+    expect(getByText('Estimate nutrition')).toBeTruthy();
   });
 
   test('renders nutrition without optional fiber and sodium', async () => {

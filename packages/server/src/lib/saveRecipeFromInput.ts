@@ -28,6 +28,7 @@ import {
 import {updateRecipeStatus} from '../routes/recipes/recipeStatusQueries.js';
 
 import {mapRowToRecipeDetail} from './mapRowToRecipeDetail.js';
+import {scheduleNutritionRefresh} from './refreshRecipeNutrition.js';
 import {resolveStatus} from './resolveStatus.js';
 import {slugifyRecipeTitle} from './slugifyRecipeTitle.js';
 
@@ -147,6 +148,7 @@ export const saveRecipeFromInput = async (
   queryFn: QueryFn,
 ): Promise<RecipeDetail> => {
   const ids = await runTransactional(queryFn, q => saveRecipe(opts, q));
+  scheduleNutritionRefresh(ids.versionId, queryFn);
   const detail = await queryFn(GET_RECIPE_DETAIL_SQL, [
     ids.recipeId,
     opts.userId,
@@ -169,6 +171,7 @@ export const saveNewRecipeFromInput = async (
   const ids = await runTransactional(queryFn, q =>
     createLineageWithVersion(opts.input, opts.userId, opts.createdVia, q),
   );
+  scheduleNutritionRefresh(ids.versionId, queryFn);
   const detail = await queryFn(GET_RECIPE_DETAIL_SQL, [
     ids.recipeId,
     opts.userId,

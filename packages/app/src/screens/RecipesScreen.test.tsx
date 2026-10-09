@@ -139,6 +139,8 @@ describe('RecipesScreen', () => {
       expect(mockList).toHaveBeenCalledWith({
         limit: RECIPE_LIST_PAGE_SIZE,
         offset: RECIPE_LIST_PAGE_SIZE,
+        sort: 'newest',
+        sortDir: 'desc',
       });
     });
   });
@@ -244,6 +246,8 @@ describe('RecipesScreen', () => {
         search: 'Nonexistent Recipe',
         limit: RECIPE_LIST_PAGE_SIZE,
         offset: 0,
+        sort: 'newest',
+        sortDir: 'desc',
       });
     });
     await waitFor(() => {
@@ -302,6 +306,8 @@ describe('RecipesScreen', () => {
         search: 'Soup',
         limit: RECIPE_LIST_PAGE_SIZE,
         offset: 0,
+        sort: 'newest',
+        sortDir: 'desc',
       });
     });
     await findByText('Soup');

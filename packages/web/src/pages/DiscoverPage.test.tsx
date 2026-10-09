@@ -25,6 +25,11 @@ const makeDiscoveryItem = (
   authorDisplayName: 'Chef Alex',
   updatedAt: '2024-01-01T00:00:00.000Z',
   tags: [],
+  communityRating: null,
+  satietyScore: null,
+  nutritionStatus: null,
+  calories: null,
+  proteinG: null,
   ...overrides,
 });
 
@@ -39,7 +44,7 @@ describe('DiscoverPage', () => {
       'href',
       '/recipe/public-recipe-1/shared-pasta',
     );
-    expect(screen.getByText('By Chef Alex')).toBeInTheDocument();
+    expect(screen.getByText(/By Chef Alex/)).toBeInTheDocument();
   });
 
   test('shows empty state when no public recipes match', async () => {

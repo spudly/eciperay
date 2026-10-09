@@ -1,22 +1,16 @@
 import {
   invalidateRecipeQueries,
-  RECIPE_STATUS_FILTER_ALL,
   recipeListInfiniteQueryOptions,
   useAnalytics,
+  useRecipeListFilters,
 } from '@eciperay/client';
-import type {RecipeStatus, RecipeDetail} from '@eciperay/types';
+import type {RecipeDetail} from '@eciperay/types';
 import {
   useInfiniteQuery,
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query';
-import {
-  useDeferredValue,
-  useEffect,
-  useRef,
-  useState,
-  useCallback,
-} from 'react';
+import {useEffect, useRef, useCallback} from 'react';
 import {useNavigate} from 'react-router-dom';
 
 import {RecipesListView} from '../components/recipes/RecipesListView.js';
@@ -24,11 +18,7 @@ import {eciperay} from '../lib/api.js';
 
 export const RecipesPage = () => {
   const navigate = useNavigate();
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<
-    typeof RECIPE_STATUS_FILTER_ALL | RecipeStatus
-  >(RECIPE_STATUS_FILTER_ALL);
-  const deferredSearch = useDeferredValue(search.trim());
+  const {filters, controls} = useRecipeListFilters();
   const queryClient = useQueryClient();
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const analytics = useAnalytics();
@@ -37,8 +27,7 @@ export const RecipesPage = () => {
     useInfiniteQuery(
       recipeListInfiniteQueryOptions(
         params => eciperay.recipes.list(params),
-        deferredSearch,
-        statusFilter === RECIPE_STATUS_FILTER_ALL ? '' : statusFilter,
+        filters,
       ),
     );
 
@@ -80,8 +69,7 @@ export const RecipesPage = () => {
 
   return (
     <RecipesListView
-      search={search}
-      onSearchChange={setSearch}
+      {...controls}
       isLoading={isLoading}
       recipes={recipes}
       isFetchingNextPage={isFetchingNextPage}
@@ -90,8 +78,6 @@ export const RecipesPage = () => {
       }}
       onRecipeDelete={handleDelete}
       onLoadMore={handleLoadMore}
-      statusFilter={statusFilter}
-      onStatusFilterChange={setStatusFilter}
       loadMoreRef={loadMoreRef}
     />
   );

@@ -6,28 +6,16 @@ import {
   DEFAULT_RECIPE_LIST_LIMIT,
   MAX_RECIPE_LIST_LIMIT,
 } from '../recipes/listRecipes.js';
-import {LIST_PUBLIC_RECIPES_SQL} from '../recipes/sqlConstants.js';
+import {
+  LIST_PUBLIC_RECIPES_SQL,
+  buildListPublicRecipesSql,
+} from '../recipes/sqlConstants.js';
 import {lazyTestApp} from '../../test/lazyTestApp.js';
-
-import {parseDiscoverySort} from './listPublicRecipes.js';
 
 const mockQuery = createMockQuery();
 const getApp = lazyTestApp({query: mockQuery});
 
-describe('parseDiscoverySort', () => {
-  test('defaults to newest', () => {
-    expect(parseDiscoverySort()).toBe('newest');
-    expect(parseDiscoverySort('newest')).toBe('newest');
-  });
-
-  test('accepts rating for forward compatibility', () => {
-    expect(parseDiscoverySort('rating')).toBe('rating');
-  });
-
-  test('rejects unknown sort values', () => {
-    expect(parseDiscoverySort('popular')).toBeNull();
-  });
-});
+const emptyFilterBinds = [null, null, null, null, null, null, null];
 
 describe('GET /public/recipes', () => {
   beforeEach(() => {
@@ -50,6 +38,20 @@ describe('GET /public/recipes', () => {
           updated_at: '2024-01-02T00:00:00.000Z',
           author_display_name: 'Chef Alex',
           tags: [{id: 'tag-1', name: 'Dinner', color: '#6366f1'}],
+          calories: null,
+          protein_g: null,
+          carbs_g: null,
+          fat_g: null,
+          fiber_g: null,
+          sugar_g: null,
+          sodium_mg: null,
+          prepared_weight_g: null,
+          satiety_score: 72,
+          nutrition_status: 'ready',
+          nutrition_disclaimer: null,
+          nutrition_updated_at: null,
+          community_rating_average: 4.5,
+          community_rating_count: 2,
         },
       ]),
     );
@@ -71,11 +73,18 @@ describe('GET /public/recipes', () => {
       authorDisplayName: 'Chef Alex',
       updatedAt: '2024-01-02T00:00:00.000Z',
       tags: [{id: 'tag-1', name: 'Dinner', color: '#6366f1'}],
+      satietyScore: 72,
+      nutritionStatus: 'ready',
+      calories: null,
+      proteinG: null,
+      communityRating: {average: 4.5, count: 2, hasStaleRatings: false},
     });
     expect(mockQuery).toHaveBeenCalledWith(LIST_PUBLIC_RECIPES_SQL, [
       DEFAULT_RECIPE_LIST_LIMIT,
       0,
       null,
+      null,
+      ...emptyFilterBinds,
     ]);
   });
 
@@ -87,11 +96,10 @@ describe('GET /public/recipes', () => {
     );
 
     expect(res.status).toBe(200);
-    expect(mockQuery).toHaveBeenCalledWith(LIST_PUBLIC_RECIPES_SQL, [
-      25,
-      10,
-      'pasta',
-    ]);
+    expect(mockQuery).toHaveBeenCalledWith(
+      buildListPublicRecipesSql('rating', 'desc'),
+      [25, 10, 'pasta', null, ...emptyFilterBinds],
+    );
   });
 
   test('caps limit at 500', async () => {
@@ -101,6 +109,8 @@ describe('GET /public/recipes', () => {
       MAX_RECIPE_LIST_LIMIT,
       0,
       null,
+      null,
+      ...emptyFilterBinds,
     ]);
   });
 
@@ -112,6 +122,21 @@ describe('GET /public/recipes', () => {
     const res = await request(getApp()).get('/api/public/recipes?sort=popular');
     expect(res.status).toBe(400);
     expect(res.body.error).toMatch(/sort/i);
+    expect(mockQuery).not.toHaveBeenCalled();
+  });
+
+  test('returns 400 for invalid sortDir or status', async () => {
+    const badDir = await request(getApp()).get(
+      '/api/public/recipes?sortDir=sideways',
+    );
+    expect(badDir.status).toBe(400);
+    expect(badDir.body.error).toMatch(/sortDir/i);
+
+    const badStatus = await request(getApp()).get(
+      '/api/public/recipes?status=draft',
+    );
+    expect(badStatus.status).toBe(400);
+    expect(badStatus.body.error).toMatch(/status/i);
     expect(mockQuery).not.toHaveBeenCalled();
   });
 });

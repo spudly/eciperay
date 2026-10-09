@@ -6,6 +6,8 @@ export type {
   Recipe,
   RecipeDetail,
   RecipeInput,
+  RecipeListSort,
+  RecipeListSortDir,
   RecipeMetadataInput,
   PublicRecipeDetail,
   PublicRecipeDiscoveryItem,
@@ -39,7 +41,11 @@ export type {
   CreateAiSession,
   CreateAiSessionStartResult,
 } from './createAiSession.js';
-export type {NutritionInfo} from './nutrition.js';
+export type {
+  NutritionInfo,
+  NutritionStatus,
+  RecipeNutritionSummary,
+} from './nutrition.js';
 export type {RecipeImport} from './recipeImport.js';
 export type {
   BulkImportError,

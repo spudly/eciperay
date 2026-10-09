@@ -18,6 +18,8 @@ export const showcaseModuleLoaders = {
   'auth/ResetPasswordView': () => import('../auth/ResetPasswordView.js'),
   'home/HomeView': () => import('../home/HomeView.js'),
   'profile/ProfileView': () => import('../profile/ProfileView.js'),
+  'recipes/RecipeListFiltersBar': () =>
+    import('../recipes/RecipeListFiltersBar.js'),
   'recipes/RecipesListView': () => import('../recipes/RecipesListView.js'),
   'shared/SharedWithMeView': () => import('../shared/SharedWithMeView.js'),
   'tags/TagsView': () => import('../tags/TagsView.js'),

@@ -44,7 +44,7 @@ const buildPublicRecipePath = (
 export const createRecipesApi = (client: ApiClient) => ({
   list: (params?: RecipeListParams) =>
     client.fetch<RecipeDetail[]>(buildListUrl(params)),
-  listSharedWithMe: (params?: Omit<RecipeListParams, 'search'>) =>
+  listSharedWithMe: (params?: RecipeListParams) =>
     client.fetch<RecipeDetail[]>(buildSharedWithMeUrl(params)),
   listAll: () => fetchAllRecipePages(client),
   get: (id: string) =>

@@ -29,6 +29,23 @@ describe('mapRowToPublicRecipeDetail', () => {
   });
 });
 
+const emptyNutritionColumns = {
+  calories: null,
+  protein_g: null,
+  carbs_g: null,
+  fat_g: null,
+  fiber_g: null,
+  sugar_g: null,
+  sodium_mg: null,
+  prepared_weight_g: null,
+  satiety_score: null,
+  nutrition_status: null,
+  nutrition_disclaimer: null,
+  nutrition_updated_at: null,
+  community_rating_average: null,
+  community_rating_count: 0,
+};
+
 describe('mapRowToRecipeListItem', () => {
   test('maps list row fields including imageUrl', () => {
     const mapped = mapRowToRecipeListItem({
@@ -53,10 +70,12 @@ describe('mapRowToRecipeListItem', () => {
       created_at: '2024-01-01T00:00:00.000Z',
       updated_at: '2024-01-01T00:00:00.000Z',
       tags: [],
+      ...emptyNutritionColumns,
     });
     expect(mapped.imageUrl).toBe('https://cdn.example/pasta.jpg');
     expect(mapped.ingredients).toEqual([]);
     expect(mapped.instructions).toEqual([]);
+    expect(mapped.satietyScore).toBeNull();
   });
 });
 
@@ -75,6 +94,11 @@ describe('mapRowToPublicRecipeDiscoveryItem', () => {
       updated_at: '2024-01-01T00:00:00.000Z',
       author_display_name: 'Alex',
       tags: [],
+      ...emptyNutritionColumns,
+      satiety_score: 66,
+      nutrition_status: 'ready',
+      community_rating_average: 4,
+      community_rating_count: 3,
     });
     expect(mapped).toEqual({
       id: 'recipe-public-1',
@@ -89,6 +113,11 @@ describe('mapRowToPublicRecipeDiscoveryItem', () => {
       authorDisplayName: 'Alex',
       updatedAt: '2024-01-01T00:00:00.000Z',
       tags: [],
+      satietyScore: 66,
+      nutritionStatus: 'ready',
+      calories: null,
+      proteinG: null,
+      communityRating: {average: 4, count: 3, hasStaleRatings: false},
     });
   });
 });

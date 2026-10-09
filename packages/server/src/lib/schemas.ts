@@ -235,5 +235,6 @@ export const AiNutritionResponseSchema = z.object({
   fiberG: z.number().nonnegative().nullable(),
   sugarG: z.number().nonnegative().nullable(),
   sodiumMg: z.number().nonnegative().nullable(),
+  preparedWeightG: z.number().positive(),
   disclaimer: z.string(),
 });

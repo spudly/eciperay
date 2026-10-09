@@ -1,12 +1,12 @@
 import type {RecipeDetail} from '@eciperay/types';
-import {makeRecipeDetail} from '@eciperay/client';
+import {formatRecipeListMeta, makeRecipeDetail} from '@eciperay/client';
 import type {ComponentType} from 'react';
 import type {ShowcaseFrameProps} from '@eciperay/client';
 
 import {ThumbnailListCard} from './ui/ThumbnailListCard.js';
 
 const formatRecipeSubtitle = (recipe: RecipeDetail) =>
-  `${recipe.servings} servings${recipe.cookTimeMin ? ` · ${recipe.cookTimeMin} min` : ''}`;
+  `${recipe.servings} servings${recipe.cookTimeMin ? ` · ${recipe.cookTimeMin} min` : ''} · ${formatRecipeListMeta(recipe)}`;
 
 type RecipeListCardProps = {
   recipe: RecipeDetail;

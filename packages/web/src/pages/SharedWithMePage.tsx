@@ -1,4 +1,7 @@
-import {sharedWithMeInfiniteQueryOptions} from '@eciperay/client';
+import {
+  sharedWithMeInfiniteQueryOptions,
+  useRecipeListFilters,
+} from '@eciperay/client';
 import {useInfiniteQuery} from '@tanstack/react-query';
 import {useEffect, useRef, useCallback} from 'react';
 
@@ -6,12 +9,14 @@ import {SharedWithMeView} from '../components/shared/SharedWithMeView.js';
 import {eciperay} from '../lib/api.js';
 
 export const SharedWithMePage = () => {
+  const {filters, controls} = useRecipeListFilters();
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
   const {data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage} =
     useInfiniteQuery(
-      sharedWithMeInfiniteQueryOptions(params =>
-        eciperay.recipes.listSharedWithMe(params),
+      sharedWithMeInfiniteQueryOptions(
+        params => eciperay.recipes.listSharedWithMe(params),
+        filters,
       ),
     );
 
@@ -41,6 +46,7 @@ export const SharedWithMePage = () => {
 
   return (
     <SharedWithMeView
+      {...controls}
       isLoading={isLoading}
       recipes={recipes}
       isFetchingNextPage={isFetchingNextPage}

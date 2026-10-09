@@ -17,7 +17,9 @@ describe('SharedRecipeListCard', () => {
     await renderWithProviders(<SharedRecipeListCard recipe={recipe} />);
     const link = screen.getByRole('link', {name: /My Recipe/i});
     expect(link).toHaveAttribute('href', '/recipe/recipe-1/my-recipe');
-    expect(screen.getByText('6 servings · 40 min')).toBeInTheDocument();
+    expect(
+      screen.getByText(/6 servings · 40 min · .+ · Satiety/),
+    ).toBeInTheDocument();
   });
 
   test('omits cook time when absent', async () => {
@@ -27,7 +29,7 @@ describe('SharedRecipeListCard', () => {
       servings: 2,
     });
     await renderWithProviders(<SharedRecipeListCard recipe={recipe} />);
-    expect(screen.getByText('2 servings')).toBeInTheDocument();
+    expect(screen.getByText(/^2 servings · /)).toBeInTheDocument();
     expect(screen.queryByText(/min/)).not.toBeInTheDocument();
   });
 

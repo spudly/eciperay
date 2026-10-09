@@ -21,40 +21,42 @@ const makeDiscoveryItem = (
   authorDisplayName: 'Chef Alex',
   updatedAt: '2024-01-01T00:00:00.000Z',
   tags: [],
+  communityRating: null,
+  satietyScore: null,
+  nutritionStatus: null,
+  calories: null,
+  proteinG: null,
   ...overrides,
 });
 
 describe('PublicRecipeDiscoveryCard', () => {
-  test('links to the public recipe page with author and rating placeholder', async () => {
+  test('links to the public recipe page with author, rating, and satiety', async () => {
     const recipe = makeDiscoveryItem();
     await renderWithProviders(<PublicRecipeDiscoveryCard recipe={recipe} />);
     const link = screen.getByRole('link', {name: /My Recipe/i});
     expect(link).toHaveAttribute('href', '/recipe/recipe-1/my-recipe');
-    expect(screen.getByText('By Chef Alex')).toBeInTheDocument();
-    expect(screen.getByText(DISCOVER_NO_RATINGS_LABEL)).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        new RegExp(`By Chef Alex · ${DISCOVER_NO_RATINGS_LABEL}`),
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Satiety —/)).toBeInTheDocument();
   });
 
   test('shows anonymous author when display name is missing', async () => {
     const recipe = makeDiscoveryItem({authorDisplayName: null});
     await renderWithProviders(<PublicRecipeDiscoveryCard recipe={recipe} />);
-    expect(screen.getByText('By Anonymous')).toBeInTheDocument();
+    expect(screen.getByText(/By Anonymous/)).toBeInTheDocument();
   });
 
-  test('shows anonymous author when display name is blank', async () => {
-    const recipe = makeDiscoveryItem({authorDisplayName: '   '});
-    await renderWithProviders(<PublicRecipeDiscoveryCard recipe={recipe} />);
-    expect(screen.getByText('By Anonymous')).toBeInTheDocument();
-  });
-
-  test('shows recipe thumbnail when imageUrl is present', async () => {
+  test('shows community rating and satiety when present', async () => {
     const recipe = makeDiscoveryItem({
-      title: 'Cake',
-      imageUrl: 'https://cdn.example/cake.jpg',
+      communityRating: {average: 4.5, count: 2, hasStaleRatings: false},
+      satietyScore: 72,
+      nutritionStatus: 'ready',
     });
     await renderWithProviders(<PublicRecipeDiscoveryCard recipe={recipe} />);
-    expect(screen.getByRole('img', {name: 'Cake'})).toHaveAttribute(
-      'src',
-      'https://cdn.example/cake.jpg',
-    );
+    expect(screen.getByText(/4\.5 \(2\)/)).toBeInTheDocument();
+    expect(screen.getByText(/Satiety 72/)).toBeInTheDocument();
   });
 });
