@@ -5,6 +5,7 @@ import {requireAuth, type AuthedRequest} from '../../middleware/requireAuth.js';
 
 import {deleteAccount} from './deleteAccount.js';
 import {exportAccount} from './exportAccount.js';
+import {getNutritionGoals, putNutritionGoals} from './nutritionGoals.js';
 
 type QueryFn = typeof defaultQuery;
 
@@ -13,6 +14,12 @@ export const createAccountRouter = (queryFn: QueryFn) => {
 
   router.get('/export', requireAuth, (req, res) =>
     exportAccount(req as AuthedRequest, res, queryFn),
+  );
+  router.get('/nutrition-goals', requireAuth, (req, res) =>
+    getNutritionGoals(req as AuthedRequest, res, queryFn),
+  );
+  router.put('/nutrition-goals', requireAuth, (req, res) =>
+    putNutritionGoals(req as AuthedRequest, res, queryFn),
   );
   router.delete('/', requireAuth, (req, res) =>
     deleteAccount(req as AuthedRequest, res, queryFn),

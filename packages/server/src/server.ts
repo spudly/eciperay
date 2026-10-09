@@ -16,6 +16,8 @@ import {AiResponseParseError} from './lib/validate.js';
 import {createAccountRouter} from './routes/account/router.js';
 import {createAuthRouter} from './routes/auth/router.js';
 import {createImportRouter} from './routes/import/router.js';
+import {createMealPlansRouter} from './routes/mealPlans/router.js';
+import {createMealsRouter} from './routes/meals/router.js';
 import {createPublicRecipesRouter} from './routes/public/router.js';
 import {createRecipesRouter} from './routes/recipes/router.js';
 import {attachSeoRoutes} from './routes/seo/attachSeoRoutes.js';
@@ -52,6 +54,8 @@ export const createApp = ({
   api.use('/recipes/import', createImportRouter(queryFn));
   api.use('/public/recipes', createPublicRecipesRouter(queryFn));
   api.use('/recipes', createRecipesRouter(queryFn));
+  api.use('/meals', createMealsRouter(queryFn));
+  api.use('/meal-plans', createMealPlansRouter(queryFn));
   api.use('/tags', createTagsRouter(queryFn));
   api.use((_req, res) => {
     res.status(404).json({error: 'Not found'});

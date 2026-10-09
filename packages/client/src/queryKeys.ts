@@ -55,4 +55,11 @@ export const queryKeys = {
     }
     return ['publicRecipeDiscovery', normalizeFilters(filters)] as const;
   },
+  meals: () => ['meals'] as const,
+  meal: (id: string) => ['meal', id] as const,
+  mealCookPlan: (id: string) => ['mealCookPlan', id] as const,
+  mealPlans: () => ['mealPlans'] as const,
+  mealPlan: (id: string) => ['mealPlan', id] as const,
+  mealPlanShoppingList: (id: string) => ['mealPlanShoppingList', id] as const,
+  nutritionGoals: () => ['nutritionGoals'] as const,
 };

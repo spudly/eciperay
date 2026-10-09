@@ -7,6 +7,7 @@ import {Icon} from './Icon.js';
 const navItems = [
   {to: '/', end: true, label: 'Home', icon: 'home' as const},
   {to: '/recipes', label: 'Recipes', icon: 'book-open' as const},
+  {to: '/meals', label: 'Meals', icon: 'coffee' as const},
   {to: '/shared-with-me', label: 'Shared with me', icon: 'users' as const},
   {to: '/add', label: 'Add', icon: 'plus' as const},
   {to: '/tags', label: 'Tags', icon: 'tag' as const},

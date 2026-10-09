@@ -238,3 +238,11 @@ export const AiNutritionResponseSchema = z.object({
   preparedWeightG: z.number().positive(),
   disclaimer: z.string(),
 });
+
+export {
+  AiStepTimingResponseSchema,
+  MealInputSchema,
+  MealPlanEntryInputSchema,
+  MealPlanInputSchema,
+  NutritionGoalsSchema,
+} from './mealSchemas.js';

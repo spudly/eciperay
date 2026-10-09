@@ -234,6 +234,36 @@ export {
 } from './recipeListDisplay.js';
 export {nutritionTabRows, type NutritionTabRow} from './nutritionTabRows.js';
 export {
+  buildMealInputFromForm,
+  buildMealPlanInputFromForm,
+  defaultNutritionGoals,
+  formatSimpleNutrition,
+  mealPlanEntryKey,
+  parseMealPlanEntryKey,
+} from './mealUiHelpers.js';
+export {
+  buildMealPlanFormEntryOptions,
+  mealPlanEntryToggleResult,
+  mealPlanFormDraftFromDetail,
+  type MealPlanEditRecipeOption,
+  type MealPlanFormDraft,
+} from './mealPlanFormHelpers.js';
+export {useMealPlanEditForm} from './useMealPlanEditForm.js';
+export type {
+  MealCookingModeViewProps,
+  MealDetailViewProps,
+  MealFormRecipeOption,
+  MealFormViewProps,
+  MealPlanDetailViewProps,
+  MealPlanFormEntryOption,
+  MealPlanFormViewProps,
+  MealsHubTab,
+  MealsHubViewProps,
+  NutritionGoalProgressViewProps,
+  NutritionGoalsFormViewProps,
+  ShoppingListViewProps,
+} from './ui/mealViewComponents.js';
+export {
   getRecipeListNextPageParam,
   homeRecentlyViewedRecipesQueryOptions,
   publicRecipeDiscoveryInfiniteQueryOptions,
@@ -254,6 +284,8 @@ export {createRecipesApi} from './recipesApi.js';
 export {createImportApi} from './importApi.js';
 export {createAuthApi} from './authApi.js';
 export {createAccountApi} from './accountApi.js';
+export {createMealsApi} from './mealsApi.js';
+export {createMealPlansApi} from './mealPlansApi.js';
 export {createTagsApi} from './tagsApi.js';
 export {createAiApi} from './aiApi.js';
 export {createVersionsApi, type TweakWithAiResult} from './versionsApi.js';

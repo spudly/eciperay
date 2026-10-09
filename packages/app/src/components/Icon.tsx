@@ -29,9 +29,9 @@ export const Icon = ({
 if (__DEV__) {
   Icon.demo = () => (
     <Icon
-      name="book-open"
+      name="coffee"
       size={28}
-      accessibilityLabel="Recipes"
+      accessibilityLabel="Meals"
     />
   );
 }

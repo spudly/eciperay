@@ -1,5 +1,5 @@
 import React from 'react';
-import {render, fireEvent} from '@testing-library/react-native';
+import {fireEvent, waitFor} from '@testing-library/react-native';
 import {Linking} from 'react-native';
 import {
   FeedbackPreferenceContextProvider,
@@ -7,7 +7,8 @@ import {
   TERMS_OF_SERVICE_URL,
 } from '@eciperay/client';
 
-import {makeStackProps} from '../__tests__/testUtils';
+import {makeStackProps, renderWithProviders} from '../__tests__/testUtils';
+import {api} from '../lib/api';
 import type {ProfileStackParamList} from '../navigation/types';
 
 import {ProfileScreen} from './ProfileScreen';
@@ -22,6 +23,10 @@ jest.mock('@eciperay/client', () => ({
 }));
 
 jest.mock('../lib/supabase', () => ({supabase: {auth: {signOut: jest.fn()}}}));
+jest.mock('../lib/api');
+
+const mockGetNutritionGoals = api.account.getNutritionGoals as jest.Mock;
+const mockPutNutritionGoals = api.account.putNutritionGoals as jest.Mock;
 
 const mockNavigate = jest.fn();
 const stackProps = makeStackProps<ProfileStackParamList, 'ProfileHome'>(
@@ -31,61 +36,91 @@ const stackProps = makeStackProps<ProfileStackParamList, 'ProfileHome'>(
 );
 
 const renderProfileScreen = () =>
-  render(<ProfileScreen {...stackProps} />, {
-    wrapper: ({children}) => (
-      <FeedbackPreferenceContextProvider
-        enabled={false}
-        setEnabled={jest.fn()}
-      >
-        {children}
-      </FeedbackPreferenceContextProvider>
-    ),
-  });
+  renderWithProviders(
+    <FeedbackPreferenceContextProvider
+      enabled={false}
+      setEnabled={jest.fn()}
+    >
+      <ProfileScreen {...stackProps} />
+    </FeedbackPreferenceContextProvider>,
+  );
 
 describe('ProfileScreen', () => {
   beforeEach(() => {
     jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
+    mockGetNutritionGoals.mockResolvedValue({
+      calories: null,
+      proteinG: null,
+      carbsG: null,
+      fatG: null,
+      satietyScore: null,
+    });
+    mockPutNutritionGoals.mockResolvedValue({
+      calories: 2000,
+      proteinG: null,
+      carbsG: null,
+      fatG: null,
+      satietyScore: null,
+    });
   });
 
   afterEach(() => {
     jest.restoreAllMocks();
   });
-  test('renders without email when session is missing', () => {
+  test('renders without email when session is missing', async () => {
     mockUseAuth.mockReturnValueOnce({session: null});
     const {queryByText} = renderProfileScreen();
-    expect(queryByText('user@test.com')).toBeNull();
+    await waitFor(() => {
+      expect(queryByText('user@test.com')).toBeNull();
+    });
   });
 
-  test('renders email and sign out button', () => {
-    const {getByText} = renderProfileScreen();
-    expect(getByText('user@test.com')).toBeTruthy();
-    expect(getByText('Sign Out')).toBeTruthy();
+  test('renders email and sign out button', async () => {
+    const {findByText} = renderProfileScreen();
+    expect(await findByText('user@test.com')).toBeTruthy();
+    expect(await findByText('Sign Out')).toBeTruthy();
   });
 
-  test('signs out on button press', () => {
+  test('signs out on button press', async () => {
     const {supabase} = require('../lib/supabase');
-    const {getByText} = renderProfileScreen();
-    fireEvent.press(getByText('Sign Out'));
+    const {findByText} = renderProfileScreen();
+    fireEvent.press(await findByText('Sign Out'));
     expect(supabase.auth.signOut).toHaveBeenCalled();
   });
 
-  test('navigates to Tags', () => {
-    const {getByText} = renderProfileScreen();
-    fireEvent.press(getByText('Manage Tags'));
+  test('navigates to Tags', async () => {
+    const {findByText} = renderProfileScreen();
+    fireEvent.press(await findByText('Manage Tags'));
     expect(mockNavigate).toHaveBeenCalledWith('Tags');
   });
 
-  test('opens the component showcase in dev', () => {
-    const {getByText} = renderProfileScreen();
-    fireEvent.press(getByText('Component Showcase'));
+  test('opens the component showcase in dev', async () => {
+    const {findByText} = renderProfileScreen();
+    fireEvent.press(await findByText('Component Showcase'));
     expect(mockNavigate).toHaveBeenCalledWith('ComponentShowcase');
   });
 
-  test('opens legal document URLs', () => {
-    const {getByText} = renderProfileScreen();
-    fireEvent.press(getByText('Privacy Policy'));
+  test('opens legal document URLs', async () => {
+    const {findByText} = renderProfileScreen();
+    fireEvent.press(await findByText('Privacy Policy'));
     expect(Linking.openURL).toHaveBeenCalledWith(PRIVACY_POLICY_URL);
-    fireEvent.press(getByText('Terms of Service'));
+    fireEvent.press(await findByText('Terms of Service'));
     expect(Linking.openURL).toHaveBeenCalledWith(TERMS_OF_SERVICE_URL);
+  });
+
+  test('saves nutrition goals', async () => {
+    const {findByText, getByText} = renderProfileScreen();
+    fireEvent.press(await findByText('Save goals'));
+    await waitFor(() => {
+      expect(mockPutNutritionGoals).toHaveBeenCalled();
+    });
+    expect(getByText('Save goals')).toBeTruthy();
+  });
+
+  test('shows nutrition goal save errors', async () => {
+    mockPutNutritionGoals.mockRejectedValueOnce(new Error('Goals failed'));
+    const {findByText} = renderProfileScreen();
+    fireEvent.press(await findByText('Save goals'));
+    expect(await findByText('Goals failed')).toBeTruthy();
   });
 });

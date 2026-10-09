@@ -28,7 +28,18 @@ describe('GET /account/export', () => {
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([]))
-      .mockResolvedValueOnce(makeQueryResult([]));
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          {
+            goal_calories: null,
+            goal_protein_g: null,
+            goal_carbs_g: null,
+            goal_fat_g: null,
+            goal_satiety_score: null,
+          },
+        ]),
+      );
 
     const res = await request(getApp())
       .get('/api/account/export')
@@ -41,6 +52,13 @@ describe('GET /account/export', () => {
         email: 'test@example.com',
         displayName: 'Alex',
         createdAt: '2024-01-01T00:00:00.000Z',
+      },
+      nutritionGoals: {
+        calories: null,
+        proteinG: null,
+        carbsG: null,
+        fatG: null,
+        satietyScore: null,
       },
       recipes: [],
       shareGrants: [],
@@ -93,6 +111,17 @@ describe('GET /account/export', () => {
             updated_at: '2024-01-05T00:00:00.000Z',
           },
         ]),
+      )
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          {
+            goal_calories: 2000,
+            goal_protein_g: 150,
+            goal_carbs_g: null,
+            goal_fat_g: null,
+            goal_satiety_score: 70,
+          },
+        ]),
       );
 
     const res = await request(getApp())
@@ -100,6 +129,13 @@ describe('GET /account/export', () => {
       .set('Authorization', 'Bearer valid-token');
 
     expect(res.status).toBe(200);
+    expect(res.body.nutritionGoals).toEqual({
+      calories: 2000,
+      proteinG: 150,
+      carbsG: null,
+      fatG: null,
+      satietyScore: 70,
+    });
     expect(res.body.shareGrants).toEqual([
       {
         recipeId: 'recipe-uuid-1',
