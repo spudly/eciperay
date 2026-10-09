@@ -114,12 +114,6 @@ export const buildListPublicRecipesSql = (
   limit $1 offset $2
 `;
 
-/**
- * @deprecated Use buildListRecipesSql — kept for tests that import the constant
- *   name.
- */
-export const LIST_RECIPES_SQL = buildListRecipesSql('newest', 'desc');
-
 /** @deprecated Use buildListSharedWithMeSql */
 export const LIST_SHARED_WITH_ME_SQL = buildListSharedWithMeSql(
   'newest',
