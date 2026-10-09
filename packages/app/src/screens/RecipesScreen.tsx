@@ -2,6 +2,7 @@ import {
   invalidateRecipeQueries,
   recipeListInfiniteQueryOptions,
   useAnalytics,
+  useRecipeListFilters,
 } from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {
@@ -9,7 +10,6 @@ import {
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query';
-import {useDeferredValue, useState} from 'react';
 import {Alert} from 'react-native';
 import type {RecipeDetail} from '@eciperay/types';
 
@@ -23,8 +23,7 @@ type RecipesProps = NativeStackScreenProps<
 >;
 
 export const RecipesScreen = ({navigation}: RecipesProps) => {
-  const [search, setSearch] = useState('');
-  const deferredSearch = useDeferredValue(search.trim());
+  const {filters, controls} = useRecipeListFilters();
   const queryClient = useQueryClient();
   const analytics = useAnalytics();
 
@@ -32,7 +31,7 @@ export const RecipesScreen = ({navigation}: RecipesProps) => {
     useInfiniteQuery(
       recipeListInfiniteQueryOptions(
         params => api.recipes.list(params),
-        deferredSearch,
+        filters,
       ),
     );
 
@@ -67,8 +66,7 @@ export const RecipesScreen = ({navigation}: RecipesProps) => {
 
   return (
     <RecipesListView
-      search={search}
-      onSearchChange={setSearch}
+      {...controls}
       isLoading={isLoading}
       recipes={recipes}
       isFetchingNextPage={isFetchingNextPage}

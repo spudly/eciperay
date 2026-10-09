@@ -1,15 +1,17 @@
 import {
   SHARED_WITH_ME_EMPTY_MESSAGE,
+  demoRecipeListFilters,
+  makeRecipeDetail,
   type SharedWithMeViewProps,
 } from '@eciperay/client';
-import {FlatList, StyleSheet} from 'react-native';
-import {makeRecipeDetail} from '@eciperay/client';
+import {FlatList, StyleSheet, View} from 'react-native';
 
 import {SharedRecipeListCard} from '../SharedRecipeListCard';
 import {InlineLoadingIndicator} from '../InlineLoadingIndicator';
 import {EmptyMessage} from '../ui/EmptyMessage';
 import {ListLoadingFooter} from '../ui/ListLoadingFooter';
 import {ScreenContainer} from '../ui/ScreenContainer';
+import {RecipeListFiltersBar} from '../recipes/RecipeListFiltersBar';
 
 const styles = StyleSheet.create({
   listContent: {paddingHorizontal: 16, paddingBottom: 32},
@@ -20,8 +22,12 @@ export const SharedWithMeView = ({
   recipes,
   isFetchingNextPage,
   onLoadMore,
+  ...filterControls
 }: SharedWithMeViewProps) => (
   <ScreenContainer variant="list">
+    <View className="px-4 pb-2 pt-4">
+      <RecipeListFiltersBar {...filterControls} />
+    </View>
     {isLoading ? (
       <InlineLoadingIndicator
         loading
@@ -49,6 +55,7 @@ export const SharedWithMeView = ({
 if (__DEV__) {
   SharedWithMeView.demo = () => (
     <SharedWithMeView
+      {...demoRecipeListFilters()}
       isLoading={false}
       recipes={[makeRecipeDetail()]}
       isFetchingNextPage={false}

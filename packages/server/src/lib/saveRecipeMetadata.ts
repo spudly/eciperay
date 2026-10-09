@@ -13,6 +13,7 @@ import {
 import {updateRecipeStatus} from '../routes/recipes/recipeStatusQueries.js';
 
 import {mapRowToRecipeDetail} from './mapRowToRecipeDetail.js';
+import {scheduleNutritionRefresh} from './refreshRecipeNutrition.js';
 import {RecipeNotFoundError} from './saveRecipeFromInput.js';
 import {resolveStatus} from './resolveStatus.js';
 import {slugifyRecipeTitle} from './slugifyRecipeTitle.js';
@@ -52,6 +53,7 @@ export const saveRecipeMetadata = async (
   await updateRecipeStatus(opts.recipeId, resolveStatus(opts.input), queryFn);
   await deleteRecipeTagsByVersionId(opts.versionId, queryFn);
   await linkTags(opts.versionId, opts.input.tagIds, queryFn);
+  scheduleNutritionRefresh(opts.versionId, queryFn);
   const detail = await queryFn(GET_RECIPE_DETAIL_SQL, [
     opts.recipeId,
     opts.userId,

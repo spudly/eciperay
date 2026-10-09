@@ -1,9 +1,11 @@
 import {
   makeRecipeDetail,
+  nutritionTabRows,
   queryKeys,
   type ShowcaseDemoRenderer,
 } from '@eciperay/client';
-import {useQuery} from '@tanstack/react-query';
+import {useQuery, useQueryClient} from '@tanstack/react-query';
+import {useState} from 'react';
 
 import {eciperay} from '../../lib/api.js';
 
@@ -28,72 +30,85 @@ const NutritionRow = ({
 type Props = {recipeId: string};
 
 export const NutritionTab = ({recipeId}: Props) => {
-  const {data, isLoading} = useQuery({
+  const queryClient = useQueryClient();
+  const [refreshing, setRefreshing] = useState(false);
+  const {data, isLoading, isFetching} = useQuery({
     queryKey: queryKeys.nutrition(recipeId),
     queryFn: () => eciperay.ai.nutrition(recipeId),
   });
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      const next = await eciperay.ai.nutrition(recipeId, {refresh: true});
+      queryClient.setQueryData(queryKeys.nutrition(recipeId), next);
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.recipe(recipeId),
+      });
+      void queryClient.invalidateQueries({queryKey: queryKeys.recipeLists()});
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   if (isLoading) {
     return <p className="text-muted p-4">Estimating nutrition…</p>;
   }
 
   if (!data) {
-    return null;
+    return (
+      <div className="p-4">
+        <p className="text-muted mb-3">Nutrition is not available yet.</p>
+        <button
+          type="button"
+          className="rounded-lg bg-gray-900 px-3 py-2 text-sm text-white"
+          onClick={() => {
+            void handleRefresh();
+          }}
+          disabled={refreshing}
+        >
+          {refreshing ? 'Refreshing…' : 'Estimate nutrition'}
+        </button>
+      </div>
+    );
   }
 
   return (
     <div className="p-4">
-      <p
-        className="
-          mb-2 text-sm font-semibold uppercase tracking-wide text-gray-500
-        "
-      >
-        Per Serving
-      </p>
-      <NutritionRow
-        label="Calories"
-        value={data.calories}
-        unit=""
-      />
-      <NutritionRow
-        label="Protein"
-        value={data.proteinG}
-        unit="g"
-      />
-      <NutritionRow
-        label="Carbs"
-        value={data.carbsG}
-        unit="g"
-      />
-      <NutritionRow
-        label="Fat"
-        value={data.fatG}
-        unit="g"
-      />
-      {data.fiberG ? (
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <p
+          className="
+            text-sm font-semibold uppercase tracking-wide text-gray-500
+          "
+        >
+          Per Serving
+        </p>
+        <button
+          type="button"
+          className="rounded-lg bg-gray-100 px-3 py-1.5 text-sm text-gray-800"
+          onClick={() => {
+            void handleRefresh();
+          }}
+          disabled={refreshing || isFetching}
+        >
+          {refreshing ? 'Refreshing…' : 'Refresh'}
+        </button>
+      </div>
+      {nutritionTabRows(data).map(row => (
         <NutritionRow
-          label="Fiber"
-          value={data.fiberG}
-          unit="g"
+          key={row.label}
+          {...row}
         />
-      ) : null}
-      {data.sodiumMg ? (
-        <NutritionRow
-          label="Sodium"
-          value={data.sodiumMg}
-          unit="mg"
-        />
-      ) : null}
+      ))}
       <p className="text-muted mt-4 text-xs">{data.disclaimer}</p>
     </div>
   );
 };
 
 if (import.meta.env.DEV) {
-  const nutritionTabDemo: ShowcaseDemoRenderer = ({Frame}) => (
+  NutritionTab.demo = (({Frame}) => (
     <Frame>
       <NutritionTab recipeId={makeRecipeDetail().id} />
     </Frame>
-  );
-  NutritionTab.demo = nutritionTabDemo;
+  )) satisfies ShowcaseDemoRenderer;
 }

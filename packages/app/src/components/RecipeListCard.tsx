@@ -1,11 +1,15 @@
 import type {RecipeDetail} from '@eciperay/types';
-import {makeRecipeDetail, type ShowcaseDemoRenderer} from '@eciperay/client';
+import {
+  formatRecipeListMeta,
+  makeRecipeDetail,
+  type ShowcaseDemoRenderer,
+} from '@eciperay/client';
 import {Text, TouchableOpacity} from 'react-native';
 
 import {ThumbnailListCard} from './ui/ThumbnailListCard';
 
 const formatRecipeSubtitle = (recipe: RecipeDetail) =>
-  `${recipe.servings} servings${recipe.cookTimeMin ? ` · ${recipe.cookTimeMin} min` : ''}`;
+  `${recipe.servings} servings${recipe.cookTimeMin ? ` · ${recipe.cookTimeMin} min` : ''} · ${formatRecipeListMeta(recipe)}`;
 
 type Props = {recipe: RecipeDetail; onPress: () => void; onDelete: () => void};
 

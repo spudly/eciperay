@@ -4,8 +4,11 @@ import {query as defaultQuery} from '../../db/query.js';
 import type {AuthedRequest} from '../../middleware/requireAuth.js';
 import {mapRowToRecipeListItem} from '../../lib/mapRowToRecipeDetail.js';
 
-import {LIST_SHARED_WITH_ME_SQL} from './sqlConstants.js';
-import {parseListParams} from './listRecipes.js';
+import {
+  filterBindValues,
+  parseRecipeListFilterParams,
+} from './listFilterParams.js';
+import {buildListSharedWithMeSql} from './sqlConstants.js';
 
 type QueryFn = typeof defaultQuery;
 
@@ -14,12 +17,31 @@ export const listSharedWithMe = async (
   res: Response,
   queryFn: QueryFn,
 ) => {
-  const {limit, offset} = parseListParams(req);
-  const result = await queryFn(LIST_SHARED_WITH_ME_SQL, [
-    req.userId,
-    limit,
-    offset,
-  ]);
+  const params = parseRecipeListFilterParams(req);
+  if (params.status === 'invalid') {
+    res.status(400).json({error: 'Invalid status filter'});
+    return;
+  }
+  if (params.sort === 'invalid') {
+    res.status(400).json({error: 'Invalid sort parameter'});
+    return;
+  }
+  if (params.sortDir === 'invalid') {
+    res.status(400).json({error: 'Invalid sortDir parameter'});
+    return;
+  }
+
+  const result = await queryFn(
+    buildListSharedWithMeSql(params.sort, params.sortDir),
+    [
+      req.userId,
+      params.limit,
+      params.offset,
+      params.search,
+      params.status,
+      ...filterBindValues(params),
+    ],
+  );
   res.json(
     result.rows.map(row =>
       mapRowToRecipeListItem(

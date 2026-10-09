@@ -32,6 +32,20 @@ describe('buildListUrl', () => {
   test('includes status when provided', () => {
     expect(buildListUrl({status: 'evolving'})).toBe('/recipes?status=evolving');
   });
+
+  test('includes nutrition and satiety filters', () => {
+    expect(
+      buildListUrl({
+        ingredient: 'chicken',
+        minSatiety: 40,
+        maxCalories: 500,
+        sort: 'satiety',
+        sortDir: 'asc',
+      }),
+    ).toBe(
+      '/recipes?ingredient=chicken&maxCalories=500&minSatiety=40&sort=satiety&sortDir=asc',
+    );
+  });
 });
 
 describe('buildSharedWithMeUrl', () => {
@@ -61,6 +75,6 @@ describe('buildPublicRecipesUrl', () => {
         offset: 5,
         sort: 'rating',
       }),
-    ).toBe('/public/recipes?search=pasta&limit=20&offset=5&sort=rating');
+    ).toBe('/public/recipes?search=pasta&sort=rating&limit=20&offset=5');
   });
 });

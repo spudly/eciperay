@@ -15,21 +15,21 @@ describe('NutritionTab', () => {
     expect(screen.getByText('Estimates only')).toBeInTheDocument();
   });
 
-  test('returns null when no data', async () => {
+  test('shows estimate CTA when no data', async () => {
     server.use(
       http.get('http://localhost:8080/api/recipes/:id/ai/nutrition', () =>
         HttpResponse.json(null),
       ),
     );
-    const {container} = await renderWithProviders(
-      <NutritionTab recipeId="recipe-uuid-1" />,
-    );
+    await renderWithProviders(<NutritionTab recipeId="recipe-uuid-1" />);
     await waitFor(() => {
       expect(
-        screen.queryByText('Estimating nutrition…'),
-      ).not.toBeInTheDocument();
+        screen.getByText('Nutrition is not available yet.'),
+      ).toBeInTheDocument();
     });
-    expect(container.querySelector('.p-4')).toBeNull();
+    expect(
+      screen.getByRole('button', {name: 'Estimate nutrition'}),
+    ).toBeInTheDocument();
   });
 
   test('omits optional fiber and sodium rows', async () => {

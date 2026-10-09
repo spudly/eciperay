@@ -1,11 +1,5 @@
 import type {RecipesListViewProps} from '@eciperay/client';
-import {
-  RECIPE_STATUS_FILTER_ALL,
-  RECIPE_STATUS_FILTER_LABEL,
-  RECIPE_STATUS_LABELS,
-  RECIPE_STATUS_OPTIONS,
-  makeRecipeDetail,
-} from '@eciperay/client';
+import {demoRecipeListFilters, makeRecipeDetail} from '@eciperay/client';
 import {FlatList, StyleSheet, View} from 'react-native';
 import {useState} from 'react';
 
@@ -14,47 +8,25 @@ import {InlineLoadingIndicator} from '../InlineLoadingIndicator';
 import {EmptyMessage} from '../ui/EmptyMessage';
 import {ListLoadingFooter} from '../ui/ListLoadingFooter';
 import {ScreenContainer} from '../ui/ScreenContainer';
-import {SearchField} from '../ui/SearchField';
-import {SelectField} from '../ui/SelectField';
+
+import {RecipeListFiltersBar} from './RecipeListFiltersBar';
 
 const styles = StyleSheet.create({
   listContent: {paddingHorizontal: 16, paddingBottom: 32},
 });
 
 export const RecipesListView = ({
-  search,
-  onSearchChange,
   isLoading,
   recipes,
   isFetchingNextPage,
   onRecipePress,
   onRecipeDelete,
   onLoadMore,
-  statusFilter,
-  onStatusFilterChange,
+  ...filterControls
 }: RecipesListViewProps) => (
   <ScreenContainer variant="list">
     <View className="px-4 pb-2 pt-4">
-      <SearchField
-        value={search}
-        onChange={onSearchChange}
-      />
-      {statusFilter !== undefined && onStatusFilterChange ? (
-        <SelectField
-          label={RECIPE_STATUS_FILTER_LABEL}
-          value={statusFilter}
-          options={[
-            {value: RECIPE_STATUS_FILTER_ALL, label: 'All statuses'},
-            ...RECIPE_STATUS_OPTIONS.map(status => ({
-              value: status,
-              label: RECIPE_STATUS_LABELS[status],
-            })),
-          ]}
-          onChange={next => {
-            onStatusFilterChange(next as typeof statusFilter);
-          }}
-        />
-      ) : null}
+      <RecipeListFiltersBar {...filterControls} />
     </View>
     {isLoading ? (
       <InlineLoadingIndicator
@@ -94,6 +66,7 @@ if (__DEV__) {
 
     return (
       <RecipesListView
+        {...demoRecipeListFilters()}
         search={search}
         onSearchChange={setSearch}
         isLoading={false}

@@ -140,6 +140,8 @@ describe('SharedWithMeScreen', () => {
       expect(mockListSharedWithMe).toHaveBeenCalledWith({
         limit: RECIPE_LIST_PAGE_SIZE,
         offset: RECIPE_LIST_PAGE_SIZE,
+        sort: 'newest',
+        sortDir: 'desc',
       });
     });
   });

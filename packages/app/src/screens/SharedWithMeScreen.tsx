@@ -1,6 +1,7 @@
 import {
   SHARED_WITH_ME_TITLE,
   sharedWithMeInfiniteQueryOptions,
+  useRecipeListFilters,
 } from '@eciperay/client';
 import {useInfiniteQuery} from '@tanstack/react-query';
 
@@ -8,10 +9,12 @@ import {SharedWithMeView} from '../components/shared/SharedWithMeView';
 import {api} from '../lib/api';
 
 export const SharedWithMeScreen = () => {
+  const {filters, controls} = useRecipeListFilters();
   const {data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage} =
     useInfiniteQuery(
-      sharedWithMeInfiniteQueryOptions(params =>
-        api.recipes.listSharedWithMe(params),
+      sharedWithMeInfiniteQueryOptions(
+        params => api.recipes.listSharedWithMe(params),
+        filters,
       ),
     );
 
@@ -25,6 +28,7 @@ export const SharedWithMeScreen = () => {
 
   return (
     <SharedWithMeView
+      {...controls}
       isLoading={isLoading}
       recipes={recipes}
       isFetchingNextPage={isFetchingNextPage}

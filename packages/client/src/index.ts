@@ -152,11 +152,15 @@ export type {
   ProfileViewProps,
   RecipeDetailChromeProps,
   RecipeDetailTab,
+  RecipeListFilterControls,
   RecipesListViewProps,
   RecipeStatusFilterValue,
   SharedWithMeViewProps,
   TagsViewProps,
 } from './ui/viewComponents.js';
+export {useRecipeListFilters} from './useRecipeListFilters.js';
+export {demoRecipeListFilters} from './demoRecipeListFilters.js';
+export type {RecipeListFilters, RecipeListParams} from './recipesListUrl.js';
 export {RECIPE_DETAIL_TABS} from './ui/viewComponents.js';
 export {AuthProvider, useAuth} from './AuthProvider.js';
 export {AnalyticsErrorBoundaryProvider} from './AnalyticsErrorBoundary.js';
@@ -221,6 +225,14 @@ export {
   STALE_COMMUNITY_RATING_HINT,
   STALE_VIEWER_RATING_HINT,
 } from './recipeEngagement.js';
+export {
+  formatDiscoveryListMeta,
+  formatDisplayRatingLabel,
+  formatRecipeListMeta,
+  formatSatietyLabel,
+  getDisplayRating,
+} from './recipeListDisplay.js';
+export {nutritionTabRows, type NutritionTabRow} from './nutritionTabRows.js';
 export {
   getRecipeListNextPageParam,
   homeRecentlyViewedRecipesQueryOptions,

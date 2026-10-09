@@ -25,6 +25,10 @@ export const makeRecipe = (overrides: Partial<Recipe> = {}): Recipe => ({
   createdVia: 'manual',
   createdAt: '2024-01-01T00:00:00.000Z',
   updatedAt: '2024-01-01T00:00:00.000Z',
+  satietyScore: null,
+  nutritionStatus: null,
+  calories: null,
+  proteinG: null,
   ...overrides,
 });
 
@@ -35,6 +39,8 @@ export const makeRecipeDetail = (
   ingredients: [makeIngredient()],
   instructions: [makeInstruction()],
   tags: [makeTag()],
+  nutrition: null,
+  communityRating: null,
   ...overrides,
 });
 

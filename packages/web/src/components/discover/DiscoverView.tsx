@@ -1,17 +1,16 @@
 import type {PublicRecipeDiscoveryItem} from '@eciperay/types';
+import type {RecipeListFilterControls} from '@eciperay/client';
 
 import {EmptyMessage} from '../ui/EmptyMessage.js';
 import {InlineLoadingIndicator} from '../InlineLoadingIndicator.js';
 import {ListLoadingFooter} from '../ui/ListLoadingFooter.js';
 import {PageTitle} from '../ui/PageTitle.js';
-import {SearchField} from '../ui/SearchField.js';
 import {PublicRecipeDiscoveryCard} from '../PublicRecipeDiscoveryCard.js';
+import {RecipeListFiltersBar} from '../recipes/RecipeListFiltersBar.js';
 
-export type DiscoverViewProps = {
+export type DiscoverViewProps = RecipeListFilterControls & {
   title: string;
   searchPlaceholder: string;
-  search: string;
-  onSearchChange: (value: string) => void;
   recipes: PublicRecipeDiscoveryItem[];
   loading: boolean;
   loadingMore: boolean;
@@ -22,20 +21,18 @@ export type DiscoverViewProps = {
 export const DiscoverView = ({
   title,
   searchPlaceholder,
-  search,
-  onSearchChange,
   recipes,
   loading,
   loadingMore,
   emptyMessage,
   loadMoreRef,
+  ...filterControls
 }: DiscoverViewProps) => (
   <div>
     <PageTitle spacing="section">{title}</PageTitle>
-    <SearchField
-      placeholder={searchPlaceholder}
-      value={search}
-      onChange={onSearchChange}
+    <RecipeListFiltersBar
+      {...filterControls}
+      searchPlaceholder={searchPlaceholder}
     />
     {loading ? (
       <InlineLoadingIndicator loading />

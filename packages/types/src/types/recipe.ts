@@ -1,10 +1,18 @@
 import type {Ingredient, IngredientInput} from './ingredient.js';
 import type {Instruction, InstructionInput} from './instruction.js';
+import type {NutritionInfo, RecipeNutritionSummary} from './nutrition.js';
 import type {Tag} from './tag.js';
-import type {RecipeRatingSummary, RecipeStarRating} from './recipeRating.js';
+import type {
+  RecipeCommunityRating,
+  RecipeRatingSummary,
+  RecipeStarRating,
+} from './recipeRating.js';
 import type {RecipeStatus, VersionCreatedVia} from './recipeVersion.js';
 
 export type RecipeVisibility = 'private' | 'unlisted' | 'public';
+
+export type RecipeListSort = 'newest' | 'rating' | 'satiety' | 'calories';
+export type RecipeListSortDir = 'asc' | 'desc';
 
 export type Recipe = {
   id: string;
@@ -27,12 +35,14 @@ export type Recipe = {
   createdVia: VersionCreatedVia;
   createdAt: string;
   updatedAt: string;
-};
+} & RecipeNutritionSummary;
 
 export type RecipeDetail = Recipe & {
   ingredients: Ingredient[];
   instructions: Instruction[];
   tags: Tag[];
+  nutrition: NutritionInfo | null;
+  communityRating: RecipeCommunityRating | null;
 };
 
 export type RecipeInput = {
@@ -73,7 +83,7 @@ export type RecipeShareGrantVia = 'link' | 'explicit';
 /** Recipe detail safe for anonymous viewers (no owner identifiers). */
 export type PublicRecipeDetail = Omit<RecipeDetail, 'userId'>;
 
-export type PublicRecipeDiscoverySort = 'newest' | 'rating';
+export type PublicRecipeDiscoverySort = RecipeListSort;
 
 /** Summary card for public recipe browse/search results. */
 export type PublicRecipeDiscoveryItem = {
@@ -89,7 +99,8 @@ export type PublicRecipeDiscoveryItem = {
   authorDisplayName: string | null;
   updatedAt: string;
   tags: Tag[];
-};
+  communityRating: RecipeCommunityRating | null;
+} & RecipeNutritionSummary;
 
 export type PublicRecipeResponse = RecipeRatingSummary & {
   recipe: PublicRecipeDetail;

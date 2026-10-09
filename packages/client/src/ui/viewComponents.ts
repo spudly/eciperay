@@ -1,12 +1,12 @@
 import type {ReactNode, RefObject} from 'react';
-import type {
-  RecipeDetail,
-  RecipeStatus,
-  RecipeVersionSummary,
-  Tag,
-} from '@eciperay/types';
+import type {RecipeDetail, RecipeVersionSummary, Tag} from '@eciperay/types';
 
-export type RecipeStatusFilterValue = 'all' | RecipeStatus;
+import type {RecipeListFilterControls} from './recipeListFilterControls.js';
+
+export type {
+  RecipeListFilterControls,
+  RecipeStatusFilterValue,
+} from './recipeListFilterControls.js';
 
 export type HomeViewProps = {
   isLoading: boolean;
@@ -18,21 +18,17 @@ export type HomeViewProps = {
   onRecipeDelete: (recipe: RecipeDetail) => void;
 };
 
-export type RecipesListViewProps = {
-  search: string;
-  onSearchChange: (value: string) => void;
+export type RecipesListViewProps = RecipeListFilterControls & {
   isLoading: boolean;
   recipes: RecipeDetail[];
   isFetchingNextPage: boolean;
   onRecipePress: (recipeId: string) => void;
   onRecipeDelete: (recipe: RecipeDetail) => void;
   onLoadMore: () => void;
-  statusFilter?: RecipeStatusFilterValue;
-  onStatusFilterChange?: (value: RecipeStatusFilterValue) => void;
   loadMoreRef?: RefObject<HTMLDivElement | null>;
 };
 
-export type SharedWithMeViewProps = {
+export type SharedWithMeViewProps = RecipeListFilterControls & {
   isLoading: boolean;
   recipes: RecipeDetail[];
   isFetchingNextPage: boolean;

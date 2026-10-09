@@ -37,8 +37,16 @@ const createGenerateDescription =
     );
 
 export const createAiApi = (client: ApiClient) => ({
-  nutrition: (recipeId: string) =>
-    client.fetch<NutritionInfo>(`/recipes/${recipeId}/ai/nutrition`),
+  nutrition: (recipeId: string, options?: {refresh?: boolean}) => {
+    const params = new URLSearchParams();
+    if (options?.refresh) {
+      params.set('refresh', 'true');
+    }
+    const query = params.toString();
+    return client.fetch<NutritionInfo>(
+      `/recipes/${recipeId}/ai/nutrition${query ? `?${query}` : ''}`,
+    );
+  },
   substitutions: (recipeId: string, missing: string[]) => {
     const params = new URLSearchParams();
     for (const item of missing) {

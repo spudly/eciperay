@@ -36,7 +36,7 @@ describe('SharedRecipeListCard', () => {
     const {getByText, queryByText} = renderWithProviders(
       <SharedRecipeListCard recipe={recipe} />,
     );
-    expect(getByText('2 servings')).toBeTruthy();
+    expect(getByText(/2 servings/)).toBeTruthy();
     expect(queryByText(/min/)).toBeNull();
   });
 

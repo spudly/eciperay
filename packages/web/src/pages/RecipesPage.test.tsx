@@ -88,7 +88,7 @@ describe('RecipesPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Salad')).toBeInTheDocument();
     });
-    expect(screen.getByText('2 servings')).toBeInTheDocument();
+    expect(screen.getByText(/2 servings/)).toBeInTheDocument();
   });
 
   test('lists recipes and searches', async () => {

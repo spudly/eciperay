@@ -14,6 +14,13 @@ import {
   isVersionContentLocked,
   isVersionEditable,
 } from './isVersionEditable.js';
+import {
+  mapCommunityRatingFromRow,
+  mapNutritionInfoFromDetailRow,
+  mapNutritionSummary,
+  type CommunityRatingColumns,
+  type NutritionColumns,
+} from './mapNutritionFromRow.js';
 
 type RecipeDetailRow = {
   id: string;
@@ -41,7 +48,8 @@ type RecipeDetailRow = {
   ingredients: RecipeDetail['ingredients'];
   instructions: RecipeDetail['instructions'];
   tags: RecipeDetail['tags'];
-};
+} & NutritionColumns &
+  Partial<CommunityRatingColumns>;
 
 export type RecipeListRow = {
   id: string;
@@ -65,7 +73,8 @@ export type RecipeListRow = {
   created_at: string;
   updated_at: string;
   tags: RecipeDetail['tags'];
-};
+} & NutritionColumns &
+  CommunityRatingColumns;
 
 type VersionDetailRow = {
   version_id: string;
@@ -131,6 +140,9 @@ export const mapRowToRecipeListItem = (row: RecipeListRow): RecipeDetail => ({
   createdVia: row.created_via,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
+  ...mapNutritionSummary(row),
+  nutrition: mapNutritionInfoFromDetailRow(row),
+  communityRating: mapCommunityRatingFromRow(row),
   ingredients: [],
   instructions: [],
   tags: row.tags,
@@ -149,7 +161,8 @@ export type PublicRecipeDiscoveryRow = {
   updated_at: string;
   author_display_name: string | null;
   tags: RecipeDetail['tags'];
-};
+} & NutritionColumns &
+  CommunityRatingColumns;
 
 export const mapRowToPublicRecipeDiscoveryItem = (
   row: PublicRecipeDiscoveryRow,
@@ -166,6 +179,8 @@ export const mapRowToPublicRecipeDiscoveryItem = (
   authorDisplayName: row.author_display_name,
   updatedAt: row.updated_at,
   tags: row.tags,
+  ...mapNutritionSummary(row),
+  communityRating: mapCommunityRatingFromRow(row),
 });
 
 export const mapRowToRecipeDetail = (row: RecipeDetailRow): RecipeDetail => ({
@@ -189,6 +204,9 @@ export const mapRowToRecipeDetail = (row: RecipeDetailRow): RecipeDetail => ({
   createdVia: row.created_via,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
+  ...mapNutritionSummary(row),
+  nutrition: mapNutritionInfoFromDetailRow(row),
+  communityRating: mapCommunityRatingFromRow(row),
   ingredients: row.ingredients,
   instructions: row.instructions,
   tags: row.tags,

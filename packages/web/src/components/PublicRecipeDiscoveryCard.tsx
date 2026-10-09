@@ -1,5 +1,5 @@
 import type {PublicRecipeDiscoveryItem} from '@eciperay/types';
-import {DISCOVER_NO_RATINGS_LABEL} from '@eciperay/client';
+import {formatDiscoveryListMeta} from '@eciperay/client';
 
 import {ThumbnailListCard} from './ui/ThumbnailListCard.js';
 
@@ -18,10 +18,7 @@ export const PublicRecipeDiscoveryCard = ({
   <ThumbnailListCard
     imageUrl={recipe.imageUrl}
     title={recipe.title}
-    subtitle={`By ${formatAuthorName(recipe.authorDisplayName)}`}
-    trailing={
-      <p className="text-muted mt-1 text-sm">{DISCOVER_NO_RATINGS_LABEL}</p>
-    }
+    subtitle={`By ${formatAuthorName(recipe.authorDisplayName)} · ${formatDiscoveryListMeta(recipe)}`}
     linkTo={`/recipe/${recipe.id}/${recipe.slug}`}
   />
 );

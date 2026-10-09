@@ -15,6 +15,20 @@ import {recordRecipeView, getRecentRecipeIds} from './recipeViewHistory.js';
 const makeListItem = (id: string): RecipeDetail =>
   makeRecipeDetail({id, title: `Recipe ${id}`});
 
+const emptyKeyFilters = {
+  search: '',
+  status: '',
+  ingredient: '',
+  minCalories: null,
+  maxCalories: null,
+  minProteinG: null,
+  maxProteinG: null,
+  minSatiety: null,
+  maxSatiety: null,
+  sort: 'newest',
+  sortDir: 'desc',
+};
+
 describe('recipeListQuery', () => {
   test('returns the next offset when the last page is full', () => {
     const page = Array.from({length: RECIPE_LIST_PAGE_SIZE}, (_, index) =>
@@ -32,10 +46,10 @@ describe('recipeListQuery', () => {
 
   test('builds infinite query options with paging params', async () => {
     const list = jest.fn().mockResolvedValue([makeListItem('1')]);
-    const options = recipeListInfiniteQueryOptions(list, 'pasta');
+    const options = recipeListInfiniteQueryOptions(list, {search: 'pasta'});
     expect(options.queryKey).toEqual([
       'recipes',
-      {search: 'pasta', status: ''},
+      {...emptyKeyFilters, search: 'pasta'},
     ]);
     await options.queryFn({pageParam: 40});
     expect(list).toHaveBeenCalledWith({
@@ -47,7 +61,7 @@ describe('recipeListQuery', () => {
 
   test('omits search from the request when the query is empty', async () => {
     const list = jest.fn().mockResolvedValue([]);
-    const options = recipeListInfiniteQueryOptions(list, '');
+    const options = recipeListInfiniteQueryOptions(list, {});
     await options.queryFn({pageParam: 0});
     expect(list).toHaveBeenCalledWith({
       limit: RECIPE_LIST_PAGE_SIZE,
@@ -57,10 +71,10 @@ describe('recipeListQuery', () => {
 
   test('passes status filter to list requests', async () => {
     const list = jest.fn().mockResolvedValue([]);
-    const options = recipeListInfiniteQueryOptions(list, '', 'perfected');
+    const options = recipeListInfiniteQueryOptions(list, {status: 'perfected'});
     expect(options.queryKey).toEqual([
       'recipes',
-      {search: '', status: 'perfected'},
+      {...emptyKeyFilters, status: 'perfected'},
     ]);
     await options.queryFn({pageParam: 0});
     expect(list).toHaveBeenCalledWith({
@@ -70,30 +84,47 @@ describe('recipeListQuery', () => {
     });
   });
 
+  test('passes ingredient filter to list requests', async () => {
+    const list = jest.fn().mockResolvedValue([]);
+    const options = recipeListInfiniteQueryOptions(list, {
+      ingredient: 'chicken',
+    });
+    await options.queryFn({pageParam: 0});
+    expect(list).toHaveBeenCalledWith({
+      ingredient: 'chicken',
+      limit: RECIPE_LIST_PAGE_SIZE,
+      offset: 0,
+    });
+  });
+
   test('builds shared-with-me infinite query options with paging params', async () => {
     const listSharedWithMe = jest.fn().mockResolvedValue([makeListItem('1')]);
-    const options = sharedWithMeInfiniteQueryOptions(listSharedWithMe);
+    const options = sharedWithMeInfiniteQueryOptions(listSharedWithMe, {
+      sort: 'newest',
+      sortDir: 'desc',
+    });
     expect(options.queryKey).toEqual([
       'sharedWithMe',
-      {limit: null, offset: null},
+      {...emptyKeyFilters, sort: 'newest', sortDir: 'desc'},
     ]);
     await options.queryFn({pageParam: 20});
     expect(listSharedWithMe).toHaveBeenCalledWith({
       limit: RECIPE_LIST_PAGE_SIZE,
       offset: 20,
+      sort: 'newest',
+      sortDir: 'desc',
     });
   });
 
   test('builds public discovery infinite query options with paging params', async () => {
     const listPublic = jest.fn().mockResolvedValue([{id: 'public-1'}]);
-    const options = publicRecipeDiscoveryInfiniteQueryOptions(
-      listPublic,
-      'curry',
-      'rating',
-    );
+    const options = publicRecipeDiscoveryInfiniteQueryOptions(listPublic, {
+      search: 'curry',
+      sort: 'rating',
+    });
     expect(options.queryKey).toEqual([
       'publicRecipeDiscovery',
-      {search: 'curry', sort: 'rating'},
+      {...emptyKeyFilters, search: 'curry', sort: 'rating'},
     ]);
     await options.queryFn({pageParam: 20});
     expect(listPublic).toHaveBeenCalledWith({
@@ -106,7 +137,7 @@ describe('recipeListQuery', () => {
 
   test('omits search from public discovery when the query is empty', async () => {
     const listPublic = jest.fn().mockResolvedValue([]);
-    const options = publicRecipeDiscoveryInfiniteQueryOptions(listPublic, '');
+    const options = publicRecipeDiscoveryInfiniteQueryOptions(listPublic, {});
     await options.queryFn({pageParam: 0});
     expect(listPublic).toHaveBeenCalledWith({
       sort: 'newest',

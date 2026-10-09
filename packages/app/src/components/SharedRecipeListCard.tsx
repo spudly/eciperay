@@ -1,5 +1,6 @@
 import {
   buildRecipePermalink,
+  formatRecipeListMeta,
   makeRecipeDetail,
   type ShowcaseDemoRenderer,
   WEB_APP_BASE_URL,
@@ -10,7 +11,7 @@ import type {RecipeDetail} from '@eciperay/types';
 import {ThumbnailListCard} from './ui/ThumbnailListCard';
 
 const formatRecipeSubtitle = (recipe: RecipeDetail) =>
-  `${recipe.servings} servings${recipe.cookTimeMin ? ` · ${recipe.cookTimeMin} min` : ''}`;
+  `${recipe.servings} servings${recipe.cookTimeMin ? ` · ${recipe.cookTimeMin} min` : ''} · ${formatRecipeListMeta(recipe)}`;
 
 type Props = {recipe: RecipeDetail};
 
