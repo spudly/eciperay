@@ -42,4 +42,21 @@ export const api = {
     startImportEdits: jest.fn(),
   },
   cookLogs: {list: jest.fn(), create: jest.fn()},
+  meals: {
+    list: jest.fn(),
+    get: jest.fn(),
+    create: jest.fn(),
+    put: jest.fn(),
+    delete: jest.fn(),
+    cookPlan: jest.fn(),
+  },
+  mealPlans: {
+    list: jest.fn(),
+    get: jest.fn(),
+    create: jest.fn(),
+    put: jest.fn(),
+    delete: jest.fn(),
+    shoppingList: jest.fn(),
+  },
+  account: {getNutritionGoals: jest.fn(), putNutritionGoals: jest.fn()},
 };

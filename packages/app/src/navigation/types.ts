@@ -30,9 +30,20 @@ export type ProfileStackParamList = {
   ComponentShowcase: undefined;
 };
 
+export type MealsStackParamList = {
+  MealsHub: undefined;
+  MealDetail: {mealId: string};
+  MealEdit: {mealId?: string};
+  MealCookingMode: {mealId: string};
+  MealPlanDetail: {planId: string};
+  MealPlanEdit: {planId?: string};
+  ShoppingList: {planId: string};
+};
+
 export type RootTabParamList = {
   Home: undefined;
   Recipes: NavigatorScreenParams<RecipesStackParamList>;
+  Meals: NavigatorScreenParams<MealsStackParamList>;
   Add: NavigatorScreenParams<AddStackParamList>;
   Profile: NavigatorScreenParams<ProfileStackParamList>;
   Feedback: undefined;

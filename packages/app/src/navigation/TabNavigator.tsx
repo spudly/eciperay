@@ -17,7 +17,14 @@ import {ImportReviewScreen} from '../screens/ImportReviewScreen';
 import {ImportTextScreen} from '../screens/ImportTextScreen';
 import {ImportUrlScreen} from '../screens/ImportUrlScreen';
 import {ManualEntryScreen} from '../screens/ManualEntryScreen';
+import {MealCookingModeScreen} from '../screens/MealCookingModeScreen';
+import {MealDetailScreen} from '../screens/MealDetailScreen';
+import {MealEditScreen} from '../screens/MealEditScreen';
+import {MealPlanDetailScreen} from '../screens/MealPlanDetailScreen';
+import {MealPlanEditScreen} from '../screens/MealPlanEditScreen';
+import {MealsHubScreen} from '../screens/MealsHubScreen';
 import {ProfileScreen} from '../screens/ProfileScreen';
+import {ShoppingListScreen} from '../screens/ShoppingListScreen';
 import {RecipeDetailScreen} from '../screens/RecipeDetailScreen';
 import {RecipesScreen} from '../screens/RecipesScreen';
 import {
@@ -31,6 +38,7 @@ import {POSTHOG_KEY} from '../lib/env';
 import {getComponentShowcaseScreen} from './getComponentShowcaseScreen';
 import type {
   AddStackParamList,
+  MealsStackParamList,
   ProfileStackParamList,
   RecipesStackParamList,
   RootTabParamList,
@@ -41,6 +49,7 @@ const MUTED = '#6b7280';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 const RecipesStack = createNativeStackNavigator<RecipesStackParamList>();
+const MealsStack = createNativeStackNavigator<MealsStackParamList>();
 const AddStack = createNativeStackNavigator<AddStackParamList>();
 const ProfileStack = createNativeStackNavigator<ProfileStackParamList>();
 
@@ -82,6 +91,46 @@ const RecipesStackNavigator = () => (
       options={{title: 'Edit Draft'}}
     />
   </RecipesStack.Navigator>
+);
+
+const MealsStackNavigator = () => (
+  <MealsStack.Navigator>
+    <MealsStack.Screen
+      name="MealsHub"
+      component={MealsHubScreen}
+      options={{title: 'Meals'}}
+    />
+    <MealsStack.Screen
+      name="MealDetail"
+      component={MealDetailScreen}
+      options={{title: 'Meal'}}
+    />
+    <MealsStack.Screen
+      name="MealEdit"
+      component={MealEditScreen}
+      options={{title: 'Edit meal'}}
+    />
+    <MealsStack.Screen
+      name="MealCookingMode"
+      component={MealCookingModeScreen}
+      options={{headerShown: false, presentation: 'fullScreenModal'}}
+    />
+    <MealsStack.Screen
+      name="MealPlanDetail"
+      component={MealPlanDetailScreen}
+      options={{title: 'Meal plan'}}
+    />
+    <MealsStack.Screen
+      name="MealPlanEdit"
+      component={MealPlanEditScreen}
+      options={{title: 'Edit plan'}}
+    />
+    <MealsStack.Screen
+      name="ShoppingList"
+      component={ShoppingListScreen}
+      options={{title: 'Shopping list'}}
+    />
+  </MealsStack.Navigator>
 );
 
 const AddStackNavigator = () => (
@@ -177,6 +226,11 @@ export const TabNavigator = () => {
       <Tab.Screen
         name="Recipes"
         component={RecipesStackNavigator}
+        options={{headerShown: false}}
+      />
+      <Tab.Screen
+        name="Meals"
+        component={MealsStackNavigator}
         options={{headerShown: false}}
       />
       <Tab.Screen

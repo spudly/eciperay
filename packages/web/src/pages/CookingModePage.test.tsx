@@ -69,6 +69,7 @@ describe('CookingModePage', () => {
                   recipeVersionId: 'version-uuid-2',
                   stepNumber: 1,
                   body: 'Alternate step',
+                  estimatedDurationMin: null,
                 },
               ],
             }),

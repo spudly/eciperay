@@ -187,9 +187,22 @@ describe('RecipeForm', () => {
           recipeVersionId: VERSION_ID,
           stepNumber: 3,
           body: 'Serve',
+          estimatedDurationMin: null,
         },
-        {id: 'ins-1', recipeVersionId: VERSION_ID, stepNumber: 1, body: 'Prep'},
-        {id: 'ins-2', recipeVersionId: VERSION_ID, stepNumber: 2, body: 'Cook'},
+        {
+          id: 'ins-1',
+          recipeVersionId: VERSION_ID,
+          stepNumber: 1,
+          body: 'Prep',
+          estimatedDurationMin: null,
+        },
+        {
+          id: 'ins-2',
+          recipeVersionId: VERSION_ID,
+          stepNumber: 2,
+          body: 'Cook',
+          estimatedDurationMin: null,
+        },
       ],
     });
     await renderWithProviders(

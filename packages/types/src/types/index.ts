@@ -46,6 +46,39 @@ export type {
   NutritionStatus,
   RecipeNutritionSummary,
 } from './nutrition.js';
+export type {
+  AggregatedNutrition,
+  AggregatedNutritionStatus,
+  MealPlanNutrition,
+} from './aggregatedNutrition.js';
+export type {
+  NutritionGoalBand,
+  NutritionGoalFieldProgress,
+  NutritionGoalProgress,
+  NutritionGoals,
+} from './nutritionGoals.js';
+export type {
+  Meal,
+  MealCookPlan,
+  MealDetail,
+  MealInput,
+  MealRecipeInput,
+  MealRecipeMember,
+  MealTimelineStep,
+} from './meal.js';
+export type {
+  MealPlan,
+  MealPlanDetail,
+  MealPlanEntry,
+  MealPlanEntryInput,
+  MealPlanInput,
+  MealPlanMealEntry,
+  MealPlanMealEntryInput,
+  MealPlanRecipeEntry,
+  MealPlanRecipeEntryInput,
+  ShoppingListLine,
+  ShoppingListSource,
+} from './mealPlan.js';
 export type {RecipeImport} from './recipeImport.js';
 export type {
   BulkImportError,

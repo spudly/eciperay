@@ -65,5 +65,15 @@ describe('queryKeys', () => {
       'publicRecipeDiscovery',
       {...emptyFilters, search: 'curry', sort: 'rating'},
     ]);
+    expect(queryKeys.meals()).toEqual(['meals']);
+    expect(queryKeys.meal('m1')).toEqual(['meal', 'm1']);
+    expect(queryKeys.mealCookPlan('m1')).toEqual(['mealCookPlan', 'm1']);
+    expect(queryKeys.mealPlans()).toEqual(['mealPlans']);
+    expect(queryKeys.mealPlan('p1')).toEqual(['mealPlan', 'p1']);
+    expect(queryKeys.mealPlanShoppingList('p1')).toEqual([
+      'mealPlanShoppingList',
+      'p1',
+    ]);
+    expect(queryKeys.nutritionGoals()).toEqual(['nutritionGoals']);
   });
 });

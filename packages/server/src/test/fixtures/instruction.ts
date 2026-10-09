@@ -7,6 +7,7 @@ export const makeInstruction = (
   recipeVersionId: 'version-uuid-1',
   stepNumber: 1,
   body: 'Mix the ingredients together.',
+  estimatedDurationMin: null,
   ...overrides,
 });
 

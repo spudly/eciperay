@@ -54,6 +54,7 @@ export const makeRecipeDetail = (
       recipeVersionId: VERSION_ID,
       stepNumber: 1,
       body: 'Mix dry ingredients',
+      estimatedDurationMin: null,
     },
   ],
   tags: [

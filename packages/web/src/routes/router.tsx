@@ -26,11 +26,27 @@ import {RecipesPage} from '../pages/RecipesPage.js';
 import {SharedWithMePage} from '../pages/SharedWithMePage.js';
 import {ResetPasswordPage} from '../pages/auth/ResetPasswordPage.js';
 import {SignupPage} from '../pages/auth/SignupPage.js';
+import {MealCookingModePage} from '../pages/MealCookingModePage.js';
+import {MealDetailPage} from '../pages/MealDetailPage.js';
+import {MealEditPage} from '../pages/MealEditPage.js';
+import {MealPlanDetailPage} from '../pages/MealPlanDetailPage.js';
+import {MealPlanEditPage} from '../pages/MealPlanEditPage.js';
+import {MealsHubPage} from '../pages/MealsHubPage.js';
+import {ShoppingListPage} from '../pages/ShoppingListPage.js';
 import {TagsPage} from '../pages/TagsPage.js';
 import {TermsOfServicePage} from '../pages/TermsOfServicePage.js';
 
 const authenticatedAppRoutes = [
   {path: '/recipes', element: <RecipesPage />},
+  {path: '/meals', element: <MealsHubPage />},
+  {path: '/meals/new', element: <MealEditPage />},
+  {path: '/meals/:mealId', element: <MealDetailPage />},
+  {path: '/meals/:mealId/edit', element: <MealEditPage />},
+  {path: '/meals/:mealId/cook', element: <MealCookingModePage />},
+  {path: '/meal-plans/new', element: <MealPlanEditPage />},
+  {path: '/meal-plans/:planId', element: <MealPlanDetailPage />},
+  {path: '/meal-plans/:planId/edit', element: <MealPlanEditPage />},
+  {path: '/meal-plans/:planId/shopping-list', element: <ShoppingListPage />},
   {path: '/shared-with-me', element: <SharedWithMePage />},
   {path: '/recipes/:recipeId', element: <RecipeDetailPage />},
   {path: '/recipes/:recipeId/edit', element: <EditRecipePage />},

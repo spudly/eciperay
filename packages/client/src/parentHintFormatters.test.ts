@@ -116,8 +116,20 @@ describe('formatParentListSummary', () => {
         },
       ],
       instructions: [
-        {id: 's-1', recipeVersionId: 'v-1', stepNumber: 1, body: 'Mix'},
-        {id: 's-2', recipeVersionId: 'v-1', stepNumber: 2, body: 'Bake'},
+        {
+          id: 's-1',
+          recipeVersionId: 'v-1',
+          stepNumber: 1,
+          body: 'Mix',
+          estimatedDurationMin: null,
+        },
+        {
+          id: 's-2',
+          recipeVersionId: 'v-1',
+          stepNumber: 2,
+          body: 'Bake',
+          estimatedDurationMin: null,
+        },
       ],
     });
     expect(formatParentListSummary(parent, 'ingredients')).toBe(
@@ -153,7 +165,13 @@ describe('formatParentListSummary', () => {
         },
       ],
       instructions: [
-        {id: 's-1', recipeVersionId: 'v-1', stepNumber: 1, body: 'Stir'},
+        {
+          id: 's-1',
+          recipeVersionId: 'v-1',
+          stepNumber: 1,
+          body: 'Stir',
+          estimatedDurationMin: null,
+        },
       ],
     });
     expect(formatParentListSummary(parent, 'ingredients')).toBe(

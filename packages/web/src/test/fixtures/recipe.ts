@@ -64,12 +64,14 @@ export const makeRecipeDetail = (
       recipeVersionId: VERSION_ID,
       stepNumber: 1,
       body: 'Mix dry ingredients',
+      estimatedDurationMin: null,
     },
     {
       id: 'ins-2',
       recipeVersionId: VERSION_ID,
       stepNumber: 2,
       body: 'Bake at 350°F',
+      estimatedDurationMin: null,
     },
   ],
   tags: [

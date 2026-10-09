@@ -5,6 +5,7 @@ import {useRef, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
 import {ProfileAccountDataSection} from '../components/ProfileAccountDataSection.js';
+import {ProfileNutritionGoalsSection} from '../components/profile/ProfileNutritionGoalsSection.js';
 import {ProfileView} from '../components/profile/ProfileView.js';
 import {ProfileTransferSection} from '../components/profile/ProfileTransferSection.js';
 import {eciperay} from '../lib/api.js';
@@ -96,19 +97,22 @@ export const ProfilePage = () => {
         void handleSignOut();
       }}
       sectionsBeforeFeedback={
-        <ProfileTransferSection
-          importing={importing}
-          importSummary={importSummary}
-          transferError={transferError}
-          fileInputRef={fileInputRef}
-          onImportClick={() => {
-            fileInputRef.current?.click();
-          }}
-          onImportFile={file => {
-            void handleImportFile(file);
-          }}
-          onExportError={setTransferError}
-        />
+        <>
+          <ProfileNutritionGoalsSection />
+          <ProfileTransferSection
+            importing={importing}
+            importSummary={importSummary}
+            transferError={transferError}
+            fileInputRef={fileInputRef}
+            onImportClick={() => {
+              fileInputRef.current?.click();
+            }}
+            onImportFile={file => {
+              void handleImportFile(file);
+            }}
+            onExportError={setTransferError}
+          />
+        </>
       }
       sectionsAfterFeedback={<ProfileAccountDataSection />}
     />
