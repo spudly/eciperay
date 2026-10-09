@@ -3,15 +3,18 @@ import {
   HOME_EMPTY_MESSAGE,
   HOME_TITLE,
 } from '@eciperay/client';
-import {fireEvent, render, screen} from '@testing-library/react-native';
+import {fireEvent} from '@testing-library/react-native';
 
 import {makeRecipeDetail} from '../../__tests__/fixtures/recipe';
+import {renderWithProviders} from '../../__tests__/testUtils';
 
 import {HomeView} from './HomeView';
 
+jest.mock('../../lib/api');
+
 describe('HomeView', () => {
   test('renders welcome content and empty state', () => {
-    render(
+    const {getByText} = renderWithProviders(
       <HomeView
         isLoading={false}
         recipes={[]}
@@ -23,15 +26,15 @@ describe('HomeView', () => {
       />,
     );
 
-    expect(screen.getByText(HOME_TITLE)).toBeTruthy();
-    expect(screen.getByText(HOME_BROWSE_LABEL)).toBeTruthy();
-    expect(screen.getByText(HOME_EMPTY_MESSAGE)).toBeTruthy();
+    expect(getByText(HOME_TITLE)).toBeTruthy();
+    expect(getByText(HOME_BROWSE_LABEL)).toBeTruthy();
+    expect(getByText(HOME_EMPTY_MESSAGE)).toBeTruthy();
   });
 
   test('calls browse callback when browse action is pressed', () => {
     const onBrowsePress = jest.fn();
 
-    render(
+    const {getByText} = renderWithProviders(
       <HomeView
         isLoading={false}
         recipes={[]}
@@ -43,12 +46,12 @@ describe('HomeView', () => {
       />,
     );
 
-    fireEvent.press(screen.getByText(HOME_BROWSE_LABEL));
+    fireEvent.press(getByText(HOME_BROWSE_LABEL));
     expect(onBrowsePress).toHaveBeenCalledTimes(1);
   });
 
   test('renders recently viewed recipes', () => {
-    render(
+    const {getByText} = renderWithProviders(
       <HomeView
         isLoading={false}
         recipes={[makeRecipeDetail({id: 'recipe-1', title: 'Soup'})]}
@@ -60,6 +63,7 @@ describe('HomeView', () => {
       />,
     );
 
-    expect(screen.getByText('Soup')).toBeTruthy();
+    expect(getByText('Soup')).toBeTruthy();
+    expect(getByText('Log cook')).toBeTruthy();
   });
 });

@@ -5,6 +5,7 @@ import type {AuthedRequest} from '../../middleware/requireAuth.js';
 import {fetchVersionDetail} from '../../lib/fetchVersionDetail.js';
 import {getParam} from '../../lib/getParam.js';
 import {CookLogInputSchema, validate} from '../../lib/schemas.js';
+import {updateOwnerStarRating} from '../recipes/recipeRatingQueries.js';
 
 import {mapRowToCookLog} from './mapRowToCookLog.js';
 
@@ -37,16 +38,27 @@ export const createCookLog = async (
     res.status(404).json({error: 'Version not found'});
     return;
   }
+  const authorStarRating = body.data.authorStarRating ?? null;
   const result = await queryFn(INSERT_COOK_LOG_SQL, [
     versionId,
     req.userId,
-    body.data.authorStarRating ?? null,
+    authorStarRating,
     body.data.notes ?? null,
   ]);
   const row = result.rows[0];
   if (!row) {
     res.status(500).json({error: 'Failed to create cook log'});
     return;
+  }
+  // Cook logs are owner-only; sync the cook rating onto recipes.star_rating
+  // so overview and list pick it up (they do not read cook_logs ratings).
+  if (authorStarRating !== null) {
+    await updateOwnerStarRating(
+      recipeId,
+      req.userId,
+      authorStarRating,
+      queryFn,
+    );
   }
   res
     .status(201)

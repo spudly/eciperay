@@ -11,11 +11,12 @@ const mockQuery = createMockQuery();
 const getApp = lazyTestApp({query: mockQuery});
 
 describe('POST /recipes/:id/versions/:versionId/cooks', () => {
-  test('returns 201 with cook log', async () => {
+  test('returns 201 with cook log and syncs owner star rating', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([makeVersionDetailRow()]))
-      .mockResolvedValueOnce(makeQueryResult([makeCookLogRow()]));
+      .mockResolvedValueOnce(makeQueryResult([makeCookLogRow()]))
+      .mockResolvedValueOnce(makeQueryResult([{id: 'recipe-uuid-1'}]));
 
     const res = await request(getApp())
       .post('/api/recipes/recipe-uuid-1/versions/version-uuid-1/cooks')
@@ -25,9 +26,13 @@ describe('POST /recipes/:id/versions/:versionId/cooks', () => {
     expect(res.status).toBe(201);
     expect(res.body.authorStarRating).toBe(4);
     expect(res.body.notes).toBe('Turned out great');
+    expect(mockQuery).toHaveBeenCalledWith(
+      expect.stringContaining('set star_rating = $3'),
+      ['recipe-uuid-1', 'user-uuid-1', 5],
+    );
   });
 
-  test('creates cook log with omitted optional fields', async () => {
+  test('creates cook log with omitted optional fields without syncing rating', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([makeVersionDetailRow()]))
@@ -45,6 +50,10 @@ describe('POST /recipes/:id/versions/:versionId/cooks', () => {
     expect(res.status).toBe(201);
     expect(res.body.authorStarRating).toBeNull();
     expect(res.body.notes).toBeNull();
+    expect(mockQuery).not.toHaveBeenCalledWith(
+      expect.stringContaining('set star_rating = $3'),
+      expect.anything(),
+    );
   });
 
   test('returns 404 when version is not found', async () => {

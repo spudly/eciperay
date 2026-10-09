@@ -3,22 +3,18 @@ import {
   HOME_EMPTY_MESSAGE,
   HOME_TITLE,
 } from '@eciperay/client';
-import {render, screen} from '@testing-library/react';
+import {screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type {ReactElement} from 'react';
-import {MemoryRouter} from 'react-router-dom';
 import {describe, expect, test, vi} from 'vitest';
 
 import {makeRecipeDetail} from '../../test/fixtures/recipe.js';
+import {renderWithProviders} from '../../test/testUtils.js';
 
 import {HomeView} from './HomeView.js';
 
-const renderHomeView = (ui: ReactElement) =>
-  render(<MemoryRouter>{ui}</MemoryRouter>);
-
 describe('HomeView', () => {
-  test('renders welcome content and empty state', () => {
-    renderHomeView(
+  test('renders welcome content and empty state', async () => {
+    await renderWithProviders(
       <HomeView
         isLoading={false}
         recipes={[]}
@@ -39,7 +35,7 @@ describe('HomeView', () => {
     const user = userEvent.setup();
     const onBrowsePress = vi.fn();
 
-    renderHomeView(
+    await renderWithProviders(
       <HomeView
         isLoading={false}
         recipes={[]}
@@ -55,8 +51,8 @@ describe('HomeView', () => {
     expect(onBrowsePress).toHaveBeenCalledTimes(1);
   });
 
-  test('renders recently viewed recipes', () => {
-    renderHomeView(
+  test('renders recently viewed recipes', async () => {
+    await renderWithProviders(
       <HomeView
         isLoading={false}
         recipes={[makeRecipeDetail({id: 'recipe-1', title: 'Soup'})]}
@@ -69,5 +65,6 @@ describe('HomeView', () => {
     );
 
     expect(screen.getByText('Soup')).toBeInTheDocument();
+    expect(screen.getByText('Log cook')).toBeInTheDocument();
   });
 });
