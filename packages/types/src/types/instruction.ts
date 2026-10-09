@@ -3,6 +3,10 @@ export type Instruction = {
   recipeVersionId: string;
   stepNumber: number;
   body: string;
+  estimatedDurationMin: number | null;
 };
 
-export type InstructionInput = Omit<Instruction, 'id' | 'recipeVersionId'>;
+export type InstructionInput = Omit<
+  Instruction,
+  'id' | 'recipeVersionId' | 'estimatedDurationMin'
+>;

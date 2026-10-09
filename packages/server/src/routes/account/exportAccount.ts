@@ -4,6 +4,7 @@ import type {AccountExportBundle} from '@eciperay/types';
 import {query as defaultQuery} from '../../db/query.js';
 import type {AuthedRequest} from '../../middleware/requireAuth.js';
 import {buildRecipeExportRecords} from '../../lib/buildRecipeExportRecords.js';
+import {fetchNutritionGoals} from '../../lib/nutritionGoalsQueries.js';
 
 type QueryFn = typeof defaultQuery;
 
@@ -65,6 +66,7 @@ export const exportAccount = async (
   const grantsResult = await queryFn(LIST_SHARE_GRANTS_SQL, [req.userId]);
   const ratingsResult = await queryFn(LIST_RATINGS_SQL, [req.userId]);
   const commentsResult = await queryFn(LIST_COMMENTS_SQL, [req.userId]);
+  const nutritionGoals = await fetchNutritionGoals(req.userId, queryFn);
 
   const bundle: AccountExportBundle = {
     formatVersion: 1,
@@ -74,6 +76,7 @@ export const exportAccount = async (
       displayName: profileRow.display_name,
       createdAt: profileRow.created_at,
     },
+    nutritionGoals,
     recipes,
     shareGrants: grantsResult.rows.map(row => {
       const grant = row as {

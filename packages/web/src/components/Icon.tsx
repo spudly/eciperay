@@ -3,6 +3,7 @@ import type {IconType} from 'react-icons';
 import {
   FiAlertTriangle,
   FiBookOpen,
+  FiCoffee,
   FiHome,
   FiMessageCircle,
   FiPlus,
@@ -18,6 +19,7 @@ const featherIcons: Record<FeatherIconName, IconType> = {
   'plus': FiPlus,
   'tag': FiTag,
   'user': FiUser,
+  'coffee': FiCoffee,
   'alert-triangle': FiAlertTriangle,
   'message-circle': FiMessageCircle,
 };

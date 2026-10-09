@@ -145,3 +145,18 @@ export type RecipeDetailChromeProps = {
   onSelectTab: (tab: RecipeDetailTab) => void;
   children: ReactNode;
 };
+
+export type {
+  MealCookingModeViewProps,
+  MealDetailViewProps,
+  MealFormRecipeOption,
+  MealFormViewProps,
+  MealPlanDetailViewProps,
+  MealPlanFormEntryOption,
+  MealPlanFormViewProps,
+  MealsHubTab,
+  MealsHubViewProps,
+  NutritionGoalProgressViewProps,
+  NutritionGoalsFormViewProps,
+  ShoppingListViewProps,
+} from './mealViewComponents.js';

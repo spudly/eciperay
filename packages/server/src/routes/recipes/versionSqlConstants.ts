@@ -20,7 +20,8 @@ export const GET_VERSION_DETAIL_SQL = `
       select json_agg(
         jsonb_build_object(
           'id', ins.id, 'recipeVersionId', ins.recipe_version_id,
-          'stepNumber', ins.step_number, 'body', ins.body
+          'stepNumber', ins.step_number, 'body', ins.body,
+          'estimatedDurationMin', ins.estimated_duration_min
         ) order by ins.step_number
       )
       from instructions ins

@@ -30,6 +30,13 @@ describe('downloadAccountExportBundle', () => {
       shareGrants: [],
       communityRatings: [],
       comments: [],
+      nutritionGoals: {
+        calories: null,
+        proteinG: null,
+        carbsG: null,
+        fatG: null,
+        satietyScore: null,
+      },
     });
 
     expect(createObjectURL).toHaveBeenCalled();

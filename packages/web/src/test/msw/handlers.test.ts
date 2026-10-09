@@ -101,6 +101,29 @@ describe('msw handlers', () => {
     expect(recipe.status).toBe('evolving');
   });
 
+  test('covers meals and nutrition goal endpoints', async () => {
+    const meals = await eciperay.meals.list();
+    expect(meals).toEqual([]);
+    const meal = await eciperay.meals.get('meal-uuid-1');
+    expect(meal.title).toBe('Sunday Dinner');
+    const cookPlan = await eciperay.meals.cookPlan('meal-uuid-1');
+    expect(cookPlan.steps[0]?.body).toBe('Mix dry ingredients');
+    const plans = await eciperay.mealPlans.list();
+    expect(plans).toEqual([]);
+    const plan = await eciperay.mealPlans.get('plan-uuid-1');
+    expect(plan.title).toBe('This week');
+    const shoppingList = await eciperay.mealPlans.shoppingList('plan-uuid-1');
+    expect(shoppingList[0]?.name).toBe('Flour');
+    const goals = await eciperay.account.putNutritionGoals({
+      calories: 2000,
+      proteinG: null,
+      carbsG: null,
+      fatG: null,
+      satietyScore: null,
+    });
+    expect(goals.calories).toBe(2000);
+  });
+
   test('covers ratings and comments endpoints', async () => {
     const comment = await eciperay.recipes.createComment('recipe-uuid-1', {
       body: 'Nice!',

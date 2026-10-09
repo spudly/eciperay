@@ -9,6 +9,7 @@ export const featherIconNames = [
   'plus',
   'tag',
   'user',
+  'coffee',
   'alert-triangle',
   'message-circle',
 ] as const;
@@ -18,6 +19,7 @@ export type FeatherIconName = (typeof featherIconNames)[number];
 export const tabIcons = {
   Home: 'home',
   Recipes: 'book-open',
+  Meals: 'coffee',
   Add: 'plus',
   Profile: 'user',
   Feedback: 'message-circle',

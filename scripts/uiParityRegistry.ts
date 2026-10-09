@@ -23,6 +23,15 @@ export const MIRROR_PAIRS = [
   'auth/ForgotPasswordView.tsx',
   'auth/ResetPasswordView.tsx',
   'home/HomeView.tsx',
+  'meals/MealCookingModeView.tsx',
+  'meals/MealDetailView.tsx',
+  'meals/MealFormView.tsx',
+  'meals/MealPlanDetailView.tsx',
+  'meals/MealPlanFormView.tsx',
+  'meals/MealsHubView.tsx',
+  'meals/NutritionGoalProgressView.tsx',
+  'meals/ShoppingListView.tsx',
+  'profile/NutritionGoalsFormView.tsx',
   'profile/ProfileView.tsx',
   'recipes/RecipeListFiltersBar.tsx',
   'recipes/RecipesListView.tsx',
@@ -137,6 +146,12 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
     platform: 'web',
     reason:
       'Web number-filter field extracted for max-lines; app inlines TextInput in RecipeListFiltersBar.',
+  },
+  {
+    path: 'profile/ProfileNutritionGoalsSection.tsx',
+    platform: 'web',
+    reason:
+      'Web ProfilePage extract for max-lines; app ProfileScreen keeps goals query state inline.',
   },
   {
     path: 'recipes/RecipeListStatusIngredientFilters.tsx',

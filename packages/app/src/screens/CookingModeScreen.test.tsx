@@ -127,6 +127,7 @@ describe('CookingModeScreen', () => {
             recipeVersionId: alternateVersionId,
             stepNumber: 1,
             body: 'Alternate step',
+            estimatedDurationMin: null,
           },
         ],
       }),

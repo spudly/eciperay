@@ -166,7 +166,40 @@ describe('createEciperayClient', () => {
     });
     await client.auth.syncUser();
     await client.account.exportData();
+    await client.account.getNutritionGoals();
+    await client.account.putNutritionGoals({
+      calories: 2000,
+      proteinG: 150,
+      carbsG: null,
+      fatG: null,
+      satietyScore: 70,
+    });
     await client.account.deleteAccount();
+    await client.meals.list();
+    await client.meals.get('m1');
+    await client.meals.create({
+      title: 'Dinner',
+      recipes: [{recipeId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'}],
+    });
+    await client.meals.put('m1', {
+      title: 'Dinner',
+      recipes: [{recipeId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'}],
+    });
+    await client.meals.cookPlan('m1');
+    await client.meals.cookPlan('m1', {refresh: true});
+    await client.meals.delete('m1');
+    await client.mealPlans.list();
+    await client.mealPlans.get('p1');
+    await client.mealPlans.create({
+      title: 'Week',
+      entries: [{mealId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'}],
+    });
+    await client.mealPlans.put('p1', {
+      title: 'Week',
+      entries: [{mealId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'}],
+    });
+    await client.mealPlans.shoppingList('p1');
+    await client.mealPlans.delete('p1');
     await client.tags.list();
     await client.tags.create('Dinner', '#fff');
     await client.tags.delete('t1');
@@ -224,10 +257,21 @@ describe('createEciperayClient', () => {
       expect.objectContaining({method: 'POST'}),
     );
     expect(api.fetch).toHaveBeenCalledWith('/account/export');
+    expect(api.fetch).toHaveBeenCalledWith('/account/nutrition-goals');
+    expect(api.fetch).toHaveBeenCalledWith(
+      '/account/nutrition-goals',
+      expect.objectContaining({method: 'PUT'}),
+    );
     expect(api.fetch).toHaveBeenCalledWith(
       '/account',
       expect.objectContaining({method: 'DELETE'}),
     );
+    expect(api.fetch).toHaveBeenCalledWith('/meals');
+    expect(api.fetch).toHaveBeenCalledWith('/meals/m1');
+    expect(api.fetch).toHaveBeenCalledWith('/meals/m1/cook-plan');
+    expect(api.fetch).toHaveBeenCalledWith('/meals/m1/cook-plan?refresh=true');
+    expect(api.fetch).toHaveBeenCalledWith('/meal-plans');
+    expect(api.fetch).toHaveBeenCalledWith('/meal-plans/p1/shopping-list');
     expect(api.fetch).toHaveBeenCalledWith('/tags');
     expect(api.fetch).toHaveBeenCalledWith(
       '/tags',
