@@ -24,8 +24,14 @@ runs:
           android-sdk-${{ hashFiles('packages/app/android/build.gradle',
           'packages/app/android/gradle.properties') }}
 
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
+    # NOTE: android-actions/setup-android@v3 was removed. It runs
+    # `sdkmanager tools`, but Google deleted the legacy `tools` package, so
+    # the action always fails now. The ubuntu-latest runner already ships the
+    # Android SDK (ANDROID_HOME) with cmdline-tools on PATH.
+
+    - name: Accept Android SDK licenses
+      shell: bash
+      run: yes | sdkmanager --licenses > /dev/null || true
 
     - name: Install Android SDK packages
       shell: bash
