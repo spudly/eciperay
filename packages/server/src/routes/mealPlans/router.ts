@@ -12,7 +12,9 @@ import {
   saveNewMealPlan,
 } from '../../lib/saveMealPlan.js';
 import {MealPlanInputSchema, validate} from '../../lib/schemas.js';
+import {loadEntitlement} from '../../middleware/loadEntitlement.js';
 import {requireAuth, type AuthedRequest} from '../../middleware/requireAuth.js';
+import {requirePlan} from '../../middleware/requirePlan.js';
 
 type QueryFn = typeof defaultQuery;
 const a = (req: Parameters<typeof requireAuth>[0]) => req as AuthedRequest;
@@ -105,14 +107,18 @@ const getShoppingList = async (
 
 export const createMealPlansRouter = (queryFn: QueryFn) => {
   const router = Router();
-  router.get('/', requireAuth, (req, res) => listPlans(a(req), res, queryFn));
-  router.post('/', requireAuth, (req, res) => createPlan(a(req), res, queryFn));
-  router.get('/:id', requireAuth, (req, res) => getPlan(a(req), res, queryFn));
-  router.put('/:id', requireAuth, (req, res) => putPlan(a(req), res, queryFn));
-  router.delete('/:id', requireAuth, (req, res) =>
+  // Meal planning is a Plus feature: gate the whole router. Existing plans
+  // are never deleted on downgrade — they just become inaccessible until the
+  // user re-upgrades.
+  const plus = [requireAuth, loadEntitlement(queryFn), requirePlan('plus')];
+  router.get('/', ...plus, (req, res) => listPlans(a(req), res, queryFn));
+  router.post('/', ...plus, (req, res) => createPlan(a(req), res, queryFn));
+  router.get('/:id', ...plus, (req, res) => getPlan(a(req), res, queryFn));
+  router.put('/:id', ...plus, (req, res) => putPlan(a(req), res, queryFn));
+  router.delete('/:id', ...plus, (req, res) =>
     removePlan(a(req), res, queryFn),
   );
-  router.get('/:id/shopping-list', requireAuth, (req, res) =>
+  router.get('/:id/shopping-list', ...plus, (req, res) =>
     getShoppingList(a(req), res, queryFn),
   );
   return router;
