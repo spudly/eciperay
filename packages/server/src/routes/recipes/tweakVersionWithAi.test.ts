@@ -8,6 +8,7 @@ import {createMockQuery} from '../../test/mockQuery.js';
 import {nockAnthropicMessage} from '../../test/mockNockAnthropic.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
 import {lazyTestApp} from '../../test/lazyTestApp.js';
+import {mockBillingPlan} from '../../test/mockBilling.js';
 
 const mockQuery = createMockQuery();
 const getApp = lazyTestApp({query: mockQuery});
@@ -34,11 +35,13 @@ const CLAUDE_RESPONSE = JSON.stringify({
 describe('POST /recipes/:id/versions/ai', () => {
   test('returns 201 with AI-tweaked version', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     nockAnthropicMessage(CLAUDE_RESPONSE);
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([makeVersionDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([makeCookLogRow()]))
+      .mockResolvedValueOnce(makeQueryResult([{calls: 1}]))
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([{max: 1}]))
       .mockResolvedValueOnce(makeQueryResult([{id: 'version-uuid-2'}]))
@@ -95,6 +98,7 @@ describe('POST /recipes/:id/versions/ai', () => {
 
   test('returns 400 when prompt is too short', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     const res = await request(getApp())
       .post('/api/recipes/recipe-uuid-1/versions/ai')
       .set('Authorization', 'Bearer valid-token')
@@ -111,6 +115,7 @@ describe('POST /recipes/:id/versions/ai', () => {
 
   test('returns 404 when active version is not found', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([]));
@@ -126,10 +131,13 @@ describe('POST /recipes/:id/versions/ai', () => {
 
   test('propagates unexpected AI parsing errors', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     nockAnthropicMessage('not valid json');
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([makeVersionDetailRow()]))
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([{calls: 1}]))
       .mockResolvedValueOnce(makeQueryResult([]));
 
     await expect(
@@ -142,11 +150,13 @@ describe('POST /recipes/:id/versions/ai', () => {
 
   test('returns 500 when created version cannot be fetched', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     nockAnthropicMessage(CLAUDE_RESPONSE);
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([makeVersionDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([{calls: 1}]))
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([{max: 1}]))
       .mockResolvedValueOnce(makeQueryResult([{id: 'version-uuid-2'}]))
@@ -166,11 +176,13 @@ describe('POST /recipes/:id/versions/ai', () => {
 
   test('returns 500 when version insert returns no id', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     nockAnthropicMessage(CLAUDE_RESPONSE);
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([makeVersionDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([{calls: 1}]))
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([{max: 1}]))
       .mockResolvedValueOnce(makeQueryResult([]));
@@ -183,3 +195,4 @@ describe('POST /recipes/:id/versions/ai', () => {
     ).resolves.toMatchObject({status: 500});
   });
 });
+
