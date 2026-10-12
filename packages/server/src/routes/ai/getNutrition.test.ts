@@ -7,6 +7,7 @@ import {createMockQuery} from '../../test/mockQuery.js';
 import {nockAnthropicMessage} from '../../test/mockNockAnthropic.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
 import {lazyTestApp} from '../../test/lazyTestApp.js';
+import {mockBillingPlan} from '../../test/mockBilling.js';
 
 const mockQuery = createMockQuery();
 const getApp = lazyTestApp({query: mockQuery});
@@ -56,6 +57,7 @@ const pendingNutritionRow = {
 describe('GET /recipes/:id/ai/nutrition', () => {
   test('returns stored nutrition when ready', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([readyNutritionRow]));
@@ -74,12 +76,14 @@ describe('GET /recipes/:id/ai/nutrition', () => {
 
   test('estimates and stores nutrition when missing', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     nockAnthropicMessage(NUTRITION_RESPONSE);
     mockQuery
       // fetchRecipeDetail
       .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
       // getNutrition stored check
       .mockResolvedValueOnce(makeQueryResult([pendingNutritionRow]))
+      .mockResolvedValueOnce(makeQueryResult([{calls: 1}]))
       // refresh: fetchVersionNutrition
       .mockResolvedValueOnce(makeQueryResult([pendingNutritionRow]))
       // mark pending
@@ -117,8 +121,10 @@ describe('GET /recipes/:id/ai/nutrition', () => {
 
   test('returns 404 when force refresh cannot load the version', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
+      .mockResolvedValueOnce(makeQueryResult([{calls: 1}]))
       .mockResolvedValueOnce(makeQueryResult([]));
     const res = await request(getApp())
       .get('/api/recipes/recipe-uuid-1/ai/nutrition?refresh=true')
@@ -128,11 +134,13 @@ describe('GET /recipes/:id/ai/nutrition', () => {
 
   test('estimates when stored nutrition row is missing', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     nockAnthropicMessage(NUTRITION_RESPONSE);
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
       // stored lookup returns no row
       .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([{calls: 1}]))
       // refreshRecipeNutrition
       .mockResolvedValueOnce(makeQueryResult([pendingNutritionRow]))
       .mockResolvedValueOnce(makeQueryResult([]))
@@ -150,9 +158,11 @@ describe('GET /recipes/:id/ai/nutrition', () => {
 
   test('accepts refresh=1 as a force-refresh flag', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     nockAnthropicMessage(NUTRITION_RESPONSE);
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
+      .mockResolvedValueOnce(makeQueryResult([{calls: 1}]))
       .mockResolvedValueOnce(makeQueryResult([pendingNutritionRow]))
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(
@@ -168,9 +178,11 @@ describe('GET /recipes/:id/ai/nutrition', () => {
 
   test('returns 502 when nutrition estimation fails', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([pendingNutritionRow]))
+      .mockResolvedValueOnce(makeQueryResult([{calls: 1}]))
       .mockResolvedValueOnce(makeQueryResult([pendingNutritionRow]))
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockRejectedValueOnce(new Error('db down'))
@@ -183,6 +195,7 @@ describe('GET /recipes/:id/ai/nutrition', () => {
 
   test('handles ingredients with null quantity and unit', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     nockAnthropicMessage(NUTRITION_RESPONSE);
     const detail = makeRecipeDetailRow({
       ingredients: [makeIngredient({quantity: null, unit: null, name: 'salt'})],
@@ -190,6 +203,7 @@ describe('GET /recipes/:id/ai/nutrition', () => {
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([detail]))
       .mockResolvedValueOnce(makeQueryResult([pendingNutritionRow]))
+      .mockResolvedValueOnce(makeQueryResult([{calls: 1}]))
       .mockResolvedValueOnce(makeQueryResult([pendingNutritionRow]))
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(
@@ -203,3 +217,4 @@ describe('GET /recipes/:id/ai/nutrition', () => {
     expect(res.status).toBe(200);
   });
 });
+

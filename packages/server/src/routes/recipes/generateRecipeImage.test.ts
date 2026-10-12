@@ -8,6 +8,9 @@ import {
 } from '../../test/mockNockAnthropic.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
 import {lazyTestApp} from '../../test/lazyTestApp.js';
+import {makeQueryResult} from '../../test/fixtures/queryResult.js';
+import {createMockQuery} from '../../test/mockQuery.js';
+import {mockBillingMetered, mockBillingPlan} from '../../test/mockBilling.js';
 
 const mockGenerateImage =
   jest.fn<() => Promise<{imageBase64: string; contentType: string}>>();
@@ -17,7 +20,8 @@ jest.unstable_mockModule('../../lib/generateRecipeImageWithOpenAi.js', () => ({
 }));
 
 const {formatImageGenerationError} = await import('./generateRecipeImage.js');
-const getApp = lazyTestApp();
+const mockQuery = createMockQuery();
+const getApp = lazyTestApp({query: mockQuery});
 
 describe('POST /recipes/ai/generate-image', () => {
   beforeEach(() => {
@@ -29,7 +33,10 @@ describe('POST /recipes/ai/generate-image', () => {
 
   test('returns generated image data', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingMetered(mockQuery, 'plus');
+    mockQuery.mockResolvedValueOnce(makeQueryResult([]));
     nockAnthropicMessage('A plated pasta dish with basil');
+    mockBillingMetered(mockQuery, 'plus');
     const res = await request(getApp())
       .post('/api/recipes/ai/generate-image')
       .set('Authorization', 'Bearer valid-token')
@@ -54,6 +61,7 @@ describe('POST /recipes/ai/generate-image', () => {
 
   test('returns 400 for invalid body', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     const res = await request(getApp())
       .post('/api/recipes/ai/generate-image')
       .set('Authorization', 'Bearer valid-token')
@@ -70,6 +78,8 @@ describe('POST /recipes/ai/generate-image', () => {
 
   test('returns 502 when generation fails', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingMetered(mockQuery, 'plus');
+    mockQuery.mockResolvedValueOnce(makeQueryResult([]));
     nockAnthropicMessage('Prompt');
     mockGenerateImage.mockRejectedValueOnce(new Error('OpenAI unavailable'));
     const res = await request(getApp())
@@ -82,6 +92,8 @@ describe('POST /recipes/ai/generate-image', () => {
 
   test('returns a friendly error when Anthropic connection fails', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingMetered(mockQuery, 'plus');
+    mockQuery.mockResolvedValueOnce(makeQueryResult([]));
     anthropicCreateSpy.mockRejectedValueOnce(
       new Anthropic.APIConnectionError({message: 'Connection reset'}),
     );
@@ -97,6 +109,8 @@ describe('POST /recipes/ai/generate-image', () => {
 
   test('returns a friendly error when Anthropic API errors', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingMetered(mockQuery, 'plus');
+    mockQuery.mockResolvedValueOnce(makeQueryResult([]));
     anthropicCreateSpy.mockRejectedValueOnce(
       new Anthropic.APIError(503, undefined, 'Service unavailable', undefined),
     );
@@ -112,6 +126,8 @@ describe('POST /recipes/ai/generate-image', () => {
 
   test('returns unavailable when OpenAI is not configured', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingMetered(mockQuery, 'plus');
+    mockQuery.mockResolvedValueOnce(makeQueryResult([]));
     nockAnthropicMessage('Prompt');
     mockGenerateImage.mockRejectedValueOnce(
       new Error('OPENAI_API_KEY is not configured'),
@@ -126,6 +142,8 @@ describe('POST /recipes/ai/generate-image', () => {
 
   test('returns friendly error for unexpected Claude response', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingMetered(mockQuery, 'plus');
+    mockQuery.mockResolvedValueOnce(makeQueryResult([]));
     anthropicCreateSpy.mockResolvedValueOnce({
       id: 'msg-test',
       type: 'message',
@@ -146,6 +164,8 @@ describe('POST /recipes/ai/generate-image', () => {
 
   test('returns friendly error when OpenAI image generation fails', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingMetered(mockQuery, 'plus');
+    mockQuery.mockResolvedValueOnce(makeQueryResult([]));
     nockAnthropicMessage('Prompt');
     mockGenerateImage.mockRejectedValueOnce(
       new Error('Image generation failed: rate limited'),
@@ -160,6 +180,8 @@ describe('POST /recipes/ai/generate-image', () => {
 
   test('returns 502 for non-error failures', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingMetered(mockQuery, 'plus');
+    mockQuery.mockResolvedValueOnce(makeQueryResult([]));
     nockAnthropicMessage('Prompt');
     mockGenerateImage.mockRejectedValueOnce('broken');
     const res = await request(getApp())
@@ -182,3 +204,4 @@ describe('formatImageGenerationError', () => {
     ).toBe('Image generation is temporarily unavailable. Please try again.');
   });
 });
+
