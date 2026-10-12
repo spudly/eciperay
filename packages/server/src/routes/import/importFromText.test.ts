@@ -7,6 +7,7 @@ import {createMockQuery} from '../../test/mockQuery.js';
 import {nockAnthropicMessage} from '../../test/mockNockAnthropic.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
 import {lazyTestApp} from '../../test/lazyTestApp.js';
+import {mockBillingMetered, mockBillingPlan} from '../../test/mockBilling.js';
 
 const resolveImportedImageUrl = jest.fn<() => Promise<string | null>>();
 
@@ -40,6 +41,7 @@ const CLAUDE_RESPONSE = JSON.stringify({
 });
 
 const mockSaveFlow = () => {
+  mockBillingMetered(mockQuery, 'plus');
   mockQuery
     .mockResolvedValueOnce(makeQueryResult([]))
     .mockResolvedValueOnce(makeQueryResult([{id: 'recipe-uuid-1'}]))
@@ -67,6 +69,7 @@ describe('POST /recipes/import/text', () => {
     resolveImportedImageUrl.mockResolvedValueOnce(bucketUrl);
     nockSupabaseGetUser('user-uuid-1');
     nockAnthropicMessage(CLAUDE_RESPONSE);
+    mockBillingMetered(mockQuery, 'plus');
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([{id: 'recipe-uuid-1'}]))
@@ -106,6 +109,7 @@ describe('POST /recipes/import/text', () => {
 
   test('returns 400 when text is empty', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     const res = await request(getApp())
       .post('/api/recipes/import/text')
       .set('Authorization', 'Bearer valid-token')
@@ -126,6 +130,7 @@ describe('POST /recipes/import/text', () => {
 
   test('returns 400 when HTML contains no recipe text', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     const res = await request(getApp())
       .post('/api/recipes/import/text')
       .set('Authorization', 'Bearer valid-token')
@@ -143,6 +148,7 @@ describe('POST /recipes/import/text', () => {
     resolveImportedImageUrl.mockResolvedValueOnce(bucketUrl);
     nockSupabaseGetUser('user-uuid-1');
     nockAnthropicMessage(CLAUDE_RESPONSE);
+    mockBillingMetered(mockQuery, 'plus');
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([{id: 'recipe-uuid-1'}]))
@@ -166,6 +172,7 @@ describe('POST /recipes/import/text', () => {
 
   test('returns 400 when stripped text exceeds the plain-text limit', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     const res = await request(getApp())
       .post('/api/recipes/import/text')
       .set('Authorization', 'Bearer valid-token')
@@ -193,3 +200,4 @@ describe('POST /recipes/import/text', () => {
     expect(res.status).toBe(500);
   });
 });
+
