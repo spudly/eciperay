@@ -24,13 +24,13 @@ export const createToken = async (
   if (!body.ok) {
     return;
   }
-  const {token, record} = await createPersonalAccessToken(
+  const created = await createPersonalAccessToken(
     req.userId,
     body.data.name,
     queryFn,
   );
   // The plaintext token is only ever returned here, at creation time.
-  res.status(201).json({...record, token});
+  res.status(201).json(created);
 };
 
 export const listTokens = async (

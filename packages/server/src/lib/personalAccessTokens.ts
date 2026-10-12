@@ -1,14 +1,18 @@
 import {createHash, randomBytes} from 'node:crypto';
 
+import type {
+  PersonalAccessToken,
+  PersonalAccessTokenWithSecret,
+} from '@eciperay/types';
+
 import {query as defaultQuery} from '../db/query.js';
 
 type QueryFn = typeof defaultQuery;
 
 export const PERSONAL_ACCESS_TOKEN_PREFIX = 'ecp_';
 
-export type PersonalAccessTokenRecord = {
+type PersonalAccessTokenRow = {
   id: string;
-  user_id: string;
   name: string;
   token_prefix: string;
   created_at: string;
@@ -17,6 +21,18 @@ export type PersonalAccessTokenRecord = {
 };
 
 type TokenUser = {id: string; supabaseUid: string; email: string};
+
+const TOKEN_COLUMNS =
+  'id, name, token_prefix, created_at, last_used_at, revoked_at';
+
+const mapRowToToken = (row: PersonalAccessTokenRow): PersonalAccessToken => ({
+  id: row.id,
+  name: row.name,
+  tokenPrefix: row.token_prefix,
+  createdAt: row.created_at,
+  lastUsedAt: row.last_used_at,
+  revokedAt: row.revoked_at,
+});
 
 const hashToken = (token: string): string =>
   createHash('sha256').update(token).digest('hex');
@@ -34,36 +50,34 @@ export const createPersonalAccessToken = async (
   userId: string,
   name: string,
   queryFn: QueryFn,
-): Promise<{token: string; record: PersonalAccessTokenRecord}> => {
+): Promise<PersonalAccessTokenWithSecret> => {
   const {token, tokenHash, tokenPrefix} = generateToken();
-  const result = await queryFn<PersonalAccessTokenRecord>(
+  const result = await queryFn<PersonalAccessTokenRow>(
     `insert into personal_access_tokens
        (user_id, name, token_hash, token_prefix)
      values ($1, $2, $3, $4)
-     returning
-       id, user_id, name, token_prefix, created_at, last_used_at, revoked_at`,
+     returning ${TOKEN_COLUMNS}`,
     [userId, name, tokenHash, tokenPrefix],
   );
-  const record = result.rows[0];
-  if (!record) {
+  const row = result.rows[0];
+  if (!row) {
     throw new Error('Failed to create personal access token');
   }
-  return {token, record};
+  return {...mapRowToToken(row), token};
 };
 
 export const listPersonalAccessTokens = async (
   userId: string,
   queryFn: QueryFn,
-): Promise<PersonalAccessTokenRecord[]> => {
-  const result = await queryFn<PersonalAccessTokenRecord>(
-    `select
-       id, user_id, name, token_prefix, created_at, last_used_at, revoked_at
+): Promise<PersonalAccessToken[]> => {
+  const result = await queryFn<PersonalAccessTokenRow>(
+    `select ${TOKEN_COLUMNS}
      from personal_access_tokens
      where user_id = $1
      order by created_at desc`,
     [userId],
   );
-  return result.rows;
+  return result.rows.map(mapRowToToken);
 };
 
 export const revokePersonalAccessToken = async (
