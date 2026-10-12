@@ -1,7 +1,12 @@
 import type {Response} from 'express';
 
 import {query as defaultQuery} from '../../db/query.js';
-import type {AuthedRequest} from '../../middleware/requireAuth.js';
+import {
+  consumeAiCall,
+  quotaExhaustedBody,
+  refundAiCall,
+} from '../../lib/aiMetering.js';
+import type {EntitledRequest} from '../../middleware/loadEntitlement.js';
 import {htmlToText} from '../../lib/htmlToText.js';
 import {normalizePastedRecipeHtml} from '../../lib/normalizePastedRecipeHtml.js';
 import {mapRowToRecipeDetail} from '../../lib/mapRowToRecipeDetail.js';
@@ -20,7 +25,7 @@ import {GET_RECIPE_DETAIL_SQL, setVersionImageUrl} from '../recipes/queries.js';
 type QueryFn = typeof defaultQuery;
 
 export const importFromText = async (
-  req: AuthedRequest,
+  req: EntitledRequest,
   res: Response,
   queryFn: QueryFn,
 ) => {
@@ -50,7 +55,20 @@ export const importFromText = async (
       });
     return;
   }
-  const parsed = await parseWithClaude(plainText, null);
+  const quota = await consumeAiCall(req.userId, req.entitlement.plan, queryFn);
+  if (!quota.ok) {
+    res
+      .status(402)
+      .json(quotaExhaustedBody('ai_quota_exhausted', quota.used, quota.limit));
+    return;
+  }
+  let parsed: Awaited<ReturnType<typeof parseWithClaude>>;
+  try {
+    parsed = await parseWithClaude(plainText, null);
+  } catch (error) {
+    await refundAiCall(req.userId, queryFn);
+    throw error;
+  }
   try {
     const input = await prepareImportedRecipeInput({
       recipe: parsed,
