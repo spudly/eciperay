@@ -1,0 +1,131 @@
+import request from 'supertest';
+
+import {makeQueryResult} from '../../test/fixtures/queryResult.js';
+import {createMockQuery} from '../../test/mockQuery.js';
+import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
+import {lazyTestApp} from '../../test/lazyTestApp.js';
+
+const mockQuery = createMockQuery();
+const getApp = lazyTestApp({query: mockQuery});
+
+const tokenRow = {
+  id: 'token-uuid-1',
+  name: 'Claude Desktop',
+  token_prefix: 'ecp_abcdefgh',
+  created_at: '2026-10-12T00:00:00.000Z',
+  last_used_at: null,
+  revoked_at: null,
+};
+
+describe('account personal access token routes', () => {
+  beforeEach(() => {
+    mockQuery.mockReset();
+  });
+
+  test('POST /account/personal-access-tokens creates a token', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockQuery.mockResolvedValueOnce(makeQueryResult([tokenRow]));
+
+    const res = await request(getApp())
+      .post('/api/account/personal-access-tokens')
+      .set('Authorization', 'Bearer <redacted>')
+      .send({name: 'Claude Desktop'});
+
+    expect(res.status).toBe(201);
+    expect(res.body.name).toBe('Claude Desktop');
+    expect(res.body.tokenPrefix).toBe(res.body.token.slice(0, 12));
+    expect(res.body.token).toMatch(/^ecp_/);
+    expect(res.body.createdAt).toBe('2026-10-12T00:00:00.000Z');
+    expect(res.body).not.toHaveProperty('token_hash');
+    expect(res.body).not.toHaveProperty('user_id');
+  });
+
+  test('POST returns 400 for a missing name', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+
+    const res = await request(getApp())
+      .post('/api/account/personal-access-tokens')
+      .set('Authorization', 'Bearer <redacted>')
+      .send({});
+
+    expect(res.status).toBe(400);
+  });
+
+  test('GET /account/personal-access-tokens lists tokens', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockQuery.mockResolvedValueOnce(makeQueryResult([tokenRow]));
+
+    const res = await request(getApp())
+      .get('/api/account/personal-access-tokens')
+      .set('Authorization', 'Bearer <redacted>');
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([
+      {
+        id: 'token-uuid-1',
+        name: 'Claude Desktop',
+        tokenPrefix: 'ecp_abcdefgh',
+        createdAt: '2026-10-12T00:00:00.000Z',
+        lastUsedAt: null,
+        revokedAt: null,
+      },
+    ]);
+    expect(res.body[0]).not.toHaveProperty('token');
+  });
+
+  test('DELETE /account/personal-access-tokens/:id revokes a token', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockQuery.mockResolvedValueOnce(makeQueryResult([{}]));
+
+    const res = await request(getApp())
+      .delete('/api/account/personal-access-tokens/token-uuid-1')
+      .set('Authorization', 'Bearer <redacted>');
+
+    expect(res.status).toBe(204);
+  });
+
+  test('DELETE returns 404 for an unknown token', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockQuery.mockResolvedValueOnce(makeQueryResult([]));
+
+    const res = await request(getApp())
+      .delete('/api/account/personal-access-tokens/token-uuid-9')
+      .set('Authorization', 'Bearer <redacted>');
+
+    expect(res.status).toBe(404);
+  });
+
+  test('a personal access token authenticates requests', async () => {
+    // Token lookup succeeds and resolves the owning user.
+    mockQuery
+      .mockResolvedValueOnce(makeQueryResult([{user_id: 'user-uuid-1'}]))
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          {
+            id: 'user-uuid-1',
+            supabase_uid: 'supabase-uid-1',
+            email: 'chef@example.com',
+          },
+        ]),
+      )
+      // GET list query
+      .mockResolvedValueOnce(makeQueryResult([]));
+
+    const res = await request(getApp())
+      .get('/api/account/personal-access-tokens')
+      .set('Authorization', 'Bearer ecp_testtoken');
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([]);
+  });
+
+  test('a revoked personal access token is rejected', async () => {
+    mockQuery.mockResolvedValueOnce(makeQueryResult([]));
+
+    const res = await request(getApp())
+      .get('/api/account/personal-access-tokens')
+      .set('Authorization', 'Bearer ecp_revokedtoken');
+
+    expect(res.status).toBe(401);
+  });
+});
