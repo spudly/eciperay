@@ -7,12 +7,14 @@ import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {createMockQuery} from '../../test/mockQuery.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
 import {lazyTestApp} from '../../test/lazyTestApp.js';
+import {mockBillingPlan} from '../../test/mockBilling.js';
 
 const mockQuery = createMockQuery();
 const getApp = lazyTestApp({query: mockQuery});
 const TAG_ID = '11111111-1111-4111-8111-111111111111';
 
 const mockCreateFlow = () => {
+  mockBillingPlan(mockQuery, 'plus');
   mockQuery
     .mockResolvedValueOnce(makeQueryResult([{id: 'recipe-uuid-1'}]))
     .mockResolvedValue(makeQueryResult([makeRecipeDetailRow()]));
@@ -70,6 +72,7 @@ describe('POST /recipes', () => {
 
   test('returns 400 when body is invalid', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     const res = await request(getApp())
       .post('/api/recipes')
       .set('Authorization', 'Bearer valid-token')
@@ -84,3 +87,4 @@ describe('POST /recipes', () => {
     expect(res.status).toBe(401);
   });
 });
+

@@ -7,6 +7,7 @@ import {createMockQuery} from '../../test/mockQuery.js';
 import {nockAnthropicMessage} from '../../test/mockNockAnthropic.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
 import {lazyTestApp} from '../../test/lazyTestApp.js';
+import {mockBillingMetered, mockBillingPlan} from '../../test/mockBilling.js';
 
 const mockQuery = createMockQuery();
 const getApp = lazyTestApp({query: mockQuery});
@@ -35,6 +36,7 @@ describe('POST /recipes/import/image', () => {
   test('returns 201 RecipeDetail from image via Claude vision', async () => {
     nockSupabaseGetUser('user-uuid-1');
     nockAnthropicMessage(RECIPE_JSON);
+    mockBillingMetered(mockQuery, 'plus');
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([{id: 'recipe-uuid-1'}]))
@@ -54,6 +56,7 @@ describe('POST /recipes/import/image', () => {
 
   test('returns 400 when imageBase64 is empty', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     const res = await request(getApp())
       .post('/api/recipes/import/image')
       .set('Authorization', 'Bearer valid-token')
@@ -81,6 +84,8 @@ describe('POST /recipes/import/image', () => {
         stop_reason: 'tool_use',
         usage: {input_tokens: 10, output_tokens: 5},
       });
+    mockBillingMetered(mockQuery, 'plus');
+    mockQuery.mockResolvedValueOnce(makeQueryResult([]));
     const res = await request(getApp())
       .post('/api/recipes/import/image')
       .set('Authorization', 'Bearer valid-token')
@@ -88,3 +93,4 @@ describe('POST /recipes/import/image', () => {
     expect(res.status).toBe(500);
   });
 });
+

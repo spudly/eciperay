@@ -7,6 +7,7 @@ import {createMockQuery} from '../../test/mockQuery.js';
 import {nockAnthropicMessage} from '../../test/mockNockAnthropic.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
 import {lazyTestApp} from '../../test/lazyTestApp.js';
+import {mockBillingMetered, mockBillingPlan} from '../../test/mockBilling.js';
 
 const mockQuery = createMockQuery();
 const getApp = lazyTestApp({query: mockQuery});
@@ -42,6 +43,7 @@ const CLAUDE_RESPONSE = JSON.stringify({
 });
 
 const mockSaveFlow = () => {
+  mockBillingPlan(mockQuery, 'plus');
   mockQuery
     .mockResolvedValueOnce(makeQueryResult([]))
     .mockResolvedValueOnce(makeQueryResult([{id: 'recipe-uuid-1'}]))
@@ -69,6 +71,7 @@ describe('POST /recipes/import/url', () => {
     nockSupabaseGetUser('user-uuid-1');
     nock('https://recipe.example.com').get('/plain').reply(200, PLAIN_HTML);
     nockAnthropicMessage(CLAUDE_RESPONSE);
+    mockBillingMetered(mockQuery, 'plus');
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([{id: 'recipe-uuid-1'}]))
@@ -85,6 +88,7 @@ describe('POST /recipes/import/url', () => {
 
   test('returns 400 when URL is invalid', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     const res = await request(getApp())
       .post('/api/recipes/import/url')
       .set('Authorization', 'Bearer valid-token')
@@ -109,3 +113,4 @@ describe('POST /recipes/import/url', () => {
     expect(res.status).toBe(500);
   });
 });
+
