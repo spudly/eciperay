@@ -57,7 +57,7 @@ export const resolveEntitlement = async (
   let periodEndsAt: string | null = null;
   let paddleCustomerId: string | null = null;
 
-  if (row) {
+  if (row && (row.plan === 'plus' || row.plan === 'power')) {
     status = row.status;
     paddleCustomerId = row.paddle_customer_id;
     periodEndsAt = row.current_period_end;
