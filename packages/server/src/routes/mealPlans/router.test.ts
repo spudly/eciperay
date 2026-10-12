@@ -15,6 +15,7 @@ import {
 import {createMockQuery} from '../../test/mockQuery.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
 import {lazyTestApp} from '../../test/lazyTestApp.js';
+import {mockBillingPlan} from '../../test/mockBilling.js';
 
 import {createMealPlansRouter} from './router.js';
 
@@ -34,6 +35,7 @@ describe('GET /meal-plans', () => {
 
   test('returns empty list', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery.mockResolvedValueOnce(makeQueryResult([]));
 
     const res = await request(getApp())
@@ -57,6 +59,7 @@ describe('GET /meal-plans/:id', () => {
 
   test('returns plan detail', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     installLoadMealPlanDetailRecipeMock(mockQuery);
 
     const res = await request(getApp())
@@ -69,6 +72,7 @@ describe('GET /meal-plans/:id', () => {
 
   test('returns 404 when plan missing', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery.mockResolvedValueOnce(makeQueryResult([]));
 
     const res = await request(getApp())
@@ -86,6 +90,7 @@ describe('POST /meal-plans', () => {
 
   test('creates meal plan', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery.mockImplementation((async (sql: string) => {
       if (sql.includes('from recipes r')) {
         return makeQueryResult([accessibleRecipeRow]);
@@ -140,6 +145,7 @@ describe('POST /meal-plans', () => {
 
   test('returns 400 for invalid body', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     const res = await request(getApp())
       .post('/api/meal-plans')
       .set('Authorization', 'Bearer valid-token')
@@ -150,6 +156,7 @@ describe('POST /meal-plans', () => {
 
   test('returns 400 when recipe is inaccessible', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(emptyShareGrant);
@@ -170,6 +177,7 @@ describe('PUT /meal-plans/:id', () => {
 
   test('updates meal plan', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery.mockImplementation((async (sql: string) => {
       if (sql.includes('select id from meal_plans where id')) {
         return makeQueryResult([{id: PLAN_ID}]);
@@ -228,6 +236,7 @@ describe('PUT /meal-plans/:id', () => {
 
   test('returns 400 for invalid body', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     const res = await request(getApp())
       .put(`/api/meal-plans/${PLAN_ID}`)
       .set('Authorization', 'Bearer valid-token')
@@ -238,6 +247,7 @@ describe('PUT /meal-plans/:id', () => {
 
   test('returns 404 when plan missing', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery.mockResolvedValueOnce(makeQueryResult([]));
 
     const res = await request(getApp())
@@ -250,6 +260,7 @@ describe('PUT /meal-plans/:id', () => {
 
   test('returns 400 when entry validation fails', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([{id: PLAN_ID}]))
       .mockResolvedValueOnce(makeQueryResult([accessibleRecipeRow]))
@@ -274,6 +285,7 @@ describe('DELETE /meal-plans/:id', () => {
 
   test('deletes meal plan', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery.mockResolvedValueOnce({...makeQueryResult([]), rowCount: 1});
 
     const res = await request(getApp())
@@ -285,6 +297,7 @@ describe('DELETE /meal-plans/:id', () => {
 
   test('returns 404 when plan missing', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery.mockResolvedValueOnce({...makeQueryResult([]), rowCount: 0});
 
     const res = await request(getApp())
@@ -302,6 +315,7 @@ describe('GET /meal-plans/:id/shopping-list', () => {
 
   test('returns shopping list lines', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     installLoadMealPlanDetailRecipeMock(mockQuery);
     mockQuery.mockImplementation((async (sql: string) => {
       if (sql.includes('from meal_plans') && sql.includes('where id =')) {
@@ -355,6 +369,7 @@ describe('GET /meal-plans/:id/shopping-list', () => {
 
   test('returns 404 when plan missing', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery.mockResolvedValueOnce(makeQueryResult([]));
 
     const res = await request(getApp())
@@ -364,3 +379,4 @@ describe('GET /meal-plans/:id/shopping-list', () => {
     expect(res.status).toBe(404);
   });
 });
+
