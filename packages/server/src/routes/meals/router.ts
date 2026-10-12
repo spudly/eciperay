@@ -7,7 +7,9 @@ import {getParam} from '../../lib/getParam.js';
 import {listMealsForUser, loadMealDetail} from '../../lib/loadMealDetail.js';
 import {deleteMeal, replaceMeal, saveNewMeal} from '../../lib/saveMeal.js';
 import {MealInputSchema, validate} from '../../lib/schemas.js';
+import {loadEntitlement} from '../../middleware/loadEntitlement.js';
 import {requireAuth, type AuthedRequest} from '../../middleware/requireAuth.js';
+import {requirePlan} from '../../middleware/requirePlan.js';
 
 type QueryFn = typeof defaultQuery;
 const a = (req: Parameters<typeof requireAuth>[0]) => req as AuthedRequest;
@@ -100,14 +102,16 @@ const getCookPlan = async (
 
 export const createMealsRouter = (queryFn: QueryFn) => {
   const router = Router();
-  router.get('/', requireAuth, (req, res) => listMeals(a(req), res, queryFn));
-  router.post('/', requireAuth, (req, res) => createMeal(a(req), res, queryFn));
-  router.get('/:id', requireAuth, (req, res) => getMeal(a(req), res, queryFn));
-  router.put('/:id', requireAuth, (req, res) => putMeal(a(req), res, queryFn));
-  router.delete('/:id', requireAuth, (req, res) =>
+  // Meals are a Plus feature: gate the whole router (see mealPlans router).
+  const plus = [requireAuth, loadEntitlement(queryFn), requirePlan('plus')];
+  router.get('/', ...plus, (req, res) => listMeals(a(req), res, queryFn));
+  router.post('/', ...plus, (req, res) => createMeal(a(req), res, queryFn));
+  router.get('/:id', ...plus, (req, res) => getMeal(a(req), res, queryFn));
+  router.put('/:id', ...plus, (req, res) => putMeal(a(req), res, queryFn));
+  router.delete('/:id', ...plus, (req, res) =>
     removeMeal(a(req), res, queryFn),
   );
-  router.get('/:id/cook-plan', requireAuth, (req, res) =>
+  router.get('/:id/cook-plan', ...plus, (req, res) =>
     getCookPlan(a(req), res, queryFn),
   );
   return router;
