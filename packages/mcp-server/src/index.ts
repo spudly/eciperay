@@ -1,19 +1,19 @@
 /**
- * Eciperay MCP server (stdio).
+ * Eciperay MCP server (stdio) for local clients.
  *
  * Exposes recipe search, recipe details, recipe creation, meal plans, and
  * shopping lists to MCP clients such as Claude Desktop, Cursor, and Muse.
+ * For remote access, the same tools are served over HTTP by the web server
+ * at POST /api/mcp (see http.ts).
  */
 
-import {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';
 import {StdioServerTransport} from '@modelcontextprotocol/sdk/server/stdio.js';
 
-import {createClient, loadConfig} from './eciperayClient.js';
-import {registerTools} from './tools.js';
+import {loadConfig} from './eciperayClient.js';
+import {createEciperayMcpServer} from './mcpServer.js';
 
 const main = async (): Promise<void> => {
-  const server = new McpServer({name: 'eciperay', version: '1.8.3'});
-  registerTools(server, createClient(loadConfig()));
+  const server = createEciperayMcpServer(loadConfig());
   await server.connect(new StdioServerTransport());
 };
 
