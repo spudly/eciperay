@@ -13,6 +13,7 @@
     "packages/icons",
     "packages/client",
     "packages/server",
+    "packages/mcp-server",
     "packages/app",
     "packages/web"
   ],
@@ -27,7 +28,7 @@
     "build": "npm run build --workspace=packages/web",
     "start": "npm run start --workspace=packages/server",
     "migrate": "npm run migrate --workspace=packages/server",
-    "typecheck": "tsc -b tsconfig.json packages/types packages/server && npm run typecheck --workspace=packages/icons && npm run typecheck --workspace=packages/client && npm run typecheck --workspace=packages/web && npm run typecheck --workspace=packages/app",
+    "typecheck": "tsc -b tsconfig.json packages/types packages/server && npm run typecheck --workspace=packages/icons && npm run typecheck --workspace=packages/client && npm run typecheck --workspace=packages/web && npm run typecheck --workspace=packages/app && npm run typecheck --workspace=packages/mcp-server",
     "prettier": "prettier --write .",
     "prettier:check": "prettier --check .",
     "actionlint": "github-actionlint .github/workflows/*.yml",
