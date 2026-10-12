@@ -10,6 +10,7 @@ import {
 } from '../../test/mockNockAnthropic.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
 import {lazyTestApp} from '../../test/lazyTestApp.js';
+import {mockBillingPlan} from '../../test/mockBilling.js';
 
 const mockQuery = createMockQuery();
 const getApp = lazyTestApp({query: mockQuery});
@@ -164,7 +165,9 @@ describe('POST /recipes/:id/tweak-ai-sessions', () => {
   test('returns 201 with new session and plan', async () => {
     nockSupabaseGetUser('user-uuid-1');
     nockAnthropicMessage(PLAN_TEXT);
+    mockBillingPlan(mockQuery, 'plus');
     mockLoadContext();
+    mockQuery.mockResolvedValueOnce(makeQueryResult([{calls: 1}]));
     mockQuery.mockResolvedValueOnce(
       makeQueryResult([makeSessionRow({messages: []})]),
     );
@@ -181,6 +184,7 @@ describe('POST /recipes/:id/tweak-ai-sessions', () => {
 
   test('returns 400 when prompt is too short', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     const res = await request(getApp())
       .post('/api/recipes/recipe-uuid-1/tweak-ai-sessions')
       .set('Authorization', 'Bearer valid-token')
@@ -223,6 +227,7 @@ describe('POST /recipes/:id/tweak-ai-sessions', () => {
 
   test('returns 404 when active version is not found', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([]));
@@ -238,7 +243,10 @@ describe('POST /recipes/:id/tweak-ai-sessions', () => {
 
   test('returns 502 when AI planning fails', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockLoadContext();
+    mockQuery.mockResolvedValueOnce(makeQueryResult([{calls: 1}]));
+    mockQuery.mockResolvedValueOnce(makeQueryResult([]));
     anthropicCreateSpy.mockRejectedValueOnce(new Error('AI down'));
 
     const res = await request(getApp())
@@ -252,7 +260,10 @@ describe('POST /recipes/:id/tweak-ai-sessions', () => {
 
   test('returns 502 when Claude returns non-text content', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockLoadContext();
+    mockQuery.mockResolvedValueOnce(makeQueryResult([{calls: 1}]));
+    mockQuery.mockResolvedValueOnce(makeQueryResult([]));
     anthropicCreateSpy.mockResolvedValueOnce({
       id: 'msg-test',
       type: 'message',
@@ -301,6 +312,7 @@ describe('GET /recipes/:id/tweak-ai-sessions/:sessionId', () => {
 describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/messages', () => {
   test('returns 400 when content is empty', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     const res = await request(getApp())
       .post(
         `/api/recipes/recipe-uuid-1/tweak-ai-sessions/${SESSION_ID}/messages`,
@@ -312,6 +324,7 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/messages', () => {
 
   test('returns 404 when recipe context cannot be loaded', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([makeSessionRow()]))
       .mockResolvedValueOnce(makeQueryResult([]));
@@ -328,12 +341,14 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/messages', () => {
 
   test('returns 200 with assistant reply', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     nockAnthropicMessage(REFINED_REPLY);
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([makeSessionRow()]))
       .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([makeVersionDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([{calls: 1}]))
       .mockResolvedValueOnce(makeQueryResult([makeSessionRow()]))
       .mockResolvedValueOnce(makeQueryResult([makeSessionRow()]));
 
@@ -380,10 +395,13 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/messages', () => {
 
   test('returns 502 when AI planning fails', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([makeSessionRow()]))
       .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([makeVersionDetailRow()]))
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([{calls: 1}]))
       .mockResolvedValueOnce(makeQueryResult([]));
     anthropicCreateSpy.mockRejectedValueOnce(new Error('AI down'));
 
@@ -1013,3 +1031,4 @@ describe('tweak AI session full conversational flow', () => {
     expect(saveRes.body.versionId).toBe('version-uuid-2');
   });
 });
+
