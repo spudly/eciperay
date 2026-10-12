@@ -1,12 +1,20 @@
 import type {Response} from 'express';
 import Anthropic from '@anthropic-ai/sdk';
 
-import type {AuthedRequest} from '../../middleware/requireAuth.js';
+import {query as defaultQuery} from '../../db/query.js';
+import {
+  consumeAiCall,
+  quotaExhaustedBody,
+  refundAiCall,
+} from '../../lib/aiMetering.js';
+import type {EntitledRequest} from '../../middleware/loadEntitlement.js';
 import {serializeErrorForLog} from '../../lib/aiServiceDiagnostics.js';
 import {generateRecipeImagePrompt} from '../../lib/generateRecipeImagePrompt.js';
 import {generateRecipeImageWithOpenAi} from '../../lib/generateRecipeImageWithOpenAi.js';
 import {serverLog} from '../../lib/posthogLogs.js';
 import {GenerateRecipeImageSchema, validate} from '../../lib/schemas.js';
+
+type QueryFn = typeof defaultQuery;
 
 const isAiConnectionError = (error: unknown): boolean => {
   if (error instanceof Anthropic.APIConnectionError) {
@@ -44,11 +52,21 @@ export const formatImageGenerationError = (error: unknown): string => {
 };
 
 export const generateRecipeImage = async (
-  req: AuthedRequest,
+  req: EntitledRequest,
   res: Response,
+  queryFn: QueryFn = defaultQuery,
 ) => {
   const body = validate(GenerateRecipeImageSchema, req, res);
   if (!body.ok) {
+    return;
+  }
+  // One quota unit per image generation (covers the Anthropic prompt step +
+  // the OpenAI image call) — documented approximation.
+  const quota = await consumeAiCall(req.userId, req.entitlement.plan, queryFn);
+  if (!quota.ok) {
+    res
+      .status(402)
+      .json(quotaExhaustedBody('ai_quota_exhausted', quota.used, quota.limit));
     return;
   }
   const startedAt = Date.now();
@@ -99,6 +117,7 @@ export const generateRecipeImage = async (
 
     res.json(image);
   } catch (error_) {
+    await refundAiCall(req.userId, queryFn);
     res.status(502).json({error: formatImageGenerationError(error_)});
   }
 };

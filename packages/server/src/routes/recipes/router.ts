@@ -1,7 +1,12 @@
 import {Router} from 'express';
 
 import {query as defaultQuery} from '../../db/query.js';
+import {
+  loadEntitlement,
+  type EntitledRequest,
+} from '../../middleware/loadEntitlement.js';
 import {requireAuth, type AuthedRequest} from '../../middleware/requireAuth.js';
+import {requirePlan} from '../../middleware/requirePlan.js';
 import {createAiRouter} from '../ai/router.js';
 import {createCookLog} from '../cooks/createCookLog.js';
 import {listCookLogs} from '../cooks/listCookLogs.js';
@@ -44,6 +49,7 @@ import {updateRecipeCommentRoute} from './updateRecipeComment.js';
 
 type QueryFn = typeof defaultQuery;
 const a = (req: Parameters<typeof requireAuth>[0]) => req as AuthedRequest;
+const e = (req: Parameters<typeof requireAuth>[0]) => req as EntitledRequest;
 
 export const createRecipesRouter = (queryFn: QueryFn) => {
   const router = Router();
@@ -54,14 +60,20 @@ export const createRecipesRouter = (queryFn: QueryFn) => {
   router.post('/export', requireAuth, (req, res) =>
     exportRecipes(a(req), res, queryFn),
   );
-  router.post('/', requireAuth, (req, res) =>
-    createRecipe(a(req), res, queryFn),
+  router.post('/', requireAuth, loadEntitlement(queryFn), (req, res) =>
+    createRecipe(e(req), res, queryFn),
   );
-  router.post('/ai/generate-image', requireAuth, (req, res) =>
-    generateRecipeImage(a(req), res),
+  router.post(
+    '/ai/generate-image',
+    requireAuth,
+    loadEntitlement(queryFn),
+    (req, res) => generateRecipeImage(e(req), res, queryFn),
   );
-  router.post('/ai/generate-description', requireAuth, (req, res) =>
-    generateRecipeDescriptionRoute(a(req), res),
+  router.post(
+    '/ai/generate-description',
+    requireAuth,
+    loadEntitlement(queryFn),
+    (req, res) => generateRecipeDescriptionRoute(e(req), res, queryFn),
   );
   router.get('/:id', requireAuth, (req, res) =>
     getRecipe(a(req), res, queryFn),
@@ -99,11 +111,19 @@ export const createRecipesRouter = (queryFn: QueryFn) => {
   router.patch('/:id', requireAuth, (req, res) =>
     patchRecipeLineage(a(req), res, queryFn),
   );
-  router.patch('/:id/sharing', requireAuth, (req, res) =>
-    patchRecipeSharing(a(req), res, queryFn),
+  router.patch(
+    '/:id/sharing',
+    requireAuth,
+    loadEntitlement(queryFn),
+    requirePlan('plus'),
+    (req, res) => patchRecipeSharing(a(req), res, queryFn),
   );
-  router.post('/:id/sharing/rotate-token', requireAuth, (req, res) =>
-    rotateRecipeShareToken(a(req), res, queryFn),
+  router.post(
+    '/:id/sharing/rotate-token',
+    requireAuth,
+    loadEntitlement(queryFn),
+    requirePlan('plus'),
+    (req, res) => rotateRecipeShareToken(a(req), res, queryFn),
   );
   router.delete('/:id', requireAuth, (req, res) =>
     deleteRecipe(a(req), res, queryFn),
@@ -114,11 +134,17 @@ export const createRecipesRouter = (queryFn: QueryFn) => {
   router.post('/:id/versions', requireAuth, (req, res) =>
     createVersion(a(req), res, queryFn),
   );
-  router.post('/:id/versions/ai', requireAuth, (req, res) =>
-    tweakVersionWithAi(a(req), res, queryFn),
+  router.post(
+    '/:id/versions/ai',
+    requireAuth,
+    loadEntitlement(queryFn),
+    (req, res) => tweakVersionWithAi(e(req), res, queryFn),
   );
-  router.post('/:id/tweak-ai-sessions', requireAuth, (req, res) =>
-    createTweakAiSession(a(req), res, queryFn),
+  router.post(
+    '/:id/tweak-ai-sessions',
+    requireAuth,
+    loadEntitlement(queryFn),
+    (req, res) => createTweakAiSession(e(req), res, queryFn),
   );
   router.get('/:id/tweak-ai-sessions/:sessionId', requireAuth, (req, res) =>
     getTweakAiSession(a(req), res, queryFn),
@@ -126,7 +152,8 @@ export const createRecipesRouter = (queryFn: QueryFn) => {
   router.post(
     '/:id/tweak-ai-sessions/:sessionId/messages',
     requireAuth,
-    (req, res) => sendTweakAiMessage(a(req), res, queryFn),
+    loadEntitlement(queryFn),
+    (req, res) => sendTweakAiMessage(e(req), res, queryFn),
   );
   router.post(
     '/:id/tweak-ai-sessions/:sessionId/approve-plan',
