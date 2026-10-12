@@ -48,6 +48,32 @@ The transport is stateless, so it works behind load balancers with no session
 affinity. Your Supabase token is forwarded to the Eciperay API, so tools run
 with your identity and permissions.
 
+## Authentication
+
+The MCP endpoint accepts the same Supabase bearer token as the rest of the API.
+For long-lived clients, mint a **personal access token** instead — it doesn't
+expire hourly like Supabase access tokens:
+
+```sh
+# create (shows the token once — store it somewhere safe)
+curl -X POST https://your-server.fly.dev/api/account/personal-access-tokens \
+  -H "Authorization: Bearer <supabase-token>" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Claude Desktop"}'
+
+# list
+curl https://your-server.fly.dev/api/account/personal-access-tokens \
+  -H "Authorization: Bearer <supabase-token>"
+
+# revoke
+curl -X DELETE https://your-server.fly.dev/api/account/personal-access-tokens/<id> \
+  -H "Authorization: Bearer <supabase-token>"
+```
+
+Tokens look like `ecp_...`; only a SHA-256 hash is stored server-side. Use the
+token as the `Authorization: Bearer` header for `/api/mcp` (or any other API
+route).
+
 ## Setup
 
 ```sh

@@ -5,6 +5,10 @@ import {
   extractBearerToken,
   getAuthUserFromRequest,
 } from '../lib/getAuthUser.js';
+import {
+  PERSONAL_ACCESS_TOKEN_PREFIX,
+  resolveUserByPersonalAccessToken,
+} from '../lib/personalAccessTokens.js';
 import {upsertUserRecord} from '../lib/upsertUser.js';
 
 export type AuthedRequest = Request & {
@@ -24,6 +28,27 @@ const resolveQuery = (req: Request) => {
 const shouldSkipUserUpsert = (req: Request) =>
   (req.app.locals as AppLocals).skipUserUpsert === true;
 
+const authenticateWithPersonalAccessToken = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+  token: string,
+) => {
+  const user = await resolveUserByPersonalAccessToken(
+    token,
+    resolveQuery(req),
+  );
+  if (!user) {
+    res.status(401).json({error: 'Invalid or revoked token'});
+    return;
+  }
+  const authed = req as AuthedRequest;
+  authed.userId = user.id;
+  authed.supabaseUid = user.supabaseUid;
+  authed.userEmail = user.email;
+  next();
+};
+
 export const requireAuth = async (
   req: Request,
   res: Response,
@@ -32,6 +57,10 @@ export const requireAuth = async (
   const token = extractBearerToken(req);
   if (!token) {
     res.status(401).json({error: 'Missing authorization token'});
+    return;
+  }
+  if (token.startsWith(PERSONAL_ACCESS_TOKEN_PREFIX)) {
+    await authenticateWithPersonalAccessToken(req, res, next, token);
     return;
   }
   const user = await getAuthUserFromRequest(req);
