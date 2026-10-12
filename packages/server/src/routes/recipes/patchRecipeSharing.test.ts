@@ -5,6 +5,7 @@ import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {createMockQuery} from '../../test/mockQuery.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
 import {lazyTestApp} from '../../test/lazyTestApp.js';
+import {mockBillingPlan} from '../../test/mockBilling.js';
 
 const mockQuery = createMockQuery();
 const getApp = lazyTestApp({query: mockQuery});
@@ -19,6 +20,7 @@ const sharingRow = {
 describe('PATCH /recipes/:id/sharing', () => {
   test('returns updated recipe with share token when publishing unlisted', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([sharingRow]))
       .mockResolvedValueOnce({
@@ -46,6 +48,7 @@ describe('PATCH /recipes/:id/sharing', () => {
 
   test('requires publishing consent on first publish', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery.mockResolvedValue(makeQueryResult([sharingRow]));
 
     const res = await request(getApp())
@@ -59,6 +62,7 @@ describe('PATCH /recipes/:id/sharing', () => {
 
   test('returns 404 when recipe is not found', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery.mockResolvedValue(makeQueryResult([]));
 
     const res = await request(getApp())
@@ -71,6 +75,7 @@ describe('PATCH /recipes/:id/sharing', () => {
 
   test('returns 400 for invalid visibility body', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     const res = await request(getApp())
       .patch('/api/recipes/recipe-uuid-1/sharing')
       .set('Authorization', 'Bearer valid-token')
@@ -80,6 +85,7 @@ describe('PATCH /recipes/:id/sharing', () => {
 
   test('clears share token when switching to public', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery
       .mockResolvedValueOnce(
         makeQueryResult([
@@ -108,6 +114,7 @@ describe('PATCH /recipes/:id/sharing', () => {
 
   test('does not return a new token when unlisted hash already exists', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery
       .mockResolvedValueOnce(
         makeQueryResult([
@@ -138,6 +145,7 @@ describe('PATCH /recipes/:id/sharing', () => {
 
   test('returns 404 when visibility update affects no rows', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([sharingRow]))
       .mockResolvedValueOnce({...makeQueryResult([]), rowCount: 0});
@@ -152,6 +160,7 @@ describe('PATCH /recipes/:id/sharing', () => {
 
   test('returns 404 when detail fetch fails after update', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([sharingRow]))
       .mockResolvedValueOnce({
@@ -168,3 +177,4 @@ describe('PATCH /recipes/:id/sharing', () => {
     expect(res.status).toBe(404);
   });
 });
+
