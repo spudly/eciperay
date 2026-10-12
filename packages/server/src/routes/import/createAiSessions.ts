@@ -7,6 +7,12 @@ import type {
 } from '@eciperay/types';
 
 import {query as defaultQuery} from '../../db/query.js';
+import {
+  consumeAiCall,
+  quotaExhaustedBody,
+  refundAiCall,
+} from '../../lib/aiMetering.js';
+import type {EntitledRequest} from '../../middleware/loadEntitlement.js';
 import type {AuthedRequest} from '../../middleware/requireAuth.js';
 import {anthropic, SONNET} from '../../lib/anthropic.js';
 import {prepareImportedRecipeInput} from '../../lib/prepareImportedRecipeInput.js';
@@ -203,12 +209,20 @@ const implementCreateAiSessionCore = async (
 };
 
 export const createCreateAiSession = async (
-  req: AuthedRequest,
+  req: EntitledRequest,
   res: Response,
   queryFn: QueryFn,
 ) => {
   const body = validate(TweakAiStartSchema, req, res);
   if (!body.ok) {
+    return;
+  }
+
+  const quota = await consumeAiCall(req.userId, req.entitlement.plan, queryFn);
+  if (!quota.ok) {
+    res
+      .status(402)
+      .json(quotaExhaustedBody('ai_quota_exhausted', quota.used, quota.limit));
     return;
   }
 
@@ -219,6 +233,7 @@ export const createCreateAiSession = async (
       `User request: ${body.data.prompt}`,
     );
   } catch {
+    await refundAiCall(req.userId, queryFn);
     res.status(502).json({error: 'AI planning failed'});
     return;
   }
@@ -250,7 +265,7 @@ export const getCreateAiSession = async (
 };
 
 export const sendCreateAiMessage = async (
-  req: AuthedRequest,
+  req: EntitledRequest,
   res: Response,
   queryFn: QueryFn,
 ) => {
@@ -269,6 +284,14 @@ export const sendCreateAiMessage = async (
     return;
   }
 
+  const quota = await consumeAiCall(req.userId, req.entitlement.plan, queryFn);
+  if (!quota.ok) {
+    res
+      .status(402)
+      .json(quotaExhaustedBody('ai_quota_exhausted', quota.used, quota.limit));
+    return;
+  }
+
   const messages: TweakAiMessage[] = [
     ...session.messages,
     {role: 'user', content: body.data.content},
@@ -283,6 +306,7 @@ export const sendCreateAiMessage = async (
       `Conversation so far:\n${conversation}\n\nRespond with an updated plan.`,
     );
   } catch {
+    await refundAiCall(req.userId, queryFn);
     res.status(502).json({error: 'AI planning failed'});
     return;
   }
