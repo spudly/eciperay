@@ -3,7 +3,12 @@ import type {RecipeInput} from '@eciperay/types';
 
 import {runTransactional} from '../../db/withTransaction.js';
 import {query as defaultQuery} from '../../db/query.js';
-import type {AuthedRequest} from '../../middleware/requireAuth.js';
+import {
+  consumeAiCall,
+  quotaExhaustedBody,
+  refundAiCall,
+} from '../../lib/aiMetering.js';
+import type {EntitledRequest} from '../../middleware/loadEntitlement.js';
 import {anthropic, SONNET} from '../../lib/anthropic.js';
 import {
   isRecipeEditable,
@@ -114,7 +119,7 @@ const recipeInputFromTweak = async (
 };
 
 export const tweakVersionWithAi = async (
-  req: AuthedRequest,
+  req: EntitledRequest,
   res: Response,
   queryFn: QueryFn,
 ) => {
@@ -149,6 +154,14 @@ export const tweakVersionWithAi = async (
     mapRowToCookLog(row as Parameters<typeof mapRowToCookLog>[0]),
   );
 
+  const quota = await consumeAiCall(req.userId, req.entitlement.plan, queryFn);
+  if (!quota.ok) {
+    res
+      .status(402)
+      .json(quotaExhaustedBody('ai_quota_exhausted', quota.used, quota.limit));
+    return;
+  }
+
   let input;
   try {
     const parsed = await callClaudeForTweak(
@@ -173,6 +186,7 @@ export const tweakVersionWithAi = async (
       queryFn,
     });
   } catch (error) {
+    await refundAiCall(req.userId, queryFn);
     if (error instanceof RecipeImportError) {
       res.status(422).json({error: error.message});
       return;
@@ -218,3 +232,4 @@ export const tweakVersionWithAi = async (
   }
   res.status(201).json({versionId: newVersionId, changeSummary, version});
 };
+

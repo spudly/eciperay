@@ -9,6 +9,12 @@ import type {z} from 'zod';
 
 import {runTransactional} from '../../db/withTransaction.js';
 import {query as defaultQuery} from '../../db/query.js';
+import {
+  consumeAiCall,
+  quotaExhaustedBody,
+  refundAiCall,
+} from '../../lib/aiMetering.js';
+import type {EntitledRequest} from '../../middleware/loadEntitlement.js';
 import type {AuthedRequest} from '../../middleware/requireAuth.js';
 import {anthropic, SONNET} from '../../lib/anthropic.js';
 import {
@@ -255,7 +261,7 @@ const recipeInputFromParsed = async ({
 };
 
 export const createTweakAiSession = async (
-  req: AuthedRequest,
+  req: EntitledRequest,
   res: Response,
   queryFn: QueryFn,
 ) => {
@@ -271,6 +277,14 @@ export const createTweakAiSession = async (
   }
   const {parentVersion, context} = loaded;
 
+  const quota = await consumeAiCall(req.userId, req.entitlement.plan, queryFn);
+  if (!quota.ok) {
+    res
+      .status(402)
+      .json(quotaExhaustedBody('ai_quota_exhausted', quota.used, quota.limit));
+    return;
+  }
+
   let plan: string;
   try {
     plan = await callClaudeText(
@@ -278,6 +292,7 @@ export const createTweakAiSession = async (
       `Recipe and cook logs:\n${context}\n\nUser request: ${body.data.prompt}`,
     );
   } catch {
+    await refundAiCall(req.userId, queryFn);
     res.status(502).json({error: 'AI planning failed'});
     return;
   }
@@ -297,7 +312,7 @@ export const createTweakAiSession = async (
 };
 
 export const sendTweakAiMessage = async (
-  req: AuthedRequest,
+  req: EntitledRequest,
   res: Response,
   queryFn: QueryFn,
 ) => {
@@ -329,6 +344,14 @@ export const sendTweakAiMessage = async (
   }
   const {context} = loaded;
 
+  const quota = await consumeAiCall(req.userId, req.entitlement.plan, queryFn);
+  if (!quota.ok) {
+    res
+      .status(402)
+      .json(quotaExhaustedBody('ai_quota_exhausted', quota.used, quota.limit));
+    return;
+  }
+
   const priorMessages = session.messages
     .map(m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`)
     .join('\n\n');
@@ -339,6 +362,7 @@ export const sendTweakAiMessage = async (
       `Recipe and cook logs:\n${context}\n\nConversation so far:\n${priorMessages}\n\nUser: ${body.data.content}`,
     );
   } catch {
+    await refundAiCall(req.userId, queryFn);
     res.status(502).json({error: 'AI planning failed'});
     return;
   }
@@ -651,3 +675,4 @@ export const getTweakAiSession = async (
   }
   res.json({session});
 };
+
