@@ -1,8 +1,16 @@
 import type {Response} from 'express';
 
-import type {AuthedRequest} from '../../middleware/requireAuth.js';
+import {query as defaultQuery} from '../../db/query.js';
+import {
+  consumeAiCall,
+  quotaExhaustedBody,
+  refundAiCall,
+} from '../../lib/aiMetering.js';
+import type {EntitledRequest} from '../../middleware/loadEntitlement.js';
 import {anthropic, HAIKU} from '../../lib/anthropic.js';
 import {AiSubstitutionsResponseSchema, parseAiJson} from '../../lib/schemas.js';
+
+type QueryFn = typeof defaultQuery;
 
 const callClaude = async (missing: string[]) => {
   const prompt = `Suggest practical substitutions for these missing ingredients: ${missing.join(', ')}.
@@ -20,12 +28,28 @@ Return ONLY JSON array: [{"ingredient": string, "suggestions": [string, string, 
   return parseAiJson(AiSubstitutionsResponseSchema, content.text);
 };
 
-export const getSubstitutions = async (req: AuthedRequest, res: Response) => {
+export const getSubstitutions = async (
+  req: EntitledRequest,
+  res: Response,
+  queryFn: QueryFn = defaultQuery,
+) => {
   const missing = [req.query['missing']].flat().filter(Boolean) as string[];
   if (missing.length === 0) {
     res.status(400).json({error: 'Provide at least one missing ingredient'});
     return;
   }
-  const substitutions = await callClaude(missing);
-  res.json(substitutions);
+  const quota = await consumeAiCall(req.userId, req.entitlement.plan, queryFn);
+  if (!quota.ok) {
+    res
+      .status(402)
+      .json(quotaExhaustedBody('ai_quota_exhausted', quota.used, quota.limit));
+    return;
+  }
+  try {
+    const substitutions = await callClaude(missing);
+    res.json(substitutions);
+  } catch (error) {
+    await refundAiCall(req.userId, queryFn);
+    throw error;
+  }
 };

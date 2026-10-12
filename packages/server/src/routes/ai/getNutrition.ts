@@ -1,7 +1,12 @@
 import type {Response} from 'express';
 
 import {query as defaultQuery} from '../../db/query.js';
-import type {AuthedRequest} from '../../middleware/requireAuth.js';
+import {
+  consumeAiCall,
+  quotaExhaustedBody,
+  refundAiCall,
+} from '../../lib/aiMetering.js';
+import type {EntitledRequest} from '../../middleware/loadEntitlement.js';
 import {getParam} from '../../lib/getParam.js';
 import {
   fetchVersionNutrition,
@@ -16,7 +21,7 @@ const parseForceRefresh = (value: unknown): boolean =>
   value === '1' || value === 'true';
 
 export const getNutrition = async (
-  req: AuthedRequest,
+  req: EntitledRequest,
   res: Response,
   queryFn: QueryFn,
 ) => {
@@ -35,9 +40,18 @@ export const getNutrition = async (
     const stored = await fetchVersionNutrition(recipe.versionId, queryFn);
     const info = stored ? mapRowToNutritionInfo(stored) : null;
     if (info) {
+      // Cached nutrition is free — no quota consumed.
       res.json(info);
       return;
     }
+  }
+
+  const quota = await consumeAiCall(req.userId, req.entitlement.plan, queryFn);
+  if (!quota.ok) {
+    res
+      .status(402)
+      .json(quotaExhaustedBody('ai_quota_exhausted', quota.used, quota.limit));
+    return;
   }
 
   try {
@@ -48,6 +62,7 @@ export const getNutrition = async (
     }
     res.json(refreshed);
   } catch {
+    await refundAiCall(req.userId, queryFn);
     res.status(502).json({error: 'Failed to estimate nutrition'});
   }
 };
