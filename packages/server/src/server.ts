@@ -17,6 +17,7 @@ import {logServerSecretsOnStartup} from './lib/serverSecrets.js';
 import {AiResponseParseError} from './lib/validate.js';
 import {createAccountRouter} from './routes/account/router.js';
 import {createAuthRouter} from './routes/auth/router.js';
+import {createBillingRouter} from './routes/billing/router.js';
 import {createImportRouter} from './routes/import/router.js';
 import {createMealPlansRouter} from './routes/mealPlans/router.js';
 import {createMealsRouter} from './routes/meals/router.js';
@@ -45,7 +46,16 @@ export const createApp = ({
     .split(',')
     .map(origin => origin.trim());
   app.use(cors({origin: corsOrigins}));
-  app.use(express.json({limit: '50mb'}));
+  app.use(
+    express.json({
+      limit: '50mb',
+      // Stash the raw body so the Paddle webhook route can verify the
+      // HMAC-SHA256 signature, which is computed over the raw bytes.
+      verify: (req, _res, buf) => {
+        (req as Request & {rawBody?: Buffer}).rawBody = buf;
+      },
+    }),
+  );
 
   const api = express.Router();
   api.get('/health', (_req, res) => {
@@ -53,6 +63,7 @@ export const createApp = ({
   });
   api.use('/auth', createAuthRouter(queryFn));
   api.use('/account', createAccountRouter(queryFn));
+  api.use('/billing', createBillingRouter(queryFn));
   api.use('/recipes/import', createImportRouter(queryFn));
   api.use('/public/recipes', createPublicRecipesRouter(queryFn));
   api.use('/recipes', createRecipesRouter(queryFn));
