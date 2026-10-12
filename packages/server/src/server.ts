@@ -3,11 +3,13 @@ import './loadEnv.js';
 import {fileURLToPath} from 'node:url';
 
 import Anthropic from '@anthropic-ai/sdk';
+import {createMcpRouter} from '@eciperay/mcp-server/http';
 import cors from 'cors';
 import express from 'express';
 import type {NextFunction, Request, Response} from 'express';
 
 import {API_PREFIX} from './apiPrefix.js';
+import {requireAuth} from './middleware/requireAuth.js';
 import {query as defaultQuery} from './db/query.js';
 import {attachPostHogExpress, captureServerException} from './lib/posthog.js';
 import {initPostHogLogs, serverLog} from './lib/posthogLogs.js';
@@ -57,6 +59,13 @@ export const createApp = ({
   api.use('/meals', createMealsRouter(queryFn));
   api.use('/meal-plans', createMealPlansRouter(queryFn));
   api.use('/tags', createTagsRouter(queryFn));
+  api.use(
+    '/mcp',
+    requireAuth,
+    createMcpRouter({
+      apiUrl: `http://localhost:${process.env['PORT'] ?? DEFAULT_PORT}`,
+    }),
+  );
   api.use((_req, res) => {
     res.status(404).json({error: 'Not found'});
   });
