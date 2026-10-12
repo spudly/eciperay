@@ -9,6 +9,7 @@ import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useState} from 'react';
 import type {NutritionGoals} from '@eciperay/types';
 
+import {AccessTokensSection} from '../components/profile/AccessTokensSection';
 import {NutritionGoalsFormView} from '../components/profile/NutritionGoalsFormView';
 import {ProfileView} from '../components/profile/ProfileView';
 import {api} from '../lib/api';
@@ -74,15 +75,18 @@ export const ProfileScreen = ({navigation}: Props) => {
         void supabase.auth.signOut();
       }}
       sectionsBeforeFeedback={
-        <NutritionGoalsFormView
-          goals={nutritionGoals}
-          saving={saveGoalsMutation.isPending}
-          error={goalsError}
-          onChange={setNutritionGoals}
-          onSave={() => {
-            saveGoalsMutation.mutate();
-          }}
-        />
+        <>
+          <NutritionGoalsFormView
+            goals={nutritionGoals}
+            saving={saveGoalsMutation.isPending}
+            error={goalsError}
+            onChange={setNutritionGoals}
+            onSave={() => {
+              saveGoalsMutation.mutate();
+            }}
+          />
+          <AccessTokensSection />
+        </>
       }
     />
   );

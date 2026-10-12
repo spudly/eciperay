@@ -95,6 +95,10 @@ export type {
   AccountExportShareGrant,
 } from './accountExport.js';
 export type {User} from './user.js';
+export type {
+  PersonalAccessToken,
+  PersonalAccessTokenWithSecret,
+} from './personalAccessToken.js';
 export type {RecipeComment, RecipeCommentInput} from './recipeComment.js';
 export type {
   RecipeCommunityRating,
