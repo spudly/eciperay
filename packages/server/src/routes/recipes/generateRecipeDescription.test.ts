@@ -4,13 +4,18 @@ import request from 'supertest';
 import {nockAnthropicMessage} from '../../test/mockNockAnthropic.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
 import {lazyTestApp} from '../../test/lazyTestApp.js';
+import {makeQueryResult} from '../../test/fixtures/queryResult.js';
+import {createMockQuery} from '../../test/mockQuery.js';
+import {mockBillingMetered, mockBillingPlan} from '../../test/mockBilling.js';
 
-const getApp = lazyTestApp();
+const mockQuery = createMockQuery();
+const getApp = lazyTestApp({query: mockQuery});
 
 describe('POST /recipes/ai/generate-description', () => {
   test('returns generated description', async () => {
     nockSupabaseGetUser('user-uuid-1');
     nockAnthropicMessage('A hearty pasta with fresh basil and garlic.');
+    mockBillingMetered(mockQuery, 'plus');
     const res = await request(getApp())
       .post('/api/recipes/ai/generate-description')
       .set('Authorization', 'Bearer valid-token')
@@ -29,6 +34,7 @@ describe('POST /recipes/ai/generate-description', () => {
 
   test('returns 400 for invalid body', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     const res = await request(getApp())
       .post('/api/recipes/ai/generate-description')
       .set('Authorization', 'Bearer valid-token')
@@ -45,6 +51,8 @@ describe('POST /recipes/ai/generate-description', () => {
 
   test('returns 502 when generation fails', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingMetered(mockQuery, 'plus');
+    mockQuery.mockResolvedValueOnce(makeQueryResult([]));
     const {anthropic} = await import('../../lib/anthropic.js');
     jest
       .spyOn(anthropic.messages, 'create')
@@ -59,6 +67,8 @@ describe('POST /recipes/ai/generate-description', () => {
 
   test('returns 502 for non-error failures', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingMetered(mockQuery, 'plus');
+    mockQuery.mockResolvedValueOnce(makeQueryResult([]));
     const {anthropic} = await import('../../lib/anthropic.js');
     jest.spyOn(anthropic.messages, 'create').mockRejectedValueOnce('broken');
     const res = await request(getApp())
@@ -69,3 +79,4 @@ describe('POST /recipes/ai/generate-description', () => {
     expect(res.body.error).toBe('Description generation failed');
   });
 });
+
