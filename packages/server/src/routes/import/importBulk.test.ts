@@ -8,6 +8,7 @@ import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {createMockQuery} from '../../test/mockQuery.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
 import {lazyTestApp} from '../../test/lazyTestApp.js';
+import {mockBillingPlan} from '../../test/mockBilling.js';
 
 const fetchImageAsBase64 =
   jest.fn<() => Promise<{base64: string; contentType: string} | null>>();
@@ -161,6 +162,7 @@ describe('POST /recipes/import/bulk', () => {
 
   test('imports recipes and returns created summary', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery
       .mockResolvedValueOnce(
         makeQueryResult([
@@ -183,6 +185,7 @@ describe('POST /recipes/import/bulk', () => {
 
   test('imports recipe images when provided', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     resolveImportedImageUrl.mockResolvedValue('https://cdn.example/photo.jpg');
     mockQuery
       .mockResolvedValueOnce(
@@ -209,6 +212,7 @@ describe('POST /recipes/import/bulk', () => {
 
   test('records per-recipe errors without failing the batch', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery
       .mockResolvedValueOnce(
         makeQueryResult([
@@ -231,6 +235,7 @@ describe('POST /recipes/import/bulk', () => {
 
   test('records generic message for non-error throws', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery.mockRejectedValueOnce('save failed');
 
     const res = await request(getApp())
@@ -246,6 +251,7 @@ describe('POST /recipes/import/bulk', () => {
 
   test('returns 400 when recipes array is empty', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     const res = await request(getApp())
       .post('/api/recipes/import/bulk')
       .set('Authorization', 'Bearer valid-token')
@@ -282,3 +288,4 @@ describe('refreshRecipeDetail', () => {
     ).resolves.toMatchObject({title: 'Test Recipe'});
   });
 });
+
