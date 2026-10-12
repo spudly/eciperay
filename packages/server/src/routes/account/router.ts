@@ -1,10 +1,15 @@
 import {Router} from 'express';
 
 import {query as defaultQuery} from '../../db/query.js';
+import {
+  loadEntitlement,
+  type EntitledRequest,
+} from '../../middleware/loadEntitlement.js';
 import {requireAuth, type AuthedRequest} from '../../middleware/requireAuth.js';
 
 import {deleteAccount} from './deleteAccount.js';
 import {exportAccount} from './exportAccount.js';
+import {getEntitlement} from './getEntitlement.js';
 import {getNutritionGoals, putNutritionGoals} from './nutritionGoals.js';
 
 type QueryFn = typeof defaultQuery;
@@ -12,6 +17,12 @@ type QueryFn = typeof defaultQuery;
 export const createAccountRouter = (queryFn: QueryFn) => {
   const router = Router();
 
+  router.get(
+    '/entitlement',
+    requireAuth,
+    loadEntitlement(queryFn),
+    (req, res) => getEntitlement(req as EntitledRequest, res),
+  );
   router.get('/export', requireAuth, (req, res) =>
     exportAccount(req as AuthedRequest, res, queryFn),
   );
