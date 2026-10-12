@@ -2,7 +2,12 @@ import type {Response} from 'express';
 import {load} from 'cheerio';
 
 import {query as defaultQuery} from '../../db/query.js';
-import type {AuthedRequest} from '../../middleware/requireAuth.js';
+import {
+  consumeAiCall,
+  quotaExhaustedBody,
+  refundAiCall,
+} from '../../lib/aiMetering.js';
+import type {EntitledRequest} from '../../middleware/loadEntitlement.js';
 import {parseSchemaOrg} from '../../lib/parseSchemaOrg.js';
 import {parseWithClaude} from '../../lib/parseWithClaude.js';
 import {RecipeImportError} from '../../lib/recipeImportToInput.js';
@@ -34,7 +39,7 @@ const parseFromHtml = async (html: string, url: string) => {
 };
 
 export const importFromUrl = async (
-  req: AuthedRequest,
+  req: EntitledRequest,
   res: Response,
   queryFn: QueryFn,
 ) => {
@@ -44,8 +49,28 @@ export const importFromUrl = async (
   }
   const {url} = body.data;
   const html = await fetchPage(url);
-  const parsed = await parseFromHtml(html, url);
+  // The schema.org path is free; only the Claude fallback burns AI quota.
+  // The parse itself is synchronous and cheap, so check up front.
+  const needsAi = parseSchemaOrg(load(html)) === null;
+  let aiConsumed = false;
+  if (needsAi) {
+    const quota = await consumeAiCall(
+      req.userId,
+      req.entitlement.plan,
+      queryFn,
+    );
+    if (!quota.ok) {
+      res.status(402).json({
+        ...quotaExhaustedBody('ai_quota_exhausted', quota.used, quota.limit),
+        message:
+          'AI import quota exhausted for this month. Pages with recipe markup still import for free.',
+      });
+      return;
+    }
+    aiConsumed = true;
+  }
   try {
+    const parsed = await parseFromHtml(html, url);
     const input = await prepareImportedRecipeInput({
       recipe: parsed,
       userId: req.userId,
@@ -58,6 +83,9 @@ export const importFromUrl = async (
     );
     res.status(201).json({...recipe, recipeId, versionId});
   } catch (error) {
+    if (aiConsumed) {
+      await refundAiCall(req.userId, queryFn);
+    }
     if (error instanceof RecipeImportError) {
       res.status(422).json({error: error.message});
       return;

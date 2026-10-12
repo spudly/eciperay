@@ -1,7 +1,12 @@
 import {Router, type NextFunction, type Request, type Response} from 'express';
 
 import {query as defaultQuery} from '../../db/query.js';
+import {
+  loadEntitlement,
+  type EntitledRequest,
+} from '../../middleware/loadEntitlement.js';
 import {requireAuth, type AuthedRequest} from '../../middleware/requireAuth.js';
+import {requirePlan} from '../../middleware/requirePlan.js';
 
 import {
   approveCreateAiPlan,
@@ -22,6 +27,8 @@ export const createImportRouter = (queryFn: QueryFn = defaultQuery) => {
   const router = Router();
   const asAuthed = (req: Parameters<typeof requireAuth>[0]) =>
     req as AuthedRequest;
+  const asEntitled = (req: Parameters<typeof requireAuth>[0]) =>
+    req as EntitledRequest;
 
   const runImport =
     (handler: (req: AuthedRequest, res: Response) => Promise<void>) =>
@@ -29,30 +36,47 @@ export const createImportRouter = (queryFn: QueryFn = defaultQuery) => {
       void handler(asAuthed(req), res).catch(next);
     };
 
+  const runMeteredImport =
+    (handler: (req: EntitledRequest, res: Response) => Promise<void>) =>
+    (req: Request, res: Response, next: NextFunction) => {
+      void handler(asEntitled(req), res).catch(next);
+    };
+
+  const metered = loadEntitlement(queryFn);
+
   router.post(
     '/url',
     requireAuth,
-    runImport((req, res) => importFromUrl(req, res, queryFn)),
+    metered,
+    runMeteredImport((req, res) => importFromUrl(req, res, queryFn)),
   );
   router.post(
     '/image',
     requireAuth,
-    runImport((req, res) => importFromImage(req, res, queryFn)),
+    metered,
+    requirePlan('plus'),
+    runMeteredImport((req, res) => importFromImage(req, res, queryFn)),
   );
   router.post(
     '/text',
     requireAuth,
-    runImport((req, res) => importFromText(req, res, queryFn)),
+    metered,
+    requirePlan('plus'),
+    runMeteredImport((req, res) => importFromText(req, res, queryFn)),
   );
   router.post(
     '/bulk',
     requireAuth,
+    metered,
+    requirePlan('plus'),
     runImport((req, res) => importBulk(req, res, queryFn)),
   );
   router.post(
     '/ai/sessions',
     requireAuth,
-    runImport((req, res) => createCreateAiSession(req, res, queryFn)),
+    metered,
+    requirePlan('plus'),
+    runMeteredImport((req, res) => createCreateAiSession(req, res, queryFn)),
   );
   router.get(
     '/ai/sessions/:sessionId',
@@ -62,7 +86,9 @@ export const createImportRouter = (queryFn: QueryFn = defaultQuery) => {
   router.post(
     '/ai/sessions/:sessionId/messages',
     requireAuth,
-    runImport((req, res) => sendCreateAiMessage(req, res, queryFn)),
+    metered,
+    requirePlan('plus'),
+    runMeteredImport((req, res) => sendCreateAiMessage(req, res, queryFn)),
   );
   router.post(
     '/ai/sessions/:sessionId/approve-plan',

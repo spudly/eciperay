@@ -1,7 +1,12 @@
 import type {Response} from 'express';
 
 import {query as defaultQuery} from '../../db/query.js';
-import type {AuthedRequest} from '../../middleware/requireAuth.js';
+import {
+  consumeAiCall,
+  quotaExhaustedBody,
+  refundAiCall,
+} from '../../lib/aiMetering.js';
+import type {EntitledRequest} from '../../middleware/loadEntitlement.js';
 import {anthropic, SONNET} from '../../lib/anthropic.js';
 import {RecipeImportError} from '../../lib/recipeImportToInput.js';
 import {prepareImportedRecipeInput} from '../../lib/prepareImportedRecipeInput.js';
@@ -62,7 +67,7 @@ const extractText = (
 };
 
 export const importFromImage = async (
-  req: AuthedRequest,
+  req: EntitledRequest,
   res: Response,
   queryFn: QueryFn,
 ) => {
@@ -71,7 +76,20 @@ export const importFromImage = async (
     return;
   }
   const {imageBase64, mediaType = 'image/jpeg'} = body.data;
-  const message = await callClaudeVision(imageBase64, mediaType);
+  const quota = await consumeAiCall(req.userId, req.entitlement.plan, queryFn);
+  if (!quota.ok) {
+    res
+      .status(402)
+      .json(quotaExhaustedBody('ai_quota_exhausted', quota.used, quota.limit));
+    return;
+  }
+  let message: Awaited<ReturnType<typeof callClaudeVision>>;
+  try {
+    message = await callClaudeVision(imageBase64, mediaType);
+  } catch (error) {
+    await refundAiCall(req.userId, queryFn);
+    throw error;
+  }
   const text = extractText(message.content[0]);
   const parsed = parseAiJson(RecipeImportSchema, text);
   try {
