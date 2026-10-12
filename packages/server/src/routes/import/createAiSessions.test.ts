@@ -8,6 +8,11 @@ import {
 } from '../../test/mockNockAnthropic.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
 import {lazyTestApp} from '../../test/lazyTestApp.js';
+import {
+  mockBillingMetered,
+  mockBillingPlan,
+  makeSubscriptionRow,
+} from '../../test/mockBilling.js';
 
 const mockQuery = createMockQuery();
 const getApp = lazyTestApp({query: mockQuery});
@@ -74,6 +79,7 @@ describe('POST /recipes/import/ai/sessions', () => {
   test('starts a planning session', async () => {
     nockSupabaseGetUser('user-uuid-1');
     nockAnthropicMessage(PLAN_TEXT);
+    mockBillingMetered(mockQuery, 'plus');
     mockQuery.mockResolvedValueOnce(makeQueryResult([makeSessionRow()]));
     const res = await request(getApp())
       .post('/api/recipes/import/ai/sessions')
@@ -86,6 +92,7 @@ describe('POST /recipes/import/ai/sessions', () => {
 
   test('returns 400 when prompt is too short', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     const res = await request(getApp())
       .post('/api/recipes/import/ai/sessions')
       .set('Authorization', 'Bearer valid-token')
@@ -195,6 +202,14 @@ describe('POST /recipes/import/ai/sessions/:sessionId/messages', () => {
     nockAnthropicMessage(REFINED_REPLY);
     let sessionState = makeSessionRow();
     mockQuery.mockImplementation(((sql: string) => {
+      if (sql.includes('from subscriptions')) {
+        return Promise.resolve(makeQueryResult([makeSubscriptionRow('plus')]));
+      }
+      if (sql.includes('ai_usage')) {
+        return Promise.resolve(
+          makeQueryResult([{calls: sql.trimStart().startsWith('insert') ? 1 : 0}]),
+        );
+      }
       if (sql.includes('from ai_create_sessions')) {
         return Promise.resolve(makeQueryResult([sessionState]));
       }
@@ -221,6 +236,7 @@ describe('POST /recipes/import/ai/sessions/:sessionId/messages', () => {
 
   test('returns 409 when plan already approved', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingMetered(mockQuery, 'plus');
     mockQuery.mockResolvedValueOnce(
       makeQueryResult([makeSessionRow({phase: 'preview_ready'})]),
     );
@@ -280,6 +296,8 @@ describe('create AI session error paths', () => {
   test('returns 502 when planning fails', async () => {
     nockSupabaseGetUser('user-uuid-1');
     anthropicCreateSpy.mockRejectedValueOnce(new Error('AI down'));
+    mockBillingMetered(mockQuery, 'plus');
+    mockQuery.mockResolvedValueOnce(makeQueryResult([]));
     const res = await request(getApp())
       .post('/api/recipes/import/ai/sessions')
       .set('Authorization', 'Bearer valid-token')
@@ -289,6 +307,7 @@ describe('create AI session error paths', () => {
 
   test('returns 400 when message content is too short', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     const res = await request(getApp())
       .post(`/api/recipes/import/ai/sessions/${SESSION_ID}/messages`)
       .set('Authorization', 'Bearer valid-token')
@@ -298,6 +317,7 @@ describe('create AI session error paths', () => {
 
   test('returns 404 when sending message to missing session', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery.mockResolvedValueOnce(makeQueryResult([]));
     const res = await request(getApp())
       .post(`/api/recipes/import/ai/sessions/${SESSION_ID}/messages`)
@@ -345,7 +365,10 @@ describe('create AI session error paths', () => {
   test('returns 502 when refine planning fails', async () => {
     nockSupabaseGetUser('user-uuid-1');
     anthropicCreateSpy.mockRejectedValueOnce(new Error('AI down'));
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery.mockResolvedValueOnce(makeQueryResult([makeSessionRow()]));
+    mockQuery.mockResolvedValueOnce(makeQueryResult([{calls: 1}]));
+    mockQuery.mockResolvedValueOnce(makeQueryResult([]));
     const res = await request(getApp())
       .post(`/api/recipes/import/ai/sessions/${SESSION_ID}/messages`)
       .set('Authorization', 'Bearer valid-token')
@@ -390,3 +413,4 @@ describe('create AI session error paths', () => {
     expect(res.status).toBe(404);
   });
 });
+
