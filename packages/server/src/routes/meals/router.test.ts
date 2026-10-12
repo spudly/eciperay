@@ -11,6 +11,7 @@ import {
 import {createMockQuery} from '../../test/mockQuery.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
 import {lazyTestApp} from '../../test/lazyTestApp.js';
+import {mockBillingPlan} from '../../test/mockBilling.js';
 import {
   accessibleRecipeRow,
   mealRecipeRow,
@@ -35,6 +36,7 @@ describe('GET /meals', () => {
 
   test('returns empty list', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery.mockResolvedValueOnce(makeQueryResult([]));
 
     const res = await request(getApp())
@@ -58,6 +60,7 @@ describe('GET /meals/:id', () => {
 
   test('returns meal detail', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     installLoadMealDetailMock(mockQuery);
 
     const res = await request(getApp())
@@ -70,6 +73,7 @@ describe('GET /meals/:id', () => {
 
   test('returns 404 when meal missing', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery.mockResolvedValueOnce(makeQueryResult([]));
 
     const res = await request(getApp())
@@ -87,6 +91,7 @@ describe('POST /meals', () => {
 
   test('creates meal', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([accessibleRecipeRow]))
       .mockResolvedValueOnce(emptyShareGrant)
@@ -105,6 +110,7 @@ describe('POST /meals', () => {
 
   test('returns 400 when recipe is inaccessible', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(emptyShareGrant);
@@ -119,6 +125,7 @@ describe('POST /meals', () => {
 
   test('returns 400 for invalid body', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     const res = await request(getApp())
       .post('/api/meals')
       .set('Authorization', 'Bearer valid-token')
@@ -129,6 +136,7 @@ describe('POST /meals', () => {
 
   test('returns 500 when saved meal cannot be reloaded', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([accessibleRecipeRow]))
       .mockResolvedValueOnce(emptyShareGrant)
@@ -152,6 +160,7 @@ describe('PUT /meals/:id', () => {
 
   test('updates meal', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([{id: MEAL_ID}]))
       .mockResolvedValueOnce(makeQueryResult([accessibleRecipeRow]))
@@ -172,6 +181,7 @@ describe('PUT /meals/:id', () => {
 
   test('returns 404 when meal missing', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery.mockResolvedValueOnce(makeQueryResult([]));
 
     const res = await request(getApp())
@@ -184,6 +194,7 @@ describe('PUT /meals/:id', () => {
 
   test('returns 400 when recipe is inaccessible', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([{id: MEAL_ID}]))
       .mockResolvedValueOnce(makeQueryResult([]))
@@ -199,6 +210,7 @@ describe('PUT /meals/:id', () => {
 
   test('returns 400 for invalid body', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     const res = await request(getApp())
       .put(`/api/meals/${MEAL_ID}`)
       .set('Authorization', 'Bearer valid-token')
@@ -215,6 +227,7 @@ describe('DELETE /meals/:id', () => {
 
   test('deletes meal', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce({...makeQueryResult([]), rowCount: 1});
@@ -228,6 +241,7 @@ describe('DELETE /meals/:id', () => {
 
   test('returns 404 when meal missing', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce({...makeQueryResult([]), rowCount: 0});
@@ -241,6 +255,7 @@ describe('DELETE /meals/:id', () => {
 
   test('returns 409 when meal is referenced by a plan', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery.mockResolvedValueOnce(makeQueryResult([{exists: 1}]));
 
     const res = await request(getApp())
@@ -258,6 +273,7 @@ describe('GET /meals/:id/cook-plan', () => {
 
   test('returns cook plan', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery.mockImplementation((async (sql: string) => {
       if (sql.includes('from meals') && sql.includes('where id =')) {
         return makeQueryResult([
@@ -305,6 +321,7 @@ describe('GET /meals/:id/cook-plan', () => {
 
   test('returns 404 when meal missing', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery.mockResolvedValueOnce(makeQueryResult([]));
 
     const res = await request(getApp())
@@ -316,6 +333,7 @@ describe('GET /meals/:id/cook-plan', () => {
 
   test('returns 409 when a recipe is inaccessible', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([mealRow]))
       .mockResolvedValueOnce(makeQueryResult([mealRecipeRow]))
@@ -337,6 +355,7 @@ describe('GET /meals/:id/cook-plan', () => {
 
   test('returns 502 when cook plan cannot be built', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery.mockImplementation((async (sql: string) => {
       if (sql.includes('from meals') && sql.includes('where id =')) {
         return makeQueryResult([
@@ -376,3 +395,4 @@ describe('GET /meals/:id/cook-plan', () => {
     expect(res.status).toBe(502);
   });
 });
+

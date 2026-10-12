@@ -5,6 +5,7 @@ import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {createMockQuery} from '../../test/mockQuery.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
 import {lazyTestApp} from '../../test/lazyTestApp.js';
+import {mockBillingPlan} from '../../test/mockBilling.js';
 
 const mockQuery = createMockQuery();
 const getApp = lazyTestApp({query: mockQuery});
@@ -19,6 +20,7 @@ const sharingRow = {
 describe('POST /recipes/:id/sharing/rotate-token', () => {
   test('returns a new share token for unlisted recipes', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery
       .mockResolvedValueOnce(
         makeQueryResult([
@@ -49,6 +51,7 @@ describe('POST /recipes/:id/sharing/rotate-token', () => {
 
   test('returns 409 when recipe is not unlisted', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery.mockResolvedValue(makeQueryResult([sharingRow]));
 
     const res = await request(getApp())
@@ -60,6 +63,7 @@ describe('POST /recipes/:id/sharing/rotate-token', () => {
 
   test('returns 404 when recipe is not found', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery.mockResolvedValue(makeQueryResult([]));
 
     const res = await request(getApp())
@@ -71,6 +75,7 @@ describe('POST /recipes/:id/sharing/rotate-token', () => {
 
   test('returns 404 when visibility update affects no rows', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery
       .mockResolvedValueOnce(
         makeQueryResult([
@@ -88,6 +93,7 @@ describe('POST /recipes/:id/sharing/rotate-token', () => {
 
   test('returns 404 when detail fetch fails after rotation', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery
       .mockResolvedValueOnce(
         makeQueryResult([
@@ -107,3 +113,4 @@ describe('POST /recipes/:id/sharing/rotate-token', () => {
     expect(res.status).toBe(404);
   });
 });
+
