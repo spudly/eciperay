@@ -71,7 +71,6 @@ export type {
   MealPlanDetail,
   MealPlanEntry,
   MealPlanEntryInput,
-  MealPlanInput,
   MealPlanMealEntry,
   MealPlanMealEntryInput,
   MealPlanRecipeEntry,
@@ -106,3 +105,9 @@ export type {
   RecipeRatingSummary,
   RecipeStarRating,
 } from './recipeRating.js';
+export type {
+  Entitlement,
+  PlanLimits,
+  PlanName,
+  SubscriptionStatus,
+} from './entitlement.js';
