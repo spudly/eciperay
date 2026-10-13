@@ -1032,3 +1032,40 @@ describe('tweak AI session full conversational flow', () => {
   });
 });
 
+describe('AI quota 402s', () => {
+  test('POST /tweak-ai-sessions 402s when quota is exhausted', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, null);
+    mockLoadContext();
+    mockQuery.mockResolvedValueOnce(makeQueryResult([{calls: 999}]));
+
+    const res = await request(getApp())
+      .post('/api/recipes/recipe-uuid-1/tweak-ai-sessions')
+      .set('Authorization', 'Bearer test-token')
+      .send({prompt: PROMPT});
+
+    expect(res.status).toBe(402);
+    expect(res.body.error).toBe('ai_quota_exhausted');
+  });
+
+  test('POST /tweak-ai-sessions/:id/messages 402s when quota is exhausted', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, null);
+    mockQuery
+      .mockResolvedValueOnce(makeQueryResult([makeSessionRow()]))
+      .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
+      .mockResolvedValueOnce(makeQueryResult([makeVersionDetailRow()]))
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([{calls: 999}]));
+
+    const res = await request(getApp())
+      .post(
+        `/api/recipes/recipe-uuid-1/tweak-ai-sessions/${SESSION_ID}/messages`,
+      )
+      .set('Authorization', 'Bearer test-token')
+      .send({content: 'Make it creamier please'});
+
+    expect(res.status).toBe(402);
+    expect(res.body.error).toBe('ai_quota_exhausted');
+  });
+});
