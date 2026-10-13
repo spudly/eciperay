@@ -1,9 +1,10 @@
 import {createHmac} from 'node:crypto';
+
 import request from 'supertest';
+import type {QueryResult} from 'pg';
 
 import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {createMockQuery} from '../../test/mockQuery.js';
-import type {QueryResult} from 'pg';
 import {lazyTestApp} from '../../test/lazyTestApp.js';
 
 /**
@@ -13,10 +14,7 @@ import {lazyTestApp} from '../../test/lazyTestApp.js';
  */
 const mockRouteQueries = (impl: (text: string) => Promise<QueryResult>) => {
   mockQuery.mockImplementation(
-    impl as unknown as (
-      text: string,
-      params?: unknown[],
-    ) => Promise<QueryResult>,
+    impl,
   );
 };
 
@@ -96,7 +94,7 @@ describe('POST /billing/paddle-webhook', () => {
     expect(res.status).toBe(200);
     expect(res.body).toEqual({received: true});
     const upsertCall = mockQuery.mock.calls.find(args =>
-      (args[0] as string).includes('insert into subscriptions'),
+      (args[0]).includes('insert into subscriptions'),
     );
     expect(upsertCall).toBeDefined();
     // plan resolved from plan_prices ('plus'), status mapped to active
@@ -137,7 +135,7 @@ describe('POST /billing/paddle-webhook', () => {
     expect(res.status).toBe(200);
     expect(res.body).toEqual({received: true, duplicate: true});
     const upsertCall = mockQuery.mock.calls.find(args =>
-      (args[0] as string).includes('insert into subscriptions'),
+      (args[0]).includes('insert into subscriptions'),
     );
     expect(upsertCall).toBeUndefined();
   });

@@ -1,9 +1,9 @@
 import express from 'express';
 import request from 'supertest';
+import type {QueryResult} from 'pg';
 
 import {makeQueryResult} from '../test/fixtures/queryResult.js';
 import {createMockQuery} from '../test/mockQuery.js';
-import type {QueryResult} from 'pg';
 import {nockSupabaseGetUser} from '../test/mockNockSupabase.js';
 
 import {loadEntitlement, type EntitledRequest} from './loadEntitlement.js';
@@ -17,10 +17,7 @@ import {requirePlan} from './requirePlan.js';
  */
 const mockRouteQueries = (impl: (text: string) => Promise<QueryResult>) => {
   mockQuery.mockImplementation(
-    impl as unknown as (
-      text: string,
-      params?: unknown[],
-    ) => Promise<QueryResult>,
+    impl,
   );
 };
 
