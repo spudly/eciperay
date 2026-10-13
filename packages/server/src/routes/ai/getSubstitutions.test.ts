@@ -1,7 +1,11 @@
 import request from 'supertest';
 
+import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {createMockQuery} from '../../test/mockQuery.js';
-import {nockAnthropicMessage} from '../../test/mockNockAnthropic.js';
+import {
+  anthropicCreateSpy,
+  nockAnthropicMessage,
+} from '../../test/mockNockAnthropic.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
 import {lazyTestApp} from '../../test/lazyTestApp.js';
 import {mockBillingMetered, mockBillingPlan} from '../../test/mockBilling.js';
@@ -47,5 +51,22 @@ describe('GET /recipes/:id/ai/substitutions', () => {
     );
     expect(res.status).toBe(401);
   });
-});
 
+  test('refunds the AI quota and rethrows when Claude fails', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockBillingMetered(mockQuery, 'plus');
+    // refundAiCall's UPDATE after the failed provider call.
+    mockQuery.mockResolvedValueOnce(makeQueryResult([]));
+    anthropicCreateSpy.mockRejectedValueOnce(new Error('AI down'));
+
+    const res = await request(getApp())
+      .get('/api/recipes/recipe-uuid-1/ai/substitutions?missing=butter')
+      .set('Authorization', 'Bearer <redacted>');
+
+    expect(res.status).toBe(500);
+    const refundCall = mockQuery.mock.calls.find(args =>
+      args[0].includes('update ai_usage'),
+    );
+    expect(refundCall).toBeDefined();
+  });
+});

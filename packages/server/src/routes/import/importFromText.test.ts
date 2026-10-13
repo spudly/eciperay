@@ -4,7 +4,10 @@ import request from 'supertest';
 import {makeRecipeDetailRow} from '../../test/fixtures/recipeRow.js';
 import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {createMockQuery} from '../../test/mockQuery.js';
-import {nockAnthropicMessage} from '../../test/mockNockAnthropic.js';
+import {
+  anthropicCreateSpy,
+  nockAnthropicMessage,
+} from '../../test/mockNockAnthropic.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
 import {lazyTestApp} from '../../test/lazyTestApp.js';
 import {mockBillingMetered, mockBillingPlan} from '../../test/mockBilling.js';
@@ -61,6 +64,40 @@ describe('POST /recipes/import/text', () => {
       .send({text: 'Pasta\n\nIngredients:\n200g pasta\n\nBoil pasta.'});
     expect(res.status).toBe(201);
     expect(res.body.title).toBe('Pasted Pasta');
+  });
+
+  test('refunds the AI quota and rethrows when Claude parsing fails', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockBillingMetered(mockQuery, 'plus');
+    // refundAiCall's UPDATE after the failed provider call.
+    mockQuery.mockResolvedValueOnce(makeQueryResult([]));
+    anthropicCreateSpy.mockRejectedValueOnce(new Error('AI down'));
+
+    const res = await request(getApp())
+      .post('/api/recipes/import/text')
+      .set('Authorization', 'Bearer <redacted>')
+      .send({text: 'Pasta\n\nIngredients:\n200g pasta\n\nBoil pasta.'});
+
+    expect(res.status).toBe(500);
+    const refundCall = mockQuery.mock.calls.find(args =>
+      args[0].includes('update ai_usage'),
+    );
+    expect(refundCall).toBeDefined();
+  });
+
+  test('rethrows unexpected errors from preparing the import input', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    nockAnthropicMessage(CLAUDE_RESPONSE);
+    mockBillingMetered(mockQuery, 'plus');
+    // listTagOptionsForUser's query fails with a non-RecipeImportError.
+    mockQuery.mockRejectedValueOnce(new Error('DB down'));
+
+    const res = await request(getApp())
+      .post('/api/recipes/import/text')
+      .set('Authorization', 'Bearer <redacted>')
+      .send({text: 'Pasta\n\nIngredients:\n200g pasta\n\nBoil pasta.'});
+
+    expect(res.status).toBe(500);
   });
 
   test('stores imported images in the bucket instead of external URLs', async () => {
@@ -200,4 +237,3 @@ describe('POST /recipes/import/text', () => {
     expect(res.status).toBe(500);
   });
 });
-
