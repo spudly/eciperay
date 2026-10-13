@@ -8,9 +8,15 @@
  */
 
 import {StdioServerTransport} from '@modelcontextprotocol/sdk/server/stdio.js';
+import {config as loadEnv} from 'dotenv';
 
 import {loadConfig} from './eciperayClient.js';
 import {createEciperayMcpServer} from './mcpServer.js';
+
+// Load the package .env (see .env.example) so `npm run start` works without
+// manually exporting ECIPERAY_API_TOKEN. Explicit environment variables still
+// win over .env values.
+loadEnv();
 
 const main = async (): Promise<void> => {
   const server = createEciperayMcpServer(loadConfig());

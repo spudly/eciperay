@@ -13,7 +13,7 @@ import type {AuthedRequest} from '../../middleware/requireAuth.js';
 
 type QueryFn = typeof defaultQuery;
 
-const createTokenSchema = z.object({name: z.string().min(1).max(100)});
+const createTokenSchema = z.object({name: z.string().trim().min(1).max(100)});
 
 export const createToken = async (
   req: AuthedRequest,

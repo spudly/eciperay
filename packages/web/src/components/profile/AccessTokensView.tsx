@@ -95,7 +95,7 @@ export const AccessTokensView = ({
       <PrimaryButton
         label="Create token"
         loading={isCreating}
-        disabled={!tokenName.trim()}
+        disabled={!tokenName.trim() || createdSecret !== null}
         onPress={onCreate}
       />
     </div>
