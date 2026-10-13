@@ -19,6 +19,7 @@ runs:
       with:
         node-version: 22
         cache: npm
+        registry-url: https://npm.pkg.github.com
 
     - name: Restore node_modules cache
       id: node-modules-cache
@@ -40,3 +41,5 @@ runs:
       env:
         CI: true
         HUSKY: 0
+        # NOTE: NODE_AUTH_TOKEN must be set in the calling workflow's env
+        # (composite actions cannot access the secrets context directly).
