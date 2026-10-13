@@ -3,11 +3,26 @@ import request from 'supertest';
 
 import {makeQueryResult} from '../test/fixtures/queryResult.js';
 import {createMockQuery} from '../test/mockQuery.js';
+import type {QueryResult} from 'pg';
 import {nockSupabaseGetUser} from '../test/mockNockSupabase.js';
 
 import {loadEntitlement, type EntitledRequest} from './loadEntitlement.js';
 import {requireAuth} from './requireAuth.js';
 import {requirePlan} from './requirePlan.js';
+
+/**
+ * Wraps mockQuery.mockImplementation for SQL-routing mocks. The mock query type
+ * is generic, but these callbacks return concrete row shapes, so the cast
+ * bridges the two (same approach as createMockQuery's own cast).
+ */
+const mockRouteQueries = (impl: (text: string) => Promise<QueryResult>) => {
+  mockQuery.mockImplementation(
+    impl as unknown as (
+      text: string,
+      params?: unknown[],
+    ) => Promise<QueryResult>,
+  );
+};
 
 const mockQuery = createMockQuery();
 
@@ -15,13 +30,15 @@ const ACTIVE_ROW = {
   plan: 'plus',
   status: 'active',
   paddle_customer_id: 'ctm_1',
-  current_period_end: new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString(),
+  current_period_end: new Date(
+    Date.now() + 30 * 24 * 3600 * 1000,
+  ).toISOString(),
   cancel_at_period_end: false,
   past_due_since: null,
 };
 
 const mockEntitlementQueries = (subscriptionRow: unknown) => {
-  mockQuery.mockImplementation((text: string) => {
+  mockRouteQueries((text: string) => {
     if (text.includes('from subscriptions')) {
       return Promise.resolve(
         makeQueryResult(subscriptionRow ? [subscriptionRow] : []),
@@ -39,14 +56,9 @@ const makeApp = () => {
   app.locals['query'] = mockQuery;
   // Mirrors server.ts: no user upsert in tests, so userId = supabase uid.
   app.locals['skipUserUpsert'] = true;
-  app.get(
-    '/entitled',
-    requireAuth,
-    loadEntitlement(mockQuery),
-    (req, res) => {
-      res.json((req as EntitledRequest).entitlement);
-    },
-  );
+  app.get('/entitled', requireAuth, loadEntitlement(mockQuery), (req, res) => {
+    res.json((req as EntitledRequest).entitlement);
+  });
   app.get(
     '/plus-only',
     requireAuth,

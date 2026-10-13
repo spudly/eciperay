@@ -71,6 +71,7 @@ export type {
   MealPlanDetail,
   MealPlanEntry,
   MealPlanEntryInput,
+  MealPlanInput,
   MealPlanMealEntry,
   MealPlanMealEntryInput,
   MealPlanRecipeEntry,

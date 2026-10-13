@@ -5,14 +5,13 @@ import {
   loadEntitlement,
   type EntitledRequest,
 } from '../../middleware/loadEntitlement.js';
-import {requireAuth, type AuthedRequest} from '../../middleware/requireAuth.js';
+import {requireAuth} from '../../middleware/requireAuth.js';
 
 import {getNutrition} from './getNutrition.js';
 import {getSubstitutions} from './getSubstitutions.js';
 
 type QueryFn = typeof defaultQuery;
 
-const a = (req: Parameters<typeof requireAuth>[0]) => req as AuthedRequest;
 const e = (req: Parameters<typeof requireAuth>[0]) => req as EntitledRequest;
 
 export const createAiRouter = (queryFn: QueryFn) => {

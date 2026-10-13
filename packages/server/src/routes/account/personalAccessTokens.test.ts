@@ -4,6 +4,7 @@ import type {QueryResult, QueryResultRow} from 'pg';
 import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {createMockQuery} from '../../test/mockQuery.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
+import {mockBillingPlan} from '../../test/mockBilling.js';
 import {lazyTestApp} from '../../test/lazyTestApp.js';
 
 const mockQuery = createMockQuery();
@@ -25,6 +26,7 @@ describe('account personal access token routes', () => {
 
   test('POST /account/personal-access-tokens creates a token', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'power');
     // Echo the inserted prefix so tokenPrefix matches the generated token.
     mockQuery.mockImplementationOnce(
       async <T extends QueryResultRow>(
@@ -52,6 +54,7 @@ describe('account personal access token routes', () => {
 
   test('POST returns 400 for a missing name', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'power');
 
     const res = await request(getApp())
       .post('/api/account/personal-access-tokens')
@@ -63,6 +66,7 @@ describe('account personal access token routes', () => {
 
   test('POST returns 500 when the insert yields no row', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'power');
     mockQuery.mockResolvedValueOnce(makeQueryResult([]));
 
     const res = await request(getApp())
@@ -75,6 +79,7 @@ describe('account personal access token routes', () => {
 
   test('POST returns 400 for a whitespace-only name', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'power');
 
     const res = await request(getApp())
       .post('/api/account/personal-access-tokens')
@@ -86,6 +91,7 @@ describe('account personal access token routes', () => {
 
   test('GET /account/personal-access-tokens lists tokens', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'power');
     mockQuery.mockResolvedValueOnce(makeQueryResult([tokenRow]));
 
     const res = await request(getApp())
@@ -108,6 +114,7 @@ describe('account personal access token routes', () => {
 
   test('DELETE /account/personal-access-tokens/:id revokes a token', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'power');
     mockQuery.mockResolvedValueOnce(makeQueryResult([{}]));
 
     const res = await request(getApp())
@@ -119,6 +126,7 @@ describe('account personal access token routes', () => {
 
   test('DELETE returns 404 for an unknown token', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'power');
     mockQuery.mockResolvedValueOnce(makeQueryResult([]));
 
     const res = await request(getApp())
@@ -130,6 +138,7 @@ describe('account personal access token routes', () => {
 
   test('DELETE returns 404 when rowCount is null', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'power');
     mockQuery.mockResolvedValueOnce({...makeQueryResult([]), rowCount: null});
 
     const res = await request(getApp())
@@ -151,9 +160,11 @@ describe('account personal access token routes', () => {
             email: 'chef@example.com',
           },
         ]),
-      )
-      // GET list query
-      .mockResolvedValueOnce(makeQueryResult([]));
+      );
+    // Entitlement lookups (loadEntitlement) run after auth, before the handler.
+    mockBillingPlan(mockQuery, 'power');
+    // GET list query
+    mockQuery.mockResolvedValueOnce(makeQueryResult([]));
 
     const res = await request(getApp())
       .get('/api/account/personal-access-tokens')
@@ -184,5 +195,31 @@ describe('account personal access token routes', () => {
       .set('Authorization', 'Bearer ecp_validtoken');
 
     expect(res.status).toBe(401);
+  });
+
+  test('POST returns 403 for a free-tier user', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, null);
+
+    const res = await request(getApp())
+      .post('/api/account/personal-access-tokens')
+      .set('Authorization', 'Bearer test-token')
+      .send({name: 'Claude Desktop'});
+
+    expect(res.status).toBe(403);
+    expect(res.body.error).toBe('plan_required');
+    expect(res.body.requiredPlan).toBe('power');
+  });
+
+  test('GET returns 403 for a Plus-tier user (API access is Power-only)', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
+
+    const res = await request(getApp())
+      .get('/api/account/personal-access-tokens')
+      .set('Authorization', 'Bearer test-token');
+
+    expect(res.status).toBe(403);
+    expect(res.body.error).toBe('plan_required');
   });
 });
