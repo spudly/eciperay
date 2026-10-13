@@ -1,6 +1,6 @@
 {
   "name": "@eciperay/server",
-  "version": "1.9.0",
+  "version": "1.10.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -16,6 +16,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.37.0",
     "@eciperay/client": "*",
+    "@eciperay/mcp-server": "*",
     "@eciperay/types": "*",
     "@opentelemetry/api-logs": "^0.219.0",
     "@opentelemetry/exporter-logs-otlp-http": "^0.219.0",

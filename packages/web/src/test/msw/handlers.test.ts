@@ -124,6 +124,34 @@ describe('msw handlers', () => {
     expect(goals.calories).toBe(2000);
   });
 
+  test('covers personal access token endpoints', async () => {
+    const tokens = await eciperay.account.listPersonalAccessTokens();
+    expect(tokens).toEqual([]);
+    const created =
+      await eciperay.account.createPersonalAccessToken('Claude Desktop');
+    expect(created.name).toBe('Claude Desktop');
+    expect(created.token).toBe('ecp_testprefix_testsecret');
+    const namelessResponse = await fetch(
+      'http://localhost:8080/api/account/personal-access-tokens',
+      {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({}),
+      },
+    );
+    expect(namelessResponse.status).toBe(400);
+    const blankResponse = await fetch(
+      'http://localhost:8080/api/account/personal-access-tokens',
+      {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({name: '   '}),
+      },
+    );
+    expect(blankResponse.status).toBe(400);
+    await eciperay.account.revokePersonalAccessToken('token-uuid-1');
+  });
+
   test('covers ratings and comments endpoints', async () => {
     const comment = await eciperay.recipes.createComment('recipe-uuid-1', {
       body: 'Nice!',

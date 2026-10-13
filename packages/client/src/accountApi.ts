@@ -1,4 +1,9 @@
-import type {AccountExportBundle, NutritionGoals} from '@eciperay/types';
+import type {
+  AccountExportBundle,
+  NutritionGoals,
+  PersonalAccessToken,
+  PersonalAccessTokenWithSecret,
+} from '@eciperay/types';
 
 import type {ApiClient} from './createApiClient.js';
 
@@ -12,4 +17,15 @@ export const createAccountApi = (client: ApiClient) => ({
       body: JSON.stringify(goals),
     }),
   deleteAccount: () => client.fetch<undefined>('/account', {method: 'DELETE'}),
+  listPersonalAccessTokens: () =>
+    client.fetch<PersonalAccessToken[]>('/account/personal-access-tokens'),
+  createPersonalAccessToken: (name: string) =>
+    client.fetch<PersonalAccessTokenWithSecret>(
+      '/account/personal-access-tokens',
+      {method: 'POST', body: JSON.stringify({name})},
+    ),
+  revokePersonalAccessToken: (id: string) =>
+    client.fetch<undefined>(`/account/personal-access-tokens/${id}`, {
+      method: 'DELETE',
+    }),
 });

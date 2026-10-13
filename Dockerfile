@@ -10,6 +10,7 @@ COPY packages/theme/package.json packages/theme/
 COPY packages/icons/package.json packages/icons/
 COPY packages/client/package.json packages/client/
 COPY packages/server/package.json packages/server/
+COPY packages/mcp-server/package.json packages/mcp-server/
 COPY packages/web/package.json packages/web/
 COPY packages/app/package.json packages/app/
 COPY patches/ patches/
@@ -63,6 +64,7 @@ COPY packages/theme/package.json packages/theme/
 COPY packages/icons/package.json packages/icons/
 COPY packages/client/package.json packages/client/
 COPY packages/server/package.json packages/server/
+COPY packages/mcp-server/package.json packages/mcp-server/
 COPY packages/web/package.json packages/web/
 COPY packages/app/package.json packages/app/
 COPY patches/ patches/
@@ -76,6 +78,7 @@ RUN npm ci --omit=dev --ignore-scripts \
 COPY --from=build /app/packages/types packages/types
 COPY packages/client packages/client
 COPY packages/server packages/server
+COPY packages/mcp-server packages/mcp-server
 COPY --from=build /app/packages/web/dist packages/web/dist
 
 EXPOSE 8080

@@ -8,6 +8,11 @@ import {
 import {requireAuth, type AuthedRequest} from '../../middleware/requireAuth.js';
 
 import {deleteAccount} from './deleteAccount.js';
+import {
+  createToken,
+  listTokens,
+  revokeToken,
+} from './personalAccessTokens.js';
 import {exportAccount} from './exportAccount.js';
 import {getEntitlement} from './getEntitlement.js';
 import {getNutritionGoals, putNutritionGoals} from './nutritionGoals.js';
@@ -34,6 +39,15 @@ export const createAccountRouter = (queryFn: QueryFn) => {
   );
   router.delete('/', requireAuth, (req, res) =>
     deleteAccount(req as AuthedRequest, res, queryFn),
+  );
+  router.post('/personal-access-tokens', requireAuth, (req, res) =>
+    createToken(req as AuthedRequest, res, queryFn),
+  );
+  router.get('/personal-access-tokens', requireAuth, (req, res) =>
+    listTokens(req as AuthedRequest, res, queryFn),
+  );
+  router.delete('/personal-access-tokens/:id', requireAuth, (req, res) =>
+    revokeToken(req as AuthedRequest, res, queryFn),
   );
 
   return router;

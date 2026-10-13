@@ -1,6 +1,8 @@
 # deps
 node_modules
 .npm
+.npmrc
+.npmrc.bak
 
 # env
 .env

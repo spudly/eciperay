@@ -31,6 +31,8 @@ export const MIRROR_PAIRS = [
   'meals/MealsHubView.tsx',
   'meals/NutritionGoalProgressView.tsx',
   'meals/ShoppingListView.tsx',
+  'profile/AccessTokensView.tsx',
+  'profile/AccessTokensTokenRow.tsx',
   'profile/NutritionGoalsFormView.tsx',
   'profile/ProfileView.tsx',
   'recipes/RecipeListFiltersBar.tsx',
@@ -137,6 +139,12 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
       'Thin wrapper over ui/TabBar for native RecipeDetailChrome; web RecipeDetailChrome uses TabBar directly.',
   },
   {
+    path: 'profile/AccessTokensSection.tsx',
+    platform: 'app',
+    reason:
+      'App ProfileScreen extract for the tokens section; web ProfilePage uses ProfileAccessTokensSection.',
+  },
+  {
     path: 'discover/DiscoverView.tsx',
     platform: 'web',
     reason: 'Public recipe catalog UI; discover is a web-only SEO surface.',
@@ -152,6 +160,12 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
     platform: 'web',
     reason:
       'Web ProfilePage extract for max-lines; app ProfileScreen keeps goals query state inline.',
+  },
+  {
+    path: 'profile/ProfileAccessTokensSection.tsx',
+    platform: 'web',
+    reason:
+      'Web ProfilePage extract for max-lines; app ProfileScreen uses AccessTokensSection.',
   },
   {
     path: 'recipes/RecipeListStatusIngredientFilters.tsx',

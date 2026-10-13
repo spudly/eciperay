@@ -118,6 +118,8 @@ const SHOWCASE_MIRROR_PATHS = [
   'meals/MealsHubView.tsx',
   'meals/NutritionGoalProgressView.tsx',
   'meals/ShoppingListView.tsx',
+  'profile/AccessTokensTokenRow.tsx',
+  'profile/AccessTokensView.tsx',
   'profile/NutritionGoalsFormView.tsx',
   'recipe/CookHistoryTab.tsx',
   'recipe/EditRecipeView.tsx',

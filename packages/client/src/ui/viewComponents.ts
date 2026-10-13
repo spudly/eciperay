@@ -58,6 +58,8 @@ export type ProfileViewProps = {
   sectionsAfterFeedback?: ReactNode;
 };
 
+export type {AccessTokensViewProps} from './tokenViewComponents.js';
+
 export type AddRecipeMenuOption = {
   label: string;
   description: string;

@@ -4,6 +4,7 @@ import {useQueryClient} from '@tanstack/react-query';
 import {useRef, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
+import {ProfileAccessTokensSection} from '../components/profile/ProfileAccessTokensSection.js';
 import {ProfileAccountDataSection} from '../components/ProfileAccountDataSection.js';
 import {ProfileNutritionGoalsSection} from '../components/profile/ProfileNutritionGoalsSection.js';
 import {ProfileView} from '../components/profile/ProfileView.js';
@@ -99,6 +100,7 @@ export const ProfilePage = () => {
       sectionsBeforeFeedback={
         <>
           <ProfileNutritionGoalsSection />
+          <ProfileAccessTokensSection />
           <ProfileTransferSection
             importing={importing}
             importSummary={importSummary}
