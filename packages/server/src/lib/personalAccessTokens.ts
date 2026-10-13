@@ -95,8 +95,8 @@ export const revokePersonalAccessToken = async (
 };
 
 /**
- * Resolve the owning user for a personal access token. Returns null for
- * unknown or revoked tokens. Touches last_used_at on success.
+ * Resolve the owning user for a personal access token. Returns null for unknown
+ * or revoked tokens. Touches last_used_at on success.
  */
 export const resolveUserByPersonalAccessToken = async (
   token: string,

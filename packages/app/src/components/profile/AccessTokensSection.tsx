@@ -65,7 +65,9 @@ export const AccessTokensSection = () => {
       onRevoke={id => {
         revokeMutation.mutate(id);
       }}
-      error={error}
+      error={
+        error ?? (tokensQuery.error ? errorMessage(tokensQuery.error) : null)
+      }
     />
   );
 };

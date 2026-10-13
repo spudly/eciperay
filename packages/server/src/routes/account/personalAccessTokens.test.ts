@@ -61,6 +61,29 @@ describe('account personal access token routes', () => {
     expect(res.status).toBe(400);
   });
 
+  test('POST returns 500 when the insert yields no row', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockQuery.mockResolvedValueOnce(makeQueryResult([]));
+
+    const res = await request(getApp())
+      .post('/api/account/personal-access-tokens')
+      .set('Authorization', 'Bearer <redacted>')
+      .send({name: 'Claude Desktop'});
+
+    expect(res.status).toBe(500);
+  });
+
+  test('POST returns 400 for a whitespace-only name', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+
+    const res = await request(getApp())
+      .post('/api/account/personal-access-tokens')
+      .set('Authorization', 'Bearer <redacted>')
+      .send({name: '   '});
+
+    expect(res.status).toBe(400);
+  });
+
   test('GET /account/personal-access-tokens lists tokens', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValueOnce(makeQueryResult([tokenRow]));
@@ -105,6 +128,17 @@ describe('account personal access token routes', () => {
     expect(res.status).toBe(404);
   });
 
+  test('DELETE returns 404 when rowCount is null', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockQuery.mockResolvedValueOnce({...makeQueryResult([]), rowCount: null});
+
+    const res = await request(getApp())
+      .delete('/api/account/personal-access-tokens/token-uuid-9')
+      .set('Authorization', 'Bearer <redacted>');
+
+    expect(res.status).toBe(404);
+  });
+
   test('a personal access token authenticates requests', async () => {
     // Token lookup succeeds and resolves the owning user.
     mockQuery
@@ -135,6 +169,19 @@ describe('account personal access token routes', () => {
     const res = await request(getApp())
       .get('/api/account/personal-access-tokens')
       .set('Authorization', 'Bearer ecp_revokedtoken');
+
+    expect(res.status).toBe(401);
+  });
+
+  test('a personal access token for a deleted user is rejected', async () => {
+    // Token lookup succeeds but the owning user row is gone.
+    mockQuery
+      .mockResolvedValueOnce(makeQueryResult([{user_id: 'user-uuid-1'}]))
+      .mockResolvedValueOnce(makeQueryResult([]));
+
+    const res = await request(getApp())
+      .get('/api/account/personal-access-tokens')
+      .set('Authorization', 'Bearer ecp_validtoken');
 
     expect(res.status).toBe(401);
   });

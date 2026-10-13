@@ -75,5 +75,6 @@ describe('queryKeys', () => {
       'p1',
     ]);
     expect(queryKeys.nutritionGoals()).toEqual(['nutritionGoals']);
+    expect(queryKeys.personalAccessTokens()).toEqual(['personalAccessTokens']);
   });
 });
