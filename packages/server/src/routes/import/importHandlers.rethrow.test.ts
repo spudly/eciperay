@@ -52,6 +52,9 @@ const makeRes = () => {
 describe('import handlers unexpected errors', () => {
   beforeEach(() => {
     mockQuery.mockReset();
+    // First query is consumeAiCall's INSERT (handlers are called directly,
+    // bypassing the entitlement middleware); it must return a row.
+    mockQuery.mockResolvedValueOnce(makeQueryResult([{calls: 1}]));
     mockQuery.mockResolvedValue(makeQueryResult([]));
   });
 
@@ -66,6 +69,14 @@ describe('import handlers unexpected errors', () => {
         {
           userId: 'user-uuid-1',
           body: {url: 'https://recipe.example.com/plain'},
+          entitlement: {
+            plan: 'free',
+            status: null,
+            aiUsed: 0,
+            aiLimit: 5,
+            periodEndsAt: null,
+            paddleCustomerId: null,
+          },
         } as never,
         res,
         mockQuery,
@@ -78,7 +89,18 @@ describe('import handlers unexpected errors', () => {
     const res = makeRes();
     await expect(
       importFromImage(
-        {userId: 'user-uuid-1', body: {imageBase64: 'abc'}} as never,
+        {
+          userId: 'user-uuid-1',
+          body: {imageBase64: 'abc'},
+          entitlement: {
+            plan: 'free',
+            status: null,
+            aiUsed: 0,
+            aiLimit: 5,
+            periodEndsAt: null,
+            paddleCustomerId: null,
+          },
+        } as never,
         res,
         mockQuery,
       ),
