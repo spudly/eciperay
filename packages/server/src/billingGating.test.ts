@@ -1,9 +1,9 @@
 import request from 'supertest';
+import type {QueryResult} from 'pg';
 
 import {makeRecipeInput} from './test/fixtures/recipe.js';
 import {makeQueryResult} from './test/fixtures/queryResult.js';
 import {createMockQuery} from './test/mockQuery.js';
-import type {QueryResult} from 'pg';
 import {nockSupabaseGetUser} from './test/mockNockSupabase.js';
 import {lazyTestApp} from './test/lazyTestApp.js';
 
@@ -14,10 +14,7 @@ import {lazyTestApp} from './test/lazyTestApp.js';
  */
 const mockRouteQueries = (impl: (text: string) => Promise<QueryResult>) => {
   mockQuery.mockImplementation(
-    impl as unknown as (
-      text: string,
-      params?: unknown[],
-    ) => Promise<QueryResult>,
+    impl,
   );
 };
 
@@ -119,7 +116,7 @@ describe('billing gating (Phase 1)', () => {
     // The recipe-count query must never run for unlimited plans.
     expect(
       mockQuery.mock.calls.some(args =>
-        (args[0] as string).includes('count(*) as count from recipes'),
+        (args[0]).includes('count(*) as count from recipes'),
       ),
     ).toBe(false);
   });

@@ -22,7 +22,8 @@ export const planAtOrAbove = (plan: PlanName, minimum: PlanName): boolean =>
 export const PAST_DUE_GRACE_DAYS = 7;
 
 type SubscriptionRow = {
-  plan: 'plus' | 'power';
+  // Widened: the check below validates unknown plan values to free.
+  plan: string;
   status: SubscriptionStatus;
   paddle_customer_id: string | null;
   current_period_end: string | null;

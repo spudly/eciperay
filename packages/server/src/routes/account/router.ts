@@ -23,7 +23,9 @@ export const createAccountRouter = (queryFn: QueryFn) => {
     '/entitlement',
     requireAuth,
     loadEntitlement(queryFn),
-    (req, res) => getEntitlement(req as EntitledRequest, res),
+    (req, res) => {
+      getEntitlement(req as EntitledRequest, res);
+    },
   );
   router.get('/export', requireAuth, (req, res) =>
     exportAccount(req as AuthedRequest, res, queryFn),
