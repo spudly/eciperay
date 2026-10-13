@@ -1,4 +1,5 @@
 import request from 'supertest';
+import type {QueryResult, QueryResultRow} from 'pg';
 
 import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {createMockQuery} from '../../test/mockQuery.js';
@@ -24,7 +25,16 @@ describe('account personal access token routes', () => {
 
   test('POST /account/personal-access-tokens creates a token', async () => {
     nockSupabaseGetUser('user-uuid-1');
-    mockQuery.mockResolvedValueOnce(makeQueryResult([tokenRow]));
+    // Echo the inserted prefix so tokenPrefix matches the generated token.
+    mockQuery.mockImplementationOnce(
+      async <T extends QueryResultRow>(
+        _text: string,
+        params?: unknown[],
+      ): Promise<QueryResult<T>> =>
+        makeQueryResult([
+          {...tokenRow, token_prefix: params?.[3] as string},
+        ]) as unknown as QueryResult<T>,
+    );
 
     const res = await request(getApp())
       .post('/api/account/personal-access-tokens')

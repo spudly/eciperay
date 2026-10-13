@@ -1,8 +1,6 @@
 import type {AccessTokensViewProps} from '@eciperay/client';
-import type {PersonalAccessToken} from '@eciperay/types';
 import {useState} from 'react';
 
-import {DestructiveButton} from '../ui/DestructiveButton.js';
 import {EmptyMessage} from '../ui/EmptyMessage.js';
 import {ErrorText} from '../ui/ErrorText.js';
 import {InfoBanner} from '../ui/InfoBanner.js';
@@ -11,22 +9,7 @@ import {SecondaryButton} from '../ui/SecondaryButton.js';
 import {SectionCard} from '../ui/SectionCard.js';
 import {TextField} from '../ui/TextField.js';
 
-const formatDate = (iso: string): string =>
-  new Date(iso).toLocaleDateString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-
-const describeToken = (token: PersonalAccessToken): string => {
-  const parts = [`Created ${formatDate(token.createdAt)}`];
-  parts.push(
-    token.lastUsedAt
-      ? `Last used ${formatDate(token.lastUsedAt)}`
-      : 'Never used',
-  );
-  return parts.join(' · ');
-};
+import {TokenRow} from './AccessTokensTokenRow.js';
 
 const copyToClipboard = async (text: string): Promise<boolean> => {
   try {
@@ -51,7 +34,12 @@ const CreatedSecretPanel = ({
       <p className="mb-2 text-sm font-semibold text-amber-900">
         Copy your new token now — you won&apos;t see it again.
       </p>
-      <code className="mb-3 block break-all rounded bg-white p-3 font-mono text-sm text-slate-900">
+      <code
+        className="
+        mb-3 block break-all rounded bg-white p-3 font-mono text-sm
+        text-slate-900
+      "
+      >
         {secret}
       </code>
       <div className="flex gap-2">
@@ -69,42 +57,6 @@ const CreatedSecretPanel = ({
     </div>
   );
 };
-
-const TokenRow = ({
-  token,
-  revoking,
-  onRevoke,
-}: {
-  token: PersonalAccessToken;
-  revoking: boolean;
-  onRevoke: (id: string) => void;
-}) => (
-  <li className="flex items-center justify-between gap-3 border-b border-slate-100 py-3 last:border-b-0">
-    <div className="min-w-0">
-      <p className="truncate text-sm font-medium text-slate-900">
-        {token.name}
-        {token.revokedAt ? (
-          <span className="ml-2 rounded bg-slate-200 px-1.5 py-0.5 text-xs font-normal text-slate-600">
-            Revoked
-          </span>
-        ) : null}
-      </p>
-      <p className="mt-0.5 font-mono text-xs text-slate-500">
-        {token.tokenPrefix}…
-      </p>
-      <p className="mt-0.5 text-xs text-slate-500">{describeToken(token)}</p>
-    </div>
-    {token.revokedAt ? null : (
-      <DestructiveButton
-        label={revoking ? 'Revoking…' : 'Revoke'}
-        disabled={revoking}
-        onPress={() => {
-          onRevoke(token.id);
-        }}
-      />
-    )}
-  </li>
-);
 
 export const AccessTokensView = ({
   tokens,

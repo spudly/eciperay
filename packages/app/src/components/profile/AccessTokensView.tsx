@@ -66,7 +66,11 @@ const TokenRow = ({
   revoking: boolean;
   onRevoke: (id: string) => void;
 }) => (
-  <View className="flex-row items-center justify-between gap-3 border-b border-slate-100 py-3">
+  <View
+    className="
+    flex-row items-center justify-between gap-3 border-b border-slate-100 py-3
+  "
+  >
     <View className="min-w-0 flex-1">
       <Text className="text-sm font-medium text-slate-900">
         {token.name}

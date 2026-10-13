@@ -138,6 +138,7 @@ export type {
   TagPillProps,
 } from './ui/formComponents.js';
 export type {
+  AccessTokensViewProps,
   AddRecipeMenuOption,
   AddRecipeMenuViewProps,
   EditRecipeViewProps,

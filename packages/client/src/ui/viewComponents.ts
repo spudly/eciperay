@@ -1,10 +1,5 @@
 import type {ReactNode, RefObject} from 'react';
-import type {
-  PersonalAccessToken,
-  RecipeDetail,
-  RecipeVersionSummary,
-  Tag,
-} from '@eciperay/types';
+import type {RecipeDetail, RecipeVersionSummary, Tag} from '@eciperay/types';
 
 import type {RecipeListFilterControls} from './recipeListFilterControls.js';
 
@@ -63,19 +58,7 @@ export type ProfileViewProps = {
   sectionsAfterFeedback?: ReactNode;
 };
 
-export type AccessTokensViewProps = {
-  tokens: PersonalAccessToken[];
-  isLoading: boolean;
-  tokenName: string;
-  onTokenNameChange: (value: string) => void;
-  onCreate: () => void;
-  isCreating: boolean;
-  createdSecret: string | null;
-  onDismissSecret: () => void;
-  revokingId: string | null;
-  onRevoke: (id: string) => void;
-  error: string | null;
-};
+export type {AccessTokensViewProps} from './tokenViewComponents.js';
 
 export type AddRecipeMenuOption = {
   label: string;
@@ -140,7 +123,11 @@ export type EditVersionViewProps = {
 export type ManualEntryViewProps = {children: ReactNode};
 
 export type RecipeDetailTab =
-  'overview' | 'ingredients' | 'instructions' | 'history' | 'nutrition';
+  | 'overview'
+  | 'ingredients'
+  | 'instructions'
+  | 'history'
+  | 'nutrition';
 
 export const RECIPE_DETAIL_TABS: {key: RecipeDetailTab; label: string}[] = [
   {key: 'overview', label: 'Overview'},
