@@ -163,7 +163,7 @@ const upsertSubscription = async (
     serverLog('warn', 'Paddle event has unmapped subscription status', {
       eventType: event.event_type,
       eventId: event.event_id,
-      status: event.data.status,
+      status: event.data.status ?? 'unknown',
     });
     return;
   }

@@ -3,7 +3,22 @@ import request from 'supertest';
 
 import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {createMockQuery} from '../../test/mockQuery.js';
+import type {QueryResult} from 'pg';
 import {lazyTestApp} from '../../test/lazyTestApp.js';
+
+/**
+ * Wraps mockQuery.mockImplementation for SQL-routing mocks. The mock query type
+ * is generic, but these callbacks return concrete row shapes, so the cast
+ * bridges the two (same approach as createMockQuery's own cast).
+ */
+const mockRouteQueries = (impl: (text: string) => Promise<QueryResult>) => {
+  mockQuery.mockImplementation(
+    impl as unknown as (
+      text: string,
+      params?: unknown[],
+    ) => Promise<QueryResult>,
+  );
+};
 
 const mockQuery = createMockQuery();
 const getApp = lazyTestApp({query: mockQuery});
@@ -35,10 +50,7 @@ const makeEvent = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
-const postWebhook = (
-  rawBody: string,
-  signature: string,
-) =>
+const postWebhook = (rawBody: string, signature: string) =>
   request(getApp())
     .post('/api/billing/paddle-webhook')
     .set('Content-Type', 'application/json')
@@ -47,7 +59,7 @@ const postWebhook = (
 
 /** Routes mock queries by SQL for the subscription.created happy path. */
 const mockWebhookQueries = (seenEventIds: string[] = []) => {
-  mockQuery.mockImplementation((text: string) => {
+  mockRouteQueries((text: string) => {
     if (text.includes('from paddle_events')) {
       return Promise.resolve(
         makeQueryResult(seenEventIds.map(id => ({event_id: id}))),
@@ -144,7 +156,7 @@ describe('POST /billing/paddle-webhook', () => {
   });
 
   test('returns 500 when the handler fails so Paddle retries', async () => {
-    mockQuery.mockImplementation((text: string) => {
+    mockRouteQueries((text: string) => {
       if (text.includes('from paddle_events')) {
         return Promise.resolve(makeQueryResult([]));
       }

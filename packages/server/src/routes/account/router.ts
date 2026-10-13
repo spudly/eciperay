@@ -6,13 +6,10 @@ import {
   type EntitledRequest,
 } from '../../middleware/loadEntitlement.js';
 import {requireAuth, type AuthedRequest} from '../../middleware/requireAuth.js';
+import {requirePlan} from '../../middleware/requirePlan.js';
 
 import {deleteAccount} from './deleteAccount.js';
-import {
-  createToken,
-  listTokens,
-  revokeToken,
-} from './personalAccessTokens.js';
+import {createToken, listTokens, revokeToken} from './personalAccessTokens.js';
 import {exportAccount} from './exportAccount.js';
 import {getEntitlement} from './getEntitlement.js';
 import {getNutritionGoals, putNutritionGoals} from './nutritionGoals.js';
@@ -40,13 +37,16 @@ export const createAccountRouter = (queryFn: QueryFn) => {
   router.delete('/', requireAuth, (req, res) =>
     deleteAccount(req as AuthedRequest, res, queryFn),
   );
-  router.post('/personal-access-tokens', requireAuth, (req, res) =>
+  // Personal access tokens (and the MCP API surface they unlock) are a
+  // Power-tier feature.
+  const power = [requireAuth, loadEntitlement(queryFn), requirePlan('power')];
+  router.post('/personal-access-tokens', ...power, (req, res) =>
     createToken(req as AuthedRequest, res, queryFn),
   );
-  router.get('/personal-access-tokens', requireAuth, (req, res) =>
+  router.get('/personal-access-tokens', ...power, (req, res) =>
     listTokens(req as AuthedRequest, res, queryFn),
   );
-  router.delete('/personal-access-tokens/:id', requireAuth, (req, res) =>
+  router.delete('/personal-access-tokens/:id', ...power, (req, res) =>
     revokeToken(req as AuthedRequest, res, queryFn),
   );
 
