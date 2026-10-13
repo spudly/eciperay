@@ -659,10 +659,14 @@ export const handlers = [
   ),
   http.post(`${API}/api/account/personal-access-tokens`, async ({request}) => {
     const body = (await request.json()) as {name?: string};
+    // Mirror the production schema: blank names are rejected with 400.
+    if (!body.name?.trim()) {
+      return HttpResponse.json({error: 'Validation failed'}, {status: 400});
+    }
     return HttpResponse.json(
       {
         id: 'token-uuid-1',
-        name: body.name ?? 'Test token',
+        name: body.name,
         tokenPrefix: 'ecp_testprefix',
         createdAt: '2026-10-12T00:00:00.000Z',
         lastUsedAt: null,
