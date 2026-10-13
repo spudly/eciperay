@@ -1,8 +1,8 @@
 -- Billing entitlements (Phase 1 of monetization).
 --
--- Numbered 016 (not 015): PR #101's unmerged feat/mcp-server branch already
--- claimed 015 for its personal-access-tokens table. Whoever merges second
--- renumbers.
+-- Numbered 016: follows the merged 015_personal_access_tokens.sql from PR #101
+-- (the "renumber to 017" note in the PR description was stale — 015 is already
+-- on master, so 016 is correct).
 --
 -- Design notes vs the spec draft:
 -- - subscriptions.past_due_since added (spec §4c requires recording it, but the
@@ -22,6 +22,7 @@ create table if not exists subscriptions (
   current_period_end   timestamptz,
   cancel_at_period_end boolean not null default false,
   past_due_since       timestamptz,
+  paddle_last_event_at timestamptz,
   created_at           timestamptz not null default now(),
   updated_at           timestamptz not null default now()
 );

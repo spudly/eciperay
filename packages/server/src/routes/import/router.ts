@@ -81,6 +81,8 @@ export const createImportRouter = (queryFn: QueryFn = defaultQuery) => {
   router.get(
     '/ai/sessions/:sessionId',
     requireAuth,
+    metered,
+    requirePlan('plus'),
     runImport((req, res) => getCreateAiSession(req, res, queryFn)),
   );
   router.post(
@@ -93,16 +95,22 @@ export const createImportRouter = (queryFn: QueryFn = defaultQuery) => {
   router.post(
     '/ai/sessions/:sessionId/approve-plan',
     requireAuth,
+    metered,
+    requirePlan('plus'),
     runImport((req, res) => approveCreateAiPlan(req, res, queryFn)),
   );
   router.post(
     '/ai/sessions/:sessionId/create-recipe',
     requireAuth,
+    metered,
+    requirePlan('plus'),
     runImport((req, res) => createRecipeFromCreateAiSession(req, res, queryFn)),
   );
   router.post(
     '/ai/sessions/:sessionId/cancel',
     requireAuth,
+    metered,
+    requirePlan('plus'),
     runImport((req, res) => cancelCreateAiSession(req, res, queryFn)),
   );
 

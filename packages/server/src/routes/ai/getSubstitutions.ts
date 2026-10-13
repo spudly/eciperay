@@ -49,7 +49,7 @@ export const getSubstitutions = async (
     const substitutions = await callClaude(missing);
     res.json(substitutions);
   } catch (error) {
-    await refundAiCall(req.userId, queryFn);
+    await refundAiCall(req.userId, queryFn, quota.periodStart);
     throw error;
   }
 };

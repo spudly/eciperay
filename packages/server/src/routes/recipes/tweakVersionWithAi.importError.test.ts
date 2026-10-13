@@ -49,7 +49,11 @@ describe('POST /recipes/:id/versions/ai import errors', () => {
       .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([makeVersionDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([]))
-      .mockResolvedValueOnce(makeQueryResult([{calls: 1}]))
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          {calls: 1, period_start: '2026-10-01', allowed: true},
+        ]),
+      )
       .mockResolvedValueOnce(makeQueryResult([])); // refundAiCall UPDATE
 
     const res = await request(getApp())
@@ -70,7 +74,11 @@ describe('AI quota 402', () => {
       .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([makeVersionDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([]))
-      .mockResolvedValueOnce(makeQueryResult([{calls: 999}]));
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          {calls: 999, period_start: '2026-10-01', allowed: false},
+        ]),
+      );
 
     const res = await request(getApp())
       .post('/api/recipes/recipe-uuid-1/versions/ai')
