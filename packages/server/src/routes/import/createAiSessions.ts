@@ -393,9 +393,7 @@ export const createRecipeFromCreateAiSession = async (
       res.status(422).json({error: error.message});
       return;
     }
-    /* c8 ignore next 3 -- defensive: saveNewRecipeFromInput only throws
-       RecipeNotFoundError for missing referenced entities, which the
-       session's validated proposedRecipe cannot produce */
+    /* c8 ignore next 3 -- defensive: validated proposedRecipe can't trigger this */
     if (error instanceof RecipeNotFoundError) {
       res.status(404).json({error: 'Recipe not found'});
       return;

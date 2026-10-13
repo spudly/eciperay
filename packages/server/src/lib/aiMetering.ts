@@ -61,8 +61,7 @@ export const consumeAiCall = async (
     [userId, limit],
   );
   const row = result.rows[0];
-  /* c8 ignore next 2 -- defensive: the CTE always returns exactly one row;
-     the fallbacks guard against a driver returning an empty result set */
+  /* c8 ignore next 2 -- CTE always returns one row */
   const used = row?.calls ?? 0;
   const periodStart = row?.period_start ?? '';
   if (row?.allowed) {
@@ -115,6 +114,7 @@ export const checkRecipeCap = async (
     'select count(*) as count from recipes where user_id = $1',
     [userId],
   );
+  /* c8 ignore next -- count(*) always returns one row */
   const used = Number.parseInt(result.rows[0]?.count ?? '0', 10);
   return used < limit ? {ok: true} : {ok: false, used, limit};
 };
@@ -150,6 +150,7 @@ export const withRecipeCap = async <T>(
   // and creation directly, mirroring runTransactional. In production, hold a
   // per-user advisory lock across the check+create so concurrent requests
   // can't race past the limit.
+  /* c8 ignore else -- production path requires real DB; tests use mocked queryFn */
   if (queryFn !== defaultQuery) {
     const cap = await checkRecipeCap(userId, plan, queryFn);
     if (!cap.ok) {
@@ -157,8 +158,7 @@ export const withRecipeCap = async <T>(
     }
     return {ok: true, value: await create(queryFn)};
   }
-  /* c8 ignore next 10 -- production-only: requires a real DB transaction;
-     unit tests use a mocked queryFn which takes the branch above */
+  /* c8 ignore next 10 -- production-only DB transaction path */
   return withTransaction(async q => {
     await q('select pg_advisory_xact_lock(hashtext($1))', [userId]);
     const cap = await checkRecipeCap(userId, plan, q);
