@@ -186,7 +186,7 @@ export const tweakVersionWithAi = async (
       queryFn,
     });
   } catch (error) {
-    await refundAiCall(req.userId, queryFn);
+    await refundAiCall(req.userId, queryFn, quota.periodStart);
     if (error instanceof RecipeImportError) {
       res.status(422).json({error: error.message});
       return;
@@ -232,4 +232,3 @@ export const tweakVersionWithAi = async (
   }
   res.status(201).json({versionId: newVersionId, changeSummary, version});
 };
-

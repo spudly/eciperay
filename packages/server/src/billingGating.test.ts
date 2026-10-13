@@ -60,10 +60,18 @@ const mockExhaustedQuota = (plan: 'free' | 'plus' = 'free') => {
       );
     }
     if (text.includes('insert into ai_usage')) {
-      return Promise.resolve(makeQueryResult([{calls: 999}]));
+      return Promise.resolve(
+        makeQueryResult([
+          {calls: 999, period_start: '2026-10-01', allowed: false},
+        ]),
+      );
     }
     if (text.includes('from ai_usage')) {
-      return Promise.resolve(makeQueryResult([{calls: 0}]));
+      return Promise.resolve(
+        makeQueryResult([
+          {calls: 0, period_start: '2026-10-01', allowed: true},
+        ]),
+      );
     }
     return Promise.resolve(makeQueryResult([]));
   });
@@ -127,7 +135,11 @@ describe('billing gating (Phase 1)', () => {
         return Promise.resolve(makeQueryResult([]));
       }
       if (text.includes('from ai_usage')) {
-        return Promise.resolve(makeQueryResult([{calls: 0}]));
+        return Promise.resolve(
+          makeQueryResult([
+            {calls: 0, period_start: '2026-10-01', allowed: true},
+          ]),
+        );
       }
       if (text.includes('count(*) as count from recipes')) {
         // Zero rows: checkRecipeCap treats a missing count as 0.
@@ -156,7 +168,11 @@ describe('billing gating (Phase 1)', () => {
         );
       }
       if (text.includes('from ai_usage')) {
-        return Promise.resolve(makeQueryResult([{calls: 0}]));
+        return Promise.resolve(
+          makeQueryResult([
+            {calls: 0, period_start: '2026-10-01', allowed: true},
+          ]),
+        );
       }
       return Promise.resolve(makeQueryResult([]));
     });
@@ -175,7 +191,11 @@ describe('billing gating (Phase 1)', () => {
         return Promise.resolve(makeQueryResult([PLUS_ROW]));
       }
       if (text.includes('from ai_usage')) {
-        return Promise.resolve(makeQueryResult([{calls: 0}]));
+        return Promise.resolve(
+          makeQueryResult([
+            {calls: 0, period_start: '2026-10-01', allowed: true},
+          ]),
+        );
       }
       return Promise.resolve(makeQueryResult([]));
     });

@@ -1,4 +1,5 @@
 import type {Response} from 'express';
+import type {z} from 'zod';
 
 import {query as defaultQuery} from '../../db/query.js';
 import {
@@ -83,15 +84,18 @@ export const importFromImage = async (
       .json(quotaExhaustedBody('ai_quota_exhausted', quota.used, quota.limit));
     return;
   }
-  let message: Awaited<ReturnType<typeof callClaudeVision>>;
+  let parsed: z.infer<typeof RecipeImportSchema>;
   try {
-    message = await callClaudeVision(imageBase64, mediaType);
+    const message = await callClaudeVision(imageBase64, mediaType);
+    // Extraction and parsing are inside the refunded scope: a successful
+    // transport carrying a non-text block or malformed JSON must not burn
+    // quota.
+    const text = extractText(message.content[0]);
+    parsed = parseAiJson(RecipeImportSchema, text);
   } catch (error) {
-    await refundAiCall(req.userId, queryFn);
+    await refundAiCall(req.userId, queryFn, quota.periodStart);
     throw error;
   }
-  const text = extractText(message.content[0]);
-  const parsed = parseAiJson(RecipeImportSchema, text);
   try {
     const input = await prepareImportedRecipeInput({
       recipe: {...parsed, sourceUrl: parsed.sourceUrl ?? null},

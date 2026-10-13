@@ -1,44 +1,95 @@
 import type {PlanName} from '@eciperay/types';
 
 import {query as defaultQuery} from '../db/query.js';
+import {withTransaction} from '../db/withTransaction.js';
 
 import {PLAN_LIMITS} from './plans.js';
 
 type QueryFn = typeof defaultQuery;
 
-export type QuotaCheck = {ok: true} | {ok: false; used: number; limit: number};
+export type QuotaCheck =
+  | {ok: true; periodStart?: string}
+  | {ok: false; used: number; limit: number};
 
 /**
  * Atomically consumes one AI call from the user's monthly quota. Single
  * statement (insert-or-increment) so concurrent requests can't race past the
- * limit.
+ * limit. The increment is conditional: once the stored count reaches the plan
+ * limit, further calls are rejected WITHOUT incrementing, so reported usage
+ * stays accurate.
  *
- * Call BEFORE the AI call; call refundAiCall if the AI call throws — failed
- * provider calls must not burn quota (support tickets otherwise).
+ * Call BEFORE the AI call; call refundAiCall with the returned periodStart if
+ * the AI call throws — failed provider calls must not burn quota (support
+ * tickets otherwise).
  */
 export const consumeAiCall = async (
   userId: string,
   plan: PlanName,
   queryFn: QueryFn = defaultQuery,
 ): Promise<QuotaCheck> => {
-  const result = await queryFn<{calls: number}>(
-    `insert into ai_usage (user_id, period_start, calls)
-     values ($1, date_trunc('month', now())::date, 1)
-     on conflict (user_id, period_start) do update
-       set calls = ai_usage.calls + 1
-     returning calls`,
-    [userId],
-  );
-  const used = result.rows[0]?.calls ?? 0;
   const limit = PLAN_LIMITS[plan].aiCallsPerMonth;
-  return used <= limit ? {ok: true} : {ok: false, used, limit};
+  const result = await queryFn<{
+    calls: number;
+    period_start: string;
+    allowed: boolean;
+  }>(
+    // Single statement so concurrent requests can't race past the limit. The
+    // locked CTE reads the pre-increment count (blocking on concurrent
+    // writers); the upsert only increments while under the limit, so
+    // rejected checks don't inflate reported usage.
+    `with locked as (
+       select calls as old_calls
+         from ai_usage
+        where user_id = $1 and period_start = date_trunc('month', now())::date
+        for update
+     ),
+     upserted as (
+       insert into ai_usage (user_id, period_start, calls)
+       values ($1, date_trunc('month', now())::date, 1)
+       on conflict (user_id, period_start) do update
+         set calls = case
+           when ai_usage.calls < $2 then ai_usage.calls + 1
+           else ai_usage.calls
+         end
+       returning calls, period_start
+     )
+     select upserted.calls,
+            upserted.period_start,
+            coalesce(locked.old_calls, 0) < $2 as allowed
+       from upserted
+       left join locked on true`,
+    [userId, limit],
+  );
+  const row = result.rows[0];
+  /* c8 ignore next 2 -- defensive: the CTE always returns exactly one row;
+     the fallbacks guard against a driver returning an empty result set */
+  const used = row?.calls ?? 0;
+  const periodStart = row?.period_start ?? '';
+  if (row?.allowed) {
+    return {ok: true, periodStart};
+  }
+  return {ok: false, used, limit};
 };
 
-/** Refunds one AI call (e.g. the provider call failed). Never drops below 0. */
+/**
+ * Refunds one AI call (e.g. the provider call failed). Never drops below 0.
+ * Pass the periodStart returned by consumeAiCall so a request straddling a
+ * month boundary refunds the month that was actually charged.
+ */
 export const refundAiCall = async (
   userId: string,
   queryFn: QueryFn = defaultQuery,
+  periodStart?: string,
 ): Promise<void> => {
+  if (periodStart) {
+    await queryFn(
+      `update ai_usage
+          set calls = greatest(calls - 1, 0)
+        where user_id = $1 and period_start = $2::date`,
+      [userId, periodStart],
+    );
+    return;
+  }
   await queryFn(
     `update ai_usage
         set calls = greatest(calls - 1, 0)
@@ -74,3 +125,46 @@ export const quotaExhaustedBody = (
   used: number,
   limit: number,
 ) => ({error, used, limit});
+
+export type CappedResult<T> =
+  | {ok: true; value: T}
+  | {ok: false; used: number; limit: number};
+
+/**
+ * Runs a recipe-creation callback under the Free recipe cap. The cap check and
+ * the creation run in one transaction holding a per-user advisory lock, so two
+ * concurrent requests can't both pass the check and exceed the limit.
+ * Plus/Power skip the check (and the lock) entirely.
+ */
+export const withRecipeCap = async <T>(
+  userId: string,
+  plan: PlanName,
+  queryFn: QueryFn,
+  create: (q: QueryFn) => Promise<T>,
+): Promise<CappedResult<T>> => {
+  const limit = PLAN_LIMITS[plan].recipes;
+  if (limit < 0) {
+    return {ok: true, value: await create(queryFn)};
+  }
+  // A mocked queryFn (tests) has no real transaction support: run the check
+  // and creation directly, mirroring runTransactional. In production, hold a
+  // per-user advisory lock across the check+create so concurrent requests
+  // can't race past the limit.
+  if (queryFn !== defaultQuery) {
+    const cap = await checkRecipeCap(userId, plan, queryFn);
+    if (!cap.ok) {
+      return cap;
+    }
+    return {ok: true, value: await create(queryFn)};
+  }
+  /* c8 ignore next 10 -- production-only: requires a real DB transaction;
+     unit tests use a mocked queryFn which takes the branch above */
+  return withTransaction(async q => {
+    await q('select pg_advisory_xact_lock(hashtext($1))', [userId]);
+    const cap = await checkRecipeCap(userId, plan, q);
+    if (!cap.ok) {
+      return cap;
+    }
+    return {ok: true, value: await create(q)};
+  });
+};

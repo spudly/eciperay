@@ -91,7 +91,6 @@ describe('account personal access token routes', () => {
 
   test('GET /account/personal-access-tokens lists tokens', async () => {
     nockSupabaseGetUser('user-uuid-1');
-    mockBillingPlan(mockQuery, 'power');
     mockQuery.mockResolvedValueOnce(makeQueryResult([tokenRow]));
 
     const res = await request(getApp())
@@ -114,7 +113,6 @@ describe('account personal access token routes', () => {
 
   test('DELETE /account/personal-access-tokens/:id revokes a token', async () => {
     nockSupabaseGetUser('user-uuid-1');
-    mockBillingPlan(mockQuery, 'power');
     mockQuery.mockResolvedValueOnce(makeQueryResult([{}]));
 
     const res = await request(getApp())
@@ -126,7 +124,6 @@ describe('account personal access token routes', () => {
 
   test('DELETE returns 404 for an unknown token', async () => {
     nockSupabaseGetUser('user-uuid-1');
-    mockBillingPlan(mockQuery, 'power');
     mockQuery.mockResolvedValueOnce(makeQueryResult([]));
 
     const res = await request(getApp())
@@ -138,7 +135,6 @@ describe('account personal access token routes', () => {
 
   test('DELETE returns 404 when rowCount is null', async () => {
     nockSupabaseGetUser('user-uuid-1');
-    mockBillingPlan(mockQuery, 'power');
     mockQuery.mockResolvedValueOnce({...makeQueryResult([]), rowCount: null});
 
     const res = await request(getApp())
@@ -161,8 +157,7 @@ describe('account personal access token routes', () => {
           },
         ]),
       );
-    // Entitlement lookups (loadEntitlement) run after auth, before the handler.
-    mockBillingPlan(mockQuery, 'power');
+    // GET /personal-access-tokens is auth-only (no entitlement lookup).
     // GET list query
     mockQuery.mockResolvedValueOnce(makeQueryResult([]));
 
@@ -211,15 +206,26 @@ describe('account personal access token routes', () => {
     expect(res.body.requiredPlan).toBe('power');
   });
 
-  test('GET returns 403 for a Plus-tier user (API access is Power-only)', async () => {
+  test('GET lists tokens for a free-tier user (revocation is never gated)', async () => {
     nockSupabaseGetUser('user-uuid-1');
-    mockBillingPlan(mockQuery, 'plus');
+    mockQuery.mockResolvedValueOnce(makeQueryResult([tokenRow]));
 
     const res = await request(getApp())
       .get('/api/account/personal-access-tokens')
       .set('Authorization', 'Bearer test-token');
 
-    expect(res.status).toBe(403);
-    expect(res.body.error).toBe('plan_required');
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveLength(1);
+  });
+
+  test('DELETE revokes a token for a free-tier user', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockQuery.mockResolvedValueOnce(makeQueryResult([{}]));
+
+    const res = await request(getApp())
+      .delete('/api/account/personal-access-tokens/token-uuid-1')
+      .set('Authorization', 'Bearer test-token');
+
+    expect(res.status).toBe(204);
   });
 });

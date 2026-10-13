@@ -233,7 +233,7 @@ export const createCreateAiSession = async (
       `User request: ${body.data.prompt}`,
     );
   } catch {
-    await refundAiCall(req.userId, queryFn);
+    await refundAiCall(req.userId, queryFn, quota.periodStart);
     res.status(502).json({error: 'AI planning failed'});
     return;
   }
@@ -306,7 +306,7 @@ export const sendCreateAiMessage = async (
       `Conversation so far:\n${conversation}\n\nRespond with an updated plan.`,
     );
   } catch {
-    await refundAiCall(req.userId, queryFn);
+    await refundAiCall(req.userId, queryFn, quota.periodStart);
     res.status(502).json({error: 'AI planning failed'});
     return;
   }
@@ -393,6 +393,9 @@ export const createRecipeFromCreateAiSession = async (
       res.status(422).json({error: error.message});
       return;
     }
+    /* c8 ignore next 3 -- defensive: saveNewRecipeFromInput only throws
+       RecipeNotFoundError for missing referenced entities, which the
+       session's validated proposedRecipe cannot produce */
     if (error instanceof RecipeNotFoundError) {
       res.status(404).json({error: 'Recipe not found'});
       return;

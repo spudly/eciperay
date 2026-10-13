@@ -3,9 +3,11 @@ import {load} from 'cheerio';
 
 import {query as defaultQuery} from '../../db/query.js';
 import {
+  checkRecipeCap,
   consumeAiCall,
   quotaExhaustedBody,
   refundAiCall,
+  withRecipeCap,
 } from '../../lib/aiMetering.js';
 import type {EntitledRequest} from '../../middleware/loadEntitlement.js';
 import {parseSchemaOrg} from '../../lib/parseSchemaOrg.js';
@@ -48,11 +50,26 @@ export const importFromUrl = async (
     return;
   }
   const {url} = body.data;
+  // URL imports create recipes, so the Free recipe cap applies. Check up
+  // front so we fail fast before fetching the page or burning AI quota; the
+  // save below re-checks atomically against concurrent imports.
+  const earlyCap = await checkRecipeCap(
+    req.userId,
+    req.entitlement.plan,
+    queryFn,
+  );
+  if (!earlyCap.ok) {
+    res
+      .status(402)
+      .json(quotaExhaustedBody('recipe_limit', earlyCap.used, earlyCap.limit));
+    return;
+  }
   const html = await fetchPage(url);
   // The schema.org path is free; only the Claude fallback burns AI quota.
   // The parse itself is synchronous and cheap, so check up front.
   const needsAi = parseSchemaOrg(load(html)) === null;
   let aiConsumed = false;
+  let aiPeriodStart: string | undefined;
   if (needsAi) {
     const quota = await consumeAiCall(
       req.userId,
@@ -60,31 +77,48 @@ export const importFromUrl = async (
       queryFn,
     );
     if (!quota.ok) {
-      res.status(402).json({
-        ...quotaExhaustedBody('ai_quota_exhausted', quota.used, quota.limit),
-        message:
-          'AI import quota exhausted for this month. Pages with recipe markup still import for free.',
-      });
+      res
+        .status(402)
+        .json({
+          ...quotaExhaustedBody('ai_quota_exhausted', quota.used, quota.limit),
+          message:
+            'AI import quota exhausted for this month. Pages with recipe markup still import for free.',
+        });
       return;
     }
     aiConsumed = true;
+    aiPeriodStart = quota.periodStart;
   }
   try {
     const parsed = await parseFromHtml(html, url);
-    const input = await prepareImportedRecipeInput({
-      recipe: parsed,
-      userId: req.userId,
+    const result = await withRecipeCap(
+      req.userId,
+      req.entitlement.plan,
       queryFn,
-      options: {sourceUrl: url},
-    });
-    const {recipeId, versionId, recipe} = await saveNewRecipeFromInput(
-      {userId: req.userId, input, createdVia: 'import_url'},
-      queryFn,
+      async q => {
+        const input = await prepareImportedRecipeInput({
+          recipe: parsed,
+          userId: req.userId,
+          queryFn: q,
+          options: {sourceUrl: url},
+        });
+        return saveNewRecipeFromInput(
+          {userId: req.userId, input, createdVia: 'import_url'},
+          q,
+        );
+      },
     );
+    if (!result.ok) {
+      res
+        .status(402)
+        .json(quotaExhaustedBody('recipe_limit', result.used, result.limit));
+      return;
+    }
+    const {recipeId, versionId, recipe} = result.value;
     res.status(201).json({...recipe, recipeId, versionId});
   } catch (error) {
     if (aiConsumed) {
-      await refundAiCall(req.userId, queryFn);
+      await refundAiCall(req.userId, queryFn, aiPeriodStart);
     }
     if (error instanceof RecipeImportError) {
       res.status(422).json({error: error.message});

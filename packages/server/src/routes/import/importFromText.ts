@@ -66,7 +66,7 @@ export const importFromText = async (
   try {
     parsed = await parseWithClaude(plainText, null);
   } catch (error) {
-    await refundAiCall(req.userId, queryFn);
+    await refundAiCall(req.userId, queryFn, quota.periodStart);
     throw error;
   }
   try {

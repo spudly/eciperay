@@ -15,10 +15,20 @@ const getApp = lazyTestApp({query: mockQuery});
 const shareToken = 'clone-share-token';
 const shareTokenHash = hashShareToken(shareToken);
 
+const mockFreeEntitlement = () => {
+  mockQuery
+    .mockResolvedValueOnce(makeQueryResult([]))
+    .mockResolvedValueOnce(makeQueryResult([]));
+};
+
 const mockCloneFlow = (
   sourceOverrides: Parameters<typeof makeRecipeDetailRow>[0] = {},
+  recipeCount = '0',
 ) => {
+  mockFreeEntitlement();
   mockQuery
+    // withRecipeCap: recipe count for the Free cap check.
+    .mockResolvedValueOnce(makeQueryResult([{count: recipeCount}]))
     .mockResolvedValueOnce(
       makeQueryResult([
         makeRecipeDetailRow({
@@ -88,7 +98,9 @@ describe('POST /recipes/:id/clone', () => {
 
   test('returns 403 for unlisted recipe without access', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockFreeEntitlement();
     mockQuery
+      .mockResolvedValueOnce(makeQueryResult([{count: '0'}]))
       .mockResolvedValueOnce(
         makeQueryResult([
           makeRecipeDetailRow({
@@ -111,6 +123,8 @@ describe('POST /recipes/:id/clone', () => {
 
   test('returns 404 when recipe does not exist', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockFreeEntitlement();
+    mockQuery.mockResolvedValueOnce(makeQueryResult([{count: '0'}]));
     mockQuery.mockResolvedValueOnce(makeQueryResult([]));
 
     const res = await request(getApp())
@@ -123,6 +137,8 @@ describe('POST /recipes/:id/clone', () => {
 
   test('returns 404 for private recipes', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockFreeEntitlement();
+    mockQuery.mockResolvedValueOnce(makeQueryResult([{count: '0'}]));
     mockQuery.mockResolvedValueOnce(
       makeQueryResult([makeRecipeDetailRow({visibility: 'private'})]),
     );
@@ -144,11 +160,23 @@ describe('POST /recipes/:id/clone', () => {
 
   test('returns 400 for invalid body', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockFreeEntitlement();
     const res = await request(getApp())
       .post('/api/recipes/recipe-uuid-1/clone')
       .set('Authorization', 'Bearer valid-token')
       .send({shareToken: ''});
     expect(res.status).toBe(400);
+  });
+
+  test('returns 402 when a free user at the recipe cap clones', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockCloneFlow({}, '50');
+    const res = await request(getApp())
+      .post('/api/recipes/recipe-uuid-1/clone')
+      .set('Authorization', 'Bearer <redacted>')
+      .send({});
+    expect(res.status).toBe(402);
+    expect(res.body).toEqual({error: 'recipe_limit', used: 50, limit: 50});
   });
 
   test('propagates unexpected errors', async () => {

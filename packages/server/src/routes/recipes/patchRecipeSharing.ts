@@ -2,7 +2,7 @@ import type {Response} from 'express';
 import type {RecipeVisibility} from '@eciperay/types';
 
 import {query as defaultQuery} from '../../db/query.js';
-import type {AuthedRequest} from '../../middleware/requireAuth.js';
+import type {EntitledRequest} from '../../middleware/loadEntitlement.js';
 import {getParam} from '../../lib/getParam.js';
 import {mapRowToRecipeDetail} from '../../lib/mapRowToRecipeDetail.js';
 import {RecipeSharingPatchSchema, validate} from '../../lib/schemas.js';
@@ -33,12 +33,29 @@ const resolveShareTokenHash = (
 };
 
 export const patchRecipeSharing = async (
-  req: AuthedRequest,
+  req: EntitledRequest,
   res: Response,
   queryFn: QueryFn,
 ) => {
   const body = validate(RecipeSharingPatchSchema, req, res);
   if (!body.ok) {
+    return;
+  }
+
+  const nextVisibility = body.data.visibility;
+  // Publishing (public/unlisted) is a Plus feature. Going back to private is
+  // a privacy/revocation operation and is always allowed.
+  if (
+    (nextVisibility === 'public' || nextVisibility === 'unlisted') &&
+    req.entitlement.plan === 'free'
+  ) {
+    res
+      .status(403)
+      .json({
+        error: 'plan_required',
+        requiredPlan: 'plus',
+        plan: req.entitlement.plan,
+      });
     return;
   }
 
@@ -51,7 +68,6 @@ export const patchRecipeSharing = async (
   }
 
   const currentVisibility = row.visibility as RecipeVisibility;
-  const nextVisibility = body.data.visibility;
 
   if (
     isFirstPublish(currentVisibility) &&

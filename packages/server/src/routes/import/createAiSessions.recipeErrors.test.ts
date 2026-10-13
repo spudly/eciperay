@@ -4,6 +4,7 @@ import request from 'supertest';
 import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {createMockQuery} from '../../test/mockQuery.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
+import {mockBillingPlan} from '../../test/mockBilling.js';
 import {lazyTestApp} from '../../test/lazyTestApp.js';
 
 const {RecipeImportError} = await import('../../lib/recipeImportToInput.js');
@@ -42,6 +43,7 @@ const sessionRow = {
 describe('POST /recipes/import/ai/sessions/:sessionId/create-recipe errors', () => {
   test('returns 422 when save fails validation', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery.mockResolvedValueOnce(makeQueryResult([sessionRow]));
     const res = await request(getApp())
       .post(`/api/recipes/import/ai/sessions/${SESSION_ID}/create-recipe`)

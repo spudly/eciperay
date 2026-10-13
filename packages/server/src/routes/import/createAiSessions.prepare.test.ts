@@ -69,6 +69,14 @@ describe('create AI session implement prepare errors', () => {
     nockSupabaseGetUser('user-uuid-1');
     nockAnthropicMessage(IMPLEMENT_JSON);
     mockQuery.mockImplementation(((sql: string) => {
+      if (sql.includes('from subscriptions')) {
+        return Promise.resolve(
+          makeQueryResult([{plan: 'plus', status: 'active'}]),
+        );
+      }
+      if (sql.includes('from ai_usage')) {
+        return Promise.resolve(makeQueryResult([{calls: 0}]));
+      }
       if (sql.includes('from ai_create_sessions')) {
         return Promise.resolve(makeQueryResult([makeSessionRow()]));
       }

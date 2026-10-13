@@ -90,6 +90,21 @@ const setupSessionFlowMocks = () => {
   let sessionState = makeSessionRow();
 
   mockQuery.mockImplementation(((sql: string, params?: unknown[]) => {
+    if (sql.includes('from subscriptions')) {
+      return Promise.resolve(
+        makeQueryResult([{plan: 'plus', status: 'active'}]),
+      );
+    }
+    if (sql.includes('insert into ai_usage')) {
+      return Promise.resolve(
+        makeQueryResult([
+          {calls: 1, period_start: '2026-10-01', allowed: true},
+        ]),
+      );
+    }
+    if (sql.includes('from ai_usage')) {
+      return Promise.resolve(makeQueryResult([{calls: 0}]));
+    }
     if (sql.includes('from recipes r')) {
       return Promise.resolve(makeQueryResult([makeRecipeDetailRow()]));
     }
@@ -167,7 +182,9 @@ describe('POST /recipes/:id/tweak-ai-sessions', () => {
     nockAnthropicMessage(PLAN_TEXT);
     mockBillingPlan(mockQuery, 'plus');
     mockLoadContext();
-    mockQuery.mockResolvedValueOnce(makeQueryResult([{calls: 1}]));
+    mockQuery.mockResolvedValueOnce(
+      makeQueryResult([{calls: 1, period_start: '2026-10-01', allowed: true}]),
+    );
     mockQuery.mockResolvedValueOnce(
       makeQueryResult([makeSessionRow({messages: []})]),
     );
@@ -245,7 +262,9 @@ describe('POST /recipes/:id/tweak-ai-sessions', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockBillingPlan(mockQuery, 'plus');
     mockLoadContext();
-    mockQuery.mockResolvedValueOnce(makeQueryResult([{calls: 1}]));
+    mockQuery.mockResolvedValueOnce(
+      makeQueryResult([{calls: 1, period_start: '2026-10-01', allowed: true}]),
+    );
     mockQuery.mockResolvedValueOnce(makeQueryResult([]));
     anthropicCreateSpy.mockRejectedValueOnce(new Error('AI down'));
 
@@ -262,7 +281,9 @@ describe('POST /recipes/:id/tweak-ai-sessions', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockBillingPlan(mockQuery, 'plus');
     mockLoadContext();
-    mockQuery.mockResolvedValueOnce(makeQueryResult([{calls: 1}]));
+    mockQuery.mockResolvedValueOnce(
+      makeQueryResult([{calls: 1, period_start: '2026-10-01', allowed: true}]),
+    );
     mockQuery.mockResolvedValueOnce(makeQueryResult([]));
     anthropicCreateSpy.mockResolvedValueOnce({
       id: 'msg-test',
@@ -348,7 +369,11 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/messages', () => {
       .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([makeVersionDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([]))
-      .mockResolvedValueOnce(makeQueryResult([{calls: 1}]))
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          {calls: 1, period_start: '2026-10-01', allowed: true},
+        ]),
+      )
       .mockResolvedValueOnce(makeQueryResult([makeSessionRow()]))
       .mockResolvedValueOnce(makeQueryResult([makeSessionRow()]));
 
@@ -401,7 +426,11 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/messages', () => {
       .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([makeVersionDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([]))
-      .mockResolvedValueOnce(makeQueryResult([{calls: 1}]))
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          {calls: 1, period_start: '2026-10-01', allowed: true},
+        ]),
+      )
       .mockResolvedValueOnce(makeQueryResult([]));
     anthropicCreateSpy.mockRejectedValueOnce(new Error('AI down'));
 
@@ -1037,7 +1066,11 @@ describe('AI quota 402s', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockBillingPlan(mockQuery, null);
     mockLoadContext();
-    mockQuery.mockResolvedValueOnce(makeQueryResult([{calls: 999}]));
+    mockQuery.mockResolvedValueOnce(
+      makeQueryResult([
+        {calls: 999, period_start: '2026-10-01', allowed: false},
+      ]),
+    );
 
     const res = await request(getApp())
       .post('/api/recipes/recipe-uuid-1/tweak-ai-sessions')
@@ -1056,7 +1089,11 @@ describe('AI quota 402s', () => {
       .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([makeVersionDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([]))
-      .mockResolvedValueOnce(makeQueryResult([{calls: 999}]));
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          {calls: 999, period_start: '2026-10-01', allowed: false},
+        ]),
+      );
 
     const res = await request(getApp())
       .post(

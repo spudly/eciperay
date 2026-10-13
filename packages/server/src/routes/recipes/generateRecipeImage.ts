@@ -117,7 +117,7 @@ export const generateRecipeImage = async (
 
     res.json(image);
   } catch (error_) {
-    await refundAiCall(req.userId, queryFn);
+    await refundAiCall(req.userId, queryFn, quota.periodStart);
     res.status(502).json({error: formatImageGenerationError(error_)});
   }
 };

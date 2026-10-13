@@ -9,12 +9,13 @@ import {getParam} from '../../lib/getParam.js';
 import {getShareTokenFromQuery} from '../../lib/getShareTokenFromQuery.js';
 import {RecipeNotFoundError} from '../../lib/saveRecipeFromInput.js';
 import {RecipeCloneSchema, validate} from '../../lib/schemas.js';
-import type {AuthedRequest} from '../../middleware/requireAuth.js';
+import {quotaExhaustedBody, withRecipeCap} from '../../lib/aiMetering.js';
+import type {EntitledRequest} from '../../middleware/loadEntitlement.js';
 
 type QueryFn = typeof defaultQuery;
 
 export const cloneRecipe = async (
-  req: AuthedRequest,
+  req: EntitledRequest,
   res: Response,
   queryFn: QueryFn,
 ) => {
@@ -26,12 +27,20 @@ export const cloneRecipe = async (
   const shareToken = body.data.shareToken ?? getShareTokenFromQuery(req);
 
   try {
-    const recipe = await cloneRecipeForUser(
-      getParam(req, 'id'),
+    // Cloning creates a new recipe lineage, so the Free recipe cap applies.
+    const result = await withRecipeCap(
       req.userId,
-      shareToken,
+      req.entitlement.plan,
       queryFn,
+      q => cloneRecipeForUser(getParam(req, 'id'), req.userId, shareToken, q),
     );
+    if (!result.ok) {
+      res
+        .status(402)
+        .json(quotaExhaustedBody('recipe_limit', result.used, result.limit));
+      return;
+    }
+    const recipe = result.value;
     res
       .status(201)
       .json({...recipe, recipeId: recipe.id, versionId: recipe.versionId});
@@ -44,6 +53,8 @@ export const cloneRecipe = async (
       res.status(403).json({error: 'Recipe access denied'});
       return;
     }
+    /* c8 ignore next -- defensive: unexpected errors propagate to the global
+       error handler; unit tests only trigger the known error types above */
     throw error;
   }
 };

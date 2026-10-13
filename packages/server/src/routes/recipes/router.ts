@@ -105,18 +105,20 @@ export const createRecipesRouter = (queryFn: QueryFn) => {
   router.post('/:id/import/start-edits', requireAuth, (req, res) =>
     startImportEdits(a(req), res, queryFn),
   );
-  router.post('/:id/clone', requireAuth, (req, res) =>
-    cloneRecipe(a(req), res, queryFn),
+  router.post('/:id/clone', requireAuth, loadEntitlement(queryFn), (req, res) =>
+    cloneRecipe(e(req), res, queryFn),
   );
   router.patch('/:id', requireAuth, (req, res) =>
     patchRecipeLineage(a(req), res, queryFn),
   );
+  // Sharing is a Plus feature, but revoking sharing (going back to private)
+  // is always allowed: it is a privacy operation, not a paid feature.
+  // The Plus check lives in the handler so it only applies to public/unlisted.
   router.patch(
     '/:id/sharing',
     requireAuth,
     loadEntitlement(queryFn),
-    requirePlan('plus'),
-    (req, res) => patchRecipeSharing(a(req), res, queryFn),
+    (req, res) => patchRecipeSharing(e(req), res, queryFn),
   );
   router.post(
     '/:id/sharing/rotate-token',

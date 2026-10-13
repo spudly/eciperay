@@ -41,7 +41,11 @@ describe('POST /recipes/:id/versions/ai', () => {
       .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([makeVersionDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([makeCookLogRow()]))
-      .mockResolvedValueOnce(makeQueryResult([{calls: 1}]))
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          {calls: 1, period_start: '2026-10-01', allowed: true},
+        ]),
+      )
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([{max: 1}]))
       .mockResolvedValueOnce(makeQueryResult([{id: 'version-uuid-2'}]))
@@ -137,7 +141,11 @@ describe('POST /recipes/:id/versions/ai', () => {
       .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([makeVersionDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([]))
-      .mockResolvedValueOnce(makeQueryResult([{calls: 1}]))
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          {calls: 1, period_start: '2026-10-01', allowed: true},
+        ]),
+      )
       .mockResolvedValueOnce(makeQueryResult([]));
 
     await expect(
@@ -156,7 +164,11 @@ describe('POST /recipes/:id/versions/ai', () => {
       .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([makeVersionDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([]))
-      .mockResolvedValueOnce(makeQueryResult([{calls: 1}]))
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          {calls: 1, period_start: '2026-10-01', allowed: true},
+        ]),
+      )
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([{max: 1}]))
       .mockResolvedValueOnce(makeQueryResult([{id: 'version-uuid-2'}]))
@@ -182,7 +194,11 @@ describe('POST /recipes/:id/versions/ai', () => {
       .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([makeVersionDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([]))
-      .mockResolvedValueOnce(makeQueryResult([{calls: 1}]))
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          {calls: 1, period_start: '2026-10-01', allowed: true},
+        ]),
+      )
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([{max: 1}]))
       .mockResolvedValueOnce(makeQueryResult([]));
@@ -195,4 +211,3 @@ describe('POST /recipes/:id/versions/ai', () => {
     ).resolves.toMatchObject({status: 500});
   });
 });
-

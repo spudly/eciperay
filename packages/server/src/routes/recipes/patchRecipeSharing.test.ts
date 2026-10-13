@@ -60,6 +60,47 @@ describe('PATCH /recipes/:id/sharing', () => {
     expect(res.body.error).toMatch(/consent/i);
   });
 
+  test('403s a free user publishing to public', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'free');
+
+    const res = await request(getApp())
+      .patch('/api/recipes/recipe-uuid-1/sharing')
+      .set('Authorization', 'Bearer <redacted>')
+      .send({visibility: 'public', publishingConsent: true});
+
+    expect(res.status).toBe(403);
+    expect(res.body).toEqual({
+      error: 'plan_required',
+      requiredPlan: 'plus',
+      plan: 'free',
+    });
+  });
+
+  test('allows a free user to switch back to private', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'free');
+    mockQuery
+      .mockResolvedValueOnce(
+        makeQueryResult([{...sharingRow, visibility: 'unlisted'}]),
+      )
+      .mockResolvedValueOnce({
+        ...makeQueryResult([{id: 'recipe-uuid-1'}]),
+        rowCount: 1,
+      })
+      .mockResolvedValue(
+        makeQueryResult([makeRecipeDetailRow({visibility: 'private'})]),
+      );
+
+    const res = await request(getApp())
+      .patch('/api/recipes/recipe-uuid-1/sharing')
+      .set('Authorization', 'Bearer <redacted>')
+      .send({visibility: 'private'});
+
+    expect(res.status).toBe(200);
+    expect(res.body.visibility).toBe('private');
+  });
+
   test('returns 404 when recipe is not found', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockBillingPlan(mockQuery, 'plus');
@@ -177,4 +218,3 @@ describe('PATCH /recipes/:id/sharing', () => {
     expect(res.status).toBe(404);
   });
 });
-
