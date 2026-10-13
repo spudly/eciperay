@@ -371,6 +371,7 @@ export default tseslint.config(
       'scripts/**/*.ts',
       'packages/server/src/server.ts',
       'packages/server/src/db/migrate.ts',
+      'packages/mcp-server/src/index.ts',
     ],
     rules: {'no-console': 'off'},
   },
@@ -970,7 +971,7 @@ export default tseslint.config(
 
   // ─── 6. Node.js — server only ─────────────────────────────────────────────
   {
-    files: ['packages/server/**/*.ts'],
+    files: ['packages/server/**/*.ts', 'packages/mcp-server/**/*.ts'],
     plugins: {n: nPlugin},
     rules: {
       'max-lines': [

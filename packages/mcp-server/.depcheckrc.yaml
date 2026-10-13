@@ -1,0 +1,4 @@
+ignores:
+  - '@types/node' # Provides global Node.js types (process.env, process.exit); not imported directly
+specials:
+  - bin
