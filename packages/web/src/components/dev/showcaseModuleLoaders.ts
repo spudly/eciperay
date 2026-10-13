@@ -17,6 +17,7 @@ export const showcaseModuleLoaders = {
   'auth/ForgotPasswordView': () => import('../auth/ForgotPasswordView.js'),
   'auth/ResetPasswordView': () => import('../auth/ResetPasswordView.js'),
   'home/HomeView': () => import('../home/HomeView.js'),
+  'profile/AccessTokensView': () => import('../profile/AccessTokensView.js'),
   'profile/ProfileView': () => import('../profile/ProfileView.js'),
   'recipes/RecipeListFiltersBar': () =>
     import('../recipes/RecipeListFiltersBar.js'),

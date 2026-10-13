@@ -30,9 +30,9 @@ export const TokenRow = ({
 }) => (
   <li
     className="
-    flex items-center justify-between gap-3 border-b border-slate-100 py-3
-    last:border-b-0
-  "
+      flex items-center justify-between gap-3 border-b border-slate-100 py-3
+      last:border-b-0
+    "
   >
     <div className="min-w-0">
       <p className="truncate text-sm font-medium text-slate-900">
@@ -40,9 +40,9 @@ export const TokenRow = ({
         {token.revokedAt ? (
           <span
             className="
-            ms-2 rounded bg-slate-200 px-1.5 py-0.5 text-xs font-normal
-            text-slate-600
-          "
+              ms-2 rounded bg-slate-200 px-1.5 py-0.5 text-xs font-normal
+              text-slate-600
+            "
           >
             Revoked
           </span>

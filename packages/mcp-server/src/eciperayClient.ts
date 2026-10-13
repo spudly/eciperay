@@ -32,12 +32,8 @@ export class EciperayApiError extends Error {
 export const createClient = (config: EciperayClientConfig) => {
   const request = async <T>(path: string, init?: RequestInit): Promise<T> => {
     const headers = new Headers(init?.headers);
-    if (!headers.has('content-type')) {
-      headers.set('content-type', 'application/json');
-    }
-    if (!headers.has('authorization')) {
-      headers.set('authorization', `Bearer ${config.apiToken}`);
-    }
+    headers.set('content-type', 'application/json');
+    headers.set('authorization', `Bearer ${config.apiToken}`);
     const res = await fetch(`${config.apiUrl}/api${path}`, {...init, headers});
     if (!res.ok) {
       const body = await res.text();
