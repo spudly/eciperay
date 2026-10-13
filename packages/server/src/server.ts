@@ -52,9 +52,17 @@ export const createApp = ({
     express.json({
       limit: '50mb',
       // Stash the raw body so the Paddle webhook route can verify the
-      // HMAC-SHA256 signature, which is computed over the raw bytes.
+      // HMAC-SHA256 signature, which is computed over the raw bytes. Only the
+      // webhook needs it — retaining a raw buffer for every request (up to
+      // 50 MB image imports) would needlessly double memory per request.
       verify: (req, _res, buf) => {
-        (req as Request & {rawBody?: Buffer}).rawBody = buf;
+        const url = req.url ?? '';
+        if (
+          url === '/api/billing/paddle-webhook' ||
+          url.startsWith('/api/billing/paddle-webhook?')
+        ) {
+          (req as Request & {rawBody?: Buffer}).rawBody = buf;
+        }
       },
     }),
   );

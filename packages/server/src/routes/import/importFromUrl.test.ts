@@ -97,6 +97,34 @@ describe('POST /recipes/import/url', () => {
     expect(res.status).toBe(400);
   });
 
+  test('returns 402 when a free user at the recipe cap imports by URL', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    nock('https://recipe.example.com').get('/').reply(200, SCHEMA_ORG_HTML);
+    mockBillingPlan(mockQuery, 'free');
+    mockQuery.mockResolvedValueOnce(makeQueryResult([{count: '50'}]));
+    const res = await request(getApp())
+      .post('/api/recipes/import/url')
+      .set('Authorization', 'Bearer valid-token')
+      .send({url: 'https://recipe.example.com/'});
+    expect(res.status).toBe(402);
+    expect(res.body).toEqual({error: 'recipe_limit', used: 50, limit: 50});
+  });
+
+  test('returns 402 from the atomic recheck when the cap is hit mid-import', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    nock('https://recipe.example.com').get('/').reply(200, SCHEMA_ORG_HTML);
+    mockBillingPlan(mockQuery, 'free');
+    // Early check passes (49 < 50), but the atomic recheck during save sees 50.
+    mockQuery.mockResolvedValueOnce(makeQueryResult([{count: '49'}]));
+    mockQuery.mockResolvedValueOnce(makeQueryResult([{count: '50'}]));
+    const res = await request(getApp())
+      .post('/api/recipes/import/url')
+      .set('Authorization', 'Bearer valid-token')
+      .send({url: 'https://recipe.example.com/'});
+    expect(res.status).toBe(402);
+    expect(res.body).toEqual({error: 'recipe_limit', used: 50, limit: 50});
+  });
+
   test('returns 401 without auth token', async () => {
     const res = await request(getApp())
       .post('/api/recipes/import/url')

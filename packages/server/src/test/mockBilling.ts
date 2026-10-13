@@ -10,7 +10,9 @@ export const makeSubscriptionRow = (plan: BillingPlan = 'plus') => ({
   plan,
   status: 'active',
   paddle_customer_id: 'ctm_test',
-  current_period_end: new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString(),
+  current_period_end: new Date(
+    Date.now() + 30 * 24 * 3600 * 1000,
+  ).toISOString(),
   cancel_at_period_end: false,
   past_due_since: null,
 });
@@ -20,15 +22,17 @@ export const makeSubscriptionRow = (plan: BillingPlan = 'plus') => ({
  * chain. Call FIRST in a test's mock setup, before the test's own sequenced
  * responses — mockResolvedValueOnce is FIFO, so these are consumed first.
  *
- * `plan` null = free user (no subscription row).
+ * `plan` 'free' or null = free user (no subscription row).
  */
 export const mockBillingPlan = (
   mockQuery: MockQuery,
-  plan: BillingPlan | null = 'plus',
+  plan: BillingPlan | 'free' | null = 'plus',
 ) => {
   mockQuery
     .mockResolvedValueOnce(
-      makeQueryResult(plan ? [makeSubscriptionRow(plan)] : []),
+      makeQueryResult(
+        plan && plan !== 'free' ? [makeSubscriptionRow(plan)] : [],
+      ),
     )
     .mockResolvedValueOnce(makeQueryResult([{calls: 0}]));
 };
@@ -43,5 +47,7 @@ export const mockBillingMetered = (
   plan: BillingPlan | null = 'plus',
 ) => {
   mockBillingPlan(mockQuery, plan);
-  mockQuery.mockResolvedValueOnce(makeQueryResult([{calls: 1}]));
+  mockQuery.mockResolvedValueOnce(
+    makeQueryResult([{calls: 1, period_start: '2026-10-01', allowed: true}]),
+  );
 };

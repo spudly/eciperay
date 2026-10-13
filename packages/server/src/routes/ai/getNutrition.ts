@@ -57,12 +57,14 @@ export const getNutrition = async (
   try {
     const refreshed = await refreshRecipeNutrition(recipe.versionId, queryFn);
     if (!refreshed) {
+      // No provider work happened (version gone) — refund the reservation.
+      await refundAiCall(req.userId, queryFn, quota.periodStart);
       res.status(404).json({error: 'Recipe not found'});
       return;
     }
     res.json(refreshed);
   } catch {
-    await refundAiCall(req.userId, queryFn);
+    await refundAiCall(req.userId, queryFn, quota.periodStart);
     res.status(502).json({error: 'Failed to estimate nutrition'});
   }
 };

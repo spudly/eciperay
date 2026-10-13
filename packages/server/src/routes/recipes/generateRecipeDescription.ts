@@ -32,7 +32,7 @@ export const generateRecipeDescriptionRoute = async (
     const description = await generateRecipeDescription(body.data);
     res.json({description});
   } catch (error_) {
-    await refundAiCall(req.userId, queryFn);
+    await refundAiCall(req.userId, queryFn, quota.periodStart);
     res
       .status(502)
       .json({

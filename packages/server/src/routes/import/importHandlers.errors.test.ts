@@ -61,10 +61,22 @@ const makeRes = () => {
 describe('import handlers RecipeImportError handling', () => {
   beforeEach(() => {
     mockQuery.mockReset();
-    // First query is consumeAiCall's INSERT (handlers are called directly,
-    // bypassing the entitlement middleware); it must return a row.
-    mockQuery.mockResolvedValueOnce(makeQueryResult([{calls: 1}]));
-    mockQuery.mockResolvedValue(makeQueryResult([]));
+    // Handlers are called directly, bypassing the entitlement middleware.
+    // importFromUrl checks the recipe cap first; the others start with
+    // consumeAiCall's INSERT, which must return a row.
+    mockQuery.mockImplementation(((sql: string) => {
+      if (sql.includes('count(*) as count from recipes')) {
+        return Promise.resolve(makeQueryResult([{count: '0'}]));
+      }
+      if (sql.includes('insert into ai_usage')) {
+        return Promise.resolve(
+          makeQueryResult([
+            {calls: 1, period_start: '2026-10-01', allowed: true},
+          ]),
+        );
+      }
+      return Promise.resolve(makeQueryResult([]));
+    }) as typeof mockQuery);
   });
 
   test('importFromUrl returns 422 when recipe import is invalid', async () => {

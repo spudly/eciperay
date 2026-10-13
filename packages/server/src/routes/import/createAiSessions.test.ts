@@ -119,6 +119,16 @@ describe('POST /recipes/import/ai/sessions/:sessionId/approve-plan', () => {
     nockAnthropicMessage(IMPLEMENT_JSON);
     let sessionState = makeSessionRow();
     mockQuery.mockImplementation(((sql: string) => {
+      if (sql.includes('from subscriptions')) {
+        return Promise.resolve(makeQueryResult([makeSubscriptionRow('plus')]));
+      }
+      if (sql.includes('from ai_usage')) {
+        return Promise.resolve(
+          makeQueryResult([
+            {calls: 0, period_start: '2026-10-01', allowed: true},
+          ]),
+        );
+      }
       if (sql.includes('from ai_create_sessions')) {
         return Promise.resolve(makeQueryResult([sessionState]));
       }
@@ -152,6 +162,7 @@ describe('POST /recipes/import/ai/sessions/:sessionId/create-recipe', () => {
 
   test('returns 409 when preview is not ready', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery.mockResolvedValueOnce(
       makeQueryResult([
         makeSessionRow({phase: 'planning', proposed_recipe: null}),
@@ -173,6 +184,7 @@ describe('GET /recipes/import/ai/sessions/:sessionId', () => {
 
   test('returns session when found', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery.mockResolvedValueOnce(makeQueryResult([makeSessionRow()]));
     const res = await request(getApp())
       .get(`/api/recipes/import/ai/sessions/${SESSION_ID}`)
@@ -183,6 +195,7 @@ describe('GET /recipes/import/ai/sessions/:sessionId', () => {
 
   test('returns 404 when session not found', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery.mockResolvedValueOnce(makeQueryResult([]));
     const res = await request(getApp())
       .get('/api/recipes/import/ai/sessions/missing')
@@ -208,7 +221,11 @@ describe('POST /recipes/import/ai/sessions/:sessionId/messages', () => {
       if (sql.includes('ai_usage')) {
         return Promise.resolve(
           makeQueryResult([
-            {calls: sql.trimStart().startsWith('insert') ? 1 : 0},
+            {
+              calls: sql.trimStart().startsWith('insert') ? 1 : 0,
+              period_start: '2026-10-01',
+              allowed: true,
+            },
           ]),
         );
       }
@@ -259,6 +276,16 @@ describe('POST /recipes/import/ai/sessions/:sessionId/cancel', () => {
     nockSupabaseGetUser('user-uuid-1');
     let sessionState = makeSessionRow();
     mockQuery.mockImplementation(((sql: string) => {
+      if (sql.includes('from subscriptions')) {
+        return Promise.resolve(makeQueryResult([makeSubscriptionRow('plus')]));
+      }
+      if (sql.includes('from ai_usage')) {
+        return Promise.resolve(
+          makeQueryResult([
+            {calls: 0, period_start: '2026-10-01', allowed: true},
+          ]),
+        );
+      }
       if (sql.includes('from ai_create_sessions')) {
         return Promise.resolve(makeQueryResult([sessionState]));
       }
@@ -278,6 +305,7 @@ describe('POST /recipes/import/ai/sessions/:sessionId/cancel', () => {
 
   test('returns 409 when session already finished', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery.mockResolvedValueOnce(
       makeQueryResult([makeSessionRow({phase: 'completed'})]),
     );
@@ -330,6 +358,7 @@ describe('create AI session error paths', () => {
 
   test('returns 404 when approving missing session', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery.mockResolvedValueOnce(makeQueryResult([]));
     const res = await request(getApp())
       .post(`/api/recipes/import/ai/sessions/${SESSION_ID}/approve-plan`)
@@ -340,6 +369,7 @@ describe('create AI session error paths', () => {
 
   test('returns 409 when approving session not in planning', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery.mockResolvedValueOnce(
       makeQueryResult([makeSessionRow({phase: 'preview_ready'})]),
     );
@@ -352,6 +382,7 @@ describe('create AI session error paths', () => {
 
   test('returns 422 when session has no assistant plan', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery.mockResolvedValueOnce(
       makeQueryResult([
         makeSessionRow({messages: [{role: 'user', content: PROMPT}]}),
@@ -369,7 +400,9 @@ describe('create AI session error paths', () => {
     anthropicCreateSpy.mockRejectedValueOnce(new Error('AI down'));
     mockBillingPlan(mockQuery, 'plus');
     mockQuery.mockResolvedValueOnce(makeQueryResult([makeSessionRow()]));
-    mockQuery.mockResolvedValueOnce(makeQueryResult([{calls: 1}]));
+    mockQuery.mockResolvedValueOnce(
+      makeQueryResult([{calls: 1, period_start: '2026-10-01', allowed: true}]),
+    );
     mockQuery.mockResolvedValueOnce(makeQueryResult([]));
     const res = await request(getApp())
       .post(`/api/recipes/import/ai/sessions/${SESSION_ID}/messages`)
@@ -380,6 +413,7 @@ describe('create AI session error paths', () => {
 
   test('returns 404 when create-recipe session is missing', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery.mockResolvedValueOnce(makeQueryResult([]));
     const res = await request(getApp())
       .post(`/api/recipes/import/ai/sessions/${SESSION_ID}/create-recipe`)
@@ -390,6 +424,7 @@ describe('create AI session error paths', () => {
 
   test('returns 502 when implementation JSON is invalid', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     nockAnthropicMessage('not valid json');
     mockQuery.mockImplementation(((sql: string) => {
       if (sql.includes('from ai_create_sessions')) {
@@ -407,6 +442,7 @@ describe('create AI session error paths', () => {
 
   test('returns 404 when cancelling missing session', async () => {
     nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery.mockResolvedValueOnce(makeQueryResult([]));
     const res = await request(getApp())
       .post(`/api/recipes/import/ai/sessions/${SESSION_ID}/cancel`)
@@ -424,7 +460,11 @@ describe('AI quota 402s', () => {
   test('POST /ai/sessions 402s when quota is exhausted', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockBillingPlan(mockQuery, 'plus');
-    mockQuery.mockResolvedValueOnce(makeQueryResult([{calls: 999}]));
+    mockQuery.mockResolvedValueOnce(
+      makeQueryResult([
+        {calls: 999, period_start: '2026-10-01', allowed: false},
+      ]),
+    );
 
     const res = await request(getApp())
       .post('/api/recipes/import/ai/sessions')
@@ -440,7 +480,11 @@ describe('AI quota 402s', () => {
     mockBillingPlan(mockQuery, 'plus');
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([makeSessionRow()]))
-      .mockResolvedValueOnce(makeQueryResult([{calls: 999}]));
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          {calls: 999, period_start: '2026-10-01', allowed: false},
+        ]),
+      );
 
     const res = await request(getApp())
       .post(`/api/recipes/import/ai/sessions/${SESSION_ID}/messages`)
@@ -449,5 +493,27 @@ describe('AI quota 402s', () => {
 
     expect(res.status).toBe(402);
     expect(res.body.error).toBe('ai_quota_exhausted');
+  });
+  test('free users are 403 on every step of the AI session workflow', async () => {
+    const steps: ['get' | 'post', string][] = [
+      ['get', `/api/recipes/import/ai/sessions/${SESSION_ID}`],
+      ['post', `/api/recipes/import/ai/sessions/${SESSION_ID}/approve-plan`],
+      ['post', `/api/recipes/import/ai/sessions/${SESSION_ID}/create-recipe`],
+      ['post', `/api/recipes/import/ai/sessions/${SESSION_ID}/cancel`],
+    ];
+    for (const [method, path] of steps) {
+      nockSupabaseGetUser('user-uuid-1');
+      mockBillingPlan(mockQuery, 'free');
+      const res = await request(getApp())
+        [method](path)
+        .set('Authorization', 'Bearer <redacted>')
+        .send({});
+      expect(res.status).toBe(403);
+      expect(res.body).toEqual({
+        error: 'plan_required',
+        requiredPlan: 'plus',
+        plan: 'free',
+      });
+    }
   });
 });

@@ -292,7 +292,7 @@ export const createTweakAiSession = async (
       `Recipe and cook logs:\n${context}\n\nUser request: ${body.data.prompt}`,
     );
   } catch {
-    await refundAiCall(req.userId, queryFn);
+    await refundAiCall(req.userId, queryFn, quota.periodStart);
     res.status(502).json({error: 'AI planning failed'});
     return;
   }
@@ -362,7 +362,7 @@ export const sendTweakAiMessage = async (
       `Recipe and cook logs:\n${context}\n\nConversation so far:\n${priorMessages}\n\nUser: ${body.data.content}`,
     );
   } catch {
-    await refundAiCall(req.userId, queryFn);
+    await refundAiCall(req.userId, queryFn, quota.periodStart);
     res.status(502).json({error: 'AI planning failed'});
     return;
   }
@@ -675,4 +675,3 @@ export const getTweakAiSession = async (
   }
   res.json({session});
 };
-

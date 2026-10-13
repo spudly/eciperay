@@ -403,6 +403,22 @@ describe('POST /billing/paddle-webhook edge cases', () => {
     expect(res.status).toBe(401);
   });
 
+  test('retains rawBody for webhook URLs with query params', async () => {
+    // The verify callback keys off the URL prefix so signatures still
+    // validate when Paddle appends query params.
+    mockWebhookQueries();
+    const body = JSON.stringify(makeEvent());
+    const ts = Math.floor(Date.now() / 1000).toString();
+    const res = await request(getApp())
+      .post('/api/billing/paddle-webhook?foo=bar')
+      .set('Content-Type', 'application/json')
+      .set('Paddle-Signature', `ts=${ts};h1=${sign(ts, body)}`)
+      .send(body);
+    // 401 would mean rawBody was missing and verification failed outright;
+    // any other status proves the raw body was retained for verification.
+    expect(res.status).not.toBe(401);
+  });
+
   test('returns 401 for a malformed signature (no h1)', async () => {
     mockWebhookQueries();
     const ts = Math.floor(Date.now() / 1000).toString();
@@ -591,7 +607,7 @@ describe('POST /billing/paddle-webhook event handling', () => {
     expect(upserted()).toBeUndefined();
   });
 
-  test('skips upsert for an unknown price id', async () => {
+  test('returns 500 for an unknown price id so Paddle retries', async () => {
     mockRouteQueries((text: string) => {
       if (text.includes('from paddle_events')) {
         return Promise.resolve(makeQueryResult([]));
@@ -602,7 +618,7 @@ describe('POST /billing/paddle-webhook event handling', () => {
       return Promise.resolve(makeQueryResult([]));
     });
     const res = await postEvent(makeEvent());
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(500);
     expect(upserted()).toBeUndefined();
   });
 
@@ -653,10 +669,35 @@ describe('POST /billing/paddle-webhook event handling', () => {
     );
     expect(res.status).toBe(200);
     const update = mockQuery.mock.calls.find(args =>
-      args[0].includes("set status = 'cancelled'"),
+      args[0].includes('set status = $2'),
     );
     expect(update).toBeDefined();
-    expect(update?.[1]).toEqual(['sub_123']);
+    expect(update?.[1]).toEqual(['sub_123', 'cancelled', expect.anything()]);
+  });
+
+  test('ignores a stale subscription.canceled event', async () => {
+    mockRouteQueries((text: string) => {
+      if (text.includes('from paddle_events')) {
+        return Promise.resolve(makeQueryResult([]));
+      }
+      if (text.includes('paddle_last_event_at from subscriptions')) {
+        return Promise.resolve(
+          makeQueryResult([{paddle_last_event_at: '2026-10-13T16:00:00Z'}]),
+        );
+      }
+      return Promise.resolve(makeQueryResult([]));
+    });
+    const res = await postEvent(
+      makeEvent({
+        event_id: 'evt_cancel_stale',
+        event_type: 'subscription.canceled',
+        occurred_at: '2026-10-13T15:00:00Z',
+      }),
+    );
+    expect(res.status).toBe(200);
+    expect(
+      mockQuery.mock.calls.some(args => args[0].includes('set status = $2')),
+    ).toBe(false);
   });
 
   test('ignores subscription.canceled without a subscription id', async () => {
@@ -684,9 +725,10 @@ describe('POST /billing/paddle-webhook event handling', () => {
     );
     expect(res.status).toBe(200);
     const update = mockQuery.mock.calls.find(args =>
-      args[0].includes("set status = 'past_due'"),
+      args[0].includes('set status = $2'),
     );
     expect(update).toBeDefined();
+    expect(update?.[1]?.[1]).toBe('past_due');
   });
 
   test('acknowledges transaction events', async () => {

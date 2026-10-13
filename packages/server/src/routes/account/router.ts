@@ -40,15 +40,18 @@ export const createAccountRouter = (queryFn: QueryFn) => {
     deleteAccount(req as AuthedRequest, res, queryFn),
   );
   // Personal access tokens (and the MCP API surface they unlock) are a
-  // Power-tier feature.
+  // Power-tier feature. Creation is gated, but listing and revocation stay
+  // available to any authenticated owner: a downgraded user must still be
+  // able to disable a compromised token.
   const power = [requireAuth, loadEntitlement(queryFn), requirePlan('power')];
+  const authed = [requireAuth];
   router.post('/personal-access-tokens', ...power, (req, res) =>
     createToken(req as AuthedRequest, res, queryFn),
   );
-  router.get('/personal-access-tokens', ...power, (req, res) =>
+  router.get('/personal-access-tokens', ...authed, (req, res) =>
     listTokens(req as AuthedRequest, res, queryFn),
   );
-  router.delete('/personal-access-tokens/:id', ...power, (req, res) =>
+  router.delete('/personal-access-tokens/:id', ...authed, (req, res) =>
     revokeToken(req as AuthedRequest, res, queryFn),
   );
 

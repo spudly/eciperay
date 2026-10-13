@@ -83,7 +83,11 @@ describe('GET /recipes/:id/ai/nutrition', () => {
       .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
       // getNutrition stored check
       .mockResolvedValueOnce(makeQueryResult([pendingNutritionRow]))
-      .mockResolvedValueOnce(makeQueryResult([{calls: 1}]))
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          {calls: 1, period_start: '2026-10-01', allowed: true},
+        ]),
+      )
       // refresh: fetchVersionNutrition
       .mockResolvedValueOnce(makeQueryResult([pendingNutritionRow]))
       // mark pending
@@ -124,12 +128,39 @@ describe('GET /recipes/:id/ai/nutrition', () => {
     mockBillingPlan(mockQuery, 'plus');
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
-      .mockResolvedValueOnce(makeQueryResult([{calls: 1}]))
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          {calls: 1, period_start: '2026-10-01', allowed: true},
+        ]),
+      )
       .mockResolvedValueOnce(makeQueryResult([]));
     const res = await request(getApp())
       .get('/api/recipes/recipe-uuid-1/ai/nutrition?refresh=true')
       .set('Authorization', 'Bearer valid-token');
     expect(res.status).toBe(404);
+  });
+
+  test('refunds quota when force refresh cannot load the version', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
+    mockQuery
+      .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          {calls: 1, period_start: '2026-10-01', allowed: true},
+        ]),
+      )
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValue(makeQueryResult([]));
+    const res = await request(getApp())
+      .get('/api/recipes/recipe-uuid-1/ai/nutrition?refresh=true')
+      .set('Authorization', 'Bearer valid-token');
+    expect(res.status).toBe(404);
+    const refund = mockQuery.mock.calls.find(args =>
+      args[0].includes('update ai_usage'),
+    );
+    expect(refund).toBeDefined();
+    expect(refund?.[1]).toEqual(['user-uuid-1', '2026-10-01']);
   });
 
   test('estimates when stored nutrition row is missing', async () => {
@@ -140,7 +171,11 @@ describe('GET /recipes/:id/ai/nutrition', () => {
       .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
       // stored lookup returns no row
       .mockResolvedValueOnce(makeQueryResult([]))
-      .mockResolvedValueOnce(makeQueryResult([{calls: 1}]))
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          {calls: 1, period_start: '2026-10-01', allowed: true},
+        ]),
+      )
       // refreshRecipeNutrition
       .mockResolvedValueOnce(makeQueryResult([pendingNutritionRow]))
       .mockResolvedValueOnce(makeQueryResult([]))
@@ -162,7 +197,11 @@ describe('GET /recipes/:id/ai/nutrition', () => {
     nockAnthropicMessage(NUTRITION_RESPONSE);
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
-      .mockResolvedValueOnce(makeQueryResult([{calls: 1}]))
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          {calls: 1, period_start: '2026-10-01', allowed: true},
+        ]),
+      )
       .mockResolvedValueOnce(makeQueryResult([pendingNutritionRow]))
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(
@@ -182,7 +221,11 @@ describe('GET /recipes/:id/ai/nutrition', () => {
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([pendingNutritionRow]))
-      .mockResolvedValueOnce(makeQueryResult([{calls: 1}]))
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          {calls: 1, period_start: '2026-10-01', allowed: true},
+        ]),
+      )
       .mockResolvedValueOnce(makeQueryResult([pendingNutritionRow]))
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockRejectedValueOnce(new Error('db down'))
@@ -203,7 +246,11 @@ describe('GET /recipes/:id/ai/nutrition', () => {
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([detail]))
       .mockResolvedValueOnce(makeQueryResult([pendingNutritionRow]))
-      .mockResolvedValueOnce(makeQueryResult([{calls: 1}]))
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          {calls: 1, period_start: '2026-10-01', allowed: true},
+        ]),
+      )
       .mockResolvedValueOnce(makeQueryResult([pendingNutritionRow]))
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(
@@ -225,7 +272,11 @@ describe('AI quota 402', () => {
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([pendingNutritionRow]))
-      .mockResolvedValueOnce(makeQueryResult([{calls: 999}]));
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          {calls: 999, period_start: '2026-10-01', allowed: false},
+        ]),
+      );
 
     const res = await request(getApp())
       .get('/api/recipes/recipe-uuid-1/ai/nutrition')
