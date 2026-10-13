@@ -8,6 +8,7 @@ import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {createMockQuery} from '../../test/mockQuery.js';
 import {nockAnthropicMessage} from '../../test/mockNockAnthropic.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
+import {mockBillingPlan} from '../../test/mockBilling.js';
 import {lazyTestApp} from '../../test/lazyTestApp.js';
 
 jest.unstable_mockModule('../../lib/prepareImportedRecipeInput.js', () => ({
@@ -42,10 +43,14 @@ describe('POST /recipes/:id/versions/ai import errors', () => {
   test('returns 422 when prepareImportedRecipeInput fails', async () => {
     nockSupabaseGetUser('user-uuid-1');
     nockAnthropicMessage(CLAUDE_RESPONSE);
+    // loadEntitlement (2 queries) runs before the handler's own queries.
+    mockBillingPlan(mockQuery, 'plus');
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([makeVersionDetailRow()]))
-      .mockResolvedValueOnce(makeQueryResult([]));
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([{calls: 1}]))
+      .mockResolvedValueOnce(makeQueryResult([])); // refundAiCall UPDATE
 
     const res = await request(getApp())
       .post('/api/recipes/recipe-uuid-1/versions/ai')
