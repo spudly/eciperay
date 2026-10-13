@@ -96,7 +96,7 @@ export const registerTools = (
           .optional()
           .describe('Cook time in minutes'),
         tagIds: z
-          .array(z.string().uuid())
+          .array(z.uuid())
           .optional()
           .describe('Tag ids to attach to the recipe'),
       },

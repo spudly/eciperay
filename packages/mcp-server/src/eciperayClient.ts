@@ -2,8 +2,8 @@
  * Thin HTTP client for the Eciperay REST API.
  *
  * Authentication uses the same Supabase bearer token as the web and mobile
- * clients. Configure with ECIPERAY_API_URL (defaults to
- * http://localhost:8080) and ECIPERAY_API_TOKEN.
+ * clients. Configure with ECIPERAY_API_URL (defaults to http://localhost:8080)
+ * and ECIPERAY_API_TOKEN.
  */
 
 export type EciperayClientConfig = {apiUrl: string; apiToken: string};
@@ -31,14 +31,14 @@ export class EciperayApiError extends Error {
 
 export const createClient = (config: EciperayClientConfig) => {
   const request = async <T>(path: string, init?: RequestInit): Promise<T> => {
-    const res = await fetch(`${config.apiUrl}/api${path}`, {
-      ...init,
-      headers: {
-        'content-type': 'application/json',
-        'authorization': `Bearer ${config.apiToken}`,
-        ...init?.headers,
-      },
-    });
+    const headers = new Headers(init?.headers);
+    if (!headers.has('content-type')) {
+      headers.set('content-type', 'application/json');
+    }
+    if (!headers.has('authorization')) {
+      headers.set('authorization', `Bearer ${config.apiToken}`);
+    }
+    const res = await fetch(`${config.apiUrl}/api${path}`, {...init, headers});
     if (!res.ok) {
       const body = await res.text();
       throw new EciperayApiError(
