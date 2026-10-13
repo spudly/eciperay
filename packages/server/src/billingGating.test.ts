@@ -3,22 +3,37 @@ import request from 'supertest';
 import {makeRecipeInput} from './test/fixtures/recipe.js';
 import {makeQueryResult} from './test/fixtures/queryResult.js';
 import {createMockQuery} from './test/mockQuery.js';
+import type {QueryResult} from 'pg';
 import {nockSupabaseGetUser} from './test/mockNockSupabase.js';
 import {lazyTestApp} from './test/lazyTestApp.js';
+
+/**
+ * Wraps mockQuery.mockImplementation for SQL-routing mocks. The mock query type
+ * is generic, but these callbacks return concrete row shapes, so the cast
+ * bridges the two (same approach as createMockQuery's own cast).
+ */
+const mockRouteQueries = (impl: (text: string) => Promise<QueryResult>) => {
+  mockQuery.mockImplementation(
+    impl as unknown as (
+      text: string,
+      params?: unknown[],
+    ) => Promise<QueryResult>,
+  );
+};
 
 const mockQuery = createMockQuery();
 const getApp = lazyTestApp({query: mockQuery});
 
 /**
- * Routes mock queries by SQL. `subscriptionRow` null = free user.
- * `recipeCount` drives the free recipe cap; `aiCalls` the AI quota.
+ * Routes mock queries by SQL. `subscriptionRow` null = free user. `recipeCount`
+ * drives the free recipe cap; `aiCalls` the AI quota.
  */
 const mockGatingQueries = (
   subscriptionRow: unknown,
   recipeCount = 0,
   aiCalls = 0,
 ) => {
-  mockQuery.mockImplementation((text: string) => {
+  mockRouteQueries((text: string) => {
     if (text.includes('from subscriptions')) {
       return Promise.resolve(
         makeQueryResult(subscriptionRow ? [subscriptionRow] : []),
@@ -41,15 +56,15 @@ const PLUS_ROW = {
   plan: 'power',
   status: 'active',
   paddle_customer_id: 'ctm_1',
-  current_period_end: new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString(),
+  current_period_end: new Date(
+    Date.now() + 30 * 24 * 3600 * 1000,
+  ).toISOString(),
   cancel_at_period_end: false,
   past_due_since: null,
 };
 
 const authed = (method: 'get' | 'post', path: string) =>
-  request(getApp())
-    [method](path)
-    .set('Authorization', 'Bearer test-token');
+  request(getApp())[method](path).set('Authorization', 'Bearer test-token');
 
 describe('billing gating (Phase 1)', () => {
   beforeEach(() => {
@@ -90,7 +105,7 @@ describe('billing gating (Phase 1)', () => {
   });
 
   test('POST /api/recipes never caps a paying user', async () => {
-    mockQuery.mockImplementation((text: string) => {
+    mockRouteQueries((text: string) => {
       if (text.includes('from subscriptions')) {
         return Promise.resolve(makeQueryResult([PLUS_ROW]));
       }

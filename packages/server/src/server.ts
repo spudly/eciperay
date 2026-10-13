@@ -9,7 +9,9 @@ import express from 'express';
 import type {NextFunction, Request, Response} from 'express';
 
 import {API_PREFIX} from './apiPrefix.js';
+import {loadEntitlement} from './middleware/loadEntitlement.js';
 import {requireAuth} from './middleware/requireAuth.js';
+import {requirePlan} from './middleware/requirePlan.js';
 import {query as defaultQuery} from './db/query.js';
 import {attachPostHogExpress, captureServerException} from './lib/posthog.js';
 import {initPostHogLogs, serverLog} from './lib/posthogLogs.js';
@@ -73,6 +75,8 @@ export const createApp = ({
   api.use(
     '/mcp',
     requireAuth,
+    loadEntitlement(queryFn),
+    requirePlan('power'),
     createMcpRouter({
       apiUrl: `http://localhost:${process.env['PORT'] ?? DEFAULT_PORT}`,
     }),
