@@ -121,6 +121,54 @@ describe('billing gating (Phase 1)', () => {
     expect(res.status).not.toBe(402);
   });
 
+  test('POST /api/recipes passes a free user when the count query returns no rows', async () => {
+    mockRouteQueries((text: string) => {
+      if (text.includes('from subscriptions')) {
+        return Promise.resolve(makeQueryResult([]));
+      }
+      if (text.includes('from ai_usage')) {
+        return Promise.resolve(makeQueryResult([{calls: 0}]));
+      }
+      if (text.includes('count(*) as count from recipes')) {
+        // Zero rows: checkRecipeCap treats a missing count as 0.
+        return Promise.resolve(makeQueryResult([]));
+      }
+      return Promise.resolve(makeQueryResult([]));
+    });
+    const res = await authed('post', '/api/recipes').send(makeRecipeInput());
+    expect(res.status).not.toBe(402);
+  });
+
+  test('lazily downgrades a cancelled subscription with no period end to free', async () => {
+    mockRouteQueries((text: string) => {
+      if (text.includes('from subscriptions')) {
+        return Promise.resolve(
+          makeQueryResult([
+            {
+              plan: 'plus',
+              status: 'cancelled',
+              paddle_customer_id: 'ctm_1',
+              current_period_end: null,
+              cancel_at_period_end: true,
+              past_due_since: null,
+            },
+          ]),
+        );
+      }
+      if (text.includes('from ai_usage')) {
+        return Promise.resolve(makeQueryResult([{calls: 0}]));
+      }
+      return Promise.resolve(makeQueryResult([]));
+    });
+    const res = await authed('get', '/api/meal-plans');
+    expect(res.status).toBe(403);
+    expect(res.body).toEqual({
+      error: 'plan_required',
+      requiredPlan: 'plus',
+      plan: 'free',
+    });
+  });
+
   test('POST /api/recipes never caps a paying user', async () => {
     mockRouteQueries((text: string) => {
       if (text.includes('from subscriptions')) {

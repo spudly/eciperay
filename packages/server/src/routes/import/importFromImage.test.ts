@@ -4,7 +4,10 @@ import request from 'supertest';
 import {makeRecipeDetailRow} from '../../test/fixtures/recipeRow.js';
 import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {createMockQuery} from '../../test/mockQuery.js';
-import {nockAnthropicMessage} from '../../test/mockNockAnthropic.js';
+import {
+  anthropicCreateSpy,
+  nockAnthropicMessage,
+} from '../../test/mockNockAnthropic.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
 import {lazyTestApp} from '../../test/lazyTestApp.js';
 import {mockBillingMetered, mockBillingPlan} from '../../test/mockBilling.js';
@@ -54,6 +57,25 @@ describe('POST /recipes/import/image', () => {
     expect(res.body.servings).toBe(8);
   });
 
+  test('refunds the AI quota and rethrows when Claude vision fails', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockBillingMetered(mockQuery, 'plus');
+    // refundAiCall's UPDATE after the failed provider call.
+    mockQuery.mockResolvedValueOnce(makeQueryResult([]));
+    anthropicCreateSpy.mockRejectedValueOnce(new Error('AI down'));
+
+    const res = await request(getApp())
+      .post('/api/recipes/import/image')
+      .set('Authorization', 'Bearer <redacted>')
+      .send({imageBase64: 'base64encodedimage=='});
+
+    expect(res.status).toBe(500);
+    const refundCall = mockQuery.mock.calls.find(args =>
+      args[0].includes('update ai_usage'),
+    );
+    expect(refundCall).toBeDefined();
+  });
+
   test('returns 400 when imageBase64 is empty', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockBillingPlan(mockQuery, 'plus');
@@ -93,4 +115,3 @@ describe('POST /recipes/import/image', () => {
     expect(res.status).toBe(500);
   });
 });
-
