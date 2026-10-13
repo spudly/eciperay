@@ -67,16 +67,20 @@ export const createClient = (config: EciperayClientConfig) => {
       const suffix = qs.size > 0 ? `?${qs.toString()}` : '';
       return request<unknown[]>(`/recipes${suffix}`);
     },
-    getRecipe: (id: string) => request<unknown>(`/recipes/${id}`),
+    getRecipe: (id: string) =>
+      request<unknown>(`/recipes/${encodeURIComponent(id)}`),
     createRecipe: (input: unknown) =>
       request<unknown>('/recipes', {
         method: 'POST',
         body: JSON.stringify(input),
       }),
     listMealPlans: () => request<unknown[]>('/meal-plans'),
-    getMealPlan: (id: string) => request<unknown>(`/meal-plans/${id}`),
+    getMealPlan: (id: string) =>
+      request<unknown>(`/meal-plans/${encodeURIComponent(id)}`),
     getShoppingList: (mealPlanId: string) =>
-      request<unknown[]>(`/meal-plans/${mealPlanId}/shopping-list`),
+      request<unknown[]>(
+        `/meal-plans/${encodeURIComponent(mealPlanId)}/shopping-list`,
+      ),
   };
 };
 
