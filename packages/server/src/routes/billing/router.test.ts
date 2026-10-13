@@ -106,6 +106,30 @@ describe('POST /billing/paddle-webhook', () => {
     );
   });
 
+  test('accepts a subscription.created event without a billing period', async () => {
+    mockWebhookQueries();
+    const event = makeEvent();
+    const {current_billing_period, ...data} = event.data;
+    void current_billing_period;
+    // A scheduled cancellation exercises the scheduled_change?.action branch.
+    const rawBody = JSON.stringify({
+      ...event,
+      data: {...data, scheduled_change: {action: 'cancel'}},
+    });
+    const ts = Math.floor(Date.now() / 1000).toString();
+
+    const res = await postWebhook(rawBody, `ts=${ts};h1=${sign(ts, rawBody)}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({received: true});
+    const upsertCall = mockQuery.mock.calls.find(args =>
+      args[0].includes('insert into subscriptions'),
+    );
+    expect(upsertCall).toBeDefined();
+    // Missing period dates are stored as null; cancel_at_period_end is true.
+    expect(upsertCall?.[1]).toEqual(expect.arrayContaining([null, null, true]));
+  });
+
   test('rejects an invalid signature with 401', async () => {
     mockWebhookQueries();
     const rawBody = JSON.stringify(makeEvent());

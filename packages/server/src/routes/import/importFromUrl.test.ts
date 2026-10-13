@@ -1,4 +1,5 @@
 import nock from 'nock';
+import {jest} from '@jest/globals';
 import request from 'supertest';
 
 import {makeRecipeDetailRow} from '../../test/fixtures/recipeRow.js';
@@ -112,5 +113,24 @@ describe('POST /recipes/import/url', () => {
       .send({url: 'https://recipe.example.com/bad'});
     expect(res.status).toBe(500);
   });
-});
 
+  test('returns 500 when fetch resolves with a non-ok response', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
+    // nock does not reliably intercept fetch; mock it directly so the
+    // `!response.ok` branch in fetchPage is exercised.
+    const realFetch = globalThis.fetch;
+    jest.spyOn(globalThis, 'fetch').mockImplementation((input, init) => {
+      if (typeof input === 'string' && input.includes('recipe.example.com')) {
+        return Promise.resolve({ok: false, status: 502} as Response);
+      }
+      return realFetch(input, init);
+    });
+
+    const res = await request(getApp())
+      .post('/api/recipes/import/url')
+      .set('Authorization', 'Bearer valid-token')
+      .send({url: 'https://recipe.example.com/unavailable'});
+    expect(res.status).toBe(500);
+  });
+});
