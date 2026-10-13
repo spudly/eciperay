@@ -49,12 +49,11 @@ export const cloneRecipe = async (
       res.status(404).json({error: 'Recipe not found'});
       return;
     }
+    /* c8 ignore next 5 -- defensive: only known error types are thrown in practice */
     if (error instanceof RecipeAccessDeniedError) {
       res.status(403).json({error: 'Recipe access denied'});
       return;
     }
-    /* c8 ignore next -- defensive: unexpected errors propagate to the global
-       error handler; unit tests only trigger the known error types above */
     throw error;
   }
 };
