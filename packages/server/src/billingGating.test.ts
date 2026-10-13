@@ -1,3 +1,4 @@
+import nock from 'nock';
 import request from 'supertest';
 import type {QueryResult} from 'pg';
 
@@ -13,9 +14,7 @@ import {lazyTestApp} from './test/lazyTestApp.js';
  * bridges the two (same approach as createMockQuery's own cast).
  */
 const mockRouteQueries = (impl: (text: string) => Promise<QueryResult>) => {
-  mockQuery.mockImplementation(
-    impl,
-  );
+  mockQuery.mockImplementation(impl);
 };
 
 const mockQuery = createMockQuery();
@@ -44,6 +43,27 @@ const mockGatingQueries = (
     }
     if (text.includes('from meal_plans')) {
       return Promise.resolve(makeQueryResult([]));
+    }
+    return Promise.resolve(makeQueryResult([]));
+  });
+};
+
+/**
+ * Mocks an exhausted AI quota. The consumeAiCall INSERT returns 999 calls, over
+ * the limit for the given plan (free: 5, plus: 100).
+ */
+const mockExhaustedQuota = (plan: 'free' | 'plus' = 'free') => {
+  mockRouteQueries((text: string) => {
+    if (text.includes('from subscriptions')) {
+      return Promise.resolve(
+        makeQueryResult(plan === 'free' ? [] : [PLUS_ROW]),
+      );
+    }
+    if (text.includes('insert into ai_usage')) {
+      return Promise.resolve(makeQueryResult([{calls: 999}]));
+    }
+    if (text.includes('from ai_usage')) {
+      return Promise.resolve(makeQueryResult([{calls: 0}]));
     }
     return Promise.resolve(makeQueryResult([]));
   });
@@ -116,8 +136,74 @@ describe('billing gating (Phase 1)', () => {
     // The recipe-count query must never run for unlimited plans.
     expect(
       mockQuery.mock.calls.some(args =>
-        (args[0]).includes('count(*) as count from recipes'),
+        args[0].includes('count(*) as count from recipes'),
       ),
     ).toBe(false);
+  });
+});
+
+describe('AI quota 402s', () => {
+  beforeEach(() => {
+    mockQuery.mockReset();
+    nockSupabaseGetUser('supabase-uid-1');
+  });
+
+  test('POST /api/import/url 402s when AI quota is exhausted', async () => {
+    nock('https://recipe.example.com')
+      .get('/plain')
+      .reply(200, '<html><body>no schema here</body></html>');
+    mockExhaustedQuota('free');
+    const res = await authed('post', '/api/recipes/import/url').send({
+      url: 'https://recipe.example.com/plain',
+    });
+    expect(res.status).toBe(402);
+    expect(res.body.error).toBe('ai_quota_exhausted');
+  });
+
+  test('POST /api/import/image 402s when AI quota is exhausted', async () => {
+    mockExhaustedQuota('plus');
+    const res = await authed('post', '/api/recipes/import/image').send({
+      imageBase64: 'abc',
+    });
+    expect(res.status).toBe(402);
+    expect(res.body.error).toBe('ai_quota_exhausted');
+  });
+
+  test('POST /api/import/text 402s when AI quota is exhausted', async () => {
+    mockExhaustedQuota('plus');
+    const res = await authed('post', '/api/recipes/import/text').send({
+      text: 'Pasta with tomato sauce. Boil pasta. Add sauce. Serve hot.',
+    });
+    expect(res.status).toBe(402);
+    expect(res.body.error).toBe('ai_quota_exhausted');
+  });
+
+  test('GET /api/ai/substitutions 402s when AI quota is exhausted', async () => {
+    mockExhaustedQuota('free');
+    const res = await authed(
+      'get',
+      '/api/recipes/recipe-uuid-1/ai/substitutions?missing=butter',
+    );
+    expect(res.status).toBe(402);
+    expect(res.body.error).toBe('ai_quota_exhausted');
+  });
+
+  test('POST /api/recipes/ai/generate-description 402s when quota exhausted', async () => {
+    mockExhaustedQuota('free');
+    const res = await authed(
+      'post',
+      '/api/recipes/ai/generate-description',
+    ).send({title: 'Pasta'});
+    expect(res.status).toBe(402);
+    expect(res.body.error).toBe('ai_quota_exhausted');
+  });
+
+  test('POST /api/recipes/ai/generate-image 402s when quota exhausted', async () => {
+    mockExhaustedQuota('free');
+    const res = await authed('post', '/api/recipes/ai/generate-image').send({
+      title: 'Pasta',
+    });
+    expect(res.status).toBe(402);
+    expect(res.body.error).toBe('ai_quota_exhausted');
   });
 });
