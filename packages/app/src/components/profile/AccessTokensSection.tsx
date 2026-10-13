@@ -61,7 +61,7 @@ export const AccessTokensSection = () => {
       onDismissSecret={() => {
         setCreatedSecret(null);
       }}
-      revokingId={revokeMutation.variables ?? null}
+      revokingId={revokeMutation.isPending ? revokeMutation.variables : null}
       onRevoke={id => {
         revokeMutation.mutate(id);
       }}

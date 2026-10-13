@@ -139,8 +139,16 @@ describe('msw handlers', () => {
         body: JSON.stringify({}),
       },
     );
-    const nameless = (await namelessResponse.json()) as {name: string};
-    expect(nameless.name).toBe('Test token');
+    expect(namelessResponse.status).toBe(400);
+    const blankResponse = await fetch(
+      'http://localhost:8080/api/account/personal-access-tokens',
+      {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({name: '   '}),
+      },
+    );
+    expect(blankResponse.status).toBe(400);
     await eciperay.account.revokePersonalAccessToken('token-uuid-1');
   });
 
