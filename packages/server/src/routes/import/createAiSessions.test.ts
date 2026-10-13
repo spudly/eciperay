@@ -207,7 +207,9 @@ describe('POST /recipes/import/ai/sessions/:sessionId/messages', () => {
       }
       if (sql.includes('ai_usage')) {
         return Promise.resolve(
-          makeQueryResult([{calls: sql.trimStart().startsWith('insert') ? 1 : 0}]),
+          makeQueryResult([
+            {calls: sql.trimStart().startsWith('insert') ? 1 : 0},
+          ]),
         );
       }
       if (sql.includes('from ai_create_sessions')) {
@@ -414,3 +416,38 @@ describe('create AI session error paths', () => {
   });
 });
 
+describe('AI quota 402s', () => {
+  beforeEach(() => {
+    mockQuery.mockReset();
+  });
+
+  test('POST /ai/sessions 402s when quota is exhausted', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
+    mockQuery.mockResolvedValueOnce(makeQueryResult([{calls: 999}]));
+
+    const res = await request(getApp())
+      .post('/api/recipes/import/ai/sessions')
+      .set('Authorization', 'Bearer test-token')
+      .send({prompt: PROMPT});
+
+    expect(res.status).toBe(402);
+    expect(res.body.error).toBe('ai_quota_exhausted');
+  });
+
+  test('POST /ai/sessions/:id/messages 402s when quota is exhausted', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
+    mockQuery
+      .mockResolvedValueOnce(makeQueryResult([makeSessionRow()]))
+      .mockResolvedValueOnce(makeQueryResult([{calls: 999}]));
+
+    const res = await request(getApp())
+      .post(`/api/recipes/import/ai/sessions/${SESSION_ID}/messages`)
+      .set('Authorization', 'Bearer test-token')
+      .send({content: FOLLOW_UP});
+
+    expect(res.status).toBe(402);
+    expect(res.body.error).toBe('ai_quota_exhausted');
+  });
+});

@@ -61,3 +61,23 @@ describe('POST /recipes/:id/versions/ai import errors', () => {
     expect(res.body.error).toBe('servings is required');
   });
 });
+
+describe('AI quota 402', () => {
+  test('402s when AI quota is exhausted', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, null);
+    mockQuery
+      .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
+      .mockResolvedValueOnce(makeQueryResult([makeVersionDetailRow()]))
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([{calls: 999}]));
+
+    const res = await request(getApp())
+      .post('/api/recipes/recipe-uuid-1/versions/ai')
+      .set('Authorization', 'Bearer test-token')
+      .send({prompt: 'make this pasta creamier and easier to follow'});
+
+    expect(res.status).toBe(402);
+    expect(res.body.error).toBe('ai_quota_exhausted');
+  });
+});

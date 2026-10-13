@@ -218,3 +218,20 @@ describe('GET /recipes/:id/ai/nutrition', () => {
   });
 });
 
+describe('AI quota 402', () => {
+  test('402s when AI quota is exhausted', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, null);
+    mockQuery
+      .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
+      .mockResolvedValueOnce(makeQueryResult([pendingNutritionRow]))
+      .mockResolvedValueOnce(makeQueryResult([{calls: 999}]));
+
+    const res = await request(getApp())
+      .get('/api/recipes/recipe-uuid-1/ai/nutrition')
+      .set('Authorization', 'Bearer test-token');
+
+    expect(res.status).toBe(402);
+    expect(res.body.error).toBe('ai_quota_exhausted');
+  });
+});
