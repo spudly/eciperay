@@ -32,6 +32,7 @@ export const MIRROR_PAIRS = [
   'meals/NutritionGoalProgressView.tsx',
   'meals/ShoppingListView.tsx',
   'profile/AccessTokensView.tsx',
+  'profile/AccessTokensTokenRow.tsx',
   'profile/NutritionGoalsFormView.tsx',
   'profile/ProfileView.tsx',
   'recipes/RecipeListFiltersBar.tsx',

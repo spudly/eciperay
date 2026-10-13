@@ -36,9 +36,9 @@ const CreatedSecretPanel = ({
       </p>
       <code
         className="
-        mb-3 block break-all rounded bg-white p-3 font-mono text-sm
-        text-slate-900
-      "
+          mb-3 block break-all rounded bg-white p-3 font-mono text-sm
+          text-slate-900
+        "
       >
         {secret}
       </code>
