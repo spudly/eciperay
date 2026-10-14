@@ -61,7 +61,7 @@ export const consumeAiCall = async (
     [userId, limit],
   );
   const row = result.rows[0];
-  /* c8 ignore next 2 -- CTE always returns one row */
+  /* c8 ignore next 3 -- CTE always returns one row */
   const used = row?.calls ?? 0;
   const periodStart = row?.period_start ?? '';
   if (row?.allowed) {
