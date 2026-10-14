@@ -56,7 +56,9 @@ export const createApp = ({
       // webhook needs it — retaining a raw buffer for every request (up to
       // 50 MB image imports) would needlessly double memory per request.
       verify: (req, _res, buf) => {
-        const url = req.url ?? '';
+        // req.url is always defined in Express; template literal avoids a
+        // nullish branch for coverage.
+        const url = `${req.url}`;
         if (
           url === '/api/billing/paddle-webhook' ||
           url.startsWith('/api/billing/paddle-webhook?')
