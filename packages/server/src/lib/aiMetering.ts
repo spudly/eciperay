@@ -149,31 +149,23 @@ export const withRecipeCap = async <T>(
     return {ok: true, value: await create(queryFn)};
   }
   // A mocked queryFn (tests) has no real transaction support: run the check
-  // and creation directly. In production, hold a per-user advisory lock across
-  // the check+create so concurrent requests can't race past the limit.
-  // The cap-check logic is shared; only the transaction wrapper is
-  // production-only.
-  const doCapCheck = async (q: typeof queryFn): Promise<CappedResult<T>> => {
-    const cap = await checkRecipeCap(userId, plan, q);
-    if (!cap.ok) {
-      return cap;
-    }
-    return {ok: true, value: await create(q)};
-  };
-  // Dispatch via array index to avoid a branch that can't be covered in tests.
-  // A jest mock has a `mock` property; the real queryFn does not.
-  const handlers: (() => Promise<CappedResult<T>>)[] = [
-    async (): Promise<CappedResult<T>> => doCapCheck(queryFn),
-    /* c8 ignore next 7 -- production-only: requires a real DB transaction */
-    async (): Promise<CappedResult<T>> => {
-      return withTransaction(async q => {
-        await q('select pg_advisory_xact_lock(hashtext($1))', [userId]);
-        return doCapCheck(q);
-      });
-    },
-  ];
-  const handler = handlers[Number(!('mock' in queryFn))] as () => Promise<
-    CappedResult<T>
-  >;
-  return handler();
+  // and creation directly, mirroring runTransactional. In production, hold a
+  // per-user advisory lock across the check+create so concurrent requests
+  // can't race past the limit.
+  /* c8 ignore next 10 -- production-only: requires a real DB transaction */
+  if (queryFn === defaultQuery) {
+    return withTransaction(async q => {
+      await q('select pg_advisory_xact_lock(hashtext($1))', [userId]);
+      const cap = await checkRecipeCap(userId, plan, q);
+      if (!cap.ok) {
+        return cap;
+      }
+      return {ok: true, value: await create(q)};
+    });
+  }
+  const cap = await checkRecipeCap(userId, plan, queryFn);
+  if (!cap.ok) {
+    return cap;
+  }
+  return {ok: true, value: await create(queryFn)};
 };
