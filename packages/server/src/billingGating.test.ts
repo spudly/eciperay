@@ -59,6 +59,9 @@ const mockExhaustedQuota = (plan: 'free' | 'plus' = 'free') => {
         makeQueryResult(plan === 'free' ? [] : [PLUS_ROW]),
       );
     }
+    if (text.includes('count(*) as count from recipes')) {
+      return Promise.resolve(makeQueryResult([{count: '0'}]));
+    }
     if (text.includes('insert into ai_usage')) {
       return Promise.resolve(
         makeQueryResult([
