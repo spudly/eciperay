@@ -21,11 +21,11 @@ const IGNORED_DIRS = ['docs/', '.github/', '.husky/', 'coverage/'];
 
 const IGNORED_FILES = new Set(['Dockerfile', 'fly.toml', 'CONTRIBUTING.md']);
 
-export const isAllAffectingRootFile = (relPath: string): boolean => {
+export const isAllAffectingFile = (relPath: string): boolean => {
   if (ROOT_ALL_AFFECTING.has(relPath)) {
     return true;
   }
-  return relPath.startsWith('patches/');
+  return relPath.startsWith('patches/') || relPath.startsWith('test/');
 };
 
 export const isScriptsAffectingFile = (relPath: string): boolean => {
@@ -34,8 +34,7 @@ export const isScriptsAffectingFile = (relPath: string): boolean => {
   }
   return (
     relPath.startsWith('scripts/') ||
-    relPath.startsWith('eslint-rules/') ||
-    relPath.startsWith('test/')
+    relPath.startsWith('eslint-rules/')
   );
 };
 
