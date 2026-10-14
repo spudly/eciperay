@@ -4,7 +4,7 @@ import {join} from 'node:path';
 
 import {
   getChangedFiles,
-  isAllAffectingRootFile,
+  isAllAffectingFile,
   isIgnoredFile,
   isScriptsAffectingFile,
   parseArgs,
@@ -92,15 +92,17 @@ describe('file classification', () => {
   });
 
   it('flags root files that affect everything', () => {
-    expect(isAllAffectingRootFile('package-lock.json')).toBe(true);
-    expect(isAllAffectingRootFile('patches/foo.patch')).toBe(true);
-    expect(isAllAffectingRootFile('packages/server/src/a.ts')).toBe(false);
+    expect(isAllAffectingFile('package-lock.json')).toBe(true);
+    expect(isAllAffectingFile('patches/foo.patch')).toBe(true);
+    expect(isAllAffectingFile('test/failOnConsoleError.cjs')).toBe(true);
+    expect(isAllAffectingFile('packages/server/src/a.ts')).toBe(false);
   });
 
   it('flags scripts-affecting files', () => {
     expect(isScriptsAffectingFile('scripts/foo.ts')).toBe(true);
     expect(isScriptsAffectingFile('eslint-rules/bar.ts')).toBe(true);
     expect(isScriptsAffectingFile('jest.config.cjs')).toBe(true);
+    expect(isScriptsAffectingFile('test/failOnConsoleError.cjs')).toBe(false);
     expect(isScriptsAffectingFile('packages/server/src/a.ts')).toBe(false);
   });
 
@@ -241,6 +243,18 @@ describe('discoverAffectedPackages', () => {
     expect(result.runScriptsTests).toBe(true);
   });
 
+  it('runs all suites when shared test helpers change', () => {
+    const result = discoverAffectedPackages(
+      '/repo',
+      WORKSPACES,
+      ['test/failOnConsoleError.cjs'],
+      makeRepoFs(),
+    );
+    expect(result.testPackages).toEqual(WORKSPACES);
+    expect(result.lintPackages).toEqual(WORKSPACES);
+    expect(result.runScriptsTests).toBe(true);
+  });
+
   it('treats lockfile changes as affecting everything', () => {
     const result = discoverAffectedPackages(
       '/repo',
@@ -347,6 +361,7 @@ describe('writeOutput', () => {
   });
 
   it('writes to stdout when GITHUB_OUTPUT is unset', () => {
+    delete process.env['GITHUB_OUTPUT'];
     const stdoutSpy = jest
       .spyOn(process.stdout, 'write')
       .mockImplementation(() => true);
@@ -455,6 +470,20 @@ describe('isDirectRun', () => {
 });
 
 describe('runDiscoverAffectedPackagesCli', () => {
+  const githubOutput = process.env['GITHUB_OUTPUT'];
+
+  beforeEach(() => {
+    delete process.env['GITHUB_OUTPUT'];
+  });
+
+  afterEach(() => {
+    if (githubOutput === undefined) {
+      delete process.env['GITHUB_OUTPUT'];
+    } else {
+      process.env['GITHUB_OUTPUT'] = githubOutput;
+    }
+  });
+
   it('writes discovery output for the repo', async () => {
     const stdoutSpy = jest
       .spyOn(process.stdout, 'write')

@@ -249,6 +249,20 @@ describe('isTagRangeArgv', () => {
 });
 
 describe('runResolveDeployTargetsCli', () => {
+  const githubOutput = process.env['GITHUB_OUTPUT'];
+
+  beforeEach(() => {
+    delete process.env['GITHUB_OUTPUT'];
+  });
+
+  afterEach(() => {
+    if (githubOutput === undefined) {
+      delete process.env['GITHUB_OUTPUT'];
+    } else {
+      process.env['GITHUB_OUTPUT'] = githubOutput;
+    }
+  });
+
   test('resolves subjects from argv', () => {
     const stdoutSpy = jest
       .spyOn(process.stdout, 'write')

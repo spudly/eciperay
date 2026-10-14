@@ -4,7 +4,7 @@ import {fileURLToPath} from 'node:url';
 
 import {
   getChangedFiles,
-  isAllAffectingRootFile,
+  isAllAffectingFile,
   isIgnoredFile,
   isScriptsAffectingFile,
   resolveBase,
@@ -55,7 +55,7 @@ export const discoverAffectedPackages = (
   const {testPackages: allTest, lintPackages: allLint} =
     discoverWorkspacePackages(root, workspaces, fs);
 
-  if (changedFiles.some(isAllAffectingRootFile)) {
+  if (changedFiles.some(isAllAffectingFile)) {
     return {
       testPackages: allTest,
       lintPackages: allLint,
