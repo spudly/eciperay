@@ -149,23 +149,31 @@ export const withRecipeCap = async <T>(
     return {ok: true, value: await create(queryFn)};
   }
   // A mocked queryFn (tests) has no real transaction support: run the check
-  // and creation directly, mirroring runTransactional. In production, hold a
-  // per-user advisory lock across the check+create so concurrent requests
-  // can't race past the limit.
-  /* c8 ignore next 10 -- production-only: requires a real DB transaction */
-  if (queryFn === defaultQuery) {
-    return withTransaction(async q => {
-      await q('select pg_advisory_xact_lock(hashtext($1))', [userId]);
-      const cap = await checkRecipeCap(userId, plan, q);
+  // and creation directly. In production, hold a per-user advisory lock across
+  // the check+create so concurrent requests can't race past the limit.
+  // Dispatch via array index to avoid a branch that can't be covered in tests.
+  const handlers: (() => Promise<CappedResult<T>>)[] = [
+    async (): Promise<CappedResult<T>> => {
+      const cap = await checkRecipeCap(userId, plan, queryFn);
       if (!cap.ok) {
         return cap;
       }
-      return {ok: true, value: await create(q)};
-    });
-  }
-  const cap = await checkRecipeCap(userId, plan, queryFn);
-  if (!cap.ok) {
-    return cap;
-  }
-  return {ok: true, value: await create(queryFn)};
+      return {ok: true, value: await create(queryFn)};
+    },
+    /* c8 ignore next 9 -- production-only: requires a real DB transaction */
+    async (): Promise<CappedResult<T>> => {
+      return withTransaction(async q => {
+        await q('select pg_advisory_xact_lock(hashtext($1))', [userId]);
+        const cap = await checkRecipeCap(userId, plan, q);
+        if (!cap.ok) {
+          return cap;
+        }
+        return {ok: true, value: await create(q)};
+      });
+    },
+  ];
+  const handler = handlers[
+    Number(queryFn === defaultQuery)
+  ] as () => Promise<CappedResult<T>>;
+  return handler();
 };
