@@ -39,7 +39,7 @@ export const readWorkspaceNameMap = (
   return nameToDir;
 };
 
-const internalDepDirs = (
+export const internalDepDirs = (
   pkg: PackageJsonDeps | undefined,
   workspace: string,
   nameToDir: Map<string, string>,
