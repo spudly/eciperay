@@ -77,6 +77,23 @@ describe('PATCH /recipes/:id/sharing', () => {
     });
   });
 
+  test('403s a free user publishing to unlisted', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'free');
+
+    const res = await request(getApp())
+      .patch('/api/recipes/recipe-uuid-1/sharing')
+      .set('Authorization', 'Bearer <redacted>')
+      .send({visibility: 'unlisted', publishingConsent: true});
+
+    expect(res.status).toBe(403);
+    expect(res.body).toEqual({
+      error: 'plan_required',
+      requiredPlan: 'plus',
+      plan: 'free',
+    });
+  });
+
   test('allows a free user to switch back to private', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockBillingPlan(mockQuery, 'free');
