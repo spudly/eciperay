@@ -57,6 +57,11 @@ export default defineConfig(({mode}) => {
       tailwindcss(),
       ...(posthogPlugin ? [posthogPlugin] : []),
     ],
+    define: {
+      // Tamagui and its dependencies reference process.env at runtime.
+      // Vite does not polyfill process by default, so provide a minimal stub.
+      'process.env': {},
+    },
     envDir: '../..',
     esbuild: esbuildDestructuringSupport,
     optimizeDeps: {esbuildOptions: esbuildDestructuringSupport},

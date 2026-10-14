@@ -1,6 +1,31 @@
 import type {ColorPickerFieldProps} from '@eciperay/client';
+import {ColorPickerField as DsColorPickerField} from '@spudly/ui';
 import {useState} from 'react';
-import {Text, TextInput, View} from 'react-native';
+import {StyleSheet, View} from 'react-native';
+
+const styles = StyleSheet.create({
+  dimmed: {opacity: 0.5},
+});
+
+/**
+ * Default swatch palette. The DS ColorPickerField requires a fixed list of
+ * colors (the eciperay prop API has no palette), so these cover the common
+ * tag colors; a value outside the palette simply shows no swatch selected.
+ */
+const DEFAULT_COLORS = [
+  '#6366f1',
+  '#ef4444',
+  '#f97316',
+  '#f59e0b',
+  '#84cc16',
+  '#22c55e',
+  '#14b8a6',
+  '#06b6d4',
+  '#3b82f6',
+  '#a855f7',
+  '#ec4899',
+  '#6b7280',
+];
 
 export const ColorPickerField = ({
   label,
@@ -9,19 +34,21 @@ export const ColorPickerField = ({
   name,
   disabled = false,
 }: ColorPickerFieldProps) => (
-  <View>
-    {label ? (
-      <Text className="mb-1 text-sm font-medium text-gray-700">{label}</Text>
-    ) : null}
-    <TextInput
-      nativeID={name}
-      className="ui-text-field w-28"
+  <View
+    pointerEvents={disabled ? 'none' : 'auto'}
+    style={disabled ? styles.dimmed : undefined}
+    accessibilityState={{disabled}}
+  >
+    <DsColorPickerField
+      label={label}
+      colors={DEFAULT_COLORS}
       value={value}
-      editable={!disabled}
-      autoCapitalize="none"
-      autoCorrect={false}
-      placeholder="#6366f1"
-      onChangeText={onChange}
+      onChange={color => {
+        if (!disabled) {
+          onChange(color);
+        }
+      }}
+      id={name}
     />
   </View>
 );
@@ -31,11 +58,7 @@ if (__DEV__) {
     const [value, setValue] = useState('#6366f1');
 
     return (
-      <ColorPickerField
-        label="Tag color"
-        value={value}
-        onChange={setValue}
-      />
+      <ColorPickerField label="Tag color" value={value} onChange={setValue} />
     );
   };
 

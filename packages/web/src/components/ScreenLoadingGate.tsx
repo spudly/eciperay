@@ -3,8 +3,8 @@ import {
   useDelayedTrue,
   type ScreenLoadingGateProps,
 } from '@eciperay/client';
-import clsx from 'clsx';
 import {useState} from 'react';
+import {YStack} from 'tamagui';
 
 import {BookLoadingSpinner} from './ui/BookLoadingSpinner.js';
 import {PrimaryButton} from './ui/PrimaryButton.js';
@@ -23,13 +23,19 @@ export const ScreenLoadingGate = ({
   }
 
   if (!showLoading) {
-    return <div className={clsx('min-h-full', backgroundClassName)} />;
+    return <YStack minHeight="100%" className={backgroundClassName} />;
   }
 
   return (
-    <div className={clsx('ui-loading-center min-h-full', backgroundClassName)}>
+    <YStack
+      flex={1}
+      alignItems="center"
+      justifyContent="center"
+      minHeight="100%"
+      className={backgroundClassName}
+    >
       <BookLoadingSpinner size="lg" />
-    </div>
+    </YStack>
   );
 };
 

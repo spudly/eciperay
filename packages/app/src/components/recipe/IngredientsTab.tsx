@@ -45,7 +45,7 @@ const IngredientRow = ({
   onToggle: () => void;
 }) => (
   <TouchableOpacity
-    className={clsx('flex-row items-center border-b border-gray-100 py-3', {
+    className={clsx('flex-row items-center border-be border-gray-100 py-3', {
       'opacity-40': missing,
     })}
     onPress={onToggle}
@@ -105,22 +105,22 @@ export const IngredientsTab = ({
         />
       ))}
       {missing.size > 0 ? (
-        <Text className="text-muted mt-3 text-sm">
+        <Text className="text-muted mbs-3 text-sm">
           Tap an ingredient to mark it missing and see substitutions below.
         </Text>
       ) : null}
       {missingNames.length > 0 && substitutionsLoading ? (
-        <Text className="text-muted mt-4 text-sm">Finding substitutions…</Text>
+        <Text className="text-muted mbs-4 text-sm">Finding substitutions…</Text>
       ) : null}
       {substitutions.length > 0 ? (
-        <View className="mt-4 rounded-xl bg-blue-50 p-4">
-          <Text className="mb-2 text-sm font-semibold text-blue-900">
+        <View className="mbs-4 rounded-xl bg-blue-50 p-4">
+          <Text className="mbe-2 text-sm font-semibold text-blue-900">
             Substitutions
           </Text>
           {substitutions.map(sub => (
             <View
               key={sub.ingredient}
-              className="mb-2"
+              className="mbe-2"
             >
               <Text className="text-sm font-medium text-gray-900">
                 {sub.ingredient}

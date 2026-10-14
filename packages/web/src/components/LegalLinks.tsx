@@ -2,6 +2,8 @@ import type {LegalLinksProps} from '@eciperay/client';
 import clsx from 'clsx';
 import {Link} from 'react-router-dom';
 
+const linkClasses = 'text-primary font-medium hover:underline';
+
 export const LegalLinks = ({
   className = '',
   variant = 'inline',
@@ -14,13 +16,13 @@ export const LegalLinks = ({
       >
         <Link
           to="/privacy"
-          className="ui-link"
+          className={linkClasses}
         >
           Privacy Policy
         </Link>
         <Link
           to="/terms"
-          className="ui-link"
+          className={linkClasses}
         >
           Terms of Service
         </Link>
@@ -33,14 +35,14 @@ export const LegalLinks = ({
       By creating an account, you agree to our{' '}
       <Link
         to="/terms"
-        className="ui-link"
+        className={linkClasses}
       >
         Terms of Service
       </Link>{' '}
       and{' '}
       <Link
         to="/privacy"
-        className="ui-link"
+        className={linkClasses}
       >
         Privacy Policy
       </Link>

@@ -1,7 +1,7 @@
 import React from 'react';
-import {render, fireEvent} from '@testing-library/react-native';
+import {fireEvent} from '@testing-library/react-native';
 
-import {makeStackProps} from '../__tests__/testUtils';
+import {renderWithProviders,makeStackProps} from '../__tests__/testUtils';
 import type {AddStackParamList} from '../navigation/types';
 
 import {AddScreen} from './AddScreen';
@@ -15,7 +15,7 @@ const stackProps = makeStackProps<AddStackParamList, 'AddScreen'>(
 
 describe('AddScreen', () => {
   test('renders all add options', () => {
-    const {getByText} = render(<AddScreen {...stackProps} />);
+    const {getByText} = renderWithProviders(<AddScreen {...stackProps} />);
     expect(getByText('Manual entry')).toBeTruthy();
     expect(getByText('Import from URL')).toBeTruthy();
     expect(getByText('Import from image')).toBeTruthy();
@@ -24,31 +24,31 @@ describe('AddScreen', () => {
   });
 
   test('navigates to ManualEntry on press', () => {
-    const {getByText} = render(<AddScreen {...stackProps} />);
+    const {getByText} = renderWithProviders(<AddScreen {...stackProps} />);
     fireEvent.press(getByText('Manual entry'));
     expect(mockNavigate).toHaveBeenCalledWith('ManualEntry');
   });
 
   test('navigates to ImportUrl on press', () => {
-    const {getByText} = render(<AddScreen {...stackProps} />);
+    const {getByText} = renderWithProviders(<AddScreen {...stackProps} />);
     fireEvent.press(getByText('Import from URL'));
     expect(mockNavigate).toHaveBeenCalledWith('ImportUrl');
   });
 
   test('navigates to ImportImage on press', () => {
-    const {getByText} = render(<AddScreen {...stackProps} />);
+    const {getByText} = renderWithProviders(<AddScreen {...stackProps} />);
     fireEvent.press(getByText('Import from image'));
     expect(mockNavigate).toHaveBeenCalledWith('ImportImage');
   });
 
   test('navigates to ImportText on press', () => {
-    const {getByText} = render(<AddScreen {...stackProps} />);
+    const {getByText} = renderWithProviders(<AddScreen {...stackProps} />);
     fireEvent.press(getByText('Import from text'));
     expect(mockNavigate).toHaveBeenCalledWith('ImportText');
   });
 
   test('navigates to GenerateAi on press', () => {
-    const {getByText} = render(<AddScreen {...stackProps} />);
+    const {getByText} = renderWithProviders(<AddScreen {...stackProps} />);
     fireEvent.press(getByText('Generate with AI'));
     expect(mockNavigate).toHaveBeenCalledWith('GenerateAi');
   });

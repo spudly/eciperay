@@ -1,8 +1,7 @@
 import type {BulkSelectToolbarProps} from '@eciperay/client';
+import {Button, SearchField, Text} from '@spudly/ui';
 import {useState} from 'react';
-import {Pressable, Text, View} from 'react-native';
-
-import {SearchField} from './SearchField';
+import {View} from 'react-native';
 
 export const BulkSelectToolbar = ({
   search,
@@ -23,28 +22,30 @@ export const BulkSelectToolbar = ({
     <View>
       <SearchField
         value={search}
-        onChange={onSearchChange}
+        onChangeText={onSearchChange}
         placeholder={searchPlaceholder}
       />
       <View className="
-        ui-bulk-select-toolbar-actions mb-3 flex-row flex-wrap gap-3
+        ui-bulk-select-toolbar-actions mbe-3 flex-row flex-wrap gap-3
       ">
-        <Pressable
+        <Button
+          variant="ghost"
+          size="sm"
           disabled={controlsDisabled || filteredCount === 0}
           onPress={onSelectAll}
         >
-          <Text className="text-primary font-medium">{selectAllLabel}</Text>
-        </Pressable>
-        <Pressable
+          {selectAllLabel}
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
           disabled={controlsDisabled || filteredCount === 0}
           onPress={onClearSelection}
         >
-          <Text className="font-medium text-gray-600">
-            {clearSelectionLabel}
-          </Text>
-        </Pressable>
+          {clearSelectionLabel}
+        </Button>
         {selectedCount > 0 ? (
-          <Text className="text-muted">{selectedCount} selected</Text>
+          <Text variant="hint">{selectedCount} selected</Text>
         ) : null}
       </View>
     </View>

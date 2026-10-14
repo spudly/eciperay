@@ -1,5 +1,9 @@
 import type {FixedActionBannerProps} from '@eciperay/client';
-import clsx from 'clsx';
+import {Button as DSButton} from '@spudly/ui';
+import {XStack, YStack, Text} from 'tamagui';
+
+import {PrimaryButton} from './PrimaryButton.js';
+import {SecondaryButton} from './SecondaryButton.js';
 
 export const FixedActionBanner = ({
   message,
@@ -11,63 +15,68 @@ export const FixedActionBanner = ({
   ariaLabel,
   role,
 }: FixedActionBannerProps) => (
-  <div
-    className={clsx(
-      'ui-fixed-action-banner fixed inset-x-0 z-50',
-      position === 'top'
-        ? 'ui-fixed-action-banner-top top-0'
-        : 'ui-fixed-action-banner-bottom bottom-0',
-    )}
+  <YStack
+    position="fixed"
+    left={0}
+    right={0}
+    zIndex={50}
+    top={position === 'top' ? 0 : undefined}
+    bottom={position === 'bottom' ? 0 : undefined}
+    backgroundColor="$surface"
+    borderColor="$border"
+    borderTopWidth={position === 'bottom' ? 1 : 0}
+    borderBottomWidth={position === 'top' ? 1 : 0}
+    padding="$4"
+    shadowColor="$border"
+    shadowRadius={8}
     role={role ?? (ariaLabel ? 'dialog' : 'region')}
     aria-label={ariaLabel}
   >
-    <div
-      className="
-        mx-auto flex max-w-5xl flex-col gap-3
-        sm:flex-row sm:items-center sm:justify-between
-      "
+    <XStack
+      maxWidth={1024}
+      width="100%"
+      marginHorizontal="auto"
+      flexDirection="column"
+      gap="$3"
     >
-      <div className="flex-1 text-sm text-gray-700">{message}</div>
-      <div className="flex shrink-0 flex-wrap items-center gap-2">
+      <Text
+        flex={1}
+        fontSize={14}
+        color="$text"
+      >
+        {message}
+      </Text>
+      <XStack
+        flexShrink={0}
+        flexWrap="wrap"
+        alignItems="center"
+        gap="$2"
+      >
         {secondaryAction ? (
-          <button
-            type="button"
-            className="
-              rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium
-              text-gray-800
-            "
-            onClick={secondaryAction.onPress}
-          >
-            {secondaryAction.label}
-          </button>
+          <SecondaryButton
+            label={secondaryAction.label}
+            onPress={secondaryAction.onPress}
+          />
         ) : null}
         {primaryAction ? (
-          <button
-            type="button"
-            className="
-              bg-primary rounded-lg px-4 py-2 text-sm font-medium text-white
-            "
-            onClick={primaryAction.onPress}
-          >
-            {primaryAction.label}
-          </button>
+          <PrimaryButton
+            label={primaryAction.label}
+            onPress={primaryAction.onPress}
+          />
         ) : null}
         {onDismiss ? (
-          <button
-            type="button"
-            className="
-              rounded-md px-2 py-1 text-xs font-medium text-gray-600
-              hover:bg-white/70
-            "
+          <DSButton
+            variant="ghost"
+            size="sm"
             aria-label={dismissAriaLabel}
-            onClick={onDismiss}
+            onPress={onDismiss}
           >
             Dismiss
-          </button>
+          </DSButton>
         ) : null}
-      </div>
-    </div>
-  </div>
+      </XStack>
+    </XStack>
+  </YStack>
 );
 
 if (import.meta.env.DEV) {

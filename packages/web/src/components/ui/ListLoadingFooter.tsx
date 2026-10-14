@@ -1,7 +1,8 @@
 import type {ListLoadingFooterProps} from '@eciperay/client';
+import {Spinner as DSSpinner} from '@spudly/ui';
 import {useState} from 'react';
+import {YStack} from 'tamagui';
 
-import {BookLoadingSpinner} from './BookLoadingSpinner.js';
 import {PrimaryButton} from './PrimaryButton.js';
 
 export const ListLoadingFooter = ({loading}: ListLoadingFooterProps) => {
@@ -10,9 +11,12 @@ export const ListLoadingFooter = ({loading}: ListLoadingFooterProps) => {
   }
 
   return (
-    <div className="ui-loading-center py-4">
-      <BookLoadingSpinner size="sm" />
-    </div>
+    <YStack
+      alignItems="center"
+      paddingVertical="$4"
+    >
+      <DSSpinner size="small" label="Loading more" />
+    </YStack>
   );
 };
 

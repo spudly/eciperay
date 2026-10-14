@@ -58,7 +58,7 @@ export const MealPlanFormView = ({
         onChange={onEndsOnChange}
         placeholder="YYYY-MM-DD"
       />
-      <Text className="mb-2 text-sm font-medium text-gray-700">
+      <Text className="mbe-2 text-sm font-medium text-gray-700">
         Meals & recipes
       </Text>
       <CheckboxSelectList
@@ -113,7 +113,7 @@ export const MealPlanFormView = ({
         );
       })}
       {error ? <ErrorText>{error}</ErrorText> : null}
-      <View className="mt-4">
+      <View className="mbs-4">
         <PrimaryButton
           label="Save plan"
           loading={saving}

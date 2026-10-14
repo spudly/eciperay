@@ -1,27 +1,68 @@
 import type {ScreenContainerProps} from '@eciperay/client';
-import {View} from 'react-native';
+import {ScreenContainer as DSScreenContainer, tokens} from '@spudly/ui';
 
 import {PageTitle} from './PageTitle';
 
-const variantClass = (variant: ScreenContainerProps['variant']) => {
-  if (variant === 'list') {
-    return 'flex-1 bg-gray-50';
-  }
-  if (variant === 'padded') {
-    return 'ui-screen-shell-padded';
-  }
-  if (variant === 'white') {
-    return 'flex-1 bg-white';
-  }
-  return 'ui-screen-shell';
-};
-
+/**
+ * Thin adapter over the DS ScreenContainer.
+ *
+ * Variant mapping:
+ * - default/padded keep the DS page padding (padded uses the wider spacing
+ *   of the old ui-screen-shell-padded) on the old gray-50 shell background.
+ * - list/white drop the container padding (callers provide their own, e.g.
+ *   a FlatList content style) and only tweak the background.
+ *
+ * All variants are non-scrollable: screens that scroll use ScreenScroll.
+ */
 export const ScreenContainer = ({
   children,
   variant = 'default',
-}: ScreenContainerProps) => (
-  <View className={variantClass(variant)}>{children}</View>
-);
+}: ScreenContainerProps) => {
+  if (variant === 'list') {
+    return (
+      <DSScreenContainer
+        scrollable={false}
+        paddingHorizontal={0}
+        paddingVertical={0}
+        backgroundColor={tokens.colors.gray.gray1}
+      >
+        {children}
+      </DSScreenContainer>
+    );
+  }
+  if (variant === 'white') {
+    return (
+      <DSScreenContainer
+        scrollable={false}
+        paddingHorizontal={0}
+        paddingVertical={0}
+        backgroundColor="#ffffff"
+      >
+        {children}
+      </DSScreenContainer>
+    );
+  }
+  if (variant === 'padded') {
+    return (
+      <DSScreenContainer
+        scrollable={false}
+        paddingHorizontal={tokens.spacing[6]}
+        paddingTop={tokens.spacing[8]}
+        backgroundColor={tokens.colors.gray.gray1}
+      >
+        {children}
+      </DSScreenContainer>
+    );
+  }
+  return (
+    <DSScreenContainer
+      scrollable={false}
+      backgroundColor={tokens.colors.gray.gray1}
+    >
+      {children}
+    </DSScreenContainer>
+  );
+};
 
 if (__DEV__) {
   ScreenContainer.demo = () => (

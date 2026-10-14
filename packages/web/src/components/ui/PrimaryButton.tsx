@@ -1,4 +1,5 @@
 import type {PrimaryButtonProps} from '@eciperay/client';
+import {Button as DSButton} from '@spudly/ui';
 
 export const PrimaryButton = ({
   label,
@@ -8,19 +9,14 @@ export const PrimaryButton = ({
   loadingLabel,
   type = 'button',
 }: PrimaryButtonProps) => (
-  <button
-    type={type}
-    className="
-      ui-primary-button inline-full py-4
-      disabled:opacity-50
-    "
+  <DSButton
+    variant="primary"
     disabled={disabled || loading}
-    onClick={type === 'submit' ? undefined : onPress}
+    onPress={type === 'submit' ? undefined : onPress}
+    type={type}
   >
-    <span className="ui-primary-button-text">
-      {loading ? (loadingLabel ?? label) : label}
-    </span>
-  </button>
+    {loading ? (loadingLabel ?? label) : label}
+  </DSButton>
 );
 
 if (import.meta.env.DEV) {

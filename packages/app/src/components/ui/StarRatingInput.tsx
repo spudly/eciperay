@@ -1,52 +1,42 @@
 import type {StarRatingInputProps} from '@eciperay/client';
-import clsx from 'clsx';
+import {StarRatingInput as DsStarRatingInput} from '@spudly/ui';
 import {useState} from 'react';
-import {Pressable, Text, View} from 'react-native';
+import {StyleSheet, View} from 'react-native';
 
+const styles = StyleSheet.create({
+  dimmed: {opacity: 0.5},
+});
+
+/**
+ * Adapter notes: the DS StarRatingInput is fixed at 5 stars (the eciperay
+ * `max` default is 5; non-5 values have no DS equivalent) and has no `tone`
+ * prop, so both are accepted by the prop API but not forwarded. The
+ * toggle-off behavior (pressing the current star clears the rating) is
+ * preserved, as are `readOnly`/`disabled` via a non-interactive wrapper.
+ */
 export const StarRatingInput = ({
   value,
   onChange,
-  max = 5,
   readOnly = false,
   disabled = false,
-  tone = 'default',
 }: StarRatingInputProps) => {
-  const stars = Array.from({length: max}, (_, index) => index + 1);
+  const interactive = !readOnly && !disabled && onChange !== undefined;
 
-  const starClass = (star: number) =>
-    clsx('text-2xl', {
-      'text-yellow-400': value !== null && star <= value,
-      'text-gray-300': tone !== 'dark' && (value === null || star > value),
-      'text-white/30': tone === 'dark' && (value === null || star > value),
-    });
+  const handleChange = (star: number) => {
+    if (disabled || !onChange) {
+      return;
+    }
+    onChange(value === star ? null : star);
+  };
 
   return (
-    <View className="ui-star-rating flex-row">
-      {stars.map(star => {
-        if (readOnly || !onChange) {
-          return (
-            <Text
-              key={star}
-              accessibilityLabel={`${star} stars`}
-              className={starClass(star)}
-            >
-              ★
-            </Text>
-          );
-        }
-        return (
-          <Pressable
-            key={star}
-            accessibilityLabel={`${star} stars`}
-            disabled={disabled}
-            onPress={() => {
-              onChange(value === star ? null : star);
-            }}
-          >
-            <Text className={starClass(star)}>★</Text>
-          </Pressable>
-        );
-      })}
+    <View
+      className="ui-star-rating"
+      pointerEvents={interactive ? 'auto' : 'none'}
+      style={disabled ? styles.dimmed : undefined}
+      accessibilityState={{disabled}}
+    >
+      <DsStarRatingInput value={value ?? 0} onChange={handleChange} />
     </View>
   );
 };
@@ -55,12 +45,7 @@ if (__DEV__) {
   const StarRatingInputDemo = () => {
     const [value, setValue] = useState<number | null>(3);
 
-    return (
-      <StarRatingInput
-        value={value}
-        onChange={setValue}
-      />
-    );
+    return <StarRatingInput value={value} onChange={setValue} />;
   };
 
   StarRatingInput.demo = () => <StarRatingInputDemo />;

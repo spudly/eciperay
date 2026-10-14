@@ -1,26 +1,10 @@
 import type {PageTitleProps} from '@eciperay/client';
-import clsx from 'clsx';
+import {Text as DSText} from '@spudly/ui';
 
-const titleClass = (size: PageTitleProps['size']) => {
-  if (size === 'auth') {
-    return 'ui-page-title-lg';
-  }
-  if (size === 'section') {
-    return 'ui-section-title';
-  }
-  return 'ui-page-title';
-};
-
-const spacingClass = (spacing: PageTitleProps['spacing']) => {
-  if (spacing === 'auth') {
-    return 'mbe-8';
-  }
-  if (spacing === 'section') {
-    return 'mb-4';
-  }
-  return 'mb-6';
-};
-
+/**
+ * Adapter preserving semantic heading levels (h1/h2) over the design-system
+ * Text primitive, so the heading role expected by consumers and tests is kept.
+ */
 export const PageTitle = ({
   children,
   size = 'page',
@@ -29,8 +13,15 @@ export const PageTitle = ({
   const Tag = size === 'section' ? 'h2' : 'h1';
 
   return (
-    <Tag className={clsx(titleClass(size), spacingClass(spacing))}>
-      {children}
+    <Tag style={{margin: 0}}>
+      <DSText
+        variant={size === 'section' ? 'subheading' : 'heading'}
+        marginBottom={
+          spacing === 'auth' ? '$8' : spacing === 'section' ? '$4' : '$6'
+        }
+      >
+        {children}
+      </DSText>
     </Tag>
   );
 };

@@ -26,20 +26,20 @@ export const CookLogForm = ({
 
   return (
     <View
-      className={clsx('w-full rounded-2xl p-6', {
+      className={clsx('rounded-2xl p-6 inline-full', {
         'bg-white/10': !isLight,
         'border border-gray-200 bg-gray-50': isLight,
       })}
     >
       <Text
-        className={clsx('mb-4 text-xl font-semibold', {
+        className={clsx('mbe-4 text-xl font-semibold', {
           'text-white': !isLight,
           'text-gray-900': isLight,
         })}
       >
         How did it go?
       </Text>
-      <View className="mb-4 items-center">
+      <View className="mbe-4 items-center">
         <StarRatingInput
           value={rating}
           tone={isLight ? 'default' : 'dark'}
@@ -50,7 +50,7 @@ export const CookLogForm = ({
       </View>
       <TextInput
         className={clsx(
-          'mb-4 rounded-xl px-4 py-3 text-base',
+          'mbe-4 rounded-xl px-4 py-3 text-base',
           isLight
             ? 'border border-gray-300 bg-white text-gray-900'
             : 'bg-white/10 text-white',

@@ -34,9 +34,7 @@ describe('RecipeVisibilityControls', () => {
 
     await userEvent.click(screen.getByLabelText(/Unlisted link/i));
     await userEvent.click(
-      screen.getByRole('checkbox', {
-        name: /I understand this recipe may be viewed without signing in/i,
-      }),
+      screen.getByRole('checkbox', {name: 'Publishing consent'}),
     );
     await userEvent.click(screen.getByText('Save sharing settings'));
 

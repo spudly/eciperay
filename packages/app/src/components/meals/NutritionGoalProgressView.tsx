@@ -23,7 +23,7 @@ const ProgressRow = ({
   label: string;
   field: NutritionGoalFieldProgress;
 }) => (
-  <View className="flex-row justify-between border-b border-gray-100 py-2">
+  <View className="flex-row justify-between border-be border-gray-100 py-2">
     <Text className="text-sm text-gray-700">{label}</Text>
     <Text className="text-sm text-gray-900">
       {Math.round(field.actual)} / {Math.round(field.goal)} ·{' '}
@@ -44,7 +44,7 @@ export const NutritionGoalProgressView = ({
   return (
     <SectionCard title="Nutrition goals">
       {formatSimpleNutrition(nutrition) ? (
-        <Text className="text-muted mb-3 text-sm">
+        <Text className="text-muted mbe-3 text-sm">
           Plan total: {formatSimpleNutrition(nutrition)}
         </Text>
       ) : null}
@@ -75,7 +75,7 @@ export const NutritionGoalProgressView = ({
         </Text>
       )}
       {onSetGoalsPress ? (
-        <View className="mt-3">
+        <View className="mbs-3">
           <TextLinkButton
             label="Set nutrition goals"
             onPress={onSetGoalsPress}

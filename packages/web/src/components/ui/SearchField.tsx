@@ -1,4 +1,5 @@
 import type {SearchFieldProps} from '@eciperay/client';
+import {SearchField as DSSearchField} from '@spudly/ui';
 import {useState} from 'react';
 
 export const SearchField = ({
@@ -6,14 +7,10 @@ export const SearchField = ({
   onChange,
   placeholder = 'Search recipes…',
 }: SearchFieldProps) => (
-  <input
-    className="ui-search-field inline-full mb-4"
-    onChange={e => {
-      onChange(e.target.value);
-    }}
-    placeholder={placeholder}
-    type="search"
+  <DSSearchField
     value={value}
+    onChangeText={onChange}
+    placeholder={placeholder}
   />
 );
 

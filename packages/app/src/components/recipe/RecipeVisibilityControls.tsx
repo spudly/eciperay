@@ -73,8 +73,8 @@ export const RecipeVisibilityControls = ({recipe, onActionMessage}: Props) => {
         : null;
 
   return (
-    <View className="mb-4 rounded-xl border border-gray-200 p-4">
-      <Text className="mb-2 text-sm font-semibold text-gray-900">Sharing</Text>
+    <View className="mbe-4 rounded-xl border border-gray-200 p-4">
+      <Text className="mbe-2 text-sm font-semibold text-gray-900">Sharing</Text>
       <RadioOptionGroup
         name={`visibility-${recipe.id}`}
         value={pendingVisibility ?? recipe.visibility}
@@ -89,7 +89,7 @@ export const RecipeVisibilityControls = ({recipe, onActionMessage}: Props) => {
         }}
       />
       {pendingVisibility === 'public' ? (
-        <Text className="mt-2 text-sm text-amber-800">
+        <Text className="mbs-2 text-sm text-amber-800">
           This recipe will be discoverable by anyone browsing Eciperay.
         </Text>
       ) : null}
@@ -118,7 +118,7 @@ export const RecipeVisibilityControls = ({recipe, onActionMessage}: Props) => {
       ) : null}
       {pendingVisibility && pendingVisibility !== recipe.visibility ? (
         <TouchableOpacity
-          className="bg-primary mt-3 rounded-lg px-3 py-2"
+          className="bg-primary mbs-3 rounded-lg px-3 py-2"
           disabled={
             sharingMutation.isPending ||
             (requiresPublishingConsent(recipe.visibility, pendingVisibility) &&
@@ -142,7 +142,7 @@ export const RecipeVisibilityControls = ({recipe, onActionMessage}: Props) => {
         </TouchableOpacity>
       ) : null}
       {activeVisibility === 'unlisted' ? (
-        <View className="mt-3 gap-2">
+        <View className="mbs-3 gap-2">
           <TouchableOpacity
             className="rounded-lg border border-gray-200 px-3 py-2"
             disabled={rotateMutation.isPending}
@@ -169,11 +169,11 @@ export const RecipeVisibilityControls = ({recipe, onActionMessage}: Props) => {
         </View>
       ) : null}
       {activeVisibility === 'public' ? (
-        <View className="mt-3">
+        <View className="mbs-3">
           <Text className="text-xs text-gray-500">Public permalink</Text>
-          <Text className="mt-1 text-xs text-gray-700">{permalink}</Text>
+          <Text className="mbs-1 text-xs text-gray-700">{permalink}</Text>
           <TouchableOpacity
-            className="mt-2 rounded-lg border border-gray-200 px-3 py-2"
+            className="mbs-2 rounded-lg border border-gray-200 px-3 py-2"
             onPress={() => {
               void Share.share({message: permalink});
             }}

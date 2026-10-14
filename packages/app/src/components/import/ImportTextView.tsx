@@ -25,7 +25,7 @@ export const ImportTextView = ({
         placeholder="Paste your recipe here…"
       />
       {error ? (
-        <View className="mb-4">
+        <View className="mbe-4">
           <ErrorText>{error}</ErrorText>
         </View>
       ) : null}

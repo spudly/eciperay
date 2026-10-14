@@ -45,11 +45,14 @@ export const RecipeListStatusIngredientFilters = ({
       />
     ) : null}
     <label className="block">
-      <span className="mb-1 block text-sm font-medium text-gray-700">
+      <span className="mbe-1 block text-sm font-medium text-gray-700">
         Ingredient
       </span>
       <input
-        className="ui-select-field w-full"
+        className="
+          rounded-xl border border-gray-200 bg-white px-4 py-3 text-base
+          inline-full
+        "
         value={ingredient}
         onChange={event => {
           onIngredientChange(event.target.value);

@@ -30,13 +30,13 @@ export const ShoppingListView = ({
             <Pressable
               key={line.key}
               className="
-                flex-row items-start gap-3 border-b border-gray-100 py-3
+                flex-row items-start gap-3 border-be border-gray-100 py-3
               "
               onPress={() => {
                 onToggleChecked(line.key);
               }}
             >
-              <Text className="mt-0.5">{checked ? '☑' : '☐'}</Text>
+              <Text className="mbs-0.5">{checked ? '☑' : '☐'}</Text>
               <Text
                 className={
                   checked

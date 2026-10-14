@@ -1,5 +1,8 @@
 import type {ThumbnailListCardProps} from '@eciperay/client';
+import {Card as DSCard, Text as DSText, tokens} from '@spudly/ui';
+import type {ReactNode} from 'react';
 import {Link} from 'react-router-dom';
+import {XStack, YStack} from 'tamagui';
 
 const Thumbnail = ({
   imageUrl,
@@ -12,21 +15,27 @@ const Thumbnail = ({
     <img
       src={imageUrl}
       alt={title}
-      className="size-16 shrink-0 rounded-lg bg-gray-50 object-cover"
+      width={64}
+      height={64}
+      style={{
+        flexShrink: 0,
+        borderRadius: tokens.radii.md,
+        objectFit: 'cover',
+        backgroundColor: tokens.colors.gray.gray2,
+      }}
     />
   ) : (
     <div
       aria-hidden
-      className="size-16 shrink-0 rounded-lg bg-gray-100"
+      style={{
+        width: 64,
+        height: 64,
+        flexShrink: 0,
+        borderRadius: tokens.radii.md,
+        backgroundColor: tokens.colors.gray.gray2,
+      }}
     />
   );
-
-const CardBody = ({title, subtitle}: {title: string; subtitle?: string}) => (
-  <div className="min-w-0 flex-1">
-    <p className="text-base font-semibold text-gray-900">{title}</p>
-    {subtitle ? <p className="text-muted mt-1 text-sm">{subtitle}</p> : null}
-  </div>
-);
 
 export const ThumbnailListCard = ({
   imageUrl,
@@ -36,67 +45,59 @@ export const ThumbnailListCard = ({
   trailing,
   linkTo,
 }: ThumbnailListCardProps) => {
-  const className = 'ui-thumbnail-list-card flex';
-
-  if (linkTo && !onPress) {
-    return (
-      <Link
-        to={linkTo}
-        className={className}
-      >
-        <Thumbnail
-          imageUrl={imageUrl}
-          title={title}
-        />
-        <CardBody
-          title={title}
-          subtitle={subtitle}
-        />
-        {trailing}
-      </Link>
-    );
-  }
-
-  if (onPress) {
-    return (
-      <div className={className}>
-        <button
-          type="button"
-          className="shrink-0 border-0 bg-transparent p-0"
-          onClick={onPress}
-        >
-          <Thumbnail
-            imageUrl={imageUrl}
-            title={title}
-          />
-        </button>
-        <button
-          type="button"
-          className="min-w-0 flex-1 border-0 bg-transparent p-0 text-start"
-          onClick={onPress}
-        >
-          <CardBody
-            title={title}
-            subtitle={subtitle}
-          />
-        </button>
-        {trailing}
-      </div>
-    );
-  }
-
-  return (
-    <div className={className}>
+  const main = (
+    <XStack
+      gap="$3"
+      alignItems="center"
+    >
       <Thumbnail
         imageUrl={imageUrl}
         title={title}
       />
-      <CardBody
-        title={title}
-        subtitle={subtitle}
-      />
+      <YStack flex={1} gap="$1">
+        <DSText variant="subheading">{title}</DSText>
+        {subtitle ? <DSText variant="hint">{subtitle}</DSText> : null}
+      </YStack>
+    </XStack>
+  );
+
+  // The press target wraps only the main content (thumbnail + title).
+  // Trailing actions (e.g. "Log cook", "Delete" buttons) render as siblings
+  // OUTSIDE the pressable, avoiding nested interactive elements.
+  let card: ReactNode;
+  if (onPress) {
+    card = (
+      <DSCard
+        onPress={onPress}
+        role="button"
+        tabIndex={0}
+        flex={1}
+      >
+        {main}
+      </DSCard>
+    );
+  } else if (linkTo) {
+    card = (
+      <Link
+        to={linkTo}
+        style={{textDecoration: 'none', display: 'block', flex: 1}}
+      >
+        <DSCard>{main}</DSCard>
+      </Link>
+    );
+  } else {
+    card = <DSCard flex={1}>{main}</DSCard>;
+  }
+
+  if (!trailing) {
+    return card;
+  }
+
+  return (
+    <XStack gap="$3" alignItems="center">
+      {card}
       {trailing}
-    </div>
+    </XStack>
   );
 };
 

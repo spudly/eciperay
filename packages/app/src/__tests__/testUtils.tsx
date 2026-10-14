@@ -6,6 +6,7 @@ import {
   createAnalytics,
   createNoopAnalyticsAdapter,
 } from '@eciperay/client';
+import {eciperayTamaguiConfig} from '@spudly/ui';
 import {
   notifyManager,
   QueryClient,
@@ -18,6 +19,7 @@ import {
   type RenderOptions,
 } from '@testing-library/react-native';
 import React from 'react';
+import {TamaguiProvider} from 'tamagui';
 
 const testAnalytics = createAnalytics(createNoopAnalyticsAdapter(), 'android');
 
@@ -121,11 +123,13 @@ export const renderWithProviders = (
   return render(ui, {
     ...options,
     wrapper: ({children}) => (
-      <QueryClientProvider client={client}>
-        <AnalyticsProvider analytics={testAnalytics}>
-          {children}
-        </AnalyticsProvider>
-      </QueryClientProvider>
+      <TamaguiProvider config={eciperayTamaguiConfig} defaultTheme="light">
+        <QueryClientProvider client={client}>
+          <AnalyticsProvider analytics={testAnalytics}>
+            {children}
+          </AnalyticsProvider>
+        </QueryClientProvider>
+      </TamaguiProvider>
     ),
   });
 };

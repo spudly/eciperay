@@ -1,4 +1,12 @@
-export const BRAND_COLORS = new Set(['#0943ce', '#04152d', '#eef2f6', 'none']);
+export const BRAND_COLORS = new Set([
+  '#0943ce',
+  '#04152d',
+  '#eef2f6',
+  '#c2410c',
+  '#292019',
+  '#fffdf8',
+  'none',
+]);
 
 export const MARK_SIZE = 256;
 export const WORDMARK_WIDTH = 403.051;

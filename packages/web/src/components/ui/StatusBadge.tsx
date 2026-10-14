@@ -1,10 +1,31 @@
 import type {StatusBadgeProps} from '@eciperay/client';
-import clsx from 'clsx';
+import {Badge as DSBadge} from '@spudly/ui';
+
+type Tone = 'neutral' | 'info' | 'success' | 'warning' | 'danger';
+
+/**
+ * Maps the legacy Tailwind color classes used for `variant` to the
+ * design-system Badge tone.
+ */
+const toneForVariant = (variant: string): Tone => {
+  const v = variant.toLowerCase();
+  if (v.includes('blue')) {
+    return 'info';
+  }
+  if (v.includes('green')) {
+    return 'success';
+  }
+  if (v.includes('red')) {
+    return 'danger';
+  }
+  if (v.includes('yellow') || v.includes('amber') || v.includes('orange')) {
+    return 'warning';
+  }
+  return 'neutral';
+};
 
 export const StatusBadge = ({label, variant}: StatusBadgeProps) => (
-  <span className={clsx('ui-status-badge text-xs font-medium', variant)}>
-    {label}
-  </span>
+  <DSBadge tone={toneForVariant(variant)}>{label}</DSBadge>
 );
 
 if (import.meta.env.DEV) {

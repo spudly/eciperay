@@ -1,10 +1,106 @@
 @import 'tailwindcss';
-@import '@eciperay/theme/fonts.css';
-@import '@eciperay/theme';
+
+/* Design-system theme values (from @spudly/ui eciperay "Warm Harvest" theme).
+   These CSS variables bridge Tailwind utilities to the DS theme. */
+@theme {
+  --font-sans: Georgia, 'Times New Roman', serif;
+  --color-primary: #c2410c;
+  --color-primary-dark: #7c2d12;
+  --color-surface: #faf6f0;
+  --color-muted: #57534e;
+}
 
 body {
   margin: 0;
   font-family: var(--font-sans);
-  background-color: #f9fafb;
-  color: #111827;
+  background-color: var(--color-surface);
+  color: #292019;
+}
+
+/* Full-height app root so Tamagui ScreenContainer (min-height: 100%)
+   fills the viewport at the page level and its parent when nested. */
+html,
+body,
+#root {
+  height: 100%;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Book loading spinner animation (migrated from @eciperay/theme) */
+@keyframes book-loader-paging {
+  to {
+    transform: rotateY(-180deg);
+  }
+}
+
+.book-loader {
+  --book-loader-scale: 0.65;
+  --book-loader-size: calc(1px * var(--book-loader-scale));
+  --book-loader-cover: #6b7280;
+  --book-loader-page: #ffffff;
+  --book-loader-line: #e5e7eb;
+  --book-loader-shadow: rgb(0 0 0 / 0.25);
+
+  width: calc(200 * var(--book-loader-size));
+  height: calc(140 * var(--book-loader-size));
+  background: var(--book-loader-cover);
+  box-sizing: border-box;
+  position: relative;
+  border-radius: calc(8 * var(--book-loader-size));
+  perspective: calc(1000 * var(--book-loader-size));
+  display: inline-block;
+}
+
+.book-loader::before {
+  content: '';
+  position: absolute;
+  left: calc(10 * var(--book-loader-size));
+  right: calc(10 * var(--book-loader-size));
+  top: calc(10 * var(--book-loader-size));
+  bottom: calc(10 * var(--book-loader-size));
+  border-radius: calc(8 * var(--book-loader-size));
+  background: var(--book-loader-page) no-repeat;
+  background-size: calc(60 * var(--book-loader-size)) calc(10 * var(--book-loader-size));
+  background-image:
+    linear-gradient(var(--book-loader-line) calc(100 * var(--book-loader-size)), transparent 0),
+    linear-gradient(var(--book-loader-line) calc(100 * var(--book-loader-size)), transparent 0),
+    linear-gradient(var(--book-loader-line) calc(100 * var(--book-loader-size)), transparent 0),
+    linear-gradient(var(--book-loader-line) calc(100 * var(--book-loader-size)), transparent 0),
+    linear-gradient(var(--book-loader-line) calc(100 * var(--book-loader-size)), transparent 0),
+    linear-gradient(var(--book-loader-line) calc(100 * var(--book-loader-size)), transparent 0);
+  background-position:
+    calc(15 * var(--book-loader-size)) calc(30 * var(--book-loader-size)),
+    calc(15 * var(--book-loader-size)) calc(60 * var(--book-loader-size)),
+    calc(15 * var(--book-loader-size)) calc(90 * var(--book-loader-size)),
+    calc(105 * var(--book-loader-size)) calc(30 * var(--book-loader-size)),
+    calc(105 * var(--book-loader-size)) calc(60 * var(--book-loader-size)),
+    calc(105 * var(--book-loader-size)) calc(90 * var(--book-loader-size));
+  box-shadow: 0 0 calc(10 * var(--book-loader-size)) var(--book-loader-shadow);
+}
+
+.book-loader::after {
+  content: '';
+  position: absolute;
+  width: calc(50% - calc(10 * var(--book-loader-size)));
+  right: calc(10 * var(--book-loader-size));
+  top: calc(10 * var(--book-loader-size));
+  bottom: calc(10 * var(--book-loader-size));
+  border-radius: calc(8 * var(--book-loader-size));
+  background: var(--book-loader-page) no-repeat;
+  background-size: calc(60 * var(--book-loader-size)) calc(10 * var(--book-loader-size));
+  background-image:
+    linear-gradient(var(--book-loader-line) calc(100 * var(--book-loader-size)), transparent 0),
+    linear-gradient(var(--book-loader-line) calc(100 * var(--book-loader-size)), transparent 0),
+    linear-gradient(var(--book-loader-line) calc(100 * var(--book-loader-size)), transparent 0);
+  background-position:
+    50% calc(30 * var(--book-loader-size)),
+    50% calc(60 * var(--book-loader-size)),
+    50% calc(90 * var(--book-loader-size));
+  transform: rotateY(0deg);
+  transform-origin: left center;
+  animation: book-loader-paging 1s linear infinite;
 }

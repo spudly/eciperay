@@ -1,5 +1,7 @@
 import type {BulkSelectToolbarProps} from '@eciperay/client';
+import {Button as DSButton, Text as DSText} from '@spudly/ui';
 import {useState} from 'react';
+import {XStack, YStack} from 'tamagui';
 
 import {SearchField} from './SearchField.js';
 
@@ -19,40 +21,37 @@ export const BulkSelectToolbar = ({
   const controlsDisabled = disabled || busy;
 
   return (
-    <>
+    <YStack gap="$2">
       <SearchField
         value={search}
         onChange={onSearchChange}
         placeholder={searchPlaceholder}
       />
-      <div className="ui-bulk-select-toolbar-actions">
-        <button
-          type="button"
-          className="
-            text-primary font-medium
-            disabled:opacity-50
-          "
+      <XStack
+        gap="$3"
+        alignItems="center"
+      >
+        <DSButton
+          variant="ghost"
+          size="sm"
           disabled={controlsDisabled || filteredCount === 0}
-          onClick={onSelectAll}
+          onPress={onSelectAll}
         >
           {selectAllLabel}
-        </button>
-        <button
-          type="button"
-          className="
-            font-medium text-gray-600
-            disabled:opacity-50
-          "
+        </DSButton>
+        <DSButton
+          variant="ghost"
+          size="sm"
           disabled={controlsDisabled || filteredCount === 0}
-          onClick={onClearSelection}
+          onPress={onClearSelection}
         >
           {clearSelectionLabel}
-        </button>
+        </DSButton>
         {selectedCount > 0 ? (
-          <span className="text-muted">{selectedCount} selected</span>
+          <DSText variant="hint">{selectedCount} selected</DSText>
         ) : null}
-      </div>
-    </>
+      </XStack>
+    </YStack>
   );
 };
 

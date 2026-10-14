@@ -46,6 +46,7 @@ export const ImportTextView = ({
       description="Paste a recipe from Word, a web page, or any rich text source."
     >
       <form
+        style={{display: "flex", flexDirection: "column", gap: 16}}
         onSubmit={e => {
           e.preventDefault();
           const text = getEditorContent(editorRef.current);
@@ -54,7 +55,6 @@ export const ImportTextView = ({
           }
           onSubmit(text);
         }}
-        className="ui-form-stack"
       >
         <div
           ref={editorRef}
@@ -65,10 +65,11 @@ export const ImportTextView = ({
           data-placeholder="Paste your recipe here…"
           className="
             focus:ring-primary/30
-            ui-multiline-field inline-full outline-none
+            rounded-lg border border-gray-300 px-4 py-3 text-base outline-none
+            inline-full min-block-48
+            empty:before:pointer-events-none empty:before:text-gray-400
+            empty:before:content-[attr(data-placeholder)]
             focus:ring-2
-            [&:empty]:before:pointer-events-none [&:empty]:before:text-gray-400
-            [&:empty]:before:content-[attr(data-placeholder)]
           "
           onInput={syncEmpty}
         />

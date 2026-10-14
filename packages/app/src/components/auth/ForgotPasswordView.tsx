@@ -24,7 +24,7 @@ export const ForgotPasswordView = ({
     >
       Reset password
     </PageTitle>
-    <Text className="text-muted mb-8">
+    <Text className="text-muted mbe-8">
       {"We'll send a reset link to your email."}
     </Text>
     <TextField

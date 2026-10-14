@@ -22,7 +22,7 @@ export const ResetPasswordView = ({
     >
       New password
     </PageTitle>
-    <Text className="text-muted mb-8">
+    <Text className="text-muted mbe-8">
       Choose a new password for your account.
     </Text>
     <TextField

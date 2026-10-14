@@ -1,5 +1,7 @@
-import {render, screen} from '@testing-library/react-native';
+import {screen} from '@testing-library/react-native';
 import React from 'react';
+
+import {renderWithProviders} from '../__tests__/testUtils';
 
 import {FeedbackScreen} from './FeedbackScreen';
 
@@ -27,7 +29,7 @@ describe('FeedbackScreen', () => {
     mockUseNavigationState.mockImplementation(selector =>
       selector({routes: [{name: 'FeedbackHome'}], index: 0}),
     );
-    render(<FeedbackScreen />);
+    renderWithProviders(<FeedbackScreen />);
     expect(screen.getByTestId('feedback-form-route')).toHaveTextContent(
       'FeedbackHome',
     );
@@ -42,7 +44,7 @@ describe('FeedbackScreen', () => {
         index: 0,
       }),
     );
-    render(<FeedbackScreen />);
+    renderWithProviders(<FeedbackScreen />);
     expect(screen.getByTestId('feedback-form-route')).toHaveTextContent(
       'NestedFeedback',
     );
@@ -50,7 +52,7 @@ describe('FeedbackScreen', () => {
 
   test('returns no route when navigation state is missing', () => {
     mockUseNavigationState.mockImplementation(selector => selector());
-    render(<FeedbackScreen />);
+    renderWithProviders(<FeedbackScreen />);
     expect(screen.getByTestId('feedback-form-route')).toHaveTextContent('none');
   });
 });

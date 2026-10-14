@@ -25,13 +25,13 @@ export const RecipesListView = ({
   ...filterControls
 }: RecipesListViewProps) => (
   <ScreenContainer variant="list">
-    <View className="px-4 pb-2 pt-4">
+    <View className="px-4 pbs-4 pbe-2">
       <RecipeListFiltersBar {...filterControls} />
     </View>
     {isLoading ? (
       <InlineLoadingIndicator
         loading
-        className="mt-8"
+        className="mbs-8"
       />
     ) : (
       <FlatList

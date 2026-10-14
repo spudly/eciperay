@@ -88,7 +88,7 @@ export const NutritionGoalsFormView = ({
         }}
       />
       {error ? <ErrorText>{error}</ErrorText> : null}
-      <View className="mt-3">
+      <View className="mbs-3">
         <PrimaryButton
           label="Save goals"
           loading={saving}

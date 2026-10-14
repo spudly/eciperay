@@ -42,7 +42,7 @@ if (__DEV__) {
         />
         <InlineLoadingIndicator
           loading={loading}
-          className="mt-2"
+          className="mbs-2"
         />
       </>
     );

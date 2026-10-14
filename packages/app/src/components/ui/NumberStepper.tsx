@@ -1,6 +1,9 @@
 import type {NumberStepperProps} from '@eciperay/client';
+import {NumberStepper as DsNumberStepper} from '@spudly/ui';
 import {useState} from 'react';
-import {Text, TouchableOpacity, View} from 'react-native';
+import {StyleSheet, View} from 'react-native';
+
+const styles = StyleSheet.create({dimmed: {opacity: 0.5}});
 
 export const NumberStepper = ({
   label,
@@ -9,27 +12,30 @@ export const NumberStepper = ({
   onChange,
   disabled = false,
 }: NumberStepperProps) => (
-  <View className="ui-number-stepper mb-3 flex-row">
-    <Text className="text-sm font-medium text-gray-700">{label}:</Text>
-    <TouchableOpacity
-      className="ui-number-stepper-button"
-      disabled={disabled || value <= min}
-      onPress={() => {
-        onChange(Math.max(min, value - 1));
+  <View
+    className="ui-number-stepper"
+    pointerEvents={disabled ? 'none' : 'auto'}
+    style={disabled ? styles.dimmed : undefined}
+    accessibilityState={{disabled}}
+  >
+    <DsNumberStepper
+      label={label}
+      value={value}
+      // When disabled, pin min/max to the current value so both DS step
+      // buttons render in their disabled state (with proper accessibility
+      // semantics), mirroring the web adapter.
+      min={disabled ? value : min}
+      max={disabled ? value : undefined}
+      // DsNumberStepper disables the decrement button at min, but tests (and
+      // programmatic presses) can still invoke onChange below min — clamp to
+      // preserve this adapter's long-standing contract. Guard while disabled.
+      onChange={next => {
+        if (disabled) {
+          return;
+        }
+        onChange(Math.max(next, min));
       }}
-    >
-      <Text className="text-lg font-medium">−</Text>
-    </TouchableOpacity>
-    <Text className="w-6 text-center text-base font-semibold">{value}</Text>
-    <TouchableOpacity
-      className="ui-number-stepper-button"
-      disabled={disabled}
-      onPress={() => {
-        onChange(value + 1);
-      }}
-    >
-      <Text className="text-lg font-medium">+</Text>
-    </TouchableOpacity>
+    />
   </View>
 );
 

@@ -412,9 +412,9 @@ export const RecipeForm = ({
 
   return (
     <ScrollView className="flex-1">
-      <View className="gap-4 pb-8">
+      <View className="gap-4 pbe-8">
         <View>
-          <View className="mb-1 flex-row items-center justify-between gap-3">
+          <View className="mbe-1 flex-row items-center justify-between gap-3">
             <Text className="text-sm font-medium text-gray-700">Title</Text>
             <RevertButton field="title" />
           </View>
@@ -430,7 +430,7 @@ export const RecipeForm = ({
           onChange={setStatus}
         />
         <View>
-          <View className="mb-1 flex-row items-center justify-between gap-3">
+          <View className="mbe-1 flex-row items-center justify-between gap-3">
             <Text className="text-sm font-medium text-gray-700">
               Description
             </Text>
@@ -461,14 +461,14 @@ export const RecipeForm = ({
             onChangeText={setDescription}
           />
           {descriptionError ? (
-            <Text className="mt-2 text-sm text-red-600">
+            <Text className="mbs-2 text-sm text-red-600">
               {descriptionError}
             </Text>
           ) : null}
         </View>
         <View className="flex-row gap-3">
           <View className="flex-1">
-            <View className="mb-1 flex-row items-center justify-between gap-2">
+            <View className="mbe-1 flex-row items-center justify-between gap-2">
               <Text className="text-sm font-medium text-gray-700">
                 Servings
               </Text>
@@ -483,7 +483,7 @@ export const RecipeForm = ({
             />
           </View>
           <View className="flex-1">
-            <View className="mb-1 flex-row items-center justify-between gap-2">
+            <View className="mbe-1 flex-row items-center justify-between gap-2">
               <Text className="text-sm font-medium text-gray-700">
                 Prep (min)
               </Text>
@@ -498,7 +498,7 @@ export const RecipeForm = ({
             />
           </View>
           <View className="flex-1">
-            <View className="mb-1 flex-row items-center justify-between gap-2">
+            <View className="mbe-1 flex-row items-center justify-between gap-2">
               <Text className="text-sm font-medium text-gray-700">
                 Cook (min)
               </Text>
@@ -533,7 +533,7 @@ export const RecipeForm = ({
           }}
         />
         <View>
-          <View className="mb-1 flex-row items-center justify-between gap-2">
+          <View className="mbe-1 flex-row items-center justify-between gap-2">
             <Text className="text-sm font-medium text-gray-700">
               Source URL
             </Text>
@@ -547,7 +547,7 @@ export const RecipeForm = ({
           />
         </View>
         <View>
-          <View className="mb-2 flex-row items-center justify-between gap-2">
+          <View className="mbe-2 flex-row items-center justify-between gap-2">
             <Text className="text-sm font-medium text-gray-700">Tags</Text>
             {versionDiff?.tagsChanged && parentVersion ? (
               <TouchableOpacity

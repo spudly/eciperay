@@ -8,7 +8,7 @@ import {ScreenContainer} from '../ui/ScreenContainer';
 export const FeedbackView = ({route}: FeedbackViewProps) => (
   <ScreenContainer variant="padded">
     <PageTitle spacing="section">Feedback</PageTitle>
-    <Text className="text-muted mb-6 text-sm">
+    <Text className="text-muted mbe-6 text-sm">
       Share ideas, confusion, or problems. We&apos;ll include session context to
       help us investigate.
     </Text>

@@ -1,7 +1,11 @@
 import type {CheckboxSelectListProps} from '@eciperay/client';
+import {
+  CheckboxField as DSCheckboxField,
+  Spinner as DSSpinner,
+  Text as DSText,
+} from '@spudly/ui';
 import {useState} from 'react';
-
-import {BookLoadingSpinner} from './BookLoadingSpinner.js';
+import {YStack} from 'tamagui';
 
 export const CheckboxSelectList = ({
   items,
@@ -13,35 +17,33 @@ export const CheckboxSelectList = ({
 }: CheckboxSelectListProps) => {
   if (isLoading) {
     return (
-      <div className="ui-loading-center p-4">
-        <BookLoadingSpinner size="sm" />
-      </div>
+      <YStack
+        alignItems="center"
+        padding="$4"
+        role="status"
+        aria-label="Loading"
+      >
+        <DSSpinner size="small" />
+      </YStack>
     );
   }
   if (items.length === 0) {
-    return <p className="text-muted p-4 text-sm">{emptyMessage}</p>;
+    return <DSText variant="hint">{emptyMessage}</DSText>;
   }
   return (
-    <ul className="ui-checkbox-select-list">
+    <YStack gap="$2">
       {items.map(item => (
-        <li key={item.id}>
-          <label className="ui-checkbox-select-item">
-            <input
-              type="checkbox"
-              className="size-4 rounded border-gray-300"
-              checked={selectedIds.has(item.id)}
-              disabled={disabled}
-              onChange={() => {
-                onToggle(item.id);
-              }}
-            />
-            <span className="min-w-0 flex-1 text-sm text-gray-900">
-              {item.label}
-            </span>
-          </label>
-        </li>
+        <DSCheckboxField
+          key={item.id}
+          label={item.label}
+          checked={selectedIds.has(item.id)}
+          disabled={disabled}
+          onCheckedChange={() => {
+            onToggle(item.id);
+          }}
+        />
       ))}
-    </ul>
+    </YStack>
   );
 };
 

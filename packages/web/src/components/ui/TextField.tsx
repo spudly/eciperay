@@ -1,4 +1,5 @@
 import type {TextFieldProps} from '@eciperay/client';
+import {TextField as DSTextField} from '@spudly/ui';
 import {useState} from 'react';
 
 export const TextField = ({
@@ -10,36 +11,15 @@ export const TextField = ({
   autoComplete,
   disabled = false,
 }: TextFieldProps) => (
-  <div>
-    {label ? (
-      <label className="mb-1.5 block text-sm font-medium text-gray-700">
-        {label}
-        <input
-          autoComplete={autoComplete}
-          className="ui-text-field inline-full mt-1.5"
-          disabled={disabled}
-          onChange={e => {
-            onChange(e.target.value);
-          }}
-          placeholder={placeholder}
-          type={type}
-          value={value}
-        />
-      </label>
-    ) : (
-      <input
-        autoComplete={autoComplete}
-        className="ui-text-field inline-full"
-        disabled={disabled}
-        onChange={e => {
-          onChange(e.target.value);
-        }}
-        placeholder={placeholder}
-        type={type}
-        value={value}
-      />
-    )}
-  </div>
+  <DSTextField
+    value={value}
+    onChangeText={onChange}
+    placeholder={placeholder}
+    label={label}
+    autoComplete={autoComplete}
+    disabled={disabled}
+    type={type}
+  />
 );
 
 if (import.meta.env.DEV) {

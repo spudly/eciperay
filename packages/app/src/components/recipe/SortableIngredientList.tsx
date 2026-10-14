@@ -37,17 +37,17 @@ const IngredientRow = ({
   onUpdate,
   onRemove,
 }: RowProps) => (
-  <View className="mb-2 flex-row gap-2">
+  <View className="mbe-2 flex-row gap-2">
     <TouchableOpacity
       accessibilityLabel={`Reorder ingredient ${index + 1}`}
-      className="justify-center rounded border border-gray-300 px-2 py-1"
+      className="justify-center rounded-sm border border-gray-300 px-2 py-1"
       onLongPress={drag}
       delayLongPress={0}
     >
       <Text className="text-xs text-gray-700">Drag</Text>
     </TouchableOpacity>
     <TextInput
-      className="w-14 rounded border border-gray-300 px-2 py-1 text-sm"
+      className="rounded-sm border border-gray-300 px-2 py-1 text-sm inline-14"
       placeholder="Qty"
       value={ingredient.quantity === null ? '' : String(ingredient.quantity)}
       onChangeText={val => {
@@ -55,7 +55,7 @@ const IngredientRow = ({
       }}
     />
     <TextInput
-      className="w-16 rounded border border-gray-300 px-2 py-1 text-sm"
+      className="rounded-sm border border-gray-300 px-2 py-1 text-sm inline-16"
       placeholder="Unit"
       value={ingredient.unit ?? ''}
       onChangeText={val => {
@@ -63,7 +63,7 @@ const IngredientRow = ({
       }}
     />
     <TextInput
-      className="flex-1 rounded border border-gray-300 px-2 py-1 text-sm"
+      className="flex-1 rounded-sm border border-gray-300 px-2 py-1 text-sm"
       placeholder="Name"
       value={ingredient.name}
       onChangeText={val => {
@@ -110,7 +110,7 @@ export const SortableIngredientList = ({
 
   return (
     <View>
-      <View className="mb-2 flex-row items-center justify-between">
+      <View className="mbe-2 flex-row items-center justify-between">
         <Text className="text-sm font-medium text-gray-700">Ingredients</Text>
         <TouchableOpacity onPress={onAdd}>
           <Text className="text-primary text-sm">+ Add</Text>

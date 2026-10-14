@@ -10,7 +10,7 @@ export const BookLoadingSpinner = ({
   accessibilityLabel = 'Loading',
 }: BookLoadingSpinnerProps) => (
   <span
-    className={clsx('ui-book-loader', className)}
+    className={clsx('book-loader', className)}
     style={{'--book-loader-scale': BOOK_LOADER_SCALE[size]} as CSSProperties}
     role="status"
     aria-label={accessibilityLabel}

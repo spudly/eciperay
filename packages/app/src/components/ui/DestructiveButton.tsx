@@ -1,18 +1,19 @@
 import type {DestructiveButtonProps} from '@eciperay/client';
-import {Text, TouchableOpacity} from 'react-native';
+import {Button as DsButton, tokens} from '@spudly/ui';
 
 export const DestructiveButton = ({
   label,
   onPress,
   disabled = false,
 }: DestructiveButtonProps) => (
-  <TouchableOpacity
-    className="ui-destructive-button"
-    disabled={disabled}
+  <DsButton
+    variant="primary"
+    backgroundColor={tokens.colors.danger.danger7}
     onPress={onPress}
+    disabled={disabled}
   >
-    <Text className="ui-primary-button-text">{label}</Text>
-  </TouchableOpacity>
+    {label}
+  </DsButton>
 );
 
 if (__DEV__) {

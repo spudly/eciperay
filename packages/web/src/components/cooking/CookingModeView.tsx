@@ -1,5 +1,6 @@
 import type {ReactNode} from 'react';
 import type {RecipeDetail} from '@eciperay/types';
+import {YStack} from 'tamagui';
 
 import {PrevNextNav} from '../ui/PrevNextNav.js';
 import {ProgressDots} from '../ui/ProgressDots.js';
@@ -8,7 +9,17 @@ import {ScaledIngredientsList} from './ScaledIngredientsList.js';
 
 export const CookingModeCookLogShell = ({children}: {children: ReactNode}) => (
   <div
-    className="ui-cooking-mode-overlay-fixed ui-cooking-mode-overlay-centered"
+    style={{
+        position: 'fixed',
+        inset: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#111827',
+        paddingLeft: 24,
+        paddingRight: 24,
+      }}
   >
     {children}
   </div>
@@ -38,15 +49,37 @@ export const CookingModeView = ({
   const current = steps[step];
 
   return (
-    <div className="ui-cooking-mode-overlay-fixed">
+    <YStack
+      position="fixed"
+      top={0}
+      left={0}
+      right={0}
+      bottom={0}
+      flexDirection="column"
+      justifyContent="center"
+      backgroundColor="#111827"
+      paddingHorizontal="$6"
+    >
       <button
         type="button"
-        className="ui-cooking-mode-done-button text-sm text-white"
+        style={{
+          position: 'absolute',
+          right: 24,
+          top: 48,
+          borderRadius: 9999,
+          backgroundColor: 'rgba(255, 255, 255, 0.1)',
+          paddingLeft: 16,
+          paddingRight: 16,
+          paddingTop: 8,
+          paddingBottom: 8,
+          fontSize: 14,
+          color: '#ffffff',
+        }}
         onClick={onDone}
       >
         Done
       </button>
-      <p className="mb-4 text-sm uppercase tracking-widest text-white/60">
+      <p className="mbe-4 text-sm tracking-widest text-white/60 uppercase">
         Step {current ? current.stepNumber : 1} of {steps.length}
       </p>
       {displayRecipe ? (
@@ -56,7 +89,7 @@ export const CookingModeView = ({
           servings={servings}
         />
       ) : null}
-      <p className="mb-8 text-2xl leading-relaxed text-white">
+      <p className="mbe-8 text-2xl/relaxed text-white">
         {current ? current.body : ''}
       </p>
       <ProgressDots
@@ -69,6 +102,6 @@ export const CookingModeView = ({
         disableBack={step === 0}
         disableNext={step === steps.length - 1}
       />
-    </div>
+    </YStack>
   );
 };

@@ -9,6 +9,8 @@ import {useState} from 'react';
 import type {ComponentType} from 'react';
 
 import {CheckboxField} from './ui/CheckboxField.js';
+import {PrimaryButton} from './ui/PrimaryButton.js';
+import {SecondaryButton} from './ui/SecondaryButton.js';
 
 type FeedbackFormProps = {
   route?: string;
@@ -72,8 +74,8 @@ export const FeedbackForm = ({
         </span>
         <textarea
           className="
-            min-h-28 rounded-lg border border-gray-300 px-3 py-2 text-sm
-            text-gray-900
+            rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900
+            min-block-28
           "
           value={message}
           onChange={event => {
@@ -90,30 +92,19 @@ export const FeedbackForm = ({
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
       <div className="flex gap-2">
         {onCancel ? (
-          <button
-            type="button"
-            className="
-              rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium
-              text-gray-800
-            "
-            onClick={onCancel}
-          >
-            Cancel
-          </button>
+          <SecondaryButton
+            label="Cancel"
+            onPress={onCancel}
+          />
         ) : null}
-        <button
-          type="button"
-          className="
-            bg-primary rounded-lg px-4 py-2 text-sm font-medium text-white
-            disabled:opacity-50
-          "
-          disabled={submitting || validateUserFeedbackMessage(message) !== null}
-          onClick={() => {
+        <PrimaryButton
+          label={submitting ? 'Submitting…' : submitLabel}
+          onPress={() => {
             void handleSubmit();
           }}
-        >
-          {submitting ? 'Submitting…' : submitLabel}
-        </button>
+          disabled={submitting || validateUserFeedbackMessage(message) !== null}
+          loading={submitting}
+        />
       </div>
     </div>
   );

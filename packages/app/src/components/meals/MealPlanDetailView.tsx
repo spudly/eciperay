@@ -21,15 +21,15 @@ export const MealPlanDetailView = ({
   <ScreenScroll>
     <PageTitle spacing="section">{plan.title}</PageTitle>
     {plan.notes ? (
-      <Text className="text-muted mb-4 text-sm">{plan.notes}</Text>
+      <Text className="text-muted mbe-4 text-sm">{plan.notes}</Text>
     ) : null}
     {plan.startsOn && plan.endsOn ? (
-      <Text className="text-muted mb-4 text-sm">
+      <Text className="text-muted mbe-4 text-sm">
         {plan.startsOn} – {plan.endsOn}
       </Text>
     ) : null}
     {formatSimpleNutrition(plan.nutrition) ? (
-      <Text className="mb-4 text-sm text-gray-800">
+      <Text className="mbe-4 text-sm text-gray-800">
         {formatSimpleNutrition(plan.nutrition)}
       </Text>
     ) : null}
@@ -38,7 +38,7 @@ export const MealPlanDetailView = ({
       nutrition={plan.nutrition}
       onSetGoalsPress={onSetGoalsPress}
     />
-    <View className="mb-6 flex-row flex-wrap gap-3">
+    <View className="mbe-6 flex-row flex-wrap gap-3">
       <PrimaryButton
         label="Shopping list"
         onPress={onShoppingList}
@@ -52,7 +52,7 @@ export const MealPlanDetailView = ({
       {plan.entries.map(entry => (
         <View
           key={entry.id}
-          className="border-b border-gray-100"
+          className="border-be border-gray-100"
         >
           {entry.type === 'meal' ? (
             <Pressable

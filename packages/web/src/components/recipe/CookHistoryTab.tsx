@@ -7,6 +7,7 @@ import {
 } from '@eciperay/client';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useState} from 'react';
+import {YStack} from 'tamagui';
 import type {CookLogInput} from '@eciperay/types';
 
 import {eciperay} from '../../lib/api.js';
@@ -39,16 +40,16 @@ export const CookHistoryTab = ({recipeId, versionId}: Props) => {
 
   if (isLoading) {
     return (
-      <div className="ui-loading-center p-4">
+      <YStack flex={1} alignItems="center" justifyContent="center" padding="$4">
         <BookLoadingSpinner size="sm" />
-      </div>
+      </YStack>
     );
   }
 
   return (
     <div className="p-4">
       {showForm ? (
-        <div className="mb-4">
+        <div className="mbe-4">
           <CookLogForm
             variant="light"
             secondaryLabel="Cancel"
@@ -65,7 +66,7 @@ export const CookHistoryTab = ({recipeId, versionId}: Props) => {
         <button
           type="button"
           className="
-            bg-primary mb-4 rounded-lg px-4 py-2 text-sm font-medium text-white
+            bg-primary mbe-4 rounded-lg px-4 py-2 text-sm font-medium text-white
           "
           onClick={() => {
             setShowForm(true);
@@ -86,7 +87,7 @@ export const CookHistoryTab = ({recipeId, versionId}: Props) => {
               key={log.id}
               className="rounded-lg border border-gray-100 bg-gray-50 p-4"
             >
-              <div className="mb-1 flex items-center justify-between gap-2">
+              <div className="mbe-1 flex items-center justify-between gap-2">
                 <time
                   dateTime={log.cookedAt}
                   className="text-sm font-medium text-gray-900"

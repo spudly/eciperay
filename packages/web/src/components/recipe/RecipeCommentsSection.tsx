@@ -7,6 +7,7 @@ import {
 } from '@eciperay/client';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useState} from 'react';
+import {YStack} from 'tamagui';
 
 import {eciperay} from '../../lib/api.js';
 import {BookLoadingSpinner} from '../ui/BookLoadingSpinner.js';
@@ -74,17 +75,17 @@ export const RecipeCommentsSection = ({
   });
 
   return (
-    <div className="mb-4 rounded-xl border border-gray-100 p-4">
-      <h3 className="mb-3 text-sm font-semibold text-gray-900">Comments</h3>
+    <div className="mbe-4 rounded-xl border border-gray-100 p-4">
+      <h3 className="mbe-3 text-sm font-semibold text-gray-900">Comments</h3>
       {isLoading ? (
-        <div className="ui-loading-center mb-3">
+        <YStack alignItems="center" justifyContent="center" marginBottom="$3">
           <BookLoadingSpinner size="sm" />
-        </div>
+        </YStack>
       ) : null}
       {!isLoading && comments.length === 0 ? (
-        <p className="mb-3 text-sm text-gray-600">No comments yet</p>
+        <p className="mbe-3 text-sm text-gray-600">No comments yet</p>
       ) : null}
-      <ul className="mb-4 space-y-3">
+      <ul className="mbe-4 space-y-3">
         {comments.map(comment => (
           <RecipeCommentItem
             key={comment.id}
@@ -126,7 +127,7 @@ export const RecipeCommentsSection = ({
         >
           <textarea
             className="
-              w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
+              rounded-lg border border-gray-300 px-3 py-2 text-sm inline-full
             "
             placeholder="Add a comment"
             value={draft}

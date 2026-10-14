@@ -1,14 +1,18 @@
 import type {StatBadgeProps, StatBadgeRowProps} from '@eciperay/client';
+import {StatCard as DSStatCard} from '@spudly/ui';
+import {XStack} from 'tamagui';
 
 export const StatBadge = ({label, value}: StatBadgeProps) => (
-  <div className="ui-stat-badge text-center">
-    <p className="text-base font-semibold text-gray-900">{value}</p>
-    <p className="text-muted text-xs">{label}</p>
-  </div>
+  <DSStatCard
+    value={value}
+    label={label}
+  />
 );
 
 export const StatBadgeRow = ({children}: StatBadgeRowProps) => (
-  <div className="ui-stat-badge-row mb-4 flex">{children}</div>
+  <XStack gap="$3" marginBottom="$4">
+    {children}
+  </XStack>
 );
 
 if (import.meta.env.DEV) {

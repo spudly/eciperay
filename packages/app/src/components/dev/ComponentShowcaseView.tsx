@@ -63,14 +63,14 @@ export const ComponentShowcaseView = () => {
       )}
 
       {selectedEntry ? (
-        <View className="mt-2">
+        <View className="mbs-2">
           <PageTitle
             size="section"
             spacing="section"
           >
             {selectedEntry.label}
           </PageTitle>
-          <Text className="text-muted mb-4 text-sm">{selectedEntry.id}</Text>
+          <Text className="text-muted mbe-4 text-sm">{selectedEntry.id}</Text>
           <ShowcaseDemo id={selectedId} />
         </View>
       ) : null}

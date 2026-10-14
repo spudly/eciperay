@@ -87,14 +87,14 @@ export const VersionPicker = ({
         >
           <Pressable
             testID="version-picker-sheet"
-            className="max-h-80 rounded-t-2xl bg-white"
+            className="rounded-t-2xl bg-white max-block-80"
             onPress={e => {
               e.stopPropagation();
             }}
           >
             <Text
               className="
-                border-b border-gray-100 px-4 py-3 text-sm font-medium
+                border-be border-gray-100 px-4 py-3 text-sm font-medium
                 text-gray-900
               "
             >
@@ -104,7 +104,7 @@ export const VersionPicker = ({
               {sorted.map(version => (
                 <Pressable
                   key={version.id}
-                  className="border-b border-gray-50 px-4 py-3"
+                  className="border-be border-gray-50 px-4 py-3"
                   onPress={() => {
                     onSelect(version.id);
                     setOpen(false);

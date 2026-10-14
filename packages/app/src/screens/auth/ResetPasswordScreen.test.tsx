@@ -1,7 +1,8 @@
 import React from 'react';
 import {Alert} from 'react-native';
-import {act, fireEvent, render, waitFor} from '@testing-library/react-native';
+import {act, fireEvent, waitFor} from '@testing-library/react-native';
 
+import {renderWithProviders} from '../../__tests__/testUtils';
 import {supabase} from '../../lib/supabase';
 
 import {ResetPasswordScreen} from './ResetPasswordScreen';
@@ -17,7 +18,7 @@ const mockOnComplete = jest.fn();
 describe('ResetPasswordScreen', () => {
   test('updates password and completes recovery flow', async () => {
     mockUpdateUser.mockResolvedValue({error: null});
-    const {getByLabelText, getByText} = render(
+    const {getByLabelText, getByText} = renderWithProviders(
       <ResetPasswordScreen onComplete={mockOnComplete} />,
     );
 
@@ -39,7 +40,7 @@ describe('ResetPasswordScreen', () => {
 
   test('shows error alert on failure', async () => {
     mockUpdateUser.mockResolvedValue({error: new Error('Update failed')});
-    const {getByText} = render(
+    const {getByText} = renderWithProviders(
       <ResetPasswordScreen onComplete={mockOnComplete} />,
     );
 

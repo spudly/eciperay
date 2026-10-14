@@ -1,18 +1,19 @@
 import type {DestructiveButtonProps} from '@eciperay/client';
+import {Button as DSButton, tokens} from '@spudly/ui';
 
 export const DestructiveButton = ({
   label,
   onPress,
   disabled = false,
 }: DestructiveButtonProps) => (
-  <button
-    type="button"
-    className="ui-destructive-button inline-full"
+  <DSButton
+    variant="primary"
+    backgroundColor={tokens.colors.danger.danger7}
     disabled={disabled}
-    onClick={onPress}
+    onPress={onPress}
   >
-    <span className="ui-primary-button-text">{label}</span>
-  </button>
+    {label}
+  </DSButton>
 );
 
 if (import.meta.env.DEV) {

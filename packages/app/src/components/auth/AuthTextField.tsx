@@ -24,8 +24,8 @@ export const AuthTextField = ({
   autoComplete,
   textContentType,
 }: AuthTextFieldProps) => (
-  <View className="mb-4">
-    <Text className="mb-1.5 text-sm font-medium text-gray-700">{label}</Text>
+  <View className="mbe-4">
+    <Text className="mbe-1.5 text-sm font-medium text-gray-700">{label}</Text>
     <TextInput
       accessibilityLabel={label}
       autoCapitalize={autoCapitalize}

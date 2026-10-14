@@ -15,11 +15,11 @@ export const ImportUrlView = ({
 }: ImportUrlViewProps) => (
   <FormScreenLayout title="Import from URL">
     <form
+      style={{display: "flex", flexDirection: "column", gap: 16}}
       onSubmit={e => {
         e.preventDefault();
         onSubmit();
       }}
-      className="ui-form-stack"
     >
       <TextField
         value={url}

@@ -1,24 +1,22 @@
 import type {TextLinkButtonProps} from '@eciperay/client';
-import clsx from 'clsx';
-import {Text, TouchableOpacity} from 'react-native';
+import {Button as DsButton, tokens} from '@spudly/ui';
 
 export const TextLinkButton = ({
   label,
   onPress,
   variant = 'primary',
 }: TextLinkButtonProps) => (
-  <TouchableOpacity
-    className={clsx('items-center', variant === 'primary' ? 'mt-4' : 'mt-2')}
+  <DsButton
+    variant="ghost"
+    size={variant === 'primary' ? 'md' : 'sm'}
+    color={
+      variant === 'primary' ? undefined : tokens.colors.gray.gray6
+    }
+    marginTop={variant === 'primary' ? tokens.spacing[4] : tokens.spacing[2]}
     onPress={onPress}
   >
-    <Text
-      className={clsx(
-        variant === 'primary' ? 'text-primary text-base' : 'text-muted text-sm',
-      )}
-    >
-      {label}
-    </Text>
-  </TouchableOpacity>
+    {label}
+  </DsButton>
 );
 
 if (__DEV__) {

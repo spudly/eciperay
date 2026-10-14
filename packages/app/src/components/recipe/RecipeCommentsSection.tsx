@@ -60,15 +60,15 @@ export const RecipeCommentsSection = ({recipeId, ownerUserId}: Props) => {
   });
 
   return (
-    <View className="mb-4 rounded-xl border border-gray-100 p-4">
-      <Text className="mb-3 text-sm font-semibold text-gray-900">Comments</Text>
+    <View className="mbe-4 rounded-xl border border-gray-100 p-4">
+      <Text className="mbe-3 text-sm font-semibold text-gray-900">Comments</Text>
       {isLoading ? (
-        <View className="ui-loading-center mb-3">
+        <View className="ui-loading-center mbe-3">
           <BookLoadingSpinner size="sm" />
         </View>
       ) : null}
       {!isLoading && comments.length === 0 ? (
-        <Text className="mb-3 text-sm text-gray-600">No comments yet</Text>
+        <Text className="mbe-3 text-sm text-gray-600">No comments yet</Text>
       ) : null}
       {comments.map(comment => (
         <RecipeCommentItem
@@ -104,7 +104,7 @@ export const RecipeCommentsSection = ({recipeId, ownerUserId}: Props) => {
         <View>
           <TextInput
             className="
-              mb-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm
+              mbe-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm
             "
             multiline
             placeholder="Add a comment"

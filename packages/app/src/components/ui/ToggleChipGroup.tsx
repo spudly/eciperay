@@ -1,8 +1,19 @@
 import type {ToggleChipGroupProps} from '@eciperay/client';
-import clsx from 'clsx';
+import {ToggleChipGroup as DsToggleChipGroup} from '@spudly/ui';
 import {useState} from 'react';
-import {Text, TouchableOpacity, View} from 'react-native';
+import {StyleSheet, View} from 'react-native';
 
+const styles = StyleSheet.create({
+  dimmed: {opacity: 0.5},
+});
+
+/**
+ * Adapter notes: the DS ToggleChipGroup has no `disabled` prop (blocked via
+ * a wrapper) and no per-chip `color` (accepted by the prop API but not
+ * forwarded — DS chips use the primary palette). Single mode forwards the
+ * toggled chip id; multi mode toggles the id in the set and forwards the
+ * resulting array, matching the previous behavior.
+ */
 export const ToggleChipGroup = ({
   options,
   multi = false,
@@ -11,63 +22,50 @@ export const ToggleChipGroup = ({
   onChange,
   disabled = false,
 }: ToggleChipGroupProps) => {
-  const isSelected = (id: string) => {
-    if (multi) {
-      return selectedIds?.has(id) ?? false;
-    }
-    return selectedId === id;
-  };
+  const dsOptions = options.map(option => ({
+    value: option.id,
+    label: option.label,
+  }));
 
-  const handlePress = (id: string) => {
-    if (disabled) {
-      return;
-    }
-    if (multi) {
-      const current = selectedIds ?? new Set<string>();
-      const next = new Set(current);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      onChange([...next]);
-      return;
-    }
-    onChange(id);
-  };
+  const group = multi ? (
+    <DsToggleChipGroup
+      options={dsOptions}
+      mode="multiple"
+      values={selectedIds ? [...selectedIds] : []}
+      onChange={id => {
+        if (disabled) {
+          return;
+        }
+        const next = new Set(selectedIds ?? []);
+        if (next.has(id)) {
+          next.delete(id);
+        } else {
+          next.add(id);
+        }
+        onChange([...next]);
+      }}
+    />
+  ) : (
+    <DsToggleChipGroup
+      options={dsOptions}
+      mode="single"
+      value={selectedId}
+      onChange={id => {
+        if (disabled) {
+          return;
+        }
+        onChange(id);
+      }}
+    />
+  );
 
   return (
-    <View className="flex-row flex-wrap gap-2">
-      {options.map(option => {
-        const selected = isSelected(option.id);
-        return (
-          <TouchableOpacity
-            key={option.id}
-            disabled={disabled}
-            className={clsx('ui-toggle-chip', {
-              'bg-primary': selected && !option.color,
-              'bg-gray-100': !selected && !option.color,
-              'border-primary border-2': selected && option.color,
-            })}
-            style={
-              option.color ? {backgroundColor: `${option.color}22`} : undefined
-            }
-            onPress={() => {
-              handlePress(option.id);
-            }}
-          >
-            <Text
-              className={clsx('text-sm font-medium', {
-                'text-white': selected && !option.color,
-                'text-gray-700': !selected && !option.color,
-              })}
-              style={option.color ? {color: option.color} : undefined}
-            >
-              {option.label}
-            </Text>
-          </TouchableOpacity>
-        );
-      })}
+    <View
+      pointerEvents={disabled ? 'none' : 'auto'}
+      style={disabled ? styles.dimmed : undefined}
+      accessibilityState={{disabled}}
+    >
+      {group}
     </View>
   );
 };

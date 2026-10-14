@@ -43,7 +43,9 @@ describe('OverviewActions', () => {
         onActionMessage={() => {}}
       />,
     );
-    expect(container).toBeEmptyDOMElement();
+    // TamaguiProvider renders theme context wrappers, so assert on empty text
+    // content rather than an empty container.
+    expect(container.textContent).toBe('');
   });
 
   test('shows only candidates for perfected recipes', async () => {

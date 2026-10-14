@@ -1,25 +1,14 @@
 import type {ProgressDotsProps} from '@eciperay/client';
-import clsx from 'clsx';
+import {StepDots} from '@spudly/ui';
 import {View} from 'react-native';
 
-export const ProgressDots = ({
-  total,
-  current,
-  variant = 'dark',
-}: ProgressDotsProps) => (
-  <View className="ui-progress-dots flex-row">
-    {Array.from({length: total}).map((_, index) => (
-      <View
-        key={index}
-        className={clsx('size-2 rounded-full', {
-          'bg-white': variant === 'dark' && index === current,
-          'bg-white/40': variant === 'dark' && index !== current,
-          'bg-primary': variant === 'light' && index === current,
-          'bg-gray-300': variant === 'light' && index !== current,
-        })}
-      />
-    ))}
-  </View>
+// Note: the legacy `variant` prop ('dark' | 'light') is accepted but not
+// forwarded — DS StepDots has a single dot style.
+export const ProgressDots = ({total, current}: ProgressDotsProps) => (
+  <StepDots
+    count={total}
+    activeIndex={current}
+  />
 );
 
 if (__DEV__) {

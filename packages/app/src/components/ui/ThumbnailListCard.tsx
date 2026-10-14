@@ -1,15 +1,16 @@
 import type {ThumbnailListCardProps} from '@eciperay/client';
+import {Card} from '@spudly/ui';
 import {Image, Text, TouchableOpacity, View} from 'react-native';
 
 const Thumbnail = ({imageUrl}: {imageUrl?: string | null}) =>
   imageUrl ? (
     <Image
       source={{uri: imageUrl}}
-      className="size-16 rounded-lg bg-gray-50"
+      className="rounded-lg bg-gray-50 block-16 inline-16"
       resizeMode="cover"
     />
   ) : (
-    <View className="size-16 rounded-lg bg-gray-100" />
+    <View className="rounded-lg bg-gray-100 block-16 inline-16" />
   );
 
 export const ThumbnailListCard = ({
@@ -19,21 +20,27 @@ export const ThumbnailListCard = ({
   onPress,
   trailing,
 }: ThumbnailListCardProps) => (
-  <View className="ui-thumbnail-list-card">
+  <Card
+    elevated
+    flexDirection="row"
+    alignItems="center"
+    gap="$3"
+    marginBottom="$3"
+  >
     <TouchableOpacity onPress={onPress}>
       <Thumbnail imageUrl={imageUrl} />
     </TouchableOpacity>
     <TouchableOpacity
-      className="min-w-0 flex-1"
+      className="flex-1 min-inline-0"
       onPress={onPress}
     >
       <Text className="text-base font-semibold text-gray-900">{title}</Text>
       {subtitle ? (
-        <Text className="text-muted mt-1 text-sm">{subtitle}</Text>
+        <Text className="text-muted mbs-1 text-sm">{subtitle}</Text>
       ) : null}
     </TouchableOpacity>
     {trailing}
-  </View>
+  </Card>
 );
 
 if (__DEV__) {

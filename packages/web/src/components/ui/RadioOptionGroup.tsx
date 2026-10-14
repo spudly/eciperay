@@ -1,4 +1,5 @@
 import type {RadioOptionGroupProps} from '@eciperay/client';
+import {RadioOptionGroup as DSRadioOptionGroup} from '@spudly/ui';
 import {useState} from 'react';
 
 export const RadioOptionGroup = ({
@@ -8,32 +9,20 @@ export const RadioOptionGroup = ({
   options,
   disabled = false,
 }: RadioOptionGroupProps) => (
-  <div className="ui-radio-option-group">
-    {options.map(option => (
-      <label
-        key={option.value}
-        className="ui-radio-option"
-      >
-        <input
-          type="radio"
-          name={name}
-          checked={value === option.value}
-          disabled={disabled}
-          onChange={() => {
-            onChange(option.value);
-          }}
-        />
-        <span>
-          <span className="font-medium">{option.title}</span>
-          {option.description ? (
-            <span className="mt-0.5 block text-xs text-gray-500">
-              {option.description}
-            </span>
-          ) : null}
-        </span>
-      </label>
-    ))}
-  </div>
+  <DSRadioOptionGroup
+    id={name}
+    value={value}
+    onValueChange={onChange}
+    options={options.map(option => ({
+      value: option.value,
+      label: option.title,
+      description:
+        typeof option.description === 'string'
+          ? option.description
+          : undefined,
+    }))}
+    disabled={disabled}
+  />
 );
 
 if (import.meta.env.DEV) {

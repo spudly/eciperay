@@ -41,8 +41,8 @@ export const RecipeCommentItem = ({
   const canModerate = isAuthor || ownerUserId === currentUserId;
 
   return (
-    <View className="mb-3 rounded-lg bg-gray-50 p-3">
-      <View className="mb-1 flex-row items-center gap-2">
+    <View className="mbe-3 rounded-lg bg-gray-50 p-3">
+      <View className="mbe-1 flex-row items-center gap-2">
         <Text className="text-sm font-medium text-gray-900">
           {formatAuthorName(comment)}
         </Text>
@@ -53,7 +53,7 @@ export const RecipeCommentItem = ({
       {isEditing ? (
         <TextInput
           className="
-            mb-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm
+            mbe-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm
           "
           multiline
           value={editDraft}
@@ -63,7 +63,7 @@ export const RecipeCommentItem = ({
         <Text className="text-sm text-gray-700">{comment.body}</Text>
       )}
       {canModerate ? (
-        <View className="mt-2 flex-row gap-3">
+        <View className="mbs-2 flex-row gap-3">
           {isAuthor ? (
             isEditing ? (
               <>

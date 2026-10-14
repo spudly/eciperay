@@ -1,5 +1,5 @@
 import type {PrimaryButtonProps} from '@eciperay/client';
-import {Text, TouchableOpacity} from 'react-native';
+import {Button as DsButton} from '@spudly/ui';
 
 export const PrimaryButton = ({
   label,
@@ -8,15 +8,14 @@ export const PrimaryButton = ({
   loading = false,
   loadingLabel,
 }: PrimaryButtonProps) => (
-  <TouchableOpacity
-    className="ui-primary-button"
-    disabled={disabled || loading}
+  <DsButton
+    variant="primary"
     onPress={onPress}
+    disabled={disabled || loading}
+    accessibilityLabel={label}
   >
-    <Text className="ui-primary-button-text">
-      {loading ? (loadingLabel ?? label) : label}
-    </Text>
-  </TouchableOpacity>
+    {loading ? (loadingLabel ?? label) : label}
+  </DsButton>
 );
 
 if (__DEV__) {

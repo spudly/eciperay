@@ -31,20 +31,21 @@ export const TokenRow = ({
 }) => (
   <View
     className="
-      flex-row items-center justify-between gap-3 border-b border-slate-100 py-3
+      flex-row items-center justify-between gap-3 border-be border-slate-100
+      py-3
     "
   >
-    <View className="min-w-0 flex-1">
+    <View className="flex-1 min-inline-0">
       <Text className="text-sm font-medium text-slate-900">
         {token.name}
         {token.revokedAt ? (
           <Text className="text-xs font-normal text-slate-500"> (Revoked)</Text>
         ) : null}
       </Text>
-      <Text className="mt-0.5 font-mono text-xs text-slate-500">
+      <Text className="mbs-0.5 font-mono text-xs text-slate-500">
         {token.tokenPrefix}…
       </Text>
-      <Text className="mt-0.5 text-xs text-slate-500">
+      <Text className="mbs-0.5 text-xs text-slate-500">
         {describeToken(token)}
       </Text>
     </View>

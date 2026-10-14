@@ -1,25 +1,25 @@
 import type {ScreenContainerProps} from '@eciperay/client';
+import {ScreenContainer as DSScreenContainer, tokens} from '@spudly/ui';
 
 import {PageTitle} from './PageTitle.js';
-
-const variantClass = (variant: ScreenContainerProps['variant']) => {
-  if (variant === 'list') {
-    return 'flex-1 bg-gray-50';
-  }
-  if (variant === 'padded') {
-    return 'ui-screen-shell-padded';
-  }
-  if (variant === 'white') {
-    return 'flex-1 bg-white';
-  }
-  return 'ui-screen-shell';
-};
 
 export const ScreenContainer = ({
   children,
   variant = 'default',
 }: ScreenContainerProps) => (
-  <div className={variantClass(variant)}>{children}</div>
+  // On web the body already scrolls; the Tamagui ScrollView wrapper is redundant.
+  <DSScreenContainer
+    scrollable={false}
+    backgroundColor={
+      variant === 'list'
+        ? tokens.colors.gray.gray2
+        : variant === 'white'
+          ? '#ffffff'
+          : undefined
+    }
+  >
+    {children}
+  </DSScreenContainer>
 );
 
 if (import.meta.env.DEV) {

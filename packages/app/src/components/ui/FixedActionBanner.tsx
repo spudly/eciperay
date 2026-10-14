@@ -1,53 +1,57 @@
 import type {FixedActionBannerProps} from '@eciperay/client';
+import {Button, InlineAlert} from '@spudly/ui';
 import clsx from 'clsx';
-import {Pressable, Text, View} from 'react-native';
+import {View} from 'react-native';
 
+// Note: DS DismissibleBanner couldn't be used directly — its `message` is
+// typed `string` (ours is ReactNode), `onDismiss` is required (ours is
+// optional), and it renders every action as a secondary button with no fixed
+// positioning. The message is rendered as a DS InlineAlert instead, with DS
+// Buttons for the actions.
 export const FixedActionBanner = ({
   message,
   primaryAction,
   secondaryAction,
   onDismiss,
+  dismissAriaLabel = 'Dismiss',
   position = 'bottom',
 }: FixedActionBannerProps) => (
   <View
     className={clsx(
       'ui-fixed-action-banner absolute inset-x-0 z-50',
       position === 'top'
-        ? 'ui-fixed-action-banner-top top-0'
-        : 'ui-fixed-action-banner-bottom bottom-0',
+        ? 'ui-fixed-action-banner-top inset-bs-0'
+        : 'ui-fixed-action-banner-bottom inset-be-0',
     )}
   >
-    <View className="mx-auto max-w-5xl gap-3 p-4">
-      <Text className="text-sm text-gray-700">{message}</Text>
+    <View className="mx-auto gap-3 p-4 max-inline-5xl">
+      <InlineAlert severity="info">{message}</InlineAlert>
       <View className="flex-row flex-wrap items-center gap-2">
         {secondaryAction ? (
-          <Pressable
-            className="rounded-lg border border-gray-300 px-4 py-2"
+          <Button
+            variant="secondary"
             onPress={secondaryAction.onPress}
           >
-            <Text className="text-sm font-medium text-gray-800">
-              {secondaryAction.label}
-            </Text>
-          </Pressable>
+            {secondaryAction.label}
+          </Button>
         ) : null}
         {primaryAction ? (
-          <Pressable
-            className="bg-primary rounded-lg px-4 py-2"
+          <Button
+            variant="primary"
             onPress={primaryAction.onPress}
           >
-            <Text className="text-sm font-medium text-white">
-              {primaryAction.label}
-            </Text>
-          </Pressable>
+            {primaryAction.label}
+          </Button>
         ) : null}
         {onDismiss ? (
-          <Pressable
-            accessibilityLabel="Dismiss"
-            className="rounded-md px-2 py-1"
+          <Button
+            variant="ghost"
+            size="sm"
+            accessibilityLabel={dismissAriaLabel}
             onPress={onDismiss}
           >
-            <Text className="text-xs font-medium text-gray-600">Dismiss</Text>
-          </Pressable>
+            Dismiss
+          </Button>
         ) : null}
       </View>
     </View>

@@ -141,7 +141,7 @@ export const AiSessionFlow = ({
           : 'me-8 rounded-lg bg-indigo-50 p-3'
       }
     >
-      <Text className="mb-1 text-xs font-semibold uppercase text-gray-500">
+      <Text className="mbe-1 text-xs font-semibold text-gray-500 uppercase">
         {message.role === 'user' ? 'You' : 'Plan'}
       </Text>
       <Text className="text-sm text-gray-800">{message.content}</Text>
@@ -150,13 +150,15 @@ export const AiSessionFlow = ({
 
   if (!session) {
     return (
-      <View className="flex-1 bg-gray-50 px-4 pt-4">
-        <Text className="mb-2 text-2xl font-bold text-gray-900">
+      <View className="flex-1 bg-gray-50 px-4 pbs-4">
+        <Text className="mbe-2 text-2xl font-bold text-gray-900">
           {config.title}
         </Text>
-        <Text className="text-muted mb-6 text-sm">{config.intro}</Text>
+        <Text className="text-muted mbe-6 text-sm">{config.intro}</Text>
         <TextInput
-          className="mb-4 min-h-48 rounded-lg border border-gray-300 px-4 py-3"
+          className="
+            mbe-4 rounded-lg border border-gray-300 px-4 py-3 min-block-48
+          "
           placeholder={config.promptPlaceholder}
           value={prompt}
           onChangeText={setPrompt}
@@ -164,7 +166,7 @@ export const AiSessionFlow = ({
           textAlignVertical="top"
         />
         {error ? (
-          <Text className="mb-4 text-sm text-red-600">{error}</Text>
+          <Text className="mbe-4 text-sm text-red-600">{error}</Text>
         ) : null}
         <View className="flex-row gap-3">
           <TouchableOpacity
@@ -195,18 +197,18 @@ export const AiSessionFlow = ({
   }
 
   return (
-    <ScrollView className="flex-1 bg-gray-50 px-4 pt-4">
-      <Text className="mb-2 text-2xl font-bold text-gray-900">
+    <ScrollView className="flex-1 bg-gray-50 px-4 pbs-4">
+      <Text className="mbe-2 text-2xl font-bold text-gray-900">
         {config.title}
       </Text>
-      <Text className="text-muted mb-4 text-sm">
+      <Text className="text-muted mbe-4 text-sm">
         {config.phaseLabel(session.phase)}
       </Text>
-      <View className="mb-4 gap-3">{session.messages.map(renderMessage)}</View>
+      <View className="mbe-4 gap-3">{session.messages.map(renderMessage)}</View>
       {session.phase === 'planning' ? (
-        <View className="mb-4 gap-3">
+        <View className="mbe-4 gap-3">
           <TextInput
-            className="min-h-24 rounded-lg border border-gray-300 px-4 py-3"
+            className="rounded-lg border border-gray-300 px-4 py-3 min-block-24"
             placeholder="Ask for changes to the plan…"
             value={followUp}
             onChangeText={setFollowUp}
@@ -251,14 +253,14 @@ export const AiSessionFlow = ({
         </View>
       ) : null}
       {session.phase === 'preview_ready' && previewRecipe ? (
-        <View className="mb-4 rounded-xl border border-gray-200 bg-white p-4">
-          <Text className="mb-3 text-sm font-semibold text-gray-900">
+        <View className="mbe-4 rounded-xl border border-gray-200 bg-white p-4">
+          <Text className="mbe-3 text-sm font-semibold text-gray-900">
             {config.previewTitle}
           </Text>
           <RecipeInputPreview recipe={previewRecipe} />
           <TouchableOpacity
             className="
-              bg-primary mt-4 items-center rounded-lg px-4 py-3
+              bg-primary mbs-4 items-center rounded-lg px-4 py-3
               disabled:opacity-50
             "
             disabled={busy}
@@ -275,12 +277,12 @@ export const AiSessionFlow = ({
         </View>
       ) : null}
       {error ? (
-        <Text className="mb-4 text-sm text-red-600">{error}</Text>
+        <Text className="mbe-4 text-sm text-red-600">{error}</Text>
       ) : null}
       {session.phase !== 'completed' && session.phase !== 'cancelled' ? (
         <TouchableOpacity
           className="
-            mb-8
+            mbe-8
             disabled:opacity-50
           "
           disabled={busy}

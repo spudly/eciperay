@@ -11,14 +11,15 @@ export const SelectField = ({
 }: SelectFieldProps) => (
   <label className="block">
     {label ? (
-      <span className="mb-1 block text-sm font-medium text-gray-700">
+      <span className="mbe-1 block text-sm font-medium text-gray-700">
         {label}
       </span>
     ) : null}
     <select
       id={id}
       className="
-        ui-select-field
+        rounded-xl border border-gray-200 bg-white px-4 py-3 text-base
+        inline-full
         disabled:cursor-not-allowed disabled:bg-gray-50
       "
       value={value}

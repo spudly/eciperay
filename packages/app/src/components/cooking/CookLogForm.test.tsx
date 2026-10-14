@@ -16,7 +16,7 @@ describe('CookLogForm', () => {
           isPending={false}
         />,
       );
-    fireEvent.press(getByLabelText('4 stars'));
+    fireEvent.press(getByLabelText('Rate 4 out of 5 stars'));
     fireEvent.changeText(
       getByPlaceholderText('Notes from this cook (optional)'),
       'Great',

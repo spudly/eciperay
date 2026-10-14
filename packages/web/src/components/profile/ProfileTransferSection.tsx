@@ -1,4 +1,5 @@
 import type {RefObject} from 'react';
+import {SectionCard} from '@spudly/ui';
 
 import {RecipeExportPicker} from '../RecipeExportPicker.js';
 
@@ -21,8 +22,7 @@ export const ProfileTransferSection = ({
   onImportFile,
   onExportError,
 }: ProfileTransferSectionProps) => (
-  <section className="ui-profile-section">
-    <h2 className="ui-profile-section-title">Transfer recipes</h2>
+  <SectionCard title="Transfer recipes">
     <p className="text-muted mbe-4 text-sm">
       Select recipes to export as JSON, then import them in another environment.
       Images and tags are included.
@@ -31,7 +31,7 @@ export const ProfileTransferSection = ({
       disabled={importing}
       onError={onExportError}
     />
-    <div className="mbs-6 border-bs pbs-4 border-gray-100">
+    <div className="mbs-6 border-bs border-gray-100 pbs-4">
       <button
         type="button"
         className="
@@ -63,5 +63,5 @@ export const ProfileTransferSection = ({
     {transferError ? (
       <p className="mbs-4 text-sm text-red-600">{transferError}</p>
     ) : null}
-  </section>
+  </SectionCard>
 );

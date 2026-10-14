@@ -30,17 +30,17 @@ export const TokenRow = ({
 }) => (
   <li
     className="
-      flex items-center justify-between gap-3 border-b border-slate-100 py-3
-      last:border-b-0
+      flex items-center justify-between gap-3 border-be border-slate-100 py-3
+      last:border-be-0
     "
   >
-    <div className="min-w-0">
+    <div className="min-inline-0">
       <p className="truncate text-sm font-medium text-slate-900">
         {token.name}
         {token.revokedAt ? (
           <span
             className="
-              ms-2 rounded bg-slate-200 px-1.5 py-0.5 text-xs font-normal
+              ms-2 rounded-sm bg-slate-200 px-1.5 py-0.5 text-xs font-normal
               text-slate-600
             "
           >
@@ -48,10 +48,10 @@ export const TokenRow = ({
           </span>
         ) : null}
       </p>
-      <p className="mt-0.5 font-mono text-xs text-slate-500">
+      <p className="mbs-0.5 font-mono text-xs text-slate-500">
         {token.tokenPrefix}…
       </p>
-      <p className="mt-0.5 text-xs text-slate-500">{describeToken(token)}</p>
+      <p className="mbs-0.5 text-xs text-slate-500">{describeToken(token)}</p>
     </div>
     {token.revokedAt ? null : (
       <DestructiveButton

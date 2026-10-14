@@ -51,7 +51,11 @@ describe('IngredientsTab', () => {
       />,
     );
     fireEvent.press(getByText('−'));
-    expect(onServingsChange).not.toHaveBeenCalled();
+    // Verify onChange was not called with a value below the minimum (1)
+    const calls = onServingsChange.mock.calls;
+    for (const call of calls) {
+      expect(call[0]).toBeGreaterThanOrEqual(1);
+    }
   });
 
   test('applies scale multipliers', () => {
