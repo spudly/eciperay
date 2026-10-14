@@ -60,6 +60,8 @@ export const consumeAiCall = async (
        left join locked on true`,
     [userId, limit],
   );
+  // The CTE's INSERT...RETURNING always yields exactly one row.
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- CTE guarantees a row
   const row = result.rows[0]!;
   const used = row.calls;
   const periodStart = row.period_start;
@@ -113,6 +115,8 @@ export const checkRecipeCap = async (
     'select count(*) as count from recipes where user_id = $1',
     [userId],
   );
+  // count(*) always returns exactly one row.
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- count(*) guarantees a row
   const used = Number.parseInt(result.rows[0]!.count, 10);
   return used < limit ? {ok: true} : {ok: false, used, limit};
 };
