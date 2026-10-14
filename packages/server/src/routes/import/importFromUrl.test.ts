@@ -125,6 +125,19 @@ describe('POST /recipes/import/url', () => {
     expect(res.body).toEqual({error: 'recipe_limit', used: 50, limit: 50});
   });
 
+  test('returns 402 from the early cap check without fetching the page', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'free');
+    // Cap already hit (50 >= 50), so the page is never fetched.
+    mockQuery.mockResolvedValueOnce(makeQueryResult([{count: '50'}]));
+    const res = await request(getApp())
+      .post('/api/recipes/import/url')
+      .set('Authorization', 'Bearer valid-token')
+      .send({url: 'https://recipe.example.com/'});
+    expect(res.status).toBe(402);
+    expect(res.body).toEqual({error: 'recipe_limit', used: 50, limit: 50});
+  });
+
   test('returns 401 without auth token', async () => {
     const res = await request(getApp())
       .post('/api/recipes/import/url')
