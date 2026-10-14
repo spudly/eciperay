@@ -13,6 +13,12 @@ permissions:
 env:
   NODE_AUTH_TOKEN: ${{ secrets.PACKAGES_READ_TOKEN }}
 
+# Superseded PR runs are cancelled so fix-pushes don't burn minutes on
+# already-obsolete work. Master pushes are never cancelled.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   setup:
     name: Discover packages
@@ -20,6 +26,8 @@ jobs:
     outputs:
       test-packages: ${{ steps.discover-packages.outputs.test-packages }}
       lint-packages: ${{ steps.discover-packages.outputs.lint-packages }}
+      run-scripts-tests:
+        ${{ steps.discover-packages.outputs.run-scripts-tests }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -29,9 +37,13 @@ jobs:
         with:
           skip-install-on-cache-hit: 'true'
 
-      - name: Discover workspace packages
+      - name: Fetch base branch
+        if: github.event_name == 'pull_request'
+        run: git fetch origin ${{ github.base_ref }} --depth=1
+
+      - name: Discover affected packages
         id: discover-packages
-        run: npm run discover:workspace-packages
+        run: npm run discover:affected-packages
 
   install:
     name: Install dependencies
@@ -46,8 +58,8 @@ jobs:
           install-command: npm ci
           skip-install-on-cache-hit: 'true'
 
-  validate:
-    name: validate
+  static:
+    name: static checks
     needs: install
     runs-on: ubuntu-latest
     steps:
@@ -59,11 +71,17 @@ jobs:
         with:
           skip-install-on-cache-hit: 'true'
 
-      - name: Validate Node version
-        run: npm run validate:node-version
+      - name: Validate Node version and UI parity registry
+        run: npm run validate:node-version && npm run validate:ui-parity
 
-      - name: Validate UI parity registry
-        run: npm run validate:ui-parity
+      - name: Lint unused ESLint rules
+        run: npm run lint:unused-rules
+
+      - name: Depcheck
+        run: npm run depcheck
+
+      - name: Lint GitHub Actions workflows
+        run: npm run workflows:lint
 
   typecheck:
     name: typecheck
@@ -84,6 +102,7 @@ jobs:
   lint:
     name: lint (${{ matrix.package }})
     needs: [install, setup]
+    if: needs.setup.outputs.lint-packages != '[]'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -116,57 +135,12 @@ jobs:
           npx eslint ${{ matrix.package }} --max-warnings 0 --cache
           --cache-location .eslintcache --cache-strategy content
 
-  lint-rules:
-    name: lint-rules
-    needs: install
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Setup
-        uses: ./.github/actions/ci-setup
-        with:
-          skip-install-on-cache-hit: 'true'
-
-      - name: Lint unused rules
-        run: npm run lint:unused-rules
-
-  depcheck:
-    name: depcheck
-    needs: install
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Setup
-        uses: ./.github/actions/ci-setup
-        with:
-          skip-install-on-cache-hit: 'true'
-
-      - name: Depcheck
-        run: npm run depcheck
-
-  workflows:
-    name: workflows
-    needs: install
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Setup
-        uses: ./.github/actions/ci-setup
-        with:
-          skip-install-on-cache-hit: 'true'
-
-      - name: Lint GitHub Actions workflows
-        run: npm run workflows:lint
-
   test:
     name: test (${{ matrix.package }})
     needs: [install, setup]
+    if:
+      needs.setup.outputs.test-packages != '[]' &&
+      needs.setup.outputs.test-packages != '["packages/server"]'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -188,9 +162,29 @@ jobs:
         env:
           CI: true
 
+  test-scripts:
+    name: test (scripts)
+    needs: [install, setup]
+    if: needs.setup.outputs.run-scripts-tests == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup
+        uses: ./.github/actions/ci-setup
+        with:
+          skip-install-on-cache-hit: 'true'
+
+      - name: Test scripts with coverage
+        run: npm run test:scripts
+        env:
+          CI: true
+
   test-server:
     name: test (packages/server, shard ${{ matrix.shard }}/3)
-    needs: install
+    needs: [install, setup]
+    if: contains(needs.setup.outputs.test-packages, 'packages/server')
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

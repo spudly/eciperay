@@ -1,6 +1,5 @@
 npx lint-staged
 npm run workflows:lint
 npm run typecheck
-npm run test:scripts
-npm run depcheck
-npm run precommit:test-coverage
+npm run test:scripts:quick
+npm run precommit:affected-tests
