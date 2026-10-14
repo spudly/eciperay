@@ -41,7 +41,9 @@ jobs:
         if: github.event_name == 'pull_request'
         env:
           BASE_REF: ${{ github.base_ref }}
-        run: git fetch --depth=1 origin "+refs/heads/$BASE_REF:refs/remotes/origin/$BASE_REF"
+        run:
+          git fetch --depth=1 origin
+          "+refs/heads/$BASE_REF:refs/remotes/origin/$BASE_REF"
 
       - name: Discover affected packages
         id: discover-packages
