@@ -150,7 +150,18 @@ describe('isDirectRun', () => {
 });
 
 describe('runDiscoverWorkspacePackagesCli', () => {
+  const githubOutput = process.env['GITHUB_OUTPUT'];
+
+  afterEach(() => {
+    if (githubOutput === undefined) {
+      delete process.env['GITHUB_OUTPUT'];
+    } else {
+      process.env['GITHUB_OUTPUT'] = githubOutput;
+    }
+  });
+
   it('writes discovery output for the repo', async () => {
+    delete process.env['GITHUB_OUTPUT'];
     const stdoutSpy = jest
       .spyOn(process.stdout, 'write')
       .mockImplementation(() => true);
