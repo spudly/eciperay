@@ -160,7 +160,7 @@ export const withRecipeCap = async <T>(
       }
       return {ok: true, value: await create(queryFn)};
     },
-    /* c8 ignore next 9 -- production-only: requires a real DB transaction */
+    /* c8 ignore next 10 -- production-only: requires a real DB transaction */
     async (): Promise<CappedResult<T>> => {
       return withTransaction(async q => {
         await q('select pg_advisory_xact_lock(hashtext($1))', [userId]);
