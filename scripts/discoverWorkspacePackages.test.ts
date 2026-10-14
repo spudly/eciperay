@@ -181,7 +181,7 @@ describe('ci workflow', () => {
     const repoRoot = new URL('..', import.meta.url).pathname;
     const ci = readFileSync(join(repoRoot, '.github/workflows/ci.yml'), 'utf8');
     expect(ci).toContain('uses: ./.github/actions/ci-setup');
-    expect(ci).toContain('npm run discover:workspace-packages');
-    expect(ci).not.toMatch(/run: tsx scripts\/discoverWorkspacePackages\.ts/u);
+    expect(ci).toContain('npm run discover:affected-packages');
+    expect(ci).not.toMatch(/run: tsx scripts\/discoverAffectedPackages\.ts/u);
   });
 });

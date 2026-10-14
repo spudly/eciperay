@@ -98,7 +98,7 @@ const fullMatrixResult = (
   };
 };
 
-type DiffedInput = {
+export type DiffedInput = {
   root: string;
   workspaces: string[];
   fs: DiscoverFs;
@@ -106,7 +106,7 @@ type DiffedInput = {
   deps: ExecDeps;
 };
 
-const diffedResult = ({
+export const diffedResult = ({
   root,
   workspaces,
   fs,
@@ -126,13 +126,15 @@ const diffedResult = ({
 
 export const runDiscoverAffectedPackagesCli = (
   deps: ExecDeps = createDefaultExecDeps(),
+  argv: string[] = process.argv,
+  env: NodeJS.ProcessEnv = process.env,
 ): void => {
   const root = join(new URL('..', import.meta.url).pathname);
   const {workspaces = []} = JSON.parse(
     readFileSync(join(root, 'package.json'), 'utf8'),
   ) as {workspaces?: string[]};
   const fs: DiscoverFs = {existsSync, readFileSync, readdirSync};
-  const {base, all} = resolveBase();
+  const {base, all} = resolveBase(argv, env);
   const result =
     all || !base
       ? fullMatrixResult(root, workspaces, fs)
