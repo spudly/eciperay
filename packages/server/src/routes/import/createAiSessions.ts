@@ -393,7 +393,7 @@ export const createRecipeFromCreateAiSession = async (
       res.status(422).json({error: error.message});
       return;
     }
-    /* c8 ignore next 3 -- defensive: validated proposedRecipe can't trigger this */
+    /* c8 ignore next 5 -- defensive: validated proposedRecipe can't trigger this */
     if (error instanceof RecipeNotFoundError) {
       res.status(404).json({error: 'Recipe not found'});
       return;
