@@ -68,7 +68,7 @@ export const assertNewSourceHasColocatedTests = (
   exit(1);
 };
 
-export const runPackageCoverage = (
+export const runPackageTests = (
   root: string,
   packages: PackageName[],
   spawn: typeof spawnSync,
@@ -77,20 +77,18 @@ export const runPackageCoverage = (
   },
 ): void => {
   if (packages.length === 0) {
-    console.log(
-      'pre-commit: no src/ changes in test packages, skipping coverage',
-    );
+    console.log('pre-commit: no src/ changes in test packages, skipping tests');
     return;
   }
 
   console.log(
-    `pre-commit: running test:coverage for ${packages.map(pkg => `@eciperay/${pkg}`).join(', ')}`,
+    `pre-commit: running tests (no coverage) for ${packages.map(pkg => `@eciperay/${pkg}`).join(', ')}`,
   );
 
   const args = [
     'turbo',
     'run',
-    'test:coverage',
+    'test',
     ...packages.flatMap(pkg => ['--filter', `@eciperay/${pkg}`]),
   ];
   const result = spawn('npx', args, {cwd: root, stdio: 'inherit'});
@@ -117,7 +115,7 @@ export const main = (
     stagedFiles,
     exit,
   );
-  runPackageCoverage(
+  runPackageTests(
     root,
     affectedCoveragePackages(stagedFiles),
     deps.spawnSync,

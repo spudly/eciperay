@@ -11,7 +11,7 @@ import {
   getStagedFiles,
   isDirectRun,
   main,
-  runPackageCoverage,
+  runPackageTests,
   runPreCommitTestsCli,
   maybeRunPreCommitTestsCli,
 } from './preCommitTests.ts';
@@ -153,36 +153,36 @@ describe('preCommitTests', () => {
     stderrSpy.mockRestore();
   });
 
-  it('skips coverage when no packages are affected', () => {
+  it('skips tests when no packages are affected', () => {
     const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
-    runPackageCoverage('/repo', [], jest.fn());
+    runPackageTests('/repo', [], jest.fn());
     expect(logSpy).toHaveBeenCalledWith(
-      'pre-commit: no src/ changes in test packages, skipping coverage',
+      'pre-commit: no src/ changes in test packages, skipping tests',
     );
     logSpy.mockRestore();
   });
 
-  it('exits when turbo coverage fails', () => {
+  it('exits when turbo tests fail', () => {
     const exit = jest.fn() as (code: number) => never;
     const spawnSync = jest.fn().mockReturnValue({status: 2});
-    runPackageCoverage('/repo', ['client'], spawnSync, exit);
+    runPackageTests('/repo', ['client'], spawnSync, exit);
     expect(exit).toHaveBeenCalledWith(2);
   });
 
-  it('uses process.exit by default when turbo coverage fails', () => {
+  it('uses process.exit by default when turbo tests fail', () => {
     const exitSpy = jest
       .spyOn(process, 'exit')
       .mockImplementation((() => {}) as (code?: number) => never);
     const spawnSync = jest.fn().mockReturnValue({status: null});
-    runPackageCoverage('/repo', ['client'], spawnSync);
+    runPackageTests('/repo', ['client'], spawnSync);
     expect(exitSpy).toHaveBeenCalledWith(1);
     exitSpy.mockRestore();
   });
 
-  it('succeeds when turbo coverage passes', () => {
+  it('succeeds when turbo tests pass', () => {
     const spawnSync = jest.fn().mockReturnValue({status: 0});
     expect(() => {
-      runPackageCoverage('/repo', ['client'], spawnSync);
+      runPackageTests('/repo', ['client'], spawnSync);
     }).not.toThrow();
   });
 
