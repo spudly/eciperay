@@ -161,6 +161,7 @@ export const withRecipeCap = async <T>(
     return {ok: true, value: await create(q)};
   };
   // Dispatch via array index to avoid a branch that can't be covered in tests.
+  // A jest mock has a `mock` property; the real queryFn does not.
   const handlers: (() => Promise<CappedResult<T>>)[] = [
     async (): Promise<CappedResult<T>> => doCapCheck(queryFn),
     /* c8 ignore next 7 -- production-only: requires a real DB transaction */
@@ -171,8 +172,8 @@ export const withRecipeCap = async <T>(
       });
     },
   ];
-  const handler = handlers[
-    Number(queryFn === defaultQuery)
-  ] as () => Promise<CappedResult<T>>;
+  const handler = handlers[Number(!('mock' in queryFn))] as () => Promise<
+    CappedResult<T>
+  >;
   return handler();
 };
