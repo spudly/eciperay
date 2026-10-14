@@ -1,5 +1,7 @@
 import type {MealsHubViewProps} from '@eciperay/client';
 import {formatSimpleNutrition} from '@eciperay/client';
+import {Card} from '@spudly/ui';
+import {XStack, YStack} from 'tamagui';
 
 import {InlineLoadingIndicator} from '../InlineLoadingIndicator.js';
 import {EmptyMessage} from '../ui/EmptyMessage.js';
@@ -46,15 +48,17 @@ export const MealsHubView = ({
       meals.length === 0 ? (
         <EmptyMessage>No meals yet.</EmptyMessage>
       ) : (
-        <ul className="space-y-2">
+        <YStack gap="$2">
           {meals.map(meal => (
-            <li
+            <Card
               key={meal.id}
-              className="ui-thumbnail-list-card flex items-center"
+              marginBottom="$3"
+              padding="$4"
             >
+              <XStack alignItems="center" gap="$3">
               <button
                 type="button"
-                className="min-w-0 flex-1 text-start"
+                className="flex-1 text-start min-inline-0"
                 onClick={() => {
                   onMealPress(meal.id);
                 }}
@@ -76,22 +80,25 @@ export const MealsHubView = ({
                   onDeleteMeal(meal.id);
                 }}
               />
-            </li>
+              </XStack>
+            </Card>
           ))}
-        </ul>
+        </YStack>
       )
     ) : plans.length === 0 ? (
       <EmptyMessage>No meal plans yet.</EmptyMessage>
     ) : (
-      <ul className="space-y-2">
+      <YStack gap="$2">
         {plans.map(plan => (
-          <li
+          <Card
             key={plan.id}
-            className="ui-thumbnail-list-card flex items-center"
+            marginBottom="$3"
+            padding="$4"
           >
+            <XStack alignItems="center" gap="$3">
             <button
               type="button"
-              className="min-w-0 flex-1 text-start"
+              className="flex-1 text-start min-inline-0"
               onClick={() => {
                 onPlanPress(plan.id);
               }}
@@ -116,9 +123,10 @@ export const MealsHubView = ({
                 onDeletePlan(plan.id);
               }}
             />
-          </li>
-        ))}
-      </ul>
-    )}
+              </XStack>
+            </Card>
+          ))}
+        </YStack>
+      )}
   </ScreenScroll>
 );

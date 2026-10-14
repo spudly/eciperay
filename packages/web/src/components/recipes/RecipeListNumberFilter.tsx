@@ -9,15 +9,18 @@ export const RecipeListNumberFilter = ({
   onChange: (value: string) => void;
   id: string;
 }) => (
-  <label className="block min-w-0 flex-1">
-    <span className="mb-1 block text-sm font-medium text-gray-700">
+  <label className="block flex-1 min-inline-0">
+    <span className="mbe-1 block text-sm font-medium text-gray-700">
       {label}
     </span>
     <input
       id={id}
       type="number"
       inputMode="numeric"
-      className="ui-select-field w-full"
+      className="
+        rounded-xl border border-gray-200 bg-white px-4 py-3 text-base
+        inline-full
+      "
       value={value}
       onChange={event => {
         onChange(event.target.value);

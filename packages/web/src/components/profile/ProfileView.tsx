@@ -1,4 +1,5 @@
 import type {ProfileViewProps} from '@eciperay/client';
+import {SectionCard, Text as DSText} from '@spudly/ui';
 
 import {LegalLinks} from '../LegalLinks.js';
 import {ProfileFeedbackPreference} from '../ProfileFeedbackPreference.js';
@@ -15,9 +16,9 @@ export const ProfileView = ({
 }: ProfileViewProps) => (
   <>
     <PageTitle spacing="section">Profile</PageTitle>
-    {email ? <p className="ui-profile-email">{email}</p> : null}
+    {email ? <DSText marginBottom="$6" color="$textMuted">{email}</DSText> : null}
     {onComponentShowcasePress ? (
-      <div className="mb-4">
+      <div className="mbe-4">
         <SecondaryButton
           label="Component Showcase"
           onPress={onComponentShowcasePress}
@@ -27,10 +28,9 @@ export const ProfileView = ({
     {sectionsBeforeFeedback}
     <ProfileFeedbackPreference />
     {sectionsAfterFeedback}
-    <section className="ui-profile-section">
-      <h2 className="ui-profile-section-title">Legal</h2>
+    <SectionCard title="Legal" marginBottom="$8">
       <LegalLinks variant="stacked" />
-    </section>
+    </SectionCard>
     <DestructiveButton
       label="Sign Out"
       onPress={onSignOut}

@@ -3,6 +3,7 @@ import {
   type ShowcaseDemoRenderer,
 } from '@eciperay/client';
 import {useEffect, useState} from 'react';
+import {Card} from '@spudly/ui';
 
 import {EmptyMessage} from '../ui/EmptyMessage.js';
 
@@ -84,22 +85,22 @@ export const ShowcaseDemo = ({id}: {id: string}) => {
 
   if (missing) {
     return (
-      <div className="ui-showcase-demo-frame">
+      <Card marginTop="$4" padding="$4">
         <ShowcasePlaceholder
           name={id}
           detail="Add a .demo on the component export inside a DEV guard."
         />
-      </div>
+      </Card>
     );
   }
 
   if (!Demo) {
-    return <div className="ui-showcase-demo-frame" />;
+    return <Card marginTop="$4" padding="$4" />;
   }
 
   return (
-    <div className="ui-showcase-demo-frame">
+    <Card marginTop="$4" padding="$4">
       <Demo Frame={ShowcaseDemoFrame} />
-    </div>
+    </Card>
   );
 };

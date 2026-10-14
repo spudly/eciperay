@@ -26,13 +26,13 @@ export const MealCookingModeView = ({
       >
         <Text className="text-sm text-white">Done</Text>
       </Pressable>
-      <Text className="mb-2 text-sm uppercase tracking-widest text-white/60">
+      <Text className="mbe-2 text-sm tracking-widest text-white/60 uppercase">
         {mealTitle}
       </Text>
-      <Text className="mb-4 text-sm uppercase tracking-widest text-white/60">
+      <Text className="mbe-4 text-sm tracking-widest text-white/60 uppercase">
         Step {current.stepNumber} of {steps.length} · {current.recipeTitle}
       </Text>
-      <Text className="mb-8 text-2xl leading-relaxed text-white">
+      <Text className="mbe-8 text-2xl/relaxed text-white">
         {current.body}
       </Text>
       <ProgressDots

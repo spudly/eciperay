@@ -1,7 +1,9 @@
 import type {PrevNextNavProps} from '@eciperay/client';
-import clsx from 'clsx';
-import {Text, TouchableOpacity, View} from 'react-native';
+import {PrevNextNav as DSPrevNextNav} from '@spudly/ui';
+import {View} from 'react-native';
 
+// Note: DS PrevNextNav has no disabled-back state, so `disableBack` hides the
+// back button (the DS convention when there is nowhere to go back to).
 export const PrevNextNav = ({
   onBack,
   onNext,
@@ -10,22 +12,13 @@ export const PrevNextNav = ({
   disableBack = false,
   disableNext = false,
 }: PrevNextNavProps) => (
-  <View className="ui-prev-next-nav flex-row justify-between">
-    <TouchableOpacity
-      className={clsx('ui-prev-next-nav-button', {'opacity-30': disableBack})}
-      disabled={disableBack}
-      onPress={onBack}
-    >
-      <Text className="text-base text-white">{backLabel}</Text>
-    </TouchableOpacity>
-    <TouchableOpacity
-      className={clsx('ui-prev-next-nav-button', {'opacity-30': disableNext})}
-      disabled={disableNext}
-      onPress={onNext}
-    >
-      <Text className="text-base text-white">{nextLabel}</Text>
-    </TouchableOpacity>
-  </View>
+  <DSPrevNextNav
+    onBack={disableBack ? undefined : onBack}
+    onNext={onNext}
+    backLabel={backLabel}
+    nextLabel={nextLabel}
+    nextDisabled={disableNext}
+  />
 );
 
 if (__DEV__) {

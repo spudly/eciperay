@@ -1,19 +1,21 @@
 import type {OptionCardProps} from '@eciperay/client';
-import {Text, TouchableOpacity} from 'react-native';
+import {OptionCard as DSOptionCard} from '@spudly/ui';
 
+/**
+ * Thin adapter over the DS OptionCard.
+ * The `to` prop is web-only (react-router); native ignores it, as before.
+ */
 export const OptionCard = ({title, description, onPress}: OptionCardProps) => {
   if (!onPress) {
     return null;
   }
 
   return (
-    <TouchableOpacity
-      className="ui-option-card"
+    <DSOptionCard
+      title={title}
+      description={description}
       onPress={onPress}
-    >
-      <Text className="text-base font-semibold text-gray-900">{title}</Text>
-      <Text className="text-muted mt-1 text-sm">{description}</Text>
-    </TouchableOpacity>
+    />
   );
 };
 

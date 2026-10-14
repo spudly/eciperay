@@ -8,9 +8,11 @@ import {
 } from '@eciperay/client';
 import type {Session} from '@supabase/supabase-js';
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
+import {eciperayTamaguiConfig} from '@spudly/ui';
 import React from 'react';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
+import {TamaguiProvider} from 'tamagui';
 
 import {AppFeedbackPreferenceProvider} from './src/context/AppFeedbackPreferenceProvider';
 import {api} from './src/lib/api';
@@ -30,25 +32,27 @@ const onSignedOut = () => {
 const queryClient = new QueryClient();
 
 const App = () => (
-  <GestureHandlerRootView className="flex-1 font-sans">
-    <SafeAreaProvider>
-      <QueryClientProvider client={queryClient}>
-        <AnalyticsProvider analytics={analytics}>
-          <AppFeedbackPreferenceProvider>
-            <AuthProvider
-              supabase={supabase}
-              onAuthenticated={onAuthenticated}
-              onSignedOut={onSignedOut}
-            >
-              <AnalyticsErrorBoundaryProvider>
-                <RootNavigator />
-              </AnalyticsErrorBoundaryProvider>
-            </AuthProvider>
-          </AppFeedbackPreferenceProvider>
-        </AnalyticsProvider>
-      </QueryClientProvider>
-    </SafeAreaProvider>
-  </GestureHandlerRootView>
+  <TamaguiProvider config={eciperayTamaguiConfig} defaultTheme="light">
+    <GestureHandlerRootView className="flex-1 font-sans">
+      <SafeAreaProvider>
+        <QueryClientProvider client={queryClient}>
+          <AnalyticsProvider analytics={analytics}>
+            <AppFeedbackPreferenceProvider>
+              <AuthProvider
+                supabase={supabase}
+                onAuthenticated={onAuthenticated}
+                onSignedOut={onSignedOut}
+              >
+                <AnalyticsErrorBoundaryProvider>
+                  <RootNavigator />
+                </AnalyticsErrorBoundaryProvider>
+              </AuthProvider>
+            </AppFeedbackPreferenceProvider>
+          </AnalyticsProvider>
+        </QueryClientProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
+  </TamaguiProvider>
 );
 
 export default App;

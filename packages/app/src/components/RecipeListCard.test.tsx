@@ -44,7 +44,7 @@ describe('RecipeListCard', () => {
       );
 
     fireEvent.press(getByText('Log cook'));
-    fireEvent.press(getByLabelText('5 stars'));
+    fireEvent.press(getByLabelText('Rate 5 out of 5 stars'));
     fireEvent.changeText(
       getByPlaceholderText('Notes from this cook (optional)'),
       'Weeknight favorite',

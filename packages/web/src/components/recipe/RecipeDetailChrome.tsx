@@ -5,6 +5,8 @@ import {
   RECIPE_DETAIL_TABS,
 } from '@eciperay/client';
 import {useState} from 'react';
+import {Card} from '@spudly/ui';
+import {XStack} from 'tamagui';
 
 import {InfoBanner} from '../ui/InfoBanner.js';
 import {TabBar} from '../ui/TabBar.js';
@@ -22,8 +24,17 @@ export const RecipeDetailChrome = ({
   onSelectTab,
   children,
 }: RecipeDetailChromeProps) => (
-  <div className="ui-recipe-detail-card">
-    <div className="ui-recipe-detail-toolbar justify-between">
+  <Card>
+    <XStack
+      flexWrap="wrap"
+      alignItems="center"
+      gap="$2"
+      justifyContent="space-between"
+      borderBottomWidth={1}
+      borderBottomColor="$border"
+      paddingHorizontal="$4"
+      paddingVertical="$3"
+    >
       <div className="flex items-center gap-2">
         <RecipeStatusBadge status={status} />
         <VersionPicker
@@ -33,7 +44,7 @@ export const RecipeDetailChrome = ({
           onSelect={onSelectVersion}
         />
       </div>
-    </div>
+    </XStack>
     <TabBar
       tabs={RECIPE_DETAIL_TABS}
       activeTab={activeTab}
@@ -42,7 +53,7 @@ export const RecipeDetailChrome = ({
       }}
     />
     {children}
-  </div>
+  </Card>
 );
 
 if (import.meta.env.DEV) {

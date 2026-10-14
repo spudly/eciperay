@@ -31,8 +31,8 @@ const NumberFilter = ({
   value: string;
   onChange: (value: string) => void;
 }) => (
-  <View className="mb-2 flex-1">
-    <Text className="mb-1 text-sm font-medium text-gray-700">{label}</Text>
+  <View className="mbe-2 flex-1">
+    <Text className="mbe-1 text-sm font-medium text-gray-700">{label}</Text>
     <TextInput
       className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-base"
       keyboardType="numeric"
@@ -84,8 +84,8 @@ export const RecipeListFiltersBar = ({
         }}
       />
     ) : null}
-    <View className="mb-2">
-      <Text className="mb-1 text-sm font-medium text-gray-700">Ingredient</Text>
+    <View className="mbe-2">
+      <Text className="mbe-1 text-sm font-medium text-gray-700">Ingredient</Text>
       <TextInput
         className="
           rounded-lg border border-gray-200 bg-white px-3 py-2 text-base

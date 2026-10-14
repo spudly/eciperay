@@ -1,9 +1,10 @@
 import type {AuthScreenLayoutProps} from '@eciperay/client';
+import {FormScreenLayout as DSFormScreenLayout} from '@spudly/ui';
 
 import {PageTitle} from './PageTitle.js';
 
 export const AuthScreenLayout = ({children}: AuthScreenLayoutProps) => (
-  <div className="pbs-20 max-inline-md mx-auto px-6">{children}</div>
+  <DSFormScreenLayout>{children}</DSFormScreenLayout>
 );
 
 if (import.meta.env.DEV) {

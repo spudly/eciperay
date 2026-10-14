@@ -31,7 +31,7 @@ export const RecipeStatusPicker = ({
 
   return (
     <View>
-      <Text className="mb-2 text-sm font-medium text-gray-700">Status</Text>
+      <Text className="mbe-2 text-sm font-medium text-gray-700">Status</Text>
       <ToggleChipGroup
         options={options}
         selectedId={value}

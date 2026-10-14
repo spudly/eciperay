@@ -1,12 +1,10 @@
-import {
-  fireEvent,
-  render,
+import {fireEvent,
   screen,
-  waitFor,
-} from '@testing-library/react-native';
+  waitFor} from '@testing-library/react-native';
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 import {Linking, Share} from 'react-native';
 
+import {renderWithProviders} from '../../__tests__/testUtils';
 import {makeRecipeDetail} from '../../__tests__/fixtures/recipe';
 import {api} from '../../lib/api';
 
@@ -27,7 +25,7 @@ const renderControls = (recipe = makeRecipeDetail()) => {
     defaultOptions: {queries: {retry: false}, mutations: {retry: false}},
   });
   const onActionMessage = jest.fn();
-  render(
+  renderWithProviders(
     <QueryClientProvider client={queryClient}>
       <RecipeVisibilityControls
         recipe={recipe}
@@ -70,7 +68,7 @@ describe('RecipeVisibilityControls', () => {
   test('saves visibility after publishing consent', async () => {
     const {onActionMessage} = renderControls();
     fireEvent.press(screen.getByText('Unlisted link'));
-    fireEvent(screen.getByLabelText('Publishing consent'), 'valueChange', true);
+    fireEvent.press(screen.getByText('Publishing consent'));
     fireEvent.press(screen.getByText('Save sharing settings'));
     await waitFor(() => {
       expect(mockPatchSharing).toHaveBeenCalled();

@@ -93,11 +93,11 @@ export const BookLoadingSpinner = ({
       >
         {renderPageLines(leftPageLines(scale), scale)}
         <View
-          className="absolute right-0 top-0"
+          className="absolute inset-e-0 inset-bs-0"
           style={flipContainerStyle}
         >
           <Animated.View
-            className="absolute right-0 top-0 bg-white"
+            className="absolute inset-e-0 inset-bs-0 bg-white"
             style={[
               flipPageStyle,
               bookLoadingSpinnerStyles.flipPage,

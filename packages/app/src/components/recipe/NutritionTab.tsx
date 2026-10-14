@@ -19,7 +19,7 @@ const NutritionRow = ({
   value: number;
   unit: string;
 }) => (
-  <View className="flex-row justify-between border-b border-gray-100 py-3">
+  <View className="flex-row justify-between border-be border-gray-100 py-3">
     <Text className="text-base text-gray-700">{label}</Text>
     <Text className="text-base font-semibold text-gray-900">
       {value}
@@ -56,7 +56,7 @@ export const NutritionTab = ({recipeId}: {recipeId: string}) => {
   if (!data) {
     return (
       <View className="p-4">
-        <Text className="text-muted mb-3">Nutrition is not available yet.</Text>
+        <Text className="text-muted mbe-3">Nutrition is not available yet.</Text>
         <Pressable
           className="rounded-lg bg-gray-900 px-3 py-2"
           onPress={() => {
@@ -73,10 +73,10 @@ export const NutritionTab = ({recipeId}: {recipeId: string}) => {
   }
   return (
     <View className="p-4">
-      <View className="mb-3 flex-row items-center justify-between gap-3">
+      <View className="mbe-3 flex-row items-center justify-between gap-3">
         <Text
           className="
-            text-sm font-semibold uppercase tracking-wide text-gray-500
+            text-sm font-semibold tracking-wide text-gray-500 uppercase
           "
         >
           Per Serving
@@ -99,7 +99,7 @@ export const NutritionTab = ({recipeId}: {recipeId: string}) => {
           {...row}
         />
       ))}
-      <Text className="text-muted mt-4 text-xs">{data.disclaimer}</Text>
+      <Text className="text-muted mbs-4 text-xs">{data.disclaimer}</Text>
     </View>
   );
 };

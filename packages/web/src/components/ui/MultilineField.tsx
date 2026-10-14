@@ -1,4 +1,5 @@
 import type {MultilineFieldProps} from '@eciperay/client';
+import {MultilineField as DSMultilineField} from '@spudly/ui';
 import {useState} from 'react';
 
 export const MultilineField = ({
@@ -7,14 +8,11 @@ export const MultilineField = ({
   placeholder,
   rows = 8,
 }: MultilineFieldProps) => (
-  <textarea
-    className="ui-multiline-field inline-full mb-4"
-    onChange={e => {
-      onChange(e.target.value);
-    }}
-    placeholder={placeholder}
-    rows={rows}
+  <DSMultilineField
     value={value}
+    onChangeText={onChange}
+    placeholder={placeholder}
+    numberOfLines={rows}
   />
 );
 

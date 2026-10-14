@@ -397,13 +397,13 @@ dark:
       .filter(([, data]) => typeof data === 'string')
       .map(([path]) => path);
     expect(svgOutputs).toContain(
-      '/repo/packages/theme/logos/generated/logo.svg',
+      '/repo/assets/logos/generated/logo.svg',
     );
     expect(svgOutputs).toContain(
-      '/repo/packages/theme/logos/generated/logo-dark.svg',
+      '/repo/assets/logos/generated/logo-dark.svg',
     );
     expect(svgOutputs).toContain(
-      '/repo/packages/theme/logos/generated/logo-horizontal-dark.svg',
+      '/repo/assets/logos/generated/logo-horizontal-dark.svg',
     );
     expect(writeCalls.filter(([, data]) => Buffer.isBuffer(data))).toHaveLength(
       7,

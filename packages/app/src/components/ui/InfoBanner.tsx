@@ -1,8 +1,17 @@
 import type {InfoBannerProps} from '@eciperay/client';
-import {Text} from 'react-native';
+import {InlineAlert, tokens} from '@spudly/ui';
 
+/**
+ * Thin adapter over the DS InlineAlert with info severity.
+ * The old mb-4 bottom spacing is preserved.
+ */
 export const InfoBanner = ({children}: InfoBannerProps) => (
-  <Text className="ui-info-banner mb-4">{children}</Text>
+  <InlineAlert
+    severity="info"
+    marginBottom={tokens.spacing[4]}
+  >
+    {children}
+  </InlineAlert>
 );
 
 if (__DEV__) {

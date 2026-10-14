@@ -12,7 +12,7 @@ const openUrl = (url: string) => {
 export const LegalLinks = ({variant = 'stacked'}: LegalLinksProps) => {
   if (variant === 'inline') {
     return (
-      <Text className="text-muted mt-4 text-center text-sm leading-5">
+      <Text className="text-muted mbs-4 text-center text-sm/5">
         By creating an account, you agree to our{' '}
         <Text
           className="ui-link"

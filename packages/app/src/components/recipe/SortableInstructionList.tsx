@@ -23,18 +23,18 @@ const InstructionRow = ({
   onUpdate,
   onRemove,
 }: RowProps) => (
-  <View className="mb-2 flex-row gap-2">
+  <View className="mbe-2 flex-row gap-2">
     <TouchableOpacity
       accessibilityLabel={`Reorder step ${index + 1}`}
-      className="justify-center rounded border border-gray-300 px-2 py-1"
+      className="justify-center rounded-sm border border-gray-300 px-2 py-1"
       onLongPress={drag}
       delayLongPress={0}
     >
       <Text className="text-xs text-gray-700">Drag</Text>
     </TouchableOpacity>
-    <Text className="text-muted pt-2 text-sm">{index + 1}.</Text>
+    <Text className="text-muted pbs-2 text-sm">{index + 1}.</Text>
     <TextInput
-      className="flex-1 rounded border border-gray-300 px-2 py-1 text-sm"
+      className="flex-1 rounded-sm border border-gray-300 px-2 py-1 text-sm"
       multiline
       value={instruction.body}
       onChangeText={val => {
@@ -81,7 +81,7 @@ export const SortableInstructionList = ({
 
   return (
     <View>
-      <View className="mb-2 flex-row items-center justify-between">
+      <View className="mbe-2 flex-row items-center justify-between">
         <Text className="text-sm font-medium text-gray-700">Instructions</Text>
         <TouchableOpacity onPress={onAdd}>
           <Text className="text-primary text-sm">+ Add</Text>

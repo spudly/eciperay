@@ -1,4 +1,5 @@
 import type {FormScreenLayoutProps} from '@eciperay/client';
+import {ScreenContainer as DSScreenContainer, Text as DSText} from '@spudly/ui';
 
 import {PageTitle} from './PageTitle.js';
 import {InfoBanner} from './InfoBanner.js';
@@ -8,13 +9,12 @@ export const FormScreenLayout = ({
   description,
   children,
 }: FormScreenLayoutProps) => (
-  <div className="ui-screen-shell">
+  // On web the body already scrolls; the Tamagui ScrollView wrapper is redundant.
+  <DSScreenContainer scrollable={false}>
     <PageTitle>{title}</PageTitle>
-    {description ? (
-      <p className="text-muted mb-6 text-sm">{description}</p>
-    ) : null}
+    {description ? <DSText variant="hint">{description}</DSText> : null}
     {children}
-  </div>
+  </DSScreenContainer>
 );
 
 if (import.meta.env.DEV) {

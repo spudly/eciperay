@@ -1,30 +1,13 @@
 import type {TabBarProps} from '@eciperay/client';
-import clsx from 'clsx';
+import {Tabs as DSTabs} from '@spudly/ui';
 import {useState} from 'react';
 
 export const TabBar = ({tabs, activeTab, onTabChange}: TabBarProps) => (
-  <div
-    className="ui-tab-bar flex"
-    role="tablist"
-  >
-    {tabs.map(tab => (
-      <button
-        key={tab.key}
-        type="button"
-        role="tab"
-        aria-selected={activeTab === tab.key}
-        className={clsx('ui-tab-bar-item flex-1 py-3 text-xs font-medium', {
-          'border-primary text-primary border-b-2': activeTab === tab.key,
-          'text-muted': activeTab !== tab.key,
-        })}
-        onClick={() => {
-          onTabChange(tab.key);
-        }}
-      >
-        {tab.label}
-      </button>
-    ))}
-  </div>
+  <DSTabs
+    tabs={tabs.map(tab => ({value: tab.key, label: tab.label}))}
+    value={activeTab}
+    onValueChange={onTabChange}
+  />
 );
 
 if (import.meta.env.DEV) {

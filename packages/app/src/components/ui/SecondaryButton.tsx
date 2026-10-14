@@ -1,18 +1,14 @@
 import type {SecondaryButtonProps} from '@eciperay/client';
-import {Text, TouchableOpacity} from 'react-native';
+import {Button as DsButton} from '@spudly/ui';
 
 export const SecondaryButton = ({
   label,
   onPress,
   disabled = false,
 }: SecondaryButtonProps) => (
-  <TouchableOpacity
-    className="ui-secondary-button"
-    disabled={disabled}
-    onPress={onPress}
-  >
-    <Text className="ui-secondary-button-text">{label}</Text>
-  </TouchableOpacity>
+  <DsButton variant="secondary" onPress={onPress} disabled={disabled}>
+    {label}
+  </DsButton>
 );
 
 if (__DEV__) {

@@ -49,8 +49,7 @@ export const ForgotPasswordView = ({
       >
         Reset password
       </PageTitle>
-      <form
-        className="ui-auth-form-stack"
+      <form style={{display: 'flex', flexDirection: 'column', gap: 16}}
         onSubmit={e => {
           e.preventDefault();
           onSubmit();

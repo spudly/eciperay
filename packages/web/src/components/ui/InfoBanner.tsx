@@ -1,7 +1,8 @@
 import type {InfoBannerProps} from '@eciperay/client';
+import {InlineAlert as DSInlineAlert} from '@spudly/ui';
 
 export const InfoBanner = ({children}: InfoBannerProps) => (
-  <p className="ui-info-banner mb-4">{children}</p>
+  <DSInlineAlert severity="info">{children}</DSInlineAlert>
 );
 
 if (import.meta.env.DEV) {

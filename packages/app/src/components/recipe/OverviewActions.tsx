@@ -71,7 +71,7 @@ export const OverviewActions = ({
   return (
     <>
       {isEditable ? (
-        <View className="mb-4 flex-row flex-wrap gap-2">
+        <View className="mbe-4 flex-row flex-wrap gap-2">
           <TouchableOpacity
             className="rounded-lg border border-gray-200 px-3 py-2"
             disabled={tweakManualMutation.isPending}
@@ -116,7 +116,7 @@ export const OverviewActions = ({
         </View>
       ) : null}
       {candidates.length > 0 ? (
-        <View className="mb-4 gap-2">
+        <View className="mbe-4 gap-2">
           <Text className="text-sm font-medium text-gray-900">
             Ready to activate
           </Text>
@@ -125,7 +125,7 @@ export const OverviewActions = ({
               key={version.id}
               className="rounded-lg border border-indigo-200 bg-indigo-50 p-3"
             >
-              <Text className="mb-2 text-sm text-gray-800">
+              <Text className="mbe-2 text-sm text-gray-800">
                 v{version.versionNumber}
                 {version.changeSummary
                   ? `: ${truncateChangeSummary(version.changeSummary)}`

@@ -1,41 +1,35 @@
 import type {OptionCardProps} from '@eciperay/client';
-import {Link} from 'react-router-dom';
+import {OptionCard as DSOptionCard} from '@spudly/ui';
+import {useNavigate} from 'react-router-dom';
 
+/**
+ * Adapter over the design-system OptionCard. The DS card is itself the
+ * pressable (role="button"); for router destinations we navigate via the
+ * card's onPress instead of wrapping in a <Link>, avoiding nested
+ * interactive elements.
+ */
 export const OptionCard = ({
   title,
   description,
   onPress,
   to,
 }: OptionCardProps) => {
-  const content = (
-    <>
-      <p className="font-semibold text-gray-900">{title}</p>
-      <p className="text-muted text-sm">{description}</p>
-    </>
-  );
+  const navigate = useNavigate();
 
-  if (to) {
-    return (
-      <Link
-        to={to}
-        className="
-          ui-option-card block shadow-sm
-          hover:bg-gray-50
-        "
-      >
-        {content}
-      </Link>
-    );
-  }
+  const handlePress = () => {
+    if (to) {
+      void navigate(to);
+    } else if (onPress) {
+      onPress();
+    }
+  };
 
   return (
-    <button
-      type="button"
-      className="ui-option-card inline-full text-start"
-      onClick={onPress}
-    >
-      {content}
-    </button>
+    <DSOptionCard
+      title={title}
+      description={description}
+      onPress={handlePress}
+    />
   );
 };
 

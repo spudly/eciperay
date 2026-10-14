@@ -1,2 +1,0 @@
-ignores:
-  - '@fontsource-variable/manrope' # Imported via @import in fonts.css; depcheck does not trace CSS imports

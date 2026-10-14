@@ -74,12 +74,12 @@ describe('RecipeRatingsSection', () => {
       />,
     );
 
-    fireEvent.press(getByLabelText('5 stars'));
+    fireEvent.press(getByLabelText('Rate 5 out of 5 stars'));
     await waitFor(() => {
       expect(mockPutRating).toHaveBeenCalledWith('recipe-uuid-1', {stars: 5});
     });
 
-    fireEvent.press(getByLabelText('3 stars'));
+    fireEvent.press(getByLabelText('Rate 3 out of 5 stars'));
     await waitFor(() => {
       expect(mockDeleteRating).toHaveBeenCalledWith('recipe-uuid-1');
     });

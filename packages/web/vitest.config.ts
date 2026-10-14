@@ -27,6 +27,9 @@ export default defineConfig({
     alias: {
       '@eciperay/client': path.join(monoRoot, 'packages/client/src/index.ts'),
       '@eciperay/types': path.join(monoRoot, 'packages/types/src/index.ts'),
+      // Wrap @testing-library/react's render in TamaguiProvider: the ui
+      // primitives are now @spudly/ui (Tamagui) adapters that need a theme.
+      '@testing-library/react': path.join(pkgRoot, 'src/test/rtlWithTheme.tsx'),
     },
   },
   test: {

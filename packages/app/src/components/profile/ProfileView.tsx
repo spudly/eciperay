@@ -20,7 +20,7 @@ export const ProfileView = ({
     <PageTitle spacing="section">Profile</PageTitle>
     {email ? <Text className="ui-profile-email">{email}</Text> : null}
     {onComponentShowcasePress ? (
-      <View className="mb-4">
+      <View className="mbe-4">
         <SecondaryButton
           label="Component Showcase"
           onPress={onComponentShowcasePress}
@@ -29,7 +29,7 @@ export const ProfileView = ({
     ) : null}
     {sectionsBeforeFeedback}
     {onManageTagsPress ? (
-      <View className="mb-4">
+      <View className="mbe-4">
         <SecondaryButton
           label="Manage Tags"
           onPress={onManageTagsPress}
@@ -38,7 +38,7 @@ export const ProfileView = ({
     ) : null}
     <ProfileFeedbackPreference />
     {sectionsAfterFeedback}
-    <View className="mb-8">
+    <View className="mbe-8">
       <Text className="ui-profile-section-title">Legal</Text>
       <LegalLinks />
     </View>

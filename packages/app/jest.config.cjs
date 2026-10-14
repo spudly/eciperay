@@ -35,6 +35,20 @@ module.exports = {
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(react-native|@react-native|@react-navigation|nativewind|react-native-css|react-native-css-interop|react-native-reanimated|react-native-worklets|react-native-safe-area-context|react-native-screens|react-native-blob-util|react-native-gesture-handler|react-native-draggable-flatlist|@tanstack/react-query|@eciperay)/)',
+    'node_modules/(?!(react-native|@react-native|@react-navigation|nativewind|react-native-css|react-native-css-interop|react-native-reanimated|react-native-worklets|react-native-safe-area-context|react-native-screens|react-native-blob-util|react-native-gesture-handler|react-native-draggable-flatlist|@tanstack/react-query|@eciperay|@spudly|tamagui|@tamagui)/)',
   ],
+  // Explicit babel-jest transform: tamagui/@spudly are hoisted to the
+  // workspace root node_modules, outside babel's config-file lookup, so point
+  // at the app's babel config directly. Also covers .mjs/.cjs (tamagui ESM).
+  transform: {
+    '^.+\\.(js|ts|tsx|mjs|cjs)$': [
+      'babel-jest',
+      // Tamagui/@spudly are hoisted to the workspace root node_modules, outside
+      // babel's config-file lookup, so point at the app's babel config directly.
+      // <rootDir> is not expanded here; resolve relative to this config file.
+      {configFile: require('node:path').join(__dirname, 'babel.config.cjs')},
+    ],
+    '^.+\\.(bmp|gif|jpg|jpeg|mp4|png|psd|svg|webp)$':
+      '@react-native/jest-preset/jest/assetFileTransformer.js',
+  },
 };

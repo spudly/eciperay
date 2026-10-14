@@ -1,10 +1,21 @@
 import type {AuthScreenLayoutProps} from '@eciperay/client';
-import {View} from 'react-native';
+import {ScreenContainer as DSScreenContainer} from '@spudly/ui';
 
 import {PageTitle} from './PageTitle';
 
+/**
+ * Thin adapter over the DS ScreenContainer.
+ * Matches the old ui-screen-shell-auth: white background, px-6, pt-20.
+ */
 export const AuthScreenLayout = ({children}: AuthScreenLayoutProps) => (
-  <View className="ui-screen-shell-auth">{children}</View>
+  <DSScreenContainer
+    scrollable={false}
+    backgroundColor="#ffffff"
+    paddingHorizontal={24}
+    paddingTop={80}
+  >
+    {children}
+  </DSScreenContainer>
 );
 
 if (__DEV__) {

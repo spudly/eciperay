@@ -1,36 +1,13 @@
 import type {TabBarProps} from '@eciperay/client';
-import clsx from 'clsx';
+import {Tabs} from '@spudly/ui';
 import {useState} from 'react';
-import {ScrollView, Text, TouchableOpacity} from 'react-native';
 
 export const TabBar = ({tabs, activeTab, onTabChange}: TabBarProps) => (
-  <ScrollView
-    horizontal
-    showsHorizontalScrollIndicator={false}
-    className="ui-tab-bar"
-    contentContainerClassName="flex-row"
-  >
-    {tabs.map(tab => (
-      <TouchableOpacity
-        key={tab.key}
-        className={clsx('ui-tab-bar-item', {
-          'border-primary border-b-2': activeTab === tab.key,
-        })}
-        onPress={() => {
-          onTabChange(tab.key);
-        }}
-      >
-        <Text
-          className={clsx('text-xs font-medium', {
-            'text-primary': activeTab === tab.key,
-            'text-muted': activeTab !== tab.key,
-          })}
-        >
-          {tab.label}
-        </Text>
-      </TouchableOpacity>
-    ))}
-  </ScrollView>
+  <Tabs
+    tabs={tabs.map(tab => ({value: tab.key, label: tab.label}))}
+    value={activeTab}
+    onValueChange={onTabChange}
+  />
 );
 
 if (__DEV__) {

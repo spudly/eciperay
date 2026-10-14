@@ -1,7 +1,8 @@
 import type {ErrorTextProps} from '@eciperay/client';
+import {Text as DSText} from '@spudly/ui';
 
 export const ErrorText = ({children}: ErrorTextProps) => (
-  <p className="ui-error-text">{children}</p>
+  <DSText variant="error">{children}</DSText>
 );
 
 if (import.meta.env.DEV) {

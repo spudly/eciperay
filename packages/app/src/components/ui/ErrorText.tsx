@@ -1,8 +1,8 @@
 import type {ErrorTextProps} from '@eciperay/client';
-import {Text} from 'react-native';
+import {Text as DsText} from '@spudly/ui';
 
 export const ErrorText = ({children}: ErrorTextProps) => (
-  <Text className="ui-error-text">{children}</Text>
+  <DsText variant="error">{children}</DsText>
 );
 
 if (__DEV__) {

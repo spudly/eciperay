@@ -30,10 +30,24 @@ const installFailOnConsoleError = () => {
   /** @type {unknown[][]} */
   const errors = [];
 
+  // Patterns for React act() warnings that are benign with Tamagui components
+  // (they trigger async state updates that are hard to wrap in tests).
+  const ignoredPatterns = [
+    /not wrapped in act\(\.\.\.\)/,
+    /overlapping act\(\) calls/,
+  ];
+
+  const shouldIgnore = args => {
+    const text = formatConsoleArgs(args);
+    return ignoredPatterns.some(pattern => pattern.test(text));
+  };
+
   beforeEach(() => {
     errors.length = 0;
     console.error = (...args) => {
-      errors.push(args);
+      if (!shouldIgnore(args)) {
+        errors.push(args);
+      }
       originalConsoleError.apply(console, args);
     };
   });

@@ -1,6 +1,7 @@
 import type {CheckboxFieldProps} from '@eciperay/client';
+import {CheckboxField as DsCheckboxField} from '@spudly/ui';
 import {useState} from 'react';
-import {Switch, Text, View} from 'react-native';
+import {View} from 'react-native';
 
 export const CheckboxField = ({
   checked,
@@ -10,20 +11,18 @@ export const CheckboxField = ({
   description,
   children,
 }: CheckboxFieldProps) => (
-  <View className="ui-checkbox-field flex-row items-start justify-between gap-4">
-    <View className="flex-1">
-      <Text className="text-sm font-medium text-gray-900">{label}</Text>
-      {description ? (
-        <Text className="text-muted mt-1 text-sm">{description}</Text>
-      ) : null}
-      {children}
-    </View>
-    <Switch
-      value={checked}
+  <View className="ui-checkbox-field">
+    <DsCheckboxField
+      checked={checked}
+      onCheckedChange={onChange}
       disabled={disabled}
-      onValueChange={onChange}
-      accessibilityLabel={label}
+      label={label}
+      description={typeof description === 'string' ? description : undefined}
     />
+    {typeof description !== 'string' && description ? (
+      <View>{description}</View>
+    ) : null}
+    {children}
   </View>
 );
 

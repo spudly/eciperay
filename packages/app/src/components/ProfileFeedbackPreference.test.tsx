@@ -1,6 +1,8 @@
 import {FeedbackPreferenceContextProvider} from '@eciperay/client';
-import {fireEvent, render, screen} from '@testing-library/react-native';
+import {fireEvent, screen} from '@testing-library/react-native';
 import React from 'react';
+
+import {renderWithProviders} from '../__tests__/testUtils';
 
 import {ProfileFeedbackPreference} from './ProfileFeedbackPreference';
 
@@ -9,7 +11,7 @@ jest.mock('../lib/env', () => ({POSTHOG_KEY: 'phc_test'}));
 describe('ProfileFeedbackPreference', () => {
   test('toggles the feedback shortcut preference', () => {
     const setEnabled = jest.fn();
-    render(
+    renderWithProviders(
       <FeedbackPreferenceContextProvider
         enabled={false}
         setEnabled={setEnabled}
@@ -18,11 +20,7 @@ describe('ProfileFeedbackPreference', () => {
       </FeedbackPreferenceContextProvider>,
     );
 
-    fireEvent(
-      screen.getByLabelText('Show feedback shortcut'),
-      'valueChange',
-      true,
-    );
+    fireEvent.press(screen.getByText('Show feedback shortcut'));
     expect(setEnabled).toHaveBeenCalledWith(true);
   });
 });

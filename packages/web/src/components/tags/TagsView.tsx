@@ -1,6 +1,8 @@
 import type {TagsViewProps} from '@eciperay/client';
 import {makeRecipeDetail} from '@eciperay/client';
 import {useState} from 'react';
+import {Card} from '@spudly/ui';
+import {XStack, YStack} from 'tamagui';
 
 import {InlineLoadingIndicator} from '../InlineLoadingIndicator.js';
 import {ColorPickerField} from '../ui/ColorPickerField.js';
@@ -28,11 +30,14 @@ export const TagsView = ({
     <>
       <PageTitle spacing="section">Tags</PageTitle>
       <form
+        style={{display: "flex", gap: 8, marginBottom: 24}}
         onSubmit={handleSubmit}
-        className="ui-tag-form-row flex"
       >
         <input
-          className="ui-text-field flex-1 py-2"
+          className="
+            flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2
+            text-base text-gray-900
+          "
           placeholder="Tag name"
           value={name}
           onChange={event => {
@@ -53,28 +58,31 @@ export const TagsView = ({
       {isLoading ? (
         <InlineLoadingIndicator loading />
       ) : (
-        <div className="space-y-2">
+        <YStack gap="$2">
           {tags.map(tag => (
-            <div
+            <Card
               key={tag.id}
-              className="ui-tag-list-item flex"
+              marginBottom="$2"
+              padding="$3"
             >
+              <XStack alignItems="center" justifyContent="space-between">
               <TagPill
                 name={tag.name}
                 color={tag.color}
               />
               <button
                 type="button"
-                className="ui-error-text"
+                className="text-sm text-red-600"
                 onClick={() => {
                   onDelete(tag.id);
                 }}
               >
                 Delete
               </button>
-            </div>
+              </XStack>
+            </Card>
           ))}
-        </div>
+        </YStack>
       )}
     </>
   );

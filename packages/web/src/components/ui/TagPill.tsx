@@ -1,12 +1,8 @@
 import type {TagPillProps} from '@eciperay/client';
+import {Badge as DSBadge} from '@spudly/ui';
 
 export const TagPill = ({name, color}: TagPillProps) => (
-  <span
-    className="ui-tag-pill text-xs font-medium"
-    style={{backgroundColor: `${color}22`, color}}
-  >
-    {name}
-  </span>
+  <DSBadge style={{backgroundColor: `${color}22`, color}}>{name}</DSBadge>
 );
 
 if (import.meta.env.DEV) {

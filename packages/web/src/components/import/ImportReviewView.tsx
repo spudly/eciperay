@@ -1,5 +1,7 @@
 import type {ImportReviewViewProps} from '@eciperay/client';
 import {makeRecipeDetail, recipeDetailToInput} from '@eciperay/client';
+import {Card} from '@spudly/ui';
+import {XStack} from 'tamagui';
 
 import {ErrorText} from '../ui/ErrorText.js';
 import {FormScreenLayout} from '../ui/FormScreenLayout.js';
@@ -27,12 +29,12 @@ export const ImportReviewView = ({
       <img
         src={imageUrl}
         alt={imageAlt ?? 'Imported recipe'}
-        className="mb-4 max-h-64 w-full rounded-xl object-cover"
+        className="mbe-4 rounded-xl object-cover inline-full max-block-64"
       />
     ) : null}
-    <div className="ui-import-review-preview bg-gray-50">{preview}</div>
+    <Card backgroundColor="$surface" padding="$4" marginBottom="$6">{preview}</Card>
     {error ? <ErrorText>{error}</ErrorText> : null}
-    <div className="ui-import-review-actions">
+    <XStack flexWrap="wrap" gap="$3">
       <PrimaryButton
         label={acceptPending ? 'Saving…' : 'Looks good'}
         disabled={busy}
@@ -43,7 +45,7 @@ export const ImportReviewView = ({
         disabled={busy}
         onPress={onStartEdits}
       />
-    </div>
+    </XStack>
   </FormScreenLayout>
 );
 

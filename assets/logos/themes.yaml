@@ -1,0 +1,17 @@
+# Primary app icon: terracotta mark (Warm Harvest), cream grid + spoon
+default:
+  logoBg: '#c2410c'
+  logoInk: '#fffdf8' # cream grid lines
+  logoSpoonFill: '#c2410c'
+  logoSpoonStroke: '#fffdf8'
+  wordmarkFill: '#292019'
+  wordmarkAccent: '#c2410c' # i-dot
+
+# Dark-background mark; light wordmark
+dark:
+  logoBg: '#c2410c'
+  logoInk: '#fffdf8'
+  logoSpoonFill: '#c2410c'
+  logoSpoonStroke: '#fffdf8'
+  wordmarkFill: '#fffdf8'
+  wordmarkAccent: '#c2410c'

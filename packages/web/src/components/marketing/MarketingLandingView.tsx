@@ -7,20 +7,24 @@ import {
   LANDING_SIGNUP_CTA,
   MOBILE_APP_INSTALL_URL,
 } from '@eciperay/client';
+import {Card, Text as DSText} from '@spudly/ui';
 import {Link} from 'react-router-dom';
 
 export const MarketingLandingView = () => (
   <>
-    <section className="ui-marketing-hero">
-      <h1
-        className="
-          ui-page-title-lg mb-4
-          sm:text-4xl
-        "
+    <Card
+      paddingHorizontal="$6"
+      paddingVertical="$12"
+      alignItems="center"
+    >
+      <DSText
+        variant="heading"
+        marginBottom="$4"
+        textAlign="center"
       >
         {LANDING_HERO_TITLE}
-      </h1>
-      <p className="text-muted mx-auto mb-8 max-w-2xl text-lg">
+      </DSText>
+      <p className="text-muted mx-auto mbe-8 text-lg max-inline-2xl">
         {LANDING_HERO_SUBTITLE}
       </p>
       <div
@@ -54,20 +58,32 @@ export const MarketingLandingView = () => (
           {LANDING_MOBILE_APP_CTA}
         </a>
       </div>
-    </section>
+    </Card>
 
-    <section className="ui-marketing-feature-grid">
+    <div
+      className="
+        mbs-8 grid gap-4
+        sm:grid-cols-3
+      "
+    >
       {LANDING_FEATURES.map(feature => (
-        <article
+        <Card
           key={feature.title}
-          className="ui-marketing-feature-card"
+          padding="$5"
         >
-          <h2 className="mb-2 text-lg font-semibold text-gray-900">
+          <DSText
+            variant="subheading"
+            marginBottom="$2"
+          >
             {feature.title}
-          </h2>
-          <p className="text-muted text-sm">{feature.description}</p>
-        </article>
+          </DSText>
+          <DSText
+            variant="hint"
+          >
+            {feature.description}
+          </DSText>
+        </Card>
       ))}
-    </section>
+    </div>
   </>
 );

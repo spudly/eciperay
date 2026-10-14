@@ -21,7 +21,7 @@ export const ImportUrlView = ({
       placeholder="https://example.com/recipe"
     />
     {error ? (
-      <View className="mb-4">
+      <View className="mbe-4">
         <ErrorText>{error}</ErrorText>
       </View>
     ) : null}

@@ -8,14 +8,27 @@ export const ColorPickerField = ({
   name,
   disabled = false,
 }: ColorPickerFieldProps) => (
-  <label className="inline-flex flex-col gap-1">
+  <label
+    style={{
+      display: 'inline-flex',
+      flexDirection: 'column',
+      gap: 4,
+    }}
+  >
     {label ? (
-      <span className="text-sm font-medium text-gray-700">{label}</span>
+      <span style={{fontSize: 14, fontWeight: 500}}>{label}</span>
     ) : null}
     <input
       type="color"
       name={name}
-      className="ui-color-picker-field"
+      style={{
+        height: 40,
+        width: 48,
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        borderRadius: 4,
+        border: '1px solid #d1d5db',
+        opacity: disabled ? 0.5 : 1,
+      }}
       value={value}
       disabled={disabled}
       onChange={event => {

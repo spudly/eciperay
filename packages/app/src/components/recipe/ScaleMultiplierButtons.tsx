@@ -36,7 +36,7 @@ export const ScaleMultiplierButtons = ({
     )?.toString() ?? String(RECIPE_SCALE_MULTIPLIERS[0]);
 
   return (
-    <View className="mb-4 flex-row flex-wrap items-center gap-2">
+    <View className="mbe-4 flex-row flex-wrap items-center gap-2">
       <Text className="text-sm font-medium text-gray-700">Scale:</Text>
       <ToggleChipGroup
         options={options}

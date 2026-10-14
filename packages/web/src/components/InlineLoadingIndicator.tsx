@@ -3,8 +3,8 @@ import {
   useDelayedTrue,
   type InlineLoadingIndicatorProps,
 } from '@eciperay/client';
-import clsx from 'clsx';
 import {useState} from 'react';
+import {YStack} from 'tamagui';
 
 import {BookLoadingSpinner} from './ui/BookLoadingSpinner.js';
 import {PrimaryButton} from './ui/PrimaryButton.js';
@@ -21,9 +21,14 @@ export const InlineLoadingIndicator = ({
   }
 
   return (
-    <div className={clsx('ui-loading-center', className)}>
+    <YStack
+      flex={1}
+      alignItems="center"
+      justifyContent="center"
+      className={className}
+    >
       <BookLoadingSpinner size="md" />
-    </div>
+    </YStack>
   );
 };
 
@@ -41,7 +46,7 @@ if (import.meta.env.DEV) {
         />
         <InlineLoadingIndicator
           loading={loading}
-          className="mt-2"
+          className="mbs-2"
         />
       </>
     );

@@ -1,32 +1,53 @@
 import type {SectionCardProps} from '@eciperay/client';
-import clsx from 'clsx';
-import {Text, View} from 'react-native';
+import {SectionCard as DSSectionCard, Text as DSText, tokens} from '@spudly/ui';
 
-const variantClass: Record<NonNullable<SectionCardProps['variant']>, string> = {
-  elevated: 'ui-section-card',
-  bordered: 'ui-section-card-bordered',
-  muted: 'ui-section-card-muted',
-};
+import {InfoBanner} from './InfoBanner';
 
+/**
+ * Thin adapter over the DS SectionCard.
+ *
+ * Variant mapping:
+ * - elevated -> DS elevated card (shadow, no border) — the old ui-section-card.
+ * - bordered -> default DS card (bordered) — the old ui-section-card-bordered.
+ * - muted -> default DS card on a gray-50 background — the old
+ *   ui-section-card-muted.
+ *
+ * The old description prop (rendered under the title) is composed into
+ * children as DS hint text; the mb-8 card spacing is preserved.
+ */
 export const SectionCard = ({
   title,
   description,
   variant = 'elevated',
   children,
 }: SectionCardProps) => (
-  <View className={clsx('mb-8', variantClass[variant])}>
-    <Text className="ui-section-card-title mb-1">{title}</Text>
+  <DSSectionCard
+    title={title}
+    elevated={variant === 'elevated'}
+    backgroundColor={
+      variant === 'muted' ? tokens.colors.gray.gray1 : undefined
+    }
+    marginBottom={tokens.spacing[8]}
+  >
     {description ? (
-      <Text className="text-muted mb-3 text-sm">{description}</Text>
+      <DSText
+        variant="hint"
+        marginBottom={tokens.spacing[3]}
+      >
+        {description}
+      </DSText>
     ) : null}
     {children}
-  </View>
+  </DSSectionCard>
 );
 
 if (__DEV__) {
   SectionCard.demo = () => (
-    <SectionCard title="Preferences">
-      <Text className="text-sm text-gray-700">Card content goes here.</Text>
+    <SectionCard
+      title="Preferences"
+      description="Card description renders below the title."
+    >
+      <InfoBanner>Card content goes here.</InfoBanner>
     </SectionCard>
   );
 }

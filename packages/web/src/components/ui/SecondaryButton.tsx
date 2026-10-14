@@ -1,18 +1,18 @@
 import type {SecondaryButtonProps} from '@eciperay/client';
+import {Button as DSButton} from '@spudly/ui';
 
 export const SecondaryButton = ({
   label,
   onPress,
   disabled = false,
 }: SecondaryButtonProps) => (
-  <button
-    type="button"
-    className="ui-secondary-button inline-full"
+  <DSButton
+    variant="secondary"
     disabled={disabled}
-    onClick={onPress}
+    onPress={onPress}
   >
-    <span className="ui-secondary-button-text">{label}</span>
-  </button>
+    {label}
+  </DSButton>
 );
 
 if (import.meta.env.DEV) {

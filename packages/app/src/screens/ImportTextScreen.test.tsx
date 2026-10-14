@@ -20,11 +20,23 @@ const stackProps = makeStackProps<AddStackParamList, 'ImportText'>(
 
 describe('ImportTextScreen', () => {
   test('does not import when text is empty', async () => {
-    const {getByText} = renderWithProviders(
+    const {findByText} = renderWithProviders(
       <ImportTextScreen {...stackProps} />,
     );
-    fireEvent.press(getByText('Import'));
-    expect(mockImportText).not.toHaveBeenCalled();
+    // Button should be disabled when text is empty
+    // Find the Import text, then traverse up to the button with accessibilityState
+    const importText = await findByText('Import');
+    let importButton = importText.parent;
+    // Traverse up until we find the element with accessibilityState
+    while (importButton && !importButton.props.accessibilityState) {
+      importButton = importButton.parent;
+    }
+    expect(importButton).toBeTruthy();
+    // Assert the disabled accessibility state is exposed
+    // (per Copilot review: directly assert disabled accessibility state)
+    expect(importButton?.props.accessibilityState).toMatchObject({
+      disabled: true,
+    });
   });
 
   test('imports text and navigates to review', async () => {

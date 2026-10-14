@@ -1,12 +1,14 @@
-import {fireEvent, render, screen} from '@testing-library/react-native';
+import {fireEvent, screen} from '@testing-library/react-native';
 import React from 'react';
+
+import {renderWithProviders} from '../../__tests__/testUtils';
 
 import {RecipeStatusPicker} from './RecipeStatusPicker';
 
 describe('RecipeStatusPicker', () => {
   test('changes status when a chip is pressed', () => {
     const onChange = jest.fn();
-    render(
+    renderWithProviders(
       <RecipeStatusPicker
         value="idea"
         onChange={onChange}
@@ -17,7 +19,7 @@ describe('RecipeStatusPicker', () => {
   });
 
   test('renders selected and unselected chip styles', () => {
-    render(
+    renderWithProviders(
       <RecipeStatusPicker
         value="evolving"
         onChange={jest.fn()}
@@ -30,7 +32,7 @@ describe('RecipeStatusPicker', () => {
 
   test('does not call onChange when disabled', () => {
     const onChange = jest.fn();
-    render(
+    renderWithProviders(
       <RecipeStatusPicker
         value="idea"
         onChange={onChange}

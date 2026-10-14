@@ -1,36 +1,63 @@
 import type {PageTitleProps} from '@eciperay/client';
-import clsx from 'clsx';
-import {Text} from 'react-native';
+import {Text as DSText, tokens} from '@spudly/ui';
 
-const titleClass = (size: PageTitleProps['size']) => {
+type SizeStyle = {
+  variant: 'heading' | 'subheading';
+  fontSize?: number;
+  fontWeight?: typeof tokens.typography.fontWeight.bold;
+};
+
+const sizeStyle = (size: PageTitleProps['size']): SizeStyle => {
   if (size === 'auth') {
-    return 'ui-page-title-lg';
+    // Old ui-page-title-lg: text-3xl font-bold
+    return {variant: 'heading'};
   }
   if (size === 'section') {
-    return 'ui-section-title';
+    // Old ui-section-title: text-xl font-bold
+    return {
+      variant: 'subheading',
+      fontSize: tokens.typography.fontSize.xl,
+      fontWeight: tokens.typography.fontWeight.bold,
+    };
   }
-  return 'ui-page-title';
+  // Old ui-page-title: text-2xl font-bold
+  return {
+    variant: 'heading',
+    fontSize: tokens.typography.fontSize['2xl'],
+  };
 };
 
-const spacingClass = (spacing: PageTitleProps['spacing']) => {
+const spacingValue = (spacing: PageTitleProps['spacing']) => {
   if (spacing === 'auth') {
-    return 'mb-8';
+    return tokens.spacing[8];
   }
   if (spacing === 'section') {
-    return 'mb-4';
+    return tokens.spacing[4];
   }
-  return 'mb-6';
+  return tokens.spacing[6];
 };
 
+/**
+ * Thin adapter over the DS Text primitive. Keeps the eciperay
+ * size/spacing prop API while rendering token-driven type.
+ */
 export const PageTitle = ({
   children,
   size = 'page',
   spacing = 'default',
-}: PageTitleProps) => (
-  <Text className={clsx(titleClass(size), spacingClass(spacing))}>
-    {children}
-  </Text>
-);
+}: PageTitleProps) => {
+  const {variant, fontSize, fontWeight} = sizeStyle(size);
+  return (
+    <DSText
+      variant={variant}
+      fontSize={fontSize}
+      fontWeight={fontWeight}
+      marginBottom={spacingValue(spacing)}
+    >
+      {children}
+    </DSText>
+  );
+};
 
 if (__DEV__) {
   PageTitle.demo = () => (

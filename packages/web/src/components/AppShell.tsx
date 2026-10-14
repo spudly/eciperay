@@ -24,11 +24,11 @@ const navLinkClass = ({isActive}: {isActive: boolean}) =>
 type AppShellProps = {children?: ReactNode};
 
 export const AppShell = ({children}: AppShellProps) => (
-  <div className="flex min-h-screen flex-col">
-    <header className="border-b border-gray-200 bg-white">
+  <div className="flex flex-col min-block-screen">
+    <header className="border-be border-gray-200 bg-white">
       <div
         className="
-          mx-auto flex max-w-5xl items-center justify-between px-4 py-3
+          mx-auto flex items-center justify-between px-4 py-3 max-inline-5xl
         "
       >
         <NavLink
@@ -38,7 +38,7 @@ export const AppShell = ({children}: AppShellProps) => (
           <img
             src="/logo-horizontal.svg"
             alt="Eciperay"
-            className="h-12"
+            className="block-12"
           />
         </NavLink>
         <nav className="flex gap-1">
@@ -59,7 +59,9 @@ export const AppShell = ({children}: AppShellProps) => (
         </nav>
       </div>
     </header>
-    <main className="mx-auto w-full max-w-5xl flex-1 p-4">
+    <main className="
+      mx-auto flex flex-1 flex-col p-4 inline-full max-inline-5xl
+    ">
       {children ?? <Outlet />}
     </main>
   </div>

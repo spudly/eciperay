@@ -66,7 +66,7 @@ export const OverviewTab = ({
     <View className="p-4">
       {recipe.imageUrl ? (
         <View
-          className="mb-4 w-full overflow-hidden rounded-xl bg-gray-50"
+          className="mbe-4 overflow-hidden rounded-xl bg-gray-50 inline-full"
           style={recipeImagePreviewStyles.frame}
         >
           <Image
@@ -76,14 +76,14 @@ export const OverviewTab = ({
           />
         </View>
       ) : null}
-      <Text className="mb-2 text-2xl font-bold text-gray-900">
+      <Text className="mbe-2 text-2xl font-bold text-gray-900">
         {recipe.title}
       </Text>
-      <View className="mb-4 self-start">
+      <View className="mbe-4 self-start">
         <RecipeStatusBadge status={recipe.status} />
       </View>
       {recipe.description ? (
-        <Text className="mb-4 text-gray-600">{recipe.description}</Text>
+        <Text className="mbe-4 text-gray-600">{recipe.description}</Text>
       ) : null}
       <StatBadgeRow>
         <StatBadge
@@ -103,21 +103,27 @@ export const OverviewTab = ({
           />
         ) : null}
       </StatBadgeRow>
-      <View className="mb-4 flex-row flex-wrap gap-3">
+      <View className="mbe-4 flex-row flex-wrap gap-3">
         <TouchableOpacity
-          className="bg-primary min-w-[40%] flex-1 items-center rounded-xl py-3"
+          className="
+            bg-primary flex-1 items-center rounded-xl py-3 min-inline-[40%]
+          "
           onPress={onStartCooking}
         >
           <Text className="font-semibold text-white">Start Cooking</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          className="w-12 items-center justify-center rounded-xl bg-gray-100"
+          className="
+            items-center justify-center rounded-xl bg-gray-100 inline-12
+          "
           onPress={() => void printRecipe(recipe)}
         >
           <Text className="text-gray-700">🖨</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          className="w-12 items-center justify-center rounded-xl bg-gray-100"
+          className="
+            items-center justify-center rounded-xl bg-gray-100 inline-12
+          "
           onPress={() => void shareRecipe(recipe)}
         >
           <Text className="text-gray-700">↗</Text>
@@ -152,7 +158,7 @@ export const OverviewTab = ({
       {actionMessage ? (
         <Text
           accessibilityRole="text"
-          className="mb-4 text-center text-sm text-gray-600"
+          className="mbe-4 text-center text-sm text-gray-600"
         >
           {actionMessage}
         </Text>

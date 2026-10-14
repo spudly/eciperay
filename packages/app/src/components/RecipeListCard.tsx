@@ -61,7 +61,7 @@ export const RecipeListCard = ({recipe, onPress, onDelete}: Props) => {
         }
       />
       {showForm ? (
-        <View className="mb-3">
+        <View className="mbe-3">
           <CookLogForm
             variant="light"
             secondaryLabel="Cancel"

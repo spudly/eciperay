@@ -49,7 +49,7 @@ export const CookHistoryTab = ({recipeId, versionId}: Props) => {
   return (
     <View className="p-4">
       {showForm ? (
-        <View className="mb-4">
+        <View className="mbe-4">
           <CookLogForm
             variant="light"
             secondaryLabel="Cancel"
@@ -64,7 +64,7 @@ export const CookHistoryTab = ({recipeId, versionId}: Props) => {
         </View>
       ) : (
         <TouchableOpacity
-          className="bg-primary mb-4 self-start rounded-lg px-4 py-2"
+          className="bg-primary mbe-4 self-start rounded-lg px-4 py-2"
           onPress={() => {
             setShowForm(true);
           }}
@@ -81,9 +81,9 @@ export const CookHistoryTab = ({recipeId, versionId}: Props) => {
         cookLogs.map(log => (
           <View
             key={log.id}
-            className="mb-4 rounded-lg border border-gray-100 bg-gray-50 p-4"
+            className="mbe-4 rounded-lg border border-gray-100 bg-gray-50 p-4"
           >
-            <View className="mb-1 flex-row items-center justify-between gap-2">
+            <View className="mbe-1 flex-row items-center justify-between gap-2">
               <Text className="text-sm font-medium text-gray-900">
                 {new Date(log.cookedAt).toLocaleDateString(undefined, {
                   year: 'numeric',

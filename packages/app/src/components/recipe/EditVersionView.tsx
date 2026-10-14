@@ -43,7 +43,7 @@ export const EditVersionView = ({
         </InfoBanner>
       ) : null}
       {changeSummary ? (
-        <Text className="text-muted mb-6 text-sm">{changeSummary}</Text>
+        <Text className="text-muted mbe-6 text-sm">{changeSummary}</Text>
       ) : null}
       {children}
     </ScreenScroll>

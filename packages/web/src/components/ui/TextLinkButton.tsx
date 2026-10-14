@@ -1,5 +1,5 @@
 import type {TextLinkButtonProps} from '@eciperay/client';
-import clsx from 'clsx';
+import {Button as DSButton, Text as DSText, tokens} from '@spudly/ui';
 import {Link} from 'react-router-dom';
 
 type WebTextLinkButtonProps = TextLinkButtonProps & {to?: string};
@@ -10,34 +10,36 @@ export const TextLinkButton = ({
   variant = 'primary',
   to,
 }: WebTextLinkButtonProps) => {
-  const className = clsx(
-    'block text-center',
-    variant === 'primary'
-      ? 'text-primary mbs-4 text-base'
-      : 'text-muted mbs-2 text-sm',
-  );
-
   if (to) {
     return (
       <Link
         to={to}
-        className={className}
+        style={{display: 'block', textAlign: 'center', textDecoration: 'none'}}
       >
-        {label}
+        <DSText
+          style={{
+            color:
+              variant === 'primary'
+                ? tokens.colors.primary.primary7
+                : tokens.colors.gray.gray7,
+          }}
+        >
+          {label}
+        </DSText>
       </Link>
     );
   }
 
   return (
-    <button
-      type="button"
-      className={className}
-      onClick={() => {
-        onPress?.();
-      }}
+    <DSButton
+      variant="ghost"
+      onPress={onPress}
+      color={
+        variant === 'primary' ? undefined : tokens.colors.gray.gray7
+      }
     >
       {label}
-    </button>
+    </DSButton>
   );
 };
 

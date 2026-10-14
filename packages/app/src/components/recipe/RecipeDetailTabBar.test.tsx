@@ -1,17 +1,23 @@
+import {tamaguiConfig} from '@spudly/ui';
 import React from 'react';
 import {fireEvent, render} from '@testing-library/react-native';
-import {ScrollView} from 'react-native';
+import {TamaguiProvider} from 'tamagui';
 
 import {RecipeDetailTabBar} from './RecipeDetailTabBar';
 
+const renderTabBar = (
+  activeTab: 'overview' | 'ingredients',
+  onSelect: (tab: string) => void = jest.fn(),
+) =>
+  render(
+    <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
+      <RecipeDetailTabBar activeTab={activeTab} onSelect={onSelect} />
+    </TamaguiProvider>,
+  );
+
 describe('RecipeDetailTabBar', () => {
   test('renders all recipe detail tabs', () => {
-    const {getByText} = render(
-      <RecipeDetailTabBar
-        activeTab="overview"
-        onSelect={jest.fn()}
-      />,
-    );
+    const {getByText} = renderTabBar('overview');
     expect(getByText('Overview')).toBeTruthy();
     expect(getByText('Ingredients')).toBeTruthy();
     expect(getByText('Instructions')).toBeTruthy();
@@ -21,23 +27,19 @@ describe('RecipeDetailTabBar', () => {
 
   test('calls onSelect when a tab is pressed', () => {
     const onSelect = jest.fn();
-    const {getByText} = render(
-      <RecipeDetailTabBar
-        activeTab="overview"
-        onSelect={onSelect}
-      />,
-    );
+    const {getByText} = renderTabBar('overview', onSelect);
     fireEvent.press(getByText('Ingredients'));
     expect(onSelect).toHaveBeenCalledWith('ingredients');
   });
 
-  test('uses a horizontal scroll view so tabs are not cramped', () => {
-    const {UNSAFE_getByType} = render(
-      <RecipeDetailTabBar
-        activeTab="overview"
-        onSelect={jest.fn()}
-      />,
-    );
-    expect(UNSAFE_getByType(ScrollView).props.horizontal).toBe(true);
+  test('visually distinguishes the active tab', () => {
+    const {getByText} = renderTabBar('ingredients');
+    // The design-system Tabs bolds the active tab's label.
+    expect(getByText('Ingredients').props.style).toMatchObject({
+      fontWeight: 600,
+    });
+    expect(getByText('Overview').props.style).toMatchObject({
+      fontWeight: 400,
+    });
   });
 });

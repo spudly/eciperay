@@ -53,7 +53,7 @@ describe('CookHistoryTab', () => {
         />,
       );
     fireEvent.press(await findByText('Log a cook'));
-    fireEvent.press(getByLabelText('5 stars'));
+    fireEvent.press(getByLabelText('Rate 5 out of 5 stars'));
     fireEvent.changeText(
       getByPlaceholderText('Notes from this cook (optional)'),
       'Quick weeknight cook',

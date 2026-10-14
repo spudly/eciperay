@@ -1,19 +1,18 @@
 import type {MultilineFieldProps} from '@eciperay/client';
-import {TextInput} from 'react-native';
+import {MultilineField as DsMultilineField} from '@spudly/ui';
 import {useState} from 'react';
 
 export const MultilineField = ({
   value,
   onChange,
   placeholder,
+  rows,
 }: MultilineFieldProps) => (
-  <TextInput
-    className="ui-multiline-field mb-4"
-    multiline
+  <DsMultilineField
+    value={value}
     onChangeText={onChange}
     placeholder={placeholder}
-    textAlignVertical="top"
-    value={value}
+    numberOfLines={rows}
   />
 );
 

@@ -1,6 +1,12 @@
 import type {NumberStepperProps} from '@eciperay/client';
+import {NumberStepper as DSNumberStepper} from '@spudly/ui';
 import {useState} from 'react';
 
+/**
+ * Adapter over the design-system NumberStepper. The DS component has no
+ * `disabled` prop; when disabled, min and max are pinned to the current value
+ * so both step buttons render disabled.
+ */
 export const NumberStepper = ({
   label,
   value,
@@ -8,36 +14,13 @@ export const NumberStepper = ({
   onChange,
   disabled = false,
 }: NumberStepperProps) => (
-  <div className="ui-number-stepper mb-3 flex">
-    <span className="text-sm font-medium text-gray-700">{label}:</span>
-    <button
-      type="button"
-      className="
-        ui-number-stepper-button flex
-        disabled:opacity-50
-      "
-      disabled={disabled || value <= min}
-      onClick={() => {
-        onChange(Math.max(min, value - 1));
-      }}
-    >
-      −
-    </button>
-    <span className="w-6 text-center text-base font-semibold">{value}</span>
-    <button
-      type="button"
-      className="
-        ui-number-stepper-button flex
-        disabled:opacity-50
-      "
-      disabled={disabled}
-      onClick={() => {
-        onChange(value + 1);
-      }}
-    >
-      +
-    </button>
-  </div>
+  <DSNumberStepper
+    label={label}
+    value={value}
+    onChange={disabled ? () => void 0 : onChange}
+    min={disabled ? value : min}
+    max={disabled ? value : undefined}
+  />
 );
 
 if (import.meta.env.DEV) {

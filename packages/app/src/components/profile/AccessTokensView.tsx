@@ -18,17 +18,17 @@ const CreatedSecretPanel = ({
   secret: string;
   onDismissSecret: () => void;
 }) => (
-  <View className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-4">
-    <Text className="mb-2 text-sm font-semibold text-amber-900">
+  <View className="mbe-4 rounded-lg border border-amber-300 bg-amber-50 p-4">
+    <Text className="mbe-2 text-sm font-semibold text-amber-900">
       Copy your new token now — you won&apos;t see it again.
     </Text>
     <Text
       selectable
-      className="mb-1 rounded bg-white p-3 font-mono text-sm text-slate-900"
+      className="mbe-1 rounded-sm bg-white p-3 font-mono text-sm text-slate-900"
     >
       {secret}
     </Text>
-    <Text className="mb-3 text-xs text-amber-800">
+    <Text className="mbe-3 text-xs text-amber-800">
       Long-press the token to copy it.
     </Text>
     <View className="flex-row gap-2">
@@ -65,14 +65,14 @@ export const AccessTokensView = ({
         onDismissSecret={onDismissSecret}
       />
     ) : null}
-    <View className="mb-4">
+    <View className="mbe-4">
       <TextField
         label="Token name"
         value={tokenName}
         onChange={onTokenNameChange}
         placeholder="e.g. Claude Desktop"
       />
-      <View className="mt-3">
+      <View className="mbs-3">
         <PrimaryButton
           label="Create token"
           loading={isCreating}

@@ -21,7 +21,7 @@ export const RecipeEngagementPanel = ({
   viewerRating,
   viewerRatingIsStale,
 }: Props) => (
-  <View className="px-4 pb-4">
+  <View className="px-4 pbe-4">
     <RecipeRatingsSection
       recipeId={recipeId}
       communityRating={communityRating}

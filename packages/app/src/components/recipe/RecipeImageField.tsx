@@ -70,14 +70,14 @@ export const RecipeImageField = ({
 
   return (
     <View>
-      <View className="mb-1 flex-row items-center justify-between gap-2">
+      <View className="mbe-1 flex-row items-center justify-between gap-2">
         <Text className="text-sm font-medium text-gray-700">Recipe image</Text>
         {headerAction}
       </View>
       <View
         className="
-          mb-3 overflow-hidden rounded-lg border-2 border-dashed border-gray-300
-          bg-gray-50
+          mbe-3 overflow-hidden rounded-lg border-2 border-dashed
+          border-gray-300 bg-gray-50
         "
       >
         {imagePreview ? (
@@ -143,7 +143,7 @@ export const RecipeImageField = ({
         ) : null}
       </View>
       {imageError ? (
-        <Text className="mt-2 text-sm text-red-600">{imageError}</Text>
+        <Text className="mbs-2 text-sm text-red-600">{imageError}</Text>
       ) : null}
     </View>
   );

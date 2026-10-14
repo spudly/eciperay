@@ -20,7 +20,7 @@ export const ImportImageView = ({
         onPickCamera?.();
       }}
     />
-    <View className="mt-3">
+    <View className="mbs-3">
       <SecondaryButton
         label="Choose from Library"
         disabled={loading}
@@ -29,9 +29,9 @@ export const ImportImageView = ({
         }}
       />
     </View>
-    {loading ? <Text className="text-muted mt-4">Importing…</Text> : null}
+    {loading ? <Text className="text-muted mbs-4">Importing…</Text> : null}
     {error ? (
-      <View className="mt-4">
+      <View className="mbs-4">
         <ErrorText>{error}</ErrorText>
       </View>
     ) : null}

@@ -11,9 +11,7 @@ describe('SectionCard', () => {
       </SectionCard>,
     );
 
-    expect(
-      screen.getByRole('heading', {name: 'Preferences'}),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', {name: 'Preferences'})).toBeInTheDocument();
     expect(screen.getByText('Body')).toBeInTheDocument();
   });
 });

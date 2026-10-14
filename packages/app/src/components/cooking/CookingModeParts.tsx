@@ -65,8 +65,8 @@ const ScaledIngredientsList = ({
   scaleFactor: number;
   servings: number;
 }) => (
-  <View className="mb-6 max-h-40 rounded-xl bg-white/5 p-4">
-    <Text className="mb-2 text-sm font-medium text-white/80">
+  <View className="mbe-6 rounded-xl bg-white/5 p-4 max-block-40">
+    <Text className="mbe-2 text-sm font-medium text-white/80">
       Ingredients
       {scaleFactor === 1
         ? ` (${servings} servings)`
@@ -121,7 +121,7 @@ export const StepDisplay = ({
   servings,
 }: StepDisplayProps) => (
   <>
-    <Text className="mb-4 text-sm uppercase tracking-widest text-white/60">
+    <Text className="mbe-4 text-sm tracking-widest text-white/60 uppercase">
       Step {current ? current.stepNumber : 1} of {steps.length}
     </Text>
     {recipe ? (
@@ -131,7 +131,7 @@ export const StepDisplay = ({
         servings={servings}
       />
     ) : null}
-    <Text className="mb-8 text-2xl leading-relaxed text-white">
+    <Text className="mbe-8 text-2xl/relaxed text-white">
       {current ? current.body : ''}
     </Text>
     <ProgressDots

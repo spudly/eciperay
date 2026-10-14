@@ -1,4 +1,6 @@
-import {render, screen} from '@testing-library/react-native';
+import {screen} from '@testing-library/react-native';
+
+import {renderWithProviders} from '../../__tests__/testUtils';
 
 import {ComponentShowcaseView} from './ComponentShowcaseView';
 
@@ -13,7 +15,7 @@ jest.mock('./ShowcaseDemo', () => {
 
 describe('ComponentShowcaseView', () => {
   test('renders the showcase picker and filter field', () => {
-    render(<ComponentShowcaseView />);
+    renderWithProviders(<ComponentShowcaseView />);
 
     expect(screen.getByText('Component Showcase')).toBeTruthy();
     expect(screen.getByPlaceholderText('Filter components')).toBeTruthy();

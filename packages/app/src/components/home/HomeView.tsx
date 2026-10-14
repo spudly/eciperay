@@ -29,15 +29,15 @@ export const HomeView = ({
   onRecipeDelete,
 }: HomeViewProps) => (
   <ScreenScroll>
-    <View className="pt-2">
+    <View className="pbs-2">
       <PageTitle
         size="auth"
         spacing="auth"
       >
         {HOME_TITLE}
       </PageTitle>
-      <Text className="text-muted mb-6 text-center">{HOME_SUBTITLE}</Text>
-      <View className="mb-8 gap-3">
+      <Text className="text-muted mbe-6 text-center">{HOME_SUBTITLE}</Text>
+      <View className="mbe-8 gap-3">
         <PrimaryButton
           label={HOME_BROWSE_LABEL}
           onPress={onBrowsePress}
@@ -59,11 +59,11 @@ export const HomeView = ({
       </PageTitle>
     </View>
 
-    <View className="pb-8">
+    <View className="pbe-8">
       {isLoading ? (
         <InlineLoadingIndicator
           loading
-          className="mt-8"
+          className="mbs-8"
         />
       ) : recipes.length === 0 ? (
         <EmptyMessage spacing="list">{HOME_EMPTY_MESSAGE}</EmptyMessage>

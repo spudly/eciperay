@@ -1,9 +1,11 @@
 import type {ScreenScrollProps} from '@eciperay/client';
+import {ScreenContainer as DSScreenContainer} from '@spudly/ui';
 
 import {InfoBanner} from './InfoBanner.js';
 
 export const ScreenScroll = ({children}: ScreenScrollProps) => (
-  <div className="ui-screen-shell">{children}</div>
+  // On web the body already scrolls; the Tamagui ScrollView wrapper is redundant.
+  <DSScreenContainer scrollable={false}>{children}</DSScreenContainer>
 );
 
 if (import.meta.env.DEV) {

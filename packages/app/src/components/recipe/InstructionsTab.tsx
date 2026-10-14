@@ -16,14 +16,14 @@ const StepCard = ({
   onPress: () => void;
 }) => (
   <TouchableOpacity
-    className={clsx('mb-3 rounded-xl border p-4', {
+    className={clsx('mbe-3 rounded-xl border p-4', {
       'border-primary bg-primary/5': isActive,
       'border-gray-100 bg-white': !isActive,
     })}
     onPress={onPress}
   >
     <Text
-      className={clsx('mb-1 text-xs font-semibold', {
+      className={clsx('mbe-1 text-xs font-semibold', {
         'text-primary': isActive,
         'text-muted': !isActive,
       })}

@@ -75,8 +75,8 @@ export const FeedbackForm = ({route, onSubmitted}: FeedbackFormProps) => {
         </Text>
         <TextInput
           className="
-            min-h-32 rounded-lg border border-gray-300 bg-white px-3 py-2
-            text-base text-gray-900
+            rounded-lg border border-gray-300 bg-white px-3 py-2 text-base
+            text-gray-900 min-block-32
           "
           multiline
           textAlignVertical="top"
@@ -96,6 +96,7 @@ export const FeedbackForm = ({route, onSubmitted}: FeedbackFormProps) => {
           bg-primary items-center rounded-lg py-3
           disabled:opacity-50
         "
+        accessibilityRole="button"
         disabled={submitting || validateUserFeedbackMessage(message) !== null}
         onPress={() => {
           void handleSubmit();

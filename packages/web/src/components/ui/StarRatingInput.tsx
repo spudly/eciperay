@@ -20,7 +20,7 @@ export const StarRatingInput = ({
     });
 
   return (
-    <div className="ui-star-rating flex">
+    <div className="flex gap-2">
       {stars.map(star => {
         if (readOnly || !onChange) {
           return (

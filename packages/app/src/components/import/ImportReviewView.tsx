@@ -29,13 +29,13 @@ export const ImportReviewView = ({
     {imageUrl ? (
       <Image
         source={{uri: imageUrl}}
-        className="mb-4 h-48 w-full rounded-xl"
+        className="mbe-4 rounded-xl block-48 inline-full"
         resizeMode="cover"
       />
     ) : null}
     <View className="ui-import-review-preview">{preview}</View>
     {error ? (
-      <View className="mb-4">
+      <View className="mbe-4">
         <ErrorText>{error}</ErrorText>
       </View>
     ) : null}

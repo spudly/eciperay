@@ -45,16 +45,16 @@ export const RecipeRatingsSection = ({
   });
 
   return (
-    <View className="mb-4 rounded-xl bg-gray-50 p-4">
+    <View className="mbe-4 rounded-xl bg-gray-50 p-4">
       <Text
         className="
-          mb-1 text-xs font-medium uppercase tracking-wide text-gray-500
+          mbe-1 text-xs font-medium tracking-wide text-gray-500 uppercase
         "
       >
         Community rating
       </Text>
       {communityRating ? (
-        <View className="mb-3 flex-row items-center gap-2">
+        <View className="mbe-3 flex-row items-center gap-2">
           <Text className="text-yellow-400">
             {'★'.repeat(Math.round(communityRating.average))}
           </Text>
@@ -69,7 +69,7 @@ export const RecipeRatingsSection = ({
           ) : null}
         </View>
       ) : (
-        <Text className="mb-3 text-sm text-gray-600">
+        <Text className="mbe-3 text-sm text-gray-600">
           No community ratings yet
         </Text>
       )}
@@ -77,7 +77,7 @@ export const RecipeRatingsSection = ({
         <>
           <Text
             className="
-              mb-1 text-xs font-medium uppercase tracking-wide text-gray-500
+              mbe-1 text-xs font-medium tracking-wide text-gray-500 uppercase
             "
           >
             Your rating
