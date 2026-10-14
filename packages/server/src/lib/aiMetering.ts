@@ -60,11 +60,10 @@ export const consumeAiCall = async (
        left join locked on true`,
     [userId, limit],
   );
-  const row = result.rows[0];
-  /* c8 ignore next 3 -- CTE always returns one row */
-  const used = row?.calls ?? 0;
-  const periodStart = row?.period_start ?? '';
-  if (row?.allowed) {
+  const row = result.rows[0]!;
+  const used = row.calls;
+  const periodStart = row.period_start;
+  if (row.allowed) {
     return {ok: true, periodStart};
   }
   return {ok: false, used, limit};
@@ -114,8 +113,7 @@ export const checkRecipeCap = async (
     'select count(*) as count from recipes where user_id = $1',
     [userId],
   );
-  /* c8 ignore next -- count(*) always returns one row */
-  const used = Number.parseInt(result.rows[0]?.count ?? '0', 10);
+  const used = Number.parseInt(result.rows[0]!.count, 10);
   return used < limit ? {ok: true} : {ok: false, used, limit};
 };
 
