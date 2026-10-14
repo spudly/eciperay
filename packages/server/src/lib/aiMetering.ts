@@ -152,6 +152,7 @@ export const withRecipeCap = async <T>(
   // and creation directly, mirroring runTransactional. In production, hold a
   // per-user advisory lock across the check+create so concurrent requests
   // can't race past the limit.
+  /* c8 ignore next 9 -- production-only: requires a real DB transaction */
   if (queryFn === defaultQuery) {
     return withTransaction(async q => {
       await q('select pg_advisory_xact_lock(hashtext($1))', [userId]);
