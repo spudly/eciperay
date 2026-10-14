@@ -166,5 +166,5 @@ export const withRecipeCap = async <T>(
     }
     return {ok: true, value: await create(q)};
   });
-  /* c8 ignore stop */
+  /* c8 ignore stop -- end production-only block */
 };
