@@ -7,6 +7,9 @@ on:
     branches: [master]
   workflow_dispatch:
 
+env:
+  NODE_AUTH_TOKEN: ${{ secrets.PACKAGES_READ_TOKEN }}
+
 concurrency:
   group: release-production
   cancel-in-progress: false
