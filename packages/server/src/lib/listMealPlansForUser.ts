@@ -17,7 +17,6 @@ export const listMealPlansForUser = async (
     const detail = await loadMealPlanDetail(row.id, userId, queryFn);
     if (detail) {
       const {entries: _entries, ...summary} = detail;
-      void _entries;
       plans.push(summary);
     }
   }

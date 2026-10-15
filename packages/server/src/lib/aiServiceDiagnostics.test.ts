@@ -4,9 +4,12 @@ import {serializeErrorForLog} from './aiServiceDiagnostics.js';
 
 describe('serializeErrorForLog', () => {
   test('serializes Anthropic API errors', () => {
-    const error = new Anthropic.APIError(429, undefined, 'Rate limited', {
-      'request-id': 'req_123',
-    });
+    const error = new Anthropic.APIError(
+      429,
+      undefined,
+      'Rate limited',
+      new Headers({'request-id': 'req_123'}),
+    );
     expect(serializeErrorForLog(error)).toEqual({
       errorType: 'Anthropic.APIError',
       status: 429,

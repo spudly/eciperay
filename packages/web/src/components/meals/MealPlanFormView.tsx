@@ -57,7 +57,7 @@ export const MealPlanFormView = ({
         onChange={onEndsOnChange}
         placeholder="YYYY-MM-DD"
       />
-      <p className="mb-2 text-sm font-medium text-gray-700">Meals & recipes</p>
+      <p className="mbe-2 text-sm font-medium text-gray-700">Meals & recipes</p>
       <CheckboxSelectList
         items={entryOptions.map(entry => ({
           id: entry.kind === 'meal' ? `meal:${entry.id}` : `recipe:${entry.id}`,

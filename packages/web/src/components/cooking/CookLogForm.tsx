@@ -25,20 +25,20 @@ export const CookLogForm = ({
 
   return (
     <div
-      className={clsx('mx-auto w-full max-w-md rounded-2xl p-6', {
+      className={clsx('mx-auto rounded-2xl p-6 inline-full max-inline-md', {
         'bg-white/10': !isLight,
         'border border-gray-200 bg-gray-50': isLight,
       })}
     >
       <h2
-        className={clsx('mb-4 text-xl font-semibold', {
+        className={clsx('mbe-4 text-xl font-semibold', {
           'text-white': !isLight,
           'text-gray-900': isLight,
         })}
       >
         How did it go?
       </h2>
-      <div className="mb-4 flex justify-center">
+      <div className="mbe-4 flex justify-center">
         <StarRatingInput
           value={rating}
           tone={isLight ? 'default' : 'dark'}
@@ -49,7 +49,7 @@ export const CookLogForm = ({
       </div>
       <textarea
         className={clsx(
-          'mb-4 w-full rounded-xl px-4 py-3 text-base',
+          'mbe-4 rounded-xl px-4 py-3 text-base inline-full',
           isLight
             ? `
               border border-gray-300 bg-white text-gray-900

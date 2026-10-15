@@ -20,15 +20,15 @@ export const MealPlanDetailView = ({
   <ScreenScroll>
     <PageTitle spacing="section">{plan.title}</PageTitle>
     {plan.notes ? (
-      <p className="text-muted mb-4 text-sm">{plan.notes}</p>
+      <p className="text-muted mbe-4 text-sm">{plan.notes}</p>
     ) : null}
     {plan.startsOn && plan.endsOn ? (
-      <p className="text-muted mb-4 text-sm">
+      <p className="text-muted mbe-4 text-sm">
         {plan.startsOn} – {plan.endsOn}
       </p>
     ) : null}
     {formatSimpleNutrition(plan.nutrition) ? (
-      <p className="mb-4 text-sm text-gray-800">
+      <p className="mbe-4 text-sm text-gray-800">
         {formatSimpleNutrition(plan.nutrition)}
       </p>
     ) : null}
@@ -37,7 +37,7 @@ export const MealPlanDetailView = ({
       nutrition={plan.nutrition}
       onSetGoalsPress={onSetGoalsPress}
     />
-    <div className="mb-6 flex flex-wrap gap-3">
+    <div className="mbe-6 flex flex-wrap gap-3">
       <PrimaryButton
         label="Shopping list"
         onPress={onShoppingList}
@@ -54,7 +54,7 @@ export const MealPlanDetailView = ({
             {entry.type === 'meal' ? (
               <button
                 type="button"
-                className="w-full py-3 text-start"
+                className="py-3 text-start inline-full"
                 onClick={() => {
                   onMealPress(entry.mealId);
                 }}
@@ -72,7 +72,7 @@ export const MealPlanDetailView = ({
             ) : (
               <button
                 type="button"
-                className="w-full py-3 text-start"
+                className="py-3 text-start inline-full"
                 disabled={entry.accessLost}
                 onClick={() => {
                   onRecipePress(entry.recipeId);

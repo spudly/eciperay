@@ -62,7 +62,7 @@ export const OverviewActions = ({recipe, versions, onActionMessage}: Props) => {
   return (
     <>
       {isEditable ? (
-        <div className="mb-4 flex flex-wrap gap-2">
+        <div className="mbe-4 flex flex-wrap gap-2">
           <button
             type="button"
             className="
@@ -116,14 +116,14 @@ export const OverviewActions = ({recipe, versions, onActionMessage}: Props) => {
         </div>
       ) : null}
       {candidates.length > 0 ? (
-        <div className="mb-4 space-y-2">
+        <div className="mbe-4 space-y-2">
           <p className="text-sm font-medium text-gray-900">Ready to activate</p>
           {candidates.map(version => (
             <div
               key={version.id}
               className="rounded-lg border border-indigo-200 bg-indigo-50 p-3"
             >
-              <p className="mb-2 text-sm text-gray-800">
+              <p className="mbe-2 text-sm text-gray-800">
                 v{version.versionNumber}
                 {version.changeSummary
                   ? `: ${truncateChangeSummary(version.changeSummary)}`

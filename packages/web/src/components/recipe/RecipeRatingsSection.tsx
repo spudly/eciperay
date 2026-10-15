@@ -57,9 +57,9 @@ export const RecipeRatingsSection = ({
   });
 
   return (
-    <div className="mb-4 rounded-xl bg-gray-50 p-4">
-      <div className="mb-3">
-        <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+    <div className="mbe-4 rounded-xl bg-gray-50 p-4">
+      <div className="mbe-3">
+        <p className="text-xs font-medium tracking-wide text-gray-500 uppercase">
           Community rating
         </p>
         {communityRating ? (
@@ -88,7 +88,7 @@ export const RecipeRatingsSection = ({
         <div>
           <p
             className="
-              text-xs font-medium uppercase tracking-wide text-gray-500
+              text-xs font-medium tracking-wide text-gray-500 uppercase
             "
           >
             Your rating

@@ -40,7 +40,7 @@ export const EditVersionView = ({
         </InfoBanner>
       ) : null}
       {changeSummary ? (
-        <p className="text-muted mb-6 text-sm">{changeSummary}</p>
+        <p className="text-muted mbe-6 text-sm">{changeSummary}</p>
       ) : null}
       {children}
     </div>

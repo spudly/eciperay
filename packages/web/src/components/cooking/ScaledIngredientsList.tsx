@@ -11,8 +11,8 @@ export const ScaledIngredientsList = ({
   scaleFactor,
   servings,
 }: Props) => (
-  <div className="mb-6 max-h-40 overflow-y-auto rounded-xl bg-white/5 p-4">
-    <p className="mb-2 text-sm font-medium text-white/80">
+  <div className="mbe-6 overflow-y-auto rounded-xl bg-white/5 p-4 max-block-40">
+    <p className="mbe-2 text-sm font-medium text-white/80">
       Ingredients
       {scaleFactor === 1
         ? ` (${servings} servings)`

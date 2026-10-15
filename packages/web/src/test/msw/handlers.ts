@@ -113,7 +113,6 @@ export const handlers = [
   }),
   http.get(`${API}/api/public/recipes/:id`, ({params}) => {
     const {userId: _userId, ...publicRecipe} = recipe;
-    void _userId;
     return HttpResponse.json({
       recipe: {...publicRecipe, id: params['id'], visibility: 'public'},
       canonicalSlug: recipe.slug,
@@ -124,7 +123,6 @@ export const handlers = [
   }),
   http.get(`${API}/api/public/recipes/:id/:slug`, ({params}) => {
     const {userId: _userId, ...publicRecipe} = recipe;
-    void _userId;
     const slug = params['slug'] as string;
     const slugMismatch = slug !== recipe.slug;
     return HttpResponse.json({

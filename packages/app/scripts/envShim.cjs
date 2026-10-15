@@ -37,8 +37,11 @@ const isProductionAppEnv = () =>
 const loadAppEnvVars = monorepoRoot => {
   const devVars = isProductionAppEnv()
     ? {}
-    : (dotenv.config({path: path.join(monorepoRoot, '.env'), processEnv: false})
-        .parsed ?? {});
+    : (dotenv.config({
+        path: path.join(monorepoRoot, '.env'),
+        processEnv: {},
+        quiet: true,
+      }).parsed ?? {});
 
   /** @type {Record<AppEnvKey, string | undefined>} */
   const merged = {};

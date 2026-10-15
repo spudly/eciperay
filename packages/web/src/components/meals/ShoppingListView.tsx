@@ -30,7 +30,7 @@ export const ShoppingListView = ({
               <label className="flex cursor-pointer items-start gap-3 py-3">
                 <input
                   type="checkbox"
-                  className="mt-1 size-4 rounded border-gray-300"
+                  className="mbs-1 rounded-sm border-gray-300 block-4 inline-4"
                   checked={checked}
                   onChange={() => {
                     onToggleChecked(line.key);

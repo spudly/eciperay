@@ -10,7 +10,7 @@ export const InstructionsTab = ({recipe}: Props) => (
       .map(step => (
         <li
           key={step.id}
-          className="text-base leading-relaxed text-gray-900"
+          className="text-base/relaxed text-gray-900"
         >
           {step.body}
         </li>

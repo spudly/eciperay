@@ -41,7 +41,7 @@ export const RecipeCommentItem = ({
 
   return (
     <li className="rounded-lg bg-gray-50 p-3">
-      <div className="mb-1 flex items-center gap-2">
+      <div className="mbe-1 flex items-center gap-2">
         <span className="text-sm font-medium text-gray-900">
           {formatAuthorName(comment)}
         </span>
@@ -52,7 +52,8 @@ export const RecipeCommentItem = ({
       {isEditing ? (
         <textarea
           className="
-            mb-2 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
+            mbe-2 rounded-lg border border-gray-300 px-3 py-2 text-sm
+            inline-full
           "
           value={editDraft}
           onChange={event => {
@@ -60,12 +61,12 @@ export const RecipeCommentItem = ({
           }}
         />
       ) : (
-        <p className="whitespace-pre-wrap text-sm text-gray-700">
+        <p className="text-sm whitespace-pre-wrap text-gray-700">
           {comment.body}
         </p>
       )}
       {canModerate ? (
-        <div className="mt-2 flex gap-3 text-xs">
+        <div className="mbs-2 flex gap-3 text-xs">
           {isAuthor ? (
             isEditing ? (
               <>

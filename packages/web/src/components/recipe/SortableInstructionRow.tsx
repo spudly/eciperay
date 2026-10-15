@@ -35,11 +35,11 @@ export const SortableInstructionRow = ({
         transition,
         opacity: dragRowOpacity(isDragging),
       }}
-      className="mb-2 flex gap-2"
+      className="mbe-2 flex gap-2"
     >
-      <span className="text-muted pt-2 text-sm">{index + 1}.</span>
+      <span className="text-muted pbs-2 text-sm">{index + 1}.</span>
       <textarea
-        className="flex-1 rounded border border-gray-300 px-2 py-1 text-sm"
+        className="flex-1 rounded-sm border border-gray-300 px-2 py-1 text-sm"
         required
         rows={2}
         value={instruction.body}
@@ -52,7 +52,7 @@ export const SortableInstructionRow = ({
         type="button"
         aria-label={`Reorder step ${index + 1}`}
         className="
-          cursor-grab rounded border border-gray-300 px-2 py-1 text-xs
+          cursor-grab rounded-sm border border-gray-300 px-2 py-1 text-xs
           text-gray-700
           active:cursor-grabbing
         "

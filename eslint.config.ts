@@ -504,7 +504,18 @@ export default tseslint.config(
       '@typescript-eslint/no-unsafe-unary-minus': 'error',
       '@typescript-eslint/no-unused-expressions': 'error',
       '@typescript-eslint/no-unused-private-class-members': 'off', // no classes in this project
-      '@typescript-eslint/no-unused-vars': 'error',
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          // Underscore-prefixed names mark intentional discards. This replaces
+          // the old `void x;` statements, which @typescript-eslint's
+          // no-meaningless-void-operator now flags on non-call expressions.
+          argsIgnorePattern: '^_',
+          destructuredArrayIgnorePattern: '^_',
+          ignoreRestSiblings: true,
+          varsIgnorePattern: '^_',
+        },
+      ],
       '@typescript-eslint/no-use-before-define': 'off', // TypeScript hoisting is safe; the pattern is valid
       '@typescript-eslint/no-useless-constructor': 'error',
       '@typescript-eslint/no-useless-default-assignment': 'error',
@@ -654,7 +665,12 @@ export default tseslint.config(
         'error',
         {
           cases: {camelCase: true, pascalCase: true},
-          ignore: [/^react-native\.config\.(?:js|cjs)$/u],
+          ignore: [
+            /^react-native\.config\.(?:js|cjs)$/u,
+            // Jest-mandated directory names and the mcp-server package directory
+            // (unicorn >=66 also checks directory names against the cases).
+            /^(?:__tests__|__mocks__|mcp-server)$/u,
+          ],
         },
       ],
       'unicorn/import-index': 'off', // deprecated rule

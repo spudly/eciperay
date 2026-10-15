@@ -19,7 +19,7 @@ export const serializeErrorForLog = (
       errorType: 'Anthropic.APIError',
       status: typeof error.status === 'number' ? error.status : 0,
       message: error.message,
-      ...(error.request_id ? {requestId: error.request_id} : {}),
+      ...(error.requestID ? {requestId: error.requestID} : {}),
     };
   }
   if (error instanceof Error) {

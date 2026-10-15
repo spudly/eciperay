@@ -27,7 +27,7 @@ export const RecipeEngagementPanel = ({
   publicList = false,
   publicContext,
 }: Props) => (
-  <div className="px-4 pb-4">
+  <div className="px-4 pbe-4">
     <RecipeRatingsSection
       recipeId={recipeId}
       communityRating={communityRating}

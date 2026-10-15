@@ -16,7 +16,6 @@ describe('PublicRecipeOverview', () => {
       cookTimeMin: 20,
     });
     const {userId: _userId, ...publicRecipe} = recipe;
-    void _userId;
 
     await renderWithProviders(<PublicRecipeOverview recipe={publicRecipe} />, {
       withAuth: false,
@@ -44,7 +43,6 @@ describe('PublicRecipeOverview', () => {
       tags: [],
     });
     const {userId: _userId, ...publicRecipe} = recipe;
-    void _userId;
 
     await renderWithProviders(<PublicRecipeOverview recipe={publicRecipe} />, {
       withAuth: false,

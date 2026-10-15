@@ -100,7 +100,6 @@ describe('PublicRecipePage', () => {
         const {userId: _userId, ...publicRecipe} = makeRecipeDetail({
           visibility: 'public',
         });
-        void _userId;
         const slug = request.url.split('/').pop()?.split('?')[0] ?? '';
         return HttpResponse.json({
           recipe: publicRecipe,
@@ -207,7 +206,6 @@ describe('PublicRecipePage', () => {
         const {userId: _userId, ...publicRecipe} = makeRecipeDetail({
           visibility: 'public',
         });
-        void _userId;
         return HttpResponse.json({
           recipe: publicRecipe,
           canonicalSlug: 'test-recipe',
@@ -286,7 +284,6 @@ describe('PublicRecipePage', () => {
         const {userId: _userId, ...publicRecipe} = makeRecipeDetail({
           visibility: 'unlisted',
         });
-        void _userId;
         return HttpResponse.json({
           recipe: publicRecipe,
           canonicalSlug: 'test-recipe',

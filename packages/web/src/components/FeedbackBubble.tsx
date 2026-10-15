@@ -13,6 +13,11 @@ import {Icon} from './Icon.js';
 const canShowFeedbackBubble = () =>
   POSTHOG_KEY.length > 0 && readAnalyticsConsent() === 'accepted';
 
+// Extracted so prettier and the better-tailwindcss line-wrapping rule do not
+// fight over the attribute string (same pattern as LegalLinks' linkClasses).
+const bubbleContainerClasses =
+  'fixed inset-e-4 inset-be-20 z-50 flex flex-col items-end gap-3';
+
 export const FeedbackBubble = () => {
   const {enabled} = useFeedbackShortcutEnabled();
   const location = useLocation();
@@ -23,12 +28,12 @@ export const FeedbackBubble = () => {
   }
 
   return (
-    <div className="fixed bottom-20 right-4 z-50 flex flex-col items-end gap-3">
+    <div className={bubbleContainerClasses}>
       {open ? (
         <div
           className="
-            w-[min(100vw-2rem,24rem)] rounded-2xl border border-gray-200
-            bg-white p-4 shadow-lg
+            rounded-2xl border border-gray-200 bg-white p-4 shadow-lg
+            inline-[min(100vw-2rem,24rem)]
           "
           role="dialog"
           aria-label="Send feedback"
@@ -47,8 +52,8 @@ export const FeedbackBubble = () => {
       <button
         type="button"
         className="
-          bg-primary flex size-12 items-center justify-center rounded-full
-          text-white shadow-lg
+          bg-primary flex items-center justify-center rounded-full text-white
+          shadow-lg block-12 inline-12
         "
         aria-label="Send feedback"
         aria-expanded={open}

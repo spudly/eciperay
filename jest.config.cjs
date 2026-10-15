@@ -22,15 +22,19 @@ module.exports = {
   },
   preset: 'ts-jest/presets/default-esm',
   extensionsToTreatAsEsm: ['.ts'],
-  moduleNameMapper: {
-    '^(\\.{1,2}/.*)\\.js$': '$1',
-  },
+  moduleNameMapper: {'^(\\.{1,2}/.*)\\.js$': '$1'},
   transform: {
     '^.+\\.ts$': [
       'ts-jest',
       {
         useESM: true,
-        tsconfig: {module: 'NodeNext', moduleResolution: 'nodenext'},
+        tsconfig: {
+          module: 'NodeNext',
+          moduleResolution: 'nodenext',
+          // TypeScript 6 requires an explicit rootDir (TS5011) instead of
+          // inferring the common source directory.
+          rootDir: '.',
+        },
       },
     ],
   },

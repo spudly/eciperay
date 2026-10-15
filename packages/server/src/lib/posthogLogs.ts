@@ -35,12 +35,12 @@ export const initPostHogLogs = () => {
       'deployment.environment': environment,
     }),
     processors: [
-      new BatchLogRecordProcessor(
-        new OTLPLogExporter({
+      new BatchLogRecordProcessor({
+        exporter: new OTLPLogExporter({
           url: `${host}/i/v1/logs`,
           headers: {Authorization: `Bearer ${apiKey}`},
         }),
-      ),
+      }),
     ],
   });
   logs.setGlobalLoggerProvider(loggerProvider);

@@ -48,7 +48,7 @@ export const SortableIngredientList = ({
 
   return (
     <div>
-      <div className="mb-2 flex items-center justify-between">
+      <div className="mbe-2 flex items-center justify-between">
         <p className="text-sm font-medium text-gray-700">Ingredients</p>
         <button
           type="button"

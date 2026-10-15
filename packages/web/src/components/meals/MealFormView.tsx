@@ -42,7 +42,7 @@ export const MealFormView = ({
         placeholder="Notes (optional)"
         rows={4}
       />
-      <p className="mb-2 text-sm font-medium text-gray-700">Recipes</p>
+      <p className="mbe-2 text-sm font-medium text-gray-700">Recipes</p>
       <CheckboxSelectList
         items={recipeOptions.map(recipe => ({
           id: recipe.id,

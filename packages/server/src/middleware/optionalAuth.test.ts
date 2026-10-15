@@ -112,7 +112,6 @@ describe('optionalAuth', () => {
         res: express.Response,
         _next: express.NextFunction,
       ) => {
-        void _next;
         res.status(500).json({error: (err as Error).message});
       },
     );

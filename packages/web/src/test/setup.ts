@@ -94,9 +94,7 @@ afterEach(() => {
   const details = consoleErrors
     .map((args, index) => `  [${index + 1}] ${formatConsoleArgs(args)}`)
     .join('\n');
-  throw new Error(
-    `console.error was called during "${testName}":\n${details}`,
-  );
+  throw new Error(`console.error was called during "${testName}":\n${details}`);
 });
 
 URL.createObjectURL = vi.fn(() => 'blob:preview');
@@ -131,7 +129,7 @@ vi.mock('../lib/supabase.js', async importOriginal => {
 });
 
 beforeAll(() => {
-  server.listen({onUnhandledRequest: 'error'});
+  server.listen({onUnhandledFrame: 'error'});
 });
 
 afterEach(() => {

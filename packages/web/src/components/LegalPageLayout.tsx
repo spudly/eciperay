@@ -5,11 +5,11 @@ type LegalPageLayoutProps = {children: ReactNode; title: string};
 
 export const LegalPageLayout = ({children, title}: LegalPageLayoutProps) => {
   return (
-    <div className="min-block-screen bg-gray-50">
+    <div className="bg-gray-50 min-block-screen">
       <header className="border-be border-gray-200 bg-white">
         <div
           className="
-            max-inline-3xl mx-auto flex items-center justify-between px-6 py-4
+            mx-auto flex items-center justify-between px-6 py-4 max-inline-3xl
           "
         >
           <Link
@@ -26,9 +26,9 @@ export const LegalPageLayout = ({children, title}: LegalPageLayoutProps) => {
           </Link>
         </div>
       </header>
-      <main className="max-inline-3xl mx-auto px-6 py-10">
+      <main className="mx-auto px-6 py-10 max-inline-3xl">
         <h1 className="mbe-2 text-3xl font-bold text-gray-900">{title}</h1>
-        <div className="prose prose-gray max-inline-none text-gray-800">
+        <div className="prose prose-gray text-gray-800 max-inline-none">
           {children}
         </div>
       </main>

@@ -21,7 +21,6 @@ describe('recipeSeo', () => {
       imageUrl: 'https://cdn.example/pasta.jpg',
       visibility: 'public',
     });
-    void _userId;
     return publicRecipe;
   })();
 

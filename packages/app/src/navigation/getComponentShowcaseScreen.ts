@@ -6,7 +6,7 @@ export const getComponentShowcaseScreen = (): ComponentType | null => {
   }
 
   const {ComponentShowcaseScreen} =
-    // eslint-disable-next-line @typescript-eslint/no-require-imports, unicorn/prefer-module -- dev-only require
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- dev-only require
     require('../screens/ComponentShowcaseScreen') as {
       ComponentShowcaseScreen: ComponentType;
     };

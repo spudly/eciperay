@@ -73,8 +73,8 @@ export const RecipeVisibilityControls = ({recipe, onActionMessage}: Props) => {
         : null;
 
   return (
-    <section className="mb-4 rounded-xl border border-gray-200 p-4">
-      <h3 className="mb-2 text-sm font-semibold text-gray-900">Sharing</h3>
+    <section className="mbe-4 rounded-xl border border-gray-200 p-4">
+      <h3 className="mbe-2 text-sm font-semibold text-gray-900">Sharing</h3>
       <RadioOptionGroup
         name={`visibility-${recipe.id}`}
         value={pendingVisibility ?? recipe.visibility}
@@ -89,7 +89,7 @@ export const RecipeVisibilityControls = ({recipe, onActionMessage}: Props) => {
         }}
       />
       {pendingVisibility === 'public' ? (
-        <p className="mt-3 text-sm text-amber-800">
+        <p className="mbs-3 text-sm text-amber-800">
           This recipe will be discoverable by anyone browsing Eciperay.
         </p>
       ) : null}
@@ -120,7 +120,7 @@ export const RecipeVisibilityControls = ({recipe, onActionMessage}: Props) => {
         <button
           type="button"
           className="
-            bg-primary mt-3 rounded-lg px-3 py-2 text-sm font-medium text-white
+            bg-primary mbs-3 rounded-lg px-3 py-2 text-sm font-medium text-white
             disabled:opacity-50
           "
           disabled={
@@ -144,7 +144,7 @@ export const RecipeVisibilityControls = ({recipe, onActionMessage}: Props) => {
         </button>
       ) : null}
       {activeVisibility === 'unlisted' ? (
-        <div className="mt-3 space-y-2">
+        <div className="mbs-3 space-y-2">
           <button
             type="button"
             className="
@@ -177,9 +177,9 @@ export const RecipeVisibilityControls = ({recipe, onActionMessage}: Props) => {
         </div>
       ) : null}
       {activeVisibility === 'public' ? (
-        <div className="mt-3">
+        <div className="mbs-3">
           <p className="text-xs text-gray-500">Public permalink</p>
-          <div className="mt-1 flex items-center gap-2">
+          <div className="mbs-1 flex items-center gap-2">
             <code className="flex-1 truncate text-xs text-gray-700">
               {permalink}
             </code>
