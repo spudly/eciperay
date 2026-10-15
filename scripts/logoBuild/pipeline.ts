@@ -1,7 +1,7 @@
 import {copyFileSync, mkdirSync, readFileSync, writeFileSync} from 'node:fs';
 import {join} from 'node:path';
 
-import yaml from 'js-yaml';
+import {load} from 'js-yaml';
 import sharp from 'sharp';
 import {optimize} from 'svgo';
 
@@ -66,10 +66,10 @@ const loadLogoConfig = (
   variantsConfig: VariantsConfig;
   masters: {mark: string; wordmark: string};
 } => {
-  const themes = yaml.load(
+  const themes = load(
     fs.readFileSync(join(logosDir, 'themes.yaml'), 'utf8'),
   ) as ThemesConfig;
-  const variantsConfig = yaml.load(
+  const variantsConfig = load(
     fs.readFileSync(join(logosDir, 'variants.yaml'), 'utf8'),
   ) as VariantsConfig;
 
