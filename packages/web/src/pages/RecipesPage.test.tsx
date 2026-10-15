@@ -126,11 +126,13 @@ describe('RecipesPage', () => {
       instructions: [],
       tags: [],
     }));
+    let callCount = 0;
     server.use(
       http.get('http://localhost:8080/api/recipes', ({request}) => {
         const offset = Number(
           new URL(request.url).searchParams.get('offset') ?? 0,
         );
+        callCount += 1;
         if (offset === 0) {
           return HttpResponse.json(firstPage);
         }
@@ -174,7 +176,15 @@ describe('RecipesPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Recipe 0')).toBeInTheDocument();
     });
-    observers.at(-1)?.(
+    const observerCallback = observers.at(-1);
+    observerCallback?.([], {} as IntersectionObserver);
+    observerCallback?.(
+      [{isIntersecting: false}] as IntersectionObserverEntry[],
+      {} as IntersectionObserver,
+    );
+    expect(callCount).toBe(1);
+    expect(screen.queryByText('Recipe 20')).not.toBeInTheDocument();
+    observerCallback?.(
       [{isIntersecting: true}] as IntersectionObserverEntry[],
       {} as IntersectionObserver,
     );
