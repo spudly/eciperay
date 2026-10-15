@@ -6,7 +6,6 @@ ENV HUSKY=0
 
 COPY package.json package-lock.json ./
 COPY packages/types/package.json packages/types/
-COPY packages/theme/package.json packages/theme/
 COPY packages/icons/package.json packages/icons/
 COPY packages/client/package.json packages/client/
 COPY packages/server/package.json packages/server/
@@ -19,12 +18,10 @@ RUN npm ci --ignore-scripts \
   --workspace=@eciperay/web \
   --workspace=@eciperay/client \
   --workspace=@eciperay/types \
-  --workspace=@eciperay/theme \
   --workspace=@eciperay/icons \
   --include-workspace-root
 
 COPY packages/types packages/types
-COPY packages/theme packages/theme
 COPY packages/icons packages/icons
 COPY packages/client packages/client
 COPY packages/web packages/web
@@ -60,7 +57,6 @@ ENV HOST=0.0.0.0
 
 COPY package.json package-lock.json ./
 COPY packages/types/package.json packages/types/
-COPY packages/theme/package.json packages/theme/
 COPY packages/icons/package.json packages/icons/
 COPY packages/client/package.json packages/client/
 COPY packages/server/package.json packages/server/
