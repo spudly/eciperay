@@ -14,7 +14,13 @@ COPY packages/web/package.json packages/web/
 COPY packages/app/package.json packages/app/
 COPY patches/ patches/
 
-RUN npm ci --ignore-scripts \
+# @spudly/ui is served from GitHub Packages and needs an auth token. The
+# token arrives as a BuildKit secret (flyctl --build-secret NODE_AUTH_TOKEN)
+# and is mounted only for the npm ci step below, so it never lands in an
+# image layer; this .npmrc holds just the ${NODE_AUTH_TOKEN} placeholder.
+RUN printf '@spudly:registry=https://npm.pkg.github.com/\n//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}\n' > .npmrc
+
+RUN --mount=type=secret,id=NODE_AUTH_TOKEN,env=NODE_AUTH_TOKEN npm ci --ignore-scripts \
   --workspace=@eciperay/web \
   --workspace=@eciperay/client \
   --workspace=@eciperay/types \
