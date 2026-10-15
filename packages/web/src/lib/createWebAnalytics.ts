@@ -61,8 +61,7 @@ const initWebPostHog = (apiKey: string, apiHost: string) => {
     },
     logs: {serviceName: 'eciperay-web', environment: import.meta.env.MODE},
     before_send: event => {
-      // posthog-js types the event as non-nullable, but it can pass null at
-      // runtime; the test suite pins the null-passthrough behavior.
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- posthog-js can pass null at runtime despite its non-nullable types; the tests pin the null-passthrough behavior
       if (!event) {
         return event;
       }
