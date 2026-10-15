@@ -16,18 +16,18 @@
     "@eciperay/types": "*"
   },
   "peerDependencies": {
-    "@supabase/supabase-js": "^2.0.0",
-    "@tanstack/react-query": "^5.0.0",
+    "@supabase/supabase-js": "^2.117.3",
+    "@tanstack/react-query": "^5.104.2",
     "react": "^19.0.0"
   },
   "devDependencies": {
-    "@jest/globals": "^30.0.0",
-    "@testing-library/react": "^16.0.0",
+    "@jest/globals": "^30.5.2",
+    "@testing-library/react": "^16.3.3",
     "@types/node": "^22.0.0",
-    "@types/react": "^19.0.0",
-    "jest-environment-jsdom": "^30.0.0",
-    "react": "19.2.7",
-    "react-dom": "19.2.7"
+    "@types/react": "^19.3.0",
+    "jest-environment-jsdom": "^30.5.2",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
   },
   "engines": {
     "node": ">= 22.0.0"
