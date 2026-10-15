@@ -27,7 +27,12 @@ runs:
     # NOTE: android-actions/setup-android@v3 was removed. It runs
     # `sdkmanager tools`, but Google deleted the legacy `tools` package, so
     # the action always fails now. The ubuntu-latest runner already ships the
-    # Android SDK (ANDROID_HOME) with cmdline-tools on PATH.
+    # Android SDK (ANDROID_HOME), but its cmdline-tools bin directory is NOT
+    # on PATH, so add it explicitly or `sdkmanager` exits 127 (not found).
+
+    - name: Add Android cmdline-tools to PATH
+      shell: bash
+      run: echo "${ANDROID_HOME}/cmdline-tools/latest/bin" >> "${GITHUB_PATH}"
 
     - name: Accept Android SDK licenses
       shell: bash
