@@ -41,10 +41,12 @@ react {
     /* Folders */
     //   root is ../../ from android/app/ = packages/app/ where package.json lives — correct as-is
     // root = file("../../")
-    //   node_modules are hoisted to the monorepo root (4 levels up from android/app/)
-    reactNativeDir = file("../../../../node_modules/react-native")
-    codegenDir = file("../../../../node_modules/@react-native/codegen")
-    cliFile = file("../../../../node_modules/react-native/cli.js")
+    //   The React Native toolchain lives in packages/app/node_modules (../../ from
+    //   android/app/): the lockfile keeps a separate Expo SDK 56 / RN 0.85 tree at
+    //   the monorepo root, which must not be used to build this app.
+    reactNativeDir = file("../../node_modules/react-native")
+    codegenDir = file("../../node_modules/@react-native/codegen")
+    cliFile = file("../../node_modules/react-native/cli.js")
 
     def hermesOs = {
         def osName = System.getProperty("os.name").toLowerCase()
@@ -57,7 +59,7 @@ react {
         return "linux64-bin"
     }()
     // RN 0.85+ ships hermesc in the hermes-compiler package (not react-native/sdks).
-    hermesCommand = file("../../../../node_modules/hermes-compiler/hermesc/${hermesOs}/hermesc").absolutePath
+    hermesCommand = file("../../node_modules/hermes-compiler/hermesc/${hermesOs}/hermesc").absolutePath
 
     /* Variants */
     //   The list of variants to that are debuggable. For those we're going to
