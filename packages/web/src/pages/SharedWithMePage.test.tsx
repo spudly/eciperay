@@ -76,7 +76,7 @@ describe('SharedWithMePage', () => {
     const observe = vi.fn();
     const disconnect = vi.fn();
     const originalIntersectionObserver = globalThis.IntersectionObserver;
-    globalThis.IntersectionObserver = vi.fn(callback => {
+    globalThis.IntersectionObserver = vi.fn(function (callback) {
       observe.mockImplementation(() => {
         callback([{isIntersecting: true}] as IntersectionObserverEntry[], {});
       });
