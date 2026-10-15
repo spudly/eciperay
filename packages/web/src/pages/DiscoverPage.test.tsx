@@ -115,36 +115,40 @@ describe('DiscoverPage', () => {
       }),
     );
 
-    const observe = vi.fn();
-    const disconnect = vi.fn();
-    const originalIntersectionObserver = globalThis.IntersectionObserver;
-    // eslint-disable-next-line prefer-arrow-callback -- vitest 5 requires a constructible (non-arrow) implementation for mocks used with `new`
-    globalThis.IntersectionObserver = vi.fn(function (callback) {
-      observe.mockImplementation(() => {
-        callback([{isIntersecting: true}] as IntersectionObserverEntry[], {});
-      });
-      return {
-        observe,
-        disconnect,
-        unobserve: vi.fn(),
-        takeRecords: vi.fn(),
-        root: null,
-        rootMargin: '',
-        scrollMargin: '',
-        thresholds: [],
-      };
-    });
+    const observers: IntersectionObserverCallback[] = [];
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class {
+        constructor(callback: IntersectionObserverCallback) {
+          observers.push(callback);
+        }
+        observe() {}
+        disconnect() {}
+        unobserve() {}
+      },
+    );
 
     await renderWithProviders(<DiscoverPage />);
     await waitFor(() => {
       expect(screen.getByText('Public 0')).toBeInTheDocument();
     });
-    observe();
+    const observerCallback = observers.at(-1);
+    observerCallback?.([], {} as IntersectionObserver);
+    observerCallback?.(
+      [{isIntersecting: false}] as IntersectionObserverEntry[],
+      {} as IntersectionObserver,
+    );
+    expect(callCount).toBe(1);
+    expect(screen.queryByText('Extra Public')).not.toBeInTheDocument();
+    observerCallback?.(
+      [{isIntersecting: true}] as IntersectionObserverEntry[],
+      {} as IntersectionObserver,
+    );
     await waitFor(() => {
       expect(screen.getByText('Extra Public')).toBeInTheDocument();
     });
     expect(callCount).toBeGreaterThanOrEqual(2);
 
-    globalThis.IntersectionObserver = originalIntersectionObserver;
+    vi.unstubAllGlobals();
   });
 });

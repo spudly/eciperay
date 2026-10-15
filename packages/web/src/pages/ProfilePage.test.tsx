@@ -1,4 +1,4 @@
-import {fireEvent, screen, waitFor} from '@testing-library/react';
+import {act, fireEvent, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {http, HttpResponse} from 'msw';
 import {vi} from 'vitest';
@@ -218,6 +218,39 @@ describe('ProfilePage', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/Validation failed/i)).toBeInTheDocument();
+    });
+  });
+
+  test('finishes import cleanup when unmounted while an import is in flight', async () => {
+    let finishImport: (() => void) | undefined;
+    const importBulk = vi
+      .spyOn(eciperay.import, 'importBulk')
+      .mockImplementation(
+        () =>
+          new Promise(resolve => {
+            finishImport = () => {
+              resolve({created: [], errors: []});
+            };
+          }),
+      );
+    const view = await renderWithProviders(<ProfilePage />, {withAuth: false});
+
+    const importJson = JSON.stringify({recipes: [{title: 'Imported Soup'}]});
+    const file = Object.assign(
+      new File([importJson], 'recipes.json', {type: 'application/json'}),
+      {text: async () => importJson},
+    );
+    const fileInput = document.querySelector('input[type="file"]')!;
+    fireEvent.change(fileInput, {target: {files: [file]}});
+
+    await waitFor(() => {
+      expect(importBulk).toHaveBeenCalled();
+    });
+    // Unmounting detaches the file input, so the finally block must
+    // tolerate fileInputRef.current being null when the import settles.
+    view.unmount();
+    await act(async () => {
+      finishImport?.();
     });
   });
 });

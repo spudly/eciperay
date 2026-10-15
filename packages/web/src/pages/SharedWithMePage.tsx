@@ -23,6 +23,7 @@ export const SharedWithMePage = () => {
   const recipes = data?.pages.flat() ?? [];
 
   const handleLoadMore = useCallback(() => {
+    /* v8 ignore else -- the observer effect below only invokes this when hasNextPage && !isFetchingNextPage, and the web view does not call onLoadMore */
     if (hasNextPage && !isFetchingNextPage) {
       void fetchNextPage();
     }

@@ -58,4 +58,26 @@ describe('printRecipe', () => {
     afterPrintHandler?.();
     expect(removeChild).toHaveBeenCalledWith(frame);
   });
+
+  test('cleanup is a no-op when the frame was already removed', () => {
+    const appendChild = vi.spyOn(document.body, 'appendChild');
+    const removeChild = vi.spyOn(document.body, 'removeChild');
+    printRecipe(makeRecipeDetail());
+    const frame = appendChild.mock.calls[0]?.[0] as HTMLIFrameElement;
+    let afterPrintHandler: (() => void) | undefined;
+    const addEventListener = vi.fn((event, handler: () => void) => {
+      if (event === 'afterprint') {
+        afterPrintHandler = handler;
+      }
+    });
+    Object.defineProperty(frame, 'contentWindow', {
+      value: {focus: vi.fn(), print: vi.fn(), addEventListener},
+    });
+    frame.onload!(new Event('load'));
+    afterPrintHandler?.();
+    expect(removeChild).toHaveBeenCalledTimes(1);
+    // The 60s fallback timer can fire after afterprint already cleaned up.
+    afterPrintHandler?.();
+    expect(removeChild).toHaveBeenCalledTimes(1);
+  });
 });
