@@ -118,6 +118,7 @@ describe('DiscoverPage', () => {
     const observe = vi.fn();
     const disconnect = vi.fn();
     const originalIntersectionObserver = globalThis.IntersectionObserver;
+    // eslint-disable-next-line prefer-arrow-callback -- vitest 5 requires a constructible (non-arrow) implementation for mocks used with `new`
     globalThis.IntersectionObserver = vi.fn(function (callback) {
       observe.mockImplementation(() => {
         callback([{isIntersecting: true}] as IntersectionObserverEntry[], {});
