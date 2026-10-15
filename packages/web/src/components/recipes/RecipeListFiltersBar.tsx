@@ -40,7 +40,7 @@ export const RecipeListFiltersBar = ({
   showStatusFilter = true,
   searchPlaceholder = 'Search recipes…',
 }: RecipeListFilterControls & {searchPlaceholder?: string}) => (
-  <div className="mb-4 space-y-3">
+  <div className="mbe-4 space-y-3">
     <SearchField
       value={search}
       onChange={onSearchChange}

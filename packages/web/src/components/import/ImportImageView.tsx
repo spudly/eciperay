@@ -22,9 +22,9 @@ export const ImportImageView = ({
         }
       }}
     />
-    {loading ? <p className="text-muted mt-4">Importing…</p> : null}
+    {loading ? <p className="text-muted mbs-4">Importing…</p> : null}
     {error ? (
-      <div className="mt-4">
+      <div className="mbs-4">
         <ErrorText>{error}</ErrorText>
       </div>
     ) : null}

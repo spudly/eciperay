@@ -42,10 +42,12 @@ export const SortableIngredientRow = ({
         transition,
         opacity: dragRowOpacity(isDragging),
       }}
-      className="mb-2 grid grid-cols-12 gap-2"
+      className="mbe-2 grid grid-cols-12 gap-2"
     >
       <input
-        className="col-span-2 rounded border border-gray-300 px-2 py-1 text-sm"
+        className="
+          col-span-2 rounded-sm border border-gray-300 px-2 py-1 text-sm
+        "
         placeholder="Qty"
         value={ingredient.quantity ?? ''}
         onChange={e => {
@@ -57,7 +59,9 @@ export const SortableIngredientRow = ({
         }}
       />
       <input
-        className="col-span-2 rounded border border-gray-300 px-2 py-1 text-sm"
+        className="
+          col-span-2 rounded-sm border border-gray-300 px-2 py-1 text-sm
+        "
         placeholder="Unit"
         value={ingredient.unit ?? ''}
         onChange={e => {
@@ -65,7 +69,9 @@ export const SortableIngredientRow = ({
         }}
       />
       <input
-        className="col-span-4 rounded border border-gray-300 px-2 py-1 text-sm"
+        className="
+          col-span-4 rounded-sm border border-gray-300 px-2 py-1 text-sm
+        "
         placeholder="Name"
         required
         value={ingredient.name}
@@ -78,7 +84,7 @@ export const SortableIngredientRow = ({
         type="button"
         aria-label={`Reorder ingredient ${index + 1}`}
         className="
-          col-span-2 cursor-grab rounded border border-gray-300 px-2 py-1
+          col-span-2 cursor-grab rounded-sm border border-gray-300 px-2 py-1
           text-xs text-gray-700
           active:cursor-grabbing
         "

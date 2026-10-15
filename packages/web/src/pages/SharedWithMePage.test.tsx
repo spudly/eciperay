@@ -87,6 +87,7 @@ describe('SharedWithMePage', () => {
         takeRecords: vi.fn(),
         root: null,
         rootMargin: '',
+        scrollMargin: '',
         thresholds: [],
       };
     });

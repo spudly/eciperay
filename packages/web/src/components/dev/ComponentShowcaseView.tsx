@@ -69,7 +69,7 @@ export const ComponentShowcaseView = () => {
           >
             {selectedEntry.label}
           </PageTitle>
-          <p className="text-muted mb-4 text-sm">{selectedEntry.id}</p>
+          <p className="text-muted mbe-4 text-sm">{selectedEntry.id}</p>
           <ShowcaseDemo id={selectedId} />
         </>
       ) : null}

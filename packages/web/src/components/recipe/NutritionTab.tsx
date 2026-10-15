@@ -18,7 +18,7 @@ const NutritionRow = ({
   value: number;
   unit: string;
 }) => (
-  <div className="flex justify-between border-b border-gray-100 py-3">
+  <div className="flex justify-between border-be border-gray-100 py-3">
     <span className="text-base text-gray-700">{label}</span>
     <span className="text-base font-semibold text-gray-900">
       {value}
@@ -58,7 +58,7 @@ export const NutritionTab = ({recipeId}: Props) => {
   if (!data) {
     return (
       <div className="p-4">
-        <p className="text-muted mb-3">Nutrition is not available yet.</p>
+        <p className="text-muted mbe-3">Nutrition is not available yet.</p>
         <button
           type="button"
           className="rounded-lg bg-gray-900 px-3 py-2 text-sm text-white"
@@ -75,10 +75,10 @@ export const NutritionTab = ({recipeId}: Props) => {
 
   return (
     <div className="p-4">
-      <div className="mb-3 flex items-center justify-between gap-3">
+      <div className="mbe-3 flex items-center justify-between gap-3">
         <p
           className="
-            text-sm font-semibold uppercase tracking-wide text-gray-500
+            text-sm font-semibold tracking-wide text-gray-500 uppercase
           "
         >
           Per Serving
@@ -100,7 +100,7 @@ export const NutritionTab = ({recipeId}: Props) => {
           {...row}
         />
       ))}
-      <p className="text-muted mt-4 text-xs">{data.disclaimer}</p>
+      <p className="text-muted mbs-4 text-xs">{data.disclaimer}</p>
     </div>
   );
 };

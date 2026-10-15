@@ -46,7 +46,7 @@ const IngredientRow = ({
   <button
     type="button"
     className={clsx(
-      'flex w-full items-center border-b border-gray-100 py-3 text-start',
+      'flex items-center border-be border-gray-100 py-3 text-start inline-full',
       {'opacity-40': missing},
     )}
     onClick={onToggle}
@@ -106,22 +106,22 @@ export const IngredientsTab = ({
         />
       ))}
       {missing.size > 0 ? (
-        <p className="text-muted mt-3 text-sm">
+        <p className="text-muted mbs-3 text-sm">
           Click an ingredient to mark it missing and see substitutions below.
         </p>
       ) : null}
       {missingNames.length > 0 && substitutionsLoading ? (
-        <p className="text-muted mt-4 text-sm">Finding substitutions…</p>
+        <p className="text-muted mbs-4 text-sm">Finding substitutions…</p>
       ) : null}
       {substitutions.length > 0 ? (
-        <div className="mt-4 rounded-xl bg-blue-50 p-4">
-          <p className="mb-2 text-sm font-semibold text-blue-900">
+        <div className="mbs-4 rounded-xl bg-blue-50 p-4">
+          <p className="mbe-2 text-sm font-semibold text-blue-900">
             Substitutions
           </p>
           {substitutions.map(sub => (
             <div
               key={sub.ingredient}
-              className="mb-2"
+              className="mbe-2"
             >
               <p className="text-sm font-medium text-gray-900">
                 {sub.ingredient}

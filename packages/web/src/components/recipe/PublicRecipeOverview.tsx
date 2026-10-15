@@ -14,15 +14,17 @@ export const PublicRecipeOverview = ({recipe}: Props) => {
         <img
           src={recipe.imageUrl}
           alt={recipe.title}
-          className="mb-4 max-h-64 w-full rounded-xl bg-gray-50 object-contain"
+          className="
+            mbe-4 rounded-xl bg-gray-50 object-contain inline-full max-block-64
+          "
         />
       ) : null}
-      <h2 className="mb-2 text-2xl font-bold text-gray-900">{recipe.title}</h2>
-      <div className="mb-4">
+      <h2 className="mbe-2 text-2xl font-bold text-gray-900">{recipe.title}</h2>
+      <div className="mbe-4">
         <RecipeStatusBadge status={recipe.status} />
       </div>
       {recipe.description ? (
-        <p className="mb-4 text-gray-600">{recipe.description}</p>
+        <p className="mbe-4 text-gray-600">{recipe.description}</p>
       ) : null}
       <StatBadgeRow>
         <StatBadge

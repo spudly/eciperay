@@ -29,7 +29,7 @@ export const SharedWithMeView = ({
     {isLoading ? (
       <InlineLoadingIndicator
         loading
-        className="mt-8"
+        className="mbs-8"
       />
     ) : recipes.length === 0 ? (
       <EmptyMessage spacing="list">{SHARED_WITH_ME_EMPTY_MESSAGE}</EmptyMessage>

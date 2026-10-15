@@ -65,7 +65,7 @@ export const RecipeImageField = ({
 
   return (
     <div onPaste={handlePaste}>
-      <div className="mb-1 flex items-center justify-between gap-2">
+      <div className="mbe-1 flex items-center justify-between gap-2">
         <p className="text-sm font-medium text-gray-700">Recipe image</p>
         {headerAction}
       </div>
@@ -82,7 +82,7 @@ export const RecipeImageField = ({
         }}
         onDrop={handleDrop}
         className={clsx(
-          `mb-3 rounded-lg border-2 border-dashed p-4 transition-colors`,
+          `mbe-3 rounded-lg border-2 border-dashed p-4 transition-colors`,
           {
             'border-primary bg-primary/5': isDragging,
             'border-gray-300 bg-gray-50': !isDragging,
@@ -93,7 +93,7 @@ export const RecipeImageField = ({
           <img
             src={imagePreview}
             alt="Recipe preview"
-            className="mx-auto max-h-64 w-full object-contain"
+            className="mx-auto object-contain inline-full max-block-64"
           />
         ) : (
           <p className="text-muted text-center text-sm">
@@ -151,7 +151,7 @@ export const RecipeImageField = ({
         ) : null}
       </div>
       {imageError ? (
-        <p className="mt-2 text-sm text-red-600">{imageError}</p>
+        <p className="mbs-2 text-sm text-red-600">{imageError}</p>
       ) : null}
     </div>
   );

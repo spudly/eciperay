@@ -57,7 +57,6 @@ describe('parseWithClaude', () => {
 
   test('accepts responses that omit sourceUrl', async () => {
     const {sourceUrl, ...withoutSourceUrl} = VALID_RECIPE;
-    void sourceUrl;
     const client = makeClient([
       {type: 'text', text: JSON.stringify(withoutSourceUrl)},
     ]);

@@ -29,7 +29,7 @@ export const PublicRecipeCtas = ({recipeId, shareToken}: Props) => {
     return (
       <div
         className="
-          mb-6 flex flex-col gap-3 rounded-xl border border-gray-200 bg-white
+          mbe-6 flex flex-col gap-3 rounded-xl border border-gray-200 bg-white
           p-4 shadow-sm
           sm:flex-row
         "
@@ -63,7 +63,7 @@ export const PublicRecipeCtas = ({recipeId, shareToken}: Props) => {
   return (
     <div
       className="
-        mb-6 flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4
+        mbe-6 flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4
         shadow-sm
         sm:flex-row
       "

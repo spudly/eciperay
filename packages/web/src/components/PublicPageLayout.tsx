@@ -5,11 +5,11 @@ type PublicPageLayoutProps = {children: ReactNode};
 
 export const PublicPageLayout = ({children}: PublicPageLayoutProps) => {
   return (
-    <div className="min-block-screen bg-gray-50">
+    <div className="bg-gray-50 min-block-screen">
       <header className="border-be border-gray-200 bg-white">
         <div
           className="
-            max-inline-3xl mx-auto flex items-center justify-between px-6 py-4
+            mx-auto flex items-center justify-between px-6 py-4 max-inline-3xl
           "
         >
           <Link
@@ -28,7 +28,7 @@ export const PublicPageLayout = ({children}: PublicPageLayoutProps) => {
       </header>
       <main
         className="
-          max-inline-3xl mx-auto px-4 py-6
+          mx-auto px-4 py-6 max-inline-3xl
           sm:px-6
         "
       >
@@ -37,8 +37,8 @@ export const PublicPageLayout = ({children}: PublicPageLayoutProps) => {
       <footer className="border-te border-gray-200 bg-white">
         <div
           className="
-            max-inline-3xl mx-auto flex flex-wrap items-center justify-between
-            gap-3 px-6 py-4 text-sm text-gray-600
+            mx-auto flex flex-wrap items-center justify-between gap-3 px-6 py-4
+            text-sm text-gray-600 max-inline-3xl
           "
         >
           <p>Recipes shared on Eciperay may be viewed without an account.</p>

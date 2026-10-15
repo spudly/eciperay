@@ -1,7 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const mockCreateSupabaseClient = jest.fn((opts: unknown) => {
-  void opts;
+const mockCreateSupabaseClient = jest.fn((_opts: unknown) => {
   return {auth: {}};
 });
 

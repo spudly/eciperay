@@ -109,9 +109,8 @@ export const handleUnexpectedError = (
   err: unknown,
   req: Request,
   res: Response,
-  next: NextFunction,
+  _next: NextFunction,
 ) => {
-  void next;
   if (res.headersSent) {
     return;
   }

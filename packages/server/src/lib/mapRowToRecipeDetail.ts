@@ -216,7 +216,6 @@ export const mapRowToPublicRecipeDetail = (
   row: RecipeDetailRow,
 ): PublicRecipeDetail => {
   const {userId, ...recipe} = mapRowToRecipeDetail(row);
-  void userId;
   return recipe;
 };
 

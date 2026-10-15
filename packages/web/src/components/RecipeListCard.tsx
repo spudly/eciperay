@@ -77,7 +77,7 @@ export const RecipeListCard = ({
         }
       />
       {showForm ? (
-        <div className="mb-3">
+        <div className="mbe-3">
           <CookLogForm
             variant="light"
             secondaryLabel="Cancel"

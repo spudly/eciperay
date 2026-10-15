@@ -38,7 +38,6 @@ export const ensureInstructionRowKeys = (
 
 const stripRowKey = <T extends {key: string}>(row: T): Omit<T, 'key'> => {
   const {key, ...rest} = row;
-  void key;
   return rest;
 };
 

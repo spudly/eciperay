@@ -110,7 +110,6 @@ describe('POST /billing/paddle-webhook', () => {
     mockWebhookQueries();
     const event = makeEvent();
     const {current_billing_period, ...data} = event.data;
-    void current_billing_period;
     // A scheduled cancellation exercises the scheduled_change?.action branch.
     const rawBody = JSON.stringify({
       ...event,

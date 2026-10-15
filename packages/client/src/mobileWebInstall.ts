@@ -49,8 +49,11 @@ export const shouldShowMobileAppInstallPrompt = (
   userAgent: string = navigator.userAgent,
   now = Date.now(),
 ) =>
-  isMobileWebBrowser(userAgent, window.matchMedia, navigator) &&
-  !isMobileAppInstallDismissed(now);
+  isMobileWebBrowser(
+    userAgent,
+    (query: string) => window.matchMedia(query),
+    navigator,
+  ) && !isMobileAppInstallDismissed(now);
 
 export const getPrimaryMobileAppStoreUrl = (userAgent: string) => {
   if (/Android/i.test(userAgent)) {

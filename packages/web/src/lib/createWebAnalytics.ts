@@ -61,9 +61,6 @@ const initWebPostHog = (apiKey: string, apiHost: string) => {
     },
     logs: {serviceName: 'eciperay-web', environment: import.meta.env.MODE},
     before_send: event => {
-      if (!event) {
-        return event;
-      }
       event.properties =
         sanitizePostHogEventProperties(event.properties) ?? event.properties;
       return event;

@@ -25,7 +25,6 @@ const makeApp = (locals: Record<string, unknown> = {}) => {
       res: express.Response,
       _next: express.NextFunction,
     ) => {
-      void _next;
       res.status(500).json({error: (err as Error).message});
     },
   );

@@ -421,7 +421,7 @@ export const RecipeForm = ({
       className="space-y-6"
     >
       <div>
-        <div className="mb-1 flex items-center justify-between gap-3">
+        <div className="mbe-1 flex items-center justify-between gap-3">
           <label
             htmlFor="title"
             className="text-sm font-medium text-gray-700"
@@ -434,7 +434,7 @@ export const RecipeForm = ({
           id="title"
           required
           className={clsx(
-            'w-full rounded-lg border border-gray-300 px-4 py-2',
+            'rounded-lg border border-gray-300 px-4 py-2 inline-full',
             changedFieldClass('title'),
           )}
           value={title}
@@ -448,7 +448,7 @@ export const RecipeForm = ({
         onChange={setStatus}
       />
       <div>
-        <div className="mb-1 flex items-center justify-between gap-3">
+        <div className="mbe-1 flex items-center justify-between gap-3">
           <label
             htmlFor="description"
             className="text-sm font-medium text-gray-700"
@@ -477,7 +477,7 @@ export const RecipeForm = ({
         <textarea
           id="description"
           className={clsx(
-            'w-full rounded-lg border border-gray-300 px-4 py-2',
+            'rounded-lg border border-gray-300 px-4 py-2 inline-full',
             changedFieldClass('description'),
           )}
           rows={3}
@@ -487,12 +487,12 @@ export const RecipeForm = ({
           }}
         />
         {descriptionError ? (
-          <p className="mt-2 text-sm text-red-600">{descriptionError}</p>
+          <p className="mbs-2 text-sm text-red-600">{descriptionError}</p>
         ) : null}
       </div>
       <div className="grid grid-cols-3 gap-4">
         <div>
-          <div className="mb-1 flex items-center justify-between gap-2">
+          <div className="mbe-1 flex items-center justify-between gap-2">
             <label
               htmlFor="servings"
               className="text-sm font-medium text-gray-700"
@@ -507,7 +507,7 @@ export const RecipeForm = ({
             min={1}
             required
             className={clsx(
-              'w-full rounded-lg border border-gray-300 px-4 py-2',
+              'rounded-lg border border-gray-300 px-4 py-2 inline-full',
               changedFieldClass('servings'),
             )}
             value={servings}
@@ -517,7 +517,7 @@ export const RecipeForm = ({
           />
         </div>
         <div>
-          <div className="mb-1 flex items-center justify-between gap-2">
+          <div className="mbe-1 flex items-center justify-between gap-2">
             <label
               htmlFor="prep"
               className="text-sm font-medium text-gray-700"
@@ -530,7 +530,7 @@ export const RecipeForm = ({
             id="prep"
             type="number"
             className={clsx(
-              'w-full rounded-lg border border-gray-300 px-4 py-2',
+              'rounded-lg border border-gray-300 px-4 py-2 inline-full',
               changedFieldClass('prepTimeMin'),
             )}
             value={prepTimeMin}
@@ -540,7 +540,7 @@ export const RecipeForm = ({
           />
         </div>
         <div>
-          <div className="mb-1 flex items-center justify-between gap-2">
+          <div className="mbe-1 flex items-center justify-between gap-2">
             <label
               htmlFor="cook"
               className="text-sm font-medium text-gray-700"
@@ -553,7 +553,7 @@ export const RecipeForm = ({
             id="cook"
             type="number"
             className={clsx(
-              'w-full rounded-lg border border-gray-300 px-4 py-2',
+              'rounded-lg border border-gray-300 px-4 py-2 inline-full',
               changedFieldClass('cookTimeMin'),
             )}
             value={cookTimeMin}
@@ -580,7 +580,7 @@ export const RecipeForm = ({
         }}
       />
       <div>
-        <div className="mb-1 flex items-center justify-between gap-2">
+        <div className="mbe-1 flex items-center justify-between gap-2">
           <label
             htmlFor="sourceUrl"
             className="text-sm font-medium text-gray-700"
@@ -592,7 +592,7 @@ export const RecipeForm = ({
         <input
           id="sourceUrl"
           className={clsx(
-            'w-full rounded-lg border border-gray-300 px-4 py-2',
+            'rounded-lg border border-gray-300 px-4 py-2 inline-full',
             changedFieldClass('sourceUrl'),
           )}
           value={sourceUrl}
@@ -602,7 +602,7 @@ export const RecipeForm = ({
         />
       </div>
       <div>
-        <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="mbe-2 flex items-center justify-between gap-2">
           <p className="text-sm font-medium text-gray-700">Tags</p>
           {versionDiff?.tagsChanged && parentVersion ? (
             <button
@@ -713,7 +713,7 @@ export const RecipeForm = ({
         type="submit"
         disabled={loading}
         className="
-          bg-primary w-full rounded-lg py-3 font-semibold text-white
+          bg-primary rounded-lg py-3 font-semibold text-white inline-full
           disabled:opacity-50
         "
       >

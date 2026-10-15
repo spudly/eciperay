@@ -31,14 +31,14 @@ export const MealDetailView = ({
   <ScreenScroll>
     <PageTitle spacing="section">{meal.title}</PageTitle>
     {meal.notes ? (
-      <p className="text-muted mb-4 text-sm">{meal.notes}</p>
+      <p className="text-muted mbe-4 text-sm">{meal.notes}</p>
     ) : null}
     {formatSimpleNutrition(meal.nutrition) ? (
-      <p className="mb-4 text-sm text-gray-800">
+      <p className="mbe-4 text-sm text-gray-800">
         {formatSimpleNutrition(meal.nutrition)}
       </p>
     ) : null}
-    <div className="mb-6 flex flex-wrap gap-3">
+    <div className="mbe-6 flex flex-wrap gap-3">
       <PrimaryButton
         label="Cook meal"
         onPress={onCook}
@@ -54,7 +54,7 @@ export const MealDetailView = ({
           <li key={member.recipeId}>
             <button
               type="button"
-              className="w-full py-3 text-start"
+              className="py-3 text-start inline-full"
               disabled={member.accessLost}
               onClick={() => {
                 onRecipePress(member.recipeId);

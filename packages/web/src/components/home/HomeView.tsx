@@ -35,7 +35,7 @@ export const HomeView = ({
       >
         {HOME_TITLE}
       </PageTitle>
-      <p className="text-muted mb-8">{HOME_SUBTITLE}</p>
+      <p className="text-muted mbe-8">{HOME_SUBTITLE}</p>
       <div className="flex flex-wrap justify-center gap-4">
         <div className="inline-block">
           <PrimaryButton
@@ -67,7 +67,7 @@ export const HomeView = ({
     {isLoading ? (
       <InlineLoadingIndicator
         loading
-        className="mt-8"
+        className="mbs-8"
       />
     ) : recipes.length === 0 ? (
       <EmptyMessage spacing="list">{HOME_EMPTY_MESSAGE}</EmptyMessage>

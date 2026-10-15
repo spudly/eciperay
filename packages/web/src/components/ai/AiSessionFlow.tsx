@@ -136,7 +136,7 @@ export const AiSessionFlow = ({
     >
       <p
         className="
-          mb-1 text-xs font-semibold uppercase tracking-wide opacity-70
+          mbe-1 text-xs font-semibold tracking-wide uppercase opacity-70
         "
       >
         {message.role === 'user' ? 'You' : 'Plan'}
@@ -148,10 +148,10 @@ export const AiSessionFlow = ({
   if (!session) {
     return (
       <div>
-        <h1 className="mb-2 text-2xl font-bold text-gray-900">
+        <h1 className="mbe-2 text-2xl font-bold text-gray-900">
           {config.title}
         </h1>
-        <p className="text-muted mb-6 text-sm">{config.intro}</p>
+        <p className="text-muted mbe-6 text-sm">{config.intro}</p>
         <form
           onSubmit={e => {
             e.preventDefault();
@@ -163,7 +163,7 @@ export const AiSessionFlow = ({
           <textarea
             required
             rows={6}
-            className="w-full rounded-lg border border-gray-300 px-4 py-3"
+            className="rounded-lg border border-gray-300 px-4 py-3 inline-full"
             placeholder={config.promptPlaceholder}
             value={prompt}
             onChange={e => {
@@ -203,7 +203,7 @@ export const AiSessionFlow = ({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="mb-2 text-2xl font-bold text-gray-900">
+        <h1 className="mbe-2 text-2xl font-bold text-gray-900">
           {config.title}
         </h1>
         <p className="text-muted text-sm">{config.phaseLabel(session.phase)}</p>
@@ -223,7 +223,7 @@ export const AiSessionFlow = ({
         >
           <textarea
             rows={3}
-            className="w-full rounded-lg border border-gray-300 px-4 py-3"
+            className="rounded-lg border border-gray-300 px-4 py-3 inline-full"
             placeholder="Ask for changes to the plan…"
             value={followUp}
             onChange={e => {
@@ -263,7 +263,7 @@ export const AiSessionFlow = ({
       ) : null}
       {session.phase === 'preview_ready' && previewRecipe ? (
         <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-          <p className="mb-3 text-sm font-semibold text-gray-900">
+          <p className="mbe-3 text-sm font-semibold text-gray-900">
             {config.previewTitle}
           </p>
           <RecipeInputPreview recipe={previewRecipe} />
@@ -271,7 +271,7 @@ export const AiSessionFlow = ({
             type="button"
             disabled={busy}
             className="
-              bg-primary mt-4 rounded-lg px-4 py-3 text-sm font-semibold
+              bg-primary mbs-4 rounded-lg px-4 py-3 text-sm font-semibold
               text-white
               disabled:opacity-50
             "

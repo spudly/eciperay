@@ -97,7 +97,7 @@ export const RecipeExportPicker = ({
       />
       <div
         className="
-          mb-4 max-h-64 overflow-y-auto rounded-lg border border-gray-200
+          mbe-4 overflow-y-auto rounded-lg border border-gray-200 max-block-64
         "
       >
         <CheckboxSelectList

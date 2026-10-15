@@ -14,7 +14,6 @@ describe('RecipePageHead', () => {
       imageUrl: 'https://cdn.example/pasta.jpg',
       visibility: 'public',
     });
-    void _userId;
 
     await renderWithProviders(
       <RecipePageHead
@@ -55,7 +54,6 @@ describe('RecipePageHead', () => {
       imageUrl: null,
       visibility: 'public',
     });
-    void _userId;
 
     await renderWithProviders(
       <RecipePageHead
@@ -80,7 +78,6 @@ describe('RecipePageHead', () => {
       title: 'Rated Soup',
       visibility: 'public',
     });
-    void _userId;
 
     await renderWithProviders(
       <RecipePageHead
@@ -117,7 +114,6 @@ describe('RecipePageHead', () => {
       title: 'Reused Tags',
       visibility: 'public',
     });
-    void _userId;
 
     await renderWithProviders(
       <RecipePageHead
@@ -143,7 +139,6 @@ describe('RecipePageHead', () => {
       title: 'First Title',
       visibility: 'public',
     });
-    void _userId;
 
     const {rerender} = await renderWithProviders(
       <RecipePageHead
@@ -184,7 +179,6 @@ describe('RecipePageHead', () => {
       title: 'Temporary',
       visibility: 'public',
     });
-    void _userId;
 
     const {unmount} = await renderWithProviders(
       <RecipePageHead

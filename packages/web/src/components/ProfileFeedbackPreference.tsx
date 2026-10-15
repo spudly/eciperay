@@ -25,13 +25,13 @@ export const ProfileFeedbackPreference = () => {
         description="Adds a floating feedback button so you can send product feedback. Submissions are sent to PostHog when you use it."
       >
         {analyticsConfigured ? null : (
-          <span className="mt-1 block text-gray-500">
+          <span className="mbs-1 block text-gray-500">
             Feedback is unavailable because analytics is not configured in this
             environment.
           </span>
         )}
         {analyticsConfigured && !analyticsConsentAccepted ? (
-          <span className="mt-1 block text-gray-500">
+          <span className="mbs-1 block text-gray-500">
             On the web, you also need to accept analytics cookies before the
             shortcut can send feedback.
           </span>

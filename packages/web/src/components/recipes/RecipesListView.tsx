@@ -23,7 +23,7 @@ export const RecipesListView = ({
     {isLoading ? (
       <InlineLoadingIndicator
         loading
-        className="mt-8"
+        className="mbs-8"
       />
     ) : recipes.length === 0 ? (
       <EmptyMessage spacing="list">No recipes found.</EmptyMessage>

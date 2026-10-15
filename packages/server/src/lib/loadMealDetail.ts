@@ -161,7 +161,6 @@ export const listMealsForUser = async (
     const detail = await loadMealDetail(row.id, userId, queryFn);
     if (detail) {
       const {members: _members, ...summary} = detail;
-      void _members;
       meals.push(summary);
     }
   }

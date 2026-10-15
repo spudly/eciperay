@@ -30,13 +30,13 @@ const CreatedSecretPanel = ({
   const [copied, setCopied] = useState(false);
 
   return (
-    <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-4">
-      <p className="mb-2 text-sm font-semibold text-amber-900">
+    <div className="mbe-4 rounded-lg border border-amber-300 bg-amber-50 p-4">
+      <p className="mbe-2 text-sm font-semibold text-amber-900">
         Copy your new token now — you won&apos;t see it again.
       </p>
       <code
         className="
-          mb-3 block break-all rounded bg-white p-3 font-mono text-sm
+          mbe-3 block rounded-sm bg-white p-3 font-mono text-sm break-all
           text-slate-900
         "
       >
@@ -83,7 +83,7 @@ export const AccessTokensView = ({
         onDismissSecret={onDismissSecret}
       />
     ) : null}
-    <div className="mb-4 flex items-end gap-2">
+    <div className="mbe-4 flex items-end gap-2">
       <div className="flex-1">
         <TextField
           label="Token name"

@@ -16,9 +16,7 @@ import {requirePlan} from './requirePlan.js';
  * bridges the two (same approach as createMockQuery's own cast).
  */
 const mockRouteQueries = (impl: (text: string) => Promise<QueryResult>) => {
-  mockQuery.mockImplementation(
-    impl,
-  );
+  mockQuery.mockImplementation(impl);
 };
 
 const mockQuery = createMockQuery();
@@ -75,7 +73,6 @@ const makeApp = () => {
       res: express.Response,
       _next: express.NextFunction,
     ) => {
-      void _next;
       res.status(500).json({error: (err as Error).message});
     },
   );
