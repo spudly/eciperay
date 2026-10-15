@@ -37,7 +37,7 @@ eciperay/
 
 ## Prerequisites
 
-- Node.js 22+
+- Node.js ^22.22.2, ^24.15.0, or >=26.0.0 (see `engines` in package.json)
 - npm 10+
 - [React Native environment](https://reactnative.dev/docs/set-up-your-environment)
   (for mobile)
