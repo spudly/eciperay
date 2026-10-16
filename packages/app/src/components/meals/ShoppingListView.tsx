@@ -1,10 +1,27 @@
 import type {ShoppingListViewProps} from '@eciperay/client';
+import {Text as DsText, tokens} from '@spudly/ui';
 import {Pressable, Text, View} from 'react-native';
 
 import {InlineLoadingIndicator} from '../InlineLoadingIndicator';
 import {EmptyMessage} from '../ui/EmptyMessage';
 import {PageTitle} from '../ui/PageTitle';
 import {ScreenScroll} from '../ui/ScreenScroll';
+
+/* Pressable rows keep the RN Pressable with token-valued styles (the
+   IngredientsTab pressable precedent): flex-row items-start gap-3,
+   border-be gray-100 (ramp step 2), py-3. */
+const rowStyle = {
+  flexDirection: 'row',
+  alignItems: 'flex-start',
+  gap: tokens.spacing[3],
+  borderBottomWidth: 1,
+  borderBottomColor: tokens.colors.gray.gray2,
+  paddingVertical: tokens.spacing[3],
+} as const;
+
+/* The checkbox glyph's mbs-0.5 offset: a 2px alignment nudge with no step on
+   the DS spacing scale — geometry only, no visual value. */
+const glyphStyle = {marginTop: 2} as const;
 
 export const ShoppingListView = ({
   lines,
@@ -29,29 +46,39 @@ export const ShoppingListView = ({
           return (
             <Pressable
               key={line.key}
-              className="
-                flex-row items-start gap-3 border-be border-gray-100 py-3
-              "
+              style={rowStyle}
               onPress={() => {
                 onToggleChecked(line.key);
               }}
             >
-              <Text className="mbs-0.5">{checked ? '☑' : '☐'}</Text>
-              <Text
-                className={
-                  checked
-                    ? 'text-muted flex-1 line-through'
-                    : `flex-1 text-gray-900`
-                }
+              <Text style={glyphStyle}>{checked ? '☑' : '☐'}</Text>
+              <DsText
+                flex={1}
+                color={checked ? '$textMuted' : tokens.colors.gray.gray10}
+                textDecorationLine={checked ? 'line-through' : 'none'}
               >
-                <Text className="font-medium">{line.name}</Text>
+                <DsText fontWeight={tokens.typography.fontWeight.medium}>
+                  {line.name}
+                </DsText>
                 {qty ? (
-                  <Text className="text-muted text-sm"> · {qty}</Text>
+                  <DsText
+                    color="$textMuted"
+                    fontSize={tokens.typography.fontSize.sm}
+                  >
+                    {' '}
+                    · {qty}
+                  </DsText>
                 ) : null}
                 {line.isOptional ? (
-                  <Text className="text-muted text-sm"> · optional</Text>
+                  <DsText
+                    color="$textMuted"
+                    fontSize={tokens.typography.fontSize.sm}
+                  >
+                    {' '}
+                    · optional
+                  </DsText>
                 ) : null}
-              </Text>
+              </DsText>
             </Pressable>
           );
         })}

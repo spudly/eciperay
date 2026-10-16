@@ -1,6 +1,7 @@
 import type {MealFormViewProps} from '@eciperay/client';
+import {Text as DsText, tokens} from '@spudly/ui';
 import {useMemo} from 'react';
-import {Text, View} from 'react-native';
+import {YStack} from 'tamagui';
 
 import {CheckboxSelectList} from '../ui/CheckboxSelectList';
 import {ErrorText} from '../ui/ErrorText';
@@ -43,7 +44,14 @@ export const MealFormView = ({
         placeholder="Notes (optional)"
         rows={4}
       />
-      <Text className="mbe-2 text-sm font-medium text-gray-700">Recipes</Text>
+      <DsText
+        marginBlockEnd="$2"
+        fontSize={tokens.typography.fontSize.sm}
+        fontWeight={tokens.typography.fontWeight.medium}
+        color={tokens.colors.gray.gray8}
+      >
+        Recipes
+      </DsText>
       <CheckboxSelectList
         items={recipeOptions.map(recipe => ({
           id: recipe.id,
@@ -69,14 +77,14 @@ export const MealFormView = ({
         );
       })}
       {error ? <ErrorText>{error}</ErrorText> : null}
-      <View className="mbs-4">
+      <YStack marginBlockStart="$4">
         <PrimaryButton
           label="Save meal"
           loading={saving}
           disabled={!title.trim() || selectedRecipeIds.length === 0}
           onPress={onSubmit}
         />
-      </View>
+      </YStack>
     </FormScreenLayout>
   );
 };

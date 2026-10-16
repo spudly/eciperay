@@ -1,6 +1,8 @@
 import type {MealPlanFormViewProps} from '@eciperay/client';
+import {Text as DsText, tokens} from '@spudly/ui';
 import {useMemo} from 'react';
-import {Text, View} from 'react-native';
+import {View} from 'react-native';
+import {YStack} from 'tamagui';
 
 import {CheckboxSelectList} from '../ui/CheckboxSelectList';
 import {ErrorText} from '../ui/ErrorText';
@@ -58,9 +60,14 @@ export const MealPlanFormView = ({
         onChange={onEndsOnChange}
         placeholder="YYYY-MM-DD"
       />
-      <Text className="mbe-2 text-sm font-medium text-gray-700">
+      <DsText
+        marginBlockEnd="$2"
+        fontSize={tokens.typography.fontSize.sm}
+        fontWeight={tokens.typography.fontWeight.medium}
+        color={tokens.colors.gray.gray8}
+      >
         Meals & recipes
-      </Text>
+      </DsText>
       <CheckboxSelectList
         items={entryOptions.map(entry => ({
           id: entry.kind === 'meal' ? `meal:${entry.id}` : `recipe:${entry.id}`,
@@ -113,14 +120,14 @@ export const MealPlanFormView = ({
         );
       })}
       {error ? <ErrorText>{error}</ErrorText> : null}
-      <View className="mbs-4">
+      <YStack marginBlockStart="$4">
         <PrimaryButton
           label="Save plan"
           loading={saving}
           disabled={!title.trim() || selectedKeys.length === 0}
           onPress={onSubmit}
         />
-      </View>
+      </YStack>
     </FormScreenLayout>
   );
 };

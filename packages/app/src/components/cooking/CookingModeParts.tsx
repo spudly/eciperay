@@ -1,21 +1,57 @@
- 
+/* eslint-disable max-lines -- cooking-mode overlay family with scaled ingredients list and step display */
 import {
   formatScaledIngredientLine,
   sortIngredientsByOrder,
 } from '@eciperay/client';
+import {eciperayTheme, Text as DsText, tokens} from '@spudly/ui';
 import type {ReactNode} from 'react';
 import {useState} from 'react';
 import {
   GestureResponderEvent,
   ScrollView,
-  Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import {YStack} from 'tamagui';
 import type {RecipeDetail} from '@eciperay/types';
 
 import {PrevNextNav} from '../ui/PrevNextNav';
 import {ProgressDots} from '../ui/ProgressDots';
+
+/**
+ * G9: the cooking-mode overlay family is an app-domain composite — a dark,
+ * immersive full-screen shell composed here from @spudly/ui tokens rather than
+ * a DS component. The shells keep RN Views (the swipe shell needs responder
+ * props) with token-valued styles: the old ui-cooking-mode-overlay was flex-1,
+ * justify-center, bg-gray-900 (gray ramp step 10), px-6. The overlay's "white"
+ * is the DS semantic surface; Tailwind's white-alpha steps are composed as hex
+ * alpha suffixes the way TagPill composes data colors (white/5 '0d', /10 '1a',
+ * /60 '99', /70 'b3', /80 'cc'). tracking-widest (0.1em) at text-sm is 1.4px of
+ * letterSpacing geometry; the ingredients card's max-block-40 (160px) is layout
+ * geometry with no DS spacing step.
+ */
+const WHITE = eciperayTheme.semantic.surface;
+
+const overlayStyle = {
+  flex: 1,
+  justifyContent: 'center',
+  backgroundColor: tokens.colors.gray.gray10,
+  paddingHorizontal: tokens.spacing[6],
+} as const;
+
+const cookLogShellStyle = {...overlayStyle, alignItems: 'center'} as const;
+
+/* The old ui-cooking-mode-done-button: absolute right-6 top-12, full radius,
+   white/10 fill, px-4 py-2. */
+const doneButtonStyle = {
+  position: 'absolute',
+  right: tokens.spacing[6],
+  top: tokens.spacing[12],
+  borderRadius: tokens.radii.full,
+  backgroundColor: `${WHITE}1a`,
+  paddingHorizontal: tokens.spacing[4],
+  paddingVertical: tokens.spacing[2],
+} as const;
 
 export const CookingModeShell = ({
   children,
@@ -27,7 +63,7 @@ export const CookingModeShell = ({
   onResponderRelease?: (e: GestureResponderEvent) => void;
 }) => (
   <View
-    className="ui-cooking-mode-overlay"
+    style={overlayStyle}
     onStartShouldSetResponder={
       /* istanbul ignore next -- touch responder required for swipe gestures */
       () => true
@@ -40,17 +76,20 @@ export const CookingModeShell = ({
 );
 
 export const CookingModeCookLogShell = ({children}: {children: ReactNode}) => (
-  <View className="ui-cooking-mode-overlay ui-cooking-mode-overlay-centered">
-    {children}
-  </View>
+  <View style={cookLogShellStyle}>{children}</View>
 );
 
 export const CookingModeDoneButton = ({onPress}: {onPress: () => void}) => (
   <TouchableOpacity
-    className="ui-cooking-mode-done-button"
+    style={doneButtonStyle}
     onPress={onPress}
   >
-    <Text className="text-sm text-white">Done</Text>
+    <DsText
+      fontSize={tokens.typography.fontSize.sm}
+      color={WHITE}
+    >
+      Done
+    </DsText>
   </TouchableOpacity>
 );
 
@@ -65,24 +104,37 @@ const ScaledIngredientsList = ({
   scaleFactor: number;
   servings: number;
 }) => (
-  <View className="mbe-6 rounded-xl bg-white/5 p-4 max-block-40">
-    <Text className="mbe-2 text-sm font-medium text-white/80">
+  <YStack
+    marginBlockEnd="$6"
+    borderRadius={tokens.radii.xl}
+    backgroundColor={`${WHITE}0d`}
+    padding="$4"
+    maxHeight={160}
+  >
+    <DsText
+      marginBlockEnd="$2"
+      fontSize={tokens.typography.fontSize.sm}
+      fontWeight={tokens.typography.fontWeight.medium}
+      color={`${WHITE}cc`}
+    >
       Ingredients
       {scaleFactor === 1
         ? ` (${servings} servings)`
         : ` (scaled to ${servings} servings)`}
-    </Text>
+    </DsText>
     <ScrollView>
       {sortIngredientsByOrder(recipe.ingredients).map(ingredient => (
-        <Text
+        <DsText
           key={ingredient.id}
-          className="py-1 text-sm text-white/70"
+          paddingVertical="$1"
+          fontSize={tokens.typography.fontSize.sm}
+          color={`${WHITE}b3`}
         >
           {formatScaledIngredientLine(ingredient, scaleFactor)}
-        </Text>
+        </DsText>
       ))}
     </ScrollView>
-  </View>
+  </YStack>
 );
 
 /* istanbul ignore next -- swipe gesture handlers; tested via button navigation; not simulatable in RNTL */
@@ -121,9 +173,15 @@ export const StepDisplay = ({
   servings,
 }: StepDisplayProps) => (
   <>
-    <Text className="mbe-4 text-sm tracking-widest text-white/60 uppercase">
+    <DsText
+      marginBlockEnd="$4"
+      fontSize={tokens.typography.fontSize.sm}
+      letterSpacing={1.4}
+      color={`${WHITE}99`}
+      textTransform="uppercase"
+    >
       Step {current ? current.stepNumber : 1} of {steps.length}
-    </Text>
+    </DsText>
     {recipe ? (
       <ScaledIngredientsList
         recipe={recipe}
@@ -131,9 +189,16 @@ export const StepDisplay = ({
         servings={servings}
       />
     ) : null}
-    <Text className="mbe-8 text-2xl/relaxed text-white">
+    <DsText
+      marginBlockEnd="$8"
+      fontSize={tokens.typography.fontSize['2xl']}
+      lineHeight={
+        tokens.typography.fontSize['2xl'] * tokens.typography.lineHeight.relaxed
+      }
+      color={WHITE}
+    >
       {current ? current.body : ''}
-    </Text>
+    </DsText>
     <ProgressDots
       total={steps.length}
       current={step}

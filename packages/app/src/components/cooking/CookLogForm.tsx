@@ -1,6 +1,7 @@
-import clsx from 'clsx';
+import {eciperayTheme, Text as DsText, tokens} from '@spudly/ui';
 import React, {useState} from 'react';
-import {Text, TextInput, TouchableOpacity, View} from 'react-native';
+import {TextInput, TouchableOpacity} from 'react-native';
+import {XStack, YStack} from 'tamagui';
 import type {CookLogInput} from '@eciperay/types';
 
 import {StarRatingInput} from '../ui/StarRatingInput';
@@ -13,6 +14,19 @@ type Props = {
   secondaryLabel?: string;
 };
 
+/**
+ * The form's dark variant sits on the G9 cooking-mode overlay, so its surfaces
+ * are the DS semantic surface at low alpha (white/10, composed with a hex alpha
+ * suffix the way TagPill composes data colors) and its text is the surface
+ * itself; the light variant uses the gray ramp positionally (gray-50 -> step 1,
+ * gray-200 -> step 3, gray-300 -> step 4, gray-700 -> step 8, gray-900 -> step
+ * 10). The note field keeps the RN TextInput (its chrome is variant-driven)
+ * with token-valued styles, per the VersionPicker precedent. The action buttons
+ * keep TouchableOpacity so the two halves of the row share identical chrome;
+ * the save half is the semantic primary with its onPrimary label.
+ */
+const WHITE = eciperayTheme.semantic.surface;
+
 export const CookLogForm = ({
   onSubmit,
   onSkip,
@@ -24,22 +38,66 @@ export const CookLogForm = ({
   const [notes, setNotes] = useState('');
   const isLight = variant === 'light';
 
+  const notesStyle = {
+    marginBottom: tokens.spacing[4],
+    borderRadius: tokens.radii.xl,
+    paddingHorizontal: tokens.spacing[4],
+    paddingVertical: tokens.spacing[3],
+    fontSize: tokens.typography.fontSize.md,
+    ...(isLight
+      ? {
+          borderWidth: 1,
+          borderColor: tokens.colors.gray.gray4,
+          backgroundColor: WHITE,
+          color: tokens.colors.gray.gray10,
+        }
+      : {backgroundColor: `${WHITE}1a`, color: WHITE}),
+  } as const;
+
+  const skipStyle = {
+    flex: 1,
+    alignItems: 'center',
+    borderRadius: tokens.radii.xl,
+    paddingVertical: tokens.spacing[3],
+    ...(isLight
+      ? {
+          borderWidth: 1,
+          borderColor: tokens.colors.gray.gray3,
+          backgroundColor: WHITE,
+        }
+      : {backgroundColor: `${WHITE}1a`}),
+  } as const;
+
+  const saveStyle = {
+    flex: 1,
+    alignItems: 'center',
+    borderRadius: tokens.radii.xl,
+    paddingVertical: tokens.spacing[3],
+    backgroundColor: eciperayTheme.semantic.primary,
+    opacity: isPending ? 0.5 : 1,
+  } as const;
+
   return (
-    <View
-      className={clsx('rounded-2xl p-6 inline-full', {
-        'bg-white/10': !isLight,
-        'border border-gray-200 bg-gray-50': isLight,
-      })}
+    <YStack
+      borderRadius={tokens.radii.xl}
+      padding="$6"
+      width="100%"
+      backgroundColor={isLight ? tokens.colors.gray.gray1 : `${WHITE}1a`}
+      borderWidth={isLight ? 1 : undefined}
+      borderColor={isLight ? tokens.colors.gray.gray3 : undefined}
     >
-      <Text
-        className={clsx('mbe-4 text-xl font-semibold', {
-          'text-white': !isLight,
-          'text-gray-900': isLight,
-        })}
+      <DsText
+        marginBlockEnd="$4"
+        fontSize={tokens.typography.fontSize.xl}
+        fontWeight={tokens.typography.fontWeight.semibold}
+        color={isLight ? tokens.colors.gray.gray10 : WHITE}
       >
         How did it go?
-      </Text>
-      <View className="mbe-4 items-center">
+      </DsText>
+      <YStack
+        marginBlockEnd="$4"
+        alignItems="center"
+      >
         <StarRatingInput
           value={rating}
           tone={isLight ? 'default' : 'dark'}
@@ -47,51 +105,44 @@ export const CookLogForm = ({
             setRating(star as 1 | 2 | 3 | 4 | 5 | null);
           }}
         />
-      </View>
+      </YStack>
       <TextInput
-        className={clsx(
-          'mbe-4 rounded-xl px-4 py-3 text-base',
-          isLight
-            ? 'border border-gray-300 bg-white text-gray-900'
-            : 'bg-white/10 text-white',
-        )}
+        style={notesStyle}
         placeholder="Notes from this cook (optional)"
-        placeholderTextColor={isLight ? '#9ca3af' : 'rgba(255,255,255,0.5)'}
+        placeholderTextColor={isLight ? tokens.colors.gray.gray5 : `${WHITE}80`}
         multiline
         value={notes}
         onChangeText={setNotes}
       />
-      <View className="flex-row gap-3">
+      <XStack gap="$3">
         <TouchableOpacity
-          className={clsx('flex-1 items-center rounded-xl py-3', {
-            'bg-white/10': !isLight,
-            'border border-gray-200 bg-white': isLight,
-          })}
+          style={skipStyle}
           onPress={onSkip}
         >
-          <Text
-            className={clsx('text-base', {
-              'text-white': !isLight,
-              'text-gray-700': isLight,
-            })}
+          <DsText
+            fontSize={tokens.typography.fontSize.md}
+            color={isLight ? tokens.colors.gray.gray8 : WHITE}
           >
             {secondaryLabel}
-          </Text>
+          </DsText>
         </TouchableOpacity>
         <TouchableOpacity
-          className={clsx(
-            'bg-primary flex-1 items-center rounded-xl py-3',
-            isPending ? 'opacity-50' : '',
-          )}
+          style={saveStyle}
           disabled={isPending}
           onPress={() => {
             onSubmit({authorStarRating: rating, notes: notes.trim() || null});
           }}
         >
-          <Text className="text-base font-semibold text-white">Save</Text>
+          <DsText
+            fontSize={tokens.typography.fontSize.md}
+            fontWeight={tokens.typography.fontWeight.semibold}
+            color={eciperayTheme.semantic.onPrimary}
+          >
+            Save
+          </DsText>
         </TouchableOpacity>
-      </View>
-    </View>
+      </XStack>
+    </YStack>
   );
 };
 
