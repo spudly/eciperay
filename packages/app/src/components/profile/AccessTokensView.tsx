@@ -54,7 +54,12 @@ const CreatedSecretPanel = ({
     >
       {/* RN Text: the secret needs the `selectable` prop for copy, which
           the DS Text doesn't expose; values are DS tokens. */}
-      <Text style={secretTextStyle}>{secret}</Text>
+      <Text
+        selectable
+        style={secretTextStyle}
+      >
+        {secret}
+      </Text>
     </YStack>
     <DsText
       marginBlockEnd="$3"
