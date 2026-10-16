@@ -1,7 +1,9 @@
 import type {MealDetailViewProps} from '@eciperay/client';
 import {formatSimpleNutrition} from '@eciperay/client';
+import {Text as DsText, tokens} from '@spudly/ui';
 import type {MealRecipeMember} from '@eciperay/types';
-import {Pressable, Text, View} from 'react-native';
+import {Pressable} from 'react-native';
+import {XStack} from 'tamagui';
 
 import {PageTitle} from '../ui/PageTitle';
 import {PrimaryButton} from '../ui/PrimaryButton';
@@ -23,6 +25,15 @@ const formatMemberNutrition = (member: MealRecipeMember): string | null => {
   return parts.length > 0 ? parts.join(' · ') : null;
 };
 
+/* Pressable rows keep the RN Pressable with token-valued styles (the
+   IngredientsTab pressable precedent): border-be gray-100 (ramp step 2),
+   py-3 row padding. */
+const memberRowStyle = {
+  borderBottomWidth: 1,
+  borderBottomColor: tokens.colors.gray.gray2,
+  paddingVertical: tokens.spacing[3],
+} as const;
+
 export const MealDetailView = ({
   meal,
   onEdit,
@@ -32,14 +43,28 @@ export const MealDetailView = ({
   <ScreenScroll>
     <PageTitle spacing="section">{meal.title}</PageTitle>
     {meal.notes ? (
-      <Text className="text-muted mbe-4 text-sm">{meal.notes}</Text>
+      <DsText
+        color="$textMuted"
+        marginBlockEnd="$4"
+        fontSize={tokens.typography.fontSize.sm}
+      >
+        {meal.notes}
+      </DsText>
     ) : null}
     {formatSimpleNutrition(meal.nutrition) ? (
-      <Text className="mbe-4 text-sm text-gray-800">
+      <DsText
+        marginBlockEnd="$4"
+        fontSize={tokens.typography.fontSize.sm}
+        color={tokens.colors.gray.gray9}
+      >
         {formatSimpleNutrition(meal.nutrition)}
-      </Text>
+      </DsText>
     ) : null}
-    <View className="mbe-6 flex-row flex-wrap gap-3">
+    <XStack
+      marginBlockEnd="$6"
+      flexWrap="wrap"
+      gap="$3"
+    >
       <PrimaryButton
         label="Cook meal"
         onPress={onCook}
@@ -48,28 +73,35 @@ export const MealDetailView = ({
         label="Edit"
         onPress={onEdit}
       />
-    </View>
+    </XStack>
     <SectionCard title="Recipes">
       {meal.members.map(member => (
         <Pressable
           key={member.recipeId}
-          className="border-be border-gray-100 py-3"
+          style={memberRowStyle}
           disabled={member.accessLost}
           onPress={() => {
             onRecipePress(member.recipeId);
           }}
         >
-          <Text className="text-base font-medium text-gray-900">
+          <DsText
+            fontSize={tokens.typography.fontSize.md}
+            fontWeight={tokens.typography.fontWeight.medium}
+            color={tokens.colors.gray.gray10}
+          >
             {member.title}
             {member.accessLost ? ' (unavailable)' : ''}
-          </Text>
-          <Text className="text-muted text-sm">
+          </DsText>
+          <DsText
+            color="$textMuted"
+            fontSize={tokens.typography.fontSize.sm}
+          >
             {member.servings} serving
             {member.servings === 1 ? '' : 's'}
             {formatMemberNutrition(member)
               ? ` · ${formatMemberNutrition(member)}`
               : ''}
-          </Text>
+          </DsText>
         </Pressable>
       ))}
     </SectionCard>

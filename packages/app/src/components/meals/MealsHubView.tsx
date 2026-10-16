@@ -1,6 +1,8 @@
 import type {MealsHubViewProps} from '@eciperay/client';
 import {formatSimpleNutrition} from '@eciperay/client';
-import {Pressable, Text, View} from 'react-native';
+import {Card, Text as DsText, tokens} from '@spudly/ui';
+import {Pressable} from 'react-native';
+import {YStack} from 'tamagui';
 
 import {InlineLoadingIndicator} from '../InlineLoadingIndicator';
 import {EmptyMessage} from '../ui/EmptyMessage';
@@ -10,6 +12,18 @@ import {ScreenScroll} from '../ui/ScreenScroll';
 import {TabBar} from '../ui/TabBar';
 import {TextLinkButton} from '../ui/TextLinkButton';
 
+/* Structural flex only (the old flex-1 min-inline-0): the text block expands
+   and may shrink within the card row. No visual values. */
+const textBlockStyle = {flex: 1, minWidth: 0} as const;
+
+/**
+ * The hub rows carry the old ui-thumbnail-list-card chrome (mb-3 flex-row
+ * items-center gap-3 rounded-xl bg-white p-4 shadow-sm). They compose the same
+ * DS Card treatment the ThumbnailListCard adapter uses — elevated card, row
+ * layout, $3 gap and margin — but without the adapter's thumbnail slot: these
+ * rows never rendered a thumbnail. Title/meta mirror the adapter's text block
+ * (semibold title, hint subtitle).
+ */
 export const MealsHubView = ({
   activeTab,
   onSelectTab,
@@ -35,40 +49,51 @@ export const MealsHubView = ({
         onSelectTab(tab as MealsHubViewProps['activeTab']);
       }}
     />
-    <View className="my-4">
+    <YStack marginVertical="$4">
       <PrimaryButton
         label={activeTab === 'meals' ? 'New meal' : 'New meal plan'}
         onPress={activeTab === 'meals' ? onCreateMeal : onCreatePlan}
       />
-    </View>
+    </YStack>
     {isLoading ? (
       <InlineLoadingIndicator loading />
     ) : activeTab === 'meals' ? (
       meals.length === 0 ? (
         <EmptyMessage>No meals yet.</EmptyMessage>
       ) : (
-        <View className="gap-2">
+        <YStack gap="$2">
           {meals.map(meal => (
-            <View
+            <Card
               key={meal.id}
-              className="ui-thumbnail-list-card flex-row items-center"
+              variant="elevated"
+              flexDirection="row"
+              alignItems="center"
+              gap="$3"
+              marginBottom="$3"
             >
               <Pressable
-                className="flex-1 min-inline-0"
+                style={textBlockStyle}
                 onPress={() => {
                   onMealPress(meal.id);
                 }}
               >
-                <Text className="text-base font-semibold text-gray-900">
+                <DsText
+                  fontSize={tokens.typography.fontSize.md}
+                  fontWeight={tokens.typography.fontWeight.semibold}
+                  color={tokens.colors.gray.gray10}
+                >
                   {meal.title}
-                </Text>
-                <Text className="text-muted text-sm">
+                </DsText>
+                <DsText
+                  variant="hint"
+                  marginTop="$1"
+                >
                   {meal.memberCount} recipe
                   {meal.memberCount === 1 ? '' : 's'}
                   {formatSimpleNutrition(meal.nutrition)
                     ? ` · ${formatSimpleNutrition(meal.nutrition)}`
                     : ''}
-                </Text>
+                </DsText>
               </Pressable>
               <TextLinkButton
                 label="Delete"
@@ -76,29 +101,40 @@ export const MealsHubView = ({
                   onDeleteMeal(meal.id);
                 }}
               />
-            </View>
+            </Card>
           ))}
-        </View>
+        </YStack>
       )
     ) : plans.length === 0 ? (
       <EmptyMessage>No meal plans yet.</EmptyMessage>
     ) : (
-      <View className="gap-2">
+      <YStack gap="$2">
         {plans.map(plan => (
-          <View
+          <Card
             key={plan.id}
-            className="ui-thumbnail-list-card flex-row items-center"
+            variant="elevated"
+            flexDirection="row"
+            alignItems="center"
+            gap="$3"
+            marginBottom="$3"
           >
             <Pressable
-              className="flex-1 min-inline-0"
+              style={textBlockStyle}
               onPress={() => {
                 onPlanPress(plan.id);
               }}
             >
-              <Text className="text-base font-semibold text-gray-900">
+              <DsText
+                fontSize={tokens.typography.fontSize.md}
+                fontWeight={tokens.typography.fontWeight.semibold}
+                color={tokens.colors.gray.gray10}
+              >
                 {plan.title}
-              </Text>
-              <Text className="text-muted text-sm">
+              </DsText>
+              <DsText
+                variant="hint"
+                marginTop="$1"
+              >
                 {plan.entryCount} entr
                 {plan.entryCount === 1 ? 'y' : 'ies'}
                 {plan.startsOn && plan.endsOn
@@ -107,7 +143,7 @@ export const MealsHubView = ({
                 {formatSimpleNutrition(plan.nutrition)
                   ? ` · ${formatSimpleNutrition(plan.nutrition)}`
                   : ''}
-              </Text>
+              </DsText>
             </Pressable>
             <TextLinkButton
               label="Delete"
@@ -115,9 +151,9 @@ export const MealsHubView = ({
                 onDeletePlan(plan.id);
               }}
             />
-          </View>
+          </Card>
         ))}
-      </View>
+      </YStack>
     )}
   </ScreenScroll>
 );

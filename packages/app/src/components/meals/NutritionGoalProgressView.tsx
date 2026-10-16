@@ -1,7 +1,8 @@
 import type {NutritionGoalProgressViewProps} from '@eciperay/client';
 import {formatSimpleNutrition} from '@eciperay/client';
+import {Text as DsText, tokens} from '@spudly/ui';
 import type {NutritionGoalFieldProgress} from '@eciperay/types';
-import {Text, View} from 'react-native';
+import {XStack, YStack} from 'tamagui';
 
 import {SectionCard} from '../ui/SectionCard';
 import {TextLinkButton} from '../ui/TextLinkButton';
@@ -23,13 +24,26 @@ const ProgressRow = ({
   label: string;
   field: NutritionGoalFieldProgress;
 }) => (
-  <View className="flex-row justify-between border-be border-gray-100 py-2">
-    <Text className="text-sm text-gray-700">{label}</Text>
-    <Text className="text-sm text-gray-900">
+  <XStack
+    justifyContent="space-between"
+    borderBottomWidth={1}
+    borderBottomColor={tokens.colors.gray.gray2}
+    paddingVertical="$2"
+  >
+    <DsText
+      fontSize={tokens.typography.fontSize.sm}
+      color={tokens.colors.gray.gray8}
+    >
+      {label}
+    </DsText>
+    <DsText
+      fontSize={tokens.typography.fontSize.sm}
+      color={tokens.colors.gray.gray10}
+    >
       {Math.round(field.actual)} / {Math.round(field.goal)} ·{' '}
       {bandLabel(field.band)}
-    </Text>
-  </View>
+    </DsText>
+  </XStack>
 );
 
 export const NutritionGoalProgressView = ({
@@ -44,9 +58,13 @@ export const NutritionGoalProgressView = ({
   return (
     <SectionCard title="Nutrition goals">
       {formatSimpleNutrition(nutrition) ? (
-        <Text className="text-muted mbe-3 text-sm">
+        <DsText
+          color="$textMuted"
+          marginBlockEnd="$3"
+          fontSize={tokens.typography.fontSize.sm}
+        >
           Plan total: {formatSimpleNutrition(nutrition)}
-        </Text>
+        </DsText>
       ) : null}
       {progress ? (
         <>
@@ -70,17 +88,20 @@ export const NutritionGoalProgressView = ({
           ) : null}
         </>
       ) : (
-        <Text className="text-muted text-sm">
+        <DsText
+          color="$textMuted"
+          fontSize={tokens.typography.fontSize.sm}
+        >
           Set daily nutrition goals to compare this plan.
-        </Text>
+        </DsText>
       )}
       {onSetGoalsPress ? (
-        <View className="mbs-3">
+        <YStack marginBlockStart="$3">
           <TextLinkButton
             label="Set nutrition goals"
             onPress={onSetGoalsPress}
           />
-        </View>
+        </YStack>
       ) : null}
     </SectionCard>
   );
