@@ -1,6 +1,6 @@
 import type {ImportTextViewProps} from '@eciperay/client';
 import {useState} from 'react';
-import {View} from 'react-native';
+import {YStack} from 'tamagui';
 
 import {ErrorText} from '../ui/ErrorText';
 import {FormScreenLayout} from '../ui/FormScreenLayout';
@@ -25,9 +25,9 @@ export const ImportTextView = ({
         placeholder="Paste your recipe here…"
       />
       {error ? (
-        <View className="mbe-4">
+        <YStack marginBlockEnd="$4">
           <ErrorText>{error}</ErrorText>
-        </View>
+        </YStack>
       ) : null}
       <PrimaryButton
         label="Import"

@@ -1,7 +1,8 @@
-import { PersonalAccessToken } from '@eciperay/types';
-import { View, Text } from 'react-native';
+import type {PersonalAccessToken} from '@eciperay/types';
+import {Text as DsText, tokens} from '@spudly/ui';
+import {XStack, YStack} from 'tamagui';
 
-import { DestructiveButton } from '../ui/DestructiveButton';
+import {DestructiveButton} from '../ui/DestructiveButton';
 
 const formatDate = (iso: string): string =>
   new Date(iso).toLocaleDateString(undefined, {
@@ -20,6 +21,10 @@ const describeToken = (token: PersonalAccessToken): string => {
   return parts.join(' · ');
 };
 
+/* Row treatment on DS tokens: slate maps onto the gray ramp positionally
+   (slate-100 border → gray2, slate-500 text → gray6, slate-900 text →
+   gray10). The 2px top offsets are geometry from the old mbs-0.5,
+   between DS spacing steps. */
 export const TokenRow = ({
   token,
   revoking,
@@ -29,26 +34,51 @@ export const TokenRow = ({
   revoking: boolean;
   onRevoke: (id: string) => void;
 }) => (
-  <View
-    className="
-      flex-row items-center justify-between gap-3 border-be border-slate-100
-      py-3
-    "
+  <XStack
+    alignItems="center"
+    justifyContent="space-between"
+    gap="$3"
+    borderBottomWidth={1}
+    borderBottomColor={tokens.colors.gray.gray2}
+    paddingVertical="$3"
   >
-    <View className="flex-1 min-inline-0">
-      <Text className="text-sm font-medium text-slate-900">
+    <YStack
+      flex={1}
+      minWidth={0}
+    >
+      <DsText
+        fontSize={tokens.typography.fontSize.sm}
+        fontWeight={tokens.typography.fontWeight.medium}
+        color={tokens.colors.gray.gray10}
+      >
         {token.name}
         {token.revokedAt ? (
-          <Text className="text-xs font-normal text-slate-500"> (Revoked)</Text>
+          <DsText
+            fontSize={tokens.typography.fontSize.xs}
+            fontWeight={tokens.typography.fontWeight.regular}
+            color={tokens.colors.gray.gray6}
+          >
+            {' '}
+            (Revoked)
+          </DsText>
         ) : null}
-      </Text>
-      <Text className="mbs-0.5 font-mono text-xs text-slate-500">
+      </DsText>
+      <DsText
+        marginBlockStart={2}
+        fontFamily={tokens.typography.fontFamily.mono}
+        fontSize={tokens.typography.fontSize.xs}
+        color={tokens.colors.gray.gray6}
+      >
         {token.tokenPrefix}…
-      </Text>
-      <Text className="mbs-0.5 text-xs text-slate-500">
+      </DsText>
+      <DsText
+        marginBlockStart={2}
+        fontSize={tokens.typography.fontSize.xs}
+        color={tokens.colors.gray.gray6}
+      >
         {describeToken(token)}
-      </Text>
-    </View>
+      </DsText>
+    </YStack>
     {token.revokedAt ? null : (
       <DestructiveButton
         label={revoking ? 'Revoking…' : 'Revoke'}
@@ -58,5 +88,5 @@ export const TokenRow = ({
         }}
       />
     )}
-  </View>
+  </XStack>
 );

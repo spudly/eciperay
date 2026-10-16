@@ -4,7 +4,9 @@ import {
   makeRecipeDetail,
   type SharedWithMeViewProps,
 } from '@eciperay/client';
-import {FlatList, StyleSheet, View} from 'react-native';
+import {tokens} from '@spudly/ui';
+import {FlatList} from 'react-native';
+import {YStack} from 'tamagui';
 
 import {SharedRecipeListCard} from '../SharedRecipeListCard';
 import {InlineLoadingIndicator} from '../InlineLoadingIndicator';
@@ -13,9 +15,12 @@ import {ListLoadingFooter} from '../ui/ListLoadingFooter';
 import {ScreenContainer} from '../ui/ScreenContainer';
 import {RecipeListFiltersBar} from '../recipes/RecipeListFiltersBar';
 
-const styles = StyleSheet.create({
-  listContent: {paddingHorizontal: 16, paddingBottom: 32},
-});
+// List content geometry on the DS spacing scale (plain object, no
+// StyleSheet — the RecipesListView precedent).
+const listContentStyle = {
+  paddingHorizontal: tokens.spacing[4],
+  paddingBottom: tokens.spacing[8],
+} as const;
 
 export const SharedWithMeView = ({
   isLoading,
@@ -25,19 +30,22 @@ export const SharedWithMeView = ({
   ...filterControls
 }: SharedWithMeViewProps) => (
   <ScreenContainer variant="list">
-    <View className="px-4 pbs-4 pbe-2">
+    <YStack
+      paddingHorizontal="$4"
+      paddingBlockStart="$4"
+      paddingBlockEnd="$2"
+    >
       <RecipeListFiltersBar {...filterControls} />
-    </View>
+    </YStack>
     {isLoading ? (
-      <InlineLoadingIndicator
-        loading
-        className="mbs-8"
-      />
+      <YStack marginBlockStart="$8">
+        <InlineLoadingIndicator loading />
+      </YStack>
     ) : (
       <FlatList
         data={recipes}
         keyExtractor={recipe => recipe.id}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={listContentStyle}
         renderItem={({item}) => <SharedRecipeListCard recipe={item} />}
         onEndReached={onLoadMore}
         onEndReachedThreshold={0.4}

@@ -1,6 +1,6 @@
 import type {ImportUrlViewProps} from '@eciperay/client';
-import {View} from 'react-native';
 import {useState} from 'react';
+import {YStack} from 'tamagui';
 
 import {ErrorText} from '../ui/ErrorText';
 import {FormScreenLayout} from '../ui/FormScreenLayout';
@@ -21,9 +21,9 @@ export const ImportUrlView = ({
       placeholder="https://example.com/recipe"
     />
     {error ? (
-      <View className="mbe-4">
+      <YStack marginBlockEnd="$4">
         <ErrorText>{error}</ErrorText>
-      </View>
+      </YStack>
     ) : null}
     <PrimaryButton
       label="Import"

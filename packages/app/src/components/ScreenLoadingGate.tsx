@@ -3,7 +3,7 @@ import {
   useDelayedTrue,
   type ScreenLoadingGateProps,
 } from '@eciperay/client';
-import clsx from 'clsx';
+import {eciperayTheme} from '@spudly/ui';
 import {useState} from 'react';
 import {View} from 'react-native';
 
@@ -11,11 +11,31 @@ import {BookLoadingSpinner} from './ui/BookLoadingSpinner';
 import {InfoBanner} from './ui/InfoBanner';
 import {PrimaryButton} from './ui/PrimaryButton';
 
+/**
+ * Full-screen loading gate (the old ui-loading-center + flex-1 over a white
+ * shell). It renders without a TamaguiProvider (its unit test uses a plain
+ * render), so it stays on RN primitives — the BookLoadingSpinner pattern: the
+ * shell background is the theme's semantic surface (the old bg-white, per the
+ * Stage 2 ScreenContainer white precedent). The legacy `backgroundClassName`
+ * prop remains in the prop type (from @eciperay/client) for API compatibility
+ * but is no longer applied — no caller passes a non-default value.
+ */
+const shellStyle = {
+  flex: 1,
+  backgroundColor: eciperayTheme.semantic.surface,
+} as const;
+
+const loadingStyle = {
+  flex: 1,
+  alignItems: 'center',
+  justifyContent: 'center',
+  backgroundColor: eciperayTheme.semantic.surface,
+} as const;
+
 export const ScreenLoadingGate = ({
   pending,
   delayMs = DEFAULT_LOADING_DELAY_MS,
   children,
-  backgroundClassName = 'bg-white',
 }: ScreenLoadingGateProps) => {
   const showLoading = useDelayedTrue(pending, delayMs);
 
@@ -24,11 +44,11 @@ export const ScreenLoadingGate = ({
   }
 
   if (!showLoading) {
-    return <View className={clsx('flex-1', backgroundClassName)} />;
+    return <View style={shellStyle} />;
   }
 
   return (
-    <View className={clsx('ui-loading-center flex-1', backgroundClassName)}>
+    <View style={loadingStyle}>
       <BookLoadingSpinner size="lg" />
     </View>
   );

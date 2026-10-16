@@ -6,15 +6,16 @@ import {
   showcaseAiSessionConfig,
   type ShowcaseDemoRenderer,
 } from '@eciperay/client';
+import {
+  Button as DsButton,
+  MultilineField as DsMultilineField,
+  Text as DsText,
+  tokens,
+} from '@spudly/ui';
 import {useMutation} from '@tanstack/react-query';
 import React, {useState} from 'react';
-import {
-  ScrollView,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import {ScrollView, TouchableOpacity} from 'react-native';
+import {XStack, YStack} from 'tamagui';
 import type {TweakAiMessage, TweakAiPhase} from '@eciperay/types';
 
 import {RecipeInputPreview} from '../recipe/RecipeInputPreview';
@@ -56,6 +57,22 @@ type Props = {
   onFinalizeSuccess: (result: unknown) => void | Promise<void>;
   onCancelSuccess: () => void;
 };
+
+/* Session scroll shell: the old bg-gray-50 fill (gray ramp step 1) on the
+   RN ScrollView, with content padding on the inner stack. */
+const scrollStyle = {
+  flex: 1,
+  backgroundColor: tokens.colors.gray.gray1,
+} as const;
+
+/* Cancel-session row keeps the RN TouchableOpacity so its disabled state
+   matches the old pressable exactly (Stage 3b micro-action precedent);
+   margin/opacity are token/state values. */
+const cancelSessionStyle = (disabled: boolean) =>
+  ({
+    marginBottom: tokens.spacing[8],
+    opacity: disabled ? 0.5 : undefined,
+  }) as const;
 
 export const AiSessionFlow = ({
   config,
@@ -133,168 +150,234 @@ export const AiSessionFlow = ({
     : null;
 
   const renderMessage = (message: TweakAiMessage, index: number) => (
-    <View
+    <YStack
       key={`${message.role}-${index}`}
-      className={
-        message.role === 'user'
-          ? 'ms-8 rounded-lg bg-gray-100 p-3'
-          : 'me-8 rounded-lg bg-indigo-50 p-3'
+      marginStart={message.role === 'user' ? '$8' : undefined}
+      marginEnd={message.role === 'user' ? undefined : '$8'}
+      borderRadius={tokens.radii.md}
+      backgroundColor={
+        message.role === 'user' ? tokens.colors.gray.gray2 : '$primarySubtle'
       }
+      padding="$3"
     >
-      <Text className="mbe-1 text-xs font-semibold text-gray-500 uppercase">
+      <DsText
+        marginBlockEnd="$1"
+        fontSize={tokens.typography.fontSize.xs}
+        fontWeight={tokens.typography.fontWeight.semibold}
+        color={tokens.colors.gray.gray6}
+        textTransform="uppercase"
+      >
         {message.role === 'user' ? 'You' : 'Plan'}
-      </Text>
-      <Text className="text-sm text-gray-800">{message.content}</Text>
-    </View>
+      </DsText>
+      <DsText
+        fontSize={tokens.typography.fontSize.sm}
+        color={tokens.colors.gray.gray9}
+      >
+        {message.content}
+      </DsText>
+    </YStack>
   );
 
   if (!session) {
     return (
-      <View className="flex-1 bg-gray-50 px-4 pbs-4">
-        <Text className="mbe-2 text-2xl font-bold text-gray-900">
+      <YStack
+        flex={1}
+        backgroundColor={tokens.colors.gray.gray1}
+        paddingHorizontal="$4"
+        paddingBlockStart="$4"
+      >
+        <DsText
+          marginBlockEnd="$2"
+          fontSize={tokens.typography.fontSize['2xl']}
+          fontWeight={tokens.typography.fontWeight.bold}
+          color={tokens.colors.gray.gray10}
+        >
           {config.title}
-        </Text>
-        <Text className="text-muted mbe-6 text-sm">{config.intro}</Text>
-        <TextInput
-          className="
-            mbe-4 rounded-lg border border-gray-300 px-4 py-3 min-block-48
-          "
+        </DsText>
+        <DsText
+          color="$textMuted"
+          marginBlockEnd="$6"
+          fontSize={tokens.typography.fontSize.sm}
+        >
+          {config.intro}
+        </DsText>
+        {/* min-block-48 (192) kept as geometry on the DS field */}
+        <DsMultilineField
+          marginBlockEnd="$4"
+          minHeight={192}
           placeholder={config.promptPlaceholder}
           value={prompt}
           onChangeText={setPrompt}
-          multiline
           textAlignVertical="top"
         />
         {error ? (
-          <Text className="mbe-4 text-sm text-red-600">{error}</Text>
+          <DsText
+            variant="error"
+            marginBlockEnd="$4"
+          >
+            {error}
+          </DsText>
         ) : null}
-        <View className="flex-row gap-3">
-          <TouchableOpacity
-            className="rounded-lg border border-gray-200 px-4 py-3"
+        <XStack gap="$3">
+          <DsButton
+            variant="outlined"
+            fontSize={tokens.typography.fontSize.sm}
+            fontWeight={tokens.typography.fontWeight.medium}
+            color={tokens.colors.gray.gray8}
             onPress={onEmptyCancel}
           >
-            <Text className="text-sm font-medium text-gray-700">Cancel</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            className="
-              bg-primary flex-1 items-center rounded-lg py-3
-              disabled:opacity-50
-            "
+            Cancel
+          </DsButton>
+          <DsButton
+            variant="primary"
+            flex={1}
             disabled={busy || prompt.trim().length === 0}
             onPress={() => {
               startMutation.mutate(prompt.trim());
             }}
           >
-            <Text className="font-semibold text-white">
-              {startMutation.isPending
-                ? config.startPendingLabel
-                : config.startLabel}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+            {startMutation.isPending
+              ? config.startPendingLabel
+              : config.startLabel}
+          </DsButton>
+        </XStack>
+      </YStack>
     );
   }
 
   return (
-    <ScrollView className="flex-1 bg-gray-50 px-4 pbs-4">
-      <Text className="mbe-2 text-2xl font-bold text-gray-900">
-        {config.title}
-      </Text>
-      <Text className="text-muted mbe-4 text-sm">
-        {config.phaseLabel(session.phase)}
-      </Text>
-      <View className="mbe-4 gap-3">{session.messages.map(renderMessage)}</View>
-      {session.phase === 'planning' ? (
-        <View className="mbe-4 gap-3">
-          <TextInput
-            className="rounded-lg border border-gray-300 px-4 py-3 min-block-24"
-            placeholder="Ask for changes to the plan…"
-            value={followUp}
-            onChangeText={setFollowUp}
-            multiline
-            textAlignVertical="top"
-          />
-          <View className="flex-row flex-wrap gap-2">
-            <TouchableOpacity
-              className="
-                rounded-lg border border-gray-200 px-4 py-2
-                disabled:opacity-50
-              "
-              disabled={busy || followUp.trim().length === 0}
-              onPress={() => {
-                messageMutation.mutate({
-                  sessionId: session.id,
-                  content: followUp.trim(),
-                });
-              }}
+    <ScrollView style={scrollStyle}>
+      <YStack
+        paddingHorizontal="$4"
+        paddingBlockStart="$4"
+      >
+        <DsText
+          marginBlockEnd="$2"
+          fontSize={tokens.typography.fontSize['2xl']}
+          fontWeight={tokens.typography.fontWeight.bold}
+          color={tokens.colors.gray.gray10}
+        >
+          {config.title}
+        </DsText>
+        <DsText
+          color="$textMuted"
+          marginBlockEnd="$4"
+          fontSize={tokens.typography.fontSize.sm}
+        >
+          {config.phaseLabel(session.phase)}
+        </DsText>
+        <YStack
+          marginBlockEnd="$4"
+          gap="$3"
+        >
+          {session.messages.map(renderMessage)}
+        </YStack>
+        {session.phase === 'planning' ? (
+          <YStack
+            marginBlockEnd="$4"
+            gap="$3"
+          >
+            {/* min-block-24 (96) kept as geometry on the DS field */}
+            <DsMultilineField
+              minHeight={96}
+              placeholder="Ask for changes to the plan…"
+              value={followUp}
+              onChangeText={setFollowUp}
+              textAlignVertical="top"
+            />
+            <XStack
+              flexWrap="wrap"
+              gap="$2"
             >
-              <Text className="text-sm font-medium text-gray-700">
+              <DsButton
+                variant="outlined"
+                size="sm"
+                fontSize={tokens.typography.fontSize.sm}
+                fontWeight={tokens.typography.fontWeight.medium}
+                color={tokens.colors.gray.gray8}
+                disabled={busy || followUp.trim().length === 0}
+                onPress={() => {
+                  messageMutation.mutate({
+                    sessionId: session.id,
+                    content: followUp.trim(),
+                  });
+                }}
+              >
                 Refine plan
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              className="
-                rounded-lg bg-indigo-600 px-4 py-2
-                disabled:opacity-50
-              "
-              disabled={busy}
-              onPress={() => {
-                approvePlanMutation.mutate(session.id);
-              }}
-            >
-              <Text className="text-sm font-medium text-white">
+              </DsButton>
+              <DsButton
+                variant="primary"
+                size="sm"
+                disabled={busy}
+                onPress={() => {
+                  approvePlanMutation.mutate(session.id);
+                }}
+              >
                 {approvePlanMutation.isPending
                   ? 'Building preview…'
                   : 'Approve plan'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      ) : null}
-      {session.phase === 'preview_ready' && previewRecipe ? (
-        <View className="mbe-4 rounded-xl border border-gray-200 bg-white p-4">
-          <Text className="mbe-3 text-sm font-semibold text-gray-900">
-            {config.previewTitle}
-          </Text>
-          <RecipeInputPreview recipe={previewRecipe} />
-          <TouchableOpacity
-            className="
-              bg-primary mbs-4 items-center rounded-lg px-4 py-3
-              disabled:opacity-50
-            "
-            disabled={busy}
-            onPress={() => {
-              finalizeMutation.mutate(session.id);
-            }}
+              </DsButton>
+            </XStack>
+          </YStack>
+        ) : null}
+        {session.phase === 'preview_ready' && previewRecipe ? (
+          <YStack
+            marginBlockEnd="$4"
+            borderRadius={tokens.radii.lg}
+            borderWidth={1}
+            borderColor={tokens.colors.gray.gray3}
+            backgroundColor="$surface"
+            padding="$4"
           >
-            <Text className="text-sm font-semibold text-white">
+            <DsText
+              marginBlockEnd="$3"
+              fontSize={tokens.typography.fontSize.sm}
+              fontWeight={tokens.typography.fontWeight.semibold}
+              color={tokens.colors.gray.gray10}
+            >
+              {config.previewTitle}
+            </DsText>
+            <RecipeInputPreview recipe={previewRecipe} />
+            <DsButton
+              variant="primary"
+              marginBlockStart="$4"
+              disabled={busy}
+              onPress={() => {
+                finalizeMutation.mutate(session.id);
+              }}
+            >
               {finalizeMutation.isPending
                 ? config.finalizePendingLabel
                 : config.finalizeLabel}
-            </Text>
+            </DsButton>
+          </YStack>
+        ) : null}
+        {error ? (
+          <DsText
+            variant="error"
+            marginBlockEnd="$4"
+          >
+            {error}
+          </DsText>
+        ) : null}
+        {session.phase !== 'completed' && session.phase !== 'cancelled' ? (
+          <TouchableOpacity
+            style={cancelSessionStyle(busy)}
+            disabled={busy}
+            onPress={() => {
+              cancelMutation.mutate(session.id);
+            }}
+          >
+            <DsText
+              fontSize={tokens.typography.fontSize.sm}
+              color={tokens.colors.gray.gray6}
+              textDecorationLine="underline"
+            >
+              Cancel session
+            </DsText>
           </TouchableOpacity>
-        </View>
-      ) : null}
-      {error ? (
-        <Text className="mbe-4 text-sm text-red-600">{error}</Text>
-      ) : null}
-      {session.phase !== 'completed' && session.phase !== 'cancelled' ? (
-        <TouchableOpacity
-          className="
-            mbe-8
-            disabled:opacity-50
-          "
-          disabled={busy}
-          onPress={() => {
-            cancelMutation.mutate(session.id);
-          }}
-        >
-          <Text className="text-sm text-gray-500 underline">
-            Cancel session
-          </Text>
-        </TouchableOpacity>
-      ) : null}
+        ) : null}
+      </YStack>
     </ScrollView>
   );
 };

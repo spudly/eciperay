@@ -1,7 +1,9 @@
 import type {TagsViewProps} from '@eciperay/client';
-import {Text, TextInput, TouchableOpacity, View} from 'react-native';
+import {Text as DsText, TextField as DsTextField, tokens} from '@spudly/ui';
+import {TouchableOpacity} from 'react-native';
 import {makeRecipeDetail} from '@eciperay/client';
 import {useState} from 'react';
+import {XStack, YStack} from 'tamagui';
 
 import {InlineLoadingIndicator} from '../InlineLoadingIndicator';
 import {ColorPickerField} from '../ui/ColorPickerField';
@@ -23,13 +25,18 @@ export const TagsView = ({
 }: TagsViewProps) => (
   <ScreenContainer>
     <PageTitle spacing="section">Tags</PageTitle>
-    <View className="ui-tag-form-row">
-      <TextInput
-        className="ui-text-field flex-1 py-2"
-        placeholder="Tag name"
-        value={name}
-        onChangeText={onNameChange}
-      />
+    {/* ui-tag-form-row: mb-6 flex-row gap-2 */}
+    <XStack
+      marginBlockEnd="$6"
+      gap="$2"
+    >
+      <YStack flex={1}>
+        <DsTextField
+          placeholder="Tag name"
+          value={name}
+          onChangeText={onNameChange}
+        />
+      </YStack>
       <ColorPickerField
         value={color}
         onChange={onColorChange}
@@ -40,14 +47,25 @@ export const TagsView = ({
         loading={isCreating}
         onPress={onCreate}
       />
-    </View>
+    </XStack>
     {isLoading ? (
       <InlineLoadingIndicator loading />
     ) : (
       tags.map(tag => (
-        <View
+        /* ui-tag-list-item: mb-2 row, centered, space-between, rounded-lg
+           surface card with the sm shadow */
+        <XStack
           key={tag.id}
-          className="ui-tag-list-item"
+          marginBlockEnd="$2"
+          alignItems="center"
+          justifyContent="space-between"
+          borderRadius={tokens.radii.md}
+          backgroundColor="$surface"
+          padding="$3"
+          shadowColor={tokens.shadows.sm.shadowColor}
+          shadowOffset={tokens.shadows.sm.shadowOffset}
+          shadowOpacity={tokens.shadows.sm.shadowOpacity}
+          shadowRadius={tokens.shadows.sm.shadowRadius}
         >
           <TagPill
             name={tag.name}
@@ -58,9 +76,9 @@ export const TagsView = ({
               onDelete(tag.id);
             }}
           >
-            <Text className="ui-error-text">Delete</Text>
+            <DsText variant="error">Delete</DsText>
           </TouchableOpacity>
-        </View>
+        </XStack>
       ))
     )}
   </ScreenContainer>
