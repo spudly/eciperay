@@ -5,9 +5,11 @@ import {
   VERSION_ID,
   type ShowcaseDemoRenderer,
 } from '@eciperay/client';
+import {Button as DsButton, Text as DsText, tokens} from '@spudly/ui';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import React, {useState} from 'react';
-import {Text, TouchableOpacity, View} from 'react-native';
+import {Text} from 'react-native';
+import {XStack, YStack} from 'tamagui';
 import type {CookLogInput} from '@eciperay/types';
 
 import {api} from '../../lib/api';
@@ -40,16 +42,21 @@ export const CookHistoryTab = ({recipeId, versionId}: Props) => {
 
   if (isLoading) {
     return (
-      <View className="ui-loading-center p-4">
+      <YStack
+        flex={1}
+        alignItems="center"
+        justifyContent="center"
+        padding="$4"
+      >
         <BookLoadingSpinner size="sm" />
-      </View>
+      </YStack>
     );
   }
 
   return (
-    <View className="p-4">
+    <YStack padding="$4">
       {showForm ? (
-        <View className="mbe-4">
+        <YStack marginBlockEnd="$4">
           <CookLogForm
             variant="light"
             secondaryLabel="Cancel"
@@ -61,47 +68,69 @@ export const CookHistoryTab = ({recipeId, versionId}: Props) => {
               createMutation.mutate(input);
             }}
           />
-        </View>
+        </YStack>
       ) : (
-        <TouchableOpacity
-          className="bg-primary mbe-4 self-start rounded-lg px-4 py-2"
+        <DsButton
+          variant="primary"
+          size="sm"
+          alignSelf="flex-start"
+          marginBlockEnd="$4"
           onPress={() => {
             setShowForm(true);
           }}
         >
-          <Text className="text-sm font-medium text-white">Log a cook</Text>
-        </TouchableOpacity>
+          Log a cook
+        </DsButton>
       )}
       {cookLogs.length === 0 ? (
-        <Text className="text-muted text-sm">
+        <DsText variant="hint">
           No cooks logged yet. Log a cook here or finish a cooking session to
           record feedback for this version.
-        </Text>
+        </DsText>
       ) : (
         cookLogs.map(log => (
-          <View
+          <YStack
             key={log.id}
-            className="mbe-4 rounded-lg border border-gray-100 bg-gray-50 p-4"
+            marginBlockEnd="$4"
+            borderRadius={tokens.radii.md}
+            borderWidth={1}
+            borderColor={tokens.colors.gray.gray2}
+            backgroundColor={tokens.colors.gray.gray1}
+            padding="$4"
           >
-            <View className="mbe-1 flex-row items-center justify-between gap-2">
-              <Text className="text-sm font-medium text-gray-900">
+            <XStack
+              marginBlockEnd="$1"
+              alignItems="center"
+              justifyContent="space-between"
+              gap="$2"
+            >
+              <DsText
+                fontSize={tokens.typography.fontSize.sm}
+                fontWeight={tokens.typography.fontWeight.medium}
+                color={tokens.colors.gray.gray10}
+              >
                 {new Date(log.cookedAt).toLocaleDateString(undefined, {
                   year: 'numeric',
                   month: 'short',
                   day: 'numeric',
                 })}
-              </Text>
+              </DsText>
               {log.authorStarRating ? (
                 <StarDisplay rating={log.authorStarRating} />
               ) : null}
-            </View>
+            </XStack>
             {log.notes ? (
-              <Text className="text-sm text-gray-700">{log.notes}</Text>
+              <DsText
+                fontSize={tokens.typography.fontSize.sm}
+                color={tokens.colors.gray.gray8}
+              >
+                {log.notes}
+              </DsText>
             ) : null}
-          </View>
+          </YStack>
         ))
       )}
-    </View>
+    </YStack>
   );
 };
 

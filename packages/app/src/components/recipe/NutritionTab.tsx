@@ -4,9 +4,10 @@ import {
   queryKeys,
   type ShowcaseDemoRenderer,
 } from '@eciperay/client';
+import {Button as DsButton, Text as DsText, tokens} from '@spudly/ui';
 import {useQuery, useQueryClient} from '@tanstack/react-query';
 import React, {useState} from 'react';
-import {Pressable, Text, View} from 'react-native';
+import {XStack, YStack} from 'tamagui';
 
 import {api} from '../../lib/api';
 
@@ -19,13 +20,27 @@ const NutritionRow = ({
   value: number;
   unit: string;
 }) => (
-  <View className="flex-row justify-between border-be border-gray-100 py-3">
-    <Text className="text-base text-gray-700">{label}</Text>
-    <Text className="text-base font-semibold text-gray-900">
+  <XStack
+    justifyContent="space-between"
+    borderBottomWidth={1}
+    borderBottomColor={tokens.colors.gray.gray2}
+    paddingVertical="$3"
+  >
+    <DsText
+      fontSize={tokens.typography.fontSize.md}
+      color={tokens.colors.gray.gray8}
+    >
+      {label}
+    </DsText>
+    <DsText
+      fontSize={tokens.typography.fontSize.md}
+      fontWeight={tokens.typography.fontWeight.semibold}
+      color={tokens.colors.gray.gray10}
+    >
       {value}
       {unit}
-    </Text>
-  </View>
+    </DsText>
+  </XStack>
 );
 
 export const NutritionTab = ({recipeId}: {recipeId: string}) => {
@@ -51,56 +66,82 @@ export const NutritionTab = ({recipeId}: {recipeId: string}) => {
   };
 
   if (isLoading) {
-    return <Text className="text-muted p-4">Estimating nutrition…</Text>;
+    return (
+      <DsText
+        color="$textMuted"
+        padding="$4"
+      >
+        Estimating nutrition…
+      </DsText>
+    );
   }
   if (!data) {
     return (
-      <View className="p-4">
-        <Text className="text-muted mbe-3">Nutrition is not available yet.</Text>
-        <Pressable
-          className="rounded-lg bg-gray-900 px-3 py-2"
+      <YStack padding="$4">
+        <DsText
+          color="$textMuted"
+          marginBlockEnd="$3"
+        >
+          Nutrition is not available yet.
+        </DsText>
+        <DsButton
+          variant="secondary"
+          backgroundColor={tokens.colors.gray.gray10}
+          color={tokens.colors.gray.gray1}
           onPress={() => {
             void handleRefresh();
           }}
           disabled={refreshing}
         >
-          <Text className="text-center text-sm text-white">
-            {refreshing ? 'Refreshing…' : 'Estimate nutrition'}
-          </Text>
-        </Pressable>
-      </View>
+          {refreshing ? 'Refreshing…' : 'Estimate nutrition'}
+        </DsButton>
+      </YStack>
     );
   }
   return (
-    <View className="p-4">
-      <View className="mbe-3 flex-row items-center justify-between gap-3">
-        <Text
-          className="
-            text-sm font-semibold tracking-wide text-gray-500 uppercase
-          "
+    <YStack padding="$4">
+      <XStack
+        marginBlockEnd="$3"
+        alignItems="center"
+        justifyContent="space-between"
+        gap="$3"
+      >
+        <DsText
+          fontSize={tokens.typography.fontSize.sm}
+          fontWeight={tokens.typography.fontWeight.semibold}
+          letterSpacing={0.35}
+          color={tokens.colors.gray.gray6}
+          textTransform="uppercase"
         >
           Per Serving
-        </Text>
-        <Pressable
-          className="rounded-lg bg-gray-100 px-3 py-1.5"
+        </DsText>
+        <DsButton
+          variant="secondary"
+          size="sm"
+          backgroundColor={tokens.colors.gray.gray2}
+          color={tokens.colors.gray.gray9}
           onPress={() => {
             void handleRefresh();
           }}
           disabled={refreshing || isFetching}
         >
-          <Text className="text-sm text-gray-800">
-            {refreshing ? 'Refreshing…' : 'Refresh'}
-          </Text>
-        </Pressable>
-      </View>
+          {refreshing ? 'Refreshing…' : 'Refresh'}
+        </DsButton>
+      </XStack>
       {nutritionTabRows(data).map(row => (
         <NutritionRow
           key={row.label}
           {...row}
         />
       ))}
-      <Text className="text-muted mbs-4 text-xs">{data.disclaimer}</Text>
-    </View>
+      <DsText
+        fontSize={tokens.typography.fontSize.xs}
+        color="$textMuted"
+        marginBlockStart="$4"
+      >
+        {data.disclaimer}
+      </DsText>
+    </YStack>
   );
 };
 

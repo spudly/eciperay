@@ -5,9 +5,11 @@ import {
   makeRecipeDetail,
   type ShowcaseDemoRenderer,
 } from '@eciperay/client';
+import {Button as DsButton, tokens} from '@spudly/ui';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
 import {useState} from 'react';
-import {Text, TouchableOpacity, View} from 'react-native';
+import {View} from 'react-native';
+import {XStack, YStack} from 'tamagui';
 
 import {api} from '../lib/api';
 
@@ -40,28 +42,38 @@ export const RecipeListCard = ({recipe, onPress, onDelete}: Props) => {
         subtitle={formatRecipeSubtitle(recipe)}
         onPress={onPress}
         trailing={
-          <View className="ms-3 flex-row items-center gap-2">
+          <XStack
+            marginInlineStart="$3"
+            alignItems="center"
+            gap="$2"
+          >
             {showForm ? null : (
-              <TouchableOpacity
-                className="rounded-lg bg-gray-100 px-3 py-1"
+              <DsButton
+                variant="secondary"
+                size="sm"
+                backgroundColor={tokens.colors.gray.gray2}
+                color={tokens.colors.gray.gray8}
                 onPress={() => {
                   setShowForm(true);
                 }}
               >
-                <Text className="text-sm text-gray-700">Log cook</Text>
-              </TouchableOpacity>
+                Log cook
+              </DsButton>
             )}
-            <TouchableOpacity
-              className="rounded-lg bg-red-50 px-3 py-1"
+            <DsButton
+              variant="secondary"
+              size="sm"
+              backgroundColor={tokens.colors.danger.danger1}
+              color={tokens.colors.danger.danger7}
               onPress={onDelete}
             >
-              <Text className="text-sm text-red-600">Delete</Text>
-            </TouchableOpacity>
-          </View>
+              Delete
+            </DsButton>
+          </XStack>
         }
       />
       {showForm ? (
-        <View className="mbe-3">
+        <YStack marginBlockEnd="$3">
           <CookLogForm
             variant="light"
             secondaryLabel="Cancel"
@@ -73,7 +85,7 @@ export const RecipeListCard = ({recipe, onPress, onDelete}: Props) => {
               createMutation.mutate(input);
             }}
           />
-        </View>
+        </YStack>
       ) : null}
     </View>
   );

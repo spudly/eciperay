@@ -8,8 +8,9 @@ import {
   type ShowcaseDemoRenderer,
 } from '@eciperay/client';
 import type {RecipeCommunityRating, RecipeStarRating} from '@eciperay/types';
+import {Card as DsCard, Text as DsText, tokens} from '@spudly/ui';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
-import {Text, View} from 'react-native';
+import {XStack} from 'tamagui';
 
 import {api} from '../../lib/api';
 import {StarRatingInput} from '../ui/StarRatingInput';
@@ -22,6 +23,19 @@ type Props = {
   viewerRating: RecipeStarRating | null;
   viewerRatingIsStale: boolean;
 };
+
+const EyebrowLabel = ({children}: {children: string}) => (
+  <DsText
+    marginBlockEnd="$1"
+    fontSize={tokens.typography.fontSize.xs}
+    fontWeight={tokens.typography.fontWeight.medium}
+    letterSpacing={0.3}
+    color={tokens.colors.gray.gray6}
+    textTransform="uppercase"
+  >
+    {children}
+  </DsText>
+);
 
 export const RecipeRatingsSection = ({
   recipeId,
@@ -45,44 +59,49 @@ export const RecipeRatingsSection = ({
   });
 
   return (
-    <View className="mbe-4 rounded-xl bg-gray-50 p-4">
-      <Text
-        className="
-          mbe-1 text-xs font-medium tracking-wide text-gray-500 uppercase
-        "
-      >
-        Community rating
-      </Text>
+    <DsCard
+      variant="muted"
+      marginBlockEnd="$4"
+    >
+      <EyebrowLabel>Community rating</EyebrowLabel>
       {communityRating ? (
-        <View className="mbe-3 flex-row items-center gap-2">
-          <Text className="text-yellow-400">
+        <XStack
+          marginBlockEnd="$3"
+          alignItems="center"
+          gap="$2"
+        >
+          <DsText color={tokens.colors.warning.warning5}>
             {'★'.repeat(Math.round(communityRating.average))}
-          </Text>
-          <Text className="text-sm text-gray-800">
+          </DsText>
+          <DsText
+            fontSize={tokens.typography.fontSize.sm}
+            color={tokens.colors.gray.gray9}
+          >
             {formatCommunityRatingLabel(
               communityRating.average,
               communityRating.count,
             )}
-          </Text>
+          </DsText>
           {communityRating.hasStaleRatings ? (
             <StaleVersionHint label={STALE_COMMUNITY_RATING_HINT} />
           ) : null}
-        </View>
+        </XStack>
       ) : (
-        <Text className="mbe-3 text-sm text-gray-600">
+        <DsText
+          marginBlockEnd="$3"
+          fontSize={tokens.typography.fontSize.sm}
+          color={tokens.colors.gray.gray7}
+        >
           No community ratings yet
-        </Text>
+        </DsText>
       )}
       {session ? (
         <>
-          <Text
-            className="
-              mbe-1 text-xs font-medium tracking-wide text-gray-500 uppercase
-            "
+          <EyebrowLabel>Your rating</EyebrowLabel>
+          <XStack
+            alignItems="center"
+            gap="$2"
           >
-            Your rating
-          </Text>
-          <View className="flex-row items-center gap-2">
             <StarRatingInput
               value={viewerRating}
               disabled={ratingMutation.isPending}
@@ -93,10 +112,10 @@ export const RecipeRatingsSection = ({
             {viewerRatingIsStale ? (
               <StaleVersionHint label={STALE_VIEWER_RATING_HINT} />
             ) : null}
-          </View>
+          </XStack>
         </>
       ) : null}
-    </View>
+    </DsCard>
   );
 };
 

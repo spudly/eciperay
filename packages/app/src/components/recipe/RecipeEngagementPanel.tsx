@@ -1,7 +1,7 @@
 import {makeRecipeDetail, type ShowcaseDemoRenderer} from '@eciperay/client';
 import type {RecipeCommunityRating, RecipeStarRating} from '@eciperay/types';
 import React from 'react';
-import {View} from 'react-native';
+import {YStack} from 'tamagui';
 
 import {RecipeCommentsSection} from './RecipeCommentsSection';
 import {RecipeRatingsSection} from './RecipeRatingsSection';
@@ -21,7 +21,10 @@ export const RecipeEngagementPanel = ({
   viewerRating,
   viewerRatingIsStale,
 }: Props) => (
-  <View className="px-4 pbe-4">
+  <YStack
+    paddingHorizontal="$4"
+    paddingBlockEnd="$4"
+  >
     <RecipeRatingsSection
       recipeId={recipeId}
       communityRating={communityRating}
@@ -32,7 +35,7 @@ export const RecipeEngagementPanel = ({
       recipeId={recipeId}
       ownerUserId={ownerUserId}
     />
-  </View>
+  </YStack>
 );
 
 if (__DEV__) {
