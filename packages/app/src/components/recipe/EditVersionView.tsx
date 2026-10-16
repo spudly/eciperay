@@ -2,7 +2,7 @@ import type {
   EditVersionViewProps,
   ShowcaseDemoRenderer,
 } from '@eciperay/client';
-import {Text} from 'react-native';
+import {Text as DsText} from '@spudly/ui';
 
 import {ErrorText} from '../ui/ErrorText';
 import {InfoBanner} from '../ui/InfoBanner';
@@ -43,7 +43,12 @@ export const EditVersionView = ({
         </InfoBanner>
       ) : null}
       {changeSummary ? (
-        <Text className="text-muted mbe-6 text-sm">{changeSummary}</Text>
+        <DsText
+          variant="hint"
+          marginBlockEnd="$6"
+        >
+          {changeSummary}
+        </DsText>
       ) : null}
       {children}
     </ScreenScroll>

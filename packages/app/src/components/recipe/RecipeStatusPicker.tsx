@@ -4,8 +4,9 @@ import {
   type ToggleChipOption,
 } from '@eciperay/client';
 import type {RecipeStatus} from '@eciperay/types';
+import {Text as DsText, tokens} from '@spudly/ui';
 import {useMemo, useState} from 'react';
-import {Text, View} from 'react-native';
+import {View} from 'react-native';
 
 import {ToggleChipGroup} from '../ui/ToggleChipGroup';
 
@@ -31,7 +32,14 @@ export const RecipeStatusPicker = ({
 
   return (
     <View>
-      <Text className="mbe-2 text-sm font-medium text-gray-700">Status</Text>
+      <DsText
+        fontSize={tokens.typography.fontSize.sm}
+        fontWeight={tokens.typography.fontWeight.medium}
+        color={tokens.colors.gray.gray8}
+        marginBlockEnd="$2"
+      >
+        Status
+      </DsText>
       <ToggleChipGroup
         options={options}
         selectedId={value}

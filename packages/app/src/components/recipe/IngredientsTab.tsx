@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- ingredients tab with substitutions panel and showcase demo */
 import {
   formatScaledIngredientLine,
   makeRecipeDetail,
@@ -5,10 +6,11 @@ import {
   sortIngredientsByOrder,
   type ShowcaseDemoRenderer,
 } from '@eciperay/client';
-import clsx from 'clsx';
+import {Text as DsText, tokens} from '@spudly/ui';
 import {useQuery} from '@tanstack/react-query';
 import React, {useState} from 'react';
-import {Text, TouchableOpacity, View} from 'react-native';
+import {TouchableOpacity} from 'react-native';
+import {YStack} from 'tamagui';
 import type {Ingredient, RecipeDetail} from '@eciperay/types';
 
 import {api} from '../../lib/api';
@@ -33,6 +35,20 @@ const toggleSet = (id: string, prev: Set<string>): Set<string> => {
   return next;
 };
 
+/**
+ * Pressable rows stay on RN TouchableOpacity (the Stage 2 pressable precedent);
+ * the row's visual values come from @spudly/ui tokens.
+ */
+const rowStyle = {
+  flexDirection: 'row',
+  alignItems: 'center',
+  borderBottomWidth: 1,
+  borderColor: tokens.colors.gray.gray2,
+  paddingVertical: tokens.spacing[3],
+} as const;
+
+const rowMissingStyle = {opacity: 0.4} as const;
+
 const IngredientRow = ({
   ingredient,
   scaleFactor,
@@ -45,16 +61,20 @@ const IngredientRow = ({
   onToggle: () => void;
 }) => (
   <TouchableOpacity
-    className={clsx('flex-row items-center border-be border-gray-100 py-3', {
-      'opacity-40': missing,
-    })}
+    style={[rowStyle, missing ? rowMissingStyle : undefined]}
     onPress={onToggle}
   >
-    <Text className="flex-1 text-base text-gray-900">
+    <DsText flex={1}>
       {formatScaledIngredientLine(ingredient, scaleFactor)}
-    </Text>
+    </DsText>
     {ingredient.isOptional ? (
-      <Text className="text-muted ms-2 text-xs">optional</Text>
+      <DsText
+        fontSize={tokens.typography.fontSize.xs}
+        color="$textMuted"
+        marginInlineStart="$2"
+      >
+        optional
+      </DsText>
     ) : null}
   </TouchableOpacity>
 );
@@ -83,7 +103,7 @@ export const IngredientsTab = ({
   };
 
   return (
-    <View className="p-4">
+    <YStack padding="$4">
       <ServingsStepper
         servings={servings}
         onChange={onServingsChange}
@@ -105,34 +125,58 @@ export const IngredientsTab = ({
         />
       ))}
       {missing.size > 0 ? (
-        <Text className="text-muted mbs-3 text-sm">
+        <DsText
+          variant="hint"
+          marginBlockStart="$3"
+        >
           Tap an ingredient to mark it missing and see substitutions below.
-        </Text>
+        </DsText>
       ) : null}
       {missingNames.length > 0 && substitutionsLoading ? (
-        <Text className="text-muted mbs-4 text-sm">Finding substitutions…</Text>
+        <DsText
+          variant="hint"
+          marginBlockStart="$4"
+        >
+          Finding substitutions…
+        </DsText>
       ) : null}
       {substitutions.length > 0 ? (
-        <View className="mbs-4 rounded-xl bg-blue-50 p-4">
-          <Text className="mbe-2 text-sm font-semibold text-blue-900">
+        <YStack
+          marginBlockStart="$4"
+          borderRadius={tokens.radii.lg}
+          backgroundColor="$primarySubtle"
+          padding="$4"
+        >
+          <DsText
+            fontSize={tokens.typography.fontSize.sm}
+            fontWeight={tokens.typography.fontWeight.semibold}
+            color="$primaryEmphasis"
+            marginBlockEnd="$2"
+          >
             Substitutions
-          </Text>
+          </DsText>
           {substitutions.map(sub => (
-            <View
+            <YStack
               key={sub.ingredient}
-              className="mbe-2"
+              marginBlockEnd="$2"
             >
-              <Text className="text-sm font-medium text-gray-900">
+              <DsText
+                fontSize={tokens.typography.fontSize.sm}
+                fontWeight={tokens.typography.fontWeight.medium}
+              >
                 {sub.ingredient}
-              </Text>
-              <Text className="text-sm text-gray-600">
+              </DsText>
+              <DsText
+                fontSize={tokens.typography.fontSize.sm}
+                color={tokens.colors.gray.gray7}
+              >
                 {sub.suggestions.join(', ')}
-              </Text>
-            </View>
+              </DsText>
+            </YStack>
           ))}
-        </View>
+        </YStack>
       ) : null}
-    </View>
+    </YStack>
   );
 };
 
