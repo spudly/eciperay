@@ -1,5 +1,6 @@
 import type {ProfileViewProps} from '@eciperay/client';
-import {Text, View} from 'react-native';
+import {Text as DsText, tokens} from '@spudly/ui';
+import {YStack} from 'tamagui';
 
 import {LegalLinks} from '../LegalLinks';
 import {ProfileFeedbackPreference} from '../ProfileFeedbackPreference';
@@ -18,30 +19,46 @@ export const ProfileView = ({
 }: ProfileViewProps) => (
   <ScreenContainer variant="padded">
     <PageTitle spacing="section">Profile</PageTitle>
-    {email ? <Text className="ui-profile-email">{email}</Text> : null}
+    {email ? (
+      /* ui-profile-email: mb-6, gray-700 text */
+      <DsText
+        marginBlockEnd="$6"
+        color={tokens.colors.gray.gray8}
+      >
+        {email}
+      </DsText>
+    ) : null}
     {onComponentShowcasePress ? (
-      <View className="mbe-4">
+      <YStack marginBlockEnd="$4">
         <SecondaryButton
           label="Component Showcase"
           onPress={onComponentShowcasePress}
         />
-      </View>
+      </YStack>
     ) : null}
     {sectionsBeforeFeedback}
     {onManageTagsPress ? (
-      <View className="mbe-4">
+      <YStack marginBlockEnd="$4">
         <SecondaryButton
           label="Manage Tags"
           onPress={onManageTagsPress}
         />
-      </View>
+      </YStack>
     ) : null}
     <ProfileFeedbackPreference />
     {sectionsAfterFeedback}
-    <View className="mbe-8">
-      <Text className="ui-profile-section-title">Legal</Text>
+    <YStack marginBlockEnd="$8">
+      {/* ui-profile-section-title: mb-3, lg semibold gray-900 text */}
+      <DsText
+        marginBlockEnd="$3"
+        fontSize={tokens.typography.fontSize.lg}
+        fontWeight={tokens.typography.fontWeight.semibold}
+        color={tokens.colors.gray.gray10}
+      >
+        Legal
+      </DsText>
       <LegalLinks />
-    </View>
+    </YStack>
     <DestructiveButton
       label="Sign Out"
       onPress={onSignOut}

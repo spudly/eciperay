@@ -1,5 +1,7 @@
 import type {AccessTokensViewProps} from '@eciperay/client';
-import {Text, View} from 'react-native';
+import {Text as DsText, tokens} from '@spudly/ui';
+import {Text} from 'react-native';
+import {XStack, YStack} from 'tamagui';
 
 import {EmptyMessage} from '../ui/EmptyMessage';
 import {ErrorText} from '../ui/ErrorText';
@@ -11,6 +13,16 @@ import {TextField} from '../ui/TextField';
 
 import {TokenRow} from './AccessTokensTokenRow';
 
+const secretTextStyle = {
+  fontFamily: tokens.typography.fontFamily.mono,
+  fontSize: tokens.typography.fontSize.sm,
+  color: tokens.colors.gray.gray10,
+} as const;
+
+/* Created-secret panel: the amber warning treatment on DS warning-ramp
+   tokens (the ramp is hex-identical to Tailwind amber: amber-50 =
+   warning1, amber-300 = warning4, amber-800 = warning9, amber-900 =
+   warning10). */
 const CreatedSecretPanel = ({
   secret,
   onDismissSecret,
@@ -18,30 +30,50 @@ const CreatedSecretPanel = ({
   secret: string;
   onDismissSecret: () => void;
 }) => (
-  <View className="mbe-4 rounded-lg border border-amber-300 bg-amber-50 p-4">
-    <Text className="mbe-2 text-sm font-semibold text-amber-900">
-      Copy your new token now — you won&apos;t see it again.
-    </Text>
-    <Text
-      selectable
-      className="mbe-1 rounded-sm bg-white p-3 font-mono text-sm text-slate-900"
+  <YStack
+    marginBlockEnd="$4"
+    borderRadius={tokens.radii.md}
+    borderWidth={1}
+    borderColor={tokens.colors.warning.warning4}
+    backgroundColor={tokens.colors.warning.warning1}
+    padding="$4"
+  >
+    <DsText
+      marginBlockEnd="$2"
+      fontSize={tokens.typography.fontSize.sm}
+      fontWeight={tokens.typography.fontWeight.semibold}
+      color={tokens.colors.warning.warning10}
     >
-      {secret}
-    </Text>
-    <Text className="mbe-3 text-xs text-amber-800">
+      Copy your new token now — you won&apos;t see it again.
+    </DsText>
+    <YStack
+      marginBlockEnd="$1"
+      borderRadius={tokens.radii.sm}
+      backgroundColor="$surface"
+      padding="$3"
+    >
+      {/* RN Text: the secret needs the `selectable` prop for copy, which
+          the DS Text doesn't expose; values are DS tokens. */}
+      <Text style={secretTextStyle}>{secret}</Text>
+    </YStack>
+    <DsText
+      marginBlockEnd="$3"
+      fontSize={tokens.typography.fontSize.xs}
+      color={tokens.colors.warning.warning9}
+    >
       Long-press the token to copy it.
-    </Text>
-    <View className="flex-row gap-2">
+    </DsText>
+    <XStack gap="$2">
       <SecondaryButton
         label="Done"
         onPress={onDismissSecret}
       />
-    </View>
-  </View>
+    </XStack>
+  </YStack>
 );
 
 export const AccessTokensView = ({
-  tokens,
+  tokens: accessTokens,
   isLoading,
   tokenName,
   onTokenNameChange,
@@ -65,30 +97,35 @@ export const AccessTokensView = ({
         onDismissSecret={onDismissSecret}
       />
     ) : null}
-    <View className="mbe-4">
+    <YStack marginBlockEnd="$4">
       <TextField
         label="Token name"
         value={tokenName}
         onChange={onTokenNameChange}
         placeholder="e.g. Claude Desktop"
       />
-      <View className="mbs-3">
+      <YStack marginBlockStart="$3">
         <PrimaryButton
           label="Create token"
           loading={isCreating}
           disabled={!tokenName.trim() || createdSecret !== null}
           onPress={onCreate}
         />
-      </View>
-    </View>
+      </YStack>
+    </YStack>
     {error ? <ErrorText>{error}</ErrorText> : null}
     {isLoading ? (
-      <Text className="text-sm text-slate-500">Loading tokens…</Text>
-    ) : tokens.length === 0 ? (
+      <DsText
+        fontSize={tokens.typography.fontSize.sm}
+        color={tokens.colors.gray.gray6}
+      >
+        Loading tokens…
+      </DsText>
+    ) : accessTokens.length === 0 ? (
       <EmptyMessage>No tokens yet.</EmptyMessage>
     ) : (
-      <View>
-        {tokens.map(token => (
+      <YStack>
+        {accessTokens.map(token => (
           <TokenRow
             key={token.id}
             token={token}
@@ -96,7 +133,7 @@ export const AccessTokensView = ({
             onRevoke={onRevoke}
           />
         ))}
-      </View>
+      </YStack>
     )}
   </SectionCard>
 );

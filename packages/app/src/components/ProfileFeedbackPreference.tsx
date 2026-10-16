@@ -2,7 +2,7 @@ import {
   type ShowcaseDemoRenderer,
   useFeedbackShortcutEnabled,
 } from '@eciperay/client';
-import {Text} from 'react-native';
+import {Text as DsText, tokens} from '@spudly/ui';
 
 import {POSTHOG_KEY} from '../lib/env';
 
@@ -23,10 +23,14 @@ export const ProfileFeedbackPreference = () => {
         description="Adds a Feedback tab so you can send product feedback. Submissions are sent to PostHog when you use it."
       >
         {analyticsConfigured ? null : (
-          <Text className="text-muted mbs-1 text-sm">
+          <DsText
+            color="$textMuted"
+            marginBlockStart="$1"
+            fontSize={tokens.typography.fontSize.sm}
+          >
             Feedback is unavailable because analytics is not configured in this
             environment.
-          </Text>
+          </DsText>
         )}
       </CheckboxField>
     </SectionCard>

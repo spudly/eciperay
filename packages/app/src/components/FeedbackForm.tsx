@@ -5,10 +5,17 @@ import {
   type SubmitUserFeedbackInput,
 } from '@eciperay/client';
 import {useFocusEffect} from '@react-navigation/native';
+import {
+  MultilineField as DsMultilineField,
+  Text as DsText,
+  tokens,
+} from '@spudly/ui';
 import {useCallback, useState} from 'react';
-import {Text, TextInput, TouchableOpacity, View} from 'react-native';
+import {YStack} from 'tamagui';
 
 import {CheckboxField} from './ui/CheckboxField';
+import {ErrorText} from './ui/ErrorText';
+import {PrimaryButton} from './ui/PrimaryButton';
 
 type FeedbackFormProps = {
   route?: string;
@@ -61,52 +68,50 @@ export const FeedbackForm = ({route, onSubmitted}: FeedbackFormProps) => {
 
   if (submitted) {
     return (
-      <Text className="text-sm text-green-700">
+      <DsText
+        fontSize={tokens.typography.fontSize.sm}
+        color={tokens.colors.success.success8}
+      >
         Thanks — we got your feedback.
-      </Text>
+      </DsText>
     );
   }
 
   return (
-    <View className="gap-4">
-      <View className="gap-2">
-        <Text className="text-sm font-medium text-gray-900">
+    <YStack gap="$4">
+      <YStack gap="$2">
+        <DsText
+          fontSize={tokens.typography.fontSize.sm}
+          fontWeight={tokens.typography.fontWeight.medium}
+          color={tokens.colors.gray.gray10}
+        >
           What&apos;s on your mind?
-        </Text>
-        <TextInput
-          className="
-            rounded-lg border border-gray-300 bg-white px-3 py-2 text-base
-            text-gray-900 min-block-32
-          "
-          multiline
-          textAlignVertical="top"
+        </DsText>
+        {/* DS field chrome replaces the old hand-rolled bordered input
+            (the Stage 3a RecipeForm treatment); the old min-block-32
+            sizing is covered by the field's default 4-line block. */}
+        <DsMultilineField
           value={message}
           onChangeText={setMessage}
           placeholder="Tell us what happened or what you'd like to see improved."
         />
-      </View>
+      </YStack>
       <CheckboxField
         checked={isBug}
         onChange={setIsBug}
         label="This is a bug"
       />
-      {error ? <Text className="text-sm text-red-600">{error}</Text> : null}
-      <TouchableOpacity
-        className="
-          bg-primary items-center rounded-lg py-3
-          disabled:opacity-50
-        "
-        accessibilityRole="button"
-        disabled={submitting || validateUserFeedbackMessage(message) !== null}
+      {error ? <ErrorText>{error}</ErrorText> : null}
+      <PrimaryButton
+        label="Submit feedback"
+        loading={submitting}
+        loadingLabel="Submitting…"
+        disabled={validateUserFeedbackMessage(message) !== null}
         onPress={() => {
           void handleSubmit();
         }}
-      >
-        <Text className="text-base font-semibold text-white">
-          {submitting ? 'Submitting…' : 'Submit feedback'}
-        </Text>
-      </TouchableOpacity>
-    </View>
+      />
+    </YStack>
   );
 };
 

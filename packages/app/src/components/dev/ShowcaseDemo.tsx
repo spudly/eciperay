@@ -83,9 +83,11 @@ export const ShowcaseDemo = ({id}: {id: string}) => {
     };
   }, [id]);
 
+  // The old ui-showcase-demo-frame class was dead (defined nowhere), so
+  // the frame wrappers are plain Views with no replacement styling.
   if (missing) {
     return (
-      <View className="ui-showcase-demo-frame">
+      <View>
         <ShowcasePlaceholder
           name={id}
           detail="Add a .demo on the component export inside a DEV guard."
@@ -95,11 +97,11 @@ export const ShowcaseDemo = ({id}: {id: string}) => {
   }
 
   if (!Demo) {
-    return <View className="ui-showcase-demo-frame" />;
+    return <View />;
   }
 
   return (
-    <View className="ui-showcase-demo-frame">
+    <View>
       <Demo Frame={ShowcaseDemoFrame} />
     </View>
   );

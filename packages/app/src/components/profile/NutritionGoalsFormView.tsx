@@ -1,6 +1,6 @@
 import type {NutritionGoalsFormViewProps} from '@eciperay/client';
 import type {NutritionGoals} from '@eciperay/types';
-import {View} from 'react-native';
+import {YStack} from 'tamagui';
 
 import {ErrorText} from '../ui/ErrorText';
 import {PrimaryButton} from '../ui/PrimaryButton';
@@ -88,13 +88,13 @@ export const NutritionGoalsFormView = ({
         }}
       />
       {error ? <ErrorText>{error}</ErrorText> : null}
-      <View className="mbs-3">
+      <YStack marginBlockStart="$3">
         <PrimaryButton
           label="Save goals"
           loading={saving}
           onPress={onSave}
         />
-      </View>
+      </YStack>
     </SectionCard>
   );
 };

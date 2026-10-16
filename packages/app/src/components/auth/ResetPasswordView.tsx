@@ -1,5 +1,5 @@
 import type {ResetPasswordViewProps} from '@eciperay/client';
-import {Text} from 'react-native';
+import {Text as DsText} from '@spudly/ui';
 import {useState} from 'react';
 
 import {AuthScreenLayout} from '../ui/AuthScreenLayout';
@@ -22,9 +22,12 @@ export const ResetPasswordView = ({
     >
       New password
     </PageTitle>
-    <Text className="text-muted mbe-8">
+    <DsText
+      color="$textMuted"
+      marginBlockEnd="$8"
+    >
       Choose a new password for your account.
-    </Text>
+    </DsText>
     <TextField
       autoComplete="password-new"
       label="New password"

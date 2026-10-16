@@ -8,7 +8,8 @@ import {
   HOME_TITLE,
   type HomeViewProps,
 } from '@eciperay/client';
-import {Text, View} from 'react-native';
+import {Text as DsText} from '@spudly/ui';
+import {YStack} from 'tamagui';
 import {makeRecipeDetail} from '@eciperay/client';
 
 import {RecipeListCard} from '../RecipeListCard';
@@ -29,15 +30,24 @@ export const HomeView = ({
   onRecipeDelete,
 }: HomeViewProps) => (
   <ScreenScroll>
-    <View className="pbs-2">
+    <YStack paddingBlockStart="$2">
       <PageTitle
         size="auth"
         spacing="auth"
       >
         {HOME_TITLE}
       </PageTitle>
-      <Text className="text-muted mbe-6 text-center">{HOME_SUBTITLE}</Text>
-      <View className="mbe-8 gap-3">
+      <DsText
+        color="$textMuted"
+        marginBlockEnd="$6"
+        textAlign="center"
+      >
+        {HOME_SUBTITLE}
+      </DsText>
+      <YStack
+        marginBlockEnd="$8"
+        gap="$3"
+      >
         <PrimaryButton
           label={HOME_BROWSE_LABEL}
           onPress={onBrowsePress}
@@ -50,21 +60,20 @@ export const HomeView = ({
           label={HOME_SHARED_WITH_ME_LABEL}
           onPress={onSharedWithMePress}
         />
-      </View>
+      </YStack>
       <PageTitle
         size="section"
         spacing="section"
       >
         {HOME_RECIPES_SECTION_TITLE}
       </PageTitle>
-    </View>
+    </YStack>
 
-    <View className="pbe-8">
+    <YStack paddingBlockEnd="$8">
       {isLoading ? (
-        <InlineLoadingIndicator
-          loading
-          className="mbs-8"
-        />
+        <YStack marginBlockStart="$8">
+          <InlineLoadingIndicator loading />
+        </YStack>
       ) : recipes.length === 0 ? (
         <EmptyMessage spacing="list">{HOME_EMPTY_MESSAGE}</EmptyMessage>
       ) : (
@@ -81,7 +90,7 @@ export const HomeView = ({
           />
         ))
       )}
-    </View>
+    </YStack>
   </ScreenScroll>
 );
 

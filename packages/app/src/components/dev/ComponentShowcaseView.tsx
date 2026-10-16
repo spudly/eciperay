@@ -2,8 +2,9 @@ import {
   COMPONENT_SHOWCASE_CATALOG,
   filterShowcaseEntries,
 } from '@eciperay/client';
+import {Text as DsText, tokens} from '@spudly/ui';
 import {useEffect, useMemo, useState} from 'react';
-import {Text, View} from 'react-native';
+import {YStack} from 'tamagui';
 
 import {InfoBanner} from '../ui/InfoBanner';
 import {PageTitle} from '../ui/PageTitle';
@@ -63,16 +64,22 @@ export const ComponentShowcaseView = () => {
       )}
 
       {selectedEntry ? (
-        <View className="mbs-2">
+        <YStack marginBlockStart="$2">
           <PageTitle
             size="section"
             spacing="section"
           >
             {selectedEntry.label}
           </PageTitle>
-          <Text className="text-muted mbe-4 text-sm">{selectedEntry.id}</Text>
+          <DsText
+            color="$textMuted"
+            marginBlockEnd="$4"
+            fontSize={tokens.typography.fontSize.sm}
+          >
+            {selectedEntry.id}
+          </DsText>
           <ShowcaseDemo id={selectedId} />
-        </View>
+        </YStack>
       ) : null}
     </ScreenScroll>
   );

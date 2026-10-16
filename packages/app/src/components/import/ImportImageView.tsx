@@ -1,5 +1,6 @@
 import type {ImportImageViewProps} from '@eciperay/client';
-import {Text, View} from 'react-native';
+import {Text as DsText} from '@spudly/ui';
+import {YStack} from 'tamagui';
 
 import {ErrorText} from '../ui/ErrorText';
 import {FormScreenLayout} from '../ui/FormScreenLayout';
@@ -20,7 +21,7 @@ export const ImportImageView = ({
         onPickCamera?.();
       }}
     />
-    <View className="mbs-3">
+    <YStack marginBlockStart="$3">
       <SecondaryButton
         label="Choose from Library"
         disabled={loading}
@@ -28,12 +29,19 @@ export const ImportImageView = ({
           onPickLibrary?.();
         }}
       />
-    </View>
-    {loading ? <Text className="text-muted mbs-4">Importing…</Text> : null}
+    </YStack>
+    {loading ? (
+      <DsText
+        color="$textMuted"
+        marginBlockStart="$4"
+      >
+        Importing…
+      </DsText>
+    ) : null}
     {error ? (
-      <View className="mbs-4">
+      <YStack marginBlockStart="$4">
         <ErrorText>{error}</ErrorText>
-      </View>
+      </YStack>
     ) : null}
   </FormScreenLayout>
 );

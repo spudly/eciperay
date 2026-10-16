@@ -1,5 +1,5 @@
 import type {ForgotPasswordViewProps} from '@eciperay/client';
-import {Text} from 'react-native';
+import {Text as DsText} from '@spudly/ui';
 import {useState} from 'react';
 
 import {AuthScreenLayout} from '../ui/AuthScreenLayout';
@@ -24,9 +24,12 @@ export const ForgotPasswordView = ({
     >
       Reset password
     </PageTitle>
-    <Text className="text-muted mbe-8">
+    <DsText
+      color="$textMuted"
+      marginBlockEnd="$8"
+    >
       {"We'll send a reset link to your email."}
-    </Text>
+    </DsText>
     <TextField
       autoComplete="email"
       label="Email"
