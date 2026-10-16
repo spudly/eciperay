@@ -1,5 +1,4 @@
 ignores:
-  - '@eciperay/theme' # Imported via @import in global.css; depcheck does not trace CSS imports
   - '@spudly/ui' # Design-system package; wired for upcoming component migration, not yet imported
   - '@babel/preset-env' # Babel preset used by React Native toolchain, not imported directly in app source
   - '@babel/runtime' # Babel runtime helpers injected by the compiler, not imported directly in app source
@@ -8,10 +7,6 @@ ignores:
   - '@react-native-community/cli-platform-ios' # iOS platform module for React Native CLI, loaded by the CLI at build time
   - '@types/react-test-renderer' # Type definitions for react-test-renderer; no direct imports in app source
   - patch-package # Patches are applied from the root postinstall script, not imported in app source
-  - '@tailwindcss/postcss' # Used by postcss.config.mjs, not imported in app source
-  - tailwindcss # Imported via @import in global.css; depcheck does not trace CSS imports
-  - postcss # Used by postcss.config.mjs, not imported in app source
-  - react-native-css # NativeWind v5 peer dependency; loaded by Metro, not imported in app source
   - react-native-safe-area-context # Required peer dependency of @react-navigation; autolinked without direct imports
   - react-native-screens # Required peer dependency of @react-navigation; autolinked without direct imports
   - metro-resolver # Used by metro.config.cjs; hoisted from @react-native/metro-config

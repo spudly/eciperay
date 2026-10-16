@@ -2,9 +2,9 @@
   "extends": "@react-native/typescript-config",
   "compilerOptions": {
     "lib": ["ES2022", "DOM"],
-    "types": ["jest", "nativewind/types"],
+    "types": ["jest"],
     "noEmit": true
   },
-  "include": ["**/*.ts", "**/*.tsx", "nativewind-env.d.ts"],
+  "include": ["**/*.ts", "**/*.tsx"],
   "exclude": ["**/node_modules", "**/Pods"]
 }

@@ -31,6 +31,7 @@ COPY packages/types packages/types
 COPY packages/icons packages/icons
 COPY packages/client packages/client
 COPY packages/web packages/web
+COPY assets assets
 COPY scripts scripts
 COPY tsconfig.base.json tsconfig.json ./
 
