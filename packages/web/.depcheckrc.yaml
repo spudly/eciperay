@@ -1,5 +1,4 @@
 ignores:
-  - '@eciperay/theme' # Imported via @import in index.css; depcheck does not trace CSS imports
   - '@spudly/ui' # Design-system package; wired for upcoming component migration, not yet imported
   - '@vitest/coverage-v8' # Used by vitest coverage config, not imported in source
   - tailwindcss # Used by @tailwindcss/vite and index.css; depcheck does not trace CSS imports

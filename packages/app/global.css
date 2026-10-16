@@ -1,6 +1,6 @@
 @import "tailwindcss";
 @import "nativewind/theme";
-@import "@eciperay/theme";
+@import "./theme.css";
 
 @layer utilities {
   .font-sans {
