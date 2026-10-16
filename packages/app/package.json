@@ -1,6 +1,6 @@
 {
   "name": "@eciperay/app",
-  "version": "1.12.5",
+  "version": "1.13.0",
   "private": true,
   "scripts": {
     "typecheck": "tsc --noEmit",
