@@ -11,17 +11,54 @@ import {
   type ShowcaseDemoRenderer,
 } from '@eciperay/client';
 import type {RecipeDetail, RecipeVisibility} from '@eciperay/types';
+import {
+  Button as DsButton,
+  Card as DsCard,
+  Text as DsText,
+  TextLink as DsTextLink,
+  tokens,
+} from '@spudly/ui';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useState} from 'react';
-import {Linking, Share, Text, TouchableOpacity, View} from 'react-native';
+import {Linking, Share} from 'react-native';
+import {YStack} from 'tamagui';
 
 import {api} from '../../lib/api';
 import {CheckboxField} from '../ui/CheckboxField';
+import {PrimaryButton} from '../ui/PrimaryButton';
 import {RadioOptionGroup} from '../ui/RadioOptionGroup';
 
 type Props = {recipe: RecipeDetail; onActionMessage: (message: string) => void};
 
 const visibilityOptions: RecipeVisibility[] = ['private', 'unlisted', 'public'];
+
+/**
+ * The secondary actions (rotate/share) keep their old outline-neutral look — a
+ * transparent fill with a hairline border and gray label — expressed as token
+ * overrides on the DS secondary Button.
+ */
+const OutlineActionButton = ({
+  label,
+  disabled = false,
+  onPress,
+}: {
+  label: string;
+  disabled?: boolean;
+  onPress: () => void;
+}) => (
+  <DsButton
+    variant="secondary"
+    size="sm"
+    backgroundColor="transparent"
+    borderWidth={1}
+    borderColor="$borderColor"
+    color={tokens.colors.gray.gray7}
+    disabled={disabled}
+    onPress={onPress}
+  >
+    {label}
+  </DsButton>
+);
 
 export const RecipeVisibilityControls = ({recipe, onActionMessage}: Props) => {
   const queryClient = useQueryClient();
@@ -73,8 +110,17 @@ export const RecipeVisibilityControls = ({recipe, onActionMessage}: Props) => {
         : null;
 
   return (
-    <View className="mbe-4 rounded-xl border border-gray-200 p-4">
-      <Text className="mbe-2 text-sm font-semibold text-gray-900">Sharing</Text>
+    <DsCard
+      variant="bordered"
+      marginBlockEnd="$4"
+    >
+      <DsText
+        fontSize={tokens.typography.fontSize.sm}
+        fontWeight={tokens.typography.fontWeight.semibold}
+        marginBlockEnd="$2"
+      >
+        Sharing
+      </DsText>
       <RadioOptionGroup
         name={`visibility-${recipe.id}`}
         value={pendingVisibility ?? recipe.visibility}
@@ -89,9 +135,13 @@ export const RecipeVisibilityControls = ({recipe, onActionMessage}: Props) => {
         }}
       />
       {pendingVisibility === 'public' ? (
-        <Text className="mbs-2 text-sm text-amber-800">
+        <DsText
+          fontSize={tokens.typography.fontSize.sm}
+          color={tokens.colors.warning.warning9}
+          marginBlockStart="$2"
+        >
           This recipe will be discoverable by anyone browsing Eciperay.
-        </Text>
+        </DsText>
       ) : null}
       {pendingVisibility &&
       requiresPublishingConsent(recipe.visibility, pendingVisibility) ? (
@@ -103,88 +153,93 @@ export const RecipeVisibilityControls = ({recipe, onActionMessage}: Props) => {
             <>
               I understand this recipe may be viewed without signing in and I
               agree to the{' '}
-              <Text
-                className="text-primary font-medium"
+              <DsTextLink
+                fontSize={tokens.typography.fontSize.sm}
                 onPress={() => {
                   void Linking.openURL(PRIVACY_POLICY_URL);
                 }}
               >
                 Privacy Policy
-              </Text>
+              </DsTextLink>
               .
             </>
           }
         />
       ) : null}
       {pendingVisibility && pendingVisibility !== recipe.visibility ? (
-        <TouchableOpacity
-          className="bg-primary mbs-3 rounded-lg px-3 py-2"
-          disabled={
-            sharingMutation.isPending ||
-            (requiresPublishingConsent(recipe.visibility, pendingVisibility) &&
-              !publishingConsent)
-          }
-          onPress={() => {
-            sharingMutation.mutate({
-              visibility: pendingVisibility,
-              ...(requiresPublishingConsent(
+        <YStack marginBlockStart="$3">
+          <PrimaryButton
+            label="Save sharing settings"
+            disabled={
+              sharingMutation.isPending ||
+              (requiresPublishingConsent(
                 recipe.visibility,
                 pendingVisibility,
-              )
-                ? {publishingConsent: true}
-                : {}),
-            });
-          }}
-        >
-          <Text className="text-center text-sm font-medium text-white">
-            Save sharing settings
-          </Text>
-        </TouchableOpacity>
+              ) &&
+                !publishingConsent)
+            }
+            onPress={() => {
+              sharingMutation.mutate({
+                visibility: pendingVisibility,
+                ...(requiresPublishingConsent(
+                  recipe.visibility,
+                  pendingVisibility,
+                )
+                  ? {publishingConsent: true}
+                  : {}),
+              });
+            }}
+          />
+        </YStack>
       ) : null}
       {activeVisibility === 'unlisted' ? (
-        <View className="mbs-3 gap-2">
-          <TouchableOpacity
-            className="rounded-lg border border-gray-200 px-3 py-2"
+        <YStack
+          marginBlockStart="$3"
+          gap="$2"
+        >
+          <OutlineActionButton
+            label={shareToken ? 'Rotate share link' : 'Generate share link'}
             disabled={rotateMutation.isPending}
             onPress={() => {
               rotateMutation.mutate();
             }}
-          >
-            <Text className="text-center text-sm font-medium text-gray-700">
-              {shareToken ? 'Rotate share link' : 'Generate share link'}
-            </Text>
-          </TouchableOpacity>
+          />
           {shareUrl ? (
-            <TouchableOpacity
-              className="rounded-lg border border-gray-200 px-3 py-2"
+            <OutlineActionButton
+              label="Share link"
               onPress={() => {
                 void Share.share({message: shareUrl});
               }}
-            >
-              <Text className="text-center text-sm font-medium text-gray-700">
-                Share link
-              </Text>
-            </TouchableOpacity>
+            />
           ) : null}
-        </View>
+        </YStack>
       ) : null}
       {activeVisibility === 'public' ? (
-        <View className="mbs-3">
-          <Text className="text-xs text-gray-500">Public permalink</Text>
-          <Text className="mbs-1 text-xs text-gray-700">{permalink}</Text>
-          <TouchableOpacity
-            className="mbs-2 rounded-lg border border-gray-200 px-3 py-2"
-            onPress={() => {
-              void Share.share({message: permalink});
-            }}
+        <YStack marginBlockStart="$3">
+          <DsText
+            fontSize={tokens.typography.fontSize.xs}
+            color={tokens.colors.gray.gray6}
           >
-            <Text className="text-center text-sm font-medium text-gray-700">
-              Share permalink
-            </Text>
-          </TouchableOpacity>
-        </View>
+            Public permalink
+          </DsText>
+          <DsText
+            fontSize={tokens.typography.fontSize.xs}
+            color={tokens.colors.gray.gray7}
+            marginBlockStart="$1"
+          >
+            {permalink}
+          </DsText>
+          <YStack marginBlockStart="$2">
+            <OutlineActionButton
+              label="Share permalink"
+              onPress={() => {
+                void Share.share({message: permalink});
+              }}
+            />
+          </YStack>
+        </YStack>
       ) : null}
-    </View>
+    </DsCard>
   );
 };
 

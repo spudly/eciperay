@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- version picker modal sheet with showcase demo */
 import {
   makeRecipeDetail,
   makeRecipeVersionSummary,
@@ -5,8 +6,9 @@ import {
   truncateChangeSummary,
 } from '@eciperay/client';
 import type {RecipeVersionSummary} from '@eciperay/types';
+import {eciperayTheme, Text as DsText, tokens} from '@spudly/ui';
 import {useMemo, useState} from 'react';
-import {Modal, Pressable, ScrollView, Text, View} from 'react-native';
+import {Modal, Pressable, ScrollView, View} from 'react-native';
 
 const ROLE_LABELS: Record<RecipeVersionSummary['derivedRole'], string> = {
   active: 'Active',
@@ -29,6 +31,46 @@ type Props = {
   onSelect: (versionId: string) => void;
 };
 
+/**
+ * The modal sheet keeps RN Modal/Pressable (tests drive the sheet and backdrop
+ * through their press handlers and testIDs); every visual value comes from
+ * @spudly/ui tokens. The scrim is the DS shadow color at 40% alpha (the old
+ * bg-black/40), composed with an alpha suffix the way TagPill composes data
+ * colors. Sheet max height (320, the old max-block-80) is layout geometry with
+ * no step on the DS spacing scale.
+ */
+const styles = {
+  trigger: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.spacing[2],
+  } as const,
+  chip: {
+    borderRadius: tokens.radii.md,
+    borderWidth: 1,
+    borderColor: tokens.colors.gray.gray3,
+    paddingHorizontal: tokens.spacing[2],
+    paddingVertical: tokens.spacing[1],
+  } as const,
+  backdrop: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: `${tokens.shadows.md.shadowColor}66`,
+  } as const,
+  sheet: {
+    borderTopLeftRadius: tokens.radii.xl,
+    borderTopRightRadius: tokens.radii.xl,
+    backgroundColor: eciperayTheme.semantic.surface,
+    maxHeight: 320,
+  } as const,
+  row: {
+    borderBottomWidth: 1,
+    borderColor: tokens.colors.gray.gray1,
+    paddingHorizontal: tokens.spacing[4],
+    paddingVertical: tokens.spacing[3],
+  } as const,
+};
+
 export const VersionPicker = ({
   versions,
   selectedVersionId,
@@ -43,9 +85,12 @@ export const VersionPicker = ({
 
   if (versions.length <= 1) {
     return (
-      <Text className="text-muted text-xs">
+      <DsText
+        fontSize={tokens.typography.fontSize.xs}
+        color="$textMuted"
+      >
         Version {versions[0]?.versionNumber ?? 1}
-      </Text>
+      </DsText>
     );
   }
 
@@ -54,20 +99,20 @@ export const VersionPicker = ({
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Select version"
-        className="flex-row items-center gap-2"
+        style={styles.trigger}
         onPress={() => {
           setOpen(true);
         }}
       >
-        <Text className="text-muted text-sm">Version</Text>
-        <View className="rounded-lg border border-gray-200 px-2 py-1">
-          <Text
-            className="text-sm"
+        <DsText variant="hint">Version</DsText>
+        <View style={styles.chip}>
+          <DsText
+            fontSize={tokens.typography.fontSize.sm}
             numberOfLines={1}
             ellipsizeMode="tail"
           >
             {versionLabel(selected)}
-          </Text>
+          </DsText>
         </View>
       </Pressable>
       <Modal
@@ -80,47 +125,55 @@ export const VersionPicker = ({
       >
         <Pressable
           testID="version-picker-backdrop"
-          className="flex-1 justify-end bg-black/40"
+          style={styles.backdrop}
           onPress={() => {
             setOpen(false);
           }}
         >
           <Pressable
             testID="version-picker-sheet"
-            className="rounded-t-2xl bg-white max-block-80"
+            style={styles.sheet}
             onPress={e => {
               e.stopPropagation();
             }}
           >
-            <Text
-              className="
-                border-be border-gray-100 px-4 py-3 text-sm font-medium
-                text-gray-900
-              "
+            <DsText
+              fontSize={tokens.typography.fontSize.sm}
+              fontWeight={tokens.typography.fontWeight.medium}
+              paddingHorizontal="$4"
+              paddingVertical="$3"
+              borderBottomWidth={1}
+              borderColor={tokens.colors.gray.gray2}
             >
               Select version
-            </Text>
+            </DsText>
             <ScrollView>
               {sorted.map(version => (
                 <Pressable
                   key={version.id}
-                  className="border-be border-gray-50 px-4 py-3"
+                  style={styles.row}
                   onPress={() => {
                     onSelect(version.id);
                     setOpen(false);
                   }}
                 >
-                  <Text
-                    className={
+                  <DsText
+                    fontSize={tokens.typography.fontSize.sm}
+                    fontWeight={
                       version.id === selectedVersionId
-                        ? 'text-primary text-sm font-medium'
-                        : 'text-sm text-gray-800'
+                        ? tokens.typography.fontWeight.medium
+                        : undefined
+                    }
+                    color={
+                      version.id === selectedVersionId
+                        ? '$primary'
+                        : tokens.colors.gray.gray9
                     }
                     numberOfLines={1}
                     ellipsizeMode="tail"
                   >
                     {versionLabel(version)}
-                  </Text>
+                  </DsText>
                 </Pressable>
               ))}
             </ScrollView>

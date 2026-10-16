@@ -5,6 +5,7 @@ import {
   type FormIngredientRow,
 } from '@eciperay/client';
 import type {IngredientInput} from '@eciperay/types';
+import {eciperayTheme, tokens} from '@spudly/ui';
 import React, {useState} from 'react';
 import {Text, TextInput, TouchableOpacity, View} from 'react-native';
 import DraggableFlatList, {
@@ -22,6 +23,78 @@ type UpdateIngredient = (
   value: string | number | boolean | null,
 ) => void;
 
+/**
+ * This list also renders without a TamaguiProvider (its unit test uses a plain
+ * render), so rows stay on RN primitives with every visual value sourced from
+ * @spudly/ui tokens — the BookLoadingSpinner pattern. Qty column width (56) is
+ * row geometry; it has no step on the DS spacing scale.
+ */
+const styles = {
+  row: {
+    marginBottom: tokens.spacing[2],
+    flexDirection: 'row',
+    gap: tokens.spacing[2],
+  } as const,
+  dragHandle: {
+    justifyContent: 'center',
+    borderRadius: tokens.radii.sm,
+    borderWidth: 1,
+    borderColor: tokens.colors.gray.gray4,
+    paddingHorizontal: tokens.spacing[2],
+    paddingVertical: tokens.spacing[1],
+  } as const,
+  dragLabel: {
+    fontSize: tokens.typography.fontSize.xs,
+    color: tokens.colors.gray.gray8,
+  } as const,
+  qtyInput: {
+    borderRadius: tokens.radii.sm,
+    borderWidth: 1,
+    borderColor: tokens.colors.gray.gray4,
+    paddingHorizontal: tokens.spacing[2],
+    paddingVertical: tokens.spacing[1],
+    fontSize: tokens.typography.fontSize.sm,
+    width: 56,
+  } as const,
+  unitInput: {
+    borderRadius: tokens.radii.sm,
+    borderWidth: 1,
+    borderColor: tokens.colors.gray.gray4,
+    paddingHorizontal: tokens.spacing[2],
+    paddingVertical: tokens.spacing[1],
+    fontSize: tokens.typography.fontSize.sm,
+    width: tokens.spacing[16],
+  } as const,
+  nameInput: {
+    borderRadius: tokens.radii.sm,
+    borderWidth: 1,
+    borderColor: tokens.colors.gray.gray4,
+    paddingHorizontal: tokens.spacing[2],
+    paddingVertical: tokens.spacing[1],
+    fontSize: tokens.typography.fontSize.sm,
+    flex: 1,
+  } as const,
+  removeLabel: {
+    fontSize: tokens.typography.fontSize.sm,
+    color: tokens.colors.danger.danger7,
+  } as const,
+  header: {
+    marginBottom: tokens.spacing[2],
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  } as const,
+  headerTitle: {
+    fontSize: tokens.typography.fontSize.sm,
+    fontWeight: tokens.typography.fontWeight.medium,
+    color: tokens.colors.gray.gray8,
+  } as const,
+  addLabel: {
+    fontSize: tokens.typography.fontSize.sm,
+    color: eciperayTheme.semantic.primary,
+  } as const,
+};
+
 type RowProps = {
   ingredient: FormIngredient;
   index: number;
@@ -37,17 +110,17 @@ const IngredientRow = ({
   onUpdate,
   onRemove,
 }: RowProps) => (
-  <View className="mbe-2 flex-row gap-2">
+  <View style={styles.row}>
     <TouchableOpacity
       accessibilityLabel={`Reorder ingredient ${index + 1}`}
-      className="justify-center rounded-sm border border-gray-300 px-2 py-1"
+      style={styles.dragHandle}
       onLongPress={drag}
       delayLongPress={0}
     >
-      <Text className="text-xs text-gray-700">Drag</Text>
+      <Text style={styles.dragLabel}>Drag</Text>
     </TouchableOpacity>
     <TextInput
-      className="rounded-sm border border-gray-300 px-2 py-1 text-sm inline-14"
+      style={styles.qtyInput}
       placeholder="Qty"
       value={ingredient.quantity === null ? '' : String(ingredient.quantity)}
       onChangeText={val => {
@@ -55,7 +128,7 @@ const IngredientRow = ({
       }}
     />
     <TextInput
-      className="rounded-sm border border-gray-300 px-2 py-1 text-sm inline-16"
+      style={styles.unitInput}
       placeholder="Unit"
       value={ingredient.unit ?? ''}
       onChangeText={val => {
@@ -63,7 +136,7 @@ const IngredientRow = ({
       }}
     />
     <TextInput
-      className="flex-1 rounded-sm border border-gray-300 px-2 py-1 text-sm"
+      style={styles.nameInput}
       placeholder="Name"
       value={ingredient.name}
       onChangeText={val => {
@@ -71,7 +144,7 @@ const IngredientRow = ({
       }}
     />
     <TouchableOpacity onPress={onRemove}>
-      <Text className="text-sm text-red-600">Remove</Text>
+      <Text style={styles.removeLabel}>Remove</Text>
     </TouchableOpacity>
   </View>
 );
@@ -110,10 +183,10 @@ export const SortableIngredientList = ({
 
   return (
     <View>
-      <View className="mbe-2 flex-row items-center justify-between">
-        <Text className="text-sm font-medium text-gray-700">Ingredients</Text>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Ingredients</Text>
         <TouchableOpacity onPress={onAdd}>
-          <Text className="text-primary text-sm">+ Add</Text>
+          <Text style={styles.addLabel}>+ Add</Text>
         </TouchableOpacity>
       </View>
       <DraggableFlatList

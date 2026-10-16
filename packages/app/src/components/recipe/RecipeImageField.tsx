@@ -1,7 +1,9 @@
 /* eslint-disable max-lines -- recipe image upload, paste, and generate controls */
+import {Button as DsButton, Text as DsText, tokens} from '@spudly/ui';
 import React from 'react';
-import {Image, Text, TouchableOpacity, View} from 'react-native';
+import {Image, View} from 'react-native';
 import {launchImageLibrary} from 'react-native-image-picker';
+import {XStack, YStack} from 'tamagui';
 
 import {
   recipeImageFromAsset,
@@ -69,16 +71,30 @@ export const RecipeImageField = ({
   };
 
   return (
-    <View>
-      <View className="mbe-1 flex-row items-center justify-between gap-2">
-        <Text className="text-sm font-medium text-gray-700">Recipe image</Text>
+    <YStack>
+      <XStack
+        marginBlockEnd="$1"
+        alignItems="center"
+        justifyContent="space-between"
+        gap="$2"
+      >
+        <DsText
+          fontSize={tokens.typography.fontSize.sm}
+          fontWeight={tokens.typography.fontWeight.medium}
+          color={tokens.colors.gray.gray8}
+        >
+          Recipe image
+        </DsText>
         {headerAction}
-      </View>
-      <View
-        className="
-          mbe-3 overflow-hidden rounded-lg border-2 border-dashed
-          border-gray-300 bg-gray-50
-        "
+      </XStack>
+      <YStack
+        marginBlockEnd="$3"
+        overflow="hidden"
+        borderRadius={tokens.radii.md}
+        borderWidth={2}
+        borderStyle="dashed"
+        borderColor={tokens.colors.gray.gray4}
+        backgroundColor={tokens.colors.gray.gray1}
       >
         {imagePreview ? (
           <View style={recipeImagePreviewStyles.frame}>
@@ -91,61 +107,70 @@ export const RecipeImageField = ({
           </View>
         ) : (
           <View
-            className="px-4"
-            style={recipeImagePreviewStyles.placeholder}
+            style={[
+              recipeImagePreviewStyles.placeholder,
+              {paddingHorizontal: tokens.spacing[4]},
+            ]}
           >
-            <Text className="text-muted text-center text-sm">
+            <DsText
+              variant="hint"
+              textAlign="center"
+            >
               Choose an image from your library or generate one with AI
-            </Text>
+            </DsText>
           </View>
         )}
-      </View>
-      <View className="flex-row flex-wrap gap-3">
-        <TouchableOpacity
+      </YStack>
+      <XStack
+        flexWrap="wrap"
+        gap="$3"
+      >
+        <DsButton
+          variant="primary"
+          size="sm"
           accessibilityLabel="Choose recipe image"
-          className="
-            bg-primary rounded-lg px-4 py-2
-            disabled:opacity-50
-          "
           disabled={imageBusy}
           onPress={() => {
             void handlePick();
           }}
         >
-          <Text className="text-sm font-medium text-white">
-            {imageUploading ? 'Uploading…' : 'Choose image'}
-          </Text>
-        </TouchableOpacity>
+          {imageUploading ? 'Uploading…' : 'Choose image'}
+        </DsButton>
         {onGenerateImage ? (
-          <TouchableOpacity
+          <DsButton
+            variant="ghost"
+            size="sm"
             accessibilityLabel="Generate image with AI"
-            className="
-              border-primary rounded-lg border bg-white px-4 py-2
-              disabled:opacity-50
-            "
+            borderWidth={1}
+            borderColor="$primary"
+            backgroundColor="$surface"
             disabled={imageBusy || !canGenerateImage}
             onPress={() => {
               void onGenerateImage();
             }}
           >
-            <Text className="text-primary text-sm font-medium">
-              {imageGenerating ? 'Generating…' : 'Generate with AI'}
-            </Text>
-          </TouchableOpacity>
+            {imageGenerating ? 'Generating…' : 'Generate with AI'}
+          </DsButton>
         ) : null}
         {imagePreview ? (
-          <TouchableOpacity
-            className="rounded-lg bg-gray-100 px-4 py-2"
+          <DsButton
+            variant="secondary"
+            size="sm"
             onPress={onRemove}
           >
-            <Text className="text-sm text-gray-700">Remove image</Text>
-          </TouchableOpacity>
+            Remove image
+          </DsButton>
         ) : null}
-      </View>
+      </XStack>
       {imageError ? (
-        <Text className="mbs-2 text-sm text-red-600">{imageError}</Text>
+        <DsText
+          variant="error"
+          marginBlockStart="$2"
+        >
+          {imageError}
+        </DsText>
       ) : null}
-    </View>
+    </YStack>
   );
 };
 

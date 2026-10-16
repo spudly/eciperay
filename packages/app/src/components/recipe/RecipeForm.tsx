@@ -27,15 +27,17 @@ import type {
   RecipeInput,
   RecipeVersionDetail,
 } from '@eciperay/types';
-import clsx from 'clsx';
-import React, {useMemo, useState} from 'react';
 import {
-  ScrollView,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+  Button as DsButton,
+  InlineAlert,
+  MultilineField as DsMultilineField,
+  Text as DsText,
+  TextField as DsTextField,
+  tokens,
+} from '@spudly/ui';
+import React, {useMemo, useState} from 'react';
+import {ScrollView, TouchableOpacity} from 'react-native';
+import {XStack, YStack} from 'tamagui';
 
 import {
   deleteImagePreviewFile,
@@ -46,6 +48,8 @@ import {
 } from '../../lib/recipeImageAsset';
 import {api} from '../../lib/api';
 import {supabase} from '../../lib/supabase';
+import {ErrorText} from '../ui/ErrorText';
+import {PrimaryButton} from '../ui/PrimaryButton';
 
 import {RecipeStatusPicker} from './RecipeStatusPicker';
 import {RecipeImageField} from './RecipeImageField';
@@ -72,6 +76,8 @@ type Props = {
 };
 
 type FormIngredient = FormIngredientRow & {quantity: number | string | null};
+
+const scrollStyle = {flex: 1} as const;
 
 const toQuantity = (value: number | string | null): number | null => {
   if (value === null) {
@@ -335,10 +341,16 @@ export const RecipeForm = ({
   const scalarChanged = (field: VersionScalarField) =>
     versionDiff?.changedScalars.includes(field) ?? false;
 
-  const changedFieldClass = (field: VersionScalarField) =>
-    clsx('rounded-lg border border-gray-300 px-4 py-2', {
-      'border-amber-400 bg-amber-50': scalarChanged(field),
-    });
+  // A field whose value differs from the parent version gets the DS warning
+  // wash (warning step 5 border / step 1 fill — the old amber-400/amber-50)
+  // on top of the DS field chrome.
+  const changedFieldProps = (field: VersionScalarField) =>
+    scalarChanged(field)
+      ? {
+          borderColor: tokens.colors.warning.warning5,
+          backgroundColor: tokens.colors.warning.warning1,
+        }
+      : {};
 
   const revertScalar = (
     parent: RecipeVersionDetail,
@@ -386,9 +398,14 @@ export const RecipeForm = ({
           revertScalar(parentVersion, field);
         }}
       >
-        <Text className="text-xs font-medium text-amber-800/80">
+        <DsText
+          fontSize={tokens.typography.fontSize.xs}
+          fontWeight={tokens.typography.fontWeight.medium}
+          color={tokens.colors.warning.warning9}
+          opacity={0.8}
+        >
           Revert to: {formatParentScalarHint(parentVersion, field)}
-        </Text>
+        </DsText>
       </TouchableOpacity>
     ) : null;
 
@@ -410,109 +427,143 @@ export const RecipeForm = ({
       ? withImageCacheKey(imageUrl, imageCacheKey)
       : imageUrl);
 
+  const fieldLabel = (label: string) => (
+    <DsText
+      fontSize={tokens.typography.fontSize.sm}
+      fontWeight={tokens.typography.fontWeight.medium}
+      color={tokens.colors.gray.gray8}
+    >
+      {label}
+    </DsText>
+  );
+
   return (
-    <ScrollView className="flex-1">
-      <View className="gap-4 pbe-8">
-        <View>
-          <View className="mbe-1 flex-row items-center justify-between gap-3">
-            <Text className="text-sm font-medium text-gray-700">Title</Text>
+    <ScrollView style={scrollStyle}>
+      <YStack
+        gap="$4"
+        paddingBlockEnd="$8"
+      >
+        <YStack>
+          <XStack
+            marginBlockEnd="$1"
+            alignItems="center"
+            justifyContent="space-between"
+            gap="$3"
+          >
+            {fieldLabel('Title')}
             <RevertButton field="title" />
-          </View>
-          <TextInput
+          </XStack>
+          <DsTextField
             accessibilityLabel="Title"
-            className={changedFieldClass('title')}
+            {...changedFieldProps('title')}
             value={title}
             onChangeText={setTitle}
           />
-        </View>
+        </YStack>
         <RecipeStatusPicker
           value={status}
           onChange={setStatus}
         />
-        <View>
-          <View className="mbe-1 flex-row items-center justify-between gap-3">
-            <Text className="text-sm font-medium text-gray-700">
-              Description
-            </Text>
-            <View className="flex-row items-center gap-2">
+        <YStack>
+          <XStack
+            marginBlockEnd="$1"
+            alignItems="center"
+            justifyContent="space-between"
+            gap="$3"
+          >
+            {fieldLabel('Description')}
+            <XStack
+              alignItems="center"
+              gap="$2"
+            >
               <RevertButton field="description" />
-              <TouchableOpacity
+              <DsButton
+                variant="ghost"
+                size="sm"
                 accessibilityLabel="Generate description with AI"
-                className="
-                  border-primary rounded-lg border bg-white px-3 py-1
-                  disabled:opacity-50
-                "
+                borderWidth={1}
+                borderColor="$primary"
+                backgroundColor="$surface"
                 disabled={!title.trim() || descriptionGenerating}
                 onPress={() => {
                   void handleGenerateDescription();
                 }}
               >
-                <Text className="text-primary text-sm font-medium">
-                  {descriptionGenerating ? 'Generating…' : 'Generate with AI'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-          <TextInput
-            className={changedFieldClass('description')}
-            multiline
+                {descriptionGenerating ? 'Generating…' : 'Generate with AI'}
+              </DsButton>
+            </XStack>
+          </XStack>
+          <DsMultilineField
+            {...changedFieldProps('description')}
             numberOfLines={3}
             value={description}
             onChangeText={setDescription}
           />
           {descriptionError ? (
-            <Text className="mbs-2 text-sm text-red-600">
+            <DsText
+              variant="error"
+              marginBlockStart="$2"
+            >
               {descriptionError}
-            </Text>
+            </DsText>
           ) : null}
-        </View>
-        <View className="flex-row gap-3">
-          <View className="flex-1">
-            <View className="mbe-1 flex-row items-center justify-between gap-2">
-              <Text className="text-sm font-medium text-gray-700">
-                Servings
-              </Text>
+        </YStack>
+        <XStack gap="$3">
+          <YStack flex={1}>
+            <XStack
+              marginBlockEnd="$1"
+              alignItems="center"
+              justifyContent="space-between"
+              gap="$2"
+            >
+              {fieldLabel('Servings')}
               <RevertButton field="servings" />
-            </View>
-            <TextInput
+            </XStack>
+            <DsTextField
               accessibilityLabel="Servings"
-              className={changedFieldClass('servings')}
+              {...changedFieldProps('servings')}
               keyboardType="number-pad"
               value={servings}
               onChangeText={setServings}
             />
-          </View>
-          <View className="flex-1">
-            <View className="mbe-1 flex-row items-center justify-between gap-2">
-              <Text className="text-sm font-medium text-gray-700">
-                Prep (min)
-              </Text>
+          </YStack>
+          <YStack flex={1}>
+            <XStack
+              marginBlockEnd="$1"
+              alignItems="center"
+              justifyContent="space-between"
+              gap="$2"
+            >
+              {fieldLabel('Prep (min)')}
               <RevertButton field="prepTimeMin" />
-            </View>
-            <TextInput
+            </XStack>
+            <DsTextField
               accessibilityLabel="Prep (min)"
-              className={changedFieldClass('prepTimeMin')}
+              {...changedFieldProps('prepTimeMin')}
               keyboardType="number-pad"
               value={prepTimeMin}
               onChangeText={setPrepTimeMin}
             />
-          </View>
-          <View className="flex-1">
-            <View className="mbe-1 flex-row items-center justify-between gap-2">
-              <Text className="text-sm font-medium text-gray-700">
-                Cook (min)
-              </Text>
+          </YStack>
+          <YStack flex={1}>
+            <XStack
+              marginBlockEnd="$1"
+              alignItems="center"
+              justifyContent="space-between"
+              gap="$2"
+            >
+              {fieldLabel('Cook (min)')}
               <RevertButton field="cookTimeMin" />
-            </View>
-            <TextInput
+            </XStack>
+            <DsTextField
               accessibilityLabel="Cook (min)"
-              className={changedFieldClass('cookTimeMin')}
+              {...changedFieldProps('cookTimeMin')}
               keyboardType="number-pad"
               value={cookTimeMin}
               onChangeText={setCookTimeMin}
             />
-          </View>
-        </View>
+          </YStack>
+        </XStack>
         <RecipeImageField
           imagePreview={imagePreview || null}
           imageUploading={imageUploading}
@@ -532,23 +583,31 @@ export const RecipeForm = ({
             setImageError(null);
           }}
         />
-        <View>
-          <View className="mbe-1 flex-row items-center justify-between gap-2">
-            <Text className="text-sm font-medium text-gray-700">
-              Source URL
-            </Text>
+        <YStack>
+          <XStack
+            marginBlockEnd="$1"
+            alignItems="center"
+            justifyContent="space-between"
+            gap="$2"
+          >
+            {fieldLabel('Source URL')}
             <RevertButton field="sourceUrl" />
-          </View>
-          <TextInput
+          </XStack>
+          <DsTextField
             accessibilityLabel="Source URL"
-            className={changedFieldClass('sourceUrl')}
+            {...changedFieldProps('sourceUrl')}
             value={sourceUrl}
             onChangeText={setSourceUrl}
           />
-        </View>
-        <View>
-          <View className="mbe-2 flex-row items-center justify-between gap-2">
-            <Text className="text-sm font-medium text-gray-700">Tags</Text>
+        </YStack>
+        <YStack>
+          <XStack
+            marginBlockEnd="$2"
+            alignItems="center"
+            justifyContent="space-between"
+            gap="$2"
+          >
+            {fieldLabel('Tags')}
             {versionDiff?.tagsChanged && parentVersion ? (
               <TouchableOpacity
                 accessibilityRole="button"
@@ -556,38 +615,45 @@ export const RecipeForm = ({
                   setTagIds(parentTagIds(parentVersion));
                 }}
               >
-                <Text className="text-xs font-medium text-amber-800/80">
+                <DsText
+                  fontSize={tokens.typography.fontSize.xs}
+                  fontWeight={tokens.typography.fontWeight.medium}
+                  color={tokens.colors.warning.warning9}
+                  opacity={0.8}
+                >
                   Revert to: {formatParentTagNames(parentVersion)}
-                </Text>
+                </DsText>
               </TouchableOpacity>
             ) : null}
-          </View>
+          </XStack>
           <TagPicker
             selectedIds={tagIds}
             onChange={setTagIds}
           />
-        </View>
+        </YStack>
         {contentLocked ? (
-          <View
-            className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2"
-          >
-            <Text className="text-sm text-amber-900">
-              Ingredients and instructions are locked on the active version.
-              Create a draft to change them.
-            </Text>
-          </View>
+          <InlineAlert severity="warning">
+            Ingredients and instructions are locked on the active version.
+            Create a draft to change them.
+          </InlineAlert>
         ) : null}
         {versionDiff?.ingredientsChanged && parentVersion && !contentLocked ? (
-          <View
-            className="
-              flex-row items-center justify-between rounded-lg bg-amber-50 px-3
-              py-2
-            "
+          <XStack
+            alignItems="center"
+            justifyContent="space-between"
+            borderRadius={tokens.radii.md}
+            backgroundColor={tokens.colors.warning.warning1}
+            paddingHorizontal="$3"
+            paddingVertical="$2"
           >
-            <Text className="flex-1 text-sm text-amber-900">
+            <DsText
+              flex={1}
+              fontSize={tokens.typography.fontSize.sm}
+              color={tokens.colors.warning.warning10}
+            >
               Ingredients changed from parent version (
               {formatParentListSummary(parentVersion, 'ingredients')})
-            </Text>
+            </DsText>
             <TouchableOpacity
               accessibilityRole="button"
               onPress={() => {
@@ -598,11 +664,16 @@ export const RecipeForm = ({
                 );
               }}
             >
-              <Text className="text-sm font-medium text-amber-900 underline">
+              <DsText
+                fontSize={tokens.typography.fontSize.sm}
+                fontWeight={tokens.typography.fontWeight.medium}
+                color={tokens.colors.warning.warning10}
+                textDecorationLine="underline"
+              >
                 Revert
-              </Text>
+              </DsText>
             </TouchableOpacity>
-          </View>
+          </XStack>
         ) : null}
         {contentLocked ? null : (
           <SortableIngredientList
@@ -618,16 +689,22 @@ export const RecipeForm = ({
           />
         )}
         {versionDiff?.instructionsChanged && parentVersion && !contentLocked ? (
-          <View
-            className="
-              flex-row items-center justify-between rounded-lg bg-amber-50 px-3
-              py-2
-            "
+          <XStack
+            alignItems="center"
+            justifyContent="space-between"
+            borderRadius={tokens.radii.md}
+            backgroundColor={tokens.colors.warning.warning1}
+            paddingHorizontal="$3"
+            paddingVertical="$2"
           >
-            <Text className="flex-1 text-sm text-amber-900">
+            <DsText
+              flex={1}
+              fontSize={tokens.typography.fontSize.sm}
+              color={tokens.colors.warning.warning10}
+            >
               Instructions changed from parent version (
               {formatParentListSummary(parentVersion, 'instructions')})
-            </Text>
+            </DsText>
             <TouchableOpacity
               accessibilityRole="button"
               onPress={() => {
@@ -638,11 +715,16 @@ export const RecipeForm = ({
                 );
               }}
             >
-              <Text className="text-sm font-medium text-amber-900 underline">
+              <DsText
+                fontSize={tokens.typography.fontSize.sm}
+                fontWeight={tokens.typography.fontWeight.medium}
+                color={tokens.colors.warning.warning10}
+                textDecorationLine="underline"
+              >
                 Revert
-              </Text>
+              </DsText>
             </TouchableOpacity>
-          </View>
+          </XStack>
         ) : null}
         {contentLocked ? null : (
           <SortableInstructionList
@@ -657,22 +739,16 @@ export const RecipeForm = ({
             }}
           />
         )}
-        {error ? <Text className="text-sm text-red-600">{error}</Text> : null}
-        <TouchableOpacity
-          className="
-            bg-primary items-center rounded-lg py-3
-            disabled:opacity-50
-          "
-          disabled={loading}
+        {error ? <ErrorText>{error}</ErrorText> : null}
+        <PrimaryButton
+          label={submitLabel}
+          loading={loading}
+          loadingLabel="Saving…"
           onPress={() => {
             void handleSubmit();
           }}
-        >
-          <Text className="font-semibold text-white">
-            {loading ? 'Saving…' : submitLabel}
-          </Text>
-        </TouchableOpacity>
-      </View>
+        />
+      </YStack>
     </ScrollView>
   );
 };
