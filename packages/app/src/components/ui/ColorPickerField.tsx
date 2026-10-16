@@ -1,16 +1,13 @@
 import type {ColorPickerFieldProps} from '@eciperay/client';
 import {ColorPickerField as DsColorPickerField} from '@spudly/ui';
 import {useState} from 'react';
-import {StyleSheet, View} from 'react-native';
-
-const styles = StyleSheet.create({
-  dimmed: {opacity: 0.5},
-});
+import {View} from 'tamagui';
 
 /**
  * Default swatch palette. The DS ColorPickerField requires a fixed list of
- * colors (the eciperay prop API has no palette), so these cover the common
- * tag colors; a value outside the palette simply shows no swatch selected.
+ * colors (the eciperay prop API has no palette), so these cover the common tag
+ * colors; a value outside the palette simply shows no swatch selected. These
+ * are data values (the colors a tag can take), not styling.
  */
 const DEFAULT_COLORS = [
   '#6366f1',
@@ -36,7 +33,7 @@ export const ColorPickerField = ({
 }: ColorPickerFieldProps) => (
   <View
     pointerEvents={disabled ? 'none' : 'auto'}
-    style={disabled ? styles.dimmed : undefined}
+    opacity={disabled ? 0.5 : undefined}
     accessibilityState={{disabled}}
   >
     <DsColorPickerField
@@ -58,7 +55,11 @@ if (__DEV__) {
     const [value, setValue] = useState('#6366f1');
 
     return (
-      <ColorPickerField label="Tag color" value={value} onChange={setValue} />
+      <ColorPickerField
+        label="Tag color"
+        value={value}
+        onChange={setValue}
+      />
     );
   };
 

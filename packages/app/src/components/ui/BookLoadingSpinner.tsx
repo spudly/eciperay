@@ -1,5 +1,5 @@
 import type {BookLoadingSpinnerProps} from '@eciperay/client';
-import clsx from 'clsx';
+import {tokens} from '@spudly/ui';
 import {useEffect, useRef} from 'react';
 import {Animated, Easing, View} from 'react-native';
 
@@ -14,23 +14,42 @@ import {
   bookLoadingSpinnerStyles,
 } from './bookLoadingSpinnerLayout';
 
+/**
+ * G10: the branded book-flip loader stays an app adapter (the DS Spinner covers
+ * generic loading). It is built on plain RN primitives because it must render
+ * without a TamaguiProvider (its unit test does), so every visual value is a
+ * @spudly/ui token value rather than a $ token prop: cover = gray ramp step 6
+ * (the old bg-gray-500), page lines = gray step 3 (old bg-gray-200), page
+ * surface = the theme's semantic surface (old bg-white), radius = the sm radius
+ * token, shadow = the sm shadow token. All dimensions are geometry computed
+ * from the size scale.
+ */
 const renderPageLines = (lines: LineLayout[], scale: number) =>
   lines.map((line, index) => (
     <View
       key={index}
-      className="absolute rounded-sm bg-gray-200"
       style={[
         bookLoadingSpinnerStyles.line,
-        {left: line.left, top: line.top, width: 60 * scale, height: 10 * scale},
+        {
+          left: line.left,
+          top: line.top,
+          width: 60 * scale,
+          height: 10 * scale,
+          backgroundColor: tokens.colors.gray.gray3,
+          borderRadius: tokens.radii.sm,
+        },
       ]}
     />
   ));
 
 export const BookLoadingSpinner = ({
   size = 'md',
-  className,
   accessibilityLabel = 'Loading',
 }: BookLoadingSpinnerProps) => {
+  // Note: the legacy `className` prop remains in the prop type for API
+  // compatibility but is no longer applied — no caller passes it, and
+  // styling now comes from the design system. See BookLoadingSpinnerProps
+  // in @eciperay/client.
   const scale = BOOK_LOADER_SCALE[size];
   const width = BASE_WIDTH * scale;
   const height = BASE_HEIGHT * scale;
@@ -84,23 +103,23 @@ export const BookLoadingSpinner = ({
       accessible
       accessibilityRole="progressbar"
       accessibilityLabel={accessibilityLabel}
-      className={clsx('bg-gray-500', className)}
-      style={coverStyle}
+      style={[coverStyle, {backgroundColor: tokens.colors.gray.gray6}]}
     >
       <View
-        className="relative flex-1 overflow-hidden bg-white shadow-sm"
-        style={innerPageStyle}
+        style={[
+          innerPageStyle,
+          bookLoadingSpinnerStyles.innerPage,
+          tokens.shadows.sm,
+        ]}
       >
         {renderPageLines(leftPageLines(scale), scale)}
-        <View
-          className="absolute inset-e-0 inset-bs-0"
-          style={flipContainerStyle}
-        >
+        <View style={[flipContainerStyle, bookLoadingSpinnerStyles.flipAnchor]}>
           <Animated.View
-            className="absolute inset-e-0 inset-bs-0 bg-white"
             style={[
               flipPageStyle,
               bookLoadingSpinnerStyles.flipPage,
+              bookLoadingSpinnerStyles.flipAnchor,
+              bookLoadingSpinnerStyles.pageSurface,
               {
                 transform: [
                   {perspective: 1000 * scale},
@@ -121,7 +140,7 @@ export const BookLoadingSpinner = ({
 
 if (__DEV__) {
   const BookLoadingSpinnerDemo = () => (
-    <View className="gap-6">
+    <View style={{gap: tokens.spacing[6]}}>
       <BookLoadingSpinner size="sm" />
       <BookLoadingSpinner size="md" />
       <BookLoadingSpinner size="lg" />

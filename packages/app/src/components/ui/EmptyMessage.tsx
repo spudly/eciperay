@@ -1,5 +1,5 @@
 import type {EmptyMessageProps} from '@eciperay/client';
-import {Text as DsText, tokens} from '@spudly/ui';
+import {Text as DsText} from '@spudly/ui';
 
 export const EmptyMessage = ({
   children,
@@ -7,7 +7,7 @@ export const EmptyMessage = ({
 }: EmptyMessageProps) => (
   <DsText
     textAlign="center"
-    marginTop={spacing === 'list' ? tokens.spacing[8] : undefined}
+    marginTop={spacing === 'list' ? '$8' : undefined}
   >
     {children}
   </DsText>

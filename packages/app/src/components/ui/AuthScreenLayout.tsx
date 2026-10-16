@@ -4,15 +4,14 @@ import {ScreenContainer as DSScreenContainer} from '@spudly/ui';
 import {PageTitle} from './PageTitle';
 
 /**
- * Thin adapter over the DS ScreenContainer.
- * Matches the old ui-screen-shell-auth: white background, px-6, pt-20.
+ * Thin adapter over the DS ScreenContainer. The DS `auth` variant carries the
+ * old ui-screen-shell-auth shell: surface background, wide horizontal padding,
+ * large top offset.
  */
 export const AuthScreenLayout = ({children}: AuthScreenLayoutProps) => (
   <DSScreenContainer
     scrollable={false}
-    backgroundColor="#ffffff"
-    paddingHorizontal={24}
-    paddingTop={80}
+    variant="auth"
   >
     {children}
   </DSScreenContainer>

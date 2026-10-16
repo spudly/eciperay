@@ -1,6 +1,6 @@
 import type {ProgressDotsProps} from '@eciperay/client';
-import {StepDots} from '@spudly/ui';
-import {View} from 'react-native';
+import {StepDots, tokens} from '@spudly/ui';
+import {View} from 'tamagui';
 
 // Note: the legacy `variant` prop ('dark' | 'light') is accepted but not
 // forwarded — DS StepDots has a single dot style.
@@ -13,7 +13,10 @@ export const ProgressDots = ({total, current}: ProgressDotsProps) => (
 
 if (__DEV__) {
   ProgressDots.demo = () => (
-    <View className="bg-gray-900 p-4">
+    <View
+      backgroundColor={tokens.colors.gray.gray9}
+      padding="$4"
+    >
       <ProgressDots
         total={5}
         current={2}

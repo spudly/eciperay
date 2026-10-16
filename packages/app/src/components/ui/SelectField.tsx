@@ -1,11 +1,7 @@
 import type {SelectFieldProps} from '@eciperay/client';
 import {SelectField as DsSelectField} from '@spudly/ui';
 import {useState} from 'react';
-import {StyleSheet, View} from 'react-native';
-
-const styles = StyleSheet.create({
-  dimmed: {opacity: 0.5},
-});
+import {View} from 'tamagui';
 
 export const SelectField = ({
   label,
@@ -16,9 +12,8 @@ export const SelectField = ({
   id,
 }: SelectFieldProps) => (
   <View
-    className="ui-select-field"
     pointerEvents={disabled ? 'none' : 'auto'}
-    style={disabled ? styles.dimmed : undefined}
+    opacity={disabled ? 0.5 : undefined}
     accessibilityState={{disabled}}
   >
     <DsSelectField

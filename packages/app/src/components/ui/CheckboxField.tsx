@@ -2,6 +2,7 @@ import type {CheckboxFieldProps} from '@eciperay/client';
 import {CheckboxField as DsCheckboxField} from '@spudly/ui';
 import {useState} from 'react';
 import {View} from 'react-native';
+import {YStack} from 'tamagui';
 
 export const CheckboxField = ({
   checked,
@@ -11,7 +12,7 @@ export const CheckboxField = ({
   description,
   children,
 }: CheckboxFieldProps) => (
-  <View className="ui-checkbox-field">
+  <YStack gap="$3">
     <DsCheckboxField
       checked={checked}
       onCheckedChange={onChange}
@@ -23,7 +24,7 @@ export const CheckboxField = ({
       <View>{description}</View>
     ) : null}
     {children}
-  </View>
+  </YStack>
 );
 
 if (__DEV__) {

@@ -1,16 +1,35 @@
 import type {ThumbnailListCardProps} from '@eciperay/client';
-import {Card} from '@spudly/ui';
-import {Image, Text, TouchableOpacity, View} from 'react-native';
+import {Card, Text as DsText, tokens} from '@spudly/ui';
+import {TouchableOpacity} from 'react-native';
+import {Image, View} from 'tamagui';
 
+/**
+ * G8 (ThumbnailListCard): an app-domain list-row composite that stays in the
+ * adapter layer — DS Card + thumbnail + title/meta text composed from DS
+ * components and token props. The 64px thumbnail (old block-16/inline-16) is
+ * the $16 size token; rounded-lg is the md radius token.
+ */
+
+// Structural flex only (the old flex-1 min-inline-0): the text block
+// expands and may shrink within the card row. No visual values.
+const textBlockStyle = {flex: 1, minWidth: 0};
 const Thumbnail = ({imageUrl}: {imageUrl?: string | null}) =>
   imageUrl ? (
     <Image
-      source={{uri: imageUrl}}
-      className="rounded-lg bg-gray-50 block-16 inline-16"
-      resizeMode="cover"
+      src={imageUrl}
+      width="$16"
+      height="$16"
+      borderRadius={tokens.radii.md}
+      backgroundColor={tokens.colors.gray.gray1}
+      objectFit="cover"
     />
   ) : (
-    <View className="rounded-lg bg-gray-100 block-16 inline-16" />
+    <View
+      width="$16"
+      height="$16"
+      borderRadius={tokens.radii.md}
+      backgroundColor={tokens.colors.gray.gray2}
+    />
   );
 
 export const ThumbnailListCard = ({
@@ -21,7 +40,7 @@ export const ThumbnailListCard = ({
   trailing,
 }: ThumbnailListCardProps) => (
   <Card
-    elevated
+    variant="elevated"
     flexDirection="row"
     alignItems="center"
     gap="$3"
@@ -31,12 +50,19 @@ export const ThumbnailListCard = ({
       <Thumbnail imageUrl={imageUrl} />
     </TouchableOpacity>
     <TouchableOpacity
-      className="flex-1 min-inline-0"
+      style={textBlockStyle}
       onPress={onPress}
     >
-      <Text className="text-base font-semibold text-gray-900">{title}</Text>
+      <DsText fontWeight={tokens.typography.fontWeight.semibold}>
+        {title}
+      </DsText>
       {subtitle ? (
-        <Text className="text-muted mbs-1 text-sm">{subtitle}</Text>
+        <DsText
+          variant="hint"
+          marginTop="$1"
+        >
+          {subtitle}
+        </DsText>
       ) : null}
     </TouchableOpacity>
     {trailing}

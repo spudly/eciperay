@@ -6,11 +6,12 @@ import {PageTitle} from './PageTitle';
 /**
  * Thin adapter over the DS ScreenContainer.
  *
- * Variant mapping:
- * - default/padded keep the DS page padding (padded uses the wider spacing
- *   of the old ui-screen-shell-padded) on the old gray-50 shell background.
- * - list/white drop the container padding (callers provide their own, e.g.
- *   a FlatList content style) and only tweak the background.
+ * Variant mapping (app variant -> DS variant):
+ *
+ * - Default/padded/list map straight onto the DS variants of the same name, on
+ *   the old gray-50 shell background.
+ * - White has no DS variant: it is the flush DS `list` layout on the DS surface
+ *   color instead of the old hard-coded white.
  *
  * All variants are non-scrollable: screens that scroll use ScreenScroll.
  */
@@ -18,37 +19,12 @@ export const ScreenContainer = ({
   children,
   variant = 'default',
 }: ScreenContainerProps) => {
-  if (variant === 'list') {
-    return (
-      <DSScreenContainer
-        scrollable={false}
-        paddingHorizontal={0}
-        paddingVertical={0}
-        backgroundColor={tokens.colors.gray.gray1}
-      >
-        {children}
-      </DSScreenContainer>
-    );
-  }
   if (variant === 'white') {
     return (
       <DSScreenContainer
         scrollable={false}
-        paddingHorizontal={0}
-        paddingVertical={0}
-        backgroundColor="#ffffff"
-      >
-        {children}
-      </DSScreenContainer>
-    );
-  }
-  if (variant === 'padded') {
-    return (
-      <DSScreenContainer
-        scrollable={false}
-        paddingHorizontal={tokens.spacing[6]}
-        paddingTop={tokens.spacing[8]}
-        backgroundColor={tokens.colors.gray.gray1}
+        variant="list"
+        backgroundColor="$surface"
       >
         {children}
       </DSScreenContainer>
@@ -57,6 +33,7 @@ export const ScreenContainer = ({
   return (
     <DSScreenContainer
       scrollable={false}
+      variant={variant}
       backgroundColor={tokens.colors.gray.gray1}
     >
       {children}

@@ -1,18 +1,14 @@
 import type {ToggleChipGroupProps} from '@eciperay/client';
 import {ToggleChipGroup as DsToggleChipGroup} from '@spudly/ui';
 import {useState} from 'react';
-import {StyleSheet, View} from 'react-native';
-
-const styles = StyleSheet.create({
-  dimmed: {opacity: 0.5},
-});
+import {View} from 'tamagui';
 
 /**
- * Adapter notes: the DS ToggleChipGroup has no `disabled` prop (blocked via
- * a wrapper) and no per-chip `color` (accepted by the prop API but not
- * forwarded — DS chips use the primary palette). Single mode forwards the
- * toggled chip id; multi mode toggles the id in the set and forwards the
- * resulting array, matching the previous behavior.
+ * Adapter notes: the DS ToggleChipGroup has no `disabled` prop (blocked via a
+ * wrapper) and no per-chip `color` (accepted by the prop API but not forwarded
+ * — DS chips use the primary palette). Single mode forwards the toggled chip
+ * id; multi mode toggles the id in the set and forwards the resulting array,
+ * matching the previous behavior.
  */
 export const ToggleChipGroup = ({
   options,
@@ -62,7 +58,7 @@ export const ToggleChipGroup = ({
   return (
     <View
       pointerEvents={disabled ? 'none' : 'auto'}
-      style={disabled ? styles.dimmed : undefined}
+      opacity={disabled ? 0.5 : undefined}
       accessibilityState={{disabled}}
     >
       {group}

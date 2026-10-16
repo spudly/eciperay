@@ -1,4 +1,4 @@
-import {StyleSheet} from 'react-native';
+import {eciperayTheme} from '@spudly/ui';
 
 export const BOOK_LOADER_SCALE = {sm: 0.45, md: 0.65, lg: 0.85} as const;
 
@@ -39,7 +39,20 @@ export const flippingPageLines = (
   ];
 };
 
-export const bookLoadingSpinnerStyles = StyleSheet.create({
-  flipPage: {backfaceVisibility: 'hidden'},
-  line: {position: 'absolute'},
-});
+/**
+ * Static style fragments for the spinner (plain objects — no StyleSheet; every
+ * visual value comes from @spudly/ui tokens, the dimensions are computed from
+ * the size scale in the layout helpers above).
+ */
+export const bookLoadingSpinnerStyles = {
+  flipPage: {backfaceVisibility: 'hidden' as const},
+  line: {position: 'absolute' as const},
+  innerPage: {
+    position: 'relative' as const,
+    flex: 1,
+    overflow: 'hidden' as const,
+    backgroundColor: eciperayTheme.semantic.surface,
+  },
+  flipAnchor: {position: 'absolute' as const, right: 0, top: 0},
+  pageSurface: {backgroundColor: eciperayTheme.semantic.surface},
+};

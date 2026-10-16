@@ -6,6 +6,7 @@ import {
 } from '@spudly/ui';
 import {useState} from 'react';
 import {View} from 'react-native';
+import {YStack} from 'tamagui';
 
 export const CheckboxSelectList = ({
   items,
@@ -17,9 +18,14 @@ export const CheckboxSelectList = ({
 }: CheckboxSelectListProps) => {
   if (isLoading) {
     return (
-      <View className="ui-loading-center p-4">
+      <YStack
+        flex={1}
+        alignItems="center"
+        justifyContent="center"
+        padding="$4"
+      >
         <Spinner />
-      </View>
+      </YStack>
     );
   }
   if (items.length === 0) {
