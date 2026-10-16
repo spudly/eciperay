@@ -1,7 +1,14 @@
+/* eslint-disable max-lines -- comment item with edit-state actions and showcase demo */
 import {STALE_COMMENT_HINT} from '@eciperay/client';
 import type {RecipeComment} from '@eciperay/types';
+import {
+  MultilineField as DsMultilineField,
+  Text as DsText,
+  tokens,
+} from '@spudly/ui';
 import React, {useState} from 'react';
-import {Text, TextInput, TouchableOpacity, View} from 'react-native';
+import {TouchableOpacity, View} from 'react-native';
+import {XStack, YStack} from 'tamagui';
 
 import {StaleVersionHint} from './StaleVersionHint';
 
@@ -41,29 +48,47 @@ export const RecipeCommentItem = ({
   const canModerate = isAuthor || ownerUserId === currentUserId;
 
   return (
-    <View className="mbe-3 rounded-lg bg-gray-50 p-3">
-      <View className="mbe-1 flex-row items-center gap-2">
-        <Text className="text-sm font-medium text-gray-900">
+    <YStack
+      marginBlockEnd="$3"
+      borderRadius={tokens.radii.md}
+      backgroundColor={tokens.colors.gray.gray1}
+      padding="$3"
+    >
+      <XStack
+        marginBlockEnd="$1"
+        alignItems="center"
+        gap="$2"
+      >
+        <DsText
+          fontSize={tokens.typography.fontSize.sm}
+          fontWeight={tokens.typography.fontWeight.medium}
+          color={tokens.colors.gray.gray10}
+        >
           {formatAuthorName(comment)}
-        </Text>
+        </DsText>
         {comment.isStale ? (
           <StaleVersionHint label={STALE_COMMENT_HINT} />
         ) : null}
-      </View>
+      </XStack>
       {isEditing ? (
-        <TextInput
-          className="
-            mbe-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm
-          "
-          multiline
+        <DsMultilineField
+          marginBlockEnd="$2"
           value={editDraft}
           onChangeText={onEditDraftChange}
         />
       ) : (
-        <Text className="text-sm text-gray-700">{comment.body}</Text>
+        <DsText
+          fontSize={tokens.typography.fontSize.sm}
+          color={tokens.colors.gray.gray8}
+        >
+          {comment.body}
+        </DsText>
       )}
       {canModerate ? (
-        <View className="mbs-2 flex-row gap-3">
+        <XStack
+          marginBlockStart="$2"
+          gap="$3"
+        >
           {isAuthor ? (
             isEditing ? (
               <>
@@ -71,15 +96,32 @@ export const RecipeCommentItem = ({
                   disabled={isUpdatePending || !editDraft.trim()}
                   onPress={onSaveEdit}
                 >
-                  <Text className="text-primary text-xs font-medium">Save</Text>
+                  <DsText
+                    color="$primary"
+                    fontSize={tokens.typography.fontSize.xs}
+                    fontWeight={tokens.typography.fontWeight.medium}
+                  >
+                    Save
+                  </DsText>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={onCancelEdit}>
-                  <Text className="text-xs text-gray-600">Cancel</Text>
+                  <DsText
+                    fontSize={tokens.typography.fontSize.xs}
+                    color={tokens.colors.gray.gray7}
+                  >
+                    Cancel
+                  </DsText>
                 </TouchableOpacity>
               </>
             ) : (
               <TouchableOpacity onPress={onStartEdit}>
-                <Text className="text-primary text-xs font-medium">Edit</Text>
+                <DsText
+                  color="$primary"
+                  fontSize={tokens.typography.fontSize.xs}
+                  fontWeight={tokens.typography.fontWeight.medium}
+                >
+                  Edit
+                </DsText>
               </TouchableOpacity>
             )
           ) : null}
@@ -87,11 +129,16 @@ export const RecipeCommentItem = ({
             disabled={isDeletePending}
             onPress={onDelete}
           >
-            <Text className="text-xs text-red-600">Delete</Text>
+            <DsText
+              fontSize={tokens.typography.fontSize.xs}
+              color={tokens.colors.danger.danger7}
+            >
+              Delete
+            </DsText>
           </TouchableOpacity>
-        </View>
+        </XStack>
       ) : null}
-    </View>
+    </YStack>
   );
 };
 

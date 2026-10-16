@@ -4,8 +4,9 @@ import {
   makeRecipeVersionSummary,
   RECIPE_DETAIL_TABS,
 } from '@eciperay/client';
+import {tokens} from '@spudly/ui';
 import {useState} from 'react';
-import {View} from 'react-native';
+import {XStack, YStack} from 'tamagui';
 
 import {InfoBanner} from '../ui/InfoBanner';
 import {TabBar} from '../ui/TabBar';
@@ -22,15 +23,27 @@ export const RecipeDetailChrome = ({
   onSelectTab,
   children,
 }: RecipeDetailChromeProps) => (
-  <View className="flex-1 bg-white">
-    <View className="ui-recipe-detail-toolbar">
+  <YStack
+    flex={1}
+    backgroundColor="$surface"
+  >
+    {/* The old ui-recipe-detail-toolbar utility, expressed with DS tokens. */}
+    <XStack
+      flexWrap="wrap"
+      alignItems="center"
+      gap="$2"
+      borderBottomWidth={1}
+      borderColor={tokens.colors.gray.gray2}
+      paddingHorizontal="$4"
+      paddingVertical="$3"
+    >
       <RecipeStatusBadge status={status} />
       <VersionPicker
         versions={versions}
         selectedVersionId={selectedVersionId}
         onSelect={onSelectVersion}
       />
-    </View>
+    </XStack>
     <TabBar
       tabs={RECIPE_DETAIL_TABS}
       activeTab={activeTab}
@@ -39,7 +52,7 @@ export const RecipeDetailChrome = ({
       }}
     />
     {children}
-  </View>
+  </YStack>
 );
 
 if (__DEV__) {

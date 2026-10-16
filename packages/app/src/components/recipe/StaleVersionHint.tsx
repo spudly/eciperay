@@ -1,3 +1,4 @@
+import {tokens} from '@spudly/ui';
 import React from 'react';
 
 import {Icon} from '../Icon';
@@ -8,7 +9,7 @@ export const StaleVersionHint = ({label}: Props) => (
   <Icon
     name="alert-triangle"
     size={16}
-    className="text-amber-600"
+    color={tokens.colors.warning.warning7}
     accessibilityLabel={label}
   />
 );

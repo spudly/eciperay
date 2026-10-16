@@ -1,7 +1,9 @@
 import type {RecipesListViewProps} from '@eciperay/client';
 import {demoRecipeListFilters, makeRecipeDetail} from '@eciperay/client';
-import {FlatList, StyleSheet, View} from 'react-native';
+import {tokens} from '@spudly/ui';
+import {FlatList} from 'react-native';
 import {useState} from 'react';
+import {YStack} from 'tamagui';
 
 import {RecipeListCard} from '../RecipeListCard';
 import {InlineLoadingIndicator} from '../InlineLoadingIndicator';
@@ -11,9 +13,12 @@ import {ScreenContainer} from '../ui/ScreenContainer';
 
 import {RecipeListFiltersBar} from './RecipeListFiltersBar';
 
-const styles = StyleSheet.create({
-  listContent: {paddingHorizontal: 16, paddingBottom: 32},
-});
+// List content geometry on the DS spacing scale (plain object, no StyleSheet —
+// the recipeImagePreviewStyles precedent).
+const listContentStyle = {
+  paddingHorizontal: tokens.spacing[4],
+  paddingBottom: tokens.spacing[8],
+} as const;
 
 export const RecipesListView = ({
   isLoading,
@@ -25,19 +30,22 @@ export const RecipesListView = ({
   ...filterControls
 }: RecipesListViewProps) => (
   <ScreenContainer variant="list">
-    <View className="px-4 pbs-4 pbe-2">
+    <YStack
+      paddingHorizontal="$4"
+      paddingBlockStart="$4"
+      paddingBlockEnd="$2"
+    >
       <RecipeListFiltersBar {...filterControls} />
-    </View>
+    </YStack>
     {isLoading ? (
-      <InlineLoadingIndicator
-        loading
-        className="mbs-8"
-      />
+      <YStack marginBlockStart="$8">
+        <InlineLoadingIndicator loading />
+      </YStack>
     ) : (
       <FlatList
         data={recipes}
         keyExtractor={recipe => recipe.id}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={listContentStyle}
         renderItem={({item}) => (
           <RecipeListCard
             recipe={item}

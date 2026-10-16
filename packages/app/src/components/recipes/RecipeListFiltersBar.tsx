@@ -5,7 +5,9 @@ import {
   RECIPE_STATUS_OPTIONS,
   type RecipeListFilterControls,
 } from '@eciperay/client';
-import {Text, TextInput, View} from 'react-native';
+import {Text as DsText, TextField as DsTextField, tokens} from '@spudly/ui';
+import {View} from 'react-native';
+import {XStack, YStack} from 'tamagui';
 
 import {SearchField} from '../ui/SearchField';
 import {SelectField} from '../ui/SelectField';
@@ -22,6 +24,17 @@ const SORT_DIR_OPTIONS = [
   {value: 'asc', label: 'Low to high'},
 ] as const;
 
+const FilterLabel = ({label}: {label: string}) => (
+  <DsText
+    marginBlockEnd="$1"
+    fontSize={tokens.typography.fontSize.sm}
+    fontWeight={tokens.typography.fontWeight.medium}
+    color={tokens.colors.gray.gray8}
+  >
+    {label}
+  </DsText>
+);
+
 const NumberFilter = ({
   label,
   value,
@@ -31,15 +44,18 @@ const NumberFilter = ({
   value: string;
   onChange: (value: string) => void;
 }) => (
-  <View className="mbe-2 flex-1">
-    <Text className="mbe-1 text-sm font-medium text-gray-700">{label}</Text>
-    <TextInput
-      className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-base"
+  <YStack
+    marginBlockEnd="$2"
+    flex={1}
+  >
+    <FilterLabel label={label} />
+    <DsTextField
+      accessibilityLabel={label}
       keyboardType="numeric"
       value={value}
       onChangeText={onChange}
     />
-  </View>
+  </YStack>
 );
 
 export const RecipeListFiltersBar = ({
@@ -84,18 +100,16 @@ export const RecipeListFiltersBar = ({
         }}
       />
     ) : null}
-    <View className="mbe-2">
-      <Text className="mbe-1 text-sm font-medium text-gray-700">Ingredient</Text>
-      <TextInput
-        className="
-          rounded-lg border border-gray-200 bg-white px-3 py-2 text-base
-        "
+    <YStack marginBlockEnd="$2">
+      <FilterLabel label="Ingredient" />
+      <DsTextField
+        accessibilityLabel="Ingredient"
         value={ingredient}
         onChangeText={onIngredientChange}
         placeholder="e.g. chicken"
       />
-    </View>
-    <View className="flex-row gap-2">
+    </YStack>
+    <XStack gap="$2">
       <NumberFilter
         label="Min cal"
         value={minCalories}
@@ -106,8 +120,8 @@ export const RecipeListFiltersBar = ({
         value={maxCalories}
         onChange={onMaxCaloriesChange}
       />
-    </View>
-    <View className="flex-row gap-2">
+    </XStack>
+    <XStack gap="$2">
       <NumberFilter
         label="Min satiety"
         value={minSatiety}
@@ -118,7 +132,7 @@ export const RecipeListFiltersBar = ({
         value={maxSatiety}
         onChange={onMaxSatietyChange}
       />
-    </View>
+    </XStack>
     <SelectField
       label="Sort by"
       value={sort}

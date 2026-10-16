@@ -5,8 +5,9 @@ import {
   servingsForMultiplier,
   type RecipeScaleMultiplier,
 } from '@eciperay/client';
+import {Text as DsText, tokens} from '@spudly/ui';
 import {useMemo, useState} from 'react';
-import {Text, View} from 'react-native';
+import {XStack} from 'tamagui';
 
 import {ToggleChipGroup} from '../ui/ToggleChipGroup';
 
@@ -36,8 +37,19 @@ export const ScaleMultiplierButtons = ({
     )?.toString() ?? String(RECIPE_SCALE_MULTIPLIERS[0]);
 
   return (
-    <View className="mbe-4 flex-row flex-wrap items-center gap-2">
-      <Text className="text-sm font-medium text-gray-700">Scale:</Text>
+    <XStack
+      marginBlockEnd="$4"
+      flexWrap="wrap"
+      alignItems="center"
+      gap="$2"
+    >
+      <DsText
+        fontSize={tokens.typography.fontSize.sm}
+        fontWeight={tokens.typography.fontWeight.medium}
+        color={tokens.colors.gray.gray8}
+      >
+        Scale:
+      </DsText>
       <ToggleChipGroup
         options={options}
         selectedId={selectedId}
@@ -52,7 +64,7 @@ export const ScaleMultiplierButtons = ({
           }
         }}
       />
-    </View>
+    </XStack>
   );
 };
 

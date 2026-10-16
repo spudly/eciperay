@@ -6,11 +6,11 @@ import {
   truncateChangeSummary,
   type ShowcaseDemoRenderer,
 } from '@eciperay/client';
+import {Button as DsButton, Text as DsText, tokens} from '@spudly/ui';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
 import type {RecipeDetail, RecipeVersionSummary} from '@eciperay/types';
-import clsx from 'clsx';
 import React from 'react';
-import {Text, TouchableOpacity, View} from 'react-native';
+import {XStack, YStack} from 'tamagui';
 
 import {api} from '../../lib/api';
 
@@ -21,6 +21,36 @@ type Props = {
   onTweakAi: () => void;
   onViewVersion: (versionId: string) => void;
 };
+
+/**
+ * The lifecycle actions keep their old soft-chip looks — outline-neutral,
+ * info-tinted, success-tinted, danger-tinted — expressed as token overrides on
+ * the DS secondary Button (the Stage 3a OutlineActionButton treatment). The old
+ * indigo tint maps to the DS info treatment ($primarySubtle fill /
+ * $primaryEmphasis label), as in the Stage 3a substitutions panel.
+ */
+const OutlineActionButton = ({
+  label,
+  disabled = false,
+  onPress,
+}: {
+  label: string;
+  disabled?: boolean;
+  onPress: () => void;
+}) => (
+  <DsButton
+    variant="secondary"
+    size="sm"
+    backgroundColor="transparent"
+    borderWidth={1}
+    borderColor="$borderColor"
+    color={tokens.colors.gray.gray7}
+    disabled={disabled}
+    onPress={onPress}
+  >
+    {label}
+  </DsButton>
+);
 
 export const OverviewActions = ({
   recipe,
@@ -71,81 +101,100 @@ export const OverviewActions = ({
   return (
     <>
       {isEditable ? (
-        <View className="mbe-4 flex-row flex-wrap gap-2">
-          <TouchableOpacity
-            className="rounded-lg border border-gray-200 px-3 py-2"
+        <XStack
+          marginBlockEnd="$4"
+          flexWrap="wrap"
+          gap="$2"
+        >
+          <OutlineActionButton
+            label="Tweak manually"
             disabled={tweakManualMutation.isPending}
             onPress={() => {
               tweakManualMutation.mutate();
             }}
-          >
-            <Text className="text-sm font-medium text-gray-700">
-              Tweak manually
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            className="
-              rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2
-            "
+          />
+          <DsButton
+            variant="ghost"
+            size="sm"
+            borderWidth={1}
+            borderColor="$primary"
+            backgroundColor="$primarySubtle"
+            color="$primaryEmphasis"
             onPress={onTweakAi}
           >
-            <Text className="text-sm font-medium text-indigo-800">
-              Tweak with AI
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            className="rounded-lg bg-green-100 px-3 py-2"
+            Tweak with AI
+          </DsButton>
+          <DsButton
+            variant="secondary"
+            size="sm"
+            backgroundColor={tokens.colors.success.success2}
+            color={tokens.colors.success.success9}
             disabled={statusMutation.isPending}
             onPress={() => {
               statusMutation.mutate('perfected');
             }}
           >
-            <Text className="text-sm font-medium text-green-800">
-              Mark perfected
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            className="rounded-lg bg-red-100 px-3 py-2"
+            Mark perfected
+          </DsButton>
+          <DsButton
+            variant="secondary"
+            size="sm"
+            backgroundColor={tokens.colors.danger.danger2}
+            color={tokens.colors.danger.danger9}
             disabled={statusMutation.isPending}
             onPress={() => {
               statusMutation.mutate('abandoned');
             }}
           >
-            <Text className="text-sm font-medium text-red-800">Abandon</Text>
-          </TouchableOpacity>
-        </View>
+            Abandon
+          </DsButton>
+        </XStack>
       ) : null}
       {candidates.length > 0 ? (
-        <View className="mbe-4 gap-2">
-          <Text className="text-sm font-medium text-gray-900">
+        <YStack
+          marginBlockEnd="$4"
+          gap="$2"
+        >
+          <DsText
+            fontSize={tokens.typography.fontSize.sm}
+            fontWeight={tokens.typography.fontWeight.medium}
+            color={tokens.colors.gray.gray10}
+          >
             Ready to activate
-          </Text>
+          </DsText>
           {candidates.map(version => (
-            <View
+            <YStack
               key={version.id}
-              className="rounded-lg border border-indigo-200 bg-indigo-50 p-3"
+              borderRadius={tokens.radii.md}
+              borderWidth={1}
+              borderColor={tokens.colors.terracotta.terracotta3}
+              backgroundColor="$primarySubtle"
+              padding="$3"
             >
-              <Text className="mbe-2 text-sm text-gray-800">
+              <DsText
+                marginBlockEnd="$2"
+                fontSize={tokens.typography.fontSize.sm}
+                color={tokens.colors.gray.gray9}
+              >
                 v{version.versionNumber}
                 {version.changeSummary
                   ? `: ${truncateChangeSummary(version.changeSummary)}`
                   : ''}
-              </Text>
-              <TouchableOpacity
-                className={clsx(
-                  'bg-primary self-start rounded-lg px-4 py-2',
-                  activateMutation.isPending ? 'opacity-50' : '',
-                )}
+              </DsText>
+              <DsButton
+                variant="primary"
+                size="sm"
+                alignSelf="flex-start"
                 disabled={activateMutation.isPending}
                 onPress={() => {
                   activateMutation.mutate(version.id);
                 }}
               >
-                <Text className="text-sm font-medium text-white">Activate</Text>
-              </TouchableOpacity>
-            </View>
+                Activate
+              </DsButton>
+            </YStack>
           ))}
-        </View>
+        </YStack>
       ) : null}
     </>
   );

@@ -1,12 +1,20 @@
+/* eslint-disable max-lines -- comments section with compose form and showcase demo */
 import {
   makeRecipeDetail,
   queryKeys,
   useAuth,
   type ShowcaseDemoRenderer,
 } from '@eciperay/client';
+import {
+  Button as DsButton,
+  Card as DsCard,
+  MultilineField as DsMultilineField,
+  Text as DsText,
+  tokens,
+} from '@spudly/ui';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import React, {useState} from 'react';
-import {Text, TextInput, TouchableOpacity, View} from 'react-native';
+import {YStack} from 'tamagui';
 
 import {api} from '../../lib/api';
 import {BookLoadingSpinner} from '../ui/BookLoadingSpinner';
@@ -60,15 +68,35 @@ export const RecipeCommentsSection = ({recipeId, ownerUserId}: Props) => {
   });
 
   return (
-    <View className="mbe-4 rounded-xl border border-gray-100 p-4">
-      <Text className="mbe-3 text-sm font-semibold text-gray-900">Comments</Text>
+    <DsCard
+      variant="bordered"
+      marginBlockEnd="$4"
+    >
+      <DsText
+        marginBlockEnd="$3"
+        fontSize={tokens.typography.fontSize.sm}
+        fontWeight={tokens.typography.fontWeight.semibold}
+        color={tokens.colors.gray.gray10}
+      >
+        Comments
+      </DsText>
       {isLoading ? (
-        <View className="ui-loading-center mbe-3">
+        <YStack
+          alignItems="center"
+          justifyContent="center"
+          marginBlockEnd="$3"
+        >
           <BookLoadingSpinner size="sm" />
-        </View>
+        </YStack>
       ) : null}
       {!isLoading && comments.length === 0 ? (
-        <Text className="mbe-3 text-sm text-gray-600">No comments yet</Text>
+        <DsText
+          marginBlockEnd="$3"
+          fontSize={tokens.typography.fontSize.sm}
+          color={tokens.colors.gray.gray7}
+        >
+          No comments yet
+        </DsText>
       ) : null}
       {comments.map(comment => (
         <RecipeCommentItem
@@ -101,28 +129,27 @@ export const RecipeCommentsSection = ({recipeId, ownerUserId}: Props) => {
         />
       ))}
       {currentUserId ? (
-        <View>
-          <TextInput
-            className="
-              mbe-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm
-            "
-            multiline
+        <YStack>
+          <DsMultilineField
+            marginBlockEnd="$2"
             placeholder="Add a comment"
             value={draft}
             onChangeText={setDraft}
           />
-          <TouchableOpacity
-            className="bg-primary self-start rounded-lg px-4 py-2"
+          <DsButton
+            variant="primary"
+            size="sm"
+            alignSelf="flex-start"
             disabled={createMutation.isPending || !draft.trim()}
             onPress={() => {
               createMutation.mutate(draft.trim());
             }}
           >
-            <Text className="text-sm font-medium text-white">Post comment</Text>
-          </TouchableOpacity>
-        </View>
+            Post comment
+          </DsButton>
+        </YStack>
       ) : null}
-    </View>
+    </DsCard>
   );
 };
 

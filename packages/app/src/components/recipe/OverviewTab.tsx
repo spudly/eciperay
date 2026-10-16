@@ -7,8 +7,10 @@ import {
   type ShowcaseDemoRenderer,
 } from '@eciperay/client';
 import type {RecipeDetail, RecipeVersionSummary} from '@eciperay/types';
+import {Button as DsButton, Text as DsText, tokens} from '@spudly/ui';
 import React, {useState} from 'react';
-import {Image, Text, TouchableOpacity, View} from 'react-native';
+import {Image} from 'react-native';
+import {XStack, YStack} from 'tamagui';
 
 import {printRecipe} from '../../lib/printRecipe';
 import {shareRecipe} from '../../lib/shareRecipe';
@@ -32,6 +34,17 @@ type Props = {
   onEditRecipe: () => void;
   onEditVersion: (versionId: string) => void;
 };
+
+/**
+ * The row's neutral actions (print/share/edit) keep their old gray-chip look —
+ * a gray-100 fill with a gray-700 label — expressed as token overrides on the
+ * DS secondary Button (the Stage 3a OutlineActionButton treatment).
+ */
+const neutralChipProps = {
+  variant: 'secondary',
+  backgroundColor: tokens.colors.gray.gray2,
+  color: tokens.colors.gray.gray8,
+} as const;
 
 export const OverviewTab = ({
   recipe,
@@ -63,10 +76,13 @@ export const OverviewTab = ({
   };
 
   return (
-    <View className="p-4">
+    <YStack padding="$4">
       {recipe.imageUrl ? (
-        <View
-          className="mbe-4 overflow-hidden rounded-xl bg-gray-50 inline-full"
+        <YStack
+          marginBlockEnd="$4"
+          overflow="hidden"
+          borderRadius={tokens.radii.lg}
+          backgroundColor={tokens.colors.gray.gray1}
           style={recipeImagePreviewStyles.frame}
         >
           <Image
@@ -74,16 +90,29 @@ export const OverviewTab = ({
             resizeMode="contain"
             style={recipeImagePreviewStyles.image}
           />
-        </View>
+        </YStack>
       ) : null}
-      <Text className="mbe-2 text-2xl font-bold text-gray-900">
+      <DsText
+        fontSize={tokens.typography.fontSize['2xl']}
+        fontWeight={tokens.typography.fontWeight.bold}
+        color={tokens.colors.gray.gray10}
+        marginBlockEnd="$2"
+      >
         {recipe.title}
-      </Text>
-      <View className="mbe-4 self-start">
+      </DsText>
+      <YStack
+        marginBlockEnd="$4"
+        alignSelf="flex-start"
+      >
         <RecipeStatusBadge status={recipe.status} />
-      </View>
+      </YStack>
       {recipe.description ? (
-        <Text className="mbe-4 text-gray-600">{recipe.description}</Text>
+        <DsText
+          color={tokens.colors.gray.gray7}
+          marginBlockEnd="$4"
+        >
+          {recipe.description}
+        </DsText>
       ) : null}
       <StatBadgeRow>
         <StatBadge
@@ -103,65 +132,72 @@ export const OverviewTab = ({
           />
         ) : null}
       </StatBadgeRow>
-      <View className="mbe-4 flex-row flex-wrap gap-3">
-        <TouchableOpacity
-          className="
-            bg-primary flex-1 items-center rounded-xl py-3 min-inline-[40%]
-          "
+      <XStack
+        marginBlockEnd="$4"
+        flexWrap="wrap"
+        gap="$3"
+      >
+        <DsButton
+          variant="primary"
+          flex={1}
+          minWidth="40%"
           onPress={onStartCooking}
         >
-          <Text className="font-semibold text-white">Start Cooking</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          className="
-            items-center justify-center rounded-xl bg-gray-100 inline-12
-          "
+          Start Cooking
+        </DsButton>
+        <DsButton
+          {...neutralChipProps}
+          width="$12"
+          paddingHorizontal={0}
           onPress={() => void printRecipe(recipe)}
         >
-          <Text className="text-gray-700">🖨</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          className="
-            items-center justify-center rounded-xl bg-gray-100 inline-12
-          "
+          🖨
+        </DsButton>
+        <DsButton
+          {...neutralChipProps}
+          width="$12"
+          paddingHorizontal={0}
           onPress={() => void shareRecipe(recipe)}
         >
-          <Text className="text-gray-700">↗</Text>
-        </TouchableOpacity>
+          ↗
+        </DsButton>
         {canEditMetadata ? (
-          <TouchableOpacity
-            className="rounded-xl bg-gray-100 px-4 py-3"
+          <DsButton
+            {...neutralChipProps}
             onPress={onEditRecipe}
           >
-            <Text className="text-sm font-medium text-gray-700">Edit</Text>
-          </TouchableOpacity>
+            Edit
+          </DsButton>
         ) : null}
         {canEditDraft ? (
-          <TouchableOpacity
-            className="rounded-xl bg-gray-100 px-4 py-3"
+          <DsButton
+            {...neutralChipProps}
             onPress={() => {
               onEditVersion(recipe.versionId);
             }}
           >
-            <Text className="text-sm font-medium text-gray-700">
-              Edit draft
-            </Text>
-          </TouchableOpacity>
+            Edit draft
+          </DsButton>
         ) : null}
-        <TouchableOpacity
-          className="rounded-xl bg-red-50 px-4 py-3"
+        <DsButton
+          variant="secondary"
+          backgroundColor={tokens.colors.danger.danger1}
+          color={tokens.colors.danger.danger7}
           onPress={onDelete}
         >
-          <Text className="text-sm font-medium text-red-600">Delete</Text>
-        </TouchableOpacity>
-      </View>
+          Delete
+        </DsButton>
+      </XStack>
       {actionMessage ? (
-        <Text
+        <DsText
           accessibilityRole="text"
-          className="mbe-4 text-center text-sm text-gray-600"
+          marginBlockEnd="$4"
+          textAlign="center"
+          fontSize={tokens.typography.fontSize.sm}
+          color={tokens.colors.gray.gray7}
         >
           {actionMessage}
-        </Text>
+        </DsText>
       ) : null}
       <OverviewActions
         recipe={recipe}
@@ -174,7 +210,10 @@ export const OverviewTab = ({
         recipe={recipe}
         onActionMessage={showActionMessage}
       />
-      <View className="flex-row flex-wrap gap-2">
+      <XStack
+        flexWrap="wrap"
+        gap="$2"
+      >
         {recipe.tags.map(tag => (
           <TagPill
             key={tag.id}
@@ -182,8 +221,8 @@ export const OverviewTab = ({
             color={tag.color}
           />
         ))}
-      </View>
-    </View>
+      </XStack>
+    </YStack>
   );
 };
 
