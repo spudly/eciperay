@@ -4,6 +4,14 @@ FROM node:22-bookworm-slim AS build
 WORKDIR /app
 ENV HUSKY=0
 
+# The slim image ships no CA bundle, but the web build's PostHog plugin
+# shells out to posthog-cli (a Rust binary that loads certificates from the
+# system store) to resolve the release — without this it panics with
+# "No CA certificates were loaded from the system".
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
+
 COPY package.json package-lock.json ./
 COPY packages/types/package.json packages/types/
 COPY packages/icons/package.json packages/icons/
