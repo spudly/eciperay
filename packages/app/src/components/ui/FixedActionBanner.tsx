@@ -1,13 +1,13 @@
 import type {FixedActionBannerProps} from '@eciperay/client';
-import {Button, InlineAlert} from '@spudly/ui';
-import clsx from 'clsx';
-import {View} from 'react-native';
+import {ActionBar, Button, InlineAlert} from '@spudly/ui';
+import {XStack, YStack} from 'tamagui';
 
 // Note: DS DismissibleBanner couldn't be used directly — its `message` is
-// typed `string` (ours is ReactNode), `onDismiss` is required (ours is
-// optional), and it renders every action as a secondary button with no fixed
-// positioning. The message is rendered as a DS InlineAlert instead, with DS
-// Buttons for the actions.
+// typed `string` (ours is ReactNode) and `onDismiss` is required (ours is
+// optional). The pinned bar itself is the DS ActionBar (placement maps to
+// the old top/bottom positioning); the message is rendered as a DS
+// InlineAlert inside it, with DS Buttons for the actions. Content keeps
+// the old centered max-width column.
 export const FixedActionBanner = ({
   message,
   primaryAction,
@@ -16,17 +16,19 @@ export const FixedActionBanner = ({
   dismissAriaLabel = 'Dismiss',
   position = 'bottom',
 }: FixedActionBannerProps) => (
-  <View
-    className={clsx(
-      'ui-fixed-action-banner absolute inset-x-0 z-50',
-      position === 'top'
-        ? 'ui-fixed-action-banner-top inset-bs-0'
-        : 'ui-fixed-action-banner-bottom inset-be-0',
-    )}
-  >
-    <View className="mx-auto gap-3 p-4 max-inline-5xl">
+  <ActionBar placement={position}>
+    <YStack
+      width="100%"
+      maxWidth={1024}
+      alignSelf="center"
+      gap="$3"
+    >
       <InlineAlert severity="info">{message}</InlineAlert>
-      <View className="flex-row flex-wrap items-center gap-2">
+      <XStack
+        flexWrap="wrap"
+        alignItems="center"
+        gap="$2"
+      >
         {secondaryAction ? (
           <Button
             variant="secondary"
@@ -53,9 +55,9 @@ export const FixedActionBanner = ({
             Dismiss
           </Button>
         ) : null}
-      </View>
-    </View>
-  </View>
+      </XStack>
+    </YStack>
+  </ActionBar>
 );
 
 if (__DEV__) {

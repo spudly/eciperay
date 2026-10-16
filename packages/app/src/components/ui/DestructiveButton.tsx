@@ -1,5 +1,5 @@
 import type {DestructiveButtonProps} from '@eciperay/client';
-import {Button as DsButton, tokens} from '@spudly/ui';
+import {Button as DsButton} from '@spudly/ui';
 
 export const DestructiveButton = ({
   label,
@@ -7,8 +7,7 @@ export const DestructiveButton = ({
   disabled = false,
 }: DestructiveButtonProps) => (
   <DsButton
-    variant="primary"
-    backgroundColor={tokens.colors.danger.danger7}
+    variant="danger"
     onPress={onPress}
     disabled={disabled}
   >

@@ -1,7 +1,7 @@
 import type {ListLoadingFooterProps} from '@eciperay/client';
 import {Spinner} from '@spudly/ui';
 import {useState} from 'react';
-import {View} from 'react-native';
+import {YStack} from 'tamagui';
 
 import {PrimaryButton} from './PrimaryButton';
 
@@ -11,9 +11,14 @@ export const ListLoadingFooter = ({loading}: ListLoadingFooterProps) => {
   }
 
   return (
-    <View className="ui-loading-center py-4">
+    <YStack
+      flex={1}
+      alignItems="center"
+      justifyContent="center"
+      paddingVertical="$4"
+    >
       <Spinner label="Loading" />
-    </View>
+    </YStack>
   );
 };
 

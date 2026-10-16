@@ -2,6 +2,7 @@ import type {BulkSelectToolbarProps} from '@eciperay/client';
 import {Button, SearchField, Text} from '@spudly/ui';
 import {useState} from 'react';
 import {View} from 'react-native';
+import {XStack} from 'tamagui';
 
 export const BulkSelectToolbar = ({
   search,
@@ -25,9 +26,11 @@ export const BulkSelectToolbar = ({
         onChangeText={onSearchChange}
         placeholder={searchPlaceholder}
       />
-      <View className="
-        ui-bulk-select-toolbar-actions mbe-3 flex-row flex-wrap gap-3
-      ">
+      <XStack
+        flexWrap="wrap"
+        gap="$3"
+        marginBlockEnd="$3"
+      >
         <Button
           variant="ghost"
           size="sm"
@@ -47,7 +50,7 @@ export const BulkSelectToolbar = ({
         {selectedCount > 0 ? (
           <Text variant="hint">{selectedCount} selected</Text>
         ) : null}
-      </View>
+      </XStack>
     </View>
   );
 };

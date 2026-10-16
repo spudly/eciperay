@@ -1,19 +1,18 @@
 import type {SectionCardProps} from '@eciperay/client';
-import {SectionCard as DSSectionCard, Text as DSText, tokens} from '@spudly/ui';
+import {SectionCard as DSSectionCard, Text as DSText} from '@spudly/ui';
 
 import {InfoBanner} from './InfoBanner';
 
 /**
  * Thin adapter over the DS SectionCard.
  *
- * Variant mapping:
- * - elevated -> DS elevated card (shadow, no border) — the old ui-section-card.
- * - bordered -> default DS card (bordered) — the old ui-section-card-bordered.
- * - muted -> default DS card on a gray-50 background — the old
- *   ui-section-card-muted.
+ * The app variants map straight onto the DS Card appearance variants the DS
+ * SectionCard forwards: elevated (shadow, no border — the old ui-section-card),
+ * bordered (outline), and muted (page-background fill, no border — the original
+ * ui-section-card-muted).
  *
- * The old description prop (rendered under the title) is composed into
- * children as DS hint text; the mb-8 card spacing is preserved.
+ * The old description prop (rendered under the title) is composed into children
+ * as DS hint text; the mb-8 card spacing is preserved.
  */
 export const SectionCard = ({
   title,
@@ -23,16 +22,13 @@ export const SectionCard = ({
 }: SectionCardProps) => (
   <DSSectionCard
     title={title}
-    elevated={variant === 'elevated'}
-    backgroundColor={
-      variant === 'muted' ? tokens.colors.gray.gray1 : undefined
-    }
-    marginBottom={tokens.spacing[8]}
+    variant={variant}
+    marginBottom="$8"
   >
     {description ? (
       <DSText
         variant="hint"
-        marginBottom={tokens.spacing[3]}
+        marginBottom="$3"
       >
         {description}
       </DSText>

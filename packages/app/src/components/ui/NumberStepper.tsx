@@ -1,9 +1,7 @@
 import type {NumberStepperProps} from '@eciperay/client';
 import {NumberStepper as DsNumberStepper} from '@spudly/ui';
 import {useState} from 'react';
-import {StyleSheet, View} from 'react-native';
-
-const styles = StyleSheet.create({dimmed: {opacity: 0.5}});
+import {View} from 'tamagui';
 
 export const NumberStepper = ({
   label,
@@ -13,9 +11,8 @@ export const NumberStepper = ({
   disabled = false,
 }: NumberStepperProps) => (
   <View
-    className="ui-number-stepper"
     pointerEvents={disabled ? 'none' : 'auto'}
-    style={disabled ? styles.dimmed : undefined}
+    opacity={disabled ? 0.5 : undefined}
     accessibilityState={{disabled}}
   >
     <DsNumberStepper

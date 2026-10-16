@@ -1,6 +1,6 @@
 import type {PrevNextNavProps} from '@eciperay/client';
-import {PrevNextNav as DSPrevNextNav} from '@spudly/ui';
-import {View} from 'react-native';
+import {PrevNextNav as DSPrevNextNav, tokens} from '@spudly/ui';
+import {View} from 'tamagui';
 
 // Note: DS PrevNextNav has no disabled-back state, so `disableBack` hides the
 // back button (the DS convention when there is nowhere to go back to).
@@ -23,7 +23,10 @@ export const PrevNextNav = ({
 
 if (__DEV__) {
   PrevNextNav.demo = () => (
-    <View className="bg-gray-900 p-4">
+    <View
+      backgroundColor={tokens.colors.gray.gray9}
+      padding="$4"
+    >
       <PrevNextNav
         onBack={() => {
           void 0;
