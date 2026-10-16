@@ -4,7 +4,6 @@ const {getDefaultConfig, mergeConfig} = require('@react-native/metro-config');
 const {
   patchMetroSourceMapStringForPackedMaps,
 } = require('@expo/metro-config/build/serializer/sourceMap');
-const {withNativewind} = require('nativewind/metro');
 const {resolve: metroResolve} = require('metro-resolver');
 const {
   unstableBeforeAssetSerializationDebugIdPlugin,
@@ -12,9 +11,9 @@ const {
 
 const {writeEnvShim} = require('./scripts/envShim.cjs');
 
-// NativeWind uses @expo/metro-config's transformer, which stores packed source maps
-// instead of Babel tuple arrays. Metro's standalone .map endpoint (used by DevTools)
-// must be patched to understand that format.
+// @expo/metro-config's transformer stores packed source maps instead of Babel
+// tuple arrays. Metro's standalone .map endpoint (used by DevTools) must be
+// patched to understand that format.
 patchMetroSourceMapStringForPackedMaps();
 
 const projectRoot = __dirname; // packages/app/
@@ -60,15 +59,12 @@ const config = mergeConfig(getDefaultConfig(projectRoot), {
   },
 });
 
-const nativeWindConfig = withNativewind(config);
-
 module.exports = {
-  ...nativeWindConfig,
+  ...config,
   serializer: {
-    ...nativeWindConfig.serializer,
+    ...config.serializer,
     unstable_beforeAssetSerializationPlugins: [
-      ...(nativeWindConfig.serializer
-        ?.unstable_beforeAssetSerializationPlugins ?? []),
+      ...(config.serializer?.unstable_beforeAssetSerializationPlugins ?? []),
       unstableBeforeAssetSerializationDebugIdPlugin,
     ],
   },

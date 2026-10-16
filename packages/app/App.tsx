@@ -1,5 +1,3 @@
-import './global.css';
-
 import {
   AnalyticsErrorBoundaryProvider,
   AnalyticsProvider,
@@ -10,6 +8,7 @@ import type {Session} from '@supabase/supabase-js';
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 import {eciperayTamaguiConfig} from '@spudly/ui';
 import React from 'react';
+import type {ViewStyle} from 'react-native';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
 import {TamaguiProvider} from 'tamagui';
@@ -31,9 +30,14 @@ const onSignedOut = () => {
 
 const queryClient = new QueryClient();
 
+const rootViewStyle: ViewStyle = {flex: 1};
+
 const App = () => (
-  <TamaguiProvider config={eciperayTamaguiConfig} defaultTheme="light">
-    <GestureHandlerRootView className="flex-1 font-sans">
+  <TamaguiProvider
+    config={eciperayTamaguiConfig}
+    defaultTheme="light"
+  >
+    <GestureHandlerRootView style={rootViewStyle}>
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
           <AnalyticsProvider analytics={analytics}>
