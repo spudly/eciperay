@@ -4,6 +4,9 @@ const {getDefaultConfig, mergeConfig} = require('@react-native/metro-config');
 const {
   patchMetroSourceMapStringForPackedMaps,
 } = require('@expo/metro-config/build/serializer/sourceMap');
+const {
+  withExpoSerializers,
+} = require('@expo/metro-config/build/serializer/withExpoSerializers');
 const {resolve: metroResolve} = require('metro-resolver');
 const {
   unstableBeforeAssetSerializationDebugIdPlugin,
@@ -11,8 +14,13 @@ const {
 
 const {writeEnvShim} = require('./scripts/envShim.cjs');
 
-// @expo/metro-config's transformer stores packed source maps instead of Babel
-// tuple arrays. Metro's standalone .map endpoint (used by DevTools) must be
+// The exported config is wrapped in withExpoSerializers (bottom of this
+// file): the default React Native serializer never executes
+// serializer.unstable_beforeAssetSerializationPlugins, which is the hook the
+// PostHog plugin (below) uses to inject the debug ID that links bundles to
+// their source maps — without the Expo serializer the plugin is silently
+// inert. Expo's serializer stores packed source maps instead of Babel tuple
+// arrays, so Metro's standalone .map endpoint (used by DevTools) must be
 // patched to understand that format.
 patchMetroSourceMapStringForPackedMaps();
 
@@ -59,7 +67,7 @@ const config = mergeConfig(getDefaultConfig(projectRoot), {
   },
 });
 
-module.exports = {
+module.exports = withExpoSerializers({
   ...config,
   serializer: {
     ...config.serializer,
@@ -68,4 +76,4 @@ module.exports = {
       unstableBeforeAssetSerializationDebugIdPlugin,
     ],
   },
-};
+});
