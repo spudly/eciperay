@@ -19,6 +19,13 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+# Two tiers: pull requests get a fast tier (affected packages only —
+# discovery already does that — tests without coverage, server tests
+# unsharded, no coverage gate) for quick signal; master pushes run the
+# full suite (all packages, coverage, sharded server tests, and the
+# coverage thresholds in the merge job). Release only fires on a green
+# master run, so the full gate still guards shipping.
+
 jobs:
   setup:
     name: Discover packages
@@ -177,7 +184,16 @@ jobs:
         with:
           skip-install-on-cache-hit: 'true'
 
+      # Fast PR tier: no coverage instrumentation on pull requests.
+      # The full suite (coverage + thresholds) runs on master pushes.
+      - name: Test (PR fast tier, no coverage)
+        if: github.event_name == 'pull_request'
+        run: npm run test --workspace=${{ matrix.package }}
+        env:
+          CI: true
+
       - name: Test with coverage
+        if: github.event_name != 'pull_request'
         run: npm run test:coverage --workspace=${{ matrix.package }}
         env:
           CI: true
@@ -197,15 +213,48 @@ jobs:
         with:
           skip-install-on-cache-hit: 'true'
 
+      - name: Test scripts (PR fast tier, no coverage)
+        if: github.event_name == 'pull_request'
+        run: npm run test:scripts:quick
+        env:
+          CI: true
+
       - name: Test scripts with coverage
+        if: github.event_name != 'pull_request'
         run: npm run test:scripts
+        env:
+          CI: true
+
+  # Fast PR tier for the server: one unsharded job, no coverage.
+  # The sharded coverage run + merge gate below run on master pushes.
+  test-server-fast:
+    name: test (packages/server)
+    needs: [install, setup]
+    if:
+      github.event_name == 'pull_request' &&
+      contains(needs.setup.outputs.test-packages, 'packages/server')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup
+        uses: ./.github/actions/ci-setup
+        with:
+          skip-install-on-cache-hit: 'true'
+
+      - name: Test without coverage
+        run: npm run test --workspace=packages/server
         env:
           CI: true
 
   test-server:
     name: test (packages/server, shard ${{ matrix.shard }}/3)
     needs: [install, setup]
-    if: contains(needs.setup.outputs.test-packages, 'packages/server')
+    if:
+      github.event_name != 'pull_request' &&
+      contains(needs.setup.outputs.test-packages, 'packages/server')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
