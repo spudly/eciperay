@@ -1,5 +1,23 @@
 npx lint-staged
-npm run workflows:lint
+
+# Two stages are gated on staged files that can actually affect them
+# (~11s saved on commits that can't): workflows:lint only checks
+# .github/workflows/, and the scripts suite only exercises scripts/,
+# its configs, and files its tests read. Triggers mirror
+# isScriptsAffectingFile + isAllAffectingFile in scripts/affectedFiles.ts
+# (plus .github/workflows/, which the scripts tests assert against),
+# so the hook and CI discovery agree on what "scripts-affecting" means.
+# lint-staged already runs actionlint + prettier on staged workflows.
+staged_files=$(git diff --cached --name-only)
+
+if printf '%s\n' "$staged_files" | grep -q '^\.github/workflows/'; then
+  npm run workflows:lint
+fi
+
 npm run typecheck
-npm run test:scripts:quick
+
+if printf '%s\n' "$staged_files" | grep -qE '^(scripts/|eslint-rules/|patches/|test/|\.github/workflows/|jest\.config\.cjs|commitlint\.config\.cjs|package\.json|package-lock\.json|tsconfig\.json|tsconfig\.base\.json|turbo\.json|eslint\.config\.ts|knip\.ts)'; then
+  npm run test:scripts:quick
+fi
+
 npm run precommit:affected-tests
