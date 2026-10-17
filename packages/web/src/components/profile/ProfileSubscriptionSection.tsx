@@ -1,15 +1,34 @@
 import {errorMessage, queryKeys, useAuth} from '@eciperay/client';
-import {useMutation, useQuery} from '@tanstack/react-query';
-import {useState} from 'react';
+import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
+import {useEffect, useState} from 'react';
 
 import {eciperay} from '../../lib/api.js';
 
 import {SubscriptionView} from './SubscriptionView.js';
 
+// Bounded reconciliation after checkout or a portal return. The
+// entitlement endpoint reads subscription state that Paddle webhooks
+// update separately, so the first fetch after arriving on /profile
+// (checkout completion redirects here) — or the single focus refetch
+// after returning from the portal tab — can beat the webhook and cache
+// the old plan/status. Nothing else would fetch again while the page
+// stays open: the 30s staleTime is not a polling interval, and
+// refetchOnWindowFocus only fires on another focus event. So for 30s
+// after mount, and for 30s after each window focus, refetch on a
+// backoff; after that window the section settles and fetches normally.
+const RECONCILE_OFFSETS_MS = [3000, 8000, 15_000, 30_000];
+const RECONCILE_WINDOW_MS = 30_000;
+
 export const ProfileSubscriptionSection = () => {
   const {session} = useAuth();
+  const queryClient = useQueryClient();
   const [portalError, setPortalError] = useState<string | null>(null);
   const [portalUrl, setPortalUrl] = useState<string | null>(null);
+  // Mounting starts a cycle: arriving here from /pay's
+  // checkout.completed redirect is a mount.
+  const [reconcileCycleStartedAt, setReconcileCycleStartedAt] =
+    useState<number>(() => Date.now());
+  const [isReconciling, setIsReconciling] = useState(true);
 
   // Key the cache by the authenticated user: the QueryClient is shared for
   // the life of the tab, so an unscoped key would leak the previous
@@ -27,6 +46,39 @@ export const ProfileSubscriptionSection = () => {
     // until some unrelated refetch happened.
     refetchOnWindowFocus: 'always',
   });
+
+  // Returning from the portal tab is a window focus on this tab:
+  // restart the reconciliation cycle so a webhook that lands after
+  // the immediate focus refetch is still picked up without the user
+  // having to focus again or reload.
+  useEffect(() => {
+    const onFocus = () => {
+      setReconcileCycleStartedAt(Date.now());
+    };
+    window.addEventListener('focus', onFocus);
+    return () => {
+      window.removeEventListener('focus', onFocus);
+    };
+  }, []);
+
+  useEffect(() => {
+    setIsReconciling(true);
+    const entitlementKey = queryKeys.entitlement(userId);
+    const timers = RECONCILE_OFFSETS_MS.map(offset =>
+      setTimeout(() => {
+        void queryClient.refetchQueries({queryKey: entitlementKey});
+      }, offset),
+    );
+    const endTimer = setTimeout(() => {
+      setIsReconciling(false);
+    }, RECONCILE_WINDOW_MS);
+    return () => {
+      for (const timer of timers) {
+        clearTimeout(timer);
+      }
+      clearTimeout(endTimer);
+    };
+  }, [reconcileCycleStartedAt, queryClient, userId]);
 
   const portalMutation = useMutation({
     mutationFn: () => eciperay.billing.createPortalLink(),
@@ -71,6 +123,7 @@ export const ProfileSubscriptionSection = () => {
       isOpeningPortal={portalMutation.isPending}
       onManage={handleManage}
       portalUrl={portalUrl}
+      isReconciling={isReconciling}
       error={
         portalError ??
         (entitlementQuery.error ? errorMessage(entitlementQuery.error) : null)

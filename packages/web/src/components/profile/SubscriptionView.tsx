@@ -55,6 +55,7 @@ export const SubscriptionView = ({
   onManage,
   error,
   portalUrl,
+  isReconciling,
 }: SubscriptionViewProps) => {
   const status = entitlement ? statusText(entitlement) : null;
   return (
@@ -75,6 +76,11 @@ export const SubscriptionView = ({
               ($8.99/mo) adds API access.
             </DSText>
           )}
+          {isReconciling ? (
+            <DSText variant="hint">
+              Checking for the latest subscription status…
+            </DSText>
+          ) : null}
           {entitlement.paddleCustomerId ? (
             <PrimaryButton
               label="Manage subscription"

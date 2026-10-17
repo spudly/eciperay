@@ -12,4 +12,10 @@ export type SubscriptionViewProps = {
    * request). Null when the tab opened normally.
    */
   portalUrl?: string | null;
+  /**
+   * True while a bounded reconciliation cycle is re-checking the entitlement
+   * after checkout or a portal return, because the webhook that updates
+   * subscription state can land after the first fetch.
+   */
+  isReconciling?: boolean;
 };

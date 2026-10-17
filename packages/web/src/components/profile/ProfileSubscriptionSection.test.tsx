@@ -65,6 +65,35 @@ describe('ProfileSubscriptionSection', () => {
     expect(getEntitlement).toHaveBeenCalledTimes(2);
   });
 
+  test('reconciles a delayed webhook update without another focus event', async () => {
+    const freeEntitlement: Entitlement = {
+      plan: 'free',
+      status: null,
+      aiUsed: 0,
+      aiLimit: 25,
+      periodEndsAt: null,
+      paddleCustomerId: null,
+      cancelAtPeriodEnd: false,
+    };
+    // The first fetch beats the checkout webhook and returns the old
+    // (free) entitlement; the webhook then lands, but no further focus
+    // event occurs while the profile stays open. The bounded
+    // reconciliation cycle must refetch on its own and pick the new
+    // plan up.
+    const getEntitlement = vi
+      .spyOn(eciperay.account, 'getEntitlement')
+      .mockResolvedValueOnce(freeEntitlement)
+      .mockResolvedValue(plusEntitlement);
+    await renderWithProviders(<ProfileSubscriptionSection />, {
+      withAuth: false,
+    });
+    expect(await screen.findByText('Free plan')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Plus plan', undefined, {timeout: 6000}),
+    ).toBeInTheDocument();
+    expect(getEntitlement.mock.calls.length).toBeGreaterThanOrEqual(2);
+  });
+
   test('manage subscription pre-opens a tab and navigates it to the portal link', async () => {
     vi.spyOn(eciperay.account, 'getEntitlement').mockResolvedValue(
       plusEntitlement,

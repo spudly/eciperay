@@ -106,6 +106,20 @@ describe('SubscriptionView', () => {
     ).toBeInTheDocument();
   });
 
+  test('shows a checking message while reconciling', async () => {
+    await renderView({
+      entitlement: makeEntitlement({
+        plan: 'plus',
+        status: 'active',
+        paddleCustomerId: 'ctm_123',
+      }),
+      isReconciling: true,
+    });
+    expect(
+      screen.getByText('Checking for the latest subscription status…'),
+    ).toBeInTheDocument();
+  });
+
   test('shows a clickable portal link when portalUrl is set', async () => {
     await renderView({
       entitlement: makeEntitlement({
