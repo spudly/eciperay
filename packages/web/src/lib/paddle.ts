@@ -5,16 +5,26 @@ import {PADDLE_CLIENT_TOKEN, PADDLE_ENVIRONMENT} from './env.js';
  * CDN at runtime — no npm dependency. The client-side token is a public browser
  * identifier (it ships in every page load), not a secret; the secret API key
  * never leaves the server.
+ *
+ * The SDK is initialized exactly once per page load, with a stable module-level
+ * dispatcher as its event callback. Each /pay mount hands the dispatcher its
+ * own handler via initializePaddle and releases it on unmount, so StrictMode
+ * effect replay and client-side remounts never strand the live page without
+ * handlers, and repeat visits open their transaction explicitly via
+ * Checkout.open instead of re-initializing.
  */
 
 export type PaddleEvent = {name?: string; data?: unknown};
+
+type PaddleEventCallback = (event: PaddleEvent) => void;
 
 type PaddleGlobal = {
   Environment: {set: (environment: string) => void};
   Initialize: (options: {
     token: string;
-    eventCallback?: (event: PaddleEvent) => void;
+    eventCallback?: PaddleEventCallback;
   }) => void;
+  Checkout: {open: (options: {transactionId: string}) => void};
 };
 
 type WindowWithPaddle = Window & {Paddle?: PaddleGlobal};
@@ -25,6 +35,8 @@ const paddleGlobal = (): PaddleGlobal | undefined =>
 const PADDLE_JS_URL = 'https://cdn.paddle.com/paddle/v2/paddle.js';
 
 let loadPromise: Promise<PaddleGlobal> | null = null;
+let sdkInitialized = false;
+let currentCallback: PaddleEventCallback | null = null;
 
 export const isPaddleConfigured = (): boolean => PADDLE_CLIENT_TOKEN.length > 0;
 
@@ -54,18 +66,41 @@ const loadPaddleJs = (): Promise<PaddleGlobal> => {
   return loadPromise;
 };
 
+const dispatchEvent: PaddleEventCallback = event => {
+  currentCallback?.(event);
+};
+
 /**
- * Initialize Paddle.js for this page load. When the page URL carries a `_ptxn`
- * transaction parameter (the shape of Paddle's default payment link), Paddle.js
- * opens that transaction's checkout overlay itself once initialized — no
- * explicit Checkout.open call is needed.
+ * Make `eventCallback` the live checkout handler for `transactionId`. First
+ * call: loads Paddle.js and initializes the SDK — Paddle.js then opens the
+ * transaction named by the page URL's `_ptxn` parameter itself. Later calls
+ * (remounts, a changed transaction): the SDK is already initialized, so the
+ * requested transaction is opened explicitly.
  */
 export const initializePaddle = async (
-  eventCallback: (event: PaddleEvent) => void,
+  transactionId: string,
+  eventCallback: PaddleEventCallback,
 ): Promise<void> => {
+  currentCallback = eventCallback;
   const paddle = await loadPaddleJs();
+  if (sdkInitialized) {
+    paddle.Checkout.open({transactionId});
+    return;
+  }
   if (PADDLE_ENVIRONMENT === 'sandbox') {
     paddle.Environment.set('sandbox');
   }
-  paddle.Initialize({token: PADDLE_CLIENT_TOKEN, eventCallback});
+  paddle.Initialize({token: PADDLE_CLIENT_TOKEN, eventCallback: dispatchEvent});
+  sdkInitialized = true;
+};
+
+/**
+ * Detach a handler previously passed to initializePaddle (page unmount). Only
+ * the currently-registered handler can detach itself, so an old page's cleanup
+ * never silences the page that replaced it.
+ */
+export const releasePaddle = (eventCallback: PaddleEventCallback): void => {
+  if (currentCallback === eventCallback) {
+    currentCallback = null;
+  }
 };
