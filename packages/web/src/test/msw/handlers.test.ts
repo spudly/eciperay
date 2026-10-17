@@ -152,6 +152,14 @@ describe('msw handlers', () => {
     await eciperay.account.revokePersonalAccessToken('token-uuid-1');
   });
 
+  test('covers entitlement and billing portal endpoints', async () => {
+    const entitlement = await eciperay.account.getEntitlement();
+    expect(entitlement.plan).toBe('free');
+    expect(entitlement.status).toBeNull();
+    const portal = await eciperay.billing.createPortalLink();
+    expect(portal.url).toBe('https://portal.example/session');
+  });
+
   test('covers ratings and comments endpoints', async () => {
     const comment = await eciperay.recipes.createComment('recipe-uuid-1', {
       body: 'Nice!',
