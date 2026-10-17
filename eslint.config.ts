@@ -34,6 +34,16 @@ export default [
       'packages/app/src/types/*.d.ts', // ambient type declarations only
       'packages/web/src/vite-env.d.ts', // Vite ambient types
       'packages/*/coverage/**', // generated Istanbul/V8 coverage reports
+      // typescript-eslint was the only TypeScript parser in this tree and
+      // is uninstalled pending its TypeScript 7 support, so ESLint cannot
+      // parse TypeScript at all. Until it returns, .ts/.tsx files are NOT
+      // linted — `npm run typecheck` (TS7) is the correctness gate for TS.
+      // Plain JS/CJS/MJS files are still linted by the sections below.
+      // Remove these four entries when typescript-eslint is restored.
+      '**/*.ts',
+      '**/*.tsx',
+      '**/*.mts',
+      '**/*.cts',
     ],
   },
 
