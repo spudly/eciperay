@@ -3,7 +3,11 @@ import userEvent from '@testing-library/user-event';
 import {Route, Routes, useNavigate} from 'react-router-dom';
 import {vi} from 'vitest';
 
-import {initializePaddle, isPaddleConfigured} from '../lib/paddle.js';
+import {
+  initializePaddle,
+  isPaddleConfigured,
+  releasePaddle,
+} from '../lib/paddle.js';
 import {renderWithProviders} from '../test/testUtils.js';
 
 import {PayPage} from './PayPage.js';
@@ -11,10 +15,14 @@ import {PayPage} from './PayPage.js';
 vi.mock('../lib/paddle.js', () => ({
   isPaddleConfigured: vi.fn(),
   initializePaddle: vi.fn(),
+  releasePaddle: vi.fn(),
 }));
 
 const mockConfigured = vi.mocked(isPaddleConfigured);
 const mockInitialize = vi.mocked(initializePaddle);
+const mockRelease = vi.mocked(releasePaddle);
+
+const callbackAt = (index: number) => mockInitialize.mock.calls[index]?.[1];
 
 const renderPay = async (route: string) =>
   renderWithProviders(
@@ -58,7 +66,11 @@ describe('PayPage', () => {
       screen.getByText(/Opening the secure payment window/i),
     ).toBeInTheDocument();
     expect(mockInitialize).toHaveBeenCalledTimes(1);
-    const onEvent = mockInitialize.mock.calls[0]?.[0];
+    expect(mockInitialize).toHaveBeenCalledWith(
+      'txn_123',
+      expect.any(Function),
+    );
+    const onEvent = callbackAt(0);
     expect(typeof onEvent).toBe('function');
     await act(async () => {
       onEvent?.({name: 'checkout.completed'});
@@ -69,7 +81,7 @@ describe('PayPage', () => {
   test('offers to reopen when the buyer closes the checkout', async () => {
     mockConfigured.mockReturnValue(true);
     await renderPay('/pay?_ptxn=txn_123');
-    const onEvent = mockInitialize.mock.calls[0]?.[0];
+    const onEvent = callbackAt(0);
     await act(async () => {
       onEvent?.({name: 'checkout.closed'});
     });
@@ -90,7 +102,7 @@ describe('PayPage', () => {
   test('shows an error when the checkout reports an error event', async () => {
     mockConfigured.mockReturnValue(true);
     await renderPay('/pay?_ptxn=txn_123');
-    const onEvent = mockInitialize.mock.calls[0]?.[0];
+    const onEvent = callbackAt(0);
     await act(async () => {
       onEvent?.({name: 'checkout.error'});
     });
@@ -100,7 +112,7 @@ describe('PayPage', () => {
   test('ignores unrelated Paddle events', async () => {
     mockConfigured.mockReturnValue(true);
     await renderPay('/pay?_ptxn=txn_123');
-    const onEvent = mockInitialize.mock.calls[0]?.[0];
+    const onEvent = callbackAt(0);
     await act(async () => {
       onEvent?.({name: 'checkout.loaded'});
     });
@@ -125,7 +137,7 @@ describe('PayPage', () => {
   test('reopen checkout reloads the page after the buyer closes it', async () => {
     mockConfigured.mockReturnValue(true);
     await renderPay('/pay?_ptxn=txn_123');
-    const onEvent = mockInitialize.mock.calls[0]?.[0];
+    const onEvent = callbackAt(0);
     await act(async () => {
       onEvent?.({name: 'checkout.closed'});
     });
@@ -147,8 +159,9 @@ describe('PayPage', () => {
   test('ignores events that arrive after unmount', async () => {
     mockConfigured.mockReturnValue(true);
     const {unmount} = await renderPay('/pay?_ptxn=txn_123');
-    const onEvent = mockInitialize.mock.calls[0]?.[0];
+    const onEvent = callbackAt(0);
     unmount();
+    expect(mockRelease).toHaveBeenCalledWith(onEvent);
     await act(async () => {
       onEvent?.({name: 'checkout.completed'});
     });
@@ -172,7 +185,76 @@ describe('PayPage', () => {
     expect(screen.queryByText(/couldn’t be opened/i)).not.toBeInTheDocument();
   });
 
-  test('does not initialize twice when the transaction id changes', async () => {
+  // StrictMode effect replay (setup, cleanup, setup on one mounted
+  // instance) cannot be reproduced literally here — this repo's vitest
+  // runs React's production build, which never double-invokes effects.
+  // This test drives the same sequence through dependency churn: every
+  // cleanup must release its handler and every setup must register a new
+  // one, leaving exactly the latest handler live.
+  test('effect churn leaves exactly the latest handler live', async () => {
+    mockConfigured.mockReturnValue(true);
+    const TxnSwitcher = () => {
+      const navigate = useNavigate();
+      return (
+        <>
+          <button
+            type="button"
+            onClick={() => {
+              void navigate('/pay?_ptxn=txn_2');
+            }}
+          >
+            Switch to txn 2
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              void navigate('/pay?_ptxn=txn_1');
+            }}
+          >
+            Switch to txn 1
+          </button>
+        </>
+      );
+    };
+    await renderWithProviders(
+      <Routes>
+        <Route
+          path="/pay"
+          element={
+            <>
+              <PayPage />
+              <TxnSwitcher />
+            </>
+          }
+        />
+        <Route
+          path="/profile"
+          element={<div>Profile stub</div>}
+        />
+      </Routes>,
+      {route: '/pay?_ptxn=txn_1', withAuth: false},
+    );
+    await userEvent.click(
+      screen.getByRole('button', {name: 'Switch to txn 2'}),
+    );
+    await userEvent.click(
+      screen.getByRole('button', {name: 'Switch to txn 1'}),
+    );
+    expect(mockInitialize).toHaveBeenCalledTimes(3);
+    expect(mockRelease).toHaveBeenCalledWith(callbackAt(0));
+    expect(mockRelease).toHaveBeenCalledWith(callbackAt(1));
+    await act(async () => {
+      callbackAt(0)?.({name: 'checkout.completed'});
+      callbackAt(1)?.({name: 'checkout.completed'});
+    });
+    expect(screen.queryByText('Profile stub')).not.toBeInTheDocument();
+    await act(async () => {
+      callbackAt(2)?.({name: 'checkout.completed'});
+    });
+    expect(await screen.findByText('Profile stub')).toBeInTheDocument();
+  });
+
+  test('re-registers its handler when the transaction id changes', async () => {
     mockConfigured.mockReturnValue(true);
     const TxnSwitcher = () => {
       const navigate = useNavigate();
@@ -198,6 +280,10 @@ describe('PayPage', () => {
             </>
           }
         />
+        <Route
+          path="/profile"
+          element={<div>Profile stub</div>}
+        />
       </Routes>,
       {route: '/pay?_ptxn=txn_1', withAuth: false},
     );
@@ -205,6 +291,18 @@ describe('PayPage', () => {
     await userEvent.click(
       screen.getByRole('button', {name: 'Switch transaction'}),
     );
-    expect(mockInitialize).toHaveBeenCalledTimes(1);
+    expect(mockInitialize).toHaveBeenCalledTimes(2);
+    expect(mockInitialize).toHaveBeenLastCalledWith(
+      'txn_2',
+      expect.any(Function),
+    );
+    await act(async () => {
+      callbackAt(0)?.({name: 'checkout.completed'});
+    });
+    expect(screen.queryByText('Profile stub')).not.toBeInTheDocument();
+    await act(async () => {
+      callbackAt(1)?.({name: 'checkout.completed'});
+    });
+    expect(await screen.findByText('Profile stub')).toBeInTheDocument();
   });
 });

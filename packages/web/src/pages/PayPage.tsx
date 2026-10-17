@@ -1,11 +1,16 @@
-import {useEffect, useRef, useState} from 'react';
+import {useEffect, useState} from 'react';
 import {useNavigate, useSearchParams} from 'react-router-dom';
 
 import {EmptyMessage} from '../components/ui/EmptyMessage.js';
 import {PageTitle} from '../components/ui/PageTitle.js';
 import {PrimaryButton} from '../components/ui/PrimaryButton.js';
 import {ScreenContainer} from '../components/ui/ScreenContainer.js';
-import {initializePaddle, isPaddleConfigured} from '../lib/paddle.js';
+import type {PaddleEvent} from '../lib/paddle.js';
+import {
+  initializePaddle,
+  isPaddleConfigured,
+  releasePaddle,
+} from '../lib/paddle.js';
 
 type PayStatus = 'opening' | 'closed' | 'error';
 
@@ -23,16 +28,18 @@ export const PayPage = () => {
   const transactionId = searchParams.get('_ptxn');
   const configured = isPaddleConfigured();
   const [status, setStatus] = useState<PayStatus>('opening');
-  const startedRef = useRef(false);
 
   useEffect(() => {
-    if (!transactionId || !configured || startedRef.current) {
+    if (!transactionId || !configured) {
       return;
     }
-    startedRef.current = true;
-    let cancelled = false;
-    initializePaddle(event => {
-      if (cancelled) {
+    // Each mount registers its own handler and releases it on cleanup, so
+    // StrictMode effect replay (setup, cleanup, setup) and transaction
+    // changes always leave a live handler behind — never a cancelled one.
+    let active = true;
+    setStatus('opening');
+    const onEvent = (event: PaddleEvent) => {
+      if (!active) {
         return;
       }
       switch (event.name) {
@@ -52,13 +59,15 @@ export const PayPage = () => {
           break;
         }
       }
-    }).catch(() => {
-      if (!cancelled) {
+    };
+    initializePaddle(transactionId, onEvent).catch(() => {
+      if (active) {
         setStatus('error');
       }
     });
     return () => {
-      cancelled = true;
+      active = false;
+      releasePaddle(onEvent);
     };
   }, [transactionId, configured, navigate]);
 
