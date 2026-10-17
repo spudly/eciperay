@@ -18,6 +18,14 @@ export type Entitlement = {
   aiLimit: number;
   periodEndsAt: string | null;
   paddleCustomerId: string | null;
+  /**
+   * True when the subscription is still active but scheduled to cancel at the
+   * end of the current period (Paddle `scheduled_change.action = 'cancel'`).
+   * Paid access continues until `periodEndsAt`; the plan does NOT renew.
+   * Distinct from `status: 'cancelled'`, which is already in its access-until
+   * window (or past it).
+   */
+  cancelAtPeriodEnd: boolean;
 };
 
 export type PlanLimits = {

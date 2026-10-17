@@ -648,6 +648,7 @@ export const handlers = [
       aiLimit: 25,
       periodEndsAt: null,
       paddleCustomerId: null,
+      cancelAtPeriodEnd: false,
     }),
   ),
   http.post(`${API}/api/billing/portal-link`, () =>

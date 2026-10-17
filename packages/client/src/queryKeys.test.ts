@@ -76,6 +76,9 @@ describe('queryKeys', () => {
     ]);
     expect(queryKeys.nutritionGoals()).toEqual(['nutritionGoals']);
     expect(queryKeys.personalAccessTokens()).toEqual(['personalAccessTokens']);
-    expect(queryKeys.entitlement()).toEqual(['entitlement']);
+    expect(queryKeys.entitlement('user-1')).toEqual(['entitlement', 'user-1']);
+    expect(queryKeys.entitlement('user-2')).not.toEqual(
+      queryKeys.entitlement('user-1'),
+    );
   });
 });

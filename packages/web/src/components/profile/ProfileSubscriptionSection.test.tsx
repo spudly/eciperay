@@ -15,6 +15,7 @@ const plusEntitlement: Entitlement = {
   aiLimit: 200,
   periodEndsAt: '2026-11-16T12:00:00.000Z',
   paddleCustomerId: 'ctm_123',
+  cancelAtPeriodEnd: false,
 };
 
 describe('ProfileSubscriptionSection', () => {
@@ -35,25 +36,61 @@ describe('ProfileSubscriptionSection', () => {
     ).toBeInTheDocument();
   });
 
-  test('manage subscription opens the portal link in a new tab', async () => {
+  test('manage subscription pre-opens a tab and navigates it to the portal link', async () => {
     vi.spyOn(eciperay.account, 'getEntitlement').mockResolvedValue(
       plusEntitlement,
     );
-    vi.spyOn(eciperay.billing, 'createPortalLink').mockResolvedValue({
-      url: 'https://portal.example/session',
-    });
-    const open = vi.spyOn(window, 'open').mockImplementation(() => null);
+    let resolvePortal!: (value: {url: string}) => void;
+    vi.spyOn(eciperay.billing, 'createPortalLink').mockImplementation(
+      () =>
+        new Promise<{url: string}>(resolve => {
+          resolvePortal = resolve;
+        }),
+    );
+    const portalTab = {
+      closed: false,
+      opener: {} as unknown,
+      location: {href: ''},
+      close: vi.fn(),
+    };
+    const open = vi
+      .spyOn(window, 'open')
+      .mockImplementation(() => portalTab as unknown as Window);
     await renderWithProviders(<ProfileSubscriptionSection />, {
       withAuth: false,
     });
     await userEvent.click(
       await screen.findByRole('button', {name: 'Manage subscription'}),
     );
-    expect(open).toHaveBeenCalledWith(
-      'https://portal.example/session',
-      '_blank',
-      'noopener,noreferrer',
+    // The tab opens synchronously on click, before the request resolves,
+    // so the browser's popup blocker cannot eat it.
+    expect(open).toHaveBeenCalledWith('', '_blank');
+    expect(portalTab.location.href).toBe('');
+    resolvePortal({url: 'https://portal.example/session'});
+    await screen.findByRole('button', {name: 'Manage subscription'});
+    expect(portalTab.location.href).toBe('https://portal.example/session');
+    expect(portalTab.opener).toBeNull();
+    expect(portalTab.close).not.toHaveBeenCalled();
+  });
+
+  test('shows a clickable portal link when the pre-opened tab is blocked', async () => {
+    vi.spyOn(eciperay.account, 'getEntitlement').mockResolvedValue(
+      plusEntitlement,
     );
+    vi.spyOn(eciperay.billing, 'createPortalLink').mockResolvedValue({
+      url: 'https://portal.example/session',
+    });
+    vi.spyOn(window, 'open').mockImplementation(() => null);
+    await renderWithProviders(<ProfileSubscriptionSection />, {
+      withAuth: false,
+    });
+    await userEvent.click(
+      await screen.findByRole('button', {name: 'Manage subscription'}),
+    );
+    const link = await screen.findByRole('link', {
+      name: 'Open subscription portal',
+    });
+    expect(link).toHaveAttribute('href', 'https://portal.example/session');
   });
 
   test('shows an error when the entitlement fails to load', async () => {
@@ -66,12 +103,21 @@ describe('ProfileSubscriptionSection', () => {
     expect(await screen.findByText('boom')).toBeInTheDocument();
   });
 
-  test('shows an error when the portal link fails', async () => {
+  test('shows an error and closes the pre-opened tab when the portal link fails', async () => {
     vi.spyOn(eciperay.account, 'getEntitlement').mockResolvedValue(
       plusEntitlement,
     );
     vi.spyOn(eciperay.billing, 'createPortalLink').mockRejectedValue(
       new Error('portal down'),
+    );
+    const portalTab = {
+      closed: false,
+      opener: null,
+      location: {href: ''},
+      close: vi.fn(),
+    };
+    vi.spyOn(window, 'open').mockImplementation(
+      () => portalTab as unknown as Window,
     );
     await renderWithProviders(<ProfileSubscriptionSection />, {
       withAuth: false,
@@ -80,5 +126,6 @@ describe('ProfileSubscriptionSection', () => {
       await screen.findByRole('button', {name: 'Manage subscription'}),
     );
     expect(await screen.findByText('portal down')).toBeInTheDocument();
+    expect(portalTab.close).toHaveBeenCalledTimes(1);
   });
 });
