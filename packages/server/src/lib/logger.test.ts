@@ -8,6 +8,7 @@ import {
   createLogger,
   isHealthCheckUrl,
   resolveLogLevel,
+  toLoggableUrl,
 } from './logger.js';
 
 const captureStream = () => {
@@ -76,6 +77,20 @@ describe('isHealthCheckUrl', () => {
   });
 });
 
+describe('toLoggableUrl', () => {
+  test('strips the query string', () => {
+    expect(toLoggableUrl('/api/recipes?t=share-secret')).toBe('/api/recipes');
+  });
+
+  test('keeps urls without a query string unchanged', () => {
+    expect(toLoggableUrl('/api/recipes')).toBe('/api/recipes');
+  });
+
+  test('returns an empty string for a missing url', () => {
+    expect(toLoggableUrl(undefined)).toBe('');
+  });
+});
+
 describe('createHttpLogger', () => {
   const buildApp = () => {
     const {stream, lines} = captureStream();
@@ -104,6 +119,33 @@ describe('createHttpLogger', () => {
     expect(req['url']).toBe('/api/recipes');
     expect(resInfo['statusCode']).toBe(200);
     expect(typeof access?.['responseTime']).toBe('number');
+  });
+
+  test('never logs credentials or query-string tokens', async () => {
+    const {stream, lines} = captureStream();
+    const log = createLogger({NODE_ENV: 'production'}, stream);
+    const app = express();
+    app.use(createHttpLogger(log));
+    app.get('/api/recipes', (_req, res) => {
+      res.json([]);
+    });
+    const res = await request(app)
+      .get('/api/recipes?t=share-secret')
+      .set('Authorization', 'Bearer <REDACTED_SECRET>')
+      .set('Cookie', 'session=cookie-secret');
+    expect(res.status).toBe(200);
+    const entries = await lines();
+    const access = entries.find(entry => entry['msg'] === 'request completed');
+    expect(access).toBeDefined();
+    const req = access?.['req'] as Record<string, unknown>;
+    expect(req['url']).toBe('/api/recipes');
+    const headers = req['headers'] as Record<string, unknown>;
+    expect(headers['authorization']).toBe('[Redacted]');
+    expect(headers['cookie']).toBe('[Redacted]');
+    const raw = JSON.stringify(entries);
+    expect(raw).not.toContain('bearer-secret');
+    expect(raw).not.toContain('cookie-secret');
+    expect(raw).not.toContain('share-secret');
   });
 
   test('excludes /api/health from access logs', async () => {

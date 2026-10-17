@@ -26,7 +26,13 @@ export const createLogger = (
   env: NodeJS.ProcessEnv = process.env,
   destination?: pino.DestinationStream,
 ): Logger => {
-  const options: LoggerOptions = {level: resolveLogLevel(env)};
+  const options: LoggerOptions = {
+    level: resolveLogLevel(env),
+    // Access logs must never persist credentials: Authorization carries
+    // reusable bearer / personal access tokens, and cookies carry
+    // session material. Censor both wherever a request is logged.
+    redact: ['req.headers.authorization', 'req.headers.cookie'],
+  };
   if (destination) {
     return pino(options, destination);
   }
@@ -45,10 +51,34 @@ export const logger: Logger = createLogger();
 export const isHealthCheckUrl = (url: string | undefined): boolean =>
   url === '/api/health' || (url?.startsWith('/api/health?') ?? false);
 
+/**
+ * Access logs keep only the pathname: query strings can carry reusable secrets
+ * (e.g. the `t` share token for unlisted recipes).
+ */
+export const toLoggableUrl = (url: string | undefined): string => {
+  if (!url) {
+    return '';
+  }
+  const queryStart = url.indexOf('?');
+  return queryStart === -1 ? url : url.slice(0, queryStart);
+};
+
 export const createHttpLogger = (log: Logger) =>
   pinoHttp({
     logger: log,
     autoLogging: {ignore: req => isHealthCheckUrl(req.url)},
+    serializers: {
+      // pino hands custom serializers the standard-serialized request
+      // (id, method, url, headers, remoteAddress, remotePort).
+      req: req => ({
+        id: (req as {id?: unknown}).id,
+        method: req.method,
+        url: toLoggableUrl(req.url),
+        headers: req.headers,
+        remoteAddress: (req as {remoteAddress?: string}).remoteAddress,
+        remotePort: (req as {remotePort?: number}).remotePort,
+      }),
+    },
   });
 
 export const httpLogger = createHttpLogger(logger);
