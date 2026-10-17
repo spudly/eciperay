@@ -14,6 +14,7 @@ import {requireAuth} from './middleware/requireAuth.js';
 import {requirePlan} from './middleware/requirePlan.js';
 import {query as defaultQuery} from './db/query.js';
 import {attachPostHogExpress, captureServerException} from './lib/posthog.js';
+import {httpLogger, logger} from './lib/logger.js';
 import {initPostHogLogs, serverLog} from './lib/posthogLogs.js';
 import {logServerSecretsOnStartup} from './lib/serverSecrets.js';
 import {AiResponseParseError} from './lib/validate.js';
@@ -44,6 +45,7 @@ export const createApp = ({
     app.locals['skipUserUpsert'] = true;
   }
   attachPostHogExpress(app);
+  app.use(httpLogger);
   const corsOrigins = (process.env['CORS_ORIGINS'] ?? DEFAULT_CORS_ORIGINS)
     .split(',')
     .map(origin => origin.trim());
@@ -130,6 +132,12 @@ export const handleUnexpectedError = (
     return;
   }
   captureServerException(err);
+  // Always log to stdout via pino — independent of POSTHOG_KEY, so a 500
+  // is never invisible in the local terminal (issue #79).
+  (req.log ?? logger).error(
+    {err, method: req.method, path: req.originalUrl},
+    'Unhandled server error',
+  );
   if (process.env['NODE_ENV'] !== 'test') {
     serverLog('error', 'Unhandled server error', {
       method: req.method,
