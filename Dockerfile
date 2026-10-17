@@ -51,7 +51,7 @@ ARG VITE_POSTHOG_HOST
 # Paddle client-side tokens are public browser identifiers, not secrets —
 # the sandbox token is the default until the production cutover swaps it
 # (override at deploy time with --build-arg).
-ARG VITE_PADDLE_CLIENT_TOKEN
+ARG VITE_PADDLE_CLIENT_TOKEN=test_7cabfa52da84af66b23e645f693
 ARG VITE_PADDLE_ENVIRONMENT=sandbox
 ARG POSTHOG_API_KEY
 ARG POSTHOG_PROJECT_ID
