@@ -1,10 +1,11 @@
+import {Text as DSText} from '@spudly/ui';
 import {useEffect, useState} from 'react';
 import {useNavigate, useSearchParams} from 'react-router-dom';
 
-import {EmptyMessage} from '../components/ui/EmptyMessage.js';
-import {PageTitle} from '../components/ui/PageTitle.js';
+import {BookLoadingSpinner} from '../components/ui/BookLoadingSpinner.js';
 import {PrimaryButton} from '../components/ui/PrimaryButton.js';
 import {ScreenContainer} from '../components/ui/ScreenContainer.js';
+import {SectionCard} from '../components/ui/SectionCard.js';
 import type {PaddleEvent} from '../lib/paddle.js';
 import {
   closeCheckout,
@@ -75,58 +76,78 @@ export const PayPage = () => {
     };
   }, [transactionId, configured, navigate]);
 
+  const inCheckoutFlow = configured && transactionId !== null;
+
   return (
     <ScreenContainer variant="padded">
-      <PageTitle>Checkout</PageTitle>
-      {configured ? (
-        transactionId ? (
-          status === 'error' ? (
-            <>
-              <EmptyMessage>
-                The payment window couldn’t be opened. Check your connection and
-                try again.
-              </EmptyMessage>
-              <PrimaryButton
-                label="Try again"
-                onPress={() => {
-                  window.location.reload();
-                }}
-              />
-            </>
-          ) : status === 'closed' ? (
-            <>
-              <EmptyMessage>
-                The payment window was closed before the purchase finished.
-              </EmptyMessage>
-              <PrimaryButton
-                label="Reopen checkout"
-                onPress={() => {
-                  window.location.reload();
-                }}
-              />
-            </>
+      <div style={{maxWidth: 480, margin: '0 auto'}}>
+        <div
+          style={{display: 'flex', justifyContent: 'center', marginBottom: 24}}
+        >
+          <img
+            src="/logo-horizontal.svg"
+            alt="Eciperay"
+            style={{height: 44}}
+          />
+        </div>
+        <SectionCard
+          title={inCheckoutFlow ? 'Complete your purchase' : 'Checkout'}
+        >
+          {configured ? (
+            transactionId ? (
+              status === 'error' ? (
+                <>
+                  <DSText>
+                    The payment window couldn’t be opened. Check your connection
+                    and try again.
+                  </DSText>
+                  <PrimaryButton
+                    label="Try again"
+                    onPress={() => {
+                      window.location.reload();
+                    }}
+                  />
+                </>
+              ) : status === 'closed' ? (
+                <>
+                  <DSText>
+                    The payment window was closed before the purchase finished.
+                  </DSText>
+                  <PrimaryButton
+                    label="Reopen checkout"
+                    onPress={() => {
+                      window.location.reload();
+                    }}
+                  />
+                </>
+              ) : (
+                <>
+                  <BookLoadingSpinner />
+                  <DSText>Opening the secure payment window…</DSText>
+                </>
+              )
+            ) : (
+              <>
+                <DSText>
+                  This page completes a purchase started somewhere else — it
+                  needs the checkout link from that purchase to open a payment
+                  window.
+                </DSText>
+                <PrimaryButton
+                  label="Go to Eciperay home"
+                  onPress={() => {
+                    void navigate('/');
+                  }}
+                />
+              </>
+            )
           ) : (
-            <EmptyMessage>Opening the secure payment window…</EmptyMessage>
-          )
-        ) : (
-          <>
-            <EmptyMessage>
-              This page completes a purchase started somewhere else — it needs
-              the checkout link from that purchase to open a payment window.
-            </EmptyMessage>
-            <PrimaryButton
-              label="Go to Eciperay home"
-              onPress={() => {
-                void navigate('/');
-              }}
-            />
-          </>
-        )
-      ) : (
-        <EmptyMessage>
-          Checkout isn’t configured yet, so there’s nothing to pay for here.
-        </EmptyMessage>
-      )}
+            <DSText>
+              Checkout isn’t configured yet, so there’s nothing to pay for here.
+            </DSText>
+          )}
+        </SectionCard>
+      </div>
     </ScreenContainer>
   );
 };

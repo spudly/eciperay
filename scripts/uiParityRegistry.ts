@@ -168,6 +168,18 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
       'Web ProfilePage extract for max-lines; app ProfileScreen uses AccessTokensSection.',
   },
   {
+    path: 'profile/ProfileSubscriptionSection.tsx',
+    platform: 'web',
+    reason:
+      'Web ProfilePage section for plan display and the Paddle portal link; the app has no billing surface yet (mobile billing is deferred).',
+  },
+  {
+    path: 'profile/SubscriptionView.tsx',
+    platform: 'web',
+    reason:
+      'Web presenter for the profile subscription section; the app has no billing surface yet (mobile billing is deferred).',
+  },
+  {
     path: 'recipes/RecipeListStatusIngredientFilters.tsx',
     platform: 'web',
     reason:

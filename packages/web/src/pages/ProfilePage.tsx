@@ -7,6 +7,7 @@ import {useNavigate} from 'react-router-dom';
 import {ProfileAccessTokensSection} from '../components/profile/ProfileAccessTokensSection.js';
 import {ProfileAccountDataSection} from '../components/ProfileAccountDataSection.js';
 import {ProfileNutritionGoalsSection} from '../components/profile/ProfileNutritionGoalsSection.js';
+import {ProfileSubscriptionSection} from '../components/profile/ProfileSubscriptionSection.js';
 import {ProfileView} from '../components/profile/ProfileView.js';
 import {ProfileTransferSection} from '../components/profile/ProfileTransferSection.js';
 import {eciperay} from '../lib/api.js';
@@ -99,6 +100,7 @@ export const ProfilePage = () => {
       }}
       sectionsBeforeFeedback={
         <>
+          <ProfileSubscriptionSection />
           <ProfileNutritionGoalsSection />
           <ProfileAccessTokensSection />
           <ProfileTransferSection

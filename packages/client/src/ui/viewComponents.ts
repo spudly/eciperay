@@ -59,6 +59,7 @@ export type ProfileViewProps = {
 };
 
 export type {AccessTokensViewProps} from './tokenViewComponents.js';
+export type {SubscriptionViewProps} from './billingViewComponents.js';
 
 export type AddRecipeMenuOption = {
   label: string;
@@ -123,11 +124,7 @@ export type EditVersionViewProps = {
 export type ManualEntryViewProps = {children: ReactNode};
 
 export type RecipeDetailTab =
-  | 'overview'
-  | 'ingredients'
-  | 'instructions'
-  | 'history'
-  | 'nutrition';
+  'overview' | 'ingredients' | 'instructions' | 'history' | 'nutrition';
 
 export const RECIPE_DETAIL_TABS: {key: RecipeDetailTab; label: string}[] = [
   {key: 'overview', label: 'Overview'},
