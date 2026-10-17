@@ -101,8 +101,7 @@
     "ts-jest": "^29.4.15",
     "tsx": "^4.23.15",
     "turbo": "^2.11.8",
-    "typescript": "^6.0.3",
-    "typescript-eslint": "^8.71.2"
+    "typescript": "^7.0.2"
   },
   "overrides": {
     "react": "19.3.1",
