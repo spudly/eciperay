@@ -20,6 +20,14 @@ const formatDate = (iso: string): string =>
   });
 
 const statusText = (entitlement: Entitlement): string | null => {
+  // The stored subscription status is retained after resolveEntitlement
+  // lazily downgrades the effective plan to Free (e.g. a cancelled
+  // subscription past its period end, or a past_due subscription past its
+  // grace period). Paid-status messaging no longer applies then, so the
+  // summary is selected by the effective plan, not the retained status.
+  if (entitlement.plan === 'free') {
+    return null;
+  }
   switch (entitlement.status) {
     case 'active': {
       if (entitlement.cancelAtPeriodEnd) {
