@@ -2,10 +2,10 @@ import type {SectionCardProps} from '@eciperay/client';
 import {Card as DSCard, Text as DSText, tokens} from '@spudly/ui';
 
 /**
- * Adapter over the design-system Card. The local `muted` variant has no
- * DS equivalent; it maps to a muted background color. The title retains
- * heading semantics via an h2 (the DS SectionCard renders titles as plain
- * text).
+ * Adapter over the design-system Card. The local variants (`elevated`,
+ * `bordered`, `muted`) map one-to-one onto the DS Card's `variant` prop. The
+ * title retains heading semantics via an h2 (the DS SectionCard renders titles
+ * as plain text).
  */
 export const SectionCard = ({
   title,
@@ -13,12 +13,7 @@ export const SectionCard = ({
   variant = 'elevated',
   children,
 }: SectionCardProps) => (
-  <DSCard
-    elevated={variant === 'elevated'}
-    backgroundColor={
-      variant === 'muted' ? tokens.colors.gray.gray2 : undefined
-    }
-  >
+  <DSCard variant={variant}>
     <h2 style={{margin: 0, marginBottom: tokens.spacing[3]}}>
       <DSText variant="subheading">{title}</DSText>
     </h2>
