@@ -1,6 +1,6 @@
 import {errorMessage, queryKeys, useAuth} from '@eciperay/client';
 import {useMutation, useQuery} from '@tanstack/react-query';
-import {useRef, useState} from 'react';
+import {useState} from 'react';
 
 import {eciperay} from '../../lib/api.js';
 
@@ -10,7 +10,6 @@ export const ProfileSubscriptionSection = () => {
   const {session} = useAuth();
   const [portalError, setPortalError] = useState<string | null>(null);
   const [portalUrl, setPortalUrl] = useState<string | null>(null);
-  const portalWindowRef = useRef<Window | null>(null);
 
   // Key the cache by the authenticated user: the QueryClient is shared for
   // the life of the tab, so an unscoped key would leak the previous
@@ -34,26 +33,29 @@ export const ProfileSubscriptionSection = () => {
     // waiting for the portal-link request first lets the activation
     // expire, and the browser then blocks the tab as a popup.
     const portalWindow = window.open('', '_blank');
-    portalWindowRef.current = portalWindow;
-    portalMutation.mutate(undefined, {
-      onSuccess: ({url}) => {
-        const tab = portalWindowRef.current;
-        portalWindowRef.current = null;
-        if (tab && !tab.closed) {
-          tab.opener = null;
-          tab.location.href = url;
+    // Drive the tab from the mutateAsync promise, not per-call mutate
+    // callbacks: React Query only invokes those while the component is
+    // still subscribed, so leaving /profile mid-request would skip them
+    // and strand the pre-opened tab blank. The promise handlers close
+    // over the local tab handle and run even after unmount; the
+    // setState calls below are no-ops once unmounted, which is fine —
+    // only the tab handling has to survive navigation.
+    void portalMutation
+      .mutateAsync()
+      .then(({url}) => {
+        if (portalWindow && !portalWindow.closed) {
+          portalWindow.opener = null;
+          portalWindow.location.href = url;
         } else {
           // The pre-opened tab was blocked or closed — fall back to a
           // clickable link so the click still has a visible result.
           setPortalUrl(url);
         }
-      },
-      onError: mutationError => {
-        portalWindowRef.current?.close();
-        portalWindowRef.current = null;
+      })
+      .catch((mutationError: unknown) => {
+        portalWindow?.close();
         setPortalError(errorMessage(mutationError));
-      },
-    });
+      });
   };
 
   return (

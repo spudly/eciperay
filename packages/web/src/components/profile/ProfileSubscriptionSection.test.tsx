@@ -1,5 +1,5 @@
 import type {Entitlement} from '@eciperay/types';
-import {screen} from '@testing-library/react';
+import {act, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {vi} from 'vitest';
 
@@ -127,5 +127,77 @@ describe('ProfileSubscriptionSection', () => {
     );
     expect(await screen.findByText('portal down')).toBeInTheDocument();
     expect(portalTab.close).toHaveBeenCalledTimes(1);
+  });
+
+  test('navigates the pre-opened tab even when unmounted while the portal request is pending', async () => {
+    vi.spyOn(eciperay.account, 'getEntitlement').mockResolvedValue(
+      plusEntitlement,
+    );
+    let resolvePortal!: (value: {url: string}) => void;
+    vi.spyOn(eciperay.billing, 'createPortalLink').mockImplementation(
+      () =>
+        new Promise<{url: string}>(resolve => {
+          resolvePortal = resolve;
+        }),
+    );
+    const portalTab = {
+      closed: false,
+      opener: {} as unknown,
+      location: {href: ''},
+      close: vi.fn(),
+    };
+    vi.spyOn(window, 'open').mockImplementation(
+      () => portalTab as unknown as Window,
+    );
+    const view = await renderWithProviders(<ProfileSubscriptionSection />, {
+      withAuth: false,
+    });
+    await userEvent.click(
+      await screen.findByRole('button', {name: 'Manage subscription'}),
+    );
+    // Leaving /profile mid-request must not strand the blank tab:
+    // per-call mutate callbacks are skipped after unmount, so the tab
+    // is driven from the mutateAsync promise instead.
+    view.unmount();
+    await act(async () => {
+      resolvePortal({url: 'https://portal.example/session'});
+    });
+    expect(portalTab.location.href).toBe('https://portal.example/session');
+    expect(portalTab.opener).toBeNull();
+    expect(portalTab.close).not.toHaveBeenCalled();
+  });
+
+  test('closes the pre-opened tab even when unmounted while the portal request is pending and then fails', async () => {
+    vi.spyOn(eciperay.account, 'getEntitlement').mockResolvedValue(
+      plusEntitlement,
+    );
+    let rejectPortal!: (reason: unknown) => void;
+    vi.spyOn(eciperay.billing, 'createPortalLink').mockImplementation(
+      () =>
+        new Promise<{url: string}>((_, reject) => {
+          rejectPortal = reject;
+        }),
+    );
+    const portalTab = {
+      closed: false,
+      opener: null,
+      location: {href: ''},
+      close: vi.fn(),
+    };
+    vi.spyOn(window, 'open').mockImplementation(
+      () => portalTab as unknown as Window,
+    );
+    const view = await renderWithProviders(<ProfileSubscriptionSection />, {
+      withAuth: false,
+    });
+    await userEvent.click(
+      await screen.findByRole('button', {name: 'Manage subscription'}),
+    );
+    view.unmount();
+    await act(async () => {
+      rejectPortal(new Error('portal down'));
+    });
+    expect(portalTab.close).toHaveBeenCalledTimes(1);
+    expect(portalTab.location.href).toBe('');
   });
 });
