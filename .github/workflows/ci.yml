@@ -157,7 +157,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
-      fail-fast: false
+      # Fail fast: one package's failure cancels the rest instead of
+      # billing every package to completion on a run that will fail.
+      fail-fast: true
       matrix:
         package: ${{ fromJson(needs.setup.outputs.test-packages) }}
         exclude:
@@ -203,7 +205,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
-      fail-fast: false
+      # Fail fast: the coverage-merge job needs all 3 shards, so one
+      # failed shard dooms the run — don't bill the others to completion.
+      fail-fast: true
       matrix:
         shard: [1, 2, 3]
     steps:
