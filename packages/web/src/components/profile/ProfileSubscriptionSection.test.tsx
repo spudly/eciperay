@@ -1,4 +1,5 @@
 import type {Entitlement} from '@eciperay/types';
+import {focusManager} from '@tanstack/react-query';
 import {act, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {vi} from 'vitest';
@@ -34,6 +35,34 @@ describe('ProfileSubscriptionSection', () => {
     expect(
       screen.getByText('Active — renews Nov 16, 2026'),
     ).toBeInTheDocument();
+  });
+
+  test('refetches the entitlement on window focus even while the cached entry is fresh', async () => {
+    const getEntitlement = vi
+      .spyOn(eciperay.account, 'getEntitlement')
+      .mockResolvedValue(plusEntitlement);
+    await renderWithProviders(<ProfileSubscriptionSection />, {
+      withAuth: false,
+    });
+    expect(
+      await screen.findByText('Active — renews Nov 16, 2026'),
+    ).toBeInTheDocument();
+    // The user changes the subscription in the portal and returns
+    // while the cached entitlement is still fresh (the test client
+    // uses staleTime: Infinity): focus must refetch anyway, or the
+    // profile keeps showing the pre-portal plan/status.
+    getEntitlement.mockResolvedValue({
+      ...plusEntitlement,
+      cancelAtPeriodEnd: true,
+    });
+    await act(async () => {
+      focusManager.setFocused(false);
+      focusManager.setFocused(true);
+    });
+    expect(
+      await screen.findByText('Cancelling — access until Nov 16, 2026'),
+    ).toBeInTheDocument();
+    expect(getEntitlement).toHaveBeenCalledTimes(2);
   });
 
   test('manage subscription pre-opens a tab and navigates it to the portal link', async () => {

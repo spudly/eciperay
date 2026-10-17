@@ -20,6 +20,12 @@ export const ProfileSubscriptionSection = () => {
   const entitlementQuery = useQuery({
     queryKey: queryKeys.entitlement(userId),
     queryFn: () => eciperay.account.getEntitlement(),
+    // Always refetch on focus, ignoring the app-wide 30s staleTime:
+    // returning from the billing portal is the moment the plan/status
+    // is most likely to have just changed, and a still-fresh cache
+    // entry would otherwise keep showing the old plan/renewal text
+    // until some unrelated refetch happened.
+    refetchOnWindowFocus: 'always',
   });
 
   const portalMutation = useMutation({
