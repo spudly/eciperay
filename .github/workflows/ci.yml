@@ -142,11 +142,15 @@ jobs:
           LINT_PACKAGES: ${{ needs.setup.outputs.lint-packages }}
         run: |
           set -euo pipefail
-          echo "$LINT_PACKAGES" | jq -r '.[]' | while read -r package; do
-            echo "== Linting $package =="
-            npx eslint "$package" --max-warnings 0 --cache \
-              --cache-location .eslintcache --cache-strategy content
-          done
+          # One invocation for all affected packages: sequential
+          # per-package runs prune each other's entries from the shared
+          # cache file, leaving only the last package's results cached.
+          packages=$(echo "$LINT_PACKAGES" | jq -r '.[]')
+          echo "Linting: $packages"
+          # Package paths contain no spaces; word splitting is intended.
+          # shellcheck disable=SC2086
+          npx eslint $packages --max-warnings 0 --cache \
+            --cache-location .eslintcache --cache-strategy content
 
   test:
     name: test (${{ matrix.package }})
