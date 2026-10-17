@@ -2,6 +2,7 @@ import type {ApiClient} from './createApiClient.js';
 import {createAccountApi} from './accountApi.js';
 import {createAiApi} from './aiApi.js';
 import {createAuthApi} from './authApi.js';
+import {createBillingApi} from './billingApi.js';
 import {createCookLogsApi} from './cookLogsApi.js';
 import {createCreateAiApi} from './createAiApi.js';
 import {createImportApi} from './importApi.js';
@@ -14,6 +15,7 @@ import {createVersionsApi} from './versionsApi.js';
 
 export const createEciperayClient = (api: ApiClient) => ({
   account: createAccountApi(api),
+  billing: createBillingApi(api),
   recipes: createRecipesApi(api),
   meals: createMealsApi(api),
   mealPlans: createMealPlansApi(api),

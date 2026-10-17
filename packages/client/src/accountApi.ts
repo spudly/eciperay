@@ -1,5 +1,6 @@
 import type {
   AccountExportBundle,
+  Entitlement,
   NutritionGoals,
   PersonalAccessToken,
   PersonalAccessTokenWithSecret,
@@ -17,6 +18,7 @@ export const createAccountApi = (client: ApiClient) => ({
       body: JSON.stringify(goals),
     }),
   deleteAccount: () => client.fetch<undefined>('/account', {method: 'DELETE'}),
+  getEntitlement: () => client.fetch<Entitlement>('/account/entitlement'),
   listPersonalAccessTokens: () =>
     client.fetch<PersonalAccessToken[]>('/account/personal-access-tokens'),
   createPersonalAccessToken: (name: string) =>
