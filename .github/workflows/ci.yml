@@ -23,6 +23,7 @@ jobs:
   setup:
     name: Discover packages
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       test-packages: ${{ steps.discover-packages.outputs.test-packages }}
       lint-packages: ${{ steps.discover-packages.outputs.lint-packages }}
@@ -52,6 +53,7 @@ jobs:
   install:
     name: Install dependencies
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -66,6 +68,7 @@ jobs:
     name: static checks
     needs: install
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -91,6 +94,7 @@ jobs:
     name: typecheck
     needs: install
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -103,15 +107,15 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+  # One job for all affected packages instead of a per-package matrix:
+  # each matrix job paid its own checkout/setup (~1 billed minute each,
+  # 8 jobs when every package was affected) to run 30-60s of ESLint.
   lint:
-    name: lint (${{ matrix.package }})
+    name: lint
     needs: [install, setup]
     if: needs.setup.outputs.lint-packages != '[]'
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        package: ${{ fromJson(needs.setup.outputs.lint-packages) }}
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -126,18 +130,23 @@ jobs:
         with:
           path: .eslintcache
           key:
-            eslint-${{ runner.os }}-${{ matrix.package }}-${{
-            hashFiles('eslint.config.ts', 'package-lock.json',
-            'eslint-rules/**') }}-${{ hashFiles(format('{0}/**',
-            matrix.package)) }}
+            eslint-${{ runner.os }}-${{ hashFiles('eslint.config.ts',
+            'package-lock.json', 'eslint-rules/**') }}-${{ github.sha }}
           restore-keys: |
-            eslint-${{ runner.os }}-${{ matrix.package }}-${{ hashFiles('eslint.config.ts', 'package-lock.json', 'eslint-rules/**') }}-
-            eslint-${{ runner.os }}-${{ matrix.package }}-
+            eslint-${{ runner.os }}-${{ hashFiles('eslint.config.ts', 'package-lock.json', 'eslint-rules/**') }}-
+            eslint-${{ runner.os }}-
 
-      - name: Lint
-        run:
-          npx eslint ${{ matrix.package }} --max-warnings 0 --cache
-          --cache-location .eslintcache --cache-strategy content
+      - name: Lint affected packages
+        shell: bash
+        env:
+          LINT_PACKAGES: ${{ needs.setup.outputs.lint-packages }}
+        run: |
+          set -euo pipefail
+          echo "$LINT_PACKAGES" | jq -r '.[]' | while read -r package; do
+            echo "== Linting $package =="
+            npx eslint "$package" --max-warnings 0 --cache \
+              --cache-location .eslintcache --cache-strategy content
+          done
 
   test:
     name: test (${{ matrix.package }})
@@ -146,6 +155,7 @@ jobs:
       needs.setup.outputs.test-packages != '[]' &&
       needs.setup.outputs.test-packages != '["packages/server"]'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -171,6 +181,7 @@ jobs:
     needs: [install, setup]
     if: needs.setup.outputs.run-scripts-tests == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -190,6 +201,7 @@ jobs:
     needs: [install, setup]
     if: contains(needs.setup.outputs.test-packages, 'packages/server')
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -221,6 +233,7 @@ jobs:
     name: test (packages/server, merge coverage)
     needs: test-server
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v6
