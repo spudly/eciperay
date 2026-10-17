@@ -9,10 +9,15 @@ npx lint-staged
 # - The scripts suite's triggers mirror isScriptsAffectingFile +
 #   isAllAffectingFile in scripts/affectedFiles.ts, plus .github/workflows/
 #   (its tests assert against ci.yml), the app/web component trees
-#   (checkMirrorPairs validates the real trees), and per-package jest /
-#   coverage configs (packageCoveragePatterns reads them).
+#   (checkMirrorPairs validates the real trees), per-package jest /
+#   coverage configs (packageCoveragePatterns reads them), and the Node
+#   version inputs validateNodeVersion reads (.nvmrc, every package.json's
+#   engines field, .github/actions/ci-setup/action.yml).
+# --no-renames: with rename detection, --name-only reports only the
+# destination path, so renaming a file OUT of a watched directory would
+# skip the checks its removal should trigger.
 # lint-staged already runs actionlint + prettier on staged workflows.
-staged_files=$(git diff --cached --name-only)
+staged_files=$(git diff --cached --name-only --no-renames)
 
 if printf '%s\n' "$staged_files" | grep -qE '^(\.github/workflows/|\.prettierrc\.json|\.prettierignore|package\.json|package-lock\.json)'; then
   npm run workflows:lint
@@ -20,7 +25,7 @@ fi
 
 npm run typecheck
 
-if printf '%s\n' "$staged_files" | grep -qE '^(scripts/|eslint-rules/|patches/|test/|\.github/workflows/|packages/[^/]+/src/components/|packages/[^/]+/jest\.config\.[^/]+|packages/[^/]+/coverageGlobs\.json|jest\.config\.cjs|commitlint\.config\.cjs|package\.json|package-lock\.json|tsconfig\.json|tsconfig\.base\.json|turbo\.json|eslint\.config\.ts|knip\.ts)'; then
+if printf '%s\n' "$staged_files" | grep -qE '^(scripts/|eslint-rules/|patches/|test/|\.github/workflows/|\.github/actions/|\.nvmrc|packages/[^/]+/src/components/|packages/[^/]+/jest\.config\.[^/]+|packages/[^/]+/coverageGlobs\.json|packages/[^/]+/package\.json|jest\.config\.cjs|commitlint\.config\.cjs|package\.json|package-lock\.json|tsconfig\.json|tsconfig\.base\.json|turbo\.json|eslint\.config\.ts|knip\.ts)'; then
   npm run test:scripts:quick
 fi
 
