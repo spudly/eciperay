@@ -69,15 +69,26 @@ export const createHttpLogger = (log: Logger) =>
     autoLogging: {ignore: req => isHealthCheckUrl(req.url)},
     serializers: {
       // pino hands custom serializers the standard-serialized request
-      // (id, method, url, headers, remoteAddress, remotePort).
-      req: req => ({
-        id: (req as {id?: unknown}).id,
-        method: req.method,
-        url: toLoggableUrl(req.url),
-        headers: req.headers,
-        remoteAddress: (req as {remoteAddress?: string}).remoteAddress,
-        remotePort: (req as {remotePort?: number}).remotePort,
-      }),
+      // (id, method, url, headers, remoteAddress, remotePort). The url
+      // keeps only the pathname, and Referer is stripped the same way:
+      // it carries the page URL, which can hold a `t` share token.
+      req: req => {
+        const headers = {...req.headers};
+        if (headers.referer) {
+          headers.referer = toLoggableUrl(headers.referer);
+        }
+        if (headers.referrer) {
+          headers.referrer = toLoggableUrl(headers.referrer);
+        }
+        return {
+          id: (req as {id?: unknown}).id,
+          method: req.method,
+          url: toLoggableUrl(req.url),
+          headers,
+          remoteAddress: (req as {remoteAddress?: string}).remoteAddress,
+          remotePort: (req as {remotePort?: number}).remotePort,
+        };
+      },
     },
   });
 

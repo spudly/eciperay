@@ -190,7 +190,10 @@ describe('createApp', () => {
       .mockImplementation(() => {});
     const status = jest.fn().mockReturnThis();
     const json = jest.fn();
-    const req = {method: 'GET', originalUrl: '/direct-error'} as never;
+    const req = {
+      method: 'GET',
+      originalUrl: '/direct-error?t=share-secret',
+    } as never;
     const res = {headersSent: false, status, json} as never;
     handleUnexpectedError(new Error('direct failure'), req, res, () => {});
     expect(loggerError).toHaveBeenCalledWith(

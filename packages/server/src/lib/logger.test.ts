@@ -132,7 +132,12 @@ describe('createHttpLogger', () => {
     const res = await request(app)
       .get('/api/recipes?t=share-secret')
       .set('Authorization', 'Bearer <REDACTED_SECRET>')
-      .set('Cookie', 'session=cookie-secret');
+      .set('Cookie', 'session=cookie-secret')
+      .set('Referer', 'http://localhost:8081/recipes/shared?t=referer-secret')
+      .set(
+        'Referrer',
+        'http://localhost:8081/recipes/shared?t=referrer-secret',
+      );
     expect(res.status).toBe(200);
     const entries = await lines();
     const access = entries.find(entry => entry['msg'] === 'request completed');
@@ -142,10 +147,14 @@ describe('createHttpLogger', () => {
     const headers = req['headers'] as Record<string, unknown>;
     expect(headers['authorization']).toBe('[Redacted]');
     expect(headers['cookie']).toBe('[Redacted]');
+    expect(headers['referer']).toBe('http://localhost:8081/recipes/shared');
+    expect(headers['referrer']).toBe('http://localhost:8081/recipes/shared');
     const raw = JSON.stringify(entries);
     expect(raw).not.toContain('bearer-secret');
     expect(raw).not.toContain('cookie-secret');
     expect(raw).not.toContain('share-secret');
+    expect(raw).not.toContain('referer-secret');
+    expect(raw).not.toContain('referrer-secret');
   });
 
   test('excludes /api/health from access logs', async () => {
