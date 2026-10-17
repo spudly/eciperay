@@ -149,21 +149,30 @@ jobs:
           LINT_PACKAGES: ${{ needs.setup.outputs.lint-packages }}
         run: |
           set -euo pipefail
-          # One invocation for all affected packages: sequential
-          # per-package runs prune each other's entries from the shared
-          # cache file, leaving only the last package's results cached.
-          packages=$(echo "$LINT_PACKAGES" | jq -r '.[]')
-          echo "Linting: $packages"
-          # --no-error-on-unmatched-pattern: while typescript-eslint is
-          # uninstalled pending TS7 support, eslint.config.ts ignores all
-          # .ts/.tsx files, so an all-TypeScript package matches no
-          # lintable files and ESLint would exit 2. Packages with JS/CJS
-          # files are still linted normally. Remove the flag when
-          # typescript-eslint is restored.
-          # Package paths contain no spaces; word splitting is intended.
-          # shellcheck disable=SC2086
-          npx eslint $packages --max-warnings 0 --no-error-on-unmatched-pattern --cache \
-            --cache-location .eslintcache --cache-strategy content
+          # One job, but a fresh ESLint process per package. A single
+          # invocation over the whole monorepo OOMs the Node heap
+          # (master run 39032488320: "heap out of memory", exit 134);
+          # the matrix this replaced isolated memory per job. Each
+          # package also gets its own cache file under .eslintcache/ —
+          # sharing one cache file makes sequential per-package runs
+          # prune each other's entries.
+          # Older cache restores may bring back .eslintcache as a file.
+          if [ -f .eslintcache ]; then rm .eslintcache; fi
+          mkdir -p .eslintcache
+          echo "$LINT_PACKAGES" | jq -r '.[]' | while read -r pkg; do
+            echo "Linting: $pkg"
+            cache_name=$(echo "$pkg" | tr '/' '-')
+            # --no-error-on-unmatched-pattern (from the TS7 PR): while
+            # typescript-eslint is uninstalled pending TS7 support,
+            # eslint.config.ts ignores all .ts/.tsx files, so an
+            # all-TypeScript package matches no lintable files and
+            # ESLint would exit 2. Packages with JS/CJS files are still
+            # linted normally. Remove the flag when typescript-eslint
+            # is restored.
+            npx eslint "$pkg" --max-warnings 0 --no-error-on-unmatched-pattern --cache \
+              --cache-location ".eslintcache/$cache_name" \
+              --cache-strategy content
+          done
 
   test:
     name: test (${{ matrix.package }})
