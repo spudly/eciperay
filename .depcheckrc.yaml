@@ -9,9 +9,8 @@ ignores:
   - nock # HTTP mocking library used by server workspace tests, hoisted to root
   - patch-package # Applied via root postinstall script, not imported in source
   - prettier-plugin-jsdoc # Loaded by Prettier via .prettierrc.json plugins field, not imported in source
-  - ts-jest # Jest transformer configured in workspace jest configs, not directly imported
-  - '@swc/core' # Jest transformer for packages/server, configured in jest.config.cjs
-  - '@swc/jest' # Jest transformer for packages/server, configured in jest.config.cjs
+  - '@swc/core' # Jest transformer (root scripts suite, packages/client, packages/server), configured in jest.config.cjs files
+  - '@swc/jest' # Jest transformer (root scripts suite, packages/client, packages/server), configured in jest.config.cjs files
   - istanbul-lib-coverage # Used by packages/server/scripts/mergeCoverage.ts
   - istanbul-lib-report # Used by packages/server/scripts/mergeCoverage.ts
   - istanbul-reports # Used by packages/server/scripts/mergeCoverage.ts
