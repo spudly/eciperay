@@ -24,7 +24,10 @@ type PaddleGlobal = {
     token: string;
     eventCallback?: PaddleEventCallback;
   }) => void;
-  Checkout: {open: (options: {transactionId: string}) => void};
+  Checkout: {
+    open: (options: {transactionId: string}) => void;
+    close: () => void;
+  };
 };
 
 type WindowWithPaddle = Window & {Paddle?: PaddleGlobal};
@@ -83,6 +86,13 @@ export const initializePaddle = async (
 ): Promise<void> => {
   currentCallback = eventCallback;
   const paddle = await loadPaddleJs();
+  // The shared load can outlive the page that asked for it (unmount, or a
+  // StrictMode replay registering a replacement). A superseded call must
+  // not touch the SDK: no initialization, and no checkout opened on
+  // whatever route the buyer has moved to.
+  if (currentCallback !== eventCallback) {
+    return;
+  }
   if (sdkInitialized) {
     paddle.Checkout.open({transactionId});
     return;
@@ -103,4 +113,14 @@ export const releasePaddle = (eventCallback: PaddleEventCallback): void => {
   if (currentCallback === eventCallback) {
     currentCallback = null;
   }
+};
+
+/**
+ * Dismiss the checkout overlay. The overlay lives in Paddle's own DOM, outside
+ * the React tree, so client-side navigation away from /pay does not remove it —
+ * close it explicitly (e.g. just before redirecting on completion). No-op when
+ * Paddle.js has not loaded.
+ */
+export const closeCheckout = (): void => {
+  paddleGlobal()?.Checkout.close();
 };

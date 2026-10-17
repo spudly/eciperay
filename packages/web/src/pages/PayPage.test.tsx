@@ -4,6 +4,7 @@ import {Route, Routes, useNavigate} from 'react-router-dom';
 import {vi} from 'vitest';
 
 import {
+  closeCheckout,
   initializePaddle,
   isPaddleConfigured,
   releasePaddle,
@@ -13,6 +14,7 @@ import {renderWithProviders} from '../test/testUtils.js';
 import {PayPage} from './PayPage.js';
 
 vi.mock('../lib/paddle.js', () => ({
+  closeCheckout: vi.fn(),
   isPaddleConfigured: vi.fn(),
   initializePaddle: vi.fn(),
   releasePaddle: vi.fn(),
@@ -21,6 +23,7 @@ vi.mock('../lib/paddle.js', () => ({
 const mockConfigured = vi.mocked(isPaddleConfigured);
 const mockInitialize = vi.mocked(initializePaddle);
 const mockRelease = vi.mocked(releasePaddle);
+const mockClose = vi.mocked(closeCheckout);
 
 const callbackAt = (index: number) => mockInitialize.mock.calls[index]?.[1];
 
@@ -75,6 +78,7 @@ describe('PayPage', () => {
     await act(async () => {
       onEvent?.({name: 'checkout.completed'});
     });
+    expect(mockClose).toHaveBeenCalledTimes(1);
     expect(await screen.findByText('Profile stub')).toBeInTheDocument();
   });
 
