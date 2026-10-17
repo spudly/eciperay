@@ -1,22 +1,26 @@
 npx lint-staged
 
 # Two stages are gated on staged files that can actually affect them
-# (~11s saved on commits that can't): workflows:lint only checks
-# .github/workflows/, and the scripts suite only exercises scripts/,
-# its configs, and files its tests read. Triggers mirror
-# isScriptsAffectingFile + isAllAffectingFile in scripts/affectedFiles.ts
-# (plus .github/workflows/, which the scripts tests assert against),
-# so the hook and CI discovery agree on what "scripts-affecting" means.
+# (~11s saved on commits that can't). Triggers mirror what each check
+# actually reads:
+# - workflows:lint is `prettier --check .github/workflows` + actionlint,
+#   so it also depends on the prettier config/ignore file and the tool
+#   versions pinned in package.json/package-lock.json.
+# - The scripts suite's triggers mirror isScriptsAffectingFile +
+#   isAllAffectingFile in scripts/affectedFiles.ts, plus .github/workflows/
+#   (its tests assert against ci.yml), the app/web component trees
+#   (checkMirrorPairs validates the real trees), and per-package jest /
+#   coverage configs (packageCoveragePatterns reads them).
 # lint-staged already runs actionlint + prettier on staged workflows.
 staged_files=$(git diff --cached --name-only)
 
-if printf '%s\n' "$staged_files" | grep -q '^\.github/workflows/'; then
+if printf '%s\n' "$staged_files" | grep -qE '^(\.github/workflows/|\.prettierrc\.json|\.prettierignore|package\.json|package-lock\.json)'; then
   npm run workflows:lint
 fi
 
 npm run typecheck
 
-if printf '%s\n' "$staged_files" | grep -qE '^(scripts/|eslint-rules/|patches/|test/|\.github/workflows/|jest\.config\.cjs|commitlint\.config\.cjs|package\.json|package-lock\.json|tsconfig\.json|tsconfig\.base\.json|turbo\.json|eslint\.config\.ts|knip\.ts)'; then
+if printf '%s\n' "$staged_files" | grep -qE '^(scripts/|eslint-rules/|patches/|test/|\.github/workflows/|packages/[^/]+/src/components/|packages/[^/]+/jest\.config\.[^/]+|packages/[^/]+/coverageGlobs\.json|jest\.config\.cjs|commitlint\.config\.cjs|package\.json|package-lock\.json|tsconfig\.json|tsconfig\.base\.json|turbo\.json|eslint\.config\.ts|knip\.ts)'; then
   npm run test:scripts:quick
 fi
 
