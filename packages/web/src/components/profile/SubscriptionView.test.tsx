@@ -106,6 +106,33 @@ describe('SubscriptionView', () => {
     ).toBeInTheDocument();
   });
 
+  test('free plan with a retained cancelled status shows the free summary, not cancelled messaging', async () => {
+    await renderView({
+      entitlement: makeEntitlement({
+        plan: 'free',
+        status: 'cancelled',
+        periodEndsAt: '2026-10-16T12:00:00.000Z',
+        paddleCustomerId: 'ctm_123',
+      }),
+    });
+    expect(screen.getByText('Free plan')).toBeInTheDocument();
+    expect(screen.getByText(/Plus \(\$3\.99\/mo\)/)).toBeInTheDocument();
+    expect(screen.queryByText(/Cancelled/)).not.toBeInTheDocument();
+  });
+
+  test('free plan with a retained past_due status shows the free summary, not a payment warning', async () => {
+    await renderView({
+      entitlement: makeEntitlement({
+        plan: 'free',
+        status: 'past_due',
+        paddleCustomerId: 'ctm_123',
+      }),
+    });
+    expect(screen.getByText('Free plan')).toBeInTheDocument();
+    expect(screen.getByText(/Plus \(\$3\.99\/mo\)/)).toBeInTheDocument();
+    expect(screen.queryByText(/Payment past due/)).not.toBeInTheDocument();
+  });
+
   test('shows a checking message while reconciling', async () => {
     await renderView({
       entitlement: makeEntitlement({
