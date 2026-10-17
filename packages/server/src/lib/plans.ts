@@ -57,11 +57,13 @@ export const resolveEntitlement = async (
   let status: SubscriptionStatus | null = null;
   let periodEndsAt: string | null = null;
   let paddleCustomerId: string | null = null;
+  let cancelAtPeriodEnd = false;
 
   if (row && (row.plan === 'plus' || row.plan === 'power')) {
     status = row.status;
     paddleCustomerId = row.paddle_customer_id;
     periodEndsAt = row.current_period_end;
+    cancelAtPeriodEnd = row.cancel_at_period_end;
 
     const now = Date.now();
     const periodEndMs = row.current_period_end
@@ -98,5 +100,6 @@ export const resolveEntitlement = async (
     aiLimit: PLAN_LIMITS[plan].aiCallsPerMonth,
     periodEndsAt,
     paddleCustomerId,
+    cancelAtPeriodEnd,
   };
 };

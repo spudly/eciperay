@@ -22,6 +22,11 @@ const formatDate = (iso: string): string =>
 const statusText = (entitlement: Entitlement): string | null => {
   switch (entitlement.status) {
     case 'active': {
+      if (entitlement.cancelAtPeriodEnd) {
+        return entitlement.periodEndsAt
+          ? `Cancelling — access until ${formatDate(entitlement.periodEndsAt)}`
+          : 'Cancelling — access until the end of the current period';
+      }
       return entitlement.periodEndsAt
         ? `Active — renews ${formatDate(entitlement.periodEndsAt)}`
         : 'Active';
@@ -49,6 +54,7 @@ export const SubscriptionView = ({
   isOpeningPortal,
   onManage,
   error,
+  portalUrl,
 }: SubscriptionViewProps) => {
   const status = entitlement ? statusText(entitlement) : null;
   return (
@@ -76,6 +82,16 @@ export const SubscriptionView = ({
               loadingLabel="Opening…"
               onPress={onManage}
             />
+          ) : null}
+          {portalUrl ? (
+            <a
+              href={portalUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm underline"
+            >
+              Open subscription portal
+            </a>
           ) : null}
         </>
       ) : null}

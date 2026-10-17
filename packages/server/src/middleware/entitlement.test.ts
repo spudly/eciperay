@@ -99,6 +99,7 @@ describe('loadEntitlement', () => {
       aiLimit: 5,
       periodEndsAt: null,
       paddleCustomerId: null,
+      cancelAtPeriodEnd: false,
     });
   });
 

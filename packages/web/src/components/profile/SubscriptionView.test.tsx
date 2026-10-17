@@ -14,6 +14,7 @@ const makeEntitlement = (overrides: Partial<Entitlement>): Entitlement => ({
   aiLimit: 25,
   periodEndsAt: null,
   paddleCustomerId: null,
+  cancelAtPeriodEnd: false,
   ...overrides,
 });
 
@@ -71,6 +72,52 @@ describe('SubscriptionView', () => {
       screen.getByRole('button', {name: 'Manage subscription'}),
     );
     expect(onManage).toHaveBeenCalledTimes(1);
+  });
+
+  test('active plan scheduled to cancel shows access-until, not a renewal', async () => {
+    await renderView({
+      entitlement: makeEntitlement({
+        plan: 'plus',
+        status: 'active',
+        cancelAtPeriodEnd: true,
+        periodEndsAt: '2026-11-16T12:00:00.000Z',
+        paddleCustomerId: 'ctm_123',
+      }),
+    });
+    expect(
+      screen.getByText('Cancelling — access until Nov 16, 2026'),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/renews/)).not.toBeInTheDocument();
+  });
+
+  test('active plan scheduled to cancel without a period end shows a plain cancelling status', async () => {
+    await renderView({
+      entitlement: makeEntitlement({
+        plan: 'plus',
+        status: 'active',
+        cancelAtPeriodEnd: true,
+        paddleCustomerId: 'ctm_123',
+      }),
+    });
+    expect(
+      screen.getByText(
+        'Cancelling — access until the end of the current period',
+      ),
+    ).toBeInTheDocument();
+  });
+
+  test('shows a clickable portal link when portalUrl is set', async () => {
+    await renderView({
+      entitlement: makeEntitlement({
+        plan: 'plus',
+        status: 'active',
+        paddleCustomerId: 'ctm_123',
+      }),
+      portalUrl: 'https://portal.example/session',
+    });
+    const link = screen.getByRole('link', {name: 'Open subscription portal'});
+    expect(link).toHaveAttribute('href', 'https://portal.example/session');
+    expect(link).toHaveAttribute('target', '_blank');
   });
 
   test('active plan without a period end shows a plain Active status', async () => {
