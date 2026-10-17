@@ -8,7 +8,7 @@ const SCRIPT_SRC = 'https://cdn.paddle.com/paddle/v2/paddle.js';
 const makeFakePaddle = () => ({
   Environment: {set: vi.fn()},
   Initialize: vi.fn(),
-  Checkout: {open: vi.fn()},
+  Checkout: {open: vi.fn(), close: vi.fn()},
 });
 
 type FakePaddle = ReturnType<typeof makeFakePaddle>;
@@ -106,20 +106,57 @@ describe('paddle lib', () => {
     expect(fake.Initialize).toHaveBeenCalledTimes(1);
   });
 
-  test('injects the CDN script once for concurrent initializations', async () => {
+  test('concurrent initializations share one script; only the latest initializes', async () => {
     const paddle = await importPaddle({
       token: 'test_abc',
       environment: 'sandbox',
     });
-    const first = paddle.initializePaddle('txn_1', vi.fn());
-    const second = paddle.initializePaddle('txn_2', vi.fn());
+    const firstCallback = vi.fn();
+    const secondCallback = vi.fn();
+    const first = paddle.initializePaddle('txn_1', firstCallback);
+    const second = paddle.initializePaddle('txn_2', secondCallback);
     expect(appendedScripts()).toHaveLength(1);
     const fake = makeFakePaddle();
     setWindowPaddle(fake);
     lastScript().onload?.(new Event('load'));
     await Promise.all([first, second]);
+    // The first call was superseded before the load finished: it must not
+    // initialize or open anything. The latest call initializes the SDK.
     expect(fake.Initialize).toHaveBeenCalledTimes(1);
-    expect(fake.Checkout.open).toHaveBeenCalledWith({transactionId: 'txn_2'});
+    expect(fake.Checkout.open).not.toHaveBeenCalled();
+    sdkDispatcher(fake)({name: 'checkout.loaded'});
+    expect(firstCallback).not.toHaveBeenCalled();
+    expect(secondCallback).toHaveBeenCalledTimes(1);
+  });
+
+  test('a call released before the script loads never touches the SDK', async () => {
+    const paddle = await importPaddle({
+      token: 'test_abc',
+      environment: 'sandbox',
+    });
+    const callback = vi.fn();
+    const pending = paddle.initializePaddle('txn_1', callback);
+    paddle.releasePaddle(callback);
+    const fake = makeFakePaddle();
+    setWindowPaddle(fake);
+    lastScript().onload?.(new Event('load'));
+    await pending;
+    expect(fake.Initialize).not.toHaveBeenCalled();
+    expect(fake.Checkout.open).not.toHaveBeenCalled();
+  });
+
+  test('closeCheckout closes the overlay, and no-ops before load', async () => {
+    const paddle = await importPaddle({
+      token: 'test_abc',
+      environment: 'sandbox',
+    });
+    expect(() => {
+      paddle.closeCheckout();
+    }).not.toThrow();
+    const fake = makeFakePaddle();
+    setWindowPaddle(fake);
+    paddle.closeCheckout();
+    expect(fake.Checkout.close).toHaveBeenCalledTimes(1);
   });
 
   test('rejects when the loaded script does not expose Paddle', async () => {

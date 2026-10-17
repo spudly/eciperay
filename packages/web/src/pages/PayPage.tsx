@@ -7,6 +7,7 @@ import {PrimaryButton} from '../components/ui/PrimaryButton.js';
 import {ScreenContainer} from '../components/ui/ScreenContainer.js';
 import type {PaddleEvent} from '../lib/paddle.js';
 import {
+  closeCheckout,
   initializePaddle,
   isPaddleConfigured,
   releasePaddle,
@@ -44,6 +45,9 @@ export const PayPage = () => {
       }
       switch (event.name) {
         case 'checkout.completed': {
+          // The overlay lives outside the React tree; dismiss it first or
+          // it keeps covering the profile page after navigation.
+          closeCheckout();
           void navigate('/profile', {replace: true});
           break;
         }
