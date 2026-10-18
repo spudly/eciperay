@@ -9,7 +9,8 @@ import {InfoBanner} from './InfoBanner';
  * The app variants map straight onto the DS Card appearance variants the DS
  * SectionCard forwards: elevated (shadow, no border — the old ui-section-card),
  * bordered (outline), and muted (page-background fill, no border — the original
- * ui-section-card-muted).
+ * ui-section-card-muted). The web mirror adapter forwards its `variant` the
+ * same way (it previously translated through the deprecated `elevated` prop).
  *
  * The old description prop (rendered under the title) is composed into children
  * as DS hint text; the mb-8 card spacing is preserved.

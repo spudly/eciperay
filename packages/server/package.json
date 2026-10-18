@@ -1,6 +1,6 @@
 {
   "name": "@eciperay/server",
-  "version": "1.20.0",
+  "version": "1.22.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -28,6 +28,9 @@
     "dotenv": "^18.0.8",
     "express": "^5.3.0",
     "pg": "^8.23.1",
+    "pino": "^10.4.0",
+    "pino-http": "^11.0.0",
+    "pino-pretty": "^13.2.0",
     "posthog-node": "^5.56.1",
     "tsx": "^4.23.15",
     "zod": "^4.6.7"

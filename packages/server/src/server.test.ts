@@ -7,6 +7,7 @@ import type {RequestHandler} from 'express';
 import request from 'supertest';
 
 import {createApp, handleUnexpectedError} from './server.js';
+import {logger} from './lib/logger.js';
 import {shutdownPostHogLogs} from './lib/posthogLogs.js';
 import {AiResponseParseError} from './lib/validate.js';
 import {WEB_DIST_DIR} from './staticWeb.js';
@@ -181,6 +182,31 @@ describe('createApp', () => {
     } else {
       process.env['POSTHOG_KEY'] = previousPostHogKey;
     }
+  });
+
+  test('logs unexpected errors through the app logger when req.log is absent', () => {
+    const loggerError = jest
+      .spyOn(logger, 'error')
+      .mockImplementation(() => {});
+    const status = jest.fn().mockReturnThis();
+    const json = jest.fn();
+    const req = {
+      method: 'GET',
+      originalUrl: '/direct-error?t=share-secret',
+    } as never;
+    const res = {headersSent: false, status, json} as never;
+    handleUnexpectedError(new Error('direct failure'), req, res, () => {});
+    expect(loggerError).toHaveBeenCalledWith(
+      {
+        err: expect.objectContaining({message: 'direct failure'}),
+        method: 'GET',
+        path: '/direct-error',
+      },
+      'Unhandled server error',
+    );
+    expect(status).toHaveBeenCalledWith(500);
+    expect(json).toHaveBeenCalledWith({error: 'Internal server error'});
+    loggerError.mockRestore();
   });
 
   test('logs unknown error values outside test mode', async () => {
