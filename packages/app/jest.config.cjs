@@ -35,7 +35,7 @@ module.exports = {
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(react-native|@react-native|@react-navigation|react-native-reanimated|react-native-worklets|react-native-safe-area-context|react-native-screens|react-native-blob-util|react-native-gesture-handler|react-native-draggable-flatlist|@tanstack/react-query|@eciperay|@spudly|tamagui|@tamagui)/)',
+    'node_modules/(?!(react-native|@react-native|@react-native-async-storage|@react-navigation|react-native-reanimated|react-native-worklets|react-native-safe-area-context|react-native-screens|react-native-blob-util|react-native-gesture-handler|react-native-draggable-flatlist|@tanstack/react-query|@eciperay|@spudly|tamagui|@tamagui)/)',
   ],
   // Explicit babel-jest transform: tamagui/@spudly are hoisted to the
   // workspace root node_modules, outside babel's config-file lookup, so point
