@@ -1,4 +1,4 @@
-/** @type {import('ts-jest').JestConfigWithTsJest} */
+/** @type {import('jest').Config} */
 module.exports = {
   displayName: 'root',
   testEnvironment: 'node',
@@ -20,21 +20,22 @@ module.exports = {
   coverageThreshold: {
     global: {branches: 100, functions: 100, lines: 100, statements: 100},
   },
-  preset: 'ts-jest/presets/default-esm',
   extensionsToTreatAsEsm: ['.ts'],
   moduleNameMapper: {'^(\\.{1,2}/.*)\\.js$': '$1'},
   transform: {
+    // @swc/jest (transpile-only) replaces ts-jest: ts-jest needs the
+    // TypeScript JS compiler API, which native TypeScript 7 no longer
+    // exposes, and its peer range blocks npm ci under TS7. Type safety
+    // is enforced by `npm run typecheck`, not the test transform.
+    // Mirrors packages/server's @swc/jest setup.
     '^.+\\.ts$': [
-      'ts-jest',
+      '@swc/jest',
       {
-        useESM: true,
-        tsconfig: {
-          module: 'NodeNext',
-          moduleResolution: 'nodenext',
-          // TypeScript 6 requires an explicit rootDir (TS5011) instead of
-          // inferring the common source directory.
-          rootDir: '.',
+        jsc: {
+          parser: {syntax: 'typescript', decorators: false},
+          target: 'es2022',
         },
+        module: {type: 'es6'},
       },
     ],
   },

@@ -31,6 +31,7 @@ import {MealDetailPage} from '../pages/MealDetailPage.js';
 import {MealEditPage} from '../pages/MealEditPage.js';
 import {MealPlanDetailPage} from '../pages/MealPlanDetailPage.js';
 import {MealPlanEditPage} from '../pages/MealPlanEditPage.js';
+import {PayPage} from '../pages/PayPage.js';
 import {MealsHubPage} from '../pages/MealsHubPage.js';
 import {ShoppingListPage} from '../pages/ShoppingListPage.js';
 import {TagsPage} from '../pages/TagsPage.js';
@@ -87,6 +88,7 @@ export const router = createBrowserRouter([
       {path: '/signup', element: <SignupPage />},
       {path: '/forgot-password', element: <ForgotPasswordPage />},
       {path: '/reset-password', element: <ResetPasswordPage />},
+      {path: '/pay', element: <PayPage />},
       {path: '/privacy', element: <PrivacyPolicyPage />},
       {path: '/terms', element: <TermsOfServicePage />},
       {path: '/recipe/:id/:slug', element: <PublicRecipePage />},

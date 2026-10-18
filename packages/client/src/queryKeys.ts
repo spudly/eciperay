@@ -63,4 +63,5 @@ export const queryKeys = {
   mealPlanShoppingList: (id: string) => ['mealPlanShoppingList', id] as const,
   nutritionGoals: () => ['nutritionGoals'] as const,
   personalAccessTokens: () => ['personalAccessTokens'] as const,
+  entitlement: (userId: string) => ['entitlement', userId] as const,
 };

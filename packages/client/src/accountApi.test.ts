@@ -12,6 +12,15 @@ describe('createAccountApi', () => {
     expect(fetch).toHaveBeenCalledWith('/account', {method: 'DELETE'});
   });
 
+  test('calls the entitlement endpoint', async () => {
+    const fetch = jest.fn().mockResolvedValue({plan: 'plus'});
+    const api = createAccountApi({fetch});
+
+    await api.getEntitlement();
+
+    expect(fetch).toHaveBeenCalledWith('/account/entitlement');
+  });
+
   test('calls personal access token endpoints', async () => {
     const fetch = jest.fn().mockResolvedValue([]);
     const api = createAccountApi({fetch});

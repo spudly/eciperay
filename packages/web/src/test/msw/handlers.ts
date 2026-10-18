@@ -640,6 +640,20 @@ export const handlers = [
       comments: [],
     }),
   ),
+  http.get(`${API}/api/account/entitlement`, () =>
+    HttpResponse.json({
+      plan: 'free',
+      status: null,
+      aiUsed: 0,
+      aiLimit: 25,
+      periodEndsAt: null,
+      paddleCustomerId: null,
+      cancelAtPeriodEnd: false,
+    }),
+  ),
+  http.post(`${API}/api/billing/portal-link`, () =>
+    HttpResponse.json({url: 'https://portal.example/session'}),
+  ),
   http.get(`${API}/api/account/nutrition-goals`, () =>
     HttpResponse.json({
       calories: null,

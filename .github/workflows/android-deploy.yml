@@ -53,7 +53,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: ${{ inputs.ref || github.sha }}
 
@@ -118,7 +118,7 @@ jobs:
           echo "path=${DEST}" >> "$GITHUB_OUTPUT"
 
       - name: Upload release AAB
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: eciperay-android-${{ github.run_number }}
           path: ${{ steps.aab.outputs.path }}
@@ -127,7 +127,7 @@ jobs:
 
       - name: Upload AAB to GitHub Release
         if: inputs.tag != ''
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ inputs.tag }}
           files: ${{ steps.aab.outputs.path }}

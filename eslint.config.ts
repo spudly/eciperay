@@ -1,4 +1,3 @@
-import tseslint from 'typescript-eslint';
 import reactPlugin from 'eslint-plugin-react';
 import reactHooksPlugin from 'eslint-plugin-react-hooks';
 import reactNativePlugin from 'eslint-plugin-react-native';
@@ -14,8 +13,15 @@ import globals from 'globals';
 import coverageIgnorePlugin from './eslint-rules/coverage-ignore-require-description.ts';
 import noClassnameOutsideComponentsPlugin from './eslint-rules/no-classname-outside-components.ts';
 
-// eslint-disable-next-line @typescript-eslint/no-deprecated -- tseslint.config() provides precise TypeScript types for plugin rule configs; ESLint core's defineConfig() lacks the same inference
-export default tseslint.config(
+export default [
+  {
+    // typescript-eslint is uninstalled pending its TS7 support (see
+    // section 2 note). Its rules are gone, so the ~180 inline
+    // eslint-disable directives naming @typescript-eslint/* rules no
+    // longer suppress anything; don't fail --max-warnings 0 on them
+    // until the plugin returns and the directives are live again.
+    linterOptions: {reportUnusedDisableDirectives: 'off'},
+  },
   {
     ignores: [
       '**/node_modules/**',
@@ -28,6 +34,16 @@ export default tseslint.config(
       'packages/app/src/types/*.d.ts', // ambient type declarations only
       'packages/web/src/vite-env.d.ts', // Vite ambient types
       'packages/*/coverage/**', // generated Istanbul/V8 coverage reports
+      // typescript-eslint was the only TypeScript parser in this tree and
+      // is uninstalled pending its TypeScript 7 support, so ESLint cannot
+      // parse TypeScript at all. Until it returns, .ts/.tsx files are NOT
+      // linted — `npm run typecheck` (TS7) is the correctness gate for TS.
+      // Plain JS/CJS/MJS files are still linted by the sections below.
+      // Remove these four entries when typescript-eslint is restored.
+      '**/*.ts',
+      '**/*.tsx',
+      '**/*.mts',
+      '**/*.cts',
     ],
   },
 
@@ -398,169 +414,15 @@ export default tseslint.config(
     },
   },
 
-  // ─── 2. TypeScript rules ──────────────────────────────────────────────────
-  {
-    files: ['**/*.{ts,tsx}'],
-    plugins: {'@typescript-eslint': tseslint.plugin},
-    languageOptions: {
-      parser: tseslint.parser,
-      parserOptions: {
-        projectService: true,
-        tsconfigRootDir: import.meta.dirname,
-      },
-    },
-    rules: {
-      // @typescript-eslint — all 134 rules explicitly configured
-      '@typescript-eslint/adjacent-overload-signatures': 'warn',
-      '@typescript-eslint/array-type': 'warn',
-      '@typescript-eslint/await-thenable': 'error',
-      '@typescript-eslint/ban-ts-comment': [
-        'error',
-        {'ts-expect-error': true, 'ts-ignore': true, 'ts-nocheck': true},
-      ],
-      '@typescript-eslint/ban-tslint-comment': 'warn',
-      '@typescript-eslint/class-literal-property-style': 'warn',
-      '@typescript-eslint/class-methods-use-this': 'off', // no classes in this project
-      '@typescript-eslint/consistent-generic-constructors': 'warn',
-      '@typescript-eslint/consistent-indexed-object-style': 'warn',
-      '@typescript-eslint/consistent-return': 'off', // TypeScript return-type inference handles this
-      '@typescript-eslint/consistent-type-assertions': 'warn',
-      '@typescript-eslint/consistent-type-definitions': ['warn', 'type'],
-      '@typescript-eslint/consistent-type-exports': 'off', // verbatimModuleSyntax in tsconfig handles this
-      '@typescript-eslint/consistent-type-imports': 'off', // verbatimModuleSyntax in tsconfig handles this
-      '@typescript-eslint/default-param-last': 'off', // we prefer options objects over many params
-      '@typescript-eslint/dot-notation': 'warn',
-      '@typescript-eslint/explicit-function-return-type': 'off', // TypeScript infers return types; explicit annotation is noisy
-      '@typescript-eslint/explicit-member-accessibility': 'off', // no classes in this project
-      '@typescript-eslint/explicit-module-boundary-types': 'off', // TypeScript infers types; explicit annotation is noisy
-      '@typescript-eslint/init-declarations': 'off', // too strict; many valid patterns initialise later
-      '@typescript-eslint/max-params': ['error', {max: 4}],
-      '@typescript-eslint/member-ordering': 'off', // no classes in this project
-      '@typescript-eslint/method-signature-style': 'off', // we use `type` not `interface`; not applicable
-      '@typescript-eslint/naming-convention': 'off', // too opinionated; existing conventions are sufficient
-      '@typescript-eslint/no-array-constructor': 'error',
-      '@typescript-eslint/no-array-delete': 'error',
-      '@typescript-eslint/no-base-to-string': 'error',
-      '@typescript-eslint/no-confusing-non-null-assertion': 'warn',
-      '@typescript-eslint/no-confusing-void-expression': 'error',
-      '@typescript-eslint/no-deprecated': 'error',
-      '@typescript-eslint/no-dupe-class-members': 'off', // no classes in this project
-      '@typescript-eslint/no-duplicate-enum-values': 'error',
-      '@typescript-eslint/no-duplicate-type-constituents': 'error',
-      '@typescript-eslint/no-dynamic-delete': 'error',
-      '@typescript-eslint/no-empty-function': 'warn',
-      '@typescript-eslint/no-empty-interface': 'off', // superseded by no-empty-object-type
-      '@typescript-eslint/no-empty-object-type': 'error',
-      '@typescript-eslint/no-explicit-any': 'error',
-      '@typescript-eslint/no-extra-non-null-assertion': 'error',
-      '@typescript-eslint/no-extraneous-class': 'error',
-      '@typescript-eslint/no-floating-promises': 'error',
-      '@typescript-eslint/no-for-in-array': 'error',
-      '@typescript-eslint/no-implied-eval': 'error',
-      '@typescript-eslint/no-import-type-side-effects': 'off', // verbatimModuleSyntax in tsconfig handles this
-      '@typescript-eslint/no-inferrable-types': 'warn',
-      '@typescript-eslint/no-invalid-this': 'off', // we don't use `this` (no classes, no OOP)
-      '@typescript-eslint/no-invalid-void-type': 'error',
-      '@typescript-eslint/no-loop-func': 'off', // no-restricted-syntax + functional style covers this
-      '@typescript-eslint/no-loss-of-precision': 'off', // TypeScript compiler catches this
-      '@typescript-eslint/no-magic-numbers': 'off', // too noisy in practice; constants are named where it matters
-      '@typescript-eslint/no-meaningless-void-operator': 'error',
-      '@typescript-eslint/no-misused-new': 'error',
-      '@typescript-eslint/no-misused-promises': 'error',
-      '@typescript-eslint/no-misused-spread': 'error',
-      '@typescript-eslint/no-mixed-enums': 'error',
-      '@typescript-eslint/no-namespace': 'error',
-      '@typescript-eslint/no-non-null-asserted-nullish-coalescing': 'error',
-      '@typescript-eslint/no-non-null-asserted-optional-chain': 'error',
-      '@typescript-eslint/no-non-null-assertion': 'error',
-      '@typescript-eslint/no-redeclare': 'off', // TypeScript catches duplicate declarations at compile time
-      '@typescript-eslint/no-redundant-type-constituents': 'error',
-      '@typescript-eslint/no-require-imports': 'error',
-      '@typescript-eslint/no-restricted-imports': 'off', // no project-specific import restrictions needed
-      '@typescript-eslint/no-restricted-types': 'off', // no project-specific type restrictions needed
-      '@typescript-eslint/no-shadow': 'off', // TypeScript scope analysis prevents real bugs here
-      '@typescript-eslint/no-this-alias': 'error',
-      '@typescript-eslint/no-type-alias': 'off', // deprecated rule; consistent-type-definitions covers intent
-      '@typescript-eslint/no-unnecessary-boolean-literal-compare': 'error',
-      '@typescript-eslint/no-unnecessary-condition': 'error',
-      '@typescript-eslint/no-unnecessary-parameter-property-assignment': 'off', // no classes in this project
-      '@typescript-eslint/no-unnecessary-qualifier': 'off', // we don't use namespaces
-      '@typescript-eslint/no-unnecessary-template-expression': 'error',
-      '@typescript-eslint/no-unnecessary-type-arguments': 'error',
-      '@typescript-eslint/no-unnecessary-type-assertion': 'error',
-      '@typescript-eslint/no-unnecessary-type-constraint': 'error',
-      '@typescript-eslint/no-unnecessary-type-conversion': 'error',
-      '@typescript-eslint/no-unnecessary-type-parameters': 'error',
-      '@typescript-eslint/no-unsafe-argument': 'error',
-      '@typescript-eslint/no-unsafe-assignment': 'error',
-      '@typescript-eslint/no-unsafe-call': 'error',
-      '@typescript-eslint/no-unsafe-declaration-merging': 'error',
-      '@typescript-eslint/no-unsafe-enum-comparison': 'error',
-      '@typescript-eslint/no-unsafe-function-type': 'error',
-      '@typescript-eslint/no-unsafe-member-access': 'error',
-      '@typescript-eslint/no-unsafe-return': 'error',
-      '@typescript-eslint/no-unsafe-type-assertion': 'off', // covered by no-explicit-any + no-unsafe-assignment
-      '@typescript-eslint/no-unsafe-unary-minus': 'error',
-      '@typescript-eslint/no-unused-expressions': 'error',
-      '@typescript-eslint/no-unused-private-class-members': 'off', // no classes in this project
-      '@typescript-eslint/no-unused-vars': [
-        'error',
-        {
-          // Underscore-prefixed names mark intentional discards. This replaces
-          // the old `void x;` statements, which @typescript-eslint's
-          // no-meaningless-void-operator now flags on non-call expressions.
-          argsIgnorePattern: '^_',
-          destructuredArrayIgnorePattern: '^_',
-          ignoreRestSiblings: true,
-          varsIgnorePattern: '^_',
-        },
-      ],
-      '@typescript-eslint/no-use-before-define': 'off', // TypeScript hoisting is safe; the pattern is valid
-      '@typescript-eslint/no-useless-constructor': 'error',
-      '@typescript-eslint/no-useless-default-assignment': 'error',
-      '@typescript-eslint/no-useless-empty-export': 'off', // not needed in ESM with verbatimModuleSyntax
-      '@typescript-eslint/no-var-requires': 'off', // covered by no-require-imports and unicorn/prefer-module
-      '@typescript-eslint/no-wrapper-object-types': 'error',
-      '@typescript-eslint/non-nullable-type-assertion-style': 'warn',
-      '@typescript-eslint/only-throw-error': 'error',
-      '@typescript-eslint/parameter-properties': 'off', // no classes in this project
-      '@typescript-eslint/prefer-as-const': 'error',
-      '@typescript-eslint/prefer-destructuring': 'off', // too opinionated; destructuring is not always clearer
-      '@typescript-eslint/prefer-enum-initializers': 'off', // we avoid enums in favour of plain objects/unions
-      '@typescript-eslint/prefer-find': 'warn',
-      '@typescript-eslint/prefer-for-of': 'warn',
-      '@typescript-eslint/prefer-function-type': 'warn',
-      '@typescript-eslint/prefer-includes': 'warn',
-      '@typescript-eslint/prefer-literal-enum-member': 'error',
-      '@typescript-eslint/prefer-namespace-keyword': 'error',
-      '@typescript-eslint/prefer-nullish-coalescing': 'warn',
-      '@typescript-eslint/prefer-optional-chain': 'warn',
-      '@typescript-eslint/prefer-promise-reject-errors': 'error',
-      '@typescript-eslint/prefer-readonly': 'off', // too strict; mutability is fine in local scope
-      '@typescript-eslint/prefer-readonly-parameter-types': 'off', // too strict and very noisy
-      '@typescript-eslint/prefer-reduce-type-parameter': 'error',
-      '@typescript-eslint/prefer-regexp-exec': 'warn',
-      '@typescript-eslint/prefer-return-this-type': 'error',
-      '@typescript-eslint/prefer-string-starts-ends-with': 'warn',
-      '@typescript-eslint/prefer-ts-expect-error': 'off', // superseded by ban-ts-comment
-      '@typescript-eslint/promise-function-async': 'off', // too strict; sync wrappers of async functions are valid
-      '@typescript-eslint/related-getter-setter-pairs': 'error',
-      '@typescript-eslint/require-array-sort-compare': 'off', // too strict; default numeric sort is often intentional
-      '@typescript-eslint/require-await': 'error',
-      '@typescript-eslint/restrict-plus-operands': 'error',
-      '@typescript-eslint/restrict-template-expressions': 'error',
-      '@typescript-eslint/return-await': 'off', // conflicts with our try/catch patterns where returning a promise is valid
-      '@typescript-eslint/sort-type-constituents': 'off', // too opinionated; logical grouping is preferable
-      '@typescript-eslint/strict-boolean-expressions': 'off', // too strict; idiomatic JS truthiness is intentional
-      '@typescript-eslint/strict-void-return': 'off', // too strict; void callbacks are common in React event handlers
-      '@typescript-eslint/switch-exhaustiveness-check': 'off', // TypeScript's never-type handles this at compile time
-      '@typescript-eslint/triple-slash-reference': 'error',
-      '@typescript-eslint/typedef': 'off', // TypeScript infers types; explicit typedef is redundant
-      '@typescript-eslint/unbound-method': 'error',
-      '@typescript-eslint/unified-signatures': 'error',
-      '@typescript-eslint/use-unknown-in-catch-callback-variable': 'error',
-    },
-  },
+  // ─── 2. TypeScript rules — REMOVED ───────────────────────────────────────
+  // typescript-eslint (plugin + parser + all @typescript-eslint/* rules)
+  // was uninstalled because 8.71 caps TypeScript at <6.1 and this repo
+  // now uses TypeScript 7. Type-aware linting is off until
+  // typescript-eslint ships TS7 support; restore this section (and the
+  // parser/project blocks in 2b) when it does. Core rules that were
+  // turned off in section 1 as "superseded by @typescript-eslint" stay
+  // off for TS files for the same reason — nothing supersedes them now,
+  // they are simply not enforced until the plugin returns.
 
   // ─── 3. import-x — all packages ───────────────────────────────────────────
   {
@@ -802,48 +664,6 @@ export default tseslint.config(
     },
   },
 
-  // ─── 2b. TypeScript project — app/client test files excluded from typecheck ─
-  {
-    files: ['scripts/**/*.test.ts', 'eslint-rules/**/*.test.ts'],
-    languageOptions: {
-      parserOptions: {
-        project: ['./scripts/tsconfig.eslint.json'],
-        projectService: false,
-        tsconfigRootDir: import.meta.dirname,
-      },
-    },
-  },
-  {
-    files: ['packages/app/**/*.test.{ts,tsx}'],
-    languageOptions: {
-      parserOptions: {
-        project: ['./packages/app/tsconfig.eslint.json'],
-        projectService: false,
-        tsconfigRootDir: import.meta.dirname,
-      },
-    },
-  },
-  {
-    files: ['packages/client/**/*.test.{ts,tsx}'],
-    languageOptions: {
-      parserOptions: {
-        project: ['./packages/client/tsconfig.eslint.json'],
-        projectService: false,
-        tsconfigRootDir: import.meta.dirname,
-      },
-    },
-  },
-  {
-    files: ['packages/web/**/*.test.{ts,tsx}'],
-    languageOptions: {
-      parserOptions: {
-        project: ['./packages/web/tsconfig.eslint.json'],
-        projectService: false,
-        tsconfigRootDir: import.meta.dirname,
-      },
-    },
-  },
-
   // ─── 4a. CJS config files — turn off ES module enforcement ─────────────────
   // Metro, Babel, and Jest config files use CommonJS (`require` / `module.exports`).
   // Section 1b re-enables `no-undef` for .js/.cjs/.mjs; Node globals cover
@@ -1082,25 +902,14 @@ export default tseslint.config(
       'max-lines': 'off',
       'max-lines-per-function': 'off',
       'no-restricted-syntax': 'off', // mock classes and test doubles are acceptable
-      '@typescript-eslint/require-await': 'off', // async test helpers without await are fine
-      '@typescript-eslint/no-non-null-assertion': 'off', // test fixtures use definite assignments
-      '@typescript-eslint/no-deprecated': 'off', // DOM API mocks may use legacy methods
       'unicorn/consistent-function-scoping': 'off', // test helpers nested in describe are fine
-      '@typescript-eslint/no-empty-function': 'off', // pending promises and no-op mocks are fine in tests
       'no-empty-function': 'off', // jest mock implementations may intentionally be empty
 
       // test files frequently access `res.body` (typed as any by supertest) and
       // JSON.parse results — relaxing unsafe rules in test scope is intentional
-      '@typescript-eslint/no-unsafe-assignment': 'off',
-      '@typescript-eslint/no-unsafe-member-access': 'off',
-      '@typescript-eslint/no-unsafe-argument': 'off',
-      '@typescript-eslint/no-unsafe-return': 'off',
-      '@typescript-eslint/no-unsafe-call': 'off',
-      '@typescript-eslint/unbound-method': 'off', // jest.fn() returns are not class methods
 
       // jest.mock() factories run before imports resolve, so require() is the only
       // way to load modules inside them — especially when top-level imports are out-of-scope
-      '@typescript-eslint/no-require-imports': 'off',
       'unicorn/prefer-module': 'off',
       'import-x/no-commonjs': 'off',
 
@@ -1298,7 +1107,7 @@ export default tseslint.config(
       'eslint-comments/no-duplicate-disable': 'error',
       'eslint-comments/no-restricted-disable': 'off', // no restricted rules
       'eslint-comments/no-unlimited-disable': 'off', // unicorn/no-abusive-eslint-disable already requires rule names
-      'eslint-comments/no-unused-disable': 'off', // handled by reportUnusedDisableDirectives / --max-warnings 0
+      'eslint-comments/no-unused-disable': 'off', // was handled by reportUnusedDisableDirectives / --max-warnings 0; that reporting is itself off while typescript-eslint is uninstalled (see the linterOptions block at the top)
       'eslint-comments/no-unused-enable': 'error',
       'eslint-comments/no-use': 'off', // disables are allowed; we just require descriptions
       'eslint-comments/require-description': 'error', // every disable must explain why -- like this
@@ -1312,16 +1121,12 @@ export default tseslint.config(
   // behavior exactly (none of them were applied before).
   {
     plugins: {
-      '@typescript-eslint': tseslint.plugin,
       'react-hooks': reactHooksPlugin,
       'n': nPlugin,
       'jest': jestPlugin,
       'unicorn': unicornPlugin,
     },
     rules: {
-      // typescript-eslint 8.71 additions
-      '@typescript-eslint/no-generated-empty-object-type': 'off',
-      '@typescript-eslint/no-unsafe-enum-assignment': 'off',
       // react-hooks 7 (React Compiler rule set) additions
       'react-hooks/hooks': 'off',
       'react-hooks/capitalized-calls': 'off',
@@ -1427,4 +1232,4 @@ export default tseslint.config(
 
   // ─── 13. Prettier — last, disables formatting conflicts ───────────────────
   prettier,
-);
+];

@@ -157,6 +157,7 @@ export type {
   RecipesListViewProps,
   RecipeStatusFilterValue,
   SharedWithMeViewProps,
+  SubscriptionViewProps,
   TagsViewProps,
 } from './ui/viewComponents.js';
 export {useRecipeListFilters} from './useRecipeListFilters.js';

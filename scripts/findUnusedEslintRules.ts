@@ -1,7 +1,6 @@
 import {fileURLToPath} from 'node:url';
 
 import {builtinRules} from 'eslint/use-at-your-own-risk';
-import tseslint from 'typescript-eslint';
 import reactPlugin from 'eslint-plugin-react';
 import reactHooksPlugin from 'eslint-plugin-react-hooks';
 import reactNativePlugin from 'eslint-plugin-react-native';
@@ -14,7 +13,6 @@ import eslintCommentsPlugin from '@eslint-community/eslint-plugin-eslint-comment
 type Plugin = {rules?: Record<string, unknown>};
 
 export const PLUGINS: Record<string, Plugin> = {
-  '@typescript-eslint': tseslint.plugin as Plugin,
   'react': reactPlugin,
   'react-hooks': reactHooksPlugin,
   'react-native': reactNativePlugin,
