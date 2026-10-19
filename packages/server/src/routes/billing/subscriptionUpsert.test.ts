@@ -533,6 +533,117 @@ describe('upsertSubscription', () => {
     expect(row.superseded_last_event_at).toBe('2026-10-17T00:00:00.000Z');
   });
 
+  test('delayed cancellation for a two-generations-old subscription cannot replace the current one', async () => {
+    let row = {
+      status: 'active',
+      past_due_since: null as string | null,
+      paddle_subscription_id: 'sub_a' as string | null,
+      paddle_last_event_at: '2026-10-10T00:00:00.000Z' as string | null,
+      superseded_subscription_id: null as string | null,
+      superseded_last_event_at: null as string | null,
+    };
+    mockQuery.mockImplementation(((sql: string, params?: unknown[]) => {
+      if (sql.includes('from plan_prices')) {
+        return Promise.resolve(makeQueryResult([{plan: 'plus'}]));
+      }
+      if (sql.includes('from subscriptions')) {
+        return Promise.resolve(makeQueryResult([row]));
+      }
+      if (sql.includes('insert into subscriptions')) {
+        const p = params as unknown[];
+        row = {
+          ...row,
+          status: p[2] as string,
+          paddle_subscription_id: p[4] as string,
+          paddle_last_event_at: p[10] as string,
+          superseded_subscription_id: p[11] as string,
+          superseded_last_event_at: p[12] as string,
+        };
+        return Promise.resolve(makeQueryResult([{}]));
+      }
+      return Promise.resolve(makeQueryResult([]));
+    }) as typeof mockQuery);
+    const snapshotFor = (id: string, occurredAt: string) =>
+      upsertSubscription(
+        makeEvent({occurred_at: occurredAt, data: {...makeEvent().data, id}}),
+        'user-uuid-1',
+        mockQuery,
+        {snapshot: true},
+      );
+
+    // A -> B -> C: after two replacements only B fits the superseded
+    // slot; A is forgotten.
+    await expect(
+      snapshotFor('sub_b', '2026-10-11T00:00:00.000Z'),
+    ).resolves.toBe('applied');
+    await expect(
+      snapshotFor('sub_c', '2026-10-12T00:00:00.000Z'),
+    ).resolves.toBe('applied');
+    expect(row.paddle_subscription_id).toBe('sub_c');
+    expect(row.superseded_subscription_id).toBe('sub_b');
+
+    // A delayed canceled update for A dated Oct 13 — newer than C's
+    // clock — must not replace the active C: A is untracked, and a
+    // non-active state never overwrites the selected subscription.
+    mockQuery.mockClear();
+    const delayedA = makeEvent({
+      occurred_at: '2026-10-13T00:00:00.000Z',
+      data: {...makeEvent().data, id: 'sub_a', status: 'canceled'},
+    });
+    await expect(
+      upsertSubscription(delayedA, 'user-uuid-1', mockQuery),
+    ).resolves.toBe('stale');
+    expect(row.paddle_subscription_id).toBe('sub_c');
+    expect(row.status).toBe('active');
+    expect(
+      mockQuery.mock.calls.some(args =>
+        args[0].includes('insert into subscriptions'),
+      ),
+    ).toBe(false);
+  });
+
+  test('a newer past_due revision of a superseded subscription only advances its clock', async () => {
+    let row = {
+      status: 'active',
+      past_due_since: null as string | null,
+      paddle_subscription_id: 'sub_new' as string | null,
+      paddle_last_event_at: '2026-10-17T00:00:00.000Z' as string | null,
+      superseded_subscription_id: 'sub_old' as string | null,
+      superseded_last_event_at: '2026-10-16T00:00:00.000Z' as string | null,
+    };
+    mockQuery.mockImplementation(((sql: string, params?: unknown[]) => {
+      if (sql.includes('from plan_prices')) {
+        return Promise.resolve(makeQueryResult([{plan: 'plus'}]));
+      }
+      if (sql.includes('from subscriptions')) {
+        return Promise.resolve(makeQueryResult([row]));
+      }
+      if (sql.includes('set superseded_last_event_at')) {
+        row = {...row, superseded_last_event_at: params?.[1] as string};
+        return Promise.resolve(makeQueryResult([{}]));
+      }
+      return Promise.resolve(makeQueryResult([]));
+    }) as typeof mockQuery);
+
+    const pastDueOld = makeEvent({
+      occurred_at: '2026-10-18T00:00:00.000Z',
+      data: {...makeEvent().data, id: 'sub_old', status: 'past_due'},
+    });
+    await expect(
+      upsertSubscription(pastDueOld, 'user-uuid-1', mockQuery),
+    ).resolves.toBe('applied');
+    // The active replacement is untouched; only the superseded
+    // clock moved.
+    expect(row.paddle_subscription_id).toBe('sub_new');
+    expect(row.status).toBe('active');
+    expect(row.superseded_last_event_at).toBe('2026-10-18T00:00:00.000Z');
+    expect(
+      mockQuery.mock.calls.some(args =>
+        args[0].includes('insert into subscriptions'),
+      ),
+    ).toBe(false);
+  });
+
   test('snapshot past_due seeds the grace clock from the period start', async () => {
     mockQuery.mockImplementation(((sql: string) => {
       if (sql.includes('from plan_prices')) {
