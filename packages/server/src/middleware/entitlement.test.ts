@@ -152,6 +152,72 @@ describe('loadEntitlement', () => {
   });
 });
 
+describe('loadEntitlement with an entitlement override', () => {
+  beforeEach(() => {
+    mockQuery.mockReset();
+    nockSupabaseGetUser('supabase-uid-1');
+  });
+
+  const mockOverrideQueries = (
+    overridePlan: string | null,
+    subscriptionRow: unknown,
+  ) => {
+    mockRouteQueries((text: string) => {
+      if (text.includes('from entitlement_overrides')) {
+        return Promise.resolve(
+          makeQueryResult(overridePlan ? [{plan: overridePlan}] : []),
+        );
+      }
+      if (text.includes('from subscriptions')) {
+        return Promise.resolve(
+          makeQueryResult(subscriptionRow ? [subscriptionRow] : []),
+        );
+      }
+      if (text.includes('from ai_usage')) {
+        return Promise.resolve(makeQueryResult([{calls: 2}]));
+      }
+      return Promise.resolve(makeQueryResult([]));
+    });
+  };
+
+  test('grants the override plan with no subscription at all', async () => {
+    mockOverrideQueries('power', null);
+    const res = await authed(makeApp(), '/entitled');
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({
+      plan: 'power',
+      status: 'active',
+      aiUsed: 2,
+      aiLimit: -1,
+      unlimited: true,
+      periodEndsAt: null,
+      paddleCustomerId: null,
+      cancelAtPeriodEnd: false,
+    });
+  });
+
+  test('override wins over an expired subscription and keeps its customer id', async () => {
+    mockOverrideQueries('plus', {
+      ...ACTIVE_ROW,
+      status: 'expired',
+      plan: 'power',
+    });
+    const res = await authed(makeApp(), '/entitled');
+    expect(res.body.plan).toBe('plus');
+    expect(res.body.status).toBe('active');
+    expect(res.body.unlimited).toBe(true);
+    expect(res.body.paddleCustomerId).toBe('ctm_1');
+    expect(res.body.periodEndsAt).toBeNull();
+  });
+
+  test('an unknown override plan value is ignored', async () => {
+    mockOverrideQueries('enterprise', null);
+    const res = await authed(makeApp(), '/entitled');
+    expect(res.body.plan).toBe('free');
+    expect(res.body.unlimited).toBeUndefined();
+  });
+});
+
 describe('requirePlan', () => {
   beforeEach(() => {
     mockQuery.mockReset();
@@ -166,6 +232,7 @@ describe('requirePlan', () => {
       error: 'plan_required',
       requiredPlan: 'plus',
       plan: 'free',
+      message: "This feature requires the Plus plan. You're on the Free plan.",
     });
   });
 

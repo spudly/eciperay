@@ -28,7 +28,10 @@ export const mockBillingPlan = (
   mockQuery: MockQuery,
   plan: BillingPlan | 'free' | null = 'plus',
 ) => {
+  // resolveEntitlement queries entitlement_overrides first (no grant for
+  // these tests), then the subscriptions row, then ai_usage.
   mockQuery
+    .mockResolvedValueOnce(makeQueryResult([]))
     .mockResolvedValueOnce(
       makeQueryResult(
         plan && plan !== 'free' ? [makeSubscriptionRow(plan)] : [],

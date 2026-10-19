@@ -277,7 +277,9 @@ export const createTweakAiSession = async (
   }
   const {parentVersion, context} = loaded;
 
-  const quota = await consumeAiCall(req.userId, req.entitlement.plan, queryFn);
+  const quota = await consumeAiCall(req.userId, req.entitlement.plan, queryFn, {
+    unlimited: req.entitlement.unlimited,
+  });
   if (!quota.ok) {
     res
       .status(402)
@@ -344,7 +346,9 @@ export const sendTweakAiMessage = async (
   }
   const {context} = loaded;
 
-  const quota = await consumeAiCall(req.userId, req.entitlement.plan, queryFn);
+  const quota = await consumeAiCall(req.userId, req.entitlement.plan, queryFn, {
+    unlimited: req.entitlement.unlimited,
+  });
   if (!quota.ok) {
     res
       .status(402)

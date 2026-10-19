@@ -75,6 +75,7 @@ export const importFromUrl = async (
       req.userId,
       req.entitlement.plan,
       queryFn,
+      {unlimited: req.entitlement.unlimited},
     );
     if (!quota.ok) {
       res
