@@ -17,6 +17,7 @@ type StoredSub = {
   plan: string;
   status: string;
   paddle_customer_id: string | null;
+  paddle_subscription_id?: string | null;
   paddle_last_event_at: string | null;
   current_period_end: string | null;
   cancel_at_period_end: boolean;
@@ -70,11 +71,17 @@ describe('POST /api/account/entitlement/refresh', () => {
       if (text.includes('from entitlement_overrides')) {
         return Promise.resolve(makeQueryResult([]));
       }
-      if (text.includes('select paddle_customer_id from subscriptions')) {
+      if (text.includes('select paddle_customer_id')) {
         return Promise.resolve(
           makeQueryResult(
             storedSub
-              ? [{paddle_customer_id: storedSub.paddle_customer_id}]
+              ? [
+                  {
+                    paddle_customer_id: storedSub.paddle_customer_id,
+                    paddle_subscription_id:
+                      storedSub.paddle_subscription_id ?? null,
+                  },
+                ]
               : [],
           ),
         );
@@ -370,10 +377,19 @@ describe('POST /api/account/entitlement/refresh', () => {
   });
 
   test('stamps the upsert with Paddle updated_at, not local time', async () => {
+    storedSub = {
+      plan: 'plus',
+      status: 'active',
+      paddle_customer_id: 'ctm_999',
+      paddle_subscription_id: 'sub_1',
+      paddle_last_event_at: null,
+      current_period_end: futureDate(),
+      cancel_at_period_end: false,
+      past_due_since: null,
+    };
     subscriptionsForCustomer = {
       data: [paddleSub({updated_at: '2026-10-01T12:00:00.000Z'})],
     };
-    customersByEmail = {data: [{id: 'ctm_999'}]};
     const res = await postRefresh();
     expect(res.status).toBe(200);
     expect(res.body.plan).toBe('plus');
@@ -384,11 +400,66 @@ describe('POST /api/account/entitlement/refresh', () => {
     expect(insert?.[1]?.[10]).toBe('2026-10-01T12:00:00.000Z');
   });
 
+  test('falls back to now when the same subscription has no usable updated_at', async () => {
+    storedSub = {
+      plan: 'plus',
+      status: 'active',
+      paddle_customer_id: 'ctm_999',
+      paddle_subscription_id: 'sub_1',
+      paddle_last_event_at: null,
+      current_period_end: futureDate(),
+      cancel_at_period_end: false,
+      past_due_since: null,
+    };
+    subscriptionsForCustomer = {
+      data: [paddleSub({updated_at: 'not-a-timestamp'})],
+    };
+    const before = Date.now();
+    const res = await postRefresh();
+    expect(res.status).toBe(200);
+    const insert = mockQuery.mock.calls.find(args =>
+      args[0].includes('insert into subscriptions'),
+    );
+    const eventAt = insert?.[1]?.[10] as string;
+    expect(Date.parse(eventAt)).toBeGreaterThanOrEqual(before - 1000);
+  });
+
+  test('a replacement subscription is not rejected as a stale revision', async () => {
+    // The previous subscription was canceled on Oct 18; its replacement
+    // became active on Oct 17. Revision ordering applies within one
+    // subscription, so the replacement must apply despite its older
+    // updated_at.
+    storedSub = {
+      plan: 'plus',
+      status: 'cancelled',
+      paddle_customer_id: 'ctm_999',
+      paddle_subscription_id: 'sub_old',
+      paddle_last_event_at: '2026-10-18T00:00:00.000Z',
+      current_period_end: '2020-01-01T00:00:00.000Z',
+      cancel_at_period_end: true,
+      past_due_since: null,
+    };
+    subscriptionsForCustomer = {
+      data: [
+        paddleSub({id: 'sub_new', updated_at: '2026-10-17T00:00:00.000Z'}),
+      ],
+    };
+    const res = await postRefresh();
+    expect(res.status).toBe(200);
+    expect(res.body.plan).toBe('plus');
+    expect(res.body.status).toBe('active');
+    const insert = mockQuery.mock.calls.find(args =>
+      args[0].includes('insert into subscriptions'),
+    );
+    expect(insert?.[1]?.[4]).toBe('sub_new');
+  });
+
   test('a stale snapshot cannot overwrite newer stored state', async () => {
     storedSub = {
       plan: 'plus',
       status: 'cancelled',
       paddle_customer_id: 'ctm_999',
+      paddle_subscription_id: 'sub_1',
       paddle_last_event_at: '2030-01-01T00:00:00.000Z',
       current_period_end: '2020-01-01T00:00:00.000Z',
       cancel_at_period_end: true,
