@@ -69,14 +69,23 @@ export const fetchPaddleCustomerEmail = async (
   return typeof email === 'string' && email.length > 0 ? email : null;
 };
 
-/** First Paddle customer id registered under an email. Null when none. */
+/**
+ * First Paddle customer id registered under an email. Null when Paddle answered
+ * with none. THROWS when the lookup itself failed (paddleApiGet returned null):
+ * callers must not mistake a failed lookup for "no such customer" — for
+ * entitlement refresh that would silently report the stale entitlement as if
+ * reconciliation had succeeded.
+ */
 export const findPaddleCustomerIdByEmail = async (
   email: string,
 ): Promise<string | null> => {
   const json = await paddleApiGet(
     `/customers?email=${encodeURIComponent(email)}`,
   );
-  const data = (json as {data?: unknown} | null)?.data;
+  if (json === null) {
+    throw new Error('Paddle customer lookup failed');
+  }
+  const data = (json as {data?: unknown}).data;
   const first = Array.isArray(data) ? asCustomer(data[0]) : {};
   return typeof first.id === 'string' && first.id.length > 0 ? first.id : null;
 };

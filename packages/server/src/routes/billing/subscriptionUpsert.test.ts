@@ -223,6 +223,31 @@ describe('upsertSubscription', () => {
       }),
     ).resolves.toBe('stale');
 
+    // Replacement whose candidate timestamp is the later one keeps
+    // the candidate's timestamp.
+    mockQuery.mockImplementation(
+      mockWithRow({
+        status: 'cancelled',
+        past_due_since: null,
+        paddle_subscription_id: 'sub_old',
+        paddle_last_event_at: '2026-10-18T00:00:00.000Z',
+      }),
+    );
+    mockQuery.mockClear();
+    await expect(
+      upsertSubscription(
+        makeEvent({occurred_at: '2026-10-19T00:00:00.000Z'}),
+        'user-uuid-1',
+        mockQuery,
+        {snapshot: true},
+      ),
+    ).resolves.toBe('applied');
+    expect(
+      mockQuery.mock.calls.find(args =>
+        args[0].includes('insert into subscriptions'),
+      )?.[1]?.[10],
+    ).toBe('2026-10-19T00:00:00.000Z');
+
     // A stored row with no subscription id (legacy) cannot be the
     // candidate's subscription either: replacement.
     mockQuery.mockImplementation(
@@ -257,6 +282,115 @@ describe('upsertSubscription', () => {
         {snapshot: true},
       ),
     ).resolves.toBe('applied');
+  });
+
+  test('replacement never lowers the stored event clock (delayed old-sub guard)', async () => {
+    let storedLast: string | null = '2026-10-18T00:00:00.000Z';
+    mockQuery.mockImplementation(((sql: string) => {
+      if (sql.includes('from plan_prices')) {
+        return Promise.resolve(makeQueryResult([{plan: 'plus'}]));
+      }
+      if (sql.includes('from subscriptions')) {
+        return Promise.resolve(
+          makeQueryResult([
+            {
+              status: 'cancelled',
+              past_due_since: null,
+              paddle_subscription_id: 'sub_old',
+              paddle_last_event_at: storedLast,
+            },
+          ]),
+        );
+      }
+      return Promise.resolve(makeQueryResult([]));
+    }) as typeof mockQuery);
+
+    // Refresh recovers sub_new (updated Oct 17) in place of sub_old
+    // (canceled Oct 18): applies as a replacement, but the stored
+    // event clock must stay at Oct 18, not drop to Oct 17.
+    const replacement = makeEvent({
+      occurred_at: '2026-10-17T00:00:00.000Z',
+      data: {...makeEvent().data, id: 'sub_new'},
+    });
+    await expect(
+      upsertSubscription(replacement, 'user-uuid-1', mockQuery, {
+        snapshot: true,
+      }),
+    ).resolves.toBe('applied');
+    const insert = mockQuery.mock.calls.find(args =>
+      args[0].includes('insert into subscriptions'),
+    );
+    expect(insert?.[1]?.[10]).toBe('2026-10-18T00:00:00.000Z');
+    storedLast = insert?.[1]?.[10] as string;
+
+    // A delayed subscription.updated for sub_old dated Oct 18 then
+    // arrives via webhook: not newer than the preserved clock, so it
+    // cannot overwrite the replacement.
+    mockQuery.mockClear();
+    const delayedOld = makeEvent({
+      occurred_at: '2026-10-18T00:00:00.000Z',
+      data: {...makeEvent().data, id: 'sub_old', status: 'canceled'},
+    });
+    await expect(
+      upsertSubscription(delayedOld, 'user-uuid-1', mockQuery),
+    ).resolves.toBe('stale');
+    expect(
+      mockQuery.mock.calls.some(args =>
+        args[0].includes('insert into subscriptions'),
+      ),
+    ).toBe(false);
+  });
+
+  test('snapshot past_due seeds the grace clock from the period start', async () => {
+    mockQuery.mockImplementation(((sql: string) => {
+      if (sql.includes('from plan_prices')) {
+        return Promise.resolve(makeQueryResult([{plan: 'plus'}]));
+      }
+      return Promise.resolve(makeQueryResult([]));
+    }) as typeof mockQuery);
+    const pastDue = makeEvent({
+      data: {...makeEvent().data, status: 'past_due'},
+    });
+
+    await upsertSubscription(pastDue, 'user-uuid-1', mockQuery, {
+      snapshot: true,
+    });
+    let insert = mockQuery.mock.calls.find(args =>
+      args[0].includes('insert into subscriptions'),
+    );
+    // Fixture period starts 2026-10-13: delinquency began then, not
+    // at refresh time.
+    expect(insert?.[1]?.[9]).toBe('2026-10-13T00:00:00.000Z');
+
+    mockQuery.mockClear();
+    await upsertSubscription(pastDue, 'user-uuid-1', mockQuery);
+    insert = mockQuery.mock.calls.find(args =>
+      args[0].includes('insert into subscriptions'),
+    );
+    // Webhook path keeps stamping the transition time.
+    expect(insert?.[1]?.[9]).not.toBe('2026-10-13T00:00:00.000Z');
+    expect(
+      Math.abs(Date.parse(insert?.[1]?.[9] as string) - Date.now()),
+    ).toBeLessThan(60_000);
+
+    // Snapshot without a billing period falls back to stamping now.
+    mockQuery.mockClear();
+    const noPeriod = makeEvent({
+      data: {
+        ...makeEvent().data,
+        status: 'past_due',
+        current_billing_period: undefined,
+      },
+    });
+    await upsertSubscription(noPeriod, 'user-uuid-1', mockQuery, {
+      snapshot: true,
+    });
+    insert = mockQuery.mock.calls.find(args =>
+      args[0].includes('insert into subscriptions'),
+    );
+    expect(
+      Math.abs(Date.parse(insert?.[1]?.[9] as string) - Date.now()),
+    ).toBeLessThan(60_000);
   });
 
   test('upserts and persists the event timestamp', async () => {

@@ -114,6 +114,18 @@ test('findPaddleCustomerIdByEmail returns the first customer id', async () => {
   );
 });
 
+test('findPaddleCustomerIdByEmail throws when the lookup request fails', async () => {
+  fetchImpl = () =>
+    Promise.resolve({ok: false, status: 503, text: async () => 'err'});
+  await expect(findPaddleCustomerIdByEmail('a@b.c')).rejects.toThrow(
+    'Paddle customer lookup failed',
+  );
+  fetchImpl = () => Promise.reject(new Error('network down'));
+  await expect(findPaddleCustomerIdByEmail('a@b.c')).rejects.toThrow(
+    'Paddle customer lookup failed',
+  );
+});
+
 test('findPaddleCustomerIdByEmail returns null for empty or malformed lists', async () => {
   fetchImpl = () => okJson({data: []});
   await expect(
