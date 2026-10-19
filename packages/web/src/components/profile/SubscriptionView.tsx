@@ -4,6 +4,7 @@ import {Text as DSText} from '@spudly/ui';
 
 import {ErrorText} from '../ui/ErrorText.js';
 import {PrimaryButton} from '../ui/PrimaryButton.js';
+import {SecondaryButton} from '../ui/SecondaryButton.js';
 import {SectionCard} from '../ui/SectionCard.js';
 
 const PLAN_LABELS: Record<PlanName, string> = {
@@ -64,6 +65,8 @@ export const SubscriptionView = ({
   error,
   portalUrl,
   isReconciling,
+  onRefresh,
+  isRefreshing,
 }: SubscriptionViewProps) => {
   const status = entitlement ? statusText(entitlement) : null;
   return (
@@ -95,6 +98,13 @@ export const SubscriptionView = ({
               loading={isOpeningPortal}
               loadingLabel="Opening…"
               onPress={onManage}
+            />
+          ) : null}
+          {onRefresh ? (
+            <SecondaryButton
+              label={isRefreshing ? 'Checking…' : 'Check again'}
+              disabled={isRefreshing}
+              onPress={onRefresh}
             />
           ) : null}
           {portalUrl ? (

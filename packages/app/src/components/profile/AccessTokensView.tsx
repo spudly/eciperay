@@ -89,6 +89,7 @@ export const AccessTokensView = ({
   revokingId,
   onRevoke,
   error,
+  planNotice,
 }: AccessTokensViewProps) => (
   <SectionCard title="API access tokens">
     <InfoBanner>
@@ -102,22 +103,26 @@ export const AccessTokensView = ({
         onDismissSecret={onDismissSecret}
       />
     ) : null}
-    <YStack marginBlockEnd="$4">
-      <TextField
-        label="Token name"
-        value={tokenName}
-        onChange={onTokenNameChange}
-        placeholder="e.g. Claude Desktop"
-      />
-      <YStack marginBlockStart="$3">
-        <PrimaryButton
-          label="Create token"
-          loading={isCreating}
-          disabled={!tokenName.trim() || createdSecret !== null}
-          onPress={onCreate}
+    {planNotice ? (
+      <InfoBanner>{planNotice}</InfoBanner>
+    ) : (
+      <YStack marginBlockEnd="$4">
+        <TextField
+          label="Token name"
+          value={tokenName}
+          onChange={onTokenNameChange}
+          placeholder="e.g. Claude Desktop"
         />
+        <YStack marginBlockStart="$3">
+          <PrimaryButton
+            label="Create token"
+            loading={isCreating}
+            disabled={!tokenName.trim() || createdSecret !== null}
+            onPress={onCreate}
+          />
+        </YStack>
       </YStack>
-    </YStack>
+    )}
     {error ? <ErrorText>{error}</ErrorText> : null}
     {isLoading ? (
       <DsText

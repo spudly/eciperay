@@ -1,4 +1,9 @@
-import {errorMessage, queryKeys} from '@eciperay/client';
+import {
+  apiTokensPowerNotice,
+  errorMessage,
+  queryKeys,
+  useAuth,
+} from '@eciperay/client';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useState} from 'react';
 
@@ -7,6 +12,7 @@ import {eciperay} from '../../lib/api.js';
 import {AccessTokensView} from './AccessTokensView.js';
 
 export const ProfileAccessTokensSection = () => {
+  const {session} = useAuth();
   const queryClient = useQueryClient();
   const [tokenName, setTokenName] = useState('');
   const [createdSecret, setCreatedSecret] = useState<string | null>(null);
@@ -16,6 +22,21 @@ export const ProfileAccessTokensSection = () => {
     queryKey: queryKeys.personalAccessTokens(),
     queryFn: () => eciperay.account.listPersonalAccessTokens(),
   });
+
+  // Token creation is Power-gated server-side. When the entitlement is
+  // known to be below Power, show the explainer instead of a form that
+  // would only fail with plan_required. When the entitlement is unknown
+  // (still loading, or its fetch failed) planNotice stays null and the
+  // form shows — token management is never bricked by an outage here.
+  const userId = session?.user.id ?? 'anonymous';
+  const entitlementQuery = useQuery({
+    queryKey: queryKeys.entitlement(userId),
+    queryFn: () => eciperay.account.getEntitlement(),
+  });
+  const planNotice =
+    entitlementQuery.data && entitlementQuery.data.plan !== 'power'
+      ? apiTokensPowerNotice(entitlementQuery.data.plan)
+      : null;
 
   const invalidateTokens = () =>
     queryClient.invalidateQueries({queryKey: queryKeys.personalAccessTokens()});
@@ -69,6 +90,7 @@ export const ProfileAccessTokensSection = () => {
       error={
         error ?? (tokensQuery.error ? errorMessage(tokensQuery.error) : null)
       }
+      planNotice={planNotice}
     />
   );
 };

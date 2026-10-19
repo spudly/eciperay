@@ -147,6 +147,23 @@ describe('SubscriptionView', () => {
     ).toBeInTheDocument();
   });
 
+  test('check again button calls onRefresh', async () => {
+    const onRefresh = vi.fn();
+    await renderView({entitlement: makeEntitlement({}), onRefresh});
+    await userEvent.click(screen.getByRole('button', {name: 'Check again'}));
+    expect(onRefresh).toHaveBeenCalledTimes(1);
+  });
+
+  test('check again shows a checking state while refreshing', async () => {
+    await renderView({
+      entitlement: makeEntitlement({}),
+      onRefresh: () => {},
+      isRefreshing: true,
+    });
+    const button = screen.getByRole('button', {name: 'Checking…'});
+    expect(button).toBeDisabled();
+  });
+
   test('shows a clickable portal link when portalUrl is set', async () => {
     await renderView({
       entitlement: makeEntitlement({

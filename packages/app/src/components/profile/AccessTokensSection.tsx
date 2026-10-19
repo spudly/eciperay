@@ -1,4 +1,9 @@
-import {errorMessage, queryKeys} from '@eciperay/client';
+import {
+  apiTokensPowerNotice,
+  errorMessage,
+  queryKeys,
+  useAuth,
+} from '@eciperay/client';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useState} from 'react';
 
@@ -7,6 +12,7 @@ import {api} from '../../lib/api';
 import {AccessTokensView} from './AccessTokensView';
 
 export const AccessTokensSection = () => {
+  const {session} = useAuth();
   const queryClient = useQueryClient();
   const [tokenName, setTokenName] = useState('');
   const [createdSecret, setCreatedSecret] = useState<string | null>(null);
@@ -16,6 +22,18 @@ export const AccessTokensSection = () => {
     queryKey: queryKeys.personalAccessTokens(),
     queryFn: () => api.account.listPersonalAccessTokens(),
   });
+
+  // Mirror of the web section: below Power, replace the create form with
+  // the explainer; unknown entitlement (loading/failed) keeps the form.
+  const userId = session?.user.id ?? 'anonymous';
+  const entitlementQuery = useQuery({
+    queryKey: queryKeys.entitlement(userId),
+    queryFn: () => api.account.getEntitlement(),
+  });
+  const planNotice =
+    entitlementQuery.data && entitlementQuery.data.plan !== 'power'
+      ? apiTokensPowerNotice(entitlementQuery.data.plan)
+      : null;
 
   const invalidateTokens = () =>
     queryClient.invalidateQueries({queryKey: queryKeys.personalAccessTokens()});
@@ -68,6 +86,7 @@ export const AccessTokensSection = () => {
       error={
         error ?? (tokensQuery.error ? errorMessage(tokensQuery.error) : null)
       }
+      planNotice={planNotice}
     />
   );
 };

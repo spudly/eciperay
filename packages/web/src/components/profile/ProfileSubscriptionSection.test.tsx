@@ -151,6 +151,62 @@ describe('ProfileSubscriptionSection', () => {
     expect(link).toHaveAttribute('href', 'https://portal.example/session');
   });
 
+  test('check again reconciles with the server and shows the new plan', async () => {
+    const freeEntitlement: Entitlement = {
+      plan: 'free',
+      status: null,
+      aiUsed: 0,
+      aiLimit: 25,
+      periodEndsAt: null,
+      paddleCustomerId: null,
+      cancelAtPeriodEnd: false,
+    };
+    vi.spyOn(eciperay.account, 'getEntitlement').mockResolvedValue(
+      freeEntitlement,
+    );
+    const refresh = vi
+      .spyOn(eciperay.account, 'refreshEntitlement')
+      .mockResolvedValue(plusEntitlement);
+    await renderWithProviders(<ProfileSubscriptionSection />, {
+      withAuth: false,
+    });
+    expect(await screen.findByText('Free plan')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', {name: 'Check again'}));
+    expect(await screen.findByText('Plus plan')).toBeInTheDocument();
+    expect(refresh).toHaveBeenCalledTimes(1);
+  });
+
+  test('check again surfaces a refresh failure', async () => {
+    vi.spyOn(eciperay.account, 'getEntitlement').mockResolvedValue(
+      plusEntitlement,
+    );
+    vi.spyOn(eciperay.account, 'refreshEntitlement').mockRejectedValue(
+      new Error('billing not configured'),
+    );
+    await renderWithProviders(<ProfileSubscriptionSection />, {
+      withAuth: false,
+    });
+    await userEvent.click(
+      await screen.findByRole('button', {name: 'Check again'}),
+    );
+    expect(
+      await screen.findByText('billing not configured'),
+    ).toBeInTheDocument();
+  });
+
+  test('does not show the checking hint while idle', async () => {
+    vi.spyOn(eciperay.account, 'getEntitlement').mockResolvedValue(
+      plusEntitlement,
+    );
+    await renderWithProviders(<ProfileSubscriptionSection />, {
+      withAuth: false,
+    });
+    expect(await screen.findByText('Plus plan')).toBeInTheDocument();
+    expect(
+      screen.queryByText('Checking for the latest subscription status…'),
+    ).not.toBeInTheDocument();
+  });
+
   test('shows an error when the entitlement fails to load', async () => {
     vi.spyOn(eciperay.account, 'getEntitlement').mockRejectedValue(
       new Error('boom'),
