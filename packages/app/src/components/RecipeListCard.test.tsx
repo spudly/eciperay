@@ -17,7 +17,7 @@ describe('RecipeListCard', () => {
   });
 
   test('opens cook log form from list action', async () => {
-    const {getByText, queryByText} = renderWithProviders(
+    const {getByText, queryByText} = await renderWithProviders(
       <RecipeListCard
         recipe={makeRecipeDetail({title: 'Pasta'})}
         onPress={jest.fn()}
@@ -26,16 +26,16 @@ describe('RecipeListCard', () => {
     );
 
     expect(getByText('Pasta')).toBeTruthy();
-    fireEvent.press(getByText('Log cook'));
+    await fireEvent.press(getByText('Log cook'));
     expect(getByText('How did it go?')).toBeTruthy();
-    fireEvent.press(getByText('Cancel'));
+    await fireEvent.press(getByText('Cancel'));
     expect(queryByText('How did it go?')).toBeNull();
   });
 
   test('saves cook log with rating from list', async () => {
     const recipe = makeRecipeDetail();
     const {getByText, getByLabelText, getByPlaceholderText, queryByText} =
-      renderWithProviders(
+      await renderWithProviders(
         <RecipeListCard
           recipe={recipe}
           onPress={jest.fn()}
@@ -43,13 +43,13 @@ describe('RecipeListCard', () => {
         />,
       );
 
-    fireEvent.press(getByText('Log cook'));
-    fireEvent.press(getByLabelText('Rate 5 out of 5 stars'));
-    fireEvent.changeText(
+    await fireEvent.press(getByText('Log cook'));
+    await fireEvent.press(getByLabelText('Rate 5 out of 5 stars'));
+    await fireEvent.changeText(
       getByPlaceholderText('Notes from this cook (optional)'),
       'Weeknight favorite',
     );
-    fireEvent.press(getByText('Save'));
+    await fireEvent.press(getByText('Save'));
 
     await waitFor(() => {
       expect(mockCreateCookLog).toHaveBeenCalledWith(

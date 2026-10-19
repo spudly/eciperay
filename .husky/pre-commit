@@ -1,5 +1,40 @@
 npx lint-staged
-npm run workflows:lint
+
+# Two stages are gated on staged files that can actually affect them
+# (~11s saved on commits that can't). Triggers mirror what each check
+# actually reads:
+# - workflows:lint is `prettier --check .github/workflows` + actionlint,
+#   so it also depends on the prettier config/ignore file and the tool
+#   versions pinned in package.json/package-lock.json.
+# - The scripts suite's triggers mirror isScriptsAffectingFile +
+#   isAllAffectingFile in scripts/affectedFiles.ts, plus .github/workflows/
+#   (its tests assert against ci.yml), the app/web component trees
+#   (checkMirrorPairs validates the real trees), per-package jest /
+#   coverage configs (packageCoveragePatterns reads them), the Node
+#   version inputs validateNodeVersion reads (.nvmrc, every package.json's
+#   engines field, .github/actions/ci-setup/action.yml), and the logo
+#   inputs buildLogos reads (assets/logos/).
+# Git C-quotes paths containing non-ASCII or special characters
+# ("packages/.../Caf\303\251.tsx"), which would defeat the anchored
+# patterns below. The sed strips the surrounding quotes: the gates only
+# match path prefixes, and quoting escapes only the special characters
+# themselves (in the filename, past the prefix). Residual gap: a special
+# character inside a matched prefix (e.g. a non-ASCII directory name) is
+# still missed — none exist in this repo. Plain grep/sed only, no GNU
+# extensions (grep -z): the hook must also run on macOS's BSD tools,
+# where an unsupported flag would silently disable both gates.
+# --no-renames: with rename detection, --name-only reports only the
+# destination path, so renaming a file OUT of a watched directory would
+# skip the checks its removal should trigger.
+# lint-staged already runs actionlint + prettier on staged workflows.
+if git diff --cached --name-only --no-renames | sed 's/^"//; s/"$//' | grep -qE '^(\.github/workflows/|\.prettierrc\.json|\.prettierignore|package\.json|package-lock\.json)'; then
+  npm run workflows:lint
+fi
+
 npm run typecheck
-npm run test:scripts:quick
+
+if git diff --cached --name-only --no-renames | sed 's/^"//; s/"$//' | grep -qE '^(scripts/|eslint-rules/|patches/|test/|\.github/workflows/|\.github/actions/|\.nvmrc|assets/logos/|packages/[^/]+/src/components/|packages/[^/]+/jest\.config\.[^/]+|packages/[^/]+/coverageGlobs\.json|packages/[^/]+/package\.json|jest\.config\.cjs|commitlint\.config\.cjs|package\.json|package-lock\.json|tsconfig\.json|tsconfig\.base\.json|turbo\.json|eslint\.config\.ts|knip\.ts)'; then
+  npm run test:scripts:quick
+fi
+
 npm run precommit:affected-tests

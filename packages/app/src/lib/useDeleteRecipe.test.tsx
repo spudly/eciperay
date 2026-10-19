@@ -30,10 +30,10 @@ describe('useDeleteRecipe', () => {
     const alertSpy = jest.spyOn(Alert, 'alert');
     const onDeleted = jest.fn();
     mockDelete.mockImplementation(async () => {});
-    const {getByText} = renderWithProviders(
+    const {getByText} = await renderWithProviders(
       <DeleteProbe onDeleted={onDeleted} />,
     );
-    fireEvent.press(getByText('Delete'));
+    await fireEvent.press(getByText('Delete'));
     const buttons = alertSpy.mock.calls[0]?.[2];
     await act(async () => {
       buttons?.[1]?.onPress?.();

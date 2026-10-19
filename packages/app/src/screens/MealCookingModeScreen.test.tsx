@@ -63,15 +63,15 @@ describe('MealCookingModeScreen', () => {
   });
 
   test('renders cook mode and navigates steps', async () => {
-    const {findByText} = renderWithProviders(
+    const {findByText} = await renderWithProviders(
       <MealCookingModeScreen {...stackProps} />,
     );
     expect(await findByText('Mix dry ingredients')).toBeTruthy();
-    fireEvent.press(await findByText('Next →'));
+    await fireEvent.press(await findByText('Next →'));
     expect(await findByText('Bake')).toBeTruthy();
-    fireEvent.press(await findByText('← Back'));
+    await fireEvent.press(await findByText('← Back'));
     expect(await findByText('Mix dry ingredients')).toBeTruthy();
-    fireEvent.press(await findByText('Done'));
+    await fireEvent.press(await findByText('Done'));
     expect(mockNavigate).toHaveBeenCalledWith('MealDetail', {mealId});
   });
 });

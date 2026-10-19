@@ -21,7 +21,7 @@ describe('RecipeDetailTabPanel', () => {
 
   test('renders overview tab content', async () => {
     const recipe = makeRecipeDetail();
-    const {getByText} = renderWithProviders(
+    const {getByText} = await renderWithProviders(
       <RecipeDetailTabPanel
         activeTab="overview"
         recipe={recipe}

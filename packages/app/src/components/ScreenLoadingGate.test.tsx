@@ -13,8 +13,8 @@ describe('ScreenLoadingGate', () => {
     jest.useRealTimers();
   });
 
-  test('renders children when not pending', () => {
-    const {getByText} = render(
+  test('renders children when not pending', async () => {
+    const {getByText} = await render(
       <ScreenLoadingGate pending={false}>
         <Text>Ready</Text>
       </ScreenLoadingGate>,
@@ -23,8 +23,8 @@ describe('ScreenLoadingGate', () => {
     expect(getByText('Ready')).toBeTruthy();
   });
 
-  test('shows a spinner only after the loading delay', () => {
-    const {queryByLabelText} = render(
+  test('shows a spinner only after the loading delay', async () => {
+    const {queryByLabelText} = await render(
       <ScreenLoadingGate pending>
         <Text>Ready</Text>
       </ScreenLoadingGate>,
@@ -32,15 +32,15 @@ describe('ScreenLoadingGate', () => {
 
     expect(queryByLabelText('Loading')).toBeNull();
 
-    act(() => {
+    await act(() => {
       jest.advanceTimersByTime(100);
     });
 
     expect(queryByLabelText('Loading')).toBeTruthy();
   });
 
-  test('renders a blank placeholder before the loading delay', () => {
-    const {queryByText, queryByLabelText} = render(
+  test('renders a blank placeholder before the loading delay', async () => {
+    const {queryByText, queryByLabelText} = await render(
       <ScreenLoadingGate pending>
         <Text>Ready</Text>
       </ScreenLoadingGate>,

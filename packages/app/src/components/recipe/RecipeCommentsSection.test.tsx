@@ -47,7 +47,7 @@ describe('RecipeCommentsSection', () => {
   });
 
   test('renders comments with stale badges', async () => {
-    const {findByText, getByLabelText} = renderWithProviders(
+    const {findByText, getByLabelText} = await renderWithProviders(
       <RecipeCommentsSection
         recipeId="recipe-uuid-1"
         ownerUserId="owner-uuid"
@@ -59,7 +59,7 @@ describe('RecipeCommentsSection', () => {
 
   test('renders loading, empty, and anonymous author states', async () => {
     mockListComments.mockImplementation(() => new Promise(() => {}));
-    const loading = renderWithProviders(
+    const loading = await renderWithProviders(
       <RecipeCommentsSection
         recipeId="recipe-uuid-1"
         ownerUserId="owner-uuid"
@@ -68,7 +68,7 @@ describe('RecipeCommentsSection', () => {
     expect(loading.getByLabelText('Loading')).toBeTruthy();
 
     mockListComments.mockResolvedValue([]);
-    const empty = renderWithProviders(
+    const empty = await renderWithProviders(
       <RecipeCommentsSection
         recipeId="recipe-uuid-1"
         ownerUserId="owner-uuid"
@@ -79,7 +79,7 @@ describe('RecipeCommentsSection', () => {
     mockListComments.mockResolvedValue([
       {...sampleComment, authorDisplayName: null, isStale: false},
     ]);
-    const anonymous = renderWithProviders(
+    const anonymous = await renderWithProviders(
       <RecipeCommentsSection
         recipeId="recipe-uuid-1"
         ownerUserId="owner-uuid"
@@ -96,14 +96,14 @@ describe('RecipeCommentsSection', () => {
       {...sampleComment, authorUserId: 'other-user', isStale: false},
     ]);
 
-    const {findByText} = renderWithProviders(
+    const {findByText} = await renderWithProviders(
       <RecipeCommentsSection
         recipeId="recipe-uuid-1"
         ownerUserId="owner-uuid"
       />,
     );
 
-    fireEvent.press(await findByText('Delete'));
+    await fireEvent.press(await findByText('Delete'));
     await waitFor(() => {
       expect(mockDeleteComment).toHaveBeenCalledWith(
         'recipe-uuid-1',
@@ -120,7 +120,7 @@ describe('RecipeCommentsSection', () => {
       {...sampleComment, authorUserId: 'other-user', isStale: false},
     ]);
 
-    const {findByText, queryByText} = renderWithProviders(
+    const {findByText, queryByText} = await renderWithProviders(
       <RecipeCommentsSection
         recipeId="recipe-uuid-1"
         ownerUserId="owner-uuid"
@@ -134,7 +134,7 @@ describe('RecipeCommentsSection', () => {
 
   test('posts, edits, and deletes comments', async () => {
     const {getByPlaceholderText, getByText, getByDisplayValue} =
-      renderWithProviders(
+      await renderWithProviders(
         <RecipeCommentsSection
           recipeId="recipe-uuid-1"
           ownerUserId="owner-uuid"
@@ -145,21 +145,21 @@ describe('RecipeCommentsSection', () => {
       expect(getByText('Great!')).toBeTruthy();
     });
 
-    fireEvent.changeText(getByPlaceholderText('Add a comment'), 'Nice!');
-    fireEvent.press(getByText('Post comment'));
+    await fireEvent.changeText(getByPlaceholderText('Add a comment'), 'Nice!');
+    await fireEvent.press(getByText('Post comment'));
     await waitFor(() => {
       expect(mockCreateComment).toHaveBeenCalledWith('recipe-uuid-1', {
         body: 'Nice!',
       });
     });
 
-    fireEvent.press(getByText('Edit'));
-    fireEvent.press(getByText('Cancel'));
+    await fireEvent.press(getByText('Edit'));
+    await fireEvent.press(getByText('Cancel'));
     expect(getByText('Great!')).toBeTruthy();
 
-    fireEvent.press(getByText('Edit'));
-    fireEvent.changeText(getByDisplayValue('Great!'), 'Updated');
-    fireEvent.press(getByText('Save'));
+    await fireEvent.press(getByText('Edit'));
+    await fireEvent.changeText(getByDisplayValue('Great!'), 'Updated');
+    await fireEvent.press(getByText('Save'));
     await waitFor(() => {
       expect(mockUpdateComment).toHaveBeenCalledWith(
         'recipe-uuid-1',
@@ -168,7 +168,7 @@ describe('RecipeCommentsSection', () => {
       );
     });
 
-    fireEvent.press(getByText('Delete'));
+    await fireEvent.press(getByText('Delete'));
     await waitFor(() => {
       expect(mockDeleteComment).toHaveBeenCalledWith(
         'recipe-uuid-1',

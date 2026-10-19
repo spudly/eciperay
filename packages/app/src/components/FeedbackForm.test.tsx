@@ -32,11 +32,11 @@ describe('FeedbackForm', () => {
 
   // TamaguiProvider is required: the design-system Checkbox/Button adapters
   // throw "Missing theme." without it.
-  const renderWithProviders = (
+  const renderWithProviders = async (
     ui: React.ReactElement,
     analytics: ComponentProps<typeof AnalyticsProvider>['analytics'],
   ) =>
-    render(ui, {
+    await render(ui, {
       wrapper: ({children}) => (
         <TamaguiProvider
           config={tamaguiConfig}
@@ -56,7 +56,7 @@ describe('FeedbackForm', () => {
       submitUserFeedback,
     };
 
-    renderWithProviders(
+    await renderWithProviders(
       <FeedbackForm
         route="RecipesList"
         onSubmitted={jest.fn()}
@@ -64,12 +64,14 @@ describe('FeedbackForm', () => {
       analytics,
     );
 
-    fireEvent.changeText(
+    await fireEvent.changeText(
       screen.getByPlaceholderText(/Tell us what happened/i),
       'The recipe list never refreshes after import.',
     );
-    fireEvent.press(screen.getByText('This is a bug'));
-    fireEvent.press(screen.getByRole('button', {name: 'Submit feedback'}));
+    await fireEvent.press(screen.getByText('This is a bug'));
+    await fireEvent.press(
+      screen.getByRole('button', {name: 'Submit feedback'}),
+    );
 
     await screen.findByText(/Thanks — we got your feedback/i);
     expect(submitUserFeedback).toHaveBeenCalledWith({
@@ -86,13 +88,15 @@ describe('FeedbackForm', () => {
       submitUserFeedback,
     };
 
-    renderWithProviders(<FeedbackForm />, analytics);
+    await renderWithProviders(<FeedbackForm />, analytics);
 
-    fireEvent.changeText(
+    await fireEvent.changeText(
       screen.getByPlaceholderText(/Tell us what happened/i),
       'The recipe list never refreshes after import.',
     );
-    fireEvent.press(screen.getByRole('button', {name: 'Submit feedback'}));
+    await fireEvent.press(
+      screen.getByRole('button', {name: 'Submit feedback'}),
+    );
 
     await screen.findByText(/Thanks — we got your feedback/i);
     expect(submitUserFeedback).toHaveBeenCalledWith({
@@ -114,13 +118,15 @@ describe('FeedbackForm', () => {
       submitUserFeedback,
     };
 
-    renderWithProviders(<FeedbackForm route="RecipesList" />, analytics);
+    await renderWithProviders(<FeedbackForm route="RecipesList" />, analytics);
 
-    fireEvent.changeText(
+    await fireEvent.changeText(
       screen.getByPlaceholderText(/Tell us what happened/i),
       'The recipe list never refreshes after import.',
     );
-    fireEvent.press(screen.getByRole('button', {name: 'Submit feedback'}));
+    await fireEvent.press(
+      screen.getByRole('button', {name: 'Submit feedback'}),
+    );
 
     expect(screen.getByText('Submitting…')).toBeTruthy();
     resolveSubmit?.({error: null});
@@ -136,13 +142,15 @@ describe('FeedbackForm', () => {
       submitUserFeedback,
     };
 
-    renderWithProviders(<FeedbackForm route="RecipesList" />, analytics);
+    await renderWithProviders(<FeedbackForm route="RecipesList" />, analytics);
 
-    fireEvent.changeText(
+    await fireEvent.changeText(
       screen.getByPlaceholderText(/Tell us what happened/i),
       'The recipe list never refreshes after import.',
     );
-    fireEvent.press(screen.getByRole('button', {name: 'Submit feedback'}));
+    await fireEvent.press(
+      screen.getByRole('button', {name: 'Submit feedback'}),
+    );
 
     expect(await screen.findByText('Could not submit feedback.')).toBeTruthy();
   });
@@ -154,13 +162,15 @@ describe('FeedbackForm', () => {
       submitUserFeedback,
     };
 
-    renderWithProviders(<FeedbackForm route="Feedback" />, analytics);
+    await renderWithProviders(<FeedbackForm route="Feedback" />, analytics);
 
-    fireEvent.changeText(
+    await fireEvent.changeText(
       screen.getByPlaceholderText(/Tell us what happened/i),
       'First feedback submission.',
     );
-    fireEvent.press(screen.getByRole('button', {name: 'Submit feedback'}));
+    await fireEvent.press(
+      screen.getByRole('button', {name: 'Submit feedback'}),
+    );
     await screen.findByText(/Thanks — we got your feedback/i);
 
     await act(async () => {

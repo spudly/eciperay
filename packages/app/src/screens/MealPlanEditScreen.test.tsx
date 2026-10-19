@@ -60,7 +60,7 @@ describe('MealPlanEditScreen', () => {
   });
 
   test('renders new meal plan form', async () => {
-    const {findByText} = renderWithProviders(
+    const {findByText} = await renderWithProviders(
       <MealPlanEditScreen {...createProps({})} />,
     );
     expect(await findByText('Meal plan')).toBeTruthy();
@@ -69,13 +69,12 @@ describe('MealPlanEditScreen', () => {
   });
 
   test('creates plan with recipe entry', async () => {
-    const {findByText, getByPlaceholderText, getByText} = renderWithProviders(
-      <MealPlanEditScreen {...createProps({})} />,
-    );
+    const {findByText, getByPlaceholderText, getByText} =
+      await renderWithProviders(<MealPlanEditScreen {...createProps({})} />);
     await findByText('Recipe · Pasta');
-    fireEvent.changeText(getByPlaceholderText('Plan title'), 'Week');
-    fireEvent.press(getByText('Recipe · Pasta'));
-    fireEvent.press(getByText('Save plan'));
+    await fireEvent.changeText(getByPlaceholderText('Plan title'), 'Week');
+    await fireEvent.press(getByText('Recipe · Pasta'));
+    await fireEvent.press(getByText('Save plan'));
     await waitFor(() => {
       expect(mockCreate).toHaveBeenCalled();
       expect(mockReplace).toHaveBeenCalledWith('MealPlanDetail', {planId});
@@ -85,13 +84,13 @@ describe('MealPlanEditScreen', () => {
   test('adjusts entry quantity and shows save errors', async () => {
     mockCreate.mockRejectedValue(new Error('Plan failed'));
     const {findByText, getByPlaceholderText, getByText, getAllByText} =
-      renderWithProviders(<MealPlanEditScreen {...createProps({})} />);
+      await renderWithProviders(<MealPlanEditScreen {...createProps({})} />);
     await findByText('Recipe · Pasta');
-    fireEvent.changeText(getByPlaceholderText('Plan title'), 'Week');
-    fireEvent.press(getByText('Recipe · Pasta'));
-    fireEvent.press(getAllByText('+')[0]);
-    fireEvent.press(getAllByText('+')[1]);
-    fireEvent.press(getByText('Save plan'));
+    await fireEvent.changeText(getByPlaceholderText('Plan title'), 'Week');
+    await fireEvent.press(getByText('Recipe · Pasta'));
+    await fireEvent.press(getAllByText('+')[0]);
+    await fireEvent.press(getAllByText('+')[1]);
+    await fireEvent.press(getByText('Save plan'));
     expect(await findByText('Plan failed')).toBeTruthy();
   });
 
@@ -128,11 +127,11 @@ describe('MealPlanEditScreen', () => {
         },
       ],
     });
-    const {findByDisplayValue, getByText} = renderWithProviders(
+    const {findByDisplayValue, getByText} = await renderWithProviders(
       <MealPlanEditScreen {...createProps({planId})} />,
     );
     expect(await findByDisplayValue('This week')).toBeTruthy();
-    fireEvent.press(getByText('Save plan'));
+    await fireEvent.press(getByText('Save plan'));
     await waitFor(() => {
       expect(mockPut).toHaveBeenCalledWith(planId, expect.any(Object));
     });

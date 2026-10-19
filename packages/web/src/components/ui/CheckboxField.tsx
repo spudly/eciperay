@@ -3,8 +3,8 @@ import {CheckboxField as DSCheckboxField, Text as DSText} from '@spudly/ui';
 import {useState} from 'react';
 
 /**
- * Adapter over the design-system CheckboxField. The DS component only accepts
- * a string description and no children; rich (ReactNode) descriptions and
+ * Adapter over the design-system CheckboxField. The DS component only accepts a
+ * string description and no children; rich (ReactNode) descriptions and
  * children are rendered below it so no consumer content is lost.
  */
 export const CheckboxField = ({
@@ -31,7 +31,12 @@ export const CheckboxField = ({
         label={label}
         description={stringDescription}
       />
-      {richDescription ? <DSText variant="hint">{richDescription}</DSText> : null}
+      {/* Rich descriptions render inside a Text component: React Native
+          rejects raw strings under a View (test-renderer enforces this in
+          tests). Mirrors the app adapter. */}
+      {richDescription ? (
+        <DSText variant="hint">{richDescription}</DSText>
+      ) : null}
       {children}
     </>
   );

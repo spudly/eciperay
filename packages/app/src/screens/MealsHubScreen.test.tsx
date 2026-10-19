@@ -57,7 +57,7 @@ describe('MealsHubScreen', () => {
   });
 
   test('renders meals from API', async () => {
-    const {findByText} = renderWithProviders(
+    const {findByText} = await renderWithProviders(
       <MealsHubScreen {...stackProps} />,
     );
     expect(await findByText('Sunday Dinner')).toBeTruthy();
@@ -65,32 +65,32 @@ describe('MealsHubScreen', () => {
   });
 
   test('navigates and deletes from both tabs', async () => {
-    const {findByText, getAllByText} = renderWithProviders(
+    const {findByText, getAllByText} = await renderWithProviders(
       <MealsHubScreen {...stackProps} />,
     );
-    fireEvent.press(await findByText('Sunday Dinner'));
+    await fireEvent.press(await findByText('Sunday Dinner'));
     expect(mockNavigate).toHaveBeenCalledWith('MealDetail', {mealId});
-    fireEvent.press(getAllByText('Delete')[0]);
+    await fireEvent.press(getAllByText('Delete')[0]);
     await waitFor(() => {
       expect(mockDeleteMeal).toHaveBeenCalledWith(mealId);
     });
 
-    fireEvent.press(await findByText('Meal plans'));
-    fireEvent.press(await findByText('New meal plan'));
+    await fireEvent.press(await findByText('Meal plans'));
+    await fireEvent.press(await findByText('New meal plan'));
     expect(mockNavigate).toHaveBeenCalledWith('MealPlanEdit', {});
-    fireEvent.press(await findByText('This week'));
+    await fireEvent.press(await findByText('This week'));
     expect(mockNavigate).toHaveBeenCalledWith('MealPlanDetail', {planId});
-    fireEvent.press(getAllByText('Delete')[0]);
+    await fireEvent.press(getAllByText('Delete')[0]);
     await waitFor(() => {
       expect(mockDeletePlan).toHaveBeenCalledWith(planId);
     });
   });
 
   test('creates a new meal', async () => {
-    const {findByText} = renderWithProviders(
+    const {findByText} = await renderWithProviders(
       <MealsHubScreen {...stackProps} />,
     );
-    fireEvent.press(await findByText('New meal'));
+    await fireEvent.press(await findByText('New meal'));
     expect(mockNavigate).toHaveBeenCalledWith('MealEdit', {});
   });
 });
