@@ -18,3 +18,11 @@ create table if not exists entitlement_overrides (
   note       text,
   created_at timestamptz not null default now()
 );
+
+-- The absence of an API is not access control: Supabase exposes
+-- public-schema tables through its Data API with default grants, so lock
+-- this table down explicitly. RLS is enabled with no client policies and
+-- client-role privileges are revoked — only privileged database access
+-- (the SQL editor, the server's own connection) can read or write grants.
+alter table entitlement_overrides enable row level security;
+revoke all on entitlement_overrides from anon, authenticated, public;

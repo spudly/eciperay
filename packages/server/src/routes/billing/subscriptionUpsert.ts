@@ -87,6 +87,17 @@ const resolveUserId = async (
 };
 
 /**
+ * What an upsert attempt did, so reconcile callers can tell "stored" from "this
+ * candidate was unusable" from "newer state is already stored":
+ *
+ * - Applied: the row was written.
+ * - Invalid: the candidate cannot be stored at all (missing price id, unmapped
+ *   status) — trying the next candidate may still succeed.
+ * - Stale: the ordering guard rejected it because newer state is stored.
+ */
+export type UpsertOutcome = 'applied' | 'invalid' | 'stale';
+
+/**
  * Inserts or updates the subscription row from a subscription.created /
  * .activated / .updated event. Out-of-order events are ignored (see
  * paddleEventOrdering). Unknown price ids throw so Paddle retries once the
@@ -96,14 +107,14 @@ export const upsertSubscription = async (
   event: PaddleEvent,
   userId: string,
   queryFn: QueryFn,
-): Promise<void> => {
+): Promise<UpsertOutcome> => {
   const priceId = event.data.items?.[0]?.price?.id;
   if (!priceId) {
     serverLog('error', 'Paddle event missing price id', {
       eventType: event.event_type,
       eventId: event.event_id,
     });
-    return;
+    return 'invalid';
   }
   const priceRow = await queryFn<{plan: 'plus' | 'power'}>(
     'select plan from plan_prices where paddle_price_id = $1',
@@ -129,7 +140,7 @@ export const upsertSubscription = async (
       eventId: event.event_id,
       status: event.data.status ?? 'unknown',
     });
-    return;
+    return 'invalid';
   }
 
   const existing = await queryFn<{
@@ -146,7 +157,7 @@ export const upsertSubscription = async (
     existing.rows[0]?.paddle_last_event_at ?? null,
   );
   if (!apply) {
-    return;
+    return 'stale';
   }
   const wasPastDue = existing.rows[0]?.status === 'past_due';
   const pastDueSince =
@@ -190,6 +201,7 @@ export const upsertSubscription = async (
       eventAt,
     ],
   );
+  return 'applied';
 };
 
 export const resolveSubscriptionUserId = resolveUserId;

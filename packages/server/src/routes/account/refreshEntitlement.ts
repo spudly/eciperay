@@ -58,13 +58,20 @@ const toSyntheticEvent = (sub: Record<string, unknown>): PaddleEvent => {
     {starts_at?: string; ends_at?: string} | undefined;
   const scheduledChange = sub['scheduled_change'] as
     {action?: string} | null | undefined;
+  const updatedAt = sub['updated_at'];
   return {
     event_id: `refresh-${String(sub['id'])}`,
     event_type: 'subscription.updated',
-    // "Now" so the ordering guard applies this over any stored webhook
-    // state — the whole point of the refresh is that Paddle's current
-    // answer wins.
-    occurred_at: new Date().toISOString(),
+    // Order by Paddle's own revision timestamp, never local processing
+    // time: a snapshot read just before a concurrent cancellation must
+    // not stamp its stale state as newest and make the ordering guard
+    // reject the real cancellation. Falls back to now only when Paddle
+    // gave no usable timestamp (in the lost-webhook case this endpoint
+    // heals there is no competing stored timestamp anyway).
+    occurred_at:
+      typeof updatedAt === 'string' && !Number.isNaN(Date.parse(updatedAt))
+        ? updatedAt
+        : new Date().toISOString(),
     data: {
       id: sub['id'] as string,
       customer_id: sub['customer_id'] as string,
@@ -115,11 +122,23 @@ export const refreshEntitlement = async (
   });
   for (const candidate of candidates) {
     try {
-      await upsertSubscription(
+      const outcome = await upsertSubscription(
         toSyntheticEvent(candidate),
         req.userId,
         queryFn,
       );
+      if (outcome === 'invalid') {
+        // Unusable candidate (e.g. a paused subscription, whose status
+        // the upsert does not map) — a lower-ranked candidate may still
+        // correct the stored entitlement, so keep going.
+        serverLog('warn', 'Entitlement refresh skipped a subscription', {
+          subscriptionId: String(candidate['id']),
+          reason: 'invalid candidate',
+        });
+        continue;
+      }
+      // 'applied', or 'stale' (stored state is newer than this snapshot —
+      // nothing a lower-ranked candidate could fix). Done either way.
       break;
     } catch (error) {
       // e.g. an unknown price id — skip this subscription and try the

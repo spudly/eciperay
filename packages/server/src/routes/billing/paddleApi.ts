@@ -42,7 +42,15 @@ export const paddleApiGet = async (path: string): Promise<unknown> => {
     });
     return null;
   }
-  return response.json() as Promise<unknown>;
+  try {
+    return (await response.json()) as unknown;
+  } catch (error) {
+    serverLog('error', 'Paddle API response body unreadable', {
+      path,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return null;
+  }
 };
 
 type PaddleCustomer = {id?: unknown; email?: unknown};
