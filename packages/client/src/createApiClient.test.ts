@@ -60,6 +60,32 @@ describe('createApiClient', () => {
     await expect(client.fetch('/missing')).rejects.toThrow('Not found');
   });
 
+  test('prefers the human message over the error code in error bodies', async () => {
+    global.fetch = jest
+      .fn()
+      .mockResolvedValue({
+        ok: false,
+        status: 403,
+        text: async () =>
+          JSON.stringify({
+            error: 'plan_required',
+            requiredPlan: 'power',
+            plan: 'free',
+            message:
+              "This feature requires the Power plan. You're on the Free plan.",
+          }),
+      });
+    const client = createApiClient({
+      baseUrl: 'http://localhost:8080',
+      getToken: async () => null,
+    });
+    await expect(
+      client.fetch('/account/personal-access-tokens'),
+    ).rejects.toThrow(
+      "This feature requires the Power plan. You're on the Free plan.",
+    );
+  });
+
   test('returns undefined for 204 responses', async () => {
     global.fetch = jest.fn().mockResolvedValue({ok: true, status: 204});
     const client = createApiClient({
@@ -128,6 +154,31 @@ describe('createApiClient', () => {
       expect.objectContaining({
         headers: expect.objectContaining({'X-Custom': '3'}),
       }),
+    );
+  });
+});
+
+describe('createApiClient message-only error bodies', () => {
+  const originalFetch = global.fetch;
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  test('ignores a message field unaccompanied by an error code', async () => {
+    global.fetch = jest
+      .fn()
+      .mockResolvedValue({
+        ok: false,
+        status: 500,
+        text: async () => JSON.stringify({message: 'AI unavailable'}),
+      });
+    const client = createApiClient({
+      baseUrl: 'http://localhost:8080',
+      getToken: async () => null,
+    });
+    await expect(client.fetch('/recipes/1/tweak-ai-sessions')).rejects.toThrow(
+      'API error 500: /recipes/1/tweak-ai-sessions',
     );
   });
 });

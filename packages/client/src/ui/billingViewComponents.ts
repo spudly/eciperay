@@ -18,4 +18,11 @@ export type SubscriptionViewProps = {
    * subscription state can land after the first fetch.
    */
   isReconciling?: boolean;
+  /**
+   * "Check again" action: asks the server to reconcile the entitlement with
+   * Paddle directly (self-heal for lost webhook deliveries).
+   */
+  onRefresh?: () => void;
+  /** True while the onRefresh reconcile request is in flight. */
+  isRefreshing?: boolean;
 };

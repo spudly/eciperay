@@ -55,9 +55,14 @@ export const createApiClient = (opts: ApiClientOptions): ApiClient => {
       let message = `API error ${response.status}: ${path}`;
       try {
         const body = await response.text();
-        const json = JSON.parse(body) as {error?: string};
+        const json = JSON.parse(body) as {error?: string; message?: string};
         if (json.error) {
-          message = json.error;
+          // Prefer the human sentence when the server pairs one with the
+          // code (e.g. plan_required carries a message) — `error` alone can
+          // be a raw machine code, which is meaningless in UI. A body with
+          // only `message` is not our error shape and keeps the generic
+          // fallback below.
+          message = json.message ? json.message : json.error;
         }
       } catch {
         // keep default message when the body is not JSON
