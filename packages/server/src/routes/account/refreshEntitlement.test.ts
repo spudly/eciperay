@@ -326,13 +326,48 @@ describe('POST /api/account/entitlement/refresh', () => {
     expect(insert?.[1]).toEqual(expect.arrayContaining(['sub_valid_end']));
   });
 
-  test('survives a non-Error failure while upserting a candidate', async () => {
+  test('fails the refresh when upserting hits a persistence failure', async () => {
+    // A database failure is not an unusable candidate: the refresh
+    // must surface it instead of silently reporting the stale
+    // entitlement (or worse, a lower-ranked candidate) as refreshed.
     customersByEmail = {data: [{id: 'ctm_999'}]};
     subscriptionsForCustomer = {data: [paddleSub()]};
     planPricesError = 'db exploded';
     const res = await postRefresh();
-    expect(res.status).toBe(200);
-    expect(res.body.plan).toBe('free');
+    expect(res.status).toBe(500);
+    expect(res.body).toEqual({error: 'failed to refresh subscription status'});
+  });
+
+  test('a failed write for the active candidate never falls through to a canceled one', async () => {
+    customersByEmail = {data: [{id: 'ctm_999'}]};
+    subscriptionsForCustomer = {
+      data: [paddleSub(), paddleSub({id: 'sub_old', status: 'canceled'})],
+    };
+    let insertAttempts = 0;
+    mockRouteQueries((text: string) => {
+      if (text.includes('from entitlement_overrides')) {
+        return Promise.resolve(makeQueryResult([]));
+      }
+      if (text.includes('select paddle_customer_id')) {
+        return Promise.resolve(
+          makeQueryResult([{paddle_customer_id: 'ctm_999'}]),
+        );
+      }
+      if (text.includes('from plan_prices')) {
+        return Promise.resolve(makeQueryResult([{plan: 'plus'}]));
+      }
+      if (text.includes('insert into subscriptions')) {
+        insertAttempts += 1;
+        throw new Error('db unavailable');
+      }
+      return Promise.resolve(makeQueryResult([]));
+    });
+    const res = await postRefresh();
+    expect(res.status).toBe(500);
+    expect(res.body).toEqual({error: 'failed to refresh subscription status'});
+    // Only the preferred active candidate was attempted; the
+    // historical canceled subscription was never written over it.
+    expect(insertAttempts).toBe(1);
   });
 
   test('returns the current entitlement when the customer list is malformed', async () => {

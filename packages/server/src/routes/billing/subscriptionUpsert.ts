@@ -102,6 +102,20 @@ const resolveUserId = async (
 export type UpsertOutcome = 'applied' | 'invalid' | 'stale';
 
 /**
+ * Thrown when an event references a price id with no plan_prices row. A
+ * distinct class so reconciliation callers can tell this recognized "candidate
+ * is unusable" failure apart from persistence errors: the webhook path lets it
+ * propagate (500, Paddle retries once the seed exists), while entitlement
+ * refresh skips just that candidate.
+ */
+export class UnknownPaddlePriceError extends Error {
+  constructor(priceId: string) {
+    super(`Unknown Paddle price id: ${priceId}`);
+    this.name = 'UnknownPaddlePriceError';
+  }
+}
+
+/**
  * Inserts or updates the subscription row from a subscription.created /
  * .activated / .updated event. Out-of-order events are ignored (see
  * paddleEventOrdering). Unknown price ids throw so Paddle retries once the
@@ -149,7 +163,7 @@ export const upsertSubscription = async (
       eventId: event.event_id,
       priceId,
     });
-    throw new Error(`Unknown Paddle price id: ${priceId}`);
+    throw new UnknownPaddlePriceError(priceId);
   }
   const mappedStatus = mapPaddleStatus(event.data.status);
   if (!mappedStatus) {
@@ -166,53 +180,93 @@ export const upsertSubscription = async (
     past_due_since: string | null;
     paddle_subscription_id: string | null;
     paddle_last_event_at: string | Date | null;
+    superseded_subscription_id: string | null;
+    superseded_last_event_at: string | Date | null;
   }>(
     `select status, past_due_since, paddle_subscription_id,
-            paddle_last_event_at
+            paddle_last_event_at, superseded_subscription_id,
+            superseded_last_event_at
        from subscriptions where user_id = $1`,
     [userId],
   );
   const existingRow = existing.rows[0];
-  // Snapshot refresh only: a different subscription id than the stored
-  // row's means replacement, decided against this write-time row (a
-  // concurrent webhook may have replaced the row since the caller read
-  // it).
-  const isReplacement =
-    options.snapshot === true &&
+  const storedId = existingRow?.paddle_subscription_id ?? null;
+  const eventSubId = event.data.id ?? null;
+  const supersededId = existingRow?.superseded_subscription_id ?? null;
+  // Two identity notions: strictlyDifferent (ids differ, counting a
+  // missing id as different) drives the snapshot replacement decision
+  // and the grace-clock scoping, both of which err toward treating an
+  // unidentifiable candidate as new; positivelyDifferent (both ids
+  // known and different) is required before recording a swap, since
+  // a swap asserts the outgoing subscription's identity.
+  const strictlyDifferent =
+    existingRow !== undefined && storedId !== eventSubId;
+  const positivelyDifferent =
+    storedId !== null && eventSubId !== null && storedId !== eventSubId;
+  const isSupersededSubscription =
     existingRow !== undefined &&
-    (existingRow.paddle_subscription_id ?? null) !== (event.data.id ?? null);
+    eventSubId !== null &&
+    eventSubId === supersededId &&
+    positivelyDifferent;
+  // Ordering uses TWO clocks: paddle_last_event_at belongs to the
+  // current subscription only, and superseded_last_event_at to the
+  // subscription it replaced. Comparing an event against the other
+  // subscription's clock both lets delayed old-subscription events
+  // overwrite a replacement and lets the old subscription's later
+  // events suppress the replacement's genuine earlier ones.
+  //
+  // What the superseded slot holds after this write: when this
+  // event's subscription takes over the row (a swap), it records the
+  // outgoing subscription and its clock; otherwise it is unchanged.
+  let nextSupersededId = supersededId;
+  let nextSupersededAt = normalizeTimestamp(
+    existingRow?.superseded_last_event_at,
+  );
+  const recordSwap = () => {
+    nextSupersededId = storedId;
+    nextSupersededAt = normalizeTimestamp(existingRow?.paddle_last_event_at);
+  };
   let eventAt: string | null;
-  if (isReplacement) {
-    // Never move the stored event clock backwards: if it did, a
-    // delayed webhook for the superseded subscription, timestamped
-    // after this candidate but before the stored row's previous
-    // timestamp, would pass the global ordering guard and overwrite
-    // the replacement. Keep the later of the two timestamps; genuine
-    // newer revisions of the replacement still order after it.
-    const storedLast = normalizeTimestamp(existingRow.paddle_last_event_at);
-    const candidateAt = parseEventTime(event);
-    eventAt =
-      storedLast !== null && (candidateAt === null || storedLast > candidateAt)
-        ? storedLast
-        : candidateAt;
-  } else {
+  if (existingRow === undefined) {
+    eventAt = parseEventTime(event);
+  } else if (isSupersededSubscription) {
+    // An event for the superseded subscription orders against its
+    // own clock; only a genuinely newer revision makes it current
+    // again.
     const decision = shouldApplyEvent(
       event,
-      existingRow?.paddle_last_event_at ?? null,
+      existingRow.superseded_last_event_at,
     );
     if (!decision.apply) {
       return 'stale';
     }
     eventAt = decision.eventAt;
+    recordSwap();
+  } else if (strictlyDifferent && options.snapshot === true) {
+    // Snapshot replacement, decided against this write-time row (a
+    // concurrent webhook may have replaced the row since the caller
+    // read it): applies without the revision guard, stamped with
+    // its OWN timestamp — never the outgoing subscription's clock.
+    eventAt = parseEventTime(event);
+    recordSwap();
+  } else {
+    const decision = shouldApplyEvent(event, existingRow.paddle_last_event_at);
+    if (!decision.apply) {
+      return 'stale';
+    }
+    eventAt = decision.eventAt;
+    if (positivelyDifferent) {
+      recordSwap();
+    }
   }
   const wasPastDue = existing.rows[0]?.status === 'past_due';
   // The stored grace clock belongs to the stored subscription: only
   // preserve it when this update is for that same subscription. A
-  // snapshot REPLACEMENT that is itself past_due must not inherit the
+  // REPLACEMENT that is itself past_due must not inherit the
   // superseded subscription's clock (in either direction); it seeds
   // from its own period start like any recovered past_due snapshot.
   const preservePastDueSince =
-    wasPastDue && !(options.snapshot === true && isReplacement);
+    wasPastDue && !(options.snapshot === true && strictlyDifferent);
   // Snapshot reconciliation must not restart the past-due grace clock:
   // for a recovered past_due subscription, delinquency began with the
   // unpaid period, so seed past_due_since from the period start Paddle
@@ -233,8 +287,9 @@ export const upsertSubscription = async (
     `insert into subscriptions (
        user_id, plan, status, paddle_customer_id, paddle_subscription_id,
        paddle_price_id, current_period_start, current_period_end,
-       cancel_at_period_end, past_due_since, paddle_last_event_at
-     ) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+       cancel_at_period_end, past_due_since, paddle_last_event_at,
+       superseded_subscription_id, superseded_last_event_at
+     ) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
      on conflict (user_id) do update set
        plan = excluded.plan,
        status = excluded.status,
@@ -245,6 +300,8 @@ export const upsertSubscription = async (
        current_period_end = excluded.current_period_end,
        cancel_at_period_end = excluded.cancel_at_period_end,
        past_due_since = excluded.past_due_since,
+       superseded_subscription_id = excluded.superseded_subscription_id,
+       superseded_last_event_at = excluded.superseded_last_event_at,
        paddle_last_event_at = coalesce(
          excluded.paddle_last_event_at,
          subscriptions.paddle_last_event_at
@@ -261,6 +318,8 @@ export const upsertSubscription = async (
       event.data.scheduled_change?.action === 'cancel',
       pastDueSince,
       eventAt,
+      nextSupersededId,
+      nextSupersededAt,
     ],
   );
   return 'applied';

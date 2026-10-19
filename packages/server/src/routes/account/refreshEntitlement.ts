@@ -9,7 +9,10 @@ import {
   findPaddleCustomerIdByEmail,
   listPaddleSubscriptions,
 } from '../billing/paddleApi.js';
-import {upsertSubscription} from '../billing/subscriptionUpsert.js';
+import {
+  UnknownPaddlePriceError,
+  upsertSubscription,
+} from '../billing/subscriptionUpsert.js';
 
 type QueryFn = typeof defaultQuery;
 
@@ -153,12 +156,26 @@ export const refreshEntitlement = async (
       // nothing a lower-ranked candidate could fix). Done either way.
       break;
     } catch (error) {
-      // e.g. an unknown price id — skip this subscription and try the
-      // next one rather than failing the whole refresh.
-      serverLog('warn', 'Entitlement refresh skipped a subscription', {
+      if (error instanceof UnknownPaddlePriceError) {
+        // Recognized unusable candidate: skip it and try the next one
+        // rather than failing the whole refresh.
+        serverLog('warn', 'Entitlement refresh skipped a subscription', {
+          subscriptionId: String(candidate['id']),
+          error: error.message,
+        });
+        continue;
+      }
+      // Anything else is a persistence failure, not an unusable
+      // candidate. Falling through to a lower-ranked candidate here
+      // could write a historical canceled subscription over the
+      // preferred active one and downgrade a paying user to Free —
+      // fail the refresh instead.
+      serverLog('error', 'Entitlement refresh failed to persist candidate', {
         subscriptionId: String(candidate['id']),
         error: error instanceof Error ? error.message : String(error),
       });
+      res.status(500).json({error: 'failed to refresh subscription status'});
+      return;
     }
   }
 

@@ -719,6 +719,89 @@ describe('POST /billing/paddle-webhook event handling', () => {
     expect(update?.[1]).toEqual(['sub_123', 'cancelled', expect.anything()]);
   });
 
+  test('status events order against their own subscription clock after a replacement', async () => {
+    // The row now holds sub_new (snapshot read at 10:00:00); sub_old
+    // was superseded with its own clock at 10:00:02.
+    const row = {
+      paddle_subscription_id: 'sub_new',
+      paddle_last_event_at: '2026-10-19T10:00:00.000Z',
+      superseded_subscription_id: 'sub_old',
+      superseded_last_event_at: '2026-10-19T10:00:02.000Z',
+    };
+    mockRouteQueries((text: string, params?: unknown[]) => {
+      if (text.includes('from paddle_events')) {
+        return Promise.resolve(makeQueryResult([]));
+      }
+      if (text.includes('paddle_subscription_id = $1')) {
+        const id = params?.[0];
+        return Promise.resolve(
+          makeQueryResult(id === 'sub_new' || id === 'sub_old' ? [row] : []),
+        );
+      }
+      return Promise.resolve(makeQueryResult([{}]));
+    });
+
+    // sub_new canceled at :01 — newer than its OWN clock (:00) even
+    // though older than sub_old's :02. With one shared clock this
+    // genuine cancellation was rejected as stale and paid access
+    // stayed active.
+    const cancelNew = await postEvent(
+      makeEvent({
+        event_id: 'evt_cancel_new',
+        event_type: 'subscription.canceled',
+        occurred_at: '2026-10-19T10:00:01.000Z',
+        data: {id: 'sub_new'},
+      }),
+    );
+    expect(cancelNew.status).toBe(200);
+    const statusUpdate = mockQuery.mock.calls.find(args =>
+      args[0].includes('set status = $2'),
+    );
+    expect(statusUpdate?.[1]).toEqual([
+      'sub_new',
+      'cancelled',
+      '2026-10-19T10:00:01.000Z',
+    ]);
+
+    // sub_old status event at :03 — newer than the SUPERSEDED clock:
+    // only that clock advances; the current row's status is untouched.
+    mockQuery.mockClear();
+    const cancelOld = await postEvent(
+      makeEvent({
+        event_id: 'evt_cancel_old',
+        event_type: 'subscription.canceled',
+        occurred_at: '2026-10-19T10:00:03.000Z',
+        data: {id: 'sub_old'},
+      }),
+    );
+    expect(cancelOld.status).toBe(200);
+    expect(
+      mockQuery.mock.calls.some(args => args[0].includes('set status = $2')),
+    ).toBe(false);
+    const clockUpdate = mockQuery.mock.calls.find(args =>
+      args[0].includes('set superseded_last_event_at'),
+    );
+    expect(clockUpdate?.[1]).toEqual(['sub_old', '2026-10-19T10:00:03.000Z']);
+
+    // sub_old status event at :01 — older than its superseded clock:
+    // acknowledged, no writes.
+    mockQuery.mockClear();
+    const staleOld = await postEvent(
+      makeEvent({
+        event_id: 'evt_cancel_old_stale',
+        event_type: 'subscription.canceled',
+        occurred_at: '2026-10-19T10:00:01.000Z',
+        data: {id: 'sub_old'},
+      }),
+    );
+    expect(staleOld.status).toBe(200);
+    expect(
+      mockQuery.mock.calls.some(args =>
+        args[0].includes('update subscriptions'),
+      ),
+    ).toBe(false);
+  });
+
   test('keeps subscription.canceled retryable while no subscription row exists', async () => {
     // Creation failed to map (and will be retried by Paddle); the
     // cancellation must not be recorded as processed in the meantime,
@@ -820,9 +903,16 @@ describe('POST /billing/paddle-webhook event handling', () => {
       if (text.includes('from paddle_events')) {
         return Promise.resolve(makeQueryResult([]));
       }
-      if (text.includes('paddle_last_event_at from subscriptions')) {
+      if (text.includes('paddle_subscription_id = $1')) {
         return Promise.resolve(
-          makeQueryResult([{paddle_last_event_at: '2026-10-13T16:00:00Z'}]),
+          makeQueryResult([
+            {
+              paddle_subscription_id: 'sub_123',
+              paddle_last_event_at: '2026-10-13T16:00:00Z',
+              superseded_subscription_id: null,
+              superseded_last_event_at: null,
+            },
+          ]),
         );
       }
       return Promise.resolve(makeQueryResult([]));
