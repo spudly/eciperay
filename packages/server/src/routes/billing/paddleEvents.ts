@@ -76,7 +76,13 @@ export const handlePaddleEvent = async (
           eventType: event.event_type,
           eventId: event.event_id,
         });
-        return;
+        // Throw (not just log) so the webhook returns 500 and does NOT
+        // record the event as processed: Paddle retries, and a later
+        // delivery can succeed once the user/customer mapping exists.
+        // Returning here would lose the purchase permanently.
+        throw new Error(
+          `Paddle event ${event.event_id} could not be mapped to a user`,
+        );
       }
       await upsertSubscription(event, userId, queryFn);
       return;

@@ -2,6 +2,7 @@ import {query as defaultQuery} from '../../db/query.js';
 import {serverLog} from '../../lib/posthogLogs.js';
 
 import type {PaddleEvent} from './paddleEvents.js';
+import {fetchPaddleCustomerEmail} from './paddleApi.js';
 import {shouldApplyEvent} from './paddleEventOrdering.js';
 
 type QueryFn = typeof defaultQuery;
@@ -27,6 +28,25 @@ const mapPaddleStatus = (
   }
 };
 
+const lookupUserByEmail = async (
+  email: string,
+  event: PaddleEvent,
+  queryFn: QueryFn,
+): Promise<string | null> => {
+  const byEmail = await queryFn<{id: string}>(
+    'select id from users where email = $1',
+    [email],
+  );
+  if (byEmail.rows[0]) {
+    serverLog('warn', 'Paddle webhook matched user by email fallback', {
+      eventType: event.event_type,
+      eventId: event.event_id,
+    });
+    return byEmail.rows[0].id;
+  }
+  return null;
+};
+
 const resolveUserId = async (
   event: PaddleEvent,
   queryFn: QueryFn,
@@ -43,20 +63,25 @@ const resolveUserId = async (
     if (byCustomer.rows[0]) {
       return byCustomer.rows[0].user_id;
     }
+    // Subscription payloads carry no customer object, so the email
+    // fallback below is dead for first-ever events unless we ask Paddle
+    // who this customer is. That lookup is what recovers purchases whose
+    // checkout never stamped custom_data.user_id.
+    const paddleEmail = await fetchPaddleCustomerEmail(event.data.customer_id);
+    if (paddleEmail) {
+      const byPaddleEmail = await lookupUserByEmail(
+        paddleEmail,
+        event,
+        queryFn,
+      );
+      if (byPaddleEmail) {
+        return byPaddleEmail;
+      }
+    }
   }
   const email = event.data.customer?.email;
   if (email) {
-    const byEmail = await queryFn<{id: string}>(
-      'select id from users where email = $1',
-      [email],
-    );
-    if (byEmail.rows[0]) {
-      serverLog('warn', 'Paddle webhook matched user by email fallback', {
-        eventType: event.event_type,
-        eventId: event.event_id,
-      });
-      return byEmail.rows[0].id;
-    }
+    return lookupUserByEmail(email, event, queryFn);
   }
   return null;
 };
