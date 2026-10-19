@@ -513,6 +513,8 @@ describe('AI quota 402s', () => {
         error: 'plan_required',
         requiredPlan: 'plus',
         plan: 'free',
+        message:
+          "This feature requires the Plus plan. You're on the Free plan.",
       });
     }
   });

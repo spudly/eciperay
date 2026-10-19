@@ -108,6 +108,7 @@ describe('billing gating (Phase 1)', () => {
       error: 'plan_required',
       requiredPlan: 'plus',
       plan: 'free',
+      message: "This feature requires the Plus plan. You're on the Free plan.",
     });
   });
 
@@ -185,6 +186,7 @@ describe('billing gating (Phase 1)', () => {
       error: 'plan_required',
       requiredPlan: 'plus',
       plan: 'free',
+      message: "This feature requires the Plus plan. You're on the Free plan.",
     });
   });
 

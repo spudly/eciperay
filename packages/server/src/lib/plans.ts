@@ -1,4 +1,9 @@
-import type {Entitlement, PlanLimits, PlanName, SubscriptionStatus} from '@eciperay/types';
+import type {
+  Entitlement,
+  PlanLimits,
+  PlanName,
+  SubscriptionStatus,
+} from '@eciperay/types';
 
 import {query as defaultQuery} from '../db/query.js';
 
@@ -14,6 +19,25 @@ const PLAN_RANK: Record<PlanName, number> = {free: 0, plus: 1, power: 2};
 
 export const planAtOrAbove = (plan: PlanName, minimum: PlanName): boolean =>
   PLAN_RANK[plan] >= PLAN_RANK[minimum];
+
+const PLAN_LABELS: Record<PlanName, string> = {
+  free: 'Free',
+  plus: 'Plus',
+  power: 'Power',
+};
+
+/**
+ * Standard 403 body for plan-gated features. `error` stays the stable machine
+ * code for clients that branch on it; `message` is the human sentence clients
+ * should show (createApiClient prefers it), so users never see the raw
+ * "plan_required" code.
+ */
+export const planRequiredBody = (requiredPlan: PlanName, plan: PlanName) => ({
+  error: 'plan_required',
+  requiredPlan,
+  plan,
+  message: `This feature requires the ${PLAN_LABELS[requiredPlan]} plan. You're on the ${PLAN_LABELS[plan]} plan.`,
+});
 
 /**
  * Grace period for past_due subscriptions before the lazy downgrade kicks in.
@@ -34,16 +58,27 @@ type SubscriptionRow = {
 /**
  * Resolves a user's entitlement. Downgrades are evaluated lazily on each
  * request — no cron jobs:
- * - cancelled: free once now() passes current_period_end (or immediately if
- *   no period end is recorded)
- * - past_due: free once past_due_since + PAST_DUE_GRACE_DAYS passes
- * - expired: free
- * Data is never deleted or locked by a downgrade.
+ *
+ * - Cancelled: free once now() passes current_period_end (or immediately if no
+ *   period end is recorded)
+ * - Past_due: free once past_due_since + PAST_DUE_GRACE_DAYS passes
+ * - Expired: free Data is never deleted or locked by a downgrade. An
+ *   entitlement_overrides row (migration 018) short-circuits all of this: the
+ *   granted plan is returned as active and unlimited, whatever Paddle state
+ *   exists.
  */
 export const resolveEntitlement = async (
   userId: string,
   queryFn: QueryFn = defaultQuery,
 ): Promise<Entitlement> => {
+  // Secret comp grants (migration 018) win over Paddle state: checked
+  // first, and a grant is never expired or lazily downgraded below.
+  const overrideResult = await queryFn<{plan: string}>(
+    `select plan from entitlement_overrides where user_id = $1`,
+    [userId],
+  );
+  const overridePlan = overrideResult.rows[0]?.plan;
+
   const subResult = await queryFn<SubscriptionRow>(
     `select plan, status, paddle_customer_id, current_period_end,
             cancel_at_period_end, past_due_since
@@ -52,6 +87,26 @@ export const resolveEntitlement = async (
     [userId],
   );
   const row = subResult.rows[0];
+
+  const usageResult = await queryFn<{calls: number}>(
+    `select calls from ai_usage
+      where user_id = $1 and period_start = date_trunc('month', now())::date`,
+    [userId],
+  );
+  const aiUsed = usageResult.rows[0]?.calls ?? 0;
+
+  if (overridePlan === 'plus' || overridePlan === 'power') {
+    return {
+      plan: overridePlan,
+      status: 'active',
+      aiUsed,
+      aiLimit: -1,
+      unlimited: true,
+      periodEndsAt: null,
+      paddleCustomerId: row?.paddle_customer_id ?? null,
+      cancelAtPeriodEnd: false,
+    };
+  }
 
   let plan: PlanName = 'free';
   let status: SubscriptionStatus | null = null;
@@ -85,13 +140,6 @@ export const resolveEntitlement = async (
       plan = row.plan;
     }
   }
-
-  const usageResult = await queryFn<{calls: number}>(
-    `select calls from ai_usage
-      where user_id = $1 and period_start = date_trunc('month', now())::date`,
-    [userId],
-  );
-  const aiUsed = usageResult.rows[0]?.calls ?? 0;
 
   return {
     plan,

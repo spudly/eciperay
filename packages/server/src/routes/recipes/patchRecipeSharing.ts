@@ -5,6 +5,7 @@ import {query as defaultQuery} from '../../db/query.js';
 import type {EntitledRequest} from '../../middleware/loadEntitlement.js';
 import {getParam} from '../../lib/getParam.js';
 import {mapRowToRecipeDetail} from '../../lib/mapRowToRecipeDetail.js';
+import {planRequiredBody} from '../../lib/plans.js';
 import {RecipeSharingPatchSchema, validate} from '../../lib/schemas.js';
 import {generateShareToken, hashShareToken} from '../../lib/shareToken.js';
 
@@ -49,13 +50,7 @@ export const patchRecipeSharing = async (
     (nextVisibility === 'public' || nextVisibility === 'unlisted') &&
     req.entitlement.plan === 'free'
   ) {
-    res
-      .status(403)
-      .json({
-        error: 'plan_required',
-        requiredPlan: 'plus',
-        plan: req.entitlement.plan,
-      });
+    res.status(403).json(planRequiredBody('plus', req.entitlement.plan));
     return;
   }
 
