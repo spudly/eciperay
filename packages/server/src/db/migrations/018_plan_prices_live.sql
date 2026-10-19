@@ -1,0 +1,32 @@
+-- Seed the Paddle price -> plan mapping for the LIVE catalog.
+--
+-- Final data step of the Paddle live cutover (see
+-- docs/paddle-live-cutover.md). This migration intentionally ships as a
+-- NO-OP: the live price IDs do not exist until Stephen creates the live
+-- products/prices in the Paddle dashboard, and placeholder IDs must
+-- never be seeded. A webhook event carrying a price ID with no
+-- plan_prices row throws and Paddle retries (loud, recoverable); a
+-- placeholder row would only mask a forgotten fill-in.
+--
+-- When the live prices exist:
+--   1. Copy their four pri_... IDs from the Paddle dashboard.
+--   2. If this file has NOT been applied yet, uncomment the inserts
+--      below and replace the REPLACE_WITH_LIVE_* placeholders.
+--      If it HAS already been applied as a no-op, do not edit it —
+--      add the same inserts as migration 019 instead.
+--   3. Deploy; the release command applies the migration.
+--
+-- The sandbox rows from migration 017 can stay: price IDs are unique
+-- per Paddle environment, so sandbox IDs never match a live event (and
+-- the dev/preview environments, still on sandbox, use their own copy
+-- of this table the same way).
+--
+-- insert into plan_prices (paddle_price_id, plan) values
+--   ('REPLACE_WITH_LIVE_PLUS_MONTHLY_PRICE_ID', 'plus'),
+--   ('REPLACE_WITH_LIVE_PLUS_ANNUAL_PRICE_ID', 'plus'),
+--   ('REPLACE_WITH_LIVE_POWER_MONTHLY_PRICE_ID', 'power'),
+--   ('REPLACE_WITH_LIVE_POWER_ANNUAL_PRICE_ID', 'power')
+-- on conflict (paddle_price_id) do update set plan = excluded.plan;
+
+-- No-op guard so this file is a valid, applyable migration as shipped.
+select 1;

@@ -48,9 +48,12 @@ ARG VITE_SUPABASE_URL
 ARG VITE_SUPABASE_ANON_KEY
 ARG VITE_POSTHOG_KEY
 ARG VITE_POSTHOG_HOST
-# Paddle client-side tokens are public browser identifiers, not secrets —
-# the sandbox token is the default until the production cutover swaps it
-# (override at deploy time with --build-arg).
+# Paddle client-side tokens are public browser identifiers, not secrets.
+# The sandbox token + environment are the defaults so dev and preview
+# builds always stay on the sandbox catalog; the production deploy
+# (fly-deploy.yml) overrides both at cutover via --build-arg once the
+# live token secret / environment variable are set — see
+# docs/paddle-live-cutover.md.
 ARG VITE_PADDLE_CLIENT_TOKEN=test_7cabfa52da84af66b23e645f693
 ARG VITE_PADDLE_ENVIRONMENT=sandbox
 ARG POSTHOG_API_KEY

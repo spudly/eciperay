@@ -1,6 +1,7 @@
 import type {Request, Response} from 'express';
 
 import {query as defaultQuery} from '../../db/query.js';
+import {getPaddleConfig} from '../../lib/paddleConfig.js';
 import {serverLog} from '../../lib/posthogLogs.js';
 
 import {verifyPaddleSignature} from './paddleSignature.js';
@@ -18,7 +19,7 @@ export const paddleWebhook = async (
   res: Response,
   queryFn: QueryFn,
 ) => {
-  const secret = process.env['PADDLE_WEBHOOK_SECRET'];
+  const secret = getPaddleConfig().webhookSecret;
   if (!secret) {
     serverLog(
       'error',
@@ -48,9 +49,10 @@ export const paddleWebhook = async (
   }
 
   // Fast path for redeliveries.
-  const seen = await queryFn('select 1 from paddle_events where event_id = $1', [
-    event.event_id,
-  ]);
+  const seen = await queryFn(
+    'select 1 from paddle_events where event_id = $1',
+    [event.event_id],
+  );
   if (seen.rows.length > 0) {
     res.status(200).json({received: true, duplicate: true});
     return;

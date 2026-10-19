@@ -27,8 +27,29 @@ jobs:
       - name: Setup Flyctl
         uses: superfly/flyctl-actions/setup-flyctl@master
 
+      # Live cutover guard (docs/paddle-live-cutover.md): production mode
+      # without the live client token would deploy a web build whose
+      # checkout can never open. Until the PADDLE_ENVIRONMENT variable is
+      # set to "production" this is a no-op and deploys stay on sandbox.
+      - name: Validate Paddle web config
+        env:
+          PADDLE_ENVIRONMENT: ${{ vars.PADDLE_ENVIRONMENT }}
+          VITE_PADDLE_CLIENT_TOKEN: ${{ secrets.VITE_PADDLE_CLIENT_TOKEN }}
+        run: |
+          if [ "$PADDLE_ENVIRONMENT" = "production" ] && [ -z "$VITE_PADDLE_CLIENT_TOKEN" ]; then
+            echo "::error::vars.PADDLE_ENVIRONMENT is 'production' but the VITE_PADDLE_CLIENT_TOKEN secret (the live Paddle client token) is not set. Add it before deploying — see docs/paddle-live-cutover.md."
+            exit 1
+          fi
+
       - name: Deploy
         run: |
+          # Only pass the Paddle client token when the secret is set: an
+          # empty --build-arg would override the Dockerfile's sandbox
+          # default token and break checkout before the cutover.
+          PADDLE_ARGS=()
+          if [ -n "$VITE_PADDLE_CLIENT_TOKEN" ]; then
+            PADDLE_ARGS+=(--build-arg "VITE_PADDLE_CLIENT_TOKEN=${VITE_PADDLE_CLIENT_TOKEN}")
+          fi
           flyctl deploy --remote-only \
             --build-arg "VITE_API_BASE_URL=${VITE_API_BASE_URL}" \
             --build-arg "VITE_SUPABASE_URL=${VITE_SUPABASE_URL}" \
@@ -39,6 +60,8 @@ jobs:
             --build-arg "POSTHOG_PROJECT_ID=${POSTHOG_PROJECT_ID}" \
             --build-arg "POSTHOG_API_HOST=${POSTHOG_API_HOST}" \
             --build-arg "GITHUB_SHA=${GITHUB_SHA}" \
+            --build-arg "VITE_PADDLE_ENVIRONMENT=${VITE_PADDLE_ENVIRONMENT:-sandbox}" \
+            "${PADDLE_ARGS[@]}" \
             --build-secret "NODE_AUTH_TOKEN=${NODE_AUTH_TOKEN}"
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
@@ -48,6 +71,8 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           VITE_POSTHOG_KEY: ${{ secrets.VITE_POSTHOG_KEY }}
           VITE_POSTHOG_HOST: ${{ secrets.VITE_POSTHOG_HOST }}
+          VITE_PADDLE_CLIENT_TOKEN: ${{ secrets.VITE_PADDLE_CLIENT_TOKEN }}
+          VITE_PADDLE_ENVIRONMENT: ${{ vars.PADDLE_ENVIRONMENT }}
           POSTHOG_API_KEY: ${{ secrets.POSTHOG_API_KEY }}
           POSTHOG_PROJECT_ID: ${{ secrets.POSTHOG_PROJECT_ID }}
           POSTHOG_API_HOST: https://us.posthog.com

@@ -30,6 +30,10 @@ describe('serverEnvironmentAttributes', () => {
     delete process.env['OPENAI_IMAGE_MODEL'];
     delete process.env['POSTHOG_KEY'];
     delete process.env['POSTHOG_HOST'];
+    delete process.env['PADDLE_API_KEY'];
+    delete process.env['PADDLE_WEBHOOK_SECRET'];
+    delete process.env['PADDLE_ENVIRONMENT'];
+    delete process.env['PADDLE_API_BASE'];
 
     expect(serverEnvironmentAttributes()).toEqual({
       DATABASE_URL: SET_SECRET_VALUE,
@@ -38,6 +42,10 @@ describe('serverEnvironmentAttributes', () => {
       ANTHROPIC_API_KEY: SET_SECRET_VALUE,
       OPENAI_API_KEY: UNSET_CONFIG_VALUE,
       POSTHOG_KEY: UNSET_CONFIG_VALUE,
+      PADDLE_API_KEY: UNSET_CONFIG_VALUE,
+      PADDLE_WEBHOOK_SECRET: UNSET_CONFIG_VALUE,
+      PADDLE_ENVIRONMENT: UNSET_CONFIG_VALUE,
+      PADDLE_API_BASE: UNSET_CONFIG_VALUE,
       OPENAI_IMAGE_MODEL: UNSET_CONFIG_VALUE,
       POSTHOG_HOST: UNSET_CONFIG_VALUE,
       CORS_ORIGINS: 'https://www.eciperay.com',
