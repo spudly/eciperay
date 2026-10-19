@@ -1,5 +1,6 @@
 import {
   fetchPaddleCustomerEmail,
+  fetchPaddleSubscriptionStatus,
   findPaddleCustomerIdByEmail,
   listPaddleSubscriptions,
   paddleApiGet,
@@ -154,6 +155,77 @@ test('listPaddleSubscriptions returns subscriptions and null on failure', async 
   await expect(listPaddleSubscriptions('ctm_9')).resolves.toBeNull();
   fetchImpl = () => okJson({data: {}});
   await expect(listPaddleSubscriptions('ctm_9')).resolves.toBeNull();
+});
+
+test('listPaddleSubscriptions collects every page before returning', async () => {
+  const pageOne = Array.from({length: 100}, (_, i) => ({
+    id: `sub_${i + 1}`,
+    status: 'canceled',
+  }));
+  const active = {id: 'sub_101', status: 'active'};
+  fetchImpl = url => {
+    if (url.includes('after=sub_100')) {
+      return okJson({data: [active]});
+    }
+    return okJson({data: pageOne});
+  };
+  const result = await listPaddleSubscriptions('ctm_9');
+  expect(result).toHaveLength(101);
+  expect(result?.[100]).toEqual(active);
+  expect(fetchCalls.map(c => c.url)).toEqual([
+    expect.stringContaining('/subscriptions?customer_id=ctm_9&per_page=100'),
+    expect.stringContaining('after=sub_100'),
+  ]);
+});
+
+test('listPaddleSubscriptions fails the whole list when a later page fails', async () => {
+  const pageOne = Array.from({length: 100}, (_, i) => ({
+    id: `sub_${i + 1}`,
+    status: 'canceled',
+  }));
+  fetchImpl = url => {
+    if (url.includes('after=')) {
+      return Promise.resolve({ok: false, status: 503, text: async () => 'err'});
+    }
+    return okJson({data: pageOne});
+  };
+  await expect(listPaddleSubscriptions('ctm_9')).resolves.toBeNull();
+});
+
+test('listPaddleSubscriptions stops when a full page cannot advance the cursor', async () => {
+  // Last item of a full page has no id: no cursor to continue with.
+  const noIdPage = [
+    ...Array.from({length: 99}, (_, i) => ({id: `sub_${i + 1}`})),
+    {status: 'canceled'},
+  ];
+  fetchImpl = () => okJson({data: noIdPage});
+  await expect(listPaddleSubscriptions('ctm_9')).resolves.toHaveLength(100);
+  expect(fetchCalls).toHaveLength(1);
+
+  // The cursor echoes back unchanged: stop instead of looping.
+  const page = Array.from({length: 100}, (_, i) => ({
+    id: `sub_${i + 1}`,
+    status: 'canceled',
+  }));
+  fetchCalls = [];
+  fetchImpl = () => okJson({data: page});
+  await expect(listPaddleSubscriptions('ctm_9')).resolves.toHaveLength(200);
+  expect(fetchCalls).toHaveLength(2);
+});
+
+test('fetchPaddleSubscriptionStatus returns the status or null', async () => {
+  fetchImpl = url => {
+    expect(url).toContain('/subscriptions/sub_7');
+    return okJson({data: {id: 'sub_7', status: 'canceled'}});
+  };
+  await expect(fetchPaddleSubscriptionStatus('sub_7')).resolves.toBe(
+    'canceled',
+  );
+  fetchImpl = () =>
+    Promise.resolve({ok: false, status: 404, text: async () => 'err'});
+  await expect(fetchPaddleSubscriptionStatus('sub_7')).resolves.toBeNull();
+  fetchImpl = () => okJson({data: {}});
+  await expect(fetchPaddleSubscriptionStatus('sub_7')).resolves.toBeNull();
 });
 
 test('listPaddleSubscriptions passes objects through, dropping non-objects', async () => {

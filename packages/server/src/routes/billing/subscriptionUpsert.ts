@@ -2,7 +2,10 @@ import {query as defaultQuery} from '../../db/query.js';
 import {serverLog} from '../../lib/posthogLogs.js';
 
 import type {PaddleEvent} from './paddleEvents.js';
-import {fetchPaddleCustomerEmail} from './paddleApi.js';
+import {
+  fetchPaddleCustomerEmail,
+  fetchPaddleSubscriptionStatus,
+} from './paddleApi.js';
 import {
   normalizeTimestamp,
   parseEventTime,
@@ -267,12 +270,18 @@ export const upsertSubscription = async (
       ) {
         return 'stale';
       }
-      await queryFn(
+      // Conditional on the superseded slot still holding THIS
+      // subscription: a concurrent writer may have swapped the slot
+      // since the SELECT above, and stamping this subscription's
+      // clock into a different subscription's slot would corrupt
+      // its ordering. Zero rows updated means the slot changed —
+      // re-evaluation belongs to the newer state, not this event.
+      const updated = await queryFn(
         `update subscriptions set superseded_last_event_at = $2
-          where user_id = $1`,
-        [userId, candidateAt],
+          where user_id = $1 and superseded_subscription_id = $3`,
+        [userId, candidateAt, eventSubId],
       );
-      return 'applied';
+      return (updated.rowCount ?? 0) > 0 ? 'applied' : 'stale';
     } else {
       // A genuinely newer live revision of the superseded
       // subscription makes it current again.
@@ -317,6 +326,30 @@ export const upsertSubscription = async (
     const decision = shouldApplyEvent(event, existingRow.paddle_last_event_at);
     if (!decision.apply) {
       return 'stale';
+    }
+    if (
+      options.snapshot !== true &&
+      positivelyDifferent &&
+      mappedStatus === 'active' &&
+      eventSubId !== null
+    ) {
+      // An untracked subscription claiming the row with a live
+      // status: verify it against Paddle's current state before
+      // promoting. A delayed event can describe a subscription
+      // that has since been canceled — its ordering history no
+      // longer fits the single superseded slot, so the stored
+      // clocks cannot arbitrate it. Unverifiable or no-longer-live
+      // claims are dropped; snapshot refresh reconciles the truth.
+      const liveStatus = await fetchPaddleSubscriptionStatus(eventSubId);
+      if (liveStatus !== 'active' && liveStatus !== 'trialing') {
+        serverLog('warn', 'Paddle takeover event failed live verification', {
+          eventType: event.event_type,
+          eventId: event.event_id,
+          subscriptionId: eventSubId,
+          liveStatus: liveStatus ?? 'unknown',
+        });
+        return 'stale';
+      }
     }
     eventAt = decision.eventAt;
     if (positivelyDifferent) {

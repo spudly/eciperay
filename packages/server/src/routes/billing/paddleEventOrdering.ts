@@ -3,14 +3,21 @@ import {serverLog} from '../../lib/posthogLogs.js';
 import type {PaddleEvent} from './paddleEvents.js';
 
 /**
- * Normalizes the event's occurred_at for ordering. Null when absent or
- * unparseable — such events are applied without ordering checks (fail open).
+ * The subscription's revision clock for ordering: the entity's own updated_at
+ * when the payload carries it, else the event's occurred_at. One consistent
+ * clock across writers is essential — webhook writes and refresh snapshots
+ * describe the same revision, and refresh supplies updated_at; if webhook
+ * writes stamped occurred_at instead (which lags updated_at by delivery time),
+ * the same unchanged revision would compare as two different times and later
+ * ordering decisions would misfire. Null when neither is present or parseable —
+ * such events are applied without ordering checks (fail open).
  */
 export const parseEventTime = (event: PaddleEvent): string | null => {
-  if (!event.occurred_at) {
+  const raw = event.data.updated_at ?? event.occurred_at;
+  if (!raw) {
     return null;
   }
-  const ms = Date.parse(event.occurred_at);
+  const ms = Date.parse(raw);
   return Number.isNaN(ms) ? null : new Date(ms).toISOString();
 };
 
