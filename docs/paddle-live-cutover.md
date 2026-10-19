@@ -85,8 +85,9 @@ should only happen once all three are in place — the safety rails will
 
 ## Rollback
 
-Flip every switch back — a partial rollback leaves mismatched pairs that the
-safety rails (deliberately) reject:
+**Before any real live subscription exists** (only test purchases so far), flip
+every switch back — a partial rollback leaves mismatched pairs that the safety
+rails (deliberately) reject:
 
 - Fly secrets: `PADDLE_ENVIRONMENT` back to `sandbox`, restore the sandbox
   `PADDLE_API_KEY` / `PADDLE_WEBHOOK_SECRET`, and **unset `PADDLE_API_BASE`** if
@@ -96,6 +97,19 @@ safety rails (deliberately) reject:
   `VITE_PADDLE_CLIENT_TOKEN` secret** (or reset its value to the sandbox
   client-side token) — otherwise the deploy keeps injecting the live token into
   a sandbox-mode web build and checkout breaks.
+- Clear the live test rows the same way step 5 cleared the sandbox ones
+  (`delete from subscriptions;`): entitlement reads have no environment filter,
+  so a live row would keep granting its plan under sandbox and its portal link
+  would send a live customer ID to the sandbox API and fail.
 - Redeploy. The sandbox catalog, keys, and `plan_prices` rows are untouched by
-  the cutover, and live subscription rows created since the flip simply go
-  dormant (their IDs are meaningless to the sandbox API, the mirror of step 5).
+  the cutover.
+
+**Once real live customers exist, do not roll back the Paddle environment.**
+Entitlements are read from the `subscriptions` table regardless of environment,
+and live subscriptions keep renewing inside Paddle: restoring the sandbox
+webhook secret would reject their lifecycle events, and portal links would break
+against the sandbox API, while the customers keep paying. To back out a bad
+release, redeploy the previous application release with the **live** Paddle
+configuration retained. Returning to sandbox after live customers exist is a
+migration, not a rollback: cancel or migrate the live subscriptions in Paddle
+first, clear the live rows, then follow the flip-back above.
