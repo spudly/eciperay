@@ -393,6 +393,67 @@ describe('upsertSubscription', () => {
     ).toBeLessThan(60_000);
   });
 
+  test('snapshot replacement between past_due subscriptions uses its own grace clock', async () => {
+    const mockWithPastDueRow = (subscriptionId: string, lastEventAt: string) =>
+      ((sql: string) => {
+        if (sql.includes('from plan_prices')) {
+          return Promise.resolve(makeQueryResult([{plan: 'plus'}]));
+        }
+        if (sql.includes('from subscriptions')) {
+          return Promise.resolve(
+            makeQueryResult([
+              {
+                status: 'past_due',
+                past_due_since: '2026-10-01T00:00:00.000Z',
+                paddle_subscription_id: subscriptionId,
+                paddle_last_event_at: lastEventAt,
+              },
+            ]),
+          );
+        }
+        return Promise.resolve(makeQueryResult([]));
+      }) as typeof mockQuery;
+
+    // Replacement (stored sub_old past_due since Oct 1; candidate
+    // sub_new past_due with period start Oct 13): the candidate must
+    // NOT inherit Oct 1 — that would end its grace immediately.
+    mockQuery.mockImplementation(
+      mockWithPastDueRow('sub_old', '2026-10-18T00:00:00.000Z'),
+    );
+    const replacement = makeEvent({
+      occurred_at: '2026-10-17T00:00:00.000Z',
+      data: {...makeEvent().data, id: 'sub_new', status: 'past_due'},
+    });
+    await expect(
+      upsertSubscription(replacement, 'user-uuid-1', mockQuery, {
+        snapshot: true,
+      }),
+    ).resolves.toBe('applied');
+    expect(
+      mockQuery.mock.calls.find(args =>
+        args[0].includes('insert into subscriptions'),
+      )?.[1]?.[9],
+    ).toBe('2026-10-13T00:00:00.000Z');
+
+    // Same subscription in snapshot mode: the stored clock IS
+    // preserved.
+    mockQuery.mockClear();
+    mockQuery.mockImplementation(
+      mockWithPastDueRow('sub_123', '2026-10-10T00:00:00.000Z'),
+    );
+    const sameSub = makeEvent({
+      data: {...makeEvent().data, status: 'past_due'},
+    });
+    await expect(
+      upsertSubscription(sameSub, 'user-uuid-1', mockQuery, {snapshot: true}),
+    ).resolves.toBe('applied');
+    expect(
+      mockQuery.mock.calls.find(args =>
+        args[0].includes('insert into subscriptions'),
+      )?.[1]?.[9],
+    ).toBe('2026-10-01T00:00:00.000Z');
+  });
+
   test('upserts and persists the event timestamp', async () => {
     mockQuery.mockImplementation(((sql: string) => {
       if (sql.includes('from plan_prices')) {

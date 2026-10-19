@@ -206,6 +206,13 @@ export const upsertSubscription = async (
     eventAt = decision.eventAt;
   }
   const wasPastDue = existing.rows[0]?.status === 'past_due';
+  // The stored grace clock belongs to the stored subscription: only
+  // preserve it when this update is for that same subscription. A
+  // snapshot REPLACEMENT that is itself past_due must not inherit the
+  // superseded subscription's clock (in either direction); it seeds
+  // from its own period start like any recovered past_due snapshot.
+  const preservePastDueSince =
+    wasPastDue && !(options.snapshot === true && isReplacement);
   // Snapshot reconciliation must not restart the past-due grace clock:
   // for a recovered past_due subscription, delinquency began with the
   // unpaid period, so seed past_due_since from the period start Paddle
@@ -214,7 +221,7 @@ export const upsertSubscription = async (
   // signal for a live transition).
   const pastDueSince =
     mappedStatus === 'past_due'
-      ? wasPastDue
+      ? preservePastDueSince
         ? (existing.rows[0]?.past_due_since ?? null)
         : options.snapshot === true
           ? (event.data.current_billing_period?.starts_at ??
