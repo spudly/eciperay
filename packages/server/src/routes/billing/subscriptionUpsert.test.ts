@@ -141,6 +141,124 @@ describe('upsertSubscription', () => {
     ).resolves.toBe('stale');
   });
 
+  test('applies against a native-Date stored timestamp (pg runtime shape)', async () => {
+    mockQuery.mockImplementation(((sql: string) => {
+      if (sql.includes('from plan_prices')) {
+        return Promise.resolve(makeQueryResult([{plan: 'plus'}]));
+      }
+      if (sql.includes('from subscriptions')) {
+        return Promise.resolve(
+          makeQueryResult([
+            {
+              status: 'active',
+              past_due_since: null,
+              paddle_subscription_id: 'sub_123',
+              // pg returns timestamptz as a Date, not a string.
+              paddle_last_event_at: new Date('2026-10-13T15:00:00.000Z'),
+            },
+          ]),
+        );
+      }
+      return Promise.resolve(makeQueryResult([]));
+    }) as typeof mockQuery);
+
+    await expect(
+      upsertSubscription(makeEvent(), 'user-uuid-1', mockQuery),
+    ).resolves.toBe('applied');
+    expect(
+      mockQuery.mock.calls.some(args =>
+        args[0].includes('insert into subscriptions'),
+      ),
+    ).toBe(true);
+  });
+
+  test('snapshot mode: replacement applies, same-subscription revision still orders', async () => {
+    const mockWithRow = (row: Record<string, unknown>) =>
+      ((sql: string) => {
+        if (sql.includes('from plan_prices')) {
+          return Promise.resolve(makeQueryResult([{plan: 'plus'}]));
+        }
+        if (sql.includes('from subscriptions')) {
+          return Promise.resolve(makeQueryResult([row]));
+        }
+        return Promise.resolve(makeQueryResult([]));
+      }) as typeof mockQuery;
+
+    // Stored row is a DIFFERENT subscription with a far-future event
+    // clock: a snapshot candidate is its replacement, not a stale
+    // revision, so it applies.
+    mockQuery.mockImplementation(
+      mockWithRow({
+        status: 'cancelled',
+        past_due_since: null,
+        paddle_subscription_id: 'sub_old',
+        paddle_last_event_at: '2030-01-01T00:00:00.000Z',
+      }),
+    );
+    await expect(
+      upsertSubscription(makeEvent(), 'user-uuid-1', mockQuery, {
+        snapshot: true,
+      }),
+    ).resolves.toBe('applied');
+
+    // Without snapshot mode the same inputs stay stale (webhook path
+    // keeps the global guard).
+    await expect(
+      upsertSubscription(makeEvent(), 'user-uuid-1', mockQuery),
+    ).resolves.toBe('stale');
+
+    // Snapshot of the SAME subscription with an older updated_at is a
+    // stale revision and still loses.
+    mockQuery.mockImplementation(
+      mockWithRow({
+        status: 'cancelled',
+        past_due_since: null,
+        paddle_subscription_id: 'sub_123',
+        paddle_last_event_at: '2030-01-01T00:00:00.000Z',
+      }),
+    );
+    await expect(
+      upsertSubscription(makeEvent(), 'user-uuid-1', mockQuery, {
+        snapshot: true,
+      }),
+    ).resolves.toBe('stale');
+
+    // A stored row with no subscription id (legacy) cannot be the
+    // candidate's subscription either: replacement.
+    mockQuery.mockImplementation(
+      mockWithRow({
+        status: 'active',
+        past_due_since: null,
+        paddle_subscription_id: null,
+        paddle_last_event_at: '2030-01-01T00:00:00.000Z',
+      }),
+    );
+    await expect(
+      upsertSubscription(makeEvent(), 'user-uuid-1', mockQuery, {
+        snapshot: true,
+      }),
+    ).resolves.toBe('applied');
+
+    // Snapshot candidate without a subscription id cannot be the stored
+    // subscription, so it also counts as a replacement.
+    mockQuery.mockImplementation(
+      mockWithRow({
+        status: 'cancelled',
+        past_due_since: null,
+        paddle_subscription_id: 'sub_old',
+        paddle_last_event_at: '2030-01-01T00:00:00.000Z',
+      }),
+    );
+    await expect(
+      upsertSubscription(
+        makeEvent({data: {...makeEvent().data, id: undefined}}),
+        'user-uuid-1',
+        mockQuery,
+        {snapshot: true},
+      ),
+    ).resolves.toBe('applied');
+  });
+
   test('upserts and persists the event timestamp', async () => {
     mockQuery.mockImplementation(((sql: string) => {
       if (sql.includes('from plan_prices')) {

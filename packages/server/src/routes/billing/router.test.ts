@@ -515,6 +515,9 @@ describe('POST /billing/paddle-webhook event handling', () => {
           makeQueryResult(opts.byEmail ? [opts.byEmail] : []),
         );
       }
+      if (text.includes('paddle_subscription_id = $1')) {
+        return Promise.resolve(makeQueryResult([{paddle_last_event_at: null}]));
+      }
       if (text.includes('from subscriptions where user_id')) {
         return Promise.resolve(
           makeQueryResult(opts.existingSub ? [opts.existingSub] : []),
@@ -714,6 +717,102 @@ describe('POST /billing/paddle-webhook event handling', () => {
     );
     expect(update).toBeDefined();
     expect(update?.[1]).toEqual(['sub_123', 'cancelled', expect.anything()]);
+  });
+
+  test('keeps subscription.canceled retryable while no subscription row exists', async () => {
+    // Creation failed to map (and will be retried by Paddle); the
+    // cancellation must not be recorded as processed in the meantime,
+    // or the creation retry would resurrect the canceled subscription.
+    mockRouteQueries((text: string) => {
+      if (text.includes('from paddle_events')) {
+        return Promise.resolve(makeQueryResult([]));
+      }
+      return Promise.resolve(makeQueryResult([]));
+    });
+    const res = await postEvent(
+      makeEvent({
+        event_id: 'evt_cancel_before_create',
+        event_type: 'subscription.canceled',
+      }),
+    );
+    expect(res.status).toBe(500);
+    expect(res.body).toEqual({error: 'handler failed'});
+    expect(
+      mockQuery.mock.calls.some(args =>
+        args[0].includes('insert into paddle_events'),
+      ),
+    ).toBe(false);
+  });
+
+  test('creation-failure, cancellation, creation-retry keeps the cancellation', async () => {
+    let rowExists = false;
+    const statusUpdates: string[] = [];
+    mockRouteQueries((text: string) => {
+      if (text.includes('from paddle_events')) {
+        return Promise.resolve(makeQueryResult([]));
+      }
+      if (text.includes('from plan_prices')) {
+        return Promise.resolve(makeQueryResult([{plan: 'plus'}]));
+      }
+      if (text.includes('set status = $2')) {
+        statusUpdates.push('status');
+        return Promise.resolve(makeQueryResult([{}]));
+      }
+      if (text.includes('paddle_subscription_id = $1')) {
+        return Promise.resolve(
+          makeQueryResult(rowExists ? [{paddle_last_event_at: null}] : []),
+        );
+      }
+      if (text.includes('insert into subscriptions')) {
+        rowExists = true;
+        return Promise.resolve(makeQueryResult([{}]));
+      }
+      if (
+        text.includes('insert into paddle_events') ||
+        text.includes('update subscriptions')
+      ) {
+        return Promise.resolve(makeQueryResult([{}]));
+      }
+      return Promise.resolve(makeQueryResult([]));
+    });
+
+    // 1. Creation cannot be mapped yet -> 500, Paddle will retry.
+    const unmappable = makeEvent({
+      event_id: 'evt_seq_create',
+      data: {
+        id: 'sub_123',
+        customer_id: 'ctm_unknown',
+        status: 'active',
+        items: [{price: {id: 'pri_plus_monthly'}}],
+      },
+    });
+    const first = await postEvent(unmappable);
+    expect(first.status).toBe(500);
+
+    // 2. Cancellation arrives before the creation retry -> also 500,
+    //    not recorded, so it stays retryable.
+    const cancel = makeEvent({
+      event_id: 'evt_seq_cancel',
+      event_type: 'subscription.canceled',
+      occurred_at: '2026-10-13T17:00:00Z',
+    });
+    const second = await postEvent(cancel);
+    expect(second.status).toBe(500);
+    expect(statusUpdates).toHaveLength(0);
+
+    // 3. Creation retry, now mappable via custom_data -> row created.
+    const mappable = makeEvent({
+      event_id: 'evt_seq_create',
+      data: {...makeEvent().data, custom_data: {user_id: 'user-uuid-1'}},
+    });
+    const third = await postEvent(mappable);
+    expect(third.status).toBe(200);
+    expect(rowExists).toBe(true);
+
+    // 4. Cancellation retry now finds the row and applies.
+    const fourth = await postEvent(cancel);
+    expect(fourth.status).toBe(200);
+    expect(statusUpdates).toHaveLength(1);
   });
 
   test('ignores a stale subscription.canceled event', async () => {

@@ -37,14 +37,25 @@ const applyOrderedStatusUpdate = async (
   status: 'cancelled' | 'past_due',
   queryFn: QueryFn,
 ): Promise<void> => {
-  const current = await queryFn<{paddle_last_event_at: string | null}>(
+  const current = await queryFn<{paddle_last_event_at: string | Date | null}>(
     `select paddle_last_event_at from subscriptions
       where paddle_subscription_id = $1`,
     [subscriptionId],
   );
+  if (!current.rows[0]) {
+    // No row yet: the creation event has not been applied (it may have
+    // failed mapping and be awaiting Paddle's retry). Succeeding here
+    // would record this status event as processed and lose it — when
+    // the creation retry lands it would insert the pre-cancellation
+    // state with nothing left to cancel it. Throw so this event stays
+    // retryable too.
+    throw new Error(
+      `Paddle status event ${event.event_id} has no subscription row yet`,
+    );
+  }
   const {apply, eventAt} = shouldApplyEvent(
     event,
-    current.rows[0]?.paddle_last_event_at ?? null,
+    current.rows[0].paddle_last_event_at,
   );
   if (!apply) {
     return;

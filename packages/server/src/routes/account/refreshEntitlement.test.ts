@@ -43,6 +43,7 @@ const paddleSub = (overrides: Record<string, unknown> = {}) => ({
 describe('POST /api/account/entitlement/refresh', () => {
   const realFetch = global.fetch;
   let storedSub: StoredSub | null;
+  let concurrentRow: StoredSub | null;
   let planForPrice: string | null;
   let customersByEmail: unknown;
   let subscriptionsForCustomer: unknown;
@@ -60,6 +61,7 @@ describe('POST /api/account/entitlement/refresh', () => {
     nockSupabaseGetUser('user-uuid-1');
     process.env['PADDLE_API_KEY'] = 'test-paddle-key';
     storedSub = null;
+    concurrentRow = null;
     planForPrice = 'plus';
     customersByEmail = {data: []};
     subscriptionsForCustomer = {data: []};
@@ -107,7 +109,8 @@ describe('POST /api/account/entitlement/refresh', () => {
         return Promise.resolve(makeQueryResult([{}]));
       }
       if (text.includes('from subscriptions')) {
-        return Promise.resolve(makeQueryResult(storedSub ? [storedSub] : []));
+        const row = concurrentRow ?? storedSub;
+        return Promise.resolve(makeQueryResult(row ? [row] : []));
       }
       if (text.includes('from ai_usage')) {
         return Promise.resolve(makeQueryResult([{calls: 1}]));
@@ -452,6 +455,50 @@ describe('POST /api/account/entitlement/refresh', () => {
       args[0].includes('insert into subscriptions'),
     );
     expect(insert?.[1]?.[4]).toBe('sub_new');
+  });
+
+  test('a cancellation landing during a replacement refresh is not undone', async () => {
+    // Refresh starts against sub_old, but before its upsert runs, a
+    // webhook installs sub_new and then cancels it. The replacement
+    // decision is made against the write-time row, so the (older)
+    // active snapshot of sub_new is stale relative to its own
+    // cancellation and must not resurrect it.
+    storedSub = {
+      plan: 'plus',
+      status: 'cancelled',
+      paddle_customer_id: 'ctm_999',
+      paddle_subscription_id: 'sub_old',
+      paddle_last_event_at: '2026-10-18T00:00:00.000Z',
+      current_period_end: '2020-01-01T00:00:00.000Z',
+      cancel_at_period_end: true,
+      past_due_since: null,
+    };
+    concurrentRow = {
+      plan: 'plus',
+      status: 'cancelled',
+      paddle_customer_id: 'ctm_999',
+      paddle_subscription_id: 'sub_new',
+      paddle_last_event_at: new Date().toISOString(),
+      current_period_end: futureDate(),
+      cancel_at_period_end: true,
+      past_due_since: null,
+    };
+    subscriptionsForCustomer = {
+      data: [
+        paddleSub({
+          id: 'sub_new',
+          updated_at: new Date(Date.now() - 3600_000).toISOString(),
+        }),
+      ],
+    };
+    const res = await postRefresh();
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe('cancelled');
+    expect(
+      mockQuery.mock.calls.some(args =>
+        args[0].includes('insert into subscriptions'),
+      ),
+    ).toBe(false);
   });
 
   test('a stale snapshot cannot overwrite newer stored state', async () => {
