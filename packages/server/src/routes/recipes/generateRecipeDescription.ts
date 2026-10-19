@@ -21,7 +21,9 @@ export const generateRecipeDescriptionRoute = async (
   if (!body.ok) {
     return;
   }
-  const quota = await consumeAiCall(req.userId, req.entitlement.plan, queryFn);
+  const quota = await consumeAiCall(req.userId, req.entitlement.plan, queryFn, {
+    unlimited: req.entitlement.unlimited,
+  });
   if (!quota.ok) {
     res
       .status(402)

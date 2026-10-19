@@ -16,7 +16,9 @@ const shareToken = 'clone-share-token';
 const shareTokenHash = hashShareToken(shareToken);
 
 const mockFreeEntitlement = () => {
+  // resolveEntitlement: entitlement_overrides, subscriptions, ai_usage.
   mockQuery
+    .mockResolvedValueOnce(makeQueryResult([]))
     .mockResolvedValueOnce(makeQueryResult([]))
     .mockResolvedValueOnce(makeQueryResult([]));
 };

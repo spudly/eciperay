@@ -8,8 +8,7 @@ import {PLAN_LIMITS} from './plans.js';
 type QueryFn = typeof defaultQuery;
 
 export type QuotaCheck =
-  | {ok: true; periodStart?: string}
-  | {ok: false; used: number; limit: number};
+  {ok: true; periodStart?: string} | {ok: false; used: number; limit: number};
 
 /**
  * Atomically consumes one AI call from the user's monthly quota. Single
@@ -22,11 +21,34 @@ export type QuotaCheck =
  * the AI call throws — failed provider calls must not burn quota (support
  * tickets otherwise).
  */
+export type ConsumeAiCallOptions = {
+  /**
+   * Entitlement-override grants (migration 018) are never blocked. Usage is
+   * still recorded (and refundable) so aiUsed stays truthful.
+   */
+  unlimited?: boolean;
+};
+
 export const consumeAiCall = async (
   userId: string,
   plan: PlanName,
   queryFn: QueryFn = defaultQuery,
+  options: ConsumeAiCallOptions = {},
 ): Promise<QuotaCheck> => {
+  if (options.unlimited) {
+    const recorded = await queryFn<{calls: number; period_start: string}>(
+      `insert into ai_usage (user_id, period_start, calls)
+       values ($1, date_trunc('month', now())::date, 1)
+       on conflict (user_id, period_start) do update
+         set calls = ai_usage.calls + 1
+       returning calls, period_start`,
+      [userId],
+    );
+    // The INSERT...RETURNING always yields exactly one row.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- INSERT guarantees a row
+    const row = recorded.rows[0]!;
+    return {ok: true, periodStart: row.period_start};
+  }
   const limit = PLAN_LIMITS[plan].aiCallsPerMonth;
   const result = await queryFn<{
     calls: number;
@@ -129,8 +151,7 @@ export const quotaExhaustedBody = (
 ) => ({error, used, limit});
 
 export type CappedResult<T> =
-  | {ok: true; value: T}
-  | {ok: false; used: number; limit: number};
+  {ok: true; value: T} | {ok: false; used: number; limit: number};
 
 /**
  * Runs a recipe-creation callback under the Free recipe cap. The cap check and

@@ -38,6 +38,21 @@ describe('aiMetering quota accounting', () => {
     expect(quota).toEqual({ok: false, used: 100, limit: 100});
   });
 
+  test('consumeAiCall with unlimited always allows and still records usage', async () => {
+    mockQuery.mockResolvedValueOnce(
+      makeQueryResult([{calls: 9999, period_start: '2026-10-01'}]),
+    );
+    const quota = await consumeAiCall('user-1', 'free', mockQuery, {
+      unlimited: true,
+    });
+    expect(quota).toEqual({ok: true, periodStart: '2026-10-01'});
+    // Records with a plain increment — no limit condition in the SQL.
+    expect(mockQuery.mock.calls[0]?.[0]).toContain(
+      'set calls = ai_usage.calls + 1',
+    );
+    expect(mockQuery.mock.calls[0]?.[1]).toEqual(['user-1']);
+  });
+
   test('refundAiCall targets the consumed period, not the current month', async () => {
     mockQuery.mockResolvedValue(makeQueryResult([]));
     await refundAiCall('user-1', mockQuery, '2026-09-01');

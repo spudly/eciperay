@@ -36,6 +36,7 @@ describe('GET /api/account/entitlement', () => {
   test('exposes a scheduled cancellation while the plan stays active', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery
+      .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(
         makeQueryResult([
           {...makeSubscriptionRow('plus'), cancel_at_period_end: true},

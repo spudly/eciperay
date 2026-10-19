@@ -154,7 +154,9 @@ export const tweakVersionWithAi = async (
     mapRowToCookLog(row as Parameters<typeof mapRowToCookLog>[0]),
   );
 
-  const quota = await consumeAiCall(req.userId, req.entitlement.plan, queryFn);
+  const quota = await consumeAiCall(req.userId, req.entitlement.plan, queryFn, {
+    unlimited: req.entitlement.unlimited,
+  });
   if (!quota.ok) {
     res
       .status(402)
