@@ -47,7 +47,7 @@ const renderProfileScreen = () =>
 
 describe('ProfileScreen', () => {
   beforeEach(() => {
-    jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
+    jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
     mockGetNutritionGoals.mockResolvedValue({
       calories: null,
       proteinG: null,

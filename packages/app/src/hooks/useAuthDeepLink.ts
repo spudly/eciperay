@@ -15,7 +15,7 @@ type AuthDeepLinkState = {
 
 const handleAuthDeepLinkUrl = async (
   supabase: SupabaseClient,
-  url: string | null,
+  url: string | null | undefined,
 ) => {
   if (!url || !isAuthDeepLinkUrl(url)) {
     return;

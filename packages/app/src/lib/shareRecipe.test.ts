@@ -5,7 +5,9 @@ import {makeRecipeDetail} from '../__tests__/fixtures/recipe';
 
 import {shareRecipe} from './shareRecipe';
 
-jest.spyOn(Share, 'share').mockResolvedValue({action: 'sharedAction'});
+jest
+  .spyOn(Share, 'share')
+  .mockResolvedValue({action: 'sharedAction', activityType: undefined});
 
 const privateRecipeUrl = `${WEB_APP_BASE_URL}/recipes/recipe-uuid-1`;
 const publicRecipeUrl = `${WEB_APP_BASE_URL}/recipe/recipe-uuid-1/test-recipe`;
