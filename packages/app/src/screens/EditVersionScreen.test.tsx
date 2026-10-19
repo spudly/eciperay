@@ -46,11 +46,11 @@ describe('EditVersionScreen', () => {
   });
 
   test('loads draft version and saves', async () => {
-    const {findByText, getByText} = renderWithProviders(
+    const {findByText, getByText} = await renderWithProviders(
       <EditVersionScreen {...stackProps} />,
     );
     expect(await findByText('Edit Draft (v1)')).toBeTruthy();
-    fireEvent.press(getByText('Save Draft'));
+    await fireEvent.press(getByText('Save Draft'));
     await waitFor(() => {
       expect(mockPut).toHaveBeenCalled();
       expect(mockNavigate).toHaveBeenCalledWith('RecipeDetail', {
@@ -68,7 +68,7 @@ describe('EditVersionScreen', () => {
         changeSummary: 'Less sugar',
       }),
     );
-    const {findByText} = renderWithProviders(
+    const {findByText} = await renderWithProviders(
       <EditVersionScreen {...stackProps} />,
     );
     expect(await findByText('Less sugar')).toBeTruthy();
@@ -90,7 +90,7 @@ describe('EditVersionScreen', () => {
         }),
       );
     });
-    const {findByText} = renderWithProviders(
+    const {findByText} = await renderWithProviders(
       <EditVersionScreen {...stackProps} />,
     );
     expect(await findByText('Edit Draft (v2)')).toBeTruthy();
@@ -114,7 +114,7 @@ describe('EditVersionScreen', () => {
         }),
       );
     });
-    const {findByText} = renderWithProviders(
+    const {findByText} = await renderWithProviders(
       <EditVersionScreen {...stackProps} />,
     );
     expect(
@@ -131,7 +131,7 @@ describe('EditVersionScreen', () => {
         derivedFromVersionId: null,
       }),
     );
-    const {findByText, queryByText} = renderWithProviders(
+    const {findByText, queryByText} = await renderWithProviders(
       <EditVersionScreen {...stackProps} />,
     );
     expect(await findByText('Edit Draft (v1)')).toBeTruthy();
@@ -142,13 +142,13 @@ describe('EditVersionScreen', () => {
     mockGet.mockResolvedValue(
       makeRecipeVersionDetail({derivedRole: 'active', isEditable: false}),
     );
-    const {findByText} = renderWithProviders(
+    const {findByText} = await renderWithProviders(
       <EditVersionScreen {...stackProps} />,
     );
     expect(
       await findByText('This version can no longer be edited.'),
     ).toBeTruthy();
-    fireEvent.press(await findByText('Back to recipe'));
+    await fireEvent.press(await findByText('Back to recipe'));
     expect(mockNavigate).toHaveBeenCalledWith('RecipeDetail', {
       recipeId: 'recipe-uuid-1',
     });

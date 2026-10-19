@@ -38,8 +38,8 @@ describe('RecipeRatingsSection', () => {
     });
   });
 
-  test('shows dual rating labels and stale hints', () => {
-    const {getByText, getByLabelText} = renderWithProviders(
+  test('shows dual rating labels and stale hints', async () => {
+    const {getByText, getByLabelText} = await renderWithProviders(
       <RecipeRatingsSection
         recipeId="recipe-uuid-1"
         communityRating={{average: 4, count: 2, hasStaleRatings: true}}
@@ -53,7 +53,7 @@ describe('RecipeRatingsSection', () => {
     expect(getByLabelText(STALE_COMMUNITY_RATING_HINT)).toBeTruthy();
     expect(getByLabelText(STALE_VIEWER_RATING_HINT)).toBeTruthy();
 
-    const noStale = renderWithProviders(
+    const noStale = await renderWithProviders(
       <RecipeRatingsSection
         recipeId="recipe-uuid-1"
         communityRating={{average: 4, count: 2, hasStaleRatings: false}}
@@ -65,7 +65,7 @@ describe('RecipeRatingsSection', () => {
   });
 
   test('updates and clears personal ratings', async () => {
-    const {getByLabelText} = renderWithProviders(
+    const {getByLabelText} = await renderWithProviders(
       <RecipeRatingsSection
         recipeId="recipe-uuid-1"
         communityRating={null}
@@ -74,12 +74,12 @@ describe('RecipeRatingsSection', () => {
       />,
     );
 
-    fireEvent.press(getByLabelText('Rate 5 out of 5 stars'));
+    await fireEvent.press(getByLabelText('Rate 5 out of 5 stars'));
     await waitFor(() => {
       expect(mockPutRating).toHaveBeenCalledWith('recipe-uuid-1', {stars: 5});
     });
 
-    fireEvent.press(getByLabelText('Rate 3 out of 5 stars'));
+    await fireEvent.press(getByLabelText('Rate 3 out of 5 stars'));
     await waitFor(() => {
       expect(mockDeleteRating).toHaveBeenCalledWith('recipe-uuid-1');
     });

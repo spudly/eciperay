@@ -14,19 +14,19 @@ describe('LegalLinks', () => {
     jest.restoreAllMocks();
   });
 
-  test('opens stacked legal document URLs', () => {
-    const {getByText} = render(<LegalLinks />);
-    fireEvent.press(getByText('Privacy Policy'));
+  test('opens stacked legal document URLs', async () => {
+    const {getByText} = await render(<LegalLinks />);
+    await fireEvent.press(getByText('Privacy Policy'));
     expect(Linking.openURL).toHaveBeenCalledWith(PRIVACY_POLICY_URL);
-    fireEvent.press(getByText('Terms of Service'));
+    await fireEvent.press(getByText('Terms of Service'));
     expect(Linking.openURL).toHaveBeenCalledWith(TERMS_OF_SERVICE_URL);
   });
 
-  test('opens inline legal document URLs', () => {
-    const {getByText} = render(<LegalLinks variant="inline" />);
-    fireEvent.press(getByText('Terms of Service'));
+  test('opens inline legal document URLs', async () => {
+    const {getByText} = await render(<LegalLinks variant="inline" />);
+    await fireEvent.press(getByText('Terms of Service'));
     expect(Linking.openURL).toHaveBeenCalledWith(TERMS_OF_SERVICE_URL);
-    fireEvent.press(getByText('Privacy Policy'));
+    await fireEvent.press(getByText('Privacy Policy'));
     expect(Linking.openURL).toHaveBeenCalledWith(PRIVACY_POLICY_URL);
   });
 });

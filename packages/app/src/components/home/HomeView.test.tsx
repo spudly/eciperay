@@ -13,8 +13,8 @@ import {HomeView} from './HomeView';
 jest.mock('../../lib/api');
 
 describe('HomeView', () => {
-  test('renders welcome content and empty state', () => {
-    const {getByText} = renderWithProviders(
+  test('renders welcome content and empty state', async () => {
+    const {getByText} = await renderWithProviders(
       <HomeView
         isLoading={false}
         recipes={[]}
@@ -31,10 +31,10 @@ describe('HomeView', () => {
     expect(getByText(HOME_EMPTY_MESSAGE)).toBeTruthy();
   });
 
-  test('calls browse callback when browse action is pressed', () => {
+  test('calls browse callback when browse action is pressed', async () => {
     const onBrowsePress = jest.fn();
 
-    const {getByText} = renderWithProviders(
+    const {getByText} = await renderWithProviders(
       <HomeView
         isLoading={false}
         recipes={[]}
@@ -46,12 +46,12 @@ describe('HomeView', () => {
       />,
     );
 
-    fireEvent.press(getByText(HOME_BROWSE_LABEL));
+    await fireEvent.press(getByText(HOME_BROWSE_LABEL));
     expect(onBrowsePress).toHaveBeenCalledTimes(1);
   });
 
-  test('renders recently viewed recipes', () => {
-    const {getByText} = renderWithProviders(
+  test('renders recently viewed recipes', async () => {
+    const {getByText} = await renderWithProviders(
       <HomeView
         isLoading={false}
         recipes={[makeRecipeDetail({id: 'recipe-1', title: 'Soup'})]}

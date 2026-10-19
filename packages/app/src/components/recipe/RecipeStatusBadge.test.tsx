@@ -5,9 +5,14 @@ import {TamaguiProvider} from 'tamagui';
 
 import {RecipeStatusBadge} from './RecipeStatusBadge';
 
-const renderBadge = (status?: 'idea' | 'evolving' | 'perfected' | 'abandoned') =>
-  render(
-    <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
+const renderBadge = async (
+  status?: 'idea' | 'evolving' | 'perfected' | 'abandoned',
+) =>
+  await render(
+    <TamaguiProvider
+      config={tamaguiConfig}
+      defaultTheme="light"
+    >
       <RecipeStatusBadge status={status} />
     </TamaguiProvider>,
   );
@@ -18,13 +23,13 @@ describe('RecipeStatusBadge', () => {
     ['evolving', 'Evolving'],
     ['perfected', 'Perfected'],
     ['abandoned', 'Abandoned'],
-  ] as const)('renders %s label', (status, label) => {
-    renderBadge(status);
+  ] as const)('renders %s label', async (status, label) => {
+    await renderBadge(status);
     expect(screen.getByText(label)).toBeTruthy();
   });
 
-  test('falls back to idea for unknown status', () => {
-    renderBadge();
+  test('falls back to idea for unknown status', async () => {
+    await renderBadge();
     expect(screen.getByText('Idea')).toBeTruthy();
   });
 });

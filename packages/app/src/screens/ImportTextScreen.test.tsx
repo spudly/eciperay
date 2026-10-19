@@ -20,7 +20,7 @@ const stackProps = makeStackProps<AddStackParamList, 'ImportText'>(
 
 describe('ImportTextScreen', () => {
   test('does not import when text is empty', async () => {
-    const {findByText} = renderWithProviders(
+    const {findByText} = await renderWithProviders(
       <ImportTextScreen {...stackProps} />,
     );
     // Button should be disabled when text is empty
@@ -41,14 +41,14 @@ describe('ImportTextScreen', () => {
 
   test('imports text and navigates to review', async () => {
     mockImportText.mockResolvedValue(makeRecipeDetail({id: 'imported-1'}));
-    const {getByPlaceholderText, getByText} = renderWithProviders(
+    const {getByPlaceholderText, getByText} = await renderWithProviders(
       <ImportTextScreen {...stackProps} />,
     );
-    fireEvent.changeText(
+    await fireEvent.changeText(
       getByPlaceholderText('Paste your recipe here…'),
       'Pasta\n\nBoil water.',
     );
-    fireEvent.press(getByText('Import'));
+    await fireEvent.press(getByText('Import'));
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith('ImportReview', {
         recipeId: 'imported-1',
@@ -58,27 +58,25 @@ describe('ImportTextScreen', () => {
 
   test('shows generic error on non-Error failure', async () => {
     mockImportText.mockRejectedValue('nope');
-    const {getByPlaceholderText, getByText, findByText} = renderWithProviders(
-      <ImportTextScreen {...stackProps} />,
-    );
-    fireEvent.changeText(
+    const {getByPlaceholderText, getByText, findByText} =
+      await renderWithProviders(<ImportTextScreen {...stackProps} />);
+    await fireEvent.changeText(
       getByPlaceholderText('Paste your recipe here…'),
       'bad',
     );
-    fireEvent.press(getByText('Import'));
+    await fireEvent.press(getByText('Import'));
     expect(await findByText('Import failed')).toBeTruthy();
   });
 
   test('shows error on failure', async () => {
     mockImportText.mockRejectedValue(new Error('Parse failed'));
-    const {getByPlaceholderText, getByText, findByText} = renderWithProviders(
-      <ImportTextScreen {...stackProps} />,
-    );
-    fireEvent.changeText(
+    const {getByPlaceholderText, getByText, findByText} =
+      await renderWithProviders(<ImportTextScreen {...stackProps} />);
+    await fireEvent.changeText(
       getByPlaceholderText('Paste your recipe here…'),
       'bad',
     );
-    fireEvent.press(getByText('Import'));
+    await fireEvent.press(getByText('Import'));
     expect(await findByText('Parse failed')).toBeTruthy();
   });
 });

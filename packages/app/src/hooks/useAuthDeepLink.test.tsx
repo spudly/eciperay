@@ -72,30 +72,30 @@ describe('useAuthDeepLink', () => {
     jest.spyOn(Alert, 'alert').mockReturnValue();
   });
 
-  test('starts without a pending password reset', () => {
+  test('starts without a pending password reset', async () => {
     const {supabase} = makeSupabase();
-    const {getByTestId} = render(<HookProbe supabase={supabase} />);
+    const {getByTestId} = await render(<HookProbe supabase={supabase} />);
     expect(getByTestId('needs-reset').props.children).toBe('no');
   });
 
   test('marks password recovery when auth state changes', async () => {
     const {supabase, onAuthStateChange} = makeSupabase();
-    const {getByTestId} = render(<HookProbe supabase={supabase} />);
+    const {getByTestId} = await render(<HookProbe supabase={supabase} />);
     const callback = onAuthStateChange.mock.calls[0][0];
 
-    act(() => {
+    await act(() => {
       callback('PASSWORD_RECOVERY', null);
     });
 
     expect(getByTestId('needs-reset').props.children).toBe('yes');
   });
 
-  test('ignores unrelated auth state changes', () => {
+  test('ignores unrelated auth state changes', async () => {
     const {supabase, onAuthStateChange} = makeSupabase();
-    const {getByTestId} = render(<HookProbe supabase={supabase} />);
+    const {getByTestId} = await render(<HookProbe supabase={supabase} />);
     const callback = onAuthStateChange.mock.calls[0][0];
 
-    act(() => {
+    await act(() => {
       callback('SIGNED_IN', null);
     });
 
@@ -106,7 +106,7 @@ describe('useAuthDeepLink', () => {
     const {supabase} = makeSupabase();
     jest.spyOn(Linking, 'getInitialURL').mockResolvedValue(devAuthCallback);
 
-    render(<HookProbe supabase={supabase} />);
+    await render(<HookProbe supabase={supabase} />);
 
     await waitFor(() => {
       expect(mockCreateSessionFromAuthDeepLink).toHaveBeenCalledWith(
@@ -118,7 +118,7 @@ describe('useAuthDeepLink', () => {
 
   test('handles deep links received while the app is open', async () => {
     const {supabase} = makeSupabase();
-    render(<HookProbe supabase={supabase} />);
+    await render(<HookProbe supabase={supabase} />);
 
     await act(async () => {
       linkListener?.({url: devAuthCallbackLive});
@@ -133,7 +133,7 @@ describe('useAuthDeepLink', () => {
 
   test('ignores null and non-auth URLs', async () => {
     const {supabase} = makeSupabase();
-    render(<HookProbe supabase={supabase} />);
+    await render(<HookProbe supabase={supabase} />);
 
     await act(async () => {
       linkListener?.({url: 'https://www.eciperay.com/login'});
@@ -146,7 +146,7 @@ describe('useAuthDeepLink', () => {
   test('shows an alert when deep link session creation fails', async () => {
     const {supabase} = makeSupabase();
     mockCreateSessionFromAuthDeepLink.mockRejectedValue(new Error('bad link'));
-    render(<HookProbe supabase={supabase} />);
+    await render(<HookProbe supabase={supabase} />);
 
     await act(async () => {
       linkListener?.({url: devAuthCallbackBad});
@@ -158,22 +158,22 @@ describe('useAuthDeepLink', () => {
 
   test('clears the password recovery state', async () => {
     const {supabase, onAuthStateChange} = makeSupabase();
-    const {getByTestId} = render(<HookProbe supabase={supabase} />);
+    const {getByTestId} = await render(<HookProbe supabase={supabase} />);
     const callback = onAuthStateChange.mock.calls[0][0];
 
-    act(() => {
+    await act(() => {
       callback('PASSWORD_RECOVERY', null);
     });
-    fireEvent.press(getByTestId('clear'));
+    await fireEvent.press(getByTestId('clear'));
 
     expect(getByTestId('needs-reset').props.children).toBe('no');
   });
 
   test('unsubscribes from auth and link listeners on unmount', async () => {
     const {supabase, unsubscribe} = makeSupabase();
-    const {unmount} = render(<HookProbe supabase={supabase} />);
+    const {unmount} = await render(<HookProbe supabase={supabase} />);
 
-    unmount();
+    await unmount();
 
     expect(unsubscribe).toHaveBeenCalled();
     expect(mockRemoveListener).toHaveBeenCalled();

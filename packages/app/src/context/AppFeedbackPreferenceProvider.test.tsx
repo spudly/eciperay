@@ -37,7 +37,7 @@ describe('AppFeedbackPreferenceProvider', () => {
   });
 
   test('loads the stored feedback shortcut preference', async () => {
-    render(
+    await render(
       <AppFeedbackPreferenceProvider>
         <Probe />
       </AppFeedbackPreferenceProvider>,
@@ -50,7 +50,7 @@ describe('AppFeedbackPreferenceProvider', () => {
 
   test('persists preference changes', async () => {
     let setEnabled: ((enabled: boolean) => void) | undefined;
-    render(
+    await render(
       <AppFeedbackPreferenceProvider>
         <Probe
           onReady={value => {
@@ -70,7 +70,7 @@ describe('AppFeedbackPreferenceProvider', () => {
       expect(screen.getByText('enabled')).toBeTruthy();
     });
 
-    fireEvent.press(screen.getByLabelText('Disable feedback shortcut'));
+    await fireEvent.press(screen.getByLabelText('Disable feedback shortcut'));
 
     await waitFor(() => {
       expect(

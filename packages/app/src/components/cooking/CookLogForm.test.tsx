@@ -6,44 +6,44 @@ import {renderWithProviders} from '../../__tests__/testUtils';
 import {CookLogForm} from './CookLogForm';
 
 describe('CookLogForm', () => {
-  test('submits rating and notes', () => {
+  test('submits rating and notes', async () => {
     const onSubmit = jest.fn();
     const {getByLabelText, getByText, getByPlaceholderText} =
-      renderWithProviders(
+      await renderWithProviders(
         <CookLogForm
           onSubmit={onSubmit}
           onSkip={jest.fn()}
           isPending={false}
         />,
       );
-    fireEvent.press(getByLabelText('Rate 4 out of 5 stars'));
-    fireEvent.changeText(
+    await fireEvent.press(getByLabelText('Rate 4 out of 5 stars'));
+    await fireEvent.changeText(
       getByPlaceholderText('Notes from this cook (optional)'),
       'Great',
     );
-    fireEvent.press(getByText('Save'));
+    await fireEvent.press(getByText('Save'));
     expect(onSubmit).toHaveBeenCalledWith({
       authorStarRating: 4,
       notes: 'Great',
     });
   });
 
-  test('disables save while pending', () => {
+  test('disables save while pending', async () => {
     const onSubmit = jest.fn();
-    const {getByText} = renderWithProviders(
+    const {getByText} = await renderWithProviders(
       <CookLogForm
         onSubmit={onSubmit}
         onSkip={jest.fn()}
         isPending
       />,
     );
-    fireEvent.press(getByText('Save'));
+    await fireEvent.press(getByText('Save'));
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
-  test('renders light variant with custom secondary label', () => {
+  test('renders light variant with custom secondary label', async () => {
     const onSkip = jest.fn();
-    const {getByText} = renderWithProviders(
+    const {getByText} = await renderWithProviders(
       <CookLogForm
         variant="light"
         secondaryLabel="Cancel"
@@ -52,7 +52,7 @@ describe('CookLogForm', () => {
         isPending={false}
       />,
     );
-    fireEvent.press(getByText('Cancel'));
+    await fireEvent.press(getByText('Cancel'));
     expect(onSkip).toHaveBeenCalled();
   });
 });

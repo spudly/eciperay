@@ -6,8 +6,8 @@ import {renderWithProviders} from '../../__tests__/testUtils';
 import {SignInView} from './SignInView';
 
 describe('SignInView', () => {
-  test('renders sign-in title and button', () => {
-    renderWithProviders(
+  test('renders sign-in title and button', async () => {
+    await renderWithProviders(
       <SignInView
         email=""
         password=""

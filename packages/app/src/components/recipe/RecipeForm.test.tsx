@@ -125,9 +125,9 @@ describe('RecipeForm', () => {
     );
 
     await act(async () => {
-      fireEvent.press(getByLabelText('Mock reorder i-2'));
+      await fireEvent.press(getByLabelText('Mock reorder i-2'));
     });
-    fireEvent.press(getByText('Save'));
+    await fireEvent.press(getByText('Save'));
 
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalled();
@@ -152,8 +152,8 @@ describe('RecipeForm', () => {
       />,
     );
 
-    fireEvent.press(getByLabelText('Mock reorder ins-2'));
-    fireEvent.press(getByText('Save'));
+    await fireEvent.press(getByLabelText('Mock reorder ins-2'));
+    await fireEvent.press(getByText('Save'));
 
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalled();
@@ -176,7 +176,7 @@ describe('RecipeForm', () => {
         onSubmit={onSubmit}
       />,
     );
-    fireEvent.press(getByText('Save'));
+    await fireEvent.press(getByText('Save'));
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalled();
     });
@@ -191,7 +191,7 @@ describe('RecipeForm', () => {
         onSubmit={onSubmit}
       />,
     );
-    fireEvent.press(getByText('Save'));
+    await fireEvent.press(getByText('Save'));
     expect(await findByText('Failed to save')).toBeTruthy();
   });
 
@@ -204,7 +204,7 @@ describe('RecipeForm', () => {
         onSubmit={onSubmit}
       />,
     );
-    fireEvent.press(getByText('Save'));
+    await fireEvent.press(getByText('Save'));
     expect(await findByText('Save failed')).toBeTruthy();
   });
 
@@ -217,15 +217,15 @@ describe('RecipeForm', () => {
         onSubmit={onSubmit}
       />,
     );
-    fireEvent.changeText(getAllByPlaceholderText('Qty')[0], '3');
-    fireEvent.changeText(getAllByPlaceholderText('Qty')[0], '');
-    fireEvent.changeText(getAllByPlaceholderText('Unit')[0], 'cups');
-    fireEvent.changeText(getAllByPlaceholderText('Unit')[0], '');
-    fireEvent.press(getAllByText('+ Add')[0]);
-    fireEvent.press(getAllByText('Remove')[0]);
-    fireEvent.press(getAllByText('+ Add')[1]);
-    fireEvent.press(getAllByText('Remove').at(-1)!);
-    fireEvent.press(getByText('Save'));
+    await fireEvent.changeText(getAllByPlaceholderText('Qty')[0], '3');
+    await fireEvent.changeText(getAllByPlaceholderText('Qty')[0], '');
+    await fireEvent.changeText(getAllByPlaceholderText('Unit')[0], 'cups');
+    await fireEvent.changeText(getAllByPlaceholderText('Unit')[0], '');
+    await fireEvent.press(getAllByText('+ Add')[0]);
+    await fireEvent.press(getAllByText('Remove')[0]);
+    await fireEvent.press(getAllByText('+ Add')[1]);
+    await fireEvent.press(getAllByText('Remove').at(-1)!);
+    await fireEvent.press(getByText('Save'));
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalled();
     });
@@ -240,7 +240,7 @@ describe('RecipeForm', () => {
       />,
     );
     const step = getByDisplayValue('Mix dry ingredients');
-    fireEvent.changeText(step, 'Updated step');
+    await fireEvent.changeText(step, 'Updated step');
     expect(step.props.value).toBe('Updated step');
   });
 
@@ -253,8 +253,8 @@ describe('RecipeForm', () => {
         onSubmit={onSubmit}
       />,
     );
-    fireEvent.changeText(getAllByPlaceholderText('Qty')[0], '1.5');
-    fireEvent.press(getByText('Save'));
+    await fireEvent.changeText(getAllByPlaceholderText('Qty')[0], '1.5');
+    await fireEvent.press(getByText('Save'));
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalled();
     });
@@ -303,8 +303,8 @@ describe('RecipeForm', () => {
       />,
     );
     const titleInput = getAllByDisplayValue('')[0];
-    fireEvent.changeText(titleInput, 'New Title');
-    fireEvent.changeText(getAllByDisplayValue('4')[0], '6');
+    await fireEvent.changeText(titleInput, 'New Title');
+    await fireEvent.changeText(getAllByDisplayValue('4')[0], '6');
     expect(titleInput.props.value).toBe('New Title');
   });
 
@@ -316,7 +316,7 @@ describe('RecipeForm', () => {
         onSubmit={jest.fn()}
       />,
     );
-    fireEvent.press(getByLabelText('Generate description with AI'));
+    await fireEvent.press(getByLabelText('Generate description with AI'));
     await waitFor(() => {
       expect(mockGenerateDescription).toHaveBeenCalledWith({
         title: 'Test Recipe',
@@ -340,7 +340,7 @@ describe('RecipeForm', () => {
         onSubmit={jest.fn()}
       />,
     );
-    fireEvent.press(getByLabelText('Generate image with AI'));
+    await fireEvent.press(getByLabelText('Generate image with AI'));
     await waitFor(() => {
       expect(mockGenerateImage).toHaveBeenCalled();
     });
@@ -364,7 +364,7 @@ describe('RecipeForm', () => {
         onSubmit={onSubmit}
       />,
     );
-    fireEvent.press(getByLabelText('Generate image with AI'));
+    await fireEvent.press(getByLabelText('Generate image with AI'));
     await waitFor(() => {
       expect(mockGenerateImage).toHaveBeenCalled();
     });
@@ -404,7 +404,7 @@ describe('RecipeForm', () => {
         onSubmit={jest.fn()}
       />,
     );
-    fireEvent.press(getByLabelText('Generate image with AI'));
+    await fireEvent.press(getByLabelText('Generate image with AI'));
     expect(await findByText('Sign in to generate images')).toBeTruthy();
   });
 
@@ -419,7 +419,7 @@ describe('RecipeForm', () => {
         onSubmit={jest.fn()}
       />,
     );
-    fireEvent.press(getByLabelText('Generate description with AI'));
+    await fireEvent.press(getByLabelText('Generate description with AI'));
     expect(await findByText('OpenAI unavailable')).toBeTruthy();
   });
 
@@ -434,7 +434,7 @@ describe('RecipeForm', () => {
         onSubmit={jest.fn()}
       />,
     );
-    fireEvent.press(getByLabelText('Generate description with AI'));
+    await fireEvent.press(getByLabelText('Generate description with AI'));
     expect(await findByText('Failed to generate description')).toBeTruthy();
     expect(mockGenerateDescription).toHaveBeenCalledWith(
       expect.objectContaining({prepTimeMin: null, cookTimeMin: null}),
@@ -453,7 +453,7 @@ describe('RecipeForm', () => {
         onSubmit={jest.fn()}
       />,
     );
-    fireEvent.press(getByLabelText('Generate image with AI'));
+    await fireEvent.press(getByLabelText('Generate image with AI'));
     expect(await findByText('Image model unavailable')).toBeTruthy();
   });
 
@@ -467,7 +467,7 @@ describe('RecipeForm', () => {
         onSubmit={jest.fn()}
       />,
     );
-    fireEvent.press(getByLabelText('Generate image with AI'));
+    await fireEvent.press(getByLabelText('Generate image with AI'));
     expect(await findByText('Failed to generate image')).toBeTruthy();
   });
 
@@ -482,7 +482,7 @@ describe('RecipeForm', () => {
         onSubmit={jest.fn()}
       />,
     );
-    fireEvent.press(getByText('Remove image'));
+    await fireEvent.press(getByText('Remove image'));
     expect(queryByLabelText('Recipe preview')).toBeNull();
   });
 
@@ -500,12 +500,12 @@ describe('RecipeForm', () => {
         onSubmit={jest.fn()}
       />,
     );
-    fireEvent.press(getByLabelText('Generate image with AI'));
+    await fireEvent.press(getByLabelText('Generate image with AI'));
     await waitFor(() => {
       expect(mockGenerateImage).toHaveBeenCalled();
     });
     expect(getByLabelText('Recipe preview')).toBeTruthy();
-    fireEvent.press(getByText('Remove image'));
+    await fireEvent.press(getByText('Remove image'));
     expect(queryByLabelText('Recipe preview')).toBeNull();
   });
 
@@ -518,7 +518,7 @@ describe('RecipeForm', () => {
         onSubmit={jest.fn()}
       />,
     );
-    fireEvent.press(getByLabelText('Generate description with AI'));
+    await fireEvent.press(getByLabelText('Generate description with AI'));
     expect(await findByText('Sign in to generate descriptions')).toBeTruthy();
   });
 
@@ -534,7 +534,7 @@ describe('RecipeForm', () => {
         onSubmit={jest.fn()}
       />,
     );
-    fireEvent.press(getByLabelText('Generate image with AI'));
+    await fireEvent.press(getByLabelText('Generate image with AI'));
     expect(await findByText('Upload failed')).toBeTruthy();
   });
 
@@ -548,7 +548,7 @@ describe('RecipeForm', () => {
         onSubmit={jest.fn()}
       />,
     );
-    fireEvent.press(getByLabelText('Generate image with AI'));
+    await fireEvent.press(getByLabelText('Generate image with AI'));
     expect(await findByText('Failed to upload image')).toBeTruthy();
   });
 
@@ -573,7 +573,7 @@ describe('RecipeForm', () => {
         },
       ],
     });
-    fireEvent.press(getByLabelText('Choose recipe image'));
+    await fireEvent.press(getByLabelText('Choose recipe image'));
     expect(await findByText('Sign in to upload images')).toBeTruthy();
   });
 
@@ -589,7 +589,7 @@ describe('RecipeForm', () => {
         onSubmit={jest.fn()}
       />,
     );
-    fireEvent.press(getByLabelText('Choose recipe image'));
+    await fireEvent.press(getByLabelText('Choose recipe image'));
     expect(await findByText('Failed to read image')).toBeTruthy();
   });
 
@@ -608,11 +608,11 @@ describe('RecipeForm', () => {
         onSubmit={onSubmit}
       />,
     );
-    fireEvent.press(getByLabelText('Generate image with AI'));
+    await fireEvent.press(getByLabelText('Generate image with AI'));
     await waitFor(() => {
       expect(mockGenerateImage).toHaveBeenCalled();
     });
-    fireEvent.press(getByText('Create'));
+    await fireEvent.press(getByText('Create'));
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalledWith(
         expect.objectContaining({title: 'New Recipe', imageUrl: null}),
@@ -676,23 +676,23 @@ describe('RecipeForm', () => {
     expect(getByText(/Ingredients changed from parent version/)).toBeTruthy();
     expect(getByText('Revert to: Dinner')).toBeTruthy();
 
-    fireEvent.press(getByText('Revert to: Original Title'));
+    await fireEvent.press(getByText('Revert to: Original Title'));
     expect(getByLabelText('Title')).toHaveProp('value', 'Original Title');
-    fireEvent.press(getByText('Revert to: Original description'));
-    fireEvent.press(getByText('Revert to: 4'));
-    fireEvent.press(getByText('Revert to: 10 min'));
-    fireEvent.press(getByText('Revert to: 20 min'));
-    fireEvent.press(getByText('Revert to: parent.jpg'));
-    fireEvent.press(getByText('Revert to: https://example.com/source'));
+    await fireEvent.press(getByText('Revert to: Original description'));
+    await fireEvent.press(getByText('Revert to: 4'));
+    await fireEvent.press(getByText('Revert to: 10 min'));
+    await fireEvent.press(getByText('Revert to: 20 min'));
+    await fireEvent.press(getByText('Revert to: parent.jpg'));
+    await fireEvent.press(getByText('Revert to: https://example.com/source'));
 
-    fireEvent.press(getByText('Revert to: Dinner'));
+    await fireEvent.press(getByText('Revert to: Dinner'));
     await waitFor(() => {
       expect(queryByText('Revert to: Dinner')).toBeNull();
     });
 
     const listRevertButtons = getAllByText('Revert');
-    fireEvent.press(listRevertButtons[0]);
-    fireEvent.press(listRevertButtons[1]);
+    await fireEvent.press(listRevertButtons[0]);
+    await fireEvent.press(listRevertButtons[1]);
   });
 
   test('uses fallback values when reverting null title and servings', async () => {
@@ -734,16 +734,16 @@ describe('RecipeForm', () => {
       />,
     );
 
-    fireEvent.press(getByText('Revert to: Test Recipe'));
+    await fireEvent.press(getByText('Revert to: Test Recipe'));
     expect(getByLabelText('Title')).toHaveProp('value', '');
-    fireEvent.press(getByText('Revert to: 4'));
+    await fireEvent.press(getByText('Revert to: 4'));
     expect(getByLabelText('Servings')).toHaveProp('value', '1');
-    fireEvent.press(getByText('Revert to: (empty)'));
-    fireEvent.press(getByText('Revert to: parent.jpg'));
-    fireEvent.press(getByText('Revert to: https://example.com/source'));
-    fireEvent.press(getAllByText('Revert to: (none)')[0]);
+    await fireEvent.press(getByText('Revert to: (empty)'));
+    await fireEvent.press(getByText('Revert to: parent.jpg'));
+    await fireEvent.press(getByText('Revert to: https://example.com/source'));
+    await fireEvent.press(getAllByText('Revert to: (none)')[0]);
     expect(getByLabelText('Prep (min)')).toHaveProp('value', '');
-    fireEvent.press(getAllByText('Revert to: (none)')[0]);
+    await fireEvent.press(getAllByText('Revert to: (none)')[0]);
     expect(getByLabelText('Cook (min)')).toHaveProp('value', '');
   });
 
@@ -763,7 +763,7 @@ describe('RecipeForm', () => {
         onSubmit={mockOnSubmit()}
       />,
     );
-    fireEvent.press(getByText('Revert to: (none)'));
+    await fireEvent.press(getByText('Revert to: (none)'));
     expect(getByLabelText('Cook (min)')).toHaveProp('value', '');
   });
 });

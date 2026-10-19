@@ -46,11 +46,11 @@ describe('ImportReviewScreen', () => {
   });
 
   test('accepts import and navigates to recipe detail', async () => {
-    const {findByText, getByText} = renderWithProviders(
+    const {findByText, getByText} = await renderWithProviders(
       <ImportReviewScreen {...stackProps} />,
     );
     expect(await findByText('Review Import')).toBeTruthy();
-    fireEvent.press(getByText('Looks good'));
+    await fireEvent.press(getByText('Looks good'));
     await waitFor(() => {
       expect(mockAcceptImport).toHaveBeenCalledWith('recipe-uuid-1');
     });
@@ -62,11 +62,11 @@ describe('ImportReviewScreen', () => {
 
   test('shows error when accept fails', async () => {
     mockAcceptImport.mockRejectedValue(new Error('Accept failed'));
-    const {findByText, getByText} = renderWithProviders(
+    const {findByText, getByText} = await renderWithProviders(
       <ImportReviewScreen {...stackProps} />,
     );
     expect(await findByText('Review Import')).toBeTruthy();
-    fireEvent.press(getByText('Looks good'));
+    await fireEvent.press(getByText('Looks good'));
     expect(await findByText('Accept failed')).toBeTruthy();
   });
 
@@ -74,7 +74,7 @@ describe('ImportReviewScreen', () => {
     mockGet.mockResolvedValue(
       makeRecipeDetail({imageUrl: 'https://example.com/pasta.jpg'}),
     );
-    const {findByText} = renderWithProviders(
+    const {findByText} = await renderWithProviders(
       <ImportReviewScreen {...stackProps} />,
     );
     expect(await findByText('Review Import')).toBeTruthy();
@@ -85,7 +85,7 @@ describe('ImportReviewScreen', () => {
       ...makeRecipeDetail(),
       versionNumber: undefined,
     });
-    const {findByText} = renderWithProviders(
+    const {findByText} = await renderWithProviders(
       <ImportReviewScreen {...stackProps} />,
     );
     expect(await findByText(/imported recipe \(v1\)/i)).toBeTruthy();
@@ -93,11 +93,11 @@ describe('ImportReviewScreen', () => {
 
   test('shows error when start edits fails', async () => {
     mockStartImportEdits.mockRejectedValue(new Error('Draft failed'));
-    const {findByText, getByText} = renderWithProviders(
+    const {findByText, getByText} = await renderWithProviders(
       <ImportReviewScreen {...stackProps} />,
     );
     expect(await findByText('Review Import')).toBeTruthy();
-    fireEvent.press(getByText('Make edits'));
+    await fireEvent.press(getByText('Make edits'));
     expect(await findByText('Draft failed')).toBeTruthy();
   });
 
@@ -109,12 +109,12 @@ describe('ImportReviewScreen', () => {
           resolveAccept = resolve;
         }),
     );
-    const {findByText, getByText} = renderWithProviders(
+    const {findByText, getByText} = await renderWithProviders(
       <ImportReviewScreen {...stackProps} />,
     );
     expect(await findByText('Review Import')).toBeTruthy();
     await act(async () => {
-      fireEvent.press(getByText('Looks good'));
+      await fireEvent.press(getByText('Looks good'));
     });
     expect(getByText('Saving…')).toBeTruthy();
     await act(async () => {
@@ -133,12 +133,12 @@ describe('ImportReviewScreen', () => {
           resolveEdits = resolve;
         }),
     );
-    const {findByText, getByText} = renderWithProviders(
+    const {findByText, getByText} = await renderWithProviders(
       <ImportReviewScreen {...stackProps} />,
     );
     expect(await findByText('Review Import')).toBeTruthy();
     await act(async () => {
-      fireEvent.press(getByText('Make edits'));
+      await fireEvent.press(getByText('Make edits'));
     });
     expect(getByText('Creating draft…')).toBeTruthy();
     await act(async () => {
@@ -150,11 +150,11 @@ describe('ImportReviewScreen', () => {
   });
 
   test('starts import edits and navigates to edit version', async () => {
-    const {findByText, getByText} = renderWithProviders(
+    const {findByText, getByText} = await renderWithProviders(
       <ImportReviewScreen {...stackProps} />,
     );
     expect(await findByText('Review Import')).toBeTruthy();
-    fireEvent.press(getByText('Make edits'));
+    await fireEvent.press(getByText('Make edits'));
     await waitFor(() => {
       expect(mockStartImportEdits).toHaveBeenCalledWith('recipe-uuid-1');
     });
