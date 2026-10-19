@@ -1,3 +1,4 @@
+import {readFileSync} from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 
@@ -10,6 +11,11 @@ import {createApiProxy} from './viteProxy.js';
 
 const pkgRoot = path.dirname(fileURLToPath(import.meta.url));
 const monoRoot = path.resolve(pkgRoot, '../..');
+
+const webPackageJson = JSON.parse(
+  readFileSync(path.join(pkgRoot, 'package.json'), 'utf8'),
+) as {version?: string};
+const appVersion = webPackageJson.version ?? 'unknown';
 
 const esbuildDestructuringSupport = {
   supported: {
@@ -61,6 +67,9 @@ export default defineConfig(({mode}) => {
       // Tamagui and its dependencies reference process.env at runtime.
       // Vite does not polyfill process by default, so provide a minimal stub.
       'process.env': {},
+      // The web package version (kept in sync across the monorepo) is the
+      // app version attached to analytics context such as feedback events.
+      'import.meta.env.VITE_APP_VERSION': JSON.stringify(appVersion),
     },
     envDir: '../..',
     esbuild: esbuildDestructuringSupport,

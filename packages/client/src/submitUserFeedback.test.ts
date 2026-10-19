@@ -21,9 +21,84 @@ describe('submitUserFeedback', () => {
     const result = await submitUserFeedback(
       {...createNoopAnalyticsAdapter(), capture},
       'web',
-      {message: 'x'.repeat(501), is_bug: false},
+      {message: 'x'.repeat(2001), is_bug: false},
     );
-    expect(result.error).toMatch(/under 500 characters/i);
+    expect(result.error).toMatch(/under 2000 characters/i);
+    expect(capture).not.toHaveBeenCalled();
+  });
+
+  test('accepts messages up to the raised max length', async () => {
+    const capture = jest.fn();
+    const message = 'x'.repeat(501);
+    const result = await submitUserFeedback(
+      {...createNoopAnalyticsAdapter(), capture},
+      'web',
+      {message, is_bug: false},
+    );
+    expect(result.error).toBeNull();
+    expect(capture).toHaveBeenCalledWith(
+      'user_feedback',
+      expect.objectContaining({message}),
+    );
+  });
+
+  test('captures reply email, user id, and app version when provided', async () => {
+    const capture = jest.fn();
+    const result = await submitUserFeedback(
+      {...createNoopAnalyticsAdapter(), capture},
+      'web',
+      {
+        message: 'The import screen never finishes loading.',
+        is_bug: true,
+        reply_email: '  cook@example.com ',
+        user_id: 'user-123',
+        app_version: '1.22.2',
+      },
+    );
+    expect(result.error).toBeNull();
+    expect(capture).toHaveBeenCalledWith('user_feedback', {
+      message: 'The import screen never finishes loading.',
+      is_bug: true,
+      platform: 'web',
+      reply_email: 'cook@example.com',
+      user_id: 'user-123',
+      app_version: '1.22.2',
+    });
+  });
+
+  test('omits blank reply email, user id, and app version from the event', async () => {
+    const capture = jest.fn();
+    const result = await submitUserFeedback(
+      {...createNoopAnalyticsAdapter(), capture},
+      'web',
+      {
+        message: 'The import screen never finishes loading.',
+        is_bug: true,
+        reply_email: '   ',
+        user_id: '',
+        app_version: '',
+      },
+    );
+    expect(result.error).toBeNull();
+    expect(capture).toHaveBeenCalledWith('user_feedback', {
+      message: 'The import screen never finishes loading.',
+      is_bug: true,
+      platform: 'web',
+    });
+  });
+
+  test('rejects a malformed reply email', async () => {
+    const capture = jest.fn();
+    const result = await submitUserFeedback(
+      {...createNoopAnalyticsAdapter(), capture},
+      'web',
+      {
+        message: 'The import screen never finishes loading.',
+        is_bug: true,
+        reply_email: 'not-an-email',
+      },
+    );
+    expect(result.error).toMatch(/valid email/i);
     expect(capture).not.toHaveBeenCalled();
   });
 

@@ -1,6 +1,8 @@
 import {
   useAnalytics,
+  useAuth,
   validateUserFeedbackMessage,
+  validateUserFeedbackReplyEmail,
   type ShowcaseDemoRenderer,
   type SubmitUserFeedbackInput,
 } from '@eciperay/client';
@@ -10,12 +12,15 @@ import {
   Text as DsText,
   tokens,
 } from '@spudly/ui';
-import {useCallback, useState} from 'react';
+import {useCallback, useEffect, useState} from 'react';
 import {YStack} from 'tamagui';
+
+import {APP_VERSION} from '../lib/env';
 
 import {CheckboxField} from './ui/CheckboxField';
 import {ErrorText} from './ui/ErrorText';
 import {PrimaryButton} from './ui/PrimaryButton';
+import {TextField} from './ui/TextField';
 
 type FeedbackFormProps = {
   route?: string;
@@ -25,19 +30,31 @@ type FeedbackFormProps = {
 
 export const FeedbackForm = ({route, onSubmitted}: FeedbackFormProps) => {
   const analytics = useAnalytics();
+  const {session} = useAuth();
   const [message, setMessage] = useState('');
+  const [replyEmail, setReplyEmail] = useState('');
   const [isBug, setIsBug] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
+  const accountEmail = session?.user.email ?? '';
+  // Pre-fill the reply address from the signed-in account until the user
+  // edits the field themselves.
+  useEffect(() => {
+    setReplyEmail(current => (current === '' ? accountEmail : current));
+  }, [accountEmail]);
+
+  const userId = session?.user.id;
+
   const resetForm = useCallback(() => {
     setMessage('');
+    setReplyEmail(accountEmail);
     setIsBug(false);
     setError(null);
     setSubmitting(false);
     setSubmitted(false);
-  }, []);
+  }, [accountEmail]);
 
   useFocusEffect(
     useCallback(() => {
@@ -49,10 +66,14 @@ export const FeedbackForm = ({route, onSubmitted}: FeedbackFormProps) => {
     setSubmitting(true);
     setError(null);
 
+    const trimmedReplyEmail = replyEmail.trim();
     const input: SubmitUserFeedbackInput = {
       message,
       is_bug: isBug,
       ...(route ? {route} : {}),
+      ...(trimmedReplyEmail ? {reply_email: trimmedReplyEmail} : {}),
+      ...(userId ? {user_id: userId} : {}),
+      ...(APP_VERSION ? {app_version: APP_VERSION} : {}),
     };
     const result = await analytics.submitUserFeedback(input);
     setSubmitting(false);
@@ -96,6 +117,13 @@ export const FeedbackForm = ({route, onSubmitted}: FeedbackFormProps) => {
           placeholder="Tell us what happened or what you'd like to see improved."
         />
       </YStack>
+      <TextField
+        label="Email me back (optional)"
+        type="email"
+        value={replyEmail}
+        onChange={setReplyEmail}
+        placeholder="you@example.com"
+      />
       <CheckboxField
         checked={isBug}
         onChange={setIsBug}
@@ -106,7 +134,10 @@ export const FeedbackForm = ({route, onSubmitted}: FeedbackFormProps) => {
         label="Submit feedback"
         loading={submitting}
         loadingLabel="Submitting…"
-        disabled={validateUserFeedbackMessage(message) !== null}
+        disabled={
+          validateUserFeedbackMessage(message) !== null ||
+          validateUserFeedbackReplyEmail(replyEmail) !== null
+        }
         onPress={() => {
           void handleSubmit();
         }}

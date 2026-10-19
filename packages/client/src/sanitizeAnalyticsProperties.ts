@@ -1,7 +1,9 @@
 const SENSITIVE_KEY_PATTERN =
   /password|token|secret|authorization|api[_-]?key|credential/i;
 
-const MAX_STRING_LENGTH = 500;
+// Must stay >= USER_FEEDBACK_MESSAGE_MAX_LENGTH (2000) so full feedback
+// messages survive the web adapter's before_send sanitizing.
+const MAX_STRING_LENGTH = 2000;
 
 export const isSensitiveAnalyticsPropertyKey = (key: string): boolean => {
   // PostHog SDK attaches the project key as properties.token in before_send payloads.

@@ -212,6 +212,7 @@ export {
 export {
   submitUserFeedback,
   validateUserFeedbackMessage,
+  validateUserFeedbackReplyEmail,
   USER_FEEDBACK_MESSAGE_MAX_LENGTH,
   USER_FEEDBACK_MESSAGE_MIN_LENGTH,
   type SubmitUserFeedbackInput,
