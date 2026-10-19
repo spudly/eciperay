@@ -231,17 +231,58 @@ export const upsertSubscription = async (
     eventAt = parseEventTime(event);
   } else if (isSupersededSubscription) {
     // An event for the superseded subscription orders against its
-    // own clock; only a genuinely newer revision makes it current
-    // again.
-    const decision = shouldApplyEvent(
-      event,
+    // own clock — but the mode and status decide what applying it
+    // means:
+    const supersededAt = normalizeTimestamp(
       existingRow.superseded_last_event_at,
     );
-    if (!decision.apply) {
-      return 'stale';
+    const candidateAt = parseEventTime(event);
+    if (options.snapshot === true) {
+      // The caller selected this candidate from Paddle's live state.
+      // An EQUAL revision must be allowed to reselect it: if the
+      // current subscription was canceled while this one stayed
+      // active, its updated_at never moved past the superseded
+      // clock, and rejecting it would strand the canceled
+      // subscription as current. Only an older snapshot is stale.
+      if (
+        candidateAt !== null &&
+        supersededAt !== null &&
+        candidateAt < supersededAt
+      ) {
+        return 'stale';
+      }
+      eventAt = candidateAt;
+      recordSwap();
+    } else if (mappedStatus === 'cancelled') {
+      // A canceled revision never promotes over the current
+      // subscription: its clock advanced precisely because it was
+      // canceled, so "newer" carries no entitlement claim. Advance
+      // the superseded clock only, as the status-only handler does.
+      if (
+        candidateAt === null ||
+        (supersededAt !== null && candidateAt <= supersededAt)
+      ) {
+        return 'stale';
+      }
+      await queryFn(
+        `update subscriptions set superseded_last_event_at = $2
+          where user_id = $1`,
+        [userId, candidateAt],
+      );
+      return 'applied';
+    } else {
+      // A genuinely newer live revision of the superseded
+      // subscription makes it current again.
+      const decision = shouldApplyEvent(
+        event,
+        existingRow.superseded_last_event_at,
+      );
+      if (!decision.apply) {
+        return 'stale';
+      }
+      eventAt = decision.eventAt;
+      recordSwap();
     }
-    eventAt = decision.eventAt;
-    recordSwap();
   } else if (strictlyDifferent && options.snapshot === true) {
     // Snapshot replacement, decided against this write-time row (a
     // concurrent webhook may have replaced the row since the caller
