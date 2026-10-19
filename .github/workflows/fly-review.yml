@@ -44,24 +44,21 @@ jobs:
           config: fly.review.toml
           memory: 512
           build_args: >-
-            VITE_API_BASE_URL=/api
-            VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}
-            VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}
-            VITE_POSTHOG_KEY=${{ secrets.VITE_POSTHOG_KEY }}
-            VITE_POSTHOG_HOST=${{ secrets.VITE_POSTHOG_HOST }}
-            POSTHOG_API_KEY=${{ secrets.POSTHOG_API_KEY }}
-            POSTHOG_PROJECT_ID=${{ secrets.POSTHOG_PROJECT_ID }}
-            POSTHOG_API_HOST=https://us.posthog.com
-            GITHUB_SHA=${{ github.sha }}
+            VITE_API_BASE_URL=/api VITE_SUPABASE_URL=${{
+            secrets.VITE_SUPABASE_URL }} VITE_SUPABASE_ANON_KEY=${{
+            secrets.VITE_SUPABASE_ANON_KEY }} VITE_POSTHOG_KEY=${{
+            secrets.VITE_POSTHOG_KEY }} VITE_POSTHOG_HOST=${{
+            secrets.VITE_POSTHOG_HOST }} POSTHOG_API_KEY=${{
+            secrets.POSTHOG_API_KEY }} POSTHOG_PROJECT_ID=${{
+            secrets.POSTHOG_PROJECT_ID }}
+            POSTHOG_API_HOST=https://us.posthog.com GITHUB_SHA=${{ github.sha }}
           secrets: >-
-            DATABASE_URL=${{ secrets.DATABASE_URL }}
-            SUPABASE_URL=${{ secrets.SUPABASE_URL }}
-            SUPABASE_SECRET_KEY=${{ secrets.SUPABASE_SECRET_KEY }}
-            ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
-            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
-            SERVER_SECRET=${{ secrets.SERVER_SECRET }}
+            DATABASE_URL=${{ secrets.DATABASE_URL }} SUPABASE_URL=${{
+            secrets.SUPABASE_URL }} SUPABASE_SECRET_KEY=${{
+            secrets.SUPABASE_SECRET_KEY }} ANTHROPIC_API_KEY=${{
+            secrets.ANTHROPIC_API_KEY }} OPENAI_API_KEY=${{
+            secrets.OPENAI_API_KEY }} SERVER_SECRET=${{ secrets.SERVER_SECRET }}
             POSTHOG_KEY=${{ secrets.VITE_POSTHOG_KEY }}
-            POSTHOG_HOST=https://a.eciperay.com
-            PADDLE_API_KEY=${{ secrets.PADDLE_API_KEY }}
-            PADDLE_WEBHOOK_SECRET=${{ secrets.PADDLE_WEBHOOK_SECRET }}
-            PADDLE_ENVIRONMENT=sandbox
+            POSTHOG_HOST=https://a.eciperay.com PADDLE_API_KEY=${{
+            secrets.PADDLE_API_KEY }} PADDLE_WEBHOOK_SECRET=${{
+            secrets.PADDLE_WEBHOOK_SECRET }} PADDLE_ENVIRONMENT=sandbox
