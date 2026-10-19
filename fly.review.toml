@@ -1,0 +1,43 @@
+# Fly.io config for PR review apps (see .github/workflows/fly-review.yml).
+# The review-apps action copies this file and renames the app to
+# pr-<number>-spudly-eciperay, so `app` below is only a placeholder.
+#
+# Deliberate differences from fly.toml (production):
+#   - NO [deploy] release_command: code from an unmerged PR must never run
+#     database migrations. If the preview's DATABASE_URL points at the
+#     production database, the schema it sees is production's current schema.
+#   - min_machines_running = 0: previews scale to zero when idle and are
+#     destroyed when the PR closes; they should cost as little as possible.
+
+app = 'eciperay'
+primary_region = 'iad'
+
+[build]
+  dockerfile = 'Dockerfile'
+
+  [build.args]
+    VITE_API_BASE_URL = '/api'
+
+[env]
+  NODE_ENV = 'production'
+  HOST = '0.0.0.0'
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
+
+  [[http_service.checks]]
+    interval = '15s'
+    timeout = '2s'
+    grace_period = '15s'
+    method = 'GET'
+    path = '/api/health'
+
+[[vm]]
+  memory = '512mb'
+  cpu_kind = 'shared'
+  cpus = 1
