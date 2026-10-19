@@ -47,10 +47,10 @@ describe('GenerateAiScreen', () => {
   });
 
   test('does not start when prompt is empty', async () => {
-    const {getByText} = renderWithProviders(
+    const {getByText} = await renderWithProviders(
       <GenerateAiScreen {...stackProps} />,
     );
-    fireEvent.press(getByText('Start planning'));
+    await fireEvent.press(getByText('Start planning'));
     expect(mockStart).not.toHaveBeenCalled();
   });
 
@@ -80,14 +80,14 @@ describe('GenerateAiScreen', () => {
       recipeId: 'recipe-ai-1',
       versionId: 'version-uuid-1',
     });
-    const {getByPlaceholderText, getByText} = renderWithProviders(
+    const {getByPlaceholderText, getByText} = await renderWithProviders(
       <GenerateAiScreen {...stackProps} />,
     );
-    fireEvent.changeText(
+    await fireEvent.changeText(
       getByPlaceholderText(/quick weeknight vegetarian pasta/i),
       'simple chocolate chip cookies for 12',
     );
-    fireEvent.press(getByText('Start planning'));
+    await fireEvent.press(getByText('Start planning'));
     await waitFor(() => {
       expect(mockStart).toHaveBeenCalledWith(
         'simple chocolate chip cookies for 12',
@@ -98,7 +98,7 @@ describe('GenerateAiScreen', () => {
         ),
       ).toBeTruthy();
     });
-    fireEvent.press(getByText('Approve plan'));
+    await fireEvent.press(getByText('Approve plan'));
     await waitFor(() => {
       expect(
         getByText(
@@ -107,7 +107,7 @@ describe('GenerateAiScreen', () => {
       ).toBeTruthy();
       expect(getByText('Save recipe')).toBeTruthy();
     });
-    fireEvent.press(getByText('Save recipe'));
+    await fireEvent.press(getByText('Save recipe'));
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith('ImportReview', {
         recipeId: 'recipe-ai-1',
@@ -129,24 +129,23 @@ describe('GenerateAiScreen', () => {
       reply: 'Add vanilla extract',
     });
     mockCancel.mockResolvedValue({session: {...session, phase: 'cancelled'}});
-    const {getByPlaceholderText, getByText, findByText} = renderWithProviders(
-      <GenerateAiScreen {...stackProps} />,
-    );
-    fireEvent.changeText(
+    const {getByPlaceholderText, getByText, findByText} =
+      await renderWithProviders(<GenerateAiScreen {...stackProps} />);
+    await fireEvent.changeText(
       getByPlaceholderText(/quick weeknight vegetarian pasta/i),
       'simple chocolate chip cookies for 12',
     );
-    fireEvent.press(getByText('Start planning'));
+    await fireEvent.press(getByText('Start planning'));
     await waitFor(() => {
       expect(getByPlaceholderText('Ask for changes to the plan…')).toBeTruthy();
     });
-    fireEvent.changeText(
+    await fireEvent.changeText(
       getByPlaceholderText('Ask for changes to the plan…'),
       'add vanilla',
     );
-    fireEvent.press(getByText('Refine plan'));
+    await fireEvent.press(getByText('Refine plan'));
     expect(await findByText('Add vanilla extract')).toBeTruthy();
-    fireEvent.press(getByText('Cancel session'));
+    await fireEvent.press(getByText('Cancel session'));
     await waitFor(() => {
       expect(mockCancel).toHaveBeenCalledWith('session-1');
       expect(mockGoBack).toHaveBeenCalled();
@@ -154,10 +153,10 @@ describe('GenerateAiScreen', () => {
   });
 
   test('cancels from empty state', async () => {
-    const {getByText} = renderWithProviders(
+    const {getByText} = await renderWithProviders(
       <GenerateAiScreen {...stackProps} />,
     );
-    fireEvent.press(getByText('Cancel'));
+    await fireEvent.press(getByText('Cancel'));
     expect(mockGoBack).toHaveBeenCalled();
   });
 
@@ -166,14 +165,13 @@ describe('GenerateAiScreen', () => {
       session: {...session, phase: 'completed'},
       plan: '',
     });
-    const {getByPlaceholderText, getByText, queryByText} = renderWithProviders(
-      <GenerateAiScreen {...stackProps} />,
-    );
-    fireEvent.changeText(
+    const {getByPlaceholderText, getByText, queryByText} =
+      await renderWithProviders(<GenerateAiScreen {...stackProps} />);
+    await fireEvent.changeText(
       getByPlaceholderText(/quick weeknight vegetarian pasta/i),
       'simple chocolate chip cookies for 12',
     );
-    fireEvent.press(getByText('Start planning'));
+    await fireEvent.press(getByText('Start planning'));
     await waitFor(() => {
       expect(queryByText('Cancel session')).toBeNull();
     });
@@ -181,14 +179,13 @@ describe('GenerateAiScreen', () => {
 
   test('shows error when start fails', async () => {
     mockStart.mockRejectedValue(new Error('Planning failed'));
-    const {getByPlaceholderText, getByText, findByText} = renderWithProviders(
-      <GenerateAiScreen {...stackProps} />,
-    );
-    fireEvent.changeText(
+    const {getByPlaceholderText, getByText, findByText} =
+      await renderWithProviders(<GenerateAiScreen {...stackProps} />);
+    await fireEvent.changeText(
       getByPlaceholderText(/quick weeknight vegetarian pasta/i),
       'simple chocolate chip cookies for 12',
     );
-    fireEvent.press(getByText('Start planning'));
+    await fireEvent.press(getByText('Start planning'));
     expect(await findByText('Planning failed')).toBeTruthy();
   });
 });

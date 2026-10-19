@@ -1,5 +1,4 @@
 import React from 'react';
-import {FlatList} from 'react-native';
 import {act, waitFor} from '@testing-library/react-native';
 import {
   RECIPE_LIST_PAGE_SIZE,
@@ -16,9 +15,16 @@ import {api} from '../lib/api';
 
 import {SharedWithMeScreen} from './SharedWithMeScreen';
 
+import type {TestInstance} from 'test-renderer';
+
 jest.mock('../lib/api');
 
 const mockListSharedWithMe = api.recipes.listSharedWithMe as jest.Mock;
+
+// RNTL v14 renders host elements only: the list is the host scroll view
+// that receives the FlatList onEndReached prop.
+const findList = (container: TestInstance) =>
+  container.queryAll(node => typeof node.props?.onEndReached === 'function')[0];
 
 const triggerEndReached = async (list: {
   props: {onEndReached?: () => void};
@@ -34,7 +40,7 @@ describe('SharedWithMeScreen', () => {
   });
 
   test('shows empty state', async () => {
-    const {findByText} = renderWithProviders(<SharedWithMeScreen />);
+    const {findByText} = await renderWithProviders(<SharedWithMeScreen />);
     expect(await findByText(SHARED_WITH_ME_EMPTY_MESSAGE)).toBeTruthy();
   });
 
@@ -47,7 +53,7 @@ describe('SharedWithMeScreen', () => {
         userId: 'other-user',
       }),
     ]);
-    const {findByText} = renderWithProviders(<SharedWithMeScreen />);
+    const {findByText} = await renderWithProviders(<SharedWithMeScreen />);
     expect(await findByText('Shared Soup')).toBeTruthy();
   });
 
@@ -55,11 +61,11 @@ describe('SharedWithMeScreen', () => {
     mockListSharedWithMe.mockResolvedValue([
       makeRecipeDetail({title: 'Only Shared', userId: 'other-user'}),
     ]);
-    const {findByText, UNSAFE_getByType} = renderWithProviders(
+    const {findByText, container} = await renderWithProviders(
       <SharedWithMeScreen />,
     );
     await findByText('Only Shared');
-    await triggerEndReached(UNSAFE_getByType(FlatList));
+    await triggerEndReached(findList(container));
     await waitFor(() => {
       expect(mockListSharedWithMe).toHaveBeenCalledTimes(1);
     });
@@ -90,12 +96,12 @@ describe('SharedWithMeScreen', () => {
       },
     );
     const client = makeQueryClient();
-    const {findByText, getByLabelText, UNSAFE_getByType} = renderWithProviders(
+    const {findByText, getByLabelText, container} = await renderWithProviders(
       <SharedWithMeScreen />,
       client,
     );
     await findByText('Shared 0');
-    const list = UNSAFE_getByType(FlatList);
+    const list = findList(container);
     await act(async () => {
       list.props.onEndReached?.();
       await flushQueryClient(client);
@@ -131,11 +137,11 @@ describe('SharedWithMeScreen', () => {
         ];
       },
     );
-    const {findByText, UNSAFE_getByType} = renderWithProviders(
+    const {findByText, container} = await renderWithProviders(
       <SharedWithMeScreen />,
     );
     await findByText('Shared 0');
-    await triggerEndReached(UNSAFE_getByType(FlatList));
+    await triggerEndReached(findList(container));
     await waitFor(() => {
       expect(mockListSharedWithMe).toHaveBeenCalledWith({
         limit: RECIPE_LIST_PAGE_SIZE,

@@ -41,11 +41,11 @@ describe('EditRecipeScreen', () => {
   });
 
   test('loads recipe and saves changes', async () => {
-    const {findByText, getByText} = renderWithProviders(
+    const {findByText, getByText} = await renderWithProviders(
       <EditRecipeScreen {...stackProps} />,
     );
     expect(await findByText('Edit Recipe')).toBeTruthy();
-    fireEvent.press(getByText('Save Changes'));
+    await fireEvent.press(getByText('Save Changes'));
     await waitFor(() => {
       expect(mockPut).toHaveBeenCalled();
       expect(mockNavigate).toHaveBeenCalledWith('RecipeDetail', {
@@ -54,7 +54,7 @@ describe('EditRecipeScreen', () => {
     });
   });
 
-  test('shows a delayed loading gate while the recipe is fetching', () => {
+  test('shows a delayed loading gate while the recipe is fetching', async () => {
     jest.useFakeTimers();
     mockGet.mockImplementation(
       () =>
@@ -62,13 +62,13 @@ describe('EditRecipeScreen', () => {
           /* never resolves */
         }),
     );
-    const {queryByLabelText} = renderWithProviders(
+    const {queryByLabelText} = await renderWithProviders(
       <EditRecipeScreen {...stackProps} />,
     );
 
     expect(queryByLabelText('Loading')).toBeNull();
 
-    act(() => {
+    await act(() => {
       jest.advanceTimersByTime(100);
     });
 

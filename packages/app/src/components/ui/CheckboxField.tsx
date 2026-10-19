@@ -1,7 +1,6 @@
 import type {CheckboxFieldProps} from '@eciperay/client';
-import {CheckboxField as DsCheckboxField} from '@spudly/ui';
+import {CheckboxField as DsCheckboxField, Text as DsText} from '@spudly/ui';
 import {useState} from 'react';
-import {View} from 'react-native';
 import {YStack} from 'tamagui';
 
 export const CheckboxField = ({
@@ -21,7 +20,10 @@ export const CheckboxField = ({
       description={typeof description === 'string' ? description : undefined}
     />
     {typeof description !== 'string' && description ? (
-      <View>{description}</View>
+      // Rich descriptions must render inside a Text component: React
+      // Native rejects raw strings under a View (test-renderer enforces
+      // this in tests). Mirrors the web adapter.
+      <DsText variant="hint">{description}</DsText>
     ) : null}
     {children}
   </YStack>

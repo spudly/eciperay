@@ -12,24 +12,24 @@ describe('InlineLoadingIndicator', () => {
     jest.useRealTimers();
   });
 
-  test('renders nothing until the delay elapses', () => {
-    const {queryByLabelText} = render(<InlineLoadingIndicator loading />);
+  test('renders nothing until the delay elapses', async () => {
+    const {queryByLabelText} = await render(<InlineLoadingIndicator loading />);
 
     expect(queryByLabelText('Loading')).toBeNull();
 
-    act(() => {
+    await act(() => {
       jest.advanceTimersByTime(100);
     });
 
     expect(queryByLabelText('Loading')).toBeTruthy();
   });
 
-  test('renders nothing when loading is false', () => {
-    const {queryByLabelText} = render(
+  test('renders nothing when loading is false', async () => {
+    const {queryByLabelText} = await render(
       <InlineLoadingIndicator loading={false} />,
     );
 
-    act(() => {
+    await act(() => {
       jest.advanceTimersByTime(100);
     });
 

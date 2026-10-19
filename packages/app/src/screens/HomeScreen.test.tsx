@@ -74,11 +74,11 @@ describe('HomeScreen', () => {
     jest.restoreAllMocks();
   });
 
-  const renderHome = () =>
-    renderWithProviders(<HomeScreen {...homeProps} />, makeQueryClient());
+  const renderHome = async () =>
+    await renderWithProviders(<HomeScreen {...homeProps} />, makeQueryClient());
 
   test('displays welcome content and actions', async () => {
-    const {findByText} = renderHome();
+    const {findByText} = await renderHome();
     expect(await findByText(HOME_TITLE)).toBeTruthy();
     expect(await findByText(HOME_BROWSE_LABEL)).toBeTruthy();
     expect(await findByText(HOME_ADD_LABEL)).toBeTruthy();
@@ -87,25 +87,25 @@ describe('HomeScreen', () => {
   });
 
   test('navigates to Recipes tab from browse action', async () => {
-    const {findByText} = renderHome();
+    const {findByText} = await renderHome();
     await findByText(HOME_TITLE);
-    fireEvent.press(await findByText(HOME_BROWSE_LABEL));
+    await fireEvent.press(await findByText(HOME_BROWSE_LABEL));
     expect(mockNavigate).toHaveBeenCalledWith('Recipes', {
       screen: 'RecipesList',
     });
   });
 
   test('navigates to Add tab from add action', async () => {
-    const {findByText} = renderHome();
+    const {findByText} = await renderHome();
     await findByText(HOME_TITLE);
-    fireEvent.press(await findByText(HOME_ADD_LABEL));
+    await fireEvent.press(await findByText(HOME_ADD_LABEL));
     expect(mockNavigate).toHaveBeenCalledWith('Add', {screen: 'AddScreen'});
   });
 
   test('navigates to Shared with me from home action', async () => {
-    const {findByText} = renderHome();
+    const {findByText} = await renderHome();
     await findByText(HOME_TITLE);
-    fireEvent.press(await findByText(HOME_SHARED_WITH_ME_LABEL));
+    await fireEvent.press(await findByText(HOME_SHARED_WITH_ME_LABEL));
     expect(mockNavigate).toHaveBeenCalledWith('Recipes', {
       screen: 'SharedWithMe',
     });
@@ -117,7 +117,7 @@ describe('HomeScreen', () => {
     const invalidateSpy = jest
       .spyOn(client, 'invalidateQueries')
       .mockResolvedValue();
-    const {findByText} = renderWithProviders(
+    const {findByText} = await renderWithProviders(
       <HomeScreen {...homeProps} />,
       client,
     );
@@ -132,14 +132,14 @@ describe('HomeScreen', () => {
   });
 
   test('shows empty state when there is no view history', async () => {
-    const {findByText} = renderHome();
+    const {findByText} = await renderHome();
     expect(await findByText(/Recipes you view will appear here/)).toBeTruthy();
   });
 
   test('navigates to recipe detail when a recipe is pressed', async () => {
     await recordRecipeView(recipeViewHistoryStorage, 'recipe-1');
-    const {findByText} = renderHome();
-    fireEvent.press(await findByText('Soup'));
+    const {findByText} = await renderHome();
+    await fireEvent.press(await findByText('Soup'));
     expect(mockNavigate).toHaveBeenCalledWith('Recipes', {
       screen: 'RecipeDetail',
       params: {recipeId: 'recipe-1'},
@@ -148,7 +148,7 @@ describe('HomeScreen', () => {
 
   test('deletes a recipe after confirmation', async () => {
     await recordRecipeView(recipeViewHistoryStorage, 'recipe-1');
-    const {findByText} = renderHome();
+    const {findByText} = await renderHome();
     await findByText('Soup');
 
     (Alert.alert as jest.Mock).mockImplementation(
@@ -157,7 +157,7 @@ describe('HomeScreen', () => {
       },
     );
 
-    fireEvent.press(await findByText('Delete'));
+    await fireEvent.press(await findByText('Delete'));
     await waitFor(() => {
       expect(mockDelete).toHaveBeenCalledWith('recipe-1');
     });
@@ -172,7 +172,7 @@ describe('HomeScreen', () => {
       makeRecipeDetail({id, title: `Recipe ${id}`}),
     );
 
-    const {findByText, queryByText} = renderHome();
+    const {findByText, queryByText} = await renderHome();
 
     expect(await findByText('Recipe recipe-4')).toBeTruthy();
     expect(await findByText('Recipe recipe-2')).toBeTruthy();

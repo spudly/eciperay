@@ -22,7 +22,7 @@ describe('RecipeImageField', () => {
     const {confirmPhotoLibraryAccess} = require('../../lib/androidPermissions');
     confirmPhotoLibraryAccess.mockResolvedValueOnce(false);
     const onImagePicked = jest.fn();
-    const {getByLabelText} = renderWithProviders(
+    const {getByLabelText} = await renderWithProviders(
       <RecipeImageField
         imagePreview={null}
         imageUploading={false}
@@ -31,7 +31,7 @@ describe('RecipeImageField', () => {
         onRemove={jest.fn()}
       />,
     );
-    fireEvent.press(getByLabelText('Choose recipe image'));
+    await fireEvent.press(getByLabelText('Choose recipe image'));
     await waitFor(() => {
       expect(confirmPhotoLibraryAccess).toHaveBeenCalled();
     });
@@ -39,9 +39,9 @@ describe('RecipeImageField', () => {
     expect(onImagePicked).not.toHaveBeenCalled();
   });
 
-  test('calls onGenerateImage from the generate button', () => {
+  test('calls onGenerateImage from the generate button', async () => {
     const onGenerateImage = jest.fn();
-    const {getByLabelText} = renderWithProviders(
+    const {getByLabelText} = await renderWithProviders(
       <RecipeImageField
         imagePreview={null}
         imageUploading={false}
@@ -51,7 +51,7 @@ describe('RecipeImageField', () => {
         onRemove={jest.fn()}
       />,
     );
-    fireEvent.press(getByLabelText('Generate image with AI'));
+    await fireEvent.press(getByLabelText('Generate image with AI'));
     expect(onGenerateImage).toHaveBeenCalled();
   });
 
@@ -67,7 +67,7 @@ describe('RecipeImageField', () => {
         },
       ],
     });
-    const {getByLabelText} = renderWithProviders(
+    const {getByLabelText} = await renderWithProviders(
       <RecipeImageField
         imagePreview={null}
         imageUploading={false}
@@ -77,7 +77,7 @@ describe('RecipeImageField', () => {
         onRemove={jest.fn()}
       />,
     );
-    fireEvent.press(getByLabelText('Choose recipe image'));
+    await fireEvent.press(getByLabelText('Choose recipe image'));
     await waitFor(() => {
       expect(onImagePicked).toHaveBeenCalledWith(
         {base64: btoa('pixels'), contentType: 'image/png'},
@@ -89,7 +89,7 @@ describe('RecipeImageField', () => {
   test('ignores cancelled library picks', async () => {
     const onImagePicked = jest.fn();
     mockLaunchImageLibrary.mockResolvedValue({didCancel: true});
-    const {getByLabelText} = renderWithProviders(
+    const {getByLabelText} = await renderWithProviders(
       <RecipeImageField
         imagePreview={null}
         imageUploading={false}
@@ -99,14 +99,14 @@ describe('RecipeImageField', () => {
         onRemove={jest.fn()}
       />,
     );
-    fireEvent.press(getByLabelText('Choose recipe image'));
+    await fireEvent.press(getByLabelText('Choose recipe image'));
     await waitFor(() => {
       expect(onImagePicked).not.toHaveBeenCalled();
     });
   });
 
-  test('disables choose image while an upload is in progress', () => {
-    const {getByLabelText} = renderWithProviders(
+  test('disables choose image while an upload is in progress', async () => {
+    const {getByLabelText} = await renderWithProviders(
       <RecipeImageField
         imagePreview={null}
         imageUploading
@@ -121,8 +121,8 @@ describe('RecipeImageField', () => {
     ).toMatchObject({disabled: true});
   });
 
-  test('disables choose image while an image is generating', () => {
-    const {getByLabelText} = renderWithProviders(
+  test('disables choose image while an image is generating', async () => {
+    const {getByLabelText} = await renderWithProviders(
       <RecipeImageField
         imagePreview={null}
         imageUploading={false}
@@ -143,7 +143,7 @@ describe('RecipeImageField', () => {
     mockLaunchImageLibrary.mockResolvedValue({
       assets: [{base64: btoa('pixels'), type: 'image/png'}],
     });
-    const {getByLabelText} = renderWithProviders(
+    const {getByLabelText} = await renderWithProviders(
       <RecipeImageField
         imagePreview={null}
         imageUploading={false}
@@ -153,7 +153,7 @@ describe('RecipeImageField', () => {
         onRemove={jest.fn()}
       />,
     );
-    fireEvent.press(getByLabelText('Choose recipe image'));
+    await fireEvent.press(getByLabelText('Choose recipe image'));
     await waitFor(() => {
       expect(onImagePicked).not.toHaveBeenCalled();
     });
@@ -164,7 +164,7 @@ describe('RecipeImageField', () => {
     mockLaunchImageLibrary.mockResolvedValue({
       assets: [{uri: 'file://recipe.png', type: 'image/png'}],
     });
-    const {getByLabelText} = renderWithProviders(
+    const {getByLabelText} = await renderWithProviders(
       <RecipeImageField
         imagePreview={null}
         imageUploading={false}
@@ -175,7 +175,7 @@ describe('RecipeImageField', () => {
         onRemove={jest.fn()}
       />,
     );
-    fireEvent.press(getByLabelText('Choose recipe image'));
+    await fireEvent.press(getByLabelText('Choose recipe image'));
     await waitFor(() => {
       expect(onImageError).toHaveBeenCalledWith('Failed to read image');
     });
@@ -194,7 +194,7 @@ describe('RecipeImageField', () => {
         },
       ],
     });
-    const {getByLabelText} = renderWithProviders(
+    const {getByLabelText} = await renderWithProviders(
       <RecipeImageField
         imagePreview={null}
         imageUploading={false}
@@ -205,14 +205,14 @@ describe('RecipeImageField', () => {
         onRemove={jest.fn()}
       />,
     );
-    fireEvent.press(getByLabelText('Choose recipe image'));
+    await fireEvent.press(getByLabelText('Choose recipe image'));
     await waitFor(() => {
       expect(onImageError).toHaveBeenCalledWith('Failed to read image');
     });
   });
 
-  test('shows uploading label while an upload is in progress', () => {
-    const {getByText} = renderWithProviders(
+  test('shows uploading label while an upload is in progress', async () => {
+    const {getByText} = await renderWithProviders(
       <RecipeImageField
         imagePreview={null}
         imageUploading
@@ -225,8 +225,8 @@ describe('RecipeImageField', () => {
     expect(getByText('Uploading…')).toBeTruthy();
   });
 
-  test('hides generate button when generation is unavailable', () => {
-    const {queryByLabelText} = renderWithProviders(
+  test('hides generate button when generation is unavailable', async () => {
+    const {queryByLabelText} = await renderWithProviders(
       <RecipeImageField
         imagePreview={null}
         imageUploading={false}

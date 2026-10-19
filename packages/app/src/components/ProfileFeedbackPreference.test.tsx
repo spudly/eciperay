@@ -9,9 +9,9 @@ import {ProfileFeedbackPreference} from './ProfileFeedbackPreference';
 jest.mock('../lib/env', () => ({POSTHOG_KEY: 'phc_test'}));
 
 describe('ProfileFeedbackPreference', () => {
-  test('toggles the feedback shortcut preference', () => {
+  test('toggles the feedback shortcut preference', async () => {
     const setEnabled = jest.fn();
-    renderWithProviders(
+    await renderWithProviders(
       <FeedbackPreferenceContextProvider
         enabled={false}
         setEnabled={setEnabled}
@@ -20,7 +20,7 @@ describe('ProfileFeedbackPreference', () => {
       </FeedbackPreferenceContextProvider>,
     );
 
-    fireEvent.press(screen.getByText('Show feedback shortcut'));
+    await fireEvent.press(screen.getByText('Show feedback shortcut'));
     expect(setEnabled).toHaveBeenCalledWith(true);
   });
 });

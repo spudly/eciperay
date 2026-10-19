@@ -27,7 +27,7 @@ describe('OverviewActions', () => {
   test('activates candidate versions', async () => {
     mockActivate.mockResolvedValueOnce(makeRecipeDetail());
     const onActionMessage = jest.fn();
-    const {getByText} = renderWithProviders(
+    const {getByText} = await renderWithProviders(
       <OverviewActions
         recipe={makeRecipeDetail()}
         versions={[
@@ -43,14 +43,14 @@ describe('OverviewActions', () => {
       />,
     );
     expect(getByText(/More spice/)).toBeTruthy();
-    fireEvent.press(getByText('Activate'));
+    await fireEvent.press(getByText('Activate'));
     await waitFor(() => {
       expect(onActionMessage).toHaveBeenCalledWith('Version activated');
     });
   });
 
   test('updates recipe status to perfected or abandoned', async () => {
-    const {getByText} = renderWithProviders(
+    const {getByText} = await renderWithProviders(
       <OverviewActions
         recipe={makeRecipeDetail()}
         versions={[makeRecipeVersionSummary()]}
@@ -59,14 +59,14 @@ describe('OverviewActions', () => {
         onViewVersion={jest.fn()}
       />,
     );
-    fireEvent.press(getByText('Mark perfected'));
+    await fireEvent.press(getByText('Mark perfected'));
     await waitFor(() => {
       expect(mockPatchStatus).toHaveBeenCalledWith(
         'recipe-uuid-1',
         'perfected',
       );
     });
-    fireEvent.press(getByText('Abandon'));
+    await fireEvent.press(getByText('Abandon'));
     await waitFor(() => {
       expect(mockPatchStatus).toHaveBeenCalledWith(
         'recipe-uuid-1',
@@ -77,7 +77,7 @@ describe('OverviewActions', () => {
 
   test('creates manual tweak draft', async () => {
     const onViewVersion = jest.fn();
-    const {getByText} = renderWithProviders(
+    const {getByText} = await renderWithProviders(
       <OverviewActions
         recipe={makeRecipeDetail()}
         versions={[makeRecipeVersionSummary()]}
@@ -86,14 +86,14 @@ describe('OverviewActions', () => {
         onViewVersion={onViewVersion}
       />,
     );
-    fireEvent.press(getByText('Tweak manually'));
+    await fireEvent.press(getByText('Tweak manually'));
     await waitFor(() => {
       expect(onViewVersion).toHaveBeenCalledWith('version-draft-1');
     });
   });
 
-  test('renders nothing for perfected recipes without candidates', () => {
-    const {queryByText} = renderWithProviders(
+  test('renders nothing for perfected recipes without candidates', async () => {
+    const {queryByText} = await renderWithProviders(
       <OverviewActions
         recipe={makeRecipeDetail({status: 'perfected'})}
         versions={[makeRecipeVersionSummary({derivedRole: 'active'})]}
@@ -106,8 +106,8 @@ describe('OverviewActions', () => {
     expect(queryByText('Ready to activate')).toBeNull();
   });
 
-  test('shows activation controls without tweak actions for perfected recipes', () => {
-    const {getByText, queryByText} = renderWithProviders(
+  test('shows activation controls without tweak actions for perfected recipes', async () => {
+    const {getByText, queryByText} = await renderWithProviders(
       <OverviewActions
         recipe={makeRecipeDetail({status: 'perfected'})}
         versions={[

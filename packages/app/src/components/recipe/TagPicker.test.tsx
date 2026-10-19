@@ -28,26 +28,26 @@ describe('TagPicker', () => {
   });
 
   test('renders tags and toggles selection', async () => {
-    const {findByText} = renderWithProviders(
+    const {findByText} = await renderWithProviders(
       <TagPicker
         selectedIds={[]}
         onChange={onChange}
       />,
     );
-    fireEvent.press(await findByText('Dinner'));
+    await fireEvent.press(await findByText('Dinner'));
     await waitFor(() => {
       expect(onChange).toHaveBeenCalledWith(['t1']);
     });
   });
 
   test('deselects tag when already selected', async () => {
-    const {findByText} = renderWithProviders(
+    const {findByText} = await renderWithProviders(
       <TagPicker
         selectedIds={['t1']}
         onChange={onChange}
       />,
     );
-    fireEvent.press(await findByText('Dinner'));
+    await fireEvent.press(await findByText('Dinner'));
     await waitFor(() => {
       expect(onChange).toHaveBeenCalledWith([]);
     });
@@ -60,14 +60,14 @@ describe('TagPicker', () => {
           /* never resolves */
         }),
     );
-    const {getByLabelText, unmount} = renderWithProviders(
+    const {getByLabelText, unmount} = await renderWithProviders(
       <TagPicker
         selectedIds={[]}
         onChange={onChange}
       />,
     );
     expect(getByLabelText('Loading')).toBeTruthy();
-    unmount();
+    await unmount();
     await settleAsyncUpdates();
   });
 });

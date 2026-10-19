@@ -52,7 +52,7 @@ describe('MealEditScreen', () => {
   });
 
   test('renders new meal form', async () => {
-    const {findByText} = renderWithProviders(
+    const {findByText} = await renderWithProviders(
       <MealEditScreen {...createProps({})} />,
     );
     expect(await findByText('Meal')).toBeTruthy();
@@ -61,13 +61,12 @@ describe('MealEditScreen', () => {
   });
 
   test('creates meal and navigates to detail', async () => {
-    const {findByText, getByPlaceholderText, getByText} = renderWithProviders(
-      <MealEditScreen {...createProps({})} />,
-    );
+    const {findByText, getByPlaceholderText, getByText} =
+      await renderWithProviders(<MealEditScreen {...createProps({})} />);
     await findByText('Pasta');
-    fireEvent.changeText(getByPlaceholderText('Meal title'), 'Dinner');
-    fireEvent.press(getByText('Pasta'));
-    fireEvent.press(getByText('Save meal'));
+    await fireEvent.changeText(getByPlaceholderText('Meal title'), 'Dinner');
+    await fireEvent.press(getByText('Pasta'));
+    await fireEvent.press(getByText('Save meal'));
     await waitFor(() => {
       expect(mockCreate).toHaveBeenCalled();
       expect(mockReplace).toHaveBeenCalledWith('MealDetail', {mealId});
@@ -100,7 +99,7 @@ describe('MealEditScreen', () => {
         },
       ],
     });
-    const {findByDisplayValue} = renderWithProviders(
+    const {findByDisplayValue} = await renderWithProviders(
       <MealEditScreen {...createProps({mealId})} />,
     );
     expect(await findByDisplayValue('Sunday Dinner')).toBeTruthy();
@@ -132,11 +131,11 @@ describe('MealEditScreen', () => {
         },
       ],
     });
-    const {findByDisplayValue, getByText} = renderWithProviders(
+    const {findByDisplayValue, getByText} = await renderWithProviders(
       <MealEditScreen {...createProps({mealId})} />,
     );
     expect(await findByDisplayValue('Sunday Dinner')).toBeTruthy();
-    fireEvent.press(getByText('Save meal'));
+    await fireEvent.press(getByText('Save meal'));
     await waitFor(() => {
       expect(mockPut).toHaveBeenCalledWith(mealId, expect.any(Object));
     });
@@ -144,25 +143,24 @@ describe('MealEditScreen', () => {
 
   test('toggles recipes and adjusts servings', async () => {
     const {findByText, getByPlaceholderText, getByText, queryByText} =
-      renderWithProviders(<MealEditScreen {...createProps({})} />);
+      await renderWithProviders(<MealEditScreen {...createProps({})} />);
     await findByText('Pasta');
-    fireEvent.changeText(getByPlaceholderText('Meal title'), 'Dinner');
-    fireEvent.press(getByText('Pasta'));
-    fireEvent.press(getByText('+'));
-    fireEvent.press(getByText('Pasta'));
+    await fireEvent.changeText(getByPlaceholderText('Meal title'), 'Dinner');
+    await fireEvent.press(getByText('Pasta'));
+    await fireEvent.press(getByText('+'));
+    await fireEvent.press(getByText('Pasta'));
     expect(queryByText('Servings · Pasta')).toBeNull();
   });
 
   test('shows save errors', async () => {
     mockCreate.mockRejectedValue(new Error('Save failed'));
-    const {findByText, getByPlaceholderText, getByText} = renderWithProviders(
-      <MealEditScreen {...createProps({})} />,
-    );
+    const {findByText, getByPlaceholderText, getByText} =
+      await renderWithProviders(<MealEditScreen {...createProps({})} />);
     await findByText('Pasta');
-    fireEvent.changeText(getByPlaceholderText('Meal title'), 'Dinner');
-    fireEvent.press(getByText('Pasta'));
+    await fireEvent.changeText(getByPlaceholderText('Meal title'), 'Dinner');
+    await fireEvent.press(getByText('Pasta'));
     await act(async () => {
-      fireEvent.press(getByText('Save meal'));
+      await fireEvent.press(getByText('Save meal'));
     });
     expect(await findByText('Save failed')).toBeTruthy();
   });

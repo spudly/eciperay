@@ -25,17 +25,17 @@ jest.mock('../components/FeedbackForm.js', () => {
 });
 
 describe('FeedbackScreen', () => {
-  test('passes the active route to the feedback form', () => {
+  test('passes the active route to the feedback form', async () => {
     mockUseNavigationState.mockImplementation(selector =>
       selector({routes: [{name: 'FeedbackHome'}], index: 0}),
     );
-    renderWithProviders(<FeedbackScreen />);
+    await renderWithProviders(<FeedbackScreen />);
     expect(screen.getByTestId('feedback-form-route')).toHaveTextContent(
       'FeedbackHome',
     );
   });
 
-  test('handles nested navigation state', () => {
+  test('handles nested navigation state', async () => {
     mockUseNavigationState.mockImplementation(selector =>
       selector({
         routes: [
@@ -44,15 +44,15 @@ describe('FeedbackScreen', () => {
         index: 0,
       }),
     );
-    renderWithProviders(<FeedbackScreen />);
+    await renderWithProviders(<FeedbackScreen />);
     expect(screen.getByTestId('feedback-form-route')).toHaveTextContent(
       'NestedFeedback',
     );
   });
 
-  test('returns no route when navigation state is missing', () => {
+  test('returns no route when navigation state is missing', async () => {
     mockUseNavigationState.mockImplementation(selector => selector());
-    renderWithProviders(<FeedbackScreen />);
+    await renderWithProviders(<FeedbackScreen />);
     expect(screen.getByTestId('feedback-form-route')).toHaveTextContent('none');
   });
 });

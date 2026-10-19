@@ -18,15 +18,18 @@ const mockOnComplete = jest.fn();
 describe('ResetPasswordScreen', () => {
   test('updates password and completes recovery flow', async () => {
     mockUpdateUser.mockResolvedValue({error: null});
-    const {getByLabelText, getByText} = renderWithProviders(
+    const {getByLabelText, getByText} = await renderWithProviders(
       <ResetPasswordScreen onComplete={mockOnComplete} />,
     );
 
     await act(async () => {
-      fireEvent.changeText(getByLabelText('New password'), 'new-password');
+      await fireEvent.changeText(
+        getByLabelText('New password'),
+        'new-password',
+      );
       await Promise.resolve();
     });
-    fireEvent.press(getByText('Update password'));
+    await fireEvent.press(getByText('Update password'));
 
     await waitFor(() => {
       expect(mockUpdateUser).toHaveBeenCalledWith({password: 'new-password'});
@@ -40,11 +43,11 @@ describe('ResetPasswordScreen', () => {
 
   test('shows error alert on failure', async () => {
     mockUpdateUser.mockResolvedValue({error: new Error('Update failed')});
-    const {getByText} = renderWithProviders(
+    const {getByText} = await renderWithProviders(
       <ResetPasswordScreen onComplete={mockOnComplete} />,
     );
 
-    fireEvent.press(getByText('Update password'));
+    await fireEvent.press(getByText('Update password'));
 
     await waitFor(() => {
       expect(mockAlert).toHaveBeenCalledWith('Error', 'Update failed');

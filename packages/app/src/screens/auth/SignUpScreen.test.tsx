@@ -20,8 +20,10 @@ const mockNavigate = jest.fn();
 const nav = {navigate: mockNavigate};
 
 describe('SignUpScreen', () => {
-  test('renders sign up form', () => {
-    const {getByLabelText} = renderWithProviders(<SignUpScreen navigation={nav} />);
+  test('renders sign up form', async () => {
+    const {getByLabelText} = await renderWithProviders(
+      <SignUpScreen navigation={nav} />,
+    );
     expect(getByLabelText('Your name')).toBeTruthy();
     expect(getByLabelText('Email')).toBeTruthy();
     expect(getByLabelText('Password')).toBeTruthy();
@@ -30,8 +32,10 @@ describe('SignUpScreen', () => {
   test('syncs user when session is returned', async () => {
     mockSignUp.mockResolvedValue({data: {session: {}}, error: null});
     mockSyncUser.mockImplementation(async () => {});
-    const {getByText} = renderWithProviders(<SignUpScreen navigation={nav} />);
-    fireEvent.press(getByText('Create Account'));
+    const {getByText} = await renderWithProviders(
+      <SignUpScreen navigation={nav} />,
+    );
+    await fireEvent.press(getByText('Create Account'));
     await waitFor(() => {
       expect(mockSyncUser).toHaveBeenCalled();
     });
@@ -39,8 +43,10 @@ describe('SignUpScreen', () => {
 
   test('shows confirmation alert when email confirmation required', async () => {
     mockSignUp.mockResolvedValue({data: {session: null}, error: null});
-    const {getByText} = renderWithProviders(<SignUpScreen navigation={nav} />);
-    fireEvent.press(getByText('Create Account'));
+    const {getByText} = await renderWithProviders(
+      <SignUpScreen navigation={nav} />,
+    );
+    await fireEvent.press(getByText('Create Account'));
     await waitFor(() => {
       expect(mockAlert).toHaveBeenCalledWith(
         'Check your email',
@@ -54,16 +60,20 @@ describe('SignUpScreen', () => {
       data: {session: null},
       error: new Error('Email taken'),
     });
-    const {getByText} = renderWithProviders(<SignUpScreen navigation={nav} />);
-    fireEvent.press(getByText('Create Account'));
+    const {getByText} = await renderWithProviders(
+      <SignUpScreen navigation={nav} />,
+    );
+    await fireEvent.press(getByText('Create Account'));
     await waitFor(() => {
       expect(mockAlert).toHaveBeenCalledWith('Sign up failed', 'Email taken');
     });
   });
 
-  test('navigates to SignIn', () => {
-    const {getByText} = renderWithProviders(<SignUpScreen navigation={nav} />);
-    fireEvent.press(getByText('Already have an account? Sign in'));
+  test('navigates to SignIn', async () => {
+    const {getByText} = await renderWithProviders(
+      <SignUpScreen navigation={nav} />,
+    );
+    await fireEvent.press(getByText('Already have an account? Sign in'));
     expect(mockNavigate).toHaveBeenCalledWith('SignIn');
   });
 });

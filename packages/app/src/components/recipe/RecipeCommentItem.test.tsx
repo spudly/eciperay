@@ -19,9 +19,9 @@ describe('RecipeCommentItem', () => {
     updatedAt: '2024-01-01T00:00:00.000Z',
   };
 
-  test('renders comment content and moderation actions', () => {
+  test('renders comment content and moderation actions', async () => {
     const onDelete = jest.fn();
-    const {getByText, getByLabelText} = renderWithProviders(
+    const {getByText, getByLabelText} = await renderWithProviders(
       <RecipeCommentItem
         comment={comment}
         currentUserId="user-uuid-1"
@@ -40,7 +40,7 @@ describe('RecipeCommentItem', () => {
 
     expect(getByText('Anonymous')).toBeTruthy();
     expect(getByLabelText(STALE_COMMENT_HINT)).toBeTruthy();
-    fireEvent.press(getByText('Delete'));
+    await fireEvent.press(getByText('Delete'));
     expect(onDelete).toHaveBeenCalled();
   });
 });

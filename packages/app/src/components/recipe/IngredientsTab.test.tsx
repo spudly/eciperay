@@ -20,37 +20,37 @@ describe('IngredientsTab', () => {
     mockSubstitutions.mockResolvedValue([]);
   });
 
-  test('renders ingredient list with names', () => {
-    const {getByText} = renderWithProviders(
+  test('renders ingredient list with names', async () => {
+    const {getByText} = await renderWithProviders(
       <IngredientsTab {...defaultProps} />,
     );
     expect(getByText(/Flour/)).toBeTruthy();
   });
 
-  test('ServingsStepper increment calls onServingsChange with servings + 1', () => {
-    const {getByText} = renderWithProviders(
+  test('ServingsStepper increment calls onServingsChange with servings + 1', async () => {
+    const {getByText} = await renderWithProviders(
       <IngredientsTab {...defaultProps} />,
     );
-    fireEvent.press(getByText('+'));
+    await fireEvent.press(getByText('+'));
     expect(onServingsChange).toHaveBeenCalledWith(5);
   });
 
-  test('ServingsStepper decrement calls onServingsChange with servings - 1', () => {
-    const {getByText} = renderWithProviders(
+  test('ServingsStepper decrement calls onServingsChange with servings - 1', async () => {
+    const {getByText} = await renderWithProviders(
       <IngredientsTab {...defaultProps} />,
     );
-    fireEvent.press(getByText('−'));
+    await fireEvent.press(getByText('−'));
     expect(onServingsChange).toHaveBeenCalledWith(3);
   });
 
-  test('decrement stops at 1 serving minimum', () => {
-    const {getByText} = renderWithProviders(
+  test('decrement stops at 1 serving minimum', async () => {
+    const {getByText} = await renderWithProviders(
       <IngredientsTab
         {...defaultProps}
         servings={1}
       />,
     );
-    fireEvent.press(getByText('−'));
+    await fireEvent.press(getByText('−'));
     // Verify onChange was not called with a value below the minimum (1)
     const calls = onServingsChange.mock.calls;
     for (const call of calls) {
@@ -58,19 +58,19 @@ describe('IngredientsTab', () => {
     }
   });
 
-  test('applies scale multipliers', () => {
-    const {getByText} = renderWithProviders(
+  test('applies scale multipliers', async () => {
+    const {getByText} = await renderWithProviders(
       <IngredientsTab
         {...defaultProps}
         servings={4}
       />,
     );
-    fireEvent.press(getByText('3×'));
+    await fireEvent.press(getByText('3×'));
     expect(onServingsChange).toHaveBeenCalledWith(12);
   });
 
-  test('shows scaled ingredient quantities', () => {
-    const {getByText} = renderWithProviders(
+  test('shows scaled ingredient quantities', async () => {
+    const {getByText} = await renderWithProviders(
       <IngredientsTab
         {...defaultProps}
         scaleFactor={2}
@@ -84,25 +84,25 @@ describe('IngredientsTab', () => {
     mockSubstitutions.mockResolvedValue([
       {ingredient: 'Salt', suggestions: ['Soy sauce']},
     ]);
-    const {getAllByText, findByText} = renderWithProviders(
+    const {getAllByText, findByText} = await renderWithProviders(
       <IngredientsTab {...defaultProps} />,
     );
-    fireEvent.press(getAllByText(/Salt/)[0]);
+    await fireEvent.press(getAllByText(/Salt/)[0]);
     expect(await findByText('Substitutions')).toBeTruthy();
     expect(mockSubstitutions).toHaveBeenCalled();
   });
 
-  test('tapping missing ingredient again removes it from set', () => {
-    const {getAllByText, queryByText} = renderWithProviders(
+  test('tapping missing ingredient again removes it from set', async () => {
+    const {getAllByText, queryByText} = await renderWithProviders(
       <IngredientsTab {...defaultProps} />,
     );
-    fireEvent.press(getAllByText(/Flour/)[0]);
+    await fireEvent.press(getAllByText(/Flour/)[0]);
     expect(queryByText(/Tap an ingredient/)).toBeTruthy();
-    fireEvent.press(getAllByText(/Flour/)[0]);
+    await fireEvent.press(getAllByText(/Flour/)[0]);
     expect(queryByText(/Tap an ingredient/)).toBeNull();
   });
 
-  test('shows optional label for optional ingredients', () => {
+  test('shows optional label for optional ingredients', async () => {
     const optionalRecipe = makeRecipeDetail({
       ingredients: [
         {
@@ -117,7 +117,7 @@ describe('IngredientsTab', () => {
         },
       ],
     });
-    const {getByText} = renderWithProviders(
+    const {getByText} = await renderWithProviders(
       <IngredientsTab
         recipe={optionalRecipe}
         scaleFactor={1}

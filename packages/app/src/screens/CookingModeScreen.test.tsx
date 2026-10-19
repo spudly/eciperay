@@ -32,7 +32,7 @@ describe('CookingModeScreen', () => {
   });
 
   test('renders first instruction step', async () => {
-    const {findByText} = renderWithProviders(
+    const {findByText} = await renderWithProviders(
       <CookingModeScreen {...stackProps} />,
     );
     expect(await findByText('Mix dry ingredients')).toBeTruthy();
@@ -43,28 +43,28 @@ describe('CookingModeScreen', () => {
       RecipesStackParamList,
       'CookingMode'
     >('CookingMode', {recipeId: 'recipe-uuid-1'}, {goBack: mockGoBack});
-    const {findByText} = renderWithProviders(
+    const {findByText} = await renderWithProviders(
       <CookingModeScreen {...propsWithoutVersion} />,
     );
     expect(await findByText('Mix dry ingredients')).toBeTruthy();
   });
 
   test('advances to next step', async () => {
-    const {findByText} = renderWithProviders(
+    const {findByText} = await renderWithProviders(
       <CookingModeScreen {...stackProps} />,
     );
     await findByText('Mix dry ingredients');
-    fireEvent.press(await findByText('Next →'));
+    await fireEvent.press(await findByText('Next →'));
     expect(await findByText('Bake at 350°F')).toBeTruthy();
   });
 
   test('goes to previous step', async () => {
-    const {findByText} = renderWithProviders(
+    const {findByText} = await renderWithProviders(
       <CookingModeScreen {...stackProps} />,
     );
     await findByText('Mix dry ingredients');
-    fireEvent.press(await findByText('Next →'));
-    fireEvent.press(await findByText('← Back'));
+    await fireEvent.press(await findByText('Next →'));
+    await fireEvent.press(await findByText('← Back'));
     expect(await findByText('Mix dry ingredients')).toBeTruthy();
   });
 
@@ -74,7 +74,7 @@ describe('CookingModeScreen', () => {
       {recipeId: 'recipe-uuid-1', versionId: VERSION_ID, servings: 8},
       {goBack: mockGoBack},
     );
-    const {findByText} = renderWithProviders(
+    const {findByText} = await renderWithProviders(
       <CookingModeScreen {...scaledProps} />,
     );
     expect(await findByText('4 cups Flour')).toBeTruthy();
@@ -82,30 +82,30 @@ describe('CookingModeScreen', () => {
   });
 
   test('shows cook log form on Done press', async () => {
-    const {findByText} = renderWithProviders(
+    const {findByText} = await renderWithProviders(
       <CookingModeScreen {...stackProps} />,
     );
-    fireEvent.press(await findByText('Done'));
+    await fireEvent.press(await findByText('Done'));
     expect(await findByText('How did it go?')).toBeTruthy();
   });
 
   test('skips cook log and goes back', async () => {
-    const {findByText} = renderWithProviders(
+    const {findByText} = await renderWithProviders(
       <CookingModeScreen {...stackProps} />,
     );
-    fireEvent.press(await findByText('Done'));
-    fireEvent.press(await findByText('Skip'));
+    await fireEvent.press(await findByText('Done'));
+    await fireEvent.press(await findByText('Skip'));
     await waitFor(() => {
       expect(mockGoBack).toHaveBeenCalled();
     });
   });
 
   test('saves cook log and goes back', async () => {
-    const {findByText} = renderWithProviders(
+    const {findByText} = await renderWithProviders(
       <CookingModeScreen {...stackProps} />,
     );
-    fireEvent.press(await findByText('Done'));
-    fireEvent.press(await findByText('Save'));
+    await fireEvent.press(await findByText('Done'));
+    await fireEvent.press(await findByText('Save'));
     await waitFor(() => {
       expect(mockCreateCookLog).toHaveBeenCalledWith(
         'recipe-uuid-1',
@@ -137,7 +137,7 @@ describe('CookingModeScreen', () => {
       {recipeId: 'recipe-uuid-1', versionId: alternateVersionId},
       {goBack: mockGoBack},
     );
-    const {findByText} = renderWithProviders(
+    const {findByText} = await renderWithProviders(
       <CookingModeScreen {...alternateProps} />,
     );
     expect(await findByText('Alternate step')).toBeTruthy();

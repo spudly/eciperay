@@ -104,7 +104,7 @@ type RenderWithProvidersOptions = Omit<RenderOptions, 'wrapper'> & {
   client?: QueryClient;
 };
 
-export const renderWithProviders = (
+export const renderWithProviders = async (
   ui: React.ReactElement,
   clientOrOptions: QueryClient | RenderWithProvidersOptions = makeQueryClient(),
   maybeOptions?: RenderWithProvidersOptions,
@@ -120,10 +120,13 @@ export const renderWithProviders = (
     activeQueryClients.add(client);
   }
 
-  return render(ui, {
+  return await render(ui, {
     ...options,
     wrapper: ({children}) => (
-      <TamaguiProvider config={eciperayTamaguiConfig} defaultTheme="light">
+      <TamaguiProvider
+        config={eciperayTamaguiConfig}
+        defaultTheme="light"
+      >
         <QueryClientProvider client={client}>
           <AnalyticsProvider analytics={testAnalytics}>
             {children}

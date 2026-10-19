@@ -13,9 +13,11 @@ import type {ProfileStackParamList} from '../navigation/types';
 
 import {ProfileScreen} from './ProfileScreen';
 
-const mockUseAuth = jest.fn((): {session: {user: {email: string}} | null} => ({
+const defaultUseAuth = (): {session: {user: {email: string}} | null} => ({
   session: {user: {email: 'user@test.com'}},
-}));
+});
+
+const mockUseAuth = jest.fn(defaultUseAuth);
 
 jest.mock('@eciperay/client', () => ({
   ...jest.requireActual('@eciperay/client'),
@@ -35,8 +37,8 @@ const stackProps = makeStackProps<ProfileStackParamList, 'ProfileHome'>(
   {navigate: mockNavigate},
 );
 
-const renderProfileScreen = () =>
-  renderWithProviders(
+const renderProfileScreen = async () =>
+  await renderWithProviders(
     <FeedbackPreferenceContextProvider
       enabled={false}
       setEnabled={jest.fn()}
@@ -68,49 +70,55 @@ describe('ProfileScreen', () => {
     jest.restoreAllMocks();
   });
   test('renders without email when session is missing', async () => {
-    mockUseAuth.mockReturnValueOnce({session: null});
-    const {queryByText} = renderProfileScreen();
-    await waitFor(() => {
-      expect(queryByText('user@test.com')).toBeNull();
-    });
+    // mockReturnValueOnce is not reliable here: the async renderer may
+    // render more than once before committing, consuming the one-off value.
+    mockUseAuth.mockReturnValue({session: null});
+    try {
+      const {queryByText} = await renderProfileScreen();
+      await waitFor(() => {
+        expect(queryByText('user@test.com')).toBeNull();
+      });
+    } finally {
+      mockUseAuth.mockImplementation(defaultUseAuth);
+    }
   });
 
   test('renders email and sign out button', async () => {
-    const {findByText} = renderProfileScreen();
+    const {findByText} = await renderProfileScreen();
     expect(await findByText('user@test.com')).toBeTruthy();
     expect(await findByText('Sign Out')).toBeTruthy();
   });
 
   test('signs out on button press', async () => {
     const {supabase} = require('../lib/supabase');
-    const {findByText} = renderProfileScreen();
-    fireEvent.press(await findByText('Sign Out'));
+    const {findByText} = await renderProfileScreen();
+    await fireEvent.press(await findByText('Sign Out'));
     expect(supabase.auth.signOut).toHaveBeenCalled();
   });
 
   test('navigates to Tags', async () => {
-    const {findByText} = renderProfileScreen();
-    fireEvent.press(await findByText('Manage Tags'));
+    const {findByText} = await renderProfileScreen();
+    await fireEvent.press(await findByText('Manage Tags'));
     expect(mockNavigate).toHaveBeenCalledWith('Tags');
   });
 
   test('opens the component showcase in dev', async () => {
-    const {findByText} = renderProfileScreen();
-    fireEvent.press(await findByText('Component Showcase'));
+    const {findByText} = await renderProfileScreen();
+    await fireEvent.press(await findByText('Component Showcase'));
     expect(mockNavigate).toHaveBeenCalledWith('ComponentShowcase');
   });
 
   test('opens legal document URLs', async () => {
-    const {findByText} = renderProfileScreen();
-    fireEvent.press(await findByText('Privacy Policy'));
+    const {findByText} = await renderProfileScreen();
+    await fireEvent.press(await findByText('Privacy Policy'));
     expect(Linking.openURL).toHaveBeenCalledWith(PRIVACY_POLICY_URL);
-    fireEvent.press(await findByText('Terms of Service'));
+    await fireEvent.press(await findByText('Terms of Service'));
     expect(Linking.openURL).toHaveBeenCalledWith(TERMS_OF_SERVICE_URL);
   });
 
   test('saves nutrition goals', async () => {
-    const {findByText, getByText} = renderProfileScreen();
-    fireEvent.press(await findByText('Save goals'));
+    const {findByText, getByText} = await renderProfileScreen();
+    await fireEvent.press(await findByText('Save goals'));
     await waitFor(() => {
       expect(mockPutNutritionGoals).toHaveBeenCalled();
     });
@@ -119,8 +127,8 @@ describe('ProfileScreen', () => {
 
   test('shows nutrition goal save errors', async () => {
     mockPutNutritionGoals.mockRejectedValueOnce(new Error('Goals failed'));
-    const {findByText} = renderProfileScreen();
-    fireEvent.press(await findByText('Save goals'));
+    const {findByText} = await renderProfileScreen();
+    await fireEvent.press(await findByText('Save goals'));
     expect(await findByText('Goals failed')).toBeTruthy();
   });
 });
