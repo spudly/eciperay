@@ -369,6 +369,62 @@ describe('POST /api/account/entitlement/refresh', () => {
     expect(res.body.plan).toBe('free');
   });
 
+  test('stamps the upsert with Paddle updated_at, not local time', async () => {
+    subscriptionsForCustomer = {
+      data: [paddleSub({updated_at: '2026-10-01T12:00:00.000Z'})],
+    };
+    customersByEmail = {data: [{id: 'ctm_999'}]};
+    const res = await postRefresh();
+    expect(res.status).toBe(200);
+    expect(res.body.plan).toBe('plus');
+    const insert = mockQuery.mock.calls.find(args =>
+      args[0].includes('insert into subscriptions'),
+    );
+    // Event timestamp is the last bind parameter.
+    expect(insert?.[1]?.[10]).toBe('2026-10-01T12:00:00.000Z');
+  });
+
+  test('a stale snapshot cannot overwrite newer stored state', async () => {
+    storedSub = {
+      plan: 'plus',
+      status: 'cancelled',
+      paddle_customer_id: 'ctm_999',
+      paddle_last_event_at: '2030-01-01T00:00:00.000Z',
+      current_period_end: '2020-01-01T00:00:00.000Z',
+      cancel_at_period_end: true,
+      past_due_since: null,
+    };
+    subscriptionsForCustomer = {
+      data: [paddleSub({updated_at: '2026-01-01T00:00:00.000Z'})],
+    };
+    const res = await postRefresh();
+    expect(res.status).toBe(200);
+    expect(res.body.plan).toBe('free');
+    expect(
+      mockQuery.mock.calls.some(args =>
+        args[0].includes('insert into subscriptions'),
+      ),
+    ).toBe(false);
+  });
+
+  test('skips an unusable paused candidate for a usable canceled one', async () => {
+    subscriptionsForCustomer = {
+      data: [
+        paddleSub({id: 'sub_paused', status: 'paused'}),
+        paddleSub({id: 'sub_canceled', status: 'canceled'}),
+      ],
+    };
+    customersByEmail = {data: [{id: 'ctm_999'}]};
+    const res = await postRefresh();
+    expect(res.status).toBe(200);
+    const inserts = mockQuery.mock.calls.filter(args =>
+      args[0].includes('insert into subscriptions'),
+    );
+    expect(inserts).toHaveLength(1);
+    expect(inserts[0]?.[1]?.[2]).toBe('cancelled');
+    expect(inserts[0]?.[1]?.[4]).toBe('sub_canceled');
+  });
+
   test('returns 502 when the Paddle subscriptions request fails', async () => {
     storedSub = {
       plan: 'plus',

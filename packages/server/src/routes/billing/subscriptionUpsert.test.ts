@@ -79,6 +79,68 @@ describe('upsertSubscription', () => {
     ).toBe(false);
   });
 
+  test('reports outcomes: applied, invalid, and stale', async () => {
+    const mockPlanFound = ((sql: string) => {
+      if (sql.includes('from plan_prices')) {
+        return Promise.resolve(makeQueryResult([{plan: 'plus'}]));
+      }
+      return Promise.resolve(makeQueryResult([]));
+    }) as typeof mockQuery;
+
+    mockQuery.mockImplementation(mockPlanFound);
+    await expect(
+      upsertSubscription(makeEvent(), 'user-uuid-1', mockQuery),
+    ).resolves.toBe('applied');
+
+    // Missing price id: invalid before any query runs.
+    mockQuery.mockReset();
+    await expect(
+      upsertSubscription(
+        makeEvent({data: {...makeEvent().data, items: []}}),
+        'user-uuid-1',
+        mockQuery,
+      ),
+    ).resolves.toBe('invalid');
+    expect(mockQuery.mock.calls).toHaveLength(0);
+
+    // Unmapped status (paused): invalid, nothing written.
+    mockQuery.mockImplementation(mockPlanFound);
+    await expect(
+      upsertSubscription(
+        makeEvent({data: {...makeEvent().data, status: 'paused'}}),
+        'user-uuid-1',
+        mockQuery,
+      ),
+    ).resolves.toBe('invalid');
+    expect(
+      mockQuery.mock.calls.some(args =>
+        args[0].includes('insert into subscriptions'),
+      ),
+    ).toBe(false);
+
+    // Older event than the stored state: stale.
+    mockQuery.mockImplementation(((sql: string) => {
+      if (sql.includes('from plan_prices')) {
+        return Promise.resolve(makeQueryResult([{plan: 'plus'}]));
+      }
+      if (sql.includes('from subscriptions')) {
+        return Promise.resolve(
+          makeQueryResult([
+            {
+              status: 'active',
+              past_due_since: null,
+              paddle_last_event_at: '2026-10-13T17:00:00.000Z',
+            },
+          ]),
+        );
+      }
+      return Promise.resolve(makeQueryResult([]));
+    }) as typeof mockQuery);
+    await expect(
+      upsertSubscription(makeEvent(), 'user-uuid-1', mockQuery),
+    ).resolves.toBe('stale');
+  });
+
   test('upserts and persists the event timestamp', async () => {
     mockQuery.mockImplementation(((sql: string) => {
       if (sql.includes('from plan_prices')) {

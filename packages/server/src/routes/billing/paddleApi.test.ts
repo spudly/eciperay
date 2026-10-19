@@ -69,6 +69,25 @@ test('paddleApiGet returns null when fetch throws', async () => {
   await expect(paddleApiGet('/customers/ctm_1')).resolves.toBeNull();
 });
 
+test('paddleApiGet returns null when the body cannot be parsed', async () => {
+  fetchImpl = () =>
+    Promise.resolve({
+      ok: true,
+      status: 200,
+      json: async () => {
+        throw new Error('truncated body');
+      },
+    });
+  await expect(paddleApiGet('/customers/ctm_1')).resolves.toBeNull();
+  fetchImpl = () =>
+    Promise.resolve({
+      ok: true,
+      status: 200,
+      json: () => Promise.reject('non-error body failure'),
+    });
+  await expect(paddleApiGet('/customers/ctm_1')).resolves.toBeNull();
+});
+
 test('fetchPaddleCustomerEmail extracts data.email', async () => {
   fetchImpl = () => okJson({data: {email: 'buyer@example.com'}});
   await expect(fetchPaddleCustomerEmail('ctm_1')).resolves.toBe(
