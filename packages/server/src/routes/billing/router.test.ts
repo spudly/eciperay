@@ -645,7 +645,7 @@ describe('POST /billing/paddle-webhook event handling', () => {
     );
   });
 
-  test('ignores the event when no user can be resolved', async () => {
+  test('returns 500 without recording the event when no user can be resolved', async () => {
     mockEventQueries();
     const data = {
       ...(makeEvent().data as object),
@@ -654,8 +654,50 @@ describe('POST /billing/paddle-webhook event handling', () => {
       customer: {},
     };
     const res = await postEvent(makeEvent({data}));
-    expect(res.status).toBe(200);
+    // 500 so Paddle retries: recording the event as processed (the old
+    // behavior) lost the purchase permanently once it was marked seen.
+    expect(res.status).toBe(500);
+    expect(res.body).toEqual({error: 'handler failed'});
     expect(upserted()).toBeUndefined();
+    const recorded = mockQuery.mock.calls.find(args =>
+      args[0].includes('insert into paddle_events'),
+    );
+    expect(recorded).toBeUndefined();
+  });
+
+  test('resolves the user via the Paddle customer email lookup', async () => {
+    mockEventQueries({byEmail: {id: 'user-uuid-8'}});
+    const realFetch = global.fetch;
+    const originalKey = process.env['PADDLE_API_KEY'];
+    process.env['PADDLE_API_KEY'] = 'test-paddle-key';
+    global.fetch = async (url: unknown) => {
+      if (String(url).includes('/customers/ctm_123')) {
+        return {
+          ok: true,
+          json: async () => ({data: {email: 'buyer@example.com'}}),
+        } as Response;
+      }
+      return realFetch(url as never);
+    };
+    try {
+      const data = {
+        ...(makeEvent().data as object),
+        custom_data: {},
+        customer: {},
+      };
+      const res = await postEvent(makeEvent({data}));
+      expect(res.status).toBe(200);
+      expect(upserted()?.[1]).toEqual(
+        expect.arrayContaining(['user-uuid-8', 'plus', 'active']),
+      );
+    } finally {
+      global.fetch = realFetch;
+      if (originalKey === undefined) {
+        delete process.env['PADDLE_API_KEY'];
+      } else {
+        process.env['PADDLE_API_KEY'] = originalKey;
+      }
+    }
   });
 
   test('marks subscription cancelled on subscription.canceled', async () => {
