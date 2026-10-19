@@ -3,7 +3,11 @@ import {serverLog} from '../../lib/posthogLogs.js';
 
 import type {PaddleEvent} from './paddleEvents.js';
 import {fetchPaddleCustomerEmail} from './paddleApi.js';
-import {parseEventTime, shouldApplyEvent} from './paddleEventOrdering.js';
+import {
+  normalizeTimestamp,
+  parseEventTime,
+  shouldApplyEvent,
+} from './paddleEventOrdering.js';
 
 type QueryFn = typeof defaultQuery;
 
@@ -172,14 +176,25 @@ export const upsertSubscription = async (
   // Snapshot refresh only: a different subscription id than the stored
   // row's means replacement, decided against this write-time row (a
   // concurrent webhook may have replaced the row since the caller read
-  // it). The candidate's own timestamp is still what gets recorded.
+  // it).
   const isReplacement =
     options.snapshot === true &&
     existingRow !== undefined &&
     (existingRow.paddle_subscription_id ?? null) !== (event.data.id ?? null);
   let eventAt: string | null;
   if (isReplacement) {
-    eventAt = parseEventTime(event);
+    // Never move the stored event clock backwards: if it did, a
+    // delayed webhook for the superseded subscription, timestamped
+    // after this candidate but before the stored row's previous
+    // timestamp, would pass the global ordering guard and overwrite
+    // the replacement. Keep the later of the two timestamps; genuine
+    // newer revisions of the replacement still order after it.
+    const storedLast = normalizeTimestamp(existingRow.paddle_last_event_at);
+    const candidateAt = parseEventTime(event);
+    eventAt =
+      storedLast !== null && (candidateAt === null || storedLast > candidateAt)
+        ? storedLast
+        : candidateAt;
   } else {
     const decision = shouldApplyEvent(
       event,
@@ -191,11 +206,20 @@ export const upsertSubscription = async (
     eventAt = decision.eventAt;
   }
   const wasPastDue = existing.rows[0]?.status === 'past_due';
+  // Snapshot reconciliation must not restart the past-due grace clock:
+  // for a recovered past_due subscription, delinquency began with the
+  // unpaid period, so seed past_due_since from the period start Paddle
+  // reports instead of the refresh time. Webhook deliveries keep the
+  // event-time behavior (their period start is not a delinquency
+  // signal for a live transition).
   const pastDueSince =
     mappedStatus === 'past_due'
       ? wasPastDue
         ? (existing.rows[0]?.past_due_since ?? null)
-        : new Date().toISOString()
+        : options.snapshot === true
+          ? (event.data.current_billing_period?.starts_at ??
+            new Date().toISOString())
+          : new Date().toISOString()
       : null;
 
   await queryFn(

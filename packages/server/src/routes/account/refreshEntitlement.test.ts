@@ -543,6 +543,77 @@ describe('POST /api/account/entitlement/refresh', () => {
     expect(inserts[0]?.[1]?.[4]).toBe('sub_canceled');
   });
 
+  test('returns 502 when the customer lookup fails (not "no customer")', async () => {
+    paddleStatus = 503;
+    const res = await postRefresh();
+    expect(res.status).toBe(502);
+    expect(res.body).toEqual({error: 'failed to refresh subscription status'});
+  });
+
+  test('a recovered past_due subscription does not restart its grace period', async () => {
+    const periodStart = new Date(
+      Date.now() - 8 * 24 * 3600 * 1000,
+    ).toISOString();
+    subscriptionsForCustomer = {
+      data: [
+        paddleSub({
+          status: 'past_due',
+          current_billing_period: {
+            starts_at: periodStart,
+            ends_at: futureDate(),
+          },
+        }),
+      ],
+    };
+    customersByEmail = {data: [{id: 'ctm_999'}]};
+    let inserted: unknown[] | null = null;
+    mockRouteQueries((text: string, params?: unknown[]) => {
+      if (text.includes('from entitlement_overrides')) {
+        return Promise.resolve(makeQueryResult([]));
+      }
+      if (text.includes('select paddle_customer_id')) {
+        return Promise.resolve(makeQueryResult([]));
+      }
+      if (text.includes('from plan_prices')) {
+        return Promise.resolve(makeQueryResult([{plan: 'plus'}]));
+      }
+      if (text.includes('insert into subscriptions')) {
+        inserted = params ?? null;
+        return Promise.resolve(makeQueryResult([{}]));
+      }
+      if (text.includes('from subscriptions')) {
+        return Promise.resolve(
+          makeQueryResult(
+            inserted
+              ? [
+                  {
+                    plan: 'plus',
+                    status: 'past_due',
+                    paddle_customer_id: 'ctm_999',
+                    paddle_subscription_id: 'sub_1',
+                    paddle_last_event_at: inserted[10],
+                    current_period_end: futureDate(),
+                    cancel_at_period_end: false,
+                    past_due_since: inserted[9],
+                  },
+                ]
+              : [],
+          ),
+        );
+      }
+      if (text.includes('from ai_usage')) {
+        return Promise.resolve(makeQueryResult([{calls: 0}]));
+      }
+      return Promise.resolve(makeQueryResult([]));
+    });
+    const res = await postRefresh();
+    expect(res.status).toBe(200);
+    // Delinquency began with the unpaid period 8 days ago, so the
+    // 7-day grace has already expired: free, not a fresh grace window.
+    expect(inserted?.[9]).toBe(periodStart);
+    expect(res.body.plan).toBe('free');
+  });
+
   test('returns 502 when the Paddle subscriptions request fails', async () => {
     storedSub = {
       plan: 'plus',

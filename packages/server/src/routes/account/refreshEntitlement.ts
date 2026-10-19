@@ -105,7 +105,15 @@ export const refreshEntitlement = async (
   );
   let customerId = subRow.rows[0]?.paddle_customer_id ?? null;
   if (!customerId && req.userEmail) {
-    customerId = await findPaddleCustomerIdByEmail(req.userEmail);
+    try {
+      customerId = await findPaddleCustomerIdByEmail(req.userEmail);
+    } catch {
+      // A failed lookup is not "no such customer": report it like a
+      // failed subscriptions fetch rather than returning the stale
+      // entitlement as if reconciliation had succeeded.
+      res.status(502).json({error: 'failed to refresh subscription status'});
+      return;
+    }
   }
   if (!customerId) {
     // Paddle has no customer for this user: nothing to reconcile.

@@ -20,18 +20,24 @@ export const parseEventTime = (event: PaddleEvent): string | null => {
  * restore paid access after a cancellation). Returns the event timestamp to
  * persist when the update is applied.
  */
+/**
+ * Pg returns timestamptz columns as Date objects at runtime (no type parser
+ * override is configured), despite the string annotations on the row types.
+ * Normalize to ISO before any comparison: an ISO string compared against a Date
+ * with `>` is always false, which silently rejected every event after the first
+ * for a stored subscription.
+ */
+export const normalizeTimestamp = (
+  value: string | Date | null | undefined,
+): string | null =>
+  value instanceof Date ? value.toISOString() : (value ?? null);
+
 export const shouldApplyEvent = (
   event: PaddleEvent,
   lastAppliedAt: string | Date | null,
 ): {apply: boolean; eventAt: string | null} => {
   const eventAt = parseEventTime(event);
-  // pg returns timestamptz columns as Date objects at runtime (no type
-  // parser override is configured), despite the string annotations on
-  // the row types. Normalize before comparing: an ISO string compared
-  // against a Date with `>` is always false, which silently rejected
-  // every event after the first for a stored subscription.
-  const lastAppliedIso =
-    lastAppliedAt instanceof Date ? lastAppliedAt.toISOString() : lastAppliedAt;
+  const lastAppliedIso = normalizeTimestamp(lastAppliedAt);
   if (!eventAt || !lastAppliedIso || eventAt > lastAppliedIso) {
     return {apply: true, eventAt};
   }
