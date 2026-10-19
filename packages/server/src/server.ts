@@ -13,6 +13,7 @@ import {loadEntitlement} from './middleware/loadEntitlement.js';
 import {requireAuth} from './middleware/requireAuth.js';
 import {requirePlan} from './middleware/requirePlan.js';
 import {query as defaultQuery} from './db/query.js';
+import {assertPaddleConfig} from './lib/paddleConfig.js';
 import {attachPostHogExpress, captureServerException} from './lib/posthog.js';
 import {httpLogger, logger, toLoggableUrl} from './lib/logger.js';
 import {initPostHogLogs, serverLog} from './lib/posthogLogs.js';
@@ -151,6 +152,10 @@ export const handleUnexpectedError = (
 
 /* c8 ignore start -- HTTP listener entrypoint; tests import createApp via supertest only */
 const startServer = () => {
+  // Fail fast on a half-finished Paddle live cutover (production mode
+  // without the live secrets, or a mismatched API base) instead of
+  // booting a server whose billing silently cannot work.
+  assertPaddleConfig();
   initPostHogLogs();
   logServerSecretsOnStartup();
   const app = createApp();

@@ -1,15 +1,22 @@
 import type {Response as ExpressResponse} from 'express';
 
+import {getPaddleConfig} from '../../lib/paddleConfig.js';
 import {serverLog} from '../../lib/posthogLogs.js';
 import type {EntitledRequest} from '../../middleware/loadEntitlement.js';
 
 /**
  * POST /api/billing/portal-link — returns a Paddle customer-portal URL for the
  * user's Paddle customer. Upgrades, downgrades, cancellation, invoices, and
- * card updates all happen in Paddle's portal: we never build custom billing UI.
+ * card updates all happen in Paddle's portal: we never build custom billing
+ * UI.
  */
-export const portalLink = async (req: EntitledRequest, res: ExpressResponse) => {
-  const apiKey = process.env['PADDLE_API_KEY'];
+export const portalLink = async (
+  req: EntitledRequest,
+  res: ExpressResponse,
+) => {
+  // Sandbox vs live catalog (API base + which key is expected in
+  // PADDLE_API_KEY) is decided by PADDLE_ENVIRONMENT — see paddleConfig.
+  const {apiKey, apiBase} = getPaddleConfig();
   if (!apiKey) {
     res.status(500).json({error: 'billing not configured'});
     return;
@@ -19,9 +26,6 @@ export const portalLink = async (req: EntitledRequest, res: ExpressResponse) => 
     res.status(404).json({error: 'no subscription'});
     return;
   }
-  // Defaults to the sandbox API until Stephen cuts over to production.
-  const apiBase =
-    process.env['PADDLE_API_BASE'] ?? 'https://sandbox-api.paddle.com';
   let fetchResponse: globalThis.Response;
   try {
     fetchResponse = await fetch(
@@ -29,7 +33,7 @@ export const portalLink = async (req: EntitledRequest, res: ExpressResponse) => 
       {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${apiKey}`,
+          'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
         },
         body: '{}',
