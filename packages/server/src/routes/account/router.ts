@@ -12,6 +12,7 @@ import {deleteAccount} from './deleteAccount.js';
 import {createToken, listTokens, revokeToken} from './personalAccessTokens.js';
 import {exportAccount} from './exportAccount.js';
 import {getEntitlement} from './getEntitlement.js';
+import {refreshEntitlement} from './refreshEntitlement.js';
 import {getNutritionGoals, putNutritionGoals} from './nutritionGoals.js';
 
 type QueryFn = typeof defaultQuery;
@@ -26,6 +27,10 @@ export const createAccountRouter = (queryFn: QueryFn) => {
     (req, res) => {
       getEntitlement(req as EntitledRequest, res);
     },
+  );
+  // Self-heal for lost webhook deliveries: reconcile with Paddle directly.
+  router.post('/entitlement/refresh', requireAuth, (req, res) =>
+    refreshEntitlement(req as AuthedRequest, res, queryFn),
   );
   router.get('/export', requireAuth, (req, res) =>
     exportAccount(req as AuthedRequest, res, queryFn),
