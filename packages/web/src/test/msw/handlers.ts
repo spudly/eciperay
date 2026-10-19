@@ -651,6 +651,17 @@ export const handlers = [
       cancelAtPeriodEnd: false,
     }),
   ),
+  http.post(`${API}/api/account/entitlement/refresh`, () =>
+    HttpResponse.json({
+      plan: 'free',
+      status: null,
+      aiUsed: 0,
+      aiLimit: 25,
+      periodEndsAt: null,
+      paddleCustomerId: null,
+      cancelAtPeriodEnd: false,
+    }),
+  ),
   http.post(`${API}/api/billing/portal-link`, () =>
     HttpResponse.json({url: 'https://portal.example/session'}),
   ),

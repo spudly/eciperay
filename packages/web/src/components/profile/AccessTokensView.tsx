@@ -70,6 +70,7 @@ export const AccessTokensView = ({
   revokingId,
   onRevoke,
   error,
+  planNotice,
 }: AccessTokensViewProps) => (
   <SectionCard title="API access tokens">
     <InfoBanner>
@@ -83,22 +84,26 @@ export const AccessTokensView = ({
         onDismissSecret={onDismissSecret}
       />
     ) : null}
-    <div className="mbe-4 flex items-end gap-2">
-      <div className="flex-1">
-        <TextField
-          label="Token name"
-          value={tokenName}
-          onChange={onTokenNameChange}
-          placeholder="e.g. Claude Desktop"
+    {planNotice ? (
+      <InfoBanner>{planNotice}</InfoBanner>
+    ) : (
+      <div className="mbe-4 flex items-end gap-2">
+        <div className="flex-1">
+          <TextField
+            label="Token name"
+            value={tokenName}
+            onChange={onTokenNameChange}
+            placeholder="e.g. Claude Desktop"
+          />
+        </div>
+        <PrimaryButton
+          label="Create token"
+          loading={isCreating}
+          disabled={!tokenName.trim() || createdSecret !== null}
+          onPress={onCreate}
         />
       </div>
-      <PrimaryButton
-        label="Create token"
-        loading={isCreating}
-        disabled={!tokenName.trim() || createdSecret !== null}
-        onPress={onCreate}
-      />
-    </div>
+    )}
     {error ? <ErrorText>{error}</ErrorText> : null}
     {isLoading ? (
       <p className="text-sm text-slate-500">Loading tokens…</p>

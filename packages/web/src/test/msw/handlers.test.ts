@@ -156,6 +156,8 @@ describe('msw handlers', () => {
     const entitlement = await eciperay.account.getEntitlement();
     expect(entitlement.plan).toBe('free');
     expect(entitlement.status).toBeNull();
+    const refreshed = await eciperay.account.refreshEntitlement();
+    expect(refreshed.plan).toBe('free');
     const portal = await eciperay.billing.createPortalLink();
     expect(portal.url).toBe('https://portal.example/session');
   });

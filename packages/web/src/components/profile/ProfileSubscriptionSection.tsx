@@ -17,18 +17,17 @@ import {SubscriptionView} from './SubscriptionView.js';
 // after mount, and for 30s after each window focus, refetch on a
 // backoff; after that window the section settles and fetches normally.
 const RECONCILE_OFFSETS_MS = [3000, 8000, 15_000, 30_000];
-const RECONCILE_WINDOW_MS = 30_000;
 
 export const ProfileSubscriptionSection = () => {
   const {session} = useAuth();
   const queryClient = useQueryClient();
   const [portalError, setPortalError] = useState<string | null>(null);
   const [portalUrl, setPortalUrl] = useState<string | null>(null);
+  const [refreshError, setRefreshError] = useState<string | null>(null);
   // Mounting starts a cycle: arriving here from /pay's
   // checkout.completed redirect is a mount.
   const [reconcileCycleStartedAt, setReconcileCycleStartedAt] =
     useState<number>(() => Date.now());
-  const [isReconciling, setIsReconciling] = useState(true);
 
   // Key the cache by the authenticated user: the QueryClient is shared for
   // the life of the tab, so an unscoped key would leak the previous
@@ -62,23 +61,44 @@ export const ProfileSubscriptionSection = () => {
   }, []);
 
   useEffect(() => {
-    setIsReconciling(true);
     const entitlementKey = queryKeys.entitlement(userId);
     const timers = RECONCILE_OFFSETS_MS.map(offset =>
       setTimeout(() => {
         void queryClient.refetchQueries({queryKey: entitlementKey});
       }, offset),
     );
-    const endTimer = setTimeout(() => {
-      setIsReconciling(false);
-    }, RECONCILE_WINDOW_MS);
     return () => {
       for (const timer of timers) {
         clearTimeout(timer);
       }
-      clearTimeout(endTimer);
     };
   }, [reconcileCycleStartedAt, queryClient, userId]);
+
+  // "Check again": ask the server to reconcile with Paddle directly —
+  // the self-heal for a webhook delivery that never landed. The server
+  // answers with the freshly resolved entitlement, which becomes the
+  // cached value.
+  const refreshMutation = useMutation({
+    mutationFn: () => eciperay.account.refreshEntitlement(),
+    onSuccess: data => {
+      setRefreshError(null);
+      queryClient.setQueryData(queryKeys.entitlement(userId), data);
+    },
+    onError: mutationError => {
+      setRefreshError(errorMessage(mutationError));
+    },
+  });
+
+  const handleRefresh = () => {
+    setRefreshError(null);
+    refreshMutation.mutate();
+  };
+
+  // The "Checking…" hint tracks real work only — an entitlement fetch or
+  // the explicit refresh — never a blind timer, so it cannot look stuck
+  // for 30s on every mount/focus while nothing is actually being checked.
+  const isReconciling =
+    entitlementQuery.isFetching || refreshMutation.isPending;
 
   const portalMutation = useMutation({
     mutationFn: () => eciperay.billing.createPortalLink(),
@@ -124,8 +144,11 @@ export const ProfileSubscriptionSection = () => {
       onManage={handleManage}
       portalUrl={portalUrl}
       isReconciling={isReconciling}
+      onRefresh={handleRefresh}
+      isRefreshing={refreshMutation.isPending}
       error={
         portalError ??
+        refreshError ??
         (entitlementQuery.error ? errorMessage(entitlementQuery.error) : null)
       }
     />
