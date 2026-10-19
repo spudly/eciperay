@@ -51,33 +51,51 @@ it cannot be done from code.
 4. **Default payment link.** Point the live catalog's default payment link at
    `https://www.eciperay.com/pay` (the checkout-completion page Paddle.js opens
    from), mirroring the sandbox setup.
-5. **Fly production secrets** (app `eciperay`):
+5. **Clear sandbox subscription state.** Production runs the sandbox catalog
+   until the flip, so every row in the production `subscriptions` table is a
+   sandbox artifact: its `paddle_customer_id` / `paddle_subscription_id` do not
+   exist in the live catalog. Left in place, a row would keep granting its plan
+   after cutover, and the customer-portal link would send a sandbox customer ID
+   to the live API and fail. Before (or as part of) the flip, delete the sandbox
+   rows — `delete from subscriptions;` on the production database (the table
+   only ever holds paying users, and at this point all of them are sandbox test
+   purchases). Real live subscriptions repopulate it via the live webhook.
+6. **Fly production secrets** (app `eciperay`):
    - `PADDLE_ENVIRONMENT=production`
    - `PADDLE_API_KEY=<live API key>`
    - `PADDLE_WEBHOOK_SECRET=<live webhook signing secret from step 3>`
    - Leave `PADDLE_API_BASE` unset (derived from the environment), or set it
      explicitly to `https://api.paddle.com`.
-6. **GitHub settings** (repo `spudly/eciperay`):
+7. **GitHub settings** (repo `spudly/eciperay`):
    - Variable `PADDLE_ENVIRONMENT` = `production`
    - Secret `VITE_PADDLE_CLIENT_TOKEN` = the live client-side token
-7. **Live price IDs.** Copy the four `pri_…` IDs from step 1 into migration
+8. **Live price IDs.** Copy the four `pri_…` IDs from step 1 into migration
    `018_plan_prices_live.sql` (follow the instructions in that file; if it was
    already applied as a no-op, add the inserts as migration 019 instead).
-8. **Deploy.** Merge + release as usual. The deploy applies the price migration,
+9. **Deploy.** Merge + release as usual. The deploy applies the price migration,
    the server boots in production mode (watch the startup "Server environment"
    log for the Paddle entries), and the web build ships the live token.
-9. **Verify.** Make one small real purchase (e.g. Plus monthly) with a real
-   card, confirm the profile shows the paid plan, confirm the customer-portal
-   link opens the live portal, then cancel/refund if it was only a test.
+10. **Verify.** Make one small real purchase (e.g. Plus monthly) with a real
+    card, confirm the profile shows the paid plan, confirm the customer-portal
+    link opens the live portal, then cancel/refund if it was only a test.
 
-Ordering note: steps 5–7 can be done in any order, but the deploy in step 8
+Ordering note: steps 6–8 can be done in any order, but the deploy in step 9
 should only happen once all three are in place — the safety rails will
 (deliberately) block a half-configured deploy/boot.
 
 ## Rollback
 
-Set Fly secret `PADDLE_ENVIRONMENT` back to `sandbox` (and restore the sandbox
-`PADDLE_API_KEY` / `PADDLE_WEBHOOK_SECRET`), set the GitHub variable
-`PADDLE_ENVIRONMENT` back to `sandbox`, and redeploy. The sandbox catalog, keys,
-and `plan_prices` rows are untouched by the cutover, so rollback is just
-flipping the switches back.
+Flip every switch back — a partial rollback leaves mismatched pairs that the
+safety rails (deliberately) reject:
+
+- Fly secrets: `PADDLE_ENVIRONMENT` back to `sandbox`, restore the sandbox
+  `PADDLE_API_KEY` / `PADDLE_WEBHOOK_SECRET`, and **unset `PADDLE_API_BASE`** if
+  step 6 set it explicitly (sandbox mode refuses to boot against the live API
+  base).
+- GitHub: variable `PADDLE_ENVIRONMENT` back to `sandbox`, and **remove the
+  `VITE_PADDLE_CLIENT_TOKEN` secret** (or reset its value to the sandbox
+  client-side token) — otherwise the deploy keeps injecting the live token into
+  a sandbox-mode web build and checkout breaks.
+- Redeploy. The sandbox catalog, keys, and `plan_prices` rows are untouched by
+  the cutover, and live subscription rows created since the flip simply go
+  dormant (their IDs are meaningless to the sandbox API, the mirror of step 5).
