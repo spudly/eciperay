@@ -37,9 +37,16 @@ const applyOrderedStatusUpdate = async (
   status: 'cancelled' | 'past_due',
   queryFn: QueryFn,
 ): Promise<void> => {
-  const current = await queryFn<{paddle_last_event_at: string | Date | null}>(
-    `select paddle_last_event_at from subscriptions
-      where paddle_subscription_id = $1`,
+  const current = await queryFn<{
+    paddle_subscription_id: string | null;
+    paddle_last_event_at: string | Date | null;
+    superseded_subscription_id: string | null;
+    superseded_last_event_at: string | Date | null;
+  }>(
+    `select paddle_subscription_id, paddle_last_event_at,
+            superseded_subscription_id, superseded_last_event_at
+       from subscriptions
+      where paddle_subscription_id = $1 or superseded_subscription_id = $1`,
     [subscriptionId],
   );
   if (!current.rows[0]) {
@@ -52,6 +59,26 @@ const applyOrderedStatusUpdate = async (
     throw new Error(
       `Paddle status event ${event.event_id} has no subscription row yet`,
     );
+  }
+  const row = current.rows[0];
+  if (
+    row.superseded_subscription_id === subscriptionId &&
+    row.paddle_subscription_id !== subscriptionId
+  ) {
+    // Status event for the superseded subscription: its status does
+    // not drive entitlement (the current subscription does), so just
+    // advance its own clock and acknowledge — never touch the row's
+    // subscription state, and never compare against the current
+    // subscription's clock.
+    const decision = shouldApplyEvent(event, row.superseded_last_event_at);
+    if (decision.apply && decision.eventAt !== null) {
+      await queryFn(
+        `update subscriptions set superseded_last_event_at = $2
+          where superseded_subscription_id = $1`,
+        [subscriptionId, decision.eventAt],
+      );
+    }
+    return;
   }
   const {apply, eventAt} = shouldApplyEvent(
     event,
