@@ -17,6 +17,7 @@ export type PaddleEvent = {
     id?: string;
     customer_id?: string;
     status?: string;
+    updated_at?: string;
     custom_data?: {user_id?: string};
     items?: {price?: {id?: string}}[];
     current_billing_period?: {starts_at?: string; ends_at?: string};

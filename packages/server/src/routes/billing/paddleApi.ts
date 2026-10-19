@@ -91,25 +91,68 @@ export const findPaddleCustomerIdByEmail = async (
 };
 
 /**
- * All subscriptions Paddle reports for a customer, in API order. Returns null
- * when the request failed (vs. an empty list when Paddle answered with none),
- * so reconcile callers can tell failure from "no subscription".
+ * All subscriptions Paddle reports for a customer, in API order, across every
+ * page. Returns null when any page request fails (vs. an empty list when Paddle
+ * answered with none), so reconcile callers can tell failure from "no
+ * subscription" — and never reconcile from a partial list, which could select a
+ * historical subscription over the active one sitting on a later page. Paddle
+ * paginates with an `after` cursor (the last id of the page); a page shorter
+ * than per_page is the last one.
  */
 export const listPaddleSubscriptions = async (
   customerId: string,
 ): Promise<Record<string, unknown>[] | null> => {
+  const perPage = 100;
+  const all: Record<string, unknown>[] = [];
+  let after: string | null = null;
+  for (let page = 0; page < 50; page += 1) {
+    const cursor = after === null ? '' : `&after=${encodeURIComponent(after)}`;
+    const json = await paddleApiGet(
+      `/subscriptions?customer_id=${encodeURIComponent(customerId)}&per_page=${perPage}${cursor}`,
+    );
+    if (json === null) {
+      return null;
+    }
+    const data = (json as {data?: unknown}).data;
+    if (!Array.isArray(data)) {
+      return null;
+    }
+    all.push(
+      ...data.filter(
+        (item): item is Record<string, unknown> =>
+          item !== null && typeof item === 'object',
+      ),
+    );
+    if (data.length < perPage) {
+      return all;
+    }
+    const lastRaw: unknown = data[data.length - 1];
+    const lastId =
+      lastRaw !== null &&
+      typeof lastRaw === 'object' &&
+      typeof (lastRaw as {id?: unknown}).id === 'string'
+        ? (lastRaw as {id: string}).id
+        : null;
+    if (lastId === null || lastId === after) {
+      // A full page we cannot advance past: stop rather than loop.
+      return all;
+    }
+    after = lastId;
+  }
+  return all;
+};
+
+/**
+ * Current status of one subscription, via the API. Null when the request fails
+ * or the response carries no status — callers must treat null as "unknown",
+ * never as a status.
+ */
+export const fetchPaddleSubscriptionStatus = async (
+  subscriptionId: string,
+): Promise<string | null> => {
   const json = await paddleApiGet(
-    `/subscriptions?customer_id=${encodeURIComponent(customerId)}&per_page=100`,
+    `/subscriptions/${encodeURIComponent(subscriptionId)}`,
   );
-  if (json === null) {
-    return null;
-  }
-  const data = (json as {data?: unknown}).data;
-  if (!Array.isArray(data)) {
-    return null;
-  }
-  return data.filter(
-    (item): item is Record<string, unknown> =>
-      item !== null && typeof item === 'object',
-  );
+  const status = (json as {data?: {status?: unknown}} | null)?.data?.status;
+  return typeof status === 'string' && status.length > 0 ? status : null;
 };

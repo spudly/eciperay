@@ -366,36 +366,51 @@ describe('upsertSubscription', () => {
   });
 
   test('a newer webhook for a different subscription records the swap', async () => {
-    mockQuery.mockImplementation(((sql: string) => {
-      if (sql.includes('from plan_prices')) {
-        return Promise.resolve(makeQueryResult([{plan: 'plus'}]));
-      }
-      if (sql.includes('from subscriptions')) {
-        return Promise.resolve(
-          makeQueryResult([
-            {
-              status: 'active',
-              past_due_since: null,
-              paddle_subscription_id: 'sub_old',
-              paddle_last_event_at: '2026-10-10T00:00:00.000Z',
-            },
-          ]),
-        );
-      }
-      return Promise.resolve(makeQueryResult([]));
-    }) as typeof mockQuery);
-    const newer = makeEvent({
-      occurred_at: '2026-10-13T16:00:00.000Z',
-      data: {...makeEvent().data, id: 'sub_new'},
-    });
-    await expect(
-      upsertSubscription(newer, 'user-uuid-1', mockQuery),
-    ).resolves.toBe('applied');
-    const insert = mockQuery.mock.calls.find(args =>
-      args[0].includes('insert into subscriptions'),
-    );
-    expect(insert?.[1]?.[11]).toBe('sub_old');
-    expect(insert?.[1]?.[12]).toBe('2026-10-10T00:00:00.000Z');
+    // The takeover is verified live against Paddle first (see the
+    // delayed-active regression below); stub the API as confirming
+    // the new subscription is active.
+    const realFetch = global.fetch;
+    process.env['PADDLE_API_KEY'] = 'test-paddle-key';
+    global.fetch = (async () =>
+      ({
+        ok: true,
+        json: async () => ({data: {status: 'active'}}),
+      }) as Response) as typeof fetch;
+    try {
+      mockQuery.mockImplementation(((sql: string) => {
+        if (sql.includes('from plan_prices')) {
+          return Promise.resolve(makeQueryResult([{plan: 'plus'}]));
+        }
+        if (sql.includes('from subscriptions')) {
+          return Promise.resolve(
+            makeQueryResult([
+              {
+                status: 'active',
+                past_due_since: null,
+                paddle_subscription_id: 'sub_old',
+                paddle_last_event_at: '2026-10-10T00:00:00.000Z',
+              },
+            ]),
+          );
+        }
+        return Promise.resolve(makeQueryResult([]));
+      }) as typeof mockQuery);
+      const newer = makeEvent({
+        occurred_at: '2026-10-13T16:00:00.000Z',
+        data: {...makeEvent().data, id: 'sub_new'},
+      });
+      await expect(
+        upsertSubscription(newer, 'user-uuid-1', mockQuery),
+      ).resolves.toBe('applied');
+      const insert = mockQuery.mock.calls.find(args =>
+        args[0].includes('insert into subscriptions'),
+      );
+      expect(insert?.[1]?.[11]).toBe('sub_old');
+      expect(insert?.[1]?.[12]).toBe('2026-10-10T00:00:00.000Z');
+    } finally {
+      global.fetch = realFetch;
+      delete process.env['PADDLE_API_KEY'];
+    }
   });
 
   test('snapshot can reselect a superseded subscription at an equal revision', async () => {
@@ -642,6 +657,242 @@ describe('upsertSubscription', () => {
         args[0].includes('insert into subscriptions'),
       ),
     ).toBe(false);
+  });
+
+  test('delayed active webhook for a two-generations-old subscription fails live verification', async () => {
+    let row = {
+      status: 'active',
+      past_due_since: null as string | null,
+      paddle_subscription_id: 'sub_a' as string | null,
+      paddle_last_event_at: '2026-10-10T00:00:00.000Z' as string | null,
+      superseded_subscription_id: null as string | null,
+      superseded_last_event_at: null as string | null,
+    };
+    mockQuery.mockImplementation(((sql: string, params?: unknown[]) => {
+      if (sql.includes('from plan_prices')) {
+        return Promise.resolve(makeQueryResult([{plan: 'plus'}]));
+      }
+      if (sql.includes('from subscriptions')) {
+        return Promise.resolve(makeQueryResult([row]));
+      }
+      if (sql.includes('insert into subscriptions')) {
+        const p = params as unknown[];
+        row = {
+          ...row,
+          status: p[2] as string,
+          paddle_subscription_id: p[4] as string,
+          paddle_last_event_at: p[10] as string,
+          superseded_subscription_id: p[11] as string,
+          superseded_last_event_at: p[12] as string,
+        };
+        return Promise.resolve(makeQueryResult([{}]));
+      }
+      return Promise.resolve(makeQueryResult([]));
+    }) as typeof mockQuery);
+    const snapshotFor = (id: string, occurredAt: string) =>
+      upsertSubscription(
+        makeEvent({occurred_at: occurredAt, data: {...makeEvent().data, id}}),
+        'user-uuid-1',
+        mockQuery,
+        {snapshot: true},
+      );
+    await snapshotFor('sub_b', '2026-10-11T00:00:00.000Z');
+    await snapshotFor('sub_c', '2026-10-14T00:00:00.000Z');
+    expect(row.paddle_subscription_id).toBe('sub_c');
+
+    // sub_a was canceled Oct 18, but an unseen ACTIVE revision of it
+    // from Oct 17 now arrives — newer than sub_c's Oct 14 clock, so
+    // the stored clocks alone would promote it. Live verification
+    // asks Paddle, which reports sub_a canceled: no promotion.
+    const realFetch = global.fetch;
+    process.env['PADDLE_API_KEY'] = 'test-paddle-key';
+    global.fetch = (async () =>
+      ({
+        ok: true,
+        json: async () => ({data: {status: 'canceled'}}),
+      }) as Response) as typeof fetch;
+    try {
+      mockQuery.mockClear();
+      const delayedActive = makeEvent({
+        occurred_at: '2026-10-17T00:00:00.000Z',
+        data: {...makeEvent().data, id: 'sub_a'},
+      });
+      await expect(
+        upsertSubscription(delayedActive, 'user-uuid-1', mockQuery),
+      ).resolves.toBe('stale');
+      expect(row.paddle_subscription_id).toBe('sub_c');
+      expect(
+        mockQuery.mock.calls.some(args =>
+          args[0].includes('insert into subscriptions'),
+        ),
+      ).toBe(false);
+
+      // And when the verification request itself fails, the claim
+      // is likewise not promoted.
+      global.fetch = (async () =>
+        ({
+          ok: false,
+          status: 503,
+          json: async () => ({}),
+        }) as Response) as typeof fetch;
+      mockQuery.mockClear();
+      await expect(
+        upsertSubscription(delayedActive, 'user-uuid-1', mockQuery),
+      ).resolves.toBe('stale');
+      expect(row.paddle_subscription_id).toBe('sub_c');
+    } finally {
+      global.fetch = realFetch;
+      delete process.env['PADDLE_API_KEY'];
+    }
+  });
+
+  test('superseded clock advance is conditional on the slot still holding that subscription', async () => {
+    mockQuery.mockImplementation(((sql: string) => {
+      if (sql.includes('from plan_prices')) {
+        return Promise.resolve(makeQueryResult([{plan: 'plus'}]));
+      }
+      if (sql.includes('from subscriptions')) {
+        return Promise.resolve(
+          makeQueryResult([
+            {
+              status: 'active',
+              past_due_since: null,
+              paddle_subscription_id: 'sub_new',
+              paddle_last_event_at: '2026-10-17T00:00:00.000Z',
+              superseded_subscription_id: 'sub_old',
+              superseded_last_event_at: '2026-10-16T00:00:00.000Z',
+            },
+          ]),
+        );
+      }
+      if (sql.includes('set superseded_last_event_at')) {
+        // A concurrent writer swapped the slot between the SELECT
+        // and this update: zero rows match the condition.
+        return Promise.resolve(makeQueryResult([]));
+      }
+      return Promise.resolve(makeQueryResult([]));
+    }) as typeof mockQuery);
+    const canceledOld = makeEvent({
+      occurred_at: '2026-10-18T00:00:00.000Z',
+      data: {...makeEvent().data, id: 'sub_old', status: 'canceled'},
+    });
+    // Without the condition, sub_old's timestamp would land in the
+    // new superseded subscription's clock; instead the event is
+    // stale against the state that replaced it.
+    await expect(
+      upsertSubscription(canceledOld, 'user-uuid-1', mockQuery),
+    ).resolves.toBe('stale');
+    const update = mockQuery.mock.calls.find(args =>
+      args[0].includes('set superseded_last_event_at'),
+    );
+    expect(update?.[0]).toContain('superseded_subscription_id = $3');
+    expect(update?.[1]).toEqual([
+      'user-uuid-1',
+      '2026-10-18T00:00:00.000Z',
+      'sub_old',
+    ]);
+
+    // A null rowCount (pg reports null for some commands) is also
+    // treated as "the slot changed": stale, never a blind write.
+    mockQuery.mockImplementation(((sql: string) => {
+      if (sql.includes('from plan_prices')) {
+        return Promise.resolve(makeQueryResult([{plan: 'plus'}]));
+      }
+      if (sql.includes('from subscriptions')) {
+        return Promise.resolve(
+          makeQueryResult([
+            {
+              status: 'active',
+              past_due_since: null,
+              paddle_subscription_id: 'sub_new',
+              paddle_last_event_at: '2026-10-17T00:00:00.000Z',
+              superseded_subscription_id: 'sub_old',
+              superseded_last_event_at: '2026-10-16T00:00:00.000Z',
+            },
+          ]),
+        );
+      }
+      if (sql.includes('set superseded_last_event_at')) {
+        return Promise.resolve({...makeQueryResult([]), rowCount: null});
+      }
+      return Promise.resolve(makeQueryResult([]));
+    }) as typeof mockQuery);
+    await expect(
+      upsertSubscription(canceledOld, 'user-uuid-1', mockQuery),
+    ).resolves.toBe('stale');
+  });
+
+  test('webhook writes stamp the entity updated_at; snapshot reselect compares the same clock', async () => {
+    let row: Record<string, unknown> | null = null;
+    mockQuery.mockImplementation(((sql: string, params?: unknown[]) => {
+      if (sql.includes('from plan_prices')) {
+        return Promise.resolve(makeQueryResult([{plan: 'plus'}]));
+      }
+      if (sql.includes('from subscriptions')) {
+        return Promise.resolve(makeQueryResult(row ? [row] : []));
+      }
+      if (sql.includes('insert into subscriptions')) {
+        const p = params as unknown[];
+        row = {
+          status: p[2],
+          past_due_since: p[9],
+          paddle_subscription_id: p[4],
+          paddle_last_event_at: p[10],
+          superseded_subscription_id: p[11],
+          superseded_last_event_at: p[12],
+        };
+        return Promise.resolve(makeQueryResult([{}]));
+      }
+      return Promise.resolve(makeQueryResult([]));
+    }) as typeof mockQuery);
+
+    // sub_a's webhook occurred 100ms after its entity update; the
+    // stored revision clock is updated_at (.000), not occurred_at.
+    const webhookA = makeEvent({
+      occurred_at: '2026-10-19T12:00:00.100Z',
+      data: {
+        ...makeEvent().data,
+        id: 'sub_a',
+        updated_at: '2026-10-19T12:00:00.000Z',
+      },
+    });
+    await expect(
+      upsertSubscription(webhookA, 'user-uuid-1', mockQuery),
+    ).resolves.toBe('applied');
+    expect(row?.['paddle_last_event_at']).toBe('2026-10-19T12:00:00.000Z');
+
+    // sub_b replaces sub_a via refresh; sub_a becomes superseded
+    // with the .000 clock.
+    await expect(
+      upsertSubscription(
+        makeEvent({
+          occurred_at: '2026-10-19T13:00:00.000Z',
+          data: {...makeEvent().data, id: 'sub_b'},
+        }),
+        'user-uuid-1',
+        mockQuery,
+        {snapshot: true},
+      ),
+    ).resolves.toBe('applied');
+    expect(row?.['superseded_subscription_id']).toBe('sub_a');
+    expect(row?.['superseded_last_event_at']).toBe('2026-10-19T12:00:00.000Z');
+
+    // Refresh reselects the unchanged sub_a: its revision (.000)
+    // equals the superseded clock (.000), so it applies — had the
+    // webhook stamped occurred_at (.100), this would read as older
+    // and be rejected forever.
+    await expect(
+      upsertSubscription(
+        makeEvent({
+          occurred_at: '2026-10-19T12:00:00.000Z',
+          data: {...makeEvent().data, id: 'sub_a'},
+        }),
+        'user-uuid-1',
+        mockQuery,
+        {snapshot: true},
+      ),
+    ).resolves.toBe('applied');
+    expect(row?.['paddle_subscription_id']).toBe('sub_a');
   });
 
   test('snapshot past_due seeds the grace clock from the period start', async () => {
