@@ -14,7 +14,7 @@
     "migrate": "tsx src/db/migrate.ts"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.134.0",
+    "@anthropic-ai/sdk": "^0.135.0",
     "@eciperay/client": "*",
     "@eciperay/mcp-server": "*",
     "@eciperay/types": "*",
