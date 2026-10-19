@@ -12,3 +12,4 @@ export const PADDLE_CLIENT_TOKEN =
   import.meta.env.VITE_PADDLE_CLIENT_TOKEN ?? '';
 export const PADDLE_ENVIRONMENT =
   import.meta.env.VITE_PADDLE_ENVIRONMENT ?? 'production';
+export const APP_VERSION = import.meta.env.VITE_APP_VERSION ?? '';

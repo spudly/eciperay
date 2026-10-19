@@ -25,6 +25,9 @@ export type AnalyticsEventProperties = {
     message: string;
     is_bug: boolean;
     route?: string;
+    reply_email?: string;
+    user_id?: string;
+    app_version?: string;
     session_id?: string;
     replay_url?: string;
   };

@@ -4,36 +4,55 @@ import {
   createNoopAnalyticsAdapter,
 } from '@eciperay/client';
 import {fireEvent, render, screen} from '@testing-library/react';
-import {afterEach, describe, expect, test, vi} from 'vitest';
+import {afterEach, beforeEach, describe, expect, test, vi} from 'vitest';
+
+import {APP_VERSION} from '../lib/env.js';
 
 import {FeedbackForm} from './FeedbackForm.js';
 
+const mockUseAuth = vi.fn();
+
+vi.mock('@eciperay/client', async importOriginal => {
+  const actual = await importOriginal<typeof import('@eciperay/client')>();
+  return {...actual, useAuth: () => mockUseAuth()};
+});
+
+type Analytics = ReturnType<typeof createAnalytics>;
+
+const renderForm = (
+  submitUserFeedback: Analytics['submitUserFeedback'],
+  props: {onSubmitted?: () => void; onCancel?: () => void} = {},
+) => {
+  const analytics = {
+    ...createAnalytics(createNoopAnalyticsAdapter(), 'web'),
+    submitUserFeedback,
+  };
+  return render(
+    <FeedbackForm
+      route="/profile"
+      onSubmitted={props.onSubmitted ?? vi.fn()}
+      onCancel={props.onCancel}
+    />,
+    {
+      wrapper: ({children}) => (
+        <AnalyticsProvider analytics={analytics}>{children}</AnalyticsProvider>
+      ),
+    },
+  );
+};
+
 describe('FeedbackForm', () => {
+  beforeEach(() => {
+    mockUseAuth.mockReturnValue({session: null, isLoading: false});
+  });
+
   afterEach(() => {
     vi.useRealTimers();
   });
 
   test('submits feedback with the bug flag', async () => {
     const submitUserFeedback = vi.fn().mockResolvedValue({error: null});
-    const analytics = {
-      ...createAnalytics(createNoopAnalyticsAdapter(), 'web'),
-      submitUserFeedback,
-    };
-
-    render(
-      <FeedbackForm
-        route="/profile"
-        onSubmitted={vi.fn()}
-        onCancel={vi.fn()}
-      />,
-      {
-        wrapper: ({children}) => (
-          <AnalyticsProvider analytics={analytics}>
-            {children}
-          </AnalyticsProvider>
-        ),
-      },
-    );
+    renderForm(submitUserFeedback, {onCancel: vi.fn()});
 
     fireEvent.change(screen.getByPlaceholderText(/Tell us what happened/i), {
       target: {value: 'The profile page feels confusing to me.'},
@@ -48,30 +67,84 @@ describe('FeedbackForm', () => {
       message: 'The profile page feels confusing to me.',
       is_bug: true,
       route: '/profile',
+      ...(APP_VERSION ? {app_version: APP_VERSION} : {}),
     });
+  });
+
+  test('pre-fills the reply email and attaches the user id when signed in', async () => {
+    mockUseAuth.mockReturnValue({
+      session: {user: {id: 'user-123', email: 'cook@example.com'}},
+      isLoading: false,
+    });
+    const submitUserFeedback = vi.fn().mockResolvedValue({error: null});
+    renderForm(submitUserFeedback);
+
+    const emailInput = screen.getByPlaceholderText('you@example.com');
+    expect(emailInput).toHaveValue('cook@example.com');
+
+    fireEvent.change(screen.getByPlaceholderText(/Tell us what happened/i), {
+      target: {value: 'The profile page feels confusing to me.'},
+    });
+    fireEvent.click(screen.getByRole('button', {name: 'Submit feedback'}));
+
+    expect(
+      await screen.findByText(/Thanks — we got your feedback/i),
+    ).toBeInTheDocument();
+    expect(submitUserFeedback).toHaveBeenCalledWith({
+      message: 'The profile page feels confusing to me.',
+      is_bug: false,
+      route: '/profile',
+      reply_email: 'cook@example.com',
+      user_id: 'user-123',
+      ...(APP_VERSION ? {app_version: APP_VERSION} : {}),
+    });
+  });
+
+  test('sends a reply email typed by an anonymous user', async () => {
+    const submitUserFeedback = vi.fn().mockResolvedValue({error: null});
+    renderForm(submitUserFeedback);
+
+    fireEvent.change(screen.getByPlaceholderText(/Tell us what happened/i), {
+      target: {value: 'The profile page feels confusing to me.'},
+    });
+    fireEvent.change(screen.getByPlaceholderText('you@example.com'), {
+      target: {value: 'guest@example.com'},
+    });
+    fireEvent.click(screen.getByRole('button', {name: 'Submit feedback'}));
+
+    expect(
+      await screen.findByText(/Thanks — we got your feedback/i),
+    ).toBeInTheDocument();
+    expect(submitUserFeedback).toHaveBeenCalledWith({
+      message: 'The profile page feels confusing to me.',
+      is_bug: false,
+      route: '/profile',
+      reply_email: 'guest@example.com',
+      ...(APP_VERSION ? {app_version: APP_VERSION} : {}),
+    });
+  });
+
+  test('blocks submission while the reply email is malformed', async () => {
+    const submitUserFeedback = vi.fn().mockResolvedValue({error: null});
+    renderForm(submitUserFeedback);
+
+    fireEvent.change(screen.getByPlaceholderText(/Tell us what happened/i), {
+      target: {value: 'The profile page feels confusing to me.'},
+    });
+    fireEvent.change(screen.getByPlaceholderText('you@example.com'), {
+      target: {value: 'not-an-email'},
+    });
+
+    expect(
+      screen.getByRole('button', {name: 'Submit feedback'}),
+    ).toBeDisabled();
+    expect(submitUserFeedback).not.toHaveBeenCalled();
   });
 
   test('calls onSubmitted after showing thanks', async () => {
     const submitUserFeedback = vi.fn().mockResolvedValue({error: null});
     const onSubmitted = vi.fn();
-    const analytics = {
-      ...createAnalytics(createNoopAnalyticsAdapter(), 'web'),
-      submitUserFeedback,
-    };
-
-    render(
-      <FeedbackForm
-        route="/profile"
-        onSubmitted={onSubmitted}
-      />,
-      {
-        wrapper: ({children}) => (
-          <AnalyticsProvider analytics={analytics}>
-            {children}
-          </AnalyticsProvider>
-        ),
-      },
-    );
+    renderForm(submitUserFeedback, {onSubmitted});
 
     fireEvent.change(screen.getByPlaceholderText(/Tell us what happened/i), {
       target: {value: 'The profile page feels confusing to me.'},
@@ -92,24 +165,7 @@ describe('FeedbackForm', () => {
       .fn()
       .mockResolvedValue({error: 'Could not submit feedback.'});
     const onCancel = vi.fn();
-    const analytics = {
-      ...createAnalytics(createNoopAnalyticsAdapter(), 'web'),
-      submitUserFeedback,
-    };
-
-    render(
-      <FeedbackForm
-        onSubmitted={vi.fn()}
-        onCancel={onCancel}
-      />,
-      {
-        wrapper: ({children}) => (
-          <AnalyticsProvider analytics={analytics}>
-            {children}
-          </AnalyticsProvider>
-        ),
-      },
-    );
+    renderForm(submitUserFeedback, {onCancel});
 
     fireEvent.change(screen.getByPlaceholderText(/Tell us what happened/i), {
       target: {value: 'Something went wrong when I tried to save.'},

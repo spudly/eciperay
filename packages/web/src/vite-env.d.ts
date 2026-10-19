@@ -8,6 +8,7 @@ interface ImportMetaEnv {
   readonly VITE_POSTHOG_HOST?: string;
   readonly VITE_PADDLE_CLIENT_TOKEN?: string;
   readonly VITE_PADDLE_ENVIRONMENT?: string;
+  readonly VITE_APP_VERSION?: string;
 }
 
 interface ImportMeta {

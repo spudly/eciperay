@@ -18,10 +18,16 @@ describe('sanitizeAnalyticsProperties', () => {
   });
 
   test('truncates long string values', () => {
-    const longValue = 'x'.repeat(600);
+    const longValue = 'x'.repeat(2100);
     const sanitized = sanitizeAnalyticsProperties({message: longValue});
-    expect(sanitized?.['message']).toHaveLength(501);
+    expect(sanitized?.['message']).toHaveLength(2001);
     expect(String(sanitized?.['message']).endsWith('…')).toBe(true);
+  });
+
+  test('keeps feedback-length messages intact', () => {
+    const message = 'x'.repeat(2000);
+    const sanitized = sanitizeAnalyticsProperties({message});
+    expect(sanitized?.['message']).toBe(message);
   });
 
   test('passes through non-sensitive properties', () => {
