@@ -74,6 +74,7 @@ describe('PATCH /recipes/:id/sharing', () => {
       error: 'plan_required',
       requiredPlan: 'plus',
       plan: 'free',
+      message: "This feature requires the Plus plan. You're on the Free plan.",
     });
   });
 
@@ -91,6 +92,7 @@ describe('PATCH /recipes/:id/sharing', () => {
       error: 'plan_required',
       requiredPlan: 'plus',
       plan: 'free',
+      message: "This feature requires the Plus plan. You're on the Free plan.",
     });
   });
 
