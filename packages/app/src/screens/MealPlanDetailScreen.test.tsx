@@ -82,7 +82,7 @@ describe('MealPlanDetailScreen', () => {
   });
 
   test('renders plan detail', async () => {
-    const {findByText} = renderWithProviders(
+    const {findByText} = await renderWithProviders(
       <MealPlanDetailScreen {...stackProps} />,
     );
     expect(await findByText('This week')).toBeTruthy();
@@ -90,21 +90,21 @@ describe('MealPlanDetailScreen', () => {
   });
 
   test('handles navigation actions', async () => {
-    const {findByText} = renderWithProviders(
+    const {findByText} = await renderWithProviders(
       <MealPlanDetailScreen {...stackProps} />,
     );
-    fireEvent.press(await findByText('Edit'));
+    await fireEvent.press(await findByText('Edit'));
     expect(mockNavigate).toHaveBeenCalledWith('MealPlanEdit', {planId});
-    fireEvent.press(await findByText('Shopping list'));
+    await fireEvent.press(await findByText('Shopping list'));
     expect(mockNavigate).toHaveBeenCalledWith('ShoppingList', {planId});
-    fireEvent.press(await findByText('Meal · Sunday Dinner'));
+    await fireEvent.press(await findByText('Meal · Sunday Dinner'));
     expect(mockNavigate).toHaveBeenCalledWith('MealDetail', {mealId});
-    fireEvent.press(await findByText('Recipe · Test Recipe'));
+    await fireEvent.press(await findByText('Recipe · Test Recipe'));
     expect(mockParentNavigate).toHaveBeenCalledWith('Recipes', {
       screen: 'RecipeDetail',
       params: {recipeId},
     });
-    fireEvent.press(await findByText('Set nutrition goals'));
+    await fireEvent.press(await findByText('Set nutrition goals'));
     expect(mockParentNavigate).toHaveBeenCalledWith('Profile', {
       screen: 'ProfileHome',
     });

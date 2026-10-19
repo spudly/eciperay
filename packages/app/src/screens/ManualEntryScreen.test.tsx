@@ -77,13 +77,13 @@ describe('ManualEntryScreen', () => {
       queryKey: queryKeys.tags(),
       queryFn: () => mockListTags(),
     });
-    const {getAllByPlaceholderText, getByText} = renderWithProviders(
+    const {getAllByPlaceholderText, getByText} = await renderWithProviders(
       <ManualEntryScreen {...stackProps} />,
       queryClient,
     );
     const inputs = getAllByPlaceholderText('Name');
-    fireEvent.changeText(inputs[0], 'Flour');
-    fireEvent.press(getByText('Create Recipe'));
+    await fireEvent.changeText(inputs[0], 'Flour');
+    await fireEvent.press(getByText('Create Recipe'));
     await waitFor(() => {
       expect(mockCreate).toHaveBeenCalled();
     });
@@ -100,16 +100,16 @@ describe('ManualEntryScreen', () => {
       queryKey: queryKeys.tags(),
       queryFn: () => mockListTags(),
     });
-    const {getByLabelText, getByText} = renderWithProviders(
+    const {getByLabelText, getByText} = await renderWithProviders(
       <ManualEntryScreen {...stackProps} />,
       queryClient,
     );
-    fireEvent.changeText(getByLabelText('Title'), 'New Recipe');
-    fireEvent.press(getByLabelText('Generate image with AI'));
+    await fireEvent.changeText(getByLabelText('Title'), 'New Recipe');
+    await fireEvent.press(getByLabelText('Generate image with AI'));
     await waitFor(() => {
       expect(mockUploadRecipeImageFromBase64).not.toHaveBeenCalled();
     });
-    fireEvent.press(getByText('Create Recipe'));
+    await fireEvent.press(getByText('Create Recipe'));
     await waitFor(() => {
       expect(mockUploadRecipeImageFromBase64).toHaveBeenCalledWith(
         expect.anything(),

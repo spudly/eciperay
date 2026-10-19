@@ -20,8 +20,10 @@ const mockNavigate = jest.fn();
 const nav = {navigate: mockNavigate};
 
 describe('SignInScreen', () => {
-  test('renders email and password fields', () => {
-    const {getByLabelText} = renderWithProviders(<SignInScreen navigation={nav} />);
+  test('renders email and password fields', async () => {
+    const {getByLabelText} = await renderWithProviders(
+      <SignInScreen navigation={nav} />,
+    );
     expect(getByLabelText('Email')).toBeTruthy();
     expect(getByLabelText('Password')).toBeTruthy();
   });
@@ -29,15 +31,15 @@ describe('SignInScreen', () => {
   test('calls signInWithPassword on submit', async () => {
     mockSignIn.mockResolvedValue({error: null});
     mockSyncUser.mockImplementation(async () => {});
-    const {getByLabelText, getByText} = renderWithProviders(
+    const {getByLabelText, getByText} = await renderWithProviders(
       <SignInScreen navigation={nav} />,
     );
     await act(async () => {
-      fireEvent.changeText(getByLabelText('Email'), 'user@test.com');
-      fireEvent.changeText(getByLabelText('Password'), 'secret');
+      await fireEvent.changeText(getByLabelText('Email'), 'user@test.com');
+      await fireEvent.changeText(getByLabelText('Password'), 'secret');
       await Promise.resolve();
     });
-    fireEvent.press(getByText('Sign In'));
+    await fireEvent.press(getByText('Sign In'));
     await waitFor(() => {
       expect(mockSignIn).toHaveBeenCalledWith({
         email: 'user@test.com',
@@ -49,8 +51,10 @@ describe('SignInScreen', () => {
   test('calls auth sync on successful sign-in', async () => {
     mockSignIn.mockResolvedValue({error: null});
     mockSyncUser.mockImplementation(async () => {});
-    const {getByText} = renderWithProviders(<SignInScreen navigation={nav} />);
-    fireEvent.press(getByText('Sign In'));
+    const {getByText} = await renderWithProviders(
+      <SignInScreen navigation={nav} />,
+    );
+    await fireEvent.press(getByText('Sign In'));
     await waitFor(() => {
       expect(mockSyncUser).toHaveBeenCalled();
     });
@@ -58,8 +62,10 @@ describe('SignInScreen', () => {
 
   test('shows error alert on sign-in failure', async () => {
     mockSignIn.mockResolvedValue({error: new Error('Invalid credentials')});
-    const {getByText} = renderWithProviders(<SignInScreen navigation={nav} />);
-    fireEvent.press(getByText('Sign In'));
+    const {getByText} = await renderWithProviders(
+      <SignInScreen navigation={nav} />,
+    );
+    await fireEvent.press(getByText('Sign In'));
     await waitFor(() => {
       expect(mockAlert).toHaveBeenCalledWith(
         'Sign in failed',
@@ -68,15 +74,19 @@ describe('SignInScreen', () => {
     });
   });
 
-  test('navigates to SignUp when create account link pressed', () => {
-    const {getByText} = renderWithProviders(<SignInScreen navigation={nav} />);
-    fireEvent.press(getByText('Create an account'));
+  test('navigates to SignUp when create account link pressed', async () => {
+    const {getByText} = await renderWithProviders(
+      <SignInScreen navigation={nav} />,
+    );
+    await fireEvent.press(getByText('Create an account'));
     expect(mockNavigate).toHaveBeenCalledWith('SignUp');
   });
 
-  test('navigates to ForgotPassword when link pressed', () => {
-    const {getByText} = renderWithProviders(<SignInScreen navigation={nav} />);
-    fireEvent.press(getByText('Forgot password?'));
+  test('navigates to ForgotPassword when link pressed', async () => {
+    const {getByText} = await renderWithProviders(
+      <SignInScreen navigation={nav} />,
+    );
+    await fireEvent.press(getByText('Forgot password?'));
     expect(mockNavigate).toHaveBeenCalledWith('ForgotPassword');
   });
 });

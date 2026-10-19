@@ -55,26 +55,26 @@ describe('RecipeDetailScreen', () => {
   });
 
   test('renders recipe title in overview tab', async () => {
-    const {findByText} = renderWithProviders(
+    const {findByText} = await renderWithProviders(
       <RecipeDetailScreen {...stackProps} />,
     );
     expect(await findByText('Test Recipe')).toBeTruthy();
   });
 
   test('switches to ingredients tab', async () => {
-    const {findByText} = renderWithProviders(
+    const {findByText} = await renderWithProviders(
       <RecipeDetailScreen {...stackProps} />,
     );
     await findByText('Test Recipe');
-    fireEvent.press(await findByText('Ingredients'));
+    await fireEvent.press(await findByText('Ingredients'));
     expect(await findByText(/Flour/)).toBeTruthy();
   });
 
   test('navigates to cooking mode with versionId', async () => {
-    const {findByText} = renderWithProviders(
+    const {findByText} = await renderWithProviders(
       <RecipeDetailScreen {...stackProps} />,
     );
-    fireEvent.press(await findByText('Start Cooking'));
+    await fireEvent.press(await findByText('Start Cooking'));
     expect(mockNavigate).toHaveBeenCalledWith('CookingMode', {
       recipeId: 'recipe-uuid-1',
       versionId: VERSION_ID,
@@ -83,14 +83,14 @@ describe('RecipeDetailScreen', () => {
   });
 
   test('passes scaled servings to cooking mode', async () => {
-    const {findByText, getByText} = renderWithProviders(
+    const {findByText, getByText} = await renderWithProviders(
       <RecipeDetailScreen {...stackProps} />,
     );
     await findByText('Test Recipe');
-    fireEvent.press(getByText('Ingredients'));
-    fireEvent.press(await findByText('2×'));
-    fireEvent.press(getByText('Overview'));
-    fireEvent.press(await findByText('Start Cooking'));
+    await fireEvent.press(getByText('Ingredients'));
+    await fireEvent.press(await findByText('2×'));
+    await fireEvent.press(getByText('Overview'));
+    await fireEvent.press(await findByText('Start Cooking'));
     expect(mockNavigate).toHaveBeenCalledWith('CookingMode', {
       recipeId: 'recipe-uuid-1',
       versionId: VERSION_ID,
@@ -99,10 +99,10 @@ describe('RecipeDetailScreen', () => {
   });
 
   test('navigates to edit recipe screen for active versions', async () => {
-    const {findByText} = renderWithProviders(
+    const {findByText} = await renderWithProviders(
       <RecipeDetailScreen {...stackProps} />,
     );
-    fireEvent.press(await findByText('Edit'));
+    await fireEvent.press(await findByText('Edit'));
     expect(mockNavigate).toHaveBeenCalledWith('EditRecipe', {
       recipeId: 'recipe-uuid-1',
     });
@@ -142,7 +142,7 @@ describe('RecipeDetailScreen', () => {
       routeParams,
       {navigate: mockNavigate, setParams: mockSetParams},
     );
-    const {findByText} = renderWithProviders(
+    const {findByText} = await renderWithProviders(
       <RecipeDetailScreen {...draftProps} />,
       client,
     );
@@ -153,7 +153,7 @@ describe('RecipeDetailScreen', () => {
       },
       {timeout: 5000},
     );
-    fireEvent.press(await findByText('Edit draft'));
+    await fireEvent.press(await findByText('Edit draft'));
     expect(mockNavigate).toHaveBeenCalledWith('EditVersion', {
       recipeId: 'recipe-uuid-1',
       versionId: draftId,
@@ -162,15 +162,15 @@ describe('RecipeDetailScreen', () => {
 
   test('switches to instructions, cook history, and nutrition tabs', async () => {
     mockListCookLogs.mockResolvedValue([makeCookLog()]);
-    const {findByText} = renderWithProviders(
+    const {findByText} = await renderWithProviders(
       <RecipeDetailScreen {...stackProps} />,
     );
     await findByText('Test Recipe');
-    fireEvent.press(await findByText('Instructions'));
+    await fireEvent.press(await findByText('Instructions'));
     expect(await findByText('Mix dry ingredients')).toBeTruthy();
-    fireEvent.press(await findByText('Cook History'));
+    await fireEvent.press(await findByText('Cook History'));
     expect(await findByText('Turned out great')).toBeTruthy();
-    fireEvent.press(await findByText('Nutrition'));
+    await fireEvent.press(await findByText('Nutrition'));
     expect(await findByText('250')).toBeTruthy();
   });
 
@@ -178,10 +178,10 @@ describe('RecipeDetailScreen', () => {
     jest.spyOn(Alert, 'alert').mockImplementation((_t, _m, buttons) => {
       buttons?.[1]?.onPress?.();
     });
-    const {findByText} = renderWithProviders(
+    const {findByText} = await renderWithProviders(
       <RecipeDetailScreen {...stackProps} />,
     );
-    fireEvent.press(await findByText('Delete'));
+    await fireEvent.press(await findByText('Delete'));
     await waitFor(() => {
       expect(mockDelete).toHaveBeenCalled();
     });
@@ -205,12 +205,12 @@ describe('RecipeDetailScreen', () => {
         derivedRole: 'archived',
       }),
     );
-    const {findByText, getByLabelText, getByText} = renderWithProviders(
+    const {findByText, getByLabelText, getByText} = await renderWithProviders(
       <RecipeDetailScreen {...stackProps} />,
     );
     await findByText('Test Recipe');
-    fireEvent.press(getByLabelText('Select version'));
-    fireEvent.press(getByText(/v2/));
+    await fireEvent.press(getByLabelText('Select version'));
+    await fireEvent.press(getByText(/v2/));
     expect(await findByText('Archived Recipe')).toBeTruthy();
     expect(mockGetVersion).toHaveBeenCalledWith(
       'recipe-uuid-1',
@@ -222,14 +222,14 @@ describe('RecipeDetailScreen', () => {
     mockCreateVersion.mockResolvedValue(
       makeRecipeVersionSummary({id: 'version-draft-1'}),
     );
-    const {findByText} = renderWithProviders(
+    const {findByText} = await renderWithProviders(
       <RecipeDetailScreen {...stackProps} />,
     );
-    fireEvent.press(await findByText('Tweak with AI'));
+    await fireEvent.press(await findByText('Tweak with AI'));
     expect(mockNavigate).toHaveBeenCalledWith('TweakAi', {
       recipeId: 'recipe-uuid-1',
     });
-    fireEvent.press(await findByText('Tweak manually'));
+    await fireEvent.press(await findByText('Tweak manually'));
     await waitFor(() => {
       expect(mockCreateVersion).toHaveBeenCalled();
     });

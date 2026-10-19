@@ -8,8 +8,8 @@ import {PageTitle} from './PageTitle';
 const TEST_TITLE = 'Hello';
 
 describe('PageTitle', () => {
-  test('renders page title text', () => {
-    render(
+  test('renders page title text', async () => {
+    await render(
       <TamaguiProvider
         config={tamaguiConfig}
         defaultTheme="light"

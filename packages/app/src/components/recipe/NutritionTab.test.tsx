@@ -21,17 +21,17 @@ describe('NutritionTab', () => {
           /* never resolves */
         }),
     );
-    const {getByText, unmount} = renderWithProviders(
+    const {getByText, unmount} = await renderWithProviders(
       <NutritionTab recipeId="r-1" />,
     );
     expect(getByText('Estimating nutrition…')).toBeTruthy();
-    unmount();
+    await unmount();
     await settleAsyncUpdates();
   });
 
   test('shows estimate CTA when no data', async () => {
     mockNutrition.mockResolvedValue(null);
-    const {getByText, queryByText} = renderWithProviders(
+    const {getByText, queryByText} = await renderWithProviders(
       <NutritionTab recipeId="r-1" />,
     );
     await waitFor(() => {
@@ -51,7 +51,7 @@ describe('NutritionTab', () => {
       sodiumMg: null,
       disclaimer: 'Estimate',
     });
-    const {findByText, queryByText} = renderWithProviders(
+    const {findByText, queryByText} = await renderWithProviders(
       <NutritionTab recipeId="r-1" />,
     );
     expect(await findByText('200')).toBeTruthy();
@@ -68,7 +68,9 @@ describe('NutritionTab', () => {
       sodiumMg: 500,
       disclaimer: 'Estimate only',
     });
-    const {findByText} = renderWithProviders(<NutritionTab recipeId="r-1" />);
+    const {findByText} = await renderWithProviders(
+      <NutritionTab recipeId="r-1" />,
+    );
     expect(await findByText('250')).toBeTruthy();
     expect(await findByText('Estimate only')).toBeTruthy();
   });

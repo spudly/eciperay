@@ -50,20 +50,21 @@ describe('AiSessionFlow', () => {
 
   test('starts a session from the prompt', async () => {
     (api.start as jest.Mock).mockResolvedValue({session});
-    const {getByPlaceholderText, getByText, findByText} = renderWithProviders(
-      <AiSessionFlow
-        config={config}
-        api={api}
-        onEmptyCancel={onEmptyCancel}
-        onFinalizeSuccess={onFinalizeSuccess}
-        onCancelSuccess={onCancelSuccess}
-      />,
-    );
-    fireEvent.changeText(
+    const {getByPlaceholderText, getByText, findByText} =
+      await renderWithProviders(
+        <AiSessionFlow
+          config={config}
+          api={api}
+          onEmptyCancel={onEmptyCancel}
+          onFinalizeSuccess={onFinalizeSuccess}
+          onCancelSuccess={onCancelSuccess}
+        />,
+      );
+    await fireEvent.changeText(
       getByPlaceholderText('e.g. orange chicken'),
       'orange chicken like panda express',
     );
-    fireEvent.press(getByText('Start planning'));
+    await fireEvent.press(getByText('Start planning'));
     await waitFor(() => {
       expect(api.start).toHaveBeenCalledWith(
         'orange chicken like panda express',
@@ -72,8 +73,8 @@ describe('AiSessionFlow', () => {
     expect(await findByText('Plan for orange chicken')).toBeTruthy();
   });
 
-  test('calls onEmptyCancel when cancel is pressed without a session', () => {
-    const {getByText} = renderWithProviders(
+  test('calls onEmptyCancel when cancel is pressed without a session', async () => {
+    const {getByText} = await renderWithProviders(
       <AiSessionFlow
         config={config}
         api={api}
@@ -82,7 +83,7 @@ describe('AiSessionFlow', () => {
         onCancelSuccess={onCancelSuccess}
       />,
     );
-    fireEvent.press(getByText('Cancel'));
+    await fireEvent.press(getByText('Cancel'));
     expect(onEmptyCancel).toHaveBeenCalled();
   });
 });

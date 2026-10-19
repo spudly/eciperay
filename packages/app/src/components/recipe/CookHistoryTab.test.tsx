@@ -19,7 +19,7 @@ describe('CookHistoryTab', () => {
   });
 
   test('renders cook log timeline', async () => {
-    const {findByText, getByText} = renderWithProviders(
+    const {findByText, getByText} = await renderWithProviders(
       <CookHistoryTab
         recipeId="recipe-uuid-1"
         versionId={VERSION_ID}
@@ -31,7 +31,7 @@ describe('CookHistoryTab', () => {
 
   test('renders empty state', async () => {
     mockListCookLogs.mockResolvedValue([]);
-    const {findByText} = renderWithProviders(
+    const {findByText} = await renderWithProviders(
       <CookHistoryTab
         recipeId="recipe-uuid-1"
         versionId={VERSION_ID}
@@ -46,19 +46,19 @@ describe('CookHistoryTab', () => {
   test('logs a cook without cooking mode', async () => {
     mockListCookLogs.mockResolvedValue([]);
     const {findByText, getByLabelText, getByPlaceholderText, getByText} =
-      renderWithProviders(
+      await renderWithProviders(
         <CookHistoryTab
           recipeId="recipe-uuid-1"
           versionId={VERSION_ID}
         />,
       );
-    fireEvent.press(await findByText('Log a cook'));
-    fireEvent.press(getByLabelText('Rate 5 out of 5 stars'));
-    fireEvent.changeText(
+    await fireEvent.press(await findByText('Log a cook'));
+    await fireEvent.press(getByLabelText('Rate 5 out of 5 stars'));
+    await fireEvent.changeText(
       getByPlaceholderText('Notes from this cook (optional)'),
       'Quick weeknight cook',
     );
-    fireEvent.press(getByText('Save'));
+    await fireEvent.press(getByText('Save'));
     await waitFor(() => {
       expect(mockCreateCookLog).toHaveBeenCalledWith(
         'recipe-uuid-1',
@@ -70,20 +70,20 @@ describe('CookHistoryTab', () => {
   });
 
   test('cancels log cook form', async () => {
-    const {findByText, getByText, queryByText} = renderWithProviders(
+    const {findByText, getByText, queryByText} = await renderWithProviders(
       <CookHistoryTab
         recipeId="recipe-uuid-1"
         versionId={VERSION_ID}
       />,
     );
-    fireEvent.press(await findByText('Log a cook'));
-    fireEvent.press(getByText('Cancel'));
+    await fireEvent.press(await findByText('Log a cook'));
+    await fireEvent.press(getByText('Cancel'));
     expect(queryByText('How did it go?')).toBeNull();
   });
 
-  test('renders loading state', () => {
+  test('renders loading state', async () => {
     mockListCookLogs.mockImplementation(() => new Promise(() => {}));
-    const {getByLabelText} = renderWithProviders(
+    const {getByLabelText} = await renderWithProviders(
       <CookHistoryTab
         recipeId="recipe-uuid-1"
         versionId={VERSION_ID}
@@ -96,7 +96,7 @@ describe('CookHistoryTab', () => {
     mockListCookLogs.mockResolvedValue([
       makeCookLog({authorStarRating: null, notes: null}),
     ]);
-    const {findByText, queryByLabelText} = renderWithProviders(
+    const {findByText, queryByLabelText} = await renderWithProviders(
       <CookHistoryTab
         recipeId="recipe-uuid-1"
         versionId={VERSION_ID}

@@ -28,29 +28,28 @@ describe('TagsScreen', () => {
   });
 
   test('lists tags and creates new tag', async () => {
-    const {findByText, getByPlaceholderText, getByText} = renderWithProviders(
-      <TagsScreen />,
-    );
+    const {findByText, getByPlaceholderText, getByText} =
+      await renderWithProviders(<TagsScreen />);
     expect(await findByText('Dinner')).toBeTruthy();
-    fireEvent.changeText(getByPlaceholderText('Tag name'), 'Lunch');
-    fireEvent.press(getByText('Add'));
+    await fireEvent.changeText(getByPlaceholderText('Tag name'), 'Lunch');
+    await fireEvent.press(getByText('Add'));
     await waitFor(() => {
       expect(mockCreate).toHaveBeenCalledWith('Lunch', '#6366f1');
     });
   });
 
   test('deletes tag', async () => {
-    const {findByText} = renderWithProviders(<TagsScreen />);
-    fireEvent.press(await findByText('Delete'));
+    const {findByText} = await renderWithProviders(<TagsScreen />);
+    await fireEvent.press(await findByText('Delete'));
     await waitFor(() => {
       expect(mockDelete).toHaveBeenCalledWith('t1');
     });
   });
 
   test('ignores empty tag name', async () => {
-    const {getByText, findByText} = renderWithProviders(<TagsScreen />);
+    const {getByText, findByText} = await renderWithProviders(<TagsScreen />);
     await findByText('Dinner');
-    fireEvent.press(getByText('Add'));
+    await fireEvent.press(getByText('Add'));
     expect(mockCreate).not.toHaveBeenCalled();
   });
 });

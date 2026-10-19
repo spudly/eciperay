@@ -16,10 +16,10 @@ describe('SharedRecipeListCard', () => {
       servings: 4,
       cookTimeMin: 30,
     });
-    const {getByText} = renderWithProviders(
+    const {getByText} = await renderWithProviders(
       <SharedRecipeListCard recipe={recipe} />,
     );
-    fireEvent.press(getByText('My Recipe'));
+    await fireEvent.press(getByText('My Recipe'));
     await waitFor(() => {
       expect(Linking.openURL).toHaveBeenCalledWith(
         `${WEB_APP_BASE_URL}/recipe/recipe-1/my-recipe`,
@@ -33,7 +33,7 @@ describe('SharedRecipeListCard', () => {
       cookTimeMin: null,
       servings: 2,
     });
-    const {getByText, queryByText} = renderWithProviders(
+    const {getByText, queryByText} = await renderWithProviders(
       <SharedRecipeListCard recipe={recipe} />,
     );
     expect(getByText(/2 servings/)).toBeTruthy();
@@ -45,10 +45,10 @@ describe('SharedRecipeListCard', () => {
       title: 'Cake',
       imageUrl: 'https://cdn.example/cake.jpg',
     });
-    const {getByText, UNSAFE_getByType} = renderWithProviders(
+    const {getByText, container} = await renderWithProviders(
       <SharedRecipeListCard recipe={recipe} />,
     );
     expect(getByText('Cake')).toBeTruthy();
-    expect(UNSAFE_getByType(require('react-native').Image)).toBeTruthy();
+    expect(container.queryAll(node => node.type === 'Image')[0]).toBeTruthy();
   });
 });

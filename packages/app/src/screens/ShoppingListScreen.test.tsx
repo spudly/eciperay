@@ -32,7 +32,7 @@ describe('ShoppingListScreen', () => {
   });
 
   test('renders shopping list lines', async () => {
-    const {findByText} = renderWithProviders(
+    const {findByText} = await renderWithProviders(
       <ShoppingListScreen {...stackProps} />,
     );
     expect(await findByText('Shopping list')).toBeTruthy();
@@ -40,12 +40,12 @@ describe('ShoppingListScreen', () => {
   });
 
   test('toggles checked state', async () => {
-    const {findByText} = renderWithProviders(
+    const {findByText} = await renderWithProviders(
       <ShoppingListScreen {...stackProps} />,
     );
     const row = await findByText('Flour');
-    fireEvent.press(row);
-    fireEvent.press(row);
+    await fireEvent.press(row);
+    await fireEvent.press(row);
     expect(row).toBeTruthy();
   });
 });

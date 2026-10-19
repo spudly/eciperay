@@ -27,8 +27,8 @@ const recipe: RecipeVersionInput = {
 };
 
 describe('RecipeInputPreview', () => {
-  test('renders recipe preview content', () => {
-    const {getByText} = render(<RecipeInputPreview recipe={recipe} />);
+  test('renders recipe preview content', async () => {
+    const {getByText} = await render(<RecipeInputPreview recipe={recipe} />);
     expect(getByText('Pasta')).toBeTruthy();
     expect(getByText('Creamy pasta')).toBeTruthy();
     expect(getByText(/Serves 4/)).toBeTruthy();
@@ -36,8 +36,8 @@ describe('RecipeInputPreview', () => {
     expect(getByText('1. Cook')).toBeTruthy();
   });
 
-  test('omits optional metadata in preview', () => {
-    const {getByText, queryByText} = render(
+  test('omits optional metadata in preview', async () => {
+    const {getByText, queryByText} = await render(
       <RecipeInputPreview
         recipe={{
           title: 'Soup',

@@ -18,8 +18,8 @@ const mockGoBack = jest.fn();
 const nav = {goBack: mockGoBack};
 
 describe('ForgotPasswordScreen', () => {
-  test('renders email field and send button', () => {
-    const {getByLabelText, getByText} = renderWithProviders(
+  test('renders email field and send button', async () => {
+    const {getByLabelText, getByText} = await renderWithProviders(
       <ForgotPasswordScreen navigation={nav} />,
     );
     expect(getByLabelText('Email')).toBeTruthy();
@@ -28,15 +28,15 @@ describe('ForgotPasswordScreen', () => {
 
   test('calls resetPasswordForEmail on submit', async () => {
     mockReset.mockResolvedValue({error: null});
-    const {getByLabelText, getByText} = renderWithProviders(
+    const {getByLabelText, getByText} = await renderWithProviders(
       <ForgotPasswordScreen navigation={nav} />,
     );
     // Flush React 19 concurrent state updates before pressing
     await act(async () => {
-      fireEvent.changeText(getByLabelText('Email'), 'user@test.com');
+      await fireEvent.changeText(getByLabelText('Email'), 'user@test.com');
       await Promise.resolve(); // flush React 19 concurrent state updates
     });
-    fireEvent.press(getByText('Send Reset Link'));
+    await fireEvent.press(getByText('Send Reset Link'));
     await waitFor(() => {
       expect(mockReset).toHaveBeenCalledWith('user@test.com', {
         redirectTo: AUTH_DEEP_LINK_REDIRECT_URL,
@@ -46,8 +46,10 @@ describe('ForgotPasswordScreen', () => {
 
   test('shows success alert and goes back on success', async () => {
     mockReset.mockResolvedValue({error: null});
-    const {getByText} = renderWithProviders(<ForgotPasswordScreen navigation={nav} />);
-    fireEvent.press(getByText('Send Reset Link'));
+    const {getByText} = await renderWithProviders(
+      <ForgotPasswordScreen navigation={nav} />,
+    );
+    await fireEvent.press(getByText('Send Reset Link'));
     await waitFor(() => {
       expect(mockAlert).toHaveBeenCalledWith(
         'Check your email',
@@ -57,16 +59,20 @@ describe('ForgotPasswordScreen', () => {
     });
   });
 
-  test('goes back when back link is pressed', () => {
-    const {getByText} = renderWithProviders(<ForgotPasswordScreen navigation={nav} />);
-    fireEvent.press(getByText('Back to sign in'));
+  test('goes back when back link is pressed', async () => {
+    const {getByText} = await renderWithProviders(
+      <ForgotPasswordScreen navigation={nav} />,
+    );
+    await fireEvent.press(getByText('Back to sign in'));
     expect(mockGoBack).toHaveBeenCalled();
   });
 
   test('shows error alert on failure', async () => {
     mockReset.mockResolvedValue({error: new Error('User not found')});
-    const {getByText} = renderWithProviders(<ForgotPasswordScreen navigation={nav} />);
-    fireEvent.press(getByText('Send Reset Link'));
+    const {getByText} = await renderWithProviders(
+      <ForgotPasswordScreen navigation={nav} />,
+    );
+    await fireEvent.press(getByText('Send Reset Link'));
     await waitFor(() => {
       expect(mockAlert).toHaveBeenCalledWith('Error', 'User not found');
     });

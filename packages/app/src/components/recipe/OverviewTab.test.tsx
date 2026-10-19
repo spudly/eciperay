@@ -54,58 +54,58 @@ describe('OverviewTab', () => {
     );
   });
 
-  test('renders recipe title and description', () => {
-    const {getByText} = renderWithProviders(
+  test('renders recipe title and description', async () => {
+    const {getByText} = await renderWithProviders(
       <OverviewTab {...defaultProps()} />,
     );
     expect(getByText('Test Cake')).toBeTruthy();
     expect(getByText('Yummy cake')).toBeTruthy();
   });
 
-  test('calls onStartCooking when Start Cooking button pressed', () => {
-    const {getByText} = renderWithProviders(
+  test('calls onStartCooking when Start Cooking button pressed', async () => {
+    const {getByText} = await renderWithProviders(
       <OverviewTab {...defaultProps()} />,
     );
-    fireEvent.press(getByText('Start Cooking'));
+    await fireEvent.press(getByText('Start Cooking'));
     expect(onStartCooking).toHaveBeenCalled();
   });
 
-  test('calls printRecipe when print button pressed', () => {
-    const {getByText} = renderWithProviders(
+  test('calls printRecipe when print button pressed', async () => {
+    const {getByText} = await renderWithProviders(
       <OverviewTab {...defaultProps()} />,
     );
-    fireEvent.press(getByText('🖨'));
+    await fireEvent.press(getByText('🖨'));
     expect(mockPrint).toHaveBeenCalled();
   });
 
-  test('calls shareRecipe when share button pressed', () => {
-    const {getByText} = renderWithProviders(
+  test('calls shareRecipe when share button pressed', async () => {
+    const {getByText} = await renderWithProviders(
       <OverviewTab {...defaultProps()} />,
     );
-    fireEvent.press(getByText('↗'));
+    await fireEvent.press(getByText('↗'));
     expect(mockShare).toHaveBeenCalled();
   });
 
-  test('calls onDelete and onTweakAi', () => {
-    const {getByText} = renderWithProviders(
+  test('calls onDelete and onTweakAi', async () => {
+    const {getByText} = await renderWithProviders(
       <OverviewTab {...defaultProps()} />,
     );
-    fireEvent.press(getByText('Delete'));
-    fireEvent.press(getByText('Tweak with AI'));
+    await fireEvent.press(getByText('Delete'));
+    await fireEvent.press(getByText('Tweak with AI'));
     expect(onDelete).toHaveBeenCalled();
     expect(onTweakAi).toHaveBeenCalled();
   });
 
-  test('shows edit for content-locked active versions', () => {
-    const {getByText} = renderWithProviders(
+  test('shows edit for content-locked active versions', async () => {
+    const {getByText} = await renderWithProviders(
       <OverviewTab {...defaultProps()} />,
     );
-    fireEvent.press(getByText('Edit'));
+    await fireEvent.press(getByText('Edit'));
     expect(onEditRecipe).toHaveBeenCalled();
   });
 
-  test('shows edit draft for editable draft versions', () => {
-    const {getByText} = renderWithProviders(
+  test('shows edit draft for editable draft versions', async () => {
+    const {getByText} = await renderWithProviders(
       <OverviewTab
         {...defaultProps()}
         recipe={makeRecipeDetail({versionId: 'draft-1'})}
@@ -118,15 +118,15 @@ describe('OverviewTab', () => {
         ]}
       />,
     );
-    fireEvent.press(getByText('Edit draft'));
+    await fireEvent.press(getByText('Edit draft'));
     expect(onEditVersion).toHaveBeenCalledWith('draft-1');
   });
 
   test('creates manual tweak version and selects it', async () => {
-    const {getByText, findByText} = renderWithProviders(
+    const {getByText, findByText} = await renderWithProviders(
       <OverviewTab {...defaultProps()} />,
     );
-    fireEvent.press(getByText('Tweak manually'));
+    await fireEvent.press(getByText('Tweak manually'));
     expect(await findByText('Tweak manually')).toBeTruthy();
     await waitFor(() => {
       expect(mockCreateVersion).toHaveBeenCalled();
@@ -134,11 +134,11 @@ describe('OverviewTab', () => {
     });
   });
 
-  test('renders image when imageUrl is provided', () => {
+  test('renders image when imageUrl is provided', async () => {
     const recipeWithImage = makeRecipeDetail({
       imageUrl: 'https://example.com/img.jpg',
     });
-    const {toJSON} = renderWithProviders(
+    const {toJSON} = await renderWithProviders(
       <OverviewTab
         {...defaultProps()}
         recipe={recipeWithImage}
@@ -147,7 +147,7 @@ describe('OverviewTab', () => {
     expect(JSON.stringify(toJSON())).toContain('example.com/img.jpg');
   });
 
-  test('renders without optional fields', () => {
+  test('renders without optional fields', async () => {
     const minimal = makeRecipeDetail({
       imageUrl: null,
       description: null,
@@ -155,7 +155,7 @@ describe('OverviewTab', () => {
       cookTimeMin: null,
       tags: [],
     });
-    const {getByText, queryByText} = renderWithProviders(
+    const {getByText, queryByText} = await renderWithProviders(
       <OverviewTab
         {...defaultProps()}
         recipe={minimal}
@@ -165,7 +165,7 @@ describe('OverviewTab', () => {
     expect(queryByText(/m$/)).toBeNull();
   });
 
-  test('renders tags', () => {
+  test('renders tags', async () => {
     const recipeWithTag = makeRecipeDetail({
       tags: [
         {
@@ -177,7 +177,7 @@ describe('OverviewTab', () => {
         },
       ],
     });
-    const {getByText} = renderWithProviders(
+    const {getByText} = await renderWithProviders(
       <OverviewTab
         {...defaultProps()}
         recipe={recipeWithTag}
@@ -189,7 +189,7 @@ describe('OverviewTab', () => {
   test('shows and clears action message after activation', async () => {
     jest.useFakeTimers();
     mockActivate.mockResolvedValueOnce(makeRecipeDetail());
-    const {getByText, findByText, queryByText} = renderWithProviders(
+    const {getByText, findByText, queryByText} = await renderWithProviders(
       <OverviewTab
         {...defaultProps()}
         versions={[
@@ -197,9 +197,9 @@ describe('OverviewTab', () => {
         ]}
       />,
     );
-    fireEvent.press(getByText('Activate'));
+    await fireEvent.press(getByText('Activate'));
     expect(await findByText('Version activated')).toBeTruthy();
-    act(() => {
+    await act(() => {
       jest.advanceTimersByTime(2500);
     });
     await waitFor(() => {
@@ -208,8 +208,8 @@ describe('OverviewTab', () => {
     jest.useRealTimers();
   });
 
-  test('hides edit draft for active versions', () => {
-    const {queryByText} = renderWithProviders(
+  test('hides edit draft for active versions', async () => {
+    const {queryByText} = await renderWithProviders(
       <OverviewTab
         {...defaultProps()}
         recipe={makeRecipeDetail({status: 'perfected'})}

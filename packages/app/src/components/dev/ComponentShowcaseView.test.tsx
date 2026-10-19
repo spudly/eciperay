@@ -14,8 +14,8 @@ jest.mock('./ShowcaseDemo', () => {
 });
 
 describe('ComponentShowcaseView', () => {
-  test('renders the showcase picker and filter field', () => {
-    renderWithProviders(<ComponentShowcaseView />);
+  test('renders the showcase picker and filter field', async () => {
+    await renderWithProviders(<ComponentShowcaseView />);
 
     expect(screen.getByText('Component Showcase')).toBeTruthy();
     expect(screen.getByPlaceholderText('Filter components')).toBeTruthy();

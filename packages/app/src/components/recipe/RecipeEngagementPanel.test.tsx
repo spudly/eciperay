@@ -8,7 +8,7 @@ jest.mock('../../lib/api');
 
 describe('RecipeEngagementPanel', () => {
   test('renders ratings and comments sections', async () => {
-    const {findByText} = renderWithProviders(
+    const {findByText} = await renderWithProviders(
       <RecipeEngagementPanel
         recipeId="recipe-uuid-1"
         ownerUserId="owner-uuid"

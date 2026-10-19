@@ -6,20 +6,20 @@ import {renderWithProviders} from '../../__tests__/testUtils';
 import {RecipeStatusPicker} from './RecipeStatusPicker';
 
 describe('RecipeStatusPicker', () => {
-  test('changes status when a chip is pressed', () => {
+  test('changes status when a chip is pressed', async () => {
     const onChange = jest.fn();
-    renderWithProviders(
+    await renderWithProviders(
       <RecipeStatusPicker
         value="idea"
         onChange={onChange}
       />,
     );
-    fireEvent.press(screen.getByText('Evolving'));
+    await fireEvent.press(screen.getByText('Evolving'));
     expect(onChange).toHaveBeenCalledWith('evolving');
   });
 
-  test('renders selected and unselected chip styles', () => {
-    renderWithProviders(
+  test('renders selected and unselected chip styles', async () => {
+    await renderWithProviders(
       <RecipeStatusPicker
         value="evolving"
         onChange={jest.fn()}
@@ -30,16 +30,16 @@ describe('RecipeStatusPicker', () => {
     expect(screen.getByText('Perfected')).toBeTruthy();
   });
 
-  test('does not call onChange when disabled', () => {
+  test('does not call onChange when disabled', async () => {
     const onChange = jest.fn();
-    renderWithProviders(
+    await renderWithProviders(
       <RecipeStatusPicker
         value="idea"
         onChange={onChange}
         disabled
       />,
     );
-    fireEvent.press(screen.getByText('Perfected'));
+    await fireEvent.press(screen.getByText('Perfected'));
     expect(onChange).not.toHaveBeenCalled();
   });
 });

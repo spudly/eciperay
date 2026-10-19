@@ -14,9 +14,9 @@ describe('SortableIngredientList', () => {
     expect(resolveDragIndex(() => 2)).toBe(2);
   });
 
-  test('reorders ingredients through the mock drag control', () => {
+  test('reorders ingredients through the mock drag control', async () => {
     const onChange = jest.fn();
-    const {getByLabelText} = render(
+    const {getByLabelText} = await render(
       <SortableIngredientList
         ingredients={[
           {...createEmptyIngredientRow(0), key: 'i-1', name: 'Flour'},
@@ -28,15 +28,15 @@ describe('SortableIngredientList', () => {
       />,
     );
 
-    fireEvent.press(getByLabelText('Mock reorder i-2'));
+    await fireEvent.press(getByLabelText('Mock reorder i-2'));
     expect(onChange).toHaveBeenCalledWith([
       expect.objectContaining({key: 'i-2', name: 'Salt'}),
       expect.objectContaining({key: 'i-1', name: 'Flour'}),
     ]);
   });
 
-  test('renders drag handles for ingredient rows', () => {
-    const {getByLabelText} = render(
+  test('renders drag handles for ingredient rows', async () => {
+    const {getByLabelText} = await render(
       <SortableIngredientList
         ingredients={[
           {
