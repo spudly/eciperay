@@ -31,7 +31,6 @@ module.exports = {
     '^@env$': '<rootDir>/env-shim.test.js',
     '^@eciperay/client$': '<rootDir>/../client/src/index.ts',
     '^react$': '<rootDir>/node_modules/react',
-    '^react-test-renderer$': '<rootDir>/node_modules/react-test-renderer',
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },
   transformIgnorePatterns: [
