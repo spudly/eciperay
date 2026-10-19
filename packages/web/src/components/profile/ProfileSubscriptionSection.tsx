@@ -80,8 +80,15 @@ export const ProfileSubscriptionSection = () => {
   // cached value.
   const refreshMutation = useMutation({
     mutationFn: () => eciperay.account.refreshEntitlement(),
-    onSuccess: data => {
+    onSuccess: async data => {
       setRefreshError(null);
+      // Cancel any in-flight entitlement fetch first: a timer/focus
+      // refetch that started before the refresh could otherwise resolve
+      // afterwards and overwrite the refreshed entitlement with its
+      // older snapshot.
+      await queryClient.cancelQueries({
+        queryKey: queryKeys.entitlement(userId),
+      });
       queryClient.setQueryData(queryKeys.entitlement(userId), data);
     },
     onError: mutationError => {

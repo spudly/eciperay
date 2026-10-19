@@ -1,5 +1,5 @@
 import type {Entitlement} from '@eciperay/types';
-import {focusManager} from '@tanstack/react-query';
+import {focusManager, QueryClient} from '@tanstack/react-query';
 import {act, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {vi} from 'vitest';
@@ -174,6 +174,28 @@ describe('ProfileSubscriptionSection', () => {
     await userEvent.click(screen.getByRole('button', {name: 'Check again'}));
     expect(await screen.findByText('Plus plan')).toBeInTheDocument();
     expect(refresh).toHaveBeenCalledTimes(1);
+  });
+
+  test('check again cancels in-flight entitlement fetches before caching', async () => {
+    const cancelQueries = vi.spyOn(QueryClient.prototype, 'cancelQueries');
+    vi.spyOn(eciperay.account, 'getEntitlement').mockResolvedValue(
+      plusEntitlement,
+    );
+    vi.spyOn(eciperay.account, 'refreshEntitlement').mockResolvedValue(
+      plusEntitlement,
+    );
+    await renderWithProviders(<ProfileSubscriptionSection />, {
+      withAuth: false,
+    });
+    await userEvent.click(
+      await screen.findByRole('button', {name: 'Check again'}),
+    );
+    expect(await screen.findByText('Plus plan')).toBeInTheDocument();
+    // A slower in-flight GET must not be able to land afterwards and
+    // overwrite the refreshed entitlement with its older snapshot.
+    expect(cancelQueries).toHaveBeenCalledWith({
+      queryKey: ['entitlement', 'anonymous'],
+    });
   });
 
   test('check again surfaces a refresh failure', async () => {
