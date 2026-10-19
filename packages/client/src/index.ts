@@ -23,6 +23,7 @@ export {
   sortIngredientsByOrder,
 } from './recipeScaling.js';
 export {errorMessage} from './errorMessage.js';
+export {PLAN_LABELS, apiTokensPowerNotice} from './billingCopy.js';
 export {buildPrintHtml} from './buildPrintHtml.js';
 export {buildShareText} from './buildShareText.js';
 export {

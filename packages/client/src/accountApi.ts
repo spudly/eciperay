@@ -19,6 +19,8 @@ export const createAccountApi = (client: ApiClient) => ({
     }),
   deleteAccount: () => client.fetch<undefined>('/account', {method: 'DELETE'}),
   getEntitlement: () => client.fetch<Entitlement>('/account/entitlement'),
+  refreshEntitlement: () =>
+    client.fetch<Entitlement>('/account/entitlement/refresh', {method: 'POST'}),
   listPersonalAccessTokens: () =>
     client.fetch<PersonalAccessToken[]>('/account/personal-access-tokens'),
   createPersonalAccessToken: (name: string) =>

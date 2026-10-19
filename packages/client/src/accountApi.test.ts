@@ -21,6 +21,17 @@ describe('createAccountApi', () => {
     expect(fetch).toHaveBeenCalledWith('/account/entitlement');
   });
 
+  test('calls the entitlement refresh endpoint', async () => {
+    const fetch = jest.fn().mockResolvedValue({plan: 'plus'});
+    const api = createAccountApi({fetch});
+
+    await api.refreshEntitlement();
+
+    expect(fetch).toHaveBeenCalledWith('/account/entitlement/refresh', {
+      method: 'POST',
+    });
+  });
+
   test('calls personal access token endpoints', async () => {
     const fetch = jest.fn().mockResolvedValue([]);
     const api = createAccountApi({fetch});
