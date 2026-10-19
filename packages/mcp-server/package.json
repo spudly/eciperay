@@ -1,6 +1,6 @@
 {
   "name": "@eciperay/mcp-server",
-  "version": "1.22.1",
+  "version": "1.22.2",
   "private": true,
   "type": "module",
   "description": "Model Context Protocol server exposing Eciperay recipe management tools",
