@@ -60,4 +60,22 @@ describe('paddleEventOrdering', () => {
     expect(apply).toBe(true);
     expect(eventAt).toBeNull();
   });
+
+  test('normalizes a native Date stored timestamp (pg timestamptz)', () => {
+    // pg returns timestamptz as Date objects at runtime; comparing the
+    // ISO event string against a Date with > is always false, which
+    // used to reject every event after the first.
+    expect(
+      shouldApplyEvent(
+        makeEvent('2026-10-13T16:00:00.000Z'),
+        new Date('2026-10-13T15:00:00.000Z'),
+      ).apply,
+    ).toBe(true);
+    expect(
+      shouldApplyEvent(
+        makeEvent('2026-10-13T16:00:00.000Z'),
+        new Date('2026-10-13T17:00:00.000Z'),
+      ).apply,
+    ).toBe(false);
+  });
 });

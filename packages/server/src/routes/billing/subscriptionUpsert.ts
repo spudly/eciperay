@@ -3,7 +3,7 @@ import {serverLog} from '../../lib/posthogLogs.js';
 
 import type {PaddleEvent} from './paddleEvents.js';
 import {fetchPaddleCustomerEmail} from './paddleApi.js';
-import {shouldApplyEvent} from './paddleEventOrdering.js';
+import {parseEventTime, shouldApplyEvent} from './paddleEventOrdering.js';
 
 type QueryFn = typeof defaultQuery;
 
@@ -103,10 +103,24 @@ export type UpsertOutcome = 'applied' | 'invalid' | 'stale';
  * paddleEventOrdering). Unknown price ids throw so Paddle retries once the
  * plan_prices seed exists; the handler is idempotent.
  */
+export type UpsertOptions = {
+  /**
+   * The event is a live snapshot of Paddle's current state (entitlement
+   * refresh), not a webhook delivery. For snapshots, the same-vs-
+   * replacement-subscription decision is made here, against the row as it
+   * stands at write time: a candidate whose subscription id differs from the
+   * stored row's is a replacement and applies without the revision-ordering
+   * guard (its updated_at belongs to a different subscription's clock), while a
+   * candidate for the stored subscription goes through the guard as usual.
+   */
+  snapshot?: boolean;
+};
+
 export const upsertSubscription = async (
   event: PaddleEvent,
   userId: string,
   queryFn: QueryFn,
+  options: UpsertOptions = {},
 ): Promise<UpsertOutcome> => {
   const priceId = event.data.items?.[0]?.price?.id;
   if (!priceId) {
@@ -146,18 +160,35 @@ export const upsertSubscription = async (
   const existing = await queryFn<{
     status: string;
     past_due_since: string | null;
-    paddle_last_event_at: string | null;
+    paddle_subscription_id: string | null;
+    paddle_last_event_at: string | Date | null;
   }>(
-    `select status, past_due_since, paddle_last_event_at
+    `select status, past_due_since, paddle_subscription_id,
+            paddle_last_event_at
        from subscriptions where user_id = $1`,
     [userId],
   );
-  const {apply, eventAt} = shouldApplyEvent(
-    event,
-    existing.rows[0]?.paddle_last_event_at ?? null,
-  );
-  if (!apply) {
-    return 'stale';
+  const existingRow = existing.rows[0];
+  // Snapshot refresh only: a different subscription id than the stored
+  // row's means replacement, decided against this write-time row (a
+  // concurrent webhook may have replaced the row since the caller read
+  // it). The candidate's own timestamp is still what gets recorded.
+  const isReplacement =
+    options.snapshot === true &&
+    existingRow !== undefined &&
+    (existingRow.paddle_subscription_id ?? null) !== (event.data.id ?? null);
+  let eventAt: string | null;
+  if (isReplacement) {
+    eventAt = parseEventTime(event);
+  } else {
+    const decision = shouldApplyEvent(
+      event,
+      existingRow?.paddle_last_event_at ?? null,
+    );
+    if (!decision.apply) {
+      return 'stale';
+    }
+    eventAt = decision.eventAt;
   }
   const wasPastDue = existing.rows[0]?.status === 'past_due';
   const pastDueSince =

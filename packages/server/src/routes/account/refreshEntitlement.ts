@@ -44,10 +44,7 @@ const periodEndMs = (sub: Record<string, unknown>): number => {
 };
 
 /** Normalize a Paddle API subscription into the webhook event data shape. */
-const toSyntheticEvent = (
-  sub: Record<string, unknown>,
-  storedSubscriptionId: string | null,
-): PaddleEvent => {
+const toSyntheticEvent = (sub: Record<string, unknown>): PaddleEvent => {
   const items = Array.isArray(sub['items']) ? sub['items'] : [];
   const normalizedItems = items.map(item => {
     const entry = (item ?? {}) as Record<string, unknown>;
@@ -62,25 +59,20 @@ const toSyntheticEvent = (
   const scheduledChange = sub['scheduled_change'] as
     {action?: string} | null | undefined;
   const updatedAt = sub['updated_at'];
-  // Revision ordering only makes sense within one subscription. For the
-  // same subscription, order by Paddle's own revision timestamp, never
-  // local processing time: a snapshot read just before a concurrent
-  // cancellation must not stamp its stale state as newest and make the
-  // ordering guard reject the real cancellation. A DIFFERENT
-  // subscription is a replacement, not an older revision of the stored
-  // one — comparing its updated_at against the previous subscription's
-  // event clock would wrongly reject it as stale — so it gets snapshot
-  // semantics (now), as does a same-subscription candidate whose
-  // updated_at is unusable.
-  const sameSubscription =
-    storedSubscriptionId !== null && sub['id'] === storedSubscriptionId;
   return {
     event_id: `refresh-${String(sub['id'])}`,
     event_type: 'subscription.updated',
+    // Always Paddle's own revision timestamp, never local processing
+    // time: a snapshot read just before a concurrent cancellation must
+    // not stamp its stale state as newest and make the ordering guard
+    // reject the real cancellation. Whether the candidate is a revision
+    // of the stored subscription or a replacement for it is decided in
+    // upsertSubscription against the row at write time (snapshot mode)
+    // — a subscription id read here could already be outdated by a
+    // concurrent webhook. Falls back to now only when Paddle gave no
+    // usable timestamp.
     occurred_at:
-      sameSubscription &&
-      typeof updatedAt === 'string' &&
-      !Number.isNaN(Date.parse(updatedAt))
+      typeof updatedAt === 'string' && !Number.isNaN(Date.parse(updatedAt))
         ? updatedAt
         : new Date().toISOString(),
     data: {
@@ -107,15 +99,11 @@ export const refreshEntitlement = async (
     return;
   }
 
-  const subRow = await queryFn<{
-    paddle_customer_id: string | null;
-    paddle_subscription_id: string | null;
-  }>(
-    'select paddle_customer_id, paddle_subscription_id from subscriptions where user_id = $1',
+  const subRow = await queryFn<{paddle_customer_id: string | null}>(
+    'select paddle_customer_id from subscriptions where user_id = $1',
     [req.userId],
   );
   let customerId = subRow.rows[0]?.paddle_customer_id ?? null;
-  const storedSubscriptionId = subRow.rows[0]?.paddle_subscription_id ?? null;
   if (!customerId && req.userEmail) {
     customerId = await findPaddleCustomerIdByEmail(req.userEmail);
   }
@@ -138,9 +126,10 @@ export const refreshEntitlement = async (
   for (const candidate of candidates) {
     try {
       const outcome = await upsertSubscription(
-        toSyntheticEvent(candidate, storedSubscriptionId),
+        toSyntheticEvent(candidate),
         req.userId,
         queryFn,
+        {snapshot: true},
       );
       if (outcome === 'invalid') {
         // Unusable candidate (e.g. a paused subscription, whose status

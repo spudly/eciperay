@@ -22,17 +22,24 @@ export const parseEventTime = (event: PaddleEvent): string | null => {
  */
 export const shouldApplyEvent = (
   event: PaddleEvent,
-  lastAppliedAt: string | null,
+  lastAppliedAt: string | Date | null,
 ): {apply: boolean; eventAt: string | null} => {
   const eventAt = parseEventTime(event);
-  if (!eventAt || !lastAppliedAt || eventAt > lastAppliedAt) {
+  // pg returns timestamptz columns as Date objects at runtime (no type
+  // parser override is configured), despite the string annotations on
+  // the row types. Normalize before comparing: an ISO string compared
+  // against a Date with `>` is always false, which silently rejected
+  // every event after the first for a stored subscription.
+  const lastAppliedIso =
+    lastAppliedAt instanceof Date ? lastAppliedAt.toISOString() : lastAppliedAt;
+  if (!eventAt || !lastAppliedIso || eventAt > lastAppliedIso) {
     return {apply: true, eventAt};
   }
   serverLog('warn', 'Ignoring out-of-order Paddle event', {
     eventType: event.event_type,
     eventId: event.event_id,
     eventAt,
-    lastAppliedAt,
+    lastAppliedAt: lastAppliedIso,
   });
   return {apply: false, eventAt};
 };
