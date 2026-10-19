@@ -204,29 +204,34 @@ before deploys.
 
 Every pull request gets an ephemeral preview deployment on Fly.io via
 `.github/workflows/fly-review.yml` (Fly's
-[review-apps blueprint](https://fly.io/docs/blueprints/review-apps-guide)),
-at `https://pr-<number>-spudly-eciperay.fly.dev`. The app is updated on each
-push and destroyed when the PR closes. Two one-time setup steps:
+[review-apps blueprint](https://fly.io/docs/blueprints/review-apps-guide)), at
+`https://pr-<number>-spudly-eciperay.fly.dev`. The app is updated on each push
+and destroyed when the PR closes. Two one-time setup steps:
 
-1. **Org token.** The workflow uses the `FLY_API_TOKEN` repository secret,
-   but creating apps requires an _org_ token — the app-scoped deploy token
+1. **Org token.** The workflow uses the `FLY_API_TOKEN` repository secret, but
+   creating apps requires an _org_ token — the app-scoped deploy token
    (`fly tokens create deploy`) is not enough. Create one with
-   `fly tokens create org` and store it as `FLY_API_TOKEN`; org tokens can
-   also deploy the production app, so `fly-deploy.yml` keeps working.
-2. **Runtime secrets.** The workflow passes runtime secrets to the preview
-   app from same-named GitHub repository secrets (`DATABASE_URL`,
-   `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `ANTHROPIC_API_KEY`,
-   `OPENAI_API_KEY`, `SERVER_SECRET`, `PADDLE_API_KEY`,
-   `PADDLE_WEBHOOK_SECRET`). Fly secrets are write-only, so copy the values
-   from your own records. Until a secret is added, the preview runs without
-   it (no database/AI access). Paddle is pinned to the sandbox environment
-   in previews, and Paddle webhooks still point at production — previews
-   cannot exercise real billing webhooks.
+   `fly tokens create org` and store it as `FLY_API_TOKEN`; org tokens can also
+   deploy the production app, so `fly-deploy.yml` keeps working.
+2. **Runtime secrets.** The workflow passes runtime secrets to the preview app
+   from same-named GitHub repository secrets (`DATABASE_URL`, `SUPABASE_URL`,
+   `SUPABASE_SECRET_KEY`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`,
+   `SERVER_SECRET`, `PADDLE_API_KEY`, `PADDLE_WEBHOOK_SECRET`). Fly secrets are
+   write-only, so copy the values from your own records. `SUPABASE_URL` and
+   `SUPABASE_SECRET_KEY` are **required**: the server creates its Supabase
+   client at import time and will not start without them, so the workflow
+   validates them before deploying (the other secrets only disable their feature
+   when absent). Paddle is pinned to the sandbox environment in previews, and
+   Paddle webhooks still point at production — previews cannot exercise real
+   billing webhooks.
 
 Safety notes: `fly.review.toml` has **no release command**, so PR code never
-runs database migrations. If `DATABASE_URL` points at the production
-database, preview writes hit production data — point it at a separate
-Supabase project if previews need isolated data.
+runs database migrations. For real isolation, point **all** of `DATABASE_URL`,
+`SUPABASE_URL`, and `SUPABASE_SECRET_KEY` at a separate Supabase project:
+changing only `DATABASE_URL` leaves Supabase Auth and Storage shared, so with
+production Supabase credentials a preview action such as account deletion would
+delete a **production** user. Treat a preview that uses production credentials
+as production.
 
 **5. Custom domain**
 
