@@ -253,11 +253,14 @@ export const upsertSubscription = async (
       }
       eventAt = candidateAt;
       recordSwap();
-    } else if (mappedStatus === 'cancelled') {
-      // A canceled revision never promotes over the current
-      // subscription: its clock advanced precisely because it was
-      // canceled, so "newer" carries no entitlement claim. Advance
-      // the superseded clock only, as the status-only handler does.
+    } else if (mappedStatus !== 'active') {
+      // A canceled or past_due revision never promotes over the
+      // current subscription: its clock advanced precisely because
+      // it was canceled or went delinquent, so "newer" carries no
+      // entitlement claim — swapping it in could downgrade an
+      // active subscription to delinquent, then Free when grace
+      // expires. Advance the superseded clock only, as the
+      // status-only handler does.
       if (
         candidateAt === null ||
         (supersededAt !== null && candidateAt <= supersededAt)
@@ -291,6 +294,26 @@ export const upsertSubscription = async (
     eventAt = parseEventTime(event);
     recordSwap();
   } else {
+    if (
+      options.snapshot !== true &&
+      positivelyDifferent &&
+      mappedStatus !== 'active'
+    ) {
+      // Webhook event for a subscription this row does not track —
+      // neither current nor the remembered superseded one (e.g. a
+      // delayed event for a subscription replaced two generations
+      // ago, whose history no longer fits the single superseded
+      // slot). A non-active state must never overwrite the selected
+      // subscription; live takeovers keep the ordering guard below,
+      // and snapshot refresh reconciles anything else.
+      serverLog('warn', 'Paddle event for untracked subscription ignored', {
+        eventType: event.event_type,
+        eventId: event.event_id,
+        subscriptionId: eventSubId,
+        status: mappedStatus,
+      });
+      return 'stale';
+    }
     const decision = shouldApplyEvent(event, existingRow.paddle_last_event_at);
     if (!decision.apply) {
       return 'stale';
