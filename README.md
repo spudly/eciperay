@@ -216,8 +216,8 @@ and destroyed when the PR closes. Two one-time setup steps:
 2. **Runtime secrets.** The workflow passes runtime secrets to the preview app
    from same-named GitHub repository secrets (`DATABASE_URL`, `SUPABASE_URL`,
    `SUPABASE_SECRET_KEY`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`,
-   `SERVER_SECRET`, `PADDLE_API_KEY`, `PADDLE_WEBHOOK_SECRET`). Fly secrets are
-   write-only, so copy the values from your own records. `SUPABASE_URL` and
+   `PADDLE_API_KEY`, `PADDLE_WEBHOOK_SECRET`). Fly secrets are write-only, so
+   copy the values from your own records. `SUPABASE_URL` and
    `SUPABASE_SECRET_KEY` are **required**: the server creates its Supabase
    client at import time and will not start without them, so the workflow
    validates them before deploying (the other secrets only disable their feature

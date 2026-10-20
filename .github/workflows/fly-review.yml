@@ -80,9 +80,8 @@ jobs:
             secrets.SUPABASE_URL }} SUPABASE_SECRET_KEY=${{
             secrets.SUPABASE_SECRET_KEY }} ANTHROPIC_API_KEY=${{
             secrets.ANTHROPIC_API_KEY }} OPENAI_API_KEY=${{
-            secrets.OPENAI_API_KEY }} SERVER_SECRET=${{ secrets.SERVER_SECRET }}
-            POSTHOG_KEY=${{ secrets.VITE_POSTHOG_KEY }}
-            POSTHOG_HOST=https://a.eciperay.com PADDLE_API_KEY=${{
+            secrets.OPENAI_API_KEY }} POSTHOG_KEY=${{ secrets.VITE_POSTHOG_KEY
+            }} POSTHOG_HOST=https://a.eciperay.com PADDLE_API_KEY=${{
             secrets.PADDLE_API_KEY }} PADDLE_WEBHOOK_SECRET=${{
             secrets.PADDLE_WEBHOOK_SECRET }} PADDLE_ENVIRONMENT=sandbox
 
