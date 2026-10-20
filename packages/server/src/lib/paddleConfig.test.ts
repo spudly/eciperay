@@ -91,6 +91,17 @@ describe('assertPaddleConfig', () => {
     ).toThrow(/points at the sandbox API/);
   });
 
+  test('refuses production mode with a malformed API base', () => {
+    expect(() =>
+      assertPaddleConfig({
+        PADDLE_ENVIRONMENT: 'production',
+        PADDLE_API_KEY: 'live-key',
+        PADDLE_WEBHOOK_SECRET: 'live-secret',
+        PADDLE_API_BASE: 'api.paddle.com',
+      }),
+    ).toThrow(/is not a valid URL/);
+  });
+
   test('refuses sandbox mode pointed at the live API base', () => {
     expect(() =>
       assertPaddleConfig({PADDLE_API_BASE: 'https://api.paddle.com'}),

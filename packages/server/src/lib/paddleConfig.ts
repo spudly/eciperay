@@ -15,11 +15,12 @@
  * puts in those secrets when he flips PADDLE_ENVIRONMENT.
  *
  * In production mode the server refuses to boot (assertPaddleConfig) without
- * the live API key and webhook secret, or with a PADDLE_API_BASE that still
- * points at the sandbox host — live keys against the sandbox API is the classic
- * cutover mistake, and a silently unconfigured webhook would drop paid
- * subscriptions on the floor. In sandbox mode nothing is required: billing
- * endpoints just report "not configured" per request, exactly as before.
+ * the live API key and webhook secret, or with a PADDLE_API_BASE that is not a
+ * valid URL or still points at the sandbox host — live keys against the sandbox
+ * API is the classic cutover mistake, and a silently unconfigured webhook would
+ * drop paid subscriptions on the floor. In sandbox mode nothing is required:
+ * billing endpoints just report "not configured" per request, exactly as
+ * before.
  */
 
 export type PaddleEnvironmentName = 'sandbox' | 'production';
@@ -94,6 +95,14 @@ export const assertPaddleConfig = (env: Env = process.env): void => {
         `${missing.join(' and ')} ${missing.length > 1 ? 'are' : 'is'} not set. ` +
         'Set the live Paddle secrets (see docs/paddle-live-cutover.md) or ' +
         'unset PADDLE_ENVIRONMENT to stay on sandbox.',
+    );
+  }
+  if (host === null) {
+    throw new Error(
+      'Paddle config mismatch: PADDLE_API_BASE ' +
+        `(${config.apiBase}) is not a valid URL. Remove PADDLE_API_BASE ` +
+        '(the live base is derived from PADDLE_ENVIRONMENT) or set it ' +
+        'to https://api.paddle.com.',
     );
   }
   if (host === SANDBOX_HOST) {
