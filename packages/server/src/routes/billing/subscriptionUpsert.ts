@@ -670,7 +670,26 @@ export const upsertSubscription = async (
       });
       return 'stale';
     }
-    const decision = shouldApplyEvent(event, existingRow.paddle_last_event_at);
+    // Revision ordering applies WITHIN a subscription: a webhook
+    // activation for a DIFFERENT (untracked) subscription must not
+    // be rejected against the current subscription's clock — the
+    // two clocks belong to different subscriptions. Example: the
+    // current subscription was canceled Oct 18 and no longer grants
+    // access; a delayed activation for a new subscription dated
+    // Oct 17 compared against that clock returns 'stale' and is
+    // acknowledged without granting the paid plan, leaving recovery
+    // to a manual refresh or a later event. Different-subscription
+    // activations are decided by the live verification below
+    // instead (confirmed still active, at no newer revision than
+    // the event claims) — the same basis the snapshot replacement
+    // branch uses, which handles this sequence separately.
+    const differentSubscriptionActivation =
+      options.snapshot !== true &&
+      positivelyDifferent &&
+      mappedStatus === 'active';
+    const decision = differentSubscriptionActivation
+      ? {apply: true, eventAt: parseEventTime(event)}
+      : shouldApplyEvent(event, existingRow.paddle_last_event_at);
     if (!decision.apply) {
       // Snapshot mode, same subscription, EQUAL revision: the
       // stored clock can have been advanced by a partial write —

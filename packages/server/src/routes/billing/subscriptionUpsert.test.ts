@@ -224,11 +224,16 @@ describe('upsertSubscription', () => {
       }),
     ).resolves.toBe('applied');
 
-    // Without snapshot mode the same inputs stay stale (webhook path
-    // keeps the global guard).
+    // Without snapshot mode, a DIFFERENT subscription's activation
+    // is likewise not ordered against the stored subscription's
+    // clock (the far-future 2030 clock belongs to sub_old, not to
+    // this candidate): the webhook takeover is decided by live
+    // verification, which the stub above passes (active at the
+    // claimed revision), so it applies. Same-subscription webhook
+    // revisions keep the ordering guard (see the stale-event test).
     await expect(
       upsertSubscription(makeEvent(), 'user-uuid-1', mockQuery),
-    ).resolves.toBe('stale');
+    ).resolves.toBe('applied');
 
     // Snapshot of the SAME subscription with an older updated_at is a
     // stale revision and still loses.
@@ -859,6 +864,97 @@ describe('upsertSubscription', () => {
         upsertSubscription(delayedActive, 'user-uuid-1', mockQuery),
       ).rejects.toThrow('Paddle live verification unavailable');
       expect(row.paddle_subscription_id).toBe('sub_c');
+    } finally {
+      global.fetch = realFetch;
+      delete process.env['PADDLE_API_KEY'];
+    }
+  });
+
+  test('a delayed activation for a different subscription is decided live, not against the current clock', async () => {
+    // Current: sub_a, canceled Oct 18 — it no longer grants access.
+    // A delayed activation for the new subscription sub_b dated
+    // Oct 17 arrives. Compared against sub_a's clock it reads as
+    // out-of-order and would be acknowledged as 'stale' without
+    // granting sub_b's paid plan; revision ordering only applies
+    // within a subscription, so the takeover is decided by live
+    // verification instead.
+    let insertParams: unknown[] | null = null;
+    mockQuery.mockImplementation(((sql: string, params?: unknown[]) => {
+      if (sql.includes('from plan_prices')) {
+        return Promise.resolve(makeQueryResult([{plan: 'plus'}]));
+      }
+      if (sql.includes('from subscriptions')) {
+        return Promise.resolve(
+          makeQueryResult([
+            {
+              status: 'cancelled',
+              past_due_since: null,
+              paddle_subscription_id: 'sub_a',
+              paddle_last_event_at: '2026-10-18T00:00:00.000Z',
+              superseded_subscription_id: null,
+              superseded_last_event_at: null,
+            },
+          ]),
+        );
+      }
+      if (sql.includes('insert into subscriptions')) {
+        insertParams = params as unknown[];
+        return Promise.resolve(makeQueryResult([{}]));
+      }
+      return Promise.resolve(makeQueryResult([]));
+    }) as typeof mockQuery);
+    const realFetch = global.fetch;
+    process.env['PADDLE_API_KEY'] = 'test-paddle-key';
+    let livePayload: {status: string; updated_at: string} | null = null;
+    global.fetch = (async () =>
+      livePayload === null
+        ? ({ok: false, status: 503, json: async () => ({})} as Response)
+        : ({
+            ok: true,
+            json: async () => ({data: livePayload}),
+          } as Response)) as typeof fetch;
+    try {
+      const delayedActivation = makeEvent({
+        occurred_at: '2026-10-17T00:00:00.000Z',
+        data: {...makeEvent().data, id: 'sub_b'},
+      });
+      // Live: sub_b still active at exactly the claimed revision —
+      // the takeover applies, recording sub_a as superseded with
+      // its own Oct 18 clock intact.
+      livePayload = {status: 'active', updated_at: '2026-10-17T00:00:00.000Z'};
+      await expect(
+        upsertSubscription(delayedActivation, 'user-uuid-1', mockQuery),
+      ).resolves.toBe('applied');
+      expect(insertParams?.[4]).toBe('sub_b');
+      expect(insertParams?.[10]).toBe('2026-10-17T00:00:00.000Z');
+      expect(insertParams?.[11]).toBe('sub_a');
+      expect(insertParams?.[12]).toBe('2026-10-18T00:00:00.000Z');
+
+      // Live: sub_b has since been canceled — no takeover.
+      insertParams = null;
+      livePayload = {
+        status: 'canceled',
+        updated_at: '2026-10-19T00:00:00.000Z',
+      };
+      await expect(
+        upsertSubscription(delayedActivation, 'user-uuid-1', mockQuery),
+      ).resolves.toBe('stale');
+      expect(insertParams).toBeNull();
+
+      // Live: sub_b is active but at a NEWER revision than the
+      // delayed event claims — the event is historical.
+      livePayload = {status: 'active', updated_at: '2026-10-19T00:00:00.000Z'};
+      await expect(
+        upsertSubscription(delayedActivation, 'user-uuid-1', mockQuery),
+      ).resolves.toBe('stale');
+      expect(insertParams).toBeNull();
+
+      // Verification unavailable: throw, so the webhook stays
+      // retryable instead of dropping the takeover.
+      livePayload = null;
+      await expect(
+        upsertSubscription(delayedActivation, 'user-uuid-1', mockQuery),
+      ).rejects.toThrow('Paddle live verification unavailable');
     } finally {
       global.fetch = realFetch;
       delete process.env['PADDLE_API_KEY'];
