@@ -894,6 +894,58 @@ describe('upsertSubscription', () => {
     expect(stored.superseded_last_event_at).toBe('2026-10-18T00:00:00.000Z');
   });
 
+  test('throws when a cancellation commits between the SELECT and the INSERT', async () => {
+    // Refresh reads sub_123 active with its clock at Oct 17 and
+    // accepts a snapshot revision. Before the INSERT lands, a
+    // cancellation for sub_123 commits: same subscription id, but
+    // status cancelled and the clock advanced to Oct 19. A guard
+    // comparing only the id would let the refresh restore active
+    // and rewind the clock over the acknowledged cancellation. The
+    // conflict predicate also compares both clocks and the
+    // superseded identity, so the write matches zero rows (modeled
+    // here by the insert returning none) and the upsert throws —
+    // the refresh 500s and the retry re-reads the canceled state.
+    mockQuery.mockImplementation(((sql: string, params?: unknown[]) => {
+      if (sql.includes('from plan_prices')) {
+        return Promise.resolve(makeQueryResult([{plan: 'plus'}]));
+      }
+      if (sql.includes('from subscriptions')) {
+        return Promise.resolve(
+          makeQueryResult([
+            {
+              status: 'active',
+              past_due_since: null,
+              paddle_subscription_id: 'sub_123',
+              paddle_last_event_at: '2026-10-17T00:00:00.000Z',
+              superseded_subscription_id: 'sub_old',
+              superseded_last_event_at: '2026-10-16T00:00:00.000Z',
+            },
+          ]),
+        );
+      }
+      if (sql.includes('insert into subscriptions')) {
+        // The predicate binds the SELECT-time state: current id,
+        // current clock, superseded id, superseded clock.
+        expect(sql).toContain('paddle_last_event_at is not distinct from');
+        expect(sql).toContain('superseded_last_event_at is not distinct from');
+        expect(params?.[13]).toBe('sub_123');
+        expect(params?.[14]).toBe('2026-10-17T00:00:00.000Z');
+        expect(params?.[15]).toBe('sub_old');
+        expect(params?.[16]).toBe('2026-10-16T00:00:00.000Z');
+        return Promise.resolve(makeQueryResult([]));
+      }
+      return Promise.resolve(makeQueryResult([]));
+    }) as typeof mockQuery);
+
+    const snapshot = makeEvent({
+      occurred_at: '2026-10-18T00:00:00.000Z',
+      data: {...makeEvent().data, id: 'sub_123'},
+    });
+    await expect(
+      upsertSubscription(snapshot, 'user-uuid-1', mockQuery, {snapshot: true}),
+    ).rejects.toThrow('raced a subscription replacement');
+  });
+
   test('webhook writes stamp the entity updated_at; snapshot reselect compares the same clock', async () => {
     let row: Record<string, unknown> | null = null;
     mockQuery.mockImplementation(((sql: string, params?: unknown[]) => {

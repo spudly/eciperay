@@ -412,18 +412,20 @@ export const upsertSubscription = async (
           : new Date().toISOString()
       : null;
 
-  // The conflict update is conditional on the stored subscription
-  // still being the one the SELECT above decided against ($14): the
-  // same-vs-replacement decision and the superseded values below were
-  // computed from that state, and writing them over a row a
-  // concurrent writer already swapped would resurrect the outgoing
-  // subscription and erase the newer superseded record. And when the
-  // superseded slot still holds the SAME subscription after the
-  // write, its clock only moves forward (greatest): a cancellation
-  // that advanced it between the SELECT and this write must not be
-  // rewound by this write's older snapshot of it, or a delayed
-  // active revision of that subscription could promote it despite
-  // the processed cancellation.
+  // The conflict update is conditional on the stored row still
+  // being exactly the state the SELECT above decided against: the
+  // current subscription id ($14), its revision clock ($15), and
+  // the superseded slot's id and clock ($16, $17). The same-vs-
+  // replacement decision, the ordering decision, and the superseded
+  // values below were all computed from that state. A concurrent
+  // writer that swapped the subscription — OR merely advanced a
+  // clock, e.g. an acknowledged cancellation committing while a
+  // refresh INSERT is in flight — invalidates the decision even
+  // when the current id is unchanged: writing anyway could restore
+  // the canceled subscription's active status and rewind its clock
+  // to this event's older revision. And when the superseded slot
+  // still holds the SAME subscription after the write, its clock
+  // only moves forward (greatest), for the same reason.
   const written = await queryFn(
     `insert into subscriptions (
        user_id, plan, status, paddle_customer_id, paddle_subscription_id,
@@ -455,7 +457,10 @@ export const upsertSubscription = async (
          excluded.paddle_last_event_at,
          subscriptions.paddle_last_event_at
        )
-     where subscriptions.paddle_subscription_id is not distinct from $14`,
+     where subscriptions.paddle_subscription_id is not distinct from $14
+       and subscriptions.paddle_last_event_at is not distinct from $15
+       and subscriptions.superseded_subscription_id is not distinct from $16
+       and subscriptions.superseded_last_event_at is not distinct from $17`,
     [
       userId,
       plan,
@@ -471,15 +476,18 @@ export const upsertSubscription = async (
       nextSupersededId,
       nextSupersededAt,
       storedId,
+      existingRow?.paddle_last_event_at ?? null,
+      supersededId,
+      existingRow?.superseded_last_event_at ?? null,
     ],
   );
   if ((written.rowCount ?? 0) === 0) {
-    // The WHERE rejected the update: a concurrent writer swapped the
-    // stored subscription after the SELECT. Nothing was written from
-    // this event's stale decision basis — throw so the caller does
-    // not acknowledge it (webhook 500 → Paddle redelivers; refresh
-    // 500 → the client retries) and the redelivery is re-evaluated
-    // against the newer state.
+    // The WHERE rejected the update: a concurrent writer changed
+    // the stored subscription or one of its clocks after the
+    // SELECT. Nothing was written from this event's stale decision
+    // basis — throw so the caller does not acknowledge it (webhook
+    // 500 → Paddle redelivers; refresh 500 → the client retries)
+    // and the redelivery is re-evaluated against the newer state.
     throw new Error(
       `Paddle event ${event.event_id} raced a subscription replacement`,
     );
