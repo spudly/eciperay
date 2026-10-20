@@ -93,6 +93,38 @@ describe('requireAuth', () => {
     expect(res.body).toMatchObject({error: 'database unavailable'});
   });
 
+  test('succeeds when the user upsert loses a concurrent first-login users_pkey race and retries', async () => {
+    nockSupabaseGetUser('4e35e006-2ea0-40f2-8ef9-af42b51f266a');
+    mockQuery
+      .mockRejectedValueOnce(
+        Object.assign(
+          new Error(
+            'duplicate key value violates unique constraint "users_pkey"',
+          ),
+          {code: '23505', constraint: 'users_pkey'},
+        ),
+      )
+      .mockResolvedValue(
+        makeQueryResult([
+          {
+            id: '4e35e006-2ea0-40f2-8ef9-af42b51f266a',
+            supabase_uid: '4e35e006-2ea0-40f2-8ef9-af42b51f266a',
+          },
+        ]),
+      );
+
+    const res = await request(makeApp())
+      .get('/me')
+      .set('Authorization', 'Bearer valid-token');
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({
+      userId: '4e35e006-2ea0-40f2-8ef9-af42b51f266a',
+      supabaseUid: '4e35e006-2ea0-40f2-8ef9-af42b51f266a',
+    });
+    expect(mockQuery).toHaveBeenCalledTimes(2);
+  });
+
   test('uses supabaseUid as userId when user upsert is skipped', async () => {
     nockSupabaseGetUser('4e35e006-2ea0-40f2-8ef9-af42b51f266a');
 
