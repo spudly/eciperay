@@ -14,3 +14,10 @@
 alter table subscriptions
   add column if not exists superseded_subscription_id text,
   add column if not exists superseded_last_event_at timestamptz;
+
+-- The status-event lookup matches a subscription in either slot
+-- (paddle_subscription_id = $1 OR superseded_subscription_id = $1).
+-- Only the current id is covered by migration 016's unique
+-- constraint; without this index the OR branch scans the table.
+create index if not exists subscriptions_superseded_subscription_id_idx
+  on subscriptions (superseded_subscription_id);

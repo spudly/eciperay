@@ -184,6 +184,7 @@ describe('POST /api/account/entitlement/refresh', () => {
       plan: 'plus',
       status: 'cancelled',
       paddle_customer_id: 'ctm_999',
+      paddle_subscription_id: 'sub_1',
       paddle_last_event_at: null,
       current_period_end: new Date(Date.now() - 1000).toISOString(),
       cancel_at_period_end: true,
@@ -482,6 +483,32 @@ describe('POST /api/account/entitlement/refresh', () => {
         paddleSub({id: 'sub_new', updated_at: '2026-10-17T00:00:00.000Z'}),
       ],
     };
+    // The replacement is verified against Paddle's live state at
+    // write time: serve the single-subscription GET accordingly.
+    global.fetch = async (url: unknown, init?: unknown) => {
+      const urlStr = String(url);
+      if (urlStr.includes('/subscriptions/sub_new')) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            data: {status: 'active', updated_at: '2026-10-17T00:00:00.000Z'},
+          }),
+        } as Response;
+      }
+      if (urlStr.includes('paddle.com')) {
+        fetchUrls.push(urlStr);
+        const payload = urlStr.includes('/subscriptions?')
+          ? subscriptionsForCustomer
+          : customersByEmail;
+        return {
+          ok: paddleStatus === 200,
+          status: paddleStatus,
+          json: async () => payload,
+        } as Response;
+      }
+      return realFetch(url as never, init as never);
+    };
     const res = await postRefresh();
     expect(res.status).toBe(200);
     expect(res.body.plan).toBe('plus');
@@ -727,6 +754,7 @@ describe('POST /api/account/entitlement/refresh', () => {
         },
       });
     let listCalls = 0;
+    let currentList: Array<Record<string, unknown>> = [];
     global.fetch = async (url: unknown) => {
       const urlStr = String(url);
       if (urlStr.includes('paddle.com')) {
@@ -737,7 +765,24 @@ describe('POST /api/account/entitlement/refresh', () => {
             listCalls === 1
               ? {data: [subA('active', '2026-10-18T00:00:00.000Z'), subB()]}
               : {data: [subA('canceled', '2026-10-19T00:00:00.000Z'), subB()]};
+          currentList = payload.data as Array<Record<string, unknown>>;
           return {ok: true, status: 200, json: async () => payload} as Response;
+        }
+        if (urlStr.includes('/subscriptions/')) {
+          // Single-subscription GET (the upsert's write-time live
+          // verification): answer from the most recently served list.
+          const id = urlStr.split('/subscriptions/')[1];
+          const entry = currentList.find(s => s['id'] === id);
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              data: {
+                status: entry?.['status'],
+                updated_at: entry?.['updated_at'],
+              },
+            }),
+          } as Response;
         }
         return {
           ok: true,

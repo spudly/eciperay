@@ -4,7 +4,7 @@ import {serverLog} from '../../lib/posthogLogs.js';
 import type {PaddleEvent} from './paddleEvents.js';
 import {
   fetchPaddleCustomerEmail,
-  fetchPaddleSubscriptionStatus,
+  fetchPaddleSubscriptionState,
 } from './paddleApi.js';
 import {
   normalizeTimestamp,
@@ -319,6 +319,48 @@ export const upsertSubscription = async (
     // concurrent webhook may have replaced the row since the caller
     // read it): applies without the revision guard, stamped with
     // its OWN timestamp — never the outgoing subscription's clock.
+    //
+    // But the caller's list can itself be stale by write time: if
+    // this candidate was canceled after the list was fetched, the
+    // canceling webhook lands in the untracked-subscription branch
+    // below, reports 'stale', and retains no revision for it — so
+    // nothing stops this older active snapshot from reactivating
+    // the canceled subscription. Verify the candidate's live state
+    // at write time: the snapshot installs only while Paddle still
+    // reports the same status at no newer revision. A mismatch
+    // means the snapshot no longer represents Paddle's state —
+    // 'stale', and the caller's re-fetch re-ranks fresh data. If
+    // Paddle cannot be checked at all, throw (the caller surfaces a
+    // retryable error) rather than install unverified state.
+    if (eventSubId !== null) {
+      const live = await fetchPaddleSubscriptionState(eventSubId);
+      if (live === null) {
+        throw new Error(
+          `Paddle live verification unavailable for subscription ${eventSubId}`,
+        );
+      }
+      const candidateAt = parseEventTime(event);
+      const liveUpdatedMs =
+        live.updatedAt !== null ? Date.parse(live.updatedAt) : Number.NaN;
+      const movedPastSnapshot =
+        live.status !== event.data.status ||
+        (candidateAt !== null &&
+          !Number.isNaN(liveUpdatedMs) &&
+          liveUpdatedMs > Date.parse(candidateAt));
+      if (movedPastSnapshot) {
+        serverLog(
+          'warn',
+          'Paddle snapshot candidate superseded by live state',
+          {
+            eventType: event.event_type,
+            eventId: event.event_id,
+            subscriptionId: eventSubId,
+            liveStatus: live.status,
+          },
+        );
+        return 'stale';
+      }
+    }
     eventAt = parseEventTime(event);
     recordSwap();
   } else {
@@ -360,8 +402,8 @@ export const upsertSubscription = async (
       // clocks cannot arbitrate it. A CONFIRMED no-longer-live
       // status drops the claim; snapshot refresh reconciles the
       // truth.
-      const liveStatus = await fetchPaddleSubscriptionStatus(eventSubId);
-      if (liveStatus === null) {
+      const live = await fetchPaddleSubscriptionState(eventSubId);
+      if (live === null) {
         // Verification unavailable (request failed or the response
         // carried no status): unknown is not "not live". Returning
         // here would let the webhook record the event as processed
@@ -373,12 +415,37 @@ export const upsertSubscription = async (
           `Paddle live verification unavailable for subscription ${eventSubId}`,
         );
       }
-      if (liveStatus !== 'active' && liveStatus !== 'trialing') {
+      if (live.status !== 'active' && live.status !== 'trialing') {
         serverLog('warn', 'Paddle takeover event failed live verification', {
           eventType: event.event_type,
           eventId: event.event_id,
           subscriptionId: eventSubId,
-          liveStatus,
+          liveStatus: live.status,
+        });
+        return 'stale';
+      }
+      // Live status alone does not validate the event's PRICE or
+      // revision: a delayed event can carry a historical price for
+      // a subscription that is still active — e.g. its Power
+      // revision from before a downgrade to Plus that was already
+      // processed and later superseded, so no stored clock covers
+      // it. If Paddle's live revision is NEWER than the revision
+      // this event claims, the event is historical whatever its
+      // status says: drop it rather than restore the old price.
+      const liveUpdatedAt = live.updatedAt;
+      const liveUpdatedMs =
+        liveUpdatedAt !== null ? Date.parse(liveUpdatedAt) : Number.NaN;
+      if (
+        decision.eventAt !== null &&
+        liveUpdatedAt !== null &&
+        !Number.isNaN(liveUpdatedMs) &&
+        liveUpdatedMs > Date.parse(decision.eventAt)
+      ) {
+        serverLog('warn', 'Paddle takeover event superseded by live revision', {
+          eventType: event.event_type,
+          eventId: event.event_id,
+          subscriptionId: eventSubId,
+          liveUpdatedAt,
         });
         return 'stale';
       }
