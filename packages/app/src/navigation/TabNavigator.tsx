@@ -3,6 +3,7 @@ import {tabIcons} from '@eciperay/icons';
 import {useFeedbackShortcutEnabled} from '@eciperay/client';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
+import {useTheme} from 'tamagui';
 
 import {Icon} from '../components/Icon';
 import {AddScreen} from '../screens/AddScreen';
@@ -43,9 +44,6 @@ import type {
   RecipesStackParamList,
   RootTabParamList,
 } from './types';
-
-const PRIMARY = '#6366f1';
-const MUTED = '#6b7280';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 const RecipesStack = createNativeStackNavigator<RecipesStackParamList>();
@@ -200,12 +198,16 @@ const ProfileStackNavigator = () => (
 export const TabNavigator = () => {
   const {enabled: feedbackShortcutEnabled} = useFeedbackShortcutEnabled();
   const showFeedbackTab = feedbackShortcutEnabled && POSTHOG_KEY.length > 0;
+  // Tint colors come from the active Tamagui theme (Warm Harvest
+  // terracotta primary), not hardcoded hexes — the previous hardcoded
+  // indigo was a styling-migration leftover (spudly/eciperay#149).
+  const theme = useTheme();
 
   return (
     <Tab.Navigator
       screenOptions={({route}) => ({
-        tabBarActiveTintColor: PRIMARY,
-        tabBarInactiveTintColor: MUTED,
+        tabBarActiveTintColor: theme.primary.get(),
+        tabBarInactiveTintColor: theme.textMuted.get(),
         tabBarIcon: ({color, size}) => {
           const iconName =
             route.name in tabIcons ? tabIcons[route.name] : tabIcons.Profile;

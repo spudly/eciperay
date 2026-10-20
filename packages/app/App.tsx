@@ -6,7 +6,6 @@ import {
 } from '@eciperay/client';
 import type {Session} from '@supabase/supabase-js';
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
-import {eciperayTamaguiConfig} from '@spudly/ui';
 import React from 'react';
 import type {ViewStyle} from 'react-native';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
@@ -16,6 +15,7 @@ import {TamaguiProvider} from 'tamagui';
 import {AppFeedbackPreferenceProvider} from './src/context/AppFeedbackPreferenceProvider';
 import {api} from './src/lib/api';
 import {analytics} from './src/lib/analytics';
+import {appTamaguiConfig} from './src/lib/tamaguiConfig';
 import {RootNavigator} from './src/navigation/RootNavigator';
 import {supabase} from './src/lib/supabase';
 
@@ -34,7 +34,7 @@ const rootViewStyle: ViewStyle = {flex: 1};
 
 const App = () => (
   <TamaguiProvider
-    config={eciperayTamaguiConfig}
+    config={appTamaguiConfig}
     defaultTheme="light"
   >
     <GestureHandlerRootView style={rootViewStyle}>

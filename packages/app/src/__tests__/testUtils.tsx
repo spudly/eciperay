@@ -6,7 +6,6 @@ import {
   createAnalytics,
   createNoopAnalyticsAdapter,
 } from '@eciperay/client';
-import {eciperayTamaguiConfig} from '@spudly/ui';
 import {
   notifyManager,
   QueryClient,
@@ -20,6 +19,8 @@ import {
 } from '@testing-library/react-native';
 import React from 'react';
 import {TamaguiProvider} from 'tamagui';
+
+import {appTamaguiConfig} from '../lib/tamaguiConfig';
 
 const testAnalytics = createAnalytics(createNoopAnalyticsAdapter(), 'android');
 
@@ -124,7 +125,7 @@ export const renderWithProviders = async (
     ...options,
     wrapper: ({children}) => (
       <TamaguiProvider
-        config={eciperayTamaguiConfig}
+        config={appTamaguiConfig}
         defaultTheme="light"
       >
         <QueryClientProvider client={client}>
