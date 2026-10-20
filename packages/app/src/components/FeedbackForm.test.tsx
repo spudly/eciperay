@@ -288,4 +288,79 @@ describe('FeedbackForm', () => {
     expect(screen.getByPlaceholderText(/Tell us what happened/i)).toBeTruthy();
     expect(screen.queryByText(/Thanks — we got your feedback/i)).toBeNull();
   });
+
+  test('preserves the draft and edited reply email when the account changes while focused', async () => {
+    mockUseAuth.mockReturnValue({
+      session: {user: {id: 'user-a', email: 'first@example.com'}},
+      isLoading: false,
+    });
+    const submitUserFeedback = jest.fn().mockResolvedValue({error: null});
+    const analytics = {
+      ...createAnalytics(createNoopAnalyticsAdapter(), 'android'),
+      submitUserFeedback,
+    };
+
+    const view = await renderWithProviders(
+      <FeedbackForm route="Feedback" />,
+      analytics,
+    );
+    await fireEvent.changeText(
+      screen.getByPlaceholderText(/Tell us what happened/i),
+      'Half-written draft.',
+    );
+    await fireEvent.changeText(
+      screen.getByPlaceholderText('you@example.com'),
+      'mine@example.com',
+    );
+
+    mockUseAuth.mockReturnValue({
+      session: {user: {id: 'user-b', email: 'second@example.com'}},
+      isLoading: false,
+    });
+    await view.rerender(<FeedbackForm route="Feedback" />);
+
+    expect(
+      screen.getByPlaceholderText(/Tell us what happened/i).props.value,
+    ).toBe('Half-written draft.');
+    expect(screen.getByPlaceholderText('you@example.com').props.value).toBe(
+      'mine@example.com',
+    );
+  });
+
+  test('updates an untouched prefill when the account changes while focused', async () => {
+    mockUseAuth.mockReturnValue({
+      session: {user: {id: 'user-a', email: 'first@example.com'}},
+      isLoading: false,
+    });
+    const submitUserFeedback = jest.fn().mockResolvedValue({error: null});
+    const analytics = {
+      ...createAnalytics(createNoopAnalyticsAdapter(), 'android'),
+      submitUserFeedback,
+    };
+
+    const view = await renderWithProviders(
+      <FeedbackForm route="Feedback" />,
+      analytics,
+    );
+    expect(screen.getByPlaceholderText('you@example.com').props.value).toBe(
+      'first@example.com',
+    );
+    await fireEvent.changeText(
+      screen.getByPlaceholderText(/Tell us what happened/i),
+      'Half-written draft.',
+    );
+
+    mockUseAuth.mockReturnValue({
+      session: {user: {id: 'user-b', email: 'second@example.com'}},
+      isLoading: false,
+    });
+    await view.rerender(<FeedbackForm route="Feedback" />);
+
+    expect(
+      screen.getByPlaceholderText(/Tell us what happened/i).props.value,
+    ).toBe('Half-written draft.');
+    expect(screen.getByPlaceholderText('you@example.com').props.value).toBe(
+      'second@example.com',
+    );
+  });
 });

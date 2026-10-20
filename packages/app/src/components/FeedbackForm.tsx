@@ -12,7 +12,7 @@ import {
   Text as DsText,
   tokens,
 } from '@spudly/ui';
-import {useCallback, useEffect, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import {YStack} from 'tamagui';
 
 import {APP_VERSION} from '../lib/env';
@@ -39,22 +39,31 @@ export const FeedbackForm = ({route, onSubmitted}: FeedbackFormProps) => {
   const [submitted, setSubmitted] = useState(false);
 
   const accountEmail = session?.user.email ?? '';
-  // Pre-fill the reply address from the signed-in account until the user
-  // edits the field themselves.
+  // Whether the user has edited the reply field themselves. An untouched
+  // prefill tracks the signed-in account (fills when the session resolves,
+  // updates on account switch, clears on sign-out); a deliberate edit —
+  // including clearing the field — is preserved across account changes.
+  const replyEditedRef = useRef(false);
+  // Latest account email for the focus reset below, read through a ref so
+  // the reset callback stays stable: a session change must not re-run the
+  // focus effect and wipe an in-progress draft.
+  const accountEmailRef = useRef(accountEmail);
   useEffect(() => {
-    setReplyEmail(current => (current === '' ? accountEmail : current));
+    accountEmailRef.current = accountEmail;
+    setReplyEmail(current => (replyEditedRef.current ? current : accountEmail));
   }, [accountEmail]);
 
   const userId = session?.user.id;
 
   const resetForm = useCallback(() => {
     setMessage('');
-    setReplyEmail(accountEmail);
+    replyEditedRef.current = false;
+    setReplyEmail(accountEmailRef.current);
     setIsBug(false);
     setError(null);
     setSubmitting(false);
     setSubmitted(false);
-  }, [accountEmail]);
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -121,7 +130,10 @@ export const FeedbackForm = ({route, onSubmitted}: FeedbackFormProps) => {
         label="Email me back (optional)"
         type="email"
         value={replyEmail}
-        onChange={setReplyEmail}
+        onChange={value => {
+          replyEditedRef.current = true;
+          setReplyEmail(value);
+        }}
         placeholder="you@example.com"
       />
       <CheckboxField

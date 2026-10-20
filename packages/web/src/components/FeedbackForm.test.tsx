@@ -100,6 +100,99 @@ describe('FeedbackForm', () => {
     });
   });
 
+  test('updates an untouched prefill when the account changes', () => {
+    mockUseAuth.mockReturnValue({
+      session: {user: {id: 'user-a', email: 'first@example.com'}},
+      isLoading: false,
+    });
+    const submitUserFeedback = vi.fn().mockResolvedValue({error: null});
+    const view = renderForm(submitUserFeedback);
+    const emailInput = screen.getByPlaceholderText('you@example.com');
+    expect(emailInput).toHaveValue('first@example.com');
+
+    mockUseAuth.mockReturnValue({
+      session: {user: {id: 'user-b', email: 'second@example.com'}},
+      isLoading: false,
+    });
+    view.rerender(
+      <FeedbackForm
+        route="/profile"
+        onSubmitted={vi.fn()}
+      />,
+    );
+
+    expect(emailInput).toHaveValue('second@example.com');
+  });
+
+  test('clears an untouched prefill on sign-out', () => {
+    mockUseAuth.mockReturnValue({
+      session: {user: {id: 'user-a', email: 'first@example.com'}},
+      isLoading: false,
+    });
+    const submitUserFeedback = vi.fn().mockResolvedValue({error: null});
+    const view = renderForm(submitUserFeedback);
+    const emailInput = screen.getByPlaceholderText('you@example.com');
+    expect(emailInput).toHaveValue('first@example.com');
+
+    mockUseAuth.mockReturnValue({session: null, isLoading: false});
+    view.rerender(
+      <FeedbackForm
+        route="/profile"
+        onSubmitted={vi.fn()}
+      />,
+    );
+
+    expect(emailInput).toHaveValue('');
+  });
+
+  test('preserves a deliberate reply email edit across account changes', () => {
+    mockUseAuth.mockReturnValue({
+      session: {user: {id: 'user-a', email: 'first@example.com'}},
+      isLoading: false,
+    });
+    const submitUserFeedback = vi.fn().mockResolvedValue({error: null});
+    const view = renderForm(submitUserFeedback);
+    const emailInput = screen.getByPlaceholderText('you@example.com');
+    fireEvent.change(emailInput, {target: {value: 'mine@example.com'}});
+
+    mockUseAuth.mockReturnValue({
+      session: {user: {id: 'user-b', email: 'second@example.com'}},
+      isLoading: false,
+    });
+    view.rerender(
+      <FeedbackForm
+        route="/profile"
+        onSubmitted={vi.fn()}
+      />,
+    );
+
+    expect(emailInput).toHaveValue('mine@example.com');
+  });
+
+  test('preserves a deliberately cleared reply email across sign-in', () => {
+    mockUseAuth.mockReturnValue({
+      session: {user: {id: 'user-a', email: 'first@example.com'}},
+      isLoading: false,
+    });
+    const submitUserFeedback = vi.fn().mockResolvedValue({error: null});
+    const view = renderForm(submitUserFeedback);
+    const emailInput = screen.getByPlaceholderText('you@example.com');
+    fireEvent.change(emailInput, {target: {value: ''}});
+
+    mockUseAuth.mockReturnValue({
+      session: {user: {id: 'user-b', email: 'second@example.com'}},
+      isLoading: false,
+    });
+    view.rerender(
+      <FeedbackForm
+        route="/profile"
+        onSubmitted={vi.fn()}
+      />,
+    );
+
+    expect(emailInput).toHaveValue('');
+  });
+
   test('sends a reply email typed by an anonymous user', async () => {
     const submitUserFeedback = vi.fn().mockResolvedValue({error: null});
     renderForm(submitUserFeedback);
