@@ -284,9 +284,29 @@ describe('getReleaseChangedPaths', () => {
       'packages/server/src/index.ts',
     ]);
     expect(exec).toHaveBeenCalledWith(
-      'git log v1.0.0..v1.1.0 --name-only --pretty=format:%x1e%s',
+      'git log v1.0.0..v1.1.0 --name-only --no-renames --diff-merges=first-parent --pretty=format:%x1e%s',
       {encoding: 'utf8'},
     );
+  });
+
+  test('collects both sides of a cross-package move', () => {
+    // With --no-renames, git reports a move as a deletion plus an
+    // addition; both packages must see the change.
+    const exec = jest.fn(() =>
+      logRecord(
+        'refactor(web): move share button out of the app',
+        'packages/app/src/components/ShareButton.tsx',
+        'packages/web/src/components/ShareButton.tsx',
+      ),
+    );
+    expect(getReleaseChangedPaths('v1.0.0', 'v1.1.0', exec)).toEqual([
+      'packages/app/src/components/ShareButton.tsx',
+      'packages/web/src/components/ShareButton.tsx',
+    ]);
+    expect(resolveDeployTargetsFromTags('v1.0.0', 'v1.1.0', exec)).toEqual({
+      fly: true,
+      android: true,
+    });
   });
 
   test('excludes the automated release commit version bumps', () => {
@@ -325,7 +345,9 @@ describe('resolveDeployTargetsFromTags', () => {
   test('deploys android when app files changed under scope-less subjects', () => {
     // Regression for #151: merge-commit subjects carry no app/client
     // scope, so the old subject-based resolver skipped the Android build
-    // even though the release changed app code.
+    // even though the release changed app code. The merge record below
+    // lists files because the CLI passes --diff-merges=first-parent;
+    // without it git log would emit no file list for the merge at all.
     const exec = jest.fn(
       () =>
         logRecord(
