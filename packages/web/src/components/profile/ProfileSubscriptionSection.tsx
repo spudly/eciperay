@@ -77,19 +77,27 @@ export const ProfileSubscriptionSection = () => {
   // "Check again": ask the server to reconcile with Paddle directly —
   // the self-heal for a webhook delivery that never landed. The server
   // answers with the freshly resolved entitlement, which becomes the
-  // cached value.
+  // cached value. The initiating user id travels as the mutation
+  // variable: React Query invokes callbacks with the LATEST options,
+  // so closing over the rendered userId would write the response
+  // into the NEW account's cache entry if the session switched
+  // accounts while the POST was in flight — displaying one account's
+  // plan (and Paddle customer id) under another. The variable is
+  // fixed at mutate() time, so cancellation and the cache write stay
+  // scoped to the account that started the refresh.
   const refreshMutation = useMutation({
-    mutationFn: () => eciperay.account.refreshEntitlement(),
-    onSuccess: async data => {
+    mutationFn: (_initiatingUserId: string) =>
+      eciperay.account.refreshEntitlement(),
+    onSuccess: async (data, initiatingUserId) => {
       setRefreshError(null);
       // Cancel any in-flight entitlement fetch first: a timer/focus
       // refetch that started before the refresh could otherwise resolve
       // afterwards and overwrite the refreshed entitlement with its
       // older snapshot.
       await queryClient.cancelQueries({
-        queryKey: queryKeys.entitlement(userId),
+        queryKey: queryKeys.entitlement(initiatingUserId),
       });
-      queryClient.setQueryData(queryKeys.entitlement(userId), data);
+      queryClient.setQueryData(queryKeys.entitlement(initiatingUserId), data);
     },
     onError: mutationError => {
       setRefreshError(errorMessage(mutationError));
@@ -98,7 +106,7 @@ export const ProfileSubscriptionSection = () => {
 
   const handleRefresh = () => {
     setRefreshError(null);
-    refreshMutation.mutate();
+    refreshMutation.mutate(userId);
   };
 
   // The "Checking…" hint tracks real work only — an entitlement fetch or

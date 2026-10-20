@@ -148,6 +148,29 @@ export const listPaddleSubscriptions = async (
 };
 
 /**
+ * Current state of one subscription, via the API: its status and its revision
+ * timestamp. Null when the request fails or the response carries no status —
+ * callers must treat null as "unknown", never as a status. updatedAt is null
+ * when Paddle reports no usable value.
+ */
+export const fetchPaddleSubscriptionState = async (
+  subscriptionId: string,
+): Promise<{status: string; updatedAt: string | null} | null> => {
+  const json = await paddleApiGet(
+    `/subscriptions/${encodeURIComponent(subscriptionId)}`,
+  );
+  const data = (
+    json as {data?: {status?: unknown; updated_at?: unknown}} | null
+  )?.data;
+  const status = data?.status;
+  if (typeof status !== 'string' || status.length === 0) {
+    return null;
+  }
+  const updatedAt = data?.updated_at;
+  return {status, updatedAt: typeof updatedAt === 'string' ? updatedAt : null};
+};
+
+/**
  * Current status of one subscription, via the API. Null when the request fails
  * or the response carries no status — callers must treat null as "unknown",
  * never as a status.
@@ -155,9 +178,6 @@ export const listPaddleSubscriptions = async (
 export const fetchPaddleSubscriptionStatus = async (
   subscriptionId: string,
 ): Promise<string | null> => {
-  const json = await paddleApiGet(
-    `/subscriptions/${encodeURIComponent(subscriptionId)}`,
-  );
-  const status = (json as {data?: {status?: unknown}} | null)?.data?.status;
-  return typeof status === 'string' && status.length > 0 ? status : null;
+  const state = await fetchPaddleSubscriptionState(subscriptionId);
+  return state?.status ?? null;
 };

@@ -1,5 +1,6 @@
 import {
   fetchPaddleCustomerEmail,
+  fetchPaddleSubscriptionState,
   fetchPaddleSubscriptionStatus,
   findPaddleCustomerIdByEmail,
   listPaddleSubscriptions,
@@ -249,6 +250,29 @@ test('fetchPaddleSubscriptionStatus returns the status or null', async () => {
   await expect(fetchPaddleSubscriptionStatus('sub_7')).resolves.toBeNull();
   fetchImpl = () => okJson({data: {}});
   await expect(fetchPaddleSubscriptionStatus('sub_7')).resolves.toBeNull();
+});
+
+test('fetchPaddleSubscriptionState returns status and revision or null', async () => {
+  fetchImpl = () =>
+    okJson({
+      data: {
+        id: 'sub_7',
+        status: 'active',
+        updated_at: '2026-10-18T00:00:00.000Z',
+      },
+    });
+  await expect(fetchPaddleSubscriptionState('sub_7')).resolves.toEqual({
+    status: 'active',
+    updatedAt: '2026-10-18T00:00:00.000Z',
+  });
+  // A missing updated_at is reported as null, not as a failure.
+  fetchImpl = () => okJson({data: {id: 'sub_7', status: 'canceled'}});
+  await expect(fetchPaddleSubscriptionState('sub_7')).resolves.toEqual({
+    status: 'canceled',
+    updatedAt: null,
+  });
+  fetchImpl = () => okJson({data: {}});
+  await expect(fetchPaddleSubscriptionState('sub_7')).resolves.toBeNull();
 });
 
 test('listPaddleSubscriptions passes objects through, dropping non-objects', async () => {
