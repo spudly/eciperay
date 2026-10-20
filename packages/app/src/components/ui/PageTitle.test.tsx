@@ -1,5 +1,5 @@
 import {render, screen} from '@testing-library/react-native';
-import {tamaguiConfig} from '@spudly/ui';
+import {appTamaguiConfig} from '../../lib/tamaguiConfig';
 import React from 'react';
 import {TamaguiProvider} from 'tamagui';
 
@@ -11,7 +11,7 @@ describe('PageTitle', () => {
   test('renders page title text', async () => {
     await render(
       <TamaguiProvider
-        config={tamaguiConfig}
+        config={appTamaguiConfig}
         defaultTheme="light"
       >
         <PageTitle>{TEST_TITLE}</PageTitle>

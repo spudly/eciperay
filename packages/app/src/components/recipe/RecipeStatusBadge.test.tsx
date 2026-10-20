@@ -1,4 +1,4 @@
-import {tamaguiConfig} from '@spudly/ui';
+import {appTamaguiConfig} from '../../lib/tamaguiConfig';
 import {render, screen} from '@testing-library/react-native';
 import React from 'react';
 import {TamaguiProvider} from 'tamagui';
@@ -10,7 +10,7 @@ const renderBadge = async (
 ) =>
   await render(
     <TamaguiProvider
-      config={tamaguiConfig}
+      config={appTamaguiConfig}
       defaultTheme="light"
     >
       <RecipeStatusBadge status={status} />
