@@ -274,14 +274,33 @@ export const upsertSubscription = async (
       // subscription: a concurrent writer may have swapped the slot
       // since the SELECT above, and stamping this subscription's
       // clock into a different subscription's slot would corrupt
-      // its ordering. Zero rows updated means the slot changed —
-      // re-evaluation belongs to the newer state, not this event.
+      // its ordering. The clock advances monotonically IN SQL
+      // (greatest): two overlapping handlers can both pass the
+      // candidateAt check above against the same read, and a plain
+      // assignment would let the later write stamp the OLDER clock
+      // over the newer one, letting a delayed active revision
+      // promote a subscription whose cancellation was processed.
       const updated = await queryFn(
-        `update subscriptions set superseded_last_event_at = $2
+        `update subscriptions
+            set superseded_last_event_at = greatest(
+                  superseded_last_event_at, $2
+                )
           where user_id = $1 and superseded_subscription_id = $3`,
         [userId, candidateAt, eventSubId],
       );
-      return (updated.rowCount ?? 0) > 0 ? 'applied' : 'stale';
+      if ((updated.rowCount ?? 0) === 0) {
+        // Zero rows: the slot changed since the SELECT (e.g. refresh
+        // promoted this subscription to current). The event has NOT
+        // been applied to the state that replaced it, and returning
+        // normally would let the webhook record it as processed and
+        // lose the cancellation/past-due for good. Throw so the
+        // webhook 500s and Paddle redelivers; the redelivery is
+        // re-evaluated against the newer state.
+        throw new Error(
+          `Paddle event ${event.event_id} raced a subscription replacement`,
+        );
+      }
+      return 'applied';
     } else {
       // A genuinely newer live revision of the superseded
       // subscription makes it current again.
@@ -338,15 +357,28 @@ export const upsertSubscription = async (
       // promoting. A delayed event can describe a subscription
       // that has since been canceled — its ordering history no
       // longer fits the single superseded slot, so the stored
-      // clocks cannot arbitrate it. Unverifiable or no-longer-live
-      // claims are dropped; snapshot refresh reconciles the truth.
+      // clocks cannot arbitrate it. A CONFIRMED no-longer-live
+      // status drops the claim; snapshot refresh reconciles the
+      // truth.
       const liveStatus = await fetchPaddleSubscriptionStatus(eventSubId);
+      if (liveStatus === null) {
+        // Verification unavailable (request failed or the response
+        // carried no status): unknown is not "not live". Returning
+        // here would let the webhook record the event as processed
+        // and drop a genuine takeover — a transient Paddle 503
+        // during a real active replacement would silently deny the
+        // access the user paid for. Throw so the webhook 500s and
+        // Paddle retries.
+        throw new Error(
+          `Paddle live verification unavailable for subscription ${eventSubId}`,
+        );
+      }
       if (liveStatus !== 'active' && liveStatus !== 'trialing') {
         serverLog('warn', 'Paddle takeover event failed live verification', {
           eventType: event.event_type,
           eventId: event.event_id,
           subscriptionId: eventSubId,
-          liveStatus: liveStatus ?? 'unknown',
+          liveStatus,
         });
         return 'stale';
       }
@@ -380,7 +412,19 @@ export const upsertSubscription = async (
           : new Date().toISOString()
       : null;
 
-  await queryFn(
+  // The conflict update is conditional on the stored subscription
+  // still being the one the SELECT above decided against ($14): the
+  // same-vs-replacement decision and the superseded values below were
+  // computed from that state, and writing them over a row a
+  // concurrent writer already swapped would resurrect the outgoing
+  // subscription and erase the newer superseded record. And when the
+  // superseded slot still holds the SAME subscription after the
+  // write, its clock only moves forward (greatest): a cancellation
+  // that advanced it between the SELECT and this write must not be
+  // rewound by this write's older snapshot of it, or a delayed
+  // active revision of that subscription could promote it despite
+  // the processed cancellation.
+  const written = await queryFn(
     `insert into subscriptions (
        user_id, plan, status, paddle_customer_id, paddle_subscription_id,
        paddle_price_id, current_period_start, current_period_end,
@@ -398,11 +442,20 @@ export const upsertSubscription = async (
        cancel_at_period_end = excluded.cancel_at_period_end,
        past_due_since = excluded.past_due_since,
        superseded_subscription_id = excluded.superseded_subscription_id,
-       superseded_last_event_at = excluded.superseded_last_event_at,
+       superseded_last_event_at = case
+         when subscriptions.superseded_subscription_id is not distinct from
+              excluded.superseded_subscription_id
+           then greatest(
+                  subscriptions.superseded_last_event_at,
+                  excluded.superseded_last_event_at
+                )
+         else excluded.superseded_last_event_at
+       end,
        paddle_last_event_at = coalesce(
          excluded.paddle_last_event_at,
          subscriptions.paddle_last_event_at
-       )`,
+       )
+     where subscriptions.paddle_subscription_id is not distinct from $14`,
     [
       userId,
       plan,
@@ -417,8 +470,20 @@ export const upsertSubscription = async (
       eventAt,
       nextSupersededId,
       nextSupersededAt,
+      storedId,
     ],
   );
+  if ((written.rowCount ?? 0) === 0) {
+    // The WHERE rejected the update: a concurrent writer swapped the
+    // stored subscription after the SELECT. Nothing was written from
+    // this event's stale decision basis — throw so the caller does
+    // not acknowledge it (webhook 500 → Paddle redelivers; refresh
+    // 500 → the client retries) and the redelivery is re-evaluated
+    // against the newer state.
+    throw new Error(
+      `Paddle event ${event.event_id} raced a subscription replacement`,
+    );
+  }
   return 'applied';
 };
 

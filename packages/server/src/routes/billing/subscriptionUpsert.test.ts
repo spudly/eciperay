@@ -84,6 +84,10 @@ describe('upsertSubscription', () => {
       if (sql.includes('from plan_prices')) {
         return Promise.resolve(makeQueryResult([{plan: 'plus'}]));
       }
+      if (sql.includes('insert into subscriptions')) {
+        // A real insert/upsert affects one row.
+        return Promise.resolve(makeQueryResult([{}]));
+      }
       return Promise.resolve(makeQueryResult([]));
     }) as typeof mockQuery;
 
@@ -159,6 +163,9 @@ describe('upsertSubscription', () => {
           ]),
         );
       }
+      if (sql.includes('insert into subscriptions')) {
+        return Promise.resolve(makeQueryResult([{}]));
+      }
       return Promise.resolve(makeQueryResult([]));
     }) as typeof mockQuery);
 
@@ -180,6 +187,9 @@ describe('upsertSubscription', () => {
         }
         if (sql.includes('from subscriptions')) {
           return Promise.resolve(makeQueryResult([row]));
+        }
+        if (sql.includes('insert into subscriptions')) {
+          return Promise.resolve(makeQueryResult([{}]));
         }
         return Promise.resolve(makeQueryResult([]));
       }) as typeof mockQuery;
@@ -392,6 +402,9 @@ describe('upsertSubscription', () => {
               },
             ]),
           );
+        }
+        if (sql.includes('insert into subscriptions')) {
+          return Promise.resolve(makeQueryResult([{}]));
         }
         return Promise.resolve(makeQueryResult([]));
       }) as typeof mockQuery);
@@ -728,7 +741,10 @@ describe('upsertSubscription', () => {
       ).toBe(false);
 
       // And when the verification request itself fails, the claim
-      // is likewise not promoted.
+      // is not promoted either — but it is NOT acknowledged as
+      // stale: a transient 503 says nothing about the subscription,
+      // so the upsert throws and the webhook stays retryable rather
+      // than recording the event and dropping a genuine takeover.
       global.fetch = (async () =>
         ({
           ok: false,
@@ -738,7 +754,7 @@ describe('upsertSubscription', () => {
       mockQuery.mockClear();
       await expect(
         upsertSubscription(delayedActive, 'user-uuid-1', mockQuery),
-      ).resolves.toBe('stale');
+      ).rejects.toThrow('Paddle live verification unavailable');
       expect(row.paddle_subscription_id).toBe('sub_c');
     } finally {
       global.fetch = realFetch;
@@ -777,11 +793,15 @@ describe('upsertSubscription', () => {
       data: {...makeEvent().data, id: 'sub_old', status: 'canceled'},
     });
     // Without the condition, sub_old's timestamp would land in the
-    // new superseded subscription's clock; instead the event is
-    // stale against the state that replaced it.
+    // new superseded subscription's clock. With it, zero rows match —
+    // and the upsert THROWS rather than reporting stale: refresh may
+    // have promoted sub_old to current in the meantime, and
+    // acknowledging the event would record it as processed while the
+    // now-current subscription stays active. The webhook 500s and
+    // Paddle redelivers against the newer state.
     await expect(
       upsertSubscription(canceledOld, 'user-uuid-1', mockQuery),
-    ).resolves.toBe('stale');
+    ).rejects.toThrow('raced a subscription replacement');
     const update = mockQuery.mock.calls.find(args =>
       args[0].includes('set superseded_last_event_at'),
     );
@@ -793,7 +813,7 @@ describe('upsertSubscription', () => {
     ]);
 
     // A null rowCount (pg reports null for some commands) is also
-    // treated as "the slot changed": stale, never a blind write.
+    // treated as "the slot changed": throw, never a blind write.
     mockQuery.mockImplementation(((sql: string) => {
       if (sql.includes('from plan_prices')) {
         return Promise.resolve(makeQueryResult([{plan: 'plus'}]));
@@ -819,7 +839,59 @@ describe('upsertSubscription', () => {
     }) as typeof mockQuery);
     await expect(
       upsertSubscription(canceledOld, 'user-uuid-1', mockQuery),
-    ).resolves.toBe('stale');
+    ).rejects.toThrow('raced a subscription replacement');
+  });
+
+  test('overlapping superseded clock advances never move the clock backwards', async () => {
+    // Two deliveries of sub_old non-active revisions overlap: both
+    // read the superseded clock at Oct 16 (modeled by returning a
+    // frozen SELECT snapshot) and both pass the JS ordering check.
+    // The newer one (Oct 18) writes first; the older one (Oct 17)
+    // writes second. The SQL greatest() keeps Oct 18 — a plain
+    // assignment would stamp Oct 17 and let a delayed active
+    // revision dated Oct 17+ promote the canceled subscription.
+    const stored = {
+      status: 'active',
+      past_due_since: null as string | null,
+      paddle_subscription_id: 'sub_new' as string | null,
+      paddle_last_event_at: '2026-10-17T00:00:00.000Z' as string | null,
+      superseded_subscription_id: 'sub_old' as string | null,
+      superseded_last_event_at: '2026-10-16T00:00:00.000Z' as string | null,
+    };
+    const snapshot = {...stored};
+    mockQuery.mockImplementation(((sql: string, params?: unknown[]) => {
+      if (sql.includes('from plan_prices')) {
+        return Promise.resolve(makeQueryResult([{plan: 'plus'}]));
+      }
+      if (sql.includes('from subscriptions')) {
+        return Promise.resolve(makeQueryResult([snapshot]));
+      }
+      if (sql.includes('set superseded_last_event_at')) {
+        expect(sql).toContain('greatest(');
+        const candidate = params?.[1] as string;
+        const current = stored.superseded_last_event_at;
+        stored.superseded_last_event_at =
+          current !== null && current > candidate ? current : candidate;
+        return Promise.resolve(makeQueryResult([{}]));
+      }
+      return Promise.resolve(makeQueryResult([]));
+    }) as typeof mockQuery);
+
+    const newer = makeEvent({
+      occurred_at: '2026-10-18T00:00:00.000Z',
+      data: {...makeEvent().data, id: 'sub_old', status: 'canceled'},
+    });
+    const older = makeEvent({
+      occurred_at: '2026-10-17T00:00:00.000Z',
+      data: {...makeEvent().data, id: 'sub_old', status: 'past_due'},
+    });
+    await expect(
+      upsertSubscription(newer, 'user-uuid-1', mockQuery),
+    ).resolves.toBe('applied');
+    await expect(
+      upsertSubscription(older, 'user-uuid-1', mockQuery),
+    ).resolves.toBe('applied');
+    expect(stored.superseded_last_event_at).toBe('2026-10-18T00:00:00.000Z');
   });
 
   test('webhook writes stamp the entity updated_at; snapshot reselect compares the same clock', async () => {
@@ -900,6 +972,9 @@ describe('upsertSubscription', () => {
       if (sql.includes('from plan_prices')) {
         return Promise.resolve(makeQueryResult([{plan: 'plus'}]));
       }
+      if (sql.includes('insert into subscriptions')) {
+        return Promise.resolve(makeQueryResult([{}]));
+      }
       return Promise.resolve(makeQueryResult([]));
     }) as typeof mockQuery);
     const pastDue = makeEvent({
@@ -965,6 +1040,9 @@ describe('upsertSubscription', () => {
             ]),
           );
         }
+        if (sql.includes('insert into subscriptions')) {
+          return Promise.resolve(makeQueryResult([{}]));
+        }
         return Promise.resolve(makeQueryResult([]));
       }) as typeof mockQuery;
 
@@ -1015,6 +1093,9 @@ describe('upsertSubscription', () => {
       }
       if (sql.includes('from subscriptions')) {
         return Promise.resolve(makeQueryResult([]));
+      }
+      if (sql.includes('insert into subscriptions')) {
+        return Promise.resolve(makeQueryResult([{}]));
       }
       return Promise.resolve(makeQueryResult([]));
     }) as typeof mockQuery);

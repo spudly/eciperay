@@ -192,25 +192,48 @@ test('listPaddleSubscriptions fails the whole list when a later page fails', asy
   await expect(listPaddleSubscriptions('ctm_9')).resolves.toBeNull();
 });
 
-test('listPaddleSubscriptions stops when a full page cannot advance the cursor', async () => {
-  // Last item of a full page has no id: no cursor to continue with.
+test('listPaddleSubscriptions fails when a full page cannot advance the cursor', async () => {
+  // Last item of a full page has no id: no cursor to continue with, so
+  // the list is incomplete — returning it as success could make
+  // refresh pick a historical subscription over the active one on an
+  // unread page. The whole list fails instead.
   const noIdPage = [
     ...Array.from({length: 99}, (_, i) => ({id: `sub_${i + 1}`})),
     {status: 'canceled'},
   ];
   fetchImpl = () => okJson({data: noIdPage});
-  await expect(listPaddleSubscriptions('ctm_9')).resolves.toHaveLength(100);
+  await expect(listPaddleSubscriptions('ctm_9')).resolves.toBeNull();
   expect(fetchCalls).toHaveLength(1);
 
-  // The cursor echoes back unchanged: stop instead of looping.
+  // The cursor echoes back unchanged: same failure, not a loop and
+  // not a partial success.
   const page = Array.from({length: 100}, (_, i) => ({
     id: `sub_${i + 1}`,
     status: 'canceled',
   }));
   fetchCalls = [];
   fetchImpl = () => okJson({data: page});
-  await expect(listPaddleSubscriptions('ctm_9')).resolves.toHaveLength(200);
+  await expect(listPaddleSubscriptions('ctm_9')).resolves.toBeNull();
   expect(fetchCalls).toHaveLength(2);
+});
+
+test('listPaddleSubscriptions fails when the page limit is exhausted', async () => {
+  // Every page is full and the cursor keeps advancing: after 50 pages
+  // there may still be unread subscriptions, so the list is incomplete
+  // and must fail rather than return a partial success.
+  let pageNumber = 0;
+  fetchImpl = () => {
+    pageNumber += 1;
+    const base = pageNumber * 100;
+    return okJson({
+      data: Array.from({length: 100}, (_, i) => ({
+        id: `sub_${base + i}`,
+        status: 'canceled',
+      })),
+    });
+  };
+  await expect(listPaddleSubscriptions('ctm_9')).resolves.toBeNull();
+  expect(fetchCalls).toHaveLength(50);
 });
 
 test('fetchPaddleSubscriptionStatus returns the status or null', async () => {
