@@ -953,6 +953,135 @@ describe('upsertSubscription', () => {
     }
   });
 
+  test('snapshot reselect tolerates a legacy occurred_at clock in the superseded slot', async () => {
+    // Pre-upgrade row shape: sub_a was superseded before webhook
+    // writes switched to stamping the entity updated_at, so the
+    // superseded slot holds sub_a's legacy occurred_at clock
+    // (.100) while sub_a's own revision (updated_at) is .000.
+    // sub_b (current) has since been canceled; refresh reselects
+    // the unchanged, still-active sub_a. Without the legacy-skew
+    // tolerance the .000 candidate reads as older than the .100
+    // slot clock and is rejected on every pass, stranding the
+    // paying user on Free.
+    mockQuery.mockImplementation(((sql: string) => {
+      if (sql.includes('from plan_prices')) {
+        return Promise.resolve(makeQueryResult([{plan: 'plus'}]));
+      }
+      if (sql.includes('from subscriptions')) {
+        return Promise.resolve(
+          makeQueryResult([
+            {
+              status: 'cancelled',
+              past_due_since: null,
+              paddle_subscription_id: 'sub_b',
+              paddle_last_event_at: '2026-10-19T00:00:00.000Z',
+              superseded_subscription_id: 'sub_a',
+              superseded_last_event_at: '2026-10-18T12:00:00.100Z',
+            },
+          ]),
+        );
+      }
+      if (sql.includes('insert into subscriptions')) {
+        return Promise.resolve(makeQueryResult([{}]));
+      }
+      return Promise.resolve(makeQueryResult([]));
+    }) as typeof mockQuery);
+
+    const reselect = makeEvent({
+      occurred_at: '2026-10-18T12:00:00.100Z',
+      data: {
+        ...makeEvent().data,
+        id: 'sub_a',
+        updated_at: '2026-10-18T12:00:00.000Z',
+      },
+    });
+    await expect(
+      upsertSubscription(reselect, 'user-uuid-1', mockQuery, {snapshot: true}),
+    ).resolves.toBe('applied');
+
+    // A genuinely older revision of sub_a (an hour before the slot
+    // clock — far beyond event-creation skew) is still stale.
+    mockQuery.mockClear();
+    const older = makeEvent({
+      occurred_at: '2026-10-18T11:00:00.000Z',
+      data: {
+        ...makeEvent().data,
+        id: 'sub_a',
+        updated_at: '2026-10-18T11:00:00.000Z',
+      },
+    });
+    await expect(
+      upsertSubscription(older, 'user-uuid-1', mockQuery, {snapshot: true}),
+    ).resolves.toBe('stale');
+    expect(
+      mockQuery.mock.calls.some(args =>
+        args[0].includes('insert into subscriptions'),
+      ),
+    ).toBe(false);
+  });
+
+  test('equal-revision snapshot persists the state a status-only write left partial', async () => {
+    // An immediate cancellation was processed by the status-only
+    // handler first: it stamped the revision clock and the
+    // cancelled status but left the billing period at its old
+    // future end. Refresh's snapshot of the SAME revision carries
+    // the complete state (no billing period — access has ended).
+    // Rejecting it as an equal revision would retain the stale
+    // period end and keep granting paid access; persisting it
+    // completes the revision. Webhooks keep the strict no-op: an
+    // equal-revision event is a duplicate delta, not full state.
+    mockQuery.mockImplementation(((sql: string) => {
+      if (sql.includes('from plan_prices')) {
+        return Promise.resolve(makeQueryResult([{plan: 'plus'}]));
+      }
+      if (sql.includes('from subscriptions')) {
+        return Promise.resolve(
+          makeQueryResult([
+            {
+              status: 'cancelled',
+              past_due_since: null,
+              paddle_subscription_id: 'sub_123',
+              paddle_last_event_at: '2026-10-17T00:00:00.000Z',
+            },
+          ]),
+        );
+      }
+      if (sql.includes('insert into subscriptions')) {
+        return Promise.resolve(makeQueryResult([{}]));
+      }
+      return Promise.resolve(makeQueryResult([]));
+    }) as typeof mockQuery);
+
+    const snapshot = makeEvent({
+      occurred_at: '2026-10-17T00:00:00.000Z',
+      data: {
+        ...makeEvent().data,
+        status: 'canceled',
+        updated_at: '2026-10-17T00:00:00.000Z',
+        current_billing_period: undefined,
+      },
+    });
+    await expect(
+      upsertSubscription(snapshot, 'user-uuid-1', mockQuery, {snapshot: true}),
+    ).resolves.toBe('applied');
+    const insert = mockQuery.mock.calls.find(args =>
+      args[0].includes('insert into subscriptions'),
+    );
+    // current_period_end is bind $8: the snapshot's null replaces
+    // the stale future end.
+    expect(insert?.[1]?.[7]).toBeNull();
+
+    mockQuery.mockClear();
+    await expect(
+      upsertSubscription(snapshot, 'user-uuid-1', mockQuery),
+    ).resolves.toBe('stale');
+    expect(
+      mockQuery.mock.calls.some(args =>
+        args[0].includes('insert into subscriptions'),
+      ),
+    ).toBe(false);
+  });
+
   test('superseded clock advance is conditional on the slot still holding that subscription', async () => {
     mockQuery.mockImplementation(((sql: string) => {
       if (sql.includes('from plan_prices')) {
