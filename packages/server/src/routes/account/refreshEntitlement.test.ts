@@ -587,6 +587,60 @@ describe('POST /api/account/entitlement/refresh', () => {
     ).toBe(false);
   });
 
+  test('returns 502 when the re-fetch after a stale pass fails', async () => {
+    // The stored row is newer than the only listed candidate, so
+    // the first pass ends 'stale' and the refresh re-fetches once
+    // before settling. When that re-fetch itself fails, the refresh
+    // must not settle on the stale list or report the stored
+    // entitlement as if reconciliation had succeeded — it answers
+    // 502, like any other failed subscriptions fetch.
+    storedSub = {
+      plan: 'plus',
+      status: 'cancelled',
+      paddle_customer_id: 'ctm_999',
+      paddle_subscription_id: 'sub_1',
+      paddle_last_event_at: '2030-01-01T00:00:00.000Z',
+      current_period_end: '2020-01-01T00:00:00.000Z',
+      cancel_at_period_end: true,
+      past_due_since: null,
+    };
+    let listCalls = 0;
+    global.fetch = async (url: unknown, init?: unknown) => {
+      const urlStr = String(url);
+      if (urlStr.includes('paddle.com')) {
+        fetchUrls.push(urlStr);
+        if (urlStr.includes('/subscriptions?')) {
+          listCalls += 1;
+          if (listCalls === 1) {
+            return {
+              ok: true,
+              status: 200,
+              json: async () => ({
+                data: [paddleSub({updated_at: '2026-01-01T00:00:00.000Z'})],
+              }),
+            } as Response;
+          }
+          return {ok: false, status: 503, json: async () => ({})} as Response;
+        }
+        return {
+          ok: true,
+          status: 200,
+          json: async () => customersByEmail,
+        } as Response;
+      }
+      return realFetch(url as never, init as never);
+    };
+    const res = await postRefresh();
+    expect(res.status).toBe(502);
+    expect(res.body).toEqual({error: 'failed to refresh subscription status'});
+    expect(listCalls).toBe(2);
+    expect(
+      mockQuery.mock.calls.some(args =>
+        args[0].includes('insert into subscriptions'),
+      ),
+    ).toBe(false);
+  });
+
   test('skips an unusable paused candidate for a usable canceled one', async () => {
     subscriptionsForCustomer = {
       data: [

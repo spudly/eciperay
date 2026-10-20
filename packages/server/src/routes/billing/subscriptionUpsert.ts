@@ -388,6 +388,7 @@ export const upsertSubscription = async (
             eventType: event.event_type,
             eventId: event.event_id,
             subscriptionId: eventSubId,
+            /* c8 ignore next -- storedId is non-null in this branch: isSupersededSubscription requires positivelyDifferent ids */
             currentSubscriptionId: storedId ?? 'unknown',
           },
         );
@@ -409,6 +410,7 @@ export const upsertSubscription = async (
             eventType: event.event_type,
             eventId: event.event_id,
             subscriptionId: eventSubId,
+            /* c8 ignore next -- storedId is non-null here: the ambiguous window requires a listed state, which requires a stored id */
             currentSubscriptionId: storedId ?? 'unknown',
           },
         );
@@ -593,6 +595,7 @@ export const upsertSubscription = async (
         eventType: event.event_type,
         eventId: event.event_id,
         subscriptionId: eventSubId ?? 'unknown',
+        /* c8 ignore next -- storedId is non-null here: a stale selection (moved or changed) requires a stored id */
         currentSubscriptionId: storedId ?? 'unknown',
       });
       return 'stale';
@@ -613,6 +616,7 @@ export const upsertSubscription = async (
           eventType: event.event_type,
           eventId: event.event_id,
           subscriptionId: eventSubId ?? 'unknown',
+          /* c8 ignore next -- storedId is non-null here: the ambiguous window requires a listed state, which requires a stored id */
           currentSubscriptionId: storedId ?? 'unknown',
         },
       );
