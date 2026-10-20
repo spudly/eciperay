@@ -920,6 +920,303 @@ describe('POST /api/account/entitlement/refresh', () => {
     ).toBe(false);
   });
 
+  test('a selection installed mid-refresh is not replaced from the stale list', async () => {
+    // The refresh lists only the stored (canceled) sub_a. Before
+    // its upsert runs, sub_b's activation webhook installs sub_b
+    // as the current subscription. sub_b is outside everything
+    // this refresh ever saw — its list and the pre-fetch selection
+    // contain only sub_a — so writing sub_a's snapshot would swap
+    // the newly activated sub_b back out. The snapshot is refused
+    // and the refresh settles on sub_b's state.
+    storedSub = {
+      plan: 'plus',
+      status: 'cancelled',
+      paddle_customer_id: 'ctm_999',
+      paddle_subscription_id: 'sub_a',
+      paddle_last_event_at: '2026-10-18T00:00:00.000Z',
+      current_period_end: '2020-01-01T00:00:00.000Z',
+      cancel_at_period_end: true,
+      past_due_since: null,
+    };
+    concurrentRow = {
+      plan: 'plus',
+      status: 'active',
+      paddle_customer_id: 'ctm_999',
+      paddle_subscription_id: 'sub_b',
+      paddle_last_event_at: new Date().toISOString(),
+      current_period_end: futureDate(),
+      cancel_at_period_end: false,
+      past_due_since: null,
+    };
+    subscriptionsForCustomer = {
+      data: [paddleSub({id: 'sub_a', status: 'canceled'})],
+    };
+    global.fetch = async (url: unknown, init?: unknown) => {
+      const urlStr = String(url);
+      if (urlStr.includes('/subscriptions/sub_a')) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            data: {status: 'canceled', updated_at: '2026-10-18T00:00:00.000Z'},
+          }),
+        } as Response;
+      }
+      if (urlStr.includes('paddle.com')) {
+        fetchUrls.push(urlStr);
+        const payload = urlStr.includes('/subscriptions?')
+          ? subscriptionsForCustomer
+          : customersByEmail;
+        return {
+          ok: paddleStatus === 200,
+          status: paddleStatus,
+          json: async () => payload,
+        } as Response;
+      }
+      return realFetch(url as never, init as never);
+    };
+    const res = await postRefresh();
+    expect(res.status).toBe(200);
+    expect(res.body.plan).toBe('plus');
+    expect(res.body.status).toBe('active');
+    expect(
+      mockQuery.mock.calls.some(args =>
+        args[0].includes('insert into subscriptions'),
+      ),
+    ).toBe(false);
+  });
+
+  test('the unpriced-active guard resets when the list is re-fetched', async () => {
+    // Pass one: sub_a is active but unpriced (skipped, guard set);
+    // sub_b's snapshot is stale against the stored clock, so the
+    // refresh re-fetches. The new list shows BOTH subscriptions
+    // canceled. The guard described the OLD list — with it reset,
+    // sub_a's cancellation is persisted; carried over, every
+    // canceled candidate would be skipped and the stored active
+    // entitlement would wrongly survive.
+    storedSub = {
+      plan: 'plus',
+      status: 'active',
+      paddle_customer_id: 'ctm_999',
+      paddle_subscription_id: 'sub_b',
+      paddle_last_event_at: '2026-10-19T00:00:00.000Z',
+      current_period_end: futureDate(),
+      cancel_at_period_end: false,
+      past_due_since: null,
+    };
+    customersByEmail = {data: [{id: 'ctm_999'}]};
+    mockRouteQueries((text: string, params?: unknown[]) => {
+      if (text.includes('from entitlement_overrides')) {
+        return Promise.resolve(makeQueryResult([]));
+      }
+      if (text.includes('select paddle_customer_id')) {
+        return Promise.resolve(
+          makeQueryResult(
+            storedSub
+              ? [
+                  {
+                    paddle_customer_id: storedSub.paddle_customer_id,
+                    paddle_subscription_id:
+                      storedSub.paddle_subscription_id ?? null,
+                  },
+                ]
+              : [],
+          ),
+        );
+      }
+      if (text.includes('from plan_prices')) {
+        return Promise.resolve(
+          makeQueryResult(
+            params?.[0] === 'pri_plus_monthly' ? [{plan: 'plus'}] : [],
+          ),
+        );
+      }
+      if (text.includes('insert into subscriptions')) {
+        const p = params as unknown[];
+        storedSub = {
+          plan: p[1] as string,
+          status: p[2] as string,
+          paddle_customer_id: 'ctm_999',
+          paddle_subscription_id: p[4] as string,
+          paddle_last_event_at: p[10] as string,
+          current_period_end: p[7] as string,
+          cancel_at_period_end: p[8] as boolean,
+          past_due_since: p[9] as string | null,
+        };
+        return Promise.resolve(makeQueryResult([{}]));
+      }
+      if (text.includes('from subscriptions')) {
+        return Promise.resolve(makeQueryResult(storedSub ? [storedSub] : []));
+      }
+      if (text.includes('from ai_usage')) {
+        return Promise.resolve(makeQueryResult([{calls: 1}]));
+      }
+      return Promise.resolve(makeQueryResult([]));
+    });
+    let listCalls = 0;
+    global.fetch = async (url: unknown) => {
+      const urlStr = String(url);
+      if (urlStr.includes('/subscriptions/sub_a')) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            data: {status: 'canceled', updated_at: '2026-10-20T00:00:00.000Z'},
+          }),
+        } as Response;
+      }
+      if (urlStr.includes('paddle.com')) {
+        fetchUrls.push(urlStr);
+        if (urlStr.includes('/subscriptions?')) {
+          listCalls += 1;
+          const payload =
+            listCalls === 1
+              ? {
+                  data: [
+                    paddleSub({
+                      id: 'sub_a',
+                      items: [{price: {id: 'pri_unseeded'}}],
+                      updated_at: '2026-10-18T00:00:00.000Z',
+                    }),
+                    paddleSub({
+                      id: 'sub_b',
+                      updated_at: '2026-10-18T00:00:00.000Z',
+                    }),
+                  ],
+                }
+              : {
+                  data: [
+                    paddleSub({
+                      id: 'sub_a',
+                      status: 'canceled',
+                      updated_at: '2026-10-20T00:00:00.000Z',
+                    }),
+                    paddleSub({
+                      id: 'sub_b',
+                      status: 'canceled',
+                      updated_at: '2026-10-20T00:00:00.000Z',
+                    }),
+                  ],
+                };
+          return {ok: true, status: 200, json: async () => payload} as Response;
+        }
+        return {
+          ok: true,
+          status: 200,
+          json: async () => customersByEmail,
+        } as Response;
+      }
+      return realFetch(url as never);
+    };
+    const res = await postRefresh();
+    expect(res.status).toBe(200);
+    expect(listCalls).toBe(2);
+    expect(res.body.status).toBe('cancelled');
+    const insert = mockQuery.mock.calls.find(args =>
+      args[0].includes('insert into subscriptions'),
+    );
+    expect(insert?.[1]?.[4]).toBe('sub_a');
+  });
+
+  test('an unpriced active candidate is not replaced by an out-of-grace past_due one', async () => {
+    // Stored sub_a is active at Paddle on an unseeded price. The
+    // fallback, sub_b, is past_due with a period that started
+    // eight days ago: installing it would seed its grace clock
+    // from that period start, so the entitlement would resolve to
+    // Free — a downgrade from the stored active plan caused
+    // solely by the active price being unmapped. Only another
+    // ACTIVE candidate may follow an unpriced granting one.
+    storedSub = {
+      plan: 'plus',
+      status: 'active',
+      paddle_customer_id: 'ctm_999',
+      paddle_subscription_id: 'sub_a',
+      paddle_last_event_at: '2026-10-10T00:00:00.000Z',
+      current_period_end: futureDate(),
+      cancel_at_period_end: false,
+      past_due_since: null,
+    };
+    customersByEmail = {data: [{id: 'ctm_999'}]};
+    const eightDaysAgo = new Date(
+      Date.now() - 8 * 24 * 3600 * 1000,
+    ).toISOString();
+    subscriptionsForCustomer = {
+      data: [
+        paddleSub({
+          id: 'sub_a',
+          items: [{price: {id: 'pri_unseeded'}}],
+          updated_at: '2026-10-17T00:00:00.000Z',
+        }),
+        paddleSub({
+          id: 'sub_b',
+          status: 'past_due',
+          updated_at: '2026-10-17T00:00:00.000Z',
+          current_billing_period: {
+            starts_at: eightDaysAgo,
+            ends_at: futureDate(),
+          },
+        }),
+      ],
+    };
+    mockRouteQueries((text: string, params?: unknown[]) => {
+      if (text.includes('from entitlement_overrides')) {
+        return Promise.resolve(makeQueryResult([]));
+      }
+      if (text.includes('select paddle_customer_id')) {
+        return Promise.resolve(
+          makeQueryResult(
+            storedSub
+              ? [
+                  {
+                    paddle_customer_id: storedSub.paddle_customer_id,
+                    paddle_subscription_id:
+                      storedSub.paddle_subscription_id ?? null,
+                  },
+                ]
+              : [],
+          ),
+        );
+      }
+      if (text.includes('from plan_prices')) {
+        return Promise.resolve(
+          makeQueryResult(
+            params?.[0] === 'pri_plus_monthly' ? [{plan: 'plus'}] : [],
+          ),
+        );
+      }
+      if (text.includes('insert into subscriptions')) {
+        const p = params as unknown[];
+        storedSub = {
+          plan: p[1] as string,
+          status: p[2] as string,
+          paddle_customer_id: 'ctm_999',
+          paddle_subscription_id: p[4] as string,
+          paddle_last_event_at: p[10] as string,
+          current_period_end: p[7] as string,
+          cancel_at_period_end: p[8] as boolean,
+          past_due_since: p[9] as string | null,
+        };
+        return Promise.resolve(makeQueryResult([{}]));
+      }
+      if (text.includes('from subscriptions')) {
+        return Promise.resolve(makeQueryResult(storedSub ? [storedSub] : []));
+      }
+      if (text.includes('from ai_usage')) {
+        return Promise.resolve(makeQueryResult([{calls: 1}]));
+      }
+      return Promise.resolve(makeQueryResult([]));
+    });
+    const res = await postRefresh();
+    expect(res.status).toBe(200);
+    expect(res.body.plan).toBe('plus');
+    expect(res.body.status).toBe('active');
+    expect(
+      mockQuery.mock.calls.some(args =>
+        args[0].includes('insert into subscriptions'),
+      ),
+    ).toBe(false);
+  });
+
   test('returns 502 when the Paddle subscriptions request fails', async () => {
     storedSub = {
       plan: 'plus',

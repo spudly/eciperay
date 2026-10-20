@@ -149,6 +149,17 @@ export type UpsertOptions = {
    * candidate for the stored subscription goes through the guard as usual.
    */
   snapshot?: boolean;
+  /**
+   * Snapshot mode only: the selection state the caller's decision was based on
+   * — the ids in its fetched list plus the subscription stored when the list
+   * was fetched. If the row's current subscription at write time is outside
+   * this set, a webhook installed a subscription the list never contained while
+   * the caller was deciding; the snapshot replacement branches then refuse
+   * ('stale') rather than overwrite it, and the caller re-fetches and re-ranks
+   * against fresh state. Omitted = no mid-flight guard (callers that read the
+   * row themselves at decision time).
+   */
+  knownSelectionIds?: ReadonlySet<string>;
 };
 
 export const upsertSubscription = async (
@@ -225,6 +236,14 @@ export const upsertSubscription = async (
     eventSubId !== null &&
     eventSubId === supersededId &&
     positivelyDifferent;
+  // See UpsertOptions.knownSelectionIds: the write-time selection
+  // is not one the snapshot caller ever saw, so its list is stale
+  // in a way its own ranking cannot arbitrate.
+  const selectionMovedMidFlight =
+    options.snapshot === true &&
+    options.knownSelectionIds !== undefined &&
+    storedId !== null &&
+    !options.knownSelectionIds.has(storedId);
   // Ordering uses TWO clocks: paddle_last_event_at belongs to the
   // current subscription only, and superseded_last_event_at to the
   // subscription it replaced. Comparing an event against the other
@@ -261,6 +280,24 @@ export const upsertSubscription = async (
       // active, its updated_at never moved past the superseded
       // clock, and rejecting it would strand the canceled
       // subscription as current. Only an older snapshot is stale.
+      if (selectionMovedMidFlight) {
+        // The current subscription was installed after the
+        // caller's list was fetched (e.g. a newly activated
+        // subscription's webhook landed mid-refresh): reselecting
+        // this superseded candidate from the stale list would
+        // replace it. Refuse; the caller re-fetches and re-ranks.
+        serverLog(
+          'warn',
+          'Paddle snapshot reselection raced a newer selection',
+          {
+            eventType: event.event_type,
+            eventId: event.event_id,
+            subscriptionId: eventSubId,
+            currentSubscriptionId: storedId ?? 'unknown',
+          },
+        );
+        return 'stale';
+      }
       if (
         candidateAt !== null &&
         supersededAt !== null &&
@@ -326,6 +363,46 @@ export const upsertSubscription = async (
       if (!decision.apply) {
         return 'stale';
       }
+      // Promotion is a takeover: verify it against Paddle's live
+      // state, exactly like the untracked-subscription path. The
+      // superseded clock alone cannot see a cancellation whose
+      // webhook was lost — a delayed active revision would
+      // otherwise promote a subscription Paddle has since
+      // canceled, replacing the current one with an obsolete
+      // active plan. A confirmed non-active status, or a live
+      // revision newer than the event's, makes the event stale;
+      // unavailable verification throws so delivery stays
+      // retryable.
+      if (eventSubId !== null) {
+        const live = await fetchPaddleSubscriptionState(eventSubId);
+        if (live === null) {
+          throw new Error(
+            `Paddle live verification unavailable for subscription ${eventSubId}`,
+          );
+        }
+        const liveUpdatedAt = live.updatedAt;
+        const liveUpdatedMs =
+          liveUpdatedAt !== null ? Date.parse(liveUpdatedAt) : Number.NaN;
+        if (
+          mapPaddleStatus(live.status) !== 'active' ||
+          (decision.eventAt !== null &&
+            liveUpdatedAt !== null &&
+            !Number.isNaN(liveUpdatedMs) &&
+            liveUpdatedMs > Date.parse(decision.eventAt))
+        ) {
+          serverLog(
+            'warn',
+            'Paddle superseded promotion failed live verification',
+            {
+              eventType: event.event_type,
+              eventId: event.event_id,
+              subscriptionId: eventSubId,
+              liveStatus: live.status,
+            },
+          );
+          return 'stale';
+        }
+      }
       eventAt = decision.eventAt;
       recordSwap();
     }
@@ -347,6 +424,20 @@ export const upsertSubscription = async (
     // 'stale', and the caller's re-fetch re-ranks fresh data. If
     // Paddle cannot be checked at all, throw (the caller surfaces a
     // retryable error) rather than install unverified state.
+    if (selectionMovedMidFlight) {
+      // The current subscription is not one the caller ever saw:
+      // a webhook installed it after the list was fetched (e.g. a
+      // newly activated subscription). The candidate's own live
+      // check cannot detect that — refuse and let the caller
+      // re-fetch and re-rank with the new subscription listed.
+      serverLog('warn', 'Paddle snapshot replacement raced a newer selection', {
+        eventType: event.event_type,
+        eventId: event.event_id,
+        subscriptionId: eventSubId ?? 'unknown',
+        currentSubscriptionId: storedId ?? 'unknown',
+      });
+      return 'stale';
+    }
     if (eventSubId !== null) {
       const live = await fetchPaddleSubscriptionState(eventSubId);
       if (live === null) {
