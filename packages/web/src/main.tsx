@@ -4,7 +4,6 @@ import {
   AuthProvider,
   FeedbackPreferenceProvider,
 } from '@eciperay/client';
-import {eciperayTamaguiConfig} from '@spudly/ui';
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 import {StrictMode} from 'react';
 import {createRoot} from 'react-dom/client';
@@ -13,6 +12,7 @@ import {TamaguiProvider} from 'tamagui';
 
 import {onAuthenticated, onSignedOut} from './lib/authSessionLifecycle.js';
 import {analytics} from './lib/analytics.js';
+import {webTamaguiConfig} from './lib/tamaguiConfig.js';
 import {router} from './routes/router.js';
 import {supabase} from './lib/supabase.js';
 
@@ -27,7 +27,7 @@ if (root) {
   createRoot(root).render(
     <StrictMode>
       <TamaguiProvider
-        config={eciperayTamaguiConfig}
+        config={webTamaguiConfig}
         defaultTheme="light"
       >
         <QueryClientProvider client={queryClient}>

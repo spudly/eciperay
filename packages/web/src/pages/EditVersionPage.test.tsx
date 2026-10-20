@@ -143,8 +143,12 @@ describe('EditVersionPage', () => {
     await waitFor(() => {
       expect(screen.getByLabelText('Title')).toHaveValue('Changed draft title');
     });
+    // The "Revert to:" button renders only after the parent-version
+    // query resolves (a second request, after the draft query that
+    // fills the Title field), so assert asynchronously — the previous
+    // synchronous getByRole raced that query and flaked under load.
     expect(
-      screen.getByRole('button', {name: /Revert to:/}),
+      await screen.findByRole('button', {name: /Revert to:/}),
     ).toBeInTheDocument();
   });
 });
