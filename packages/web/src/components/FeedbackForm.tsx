@@ -7,7 +7,7 @@ import {
   type SubmitUserFeedbackInput,
 } from '@eciperay/client';
 import clsx from 'clsx';
-import {useEffect, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import type {ComponentType} from 'react';
 
 import {APP_VERSION} from '../lib/env.js';
@@ -42,10 +42,13 @@ export const FeedbackForm = ({
   const [submitted, setSubmitted] = useState(false);
 
   const accountEmail = session?.user.email ?? '';
-  // Pre-fill the reply address from the signed-in account until the user
-  // edits the field themselves.
+  // Whether the user has edited the reply field themselves. An untouched
+  // prefill tracks the signed-in account (fills when the session resolves,
+  // updates on account switch, clears on sign-out); a deliberate edit —
+  // including clearing the field — is preserved across account changes.
+  const replyEditedRef = useRef(false);
   useEffect(() => {
-    setReplyEmail(current => (current === '' ? accountEmail : current));
+    setReplyEmail(current => (replyEditedRef.current ? current : accountEmail));
   }, [accountEmail]);
 
   const userId = session?.user.id;
@@ -114,6 +117,7 @@ export const FeedbackForm = ({
           "
           value={replyEmail}
           onChange={event => {
+            replyEditedRef.current = true;
             setReplyEmail(event.target.value);
           }}
           placeholder="you@example.com"
