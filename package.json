@@ -1,6 +1,6 @@
 {
   "name": "eciperay",
-  "version": "1.25.1",
+  "version": "1.25.2",
   "private": true,
   "type": "module",
   "packageManager": "npm@10.8.2",
