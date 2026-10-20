@@ -142,6 +142,14 @@ export const refreshEntitlement = async (
   // (bounded: a second stale is accepted as the no-op case). The
   // loop never blindly continues into lower-ranked candidates from
   // the stale list — the re-ranked list decides.
+  // A granting candidate (active / past_due) skipped ONLY because
+  // its price is unmapped still outranks every non-granting
+  // candidate: falling through to an older canceled subscription
+  // would replace a still-paying user's entitlement with the
+  // canceled one and downgrade them to Free. Once such a candidate
+  // has been seen, only other granting candidates may be tried;
+  // if none is usable, the stored entitlement stands.
+  let unpricedGrantingSeen = false;
   for (let pass = 0; pass < 2; pass += 1) {
     const candidates = [...subscriptions].sort((a, b) => {
       const byStatus = statusPriority(a) - statusPriority(b);
@@ -149,6 +157,9 @@ export const refreshEntitlement = async (
     });
     let sawStale = false;
     for (const candidate of candidates) {
+      if (unpricedGrantingSeen && statusPriority(candidate) > 1) {
+        continue;
+      }
       try {
         const outcome = await upsertSubscription(
           toSyntheticEvent(candidate),
@@ -173,7 +184,12 @@ export const refreshEntitlement = async (
       } catch (error) {
         if (error instanceof UnknownPaddlePriceError) {
           // Recognized unusable candidate: skip it and try the next one
-          // rather than failing the whole refresh.
+          // rather than failing the whole refresh — unless it grants
+          // access, in which case no lower-standing candidate may
+          // replace it (see unpricedGrantingSeen above).
+          if (statusPriority(candidate) <= 1) {
+            unpricedGrantingSeen = true;
+          }
           serverLog('warn', 'Entitlement refresh skipped a subscription', {
             subscriptionId: String(candidate['id']),
             error: error.message,

@@ -14,6 +14,20 @@ import {
 
 type QueryFn = typeof defaultQuery;
 
+// Pre-upgrade rows carry revision clocks stamped from occurred_at,
+// which lags the entity's updated_at by Paddle's event-creation
+// latency (sub-second in practice). When such a subscription is
+// later superseded, its legacy clock lands in the superseded slot,
+// and the unchanged subscription's own updated_at then compares as
+// slightly OLDER than the slot — blocking its reselection after
+// the replacement is canceled and stranding a paying user on Free.
+// Snapshot reselection therefore tolerates a small skew against
+// the superseded clock. The tolerance is far below any realistic
+// gap between distinct revisions (plan changes, cancellations and
+// reactivations are separate user actions, minutes apart), so
+// stale-revision protection is preserved.
+const LEGACY_CLOCK_SKEW_MS = 2000;
+
 const mapPaddleStatus = (
   status: string | undefined,
 ): 'active' | 'past_due' | 'cancelled' | null => {
@@ -250,7 +264,8 @@ export const upsertSubscription = async (
       if (
         candidateAt !== null &&
         supersededAt !== null &&
-        candidateAt < supersededAt
+        Date.parse(candidateAt) <
+          Date.parse(supersededAt) - LEGACY_CLOCK_SKEW_MS
       ) {
         return 'stale';
       }
@@ -386,7 +401,29 @@ export const upsertSubscription = async (
     }
     const decision = shouldApplyEvent(event, existingRow.paddle_last_event_at);
     if (!decision.apply) {
-      return 'stale';
+      // Snapshot mode, same subscription, EQUAL revision: the
+      // stored clock can have been advanced by a partial write —
+      // the status-only handler stamps the revision while leaving
+      // fields like the billing period at their pre-event values,
+      // so an immediate cancellation processed there first leaves
+      // a stale future period end that the entitlement resolver
+      // would keep granting against. The snapshot carries this
+      // revision's COMPLETE state from Paddle, so persisting it is
+      // the correct completion of the revision, not an out-of-order
+      // write; the conditional-write guards below still bind the
+      // write to the state read here. Older revisions stay stale,
+      // and webhook (non-snapshot) equal revisions stay no-ops —
+      // events are deltas, snapshots are full state.
+      const equalRevisionSnapshot =
+        options.snapshot === true &&
+        storedId !== null &&
+        eventSubId === storedId &&
+        decision.eventAt !== null &&
+        decision.eventAt ===
+          normalizeTimestamp(existingRow.paddle_last_event_at);
+      if (!equalRevisionSnapshot) {
+        return 'stale';
+      }
     }
     if (
       options.snapshot !== true &&
