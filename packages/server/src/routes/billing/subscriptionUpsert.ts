@@ -160,6 +160,22 @@ export type UpsertOptions = {
    * row themselves at decision time).
    */
   knownSelectionIds?: ReadonlySet<string>;
+  /**
+   * Snapshot mode only: the listed status and revision (updated_at) of each
+   * subscription in the caller's fetched list, keyed by id. The id-only guard
+   * above cannot see a change to a subscription that WAS in the list: if the
+   * row's current subscription is in the list but its stored revision clock has
+   * advanced past the listed revision, a webhook changed it while the caller
+   * was deciding (e.g. a listed-paused subscription resumed) — the snapshot
+   * replacement branches then refuse ('stale') rather than replace the newer
+   * state with a lower-ranked candidate ranked against the old one, and the
+   * caller re-fetches and re-ranks. Omitted = no listed-state validation (the
+   * id guard still applies when knownSelectionIds is given).
+   */
+  knownSelectionState?: ReadonlyMap<
+    string,
+    {status?: string | null; updatedAt?: string | null}
+  >;
 };
 
 export const upsertSubscription = async (
@@ -244,6 +260,47 @@ export const upsertSubscription = async (
     options.knownSelectionIds !== undefined &&
     storedId !== null &&
     !options.knownSelectionIds.has(storedId);
+  // The listed-state counterpart (see UpsertOptions.knownSelectionState):
+  // the current subscription WAS in the caller's list, but its stored
+  // revision has advanced PAST the revision the list showed for it —
+  // a webhook landed mid-decision and moved it (e.g. a listed-paused
+  // subscription resumed, stamping a newer revision than the listed
+  // one). The caller's ranking was made against the listed state, so
+  // a snapshot replacement from that ranking is refused the same
+  // way. The opposite case — a listed revision NEWER than the
+  // stored one — is a fresh list ahead of the stored row, exactly
+  // what reconciliation exists to apply; and an equal one (within
+  // the legacy occurred_at skew) is no change at all. When the list
+  // gave
+  // no usable revision for the current subscription, fall back to a
+  // mapped-status mismatch. A listed status the upsert does not map
+  // (e.g. paused) has no stored counterpart and compares by revision
+  // only.
+  const listedCurrentState =
+    options.snapshot === true && storedId !== null
+      ? options.knownSelectionState?.get(storedId)
+      : undefined;
+  const listedCurrentUpdatedMs =
+    listedCurrentState?.updatedAt != null
+      ? Date.parse(listedCurrentState.updatedAt)
+      : Number.NaN;
+  const storedClockMs = (() => {
+    const storedClock = normalizeTimestamp(existingRow?.paddle_last_event_at);
+    return storedClock !== null ? Date.parse(storedClock) : Number.NaN;
+  })();
+  const listedCurrentMappedStatus =
+    listedCurrentState?.status != null
+      ? mapPaddleStatus(listedCurrentState.status)
+      : null;
+  const currentSelectionChangedMidFlight =
+    listedCurrentState !== undefined &&
+    existingRow !== undefined &&
+    (!Number.isNaN(listedCurrentUpdatedMs) && !Number.isNaN(storedClockMs)
+      ? storedClockMs > listedCurrentUpdatedMs + LEGACY_CLOCK_SKEW_MS
+      : listedCurrentMappedStatus !== null &&
+        listedCurrentMappedStatus !== existingRow.status);
+  const selectionStaleMidFlight =
+    selectionMovedMidFlight || currentSelectionChangedMidFlight;
   // Ordering uses TWO clocks: paddle_last_event_at belongs to the
   // current subscription only, and superseded_last_event_at to the
   // subscription it replaced. Comparing an event against the other
@@ -280,12 +337,15 @@ export const upsertSubscription = async (
       // active, its updated_at never moved past the superseded
       // clock, and rejecting it would strand the canceled
       // subscription as current. Only an older snapshot is stale.
-      if (selectionMovedMidFlight) {
-        // The current subscription was installed after the
-        // caller's list was fetched (e.g. a newly activated
-        // subscription's webhook landed mid-refresh): reselecting
-        // this superseded candidate from the stale list would
-        // replace it. Refuse; the caller re-fetches and re-ranks.
+      if (selectionStaleMidFlight) {
+        // The current subscription is not the selection the caller
+        // ranked against: it was installed after the caller's list
+        // was fetched (e.g. a newly activated subscription's webhook
+        // landed mid-refresh), or a listed one changed state in the
+        // meantime (e.g. a listed-paused subscription resumed).
+        // Reselecting this superseded candidate from the stale list
+        // would replace it. Refuse; the caller re-fetches and
+        // re-ranks.
         serverLog(
           'warn',
           'Paddle snapshot reselection raced a newer selection',
@@ -305,6 +365,47 @@ export const upsertSubscription = async (
           Date.parse(supersededAt) - LEGACY_CLOCK_SKEW_MS
       ) {
         return 'stale';
+      }
+      // Reselection installs this candidate as current, so verify
+      // it against Paddle's live state exactly like the snapshot
+      // replacement branch below: if it was canceled after the
+      // caller's list was fetched, a delayed or lost cancellation
+      // webhook leaves the superseded clock unchanged, and nothing
+      // else stops this now-obsolete active snapshot from replacing
+      // the current subscription and being 'applied' (so the caller
+      // never re-fetches). A live status that differs from the
+      // snapshot's, or a live revision newer than it, means the
+      // snapshot no longer represents Paddle's state — 'stale', and
+      // the caller's re-fetch re-ranks fresh data. If Paddle cannot
+      // be checked at all, throw (the caller surfaces a retryable
+      // error) rather than install unverified state.
+      if (eventSubId !== null) {
+        const live = await fetchPaddleSubscriptionState(eventSubId);
+        if (live === null) {
+          throw new Error(
+            `Paddle live verification unavailable for subscription ${eventSubId}`,
+          );
+        }
+        const liveUpdatedMs =
+          live.updatedAt !== null ? Date.parse(live.updatedAt) : Number.NaN;
+        const movedPastSnapshot =
+          live.status !== event.data.status ||
+          (candidateAt !== null &&
+            !Number.isNaN(liveUpdatedMs) &&
+            liveUpdatedMs > Date.parse(candidateAt));
+        if (movedPastSnapshot) {
+          serverLog(
+            'warn',
+            'Paddle snapshot reselection superseded by live state',
+            {
+              eventType: event.event_type,
+              eventId: event.event_id,
+              subscriptionId: eventSubId,
+              liveStatus: live.status,
+            },
+          );
+          return 'stale';
+        }
       }
       eventAt = candidateAt;
       recordSwap();
@@ -424,12 +525,14 @@ export const upsertSubscription = async (
     // 'stale', and the caller's re-fetch re-ranks fresh data. If
     // Paddle cannot be checked at all, throw (the caller surfaces a
     // retryable error) rather than install unverified state.
-    if (selectionMovedMidFlight) {
-      // The current subscription is not one the caller ever saw:
-      // a webhook installed it after the list was fetched (e.g. a
-      // newly activated subscription). The candidate's own live
-      // check cannot detect that — refuse and let the caller
-      // re-fetch and re-rank with the new subscription listed.
+    if (selectionStaleMidFlight) {
+      // The current subscription is not the selection the caller
+      // ranked against: a webhook installed one the caller never
+      // saw after the list was fetched (e.g. a newly activated
+      // subscription), or a listed one changed state in the
+      // meantime. The candidate's own live check cannot detect
+      // that — refuse and let the caller re-fetch and re-rank with
+      // the current state listed.
       serverLog('warn', 'Paddle snapshot replacement raced a newer selection', {
         eventType: event.event_type,
         eventId: event.event_id,
