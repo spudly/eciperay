@@ -3,18 +3,24 @@ import {
   formatGithubOutput,
   packagesToDeployTargets,
   parseCommitScopes,
+  pathToPackage,
+  resolveDeployTargetsFromPaths,
   resolveDeployTargetsFromSubjects,
   scopeToPackage,
   writeGithubOutput,
 } from './resolveDeployTargets.ts';
 import {
-  getReleaseCommitSubjects,
+  getReleaseChangedPaths,
   isDirectRun,
   isTagRangeArgv,
   maybeRunResolveDeployTargetsCli,
   resolveDeployTargetsFromTags,
   runResolveDeployTargetsCli,
 } from './resolveDeployTargetsCli.ts';
+
+// One commit record in `git log --name-only --pretty=format:%x1e%s` output.
+const logRecord = (subject: string, ...paths: string[]): string =>
+  `\x1e${subject}\n${paths.map(path => `\n${path}`).join('')}\n`;
 
 describe('parseCommitScopes', () => {
   test('parses a single scope', () => {
@@ -194,42 +200,173 @@ describe('maybeRunResolveDeployTargetsCli', () => {
   });
 });
 
-describe('getReleaseCommitSubjects', () => {
-  test('reads commit subjects from git log', () => {
-    const exec = jest.fn(() => 'feat(web): add page\nfix(server): timeout');
-    expect(getReleaseCommitSubjects('v1.0.0', 'v1.1.0', exec)).toEqual([
-      'feat(web): add page',
-      'fix(server): timeout',
-    ]);
-    expect(exec).toHaveBeenCalledWith(
-      'git log v1.0.0..v1.1.0 --pretty=format:%s',
-      {encoding: 'utf8'},
+describe('pathToPackage', () => {
+  test('maps package paths to their package', () => {
+    expect(pathToPackage('packages/app/src/App.tsx')).toBe('app');
+    expect(pathToPackage('packages/icons/assets/logo.svg')).toBe('icons');
+    expect(pathToPackage('packages/mcp-server/src/index.ts')).toBe(
+      'mcp-server',
     );
   });
 
-  test('returns empty array when git log is empty', () => {
-    const exec = jest.fn(() => '');
-    expect(getReleaseCommitSubjects('v1.0.0', 'v1.1.0', exec)).toEqual([]);
+  test('returns null outside known packages', () => {
+    expect(pathToPackage('package.json')).toBeNull();
+    expect(pathToPackage('.github/workflows/release.yml')).toBeNull();
+    expect(pathToPackage('packages/not-a-package/src/index.ts')).toBeNull();
+  });
+});
+
+describe('resolveDeployTargetsFromPaths', () => {
+  test('deploys fly only for web changes', () => {
+    expect(
+      resolveDeployTargetsFromPaths(['packages/web/src/Page.tsx']),
+    ).toEqual({fly: true, android: false});
   });
 
-  test('reads first release commits from tag parent', () => {
-    const exec = jest.fn(() => 'feat(web): add page');
-    expect(getReleaseCommitSubjects('', 'v1.0.0', exec)).toEqual([
-      'feat(web): add page',
-    ]);
-    expect(exec).toHaveBeenCalledWith('git log v1.0.0^ --pretty=format:%s', {
-      encoding: 'utf8',
+  test('deploys fly only for server changes', () => {
+    expect(
+      resolveDeployTargetsFromPaths(['packages/server/src/index.ts']),
+    ).toEqual({fly: true, android: false});
+  });
+
+  test('deploys android only for app changes', () => {
+    expect(resolveDeployTargetsFromPaths(['packages/app/src/App.tsx'])).toEqual(
+      {fly: false, android: true},
+    );
+  });
+
+  test('expands shared packages to their dependents', () => {
+    expect(
+      resolveDeployTargetsFromPaths(['packages/types/src/api.ts']),
+    ).toEqual({fly: true, android: true});
+    expect(
+      resolveDeployTargetsFromPaths(['packages/client/src/auth.ts']),
+    ).toEqual({fly: true, android: true});
+    expect(resolveDeployTargetsFromPaths(['packages/icons/logo.svg'])).toEqual({
+      fly: true,
+      android: true,
+    });
+    expect(
+      resolveDeployTargetsFromPaths(['packages/mcp-server/src/index.ts']),
+    ).toEqual({fly: true, android: false});
+  });
+
+  test('deploys both for changes outside packages', () => {
+    expect(resolveDeployTargetsFromPaths(['package-lock.json'])).toEqual({
+      fly: true,
+      android: true,
+    });
+    expect(
+      resolveDeployTargetsFromPaths(['.github/workflows/android-deploy.yml']),
+    ).toEqual({fly: true, android: true});
+    expect(
+      resolveDeployTargetsFromPaths(['packages/new-package/src/index.ts']),
+    ).toEqual({fly: true, android: true});
+  });
+
+  test('returns false when nothing changed', () => {
+    expect(resolveDeployTargetsFromPaths([])).toEqual({
+      fly: false,
+      android: false,
     });
   });
 });
 
+describe('getReleaseChangedPaths', () => {
+  test('collects changed files per commit from git log', () => {
+    const exec = jest.fn(
+      () =>
+        logRecord('feat(web): add page', 'packages/web/src/Page.tsx') +
+        logRecord('fix(server): timeout', 'packages/server/src/index.ts'),
+    );
+    expect(getReleaseChangedPaths('v1.0.0', 'v1.1.0', exec)).toEqual([
+      'packages/web/src/Page.tsx',
+      'packages/server/src/index.ts',
+    ]);
+    expect(exec).toHaveBeenCalledWith(
+      'git log v1.0.0..v1.1.0 --name-only --pretty=format:%x1e%s',
+      {encoding: 'utf8'},
+    );
+  });
+
+  test('excludes the automated release commit version bumps', () => {
+    const exec = jest.fn(
+      () =>
+        logRecord(
+          'chore(release): 1.1.0 [skip ci]',
+          'package.json',
+          'package-lock.json',
+          'packages/app/package.json',
+          'packages/web/package.json',
+        ) + logRecord('fix(server): timeout', 'packages/server/src/index.ts'),
+    );
+    expect(getReleaseChangedPaths('v1.0.0', 'v1.1.0', exec)).toEqual([
+      'packages/server/src/index.ts',
+    ]);
+  });
+
+  test('returns empty array when git log is empty', () => {
+    const exec = jest.fn(() => '');
+    expect(getReleaseChangedPaths('v1.0.0', 'v1.1.0', exec)).toEqual([]);
+  });
+});
+
 describe('resolveDeployTargetsFromTags', () => {
-  test('resolves deploy targets from git tags', () => {
-    const exec = jest.fn(() => 'feat(client): add helper');
+  test('resolves deploy targets from changed files between tags', () => {
+    const exec = jest.fn(() =>
+      logRecord('feat(client): add helper', 'packages/client/src/auth.ts'),
+    );
     expect(resolveDeployTargetsFromTags('v0.1.0', 'v0.2.0', exec)).toEqual({
       fly: true,
       android: true,
     });
+  });
+
+  test('deploys android when app files changed under scope-less subjects', () => {
+    // Regression for #151: merge-commit subjects carry no app/client
+    // scope, so the old subject-based resolver skipped the Android build
+    // even though the release changed app code.
+    const exec = jest.fn(
+      () =>
+        logRecord(
+          'chore(release): 1.1.0 [skip ci]',
+          'packages/app/package.json',
+          'packages/web/package.json',
+        ) +
+        logRecord(
+          'Merge pull request #132 from spudly/styling-migration',
+          'packages/app/src/screens/HomeScreen.tsx',
+        ),
+    );
+    expect(resolveDeployTargetsFromTags('v1.0.0', 'v1.1.0', exec)).toEqual({
+      fly: false,
+      android: true,
+    });
+  });
+
+  test('deploys nothing when only release version bumps changed', () => {
+    const exec = jest.fn(() =>
+      logRecord(
+        'chore(release): 1.1.0 [skip ci]',
+        'packages/app/package.json',
+        'packages/server/package.json',
+      ),
+    );
+    expect(resolveDeployTargetsFromTags('v1.0.0', 'v1.1.0', exec)).toEqual({
+      fly: false,
+      android: false,
+    });
+  });
+
+  test('deploys everything for a first release with no previous tag', () => {
+    const exec = jest.fn(() => {
+      throw new Error('git must not be called without a previous tag');
+    });
+    expect(resolveDeployTargetsFromTags('', 'v1.0.0', exec)).toEqual({
+      fly: true,
+      android: true,
+    });
+    expect(exec).not.toHaveBeenCalled();
   });
 });
 
@@ -278,7 +415,9 @@ describe('runResolveDeployTargetsCli', () => {
     const stdoutSpy = jest
       .spyOn(process.stdout, 'write')
       .mockImplementation(() => true);
-    const exec = jest.fn(() => 'feat(web): add page');
+    const exec = jest.fn(() =>
+      logRecord('feat(web): add page', 'packages/web/src/Page.tsx'),
+    );
     runResolveDeployTargetsCli(['v1.0.0', 'v1.1.0'], exec);
     expect(stdoutSpy).toHaveBeenCalledWith(
       'deploy_fly=true\ndeploy_android=false\n',
@@ -290,10 +429,10 @@ describe('runResolveDeployTargetsCli', () => {
     const stdoutSpy = jest
       .spyOn(process.stdout, 'write')
       .mockImplementation(() => true);
-    const exec = jest.fn(() => 'feat(web): add page');
+    const exec = jest.fn(() => '');
     runResolveDeployTargetsCli(['--first-release', 'v1.0.0'], exec);
     expect(stdoutSpy).toHaveBeenCalledWith(
-      'deploy_fly=true\ndeploy_android=false\n',
+      'deploy_fly=true\ndeploy_android=true\n',
     );
     stdoutSpy.mockRestore();
   });
@@ -305,7 +444,7 @@ describe('runResolveDeployTargetsCli', () => {
     const exec = jest.fn(() => '');
     runResolveDeployTargetsCli(['--first-release'], exec);
     expect(stdoutSpy).toHaveBeenCalledWith(
-      'deploy_fly=false\ndeploy_android=false\n',
+      'deploy_fly=true\ndeploy_android=true\n',
     );
     stdoutSpy.mockRestore();
   });

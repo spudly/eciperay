@@ -23,7 +23,9 @@ export type PackageName =
   | 'server'
   | 'client'
   | 'types'
-  | 'theme';
+  | 'theme'
+  | 'icons'
+  | 'mcp-server';
 
 export const SCOPE_TO_PACKAGE: Record<string, PackageName | null> = {
   app: 'app',
@@ -39,21 +41,38 @@ export const SCOPE_TO_PACKAGE: Record<string, PackageName | null> = {
 };
 
 export const PACKAGE_DEPENDENTS: Record<PackageName, PackageName[]> = {
-  types: ['client', 'server', 'web', 'app'],
-  theme: ['web', 'app'],
-  client: ['server', 'web', 'app'],
-  server: [],
-  web: [],
-  app: [],
+  'types': ['client', 'server', 'web', 'app'],
+  'theme': ['web', 'app'],
+  'client': ['server', 'web', 'app'],
+  'icons': ['web', 'app'],
+  'mcp-server': ['server'],
+  'server': [],
+  'web': [],
+  'app': [],
 };
 
 export const PACKAGE_DEPLOY_TARGETS: Record<PackageName, DeployTarget[]> = {
-  server: ['fly'],
-  web: ['fly'],
-  app: ['android'],
-  client: ['fly', 'android'],
-  types: [],
-  theme: [],
+  'server': ['fly'],
+  'web': ['fly'],
+  'app': ['android'],
+  'client': ['fly', 'android'],
+  'types': [],
+  'theme': [],
+  'icons': [],
+  'mcp-server': [],
+};
+
+const PACKAGE_NAMES: ReadonlySet<string> = new Set(
+  Object.keys(PACKAGE_DEPLOY_TARGETS),
+);
+
+export const pathToPackage = (path: string): PackageName | null => {
+  const match = /^packages\/([^/]+)\//u.exec(path);
+  if (!match?.[1]) {
+    return null;
+  }
+
+  return PACKAGE_NAMES.has(match[1]) ? (match[1] as PackageName) : null;
 };
 
 export const parseCommitScopes = (subject: string): string[] => {
@@ -107,6 +126,39 @@ export const packagesToDeployTargets = (
   }
 
   return targets;
+};
+
+/**
+ * Resolve deploy targets from the set of files changed in a release.
+ *
+ * Paths under packages/<name>/ seed that package, and the seed set is expanded
+ * through PACKAGE_DEPENDENTS, so a change to a shared package (types, client,
+ * theme, icons) deploys everything that consumes it.
+ *
+ * Any path outside a known package — root package.json / package-lock.json,
+ * shared tsconfig or turbo config, .github/workflows, scripts, docs — is a
+ * "global" change: it can alter shared tooling or every package's build, so it
+ * deploys BOTH targets. This is deliberate: a wasted build is cheaper than the
+ * old scope-based behaviour, where a release whose commit subjects lacked the
+ * right scopes silently skipped a deploy and left a target stale
+ * (spudly/eciperay#151). A path under an unrecognised packages/<dir>/ is also
+ * global, so a future package can never be skipped silently.
+ */
+export const resolveDeployTargetsFromPaths = (
+  paths: string[],
+): DeployTargets => {
+  const seedPackages = new Set<PackageName>();
+
+  for (const path of paths) {
+    const pkg = pathToPackage(path);
+    if (!pkg) {
+      return {fly: true, android: true};
+    }
+    seedPackages.add(pkg);
+  }
+
+  const affected = expandAffectedPackages(seedPackages);
+  return packagesToDeployTargets(affected);
 };
 
 export const resolveDeployTargetsFromSubjects = (
