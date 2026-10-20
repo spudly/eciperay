@@ -1530,6 +1530,233 @@ describe('upsertSubscription', () => {
     }
   });
 
+  test('snapshot writes revalidate the current subscription when its clock is within the skew window', async () => {
+    // The listed-state guard tolerates a stored clock up to the
+    // legacy skew (2s) past the listed revision — but a genuine
+    // revision can land inside that window too: listed paused B at
+    // 10:00:00, resume webhook stores active B at 10:00:01. Clocks
+    // cannot tell that from a legacy occurred_at clock, so both
+    // snapshot replacement branches revalidate the CURRENT
+    // subscription live when the difference is inside the window.
+    const mockWithRow = (row: Record<string, unknown>) =>
+      ((sql: string) => {
+        if (sql.includes('from plan_prices')) {
+          return Promise.resolve(makeQueryResult([{plan: 'plus'}]));
+        }
+        if (sql.includes('from subscriptions')) {
+          return Promise.resolve(makeQueryResult([row]));
+        }
+        if (sql.includes('insert into subscriptions')) {
+          return Promise.resolve(makeQueryResult([{}]));
+        }
+        return Promise.resolve(makeQueryResult([]));
+      }) as typeof mockQuery;
+    const realFetch = global.fetch;
+    process.env['PADDLE_API_KEY'] = 'test-paddle-key';
+    let liveById: Record<string, {status: string; updated_at: string} | null> =
+      {};
+    global.fetch = (async (url: unknown) => {
+      const id = String(url).split('/subscriptions/')[1] ?? '';
+      const payload = liveById[id];
+      if (!payload) {
+        return {ok: false, status: 503, json: async () => ({})} as Response;
+      }
+      return {ok: true, json: async () => ({data: payload})} as Response;
+    }) as typeof fetch;
+    const canceledA = makeEvent({
+      occurred_at: '2026-10-16T00:00:00.000Z',
+      data: {...makeEvent().data, id: 'sub_a', status: 'canceled'},
+    });
+    const reselectA = makeEvent({
+      occurred_at: '2026-10-15T00:00:00.000Z',
+      data: {...makeEvent().data, id: 'sub_a'},
+    });
+    try {
+      // Replacement branch, genuine sub-2s change: stored sub_b
+      // resumed at 10:00:01, one second after the listed pause.
+      // Live revalidation shows sub_b active at a newer revision
+      // than listed — the canceled candidate must not replace it.
+      mockQuery.mockImplementation(
+        mockWithRow({
+          status: 'active',
+          past_due_since: null,
+          paddle_subscription_id: 'sub_b',
+          paddle_last_event_at: '2026-10-20T10:00:01.000Z',
+          superseded_subscription_id: null,
+          superseded_last_event_at: null,
+        }),
+      );
+      liveById = {
+        sub_b: {status: 'active', updated_at: '2026-10-20T10:00:01.000Z'},
+      };
+      await expect(
+        upsertSubscription(canceledA, 'user-uuid-1', mockQuery, {
+          snapshot: true,
+          knownSelectionIds: new Set(['sub_a', 'sub_b']),
+          knownSelectionState: new Map([
+            [
+              'sub_b',
+              {status: 'paused', updatedAt: '2026-10-20T10:00:00.000Z'},
+            ],
+            [
+              'sub_a',
+              {status: 'canceled', updatedAt: '2026-10-16T00:00:00.000Z'},
+            ],
+          ]),
+        }),
+      ).resolves.toBe('stale');
+      expect(
+        mockQuery.mock.calls.some(args =>
+          args[0].includes('insert into subscriptions'),
+        ),
+      ).toBe(false);
+
+      // Replacement branch, legacy skew: the stored clock is a
+      // pre-upgrade occurred_at stamp 100ms past the listed
+      // revision; live state still matches the listing exactly, so
+      // the replacement proceeds (the candidate's own live check
+      // also runs).
+      mockQuery.mockClear();
+      mockQuery.mockImplementation(
+        mockWithRow({
+          status: 'active',
+          past_due_since: null,
+          paddle_subscription_id: 'sub_b',
+          paddle_last_event_at: '2026-10-20T10:00:00.100Z',
+          superseded_subscription_id: null,
+          superseded_last_event_at: null,
+        }),
+      );
+      liveById = {
+        sub_b: {status: 'active', updated_at: '2026-10-20T10:00:00.000Z'},
+        sub_a: {status: 'canceled', updated_at: '2026-10-16T00:00:00.000Z'},
+      };
+      await expect(
+        upsertSubscription(canceledA, 'user-uuid-1', mockQuery, {
+          snapshot: true,
+          knownSelectionIds: new Set(['sub_a', 'sub_b']),
+          knownSelectionState: new Map([
+            [
+              'sub_b',
+              {status: 'active', updatedAt: '2026-10-20T10:00:00.000Z'},
+            ],
+            [
+              'sub_a',
+              {status: 'canceled', updatedAt: '2026-10-16T00:00:00.000Z'},
+            ],
+          ]),
+        }),
+      ).resolves.toBe('applied');
+
+      // Superseded-reselect branch, genuine sub-2s change: the
+      // current sub_b changed inside the window, so reselecting
+      // the superseded candidate is refused before its own check.
+      mockQuery.mockClear();
+      mockQuery.mockImplementation(
+        mockWithRow({
+          status: 'active',
+          past_due_since: null,
+          paddle_subscription_id: 'sub_b',
+          paddle_last_event_at: '2026-10-20T10:00:01.000Z',
+          superseded_subscription_id: 'sub_a',
+          superseded_last_event_at: '2026-10-15T00:00:00.000Z',
+        }),
+      );
+      liveById = {
+        sub_b: {status: 'active', updated_at: '2026-10-20T10:00:01.000Z'},
+      };
+      await expect(
+        upsertSubscription(reselectA, 'user-uuid-1', mockQuery, {
+          snapshot: true,
+          knownSelectionIds: new Set(['sub_a', 'sub_b']),
+          knownSelectionState: new Map([
+            [
+              'sub_b',
+              {status: 'paused', updatedAt: '2026-10-20T10:00:00.000Z'},
+            ],
+            [
+              'sub_a',
+              {status: 'active', updatedAt: '2026-10-15T00:00:00.000Z'},
+            ],
+          ]),
+        }),
+      ).resolves.toBe('stale');
+      expect(
+        mockQuery.mock.calls.some(args =>
+          args[0].includes('insert into subscriptions'),
+        ),
+      ).toBe(false);
+
+      // Superseded-reselect branch, legacy skew: live state
+      // matches the listing, and the candidate verifies live at
+      // its own revision — the reselection applies.
+      mockQuery.mockImplementation(
+        mockWithRow({
+          status: 'cancelled',
+          past_due_since: null,
+          paddle_subscription_id: 'sub_b',
+          paddle_last_event_at: '2026-10-20T10:00:00.100Z',
+          superseded_subscription_id: 'sub_a',
+          superseded_last_event_at: '2026-10-15T00:00:00.000Z',
+        }),
+      );
+      liveById = {
+        sub_b: {status: 'active', updated_at: '2026-10-20T10:00:00.000Z'},
+        sub_a: {status: 'active', updated_at: '2026-10-15T00:00:00.000Z'},
+      };
+      await expect(
+        upsertSubscription(reselectA, 'user-uuid-1', mockQuery, {
+          snapshot: true,
+          knownSelectionIds: new Set(['sub_a', 'sub_b']),
+          knownSelectionState: new Map([
+            [
+              'sub_b',
+              {status: 'active', updatedAt: '2026-10-20T10:00:00.000Z'},
+            ],
+            [
+              'sub_a',
+              {status: 'active', updatedAt: '2026-10-15T00:00:00.000Z'},
+            ],
+          ]),
+        }),
+      ).resolves.toBe('applied');
+
+      // Ambiguous window + verification unavailable: throw, so
+      // refresh surfaces a retryable error rather than accept a
+      // possibly-changed selection.
+      mockQuery.mockImplementation(
+        mockWithRow({
+          status: 'active',
+          past_due_since: null,
+          paddle_subscription_id: 'sub_b',
+          paddle_last_event_at: '2026-10-20T10:00:01.000Z',
+          superseded_subscription_id: null,
+          superseded_last_event_at: null,
+        }),
+      );
+      liveById = {};
+      await expect(
+        upsertSubscription(canceledA, 'user-uuid-1', mockQuery, {
+          snapshot: true,
+          knownSelectionIds: new Set(['sub_a', 'sub_b']),
+          knownSelectionState: new Map([
+            [
+              'sub_b',
+              {status: 'paused', updatedAt: '2026-10-20T10:00:00.000Z'},
+            ],
+            [
+              'sub_a',
+              {status: 'canceled', updatedAt: '2026-10-16T00:00:00.000Z'},
+            ],
+          ]),
+        }),
+      ).rejects.toThrow('Paddle live verification unavailable');
+    } finally {
+      global.fetch = realFetch;
+      delete process.env['PADDLE_API_KEY'];
+    }
+  });
+
   test('superseded clock advance is conditional on the slot still holding that subscription', async () => {
     mockQuery.mockImplementation(((sql: string) => {
       if (sql.includes('from plan_prices')) {
