@@ -124,59 +124,84 @@ export const refreshEntitlement = async (
     return;
   }
 
-  const subscriptions = await listPaddleSubscriptions(customerId);
+  let subscriptions = await listPaddleSubscriptions(customerId);
   if (subscriptions === null) {
     res.status(502).json({error: 'failed to refresh subscription status'});
     return;
   }
 
-  const candidates = [...subscriptions].sort((a, b) => {
-    const byStatus = statusPriority(a) - statusPriority(b);
-    return byStatus !== 0 ? byStatus : periodEndMs(b) - periodEndMs(a);
-  });
-  for (const candidate of candidates) {
-    try {
-      const outcome = await upsertSubscription(
-        toSyntheticEvent(candidate),
-        req.userId,
-        queryFn,
-        {snapshot: true},
-      );
-      if (outcome === 'invalid') {
-        // Unusable candidate (e.g. a paused subscription, whose status
-        // the upsert does not map) — a lower-ranked candidate may still
-        // correct the stored entitlement, so keep going.
-        serverLog('warn', 'Entitlement refresh skipped a subscription', {
+  // Reconcile against the ranked candidates. A 'stale' outcome means
+  // the stored state moved past the snapshot — which is a no-op when
+  // the stored row is simply an equal/newer revision of the same
+  // candidate, but NOT when the candidate itself changed state after
+  // the list was fetched: if the top-ranked active subscription was
+  // canceled in the meantime, stopping at 'stale' would leave the
+  // canceled subscription selected and never try another still-
+  // active one, stranding a paying user on Free. So a stale outcome
+  // triggers ONE re-fetch and re-rank against the newer state
+  // (bounded: a second stale is accepted as the no-op case). The
+  // loop never blindly continues into lower-ranked candidates from
+  // the stale list — the re-ranked list decides.
+  for (let pass = 0; pass < 2; pass += 1) {
+    const candidates = [...subscriptions].sort((a, b) => {
+      const byStatus = statusPriority(a) - statusPriority(b);
+      return byStatus !== 0 ? byStatus : periodEndMs(b) - periodEndMs(a);
+    });
+    let sawStale = false;
+    for (const candidate of candidates) {
+      try {
+        const outcome = await upsertSubscription(
+          toSyntheticEvent(candidate),
+          req.userId,
+          queryFn,
+          {snapshot: true},
+        );
+        if (outcome === 'invalid') {
+          // Unusable candidate (e.g. a paused subscription, whose status
+          // the upsert does not map) — a lower-ranked candidate may still
+          // correct the stored entitlement, so keep going.
+          serverLog('warn', 'Entitlement refresh skipped a subscription', {
+            subscriptionId: String(candidate['id']),
+            reason: 'invalid candidate',
+          });
+          continue;
+        }
+        // 'applied': done. 'stale': the pass is done too, but the
+        // refresh re-fetches once before settling (see above).
+        sawStale = outcome === 'stale';
+        break;
+      } catch (error) {
+        if (error instanceof UnknownPaddlePriceError) {
+          // Recognized unusable candidate: skip it and try the next one
+          // rather than failing the whole refresh.
+          serverLog('warn', 'Entitlement refresh skipped a subscription', {
+            subscriptionId: String(candidate['id']),
+            error: error.message,
+          });
+          continue;
+        }
+        // Anything else is a persistence failure, not an unusable
+        // candidate. Falling through to a lower-ranked candidate here
+        // could write a historical canceled subscription over the
+        // preferred active one and downgrade a paying user to Free —
+        // fail the refresh instead.
+        serverLog('error', 'Entitlement refresh failed to persist candidate', {
           subscriptionId: String(candidate['id']),
-          reason: 'invalid candidate',
+          error: error instanceof Error ? error.message : String(error),
         });
-        continue;
+        res.status(500).json({error: 'failed to refresh subscription status'});
+        return;
       }
-      // 'applied', or 'stale' (stored state is newer than this snapshot —
-      // nothing a lower-ranked candidate could fix). Done either way.
+    }
+    if (!sawStale || pass === 1) {
       break;
-    } catch (error) {
-      if (error instanceof UnknownPaddlePriceError) {
-        // Recognized unusable candidate: skip it and try the next one
-        // rather than failing the whole refresh.
-        serverLog('warn', 'Entitlement refresh skipped a subscription', {
-          subscriptionId: String(candidate['id']),
-          error: error.message,
-        });
-        continue;
-      }
-      // Anything else is a persistence failure, not an unusable
-      // candidate. Falling through to a lower-ranked candidate here
-      // could write a historical canceled subscription over the
-      // preferred active one and downgrade a paying user to Free —
-      // fail the refresh instead.
-      serverLog('error', 'Entitlement refresh failed to persist candidate', {
-        subscriptionId: String(candidate['id']),
-        error: error instanceof Error ? error.message : String(error),
-      });
-      res.status(500).json({error: 'failed to refresh subscription status'});
+    }
+    const refetched = await listPaddleSubscriptions(customerId);
+    if (refetched === null) {
+      res.status(502).json({error: 'failed to refresh subscription status'});
       return;
     }
+    subscriptions = refetched;
   }
 
   res.json(await resolveEntitlement(req.userId, queryFn));
