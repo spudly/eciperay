@@ -716,7 +716,12 @@ describe('POST /billing/paddle-webhook event handling', () => {
       args[0].includes('set status = $2'),
     );
     expect(update).toBeDefined();
-    expect(update?.[1]).toEqual(['sub_123', 'cancelled', expect.anything()]);
+    expect(update?.[1]).toEqual([
+      'sub_123',
+      'cancelled',
+      expect.anything(),
+      null,
+    ]);
   });
 
   test('status events order against their own subscription clock after a replacement', async () => {
@@ -761,6 +766,7 @@ describe('POST /billing/paddle-webhook event handling', () => {
       'sub_new',
       'cancelled',
       '2026-10-19T10:00:01.000Z',
+      '2026-10-19T10:00:00.000Z',
     ]);
 
     // sub_old status event at :03 — newer than the SUPERSEDED clock:
@@ -798,6 +804,89 @@ describe('POST /billing/paddle-webhook event handling', () => {
     expect(
       mockQuery.mock.calls.some(args =>
         args[0].includes('update subscriptions'),
+      ),
+    ).toBe(false);
+  });
+
+  test('keeps subscription.canceled retryable when the superseded slot changed mid-write', async () => {
+    // The SELECT saw sub_old in the superseded slot, but a concurrent
+    // writer swapped it before the clock update landed: zero rows
+    // match. Acknowledging would record the event as processed while
+    // nothing was applied — the endpoint must 500 instead so Paddle
+    // redelivers against the newer state.
+    const row = {
+      paddle_subscription_id: 'sub_new',
+      paddle_last_event_at: '2026-10-19T10:00:00.000Z',
+      superseded_subscription_id: 'sub_old',
+      superseded_last_event_at: '2026-10-19T10:00:02.000Z',
+    };
+    mockRouteQueries((text: string) => {
+      if (text.includes('from paddle_events')) {
+        return Promise.resolve(makeQueryResult([]));
+      }
+      if (text.includes('paddle_subscription_id = $1')) {
+        return Promise.resolve(makeQueryResult([row]));
+      }
+      if (text.includes('set superseded_last_event_at')) {
+        return Promise.resolve(makeQueryResult([]));
+      }
+      return Promise.resolve(makeQueryResult([{}]));
+    });
+    const res = await postEvent(
+      makeEvent({
+        event_id: 'evt_cancel_old_raced',
+        event_type: 'subscription.canceled',
+        occurred_at: '2026-10-19T10:00:03.000Z',
+        data: {id: 'sub_old'},
+      }),
+    );
+    expect(res.status).toBe(500);
+    expect(
+      mockQuery.mock.calls.some(args =>
+        args[0].includes('insert into paddle_events'),
+      ),
+    ).toBe(false);
+  });
+
+  test('keeps subscription.canceled retryable when a newer update lands mid-write', async () => {
+    // A concurrent writer advanced the current subscription's clock
+    // between the SELECT and the status update: the conditional
+    // update matches zero rows, so the cancellation was not applied
+    // and must stay retryable rather than be acknowledged.
+    mockRouteQueries((text: string) => {
+      if (text.includes('from paddle_events')) {
+        return Promise.resolve(makeQueryResult([]));
+      }
+      // Checked before the SELECT: the UPDATE's WHERE clause also
+      // contains 'paddle_subscription_id = $1'.
+      if (text.includes('set status = $2')) {
+        return Promise.resolve(makeQueryResult([]));
+      }
+      if (text.includes('paddle_subscription_id = $1')) {
+        return Promise.resolve(
+          makeQueryResult([
+            {
+              paddle_subscription_id: 'sub_123',
+              paddle_last_event_at: '2026-10-13T16:00:00Z',
+              superseded_subscription_id: null,
+              superseded_last_event_at: null,
+            },
+          ]),
+        );
+      }
+      return Promise.resolve(makeQueryResult([{}]));
+    });
+    const res = await postEvent(
+      makeEvent({
+        event_id: 'evt_cancel_raced',
+        event_type: 'subscription.canceled',
+        occurred_at: '2026-10-13T17:00:00Z',
+      }),
+    );
+    expect(res.status).toBe(500);
+    expect(
+      mockQuery.mock.calls.some(args =>
+        args[0].includes('insert into paddle_events'),
       ),
     ).toBe(false);
   });

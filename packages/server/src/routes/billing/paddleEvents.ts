@@ -70,14 +70,31 @@ const applyOrderedStatusUpdate = async (
     // not drive entitlement (the current subscription does), so just
     // advance its own clock and acknowledge — never touch the row's
     // subscription state, and never compare against the current
-    // subscription's clock.
+    // subscription's clock. The clock advances monotonically IN SQL
+    // (greatest): overlapping deliveries can both pass the decision
+    // above against the same read, and a plain assignment would let
+    // the later write stamp the older clock over the newer one.
     const decision = shouldApplyEvent(event, row.superseded_last_event_at);
     if (decision.apply && decision.eventAt !== null) {
-      await queryFn(
-        `update subscriptions set superseded_last_event_at = $2
+      const updated = await queryFn(
+        `update subscriptions
+            set superseded_last_event_at = greatest(
+                  superseded_last_event_at, $2
+                )
           where superseded_subscription_id = $1`,
         [subscriptionId, decision.eventAt],
       );
+      if ((updated.rowCount ?? 0) === 0) {
+        // Zero rows: a concurrent writer swapped the slot since the
+        // SELECT (e.g. refresh promoted this subscription to
+        // current), so the event was not applied to anything.
+        // Returning normally would let the webhook record it as
+        // processed and lose it — throw so Paddle redelivers and
+        // the redelivery is re-evaluated against the newer state.
+        throw new Error(
+          `Paddle status event ${event.event_id} raced a subscription replacement`,
+        );
+      }
     }
     return;
   }
@@ -92,13 +109,28 @@ const applyOrderedStatusUpdate = async (
     status === 'cancelled'
       ? ', cancel_at_period_end = true'
       : ', past_due_since = coalesce(past_due_since, now())';
-  await queryFn(
+  // Conditional on the stored clock still being the value the
+  // ordering decision was made against ($4): if a concurrent writer
+  // advanced it, this event's decision basis is gone — zero rows
+  // match, and throwing keeps the event retryable instead of
+  // stamping an older status over newer state or silently applying
+  // nothing. The clock itself also only moves forward (greatest).
+  const updated = await queryFn(
     `update subscriptions
         set status = $2${extraSet},
-            paddle_last_event_at = coalesce($3, paddle_last_event_at)
-      where paddle_subscription_id = $1`,
-    [subscriptionId, status, eventAt],
+            paddle_last_event_at = greatest(
+              paddle_last_event_at,
+              coalesce($3, paddle_last_event_at)
+            )
+      where paddle_subscription_id = $1
+        and paddle_last_event_at is not distinct from $4`,
+    [subscriptionId, status, eventAt, row.paddle_last_event_at],
   );
+  if ((updated.rowCount ?? 0) === 0) {
+    throw new Error(
+      `Paddle status event ${event.event_id} raced a newer subscription update`,
+    );
+  }
 };
 
 export const handlePaddleEvent = async (

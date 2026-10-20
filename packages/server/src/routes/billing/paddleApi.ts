@@ -92,12 +92,12 @@ export const findPaddleCustomerIdByEmail = async (
 
 /**
  * All subscriptions Paddle reports for a customer, in API order, across every
- * page. Returns null when any page request fails (vs. an empty list when Paddle
- * answered with none), so reconcile callers can tell failure from "no
- * subscription" — and never reconcile from a partial list, which could select a
- * historical subscription over the active one sitting on a later page. Paddle
- * paginates with an `after` cursor (the last id of the page); a page shorter
- * than per_page is the last one.
+ * page. Returns null when any page request fails OR pagination cannot be
+ * completed (vs. an empty list when Paddle answered with none), so reconcile
+ * callers can tell failure from "no subscription" — and never reconcile from a
+ * partial list, which could select a historical subscription over the active
+ * one sitting on an unread page. Paddle paginates with an `after` cursor (the
+ * last id of the page); a page shorter than per_page is the last one.
  */
 export const listPaddleSubscriptions = async (
   customerId: string,
@@ -134,12 +134,17 @@ export const listPaddleSubscriptions = async (
         ? (lastRaw as {id: string}).id
         : null;
     if (lastId === null || lastId === after) {
-      // A full page we cannot advance past: stop rather than loop.
-      return all;
+      // A full page we cannot advance past (missing or repeated cursor):
+      // the list is incomplete, and returning it as success could make
+      // refresh select a historical subscription while the active one
+      // sits on an unread page. Fail the whole list, like any other
+      // page failure, so the caller takes its error path.
+      return null;
     }
     after = lastId;
   }
-  return all;
+  // The page limit ran out with pages still unread: also incomplete.
+  return null;
 };
 
 /**
