@@ -2,7 +2,7 @@ import React from 'react';
 import type {PersonalAccessToken} from '@eciperay/types';
 import {fireEvent, render, screen} from '@testing-library/react-native';
 import {TamaguiProvider} from 'tamagui';
-import {tamaguiConfig} from '@spudly/ui';
+import {appTamaguiConfig} from '../../lib/tamaguiConfig';
 
 import {AccessTokensView} from './AccessTokensView';
 
@@ -36,7 +36,7 @@ const renderView = async (
     {
       wrapper: ({children}) => (
         <TamaguiProvider
-          config={tamaguiConfig}
+          config={appTamaguiConfig}
           defaultTheme="light"
         >
           {children}

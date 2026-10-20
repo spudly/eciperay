@@ -1,4 +1,4 @@
-import {tamaguiConfig} from '@spudly/ui';
+import {appTamaguiConfig} from '../../lib/tamaguiConfig';
 import React from 'react';
 import {fireEvent, render} from '@testing-library/react-native';
 import {TamaguiProvider} from 'tamagui';
@@ -11,7 +11,7 @@ const renderTabBar = async (
 ) =>
   await render(
     <TamaguiProvider
-      config={tamaguiConfig}
+      config={appTamaguiConfig}
       defaultTheme="light"
     >
       <RecipeDetailTabBar

@@ -7,7 +7,7 @@ import {
   createAnalytics,
   createNoopAnalyticsAdapter,
 } from '@eciperay/client';
-import {tamaguiConfig} from '@spudly/ui';
+import {appTamaguiConfig} from '../lib/tamaguiConfig';
 
 import {FeedbackForm} from './FeedbackForm';
 
@@ -39,7 +39,7 @@ describe('FeedbackForm', () => {
     await render(ui, {
       wrapper: ({children}) => (
         <TamaguiProvider
-          config={tamaguiConfig}
+          config={appTamaguiConfig}
           defaultTheme="light"
         >
           <AnalyticsProvider analytics={analytics}>
