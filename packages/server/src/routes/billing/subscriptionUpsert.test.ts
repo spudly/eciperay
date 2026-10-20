@@ -2292,6 +2292,443 @@ describe('upsertSubscription', () => {
     // Event timestamp is the last bind parameter.
     expect(upsert?.[1]?.[10]).toBe('2026-10-13T16:00:00.000Z');
   });
+
+  test('superseded promotion throws when live verification is unavailable', async () => {
+    // Same shape as the delayed-promotion test: sub_old is
+    // superseded (clock Oct 15), sub_new is current, and a delayed
+    // ACTIVE revision of sub_old dated Oct 17 passes the superseded
+    // clock. Promotion must be verified live; when Paddle cannot be
+    // checked at all, the upsert throws so the webhook stays
+    // retryable instead of promoting unverified state.
+    mockQuery.mockImplementation(((sql: string) => {
+      if (sql.includes('from plan_prices')) {
+        return Promise.resolve(makeQueryResult([{plan: 'plus'}]));
+      }
+      if (sql.includes('from subscriptions')) {
+        return Promise.resolve(
+          makeQueryResult([
+            {
+              status: 'active',
+              past_due_since: null,
+              paddle_subscription_id: 'sub_new',
+              paddle_last_event_at: '2026-10-17T00:00:00.000Z',
+              superseded_subscription_id: 'sub_old',
+              superseded_last_event_at: '2026-10-15T00:00:00.000Z',
+            },
+          ]),
+        );
+      }
+      if (sql.includes('insert into subscriptions')) {
+        return Promise.resolve(makeQueryResult([{}]));
+      }
+      return Promise.resolve(makeQueryResult([]));
+    }) as typeof mockQuery);
+    const realFetch = global.fetch;
+    process.env['PADDLE_API_KEY'] = 'test-paddle-key';
+    global.fetch = (async () =>
+      ({
+        ok: false,
+        status: 503,
+        json: async () => ({}),
+      }) as Response) as typeof fetch;
+    try {
+      const delayed = makeEvent({
+        occurred_at: '2026-10-17T00:00:00.000Z',
+        data: {...makeEvent().data, id: 'sub_old'},
+      });
+      await expect(
+        upsertSubscription(delayed, 'user-uuid-1', mockQuery),
+      ).rejects.toThrow(
+        'Paddle live verification unavailable for subscription sub_old',
+      );
+      expect(
+        mockQuery.mock.calls.some(args =>
+          args[0].includes('insert into subscriptions'),
+        ),
+      ).toBe(false);
+    } finally {
+      global.fetch = realFetch;
+      delete process.env['PADDLE_API_KEY'];
+    }
+  });
+
+  test('superseded promotion applies when the live state carries no updated_at', async () => {
+    // Paddle's live answer confirms sub_old is still active but
+    // carries no updated_at (the API omits it on some payloads):
+    // there is no newer live revision to compare against, so the
+    // promotion the superseded clock already admitted proceeds.
+    mockQuery.mockImplementation(((sql: string) => {
+      if (sql.includes('from plan_prices')) {
+        return Promise.resolve(makeQueryResult([{plan: 'plus'}]));
+      }
+      if (sql.includes('from subscriptions')) {
+        return Promise.resolve(
+          makeQueryResult([
+            {
+              status: 'active',
+              past_due_since: null,
+              paddle_subscription_id: 'sub_new',
+              paddle_last_event_at: '2026-10-17T00:00:00.000Z',
+              superseded_subscription_id: 'sub_old',
+              superseded_last_event_at: '2026-10-15T00:00:00.000Z',
+            },
+          ]),
+        );
+      }
+      if (sql.includes('insert into subscriptions')) {
+        return Promise.resolve(makeQueryResult([{}]));
+      }
+      return Promise.resolve(makeQueryResult([]));
+    }) as typeof mockQuery);
+    const realFetch = global.fetch;
+    process.env['PADDLE_API_KEY'] = 'test-paddle-key';
+    global.fetch = (async () =>
+      ({
+        ok: true,
+        json: async () => ({data: {status: 'active'}}),
+      }) as Response) as typeof fetch;
+    try {
+      const delayed = makeEvent({
+        occurred_at: '2026-10-17T00:00:00.000Z',
+        data: {...makeEvent().data, id: 'sub_old'},
+      });
+      await expect(
+        upsertSubscription(delayed, 'user-uuid-1', mockQuery),
+      ).resolves.toBe('applied');
+      const insert = mockQuery.mock.calls.find(args =>
+        args[0].includes('insert into subscriptions'),
+      );
+      // sub_old is promoted to current; sub_new is recorded as the
+      // superseded subscription with its own clock.
+      expect(insert?.[1]?.[4]).toBe('sub_old');
+      expect(insert?.[1]?.[11]).toBe('sub_new');
+      expect(insert?.[1]?.[12]).toBe('2026-10-17T00:00:00.000Z');
+    } finally {
+      global.fetch = realFetch;
+      delete process.env['PADDLE_API_KEY'];
+    }
+  });
+
+  test('snapshot replacement throws when live verification is unavailable', async () => {
+    // Stored: sub_c current, sub_b superseded. Refresh offers
+    // sub_a as a replacement, but Paddle cannot be checked at write
+    // time — installing the snapshot unverified could reactivate a
+    // subscription canceled after the list was fetched, so the
+    // upsert throws and the refresh surfaces a retryable error.
+    mockQuery.mockImplementation(((sql: string) => {
+      if (sql.includes('from plan_prices')) {
+        return Promise.resolve(makeQueryResult([{plan: 'plus'}]));
+      }
+      if (sql.includes('from subscriptions')) {
+        return Promise.resolve(
+          makeQueryResult([
+            {
+              status: 'active',
+              past_due_since: null,
+              paddle_subscription_id: 'sub_c',
+              paddle_last_event_at: '2026-10-14T00:00:00.000Z',
+              superseded_subscription_id: 'sub_b',
+              superseded_last_event_at: '2026-10-12T00:00:00.000Z',
+            },
+          ]),
+        );
+      }
+      if (sql.includes('insert into subscriptions')) {
+        return Promise.resolve(makeQueryResult([{}]));
+      }
+      return Promise.resolve(makeQueryResult([]));
+    }) as typeof mockQuery);
+    const realFetch = global.fetch;
+    process.env['PADDLE_API_KEY'] = 'test-paddle-key';
+    global.fetch = (async () =>
+      ({
+        ok: false,
+        status: 503,
+        json: async () => ({}),
+      }) as Response) as typeof fetch;
+    try {
+      const snapshot = makeEvent({
+        occurred_at: '2026-10-17T00:00:00.000Z',
+        data: {...makeEvent().data, id: 'sub_a'},
+      });
+      await expect(
+        upsertSubscription(snapshot, 'user-uuid-1', mockQuery, {
+          snapshot: true,
+        }),
+      ).rejects.toThrow(
+        'Paddle live verification unavailable for subscription sub_a',
+      );
+      expect(
+        mockQuery.mock.calls.some(args =>
+          args[0].includes('insert into subscriptions'),
+        ),
+      ).toBe(false);
+    } finally {
+      global.fetch = realFetch;
+      delete process.env['PADDLE_API_KEY'];
+    }
+  });
+
+  test('snapshot replacement applies when the live state carries no updated_at', async () => {
+    // Stored: sub_c current, sub_b superseded. Paddle confirms the
+    // replacement candidate sub_a is still active but reports no
+    // updated_at for it: with no newer live revision to compare,
+    // the snapshot installs as offered.
+    mockQuery.mockImplementation(((sql: string) => {
+      if (sql.includes('from plan_prices')) {
+        return Promise.resolve(makeQueryResult([{plan: 'plus'}]));
+      }
+      if (sql.includes('from subscriptions')) {
+        return Promise.resolve(
+          makeQueryResult([
+            {
+              status: 'active',
+              past_due_since: null,
+              paddle_subscription_id: 'sub_c',
+              paddle_last_event_at: '2026-10-14T00:00:00.000Z',
+              superseded_subscription_id: 'sub_b',
+              superseded_last_event_at: '2026-10-12T00:00:00.000Z',
+            },
+          ]),
+        );
+      }
+      if (sql.includes('insert into subscriptions')) {
+        return Promise.resolve(makeQueryResult([{}]));
+      }
+      return Promise.resolve(makeQueryResult([]));
+    }) as typeof mockQuery);
+    const realFetch = global.fetch;
+    process.env['PADDLE_API_KEY'] = 'test-paddle-key';
+    global.fetch = (async () =>
+      ({
+        ok: true,
+        json: async () => ({data: {status: 'active'}}),
+      }) as Response) as typeof fetch;
+    try {
+      const snapshot = makeEvent({
+        occurred_at: '2026-10-17T00:00:00.000Z',
+        data: {...makeEvent().data, id: 'sub_a'},
+      });
+      await expect(
+        upsertSubscription(snapshot, 'user-uuid-1', mockQuery, {
+          snapshot: true,
+        }),
+      ).resolves.toBe('applied');
+      const insert = mockQuery.mock.calls.find(args =>
+        args[0].includes('insert into subscriptions'),
+      );
+      expect(insert?.[1]?.[4]).toBe('sub_a');
+    } finally {
+      global.fetch = realFetch;
+      delete process.env['PADDLE_API_KEY'];
+    }
+  });
+
+  test('snapshot reselection applies when the live state carries no updated_at', async () => {
+    // Stored: sub_b current (canceled Oct 19), sub_a superseded at
+    // Oct 15. Refresh wants to reselect sub_a; Paddle confirms it
+    // is still active but reports no updated_at, so there is no
+    // newer live revision that could make the snapshot historical
+    // — the reselection proceeds.
+    mockQuery.mockImplementation(((sql: string) => {
+      if (sql.includes('from plan_prices')) {
+        return Promise.resolve(makeQueryResult([{plan: 'plus'}]));
+      }
+      if (sql.includes('from subscriptions')) {
+        return Promise.resolve(
+          makeQueryResult([
+            {
+              status: 'cancelled',
+              past_due_since: null,
+              paddle_subscription_id: 'sub_b',
+              paddle_last_event_at: '2026-10-19T00:00:00.000Z',
+              superseded_subscription_id: 'sub_a',
+              superseded_last_event_at: '2026-10-15T00:00:00.000Z',
+            },
+          ]),
+        );
+      }
+      if (sql.includes('insert into subscriptions')) {
+        return Promise.resolve(makeQueryResult([{}]));
+      }
+      return Promise.resolve(makeQueryResult([]));
+    }) as typeof mockQuery);
+    const realFetch = global.fetch;
+    process.env['PADDLE_API_KEY'] = 'test-paddle-key';
+    global.fetch = (async () =>
+      ({
+        ok: true,
+        json: async () => ({data: {status: 'active'}}),
+      }) as Response) as typeof fetch;
+    try {
+      const reselect = makeEvent({
+        occurred_at: '2026-10-15T00:00:00.000Z',
+        data: {...makeEvent().data, id: 'sub_a'},
+      });
+      await expect(
+        upsertSubscription(reselect, 'user-uuid-1', mockQuery, {
+          snapshot: true,
+        }),
+      ).resolves.toBe('applied');
+      const insert = mockQuery.mock.calls.find(args =>
+        args[0].includes('insert into subscriptions'),
+      );
+      expect(insert?.[1]?.[4]).toBe('sub_a');
+    } finally {
+      global.fetch = realFetch;
+      delete process.env['PADDLE_API_KEY'];
+    }
+  });
+
+  test('snapshot write refuses an unidentified candidate when the selection moved mid-flight', async () => {
+    // A snapshot candidate whose payload carries no subscription id
+    // still counts as a different subscription — but when the stored
+    // selection is not one the caller listed, the write is refused
+    // as stale before any live check or write happens.
+    mockQuery.mockImplementation(((sql: string) => {
+      if (sql.includes('from plan_prices')) {
+        return Promise.resolve(makeQueryResult([{plan: 'plus'}]));
+      }
+      if (sql.includes('from subscriptions')) {
+        return Promise.resolve(
+          makeQueryResult([
+            {
+              status: 'active',
+              past_due_since: null,
+              paddle_subscription_id: 'sub_current',
+              paddle_last_event_at: '2026-10-17T00:00:00.000Z',
+              superseded_subscription_id: null,
+              superseded_last_event_at: null,
+            },
+          ]),
+        );
+      }
+      if (sql.includes('insert into subscriptions')) {
+        return Promise.resolve(makeQueryResult([{}]));
+      }
+      return Promise.resolve(makeQueryResult([]));
+    }) as typeof mockQuery);
+    const unidentified = makeEvent({
+      occurred_at: '2026-10-18T00:00:00.000Z',
+      data: {...makeEvent().data, id: undefined},
+    });
+    await expect(
+      upsertSubscription(unidentified, 'user-uuid-1', mockQuery, {
+        snapshot: true,
+        knownSelectionIds: new Set(['sub_listed']),
+      }),
+    ).resolves.toBe('stale');
+    expect(
+      mockQuery.mock.calls.some(args =>
+        args[0].includes('insert into subscriptions'),
+      ),
+    ).toBe(false);
+  });
+
+  test('snapshot replacement refuses an unidentified candidate when the listed selection changed inside the skew window', async () => {
+    // The stored clock for sub_cur sits one second past its listed
+    // revision — inside the legacy skew window, so clocks alone
+    // cannot tell a legacy occurred_at clock from a genuine change.
+    // The upsert revalidates sub_cur live: Paddle reports it active
+    // where the list said paused, so the selection changed and even
+    // an unidentified candidate is refused as stale.
+    mockQuery.mockImplementation(((sql: string) => {
+      if (sql.includes('from plan_prices')) {
+        return Promise.resolve(makeQueryResult([{plan: 'plus'}]));
+      }
+      if (sql.includes('from subscriptions')) {
+        return Promise.resolve(
+          makeQueryResult([
+            {
+              status: 'active',
+              past_due_since: null,
+              paddle_subscription_id: 'sub_cur',
+              paddle_last_event_at: '2026-10-17T00:00:01.000Z',
+              superseded_subscription_id: null,
+              superseded_last_event_at: null,
+            },
+          ]),
+        );
+      }
+      if (sql.includes('insert into subscriptions')) {
+        return Promise.resolve(makeQueryResult([{}]));
+      }
+      return Promise.resolve(makeQueryResult([]));
+    }) as typeof mockQuery);
+    const realFetch = global.fetch;
+    process.env['PADDLE_API_KEY'] = 'test-paddle-key';
+    global.fetch = (async () =>
+      ({
+        ok: true,
+        json: async () => ({
+          data: {status: 'active', updated_at: '2026-10-17T00:00:01.000Z'},
+        }),
+      }) as Response) as typeof fetch;
+    try {
+      const unidentified = makeEvent({
+        occurred_at: '2026-10-18T00:00:00.000Z',
+        data: {...makeEvent().data, id: undefined},
+      });
+      await expect(
+        upsertSubscription(unidentified, 'user-uuid-1', mockQuery, {
+          snapshot: true,
+          knownSelectionState: new Map([
+            [
+              'sub_cur',
+              {status: 'paused', updatedAt: '2026-10-17T00:00:00.000Z'},
+            ],
+          ]),
+        }),
+      ).resolves.toBe('stale');
+      expect(
+        mockQuery.mock.calls.some(args =>
+          args[0].includes('insert into subscriptions'),
+        ),
+      ).toBe(false);
+    } finally {
+      global.fetch = realFetch;
+      delete process.env['PADDLE_API_KEY'];
+    }
+  });
+
+  test('throws when the final write reports a null rowCount', async () => {
+    // pg reports a null rowCount for some commands; the conflict
+    // guard treats it like zero rows matched — the stored state
+    // moved after the SELECT — so the upsert throws and the caller
+    // retries against the newer state instead of acknowledging a
+    // write that never landed.
+    mockQuery.mockImplementation(((sql: string) => {
+      if (sql.includes('from plan_prices')) {
+        return Promise.resolve(makeQueryResult([{plan: 'plus'}]));
+      }
+      if (sql.includes('from subscriptions')) {
+        return Promise.resolve(
+          makeQueryResult([
+            {
+              status: 'active',
+              past_due_since: null,
+              paddle_subscription_id: 'sub_123',
+              paddle_last_event_at: '2026-10-17T00:00:00.000Z',
+              superseded_subscription_id: 'sub_old',
+              superseded_last_event_at: '2026-10-16T00:00:00.000Z',
+            },
+          ]),
+        );
+      }
+      if (sql.includes('insert into subscriptions')) {
+        return Promise.resolve({...makeQueryResult([{}]), rowCount: null});
+      }
+      return Promise.resolve(makeQueryResult([]));
+    }) as typeof mockQuery);
+
+    const snapshot = makeEvent({
+      occurred_at: '2026-10-18T00:00:00.000Z',
+      data: {...makeEvent().data, id: 'sub_123'},
+    });
+    await expect(
+      upsertSubscription(snapshot, 'user-uuid-1', mockQuery, {snapshot: true}),
+    ).rejects.toThrow('raced a subscription replacement');
+  });
 });
 
 describe('resolveSubscriptionUserId Paddle customer lookup', () => {
