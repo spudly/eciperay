@@ -301,6 +301,41 @@ export const upsertSubscription = async (
         listedCurrentMappedStatus !== existingRow.status);
   const selectionStaleMidFlight =
     selectionMovedMidFlight || currentSelectionChangedMidFlight;
+  // The ambiguous window inside that guard: the stored clock is
+  // past the listed revision but within the legacy skew, so the
+  // difference could be a pre-upgrade occurred_at clock (no change
+  // since listing) OR a genuine revision that landed within the
+  // same two seconds (a resume one second after the listed pause).
+  // Clocks cannot tell those apart — Paddle can: the snapshot
+  // replacement branches revalidate the CURRENT subscription live
+  // before writing when this window applies. Live state that still
+  // matches the listed status at no newer revision means the skew
+  // is legacy and the replacement may proceed; anything else is a
+  // changed selection. Unavailable verification throws, like the
+  // candidate checks, rather than accept a possibly-changed state.
+  const currentSelectionAmbiguousMidFlight =
+    listedCurrentState !== undefined &&
+    existingRow !== undefined &&
+    !Number.isNaN(listedCurrentUpdatedMs) &&
+    !Number.isNaN(storedClockMs) &&
+    storedClockMs > listedCurrentUpdatedMs &&
+    storedClockMs <= listedCurrentUpdatedMs + LEGACY_CLOCK_SKEW_MS;
+  const currentSelectionChangedLive = async (): Promise<boolean> => {
+    const live = await fetchPaddleSubscriptionState(storedId as string);
+    if (live === null) {
+      throw new Error(
+        `Paddle live verification unavailable for subscription ${storedId}`,
+      );
+    }
+    const liveUpdatedMs =
+      live.updatedAt !== null ? Date.parse(live.updatedAt) : Number.NaN;
+    return (
+      live.status !== listedCurrentState?.status ||
+      (!Number.isNaN(liveUpdatedMs) &&
+        !Number.isNaN(listedCurrentUpdatedMs) &&
+        liveUpdatedMs > listedCurrentUpdatedMs)
+    );
+  };
   // Ordering uses TWO clocks: paddle_last_event_at belongs to the
   // current subscription only, and superseded_last_event_at to the
   // subscription it replaced. Comparing an event against the other
@@ -349,6 +384,27 @@ export const upsertSubscription = async (
         serverLog(
           'warn',
           'Paddle snapshot reselection raced a newer selection',
+          {
+            eventType: event.event_type,
+            eventId: event.event_id,
+            subscriptionId: eventSubId,
+            currentSubscriptionId: storedId ?? 'unknown',
+          },
+        );
+        return 'stale';
+      }
+      if (
+        currentSelectionAmbiguousMidFlight &&
+        (await currentSelectionChangedLive())
+      ) {
+        // The stored clock's sub-skew advance past the listed
+        // revision was a genuine change to the current
+        // subscription, not a legacy clock: the caller's ranking
+        // no longer describes the selection. Refuse; the caller
+        // re-fetches and re-ranks.
+        serverLog(
+          'warn',
+          'Paddle snapshot reselection raced a changed selection',
           {
             eventType: event.event_type,
             eventId: event.event_id,
@@ -539,6 +595,27 @@ export const upsertSubscription = async (
         subscriptionId: eventSubId ?? 'unknown',
         currentSubscriptionId: storedId ?? 'unknown',
       });
+      return 'stale';
+    }
+    if (
+      currentSelectionAmbiguousMidFlight &&
+      (await currentSelectionChangedLive())
+    ) {
+      // The stored clock's sub-skew advance past the listed
+      // revision was a genuine change to the current subscription,
+      // not a legacy clock: the caller's ranking no longer
+      // describes the selection. Refuse; the caller re-fetches and
+      // re-ranks.
+      serverLog(
+        'warn',
+        'Paddle snapshot replacement raced a changed selection',
+        {
+          eventType: event.event_type,
+          eventId: event.event_id,
+          subscriptionId: eventSubId ?? 'unknown',
+          currentSubscriptionId: storedId ?? 'unknown',
+        },
+      );
       return 'stale';
     }
     if (eventSubId !== null) {
