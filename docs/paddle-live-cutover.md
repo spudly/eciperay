@@ -22,7 +22,7 @@ Safety rails in code:
 
 - The server refuses to boot with `PADDLE_ENVIRONMENT=production` when
   `PADDLE_API_KEY` or `PADDLE_WEBHOOK_SECRET` is missing, or when
-  `PADDLE_API_BASE` still points at the sandbox host
+  `PADDLE_API_BASE` is not a valid URL or still points at the sandbox host
   (`packages/server/src/lib/paddleConfig.ts`).
 - The production deploy workflow refuses to build with
   `PADDLE_ENVIRONMENT=production` when the `VITE_PADDLE_CLIENT_TOKEN` secret is
@@ -60,10 +60,20 @@ it cannot be done from code.
    rows — `delete from subscriptions;` on the production database (the table
    only ever holds paying users, and at this point all of them are sandbox test
    purchases). Real live subscriptions repopulate it via the live webhook.
-6. **Fly production secrets** (app `eciperay`):
-   - `PADDLE_ENVIRONMENT=production`
-   - `PADDLE_API_KEY=<live API key>`
-   - `PADDLE_WEBHOOK_SECRET=<live webhook signing secret from step 3>`
+6. **Fly production secrets** (app `eciperay`) — **stage them, do not apply them
+   yet**:
+   ```
+   fly secrets set --stage -a eciperay \
+     PADDLE_ENVIRONMENT=production \
+     PADDLE_API_KEY=<live API key> \
+     PADDLE_WEBHOOK_SECRET=<live webhook signing secret from step 3>
+   ```
+   `--stage` matters: an unstaged `fly secrets set` restarts the running
+   machines immediately, which would flip the server to live billing while the
+   deployed image still contains the sandbox web bundle and before migration 018
+   has applied the live prices — a server/web mismatch the startup guards cannot
+   detect. Staged secrets take effect on the next deploy (step 9), so server,
+   web bundle, and prices flip in the same release.
    - Leave `PADDLE_API_BASE` unset (derived from the environment), or set it
      explicitly to `https://api.paddle.com`.
 7. **GitHub settings** (repo `spudly/eciperay`):
