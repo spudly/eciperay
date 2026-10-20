@@ -3,25 +3,46 @@ import {execSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 
 import {
+  resolveDeployTargetsFromPaths,
   resolveDeployTargetsFromSubjects,
   writeGithubOutput,
 } from './resolveDeployTargets.ts';
 
 const TAG_PATTERN = /^v\d/u;
 
-export const getReleaseCommitSubjects = (
+// Record separator printed before each commit subject so the parser can
+// attribute every --name-only file list to the commit that touched it.
+const RECORD_SEPARATOR = '\x1e';
+
+const RELEASE_COMMIT_PREFIX = 'chore(release):';
+
+/**
+ * Collect the files changed between two release tags.
+ *
+ * Files are gathered per commit (not from the two trees' diff) so the automated
+ * release commit can be excluded: it bumps the version field of every
+ * package.json under packages/, which would otherwise mark every package as
+ * changed on every release. Non-release commits that touch a package.json (e.g.
+ * a dependency bump) still count.
+ */
+export const getReleaseChangedPaths = (
   prevTag: string,
   newTag: string,
   exec: typeof execSync = execSync,
 ): string[] => {
-  const range = prevTag ? `${prevTag}..${newTag}` : `${newTag}^`;
-  const output = exec(`git log ${range} --pretty=format:%s`, {
+  const range = `${prevTag}..${newTag}`;
+  const output = exec(`git log ${range} --name-only --pretty=format:%x1e%s`, {
     encoding: 'utf8',
-  }).trim();
-  if (!output) {
-    return [];
-  }
-  return output.split('\n');
+  });
+
+  return output.split(RECORD_SEPARATOR).flatMap(record => {
+    const [subjectLine, ...fileLines] = record.split('\n');
+    if (!subjectLine || subjectLine.startsWith(RELEASE_COMMIT_PREFIX)) {
+      return [];
+    }
+
+    return fileLines.map(line => line.trim()).filter(Boolean);
+  });
 };
 
 export const resolveDeployTargetsFromTags = (
@@ -29,8 +50,14 @@ export const resolveDeployTargetsFromTags = (
   newTag: string,
   exec: typeof execSync = execSync,
 ) => {
-  const subjects = getReleaseCommitSubjects(prevTag, newTag, exec);
-  return resolveDeployTargetsFromSubjects(subjects);
+  // No previous tag means no baseline to diff against (first release):
+  // deploy everything rather than risk silently skipping a target.
+  if (!prevTag) {
+    return {fly: true, android: true};
+  }
+
+  const paths = getReleaseChangedPaths(prevTag, newTag, exec);
+  return resolveDeployTargetsFromPaths(paths);
 };
 
 export const isTagRangeArgv = (
@@ -57,6 +84,9 @@ export const runResolveDeployTargetsCli = (
   argv: string[] = process.argv.slice(2),
   exec: typeof execSync = execSync,
 ): void => {
+  // release.yml only ever uses the tag-range / --first-release modes,
+  // which resolve from the changed files. Passing raw commit subjects is
+  // a manual fallback kept for ad-hoc checks.
   const firstReleaseIndex = argv.indexOf('--first-release');
   const targets =
     firstReleaseIndex === -1
