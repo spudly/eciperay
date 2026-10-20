@@ -85,4 +85,33 @@ describe('POST /auth/sync', () => {
     expect(res.status).toBe(500);
     expect(res.body).toMatchObject({error: 'Internal server error'});
   });
+
+  test('two concurrent syncs for a brand-new user both return 200 when one insert loses the users_pkey race', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    nockSupabaseGetUser('user-uuid-1');
+    // Simulate Postgres for two racing first-login inserts of the same
+    // new user: one insert violates users_pkey (issue #157) while the
+    // other creates the row; the loser must retry and succeed.
+    mockQuery.mockRejectedValueOnce(
+      Object.assign(
+        new Error(
+          'duplicate key value violates unique constraint "users_pkey"',
+        ),
+        {code: '23505', constraint: 'users_pkey'},
+      ),
+    );
+    const app = getApp();
+    const [first, second] = await Promise.all([
+      request(app)
+        .post('/api/auth/sync')
+        .set('Authorization', 'Bearer valid-token')
+        .send({displayName: 'Test User'}),
+      request(app)
+        .post('/api/auth/sync')
+        .set('Authorization', 'Bearer valid-token')
+        .send({displayName: 'Test User'}),
+    ]);
+    expect(first.status).toBe(200);
+    expect(second.status).toBe(200);
+  });
 });
