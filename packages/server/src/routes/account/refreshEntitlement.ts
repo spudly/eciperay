@@ -102,11 +102,18 @@ export const refreshEntitlement = async (
     return;
   }
 
-  const subRow = await queryFn<{paddle_customer_id: string | null}>(
-    'select paddle_customer_id from subscriptions where user_id = $1',
+  const subRow = await queryFn<{
+    paddle_customer_id: string | null;
+    paddle_subscription_id: string | null;
+  }>(
+    'select paddle_customer_id, paddle_subscription_id from subscriptions where user_id = $1',
     [req.userId],
   );
   let customerId = subRow.rows[0]?.paddle_customer_id ?? null;
+  // The selection stored as this refresh begins: together with the
+  // fetched list's ids it defines what a snapshot write may
+  // legitimately replace (see knownSelectionIds below).
+  const preFetchSubscriptionId = subRow.rows[0]?.paddle_subscription_id ?? null;
   if (!customerId && req.userEmail) {
     try {
       customerId = await findPaddleCustomerIdByEmail(req.userEmail);
@@ -142,22 +149,41 @@ export const refreshEntitlement = async (
   // (bounded: a second stale is accepted as the no-op case). The
   // loop never blindly continues into lower-ranked candidates from
   // the stale list — the re-ranked list decides.
-  // A granting candidate (active / past_due) skipped ONLY because
-  // its price is unmapped still outranks every non-granting
-  // candidate: falling through to an older canceled subscription
-  // would replace a still-paying user's entitlement with the
-  // canceled one and downgrade them to Free. Once such a candidate
-  // has been seen, only other granting candidates may be tried;
-  // if none is usable, the stored entitlement stands.
-  let unpricedGrantingSeen = false;
   for (let pass = 0; pass < 2; pass += 1) {
     const candidates = [...subscriptions].sort((a, b) => {
       const byStatus = statusPriority(a) - statusPriority(b);
       return byStatus !== 0 ? byStatus : periodEndMs(b) - periodEndMs(a);
     });
+    // What this pass's writes may legitimately replace: the ids in
+    // THIS list, plus the subscription stored when the refresh
+    // began. A write-time selection outside that set was installed
+    // by a webhook mid-refresh (e.g. a newly activated
+    // subscription) and must not be overwritten from this list —
+    // the upsert refuses, and the re-fetch pass re-ranks with the
+    // new subscription included.
+    const knownSelectionIds = new Set<string>(
+      subscriptions
+        .map(sub => sub['id'])
+        .filter((id): id is string => typeof id === 'string'),
+    );
+    if (preFetchSubscriptionId !== null) {
+      knownSelectionIds.add(preFetchSubscriptionId);
+    }
+    // A candidate skipped ONLY because its price is unmapped still
+    // represents Paddle's current granting state (it is active or
+    // past_due in the live list): falling through to a lower
+    // candidate can only downgrade from it — a canceled one ends
+    // access outright, and a past_due one may already be out of
+    // grace, resolving to Free when it seeds its grace clock.
+    // Once such a candidate has been seen, only another ACTIVE
+    // candidate (which certainly grants) may be tried; if none is
+    // usable, the stored entitlement stands. The flag is per-pass:
+    // it describes THIS list, and a re-fetched list is judged on
+    // its own contents.
+    let unpricedGrantingSeen = false;
     let sawStale = false;
     for (const candidate of candidates) {
-      if (unpricedGrantingSeen && statusPriority(candidate) > 1) {
+      if (unpricedGrantingSeen && statusPriority(candidate) > 0) {
         continue;
       }
       try {
@@ -165,7 +191,7 @@ export const refreshEntitlement = async (
           toSyntheticEvent(candidate),
           req.userId,
           queryFn,
-          {snapshot: true},
+          {snapshot: true, knownSelectionIds},
         );
         if (outcome === 'invalid') {
           // Unusable candidate (e.g. a paused subscription, whose status
