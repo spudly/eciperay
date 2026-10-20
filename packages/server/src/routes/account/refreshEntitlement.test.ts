@@ -803,6 +803,85 @@ describe('POST /api/account/entitlement/refresh', () => {
     expect(insert?.[1]?.[4]).toBe('sub_b');
   });
 
+  test('a listed subscription that resumed mid-refresh is not replaced by a canceled one', async () => {
+    // The list ranks paused sub_b ahead of canceled sub_a. sub_b's
+    // resume webhook committed after the list was fetched: the
+    // stored row is sub_b ACTIVE at Oct 19, while the list showed
+    // it paused at Oct 17. Refresh skips paused sub_b as invalid,
+    // but sub_b is in the known ids — without validating the
+    // listed STATE, canceled sub_a would replace the newly active
+    // sub_b and return Free. The upsert refuses ('stale'), the
+    // refresh re-fetches once, and the stored entitlement stands.
+    storedSub = {
+      plan: 'plus',
+      status: 'active',
+      paddle_customer_id: 'ctm_999',
+      paddle_subscription_id: 'sub_b',
+      paddle_last_event_at: '2026-10-19T00:00:00.000Z',
+      current_period_end: futureDate(),
+      cancel_at_period_end: false,
+      past_due_since: null,
+    };
+    const listed: Array<Record<string, unknown>> = [
+      paddleSub({
+        id: 'sub_b',
+        status: 'paused',
+        updated_at: '2026-10-17T00:00:00.000Z',
+      }),
+      paddleSub({
+        id: 'sub_a',
+        status: 'canceled',
+        updated_at: '2026-10-16T00:00:00.000Z',
+      }),
+    ];
+    let listCalls = 0;
+    global.fetch = async (url: unknown) => {
+      const urlStr = String(url);
+      if (urlStr.includes('paddle.com')) {
+        fetchUrls.push(urlStr);
+        if (urlStr.includes('/subscriptions?')) {
+          listCalls += 1;
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({data: listed}),
+          } as Response;
+        }
+        if (urlStr.includes('/subscriptions/')) {
+          const id = urlStr.split('/subscriptions/')[1];
+          const entry = listed.find(s => s['id'] === id);
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              data: {
+                status: entry?.['status'],
+                updated_at: entry?.['updated_at'],
+              },
+            }),
+          } as Response;
+        }
+        return {
+          ok: true,
+          status: 200,
+          json: async () => customersByEmail,
+        } as Response;
+      }
+      return realFetch(url as never);
+    };
+    const res = await postRefresh();
+    expect(res.status).toBe(200);
+    expect(res.body.plan).toBe('plus');
+    expect(res.body.status).toBe('active');
+    expect(listCalls).toBe(2);
+    expect(
+      mockQuery.mock.calls.some(args =>
+        args[0].includes('insert into subscriptions'),
+      ),
+    ).toBe(false);
+    expect(storedSub?.paddle_subscription_id).toBe('sub_b');
+  });
+
   test('an unpriced active candidate is not replaced by a canceled one', async () => {
     // The stored subscription is still active at Paddle but moved
     // to a price the plan_prices seed does not know; an older

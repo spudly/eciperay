@@ -169,6 +169,30 @@ export const refreshEntitlement = async (
     if (preFetchSubscriptionId !== null) {
       knownSelectionIds.add(preFetchSubscriptionId);
     }
+    // The listed state behind those ids: a subscription that WAS
+    // listed can still change mid-refresh (a webhook resumes a
+    // listed-paused subscription, say), and the id guard alone
+    // would let a lower-ranked candidate ranked against its old
+    // state replace its newer one. The upsert compares the stored
+    // row against this state and refuses a replacement when the
+    // current subscription has advanced past its listed revision.
+    const knownSelectionState = new Map<
+      string,
+      {status: string | null; updatedAt: string | null}
+    >(
+      subscriptions
+        .filter(
+          (sub): sub is Record<string, unknown> & {id: string} =>
+            typeof sub['id'] === 'string',
+        )
+        .map(sub => [
+          sub['id'],
+          {
+            status: sub['status'] as string | null,
+            updatedAt: sub['updated_at'] as string | null,
+          },
+        ]),
+    );
     // A candidate skipped ONLY because its price is unmapped still
     // represents Paddle's current granting state (it is active or
     // past_due in the live list): falling through to a lower
@@ -191,7 +215,7 @@ export const refreshEntitlement = async (
           toSyntheticEvent(candidate),
           req.userId,
           queryFn,
-          {snapshot: true, knownSelectionIds},
+          {snapshot: true, knownSelectionIds, knownSelectionState},
         );
         if (outcome === 'invalid') {
           // Unusable candidate (e.g. a paused subscription, whose status
