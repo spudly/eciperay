@@ -24,6 +24,14 @@ const RELEASE_COMMIT_PREFIX = 'chore(release):';
  * package.json under packages/, which would otherwise mark every package as
  * changed on every release. Non-release commits that touch a package.json (e.g.
  * a dependency bump) still count.
+ *
+ * Two git log flags keep the per-commit lists complete:
+ *
+ * - --no-renames: with rename detection, a moved file is reported only at its
+ *   destination, hiding that the source package lost a file.
+ * - --diff-merges=first-parent: merge commits otherwise list no files, so an edit
+ *   made while resolving a merge (or the changes the merge brings in) would be
+ *   missed.
  */
 export const getReleaseChangedPaths = (
   prevTag: string,
@@ -31,9 +39,10 @@ export const getReleaseChangedPaths = (
   exec: typeof execSync = execSync,
 ): string[] => {
   const range = `${prevTag}..${newTag}`;
-  const output = exec(`git log ${range} --name-only --pretty=format:%x1e%s`, {
-    encoding: 'utf8',
-  });
+  const output = exec(
+    `git log ${range} --name-only --no-renames --diff-merges=first-parent --pretty=format:%x1e%s`,
+    {encoding: 'utf8'},
+  );
 
   return output.split(RECORD_SEPARATOR).flatMap(record => {
     const [subjectLine, ...fileLines] = record.split('\n');
