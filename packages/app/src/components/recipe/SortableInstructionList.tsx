@@ -43,6 +43,7 @@ const styles = {
     borderRadius: tokens.radii.sm,
     borderWidth: 1,
     borderColor: tokens.colors.gray.gray4,
+    backgroundColor: eciperayTheme.semantic.surface,
     paddingHorizontal: tokens.spacing[2],
     paddingVertical: tokens.spacing[1],
     fontSize: tokens.typography.fontSize.sm,

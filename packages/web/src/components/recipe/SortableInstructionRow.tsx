@@ -39,7 +39,7 @@ export const SortableInstructionRow = ({
     >
       <span className="text-muted pbs-2 text-sm">{index + 1}.</span>
       <textarea
-        className="flex-1 rounded-sm border border-gray-300 px-2 py-1 text-sm"
+        className="flex-1 rounded-sm border border-gray-300 bg-field px-2 py-1 text-sm"
         required
         rows={2}
         value={instruction.body}

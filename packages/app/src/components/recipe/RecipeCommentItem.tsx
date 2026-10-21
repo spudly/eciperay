@@ -30,6 +30,9 @@ type Props = {
   onDelete: () => void;
 };
 
+// Field backgrounds (issue #167): fields here render through @spudly/ui
+// components, which all share the Warm Harvest $surface field background.
+// The web mirror matches via its bg-field token (#fffdf8, the same surface).
 export const RecipeCommentItem = ({
   comment,
   currentUserId,

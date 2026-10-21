@@ -27,6 +27,11 @@ type Props = {
  */
 const WHITE = eciperayTheme.semantic.surface;
 
+// Field background (issue #167): the notes field fills with
+// eciperayTheme.semantic.surface (the Warm Harvest surface) in the light
+// variant — the shared field background. The web mirror matches via its
+// bg-field token (#fffdf8). The dark variant keeps its translucent fill
+// for the dark cooking overlay.
 export const CookLogForm = ({
   onSubmit,
   onSkip,

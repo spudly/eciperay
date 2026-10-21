@@ -163,7 +163,7 @@ export const AiSessionFlow = ({
           <textarea
             required
             rows={6}
-            className="rounded-lg border border-gray-300 px-4 py-3 inline-full"
+            className="rounded-lg border border-gray-300 bg-field px-4 py-3 inline-full"
             placeholder={config.promptPlaceholder}
             value={prompt}
             onChange={e => {
@@ -223,7 +223,7 @@ export const AiSessionFlow = ({
         >
           <textarea
             rows={3}
-            className="rounded-lg border border-gray-300 px-4 py-3 inline-full"
+            className="rounded-lg border border-gray-300 bg-field px-4 py-3 inline-full"
             placeholder="Ask for changes to the plan…"
             value={followUp}
             onChange={e => {

@@ -52,7 +52,7 @@ export const RecipeCommentItem = ({
       {isEditing ? (
         <textarea
           className="
-            mbe-2 rounded-lg border border-gray-300 px-3 py-2 text-sm
+            mbe-2 rounded-lg border border-gray-300 bg-field px-3 py-2 text-sm
             inline-full
           "
           value={editDraft}

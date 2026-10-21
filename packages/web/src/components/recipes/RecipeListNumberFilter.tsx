@@ -18,7 +18,7 @@ export const RecipeListNumberFilter = ({
       type="number"
       inputMode="numeric"
       className="
-        rounded-xl border border-gray-200 bg-white px-4 py-3 text-base
+        rounded-xl border border-gray-200 bg-field px-4 py-3 text-base
         inline-full
       "
       value={value}

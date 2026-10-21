@@ -3,6 +3,9 @@ import {SelectField as DsSelectField} from '@spudly/ui';
 import {useState} from 'react';
 import {View} from 'tamagui';
 
+// Field background (issue #167): the DS SelectField fills with the Warm
+// Harvest $surface token, the shared field background. The web mirror is a
+// native <select> and matches via its bg-field token (#fffdf8).
 export const SelectField = ({
   label,
   value,
