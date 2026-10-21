@@ -8,8 +8,10 @@ import {api} from '../../lib/api';
 
 import {RecipeVisibilityControls} from './RecipeVisibilityControls';
 
-jest.spyOn(Linking, 'openURL').mockImplementation(() => Promise.resolve(true));
-jest.spyOn(Share, 'share').mockResolvedValue({action: 'sharedAction'});
+jest.spyOn(Linking, 'openURL').mockImplementation(() => Promise.resolve());
+jest
+  .spyOn(Share, 'share')
+  .mockResolvedValue({action: 'sharedAction', activityType: undefined});
 
 jest.mock('../../lib/api', () => ({
   api: {recipes: {patchSharing: jest.fn(), rotateShareToken: jest.fn()}},

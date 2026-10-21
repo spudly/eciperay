@@ -2,9 +2,6 @@ const path = require('node:path');
 
 const {getDefaultConfig, mergeConfig} = require('@react-native/metro-config');
 const {
-  patchMetroSourceMapStringForPackedMaps,
-} = require('@expo/metro-config/build/serializer/sourceMap');
-const {
   withExpoSerializers,
 } = require('@expo/metro-config/build/serializer/withExpoSerializers');
 const {resolve: metroResolve} = require('metro-resolver');
@@ -19,10 +16,10 @@ const {writeEnvShim} = require('./scripts/envShim.cjs');
 // serializer.unstable_beforeAssetSerializationPlugins, which is the hook the
 // PostHog plugin (below) uses to inject the debug ID that links bundles to
 // their source maps — without the Expo serializer the plugin is silently
-// inert. Expo's serializer stores packed source maps instead of Babel tuple
-// arrays, so Metro's standalone .map endpoint (used by DevTools) must be
-// patched to understand that format.
-patchMetroSourceMapStringForPackedMaps();
+// inert. (@expo/metro-config 58 removed the packed source-map format and
+// the patchMetroSourceMapStringForPackedMaps patch that Metro's standalone
+// .map endpoint needed to read it; the 58 serializer emits standard source
+// maps, so no patch is required.)
 
 const projectRoot = __dirname; // packages/app/
 const monorepoRoot = path.resolve(projectRoot, '../..'); // repo root

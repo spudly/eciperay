@@ -7,7 +7,7 @@ import {LegalLinks} from './LegalLinks';
 
 describe('LegalLinks', () => {
   beforeEach(() => {
-    jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
+    jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
   });
 
   afterEach(() => {
