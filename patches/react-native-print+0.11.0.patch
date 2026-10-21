@@ -1,0 +1,12 @@
+diff --git a/node_modules/react-native-print/android/build.gradle b/node_modules/react-native-print/android/build.gradle
+--- a/node_modules/react-native-print/android/build.gradle
++++ b/node_modules/react-native-print/android/build.gradle
+@@ -5,7 +5,7 @@
+      
+     defaultConfig {
+         minSdkVersion = 21
+-        compileSdkVersion = 31
++        compileSdkVersion = 36
+         targetSdkVersion 29
+         versionCode 1
+         versionName "1.0"
