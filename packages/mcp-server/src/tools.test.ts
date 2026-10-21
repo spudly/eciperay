@@ -8,6 +8,8 @@ import {createEciperayMcpServer} from './mcpServer.js';
 
 const storedRecipe = {
   id: 'recipe-1',
+  contentRevision: 1,
+  versionId: 'version-1',
   title: 'Salt Water Taffy',
   description: null,
   servings: 1,
@@ -67,22 +69,24 @@ describe('update_recipe tool', () => {
 
   test('updating only servings changes that field and no others', async () => {
     const putBodies: unknown[] = [];
+    let current: Record<string, unknown> = {...storedRecipe};
     globalThis.fetch = (async (_url: string | URL, init?: RequestInit) => {
       if (init?.method === 'PUT') {
         const body = JSON.parse(String(init.body)) as Record<string, unknown>;
         putBodies.push(body);
+        current = {...storedRecipe, ...body};
         return {
           ok: true,
           status: 200,
-          text: async () => JSON.stringify({...storedRecipe, ...body}),
-          json: async () => ({...storedRecipe, ...body}),
+          text: async () => JSON.stringify(current),
+          json: async () => current,
         } as Response;
       }
       return {
         ok: true,
         status: 200,
-        text: async () => JSON.stringify(storedRecipe),
-        json: async () => storedRecipe,
+        text: async () => JSON.stringify(current),
+        json: async () => current,
       } as Response;
     }) as typeof fetch;
 

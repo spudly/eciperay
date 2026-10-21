@@ -133,7 +133,7 @@ export const registerTools = (
     {
       title: 'Update recipe',
       description:
-        'Update an existing recipe in your Eciperay collection. Only the fields you provide change; omitted fields keep their stored values. Provide null for description, prepTimeMin, or cookTimeMin to clear them. Only your own recipes can be updated.',
+        'Update an existing recipe in your Eciperay collection. Only the fields you provide change; omitted fields keep their stored values. Provide null for description, prepTimeMin, or cookTimeMin to clear them. Only your own recipes can be updated. Note: ingredients and instructions cannot be changed here — content is locked on the active version of a recipe, so passing a changed list returns an error; create a new version in the app to edit content.',
       inputSchema: {
         id: z.string().describe('Recipe id, from search_recipes'),
         title: z.string().min(1).optional().describe('Recipe title'),

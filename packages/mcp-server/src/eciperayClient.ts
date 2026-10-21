@@ -80,6 +80,19 @@ export const createClient = (config: EciperayClientConfig) => {
      * endpoints resolve recipes by owner, so a recipe that does not exist or
      * belongs to someone else fails with the API's 404 instead of silently
      * doing nothing.
+     *
+     * Three safeguards on top of the raw read-merge-write:
+     *
+     * - Content edits are refused with a clear error (see
+     *   assertContentUnchanged): the API locks ingredients/instructions on the
+     *   active version, so a changed list would only fail with a raw 409 from
+     *   the PUT.
+     * - The recipe is re-read just before the PUT and the merge is redone once if
+     *   its contentRevision moved, so a concurrent edit is not silently
+     *   overwritten with stale preserved fields; a second move raises a
+     *   conflict error instead.
+     * - The result is a fresh GET, so callers receive the same representation as
+     *   get_recipe (the PUT response omits the ratings enrichment GET adds).
      */
     updateRecipe: async (id: string, patch: RecipeUpdatePatch) => {
       if (!hasRecipeUpdateFields(patch)) {
@@ -87,13 +100,28 @@ export const createClient = (config: EciperayClientConfig) => {
           'update_recipe requires at least one field to update; every field was omitted.',
         );
       }
-      const current = await request<RecipeDetailForUpdate>(
-        `/recipes/${encodeURIComponent(id)}`,
+      const path = `/recipes/${encodeURIComponent(id)}`;
+      let current = await request<RecipeDetailForUpdate>(path);
+      assertContentUnchanged(current, patch);
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        const payload = buildRecipeUpdatePayload(current, patch);
+        const fresh = await request<RecipeDetailForUpdate>(path);
+        if (
+          fresh.contentRevision === current.contentRevision &&
+          fresh.versionId === current.versionId
+        ) {
+          await request<unknown>(path, {
+            method: 'PUT',
+            body: JSON.stringify(payload),
+          });
+          return request<unknown>(path);
+        }
+        current = fresh;
+        assertContentUnchanged(current, patch);
+      }
+      throw new Error(
+        'update_recipe aborted: the recipe kept changing while the update was being applied, so no changes were written. Retry the update.',
       );
-      return request<unknown>(`/recipes/${encodeURIComponent(id)}`, {
-        method: 'PUT',
-        body: JSON.stringify(buildRecipeUpdatePayload(current, patch)),
-      });
     },
     listMealPlans: () => request<unknown[]>('/meal-plans'),
     getMealPlan: (id: string) =>
@@ -135,6 +163,8 @@ export type RecipeUpdatePatch = {
 
 /** The recipe-detail shape returned by `GET /recipes/:id`, as read here. */
 type RecipeDetailForUpdate = {
+  contentRevision: number;
+  versionId: string;
   title: string;
   description: string | null;
   servings: number;
@@ -158,6 +188,59 @@ const PATCH_FIELDS: (keyof RecipeUpdatePatch)[] = [
   'instructions',
   'tagIds',
 ];
+
+const serializeIngredients = (
+  ingredients: readonly (Partial<RecipeIngredientInput> &
+    Record<string, unknown>)[],
+): string =>
+  [...ingredients]
+    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+    .map(ingredient =>
+      [
+        ingredient.name,
+        ingredient.quantity ?? null,
+        ingredient.unit ?? null,
+        ingredient.notes ?? null,
+        ingredient.isOptional ?? false,
+      ].join('|'),
+    )
+    .join(';');
+
+const serializeInstructions = (
+  instructions: readonly (Partial<RecipeInstructionInput> &
+    Record<string, unknown>)[],
+): string =>
+  [...instructions]
+    .sort((a, b) => (a.stepNumber ?? 0) - (b.stepNumber ?? 0))
+    .map(instruction => `${instruction.stepNumber}:${instruction.body}`)
+    .join(';');
+
+/**
+ * Refuse ingredient/instruction changes with a clear error. The REST API locks
+ * content on a recipe's active version (only draft versions are
+ * content-editable, via the version workflow), so the full-replace PUT would
+ * reject a changed list with a raw 409. Lists identical to the stored ones are
+ * fine: they keep the PUT on its metadata-only path. Mirrors the comparison in
+ * the server's recipeContentEquals.
+ */
+export const assertContentUnchanged = (
+  current: RecipeDetailForUpdate,
+  patch: RecipeUpdatePatch,
+): void => {
+  const ingredientsChanged =
+    patch.ingredients !== undefined &&
+    serializeIngredients(patch.ingredients) !==
+      serializeIngredients(current.ingredients);
+  const instructionsChanged =
+    patch.instructions !== undefined &&
+    serializeInstructions(patch.instructions) !==
+      serializeInstructions(current.instructions);
+  if (ingredientsChanged || instructionsChanged) {
+    throw new Error(
+      'update_recipe cannot change ingredients or instructions: content is locked on the active version of a recipe. Create a new version in the app to edit content, or update metadata fields only (title, description, servings, prepTimeMin, cookTimeMin, tagIds).',
+    );
+  }
+};
 
 /** True when the patch provides at least one field to change. */
 export const hasRecipeUpdateFields = (patch: RecipeUpdatePatch): boolean =>
