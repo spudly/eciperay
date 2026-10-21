@@ -99,6 +99,30 @@ describe('RecipeForm', () => {
     }
   });
 
+  test('keeps the amber highlight on changed fields instead of bg-field', async () => {
+    const parentVersion = makeRecipeVersionDetail({title: 'Original Title'});
+    const initial = {
+      ...recipeVersionDetailToInput(parentVersion),
+      title: 'Changed Title',
+    };
+
+    await renderWithProviders(
+      <RecipeForm
+        initial={initial}
+        parentVersion={parentVersion}
+        submitLabel="Save"
+        onSubmit={mockOnSubmit()}
+      />,
+    );
+
+    const title = screen.getByLabelText('Title');
+    expect(title.className).toContain('bg-amber-50');
+    expect(title.className).not.toContain('bg-field');
+    const servings = screen.getByLabelText('Servings');
+    expect(servings.className).toContain('bg-field');
+    expect(servings.className).not.toContain('bg-amber-50');
+  });
+
   test('submits recipe input', async () => {
     const onSubmit = mockOnSubmit();
     await renderWithProviders(
