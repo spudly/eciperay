@@ -90,6 +90,16 @@ export const recipeListInfiniteQueryOptions = (
   getNextPageParam: getRecipeListNextPageParam,
 });
 
+export const RECIPE_FORM_OPTIONS_LIMIT = 100;
+
+// Flat (non-paginated) recipe list for the meal / meal-plan form pickers.
+// Uses its own query key — see queryKeys.recipeFormOptions for why sharing
+// the infinite list's key crashes both consumers (#171, #172).
+export const recipeFormOptionsQueryOptions = (list: ListRecipesFn) => ({
+  queryKey: queryKeys.recipeFormOptions(),
+  queryFn: () => list({limit: RECIPE_FORM_OPTIONS_LIMIT}),
+});
+
 export const sharedWithMeInfiniteQueryOptions = (
   listSharedWithMe: ListRecipesFn,
   filters: RecipeListFilters = {},

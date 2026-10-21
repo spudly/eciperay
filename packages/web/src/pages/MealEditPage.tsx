@@ -2,6 +2,7 @@ import {
   buildMealInputFromForm,
   errorMessage,
   queryKeys,
+  recipeFormOptionsQueryOptions,
 } from '@eciperay/client';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useState} from 'react';
@@ -31,10 +32,9 @@ export const MealEditPage = () => {
     enabled: isEdit,
   });
 
-  const {data: recipes = [], isLoading: recipesLoading} = useQuery({
-    queryKey: queryKeys.recipes({sort: 'newest', sortDir: 'desc'}),
-    queryFn: () => eciperay.recipes.list({limit: 100}),
-  });
+  const {data: recipes = [], isLoading: recipesLoading} = useQuery(
+    recipeFormOptionsQueryOptions(params => eciperay.recipes.list(params)),
+  );
 
   useEffect(() => {
     if (!meal) {
