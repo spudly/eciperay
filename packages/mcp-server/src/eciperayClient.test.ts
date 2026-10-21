@@ -9,6 +9,8 @@ import {
 
 const storedRecipe = {
   id: 'recipe-1',
+  contentRevision: 1,
+  versionId: 'version-1',
   title: 'Salt Water Taffy',
   description: 'Old-fashioned taffy',
   servings: 1,
@@ -175,25 +177,112 @@ describe('buildRecipeUpdatePayload', () => {
 });
 
 describe('client.updateRecipe', () => {
-  test('GETs the stored recipe, PUTs the merged payload, returns the update', async () => {
-    const updated = {...storedRecipe, servings: 40};
-    const calls = stubFetch(call =>
-      call.init?.method === 'PUT'
-        ? {status: 200, body: updated}
-        : {status: 200, body: storedRecipe},
-    );
+  test('GETs the stored recipe, PUTs the merged payload, returns a fresh GET', async () => {
+    const updated = {...storedRecipe, servings: 40, contentRevision: 2};
+    let putSeen = false;
+    const calls = stubFetch(call => {
+      if (call.init?.method === 'PUT') {
+        putSeen = true;
+        return {status: 200, body: {partial: 'put response is not returned'}};
+      }
+      return {status: 200, body: putSeen ? updated : storedRecipe};
+    });
     const result = await client().updateRecipe('recipe-1', {servings: 40});
+    // The PUT response lacks the ratings enrichment GET adds, so the tool
+    // returns the post-update GET instead of the PUT body.
     assert.deepEqual(result, updated);
-    assert.equal(calls.length, 2);
-    assert.equal(calls[0]?.url, 'http://api.test/api/recipes/recipe-1');
-    assert.equal(calls[1]?.url, 'http://api.test/api/recipes/recipe-1');
-    assert.equal(calls[1]?.init?.method, 'PUT');
-    const sent = JSON.parse(String(calls[1]?.init?.body)) as {
+    const put = calls.find(call => call.init?.method === 'PUT');
+    assert.ok(put);
+    assert.equal(put.url, 'http://api.test/api/recipes/recipe-1');
+    const sent = JSON.parse(String(put.init?.body)) as {
       servings: number;
       title: string;
     };
     assert.equal(sent.servings, 40);
     assert.equal(sent.title, 'Salt Water Taffy');
+  });
+
+  test('changing ingredients is refused with a clear error and no PUT', async () => {
+    const calls = stubFetch(() => ({status: 200, body: storedRecipe}));
+    await assert.rejects(
+      client().updateRecipe('recipe-1', {
+        ingredients: [
+          {
+            sortOrder: 0,
+            name: 'brown sugar',
+            quantity: 2,
+            unit: 'cups',
+            notes: null,
+            isOptional: false,
+          },
+        ],
+      }),
+      /cannot change ingredients or instructions/,
+    );
+    assert.equal(calls.filter(call => call.init?.method === 'PUT').length, 0);
+  });
+
+  test('re-sending the stored ingredients unchanged proceeds as metadata-only', async () => {
+    let putSeen = false;
+    const calls = stubFetch(call => {
+      if (call.init?.method === 'PUT') {
+        putSeen = true;
+        return {status: 200, body: {}};
+      }
+      return {status: 200, body: storedRecipe};
+    });
+    await client().updateRecipe('recipe-1', {
+      servings: 40,
+      ingredients: storedRecipe.ingredients.map(
+        ({sortOrder, name, quantity, unit, notes, isOptional}) => ({
+          sortOrder,
+          name,
+          quantity,
+          unit,
+          notes,
+          isOptional,
+        }),
+      ),
+    });
+    assert.equal(putSeen, true);
+    assert.equal(calls.filter(call => call.init?.method === 'PUT').length, 1);
+  });
+
+  test('a concurrent edit triggers one re-merge instead of overwriting it', async () => {
+    // First read sees revision 1; the pre-PUT re-read sees revision 2 with
+    // a description someone else set meanwhile; the update must preserve
+    // that description rather than PUT the stale one.
+    const concurrent = {
+      ...storedRecipe,
+      description: 'Edited elsewhere',
+      contentRevision: 2,
+    };
+    let getCount = 0;
+    let putBody: Record<string, unknown> | undefined;
+    stubFetch(call => {
+      if (call.init?.method === 'PUT') {
+        putBody = JSON.parse(String(call.init.body)) as Record<string, unknown>;
+        return {status: 200, body: {}};
+      }
+      getCount += 1;
+      return {status: 200, body: getCount === 1 ? storedRecipe : concurrent};
+    });
+    await client().updateRecipe('recipe-1', {servings: 40});
+    assert.equal(putBody?.['servings'], 40);
+    assert.equal(putBody?.['description'], 'Edited elsewhere');
+  });
+
+  test('a recipe that keeps changing aborts with a conflict error and no PUT', async () => {
+    let revision = 0;
+    const calls = stubFetch(() => {
+      revision += 1;
+      return {status: 200, body: {...storedRecipe, contentRevision: revision}};
+    });
+    await assert.rejects(
+      client().updateRecipe('recipe-1', {servings: 40}),
+      /kept changing/,
+    );
+    assert.equal(calls.filter(call => call.init?.method === 'PUT').length, 0);
   });
 
   test('a missing or foreign recipe errors and never issues a PUT', async () => {
