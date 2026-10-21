@@ -24,3 +24,21 @@ buildscript {
 }
 
 apply plugin: "com.facebook.react.rootproject"
+
+// AGP 9's built-in Kotlin compiles from a separate Kotlin source set that
+// does not inherit directories added to a module's Java source set.
+// react-native-localize adds its architecture-specific sources
+// (src/newarch, containing RNLocalizeModule.kt) only via java.srcDirs,
+// so under AGP 9 they are never compiled and RNLocalizePackage fails
+// with an unresolved reference. Mirror the Java source directories into
+// the Kotlin source set for that module. (patch-package cannot be used
+// here: the package is installed nested under packages/app/node_modules,
+// and patch-package only supports root-level packages.)
+subprojects { subproject ->
+    if (subproject.name == 'react-native-localize') {
+        subproject.afterEvaluate {
+            def mainSourceSet = subproject.android.sourceSets.main
+            mainSourceSet.kotlin.srcDirs = new ArrayList(mainSourceSet.java.srcDirs)
+        }
+    }
+}
