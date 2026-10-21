@@ -1,8 +1,8 @@
 diff --git a/node_modules/@react-native-async-storage/async-storage/android/build.gradle b/node_modules/@react-native-async-storage/async-storage/android/build.gradle
-index 4560dc7..ab2e315 100644
+index 4560dc7..ec4ab5e 100644
 --- a/node_modules/@react-native-async-storage/async-storage/android/build.gradle
 +++ b/node_modules/@react-native-async-storage/async-storage/android/build.gradle
-@@ -85,6 +85,15 @@ android {
+@@ -85,10 +85,28 @@ android {
                  srcDirs += 'src/javaPackage/java'
              }
  
@@ -18,3 +18,16 @@ index 4560dc7..ab2e315 100644
              if (!isNewArchitectureEnabled) {
                  srcDirs += 'src/oldarch/java'
              }
+         }
++
++        if (!useNextStorage) {
++            // AGP 9's built-in Kotlin compiles from a separate Kotlin
++            // source set, which does not inherit the Java exclusion
++            // above, so apply the same exclusion there.
++            kotlin {
++                exclude 'com/reactnativecommunity/asyncstorage/next/**'
++            }
++        }
+     }
+ }
+ 
