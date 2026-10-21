@@ -1,4 +1,5 @@
 import {createFormRowKey} from '@eciperay/client';
+import {eciperayTheme} from '@spudly/ui';
 import {fireEvent, render} from '@testing-library/react-native';
 import React from 'react';
 
@@ -33,6 +34,31 @@ describe('SortableIngredientList', () => {
       expect.objectContaining({key: 'i-2', name: 'Salt'}),
       expect.objectContaining({key: 'i-1', name: 'Flour'}),
     ]);
+  });
+
+  test('gives every row input the shared field background', async () => {
+    const {getByDisplayValue} = await render(
+      <SortableIngredientList
+        ingredients={[
+          {
+            ...createEmptyIngredientRow(0),
+            key: 'i-1',
+            quantity: 2,
+            unit: 'cups',
+            name: 'Flour',
+          },
+        ]}
+        onChange={jest.fn()}
+        onUpdate={jest.fn()}
+        onAdd={jest.fn()}
+      />,
+    );
+
+    for (const value of ['2', 'cups', 'Flour']) {
+      expect(getByDisplayValue(value).props.style).toMatchObject({
+        backgroundColor: eciperayTheme.semantic.surface,
+      });
+    }
   });
 
   test('renders drag handles for ingredient rows', async () => {

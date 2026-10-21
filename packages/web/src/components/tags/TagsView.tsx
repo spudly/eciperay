@@ -30,12 +30,12 @@ export const TagsView = ({
     <>
       <PageTitle spacing="section">Tags</PageTitle>
       <form
-        style={{display: "flex", gap: 8, marginBottom: 24}}
+        style={{display: 'flex', gap: 8, marginBottom: 24}}
         onSubmit={handleSubmit}
       >
         <input
           className="
-            flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2
+            flex-1 rounded-lg border border-gray-300 bg-field px-4 py-2
             text-base text-gray-900
           "
           placeholder="Tag name"
@@ -65,20 +65,23 @@ export const TagsView = ({
               marginBottom="$2"
               padding="$3"
             >
-              <XStack alignItems="center" justifyContent="space-between">
-              <TagPill
-                name={tag.name}
-                color={tag.color}
-              />
-              <button
-                type="button"
-                className="text-sm text-red-600"
-                onClick={() => {
-                  onDelete(tag.id);
-                }}
+              <XStack
+                alignItems="center"
+                justifyContent="space-between"
               >
-                Delete
-              </button>
+                <TagPill
+                  name={tag.name}
+                  color={tag.color}
+                />
+                <button
+                  type="button"
+                  className="text-sm text-red-600"
+                  onClick={() => {
+                    onDelete(tag.id);
+                  }}
+                >
+                  Delete
+                </button>
               </XStack>
             </Card>
           ))}

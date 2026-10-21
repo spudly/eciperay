@@ -35,6 +35,10 @@ type Props = {
   onAdd: () => void;
 };
 
+// Field backgrounds (issue #167): the row inputs rendered by this list
+// (see the platform-only Sortable*Row primitives) use the shared bg-field
+// background (#fffdf8, the Warm Harvest surface). The app mirror's row
+// inputs fill with eciperayTheme.semantic.surface — the same value.
 export const SortableIngredientList = ({
   ingredients,
   onChange,

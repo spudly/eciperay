@@ -7,6 +7,9 @@
   --color-primary: #c2410c;
   --color-primary-dark: #7c2d12;
   --color-surface: #faf6f0;
+  /* DS Warm Harvest semantic surface (#fffdf8): the one background every
+     form field uses, matching the @spudly/ui field components. */
+  --color-field: #fffdf8;
   --color-muted: #57534e;
 }
 

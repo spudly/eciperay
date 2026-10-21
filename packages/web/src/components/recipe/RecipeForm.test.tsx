@@ -78,6 +78,27 @@ describe('RecipeForm', () => {
       }
     });
   });
+  test('gives every scalar field the shared field background', async () => {
+    await renderWithProviders(
+      <RecipeForm
+        initial={recipeDetailToInput(makeRecipeDetail())}
+        submitLabel="Save"
+        onSubmit={mockOnSubmit()}
+      />,
+    );
+
+    for (const label of [
+      'Title',
+      'Description',
+      'Servings',
+      'Prep (min)',
+      'Cook (min)',
+      'Source URL',
+    ]) {
+      expect(screen.getByLabelText(label).className).toContain('bg-field');
+    }
+  });
+
   test('submits recipe input', async () => {
     const onSubmit = mockOnSubmit();
     await renderWithProviders(

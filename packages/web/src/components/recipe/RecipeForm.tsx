@@ -438,7 +438,7 @@ export const RecipeForm = ({
           id="title"
           required
           className={clsx(
-            'rounded-lg border border-gray-300 px-4 py-2 inline-full',
+            'rounded-lg border border-gray-300 bg-field px-4 py-2 inline-full',
             changedFieldClass('title'),
           )}
           value={title}
@@ -481,7 +481,7 @@ export const RecipeForm = ({
         <textarea
           id="description"
           className={clsx(
-            'rounded-lg border border-gray-300 px-4 py-2 inline-full',
+            'rounded-lg border border-gray-300 bg-field px-4 py-2 inline-full',
             changedFieldClass('description'),
           )}
           rows={3}
@@ -511,7 +511,7 @@ export const RecipeForm = ({
             min={1}
             required
             className={clsx(
-              'rounded-lg border border-gray-300 px-4 py-2 inline-full',
+              'rounded-lg border border-gray-300 bg-field px-4 py-2 inline-full',
               changedFieldClass('servings'),
             )}
             value={servings}
@@ -534,7 +534,7 @@ export const RecipeForm = ({
             id="prep"
             type="number"
             className={clsx(
-              'rounded-lg border border-gray-300 px-4 py-2 inline-full',
+              'rounded-lg border border-gray-300 bg-field px-4 py-2 inline-full',
               changedFieldClass('prepTimeMin'),
             )}
             value={prepTimeMin}
@@ -557,7 +557,7 @@ export const RecipeForm = ({
             id="cook"
             type="number"
             className={clsx(
-              'rounded-lg border border-gray-300 px-4 py-2 inline-full',
+              'rounded-lg border border-gray-300 bg-field px-4 py-2 inline-full',
               changedFieldClass('cookTimeMin'),
             )}
             value={cookTimeMin}
@@ -596,7 +596,7 @@ export const RecipeForm = ({
         <input
           id="sourceUrl"
           className={clsx(
-            'rounded-lg border border-gray-300 px-4 py-2 inline-full',
+            'rounded-lg border border-gray-300 bg-field px-4 py-2 inline-full',
             changedFieldClass('sourceUrl'),
           )}
           value={sourceUrl}

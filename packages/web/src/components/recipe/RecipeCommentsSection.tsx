@@ -78,7 +78,11 @@ export const RecipeCommentsSection = ({
     <div className="mbe-4 rounded-xl border border-gray-100 p-4">
       <h3 className="mbe-3 text-sm font-semibold text-gray-900">Comments</h3>
       {isLoading ? (
-        <YStack alignItems="center" justifyContent="center" marginBottom="$3">
+        <YStack
+          alignItems="center"
+          justifyContent="center"
+          marginBottom="$3"
+        >
           <BookLoadingSpinner size="sm" />
         </YStack>
       ) : null}
@@ -127,7 +131,7 @@ export const RecipeCommentsSection = ({
         >
           <textarea
             className="
-              rounded-lg border border-gray-300 px-3 py-2 text-sm inline-full
+              rounded-lg border border-gray-300 bg-field px-3 py-2 text-sm inline-full
             "
             placeholder="Add a comment"
             value={draft}

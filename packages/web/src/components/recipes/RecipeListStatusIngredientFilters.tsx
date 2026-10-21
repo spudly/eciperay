@@ -50,7 +50,7 @@ export const RecipeListStatusIngredientFilters = ({
       </span>
       <input
         className="
-          rounded-xl border border-gray-200 bg-white px-4 py-3 text-base
+          rounded-xl border border-gray-200 bg-field px-4 py-3 text-base
           inline-full
         "
         value={ingredient}

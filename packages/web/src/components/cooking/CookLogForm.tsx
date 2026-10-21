@@ -52,7 +52,7 @@ export const CookLogForm = ({
           'mbe-4 rounded-xl px-4 py-3 text-base inline-full',
           isLight
             ? `
-              border border-gray-300 bg-white text-gray-900
+              border border-gray-300 bg-field text-gray-900
               placeholder:text-gray-400
             `
             : `

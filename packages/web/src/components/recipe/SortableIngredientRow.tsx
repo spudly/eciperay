@@ -46,7 +46,7 @@ export const SortableIngredientRow = ({
     >
       <input
         className="
-          col-span-2 rounded-sm border border-gray-300 px-2 py-1 text-sm
+          col-span-2 rounded-sm border border-gray-300 bg-field px-2 py-1 text-sm
         "
         placeholder="Qty"
         value={ingredient.quantity ?? ''}
@@ -60,7 +60,7 @@ export const SortableIngredientRow = ({
       />
       <input
         className="
-          col-span-2 rounded-sm border border-gray-300 px-2 py-1 text-sm
+          col-span-2 rounded-sm border border-gray-300 bg-field px-2 py-1 text-sm
         "
         placeholder="Unit"
         value={ingredient.unit ?? ''}
@@ -70,7 +70,7 @@ export const SortableIngredientRow = ({
       />
       <input
         className="
-          col-span-4 rounded-sm border border-gray-300 px-2 py-1 text-sm
+          col-span-4 rounded-sm border border-gray-300 bg-field px-2 py-1 text-sm
         "
         placeholder="Name"
         required

@@ -28,6 +28,9 @@ type FeedbackFormProps = {
   onSubmitted?: () => void;
 };
 
+// Field backgrounds (issue #167): fields here render through @spudly/ui
+// components, which all share the Warm Harvest $surface field background.
+// The web mirror matches via its bg-field token (#fffdf8, the same surface).
 export const FeedbackForm = ({route, onSubmitted}: FeedbackFormProps) => {
   const analytics = useAnalytics();
   const {session} = useAuth();
