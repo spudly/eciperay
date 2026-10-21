@@ -1,0 +1,12 @@
+diff --git a/node_modules/posthog-react-native-session-replay/android/build.gradle b/node_modules/posthog-react-native-session-replay/android/build.gradle
+index 2fe0909..60ee881 100644
+--- a/node_modules/posthog-react-native-session-replay/android/build.gradle
++++ b/node_modules/posthog-react-native-session-replay/android/build.gradle
+@@ -8,7 +8,6 @@ def isNewArchitectureEnabled() {
+ }
+ 
+ apply plugin: "com.android.library"
+-apply plugin: "kotlin-android"
+ 
+ if (isNewArchitectureEnabled()) {
+   apply plugin: "com.facebook.react"
