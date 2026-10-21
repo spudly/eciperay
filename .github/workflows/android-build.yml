@@ -43,7 +43,7 @@ jobs:
     timeout-minutes: 60
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Node.js and install dependencies
         uses: ./.github/actions/ci-setup
@@ -61,11 +61,19 @@ jobs:
             -PVERSION_CODE=${{ github.run_number }} \
             -PreactNativeArchitectures=arm64-v8a,armeabi-v7a
         env:
-          APP_ENV: ci
+          APP_ENV: production
+          API_BASE_URL: https://www.eciperay.com/api
+          SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          POSTHOG_KEY: ${{ secrets.VITE_POSTHOG_KEY }}
+          POSTHOG_HOST: ${{ secrets.VITE_POSTHOG_HOST }}
+          POSTHOG_CLI_API_KEY: <redacted>
+          POSTHOG_CLI_PROJECT_ID: ${{ secrets.POSTHOG_CLI_PROJECT_ID }}
+          POSTHOG_CLI_HOST: https://us.posthog.com
 
       - name: Upload AAB
         if: success()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: eciperay-app-release-aab
           path: packages/app/android/app/build/outputs/bundle/release/*.aab
