@@ -13,7 +13,12 @@ import {PageTitle} from './PageTitle';
  * - White has no DS variant: it is the flush DS `list` layout on the DS surface
  *   color instead of the old hard-coded white.
  *
- * All variants are non-scrollable: screens that scroll use ScreenScroll.
+ * Scrolling: content variants (default, padded, white) scroll. Android has no
+ * page-level scroll to fall back on, so a fixed shell makes any content below
+ * the fold unreachable — Profile and the recipe form screens overflow on
+ * smaller devices (eciperay#166). The `list` variant stays fixed: its screens
+ * embed a FlatList, which provides its own scrolling and must not be nested
+ * inside a ScrollView.
  */
 export const ScreenContainer = ({
   children,
@@ -22,7 +27,6 @@ export const ScreenContainer = ({
   if (variant === 'white') {
     return (
       <DSScreenContainer
-        scrollable={false}
         variant="list"
         backgroundColor="$surface"
       >
@@ -30,9 +34,19 @@ export const ScreenContainer = ({
       </DSScreenContainer>
     );
   }
+  if (variant === 'list') {
+    return (
+      <DSScreenContainer
+        scrollable={false}
+        variant="list"
+        backgroundColor={tokens.colors.gray.gray1}
+      >
+        {children}
+      </DSScreenContainer>
+    );
+  }
   return (
     <DSScreenContainer
-      scrollable={false}
       variant={variant}
       backgroundColor={tokens.colors.gray.gray1}
     >

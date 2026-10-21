@@ -3,6 +3,13 @@ import {ScreenContainer as DSScreenContainer, tokens} from '@spudly/ui';
 
 import {PageTitle} from './PageTitle.js';
 
+/**
+ * Web mirror of the app ScreenContainer adapter. The app adapter scrolls its
+ * content variants (Android has no page-level scroll; see eciperay#166) while
+ * the `list` variant stays fixed around its FlatList. On web the document
+ * already scrolls, so every variant renders non-scrollable here and the page
+ * flow provides the scrolling.
+ */
 export const ScreenContainer = ({
   children,
   variant = 'default',
