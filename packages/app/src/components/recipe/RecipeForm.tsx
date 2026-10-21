@@ -347,6 +347,11 @@ export const RecipeForm = ({
   // A field whose value differs from the parent version gets the DS warning
   // wash (warning step 5 border / step 1 fill — the old amber-400/amber-50)
   // on top of the DS field chrome.
+  // Changed fields get the warning fill INSTEAD of the shared field
+  // background (issue #167): the prop replaces the DS field's $surface
+  // fill outright, so the two never combine. The web mirror achieves the
+  // same exclusivity in changedFieldClass (bg-amber-50 vs bg-field),
+  // because there CSS source order would otherwise let bg-field win.
   const changedFieldProps = (field: VersionScalarField) =>
     scalarChanged(field)
       ? {

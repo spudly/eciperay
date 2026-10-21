@@ -340,7 +340,13 @@ export const RecipeForm = ({
     versionDiff?.changedScalars.includes(field) ?? false;
 
   const changedFieldClass = (field: VersionScalarField) =>
-    clsx({'border-amber-400 bg-amber-50': scalarChanged(field)});
+    clsx({
+      'border-amber-400 bg-amber-50': scalarChanged(field),
+      // The shared field background (issue #167) must not be combined with
+      // bg-amber-50 on the same element: in the built CSS bg-field sorts
+      // after bg-amber-50 and would erase the changed-field highlight.
+      'bg-field': !scalarChanged(field),
+    });
 
   const revertScalar = (
     parent: RecipeVersionDetail,
@@ -438,7 +444,7 @@ export const RecipeForm = ({
           id="title"
           required
           className={clsx(
-            'rounded-lg border border-gray-300 bg-field px-4 py-2 inline-full',
+            'rounded-lg border border-gray-300 px-4 py-2 inline-full',
             changedFieldClass('title'),
           )}
           value={title}
@@ -481,7 +487,7 @@ export const RecipeForm = ({
         <textarea
           id="description"
           className={clsx(
-            'rounded-lg border border-gray-300 bg-field px-4 py-2 inline-full',
+            'rounded-lg border border-gray-300 px-4 py-2 inline-full',
             changedFieldClass('description'),
           )}
           rows={3}
@@ -511,7 +517,7 @@ export const RecipeForm = ({
             min={1}
             required
             className={clsx(
-              'rounded-lg border border-gray-300 bg-field px-4 py-2 inline-full',
+              'rounded-lg border border-gray-300 px-4 py-2 inline-full',
               changedFieldClass('servings'),
             )}
             value={servings}
@@ -534,7 +540,7 @@ export const RecipeForm = ({
             id="prep"
             type="number"
             className={clsx(
-              'rounded-lg border border-gray-300 bg-field px-4 py-2 inline-full',
+              'rounded-lg border border-gray-300 px-4 py-2 inline-full',
               changedFieldClass('prepTimeMin'),
             )}
             value={prepTimeMin}
@@ -557,7 +563,7 @@ export const RecipeForm = ({
             id="cook"
             type="number"
             className={clsx(
-              'rounded-lg border border-gray-300 bg-field px-4 py-2 inline-full',
+              'rounded-lg border border-gray-300 px-4 py-2 inline-full',
               changedFieldClass('cookTimeMin'),
             )}
             value={cookTimeMin}
@@ -596,7 +602,7 @@ export const RecipeForm = ({
         <input
           id="sourceUrl"
           className={clsx(
-            'rounded-lg border border-gray-300 bg-field px-4 py-2 inline-full',
+            'rounded-lg border border-gray-300 px-4 py-2 inline-full',
             changedFieldClass('sourceUrl'),
           )}
           value={sourceUrl}
