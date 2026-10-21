@@ -13,9 +13,15 @@
 // created late (after project evaluation) by the PostHog/RN tooling, and
 // a tasks.matching/configureEach registration proved unreliable — the
 // upload task still executed. whenReady runs after the graph is fully
-// populated, so every upload task is caught.
+// populated, so every upload task is caught. Matching is on any task
+// whose name mentions both PostHog and upload: the bundle source-map
+// tasks (createBundle..._PostHogUpload_...) and the ProGuard mapping
+// task (uploadPostHogProguardMappingsRelease) are named differently.
 gradle.taskGraph.whenReady { graph ->
-    graph.allTasks.findAll { it.name.contains('PostHogUpload') }.each {
-        it.enabled = false
-    }
+    graph.allTasks
+        .findAll {
+            def n = it.name.toLowerCase()
+            n.contains('posthog') && n.contains('upload')
+        }
+        .each { it.enabled = false }
 }
