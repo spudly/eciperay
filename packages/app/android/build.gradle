@@ -12,8 +12,11 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        // AGP version must be pinned: React Native 0.85's Gradle plugin expects AGP 8.12.0.
-        classpath("com.android.tools.build:gradle:8.12.0")
+        // AGP version must be pinned to the version React Native's Gradle plugin
+        // expects: RNGP 0.88 uses AGP 9.2.1 (libs.versions.toml in
+        // @react-native/gradle-plugin). AGP 9 ships built-in Kotlin, so the app
+        // must NOT also apply the org.jetbrains.kotlin.android plugin.
+        classpath("com.android.tools.build:gradle:9.2.1")
         classpath("com.facebook.react:react-native-gradle-plugin")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin")
         classpath("com.posthog:posthog-android-gradle-plugin:1.2.0")
