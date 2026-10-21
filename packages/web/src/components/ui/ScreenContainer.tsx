@@ -5,10 +5,12 @@ import {PageTitle} from './PageTitle.js';
 
 /**
  * Web mirror of the app ScreenContainer adapter. The app adapter scrolls its
- * content variants (Android has no page-level scroll; see eciperay#166) while
- * the `list` variant stays fixed around its FlatList. On web the document
- * already scrolls, so every variant renders non-scrollable here and the page
- * flow provides the scrolling.
+ * content variants (Android has no page-level scroll; see eciperay#166) —
+ * composing its own ScrollView with keyboardShouldPersistTaps="handled" around
+ * the DS content stack, because the DS ScrollView accepts no ScrollView props —
+ * while the `list` variant stays fixed around its FlatList. On web the document
+ * already scrolls and taps are native browser behavior, so every variant
+ * renders non-scrollable here and the page flow provides the scrolling.
  */
 export const ScreenContainer = ({
   children,

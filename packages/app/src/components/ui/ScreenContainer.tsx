@@ -1,5 +1,6 @@
 import type {ScreenContainerProps} from '@eciperay/client';
 import {ScreenContainer as DSScreenContainer, tokens} from '@spudly/ui';
+import {ScrollView} from 'tamagui';
 
 import {PageTitle} from './PageTitle';
 
@@ -19,21 +20,19 @@ import {PageTitle} from './PageTitle';
  * smaller devices (eciperay#166). The `list` variant stays fixed: its screens
  * embed a FlatList, which provides its own scrolling and must not be nested
  * inside a ScrollView.
+ *
+ * The scroll wrapper is composed here rather than using the DS container's own
+ * scrollable mode because the DS ScrollView accepts no ScrollView props: form
+ * screens need `keyboardShouldPersistTaps="handled"` on the actual ScrollView,
+ * or a tap on a button next to a focused input (e.g. Tags' Add button)
+ * dismisses the keyboard instead of pressing the button. The geometry matches
+ * the DS scrollable mode (flex:1 ScrollView around the same content stack,
+ * which carries flex:1 / minHeight:100%).
  */
 export const ScreenContainer = ({
   children,
   variant = 'default',
 }: ScreenContainerProps) => {
-  if (variant === 'white') {
-    return (
-      <DSScreenContainer
-        variant="list"
-        backgroundColor="$surface"
-      >
-        {children}
-      </DSScreenContainer>
-    );
-  }
   if (variant === 'list') {
     return (
       <DSScreenContainer
@@ -46,12 +45,28 @@ export const ScreenContainer = ({
     );
   }
   return (
-    <DSScreenContainer
-      variant={variant}
-      backgroundColor={tokens.colors.gray.gray1}
+    <ScrollView
+      flex={1}
+      keyboardShouldPersistTaps="handled"
     >
-      {children}
-    </DSScreenContainer>
+      {variant === 'white' ? (
+        <DSScreenContainer
+          scrollable={false}
+          variant="list"
+          backgroundColor="$surface"
+        >
+          {children}
+        </DSScreenContainer>
+      ) : (
+        <DSScreenContainer
+          scrollable={false}
+          variant={variant}
+          backgroundColor={tokens.colors.gray.gray1}
+        >
+          {children}
+        </DSScreenContainer>
+      )}
+    </ScrollView>
   );
 };
 

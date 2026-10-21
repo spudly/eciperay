@@ -21,6 +21,30 @@ const renderedHostTypes = (json: unknown): string[] => {
   return types;
 };
 
+type JsonNode = {
+  type?: string;
+  props?: Record<string, unknown>;
+  children?: unknown[];
+};
+
+/** The rendered RCTScrollView node (with its props), if any. */
+const findScrollViewNode = (json: unknown): JsonNode | undefined => {
+  if (!json || typeof json !== 'object') {
+    return undefined;
+  }
+  const node = json as JsonNode;
+  if (node.type === 'RCTScrollView') {
+    return node;
+  }
+  for (const child of node.children ?? []) {
+    const found = findScrollViewNode(child);
+    if (found) {
+      return found;
+    }
+  }
+  return undefined;
+};
+
 describe('ScreenContainer', () => {
   // Regression (eciperay#166): the content variants used to render a fixed
   // shell, so on Android any content below the fold (Profile sections, the
@@ -36,6 +60,11 @@ describe('ScreenContainer', () => {
 
       expect(renderedHostTypes(toJSON())).toContain('RCTScrollView');
       expect(getByText('Long page content')).toBeTruthy();
+      // Form screens need taps next to a focused input to register instead
+      // of only dismissing the keyboard (eciperay#169 review).
+      expect(
+        findScrollViewNode(toJSON())?.props?.['keyboardShouldPersistTaps'],
+      ).toBe('handled');
     },
   );
 

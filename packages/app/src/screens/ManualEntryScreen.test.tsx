@@ -58,6 +58,23 @@ const stackProps = makeStackProps<AddStackParamList, 'ManualEntry'>(
   {getParent: mockGetParent},
 );
 
+/** Host types rendered for a tree, via the RNTL JSON snapshot. */
+const renderedHostTypes = (json: unknown): string[] => {
+  const types: string[] = [];
+  const walk = (node: unknown): void => {
+    if (!node || typeof node !== 'object') {
+      return;
+    }
+    const {type, children} = node as {type?: string; children?: unknown[]};
+    if (type) {
+      types.push(type);
+    }
+    (children ?? []).forEach(walk);
+  };
+  walk(json);
+  return types;
+};
+
 describe('ManualEntryScreen', () => {
   beforeEach(() => {
     mockListTags.mockResolvedValue([]);
@@ -65,6 +82,23 @@ describe('ManualEntryScreen', () => {
     mockUploadRecipeImageFromBase64.mockResolvedValue(
       'https://cdn.example/recipe.png',
     );
+  });
+
+  test('renders the real form with its submit action inside scroll views', async () => {
+    // Regression (eciperay#166/#169 review): the production composition —
+    // the screen container's ScrollView around RecipeForm's own ScrollView,
+    // the same pairing EditVersionScreen already shipped — must keep the
+    // form's bottom submit action in the tree. Copilot flagged that the
+    // view-level test used placeholder content instead of the real form.
+    const {toJSON, getByText} = await renderWithProviders(
+      <ManualEntryScreen {...stackProps} />,
+      makeQueryClient(),
+    );
+
+    expect(getByText('Create Recipe')).toBeTruthy();
+    expect(
+      renderedHostTypes(toJSON()).filter(type => type === 'RCTScrollView'),
+    ).toHaveLength(2);
   });
 
   test('creates recipe on submit', async () => {
