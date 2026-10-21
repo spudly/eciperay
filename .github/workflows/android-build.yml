@@ -1,0 +1,72 @@
+name: Android Build
+
+# Phase 1 of #183: PR CI must build the Android app. Until now every
+# native-side break (the AGP 9 chain of 2026-10-21: Gradle wrapper minimum,
+# kotlin-android plugin conflicts, a removed ProGuard API, library-module
+# source-set divergence) was discovered only in the post-merge release run,
+# behind a green PR CI.
+#
+# This job runs the same install path as the release build (npm ci, so
+# patch-package patches apply) and the same Gradle task (bundleRelease),
+# minus the Play upload and the release keystore — app/build.gradle falls
+# back to the debug signing config when no keystore env is present, so no
+# signing secrets are needed on PRs.
+#
+# Phase 2 (emulator use-case tests) is tracked in #183 and is not part of
+# this job yet.
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - 'packages/app/**'
+      - 'patches/**'
+      - 'package-lock.json'
+      - '.github/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+
+env:
+  NODE_AUTH_TOKEN: ${{ secrets.PACKAGES_READ_TOKEN }}
+
+concurrency:
+  group: android-build-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  android-build:
+    name: Build Android release AAB
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js and install dependencies
+        uses: ./.github/actions/ci-setup
+        with:
+          install-command: npm ci
+          skip-install-on-cache-hit: 'true'
+
+      - name: Setup Android build environment
+        uses: ./.github/actions/android-build-setup
+
+      - name: Build Android release AAB
+        working-directory: packages/app/android
+        run: |
+          ./gradlew bundleRelease --build-cache \
+            -PVERSION_CODE=${{ github.run_number }} \
+            -PreactNativeArchitectures=arm64-v8a,armeabi-v7a
+        env:
+          APP_ENV: ci
+
+      - name: Upload AAB
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eciperay-app-release-aab
+          path: packages/app/android/app/build/outputs/bundle/release/*.aab
+          if-no-files-found: warn
