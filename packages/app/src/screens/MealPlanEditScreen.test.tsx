@@ -1,8 +1,14 @@
 import React from 'react';
 import {fireEvent, waitFor} from '@testing-library/react-native';
 
+import {recipeListInfiniteQueryOptions} from '@eciperay/client';
+
 import {makeRecipeDetail} from '../__tests__/fixtures/recipe';
-import {makeStackProps, renderWithProviders} from '../__tests__/testUtils';
+import {
+  makeQueryClient,
+  makeStackProps,
+  renderWithProviders,
+} from '../__tests__/testUtils';
 import {api} from '../lib/api';
 import type {MealsStackParamList} from '../navigation/types';
 
@@ -57,6 +63,22 @@ describe('MealPlanEditScreen', () => {
       updatedAt: '2024-01-01T00:00:00.000Z',
       entries: [],
     });
+  });
+
+  test('renders picker options when the list cache holds infinite-query data', async () => {
+    // Regression (#171): the recipe list caches {pages, pageParams} under
+    // its key; the form picker must not read that shape as a flat array.
+    const client = makeQueryClient();
+    client.setQueryData(
+      recipeListInfiniteQueryOptions(params => api.recipes.list(params), {})
+        .queryKey,
+      {pages: [[recipe]], pageParams: [0]},
+    );
+    const {findByText} = await renderWithProviders(
+      <MealPlanEditScreen {...createProps({})} />,
+      client,
+    );
+    expect(await findByText('Recipe \u00b7 Pasta')).toBeTruthy();
   });
 
   test('renders new meal plan form', async () => {

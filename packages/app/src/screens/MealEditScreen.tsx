@@ -2,6 +2,7 @@ import {
   buildMealInputFromForm,
   errorMessage,
   queryKeys,
+  recipeFormOptionsQueryOptions,
 } from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
@@ -33,10 +34,9 @@ export const MealEditScreen = ({route, navigation}: Props) => {
     enabled: isEdit,
   });
 
-  const {data: recipes = [], isLoading: recipesLoading} = useQuery({
-    queryKey: queryKeys.recipes({sort: 'newest', sortDir: 'desc'}),
-    queryFn: () => api.recipes.list({limit: 100}),
-  });
+  const {data: recipes = [], isLoading: recipesLoading} = useQuery(
+    recipeFormOptionsQueryOptions(params => api.recipes.list(params)),
+  );
 
   useEffect(() => {
     if (!meal) {

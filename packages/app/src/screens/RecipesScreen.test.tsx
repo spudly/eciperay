@@ -1,7 +1,7 @@
 import React from 'react';
 import {Alert} from 'react-native';
 import {fireEvent, waitFor, act} from '@testing-library/react-native';
-import {RECIPE_LIST_PAGE_SIZE} from '@eciperay/client';
+import {queryKeys, RECIPE_LIST_PAGE_SIZE} from '@eciperay/client';
 
 import {makeRecipeDetail} from '../__tests__/fixtures/recipe';
 import {
@@ -45,6 +45,22 @@ describe('RecipesScreen', () => {
   beforeEach(() => {
     mockList.mockResolvedValue([]);
     mockDelete.mockImplementation(async () => {});
+  });
+
+  test('renders list when the form picker cache holds a flat recipe array', async () => {
+    // Regression (#172): the meal-form picker caches a flat RecipeDetail[]
+    // on its own key; the infinite list must not read it as {pages, ...}
+    // (hasNextPage crashed reading .length of undefined pages).
+    mockList.mockResolvedValue([makeRecipeDetail({title: 'Pasta'})]);
+    const client = makeQueryClient();
+    client.setQueryData(queryKeys.recipeFormOptions(), [
+      makeRecipeDetail({title: 'PickerCached'}),
+    ]);
+    const {findByText} = await renderWithProviders(
+      <RecipesScreen {...stackProps} />,
+      client,
+    );
+    expect(await findByText('Pasta')).toBeTruthy();
   });
 
   test('renders search input', async () => {

@@ -5,7 +5,9 @@ import {
   getRecipeListNextPageParam,
   homeRecentlyViewedRecipesQueryOptions,
   publicRecipeDiscoveryInfiniteQueryOptions,
+  RECIPE_FORM_OPTIONS_LIMIT,
   RECIPE_LIST_PAGE_SIZE,
+  recipeFormOptionsQueryOptions,
   recipeListInfiniteQueryOptions,
   sharedWithMeInfiniteQueryOptions,
 } from './recipeListQuery.js';
@@ -95,6 +97,24 @@ describe('recipeListQuery', () => {
       limit: RECIPE_LIST_PAGE_SIZE,
       offset: 0,
     });
+  });
+
+  test('builds form picker options on a key distinct from the infinite list', async () => {
+    const list = jest.fn().mockResolvedValue([makeListItem('1')]);
+    const options = recipeFormOptionsQueryOptions(list);
+    expect(options.queryKey).toEqual([
+      'recipes',
+      'form-options',
+      {sort: 'newest', sortDir: 'desc'},
+    ]);
+    // Regression (#171, #172): the default-filter infinite list key
+    // normalizes to {sort: 'newest', sortDir: 'desc'} — the picker key must
+    // never equal it, or each query reads the other's cached data shape.
+    const infiniteKey = recipeListInfiniteQueryOptions(list, {}).queryKey;
+    expect(options.queryKey).not.toEqual(infiniteKey);
+    await options.queryFn();
+    expect(list).toHaveBeenCalledWith({limit: RECIPE_FORM_OPTIONS_LIMIT});
+    expect(RECIPE_FORM_OPTIONS_LIMIT).toBe(100);
   });
 
   test('builds shared-with-me infinite query options with paging params', async () => {

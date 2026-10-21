@@ -271,7 +271,9 @@ export {
   getRecipeListNextPageParam,
   homeRecentlyViewedRecipesQueryOptions,
   publicRecipeDiscoveryInfiniteQueryOptions,
+  RECIPE_FORM_OPTIONS_LIMIT,
   RECIPE_LIST_PAGE_SIZE,
+  recipeFormOptionsQueryOptions,
   recipeListInfiniteQueryOptions,
   sharedWithMeInfiniteQueryOptions,
 } from './recipeListQuery.js';
