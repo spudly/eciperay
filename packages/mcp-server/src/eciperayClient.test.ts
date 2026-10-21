@@ -272,6 +272,27 @@ describe('client.updateRecipe', () => {
     assert.equal(putBody?.['description'], 'Edited elsewhere');
   });
 
+  test('a metadata edit between reads is preserved even when contentRevision does not move', async () => {
+    // The API's metadata-save path never bumps contentRevision, so a
+    // description edited between the two reads arrives with the same
+    // revision. The merge must be rebuilt from the fresh read, not from
+    // the stale first one.
+    const edited = {...storedRecipe, description: 'Edited elsewhere'};
+    let getCount = 0;
+    let putBody: Record<string, unknown> | undefined;
+    stubFetch(call => {
+      if (call.init?.method === 'PUT') {
+        putBody = JSON.parse(String(call.init.body)) as Record<string, unknown>;
+        return {status: 200, body: {}};
+      }
+      getCount += 1;
+      return {status: 200, body: getCount === 1 ? storedRecipe : edited};
+    });
+    await client().updateRecipe('recipe-1', {servings: 40});
+    assert.equal(putBody?.['servings'], 40);
+    assert.equal(putBody?.['description'], 'Edited elsewhere');
+  });
+
   test('a recipe that keeps changing aborts with a conflict error and no PUT', async () => {
     let revision = 0;
     const calls = stubFetch(() => {

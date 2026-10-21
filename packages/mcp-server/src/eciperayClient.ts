@@ -87,10 +87,13 @@ export const createClient = (config: EciperayClientConfig) => {
      *   assertContentUnchanged): the API locks ingredients/instructions on the
      *   active version, so a changed list would only fail with a raw 409 from
      *   the PUT.
-     * - The recipe is re-read just before the PUT and the merge is redone once if
-     *   its contentRevision moved, so a concurrent edit is not silently
-     *   overwritten with stale preserved fields; a second move raises a
-     *   conflict error instead.
+     * - The recipe is re-read just before the PUT and the merge is built from
+     *   that freshest read, so a concurrent edit is not silently overwritten
+     *   with stale preserved fields. The comparison covers every preserved
+     *   field, not just contentRevision: the API's metadata-save path does not
+     *   bump contentRevision, so a revision check alone would miss metadata
+     *   edits. If the recipe keeps changing across re-reads, a conflict error
+     *   is raised instead.
      * - The result is a fresh GET, so callers receive the same representation as
      *   get_recipe (the PUT response omits the ratings enrichment GET adds).
      */
@@ -104,15 +107,11 @@ export const createClient = (config: EciperayClientConfig) => {
       let current = await request<RecipeDetailForUpdate>(path);
       assertContentUnchanged(current, patch);
       for (let attempt = 0; attempt < 2; attempt += 1) {
-        const payload = buildRecipeUpdatePayload(current, patch);
         const fresh = await request<RecipeDetailForUpdate>(path);
-        if (
-          fresh.contentRevision === current.contentRevision &&
-          fresh.versionId === current.versionId
-        ) {
+        if (recipeSnapshot(fresh) === recipeSnapshot(current)) {
           await request<unknown>(path, {
             method: 'PUT',
-            body: JSON.stringify(payload),
+            body: JSON.stringify(buildRecipeUpdatePayload(fresh, patch)),
           });
           return request<unknown>(path);
         }
@@ -241,6 +240,29 @@ export const assertContentUnchanged = (
     );
   }
 };
+
+/**
+ * The fields a merged PUT would carry over from a stored recipe, serialized for
+ * change detection between two reads. Includes contentRevision and versionId,
+ * but does not rely on them alone: the API's metadata-save path
+ * (saveRecipeMetadata) never bumps contentRevision.
+ */
+const recipeSnapshot = (recipe: RecipeDetailForUpdate): string =>
+  JSON.stringify({
+    contentRevision: recipe.contentRevision,
+    versionId: recipe.versionId,
+    title: recipe.title,
+    description: recipe.description,
+    servings: recipe.servings,
+    prepTimeMin: recipe.prepTimeMin,
+    cookTimeMin: recipe.cookTimeMin,
+    imageUrl: recipe.imageUrl,
+    sourceUrl: recipe.sourceUrl,
+    status: recipe.status ?? null,
+    ingredients: serializeIngredients(recipe.ingredients),
+    instructions: serializeInstructions(recipe.instructions),
+    tagIds: recipe.tags.map(tag => tag.id),
+  });
 
 /** True when the patch provides at least one field to change. */
 export const hasRecipeUpdateFields = (patch: RecipeUpdatePatch): boolean =>
