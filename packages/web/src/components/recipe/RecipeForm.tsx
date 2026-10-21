@@ -412,6 +412,10 @@ export const RecipeForm = ({
       ? withImageCacheKey(imageUrl, imageCacheKey)
       : imageUrl);
 
+  // The app mirror wraps the form in its own ScrollView with
+  // keyboardShouldPersistTaps="handled" (see the app RecipeForm); on web the
+  // document scrolls and taps are native browser behavior, so a plain form
+  // element is the whole story here.
   return (
     <form
       onSubmit={e => {

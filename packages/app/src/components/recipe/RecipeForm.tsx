@@ -438,7 +438,10 @@ export const RecipeForm = ({
   );
 
   return (
-    <ScrollView style={scrollStyle}>
+    <ScrollView
+      style={scrollStyle}
+      keyboardShouldPersistTaps="handled"
+    >
       <YStack
         gap="$4"
         paddingBlockEnd="$8"
