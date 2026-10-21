@@ -67,8 +67,10 @@ jobs:
         env:
           APP_ENV: production
           API_BASE_URL: https://www.eciperay.com/api
-          SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          # Fallbacks keep fork PR builds (which receive no secrets) bundling;
+          # same-repo PRs and pushes always use the real secrets.
+          SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://placeholder.supabase.co' }}
+          SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || 'placeholder-anon-key' }}
           POSTHOG_KEY: ${{ secrets.VITE_POSTHOG_KEY }}
           POSTHOG_HOST: ${{ secrets.VITE_POSTHOG_HOST }}
           POSTHOG_CLI_API_KEY: <redacted>
