@@ -28,7 +28,9 @@ runs:
         path: |
           node_modules
           packages/*/node_modules
-        key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+        key:
+          node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json',
+          'patches/**') }}
         restore-keys: |
           node-modules-${{ runner.os }}-
 
