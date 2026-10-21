@@ -1,0 +1,14 @@
+// Init script used ONLY by the PR Android build job
+// (.github/workflows/android-build.yml), passed via -I.
+//
+// posthog-react-native's tooling attaches a source-map upload task to the
+// release bundle task. Uploading is a publishing concern: the release build
+// must keep doing it, but a PR build only needs to prove the app compiles
+// and bundles — and the upload fails without a valid PostHog personal API
+// key (phx_), which PR CI should not depend on. Disable the upload tasks
+// for CI builds only; the release workflow does not pass this script.
+gradle.allprojects { project ->
+    project.tasks.matching { it.name.contains('PostHogUpload') }.configureEach {
+        enabled = false
+    }
+}

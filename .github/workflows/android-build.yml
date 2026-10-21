@@ -57,7 +57,11 @@ jobs:
       - name: Build Android release AAB
         working-directory: packages/app/android
         run: |
+          # The init script disables PostHog source-map upload tasks:
+          # uploading is a release (publishing) concern, and PR CI should
+          # not fail on it. The release workflow does not pass it.
           ./gradlew bundleRelease --build-cache \
+            -I "$GITHUB_WORKSPACE/.github/scripts/disable-posthog-upload.init.gradle" \
             -PVERSION_CODE=${{ github.run_number }} \
             -PreactNativeArchitectures=arm64-v8a,armeabi-v7a
         env:
