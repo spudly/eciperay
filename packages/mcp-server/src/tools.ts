@@ -129,6 +129,84 @@ export const registerTools = (
   );
 
   server.registerTool(
+    'update_recipe',
+    {
+      title: 'Update recipe',
+      description:
+        'Update an existing recipe in your Eciperay collection. Only the fields you provide change; omitted fields keep their stored values. Provide null for description, prepTimeMin, or cookTimeMin to clear them. Only your own recipes can be updated.',
+      inputSchema: {
+        id: z.string().describe('Recipe id, from search_recipes'),
+        title: z.string().min(1).optional().describe('Recipe title'),
+        servings: z
+          .number()
+          .int()
+          .positive()
+          .optional()
+          .describe('Number of servings'),
+        ingredients: z
+          .array(ingredientSchema)
+          .min(1)
+          .optional()
+          .describe('Ingredients in order (replaces the stored list)'),
+        instructions: z
+          .array(z.string().min(1))
+          .min(1)
+          .optional()
+          .describe('Preparation steps in order (replaces the stored list)'),
+        description: z
+          .string()
+          .nullable()
+          .optional()
+          .describe('Short description, or null to clear it'),
+        prepTimeMin: z
+          .number()
+          .int()
+          .nonnegative()
+          .nullable()
+          .optional()
+          .describe('Prep time in minutes, or null to clear it'),
+        cookTimeMin: z
+          .number()
+          .int()
+          .nonnegative()
+          .nullable()
+          .optional()
+          .describe('Cook time in minutes, or null to clear it'),
+        tagIds: z
+          .array(z.uuid())
+          .optional()
+          .describe('Tag ids to attach to the recipe (replaces stored tags)'),
+      },
+    },
+    async ({id, ingredients, instructions, ...fields}) =>
+      textResult(
+        await client.updateRecipe(id, {
+          ...fields,
+          ...(ingredients !== undefined
+            ? {
+                ingredients: ingredients.map((ingredient, index) => ({
+                  sortOrder: index,
+                  name: ingredient.name,
+                  quantity: ingredient.quantity ?? null,
+                  unit: ingredient.unit ?? null,
+                  notes: ingredient.notes ?? null,
+                  isOptional: ingredient.isOptional ?? false,
+                })),
+              }
+            : {}),
+          ...(instructions !== undefined
+            ? {
+                instructions: instructions.map((body, index) => ({
+                  stepNumber: index + 1,
+                  body,
+                })),
+              }
+            : {}),
+        }),
+      ),
+  );
+
+  server.registerTool(
     'list_meal_plans',
     {
       title: 'List meal plans',

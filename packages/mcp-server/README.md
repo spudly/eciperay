@@ -14,6 +14,7 @@ authentication and permissions as the web and mobile apps.
 | `search_recipes`    | Search recipes by keyword                          |
 | `get_recipe`        | Full recipe details: ingredients, steps, nutrition |
 | `create_recipe`     | Save a new recipe                                  |
+| `update_recipe`     | Update fields of an existing recipe (partial)      |
 | `list_meal_plans`   | List saved meal plans                              |
 | `get_meal_plan`     | Meal plan details with scheduled meals             |
 | `get_shopping_list` | Aggregated shopping list for a meal plan           |
@@ -116,5 +117,6 @@ Claude Desktop (`claude_desktop_config.json`):
 
 ```sh
 npm run dev --workspace=@eciperay/mcp-server   # watch mode
+npm run test --workspace=@eciperay/mcp-server
 npm run typecheck --workspace=@eciperay/mcp-server
 ```

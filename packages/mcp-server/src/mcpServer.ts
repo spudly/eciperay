@@ -4,12 +4,12 @@ import {createClient, type EciperayClientConfig} from './eciperayClient.js';
 import {registerTools} from './tools.js';
 
 export const MCP_SERVER_NAME = 'eciperay';
-export const MCP_SERVER_VERSION = '1.8.3';
+export const MCP_SERVER_VERSION = '1.9.0';
 
 /**
- * Build a transport-agnostic Eciperay MCP server. Callers choose how to
- * expose it: stdio for local clients (see index.ts) or Streamable HTTP
- * mounted in the web server (see http.ts).
+ * Build a transport-agnostic Eciperay MCP server. Callers choose how to expose
+ * it: stdio for local clients (see index.ts) or Streamable HTTP mounted in the
+ * web server (see http.ts).
  */
 export const createEciperayMcpServer = (
   config: EciperayClientConfig,

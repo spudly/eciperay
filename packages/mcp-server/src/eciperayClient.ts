@@ -74,6 +74,27 @@ export const createClient = (config: EciperayClientConfig) => {
         method: 'POST',
         body: JSON.stringify(input),
       }),
+    /**
+     * Partial update: the REST API only offers a full-replace PUT, so read the
+     * current recipe, merge the patch over it, and PUT the result. Both
+     * endpoints resolve recipes by owner, so a recipe that does not exist or
+     * belongs to someone else fails with the API's 404 instead of silently
+     * doing nothing.
+     */
+    updateRecipe: async (id: string, patch: RecipeUpdatePatch) => {
+      if (!hasRecipeUpdateFields(patch)) {
+        throw new Error(
+          'update_recipe requires at least one field to update; every field was omitted.',
+        );
+      }
+      const current = await request<RecipeDetailForUpdate>(
+        `/recipes/${encodeURIComponent(id)}`,
+      );
+      return request<unknown>(`/recipes/${encodeURIComponent(id)}`, {
+        method: 'PUT',
+        body: JSON.stringify(buildRecipeUpdatePayload(current, patch)),
+      });
+    },
     listMealPlans: () => request<unknown[]>('/meal-plans'),
     getMealPlan: (id: string) =>
       request<unknown>(`/meal-plans/${encodeURIComponent(id)}`),
@@ -81,6 +102,112 @@ export const createClient = (config: EciperayClientConfig) => {
       request<unknown[]>(
         `/meal-plans/${encodeURIComponent(mealPlanId)}/shopping-list`,
       ),
+  };
+};
+
+/** Ingredient/instruction shapes accepted by the REST recipe endpoints. */
+export type RecipeIngredientInput = {
+  sortOrder: number;
+  name: string;
+  quantity: number | null;
+  unit: string | null;
+  notes: string | null;
+  isOptional: boolean;
+};
+
+export type RecipeInstructionInput = {stepNumber: number; body: string};
+
+/**
+ * The subset of recipe fields `update_recipe` may change. A field left
+ * `undefined` is preserved from the stored recipe; a field set to `null` (where
+ * nullable) clears it.
+ */
+export type RecipeUpdatePatch = {
+  title?: string;
+  description?: string | null;
+  servings?: number;
+  prepTimeMin?: number | null;
+  cookTimeMin?: number | null;
+  ingredients?: RecipeIngredientInput[];
+  instructions?: RecipeInstructionInput[];
+  tagIds?: string[];
+};
+
+/** The recipe-detail shape returned by `GET /recipes/:id`, as read here. */
+type RecipeDetailForUpdate = {
+  title: string;
+  description: string | null;
+  servings: number;
+  prepTimeMin: number | null;
+  cookTimeMin: number | null;
+  imageUrl: string | null;
+  sourceUrl: string | null;
+  status?: string;
+  ingredients: (RecipeIngredientInput & Record<string, unknown>)[];
+  instructions: (RecipeInstructionInput & Record<string, unknown>)[];
+  tags: {id: string}[];
+};
+
+const PATCH_FIELDS: (keyof RecipeUpdatePatch)[] = [
+  'title',
+  'description',
+  'servings',
+  'prepTimeMin',
+  'cookTimeMin',
+  'ingredients',
+  'instructions',
+  'tagIds',
+];
+
+/** True when the patch provides at least one field to change. */
+export const hasRecipeUpdateFields = (patch: RecipeUpdatePatch): boolean =>
+  PATCH_FIELDS.some(field => patch[field] !== undefined);
+
+/**
+ * Merge a partial update over the stored recipe detail, producing the full
+ * payload the REST `PUT /recipes/:id` endpoint expects. Fields the patch does
+ * not provide are carried over from the stored recipe (including imageUrl,
+ * sourceUrl, and status, which `update_recipe` cannot change), so a partial
+ * update never clears data it did not mention.
+ */
+export const buildRecipeUpdatePayload = (
+  current: RecipeDetailForUpdate,
+  patch: RecipeUpdatePatch,
+): Record<string, unknown> => {
+  if (!hasRecipeUpdateFields(patch)) {
+    throw new Error(
+      'update_recipe requires at least one field to update; every field was omitted.',
+    );
+  }
+  return {
+    title: patch.title ?? current.title,
+    description:
+      patch.description !== undefined ? patch.description : current.description,
+    servings: patch.servings ?? current.servings,
+    prepTimeMin:
+      patch.prepTimeMin !== undefined ? patch.prepTimeMin : current.prepTimeMin,
+    cookTimeMin:
+      patch.cookTimeMin !== undefined ? patch.cookTimeMin : current.cookTimeMin,
+    imageUrl: current.imageUrl,
+    sourceUrl: current.sourceUrl,
+    ...(current.status !== undefined ? {status: current.status} : {}),
+    ingredients: (patch.ingredients ?? current.ingredients).map(
+      (ingredient, index) => ({
+        sortOrder: ingredient.sortOrder ?? index,
+        name: ingredient.name,
+        quantity: ingredient.quantity ?? null,
+        unit: ingredient.unit ?? null,
+        notes: ingredient.notes ?? null,
+        isOptional: ingredient.isOptional ?? false,
+      }),
+    ),
+    instructions: (patch.instructions ?? current.instructions).map(
+      (instruction, index) => ({
+        stepNumber: instruction.stepNumber ?? index + 1,
+        body: instruction.body,
+      }),
+    ),
+    tagIds: patch.tagIds ?? current.tags.map(tag => tag.id),
   };
 };
 
