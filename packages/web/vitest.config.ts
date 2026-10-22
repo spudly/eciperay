@@ -4,7 +4,7 @@ import {fileURLToPath} from 'node:url';
 
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
-import {defineConfig} from 'vitest/config';
+import {configDefaults, defineConfig} from 'vitest/config';
 
 const coverageGlobs = JSON.parse(
   readFileSync(
@@ -33,6 +33,10 @@ export default defineConfig({
     },
   },
   test: {
+    // Playwright specs live in e2e/ and run under `playwright test`
+    // (npm run test:e2e), never under Vitest — its default include
+    // pattern would otherwise collect them and fail.
+    exclude: [...configDefaults.exclude, 'e2e/**'],
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
