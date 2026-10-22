@@ -68,18 +68,22 @@ export const ThumbnailListCard = ({
   // Trailing actions (e.g. "Log cook", "Delete" buttons) render as siblings
   // OUTSIDE the pressable, avoiding nested interactive elements.
   //
-  // Inside the trailing-actions row the card flexes from a 12rem basis
+  // Inside the trailing-actions row the card flexes from a 17rem basis
   // and the row wraps (#190): at phone widths the trailing actions cannot
   // share the row without squeezing the title column to a few characters,
   // so they wrap onto their own right-aligned row and the card spans the
-  // full list width. At desktop widths everything fits on one row and
+  // full list width. The basis is sized so that whenever the actions DO
+  // stay beside the card, the title column keeps at least ~160px (17rem
+  // minus the card padding, the 64px thumbnail, and the gap) — a smaller
+  // basis let the actions rejoin at 414–430px viewports with a ~118px
+  // title column. At desktop widths everything fits on one row and
   // nothing wraps. (The app mirror keeps its single-row layout: native
   // rows are not width-squeezed the same way, and its trailing actions
   // render inside the card.)
   //
   // The basis applies ONLY in that row: without trailing actions the
   // card renders standalone as a child of a column layout, where a
-  // 12rem flex basis would resolve vertically and stretch the card.
+  // 17rem flex basis would resolve vertically and stretch the card.
   const inRow = Boolean(trailing);
   let card: ReactNode;
   if (onPress) {
@@ -90,7 +94,7 @@ export const ThumbnailListCard = ({
         tabIndex={0}
         flexGrow={1}
         flexShrink={1}
-        flexBasis="12rem"
+        flexBasis="17rem"
         minWidth={0}
       >
         {main}
@@ -112,7 +116,7 @@ export const ThumbnailListCard = ({
         style={{
           textDecoration: 'none',
           display: 'block',
-          flex: inRow ? '1 1 12rem' : 1,
+          flex: inRow ? '1 1 17rem' : 1,
           minWidth: 0,
         }}
       >
@@ -124,7 +128,7 @@ export const ThumbnailListCard = ({
       <DSCard
         flexGrow={1}
         flexShrink={1}
-        flexBasis="12rem"
+        flexBasis="17rem"
         minWidth={0}
       >
         {main}

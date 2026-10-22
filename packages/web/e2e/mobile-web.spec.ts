@@ -72,6 +72,29 @@ test.describe('mobile web layout (390px)', () => {
     }
   });
 
+  test('recipe titles stay readable at wider phone widths (430px)', async ({
+    page,
+  }) => {
+    // The 414–430px band: the trailing actions must not rejoin the card
+    // row until the title column can keep a usable width beside them.
+    await page.setViewportSize({width: 430, height: 844});
+    await page.goto('/recipes');
+    await expect(page.getByText('E2E Tomato Pasta')).toBeVisible();
+
+    const titleColumnWidth = await page.evaluate(() => {
+      const title = [...document.querySelectorAll('*')].find(
+        el => el.children.length === 0 && el.textContent === 'E2E Tomato Pasta',
+      );
+      return title?.parentElement?.getBoundingClientRect().width ?? 0;
+    });
+    expect(titleColumnWidth).toBeGreaterThan(150);
+
+    const scrollWidth = await page.evaluate(
+      () => document.documentElement.scrollWidth,
+    );
+    expect(scrollWidth).toBeLessThanOrEqual(430);
+  });
+
   test('shared-with-me cards span the list width', async ({page}) => {
     await page.goto('/shared-with-me');
     await expect(page.getByText('E2E Shared Salad')).toBeVisible();
@@ -91,7 +114,7 @@ test.describe('mobile web layout (390px)', () => {
     expect(cardBox.width).toBeGreaterThan(300);
     // The standalone (no trailing actions) card is a child of a column
     // layout: its height must stay content-sized (~110px), not stretch
-    // to the 12rem row basis that only applies beside trailing actions.
+    // to the 17rem row basis that only applies beside trailing actions.
     expect(cardBox.height).toBeLessThan(160);
   });
 
