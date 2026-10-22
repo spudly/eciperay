@@ -68,16 +68,22 @@ export const ThumbnailListCard = ({
   // Trailing actions (e.g. "Log cook", "Delete" buttons) render as siblings
   // OUTSIDE the pressable, avoiding nested interactive elements.
   //
-  // The card flexes from a 12rem basis and the row wraps (#190): at phone
-  // widths the trailing actions cannot share the row without squeezing
-  // the title column to a few characters, so they wrap onto their own
-  // right-aligned row and the card spans the full list width. At desktop
-  // widths everything fits on one row and nothing wraps. (The app mirror
-  // keeps its single-row layout: native rows are not width-squeezed the
-  // same way, and its trailing actions render inside the card.)
+  // Inside the trailing-actions row the card flexes from a 12rem basis
+  // and the row wraps (#190): at phone widths the trailing actions cannot
+  // share the row without squeezing the title column to a few characters,
+  // so they wrap onto their own right-aligned row and the card spans the
+  // full list width. At desktop widths everything fits on one row and
+  // nothing wraps. (The app mirror keeps its single-row layout: native
+  // rows are not width-squeezed the same way, and its trailing actions
+  // render inside the card.)
+  //
+  // The basis applies ONLY in that row: without trailing actions the
+  // card renders standalone as a child of a column layout, where a
+  // 12rem flex basis would resolve vertically and stretch the card.
+  const inRow = Boolean(trailing);
   let card: ReactNode;
   if (onPress) {
-    card = (
+    card = inRow ? (
       <DSCard
         onPress={onPress}
         role="button"
@@ -89,6 +95,15 @@ export const ThumbnailListCard = ({
       >
         {main}
       </DSCard>
+    ) : (
+      <DSCard
+        onPress={onPress}
+        role="button"
+        tabIndex={0}
+        flex={1}
+      >
+        {main}
+      </DSCard>
     );
   } else if (linkTo) {
     card = (
@@ -97,7 +112,7 @@ export const ThumbnailListCard = ({
         style={{
           textDecoration: 'none',
           display: 'block',
-          flex: '1 1 12rem',
+          flex: inRow ? '1 1 12rem' : 1,
           minWidth: 0,
         }}
       >
@@ -105,7 +120,7 @@ export const ThumbnailListCard = ({
       </Link>
     );
   } else {
-    card = (
+    card = inRow ? (
       <DSCard
         flexGrow={1}
         flexShrink={1}
@@ -114,6 +129,8 @@ export const ThumbnailListCard = ({
       >
         {main}
       </DSCard>
+    ) : (
+      <DSCard flex={1}>{main}</DSCard>
     );
   }
 

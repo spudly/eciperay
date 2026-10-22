@@ -76,7 +76,7 @@ test.describe('mobile web layout (390px)', () => {
     await page.goto('/shared-with-me');
     await expect(page.getByText('E2E Shared Salad')).toBeVisible();
 
-    const cardWidth = await page.evaluate(() => {
+    const cardBox = await page.evaluate(() => {
       const title = [...document.querySelectorAll('*')].find(
         el => el.children.length === 0 && el.textContent === 'E2E Shared Salad',
       );
@@ -85,9 +85,14 @@ test.describe('mobile web layout (390px)', () => {
       while (el && el.tagName !== 'A') {
         el = el.parentElement;
       }
-      return el?.getBoundingClientRect().width ?? 0;
+      const rect = el?.getBoundingClientRect();
+      return {width: rect?.width ?? 0, height: rect?.height ?? 0};
     });
-    expect(cardWidth).toBeGreaterThan(300);
+    expect(cardBox.width).toBeGreaterThan(300);
+    // The standalone (no trailing actions) card is a child of a column
+    // layout: its height must stay content-sized (~110px), not stretch
+    // to the 12rem row basis that only applies beside trailing actions.
+    expect(cardBox.height).toBeLessThan(160);
   });
 
   test('home recently-viewed cards span the list width', async ({page}) => {
