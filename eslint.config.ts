@@ -26,6 +26,8 @@ export default [
     ignores: [
       '**/node_modules/**',
       '**/dist/**',
+      '**/dist-e2e*/**', // Playwright e2e build output (packages/web/playwright.config.ts)
+      '**/test-results/**', // Playwright traces/reports
       'packages/app/ios/**',
       'packages/app/android/**',
       'packages/app/__tests__/**',
