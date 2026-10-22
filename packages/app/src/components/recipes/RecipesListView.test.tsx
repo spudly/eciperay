@@ -1,5 +1,6 @@
 import {tokens} from '@spudly/ui';
-import {fireEvent, waitFor} from '@testing-library/react-native';
+import {act, fireEvent, waitFor} from '@testing-library/react-native';
+import type {RecipeDetail} from '@eciperay/types';
 import React from 'react';
 import {
   RECIPE_STATUS_FILTER_ALL,
@@ -234,6 +235,69 @@ describe('RecipesListView cook-log accessory (#49 stage 2)', () => {
     await waitFor(() => {
       expect(queryByText('How did it go?')).toBeNull();
     });
+    expect(getAllByText('Log cook')).toHaveLength(2);
+  });
+
+  test('a pending save cannot be cancelled away — the form stays open until the save settles', async () => {
+    let resolveCreate: (cookLog: ReturnType<typeof makeCookLog>) => void = () =>
+      undefined;
+    mockCreateCookLog.mockImplementation(
+      () =>
+        new Promise(resolve => {
+          resolveCreate = resolve;
+        }),
+    );
+    const {getAllByText, getByText, queryByText} = await renderView();
+
+    await fireEvent.press(getAllByText('Log cook')[0]);
+    await fireEvent.press(getByText('Save'));
+    expect(mockCreateCookLog).toHaveBeenCalledTimes(1);
+
+    // Cancel while the save is in flight must not unmount the form
+    // and its mutation: the card kept the mutation mounted across a
+    // cancel/reopen, so a pending save stayed unrepeatable. Here the
+    // form simply stays open until the save settles.
+    await fireEvent.press(getByText('Cancel'));
+    expect(queryByText('How did it go?')).toBeTruthy();
+    expect(mockCreateCookLog).toHaveBeenCalledTimes(1);
+
+    // When the save lands, the form closes as usual.
+    await act(async () => {
+      resolveCreate(makeCookLog());
+    });
+    await waitFor(() => {
+      expect(queryByText('How did it go?')).toBeNull();
+    });
+    expect(getAllByText('Log cook')).toHaveLength(2);
+  });
+
+  test('a recipe that leaves the list returns with its form closed', async () => {
+    const view = (list: RecipeDetail[]) => (
+      <RecipesListView
+        {...controls}
+        isLoading={false}
+        recipes={list}
+        isFetchingNextPage={false}
+        onRecipePress={jest.fn()}
+        onRecipeDelete={jest.fn()}
+        onLoadMore={jest.fn()}
+      />
+    );
+    const {getAllByText, queryByText, rerender} = await renderWithProviders(
+      view([pasta, salad]),
+    );
+
+    await fireEvent.press(getAllByText('Log cook')[0]);
+    expect(queryByText('How did it go?')).toBeTruthy();
+
+    // Filter the recipe out, then bring it back. The card discarded
+    // its open state when it unmounted, so the returning row is
+    // closed — the lifted open set prunes ids whose rows are gone
+    // instead of reopening a fresh empty form.
+    await rerender(view([salad]));
+    await rerender(view([pasta, salad]));
+
+    expect(queryByText('How did it go?')).toBeNull();
     expect(getAllByText('Log cook')).toHaveLength(2);
   });
 });

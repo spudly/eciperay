@@ -25,6 +25,14 @@ import {RecipeListFiltersBar} from './RecipeListFiltersBar.js';
 // deliberately keeps its DOM implementation — page-flow rendering and
 // IntersectionObserver pagination via loadMoreRef; converging web onto
 // the DS page is a separate decision.
+//
+// Stage-2 follow-up (Copilot round on the app rewire): the app host
+// guards the slot form's open set so it matches the card semantics
+// this file's cards still have natively — a pending save cannot be
+// cancelled into a duplicate (the mutation here lives in the mounted
+// card; the app's slot form must not unmount mid-save), and an open
+// form's id is pruned when its row leaves the list (here, unmounting
+// the card discards its open state). No web behavior changes.
 export const RecipesListView = ({
   isLoading,
   recipes,

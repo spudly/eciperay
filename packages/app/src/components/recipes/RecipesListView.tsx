@@ -15,7 +15,7 @@ import type {
 } from '@eciperay/types';
 import {RecipesPage, type RecipesPageItem} from '@spudly/ui/pages';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
-import {useState} from 'react';
+import {useEffect, useState} from 'react';
 
 import {api} from '../../lib/api';
 import {CookLogForm} from '../cooking/CookLogForm';
@@ -45,6 +45,14 @@ import {formatRecipeSubtitle} from '../RecipeListCard';
  * invalidation, same close-on-success — with the open state lifted to the
  * view's open set instead of per-card state. The page wraps the accessory in
  * the same bottom-margin stack the card wrapped its form in.
+ *
+ * One card behavior needs explicit care here: the card's mutation lives in the
+ * always-mounted card body, so cancelling mid-save merely hid the form — the
+ * pending mutation (and its disabled Save) survived a close/reopen. This
+ * component unmounts with the slot instead, so a cancel during a pending save
+ * would orphan the in-flight request and let a reopened form save a duplicate.
+ * Cancel is therefore inert while the save is pending: the form stays open
+ * until the save settles (success closes it; an error re-enables Cancel).
  */
 const InlineCookLogForm = ({
   recipe,
@@ -69,7 +77,11 @@ const InlineCookLogForm = ({
       variant="light"
       secondaryLabel="Cancel"
       isPending={createMutation.isPending}
-      onSkip={onClose}
+      onSkip={() => {
+        if (!createMutation.isPending) {
+          onClose();
+        }
+      }}
       onSubmit={input => {
         createMutation.mutate(input);
       }}
@@ -125,6 +137,26 @@ export const RecipesListView = ({
       return next;
     });
   };
+
+  // Reconcile the open set with the rows actually in the list: when a
+  // recipe leaves the list (filtered out, or the loading-to-empty
+  // transition), its open id goes with it, so a recipe that later
+  // returns comes back closed. The cards got this for free — unmounting
+  // a card discarded its open state — but the lifted set has to prune
+  // explicitly, or a returning row would reopen a fresh empty form and
+  // hide its "Log cook" button.
+  useEffect(() => {
+    setOpenCookLogIds(current => {
+      if (current.size === 0) {
+        return current;
+      }
+      const present = new Set(recipes.map(recipe => recipe.id));
+      const next = new Set(
+        [...current].filter(recipeId => present.has(recipeId)),
+      );
+      return next.size === current.size ? current : next;
+    });
+  }, [recipes]);
 
   const recipesById = new Map(recipes.map(recipe => [recipe.id, recipe]));
 
