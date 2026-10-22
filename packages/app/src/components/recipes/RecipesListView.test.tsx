@@ -12,7 +12,7 @@ import {makeCookLog, makeRecipeDetail} from '../../__tests__/fixtures/recipe';
 import {renderWithProviders} from '../../__tests__/testUtils';
 import {api} from '../../lib/api';
 
-import {RecipesListView} from './RecipesListView';
+import {InlineCookLogForm, RecipesListView} from './RecipesListView';
 
 jest.mock('../../lib/api');
 
@@ -299,5 +299,55 @@ describe('RecipesListView cook-log accessory (#49 stage 2)', () => {
 
     expect(queryByText('How did it go?')).toBeNull();
     expect(getAllByText('Log cook')).toHaveLength(2);
+  });
+});
+
+/**
+ * Unmount reconciliation (#49 stage 2): the DS page's FlatList is virtualized,
+ * so a row scrolled far off screen unmounts — in jest that unmount cannot be
+ * reproduced through the view (no layout runs), so these tests pin the form's
+ * half of the contract directly: when the slot form unmounts, it removes its id
+ * from the host's open set via onClose, and the row that later remounts renders
+ * closed (the same end state the find-2 rerender test pins through the list).
+ * The card got this for free — its open state died with the card.
+ */
+describe('InlineCookLogForm unmount reconciliation (#49 stage 2)', () => {
+  const pasta = makeRecipeDetail({id: 'pasta-id', title: 'Pasta Night'});
+
+  beforeEach(() => {
+    mockCreateCookLog.mockResolvedValue(makeCookLog());
+  });
+
+  test('unmounting the form closes it in the host open set', async () => {
+    const onClose = jest.fn();
+    const {unmount} = await renderWithProviders(
+      <InlineCookLogForm
+        recipe={pasta}
+        onClose={onClose}
+      />,
+    );
+
+    await unmount();
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  test('unmounting during a pending save still reconciles the open flag', async () => {
+    mockCreateCookLog.mockImplementation(() => new Promise(() => undefined));
+    const onClose = jest.fn();
+    const {getByText, unmount} = await renderWithProviders(
+      <InlineCookLogForm
+        recipe={pasta}
+        onClose={onClose}
+      />,
+    );
+
+    await fireEvent.press(getByText('Save'));
+    expect(mockCreateCookLog).toHaveBeenCalledTimes(1);
+    expect(onClose).not.toHaveBeenCalled();
+
+    await unmount();
+
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 });
