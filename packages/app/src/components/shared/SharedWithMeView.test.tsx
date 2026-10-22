@@ -1,3 +1,4 @@
+import {tokens} from '@spudly/ui';
 import React from 'react';
 import {
   RECIPE_STATUS_FILTER_ALL,
@@ -55,5 +56,53 @@ describe('SharedWithMeView element presence (#162)', () => {
     expect(getByText('High to low')).toBeTruthy();
     // First shared recipe card.
     expect(getByText('Shared Soup')).toBeTruthy();
+  });
+});
+
+/**
+ * Regression test for #188, applied to this screen as well: it shares the
+ * filter form, the fixed `list` shell, and the unbounded-FlatList pattern
+ * RecipesListView had, so it had the same unreachable-list geometry. Jest
+ * renderers do not run Yoga layout, so this pins the rendered contract — the
+ * list's scroll view is bounded (flex: 1) and the filters render inside it as
+ * its header, travelling with the list. The list's scroll view is the
+ * RCTScrollView carrying the list content padding (spacing 4 / 8).
+ */
+describe('SharedWithMeView list scrollability (#188)', () => {
+  const controls = {
+    ...demoRecipeListFilters(),
+    statusFilter: RECIPE_STATUS_FILTER_ALL as RecipeStatusFilterValue,
+    onStatusFilterChange: () => undefined,
+  };
+
+  test('bounds the FlatList and renders the filters as its scrollable header', async () => {
+    const {container} = await renderWithProviders(
+      <SharedWithMeView
+        {...controls}
+        isLoading={false}
+        recipes={[
+          makeRecipeDetail({title: 'Shared Soup', userId: 'other-user'}),
+        ]}
+        isFetchingNextPage={false}
+        onLoadMore={jest.fn()}
+      />,
+    );
+
+    const lists = container.queryAll(
+      node =>
+        node.type === 'RCTScrollView' &&
+        node.props.contentContainerStyle?.paddingHorizontal ===
+          tokens.spacing[4] &&
+        node.props.contentContainerStyle?.paddingBottom === tokens.spacing[8],
+    );
+    expect(lists).toHaveLength(1);
+    const list = lists[0];
+    expect(list.props.style).toEqual(expect.objectContaining({flex: 1}));
+    expect(
+      list.queryAll(node => node.props.placeholder === 'Search recipes…'),
+    ).toHaveLength(1);
+    expect(
+      list.queryAll(node => node.children.includes('Shared Soup')),
+    ).not.toHaveLength(0);
   });
 });

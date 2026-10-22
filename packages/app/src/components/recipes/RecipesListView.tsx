@@ -20,6 +20,12 @@ const listContentStyle = {
   paddingBottom: tokens.spacing[8],
 } as const;
 
+// The FlatList must be bounded to the space the fixed `list` shell leaves it
+// (#188): without flex: 1 it sizes to its full content height inside the
+// non-scrolling shell, overflows the viewport, and never gets a scrollable
+// viewport of its own — the recipes below the fold were unreachable.
+const listStyle = {flex: 1} as const;
+
 export const RecipesListView = ({
   isLoading,
   recipes,
@@ -28,45 +34,68 @@ export const RecipesListView = ({
   onRecipeDelete,
   onLoadMore,
   ...filterControls
-}: RecipesListViewProps) => (
-  <ScreenContainer variant="list">
-    <YStack
-      paddingHorizontal="$4"
-      paddingBlockStart="$4"
-      paddingBlockEnd="$2"
-    >
-      <RecipeListFiltersBar {...filterControls} />
-    </YStack>
-    {isLoading ? (
-      <YStack marginBlockStart="$8">
-        <InlineLoadingIndicator loading />
-      </YStack>
-    ) : (
-      <FlatList
-        data={recipes}
-        keyExtractor={recipe => recipe.id}
-        contentContainerStyle={listContentStyle}
-        renderItem={({item}) => (
-          <RecipeListCard
-            recipe={item}
-            onPress={() => {
-              onRecipePress(item.id);
-            }}
-            onDelete={() => {
-              onRecipeDelete(item);
-            }}
-          />
-        )}
-        onEndReached={onLoadMore}
-        onEndReachedThreshold={0.4}
-        ListEmptyComponent={
-          <EmptyMessage spacing="list">No recipes found.</EmptyMessage>
-        }
-        ListFooterComponent={<ListLoadingFooter loading={isFetchingNextPage} />}
-      />
-    )}
-  </ScreenContainer>
-);
+}: RecipesListViewProps) => {
+  const filtersBar = <RecipeListFiltersBar {...filterControls} />;
+
+  return (
+    <ScreenContainer variant="list">
+      {isLoading ? (
+        <>
+          <YStack
+            paddingHorizontal="$4"
+            paddingBlockStart="$4"
+            paddingBlockEnd="$2"
+          >
+            {filtersBar}
+          </YStack>
+          <YStack marginBlockStart="$8">
+            <InlineLoadingIndicator loading />
+          </YStack>
+        </>
+      ) : (
+        <FlatList
+          style={listStyle}
+          data={recipes}
+          keyExtractor={recipe => recipe.id}
+          contentContainerStyle={listContentStyle}
+          // The filters render as the list's header so they scroll together
+          // with the recipes (#188): the filter form is nearly a viewport
+          // tall on its own, so pinning it above a bounded list left the
+          // list only a sliver of screen. The header sits inside the list's
+          // content container, which already supplies the horizontal
+          // padding the standalone wrapper used to add.
+          ListHeaderComponent={
+            <YStack
+              paddingBlockStart="$4"
+              paddingBlockEnd="$2"
+            >
+              {filtersBar}
+            </YStack>
+          }
+          renderItem={({item}) => (
+            <RecipeListCard
+              recipe={item}
+              onPress={() => {
+                onRecipePress(item.id);
+              }}
+              onDelete={() => {
+                onRecipeDelete(item);
+              }}
+            />
+          )}
+          onEndReached={onLoadMore}
+          onEndReachedThreshold={0.4}
+          ListEmptyComponent={
+            <EmptyMessage spacing="list">No recipes found.</EmptyMessage>
+          }
+          ListFooterComponent={
+            <ListLoadingFooter loading={isFetchingNextPage} />
+          }
+        />
+      )}
+    </ScreenContainer>
+  );
+};
 
 if (__DEV__) {
   const RecipesListViewDemo = () => {
