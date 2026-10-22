@@ -1,4 +1,5 @@
 import {tokens} from '@spudly/ui';
+import {fireEvent, waitFor} from '@testing-library/react-native';
 import React from 'react';
 import {
   RECIPE_STATUS_FILTER_ALL,
@@ -6,12 +7,15 @@ import {
   type RecipeStatusFilterValue,
 } from '@eciperay/client';
 
-import {makeRecipeDetail} from '../../__tests__/fixtures/recipe';
+import {makeCookLog, makeRecipeDetail} from '../../__tests__/fixtures/recipe';
 import {renderWithProviders} from '../../__tests__/testUtils';
+import {api} from '../../lib/api';
 
 import {RecipesListView} from './RecipesListView';
 
 jest.mock('../../lib/api');
+
+const mockCreateCookLog = api.cookLogs.create as jest.Mock;
 
 /**
  * Regression test for #162 (Android 1.25.0: this screen rendered one giant
@@ -147,5 +151,89 @@ describe('RecipesListView list scrollability (#188)', () => {
     ).toHaveLength(1);
     // The loading state is not the empty state.
     expect(queryByText('No recipes found.')).toBeNull();
+  });
+});
+
+/**
+ * Cook-log composition (#49, stage 2): the DS page owns the "Log cook" button
+ * and hides it for a row whose accessory renders content; the view holds the
+ * open set and renders the app's form through the accessory slot. These tests
+ * pin the behavior the per-card state used to give this screen — a form expands
+ * under the tapped row, its row's button hides while it is open, and forms open
+ * and close independently (several may be open at once).
+ */
+describe('RecipesListView cook-log accessory (#49 stage 2)', () => {
+  const controls = {
+    ...demoRecipeListFilters(),
+    statusFilter: RECIPE_STATUS_FILTER_ALL as RecipeStatusFilterValue,
+    onStatusFilterChange: () => undefined,
+  };
+  const pasta = makeRecipeDetail({id: 'pasta-id', title: 'Pasta Night'});
+  const salad = makeRecipeDetail({id: 'salad-id', title: 'Salad Days'});
+
+  const renderView = () =>
+    renderWithProviders(
+      <RecipesListView
+        {...controls}
+        isLoading={false}
+        recipes={[pasta, salad]}
+        isFetchingNextPage={false}
+        onRecipePress={jest.fn()}
+        onRecipeDelete={jest.fn()}
+        onLoadMore={jest.fn()}
+      />,
+    );
+
+  beforeEach(() => {
+    mockCreateCookLog.mockResolvedValue(makeCookLog());
+  });
+
+  test('opens the form under the tapped row and hides only that row’s Log cook button', async () => {
+    const {getAllByText, queryByText} = await renderView();
+
+    expect(getAllByText('Log cook')).toHaveLength(2);
+    expect(queryByText('How did it go?')).toBeNull();
+
+    await fireEvent.press(getAllByText('Log cook')[0]);
+
+    expect(getAllByText('How did it go?')).toHaveLength(1);
+    // The open row's button is hidden; the other row keeps its own.
+    expect(getAllByText('Log cook')).toHaveLength(1);
+  });
+
+  test('forms open and close independently — a second form opens while the first stays open', async () => {
+    const {getAllByText, queryByText} = await renderView();
+
+    await fireEvent.press(getAllByText('Log cook')[0]);
+    await fireEvent.press(getAllByText('Log cook')[0]);
+
+    expect(getAllByText('How did it go?')).toHaveLength(2);
+    expect(queryByText('Log cook')).toBeNull();
+
+    // Cancelling one form leaves the other open and restores only
+    // the cancelled row's button.
+    await fireEvent.press(getAllByText('Cancel')[0]);
+
+    expect(getAllByText('How did it go?')).toHaveLength(1);
+    expect(getAllByText('Log cook')).toHaveLength(1);
+  });
+
+  test('saves the cook log through the slot form and closes it', async () => {
+    const {getAllByText, getByText, queryByText} = await renderView();
+
+    await fireEvent.press(getAllByText('Log cook')[0]);
+    await fireEvent.press(getByText('Save'));
+
+    await waitFor(() => {
+      expect(mockCreateCookLog).toHaveBeenCalledWith(
+        pasta.id,
+        pasta.versionId,
+        {authorStarRating: null, notes: null},
+      );
+    });
+    await waitFor(() => {
+      expect(queryByText('How did it go?')).toBeNull();
+    });
+    expect(getAllByText('Log cook')).toHaveLength(2);
   });
 });
