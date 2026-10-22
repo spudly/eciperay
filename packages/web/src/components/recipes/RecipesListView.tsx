@@ -16,6 +16,15 @@ import {RecipeListFiltersBar} from './RecipeListFiltersBar.js';
 // inside a flex-bounded list to get the same effect, keeps that single
 // list mounted while loading, and sets keyboardShouldPersistTaps on it
 // so filter taps land while the keyboard is open.
+//
+// Page-view migration (#49, stage 2): the app mirror no longer renders
+// its own list — it hosts the design system's RecipesPage
+// (@spudly/ui/pages) and keeps only the app-side composition (the item
+// mapping, the filter boundary casts, and the cook-log forms rendered
+// through the page's per-row accessory slot). This web mirror
+// deliberately keeps its DOM implementation — page-flow rendering and
+// IntersectionObserver pagination via loadMoreRef; converging web onto
+// the DS page is a separate decision.
 export const RecipesListView = ({
   isLoading,
   recipes,

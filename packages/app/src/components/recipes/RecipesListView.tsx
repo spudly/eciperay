@@ -1,30 +1,81 @@
-import type {RecipesListViewProps} from '@eciperay/client';
-import {demoRecipeListFilters, makeRecipeDetail} from '@eciperay/client';
-import {tokens} from '@spudly/ui';
-import {FlatList} from 'react-native';
+import type {
+  RecipeStatusFilterValue,
+  RecipesListViewProps,
+} from '@eciperay/client';
+import {
+  demoRecipeListFilters,
+  invalidateRecipeQueries,
+  makeRecipeDetail,
+} from '@eciperay/client';
+import type {
+  CookLogInput,
+  RecipeDetail,
+  RecipeListSort,
+  RecipeListSortDir,
+} from '@eciperay/types';
+import {RecipesPage, type RecipesPageItem} from '@spudly/ui/pages';
+import {useMutation, useQueryClient} from '@tanstack/react-query';
 import {useState} from 'react';
-import {YStack} from 'tamagui';
 
-import {RecipeListCard} from '../RecipeListCard';
-import {InlineLoadingIndicator} from '../InlineLoadingIndicator';
-import {EmptyMessage} from '../ui/EmptyMessage';
-import {ListLoadingFooter} from '../ui/ListLoadingFooter';
-import {ScreenContainer} from '../ui/ScreenContainer';
+import {api} from '../../lib/api';
+import {CookLogForm} from '../cooking/CookLogForm';
+import {formatRecipeSubtitle} from '../RecipeListCard';
 
-import {RecipeListFiltersBar} from './RecipeListFiltersBar';
+/**
+ * The Recipes screen's view (#49, stage 2): the design system's RecipesPage
+ * renders the screen — filter bar, bounded list, rows — and this component is
+ * its app-side host. Everything the page must not own stays here: the
+ * view-model mapping (the subtitle is the app's list meta line, formatted by
+ * the same helper the list card uses), the boundary adaptations (delete
+ * resolves the recipe from the app's own list by id, because the confirmation
+ * alert needs the full recipe; the filter unions narrow back from the page's
+ * plain strings with the same casts the old filter bar used), and the cook-log
+ * composition below.
+ *
+ * The layout regressions the old hand-rolled list guarded in this file — #188
+ * (bounded flex: 1 list, filters as its header) and #162 (the DS SearchField
+ * untouched) — are structural in the DS page now; the view tests here still pin
+ * the rendered contract (bounded scroll view, header filters, element
+ * presence).
+ */
 
-// List content geometry on the DS spacing scale (plain object, no StyleSheet —
-// the recipeImagePreviewStyles precedent).
-const listContentStyle = {
-  paddingHorizontal: tokens.spacing[4],
-  paddingBottom: tokens.spacing[8],
-} as const;
+/**
+ * One row's inline cook-log form, rendered through the page's per-row accessory
+ * slot. It mirrors RecipeListCard's form block — same mutation, same
+ * invalidation, same close-on-success — with the open state lifted to the
+ * view's open set instead of per-card state. The page wraps the accessory in
+ * the same bottom-margin stack the card wrapped its form in.
+ */
+const InlineCookLogForm = ({
+  recipe,
+  onClose,
+}: {
+  recipe: RecipeDetail;
+  onClose: () => void;
+}) => {
+  const queryClient = useQueryClient();
 
-// The FlatList must be bounded to the space the fixed `list` shell leaves it
-// (#188): without flex: 1 it sizes to its full content height inside the
-// non-scrolling shell, overflows the viewport, and never gets a scrollable
-// viewport of its own — the recipes below the fold were unreachable.
-const listStyle = {flex: 1} as const;
+  const createMutation = useMutation({
+    mutationFn: (input: CookLogInput) =>
+      api.cookLogs.create(recipe.id, recipe.versionId, input),
+    onSuccess: async () => {
+      await invalidateRecipeQueries(queryClient, recipe.id, recipe.versionId);
+      onClose();
+    },
+  });
+
+  return (
+    <CookLogForm
+      variant="light"
+      secondaryLabel="Cancel"
+      isPending={createMutation.isPending}
+      onSkip={onClose}
+      onSubmit={input => {
+        createMutation.mutate(input);
+      }}
+    />
+  );
+};
 
 export const RecipesListView = ({
   isLoading,
@@ -33,66 +84,116 @@ export const RecipesListView = ({
   onRecipePress,
   onRecipeDelete,
   onLoadMore,
-  ...filterControls
+  search,
+  onSearchChange,
+  statusFilter,
+  onStatusFilterChange,
+  ingredient,
+  onIngredientChange,
+  minCalories,
+  onMinCaloriesChange,
+  maxCalories,
+  onMaxCaloriesChange,
+  minSatiety,
+  onMinSatietyChange,
+  maxSatiety,
+  onMaxSatietyChange,
+  sort,
+  onSortChange,
+  sortDir,
+  onSortDirChange,
+  showStatusFilter,
 }: RecipesListViewProps) => {
-  const filtersBar = <RecipeListFiltersBar {...filterControls} />;
+  // The cook-log forms' open state: a set of recipe ids, so forms
+  // open and close independently and several may be open at once —
+  // the same semantics the cards' per-card state gave this screen.
+  // The page hides the "Log cook" button of any row whose accessory
+  // renders content, so opening a form here is all it takes to
+  // reproduce the card's button-hides-while-open behavior.
+  const [openCookLogIds, setOpenCookLogIds] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  );
+
+  const openCookLog = (recipeId: string) => {
+    setOpenCookLogIds(current => new Set(current).add(recipeId));
+  };
+
+  const closeCookLog = (recipeId: string) => {
+    setOpenCookLogIds(current => {
+      const next = new Set(current);
+      next.delete(recipeId);
+      return next;
+    });
+  };
+
+  const recipesById = new Map(recipes.map(recipe => [recipe.id, recipe]));
+
+  const items: RecipesPageItem[] = recipes.map(recipe => ({
+    id: recipe.id,
+    title: recipe.title,
+    subtitle: formatRecipeSubtitle(recipe),
+    imageUrl: recipe.imageUrl,
+  }));
 
   return (
-    <ScreenContainer variant="list">
-      <FlatList
-        style={listStyle}
-        // The filter controls live inside this scroll view, so taps on
-        // them must land while the keyboard is open instead of being
-        // consumed to dismiss it — the same reason the form shells set
-        // this on their ScrollView (see ui/ScreenContainer).
-        keyboardShouldPersistTaps="handled"
-        data={isLoading ? [] : recipes}
-        keyExtractor={recipe => recipe.id}
-        contentContainerStyle={listContentStyle}
-        // The filters render as the list's header so they scroll together
-        // with the recipes (#188): the filter form is nearly a viewport
-        // tall on its own, so pinning it above a bounded list left the
-        // list only a sliver of screen. The header sits inside the list's
-        // content container, which already supplies the horizontal
-        // padding a standalone wrapper would add. The list (and therefore
-        // the header) stays mounted while loading — the screens' queries
-        // keep no previous data, so a filter edit flips isLoading and a
-        // tree swap here would unmount the focused filter input
-        // mid-typing; the loading indicator renders as the list's empty
-        // state instead.
-        ListHeaderComponent={
-          <YStack
-            paddingBlockStart="$4"
-            paddingBlockEnd="$2"
-          >
-            {filtersBar}
-          </YStack>
+    <RecipesPage
+      recipes={items}
+      isLoading={isLoading}
+      isFetchingNextPage={isFetchingNextPage}
+      onRecipePress={onRecipePress}
+      onLogCookPress={openCookLog}
+      onRecipeDelete={recipeId => {
+        const recipe = recipesById.get(recipeId);
+        if (recipe) {
+          onRecipeDelete(recipe);
         }
-        renderItem={({item}) => (
-          <RecipeListCard
-            recipe={item}
-            onPress={() => {
-              onRecipePress(item.id);
-            }}
-            onDelete={() => {
-              onRecipeDelete(item);
+      }}
+      renderRecipeAccessory={recipeId => {
+        const recipe = recipesById.get(recipeId);
+        if (!recipe || !openCookLogIds.has(recipeId)) {
+          return null;
+        }
+        return (
+          <InlineCookLogForm
+            key={recipeId}
+            recipe={recipe}
+            onClose={() => {
+              closeCookLog(recipeId);
             }}
           />
-        )}
-        onEndReached={onLoadMore}
-        onEndReachedThreshold={0.4}
-        ListEmptyComponent={
-          isLoading ? (
-            <YStack marginBlockStart="$8">
-              <InlineLoadingIndicator loading />
-            </YStack>
-          ) : (
-            <EmptyMessage spacing="list">No recipes found.</EmptyMessage>
-          )
-        }
-        ListFooterComponent={<ListLoadingFooter loading={isFetchingNextPage} />}
-      />
-    </ScreenContainer>
+        );
+      }}
+      onLoadMore={onLoadMore}
+      search={search}
+      onSearchChange={onSearchChange}
+      statusFilter={statusFilter}
+      onStatusFilterChange={
+        onStatusFilterChange
+          ? value => {
+              onStatusFilterChange(value as RecipeStatusFilterValue);
+            }
+          : undefined
+      }
+      showStatusFilter={showStatusFilter}
+      ingredient={ingredient}
+      onIngredientChange={onIngredientChange}
+      minCalories={minCalories}
+      onMinCaloriesChange={onMinCaloriesChange}
+      maxCalories={maxCalories}
+      onMaxCaloriesChange={onMaxCaloriesChange}
+      minSatiety={minSatiety}
+      onMinSatietyChange={onMinSatietyChange}
+      maxSatiety={maxSatiety}
+      onMaxSatietyChange={onMaxSatietyChange}
+      sort={sort}
+      onSortChange={value => {
+        onSortChange(value as RecipeListSort);
+      }}
+      sortDir={sortDir}
+      onSortDirChange={value => {
+        onSortDirChange(value as RecipeListSortDir);
+      }}
+    />
   );
 };
 
