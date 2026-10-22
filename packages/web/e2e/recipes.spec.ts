@@ -27,8 +27,15 @@ test.describe('authenticated recipes', () => {
 
     await page.getByPlaceholder('Search recipes…').fill('Lentil');
 
-    await expect(page.getByText('E2E Lentil Soup')).toBeVisible();
-    await expect(page.getByText('E2E Tomato Pasta')).toHaveCount(0);
+    // One retrying assertion over both titles: the pair must hold in
+    // the SAME state. Soup alone is visible in the unfiltered list,
+    // and Pasta alone disappears while the filtered query loads (the
+    // list empties), so sequential assertions could pass across two
+    // different states without ever seeing the filtered result.
+    await expect(async () => {
+      await expect(page.getByText('E2E Lentil Soup')).toBeVisible();
+      await expect(page.getByText('E2E Tomato Pasta')).toHaveCount(0);
+    }).toPass();
   });
 
   test('opening a recipe renders its detail', async ({page}) => {
