@@ -13,7 +13,9 @@ import {InfoBanner} from './InfoBanner';
  * same way (it previously translated through the deprecated `elevated` prop).
  *
  * The old description prop (rendered under the title) is composed into children
- * as DS hint text; the mb-8 card spacing is preserved.
+ * as DS hint text; the mb-8 card spacing is preserved. (Parity note: the web
+ * mirror adapter restores the same mb-8 spacing on its DS Card — #191; this
+ * adapter already carried it, so no app-side change was needed.)
  */
 export const SectionCard = ({
   title,
