@@ -22,7 +22,10 @@ export const ProfileTransferSection = ({
   onImportFile,
   onExportError,
 }: ProfileTransferSectionProps) => (
-  <SectionCard title="Transfer recipes">
+  <SectionCard
+    title="Transfer recipes"
+    marginBottom="$8"
+  >
     <p className="text-muted mbe-4 text-sm">
       Select recipes to export as JSON, then import them in another environment.
       Images and tags are included.
