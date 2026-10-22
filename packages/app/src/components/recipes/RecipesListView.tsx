@@ -39,60 +39,59 @@ export const RecipesListView = ({
 
   return (
     <ScreenContainer variant="list">
-      {isLoading ? (
-        <>
+      <FlatList
+        style={listStyle}
+        // The filter controls live inside this scroll view, so taps on
+        // them must land while the keyboard is open instead of being
+        // consumed to dismiss it — the same reason the form shells set
+        // this on their ScrollView (see ui/ScreenContainer).
+        keyboardShouldPersistTaps="handled"
+        data={isLoading ? [] : recipes}
+        keyExtractor={recipe => recipe.id}
+        contentContainerStyle={listContentStyle}
+        // The filters render as the list's header so they scroll together
+        // with the recipes (#188): the filter form is nearly a viewport
+        // tall on its own, so pinning it above a bounded list left the
+        // list only a sliver of screen. The header sits inside the list's
+        // content container, which already supplies the horizontal
+        // padding a standalone wrapper would add. The list (and therefore
+        // the header) stays mounted while loading — the screens' queries
+        // keep no previous data, so a filter edit flips isLoading and a
+        // tree swap here would unmount the focused filter input
+        // mid-typing; the loading indicator renders as the list's empty
+        // state instead.
+        ListHeaderComponent={
           <YStack
-            paddingHorizontal="$4"
             paddingBlockStart="$4"
             paddingBlockEnd="$2"
           >
             {filtersBar}
           </YStack>
-          <YStack marginBlockStart="$8">
-            <InlineLoadingIndicator loading />
-          </YStack>
-        </>
-      ) : (
-        <FlatList
-          style={listStyle}
-          data={recipes}
-          keyExtractor={recipe => recipe.id}
-          contentContainerStyle={listContentStyle}
-          // The filters render as the list's header so they scroll together
-          // with the recipes (#188): the filter form is nearly a viewport
-          // tall on its own, so pinning it above a bounded list left the
-          // list only a sliver of screen. The header sits inside the list's
-          // content container, which already supplies the horizontal
-          // padding the standalone wrapper used to add.
-          ListHeaderComponent={
-            <YStack
-              paddingBlockStart="$4"
-              paddingBlockEnd="$2"
-            >
-              {filtersBar}
+        }
+        renderItem={({item}) => (
+          <RecipeListCard
+            recipe={item}
+            onPress={() => {
+              onRecipePress(item.id);
+            }}
+            onDelete={() => {
+              onRecipeDelete(item);
+            }}
+          />
+        )}
+        onEndReached={onLoadMore}
+        onEndReachedThreshold={0.4}
+        ListEmptyComponent={
+          isLoading ? (
+            <YStack marginBlockStart="$8">
+              <InlineLoadingIndicator loading />
             </YStack>
-          }
-          renderItem={({item}) => (
-            <RecipeListCard
-              recipe={item}
-              onPress={() => {
-                onRecipePress(item.id);
-              }}
-              onDelete={() => {
-                onRecipeDelete(item);
-              }}
-            />
-          )}
-          onEndReached={onLoadMore}
-          onEndReachedThreshold={0.4}
-          ListEmptyComponent={
+          ) : (
             <EmptyMessage spacing="list">No recipes found.</EmptyMessage>
-          }
-          ListFooterComponent={
-            <ListLoadingFooter loading={isFetchingNextPage} />
-          }
-        />
-      )}
+          )
+        }
+        ListFooterComponent={<ListLoadingFooter loading={isFetchingNextPage} />}
+      />
     </ScreenContainer>
   );
 };

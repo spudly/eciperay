@@ -104,6 +104,9 @@ describe('RecipesListView list scrollability (#188)', () => {
     expect(lists).toHaveLength(1);
     const list = lists[0];
     expect(list.props.style).toEqual(expect.objectContaining({flex: 1}));
+    // The filter controls live inside this scroll view, so taps on them
+    // must land while the keyboard is open rather than dismissing it.
+    expect(list.props.keyboardShouldPersistTaps).toBe('handled');
     // The search input (filters header) and the first card both live
     // inside the list's own scroll view, so they scroll together.
     expect(
@@ -112,5 +115,37 @@ describe('RecipesListView list scrollability (#188)', () => {
     expect(
       list.queryAll(node => node.children.includes('Pasta Night')),
     ).not.toHaveLength(0);
+  });
+
+  test('keeps the filters mounted inside the list while loading', async () => {
+    const {container, queryByText} = await renderWithProviders(
+      <RecipesListView
+        {...controls}
+        isLoading
+        recipes={[]}
+        isFetchingNextPage={false}
+        onRecipePress={jest.fn()}
+        onRecipeDelete={jest.fn()}
+        onLoadMore={jest.fn()}
+      />,
+    );
+
+    // One list, still carrying the filters header — a tree swap on the
+    // loading transition would unmount the focused search input
+    // mid-typing (the screens' queries keep no previous data, so a
+    // filter edit flips isLoading).
+    const lists = container.queryAll(
+      node =>
+        node.type === 'RCTScrollView' &&
+        node.props.contentContainerStyle?.paddingHorizontal ===
+          tokens.spacing[4] &&
+        node.props.contentContainerStyle?.paddingBottom === tokens.spacing[8],
+    );
+    expect(lists).toHaveLength(1);
+    expect(
+      lists[0].queryAll(node => node.props.placeholder === 'Search recipes…'),
+    ).toHaveLength(1);
+    // The loading state is not the empty state.
+    expect(queryByText('No recipes found.')).toBeNull();
   });
 });

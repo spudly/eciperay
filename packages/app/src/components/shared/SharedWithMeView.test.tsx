@@ -98,11 +98,42 @@ describe('SharedWithMeView list scrollability (#188)', () => {
     expect(lists).toHaveLength(1);
     const list = lists[0];
     expect(list.props.style).toEqual(expect.objectContaining({flex: 1}));
+    // The filter controls live inside this scroll view, so taps on them
+    // must land while the keyboard is open rather than dismissing it.
+    expect(list.props.keyboardShouldPersistTaps).toBe('handled');
     expect(
       list.queryAll(node => node.props.placeholder === 'Search recipes…'),
     ).toHaveLength(1);
     expect(
       list.queryAll(node => node.children.includes('Shared Soup')),
     ).not.toHaveLength(0);
+  });
+
+  test('keeps the filters mounted inside the list while loading', async () => {
+    const {container} = await renderWithProviders(
+      <SharedWithMeView
+        {...controls}
+        isLoading
+        recipes={[]}
+        isFetchingNextPage={false}
+        onLoadMore={jest.fn()}
+      />,
+    );
+
+    // One list, still carrying the filters header — a tree swap on the
+    // loading transition would unmount the focused search input
+    // mid-typing (the screens' queries keep no previous data, so a
+    // filter edit flips isLoading).
+    const lists = container.queryAll(
+      node =>
+        node.type === 'RCTScrollView' &&
+        node.props.contentContainerStyle?.paddingHorizontal ===
+          tokens.spacing[4] &&
+        node.props.contentContainerStyle?.paddingBottom === tokens.spacing[8],
+    );
+    expect(lists).toHaveLength(1);
+    expect(
+      lists[0].queryAll(node => node.props.placeholder === 'Search recipes…'),
+    ).toHaveLength(1);
   });
 });

@@ -15,9 +15,12 @@ import {RecipeListFiltersBar} from '../recipes/RecipeListFiltersBar.js';
 
 // Scroll parity with the app mirror (#188): on web the filters and the
 // cards render in normal page flow, so the page scrolls and every recipe
-// stays reachable. The app mirror cannot rely on page scroll (its `list`
+// stays reachable, and the filters stay mounted across loading
+// transitions. The app mirror cannot rely on page scroll (its `list`
 // shell is fixed), so it renders the same filters as its FlatList header
-// inside a flex-bounded list to get the same effect.
+// inside a flex-bounded list to get the same effect, keeps that single
+// list mounted while loading, and sets keyboardShouldPersistTaps on it
+// so filter taps land while the keyboard is open.
 export const SharedWithMeView = ({
   isLoading,
   recipes,
