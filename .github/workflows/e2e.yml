@@ -1,0 +1,70 @@
+name: e2e
+
+# Playwright web integration tests (issue #184). Unit/component tests
+# never load the real web app in a browser; this job builds the web
+# package in-job and exercises the core flows in Chromium against
+# fixture-mocked /api responses and a fake Supabase project (no
+# production data, no real account). See
+# packages/web/playwright.config.ts for why the suite targets the
+# in-job build instead of the per-PR Fly review app.
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - 'packages/web/**'
+      - 'packages/client/**'
+      - 'package-lock.json'
+      - '.github/workflows/e2e.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+
+env:
+  NODE_AUTH_TOKEN: ${{ secrets.PACKAGES_READ_TOKEN }}
+
+# Same-repo PRs only: fork PRs receive no secrets, so NODE_AUTH_TOKEN
+# would be empty and a cold-cache `npm ci` cannot fetch the private
+# @spudly/ui package from GitHub Packages (same gate as
+# android-build.yml / fly-review.yml).
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  e2e:
+    name: Playwright web e2e
+    if:
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup and install
+        uses: ./.github/actions/ci-setup
+        with:
+          install-command: npm ci
+          skip-install-on-cache-hit: 'true'
+
+      - name: Install Chromium for Playwright
+        working-directory: packages/web
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright tests
+        working-directory: packages/web
+        run: npm run test:e2e
+        env:
+          CI: true
+
+      - name: Upload Playwright traces on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-traces
+          path: packages/web/test-results
+          if-no-files-found: ignore

@@ -12,6 +12,9 @@ node_modules
 # build output
 dist
 build
+dist-e2e/
+test-results/
+playwright-report/
 coverage
 *.tsbuildinfo
 packages/theme/logos/generated/
