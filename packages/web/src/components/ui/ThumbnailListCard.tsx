@@ -54,7 +54,10 @@ export const ThumbnailListCard = ({
         imageUrl={imageUrl}
         title={title}
       />
-      <YStack flex={1} gap="$1">
+      <YStack
+        flex={1}
+        gap="$1"
+      >
         <DSText variant="subheading">{title}</DSText>
         {subtitle ? <DSText variant="hint">{subtitle}</DSText> : null}
       </YStack>
@@ -64,6 +67,14 @@ export const ThumbnailListCard = ({
   // The press target wraps only the main content (thumbnail + title).
   // Trailing actions (e.g. "Log cook", "Delete" buttons) render as siblings
   // OUTSIDE the pressable, avoiding nested interactive elements.
+  //
+  // The card flexes from a 12rem basis and the row wraps (#190): at phone
+  // widths the trailing actions cannot share the row without squeezing
+  // the title column to a few characters, so they wrap onto their own
+  // right-aligned row and the card spans the full list width. At desktop
+  // widths everything fits on one row and nothing wraps. (The app mirror
+  // keeps its single-row layout: native rows are not width-squeezed the
+  // same way, and its trailing actions render inside the card.)
   let card: ReactNode;
   if (onPress) {
     card = (
@@ -71,7 +82,10 @@ export const ThumbnailListCard = ({
         onPress={onPress}
         role="button"
         tabIndex={0}
-        flex={1}
+        flexGrow={1}
+        flexShrink={1}
+        flexBasis="12rem"
+        minWidth={0}
       >
         {main}
       </DSCard>
@@ -80,13 +94,27 @@ export const ThumbnailListCard = ({
     card = (
       <Link
         to={linkTo}
-        style={{textDecoration: 'none', display: 'block', flex: 1}}
+        style={{
+          textDecoration: 'none',
+          display: 'block',
+          flex: '1 1 12rem',
+          minWidth: 0,
+        }}
       >
         <DSCard>{main}</DSCard>
       </Link>
     );
   } else {
-    card = <DSCard flex={1}>{main}</DSCard>;
+    card = (
+      <DSCard
+        flexGrow={1}
+        flexShrink={1}
+        flexBasis="12rem"
+        minWidth={0}
+      >
+        {main}
+      </DSCard>
+    );
   }
 
   if (!trailing) {
@@ -94,9 +122,13 @@ export const ThumbnailListCard = ({
   }
 
   return (
-    <XStack gap="$3" alignItems="center">
+    <XStack
+      gap="$3"
+      alignItems="center"
+      flexWrap="wrap"
+    >
       {card}
-      {trailing}
+      <div style={{marginInlineStart: 'auto'}}>{trailing}</div>
     </XStack>
   );
 };

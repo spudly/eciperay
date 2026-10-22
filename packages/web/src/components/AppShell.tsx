@@ -23,12 +23,17 @@ const navLinkClass = ({isActive}: {isActive: boolean}) =>
 
 type AppShellProps = {children?: ReactNode};
 
+// The header wraps (#189): at phone widths the logo and the 7-item nav
+// cannot share one row, so the nav wraps below the logo instead of
+// overflowing the viewport and clipping labels. Desktop widths fit on
+// one row, so the wrap never engages there.
 export const AppShell = ({children}: AppShellProps) => (
   <div className="flex flex-col min-block-screen">
     <header className="border-be border-gray-200 bg-white">
       <div
         className="
-          mx-auto flex items-center justify-between px-4 py-3 max-inline-5xl
+          mx-auto flex flex-wrap items-center justify-between gap-x-4 gap-y-2
+          px-4 py-3 max-inline-5xl
         "
       >
         <NavLink
@@ -41,7 +46,7 @@ export const AppShell = ({children}: AppShellProps) => (
             className="block-12"
           />
         </NavLink>
-        <nav className="flex gap-1">
+        <nav className="flex flex-wrap gap-1">
           {navItems.map(({to, end, label, icon}) => (
             <NavLink
               key={to}
@@ -59,9 +64,11 @@ export const AppShell = ({children}: AppShellProps) => (
         </nav>
       </div>
     </header>
-    <main className="
+    <main
+      className="
       mx-auto flex flex-1 flex-col p-4 inline-full max-inline-5xl
-    ">
+    "
+    >
       {children ?? <Outlet />}
     </main>
   </div>
