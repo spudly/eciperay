@@ -38,51 +38,49 @@ export const SharedWithMeView = ({
 
   return (
     <ScreenContainer variant="list">
-      {isLoading ? (
-        <>
+      <FlatList
+        style={listStyle}
+        // The filter controls live inside this scroll view, so taps on
+        // them must land while the keyboard is open instead of being
+        // consumed to dismiss it — the same reason the form shells set
+        // this on their ScrollView (see ui/ScreenContainer).
+        keyboardShouldPersistTaps="handled"
+        data={isLoading ? [] : recipes}
+        keyExtractor={recipe => recipe.id}
+        contentContainerStyle={listContentStyle}
+        // Filters as the list header, scrolling with the recipes — the
+        // #188 fix applied to RecipesListView; this screen has the same
+        // filter form and the same fixed shell. The header sits inside
+        // the list's content container, which already supplies the
+        // horizontal padding a standalone wrapper would add. The list
+        // (and therefore the header) stays mounted while loading, so a
+        // filter edit that flips isLoading cannot unmount the focused
+        // filter input mid-typing; the loading indicator renders as the
+        // list's empty state instead.
+        ListHeaderComponent={
           <YStack
-            paddingHorizontal="$4"
             paddingBlockStart="$4"
             paddingBlockEnd="$2"
           >
             {filtersBar}
           </YStack>
-          <YStack marginBlockStart="$8">
-            <InlineLoadingIndicator loading />
-          </YStack>
-        </>
-      ) : (
-        <FlatList
-          style={listStyle}
-          data={recipes}
-          keyExtractor={recipe => recipe.id}
-          contentContainerStyle={listContentStyle}
-          // Filters as the list header, scrolling with the recipes — the
-          // #188 fix applied to RecipesListView; this screen has the same
-          // filter form and the same fixed shell. The header sits inside
-          // the list's content container, which already supplies the
-          // horizontal padding the standalone wrapper used to add.
-          ListHeaderComponent={
-            <YStack
-              paddingBlockStart="$4"
-              paddingBlockEnd="$2"
-            >
-              {filtersBar}
+        }
+        renderItem={({item}) => <SharedRecipeListCard recipe={item} />}
+        onEndReached={onLoadMore}
+        onEndReachedThreshold={0.4}
+        ListEmptyComponent={
+          isLoading ? (
+            <YStack marginBlockStart="$8">
+              <InlineLoadingIndicator loading />
             </YStack>
-          }
-          renderItem={({item}) => <SharedRecipeListCard recipe={item} />}
-          onEndReached={onLoadMore}
-          onEndReachedThreshold={0.4}
-          ListEmptyComponent={
+          ) : (
             <EmptyMessage spacing="list">
               {SHARED_WITH_ME_EMPTY_MESSAGE}
             </EmptyMessage>
-          }
-          ListFooterComponent={
-            <ListLoadingFooter loading={isFetchingNextPage} />
-          }
-        />
-      )}
+          )
+        }
+        ListFooterComponent={<ListLoadingFooter loading={isFetchingNextPage} />}
+      />
     </ScreenContainer>
   );
 };
