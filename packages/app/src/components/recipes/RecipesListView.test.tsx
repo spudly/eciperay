@@ -2,14 +2,16 @@ import {tokens} from '@spudly/ui';
 import {act, fireEvent, waitFor} from '@testing-library/react-native';
 import type {RecipeDetail} from '@eciperay/types';
 import React from 'react';
+import {useQuery} from '@tanstack/react-query';
 import {
   RECIPE_STATUS_FILTER_ALL,
   demoRecipeListFilters,
+  queryKeys,
   type RecipeStatusFilterValue,
 } from '@eciperay/client';
 
 import {makeCookLog, makeRecipeDetail} from '../../__tests__/fixtures/recipe';
-import {renderWithProviders} from '../../__tests__/testUtils';
+import {makeQueryClient, renderWithProviders} from '../../__tests__/testUtils';
 import {api} from '../../lib/api';
 
 import {InlineCookLogForm, RecipesListView} from './RecipesListView';
@@ -349,5 +351,92 @@ describe('InlineCookLogForm unmount reconciliation (#49 stage 2)', () => {
     await unmount();
 
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  test('a save completing after this form was replaced does not close the replacement', async () => {
+    const client = makeQueryClient();
+
+    // A probe query on the recipe key whose refetch the test holds
+    // open: the save's success handler awaits invalidateRecipeQueries,
+    // which awaits that refetch — a controllable completion window.
+    let releaseRefetch: () => void = () => undefined;
+    let refetchArmed = false;
+    const probeQueryFn = jest.fn(() => {
+      if (!refetchArmed) {
+        return Promise.resolve({id: pasta.id});
+      }
+      return new Promise<{id: string}>(resolve => {
+        releaseRefetch = () => {
+          resolve({id: pasta.id});
+        };
+      });
+    });
+    const Probe = () => {
+      useQuery({queryKey: queryKeys.recipe(pasta.id), queryFn: probeQueryFn});
+      return null;
+    };
+    await renderWithProviders(<Probe />, client);
+    await waitFor(() => {
+      expect(client.getQueryState(queryKeys.recipe(pasta.id))?.status).toBe(
+        'success',
+      );
+    });
+
+    // The original form, with a save whose create call is held too.
+    let releaseCreate: () => void = () => undefined;
+    mockCreateCookLog.mockImplementation(
+      () =>
+        new Promise(resolve => {
+          releaseCreate = () => {
+            resolve(makeCookLog());
+          };
+        }),
+    );
+    const onClose = jest.fn();
+    const original = await renderWithProviders(
+      <InlineCookLogForm
+        recipe={pasta}
+        onClose={onClose}
+      />,
+      client,
+    );
+    await fireEvent.press(original.getByText('Save'));
+    expect(mockCreateCookLog).toHaveBeenCalledTimes(1);
+
+    // The save succeeds; its completion parks in the invalidation,
+    // waiting on the probe's held refetch.
+    refetchArmed = true;
+    await act(async () => {
+      releaseCreate();
+    });
+    await waitFor(() => {
+      expect(probeQueryFn).toHaveBeenCalledTimes(2);
+    });
+
+    // The row unmounts (filter/virtualization): the form reconciles
+    // its open flag on the way out, and a replacement form opens for
+    // the same recipe under the same host close callback.
+    await original.unmount();
+    expect(onClose).toHaveBeenCalledTimes(1);
+    const replacement = await renderWithProviders(
+      <InlineCookLogForm
+        recipe={pasta}
+        onClose={onClose}
+      />,
+      client,
+    );
+    expect(replacement.getByText('How did it go?')).toBeTruthy();
+
+    // The original save's completion now lands. It must not fire
+    // the shared close again: the flag came off exactly once (the
+    // unmount), and the replacement form is still open.
+    await act(async () => {
+      releaseRefetch();
+    });
+    await waitFor(() => {
+      expect(client.isMutating()).toBe(0);
+    });
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(replacement.getByText('How did it go?')).toBeTruthy();
   });
 });
