@@ -64,6 +64,12 @@ import {formatRecipeSubtitle} from '../RecipeListCard';
  * state are gone; what the reconcile prevents is the row remounting with a
  * fresh empty form already open on top of it.)
  *
+ * Completion has the mirror-image hazard: a save that resolves just before the
+ * unmount parks in the awaited invalidation and finishes after a replacement
+ * form has opened for the same recipe. The success close is therefore guarded
+ * by this form's mounted lifetime, so a stale completion can never close the
+ * replacement (invalidation itself always runs).
+ *
  * Exported for the unmount-reconciliation tests; the view is its only
  * production caller.
  */
@@ -81,7 +87,15 @@ export const InlineCookLogForm = ({
       api.cookLogs.create(recipe.id, recipe.versionId, input),
     onSuccess: async () => {
       await invalidateRecipeQueries(queryClient, recipe.id, recipe.versionId);
-      onClose();
+      // The close is guarded by this form's mounted lifetime: the save
+      // can complete after this form was replaced (its row unmounted
+      // and the recipe was reopened while the invalidation above was
+      // still in flight), and an unguarded close would remove the
+      // replacement form's shared open flag and discard its draft.
+      // The card's callback only ever touched its own local state.
+      if (isMountedRef.current) {
+        onClose();
+      }
     },
   });
 
@@ -93,12 +107,16 @@ export const InlineCookLogForm = ({
     onCloseRef.current = onClose;
   });
 
-  useEffect(
-    () => () => {
+  // This form's mounted lifetime: set on mount, cleared by the unmount
+  // cleanup, which also reconciles the open flag (see the doc comment).
+  const isMountedRef = useRef(false);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
       onCloseRef.current();
-    },
-    [],
-  );
+    };
+  }, []);
 
   return (
     <CookLogForm
