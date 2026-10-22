@@ -14,6 +14,14 @@ name: Android Build
 #
 # Phase 2 (emulator use-case tests) is tracked in #183 and is not part of
 # this job yet.
+#
+# Same-repo PRs only: fork PRs receive no secrets, so NODE_AUTH_TOKEN
+# would be empty and a cold-cache `npm ci` cannot fetch the private
+# @spudly/ui package from GitHub Packages. That package's repository is
+# spudly/design-system, not this repo, so this repo's GITHUB_TOKEN cannot
+# be relied on to read it either. Fork builds are therefore intentionally
+# unsupported here — the same gate fly-review.yml uses — rather than
+# failing inside npm ci before Gradle ever runs.
 
 on:
   pull_request:
@@ -39,6 +47,9 @@ concurrency:
 jobs:
   android-build:
     name: Build Android release AAB
+    if:
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -67,8 +78,8 @@ jobs:
         env:
           APP_ENV: production
           API_BASE_URL: https://www.eciperay.com/api
-          # Fallbacks keep fork PR builds (which receive no secrets) bundling;
-          # same-repo PRs and pushes always use the real secrets.
+          # Fallbacks keep the build bundling if these optional secrets
+          # are ever unset; same-repo PRs normally use the real secrets.
           SUPABASE_URL:
             ${{ secrets.VITE_SUPABASE_URL || 'https://placeholder.supabase.co'
             }}
