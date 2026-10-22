@@ -17,13 +17,15 @@ const webPackageJson = JSON.parse(
 ) as {version?: string};
 const appVersion = webPackageJson.version ?? 'unknown';
 
-const esbuildDestructuringSupport = {
-  supported: {
-    // esbuild 0.28+ errors when lowering destructuring for Vite's default
-    // browser targets; our minimums are modern enough to run it natively.
-    destructuring: true,
-  },
-} as const;
+// Vite 8 transforms with Oxc (via Rolldown), which has no per-feature
+// `supported` map like esbuild's: syntax lowering is governed solely by
+// the transform target, and 'esnext' performs no lowering at all. That
+// preserves the intent of the old esbuild
+// `supported: { destructuring: true }` flag — esbuild 0.28+ errors when
+// lowering destructuring for Vite's default browser targets, and our
+// minimums run modern syntax natively — so destructuring (and every
+// other modern feature) stays native instead of being lowered. (#195)
+const noLoweringTarget = 'esnext' as const;
 
 const createPostHogSourceMapPlugin = (mode: string) => {
   if (mode !== 'production') {
@@ -72,8 +74,8 @@ export default defineConfig(({mode}) => {
       'import.meta.env.VITE_APP_VERSION': JSON.stringify(appVersion),
     },
     envDir: '../..',
-    esbuild: esbuildDestructuringSupport,
-    optimizeDeps: {esbuildOptions: esbuildDestructuringSupport},
+    oxc: {target: noLoweringTarget},
+    optimizeDeps: {rolldownOptions: {transform: {target: noLoweringTarget}}},
     build: {sourcemap: mode === 'production'},
     server: {port, proxy: {'/api': createApiProxy(apiTarget)}},
     resolve: {
