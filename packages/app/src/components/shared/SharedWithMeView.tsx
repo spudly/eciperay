@@ -22,43 +22,70 @@ const listContentStyle = {
   paddingBottom: tokens.spacing[8],
 } as const;
 
+// Same bounded-list contract as RecipesListView (#188): without flex: 1 the
+// FlatList sizes to its full content height inside the fixed `list` shell
+// and never gets a scrollable viewport of its own.
+const listStyle = {flex: 1} as const;
+
 export const SharedWithMeView = ({
   isLoading,
   recipes,
   isFetchingNextPage,
   onLoadMore,
   ...filterControls
-}: SharedWithMeViewProps) => (
-  <ScreenContainer variant="list">
-    <YStack
-      paddingHorizontal="$4"
-      paddingBlockStart="$4"
-      paddingBlockEnd="$2"
-    >
-      <RecipeListFiltersBar {...filterControls} />
-    </YStack>
-    {isLoading ? (
-      <YStack marginBlockStart="$8">
-        <InlineLoadingIndicator loading />
-      </YStack>
-    ) : (
-      <FlatList
-        data={recipes}
-        keyExtractor={recipe => recipe.id}
-        contentContainerStyle={listContentStyle}
-        renderItem={({item}) => <SharedRecipeListCard recipe={item} />}
-        onEndReached={onLoadMore}
-        onEndReachedThreshold={0.4}
-        ListEmptyComponent={
-          <EmptyMessage spacing="list">
-            {SHARED_WITH_ME_EMPTY_MESSAGE}
-          </EmptyMessage>
-        }
-        ListFooterComponent={<ListLoadingFooter loading={isFetchingNextPage} />}
-      />
-    )}
-  </ScreenContainer>
-);
+}: SharedWithMeViewProps) => {
+  const filtersBar = <RecipeListFiltersBar {...filterControls} />;
+
+  return (
+    <ScreenContainer variant="list">
+      {isLoading ? (
+        <>
+          <YStack
+            paddingHorizontal="$4"
+            paddingBlockStart="$4"
+            paddingBlockEnd="$2"
+          >
+            {filtersBar}
+          </YStack>
+          <YStack marginBlockStart="$8">
+            <InlineLoadingIndicator loading />
+          </YStack>
+        </>
+      ) : (
+        <FlatList
+          style={listStyle}
+          data={recipes}
+          keyExtractor={recipe => recipe.id}
+          contentContainerStyle={listContentStyle}
+          // Filters as the list header, scrolling with the recipes — the
+          // #188 fix applied to RecipesListView; this screen has the same
+          // filter form and the same fixed shell. The header sits inside
+          // the list's content container, which already supplies the
+          // horizontal padding the standalone wrapper used to add.
+          ListHeaderComponent={
+            <YStack
+              paddingBlockStart="$4"
+              paddingBlockEnd="$2"
+            >
+              {filtersBar}
+            </YStack>
+          }
+          renderItem={({item}) => <SharedRecipeListCard recipe={item} />}
+          onEndReached={onLoadMore}
+          onEndReachedThreshold={0.4}
+          ListEmptyComponent={
+            <EmptyMessage spacing="list">
+              {SHARED_WITH_ME_EMPTY_MESSAGE}
+            </EmptyMessage>
+          }
+          ListFooterComponent={
+            <ListLoadingFooter loading={isFetchingNextPage} />
+          }
+        />
+      )}
+    </ScreenContainer>
+  );
+};
 
 if (__DEV__) {
   SharedWithMeView.demo = () => (

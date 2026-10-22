@@ -1,3 +1,4 @@
+import {tokens} from '@spudly/ui';
 import React from 'react';
 import {
   RECIPE_STATUS_FILTER_ALL,
@@ -56,5 +57,60 @@ describe('RecipesListView element presence (#162)', () => {
     expect(getByText('High to low')).toBeTruthy();
     // First recipe card.
     expect(getByText('Pasta Night')).toBeTruthy();
+  });
+});
+
+/**
+ * Regression test for #188 (Android: the Recipes screen did not scroll — the
+ * filter form filled the viewport and the recipe list was unreachable).
+ *
+ * The on-device failure was geometry, not rendering: the FlatList had no flex
+ * bound inside the fixed `list` shell, so it sized to its full content height,
+ * overflowed the viewport, and never scrolled; the pinned filter form above it
+ * left only a sliver in any case. Jest renderers do not run Yoga layout, so
+ * this test pins the rendered contract the fix relies on — the list's scroll
+ * view is bounded (flex: 1) and the filters render inside it as its header,
+ * travelling with the list — while the #183 Phase 2 emulator tests are the
+ * on-device check. The list's scroll view is the RCTScrollView carrying the
+ * list content padding (spacing 4 / 8).
+ */
+describe('RecipesListView list scrollability (#188)', () => {
+  const controls = {
+    ...demoRecipeListFilters(),
+    statusFilter: RECIPE_STATUS_FILTER_ALL as RecipeStatusFilterValue,
+    onStatusFilterChange: () => undefined,
+  };
+
+  test('bounds the FlatList and renders the filters as its scrollable header', async () => {
+    const {container} = await renderWithProviders(
+      <RecipesListView
+        {...controls}
+        isLoading={false}
+        recipes={[makeRecipeDetail({title: 'Pasta Night'})]}
+        isFetchingNextPage={false}
+        onRecipePress={jest.fn()}
+        onRecipeDelete={jest.fn()}
+        onLoadMore={jest.fn()}
+      />,
+    );
+
+    const lists = container.queryAll(
+      node =>
+        node.type === 'RCTScrollView' &&
+        node.props.contentContainerStyle?.paddingHorizontal ===
+          tokens.spacing[4] &&
+        node.props.contentContainerStyle?.paddingBottom === tokens.spacing[8],
+    );
+    expect(lists).toHaveLength(1);
+    const list = lists[0];
+    expect(list.props.style).toEqual(expect.objectContaining({flex: 1}));
+    // The search input (filters header) and the first card both live
+    // inside the list's own scroll view, so they scroll together.
+    expect(
+      list.queryAll(node => node.props.placeholder === 'Search recipes…'),
+    ).toHaveLength(1);
+    expect(
+      list.queryAll(node => node.children.includes('Pasta Night')),
+    ).not.toHaveLength(0);
   });
 });
