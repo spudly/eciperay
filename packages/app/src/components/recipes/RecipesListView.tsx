@@ -15,7 +15,7 @@ import type {
 } from '@eciperay/types';
 import {RecipesPage, type RecipesPageItem} from '@spudly/ui/pages';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
-import {useEffect, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 
 import {api} from '../../lib/api';
 import {CookLogForm} from '../cooking/CookLogForm';
@@ -53,8 +53,21 @@ import {formatRecipeSubtitle} from '../RecipeListCard';
  * would orphan the in-flight request and let a reopened form save a duplicate.
  * Cancel is therefore inert while the save is pending: the form stays open
  * until the save settles (success closes it; an error re-enables Cancel).
+ *
+ * The same lifetime argument applies to the page's list virtualization: the
+ * FlatList unmounts rows scrolled far off screen, and an unmounted card
+ * returned closed because its open state died with it. The lifted set would
+ * survive the unmount, so this form reconciles on the way out — its unmount
+ * cleanup removes its id from the open set — and a row that scrolls back
+ * returns closed, as the card did. (A save still in flight at unmount keeps the
+ * card's own exposure: the request is not cancelled, only the form and its
+ * state are gone; what the reconcile prevents is the row remounting with a
+ * fresh empty form already open on top of it.)
+ *
+ * Exported for the unmount-reconciliation tests; the view is its only
+ * production caller.
  */
-const InlineCookLogForm = ({
+export const InlineCookLogForm = ({
   recipe,
   onClose,
 }: {
@@ -71,6 +84,21 @@ const InlineCookLogForm = ({
       onClose();
     },
   });
+
+  // The latest onClose, for the unmount cleanup below: the host passes a
+  // fresh closure on every render, so the cleanup cannot depend on the
+  // prop itself without firing on every render.
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
+
+  useEffect(
+    () => () => {
+      onCloseRef.current();
+    },
+    [],
+  );
 
   return (
     <CookLogForm
@@ -132,6 +160,9 @@ export const RecipesListView = ({
 
   const closeCookLog = (recipeId: string) => {
     setOpenCookLogIds(current => {
+      if (!current.has(recipeId)) {
+        return current;
+      }
       const next = new Set(current);
       next.delete(recipeId);
       return next;

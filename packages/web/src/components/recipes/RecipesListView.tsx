@@ -30,9 +30,11 @@ import {RecipeListFiltersBar} from './RecipeListFiltersBar.js';
 // guards the slot form's open set so it matches the card semantics
 // this file's cards still have natively — a pending save cannot be
 // cancelled into a duplicate (the mutation here lives in the mounted
-// card; the app's slot form must not unmount mid-save), and an open
-// form's id is pruned when its row leaves the list (here, unmounting
-// the card discards its open state). No web behavior changes.
+// card; the app's slot form must not unmount mid-save), an open
+// form's id is pruned when its row leaves the list, and the slot
+// form reconciles its id on unmount so a virtualized row that
+// scrolls back returns closed (here, unmounting the card discards
+// its open state). No web behavior changes.
 export const RecipesListView = ({
   isLoading,
   recipes,
