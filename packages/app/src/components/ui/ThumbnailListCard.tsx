@@ -10,9 +10,11 @@ import {Image, View} from 'tamagui';
  * the $16 size token; rounded-lg is the md radius token.
  *
  * Parity note (#190): the web mirror wraps its trailing actions onto their own
- * row at phone widths because the browser squeezed the title column beside
- * them; native rows here keep the single-row layout with the trailing actions
- * inside the card, which does not squeeze the same way.
+ * row at phone widths because the browser squeezed the title column beside them
+ * (its 12rem card basis applies only in that row — standalone web cards render
+ * in a column layout, where the basis would resolve vertically); native rows
+ * here keep the single-row layout with the trailing actions inside the card,
+ * which does not squeeze the same way.
  */
 
 // Structural flex only (the old flex-1 min-inline-0): the text block
