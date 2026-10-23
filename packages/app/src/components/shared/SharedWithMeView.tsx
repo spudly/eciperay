@@ -1,87 +1,116 @@
 import {
-  SHARED_WITH_ME_EMPTY_MESSAGE,
+  buildRecipePermalink,
   demoRecipeListFilters,
   makeRecipeDetail,
+  WEB_APP_BASE_URL,
+  type RecipeStatusFilterValue,
   type SharedWithMeViewProps,
 } from '@eciperay/client';
-import {tokens} from '@spudly/ui';
-import {FlatList} from 'react-native';
-import {YStack} from 'tamagui';
+import type {RecipeListSort, RecipeListSortDir} from '@eciperay/types';
+import {SharedWithMePage, type SharedWithMePageItem} from '@spudly/ui/pages';
+import {Linking} from 'react-native';
 
-import {SharedRecipeListCard} from '../SharedRecipeListCard';
-import {InlineLoadingIndicator} from '../InlineLoadingIndicator';
-import {EmptyMessage} from '../ui/EmptyMessage';
-import {ListLoadingFooter} from '../ui/ListLoadingFooter';
-import {ScreenContainer} from '../ui/ScreenContainer';
-import {RecipeListFiltersBar} from '../recipes/RecipeListFiltersBar';
+import {formatRecipeSubtitle} from '../SharedRecipeListCard';
 
-// List content geometry on the DS spacing scale (plain object, no
-// StyleSheet — the RecipesListView precedent).
-const listContentStyle = {
-  paddingHorizontal: tokens.spacing[4],
-  paddingBottom: tokens.spacing[8],
-} as const;
-
-// Same bounded-list contract as RecipesListView (#188): without flex: 1 the
-// FlatList sizes to its full content height inside the fixed `list` shell
-// and never gets a scrollable viewport of its own.
-const listStyle = {flex: 1} as const;
-
+/**
+ * The Shared-with-me screen's view (#49, Wave A): the design system's
+ * SharedWithMePage renders the screen — filter bar, bounded list, rows — and
+ * this component is its app-side host. Everything the page must not own stays
+ * here: the view-model mapping (the subtitle is the app's list meta line,
+ * formatted by the same helper the shared card uses), the row press, and the
+ * boundary adaptations (the filter unions narrow back from the page's plain
+ * strings with the same casts the old filter bar used).
+ *
+ * The row press is the one piece of behavior this screen has that Recipes does
+ * not: a shared recipe is not the viewer's to open in-app, so the press opens
+ * the recipe's permalink in the browser. The page reports the press by id; the
+ * host resolves the recipe from the app's own list, builds the permalink from
+ * the app's base-URL constant, and hands it to Linking — exactly what
+ * SharedRecipeListCard did per card.
+ *
+ * The layout regressions the old hand-rolled list guarded in this file — #188
+ * (bounded flex: 1 list, filters as its header, the list mounted while loading
+ * so a filter edit cannot unmount the focused input) and #162 (the DS
+ * SearchField untouched) — are structural in the DS page now; the view tests
+ * here still pin the rendered contract (bounded scroll view, header filters,
+ * element presence).
+ */
 export const SharedWithMeView = ({
   isLoading,
   recipes,
   isFetchingNextPage,
   onLoadMore,
-  ...filterControls
+  search,
+  onSearchChange,
+  statusFilter,
+  onStatusFilterChange,
+  ingredient,
+  onIngredientChange,
+  minCalories,
+  onMinCaloriesChange,
+  maxCalories,
+  onMaxCaloriesChange,
+  minSatiety,
+  onMinSatietyChange,
+  maxSatiety,
+  onMaxSatietyChange,
+  sort,
+  onSortChange,
+  sortDir,
+  onSortDirChange,
+  showStatusFilter,
 }: SharedWithMeViewProps) => {
-  const filtersBar = <RecipeListFiltersBar {...filterControls} />;
+  const recipesById = new Map(recipes.map(recipe => [recipe.id, recipe]));
+
+  const items: SharedWithMePageItem[] = recipes.map(recipe => ({
+    id: recipe.id,
+    title: recipe.title,
+    subtitle: formatRecipeSubtitle(recipe),
+    imageUrl: recipe.imageUrl,
+  }));
 
   return (
-    <ScreenContainer variant="list">
-      <FlatList
-        style={listStyle}
-        // The filter controls live inside this scroll view, so taps on
-        // them must land while the keyboard is open instead of being
-        // consumed to dismiss it — the same reason the form shells set
-        // this on their ScrollView (see ui/ScreenContainer).
-        keyboardShouldPersistTaps="handled"
-        data={isLoading ? [] : recipes}
-        keyExtractor={recipe => recipe.id}
-        contentContainerStyle={listContentStyle}
-        // Filters as the list header, scrolling with the recipes — the
-        // #188 fix applied to RecipesListView; this screen has the same
-        // filter form and the same fixed shell. The header sits inside
-        // the list's content container, which already supplies the
-        // horizontal padding a standalone wrapper would add. The list
-        // (and therefore the header) stays mounted while loading, so a
-        // filter edit that flips isLoading cannot unmount the focused
-        // filter input mid-typing; the loading indicator renders as the
-        // list's empty state instead.
-        ListHeaderComponent={
-          <YStack
-            paddingBlockStart="$4"
-            paddingBlockEnd="$2"
-          >
-            {filtersBar}
-          </YStack>
+    <SharedWithMePage
+      recipes={items}
+      isLoading={isLoading}
+      isFetchingNextPage={isFetchingNextPage}
+      onRecipePress={recipeId => {
+        const recipe = recipesById.get(recipeId);
+        if (recipe) {
+          void Linking.openURL(buildRecipePermalink(WEB_APP_BASE_URL, recipe));
         }
-        renderItem={({item}) => <SharedRecipeListCard recipe={item} />}
-        onEndReached={onLoadMore}
-        onEndReachedThreshold={0.4}
-        ListEmptyComponent={
-          isLoading ? (
-            <YStack marginBlockStart="$8">
-              <InlineLoadingIndicator loading />
-            </YStack>
-          ) : (
-            <EmptyMessage spacing="list">
-              {SHARED_WITH_ME_EMPTY_MESSAGE}
-            </EmptyMessage>
-          )
-        }
-        ListFooterComponent={<ListLoadingFooter loading={isFetchingNextPage} />}
-      />
-    </ScreenContainer>
+      }}
+      onLoadMore={onLoadMore}
+      search={search}
+      onSearchChange={onSearchChange}
+      statusFilter={statusFilter}
+      onStatusFilterChange={
+        onStatusFilterChange
+          ? value => {
+              onStatusFilterChange(value as RecipeStatusFilterValue);
+            }
+          : undefined
+      }
+      showStatusFilter={showStatusFilter}
+      ingredient={ingredient}
+      onIngredientChange={onIngredientChange}
+      minCalories={minCalories}
+      onMinCaloriesChange={onMinCaloriesChange}
+      maxCalories={maxCalories}
+      onMaxCaloriesChange={onMaxCaloriesChange}
+      minSatiety={minSatiety}
+      onMinSatietyChange={onMinSatietyChange}
+      maxSatiety={maxSatiety}
+      onMaxSatietyChange={onMaxSatietyChange}
+      sort={sort}
+      onSortChange={value => {
+        onSortChange(value as RecipeListSort);
+      }}
+      sortDir={sortDir}
+      onSortDirChange={value => {
+        onSortDirChange(value as RecipeListSortDir);
+      }}
+    />
   );
 };
 
