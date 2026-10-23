@@ -1,7 +1,10 @@
 import {tokens} from '@spudly/ui';
+import {fireEvent, waitFor} from '@testing-library/react-native';
 import React from 'react';
+import {Linking} from 'react-native';
 import {
   RECIPE_STATUS_FILTER_ALL,
+  WEB_APP_BASE_URL,
   demoRecipeListFilters,
   type RecipeStatusFilterValue,
 } from '@eciperay/client';
@@ -56,6 +59,35 @@ describe('SharedWithMeView element presence (#162)', () => {
     expect(getByText('High to low')).toBeTruthy();
     // First shared recipe card.
     expect(getByText('Shared Soup')).toBeTruthy();
+  });
+
+  test('opens the recipe permalink in the browser when a row is pressed', async () => {
+    const {getByText} = await renderWithProviders(
+      <SharedWithMeView
+        {...controls}
+        isLoading={false}
+        recipes={[
+          makeRecipeDetail({
+            id: 'recipe-1',
+            slug: 'shared-soup',
+            title: 'Shared Soup',
+            userId: 'other-user',
+          }),
+        ]}
+        isFetchingNextPage={false}
+        onLoadMore={jest.fn()}
+      />,
+    );
+
+    // The press behavior moved from SharedRecipeListCard into this host
+    // with the rewire (#49): the DS page reports the press by id, and
+    // the host builds the permalink and hands it to Linking.
+    await fireEvent.press(getByText('Shared Soup'));
+    await waitFor(() => {
+      expect(Linking.openURL).toHaveBeenCalledWith(
+        `${WEB_APP_BASE_URL}/recipe/recipe-1/shared-soup`,
+      );
+    });
   });
 });
 

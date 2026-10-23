@@ -1,20 +1,61 @@
 import type {MealPlanDetailViewProps} from '@eciperay/client';
 import {formatSimpleNutrition} from '@eciperay/client';
-import {Text as DsText, tokens} from '@spudly/ui';
-import {Pressable} from 'react-native';
-import {XStack, YStack} from 'tamagui';
+import type {NutritionGoalFieldProgress} from '@eciperay/types';
+import {
+  MealPlanDetailPage,
+  type MealPlanDetailPageEntry,
+  type MealPlanDetailPageNutritionGoals,
+} from '@spudly/ui/pages';
 
-import {PageTitle} from '../ui/PageTitle';
-import {PrimaryButton} from '../ui/PrimaryButton';
-import {ScreenScroll} from '../ui/ScreenScroll';
-import {SecondaryButton} from '../ui/SecondaryButton';
-import {SectionCard} from '../ui/SectionCard';
+/**
+ * The Meal plan detail screen's view (#49, Wave A): the design system's
+ * MealPlanDetailPage renders the screen — plan meta, the nutrition-goals
+ * section, the Shopping list / Edit actions, the flat entry list — and this
+ * component is its app-side host. Everything the page must not own stays here:
+ * the view-model mapping (the date range joined with " – " from the plan's raw
+ * date strings, the nutrition summary composed by the app's formatter, the goal
+ * rows' rounded actual / goal labels with the app's band wording, and each
+ * entry's quantity meta line), in exactly the composition the hand-rolled view
+ * rendered.
+ *
+ * Loading stays app-side, as the DS contract records: the screen keeps its
+ * ScreenLoadingGate (with its delayed spinner) around this host, so the page is
+ * only ever driven in its ready state here; the union's loading member serves
+ * the page's standalone use. A missing plan stays on the gate — there is no
+ * not-found UI, here or in the page.
+ *
+ * The goals section's composition mirrors NutritionGoalProgressView, which this
+ * screen no longer renders (it remains a showcased component; the section
+ * itself is view-modeled into the page, not slotted — the app's goal view is
+ * pure presentation over this data). Rows cover the three fields that view
+ * rendered — Calories, Protein, Satiety — in its order; the progress type's
+ * carbs / fat fields were never rendered. `nutritionGoals` is null exactly when
+ * the plan carries no goal progress, even when every rendered field is unset
+ * (the old view keyed the rows-vs-hint choice on the progress object, not on
+ * its fields).
+ *
+ * One visibility nuance rides on the DS contract: the page renders the goals
+ * section when the plan has goal progress or a nutrition summary. The old view
+ * keyed the section on the raw nutrition object, so a plan whose nutrition is
+ * present but unavailable (the formatter returns no summary) with no goal
+ * progress still showed the set-goals hint card; the page has no encoding for
+ * that case and renders no section. Every other case — the standalone nutrition
+ * line, the section's "Plan total:" line, the hint, the set-goals link —
+ * composes identically.
+ */
 
-import {NutritionGoalProgressView} from './NutritionGoalProgressView';
+const bandLabel = (band: NutritionGoalFieldProgress['band']): string => {
+  if (band === 'under') {
+    return 'Below goal';
+  }
+  if (band === 'over') {
+    return 'Above goal';
+  }
+  return 'On track';
+};
 
-/* Pressable rows keep the RN Pressable with a token-valued style (the
-   IngredientsTab pressable precedent): py-3 row padding. */
-const rowStyle = {paddingVertical: tokens.spacing[3]} as const;
+const goalValueLabel = (field: NutritionGoalFieldProgress): string =>
+  `${Math.round(field.actual)} / ${Math.round(field.goal)} · ${bandLabel(field.band)}`;
 
 export const MealPlanDetailView = ({
   plan,
@@ -23,115 +64,81 @@ export const MealPlanDetailView = ({
   onMealPress,
   onRecipePress,
   onSetGoalsPress,
-}: MealPlanDetailViewProps) => (
-  <ScreenScroll>
-    <PageTitle spacing="section">{plan.title}</PageTitle>
-    {plan.notes ? (
-      <DsText
-        color="$textMuted"
-        marginBlockEnd="$4"
-        fontSize={tokens.typography.fontSize.sm}
-      >
-        {plan.notes}
-      </DsText>
-    ) : null}
-    {plan.startsOn && plan.endsOn ? (
-      <DsText
-        color="$textMuted"
-        marginBlockEnd="$4"
-        fontSize={tokens.typography.fontSize.sm}
-      >
-        {plan.startsOn} – {plan.endsOn}
-      </DsText>
-    ) : null}
-    {formatSimpleNutrition(plan.nutrition) ? (
-      <DsText
-        marginBlockEnd="$4"
-        fontSize={tokens.typography.fontSize.sm}
-        color={tokens.colors.gray.gray9}
-      >
-        {formatSimpleNutrition(plan.nutrition)}
-      </DsText>
-    ) : null}
-    <NutritionGoalProgressView
-      progress={plan.goalProgress}
-      nutrition={plan.nutrition}
+}: MealPlanDetailViewProps) => {
+  const nutritionLabel = formatSimpleNutrition(plan.nutrition) ?? undefined;
+
+  const progress = plan.goalProgress;
+  const nutritionGoals: MealPlanDetailPageNutritionGoals | null = progress
+    ? {
+        rows: [
+          ...(progress.calories
+            ? [
+                {
+                  label: 'Calories',
+                  valueLabel: goalValueLabel(progress.calories),
+                },
+              ]
+            : []),
+          ...(progress.proteinG
+            ? [
+                {
+                  label: 'Protein',
+                  valueLabel: goalValueLabel(progress.proteinG),
+                },
+              ]
+            : []),
+          ...(progress.satietyScore
+            ? [
+                {
+                  label: 'Satiety',
+                  valueLabel: goalValueLabel(progress.satietyScore),
+                },
+              ]
+            : []),
+        ],
+      }
+    : null;
+
+  const entries: MealPlanDetailPageEntry[] = plan.entries.map(entry => {
+    const entryNutrition = formatSimpleNutrition(entry.nutrition);
+    const nutritionSuffix = entryNutrition ? ` · ${entryNutrition}` : '';
+    if (entry.type === 'meal') {
+      return {
+        id: entry.id,
+        kind: 'meal',
+        targetId: entry.mealId,
+        title: entry.title,
+        subtitle: `Qty ${entry.quantity} · ${entry.memberCount} recipes${nutritionSuffix}`,
+      };
+    }
+    return {
+      id: entry.id,
+      kind: 'recipe',
+      targetId: entry.recipeId,
+      title: entry.title,
+      subtitle: `Qty ${entry.quantity} · ${entry.servings} servings${nutritionSuffix}`,
+      isUnavailable: entry.accessLost,
+    };
+  });
+
+  return (
+    <MealPlanDetailPage
+      state="ready"
+      title={plan.title}
+      notes={plan.notes}
+      dateRangeLabel={
+        plan.startsOn && plan.endsOn
+          ? `${plan.startsOn} – ${plan.endsOn}`
+          : undefined
+      }
+      nutritionLabel={nutritionLabel}
+      nutritionGoals={nutritionGoals}
       onSetGoalsPress={onSetGoalsPress}
+      onShoppingListPress={onShoppingList}
+      onEditPress={onEdit}
+      entries={entries}
+      onMealPress={onMealPress}
+      onRecipePress={onRecipePress}
     />
-    <XStack
-      marginBlockEnd="$6"
-      flexWrap="wrap"
-      gap="$3"
-    >
-      <PrimaryButton
-        label="Shopping list"
-        onPress={onShoppingList}
-      />
-      <SecondaryButton
-        label="Edit"
-        onPress={onEdit}
-      />
-    </XStack>
-    <SectionCard title="Entries">
-      {plan.entries.map(entry => (
-        <YStack
-          key={entry.id}
-          borderBottomWidth={1}
-          borderBottomColor={tokens.colors.gray.gray2}
-        >
-          {entry.type === 'meal' ? (
-            <Pressable
-              style={rowStyle}
-              onPress={() => {
-                onMealPress(entry.mealId);
-              }}
-            >
-              <DsText
-                fontSize={tokens.typography.fontSize.md}
-                fontWeight={tokens.typography.fontWeight.medium}
-                color={tokens.colors.gray.gray10}
-              >
-                Meal · {entry.title}
-              </DsText>
-              <DsText
-                color="$textMuted"
-                fontSize={tokens.typography.fontSize.sm}
-              >
-                Qty {entry.quantity} · {entry.memberCount} recipes
-                {formatSimpleNutrition(entry.nutrition)
-                  ? ` · ${formatSimpleNutrition(entry.nutrition)}`
-                  : ''}
-              </DsText>
-            </Pressable>
-          ) : (
-            <Pressable
-              style={rowStyle}
-              disabled={entry.accessLost}
-              onPress={() => {
-                onRecipePress(entry.recipeId);
-              }}
-            >
-              <DsText
-                fontSize={tokens.typography.fontSize.md}
-                fontWeight={tokens.typography.fontWeight.medium}
-                color={tokens.colors.gray.gray10}
-              >
-                Recipe · {entry.title}
-                {entry.accessLost ? ' (unavailable)' : ''}
-              </DsText>
-              <DsText
-                color="$textMuted"
-                fontSize={tokens.typography.fontSize.sm}
-              >
-                Qty {entry.quantity} · {entry.servings} servings
-                {formatSimpleNutrition(entry.nutrition)
-                  ? ` · ${formatSimpleNutrition(entry.nutrition)}`
-                  : ''}
-              </DsText>
-            </Pressable>
-          )}
-        </YStack>
-      ))}
-    </SectionCard>
-  </ScreenScroll>
-);
+  );
+};
