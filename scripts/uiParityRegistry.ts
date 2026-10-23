@@ -139,6 +139,12 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
       'Thin wrapper over ui/TabBar for native RecipeDetailChrome; web RecipeDetailChrome uses TabBar directly.',
   },
   {
+    path: 'recipe/RecipeDetailView.tsx',
+    platform: 'app',
+    reason:
+      'App-side host for the design system RecipeDetailPage (#49): owns the detail tab queries, mutations, and slots; web renders its own DOM recipe detail page.',
+  },
+  {
     path: 'profile/AccessTokensSection.tsx',
     platform: 'app',
     reason:

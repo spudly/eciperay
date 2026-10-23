@@ -6,10 +6,8 @@ import {
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useQuery, useQueryClient} from '@tanstack/react-query';
 import {useCallback, useEffect, useMemo, useState} from 'react';
-import {ScrollView} from 'react-native';
 
-import {RecipeDetailChrome} from '../components/recipe/RecipeDetailChrome';
-import {RecipeDetailTabPanel} from '../components/recipe/RecipeDetailTabPanel';
+import {RecipeDetailView} from '../components/recipe/RecipeDetailView';
 import {ScreenLoadingGate} from '../components/ScreenLoadingGate';
 import {api} from '../lib/api';
 import {mergeVersionIntoRecipe} from '../lib/mergeVersionIntoRecipe';
@@ -89,6 +87,10 @@ export const RecipeDetailScreen = ({route, navigation}: DetailProps) => {
     setServings(null);
   }, [activeVersionId]);
 
+  // The app's loading gate (with its delayed spinner) stays app-side, as
+  // the page's contract documents: the view only ever receives the ready
+  // state, and a missing recipe stays on the gate — the screen has no
+  // distinct not-found UI.
   if (isLoading || !recipe || !displayRecipe) {
     return <ScreenLoadingGate pending>{null}</ScreenLoadingGate>;
   }
@@ -97,50 +99,39 @@ export const RecipeDetailScreen = ({route, navigation}: DetailProps) => {
   const scaleFactor = currentServings / displayRecipe.servings;
 
   return (
-    <RecipeDetailChrome
-      status={recipe.status}
+    <RecipeDetailView
+      recipe={recipe}
+      displayRecipe={displayRecipe}
       versions={versions}
+      activeTab={activeTab}
+      onTabChange={setActiveTab}
       selectedVersionId={activeVersionId}
       onSelectVersion={setSelectedVersionId}
-      activeTab={activeTab}
-      onSelectTab={setActiveTab}
-    >
-      <ScrollView>
-        <RecipeDetailTabPanel
-          activeTab={activeTab}
-          recipe={recipe}
-          displayRecipe={displayRecipe}
-          versions={versions}
-          currentServings={currentServings}
-          scaleFactor={scaleFactor}
-          onServingsChange={setServings}
-          onStartCooking={() => {
-            navigation.navigate('CookingMode', {
-              recipeId: recipe.id,
-              versionId: displayRecipe.versionId,
-              servings: currentServings,
-            });
-          }}
-          onDelete={() => {
-            confirmDelete(recipe);
-          }}
-          onTweakAi={() => {
-            navigation.navigate('TweakAi', {recipeId: recipe.id});
-          }}
-          onViewVersion={versionId => {
-            setSelectedVersionId(versionId);
-          }}
-          onEditRecipe={() => {
-            navigation.navigate('EditRecipe', {recipeId: recipe.id});
-          }}
-          onEditVersion={versionId => {
-            navigation.navigate('EditVersion', {
-              recipeId: recipe.id,
-              versionId,
-            });
-          }}
-        />
-      </ScrollView>
-    </RecipeDetailChrome>
+      currentServings={currentServings}
+      scaleFactor={scaleFactor}
+      onServingsChange={setServings}
+      onStartCooking={() => {
+        navigation.navigate('CookingMode', {
+          recipeId: recipe.id,
+          versionId: displayRecipe.versionId,
+          servings: currentServings,
+        });
+      }}
+      onDelete={() => {
+        confirmDelete(recipe);
+      }}
+      onTweakAi={() => {
+        navigation.navigate('TweakAi', {recipeId: recipe.id});
+      }}
+      onViewVersion={versionId => {
+        setSelectedVersionId(versionId);
+      }}
+      onEditRecipe={() => {
+        navigation.navigate('EditRecipe', {recipeId: recipe.id});
+      }}
+      onEditVersion={versionId => {
+        navigation.navigate('EditVersion', {recipeId: recipe.id, versionId});
+      }}
+    />
   );
 };

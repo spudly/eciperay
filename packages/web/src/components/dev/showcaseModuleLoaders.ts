@@ -95,6 +95,13 @@ export const showcaseModuleLoaders = {
   'recipe/RecipeDetailChrome': () => import('../recipe/RecipeDetailChrome.js'),
   'recipe/RecipeDetailTabPanel': () =>
     import('../recipe/RecipeDetailTabPanel.js'),
+  // Page-view migration (#49): the app side has a 'recipe/RecipeDetailView'
+  // host for the design system's RecipeDetailPage (@spudly/ui/pages),
+  // which owns the detail tab queries, mutations, and slots on native.
+  // The host is app-only (registered as such in the UI parity registry),
+  // so — like the other platform-only components — it is in neither
+  // platform's showcase loaders or catalog: web renders its own DOM
+  // recipe detail page, and there is deliberately no web mirror file.
   'recipe/RecipeEngagementPanel': () =>
     import('../recipe/RecipeEngagementPanel.js'),
   'recipe/RecipeForm': () => import('../recipe/RecipeForm.js'),

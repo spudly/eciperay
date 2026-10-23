@@ -94,6 +94,11 @@ export const showcaseModuleLoaders = {
     import('../recipe/RecipeCommentsSection'),
   'recipe/RecipeDetailChrome': () => import('../recipe/RecipeDetailChrome'),
   'recipe/RecipeDetailTabPanel': () => import('../recipe/RecipeDetailTabPanel'),
+  // Page-view migration (#49): there is deliberately no loader entry for
+  // 'recipe/RecipeDetailView' — the app-side host for the design system's
+  // RecipeDetailPage (@spudly/ui/pages). The host is app-only (registered
+  // as such in the UI parity registry), and platform-only components are
+  // in neither platform's showcase loaders or catalog.
   'recipe/RecipeEngagementPanel': () =>
     import('../recipe/RecipeEngagementPanel'),
   'recipe/RecipeForm': () => import('../recipe/RecipeForm'),
