@@ -11,6 +11,12 @@ import {ScreenScroll} from '../ui/ScreenScroll.js';
 import {TabBar} from '../ui/TabBar.js';
 import {TextLinkButton} from '../ui/TextLinkButton.js';
 
+// Page-view migration (#49, Wave A): the app mirror no longer renders its
+// own meal plan rows — its Meal plans tab hosts the design system's
+// MealPlansPage (@spudly/ui/pages) and keeps only the app-side composition
+// (the plan view-model mapping, with each row's meta line composed app-side).
+// This web mirror deliberately keeps its DOM implementation; converging web
+// onto the DS page is a separate decision.
 export const MealsHubView = ({
   activeTab,
   onSelectTab,
@@ -55,31 +61,34 @@ export const MealsHubView = ({
               marginBottom="$3"
               padding="$4"
             >
-              <XStack alignItems="center" gap="$3">
-              <button
-                type="button"
-                className="flex-1 text-start min-inline-0"
-                onClick={() => {
-                  onMealPress(meal.id);
-                }}
+              <XStack
+                alignItems="center"
+                gap="$3"
               >
-                <p className="text-base font-semibold text-gray-900">
-                  {meal.title}
-                </p>
-                <p className="text-muted text-sm">
-                  {meal.memberCount} recipe
-                  {meal.memberCount === 1 ? '' : 's'}
-                  {formatSimpleNutrition(meal.nutrition)
-                    ? ` · ${formatSimpleNutrition(meal.nutrition)}`
-                    : ''}
-                </p>
-              </button>
-              <TextLinkButton
-                label="Delete"
-                onPress={() => {
-                  onDeleteMeal(meal.id);
-                }}
-              />
+                <button
+                  type="button"
+                  className="flex-1 text-start min-inline-0"
+                  onClick={() => {
+                    onMealPress(meal.id);
+                  }}
+                >
+                  <p className="text-base font-semibold text-gray-900">
+                    {meal.title}
+                  </p>
+                  <p className="text-muted text-sm">
+                    {meal.memberCount} recipe
+                    {meal.memberCount === 1 ? '' : 's'}
+                    {formatSimpleNutrition(meal.nutrition)
+                      ? ` · ${formatSimpleNutrition(meal.nutrition)}`
+                      : ''}
+                  </p>
+                </button>
+                <TextLinkButton
+                  label="Delete"
+                  onPress={() => {
+                    onDeleteMeal(meal.id);
+                  }}
+                />
               </XStack>
             </Card>
           ))}
@@ -95,38 +104,41 @@ export const MealsHubView = ({
             marginBottom="$3"
             padding="$4"
           >
-            <XStack alignItems="center" gap="$3">
-            <button
-              type="button"
-              className="flex-1 text-start min-inline-0"
-              onClick={() => {
-                onPlanPress(plan.id);
-              }}
+            <XStack
+              alignItems="center"
+              gap="$3"
             >
-              <p className="text-base font-semibold text-gray-900">
-                {plan.title}
-              </p>
-              <p className="text-muted text-sm">
-                {plan.entryCount} entr
-                {plan.entryCount === 1 ? 'y' : 'ies'}
-                {plan.startsOn && plan.endsOn
-                  ? ` · ${plan.startsOn} – ${plan.endsOn}`
-                  : ''}
-                {formatSimpleNutrition(plan.nutrition)
-                  ? ` · ${formatSimpleNutrition(plan.nutrition)}`
-                  : ''}
-              </p>
-            </button>
-            <TextLinkButton
-              label="Delete"
-              onPress={() => {
-                onDeletePlan(plan.id);
-              }}
-            />
-              </XStack>
-            </Card>
-          ))}
-        </YStack>
-      )}
+              <button
+                type="button"
+                className="flex-1 text-start min-inline-0"
+                onClick={() => {
+                  onPlanPress(plan.id);
+                }}
+              >
+                <p className="text-base font-semibold text-gray-900">
+                  {plan.title}
+                </p>
+                <p className="text-muted text-sm">
+                  {plan.entryCount} entr
+                  {plan.entryCount === 1 ? 'y' : 'ies'}
+                  {plan.startsOn && plan.endsOn
+                    ? ` · ${plan.startsOn} – ${plan.endsOn}`
+                    : ''}
+                  {formatSimpleNutrition(plan.nutrition)
+                    ? ` · ${formatSimpleNutrition(plan.nutrition)}`
+                    : ''}
+                </p>
+              </button>
+              <TextLinkButton
+                label="Delete"
+                onPress={() => {
+                  onDeletePlan(plan.id);
+                }}
+              />
+            </XStack>
+          </Card>
+        ))}
+      </YStack>
+    )}
   </ScreenScroll>
 );
