@@ -22,8 +22,10 @@ import {NutritionGoalProgressView} from './NutritionGoalProgressView.js';
 // renders the goals section when the plan has goal progress or a
 // nutrition summary, where this mirror (like the old app view) keys
 // the section on the raw nutrition object — so for a plan whose
-// nutrition is present but unavailable with no goal progress, web
-// still shows the set-goals hint card and the app no longer does.
+// nutrition is present but unavailable with no goal progress, both
+// show the set-goals hint card (the app again since @spudly/ui 1.4.0,
+// whose page takes the host's goalsSectionVisibility="shown" for
+// exactly that case; DS #78).
 export const MealPlanDetailView = ({
   plan,
   onEdit,

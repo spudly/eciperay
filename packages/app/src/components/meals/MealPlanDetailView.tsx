@@ -34,14 +34,16 @@ import {
  * (the old view keyed the rows-vs-hint choice on the progress object, not on
  * its fields).
  *
- * One visibility nuance rides on the DS contract: the page renders the goals
- * section when the plan has goal progress or a nutrition summary. The old view
- * keyed the section on the raw nutrition object, so a plan whose nutrition is
- * present but unavailable (the formatter returns no summary) with no goal
- * progress still showed the set-goals hint card; the page has no encoding for
- * that case and renders no section. Every other case — the standalone nutrition
- * line, the section's "Plan total:" line, the hint, the set-goals link —
- * composes identically.
+ * One visibility nuance rides on the DS contract: the page decides the goals
+ * section's visibility itself, rendering it when the plan has goal progress or
+ * a nutrition summary. The old view keyed the section on the raw nutrition
+ * object, so a plan whose nutrition is present but unavailable (the formatter
+ * returns no summary) with no goal progress still showed the set-goals hint
+ * card. The page's `goalsSectionVisibility` prop (DS #78, @spudly/ui 1.4.0)
+ * closes that gap: this host passes "shown" for exactly that case and "auto"
+ * otherwise, so every case — the standalone nutrition line, the section's "Plan
+ * total:" line, the hint, the set-goals link — composes identically to the old
+ * view.
  */
 
 const bandLabel = (band: NutritionGoalFieldProgress['band']): string => {
@@ -99,6 +101,16 @@ export const MealPlanDetailView = ({
       }
     : null;
 
+  // DS #78: force the goals section (with its set-goals hint) for the one
+  // case the page's own rule misses — nutrition present but unavailable (no
+  // summary) and no goal progress; "auto" keeps the page's rule elsewhere.
+  const goalsSectionVisibility: 'shown' | 'auto' =
+    plan.nutrition !== null &&
+    plan.nutrition.status === 'unavailable' &&
+    progress === null
+      ? 'shown'
+      : 'auto';
+
   const entries: MealPlanDetailPageEntry[] = plan.entries.map(entry => {
     const entryNutrition = formatSimpleNutrition(entry.nutrition);
     const nutritionSuffix = entryNutrition ? ` · ${entryNutrition}` : '';
@@ -133,6 +145,7 @@ export const MealPlanDetailView = ({
       }
       nutritionLabel={nutritionLabel}
       nutritionGoals={nutritionGoals}
+      goalsSectionVisibility={goalsSectionVisibility}
       onSetGoalsPress={onSetGoalsPress}
       onShoppingListPress={onShoppingList}
       onEditPress={onEdit}

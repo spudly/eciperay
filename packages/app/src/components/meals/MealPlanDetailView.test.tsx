@@ -179,6 +179,54 @@ describe('MealPlanDetailView', () => {
     expect(props.onSetGoalsPress).toHaveBeenCalledTimes(1);
   });
 
+  test('shows the set-goals hint when nutrition is present but unavailable and there is no progress', async () => {
+    const props = handlers();
+    const {findByText, queryByText} = await renderWithProviders(
+      <MealPlanDetailView
+        plan={makePlan({nutrition: planNutrition({status: 'unavailable'})})}
+        {...props}
+      />,
+    );
+    // No summary line anywhere — the formatter returns none — but the
+    // goals section is forced visible with its hint (DS #78 "shown").
+    expect(queryByText(/Plan total:/)).toBeNull();
+    expect(
+      await findByText('Set daily nutrition goals to compare this plan.'),
+    ).toBeTruthy();
+    fireEvent.press(await findByText('Set nutrition goals'));
+    expect(props.onSetGoalsPress).toHaveBeenCalledTimes(1);
+  });
+
+  test('composes goal rows when nutrition is unavailable but progress exists', async () => {
+    const plan = makePlan({
+      nutrition: planNutrition({status: 'unavailable'}),
+      goalProgress: {
+        calories: {
+          goal: 2000,
+          actual: 500,
+          delta: -1500,
+          percentOfGoal: 25,
+          band: 'under',
+        },
+        proteinG: null,
+        carbsG: null,
+        fatG: null,
+        satietyScore: null,
+      },
+    });
+    const {findByText, queryByText} = await renderWithProviders(
+      <MealPlanDetailView
+        plan={plan}
+        {...handlers()}
+      />,
+    );
+    // "auto" branch: progress alone drives the section — rows, no hint.
+    expect(await findByText('500 / 2000 · Below goal')).toBeTruthy();
+    expect(
+      queryByText('Set daily nutrition goals to compare this plan.'),
+    ).toBeNull();
+  });
+
   test('renders no goals section when the plan has neither progress nor nutrition', async () => {
     const {queryByText} = await renderWithProviders(
       <MealPlanDetailView
