@@ -9,6 +9,21 @@ import {SectionCard} from '../ui/SectionCard.js';
 
 import {NutritionGoalProgressView} from './NutritionGoalProgressView.js';
 
+// Page-view migration (#49, Wave A): the app mirror no longer renders
+// its own detail — it hosts the design system's MealPlanDetailPage
+// (@spudly/ui/pages) and keeps only the app-side composition (the date
+// range joined from the plan's raw date strings, the nutrition summary
+// and entry meta lines composed by the shared formatter, and the goal
+// rows' rounded labels with the app's band wording). This web mirror
+// deliberately keeps its DOM implementation; converging web onto the
+// DS page is a separate decision. Two composition notes from the app
+// rewire: the app's screen keeps its delayed-spinner loading gate, so
+// the app host drives the page only in its ready state; and the page
+// renders the goals section when the plan has goal progress or a
+// nutrition summary, where this mirror (like the old app view) keys
+// the section on the raw nutrition object — so for a plan whose
+// nutrition is present but unavailable with no goal progress, web
+// still shows the set-goals hint card and the app no longer does.
 export const MealPlanDetailView = ({
   plan,
   onEdit,
