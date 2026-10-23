@@ -10,7 +10,7 @@ import type {RecipeDetail} from '@eciperay/types';
 
 import {ThumbnailListCard} from './ui/ThumbnailListCard';
 
-const formatRecipeSubtitle = (recipe: RecipeDetail) =>
+export const formatRecipeSubtitle = (recipe: RecipeDetail) =>
   `${recipe.servings} servings${recipe.cookTimeMin ? ` · ${recipe.cookTimeMin} min` : ''} · ${formatRecipeListMeta(recipe)}`;
 
 type Props = {recipe: RecipeDetail};
