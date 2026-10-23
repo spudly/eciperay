@@ -5,6 +5,10 @@ import type {ShowcaseFrameProps} from '@eciperay/client';
 
 import {ThumbnailListCard} from './ui/ThumbnailListCard.js';
 
+// Parity note (#49, Wave A): the app mirror exports its
+// formatRecipeSubtitle so the app's Shared-with-me view can format the
+// DS page's items with the card's own helper. This mirror keeps its
+// local copy — the web view still renders these cards directly.
 const formatRecipeSubtitle = (recipe: RecipeDetail) =>
   `${recipe.servings} servings${recipe.cookTimeMin ? ` · ${recipe.cookTimeMin} min` : ''} · ${formatRecipeListMeta(recipe)}`;
 

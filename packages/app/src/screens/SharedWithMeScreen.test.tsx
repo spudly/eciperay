@@ -1,9 +1,6 @@
 import React from 'react';
 import {act, waitFor} from '@testing-library/react-native';
-import {
-  RECIPE_LIST_PAGE_SIZE,
-  SHARED_WITH_ME_EMPTY_MESSAGE,
-} from '@eciperay/client';
+import {RECIPE_LIST_PAGE_SIZE} from '@eciperay/client';
 
 import {makeRecipeDetail} from '../__tests__/fixtures/recipe';
 import {
@@ -41,7 +38,16 @@ describe('SharedWithMeScreen', () => {
 
   test('shows empty state', async () => {
     const {findByText} = await renderWithProviders(<SharedWithMeScreen />);
-    expect(await findByText(SHARED_WITH_ME_EMPTY_MESSAGE)).toBeTruthy();
+    // The DS page's EmptyState carries SHARED_WITH_ME_EMPTY_MESSAGE as
+    // its title/body split — the constant's two sentences, one each.
+    expect(
+      await findByText('Recipes others share with you will appear here.'),
+    ).toBeTruthy();
+    expect(
+      await findByText(
+        'Open a share link while signed in to save recipes to this list.',
+      ),
+    ).toBeTruthy();
   });
 
   test('lists shared recipes', async () => {
