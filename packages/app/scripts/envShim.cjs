@@ -8,7 +8,8 @@ const dotenv = require('dotenv');
  *   | 'SUPABASE_URL'
  *   | 'SUPABASE_ANON_KEY'
  *   | 'POSTHOG_KEY'
- *   | 'POSTHOG_HOST'} AppEnvKey
+ *   | 'POSTHOG_HOST'
+ *   | 'EXP205_FIXTURES'} AppEnvKey
  */
 
 /** @type {readonly AppEnvKey[]} */
@@ -25,6 +26,7 @@ const APP_ENV_KEYS = Object.freeze([
   'SUPABASE_ANON_KEY',
   'POSTHOG_KEY',
   'POSTHOG_HOST',
+  'EXP205_FIXTURES',
 ]);
 
 const isProductionAppEnv = () =>

@@ -18,7 +18,12 @@ export const RootNavigator = () => {
   const {session, isLoading} = useAuth();
   const {needsPasswordReset, clearPasswordRecovery} = useAuthDeepLink(supabase);
 
-  if (isLoading) {
+  // EXPERIMENT ONLY (#205 diagnosis, throwaway branch): force the
+  // signed-in branch so the emulator reaches the real tab/stack
+  // navigation without an authenticated session.
+  const experimentSignedIn = true;
+
+  if (isLoading && !experimentSignedIn) {
     return (
       <ScreenLoadingGate pending>
         <View />
@@ -29,11 +34,11 @@ export const RootNavigator = () => {
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{headerShown: false}}>
-        {session && needsPasswordReset ? (
+        {experimentSignedIn && needsPasswordReset ? (
           <Stack.Screen name="ResetPassword">
             {() => <ResetPasswordScreen onComplete={clearPasswordRecovery} />}
           </Stack.Screen>
-        ) : session ? (
+        ) : experimentSignedIn || session ? (
           <Stack.Screen
             name="Main"
             component={TabNavigator}

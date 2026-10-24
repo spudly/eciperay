@@ -1,5 +1,6 @@
 import {
   API_BASE_URL as RAW_API_BASE_URL,
+  EXP205_FIXTURES as RAW_EXP205_FIXTURES,
   POSTHOG_HOST as RAW_POSTHOG_HOST,
   POSTHOG_KEY as RAW_POSTHOG_KEY,
 } from '@env';
@@ -23,3 +24,9 @@ export const POSTHOG_KEY =
 
 export const POSTHOG_HOST =
   typeof RAW_POSTHOG_HOST === 'string' ? RAW_POSTHOG_HOST : '';
+
+// EXPERIMENT ONLY (#205 diagnosis, throwaway branch): true when the
+// bundle was built with EXP205_FIXTURES=1 (the emulator workflow), in
+// which case RecipesScreen serves fixture rows. Never set in real
+// builds.
+export const EXP205_FIXTURES = RAW_EXP205_FIXTURES === '1';

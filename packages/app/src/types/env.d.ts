@@ -5,4 +5,5 @@ declare module '@env' {
   export const API_BASE_URL: string | undefined;
   export const POSTHOG_KEY: string | undefined;
   export const POSTHOG_HOST: string | undefined;
+  export const EXP205_FIXTURES: string | undefined;
 }

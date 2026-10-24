@@ -13,7 +13,7 @@ import {RecipesListView} from '../components/recipes/RecipesListView';
  * ordinary short titles, most with imageUrl null, one with his real Supabase
  * image URL.
  */
-const RECIPES: RecipeDetail[] = [
+export const EXP_RECIPES: RecipeDetail[] = [
   makeRecipeDetail({
     id: 'exp-r1',
     title: 'Chili',
@@ -74,7 +74,7 @@ export const DiagHarness = () => {
       search={search}
       onSearchChange={setSearch}
       isLoading={false}
-      recipes={RECIPES}
+      recipes={EXP_RECIPES}
       isFetchingNextPage={false}
       onRecipePress={() => {
         void 0;

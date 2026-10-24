@@ -95,7 +95,8 @@ describe('envShim', () => {
         'exports.SUPABASE_URL = "https://prod.supabase.co";\n' +
         'exports.SUPABASE_ANON_KEY = "anon";\n' +
         'exports.POSTHOG_KEY = undefined;\n' +
-        'exports.POSTHOG_HOST = undefined;\n',
+        'exports.POSTHOG_HOST = undefined;\n' +
+        'exports.EXP205_FIXTURES = undefined;\n',
     );
   });
 
