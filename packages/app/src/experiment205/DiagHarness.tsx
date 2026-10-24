@@ -65,6 +65,84 @@ export const EXP_RECIPES: RecipeDetail[] = [
   }),
 ];
 
+/**
+ * RESUMED INVESTIGATION (2026-10-24): Stephen's library is 53 recipes and EVERY
+ * card is broken on his Pixel 8a, across many versions, reinstall-proof, while
+ * the recipe detail page renders fine. The first matrix ran only the 6 rows
+ * above. EXP_RECIPES now totals 53 — Stephen's real count — with a realistic
+ * spread: mostly imageUrl null, a handful sharing his one real Supabase image
+ * URL (the pattern his library actually has), short and long wrapping titles,
+ * varied servings/cook times/satiety. The capture script additionally sweeps
+ * device font scale and display density per run, so the library-size and
+ * device-settings leads are exercised together.
+ */
+const EXP_IMAGE_URL =
+  'https://xlvefaeetaaeexyvqbnq.supabase.co/storage/v1/object/public/recipe-images/4e35e006-2ea0-40f2-8ef9-af42b51f266a/6dc355dc-43a5-4d25-8fd1-d76e4380cda7';
+
+const EXP_EXTRA_TITLES: readonly string[] = [
+  'Beef Stew',
+  'Chicken Tikka Masala with Basmati Rice and Garlic Naan',
+  'Pancakes',
+  'Greek Salad',
+  'Beef and Broccoli Stir Fry',
+  'Tomato Soup',
+  'Grilled Cheese Sandwich',
+  'Shrimp Scampi',
+  'Vegetable Curry',
+  'BBQ Pulled Pork',
+  'Caesar Salad',
+  'Chicken Noodle Soup',
+  'Fish Tacos with Chipotle Crema',
+  'Mushroom Risotto',
+  'Blueberry Muffins',
+  'Egg Fried Rice',
+  'Lentil Soup',
+  'Chicken Parmesan',
+  'Beef Chili Verde',
+  'Caprese Salad',
+  'Pork Chops with Apples',
+  'Vegetable Lasagna',
+  'Chicken Enchiladas',
+  'Minestrone',
+  'Garlic Butter Pasta',
+  'Tuna Salad',
+  'Beef Burritos',
+  'Corn Chowder',
+  'Spinach and Feta Stuffed Chicken Breast with Lemon Butter Sauce',
+  'Oatmeal Raisin Cookies',
+  'Chicken Fried Rice',
+  'Tomato Basil Pasta',
+  'Pulled Chicken Sandwiches',
+  'Zucchini Bread',
+  'Beef Stroganoff',
+  'Garden Salad',
+  'Baked Salmon',
+  'Potato Leek Soup',
+  'Chicken Pot Pie',
+  'Veggie Burger',
+  'Shrimp Fried Rice',
+  'Butternut Squash Soup',
+  'Meatloaf',
+  'Chicken Shawarma',
+  'Pesto Pasta',
+  'Breakfast Burrito',
+  'Clam Chowder',
+];
+
+const EXP_EXTRA_RECIPES: RecipeDetail[] = EXP_EXTRA_TITLES.map((title, index) =>
+  makeRecipeDetail({
+    id: `exp-x${index + 1}`,
+    title,
+    servings: (index % 8) + 1,
+    cookTimeMin: index % 3 === 0 ? null : 10 + ((index * 7) % 50),
+    satietyScore: (index * 13) % 100,
+    // A small minority carry an image, mirroring his library's pattern.
+    imageUrl: index % 9 === 4 ? EXP_IMAGE_URL : null,
+  }),
+);
+
+EXP_RECIPES.push(...EXP_EXTRA_RECIPES);
+
 export const DiagHarness = () => {
   const [search, setSearch] = useState('');
 

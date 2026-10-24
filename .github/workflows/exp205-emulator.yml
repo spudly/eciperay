@@ -84,3 +84,30 @@ jobs:
           name: exp205-output
           path: /tmp/exp205-out
           if-no-files-found: warn
+
+      # RESUMED INVESTIGATION (2026-10-24): Stephen's phone is a Pixel 8a.
+      # Second pass on that device profile at API 35 (Android 15), base +
+      # large-font variants only, reusing the APK built above.
+      - name: Install, launch, and screenshot on Pixel 8a (API 35)
+        uses: reactivecircus/android-emulator-runner@v2
+        env:
+          EXP205_VARIANTS: 'base font130'
+          EXP205_OUT_SUFFIX: '-8a'
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_8a
+          disable-animations: true
+          emulator-options:
+            -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+            -no-snapshot-save
+          script: bash .github/scripts/exp205-capture.sh
+
+      - name: Upload Pixel 8a screenshots and logcat
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: exp205-output-8a
+          path: /tmp/exp205-out-8a
+          if-no-files-found: warn
