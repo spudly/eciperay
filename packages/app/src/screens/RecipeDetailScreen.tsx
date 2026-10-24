@@ -1,8 +1,4 @@
-import {
-  queryKeys,
-  recordRecipeView,
-  type RecipeDetailTab,
-} from '@eciperay/client';
+import {queryKeys, recordRecipeView} from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useQuery, useQueryClient} from '@tanstack/react-query';
 import {useCallback, useEffect, useMemo, useState} from 'react';
@@ -22,7 +18,6 @@ type DetailProps = NativeStackScreenProps<
 
 export const RecipeDetailScreen = ({route, navigation}: DetailProps) => {
   const {recipeId, versionId: initialVersionId} = route.params;
-  const [activeTab, setActiveTab] = useState<RecipeDetailTab>('overview');
   const [servings, setServings] = useState<number | null>(null);
   const [selectedVersionId, setSelectedVersionId] = useState<string | null>(
     initialVersionId ?? null,
@@ -103,8 +98,6 @@ export const RecipeDetailScreen = ({route, navigation}: DetailProps) => {
       recipe={recipe}
       displayRecipe={displayRecipe}
       versions={versions}
-      activeTab={activeTab}
-      onTabChange={setActiveTab}
       selectedVersionId={activeVersionId}
       onSelectVersion={setSelectedVersionId}
       currentServings={currentServings}

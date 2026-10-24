@@ -41,27 +41,36 @@ describe('RecipesListView element presence (#162)', () => {
   };
 
   test('renders the search input, all three select triggers, and the first recipe card', async () => {
-    const {getByPlaceholderText, getByText} = await renderWithProviders(
-      <RecipesListView
-        {...controls}
-        isLoading={false}
-        recipes={[makeRecipeDetail({title: 'Pasta Night'})]}
-        isFetchingNextPage={false}
-        onRecipePress={jest.fn()}
-        onRecipeDelete={jest.fn()}
-        onLoadMore={jest.fn()}
-      />,
-    );
+    const {findByText, getByLabelText, getByPlaceholderText, getByText} =
+      await renderWithProviders(
+        <RecipesListView
+          {...controls}
+          isLoading={false}
+          recipes={[makeRecipeDetail({title: 'Pasta Night'})]}
+          isFetchingNextPage={false}
+          onRecipePress={jest.fn()}
+          onRecipeDelete={jest.fn()}
+          onLoadMore={jest.fn()}
+        />,
+      );
 
     // Search input.
     expect(getByPlaceholderText('Search recipes…')).toBeTruthy();
+    // The #96 collapsed bar: at default values the selects live behind
+    // the Filters chooser, so add each filter to render its select —
+    // the presence contract below is unchanged.
+    expect(getByText('Filters')).toBeTruthy();
+    await fireEvent.press(getByText('Filters'));
+    await fireEvent.press(getByLabelText('Add Status filter'));
     // The three select triggers: label + currently selected value.
-    expect(getByText('Status')).toBeTruthy();
-    expect(getByText('All statuses')).toBeTruthy();
-    expect(getByText('Sort by')).toBeTruthy();
-    expect(getByText('Newest')).toBeTruthy();
-    expect(getByText('Order')).toBeTruthy();
-    expect(getByText('High to low')).toBeTruthy();
+    expect(await findByText('Status')).toBeTruthy();
+    expect(await findByText('All statuses')).toBeTruthy();
+    await fireEvent.press(getByText('Filters'));
+    await fireEvent.press(getByLabelText('Add Sort filter'));
+    expect(await findByText('Sort by')).toBeTruthy();
+    expect(await findByText('Newest')).toBeTruthy();
+    expect(await findByText('Order')).toBeTruthy();
+    expect(await findByText('High to low')).toBeTruthy();
     // First recipe card.
     expect(getByText('Pasta Night')).toBeTruthy();
   });

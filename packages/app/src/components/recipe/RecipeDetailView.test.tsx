@@ -1,4 +1,4 @@
-import {useAuth, type RecipeDetailTab} from '@eciperay/client';
+import {useAuth} from '@eciperay/client';
 import type {RecipeDetail, RecipeVersionSummary} from '@eciperay/types';
 import {fireEvent, waitFor} from '@testing-library/react-native';
 import React, {useState} from 'react';
@@ -52,8 +52,8 @@ const makeCallbacks = (): Callbacks => ({
 });
 
 /**
- * The screen's stateful shell, minus its queries: tab, servings, and version
- * selection live here exactly as the screen holds them, so tab presses and
+ * The screen's stateful shell, minus its queries: servings and version
+ * selection live here exactly as the screen holds them, so version switches and
  * scaling flow through the view the way they do in the app.
  */
 const Harness = ({
@@ -65,7 +65,6 @@ const Harness = ({
   versions: RecipeVersionSummary[];
   callbacks: Callbacks;
 }) => {
-  const [activeTab, setActiveTab] = useState<RecipeDetailTab>('overview');
   const [servings, setServings] = useState<number | null>(null);
   const [selectedVersionId, setSelectedVersionId] = useState(recipe.versionId);
   const displayRecipe =
@@ -79,8 +78,6 @@ const Harness = ({
       recipe={recipe}
       displayRecipe={displayRecipe}
       versions={versions}
-      activeTab={activeTab}
-      onTabChange={setActiveTab}
       selectedVersionId={selectedVersionId}
       onSelectVersion={versionId => {
         setSelectedVersionId(versionId);
@@ -149,9 +146,11 @@ describe('RecipeDetailView', () => {
   });
 
   test('renders the overview mapping: stats, chips, lifecycle, engagement', async () => {
-    const {findByText, queryByText} = await renderView();
+    const {findByText, queryByText, getAllByText} = await renderView();
     expect(await findByText('Test Recipe')).toBeTruthy();
-    expect(await findByText('Servings')).toBeTruthy();
+    // The single-scroll page shows the label twice: the overview stat and
+    // the ingredients section's servings control.
+    expect(getAllByText('Servings').length).toBeGreaterThan(0);
     expect(await findByText('15m')).toBeTruthy();
     expect(await findByText('30m')).toBeTruthy();
     expect(await findByText('Start Cooking')).toBeTruthy();
@@ -256,12 +255,12 @@ describe('RecipeDetailView', () => {
       versionNumber: 2,
       derivedRole: 'archived',
     });
-    const {callbacks, findByText, getByLabelText} = await renderView({}, [
+    const {callbacks, findByText} = await renderView({}, [
       makeRecipeVersionSummary(),
       archived,
     ]);
     await findByText('Test Recipe');
-    await fireEvent.press(getByLabelText('Select version'));
+    await fireEvent.press(await findByText(/v1 — Active/));
     await fireEvent.press(await findByText(/v2 — Archived/));
     expect(callbacks.onSelectVersion).toHaveBeenCalledWith('version-uuid-2');
   });
@@ -270,8 +269,15 @@ describe('RecipeDetailView', () => {
     mockSubstitutions.mockResolvedValue([
       {ingredient: 'Flour', suggestions: ['Rice flour', 'Oat flour']},
     ]);
-    const {findByText, queryByText} = await renderView();
-    await fireEvent.press(await findByText('Ingredients'));
+    const archived = makeRecipeVersionSummary({
+      id: 'version-uuid-2',
+      versionNumber: 2,
+      derivedRole: 'archived',
+    });
+    const {findByText, queryByText} = await renderView({}, [
+      makeRecipeVersionSummary(),
+      archived,
+    ]);
     expect(await findByText('2 cups Flour')).toBeTruthy();
     await fireEvent.press(await findByText('2×'));
     expect(await findByText('4 cups Flour')).toBeTruthy();
@@ -283,16 +289,16 @@ describe('RecipeDetailView', () => {
         'Tap an ingredient to mark it missing and see substitutions below.',
       ),
     ).toBeTruthy();
-    // Leaving the tab resets the missing set, as the unmounted tab did.
-    await fireEvent.press(await findByText('Overview'));
-    await fireEvent.press(await findByText('Ingredients'));
+    // Switching the displayed version resets the missing set: the marks
+    // are per-version ingredient ids and must not leak across versions.
+    await fireEvent.press(await findByText(/v1 — Active/));
+    await fireEvent.press(await findByText(/v2 — Archived/));
     expect(await findByText('4 cups Flour')).toBeTruthy();
     expect(queryByText('Substitutions')).toBeNull();
   });
 
   test('renders the instruction steps', async () => {
     const {findByText} = await renderView();
-    await fireEvent.press(await findByText('Instructions'));
     expect(await findByText('Mix dry ingredients')).toBeTruthy();
     expect(await findByText('Bake at 350°F')).toBeTruthy();
   });
@@ -300,7 +306,6 @@ describe('RecipeDetailView', () => {
   test('swaps the cook-log form for the button and saves through it', async () => {
     mockListCookLogs.mockResolvedValue([makeCookLog()]);
     const {recipe, findByText, queryByText} = await renderView();
-    await fireEvent.press(await findByText('Cook History'));
     expect(await findByText('Turned out great')).toBeTruthy();
     await fireEvent.press(await findByText('Log a cook'));
     expect(await findByText('How did it go?')).toBeTruthy();
@@ -314,20 +319,28 @@ describe('RecipeDetailView', () => {
     });
   });
 
-  test('closes the cook-log form when leaving the history tab', async () => {
-    const {findByText, queryByText} = await renderView();
-    await fireEvent.press(await findByText('Cook History'));
+  test('closes the cook-log form when the displayed version changes', async () => {
+    const archived = makeRecipeVersionSummary({
+      id: 'version-uuid-2',
+      versionNumber: 2,
+      derivedRole: 'archived',
+    });
+    const {findByText, queryByText} = await renderView({}, [
+      makeRecipeVersionSummary(),
+      archived,
+    ]);
     await fireEvent.press(await findByText('Log a cook'));
     expect(await findByText('How did it go?')).toBeTruthy();
-    await fireEvent.press(await findByText('Overview'));
-    await fireEvent.press(await findByText('Cook History'));
+    // The form saves against the displayed version, so switching versions
+    // closes it instead of retargeting the entry.
+    await fireEvent.press(await findByText(/v1 — Active/));
+    await fireEvent.press(await findByText(/v2 — Archived/));
     expect(await findByText('Log a cook')).toBeTruthy();
     expect(queryByText('How did it go?')).toBeNull();
   });
 
   test('renders nutrition rows and refreshes the estimate', async () => {
     const {recipe, findByText} = await renderView();
-    await fireEvent.press(await findByText('Nutrition'));
     expect(await findByText('Per Serving')).toBeTruthy();
     expect(await findByText('250')).toBeTruthy();
     expect(await findByText('10g')).toBeTruthy();
@@ -340,7 +353,6 @@ describe('RecipeDetailView', () => {
   test('renders the nutrition unavailable state with an estimate action', async () => {
     mockNutrition.mockResolvedValue(null);
     const {recipe, findByText} = await renderView();
-    await fireEvent.press(await findByText('Nutrition'));
     expect(await findByText('Nutrition is not available yet.')).toBeTruthy();
     await fireEvent.press(await findByText('Estimate nutrition'));
     await waitFor(() => {

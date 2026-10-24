@@ -142,7 +142,7 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
     path: 'recipe/RecipeDetailView.tsx',
     platform: 'app',
     reason:
-      'App-side host for the design system RecipeDetailPage (#49): owns the detail tab queries, mutations, and slots; web renders its own DOM recipe detail page.',
+      'App-side host for the design system RecipeDetailPage (#49): owns the detail section queries, mutations, and slots; web renders its own DOM recipe detail page.',
   },
   {
     path: 'profile/AccessTokensSection.tsx',
