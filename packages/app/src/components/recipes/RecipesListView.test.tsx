@@ -49,7 +49,6 @@ describe('RecipesListView element presence (#162)', () => {
           recipes={[makeRecipeDetail({title: 'Pasta Night'})]}
           isFetchingNextPage={false}
           onRecipePress={jest.fn()}
-          onRecipeDelete={jest.fn()}
           onLoadMore={jest.fn()}
         />,
       );
@@ -105,7 +104,6 @@ describe('RecipesListView list scrollability (#188)', () => {
         recipes={[makeRecipeDetail({title: 'Pasta Night'})]}
         isFetchingNextPage={false}
         onRecipePress={jest.fn()}
-        onRecipeDelete={jest.fn()}
         onLoadMore={jest.fn()}
       />,
     );
@@ -141,7 +139,6 @@ describe('RecipesListView list scrollability (#188)', () => {
         recipes={[]}
         isFetchingNextPage={false}
         onRecipePress={jest.fn()}
-        onRecipeDelete={jest.fn()}
         onLoadMore={jest.fn()}
       />,
     );
@@ -167,12 +164,19 @@ describe('RecipesListView list scrollability (#188)', () => {
 });
 
 /**
- * Cook-log composition (#49, stage 2): the DS page owns the "Log cook" button
- * and hides it for a row whose accessory renders content; the view holds the
- * open set and renders the app's form through the accessory slot. These tests
- * pin the behavior the per-card state used to give this screen — a form expands
- * under the tapped row, its row's button hides while it is open, and forms open
- * and close independently (several may be open at once).
+ * Cook-log composition (#49, stage 2): the DS page owns the row's log-cook
+ * control and hides it for a row whose accessory renders content; the view
+ * holds the open set and renders the app's form through the accessory slot.
+ * These tests pin the behavior the per-card state used to give this screen — a
+ * form expands under the tapped row, its row's control hides while it is open,
+ * and forms open and close independently (several may be open at once).
+ *
+ * Row contract at @spudly/ui 1.8.0: there is no "Log cook" text button and no
+ * Delete on list rows. A rated recipe's stars are the control (label "Log a
+ * cook of {title}, rated {rating} out of 5 stars"); an unrated recipe gets a
+ * single icon-only button (label "Log a cook of {title}"). The fixture recipes
+ * are unrated unless a test says otherwise, so the labels below are the unrated
+ * form.
  */
 describe('RecipesListView cook-log accessory (#49 stage 2)', () => {
   const controls = {
@@ -191,7 +195,6 @@ describe('RecipesListView cook-log accessory (#49 stage 2)', () => {
         recipes={[pasta, salad]}
         isFetchingNextPage={false}
         onRecipePress={jest.fn()}
-        onRecipeDelete={jest.fn()}
         onLoadMore={jest.fn()}
       />,
     );
@@ -200,40 +203,84 @@ describe('RecipesListView cook-log accessory (#49 stage 2)', () => {
     mockCreateCookLog.mockResolvedValue(makeCookLog());
   });
 
-  test('opens the form under the tapped row and hides only that row’s Log cook button', async () => {
-    const {getAllByText, queryByText} = await renderView();
+  test('opens the form under the tapped row and hides only that row’s log-cook control', async () => {
+    const {getAllByText, getByLabelText, queryByLabelText, queryByText} =
+      await renderView();
 
-    expect(getAllByText('Log cook')).toHaveLength(2);
+    // No Delete and no "Log cook" text on list rows at 1.8.0; each
+    // unrated row's only log-cook affordance is its icon-only button.
+    expect(queryByText('Delete')).toBeNull();
+    expect(queryByText('Log cook')).toBeNull();
+    expect(getByLabelText('Log a cook of Pasta Night')).toBeTruthy();
+    expect(getByLabelText('Log a cook of Salad Days')).toBeTruthy();
     expect(queryByText('How did it go?')).toBeNull();
 
-    await fireEvent.press(getAllByText('Log cook')[0]);
+    await fireEvent.press(getByLabelText('Log a cook of Pasta Night'));
 
     expect(getAllByText('How did it go?')).toHaveLength(1);
-    // The open row's button is hidden; the other row keeps its own.
-    expect(getAllByText('Log cook')).toHaveLength(1);
+    // The open row's control is hidden; the other row keeps its own.
+    expect(queryByLabelText('Log a cook of Pasta Night')).toBeNull();
+    expect(getByLabelText('Log a cook of Salad Days')).toBeTruthy();
+  });
+
+  test('a rated recipe logs a cook through its stars, and its subtitle carries no rating text', async () => {
+    const rated = makeRecipeDetail({
+      id: 'rated-id',
+      title: 'Rated Stew',
+      communityRating: {average: 4.5, count: 3, hasStaleRatings: false},
+      satietyScore: 60,
+    });
+    const {getByLabelText, getByText, queryByText} = await renderWithProviders(
+      <RecipesListView
+        {...controls}
+        isLoading={false}
+        recipes={[rated]}
+        isFetchingNextPage={false}
+        onRecipePress={jest.fn()}
+        onLoadMore={jest.fn()}
+      />,
+    );
+
+    // The rating is passed as the item's `rating`, so the page renders
+    // the stars from it and the subtitle keeps only the satiety
+    // segment — the rating text must not appear a second time.
+    expect(getByText(/Satiety 60/)).toBeTruthy();
+    expect(queryByText(/4\.5★/)).toBeNull();
+    expect(
+      getByLabelText('Log a cook of Rated Stew, rated 4.5 out of 5 stars'),
+    ).toBeTruthy();
+
+    await fireEvent.press(
+      getByLabelText('Log a cook of Rated Stew, rated 4.5 out of 5 stars'),
+    );
+    expect(getByText('How did it go?')).toBeTruthy();
   });
 
   test('forms open and close independently — a second form opens while the first stays open', async () => {
-    const {getAllByText, queryByText} = await renderView();
+    const {getAllByText, getByLabelText, queryByLabelText, queryByText} =
+      await renderView();
 
-    await fireEvent.press(getAllByText('Log cook')[0]);
-    await fireEvent.press(getAllByText('Log cook')[0]);
+    await fireEvent.press(getByLabelText('Log a cook of Pasta Night'));
+    await fireEvent.press(getByLabelText('Log a cook of Salad Days'));
 
     expect(getAllByText('How did it go?')).toHaveLength(2);
+    expect(queryByLabelText('Log a cook of Pasta Night')).toBeNull();
+    expect(queryByLabelText('Log a cook of Salad Days')).toBeNull();
     expect(queryByText('Log cook')).toBeNull();
 
     // Cancelling one form leaves the other open and restores only
-    // the cancelled row's button.
+    // the cancelled row's control.
     await fireEvent.press(getAllByText('Cancel')[0]);
 
     expect(getAllByText('How did it go?')).toHaveLength(1);
-    expect(getAllByText('Log cook')).toHaveLength(1);
+    expect(getByLabelText('Log a cook of Pasta Night')).toBeTruthy();
+    expect(queryByLabelText('Log a cook of Salad Days')).toBeNull();
   });
 
   test('saves the cook log through the slot form and closes it', async () => {
-    const {getAllByText, getByText, queryByText} = await renderView();
+    const {getByLabelText, getByText, queryByText} = await renderView();
 
-    await fireEvent.press(getAllByText('Log cook')[0]);
+    await fireEvent.press(getByLabelText('Log a cook of Pasta Night'));
     await fireEvent.press(getByText('Save'));
 
     await waitFor(() => {
@@ -246,7 +293,8 @@ describe('RecipesListView cook-log accessory (#49 stage 2)', () => {
     await waitFor(() => {
       expect(queryByText('How did it go?')).toBeNull();
     });
-    expect(getAllByText('Log cook')).toHaveLength(2);
+    expect(getByLabelText('Log a cook of Pasta Night')).toBeTruthy();
+    expect(getByLabelText('Log a cook of Salad Days')).toBeTruthy();
   });
 
   test('a pending save cannot be cancelled away — the form stays open until the save settles', async () => {
@@ -258,9 +306,9 @@ describe('RecipesListView cook-log accessory (#49 stage 2)', () => {
           resolveCreate = resolve;
         }),
     );
-    const {getAllByText, getByText, queryByText} = await renderView();
+    const {getByLabelText, getByText, queryByText} = await renderView();
 
-    await fireEvent.press(getAllByText('Log cook')[0]);
+    await fireEvent.press(getByLabelText('Log a cook of Pasta Night'));
     await fireEvent.press(getByText('Save'));
     expect(mockCreateCookLog).toHaveBeenCalledTimes(1);
 
@@ -279,7 +327,8 @@ describe('RecipesListView cook-log accessory (#49 stage 2)', () => {
     await waitFor(() => {
       expect(queryByText('How did it go?')).toBeNull();
     });
-    expect(getAllByText('Log cook')).toHaveLength(2);
+    expect(getByLabelText('Log a cook of Pasta Night')).toBeTruthy();
+    expect(getByLabelText('Log a cook of Salad Days')).toBeTruthy();
   });
 
   test('a recipe that leaves the list returns with its form closed', async () => {
@@ -290,15 +339,14 @@ describe('RecipesListView cook-log accessory (#49 stage 2)', () => {
         recipes={list}
         isFetchingNextPage={false}
         onRecipePress={jest.fn()}
-        onRecipeDelete={jest.fn()}
         onLoadMore={jest.fn()}
       />
     );
-    const {getAllByText, queryByText, rerender} = await renderWithProviders(
+    const {getByLabelText, queryByText, rerender} = await renderWithProviders(
       view([pasta, salad]),
     );
 
-    await fireEvent.press(getAllByText('Log cook')[0]);
+    await fireEvent.press(getByLabelText('Log a cook of Pasta Night'));
     expect(queryByText('How did it go?')).toBeTruthy();
 
     // Filter the recipe out, then bring it back. The card discarded
@@ -309,7 +357,8 @@ describe('RecipesListView cook-log accessory (#49 stage 2)', () => {
     await rerender(view([pasta, salad]));
 
     expect(queryByText('How did it go?')).toBeNull();
-    expect(getAllByText('Log cook')).toHaveLength(2);
+    expect(getByLabelText('Log a cook of Pasta Night')).toBeTruthy();
+    expect(getByLabelText('Log a cook of Salad Days')).toBeTruthy();
   });
 });
 

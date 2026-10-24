@@ -1,5 +1,4 @@
 import React from 'react';
-import {Alert} from 'react-native';
 import {fireEvent, waitFor, act} from '@testing-library/react-native';
 import {queryKeys, RECIPE_LIST_PAGE_SIZE} from '@eciperay/client';
 
@@ -44,7 +43,6 @@ const triggerEndReached = async (list: {
 describe('RecipesScreen', () => {
   beforeEach(() => {
     mockList.mockResolvedValue([]);
-    mockDelete.mockImplementation(async () => {});
   });
 
   test('renders list when the form picker cache holds a flat recipe array', async () => {
@@ -283,70 +281,16 @@ describe('RecipesScreen', () => {
     });
   });
 
-  test('deletes recipe after confirmation', async () => {
-    jest.spyOn(Alert, 'alert').mockImplementation((_t, _m, buttons) => {
-      buttons?.[1]?.onPress?.();
-    });
+  test('offers no delete action on list rows — deleting lives on the recipe detail screen', async () => {
     mockList.mockResolvedValue([makeRecipeDetail({title: 'Soup'})]);
-    const client = makeQueryClient();
-    const {findByText} = await renderWithProviders(
+    const {findByText, queryByText} = await renderWithProviders(
       <RecipesScreen {...stackProps} />,
-      client,
     );
-    const deleteButton = await findByText('Delete');
-    await act(async () => {
-      await fireEvent.press(deleteButton);
-      await flushQueryClient(client);
-    });
-    expect(mockDelete).toHaveBeenCalled();
-  });
-
-  test('removes deleted recipe from filtered list without clearing search', async () => {
-    jest.spyOn(Alert, 'alert').mockImplementation((_t, _m, buttons) => {
-      buttons?.[1]?.onPress?.();
-    });
-    let deleted = false;
-    const soup = makeRecipeDetail({id: 'soup-id', title: 'Soup'});
-    const salad = makeRecipeDetail({id: 'salad-id', title: 'Salad'});
-    mockList.mockImplementation(async (params?: {search?: string}) => {
-      const items = [soup, salad].filter(
-        recipe => !deleted || recipe.id !== 'soup-id',
-      );
-      if (params?.search) {
-        return items.filter(recipe =>
-          recipe.title.toLowerCase().includes(params.search!.toLowerCase()),
-        );
-      }
-      return items;
-    });
-    mockDelete.mockImplementation(async () => {
-      deleted = true;
-    });
-    const client = makeQueryClient();
-    const {findByText, getByPlaceholderText, queryByText} =
-      await renderWithProviders(<RecipesScreen {...stackProps} />, client);
-    await findByText('Soup');
-    await fireEvent.changeText(getByPlaceholderText('Search recipes…'), 'Soup');
-    await waitFor(() => {
-      expect(mockList).toHaveBeenCalledWith({
-        search: 'Soup',
-        limit: RECIPE_LIST_PAGE_SIZE,
-        offset: 0,
-        sort: 'newest',
-        sortDir: 'desc',
-      });
-    });
-    await findByText('Soup');
-    expect(queryByText('Salad')).toBeNull();
-    const deleteButton = await findByText('Delete');
-    await act(async () => {
-      await fireEvent.press(deleteButton);
-      await flushQueryClient(client);
-    });
-    expect(mockDelete).toHaveBeenCalledWith('soup-id');
-    await waitFor(() => {
-      expect(queryByText('Soup')).toBeNull();
-    });
-    expect(getByPlaceholderText('Search recipes…').props.value).toBe('Soup');
+    expect(await findByText('Soup')).toBeTruthy();
+    // @spudly/ui 1.8.0 removed the list row's Delete action and the
+    // `onRecipeDelete` prop; the screen no longer wires any delete
+    // mutation to the list.
+    expect(queryByText('Delete')).toBeNull();
+    expect(mockDelete).not.toHaveBeenCalled();
   });
 });

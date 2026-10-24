@@ -37,6 +37,20 @@ import {RecipeListFiltersBar} from './RecipeListFiltersBar.js';
 // replaced cannot close the replacement (here, the completion only
 // ever touches the originating card's own state). No web behavior
 // changes.
+//
+// @spudly/ui 1.8.0 adoption (app only): the app mirror's host no
+// longer accepts or forwards `onRecipeDelete` — 1.8.0 removed the
+// prop from the DS RecipesPage (list rows have no Delete; deleting
+// lives on the recipe detail page), so the app items now carry
+// `rating` (the page renders it as the pressable stars that log a
+// cook, or a single icon-only button when unrated) and the app
+// subtitle drops its rating segment so the rating is not shown
+// twice. This web mirror deliberately does none of that: it keeps
+// its DOM cards (with their per-row Delete, wired through the shared
+// `RecipesListViewProps.onRecipeDelete` the client type still
+// carries) and its rating-bearing subtitle, on @spudly/ui 1.0.3.
+// Converging web onto the DS page is the separate B7 decision
+// noted above. Comment-only change; no web behavior changes.
 export const RecipesListView = ({
   isLoading,
   recipes,
