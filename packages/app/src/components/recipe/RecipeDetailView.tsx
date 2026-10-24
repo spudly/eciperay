@@ -1,4 +1,4 @@
-/* eslint-disable max-lines -- detail host: every tab's queries, mutations, and view-model mapping */
+/* eslint-disable max-lines -- detail host: every section's queries, mutations, and view-model mapping */
 import {
   canEditActiveRecipeMetadata,
   canEditDraftVersion,
@@ -15,7 +15,6 @@ import {
   sortIngredientsByOrder,
   truncateChangeSummary,
   useAuth,
-  type RecipeDetailTab,
   type RecipeScaleMultiplier,
 } from '@eciperay/client';
 import type {
@@ -44,8 +43,6 @@ type RecipeDetailViewProps = {
   recipe: RecipeDetail;
   displayRecipe: RecipeDetail;
   versions: RecipeVersionSummary[];
-  activeTab: RecipeDetailTab;
-  onTabChange: (tab: RecipeDetailTab) => void;
   selectedVersionId: string;
   onSelectVersion: (versionId: string) => void;
   currentServings: number;
@@ -61,26 +58,29 @@ type RecipeDetailViewProps = {
 
 /**
  * The Recipe detail screen's view (#49): the design system's RecipeDetailPage
- * renders the screen — pinned chrome, tab bar, and the active tab's panel — and
- * this component is its app-side host. Everything the page must not own stays
- * here: the recipe/version queries' results are mapped to the page's per-tab
- * view-models at this boundary (picker and candidate labels formatted with the
- * same helpers the old VersionPicker and OverviewActions used, ingredient lines
- * scaled by the app's formatter, nutrition rows composed by the client's row
- * builder), and every mutation (status, activation, tweak-manually, rating,
- * cook log) plus the three slotted app panels (sharing controls, comments,
- * cook-log form) keep their state and API calls app-side.
+ * renders the screen — pinned chrome above a single scroll view holding every
+ * section (#71) — and this component is its app-side host. Everything the page
+ * must not own stays here: the recipe/version queries' results are mapped to
+ * the page's per-section view-models at this boundary (picker and candidate
+ * labels formatted with the same helpers the old VersionPicker and
+ * OverviewActions used, ingredient lines scaled by the app's formatter,
+ * nutrition rows composed by the client's row builder), and every mutation
+ * (status, activation, tweak-manually, rating, cook log) plus the three slotted
+ * app panels (sharing controls, comments, cook-log form) keep their state and
+ * API calls app-side.
  *
- * State lifetimes are mapped defensively, following the tabs this replaces: the
- * old tab components unmounted on every tab switch, which reset the ingredients
- * tab's missing set and closed the history tab's cook-log form. The page stays
- * mounted across tabs, so both resets are reproduced explicitly below. The
- * mutations, by contrast, already lived in the tab components above their
- * forms, so hosting them here preserves their semantics — with one deliberate
- * improvement from the Recipes list rewire (#197): a save still in flight when
- * its form is cancelled and reopened now shows as pending in the reopened form
- * (the shared mutation's isPending) instead of allowing a duplicate submit
- * against an orphaned request.
+ * State lifetimes are mapped defensively: the tab components this page replaced
+ * unmounted on every tab switch, which reset the ingredients tab's missing set
+ * and closed the history tab's cook-log form. The single-scroll page never
+ * unmounts its sections, so both resets hang off the displayed recipe/version
+ * changing instead (see the effect below) — ingredient ids are per-version and
+ * the cook-log form saves against the displayed version, so neither piece of
+ * state may leak across versions. The mutations, by contrast, already lived in
+ * the tab components above their forms, so hosting them here preserves their
+ * semantics — with one deliberate improvement from the Recipes list rewire
+ * (#197): a save still in flight when its form is cancelled and reopened now
+ * shows as pending in the reopened form (the shared mutation's isPending)
+ * instead of allowing a duplicate submit against an orphaned request.
  */
 
 const VERSION_ROLE_LABELS: Record<RecipeVersionSummary['derivedRole'], string> =
@@ -117,8 +117,6 @@ export const RecipeDetailView = ({
   recipe,
   displayRecipe,
   versions,
-  activeTab,
-  onTabChange,
   selectedVersionId,
   onSelectVersion,
   currentServings,
@@ -334,18 +332,20 @@ export const RecipeDetailView = ({
           },
         };
 
-  // The old tab components unmounted on every tab switch, resetting the
+  // The tab components unmounted on every tab switch, resetting the
   // ingredients tab's missing set and closing the history tab's form.
-  // The page stays mounted, so reproduce both resets when the tab
-  // changes away.
+  // The single-scroll page never unmounts sections, so both resets hang
+  // off the displayed recipe/version changing: the missing set holds
+  // per-version ingredient ids (a mark on one version must never flag
+  // another version's rows or drive its substitutions lookup), and an
+  // open cook-log form saves against the displayed version, so it
+  // closes rather than submitting against a version picked after it
+  // was opened. Within one displayed version the form still closes
+  // only through its own paths (Cancel/success), as before.
   useEffect(() => {
-    if (activeTab !== 'ingredients') {
-      setMissingIds(current => (current.size === 0 ? current : new Set()));
-    }
-    if (activeTab !== 'history') {
-      setShowCookLogForm(false);
-    }
-  }, [activeTab]);
+    setMissingIds(current => (current.size === 0 ? current : new Set()));
+    setShowCookLogForm(false);
+  }, [displayRecipe.id, displayRecipe.versionId]);
 
   const canEditDraft = canEditDraftVersion(displayRecipe.versionId, versions);
   const canEditMetadata = canEditActiveRecipeMetadata(
@@ -366,10 +366,6 @@ export const RecipeDetailView = ({
       }))}
       selectedVersionId={selectedVersionId}
       onSelectVersion={onSelectVersion}
-      activeTab={activeTab}
-      onTabChange={tab => {
-        onTabChange(tab as RecipeDetailTab);
-      }}
       overview={{
         imageUrl: displayRecipe.imageUrl,
         title: displayRecipe.title,
@@ -504,7 +500,6 @@ export const RecipeDetailView = ({
 if (__DEV__) {
   const RecipeDetailViewDemo = () => {
     const demoRecipe = makeRecipeDetail();
-    const [activeTab, setActiveTab] = useState<RecipeDetailTab>('overview');
     const [servings, setServings] = useState<number | null>(null);
     const [selectedVersionId, setSelectedVersionId] = useState<string | null>(
       null,
@@ -516,8 +511,6 @@ if (__DEV__) {
         recipe={demoRecipe}
         displayRecipe={demoRecipe}
         versions={[makeRecipeVersionSummary()]}
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
         selectedVersionId={selectedVersionId ?? demoRecipe.versionId}
         onSelectVersion={setSelectedVersionId}
         currentServings={currentServings}
