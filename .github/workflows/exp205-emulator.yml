@@ -39,6 +39,12 @@ jobs:
           install-command: npm ci
           skip-install-on-cache-hit: 'true'
 
+      # EXPERIMENT ONLY: apply the design-system #205 fix to the
+      # installed @spudly/ui 1.4.0 dist (patch-package can't address
+      # the app's nested copy; the real fix ships in @spudly/ui).
+      - name: Apply exp205 design-system fix to installed @spudly/ui
+        run: python3 .github/scripts/exp205-apply-ds-fix.py
+
       - name: Setup Android build environment
         uses: ./.github/actions/android-build-setup
 
