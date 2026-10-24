@@ -89,7 +89,8 @@ describe('RecipeDetailScreen', () => {
     await findByText('Test Recipe');
     await fireEvent.press(getByText('Ingredients'));
     await fireEvent.press(await findByText('2×'));
-    await fireEvent.press(getByText('Overview'));
+    // No return trip to an overview tab: the single-scroll page keeps
+    // every section mounted, so Start Cooking is already on screen.
     await fireEvent.press(await findByText('Start Cooking'));
     expect(mockNavigate).toHaveBeenCalledWith('CookingMode', {
       recipeId: 'recipe-uuid-1',
@@ -205,11 +206,11 @@ describe('RecipeDetailScreen', () => {
         derivedRole: 'archived',
       }),
     );
-    const {findByText, getByLabelText, getByText} = await renderWithProviders(
+    const {findByText, getByText} = await renderWithProviders(
       <RecipeDetailScreen {...stackProps} />,
     );
     await findByText('Test Recipe');
-    await fireEvent.press(getByLabelText('Select version'));
+    await fireEvent.press(await findByText(/v1 — Active/));
     await fireEvent.press(getByText(/v2/));
     expect(await findByText('Archived Recipe')).toBeTruthy();
     expect(mockGetVersion).toHaveBeenCalledWith(
