@@ -1,0 +1,80 @@
+name: Exp205 Emulator Diagnosis
+
+# EXPERIMENT ONLY (spudly/eciperay#205, throwaway branch — never merge):
+# builds the app exactly as the device build is made (release APK,
+# embedded bundle, the app's own Metro resolution) with App.tsx swapped
+# to a fixture-data RecipesListView harness, boots it on an emulator,
+# and screenshots the result. Question: do the recipe cards render
+# giant and textless (the on-device symptom) under the app's own
+# runtime conditions, even though every design-system-side replication
+# (1.4.0 components, tamagui 3.0.15, no Raleway, release host build)
+# renders correctly?
+
+on: workflow_dispatch
+
+permissions:
+  contents: read
+  packages: read
+
+env:
+  NODE_AUTH_TOKEN: ${{ secrets.PACKAGES_READ_TOKEN }}
+
+jobs:
+  exp205:
+    name: Build app and screenshot RecipesListView on emulator
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js and install dependencies
+        uses: ./.github/actions/ci-setup
+        with:
+          install-command: npm ci
+          skip-install-on-cache-hit: 'true'
+
+      - name: Setup Android build environment
+        uses: ./.github/actions/android-build-setup
+
+      - name: Build Android release APK (x86_64 for the emulator)
+        working-directory: packages/app/android
+        run: |
+          ./gradlew assembleRelease --build-cache \
+            -I "$GITHUB_WORKSPACE/.github/scripts/disable-posthog-upload.init.gradle" \
+            -PVERSION_CODE=${{ github.run_number }} \
+            -PreactNativeArchitectures=x86_64
+        env:
+          APP_ENV: production
+          API_BASE_URL: https://www.eciperay.com/api
+          SUPABASE_URL: https://placeholder.supabase.co
+          SUPABASE_ANON_KEY: placeholder-anon-key
+          POSTHOG_KEY: ''
+          POSTHOG_HOST: ''
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Install, launch, and screenshot on the emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          emulator-options:
+            -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+            -no-snapshot-save
+          script: bash .github/scripts/exp205-capture.sh
+
+      - name: Upload screenshots and logcat
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: exp205-output
+          path: /tmp/exp205-out
+          if-no-files-found: warn
