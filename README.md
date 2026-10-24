@@ -28,8 +28,6 @@ eciperay/
 │   ├── theme/      # Shared Tailwind v4 tokens
 │   ├── server/     # Express API server
 │   └── types/      # Shared TypeScript types
-├── scripts/
-│   └── findUnusedEslintRules.ts
 ├── eslint.config.ts
 ├── tsconfig.base.json
 └── package.json

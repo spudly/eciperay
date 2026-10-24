@@ -29,7 +29,6 @@ The `CI` workflow (`.github/workflows/ci.yml`) runs on PRs to `master`:
 | `validate`                               | `npm run validate:node-version`                     |
 | `typecheck`                              | `npm run typecheck`                                 |
 | `lint (<package>)`                       | ESLint per workspace package                        |
-| `lint-rules`                             | `npm run lint:unused-rules`                         |
 | `depcheck`                               | `npm run depcheck`                                  |
 | `workflows`                              | `npm run workflows:lint`                            |
 | `test (<package>)`                       | `npm run test:coverage` per package (except server) |
@@ -101,7 +100,6 @@ Map failures to local commands (run from repo root):
 | `validate`   | `npm run validate:node-version`               |
 | `typecheck`  | `npm run typecheck`                           |
 | `lint (...)` | `npx eslint <package> --max-warnings 0`       |
-| `lint-rules` | `npm run lint:unused-rules`                   |
 | `depcheck`   | `npm run depcheck`                            |
 | `workflows`  | `npm run workflows:lint`                      |
 | `test (...)` | `npm run test:coverage --workspace=<package>` |

@@ -88,9 +88,6 @@ jobs:
       - name: Validate Node version and UI parity registry
         run: npm run validate:node-version && npm run validate:ui-parity
 
-      - name: Lint unused ESLint rules
-        run: npm run lint:unused-rules
-
       - name: Depcheck
         run: npm run depcheck
 

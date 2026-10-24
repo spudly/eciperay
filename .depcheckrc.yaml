@@ -14,7 +14,7 @@ ignores:
   - istanbul-lib-coverage # Used by packages/server/scripts/mergeCoverage.ts
   - istanbul-lib-report # Used by packages/server/scripts/mergeCoverage.ts
   - istanbul-reports # Used by packages/server/scripts/mergeCoverage.ts
-  - tsx # CLI for running TypeScript scripts (validateNodeVersion, findUnusedEslintRules)
+  - tsx # CLI for running TypeScript scripts (validateNodeVersion)
   - turbo # Invoked via npm scripts only (test, test:coverage), not imported in source
 specials:
   - bin
