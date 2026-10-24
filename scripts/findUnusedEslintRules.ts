@@ -1,9 +1,7 @@
 import {fileURLToPath} from 'node:url';
 
 import {builtinRules} from 'eslint/use-at-your-own-risk';
-import reactPlugin from 'eslint-plugin-react';
 import reactHooksPlugin from 'eslint-plugin-react-hooks';
-import reactNativePlugin from 'eslint-plugin-react-native';
 import nPlugin from 'eslint-plugin-n';
 import importXPlugin from 'eslint-plugin-import-x';
 import jestPlugin from 'eslint-plugin-jest';
@@ -12,10 +10,16 @@ import eslintCommentsPlugin from '@eslint-community/eslint-plugin-eslint-comment
 
 type Plugin = {rules?: Record<string, unknown>};
 
+// No 'react' or 'react-native' entries: eslint-plugin-react and
+// eslint-plugin-react-native were removed by the @spudly/eslint-config
+// adoption (neither has an ESLint 10 release). Their rule sets are owned
+// by the shared package now — react via @eslint-react (pending in the
+// package's reactPending export until it loads under TypeScript 7; see
+// spudly/eslint-config#8) and react-native via the rules vendored into
+// the package — and the package's own check-rules audit covers their
+// explicit-configuration discipline.
 export const PLUGINS: Record<string, Plugin> = {
-  'react': reactPlugin,
   'react-hooks': reactHooksPlugin,
-  'react-native': reactNativePlugin,
   'n': nPlugin,
   'import-x': importXPlugin,
   'jest': jestPlugin,
@@ -36,15 +40,31 @@ export const getConfiguredRules = async (): Promise<Set<string>> => {
   return configured;
 };
 
+// Deprecated rules are deliberately NOT audited: since the
+// @spudly/eslint-config adoption, the shared package's currency policy
+// removes deprecated rules from the config instead of carrying them as
+// dead 'off' entries (the pre-adoption config listed them all). Only
+// live rules must be explicitly configured.
+export const isDeprecatedRule = (rule: unknown): boolean => {
+  if (typeof rule !== 'object' || rule === null || !('meta' in rule)) {
+    return false;
+  }
+  const meta = (rule as {meta?: unknown}).meta;
+  if (typeof meta !== 'object' || meta === null || !('deprecated' in meta)) {
+    return false;
+  }
+  return Boolean((meta as {deprecated?: unknown}).deprecated);
+};
+
 export const checkPluginRules = (
   configured: Set<string>,
   plugins: Record<string, Plugin> = PLUGINS,
 ): {plugin: string; unused: string[]}[] => {
   const results: {plugin: string; unused: string[]}[] = [];
   for (const [prefix, plugin] of Object.entries(plugins)) {
-    const available = Object.keys(plugin.rules ?? {}).map(
-      r => `${prefix}/${r}`,
-    );
+    const available = Object.entries(plugin.rules ?? {})
+      .filter(([, rule]) => !isDeprecatedRule(rule))
+      .map(([name]) => `${prefix}/${name}`);
     const unused = available.filter(r => !configured.has(r));
     results.push({plugin: prefix, unused});
   }
@@ -53,7 +73,9 @@ export const checkPluginRules = (
 
 export const checkCoreRules = (configured: Set<string>): string[] => {
   // eslint-disable-next-line @typescript-eslint/no-deprecated -- builtinRules is the only stable way to enumerate all ESLint core rules; no public replacement exists in ESLint 9
-  const available = [...builtinRules.keys()];
+  const available = [...builtinRules.entries()]
+    .filter(([, rule]) => !isDeprecatedRule(rule))
+    .map(([name]) => name);
   return available.filter(r => !configured.has(r));
 };
 

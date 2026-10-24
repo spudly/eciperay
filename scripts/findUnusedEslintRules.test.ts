@@ -2,6 +2,7 @@ import {
   checkCoreRules,
   checkPluginRules,
   getConfiguredRules,
+  isDeprecatedRule,
   printLintUnusedRulesReport,
   runLintUnusedRules,
 } from './findUnusedEslintRules.ts';
@@ -27,6 +28,52 @@ describe('checkCoreRules', () => {
     const unused = checkCoreRules(configured);
     expect(unused).toContain('no-alert');
     expect(unused).not.toContain('no-console');
+  });
+
+  it('does not report deprecated core rules', () => {
+    const unused = checkCoreRules(new Set());
+    expect(unused).not.toContain('no-new-symbol');
+    expect(unused).toContain('no-alert');
+  });
+});
+
+describe('isDeprecatedRule', () => {
+  it('returns false for non-object rules', () => {
+    expect(isDeprecatedRule(undefined)).toBe(false);
+    expect(isDeprecatedRule(null)).toBe(false);
+    expect(isDeprecatedRule('rule')).toBe(false);
+  });
+
+  it('returns false when meta is missing or not an object', () => {
+    expect(isDeprecatedRule({})).toBe(false);
+    expect(isDeprecatedRule({meta: 'docs'})).toBe(false);
+    expect(isDeprecatedRule({meta: null})).toBe(false);
+  });
+
+  it('returns false when deprecated is absent or falsy', () => {
+    expect(isDeprecatedRule({meta: {}})).toBe(false);
+    expect(isDeprecatedRule({meta: {deprecated: false}})).toBe(false);
+  });
+
+  it('returns true when deprecated is truthy', () => {
+    expect(isDeprecatedRule({meta: {deprecated: true}})).toBe(true);
+    expect(isDeprecatedRule({meta: {deprecated: {url: 'https://x'}}})).toBe(
+      true,
+    );
+  });
+});
+
+describe('checkPluginRules deprecated filtering', () => {
+  it('does not report deprecated plugin rules as unused', () => {
+    const results = checkPluginRules(new Set(), {
+      fake: {
+        rules: {
+          'old-rule': {meta: {deprecated: true}},
+          'live-rule': {meta: {}},
+        },
+      },
+    });
+    expect(results).toEqual([{plugin: 'fake', unused: ['fake/live-rule']}]);
   });
 });
 
