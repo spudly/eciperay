@@ -1,17 +1,9 @@
 import {
-  invalidateRecipeQueries,
   recipeListInfiniteQueryOptions,
-  useAnalytics,
   useRecipeListFilters,
 } from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {
-  useInfiniteQuery,
-  useMutation,
-  useQueryClient,
-} from '@tanstack/react-query';
-import {Alert} from 'react-native';
-import type {RecipeDetail} from '@eciperay/types';
+import {useInfiniteQuery} from '@tanstack/react-query';
 
 import {RecipesListView} from '../components/recipes/RecipesListView';
 import {api} from '../lib/api';
@@ -22,10 +14,12 @@ type RecipesProps = NativeStackScreenProps<
   'RecipesList'
 >;
 
+// No delete wiring lives here anymore: @spudly/ui 1.8.0 removed the
+// list row's Delete action (and its `onRecipeDelete` prop), so deleting
+// a recipe happens on the recipe detail screen, which already exposes
+// it through RecipeDetailPage's `onDeletePress`.
 export const RecipesScreen = ({navigation}: RecipesProps) => {
   const {filters, controls} = useRecipeListFilters();
-  const queryClient = useQueryClient();
-  const analytics = useAnalytics();
 
   const {data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage} =
     useInfiniteQuery(
@@ -36,27 +30,6 @@ export const RecipesScreen = ({navigation}: RecipesProps) => {
     );
 
   const recipes = data?.pages.flat() ?? [];
-
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => api.recipes.delete(id),
-    onSuccess: (_data, id) => {
-      analytics.track('recipe_deleted', {recipe_id: id});
-      void invalidateRecipeQueries(queryClient, id);
-    },
-  });
-
-  const confirmDelete = (recipe: RecipeDetail) => {
-    Alert.alert('Delete recipe', `Delete "${recipe.title}"?`, [
-      {text: 'Cancel', style: 'cancel'},
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: () => {
-          deleteMutation.mutate(recipe.id);
-        },
-      },
-    ]);
-  };
 
   const loadMore = () => {
     if (hasNextPage && !isFetchingNextPage) {
@@ -73,7 +46,6 @@ export const RecipesScreen = ({navigation}: RecipesProps) => {
       onRecipePress={recipeId => {
         navigation.navigate('RecipeDetail', {recipeId});
       }}
-      onRecipeDelete={confirmDelete}
       onLoadMore={loadMore}
     />
   );

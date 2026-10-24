@@ -4,6 +4,8 @@ import type {
 } from '@eciperay/client';
 import {
   demoRecipeListFilters,
+  formatSatietyLabel,
+  getDisplayRating,
   invalidateRecipeQueries,
   makeRecipeDetail,
 } from '@eciperay/client';
@@ -19,18 +21,37 @@ import {useEffect, useRef, useState} from 'react';
 
 import {api} from '../../lib/api';
 import {CookLogForm} from '../cooking/CookLogForm';
-import {formatRecipeSubtitle} from '../RecipeListCard';
+
+/**
+ * The app host's props: the shared view-props type minus `onRecipeDelete`. The
+ * shared type keeps the prop because the web mirror's own DOM list still offers
+ * per-row delete; the app list no longer does — @spudly/ui 1.8.0 removed
+ * `onRecipeDelete` from RecipesPage (deleting a recipe is a recipe-detail
+ * action, where RecipeDetailPage already exposes it), so this host neither
+ * accepts nor forwards it.
+ */
+type RecipesListViewOwnProps = Omit<RecipesListViewProps, 'onRecipeDelete'>;
+
+/**
+ * The subtitle for a RecipesPage row: servings · time · satiety, with no rating
+ * segment. It mirrors RecipeListCard's `formatRecipeSubtitle` minus the rating
+ * text `formatRecipeListMeta` embeds — the page renders the rating itself as
+ * the row's stars (the log-cook control), so keeping the text would show the
+ * rating twice. The card's helper is unchanged: the Home list's card renders no
+ * stars, so its subtitle keeps the rating text.
+ */
+const formatRecipesPageSubtitle = (recipe: RecipeDetail) =>
+  `${recipe.servings} servings${recipe.cookTimeMin ? ` · ${recipe.cookTimeMin} min` : ''} · ${formatSatietyLabel(recipe.satietyScore, recipe.nutritionStatus)}`;
 
 /**
  * The Recipes screen's view (#49, stage 2): the design system's RecipesPage
  * renders the screen — filter bar, bounded list, rows — and this component is
  * its app-side host. Everything the page must not own stays here: the
- * view-model mapping (the subtitle is the app's list meta line, formatted by
- * the same helper the list card uses), the boundary adaptations (delete
- * resolves the recipe from the app's own list by id, because the confirmation
- * alert needs the full recipe; the filter unions narrow back from the page's
- * plain strings with the same casts the old filter bar used), and the cook-log
- * composition below.
+ * view-model mapping (the subtitle is the app's list meta line — see
+ * `formatRecipesPageSubtitle` above — and the item's `rating` is the app's
+ * display rating), the boundary adaptations (the filter unions narrow back from
+ * the page's plain strings with the same casts the old filter bar used), and
+ * the cook-log composition below.
  *
  * The layout regressions the old hand-rolled list guarded in this file — #188
  * (bounded flex: 1 list, filters as its header) and #162 (the DS SearchField
@@ -140,7 +161,6 @@ export const RecipesListView = ({
   recipes,
   isFetchingNextPage,
   onRecipePress,
-  onRecipeDelete,
   onLoadMore,
   search,
   onSearchChange,
@@ -161,11 +181,12 @@ export const RecipesListView = ({
   sortDir,
   onSortDirChange,
   showStatusFilter,
-}: RecipesListViewProps) => {
+}: RecipesListViewOwnProps) => {
   // The cook-log forms' open state: a set of recipe ids, so forms
   // open and close independently and several may be open at once —
   // the same semantics the cards' per-card state gave this screen.
-  // The page hides the "Log cook" button of any row whose accessory
+  // The page hides the log-cook control (the row's stars, or the
+  // icon-only button for an unrated recipe) of any row whose accessory
   // renders content, so opening a form here is all it takes to
   // reproduce the card's button-hides-while-open behavior.
   const [openCookLogIds, setOpenCookLogIds] = useState<ReadonlySet<string>>(
@@ -193,7 +214,7 @@ export const RecipesListView = ({
   // returns comes back closed. The cards got this for free — unmounting
   // a card discarded its open state — but the lifted set has to prune
   // explicitly, or a returning row would reopen a fresh empty form and
-  // hide its "Log cook" button.
+  // hide its log-cook control.
   useEffect(() => {
     setOpenCookLogIds(current => {
       if (current.size === 0) {
@@ -212,7 +233,8 @@ export const RecipesListView = ({
   const items: RecipesPageItem[] = recipes.map(recipe => ({
     id: recipe.id,
     title: recipe.title,
-    subtitle: formatRecipeSubtitle(recipe),
+    subtitle: formatRecipesPageSubtitle(recipe),
+    rating: getDisplayRating(recipe),
     imageUrl: recipe.imageUrl,
   }));
 
@@ -223,12 +245,6 @@ export const RecipesListView = ({
       isFetchingNextPage={isFetchingNextPage}
       onRecipePress={onRecipePress}
       onLogCookPress={openCookLog}
-      onRecipeDelete={recipeId => {
-        const recipe = recipesById.get(recipeId);
-        if (recipe) {
-          onRecipeDelete(recipe);
-        }
-      }}
       renderRecipeAccessory={recipeId => {
         const recipe = recipesById.get(recipeId);
         if (!recipe || !openCookLogIds.has(recipeId)) {
@@ -291,9 +307,6 @@ if (__DEV__) {
         recipes={[makeRecipeDetail()]}
         isFetchingNextPage={false}
         onRecipePress={() => {
-          void 0;
-        }}
-        onRecipeDelete={() => {
           void 0;
         }}
         onLoadMore={() => {
