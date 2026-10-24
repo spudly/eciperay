@@ -91,9 +91,9 @@ jobs:
           if-no-files-found: warn
 
       # RESUMED INVESTIGATION (2026-10-24): Stephen's phone is a Pixel 8a.
-      # Round 1 used profile pixel_8a, which the CI SDK does not define
-      # ("No device found matching --device pixel_8a", run 40091424246).
-      # pixel_7a has the identical display (1080x2400, 420dpi bucket),
+      # Rounds 1-2 tried profiles pixel_8a and pixel_7a; the CI SDK
+      # defines neither ("No device found matching --device ...").
+      # pixel_6 has the identical display (1080x2400, 420dpi bucket),
       # so it stands in for the 8a panel; API 35 (Android 15) is the
       # variable this pass actually tests. Variants: base + disp (the
       # density-550 variant that broke the card in round 1).
@@ -106,7 +106,7 @@ jobs:
           api-level: 35
           target: google_apis
           arch: x86_64
-          profile: pixel_7a
+          profile: pixel_6
           disable-animations: true
           emulator-options:
             -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
