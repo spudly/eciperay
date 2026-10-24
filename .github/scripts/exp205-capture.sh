@@ -59,6 +59,29 @@ apply_variant() {
     font85)
       adb shell settings put system font_scale 0.85
       ;;
+    # Stephen's EXACT device grid (2026-10-24, from his own
+    # wm size/density + font_scale output and his before/after
+    # report): density override 500 (logical width ~346dp) with
+    # font_scale 1.3 was broken; font 0.85 at the same density is
+    # much better; density 356 makes everything fit.
+    his500f130)
+      adb shell wm density 500
+      adb shell settings put system font_scale 1.30
+      ;;
+    his500f100)
+      adb shell wm density 500
+      ;;
+    d420f130)
+      adb shell settings put system font_scale 1.30
+      ;;
+    his500f085)
+      adb shell wm density 500
+      adb shell settings put system font_scale 0.85
+      ;;
+    his356f130)
+      adb shell wm density 356
+      adb shell settings put system font_scale 1.30
+      ;;
     *)
       echo "Unknown variant: $1" >&2
       return 1
