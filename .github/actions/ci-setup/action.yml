@@ -30,7 +30,7 @@ runs:
           packages/*/node_modules
         key:
           node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json',
-          'patches/**') }}
+          'patches/**', 'packages/*/patches/**') }}
         restore-keys: |
           node-modules-${{ runner.os }}-
 

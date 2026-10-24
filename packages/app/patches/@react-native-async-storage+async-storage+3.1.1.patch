@@ -1,0 +1,19 @@
+diff --git a/node_modules/@react-native-async-storage/async-storage/android/build.gradle b/node_modules/@react-native-async-storage/async-storage/android/build.gradle
+--- a/node_modules/@react-native-async-storage/async-storage/android/build.gradle
++++ b/node_modules/@react-native-async-storage/async-storage/android/build.gradle
+@@ -18,7 +18,14 @@
+ 
+ apply from: "config.gradle"
+ apply plugin: "com.android.library"
+-apply plugin: "kotlin-android"
++// AGP 9 registers a "kotlin" extension via its built-in Kotlin support when
++// "com.android.library" is applied, so applying the kotlin-android plugin
++// unconditionally fails with "Cannot add extension with name 'kotlin'".
++// Only apply it when nothing has registered that extension yet (the same
++// guard @posthog/react-native-plugin uses upstream for this error).
++if (project.extensions.findByName('kotlin') == null) {
++    apply plugin: "kotlin-android"
++}
+ apply plugin: "com.facebook.react"
+ 
+ // ksp/room is required to support legacy storage
