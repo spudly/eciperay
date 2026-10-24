@@ -23,8 +23,8 @@ permissions:
 
 env:
   NODE_AUTH_TOKEN: ${{ secrets.PACKAGES_READ_TOKEN }}
-  # Round 3 repro run: unpatched @spudly/ui at Stephen's exact settings.
-  EXP205_FIX: '0'
+  # Round 4: DS PR #117 fix applied, same grid.
+  EXP205_FIX: '1'
 
 jobs:
   exp205:
