@@ -113,6 +113,20 @@ capture_variant() {
 
   adb shell uiautomator dump "/sdcard/exp205-$variant.xml" >/dev/null 2>&1 || true
   adb pull "/sdcard/exp205-$variant.xml" "$OUT/$variant-window.xml" >/dev/null 2>&1 || true
+
+  # RESUMED INVESTIGATION round 2 (2026-10-24): the density-550
+  # variants showed a ~1250px tall first card with NO children in the
+  # dump — possibly a transient VirtualizedList blank cell caught
+  # mid-scroll, possibly a deterministic empty card. Settle much
+  # longer, capture again at the same position, then scroll a second
+  # step and capture + dump again, to distinguish the two.
+  sleep 10
+  adb exec-out screencap -p > "$OUT/$variant-settled.png"
+  adb shell input swipe 540 1700 540 700 300
+  sleep 10
+  adb exec-out screencap -p > "$OUT/$variant-scrolled2.png"
+  adb shell uiautomator dump "/sdcard/exp205-$variant-2.xml" >/dev/null 2>&1 || true
+  adb pull "/sdcard/exp205-$variant-2.xml" "$OUT/$variant-window2.xml" >/dev/null 2>&1 || true
 }
 
 for variant in $VARIANTS; do
