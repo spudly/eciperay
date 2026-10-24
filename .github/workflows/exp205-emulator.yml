@@ -10,7 +10,12 @@ name: Exp205 Emulator Diagnosis
 # (1.4.0 components, tamagui 3.0.15, no Raleway, release host build)
 # renders correctly?
 
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+  # workflow_dispatch requires the file on the default branch, so this
+  # throwaway workflow also fires on pushes to its own branch.
+  push:
+    branches: [experiment/205-app-emulator]
 
 permissions:
   contents: read
