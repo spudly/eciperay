@@ -15,7 +15,7 @@ on:
   # workflow_dispatch requires the file on the default branch, so this
   # throwaway workflow also fires on pushes to its own branch.
   push:
-    branches: [experiment/205-app-emulator]
+    branches: [experiment/205-app-emulator-127]
 
 permissions:
   contents: read
