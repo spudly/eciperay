@@ -1,8 +1,9 @@
 {
   "name": "@eciperay/app",
-  "version": "1.30.0",
+  "version": "1.30.1",
   "private": true,
   "scripts": {
+    "postinstall": "patch-package",
     "typecheck": "tsc --noEmit",
     "android": "tsx ../../scripts/setupAndroidDevice.ts && react-native run-android --appIdSuffix dev",
     "ios": "react-native run-ios",
