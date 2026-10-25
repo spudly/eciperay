@@ -5,10 +5,10 @@ import {
   useAuth,
 } from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {ManualEntryPage} from '@spudly/ui/pages';
 import {useQueryClient} from '@tanstack/react-query';
 import type {RecipeInput} from '@eciperay/types';
 
-import {ManualEntryView} from '../components/recipe/ManualEntryView';
 import {RecipeForm} from '../components/recipe/RecipeForm';
 import type {PendingRecipeImage} from '../lib/recipeImageAsset';
 import {api} from '../lib/api';
@@ -57,12 +57,12 @@ export const ManualEntryScreen = ({navigation}: Props) => {
   };
 
   return (
-    <ManualEntryView>
+    <ManualEntryPage>
       <RecipeForm
         initial={emptyInput}
         submitLabel="Create Recipe"
         onSubmit={handleSubmit}
       />
-    </ManualEntryView>
+    </ManualEntryPage>
   );
 };

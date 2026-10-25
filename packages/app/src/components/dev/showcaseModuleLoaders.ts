@@ -81,11 +81,8 @@ export const showcaseModuleLoaders = {
   'profile/NutritionGoalsFormView': () =>
     import('../profile/NutritionGoalsFormView'),
   'recipe/CookHistoryTab': () => import('../recipe/CookHistoryTab'),
-  'recipe/EditRecipeView': () => import('../recipe/EditRecipeView'),
-  'recipe/EditVersionView': () => import('../recipe/EditVersionView'),
   'recipe/IngredientsTab': () => import('../recipe/IngredientsTab'),
   'recipe/InstructionsTab': () => import('../recipe/InstructionsTab'),
-  'recipe/ManualEntryView': () => import('../recipe/ManualEntryView'),
   'recipe/NutritionTab': () => import('../recipe/NutritionTab'),
   'recipe/OverviewActions': () => import('../recipe/OverviewActions'),
   'recipe/OverviewTab': () => import('../recipe/OverviewTab'),
@@ -101,12 +98,10 @@ export const showcaseModuleLoaders = {
   // in neither platform's showcase loaders or catalog.
   'recipe/RecipeEngagementPanel': () =>
     import('../recipe/RecipeEngagementPanel'),
-  'recipe/RecipeForm': () => import('../recipe/RecipeForm'),
   'recipe/RecipeImageField': () => import('../recipe/RecipeImageField'),
   'recipe/RecipeInputPreview': () => import('../recipe/RecipeInputPreview'),
   'recipe/RecipeRatingsSection': () => import('../recipe/RecipeRatingsSection'),
   'recipe/RecipeStatusBadge': () => import('../recipe/RecipeStatusBadge'),
-  'recipe/RecipeStatusPicker': () => import('../recipe/RecipeStatusPicker'),
   'recipe/RecipeVisibilityControls': () =>
     import('../recipe/RecipeVisibilityControls'),
   'recipe/ScaleMultiplierButtons': () =>
@@ -117,7 +112,6 @@ export const showcaseModuleLoaders = {
   'recipe/SortableInstructionList': () =>
     import('../recipe/SortableInstructionList'),
   'recipe/StaleVersionHint': () => import('../recipe/StaleVersionHint'),
-  'recipe/TagPicker': () => import('../recipe/TagPicker'),
   'recipe/VersionPicker': () => import('../recipe/VersionPicker'),
 } as Partial<Record<string, () => Promise<ShowcaseModule>>> as Record<
   string,

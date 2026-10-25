@@ -4,10 +4,10 @@ import {
   recipeDetailToInput,
 } from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {EditRecipePage} from '@spudly/ui/pages';
 import {useQuery, useQueryClient} from '@tanstack/react-query';
 import type {RecipeInput} from '@eciperay/types';
 
-import {EditRecipeView} from '../components/recipe/EditRecipeView';
 import {RecipeForm} from '../components/recipe/RecipeForm';
 import {ScreenLoadingGate} from '../components/ScreenLoadingGate';
 import {api} from '../lib/api';
@@ -36,7 +36,7 @@ export const EditRecipeScreen = ({route, navigation}: Props) => {
   }
 
   return (
-    <EditRecipeView>
+    <EditRecipePage>
       <RecipeForm
         initial={recipeDetailToInput(recipe)}
         recipeId={recipeId}
@@ -44,6 +44,6 @@ export const EditRecipeScreen = ({route, navigation}: Props) => {
         submitLabel="Save Changes"
         onSubmit={handleSubmit}
       />
-    </EditRecipeView>
+    </EditRecipePage>
   );
 };
