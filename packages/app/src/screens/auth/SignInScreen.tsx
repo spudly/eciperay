@@ -1,8 +1,8 @@
 import {errorMessage} from '@eciperay/client';
 import {useState} from 'react';
 import {Alert} from 'react-native';
+import {SignInPage} from '@spudly/ui/pages';
 
-import {SignInView} from '../../components/auth/SignInView';
 import {api} from '../../lib/api';
 import {
   normalizeAuthEmail,
@@ -37,7 +37,7 @@ export const SignInScreen = ({navigation}: SignInProps) => {
   };
 
   return (
-    <SignInView
+    <SignInPage
       email={email}
       password={password}
       onEmailChange={setEmail}

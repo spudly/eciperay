@@ -1,8 +1,8 @@
 import {errorMessage} from '@eciperay/client';
 import {useState} from 'react';
 import {Alert} from 'react-native';
+import {ResetPasswordPage} from '@spudly/ui/pages';
 
-import {ResetPasswordView} from '../../components/auth/ResetPasswordView';
 import {normalizeAuthPassword} from '../../lib/normalizeAuthInput';
 import {supabase} from '../../lib/supabase';
 
@@ -31,7 +31,7 @@ export const ResetPasswordScreen = ({onComplete}: ResetPasswordProps) => {
   };
 
   return (
-    <ResetPasswordView
+    <ResetPasswordPage
       password={password}
       onPasswordChange={setPassword}
       loading={loading}

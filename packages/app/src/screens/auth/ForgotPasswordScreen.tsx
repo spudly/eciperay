@@ -1,8 +1,8 @@
 import {errorMessage} from '@eciperay/client';
 import {useState} from 'react';
 import {Alert} from 'react-native';
+import {ForgotPasswordPage} from '@spudly/ui/pages';
 
-import {ForgotPasswordView} from '../../components/auth/ForgotPasswordView';
 import {AUTH_DEEP_LINK_REDIRECT_URL} from '../../lib/authDeepLink';
 import {normalizeAuthEmail} from '../../lib/normalizeAuthInput';
 import {supabase} from '../../lib/supabase';
@@ -36,7 +36,7 @@ export const ForgotPasswordScreen = ({navigation}: ForgotProps) => {
   };
 
   return (
-    <ForgotPasswordView
+    <ForgotPasswordPage
       email={email}
       onEmailChange={setEmail}
       loading={loading}

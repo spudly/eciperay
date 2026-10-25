@@ -1,3 +1,7 @@
+// Parity note (design-system#126): the app adapter also exports its
+// swatch palette as TAG_COLOR_OPTIONS — the app tags screen passes it to
+// the design system TagsPage. Web keeps the native color input, so there
+// is no palette to export here.
 import type {ColorPickerFieldProps} from '@eciperay/client';
 import {useState} from 'react';
 

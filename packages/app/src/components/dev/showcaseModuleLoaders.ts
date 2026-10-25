@@ -3,7 +3,6 @@ import type {ShowcaseDemoRenderer} from '@eciperay/client';
 export type ShowcaseModule = Record<string, {demo?: ShowcaseDemoRenderer}>;
 
 export const showcaseModuleLoaders = {
-  'FeedbackForm': () => import('../FeedbackForm'),
   'Icon': () => import('../Icon'),
   'InlineLoadingIndicator': () => import('../InlineLoadingIndicator'),
   'LegalLinks': () => import('../LegalLinks'),
@@ -11,21 +10,10 @@ export const showcaseModuleLoaders = {
   'RecipeListCard': () => import('../RecipeListCard'),
   'ScreenLoadingGate': () => import('../ScreenLoadingGate'),
   'SharedRecipeListCard': () => import('../SharedRecipeListCard'),
-  'add/AddRecipeMenuView': () => import('../add/AddRecipeMenuView'),
-  'auth/SignInView': () => import('../auth/SignInView'),
-  'auth/SignUpView': () => import('../auth/SignUpView'),
-  'auth/ForgotPasswordView': () => import('../auth/ForgotPasswordView'),
-  'auth/ResetPasswordView': () => import('../auth/ResetPasswordView'),
-  'home/HomeView': () => import('../home/HomeView'),
-  'profile/AccessTokensTokenRow': () =>
-    import('../profile/AccessTokensTokenRow'),
-  'profile/AccessTokensView': () => import('../profile/AccessTokensView'),
-  'profile/ProfileView': () => import('../profile/ProfileView'),
   'recipes/RecipeListFiltersBar': () =>
     import('../recipes/RecipeListFiltersBar'),
   'recipes/RecipesListView': () => import('../recipes/RecipesListView'),
   'shared/SharedWithMeView': () => import('../shared/SharedWithMeView'),
-  'tags/TagsView': () => import('../tags/TagsView'),
   'ui/AuthScreenLayout': () => import('../ui/AuthScreenLayout'),
   'ui/BulkSelectToolbar': () => import('../ui/BulkSelectToolbar'),
   'ui/BookLoadingSpinner': () => import('../ui/BookLoadingSpinner'),
@@ -62,18 +50,10 @@ export const showcaseModuleLoaders = {
   'ui/TextLinkButton': () => import('../ui/TextLinkButton'),
   'ui/ThumbnailListCard': () => import('../ui/ThumbnailListCard'),
   'ui/ToggleChipGroup': () => import('../ui/ToggleChipGroup'),
-  'ai/AiSessionFlow': () => import('../ai/AiSessionFlow'),
   'cooking/CookLogForm': () => import('../cooking/CookLogForm'),
-  'feedback/FeedbackView': () => import('../feedback/FeedbackView'),
-  'import/ImportImageView': () => import('../import/ImportImageView'),
-  'import/ImportReviewView': () => import('../import/ImportReviewView'),
-  'import/ImportTextView': () => import('../import/ImportTextView'),
-  'import/ImportUrlView': () => import('../import/ImportUrlView'),
   'meals/MealPlanDetailView': () => import('../meals/MealPlanDetailView'),
   'meals/NutritionGoalProgressView': () =>
     import('../meals/NutritionGoalProgressView'),
-  'profile/NutritionGoalsFormView': () =>
-    import('../profile/NutritionGoalsFormView'),
   'recipe/CookHistoryTab': () => import('../recipe/CookHistoryTab'),
   'recipe/IngredientsTab': () => import('../recipe/IngredientsTab'),
   'recipe/InstructionsTab': () => import('../recipe/InstructionsTab'),

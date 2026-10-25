@@ -9,7 +9,6 @@ export type PlatformOnlyEntry = {
 
 /** Same relative path in packages/app and packages/web src/components */
 export const MIRROR_PAIRS = [
-  'FeedbackForm.tsx',
   'Icon.tsx',
   'InlineLoadingIndicator.tsx',
   'LegalLinks.tsx',
@@ -17,22 +16,11 @@ export const MIRROR_PAIRS = [
   'RecipeListCard.tsx',
   'ScreenLoadingGate.tsx',
   'SharedRecipeListCard.tsx',
-  'add/AddRecipeMenuView.tsx',
-  'auth/SignInView.tsx',
-  'auth/SignUpView.tsx',
-  'auth/ForgotPasswordView.tsx',
-  'auth/ResetPasswordView.tsx',
-  'home/HomeView.tsx',
   'meals/MealPlanDetailView.tsx',
   'meals/NutritionGoalProgressView.tsx',
-  'profile/AccessTokensView.tsx',
-  'profile/AccessTokensTokenRow.tsx',
-  'profile/NutritionGoalsFormView.tsx',
-  'profile/ProfileView.tsx',
   'recipes/RecipeListFiltersBar.tsx',
   'recipes/RecipesListView.tsx',
   'shared/SharedWithMeView.tsx',
-  'tags/TagsView.tsx',
   'ui/AuthScreenLayout.tsx',
   'ui/BulkSelectToolbar.tsx',
   'ui/BookLoadingSpinner.tsx',
@@ -69,18 +57,12 @@ export const MIRROR_PAIRS = [
   'ui/TextLinkButton.tsx',
   'ui/ThumbnailListCard.tsx',
   'ui/ToggleChipGroup.tsx',
-  'ai/AiSessionFlow.tsx',
   'cooking/CookLogForm.tsx',
   'dev/ComponentShowcaseView.tsx',
   'dev/ShowcasePicker.tsx',
   'dev/ShowcaseDemoFrame.tsx',
   'dev/ShowcaseDemo.tsx',
   'dev/showcaseModuleLoaders.ts',
-  'feedback/FeedbackView.tsx',
-  'import/ImportImageView.tsx',
-  'import/ImportReviewView.tsx',
-  'import/ImportTextView.tsx',
-  'import/ImportUrlView.tsx',
   'recipe/CookHistoryTab.tsx',
   'recipe/IngredientsTab.tsx',
   'recipe/InstructionsTab.tsx',
@@ -400,6 +382,120 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
     platform: 'web',
     reason:
       'dnd-kit sortable row primitive for web; app uses react-native-draggable-flatlist in SortableInstructionList.',
+  },
+  {
+    path: 'auth/SignInView.tsx',
+    platform: 'web',
+    reason:
+      'Web sign-in view; the app renders the design system SignInPage (design-system#126). Web adoption is B7.',
+  },
+  {
+    path: 'auth/SignUpView.tsx',
+    platform: 'web',
+    reason:
+      'Web sign-up view; the app renders the design system SignUpPage (design-system#126). Web adoption is B7.',
+  },
+  {
+    path: 'auth/ForgotPasswordView.tsx',
+    platform: 'web',
+    reason:
+      'Web forgot-password view; the app renders the design system ForgotPasswordPage (design-system#126). Web adoption is B7.',
+  },
+  {
+    path: 'auth/ResetPasswordView.tsx',
+    platform: 'web',
+    reason:
+      'Web reset-password view; the app renders the design system ResetPasswordPage (design-system#126). Web adoption is B7.',
+  },
+  {
+    path: 'home/HomeView.tsx',
+    platform: 'web',
+    reason:
+      'Web home view; the app renders the design system HomePage (design-system#126). Web adoption is B7.',
+  },
+  {
+    path: 'tags/TagsView.tsx',
+    platform: 'web',
+    reason:
+      'Web tags view; the app renders the design system TagsPage (design-system#126). Web adoption is B7.',
+  },
+  {
+    path: 'add/AddRecipeMenuView.tsx',
+    platform: 'web',
+    reason:
+      'Web add-recipe menu; the app renders the design system AddRecipeMenuPage (design-system#126). Web adoption is B7.',
+  },
+  {
+    path: 'profile/ProfileView.tsx',
+    platform: 'web',
+    reason:
+      'Web profile view; the app renders the design system ProfilePage (design-system#126). Web adoption is B7.',
+  },
+  {
+    path: 'profile/AccessTokensView.tsx',
+    platform: 'web',
+    reason:
+      'Web access tokens section; the app renders the design system AccessTokensPanel (design-system#126). Web adoption is B7.',
+  },
+  {
+    path: 'profile/AccessTokensTokenRow.tsx',
+    platform: 'web',
+    reason:
+      'Web token row; the app renders the design system AccessTokensPanel, whose rows are design system TokenRows (design-system#126). Web adoption is B7.',
+  },
+  {
+    path: 'profile/NutritionGoalsFormView.tsx',
+    platform: 'web',
+    reason:
+      'Web nutrition goals form; the app renders the design system NutritionGoalsForm (design-system#126). Web adoption is B7.',
+  },
+  {
+    path: 'import/ImportTextView.tsx',
+    platform: 'web',
+    reason:
+      'Web import-from-text view; the app renders the design system ImportTextPage (design-system#126). Web adoption is B7.',
+  },
+  {
+    path: 'import/ImportUrlView.tsx',
+    platform: 'web',
+    reason:
+      'Web import-from-URL view; the app renders the design system ImportUrlPage (design-system#126). Web adoption is B7.',
+  },
+  {
+    path: 'import/ImportImageView.tsx',
+    platform: 'web',
+    reason:
+      'Web import-from-image view; the app renders the design system ImportImagePage (design-system#126). Web adoption is B7.',
+  },
+  {
+    path: 'import/ImportReviewView.tsx',
+    platform: 'web',
+    reason:
+      'Web import review view; the app renders the design system ImportReviewPage (design-system#126). Web adoption is B7.',
+  },
+  {
+    path: 'FeedbackForm.tsx',
+    platform: 'app',
+    reason:
+      'App-side host for the design system FeedbackPage (design-system#126): owns the analytics submission, reply-email prefill rules, focus reset, and validation; web keeps its form implementation until B7.',
+  },
+  {
+    path: 'FeedbackForm.tsx',
+    platform: 'web',
+    reason:
+      'Web feedback form implementation; the app renders the design system FeedbackPage via its host (design-system#126). Web adoption is B7.',
+  },
+  {
+    path: 'ai/AiSessionFlow.tsx',
+    platform: 'app',
+    reason:
+      'App-side host for the design system AiSessionPage (design-system#126): owns the session state machine, the session mutations, and error mapping; web keeps its flow implementation until B7.',
+  },
+  {
+    path: 'ai/AiSessionFlow.tsx',
+    platform: 'web',
+    reason:
+      'Web AI session flow implementation; the app renders the design system AiSessionPage via its host (design-system#126). Web adoption is B7.',
   },
 ];
 

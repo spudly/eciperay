@@ -2,7 +2,9 @@ import {queryKeys} from '@eciperay/client';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import React, {useState} from 'react';
 
-import {TagsView} from '../components/tags/TagsView';
+import {TagsPage} from '@spudly/ui/pages';
+
+import {TAG_COLOR_OPTIONS} from '../components/ui/ColorPickerField';
 import {api} from '../lib/api';
 
 export const TagsScreen = (): React.JSX.Element => {
@@ -39,7 +41,8 @@ export const TagsScreen = (): React.JSX.Element => {
   };
 
   return (
-    <TagsView
+    <TagsPage
+      colorOptions={TAG_COLOR_OPTIONS}
       tags={tags}
       isLoading={isLoading}
       name={name}
