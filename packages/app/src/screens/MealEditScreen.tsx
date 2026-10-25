@@ -5,10 +5,10 @@ import {
   recipeFormOptionsQueryOptions,
 } from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {MealFormPage} from '@spudly/ui/pages';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useState} from 'react';
 
-import {MealFormView} from '../components/meals/MealFormView';
 import {ScreenLoadingGate} from '../components/ScreenLoadingGate';
 import {api} from '../lib/api';
 import type {MealsStackParamList} from '../navigation/types';
@@ -101,13 +101,17 @@ export const MealEditScreen = ({route, navigation}: Props) => {
 
   return (
     <ScreenLoadingGate pending={isEdit && (mealLoading || recipesLoading)}>
-      <MealFormView
+      <MealFormPage
         title={title}
         notes={notes}
+        recipeOptions={recipeOptions.map(recipe => ({
+          id: recipe.id,
+          label: recipe.title,
+          servings: recipe.servings,
+        }))}
         selectedRecipeIds={selectedRecipeIds}
-        recipeOptions={recipeOptions}
         servingsByRecipeId={servingsByRecipeId}
-        saving={saveMutation.isPending}
+        isSaving={saveMutation.isPending}
         error={formError}
         onTitleChange={setTitle}
         onNotesChange={setNotes}

@@ -1,9 +1,9 @@
 import {queryKeys} from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {MealCookingModePage} from '@spudly/ui/pages';
 import {useQuery} from '@tanstack/react-query';
 import {useState} from 'react';
 
-import {MealCookingModeView} from '../components/meals/MealCookingModeView';
 import {ScreenLoadingGate} from '../components/ScreenLoadingGate';
 import {api} from '../lib/api';
 import type {MealsStackParamList} from '../navigation/types';
@@ -27,8 +27,8 @@ export const MealCookingModeScreen = ({route, navigation}: Props) => {
   return (
     <ScreenLoadingGate pending={isLoading || !plan || !meal}>
       {plan && meal ? (
-        <MealCookingModeView
-          plan={plan}
+        <MealCookingModePage
+          steps={plan.steps}
           mealTitle={meal.title}
           stepIndex={stepIndex}
           onPrev={() => {

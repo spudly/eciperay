@@ -1,9 +1,9 @@
 import {queryKeys} from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {ShoppingListPage} from '@spudly/ui/pages';
 import {useQuery} from '@tanstack/react-query';
 import {useState} from 'react';
 
-import {ShoppingListView} from '../components/meals/ShoppingListView';
 import type {MealsStackParamList} from '../navigation/types';
 import {api} from '../lib/api';
 
@@ -19,11 +19,19 @@ export const ShoppingListScreen = ({route}: Props) => {
   });
 
   return (
-    <ShoppingListView
-      lines={lines}
+    <ShoppingListPage
       isLoading={isLoading}
-      checkedKeys={checkedKeys}
-      onToggleChecked={key => {
+      lines={lines.map(line => ({
+        key: line.key,
+        name: line.name,
+        quantityLabel:
+          line.quantity === null
+            ? null
+            : `${line.quantity}${line.unit ? ` ${line.unit}` : ''}`,
+        isOptional: line.isOptional,
+        isChecked: checkedKeys.has(line.key),
+      }))}
+      onToggleLine={key => {
         setCheckedKeys(previous => {
           const next = new Set(previous);
           if (next.has(key)) {

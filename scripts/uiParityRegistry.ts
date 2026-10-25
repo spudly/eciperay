@@ -23,14 +23,8 @@ export const MIRROR_PAIRS = [
   'auth/ForgotPasswordView.tsx',
   'auth/ResetPasswordView.tsx',
   'home/HomeView.tsx',
-  'meals/MealCookingModeView.tsx',
-  'meals/MealDetailView.tsx',
-  'meals/MealFormView.tsx',
   'meals/MealPlanDetailView.tsx',
-  'meals/MealPlanFormView.tsx',
-  'meals/MealsHubView.tsx',
   'meals/NutritionGoalProgressView.tsx',
-  'meals/ShoppingListView.tsx',
   'profile/AccessTokensView.tsx',
   'profile/AccessTokensTokenRow.tsx',
   'profile/NutritionGoalsFormView.tsx',
@@ -179,6 +173,42 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
     platform: 'web',
     reason:
       'Web tag picker for its recipe form; the app form host runs the tags query and passes options to the design system RecipeFormPage (design-system#124).',
+  },
+  {
+    path: 'meals/MealFormView.tsx',
+    platform: 'web',
+    reason:
+      'Web meal form implementation; the app renders the design system MealFormPage (design-system#125). Web adoption is B7.',
+  },
+  {
+    path: 'meals/MealPlanFormView.tsx',
+    platform: 'web',
+    reason:
+      'Web meal plan form implementation; the app renders the design system MealPlanFormPage (design-system#125). Web adoption is B7.',
+  },
+  {
+    path: 'meals/ShoppingListView.tsx',
+    platform: 'web',
+    reason:
+      'Web shopping list implementation; the app renders the design system ShoppingListPage (design-system#125). Web adoption is B7.',
+  },
+  {
+    path: 'meals/MealCookingModeView.tsx',
+    platform: 'web',
+    reason:
+      'Web cooking-mode implementation; the app renders the design system MealCookingModePage (design-system#125). Web adoption is B7.',
+  },
+  {
+    path: 'meals/MealDetailView.tsx',
+    platform: 'web',
+    reason:
+      'Web meal detail implementation; the app renders the design system MealDetailPage (design-system#125). Web adoption is B7.',
+  },
+  {
+    path: 'meals/MealsHubView.tsx',
+    platform: 'web',
+    reason:
+      'Web meals hub implementation; the app renders the design system MealsHubPage (design-system#125). Web adoption is B7.',
   },
   {
     path: 'profile/AccessTokensSection.tsx',
