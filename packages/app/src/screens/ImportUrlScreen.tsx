@@ -2,7 +2,7 @@ import {useAnalytics} from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useState} from 'react';
 
-import {ImportUrlView} from '../components/import/ImportUrlView';
+import {ImportUrlPage} from '@spudly/ui/pages';
 import {api} from '../lib/api';
 import type {AddStackParamList} from '../navigation/types';
 
@@ -33,7 +33,7 @@ export const ImportUrlScreen = ({navigation}: Props) => {
   };
 
   return (
-    <ImportUrlView
+    <ImportUrlPage
       url={url}
       onUrlChange={setUrl}
       loading={loading}

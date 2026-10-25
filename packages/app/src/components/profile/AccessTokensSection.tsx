@@ -7,9 +7,27 @@ import {
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useState} from 'react';
 
+import type {PersonalAccessToken} from '@eciperay/types';
+import {AccessTokensPanel} from '@spudly/ui';
+
 import {api} from '../../lib/api';
 
-import {AccessTokensView} from './AccessTokensView';
+const formatDate = (iso: string): string =>
+  new Date(iso).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+
+const describeToken = (token: PersonalAccessToken): string => {
+  const parts = [`Created ${formatDate(token.createdAt)}`];
+  parts.push(
+    token.lastUsedAt
+      ? `Last used ${formatDate(token.lastUsedAt)}`
+      : 'Never used',
+  );
+  return parts.join(' · ');
+};
 
 export const AccessTokensSection = () => {
   const {session} = useAuth();
@@ -63,8 +81,14 @@ export const AccessTokensSection = () => {
   });
 
   return (
-    <AccessTokensView
-      tokens={tokensQuery.data ?? []}
+    <AccessTokensPanel
+      tokens={(tokensQuery.data ?? []).map(token => ({
+        id: token.id,
+        name: token.name,
+        prefix: token.tokenPrefix,
+        metaLabel: describeToken(token),
+        revoked: Boolean(token.revokedAt),
+      }))}
       isLoading={tokensQuery.isLoading}
       tokenName={tokenName}
       onTokenNameChange={setTokenName}

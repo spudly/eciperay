@@ -9,7 +9,7 @@ import {View} from 'tamagui';
  * colors; a value outside the palette simply shows no swatch selected. These
  * are data values (the colors a tag can take), not styling.
  */
-const DEFAULT_COLORS = [
+export const TAG_COLOR_OPTIONS = [
   '#6366f1',
   '#ef4444',
   '#f97316',
@@ -38,7 +38,7 @@ export const ColorPickerField = ({
   >
     <DsColorPickerField
       label={label}
-      colors={DEFAULT_COLORS}
+      colors={TAG_COLOR_OPTIONS}
       value={value}
       onChange={color => {
         if (!disabled) {

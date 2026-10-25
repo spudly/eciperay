@@ -1,7 +1,7 @@
 import type {AddRecipeMenuOption} from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 
-import {AddRecipeMenuView} from '../components/add/AddRecipeMenuView';
+import {AddRecipeMenuPage} from '@spudly/ui/pages';
 import type {AddStackParamList} from '../navigation/types';
 
 type AddProps = NativeStackScreenProps<AddStackParamList, 'AddScreen'>;
@@ -35,7 +35,7 @@ const OPTIONS: AddRecipeMenuOption[] = [
 ];
 
 export const AddScreen = ({navigation}: AddProps) => (
-  <AddRecipeMenuView
+  <AddRecipeMenuPage
     options={OPTIONS}
     onSelect={target => {
       navigation.navigate(

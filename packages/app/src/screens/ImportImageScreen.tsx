@@ -4,7 +4,7 @@ import {useState} from 'react';
 import {Alert} from 'react-native';
 import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 
-import {ImportImageView} from '../components/import/ImportImageView';
+import {ImportImagePage} from '@spudly/ui/pages';
 import {api} from '../lib/api';
 import {
   confirmPhotoLibraryAccess,
@@ -66,7 +66,7 @@ export const ImportImageScreen = ({navigation}: Props) => {
   };
 
   return (
-    <ImportImageView
+    <ImportImagePage
       loading={loading}
       error={error}
       onPickCamera={() => {

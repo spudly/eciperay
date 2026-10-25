@@ -1,7 +1,7 @@
 import type {NavigationState} from '@react-navigation/native';
 import {useNavigationState} from '@react-navigation/native';
 
-import {FeedbackView} from '../components/feedback/FeedbackView';
+import {FeedbackForm} from '../components/FeedbackForm';
 
 const getActiveRouteName = (
   state: NavigationState | undefined,
@@ -21,5 +21,5 @@ const getActiveRouteName = (
 export const FeedbackScreen = () => {
   const route = useNavigationState(state => getActiveRouteName(state));
 
-  return <FeedbackView route={route} />;
+  return <FeedbackForm route={route} />;
 };

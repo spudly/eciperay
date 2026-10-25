@@ -2,7 +2,7 @@ import {useAnalytics} from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useState} from 'react';
 
-import {ImportTextView} from '../components/import/ImportTextView';
+import {ImportTextPage} from '@spudly/ui/pages';
 import {api} from '../lib/api';
 import type {AddStackParamList} from '../navigation/types';
 
@@ -31,7 +31,7 @@ export const ImportTextScreen = ({navigation}: Props) => {
   };
 
   return (
-    <ImportTextView
+    <ImportTextPage
       loading={loading}
       error={error}
       onSubmit={text => {

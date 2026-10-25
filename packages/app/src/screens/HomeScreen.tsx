@@ -1,4 +1,11 @@
 import {
+  HOME_ADD_LABEL,
+  HOME_BROWSE_LABEL,
+  HOME_EMPTY_MESSAGE,
+  HOME_RECIPES_SECTION_TITLE,
+  HOME_SHARED_WITH_ME_LABEL,
+  HOME_SUBTITLE,
+  HOME_TITLE,
   homeRecentlyViewedRecipesQueryOptions,
   queryKeys,
   removeRecipeView,
@@ -10,7 +17,9 @@ import {useCallback} from 'react';
 import {Alert} from 'react-native';
 import type {RecipeDetail} from '@eciperay/types';
 
-import {HomeView} from '../components/home/HomeView';
+import {HomePage} from '@spudly/ui/pages';
+
+import {RecipeListCard} from '../components/RecipeListCard';
 import {api} from '../lib/api';
 import {recipeViewHistoryStorage} from '../lib/recipeViewHistoryStorage';
 import type {RootTabParamList} from '../navigation/types';
@@ -67,10 +76,36 @@ export const HomeScreen = ({navigation}: Props) => {
     });
   };
 
+  const recipesById = new Map(recipes.map(recipe => [recipe.id, recipe]));
+
   return (
-    <HomeView
+    <HomePage
+      title={HOME_TITLE}
+      subtitle={HOME_SUBTITLE}
+      browseLabel={HOME_BROWSE_LABEL}
+      addLabel={HOME_ADD_LABEL}
+      sharedWithMeLabel={HOME_SHARED_WITH_ME_LABEL}
+      recipesTitle={HOME_RECIPES_SECTION_TITLE}
+      emptyMessage={HOME_EMPTY_MESSAGE}
       isLoading={isLoading}
-      recipes={recipes}
+      recipes={recipes.map(recipe => ({id: recipe.id}))}
+      renderRecipeRow={row => {
+        const recipe = recipesById.get(row.id);
+        if (!recipe) {
+          return null;
+        }
+        return (
+          <RecipeListCard
+            recipe={recipe}
+            onPress={() => {
+              openRecipe(recipe.id);
+            }}
+            onDelete={() => {
+              confirmDelete(recipe);
+            }}
+          />
+        );
+      }}
       onBrowsePress={() => {
         navigation.navigate('Recipes', {screen: 'RecipesList'});
       }}
@@ -80,8 +115,6 @@ export const HomeScreen = ({navigation}: Props) => {
       onSharedWithMePress={() => {
         navigation.navigate('Recipes', {screen: 'SharedWithMe'});
       }}
-      onRecipePress={openRecipe}
-      onRecipeDelete={confirmDelete}
     />
   );
 };

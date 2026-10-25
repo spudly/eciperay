@@ -1,9 +1,10 @@
 import {errorMessage} from '@eciperay/client';
 import {useState} from 'react';
 import {Alert} from 'react-native';
+import {SignUpPage} from '@spudly/ui/pages';
 
-import {SignUpView} from '../../components/auth/SignUpView';
 import {AUTH_DEEP_LINK_REDIRECT_URL} from '../../lib/authDeepLink';
+import {LegalLinks} from '../../components/LegalLinks';
 import {api} from '../../lib/api';
 import {
   normalizeAuthEmail,
@@ -65,7 +66,7 @@ export const SignUpScreen = ({navigation}: SignUpProps) => {
   const [loading, setLoading] = useState(false);
 
   return (
-    <SignUpView
+    <SignUpPage
       displayName={displayName}
       email={email}
       password={password}
@@ -79,6 +80,7 @@ export const SignUpScreen = ({navigation}: SignUpProps) => {
       onSignInPress={() => {
         navigation.navigate('SignIn');
       }}
+      legalNotice={<LegalLinks variant="inline" />}
     />
   );
 };

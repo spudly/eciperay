@@ -9,9 +9,10 @@ import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useState} from 'react';
 import type {NutritionGoals} from '@eciperay/types';
 
+import {LegalLinks} from '../components/LegalLinks';
 import {AccessTokensSection} from '../components/profile/AccessTokensSection';
-import {NutritionGoalsFormView} from '../components/profile/NutritionGoalsFormView';
-import {ProfileView} from '../components/profile/ProfileView';
+import {NutritionGoalsForm} from '@spudly/ui';
+import {ProfilePage} from '@spudly/ui/pages';
 import {api} from '../lib/api';
 import {supabase} from '../lib/supabase';
 import type {ProfileStackParamList} from '../navigation/types';
@@ -65,8 +66,8 @@ export const ProfileScreen = ({navigation}: Props) => {
   });
 
   return (
-    <ProfileView
-      email={session?.user.email}
+    <ProfilePage
+      email={session?.user.email ?? null}
       onComponentShowcasePress={createComponentShowcasePress(navigation)}
       onManageTagsPress={() => {
         navigation.navigate('Tags');
@@ -74,9 +75,10 @@ export const ProfileScreen = ({navigation}: Props) => {
       onSignOut={() => {
         void supabase.auth.signOut();
       }}
+      legalLinks={<LegalLinks />}
       sectionsBeforeFeedback={
         <>
-          <NutritionGoalsFormView
+          <NutritionGoalsForm
             goals={nutritionGoals}
             saving={saveGoalsMutation.isPending}
             error={goalsError}

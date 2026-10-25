@@ -1,21 +1,7 @@
-/* eslint-disable max-lines -- shared conversational AI session UI */
-import {
-  createShowcaseAiSessionFlowApi,
-  errorMessage,
-  parseProposedRecipe,
-  showcaseAiSessionConfig,
-  type ShowcaseDemoRenderer,
-} from '@eciperay/client';
-import {
-  Button as DsButton,
-  MultilineField as DsMultilineField,
-  Text as DsText,
-  tokens,
-} from '@spudly/ui';
+import {errorMessage, parseProposedRecipe} from '@eciperay/client';
+import {AiSessionPage} from '@spudly/ui/pages';
 import {useMutation} from '@tanstack/react-query';
 import React, {useState} from 'react';
-import {ScrollView, TouchableOpacity} from 'react-native';
-import {XStack, YStack} from 'tamagui';
 import type {TweakAiMessage, TweakAiPhase} from '@eciperay/types';
 
 import {RecipeInputPreview} from '../recipe/RecipeInputPreview';
@@ -58,25 +44,17 @@ type Props = {
   onCancelSuccess: () => void;
 };
 
-/* Session scroll shell: the old bg-gray-50 fill (gray ramp step 1) on the
-   RN ScrollView, with content padding on the inner stack. */
-const scrollStyle = {
-  flex: 1,
-  backgroundColor: tokens.colors.gray.gray1,
-} as const;
-
-/* Cancel-session row keeps the RN TouchableOpacity so its disabled state
-   matches the old pressable exactly (Stage 3b micro-action precedent);
-   margin/opacity are token/state values. */
-const cancelSessionStyle = (disabled: boolean) =>
-  ({
-    marginBottom: tokens.spacing[8],
-    opacity: disabled ? 0.5 : undefined,
-  }) as const;
-
-// Field backgrounds (issue #167): fields here render through @spudly/ui
-// components, which all share the Warm Harvest $surface field background.
-// The web mirror matches via its bg-field token (#fffdf8, the same surface).
+/**
+ * Host for the design system AiSessionPage (design-system#126): this
+ * component keeps the session state machine, the five session
+ * mutations, and the error mapping, and maps the session to the
+ * page's view-model — the phase resolved to its label string, the
+ * stage booleans derived from the phase, and the parsed proposed
+ * recipe rendered through RecipeInputPreview into the page's preview
+ * slot. The page renders display state and reports bare intents;
+ * the trims the old view applied before mutating happen here, at
+ * the same call sites.
+ */
 export const AiSessionFlow = ({
   config,
   api,
@@ -152,256 +130,72 @@ export const AiSessionFlow = ({
     ? parseProposedRecipe(session.proposedRecipe)
     : null;
 
-  const renderMessage = (message: TweakAiMessage, index: number) => (
-    <YStack
-      key={`${message.role}-${index}`}
-      marginStart={message.role === 'user' ? '$8' : undefined}
-      marginEnd={message.role === 'user' ? undefined : '$8'}
-      borderRadius={tokens.radii.md}
-      backgroundColor={
-        message.role === 'user' ? tokens.colors.gray.gray2 : '$primarySubtle'
-      }
-      padding="$3"
-    >
-      <DsText
-        marginBlockEnd="$1"
-        fontSize={tokens.typography.fontSize.xs}
-        fontWeight={tokens.typography.fontWeight.semibold}
-        color={tokens.colors.gray.gray6}
-        textTransform="uppercase"
-      >
-        {message.role === 'user' ? 'You' : 'Plan'}
-      </DsText>
-      <DsText
-        fontSize={tokens.typography.fontSize.sm}
-        color={tokens.colors.gray.gray9}
-      >
-        {message.content}
-      </DsText>
-    </YStack>
-  );
-
-  if (!session) {
-    return (
-      <YStack
-        flex={1}
-        backgroundColor={tokens.colors.gray.gray1}
-        paddingHorizontal="$4"
-        paddingBlockStart="$4"
-      >
-        <DsText
-          marginBlockEnd="$2"
-          fontSize={tokens.typography.fontSize['2xl']}
-          fontWeight={tokens.typography.fontWeight.bold}
-          color={tokens.colors.gray.gray10}
-        >
-          {config.title}
-        </DsText>
-        <DsText
-          color="$textMuted"
-          marginBlockEnd="$6"
-          fontSize={tokens.typography.fontSize.sm}
-        >
-          {config.intro}
-        </DsText>
-        {/* min-block-48 (192) kept as geometry on the DS field */}
-        <DsMultilineField
-          marginBlockEnd="$4"
-          minHeight={192}
-          placeholder={config.promptPlaceholder}
-          value={prompt}
-          onChangeText={setPrompt}
-          textAlignVertical="top"
-        />
-        {error ? (
-          <DsText
-            variant="error"
-            marginBlockEnd="$4"
-          >
-            {error}
-          </DsText>
-        ) : null}
-        <XStack gap="$3">
-          <DsButton
-            variant="outlined"
-            fontSize={tokens.typography.fontSize.sm}
-            fontWeight={tokens.typography.fontWeight.medium}
-            color={tokens.colors.gray.gray8}
-            onPress={onEmptyCancel}
-          >
-            Cancel
-          </DsButton>
-          <DsButton
-            variant="primary"
-            flex={1}
-            disabled={busy || prompt.trim().length === 0}
-            onPress={() => {
-              startMutation.mutate(prompt.trim());
-            }}
-          >
-            {startMutation.isPending
-              ? config.startPendingLabel
-              : config.startLabel}
-          </DsButton>
-        </XStack>
-      </YStack>
-    );
-  }
-
   return (
-    <ScrollView style={scrollStyle}>
-      <YStack
-        paddingHorizontal="$4"
-        paddingBlockStart="$4"
-      >
-        <DsText
-          marginBlockEnd="$2"
-          fontSize={tokens.typography.fontSize['2xl']}
-          fontWeight={tokens.typography.fontWeight.bold}
-          color={tokens.colors.gray.gray10}
-        >
-          {config.title}
-        </DsText>
-        <DsText
-          color="$textMuted"
-          marginBlockEnd="$4"
-          fontSize={tokens.typography.fontSize.sm}
-        >
-          {config.phaseLabel(session.phase)}
-        </DsText>
-        <YStack
-          marginBlockEnd="$4"
-          gap="$3"
-        >
-          {session.messages.map(renderMessage)}
-        </YStack>
-        {session.phase === 'planning' ? (
-          <YStack
-            marginBlockEnd="$4"
-            gap="$3"
-          >
-            {/* min-block-24 (96) kept as geometry on the DS field */}
-            <DsMultilineField
-              minHeight={96}
-              placeholder="Ask for changes to the plan…"
-              value={followUp}
-              onChangeText={setFollowUp}
-              textAlignVertical="top"
-            />
-            <XStack
-              flexWrap="wrap"
-              gap="$2"
-            >
-              <DsButton
-                variant="outlined"
-                size="sm"
-                fontSize={tokens.typography.fontSize.sm}
-                fontWeight={tokens.typography.fontWeight.medium}
-                color={tokens.colors.gray.gray8}
-                disabled={busy || followUp.trim().length === 0}
-                onPress={() => {
-                  messageMutation.mutate({
-                    sessionId: session.id,
-                    content: followUp.trim(),
-                  });
-                }}
-              >
-                Refine plan
-              </DsButton>
-              <DsButton
-                variant="primary"
-                size="sm"
-                disabled={busy}
-                onPress={() => {
-                  approvePlanMutation.mutate(session.id);
-                }}
-              >
-                {approvePlanMutation.isPending
-                  ? 'Building preview…'
-                  : 'Approve plan'}
-              </DsButton>
-            </XStack>
-          </YStack>
-        ) : null}
-        {session.phase === 'preview_ready' && previewRecipe ? (
-          <YStack
-            marginBlockEnd="$4"
-            borderRadius={tokens.radii.lg}
-            borderWidth={1}
-            borderColor={tokens.colors.gray.gray3}
-            backgroundColor="$surface"
-            padding="$4"
-          >
-            <DsText
-              marginBlockEnd="$3"
-              fontSize={tokens.typography.fontSize.sm}
-              fontWeight={tokens.typography.fontWeight.semibold}
-              color={tokens.colors.gray.gray10}
-            >
-              {config.previewTitle}
-            </DsText>
-            <RecipeInputPreview recipe={previewRecipe} />
-            <DsButton
-              variant="primary"
-              marginBlockStart="$4"
-              disabled={busy}
-              onPress={() => {
-                finalizeMutation.mutate(session.id);
-              }}
-            >
-              {finalizeMutation.isPending
-                ? config.finalizePendingLabel
-                : config.finalizeLabel}
-            </DsButton>
-          </YStack>
-        ) : null}
-        {error ? (
-          <DsText
-            variant="error"
-            marginBlockEnd="$4"
-          >
-            {error}
-          </DsText>
-        ) : null}
-        {session.phase !== 'completed' && session.phase !== 'cancelled' ? (
-          <TouchableOpacity
-            style={cancelSessionStyle(busy)}
-            disabled={busy}
-            onPress={() => {
-              cancelMutation.mutate(session.id);
-            }}
-          >
-            <DsText
-              fontSize={tokens.typography.fontSize.sm}
-              color={tokens.colors.gray.gray6}
-              textDecorationLine="underline"
-            >
-              Cancel session
-            </DsText>
-          </TouchableOpacity>
-        ) : null}
-      </YStack>
-    </ScrollView>
+    <AiSessionPage
+      config={{
+        title: config.title,
+        intro: config.intro,
+        promptPlaceholder: config.promptPlaceholder,
+        startLabel: config.startLabel,
+        startPendingLabel: config.startPendingLabel,
+        previewTitle: config.previewTitle,
+        finalizeLabel: config.finalizeLabel,
+        finalizePendingLabel: config.finalizePendingLabel,
+      }}
+      session={
+        session
+          ? {
+              phaseLabel: config.phaseLabel(session.phase),
+              messages: session.messages,
+              canRefine: session.phase === 'planning',
+              canCancel:
+                session.phase !== 'completed' &&
+                session.phase !== 'cancelled',
+            }
+          : null
+      }
+      preview={
+        session?.phase === 'preview_ready' && previewRecipe ? (
+          <RecipeInputPreview recipe={previewRecipe} />
+        ) : undefined
+      }
+      prompt={prompt}
+      onPromptChange={setPrompt}
+      followUp={followUp}
+      onFollowUpChange={setFollowUp}
+      busy={busy}
+      startPending={startMutation.isPending}
+      approvePending={approvePlanMutation.isPending}
+      finalizePending={finalizeMutation.isPending}
+      error={error}
+      onStart={text => {
+        startMutation.mutate(text.trim());
+      }}
+      onSendMessage={text => {
+        if (session) {
+          messageMutation.mutate({
+            sessionId: session.id,
+            content: text.trim(),
+          });
+        }
+      }}
+      onApprovePlan={() => {
+        if (session) {
+          approvePlanMutation.mutate(session.id);
+        }
+      }}
+      onFinalize={() => {
+        if (session) {
+          finalizeMutation.mutate(session.id);
+        }
+      }}
+      onCancel={() => {
+        if (session) {
+          cancelMutation.mutate(session.id);
+        }
+      }}
+      onEmptyCancel={onEmptyCancel}
+    />
   );
 };
 
-if (__DEV__) {
-  const aiSessionFlowDemo: ShowcaseDemoRenderer = ({Frame}) => (
-    <Frame>
-      <AiSessionFlow
-        config={showcaseAiSessionConfig}
-        api={createShowcaseAiSessionFlowApi()}
-        onEmptyCancel={() => {
-          void 0;
-        }}
-        onFinalizeSuccess={() => {
-          void 0;
-        }}
-        onCancelSuccess={() => {
-          void 0;
-        }}
-      />
-    </Frame>
-  );
-  AiSessionFlow.demo = aiSessionFlowDemo;
-}

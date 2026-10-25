@@ -80,17 +80,17 @@ describe('componentShowcaseCatalog', () => {
 
   test('assigns categories for root-level and prefixed showcase paths', () => {
     const icon = COMPONENT_SHOWCASE_CATALOG.find(entry => entry.id === 'Icon');
-    const feedback = COMPONENT_SHOWCASE_CATALOG.find(
-      entry => entry.id === 'FeedbackForm',
+    const recipeCard = COMPONENT_SHOWCASE_CATALOG.find(
+      entry => entry.id === 'RecipeListCard',
     );
     const primary = COMPONENT_SHOWCASE_CATALOG.find(
       entry => entry.id === 'ui/PrimaryButton',
     );
 
     expect(icon).toMatchObject({label: 'Icon', category: 'Shared'});
-    expect(feedback).toMatchObject({
-      label: 'FeedbackForm',
-      category: 'Feedback',
+    expect(recipeCard).toMatchObject({
+      label: 'RecipeListCard',
+      category: 'Shared',
     });
     expect(primary).toMatchObject({
       label: 'PrimaryButton',

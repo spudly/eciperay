@@ -30,10 +30,6 @@ const categorizeShowcasePath = (id: string): string => {
     }
   }
 
-  if (id === 'FeedbackForm') {
-    return 'Feedback';
-  }
-
   return 'Shared';
 };
 
@@ -48,7 +44,6 @@ const labelFromShowcasePath = (path: string): string => {
  * showcase itself).
  */
 const SHOWCASE_MIRROR_PATHS = [
-  'FeedbackForm.tsx',
   'Icon.tsx',
   'InlineLoadingIndicator.tsx',
   'LegalLinks.tsx',
@@ -56,17 +51,9 @@ const SHOWCASE_MIRROR_PATHS = [
   'RecipeListCard.tsx',
   'ScreenLoadingGate.tsx',
   'SharedRecipeListCard.tsx',
-  'add/AddRecipeMenuView.tsx',
-  'auth/SignInView.tsx',
-  'auth/SignUpView.tsx',
-  'auth/ForgotPasswordView.tsx',
-  'auth/ResetPasswordView.tsx',
-  'home/HomeView.tsx',
-  'profile/ProfileView.tsx',
   'recipes/RecipeListFiltersBar.tsx',
   'recipes/RecipesListView.tsx',
   'shared/SharedWithMeView.tsx',
-  'tags/TagsView.tsx',
   'ui/AuthScreenLayout.tsx',
   'ui/BulkSelectToolbar.tsx',
   'ui/BookLoadingSpinner.tsx',
@@ -103,18 +90,9 @@ const SHOWCASE_MIRROR_PATHS = [
   'ui/TextLinkButton.tsx',
   'ui/ThumbnailListCard.tsx',
   'ui/ToggleChipGroup.tsx',
-  'ai/AiSessionFlow.tsx',
   'cooking/CookLogForm.tsx',
-  'feedback/FeedbackView.tsx',
-  'import/ImportImageView.tsx',
-  'import/ImportReviewView.tsx',
-  'import/ImportTextView.tsx',
-  'import/ImportUrlView.tsx',
   'meals/MealPlanDetailView.tsx',
   'meals/NutritionGoalProgressView.tsx',
-  'profile/AccessTokensTokenRow.tsx',
-  'profile/AccessTokensView.tsx',
-  'profile/NutritionGoalsFormView.tsx',
   'recipe/CookHistoryTab.tsx',
   'recipe/IngredientsTab.tsx',
   'recipe/InstructionsTab.tsx',

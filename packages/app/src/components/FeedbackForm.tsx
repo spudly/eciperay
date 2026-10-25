@@ -3,24 +3,13 @@ import {
   useAuth,
   validateUserFeedbackMessage,
   validateUserFeedbackReplyEmail,
-  type ShowcaseDemoRenderer,
   type SubmitUserFeedbackInput,
 } from '@eciperay/client';
 import {useFocusEffect} from '@react-navigation/native';
-import {
-  MultilineField as DsMultilineField,
-  Text as DsText,
-  tokens,
-} from '@spudly/ui';
+import {FeedbackPage} from '@spudly/ui/pages';
 import {useCallback, useEffect, useRef, useState} from 'react';
-import {YStack} from 'tamagui';
 
 import {APP_VERSION} from '../lib/env';
-
-import {CheckboxField} from './ui/CheckboxField';
-import {ErrorText} from './ui/ErrorText';
-import {PrimaryButton} from './ui/PrimaryButton';
-import {TextField} from './ui/TextField';
 
 type FeedbackFormProps = {
   route?: string;
@@ -99,73 +88,28 @@ export const FeedbackForm = ({route, onSubmitted}: FeedbackFormProps) => {
     onSubmitted?.();
   };
 
-  if (submitted) {
-    return (
-      <DsText
-        fontSize={tokens.typography.fontSize.sm}
-        color={tokens.colors.success.success8}
-      >
-        Thanks — we got your feedback.
-      </DsText>
-    );
-  }
-
   return (
-    <YStack gap="$4">
-      <YStack gap="$2">
-        <DsText
-          fontSize={tokens.typography.fontSize.sm}
-          fontWeight={tokens.typography.fontWeight.medium}
-          color={tokens.colors.gray.gray10}
-        >
-          What&apos;s on your mind?
-        </DsText>
-        {/* DS field chrome replaces the old hand-rolled bordered input
-            (the Stage 3a RecipeForm treatment); the old min-block-32
-            sizing is covered by the field's default 4-line block. */}
-        <DsMultilineField
-          value={message}
-          onChangeText={setMessage}
-          placeholder="Tell us what happened or what you'd like to see improved."
-        />
-      </YStack>
-      <TextField
-        label="Email me back (optional)"
-        type="email"
-        value={replyEmail}
-        onChange={value => {
-          replyEditedRef.current = true;
-          setReplyEmail(value);
-        }}
-        placeholder="you@example.com"
-      />
-      <CheckboxField
-        checked={isBug}
-        onChange={setIsBug}
-        label="This is a bug"
-      />
-      {error ? <ErrorText>{error}</ErrorText> : null}
-      <PrimaryButton
-        label="Submit feedback"
-        loading={submitting}
-        loadingLabel="Submitting…"
-        disabled={
-          validateUserFeedbackMessage(message) !== null ||
-          validateUserFeedbackReplyEmail(replyEmail) !== null
-        }
-        onPress={() => {
-          void handleSubmit();
-        }}
-      />
-    </YStack>
+    <FeedbackPage
+      message={message}
+      onMessageChange={setMessage}
+      replyEmail={replyEmail}
+      onReplyEmailChange={value => {
+        replyEditedRef.current = true;
+        setReplyEmail(value);
+      }}
+      isBug={isBug}
+      onIsBugChange={setIsBug}
+      error={error}
+      submitting={submitting}
+      submitted={submitted}
+      submitDisabled={
+        validateUserFeedbackMessage(message) !== null ||
+        validateUserFeedbackReplyEmail(replyEmail) !== null
+      }
+      onSubmit={() => {
+        void handleSubmit();
+      }}
+    />
   );
 };
 
-if (__DEV__) {
-  const feedbackFormDemo: ShowcaseDemoRenderer = ({Frame}) => (
-    <Frame>
-      <FeedbackForm route="/dev/components" />
-    </Frame>
-  );
-  FeedbackForm.demo = feedbackFormDemo;
-}
