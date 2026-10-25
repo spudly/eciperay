@@ -113,6 +113,25 @@ const candidateLabel = (version: RecipeVersionSummary): string =>
       : ''
   }`;
 
+/**
+ * The scale string the page shows as selected for a base/current servings pair
+ * when the servings were not set through a scale selection: the preset's string
+ * when the applied servings are exactly that preset's, otherwise the exact
+ * servings ratio as a plain number string — the same form the page's custom
+ * chip formats ("2.5", never "2.50").
+ */
+const deriveScaleValue = (
+  baseServings: number,
+  currentServings: number,
+): string => {
+  const preset = RECIPE_SCALE_MULTIPLIERS.find(multiplier =>
+    isActiveScaleMultiplier(baseServings, currentServings, multiplier),
+  );
+  return preset === undefined
+    ? String(currentServings / baseServings)
+    : String(preset);
+};
+
 export const RecipeDetailView = ({
   recipe,
   displayRecipe,
@@ -257,11 +276,35 @@ export const RecipeDetailView = ({
     });
 
   const baseServings = displayRecipe.servings;
-  const scaleValue = String(
-    RECIPE_SCALE_MULTIPLIERS.find(multiplier =>
-      isActiveScaleMultiplier(baseServings, currentServings, multiplier),
-    ) ?? RECIPE_SCALE_MULTIPLIERS[0],
-  );
+
+  // The selected scale is host state, not a pure derivation from the
+  // servings (#73): the page's custom chip renders selected with its
+  // value only when the host echoes a non-preset scaleValue back, and a
+  // derivation can only name presets — deriving fell back to ½× for any
+  // off-preset servings, so a committed custom scale (2.5×) showed the
+  // ½× chip selected while the ingredients were scaled 2.5×. The state
+  // is keyed to the base and servings the selection was recorded at:
+  // onScaleChange records the page's raw value alongside the servings it
+  // applies, servings changes record their derivation, and a render-time
+  // mismatch means the servings moved without a selection behind them
+  // (the screen resets them on a version switch), so the selection
+  // re-derives from the servings that actually apply.
+  const [scaleSelection, setScaleSelection] = useState(() => ({
+    baseServings,
+    servings: currentServings,
+    value: deriveScaleValue(baseServings, currentServings),
+  }));
+  if (
+    scaleSelection.baseServings !== baseServings ||
+    scaleSelection.servings !== currentServings
+  ) {
+    setScaleSelection({
+      baseServings,
+      servings: currentServings,
+      value: deriveScaleValue(baseServings, currentServings),
+    });
+  }
+  const scaleValue = scaleSelection.value;
 
   // Cook history (the old CookHistoryTab): the entries are view-modeled;
   // the form's open state, its mutation, and the form itself stay here
@@ -430,15 +473,22 @@ export const RecipeDetailView = ({
       }}
       ingredients={{
         servings: currentServings,
-        onServingsChange,
+        onServingsChange: (servings: number) => {
+          setScaleSelection({
+            baseServings,
+            servings,
+            value: deriveScaleValue(baseServings, servings),
+          });
+          onServingsChange(servings);
+        },
         scaleValue,
         onScaleChange: (value: string) => {
-          onServingsChange(
-            servingsForMultiplier(
-              baseServings,
-              Number(value) as RecipeScaleMultiplier,
-            ),
+          const nextServings = servingsForMultiplier(
+            baseServings,
+            Number(value) as RecipeScaleMultiplier,
           );
+          setScaleSelection({baseServings, servings: nextServings, value});
+          onServingsChange(nextServings);
         },
         ingredients: sortIngredientsByOrder(displayRecipe.ingredients).map(
           ingredient => ({

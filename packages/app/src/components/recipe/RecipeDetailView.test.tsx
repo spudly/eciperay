@@ -1,6 +1,6 @@
 import {useAuth} from '@eciperay/client';
 import type {RecipeDetail, RecipeVersionSummary} from '@eciperay/types';
-import {fireEvent, waitFor} from '@testing-library/react-native';
+import {fireEvent, userEvent, waitFor} from '@testing-library/react-native';
 import React, {useState} from 'react';
 
 import {
@@ -60,12 +60,16 @@ const Harness = ({
   recipe,
   versions,
   callbacks,
+  initialServings,
 }: {
   recipe: RecipeDetail;
   versions: RecipeVersionSummary[];
   callbacks: Callbacks;
+  initialServings?: number;
 }) => {
-  const [servings, setServings] = useState<number | null>(null);
+  const [servings, setServings] = useState<number | null>(
+    initialServings ?? null,
+  );
   const [selectedVersionId, setSelectedVersionId] = useState(recipe.versionId);
   const displayRecipe =
     selectedVersionId === recipe.versionId
@@ -99,6 +103,7 @@ const Harness = ({
 const renderView = async (
   overrides: Partial<RecipeDetail> = {},
   versions: RecipeVersionSummary[] = [makeRecipeVersionSummary()],
+  initialServings?: number,
 ) => {
   const callbacks = makeCallbacks();
   const recipe = makeRecipeDetail(overrides);
@@ -107,6 +112,7 @@ const renderView = async (
       recipe={recipe}
       versions={versions}
       callbacks={callbacks}
+      initialServings={initialServings}
     />,
     makeQueryClient(),
   );
@@ -295,6 +301,59 @@ describe('RecipeDetailView', () => {
     await fireEvent.press(await findByText(/v2 — Archived/));
     expect(await findByText('4 cups Flour')).toBeTruthy();
     expect(queryByText('Substitutions')).toBeNull();
+  });
+
+  test('echoes a committed custom scale back as the selected scale value', async () => {
+    const {findByText, getByLabelText, queryByText} = await renderView();
+    await fireEvent.press(await findByText('Custom'));
+    await userEvent.type(getByLabelText('Custom scale'), '2.5');
+    fireEvent(getByLabelText('Custom scale'), 'submitEditing');
+    // The servings actually apply: 4 * 2.5 = 10, so the flour rescales
+    // by the same factor the scale selection reports.
+    expect(await findByText('5 cups Flour')).toBeTruthy();
+    // The custom chip shows the committed value selected instead of
+    // falling back to the ½× preset (the pre-1.8.1 host derivation).
+    expect(await findByText('2.5×')).toBeTruthy();
+    expect(queryByText('Custom')).toBeNull();
+    expect(getByLabelText('½×').props['aria-pressed']).toBe(false);
+    expect(getByLabelText('2×').props['aria-pressed']).toBe(false);
+  });
+
+  test('derives the scale when the servings stepper lands off-preset', async () => {
+    const {findByText, getByLabelText} = await renderView();
+    await findByText('Test Recipe');
+    await fireEvent.press(getByLabelText('Increase Servings'));
+    await fireEvent.press(getByLabelText('Increase Servings'));
+    // 4 → 6 servings is a 1.5 ratio: no preset matches, so the custom
+    // chip carries the derived ratio as the selected value.
+    expect(await findByText('1.5×')).toBeTruthy();
+    expect(getByLabelText('½×').props['aria-pressed']).toBe(false);
+  });
+
+  test('passes the preset string through when a preset chip is chosen', async () => {
+    const {findByText, getByLabelText} = await renderView();
+    await fireEvent.press(await findByText('2×'));
+    expect(await findByText('4 cups Flour')).toBeTruthy();
+    expect(getByLabelText('2×').props['aria-pressed']).toBe(true);
+    // The custom chip stays at its resting label for a preset selection.
+    expect(await findByText('Custom')).toBeTruthy();
+  });
+
+  test('derives the initial scale for servings starting on a preset', async () => {
+    // Base servings 4 with the screen's servings already at 8: the 2×
+    // preset is the selection, exactly as the old derivation had it.
+    const {findByText, getByLabelText} = await renderView({}, undefined, 8);
+    expect(await findByText('4 cups Flour')).toBeTruthy();
+    expect(getByLabelText('2×').props['aria-pressed']).toBe(true);
+    expect(await findByText('Custom')).toBeTruthy();
+  });
+
+  test('derives the initial scale for servings starting off-preset', async () => {
+    // Base servings 4 with the screen's servings already at 6: the
+    // selection is the 1.5 ratio on the custom chip, not the ½× fallback.
+    const {findByText, getByLabelText} = await renderView({}, undefined, 6);
+    expect(await findByText('1.5×')).toBeTruthy();
+    expect(getByLabelText('½×').props['aria-pressed']).toBe(false);
   });
 
   test('renders the instruction steps', async () => {
