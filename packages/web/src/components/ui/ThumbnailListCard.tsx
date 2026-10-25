@@ -68,6 +68,12 @@ export const ThumbnailListCard = ({
   // Trailing actions (e.g. "Log cook", "Delete" buttons) render as siblings
   // OUTSIDE the pressable, avoiding nested interactive elements.
   //
+  // Both press branches show a pointer cursor on hover (#213) so the card
+  // reads as clickable: the onPress Card takes Tamagui's cursor style prop
+  // (the same mechanism the design system's own pressables use), and the
+  // linkTo Link carries it in its inline style. The app mirror has no
+  // counterpart — native has no hover cursor.
+  //
   // Inside the trailing-actions row the card flexes from a 17rem basis
   // and the row wraps (#190): at phone widths the trailing actions cannot
   // share the row without squeezing the title column to a few characters,
@@ -92,6 +98,7 @@ export const ThumbnailListCard = ({
         onPress={onPress}
         role="button"
         tabIndex={0}
+        cursor="pointer"
         flexGrow={1}
         flexShrink={1}
         flexBasis="17rem"
@@ -104,6 +111,7 @@ export const ThumbnailListCard = ({
         onPress={onPress}
         role="button"
         tabIndex={0}
+        cursor="pointer"
         flex={1}
       >
         {main}
@@ -116,6 +124,7 @@ export const ThumbnailListCard = ({
         style={{
           textDecoration: 'none',
           display: 'block',
+          cursor: 'pointer',
           flex: inRow ? '1 1 17rem' : 1,
           minWidth: 0,
         }}

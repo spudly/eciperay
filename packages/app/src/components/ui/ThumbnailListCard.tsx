@@ -15,6 +15,11 @@ import {Image, View} from 'tamagui';
  * in a column layout, where the basis would resolve vertically); native rows
  * here keep the single-row layout with the trailing actions inside the card,
  * which does not squeeze the same way.
+ *
+ * Parity note (#213): the web mirror's press targets (its onPress Card and
+ * linkTo Link) show a pointer cursor on hover so the card reads as clickable.
+ * Native has no hover cursor, so there is no counterpart here. Comment-only; no
+ * behavior change.
  */
 
 // Structural flex only (the old flex-1 min-inline-0): the text block

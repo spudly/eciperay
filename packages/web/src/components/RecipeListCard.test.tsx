@@ -24,6 +24,33 @@ describe('RecipeListCard', () => {
     expect(screen.queryByText('How did it go?')).not.toBeInTheDocument();
   });
 
+  test('shows a pointer cursor on the card button when onPress is given', async () => {
+    await renderWithProviders(
+      <RecipeListCard
+        recipe={makeRecipeDetail({title: 'Pasta'})}
+        onDelete={vi.fn()}
+        onPress={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('button', {name: /Pasta/})).toHaveStyle({
+      cursor: 'pointer',
+    });
+  });
+
+  test('shows a pointer cursor on the card link when no onPress is given', async () => {
+    await renderWithProviders(
+      <RecipeListCard
+        recipe={makeRecipeDetail({title: 'Pasta'})}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('link', {name: /Pasta/})).toHaveStyle({
+      cursor: 'pointer',
+    });
+  });
+
   test('saves cook log with rating from list', async () => {
     await renderWithProviders(
       <RecipeListCard
