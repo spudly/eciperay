@@ -1,3 +1,6 @@
+// Parity note (design-system#124, B3a): the app form passes status
+// options as props to the design system RecipeFormPage; this web
+// picker remains with the web form until B7.
 import {RECIPE_STATUS_LABELS, RECIPE_STATUS_OPTIONS} from '@eciperay/client';
 import type {RecipeStatus} from '@eciperay/types';
 import {useMemo, useState} from 'react';

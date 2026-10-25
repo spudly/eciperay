@@ -81,11 +81,8 @@ export const showcaseModuleLoaders = {
   'profile/NutritionGoalsFormView': () =>
     import('../profile/NutritionGoalsFormView.js'),
   'recipe/CookHistoryTab': () => import('../recipe/CookHistoryTab.js'),
-  'recipe/EditRecipeView': () => import('../recipe/EditRecipeView.js'),
-  'recipe/EditVersionView': () => import('../recipe/EditVersionView.js'),
   'recipe/IngredientsTab': () => import('../recipe/IngredientsTab.js'),
   'recipe/InstructionsTab': () => import('../recipe/InstructionsTab.js'),
-  'recipe/ManualEntryView': () => import('../recipe/ManualEntryView.js'),
   'recipe/NutritionTab': () => import('../recipe/NutritionTab.js'),
   'recipe/OverviewActions': () => import('../recipe/OverviewActions.js'),
   'recipe/OverviewTab': () => import('../recipe/OverviewTab.js'),
@@ -104,13 +101,11 @@ export const showcaseModuleLoaders = {
   // recipe detail page, and there is deliberately no web mirror file.
   'recipe/RecipeEngagementPanel': () =>
     import('../recipe/RecipeEngagementPanel.js'),
-  'recipe/RecipeForm': () => import('../recipe/RecipeForm.js'),
   'recipe/RecipeImageField': () => import('../recipe/RecipeImageField.js'),
   'recipe/RecipeInputPreview': () => import('../recipe/RecipeInputPreview.js'),
   'recipe/RecipeRatingsSection': () =>
     import('../recipe/RecipeRatingsSection.js'),
   'recipe/RecipeStatusBadge': () => import('../recipe/RecipeStatusBadge.js'),
-  'recipe/RecipeStatusPicker': () => import('../recipe/RecipeStatusPicker.js'),
   'recipe/RecipeVisibilityControls': () =>
     import('../recipe/RecipeVisibilityControls.js'),
   'recipe/ScaleMultiplierButtons': () =>
@@ -121,6 +116,5 @@ export const showcaseModuleLoaders = {
   'recipe/SortableInstructionList': () =>
     import('../recipe/SortableInstructionList.js'),
   'recipe/StaleVersionHint': () => import('../recipe/StaleVersionHint.js'),
-  'recipe/TagPicker': () => import('../recipe/TagPicker.js'),
   'recipe/VersionPicker': () => import('../recipe/VersionPicker.js'),
 } as Record<string, () => Promise<ShowcaseModule>>;

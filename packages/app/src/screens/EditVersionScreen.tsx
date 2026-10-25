@@ -4,10 +4,10 @@ import {
   recipeVersionDetailToInput,
 } from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {EditVersionPage} from '@spudly/ui/pages';
 import {useQuery, useQueryClient} from '@tanstack/react-query';
 import type {RecipeVersionInput} from '@eciperay/types';
 
-import {EditVersionView} from '../components/recipe/EditVersionView';
 import {RecipeForm} from '../components/recipe/RecipeForm';
 import {ScreenLoadingGate} from '../components/ScreenLoadingGate';
 import {api} from '../lib/api';
@@ -44,7 +44,7 @@ export const EditVersionScreen = ({route, navigation}: Props) => {
   }
 
   return (
-    <EditVersionView
+    <EditVersionPage
       versionNumber={version.versionNumber}
       changeSummary={version.changeSummary}
       showImportBanner={
@@ -63,6 +63,6 @@ export const EditVersionScreen = ({route, navigation}: Props) => {
         submitLabel="Save Draft"
         onSubmit={handleSubmit}
       />
-    </EditVersionView>
+    </EditVersionPage>
   );
 };

@@ -1,4 +1,4 @@
-/* eslint-disable max-lines -- shared recipe form with dynamic ingredient/instruction lists */
+/* eslint-disable max-lines -- shared recipe form host with dynamic ingredient/instruction lists */
 import {
   compareVersionToParent,
   ensureIngredientRowKeys,
@@ -6,11 +6,12 @@ import {
   formatParentListSummary,
   formatParentScalarHint,
   formatParentTagNames,
-  makeRecipeDetail,
   parentIngredientsInput,
   parentInstructionsInput,
   parentTagIds,
-  recipeDetailToInput,
+  queryKeys,
+  RECIPE_STATUS_LABELS,
+  RECIPE_STATUS_OPTIONS,
   revertVersionScalar,
   toRecipeInputIngredients,
   toRecipeInputInstructions,
@@ -19,25 +20,17 @@ import {
   type FormIngredientRow,
   type FormInstructionRow,
   type RecipeFormInitial,
-  type ShowcaseDemoRenderer,
   type VersionScalarField,
 } from '@eciperay/client';
 import type {
   IngredientInput,
   RecipeInput,
+  RecipeStatus,
   RecipeVersionDetail,
 } from '@eciperay/types';
-import {
-  Button as DsButton,
-  InlineAlert,
-  MultilineField as DsMultilineField,
-  Text as DsText,
-  TextField as DsTextField,
-  tokens,
-} from '@spudly/ui';
+import {RecipeFormPage, type RecipeFormPageField} from '@spudly/ui/pages';
+import {useQuery} from '@tanstack/react-query';
 import React, {useMemo, useState} from 'react';
-import {ScrollView, TouchableOpacity} from 'react-native';
-import {XStack, YStack} from 'tamagui';
 
 import {
   deleteImagePreviewFile,
@@ -48,10 +41,7 @@ import {
 } from '../../lib/recipeImageAsset';
 import {api} from '../../lib/api';
 import {supabase} from '../../lib/supabase';
-import {ErrorText} from '../ui/ErrorText';
-import {PrimaryButton} from '../ui/PrimaryButton';
 
-import {RecipeStatusPicker} from './RecipeStatusPicker';
 import {RecipeImageField} from './RecipeImageField';
 import {
   createEmptyIngredientRow,
@@ -61,7 +51,6 @@ import {
   createEmptyInstructionRow,
   SortableInstructionList,
 } from './SortableInstructionList';
-import {TagPicker} from './TagPicker';
 
 type Props = {
   initial: RecipeFormInitial;
@@ -77,8 +66,6 @@ type Props = {
 
 type FormIngredient = FormIngredientRow & {quantity: number | string | null};
 
-const scrollStyle = {flex: 1} as const;
-
 const toQuantity = (value: number | string | null): number | null => {
   if (value === null) {
     return null;
@@ -86,9 +73,16 @@ const toQuantity = (value: number | string | null): number | null => {
   return typeof value === 'number' ? value : Number(value);
 };
 
-// Field backgrounds (issue #167): fields here render through @spudly/ui
-// components, which all share the Warm Harvest $surface field background.
-// The web mirror matches via its bg-field token (#fffdf8, the same surface).
+/**
+ * App-side host for the design system's RecipeFormPage (#124, B3a): this
+ * component owns everything the B2 audit leaves in the app — the form state,
+ * the tags query, image processing and upload, the AI description/image calls,
+ * parent-version diffing, and building the RecipeInput — and renders the DS
+ * page with the app's image field and sortable lists in its render slots (the
+ * picker invocation and the drag lists stay app-side pending the contract picks
+ * proposed on design-system#124). The screens wrap this host in the DS shell
+ * pages (EditRecipePage / EditVersionPage / ManualEntryPage).
+ */
 export const RecipeForm = ({
   initial,
   recipeId,
@@ -132,7 +126,7 @@ export const RecipeForm = ({
     return [createEmptyInstructionRow(1)];
   });
   const [tagIds, setTagIds] = useState<string[]>(initial.tagIds);
-  const [status, setStatus] = useState(initial.status ?? 'idea');
+  const [status, setStatus] = useState<RecipeStatus>(initial.status ?? 'idea');
   const [pendingImage, setPendingImage] = useState<PendingRecipeImage | null>(
     null,
   );
@@ -145,6 +139,26 @@ export const RecipeForm = ({
   const [imageCacheKey, setImageCacheKey] = useState(0);
   const [descriptionGenerating, setDescriptionGenerating] = useState(false);
   const [descriptionError, setDescriptionError] = useState<string | null>(null);
+
+  // The tags query lived in the TagPicker container before the
+  // split; the DS page takes the options as view-models, so the
+  // query moves here with the rest of the form's data.
+  const {data: tags = [], isLoading: isLoadingTags} = useQuery({
+    queryKey: queryKeys.tags(),
+    queryFn: () => api.tags.list(),
+  });
+  const tagOptions = useMemo(
+    () => tags.map(tag => ({value: tag.id, label: tag.name})),
+    [tags],
+  );
+  const statusOptions = useMemo(
+    () =>
+      RECIPE_STATUS_OPTIONS.map(value => ({
+        value,
+        label: RECIPE_STATUS_LABELS[value],
+      })),
+    [],
+  );
 
   const clearPendingImage = () => {
     setPreviewUri(current => {
@@ -341,24 +355,20 @@ export const RecipeForm = ({
     status,
   ]);
 
-  const scalarChanged = (field: VersionScalarField) =>
-    versionDiff?.changedScalars.includes(field) ?? false;
-
-  // A field whose value differs from the parent version gets the DS warning
-  // wash (warning step 5 border / step 1 fill — the old amber-400/amber-50)
-  // on top of the DS field chrome.
-  // Changed fields get the warning fill INSTEAD of the shared field
-  // background (issue #167): the prop replaces the DS field's $surface
-  // fill outright, so the two never combine. The web mirror achieves the
-  // same exclusivity in changedFieldClass (bg-amber-50 vs bg-field),
-  // because there CSS source order would otherwise let bg-field win.
-  const changedFieldProps = (field: VersionScalarField) =>
-    scalarChanged(field)
-      ? {
-          borderColor: tokens.colors.warning.warning5,
-          backgroundColor: tokens.colors.warning.warning1,
-        }
-      : {};
+  // The diff crosses to the DS page as presentation data: which
+  // fields changed (the page field names — imageUrl is the image
+  // section's "image") and the pre-formatted parent-value hint for
+  // each changed field's revert affordance.
+  const changedFields: RecipeFormPageField[] = [];
+  const revertLabels: Partial<Record<RecipeFormPageField, string>> = {};
+  if (parentVersion && versionDiff) {
+    for (const field of versionDiff.changedScalars) {
+      const pageField: RecipeFormPageField =
+        field === 'imageUrl' ? 'image' : field;
+      changedFields.push(pageField);
+      revertLabels[pageField] = formatParentScalarHint(parentVersion, field);
+    }
+  }
 
   const revertScalar = (
     parent: RecipeVersionDetail,
@@ -398,24 +408,12 @@ export const RecipeForm = ({
     }
   };
 
-  const RevertButton = ({field}: {field: VersionScalarField}) =>
-    scalarChanged(field) && parentVersion ? (
-      <TouchableOpacity
-        accessibilityRole="button"
-        onPress={() => {
-          revertScalar(parentVersion, field);
-        }}
-      >
-        <DsText
-          fontSize={tokens.typography.fontSize.xs}
-          fontWeight={tokens.typography.fontWeight.medium}
-          color={tokens.colors.warning.warning9}
-          opacity={0.8}
-        >
-          Revert to: {formatParentScalarHint(parentVersion, field)}
-        </DsText>
-      </TouchableOpacity>
-    ) : null;
+  const handleRevertField = (field: RecipeFormPageField) => {
+    if (!parentVersion) {
+      return;
+    }
+    revertScalar(parentVersion, field === 'image' ? 'imageUrl' : field);
+  };
 
   const handleSubmit = async () => {
     setLoading(true);
@@ -435,153 +433,76 @@ export const RecipeForm = ({
       ? withImageCacheKey(imageUrl, imageCacheKey)
       : imageUrl);
 
-  const fieldLabel = (label: string) => (
-    <DsText
-      fontSize={tokens.typography.fontSize.sm}
-      fontWeight={tokens.typography.fontWeight.medium}
-      color={tokens.colors.gray.gray8}
-    >
-      {label}
-    </DsText>
-  );
-
   return (
-    <ScrollView
-      style={scrollStyle}
-      keyboardShouldPersistTaps="handled"
-    >
-      <YStack
-        gap="$4"
-        paddingBlockEnd="$8"
-      >
-        <YStack>
-          <XStack
-            marginBlockEnd="$1"
-            alignItems="center"
-            justifyContent="space-between"
-            gap="$3"
-          >
-            {fieldLabel('Title')}
-            <RevertButton field="title" />
-          </XStack>
-          <DsTextField
-            accessibilityLabel="Title"
-            {...changedFieldProps('title')}
-            value={title}
-            onChangeText={setTitle}
-          />
-        </YStack>
-        <RecipeStatusPicker
-          value={status}
-          onChange={setStatus}
-        />
-        <YStack>
-          <XStack
-            marginBlockEnd="$1"
-            alignItems="center"
-            justifyContent="space-between"
-            gap="$3"
-          >
-            {fieldLabel('Description')}
-            <XStack
-              alignItems="center"
-              gap="$2"
-            >
-              <RevertButton field="description" />
-              <DsButton
-                variant="ghost"
-                size="sm"
-                accessibilityLabel="Generate description with AI"
-                borderWidth={1}
-                borderColor="$primary"
-                backgroundColor="$surface"
-                disabled={!title.trim() || descriptionGenerating}
-                onPress={() => {
-                  void handleGenerateDescription();
-                }}
-              >
-                {descriptionGenerating ? 'Generating…' : 'Generate with AI'}
-              </DsButton>
-            </XStack>
-          </XStack>
-          <DsMultilineField
-            {...changedFieldProps('description')}
-            numberOfLines={3}
-            value={description}
-            onChangeText={setDescription}
-          />
-          {descriptionError ? (
-            <DsText
-              variant="error"
-              marginBlockStart="$2"
-            >
-              {descriptionError}
-            </DsText>
-          ) : null}
-        </YStack>
-        <XStack gap="$3">
-          <YStack flex={1}>
-            <XStack
-              marginBlockEnd="$1"
-              alignItems="center"
-              justifyContent="space-between"
-              gap="$2"
-            >
-              {fieldLabel('Servings')}
-              <RevertButton field="servings" />
-            </XStack>
-            <DsTextField
-              accessibilityLabel="Servings"
-              {...changedFieldProps('servings')}
-              keyboardType="number-pad"
-              value={servings}
-              onChangeText={setServings}
-            />
-          </YStack>
-          <YStack flex={1}>
-            <XStack
-              marginBlockEnd="$1"
-              alignItems="center"
-              justifyContent="space-between"
-              gap="$2"
-            >
-              {fieldLabel('Prep (min)')}
-              <RevertButton field="prepTimeMin" />
-            </XStack>
-            <DsTextField
-              accessibilityLabel="Prep (min)"
-              {...changedFieldProps('prepTimeMin')}
-              keyboardType="number-pad"
-              value={prepTimeMin}
-              onChangeText={setPrepTimeMin}
-            />
-          </YStack>
-          <YStack flex={1}>
-            <XStack
-              marginBlockEnd="$1"
-              alignItems="center"
-              justifyContent="space-between"
-              gap="$2"
-            >
-              {fieldLabel('Cook (min)')}
-              <RevertButton field="cookTimeMin" />
-            </XStack>
-            <DsTextField
-              accessibilityLabel="Cook (min)"
-              {...changedFieldProps('cookTimeMin')}
-              keyboardType="number-pad"
-              value={cookTimeMin}
-              onChangeText={setCookTimeMin}
-            />
-          </YStack>
-        </XStack>
+    <RecipeFormPage
+      title={title}
+      onTitleChange={setTitle}
+      description={description}
+      onDescriptionChange={setDescription}
+      servings={servings}
+      onServingsChange={setServings}
+      prepTimeMin={prepTimeMin}
+      onPrepTimeMinChange={setPrepTimeMin}
+      cookTimeMin={cookTimeMin}
+      onCookTimeMinChange={setCookTimeMin}
+      sourceUrl={sourceUrl}
+      onSourceUrlChange={setSourceUrl}
+      statusOptions={statusOptions}
+      status={status}
+      onStatusChange={value => {
+        setStatus(value as RecipeStatus);
+      }}
+      tagOptions={tagOptions}
+      tagIds={tagIds}
+      onTagIdsChange={setTagIds}
+      isLoadingTags={isLoadingTags}
+      changedFields={changedFields}
+      revertLabels={revertLabels}
+      onRevertField={handleRevertField}
+      {...(parentVersion && versionDiff?.tagsChanged
+        ? {
+            tagsRevertLabel: formatParentTagNames(parentVersion),
+            onRevertTags: () => {
+              setTagIds(parentTagIds(parentVersion));
+            },
+          }
+        : {})}
+      {...(parentVersion && versionDiff?.ingredientsChanged
+        ? {
+            ingredientsChangedLabel: `Ingredients changed from parent version (${formatParentListSummary(parentVersion, 'ingredients')})`,
+            onRevertIngredients: () => {
+              setIngredients(
+                ensureIngredientRowKeys(parentIngredientsInput(parentVersion)),
+              );
+            },
+          }
+        : {})}
+      {...(parentVersion && versionDiff?.instructionsChanged
+        ? {
+            instructionsChangedLabel: `Instructions changed from parent version (${formatParentListSummary(parentVersion, 'instructions')})`,
+            onRevertInstructions: () => {
+              setInstructions(
+                ensureInstructionRowKeys(
+                  parentInstructionsInput(parentVersion),
+                ),
+              );
+            },
+          }
+        : {})}
+      onGenerateDescription={() => {
+        void handleGenerateDescription();
+      }}
+      isGeneratingDescription={descriptionGenerating}
+      descriptionError={descriptionError}
+      contentLocked={contentLocked}
+      renderImageSection={revertAction => (
         <RecipeImageField
           imagePreview={imagePreview || null}
           imageUploading={imageUploading}
           imageGenerating={imageGenerating}
           imageError={imageError}
           canGenerateImage={title.trim().length > 0}
-          headerAction={<RevertButton field="imageUrl" />}
+          headerAction={revertAction}
           onImagePicked={processImage}
           onImageError={message => {
             setImageError(message);
@@ -594,185 +515,39 @@ export const RecipeForm = ({
             setImageError(null);
           }}
         />
-        <YStack>
-          <XStack
-            marginBlockEnd="$1"
-            alignItems="center"
-            justifyContent="space-between"
-            gap="$2"
-          >
-            {fieldLabel('Source URL')}
-            <RevertButton field="sourceUrl" />
-          </XStack>
-          <DsTextField
-            accessibilityLabel="Source URL"
-            {...changedFieldProps('sourceUrl')}
-            value={sourceUrl}
-            onChangeText={setSourceUrl}
-          />
-        </YStack>
-        <YStack>
-          <XStack
-            marginBlockEnd="$2"
-            alignItems="center"
-            justifyContent="space-between"
-            gap="$2"
-          >
-            {fieldLabel('Tags')}
-            {versionDiff?.tagsChanged && parentVersion ? (
-              <TouchableOpacity
-                accessibilityRole="button"
-                onPress={() => {
-                  setTagIds(parentTagIds(parentVersion));
-                }}
-              >
-                <DsText
-                  fontSize={tokens.typography.fontSize.xs}
-                  fontWeight={tokens.typography.fontWeight.medium}
-                  color={tokens.colors.warning.warning9}
-                  opacity={0.8}
-                >
-                  Revert to: {formatParentTagNames(parentVersion)}
-                </DsText>
-              </TouchableOpacity>
-            ) : null}
-          </XStack>
-          <TagPicker
-            selectedIds={tagIds}
-            onChange={setTagIds}
-          />
-        </YStack>
-        {contentLocked ? (
-          <InlineAlert severity="warning">
-            Ingredients and instructions are locked on the active version.
-            Create a draft to change them.
-          </InlineAlert>
-        ) : null}
-        {versionDiff?.ingredientsChanged && parentVersion && !contentLocked ? (
-          <XStack
-            alignItems="center"
-            justifyContent="space-between"
-            borderRadius={tokens.radii.md}
-            backgroundColor={tokens.colors.warning.warning1}
-            paddingHorizontal="$3"
-            paddingVertical="$2"
-          >
-            <DsText
-              flex={1}
-              fontSize={tokens.typography.fontSize.sm}
-              color={tokens.colors.warning.warning10}
-            >
-              Ingredients changed from parent version (
-              {formatParentListSummary(parentVersion, 'ingredients')})
-            </DsText>
-            <TouchableOpacity
-              accessibilityRole="button"
-              onPress={() => {
-                setIngredients(
-                  ensureIngredientRowKeys(
-                    parentIngredientsInput(parentVersion),
-                  ),
-                );
-              }}
-            >
-              <DsText
-                fontSize={tokens.typography.fontSize.sm}
-                fontWeight={tokens.typography.fontWeight.medium}
-                color={tokens.colors.warning.warning10}
-                textDecorationLine="underline"
-              >
-                Revert
-              </DsText>
-            </TouchableOpacity>
-          </XStack>
-        ) : null}
-        {contentLocked ? null : (
-          <SortableIngredientList
-            ingredients={ingredients}
-            onChange={setIngredients}
-            onUpdate={updateIngredient}
-            onAdd={() => {
-              setIngredients(prev => [
-                ...prev,
-                createEmptyIngredientRow(prev.length),
-              ]);
-            }}
-          />
-        )}
-        {versionDiff?.instructionsChanged && parentVersion && !contentLocked ? (
-          <XStack
-            alignItems="center"
-            justifyContent="space-between"
-            borderRadius={tokens.radii.md}
-            backgroundColor={tokens.colors.warning.warning1}
-            paddingHorizontal="$3"
-            paddingVertical="$2"
-          >
-            <DsText
-              flex={1}
-              fontSize={tokens.typography.fontSize.sm}
-              color={tokens.colors.warning.warning10}
-            >
-              Instructions changed from parent version (
-              {formatParentListSummary(parentVersion, 'instructions')})
-            </DsText>
-            <TouchableOpacity
-              accessibilityRole="button"
-              onPress={() => {
-                setInstructions(
-                  ensureInstructionRowKeys(
-                    parentInstructionsInput(parentVersion),
-                  ),
-                );
-              }}
-            >
-              <DsText
-                fontSize={tokens.typography.fontSize.sm}
-                fontWeight={tokens.typography.fontWeight.medium}
-                color={tokens.colors.warning.warning10}
-                textDecorationLine="underline"
-              >
-                Revert
-              </DsText>
-            </TouchableOpacity>
-          </XStack>
-        ) : null}
-        {contentLocked ? null : (
-          <SortableInstructionList
-            instructions={instructions}
-            onChange={setInstructions}
-            onUpdate={updateInstruction}
-            onAdd={() => {
-              setInstructions(prev => [
-                ...prev,
-                createEmptyInstructionRow(prev.length + 1),
-              ]);
-            }}
-          />
-        )}
-        {error ? <ErrorText>{error}</ErrorText> : null}
-        <PrimaryButton
-          label={submitLabel}
-          loading={loading}
-          loadingLabel="Saving…"
-          onPress={() => {
-            void handleSubmit();
+      )}
+      renderIngredientsSection={() => (
+        <SortableIngredientList
+          ingredients={ingredients}
+          onChange={setIngredients}
+          onUpdate={updateIngredient}
+          onAdd={() => {
+            setIngredients(prev => [
+              ...prev,
+              createEmptyIngredientRow(prev.length),
+            ]);
           }}
         />
-      </YStack>
-    </ScrollView>
+      )}
+      renderInstructionsSection={() => (
+        <SortableInstructionList
+          instructions={instructions}
+          onChange={setInstructions}
+          onUpdate={updateInstruction}
+          onAdd={() => {
+            setInstructions(prev => [
+              ...prev,
+              createEmptyInstructionRow(prev.length + 1),
+            ]);
+          }}
+        />
+      )}
+      submitLabel={submitLabel}
+      isSubmitting={loading}
+      submitError={error}
+      onSubmit={() => {
+        void handleSubmit();
+      }}
+    />
   );
 };
-
-if (__DEV__) {
-  const recipeFormDemo: ShowcaseDemoRenderer = ({Frame}) => (
-    <Frame>
-      <RecipeForm
-        initial={recipeDetailToInput(makeRecipeDetail())}
-        submitLabel="Save recipe"
-        onSubmit={() => Promise.resolve()}
-      />
-    </Frame>
-  );
-  RecipeForm.demo = recipeFormDemo;
-}

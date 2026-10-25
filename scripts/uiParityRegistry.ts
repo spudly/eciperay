@@ -88,11 +88,8 @@ export const MIRROR_PAIRS = [
   'import/ImportTextView.tsx',
   'import/ImportUrlView.tsx',
   'recipe/CookHistoryTab.tsx',
-  'recipe/EditRecipeView.tsx',
-  'recipe/EditVersionView.tsx',
   'recipe/IngredientsTab.tsx',
   'recipe/InstructionsTab.tsx',
-  'recipe/ManualEntryView.tsx',
   'recipe/NutritionTab.tsx',
   'recipe/OverviewActions.tsx',
   'recipe/OverviewTab.tsx',
@@ -101,19 +98,16 @@ export const MIRROR_PAIRS = [
   'recipe/RecipeDetailChrome.tsx',
   'recipe/RecipeDetailTabPanel.tsx',
   'recipe/RecipeEngagementPanel.tsx',
-  'recipe/RecipeForm.tsx',
   'recipe/RecipeImageField.tsx',
   'recipe/RecipeInputPreview.tsx',
   'recipe/RecipeRatingsSection.tsx',
   'recipe/RecipeStatusBadge.tsx',
-  'recipe/RecipeStatusPicker.tsx',
   'recipe/RecipeVisibilityControls.tsx',
   'recipe/ScaleMultiplierButtons.tsx',
   'recipe/ServingsStepper.tsx',
   'recipe/SortableIngredientList.tsx',
   'recipe/SortableInstructionList.tsx',
   'recipe/StaleVersionHint.tsx',
-  'recipe/TagPicker.tsx',
   'recipe/VersionPicker.tsx',
 ] as const;
 
@@ -143,6 +137,48 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
     platform: 'app',
     reason:
       'App-side host for the design system RecipeDetailPage (#49): owns the detail section queries, mutations, and slots; web renders its own DOM recipe detail page.',
+  },
+  {
+    path: 'recipe/RecipeForm.tsx',
+    platform: 'app',
+    reason:
+      'App-side host for the design system RecipeFormPage (design-system#124): owns the form state, tags query, image processing, AI calls, and version diffing; web renders its own DOM recipe form until B7.',
+  },
+  {
+    path: 'recipe/RecipeForm.tsx',
+    platform: 'web',
+    reason:
+      'Web recipe form implementation; the app renders the design system RecipeFormPage via its host (design-system#124). Web adoption is B7.',
+  },
+  {
+    path: 'recipe/EditRecipeView.tsx',
+    platform: 'web',
+    reason:
+      'Web shell for its recipe form pages; the app renders the design system EditRecipePage (design-system#124). Web adoption is B7.',
+  },
+  {
+    path: 'recipe/EditVersionView.tsx',
+    platform: 'web',
+    reason:
+      'Web shell for its recipe form pages; the app renders the design system EditVersionPage (design-system#124). Web adoption is B7.',
+  },
+  {
+    path: 'recipe/ManualEntryView.tsx',
+    platform: 'web',
+    reason:
+      'Web shell for its recipe form pages; the app renders the design system ManualEntryPage (design-system#124). Web adoption is B7.',
+  },
+  {
+    path: 'recipe/RecipeStatusPicker.tsx',
+    platform: 'web',
+    reason:
+      'Web status picker for its recipe form; the app form passes status options as props to the design system RecipeFormPage (design-system#124).',
+  },
+  {
+    path: 'recipe/TagPicker.tsx',
+    platform: 'web',
+    reason:
+      'Web tag picker for its recipe form; the app form host runs the tags query and passes options to the design system RecipeFormPage (design-system#124).',
   },
   {
     path: 'profile/AccessTokensSection.tsx',

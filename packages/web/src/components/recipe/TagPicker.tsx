@@ -1,3 +1,6 @@
+// Parity note (design-system#124, B3a): the app form's host runs the
+// tags query and passes options to the design system RecipeFormPage;
+// this web picker remains with the web form until B7.
 import {queryKeys} from '@eciperay/client';
 import {useQuery} from '@tanstack/react-query';
 import type {ComponentType} from 'react';

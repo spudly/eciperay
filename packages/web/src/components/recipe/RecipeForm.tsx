@@ -1,4 +1,7 @@
 /* eslint-disable max-lines -- shared recipe form with dynamic ingredient/instruction lists */
+// Parity note (design-system#124, B3a): the app no longer mirrors this
+// form — its RecipeForm is the host for the design system RecipeFormPage,
+// and this web implementation remains until web adoption in B7.
 import {
   compareVersionToParent,
   ensureIngredientRowKeys,

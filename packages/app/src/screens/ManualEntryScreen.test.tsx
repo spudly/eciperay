@@ -84,12 +84,14 @@ describe('ManualEntryScreen', () => {
     );
   });
 
-  test('renders the real form with its submit action inside scroll views', async () => {
-    // Regression (eciperay#166/#169 review): the production composition —
-    // the screen container's ScrollView around RecipeForm's own ScrollView,
-    // the same pairing EditVersionScreen already shipped — must keep the
-    // form's bottom submit action in the tree. Copilot flagged that the
-    // view-level test used placeholder content instead of the real form.
+  test('renders the real form with its submit action inside a scroll view', async () => {
+    // Regression (eciperay#166/#169 review): the production composition
+    // must keep the form's bottom submit action in the tree. Copilot
+    // flagged that the view-level test used placeholder content instead
+    // of the real form. Since B3a (design-system#124) the composition is
+    // the DS ManualEntryPage shell (non-scrolling) around the DS
+    // RecipeFormPage, which owns the single ScrollView — one scroll
+    // view, not the old nested pair.
     const {toJSON, getByText} = await renderWithProviders(
       <ManualEntryScreen {...stackProps} />,
       makeQueryClient(),
@@ -98,7 +100,7 @@ describe('ManualEntryScreen', () => {
     expect(getByText('Create Recipe')).toBeTruthy();
     expect(
       renderedHostTypes(toJSON()).filter(type => type === 'RCTScrollView'),
-    ).toHaveLength(2);
+    ).toHaveLength(1);
   });
 
   test('creates recipe on submit', async () => {
