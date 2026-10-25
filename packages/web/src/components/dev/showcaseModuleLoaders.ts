@@ -69,15 +69,9 @@ export const showcaseModuleLoaders = {
   'import/ImportReviewView': () => import('../import/ImportReviewView.js'),
   'import/ImportTextView': () => import('../import/ImportTextView.js'),
   'import/ImportUrlView': () => import('../import/ImportUrlView.js'),
-  'meals/MealCookingModeView': () => import('../meals/MealCookingModeView.js'),
-  'meals/MealDetailView': () => import('../meals/MealDetailView.js'),
-  'meals/MealFormView': () => import('../meals/MealFormView.js'),
   'meals/MealPlanDetailView': () => import('../meals/MealPlanDetailView.js'),
-  'meals/MealPlanFormView': () => import('../meals/MealPlanFormView.js'),
-  'meals/MealsHubView': () => import('../meals/MealsHubView.js'),
   'meals/NutritionGoalProgressView': () =>
     import('../meals/NutritionGoalProgressView.js'),
-  'meals/ShoppingListView': () => import('../meals/ShoppingListView.js'),
   'profile/NutritionGoalsFormView': () =>
     import('../profile/NutritionGoalsFormView.js'),
   'recipe/CookHistoryTab': () => import('../recipe/CookHistoryTab.js'),

@@ -1,14 +1,15 @@
 import {
   errorMessage,
+  mealPlanEntryKey,
   queryKeys,
   recipeFormOptionsQueryOptions,
   useMealPlanEditForm,
 } from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {MealPlanFormPage} from '@spudly/ui/pages';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useState} from 'react';
 
-import {MealPlanFormView} from '../components/meals/MealPlanFormView';
 import {ScreenLoadingGate} from '../components/ScreenLoadingGate';
 import {api} from '../lib/api';
 import type {MealsStackParamList} from '../navigation/types';
@@ -60,16 +61,23 @@ export const MealPlanEditScreen = ({route, navigation}: Props) => {
 
   return (
     <ScreenLoadingGate pending={isEdit && (planLoading || recipesLoading)}>
-      <MealPlanFormView
+      <MealPlanFormPage
         title={form.title}
         notes={form.notes}
         startsOn={form.startsOn}
         endsOn={form.endsOn}
         selectedKeys={form.selectedKeys}
-        entryOptions={form.entryOptions}
+        entryOptions={form.entryOptions.map(option => ({
+          key: mealPlanEntryKey(option.kind, option.id),
+          kind: option.kind,
+          title: option.title,
+          ...(option.kind === 'recipe'
+            ? {recipeId: option.id, servings: option.servings}
+            : {}),
+        }))}
         quantityByKey={form.quantityByKey}
         servingsByRecipeId={form.servingsByRecipeId}
-        saving={saveMutation.isPending}
+        isSaving={saveMutation.isPending}
         error={formError}
         onTitleChange={form.setTitle}
         onNotesChange={form.setNotes}
