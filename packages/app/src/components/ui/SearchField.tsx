@@ -27,18 +27,3 @@ export const SearchField = ({
     borderRadius={tokens.radii.zero}
   />
 );
-
-if (__DEV__) {
-  const SearchFieldDemo = () => {
-    const [value, setValue] = useState('');
-
-    return (
-      <SearchField
-        value={value}
-        onChange={setValue}
-      />
-    );
-  };
-
-  SearchField.demo = () => <SearchFieldDemo />;
-}

@@ -24,11 +24,7 @@ export type AddStackParamList = {
   ImportReview: {recipeId: string};
 };
 
-export type ProfileStackParamList = {
-  ProfileHome: undefined;
-  Tags: undefined;
-  ComponentShowcase: undefined;
-};
+export type ProfileStackParamList = {ProfileHome: undefined; Tags: undefined};
 
 export type MealsStackParamList = {
   MealsHub: undefined;

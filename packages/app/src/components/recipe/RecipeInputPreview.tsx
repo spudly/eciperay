@@ -111,9 +111,3 @@ export const RecipeInputPreview = ({recipe}: Props) => {
     </ScrollView>
   );
 };
-
-if (__DEV__) {
-  RecipeInputPreview.demo = () => (
-    <RecipeInputPreview recipe={recipeDetailToInput(makeRecipeDetail())} />
-  );
-}

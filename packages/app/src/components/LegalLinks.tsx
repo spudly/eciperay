@@ -86,7 +86,3 @@ export const LegalLinks = ({variant = 'stacked'}: LegalLinksProps) => {
     </View>
   );
 };
-
-if (__DEV__) {
-  LegalLinks.demo = () => <LegalLinks variant="stacked" />;
-}

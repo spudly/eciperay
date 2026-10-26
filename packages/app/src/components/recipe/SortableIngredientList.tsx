@@ -1,4 +1,4 @@
-/* eslint-disable max-lines -- draggable ingredient rows with showcase demo */
+/* eslint-disable max-lines -- draggable ingredient rows */
 import {
   createFormRowKey,
   ensureIngredientRowKeys,
@@ -216,40 +216,3 @@ export const createEmptyIngredientRow = (
   notes: null,
   isOptional: false,
 });
-
-if (__DEV__) {
-  const SortableIngredientListDemo = () => {
-    const [ingredients, setIngredients] = useState<FormIngredientRow[]>(() =>
-      ensureIngredientRowKeys([
-        {
-          ...createEmptyIngredientRow(0),
-          name: 'Flour',
-          quantity: 2,
-          unit: 'cups',
-        },
-      ]),
-    );
-
-    return (
-      <SortableIngredientList
-        ingredients={ingredients}
-        onChange={setIngredients}
-        onUpdate={(index, field, value) => {
-          setIngredients(prev =>
-            prev.map((row, rowIndex) =>
-              rowIndex === index ? {...row, [field]: value} : row,
-            ),
-          );
-        }}
-        onAdd={() => {
-          setIngredients(prev => [
-            ...prev,
-            createEmptyIngredientRow(prev.length),
-          ]);
-        }}
-      />
-    );
-  };
-
-  SortableIngredientList.demo = () => <SortableIngredientListDemo />;
-}

@@ -80,15 +80,3 @@ export const ThumbnailListCard = ({
     {trailing}
   </Card>
 );
-
-if (__DEV__) {
-  ThumbnailListCard.demo = () => (
-    <ThumbnailListCard
-      title="Test Recipe"
-      subtitle="4 servings"
-      onPress={() => {
-        void 0;
-      }}
-    />
-  );
-}

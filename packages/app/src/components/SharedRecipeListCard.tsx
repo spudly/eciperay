@@ -2,7 +2,6 @@ import {
   buildRecipePermalink,
   formatRecipeListMeta,
   makeRecipeDetail,
-  type ShowcaseDemoRenderer,
   WEB_APP_BASE_URL,
 } from '@eciperay/client';
 import {Linking} from 'react-native';
@@ -30,12 +29,3 @@ export const SharedRecipeListCard = ({recipe}: Props) => {
     />
   );
 };
-
-if (__DEV__) {
-  const sharedRecipeListCardDemo: ShowcaseDemoRenderer = ({Frame}) => (
-    <Frame>
-      <SharedRecipeListCard recipe={makeRecipeDetail()} />
-    </Frame>
-  );
-  SharedRecipeListCard.demo = sharedRecipeListCardDemo;
-}

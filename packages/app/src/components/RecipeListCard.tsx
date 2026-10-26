@@ -3,7 +3,6 @@ import {
   formatRecipeListMeta,
   invalidateRecipeQueries,
   makeRecipeDetail,
-  type ShowcaseDemoRenderer,
 } from '@eciperay/client';
 import {Button as DsButton, tokens} from '@spudly/ui';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
@@ -16,7 +15,7 @@ import {api} from '../lib/api';
 import {CookLogForm} from './cooking/CookLogForm';
 import {ThumbnailListCard} from './ui/ThumbnailListCard';
 
-export const formatRecipeSubtitle = (recipe: RecipeDetail) =>
+const formatRecipeSubtitle = (recipe: RecipeDetail) =>
   `${recipe.servings} servings${recipe.cookTimeMin ? ` · ${recipe.cookTimeMin} min` : ''} · ${formatRecipeListMeta(recipe)}`;
 
 type Props = {recipe: RecipeDetail; onPress: () => void; onDelete: () => void};
@@ -90,20 +89,3 @@ export const RecipeListCard = ({recipe, onPress, onDelete}: Props) => {
     </View>
   );
 };
-
-if (__DEV__) {
-  const recipeListCardDemo: ShowcaseDemoRenderer = ({Frame}) => (
-    <Frame>
-      <RecipeListCard
-        recipe={makeRecipeDetail()}
-        onPress={() => {
-          void 0;
-        }}
-        onDelete={() => {
-          void 0;
-        }}
-      />
-    </Frame>
-  );
-  RecipeListCard.demo = recipeListCardDemo;
-}

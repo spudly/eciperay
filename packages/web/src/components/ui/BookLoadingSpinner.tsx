@@ -4,6 +4,9 @@ import type {CSSProperties} from 'react';
 
 const BOOK_LOADER_SCALE = {sm: 0.45, md: 0.65, lg: 0.85} as const;
 
+// Parity note (design-system#129): the app mirror's showcase demo was
+// removed with the in-app component showcase; this web mirror keeps its
+// own demo for the web showcase page, so no web change was needed.
 export const BookLoadingSpinner = ({
   size = 'md',
   className,

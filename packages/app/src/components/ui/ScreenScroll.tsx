@@ -26,11 +26,3 @@ export const ScreenScroll = ({children}: ScreenScrollProps) => (
     </DSScreenContainer>
   </ScrollView>
 );
-
-if (__DEV__) {
-  ScreenScroll.demo = () => (
-    <ScreenScroll>
-      <InfoBanner>Scroll container with sample content.</InfoBanner>
-    </ScreenScroll>
-  );
-}

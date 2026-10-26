@@ -137,15 +137,3 @@ export const BookLoadingSpinner = ({
     </View>
   );
 };
-
-if (__DEV__) {
-  const BookLoadingSpinnerDemo = () => (
-    <View style={{gap: tokens.spacing[6]}}>
-      <BookLoadingSpinner size="sm" />
-      <BookLoadingSpinner size="md" />
-      <BookLoadingSpinner size="lg" />
-    </View>
-  );
-
-  BookLoadingSpinner.demo = () => <BookLoadingSpinnerDemo />;
-}

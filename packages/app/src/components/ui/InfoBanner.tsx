@@ -13,9 +13,3 @@ export const InfoBanner = ({children}: InfoBannerProps) => (
     {children}
   </InlineAlert>
 );
-
-if (__DEV__) {
-  InfoBanner.demo = () => (
-    <InfoBanner>Draft based on imported version.</InfoBanner>
-  );
-}

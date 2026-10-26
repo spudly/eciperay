@@ -38,18 +38,3 @@ export const StarRatingInput = ({
     </View>
   );
 };
-
-if (__DEV__) {
-  const StarRatingInputDemo = () => {
-    const [value, setValue] = useState<number | null>(3);
-
-    return (
-      <StarRatingInput
-        value={value}
-        onChange={setValue}
-      />
-    );
-  };
-
-  StarRatingInput.demo = () => <StarRatingInputDemo />;
-}

@@ -25,14 +25,13 @@ import {
  * not-found UI, here or in the page.
  *
  * The goals section's composition mirrors NutritionGoalProgressView, which this
- * screen no longer renders (it remains a showcased component; the section
- * itself is view-modeled into the page, not slotted — the app's goal view is
- * pure presentation over this data). Rows cover the three fields that view
- * rendered — Calories, Protein, Satiety — in its order; the progress type's
- * carbs / fat fields were never rendered. `nutritionGoals` is null exactly when
- * the plan carries no goal progress, even when every rendered field is unset
- * (the old view keyed the rows-vs-hint choice on the progress object, not on
- * its fields).
+ * screen no longer renders (the section itself is view-modeled into the page,
+ * not slotted — the app's goal view is pure presentation over this data). Rows
+ * cover the three fields that view rendered — Calories, Protein, Satiety — in
+ * its order; the progress type's carbs / fat fields were never rendered.
+ * `nutritionGoals` is null exactly when the plan carries no goal progress, even
+ * when every rendered field is unset (the old view keyed the rows-vs-hint
+ * choice on the progress object, not on its fields).
  *
  * One visibility nuance rides on the DS contract: the page decides the goals
  * section's visibility itself, rendering it when the plan has goal progress or

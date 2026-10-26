@@ -5,6 +5,9 @@ import {Text as DSText} from '@spudly/ui';
  * Adapter preserving semantic heading levels (h1/h2) over the design-system
  * Text primitive, so the heading role expected by consumers and tests is kept.
  */
+// Parity note (design-system#129): the app mirror's showcase demo was
+// removed with the in-app component showcase; this web mirror keeps its
+// own demo for the web showcase page, so no web change was needed.
 export const PageTitle = ({
   children,
   size = 'page',

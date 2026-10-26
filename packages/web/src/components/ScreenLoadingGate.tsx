@@ -14,6 +14,9 @@ import {InfoBanner} from './ui/InfoBanner.js';
 // renders the design system Button directly (the app ui/PrimaryButton
 // adapter was deleted); this web mirror still uses its own PrimaryButton
 // adapter, so no web change was needed.
+// Parity note (design-system#129): the app mirror's showcase demo was
+// removed with the in-app component showcase; this web mirror keeps its
+// own demo for the web showcase page, so no web change was needed.
 export const ScreenLoadingGate = ({
   pending,
   delayMs = DEFAULT_LOADING_DELAY_MS,

@@ -1,7 +1,4 @@
-import {
-  type ShowcaseDemoRenderer,
-  useFeedbackShortcutEnabled,
-} from '@eciperay/client';
+import {useFeedbackShortcutEnabled} from '@eciperay/client';
 import {SectionCard as DsSectionCard, Text as DsText, tokens} from '@spudly/ui';
 
 import {POSTHOG_KEY} from '../../lib/env';
@@ -39,12 +36,3 @@ export const ProfileFeedbackPreference = () => {
     </DsSectionCard>
   );
 };
-
-if (__DEV__) {
-  const profileFeedbackPreferenceDemo: ShowcaseDemoRenderer = ({Frame}) => (
-    <Frame>
-      <ProfileFeedbackPreference />
-    </Frame>
-  );
-  ProfileFeedbackPreference.demo = profileFeedbackPreferenceDemo;
-}
