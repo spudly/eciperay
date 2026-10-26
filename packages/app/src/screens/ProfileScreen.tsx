@@ -11,6 +11,7 @@ import type {NutritionGoals} from '@eciperay/types';
 
 import {LegalLinks} from '../components/LegalLinks';
 import {AccessTokensSection} from '../hosts/profile/AccessTokensSection';
+import {ProfileFeedbackPreference} from '../hosts/profile/ProfileFeedbackPreference';
 import {NutritionGoalsForm} from '@spudly/ui';
 import {ProfilePage} from '@spudly/ui/pages';
 import {api} from '../lib/api';
@@ -88,6 +89,7 @@ export const ProfileScreen = ({navigation}: Props) => {
             }}
           />
           <AccessTokensSection />
+          <ProfileFeedbackPreference />
         </>
       }
     />
