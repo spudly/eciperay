@@ -1,0 +1,22 @@
+{
+  "$schema": "https://unpkg.com/@changesets/config@3.1.1/schema.json",
+  "access": "restricted",
+  "baseBranch": "master",
+  "changelog": "@changesets/cli/changelog",
+  "commit": false,
+  "fixed": [
+    [
+      "@eciperay/app",
+      "@eciperay/client",
+      "@eciperay/icons",
+      "@eciperay/mcp-server",
+      "@eciperay/server",
+      "@eciperay/types",
+      "@eciperay/web"
+    ]
+  ],
+  "ignore": [],
+  "linked": [],
+  "privatePackages": {"tag": false, "version": true},
+  "updateInternalDependencies": "patch"
+}

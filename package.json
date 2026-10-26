@@ -26,6 +26,7 @@
     "android:device": "tsx scripts/setupAndroidDevice.ts && npm run android --workspace=packages/app",
     "dev:all": "concurrently --names server,metro,ios,android --prefix-colors cyan,yellow,blue,green --delay 5000 \"npm run dev --workspace=packages/server\" \"npm run start --workspace=packages/app\" \"npm run ios --workspace=packages/app -- --no-packager\" \"npm run android --workspace=packages/app -- --no-packager\"",
     "build": "npm run build --workspace=packages/web",
+    "changeset": "changeset",
     "start": "npm run start --workspace=packages/server",
     "migrate": "npm run migrate --workspace=packages/server",
     "typecheck": "tsc -b tsconfig.json packages/types packages/server && npm run typecheck --workspace=packages/icons && npm run typecheck --workspace=packages/client && npm run typecheck --workspace=packages/web && npm run typecheck --workspace=packages/app && npm run typecheck --workspace=packages/mcp-server",
@@ -63,6 +64,7 @@
     ".github/workflows/*.{yml,yaml}": "github-actionlint"
   },
   "devDependencies": {
+    "@changesets/cli": "^3.0.3",
     "@commitlint/cli": "^21.2.4",
     "@commitlint/config-conventional": "^21.2.3",
     "@jest/globals": "^30.5.2",
