@@ -321,3 +321,37 @@ jobs:
 
       - name: Merge coverage and verify thresholds
         run: npm run test:coverage:merge --workspace=packages/server
+
+  # Always-reporting gate for branch protection. The per-package test
+  # matrix is discovered dynamically, so legs for unaffected packages
+  # never report on narrow PRs — and a required check that never
+  # reports blocks the merge. This job needs every job in the workflow
+  # and reports on every run: it fails only when a needed job failed
+  # or was cancelled, and passes when the rest succeeded or were
+  # legitimately skipped.
+  ci-gate:
+    name: ci-gate
+    needs:
+      - setup
+      - install
+      - static
+      - typecheck
+      - lint
+      - test
+      - test-scripts
+      - test-server-fast
+      - test-server
+      - test-server-coverage
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify job results
+        env:
+          NEEDS_JSON: ${{ toJSON(needs) }}
+        run: |
+          echo "$NEEDS_JSON" | jq -r 'to_entries[] | "\(.key): \(.value.result)"'
+          if echo "$NEEDS_JSON" | jq -e '[.[] | .result] | any(. == "failure" or . == "cancelled")' > /dev/null; then
+            echo "::error::A job this gate depends on failed or was cancelled."
+            exit 1
+          fi
