@@ -3,13 +3,12 @@ import {
   useDelayedTrue,
   type ScreenLoadingGateProps,
 } from '@eciperay/client';
-import {eciperayTheme} from '@spudly/ui';
+import {Button as DsButton, eciperayTheme} from '@spudly/ui';
 import {useState} from 'react';
 import {View} from 'react-native';
 
 import {BookLoadingSpinner} from './ui/BookLoadingSpinner';
 import {InfoBanner} from './ui/InfoBanner';
-import {PrimaryButton} from './ui/PrimaryButton';
 
 /**
  * Full-screen loading gate (the old ui-loading-center + flex-1 over a white
@@ -60,12 +59,15 @@ if (__DEV__) {
 
     return (
       <>
-        <PrimaryButton
-          label={pending ? 'Mark ready' : 'Mark pending'}
+        <DsButton
+          variant="primary"
+          accessibilityLabel={pending ? 'Mark ready' : 'Mark pending'}
           onPress={() => {
             setPending(current => !current);
           }}
-        />
+        >
+          {pending ? 'Mark ready' : 'Mark pending'}
+        </DsButton>
         <ScreenLoadingGate pending={pending}>
           <InfoBanner>Loaded content behind the gate.</InfoBanner>
         </ScreenLoadingGate>

@@ -14,6 +14,7 @@ import type {RecipeDetail, RecipeVisibility} from '@eciperay/types';
 import {
   Button as DsButton,
   Card as DsCard,
+  RadioOptionGroup as DsRadioOptionGroup,
   Text as DsText,
   TextLink as DsTextLink,
   tokens,
@@ -24,9 +25,7 @@ import {Linking, Share} from 'react-native';
 import {YStack} from 'tamagui';
 
 import {api} from '../../lib/api';
-import {CheckboxField} from '../ui/CheckboxField';
-import {PrimaryButton} from '../ui/PrimaryButton';
-import {RadioOptionGroup} from '../ui/RadioOptionGroup';
+import {CheckboxField} from '../../components/ui/CheckboxField';
 
 type Props = {recipe: RecipeDetail; onActionMessage: (message: string) => void};
 
@@ -121,16 +120,16 @@ export const RecipeVisibilityControls = ({recipe, onActionMessage}: Props) => {
       >
         Sharing
       </DsText>
-      <RadioOptionGroup
-        name={`visibility-${recipe.id}`}
+      <DsRadioOptionGroup
+        id={`visibility-${recipe.id}`}
         value={pendingVisibility ?? recipe.visibility}
         disabled={sharingMutation.isPending}
         options={visibilityOptions.map(option => ({
           value: option,
-          title: recipeVisibilityLabels[option],
+          label: recipeVisibilityLabels[option],
           description: recipeVisibilityDescriptions[option],
         }))}
-        onChange={value => {
+        onValueChange={value => {
           setPendingVisibility(value as RecipeVisibility);
         }}
       />
@@ -168,8 +167,9 @@ export const RecipeVisibilityControls = ({recipe, onActionMessage}: Props) => {
       ) : null}
       {pendingVisibility && pendingVisibility !== recipe.visibility ? (
         <YStack marginBlockStart="$3">
-          <PrimaryButton
-            label="Save sharing settings"
+          <DsButton
+            variant="primary"
+            accessibilityLabel="Save sharing settings"
             disabled={
               sharingMutation.isPending ||
               (requiresPublishingConsent(
@@ -189,7 +189,9 @@ export const RecipeVisibilityControls = ({recipe, onActionMessage}: Props) => {
                   : {}),
               });
             }}
-          />
+          >
+            Save sharing settings
+          </DsButton>
         </YStack>
       ) : null}
       {activeVisibility === 'unlisted' ? (

@@ -3,7 +3,7 @@ import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useQuery, useQueryClient} from '@tanstack/react-query';
 import {useCallback, useEffect, useMemo, useState} from 'react';
 
-import {RecipeDetailView} from '../components/recipe/RecipeDetailView';
+import {RecipeDetailView} from '../hosts/recipe/RecipeDetailView';
 import {ScreenLoadingGate} from '../components/ScreenLoadingGate';
 import {api} from '../lib/api';
 import {mergeVersionIntoRecipe} from '../lib/mergeVersionIntoRecipe';

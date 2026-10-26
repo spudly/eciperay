@@ -3,12 +3,11 @@ import {
   useDelayedTrue,
   type InlineLoadingIndicatorProps,
 } from '@eciperay/client';
-import {tokens} from '@spudly/ui';
+import {Button as DsButton, tokens} from '@spudly/ui';
 import {useState} from 'react';
 import {View} from 'react-native';
 
 import {BookLoadingSpinner} from './ui/BookLoadingSpinner';
-import {PrimaryButton} from './ui/PrimaryButton';
 
 /**
  * Centered inline loading composition (the old ui-loading-center: flex,
@@ -45,12 +44,15 @@ if (__DEV__) {
 
     return (
       <>
-        <PrimaryButton
-          label={loading ? 'Hide spinner' : 'Show spinner'}
+        <DsButton
+          variant="primary"
+          accessibilityLabel={loading ? 'Hide spinner' : 'Show spinner'}
           onPress={() => {
             setLoading(current => !current);
           }}
-        />
+        >
+          {loading ? 'Hide spinner' : 'Show spinner'}
+        </DsButton>
         <View style={demoOffsetStyle}>
           <InlineLoadingIndicator loading={loading} />
         </View>

@@ -13,11 +13,10 @@
  * brand's config last) makes these assertions fail.
  */
 import {render} from '@testing-library/react-native';
+import {Button as DsButton} from '@spudly/ui';
 import React from 'react';
 import {TamaguiProvider, View} from 'tamagui';
 
-import {PrimaryButton} from '../components/ui/PrimaryButton';
-import {SecondaryButton} from '../components/ui/SecondaryButton';
 import {appTamaguiConfig} from '../lib/tamaguiConfig';
 
 // Warm Harvest (Eciperay) values from @spudly/ui tokens/themes.
@@ -45,14 +44,20 @@ describe('app Tamagui theme resolution (regression #149)', () => {
           backgroundColor="$background"
           testID="themed-root"
         >
-          <PrimaryButton
-            label="Browse Recipes"
+          <DsButton
+            variant="primary"
+            accessibilityLabel="Browse Recipes"
             onPress={() => undefined}
-          />
-          <SecondaryButton
-            label="Add a Recipe"
+          >
+            Browse Recipes
+          </DsButton>
+          <DsButton
+            variant="secondary"
+            accessibilityLabel="Add a Recipe"
             onPress={() => undefined}
-          />
+          >
+            Add a Recipe
+          </DsButton>
         </View>
       </TamaguiProvider>,
     );

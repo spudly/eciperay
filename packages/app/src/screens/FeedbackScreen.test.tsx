@@ -12,7 +12,7 @@ jest.mock('@react-navigation/native', () => ({
     mockUseNavigationState(selector),
 }));
 
-jest.mock('../components/FeedbackForm.js', () => {
+jest.mock('../hosts/FeedbackForm.js', () => {
   const ReactNative =
     jest.requireActual<typeof import('react-native')>('react-native');
   return {

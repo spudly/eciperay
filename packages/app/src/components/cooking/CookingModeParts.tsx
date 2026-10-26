@@ -3,7 +3,7 @@ import {
   formatScaledIngredientLine,
   sortIngredientsByOrder,
 } from '@eciperay/client';
-import {eciperayTheme, Text as DsText, tokens} from '@spudly/ui';
+import {eciperayTheme, StepDots, Text as DsText, tokens} from '@spudly/ui';
 import type {ReactNode} from 'react';
 import {useState} from 'react';
 import {
@@ -16,7 +16,6 @@ import {YStack} from 'tamagui';
 import type {RecipeDetail} from '@eciperay/types';
 
 import {PrevNextNav} from '../ui/PrevNextNav';
-import {ProgressDots} from '../ui/ProgressDots';
 
 /**
  * G9: the cooking-mode overlay family is an app-domain composite — a dark,
@@ -199,9 +198,9 @@ export const StepDisplay = ({
     >
       {current ? current.body : ''}
     </DsText>
-    <ProgressDots
-      total={steps.length}
-      current={step}
+    <StepDots
+      count={steps.length}
+      activeIndex={step}
     />
   </>
 );

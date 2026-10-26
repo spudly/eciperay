@@ -20,7 +20,7 @@ import {useMutation, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useRef, useState} from 'react';
 
 import {api} from '../../lib/api';
-import {CookLogForm} from '../cooking/CookLogForm';
+import {CookLogForm} from '../../components/cooking/CookLogForm';
 
 /**
  * The app host's props: the shared view-props type minus `onRecipeDelete`. The

@@ -2,19 +2,22 @@ import {
   type ShowcaseDemoRenderer,
   useFeedbackShortcutEnabled,
 } from '@eciperay/client';
-import {Text as DsText, tokens} from '@spudly/ui';
+import {SectionCard as DsSectionCard, Text as DsText, tokens} from '@spudly/ui';
 
-import {POSTHOG_KEY} from '../lib/env';
+import {POSTHOG_KEY} from '../../lib/env';
 
-import {CheckboxField} from './ui/CheckboxField';
-import {SectionCard} from './ui/SectionCard';
+import {CheckboxField} from '../../components/ui/CheckboxField';
 
 export const ProfileFeedbackPreference = () => {
   const {enabled, setEnabled} = useFeedbackShortcutEnabled();
   const analyticsConfigured = POSTHOG_KEY.length > 0;
 
   return (
-    <SectionCard title="Preferences">
+    <DsSectionCard
+      title="Preferences"
+      variant="elevated"
+      marginBottom="$8"
+    >
       <CheckboxField
         checked={enabled}
         disabled={!analyticsConfigured}
@@ -33,7 +36,7 @@ export const ProfileFeedbackPreference = () => {
           </DsText>
         )}
       </CheckboxField>
-    </SectionCard>
+    </DsSectionCard>
   );
 };
 

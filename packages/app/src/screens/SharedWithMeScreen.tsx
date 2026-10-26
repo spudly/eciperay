@@ -5,7 +5,7 @@ import {
 } from '@eciperay/client';
 import {useInfiniteQuery} from '@tanstack/react-query';
 
-import {SharedWithMeView} from '../components/shared/SharedWithMeView';
+import {SharedWithMeView} from '../hosts/shared/SharedWithMeView';
 import {api} from '../lib/api';
 
 export const SharedWithMeScreen = () => {

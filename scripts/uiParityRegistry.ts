@@ -12,27 +12,17 @@ export const MIRROR_PAIRS = [
   'Icon.tsx',
   'InlineLoadingIndicator.tsx',
   'LegalLinks.tsx',
-  'ProfileFeedbackPreference.tsx',
   'RecipeListCard.tsx',
   'ScreenLoadingGate.tsx',
   'SharedRecipeListCard.tsx',
-  'meals/MealPlanDetailView.tsx',
-  'recipes/RecipesListView.tsx',
-  'shared/SharedWithMeView.tsx',
   'ui/BookLoadingSpinner.tsx',
   'ui/CheckboxField.tsx',
-  'ui/ColorPickerField.tsx',
   'ui/EmptyMessage.tsx',
   'ui/InfoBanner.tsx',
   'ui/PageTitle.tsx',
   'ui/PrevNextNav.tsx',
-  'ui/PrimaryButton.tsx',
-  'ui/ProgressDots.tsx',
-  'ui/RadioOptionGroup.tsx',
   'ui/ScreenScroll.tsx',
   'ui/SearchField.tsx',
-  'ui/SecondaryButton.tsx',
-  'ui/SectionCard.tsx',
   'ui/SelectField.tsx',
   'ui/StarRatingInput.tsx',
   'ui/ThumbnailListCard.tsx',
@@ -42,14 +32,10 @@ export const MIRROR_PAIRS = [
   'dev/ShowcaseDemoFrame.tsx',
   'dev/ShowcaseDemo.tsx',
   'dev/showcaseModuleLoaders.ts',
-  'recipe/RecipeCommentItem.tsx',
-  'recipe/RecipeCommentsSection.tsx',
   'recipe/RecipeImageField.tsx',
   'recipe/RecipeInputPreview.tsx',
-  'recipe/RecipeVisibilityControls.tsx',
   'recipe/SortableIngredientList.tsx',
   'recipe/SortableInstructionList.tsx',
-  'recipe/StaleVersionHint.tsx',
 ] as const;
 
 export type MirrorPairPath = (typeof MIRROR_PAIRS)[number];
@@ -60,18 +46,6 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
     platform: 'app',
     reason:
       'Native cooking-mode UI fragments; web uses CookingModeView with DOM layout instead.',
-  },
-  {
-    path: 'recipe/RecipeDetailView.tsx',
-    platform: 'app',
-    reason:
-      'App-side host for the design system RecipeDetailPage (#49): owns the detail section queries, mutations, and slots; web renders its own DOM recipe detail page.',
-  },
-  {
-    path: 'recipe/RecipeForm.tsx',
-    platform: 'app',
-    reason:
-      'App-side host for the design system RecipeFormPage (design-system#124): owns the form state, tags query, image processing, AI calls, and version diffing; web renders its own DOM recipe form until B7.',
   },
   {
     path: 'recipe/RecipeForm.tsx',
@@ -144,12 +118,6 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
     platform: 'web',
     reason:
       'Web meals hub implementation; the app renders the design system MealsHubPage (design-system#125). Web adoption is B7.',
-  },
-  {
-    path: 'profile/AccessTokensSection.tsx',
-    platform: 'app',
-    reason:
-      'App ProfileScreen extract for the tokens section; web ProfilePage uses ProfileAccessTokensSection.',
   },
   {
     path: 'discover/DiscoverView.tsx',
@@ -428,21 +396,9 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
   },
   {
     path: 'FeedbackForm.tsx',
-    platform: 'app',
-    reason:
-      'App-side host for the design system FeedbackPage (design-system#126): owns the analytics submission, reply-email prefill rules, focus reset, and validation; web keeps its form implementation until B7.',
-  },
-  {
-    path: 'FeedbackForm.tsx',
     platform: 'web',
     reason:
       'Web feedback form implementation; the app renders the design system FeedbackPage via its host (design-system#126). Web adoption is B7.',
-  },
-  {
-    path: 'ai/AiSessionFlow.tsx',
-    platform: 'app',
-    reason:
-      'App-side host for the design system AiSessionPage (design-system#126): owns the session state machine, the session mutations, and error mapping; web keeps its flow implementation until B7.',
   },
   {
     path: 'ai/AiSessionFlow.tsx',
@@ -659,6 +615,90 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
     platform: 'web',
     reason:
       'Web adapter remains; the app copy was only reachable via the removed ScaleMultiplierButtons (callers use @spudly/ui directly). Removed in B6 (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'recipe/RecipeCommentItem.tsx',
+    platform: 'web',
+    reason:
+      'Web item remains; the app copy was deleted when RecipeCommentsSection adopted the design system CommentItem (the widget moved to @spudly/ui in B2). Removed in B6 (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'recipe/StaleVersionHint.tsx',
+    platform: 'web',
+    reason:
+      'Web hint remains; the app copy was deleted with RecipeCommentItem — its stale marker is the design system CommentItem marker now. Removed in B6 (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'ui/SectionCard.tsx',
+    platform: 'web',
+    reason:
+      'Web adapter remains; the app copy was deleted when its last caller (ProfileFeedbackPreference) adopted the design system SectionCard directly. Removed in B6 (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'ui/RadioOptionGroup.tsx',
+    platform: 'web',
+    reason:
+      'Web adapter remains; the app copy was deleted when RecipeVisibilityControls adopted the design system RadioOptionGroup directly. Removed in B6 (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'ui/PrimaryButton.tsx',
+    platform: 'web',
+    reason:
+      'Web adapter remains; the app copy was deleted when its last callers adopted the design system Button directly. Removed in B6 (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'ui/SecondaryButton.tsx',
+    platform: 'web',
+    reason:
+      'Web adapter remains; the app copy had no production importer (test/showcase only) and was deleted with the design system Button adoption. Removed in B6 (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'ui/ColorPickerField.tsx',
+    platform: 'web',
+    reason:
+      'Web adapter remains; the app copy was deleted — its only production use was the TAG_COLOR_OPTIONS constant (app data), which moved to the app lib. Removed in B6 (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'ui/ProgressDots.tsx',
+    platform: 'web',
+    reason:
+      'Web adapter remains; the app copy was deleted when CookingModeParts adopted the design system StepDots directly. Removed in B6 (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'meals/MealPlanDetailView.tsx',
+    platform: 'web',
+    reason:
+      'Web view remains; the app host moved out of components/ to packages/app/src/hosts in B6 (design-system#129) — it renders the design system MealPlanDetailPage. Web retirement is B7.',
+  },
+  {
+    path: 'recipes/RecipesListView.tsx',
+    platform: 'web',
+    reason:
+      'Web view remains; the app host moved out of components/ to packages/app/src/hosts in B6 (design-system#129) — it renders the design system RecipesPage. Web retirement is B7.',
+  },
+  {
+    path: 'shared/SharedWithMeView.tsx',
+    platform: 'web',
+    reason:
+      'Web view remains; the app host moved out of components/ to packages/app/src/hosts in B6 (design-system#129) — it renders the design system SharedWithMePage. Web retirement is B7.',
+  },
+  {
+    path: 'recipe/RecipeCommentsSection.tsx',
+    platform: 'web',
+    reason:
+      'Web section remains; the app host moved out of components/ to packages/app/src/hosts in B6 (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'recipe/RecipeVisibilityControls.tsx',
+    platform: 'web',
+    reason:
+      'Web controls remain; the app host moved out of components/ to packages/app/src/hosts in B6 (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'ProfileFeedbackPreference.tsx',
+    platform: 'web',
+    reason:
+      'Web mirror remains; the app container moved out of components/ to packages/app/src/hosts in B6 (design-system#129). Web retirement is B7.',
   },
 ];
 

@@ -2,12 +2,14 @@
 import {
   makeRecipeDetail,
   queryKeys,
+  STALE_COMMENT_HINT,
   useAuth,
   type ShowcaseDemoRenderer,
 } from '@eciperay/client';
 import {
   Button as DsButton,
   Card as DsCard,
+  CommentItem as DsCommentItem,
   MultilineField as DsMultilineField,
   Text as DsText,
   tokens,
@@ -17,9 +19,7 @@ import React, {useState} from 'react';
 import {YStack} from 'tamagui';
 
 import {api} from '../../lib/api';
-import {BookLoadingSpinner} from '../ui/BookLoadingSpinner';
-
-import {RecipeCommentItem} from './RecipeCommentItem';
+import {BookLoadingSpinner} from '../../components/ui/BookLoadingSpinner';
 
 type Props = {recipeId: string; ownerUserId: string};
 
@@ -102,11 +102,17 @@ export const RecipeCommentsSection = ({recipeId, ownerUserId}: Props) => {
         </DsText>
       ) : null}
       {comments.map(comment => (
-        <RecipeCommentItem
+        <DsCommentItem
           key={comment.id}
-          comment={comment}
-          currentUserId={currentUserId}
-          ownerUserId={ownerUserId}
+          authorName={comment.authorDisplayName?.trim() ?? 'Anonymous'}
+          body={comment.body}
+          isStale={comment.isStale}
+          staleHintLabel={STALE_COMMENT_HINT}
+          canEdit={comment.authorUserId === currentUserId}
+          canDelete={
+            comment.authorUserId === currentUserId ||
+            ownerUserId === currentUserId
+          }
           isEditing={editingId === comment.id}
           editDraft={editDraft}
           isUpdatePending={updateMutation.isPending}

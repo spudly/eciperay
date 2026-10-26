@@ -4,7 +4,7 @@ import {useMutation} from '@tanstack/react-query';
 import React, {useState} from 'react';
 import type {TweakAiMessage, TweakAiPhase} from '@eciperay/types';
 
-import {RecipeInputPreview} from '../recipe/RecipeInputPreview';
+import {RecipeInputPreview} from '../../components/recipe/RecipeInputPreview';
 
 export type AiSessionState = {
   id: string;
@@ -45,15 +45,14 @@ type Props = {
 };
 
 /**
- * Host for the design system AiSessionPage (design-system#126): this
- * component keeps the session state machine, the five session
- * mutations, and the error mapping, and maps the session to the
- * page's view-model — the phase resolved to its label string, the
- * stage booleans derived from the phase, and the parsed proposed
- * recipe rendered through RecipeInputPreview into the page's preview
- * slot. The page renders display state and reports bare intents;
- * the trims the old view applied before mutating happen here, at
- * the same call sites.
+ * Host for the design system AiSessionPage (design-system#126): this component
+ * keeps the session state machine, the five session mutations, and the error
+ * mapping, and maps the session to the page's view-model — the phase resolved
+ * to its label string, the stage booleans derived from the phase, and the
+ * parsed proposed recipe rendered through RecipeInputPreview into the page's
+ * preview slot. The page renders display state and reports bare intents; the
+ * trims the old view applied before mutating happen here, at the same call
+ * sites.
  */
 export const AiSessionFlow = ({
   config,
@@ -149,8 +148,7 @@ export const AiSessionFlow = ({
               messages: session.messages,
               canRefine: session.phase === 'planning',
               canCancel:
-                session.phase !== 'completed' &&
-                session.phase !== 'cancelled',
+                session.phase !== 'completed' && session.phase !== 'cancelled',
             }
           : null
       }
@@ -173,10 +171,7 @@ export const AiSessionFlow = ({
       }}
       onSendMessage={text => {
         if (session) {
-          messageMutation.mutate({
-            sessionId: session.id,
-            content: text.trim(),
-          });
+          messageMutation.mutate({sessionId: session.id, content: text.trim()});
         }
       }}
       onApprovePlan={() => {
@@ -198,4 +193,3 @@ export const AiSessionFlow = ({
     />
   );
 };
-

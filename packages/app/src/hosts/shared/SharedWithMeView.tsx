@@ -10,7 +10,7 @@ import type {RecipeListSort, RecipeListSortDir} from '@eciperay/types';
 import {SharedWithMePage, type SharedWithMePageItem} from '@spudly/ui/pages';
 import {Linking} from 'react-native';
 
-import {formatRecipeSubtitle} from '../SharedRecipeListCard';
+import {formatRecipeSubtitle} from '../../components/SharedRecipeListCard';
 
 /**
  * The Shared-with-me screen's view (#49, Wave A): the design system's

@@ -84,7 +84,7 @@ describe('componentShowcaseCatalog', () => {
       entry => entry.id === 'RecipeListCard',
     );
     const primary = COMPONENT_SHOWCASE_CATALOG.find(
-      entry => entry.id === 'ui/PrimaryButton',
+      entry => entry.id === 'ui/CheckboxField',
     );
 
     expect(icon).toMatchObject({label: 'Icon', category: 'Shared'});
@@ -93,7 +93,7 @@ describe('componentShowcaseCatalog', () => {
       category: 'Shared',
     });
     expect(primary).toMatchObject({
-      label: 'PrimaryButton',
+      label: 'CheckboxField',
       category: 'UI primitives',
     });
   });
