@@ -159,7 +159,7 @@ describe('validateChangedComponentsRegistered', () => {
     const errors = validateChangedComponentsRegistered(root, [
       'packages/app/src/components/LegalLinks.tsx',
       'packages/web/src/components/LegalLinks.tsx',
-      'packages/app/src/components/auth/AuthTextField.tsx',
+      'packages/app/src/components/cooking/CookingModeParts.tsx',
     ]);
 
     expect(errors).toEqual([]);

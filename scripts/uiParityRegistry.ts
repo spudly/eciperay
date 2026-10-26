@@ -17,96 +17,49 @@ export const MIRROR_PAIRS = [
   'ScreenLoadingGate.tsx',
   'SharedRecipeListCard.tsx',
   'meals/MealPlanDetailView.tsx',
-  'meals/NutritionGoalProgressView.tsx',
-  'recipes/RecipeListFiltersBar.tsx',
   'recipes/RecipesListView.tsx',
   'shared/SharedWithMeView.tsx',
-  'ui/AuthScreenLayout.tsx',
-  'ui/BulkSelectToolbar.tsx',
   'ui/BookLoadingSpinner.tsx',
   'ui/CheckboxField.tsx',
-  'ui/CheckboxSelectList.tsx',
   'ui/ColorPickerField.tsx',
-  'ui/DestructiveButton.tsx',
   'ui/EmptyMessage.tsx',
-  'ui/ErrorText.tsx',
-  'ui/FixedActionBanner.tsx',
-  'ui/FormScreenLayout.tsx',
   'ui/InfoBanner.tsx',
-  'ui/ListLoadingFooter.tsx',
-  'ui/MultilineField.tsx',
-  'ui/NumberStepper.tsx',
-  'ui/OptionCard.tsx',
   'ui/PageTitle.tsx',
   'ui/PrevNextNav.tsx',
   'ui/PrimaryButton.tsx',
   'ui/ProgressDots.tsx',
   'ui/RadioOptionGroup.tsx',
-  'ui/ScreenContainer.tsx',
   'ui/ScreenScroll.tsx',
   'ui/SearchField.tsx',
   'ui/SecondaryButton.tsx',
   'ui/SectionCard.tsx',
   'ui/SelectField.tsx',
   'ui/StarRatingInput.tsx',
-  'ui/StatBadge.tsx',
-  'ui/StatusBadge.tsx',
-  'ui/TabBar.tsx',
-  'ui/TagPill.tsx',
-  'ui/TextField.tsx',
-  'ui/TextLinkButton.tsx',
   'ui/ThumbnailListCard.tsx',
-  'ui/ToggleChipGroup.tsx',
   'cooking/CookLogForm.tsx',
   'dev/ComponentShowcaseView.tsx',
   'dev/ShowcasePicker.tsx',
   'dev/ShowcaseDemoFrame.tsx',
   'dev/ShowcaseDemo.tsx',
   'dev/showcaseModuleLoaders.ts',
-  'recipe/CookHistoryTab.tsx',
-  'recipe/IngredientsTab.tsx',
-  'recipe/InstructionsTab.tsx',
-  'recipe/NutritionTab.tsx',
-  'recipe/OverviewActions.tsx',
-  'recipe/OverviewTab.tsx',
   'recipe/RecipeCommentItem.tsx',
   'recipe/RecipeCommentsSection.tsx',
-  'recipe/RecipeDetailChrome.tsx',
-  'recipe/RecipeDetailTabPanel.tsx',
-  'recipe/RecipeEngagementPanel.tsx',
   'recipe/RecipeImageField.tsx',
   'recipe/RecipeInputPreview.tsx',
-  'recipe/RecipeRatingsSection.tsx',
-  'recipe/RecipeStatusBadge.tsx',
   'recipe/RecipeVisibilityControls.tsx',
-  'recipe/ScaleMultiplierButtons.tsx',
-  'recipe/ServingsStepper.tsx',
   'recipe/SortableIngredientList.tsx',
   'recipe/SortableInstructionList.tsx',
   'recipe/StaleVersionHint.tsx',
-  'recipe/VersionPicker.tsx',
 ] as const;
 
 export type MirrorPairPath = (typeof MIRROR_PAIRS)[number];
 
 export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
   {
-    path: 'auth/AuthTextField.tsx',
-    platform: 'app',
-    reason:
-      'React Native TextInput wrapper for auth screens; web auth pages use native HTML inputs.',
-  },
-  {
     path: 'cooking/CookingModeParts.tsx',
     platform: 'app',
     reason:
       'Native cooking-mode UI fragments; web uses CookingModeView with DOM layout instead.',
-  },
-  {
-    path: 'recipe/RecipeDetailTabBar.tsx',
-    platform: 'app',
-    reason:
-      'Thin wrapper over ui/TabBar for native RecipeDetailChrome; web RecipeDetailChrome uses TabBar directly.',
   },
   {
     path: 'recipe/RecipeDetailView.tsx',
@@ -496,6 +449,216 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
     platform: 'web',
     reason:
       'Web AI session flow implementation; the app renders the design system AiSessionPage via its host (design-system#126). Web adoption is B7.',
+  },
+  {
+    path: 'meals/NutritionGoalProgressView.tsx',
+    platform: 'web',
+    reason:
+      'Web view remains; the app copy had no production consumer since MealPlanDetailView folded its composition into the design system MealPlanDetailPage view-models. Removed in B6 (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'recipes/RecipeListFiltersBar.tsx',
+    platform: 'web',
+    reason:
+      'Web bar remains; the app copy was superseded by the filter bars built into the design system RecipesPage/SharedWithMePage. Removed in B6 (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'recipe/CookHistoryTab.tsx',
+    platform: 'web',
+    reason:
+      'Web tab remains for its tabbed detail page; the app copy was orphaned by the #71 single-scroll RecipeDetailPage rewire (cook-log wiring lives in the app host). Removed in B6 (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'recipe/IngredientsTab.tsx',
+    platform: 'web',
+    reason:
+      'Web tab remains for its tabbed detail page; the app copy was orphaned by the #71 single-scroll rewire (the design system page renders ingredients). Removed in B6 (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'recipe/InstructionsTab.tsx',
+    platform: 'web',
+    reason:
+      'Web tab remains for its tabbed detail page; the app copy was orphaned by the #71 single-scroll rewire (the design system page renders instructions). Removed in B6 (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'recipe/NutritionTab.tsx',
+    platform: 'web',
+    reason:
+      'Web tab remains for its tabbed detail page; the app copy was orphaned by the #71 single-scroll rewire (nutrition query/refresh lives in the app host). Removed in B6 (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'recipe/OverviewActions.tsx',
+    platform: 'web',
+    reason:
+      'Web actions remain; the app copy was only reachable via the removed OverviewTab (lifecycle mutations live in the app host). Removed in B6 (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'recipe/OverviewTab.tsx',
+    platform: 'web',
+    reason:
+      'Web tab remains for its tabbed detail page; the app copy was orphaned by the #71 single-scroll rewire. Removed in B6 (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'recipe/RecipeDetailChrome.tsx',
+    platform: 'web',
+    reason:
+      'Web chrome remains; the app copy was tab-era scaffolding superseded by the design system RecipeDetailPage chrome. Removed in B6 (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'recipe/RecipeDetailTabPanel.tsx',
+    platform: 'web',
+    reason:
+      'Web panel remains; the app copy switched tabs for the removed native tab UI. Removed in B6 (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'recipe/RecipeEngagementPanel.tsx',
+    platform: 'web',
+    reason:
+      'Web panel remains; the app copy was only consumed by the removed tab panel (the host slots comments/visibility into the design system page). Removed in B6 (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'recipe/RecipeRatingsSection.tsx',
+    platform: 'web',
+    reason:
+      'Web section remains; the app copy was only reachable via the removed engagement panel (rating mutation and labels live in the app host and design system page props). Removed in B6 (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'recipe/RecipeStatusBadge.tsx',
+    platform: 'web',
+    reason:
+      'Web badge remains; the app copy was an adapter over ui/StatusBadge used only by the removed tab-era files. Removed in B6 (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'recipe/ScaleMultiplierButtons.tsx',
+    platform: 'web',
+    reason:
+      'Web buttons remain; the app copy was superseded by the design system page scale controls including custom scale (@spudly/ui 1.8.1). Removed in B6 (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'recipe/ServingsStepper.tsx',
+    platform: 'web',
+    reason:
+      'Web stepper remains; the app copy was superseded by the design system page direct-entry servings input (@spudly/ui 1.8.1). Removed in B6 (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'recipe/VersionPicker.tsx',
+    platform: 'web',
+    reason:
+      'Web picker remains; the app copy was only consumed by the removed RecipeDetailChrome (the design system page has its own version picker). Removed in B6 (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'ui/AuthScreenLayout.tsx',
+    platform: 'web',
+    reason:
+      'Web adapter remains; the app copy had no production importer after the B3c auth pages moved to the design system. Removed in B6 (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'ui/BulkSelectToolbar.tsx',
+    platform: 'web',
+    reason:
+      'Web mirror remains live for its banners/lists; the app copy was dev-showcase-only (the widget moved to @spudly/ui in B2). Removed in B6 (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'ui/CheckboxSelectList.tsx',
+    platform: 'web',
+    reason:
+      'Web adapter remains; the app copy lost its consumers when the meal forms moved to the design system in B3b (the widget moved to @spudly/ui in B2). Removed in B6 (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'ui/DestructiveButton.tsx',
+    platform: 'web',
+    reason:
+      'Web adapter remains; the app copy had no production importer after screens adopted design system pages. Removed in B6 (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'ui/ErrorText.tsx',
+    platform: 'web',
+    reason:
+      'Web adapter remains; the app copy had no production importer after screens adopted design system pages. Removed in B6 (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'ui/FixedActionBanner.tsx',
+    platform: 'web',
+    reason:
+      'Web mirror remains live for the consent/install banners; the app copy was dev-showcase-only (the widget moved to @spudly/ui in B2). Removed in B6 (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'ui/FormScreenLayout.tsx',
+    platform: 'web',
+    reason:
+      'Web adapter remains; the app copy had no production importer after the B3 form pages moved to the design system. Removed in B6 (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'ui/ListLoadingFooter.tsx',
+    platform: 'web',
+    reason:
+      'Web adapter remains; the app copy had no production importer after screens adopted design system pages. Removed in B6 (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'ui/MultilineField.tsx',
+    platform: 'web',
+    reason:
+      'Web adapter remains; the app copy had no production importer after the B3 form pages moved to the design system. Removed in B6 (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'ui/NumberStepper.tsx',
+    platform: 'web',
+    reason:
+      'Web adapter remains; the app copy was only reachable via the removed ServingsStepper. Removed in B6 (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'ui/OptionCard.tsx',
+    platform: 'web',
+    reason:
+      'Web adapter remains; the app copy had no production importer after screens adopted design system pages. Removed in B6 (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'ui/ScreenContainer.tsx',
+    platform: 'web',
+    reason:
+      'Web adapter remains; the app copy had no production importer after screens adopted design system pages. Removed in B6 (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'ui/StatBadge.tsx',
+    platform: 'web',
+    reason:
+      'Web adapter remains; the app copy was only reachable via the removed OverviewTab (the row layout moved to @spudly/ui as StatRow in B2). Removed in B6 (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'ui/StatusBadge.tsx',
+    platform: 'web',
+    reason:
+      'Web adapter remains; the app copy was only reachable via the removed RecipeStatusBadge. Removed in B6 (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'ui/TabBar.tsx',
+    platform: 'web',
+    reason:
+      'Web adapter remains; the app copy was only reachable via the removed tab-era chrome/panel. Removed in B6 (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'ui/TagPill.tsx',
+    platform: 'web',
+    reason:
+      'Web adapter remains; the app copy was only reachable via the removed OverviewTab (the widget moved to @spudly/ui in B2). Removed in B6 (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'ui/TextField.tsx',
+    platform: 'web',
+    reason:
+      'Web adapter remains; the app copy had no production importer after the B3 form pages moved to the design system. Removed in B6 (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'ui/TextLinkButton.tsx',
+    platform: 'web',
+    reason:
+      'Web adapter remains; the app copy was only reachable via the removed NutritionGoalProgressView. Removed in B6 (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'ui/ToggleChipGroup.tsx',
+    platform: 'web',
+    reason:
+      'Web adapter remains; the app copy was only reachable via the removed ScaleMultiplierButtons (callers use @spudly/ui directly). Removed in B6 (design-system#129). Web retirement is B7.',
   },
 ];
 
