@@ -96,6 +96,11 @@ describe('ProfileScreen', () => {
     expect(supabase.auth.signOut).toHaveBeenCalled();
   });
 
+  test('renders the feedback shortcut preference toggle', async () => {
+    const {findByText} = await renderProfileScreen();
+    expect(await findByText('Show feedback shortcut')).toBeTruthy();
+  });
+
   test('navigates to Tags', async () => {
     const {findByText} = await renderProfileScreen();
     await fireEvent.press(await findByText('Manage Tags'));
