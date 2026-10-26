@@ -48,7 +48,7 @@
     "istanbul-lib-coverage": "^3.2.2",
     "istanbul-lib-report": "^3.0.1",
     "istanbul-reports": "^3.2.0",
-    "nock": "^14.0.15",
+    "nock": "^15.0.5",
     "supertest": "^7.3.1"
   },
   "engines": {
