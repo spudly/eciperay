@@ -39,6 +39,9 @@ type Props = {
 // (see the platform-only Sortable*Row primitives) use the shared bg-field
 // background (#fffdf8, the Warm Harvest surface). The app mirror's row
 // inputs fill with eciperayTheme.semantic.surface — the same value.
+// Parity note (design-system#129): the app mirror's showcase demo was
+// removed with the in-app component showcase; this web mirror keeps its
+// own demo for the web showcase page, so no web change was needed.
 export const SortableIngredientList = ({
   ingredients,
   onChange,

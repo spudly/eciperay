@@ -52,28 +52,3 @@ export const ScreenLoadingGate = ({
     </View>
   );
 };
-
-if (__DEV__) {
-  const ScreenLoadingGateDemo = () => {
-    const [pending, setPending] = useState(true);
-
-    return (
-      <>
-        <DsButton
-          variant="primary"
-          accessibilityLabel={pending ? 'Mark ready' : 'Mark pending'}
-          onPress={() => {
-            setPending(current => !current);
-          }}
-        >
-          {pending ? 'Mark ready' : 'Mark pending'}
-        </DsButton>
-        <ScreenLoadingGate pending={pending}>
-          <InfoBanner>Loaded content behind the gate.</InfoBanner>
-        </ScreenLoadingGate>
-      </>
-    );
-  };
-
-  ScreenLoadingGate.demo = () => <ScreenLoadingGateDemo />;
-}

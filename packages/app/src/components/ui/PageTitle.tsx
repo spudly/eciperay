@@ -21,10 +21,7 @@ const sizeStyle = (size: PageTitleProps['size']): SizeStyle => {
     };
   }
   // Old ui-page-title: text-2xl font-bold
-  return {
-    variant: 'heading',
-    fontSize: tokens.typography.fontSize['2xl'],
-  };
+  return {variant: 'heading', fontSize: tokens.typography.fontSize['2xl']};
 };
 
 const spacingValue = (spacing: PageTitleProps['spacing']) => {
@@ -38,8 +35,8 @@ const spacingValue = (spacing: PageTitleProps['spacing']) => {
 };
 
 /**
- * Thin adapter over the DS Text primitive. Keeps the eciperay
- * size/spacing prop API while rendering token-driven type.
+ * Thin adapter over the DS Text primitive. Keeps the eciperay size/spacing prop
+ * API while rendering token-driven type.
  */
 export const PageTitle = ({
   children,
@@ -58,14 +55,3 @@ export const PageTitle = ({
     </DSText>
   );
 };
-
-if (__DEV__) {
-  PageTitle.demo = () => (
-    <PageTitle
-      size="auth"
-      spacing="section"
-    >
-      Page title
-    </PageTitle>
-  );
-}

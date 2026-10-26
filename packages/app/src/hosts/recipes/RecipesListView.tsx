@@ -293,28 +293,3 @@ export const RecipesListView = ({
     />
   );
 };
-
-if (__DEV__) {
-  const RecipesListViewDemo = () => {
-    const [search, setSearch] = useState('');
-
-    return (
-      <RecipesListView
-        {...demoRecipeListFilters()}
-        search={search}
-        onSearchChange={setSearch}
-        isLoading={false}
-        recipes={[makeRecipeDetail()]}
-        isFetchingNextPage={false}
-        onRecipePress={() => {
-          void 0;
-        }}
-        onLoadMore={() => {
-          void 0;
-        }}
-      />
-    );
-  };
-
-  RecipesListView.demo = () => <RecipesListViewDemo />;
-}

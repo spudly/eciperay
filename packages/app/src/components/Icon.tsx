@@ -27,13 +27,3 @@ export const Icon = ({
     accessibilityLabel={accessibilityLabel}
   />
 );
-
-if (__DEV__) {
-  Icon.demo = () => (
-    <Icon
-      name="coffee"
-      size={28}
-      accessibilityLabel="Meals"
-    />
-  );
-}

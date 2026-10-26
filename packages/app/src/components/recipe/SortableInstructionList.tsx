@@ -1,4 +1,4 @@
-/* eslint-disable max-lines -- draggable instruction rows with showcase demo */
+/* eslint-disable max-lines -- draggable instruction rows */
 import {createFormRowKey, type FormInstructionRow} from '@eciperay/client';
 import {eciperayTheme, tokens} from '@spudly/ui';
 import React, {useState} from 'react';
@@ -164,33 +164,3 @@ export const SortableInstructionList = ({
 export const createEmptyInstructionRow = (
   stepNumber: number,
 ): FormInstructionRow => ({key: createFormRowKey(), stepNumber, body: ''});
-
-if (__DEV__) {
-  const SortableInstructionListDemo = () => {
-    const [instructions, setInstructions] = useState<FormInstructionRow[]>(
-      () => [{...createEmptyInstructionRow(1), body: 'Mix dry ingredients.'}],
-    );
-
-    return (
-      <SortableInstructionList
-        instructions={instructions}
-        onChange={setInstructions}
-        onUpdate={(index, body) => {
-          setInstructions(prev =>
-            prev.map((row, rowIndex) =>
-              rowIndex === index ? {...row, body} : row,
-            ),
-          );
-        }}
-        onAdd={() => {
-          setInstructions(prev => [
-            ...prev,
-            createEmptyInstructionRow(prev.length + 1),
-          ]);
-        }}
-      />
-    );
-  };
-
-  SortableInstructionList.demo = () => <SortableInstructionListDemo />;
-}

@@ -28,20 +28,3 @@ export const CheckboxField = ({
     {children}
   </YStack>
 );
-
-if (__DEV__) {
-  const CheckboxFieldDemo = () => {
-    const [checked, setChecked] = useState(true);
-
-    return (
-      <CheckboxField
-        checked={checked}
-        onChange={setChecked}
-        label="Enable notifications"
-        description="Receive updates about recipe changes."
-      />
-    );
-  };
-
-  CheckboxField.demo = () => <CheckboxFieldDemo />;
-}

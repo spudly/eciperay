@@ -102,12 +102,6 @@ describe('ProfileScreen', () => {
     expect(mockNavigate).toHaveBeenCalledWith('Tags');
   });
 
-  test('opens the component showcase in dev', async () => {
-    const {findByText} = await renderProfileScreen();
-    await fireEvent.press(await findByText('Component Showcase'));
-    expect(mockNavigate).toHaveBeenCalledWith('ComponentShowcase');
-  });
-
   test('opens legal document URLs', async () => {
     const {findByText} = await renderProfileScreen();
     await fireEvent.press(await findByText('Privacy Policy'));

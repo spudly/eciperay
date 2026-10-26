@@ -20,21 +20,3 @@ export const PrevNextNav = ({
     nextDisabled={disableNext}
   />
 );
-
-if (__DEV__) {
-  PrevNextNav.demo = () => (
-    <View
-      backgroundColor={tokens.colors.gray.gray9}
-      padding="$4"
-    >
-      <PrevNextNav
-        onBack={() => {
-          void 0;
-        }}
-        onNext={() => {
-          void 0;
-        }}
-      />
-    </View>
-  );
-}

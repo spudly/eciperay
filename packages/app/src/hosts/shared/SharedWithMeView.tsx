@@ -113,17 +113,3 @@ export const SharedWithMeView = ({
     />
   );
 };
-
-if (__DEV__) {
-  SharedWithMeView.demo = () => (
-    <SharedWithMeView
-      {...demoRecipeListFilters()}
-      isLoading={false}
-      recipes={[makeRecipeDetail()]}
-      isFetchingNextPage={false}
-      onLoadMore={() => {
-        void 0;
-      }}
-    />
-  );
-}

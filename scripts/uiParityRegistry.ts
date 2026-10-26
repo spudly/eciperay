@@ -17,21 +17,14 @@ export const MIRROR_PAIRS = [
   'SharedRecipeListCard.tsx',
   'ui/BookLoadingSpinner.tsx',
   'ui/CheckboxField.tsx',
-  'ui/EmptyMessage.tsx',
   'ui/InfoBanner.tsx',
   'ui/PageTitle.tsx',
   'ui/PrevNextNav.tsx',
   'ui/ScreenScroll.tsx',
   'ui/SearchField.tsx',
-  'ui/SelectField.tsx',
   'ui/StarRatingInput.tsx',
   'ui/ThumbnailListCard.tsx',
   'cooking/CookLogForm.tsx',
-  'dev/ComponentShowcaseView.tsx',
-  'dev/ShowcasePicker.tsx',
-  'dev/ShowcaseDemoFrame.tsx',
-  'dev/ShowcaseDemo.tsx',
-  'dev/showcaseModuleLoaders.ts',
   'recipe/RecipeImageField.tsx',
   'recipe/RecipeInputPreview.tsx',
   'recipe/SortableIngredientList.tsx',
@@ -663,6 +656,48 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
     platform: 'web',
     reason:
       'Web adapter remains; the app copy was deleted when CookingModeParts adopted the design system StepDots directly. Removed in B6 (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'dev/ComponentShowcaseView.tsx',
+    platform: 'web',
+    reason:
+      'Web showcase remains live for the web component showcase page; the app copy was removed with the in-app component showcase (design-system#129) — the design system Storybooks are the showcase now. Web retirement is B7.',
+  },
+  {
+    path: 'dev/ShowcasePicker.tsx',
+    platform: 'web',
+    reason:
+      'Web showcase remains live for the web component showcase page; the app copy was removed with the in-app component showcase (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'dev/ShowcaseDemoFrame.tsx',
+    platform: 'web',
+    reason:
+      'Web showcase remains live for the web component showcase page; the app copy was removed with the in-app component showcase (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'dev/ShowcaseDemo.tsx',
+    platform: 'web',
+    reason:
+      'Web showcase remains live for the web component showcase page; the app copy was removed with the in-app component showcase (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'dev/showcaseModuleLoaders.ts',
+    platform: 'web',
+    reason:
+      'Web showcase remains live for the web component showcase page; the app copy was removed with the in-app component showcase (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'ui/EmptyMessage.tsx',
+    platform: 'web',
+    reason:
+      'Web copy remains (the web showcase demo infrastructure imports it); the app copy was only consumed by the in-app component showcase (ShowcaseDemo and the showcase loaders) and was removed with it (design-system#129). Web retirement is B7.',
+  },
+  {
+    path: 'ui/SelectField.tsx',
+    platform: 'web',
+    reason:
+      'Web copy remains (the web showcase picker imports it); the app copy was only consumed by the in-app component showcase (ShowcasePicker and the showcase loaders) and was removed with it (design-system#129). Web retirement is B7.',
   },
   {
     path: 'meals/MealPlanDetailView.tsx',

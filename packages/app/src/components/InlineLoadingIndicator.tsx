@@ -37,28 +37,3 @@ export const InlineLoadingIndicator = ({
     </View>
   );
 };
-
-if (__DEV__) {
-  const InlineLoadingIndicatorDemo = () => {
-    const [loading, setLoading] = useState(true);
-
-    return (
-      <>
-        <DsButton
-          variant="primary"
-          accessibilityLabel={loading ? 'Hide spinner' : 'Show spinner'}
-          onPress={() => {
-            setLoading(current => !current);
-          }}
-        >
-          {loading ? 'Hide spinner' : 'Show spinner'}
-        </DsButton>
-        <View style={demoOffsetStyle}>
-          <InlineLoadingIndicator loading={loading} />
-        </View>
-      </>
-    );
-  };
-
-  InlineLoadingIndicator.demo = () => <InlineLoadingIndicatorDemo />;
-}

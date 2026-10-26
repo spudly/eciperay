@@ -173,19 +173,3 @@ export const RecipeImageField = ({
     </YStack>
   );
 };
-
-if (__DEV__) {
-  RecipeImageField.demo = () => (
-    <RecipeImageField
-      imagePreview={null}
-      imageUploading={false}
-      imageError={null}
-      onImagePicked={() => {
-        void 0;
-      }}
-      onRemove={() => {
-        void 0;
-      }}
-    />
-  );
-}

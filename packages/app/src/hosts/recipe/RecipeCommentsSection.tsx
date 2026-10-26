@@ -1,10 +1,9 @@
-/* eslint-disable max-lines -- comments section with compose form and showcase demo */
+/* eslint-disable max-lines -- comments section with compose form */
 import {
   makeRecipeDetail,
   queryKeys,
   STALE_COMMENT_HINT,
   useAuth,
-  type ShowcaseDemoRenderer,
 } from '@eciperay/client';
 import {
   Button as DsButton,
@@ -161,18 +160,3 @@ export const RecipeCommentsSection = ({recipeId, ownerUserId}: Props) => {
     </DsCard>
   );
 };
-
-if (__DEV__) {
-  const recipeCommentsSectionDemo: ShowcaseDemoRenderer = ({Frame}) => {
-    const recipe = makeRecipeDetail();
-    return (
-      <Frame>
-        <RecipeCommentsSection
-          recipeId={recipe.id}
-          ownerUserId={recipe.userId}
-        />
-      </Frame>
-    );
-  };
-  RecipeCommentsSection.demo = recipeCommentsSectionDemo;
-}
