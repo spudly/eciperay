@@ -15,12 +15,12 @@ import type {
   RecipeListSort,
   RecipeListSortDir,
 } from '@eciperay/types';
+import {CookLogForm} from '@spudly/ui';
 import {RecipesPage, type RecipesPageItem} from '@spudly/ui/pages';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useRef, useState} from 'react';
 
 import {api} from '../../lib/api';
-import {CookLogForm} from '../../components/cooking/CookLogForm';
 
 /**
  * The app host's props: the shared view-props type minus `onRecipeDelete`. The

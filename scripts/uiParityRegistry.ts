@@ -22,9 +22,7 @@ export const MIRROR_PAIRS = [
   'ui/PrevNextNav.tsx',
   'ui/ScreenScroll.tsx',
   'ui/SearchField.tsx',
-  'ui/StarRatingInput.tsx',
   'ui/ThumbnailListCard.tsx',
-  'cooking/CookLogForm.tsx',
   'recipe/RecipeImageField.tsx',
   'recipe/RecipeInputPreview.tsx',
   'recipe/SortableIngredientList.tsx',
@@ -39,6 +37,18 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
     platform: 'app',
     reason:
       'Native cooking-mode UI fragments; web uses CookingModeView with DOM layout instead.',
+  },
+  {
+    path: 'ui/StarRatingInput.tsx',
+    platform: 'web',
+    reason:
+      'Web star-rating input for its cook-log form; the app renders the design system CookLogForm with the design system StarRatingInput (design-system#126). Web adoption is B7.',
+  },
+  {
+    path: 'cooking/CookLogForm.tsx',
+    platform: 'web',
+    reason:
+      'Web cook-log form implementation; the app renders the design system CookLogForm (design-system#126). Web adoption is B7.',
   },
   {
     path: 'recipe/RecipeForm.tsx',

@@ -4,7 +4,7 @@ import {
   invalidateRecipeQueries,
   makeRecipeDetail,
 } from '@eciperay/client';
-import {Button as DsButton, tokens} from '@spudly/ui';
+import {Button as DsButton, CookLogForm, tokens} from '@spudly/ui';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
 import {useState} from 'react';
 import {View} from 'react-native';
@@ -12,7 +12,6 @@ import {XStack, YStack} from 'tamagui';
 
 import {api} from '../lib/api';
 
-import {CookLogForm} from './cooking/CookLogForm';
 import {ThumbnailListCard} from './ui/ThumbnailListCard';
 
 const formatRecipeSubtitle = (recipe: RecipeDetail) =>
