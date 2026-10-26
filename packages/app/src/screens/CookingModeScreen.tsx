@@ -5,12 +5,12 @@ import {
   scaleFactorFromServings,
 } from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {CookLogForm} from '@spudly/ui';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useState} from 'react';
 import KeepAwake from 'react-native-keep-awake';
 import type {CookLogInput} from '@eciperay/types';
 
-import {CookLogForm} from '../components/cooking/CookLogForm';
 import {
   CookingModeCookLogShell,
   CookingModeDoneButton,

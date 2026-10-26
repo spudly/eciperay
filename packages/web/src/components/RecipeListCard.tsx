@@ -17,6 +17,10 @@ import {ThumbnailListCard} from './ui/ThumbnailListCard.js';
 // formatRecipeSubtitle so the app's Recipes view can format the DS
 // page's items with the card's own helper. This mirror keeps its local
 // copy — the web view still renders these cards directly.
+// Parity note (design-system#126): the app mirror now imports
+// CookLogForm from @spudly/ui instead of a local components copy;
+// this mirror keeps importing its own cooking/CookLogForm until web
+// adoption in B7.
 const formatRecipeSubtitle = (recipe: RecipeDetail) =>
   `${recipe.servings} servings${recipe.cookTimeMin ? ` · ${recipe.cookTimeMin} min` : ''} · ${formatRecipeListMeta(recipe)}`;
 

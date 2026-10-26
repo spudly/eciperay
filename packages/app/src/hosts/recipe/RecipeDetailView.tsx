@@ -24,6 +24,7 @@ import type {
   RecipeStarRating,
   RecipeVersionSummary,
 } from '@eciperay/types';
+import {CookLogForm} from '@spudly/ui';
 import {
   RecipeDetailPage,
   type RecipeDetailPageNutritionProps,
@@ -34,7 +35,6 @@ import {useEffect, useState} from 'react';
 import {api} from '../../lib/api';
 import {printRecipe} from '../../lib/printRecipe';
 import {shareRecipe} from '../../lib/shareRecipe';
-import {CookLogForm} from '../../components/cooking/CookLogForm';
 
 import {RecipeCommentsSection} from './RecipeCommentsSection';
 import {RecipeVisibilityControls} from './RecipeVisibilityControls';

@@ -16,9 +16,7 @@ export const showcaseModuleLoaders = {
   'ui/PrevNextNav': () => import('../ui/PrevNextNav.js'),
   'ui/ScreenScroll': () => import('../ui/ScreenScroll.js'),
   'ui/SearchField': () => import('../ui/SearchField.js'),
-  'ui/StarRatingInput': () => import('../ui/StarRatingInput.js'),
   'ui/ThumbnailListCard': () => import('../ui/ThumbnailListCard.js'),
-  'cooking/CookLogForm': () => import('../cooking/CookLogForm.js'),
   // Page-view migration (#49): the app side has a 'recipe/RecipeDetailView'
   // host for the design system's RecipeDetailPage (@spudly/ui/pages),
   // which owns the detail tab queries, mutations, and slots on native.

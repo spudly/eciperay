@@ -12,9 +12,9 @@ type Props = {
   secondaryLabel?: string;
 };
 
-// Parity note (design-system#129): the app mirror's showcase demo was
-// removed with the in-app component showcase; this web mirror keeps its
-// own demo for the web showcase page, so no web change was needed.
+// Parity note (design-system#126): the app no longer mirrors this
+// form — it renders the design system CookLogForm — and this web
+// implementation remains until web adoption in B7.
 export const CookLogForm = ({
   onSubmit,
   onSkip,
