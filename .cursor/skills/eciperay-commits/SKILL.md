@@ -73,6 +73,25 @@ Releases on `master` deploy only what scopes imply (with transitive expansion):
 | `theme`                 | Fly + Android (expands to web, app)         |
 | `deps`, `ci`, `release` | Version only if releasable type; no deploy  |
 
+## Changesets (pending-release migration)
+
+Releases are moving from semantic-release to a changesets pending-release flow
+(see issue #234). The changesets configuration lives in
+`.changeset/config.json`: all seven workspace packages are in one `fixed` group
+and always version together, and every package is private, so changesets
+versions them but never publishes them to npm.
+
+Until the trigger swap lands, semantic-release still drives releases — keep
+following the commit conventions above. Once it lands, a PR that changes
+user-facing behavior declares its version bump with a changeset file instead of
+relying on the PR title:
+
+1. Run `npm run changeset`, pick any package in the fixed group (they all bump
+   together), and choose the bump the change maps to under the type table above
+   (`feat` → minor, `fix`/`perf` → patch, breaking → major).
+2. Write a one-line summary — it becomes the changelog entry — and commit the
+   generated `.changeset/*.md` file with the PR.
+
 ## Examples
 
 | Good                                           | Bad                           |
