@@ -10,6 +10,10 @@ import {BookLoadingSpinner} from './ui/BookLoadingSpinner.js';
 import {PrimaryButton} from './ui/PrimaryButton.js';
 import {InfoBanner} from './ui/InfoBanner.js';
 
+// Parity note (B6, design-system#129): the app mirror's showcase demo now
+// renders the design system Button directly (the app ui/PrimaryButton
+// adapter was deleted); this web mirror still uses its own PrimaryButton
+// adapter, so no web change was needed.
 export const ScreenLoadingGate = ({
   pending,
   delayMs = DEFAULT_LOADING_DELAY_MS,
@@ -23,7 +27,12 @@ export const ScreenLoadingGate = ({
   }
 
   if (!showLoading) {
-    return <YStack minHeight="100%" className={backgroundClassName} />;
+    return (
+      <YStack
+        minHeight="100%"
+        className={backgroundClassName}
+      />
+    );
   }
 
   return (

@@ -42,15 +42,15 @@ import {
 import {api} from '../../lib/api';
 import {supabase} from '../../lib/supabase';
 
-import {RecipeImageField} from './RecipeImageField';
+import {RecipeImageField} from '../../components/recipe/RecipeImageField';
 import {
   createEmptyIngredientRow,
   SortableIngredientList,
-} from './SortableIngredientList';
+} from '../../components/recipe/SortableIngredientList';
 import {
   createEmptyInstructionRow,
   SortableInstructionList,
-} from './SortableInstructionList';
+} from '../../components/recipe/SortableInstructionList';
 
 type Props = {
   initial: RecipeFormInitial;

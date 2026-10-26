@@ -4,7 +4,7 @@ import React, {useState} from 'react';
 
 import {TagsPage} from '@spudly/ui/pages';
 
-import {TAG_COLOR_OPTIONS} from '../components/ui/ColorPickerField';
+import {TAG_COLOR_OPTIONS} from '../lib/tagColors';
 import {api} from '../lib/api';
 
 export const TagsScreen = (): React.JSX.Element => {

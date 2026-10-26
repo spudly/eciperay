@@ -2,7 +2,7 @@ import {queryKeys} from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useQuery} from '@tanstack/react-query';
 
-import {MealPlanDetailView} from '../components/meals/MealPlanDetailView';
+import {MealPlanDetailView} from '../hosts/meals/MealPlanDetailView';
 import {ScreenLoadingGate} from '../components/ScreenLoadingGate';
 import {api} from '../lib/api';
 import type {MealsStackParamList} from '../navigation/types';

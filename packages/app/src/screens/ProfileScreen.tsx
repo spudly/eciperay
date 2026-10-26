@@ -10,7 +10,7 @@ import {useEffect, useState} from 'react';
 import type {NutritionGoals} from '@eciperay/types';
 
 import {LegalLinks} from '../components/LegalLinks';
-import {AccessTokensSection} from '../components/profile/AccessTokensSection';
+import {AccessTokensSection} from '../hosts/profile/AccessTokensSection';
 import {NutritionGoalsForm} from '@spudly/ui';
 import {ProfilePage} from '@spudly/ui/pages';
 import {api} from '../lib/api';

@@ -9,7 +9,7 @@ import {ManualEntryPage} from '@spudly/ui/pages';
 import {useQueryClient} from '@tanstack/react-query';
 import type {RecipeInput} from '@eciperay/types';
 
-import {RecipeForm} from '../components/recipe/RecipeForm';
+import {RecipeForm} from '../hosts/recipe/RecipeForm';
 import type {PendingRecipeImage} from '../lib/recipeImageAsset';
 import {api} from '../lib/api';
 import {supabase} from '../lib/supabase';

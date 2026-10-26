@@ -8,7 +8,7 @@ import {EditRecipePage} from '@spudly/ui/pages';
 import {useQuery, useQueryClient} from '@tanstack/react-query';
 import type {RecipeInput} from '@eciperay/types';
 
-import {RecipeForm} from '../components/recipe/RecipeForm';
+import {RecipeForm} from '../hosts/recipe/RecipeForm';
 import {ScreenLoadingGate} from '../components/ScreenLoadingGate';
 import {api} from '../lib/api';
 import type {RecipesStackParamList} from '../navigation/types';

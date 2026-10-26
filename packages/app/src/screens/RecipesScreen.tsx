@@ -5,7 +5,7 @@ import {
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useInfiniteQuery} from '@tanstack/react-query';
 
-import {RecipesListView} from '../components/recipes/RecipesListView';
+import {RecipesListView} from '../hosts/recipes/RecipesListView';
 import {api} from '../lib/api';
 import type {RecipesStackParamList} from '../navigation/types';
 

@@ -2,11 +2,11 @@ import {FeedbackPreferenceContextProvider} from '@eciperay/client';
 import {fireEvent, screen} from '@testing-library/react-native';
 import React from 'react';
 
-import {renderWithProviders} from '../__tests__/testUtils';
+import {renderWithProviders} from '../../__tests__/testUtils';
 
 import {ProfileFeedbackPreference} from './ProfileFeedbackPreference';
 
-jest.mock('../lib/env', () => ({POSTHOG_KEY: 'phc_test'}));
+jest.mock('../../lib/env', () => ({POSTHOG_KEY: 'phc_test'}));
 
 describe('ProfileFeedbackPreference', () => {
   test('toggles the feedback shortcut preference', async () => {

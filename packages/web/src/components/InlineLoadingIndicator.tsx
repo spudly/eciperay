@@ -9,6 +9,10 @@ import {YStack} from 'tamagui';
 import {BookLoadingSpinner} from './ui/BookLoadingSpinner.js';
 import {PrimaryButton} from './ui/PrimaryButton.js';
 
+// Parity note (B6, design-system#129): the app mirror's showcase demo now
+// renders the design system Button directly (the app ui/PrimaryButton
+// adapter was deleted); this web mirror still uses its own PrimaryButton
+// adapter, so no web change was needed.
 export const InlineLoadingIndicator = ({
   loading,
   delayMs = DEFAULT_LOADING_DELAY_MS,

@@ -8,7 +8,7 @@ import {
   AiSessionFlow,
   type AiSessionFlowApi,
   type AiSessionState,
-} from '../components/ai/AiSessionFlow';
+} from '../hosts/ai/AiSessionFlow';
 import {api} from '../lib/api';
 import type {RecipesStackParamList} from '../navigation/types';
 

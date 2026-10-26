@@ -1,7 +1,7 @@
 import type {NavigationState} from '@react-navigation/native';
 import {useNavigationState} from '@react-navigation/native';
 
-import {FeedbackForm} from '../components/FeedbackForm';
+import {FeedbackForm} from '../hosts/FeedbackForm';
 
 const getActiveRouteName = (
   state: NavigationState | undefined,

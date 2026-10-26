@@ -34,7 +34,7 @@ import {useEffect, useState} from 'react';
 import {api} from '../../lib/api';
 import {printRecipe} from '../../lib/printRecipe';
 import {shareRecipe} from '../../lib/shareRecipe';
-import {CookLogForm} from '../cooking/CookLogForm';
+import {CookLogForm} from '../../components/cooking/CookLogForm';
 
 import {RecipeCommentsSection} from './RecipeCommentsSection';
 import {RecipeVisibilityControls} from './RecipeVisibilityControls';
