@@ -21,3 +21,6 @@ PR is merged. For UI changes, also complete the PR checklist in CONTRIBUTING.md.
       deployment and passed, or not applicable (no behavior change, docs-only,
       or version-only)
 - [ ] Changeset added for user-visible changes, or not required
+- [ ] If this PR bumps @spudly/ui: manual tests cover the design-system changes
+      in the bumped version range (per the DS changelog), or none of those
+      changes are user-visible
