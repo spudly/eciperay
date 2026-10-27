@@ -9,6 +9,7 @@ import {useEffect, useState} from 'react';
 import {useNavigate, useParams, useSearchParams} from 'react-router-dom';
 import type {CookLogInput} from '@eciperay/types';
 
+import {ScreenLoadingGate} from '../components/ScreenLoadingGate.js';
 import {CookLogForm} from '../components/cooking/CookLogForm.js';
 import {
   CookingModeCookLogShell,
@@ -24,7 +25,7 @@ export const CookingModePage = () => {
   const [step, setStep] = useState(0);
   const [showCookLogForm, setShowCookLogForm] = useState(false);
 
-  const {data: recipe} = useQuery({
+  const {data: recipe, isLoading} = useQuery({
     queryKey: queryKeys.recipe(recipeId),
     queryFn: () => eciperay.recipes.get(recipeId),
     enabled: recipeId.length > 0,
@@ -96,6 +97,14 @@ export const CookingModePage = () => {
       window.removeEventListener('keydown', handleKey);
     };
   }, [steps.length, showCookLogForm]);
+
+  // Gate the whole cooking view — including the Done path and the cook log
+  // form — on the recipe having loaded. Before it resolves, versionId can
+  // still be empty (no ?versionId= param), and a cook log submitted in that
+  // window posts to an empty-version URL and is silently lost (#247).
+  if (isLoading || !recipe) {
+    return <ScreenLoadingGate pending>{null}</ScreenLoadingGate>;
+  }
 
   if (showCookLogForm) {
     return (
