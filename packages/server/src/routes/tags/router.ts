@@ -32,6 +32,36 @@ const createTag = async (
   res.status(201).json(result.rows[0]);
 };
 
+const updateTag = async (
+  req: AuthedRequest,
+  res: Response,
+  queryFn: QueryFn,
+) => {
+  const {name, color} = req.body as {name?: string; color?: string};
+  const sets: string[] = [];
+  const params: unknown[] = [];
+  if (name !== undefined) {
+    params.push(name);
+    sets.push(`name = $${params.length}`);
+  }
+  if (color !== undefined) {
+    params.push(color);
+    sets.push(`color = $${params.length}`);
+  }
+  if (sets.length === 0) {
+    res.status(400).json({error: 'Nothing to update'});
+    return;
+  }
+  params.push(getParam(req, 'id'), req.userId);
+  const sql = `update tags set ${sets.join(', ')} where id = $${params.length - 1} and user_id = $${params.length} and is_preset = false returning *`;
+  const result = await queryFn(sql, params);
+  if (result.rowCount === 0) {
+    res.status(404).json({error: 'Tag not found'});
+    return;
+  }
+  res.json(result.rows[0]);
+};
+
 const deleteTag = async (
   req: AuthedRequest,
   res: Response,
@@ -55,6 +85,9 @@ export const createTagsRouter = (queryFn: QueryFn) => {
   );
   router.post('/', requireAuth, (req, res) =>
     createTag(asAuthed(req), res, queryFn),
+  );
+  router.patch('/:id', requireAuth, (req, res) =>
+    updateTag(asAuthed(req), res, queryFn),
   );
   router.delete('/:id', requireAuth, (req, res) =>
     deleteTag(asAuthed(req), res, queryFn),

@@ -610,6 +610,16 @@ export const handlers = [
       isPreset: false,
     });
   }),
+  http.patch(`${API}/api/tags/:id`, async ({request, params}) => {
+    const body = (await request.json()) as {name?: string; color?: string};
+    return HttpResponse.json({
+      id: params['id'],
+      userId: 'user-uuid-1',
+      name: body.name ?? 'Dinner',
+      color: body.color ?? '#6366f1',
+      isPreset: false,
+    });
+  }),
   http.delete(
     `${API}/api/tags/:id`,
     () => new HttpResponse(null, {status: 204}),
