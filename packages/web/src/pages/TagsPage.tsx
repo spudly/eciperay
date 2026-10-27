@@ -2,8 +2,10 @@ import {queryKeys} from '@eciperay/client';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useState} from 'react';
 
-import {TagsView} from '../components/tags/TagsView.js';
+import {TagsPage as TagsPageView} from '@spudly/ui/pages';
+
 import {eciperay} from '../lib/api.js';
+import {TAG_COLOR_OPTIONS} from '../lib/tagColors.js';
 
 export const TagsPage = () => {
   const [name, setName] = useState('');
@@ -38,7 +40,8 @@ export const TagsPage = () => {
   };
 
   return (
-    <TagsView
+    <TagsPageView
+      colorOptions={TAG_COLOR_OPTIONS}
       tags={tags}
       isLoading={isLoading}
       name={name}
