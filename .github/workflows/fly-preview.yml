@@ -1,0 +1,166 @@
+name: Fly Preview
+
+# Persistent preview environment: every push to master deploys to the
+# Fly app `eciperay-next` (fly.preview.toml), backed by the Supabase QA
+# dataset (issue #234). QA sweeps and Playwright target this environment;
+# production deploys separately through the pending-release flow.
+#
+# Everything environment-specific arrives through the PREVIEW_*
+# repository secrets — no credentials or dataset identifiers live in the
+# repo. This workflow is deliberately NOT part of ci.yml and is never a
+# required check: if the secrets are missing it fails loudly here (and
+# only here), never on a PR.
+#
+# Paddle: the runtime secrets below reuse the shared PADDLE_API_KEY /
+# PADDLE_WEBHOOK_SECRET repository secrets (today these hold sandbox
+# credentials), but PADDLE_ENVIRONMENT is pinned to "sandbox" for the
+# preview. At the Paddle live cutover (docs/paddle-live-cutover.md) the
+# shared secrets gain live keys — before that swap, add sandbox-valued
+# PREVIEW_PADDLE_API_KEY / PREVIEW_PADDLE_WEBHOOK_SECRET secrets and
+# switch this workflow to them, or the preview would inherit live keys.
+# PostHog stays shared with production, as in fly-review.yml.
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+env:
+  FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+  PREVIEW_APP: eciperay-next
+  PREVIEW_URL: https://eciperay-next.fly.dev
+
+# A newer master push supersedes an in-flight preview deploy — the
+# preview only ever needs to run the latest master.
+concurrency:
+  group: fly-preview
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy preview
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    environment:
+      name: preview
+      url: https://eciperay-next.fly.dev
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      # Fail fast, before any deploy work, if the preview dataset is not
+      # wired up: the server cannot start without these, and a missing
+      # one should name itself instead of surfacing as a crash-loop.
+      - name: Validate preview secrets
+        env:
+          PREVIEW_SUPABASE_URL: ${{ secrets.PREVIEW_SUPABASE_URL }}
+          PREVIEW_SUPABASE_SECRET_KEY:
+            ${{ secrets.PREVIEW_SUPABASE_SECRET_KEY }}
+          PREVIEW_VITE_SUPABASE_URL: ${{ secrets.PREVIEW_VITE_SUPABASE_URL }}
+          PREVIEW_VITE_SUPABASE_ANON_KEY:
+            ${{ secrets.PREVIEW_VITE_SUPABASE_ANON_KEY }}
+          PREVIEW_DATABASE_URL: ${{ secrets.PREVIEW_DATABASE_URL }}
+        run: |
+          missing=""
+          for name in PREVIEW_SUPABASE_URL PREVIEW_SUPABASE_SECRET_KEY \
+            PREVIEW_VITE_SUPABASE_URL PREVIEW_VITE_SUPABASE_ANON_KEY \
+            PREVIEW_DATABASE_URL; do
+            if [ -z "${!name}" ]; then
+              missing="$missing $name"
+            fi
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Missing PREVIEW_* repository secrets:$missing — add them in Settings > Secrets and variables > Actions (values come from the Supabase QA dataset)."
+            exit 1
+          fi
+          echo "All PREVIEW_* secrets are present."
+
+      # The review apps already create Fly apps with this org token; the
+      # persistent preview app is created the same way, once. If this
+      # step fails with a permissions error, create the app once by hand
+      # (fly apps create eciperay-next) and re-run — later runs take the
+      # "already exists" path.
+      - name: Create preview app if missing
+        run: |
+          if flyctl status --app "$PREVIEW_APP" >/dev/null 2>&1; then
+            echo "Fly app $PREVIEW_APP already exists."
+          else
+            echo "Creating Fly app $PREVIEW_APP..."
+            flyctl apps create "$PREVIEW_APP"
+          fi
+
+      # Staged (--stage) so setting secrets does not boot machines
+      # against the old image: the deploy below applies them.
+      - name: Set preview runtime secrets
+        env:
+          DATABASE_URL: ${{ secrets.PREVIEW_DATABASE_URL }}
+          SUPABASE_URL: ${{ secrets.PREVIEW_SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.PREVIEW_SUPABASE_SECRET_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          POSTHOG_KEY: ${{ secrets.VITE_POSTHOG_KEY }}
+          PADDLE_API_KEY: ${{ secrets.PADDLE_API_KEY }}
+          PADDLE_WEBHOOK_SECRET: ${{ secrets.PADDLE_WEBHOOK_SECRET }}
+        run: |
+          flyctl secrets set --app "$PREVIEW_APP" --stage \
+            "DATABASE_URL=$DATABASE_URL" \
+            "SUPABASE_URL=$SUPABASE_URL" \
+            "SUPABASE_SECRET_KEY=$SUPABASE_SECRET_KEY" \
+            "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY" \
+            "OPENAI_API_KEY=$OPENAI_API_KEY" \
+            "POSTHOG_KEY=$POSTHOG_KEY" \
+            "POSTHOG_HOST=https://a.eciperay.com" \
+            "PADDLE_API_KEY=$PADDLE_API_KEY" \
+            "PADDLE_WEBHOOK_SECRET=$PADDLE_WEBHOOK_SECRET" \
+            "PADDLE_ENVIRONMENT=sandbox"
+
+      # Build args mirror fly-deploy.yml with the preview values swapped
+      # in. VITE_PADDLE_ENVIRONMENT is pinned to sandbox explicitly (not
+      # read from vars.PADDLE_ENVIRONMENT, which the live cutover flips
+      # to production) and VITE_PADDLE_CLIENT_TOKEN is not passed at all:
+      # the Dockerfile's default is the sandbox client token, and an
+      # empty override would break it.
+      - name: Deploy preview
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.PACKAGES_READ_TOKEN }}
+          VITE_SUPABASE_URL: ${{ secrets.PREVIEW_VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.PREVIEW_VITE_SUPABASE_ANON_KEY }}
+          VITE_POSTHOG_KEY: ${{ secrets.VITE_POSTHOG_KEY }}
+          VITE_POSTHOG_HOST: ${{ secrets.VITE_POSTHOG_HOST }}
+          POSTHOG_API_KEY: ${{ secrets.POSTHOG_API_KEY }}
+          POSTHOG_PROJECT_ID: ${{ secrets.POSTHOG_PROJECT_ID }}
+        run: |
+          flyctl deploy --remote-only \
+            --config fly.preview.toml \
+            --app "$PREVIEW_APP" \
+            --build-arg "VITE_API_BASE_URL=/api" \
+            --build-arg "VITE_SUPABASE_URL=$VITE_SUPABASE_URL" \
+            --build-arg "VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY" \
+            --build-arg "VITE_POSTHOG_KEY=$VITE_POSTHOG_KEY" \
+            --build-arg "VITE_POSTHOG_HOST=$VITE_POSTHOG_HOST" \
+            --build-arg "POSTHOG_API_KEY=$POSTHOG_API_KEY" \
+            --build-arg "POSTHOG_PROJECT_ID=$POSTHOG_PROJECT_ID" \
+            --build-arg "POSTHOG_API_HOST=https://us.posthog.com" \
+            --build-arg "VITE_PADDLE_ENVIRONMENT=sandbox" \
+            --build-arg "GITHUB_SHA=${{ github.sha }}" \
+            --build-secret "NODE_AUTH_TOKEN=$NODE_AUTH_TOKEN"
+
+      # flyctl reports success once machines update, even if the app then
+      # crash-loops (bad secret, failed migration) — verify it actually
+      # serves. Machines scale to zero and the release command runs
+      # migrations first, so allow several minutes.
+      - name: Verify preview health
+        run: |
+          for i in $(seq 1 24); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "$PREVIEW_URL/api/health" || true)
+            echo "Attempt $i: HTTP $code"
+            [ "$code" = "200" ] && exit 0
+            sleep 10
+          done
+          echo "::error::Preview at $PREVIEW_URL did not return 200 from /api/health."
+          exit 1
