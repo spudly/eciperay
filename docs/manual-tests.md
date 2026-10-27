@@ -446,8 +446,8 @@ recipe containing "buttermilk").
    both. **Expected:** the full list restores; no stale filter chips remain.
 
 **Run when:** `packages/app/src/screens/{Tags,Recipes}Screen.tsx`,
-`packages/web/src/pages/{Tags,Recipes}Page.tsx`,
-`packages/web/src/components/tags/**`, `packages/server` search/tag routes.
+`packages/web/src/pages/{Tags,Recipes}Page.tsx`, `@spudly/ui` `TagsPage`,
+`packages/server` search/tag routes.
 
 ---
 
