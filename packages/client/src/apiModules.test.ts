@@ -280,7 +280,10 @@ describe('createEciperayClient', () => {
     );
     expect(api.fetch).toHaveBeenCalledWith(
       '/tags/t1',
-      expect.objectContaining({method: 'PATCH'}),
+      expect.objectContaining({
+        method: 'PATCH',
+        body: JSON.stringify({name: 'Supper'}),
+      }),
     );
     expect(api.fetch).toHaveBeenCalledWith(
       '/tags/t1',

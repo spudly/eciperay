@@ -56,6 +56,7 @@ describe('PATCH /tags/:id', () => {
     expect(res.body.name).toBe('Weeknight dinners');
     const [sql, params] = mockQuery.mock.calls[0]!;
     expect(sql).toContain('update tags set name = $1');
+    expect(sql).toContain('user_id = $3');
     expect(sql).toContain('is_preset = false');
     expect(params).toEqual(['Weeknight dinners', TAG_ID, 'user-uuid-1']);
   });
