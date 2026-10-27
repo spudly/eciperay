@@ -83,7 +83,8 @@ describe('MealPlanDetailPage', () => {
     const missingId = '00000000-0000-4000-8000-000000000099';
     server.use(
       http.get(`http://localhost:8080/api/meal-plans/${missingId}`, () =>
-        HttpResponse.json({error: 'not_found'}, {status: 404}),
+        // Mirrors the real route: 404 with {error: 'Meal plan not found'}.
+        HttpResponse.json({error: 'Meal plan not found'}, {status: 404}),
       ),
     );
 

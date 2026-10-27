@@ -20,13 +20,17 @@ export const MealPlanDetailPage = () => {
   // A settled query with no plan means the plan does not exist (deleted or
   // a bad link): show a not-found state instead of gating on `!plan`
   // forever, which left the page on the loading skeleton indefinitely
-  // (#260). The API client surfaces HTTP failures as `API error <status>:`
-  // messages; a 404 — or no error at all — reads as not found, anything
-  // else as a generic load failure.
+  // (#260). The meal-plans route answers a missing plan with 404 and
+  // `{error: 'Meal plan not found'}`, which the API client throws as that
+  // message (a body without an `error` field falls back to
+  // `API error <status>:`); either shape — or no error at all — reads as
+  // not found, anything else as a generic load failure.
   if (!isLoading && !plan) {
     const isNotFound =
       !error ||
-      (error instanceof Error && error.message.startsWith('API error 404'));
+      (error instanceof Error &&
+        (error.message === 'Meal plan not found' ||
+          error.message.startsWith('API error 404')));
     return <RouteErrorView isNotFound={isNotFound} />;
   }
 
