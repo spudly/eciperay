@@ -24,13 +24,26 @@ export default defineConfig({
   envDir: '../..',
   resolve: {
     dedupe: ['react', 'react-dom', '@tanstack/react-query'],
-    alias: {
-      '@eciperay/client': path.join(monoRoot, 'packages/client/src/index.ts'),
-      '@eciperay/types': path.join(monoRoot, 'packages/types/src/index.ts'),
+    alias: [
+      // Same react-native substitution as vite.config.ts: design system
+      // page components (@spudly/ui/pages) render React Native
+      // primitives, resolved to react-native-web in web contexts.
+      {find: /^react-native$/, replacement: 'react-native-web'},
+      {
+        find: '@eciperay/client',
+        replacement: path.join(monoRoot, 'packages/client/src/index.ts'),
+      },
+      {
+        find: '@eciperay/types',
+        replacement: path.join(monoRoot, 'packages/types/src/index.ts'),
+      },
       // Wrap @testing-library/react's render in TamaguiProvider: the ui
       // primitives are now @spudly/ui (Tamagui) adapters that need a theme.
-      '@testing-library/react': path.join(pkgRoot, 'src/test/rtlWithTheme.tsx'),
-    },
+      {
+        find: '@testing-library/react',
+        replacement: path.join(pkgRoot, 'src/test/rtlWithTheme.tsx'),
+      },
+    ],
   },
   test: {
     // Playwright specs live in e2e/ and run under `playwright test`
@@ -40,7 +53,21 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
-    server: {deps: {inline: [/@tanstack/, /@eciperay/, /@dnd-kit/]}},
+    server: {
+      deps: {
+        // @spudly/ui/pages imports react-native; inlining keeps its
+        // module graph inside Vite's pipeline so the react-native ->
+        // react-native-web alias above applies (externalized, Node would
+        // resolve the real react-native package and fail to parse it).
+        inline: [
+          /@tanstack/,
+          /@eciperay/,
+          /@dnd-kit/,
+          /@spudly/,
+          /react-native-web/,
+        ],
+      },
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],

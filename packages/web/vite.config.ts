@@ -80,10 +80,23 @@ export default defineConfig(({mode}) => {
     server: {port, proxy: {'/api': createApiProxy(apiTarget)}},
     resolve: {
       dedupe: ['react', 'react-dom', '@tanstack/react-query'],
-      alias: {
-        '@eciperay/client': path.join(monoRoot, 'packages/client/src/index.ts'),
-        '@eciperay/types': path.join(monoRoot, 'packages/types/src/index.ts'),
-      },
+      alias: [
+        // Design system page components (@spudly/ui/pages) render React
+        // Native primitives such as FlatList; the web build resolves
+        // react-native to react-native-web, the same substitution the
+        // design system's web Storybook makes. Exact-name alias only:
+        // subpath imports (react-native/...) are not used and must not
+        // be rewritten.
+        {find: /^react-native$/, replacement: 'react-native-web'},
+        {
+          find: '@eciperay/client',
+          replacement: path.join(monoRoot, 'packages/client/src/index.ts'),
+        },
+        {
+          find: '@eciperay/types',
+          replacement: path.join(monoRoot, 'packages/types/src/index.ts'),
+        },
+      ],
     },
   };
 });

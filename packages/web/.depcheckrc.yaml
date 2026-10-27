@@ -4,3 +4,4 @@ ignores:
   - '@vitest/coverage-v8' # Used by vitest coverage config, not imported in source
   - tailwindcss # Used by @tailwindcss/vite and index.css; depcheck does not trace CSS imports
   - '@posthog/rollup-plugin' # Vite build plugin for production source map upload
+  - react-native-web # resolve.alias target in vite.config.ts/vitest.config.ts for the react-native imports of @spudly/ui/pages; referenced by config, not imported in source

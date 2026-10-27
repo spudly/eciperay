@@ -338,12 +338,6 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
       'Web home view; the app renders the design system HomePage (design-system#126). Web adoption is B7.',
   },
   {
-    path: 'tags/TagsView.tsx',
-    platform: 'web',
-    reason:
-      'Web tags view; the app renders the design system TagsPage (design-system#126). Web adoption is B7.',
-  },
-  {
     path: 'add/AddRecipeMenuView.tsx',
     platform: 'web',
     reason:
@@ -654,12 +648,6 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
     platform: 'web',
     reason:
       'Web adapter remains; the app copy had no production importer (test/showcase only) and was deleted with the design system Button adoption. Removed in B6 (design-system#129). Web retirement is B7.',
-  },
-  {
-    path: 'ui/ColorPickerField.tsx',
-    platform: 'web',
-    reason:
-      'Web adapter remains; the app copy was deleted — its only production use was the TAG_COLOR_OPTIONS constant (app data), which moved to the app lib. Removed in B6 (design-system#129). Web retirement is B7.',
   },
   {
     path: 'ui/ProgressDots.tsx',

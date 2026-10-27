@@ -1,4 +1,4 @@
-import {fireEvent, screen, waitFor} from '@testing-library/react';
+import {screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import {renderWithProviders} from '../test/testUtils.js';
@@ -21,14 +21,24 @@ describe('TagsPage', () => {
   });
 
   test('ignores empty tag name and updates color', async () => {
-    await renderWithProviders(<TagsPage />);
+    const view = await renderWithProviders(<TagsPage />);
     await waitFor(() => {
       expect(screen.getByText('Dinner')).toBeInTheDocument();
     });
-    const colorInput = screen.getByDisplayValue('#6366f1');
-    fireEvent.change(colorInput, {target: {value: '#ff0000'}});
-    const form = screen.getByPlaceholderText('Tag name').closest('form')!;
-    fireEvent.submit(form);
+    // The design system color picker renders its swatches as pressable
+    // views labelled "Select color <hex>"; in jsdom the label lands in
+    // the accessibilitylabel attribute rather than an ARIA role/name.
+    const swatch = () =>
+      view.container.querySelector(
+        '[accessibilitylabel="Select color #ef4444"]',
+      );
+    expect(swatch()).not.toBeNull();
+    await userEvent.click(swatch()!);
+    expect(swatch()).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', {name: 'Add'})).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    );
     expect(screen.getByPlaceholderText('Tag name')).toHaveValue('');
   });
 });
