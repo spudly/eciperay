@@ -5,6 +5,10 @@ on:
     branches: [master]
   pull_request:
     branches: [master]
+    # `edited` is not a default type: it is listed because ticking a
+    # checkbox in the PR body fires it, and the merge-guard job below
+    # must re-run when the pre-merge checklist changes.
+    types: [opened, synchronize, reopened, edited]
 
 permissions:
   contents: read
@@ -322,6 +326,78 @@ jobs:
       - name: Merge coverage and verify thresholds
         run: npm run test:coverage:merge --workspace=packages/server
 
+  # Enforces the PR template's pre-merge checklist: a PR whose body
+  # still has unchecked task-list items fails here, and ci-gate needs
+  # this job, so such a PR cannot merge. Dependabot PRs are exempt —
+  # their bodies quote upstream changelogs that can contain task
+  # lists, and the checklist is for PRs authored in this repo.
+  merge-guard:
+    name: merge-guard
+    if:
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.user.login != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: read
+    steps:
+      - name: Fetch PR body
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: >
+          gh api "repos/${{ github.repository }}/pulls/${{
+          github.event.pull_request.number }}" --jq '.body // ""' >
+          "$RUNNER_TEMP/pr-body.md"
+
+      - name: Check for unchecked task-list items
+        run: |
+          cat > "$RUNNER_TEMP/check-tasks.mjs" <<'EOF'
+          import {readFileSync} from 'node:fs';
+
+          const body = readFileSync(process.argv[2], 'utf8');
+
+          // HTML comments often quote the PR template itself; their
+          // boxes are not real tasks.
+          const uncommented = body.replace(/<!--[\s\S]*?-->/g, '');
+
+          const open = [];
+          let fence = null;
+          for (const line of uncommented.split('\n')) {
+            const fenceMatch = line.match(/^\s*(```+|~~~+)/);
+            if (fenceMatch) {
+              // A fence line opens a code block; a fence of the same
+              // character closes it. Quoted checklists inside code
+              // blocks are examples, not tasks.
+              if (fence === null) fence = fenceMatch[1][0];
+              else if (fenceMatch[1][0] === fence) fence = null;
+              continue;
+            }
+            if (fence !== null) continue;
+            // A struck-through item counts as waived — the PR
+            // template's convention for boxes that do not apply.
+            if (
+              /^\s*[-*+]\s+\[\s\]\s+\S/.test(line) &&
+              !line.includes('~~')
+            ) {
+              open.push(line.trim());
+            }
+          }
+
+          if (open.length > 0) {
+            console.error('Unchecked task-list items in the PR body:');
+            for (const line of open) console.error(`  ${line}`);
+            console.error(
+              'Check each item off, or strike it through (~~...~~) ' +
+                'with a reason, per the PR template.',
+            );
+            process.exit(1);
+          }
+          console.log(
+            'All task-list items in the PR body are complete or waived.',
+          );
+          EOF
+          node "$RUNNER_TEMP/check-tasks.mjs" "$RUNNER_TEMP/pr-body.md"
+
   # Always-reporting gate for branch protection. The per-package test
   # matrix is discovered dynamically, so legs for unaffected packages
   # never report on narrow PRs — and a required check that never
@@ -342,6 +418,7 @@ jobs:
       - test-server-fast
       - test-server
       - test-server-coverage
+      - merge-guard
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
