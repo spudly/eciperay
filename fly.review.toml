@@ -4,8 +4,10 @@
 #
 # Deliberate differences from fly.toml (production):
 #   - NO [deploy] release_command: code from an unmerged PR must never run
-#     database migrations. If the preview's DATABASE_URL points at the
-#     production database, the schema it sees is production's current schema.
+#     database migrations. Review apps share the Supabase QA dataset with
+#     the persistent preview (eciperay-next); that preview's deploys own
+#     migrating the dataset, so the schema a review app sees is the schema
+#     current master last migrated it to.
 #   - min_machines_running = 0: previews scale to zero when idle and are
 #     destroyed when the PR closes; they should cost as little as possible.
 

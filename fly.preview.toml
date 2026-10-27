@@ -17,7 +17,8 @@
 #     is allowed to migrate: the persistent preview must run the app
 #     migrator on every deploy or the QA schema silently drifts behind
 #     master whenever a change carries migrations. Review apps must never
-#     do this — their DATABASE_URL is production's.
+#     do this — they share this same QA dataset, and migrations are owned
+#     solely by this persistent preview.
 
 app = 'eciperay-next'
 primary_region = 'iad'

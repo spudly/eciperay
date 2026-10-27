@@ -10,7 +10,6 @@ export const ALLOWED_SCOPES = [
   'server',
   'client',
   'types',
-  'theme',
   'android',
   'deps',
   'ci',
@@ -18,14 +17,7 @@ export const ALLOWED_SCOPES = [
 ] as const;
 
 export type PackageName =
-  | 'app'
-  | 'web'
-  | 'server'
-  | 'client'
-  | 'types'
-  | 'theme'
-  | 'icons'
-  | 'mcp-server';
+  'app' | 'web' | 'server' | 'client' | 'types' | 'icons' | 'mcp-server';
 
 export const SCOPE_TO_PACKAGE: Record<string, PackageName | null> = {
   app: 'app',
@@ -34,7 +26,6 @@ export const SCOPE_TO_PACKAGE: Record<string, PackageName | null> = {
   server: 'server',
   client: 'client',
   types: 'types',
-  theme: 'theme',
   deps: null,
   ci: null,
   release: null,
@@ -42,7 +33,6 @@ export const SCOPE_TO_PACKAGE: Record<string, PackageName | null> = {
 
 export const PACKAGE_DEPENDENTS: Record<PackageName, PackageName[]> = {
   'types': ['client', 'server', 'web', 'app'],
-  'theme': ['web', 'app'],
   'client': ['server', 'web', 'app'],
   'icons': ['web', 'app'],
   'mcp-server': ['server'],
@@ -57,7 +47,6 @@ export const PACKAGE_DEPLOY_TARGETS: Record<PackageName, DeployTarget[]> = {
   'app': ['android'],
   'client': ['fly', 'android'],
   'types': [],
-  'theme': [],
   'icons': [],
   'mcp-server': [],
 };
@@ -133,7 +122,7 @@ export const packagesToDeployTargets = (
  *
  * Paths under packages/<name>/ seed that package, and the seed set is expanded
  * through PACKAGE_DEPENDENTS, so a change to a shared package (types, client,
- * theme, icons) deploys everything that consumes it.
+ * icons) deploys everything that consumes it.
  *
  * Any path outside a known package — root package.json / package-lock.json,
  * shared tsconfig or turbo config, .github/workflows, scripts, docs — is a

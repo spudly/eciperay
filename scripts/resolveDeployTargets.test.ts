@@ -112,12 +112,6 @@ describe('resolveDeployTargetsFromSubjects', () => {
     ).toEqual({fly: true, android: true});
   });
 
-  test('deploys fly and android for theme changes', () => {
-    expect(
-      resolveDeployTargetsFromSubjects(['feat(theme): tweak tokens']),
-    ).toEqual({fly: true, android: true});
-  });
-
   test('deploys fly only for server changes', () => {
     expect(
       resolveDeployTargetsFromSubjects(['fix(server): handle timeout']),

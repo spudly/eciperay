@@ -4,7 +4,6 @@ const ALLOWED_SCOPES = [
   'server',
   'client',
   'types',
-  'theme',
   'android',
   'deps',
   'ci',

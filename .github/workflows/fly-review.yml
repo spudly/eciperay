@@ -7,9 +7,19 @@ name: Fly Review App
 #
 # Setup (one-time, see README "PR review apps"): the FLY_API_TOKEN repository
 # secret must be an ORG token (`fly tokens create org`) — the app-scoped
-# deploy token used by fly-deploy.yml cannot create new apps. Runtime secrets
-# are passed from same-named GitHub repository secrets. SUPABASE_URL and
-# SUPABASE_SECRET_KEY are REQUIRED — the server creates its Supabase client
+# deploy token used by fly-deploy.yml cannot create new apps.
+#
+# Dataset: review apps run against the Supabase QA dataset, NOT production
+# (issue #234). The Supabase values come from the same five PREVIEW_*
+# repository secrets that back the persistent preview environment
+# (eciperay-next, fly-preview.yml): PREVIEW_DATABASE_URL,
+# PREVIEW_SUPABASE_URL, and PREVIEW_SUPABASE_SECRET_KEY feed the server
+# runtime; PREVIEW_VITE_SUPABASE_URL and PREVIEW_VITE_SUPABASE_ANON_KEY feed
+# the web build. All PR review apps share that one QA dataset (the schema is
+# migrated by the persistent preview's deploys — review apps themselves never
+# run migrations, see fly.review.toml), so data created while testing a PR
+# must follow the QA conventions (`QA —` name prefixes, cleanup at the end).
+# The PREVIEW_* secrets are REQUIRED — the server creates its Supabase client
 # at import time and will not start without them (validated below).
 
 on:
@@ -46,12 +56,23 @@ jobs:
       - name: Validate required preview secrets
         if: github.event.action != 'closed'
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          PREVIEW_DATABASE_URL: ${{ secrets.PREVIEW_DATABASE_URL }}
+          PREVIEW_SUPABASE_URL: ${{ secrets.PREVIEW_SUPABASE_URL }}
+          PREVIEW_SUPABASE_SECRET_KEY:
+            ${{ secrets.PREVIEW_SUPABASE_SECRET_KEY }}
+          PREVIEW_VITE_SUPABASE_URL: ${{ secrets.PREVIEW_VITE_SUPABASE_URL }}
+          PREVIEW_VITE_SUPABASE_ANON_KEY:
+            ${{ secrets.PREVIEW_VITE_SUPABASE_ANON_KEY }}
         run: |
           missing=0
-          [ -n "$SUPABASE_URL" ] || { echo "::error::SUPABASE_URL repository secret is not set — the preview server cannot start without it."; missing=1; }
-          [ -n "$SUPABASE_SECRET_KEY" ] || { echo "::error::SUPABASE_SECRET_KEY repository secret is not set — the preview server cannot start without it."; missing=1; }
+          for name in PREVIEW_DATABASE_URL PREVIEW_SUPABASE_URL \
+            PREVIEW_SUPABASE_SECRET_KEY PREVIEW_VITE_SUPABASE_URL \
+            PREVIEW_VITE_SUPABASE_ANON_KEY; do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name repository secret is not set — the review app cannot run against the QA dataset without it."
+              missing=1
+            fi
+          done
           exit $missing
 
       - name: Deploy review app
@@ -64,8 +85,8 @@ jobs:
           memory: 512
           build_args: >-
             VITE_API_BASE_URL=/api VITE_SUPABASE_URL=${{
-            secrets.VITE_SUPABASE_URL }} VITE_SUPABASE_ANON_KEY=${{
-            secrets.VITE_SUPABASE_ANON_KEY }} VITE_POSTHOG_KEY=${{
+            secrets.PREVIEW_VITE_SUPABASE_URL }} VITE_SUPABASE_ANON_KEY=${{
+            secrets.PREVIEW_VITE_SUPABASE_ANON_KEY }} VITE_POSTHOG_KEY=${{
             secrets.VITE_POSTHOG_KEY }} VITE_POSTHOG_HOST=${{
             secrets.VITE_POSTHOG_HOST }} POSTHOG_API_KEY=${{
             secrets.POSTHOG_API_KEY }} POSTHOG_PROJECT_ID=${{
@@ -76,9 +97,9 @@ jobs:
           # same PACKAGES_READ_TOKEN secret the release workflow uses.
           build_secrets: NODE_AUTH_TOKEN=${{ secrets.PACKAGES_READ_TOKEN }}
           secrets: >-
-            DATABASE_URL=${{ secrets.DATABASE_URL }} SUPABASE_URL=${{
-            secrets.SUPABASE_URL }} SUPABASE_SECRET_KEY=${{
-            secrets.SUPABASE_SECRET_KEY }} ANTHROPIC_API_KEY=${{
+            DATABASE_URL=${{ secrets.PREVIEW_DATABASE_URL }} SUPABASE_URL=${{
+            secrets.PREVIEW_SUPABASE_URL }} SUPABASE_SECRET_KEY=${{
+            secrets.PREVIEW_SUPABASE_SECRET_KEY }} ANTHROPIC_API_KEY=${{
             secrets.ANTHROPIC_API_KEY }} OPENAI_API_KEY=${{
             secrets.OPENAI_API_KEY }} POSTHOG_KEY=${{ secrets.VITE_POSTHOG_KEY
             }} POSTHOG_HOST=https://a.eciperay.com PADDLE_API_KEY=${{
@@ -123,6 +144,8 @@ jobs:
               `**${url}**`,
               '',
               `Deployed from ${context.sha.slice(0, 7)} by the Fly review-app workflow. Updated on every push; destroyed when this PR closes.`,
+              '',
+              'Runs against the QA dataset, not production — safe for signed-in manual testing with the QA account.',
             ].join('\n');
             const comments = await github.paginate(github.rest.issues.listComments, {
               owner: context.repo.owner,

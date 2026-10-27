@@ -8,7 +8,7 @@ on:
         type: string
         required: true
       version:
-        description: App version from semantic-release
+        description: App version (defaults to the root package.json version)
         type: string
         required: false
       tag:

@@ -9,7 +9,7 @@ Google Play requires two version fields on every upload:
 
 ## Where values are defined
 
-**Canonical user-facing version:** `version` in the repo root [`package.json`](../../../package.json). semantic-release bumps root and every workspace `packages/*/package.json` together.
+**Canonical user-facing version:** `version` in the repo root [`package.json`](../../../package.json). The changesets pending-release flow versions the workspace packages as one fixed group; when a release is cut, the publish step (`scripts/changesetRelease.ts`) syncs the root manifest to the group version, so the root and every `packages/*/package.json` always agree.
 
 `packages/app/android/app/build.gradle` reads the root `package.json` for `versionName`. Override at build time if needed:
 
@@ -19,36 +19,33 @@ Google Play requires two version fields on every upload:
 
 ## Release workflow
 
-### 1. Use conventional commits on `master`
+### 1. Declare bumps with changesets
 
-Version bumps are automatic via [semantic-release](https://semantic-release.gitbook.io/) after CI passes. Use scoped commits (see [`.cursor/skills/eciperay-commits/SKILL.md`](../../../.cursor/skills/eciperay-commits/SKILL.md)):
-
-```text
-feat(web): add recipe import drag target
-fix(server): validate image mime type
-```
+Version bumps come from [changesets](https://github.com/changesets/changesets) in the PRs that land on `master` (see [`.cursor/skills/eciperay-commits/SKILL.md`](../../../.cursor/skills/eciperay-commits/SKILL.md)): a PR that changes user-facing behavior includes a changeset declaring the bump the change maps to:
 
 - `feat` → minor bump
 - `fix` / `perf` → patch bump
-- `BREAKING CHANGE` or `feat!` → major bump
+- Breaking change → major bump
 
-The first `feat` from `0.0.0` becomes `0.1.0`.
+`changesets/action` in the **Release** workflow accumulates pending changesets into a **Pending Release PR**. Merging that PR is the release: the publish step syncs the root `package.json` to the new version and commits it as `chore(release): X.Y.Z [skip ci]`, tags `vX.Y.Z`, and opens a GitHub Release with the changelog as its notes.
 
-You do **not** hand-edit version numbers or create tags. semantic-release commits `chore(release): X.Y.Z [skip ci]`, tags `vX.Y.Z`, and opens a GitHub Release.
+You do **not** hand-edit version numbers or create tags.
 
-### 2. Scoped deploys
+### 2. Path-based deploys
 
-The **Release** workflow (`.github/workflows/release.yml`) deploys only what changed:
+The **Release** workflow (`.github/workflows/release.yml`) deploys what changed between the previous tag and the new one, resolved from the **changed file paths** in that range and expanded through the package dependents graph (commit scopes play no part):
 
-| Scope | Deploy |
-| ----- | ------ |
+| Changed package | Deploy |
+| --------------- | ------ |
 | `web`, `server` | Fly (API + web) |
-| `app`, `android` | Android AAB → GitHub Release |
+| `app` | Android AAB → GitHub Release |
 | `client` | Fly + Android |
-| `types` | Fly + Android (all consumers) |
-| `theme` | Fly + Android (web + app) |
+| `types`, `icons` | Fly + Android (all consumers) |
+| anything else | Fly + Android (global change) |
 
 Play Store upload remains manual via **Android Deploy → Run workflow** and a Play track.
+
+> **`versionCode` trap:** `versionCode` is the Release workflow's `github.run_number`, so the workflow's identity is load-bearing. Do not rename or replace `.github/workflows/release.yml` — a new workflow restarts the run-number sequence, and a `versionCode` that goes backwards is rejected by Play.
 
 ### 3. Manual Android workflow
 

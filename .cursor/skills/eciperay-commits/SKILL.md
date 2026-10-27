@@ -2,8 +2,8 @@
 name: eciperay-commits
 description: >-
   Conventional commit format for the Eciperay monorepo. Use when writing commit
-  messages, summarizing changes for git, or choosing scope/type for
-  semantic-release.
+  messages, summarizing changes for git, or choosing type/scope and declaring
+  version bumps with changesets.
 disable-model-invocation: true
 ---
 
@@ -28,27 +28,27 @@ Optional body and footers follow
 
 ## Types
 
-| Type                                               | Version bump | Use for                                  |
-| -------------------------------------------------- | ------------ | ---------------------------------------- |
-| `feat`                                             | minor        | New user-facing behavior                 |
-| `fix`                                              | patch        | Bug fixes                                |
-| `perf`                                             | patch        | Performance improvements                 |
-| `feat!` or footer `BREAKING CHANGE:`               | major        | Breaking API or behavior changes         |
-| `chore`, `docs`, `ci`, `build`, `test`, `refactor` | none         | Maintenance (no release unless breaking) |
+| Type                                               | Changeset bump | Use for                                  |
+| -------------------------------------------------- | -------------- | ---------------------------------------- |
+| `feat`                                             | minor          | New user-facing behavior                 |
+| `fix`                                              | patch          | Bug fixes                                |
+| `perf`                                             | patch          | Performance improvements                 |
+| `feat!` or footer `BREAKING CHANGE:`               | major          | Breaking API or behavior changes         |
+| `chore`, `docs`, `ci`, `build`, `test`, `refactor` | none           | Maintenance (no release unless breaking) |
 
 ## Scopes (required)
 
 Pick the package(s) whose code changed. Allowed scopes:
 
-`app`, `web`, `server`, `client`, `types`, `theme`, `android`, `deps`, `ci`,
-`release`
+`app`, `web`, `server`, `client`, `types`, `android`, `deps`, `ci`, `release`
 
 - `android` is an alias for `app`
 - Use multiple scopes when a change spans packages:
   `feat(web,client): share hook`
 - `deps` — root or lockfile dependency changes
 - `ci` — GitHub Actions, Husky, release tooling
-- `release` — reserved for semantic-release bot commits; do not use manually
+- `release` — reserved for the release publish step's version-sync commits
+  (`chore(release): X.Y.Z`); do not use manually
 
 ## Scope selection
 
@@ -59,32 +59,30 @@ Pick the package(s) whose code changed. Allowed scopes:
 3. Do not use a broad scope when a narrow one fits (`feat(web):` not
    `feat(client):` for web-only UI).
 
-## Deploy impact (semantic-release)
+## Deploy impact
 
-Releases on `master` deploy only what scopes imply (with transitive expansion):
+Commit scopes do **not** drive deploys. When a release is cut, deploy targets
+resolve from the **changed file paths** between the previous tag and the new
+one, expanded through the package dependents graph:
 
-| Scope                   | Deploy targets                              |
-| ----------------------- | ------------------------------------------- |
-| `web`                   | Fly (API + web)                             |
-| `server`                | Fly                                         |
-| `app`, `android`        | Android                                     |
-| `client`                | Fly + Android (expands to server, web, app) |
-| `types`                 | Fly + Android (expands to all consumers)    |
-| `theme`                 | Fly + Android (expands to web, app)         |
-| `deps`, `ci`, `release` | Version only if releasable type; no deploy  |
+| Changed package            | Deploy targets                          |
+| -------------------------- | --------------------------------------- |
+| `web`, `server`            | Fly (API + web)                         |
+| `app`                      | Android                                 |
+| `client`, `types`, `icons` | Fly + Android (expand to all consumers) |
+| anything else              | Fly + Android (global change)           |
 
-## Changesets (pending-release migration)
+## Changesets (pending-release flow)
 
-Releases are moving from semantic-release to a changesets pending-release flow
-(see issue #234). The changesets configuration lives in
-`.changeset/config.json`: all seven workspace packages are in one `fixed` group
-and always version together, and every package is private, so changesets
-versions them but never publishes them to npm.
+Releases run on a changesets pending-release flow (see issue #234). The
+changesets configuration lives in `.changeset/config.json`: all seven workspace
+packages are in one `fixed` group and always version together, and every package
+is private, so changesets versions them but never publishes them to npm.
+`changesets/action` keeps a Pending Release PR open on `master`; merging it is
+the release.
 
-Until the trigger swap lands, semantic-release still drives releases — keep
-following the commit conventions above. Once it lands, a PR that changes
-user-facing behavior declares its version bump with a changeset file instead of
-relying on the PR title:
+A PR that changes user-facing behavior declares its version bump with a
+changeset file (the commit type/scope no longer decides the bump):
 
 1. Run `npm run changeset`, pick any package in the fixed group (they all bump
    together), and choose the bump the change maps to under the type table above
@@ -104,7 +102,8 @@ relying on the PR title:
 
 ## Do not
 
-- Hand-write `chore(release):` commits — semantic-release creates those
+- Hand-write `chore(release):` commits — the release publish step creates those
+  when a Pending Release PR merges
 - Omit scope — the hook rejects `feat: add thing`
 - Use scopes outside the allowed list
 
