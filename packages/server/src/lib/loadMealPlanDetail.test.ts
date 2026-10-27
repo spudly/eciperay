@@ -204,6 +204,42 @@ describe('loadMealPlanDetail', () => {
     expect(plan?.endsOn).toBeNull();
   });
 
+  test('formats Date-valued plan dates as date-only strings', async () => {
+    // Regression (#251): node-postgres returns DATE columns as JS Date
+    // objects, not strings — dateOnly must not call .slice on them.
+    const mockQuery = createMockQuery();
+    mockQuery.mockImplementation((async (sql: string) => {
+      if (sql.includes('from meal_plans') && sql.includes('where id =')) {
+        return makeQueryResult([
+          {
+            ...mealPlanRow,
+            starts_on: new Date(2026, 0, 1),
+            ends_on: new Date(2026, 0, 7),
+          },
+        ]);
+      }
+      if (sql.includes('from meal_plan_entries')) {
+        return makeQueryResult([]);
+      }
+      if (sql.includes('goal_calories')) {
+        return makeQueryResult([
+          {
+            goal_calories: null,
+            goal_protein_g: null,
+            goal_carbs_g: null,
+            goal_fat_g: null,
+            goal_satiety_score: null,
+          },
+        ]);
+      }
+      return makeQueryResult([]);
+    }) as typeof mockQuery);
+
+    const plan = await loadMealPlanDetail(PLAN_ID, USER_ID, mockQuery);
+    expect(plan?.startsOn).toBe('2026-01-01');
+    expect(plan?.endsOn).toBe('2026-01-07');
+  });
+
   test('defaults recipe entry servings from recipe row', async () => {
     const mockQuery = createMockQuery();
     mockQuery.mockImplementation((async (sql: string) => {

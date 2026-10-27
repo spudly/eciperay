@@ -42,8 +42,10 @@ type PlanRow = {
   user_id: string;
   title: string;
   notes: string | null;
-  starts_on: string | null;
-  ends_on: string | null;
+  // node-postgres returns DATE columns as JS Date objects by default;
+  // the row typing must admit both representations (see dateOnly).
+  starts_on: string | Date | null;
+  ends_on: string | Date | null;
   created_at: string;
   updated_at: string;
 };
@@ -58,9 +60,16 @@ type EntryRow = {
   servings: number | null;
 };
 
-const dateOnly = (value: string | null): string | null => {
+const dateOnly = (value: string | Date | null): string | null => {
   if (!value) {
     return null;
+  }
+  if (value instanceof Date) {
+    // Format from local date components: toISOString() would shift the
+    // calendar day for Date objects parsed at local midnight.
+    const month = String(value.getMonth() + 1).padStart(2, '0');
+    const day = String(value.getDate()).padStart(2, '0');
+    return `${value.getFullYear()}-${month}-${day}`;
   }
   return value.slice(0, 10);
 };
