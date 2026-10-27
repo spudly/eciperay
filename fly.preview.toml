@@ -1,0 +1,56 @@
+# Fly.io config for the persistent preview environment
+# (see .github/workflows/fly-preview.yml and issue #234).
+#
+# Deliberate differences from fly.toml (production):
+#   - app is `eciperay-next`, a separate persistent app that always runs
+#     current master; production deploys separately through the
+#     pending-release flow.
+#   - min_machines_running = 0: the preview may scale to zero when idle;
+#     it is a QA target, not a user-facing service, so it should cost as
+#     little as possible. fly-preview.yml polls /api/health after each
+#     deploy, which also wakes the machines.
+#
+# Deliberate difference from fly.review.toml (per-PR review apps):
+#   - This config HAS a [deploy] release_command. The preview's
+#     DATABASE_URL points at the Supabase QA dataset (supplied through the
+#     PREVIEW_DATABASE_URL secret), which is the one database preview code
+#     is allowed to migrate: the persistent preview must run the app
+#     migrator on every deploy or the QA schema silently drifts behind
+#     master whenever a change carries migrations. Review apps must never
+#     do this — their DATABASE_URL is production's.
+
+app = 'eciperay-next'
+primary_region = 'iad'
+
+[build]
+  dockerfile = 'Dockerfile'
+
+  [build.args]
+    VITE_API_BASE_URL = '/api'
+
+[env]
+  NODE_ENV = 'production'
+  HOST = '0.0.0.0'
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
+
+  [[http_service.checks]]
+    interval = '15s'
+    timeout = '2s'
+    grace_period = '15s'
+    method = 'GET'
+    path = '/api/health'
+
+[[vm]]
+  memory = '512mb'
+  cpu_kind = 'shared'
+  cpus = 1
+
+[deploy]
+  release_command = 'npm run migrate --workspace=packages/server'
