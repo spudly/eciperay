@@ -142,7 +142,6 @@ export const InlineCookLogForm = ({
   return (
     <CookLogForm
       variant="light"
-      secondaryLabel="Cancel"
       isPending={createMutation.isPending}
       onSkip={() => {
         if (!createMutation.isPending) {

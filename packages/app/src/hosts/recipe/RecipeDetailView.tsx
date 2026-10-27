@@ -531,7 +531,6 @@ export const RecipeDetailView = ({
           showCookLogForm ? (
             <CookLogForm
               variant="light"
-              secondaryLabel="Cancel"
               isPending={createCookLogMutation.isPending}
               onSkip={() => {
                 setShowCookLogForm(false);

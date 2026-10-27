@@ -270,7 +270,7 @@ describe('RecipesListView cook-log accessory (#49 stage 2)', () => {
 
     // Cancelling one form leaves the other open and restores only
     // the cancelled row's control.
-    await fireEvent.press(getAllByText('Cancel')[0]);
+    await fireEvent.press(getAllByText('Skip')[0]);
 
     expect(getAllByText('How did it go?')).toHaveLength(1);
     expect(getByLabelText('Log a cook of Pasta Night')).toBeTruthy();
@@ -316,7 +316,7 @@ describe('RecipesListView cook-log accessory (#49 stage 2)', () => {
     // and its mutation: the card kept the mutation mounted across a
     // cancel/reopen, so a pending save stayed unrepeatable. Here the
     // form simply stays open until the save settles.
-    await fireEvent.press(getByText('Cancel'));
+    await fireEvent.press(getByText('Skip'));
     expect(queryByText('How did it go?')).toBeTruthy();
     expect(mockCreateCookLog).toHaveBeenCalledTimes(1);
 
