@@ -1,4 +1,4 @@
-import {createBrowserRouter} from 'react-router-dom';
+import {createBrowserRouter, Navigate} from 'react-router-dom';
 
 import {AppShell} from '../components/AppShell.js';
 import {AuthGuard} from '../components/AuthGuard.js';
@@ -23,6 +23,7 @@ import {ProfilePage} from '../pages/ProfilePage.js';
 import {PublicRecipePage} from '../pages/PublicRecipePage.js';
 import {RecipeDetailPage} from '../pages/RecipeDetailPage.js';
 import {RecipesPage} from '../pages/RecipesPage.js';
+import {RouteErrorPage} from '../pages/RouteErrorPage.js';
 import {SharedWithMePage} from '../pages/SharedWithMePage.js';
 import {ResetPasswordPage} from '../pages/auth/ResetPasswordPage.js';
 import {SignupPage} from '../pages/auth/SignupPage.js';
@@ -44,6 +45,15 @@ const authenticatedAppRoutes = [
   {path: '/meals/:mealId', element: <MealDetailPage />},
   {path: '/meals/:mealId/edit', element: <MealEditPage />},
   {path: '/meals/:mealId/cook', element: <MealCookingModePage />},
+  {
+    path: '/meal-plans',
+    element: (
+      <Navigate
+        to="/meals?tab=plans"
+        replace
+      />
+    ),
+  },
   {path: '/meal-plans/new', element: <MealPlanEditPage />},
   {path: '/meal-plans/:planId', element: <MealPlanDetailPage />},
   {path: '/meal-plans/:planId/edit', element: <MealPlanEditPage />},
@@ -83,6 +93,7 @@ const authenticatedAppRoutes = [
 export const router = createBrowserRouter([
   {
     element: <RootLayout />,
+    errorElement: <RouteErrorPage />,
     children: [
       {path: '/login', element: <LoginPage />},
       {path: '/signup', element: <SignupPage />},

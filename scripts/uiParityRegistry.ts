@@ -211,6 +211,12 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
       'Floating feedback widget for web layout; app uses a dedicated Feedback screen.',
   },
   {
+    path: 'RouteErrorView.tsx',
+    platform: 'web',
+    reason:
+      'React Router route error page view (eciperay#257); the app uses React Navigation, which has no URL routing or router error boundary.',
+  },
+  {
     path: 'LegalDocumentPage.tsx',
     platform: 'web',
     reason: 'Renders legal markdown for in-app web routes (/privacy, /terms).',

@@ -269,13 +269,18 @@ Jest covers the meal plan detail/form views. The cases below are manual._
    without entries.
 5. **Delete the plan.** Delete `QA — Week Plan`. **Expected:** gone from the
    list; member recipes unaffected.
+6. **Direct `/meal-plans` visit + unknown routes (web).** Visit `/meal-plans`
+   directly. **Expected:** you land on the Meals hub with the Meal plans tab
+   active (`/meals?tab=plans`) and the plan list renders — no 404. Then visit a
+   nonsense path (e.g. `/no-such-page`). **Expected:** the app's own "Page not
+   found" page with a link home, never the raw framework error screen.
 
 **Run when:**
 `packages/app/src/screens/{MealPlanDetail,MealPlanEdit}Screen.tsx`,
 `packages/app/src/hosts/meals/**`,
 `packages/web/src/pages/{MealPlanDetail,MealPlanEdit}Page.tsx`,
 `packages/web/src/components/meals/{MealPlanDetailView,MealPlanFormView,NutritionGoalProgressView}.tsx`,
-`packages/server` meal plan routes.
+`packages/web/src/routes/router.tsx`, `packages/server` meal plan routes.
 
 ---
 
