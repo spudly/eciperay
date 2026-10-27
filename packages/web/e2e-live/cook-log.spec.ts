@@ -34,10 +34,11 @@ test.describe('live cook log', () => {
     await expect(page.getByText('Mix everything and cook.')).toBeVisible({
       timeout: 15_000,
     });
-    // One instruction step: "Next →" may or may not appear before "Done"
-    // depending on step count; click through whichever is offered.
+    // Advance through the steps: "Next →" renders disabled on the
+    // last step (and clicking a disabled button hangs until the test
+    // timeout), so only click it while it is enabled.
     const next = page.getByRole('button', {name: 'Next →'});
-    if (await next.isVisible({timeout: 5_000}).catch(() => false)) {
+    while (await next.isEnabled().catch(() => false)) {
       await next.click();
     }
     await page.getByRole('button', {name: 'Done'}).click();
