@@ -49,6 +49,23 @@ describe('CookingModeScreen', () => {
     expect(await findByText('Mix dry ingredients')).toBeTruthy();
   });
 
+  test('renders no cooking controls before the recipe loads', async () => {
+    // Regression (#247): with no versionId route param, versionId is empty
+    // until the recipe resolves — the Done path and the cook log form must
+    // not be reachable in that window, or a submit posts to an
+    // empty-version URL and the cook log is silently lost.
+    mockGet.mockReturnValue(new Promise(() => undefined));
+    const propsWithoutVersion = makeStackProps<
+      RecipesStackParamList,
+      'CookingMode'
+    >('CookingMode', {recipeId: 'recipe-uuid-1'}, {goBack: mockGoBack});
+    const {queryByText} = await renderWithProviders(
+      <CookingModeScreen {...propsWithoutVersion} />,
+    );
+    expect(queryByText('Done')).toBeNull();
+    expect(queryByText('How did it go?')).toBeNull();
+  });
+
   test('advances to next step', async () => {
     const {findByText} = await renderWithProviders(
       <CookingModeScreen {...stackProps} />,

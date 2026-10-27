@@ -11,6 +11,7 @@ import {useEffect, useState} from 'react';
 import KeepAwake from 'react-native-keep-awake';
 import type {CookLogInput} from '@eciperay/types';
 
+import {ScreenLoadingGate} from '../components/ScreenLoadingGate';
 import {
   CookingModeCookLogShell,
   CookingModeDoneButton,
@@ -37,7 +38,7 @@ export const CookingModeScreen = ({route, navigation}: CookingProps) => {
   const [showCookLogForm, setShowCookLogForm] = useState(false);
   const queryClient = useQueryClient();
 
-  const {data: recipe} = useQuery({
+  const {data: recipe, isLoading} = useQuery({
     queryKey: queryKeys.recipe(recipeId),
     queryFn: () => api.recipes.get(recipeId),
   });
@@ -104,6 +105,14 @@ export const CookingModeScreen = ({route, navigation}: CookingProps) => {
     setStep(s => Math.max(s - 1, 0));
   };
   const {onStart, onEnd} = useSwipeNav(goNext, goPrev);
+
+  // Gate the whole cooking view — including the Done path and the cook log
+  // form — on the recipe having loaded. Before it resolves, versionId can
+  // still be empty (no versionId route param), and a cook log submitted in
+  // that window posts to an empty-version URL and is silently lost (#247).
+  if (isLoading || !recipe) {
+    return <ScreenLoadingGate pending>{null}</ScreenLoadingGate>;
+  }
 
   if (showCookLogForm) {
     return (

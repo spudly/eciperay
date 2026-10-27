@@ -210,6 +210,12 @@ list view, and the cooking-mode overlay.
 7. **Pending state.** On a slow connection (browser throttling), submit.
    **Expected:** Save disables while pending; double-taps do not create
    duplicate entries; Skip remains available per the form's design.
+8. **Cooking mode before the recipe loads.** Open cooking mode directly
+   (`/recipes/:recipeId/cook`, no `?versionId=`) on a throttled connection and
+   try to reach the cook log form before the recipe finishes loading.
+   **Expected:** no step controls, Done button, or cook log form is shown until
+   the recipe has loaded — a cook log can never be submitted with an empty
+   version (regression: #247).
 
 **Run when:** `@spudly/ui` `CookLogForm` or `StarRatingInput`,
 `packages/app/src/screens/CookingModeScreen.tsx`,

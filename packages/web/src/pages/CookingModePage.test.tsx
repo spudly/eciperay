@@ -1,9 +1,12 @@
 import {fireEvent, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import {http, HttpResponse} from 'msw';
+import {delay, http, HttpResponse} from 'msw';
 import {Route, Routes} from 'react-router-dom';
 
-import {makeRecipeVersionDetail} from '../test/fixtures/recipe.js';
+import {
+  makeRecipeDetail,
+  makeRecipeVersionDetail,
+} from '../test/fixtures/recipe.js';
 import {server} from '../test/msw/server.js';
 import {renderWithProviders} from '../test/testUtils.js';
 
@@ -36,6 +39,38 @@ describe('CookingModePage', () => {
     fireEvent.keyDown(window, {key: 'ArrowUp'});
     fireEvent.keyDown(window, {key: 'Escape'});
     expect(screen.getByText('How did it go?')).toBeInTheDocument();
+  });
+
+  test('renders no cooking controls or cook log form before the recipe loads', async () => {
+    server.use(
+      http.get('http://localhost:8080/api/recipes/:id', async () => {
+        await delay(500);
+        return HttpResponse.json({
+          ...makeRecipeDetail(),
+          communityRating: null,
+          viewerRating: null,
+          viewerRatingIsStale: false,
+        });
+      }),
+    );
+    await renderWithProviders(
+      <Routes>
+        <Route
+          path="/recipes/:recipeId/cook"
+          element={<CookingModePage />}
+        />
+      </Routes>,
+      {route: '/recipes/recipe-uuid-1/cook'},
+    );
+    // Regression (#247): with no ?versionId= param, versionId is empty until
+    // the recipe resolves — the Done path and the cook log form must not be
+    // reachable in that window, or a submit posts to an empty-version URL.
+    expect(screen.queryByText('Done')).not.toBeInTheDocument();
+    expect(screen.queryByText('How did it go?')).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('Mix dry ingredients')).toBeInTheDocument();
+    });
+    expect(screen.getByText('Done')).toBeInTheDocument();
   });
 
   test('shows scaled ingredients when servings are provided', async () => {
