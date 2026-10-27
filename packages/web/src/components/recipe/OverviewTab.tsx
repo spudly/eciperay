@@ -52,13 +52,13 @@ export const OverviewTab = ({
   const deleteMutation = useMutation({
     mutationFn: async () => {
       await eciperay.recipes.delete(recipe.id);
-    },
-    onSuccess: () => {
       // History cleanup is best-effort: the server delete already
       // succeeded, so a storage failure must not route to onError.
-      void removeRecipeView(recipeViewHistoryStorage, recipe.id).catch(
+      await removeRecipeView(recipeViewHistoryStorage, recipe.id).catch(
         () => undefined,
       );
+    },
+    onSuccess: () => {
       analytics.track('recipe_deleted', {recipe_id: recipe.id});
       void invalidateRecipeQueries(queryClient, recipe.id, recipe.versionId);
       void navigate('/recipes');

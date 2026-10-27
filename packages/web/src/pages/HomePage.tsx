@@ -34,13 +34,15 @@ export const HomePage = () => {
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       await eciperay.recipes.delete(id);
-    },
-    onSuccess: (_data, id) => {
-      // History cleanup is best-effort: the server delete already
-      // succeeded, so a storage failure must not route to onError.
-      void removeRecipeView(recipeViewHistoryStorage, id).catch(
+      // History cleanup is best-effort and must finish before the
+      // onSuccess invalidation refetches the history-driven list —
+      // but a storage failure must not route to onError: the server
+      // delete already succeeded.
+      await removeRecipeView(recipeViewHistoryStorage, id).catch(
         () => undefined,
       );
+    },
+    onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: queryKeys.recipes('home-recently-viewed'),
       });
