@@ -67,7 +67,10 @@ export const deleteRecipeViaUi = async (
   page.once('dialog', dialog => {
     void dialog.accept();
   });
-  await page.getByRole('button', {name: 'Delete'}).click();
+  // exact: the recipe card itself is a button whose accessible name
+  // contains the recipe title — a title like "CI — Delete Me …" would
+  // otherwise match the substring locator too (strict-mode violation).
+  await page.getByRole('button', {name: 'Delete', exact: true}).click();
   await expect(page.getByText(title)).toHaveCount(0, {timeout: 15_000});
 };
 

@@ -52,12 +52,21 @@ test.describe('live imports', () => {
     await page.getByRole('button', {name: 'Import', exact: true}).click();
 
     // The review screen shows the parsed recipe; accepting it saves.
+    // The parser normalizes the title (it dropped this spec's "CI —"
+    // prefix and random suffix, returning "Imported Soup"), so assert
+    // on the parsed content it does carry verbatim — the ingredients —
+    // not on the exact title it was fed.
     await expect(page).toHaveURL(/\/import\/review\//, {timeout: 30_000});
-    await expect(page.getByText(title)).toBeVisible();
+    await expect(page.getByText('2 cups water')).toBeVisible();
     await page.getByRole('button', {name: 'Looks good'}).click();
 
     await expect(page).toHaveURL(/\/recipes\/[^/]+$/, {timeout: 15_000});
+    // Capture the id before any further assertion: teardown deletes by
+    // id, and a failed assertion after this point must not leak the
+    // imported recipe into the QA dataset.
     createdId = page.url().split('/recipes/')[1]!;
-    await expect(page.getByRole('heading', {name: title})).toBeVisible();
+    await expect(
+      page.getByRole('heading', {name: 'Imported Soup'}),
+    ).toBeVisible();
   });
 });

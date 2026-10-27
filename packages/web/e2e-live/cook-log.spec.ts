@@ -26,6 +26,14 @@ test.describe('live cook log', () => {
 
   const reachCookLogForm = async (page: Page, recipeId: string) => {
     await page.goto(`/recipes/${recipeId}/cook`);
+    // Wait for the loaded step text before touching anything: the cook
+    // page renders its controls before the recipe query resolves, and a
+    // submit fired in that window posts with an empty versionId (the
+    // request goes to /versions//cooks and is lost — filed as a QA bug).
+    // The step text comes from createRecipeViaUi's fixture instruction.
+    await expect(page.getByText('Mix everything and cook.')).toBeVisible({
+      timeout: 15_000,
+    });
     // One instruction step: "Next →" may or may not appear before "Done"
     // depending on step count; click through whichever is offered.
     const next = page.getByRole('button', {name: 'Next →'});
@@ -47,6 +55,12 @@ test.describe('live cook log', () => {
       .getByPlaceholder('Notes from this cook (optional)')
       .fill('CI cook log notes');
     await page.getByRole('button', {name: 'Save', exact: true}).click();
+
+    // A successful save navigates back off the form; if the mutation
+    // failed, the form (and its title) stays — fail here, not later.
+    await expect(page.getByText('How did it go?')).toHaveCount(0, {
+      timeout: 15_000,
+    });
 
     // Back on the recipe, the cook shows in its history.
     await page.goto(`/recipes/${created.id}`);

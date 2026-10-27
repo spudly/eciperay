@@ -48,7 +48,12 @@ test.describe('live meal plans', () => {
       .getByPlaceholder('YYYY-MM-DD')
       .nth(1)
       .fill(fmt(Date.now() + 7 * day));
-    // Include the CI recipe in the plan.
+    // Include the CI recipe in the plan: the quantity field for a
+    // recipe only appears once its checkbox is selected (Save plan
+    // stays disabled until at least one recipe is checked).
+    await page
+      .getByRole('checkbox', {name: `Recipe · ${recipe.title}`})
+      .check();
     await page.getByLabel(`Quantity · ${recipe.title}`).fill('1');
     await page.getByRole('button', {name: 'Save plan'}).click();
 
