@@ -27,6 +27,26 @@ const liveDir = path.dirname(fileURLToPath(import.meta.url));
 /** Where auth.setup.ts saves the signed-in session for the live-auth project. */
 export const storageStatePath = path.join(liveDir, '.auth', 'qa.json');
 
+/**
+ * A second, dedicated session that only sign-out.spec.ts consumes: signing out
+ * must never touch the shared session above (Supabase signOut defaults to
+ * global scope and revokes every session for the user).
+ */
+export const signOutStatePath = path.join(liveDir, '.auth', 'qa-signout.json');
+
+/**
+ * Text import parses server-side with Anthropic, so the imports spec also needs
+ * the API key in the job environment. The e2e-live CI job passes
+ * ANTHROPIC_API_KEY through from secrets; while no secret exists the spec skips
+ * with AI_SKIP_REASON instead of failing on the server's 500.
+ */
+export const hasAiKey = (process.env['ANTHROPIC_API_KEY'] ?? '') !== '';
+
+export const AI_SKIP_REASON =
+  'ANTHROPIC_API_KEY is not set: text import parses with Anthropic ' +
+  'server-side, so the imports spec activates once the key is provided ' +
+  'as a CI secret (issue #233).';
+
 /** Everything a live test creates is named with this prefix (hygiene rule). */
 const CI_PREFIX = 'CI — ';
 

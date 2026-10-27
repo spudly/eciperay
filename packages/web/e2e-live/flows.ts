@@ -34,7 +34,9 @@ export const createRecipeViaUi = async (
     .locator('div:has(> button[aria-label="Reorder step 1"]) > textarea')
     .fill('Mix everything and cook.');
 
-  await page.getByRole('button', {name: 'Save recipe'}).click();
+  // The page host's submit label (ManualEntryPage passes "Create Recipe";
+  // "Save recipe" exists only in RecipeForm's DEV demo, not in the app).
+  await page.getByRole('button', {name: 'Create Recipe'}).click();
 
   // Saving lands on the new recipe's detail page.
   await expect(page).toHaveURL(/\/recipes\/[^/]+$/, {timeout: 15_000});

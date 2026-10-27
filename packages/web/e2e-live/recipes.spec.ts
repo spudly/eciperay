@@ -43,7 +43,8 @@ test.describe('live recipes', () => {
 
     await page.goto(`/recipes/${created.id}/edit`);
     await page.getByLabel('Title').fill(renamed);
-    await page.getByRole('button', {name: 'Save recipe'}).click();
+    // EditRecipePage's submit label.
+    await page.getByRole('button', {name: 'Save Changes'}).click();
 
     await expect(page.getByRole('heading', {name: renamed})).toBeVisible({
       timeout: 15_000,

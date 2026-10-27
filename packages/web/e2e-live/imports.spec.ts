@@ -1,14 +1,25 @@
 import {expect, test} from '@playwright/test';
 
 import {deleteRecipeViaApi} from './flows.js';
-import {QA_SKIP_REASON, hasQaAccount, uniqueCiName} from './qa.js';
+import {
+  AI_SKIP_REASON,
+  QA_SKIP_REASON,
+  hasAiKey,
+  hasQaAccount,
+  uniqueCiName,
+} from './qa.js';
 
 /**
  * Text import end-to-end (issue #233). URL/image imports stay out of the live
  * suite: URL import depends on third-party page content and image import on AI
  * generation, neither of which is a stable CI target.
+ *
+ * Text import itself parses with Anthropic server-side, so on top of the CI
+ * test account this spec needs ANTHROPIC_API_KEY in the job environment —
+ * without it the endpoint 500s and the spec skips with AI_SKIP_REASON.
  */
 test.skip(!hasQaAccount, QA_SKIP_REASON);
+test.skip(!hasAiKey, AI_SKIP_REASON);
 
 test.describe('live imports', () => {
   let createdId: string | null = null;
