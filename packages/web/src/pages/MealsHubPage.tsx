@@ -39,8 +39,11 @@ export const MealsHubPage = () => {
 
   const deletePlanMutation = useMutation({
     mutationFn: (id: string) => eciperay.mealPlans.delete(id),
-    onSuccess: () => {
+    onSuccess: (_data, id) => {
       void queryClient.invalidateQueries({queryKey: queryKeys.mealPlans()});
+      // Drop the deleted plan's detail cache too, so a later visit to its
+      // detail page cannot render the stale cached plan (#268).
+      queryClient.removeQueries({queryKey: queryKeys.mealPlan(id)});
     },
   });
 

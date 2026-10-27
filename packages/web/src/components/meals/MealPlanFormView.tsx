@@ -16,6 +16,7 @@ export const MealPlanFormView = ({
   endsOn,
   selectedKeys,
   entryOptions,
+  entryOptionsLoading = false,
   quantityByKey,
   servingsByRecipeId,
   saving,
@@ -59,6 +60,7 @@ export const MealPlanFormView = ({
       />
       <p className="mbe-2 text-sm font-medium text-gray-700">Meals & recipes</p>
       <CheckboxSelectList
+        isLoading={entryOptionsLoading}
         items={entryOptions.map(entry => ({
           id: entry.kind === 'meal' ? `meal:${entry.id}` : `recipe:${entry.id}`,
           label:

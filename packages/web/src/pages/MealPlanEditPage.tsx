@@ -25,7 +25,7 @@ export const MealPlanEditPage = () => {
     enabled: isEdit,
   });
 
-  const {data: meals = []} = useQuery({
+  const {data: meals = [], isLoading: mealsLoading} = useQuery({
     queryKey: queryKeys.meals(),
     queryFn: () => eciperay.meals.list(),
   });
@@ -67,6 +67,7 @@ export const MealPlanEditPage = () => {
         endsOn={form.endsOn}
         selectedKeys={form.selectedKeys}
         entryOptions={form.entryOptions}
+        entryOptionsLoading={mealsLoading || recipesLoading}
         quantityByKey={form.quantityByKey}
         servingsByRecipeId={form.servingsByRecipeId}
         saving={saveMutation.isPending}

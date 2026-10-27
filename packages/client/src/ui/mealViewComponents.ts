@@ -83,6 +83,10 @@ export type MealPlanFormViewProps = {
   endsOn: string;
   selectedKeys: string[];
   entryOptions: MealPlanFormEntryOption[];
+  /** True while the meals/recipes behind `entryOptions` are still loading;
+   * the form shows a loading state for the list instead of "No items
+   * found." (#260). */
+  entryOptionsLoading?: boolean;
   quantityByKey: Record<string, number>;
   servingsByRecipeId: Record<string, number>;
   saving: boolean;
