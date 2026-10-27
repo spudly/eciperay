@@ -169,6 +169,14 @@ export const ThumbnailListCard = ({
   // flex item whose min-content (thumbnail + unwrapped subtitle) forced
   // it wider than the card at phone widths — a 9px horizontal overflow
   // on /recipes at 390px in the mobile-web e2e layout test.
+  // The outer card renders with padding 0 and the main region carries
+  // the card's padding itself, so the padded area stays inside the
+  // press target: when the pressable was a plain stack under the padded
+  // card, clicks on the card's padded ring hit the outer card and never
+  // reached onPress. The actions wrapper keeps the card's end and
+  // bottom insets instead. (With border-box sizing the main region's
+  // 17rem basis already included this padding back when the pressable
+  // was a Card, so the row's outer geometry is unchanged.)
   let mainRegion: ReactNode;
   if (onPress) {
     mainRegion = (
@@ -181,6 +189,7 @@ export const ThumbnailListCard = ({
         flexShrink={1}
         flexBasis="17rem"
         minWidth={0}
+        padding="$4"
       >
         {main}
       </YStack>
@@ -195,6 +204,10 @@ export const ThumbnailListCard = ({
           cursor: 'pointer',
           flex: '1 1 17rem',
           minWidth: 0,
+          paddingTop: tokens.spacing[4],
+          paddingBottom: tokens.spacing[4],
+          paddingLeft: tokens.spacing[4],
+          paddingRight: tokens.spacing[4],
         }}
       >
         {main}
@@ -207,6 +220,7 @@ export const ThumbnailListCard = ({
         flexShrink={1}
         flexBasis="17rem"
         minWidth={0}
+        padding="$4"
       >
         {main}
       </YStack>
@@ -214,14 +228,23 @@ export const ThumbnailListCard = ({
   }
 
   return (
-    <DSCard>
+    <DSCard padding={0}>
       <XStack
         gap="$3"
         alignItems="center"
         flexWrap="wrap"
       >
         {mainRegion}
-        <div style={{marginInlineStart: 'auto'}}>{trailing}</div>
+        <div
+          style={{
+            marginInlineStart: 'auto',
+            paddingTop: tokens.spacing[4],
+            paddingBottom: tokens.spacing[4],
+            paddingInlineEnd: tokens.spacing[4],
+          }}
+        >
+          {trailing}
+        </div>
       </XStack>
     </DSCard>
   );

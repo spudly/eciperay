@@ -20,6 +20,14 @@ import {Image, View} from 'tamagui';
  * linkTo Link) show a pointer cursor on hover so the card reads as clickable.
  * Native has no hover cursor, so there is no counterpart here. Comment-only; no
  * behavior change.
+ *
+ * Parity note (#267): the web mirror moved its card padding inside the press
+ * target — the web card itself is pressable, but its padding sat on the outer
+ * card while onPress lived on an inner stack, so the padded ring never pressed.
+ * This mirror's card is not a pressable surface: its press targets are the
+ * thumbnail and text TouchableOpacities, and the DS Card's default padding is
+ * layout space around them, so there is no counterpart change. Comment-only; no
+ * behavior change.
  */
 
 // Structural flex only (the old flex-1 min-inline-0): the text block

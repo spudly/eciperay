@@ -48,10 +48,15 @@ describe('ThumbnailListCard', () => {
     const pressable = screen.getByRole('button', {name: /Pasta/});
     const action = screen.getByRole('button', {name: /Log cook/});
 
-    // The actions live in the same in-card row as the pressable main
-    // region (#258: they previously rendered outside the card border as a
-    // floating column in the page margin).
-    expect(pressable.parentElement).toContainElement(action);
+    // The card surface itself contains both the pressable main region
+    // and the actions (#258: the actions previously rendered outside the
+    // card border as a floating column in the page margin). Asserting
+    // against the card — not just the row — fails if either element
+    // moves outside it. (The card surface is the pressable's
+    // grandparent: card > row > pressable main region.)
+    const card = pressable.parentElement?.parentElement;
+    expect(card).toContainElement(pressable);
+    expect(card).toContainElement(action);
   });
 
   test('shows a pointer cursor on the linkTo link', async () => {
