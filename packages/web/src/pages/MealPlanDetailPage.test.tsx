@@ -1,11 +1,12 @@
-import {fireEvent, screen, waitFor} from '@testing-library/react';
+import {queryKeys} from '@eciperay/client';
+import {act, fireEvent, screen, waitFor} from '@testing-library/react';
 import {http, HttpResponse} from 'msw';
 import {Route, Routes} from 'react-router-dom';
 import {vi} from 'vitest';
 
 import {MEAL_ID, PLAN_ID} from '../test/fixtures/meal.js';
 import {server} from '../test/msw/server.js';
-import {renderWithProviders} from '../test/testUtils.js';
+import {makeQueryClient, renderWithProviders} from '../test/testUtils.js';
 
 import {MealPlanDetailPage} from './MealPlanDetailPage.js';
 
@@ -102,6 +103,40 @@ describe('MealPlanDetailPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Page not found')).toBeInTheDocument();
     });
+  });
+
+  test('shows a not-found state when a refetch 404s over a cached plan', async () => {
+    const queryClient = makeQueryClient();
+    await renderWithProviders(
+      <Routes>
+        <Route
+          path="/meal-plans/:planId"
+          element={<MealPlanDetailPage />}
+        />
+      </Routes>,
+      {route: `/meal-plans/${PLAN_ID}`, queryClient},
+    );
+    await waitFor(() => {
+      expect(screen.getByText('This week')).toBeInTheDocument();
+    });
+
+    // The plan is deleted elsewhere; the detail refetch now answers 404
+    // while TanStack Query still holds the cached plan data.
+    server.use(
+      http.get(`http://localhost:8080/api/meal-plans/${PLAN_ID}`, () =>
+        HttpResponse.json({error: 'Meal plan not found'}, {status: 404}),
+      ),
+    );
+    await act(async () => {
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.mealPlan(PLAN_ID),
+      });
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Page not found')).toBeInTheDocument();
+    });
+    expect(screen.queryByText('This week')).not.toBeInTheDocument();
   });
 
   test('renders meal plan detail and navigates', async () => {
