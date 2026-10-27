@@ -80,7 +80,13 @@ test.describe('live meal plans', () => {
     await expect(page.getByText('CI Test Ingredient')).toBeVisible({
       timeout: 15_000,
     });
-    const checkbox = page.getByRole('checkbox').first();
+    // Target the checkbox on the ingredient's own row: the list is
+    // generated from a persistent dataset, so "the first checkbox" is
+    // not a stable identity for this item.
+    const checkbox = page
+      .getByRole('listitem')
+      .filter({hasText: 'CI Test Ingredient'})
+      .getByRole('checkbox');
     await checkbox.check();
     await expect(checkbox).toBeChecked();
   });

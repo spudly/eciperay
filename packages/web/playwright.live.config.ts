@@ -39,7 +39,10 @@ export default defineConfig({
     {
       name: 'setup',
       testMatch: 'auth.setup.ts',
-      use: {...devices['Desktop Chrome'], baseURL},
+      // No trace for the setup project: it types the QA account password,
+      // and failure traces are uploaded as workflow artifacts — the
+      // password must never land in one (see .github/workflows/e2e.yml).
+      use: {...devices['Desktop Chrome'], baseURL, trace: 'off'},
     },
     {
       name: 'live-public',
@@ -63,7 +66,11 @@ export default defineConfig({
     : {
         command: 'npx tsx e2e-live/startStack.ts',
         url: `http://127.0.0.1:${PORT}/api/health`,
-        reuseExistingServer: !process.env['CI'],
+        // Never reuse an existing server: a local server already on the
+        // port was booted with unknown env wiring, and the live suite
+        // must only ever run against the stack startStack.ts wires to
+        // the QA dataset (never a developer's — or production's — data).
+        reuseExistingServer: false,
         timeout: 300_000,
       },
 });

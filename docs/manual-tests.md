@@ -67,7 +67,11 @@ No feature section substitutes for this baseline; it runs first, every time.
 
 _Automated: Jest covers the auth screens/forms (app `screens/auth/*`, web auth
 pages); Playwright `signed-out.spec.ts` covers the redirect-to-sign-in and
-sign-in render. The cases below are the manual remainder._
+sign-in render. Playwright live `e2e-live/auth.setup.ts` covers real sign-in;
+`e2e-live/sign-out.spec.ts` covers real sign-out; and `e2e-live/auth.spec.ts`
+covers the password-reset request against the QA dataset once the CI test
+account secrets exist (issue #233); until then those cases remain manual. The
+cases below are the manual remainder._
 
 **Preconditions:** QA account credentials; a second browser profile or private
 window for signed-out checks; access to the QA account's email inbox for
@@ -167,8 +171,11 @@ scale visibly (e.g. 2 cups flour, 0.5 tsp salt), such as
    coherently.
 4. **Invalid input resilience.** Enter 0, then a negative number, then
    non-numeric text in the servings and custom-scale inputs. **Expected:** no
-   crash, no NaN quantities; the last valid quantities stay or the field resets
-   to a sane value.
+   crash, no NaN quantities. Empty or non-numeric entries commit nothing — the
+   field restores the current value and the last valid quantities stay. In the
+   servings input, 0 or a negative number clamps to the minimum (1 serving) and
+   quantities rescale to match; in the custom-scale input, a non-positive entry
+   commits nothing and the current scale stays.
 5. **Persistence of intent.** Scale to 2x, navigate away, and return.
    **Expected:** either the scale resets to 1x by design or persists — but
    whichever it does, quantities and the displayed scale agree.
@@ -321,7 +328,11 @@ shopping list generation.
 ## Imports
 
 _Automated: Jest covers the import screens and the review screen's rendering;
-extraction quality against real-world sources is inherently manual._
+Playwright live `e2e-live/imports.spec.ts` covers text import end-to-end against
+the QA dataset once both prerequisites exist as CI secrets — the CI test account
+and the Anthropic API key (text import parses with Anthropic server-side, so the
+spec skips while either is missing; issue #233). Extraction quality against
+real-world sources is inherently manual._
 
 **Preconditions:** QA account; the sample inputs named in each case (keep a
 small set of known inputs so results are comparable across runs).

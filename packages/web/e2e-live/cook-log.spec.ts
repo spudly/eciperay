@@ -80,5 +80,13 @@ test.describe('live cook log', () => {
     await expect(page.getByText('How did it go?')).toHaveCount(0, {
       timeout: 15_000,
     });
+
+    // The form closing is not enough: Skip must not have recorded a cook
+    // on the way out. The new recipe's history is empty.
+    await page.goto(`/recipes/${created.id}`);
+    await page.getByRole('tab', {name: /history/i}).click();
+    await expect(page.getByText(/No cooks logged yet/)).toBeVisible({
+      timeout: 15_000,
+    });
   });
 });

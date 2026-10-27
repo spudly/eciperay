@@ -64,9 +64,11 @@ test.describe('live recipes', () => {
 
   test('delete removes the recipe from the list', async ({page}) => {
     created = await createRecipeViaUi(page, uniqueCiName('Delete Me'));
-    const {title} = created;
-    created = null; // the UI flow below is the deletion; nothing to clean up
 
-    await deleteRecipeViaUi(page, title);
+    // `created` deliberately stays set: if the UI flow below fails before
+    // deleting, afterEach still removes the recipe via the API; if it
+    // succeeds, the API pass just gets a 404, which apiDelete treats as
+    // already-clean (see qa.ts).
+    await deleteRecipeViaUi(page, created.title);
   });
 });

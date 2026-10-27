@@ -56,17 +56,29 @@ test.describe('live imports', () => {
     // prefix and random suffix, returning "Imported Soup"), so assert
     // on the parsed content it does carry verbatim — the ingredients —
     // not on the exact title it was fed.
-    await expect(page).toHaveURL(/\/import\/review\//, {timeout: 30_000});
+    await expect(page).toHaveURL(/\/import\/review\/[^/]+$/, {timeout: 30_000});
+    // Capture the id from the review URL before accepting: the recipe
+    // already exists server-side at this point, and teardown deletes by
+    // id — if accepting or any later step fails, afterEach must still be
+    // able to remove it instead of leaking it into the QA dataset.
+    createdId = page.url().split('/import/review/')[1]!;
     await expect(page.getByText('2 cups water')).toBeVisible();
     await page.getByRole('button', {name: 'Looks good'}).click();
 
     await expect(page).toHaveURL(/\/recipes\/[^/]+$/, {timeout: 15_000});
-    // Capture the id before any further assertion: teardown deletes by
-    // id, and a failed assertion after this point must not leak the
-    // imported recipe into the QA dataset.
-    createdId = page.url().split('/recipes/')[1]!;
     await expect(
       page.getByRole('heading', {name: 'Imported Soup'}),
     ).toBeVisible();
+
+    // The saved recipe carries the parser's unprefixed title; rename it
+    // to this spec's `CI —` title through the standard edit flow (the
+    // same one recipes.spec.ts proves) so everything the suite leaves
+    // behind — even briefly — follows the prefix hygiene rule.
+    await page.goto(`/recipes/${createdId}/edit`);
+    await page.getByLabel('Title').fill(title);
+    await page.getByRole('button', {name: 'Save Changes'}).click();
+    await expect(page.getByRole('heading', {name: title})).toBeVisible({
+      timeout: 15_000,
+    });
   });
 });

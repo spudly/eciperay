@@ -117,6 +117,13 @@ jobs:
           E2E_QA_EMAIL: ${{ secrets.E2E_QA_EMAIL }}
           E2E_QA_PASSWORD: ${{ secrets.E2E_QA_PASSWORD }}
 
+      # Traces from the live suite can carry session tokens for the QA
+      # account, and this repo is public — anyone with read access can
+      # download artifacts. The setup project records no trace at all
+      # (it types the QA password; see playwright.live.config.ts), and
+      # retention is cut to the minimum so the exposure window for the
+      # remaining traces is as short as the failure-diagnosis value
+      # allows.
       - name: Upload Playwright traces on failure
         if: failure()
         uses: actions/upload-artifact@v7
@@ -124,3 +131,4 @@ jobs:
           name: playwright-traces-live
           path: packages/web/test-results
           if-no-files-found: ignore
+          retention-days: 1

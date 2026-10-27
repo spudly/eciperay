@@ -22,9 +22,12 @@ test.describe('live auth', () => {
   test('a password-reset request confirms for the CI account email', async ({
     browser,
   }) => {
-    // Fresh, signed-out context (the project's storageState must not leak
-    // into this flow).
-    const context = await browser.newContext();
+    // Fresh, signed-out context. browser.newContext() inherits the
+    // project's storageState in Playwright, so the empty state is
+    // passed explicitly to keep the shared session out of this flow.
+    const context = await browser.newContext({
+      storageState: {cookies: [], origins: []},
+    });
     const page = await context.newPage();
     try {
       await page.goto('/forgot-password');

@@ -80,20 +80,31 @@ export const getAccessToken = async (page: Page): Promise<string | null> =>
  * Teardown helper: deletes a QA-dataset entity through the real API using the
  * signed-in page's session. Used in afterAll hooks so `CI —` data never
  * accumulates, even when a spec fails mid-flow. No-ops when there is no session
- * (the spec never got signed in).
+ * (the spec never got signed in). A failed DELETE throws: cleanup that did not
+ * happen must fail the run loudly instead of silently leaking `CI —` records
+ * into the persistent QA dataset. The one exception is 404 — the entity is
+ * already gone (e.g. the spec deleted it through the UI and this is the
+ * belt-and-braces API pass), which is the teardown goal already met.
  */
 export const apiDelete = async (page: Page, apiPath: string): Promise<void> => {
   const token = await getAccessToken(page);
   if (!token) {
     return;
   }
-  await page.evaluate(
+  const status = await page.evaluate(
     async ({apiPath: p, token: t}) => {
-      await fetch(`/api${p}`, {
+      const response = await fetch(`/api${p}`, {
         method: 'DELETE',
         headers: {Authorization: `Bearer ${t}`},
-      }).catch(() => undefined);
+      });
+      return response.status;
     },
     {apiPath, token},
   );
+  if (status !== 404 && (status < 200 || status >= 300)) {
+    throw new Error(
+      `apiDelete: DELETE ${apiPath} failed with status ${status}; ` +
+        'the CI record may still exist in the QA dataset.',
+    );
+  }
 };
