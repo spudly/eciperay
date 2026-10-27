@@ -194,7 +194,6 @@ describe('RecipesPage', () => {
   });
 
   test('deletes recipe on confirm', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
     await renderWithProviders(<RecipesPage />);
     await waitFor(() => {
       expect(screen.getByText('Delete')).toBeInTheDocument();
@@ -205,13 +204,35 @@ describe('RecipesPage', () => {
       ),
     );
     await userEvent.click(screen.getByText('Delete'));
+    // The in-page confirmation is what deletes — no window.confirm (#263).
+    expect(screen.getByText('Test Recipe')).toBeInTheDocument();
+    await userEvent.click(screen.getByText('Confirm delete'));
     await waitFor(() => {
       expect(screen.queryByText('Test Recipe')).not.toBeInTheDocument();
     });
   });
 
+  test('surfaces an error when deleting a recipe fails', async () => {
+    server.use(
+      http.delete('http://localhost:8080/api/recipes/:id', () =>
+        HttpResponse.json({error: 'Delete failed on server'}, {status: 500}),
+      ),
+    );
+    await renderWithProviders(<RecipesPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Delete')).toBeInTheDocument();
+    });
+    await userEvent.click(screen.getByText('Delete'));
+    await userEvent.click(screen.getByText('Confirm delete'));
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'Could not delete recipe: Delete failed on server',
+      );
+    });
+    expect(screen.getByText('Test Recipe')).toBeInTheDocument();
+  });
+
   test('removes deleted recipe from filtered list without clearing search', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
     let deleted = false;
     const soup = makeRecipeDetail({id: 'soup-id', title: 'Soup'});
     const salad = makeRecipeDetail({id: 'salad-id', title: 'Salad'});
@@ -249,6 +270,7 @@ describe('RecipesPage', () => {
       expect(screen.queryByText('Salad')).not.toBeInTheDocument();
     });
     await userEvent.click(screen.getByText('Delete'));
+    await userEvent.click(screen.getByText('Confirm delete'));
     await waitFor(() => {
       expect(screen.queryByText('Soup')).not.toBeInTheDocument();
     });

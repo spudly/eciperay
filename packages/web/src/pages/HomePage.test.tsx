@@ -39,11 +39,11 @@ describe('HomePage', () => {
   });
 
   test('deletes a recently viewed recipe on confirm', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
     await recordRecipeView(recipeViewHistoryStorage, 'recipe-uuid-1');
     await renderWithProviders(<HomePage />);
     await screen.findByText('Test Recipe');
     await userEvent.click(screen.getByText('Delete'));
+    await userEvent.click(screen.getByText('Confirm delete'));
     await waitFor(() => {
       expect(screen.queryByText('Test Recipe')).not.toBeInTheDocument();
     });

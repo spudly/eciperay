@@ -1,5 +1,6 @@
-import {act, screen} from '@testing-library/react';
+import {act, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import {http, HttpResponse} from 'msw';
 import {Route, Routes} from 'react-router-dom';
 import {vi} from 'vitest';
 
@@ -7,6 +8,7 @@ import {
   makeRecipeDetail,
   makeRecipeVersionSummary,
 } from '../../test/fixtures/recipe.js';
+import {server} from '../../test/msw/server.js';
 import {renderWithProviders} from '../../test/testUtils.js';
 import * as printRecipeModule from '../../lib/printRecipe.js';
 import * as shareRecipeModule from '../../lib/shareRecipe.js';
@@ -103,6 +105,61 @@ describe('OverviewTab', () => {
     });
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
     setTimeoutSpy.mockRestore();
+  });
+
+  test('deletes the recipe after the in-page confirmation and returns to the list', async () => {
+    const recipe = makeRecipeDetail();
+    await renderWithProviders(
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <OverviewTab
+              recipe={recipe}
+              activeVersionId={recipe.versionId}
+              servings={4}
+              versions={[makeRecipeVersionSummary()]}
+            />
+          }
+        />
+        <Route
+          path="/recipes"
+          element={<div>Recipes list page</div>}
+        />
+      </Routes>,
+      {route: '/'},
+    );
+    // First click only arms the confirmation (#263).
+    await userEvent.click(screen.getByText('Delete'));
+    expect(screen.queryByText('Recipes list page')).not.toBeInTheDocument();
+    await userEvent.click(screen.getByText('Confirm delete'));
+    expect(await screen.findByText('Recipes list page')).toBeInTheDocument();
+  });
+
+  test('cancelling the delete confirmation keeps the recipe', async () => {
+    await renderOverview();
+    await userEvent.click(screen.getByText('Delete'));
+    await userEvent.click(screen.getByText('Cancel'));
+    expect(screen.getByText('Test Recipe')).toBeInTheDocument();
+    expect(screen.getByText('Delete')).toBeInTheDocument();
+    expect(screen.queryByText('Confirm delete')).not.toBeInTheDocument();
+  });
+
+  test('surfaces an error when deleting fails', async () => {
+    server.use(
+      http.delete('http://localhost:8080/api/recipes/:id', () =>
+        HttpResponse.json({error: 'Delete failed on server'}, {status: 500}),
+      ),
+    );
+    await renderOverview();
+    await userEvent.click(screen.getByText('Delete'));
+    await userEvent.click(screen.getByText('Confirm delete'));
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'Could not delete recipe: Delete failed on server',
+      );
+    });
+    expect(screen.getByText('Test Recipe')).toBeInTheDocument();
   });
 
   test('renders without optional fields', async () => {

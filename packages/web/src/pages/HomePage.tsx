@@ -4,6 +4,7 @@ import {
   removeRecipeView,
 } from '@eciperay/client';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
+import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 import type {RecipeDetail} from '@eciperay/types';
 
@@ -22,6 +23,10 @@ export const HomePage = () => {
     ),
   );
 
+  // Same silent-failure fix as the recipes list (#263): surface a
+  // failed delete instead of leaving the recipe listed with no error.
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       await eciperay.recipes.delete(id);
@@ -32,9 +37,17 @@ export const HomePage = () => {
         queryKey: queryKeys.recipes('home-recently-viewed'),
       });
     },
+    onError: error => {
+      setDeleteError(
+        `Could not delete recipe: ${
+          error instanceof Error ? error.message : 'Recipe deletion failed'
+        }`,
+      );
+    },
   });
 
   const handleDelete = (recipe: RecipeDetail) => {
+    setDeleteError(null);
     deleteMutation.mutate(recipe.id);
   };
 
@@ -55,6 +68,8 @@ export const HomePage = () => {
         void navigate(`/recipes/${recipeId}`);
       }}
       onRecipeDelete={handleDelete}
+      deleteError={deleteError}
+      isDeletePending={deleteMutation.isPending}
     />
   );
 };

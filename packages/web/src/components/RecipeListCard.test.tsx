@@ -51,6 +51,57 @@ describe('RecipeListCard', () => {
     });
   });
 
+  test('deletes only after the in-page confirmation', async () => {
+    const onDelete = vi.fn();
+    await renderWithProviders(
+      <RecipeListCard
+        recipe={makeRecipeDetail({title: 'Pasta'})}
+        onDelete={onDelete}
+        onPress={vi.fn()}
+      />,
+    );
+
+    // First click arms the confirmation — it must not delete yet, and
+    // must not depend on window.confirm (#263).
+    await userEvent.click(screen.getByText('Delete'));
+    expect(onDelete).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByText('Confirm delete'));
+    expect(onDelete).toHaveBeenCalledTimes(1);
+    expect(onDelete).toHaveBeenCalledWith('recipe-uuid-1');
+  });
+
+  test('cancelling the delete confirmation does not delete', async () => {
+    const onDelete = vi.fn();
+    await renderWithProviders(
+      <RecipeListCard
+        recipe={makeRecipeDetail({title: 'Pasta'})}
+        onDelete={onDelete}
+        onPress={vi.fn()}
+      />,
+    );
+
+    await userEvent.click(screen.getByText('Delete'));
+    await userEvent.click(screen.getByText('Cancel'));
+    expect(onDelete).not.toHaveBeenCalled();
+    expect(screen.getByText('Delete')).toBeInTheDocument();
+    expect(screen.queryByText('Confirm delete')).not.toBeInTheDocument();
+  });
+
+  test('disables the delete confirmation while a delete is in flight', async () => {
+    await renderWithProviders(
+      <RecipeListCard
+        recipe={makeRecipeDetail({title: 'Pasta'})}
+        onDelete={vi.fn()}
+        onPress={vi.fn()}
+        isDeleting
+      />,
+    );
+
+    await userEvent.click(screen.getByText('Delete'));
+    expect(screen.getByText('Deleting…')).toBeDisabled();
+    expect(screen.getByText('Cancel')).toBeDisabled();
+  });
+
   test('saves cook log with rating from list', async () => {
     await renderWithProviders(
       <RecipeListCard

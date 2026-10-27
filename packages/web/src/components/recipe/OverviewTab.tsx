@@ -2,15 +2,21 @@
 import {
   canEditActiveRecipeMetadata,
   canEditDraftVersion,
+  invalidateRecipeQueries,
   makeRecipeDetail,
   makeRecipeVersionSummary,
+  removeRecipeView,
+  useAnalytics,
   type ShowcaseDemoRenderer,
 } from '@eciperay/client';
 import type {RecipeDetail, RecipeVersionSummary} from '@eciperay/types';
+import {useMutation, useQueryClient} from '@tanstack/react-query';
 import {useState} from 'react';
-import {Link} from 'react-router-dom';
+import {Link, useNavigate} from 'react-router-dom';
 
+import {eciperay} from '../../lib/api.js';
 import {printRecipe} from '../../lib/printRecipe.js';
+import {recipeViewHistoryStorage} from '../../lib/recipeViewHistoryStorage.js';
 import {shareRecipe} from '../../lib/shareRecipe.js';
 import {StatBadge, StatBadgeRow} from '../ui/StatBadge.js';
 import {TagPill} from '../ui/TagPill.js';
@@ -33,6 +39,34 @@ export const OverviewTab = ({
   versions,
 }: Props) => {
   const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const analytics = useAnalytics();
+  // Delete control (#263): the web detail page had none, while the app
+  // detail wires one through the DS page's onDeletePress. It follows
+  // the list card's in-page two-step confirmation (never
+  // window.confirm) and surfaces failures instead of failing silently.
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      await eciperay.recipes.delete(recipe.id);
+      await removeRecipeView(recipeViewHistoryStorage, recipe.id);
+    },
+    onSuccess: () => {
+      analytics.track('recipe_deleted', {recipe_id: recipe.id});
+      void invalidateRecipeQueries(queryClient, recipe.id, recipe.versionId);
+      void navigate('/recipes');
+    },
+    onError: error => {
+      setDeleteError(
+        `Could not delete recipe: ${
+          error instanceof Error ? error.message : 'Recipe deletion failed'
+        }`,
+      );
+    },
+  });
 
   const canEditDraft = canEditDraftVersion(recipe.versionId, versions);
   const canEditMetadata = canEditActiveRecipeMetadata(
@@ -148,7 +182,59 @@ export const OverviewTab = ({
             Edit draft
           </Link>
         ) : null}
+        {confirmingDelete ? (
+          <>
+            <button
+              type="button"
+              className="
+                rounded-xl bg-red-600 px-4 py-3 text-sm font-medium text-white
+                disabled:opacity-50
+              "
+              disabled={deleteMutation.isPending}
+              onClick={() => {
+                setDeleteError(null);
+                deleteMutation.mutate();
+              }}
+            >
+              {deleteMutation.isPending ? 'Deleting…' : 'Confirm delete'}
+            </button>
+            <button
+              type="button"
+              className="
+                rounded-xl bg-gray-100 px-4 py-3 text-sm font-medium
+                text-gray-700
+                disabled:opacity-50
+              "
+              disabled={deleteMutation.isPending}
+              onClick={() => {
+                setConfirmingDelete(false);
+              }}
+            >
+              Cancel
+            </button>
+          </>
+        ) : (
+          <button
+            type="button"
+            className="
+              rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-600
+            "
+            onClick={() => {
+              setConfirmingDelete(true);
+            }}
+          >
+            Delete
+          </button>
+        )}
       </div>
+      {deleteError ? (
+        <p
+          role="alert"
+          className="mbe-4 text-sm text-red-600"
+        >
+          {deleteError}
+        </p>
+      ) : null}
       {actionMessage ? (
         <p
           role="status"

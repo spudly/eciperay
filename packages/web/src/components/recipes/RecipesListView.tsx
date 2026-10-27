@@ -51,6 +51,15 @@ import {RecipeListFiltersBar} from './RecipeListFiltersBar.js';
 // carries) and its rating-bearing subtitle, on @spudly/ui 1.0.3.
 // Converging web onto the DS page is the separate B7 decision
 // noted above. Comment-only change; no web behavior changes.
+//
+// #263: the per-row Delete now confirms in-page (RecipeListCard) and
+// a failed delete is surfaced via `deleteError` instead of failing
+// silently; `isDeletePending` disables the confirm while in flight.
+type RecipesListViewOwnProps = RecipesListViewProps & {
+  deleteError?: string | null;
+  isDeletePending?: boolean;
+};
+
 export const RecipesListView = ({
   isLoading,
   recipes,
@@ -58,11 +67,21 @@ export const RecipesListView = ({
   onRecipePress,
   onRecipeDelete,
   loadMoreRef,
+  deleteError,
+  isDeletePending = false,
   ...filterControls
-}: RecipesListViewProps) => (
+}: RecipesListViewOwnProps) => (
   <>
     <PageTitle spacing="section">Recipes</PageTitle>
     <RecipeListFiltersBar {...filterControls} />
+    {deleteError ? (
+      <p
+        role="alert"
+        className="mbe-4 text-sm text-red-600"
+      >
+        {deleteError}
+      </p>
+    ) : null}
     {isLoading ? (
       <InlineLoadingIndicator
         loading
@@ -76,6 +95,7 @@ export const RecipesListView = ({
           <RecipeListCard
             key={recipe.id}
             recipe={recipe}
+            isDeleting={isDeletePending}
             onPress={() => {
               onRecipePress(recipe.id);
             }}

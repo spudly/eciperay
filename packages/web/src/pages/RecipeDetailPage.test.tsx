@@ -41,6 +41,28 @@ describe('RecipeDetailPage', () => {
     });
   });
 
+  test('deletes the recipe from the detail page and returns to the list', async () => {
+    await renderWithProviders(
+      <Routes>
+        <Route
+          path="/recipes/:recipeId"
+          element={<RecipeDetailPage />}
+        />
+        <Route
+          path="/recipes"
+          element={<div>Recipes list page</div>}
+        />
+      </Routes>,
+      {route: '/recipes/recipe-uuid-1'},
+    );
+    await waitFor(() => {
+      expect(screen.getByText('Test Recipe')).toBeInTheDocument();
+    });
+    await userEvent.click(screen.getByText('Delete'));
+    await userEvent.click(screen.getByText('Confirm delete'));
+    expect(await screen.findByText('Recipes list page')).toBeInTheDocument();
+  });
+
   test('does not record a view when recipeId is missing', async () => {
     await renderWithProviders(
       <Routes>
