@@ -171,9 +171,10 @@ fly deploy \
 ```
 
 **GitHub Actions:** Fly deploys run from the **Release** workflow
-(`.github/workflows/release.yml`) when semantic-release publishes a version and
-commit scopes affect `web` or `server` (or shared packages that expand to them).
-You can also trigger **Deploy** manually from the Actions tab.
+(`.github/workflows/release.yml`) when a Pending Release PR merges and the paths
+changed since the previous tag resolve to the Fly target (shared packages expand
+to their dependents). You can also trigger **Deploy** manually from the Actions
+tab.
 
 Add these repository secrets (Settings → Secrets and variables → Actions):
 
@@ -211,25 +212,27 @@ and destroyed when the PR closes. Two one-time setup steps:
    (`fly tokens create deploy`) is not enough. Create one with
    `fly tokens create org` and store it as `FLY_API_TOKEN`; org tokens can also
    deploy the production app, so `fly-deploy.yml` keeps working.
-2. **Runtime secrets.** The workflow passes runtime secrets to the preview app
-   from same-named GitHub repository secrets (`DATABASE_URL`, `SUPABASE_URL`,
-   `SUPABASE_SECRET_KEY`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`,
-   `PADDLE_API_KEY`, `PADDLE_WEBHOOK_SECRET`). Fly secrets are write-only, so
-   copy the values from your own records. `SUPABASE_URL` and
-   `SUPABASE_SECRET_KEY` are **required**: the server creates its Supabase
+2. **Runtime secrets.** Review apps run against the Supabase **QA dataset**
+   (issue #234), not production: the workflow feeds the app from the five
+   `PREVIEW_*` repository secrets — `DATABASE_URL` ← `PREVIEW_DATABASE_URL`,
+   `SUPABASE_URL` ← `PREVIEW_SUPABASE_URL`, `SUPABASE_SECRET_KEY` ←
+   `PREVIEW_SUPABASE_SECRET_KEY`, and the web build's `VITE_SUPABASE_URL` /
+   `VITE_SUPABASE_ANON_KEY` ← `PREVIEW_VITE_SUPABASE_URL` /
+   `PREVIEW_VITE_SUPABASE_ANON_KEY` — plus the shared `ANTHROPIC_API_KEY`,
+   `OPENAI_API_KEY`, `PADDLE_API_KEY`, and `PADDLE_WEBHOOK_SECRET` secrets. The
+   five `PREVIEW_*` secrets are **required**: the server creates its Supabase
    client at import time and will not start without them, so the workflow
-   validates them before deploying (the other secrets only disable their feature
-   when absent). Paddle is pinned to the sandbox environment in previews, and
-   Paddle webhooks still point at production — previews cannot exercise real
-   billing webhooks.
+   validates them before deploying. Paddle is pinned to the sandbox environment
+   in previews, and Paddle webhooks still point at production — previews cannot
+   exercise real billing webhooks.
 
 Safety notes: `fly.review.toml` has **no release command**, so PR code never
-runs database migrations. For real isolation, point **all** of `DATABASE_URL`,
-`SUPABASE_URL`, and `SUPABASE_SECRET_KEY` at a separate Supabase project:
-changing only `DATABASE_URL` leaves Supabase Auth and Storage shared, so with
-production Supabase credentials a preview action such as account deletion would
-delete a **production** user. Treat a preview that uses production credentials
-as production.
+runs database migrations; the persistent preview environment (`eciperay-next`)
+owns migrating the shared QA dataset. Review apps are isolated from production —
+every action in a review app, including account deletion, can only affect QA
+data. All review apps and the persistent preview share the one QA dataset, so
+data created while testing is visible across them: use `QA —` name prefixes and
+clean up what you create.
 
 **5. Custom domain**
 
@@ -291,31 +294,35 @@ documented in
 Android `versionCode` / `versionName` and the Play Store release process are
 documented in
 [`packages/app/android/VERSIONING.md`](packages/app/android/VERSIONING.md). Root
-[`package.json`](package.json) `version` is the source of truth;
-semantic-release bumps all workspace packages together after conventional
-commits land on `master`.
+[`package.json`](package.json) `version` is the source of truth; the changesets
+pending-release flow versions all workspace packages together — merging the
+Pending Release PR stamps the new version everywhere (the publish step syncs the
+root manifest to the package group's version).
 
 #### Releases and deploys
 
-After CI passes on `master`, the **Release** workflow
-(`.github/workflows/release.yml`) runs
-[semantic-release](https://semantic-release.gitbook.io/):
+Releases run on the changesets **pending-release** flow (issue #234). A PR that
+changes user-facing behavior carries a changeset (see [Commits](#commits)
+below); `changesets/action` in the **Release** workflow
+(`.github/workflows/release.yml`) keeps a **Pending Release PR** open with the
+accumulated version bump and changelog. Merging that PR is the release: the
+publish step syncs the root `package.json` to the new version, tags `vX.Y.Z`,
+creates the GitHub Release, and deploys what changed since the previous tag.
 
-1. Analyzes conventional commits since the last tag
-2. Bumps root + workspace `package.json` versions, tags `vX.Y.Z`, and creates a
-   GitHub Release
-3. Deploys **only** what scopes imply (see [Commits](#commits) below)
+Deploy targets resolve from the **changed file paths** in the release range —
+not commit scopes — expanded through the package dependents graph:
 
-| Changed scope    | Deploy                                 |
+| Changed package  | Deploy                                 |
 | ---------------- | -------------------------------------- |
 | `web`, `server`  | Fly (API + web)                        |
-| `app`, `android` | Android AAB attached to GitHub Release |
+| `app`            | Android AAB attached to GitHub Release |
 | `client`         | Fly + Android                          |
-| `types`          | Fly + Android (all consumers)          |
-| `theme`          | Fly + Android (web + app)              |
+| `types`, `icons` | Fly + Android (all consumers)          |
+| anything else    | Fly + Android (global change)          |
 
-Play Store upload is still manual: **Actions → Android Deploy → Run workflow**
-and pick a Play track.
+Ordinary merges to `master` do not deploy production — they update the
+persistent preview environment (`eciperay-next`) instead. Play Store upload is
+still manual: **Actions → Android Deploy → Run workflow** and pick a Play track.
 
 #### Android Deploy workflow
 
@@ -483,8 +490,8 @@ feat(client): add shared query key
   [`commitlint.config.cjs`](commitlint.config.cjs)
 - If you squash-merge PRs on GitHub, use the same format for the **PR title**
 
-Allowed scopes: `app`, `web`, `server`, `client`, `types`, `theme`, `android`,
-`deps`, `ci`, `release`
+Allowed scopes: `app`, `web`, `server`, `client`, `types`, `android`, `deps`,
+`ci`, `release`
 
 ## Architecture Notes
 
