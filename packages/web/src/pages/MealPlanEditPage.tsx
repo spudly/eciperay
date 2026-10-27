@@ -44,11 +44,13 @@ export const MealPlanEditPage = () => {
       }
       return eciperay.mealPlans.create(input);
     },
-    onSuccess: saved => {
-      void queryClient.invalidateQueries({queryKey: queryKeys.mealPlans()});
-      void queryClient.invalidateQueries({
-        queryKey: queryKeys.mealPlan(saved.id),
-      });
+    onSuccess: async saved => {
+      // Write the saved detail into its cache entry before navigating:
+      // the detail page renders from this entry, and fire-and-forget
+      // invalidation racing the navigation left it showing the pre-edit
+      // plan until a reload (#259). The PUT response is the full detail.
+      queryClient.setQueryData(queryKeys.mealPlan(saved.id), saved);
+      await queryClient.invalidateQueries({queryKey: queryKeys.mealPlans()});
       void navigate(`/meal-plans/${saved.id}`);
     },
     onError: error => {
