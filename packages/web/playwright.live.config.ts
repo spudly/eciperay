@@ -49,7 +49,8 @@ export default defineConfig({
     {
       name: 'live-auth',
       dependencies: ['setup'],
-      testMatch: /(auth|recipes|cook-log|meal-plans|imports|sharing)\.spec\.ts/,
+      testMatch:
+        /(auth|recipes|cook-log|meal-plans|imports|sharing|sign-out)\.spec\.ts/,
       use: {
         ...devices['Desktop Chrome'],
         baseURL,

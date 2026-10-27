@@ -58,7 +58,8 @@ The authenticated specs (`auth`, `recipes`, `cook-log`, `meal-plans`, `imports`,
 
 | Flow                                                          | Spec                            |
 | ------------------------------------------------------------- | ------------------------------- |
-| Sign-in (setup) + profile + sign-out                          | `auth.setup.ts`, `auth.spec.ts` |
+| Sign-in (setup) + profile                                     | `auth.setup.ts`, `auth.spec.ts` |
+| Sign-out (own session; runs last — see the spec's header)     | `sign-out.spec.ts`              |
 | Password-reset request                                        | `auth.spec.ts`                  |
 | Recipes create / edit / delete, search                        | `recipes.spec.ts`               |
 | Servings + scale controls                                     | `recipes.spec.ts`               |
