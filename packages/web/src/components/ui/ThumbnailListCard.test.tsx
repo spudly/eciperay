@@ -35,6 +35,25 @@ describe('ThumbnailListCard', () => {
     });
   });
 
+  test('renders trailing actions inside the card row, not as an outside column', async () => {
+    await renderWithProviders(
+      <ThumbnailListCard
+        title="Pasta"
+        subtitle="4 servings"
+        onPress={vi.fn()}
+        trailing={<button type="button">Log cook</button>}
+      />,
+    );
+
+    const pressable = screen.getByRole('button', {name: /Pasta/});
+    const action = screen.getByRole('button', {name: /Log cook/});
+
+    // The actions live in the same in-card row as the pressable main
+    // region (#258: they previously rendered outside the card border as a
+    // floating column in the page margin).
+    expect(pressable.parentElement).toContainElement(action);
+  });
+
   test('shows a pointer cursor on the linkTo link', async () => {
     await renderWithProviders(
       <ThumbnailListCard

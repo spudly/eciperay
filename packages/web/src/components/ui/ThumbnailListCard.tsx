@@ -68,8 +68,13 @@ export const ThumbnailListCard = ({
   );
 
   // The press target wraps only the main content (thumbnail + title).
-  // Trailing actions (e.g. "Log cook", "Delete" buttons) render as siblings
-  // OUTSIDE the pressable, avoiding nested interactive elements.
+  // Trailing actions (e.g. "Log cook", "Delete" buttons) are not inside the
+  // pressable (avoiding nested interactive elements), but they ARE inside
+  // the card surface: the card wraps a row holding the pressable main
+  // region and the actions. Rendering the actions as siblings outside the
+  // card made them float in the page margin, detached from the card border
+  // (#258). The app mirror renders its trailing actions inside the card the
+  // same way.
   //
   // Both press branches show a pointer cursor on hover (#213) so the card
   // reads as clickable: the onPress Card takes Tamagui's cursor style prop
@@ -77,8 +82,8 @@ export const ThumbnailListCard = ({
   // linkTo Link carries it in its inline style. The app mirror has no
   // counterpart — native has no hover cursor.
   //
-  // Inside the trailing-actions row the card flexes from a 17rem basis
-  // and the row wraps (#190): at phone widths the trailing actions cannot
+  // Inside the trailing-actions row the main region flexes from a 17rem
+  // basis and the row wraps (#190): at phone widths the trailing actions cannot
   // share the row without squeezing the title column to a few characters,
   // so they wrap onto their own right-aligned row and the card spans the
   // full list width. The basis is sized so that whenever the actions DO
@@ -154,15 +159,65 @@ export const ThumbnailListCard = ({
     return card;
   }
 
+  // With trailing actions, the card surface wraps the whole row: the
+  // pressable main region flexes from the same 17rem basis as the
+  // standalone card did, and the actions row still wraps onto its own
+  // right-aligned row at phone widths (#190) — now inside the card.
+  let mainRegion: ReactNode;
+  if (onPress) {
+    mainRegion = (
+      <XStack
+        onPress={onPress}
+        role="button"
+        tabIndex={0}
+        cursor="pointer"
+        flexGrow={1}
+        flexShrink={1}
+        flexBasis="17rem"
+        minWidth={0}
+      >
+        {main}
+      </XStack>
+    );
+  } else if (linkTo) {
+    mainRegion = (
+      <Link
+        to={linkTo}
+        style={{
+          textDecoration: 'none',
+          display: 'block',
+          cursor: 'pointer',
+          flex: '1 1 17rem',
+          minWidth: 0,
+        }}
+      >
+        {main}
+      </Link>
+    );
+  } else {
+    mainRegion = (
+      <XStack
+        flexGrow={1}
+        flexShrink={1}
+        flexBasis="17rem"
+        minWidth={0}
+      >
+        {main}
+      </XStack>
+    );
+  }
+
   return (
-    <XStack
-      gap="$3"
-      alignItems="center"
-      flexWrap="wrap"
-    >
-      {card}
-      <div style={{marginInlineStart: 'auto'}}>{trailing}</div>
-    </XStack>
+    <DSCard>
+      <XStack
+        gap="$3"
+        alignItems="center"
+        flexWrap="wrap"
+      >
+        {mainRegion}
+        <div style={{marginInlineStart: 'auto'}}>{trailing}</div>
+      </XStack>
+    </DSCard>
   );
 };
 
