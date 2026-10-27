@@ -54,11 +54,14 @@ test.describe('live, signed out', () => {
     await page.goto('/discover');
 
     // The QA dataset's public recipes are data, not fixtures: assert the
-    // page itself renders (its search/filter chrome is always present)
-    // rather than any particular recipe.
-    await expect(page.getByPlaceholder('Search recipes…')).toBeVisible({
-      timeout: 15_000,
-    });
+    // page itself renders (its title and search chrome are always
+    // present) rather than any particular recipe.
+    await expect(
+      page.getByRole('heading', {name: 'Discover recipes'}),
+    ).toBeVisible({timeout: 15_000});
+    await expect(
+      page.getByPlaceholder('Search public recipes…'),
+    ).toBeVisible();
     expect(pageErrors).toEqual([]);
   });
 });

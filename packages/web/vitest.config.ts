@@ -46,10 +46,11 @@ export default defineConfig({
     ],
   },
   test: {
-    // Playwright specs live in e2e/ and run under `playwright test`
-    // (npm run test:e2e), never under Vitest — its default include
-    // pattern would otherwise collect them and fail.
-    exclude: [...configDefaults.exclude, 'e2e/**'],
+    // Playwright specs live in e2e/ and e2e-live/ and run under
+    // `playwright test` (npm run test:e2e / test:e2e:live), never under
+    // Vitest — its default include pattern would otherwise collect
+    // them and fail.
+    exclude: [...configDefaults.exclude, 'e2e/**', 'e2e-live/**'],
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
