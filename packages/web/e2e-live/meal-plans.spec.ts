@@ -37,10 +37,21 @@ test.describe('live meal plans', () => {
 
     await page.goto('/meal-plans/new');
     await page.getByPlaceholder('Plan title').fill(planTitle);
-    // Dates are deliberately left unset: creating a plan WITH dates
-    // currently 500s server-side (issue #251 — pg returns DATE columns
-    // as Date objects and loadMealPlanDetail calls .slice on them).
-    // Restore a one-week window here once #251 is fixed.
+    // Set a one-week dated window (today through +7 days). Dated plans
+    // are covered again now that issue #251 is fixed: it made dated
+    // plan create/edit/detail 500 server-side, so this spec previously
+    // had to leave the dates unset to pass.
+    const toDateOnly = (date: Date) =>
+      [
+        date.getFullYear(),
+        String(date.getMonth() + 1).padStart(2, '0'),
+        String(date.getDate()).padStart(2, '0'),
+      ].join('-');
+    const startsOn = new Date();
+    const endsOn = new Date(startsOn);
+    endsOn.setDate(endsOn.getDate() + 7);
+    await page.getByLabel('Starts on').fill(toDateOnly(startsOn));
+    await page.getByLabel('Ends on').fill(toDateOnly(endsOn));
     // Include the CI recipe in the plan: checking its checkbox reveals
     // its quantity/servings steppers (Save plan stays disabled until
     // at least one recipe is checked). Quantity is a stepper, not a
