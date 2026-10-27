@@ -41,13 +41,15 @@ describe('POST /tags', () => {
 });
 
 describe('PATCH /tags/:id', () => {
+  const TAG_ID = '11111111-1111-4111-8111-111111111111';
+
   test('returns 200 with the renamed tag', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue(
       makeQueryResult([makeTag({name: 'Weeknight dinners'})]),
     );
     const res = await request(getApp())
-      .patch('/api/tags/tag-uuid-1')
+      .patch(`/api/tags/${TAG_ID}`)
       .set('Authorization', AUTH)
       .send({name: 'Weeknight dinners'});
     expect(res.status).toBe(200);
@@ -55,7 +57,7 @@ describe('PATCH /tags/:id', () => {
     const [sql, params] = mockQuery.mock.calls[0]!;
     expect(sql).toContain('update tags set name = $1');
     expect(sql).toContain('is_preset = false');
-    expect(params).toEqual(['Weeknight dinners', 'tag-uuid-1', 'user-uuid-1']);
+    expect(params).toEqual(['Weeknight dinners', TAG_ID, 'user-uuid-1']);
   });
 
   test('updates name and color together', async () => {
@@ -64,37 +66,71 @@ describe('PATCH /tags/:id', () => {
       makeQueryResult([makeTag({name: 'Lunch', color: '#ef4444'})]),
     );
     const res = await request(getApp())
-      .patch('/api/tags/tag-uuid-1')
+      .patch(`/api/tags/${TAG_ID}`)
       .set('Authorization', AUTH)
       .send({name: 'Lunch', color: '#ef4444'});
     expect(res.status).toBe(200);
     const [sql, params] = mockQuery.mock.calls[0]!;
     expect(sql).toContain('name = $1, color = $2');
-    expect(params).toEqual(['Lunch', '#ef4444', 'tag-uuid-1', 'user-uuid-1']);
+    expect(params).toEqual(['Lunch', '#ef4444', TAG_ID, 'user-uuid-1']);
   });
 
   test('returns 400 when no fields are provided', async () => {
     nockSupabaseGetUser('user-uuid-1');
     const res = await request(getApp())
-      .patch('/api/tags/tag-uuid-1')
+      .patch(`/api/tags/${TAG_ID}`)
       .set('Authorization', AUTH)
       .send({});
     expect(res.status).toBe(400);
+  });
+
+  test('returns 400 when a field is not a string', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    const res = await request(getApp())
+      .patch(`/api/tags/${TAG_ID}`)
+      .set('Authorization', AUTH)
+      .send({name: 123});
+    expect(res.status).toBe(400);
+  });
+
+  test('returns 404 for a malformed id without querying', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    const res = await request(getApp())
+      .patch('/api/tags/missing-id')
+      .set('Authorization', AUTH)
+      .send({name: 'Nope'});
+    expect(res.status).toBe(404);
+    expect(mockQuery.mock.calls).toHaveLength(0);
   });
 
   test('returns 404 when tag is not found, not owned, or is a preset', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue({...makeQueryResult([]), rowCount: 0});
     const res = await request(getApp())
-      .patch('/api/tags/missing-id')
+      .patch(`/api/tags/${TAG_ID}`)
       .set('Authorization', AUTH)
       .send({name: 'Nope'});
     expect(res.status).toBe(404);
   });
 
+  test('returns 409 when the new name duplicates another of the user tags', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockQuery.mockRejectedValue(
+      Object.assign(new Error('duplicate key'), {
+        code: '23505',
+        constraint: 'tags_user_id_name_key',
+      }),
+    );
+    const res = await request(getApp())
+      .patch(`/api/tags/${TAG_ID}`)
+      .set('Authorization', AUTH)
+      .send({name: 'Dinner'});
+    expect(res.status).toBe(409);
+  });
+
   test('returns 401 without auth token', async () => {
     const res = await request(getApp())
-      .patch('/api/tags/tag-uuid-1')
+      .patch(`/api/tags/${TAG_ID}`)
       .send({name: 'Nope'});
     expect(res.status).toBe(401);
   });

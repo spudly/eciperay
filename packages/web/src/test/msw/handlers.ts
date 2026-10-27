@@ -612,11 +612,17 @@ export const handlers = [
   }),
   http.patch(`${API}/api/tags/:id`, async ({request, params}) => {
     const body = (await request.json()) as {name?: string; color?: string};
+    // Merge over the tag the GET handler serves so a partial update
+    // preserves the fields it does not mention.
+    const existing =
+      params['id'] === 'tag-2'
+        ? {name: 'Quick', color: '#22c55e'}
+        : {name: 'Dinner', color: '#6366f1'};
     return HttpResponse.json({
       id: params['id'],
       userId: 'user-uuid-1',
-      name: body.name ?? 'Dinner',
-      color: body.color ?? '#6366f1',
+      name: body.name ?? existing.name,
+      color: body.color ?? existing.color,
       isPreset: false,
     });
   }),
