@@ -1,3 +1,5 @@
+import {queryKeys} from '@eciperay/client';
+import {QueryClient} from '@tanstack/react-query';
 import {fireEvent, screen, waitFor} from '@testing-library/react';
 import {http, HttpResponse} from 'msw';
 import {Route, Routes} from 'react-router-dom';
@@ -117,5 +119,44 @@ describe('MealPlanEditPage', () => {
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith(`/meal-plans/${PLAN_ID}`);
     });
+  });
+
+  test('saved plan replaces the cached detail before navigating (#259)', async () => {
+    const updated = makeMealPlanDetail({endsOn: '2026-01-11'});
+    server.use(
+      http.put(`http://localhost:8080/api/meal-plans/${PLAN_ID}`, () =>
+        HttpResponse.json(updated),
+      ),
+    );
+    const queryClient = new QueryClient({
+      defaultOptions: {queries: {retry: false, staleTime: 30_000}},
+    });
+    // Pre-edit detail, as cached when arriving from the detail page.
+    queryClient.setQueryData(
+      queryKeys.mealPlan(PLAN_ID),
+      makeMealPlanDetail({endsOn: '2026-01-07'}),
+    );
+    await renderWithProviders(
+      <Routes>
+        <Route
+          path="/meal-plans/:planId/edit"
+          element={<MealPlanEditPage />}
+        />
+      </Routes>,
+      {route: `/meal-plans/${PLAN_ID}/edit`, queryClient},
+    );
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('This week')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('Recipe · Test Recipe'));
+    fireEvent.click(screen.getByText('Save plan'));
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith(`/meal-plans/${PLAN_ID}`);
+    });
+    // The detail page renders from this cache entry on navigation, so it
+    // must already hold the saved values — not the pre-edit plan.
+    expect(queryClient.getQueryData(queryKeys.mealPlan(PLAN_ID))).toEqual(
+      updated,
+    );
   });
 });
