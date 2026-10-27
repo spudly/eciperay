@@ -163,10 +163,16 @@ export const ThumbnailListCard = ({
   // pressable main region flexes from the same 17rem basis as the
   // standalone card did, and the actions row still wraps onto its own
   // right-aligned row at phone widths (#190) — now inside the card.
+  // The main region is a YStack (column), not an XStack: as a column
+  // container its child row is width-capped by stretch, exactly as when
+  // the card itself wrapped the row. An XStack region made the row a
+  // flex item whose min-content (thumbnail + unwrapped subtitle) forced
+  // it wider than the card at phone widths — a 9px horizontal overflow
+  // on /recipes at 390px in the mobile-web e2e layout test.
   let mainRegion: ReactNode;
   if (onPress) {
     mainRegion = (
-      <XStack
+      <YStack
         onPress={onPress}
         role="button"
         tabIndex={0}
@@ -177,7 +183,7 @@ export const ThumbnailListCard = ({
         minWidth={0}
       >
         {main}
-      </XStack>
+      </YStack>
     );
   } else if (linkTo) {
     mainRegion = (
@@ -196,14 +202,14 @@ export const ThumbnailListCard = ({
     );
   } else {
     mainRegion = (
-      <XStack
+      <YStack
         flexGrow={1}
         flexShrink={1}
         flexBasis="17rem"
         minWidth={0}
       >
         {main}
-      </XStack>
+      </YStack>
     );
   }
 
