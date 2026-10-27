@@ -76,6 +76,19 @@ export const RecipesListView = ({
   <>
     <PageTitle spacing="section">Recipes</PageTitle>
     <RecipeListFiltersBar {...filterControls} />
+    {deleteError &&
+    deleteErrorRecipeId &&
+    !recipes.some(recipe => recipe.id === deleteErrorRecipeId) ? (
+      // Fallback: the affected card was filtered out while its delete
+      // was in flight, so no card can render the error — show it at
+      // page level rather than failing silently.
+      <p
+        role="alert"
+        className="mbe-4 text-sm text-red-600"
+      >
+        {deleteError}
+      </p>
+    ) : null}
     {isLoading ? (
       <InlineLoadingIndicator
         loading

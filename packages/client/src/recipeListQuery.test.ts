@@ -219,4 +219,30 @@ describe('recipeListQuery', () => {
     expect(recipes.map(recipe => recipe.id)).toEqual(['recipe-a']);
     expect(await getRecentRecipeIds(storage, 5)).toEqual(['recipe-a']);
   });
+
+  test('tolerates history cleanup failures when a fetch fails', async () => {
+    const storage: RecipeViewHistoryStorage = {
+      getItem: async () =>
+        JSON.stringify([
+          {recipeId: 'recipe-b', viewedAt: 2},
+          {recipeId: 'recipe-a', viewedAt: 1},
+        ]),
+      setItem: async () => {
+        throw new Error('storage unavailable');
+      },
+      removeItem: async () => {},
+    };
+    const getRecipe = jest.fn().mockImplementation(async (id: string) => {
+      if (id === 'recipe-b') {
+        throw new Error('not found');
+      }
+      return makeListItem(id);
+    });
+    const options = homeRecentlyViewedRecipesQueryOptions(getRecipe, storage);
+
+    // The failed prune must not reject the query: the surviving
+    // recipe still resolves and the missing one is simply omitted.
+    const recipes = await options.queryFn();
+    expect(recipes.map(recipe => recipe.id)).toEqual(['recipe-a']);
+  });
 });
