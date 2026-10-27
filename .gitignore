@@ -15,6 +15,7 @@ build
 dist-e2e/
 test-results/
 playwright-report/
+packages/web/e2e-live/.auth/
 coverage
 *.tsbuildinfo
 packages/theme/logos/generated/
