@@ -57,6 +57,7 @@ import {RecipeListFiltersBar} from './RecipeListFiltersBar.js';
 // silently; `isDeletePending` disables the confirm while in flight.
 type RecipesListViewOwnProps = RecipesListViewProps & {
   deleteError?: string | null;
+  deleteErrorRecipeId?: string | null;
   isDeletePending?: boolean;
 };
 
@@ -68,20 +69,13 @@ export const RecipesListView = ({
   onRecipeDelete,
   loadMoreRef,
   deleteError,
+  deleteErrorRecipeId,
   isDeletePending = false,
   ...filterControls
 }: RecipesListViewOwnProps) => (
   <>
     <PageTitle spacing="section">Recipes</PageTitle>
     <RecipeListFiltersBar {...filterControls} />
-    {deleteError ? (
-      <p
-        role="alert"
-        className="mbe-4 text-sm text-red-600"
-      >
-        {deleteError}
-      </p>
-    ) : null}
     {isLoading ? (
       <InlineLoadingIndicator
         loading
@@ -96,6 +90,7 @@ export const RecipesListView = ({
             key={recipe.id}
             recipe={recipe}
             isDeleting={isDeletePending}
+            deleteError={deleteErrorRecipeId === recipe.id ? deleteError : null}
             onPress={() => {
               onRecipePress(recipe.id);
             }}

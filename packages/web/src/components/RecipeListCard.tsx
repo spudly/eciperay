@@ -29,6 +29,7 @@ type RecipeListCardProps = {
   onDelete: (id: string) => void;
   onPress?: () => void;
   isDeleting?: boolean;
+  deleteError?: string | null;
 };
 
 // Parity note (design-system#129): the app mirror's showcase demo was
@@ -39,6 +40,7 @@ export const RecipeListCard = ({
   onDelete,
   onPress,
   isDeleting = false,
+  deleteError,
 }: RecipeListCardProps) => {
   const [showForm, setShowForm] = useState(false);
   // Deletion is confirmed in-page, not with window.confirm (#263): the
@@ -125,6 +127,14 @@ export const RecipeListCard = ({
           </div>
         }
       />
+      {deleteError ? (
+        <p
+          role="alert"
+          className="mbe-3 text-sm text-red-600"
+        >
+          {deleteError}
+        </p>
+      ) : null}
       {showForm ? (
         <div className="mbe-3">
           <CookLogForm

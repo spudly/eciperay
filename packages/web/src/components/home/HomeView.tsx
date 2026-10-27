@@ -20,6 +20,7 @@ import {SecondaryButton} from '../ui/SecondaryButton.js';
 
 type HomeViewOwnProps = HomeViewProps & {
   deleteError?: string | null;
+  deleteErrorRecipeId?: string | null;
   isDeletePending?: boolean;
 };
 
@@ -32,6 +33,7 @@ export const HomeView = ({
   onRecipePress,
   onRecipeDelete,
   deleteError,
+  deleteErrorRecipeId,
   isDeletePending = false,
 }: HomeViewOwnProps) => (
   <ScreenScroll>
@@ -71,14 +73,6 @@ export const HomeView = ({
     >
       {HOME_RECIPES_SECTION_TITLE}
     </PageTitle>
-    {deleteError ? (
-      <p
-        role="alert"
-        className="mbe-4 text-sm text-red-600"
-      >
-        {deleteError}
-      </p>
-    ) : null}
     {isLoading ? (
       <InlineLoadingIndicator
         loading
@@ -92,6 +86,7 @@ export const HomeView = ({
           key={recipe.id}
           recipe={recipe}
           isDeleting={isDeletePending}
+          deleteError={deleteErrorRecipeId === recipe.id ? deleteError : null}
           onPress={() => {
             onRecipePress(recipe.id);
           }}

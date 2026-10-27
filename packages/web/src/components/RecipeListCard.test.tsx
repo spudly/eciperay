@@ -102,6 +102,21 @@ describe('RecipeListCard', () => {
     expect(screen.getByText('Cancel')).toBeDisabled();
   });
 
+  test('shows a delete error beside the card', async () => {
+    await renderWithProviders(
+      <RecipeListCard
+        recipe={makeRecipeDetail({title: 'Pasta'})}
+        onDelete={vi.fn()}
+        onPress={vi.fn()}
+        deleteError="Could not delete recipe: Delete failed on server"
+      />,
+    );
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Could not delete recipe: Delete failed on server',
+    );
+  });
+
   test('saves cook log with rating from list', async () => {
     await renderWithProviders(
       <RecipeListCard

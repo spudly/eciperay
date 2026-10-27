@@ -57,8 +57,12 @@ export const RecipesPage = () => {
   }, [handleLoadMore, hasNextPage, isFetchingNextPage, recipes.length]);
 
   // A failed delete must not be silent (#263): the mutation's error
-  // is rendered by the view (role="alert") and the recipe stays listed.
+  // is rendered beside the affected card (role="alert") and the
+  // recipe stays listed.
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleteErrorRecipeId, setDeleteErrorRecipeId] = useState<string | null>(
+    null,
+  );
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => eciperay.recipes.delete(id),
@@ -66,17 +70,19 @@ export const RecipesPage = () => {
       analytics.track('recipe_deleted', {recipe_id: id});
       void invalidateRecipeQueries(queryClient, id);
     },
-    onError: error => {
+    onError: (error, id) => {
       setDeleteError(
         `Could not delete recipe: ${
           error instanceof Error ? error.message : 'Recipe deletion failed'
         }`,
       );
+      setDeleteErrorRecipeId(id);
     },
   });
 
   const handleDelete = (recipe: RecipeDetail) => {
     setDeleteError(null);
+    setDeleteErrorRecipeId(null);
     deleteMutation.mutate(recipe.id);
   };
 
@@ -91,6 +97,7 @@ export const RecipesPage = () => {
       }}
       onRecipeDelete={handleDelete}
       deleteError={deleteError}
+      deleteErrorRecipeId={deleteErrorRecipeId}
       isDeletePending={deleteMutation.isPending}
       onLoadMore={handleLoadMore}
       loadMoreRef={loadMoreRef}
