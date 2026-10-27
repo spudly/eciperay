@@ -61,7 +61,10 @@ test.describe('live meal plans', () => {
     await expect(page).toHaveURL(/\/meal-plans\/[^/]+$/, {timeout: 15_000});
     planId = page.url().split('/meal-plans/')[1]!;
     await expect(page.getByText(planTitle)).toBeVisible();
-    await expect(page.getByText(recipe.title)).toBeVisible();
+    // The recipe title renders in several places on the detail page
+    // (entry row, nutrition, shopping preview) — one visible match is
+    // enough to prove the recipe is on the plan.
+    await expect(page.getByText(recipe.title).first()).toBeVisible();
 
     // Shopping list: the recipe's ingredient appears and can be checked.
     await page.getByRole('button', {name: 'Shopping list'}).click();
