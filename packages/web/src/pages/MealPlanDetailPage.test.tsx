@@ -79,6 +79,30 @@ describe('MealPlanDetailPage', () => {
     );
   });
 
+  test('shows a not-found state for a deleted or unknown plan', async () => {
+    const missingId = '00000000-0000-4000-8000-000000000099';
+    server.use(
+      http.get(`http://localhost:8080/api/meal-plans/${missingId}`, () =>
+        HttpResponse.json({error: 'not_found'}, {status: 404}),
+      ),
+    );
+
+    await renderWithProviders(
+      <Routes>
+        <Route
+          path="/meal-plans/:planId"
+          element={<MealPlanDetailPage />}
+        />
+      </Routes>,
+      {route: `/meal-plans/${missingId}`},
+    );
+
+    // #260: a settled 404 must not leave the page on the loading skeleton.
+    await waitFor(() => {
+      expect(screen.getByText('Page not found')).toBeInTheDocument();
+    });
+  });
+
   test('renders meal plan detail and navigates', async () => {
     await renderWithProviders(
       <Routes>
