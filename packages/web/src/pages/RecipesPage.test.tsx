@@ -244,9 +244,7 @@ describe('RecipesPage', () => {
         const items = [soup, salad];
         if (search) {
           return HttpResponse.json(
-            items.filter(recipe =>
-              recipe.title.toLowerCase().includes(search),
-            ),
+            items.filter(recipe => recipe.title.toLowerCase().includes(search)),
           );
         }
         return HttpResponse.json(items);
