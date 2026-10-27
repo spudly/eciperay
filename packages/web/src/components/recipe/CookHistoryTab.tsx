@@ -40,7 +40,12 @@ export const CookHistoryTab = ({recipeId, versionId}: Props) => {
 
   if (isLoading) {
     return (
-      <YStack flex={1} alignItems="center" justifyContent="center" padding="$4">
+      <YStack
+        flex={1}
+        alignItems="center"
+        justifyContent="center"
+        padding="$4"
+      >
         <BookLoadingSpinner size="sm" />
       </YStack>
     );
@@ -52,7 +57,6 @@ export const CookHistoryTab = ({recipeId, versionId}: Props) => {
         <div className="mbe-4">
           <CookLogForm
             variant="light"
-            secondaryLabel="Cancel"
             isPending={createMutation.isPending}
             onSkip={() => {
               setShowForm(false);

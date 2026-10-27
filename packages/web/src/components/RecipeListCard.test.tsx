@@ -20,7 +20,7 @@ describe('RecipeListCard', () => {
     expect(screen.getByText('Pasta')).toBeInTheDocument();
     await userEvent.click(screen.getByText('Log cook'));
     expect(screen.getByText('How did it go?')).toBeInTheDocument();
-    await userEvent.click(screen.getByText('Cancel'));
+    await userEvent.click(screen.getByText('Skip'));
     expect(screen.queryByText('How did it go?')).not.toBeInTheDocument();
   });
 

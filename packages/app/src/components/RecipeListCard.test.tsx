@@ -28,7 +28,7 @@ describe('RecipeListCard', () => {
     expect(getByText('Pasta')).toBeTruthy();
     await fireEvent.press(getByText('Log cook'));
     expect(getByText('How did it go?')).toBeTruthy();
-    await fireEvent.press(getByText('Cancel'));
+    await fireEvent.press(getByText('Skip'));
     expect(queryByText('How did it go?')).toBeNull();
   });
 

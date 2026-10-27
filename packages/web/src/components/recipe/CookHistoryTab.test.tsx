@@ -69,7 +69,7 @@ describe('CookHistoryTab', () => {
     expect(screen.getByText('Log a cook')).toBeInTheDocument();
   });
 
-  test('cancels log cook form', async () => {
+  test('dismisses the log cook form via Skip', async () => {
     await renderWithProviders(
       <CookHistoryTab
         recipeId="recipe-uuid-1"
@@ -77,7 +77,7 @@ describe('CookHistoryTab', () => {
       />,
     );
     await userEvent.click(await screen.findByText('Log a cook'));
-    await userEvent.click(screen.getByText('Cancel'));
+    await userEvent.click(screen.getByText('Skip'));
     expect(screen.queryByText('How did it go?')).not.toBeInTheDocument();
   });
 
