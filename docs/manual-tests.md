@@ -249,6 +249,15 @@ list view, and the cooking-mode overlay.
    **Expected:** no step controls, Done button, or cook log form is shown until
    the recipe has loaded — a cook log can never be submitted with an empty
    version (regression: #247).
+9. **Delete an entry from Cook History (web).** In a recipe's Cook History, use
+   an entry's Delete control. **Expected:** an in-page confirmation appears (no
+   browser dialog); Cancel keeps the entry; Confirm delete removes it and the
+   history refreshes without it. If the delete request fails, an error alert
+   appears on the entry and the entry stays listed (regression: #266).
+
+**Run when (case 9):** `packages/web/src/components/recipe/CookHistoryTab.tsx`,
+`packages/client/src/cookLogsApi.ts`, `packages/server` cook log routes,
+`@spudly/ui` `RecipeDetailPage` history section.
 
 **Run when:** `@spudly/ui` `CookLogForm` or `StarRatingInput`,
 `packages/app/src/screens/CookingModeScreen.tsx`,
@@ -309,7 +318,19 @@ are the manual remainder._
 4. **Nutrition goal progress.** If the account has nutrition goals set, open the
    plan detail's nutrition goal progress. **Expected:** totals are plausible
    sums of the assigned recipes and the progress view renders for days with and
-   without entries.
+   without entries. For a plan with a valid date range, the goal figures are the
+   plan's **per-day average** against the daily goals and are labelled as such
+   ("Per-day average calories and protein for this plan, compared with your
+   daily goals. Satiety is a plan-wide score." on web; "(per-day avg)" row
+   labels in the app). For an undated plan (dates are optional), the figures are
+   the **plan total** against the daily goals and are labelled as such
+   ("Plan-total calories and protein for this plan, compared with your daily
+   goals. Satiety is a plan-wide score." on web; "(plan total)" row labels in
+   the app) — they must not be labelled as a daily average or read as an
+   unexplained second total next to "Plan total" (regression: #266). Satiety is
+   neither an average nor a total: it is a ratio-based score that is identical
+   for the per-day and whole-plan figures, so both surfaces label it a plan-wide
+   score (app row: "Satiety (plan-wide score)").
 5. **Delete the plan.** Delete `QA — Week Plan`. **Expected:** gone from the
    list; member recipes unaffected.
 6. **Direct `/meal-plans` visit + unknown routes (web).** Visit `/meal-plans`

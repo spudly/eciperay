@@ -34,6 +34,7 @@ const ProgressRow = ({
 export const NutritionGoalProgressView = ({
   progress,
   nutrition,
+  progressIsPerDayAverage,
   onSetGoalsPress,
 }: NutritionGoalProgressViewProps) => {
   if (!progress && !nutrition) {
@@ -49,6 +50,24 @@ export const NutritionGoalProgressView = ({
       ) : null}
       {progress ? (
         <>
+          {/* The caption names what the server actually compared
+              against the daily goals (#266): the plan's per-day average
+              only when the plan has a valid date range (perDay is set
+              then); plan dates are optional, and for undated plans the
+              server falls back to the whole-plan total — label that as
+              a plan total, never as a daily average. Either way the
+              label stops the figures reading as an unexplained second
+              total next to "Plan total:". The per-day / plan-total
+              wording is scoped to the nutrient quantities (calories,
+              protein): satiety is computed from aggregated nutrient
+              ratios, so it is the same plan-wide score at any plan
+              length — never an average or a total (CodeRabbit on
+              #272). */}
+          <p className="text-muted mbe-2 text-sm">
+            {progressIsPerDayAverage
+              ? 'Per-day average calories and protein for this plan, compared with your daily goals. Satiety is a plan-wide score.'
+              : 'Plan-total calories and protein for this plan, compared with your daily goals. Satiety is a plan-wide score.'}
+          </p>
           {progress.calories ? (
             <ProgressRow
               label="Calories"

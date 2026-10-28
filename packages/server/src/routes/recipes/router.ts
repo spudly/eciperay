@@ -9,6 +9,7 @@ import {requireAuth, type AuthedRequest} from '../../middleware/requireAuth.js';
 import {requirePlan} from '../../middleware/requirePlan.js';
 import {createAiRouter} from '../ai/router.js';
 import {createCookLog} from '../cooks/createCookLog.js';
+import {deleteCookLog} from '../cooks/deleteCookLog.js';
 import {listCookLogs} from '../cooks/listCookLogs.js';
 
 import {activateVersion} from './activateVersion.js';
@@ -191,6 +192,11 @@ export const createRecipesRouter = (queryFn: QueryFn) => {
   );
   router.get('/:id/versions/:versionId/cooks', requireAuth, (req, res) =>
     listCookLogs(a(req), res, queryFn),
+  );
+  router.delete(
+    '/:id/versions/:versionId/cooks/:cookLogId',
+    requireAuth,
+    (req, res) => deleteCookLog(a(req), res, queryFn),
   );
   router.use('/:id/ai', createAiRouter(queryFn));
   return router;

@@ -81,6 +81,75 @@ describe('CookHistoryTab', () => {
     expect(screen.queryByText('How did it go?')).not.toBeInTheDocument();
   });
 
+  test('deletes a cook log entry after in-page confirmation (#266)', async () => {
+    let deleted = false;
+    server.use(
+      http.get(
+        'http://localhost:8080/api/recipes/:id/versions/:versionId/cooks',
+        () => HttpResponse.json(deleted ? [] : [makeCookLog()]),
+      ),
+      http.delete(
+        'http://localhost:8080/api/recipes/:id/versions/:versionId/cooks/:cookLogId',
+        () => {
+          deleted = true;
+          return new HttpResponse(null, {status: 204});
+        },
+      ),
+    );
+    await renderWithProviders(
+      <CookHistoryTab
+        recipeId="recipe-uuid-1"
+        versionId="version-uuid-1"
+      />,
+    );
+    await userEvent.click(await screen.findByText('Delete'));
+    // Two-step in-page confirmation: nothing is deleted yet.
+    expect(deleted).toBe(false);
+    expect(screen.getByText('Turned out great')).toBeInTheDocument();
+    await userEvent.click(screen.getByText('Confirm delete'));
+    await waitFor(() => {
+      expect(screen.queryByText('Turned out great')).not.toBeInTheDocument();
+    });
+    expect(deleted).toBe(true);
+    expect(await screen.findByText(/No cooks logged yet/)).toBeInTheDocument();
+  });
+
+  test('cancelling the delete confirmation keeps the entry (#266)', async () => {
+    await renderWithProviders(
+      <CookHistoryTab
+        recipeId="recipe-uuid-1"
+        versionId="version-uuid-1"
+      />,
+    );
+    await userEvent.click(await screen.findByText('Delete'));
+    await userEvent.click(screen.getByText('Cancel'));
+    expect(screen.queryByText('Confirm delete')).not.toBeInTheDocument();
+    expect(screen.getByText('Turned out great')).toBeInTheDocument();
+    expect(screen.getByText('Delete')).toBeInTheDocument();
+  });
+
+  test('surfaces an error when deleting a cook log fails (#266)', async () => {
+    server.use(
+      http.delete(
+        'http://localhost:8080/api/recipes/:id/versions/:versionId/cooks/:cookLogId',
+        () => HttpResponse.json({error: 'Server exploded'}, {status: 500}),
+      ),
+    );
+    await renderWithProviders(
+      <CookHistoryTab
+        recipeId="recipe-uuid-1"
+        versionId="version-uuid-1"
+      />,
+    );
+    await userEvent.click(await screen.findByText('Delete'));
+    await userEvent.click(screen.getByText('Confirm delete'));
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      /Could not delete entry/,
+    );
+    // The entry stays listed on failure.
+    expect(screen.getByText('Turned out great')).toBeInTheDocument();
+  });
+
   test('renders cook logs without ratings or notes', async () => {
     server.use(
       http.get(

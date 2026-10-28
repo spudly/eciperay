@@ -69,13 +69,34 @@ export const MealPlanDetailView = ({
   const nutritionLabel = formatSimpleNutrition(plan.nutrition) ?? undefined;
 
   const progress = plan.goalProgress;
+  // Row labels carry a qualifier naming what the server actually
+  // compared against the daily goals (#266): `comparePlanToGoals` uses
+  // the plan's per-day average only when the plan has a valid date
+  // range (the server sets `nutrition.perDay` only then — plan dates
+  // are optional); with no valid range `perDay` is null and it falls
+  // back to the whole-plan total. So the qualifier is "(per-day avg)"
+  // exactly when `perDay` is present and "(plan total)" otherwise —
+  // labelling the fallback total a daily average would be wrong for
+  // undated plans. The DS page has no caption slot for the section, so
+  // the label is the lever.
+  //
+  // Satiety is the exception: it carries neither qualifier. The server
+  // computes it from aggregated nutrient ratios (protein share, energy
+  // density, fiber per calorie — see `satietyForTotals` /
+  // `calculateSatiety`), all scale-invariant, so the per-day figure and
+  // the whole-plan figure are the same score and changing the plan
+  // length does not change it. It is a plan-wide score, not an average
+  // or a total (CodeRabbit on #272).
+  const progressQualifier = plan.nutrition?.perDay
+    ? '(per-day avg)'
+    : '(plan total)';
   const nutritionGoals: MealPlanDetailPageNutritionGoals | null = progress
     ? {
         rows: [
           ...(progress.calories
             ? [
                 {
-                  label: 'Calories',
+                  label: `Calories ${progressQualifier}`,
                   valueLabel: goalValueLabel(progress.calories),
                 },
               ]
@@ -83,7 +104,7 @@ export const MealPlanDetailView = ({
           ...(progress.proteinG
             ? [
                 {
-                  label: 'Protein',
+                  label: `Protein ${progressQualifier}`,
                   valueLabel: goalValueLabel(progress.proteinG),
                 },
               ]
@@ -91,7 +112,7 @@ export const MealPlanDetailView = ({
           ...(progress.satietyScore
             ? [
                 {
-                  label: 'Satiety',
+                  label: 'Satiety (plan-wide score)',
                   valueLabel: goalValueLabel(progress.satietyScore),
                 },
               ]
