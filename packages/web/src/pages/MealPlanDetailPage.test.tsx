@@ -41,9 +41,36 @@ describe('MealPlanDetailPage', () => {
             preparedWeightG: 800,
             satietyScore: 50,
             status: 'ready',
-            perDay: null,
+            // A dated plan with a per-day figure and goal progress, so
+            // the caller-level caption regression below exercises the
+            // real MealPlanDetailView -> NutritionGoalProgressView
+            // wiring (CodeRabbit on #272).
+            perDay: {
+              calories: 71,
+              proteinG: 4,
+              carbsG: 6,
+              fatG: 1,
+              fiberG: 1,
+              sugarG: 1,
+              sodiumMg: 129,
+              preparedWeightG: 114,
+              satietyScore: 7,
+              status: 'ready',
+            },
           },
-          goalProgress: null,
+          goalProgress: {
+            calories: {
+              goal: 2000,
+              actual: 71,
+              delta: -1929,
+              percentOfGoal: 3.55,
+              band: 'under',
+            },
+            proteinG: null,
+            carbsG: null,
+            fatG: null,
+            satietyScore: null,
+          },
           createdAt: '2024-01-01T00:00:00.000Z',
           updatedAt: '2024-01-01T00:00:00.000Z',
           entries: [
@@ -152,6 +179,16 @@ describe('MealPlanDetailPage', () => {
     await waitFor(() => {
       expect(screen.getByText('This week')).toBeInTheDocument();
     });
+    // Caller-level regression (#272): the per-day caption must render
+    // through MealPlanDetailPage, proving MealPlanDetailView passes
+    // progressIsPerDayAverage from the plan's perDay figure — the
+    // child component test supplies that flag directly and cannot
+    // catch the wiring breaking.
+    expect(
+      screen.getByText(
+        'Per-day average calories and protein for this plan, compared with your daily goals. Satiety is a plan-wide score.',
+      ),
+    ).toBeInTheDocument();
     fireEvent.click(screen.getByText('Edit'));
     expect(mockNavigate).toHaveBeenCalledWith(`/meal-plans/${PLAN_ID}/edit`);
     fireEvent.click(screen.getByText('Shopping list'));

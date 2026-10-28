@@ -162,6 +162,11 @@ describe('MealPlanDetailView', () => {
     // #266: goal rows are labelled as per-day averages (the plan has a
     // perDay figure) so they do not read as a conflicting plan total.
     expect(await findByText('Calories (per-day avg)')).toBeTruthy();
+    // Satiety is a ratio-based plan-wide score (the per-day and
+    // whole-plan figures are identical), so its row never carries the
+    // per-day / plan-total qualifier (CodeRabbit on #272).
+    expect(await findByText('Satiety (plan-wide score)')).toBeTruthy();
+    expect(queryByText('Satiety (per-day avg)')).toBeNull();
     expect(await findByText('120 / 120 · On track')).toBeTruthy();
     expect(await findByText('75 / 60 · Above goal')).toBeTruthy();
     // Progress present: no set-goals hint.
@@ -188,7 +193,13 @@ describe('MealPlanDetailView', () => {
         proteinG: null,
         carbsG: null,
         fatG: null,
-        satietyScore: null,
+        satietyScore: {
+          goal: 60,
+          actual: 75,
+          delta: 15,
+          percentOfGoal: 125,
+          band: 'over',
+        },
       },
     });
     const {findByText, queryByText} = await renderWithProviders(
@@ -199,6 +210,10 @@ describe('MealPlanDetailView', () => {
     );
     expect(await findByText('Calories (plan total)')).toBeTruthy();
     expect(queryByText('Calories (per-day avg)')).toBeNull();
+    // Satiety is not a plan total either — same plan-wide label as the
+    // dated case (CodeRabbit on #272).
+    expect(await findByText('Satiety (plan-wide score)')).toBeTruthy();
+    expect(queryByText('Satiety (plan total)')).toBeNull();
   });
 
   test('shows the set-goals hint when there is nutrition but no progress', async () => {

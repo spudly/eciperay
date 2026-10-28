@@ -283,13 +283,17 @@ Jest covers the meal plan detail/form views. The cases below are manual._
    sums of the assigned recipes and the progress view renders for days with and
    without entries. For a plan with a valid date range, the goal figures are the
    plan's **per-day average** against the daily goals and are labelled as such
-   ("Per-day average for this plan, compared with your daily goals" on web;
-   "(per-day avg)" row labels in the app). For an undated plan (dates are
-   optional), the figures are the **plan total** against the daily goals and are
-   labelled as such ("Plan total for this plan, compared with your daily goals"
-   on web; "(plan total)" row labels in the app) — they must not be labelled as
-   a daily average or read as an unexplained second total next to "Plan total"
-   (regression: #266).
+   ("Per-day average calories and protein for this plan, compared with your
+   daily goals. Satiety is a plan-wide score." on web; "(per-day avg)" row
+   labels in the app). For an undated plan (dates are optional), the figures are
+   the **plan total** against the daily goals and are labelled as such
+   ("Plan-total calories and protein for this plan, compared with your daily
+   goals. Satiety is a plan-wide score." on web; "(plan total)" row labels in
+   the app) — they must not be labelled as a daily average or read as an
+   unexplained second total next to "Plan total" (regression: #266). Satiety is
+   neither an average nor a total: it is a ratio-based score that is identical
+   for the per-day and whole-plan figures, so both surfaces label it a plan-wide
+   score (app row: "Satiety (plan-wide score)").
 5. **Delete the plan.** Delete `QA — Week Plan`. **Expected:** gone from the
    list; member recipes unaffected.
 6. **Direct `/meal-plans` visit + unknown routes (web).** Visit `/meal-plans`

@@ -79,6 +79,14 @@ export const MealPlanDetailView = ({
   // labelling the fallback total a daily average would be wrong for
   // undated plans. The DS page has no caption slot for the section, so
   // the label is the lever.
+  //
+  // Satiety is the exception: it carries neither qualifier. The server
+  // computes it from aggregated nutrient ratios (protein share, energy
+  // density, fiber per calorie — see `satietyForTotals` /
+  // `calculateSatiety`), all scale-invariant, so the per-day figure and
+  // the whole-plan figure are the same score and changing the plan
+  // length does not change it. It is a plan-wide score, not an average
+  // or a total (CodeRabbit on #272).
   const progressQualifier = plan.nutrition?.perDay
     ? '(per-day avg)'
     : '(plan total)';
@@ -104,7 +112,7 @@ export const MealPlanDetailView = ({
           ...(progress.satietyScore
             ? [
                 {
-                  label: `Satiety ${progressQualifier}`,
+                  label: 'Satiety (plan-wide score)',
                   valueLabel: goalValueLabel(progress.satietyScore),
                 },
               ]

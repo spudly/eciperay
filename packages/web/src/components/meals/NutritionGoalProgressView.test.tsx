@@ -45,7 +45,7 @@ describe('NutritionGoalProgressView', () => {
     expect(screen.getByText('Calories')).toBeInTheDocument();
     expect(
       screen.getByText(
-        'Per-day average for this plan, compared with your daily goals.',
+        'Per-day average calories and protein for this plan, compared with your daily goals. Satiety is a plan-wide score.',
       ),
     ).toBeInTheDocument();
   });
@@ -73,11 +73,11 @@ describe('NutritionGoalProgressView', () => {
     // whole-plan total, so the caption must say so.
     expect(
       screen.getByText(
-        'Plan total for this plan, compared with your daily goals.',
+        'Plan-total calories and protein for this plan, compared with your daily goals. Satiety is a plan-wide score.',
       ),
     ).toBeInTheDocument();
     expect(
-      screen.queryByText(/Per-day average for this plan/),
+      screen.queryByText(/Per-day average calories and protein/),
     ).not.toBeInTheDocument();
   });
 
@@ -92,10 +92,10 @@ describe('NutritionGoalProgressView', () => {
       screen.getByText('Set daily nutrition goals to compare this plan.'),
     ).toBeInTheDocument();
     expect(
-      screen.queryByText(/Per-day average for this plan/),
+      screen.queryByText(/Per-day average calories and protein/),
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByText(/Plan total for this plan, compared/),
+      screen.queryByText(/Plan-total calories and protein/),
     ).not.toBeInTheDocument();
   });
 });
