@@ -2,10 +2,9 @@
 name: eciperay-cross-platform-ui
 description: >-
   Cross-platform UI guidelines for Eciperay (mirrored app/web components,
-  @eciperay/theme ui-* classes, @eciperay/client shared props, dev component
-  showcase .demo pattern). Use when creating or editing components in
-  packages/app or packages/web, adding shared styling, wiring showcase demos, or
-  deciding platform parity.
+  @eciperay/theme ui-* classes, @eciperay/client shared props). Use when
+  creating or editing components in packages/app or packages/web, adding shared
+  styling, or deciding platform parity.
 disable-model-invocation: true
 ---
 
@@ -103,8 +102,7 @@ When adding a reusable widget:
 2. Add `ui-*` classes to `packages/theme/components.css` when styling is shared
 3. Implement app + web mirrors under `components/ui/`
 4. Add Vitest tests on web (`ComponentName.test.tsx` colocated)
-5. Register in `MIRROR_PAIRS`, `SHOWCASE_MIRROR_PATHS`, both
-   `showcaseModuleLoaders.ts`, and add `.demo` on both mirrors
+5. Register in `MIRROR_PAIRS`
 
 ## UI parity registry
 
@@ -141,99 +139,18 @@ Mirrored components:
 
 Shared class: `ui-loading-center` (+ platform layout utilities in each mirror).
 
-## Component showcase (dev only)
+## Component showcase (retired)
 
-Development preview for mirrored components:
+The in-app and web component showcases are retired (app: design-system#129; web:
+design-system#130 B7 C2). The design-system Storybooks are the showcase now:
+components that live in `@spudly/ui` are previewed through its stories. There is
+no showcase catalog, no `showcaseModuleLoaders`, and no `ShowcaseDemoRenderer` —
+do not register new `.demo` properties or showcase loaders. (A few legacy
+`.demo` expandos remain on components that were never showcase-driven; leave
+them alone.)
 
-| Platform | Entry                                                      |
-| -------- | ---------------------------------------------------------- |
-| Web      | `/dev/components` (lazy route, `import.meta.env.DEV` only) |
-| App      | Profile → **Component Showcase** (`__DEV__` only)          |
-
-Infrastructure lives in `components/dev/` on both platforms
-(`ComponentShowcaseView`, `ShowcaseDemo`, `ShowcaseDemoFrame`,
-`showcaseModuleLoaders`). Catalog and types live in `@eciperay/client`
-(`componentShowcaseCatalog.ts`, `showcaseComponent.ts`).
-
-### Co-located `.demo` on the component
-
-Put the preview on the **same export** as the component, behind a DEV guard so
-production bundles strip it:
-
-```tsx
-// Web
-if (import.meta.env.DEV) {
-  PrimaryButton.demo = function PrimaryButtonDemo() {
-    return (
-      <PrimaryButton
-        label="Primary"
-        onPress={() => {
-          void 0;
-        }}
-      />
-    );
-  };
-}
-
-// App — same pattern with __DEV__
-if (__DEV__) {
-  PrimaryButton.demo = () => (
-    <PrimaryButton
-      label="Primary"
-      onPress={() => {
-        void 0;
-      }}
-    />
-  );
-}
-```
-
-When the demo needs providers (React Query, analytics, router), use
-`ShowcaseDemoRenderer` and inject `Frame`:
-
-```tsx
-import {type ShowcaseDemoRenderer} from '@eciperay/client';
-
-if (__DEV__) {
-  const tagPickerDemo: ShowcaseDemoRenderer = ({Frame}) => (
-    <Frame>
-      <TagPicker
-        selectedIds={['tag-1']}
-        onChange={() => {
-          void 0;
-        }}
-      />
-    </Frame>
-  );
-  TagPicker.demo = tagPickerDemo;
-}
-```
-
-`ShowcaseDemoFrame` supplies `QueryClientProvider` + `AnalyticsProvider`. The
-showcase runs inside the app router (`/dev/components`), so demos that use
-`Link` or `useNavigate` do not need an extra router wrapper.
-
-**Do not** put demo JSX in a central registry file — keep it on the owning
-component.
-
-Every mirrored component in `SHOWCASE_MIRROR_PATHS` should have a DEV-guarded
-`.demo` on **both** app and web mirrors. Use shared fixtures from
-`@eciperay/client` and wrap query-dependent previews in `Frame` when needed.
-
-### Adding or changing a mirrored component
-
-When a component is in `MIRROR_PAIRS`:
-
-1. Add its path to `SHOWCASE_MIRROR_PATHS` in
-   `packages/client/src/dev/componentShowcaseCatalog.ts` (must stay in sync —
-   tested against `MIRROR_PAIRS` minus `dev/*` showcase infra)
-2. Add a dynamic import entry to **both** `showcaseModuleLoaders.ts` files (key
-   = catalog `id`, e.g. `'ui/PrimaryButton'`)
-3. Add a DEV-guarded `.demo` on **both** mirrors
-4. Run `npm run validate:ui-parity` and showcase-related tests
-
-Loader keys must match catalog ids exactly (`showcaseModuleLoaders.test.ts` on
-app and web).
+When a component is in `MIRROR_PAIRS`, register it in `MIRROR_PAIRS` only and
+run `npm run validate:ui-parity`.
 
 ## PR checklist
 
@@ -242,7 +159,7 @@ app and web).
 - [ ] Props? Shared type in client
 - [ ] Styling? `components.css` with `@apply`, not duplicated strings
 - [ ] Tests on both sides for behavior parity
-- [ ] New/changed mirror in showcase? Updated catalog path, both loaders, and
-      `.demo` on both mirrors
+- [ ] New/changed mirror registered in `MIRROR_PAIRS`? (Showcase retired — no
+      catalog, loaders, or `.demo` registration)
 
 See also [CONTRIBUTING.md](../../CONTRIBUTING.md).
