@@ -1,6 +1,6 @@
 import {
   buildRecipePermalink,
-  formatRecipeListMeta,
+  formatRecipeListSubtitle,
   makeRecipeDetail,
   WEB_APP_BASE_URL,
 } from '@eciperay/client';
@@ -9,9 +9,9 @@ import type {RecipeDetail} from '@eciperay/types';
 
 import {ThumbnailListCard} from './ui/ThumbnailListCard';
 
-export const formatRecipeSubtitle = (recipe: RecipeDetail) =>
-  `${recipe.servings} servings${recipe.cookTimeMin ? ` · ${recipe.cookTimeMin} min` : ''} · ${formatRecipeListMeta(recipe)}`;
-
+// The card subtitle is formatted by the shared formatRecipeListSubtitle
+// in @eciperay/client (#278); the Shared-with-me host imports it from
+// there too — see the web mirror's parity note.
 type Props = {recipe: RecipeDetail};
 
 export const SharedRecipeListCard = ({recipe}: Props) => {
@@ -24,7 +24,7 @@ export const SharedRecipeListCard = ({recipe}: Props) => {
     <ThumbnailListCard
       imageUrl={recipe.imageUrl}
       title={recipe.title}
-      subtitle={formatRecipeSubtitle(recipe)}
+      subtitle={formatRecipeListSubtitle(recipe)}
       onPress={openRecipe}
     />
   );

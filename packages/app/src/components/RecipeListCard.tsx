@@ -1,6 +1,6 @@
 import type {CookLogInput, RecipeDetail} from '@eciperay/types';
 import {
-  formatRecipeListMeta,
+  formatRecipeListSubtitle,
   invalidateRecipeQueries,
   makeRecipeDetail,
 } from '@eciperay/client';
@@ -14,9 +14,8 @@ import {api} from '../lib/api';
 
 import {ThumbnailListCard} from './ui/ThumbnailListCard';
 
-const formatRecipeSubtitle = (recipe: RecipeDetail) =>
-  `${recipe.servings} servings${recipe.cookTimeMin ? ` · ${recipe.cookTimeMin} min` : ''} · ${formatRecipeListMeta(recipe)}`;
-
+// The card subtitle is formatted by the shared formatRecipeListSubtitle
+// in @eciperay/client (#278) — see the web mirror's parity note.
 type Props = {recipe: RecipeDetail; onPress: () => void; onDelete: () => void};
 
 export const RecipeListCard = ({recipe, onPress, onDelete}: Props) => {
@@ -37,7 +36,7 @@ export const RecipeListCard = ({recipe, onPress, onDelete}: Props) => {
       <ThumbnailListCard
         imageUrl={recipe.imageUrl}
         title={recipe.title}
-        subtitle={formatRecipeSubtitle(recipe)}
+        subtitle={formatRecipeListSubtitle(recipe)}
         onPress={onPress}
         trailing={
           <XStack

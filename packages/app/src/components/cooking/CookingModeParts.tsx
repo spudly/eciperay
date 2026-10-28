@@ -1,6 +1,7 @@
 /* eslint-disable max-lines -- cooking-mode overlay family with scaled ingredients list and step display */
 import {
   formatScaledIngredientLine,
+  formatServingsLabel,
   sortIngredientsByOrder,
 } from '@eciperay/client';
 import {eciperayTheme, StepDots, Text as DsText, tokens} from '@spudly/ui';
@@ -118,8 +119,8 @@ const ScaledIngredientsList = ({
     >
       Ingredients
       {scaleFactor === 1
-        ? ` (${servings} servings)`
-        : ` (scaled to ${servings} servings)`}
+        ? ` (${formatServingsLabel(servings)})`
+        : ` (scaled to ${formatServingsLabel(servings)})`}
     </DsText>
     <ScrollView>
       {sortIngredientsByOrder(recipe.ingredients).map(ingredient => (

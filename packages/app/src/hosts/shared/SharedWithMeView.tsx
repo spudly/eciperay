@@ -1,6 +1,7 @@
 import {
   buildRecipePermalink,
   demoRecipeListFilters,
+  formatRecipeListSubtitle,
   makeRecipeDetail,
   WEB_APP_BASE_URL,
   type RecipeStatusFilterValue,
@@ -9,8 +10,6 @@ import {
 import type {RecipeListSort, RecipeListSortDir} from '@eciperay/types';
 import {SharedWithMePage, type SharedWithMePageItem} from '@spudly/ui/pages';
 import {Linking} from 'react-native';
-
-import {formatRecipeSubtitle} from '../../components/SharedRecipeListCard';
 
 /**
  * The Shared-with-me screen's view (#49, Wave A): the design system's
@@ -65,7 +64,7 @@ export const SharedWithMeView = ({
   const items: SharedWithMePageItem[] = recipes.map(recipe => ({
     id: recipe.id,
     title: recipe.title,
-    subtitle: formatRecipeSubtitle(recipe),
+    subtitle: formatRecipeListSubtitle(recipe),
     imageUrl: recipe.imageUrl,
   }));
 

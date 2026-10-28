@@ -22,7 +22,6 @@ import {StatBadge, StatBadgeRow} from '../ui/StatBadge.js';
 import {TagPill} from '../ui/TagPill.js';
 
 import {OverviewActions} from './OverviewActions.js';
-import {RecipeStatusBadge} from './RecipeStatusBadge.js';
 import {RecipeVisibilityControls} from './RecipeVisibilityControls.js';
 
 type Props = {
@@ -113,9 +112,12 @@ export const OverviewTab = ({
         />
       ) : null}
       <h2 className="mbe-2 text-2xl font-bold text-gray-900">{recipe.title}</h2>
-      <div className="mbe-4">
-        <RecipeStatusBadge status={recipe.status} />
-      </div>
+      {/* No status badge here (#278): the detail chrome's toolbar already
+          renders the status pill above the tabs, and rendering it again
+          under the title duplicated the status on the Overview. This
+          matches the design system's RecipeDetailPage, which takes the
+          status as a page-level prop and keeps it out of the overview
+          view-model — status is shown once, in the chrome. */}
       {recipe.description ? (
         <p className="mbe-4 text-gray-600">{recipe.description}</p>
       ) : null}

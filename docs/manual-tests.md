@@ -153,6 +153,13 @@ without); one recipe may be created fresh in case 1.
    current status" error), the recipe's status shows Evolving, and the
    previously Perfected version remains available unchanged in the version
    history.
+9. **Card meta and detail status polish (#278).** On `/recipes`, check the card
+   subtitles: a 1-serving recipe reads "1 serving" (not "1 servings"), and a
+   recipe whose nutrition is still being computed (e.g. one just created or
+   renamed) reads "Satiety pending" — never a bare "Satiety…" that looks
+   truncated; other cards show a satiety value or "Satiety —". Open one recipe's
+   detail. **Expected:** the recipe status appears exactly once, as the pill in
+   the toolbar above the tabs — the Overview does not repeat it under the title.
 
 **Run when:**
 `packages/app/src/screens/{Recipes,RecipeDetail,EditRecipe,EditVersion,ManualEntry}Screen.tsx`,
