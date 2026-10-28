@@ -113,7 +113,14 @@ const updateExistingVersion = async (
     throw new RecipeNotFoundError();
   }
   await updateRecipeSlug(recipeId, slugifyRecipeTitle(input.title), queryFn);
-  await updateRecipeStatus(recipeId, resolveStatus(input), queryFn);
+  // Only a save that carries a status may change the lineage status: a
+  // version save that omits it (the version editor's payload type made
+  // status optional) must preserve the current status instead of
+  // resolveStatus's create-path default of 'idea' (#275 — saving a draft
+  // created from a Perfected recipe silently reverted it to Idea).
+  if (input.status !== undefined) {
+    await updateRecipeStatus(recipeId, input.status, queryFn);
+  }
   await incrementContentRevision(recipeId, queryFn);
   await replaceVersionChildren(versionId, input, queryFn);
   return versionId;

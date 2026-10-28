@@ -51,6 +51,29 @@ describe('saveRecipeFromInput', () => {
     ]);
   });
 
+  test('preserves the lineage status when an update omits status (#275)', async () => {
+    const mockQuery = createMockQuery();
+    mockQuery
+      .mockResolvedValueOnce({
+        ...makeQueryResult([{id: 'version-uuid-1'}]),
+        rowCount: 1,
+      })
+      .mockResolvedValue(makeQueryResult([makeRecipeDetailRow()]));
+    await saveRecipeFromInput(
+      {
+        userId: 'user-uuid-1',
+        input: makeRecipeInput(),
+        recipeId: 'recipe-uuid-1',
+        versionId: 'version-uuid-1',
+      },
+      mockQuery,
+    );
+    expect(mockQuery).not.toHaveBeenCalledWith(
+      expect.stringContaining('update recipes set status'),
+      expect.anything(),
+    );
+  });
+
   test('throws RecipeNotFoundError when update misses', async () => {
     const mockQuery = createMockQuery();
     mockQuery.mockResolvedValueOnce({...makeQueryResult([]), rowCount: 0});
