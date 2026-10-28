@@ -68,8 +68,13 @@ export const ThumbnailListCard = ({
   );
 
   // The press target wraps only the main content (thumbnail + title).
-  // Trailing actions (e.g. "Log cook", "Delete" buttons) render as siblings
-  // OUTSIDE the pressable, avoiding nested interactive elements.
+  // Trailing actions (e.g. "Log cook", "Delete" buttons) are not inside the
+  // pressable (avoiding nested interactive elements), but they ARE inside
+  // the card surface: the card wraps a row holding the pressable main
+  // region and the actions. Rendering the actions as siblings outside the
+  // card made them float in the page margin, detached from the card border
+  // (#258). The app mirror renders its trailing actions inside the card the
+  // same way.
   //
   // Both press branches show a pointer cursor on hover (#213) so the card
   // reads as clickable: the onPress Card takes Tamagui's cursor style prop
@@ -77,8 +82,8 @@ export const ThumbnailListCard = ({
   // linkTo Link carries it in its inline style. The app mirror has no
   // counterpart — native has no hover cursor.
   //
-  // Inside the trailing-actions row the card flexes from a 17rem basis
-  // and the row wraps (#190): at phone widths the trailing actions cannot
+  // Inside the trailing-actions row the main region flexes from a 17rem
+  // basis and the row wraps (#190): at phone widths the trailing actions cannot
   // share the row without squeezing the title column to a few characters,
   // so they wrap onto their own right-aligned row and the card spans the
   // full list width. The basis is sized so that whenever the actions DO
@@ -154,15 +159,94 @@ export const ThumbnailListCard = ({
     return card;
   }
 
+  // With trailing actions, the card surface wraps the whole row: the
+  // pressable main region flexes from the same 17rem basis as the
+  // standalone card did, and the actions row still wraps onto its own
+  // right-aligned row at phone widths (#190) — now inside the card.
+  // The main region is a YStack (column), not an XStack: as a column
+  // container its child row is width-capped by stretch, exactly as when
+  // the card itself wrapped the row. An XStack region made the row a
+  // flex item whose min-content (thumbnail + unwrapped subtitle) forced
+  // it wider than the card at phone widths — a 9px horizontal overflow
+  // on /recipes at 390px in the mobile-web e2e layout test.
+  // The outer card renders with padding 0 and the main region carries
+  // the card's padding itself, so the padded area stays inside the
+  // press target: when the pressable was a plain stack under the padded
+  // card, clicks on the card's padded ring hit the outer card and never
+  // reached onPress. The actions wrapper keeps the card's end and
+  // bottom insets instead. (With border-box sizing the main region's
+  // 17rem basis already included this padding back when the pressable
+  // was a Card, so the row's outer geometry is unchanged.)
+  let mainRegion: ReactNode;
+  if (onPress) {
+    mainRegion = (
+      <YStack
+        onPress={onPress}
+        role="button"
+        tabIndex={0}
+        cursor="pointer"
+        flexGrow={1}
+        flexShrink={1}
+        flexBasis="17rem"
+        minWidth={0}
+        padding="$4"
+      >
+        {main}
+      </YStack>
+    );
+  } else if (linkTo) {
+    mainRegion = (
+      <Link
+        to={linkTo}
+        style={{
+          textDecoration: 'none',
+          display: 'block',
+          cursor: 'pointer',
+          flex: '1 1 17rem',
+          minWidth: 0,
+          paddingTop: tokens.spacing[4],
+          paddingBottom: tokens.spacing[4],
+          paddingLeft: tokens.spacing[4],
+          paddingRight: tokens.spacing[4],
+        }}
+      >
+        {main}
+      </Link>
+    );
+  } else {
+    mainRegion = (
+      <YStack
+        flexGrow={1}
+        flexShrink={1}
+        flexBasis="17rem"
+        minWidth={0}
+        padding="$4"
+      >
+        {main}
+      </YStack>
+    );
+  }
+
   return (
-    <XStack
-      gap="$3"
-      alignItems="center"
-      flexWrap="wrap"
-    >
-      {card}
-      <div style={{marginInlineStart: 'auto'}}>{trailing}</div>
-    </XStack>
+    <DSCard padding={0}>
+      <XStack
+        gap="$3"
+        alignItems="center"
+        flexWrap="wrap"
+      >
+        {mainRegion}
+        <div
+          style={{
+            marginInlineStart: 'auto',
+            paddingTop: tokens.spacing[4],
+            paddingBottom: tokens.spacing[4],
+            paddingInlineEnd: tokens.spacing[4],
+          }}
+        >
+          {trailing}
+        </div>
+      </XStack>
+    </DSCard>
   );
 };
 
