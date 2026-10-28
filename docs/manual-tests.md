@@ -67,7 +67,11 @@ No feature section substitutes for this baseline; it runs first, every time.
 
 _Automated: Jest covers the auth screens/forms (app `screens/auth/*`, web auth
 pages); Playwright `signed-out.spec.ts` covers the redirect-to-sign-in and
-sign-in render. The cases below are the manual remainder._
+sign-in render. Playwright live `e2e-live/auth.setup.ts` covers real sign-in;
+`e2e-live/sign-out.spec.ts` covers real sign-out; and `e2e-live/auth.spec.ts`
+covers the password-reset request against the QA dataset once the CI test
+account secrets exist (issue #233); until then those cases remain manual. The
+cases below are the manual remainder._
 
 **Preconditions:** QA account credentials; a second browser profile or private
 window for signed-out checks; access to the QA account's email inbox for
@@ -100,7 +104,10 @@ auth configuration changes.
 _Automated: Jest covers the recipe form, list view, and detail hosts (app
 `hosts/recipe/*`, `hosts/recipes/*`; web page tests); Playwright
 `recipes.spec.ts` covers browse rendering, search narrowing, and opening a
-detail. The cases below are the manual remainder._
+detail. Playwright live `e2e-live/recipes.spec.ts` covers create (rendering on
+the detail page and findable by search), edit-rename, and delete against the QA
+dataset once the CI test account secrets exist (issue #233); until then those
+cases remain manual. The cases below are the manual remainder._
 
 **Preconditions:** QA account with at least two recipes (one with an image, one
 without); one recipe may be created fresh in case 1.
@@ -145,8 +152,12 @@ recipe page components, `packages/server` recipe routes.
 ## Servings & scaling controls
 
 _Automated: Jest covers the design-system servings/scale component and the
-recipe-detail host echo behavior; there is no Playwright coverage of the scaling
-interactions. All cases below are manual._
+recipe-detail host echo behavior. Playwright live `e2e-live/recipes.spec.ts`
+covers the 2× scale preset doubling ingredient quantities on the recipe detail
+against the QA dataset once the CI test account secrets exist (issue #233);
+until then that case remains manual. Direct servings input, custom scale, and
+invalid-input handling have no Playwright coverage. The cases below are the
+manual remainder._
 
 **Preconditions:** A QA recipe with servings = 4 and ingredient quantities that
 scale visibly (e.g. 2 cups flour, 0.5 tsp salt), such as
@@ -167,8 +178,11 @@ scale visibly (e.g. 2 cups flour, 0.5 tsp salt), such as
    coherently.
 4. **Invalid input resilience.** Enter 0, then a negative number, then
    non-numeric text in the servings and custom-scale inputs. **Expected:** no
-   crash, no NaN quantities; the last valid quantities stay or the field resets
-   to a sane value.
+   crash, no NaN quantities. Empty or non-numeric entries commit nothing — the
+   field restores the current value and the last valid quantities stay. In the
+   servings input, 0 or a negative number clamps to the minimum (1 serving) and
+   quantities rescale to match; in the custom-scale input, a non-positive entry
+   commits nothing and the current scale stays.
 5. **Persistence of intent.** Scale to 2x, navigate away, and return.
    **Expected:** either the scale resets to 1x by design or persists — but
    whichever it does, quantities and the displayed scale agree.
@@ -182,7 +196,12 @@ scale visibly (e.g. 2 cups flour, 0.5 tsp salt), such as
 ## Cook log
 
 _Automated: Jest covers the design-system CookLogForm component and the app
-hosts that embed it; the multi-surface behavior below is manual._
+hosts that embed it. Playwright live `e2e-live/cook-log.spec.ts` covers the
+cooking-mode surface against the QA dataset once the CI test account secrets
+exist (issue #233): submitting the form (rating + notes) records the cook in the
+recipe's history, and Skip dismisses it recording nothing; until then those
+cases remain manual. The other surfaces (detail slot, list card, inline form)
+and the cases below are the manual remainder._
 
 **Preconditions:** QA account with at least one recipe; the cook log form
 appears in four places and each is exercised: recipe detail (the
@@ -256,7 +275,11 @@ routes.
 ## Meal plans
 
 _Automated: Playwright `meal-plans.spec.ts` covers the plans list rendering;
-Jest covers the meal plan detail/form views. The cases below are manual._
+Jest covers the meal plan detail/form views. Playwright live
+`e2e-live/meal-plans.spec.ts` covers creating a dated plan with a recipe on it
+and landing on its detail against the QA dataset once the CI test account
+secrets exist (issue #233); until then that case remains manual. The cases below
+are the manual remainder._
 
 **Preconditions:** QA account with at least three recipes.
 
@@ -292,8 +315,12 @@ Jest covers the meal plan detail/form views. The cases below are manual._
 
 ## Shopping list
 
-_Automated: Jest covers the shopping list screen/view rendering; generation and
-check-off behavior below are manual._
+_Automated: Jest covers the shopping list screen/view rendering. Playwright live
+`e2e-live/meal-plans.spec.ts` (the meal-plan flow) covers generating a plan's
+shopping list and checking off an item against the QA dataset once the CI test
+account secrets exist (issue #233); until then those cases remain manual.
+Consolidation, quantity doubling, regeneration, check-off persistence, and
+empty-plan behavior below are the manual remainder._
 
 **Preconditions:** A QA meal plan with at least two recipes sharing one
 ingredient (e.g. both use eggs) and one recipe assigned twice in the week.
@@ -321,7 +348,11 @@ shopping list generation.
 ## Imports
 
 _Automated: Jest covers the import screens and the review screen's rendering;
-extraction quality against real-world sources is inherently manual._
+Playwright live `e2e-live/imports.spec.ts` covers text import end-to-end against
+the QA dataset once both prerequisites exist as CI secrets — the CI test account
+and the Anthropic API key (text import parses with Anthropic server-side, so the
+spec skips while either is missing; issue #233). Extraction quality against
+real-world sources is inherently manual._
 
 **Preconditions:** QA account; the sample inputs named in each case (keep a
 small set of known inputs so results are comparable across runs).

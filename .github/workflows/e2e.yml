@@ -1,12 +1,20 @@
 name: e2e
 
-# Playwright web integration tests (issue #184). Unit/component tests
-# never load the real web app in a browser; this job builds the web
-# package in-job and exercises the core flows in Chromium against
-# fixture-mocked /api responses and a fake Supabase project (no
-# production data, no real account). See
+# Playwright web integration tests (issues #184 and #233). Unit/component
+# tests never load the real web app in a browser; this workflow builds
+# the web package in-job and exercises the core flows in Chromium. See
 # packages/web/playwright.config.ts for why the suite targets the
 # in-job build instead of the per-PR Fly review app.
+#
+# Two jobs:
+# - e2e: the mocked suite — fixture /api responses and a fake Supabase
+#   project (no production data, no real account).
+# - e2e-live: the live suite (issue #233) — the same in-job build wired
+#   to the Supabase QA dataset via the PREVIEW_* secrets, with the real
+#   API server booted in-job. Its authenticated specs additionally use
+#   the dedicated CI test account (E2E_QA_EMAIL / E2E_QA_PASSWORD) and
+#   skip with a stated reason until those secrets exist. Neither job is
+#   a required merge check; failures surface here, not as merge gates.
 
 on:
   pull_request:
@@ -68,3 +76,59 @@ jobs:
           name: playwright-traces
           path: packages/web/test-results
           if-no-files-found: ignore
+
+  e2e-live:
+    name: Playwright web e2e (live, QA dataset)
+    if:
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup and install
+        uses: ./.github/actions/ci-setup
+        with:
+          install-command: npm ci
+          skip-install-on-cache-hit: 'true'
+
+      - name: Install Chromium for Playwright
+        working-directory: packages/web
+        run: npx playwright install --with-deps chromium
+
+      - name: Run live Playwright tests
+        working-directory: packages/web
+        run: npm run test:e2e:live
+        env:
+          CI: true
+          PREVIEW_VITE_SUPABASE_URL: ${{ secrets.PREVIEW_VITE_SUPABASE_URL }}
+          PREVIEW_VITE_SUPABASE_ANON_KEY:
+            ${{ secrets.PREVIEW_VITE_SUPABASE_ANON_KEY }}
+          PREVIEW_SUPABASE_URL: ${{ secrets.PREVIEW_SUPABASE_URL }}
+          PREVIEW_SUPABASE_SECRET_KEY:
+            ${{ secrets.PREVIEW_SUPABASE_SECRET_KEY }}
+          PREVIEW_DATABASE_URL: ${{ secrets.PREVIEW_DATABASE_URL }}
+          # Text import parses with Anthropic server-side. Inert until
+          # the ANTHROPIC_API_KEY secret exists; the imports spec skips
+          # with a stated reason while it is absent (see e2e-live/qa.ts).
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          E2E_QA_EMAIL: ${{ secrets.E2E_QA_EMAIL }}
+          E2E_QA_PASSWORD: ${{ secrets.E2E_QA_PASSWORD }}
+
+      # Traces from the live suite can carry session tokens for the QA
+      # account, and this repo is public — anyone with read access can
+      # download artifacts. The setup project records no trace at all
+      # (it types the QA password; see playwright.live.config.ts), and
+      # retention is cut to the minimum so the exposure window for the
+      # remaining traces is as short as the failure-diagnosis value
+      # allows.
+      - name: Upload Playwright traces on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-traces-live
+          path: packages/web/test-results
+          if-no-files-found: ignore
+          retention-days: 1
