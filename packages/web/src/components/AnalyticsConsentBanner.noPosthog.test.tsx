@@ -6,6 +6,7 @@ import {renderWithProviders} from '../test/testUtils.js';
 vi.mock('../lib/analytics.js', () => ({
   analytics: {identifyUser: vi.fn()},
   enablePostHog: vi.fn(),
+  disablePostHog: vi.fn(),
 }));
 
 vi.mock('../lib/env.js', async importOriginal => {
