@@ -1,5 +1,7 @@
 import {ScreenContainer, Text, TextLink} from '@spudly/ui';
 
+import {PageTitle} from '../../components/ui/PageTitle.js';
+
 type AuthConfirmationProps = {
   title: string;
   body: string;
@@ -26,7 +28,12 @@ export const AuthConfirmation = ({
     scrollable={false}
     variant="auth"
   >
-    <Text variant="heading">{title}</Text>
+    <PageTitle
+      size="section"
+      spacing="section"
+    >
+      {title}
+    </PageTitle>
     <Text color="$textMuted">{body}</Text>
     {backLabel && onBackPress ? (
       <TextLink onPress={onBackPress}>{backLabel}</TextLink>
