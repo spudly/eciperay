@@ -10,4 +10,9 @@ export const createCookLogsApi = (client: ApiClient) => ({
       method: 'POST',
       body: JSON.stringify(input),
     }),
+  remove: (recipeId: string, versionId: string, cookLogId: string) =>
+    client.fetch<undefined>(
+      `/recipes/${recipeId}/versions/${versionId}/cooks/${cookLogId}`,
+      {method: 'DELETE'},
+    ),
 });

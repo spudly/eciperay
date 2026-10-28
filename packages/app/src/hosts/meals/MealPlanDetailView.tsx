@@ -69,13 +69,18 @@ export const MealPlanDetailView = ({
   const nutritionLabel = formatSimpleNutrition(plan.nutrition) ?? undefined;
 
   const progress = plan.goalProgress;
+  // Row labels carry a "(per-day avg)" qualifier (#266): the server
+  // compares the plan's per-day average nutrition against the daily
+  // goals, and unlabelled the figures read as a second, conflicting
+  // plan total next to the section's "Plan total:" line. The DS page
+  // has no caption slot for the section, so the label is the lever.
   const nutritionGoals: MealPlanDetailPageNutritionGoals | null = progress
     ? {
         rows: [
           ...(progress.calories
             ? [
                 {
-                  label: 'Calories',
+                  label: 'Calories (per-day avg)',
                   valueLabel: goalValueLabel(progress.calories),
                 },
               ]
@@ -83,7 +88,7 @@ export const MealPlanDetailView = ({
           ...(progress.proteinG
             ? [
                 {
-                  label: 'Protein',
+                  label: 'Protein (per-day avg)',
                   valueLabel: goalValueLabel(progress.proteinG),
                 },
               ]
@@ -91,7 +96,7 @@ export const MealPlanDetailView = ({
           ...(progress.satietyScore
             ? [
                 {
-                  label: 'Satiety',
+                  label: 'Satiety (per-day avg)',
                   valueLabel: goalValueLabel(progress.satietyScore),
                 },
               ]

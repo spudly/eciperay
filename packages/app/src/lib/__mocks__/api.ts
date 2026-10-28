@@ -41,7 +41,7 @@ export const api = {
     tweakWithAi: jest.fn(),
     startImportEdits: jest.fn(),
   },
-  cookLogs: {list: jest.fn(), create: jest.fn()},
+  cookLogs: {list: jest.fn(), create: jest.fn(), remove: jest.fn()},
   meals: {
     list: jest.fn(),
     get: jest.fn(),

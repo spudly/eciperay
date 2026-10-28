@@ -216,6 +216,15 @@ list view, and the cooking-mode overlay.
    **Expected:** no step controls, Done button, or cook log form is shown until
    the recipe has loaded — a cook log can never be submitted with an empty
    version (regression: #247).
+9. **Delete an entry from Cook History (web).** In a recipe's Cook History, use
+   an entry's Delete control. **Expected:** an in-page confirmation appears (no
+   browser dialog); Cancel keeps the entry; Confirm delete removes it and the
+   history refreshes without it. If the delete request fails, an error alert
+   appears on the entry and the entry stays listed (regression: #266).
+
+**Run when (case 9):** `packages/web/src/components/recipe/CookHistoryTab.tsx`,
+`packages/client/src/cookLogsApi.ts`, `packages/server` cook log routes,
+`@spudly/ui` `RecipeDetailPage` history section.
 
 **Run when:** `@spudly/ui` `CookLogForm` or `StarRatingInput`,
 `packages/app/src/screens/CookingModeScreen.tsx`,
@@ -272,7 +281,11 @@ Jest covers the meal plan detail/form views. The cases below are manual._
 4. **Nutrition goal progress.** If the account has nutrition goals set, open the
    plan detail's nutrition goal progress. **Expected:** totals are plausible
    sums of the assigned recipes and the progress view renders for days with and
-   without entries.
+   without entries. The goal figures are the plan's **per-day average** against
+   the daily goals and are labelled as such ("Per-day average for this plan,
+   compared with your daily goals" on web; "(per-day avg)" row labels in the
+   app) — they must not read as a second plan total next to "Plan total"
+   (regression: #266).
 5. **Delete the plan.** Delete `QA — Week Plan`. **Expected:** gone from the
    list; member recipes unaffected.
 6. **Direct `/meal-plans` visit + unknown routes (web).** Visit `/meal-plans`

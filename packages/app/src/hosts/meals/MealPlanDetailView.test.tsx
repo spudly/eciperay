@@ -156,6 +156,9 @@ describe('MealPlanDetailView', () => {
       />,
     );
     expect(await findByText('850 / 2000 · Below goal')).toBeTruthy();
+    // #266: goal rows are labelled as per-day averages so they do not
+    // read as a conflicting plan total.
+    expect(await findByText('Calories (per-day avg)')).toBeTruthy();
     expect(await findByText('120 / 120 · On track')).toBeTruthy();
     expect(await findByText('75 / 60 · Above goal')).toBeTruthy();
     // Progress present: no set-goals hint.

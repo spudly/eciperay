@@ -22,6 +22,17 @@ const StarDisplay = ({rating}: {rating: number}) => (
 
 export const CookHistoryTab = ({recipeId, versionId}: Props) => {
   const [showForm, setShowForm] = useState(false);
+  // Cook-log deletion (#266) confirms in-page, mirroring recipe
+  // deletion in PR #270: no window.confirm (suppressed dialogs made
+  // that a silent no-op), and a failed delete surfaces an error on
+  // the entry instead of failing silently.
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(
+    null,
+  );
+  const [deleteError, setDeleteError] = useState<{
+    cookLogId: string;
+    message: string;
+  } | null>(null);
   const queryClient = useQueryClient();
 
   const {data: cookLogs = [], isLoading} = useQuery({
@@ -35,6 +46,23 @@ export const CookHistoryTab = ({recipeId, versionId}: Props) => {
     onSuccess: async () => {
       await invalidateRecipeQueries(queryClient, recipeId, versionId);
       setShowForm(false);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (cookLogId: string) =>
+      eciperay.cookLogs.remove(recipeId, versionId, cookLogId),
+    onSuccess: async () => {
+      await invalidateRecipeQueries(queryClient, recipeId, versionId);
+      setConfirmingDeleteId(null);
+      setDeleteError(null);
+    },
+    onError: (error, cookLogId) => {
+      setDeleteError({
+        cookLogId,
+        message:
+          error instanceof Error ? error.message : 'Failed to delete entry',
+      });
     },
   });
 
@@ -108,6 +136,60 @@ export const CookHistoryTab = ({recipeId, versionId}: Props) => {
               </div>
               {log.notes ? (
                 <p className="text-sm text-gray-700">{log.notes}</p>
+              ) : null}
+              {confirmingDeleteId === log.id ? (
+                <div className="mbs-3 flex flex-wrap items-center gap-2">
+                  <span className="text-sm text-gray-700">
+                    Delete this entry?
+                  </span>
+                  <button
+                    type="button"
+                    className="
+                      rounded-lg bg-red-600 px-3 py-1.5 text-sm font-medium
+                      text-white disabled:opacity-50
+                    "
+                    disabled={deleteMutation.isPending}
+                    onClick={() => {
+                      deleteMutation.mutate(log.id);
+                    }}
+                  >
+                    {deleteMutation.isPending ? 'Deleting…' : 'Confirm delete'}
+                  </button>
+                  <button
+                    type="button"
+                    className="
+                      rounded-lg bg-gray-100 px-3 py-1.5 text-sm text-gray-700
+                      disabled:opacity-50
+                    "
+                    disabled={deleteMutation.isPending}
+                    onClick={() => {
+                      setConfirmingDeleteId(null);
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <div className="mbs-3">
+                  <button
+                    type="button"
+                    className="text-sm font-medium text-red-600"
+                    onClick={() => {
+                      setDeleteError(null);
+                      setConfirmingDeleteId(log.id);
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
+              )}
+              {deleteError?.cookLogId === log.id ? (
+                <p
+                  role="alert"
+                  className="mbs-2 text-sm text-red-600"
+                >
+                  Could not delete entry: {deleteError.message}
+                </p>
               ) : null}
             </li>
           ))}

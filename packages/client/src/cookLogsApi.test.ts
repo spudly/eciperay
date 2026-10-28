@@ -7,11 +7,15 @@ describe('createCookLogsApi', () => {
 
     await api.list('r1', 'v1');
     await api.create('r1', 'v1', {notes: 'Great'});
+    await api.remove('r1', 'v1', 'c1');
 
     expect(fetch).toHaveBeenCalledWith('/recipes/r1/versions/v1/cooks');
     expect(fetch).toHaveBeenCalledWith('/recipes/r1/versions/v1/cooks', {
       method: 'POST',
       body: JSON.stringify({notes: 'Great'}),
+    });
+    expect(fetch).toHaveBeenCalledWith('/recipes/r1/versions/v1/cooks/c1', {
+      method: 'DELETE',
     });
   });
 });

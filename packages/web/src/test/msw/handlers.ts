@@ -398,6 +398,10 @@ export const handlers = [
       return HttpResponse.json({...makeCookLog(), ...body}, {status: 201});
     },
   ),
+  http.delete(
+    `${API}/api/recipes/:id/versions/:versionId/cooks/:cookLogId`,
+    () => new HttpResponse(null, {status: 204}),
+  ),
   http.post(`${API}/api/recipes/import/url`, () =>
     HttpResponse.json({
       ...recipe,
