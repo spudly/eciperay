@@ -13,6 +13,10 @@ PR is merged. For UI changes, also complete the PR checklist in CONTRIBUTING.md.
 
 - [ ] CI is green for the exact head commit
 - [ ] Review feedback addressed (Copilot and/or human)
+- [ ] Manual test pass posted for this head SHA in this PR's preview
+      deployment, scoped to this PR's changes, or exempt
+      (release/Dependabot/docs-CI-only, or no matching manual-test
+      triggers)
 - [ ] No new console or CI warnings introduced — or a GitHub issue filed for
       each new one
 - [ ] Manual test plan (`docs/manual-tests.md`) updated, or no user-visible
