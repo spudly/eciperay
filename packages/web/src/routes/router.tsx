@@ -76,18 +76,6 @@ const authenticatedAppRoutes = [
   {path: '/import/review/:recipeId', element: <ImportReviewPage />},
   {path: '/profile', element: <ProfilePage />},
   {path: '/tags', element: <TagsPage />},
-  ...(import.meta.env.DEV
-    ? [
-        {
-          path: '/dev/components',
-          lazy: async () => {
-            const {ComponentShowcasePage} =
-              await import('../pages/ComponentShowcasePage.js');
-            return {Component: ComponentShowcasePage};
-          },
-        },
-      ]
-    : []),
 ];
 
 export const router = createBrowserRouter([

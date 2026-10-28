@@ -1,9 +1,4 @@
-import {
-  makeRecipeDetail,
-  nutritionTabRows,
-  queryKeys,
-  type ShowcaseDemoRenderer,
-} from '@eciperay/client';
+import {nutritionTabRows, queryKeys} from '@eciperay/client';
 import {useQuery, useQueryClient} from '@tanstack/react-query';
 import {useState} from 'react';
 
@@ -104,11 +99,3 @@ export const NutritionTab = ({recipeId}: Props) => {
     </div>
   );
 };
-
-if (import.meta.env.DEV) {
-  NutritionTab.demo = (({Frame}) => (
-    <Frame>
-      <NutritionTab recipeId={makeRecipeDetail().id} />
-    </Frame>
-  )) satisfies ShowcaseDemoRenderer;
-}

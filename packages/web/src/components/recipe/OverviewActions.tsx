@@ -2,10 +2,7 @@
 import {
   canCreateDraftVersion,
   invalidateRecipeQueries,
-  makeRecipeDetail,
-  makeRecipeVersionSummary,
   truncateChangeSummary,
-  type ShowcaseDemoRenderer,
 } from '@eciperay/client';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
 import type {RecipeDetail, RecipeVersionSummary} from '@eciperay/types';
@@ -195,21 +192,3 @@ export const OverviewActions = ({
     </>
   );
 };
-
-if (import.meta.env.DEV) {
-  const overviewActionsDemo: ShowcaseDemoRenderer = ({Frame}) => {
-    const recipe = makeRecipeDetail();
-    return (
-      <Frame>
-        <OverviewActions
-          recipe={recipe}
-          versions={[makeRecipeVersionSummary()]}
-          onActionMessage={() => {
-            void 0;
-          }}
-        />
-      </Frame>
-    );
-  };
-  OverviewActions.demo = overviewActionsDemo;
-}

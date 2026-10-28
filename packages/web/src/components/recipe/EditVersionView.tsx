@@ -1,9 +1,6 @@
 // Parity note (design-system#124, B3a): the app renders the design
 // system EditVersionPage shell; this web shell remains until B7.
-import type {
-  EditVersionViewProps,
-  ShowcaseDemoRenderer,
-} from '@eciperay/client';
+import type {EditVersionViewProps} from '@eciperay/client';
 
 import {ErrorText} from '../ui/ErrorText.js';
 import {InfoBanner} from '../ui/InfoBanner.js';
@@ -48,22 +45,3 @@ export const EditVersionView = ({
     </div>
   );
 };
-
-if (import.meta.env.DEV) {
-  const editVersionViewDemo: ShowcaseDemoRenderer = () => (
-    <EditVersionView
-      versionNumber={2}
-      changeSummary="Reduced sugar and added citrus."
-      showImportBanner
-      parentVersionNumber={1}
-      onBack={() => {
-        void 0;
-      }}
-    >
-      <InfoBanner>
-        Draft recipe editor renders here on the real screen.
-      </InfoBanner>
-    </EditVersionView>
-  );
-  EditVersionView.demo = editVersionViewDemo;
-}

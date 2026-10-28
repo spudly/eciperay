@@ -94,8 +94,9 @@ password-reset cases.
    served from cache; the app redirects to sign-in.
 
 **Run when:** `packages/app/src/screens/auth/**`,
-`packages/web/src/pages/auth/**`, `packages/server` auth/session code, Supabase
-auth configuration changes.
+`packages/web/src/pages/auth/**`, `@spudly/ui` `SignInPage`, `SignUpPage`,
+`ForgotPasswordPage`, `ResetPasswordPage`, `packages/server` auth/session code,
+Supabase auth configuration changes.
 
 ---
 

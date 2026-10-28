@@ -53,7 +53,6 @@ export type ProfileViewProps = {
   email?: string | null;
   onSignOut: () => void;
   onManageTagsPress?: () => void;
-  onComponentShowcasePress?: () => void;
   sectionsBeforeFeedback?: ReactNode;
   sectionsAfterFeedback?: ReactNode;
 };
