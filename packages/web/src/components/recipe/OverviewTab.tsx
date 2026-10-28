@@ -5,6 +5,7 @@ import {
   invalidateRecipeQueries,
   makeRecipeDetail,
   makeRecipeVersionSummary,
+  queryKeys,
   removeRecipeView,
   useAnalytics,
   type ShowcaseDemoRenderer,
@@ -61,6 +62,13 @@ export const OverviewTab = ({
       analytics.track('recipe_deleted', {recipe_id: recipe.id});
       void invalidateRecipeQueries(queryClient, recipe.id, recipe.versionId);
       void navigate('/recipes');
+      // Drop the deleted recipe's detail cache too, so navigating back
+      // to its detail URL cannot render the stale cached recipe (#273).
+      // Runs after navigate so this page does not flash its not-found
+      // state on the way out.
+      queryClient.removeQueries({
+        queryKey: queryKeys.recipe(recipe.id),
+      });
     },
     onError: error => {
       setDeleteError(
