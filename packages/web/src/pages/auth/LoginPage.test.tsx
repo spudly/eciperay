@@ -30,8 +30,8 @@ describe('LoginPage', () => {
 
   test('signs in successfully', async () => {
     await renderWithProviders(<LoginPage />, {withAuth: false});
-    await userEvent.type(screen.getByPlaceholderText('Email'), 'a@b.com');
-    await userEvent.type(screen.getByPlaceholderText('Password'), 'pass');
+    await userEvent.type(screen.getByLabelText('Email'), 'a@b.com');
+    await userEvent.type(screen.getByLabelText('Password'), 'pass');
     await userEvent.click(screen.getByText('Sign In'));
     await waitFor(() => {
       expect(supabase.auth.signInWithPassword).toHaveBeenCalled();
@@ -47,8 +47,8 @@ describe('LoginPage', () => {
       data: {user: null, session: null},
     });
     await renderWithProviders(<LoginPage />, {withAuth: false});
-    await userEvent.type(screen.getByPlaceholderText('Email'), 'a@b.com');
-    await userEvent.type(screen.getByPlaceholderText('Password'), 'wrong');
+    await userEvent.type(screen.getByLabelText('Email'), 'a@b.com');
+    await userEvent.type(screen.getByLabelText('Password'), 'wrong');
     await userEvent.click(screen.getByText('Sign In'));
     await waitFor(() => {
       expect(screen.getByText('Invalid')).toBeInTheDocument();

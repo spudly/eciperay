@@ -1,13 +1,15 @@
 import {errorMessage, useAuth} from '@eciperay/client';
 import {useState} from 'react';
-import {Navigate} from 'react-router-dom';
+import {Navigate, useNavigate} from 'react-router-dom';
 
-import {SignInView} from '../../components/auth/SignInView.js';
+import {SignInPage as SignInPageView} from '@spudly/ui/pages';
+
 import {eciperay} from '../../lib/api.js';
 import {supabase} from '../../lib/supabase.js';
 
 export const LoginPage = () => {
   const {session, isLoading} = useAuth();
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -42,7 +44,7 @@ export const LoginPage = () => {
   };
 
   return (
-    <SignInView
+    <SignInPageView
       email={email}
       password={password}
       onEmailChange={setEmail}
@@ -52,8 +54,12 @@ export const LoginPage = () => {
       onSubmit={() => {
         void handleSignIn();
       }}
-      signUpTo="/signup"
-      forgotPasswordTo="/forgot-password"
+      onSignUpPress={() => {
+        void navigate('/signup');
+      }}
+      onForgotPasswordPress={() => {
+        void navigate('/forgot-password');
+      }}
     />
   );
 };

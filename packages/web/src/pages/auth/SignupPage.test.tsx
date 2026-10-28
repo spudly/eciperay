@@ -40,10 +40,10 @@ describe('SignupPage', () => {
 
   test('signs up with session', async () => {
     await renderWithProviders(<SignupPage />, {withAuth: false});
-    await userEvent.type(screen.getByPlaceholderText('Display name'), 'Test');
-    await userEvent.type(screen.getByPlaceholderText('Email'), 'a@b.com');
-    await userEvent.type(screen.getByPlaceholderText('Password'), 'pass1234');
-    await userEvent.click(screen.getByText('Sign Up'));
+    await userEvent.type(screen.getByLabelText('Your name'), 'Test');
+    await userEvent.type(screen.getByLabelText('Email'), 'a@b.com');
+    await userEvent.type(screen.getByLabelText('Password'), 'pass1234');
+    await userEvent.click(screen.getByText('Create Account'));
     await waitFor(() => {
       expect(supabase.auth.signUp).toHaveBeenCalled();
     });
@@ -55,9 +55,9 @@ describe('SignupPage', () => {
       error: null,
     });
     await renderWithProviders(<SignupPage />, {withAuth: false});
-    await userEvent.type(screen.getByPlaceholderText('Email'), 'a@b.com');
-    await userEvent.type(screen.getByPlaceholderText('Password'), 'pass1234');
-    await userEvent.click(screen.getByText('Sign Up'));
+    await userEvent.type(screen.getByLabelText('Email'), 'a@b.com');
+    await userEvent.type(screen.getByLabelText('Password'), 'pass1234');
+    await userEvent.click(screen.getByText('Create Account'));
     await waitFor(() => {
       expect(screen.getByText('Check your email')).toBeInTheDocument();
     });
@@ -72,9 +72,9 @@ describe('SignupPage', () => {
       }) as never,
     });
     await renderWithProviders(<SignupPage />, {withAuth: false});
-    await userEvent.type(screen.getByPlaceholderText('Email'), 'a@b.com');
-    await userEvent.type(screen.getByPlaceholderText('Password'), 'pass');
-    await userEvent.click(screen.getByText('Sign Up'));
+    await userEvent.type(screen.getByLabelText('Email'), 'a@b.com');
+    await userEvent.type(screen.getByLabelText('Password'), 'pass');
+    await userEvent.click(screen.getByText('Create Account'));
     await waitFor(() => {
       expect(screen.getByText('Signup failed')).toBeInTheDocument();
     });

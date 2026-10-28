@@ -31,8 +31,8 @@ test.describe('live auth', () => {
     const page = await context.newPage();
     try {
       await page.goto('/forgot-password');
-      await page.getByPlaceholder('Email').fill(qaEmail);
-      await page.getByRole('button', {name: 'Send reset link'}).click();
+      await page.getByLabel('Email').fill(qaEmail);
+      await page.getByRole('button', {name: 'Send Reset Link'}).click();
       await expect(page.getByText('Email sent')).toBeVisible({timeout: 15_000});
     } finally {
       await context.close();

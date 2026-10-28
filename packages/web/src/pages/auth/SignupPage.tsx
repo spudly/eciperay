@@ -1,13 +1,18 @@
 import {errorMessage, useAuth} from '@eciperay/client';
 import {useState} from 'react';
-import {Navigate} from 'react-router-dom';
+import {Navigate, useNavigate} from 'react-router-dom';
 
-import {SignUpView} from '../../components/auth/SignUpView.js';
+import {SignUpPage as SignUpPageView} from '@spudly/ui/pages';
+
+import {LegalLinks} from '../../components/LegalLinks.js';
 import {eciperay} from '../../lib/api.js';
 import {supabase} from '../../lib/supabase.js';
 
+import {AuthConfirmation} from './AuthConfirmation.js';
+
 export const SignupPage = () => {
   const {session, isLoading} = useAuth();
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
@@ -48,8 +53,21 @@ export const SignupPage = () => {
     }
   };
 
+  if (confirmationSent) {
+    return (
+      <AuthConfirmation
+        title="Check your email"
+        body={`We sent a confirmation link to ${email}. Sign in after confirming.`}
+        backLabel="Back to sign in"
+        onBackPress={() => {
+          void navigate('/login');
+        }}
+      />
+    );
+  }
+
   return (
-    <SignUpView
+    <SignUpPageView
       displayName={displayName}
       email={email}
       password={password}
@@ -58,11 +76,13 @@ export const SignupPage = () => {
       onPasswordChange={setPassword}
       loading={loading}
       error={error}
-      confirmationSent={confirmationSent}
       onSubmit={() => {
         void handleSignUp();
       }}
-      signInTo="/login"
+      onSignInPress={() => {
+        void navigate('/login');
+      }}
+      legalNotice={<LegalLinks className="mbs-6" />}
     />
   );
 };
