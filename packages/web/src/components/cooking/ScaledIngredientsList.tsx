@@ -1,5 +1,6 @@
 import {
   formatScaledIngredientLine,
+  formatServingsLabel,
   sortIngredientsByOrder,
 } from '@eciperay/client';
 import type {RecipeDetail} from '@eciperay/types';
@@ -15,8 +16,8 @@ export const ScaledIngredientsList = ({
     <p className="mbe-2 text-sm font-medium text-white/80">
       Ingredients
       {scaleFactor === 1
-        ? ` (${servings} servings)`
-        : ` (scaled to ${servings} servings)`}
+        ? ` (${formatServingsLabel(servings)})`
+        : ` (scaled to ${formatServingsLabel(servings)})`}
     </p>
     {sortIngredientsByOrder(recipe.ingredients).map(ingredient => (
       <p

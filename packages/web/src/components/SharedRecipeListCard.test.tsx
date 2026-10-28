@@ -22,6 +22,17 @@ describe('SharedRecipeListCard', () => {
     ).toBeInTheDocument();
   });
 
+  test('uses the singular for a 1-serving recipe (#278)', async () => {
+    const recipe = makeRecipeDetail({
+      title: 'Solo Soup',
+      cookTimeMin: null,
+      servings: 1,
+    });
+    await renderWithProviders(<SharedRecipeListCard recipe={recipe} />);
+    expect(screen.getByText(/^1 serving · /)).toBeInTheDocument();
+    expect(screen.queryByText(/1 servings/)).not.toBeInTheDocument();
+  });
+
   test('omits cook time when absent', async () => {
     const recipe = makeRecipeDetail({
       title: 'Salad',

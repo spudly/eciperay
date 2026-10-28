@@ -162,6 +162,11 @@ describe('OverviewTab', () => {
     expect(screen.getByText('Test Recipe')).toBeInTheDocument();
   });
 
+  test('does not render a status badge — the detail chrome shows status once (#278)', async () => {
+    await renderOverview(makeRecipeDetail({status: 'idea'}));
+    expect(screen.queryByText('Idea')).not.toBeInTheDocument();
+  });
+
   test('renders without optional fields', async () => {
     const recipe = makeRecipeDetail({
       imageUrl: null,

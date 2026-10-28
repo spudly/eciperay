@@ -26,7 +26,9 @@ describe('RecipeDetailPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Test Recipe')).toBeInTheDocument();
     });
-    expect(screen.getAllByText('Evolving')[0]).toBeInTheDocument();
+    // #278: the status renders exactly once (the chrome's pill), not
+    // again in the Overview tab under the title.
+    expect(screen.getAllByText('Evolving')).toHaveLength(1);
     await userEvent.click(screen.getByText('Ingredients'));
     expect(screen.getByText(/Flour/)).toBeInTheDocument();
     await userEvent.click(screen.getByText('Instructions'));

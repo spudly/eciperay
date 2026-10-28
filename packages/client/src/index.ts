@@ -234,7 +234,9 @@ export {
   formatDiscoveryListMeta,
   formatDisplayRatingLabel,
   formatRecipeListMeta,
+  formatRecipeListSubtitle,
   formatSatietyLabel,
+  formatServingsLabel,
   getDisplayRating,
 } from './recipeListDisplay.js';
 export {nutritionTabRows, type NutritionTabRow} from './nutritionTabRows.js';

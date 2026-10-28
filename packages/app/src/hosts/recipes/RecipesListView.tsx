@@ -5,6 +5,7 @@ import type {
 import {
   demoRecipeListFilters,
   formatSatietyLabel,
+  formatServingsLabel,
   getDisplayRating,
   invalidateRecipeQueries,
   makeRecipeDetail,
@@ -34,14 +35,16 @@ type RecipesListViewOwnProps = Omit<RecipesListViewProps, 'onRecipeDelete'>;
 
 /**
  * The subtitle for a RecipesPage row: servings · time · satiety, with no rating
- * segment. It mirrors RecipeListCard's `formatRecipeSubtitle` minus the rating
+ * segment. It mirrors the shared `formatRecipeListSubtitle` minus the rating
  * text `formatRecipeListMeta` embeds — the page renders the rating itself as
  * the row's stars (the log-cook control), so keeping the text would show the
- * rating twice. The card's helper is unchanged: the Home list's card renders no
- * stars, so its subtitle keeps the rating text.
+ * rating twice. The card's helper is unchanged in shape: the Home list's card
+ * renders no stars, so its subtitle keeps the rating text. The servings segment
+ * uses the shared `formatServingsLabel` so the pluralization (#278) matches the
+ * cards.
  */
 const formatRecipesPageSubtitle = (recipe: RecipeDetail) =>
-  `${recipe.servings} servings${recipe.cookTimeMin ? ` · ${recipe.cookTimeMin} min` : ''} · ${formatSatietyLabel(recipe.satietyScore, recipe.nutritionStatus)}`;
+  `${formatServingsLabel(recipe.servings)}${recipe.cookTimeMin ? ` · ${recipe.cookTimeMin} min` : ''} · ${formatSatietyLabel(recipe.satietyScore, recipe.nutritionStatus)}`;
 
 /**
  * The Recipes screen's view (#49, stage 2): the design system's RecipesPage

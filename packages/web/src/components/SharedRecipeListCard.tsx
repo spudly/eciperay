@@ -1,16 +1,14 @@
 import type {RecipeDetail} from '@eciperay/types';
-import {formatRecipeListMeta, makeRecipeDetail} from '@eciperay/client';
+import {formatRecipeListSubtitle, makeRecipeDetail} from '@eciperay/client';
 import type {ComponentType} from 'react';
 import type {ShowcaseFrameProps} from '@eciperay/client';
 
 import {ThumbnailListCard} from './ui/ThumbnailListCard.js';
 
-// Parity note (#49, Wave A): the app mirror exports its
-// formatRecipeSubtitle so the app's Shared-with-me view can format the
-// DS page's items with the card's own helper. This mirror keeps its
-// local copy — the web view still renders these cards directly.
-const formatRecipeSubtitle = (recipe: RecipeDetail) =>
-  `${recipe.servings} servings${recipe.cookTimeMin ? ` · ${recipe.cookTimeMin} min` : ''} · ${formatRecipeListMeta(recipe)}`;
+// Parity note (#278): the card subtitle is formatted by the shared
+// formatRecipeListSubtitle in @eciperay/client — the per-mirror local
+// copies are gone, so the servings pluralization and satiety label are
+// defined once for both mirrors and the app's DS-page hosts.
 
 type SharedRecipeListCardProps = {recipe: RecipeDetail};
 
@@ -21,7 +19,7 @@ export const SharedRecipeListCard = ({recipe}: SharedRecipeListCardProps) => (
   <ThumbnailListCard
     imageUrl={recipe.imageUrl}
     title={recipe.title}
-    subtitle={formatRecipeSubtitle(recipe)}
+    subtitle={formatRecipeListSubtitle(recipe)}
     linkTo={`/recipe/${recipe.id}/${recipe.slug}`}
   />
 );
