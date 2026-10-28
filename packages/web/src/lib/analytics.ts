@@ -7,7 +7,7 @@ import {POSTHOG_HOST, POSTHOG_KEY} from './env.js';
 export {createDeferredWebAnalytics} from './createDeferredWebAnalytics.js';
 export {createWebAnalytics} from './createWebAnalytics.js';
 
-const {analytics, enablePostHog} = createDeferredWebAnalytics(
+const {analytics, enablePostHog, disablePostHog} = createDeferredWebAnalytics(
   POSTHOG_KEY,
   POSTHOG_HOST,
 );
@@ -22,4 +22,4 @@ export const identifyAnalyticsUserIfConsented = (session: Session) => {
   }
 };
 
-export {analytics, enablePostHog};
+export {analytics, enablePostHog, disablePostHog};

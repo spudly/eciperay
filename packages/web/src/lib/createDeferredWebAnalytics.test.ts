@@ -14,6 +14,9 @@ const {
   posthogLoggerInfo,
   posthogLoggerWarn,
   posthogOnFeatureFlags,
+  posthogOptInCapturing,
+  posthogOptOutCapturing,
+  posthogStopSessionRecording,
 } = vi.hoisted(() => ({
   posthogInit: vi.fn(),
   posthogCapture: vi.fn(),
@@ -29,6 +32,9 @@ const {
   posthogLoggerInfo: vi.fn(),
   posthogLoggerWarn: vi.fn(),
   posthogOnFeatureFlags: vi.fn(() => vi.fn()),
+  posthogOptInCapturing: vi.fn(),
+  posthogOptOutCapturing: vi.fn(),
+  posthogStopSessionRecording: vi.fn(),
 }));
 
 vi.mock('posthog-js', () => ({
@@ -42,6 +48,9 @@ vi.mock('posthog-js', () => ({
     onFeatureFlags: posthogOnFeatureFlags,
     reloadFeatureFlags: posthogReloadFeatureFlags,
     captureException: posthogCaptureException,
+    opt_in_capturing: posthogOptInCapturing,
+    opt_out_capturing: posthogOptOutCapturing,
+    stopSessionRecording: posthogStopSessionRecording,
     logger: {
       info: posthogLoggerInfo,
       warn: posthogLoggerWarn,
@@ -55,6 +64,11 @@ vi.mock('posthog-js', () => ({
 describe('createDeferredWebAnalytics', () => {
   beforeEach(() => {
     posthogInit.mockClear();
+    posthogCapture.mockClear();
+    posthogReset.mockClear();
+    posthogOptInCapturing.mockClear();
+    posthogOptOutCapturing.mockClear();
+    posthogStopSessionRecording.mockClear();
   });
 
   test('defers PostHog init until enabled', () => {
@@ -107,5 +121,34 @@ describe('createDeferredWebAnalytics', () => {
     enablePostHog();
     deferred.track('recipe_deleted', {recipe_id: 'recipe-1'});
     expect(posthogInit).not.toHaveBeenCalled();
+  });
+
+  test('disable stops forwarding, opts the SDK out, and re-enable restores it', () => {
+    const {
+      analytics: deferred,
+      enablePostHog,
+      disablePostHog,
+    } = createDeferredWebAnalytics('phc_test', 'https://us.i.posthog.com');
+
+    disablePostHog();
+    expect(posthogOptOutCapturing).not.toHaveBeenCalled();
+
+    enablePostHog();
+    deferred.track('recipe_deleted', {recipe_id: 'recipe-1'});
+    expect(posthogCapture).toHaveBeenCalledTimes(1);
+    expect(posthogOptInCapturing).toHaveBeenCalledTimes(1);
+
+    disablePostHog();
+    expect(posthogOptOutCapturing).toHaveBeenCalledTimes(1);
+    expect(posthogStopSessionRecording).toHaveBeenCalledTimes(1);
+    expect(posthogReset).toHaveBeenCalledTimes(1);
+    posthogCapture.mockClear();
+    deferred.track('recipe_deleted', {recipe_id: 'recipe-2'});
+    expect(posthogCapture).not.toHaveBeenCalled();
+
+    enablePostHog();
+    deferred.track('recipe_deleted', {recipe_id: 'recipe-3'});
+    expect(posthogCapture).toHaveBeenCalledTimes(1);
+    expect(posthogOptInCapturing).toHaveBeenCalledTimes(2);
   });
 });

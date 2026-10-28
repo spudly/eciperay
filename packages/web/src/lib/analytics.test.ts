@@ -1,10 +1,12 @@
 import {readAnalyticsConsent} from '@eciperay/client';
 import {vi} from 'vitest';
 
-const {mockEnablePostHog, mockIdentifyAnalyticsUser} = vi.hoisted(() => ({
-  mockEnablePostHog: vi.fn(),
-  mockIdentifyAnalyticsUser: vi.fn(),
-}));
+const {mockEnablePostHog, mockDisablePostHog, mockIdentifyAnalyticsUser} =
+  vi.hoisted(() => ({
+    mockEnablePostHog: vi.fn(),
+    mockDisablePostHog: vi.fn(),
+    mockIdentifyAnalyticsUser: vi.fn(),
+  }));
 
 vi.mock('@eciperay/client', async importOriginal => {
   const actual = await importOriginal<typeof import('@eciperay/client')>();
@@ -19,6 +21,7 @@ vi.mock('./createDeferredWebAnalytics.js', () => ({
   createDeferredWebAnalytics: () => ({
     analytics: {platform: 'web'},
     enablePostHog: mockEnablePostHog,
+    disablePostHog: mockDisablePostHog,
   }),
 }));
 

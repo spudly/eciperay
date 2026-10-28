@@ -10,7 +10,7 @@ import {useState} from 'react';
 import type {ComponentType} from 'react';
 import type {ShowcaseFrameProps} from '@eciperay/client';
 
-import {analytics, enablePostHog} from '../lib/analytics.js';
+import {analytics, disablePostHog, enablePostHog} from '../lib/analytics.js';
 import {POSTHOG_KEY} from '../lib/env.js';
 
 import {CheckboxField} from './ui/CheckboxField.js';
@@ -46,6 +46,9 @@ export const ProfileFeedbackPreference = () => {
 
   const declineConsent = () => {
     writeAnalyticsConsent('declined');
+    // If PostHog was already enabled this session (consent previously
+    // accepted), stop collection immediately rather than at next reload.
+    disablePostHog();
     setConsent('declined');
     setConsentPromptOpen(false);
     if (enabled) {
@@ -95,7 +98,7 @@ export const ProfileFeedbackPreference = () => {
             </span>
             {consentPromptOpen ? (
               <div
-                role="dialog"
+                role="group"
                 aria-label="Analytics consent for feedback"
                 className="flex flex-col gap-2"
               >

@@ -70,6 +70,20 @@ const initWebPostHog = (apiKey: string, apiHost: string) => {
       return event;
     },
   });
+  // A previous disableWebPostHog() in this page session opted the SDK out;
+  // init alone does not undo that, so opt back in explicitly.
+  posthog.opt_in_capturing();
+};
+
+/**
+ * Stops all PostHog collection for the rest of this page session: no event
+ * capture, no session recording, and the identified person is reset. Called
+ * when analytics consent is declined after PostHog was already enabled.
+ */
+export const disableWebPostHog = () => {
+  posthog.opt_out_capturing();
+  posthog.stopSessionRecording();
+  posthog.reset();
 };
 
 const getWebSessionReplayUrl = () =>

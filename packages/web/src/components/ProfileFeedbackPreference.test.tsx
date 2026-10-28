@@ -82,12 +82,12 @@ describe('ProfileFeedbackPreference', () => {
     await user.click(screen.getByRole('checkbox'));
 
     expect(
-      screen.getByRole('dialog', {name: /analytics consent for feedback/i}),
+      screen.getByRole('group', {name: /analytics consent for feedback/i}),
     ).toBeInTheDocument();
     await user.click(screen.getByRole('button', {name: 'Accept'}));
     expect(screen.getByRole('checkbox')).toBeChecked();
     expect(
-      screen.queryByRole('dialog', {name: /analytics consent for feedback/i}),
+      screen.queryByRole('group', {name: /analytics consent for feedback/i}),
     ).not.toBeInTheDocument();
   });
 
