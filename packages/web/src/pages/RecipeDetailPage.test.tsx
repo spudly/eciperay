@@ -1,4 +1,5 @@
 import {queryKeys} from '@eciperay/client';
+import {onlineManager} from '@tanstack/react-query';
 import {act, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {http, HttpResponse} from 'msw';
@@ -121,6 +122,37 @@ describe('RecipeDetailPage', () => {
       expect(screen.getByText('Page not found')).toBeInTheDocument();
     });
     expect(screen.queryByText('Test Recipe')).not.toBeInTheDocument();
+  });
+
+  test('stays on the loading gate while a recipe fetch is paused offline', async () => {
+    onlineManager.setOnline(false);
+    try {
+      const queryClient = makeQueryClient();
+      await renderWithProviders(
+        <Routes>
+          <Route
+            path="/recipes/:recipeId"
+            element={<RecipeDetailPage />}
+          />
+        </Routes>,
+        {route: '/recipes/recipe-uuid-1', queryClient},
+      );
+
+      // The uncached query really is paused: still pending, not settled.
+      const state = queryClient.getQueryState(
+        queryKeys.recipe('recipe-uuid-1'),
+      );
+      expect(state?.status).toBe('pending');
+      expect(state?.fetchStatus).toBe('paused');
+
+      // A paused fetch has isLoading false in TanStack Query v5; the page
+      // must stay on the loading gate (isPending), not render not-found
+      // for a recipe that may exist.
+      expect(screen.queryByText('Page not found')).not.toBeInTheDocument();
+      expect(screen.queryByText('Test Recipe')).not.toBeInTheDocument();
+    } finally {
+      onlineManager.setOnline(true);
+    }
   });
 
   test('does not record a view when recipeId is missing', async () => {
