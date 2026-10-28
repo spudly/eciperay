@@ -123,6 +123,9 @@ describe('MealPlanDetailView', () => {
 
   test('composes goal rows with the app rounding and band wording', async () => {
     const plan = makePlan({
+      // A dated plan: the server sets perDay, so the compared figures
+      // really are per-day averages.
+      nutrition: {...planNutrition(), perDay: nutrition()},
       goalProgress: {
         calories: {
           goal: 2000,
@@ -156,8 +159,8 @@ describe('MealPlanDetailView', () => {
       />,
     );
     expect(await findByText('850 / 2000 · Below goal')).toBeTruthy();
-    // #266: goal rows are labelled as per-day averages so they do not
-    // read as a conflicting plan total.
+    // #266: goal rows are labelled as per-day averages (the plan has a
+    // perDay figure) so they do not read as a conflicting plan total.
     expect(await findByText('Calories (per-day avg)')).toBeTruthy();
     expect(await findByText('120 / 120 · On track')).toBeTruthy();
     expect(await findByText('75 / 60 · Above goal')).toBeTruthy();
@@ -165,6 +168,37 @@ describe('MealPlanDetailView', () => {
     expect(
       queryByText('Set daily nutrition goals to compare this plan.'),
     ).toBeNull();
+  });
+
+  test('labels goal rows as plan totals when the plan has no per-day figure', async () => {
+    // Undated plan (the default fixture's perDay is null): the server
+    // compares the whole-plan total against the daily goals, so the
+    // rows must not claim to be per-day averages (CodeRabbit on #272).
+    const plan = makePlan({
+      startsOn: null,
+      endsOn: null,
+      goalProgress: {
+        calories: {
+          goal: 2000,
+          actual: 850.4,
+          delta: -1149.6,
+          percentOfGoal: 42.5,
+          band: 'under',
+        },
+        proteinG: null,
+        carbsG: null,
+        fatG: null,
+        satietyScore: null,
+      },
+    });
+    const {findByText, queryByText} = await renderWithProviders(
+      <MealPlanDetailView
+        plan={plan}
+        {...handlers()}
+      />,
+    );
+    expect(await findByText('Calories (plan total)')).toBeTruthy();
+    expect(queryByText('Calories (per-day avg)')).toBeNull();
   });
 
   test('shows the set-goals hint when there is nutrition but no progress', async () => {

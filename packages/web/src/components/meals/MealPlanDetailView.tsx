@@ -52,6 +52,7 @@ export const MealPlanDetailView = ({
     <NutritionGoalProgressView
       progress={plan.goalProgress}
       nutrition={plan.nutrition}
+      progressIsPerDayAverage={plan.nutrition?.perDay != null}
       onSetGoalsPress={onSetGoalsPress}
     />
     <div className="mbe-6 flex flex-wrap gap-3">

@@ -23,6 +23,7 @@ describe('NutritionGoalProgressView', () => {
     await renderWithProviders(
       <NutritionGoalProgressView
         nutrition={nutrition}
+        progressIsPerDayAverage
         progress={{
           calories: {
             goal: 2000,
@@ -49,6 +50,37 @@ describe('NutritionGoalProgressView', () => {
     ).toBeInTheDocument();
   });
 
+  test('labels undated-plan goal figures as plan totals, not daily averages (#266)', async () => {
+    await renderWithProviders(
+      <NutritionGoalProgressView
+        nutrition={nutrition}
+        progress={{
+          calories: {
+            goal: 2000,
+            actual: 45,
+            delta: -1955,
+            percentOfGoal: 2.3,
+            band: 'under',
+          },
+          proteinG: null,
+          carbsG: null,
+          fatG: null,
+          satietyScore: null,
+        }}
+      />,
+    );
+    // No perDay figure (undated plan): the server compared the
+    // whole-plan total, so the caption must say so.
+    expect(
+      screen.getByText(
+        'Plan total for this plan, compared with your daily goals.',
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(/Per-day average for this plan/),
+    ).not.toBeInTheDocument();
+  });
+
   test('shows no per-day caption when there is no goal progress', async () => {
     await renderWithProviders(
       <NutritionGoalProgressView
@@ -61,6 +93,9 @@ describe('NutritionGoalProgressView', () => {
     ).toBeInTheDocument();
     expect(
       screen.queryByText(/Per-day average for this plan/),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/Plan total for this plan, compared/),
     ).not.toBeInTheDocument();
   });
 });

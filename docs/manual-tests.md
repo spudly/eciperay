@@ -281,10 +281,14 @@ Jest covers the meal plan detail/form views. The cases below are manual._
 4. **Nutrition goal progress.** If the account has nutrition goals set, open the
    plan detail's nutrition goal progress. **Expected:** totals are plausible
    sums of the assigned recipes and the progress view renders for days with and
-   without entries. The goal figures are the plan's **per-day average** against
-   the daily goals and are labelled as such ("Per-day average for this plan,
-   compared with your daily goals" on web; "(per-day avg)" row labels in the
-   app) — they must not read as a second plan total next to "Plan total"
+   without entries. For a plan with a valid date range, the goal figures are the
+   plan's **per-day average** against the daily goals and are labelled as such
+   ("Per-day average for this plan, compared with your daily goals" on web;
+   "(per-day avg)" row labels in the app). For an undated plan (dates are
+   optional), the figures are the **plan total** against the daily goals and are
+   labelled as such ("Plan total for this plan, compared with your daily goals"
+   on web; "(plan total)" row labels in the app) — they must not be labelled as
+   a daily average or read as an unexplained second total next to "Plan total"
    (regression: #266).
 5. **Delete the plan.** Delete `QA — Week Plan`. **Expected:** gone from the
    list; member recipes unaffected.

@@ -83,9 +83,11 @@ export type MealPlanFormViewProps = {
   endsOn: string;
   selectedKeys: string[];
   entryOptions: MealPlanFormEntryOption[];
-  /** True while the meals/recipes behind `entryOptions` are still loading;
-   * the form shows a loading state for the list instead of "No items
-   * found." (#260). */
+  /**
+   * True while the meals/recipes behind `entryOptions` are still loading; the
+   * form shows a loading state for the list instead of "No items found."
+   * (#260).
+   */
   entryOptionsLoading?: boolean;
   quantityByKey: Record<string, number>;
   servingsByRecipeId: Record<string, number>;
@@ -119,5 +121,13 @@ export type NutritionGoalsFormViewProps = {
 export type NutritionGoalProgressViewProps = {
   progress: NutritionGoalProgress | null;
   nutrition: AggregatedNutrition | null;
+  /**
+   * True only when the progress figures are the plan's per-day average (the
+   * server compared `nutrition.perDay`, which it sets only for a plan with a
+   * valid date range). When false or omitted, the figures are whole-plan totals
+   * — the server's fallback for undated plans — and the view must label them as
+   * such, never as a daily average.
+   */
+  progressIsPerDayAverage?: boolean;
   onSetGoalsPress?: () => void;
 };

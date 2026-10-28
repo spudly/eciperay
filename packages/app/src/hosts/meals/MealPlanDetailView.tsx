@@ -69,18 +69,26 @@ export const MealPlanDetailView = ({
   const nutritionLabel = formatSimpleNutrition(plan.nutrition) ?? undefined;
 
   const progress = plan.goalProgress;
-  // Row labels carry a "(per-day avg)" qualifier (#266): the server
-  // compares the plan's per-day average nutrition against the daily
-  // goals, and unlabelled the figures read as a second, conflicting
-  // plan total next to the section's "Plan total:" line. The DS page
-  // has no caption slot for the section, so the label is the lever.
+  // Row labels carry a qualifier naming what the server actually
+  // compared against the daily goals (#266): `comparePlanToGoals` uses
+  // the plan's per-day average only when the plan has a valid date
+  // range (the server sets `nutrition.perDay` only then — plan dates
+  // are optional); with no valid range `perDay` is null and it falls
+  // back to the whole-plan total. So the qualifier is "(per-day avg)"
+  // exactly when `perDay` is present and "(plan total)" otherwise —
+  // labelling the fallback total a daily average would be wrong for
+  // undated plans. The DS page has no caption slot for the section, so
+  // the label is the lever.
+  const progressQualifier = plan.nutrition?.perDay
+    ? '(per-day avg)'
+    : '(plan total)';
   const nutritionGoals: MealPlanDetailPageNutritionGoals | null = progress
     ? {
         rows: [
           ...(progress.calories
             ? [
                 {
-                  label: 'Calories (per-day avg)',
+                  label: `Calories ${progressQualifier}`,
                   valueLabel: goalValueLabel(progress.calories),
                 },
               ]
@@ -88,7 +96,7 @@ export const MealPlanDetailView = ({
           ...(progress.proteinG
             ? [
                 {
-                  label: 'Protein (per-day avg)',
+                  label: `Protein ${progressQualifier}`,
                   valueLabel: goalValueLabel(progress.proteinG),
                 },
               ]
@@ -96,7 +104,7 @@ export const MealPlanDetailView = ({
           ...(progress.satietyScore
             ? [
                 {
-                  label: 'Satiety (per-day avg)',
+                  label: `Satiety ${progressQualifier}`,
                   valueLabel: goalValueLabel(progress.satietyScore),
                 },
               ]
