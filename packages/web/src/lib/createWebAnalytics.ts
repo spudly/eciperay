@@ -78,12 +78,20 @@ const initWebPostHog = (apiKey: string, apiHost: string) => {
 /**
  * Stops all PostHog collection for the rest of this page session: no event
  * capture, no session recording, and the identified person is reset. Called
- * when analytics consent is declined after PostHog was already enabled. Order
- * matters: reset() clears the SDK's stored state — including an opt-out
- * recorded before it — so the identity reset runs first and the opt-out is the
- * state that survives.
+ * when analytics consent is declined after PostHog was already enabled. The
+ * opt-out brackets the identity reset on both sides, for two different
+ * reasons:
+ *
+ * - Before reset(): reset() flushes buffered session-replay snapshots
+ *   (flushBeforeIdentityReset) through capture(), which drops them when
+ *   capturing is opted out — so replay recorded under the old consent is
+ *   discarded instead of being sent at the moment consent is withdrawn.
+ * - After reset(): reset() clears the SDK's stored state, including the opt-out
+ *   recorded before it, so the opt-out must be re-applied for it to be the
+ *   state that survives.
  */
 export const disableWebPostHog = () => {
+  posthog.opt_out_capturing();
   posthog.reset();
   posthog.opt_out_capturing();
   posthog.stopSessionRecording();

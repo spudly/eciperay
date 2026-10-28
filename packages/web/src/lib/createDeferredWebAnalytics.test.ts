@@ -145,13 +145,21 @@ describe('createDeferredWebAnalytics', () => {
     expect(posthogStartSessionRecording).not.toHaveBeenCalled();
 
     disablePostHog();
-    expect(posthogOptOutCapturing).toHaveBeenCalledTimes(1);
+    expect(posthogOptOutCapturing).toHaveBeenCalledTimes(2);
     expect(posthogStopSessionRecording).toHaveBeenCalledTimes(1);
     expect(posthogReset).toHaveBeenCalledTimes(1);
-    // reset() clears stored SDK state (including an earlier opt-out), so it
-    // must run before opt_out_capturing() for the opt-out to survive.
+    // The opt-out brackets reset(): the first opt-out makes the capture()
+    // gate drop the buffered session-replay snapshots reset() flushes
+    // (flushBeforeIdentityReset), and because reset() clears stored SDK
+    // state — including that opt-out — the second opt-out is the one that
+    // survives.
+    const [firstOptOutOrder, secondOptOutOrder] =
+      posthogOptOutCapturing.mock.invocationCallOrder;
+    expect(firstOptOutOrder).toBeLessThan(
+      posthogReset.mock.invocationCallOrder[0] ?? Infinity,
+    );
     expect(posthogReset.mock.invocationCallOrder[0]).toBeLessThan(
-      posthogOptOutCapturing.mock.invocationCallOrder[0] ?? Infinity,
+      secondOptOutOrder ?? Infinity,
     );
     posthogCapture.mockClear();
     deferred.track('recipe_deleted', {recipe_id: 'recipe-2'});
