@@ -629,7 +629,7 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
     path: 'ui/EmptyMessage.tsx',
     platform: 'web',
     reason:
-      'Web copy remains — production views (recipes list, shared-with-me, meals, shopping list, home, discover, access tokens) consume it; the app copy was only consumed by the in-app component showcase and was removed with it (design-system#129). The web showcase was retired in B7 cluster C2 (design-system#130); this adapter retires as its consuming views swap.',
+      'Web copy remains — production views (recipes list, shared-with-me, meals, shopping list, discover, access tokens) consume it; the app copy was only consumed by the in-app component showcase and was removed with it (design-system#129). The web showcase was retired in B7 cluster C2 (design-system#130); this adapter retires as its consuming views swap.',
   },
   {
     path: 'ui/SelectField.tsx',
