@@ -42,10 +42,13 @@ export const HomePage = () => {
         () => undefined,
       );
     },
-    onSuccess: () => {
+    onSuccess: (_data, id) => {
       void queryClient.invalidateQueries({
         queryKey: queryKeys.recipes('home-recently-viewed'),
       });
+      // Drop the deleted recipe's detail cache too, so a later visit to
+      // its detail page cannot render the stale cached recipe (#273).
+      queryClient.removeQueries({queryKey: queryKeys.recipe(id)});
     },
     onError: (error, id) => {
       setDeleteError(

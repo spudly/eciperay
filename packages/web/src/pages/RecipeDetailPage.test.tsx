@@ -1,4 +1,5 @@
-import {screen, waitFor} from '@testing-library/react';
+import {queryKeys} from '@eciperay/client';
+import {act, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {http, HttpResponse} from 'msw';
 import {Route, Routes} from 'react-router-dom';
@@ -8,7 +9,7 @@ import {
   makeRecipeVersionSummary,
 } from '../test/fixtures/recipe.js';
 import {server} from '../test/msw/server.js';
-import {renderWithProviders} from '../test/testUtils.js';
+import {makeQueryClient, renderWithProviders} from '../test/testUtils.js';
 
 import {RecipeDetailPage} from './RecipeDetailPage.js';
 
@@ -61,6 +62,65 @@ describe('RecipeDetailPage', () => {
     await userEvent.click(screen.getByText('Delete'));
     await userEvent.click(screen.getByText('Confirm delete'));
     expect(await screen.findByText('Recipes list page')).toBeInTheDocument();
+  });
+
+  test('shows a not-found state for a deleted or unknown recipe', async () => {
+    const missingId = '00000000-0000-4000-8000-000000000099';
+    server.use(
+      http.get(`http://localhost:8080/api/recipes/${missingId}`, () =>
+        // Mirrors the real route: 404 with {error: 'Recipe not found'}.
+        HttpResponse.json({error: 'Recipe not found'}, {status: 404}),
+      ),
+    );
+
+    await renderWithProviders(
+      <Routes>
+        <Route
+          path="/recipes/:recipeId"
+          element={<RecipeDetailPage />}
+        />
+      </Routes>,
+      {route: `/recipes/${missingId}`},
+    );
+
+    // #273: a settled 404 must not leave the page on the loading skeleton.
+    await waitFor(() => {
+      expect(screen.getByText('Page not found')).toBeInTheDocument();
+    });
+  });
+
+  test('shows a not-found state when a refetch 404s over a cached recipe', async () => {
+    const queryClient = makeQueryClient();
+    await renderWithProviders(
+      <Routes>
+        <Route
+          path="/recipes/:recipeId"
+          element={<RecipeDetailPage />}
+        />
+      </Routes>,
+      {route: '/recipes/recipe-uuid-1', queryClient},
+    );
+    await waitFor(() => {
+      expect(screen.getByText('Test Recipe')).toBeInTheDocument();
+    });
+
+    // The recipe is deleted elsewhere; the detail refetch now answers
+    // 404 while TanStack Query still holds the cached recipe data.
+    server.use(
+      http.get('http://localhost:8080/api/recipes/recipe-uuid-1', () =>
+        HttpResponse.json({error: 'Recipe not found'}, {status: 404}),
+      ),
+    );
+    await act(async () => {
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.recipe('recipe-uuid-1'),
+      });
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Page not found')).toBeInTheDocument();
+    });
+    expect(screen.queryByText('Test Recipe')).not.toBeInTheDocument();
   });
 
   test('does not record a view when recipeId is missing', async () => {
