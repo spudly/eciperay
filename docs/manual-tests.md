@@ -544,10 +544,14 @@ plan-state rendering and section layout. The cases below are manual._
 
 **Preconditions:** QA account signed in at Profile (`/profile`).
 
-1. **Feedback shortcut toggle.** In Profile, toggle the in-app feedback shortcut
-   preference off, then on. **Expected:** off — the Feedback entry point
-   disappears from the app navigation; on — it returns. Reload between toggles:
-   the preference persists.
+1. **Feedback shortcut toggle + analytics consent.** In Profile, the feedback
+   preference shows the current analytics consent state (Accepted / Declined /
+   Not set) with an action to change it. Toggle the shortcut off, then on.
+   **Expected:** off — the Feedback entry point disappears; turning it on
+   re-presents the analytics consent prompt even if consent was decided before —
+   Accept keeps the shortcut on and the Feedback entry point returns; Decline
+   shows an error and forces the preference back off. Reload between toggles:
+   the preference and the consent state persist.
 2. **Send feedback.** With the shortcut on, open Feedback and submit
    `QA — feedback check` (at most one submission per sweep; submissions reach
    the feedback triage). **Expected:** a sent confirmation; empty submissions
