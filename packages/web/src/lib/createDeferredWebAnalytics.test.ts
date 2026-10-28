@@ -17,6 +17,7 @@ const {
   posthogOptInCapturing,
   posthogOptOutCapturing,
   posthogStopSessionRecording,
+  posthogStartSessionRecording,
 } = vi.hoisted(() => ({
   posthogInit: vi.fn(),
   posthogCapture: vi.fn(),
@@ -35,6 +36,7 @@ const {
   posthogOptInCapturing: vi.fn(),
   posthogOptOutCapturing: vi.fn(),
   posthogStopSessionRecording: vi.fn(),
+  posthogStartSessionRecording: vi.fn(),
 }));
 
 vi.mock('posthog-js', () => ({
@@ -51,6 +53,7 @@ vi.mock('posthog-js', () => ({
     opt_in_capturing: posthogOptInCapturing,
     opt_out_capturing: posthogOptOutCapturing,
     stopSessionRecording: posthogStopSessionRecording,
+    startSessionRecording: posthogStartSessionRecording,
     logger: {
       info: posthogLoggerInfo,
       warn: posthogLoggerWarn,
@@ -69,6 +72,7 @@ describe('createDeferredWebAnalytics', () => {
     posthogOptInCapturing.mockClear();
     posthogOptOutCapturing.mockClear();
     posthogStopSessionRecording.mockClear();
+    posthogStartSessionRecording.mockClear();
   });
 
   test('defers PostHog init until enabled', () => {
@@ -137,11 +141,18 @@ describe('createDeferredWebAnalytics', () => {
     deferred.track('recipe_deleted', {recipe_id: 'recipe-1'});
     expect(posthogCapture).toHaveBeenCalledTimes(1);
     expect(posthogOptInCapturing).toHaveBeenCalledTimes(1);
+    // First enable: recording was never stopped, so no explicit resume.
+    expect(posthogStartSessionRecording).not.toHaveBeenCalled();
 
     disablePostHog();
     expect(posthogOptOutCapturing).toHaveBeenCalledTimes(1);
     expect(posthogStopSessionRecording).toHaveBeenCalledTimes(1);
     expect(posthogReset).toHaveBeenCalledTimes(1);
+    // reset() clears stored SDK state (including an earlier opt-out), so it
+    // must run before opt_out_capturing() for the opt-out to survive.
+    expect(posthogReset.mock.invocationCallOrder[0]).toBeLessThan(
+      posthogOptOutCapturing.mock.invocationCallOrder[0] ?? Infinity,
+    );
     posthogCapture.mockClear();
     deferred.track('recipe_deleted', {recipe_id: 'recipe-2'});
     expect(posthogCapture).not.toHaveBeenCalled();
@@ -150,5 +161,7 @@ describe('createDeferredWebAnalytics', () => {
     deferred.track('recipe_deleted', {recipe_id: 'recipe-3'});
     expect(posthogCapture).toHaveBeenCalledTimes(1);
     expect(posthogOptInCapturing).toHaveBeenCalledTimes(2);
+    // Re-enable after a disable explicitly resumes session recording.
+    expect(posthogStartSessionRecording).toHaveBeenCalledTimes(1);
   });
 });
