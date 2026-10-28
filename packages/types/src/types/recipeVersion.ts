@@ -58,4 +58,5 @@ export type RecipeVersionInput = {
   ingredients: IngredientInput[];
   instructions: InstructionInput[];
   tagIds: string[];
+  status?: RecipeStatus;
 };

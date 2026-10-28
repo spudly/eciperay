@@ -91,6 +91,7 @@ export const RecipeVersionInputSchema = z.object({
   ingredients: z.array(IngredientInputSchema),
   instructions: z.array(InstructionInputSchema),
   tagIds: z.array(z.uuid()),
+  status: RecipeStatusSchema.optional(),
 });
 
 export const RecipeStatusPatchSchema = z.object({status: RecipeStatusSchema});

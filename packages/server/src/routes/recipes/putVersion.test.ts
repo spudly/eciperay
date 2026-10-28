@@ -76,6 +76,26 @@ describe('PUT /recipes/:id/versions/:versionId', () => {
     expect(res.body.versionNumber).toBe(2);
   });
 
+  test('persists the status sent with a draft save (#275)', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockPutVersionQueries();
+
+    const res = await request(getApp())
+      .put('/api/recipes/recipe-uuid-1/versions/version-uuid-2')
+      .set('Authorization', 'Bearer valid-token')
+      .send(makeRecipeInput({title: 'Updated Draft', status: 'evolving'}));
+
+    expect(res.status).toBe(200);
+    expect(mockQuery).toHaveBeenCalledWith(
+      'update recipes set status = $2 where id = $1',
+      ['recipe-uuid-1', 'evolving'],
+    );
+    expect(mockQuery).not.toHaveBeenCalledWith(
+      'update recipes set status = $2 where id = $1',
+      ['recipe-uuid-1', 'idea'],
+    );
+  });
+
   test('returns 404 when version is not found', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue(makeQueryResult([]));
