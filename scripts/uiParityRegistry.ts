@@ -338,12 +338,6 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
       'Web reset-password view; the app renders the design system ResetPasswordPage (design-system#126). Web adoption is B7.',
   },
   {
-    path: 'home/HomeView.tsx',
-    platform: 'web',
-    reason:
-      'Web home view; the app renders the design system HomePage (design-system#126). Web adoption is B7.',
-  },
-  {
     path: 'add/AddRecipeMenuView.tsx',
     platform: 'web',
     reason:

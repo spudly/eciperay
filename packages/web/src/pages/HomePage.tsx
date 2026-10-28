@@ -1,4 +1,11 @@
 import {
+  HOME_ADD_LABEL,
+  HOME_BROWSE_LABEL,
+  HOME_EMPTY_MESSAGE,
+  HOME_RECIPES_SECTION_TITLE,
+  HOME_SHARED_WITH_ME_LABEL,
+  HOME_SUBTITLE,
+  HOME_TITLE,
   homeRecentlyViewedRecipesQueryOptions,
   queryKeys,
   removeRecipeView,
@@ -8,7 +15,9 @@ import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 import type {RecipeDetail} from '@eciperay/types';
 
-import {HomeView} from '../components/home/HomeView.js';
+import {HomePage as HomePageView} from '@spudly/ui/pages';
+
+import {RecipeListCard} from '../components/RecipeListCard.js';
 import {eciperay} from '../lib/api.js';
 import {recipeViewHistoryStorage} from '../lib/recipeViewHistoryStorage.js';
 
@@ -66,10 +75,41 @@ export const HomePage = () => {
     deleteMutation.mutate(recipe.id);
   };
 
+  const recipesById = new Map(recipes.map(recipe => [recipe.id, recipe]));
+
   return (
-    <HomeView
+    <HomePageView
+      title={HOME_TITLE}
+      subtitle={HOME_SUBTITLE}
+      browseLabel={HOME_BROWSE_LABEL}
+      addLabel={HOME_ADD_LABEL}
+      sharedWithMeLabel={HOME_SHARED_WITH_ME_LABEL}
+      recipesTitle={HOME_RECIPES_SECTION_TITLE}
+      emptyMessage={HOME_EMPTY_MESSAGE}
       isLoading={isLoading}
-      recipes={recipes}
+      recipes={recipes.map(recipe => ({id: recipe.id}))}
+      renderRecipeRow={row => {
+        const recipe = recipesById.get(row.id);
+        if (!recipe) {
+          return null;
+        }
+        return (
+          <RecipeListCard
+            recipe={recipe}
+            isDeleting={deleteMutation.isPending}
+            deleteError={deleteErrorRecipeId === recipe.id ? deleteError : null}
+            onPress={() => {
+              void navigate(`/recipes/${recipe.id}`);
+            }}
+            onDelete={id => {
+              const match = recipes.find(item => item.id === id);
+              if (match) {
+                handleDelete(match);
+              }
+            }}
+          />
+        );
+      }}
       onBrowsePress={() => {
         void navigate('/recipes');
       }}
@@ -79,13 +119,6 @@ export const HomePage = () => {
       onSharedWithMePress={() => {
         void navigate('/shared-with-me');
       }}
-      onRecipePress={recipeId => {
-        void navigate(`/recipes/${recipeId}`);
-      }}
-      onRecipeDelete={handleDelete}
-      deleteError={deleteError}
-      deleteErrorRecipeId={deleteErrorRecipeId}
-      isDeletePending={deleteMutation.isPending}
     />
   );
 };

@@ -38,6 +38,28 @@ describe('HomePage', () => {
     expect(await screen.findByText('Test Recipe')).toBeInTheDocument();
   });
 
+  test('logs a cook from a recently viewed recipe card', async () => {
+    await recordRecipeView(recipeViewHistoryStorage, 'recipe-uuid-1');
+    await renderWithProviders(<HomePage />);
+    await screen.findByText('Test Recipe');
+    await userEvent.click(screen.getByText('Log cook'));
+    expect(await screen.findByText('How did it go?')).toBeInTheDocument();
+    // The star rating is not clicked here: @spudly/ui 1.13.0 renders
+    // the DS StarRatingInput's label as a raw accessibilitylabel
+    // attribute on web (the leak design-system#237 fixes in a later
+    // release), so there is no role/label to query yet. The rating is
+    // optional — submitting without it sends a null rating, which
+    // still exercises the card's create mutation end to end.
+    await userEvent.type(
+      screen.getByPlaceholderText('Notes from this cook (optional)'),
+      'Great',
+    );
+    await userEvent.click(screen.getByText('Save'));
+    await waitFor(() => {
+      expect(screen.queryByText('How did it go?')).not.toBeInTheDocument();
+    });
+  });
+
   test('deletes a recently viewed recipe on confirm', async () => {
     await recordRecipeView(recipeViewHistoryStorage, 'recipe-uuid-1');
     await renderWithProviders(<HomePage />);
