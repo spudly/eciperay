@@ -25,8 +25,8 @@ test.describe('live, signed out', () => {
     await page.goto('/recipes');
 
     await expect(page).toHaveURL(/\/login$/);
-    await expect(page.getByPlaceholder('Email')).toBeVisible();
-    await expect(page.getByPlaceholder('Password')).toBeVisible();
+    await expect(page.getByLabel('Email')).toBeVisible();
+    await expect(page.getByLabel('Password')).toBeVisible();
     await expect(page.getByRole('button', {name: 'Sign In'})).toBeVisible();
   });
 
@@ -34,8 +34,8 @@ test.describe('live, signed out', () => {
     page,
   }) => {
     await page.goto('/login');
-    await page.getByPlaceholder('Email').fill('ci-nonexistent@example.invalid');
-    await page.getByPlaceholder('Password').fill('definitely-wrong-password');
+    await page.getByLabel('Email').fill('ci-nonexistent@example.invalid');
+    await page.getByLabel('Password').fill('definitely-wrong-password');
     await page.getByRole('button', {name: 'Sign In'}).click();
 
     // Supabase answers and the form surfaces the failure; we stay on /login.
@@ -59,9 +59,7 @@ test.describe('live, signed out', () => {
     await expect(
       page.getByRole('heading', {name: 'Discover recipes'}),
     ).toBeVisible({timeout: 15_000});
-    await expect(
-      page.getByPlaceholder('Search public recipes…'),
-    ).toBeVisible();
+    await expect(page.getByPlaceholder('Search public recipes…')).toBeVisible();
     expect(pageErrors).toEqual([]);
   });
 });

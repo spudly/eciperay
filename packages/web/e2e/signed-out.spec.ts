@@ -11,9 +11,9 @@ test.describe('signed out', () => {
     await page.goto('/recipes');
 
     await expect(page).toHaveURL(/\/login$/);
-    await expect(page.getByPlaceholder('Email')).toBeVisible();
-    await expect(page.getByPlaceholder('Password')).toBeVisible();
-    await expect(page.getByText('Sign In')).toBeVisible();
+    await expect(page.getByLabel('Email')).toBeVisible();
+    await expect(page.getByLabel('Password')).toBeVisible();
+    await expect(page.getByRole('button', {name: 'Sign In'})).toBeVisible();
     expect(pageErrors).toEqual([]);
   });
 

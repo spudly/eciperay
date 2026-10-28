@@ -314,30 +314,6 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
       'dnd-kit sortable row primitive for web; app uses react-native-draggable-flatlist in SortableInstructionList.',
   },
   {
-    path: 'auth/SignInView.tsx',
-    platform: 'web',
-    reason:
-      'Web sign-in view; the app renders the design system SignInPage (design-system#126). Web adoption is B7.',
-  },
-  {
-    path: 'auth/SignUpView.tsx',
-    platform: 'web',
-    reason:
-      'Web sign-up view; the app renders the design system SignUpPage (design-system#126). Web adoption is B7.',
-  },
-  {
-    path: 'auth/ForgotPasswordView.tsx',
-    platform: 'web',
-    reason:
-      'Web forgot-password view; the app renders the design system ForgotPasswordPage (design-system#126). Web adoption is B7.',
-  },
-  {
-    path: 'auth/ResetPasswordView.tsx',
-    platform: 'web',
-    reason:
-      'Web reset-password view; the app renders the design system ResetPasswordPage (design-system#126). Web adoption is B7.',
-  },
-  {
     path: 'home/HomeView.tsx',
     platform: 'web',
     reason:
@@ -504,12 +480,6 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
     platform: 'web',
     reason:
       'Web picker remains; the app copy was only consumed by the removed RecipeDetailChrome (the design system page has its own version picker). Removed in B6 (design-system#129). Web retirement is B7.',
-  },
-  {
-    path: 'ui/AuthScreenLayout.tsx',
-    platform: 'web',
-    reason:
-      'Web adapter remains; the app copy had no production importer after the B3c auth pages moved to the design system. Removed in B6 (design-system#129). Web retirement is B7.',
   },
   {
     path: 'ui/BulkSelectToolbar.tsx',

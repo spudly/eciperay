@@ -1,10 +1,15 @@
 import {errorMessage} from '@eciperay/client';
 import {useState} from 'react';
+import {useNavigate} from 'react-router-dom';
 
-import {ForgotPasswordView} from '../../components/auth/ForgotPasswordView.js';
+import {ForgotPasswordPage as ForgotPasswordPageView} from '@spudly/ui/pages';
+
 import {supabase} from '../../lib/supabase.js';
 
+import {AuthConfirmation} from './AuthConfirmation.js';
+
 export const ForgotPasswordPage = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,17 +34,31 @@ export const ForgotPasswordPage = () => {
     }
   };
 
+  if (sent) {
+    return (
+      <AuthConfirmation
+        title="Email sent"
+        body="Check your inbox for a password reset link."
+        backLabel="Back to sign in"
+        onBackPress={() => {
+          void navigate('/login');
+        }}
+      />
+    );
+  }
+
   return (
-    <ForgotPasswordView
+    <ForgotPasswordPageView
       email={email}
       onEmailChange={setEmail}
       loading={loading}
       error={error}
-      sent={sent}
       onSubmit={() => {
         void handleSubmit();
       }}
-      signInTo="/login"
+      onBackPress={() => {
+        void navigate('/login');
+      }}
     />
   );
 };
