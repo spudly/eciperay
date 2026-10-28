@@ -16,6 +16,7 @@ import {
   cloneVersionChildren,
   getNextVersionNumber,
   insertVersion,
+  reopenPerfectedLineage,
   setLineageStatus,
 } from './versionQueries.js';
 
@@ -72,8 +73,18 @@ export const createVersion = async (
       throw new Error('Failed to create version');
     }
     await cloneVersionChildren(activeVersionId, id, q);
-    if (recipe.status === 'idea' || recipe.status === 'perfected') {
+    if (recipe.status === 'idea') {
       await setLineageStatus(recipeId, req.userId, 'evolving', q);
+    }
+    if (recipe.status === 'perfected') {
+      // Conditional on the lineage still being Perfected: if its status
+      // changed after the read above (e.g. a concurrent Abandon), the
+      // update matches no row and the whole draft creation rolls back
+      // rather than resurrecting the recipe to Evolving.
+      const reopened = await reopenPerfectedLineage(recipeId, req.userId, q);
+      if (!reopened.rows[0]) {
+        throw new Error('Recipe status changed while creating a draft version');
+      }
     }
     return id;
   });

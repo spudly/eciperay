@@ -401,7 +401,13 @@ export const RecipeDetailView = ({
   }, [displayRecipe.id, displayRecipe.versionId]);
 
   const canEditDraft = canEditDraftVersion(displayRecipe.versionId, versions);
-  const canCreateDraft = canCreateDraftVersion(displayRecipe.status);
+  // Creating a draft clones the ACTIVE version (the server's createVersion
+  // always clones it), so the chip is only offered while the active version
+  // is the one on display — on an archived version it would silently draft
+  // from a version the user is not looking at.
+  const canCreateDraft =
+    canCreateDraftVersion(displayRecipe.status) &&
+    displayRecipe.versionId === recipe.versionId;
   const canEditMetadata = canEditActiveRecipeMetadata(
     displayRecipe.status,
     displayRecipe.versionId,

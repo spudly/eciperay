@@ -250,6 +250,23 @@ describe('RecipeDetailView', () => {
     expect(callbacks.onEditRecipe).not.toHaveBeenCalled();
   });
 
+  test('perfected recipe viewed at an archived version has no Edit draft chip', async () => {
+    const archived = makeRecipeVersionSummary({
+      id: 'version-uuid-2',
+      versionNumber: 2,
+      derivedRole: 'archived',
+    });
+    const {findByText, queryByText} = await renderView({status: 'perfected'}, [
+      makeRecipeVersionSummary(),
+      archived,
+    ]);
+    // Switch the display to the archived version: the create-draft chip
+    // clones the active version, so it must not be offered from here.
+    await fireEvent.press(await findByText(/v1 — Active/));
+    await fireEvent.press(await findByText(/v2 — Archived/));
+    expect(queryByText('Edit draft')).toBeNull();
+  });
+
   test('abandoned recipe has no Edit draft chip', async () => {
     const {findByText, queryByText} = await renderView({status: 'abandoned'});
     expect(await findByText('Test Recipe')).toBeTruthy();

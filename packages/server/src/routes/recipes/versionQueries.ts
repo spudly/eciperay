@@ -159,6 +159,23 @@ export const setLineageStatus = (
     [recipeId, userId, status],
   );
 
+/**
+ * Reopens a Perfected lineage to Evolving when a draft is created from it
+ * (#264). The update is conditional on the lineage still being Perfected, so a
+ * status change that lands after the caller's read (e.g. a concurrent Abandon)
+ * is not overwritten: it matches no row, and the caller rolls the draft
+ * creation back instead.
+ */
+export const reopenPerfectedLineage = (
+  recipeId: string,
+  userId: string,
+  queryFn: QueryFn,
+) =>
+  queryFn(
+    'update recipes set status = $3 where id = $1 and user_id = $2 and status = $4 returning id',
+    [recipeId, userId, 'evolving', 'perfected'],
+  );
+
 export const updateRecipeSlug = (
   recipeId: string,
   slug: string,

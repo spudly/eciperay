@@ -104,7 +104,30 @@ describe('POST /recipes/:id/versions', () => {
       'recipe-uuid-1',
       'user-uuid-1',
       'evolving',
+      'perfected',
     ]);
+  });
+
+  test('rolls back when a perfected lineage changed status mid-creation', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockQuery
+      .mockResolvedValueOnce(
+        makeQueryResult([makeRecipeDetailRow({status: 'perfected'})]),
+      )
+      .mockResolvedValueOnce(makeQueryResult([{max: 1}]))
+      .mockResolvedValueOnce(makeQueryResult([{id: 'version-uuid-2'}]))
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([]))
+      // The conditional reopen matches no row: the status changed after
+      // the recipe was read, so creation aborts instead of resurrecting it.
+      .mockResolvedValueOnce(makeQueryResult([]));
+
+    const res = await request(getApp())
+      .post('/api/recipes/recipe-uuid-1/versions')
+      .set('Authorization', 'Bearer valid-token');
+
+    expect(res.status).toBe(500);
   });
 
   test('returns 409 when recipe is abandoned', async () => {

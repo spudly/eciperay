@@ -63,6 +63,18 @@ describe('OverviewActions', () => {
     expect(screen.queryByText('Abandon')).not.toBeInTheDocument();
   });
 
+  test('hides create draft when a non-active version is displayed', async () => {
+    await renderWithProviders(
+      <OverviewActions
+        recipe={makeRecipeDetail({status: 'perfected', versionId: 'v-old'})}
+        versions={[]}
+        onActionMessage={() => {}}
+        activeVersionId="version-uuid-1"
+      />,
+    );
+    expect(screen.queryByText('Create draft')).not.toBeInTheDocument();
+  });
+
   test('create draft opens the new draft in the version editor', async () => {
     server.use(
       http.post('http://localhost:8080/api/recipes/:id/versions', () =>
