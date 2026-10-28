@@ -251,6 +251,7 @@ export const OverviewTab = ({
         recipe={recipe}
         versions={versions}
         onActionMessage={showActionMessage}
+        activeVersionId={activeVersionId}
       />
       <RecipeVisibilityControls
         recipe={recipe}

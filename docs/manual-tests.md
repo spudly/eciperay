@@ -145,6 +145,14 @@ without); one recipe may be created fresh in case 1.
 7. **Recipe without an image.** Open the image-less recipe. **Expected:** the
    detail and its list card render a clean placeholder — no broken image icon,
    no layout collapse.
+8. **Create a draft from a Perfected recipe.** Open a Perfected recipe's detail
+   and use its create-draft action (web: **Create draft**; app: the **Edit
+   draft** chip). **Expected:** a new draft version is created from the
+   Perfected version and opens in the version editor; changing the title and one
+   ingredient there and saving succeeds (no "Recipe cannot be modified in its
+   current status" error), the recipe's status shows Evolving, and the
+   previously Perfected version remains available unchanged in the version
+   history.
 
 **Run when:**
 `packages/app/src/screens/{Recipes,RecipeDetail,EditRecipe,EditVersion,ManualEntry}Screen.tsx`,

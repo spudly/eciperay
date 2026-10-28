@@ -1,5 +1,6 @@
 /* eslint-disable max-lines -- recipe overview actions with version lifecycle controls */
 import {
+  canCreateDraftVersion,
   invalidateRecipeQueries,
   makeRecipeDetail,
   makeRecipeVersionSummary,
@@ -16,9 +17,22 @@ type Props = {
   recipe: RecipeDetail;
   versions: RecipeVersionSummary[];
   onActionMessage: (message: string) => void;
+  /**
+   * The recipe's active version id, when the caller is displaying a specific
+   * version: creating a draft always clones the active version, so the
+   * create-draft action is only offered while the active version is the one on
+   * display. Defaults to the displayed recipe's version (callers that only ever
+   * show the active version).
+   */
+  activeVersionId?: string;
 };
 
-export const OverviewActions = ({recipe, versions, onActionMessage}: Props) => {
+export const OverviewActions = ({
+  recipe,
+  versions,
+  onActionMessage,
+  activeVersionId,
+}: Props) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -55,12 +69,44 @@ export const OverviewActions = ({recipe, versions, onActionMessage}: Props) => {
     },
   });
 
-  if (!isEditable && candidates.length === 0) {
+  // A Perfected recipe's active version is locked, so creating a draft is
+  // its only path to changes (#264): the draft opens directly in the
+  // version editor, where it can actually be edited and saved.
+  const canCreateDraft =
+    canCreateDraftVersion(recipe.status) &&
+    recipe.versionId === (activeVersionId ?? recipe.versionId);
+  const createDraftMutation = useMutation({
+    mutationFn: () => eciperay.versions.create(recipe.id),
+    onSuccess: version => {
+      void invalidate();
+      void navigate(`/recipes/${recipe.id}/versions/${version.id}/edit`);
+    },
+  });
+
+  if (!isEditable && !canCreateDraft && candidates.length === 0) {
     return null;
   }
 
   return (
     <>
+      {canCreateDraft ? (
+        <div className="mbe-4 flex flex-wrap gap-2">
+          <button
+            type="button"
+            className="
+              rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium
+              text-gray-700
+              disabled:opacity-50
+            "
+            disabled={createDraftMutation.isPending}
+            onClick={() => {
+              createDraftMutation.mutate();
+            }}
+          >
+            Create draft
+          </button>
+        </div>
+      ) : null}
       {isEditable ? (
         <div className="mbe-4 flex flex-wrap gap-2">
           <button

@@ -1,5 +1,6 @@
 /* eslint-disable max-lines -- detail host: every section's queries, mutations, and view-model mapping */
 import {
+  canCreateDraftVersion,
   canEditActiveRecipeMetadata,
   canEditDraftVersion,
   formatCommunityRatingLabel,
@@ -191,6 +192,15 @@ export const RecipeDetailView = ({
     onSuccess: version => {
       void invalidate();
       onViewVersion(version.id);
+    },
+  });
+  // A Perfected recipe's active version is locked, so its Edit draft chip
+  // creates the draft first and then opens it in the version editor (#264).
+  const createDraftMutation = useMutation({
+    mutationFn: () => api.versions.create(displayRecipe.id),
+    onSuccess: version => {
+      void invalidate();
+      onEditVersion(version.id);
     },
   });
 
@@ -391,6 +401,13 @@ export const RecipeDetailView = ({
   }, [displayRecipe.id, displayRecipe.versionId]);
 
   const canEditDraft = canEditDraftVersion(displayRecipe.versionId, versions);
+  // Creating a draft clones the ACTIVE version (the server's createVersion
+  // always clones it), so the chip is only offered while the active version
+  // is the one on display — on an archived version it would silently draft
+  // from a version the user is not looking at.
+  const canCreateDraft =
+    canCreateDraftVersion(displayRecipe.status) &&
+    displayRecipe.versionId === recipe.versionId;
   const canEditMetadata = canEditActiveRecipeMetadata(
     displayRecipe.status,
     displayRecipe.versionId,
@@ -433,7 +450,13 @@ export const RecipeDetailView = ({
           ? () => {
               onEditVersion(displayRecipe.versionId);
             }
-          : undefined,
+          : canCreateDraft
+            ? () => {
+                if (!createDraftMutation.isPending) {
+                  createDraftMutation.mutate();
+                }
+              }
+            : undefined,
         onDeletePress: onDelete,
         lifecycle,
         onTweakManuallyPress: () => {

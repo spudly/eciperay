@@ -16,6 +16,7 @@ import {
   cloneVersionChildren,
   getNextVersionNumber,
   insertVersion,
+  reopenPerfectedLineage,
   setLineageStatus,
 } from './versionQueries.js';
 
@@ -39,7 +40,11 @@ export const createVersion = async (
   const recipe = mapRowToRecipeDetail(
     recipeRow as Parameters<typeof mapRowToRecipeDetail>[0],
   );
-  if (!isRecipeEditable(recipe.status)) {
+  // Creating a draft version is the one change allowed on a Perfected
+  // recipe (#264): it clones the locked active version without modifying
+  // it, and the lineage reopens to Evolving below so the new draft is
+  // itself editable. Abandoned recipes stay terminal.
+  if (!isRecipeEditable(recipe.status) && recipe.status !== 'perfected') {
     res.status(409).json({error: recipeEditBlockedError()});
     return;
   }
@@ -70,6 +75,16 @@ export const createVersion = async (
     await cloneVersionChildren(activeVersionId, id, q);
     if (recipe.status === 'idea') {
       await setLineageStatus(recipeId, req.userId, 'evolving', q);
+    }
+    if (recipe.status === 'perfected') {
+      // Conditional on the lineage still being Perfected: if its status
+      // changed after the read above (e.g. a concurrent Abandon), the
+      // update matches no row and the whole draft creation rolls back
+      // rather than resurrecting the recipe to Evolving.
+      const reopened = await reopenPerfectedLineage(recipeId, req.userId, q);
+      if (!reopened.rows[0]) {
+        throw new Error('Recipe status changed while creating a draft version');
+      }
     }
     return id;
   });
