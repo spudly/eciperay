@@ -150,6 +150,9 @@ describe('RecipeDetailPage', () => {
       // for a recipe that may exist.
       expect(screen.queryByText('Page not found')).not.toBeInTheDocument();
       expect(screen.queryByText('Test Recipe')).not.toBeInTheDocument();
+      // The gate's spinner appears after its 100 ms delay; finding it
+      // proves the page is on the loading gate, not just blank.
+      await screen.findByRole('status', {name: 'Loading'});
     } finally {
       onlineManager.setOnline(true);
     }
