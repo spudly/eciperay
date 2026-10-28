@@ -48,7 +48,9 @@ test.describe('live cook log', () => {
   };
 
   test('submitting the cook log records the cook', async ({page}) => {
-    created = await createRecipeViaUi(page, uniqueCiName('Cook Log'));
+    created = await createRecipeViaUi(page, uniqueCiName('Cook Log'), value => {
+      created = value;
+    });
 
     await reachCookLogForm(page, created.id);
     await page.getByRole('button', {name: '4 stars'}).click();
@@ -72,7 +74,13 @@ test.describe('live cook log', () => {
   });
 
   test('skipping the cook log records nothing', async ({page}) => {
-    created = await createRecipeViaUi(page, uniqueCiName('Cook Skip'));
+    created = await createRecipeViaUi(
+      page,
+      uniqueCiName('Cook Skip'),
+      value => {
+        created = value;
+      },
+    );
 
     await reachCookLogForm(page, created.id);
     await page.getByRole('button', {name: 'Skip', exact: true}).click();

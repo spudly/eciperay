@@ -33,7 +33,9 @@ test.describe('live sharing', () => {
     page,
     browser,
   }) => {
-    created = await createRecipeViaUi(page, uniqueCiName('Sharing'));
+    created = await createRecipeViaUi(page, uniqueCiName('Sharing'), value => {
+      created = value;
+    });
 
     // The public permalink needs the recipe's slug: read it via the API.
     const token = await getAccessToken(page);

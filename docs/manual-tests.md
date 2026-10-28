@@ -319,8 +319,8 @@ _Automated: Jest covers the shopping list screen/view rendering. Playwright live
 `e2e-live/meal-plans.spec.ts` (the meal-plan flow) covers generating a plan's
 shopping list and checking off an item against the QA dataset once the CI test
 account secrets exist (issue #233); until then those cases remain manual.
-Consolidation, quantity doubling, and regeneration behavior below are the manual
-remainder._
+Consolidation, quantity doubling, regeneration, check-off persistence, and
+empty-plan behavior below are the manual remainder._
 
 **Preconditions:** A QA meal plan with at least two recipes sharing one
 ingredient (e.g. both use eggs) and one recipe assigned twice in the week.

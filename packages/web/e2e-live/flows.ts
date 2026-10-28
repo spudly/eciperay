@@ -11,10 +11,17 @@ import {apiDelete} from './qa.js';
 
 export type CreatedRecipe = {id: string; title: string};
 
-/** Creates a minimal recipe through the real manual-entry form. */
+/**
+ * Creates a minimal recipe through the real manual-entry form. `onCreated`
+ * fires the moment the create POST returns — before the detail-page assertions
+ * — so the caller can register the recipe for teardown even if those assertions
+ * then fail; the record already exists server-side by then and an unregistered
+ * one would leak into the QA dataset.
+ */
 export const createRecipeViaUi = async (
   page: Page,
   title: string,
+  onCreated?: (created: CreatedRecipe) => void,
 ): Promise<CreatedRecipe> => {
   await page.goto('/add/manual');
 
@@ -36,13 +43,26 @@ export const createRecipeViaUi = async (
 
   // The page host's submit label (ManualEntryPage passes "Create Recipe";
   // "Save recipe" exists only in RecipeForm's DEV demo, not in the app).
+  // Listen for the create response before submitting: POST /api/recipes
+  // persists the recipe before returning 201 with its ID.
+  const createResponsePromise = page.waitForResponse(response => {
+    const url = new URL(response.url());
+    return (
+      response.request().method() === 'POST' &&
+      response.status() === 201 &&
+      url.pathname === '/api/recipes'
+    );
+  });
   await page.getByRole('button', {name: 'Create Recipe'}).click();
+  const createResponse = await createResponsePromise;
+  const {recipeId} = (await createResponse.json()) as {recipeId: string};
+  const created: CreatedRecipe = {id: recipeId, title};
+  onCreated?.(created);
 
   // Saving lands on the new recipe's detail page.
   await expect(page).toHaveURL(/\/recipes\/[^/]+$/, {timeout: 15_000});
   await expect(page.getByRole('heading', {name: title})).toBeVisible();
-  const id = page.url().split('/recipes/')[1]!;
-  return {id, title};
+  return created;
 };
 
 /** Opens a recipe's detail page from the signed-in list via search. */

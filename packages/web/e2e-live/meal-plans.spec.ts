@@ -32,7 +32,9 @@ test.describe('live meal plans', () => {
   test('create a plan, add the recipe, check off the shopping list', async ({
     page,
   }) => {
-    recipe = await createRecipeViaUi(page, uniqueCiName('Planned'));
+    recipe = await createRecipeViaUi(page, uniqueCiName('Planned'), value => {
+      recipe = value;
+    });
     const planTitle = uniqueCiName('Week Plan');
 
     await page.goto('/meal-plans/new');

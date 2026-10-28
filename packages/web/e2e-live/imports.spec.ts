@@ -49,7 +49,23 @@ test.describe('live imports', () => {
         'Boil the water, add the salt, and serve.',
       ].join('\n'),
     );
+    // Capture the created recipe's ID from the import response itself,
+    // before navigation is asserted: the recipe already exists server-side
+    // once the POST returns 201 (ImportTextPage receives the same ID
+    // before it navigates), and teardown deletes by ID — if navigation to
+    // the review screen then fails, afterEach must still be able to
+    // remove it instead of leaking it into the QA dataset.
+    const importResponsePromise = page.waitForResponse(response => {
+      const url = new URL(response.url());
+      return (
+        response.request().method() === 'POST' &&
+        response.status() === 201 &&
+        url.pathname === '/api/recipes/import/text'
+      );
+    });
     await page.getByRole('button', {name: 'Import', exact: true}).click();
+    const importResponse = await importResponsePromise;
+    createdId = ((await importResponse.json()) as {recipeId: string}).recipeId;
 
     // The review screen shows the parsed recipe; accepting it saves.
     // The parser normalizes the title (it dropped this spec's "CI —"
@@ -57,11 +73,6 @@ test.describe('live imports', () => {
     // on the parsed content it does carry verbatim — the ingredients —
     // not on the exact title it was fed.
     await expect(page).toHaveURL(/\/import\/review\/[^/]+$/, {timeout: 30_000});
-    // Capture the id from the review URL before accepting: the recipe
-    // already exists server-side at this point, and teardown deletes by
-    // id — if accepting or any later step fails, afterEach must still be
-    // able to remove it instead of leaking it into the QA dataset.
-    createdId = page.url().split('/import/review/')[1]!;
     await expect(page.getByText('2 cups water')).toBeVisible();
     await page.getByRole('button', {name: 'Looks good'}).click();
 

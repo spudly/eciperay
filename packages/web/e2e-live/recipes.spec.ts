@@ -29,7 +29,9 @@ test.describe('live recipes', () => {
   test('create renders on the detail page and is findable by search', async ({
     page,
   }) => {
-    created = await createRecipeViaUi(page, uniqueCiName('Pasta'));
+    created = await createRecipeViaUi(page, uniqueCiName('Pasta'), value => {
+      created = value;
+    });
 
     await page.getByRole('tab', {name: 'Ingredients'}).click();
     await expect(page.getByText('CI Test Ingredient')).toBeVisible();
@@ -38,7 +40,13 @@ test.describe('live recipes', () => {
   });
 
   test('edit renames the recipe', async ({page}) => {
-    created = await createRecipeViaUi(page, uniqueCiName('Rename Me'));
+    created = await createRecipeViaUi(
+      page,
+      uniqueCiName('Rename Me'),
+      value => {
+        created = value;
+      },
+    );
     const renamed = `${created.title} Edited`;
 
     await page.goto(`/recipes/${created.id}/edit`);
@@ -53,7 +61,9 @@ test.describe('live recipes', () => {
   });
 
   test('the scale control doubles ingredient quantities', async ({page}) => {
-    created = await createRecipeViaUi(page, uniqueCiName('Scaling'));
+    created = await createRecipeViaUi(page, uniqueCiName('Scaling'), value => {
+      created = value;
+    });
 
     await page.getByRole('tab', {name: 'Ingredients'}).click();
     await expect(page.getByText(/400\s*g/)).toBeVisible();
@@ -63,7 +73,13 @@ test.describe('live recipes', () => {
   });
 
   test('delete removes the recipe from the list', async ({page}) => {
-    created = await createRecipeViaUi(page, uniqueCiName('Delete Me'));
+    created = await createRecipeViaUi(
+      page,
+      uniqueCiName('Delete Me'),
+      value => {
+        created = value;
+      },
+    );
 
     // `created` deliberately stays set: if the UI flow below fails before
     // deleting, afterEach still removes the recipe via the API; if it
