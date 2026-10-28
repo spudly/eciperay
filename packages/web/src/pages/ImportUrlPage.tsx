@@ -14,6 +14,9 @@ export const ImportUrlPage = () => {
   const analytics = useAnalytics();
 
   const handleImport = async () => {
+    if (!url.trim() || loading) {
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
