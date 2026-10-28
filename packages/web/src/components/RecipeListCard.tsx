@@ -28,6 +28,8 @@ type RecipeListCardProps = {
   recipe: RecipeDetail;
   onDelete: (id: string) => void;
   onPress?: () => void;
+  isDeleting?: boolean;
+  deleteError?: string | null;
 };
 
 // Parity note (design-system#129): the app mirror's showcase demo was
@@ -37,8 +39,17 @@ export const RecipeListCard = ({
   recipe,
   onDelete,
   onPress,
+  isDeleting = false,
+  deleteError,
 }: RecipeListCardProps) => {
   const [showForm, setShowForm] = useState(false);
+  // Deletion is confirmed in-page, not with window.confirm (#263): the
+  // native dialog is suppressed in some browsers/webviews, which made
+  // Delete a silent no-op — the click never reached onDelete and no
+  // error was shown. Meal, meal-plan, and tag deletes never had that
+  // gate. The two-step inline confirm mirrors the app's destructive
+  // Alert (Cancel / Delete) while staying renderable everywhere.
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const queryClient = useQueryClient();
 
   const createMutation = useMutation({
@@ -60,33 +71,70 @@ export const RecipeListCard = ({
         linkTo={onPress ? undefined : `/recipes/${recipe.id}`}
         trailing={
           <div className="ms-3 flex shrink-0 items-center gap-2">
-            {showForm ? null : (
-              <button
-                type="button"
-                className="
-                  rounded-lg bg-gray-100 px-3 py-1 text-sm text-gray-700
-                "
-                onClick={() => {
-                  setShowForm(true);
-                }}
-              >
-                Log cook
-              </button>
+            {showForm ? null : confirmingDelete ? (
+              <>
+                <button
+                  type="button"
+                  className="
+                    rounded-lg bg-red-600 px-3 py-1 text-sm text-white
+                    disabled:opacity-50
+                  "
+                  disabled={isDeleting}
+                  onClick={() => {
+                    onDelete(recipe.id);
+                  }}
+                >
+                  {isDeleting ? 'Deleting…' : 'Confirm delete'}
+                </button>
+                <button
+                  type="button"
+                  className="
+                    rounded-lg bg-gray-100 px-3 py-1 text-sm text-gray-700
+                    disabled:opacity-50
+                  "
+                  disabled={isDeleting}
+                  onClick={() => {
+                    setConfirmingDelete(false);
+                  }}
+                >
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className="
+                    rounded-lg bg-gray-100 px-3 py-1 text-sm text-gray-700
+                  "
+                  onClick={() => {
+                    setShowForm(true);
+                  }}
+                >
+                  Log cook
+                </button>
+                <button
+                  type="button"
+                  className="rounded-lg bg-red-50 px-3 py-1 text-sm text-red-600"
+                  onClick={() => {
+                    setConfirmingDelete(true);
+                  }}
+                >
+                  Delete
+                </button>
+              </>
             )}
-            <button
-              type="button"
-              className="rounded-lg bg-red-50 px-3 py-1 text-sm text-red-600"
-              onClick={() => {
-                if (window.confirm(`Delete "${recipe.title}"?`)) {
-                  onDelete(recipe.id);
-                }
-              }}
-            >
-              Delete
-            </button>
           </div>
         }
       />
+      {deleteError ? (
+        <p
+          role="alert"
+          className="mbe-3 text-sm text-red-600"
+        >
+          {deleteError}
+        </p>
+      ) : null}
       {showForm ? (
         <div className="mbe-3">
           <CookLogForm

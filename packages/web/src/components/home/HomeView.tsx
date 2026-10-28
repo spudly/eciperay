@@ -18,6 +18,12 @@ import {PrimaryButton} from '../ui/PrimaryButton.js';
 import {ScreenScroll} from '../ui/ScreenScroll.js';
 import {SecondaryButton} from '../ui/SecondaryButton.js';
 
+type HomeViewOwnProps = HomeViewProps & {
+  deleteError?: string | null;
+  deleteErrorRecipeId?: string | null;
+  isDeletePending?: boolean;
+};
+
 export const HomeView = ({
   isLoading,
   recipes,
@@ -26,7 +32,10 @@ export const HomeView = ({
   onSharedWithMePress,
   onRecipePress,
   onRecipeDelete,
-}: HomeViewProps) => (
+  deleteError,
+  deleteErrorRecipeId,
+  isDeletePending = false,
+}: HomeViewOwnProps) => (
   <ScreenScroll>
     <div className="py-4 text-center">
       <PageTitle
@@ -76,6 +85,8 @@ export const HomeView = ({
         <RecipeListCard
           key={recipe.id}
           recipe={recipe}
+          isDeleting={isDeletePending}
+          deleteError={deleteErrorRecipeId === recipe.id ? deleteError : null}
           onPress={() => {
             onRecipePress(recipe.id);
           }}

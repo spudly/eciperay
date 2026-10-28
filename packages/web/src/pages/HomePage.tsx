@@ -4,6 +4,7 @@ import {
   removeRecipeView,
 } from '@eciperay/client';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
+import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 import type {RecipeDetail} from '@eciperay/types';
 
@@ -22,19 +23,43 @@ export const HomePage = () => {
     ),
   );
 
+  // Same silent-failure fix as the recipes list (#263): surface a
+  // failed delete beside its card instead of leaving the recipe
+  // listed with no error.
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleteErrorRecipeId, setDeleteErrorRecipeId] = useState<string | null>(
+    null,
+  );
+
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       await eciperay.recipes.delete(id);
-      await removeRecipeView(recipeViewHistoryStorage, id);
+      // History cleanup is best-effort and must finish before the
+      // onSuccess invalidation refetches the history-driven list —
+      // but a storage failure must not route to onError: the server
+      // delete already succeeded.
+      await removeRecipeView(recipeViewHistoryStorage, id).catch(
+        () => undefined,
+      );
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: queryKeys.recipes('home-recently-viewed'),
       });
     },
+    onError: (error, id) => {
+      setDeleteError(
+        `Could not delete recipe: ${
+          error instanceof Error ? error.message : 'Recipe deletion failed'
+        }`,
+      );
+      setDeleteErrorRecipeId(id);
+    },
   });
 
   const handleDelete = (recipe: RecipeDetail) => {
+    setDeleteError(null);
+    setDeleteErrorRecipeId(null);
     deleteMutation.mutate(recipe.id);
   };
 
@@ -55,6 +80,9 @@ export const HomePage = () => {
         void navigate(`/recipes/${recipeId}`);
       }}
       onRecipeDelete={handleDelete}
+      deleteError={deleteError}
+      deleteErrorRecipeId={deleteErrorRecipeId}
+      isDeletePending={deleteMutation.isPending}
     />
   );
 };

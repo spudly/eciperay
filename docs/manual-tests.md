@@ -134,8 +134,14 @@ without); one recipe may be created fresh in case 1.
    reload. **Expected:** the comment appears with the QA account as author and
    persists after reload.
 6. **Delete.** Delete the `QA — Manual Entry Soup` recipe via the UI's delete
-   path, confirming any prompt. **Expected:** it disappears from the list and
-   search; its old detail URL no longer renders the recipe.
+   path: on the recipe list (and on Home's recently-viewed cards) the Delete
+   button arms an in-page **Confirm delete** / **Cancel** pair — Cancel keeps
+   the recipe and restores the Delete button, Confirm delete removes it. The
+   recipe detail page's Overview actions offer the same Delete control with the
+   same in-page confirmation; confirming there returns to the recipe list.
+   **Expected:** the deleted recipe disappears from the list and search; its old
+   detail URL no longer renders the recipe; and if a delete request fails, an
+   error is shown and the recipe stays listed (a delete never fails silently).
 7. **Recipe without an image.** Open the image-less recipe. **Expected:** the
    detail and its list card render a clean placeholder — no broken image icon,
    no layout collapse.

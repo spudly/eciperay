@@ -43,7 +43,10 @@ export const homeRecentlyViewedRecipesQueryOptions = (
       try {
         recipes.push(await getRecipe(id));
       } catch {
-        await removeRecipeView(storage, id);
+        // Pruning a missing recipe from history is best-effort: a
+        // storage write failure must not reject the whole query and
+        // leave the (already gone) recipe's card in the cached list.
+        await removeRecipeView(storage, id).catch(() => undefined);
       }
     }
 
