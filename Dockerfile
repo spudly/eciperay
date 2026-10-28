@@ -6,7 +6,7 @@ ENV HUSKY=0
 
 # Use the repo's pinned npm (packageManager field) for every npm
 # invocation in this stage, not the Node image's bundled npm.
-RUN corepack enable
+RUN corepack enable npm
 
 # The slim image ships no CA bundle, but the web build's PostHog plugin
 # shells out to posthog-cli (a Rust binary that loads certificates from the
@@ -86,7 +86,7 @@ ENV HOST=0.0.0.0
 
 # Use the repo's pinned npm (packageManager field) for the production
 # install and the start command, not the Node image's bundled npm.
-RUN corepack enable
+RUN corepack enable npm
 
 COPY package.json package-lock.json ./
 COPY packages/types/package.json packages/types/
