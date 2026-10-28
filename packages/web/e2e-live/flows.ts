@@ -76,7 +76,7 @@ export const openRecipeFromList = async (
   await expect(page.getByRole('heading', {name: title})).toBeVisible();
 };
 
-/** Deletes a recipe through the list-card UI (confirm dialog included). */
+/** Deletes a recipe through the list-card UI (in-page confirmation included). */
 export const deleteRecipeViaUi = async (
   page: Page,
   title: string,
@@ -84,13 +84,14 @@ export const deleteRecipeViaUi = async (
   await page.goto('/recipes');
   await page.getByPlaceholder('Search recipes…').fill(title);
   await expect(page.getByText(title)).toBeVisible();
-  page.once('dialog', dialog => {
-    void dialog.accept();
-  });
   // exact: the recipe card itself is a button whose accessible name
   // contains the recipe title — a title like "CI — Delete Me …" would
   // otherwise match the substring locator too (strict-mode violation).
   await page.getByRole('button', {name: 'Delete', exact: true}).click();
+  // Deletion is confirmed in-page, not with a native dialog (#263):
+  // clicking Delete arms a Confirm delete / Cancel pair on the card
+  // (RecipeListCard), and only Confirm delete calls onDelete.
+  await page.getByRole('button', {name: 'Confirm delete', exact: true}).click();
   await expect(page.getByText(title)).toHaveCount(0, {timeout: 15_000});
 };
 
