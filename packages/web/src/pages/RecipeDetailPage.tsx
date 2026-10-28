@@ -39,7 +39,7 @@ export const RecipeDetailPage = () => {
 
   const {
     data: recipe,
-    isLoading,
+    isPending,
     error,
   } = useQuery({
     queryKey: queryKeys.recipe(recipeId),
@@ -106,16 +106,24 @@ export const RecipeDetailPage = () => {
     return <RouteErrorView isNotFound />;
   }
 
+  // No recipe id in the route: nothing can load, so it reads as not
+  // found rather than a disabled query's endless pending state.
+  if (!recipeId) {
+    return <RouteErrorView isNotFound />;
+  }
+
   // A settled query with no recipe means the recipe does not exist
   // (deleted or a bad link): show a not-found state instead of gating on
   // `!recipe` forever, which left the page on the loading skeleton
   // indefinitely (#273). No error at all also reads as not found;
-  // anything else is a generic load failure.
-  if (!isLoading && !recipe) {
+  // anything else is a generic load failure. `isPending`, not
+  // `isLoading`: a paused (offline) fetch has isLoading false while the
+  // query is still pending, and must stay on the loading gate.
+  if (!isPending && !recipe) {
     return <RouteErrorView isNotFound={!error} />;
   }
 
-  if (isLoading || !recipe || !displayRecipe) {
+  if (isPending || !recipe || !displayRecipe) {
     return <ScreenLoadingGate pending>{null}</ScreenLoadingGate>;
   }
 
