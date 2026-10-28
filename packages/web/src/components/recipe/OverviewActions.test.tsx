@@ -35,10 +35,10 @@ describe('OverviewActions', () => {
     expect(screen.getByText('Tweak with AI')).toBeInTheDocument();
   });
 
-  test('renders nothing for non-editable recipes without candidates', async () => {
+  test('renders nothing for abandoned recipes without candidates', async () => {
     const {container} = await renderWithProviders(
       <OverviewActions
-        recipe={makeRecipeDetail({status: 'perfected'})}
+        recipe={makeRecipeDetail({status: 'abandoned'})}
         versions={[]}
         onActionMessage={() => {}}
       />,
@@ -46,6 +46,59 @@ describe('OverviewActions', () => {
     // TamaguiProvider renders theme context wrappers, so assert on empty text
     // content rather than an empty container.
     expect(container.textContent).toBe('');
+  });
+
+  test('offers only create-draft for perfected recipes without candidates', async () => {
+    await renderWithProviders(
+      <OverviewActions
+        recipe={makeRecipeDetail({status: 'perfected'})}
+        versions={[]}
+        onActionMessage={() => {}}
+      />,
+    );
+    expect(screen.getByText('Create draft')).toBeInTheDocument();
+    expect(screen.queryByText('Tweak manually')).not.toBeInTheDocument();
+    expect(screen.queryByText('Tweak with AI')).not.toBeInTheDocument();
+    expect(screen.queryByText('Mark perfected')).not.toBeInTheDocument();
+    expect(screen.queryByText('Abandon')).not.toBeInTheDocument();
+  });
+
+  test('create draft opens the new draft in the version editor', async () => {
+    server.use(
+      http.post('http://localhost:8080/api/recipes/:id/versions', () =>
+        HttpResponse.json(
+          makeRecipeVersionSummary({
+            id: 'version-draft-1',
+            versionNumber: 2,
+            derivedRole: 'draft',
+            isEditable: true,
+            childVersionCount: 0,
+          }),
+          {status: 201},
+        ),
+      ),
+    );
+    await renderWithProviders(
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <OverviewActions
+              recipe={makeRecipeDetail({status: 'perfected'})}
+              versions={[]}
+              onActionMessage={() => {}}
+            />
+          }
+        />
+        <Route
+          path="/recipes/:recipeId/versions/:versionId/edit"
+          element={<div>Edit draft page</div>}
+        />
+      </Routes>,
+      {route: '/'},
+    );
+    await userEvent.click(screen.getByText('Create draft'));
+    expect(await screen.findByText('Edit draft page')).toBeInTheDocument();
   });
 
   test('shows only candidates for perfected recipes', async () => {
@@ -63,6 +116,7 @@ describe('OverviewActions', () => {
       />,
     );
     expect(screen.queryByText('Tweak manually')).not.toBeInTheDocument();
+    expect(screen.getByText('Create draft')).toBeInTheDocument();
     expect(screen.getByText('Activate')).toBeInTheDocument();
   });
 

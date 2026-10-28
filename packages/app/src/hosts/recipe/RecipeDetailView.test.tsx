@@ -236,6 +236,26 @@ describe('RecipeDetailView', () => {
     expect(queryByText('Tweak with AI')).toBeNull();
   });
 
+  test('perfected recipe: Edit draft creates a draft and opens it for editing', async () => {
+    const {callbacks, recipe, findByText} = await renderView({
+      status: 'perfected',
+    });
+    await fireEvent.press(await findByText('Edit draft'));
+    await waitFor(() => {
+      expect(mockCreateVersion).toHaveBeenCalledWith(recipe.id);
+    });
+    await waitFor(() => {
+      expect(callbacks.onEditVersion).toHaveBeenCalledWith('version-draft-1');
+    });
+    expect(callbacks.onEditRecipe).not.toHaveBeenCalled();
+  });
+
+  test('abandoned recipe has no Edit draft chip', async () => {
+    const {findByText, queryByText} = await renderView({status: 'abandoned'});
+    expect(await findByText('Test Recipe')).toBeTruthy();
+    expect(queryByText('Edit draft')).toBeNull();
+  });
+
   test('maps the community rating and sends viewer stars to the mutation', async () => {
     const {recipe, findByText, getByLabelText} = await renderView({
       communityRating: {average: 4.6, count: 9, hasStaleRatings: false},

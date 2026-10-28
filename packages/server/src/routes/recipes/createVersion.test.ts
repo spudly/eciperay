@@ -10,7 +10,9 @@ import {lazyTestApp} from '../../test/lazyTestApp.js';
 const mockQuery = createMockQuery();
 const getApp = lazyTestApp({query: mockQuery});
 
-const mockCreateVersionFlow = (status: 'idea' | 'evolving' = 'idea') => {
+const mockCreateVersionFlow = (
+  status: 'idea' | 'evolving' | 'perfected' = 'idea',
+) => {
   mockQuery
     .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow({status})]))
     .mockResolvedValueOnce(makeQueryResult([{max: 1}]))
@@ -70,10 +72,45 @@ describe('POST /recipes/:id/versions', () => {
     expect(res.status).toBe(404);
   });
 
-  test('returns 409 when recipe is perfected', async () => {
+  test('creates a draft version from a perfected recipe', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockCreateVersionFlow('perfected');
+
+    const res = await request(getApp())
+      .post('/api/recipes/recipe-uuid-1/versions')
+      .set('Authorization', 'Bearer valid-token');
+
+    expect(res.status).toBe(201);
+    expect(res.body.versionNumber).toBe(2);
+    expect(res.body.derivedRole).toBe('draft');
+  });
+
+  test('reopens a perfected lineage to evolving when drafting', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockCreateVersionFlow('perfected');
+
+    const res = await request(getApp())
+      .post('/api/recipes/recipe-uuid-1/versions')
+      .set('Authorization', 'Bearer valid-token');
+
+    expect(res.status).toBe(201);
+    // The draft is only editable once the lineage leaves the locked
+    // Perfected status: a status update to Evolving must be issued.
+    const statusUpdate = mockQuery.mock.calls.find(
+      ([sql]) =>
+        typeof sql === 'string' && sql.includes('update recipes set status'),
+    );
+    expect(statusUpdate?.[1]).toEqual([
+      'recipe-uuid-1',
+      'user-uuid-1',
+      'evolving',
+    ]);
+  });
+
+  test('returns 409 when recipe is abandoned', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue(
-      makeQueryResult([makeRecipeDetailRow({status: 'perfected'})]),
+      makeQueryResult([makeRecipeDetailRow({status: 'abandoned'})]),
     );
 
     const res = await request(getApp())

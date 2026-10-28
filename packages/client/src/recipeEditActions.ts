@@ -3,6 +3,14 @@ import type {RecipeStatus, RecipeVersionSummary} from '@eciperay/types';
 export const isRecipeStatusEditable = (status: RecipeStatus): boolean =>
   status !== 'perfected' && status !== 'abandoned';
 
+/**
+ * A Perfected recipe's active version is locked, so the only way to change the
+ * recipe is to create a new draft version from it (#264). Abandoned recipes
+ * stay terminal: no draft can be created from them.
+ */
+export const canCreateDraftVersion = (status: RecipeStatus): boolean =>
+  status === 'perfected';
+
 export const canEditDraftVersion = (
   versionId: string,
   versions: RecipeVersionSummary[],

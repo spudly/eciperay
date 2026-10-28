@@ -39,7 +39,11 @@ export const createVersion = async (
   const recipe = mapRowToRecipeDetail(
     recipeRow as Parameters<typeof mapRowToRecipeDetail>[0],
   );
-  if (!isRecipeEditable(recipe.status)) {
+  // Creating a draft version is the one change allowed on a Perfected
+  // recipe (#264): it clones the locked active version without modifying
+  // it, and the lineage reopens to Evolving below so the new draft is
+  // itself editable. Abandoned recipes stay terminal.
+  if (!isRecipeEditable(recipe.status) && recipe.status !== 'perfected') {
     res.status(409).json({error: recipeEditBlockedError()});
     return;
   }
@@ -68,7 +72,7 @@ export const createVersion = async (
       throw new Error('Failed to create version');
     }
     await cloneVersionChildren(activeVersionId, id, q);
-    if (recipe.status === 'idea') {
+    if (recipe.status === 'idea' || recipe.status === 'perfected') {
       await setLineageStatus(recipeId, req.userId, 'evolving', q);
     }
     return id;

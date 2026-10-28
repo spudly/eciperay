@@ -31,6 +31,7 @@ export {
   recipeVersionDetailToInput,
 } from './recipeDetailToInput.js';
 export {
+  canCreateDraftVersion,
   canEditActiveRecipeMetadata,
   canEditDraftVersion,
   isRecipeStatusEditable,

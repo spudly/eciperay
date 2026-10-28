@@ -1,6 +1,7 @@
 import type {RecipeVersionSummary} from '@eciperay/types';
 
 import {
+  canCreateDraftVersion,
   canEditActiveRecipeMetadata,
   canEditDraftVersion,
   isRecipeStatusEditable,
@@ -30,6 +31,13 @@ describe('recipeEditActions', () => {
     expect(isRecipeStatusEditable('evolving')).toBe(true);
     expect(isRecipeStatusEditable('perfected')).toBe(false);
     expect(isRecipeStatusEditable('abandoned')).toBe(false);
+  });
+
+  test('canCreateDraftVersion is true only for perfected recipes', () => {
+    expect(canCreateDraftVersion('perfected')).toBe(true);
+    expect(canCreateDraftVersion('evolving')).toBe(false);
+    expect(canCreateDraftVersion('idea')).toBe(false);
+    expect(canCreateDraftVersion('abandoned')).toBe(false);
   });
 
   test('canEditDraftVersion reflects version isEditable', () => {
