@@ -1,11 +1,9 @@
 import {
   formatCommunityRatingLabel,
-  makeRecipeDetail,
   queryKeys,
   STALE_COMMUNITY_RATING_HINT,
   STALE_VIEWER_RATING_HINT,
   useAuth,
-  type ShowcaseDemoRenderer,
 } from '@eciperay/client';
 import type {RecipeCommunityRating, RecipeStarRating} from '@eciperay/types';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
@@ -113,21 +111,3 @@ export const RecipeRatingsSection = ({
     </div>
   );
 };
-
-if (import.meta.env.DEV) {
-  const recipeRatingsSectionDemo: ShowcaseDemoRenderer = ({Frame}) => {
-    const recipe = makeRecipeDetail();
-    return (
-      <Frame>
-        <RecipeRatingsSection
-          recipeId={recipe.id}
-          communityRating={null}
-          viewerRating={null}
-          viewerRatingIsStale={false}
-          editable
-        />
-      </Frame>
-    );
-  };
-  RecipeRatingsSection.demo = recipeRatingsSectionDemo;
-}

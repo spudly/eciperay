@@ -381,22 +381,10 @@ export {
   SHARED_WITH_ME_TITLE,
 } from './homeCopy.js';
 export {
-  COMPONENT_SHOWCASE_CATALOG,
-  filterShowcaseEntries,
-  groupShowcaseEntriesByCategory,
-  type ComponentShowcaseEntry,
-  type ComponentShowcaseId,
-} from './dev/componentShowcaseCatalog.js';
-export {
   createShowcaseAiSessionFlowApi,
   makeRecipeDetail,
   makeRecipeVersionSummary,
   showcaseAiSessionConfig,
   VERSION_ID,
 } from './dev/showcaseFixtures.js';
-export {
-  exportNameFromShowcaseId,
-  type ShowcaseDemoRenderer,
-  type ShowcaseFrameProps,
-  type WithShowcaseDemo,
-} from './dev/showcaseComponent.js';
+export {type ShowcaseFrameProps} from './dev/showcaseComponent.js';

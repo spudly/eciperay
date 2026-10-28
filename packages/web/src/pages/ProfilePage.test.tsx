@@ -34,12 +34,6 @@ describe('ProfilePage', () => {
     mockNavigate.mockReset();
   });
 
-  test('opens the component showcase in dev', async () => {
-    await renderWithProviders(<ProfilePage />, {withAuth: false});
-    await userEvent.click(screen.getByText('Component Showcase'));
-    expect(mockNavigate).toHaveBeenCalledWith('/dev/components');
-  });
-
   test('shows email and signs out', async () => {
     await renderWithProviders(<ProfilePage />, {withAuth: false});
     expect(screen.getByText('test@example.com')).toBeInTheDocument();

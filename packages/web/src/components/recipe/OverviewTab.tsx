@@ -3,12 +3,9 @@ import {
   canEditActiveRecipeMetadata,
   canEditDraftVersion,
   invalidateRecipeQueries,
-  makeRecipeDetail,
-  makeRecipeVersionSummary,
   queryKeys,
   removeRecipeView,
   useAnalytics,
-  type ShowcaseDemoRenderer,
 } from '@eciperay/client';
 import type {RecipeDetail, RecipeVersionSummary} from '@eciperay/types';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
@@ -279,24 +276,3 @@ export const OverviewTab = ({
     </div>
   );
 };
-
-if (import.meta.env.DEV) {
-  const OverviewTabDemo = () => {
-    const recipe = makeRecipeDetail();
-    return (
-      <OverviewTab
-        recipe={recipe}
-        activeVersionId={recipe.versionId}
-        servings={recipe.servings}
-        versions={[makeRecipeVersionSummary()]}
-      />
-    );
-  };
-
-  const overviewTabDemo: ShowcaseDemoRenderer = ({Frame}) => (
-    <Frame>
-      <OverviewTabDemo />
-    </Frame>
-  );
-  OverviewTab.demo = overviewTabDemo;
-}
