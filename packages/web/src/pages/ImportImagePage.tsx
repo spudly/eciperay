@@ -1,8 +1,9 @@
 import {useAnalytics} from '@eciperay/client';
-import {useState} from 'react';
+import {useRef, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
-import {ImportImageView} from '../components/import/ImportImageView.js';
+import {ImportImagePage as ImportImagePageView} from '@spudly/ui/pages';
+
 import {eciperay} from '../lib/api.js';
 
 const readFileAsBase64 = (file: File): Promise<string> =>
@@ -24,6 +25,8 @@ export const ImportImagePage = () => {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const analytics = useAnalytics();
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const libraryInputRef = useRef<HTMLInputElement>(null);
 
   const handleFile = async (file: File) => {
     setLoading(true);
@@ -43,13 +46,43 @@ export const ImportImagePage = () => {
     }
   };
 
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (file) {
+      void handleFile(file);
+    }
+  };
+
   return (
-    <ImportImageView
-      loading={loading}
-      error={error}
-      onFileSelected={file => {
-        void handleFile(file);
-      }}
-    />
+    <>
+      <ImportImagePageView
+        loading={loading}
+        error={error}
+        onPickCamera={() => {
+          cameraInputRef.current?.click();
+        }}
+        onPickLibrary={() => {
+          libraryInputRef.current?.click();
+        }}
+      />
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        aria-label="Take a photo of a recipe"
+        className="hidden"
+        onChange={handleFileChange}
+      />
+      <input
+        ref={libraryInputRef}
+        type="file"
+        accept="image/*"
+        aria-label="Upload recipe image"
+        className="hidden"
+        onChange={handleFileChange}
+      />
+    </>
   );
 };

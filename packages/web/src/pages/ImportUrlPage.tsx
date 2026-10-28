@@ -2,7 +2,8 @@ import {useAnalytics} from '@eciperay/client';
 import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
-import {ImportUrlView} from '../components/import/ImportUrlView.js';
+import {ImportUrlPage as ImportUrlPageView} from '@spudly/ui/pages';
+
 import {eciperay} from '../lib/api.js';
 
 export const ImportUrlPage = () => {
@@ -27,7 +28,7 @@ export const ImportUrlPage = () => {
   };
 
   return (
-    <ImportUrlView
+    <ImportUrlPageView
       url={url}
       onUrlChange={setUrl}
       loading={loading}

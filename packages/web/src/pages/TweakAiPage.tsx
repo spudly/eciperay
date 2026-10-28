@@ -3,12 +3,13 @@ import {useQueryClient} from '@tanstack/react-query';
 import {useNavigate, useParams} from 'react-router-dom';
 import type {TweakAiApproveResult, TweakAiPhase} from '@eciperay/types';
 
+import {eciperay} from '../lib/api.js';
+
 import {
-  AiSessionFlow,
+  AiSessionHost,
   type AiSessionFlowApi,
   type AiSessionState,
-} from '../components/ai/AiSessionFlow.js';
-import {eciperay} from '../lib/api.js';
+} from './AiSessionHost.js';
 
 const PROMPT_PLACEHOLDER =
   'e.g. make it vegetarian, reduce sugar, add more spice';
@@ -69,7 +70,7 @@ export const TweakAiPage = () => {
   };
 
   return (
-    <AiSessionFlow
+    <AiSessionHost
       config={{
         title: 'Tweak with AI',
         intro:

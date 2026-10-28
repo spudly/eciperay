@@ -154,7 +154,7 @@ describe('ImportReviewPage', () => {
       createdVia: 'url',
       isContentLocked: true,
     } as never);
-    await renderWithProviders(
+    const {container} = await renderWithProviders(
       <Routes>
         <Route
           path="/import/review/:recipeId"
@@ -163,9 +163,14 @@ describe('ImportReviewPage', () => {
       </Routes>,
       {route: '/import/review/recipe-uuid-1'},
     );
-    expect(
-      await screen.findByRole('img', {name: 'Imported Pasta'}),
-    ).toHaveAttribute('src', 'https://example.com/pasta.jpg');
+    // The design system ImportReviewPage renders the hero image without an
+    // accessible name (its contract has no imageAlt), so query the element.
+    await waitFor(() => {
+      expect(container.querySelector('img')).toHaveAttribute(
+        'src',
+        'https://example.com/pasta.jpg',
+      );
+    });
   });
 
   test('uses v1 label when version number is missing', async () => {

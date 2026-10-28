@@ -8,6 +8,18 @@ import {renderWithProviders} from '../test/testUtils.js';
 import {ImportImagePage} from './ImportImagePage.js';
 
 describe('ImportImagePage', () => {
+  test('pick buttons trigger their file inputs', async () => {
+    await renderWithProviders(<ImportImagePage />, {route: '/add/image'});
+    const libraryInput = screen.getByLabelText('Upload recipe image');
+    const cameraInput = screen.getByLabelText('Take a photo of a recipe');
+    const libraryClick = vi.spyOn(libraryInput, 'click');
+    const cameraClick = vi.spyOn(cameraInput, 'click');
+    await userEvent.click(screen.getByText('Choose from Library'));
+    expect(libraryClick).toHaveBeenCalled();
+    await userEvent.click(screen.getByText('Take Photo'));
+    expect(cameraClick).toHaveBeenCalled();
+  });
+
   test('imports from image file', async () => {
     await renderWithProviders(
       <Routes>
