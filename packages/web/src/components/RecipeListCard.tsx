@@ -5,22 +5,24 @@ import {
   type ShowcaseFrameProps,
 } from '@eciperay/client';
 import type {CookLogInput, RecipeDetail} from '@eciperay/types';
+import {CookLogForm} from '@spudly/ui';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
 import {useState, type ComponentType} from 'react';
 
 import {eciperay} from '../lib/api.js';
 
-import {CookLogForm} from './cooking/CookLogForm.js';
 import {ThumbnailListCard} from './ui/ThumbnailListCard.js';
 
 // Parity note (#278): the card subtitle is formatted by the shared
 // formatRecipeListSubtitle in @eciperay/client — the per-mirror local
 // copies are gone, so the servings pluralization and satiety label are
 // defined once for both mirrors and the app's DS-page hosts.
-// Parity note (design-system#126): the app mirror now imports
-// CookLogForm from @spudly/ui instead of a local components copy;
-// this mirror keeps importing its own cooking/CookLogForm until web
-// adoption in B7.
+// Parity note (design-system#126): both mirrors import
+// CookLogForm from @spudly/ui — the app mirror adopted it with the
+// design-system pages, and this mirror adopted it in B7 cluster C6
+// (design-system#130), when the web home list retired into the
+// design system HomePage. Web's local cooking/CookLogForm still
+// serves the recipe detail cook-history tab until cluster C7.
 
 type RecipeListCardProps = {
   recipe: RecipeDetail;

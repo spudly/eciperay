@@ -16,6 +16,9 @@ import {ThumbnailListCard} from './ui/ThumbnailListCard';
 
 // The card subtitle is formatted by the shared formatRecipeListSubtitle
 // in @eciperay/client (#278) — see the web mirror's parity note.
+// B7 cluster C6 (design-system#130): the web mirror now imports
+// CookLogForm from @spudly/ui too (its home list renders the design
+// system HomePage), matching this mirror — no app-side change needed.
 type Props = {recipe: RecipeDetail; onPress: () => void; onDelete: () => void};
 
 export const RecipeListCard = ({recipe, onPress, onDelete}: Props) => {
