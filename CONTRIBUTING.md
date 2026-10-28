@@ -69,23 +69,10 @@ once parity is added.
 
 ### Component showcase (development)
 
-Mirrored components can expose an isolated dev preview via a co-located `.demo`
-property on the export, guarded by `import.meta.env.DEV` (web) or `__DEV__`
-(app). Previews are loaded dynamically — demo code is stripped from production
-builds.
-
-When adding or changing a mirrored component that belongs in the showcase:
-
-1. Keep the demo on the component file (not a central registry)
-2. Update `SHOWCASE_MIRROR_PATHS` in
-   `packages/client/src/dev/componentShowcaseCatalog.ts`
-3. Add matching entries in both `showcaseModuleLoaders.ts` files
-4. Use `ShowcaseDemoRenderer` + `Frame` when the demo needs
-   Query/analytics/router context
-
-See
-[`.cursor/skills/eciperay-cross-platform-ui/SKILL.md`](.cursor/skills/eciperay-cross-platform-ui/SKILL.md)
-for examples and the full checklist.
+The in-app and web component showcases are retired (app: design-system#129; web:
+design-system#130, B7 cluster C2). The design system Storybooks are the showcase
+now — components are previewed via `@spudly/ui` stories, not via co-located
+`.demo` properties or a showcase catalog.
 
 ### PR checklist (UI changes)
 
@@ -96,8 +83,6 @@ for examples and the full checklist.
 - [ ] Manually checked loading/empty/error on both platforms (for visible UI)
 - [ ] No `className` in screens/pages/navigation — styling lives in components
       only
-- [ ] Showcase mirror added/changed? Catalog path, both loaders, and `.demo`
-      when feasible
 
 CI runs `npm run validate:ui-parity` to enforce the registry and mirror-pair
 rules.

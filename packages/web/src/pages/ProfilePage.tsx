@@ -13,19 +13,6 @@ import {ProfileTransferSection} from '../components/profile/ProfileTransferSecti
 import {eciperay} from '../lib/api.js';
 import {supabase} from '../lib/supabase.js';
 
-const createComponentShowcasePress = (
-  navigate: ReturnType<typeof useNavigate>,
-): (() => void) | undefined => {
-  /* v8 ignore start -- production-only branch (Vitest runs with DEV=true) */
-  if (!import.meta.env.DEV) {
-    return undefined;
-  }
-  /* v8 ignore stop */
-  return () => {
-    void navigate('/dev/components');
-  };
-};
-
 const parseImportFile = async (file: File): Promise<RecipeExportBundle> => {
   const text = await file.text();
   const parsed = JSON.parse(text) as RecipeExportBundle;
@@ -94,7 +81,6 @@ export const ProfilePage = () => {
   return (
     <ProfileView
       email={session?.user.email}
-      onComponentShowcasePress={createComponentShowcasePress(navigate)}
       onSignOut={() => {
         void handleSignOut();
       }}

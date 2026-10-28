@@ -662,46 +662,16 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
       'Web adapter remains; the app copy was deleted when CookingModeParts adopted the design system StepDots directly. Removed in B6 (design-system#129). Web retirement is B7.',
   },
   {
-    path: 'dev/ComponentShowcaseView.tsx',
-    platform: 'web',
-    reason:
-      'Web showcase remains live for the web component showcase page; the app copy was removed with the in-app component showcase (design-system#129) — the design system Storybooks are the showcase now. Web retirement is B7.',
-  },
-  {
-    path: 'dev/ShowcasePicker.tsx',
-    platform: 'web',
-    reason:
-      'Web showcase remains live for the web component showcase page; the app copy was removed with the in-app component showcase (design-system#129). Web retirement is B7.',
-  },
-  {
-    path: 'dev/ShowcaseDemoFrame.tsx',
-    platform: 'web',
-    reason:
-      'Web showcase remains live for the web component showcase page; the app copy was removed with the in-app component showcase (design-system#129). Web retirement is B7.',
-  },
-  {
-    path: 'dev/ShowcaseDemo.tsx',
-    platform: 'web',
-    reason:
-      'Web showcase remains live for the web component showcase page; the app copy was removed with the in-app component showcase (design-system#129). Web retirement is B7.',
-  },
-  {
-    path: 'dev/showcaseModuleLoaders.ts',
-    platform: 'web',
-    reason:
-      'Web showcase remains live for the web component showcase page; the app copy was removed with the in-app component showcase (design-system#129). Web retirement is B7.',
-  },
-  {
     path: 'ui/EmptyMessage.tsx',
     platform: 'web',
     reason:
-      'Web copy remains (the web showcase demo infrastructure imports it); the app copy was only consumed by the in-app component showcase (ShowcaseDemo and the showcase loaders) and was removed with it (design-system#129). Web retirement is B7.',
+      'Web copy remains — production views (recipes list, shared-with-me, meals, shopping list, home, discover, access tokens) consume it; the app copy was only consumed by the in-app component showcase and was removed with it (design-system#129). The web showcase was retired in B7 cluster C2 (design-system#130); this adapter retires as its consuming views swap.',
   },
   {
     path: 'ui/SelectField.tsx',
     platform: 'web',
     reason:
-      'Web copy remains (the web showcase picker imports it); the app copy was only consumed by the in-app component showcase (ShowcasePicker and the showcase loaders) and was removed with it (design-system#129). Web retirement is B7.',
+      'Web copy remains — production pickers and filter bars consume it; the app copy was only consumed by the in-app component showcase and was removed with it (design-system#129). The web showcase was retired in B7 cluster C2 (design-system#130); this adapter retires as its consuming views swap.',
   },
   {
     path: 'meals/MealPlanDetailView.tsx',
