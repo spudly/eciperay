@@ -1,6 +1,5 @@
 import type {Response} from 'express';
 import {load} from 'cheerio';
-import type {DuplicateRecipeMatch} from '@eciperay/types';
 
 import {query as defaultQuery} from '../../db/query.js';
 import {
@@ -147,8 +146,9 @@ export const importFromUrl = async (
         .json(quotaExhaustedBody('recipe_limit', result.used, result.limit));
       return;
     }
-    if ('duplicate' in result.value) {
-      const duplicate: DuplicateRecipeMatch = result.value.duplicate;
+    const duplicate =
+      'duplicate' in result.value ? result.value.duplicate : undefined;
+    if (duplicate) {
       res.status(409).json(duplicateRecipeBody(duplicate));
       return;
     }

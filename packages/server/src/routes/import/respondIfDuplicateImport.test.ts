@@ -13,6 +13,7 @@ const input = {
   title: 'Pasted Pasta',
   ingredients: [
     {
+      sortOrder: 0,
       name: 'pasta',
       quantity: 200,
       unit: 'g',
