@@ -147,6 +147,12 @@ export const importFromUrl = async (
       return;
     }
     if (result.value.kind === 'duplicate') {
+      // The parse saved nothing: refund the AI call when the Claude
+      // fallback consumed one, so the override stays usable at the quota
+      // boundary (#296, same as the text/image paths).
+      if (aiConsumed) {
+        await refundAiCall(req.userId, queryFn, aiPeriodStart);
+      }
       res.status(409).json(duplicateRecipeBody(result.value.duplicate));
       return;
     }

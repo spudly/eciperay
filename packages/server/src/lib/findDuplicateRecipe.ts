@@ -77,6 +77,7 @@ const CANDIDATE_RECIPES_SQL = `
   from recipes r
   join recipe_versions rv on rv.id = r.active_version_id
   where r.user_id = $1
+    and lower(btrim(regexp_replace(rv.title, '\\s+', ' ', 'g'))) = $2
   order by rv.created_at asc
 `;
 
@@ -93,16 +94,18 @@ const isCandidateIngredient = (
 /**
  * Returns the oldest existing recipe in the user's library that the given
  * input duplicates, or null when there is no duplicate. Candidates are the
- * user's own recipes (active versions); the title pre-filter keeps the
- * ingredient comparison to plausible matches.
+ * user's own recipes (active versions); the SQL title pre-filter (same
+ * normalization, applied in the query) keeps the ingredient aggregation
+ * and comparison to plausible matches, and the exact comparison below
+ * remains the authority for rows the pre-filter returns.
  */
 export const findDuplicateRecipe = async (
   userId: string,
   input: Pick<RecipeInput, 'title' | 'ingredients'>,
   queryFn: QueryFn,
 ): Promise<DuplicateRecipeMatch | null> => {
-  const result = await queryFn(CANDIDATE_RECIPES_SQL, [userId]);
   const targetTitle = normalizeForDuplicateMatch(input.title);
+  const result = await queryFn(CANDIDATE_RECIPES_SQL, [userId, targetTitle]);
   const targetIngredients = ingredientListFingerprint(input.ingredients);
   for (const row of result.rows as CandidateRow[]) {
     if (typeof row.title !== 'string') {

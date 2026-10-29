@@ -93,8 +93,12 @@ describe('findDuplicateRecipe', () => {
     await expect(
       findDuplicateRecipe('user-uuid-1', input, mockQuery),
     ).resolves.toEqual({recipeId: 'recipe-uuid-9', title: 'Pasted Pasta'});
-    // Candidates are scoped to the importing user's own library.
-    expect(mockQuery).toHaveBeenCalledWith(expect.any(String), ['user-uuid-1']);
+    // Candidates are scoped to the importing user's own library, with the
+    // normalized title applied as a SQL pre-filter.
+    expect(mockQuery).toHaveBeenCalledWith(expect.any(String), [
+      'user-uuid-1',
+      'pasted pasta',
+    ]);
   });
 
   test('matches despite title casing/whitespace and ingredient order', async () => {

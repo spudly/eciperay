@@ -81,7 +81,9 @@ describe('POST /recipes/import/image', () => {
             ],
           },
         ]),
-      );
+      )
+      // refundAiCall's UPDATE: a warned import saved nothing (#296).
+      .mockResolvedValueOnce(makeQueryResult([]));
     const res = await request(getApp())
       .post('/api/recipes/import/image')
       .set('Authorization', 'Bearer valid-token')

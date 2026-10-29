@@ -14,15 +14,52 @@ import type {AddStackParamList} from '../navigation/types';
 
 type Props = NativeStackScreenProps<AddStackParamList, 'ImportImage'>;
 
+type PickSource = 'camera' | 'library';
+
 export const ImportImageScreen = ({navigation}: Props) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Image payload that already drew the duplicate warning (#296): picking
-  // the same image again means "import anyway" and creates a second copy.
-  const duplicateWarnedImageRef = useRef<string | null>(null);
+  // Capture that already drew the duplicate warning (#296), retained with
+  // its source: a fresh camera capture produces a different payload, so
+  // the override cannot rely on matching a re-pick — pressing the same
+  // source again resubmits THIS payload with allowDuplicate. Pressing the
+  // other source starts a new pick and discards the retained capture.
+  const duplicateWarnedRef = useRef<{
+    base64: string;
+    source: PickSource;
+  } | null>(null);
   const analytics = useAnalytics();
 
-  const handlePick = async (source: 'camera' | 'library') => {
+  const submitImage = async (base64: string, allowDuplicate: boolean) => {
+    const recipe = await api.import.importImage(base64, {allowDuplicate});
+    analytics.track('recipe_imported', {
+      recipe_id: recipe.id,
+      source: 'image',
+    });
+    navigation.navigate('ImportReview', {recipeId: recipe.id});
+  };
+
+  const handlePick = async (source: PickSource) => {
+    const warned = duplicateWarnedRef.current;
+    if (warned && warned.source === source) {
+      // "Import anyway": resubmit the warned capture as a second copy.
+      duplicateWarnedRef.current = null;
+      setLoading(true);
+      setError(null);
+      try {
+        await submitImage(warned.base64, true);
+      } catch (error_) {
+        const message =
+          error_ instanceof Error ? error_.message : 'Import failed';
+        setError(message);
+        Alert.alert('Import failed', message);
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+    duplicateWarnedRef.current = null;
+
     if (source === 'camera') {
       const granted = await ensureCameraPermission();
       if (!granted) {
@@ -53,25 +90,17 @@ export const ImportImageScreen = ({navigation}: Props) => {
         return;
       }
 
-      const base64 = asset.base64 ?? '';
-      pickedBase64 = base64;
-      const recipe = await api.import.importImage(base64, {
-        allowDuplicate: duplicateWarnedImageRef.current === base64,
-      });
-      analytics.track('recipe_imported', {
-        recipe_id: recipe.id,
-        source: 'image',
-      });
-      navigation.navigate('ImportReview', {recipeId: recipe.id});
+      pickedBase64 = asset.base64 ?? '';
+      await submitImage(pickedBase64, false);
     } catch (error_) {
       const message =
         error_ instanceof Error ? error_.message : 'Import failed';
       setError(message);
-      if (isDuplicateRecipeError(error_)) {
-        duplicateWarnedImageRef.current = pickedBase64;
+      if (isDuplicateRecipeError(error_) && pickedBase64 !== null) {
+        duplicateWarnedRef.current = {base64: pickedBase64, source};
         // The warning is not a failure: show it inline via the page's
-        // error notice (importing the same image again proceeds), rather
-        // than the failure alert.
+        // error notice (pressing the same source again imports anyway),
+        // rather than the failure alert.
         return;
       }
       Alert.alert('Import failed', message);
