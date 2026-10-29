@@ -2,7 +2,7 @@ import {screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {http, HttpResponse} from 'msw';
 import {Route, Routes} from 'react-router-dom';
-import {vi} from 'vitest';
+import {beforeEach, vi} from 'vitest';
 
 import {server} from '../test/msw/server.js';
 import {eciperay} from '../lib/api.js';
@@ -43,6 +43,33 @@ const renderTweakAi = () =>
   );
 
 describe('TweakAiPage', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  test('restores a persisted tweak session on mount', async () => {
+    localStorage.setItem(
+      'eciperay:tweak-ai-session-id:recipe-uuid-1',
+      'session-1',
+    );
+    const get = vi.spyOn(eciperay.tweakAi, 'get').mockResolvedValue({
+      session: {
+        ...baseSession,
+        phase: 'planning' as const,
+        messages: [
+          {role: 'user' as const, content: 'make it spicier'},
+          {role: 'assistant' as const, content: 'Plan for: make it spicier'},
+        ],
+      },
+    });
+    await renderTweakAi();
+    expect(
+      await screen.findByText(/Plan for: make it spicier/),
+    ).toBeInTheDocument();
+    expect(get).toHaveBeenCalledWith('recipe-uuid-1', 'session-1');
+    get.mockRestore();
+  });
+
   test('runs the conversational tweak flow and navigates to edit page', async () => {
     await renderTweakAi();
     await userEvent.type(

@@ -1,6 +1,6 @@
 import {errorMessage, parseProposedRecipe} from '@eciperay/client';
-import {useMutation} from '@tanstack/react-query';
-import {useState} from 'react';
+import {useMutation, useQuery} from '@tanstack/react-query';
+import {useEffect, useRef, useState} from 'react';
 import type {TweakAiMessage, TweakAiPhase} from '@eciperay/types';
 
 import {AiSessionPage} from '@spudly/ui/pages';
@@ -28,6 +28,7 @@ export type AiSessionFlowConfig = {
 
 export type AiSessionFlowApi = {
   start: (prompt: string) => Promise<{session: AiSessionState}>;
+  get: (sessionId: string) => Promise<{session: AiSessionState}>;
   sendMessage: (
     sessionId: string,
     content: string,
@@ -40,10 +41,44 @@ export type AiSessionFlowApi = {
 type Props = {
   config: AiSessionFlowConfig;
   api: AiSessionFlowApi;
+  /**
+   * LocalStorage key under which the active session's id is persisted so
+   * navigating away and back restores the in-progress session (#295). Each flow
+   * (generate, tweak per recipe) passes its own key.
+   */
+  storageKey: string;
   onEmptyCancel: () => void;
   onFinalizeSuccess: (result: unknown) => void | Promise<void>;
   onCancelSuccess: () => void;
 };
+
+const readStoredSessionId = (storageKey: string): string | null => {
+  try {
+    return localStorage.getItem(storageKey);
+  } catch {
+    return null;
+  }
+};
+
+const storeSessionId = (storageKey: string, sessionId: string) => {
+  try {
+    localStorage.setItem(storageKey, sessionId);
+  } catch {
+    // Storage unavailable (private mode / quota): the session simply
+    // will not survive navigation, matching the pre-#295 behavior.
+  }
+};
+
+const clearStoredSessionId = (storageKey: string) => {
+  try {
+    localStorage.removeItem(storageKey);
+  } catch {
+    // Nothing to clear if storage is unavailable.
+  }
+};
+
+const isTerminalPhase = (phase: TweakAiPhase) =>
+  phase === 'completed' || phase === 'cancelled';
 
 /**
  * Web host for the design system AiSessionPage (B7 cluster C4): keeps the
@@ -53,6 +88,7 @@ type Props = {
 export const AiSessionHost = ({
   config,
   api,
+  storageKey,
   onEmptyCancel,
   onFinalizeSuccess,
   onCancelSuccess,
@@ -61,6 +97,53 @@ export const AiSessionHost = ({
   const [followUp, setFollowUp] = useState('');
   const [session, setSession] = useState<AiSessionState | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Restore a session left in progress by a previous visit to this page:
+  // the id was persisted when the session last changed, and the session
+  // itself is re-fetched from the server, which is its source of truth.
+  const [storedSessionId] = useState(() => readStoredSessionId(storageKey));
+  const restoreQuery = useQuery({
+    queryKey: ['aiSessionRestore', storageKey, storedSessionId],
+    queryFn: () => api.get(storedSessionId ?? ''),
+    enabled: storedSessionId !== null,
+    retry: false,
+  });
+  const handledRestoreId = useRef<string | null>(null);
+  useEffect(() => {
+    if (
+      storedSessionId === null ||
+      handledRestoreId.current === storedSessionId
+    ) {
+      return;
+    }
+    if (restoreQuery.data) {
+      handledRestoreId.current = storedSessionId;
+      const restored = restoreQuery.data.session;
+      if (isTerminalPhase(restored.phase)) {
+        clearStoredSessionId(storageKey);
+      } else {
+        setSession(restored);
+      }
+    } else if (restoreQuery.isError) {
+      // The stored id no longer resolves (deleted, expired, or another
+      // account's session): drop it silently and start fresh.
+      handledRestoreId.current = storedSessionId;
+      clearStoredSessionId(storageKey);
+    }
+  }, [storedSessionId, restoreQuery.data, restoreQuery.isError, storageKey]);
+
+  // Persist the active session's id whenever it changes; terminal
+  // sessions are not resumable, so their ids are cleared instead.
+  useEffect(() => {
+    if (!session) {
+      return;
+    }
+    if (isTerminalPhase(session.phase)) {
+      clearStoredSessionId(storageKey);
+    } else {
+      storeSessionId(storageKey, session.id);
+    }
+  }, [session, storageKey]);
 
   const startMutation = useMutation({
     mutationFn: (text: string) => api.start(text),
@@ -101,6 +184,7 @@ export const AiSessionHost = ({
   const finalizeMutation = useMutation({
     mutationFn: (sessionId: string) => api.finalize(sessionId),
     onSuccess: async result => {
+      clearStoredSessionId(storageKey);
       await onFinalizeSuccess(result);
     },
     onError: error_ => {
@@ -111,11 +195,13 @@ export const AiSessionHost = ({
   const cancelMutation = useMutation({
     mutationFn: (sessionId: string) => api.cancel(sessionId),
     onSuccess: () => {
+      clearStoredSessionId(storageKey);
       onCancelSuccess();
     },
   });
 
   const busy =
+    (storedSessionId !== null && restoreQuery.isPending) ||
     startMutation.isPending ||
     messageMutation.isPending ||
     approvePlanMutation.isPending ||

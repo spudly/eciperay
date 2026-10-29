@@ -8,6 +8,7 @@ import {GenerateAiPage} from './GenerateAiPage.js';
 
 const {
   mockStart,
+  mockGet,
   mockApprovePlan,
   mockCreateRecipe,
   mockSendMessage,
@@ -15,6 +16,7 @@ const {
   mockTrack,
 } = vi.hoisted(() => ({
   mockStart: vi.fn(),
+  mockGet: vi.fn(),
   mockApprovePlan: vi.fn(),
   mockCreateRecipe: vi.fn(),
   mockSendMessage: vi.fn(),
@@ -26,6 +28,7 @@ vi.mock('../lib/api.js', () => ({
   eciperay: {
     createAi: {
       start: mockStart,
+      get: mockGet,
       sendMessage: mockSendMessage,
       approvePlan: mockApprovePlan,
       createRecipe: mockCreateRecipe,
@@ -64,7 +67,9 @@ const session = {
 
 describe('GenerateAiPage', () => {
   beforeEach(() => {
+    localStorage.clear();
     mockStart.mockReset();
+    mockGet.mockReset();
     mockApprovePlan.mockReset();
     mockCreateRecipe.mockReset();
     mockSendMessage.mockReset();
@@ -140,6 +145,60 @@ describe('GenerateAiPage', () => {
     });
   });
 
+  test('persists the active session id and restores the session on remount', async () => {
+    mockStart.mockResolvedValue({session, plan: 'Plan for cookies'});
+    mockGet.mockResolvedValue({session});
+    const user = userEvent.setup();
+    const first = await renderWithProviders(<GenerateAiPage />);
+    await user.type(
+      screen.getByPlaceholderText(/quick weeknight vegetarian pasta/i),
+      'simple chocolate chip cookies for 12',
+    );
+    await user.click(screen.getByRole('button', {name: 'Start planning'}));
+    await screen.findByRole('button', {name: 'Approve plan'});
+    expect(localStorage.getItem('eciperay:create-ai-session-id')).toBe(
+      'session-1',
+    );
+    first.unmount();
+
+    // Navigating away and back remounts the page: the stored id is
+    // re-fetched and the in-progress session (prompt + plan) returns.
+    await renderWithProviders(<GenerateAiPage />);
+    expect(
+      await screen.findByRole('button', {name: 'Approve plan'}),
+    ).toBeInTheDocument();
+    expect(mockGet).toHaveBeenCalledWith('session-1');
+    expect(screen.getByText('Plan for cookies')).toBeInTheDocument();
+  });
+
+  test('drops a stored session id that no longer resolves', async () => {
+    localStorage.setItem('eciperay:create-ai-session-id', 'session-gone');
+    mockGet.mockRejectedValue(new Error('Not found'));
+    await renderWithProviders(<GenerateAiPage />);
+    await waitFor(() => {
+      expect(mockGet).toHaveBeenCalledWith('session-gone');
+    });
+    await waitFor(() => {
+      expect(localStorage.getItem('eciperay:create-ai-session-id')).toBeNull();
+    });
+    expect(
+      screen.getByPlaceholderText(/quick weeknight vegetarian pasta/i),
+    ).toBeInTheDocument();
+  });
+
+  test('does not restore a stored session that already finished', async () => {
+    localStorage.setItem('eciperay:create-ai-session-id', 'session-1');
+    mockGet.mockResolvedValue({session: {...session, phase: 'completed'}});
+    await renderWithProviders(<GenerateAiPage />);
+    await waitFor(() => {
+      expect(mockGet).toHaveBeenCalledWith('session-1');
+    });
+    await waitFor(() => {
+      expect(localStorage.getItem('eciperay:create-ai-session-id')).toBeNull();
+    });
+    expect(screen.queryByText('Plan for cookies')).not.toBeInTheDocument();
+  });
+
   test('shows error when start fails', async () => {
     mockStart.mockRejectedValue(new Error('Planning failed'));
     const user = userEvent.setup();
@@ -189,6 +248,7 @@ describe('GenerateAiPage', () => {
     await user.click(screen.getByText('Cancel session'));
     expect(mockCancel).toHaveBeenCalledWith('session-1');
     expect(mockNavigate).toHaveBeenCalledWith(-1);
+    expect(localStorage.getItem('eciperay:create-ai-session-id')).toBeNull();
   });
 
   test('shows default phase label for completed session', async () => {

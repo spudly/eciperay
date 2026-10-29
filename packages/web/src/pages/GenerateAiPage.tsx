@@ -50,6 +50,10 @@ export const GenerateAiPage = () => {
       const result = await eciperay.createAi.start(prompt);
       return {session: mapSession(result.session)};
     },
+    get: async sessionId => {
+      const result = await eciperay.createAi.get(sessionId);
+      return {session: mapSession(result.session)};
+    },
     sendMessage: async (sessionId, content) => {
       const result = await eciperay.createAi.sendMessage(sessionId, content);
       return {session: mapSession(result.session)};
@@ -77,6 +81,7 @@ export const GenerateAiPage = () => {
         phaseLabel,
       }}
       api={api}
+      storageKey="eciperay:create-ai-session-id"
       onEmptyCancel={() => {
         void navigate(-1);
       }}

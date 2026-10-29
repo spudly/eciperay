@@ -53,6 +53,10 @@ export const TweakAiPage = () => {
       const result = await eciperay.tweakAi.start(recipeId, prompt);
       return {session: mapSession(result.session)};
     },
+    get: async sessionId => {
+      const result = await eciperay.tweakAi.get(recipeId, sessionId);
+      return {session: mapSession(result.session)};
+    },
     sendMessage: async (sessionId, content) => {
       const result = await eciperay.tweakAi.sendMessage(
         recipeId,
@@ -84,6 +88,7 @@ export const TweakAiPage = () => {
         phaseLabel,
       }}
       api={api}
+      storageKey={`eciperay:tweak-ai-session-id:${recipeId}`}
       onEmptyCancel={() => {
         void navigate(`/recipes/${recipeId}`);
       }}
