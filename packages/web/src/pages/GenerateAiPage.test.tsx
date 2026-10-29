@@ -2,7 +2,7 @@ import {screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {beforeEach, describe, expect, test, vi} from 'vitest';
 
-import {renderWithProviders} from '../test/testUtils.js';
+import {makeQueryClient, renderWithProviders} from '../test/testUtils.js';
 
 import {GenerateAiPage} from './GenerateAiPage.js';
 
@@ -184,6 +184,33 @@ describe('GenerateAiPage', () => {
     expect(
       screen.getByPlaceholderText(/quick weeknight vegetarian pasta/i),
     ).toBeInTheDocument();
+  });
+
+  test('restore never serves cached query data from a previous account', async () => {
+    localStorage.setItem('eciperay:create-ai-session-id', 'session-1');
+    // Poison the shared QueryClient cache under the restore key with a
+    // different session, as a previous account's restore could have left
+    // behind before a sign-out/sign-in switch in the same tab.
+    const queryClient = makeQueryClient();
+    queryClient.setQueryData(
+      ['aiSessionRestore', 'eciperay:create-ai-session-id', 'session-1'],
+      {
+        session: {
+          ...session,
+          messages: [
+            {role: 'assistant' as const, content: 'CACHED FOREIGN PLAN'},
+          ],
+        },
+      },
+    );
+    mockGet.mockResolvedValue({session});
+    await renderWithProviders(<GenerateAiPage />, {queryClient});
+    expect(
+      await screen.findByRole('button', {name: 'Approve plan'}),
+    ).toBeInTheDocument();
+    expect(mockGet).toHaveBeenCalledWith('session-1');
+    expect(screen.getByText('Plan for cookies')).toBeInTheDocument();
+    expect(screen.queryByText('CACHED FOREIGN PLAN')).not.toBeInTheDocument();
   });
 
   test('keeps the stored session id after a transient restore failure', async () => {

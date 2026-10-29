@@ -1,5 +1,5 @@
 import {errorMessage, parseProposedRecipe} from '@eciperay/client';
-import {useMutation, useQuery} from '@tanstack/react-query';
+import {useMutation} from '@tanstack/react-query';
 import {useEffect, useRef, useState} from 'react';
 import type {TweakAiMessage, TweakAiPhase} from '@eciperay/types';
 
@@ -101,48 +101,42 @@ export const AiSessionHost = ({
   // Restore a session left in progress by a previous visit to this page:
   // the id was persisted when the session last changed, and the session
   // itself is re-fetched from the server, which is its source of truth.
+  // A mutation (not a query) does the fetch on purpose: mutations never
+  // read the shared QueryClient cache, so a session restored here always
+  // comes from a fresh, ownership-checked server response — the server
+  // 404s sessions owned by another account — and can never be the
+  // previous account's cached copy after a sign-out/sign-in switch.
   const [storedSessionId] = useState(() => readStoredSessionId(storageKey));
-  const restoreQuery = useQuery({
-    queryKey: ['aiSessionRestore', storageKey, storedSessionId],
-    queryFn: () => api.get(storedSessionId ?? ''),
-    enabled: storedSessionId !== null,
-    retry: false,
-  });
-  const handledRestoreId = useRef<string | null>(null);
-  useEffect(() => {
-    if (
-      storedSessionId === null ||
-      handledRestoreId.current === storedSessionId
-    ) {
-      return;
-    }
-    if (restoreQuery.data) {
-      handledRestoreId.current = storedSessionId;
-      const restored = restoreQuery.data.session;
+  const restoreMutation = useMutation({
+    mutationFn: (sessionId: string) => api.get(sessionId),
+    onSuccess: result => {
+      const restored = result.session;
       if (isTerminalPhase(restored.phase)) {
         clearStoredSessionId(storageKey);
       } else {
         setSession(restored);
       }
-    } else if (restoreQuery.isError) {
-      handledRestoreId.current = storedSessionId;
+    },
+    onError: error_ => {
       // A definitive not-found (the server's 404 for a deleted, expired,
       // or another account's session) drops the stored id silently and
       // starts fresh. Any other failure (5xx, network) may be transient:
       // keep the id so a later visit can still restore the session.
-      const message =
-        restoreQuery.error instanceof Error ? restoreQuery.error.message : '';
+      const message = error_ instanceof Error ? error_.message : '';
       if (message === 'Session not found' || message === 'Recipe not found') {
         clearStoredSessionId(storageKey);
       }
+    },
+  });
+  const {mutate: restoreSession} = restoreMutation;
+  const restoreFired = useRef(false);
+  useEffect(() => {
+    if (storedSessionId === null || restoreFired.current) {
+      return;
     }
-  }, [
-    storedSessionId,
-    restoreQuery.data,
-    restoreQuery.isError,
-    restoreQuery.error,
-    storageKey,
-  ]);
+    restoreFired.current = true;
+    restoreSession(storedSessionId);
+  }, [storedSessionId, restoreSession]);
 
   // Persist the active session's id whenever it changes; terminal
   // sessions are not resumable, so their ids are cleared instead.
@@ -213,7 +207,7 @@ export const AiSessionHost = ({
   });
 
   const busy =
-    (storedSessionId !== null && restoreQuery.isPending) ||
+    (storedSessionId !== null && restoreMutation.isPending) ||
     startMutation.isPending ||
     messageMutation.isPending ||
     approvePlanMutation.isPending ||
