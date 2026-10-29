@@ -611,13 +611,16 @@ export const handlers = [
     });
   }),
   http.patch(`${API}/api/tags/:id`, async ({request, params}) => {
+    // Mirror the server: an update applies only to a tag the caller
+    // owns (tag-2 here). tag-1 is served with userId null and unknown
+    // ids do not exist — the real PATCH returns 404 for both.
+    if (params['id'] !== 'tag-2') {
+      return HttpResponse.json({error: 'Tag not found'}, {status: 404});
+    }
     const body = (await request.json()) as {name?: string; color?: string};
     // Merge over the tag the GET handler serves so a partial update
     // preserves the fields it does not mention.
-    const existing =
-      params['id'] === 'tag-2'
-        ? {name: 'Quick', color: '#22c55e'}
-        : {name: 'Dinner', color: '#6366f1'};
+    const existing = {name: 'Quick', color: '#22c55e'};
     return HttpResponse.json({
       id: params['id'],
       userId: 'user-uuid-1',
