@@ -447,11 +447,27 @@ export const RecipeFormHost = ({
   const handleSubmit = async () => {
     // The design-system page is not a DOM form, so the native
     // required/min blocking the old web form relied on is gone; keep
-    // the API's hard requirements (non-empty title, positive integer
-    // servings) from being submitted at all.
+    // values the API schemas reject (or would silently null out, like
+    // a non-numeric time) from being submitted at all.
     const servingsCount = Number(servings);
     if (title === '' || !Number.isInteger(servingsCount) || servingsCount < 1) {
-      setError('Title and servings are required.');
+      setError(
+        'Title is required, and servings must be a positive whole number.',
+      );
+      return;
+    }
+    const isValidOptionalTime = (value: string) => {
+      if (value === '') {
+        return true;
+      }
+      const minutes = Number(value);
+      return Number.isInteger(minutes) && minutes >= 0;
+    };
+    if (
+      !isValidOptionalTime(prepTimeMin) ||
+      !isValidOptionalTime(cookTimeMin)
+    ) {
+      setError('Prep and cook times must be whole minutes, 0 or more.');
       return;
     }
     setLoading(true);
