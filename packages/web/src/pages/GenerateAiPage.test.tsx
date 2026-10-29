@@ -245,6 +245,26 @@ describe('GenerateAiPage', () => {
     expect(screen.queryByText('Plan for cookies')).not.toBeInTheDocument();
   });
 
+  test('cancelling an older session does not clear a newer stored id', async () => {
+    mockStart.mockResolvedValue({session, plan: 'Plan for cookies'});
+    mockCancel.mockResolvedValue({session: {...session, phase: 'cancelled'}});
+    const user = userEvent.setup();
+    await renderWithProviders(<GenerateAiPage />);
+    await user.type(
+      screen.getByPlaceholderText(/quick weeknight vegetarian pasta/i),
+      'simple chocolate chip cookies for 12',
+    );
+    await user.click(screen.getByRole('button', {name: 'Start planning'}));
+    await screen.findByRole('button', {name: 'Approve plan'});
+    // Another tab has since started a newer session under the same key.
+    localStorage.setItem('eciperay:create-ai-session-id', 'session-2');
+    await user.click(screen.getByText('Cancel session'));
+    expect(mockCancel).toHaveBeenCalledWith('session-1');
+    expect(localStorage.getItem('eciperay:create-ai-session-id')).toBe(
+      'session-2',
+    );
+  });
+
   test('shows error when start fails', async () => {
     mockStart.mockRejectedValue(new Error('Planning failed'));
     const user = userEvent.setup();

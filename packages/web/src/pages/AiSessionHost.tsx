@@ -69,9 +69,14 @@ const storeSessionId = (storageKey: string, sessionId: string) => {
   }
 };
 
-const clearStoredSessionId = (storageKey: string) => {
+const clearStoredSessionId = (storageKey: string, sessionId: string) => {
   try {
-    localStorage.removeItem(storageKey);
+    // Clear only the id that finished: another tab may already have
+    // stored a newer session's id under the same key, and removing that
+    // would lose the newer session's restore pointer.
+    if (localStorage.getItem(storageKey) === sessionId) {
+      localStorage.removeItem(storageKey);
+    }
   } catch {
     // Nothing to clear if storage is unavailable.
   }
@@ -112,19 +117,19 @@ export const AiSessionHost = ({
     onSuccess: result => {
       const restored = result.session;
       if (isTerminalPhase(restored.phase)) {
-        clearStoredSessionId(storageKey);
+        clearStoredSessionId(storageKey, restored.id);
       } else {
         setSession(restored);
       }
     },
-    onError: error_ => {
+    onError: (error_, sessionId) => {
       // A definitive not-found (the server's 404 for a deleted, expired,
       // or another account's session) drops the stored id silently and
       // starts fresh. Any other failure (5xx, network) may be transient:
       // keep the id so a later visit can still restore the session.
       const message = error_ instanceof Error ? error_.message : '';
       if (message === 'Session not found' || message === 'Recipe not found') {
-        clearStoredSessionId(storageKey);
+        clearStoredSessionId(storageKey, sessionId);
       }
     },
   });
@@ -145,7 +150,7 @@ export const AiSessionHost = ({
       return;
     }
     if (isTerminalPhase(session.phase)) {
-      clearStoredSessionId(storageKey);
+      clearStoredSessionId(storageKey, session.id);
     } else {
       storeSessionId(storageKey, session.id);
     }
@@ -189,8 +194,8 @@ export const AiSessionHost = ({
 
   const finalizeMutation = useMutation({
     mutationFn: (sessionId: string) => api.finalize(sessionId),
-    onSuccess: async result => {
-      clearStoredSessionId(storageKey);
+    onSuccess: async (result, sessionId) => {
+      clearStoredSessionId(storageKey, sessionId);
       await onFinalizeSuccess(result);
     },
     onError: error_ => {
@@ -200,8 +205,8 @@ export const AiSessionHost = ({
 
   const cancelMutation = useMutation({
     mutationFn: (sessionId: string) => api.cancel(sessionId),
-    onSuccess: () => {
-      clearStoredSessionId(storageKey);
+    onSuccess: (_result, sessionId) => {
+      clearStoredSessionId(storageKey, sessionId);
       onCancelSuccess();
     },
   });
