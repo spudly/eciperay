@@ -1,3 +1,4 @@
+import Anthropic from '@anthropic-ai/sdk';
 import nock from 'nock';
 import {jest} from '@jest/globals';
 import request from 'supertest';
@@ -5,13 +6,21 @@ import request from 'supertest';
 import {makeRecipeDetailRow} from '../../test/fixtures/recipeRow.js';
 import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {createMockQuery} from '../../test/mockQuery.js';
-import {nockAnthropicMessage} from '../../test/mockNockAnthropic.js';
+import {
+  anthropicCreateSpy,
+  nockAnthropicMessage,
+} from '../../test/mockNockAnthropic.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
 import {lazyTestApp} from '../../test/lazyTestApp.js';
 import {mockBillingMetered, mockBillingPlan} from '../../test/mockBilling.js';
 
 const mockQuery = createMockQuery();
 const getApp = lazyTestApp({query: mockQuery});
+
+// Captured before any test spies on globalThis.fetch: a spy left in
+// place would otherwise delegate to the previous test's (reset) mock
+// instead of the real fetch, breaking later tests' auth and fetches.
+const REAL_FETCH = globalThis.fetch;
 
 const SCHEMA_ORG_HTML = `<html><head>
 <script type="application/ld+json">
@@ -145,33 +154,104 @@ describe('POST /recipes/import/url', () => {
     expect(res.status).toBe(401);
   });
 
-  test('returns 500 when fetched page returns a non-ok status', async () => {
+  test('returns 422 with a fetch message when the page returns a non-ok status (#297)', async () => {
     nockSupabaseGetUser('user-uuid-1');
-    nock('https://recipe.example.com').get('/bad').reply(404, 'Not Found');
+    mockBillingPlan(mockQuery, 'plus');
+    nock('https://recipe.example.com').get('/bad').reply(403, 'Forbidden');
     const res = await request(getApp())
       .post('/api/recipes/import/url')
-      .set('Authorization', 'Bearer valid-token')
+      .set('Authorization', 'Bearer <redacted>')
       .send({url: 'https://recipe.example.com/bad'});
-    expect(res.status).toBe(500);
+    expect(res.status).toBe(422);
+    expect(res.body).toEqual({
+      error:
+        "We couldn't fetch that page \u2014 the site may be blocking imports. Try pasting the recipe text instead.",
+    });
   });
 
-  test('returns 500 when fetch resolves with a non-ok response', async () => {
+  test('returns 422 with a fetch message when fetch resolves with a non-ok response (#297)', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockBillingPlan(mockQuery, 'plus');
     // nock does not reliably intercept fetch; mock it directly so the
     // `!response.ok` branch in fetchPage is exercised.
-    const realFetch = globalThis.fetch;
-    jest.spyOn(globalThis, 'fetch').mockImplementation((input, init) => {
-      if (typeof input === 'string' && input.includes('recipe.example.com')) {
-        return Promise.resolve({ok: false, status: 502} as Response);
-      }
-      return realFetch(input, init);
-    });
+    const fetchSpy = jest
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation((input, init) => {
+        if (typeof input === 'string' && input.includes('recipe.example.com')) {
+          return Promise.resolve({ok: false, status: 502} as Response);
+        }
+        return REAL_FETCH(input, init);
+      });
 
     const res = await request(getApp())
       .post('/api/recipes/import/url')
-      .set('Authorization', 'Bearer valid-token')
+      .set('Authorization', 'Bearer <redacted>')
       .send({url: 'https://recipe.example.com/unavailable'});
-    expect(res.status).toBe(500);
+    fetchSpy.mockRestore();
+    expect(res.status).toBe(422);
+    expect(res.body).toEqual({
+      error:
+        "We couldn't fetch that page \u2014 the site may be blocking imports. Try pasting the recipe text instead.",
+    });
+  });
+
+  test('returns 422 with a fetch message when the fetch itself fails (#297)', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
+    const fetchSpy = jest
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation((input, init) => {
+        if (typeof input === 'string' && input.includes('recipe.example.com')) {
+          return Promise.reject(new Error('getaddrinfo ENOTFOUND'));
+        }
+        return REAL_FETCH(input, init);
+      });
+
+    const res = await request(getApp())
+      .post('/api/recipes/import/url')
+      .set('Authorization', 'Bearer <redacted>')
+      .send({url: 'https://recipe.example.com/down'});
+    fetchSpy.mockRestore();
+    expect(res.status).toBe(422);
+    expect(res.body).toEqual({
+      error:
+        "We couldn't fetch that page \u2014 the site may be blocking imports. Try pasting the recipe text instead.",
+    });
+  });
+
+  test('returns 422 with a no-recipe message when the page contains no recipe (#297)', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    nock('https://recipe.example.com').get('/plain').reply(200, PLAIN_HTML);
+    // Claude cannot extract a recipe from the page text, so its reply
+    // fails recipe-schema validation (AiResponseParseError).
+    nockAnthropicMessage('This page is not a recipe.');
+    mockBillingMetered(mockQuery, 'plus');
+    // One more response for refundAiCall's UPDATE on the failure path.
+    mockQuery.mockResolvedValueOnce(makeQueryResult([]));
+    const res = await request(getApp())
+      .post('/api/recipes/import/url')
+      .set('Authorization', 'Bearer <redacted>')
+      .send({url: 'https://recipe.example.com/plain'});
+    expect(res.status).toBe(422);
+    expect(res.body).toEqual({
+      error: "That page doesn't appear to contain a recipe.",
+    });
+  });
+
+  test('returns 502 AI service error for a genuine provider failure (#297)', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    nock('https://recipe.example.com').get('/plain').reply(200, PLAIN_HTML);
+    anthropicCreateSpy.mockRejectedValueOnce(
+      new Anthropic.APIError(500, undefined, 'AI failed', undefined),
+    );
+    mockBillingMetered(mockQuery, 'plus');
+    // One more response for refundAiCall's UPDATE on the failure path.
+    mockQuery.mockResolvedValueOnce(makeQueryResult([]));
+    const res = await request(getApp())
+      .post('/api/recipes/import/url')
+      .set('Authorization', 'Bearer <redacted>')
+      .send({url: 'https://recipe.example.com/plain'});
+    expect(res.status).toBe(502);
+    expect(res.body).toEqual({error: 'AI service error'});
   });
 });

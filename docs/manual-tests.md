@@ -414,7 +414,11 @@ small set of known inputs so results are comparable across runs).
    to the library.
 4. **URL import failure.** Submit a URL that is not a recipe (e.g. a news
    article). **Expected:** a clear "couldn't find a recipe" style message; no
-   junk recipe is created.
+   junk recipe is created. Also submit a recipe URL whose page cannot be fetched
+   (a site that blocks the importer, or an unreachable URL). **Expected:** a
+   "couldn't fetch that page — the site may be blocking imports" style message
+   suggesting pasting the recipe text instead. A generic "Internal server error"
+   or "AI service error" for either failure is a defect (issue #297).
 5. **Image import.** Add → Import from image (`/add/image`); upload a clear
    photo/scan of a printed recipe. **Expected:** extracted text reaches review
    in editable form; obvious misreads are correctable in review and the
