@@ -7,7 +7,7 @@ import {
 import {useState} from 'react';
 import {Link} from 'react-router-dom';
 
-import {analytics, enablePostHog} from '../lib/analytics.js';
+import {analytics, disablePostHog, enablePostHog} from '../lib/analytics.js';
 import {POSTHOG_KEY} from '../lib/env.js';
 
 import {FixedActionBanner} from './ui/FixedActionBanner.js';
@@ -34,6 +34,7 @@ export const AnalyticsConsentBanner = () => {
 
   const decline = () => {
     writeAnalyticsConsent('declined');
+    disablePostHog();
     setVisible(false);
   };
 
