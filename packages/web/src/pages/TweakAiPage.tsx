@@ -75,6 +75,10 @@ export const TweakAiPage = () => {
 
   return (
     <AiSessionHost
+      // Keyed by recipe: switching the recipeId route param reuses this
+      // page instance, and the host's session state (including which
+      // stored session id it restores and persists) is per recipe.
+      key={recipeId}
       config={{
         title: 'Tweak with AI',
         intro:

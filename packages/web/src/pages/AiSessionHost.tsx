@@ -125,12 +125,24 @@ export const AiSessionHost = ({
         setSession(restored);
       }
     } else if (restoreQuery.isError) {
-      // The stored id no longer resolves (deleted, expired, or another
-      // account's session): drop it silently and start fresh.
       handledRestoreId.current = storedSessionId;
-      clearStoredSessionId(storageKey);
+      // A definitive not-found (the server's 404 for a deleted, expired,
+      // or another account's session) drops the stored id silently and
+      // starts fresh. Any other failure (5xx, network) may be transient:
+      // keep the id so a later visit can still restore the session.
+      const message =
+        restoreQuery.error instanceof Error ? restoreQuery.error.message : '';
+      if (message === 'Session not found' || message === 'Recipe not found') {
+        clearStoredSessionId(storageKey);
+      }
     }
-  }, [storedSessionId, restoreQuery.data, restoreQuery.isError, storageKey]);
+  }, [
+    storedSessionId,
+    restoreQuery.data,
+    restoreQuery.isError,
+    restoreQuery.error,
+    storageKey,
+  ]);
 
   // Persist the active session's id whenever it changes; terminal
   // sessions are not resumable, so their ids are cleared instead.

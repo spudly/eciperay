@@ -173,7 +173,7 @@ describe('GenerateAiPage', () => {
 
   test('drops a stored session id that no longer resolves', async () => {
     localStorage.setItem('eciperay:create-ai-session-id', 'session-gone');
-    mockGet.mockRejectedValue(new Error('Not found'));
+    mockGet.mockRejectedValue(new Error('Session not found'));
     await renderWithProviders(<GenerateAiPage />);
     await waitFor(() => {
       expect(mockGet).toHaveBeenCalledWith('session-gone');
@@ -181,6 +181,25 @@ describe('GenerateAiPage', () => {
     await waitFor(() => {
       expect(localStorage.getItem('eciperay:create-ai-session-id')).toBeNull();
     });
+    expect(
+      screen.getByPlaceholderText(/quick weeknight vegetarian pasta/i),
+    ).toBeInTheDocument();
+  });
+
+  test('keeps the stored session id after a transient restore failure', async () => {
+    localStorage.setItem('eciperay:create-ai-session-id', 'session-1');
+    mockGet.mockRejectedValue(
+      new Error('API error 500: /recipes/import/ai/sessions/session-1'),
+    );
+    await renderWithProviders(<GenerateAiPage />);
+    await waitFor(() => {
+      expect(mockGet).toHaveBeenCalledWith('session-1');
+    });
+    // The id survives so a later visit can retry the restore; the page
+    // still shows the fresh form for this visit.
+    expect(localStorage.getItem('eciperay:create-ai-session-id')).toBe(
+      'session-1',
+    );
     expect(
       screen.getByPlaceholderText(/quick weeknight vegetarian pasta/i),
     ).toBeInTheDocument();
