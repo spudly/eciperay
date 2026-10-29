@@ -24,6 +24,12 @@ const renderEditVersion = (versionId = 'version-draft-1') =>
     {route: `/recipes/recipe-uuid-1/versions/${versionId}/edit`},
   );
 
+// The design system form labels its title input "Title"; in jsdom the
+// label lands in the accessibilitylabel attribute rather than an ARIA
+// role/name (the same leak the TagsPage tests work around).
+const titleField = () =>
+  document.querySelector<HTMLInputElement>('[accessibilitylabel="Title"]');
+
 describe('EditVersionPage', () => {
   test('blocks editing non-draft versions', async () => {
     await renderEditVersion('version-uuid-1');
@@ -141,14 +147,14 @@ describe('EditVersionPage', () => {
     );
     await renderEditVersion();
     await waitFor(() => {
-      expect(screen.getByLabelText('Title')).toHaveValue('Changed draft title');
+      expect(titleField()).toHaveValue('Changed draft title');
     });
-    // The "Revert to:" button renders only after the parent-version
+    // The "Revert to:" action renders only after the parent-version
     // query resolves (a second request, after the draft query that
     // fills the Title field), so assert asynchronously — the previous
-    // synchronous getByRole raced that query and flaked under load.
-    expect(
-      await screen.findByRole('button', {name: /Revert to:/}),
-    ).toBeInTheDocument();
+    // synchronous assertion raced that query and flaked under load.
+    // The design system renders the action as a pressable view whose
+    // role leaks as a raw attribute in jsdom, so match its text.
+    expect(await screen.findByText(/Revert to:/)).toBeInTheDocument();
   });
 });

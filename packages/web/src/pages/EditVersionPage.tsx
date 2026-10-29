@@ -3,14 +3,15 @@ import {
   queryKeys,
   recipeVersionDetailToInput,
 } from '@eciperay/client';
+import {EditVersionPage as EditVersionShell} from '@spudly/ui/pages';
 import {useQuery, useQueryClient} from '@tanstack/react-query';
 import {useNavigate, useParams} from 'react-router-dom';
 import type {RecipeVersionInput} from '@eciperay/types';
 
-import {EditVersionView} from '../components/recipe/EditVersionView.js';
-import {RecipeForm} from '../components/recipe/RecipeForm.js';
 import {ScreenLoadingGate} from '../components/ScreenLoadingGate.js';
 import {eciperay} from '../lib/api.js';
+
+import {RecipeFormHost} from './RecipeFormHost.js';
 
 export const EditVersionPage = () => {
   const {recipeId = '', versionId = ''} = useParams();
@@ -42,7 +43,7 @@ export const EditVersionPage = () => {
   }
 
   return (
-    <EditVersionView
+    <EditVersionShell
       versionNumber={version.versionNumber}
       changeSummary={version.changeSummary}
       showImportBanner={
@@ -54,13 +55,13 @@ export const EditVersionPage = () => {
         void navigate(`/recipes/${recipeId}`);
       }}
     >
-      <RecipeForm
+      <RecipeFormHost
         initial={recipeVersionDetailToInput(version)}
         recipeId={recipeId}
         parentVersion={parentVersion}
         submitLabel="Save Draft"
         onSubmit={handleSubmit}
       />
-    </EditVersionView>
+    </EditVersionShell>
   );
 };

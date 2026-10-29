@@ -14,6 +14,12 @@ vi.mock('@eciperay/client', async importOriginal => {
 
 const mockUploadRecipeImage = vi.mocked(uploadRecipeImage);
 
+// The design system form labels its title input "Title"; in jsdom the
+// label lands in the accessibilitylabel attribute rather than an ARIA
+// role/name (the same leak the TagsPage tests work around).
+const titleField = () =>
+  document.querySelector<HTMLInputElement>('[accessibilitylabel="Title"]');
+
 describe('ManualEntryPage', () => {
   beforeEach(() => {
     mockUploadRecipeImage.mockReset();
@@ -34,7 +40,7 @@ describe('ManualEntryPage', () => {
       </Routes>,
       {route: '/add/manual'},
     );
-    await userEvent.type(screen.getByLabelText('Title'), 'New Recipe');
+    await userEvent.type(titleField()!, 'New Recipe');
     await userEvent.type(screen.getAllByPlaceholderText('Name')[0]!, 'Flour');
     const textareas = screen.getAllByRole('textbox');
     await userEvent.type(textareas.at(-1)!, 'Mix ingredients');
@@ -58,7 +64,7 @@ describe('ManualEntryPage', () => {
       </Routes>,
       {route: '/add/manual'},
     );
-    await userEvent.type(screen.getByLabelText('Title'), 'New Recipe');
+    await userEvent.type(titleField()!, 'New Recipe');
     await userEvent.type(screen.getAllByPlaceholderText('Name')[0]!, 'Flour');
     const textareas = screen.getAllByRole('textbox');
     await userEvent.type(textareas.at(-1)!, 'Mix ingredients');
