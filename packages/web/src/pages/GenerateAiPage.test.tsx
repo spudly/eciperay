@@ -245,6 +245,42 @@ describe('GenerateAiPage', () => {
     expect(screen.queryByText('Plan for cookies')).not.toBeInTheDocument();
   });
 
+  test('refining an older session does not overwrite a newer stored id', async () => {
+    mockStart.mockResolvedValue({session, plan: 'Plan for cookies'});
+    mockSendMessage.mockResolvedValue({
+      session: {
+        ...session,
+        messages: [
+          ...session.messages,
+          {role: 'user', content: 'add vanilla'},
+          {role: 'assistant', content: 'Add vanilla extract'},
+        ],
+      },
+      reply: 'Add vanilla extract',
+    });
+    const user = userEvent.setup();
+    await renderWithProviders(<GenerateAiPage />);
+    await user.type(
+      screen.getByPlaceholderText(/quick weeknight vegetarian pasta/i),
+      'simple chocolate chip cookies for 12',
+    );
+    await user.click(screen.getByRole('button', {name: 'Start planning'}));
+    await screen.findByRole('button', {name: 'Approve plan'});
+    // Another tab has since started a newer session under the same key;
+    // the stored id now points at that session and must stay pointing
+    // there — ids are written at session start, not on every update.
+    localStorage.setItem('eciperay:create-ai-session-id', 'session-2');
+    await user.type(
+      screen.getByPlaceholderText('Ask for changes to the plan…'),
+      'add vanilla',
+    );
+    await user.click(screen.getByRole('button', {name: 'Refine plan'}));
+    expect(await screen.findByText('Add vanilla extract')).toBeInTheDocument();
+    expect(localStorage.getItem('eciperay:create-ai-session-id')).toBe(
+      'session-2',
+    );
+  });
+
   test('cancelling an older session does not clear a newer stored id', async () => {
     mockStart.mockResolvedValue({session, plan: 'Plan for cookies'});
     mockCancel.mockResolvedValue({session: {...session, phase: 'cancelled'}});

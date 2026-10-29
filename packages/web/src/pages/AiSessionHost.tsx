@@ -143,22 +143,22 @@ export const AiSessionHost = ({
     restoreSession(storedSessionId);
   }, [storedSessionId, restoreSession]);
 
-  // Persist the active session's id whenever it changes; terminal
-  // sessions are not resumable, so their ids are cleared instead.
+  // The stored id is written once, when a session starts (see
+  // startMutation below): a session's id never changes during its life,
+  // and writing on every session update would let an older tab refining
+  // its session clobber the restore pointer of a newer session started
+  // in another tab. This effect only clears the pointer if a session
+  // reaches a terminal phase through an update.
   useEffect(() => {
-    if (!session) {
-      return;
-    }
-    if (isTerminalPhase(session.phase)) {
+    if (session && isTerminalPhase(session.phase)) {
       clearStoredSessionId(storageKey, session.id);
-    } else {
-      storeSessionId(storageKey, session.id);
     }
   }, [session, storageKey]);
 
   const startMutation = useMutation({
     mutationFn: (text: string) => api.start(text),
     onSuccess: result => {
+      storeSessionId(storageKey, result.session.id);
       setSession(result.session);
       setPrompt('');
       setError(null);
