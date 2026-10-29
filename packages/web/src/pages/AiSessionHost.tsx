@@ -85,6 +85,25 @@ const clearStoredSessionId = (storageKey: string, sessionId: string) => {
 const isTerminalPhase = (phase: TweakAiPhase) =>
   phase === 'completed' || phase === 'cancelled';
 
+type SharedStart = {
+  promise: Promise<{session: AiSessionState}>;
+  /**
+   * False once a newer start for the same storage key has begun: a late
+   * completion of a superseded start must not store its session id or surface
+   * its session over the newer one.
+   */
+  current: boolean;
+};
+
+/**
+ * Starts in flight, shared across AiSessionHost instances by storage key. A
+ * start outlives the host instance that began it: navigating away unmounts that
+ * host, and the host that mounts in its place adopts the pending start here
+ * instead of reading a stored id that does not exist yet (ids are stored only
+ * when a start completes).
+ */
+const sharedStarts = new Map<string, SharedStart>();
+
 /**
  * Web host for the design system AiSessionPage (B7 cluster C4): keeps the
  * session state machine, the five session mutations, and error mapping
@@ -102,6 +121,9 @@ export const AiSessionHost = ({
   const [followUp, setFollowUp] = useState('');
   const [session, setSession] = useState<AiSessionState | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // True while this host waits on a start begun by a previous instance
+  // of the same flow (see the adoption effect below).
+  const [sharedStartPending, setSharedStartPending] = useState(false);
 
   // Restore a session left in progress by a previous visit to this page:
   // the id was persisted when the session last changed, and the session
@@ -143,6 +165,40 @@ export const AiSessionHost = ({
     restoreSession(storedSessionId);
   }, [storedSessionId, restoreSession]);
 
+  // Adopt a start that was still in flight when the previous host
+  // instance unmounted (the user navigated away and back mid-start):
+  // no id is stored yet, so the restore above has nothing to fetch.
+  // When the shared start completes, this host stores the id and shows
+  // the session exactly as if its own start had completed. If the
+  // start fails, the originating host surfaces the error; this host
+  // simply returns to the fresh form.
+  const adoptFired = useRef(false);
+  useEffect(() => {
+    if (storedSessionId !== null || adoptFired.current) {
+      return;
+    }
+    adoptFired.current = true;
+    const shared = sharedStarts.get(storageKey);
+    if (!shared) {
+      return;
+    }
+    setSharedStartPending(true);
+    shared.promise.then(
+      result => {
+        setSharedStartPending(false);
+        if (!shared.current) {
+          return;
+        }
+        storeSessionId(storageKey, result.session.id);
+        setSession(previous => previous ?? result.session);
+        setError(null);
+      },
+      () => {
+        setSharedStartPending(false);
+      },
+    );
+  }, [storedSessionId, storageKey]);
+
   // The stored id is written once, when a session starts (see
   // startMutation below): a session's id never changes during its life,
   // and writing on every session update would let an older tab refining
@@ -155,9 +211,34 @@ export const AiSessionHost = ({
     }
   }, [session, storageKey]);
 
+  // The start this host most recently began, so its completion can be
+  // told apart from a superseded start's late completion.
+  const ownStart = useRef<SharedStart | null>(null);
   const startMutation = useMutation({
-    mutationFn: (text: string) => api.start(text),
+    mutationFn: (text: string) => {
+      // Beginning a start supersedes any earlier start for this flow:
+      // its late completion must not overwrite this start's session.
+      const previous = sharedStarts.get(storageKey);
+      if (previous) {
+        previous.current = false;
+      }
+      const shared: SharedStart = {promise: api.start(text), current: true};
+      ownStart.current = shared;
+      sharedStarts.set(storageKey, shared);
+      const forget = () => {
+        if (sharedStarts.get(storageKey) === shared) {
+          sharedStarts.delete(storageKey);
+        }
+      };
+      shared.promise.then(forget, forget);
+      return shared.promise;
+    },
     onSuccess: result => {
+      // A newer start began while this one was in flight: leave the
+      // stored id and the visible session to the newer start.
+      if (ownStart.current && !ownStart.current.current) {
+        return;
+      }
       storeSessionId(storageKey, result.session.id);
       setSession(result.session);
       setPrompt('');
@@ -213,6 +294,7 @@ export const AiSessionHost = ({
 
   const busy =
     (storedSessionId !== null && restoreMutation.isPending) ||
+    sharedStartPending ||
     startMutation.isPending ||
     messageMutation.isPending ||
     approvePlanMutation.isPending ||
@@ -256,7 +338,7 @@ export const AiSessionHost = ({
       followUp={followUp}
       onFollowUpChange={setFollowUp}
       busy={busy}
-      startPending={startMutation.isPending}
+      startPending={startMutation.isPending || sharedStartPending}
       approvePending={approvePlanMutation.isPending}
       finalizePending={finalizeMutation.isPending}
       error={error}

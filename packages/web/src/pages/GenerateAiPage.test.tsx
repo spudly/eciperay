@@ -1,4 +1,4 @@
-import {screen, waitFor} from '@testing-library/react';
+import {screen, waitFor, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {beforeEach, describe, expect, test, vi} from 'vitest';
 
@@ -169,6 +169,96 @@ describe('GenerateAiPage', () => {
     ).toBeInTheDocument();
     expect(mockGet).toHaveBeenCalledWith('session-1');
     expect(screen.getByText('Plan for cookies')).toBeInTheDocument();
+  });
+
+  test('restores a session whose start finishes after navigating away and back', async () => {
+    // The start request stays pending while the user leaves and
+    // returns: no session id exists yet, so the remounted page must
+    // adopt the in-flight start instead of sitting on the empty form.
+    let resolveStart!: (value: unknown) => void;
+    mockStart.mockImplementation(
+      () =>
+        new Promise(resolve => {
+          resolveStart = resolve;
+        }),
+    );
+    const user = userEvent.setup();
+    const first = await renderWithProviders(<GenerateAiPage />);
+    await user.type(
+      screen.getByPlaceholderText(/quick weeknight vegetarian pasta/i),
+      'simple chocolate chip cookies for 12',
+    );
+    await user.click(screen.getByRole('button', {name: 'Start planning'}));
+    await waitFor(() => {
+      expect(mockStart).toHaveBeenCalledTimes(1);
+    });
+    first.unmount();
+    await renderWithProviders(<GenerateAiPage />);
+    resolveStart({session, plan: 'Plan for cookies'});
+    expect(
+      await screen.findByRole('button', {name: 'Approve plan'}),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Plan for cookies')).toBeInTheDocument();
+    expect(localStorage.getItem('eciperay:create-ai-session-id')).toBe(
+      'session-1',
+    );
+    // Adoption never starts a second session or re-fetches by id.
+    expect(mockStart).toHaveBeenCalledTimes(1);
+    expect(mockGet).not.toHaveBeenCalled();
+  });
+
+  test('a late-finishing earlier start does not overwrite a newer session', async () => {
+    const newerSession = {
+      ...session,
+      id: 'session-2',
+      messages: [
+        {role: 'user' as const, content: 'pasta'},
+        {role: 'assistant' as const, content: 'Plan for pasta'},
+      ],
+    };
+    let resolveEarlier!: (value: unknown) => void;
+    mockStart
+      .mockImplementationOnce(
+        () =>
+          new Promise(resolve => {
+            resolveEarlier = resolve;
+          }),
+      )
+      .mockResolvedValue({session: newerSession, plan: 'Plan for pasta'});
+    const user = userEvent.setup();
+    // Two hosts of the same flow mounted at once: the first begins a
+    // start that stays pending; the second begins (and finishes) a
+    // newer start. When the earlier start finally resolves, it must
+    // not replace the newer session or its stored restore id.
+    const first = await renderWithProviders(<GenerateAiPage />);
+    const second = await renderWithProviders(<GenerateAiPage />);
+    const firstUi = within(first.container);
+    const secondUi = within(second.container);
+    await user.type(
+      firstUi.getByPlaceholderText(/quick weeknight vegetarian pasta/i),
+      'simple chocolate chip cookies for 12',
+    );
+    await user.click(firstUi.getByRole('button', {name: 'Start planning'}));
+    await waitFor(() => {
+      expect(mockStart).toHaveBeenCalledTimes(1);
+    });
+    await user.type(
+      secondUi.getByPlaceholderText(/quick weeknight vegetarian pasta/i),
+      'weeknight pasta',
+    );
+    await user.click(secondUi.getByRole('button', {name: 'Start planning'}));
+    expect(await secondUi.findByText('Plan for pasta')).toBeInTheDocument();
+    expect(localStorage.getItem('eciperay:create-ai-session-id')).toBe(
+      'session-2',
+    );
+    resolveEarlier({session, plan: 'Plan for cookies'});
+    await waitFor(() => {
+      expect(localStorage.getItem('eciperay:create-ai-session-id')).toBe(
+        'session-2',
+      );
+    });
+    expect(secondUi.getByText('Plan for pasta')).toBeInTheDocument();
+    expect(firstUi.queryByText('Plan for cookies')).not.toBeInTheDocument();
   });
 
   test('drops a stored session id that no longer resolves', async () => {
