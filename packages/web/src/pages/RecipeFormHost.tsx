@@ -302,7 +302,16 @@ export const RecipeFormHost = ({
   };
 
   const handleFormPaste = (e: React.ClipboardEvent) => {
-    if (shouldIgnoreImagePaste(e.target)) {
+    // The image field handles pastes inside its own drop zone and
+    // marks them defaultPrevented; those bubble up to this wrapper, so
+    // skip them here rather than processing the same file twice. Also
+    // skip while an image operation is already running.
+    if (
+      e.defaultPrevented ||
+      imageUploading ||
+      imageGenerating ||
+      shouldIgnoreImagePaste(e.target)
+    ) {
       return;
     }
     const file = getImageFileFromDataTransfer(e.clipboardData);
