@@ -94,8 +94,9 @@ password-reset cases.
    served from cache; the app redirects to sign-in.
 
 **Run when:** `packages/app/src/screens/auth/**`,
-`packages/web/src/pages/auth/**`, `packages/server` auth/session code, Supabase
-auth configuration changes.
+`packages/web/src/pages/auth/**`, `@spudly/ui` `SignInPage`, `SignUpPage`,
+`ForgotPasswordPage`, `ResetPasswordPage`, `packages/server` auth/session code,
+Supabase auth configuration changes.
 
 ---
 
@@ -413,7 +414,11 @@ small set of known inputs so results are comparable across runs).
    to the library.
 4. **URL import failure.** Submit a URL that is not a recipe (e.g. a news
    article). **Expected:** a clear "couldn't find a recipe" style message; no
-   junk recipe is created.
+   junk recipe is created. Also submit a recipe URL whose page cannot be fetched
+   (a site that blocks the importer, or an unreachable URL). **Expected:** a
+   "couldn't fetch that page — the site may be blocking imports" style message
+   suggesting pasting the recipe text instead. A generic "Internal server error"
+   or "AI service error" for either failure is a defect (issue #297).
 5. **Image import.** Add → Import from image (`/add/image`); upload a clear
    photo/scan of a printed recipe. **Expected:** extracted text reaches review
    in editable form; obvious misreads are correctable in review and the
@@ -542,10 +547,14 @@ plan-state rendering and section layout. The cases below are manual._
 
 **Preconditions:** QA account signed in at Profile (`/profile`).
 
-1. **Feedback shortcut toggle.** In Profile, toggle the in-app feedback shortcut
-   preference off, then on. **Expected:** off — the Feedback entry point
-   disappears from the app navigation; on — it returns. Reload between toggles:
-   the preference persists.
+1. **Feedback shortcut toggle + analytics consent.** In Profile, the feedback
+   preference shows the current analytics consent state (Accepted / Declined /
+   Not set) with an action to change it. Toggle the shortcut off, then on.
+   **Expected:** off — the Feedback entry point disappears; turning it on
+   re-presents the analytics consent prompt even if consent was decided before —
+   Accept keeps the shortcut on and the Feedback entry point returns; Decline
+   shows an error and forces the preference back off. Reload between toggles:
+   the preference and the consent state persist.
 2. **Send feedback.** With the shortcut on, open Feedback and submit
    `QA — feedback check` (at most one submission per sweep; submissions reach
    the feedback triage). **Expected:** a sent confirmation; empty submissions

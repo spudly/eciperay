@@ -16,8 +16,18 @@ import {RecipeImportError} from '../../lib/recipeImportToInput.js';
 import {prepareImportedRecipeInput} from '../../lib/prepareImportedRecipeInput.js';
 import {saveNewRecipeFromInput} from '../../lib/saveRecipeFromInput.js';
 import {ImportUrlSchema, validate} from '../../lib/schemas.js';
+import {AiResponseParseError} from '../../lib/validate.js';
 
 type QueryFn = typeof defaultQuery;
+
+// User-actionable URL-import failures (#297). These map to 422s here in
+// the route instead of escaping to the global error handler, which can
+// only emit the generic 'AI service error' / 'Internal server error'
+// strings and gives the user nothing to act on.
+export const URL_IMPORT_FETCH_ERROR =
+  "We couldn't fetch that page — the site may be blocking imports. Try pasting the recipe text instead.";
+export const URL_IMPORT_NO_RECIPE_ERROR =
+  "That page doesn't appear to contain a recipe.";
 
 const fetchPage = async (url: string): Promise<string> => {
   const response = await fetch(url, {
@@ -64,7 +74,16 @@ export const importFromUrl = async (
       .json(quotaExhaustedBody('recipe_limit', earlyCap.used, earlyCap.limit));
     return;
   }
-  const html = await fetchPage(url);
+  // A fetch failure (non-OK status, blocked scraper, network error,
+  // timeout) is the site's answer, not a server fault: report it as
+  // such instead of letting it escape as a generic 500 (#297).
+  let html: string;
+  try {
+    html = await fetchPage(url);
+  } catch {
+    res.status(422).json({error: URL_IMPORT_FETCH_ERROR});
+    return;
+  }
   // The schema.org path is free; only the Claude fallback burns AI quota.
   // The parse itself is synchronous and cheap, so check up front.
   const needsAi = parseSchemaOrg(load(html)) === null;
@@ -123,6 +142,15 @@ export const importFromUrl = async (
     }
     if (error instanceof RecipeImportError) {
       res.status(422).json({error: error.message});
+      return;
+    }
+    // The Claude fallback produced no schema-valid recipe from the
+    // page text: the page doesn't contain a recipe (or not one the
+    // parser can read). Say so instead of the global handler's
+    // 'AI service error', which is reserved for genuine provider
+    // failures (Anthropic.APIError still rethrows to it) (#297).
+    if (error instanceof AiResponseParseError) {
+      res.status(422).json({error: URL_IMPORT_NO_RECIPE_ERROR});
       return;
     }
     throw error;

@@ -21,6 +21,10 @@ runs:
         cache: npm
         registry-url: https://npm.pkg.github.com
 
+    - name: Enable Corepack (pinned npm)
+      shell: bash
+      run: corepack enable npm
+
     - name: Restore node_modules cache
       id: node-modules-cache
       uses: actions/cache@v5

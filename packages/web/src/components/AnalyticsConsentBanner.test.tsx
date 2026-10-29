@@ -6,14 +6,18 @@ import {renderWithProviders} from '../test/testUtils.js';
 
 import {AnalyticsConsentBanner} from './AnalyticsConsentBanner.js';
 
-const {mockEnablePostHog, mockIdentify} = vi.hoisted(() => ({
-  mockEnablePostHog: vi.fn(),
-  mockIdentify: vi.fn(),
-}));
+const {mockEnablePostHog, mockDisablePostHog, mockIdentify} = vi.hoisted(
+  () => ({
+    mockEnablePostHog: vi.fn(),
+    mockDisablePostHog: vi.fn(),
+    mockIdentify: vi.fn(),
+  }),
+);
 
 vi.mock('../lib/analytics.js', () => ({
   analytics: {identifyUser: mockIdentify},
   enablePostHog: () => mockEnablePostHog(),
+  disablePostHog: () => mockDisablePostHog(),
 }));
 
 vi.mock('../lib/env.js', async importOriginal => {
@@ -29,6 +33,7 @@ describe('AnalyticsConsentBanner', () => {
   beforeEach(() => {
     localStorage.clear();
     mockEnablePostHog.mockClear();
+    mockDisablePostHog.mockClear();
     mockIdentify.mockClear();
   });
 
@@ -50,6 +55,7 @@ describe('AnalyticsConsentBanner', () => {
     await renderWithProviders(<AnalyticsConsentBanner />, {withAuth: false});
     await userEvent.click(screen.getByText('Decline'));
     expect(mockEnablePostHog).not.toHaveBeenCalled();
+    expect(mockDisablePostHog).toHaveBeenCalled();
     expect(localStorage.getItem('eciperay.analyticsConsent')).toBe('declined');
   });
 

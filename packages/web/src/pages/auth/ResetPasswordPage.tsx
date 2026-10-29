@@ -2,8 +2,11 @@ import {errorMessage, useAuth} from '@eciperay/client';
 import {useState} from 'react';
 import {Navigate, useNavigate} from 'react-router-dom';
 
-import {ResetPasswordView} from '../../components/auth/ResetPasswordView.js';
+import {ResetPasswordPage as ResetPasswordPageView} from '@spudly/ui/pages';
+
 import {supabase} from '../../lib/supabase.js';
+
+import {AuthConfirmation} from './AuthConfirmation.js';
 
 export const ResetPasswordPage = () => {
   const {session, isLoading} = useAuth();
@@ -41,13 +44,21 @@ export const ResetPasswordPage = () => {
     }
   };
 
+  if (done) {
+    return (
+      <AuthConfirmation
+        title="Password updated"
+        body="Redirecting…"
+      />
+    );
+  }
+
   return (
-    <ResetPasswordView
+    <ResetPasswordPageView
       password={password}
       onPasswordChange={setPassword}
       loading={loading}
       error={error}
-      done={done}
       onSubmit={() => {
         void handleSubmit();
       }}

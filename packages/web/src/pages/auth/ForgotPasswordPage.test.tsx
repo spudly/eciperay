@@ -10,8 +10,8 @@ import {ForgotPasswordPage} from './ForgotPasswordPage.js';
 describe('ForgotPasswordPage', () => {
   test('sends reset email', async () => {
     await renderWithProviders(<ForgotPasswordPage />);
-    await userEvent.type(screen.getByPlaceholderText('Email'), 'a@b.com');
-    await userEvent.click(screen.getByText('Send reset link'));
+    await userEvent.type(screen.getByLabelText('Email'), 'a@b.com');
+    await userEvent.click(screen.getByText('Send Reset Link'));
     await waitFor(() => {
       expect(screen.getByText('Email sent')).toBeInTheDocument();
     });
@@ -27,8 +27,8 @@ describe('ForgotPasswordPage', () => {
       data: {},
     });
     await renderWithProviders(<ForgotPasswordPage />);
-    await userEvent.type(screen.getByPlaceholderText('Email'), 'a@b.com');
-    await userEvent.click(screen.getByText('Send reset link'));
+    await userEvent.type(screen.getByLabelText('Email'), 'a@b.com');
+    await userEvent.click(screen.getByText('Send Reset Link'));
     await waitFor(() => {
       expect(screen.getByText('Reset failed')).toBeInTheDocument();
     });

@@ -1,5 +1,6 @@
 import type {Request, Response} from 'express';
 import {Router} from 'express';
+import {z} from 'zod';
 
 import {query as defaultQuery} from '../../db/query.js';
 import {requireAuth, type AuthedRequest} from '../../middleware/requireAuth.js';
@@ -32,6 +33,62 @@ const createTag = async (
   res.status(201).json(result.rows[0]);
 };
 
+const isTagNameConflict = (error: unknown): boolean => {
+  const pgError = error as {code?: string; constraint?: string};
+  return (
+    pgError.code === '23505' && pgError.constraint === 'tags_user_id_name_key'
+  );
+};
+
+const updateTag = async (
+  req: AuthedRequest,
+  res: Response,
+  queryFn: QueryFn,
+) => {
+  // tags.id is a uuid column: a malformed id would otherwise surface
+  // as a Postgres error (500) instead of the not-found response.
+  if (!z.uuid().safeParse(getParam(req, 'id')).success) {
+    res.status(404).json({error: 'Tag not found'});
+    return;
+  }
+  const body = (req.body ?? {}) as {name?: unknown; color?: unknown};
+  const sets: string[] = [];
+  const params: unknown[] = [];
+  for (const field of ['name', 'color'] as const) {
+    const value = body[field];
+    if (value !== undefined) {
+      if (typeof value !== 'string') {
+        res.status(400).json({error: `Tag ${field} must be a string`});
+        return;
+      }
+      params.push(value);
+      sets.push(`${field} = $${params.length}`);
+    }
+  }
+  if (sets.length === 0) {
+    res.status(400).json({error: 'Nothing to update'});
+    return;
+  }
+  params.push(getParam(req, 'id'), req.userId);
+  const sql = `update tags set ${sets.join(', ')} where id = $${params.length - 1} and user_id = $${params.length} and is_preset = false returning *`;
+  try {
+    const result = await queryFn(sql, params);
+    if (result.rowCount === 0) {
+      res.status(404).json({error: 'Tag not found'});
+      return;
+    }
+    res.json(result.rows[0]);
+  } catch (error) {
+    // unique(user_id, name): renaming onto a sibling tag's name is a
+    // client conflict, not a server error.
+    if (isTagNameConflict(error)) {
+      res.status(409).json({error: 'A tag with that name already exists'});
+      return;
+    }
+    throw error;
+  }
+};
+
 const deleteTag = async (
   req: AuthedRequest,
   res: Response,
@@ -55,6 +112,9 @@ export const createTagsRouter = (queryFn: QueryFn) => {
   );
   router.post('/', requireAuth, (req, res) =>
     createTag(asAuthed(req), res, queryFn),
+  );
+  router.patch('/:id', requireAuth, (req, res) =>
+    updateTag(asAuthed(req), res, queryFn),
   );
   router.delete('/:id', requireAuth, (req, res) =>
     deleteTag(asAuthed(req), res, queryFn),

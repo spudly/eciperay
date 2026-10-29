@@ -4,6 +4,10 @@ FROM node:22-bookworm-slim AS build
 WORKDIR /app
 ENV HUSKY=0
 
+# Use the repo's pinned npm (packageManager field) for every npm
+# invocation in this stage, not the Node image's bundled npm.
+RUN corepack enable npm
+
 # The slim image ships no CA bundle, but the web build's PostHog plugin
 # shells out to posthog-cli (a Rust binary that loads certificates from the
 # system store) to resolve the release — without this it panics with
@@ -79,6 +83,10 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV HUSKY=0
 ENV HOST=0.0.0.0
+
+# Use the repo's pinned npm (packageManager field) for the production
+# install and the start command, not the Node image's bundled npm.
+RUN corepack enable npm
 
 COPY package.json package-lock.json ./
 COPY packages/types/package.json packages/types/

@@ -27,6 +27,13 @@ vi.mock('@eciperay/client', async importOriginal => {
   return {...actual, readAnalyticsConsent: vi.fn(actual.readAnalyticsConsent)};
 });
 
+const renderPreference = async (initialEnabled = false) =>
+  renderWithProviders(
+    <FeedbackPreferenceProvider initialEnabled={initialEnabled}>
+      <ProfileFeedbackPreference />
+    </FeedbackPreferenceProvider>,
+  );
+
 describe('ProfileFeedbackPreference', () => {
   beforeEach(() => {
     mockEnv.POSTHOG_KEY = 'phc_test';
@@ -35,36 +42,76 @@ describe('ProfileFeedbackPreference', () => {
 
   test('toggles the feedback shortcut preference', async () => {
     const user = userEvent.setup();
-    await renderWithProviders(
-      <FeedbackPreferenceProvider initialEnabled={false}>
-        <ProfileFeedbackPreference />
-      </FeedbackPreferenceProvider>,
-    );
+    await renderPreference();
 
     await user.click(screen.getByRole('checkbox'));
     expect(screen.getByRole('checkbox')).toBeChecked();
   });
 
-  test('explains when analytics cookies have not been accepted', async () => {
-    vi.mocked(readAnalyticsConsent).mockReturnValue('declined');
-    await renderWithProviders(
-      <FeedbackPreferenceProvider initialEnabled={false}>
-        <ProfileFeedbackPreference />
-      </FeedbackPreferenceProvider>,
+  test('shows the analytics consent state with a change action', async () => {
+    await renderPreference();
+
+    expect(screen.getByText(/analytics consent:/i)).toHaveTextContent(
+      'Accepted',
     );
+    expect(
+      screen.getByRole('button', {name: 'Decline analytics consent'}),
+    ).toBeInTheDocument();
+  });
+
+  test('lets a declined user accept analytics consent from Profile', async () => {
+    const user = userEvent.setup();
+    vi.mocked(readAnalyticsConsent).mockReturnValue('declined');
+    await renderPreference();
+
+    expect(screen.getByText(/analytics consent:/i)).toHaveTextContent(
+      'Declined',
+    );
+    await user.click(
+      screen.getByRole('button', {name: 'Accept analytics consent'}),
+    );
+    expect(screen.getByText(/analytics consent:/i)).toHaveTextContent(
+      'Accepted',
+    );
+  });
+
+  test('enabling the shortcut re-presents the consent prompt even when consent was already accepted', async () => {
+    const user = userEvent.setup();
+    await renderPreference();
+
+    await user.click(screen.getByRole('checkbox'));
 
     expect(
-      screen.getByText(/accept analytics cookies before the shortcut/i),
+      screen.getByRole('group', {name: /analytics consent for feedback/i}),
     ).toBeInTheDocument();
+    await user.click(screen.getByRole('button', {name: 'Accept'}));
+    expect(screen.getByRole('checkbox')).toBeChecked();
+    expect(
+      screen.queryByRole('group', {name: /analytics consent for feedback/i}),
+    ).not.toBeInTheDocument();
+  });
+
+  test('declining the re-presented prompt forces the shortcut off and shows an error', async () => {
+    const user = userEvent.setup();
+    vi.mocked(readAnalyticsConsent).mockReturnValue('declined');
+    await renderPreference();
+
+    await user.click(screen.getByRole('checkbox'));
+    expect(screen.getByRole('checkbox')).toBeChecked();
+
+    await user.click(screen.getByRole('button', {name: 'Decline'}));
+    expect(screen.getByRole('checkbox')).not.toBeChecked();
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      /feedback shortcut needs analytics consent/i,
+    );
+    expect(screen.getByText(/analytics consent:/i)).toHaveTextContent(
+      'Declined',
+    );
   });
 
   test('explains when analytics is unavailable', async () => {
     mockEnv.POSTHOG_KEY = '';
-    await renderWithProviders(
-      <FeedbackPreferenceProvider initialEnabled={false}>
-        <ProfileFeedbackPreference />
-      </FeedbackPreferenceProvider>,
-    );
+    await renderPreference();
 
     expect(
       screen.getByText(/analytics is not configured in this environment/i),

@@ -28,10 +28,7 @@ describe('ResetPasswordPage', () => {
       isLoading: false,
     });
     await renderWithProviders(<ResetPasswordPage />, {withAuth: false});
-    await userEvent.type(
-      screen.getByPlaceholderText('New password'),
-      'newpass',
-    );
+    await userEvent.type(screen.getByLabelText('New password'), 'newpass');
     await userEvent.click(screen.getByText('Update password'));
     await waitFor(() => {
       expect(screen.getByText('Password updated')).toBeInTheDocument();
@@ -59,10 +56,7 @@ describe('ResetPasswordPage', () => {
       data: {user: null},
     });
     await renderWithProviders(<ResetPasswordPage />, {withAuth: false});
-    await userEvent.type(
-      screen.getByPlaceholderText('New password'),
-      'newpass',
-    );
+    await userEvent.type(screen.getByLabelText('New password'), 'newpass');
     await userEvent.click(screen.getByText('Update password'));
     await waitFor(() => {
       expect(screen.getByText('Update failed')).toBeInTheDocument();

@@ -1,10 +1,15 @@
-import {readAnalyticsConsent} from '@eciperay/client';
+import {
+  ANALYTICS_CONSENT_STORAGE_KEY,
+  readAnalyticsConsent,
+} from '@eciperay/client';
 import {vi} from 'vitest';
 
-const {mockEnablePostHog, mockIdentifyAnalyticsUser} = vi.hoisted(() => ({
-  mockEnablePostHog: vi.fn(),
-  mockIdentifyAnalyticsUser: vi.fn(),
-}));
+const {mockEnablePostHog, mockDisablePostHog, mockIdentifyAnalyticsUser} =
+  vi.hoisted(() => ({
+    mockEnablePostHog: vi.fn(),
+    mockDisablePostHog: vi.fn(),
+    mockIdentifyAnalyticsUser: vi.fn(),
+  }));
 
 vi.mock('@eciperay/client', async importOriginal => {
   const actual = await importOriginal<typeof import('@eciperay/client')>();
@@ -19,6 +24,7 @@ vi.mock('./createDeferredWebAnalytics.js', () => ({
   createDeferredWebAnalytics: () => ({
     analytics: {platform: 'web'},
     enablePostHog: mockEnablePostHog,
+    disablePostHog: mockDisablePostHog,
   }),
 }));
 
@@ -38,6 +44,51 @@ describe('analytics', () => {
     vi.mocked(readAnalyticsConsent).mockReturnValue('accepted');
     await import('./analytics.js');
     expect(mockEnablePostHog).toHaveBeenCalled();
+  });
+
+  test('disables PostHog when consent is declined in another tab', async () => {
+    vi.mocked(readAnalyticsConsent).mockReturnValue('accepted');
+    await import('./analytics.js');
+    mockDisablePostHog.mockClear();
+
+    window.dispatchEvent(
+      new StorageEvent('storage', {
+        key: ANALYTICS_CONSENT_STORAGE_KEY,
+        newValue: 'declined',
+      }),
+    );
+
+    expect(mockDisablePostHog).toHaveBeenCalled();
+  });
+
+  test('enables PostHog when consent is accepted in another tab', async () => {
+    vi.mocked(readAnalyticsConsent).mockReturnValue('declined');
+    await import('./analytics.js');
+    mockEnablePostHog.mockClear();
+
+    window.dispatchEvent(
+      new StorageEvent('storage', {
+        key: ANALYTICS_CONSENT_STORAGE_KEY,
+        newValue: 'accepted',
+      }),
+    );
+
+    expect(mockEnablePostHog).toHaveBeenCalled();
+  });
+
+  test('ignores storage events for other keys', async () => {
+    vi.mocked(readAnalyticsConsent).mockReturnValue('accepted');
+    await import('./analytics.js');
+    mockDisablePostHog.mockClear();
+
+    window.dispatchEvent(
+      new StorageEvent('storage', {
+        key: 'eciperay.somethingElse',
+        newValue: 'declined',
+      }),
+    );
+
+    expect(mockDisablePostHog).not.toHaveBeenCalled();
   });
 
   test('identifies the user when consent was accepted', async () => {

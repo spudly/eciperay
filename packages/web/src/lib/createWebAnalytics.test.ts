@@ -18,6 +18,7 @@ const {
   posthogLoggerTrace,
   posthogOnFeatureFlags,
   posthogStartSessionRecording,
+  posthogOptInCapturing,
   posthogGetSessionId,
   posthogGetSessionReplayUrl,
 } = vi.hoisted(() => ({
@@ -39,6 +40,7 @@ const {
   posthogLoggerTrace: vi.fn(),
   posthogOnFeatureFlags: vi.fn(() => vi.fn()),
   posthogStartSessionRecording: vi.fn(),
+  posthogOptInCapturing: vi.fn(),
   posthogGetSessionId: vi.fn(() => 'session-web-1'),
   posthogGetSessionReplayUrl: vi.fn(() => 'https://posthog.example/replay'),
 }));
@@ -55,6 +57,7 @@ vi.mock('posthog-js', () => ({
     reloadFeatureFlags: posthogReloadFeatureFlags,
     captureException: posthogCaptureException,
     startSessionRecording: posthogStartSessionRecording,
+    opt_in_capturing: posthogOptInCapturing,
     get_session_id: posthogGetSessionId,
     get_session_replay_url: posthogGetSessionReplayUrl,
     logger: {
