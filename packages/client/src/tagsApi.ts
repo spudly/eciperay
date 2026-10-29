@@ -9,6 +9,11 @@ export const createTagsApi = (client: ApiClient) => ({
       method: 'POST',
       body: JSON.stringify({name, color}),
     }),
+  update: (id: string, updates: {name?: string; color?: string}) =>
+    client.fetch<Tag>(`/tags/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(updates),
+    }),
   delete: (id: string) =>
     client.fetch<undefined>(`/tags/${id}`, {method: 'DELETE'}),
 });

@@ -202,6 +202,7 @@ describe('createEciperayClient', () => {
     await client.mealPlans.delete('p1');
     await client.tags.list();
     await client.tags.create('Dinner', '#fff');
+    await client.tags.update('t1', {name: 'Supper'});
     await client.tags.delete('t1');
     await client.ai.nutrition('r1');
     await client.ai.nutrition('r1', {refresh: true});
@@ -276,6 +277,13 @@ describe('createEciperayClient', () => {
     expect(api.fetch).toHaveBeenCalledWith(
       '/tags',
       expect.objectContaining({method: 'POST'}),
+    );
+    expect(api.fetch).toHaveBeenCalledWith(
+      '/tags/t1',
+      expect.objectContaining({
+        method: 'PATCH',
+        body: JSON.stringify({name: 'Supper'}),
+      }),
     );
     expect(api.fetch).toHaveBeenCalledWith(
       '/tags/t1',
