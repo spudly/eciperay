@@ -56,10 +56,21 @@ const mockSaveFlow = () => {
   mockBillingPlan(mockQuery, 'plus');
   mockQuery
     .mockResolvedValueOnce(makeQueryResult([]))
+    // Duplicate check (#296): no candidates in the user's library.
+    .mockResolvedValueOnce(makeQueryResult([]))
     .mockResolvedValueOnce(makeQueryResult([{id: 'recipe-uuid-1'}]))
     .mockResolvedValue(
       makeQueryResult([makeRecipeDetailRow({title: 'Pasta'})]),
     );
+};
+
+// An existing library recipe identical to the schema.org fixture below.
+const DUPLICATE_CANDIDATE_ROW = {
+  id: 'recipe-uuid-9',
+  title: 'Pasta',
+  ingredients: [
+    {name: 'pasta', quantity: 200, unit: 'g', notes: null, isOptional: false},
+  ],
 };
 
 describe('POST /recipes/import/url', () => {
@@ -84,6 +95,7 @@ describe('POST /recipes/import/url', () => {
     mockBillingMetered(mockQuery, 'plus');
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([{id: 'recipe-uuid-1'}]))
       .mockResolvedValue(
         makeQueryResult([makeRecipeDetailRow({title: 'AI Parsed Pasta'})]),
@@ -94,6 +106,50 @@ describe('POST /recipes/import/url', () => {
       .send({url: 'https://recipe.example.com/plain'});
     expect(res.status).toBe(201);
     expect(res.body.title).toBe('AI Parsed Pasta');
+  });
+
+  test('returns 409 with the duplicate warning when the recipe already exists (#296)', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    nock('https://recipe.example.com').get('/').reply(200, SCHEMA_ORG_HTML);
+    mockBillingPlan(mockQuery, 'plus');
+    mockQuery
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([DUPLICATE_CANDIDATE_ROW]));
+    const res = await request(getApp())
+      .post('/api/recipes/import/url')
+      .set('Authorization', 'Bearer valid-token')
+      .send({url: 'https://recipe.example.com/'});
+    expect(res.status).toBe(409);
+    expect(res.body.error).toBe('duplicate_recipe');
+    expect(res.body.duplicate).toEqual({
+      recipeId: 'recipe-uuid-9',
+      title: 'Pasta',
+    });
+    expect(res.body.message).toContain('already exists in your library');
+    const insertCall = mockQuery.mock.calls.find(args =>
+      String(args[0]).includes('insert into recipes'),
+    );
+    expect(insertCall).toBeUndefined();
+  });
+
+  test('imports anyway with allowDuplicate after the warning (#296)', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    nock('https://recipe.example.com').get('/').reply(200, SCHEMA_ORG_HTML);
+    // The duplicate lookup is skipped entirely, so the mock sequence is
+    // the plain save flow minus the candidate response.
+    mockBillingPlan(mockQuery, 'plus');
+    mockQuery
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([{id: 'recipe-uuid-1'}]))
+      .mockResolvedValue(
+        makeQueryResult([makeRecipeDetailRow({title: 'Pasta'})]),
+      );
+    const res = await request(getApp())
+      .post('/api/recipes/import/url')
+      .set('Authorization', 'Bearer valid-token')
+      .send({url: 'https://recipe.example.com/', allowDuplicate: true});
+    expect(res.status).toBe(201);
+    expect(res.body.title).toBe('Pasta');
   });
 
   test('returns 400 when URL is invalid', async () => {

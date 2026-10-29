@@ -1,4 +1,4 @@
-import {useAnalytics} from '@eciperay/client';
+import {isDuplicateRecipeError, useAnalytics} from '@eciperay/client';
 import {useRef, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
@@ -27,19 +27,28 @@ export const ImportImagePage = () => {
   const analytics = useAnalytics();
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const libraryInputRef = useRef<HTMLInputElement>(null);
+  // Image payload that already drew the duplicate warning (#296): picking
+  // the same image again means "import anyway" and creates a second copy.
+  const duplicateWarnedImageRef = useRef<string | null>(null);
 
   const handleFile = async (file: File) => {
     setLoading(true);
     setError(null);
+    let base64: string | null = null;
     try {
-      const base64 = await readFileAsBase64(file);
-      const recipe = await eciperay.import.importImage(base64);
+      base64 = await readFileAsBase64(file);
+      const recipe = await eciperay.import.importImage(base64, {
+        allowDuplicate: duplicateWarnedImageRef.current === base64,
+      });
       analytics.track('recipe_imported', {
         recipe_id: recipe.id,
         source: 'image',
       });
       void navigate(`/import/review/${recipe.id}`);
     } catch (error_) {
+      if (base64 !== null && isDuplicateRecipeError(error_)) {
+        duplicateWarnedImageRef.current = base64;
+      }
       setError(error_ instanceof Error ? error_.message : 'Import failed');
     } finally {
       setLoading(false);

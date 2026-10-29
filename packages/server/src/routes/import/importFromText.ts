@@ -21,6 +21,7 @@ import {
 } from '../../lib/schemas.js';
 import {resolveImportedImageUrl} from '../../lib/uploadRecipeImageServer.js';
 import {GET_RECIPE_DETAIL_SQL, setVersionImageUrl} from '../recipes/queries.js';
+import {respondIfDuplicateImport} from './respondIfDuplicateImport.js';
 
 type QueryFn = typeof defaultQuery;
 
@@ -77,6 +78,18 @@ export const importFromText = async (
       userId: req.userId,
       queryFn,
     });
+    // Duplicate warning (#296): warn before a second copy is created;
+    // the client resubmits with allowDuplicate to import anyway.
+    if (
+      await respondIfDuplicateImport(res, {
+        userId: req.userId,
+        input,
+        allowDuplicate: body.data.allowDuplicate,
+        queryFn,
+      })
+    ) {
+      return;
+    }
     const {recipeId, versionId, recipe} = await saveNewRecipeFromInput(
       {userId: req.userId, input, createdVia: 'import_text'},
       queryFn,

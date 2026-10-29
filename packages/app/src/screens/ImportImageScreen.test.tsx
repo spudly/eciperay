@@ -109,7 +109,9 @@ describe('ImportImageScreen', () => {
     );
     await fireEvent.press(getByText('Choose from Library'));
     await waitFor(() => {
-      expect(mockImportImage).toHaveBeenCalledWith('abc123');
+      expect(mockImportImage).toHaveBeenCalledWith('abc123', {
+        allowDuplicate: false,
+      });
     });
     expect(mockLaunchLibrary).toHaveBeenCalled();
   });
@@ -147,7 +149,9 @@ describe('ImportImageScreen', () => {
     );
     await fireEvent.press(getByText('Choose from Library'));
     await waitFor(() => {
-      expect(mockImportImage).toHaveBeenCalledWith('');
+      expect(mockImportImage).toHaveBeenCalledWith('', {
+        allowDuplicate: false,
+      });
     });
   });
 

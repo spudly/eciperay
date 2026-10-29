@@ -47,10 +47,21 @@ const mockSaveFlow = () => {
   mockBillingMetered(mockQuery, 'plus');
   mockQuery
     .mockResolvedValueOnce(makeQueryResult([]))
+    // Duplicate check (#296): no candidates in the user's library.
+    .mockResolvedValueOnce(makeQueryResult([]))
     .mockResolvedValueOnce(makeQueryResult([{id: 'recipe-uuid-1'}]))
     .mockResolvedValue(
       makeQueryResult([makeRecipeDetailRow({title: 'Pasted Pasta'})]),
     );
+};
+
+// An existing library recipe identical to what CLAUDE_RESPONSE parses to.
+const DUPLICATE_CANDIDATE_ROW = {
+  id: 'recipe-uuid-9',
+  title: 'Pasted Pasta',
+  ingredients: [
+    {name: 'pasta', quantity: 200, unit: 'g', notes: null, isOptional: false},
+  ],
 };
 
 describe('POST /recipes/import/text', () => {
@@ -66,6 +77,54 @@ describe('POST /recipes/import/text', () => {
     expect(res.body.title).toBe('Pasted Pasta');
   });
 
+  test('returns 409 with the duplicate warning when the recipe already exists (#296)', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    nockAnthropicMessage(CLAUDE_RESPONSE);
+    mockBillingMetered(mockQuery, 'plus');
+    mockQuery
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([DUPLICATE_CANDIDATE_ROW]));
+    const res = await request(getApp())
+      .post('/api/recipes/import/text')
+      .set('Authorization', 'Bearer valid-token')
+      .send({text: 'Pasta\n\nIngredients:\n200g pasta\n\nBoil pasta.'});
+    expect(res.status).toBe(409);
+    expect(res.body.error).toBe('duplicate_recipe');
+    expect(res.body.duplicate).toEqual({
+      recipeId: 'recipe-uuid-9',
+      title: 'Pasted Pasta',
+    });
+    expect(res.body.message).toContain('already exists in your library');
+    // No second copy was saved.
+    const insertCall = mockQuery.mock.calls.find(args =>
+      String(args[0]).includes('insert into recipes'),
+    );
+    expect(insertCall).toBeUndefined();
+  });
+
+  test('imports anyway with allowDuplicate after the warning (#296)', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    nockAnthropicMessage(CLAUDE_RESPONSE);
+    // The duplicate lookup is skipped entirely, so the mock sequence is
+    // the plain save flow minus the candidate response.
+    mockBillingMetered(mockQuery, 'plus');
+    mockQuery
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([{id: 'recipe-uuid-1'}]))
+      .mockResolvedValue(
+        makeQueryResult([makeRecipeDetailRow({title: 'Pasted Pasta'})]),
+      );
+    const res = await request(getApp())
+      .post('/api/recipes/import/text')
+      .set('Authorization', 'Bearer valid-token')
+      .send({
+        text: 'Pasta\n\nIngredients:\n200g pasta\n\nBoil pasta.',
+        allowDuplicate: true,
+      });
+    expect(res.status).toBe(201);
+    expect(res.body.title).toBe('Pasted Pasta');
+  });
+
   test('refunds the AI quota and rethrows when Claude parsing fails', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockBillingMetered(mockQuery, 'plus');
@@ -75,7 +134,7 @@ describe('POST /recipes/import/text', () => {
 
     const res = await request(getApp())
       .post('/api/recipes/import/text')
-      .set('Authorization', 'Bearer <redacted>')
+      .set('Authorization', 'Bearer valid-token')
       .send({text: 'Pasta\n\nIngredients:\n200g pasta\n\nBoil pasta.'});
 
     expect(res.status).toBe(500);
@@ -94,7 +153,7 @@ describe('POST /recipes/import/text', () => {
 
     const res = await request(getApp())
       .post('/api/recipes/import/text')
-      .set('Authorization', 'Bearer <redacted>')
+      .set('Authorization', 'Bearer valid-token')
       .send({text: 'Pasta\n\nIngredients:\n200g pasta\n\nBoil pasta.'});
 
     expect(res.status).toBe(500);
@@ -108,6 +167,7 @@ describe('POST /recipes/import/text', () => {
     nockAnthropicMessage(CLAUDE_RESPONSE);
     mockBillingMetered(mockQuery, 'plus');
     mockQuery
+      .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([{id: 'recipe-uuid-1'}]))
       .mockResolvedValue(
@@ -187,6 +247,7 @@ describe('POST /recipes/import/text', () => {
     nockAnthropicMessage(CLAUDE_RESPONSE);
     mockBillingMetered(mockQuery, 'plus');
     mockQuery
+      .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([{id: 'recipe-uuid-1'}]))
       .mockResolvedValue(

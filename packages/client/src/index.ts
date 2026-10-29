@@ -55,7 +55,11 @@ export {
   type RecipeSocialMeta,
 } from './recipeSeo.js';
 export {publicRecipeToRecipeDetail} from './publicRecipe.js';
-export {createApiClient, type ApiClient} from './createApiClient.js';
+export {
+  createApiClient,
+  type ApiClient,
+  type ApiError,
+} from './createApiClient.js';
 export {createSupabaseClient} from './createSupabaseClient.js';
 export {
   AUTH_DEEP_LINK_CALLBACK_PATH,
@@ -290,7 +294,12 @@ export {
 } from './recipeViewHistory.js';
 export {invalidateRecipeQueries} from './invalidateRecipeQueries.js';
 export {createRecipesApi} from './recipesApi.js';
-export {createImportApi} from './importApi.js';
+export {
+  createImportApi,
+  DUPLICATE_RECIPE_ERROR_CODE,
+  isDuplicateRecipeError,
+  type ImportOptions,
+} from './importApi.js';
 export {createAuthApi} from './authApi.js';
 export {createAccountApi} from './accountApi.js';
 export {createMealsApi} from './mealsApi.js';

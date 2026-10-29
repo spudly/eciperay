@@ -1,5 +1,6 @@
 import type {Response} from 'express';
 import {load} from 'cheerio';
+import type {DuplicateRecipeMatch} from '@eciperay/types';
 
 import {query as defaultQuery} from '../../db/query.js';
 import {
@@ -17,6 +18,8 @@ import {prepareImportedRecipeInput} from '../../lib/prepareImportedRecipeInput.j
 import {saveNewRecipeFromInput} from '../../lib/saveRecipeFromInput.js';
 import {ImportUrlSchema, validate} from '../../lib/schemas.js';
 import {AiResponseParseError} from '../../lib/validate.js';
+import {findDuplicateRecipe} from '../../lib/findDuplicateRecipe.js';
+import {duplicateRecipeBody} from './respondIfDuplicateImport.js';
 
 type QueryFn = typeof defaultQuery;
 
@@ -59,7 +62,7 @@ export const importFromUrl = async (
   if (!body.ok) {
     return;
   }
-  const {url} = body.data;
+  const {url, allowDuplicate} = body.data;
   // URL imports create recipes, so the Free recipe cap applies. Check up
   // front so we fail fast before fetching the page or burning AI quota; the
   // save below re-checks atomically against concurrent imports.
@@ -122,10 +125,20 @@ export const importFromUrl = async (
           queryFn: q,
           options: {sourceUrl: url},
         });
-        return saveNewRecipeFromInput(
+        // Duplicate warning (#296): checked inside the cap callback so a
+        // warned import never saves; the match rides out as a sentinel
+        // because this handler responds after the cap scope closes.
+        const duplicate = allowDuplicate
+          ? null
+          : await findDuplicateRecipe(req.userId, input, q);
+        if (duplicate) {
+          return {duplicate} as const;
+        }
+        const saved = await saveNewRecipeFromInput(
           {userId: req.userId, input, createdVia: 'import_url'},
           q,
         );
+        return {saved} as const;
       },
     );
     if (!result.ok) {
@@ -134,7 +147,12 @@ export const importFromUrl = async (
         .json(quotaExhaustedBody('recipe_limit', result.used, result.limit));
       return;
     }
-    const {recipeId, versionId, recipe} = result.value;
+    if ('duplicate' in result.value) {
+      const duplicate: DuplicateRecipeMatch = result.value.duplicate;
+      res.status(409).json(duplicateRecipeBody(duplicate));
+      return;
+    }
+    const {recipeId, versionId, recipe} = result.value.saved;
     res.status(201).json({...recipe, recipeId, versionId});
   } catch (error) {
     if (aiConsumed) {

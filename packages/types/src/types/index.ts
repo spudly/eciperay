@@ -79,7 +79,7 @@ export type {
   ShoppingListLine,
   ShoppingListSource,
 } from './mealPlan.js';
-export type {RecipeImport} from './recipeImport.js';
+export type {DuplicateRecipeMatch, RecipeImport} from './recipeImport.js';
 export type {
   BulkImportError,
   BulkImportResult,

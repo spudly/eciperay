@@ -2,6 +2,13 @@ export type ApiClient = {
   fetch: <T>(path: string, options?: RequestInit) => Promise<T>;
 };
 
+/**
+ * Error thrown for a non-OK API response. `code` carries the server's
+ * machine-readable `error` code when it sent one (e.g. 'duplicate_recipe'),
+ * so callers can branch on it instead of matching the human message.
+ */
+export type ApiError = Error & {code?: string};
+
 type ApiClientOptions = {
   baseUrl: string;
   getToken: () => Promise<string | null>;
@@ -53,10 +60,12 @@ export const createApiClient = (opts: ApiClientOptions): ApiClient => {
     });
     if (!response.ok) {
       let message = `API error ${response.status}: ${path}`;
+      let code: string | undefined;
       try {
         const body = await response.text();
         const json = JSON.parse(body) as {error?: string; message?: string};
         if (json.error) {
+          code = json.error;
           // Prefer the human sentence when the server pairs one with the
           // code (e.g. plan_required carries a message) — `error` alone can
           // be a raw machine code, which is meaningless in UI. A body with
@@ -67,7 +76,9 @@ export const createApiClient = (opts: ApiClientOptions): ApiClient => {
       } catch {
         // keep default message when the body is not JSON
       }
-      throw new Error(message);
+      const error: ApiError = new Error(message);
+      error.code = code;
+      throw error;
     }
     if (response.status === 204) {
       return undefined as unknown as T;
