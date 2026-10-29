@@ -445,6 +445,15 @@ export const RecipeFormHost = ({
   };
 
   const handleSubmit = async () => {
+    // The design-system page is not a DOM form, so the native
+    // required/min blocking the old web form relied on is gone; keep
+    // the API's hard requirements (non-empty title, positive integer
+    // servings) from being submitted at all.
+    const servingsCount = Number(servings);
+    if (title === '' || !Number.isInteger(servingsCount) || servingsCount < 1) {
+      setError('Title and servings are required.');
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
