@@ -131,13 +131,13 @@ export const importFromUrl = async (
           ? null
           : await findDuplicateRecipe(req.userId, input, q);
         if (duplicate) {
-          return {duplicate} as const;
+          return {kind: 'duplicate', duplicate} as const;
         }
         const saved = await saveNewRecipeFromInput(
           {userId: req.userId, input, createdVia: 'import_url'},
           q,
         );
-        return {saved} as const;
+        return {kind: 'saved', saved} as const;
       },
     );
     if (!result.ok) {
@@ -146,10 +146,8 @@ export const importFromUrl = async (
         .json(quotaExhaustedBody('recipe_limit', result.used, result.limit));
       return;
     }
-    const duplicate =
-      'duplicate' in result.value ? result.value.duplicate : undefined;
-    if (duplicate) {
-      res.status(409).json(duplicateRecipeBody(duplicate));
+    if (result.value.kind === 'duplicate') {
+      res.status(409).json(duplicateRecipeBody(result.value.duplicate));
       return;
     }
     const {recipeId, versionId, recipe} = result.value.saved;

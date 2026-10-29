@@ -27,7 +27,10 @@ const ingredient = (
 
 const input = {
   title: 'Pasted Pasta',
-  ingredients: [ingredient(), ingredient({name: 'basil', quantity: 5})],
+  ingredients: [
+    ingredient(),
+    ingredient({name: 'basil', quantity: 5, unit: null}),
+  ],
 };
 
 const candidateRow = (overrides: Record<string, unknown> = {}) => ({

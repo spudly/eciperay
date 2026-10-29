@@ -64,12 +64,13 @@ const mockSaveFlow = () => {
     );
 };
 
-// An existing library recipe identical to the schema.org fixture below.
+// An existing library recipe identical to the schema.org fixture below
+// (schema.org ingredients keep the raw line as the name, quantity/unit null).
 const DUPLICATE_CANDIDATE_ROW = {
   id: 'recipe-uuid-9',
   title: 'Pasta',
   ingredients: [
-    {name: 'pasta', quantity: 200, unit: 'g', notes: null, isOptional: false},
+    {name: '200g pasta', quantity: null, unit: null, notes: null, isOptional: false},
   ],
 };
 
