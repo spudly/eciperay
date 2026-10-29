@@ -2,7 +2,8 @@ import {useAnalytics} from '@eciperay/client';
 import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
-import {ImportTextView} from '../components/import/ImportTextView.js';
+import {ImportTextPage as ImportTextPageView} from '@spudly/ui/pages';
+
 import {eciperay} from '../lib/api.js';
 
 export const ImportTextPage = () => {
@@ -29,7 +30,7 @@ export const ImportTextPage = () => {
   };
 
   return (
-    <ImportTextView
+    <ImportTextPageView
       loading={loading}
       error={error}
       onSubmit={text => {

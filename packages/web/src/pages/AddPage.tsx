@@ -1,6 +1,7 @@
 import type {AddRecipeMenuOption} from '@eciperay/client';
+import {useNavigate} from 'react-router-dom';
 
-import {AddRecipeMenuView} from '../components/add/AddRecipeMenuView.js';
+import {AddRecipeMenuPage} from '@spudly/ui/pages';
 
 const OPTIONS: AddRecipeMenuOption[] = [
   {
@@ -30,4 +31,15 @@ const OPTIONS: AddRecipeMenuOption[] = [
   },
 ];
 
-export const AddPage = () => <AddRecipeMenuView options={OPTIONS} />;
+export const AddPage = () => {
+  const navigate = useNavigate();
+
+  return (
+    <AddRecipeMenuPage
+      options={OPTIONS}
+      onSelect={target => {
+        void navigate(target);
+      }}
+    />
+  );
+};

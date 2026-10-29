@@ -314,12 +314,6 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
       'dnd-kit sortable row primitive for web; app uses react-native-draggable-flatlist in SortableInstructionList.',
   },
   {
-    path: 'add/AddRecipeMenuView.tsx',
-    platform: 'web',
-    reason:
-      'Web add-recipe menu; the app renders the design system AddRecipeMenuPage (design-system#126). Web adoption is B7.',
-  },
-  {
     path: 'profile/ProfileView.tsx',
     platform: 'web',
     reason:
@@ -344,40 +338,10 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
       'Web nutrition goals form; the app renders the design system NutritionGoalsForm (design-system#126). Web adoption is B7.',
   },
   {
-    path: 'import/ImportTextView.tsx',
-    platform: 'web',
-    reason:
-      'Web import-from-text view; the app renders the design system ImportTextPage (design-system#126). Web adoption is B7.',
-  },
-  {
-    path: 'import/ImportUrlView.tsx',
-    platform: 'web',
-    reason:
-      'Web import-from-URL view; the app renders the design system ImportUrlPage (design-system#126). Web adoption is B7.',
-  },
-  {
-    path: 'import/ImportImageView.tsx',
-    platform: 'web',
-    reason:
-      'Web import-from-image view; the app renders the design system ImportImagePage (design-system#126). Web adoption is B7.',
-  },
-  {
-    path: 'import/ImportReviewView.tsx',
-    platform: 'web',
-    reason:
-      'Web import review view; the app renders the design system ImportReviewPage (design-system#126). Web adoption is B7.',
-  },
-  {
     path: 'FeedbackForm.tsx',
     platform: 'web',
     reason:
       'Web feedback form implementation; the app renders the design system FeedbackPage via its host (design-system#126). Web adoption is B7.',
-  },
-  {
-    path: 'ai/AiSessionFlow.tsx',
-    platform: 'web',
-    reason:
-      'Web AI session flow implementation; the app renders the design system AiSessionPage via its host (design-system#126). Web adoption is B7.',
   },
   {
     path: 'meals/NutritionGoalProgressView.tsx',

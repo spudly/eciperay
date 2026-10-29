@@ -2,7 +2,8 @@ import {errorMessage, queryKeys, recipeDetailToInput} from '@eciperay/client';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useNavigate, useParams} from 'react-router-dom';
 
-import {ImportReviewView} from '../components/import/ImportReviewView.js';
+import {ImportReviewPage as ImportReviewPageView} from '@spudly/ui/pages';
+
 import {RecipeInputPreview} from '../components/recipe/RecipeInputPreview.js';
 import {ScreenLoadingGate} from '../components/ScreenLoadingGate.js';
 import {eciperay} from '../lib/api.js';
@@ -52,10 +53,9 @@ export const ImportReviewPage = () => {
   const versionLabel = recipe.versionNumber ? `v${recipe.versionNumber}` : 'v1';
 
   return (
-    <ImportReviewView
+    <ImportReviewPageView
       versionLabel={versionLabel}
       imageUrl={recipe.imageUrl}
-      imageAlt={recipe.title}
       preview={<RecipeInputPreview recipe={preview} />}
       error={error}
       busy={busy}

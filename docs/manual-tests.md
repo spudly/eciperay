@@ -433,8 +433,7 @@ small set of known inputs so results are comparable across runs).
 **Run when:**
 `packages/app/src/screens/{ImportText,ImportUrl,ImportImage,ImportReview}Screen.tsx`,
 `packages/web/src/pages/{ImportText,ImportUrl,ImportImage,ImportReview}Page.tsx`,
-`packages/web/src/components/import/**`, `packages/server` import/extraction
-routes, AI extraction prompts.
+`packages/server` import/extraction routes, AI extraction prompts.
 
 ---
 
@@ -471,7 +470,7 @@ ungated; at least one existing recipe for the tweak cases.
 **Run when:** `packages/app/src/screens/{GenerateAi,TweakAi}Screen.tsx`,
 `packages/app/src/hosts/ai/**`,
 `packages/web/src/pages/{GenerateAi,TweakAi}Page.tsx`,
-`packages/web/src/components/ai/**`, `packages/server` AI routes/prompts,
+`packages/web/src/pages/AiSessionHost.tsx`, `packages/server` AI routes/prompts,
 entitlement gating for AI features.
 
 ---

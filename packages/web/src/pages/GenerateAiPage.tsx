@@ -3,12 +3,13 @@ import {useQueryClient} from '@tanstack/react-query';
 import {useNavigate} from 'react-router-dom';
 import type {CreateAiRecipeResult, TweakAiPhase} from '@eciperay/types';
 
+import {eciperay} from '../lib/api.js';
+
 import {
-  AiSessionFlow,
+  AiSessionHost,
   type AiSessionFlowApi,
   type AiSessionState,
-} from '../components/ai/AiSessionFlow.js';
-import {eciperay} from '../lib/api.js';
+} from './AiSessionHost.js';
 
 const PROMPT_PLACEHOLDER =
   'e.g. quick weeknight vegetarian pasta for 4, under 30 minutes';
@@ -62,7 +63,7 @@ export const GenerateAiPage = () => {
   };
 
   return (
-    <AiSessionFlow
+    <AiSessionHost
       config={{
         title: 'Generate with AI',
         intro:

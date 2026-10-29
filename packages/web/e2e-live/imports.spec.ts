@@ -35,7 +35,9 @@ test.describe('live imports', () => {
     const title = uniqueCiName('Imported Soup');
 
     await page.goto('/add/text');
-    const editor = page.locator('[data-placeholder]');
+    // The design system ImportTextPage renders a plain text field (the
+    // retired web view's rich-text editor carried a data-placeholder div).
+    const editor = page.getByPlaceholder('Paste your recipe here…');
     await editor.click();
     await page.keyboard.type(
       [
