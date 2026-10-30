@@ -351,6 +351,58 @@ describe('parseSchemaOrg with WP Recipe Maker markup', () => {
     ]);
   });
 
+  test('ignores ingredients from a second WPRM card on the page', () => {
+    const html = WPRM_HTML.replace(
+      '</body>',
+      '<div class="wprm-recipe-container"><ul><li class="wprm-recipe-ingredient"><span class="wprm-recipe-ingredient-amount">9</span> <span class="wprm-recipe-ingredient-unit">cups</span> <span class="wprm-recipe-ingredient-name">flour, for the second recipe</span></li></ul></div></body>',
+    );
+    const $ = load(html);
+    const result = parseSchemaOrg($);
+    expect(result?.ingredients).toHaveLength(6);
+    expect(result?.ingredients[3]?.notes).toBe('can substitute salt');
+  });
+
+  test('falls back to the JSON-LD strings when the WPRM list is incomplete', () => {
+    const html = WPRM_HTML.replace(
+      '<li class="wprm-recipe-ingredient"><span class="wprm-recipe-ingredient-amount">1/2</span> <span class="wprm-recipe-ingredient-name">red onion, sliced</span></li>\n',
+      '',
+    );
+    const $ = load(html);
+    const result = parseSchemaOrg($);
+    expect(result?.ingredients).toHaveLength(6);
+    expect(result?.ingredients[3]?.notes).toBeNull();
+    expect(result?.ingredients[5]).toEqual({
+      sortOrder: 5,
+      name: 'red onion, sliced',
+      quantity: 0.5,
+      unit: null,
+      notes: null,
+      isOptional: false,
+    });
+  });
+
+  test('combines a range amount with the WPRM notes instead of dropping it', () => {
+    const html = WPRM_HTML.replace(
+      '<span class="wprm-recipe-ingredient-name">honey</span>',
+      '<span class="wprm-recipe-ingredient-name">honey</span> <span class="wprm-recipe-ingredient-notes">(chopped)</span>',
+    );
+    const $ = load(html);
+    const result = parseSchemaOrg($);
+    expect(result?.ingredients[4]?.quantity).toBe(1);
+    expect(result?.ingredients[4]?.notes).toBe('1-2; chopped');
+  });
+
+  test('preserves an unparseable WPRM amount as notes', () => {
+    const html = WPRM_HTML.replace(
+      '<span class="wprm-recipe-ingredient-amount">2</span>',
+      '<span class="wprm-recipe-ingredient-amount">a few</span>',
+    );
+    const $ = load(html);
+    const result = parseSchemaOrg($);
+    expect(result?.ingredients[1]?.quantity).toBeNull();
+    expect(result?.ingredients[1]?.notes).toBe('a few');
+  });
+
   test('falls back to the JSON-LD strings when a WPRM item has no name', () => {
     const html = WPRM_HTML.replace(
       '<span class="wprm-recipe-ingredient-name">honey</span>',

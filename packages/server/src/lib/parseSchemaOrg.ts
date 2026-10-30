@@ -51,16 +51,33 @@ const toIngredient = (raw: string, i: number): IngredientInput => {
  * keeps WPRM's own unit classification, e.g. "medium" or "handful"). When a
  * page carries that markup, prefer it over the JSON-LD ingredient strings.
  */
-const parseWprmIngredients = ($: CheerioAPI): IngredientInput[] | null => {
-  const items = $('.wprm-recipe-ingredient').toArray();
-  if (items.length === 0) {
+const parseWprmIngredients = (
+  $: CheerioAPI,
+  expectedCount?: number,
+): IngredientInput[] | null => {
+  // Scope to the first recipe card: a page can carry several WPRM cards
+  // (e.g. a sauce recipe inside a post), and only the first matches the
+  // JSON-LD recipe selected above.
+  const container = $('.wprm-recipe-container').first();
+  const items = (
+    container.length
+      ? container.find('.wprm-recipe-ingredient')
+      : $('.wprm-recipe-ingredient')
+  ).toArray();
+  if (
+    items.length === 0 ||
+    (expectedCount !== undefined && items.length !== expectedCount)
+  ) {
     return null;
   }
   const ingredients = items.map((el, i): IngredientInput => {
     const $el = $(el);
-    const amount = parseIngredientAmount(
-      $el.find('.wprm-recipe-ingredient-amount').first().text().trim(),
-    );
+    const amountText = $el
+      .find('.wprm-recipe-ingredient-amount')
+      .first()
+      .text()
+      .trim();
+    const amount = parseIngredientAmount(amountText);
     const unit = $el.find('.wprm-recipe-ingredient-unit').first().text().trim();
     const name = $el.find('.wprm-recipe-ingredient-name').first().text().trim();
     const wprmNotes = $el
@@ -70,12 +87,22 @@ const parseWprmIngredients = ($: CheerioAPI): IngredientInput[] | null => {
       .trim()
       .replace(/^\((.*)\)$/s, '$1')
       .trim();
+    // Combine what the amount span carries (a range, or text that does not
+    // parse as an amount) with the WPRM notes instead of dropping one.
+    const notes =
+      [
+        amount.notes ??
+          (amount.quantity === null && amountText ? amountText : null),
+        wprmNotes || null,
+      ]
+        .filter(Boolean)
+        .join('; ') || null;
     return {
       sortOrder: i,
       name,
       quantity: amount.quantity,
       unit: unit ? unit.toLowerCase() : null,
-      notes: wprmNotes ? wprmNotes : amount.notes,
+      notes,
       isOptional: false,
     };
   });
@@ -93,7 +120,7 @@ const toRecipeImport = (recipe: SchemaRecipe, $: CheerioAPI): RecipeImport => ({
   cookTimeMin: parseDuration(recipe.cookTime ?? ''),
   sourceUrl: null,
   ingredients:
-    parseWprmIngredients($) ??
+    parseWprmIngredients($, recipe.recipeIngredient?.length) ??
     (recipe.recipeIngredient ?? []).map(toIngredient),
   instructions: (recipe.recipeInstructions ?? []).map((s, i) => ({
     stepNumber: i + 1,

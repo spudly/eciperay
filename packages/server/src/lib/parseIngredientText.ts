@@ -55,7 +55,7 @@ const FRACTION_CHARS = Object.keys(UNICODE_FRACTIONS).join('');
 // 4-5 plain fraction, 6-7 integer + unicode fraction, 8 unicode fraction
 // alone, 9 plain integer/decimal.
 const AMOUNT_PATTERN = new RegExp(
-  `^(?:(\\d+)\\s+(\\d+)\\/(\\d+)|(\\d+)\\/(\\d+)|(\\d+)\\s*([${FRACTION_CHARS}])|([${FRACTION_CHARS}])|(\\d+(?:\\.\\d+)?|\\.\\d+))`,
+  `^(?:(\\d+)\\s+(\\d+)\\/(\\d+)|(\\d+)\\/(\\d+)|(\\d+)\\s*([${FRACTION_CHARS}])|([${FRACTION_CHARS}])|(\\d+(?:\\.\\d+)?|\\.\\d+))(?![\\d.,%])`,
 );
 
 const RANGE_SEPARATOR_PATTERN = /^\s*(?:[-–—]\s*|to\s+)/i;

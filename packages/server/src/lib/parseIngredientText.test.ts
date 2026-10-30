@@ -177,6 +177,27 @@ describe('parseIngredientText', () => {
     });
   });
 
+  test('leaves an amount that is not a complete token intact', () => {
+    expect(parseIngredientText('0,5 l Milch')).toEqual({
+      quantity: null,
+      unit: null,
+      name: '0,5 l Milch',
+      notes: null,
+    });
+    expect(parseIngredientText('1,000 g flour')).toEqual({
+      quantity: null,
+      unit: null,
+      name: '1,000 g flour',
+      notes: null,
+    });
+    expect(parseIngredientText('2% milk')).toEqual({
+      quantity: null,
+      unit: null,
+      name: '2% milk',
+      notes: null,
+    });
+  });
+
   test('splits a two-word unit (fl oz)', () => {
     expect(parseIngredientText('16 fl oz milk')).toEqual({
       quantity: 16,
@@ -261,6 +282,11 @@ describe('parseIngredientAmount', () => {
       quantity: 1.5,
       notes: null,
     });
+  });
+
+  test('returns null quantity for an amount that is not a complete token', () => {
+    expect(parseIngredientAmount('0,5')).toEqual({quantity: null, notes: null});
+    expect(parseIngredientAmount('2%')).toEqual({quantity: null, notes: null});
   });
 
   test('parses a range amount to its lower bound with the range in notes', () => {
