@@ -133,6 +133,49 @@ describe('POST /recipes/import/url', () => {
     expect(insertCall).toBeUndefined();
   });
 
+  test('returns 409 without refunding the AI call when the Claude fallback parse duplicates (#296)', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    nock('https://recipe.example.com').get('/plain').reply(200, PLAIN_HTML);
+    nockAnthropicMessage(CLAUDE_RESPONSE);
+    mockBillingMetered(mockQuery, 'plus');
+    mockQuery
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          {
+            id: 'recipe-uuid-9',
+            title: 'AI Parsed Pasta',
+            ingredients: [
+              {
+                name: 'pasta',
+                quantity: 100,
+                unit: 'g',
+                notes: null,
+                isOptional: false,
+              },
+            ],
+          },
+        ]),
+      );
+    const res = await request(getApp())
+      .post('/api/recipes/import/url')
+      .set('Authorization', 'Bearer valid-token')
+      .send({url: 'https://recipe.example.com/plain'});
+    expect(res.status).toBe(409);
+    expect(res.body.error).toBe('duplicate_recipe');
+    // The parse succeeded, so its AI call stays charged: no refund on the
+    // duplicate path, or repeated duplicate imports would bypass the
+    // monthly quota entirely (#296).
+    const refundCall = mockQuery.mock.calls.find(args =>
+      args[0].includes('update ai_usage'),
+    );
+    expect(refundCall).toBeUndefined();
+    const insertCall = mockQuery.mock.calls.find(args =>
+      String(args[0]).includes('insert into recipes'),
+    );
+    expect(insertCall).toBeUndefined();
+  });
+
   test('imports anyway with allowDuplicate after the warning (#296)', async () => {
     nockSupabaseGetUser('user-uuid-1');
     nock('https://recipe.example.com').get('/').reply(200, SCHEMA_ORG_HTML);

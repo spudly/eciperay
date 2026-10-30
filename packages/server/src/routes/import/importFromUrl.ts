@@ -147,12 +147,11 @@ export const importFromUrl = async (
       return;
     }
     if (result.value.kind === 'duplicate') {
-      // The parse saved nothing: refund the AI call when the Claude
-      // fallback consumed one, so the override stays usable at the quota
-      // boundary (#296, same as the text/image paths).
-      if (aiConsumed) {
-        await refundAiCall(req.userId, queryFn, aiPeriodStart);
-      }
+      // No AI refund on the duplicate path (#296): when the Claude
+      // fallback consumed a call, the parse succeeded, so it stays
+      // charged — refunding it would let repeated imports of an
+      // already-owned recipe bypass the monthly quota (same as the
+      // text/image paths). The schema.org path consumed no AI call.
       res.status(409).json(duplicateRecipeBody(result.value.duplicate));
       return;
     }

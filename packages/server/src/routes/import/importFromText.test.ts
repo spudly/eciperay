@@ -83,18 +83,19 @@ describe('POST /recipes/import/text', () => {
     mockBillingMetered(mockQuery, 'plus');
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([]))
-      .mockResolvedValueOnce(makeQueryResult([DUPLICATE_CANDIDATE_ROW]))
-      // refundAiCall's UPDATE: a warned import saved nothing (#296).
-      .mockResolvedValueOnce(makeQueryResult([]));
+      .mockResolvedValueOnce(makeQueryResult([DUPLICATE_CANDIDATE_ROW]));
     const res = await request(getApp())
       .post('/api/recipes/import/text')
       .set('Authorization', 'Bearer valid-token')
       .send({text: 'Pasta\n\nIngredients:\n200g pasta\n\nBoil pasta.'});
     expect(res.status).toBe(409);
+    // The parse succeeded, so its AI call stays charged: no refund on the
+    // duplicate path, or repeated duplicate imports would bypass the
+    // monthly quota entirely (#296).
     const refundCall = mockQuery.mock.calls.find(args =>
       args[0].includes('update ai_usage'),
     );
-    expect(refundCall).toBeDefined();
+    expect(refundCall).toBeUndefined();
     expect(res.body.error).toBe('duplicate_recipe');
     expect(res.body.duplicate).toEqual({
       recipeId: 'recipe-uuid-9',

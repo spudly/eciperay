@@ -49,6 +49,13 @@ describe('normalizeForDuplicateMatch', () => {
       'pasted pasta',
     );
   });
+
+  test('treats non-breaking spaces as whitespace', () => {
+    // JS `\s`/trim cover U+00A0; the SQL pre-filter translates the same
+    // set to ASCII spaces so both sides agree under any DB collation.
+    expect(normalizeForDuplicateMatch('Pasta Salad')).toBe('pasta salad');
+    expect(normalizeForDuplicateMatch(' Pasta Salad ')).toBe('pasta salad');
+  });
 });
 
 describe('normalizeIngredientForDuplicateMatch', () => {
@@ -188,6 +195,42 @@ describe('findDuplicateRecipe', () => {
     await expect(
       findDuplicateRecipe('user-uuid-1', input, mockQuery),
     ).resolves.toEqual({recipeId: 'recipe-uuid-9', title: 'Pasted Pasta'});
+  });
+
+  test('matches a candidate whose title uses non-breaking spaces', async () => {
+    const mockQuery = createMockQuery();
+    mockQuery.mockResolvedValue(
+      makeQueryResult([
+        candidateRow({
+          title: 'Pasted Pasta',
+          ingredients: [
+            {
+              name: 'pasta',
+              quantity: 200,
+              unit: 'g',
+              notes: null,
+              isOptional: false,
+            },
+            {
+              name: 'basil',
+              quantity: 5,
+              unit: null,
+              notes: null,
+              isOptional: false,
+            },
+          ],
+        }),
+      ]),
+    );
+    await expect(
+      findDuplicateRecipe('user-uuid-1', input, mockQuery),
+    ).resolves.toEqual({recipeId: 'recipe-uuid-9', title: 'Pasted Pasta'});
+    // The SQL pre-filter must be able to return this row under any DB
+    // collation: it translates the JS `\s` non-ASCII set (incl. U+00A0)
+    // to ASCII spaces instead of relying on PostgreSQL `\s` alone.
+    const sql = String(mockQuery.mock.calls[0]?.[0]);
+    expect(sql).toContain('translate');
+    expect(sql).toContain('\\u00a0');
   });
 
   test('returns null for an empty library', async () => {

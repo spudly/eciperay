@@ -105,9 +105,9 @@ export const importFromImage = async (
       userId: req.userId,
       queryFn,
     });
-    // Duplicate warning (#296), same as the text import path — including
-    // the AI-call refund so the override stays usable at the quota
-    // boundary.
+    // Duplicate warning (#296), same as the text import path: the
+    // successful parse stays charged (no refund on the duplicate path),
+    // so repeated duplicate imports cannot bypass the AI quota.
     if (
       await respondIfDuplicateImport(res, {
         userId: req.userId,
@@ -116,7 +116,6 @@ export const importFromImage = async (
         queryFn,
       })
     ) {
-      await refundAiCall(req.userId, queryFn, quota.periodStart);
       return;
     }
     const {recipeId, versionId, recipe} = await saveNewRecipeFromInput(

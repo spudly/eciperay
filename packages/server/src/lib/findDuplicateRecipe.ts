@@ -62,6 +62,16 @@ type CandidateRow = {
   ingredients: unknown;
 };
 
+// The SQL title normalization must match normalizeForDuplicateMatch
+// (JavaScript) for every title the JS side can match. JS `\s` and trim
+// cover the full Unicode whitespace set — including U+00A0 (NBSP) —
+// regardless of environment, but PostgreSQL's `\s` classification
+// depends on the database collation (in a C locale NBSP is not `\s`),
+// and btrim strips only the ASCII space. So the non-ASCII members of
+// the JS `\s` set (U+00A0, U+1680, U+2000–U+200A, U+2028, U+2029,
+// U+202F, U+205F, U+3000, U+FEFF) are first translated to ASCII spaces;
+// after that, `\s+` collapsing and btrim behave identically on both
+// sides under any collation.
 const CANDIDATE_RECIPES_SQL = `
   select r.id, rv.title,
     coalesce((
@@ -77,7 +87,9 @@ const CANDIDATE_RECIPES_SQL = `
   from recipes r
   join recipe_versions rv on rv.id = r.active_version_id
   where r.user_id = $1
-    and lower(btrim(regexp_replace(rv.title, '\\s+', ' ', 'g'))) = $2
+    and lower(btrim(regexp_replace(
+      translate(rv.title, E'\\u00a0\\u1680\\u2000\\u2001\\u2002\\u2003\\u2004\\u2005\\u2006\\u2007\\u2008\\u2009\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff', repeat(' ', 19)),
+      '\\s+', ' ', 'g'))) = $2
   order by rv.created_at asc
 `;
 

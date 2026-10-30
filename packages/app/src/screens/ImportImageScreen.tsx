@@ -1,9 +1,11 @@
 import {isDuplicateRecipeError, useAnalytics} from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {useRef, useState} from 'react';
-import {Alert} from 'react-native';
+import {useState} from 'react';
+import {Alert, View} from 'react-native';
+
 import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 
+import {Button as DsButton, tokens} from '@spudly/ui';
 import {ImportImagePage} from '@spudly/ui/pages';
 import {api} from '../lib/api';
 import {
@@ -16,18 +18,23 @@ type Props = NativeStackScreenProps<AddStackParamList, 'ImportImage'>;
 
 type PickSource = 'camera' | 'library';
 
+const importAnywayContainerStyle = {
+  paddingHorizontal: tokens.spacing[4],
+  marginTop: tokens.spacing[3],
+} as const;
+
 export const ImportImageScreen = ({navigation}: Props) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Capture that already drew the duplicate warning (#296), retained with
-  // its source: a fresh camera capture produces a different payload, so
-  // the override cannot rely on matching a re-pick — pressing the same
-  // source again resubmits THIS payload with allowDuplicate. Pressing the
-  // other source starts a new pick and discards the retained capture.
-  const duplicateWarnedRef = useRef<{
-    base64: string;
-    source: PickSource;
-  } | null>(null);
+  // Capture that already drew the duplicate warning (#296), retained so
+  // the user can still create a second copy of THIS capture — but only
+  // via the separately labeled "Import anyway" action below. "Take
+  // Photo" / "Choose from Library" always start a NEW pick: pressing
+  // "Take Photo" after a warning must open the camera, never silently
+  // resubmit the previous capture as a duplicate the user didn't ask for.
+  const [duplicateWarnedCapture, setDuplicateWarnedCapture] = useState<
+    string | null
+  >(null);
   const analytics = useAnalytics();
 
   const submitImage = async (base64: string, allowDuplicate: boolean) => {
@@ -39,26 +46,25 @@ export const ImportImageScreen = ({navigation}: Props) => {
     navigation.navigate('ImportReview', {recipeId: recipe.id});
   };
 
-  const handlePick = async (source: PickSource) => {
-    const warned = duplicateWarnedRef.current;
-    if (warned && warned.source === source) {
-      // "Import anyway": resubmit the warned capture as a second copy.
-      duplicateWarnedRef.current = null;
-      setLoading(true);
-      setError(null);
-      try {
-        await submitImage(warned.base64, true);
-      } catch (error_) {
-        const message =
-          error_ instanceof Error ? error_.message : 'Import failed';
-        setError(message);
-        Alert.alert('Import failed', message);
-      } finally {
-        setLoading(false);
-      }
-      return;
+  const handleImportAnyway = async (warnedCapture: string) => {
+    setDuplicateWarnedCapture(null);
+    setLoading(true);
+    setError(null);
+    try {
+      await submitImage(warnedCapture, true);
+    } catch (error_) {
+      const message =
+        error_ instanceof Error ? error_.message : 'Import failed';
+      setError(message);
+      Alert.alert('Import failed', message);
+    } finally {
+      setLoading(false);
     }
-    duplicateWarnedRef.current = null;
+  };
+
+  const handlePick = async (source: PickSource) => {
+    // A new pick discards any retained warned capture.
+    setDuplicateWarnedCapture(null);
 
     if (source === 'camera') {
       const granted = await ensureCameraPermission();
@@ -97,10 +103,10 @@ export const ImportImageScreen = ({navigation}: Props) => {
         error_ instanceof Error ? error_.message : 'Import failed';
       setError(message);
       if (isDuplicateRecipeError(error_) && pickedBase64 !== null) {
-        duplicateWarnedRef.current = {base64: pickedBase64, source};
+        setDuplicateWarnedCapture(pickedBase64);
         // The warning is not a failure: show it inline via the page's
-        // error notice (pressing the same source again imports anyway),
-        // rather than the failure alert.
+        // error notice (the "Import anyway" action below resubmits this
+        // capture), rather than the failure alert.
         return;
       }
       Alert.alert('Import failed', message);
@@ -110,15 +116,31 @@ export const ImportImageScreen = ({navigation}: Props) => {
   };
 
   return (
-    <ImportImagePage
-      loading={loading}
-      error={error}
-      onPickCamera={() => {
-        void handlePick('camera');
-      }}
-      onPickLibrary={() => {
-        void handlePick('library');
-      }}
-    />
+    <>
+      <ImportImagePage
+        loading={loading}
+        error={error}
+        onPickCamera={() => {
+          void handlePick('camera');
+        }}
+        onPickLibrary={() => {
+          void handlePick('library');
+        }}
+      />
+      {duplicateWarnedCapture !== null ? (
+        <View style={importAnywayContainerStyle}>
+          <DsButton
+            variant="primary"
+            disabled={loading}
+            onPress={() => {
+              void handleImportAnyway(duplicateWarnedCapture);
+            }}
+            accessibilityLabel="Import anyway"
+          >
+            Import anyway
+          </DsButton>
+        </View>
+      ) : null}
+    </>
   );
 };
