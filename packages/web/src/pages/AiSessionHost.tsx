@@ -168,10 +168,15 @@ export const AiSessionHost = ({
   // Adopt a start that was still in flight when the previous host
   // instance unmounted (the user navigated away and back mid-start):
   // no id is stored yet, so the restore above has nothing to fetch.
-  // When the shared start completes, this host stores the id and shows
-  // the session exactly as if its own start had completed. If the
-  // start fails, the originating host surfaces the error; this host
-  // simply returns to the fresh form.
+  // When the shared start completes, this host stores the id — but it
+  // displays the session only through the owner-scoped restore above,
+  // never from the start result directly: the shared-starts map is
+  // module-level and survives a sign-out/sign-in switch in this SPA,
+  // so a start begun under a previous account could otherwise be shown
+  // to the new account. The restore fetch is ownership-checked by the
+  // server (it 404s another account's session, which drops the stored
+  // id and leaves the fresh form). If the start fails, the originating
+  // host surfaces the error; this host simply returns to the fresh form.
   const adoptFired = useRef(false);
   useEffect(() => {
     if (storedSessionId !== null || adoptFired.current) {
@@ -190,14 +195,14 @@ export const AiSessionHost = ({
           return;
         }
         storeSessionId(storageKey, result.session.id);
-        setSession(previous => previous ?? result.session);
         setError(null);
+        restoreSession(result.session.id);
       },
       () => {
         setSharedStartPending(false);
       },
     );
-  }, [storedSessionId, storageKey]);
+  }, [storedSessionId, storageKey, restoreSession]);
 
   // The stored id is written once, when a session starts (see
   // startMutation below): a session's id never changes during its life,
