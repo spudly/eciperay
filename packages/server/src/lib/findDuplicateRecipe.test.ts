@@ -233,6 +233,19 @@ describe('findDuplicateRecipe', () => {
     expect(sql).toContain('\\u00a0');
   });
 
+  test('SQL pre-filter admits raw titles containing non-ASCII characters', async () => {
+    const mockQuery = createMockQuery();
+    mockQuery.mockResolvedValue(makeQueryResult([candidateRow()]));
+    await findDuplicateRecipe('user-uuid-1', input, mockQuery);
+    // PostgreSQL lower() and JS toLowerCase() can disagree on non-ASCII
+    // characters, so alongside the normalized-equality branch for ASCII
+    // titles the pre-filter must admit any raw title containing a
+    // non-ASCII character and let the exact JS comparison decide.
+    const sql = String(mockQuery.mock.calls[0]?.[0]);
+    expect(sql).toContain('= $2');
+    expect(sql).toContain("or rv.title ~ '[^\\x00-\\x7F]'");
+  });
+
   test('returns null for an empty library', async () => {
     const mockQuery = createMockQuery();
     mockQuery.mockResolvedValue(makeQueryResult([]));

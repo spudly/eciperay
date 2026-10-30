@@ -39,19 +39,19 @@ export const ImportImageScreen = ({navigation}: Props) => {
 
   const submitImage = async (base64: string, allowDuplicate: boolean) => {
     const recipe = await api.import.importImage(base64, {allowDuplicate});
-    analytics.track('recipe_imported', {
-      recipe_id: recipe.id,
-      source: 'image',
-    });
+    analytics.track('recipe_imported', {recipe_id: recipe.id, source: 'image'});
     navigation.navigate('ImportReview', {recipeId: recipe.id});
   };
 
   const handleImportAnyway = async (warnedCapture: string) => {
-    setDuplicateWarnedCapture(null);
     setLoading(true);
     setError(null);
     try {
       await submitImage(warnedCapture, true);
+      // Only a successful override consumes the retained capture: if the
+      // import fails, the "Import anyway" action must stay available for
+      // this capture — a camera capture may not be re-creatable.
+      setDuplicateWarnedCapture(null);
     } catch (error_) {
       const message =
         error_ instanceof Error ? error_.message : 'Import failed';
@@ -63,9 +63,10 @@ export const ImportImageScreen = ({navigation}: Props) => {
   };
 
   const handlePick = async (source: PickSource) => {
-    // A new pick discards any retained warned capture.
-    setDuplicateWarnedCapture(null);
-
+    // A retained warned capture is discarded only once a replacement
+    // image is actually selected below: cancelling the picker or being
+    // denied permission must not strand the user without the
+    // "Import anyway" retry for the capture they already warned on.
     if (source === 'camera') {
       const granted = await ensureCameraPermission();
       if (!granted) {
@@ -96,6 +97,10 @@ export const ImportImageScreen = ({navigation}: Props) => {
         return;
       }
 
+      // A replacement image has actually been selected, so the retained
+      // warned capture is superseded (if this new import itself warns,
+      // the catch below retains the NEW capture instead).
+      setDuplicateWarnedCapture(null);
       pickedBase64 = asset.base64 ?? '';
       await submitImage(pickedBase64, false);
     } catch (error_) {

@@ -9,12 +9,11 @@ import {query as defaultQuery} from '../db/query.js';
 type QueryFn = typeof defaultQuery;
 
 /**
- * Duplicate detection for imports (issue #296, Stephen's 2026-10-28
- * decision): an import duplicates an existing recipe in the importing
- * user's own library when the normalized title matches AND the normalized
- * ingredient list matches. Normalization is case-insensitive with
- * whitespace trimmed/collapsed. Title alone is NOT a duplicate — two
- * genuinely different recipes can share a name.
+ * Duplicate detection for imports (issue #296, Stephen's 2026-10-28 decision):
+ * an import duplicates an existing recipe in the importing user's own library
+ * when the normalized title matches AND the normalized ingredient list matches.
+ * Normalization is case-insensitive with whitespace trimmed/collapsed. Title
+ * alone is NOT a duplicate — two genuinely different recipes can share a name.
  */
 export const normalizeForDuplicateMatch = (value: string): string =>
   value.trim().replaceAll(/\s+/g, ' ').toLowerCase();
@@ -56,11 +55,7 @@ export const ingredientListFingerprint = (
     .sort()
     .join('\n');
 
-type CandidateRow = {
-  id: string;
-  title: string;
-  ingredients: unknown;
-};
+type CandidateRow = {id: string; title: string; ingredients: unknown};
 
 // The SQL title normalization must match normalizeForDuplicateMatch
 // (JavaScript) for every title the JS side can match. JS `\s` and trim
@@ -71,7 +66,12 @@ type CandidateRow = {
 // the JS `\s` set (U+00A0, U+1680, U+2000–U+200A, U+2028, U+2029,
 // U+202F, U+205F, U+3000, U+FEFF) are first translated to ASCII spaces;
 // after that, `\s+` collapsing and btrim behave identically on both
-// sides under any collation.
+// sides under any collation. Case folding is the remaining gap:
+// PostgreSQL lower() and JS toLowerCase() can disagree on non-ASCII
+// characters (locale/Unicode differences), so the pre-filter keeps the
+// normalized equality for ASCII titles and additionally admits any raw
+// title containing a non-ASCII character — the exact JS comparison
+// below remains the authority for those rows.
 const CANDIDATE_RECIPES_SQL = `
   select r.id, rv.title,
     coalesce((
@@ -87,9 +87,12 @@ const CANDIDATE_RECIPES_SQL = `
   from recipes r
   join recipe_versions rv on rv.id = r.active_version_id
   where r.user_id = $1
-    and lower(btrim(regexp_replace(
-      translate(rv.title, E'\\u00a0\\u1680\\u2000\\u2001\\u2002\\u2003\\u2004\\u2005\\u2006\\u2007\\u2008\\u2009\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff', repeat(' ', 19)),
-      '\\s+', ' ', 'g'))) = $2
+    and (
+      lower(btrim(regexp_replace(
+        translate(rv.title, E'\\u00a0\\u1680\\u2000\\u2001\\u2002\\u2003\\u2004\\u2005\\u2006\\u2007\\u2008\\u2009\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff', repeat(' ', 19)),
+        '\\s+', ' ', 'g'))) = $2
+      or rv.title ~ '[^\\x00-\\x7F]'
+    )
   order by rv.created_at asc
 `;
 
@@ -104,12 +107,12 @@ const isCandidateIngredient = (
   typeof (value as {name?: unknown}).name === 'string';
 
 /**
- * Returns the oldest existing recipe in the user's library that the given
- * input duplicates, or null when there is no duplicate. Candidates are the
- * user's own recipes (active versions); the SQL title pre-filter (same
- * normalization, applied in the query) keeps the ingredient aggregation
- * and comparison to plausible matches, and the exact comparison below
- * remains the authority for rows the pre-filter returns.
+ * Returns the oldest existing recipe in the user's library that the given input
+ * duplicates, or null when there is no duplicate. Candidates are the user's own
+ * recipes (active versions); the SQL title pre-filter (same normalization,
+ * applied in the query) keeps the ingredient aggregation and comparison to
+ * plausible matches, and the exact comparison below remains the authority for
+ * rows the pre-filter returns.
  */
 export const findDuplicateRecipe = async (
   userId: string,
