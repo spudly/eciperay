@@ -176,13 +176,22 @@ describe('GenerateAiPage', () => {
     // returns: no session id exists yet, so the remounted page must
     // adopt the in-flight start instead of sitting on the empty form.
     let resolveStart!: (value: unknown) => void;
+    let resolveGet!: (value: unknown) => void;
     mockStart.mockImplementation(
       () =>
         new Promise(resolve => {
           resolveStart = resolve;
         }),
     );
-    mockGet.mockResolvedValue({session});
+    // The owner-scoped restore fetch stays pending after the shared
+    // start resolves, so the test can observe what is (not) shown and
+    // what the form allows while the fetch is in flight.
+    mockGet.mockImplementation(
+      () =>
+        new Promise(resolve => {
+          resolveGet = resolve;
+        }),
+    );
     const user = userEvent.setup();
     const first = await renderWithProviders(<GenerateAiPage />);
     await user.type(
@@ -201,10 +210,36 @@ describe('GenerateAiPage', () => {
     const pendingButton = screen.getByRole('button', {name: 'Planning…'});
     expect(pendingButton).toBeDisabled();
     resolveStart({session, plan: 'Plan for cookies'});
+    await waitFor(() => {
+      expect(mockGet).toHaveBeenCalledWith('session-1');
+    });
+    // The shared start result is never displayed directly: while the
+    // owner-scoped fetch is pending, its plan is absent, and the host
+    // stays busy — even with a prompt typed, no second start can begin
+    // until the restore settles.
+    expect(screen.queryByText('Plan for cookies')).not.toBeInTheDocument();
+    await user.type(
+      screen.getByPlaceholderText(/quick weeknight vegetarian pasta/i),
+      'a second idea',
+    );
+    expect(screen.getByRole('button', {name: 'Start planning'})).toBeDisabled();
+    resolveGet({
+      session: {
+        ...session,
+        messages: [
+          {role: 'user' as const, content: 'cookies'},
+          {role: 'assistant' as const, content: 'Plan from owner-scoped fetch'},
+        ],
+      },
+    });
     expect(
       await screen.findByRole('button', {name: 'Approve plan'}),
     ).toBeInTheDocument();
-    expect(screen.getByText('Plan for cookies')).toBeInTheDocument();
+    // The displayed plan is the fetched one, not the shared start's.
+    expect(
+      screen.getByText('Plan from owner-scoped fetch'),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('Plan for cookies')).not.toBeInTheDocument();
     expect(localStorage.getItem('eciperay:create-ai-session-id')).toBe(
       'session-1',
     );
@@ -221,13 +256,19 @@ describe('GenerateAiPage', () => {
     // now signed in does not own the adopted session, the owner-scoped
     // restore 404s and the session must never be displayed.
     let resolveStart!: (value: unknown) => void;
+    let rejectGet!: (reason?: unknown) => void;
     mockStart.mockImplementation(
       () =>
         new Promise(resolve => {
           resolveStart = resolve;
         }),
     );
-    mockGet.mockRejectedValue(new Error('Session not found'));
+    mockGet.mockImplementation(
+      () =>
+        new Promise((_, reject) => {
+          rejectGet = reject;
+        }),
+    );
     const user = userEvent.setup();
     const first = await renderWithProviders(<GenerateAiPage />);
     await user.type(
@@ -244,6 +285,10 @@ describe('GenerateAiPage', () => {
     await waitFor(() => {
       expect(mockGet).toHaveBeenCalledWith('session-1');
     });
+    // While the owner-scoped fetch is still pending, the shared
+    // start's plan is not shown.
+    expect(screen.queryByText('Plan for cookies')).not.toBeInTheDocument();
+    rejectGet(new Error('Session not found'));
     // The definitive not-found drops the adopted id and the page stays
     // on the fresh form — the other account's plan is never rendered.
     await waitFor(() => {
@@ -253,6 +298,65 @@ describe('GenerateAiPage', () => {
     expect(
       screen.getByPlaceholderText(/quick weeknight vegetarian pasta/i),
     ).toBeInTheDocument();
+  });
+
+  test('a restore superseded by a newer stored session does not display', async () => {
+    // An adopted start's owner-scoped restore is still in flight when
+    // a newer session starts elsewhere (another tab) and stores its
+    // id under the same key. When the older restore finally resolves,
+    // it must not display its session over the newer pointer.
+    let resolveStart!: (value: unknown) => void;
+    let resolveGet!: (value: unknown) => void;
+    mockStart.mockImplementation(
+      () =>
+        new Promise(resolve => {
+          resolveStart = resolve;
+        }),
+    );
+    mockGet.mockImplementation(
+      () =>
+        new Promise(resolve => {
+          resolveGet = resolve;
+        }),
+    );
+    const user = userEvent.setup();
+    const first = await renderWithProviders(<GenerateAiPage />);
+    await user.type(
+      screen.getByPlaceholderText(/quick weeknight vegetarian pasta/i),
+      'simple chocolate chip cookies for 12',
+    );
+    await user.click(screen.getByRole('button', {name: 'Start planning'}));
+    await waitFor(() => {
+      expect(mockStart).toHaveBeenCalledTimes(1);
+    });
+    first.unmount();
+    await renderWithProviders(<GenerateAiPage />);
+    resolveStart({session, plan: 'Plan for cookies'});
+    await waitFor(() => {
+      expect(mockGet).toHaveBeenCalledWith('session-1');
+    });
+    // The host is busy while the restore is pending: with a prompt
+    // typed, the start control stays disabled.
+    await user.type(
+      screen.getByPlaceholderText(/quick weeknight vegetarian pasta/i),
+      'a second idea',
+    );
+    expect(screen.getByRole('button', {name: 'Start planning'})).toBeDisabled();
+    // A newer session's start elsewhere moves the stored pointer.
+    localStorage.setItem('eciperay:create-ai-session-id', 'session-2');
+    resolveGet({session});
+    // The restore settling lifts busy (the start control enables),
+    // which proves the older response was processed — and its plan
+    // was still never displayed, nor did it move the pointer back.
+    await waitFor(() => {
+      expect(
+        screen.getByRole('button', {name: 'Start planning'}),
+      ).not.toBeDisabled();
+    });
+    expect(screen.queryByText('Plan for cookies')).not.toBeInTheDocument();
+    expect(localStorage.getItem('eciperay:create-ai-session-id')).toBe(
+      'session-2',
+    );
   });
 
   test('a late-finishing earlier start does not overwrite a newer session', async () => {

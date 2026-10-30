@@ -138,6 +138,15 @@ export const AiSessionHost = ({
     mutationFn: (sessionId: string) => api.get(sessionId),
     onSuccess: result => {
       const restored = result.session;
+      // A newer session may have started (and stored its id) while
+      // this restore was in flight — e.g. a second start begun in the
+      // gap after an adopted start resolved. The stored pointer names
+      // the session that should be visible; a restore for any other
+      // id is superseded and must not replace it.
+      const currentStoredId = readStoredSessionId(storageKey);
+      if (currentStoredId !== null && currentStoredId !== restored.id) {
+        return;
+      }
       if (isTerminalPhase(restored.phase)) {
         clearStoredSessionId(storageKey, restored.id);
       } else {
@@ -297,8 +306,13 @@ export const AiSessionHost = ({
     },
   });
 
+  // Every pending restore counts toward busy — including the restore
+  // an adopting host fires for a session id it never had in storage
+  // (storedSessionId is null there): until that fetch settles, the
+  // fresh form must not accept a second start that the older restore
+  // response could then overwrite.
   const busy =
-    (storedSessionId !== null && restoreMutation.isPending) ||
+    restoreMutation.isPending ||
     sharedStartPending ||
     startMutation.isPending ||
     messageMutation.isPending ||
