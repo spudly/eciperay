@@ -11,3 +11,12 @@ export type RecipeImport = {
   ingredients: IngredientInput[];
   instructions: InstructionInput[];
 };
+
+/**
+ * An existing library recipe that an import duplicates: same normalized
+ * title and same normalized ingredient list (issue #296).
+ */
+export type DuplicateRecipeMatch = {
+  recipeId: string;
+  title: string;
+};

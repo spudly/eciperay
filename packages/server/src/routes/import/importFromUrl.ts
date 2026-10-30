@@ -17,6 +17,8 @@ import {prepareImportedRecipeInput} from '../../lib/prepareImportedRecipeInput.j
 import {saveNewRecipeFromInput} from '../../lib/saveRecipeFromInput.js';
 import {ImportUrlSchema, validate} from '../../lib/schemas.js';
 import {AiResponseParseError} from '../../lib/validate.js';
+import {findDuplicateRecipe} from '../../lib/findDuplicateRecipe.js';
+import {duplicateRecipeBody} from './respondIfDuplicateImport.js';
 
 type QueryFn = typeof defaultQuery;
 
@@ -59,7 +61,7 @@ export const importFromUrl = async (
   if (!body.ok) {
     return;
   }
-  const {url} = body.data;
+  const {url, allowDuplicate} = body.data;
   // URL imports create recipes, so the Free recipe cap applies. Check up
   // front so we fail fast before fetching the page or burning AI quota; the
   // save below re-checks atomically against concurrent imports.
@@ -122,10 +124,20 @@ export const importFromUrl = async (
           queryFn: q,
           options: {sourceUrl: url},
         });
-        return saveNewRecipeFromInput(
+        // Duplicate warning (#296): checked inside the cap callback so a
+        // warned import never saves; the match rides out as a sentinel
+        // because this handler responds after the cap scope closes.
+        const duplicate = allowDuplicate
+          ? null
+          : await findDuplicateRecipe(req.userId, input, q);
+        if (duplicate) {
+          return {kind: 'duplicate', duplicate} as const;
+        }
+        const saved = await saveNewRecipeFromInput(
           {userId: req.userId, input, createdVia: 'import_url'},
           q,
         );
+        return {kind: 'saved', saved} as const;
       },
     );
     if (!result.ok) {
@@ -134,7 +146,16 @@ export const importFromUrl = async (
         .json(quotaExhaustedBody('recipe_limit', result.used, result.limit));
       return;
     }
-    const {recipeId, versionId, recipe} = result.value;
+    if (result.value.kind === 'duplicate') {
+      // No AI refund on the duplicate path (#296): when the Claude
+      // fallback consumed a call, the parse succeeded, so it stays
+      // charged — refunding it would let repeated imports of an
+      // already-owned recipe bypass the monthly quota (same as the
+      // text/image paths). The schema.org path consumed no AI call.
+      res.status(409).json(duplicateRecipeBody(result.value.duplicate));
+      return;
+    }
+    const {recipeId, versionId, recipe} = result.value.saved;
     res.status(201).json({...recipe, recipeId, versionId});
   } catch (error) {
     if (aiConsumed) {

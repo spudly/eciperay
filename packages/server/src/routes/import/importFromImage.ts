@@ -18,6 +18,7 @@ import {
   parseAiJson,
   validate,
 } from '../../lib/schemas.js';
+import {respondIfDuplicateImport} from './respondIfDuplicateImport.js';
 
 type QueryFn = typeof defaultQuery;
 
@@ -104,6 +105,19 @@ export const importFromImage = async (
       userId: req.userId,
       queryFn,
     });
+    // Duplicate warning (#296), same as the text import path: the
+    // successful parse stays charged (no refund on the duplicate path),
+    // so repeated duplicate imports cannot bypass the AI quota.
+    if (
+      await respondIfDuplicateImport(res, {
+        userId: req.userId,
+        input,
+        allowDuplicate: body.data.allowDuplicate,
+        queryFn,
+      })
+    ) {
+      return;
+    }
     const {recipeId, versionId, recipe} = await saveNewRecipeFromInput(
       {userId: req.userId, input, createdVia: 'import_image'},
       queryFn,

@@ -1,4 +1,4 @@
-import {useAnalytics} from '@eciperay/client';
+import {isDuplicateRecipeError, useAnalytics} from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useState} from 'react';
 
@@ -12,6 +12,11 @@ export const ImportUrlScreen = ({navigation}: Props) => {
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // URL that already drew the duplicate warning (#296): submitting the
+  // same URL again means "import anyway" and creates a second copy.
+  const [duplicateWarnedUrl, setDuplicateWarnedUrl] = useState<string | null>(
+    null,
+  );
   const analytics = useAnalytics();
 
   const handleImport = async () => {
@@ -22,10 +27,15 @@ export const ImportUrlScreen = ({navigation}: Props) => {
     setLoading(true);
     setError(null);
     try {
-      const recipe = await api.import.importUrl(url);
+      const recipe = await api.import.importUrl(url, {
+        allowDuplicate: duplicateWarnedUrl === url,
+      });
       analytics.track('recipe_imported', {recipe_id: recipe.id, source: 'url'});
       navigation.navigate('ImportReview', {recipeId: recipe.id});
     } catch (error_) {
+      if (isDuplicateRecipeError(error_)) {
+        setDuplicateWarnedUrl(url);
+      }
       setError(error_ instanceof Error ? error_.message : 'Import failed');
     } finally {
       setLoading(false);
@@ -35,7 +45,12 @@ export const ImportUrlScreen = ({navigation}: Props) => {
   return (
     <ImportUrlPage
       url={url}
-      onUrlChange={setUrl}
+      onUrlChange={value => {
+        setUrl(value);
+        if (value !== duplicateWarnedUrl) {
+          setDuplicateWarnedUrl(null);
+        }
+      }}
       loading={loading}
       error={error}
       onSubmit={() => {

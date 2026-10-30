@@ -120,13 +120,19 @@ export const TagInputSchema = z.object({
     .optional(),
 });
 
-export const ImportUrlSchema = z.object({url: z.url()});
+export const ImportUrlSchema = z.object({
+  url: z.url(),
+  // Set after the duplicate warning (409 duplicate_recipe) to import a
+  // second copy anyway (#296).
+  allowDuplicate: z.boolean().optional(),
+});
 
 export const ImportImageSchema = z.object({
   imageBase64: z.string().min(1),
   mediaType: z
     .enum(['image/jpeg', 'image/png', 'image/gif', 'image/webp'])
     .optional(),
+  allowDuplicate: z.boolean().optional(),
 });
 
 /**
@@ -139,6 +145,7 @@ export const IMPORT_TEXT_PLAIN_MAX = 100_000;
 
 export const ImportTextSchema = z.object({
   text: z.string().min(1).max(IMPORT_TEXT_REQUEST_MAX),
+  allowDuplicate: z.boolean().optional(),
 });
 
 const IMPORT_AI_PROMPT_MAX = 2000;

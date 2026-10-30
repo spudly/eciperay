@@ -56,6 +56,40 @@ describe('ImportTextScreen', () => {
     });
   });
 
+  test('warns on a duplicate, then imports anyway on resubmit (#296)', async () => {
+    const duplicateError = Object.assign(
+      new Error(
+        'This recipe already exists in your library as "Pasta". Import anyway to create a second copy.',
+      ),
+      {code: 'duplicate_recipe'},
+    );
+    mockImportText
+      .mockRejectedValueOnce(duplicateError)
+      .mockResolvedValue(makeRecipeDetail({id: 'imported-2'}));
+    const {getByPlaceholderText, getByText, findByText} =
+      await renderWithProviders(<ImportTextScreen {...stackProps} />);
+    await fireEvent.changeText(
+      getByPlaceholderText('Paste your recipe here…'),
+      'Pasta\n\nBoil water.',
+    );
+    await fireEvent.press(getByText('Import'));
+    expect(
+      await findByText(/already exists in your library/),
+    ).toBeTruthy();
+    expect(mockImportText).toHaveBeenLastCalledWith('Pasta\n\nBoil water.', {
+      allowDuplicate: false,
+    });
+    await fireEvent.press(getByText('Import'));
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('ImportReview', {
+        recipeId: 'imported-2',
+      });
+    });
+    expect(mockImportText).toHaveBeenLastCalledWith('Pasta\n\nBoil water.', {
+      allowDuplicate: true,
+    });
+  });
+
   test('shows generic error on non-Error failure', async () => {
     mockImportText.mockRejectedValue('nope');
     const {getByPlaceholderText, getByText, findByText} =
