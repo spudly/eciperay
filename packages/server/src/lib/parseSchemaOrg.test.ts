@@ -221,4 +221,151 @@ describe('parseSchemaOrg', () => {
     const result = parseSchemaOrg($);
     expect(result?.instructions[0]?.body).toBe('');
   });
+
+  test('splits amount and unit out of JSON-LD ingredient strings', () => {
+    const html = makeHtml(
+      JSON.stringify({
+        '@type': 'Recipe',
+        'name': 'Cucumber Crunch Salad',
+        'recipeYield': '4',
+        'recipeIngredient': [
+          '1/4 cup dill, fresh chopped',
+          '200g pasta',
+          '1 1/2 tbsp honey',
+          'Salt and pepper to taste',
+        ],
+        'recipeInstructions': [],
+      }),
+    );
+    const $ = load(html);
+    const result = parseSchemaOrg($);
+    expect(result?.ingredients).toEqual([
+      {
+        sortOrder: 0,
+        name: 'dill, fresh chopped',
+        quantity: 0.25,
+        unit: 'cup',
+        notes: null,
+        isOptional: false,
+      },
+      {
+        sortOrder: 1,
+        name: 'pasta',
+        quantity: 200,
+        unit: 'g',
+        notes: null,
+        isOptional: false,
+      },
+      {
+        sortOrder: 2,
+        name: 'honey',
+        quantity: 1.5,
+        unit: 'tbsp',
+        notes: null,
+        isOptional: false,
+      },
+      {
+        sortOrder: 3,
+        name: 'Salt and pepper to taste',
+        quantity: null,
+        unit: null,
+        notes: null,
+        isOptional: false,
+      },
+    ]);
+  });
+});
+
+const WPRM_HTML = `<html><head>
+<script type="application/ld+json">
+{"@type":"Recipe","name":"Cucumber Crunch Salad","recipeYield":"4",
+"recipeIngredient":["1 medium avocado, pitted and peeled","2 tbsp lemon juice, fresh","1/4 cup dill, fresh chopped","Hey Old Sport Overachiever to taste","1-2 tbsp honey","1/2 red onion, sliced"],
+"recipeInstructions":[{"text":"Toss everything"}]}
+</script></head><body>
+<div class="wprm-recipe-container">
+<ul class="wprm-recipe-ingredients">
+<li class="wprm-recipe-ingredient"><span class="wprm-recipe-ingredient-amount">1</span> <span class="wprm-recipe-ingredient-unit">medium</span> <span class="wprm-recipe-ingredient-name">avocado, pitted and peeled</span></li>
+<li class="wprm-recipe-ingredient"><span class="wprm-recipe-ingredient-amount">2</span> <span class="wprm-recipe-ingredient-unit">tbsp</span> <span class="wprm-recipe-ingredient-name">lemon juice, fresh</span></li>
+<li class="wprm-recipe-ingredient"><span class="wprm-recipe-ingredient-amount">1/4</span> <span class="wprm-recipe-ingredient-unit">cup</span> <span class="wprm-recipe-ingredient-name">dill, fresh chopped</span></li>
+<li class="wprm-recipe-ingredient"><span class="wprm-recipe-ingredient-name">Hey Old Sport Overachiever to taste</span> <span class="wprm-recipe-ingredient-notes">(can substitute salt)</span></li>
+<li class="wprm-recipe-ingredient"><span class="wprm-recipe-ingredient-amount">1-2</span> <span class="wprm-recipe-ingredient-unit">tbsp</span> <span class="wprm-recipe-ingredient-name">honey</span></li>
+<li class="wprm-recipe-ingredient"><span class="wprm-recipe-ingredient-amount">1/2</span> <span class="wprm-recipe-ingredient-name">red onion, sliced</span></li>
+</ul>
+</div>
+</body></html>`;
+
+describe('parseSchemaOrg with WP Recipe Maker markup', () => {
+  test('uses the WPRM amount/unit/name/notes spans when present', () => {
+    const $ = load(WPRM_HTML);
+    const result = parseSchemaOrg($);
+    expect(result?.title).toBe('Cucumber Crunch Salad');
+    expect(result?.ingredients).toEqual([
+      {
+        sortOrder: 0,
+        name: 'avocado, pitted and peeled',
+        quantity: 1,
+        unit: 'medium',
+        notes: null,
+        isOptional: false,
+      },
+      {
+        sortOrder: 1,
+        name: 'lemon juice, fresh',
+        quantity: 2,
+        unit: 'tbsp',
+        notes: null,
+        isOptional: false,
+      },
+      {
+        sortOrder: 2,
+        name: 'dill, fresh chopped',
+        quantity: 0.25,
+        unit: 'cup',
+        notes: null,
+        isOptional: false,
+      },
+      {
+        sortOrder: 3,
+        name: 'Hey Old Sport Overachiever to taste',
+        quantity: null,
+        unit: null,
+        notes: 'can substitute salt',
+        isOptional: false,
+      },
+      {
+        sortOrder: 4,
+        name: 'honey',
+        quantity: 1,
+        unit: 'tbsp',
+        notes: '1-2',
+        isOptional: false,
+      },
+      {
+        sortOrder: 5,
+        name: 'red onion, sliced',
+        quantity: 0.5,
+        unit: null,
+        notes: null,
+        isOptional: false,
+      },
+    ]);
+  });
+
+  test('falls back to the JSON-LD strings when a WPRM item has no name', () => {
+    const html = WPRM_HTML.replace(
+      '<span class="wprm-recipe-ingredient-name">honey</span>',
+      '',
+    );
+    const $ = load(html);
+    const result = parseSchemaOrg($);
+    expect(result?.ingredients).toHaveLength(6);
+    expect(result?.ingredients[4]).toEqual({
+      sortOrder: 4,
+      name: 'honey',
+      quantity: 1,
+      unit: 'tbsp',
+      notes: '1-2',
+      isOptional: false,
+    });
+  });
 });

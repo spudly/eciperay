@@ -65,12 +65,13 @@ const mockSaveFlow = () => {
 };
 
 // An existing library recipe identical to the schema.org fixture below
-// (schema.org ingredients keep the raw line as the name, quantity/unit null).
+// (schema.org ingredient lines are split into name/quantity/unit on import,
+// #307: "200g pasta" is stored as quantity 200, unit "g", name "pasta").
 const DUPLICATE_CANDIDATE_ROW = {
   id: 'recipe-uuid-9',
   title: 'Pasta',
   ingredients: [
-    {name: '200g pasta', quantity: null, unit: null, notes: null, isOptional: false},
+    {name: 'pasta', quantity: 200, unit: 'g', notes: null, isOptional: false},
   ],
 };
 
