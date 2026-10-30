@@ -1,8 +1,8 @@
 import {screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {http, HttpResponse} from 'msw';
-import {Route, Routes} from 'react-router-dom';
-import {vi} from 'vitest';
+import {Route, Routes, useNavigate} from 'react-router-dom';
+import {beforeEach, vi} from 'vitest';
 
 import {server} from '../test/msw/server.js';
 import {eciperay} from '../lib/api.js';
@@ -43,6 +43,86 @@ const renderTweakAi = () =>
   );
 
 describe('TweakAiPage', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  test('restores a persisted tweak session on mount', async () => {
+    localStorage.setItem(
+      'eciperay:tweak-ai-session-id:recipe-uuid-1:user-1',
+      'session-1',
+    );
+    const get = vi.spyOn(eciperay.tweakAi, 'get').mockResolvedValue({
+      session: {
+        ...baseSession,
+        phase: 'planning' as const,
+        messages: [
+          {role: 'user' as const, content: 'make it spicier'},
+          {role: 'assistant' as const, content: 'Plan for: make it spicier'},
+        ],
+      },
+    });
+    await renderTweakAi();
+    expect(
+      await screen.findByText(/Plan for: make it spicier/),
+    ).toBeInTheDocument();
+    expect(get).toHaveBeenCalledWith('recipe-uuid-1', 'session-1');
+    get.mockRestore();
+  });
+
+  test('switching the recipe param resets the session instead of carrying it over', async () => {
+    const Switcher = () => {
+      const navigate = useNavigate();
+      return (
+        <button
+          type="button"
+          onClick={() => {
+            void navigate('/recipes/recipe-uuid-2/tweak-ai');
+          }}
+        >
+          switch recipe
+        </button>
+      );
+    };
+    await renderWithProviders(
+      <>
+        <Routes>
+          <Route
+            path="/recipes/:recipeId/tweak-ai"
+            element={<TweakAiPage />}
+          />
+        </Routes>
+        <Switcher />
+      </>,
+      {route: '/recipes/recipe-uuid-1/tweak-ai'},
+    );
+    await userEvent.type(
+      screen.getByPlaceholderText(PROMPT),
+      'make it spicier',
+    );
+    await userEvent.click(screen.getByText('Start planning'));
+    expect(
+      await screen.findByText(/Plan for: make it spicier/),
+    ).toBeInTheDocument();
+    expect(
+      localStorage.getItem('eciperay:tweak-ai-session-id:recipe-uuid-1:user-1'),
+    ).not.toBeNull();
+
+    // A param-only navigation reuses the page instance; the previous
+    // recipe's session must neither render nor be persisted under the
+    // new recipe's storage key.
+    await userEvent.click(screen.getByText('switch recipe'));
+    await waitFor(() => {
+      expect(
+        screen.queryByText(/Plan for: make it spicier/),
+      ).not.toBeInTheDocument();
+    });
+    expect(screen.getByPlaceholderText(PROMPT)).toBeInTheDocument();
+    expect(
+      localStorage.getItem('eciperay:tweak-ai-session-id:recipe-uuid-2:user-1'),
+    ).toBeNull();
+  });
+
   test('runs the conversational tweak flow and navigates to edit page', async () => {
     await renderTweakAi();
     await userEvent.type(

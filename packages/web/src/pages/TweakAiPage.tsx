@@ -1,4 +1,4 @@
-import {invalidateRecipeQueries} from '@eciperay/client';
+import {invalidateRecipeQueries, useAuth} from '@eciperay/client';
 import {useQueryClient} from '@tanstack/react-query';
 import {useNavigate, useParams} from 'react-router-dom';
 import type {TweakAiApproveResult, TweakAiPhase} from '@eciperay/types';
@@ -47,10 +47,15 @@ export const TweakAiPage = () => {
   const {recipeId = ''} = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const {session: authSession} = useAuth();
 
   const api: AiSessionFlowApi = {
     start: async prompt => {
       const result = await eciperay.tweakAi.start(recipeId, prompt);
+      return {session: mapSession(result.session)};
+    },
+    get: async sessionId => {
+      const result = await eciperay.tweakAi.get(recipeId, sessionId);
       return {session: mapSession(result.session)};
     },
     sendMessage: async (sessionId, content) => {
@@ -69,8 +74,17 @@ export const TweakAiPage = () => {
     cancel: sessionId => eciperay.tweakAi.cancel(recipeId, sessionId),
   };
 
+  const storageKey = `eciperay:tweak-ai-session-id:${recipeId}:${authSession?.user.id ?? 'anonymous'}`;
+
   return (
     <AiSessionHost
+      // Keyed by the storage key (which encodes the recipe and the
+      // account): switching the recipeId route param reuses this page
+      // instance, and the host's session state (including which stored
+      // session id it restores and persists) is per key; the key also
+      // gains its account segment when auth resolves, and the remount
+      // keeps the host's key-bound state on the settled key.
+      key={storageKey}
       config={{
         title: 'Tweak with AI',
         intro:
@@ -84,6 +98,8 @@ export const TweakAiPage = () => {
         phaseLabel,
       }}
       api={api}
+      // Partitioned by recipe and by account (see GenerateAiPage).
+      storageKey={storageKey}
       onEmptyCancel={() => {
         void navigate(`/recipes/${recipeId}`);
       }}
