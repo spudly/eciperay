@@ -176,6 +176,35 @@ describe('ImportImageScreen', () => {
     alertSpy.mockRestore();
   });
 
+  test('shows the generic failure and keeps Import anyway when the override rejects with a non-Error (#296)', async () => {
+    const duplicateError = Object.assign(
+      new Error(
+        'This recipe already exists in your library as "Cake". Import anyway to create a second copy.',
+      ),
+      {code: 'duplicate_recipe'},
+    );
+    mockImportImage
+      .mockRejectedValueOnce(duplicateError)
+      .mockRejectedValueOnce('nope');
+    const alertSpy = jest.spyOn(Alert, 'alert').mockReturnValue();
+    const {getByText, findByText} = await renderWithProviders(
+      <ImportImageScreen {...stackProps} />,
+    );
+    await fireEvent.press(getByText('Take Photo'));
+    expect(await findByText('Import anyway')).toBeTruthy();
+    await fireEvent.press(getByText('Import anyway'));
+    // A non-Error rejection falls back to the generic failure message in
+    // both the inline notice and the alert, and the retained capture's
+    // retry action survives.
+    expect(await findByText('Import failed')).toBeTruthy();
+    expect(alertSpy).toHaveBeenCalledWith('Import failed', 'Import failed');
+    expect(await findByText('Import anyway')).toBeTruthy();
+    expect(mockImportImage).toHaveBeenLastCalledWith('abc123', {
+      allowDuplicate: true,
+    });
+    alertSpy.mockRestore();
+  });
+
   test('keeps Import anyway available when a new pick is cancelled (#296)', async () => {
     const duplicateError = Object.assign(
       new Error(
@@ -199,6 +228,9 @@ describe('ImportImageScreen', () => {
     await waitFor(() => {
       expect(mockLaunchCamera).toHaveBeenCalledTimes(2);
     });
+    // The duplicate warning that explains the retained capture must also
+    // survive the cancellation — not just the action it explains.
+    expect(await findByText(/already exists in your library/)).toBeTruthy();
     expect(await findByText('Import anyway')).toBeTruthy();
     await fireEvent.press(getByText('Import anyway'));
     await waitFor(() => {

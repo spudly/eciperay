@@ -80,7 +80,6 @@ export const ImportImageScreen = ({navigation}: Props) => {
     }
 
     setLoading(true);
-    setError(null);
     let pickedBase64: string | null = null;
     try {
       const result =
@@ -99,7 +98,12 @@ export const ImportImageScreen = ({navigation}: Props) => {
 
       // A replacement image has actually been selected, so the retained
       // warned capture is superseded (if this new import itself warns,
-      // the catch below retains the NEW capture instead).
+      // the catch below retains the NEW capture instead) and any prior
+      // notice — in particular the duplicate warning that explains the
+      // retained capture's "Import anyway" action — is cleared only
+      // now: clearing it before the picker returned would leave that
+      // action visible without its warning after a cancellation.
+      setError(null);
       setDuplicateWarnedCapture(null);
       pickedBase64 = asset.base64 ?? '';
       await submitImage(pickedBase64, false);
