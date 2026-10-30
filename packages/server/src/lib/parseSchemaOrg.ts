@@ -45,6 +45,22 @@ const toIngredient = (raw: string, i: number): IngredientInput => {
   };
 };
 
+const normalizeForMatch = (text: string): string =>
+  text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+
+/** Two ingredient names match when one is the other, or a prefix of it. */
+const ingredientNamesMatch = (a: string, b: string): boolean => {
+  const left = normalizeForMatch(a);
+  const right = normalizeForMatch(b);
+  if (!left || !right) {
+    return false;
+  }
+  return left === right || left.startsWith(right) || right.startsWith(left);
+};
+
 /**
  * WP Recipe Maker renders each ingredient as separate amount / unit / name /
  * notes spans, which is more faithful than the flat schema.org strings (it
@@ -53,21 +69,61 @@ const toIngredient = (raw: string, i: number): IngredientInput => {
  */
 const parseWprmIngredients = (
   $: CheerioAPI,
-  expectedCount?: number,
+  recipe: SchemaRecipe,
 ): IngredientInput[] | null => {
-  // Scope to the first recipe card: a page can carry several WPRM cards
-  // (e.g. a sauce recipe inside a post), and only the first matches the
-  // JSON-LD recipe selected above.
-  const container = $('.wprm-recipe-container').first();
-  const items = (
-    container.length
-      ? container.find('.wprm-recipe-ingredient')
-      : $('.wprm-recipe-ingredient')
-  ).toArray();
-  if (
-    items.length === 0 ||
-    (expectedCount !== undefined && items.length !== expectedCount)
-  ) {
+  const expected = recipe.recipeIngredient;
+  // A page can carry several WPRM cards (e.g. a sauce recipe embedded in a
+  // post about another dish), and the first card is not necessarily the
+  // JSON-LD recipe selected above. A card is used only when its identity
+  // matches that recipe — by its rendered recipe name, or by a majority of
+  // its ingredient names matching the selected recipe's parsed ingredient
+  // names. When no card can be matched, fall back to the JSON-LD strings.
+  const containers = $('.wprm-recipe-container').toArray();
+  const cardItems = containers.length
+    ? containers.map(container =>
+        $(container).find('.wprm-recipe-ingredient').toArray(),
+      )
+    : [$('.wprm-recipe-ingredient').toArray()];
+  const expectedNames = (expected ?? []).map(
+    raw => parseIngredientText(raw).name,
+  );
+  let items: (typeof cardItems)[number] | null = null;
+  for (const [index, candidate] of cardItems.entries()) {
+    if (
+      candidate.length === 0 ||
+      (expected !== undefined && candidate.length !== expected.length)
+    ) {
+      continue;
+    }
+    if (expected === undefined || containers.length === 0) {
+      items = candidate;
+      break;
+    }
+    const container = containers[index];
+    /* c8 ignore next 3 -- index is bounded by the containers array */
+    const heading = container
+      ? $(container).find('.wprm-recipe-name').first().text()
+      : '';
+    const headingMatches =
+      !!recipe.name &&
+      !!normalizeForMatch(heading) &&
+      normalizeForMatch(heading) === normalizeForMatch(recipe.name);
+    if (!headingMatches) {
+      const matchingNames = candidate.filter((el, i) =>
+        ingredientNamesMatch(
+          $(el).find('.wprm-recipe-ingredient-name').first().text(),
+          /* c8 ignore next -- candidate and expected lengths are equality-checked above */
+          expectedNames[i] ?? '',
+        ),
+      ).length;
+      if (matchingNames * 2 <= candidate.length) {
+        continue;
+      }
+    }
+    items = candidate;
+    break;
+  }
+  if (!items) {
     return null;
   }
   const ingredients = items.map((el, i): IngredientInput => {
@@ -120,7 +176,7 @@ const toRecipeImport = (recipe: SchemaRecipe, $: CheerioAPI): RecipeImport => ({
   cookTimeMin: parseDuration(recipe.cookTime ?? ''),
   sourceUrl: null,
   ingredients:
-    parseWprmIngredients($, recipe.recipeIngredient?.length) ??
+    parseWprmIngredients($, recipe) ??
     (recipe.recipeIngredient ?? []).map(toIngredient),
   instructions: (recipe.recipeInstructions ?? []).map((s, i) => ({
     stepNumber: i + 1,

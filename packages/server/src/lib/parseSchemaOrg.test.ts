@@ -362,6 +362,94 @@ describe('parseSchemaOrg with WP Recipe Maker markup', () => {
     expect(result?.ingredients[3]?.notes).toBe('can substitute salt');
   });
 
+  test('skips a different WPRM card placed first with the same ingredient count', () => {
+    const foreignCard = `<div class="wprm-recipe-container"><ul>
+<li class="wprm-recipe-ingredient"><span class="wprm-recipe-ingredient-amount">9</span> <span class="wprm-recipe-ingredient-unit">cups</span> <span class="wprm-recipe-ingredient-name">flour</span></li>
+<li class="wprm-recipe-ingredient"><span class="wprm-recipe-ingredient-amount">9</span> <span class="wprm-recipe-ingredient-unit">cups</span> <span class="wprm-recipe-ingredient-name">sugar</span></li>
+<li class="wprm-recipe-ingredient"><span class="wprm-recipe-ingredient-amount">9</span> <span class="wprm-recipe-ingredient-unit">cups</span> <span class="wprm-recipe-ingredient-name">cocoa</span></li>
+<li class="wprm-recipe-ingredient"><span class="wprm-recipe-ingredient-amount">9</span> <span class="wprm-recipe-ingredient-unit">cups</span> <span class="wprm-recipe-ingredient-name">butter</span></li>
+<li class="wprm-recipe-ingredient"><span class="wprm-recipe-ingredient-amount">9</span> <span class="wprm-recipe-ingredient-unit">cups</span> <span class="wprm-recipe-ingredient-name">eggs</span></li>
+<li class="wprm-recipe-ingredient"><span class="wprm-recipe-ingredient-amount">9</span> <span class="wprm-recipe-ingredient-unit">cups</span> <span class="wprm-recipe-ingredient-name">milk</span></li>
+</ul></div>`;
+    const html = WPRM_HTML.replace(
+      '<div class="wprm-recipe-container">',
+      `${foreignCard}\n<div class="wprm-recipe-container">`,
+    );
+    const $ = load(html);
+    const result = parseSchemaOrg($);
+    expect(result?.ingredients).toHaveLength(6);
+    expect(result?.ingredients[0]?.name).toBe('avocado, pitted and peeled');
+    expect(result?.ingredients[3]?.notes).toBe('can substitute salt');
+  });
+
+  test('falls back to the JSON-LD strings when the only WPRM card is a different recipe', () => {
+    const html = WPRM_HTML.replace('>avocado, pitted and peeled<', '>flour<')
+      .replace('>lemon juice, fresh<', '>sugar<')
+      .replace('>dill, fresh chopped<', '>cocoa<')
+      .replace('>Hey Old Sport Overachiever to taste<', '>butter<')
+      .replace('>honey<', '>eggs<')
+      .replace('>red onion, sliced<', '>milk<');
+    const $ = load(html);
+    const result = parseSchemaOrg($);
+    expect(result?.ingredients).toHaveLength(6);
+    expect(result?.ingredients[0]).toEqual({
+      sortOrder: 0,
+      name: 'avocado, pitted and peeled',
+      quantity: 1,
+      unit: 'medium',
+      notes: null,
+      isOptional: false,
+    });
+    // The WPRM-only notes span must not leak in from the other recipe's card.
+    expect(result?.ingredients[3]?.notes).toBeNull();
+  });
+
+  test('matches a WPRM card by its rendered recipe name heading', () => {
+    const card = (heading: string, names: string[]) =>
+      `<div class="wprm-recipe-container"><h2 class="wprm-recipe-name">${heading}</h2><ul>${names
+        .map(
+          name =>
+            `<li class="wprm-recipe-ingredient"><span class="wprm-recipe-ingredient-amount">3</span> <span class="wprm-recipe-ingredient-unit">cups</span> <span class="wprm-recipe-ingredient-name">${name}</span></li>`,
+        )
+        .join('')}</ul></div>`;
+    const html = WPRM_HTML.replace(
+      /<div class="wprm-recipe-container">[\s\S]*<\/body>/,
+      `${card('Some Other Dish', ['a1', 'a2', 'a3', 'a4', 'a5', 'a6'])}${card(
+        'Cucumber Crunch Salad',
+        ['b1', 'b2', 'b3', 'b4', 'b5', 'b6'],
+      )}</body>`,
+    );
+    const $ = load(html);
+    const result = parseSchemaOrg($);
+    expect(result?.ingredients.map(ingredient => ingredient.name)).toEqual([
+      'b1',
+      'b2',
+      'b3',
+      'b4',
+      'b5',
+      'b6',
+    ]);
+  });
+
+  test('uses WPRM spans without a container element', () => {
+    const html = WPRM_HTML.replace(
+      '<div class="wprm-recipe-container">',
+      '',
+    ).replace('</ul>\n</div>', '</ul>');
+    const $ = load(html);
+    const result = parseSchemaOrg($);
+    expect(result?.ingredients).toHaveLength(6);
+    expect(result?.ingredients[3]?.notes).toBe('can substitute salt');
+  });
+
+  test('uses the WPRM card when the JSON-LD recipe lists no ingredients', () => {
+    const html = WPRM_HTML.replace(/"recipeIngredient":\[[^\]]*\],/, '');
+    const $ = load(html);
+    const result = parseSchemaOrg($);
+    expect(result?.ingredients).toHaveLength(6);
+    expect(result?.ingredients[0]?.name).toBe('avocado, pitted and peeled');
+  });
+
   test('falls back to the JSON-LD strings when the WPRM list is incomplete', () => {
     const html = WPRM_HTML.replace(
       '<li class="wprm-recipe-ingredient"><span class="wprm-recipe-ingredient-amount">1/2</span> <span class="wprm-recipe-ingredient-name">red onion, sliced</span></li>\n',
