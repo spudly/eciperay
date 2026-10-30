@@ -1,4 +1,4 @@
-import {screen, waitFor, within} from '@testing-library/react';
+import {act, fireEvent, screen, waitFor, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {beforeEach, describe, expect, test, vi} from 'vitest';
 
@@ -156,7 +156,7 @@ describe('GenerateAiPage', () => {
     );
     await user.click(screen.getByRole('button', {name: 'Start planning'}));
     await screen.findByRole('button', {name: 'Approve plan'});
-    expect(localStorage.getItem('eciperay:create-ai-session-id')).toBe(
+    expect(localStorage.getItem('eciperay:create-ai-session-id:user-1')).toBe(
       'session-1',
     );
     first.unmount();
@@ -240,7 +240,7 @@ describe('GenerateAiPage', () => {
       screen.getByText('Plan from owner-scoped fetch'),
     ).toBeInTheDocument();
     expect(screen.queryByText('Plan for cookies')).not.toBeInTheDocument();
-    expect(localStorage.getItem('eciperay:create-ai-session-id')).toBe(
+    expect(localStorage.getItem('eciperay:create-ai-session-id:user-1')).toBe(
       'session-1',
     );
     // Adoption never starts a second session; the adopted session is
@@ -292,7 +292,9 @@ describe('GenerateAiPage', () => {
     // The definitive not-found drops the adopted id and the page stays
     // on the fresh form — the other account's plan is never rendered.
     await waitFor(() => {
-      expect(localStorage.getItem('eciperay:create-ai-session-id')).toBeNull();
+      expect(
+        localStorage.getItem('eciperay:create-ai-session-id:user-1'),
+      ).toBeNull();
     });
     expect(screen.queryByText('Plan for cookies')).not.toBeInTheDocument();
     expect(
@@ -300,11 +302,23 @@ describe('GenerateAiPage', () => {
     ).toBeInTheDocument();
   });
 
-  test('a restore superseded by a newer stored session does not display', async () => {
+  test('a restore superseded by a newer stored session restores the newer session', async () => {
     // An adopted start's owner-scoped restore is still in flight when
     // a newer session starts elsewhere (another tab) and stores its
     // id under the same key. When the older restore finally resolves,
-    // it must not display its session over the newer pointer.
+    // it must not display its session over the newer pointer — and
+    // the host must go on to restore the session the pointer names
+    // now, not drop to the fresh form and leave the newer session
+    // unrestored (a fresh start from there would overwrite its
+    // pointer).
+    const newerSession = {
+      ...session,
+      id: 'session-2',
+      messages: [
+        {role: 'user' as const, content: 'pasta'},
+        {role: 'assistant' as const, content: 'Plan for the newer session'},
+      ],
+    };
     let resolveStart!: (value: unknown) => void;
     let resolveGet!: (value: unknown) => void;
     mockStart.mockImplementation(
@@ -313,11 +327,12 @@ describe('GenerateAiPage', () => {
           resolveStart = resolve;
         }),
     );
-    mockGet.mockImplementation(
-      () =>
-        new Promise(resolve => {
-          resolveGet = resolve;
-        }),
+    mockGet.mockImplementation((sessionId: string) =>
+      sessionId === 'session-2'
+        ? Promise.resolve({session: newerSession})
+        : new Promise(resolve => {
+            resolveGet = resolve;
+          }),
     );
     const user = userEvent.setup();
     const first = await renderWithProviders(<GenerateAiPage />);
@@ -343,20 +358,74 @@ describe('GenerateAiPage', () => {
     );
     expect(screen.getByRole('button', {name: 'Start planning'})).toBeDisabled();
     // A newer session's start elsewhere moves the stored pointer.
-    localStorage.setItem('eciperay:create-ai-session-id', 'session-2');
+    localStorage.setItem('eciperay:create-ai-session-id:user-1', 'session-2');
     resolveGet({session});
-    // The restore settling lifts busy (the start control enables),
-    // which proves the older response was processed — and its plan
-    // was still never displayed, nor did it move the pointer back.
-    await waitFor(() => {
+    // The older session is still never displayed; instead the host
+    // fetches and shows the newer session the pointer names, and the
+    // pointer itself is left untouched.
+    expect(
+      await screen.findByText('Plan for the newer session'),
+    ).toBeInTheDocument();
+    expect(mockGet).toHaveBeenCalledWith('session-2');
+    expect(screen.queryByText('Plan for cookies')).not.toBeInTheDocument();
+    expect(localStorage.getItem('eciperay:create-ai-session-id:user-1')).toBe(
+      'session-2',
+    );
+  });
+
+  test('does not restore or clear a session id stored under another account', async () => {
+    // Session pointers are partitioned by account: a pointer stored
+    // under a different account's key is invisible to this account —
+    // it is neither restored (which would 404 against the
+    // owner-scoped API) nor cleared by that failed restore.
+    localStorage.setItem(
+      'eciperay:create-ai-session-id:user-2',
+      'session-foreign',
+    );
+    await renderWithProviders(<GenerateAiPage />);
+    expect(mockGet).not.toHaveBeenCalled();
+    expect(localStorage.getItem('eciperay:create-ai-session-id:user-2')).toBe(
+      'session-foreign',
+    );
+    expect(
+      screen.getByPlaceholderText(/quick weeknight vegetarian pasta/i),
+    ).toBeInTheDocument();
+  });
+
+  test('a stalled restore times out and frees the form, keeping the stored id', async () => {
+    vi.useFakeTimers();
+    try {
+      localStorage.setItem('eciperay:create-ai-session-id:user-1', 'session-1');
+      // The restore GET never settles.
+      mockGet.mockImplementation(() => new Promise(() => {}));
+      await renderWithProviders(<GenerateAiPage />);
+      expect(mockGet).toHaveBeenCalledWith('session-1');
+      // fireEvent, not userEvent: userEvent's async typing deadlocks
+      // under fake timers in this setup.
+      fireEvent.change(
+        screen.getByPlaceholderText(/quick weeknight vegetarian pasta/i),
+        {target: {value: 'simple chocolate chip cookies for 12'}},
+      );
+      // While the restore is pending the host is busy.
+      expect(
+        screen.getByRole('button', {name: 'Start planning'}),
+      ).toBeDisabled();
+      await act(async () => {
+        vi.advanceTimersByTime(30_000);
+      });
+      // The timeout settles the restore: the form is usable again, no
+      // unverified session is displayed, and the stored id survives
+      // (a timeout is not a definitive not-found) for a later retry.
       expect(
         screen.getByRole('button', {name: 'Start planning'}),
       ).not.toBeDisabled();
-    });
-    expect(screen.queryByText('Plan for cookies')).not.toBeInTheDocument();
-    expect(localStorage.getItem('eciperay:create-ai-session-id')).toBe(
-      'session-2',
-    );
+      expect(screen.queryByText('Plan for cookies')).not.toBeInTheDocument();
+      expect(localStorage.getItem('eciperay:create-ai-session-id:user-1')).toBe(
+        'session-1',
+      );
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   test('a late-finishing earlier start does not overwrite a newer session', async () => {
@@ -400,7 +469,7 @@ describe('GenerateAiPage', () => {
     );
     await user.click(secondUi.getByRole('button', {name: 'Start planning'}));
     expect(await secondUi.findByText('Plan for pasta')).toBeInTheDocument();
-    expect(localStorage.getItem('eciperay:create-ai-session-id')).toBe(
+    expect(localStorage.getItem('eciperay:create-ai-session-id:user-1')).toBe(
       'session-2',
     );
     resolveEarlier({session, plan: 'Plan for cookies'});
@@ -413,7 +482,7 @@ describe('GenerateAiPage', () => {
         firstUi.getByRole('button', {name: 'Start planning'}),
       ).toBeInTheDocument();
     });
-    expect(localStorage.getItem('eciperay:create-ai-session-id')).toBe(
+    expect(localStorage.getItem('eciperay:create-ai-session-id:user-1')).toBe(
       'session-2',
     );
     expect(secondUi.getByText('Plan for pasta')).toBeInTheDocument();
@@ -421,14 +490,19 @@ describe('GenerateAiPage', () => {
   });
 
   test('drops a stored session id that no longer resolves', async () => {
-    localStorage.setItem('eciperay:create-ai-session-id', 'session-gone');
+    localStorage.setItem(
+      'eciperay:create-ai-session-id:user-1',
+      'session-gone',
+    );
     mockGet.mockRejectedValue(new Error('Session not found'));
     await renderWithProviders(<GenerateAiPage />);
     await waitFor(() => {
       expect(mockGet).toHaveBeenCalledWith('session-gone');
     });
     await waitFor(() => {
-      expect(localStorage.getItem('eciperay:create-ai-session-id')).toBeNull();
+      expect(
+        localStorage.getItem('eciperay:create-ai-session-id:user-1'),
+      ).toBeNull();
     });
     expect(
       screen.getByPlaceholderText(/quick weeknight vegetarian pasta/i),
@@ -436,13 +510,13 @@ describe('GenerateAiPage', () => {
   });
 
   test('restore never serves cached query data from a previous account', async () => {
-    localStorage.setItem('eciperay:create-ai-session-id', 'session-1');
+    localStorage.setItem('eciperay:create-ai-session-id:user-1', 'session-1');
     // Poison the shared QueryClient cache under the restore key with a
     // different session, as a previous account's restore could have left
     // behind before a sign-out/sign-in switch in the same tab.
     const queryClient = makeQueryClient();
     queryClient.setQueryData(
-      ['aiSessionRestore', 'eciperay:create-ai-session-id', 'session-1'],
+      ['aiSessionRestore', 'eciperay:create-ai-session-id:user-1', 'session-1'],
       {
         session: {
           ...session,
@@ -463,7 +537,7 @@ describe('GenerateAiPage', () => {
   });
 
   test('keeps the stored session id after a transient restore failure', async () => {
-    localStorage.setItem('eciperay:create-ai-session-id', 'session-1');
+    localStorage.setItem('eciperay:create-ai-session-id:user-1', 'session-1');
     mockGet.mockRejectedValue(
       new Error('API error 500: /recipes/import/ai/sessions/session-1'),
     );
@@ -473,7 +547,7 @@ describe('GenerateAiPage', () => {
     });
     // The id survives so a later visit can retry the restore; the page
     // still shows the fresh form for this visit.
-    expect(localStorage.getItem('eciperay:create-ai-session-id')).toBe(
+    expect(localStorage.getItem('eciperay:create-ai-session-id:user-1')).toBe(
       'session-1',
     );
     expect(
@@ -482,14 +556,16 @@ describe('GenerateAiPage', () => {
   });
 
   test('does not restore a stored session that already finished', async () => {
-    localStorage.setItem('eciperay:create-ai-session-id', 'session-1');
+    localStorage.setItem('eciperay:create-ai-session-id:user-1', 'session-1');
     mockGet.mockResolvedValue({session: {...session, phase: 'completed'}});
     await renderWithProviders(<GenerateAiPage />);
     await waitFor(() => {
       expect(mockGet).toHaveBeenCalledWith('session-1');
     });
     await waitFor(() => {
-      expect(localStorage.getItem('eciperay:create-ai-session-id')).toBeNull();
+      expect(
+        localStorage.getItem('eciperay:create-ai-session-id:user-1'),
+      ).toBeNull();
     });
     expect(screen.queryByText('Plan for cookies')).not.toBeInTheDocument();
   });
@@ -518,14 +594,14 @@ describe('GenerateAiPage', () => {
     // Another tab has since started a newer session under the same key;
     // the stored id now points at that session and must stay pointing
     // there — ids are written at session start, not on every update.
-    localStorage.setItem('eciperay:create-ai-session-id', 'session-2');
+    localStorage.setItem('eciperay:create-ai-session-id:user-1', 'session-2');
     await user.type(
       screen.getByPlaceholderText('Ask for changes to the plan…'),
       'add vanilla',
     );
     await user.click(screen.getByRole('button', {name: 'Refine plan'}));
     expect(await screen.findByText('Add vanilla extract')).toBeInTheDocument();
-    expect(localStorage.getItem('eciperay:create-ai-session-id')).toBe(
+    expect(localStorage.getItem('eciperay:create-ai-session-id:user-1')).toBe(
       'session-2',
     );
   });
@@ -542,10 +618,10 @@ describe('GenerateAiPage', () => {
     await user.click(screen.getByRole('button', {name: 'Start planning'}));
     await screen.findByRole('button', {name: 'Approve plan'});
     // Another tab has since started a newer session under the same key.
-    localStorage.setItem('eciperay:create-ai-session-id', 'session-2');
+    localStorage.setItem('eciperay:create-ai-session-id:user-1', 'session-2');
     await user.click(screen.getByText('Cancel session'));
     expect(mockCancel).toHaveBeenCalledWith('session-1');
-    expect(localStorage.getItem('eciperay:create-ai-session-id')).toBe(
+    expect(localStorage.getItem('eciperay:create-ai-session-id:user-1')).toBe(
       'session-2',
     );
   });
@@ -599,7 +675,9 @@ describe('GenerateAiPage', () => {
     await user.click(screen.getByText('Cancel session'));
     expect(mockCancel).toHaveBeenCalledWith('session-1');
     expect(mockNavigate).toHaveBeenCalledWith(-1);
-    expect(localStorage.getItem('eciperay:create-ai-session-id')).toBeNull();
+    expect(
+      localStorage.getItem('eciperay:create-ai-session-id:user-1'),
+    ).toBeNull();
   });
 
   test('shows default phase label for completed session', async () => {

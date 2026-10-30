@@ -1,4 +1,4 @@
-import {invalidateRecipeQueries, useAnalytics} from '@eciperay/client';
+import {invalidateRecipeQueries, useAnalytics, useAuth} from '@eciperay/client';
 import {useQueryClient} from '@tanstack/react-query';
 import {useNavigate} from 'react-router-dom';
 import type {CreateAiRecipeResult, TweakAiPhase} from '@eciperay/types';
@@ -44,6 +44,7 @@ export const GenerateAiPage = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const analytics = useAnalytics();
+  const {session: authSession} = useAuth();
 
   const api: AiSessionFlowApi = {
     start: async prompt => {
@@ -66,8 +67,17 @@ export const GenerateAiPage = () => {
     cancel: sessionId => eciperay.createAi.cancel(sessionId),
   };
 
+  const storageKey = `eciperay:create-ai-session-id:${authSession?.user.id ?? 'anonymous'}`;
+
   return (
     <AiSessionHost
+      // Keyed by the storage key: the key gains its account segment
+      // when auth resolves, and the host's restore/adoption state is
+      // bound to the key it first saw — a remount under the settled
+      // key keeps every read, write, and shared-start lookup on the
+      // same key. (In production AuthGuard settles auth before this
+      // page renders, so the key is stable from the first render.)
+      key={storageKey}
       config={{
         title: 'Generate with AI',
         intro:
@@ -81,7 +91,10 @@ export const GenerateAiPage = () => {
         phaseLabel,
       }}
       api={api}
-      storageKey="eciperay:create-ai-session-id"
+      // Partitioned by account: another account opening this flow in
+      // the same browser must neither restore nor clear this
+      // account's session pointer.
+      storageKey={storageKey}
       onEmptyCancel={() => {
         void navigate(-1);
       }}

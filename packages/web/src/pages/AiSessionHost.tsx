@@ -85,6 +85,13 @@ const clearStoredSessionId = (storageKey: string, sessionId: string) => {
 const isTerminalPhase = (phase: TweakAiPhase) =>
   phase === 'completed' || phase === 'cancelled';
 
+/**
+ * Upper bound for one session-restore GET. Generous for a single-record fetch;
+ * its only job is to keep a stalled request from wedging the host's busy state
+ * forever.
+ */
+const RESTORE_TIMEOUT_MS = 30_000;
+
 type SharedStart = {
   promise: Promise<{session: AiSessionState}>;
   /**
@@ -134,17 +141,43 @@ export const AiSessionHost = ({
   // 404s sessions owned by another account — and can never be the
   // previous account's cached copy after a sign-out/sign-in switch.
   const [storedSessionId] = useState(() => readStoredSessionId(storageKey));
+  // The restore this host most recently needs, callable from the
+  // mutation's own onSuccess (the mutate function is assigned to this
+  // ref by the effect below, before any restore can settle).
+  const restoreSessionRef = useRef<(sessionId: string) => void>(() => {});
   const restoreMutation = useMutation({
-    mutationFn: (sessionId: string) => api.get(sessionId),
+    // A restore is a single-record GET: if it stalls, the host must
+    // not stay busy forever with no way to start over. The timeout
+    // rejects the restore (the stored id is kept — a timeout is not a
+    // definitive not-found — so a later visit can retry), the busy
+    // state lifts, and the stalled response, if it ever arrives, is
+    // ignored: an unverified session is never displayed.
+    mutationFn: (sessionId: string) => {
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const timeout = new Promise<never>((_resolve, reject) => {
+        timer = setTimeout(() => {
+          reject(new Error('Session restore timed out'));
+        }, RESTORE_TIMEOUT_MS);
+      });
+      return Promise.race([api.get(sessionId), timeout]).finally(() => {
+        if (timer) {
+          clearTimeout(timer);
+        }
+      });
+    },
     onSuccess: result => {
       const restored = result.session;
       // A newer session may have started (and stored its id) while
       // this restore was in flight — e.g. a second start begun in the
       // gap after an adopted start resolved. The stored pointer names
       // the session that should be visible; a restore for any other
-      // id is superseded and must not replace it.
+      // id is superseded and must not replace it. Restore the session
+      // the pointer names now instead of dropping to the fresh form:
+      // left there, the newer session would never be fetched, and
+      // starting another session would overwrite its pointer.
       const currentStoredId = readStoredSessionId(storageKey);
       if (currentStoredId !== null && currentStoredId !== restored.id) {
+        restoreSessionRef.current(currentStoredId);
         return;
       }
       if (isTerminalPhase(restored.phase)) {
@@ -165,6 +198,9 @@ export const AiSessionHost = ({
     },
   });
   const {mutate: restoreSession} = restoreMutation;
+  useEffect(() => {
+    restoreSessionRef.current = restoreSession;
+  }, [restoreSession]);
   const restoreFired = useRef(false);
   useEffect(() => {
     if (storedSessionId === null || restoreFired.current) {

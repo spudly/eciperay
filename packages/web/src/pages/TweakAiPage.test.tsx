@@ -49,7 +49,7 @@ describe('TweakAiPage', () => {
 
   test('restores a persisted tweak session on mount', async () => {
     localStorage.setItem(
-      'eciperay:tweak-ai-session-id:recipe-uuid-1',
+      'eciperay:tweak-ai-session-id:recipe-uuid-1:user-1',
       'session-1',
     );
     const get = vi.spyOn(eciperay.tweakAi, 'get').mockResolvedValue({
@@ -105,7 +105,7 @@ describe('TweakAiPage', () => {
       await screen.findByText(/Plan for: make it spicier/),
     ).toBeInTheDocument();
     expect(
-      localStorage.getItem('eciperay:tweak-ai-session-id:recipe-uuid-1'),
+      localStorage.getItem('eciperay:tweak-ai-session-id:recipe-uuid-1:user-1'),
     ).not.toBeNull();
 
     // A param-only navigation reuses the page instance; the previous
@@ -119,7 +119,7 @@ describe('TweakAiPage', () => {
     });
     expect(screen.getByPlaceholderText(PROMPT)).toBeInTheDocument();
     expect(
-      localStorage.getItem('eciperay:tweak-ai-session-id:recipe-uuid-2'),
+      localStorage.getItem('eciperay:tweak-ai-session-id:recipe-uuid-2:user-1'),
     ).toBeNull();
   });
 
