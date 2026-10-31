@@ -207,6 +207,11 @@ export {
   writeFeedbackShortcutEnabled,
 } from './feedbackPreference.js';
 export {
+  readShoppingListCheckedKeys,
+  shoppingListCheckedStorageKey,
+  writeShoppingListCheckedKeys,
+} from './shoppingListChecked.js';
+export {
   FeedbackPreferenceContextProvider,
   FeedbackPreferenceProvider,
   useFeedbackShortcutEnabled,
