@@ -73,6 +73,93 @@ describe('normalizeIngredientForDuplicateMatch', () => {
   });
 });
 
+describe('legacy (pre-split) ingredient normalization (#309)', () => {
+  test('an unsplit legacy row fingerprints like its split re-import', () => {
+    expect(
+      normalizeIngredientForDuplicateMatch(
+        ingredient({name: '200g pasta', quantity: null, unit: null}),
+      ),
+    ).toBe(normalizeIngredientForDuplicateMatch(ingredient()));
+    expect(
+      normalizeIngredientForDuplicateMatch(
+        ingredient({name: '200g pasta', quantity: null, unit: null}),
+      ),
+    ).toBe('pasta|200|g||required');
+  });
+
+  test('an amount-only legacy prefix splits too', () => {
+    expect(
+      normalizeIngredientForDuplicateMatch(
+        ingredient({name: '2 eggs', quantity: null, unit: null}),
+      ),
+    ).toBe('eggs|2|||required');
+  });
+
+  test('a ranged legacy amount keeps the range text as notes, like the split import', () => {
+    const legacy = normalizeIngredientForDuplicateMatch(
+      ingredient({name: '1-2 tbsp olive oil', quantity: null, unit: null}),
+    );
+    const split = normalizeIngredientForDuplicateMatch(
+      ingredient({name: 'olive oil', quantity: 1, unit: 'tbsp', notes: '1-2'}),
+    );
+    expect(legacy).toBe(split);
+    expect(legacy).toBe('olive oil|1|tbsp|1-2|required');
+  });
+
+  test('a legacy row’s own notes win over the parser’s notes', () => {
+    expect(
+      normalizeIngredientForDuplicateMatch(
+        ingredient({
+          name: '1-2 tbsp olive oil',
+          quantity: null,
+          unit: null,
+          notes: 'good quality',
+        }),
+      ),
+    ).toBe('olive oil|1|tbsp|good quality|required');
+  });
+
+  test('a legacy name with no parseable amount prefix fingerprints unchanged', () => {
+    expect(
+      normalizeIngredientForDuplicateMatch(
+        ingredient({
+          name: 'Salt and pepper to taste',
+          quantity: null,
+          unit: null,
+        }),
+      ),
+    ).toBe('salt and pepper to taste||||required');
+  });
+
+  test('already-normalized rows are never re-parsed', () => {
+    // Quantity present: the name is taken as stored, even if it still
+    // contains an amount-looking prefix.
+    expect(
+      normalizeIngredientForDuplicateMatch(
+        ingredient({name: '200g pasta', quantity: 100, unit: 'g'}),
+      ),
+    ).toBe('200g pasta|100|g||required');
+    // Unit present with a null quantity: likewise untouched.
+    expect(
+      normalizeIngredientForDuplicateMatch(
+        ingredient({name: '200g pasta', quantity: null, unit: 'g'}),
+      ),
+    ).toBe('200g pasta||g||required');
+  });
+
+  test('list fingerprints match across the legacy/split shapes', () => {
+    const legacy = ingredientListFingerprint([
+      ingredient({name: '200g pasta', quantity: null, unit: null}),
+      ingredient({name: '5 basil', quantity: null, unit: null}),
+    ]);
+    const split = ingredientListFingerprint([
+      ingredient(),
+      ingredient({name: 'basil', quantity: 5, unit: null}),
+    ]);
+    expect(legacy).toBe(split);
+  });
+});
+
 describe('ingredientListFingerprint', () => {
   test('is insensitive to ingredient order and name casing', () => {
     const a = ingredientListFingerprint([
@@ -244,6 +331,99 @@ describe('findDuplicateRecipe', () => {
     const sql = String(mockQuery.mock.calls[0]?.[0]);
     expect(sql).toContain('= $2');
     expect(sql).toContain("or rv.title ~ '[^\\x00-\\x7F]'");
+  });
+
+  test('matches a pre-split legacy candidate against the split re-import (#309)', async () => {
+    const mockQuery = createMockQuery();
+    mockQuery.mockResolvedValue(
+      makeQueryResult([
+        candidateRow({
+          ingredients: [
+            {
+              name: '200g pasta',
+              quantity: null,
+              unit: null,
+              notes: null,
+              isOptional: false,
+            },
+            {
+              name: '5 basil',
+              quantity: null,
+              unit: null,
+              notes: null,
+              isOptional: false,
+            },
+          ],
+        }),
+      ]),
+    );
+    await expect(
+      findDuplicateRecipe('user-uuid-1', input, mockQuery),
+    ).resolves.toEqual({recipeId: 'recipe-uuid-9', title: 'Pasted Pasta'});
+  });
+
+  test('does not match a legacy candidate whose amount differs from the re-import (#309)', async () => {
+    const mockQuery = createMockQuery();
+    mockQuery.mockResolvedValue(
+      makeQueryResult([
+        candidateRow({
+          ingredients: [
+            {
+              name: '250g pasta',
+              quantity: null,
+              unit: null,
+              notes: null,
+              isOptional: false,
+            },
+            {
+              name: '5 basil',
+              quantity: null,
+              unit: null,
+              notes: null,
+              isOptional: false,
+            },
+          ],
+        }),
+      ]),
+    );
+    await expect(
+      findDuplicateRecipe('user-uuid-1', input, mockQuery),
+    ).resolves.toBeNull();
+  });
+
+  test('still matches a legacy candidate with no parseable amount prefix exactly (#309)', async () => {
+    const mockQuery = createMockQuery();
+    mockQuery.mockResolvedValue(
+      makeQueryResult([
+        candidateRow({
+          ingredients: [
+            {
+              name: 'Salt and pepper to taste',
+              quantity: null,
+              unit: null,
+              notes: null,
+              isOptional: false,
+            },
+          ],
+        }),
+      ]),
+    );
+    await expect(
+      findDuplicateRecipe(
+        'user-uuid-1',
+        {
+          title: 'Pasted Pasta',
+          ingredients: [
+            ingredient({
+              name: 'Salt and pepper to taste',
+              quantity: null,
+              unit: null,
+            }),
+          ],
+        },
+        mockQuery,
+      ),
+    ).resolves.toEqual({recipeId: 'recipe-uuid-9', title: 'Pasted Pasta'});
   });
 
   test('returns null for an empty library', async () => {
