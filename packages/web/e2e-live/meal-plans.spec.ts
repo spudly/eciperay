@@ -84,13 +84,15 @@ test.describe('live meal plans', () => {
     await expect(page.getByText('CI Test Ingredient')).toBeVisible({
       timeout: 15_000,
     });
-    // Target the checkbox on the ingredient's own row: the list is
-    // generated from a persistent dataset, so "the first checkbox" is
-    // not a stable identity for this item.
-    const checkbox = page
-      .getByRole('listitem')
-      .filter({hasText: 'CI Test Ingredient'})
-      .getByRole('checkbox');
+    // Target the ingredient's own row: the list is generated from a
+    // persistent dataset, so "the first checkbox" is not a stable
+    // identity for this item. On the DS shopping-list page the row
+    // itself carries the checkbox semantics (role + aria-checked,
+    // accessible name "CI Test Ingredient, <quantity>") — there is no
+    // listitem wrapper or nested control to scope through.
+    const checkbox = page.getByRole('checkbox', {
+      name: /CI Test Ingredient/,
+    });
     await checkbox.check();
     await expect(checkbox).toBeChecked();
   });
