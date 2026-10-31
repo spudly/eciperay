@@ -15,7 +15,7 @@ import {makeQueryClient, renderWithProviders} from '../test/testUtils.js';
 import {RecipeDetailPage} from './RecipeDetailPage.js';
 
 describe('RecipeDetailPage', () => {
-  test('renders tabs and switches between them', async () => {
+  test('renders every section in a single scroll', async () => {
     await renderWithProviders(
       <Routes>
         <Route
@@ -28,18 +28,16 @@ describe('RecipeDetailPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Test Recipe')).toBeInTheDocument();
     });
-    // #278: the status renders exactly once (the chrome's pill), not
-    // again in the Overview tab under the title.
+    // #278: the status renders exactly once (the page chrome's pill),
+    // not again in the overview under the title.
     expect(screen.getAllByText('Evolving')).toHaveLength(1);
-    await userEvent.click(screen.getByText('Ingredients'));
+    // The design-system page is single-scroll (B7 C7): every section
+    // renders on the page — no tab switching.
     expect(screen.getByText(/Flour/)).toBeInTheDocument();
-    await userEvent.click(screen.getByText('Instructions'));
     expect(screen.getByText('Mix dry ingredients')).toBeInTheDocument();
-    await userEvent.click(screen.getByText('Cook History'));
     await waitFor(() => {
       expect(screen.getByText('Turned out great')).toBeInTheDocument();
     });
-    await userEvent.click(screen.getByText('Nutrition'));
     await waitFor(() => {
       expect(screen.getByText('250')).toBeInTheDocument();
     });
@@ -63,7 +61,9 @@ describe('RecipeDetailPage', () => {
       expect(screen.getByText('Test Recipe')).toBeInTheDocument();
     });
     await userEvent.click(screen.getByText('Delete'));
-    await userEvent.click(screen.getByText('Confirm delete'));
+    // #263: deletion confirms host-side (the design-system Dialog);
+    // confirming runs the mutation and returns to the list.
+    await userEvent.click(await screen.findByText('Confirm delete'));
     expect(await screen.findByText('Recipes list page')).toBeInTheDocument();
   });
 

@@ -1,5 +1,6 @@
 /* eslint-disable max-lines -- detail host: every section's queries, mutations, and view-model mapping */
 import {
+  canCreateDraftVersion,
   canEditActiveRecipeMetadata,
   canEditDraftVersion,
   formatCommunityRatingLabel,
@@ -56,6 +57,7 @@ type RecipeDetailViewProps = {
   onServingsChange: (servings: number) => void;
   onDelete: () => void;
   onViewVersion: (versionId: string) => void;
+  onEditVersion: (versionId: string) => void;
 };
 
 /**
@@ -67,9 +69,9 @@ type RecipeDetailViewProps = {
  * labels formatted with the same helpers the old VersionPicker and
  * OverviewActions used, ingredient lines scaled by the app's formatter,
  * nutrition rows composed by the client's row builder), and every mutation
- * (status, activation, tweak-manually, rating, cook log) plus the three slotted
- * app panels (sharing controls, comments, cook-log form) keep their state and
- * API calls app-side.
+ * (status, activation, tweak-manually, create-a-draft, rating, cook log) plus
+ * the three slotted app panels (sharing controls, comments, cook-log form)
+ * keep their state and API calls app-side.
  *
  * State lifetimes are mapped defensively: the tab components this page replaced
  * unmounted on every tab switch, which reset the ingredients tab's missing set
@@ -145,6 +147,7 @@ export const RecipeDetailView = ({
   onServingsChange,
   onDelete,
   onViewVersion,
+  onEditVersion,
 }: RecipeDetailViewProps) => {
   const queryClient = useQueryClient();
   const {session} = useAuth();
@@ -191,15 +194,22 @@ export const RecipeDetailView = ({
       onViewVersion(version.id);
     },
   });
-  // The Perfected recipe's create-a-draft flow (#264) has no
-  // expression in the @spudly/ui 1.15.0 page contract: the overview's
-  // draft action is the editDraftHref link, which covers opening an
-  // existing draft, but creating a draft is a mutation-then-navigate
-  // control (exempt from the href rule by the #248 borderline ruling)
-  // and the page offers no callback slot for it. The wiring is
-  // therefore removed rather than left dead; the gap is filed
-  // against the design system (see the PR body) and the flow returns
-  // when the page grows the slot.
+  // A Perfected recipe's active version is locked, so its Edit draft
+  // chip creates the draft first and then opens it in the version
+  // editor (#264). Creating a draft is a mutation-then-navigate
+  // control (exempt from the href rule by the #248 borderline ruling),
+  // so @spudly/ui 1.16.0 carries it as the onCreateDraftPress callback
+  // slot (design-system#357); the page renders it as the "Edit draft"
+  // button whenever no existing draft's editDraftHref is passed. The
+  // wiring was removed while the page had no slot for it (1.15.0) and
+  // returns here with the slot.
+  const createDraftMutation = useMutation({
+    mutationFn: () => api.versions.create(displayRecipe.id),
+    onSuccess: version => {
+      void invalidate();
+      onEditVersion(version.id);
+    },
+  });
 
   const isEditable =
     displayRecipe.status !== 'perfected' &&
@@ -398,6 +408,13 @@ export const RecipeDetailView = ({
   }, [displayRecipe.id, displayRecipe.versionId]);
 
   const canEditDraft = canEditDraftVersion(displayRecipe.versionId, versions);
+  // Creating a draft clones the ACTIVE version (the server's createVersion
+  // always clones it), so the chip is only offered while the active version
+  // is the one on display — on an archived version it would silently draft
+  // from a version the user is not looking at.
+  const canCreateDraft =
+    canCreateDraftVersion(displayRecipe.status) &&
+    displayRecipe.versionId === recipe.versionId;
   const canEditMetadata = canEditActiveRecipeMetadata(
     displayRecipe.status,
     displayRecipe.versionId,
@@ -442,6 +459,13 @@ export const RecipeDetailView = ({
         editHref: canEditMetadata ? recipeEditHref(recipe.id) : undefined,
         editDraftHref: canEditDraft
           ? recipeVersionEditHref(recipe.id, displayRecipe.versionId)
+          : undefined,
+        onCreateDraftPress: canCreateDraft
+          ? () => {
+              if (!createDraftMutation.isPending) {
+                createDraftMutation.mutate();
+              }
+            }
           : undefined,
         onDeletePress: onDelete,
         lifecycle,
