@@ -48,9 +48,10 @@ test.describe('authenticated recipes', () => {
     ).toBeVisible();
     // The detail page is single-scroll since B7 C7 (the design-system
     // RecipeDetailPage): ingredients and steps render on the page —
-    // no tab switching. Exact match: "spaghetti" also appears inside
-    // the first instruction sentence.
-    await expect(page.getByText('Spaghetti', {exact: true})).toBeVisible();
+    // no tab switching. The ingredient renders as its scaled line
+    // ("400 g Spaghetti"); the bare name would also match inside the
+    // first instruction sentence.
+    await expect(page.getByText('400 g Spaghetti')).toBeVisible();
     await expect(
       page.getByText('Boil the spaghetti in salted water'),
     ).toBeVisible();
