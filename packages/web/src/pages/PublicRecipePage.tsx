@@ -145,7 +145,13 @@ export const PublicRecipePage = () => {
     useQuery({
       queryKey: [...queryKeys.recipe(id), 'substitutions', missingNames],
       queryFn: () => eciperay.ai.substitutions(id, missingNames),
-      enabled: missingNames.length > 0,
+      // The substitutions endpoint requires an account (requireAuth
+      // + entitlement server-side): a signed-out visitor can still
+      // mark ingredients missing, but the lookup stays off rather
+      // than firing a request that can only 401 — the visible
+      // outcome matches the old tab (no substitutions shown), minus
+      // the failed request.
+      enabled: missingNames.length > 0 && Boolean(session),
     });
 
   const frame = (props: PublicRecipePageProps) => (
