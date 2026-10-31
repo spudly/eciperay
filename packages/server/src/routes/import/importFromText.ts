@@ -21,6 +21,7 @@ import {
 } from '../../lib/schemas.js';
 import {resolveImportedImageUrl} from '../../lib/uploadRecipeImageServer.js';
 import {GET_RECIPE_DETAIL_SQL, setVersionImageUrl} from '../recipes/queries.js';
+import {respondIfDuplicateImport} from './respondIfDuplicateImport.js';
 
 type QueryFn = typeof defaultQuery;
 
@@ -77,6 +78,23 @@ export const importFromText = async (
       userId: req.userId,
       queryFn,
     });
+    // Duplicate warning (#296): warn before a second copy is created;
+    // the client resubmits with allowDuplicate to import anyway. The AI
+    // call is NOT refunded here: the parse succeeded and produced the
+    // warning, so it stays charged — refunding it would let repeated
+    // imports of an already-owned recipe bypass the monthly quota
+    // entirely (each attempt costs a real provider call but would never
+    // count). Refunds remain for failed provider calls only (above).
+    if (
+      await respondIfDuplicateImport(res, {
+        userId: req.userId,
+        input,
+        allowDuplicate: body.data.allowDuplicate,
+        queryFn,
+      })
+    ) {
+      return;
+    }
     const {recipeId, versionId, recipe} = await saveNewRecipeFromInput(
       {userId: req.userId, input, createdVia: 'import_text'},
       queryFn,

@@ -1,4 +1,5 @@
-import {createApiClient} from './createApiClient.js';
+import {createApiClient, type ApiError} from './createApiClient.js';
+import {isDuplicateRecipeError} from './importApi.js';
 
 describe('createApiClient', () => {
   const originalFetch = global.fetch;
@@ -84,6 +85,32 @@ describe('createApiClient', () => {
     ).rejects.toThrow(
       "This feature requires the Power plan. You're on the Free plan.",
     );
+  });
+
+  test('attaches the server error code to the thrown error (#296)', async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () =>
+        JSON.stringify({
+          error: 'duplicate_recipe',
+          message: 'This recipe already exists in your library as "Pasta".',
+          duplicate: {recipeId: 'recipe-uuid-9', title: 'Pasta'},
+        }),
+    });
+    const client = createApiClient({
+      baseUrl: 'http://localhost:8080',
+      getToken: async () => null,
+    });
+    const error = await client
+      .fetch('/recipes/import/text')
+      .catch((error_: unknown) => error_);
+    expect(error).toBeInstanceOf(Error);
+    expect((error as ApiError).code).toBe('duplicate_recipe');
+    expect((error as Error).message).toContain('already exists');
+    expect(isDuplicateRecipeError(error)).toBe(true);
+    expect(isDuplicateRecipeError(new Error('other'))).toBe(false);
+    expect(isDuplicateRecipeError(null)).toBe(false);
   });
 
   test('returns undefined for 204 responses', async () => {

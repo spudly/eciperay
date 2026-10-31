@@ -1,4 +1,4 @@
-import {fireEvent, screen, waitFor} from '@testing-library/react';
+import {screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {http, HttpResponse} from 'msw';
 import {Route, Routes} from 'react-router-dom';
@@ -9,7 +9,7 @@ import {renderWithProviders} from '../test/testUtils.js';
 
 import {ImportTextPage} from './ImportTextPage.js';
 
-const getEditor = () => screen.getByRole('textbox', {name: 'Recipe text'});
+const getEditor = () => screen.getByPlaceholderText('Paste your recipe here…');
 
 describe('ImportTextPage', () => {
   test('imports from pasted text', async () => {
@@ -26,22 +26,11 @@ describe('ImportTextPage', () => {
       </Routes>,
       {route: '/add/text'},
     );
-    await userEvent.click(getEditor());
     await userEvent.type(getEditor(), 'Pasta\n\nBoil water.');
     await userEvent.click(screen.getByText('Import'));
     await waitFor(() => {
       expect(screen.getByText('Review')).toBeInTheDocument();
     });
-  });
-
-  test('renders pasted HTML as rich text', async () => {
-    await renderWithProviders(<ImportTextPage />, {route: '/add/text'});
-    const editor = getEditor();
-    editor.innerHTML = '<h1>Pasta</h1><p>Boil water.</p>';
-    fireEvent.input(editor);
-    expect(editor.querySelector('h1')).toHaveTextContent('Pasta');
-    expect(editor).toHaveTextContent('Boil water.');
-    expect(screen.getByText('Import')).not.toBeDisabled();
   });
 
   test('shows error on failure', async () => {
@@ -51,7 +40,6 @@ describe('ImportTextPage', () => {
       ),
     );
     await renderWithProviders(<ImportTextPage />, {route: '/add/text'});
-    await userEvent.click(getEditor());
     await userEvent.type(getEditor(), 'Some recipe');
     await userEvent.click(screen.getByText('Import'));
     await waitFor(() => {
@@ -59,47 +47,67 @@ describe('ImportTextPage', () => {
     });
   });
 
-  test('reads editor text from innerText when textContent is empty', async () => {
-    await renderWithProviders(<ImportTextPage />, {route: '/add/text'});
-    const editor = getEditor();
-    Object.defineProperty(editor, 'textContent', {
-      get: () => '',
-      configurable: true,
+  test('warns on a duplicate, then imports anyway on resubmit (#296)', async () => {
+    server.use(
+      http.post(
+        'http://localhost:8080/api/recipes/import/text',
+        async ({request}) => {
+          const body = (await request.json()) as {allowDuplicate?: boolean};
+          if (!body.allowDuplicate) {
+            return HttpResponse.json(
+              {
+                error: 'duplicate_recipe',
+                message:
+                  'This recipe already exists in your library as "Pasta". Import anyway to create a second copy.',
+                duplicate: {recipeId: 'recipe-uuid-9', title: 'Pasta'},
+              },
+              {status: 409},
+            );
+          }
+          return HttpResponse.json(
+            {id: 'recipe-uuid-10', title: 'Pasta'},
+            {status: 201},
+          );
+        },
+      ),
+    );
+    await renderWithProviders(
+      <Routes>
+        <Route
+          path="/add/text"
+          element={<ImportTextPage />}
+        />
+        <Route
+          path="/import/review/:recipeId"
+          element={<div>Review</div>}
+        />
+      </Routes>,
+      {route: '/add/text'},
+    );
+    await userEvent.type(getEditor(), 'Pasta\n\nBoil water.');
+    await userEvent.click(screen.getByText('Import'));
+    await waitFor(() => {
+      expect(
+        screen.getByText(/already exists in your library/),
+      ).toBeInTheDocument();
     });
-    Object.defineProperty(editor, 'innerText', {
-      get: () => 'Pasta',
-      configurable: true,
+    // Submitting the same text again imports anyway.
+    await userEvent.click(screen.getByText('Import'));
+    await waitFor(() => {
+      expect(screen.getByText('Review')).toBeInTheDocument();
     });
-    fireEvent.input(editor);
-    expect(screen.getByText('Import')).not.toBeDisabled();
   });
 
-  test('reads editor text from innerText when textContent is unavailable', async () => {
-    await renderWithProviders(<ImportTextPage />, {route: '/add/text'});
-    const editor = getEditor();
-    Object.defineProperty(editor, 'textContent', {
-      get: () => null,
-      configurable: true,
-    });
-    Object.defineProperty(editor, 'innerText', {
-      get: () => 'Pasta',
-      configurable: true,
-    });
-    fireEvent.input(editor);
-    expect(screen.getByText('Import')).not.toBeDisabled();
-  });
-
-  test('does not import when the editor is empty', async () => {
+  test('does not import when the text is empty', async () => {
     const importText = vi.spyOn(eciperay.import, 'importText');
     await renderWithProviders(<ImportTextPage />, {route: '/add/text'});
-    fireEvent.submit(screen.getByText('Import').closest('form')!);
+    expect(screen.getByRole('button', {name: 'Import'})).toBeDisabled();
     expect(importText).not.toHaveBeenCalled();
   });
 
   test('shows generic error for non-Error throws', async () => {
     vi.spyOn(eciperay.import, 'importText').mockRejectedValueOnce('nope');
     await renderWithProviders(<ImportTextPage />, {route: '/add/text'});
-    await userEvent.click(getEditor());
     await userEvent.type(getEditor(), 'Some recipe');
     await userEvent.click(screen.getByText('Import'));
     await waitFor(() => {

@@ -103,13 +103,216 @@ describe('ImportImageScreen', () => {
     expect(mockLaunchCamera).toHaveBeenCalled();
   });
 
+  test('warns on a duplicate capture, then imports it anyway via the Import anyway action (#296)', async () => {
+    const duplicateError = Object.assign(
+      new Error(
+        'This recipe already exists in your library as "Cake". Import anyway to create a second copy.',
+      ),
+      {code: 'duplicate_recipe'},
+    );
+    mockImportImage
+      .mockRejectedValueOnce(duplicateError)
+      .mockResolvedValue(makeRecipeDetail({id: 'img-2'}));
+    const alertSpy = jest.spyOn(Alert, 'alert').mockReturnValue();
+    const {getByText, findByText} = await renderWithProviders(
+      <ImportImageScreen {...stackProps} />,
+    );
+    await fireEvent.press(getByText('Take Photo'));
+    expect(await findByText(/already exists in your library/)).toBeTruthy();
+    // A duplicate warning is not surfaced as a failure alert.
+    expect(alertSpy).not.toHaveBeenCalled();
+    expect(mockImportImage).toHaveBeenLastCalledWith('abc123', {
+      allowDuplicate: false,
+    });
+    // The separately labeled "Import anyway" action resubmits the retained
+    // capture with the override — no new camera capture is launched.
+    mockLaunchCamera.mockClear();
+    await fireEvent.press(await findByText('Import anyway'));
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('ImportReview', {
+        recipeId: 'img-2',
+      });
+    });
+    expect(mockLaunchCamera).not.toHaveBeenCalled();
+    expect(mockImportImage).toHaveBeenLastCalledWith('abc123', {
+      allowDuplicate: true,
+    });
+    alertSpy.mockRestore();
+  });
+
+  test('keeps Import anyway available when the override import fails (#296)', async () => {
+    const duplicateError = Object.assign(
+      new Error(
+        'This recipe already exists in your library as "Cake". Import anyway to create a second copy.',
+      ),
+      {code: 'duplicate_recipe'},
+    );
+    mockImportImage
+      .mockRejectedValueOnce(duplicateError)
+      .mockRejectedValueOnce(new Error('Import failed'))
+      .mockResolvedValue(makeRecipeDetail({id: 'img-4'}));
+    const alertSpy = jest.spyOn(Alert, 'alert').mockReturnValue();
+    const {getByText, findByText} = await renderWithProviders(
+      <ImportImageScreen {...stackProps} />,
+    );
+    await fireEvent.press(getByText('Take Photo'));
+    expect(await findByText('Import anyway')).toBeTruthy();
+    // The override attempt fails: the retained capture (and its retry
+    // action) must survive — a camera capture may not be re-creatable.
+    await fireEvent.press(getByText('Import anyway'));
+    await waitFor(() => {
+      expect(alertSpy).toHaveBeenCalled();
+    });
+    expect(await findByText('Import anyway')).toBeTruthy();
+    await fireEvent.press(getByText('Import anyway'));
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('ImportReview', {
+        recipeId: 'img-4',
+      });
+    });
+    expect(mockImportImage).toHaveBeenLastCalledWith('abc123', {
+      allowDuplicate: true,
+    });
+    alertSpy.mockRestore();
+  });
+
+  test('shows the generic failure and keeps Import anyway when the override rejects with a non-Error (#296)', async () => {
+    const duplicateError = Object.assign(
+      new Error(
+        'This recipe already exists in your library as "Cake". Import anyway to create a second copy.',
+      ),
+      {code: 'duplicate_recipe'},
+    );
+    mockImportImage
+      .mockRejectedValueOnce(duplicateError)
+      .mockRejectedValueOnce('nope');
+    const alertSpy = jest.spyOn(Alert, 'alert').mockReturnValue();
+    const {getByText, findByText} = await renderWithProviders(
+      <ImportImageScreen {...stackProps} />,
+    );
+    await fireEvent.press(getByText('Take Photo'));
+    expect(await findByText('Import anyway')).toBeTruthy();
+    await fireEvent.press(getByText('Import anyway'));
+    // A non-Error rejection falls back to the generic failure message in
+    // both the inline notice and the alert, and the retained capture's
+    // retry action survives.
+    expect(await findByText('Import failed')).toBeTruthy();
+    expect(alertSpy).toHaveBeenCalledWith('Import failed', 'Import failed');
+    expect(await findByText('Import anyway')).toBeTruthy();
+    expect(mockImportImage).toHaveBeenLastCalledWith('abc123', {
+      allowDuplicate: true,
+    });
+    alertSpy.mockRestore();
+  });
+
+  test('keeps Import anyway available when a new pick is cancelled (#296)', async () => {
+    const duplicateError = Object.assign(
+      new Error(
+        'This recipe already exists in your library as "Cake". Import anyway to create a second copy.',
+      ),
+      {code: 'duplicate_recipe'},
+    );
+    mockImportImage
+      .mockRejectedValueOnce(duplicateError)
+      .mockResolvedValue(makeRecipeDetail({id: 'img-5'}));
+    const alertSpy = jest.spyOn(Alert, 'alert').mockReturnValue();
+    const {getByText, findByText} = await renderWithProviders(
+      <ImportImageScreen {...stackProps} />,
+    );
+    await fireEvent.press(getByText('Take Photo'));
+    expect(await findByText('Import anyway')).toBeTruthy();
+    // Starting a new pick and cancelling it selects no replacement, so
+    // the retained warned capture must still be importable.
+    mockLaunchCamera.mockResolvedValue({didCancel: true});
+    await fireEvent.press(getByText('Take Photo'));
+    await waitFor(() => {
+      expect(mockLaunchCamera).toHaveBeenCalledTimes(2);
+    });
+    // The duplicate warning that explains the retained capture must also
+    // survive the cancellation — not just the action it explains.
+    expect(await findByText(/already exists in your library/)).toBeTruthy();
+    expect(await findByText('Import anyway')).toBeTruthy();
+    await fireEvent.press(getByText('Import anyway'));
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('ImportReview', {
+        recipeId: 'img-5',
+      });
+    });
+    expect(mockImportImage).toHaveBeenLastCalledWith('abc123', {
+      allowDuplicate: true,
+    });
+    alertSpy.mockRestore();
+  });
+
+  test('keeps Import anyway available when camera permission is denied (#296)', async () => {
+    const duplicateError = Object.assign(
+      new Error(
+        'This recipe already exists in your library as "Cake". Import anyway to create a second copy.',
+      ),
+      {code: 'duplicate_recipe'},
+    );
+    mockImportImage.mockRejectedValueOnce(duplicateError);
+    const alertSpy = jest.spyOn(Alert, 'alert').mockReturnValue();
+    const {getByText, findByText} = await renderWithProviders(
+      <ImportImageScreen {...stackProps} />,
+    );
+    await fireEvent.press(getByText('Take Photo'));
+    expect(await findByText('Import anyway')).toBeTruthy();
+    // Denied permission selects no replacement image either.
+    mockEnsureCameraPermission.mockResolvedValue(false);
+    mockLaunchCamera.mockClear();
+    await fireEvent.press(getByText('Take Photo'));
+    await waitFor(() => {
+      expect(mockEnsureCameraPermission).toHaveBeenCalledTimes(2);
+    });
+    expect(mockLaunchCamera).not.toHaveBeenCalled();
+    expect(await findByText('Import anyway')).toBeTruthy();
+    alertSpy.mockRestore();
+  });
+
+  test('Take Photo after a duplicate warning opens the camera for a new capture (#296)', async () => {
+    const duplicateError = Object.assign(
+      new Error(
+        'This recipe already exists in your library as "Cake". Import anyway to create a second copy.',
+      ),
+      {code: 'duplicate_recipe'},
+    );
+    mockImportImage
+      .mockRejectedValueOnce(duplicateError)
+      .mockResolvedValue(makeRecipeDetail({id: 'img-3'}));
+    const alertSpy = jest.spyOn(Alert, 'alert').mockReturnValue();
+    const {getByText, findByText} = await renderWithProviders(
+      <ImportImageScreen {...stackProps} />,
+    );
+    await fireEvent.press(getByText('Take Photo'));
+    expect(await findByText(/already exists in your library/)).toBeTruthy();
+    // "Take Photo" stays bound to a new capture: it launches the camera
+    // again and submits the NEW capture without the duplicate override,
+    // instead of silently resubmitting the warned capture.
+    mockLaunchCamera.mockClear();
+    mockLaunchCamera.mockResolvedValue({assets: [{base64: 'def456'}]});
+    await fireEvent.press(getByText('Take Photo'));
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('ImportReview', {
+        recipeId: 'img-3',
+      });
+    });
+    expect(mockLaunchCamera).toHaveBeenCalled();
+    expect(mockImportImage).toHaveBeenLastCalledWith('def456', {
+      allowDuplicate: false,
+    });
+    alertSpy.mockRestore();
+  });
+
   test('imports from library', async () => {
     const {getByText} = await renderWithProviders(
       <ImportImageScreen {...stackProps} />,
     );
     await fireEvent.press(getByText('Choose from Library'));
     await waitFor(() => {
-      expect(mockImportImage).toHaveBeenCalledWith('abc123');
+      expect(mockImportImage).toHaveBeenCalledWith('abc123', {
+        allowDuplicate: false,
+      });
     });
     expect(mockLaunchLibrary).toHaveBeenCalled();
   });
@@ -147,7 +350,7 @@ describe('ImportImageScreen', () => {
     );
     await fireEvent.press(getByText('Choose from Library'));
     await waitFor(() => {
-      expect(mockImportImage).toHaveBeenCalledWith('');
+      expect(mockImportImage).toHaveBeenCalledWith('', {allowDuplicate: false});
     });
   });
 

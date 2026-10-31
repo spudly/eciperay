@@ -426,15 +426,19 @@ small set of known inputs so results are comparable across runs).
 6. **Review-step corrections.** In review, fix a title, delete one ingredient,
    and edit a step before saving. **Expected:** the saved recipe matches the
    corrected review exactly.
-7. **Duplicate awareness.** Import the same recipe twice. **Expected:** behavior
-   matches the product's stated duplicate handling (a warning or a clearly
-   separate copy) — flag whichever happens if it is neither.
+7. **Duplicate awareness.** Import the same recipe twice (issue #296).
+   **Expected:** the second import stops with a warning naming the existing
+   library recipe — a recipe is a duplicate when its normalized title AND
+   normalized ingredient list match an existing recipe in the same library —
+   and no second copy is created. Choosing to import anyway after the
+   warning (re-submitting the same import, or the "Import anyway" action
+   on the app image import) creates the second copy. Applies to text, URL,
+   and image imports.
 
 **Run when:**
 `packages/app/src/screens/{ImportText,ImportUrl,ImportImage,ImportReview}Screen.tsx`,
 `packages/web/src/pages/{ImportText,ImportUrl,ImportImage,ImportReview}Page.tsx`,
-`packages/web/src/components/import/**`, `packages/server` import/extraction
-routes, AI extraction prompts.
+`packages/server` import/extraction routes, AI extraction prompts.
 
 ---
 
@@ -471,7 +475,7 @@ ungated; at least one existing recipe for the tweak cases.
 **Run when:** `packages/app/src/screens/{GenerateAi,TweakAi}Screen.tsx`,
 `packages/app/src/hosts/ai/**`,
 `packages/web/src/pages/{GenerateAi,TweakAi}Page.tsx`,
-`packages/web/src/components/ai/**`, `packages/server` AI routes/prompts,
+`packages/web/src/pages/AiSessionHost.tsx`, `packages/server` AI routes/prompts,
 entitlement gating for AI features.
 
 ---

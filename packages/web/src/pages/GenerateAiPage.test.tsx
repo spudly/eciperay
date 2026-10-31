@@ -1,13 +1,14 @@
-import {screen, waitFor} from '@testing-library/react';
+import {act, fireEvent, screen, waitFor, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {beforeEach, describe, expect, test, vi} from 'vitest';
 
-import {renderWithProviders} from '../test/testUtils.js';
+import {makeQueryClient, renderWithProviders} from '../test/testUtils.js';
 
 import {GenerateAiPage} from './GenerateAiPage.js';
 
 const {
   mockStart,
+  mockGet,
   mockApprovePlan,
   mockCreateRecipe,
   mockSendMessage,
@@ -15,6 +16,7 @@ const {
   mockTrack,
 } = vi.hoisted(() => ({
   mockStart: vi.fn(),
+  mockGet: vi.fn(),
   mockApprovePlan: vi.fn(),
   mockCreateRecipe: vi.fn(),
   mockSendMessage: vi.fn(),
@@ -26,6 +28,7 @@ vi.mock('../lib/api.js', () => ({
   eciperay: {
     createAi: {
       start: mockStart,
+      get: mockGet,
       sendMessage: mockSendMessage,
       approvePlan: mockApprovePlan,
       createRecipe: mockCreateRecipe,
@@ -64,7 +67,9 @@ const session = {
 
 describe('GenerateAiPage', () => {
   beforeEach(() => {
+    localStorage.clear();
     mockStart.mockReset();
+    mockGet.mockReset();
     mockApprovePlan.mockReset();
     mockCreateRecipe.mockReset();
     mockSendMessage.mockReset();
@@ -140,6 +145,487 @@ describe('GenerateAiPage', () => {
     });
   });
 
+  test('persists the active session id and restores the session on remount', async () => {
+    mockStart.mockResolvedValue({session, plan: 'Plan for cookies'});
+    mockGet.mockResolvedValue({session});
+    const user = userEvent.setup();
+    const first = await renderWithProviders(<GenerateAiPage />);
+    await user.type(
+      screen.getByPlaceholderText(/quick weeknight vegetarian pasta/i),
+      'simple chocolate chip cookies for 12',
+    );
+    await user.click(screen.getByRole('button', {name: 'Start planning'}));
+    await screen.findByRole('button', {name: 'Approve plan'});
+    expect(localStorage.getItem('eciperay:create-ai-session-id:user-1')).toBe(
+      'session-1',
+    );
+    first.unmount();
+
+    // Navigating away and back remounts the page: the stored id is
+    // re-fetched and the in-progress session (prompt + plan) returns.
+    await renderWithProviders(<GenerateAiPage />);
+    expect(
+      await screen.findByRole('button', {name: 'Approve plan'}),
+    ).toBeInTheDocument();
+    expect(mockGet).toHaveBeenCalledWith('session-1');
+    expect(screen.getByText('Plan for cookies')).toBeInTheDocument();
+  });
+
+  test('restores a session whose start finishes after navigating away and back', async () => {
+    // The start request stays pending while the user leaves and
+    // returns: no session id exists yet, so the remounted page must
+    // adopt the in-flight start instead of sitting on the empty form.
+    let resolveStart!: (value: unknown) => void;
+    let resolveGet!: (value: unknown) => void;
+    mockStart.mockImplementation(
+      () =>
+        new Promise(resolve => {
+          resolveStart = resolve;
+        }),
+    );
+    // The owner-scoped restore fetch stays pending after the shared
+    // start resolves, so the test can observe what is (not) shown and
+    // what the form allows while the fetch is in flight.
+    mockGet.mockImplementation(
+      () =>
+        new Promise(resolve => {
+          resolveGet = resolve;
+        }),
+    );
+    const user = userEvent.setup();
+    const first = await renderWithProviders(<GenerateAiPage />);
+    await user.type(
+      screen.getByPlaceholderText(/quick weeknight vegetarian pasta/i),
+      'simple chocolate chip cookies for 12',
+    );
+    await user.click(screen.getByRole('button', {name: 'Start planning'}));
+    await waitFor(() => {
+      expect(mockStart).toHaveBeenCalledTimes(1);
+    });
+    first.unmount();
+    await renderWithProviders(<GenerateAiPage />);
+    // The remounted host adopted the shared start: it shows the pending
+    // state (pending label, start control disabled) until it resolves,
+    // so no second submission can slip in meanwhile.
+    const pendingButton = screen.getByRole('button', {name: 'Planning…'});
+    expect(pendingButton).toBeDisabled();
+    resolveStart({session, plan: 'Plan for cookies'});
+    await waitFor(() => {
+      expect(mockGet).toHaveBeenCalledWith('session-1');
+    });
+    // The shared start result is never displayed directly: while the
+    // owner-scoped fetch is pending, its plan is absent, and the host
+    // stays busy — even with a prompt typed, no second start can begin
+    // until the restore settles.
+    expect(screen.queryByText('Plan for cookies')).not.toBeInTheDocument();
+    await user.type(
+      screen.getByPlaceholderText(/quick weeknight vegetarian pasta/i),
+      'a second idea',
+    );
+    expect(screen.getByRole('button', {name: 'Start planning'})).toBeDisabled();
+    resolveGet({
+      session: {
+        ...session,
+        messages: [
+          {role: 'user' as const, content: 'cookies'},
+          {role: 'assistant' as const, content: 'Plan from owner-scoped fetch'},
+        ],
+      },
+    });
+    expect(
+      await screen.findByRole('button', {name: 'Approve plan'}),
+    ).toBeInTheDocument();
+    // The displayed plan is the fetched one, not the shared start's.
+    expect(
+      screen.getByText('Plan from owner-scoped fetch'),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('Plan for cookies')).not.toBeInTheDocument();
+    expect(localStorage.getItem('eciperay:create-ai-session-id:user-1')).toBe(
+      'session-1',
+    );
+    // Adoption never starts a second session; the adopted session is
+    // displayed only via the owner-scoped restore fetch by id, so a
+    // start begun under another account is never shown directly.
+    expect(mockStart).toHaveBeenCalledTimes(1);
+    expect(mockGet).toHaveBeenCalledWith('session-1');
+  });
+
+  test('does not show an adopted start owned by another account', async () => {
+    // The shared in-flight start survives a sign-out/sign-in switch in
+    // the same SPA (its map is module-level). If the account that is
+    // now signed in does not own the adopted session, the owner-scoped
+    // restore 404s and the session must never be displayed.
+    let resolveStart!: (value: unknown) => void;
+    let rejectGet!: (reason?: unknown) => void;
+    mockStart.mockImplementation(
+      () =>
+        new Promise(resolve => {
+          resolveStart = resolve;
+        }),
+    );
+    mockGet.mockImplementation(
+      () =>
+        new Promise((_, reject) => {
+          rejectGet = reject;
+        }),
+    );
+    const user = userEvent.setup();
+    const first = await renderWithProviders(<GenerateAiPage />);
+    await user.type(
+      screen.getByPlaceholderText(/quick weeknight vegetarian pasta/i),
+      'simple chocolate chip cookies for 12',
+    );
+    await user.click(screen.getByRole('button', {name: 'Start planning'}));
+    await waitFor(() => {
+      expect(mockStart).toHaveBeenCalledTimes(1);
+    });
+    first.unmount();
+    await renderWithProviders(<GenerateAiPage />);
+    resolveStart({session, plan: 'Plan for cookies'});
+    await waitFor(() => {
+      expect(mockGet).toHaveBeenCalledWith('session-1');
+    });
+    // While the owner-scoped fetch is still pending, the shared
+    // start's plan is not shown.
+    expect(screen.queryByText('Plan for cookies')).not.toBeInTheDocument();
+    rejectGet(new Error('Session not found'));
+    // The definitive not-found drops the adopted id and the page stays
+    // on the fresh form — the other account's plan is never rendered.
+    await waitFor(() => {
+      expect(
+        localStorage.getItem('eciperay:create-ai-session-id:user-1'),
+      ).toBeNull();
+    });
+    expect(screen.queryByText('Plan for cookies')).not.toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText(/quick weeknight vegetarian pasta/i),
+    ).toBeInTheDocument();
+  });
+
+  test('a restore superseded by a newer stored session restores the newer session', async () => {
+    // An adopted start's owner-scoped restore is still in flight when
+    // a newer session starts elsewhere (another tab) and stores its
+    // id under the same key. When the older restore finally resolves,
+    // it must not display its session over the newer pointer — and
+    // the host must go on to restore the session the pointer names
+    // now, not drop to the fresh form and leave the newer session
+    // unrestored (a fresh start from there would overwrite its
+    // pointer).
+    const newerSession = {
+      ...session,
+      id: 'session-2',
+      messages: [
+        {role: 'user' as const, content: 'pasta'},
+        {role: 'assistant' as const, content: 'Plan for the newer session'},
+      ],
+    };
+    let resolveStart!: (value: unknown) => void;
+    let resolveGet!: (value: unknown) => void;
+    mockStart.mockImplementation(
+      () =>
+        new Promise(resolve => {
+          resolveStart = resolve;
+        }),
+    );
+    mockGet.mockImplementation((sessionId: string) =>
+      sessionId === 'session-2'
+        ? Promise.resolve({session: newerSession})
+        : new Promise(resolve => {
+            resolveGet = resolve;
+          }),
+    );
+    const user = userEvent.setup();
+    const first = await renderWithProviders(<GenerateAiPage />);
+    await user.type(
+      screen.getByPlaceholderText(/quick weeknight vegetarian pasta/i),
+      'simple chocolate chip cookies for 12',
+    );
+    await user.click(screen.getByRole('button', {name: 'Start planning'}));
+    await waitFor(() => {
+      expect(mockStart).toHaveBeenCalledTimes(1);
+    });
+    first.unmount();
+    await renderWithProviders(<GenerateAiPage />);
+    resolveStart({session, plan: 'Plan for cookies'});
+    await waitFor(() => {
+      expect(mockGet).toHaveBeenCalledWith('session-1');
+    });
+    // The host is busy while the restore is pending: with a prompt
+    // typed, the start control stays disabled.
+    await user.type(
+      screen.getByPlaceholderText(/quick weeknight vegetarian pasta/i),
+      'a second idea',
+    );
+    expect(screen.getByRole('button', {name: 'Start planning'})).toBeDisabled();
+    // A newer session's start elsewhere moves the stored pointer.
+    localStorage.setItem('eciperay:create-ai-session-id:user-1', 'session-2');
+    resolveGet({session});
+    // The older session is still never displayed; instead the host
+    // fetches and shows the newer session the pointer names, and the
+    // pointer itself is left untouched.
+    expect(
+      await screen.findByText('Plan for the newer session'),
+    ).toBeInTheDocument();
+    expect(mockGet).toHaveBeenCalledWith('session-2');
+    expect(screen.queryByText('Plan for cookies')).not.toBeInTheDocument();
+    expect(localStorage.getItem('eciperay:create-ai-session-id:user-1')).toBe(
+      'session-2',
+    );
+  });
+
+  test('does not restore or clear a session id stored under another account', async () => {
+    // Session pointers are partitioned by account: a pointer stored
+    // under a different account's key is invisible to this account —
+    // it is neither restored (which would 404 against the
+    // owner-scoped API) nor cleared by that failed restore.
+    localStorage.setItem(
+      'eciperay:create-ai-session-id:user-2',
+      'session-foreign',
+    );
+    await renderWithProviders(<GenerateAiPage />);
+    expect(mockGet).not.toHaveBeenCalled();
+    expect(localStorage.getItem('eciperay:create-ai-session-id:user-2')).toBe(
+      'session-foreign',
+    );
+    expect(
+      screen.getByPlaceholderText(/quick weeknight vegetarian pasta/i),
+    ).toBeInTheDocument();
+  });
+
+  test('a stalled restore times out and frees the form, keeping the stored id', async () => {
+    vi.useFakeTimers();
+    try {
+      localStorage.setItem('eciperay:create-ai-session-id:user-1', 'session-1');
+      // The restore GET never settles.
+      mockGet.mockImplementation(() => new Promise(() => {}));
+      await renderWithProviders(<GenerateAiPage />);
+      expect(mockGet).toHaveBeenCalledWith('session-1');
+      // fireEvent, not userEvent: userEvent's async typing deadlocks
+      // under fake timers in this setup.
+      fireEvent.change(
+        screen.getByPlaceholderText(/quick weeknight vegetarian pasta/i),
+        {target: {value: 'simple chocolate chip cookies for 12'}},
+      );
+      // While the restore is pending the host is busy.
+      expect(
+        screen.getByRole('button', {name: 'Start planning'}),
+      ).toBeDisabled();
+      await act(async () => {
+        vi.advanceTimersByTime(30_000);
+      });
+      // The timeout settles the restore: the form is usable again, no
+      // unverified session is displayed, and the stored id survives
+      // (a timeout is not a definitive not-found) for a later retry.
+      expect(
+        screen.getByRole('button', {name: 'Start planning'}),
+      ).not.toBeDisabled();
+      expect(screen.queryByText('Plan for cookies')).not.toBeInTheDocument();
+      expect(localStorage.getItem('eciperay:create-ai-session-id:user-1')).toBe(
+        'session-1',
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  test('a late-finishing earlier start does not overwrite a newer session', async () => {
+    const newerSession = {
+      ...session,
+      id: 'session-2',
+      messages: [
+        {role: 'user' as const, content: 'pasta'},
+        {role: 'assistant' as const, content: 'Plan for pasta'},
+      ],
+    };
+    let resolveEarlier!: (value: unknown) => void;
+    mockStart
+      .mockImplementationOnce(
+        () =>
+          new Promise(resolve => {
+            resolveEarlier = resolve;
+          }),
+      )
+      .mockResolvedValue({session: newerSession, plan: 'Plan for pasta'});
+    const user = userEvent.setup();
+    // Two hosts of the same flow mounted at once: the first begins a
+    // start that stays pending; the second begins (and finishes) a
+    // newer start. When the earlier start finally resolves, it must
+    // not replace the newer session or its stored restore id.
+    const first = await renderWithProviders(<GenerateAiPage />);
+    const second = await renderWithProviders(<GenerateAiPage />);
+    const firstUi = within(first.container);
+    const secondUi = within(second.container);
+    await user.type(
+      firstUi.getByPlaceholderText(/quick weeknight vegetarian pasta/i),
+      'simple chocolate chip cookies for 12',
+    );
+    await user.click(firstUi.getByRole('button', {name: 'Start planning'}));
+    await waitFor(() => {
+      expect(mockStart).toHaveBeenCalledTimes(1);
+    });
+    await user.type(
+      secondUi.getByPlaceholderText(/quick weeknight vegetarian pasta/i),
+      'weeknight pasta',
+    );
+    await user.click(secondUi.getByRole('button', {name: 'Start planning'}));
+    expect(await secondUi.findByText('Plan for pasta')).toBeInTheDocument();
+    expect(localStorage.getItem('eciperay:create-ai-session-id:user-1')).toBe(
+      'session-2',
+    );
+    resolveEarlier({session, plan: 'Plan for cookies'});
+    // Wait until the earlier start's completion has actually been
+    // processed: its host leaves the pending state and its Start
+    // planning button reappears. (Asserting the stored id here would
+    // be vacuous — it already held 'session-2' before the resolve.)
+    await waitFor(() => {
+      expect(
+        firstUi.getByRole('button', {name: 'Start planning'}),
+      ).toBeInTheDocument();
+    });
+    expect(localStorage.getItem('eciperay:create-ai-session-id:user-1')).toBe(
+      'session-2',
+    );
+    expect(secondUi.getByText('Plan for pasta')).toBeInTheDocument();
+    expect(firstUi.queryByText('Plan for cookies')).not.toBeInTheDocument();
+  });
+
+  test('drops a stored session id that no longer resolves', async () => {
+    localStorage.setItem(
+      'eciperay:create-ai-session-id:user-1',
+      'session-gone',
+    );
+    mockGet.mockRejectedValue(new Error('Session not found'));
+    await renderWithProviders(<GenerateAiPage />);
+    await waitFor(() => {
+      expect(mockGet).toHaveBeenCalledWith('session-gone');
+    });
+    await waitFor(() => {
+      expect(
+        localStorage.getItem('eciperay:create-ai-session-id:user-1'),
+      ).toBeNull();
+    });
+    expect(
+      screen.getByPlaceholderText(/quick weeknight vegetarian pasta/i),
+    ).toBeInTheDocument();
+  });
+
+  test('restore never serves cached query data from a previous account', async () => {
+    localStorage.setItem('eciperay:create-ai-session-id:user-1', 'session-1');
+    // Poison the shared QueryClient cache under the restore key with a
+    // different session, as a previous account's restore could have left
+    // behind before a sign-out/sign-in switch in the same tab.
+    const queryClient = makeQueryClient();
+    queryClient.setQueryData(
+      ['aiSessionRestore', 'eciperay:create-ai-session-id:user-1', 'session-1'],
+      {
+        session: {
+          ...session,
+          messages: [
+            {role: 'assistant' as const, content: 'CACHED FOREIGN PLAN'},
+          ],
+        },
+      },
+    );
+    mockGet.mockResolvedValue({session});
+    await renderWithProviders(<GenerateAiPage />, {queryClient});
+    expect(
+      await screen.findByRole('button', {name: 'Approve plan'}),
+    ).toBeInTheDocument();
+    expect(mockGet).toHaveBeenCalledWith('session-1');
+    expect(screen.getByText('Plan for cookies')).toBeInTheDocument();
+    expect(screen.queryByText('CACHED FOREIGN PLAN')).not.toBeInTheDocument();
+  });
+
+  test('keeps the stored session id after a transient restore failure', async () => {
+    localStorage.setItem('eciperay:create-ai-session-id:user-1', 'session-1');
+    mockGet.mockRejectedValue(
+      new Error('API error 500: /recipes/import/ai/sessions/session-1'),
+    );
+    await renderWithProviders(<GenerateAiPage />);
+    await waitFor(() => {
+      expect(mockGet).toHaveBeenCalledWith('session-1');
+    });
+    // The id survives so a later visit can retry the restore; the page
+    // still shows the fresh form for this visit.
+    expect(localStorage.getItem('eciperay:create-ai-session-id:user-1')).toBe(
+      'session-1',
+    );
+    expect(
+      screen.getByPlaceholderText(/quick weeknight vegetarian pasta/i),
+    ).toBeInTheDocument();
+  });
+
+  test('does not restore a stored session that already finished', async () => {
+    localStorage.setItem('eciperay:create-ai-session-id:user-1', 'session-1');
+    mockGet.mockResolvedValue({session: {...session, phase: 'completed'}});
+    await renderWithProviders(<GenerateAiPage />);
+    await waitFor(() => {
+      expect(mockGet).toHaveBeenCalledWith('session-1');
+    });
+    await waitFor(() => {
+      expect(
+        localStorage.getItem('eciperay:create-ai-session-id:user-1'),
+      ).toBeNull();
+    });
+    expect(screen.queryByText('Plan for cookies')).not.toBeInTheDocument();
+  });
+
+  test('refining an older session does not overwrite a newer stored id', async () => {
+    mockStart.mockResolvedValue({session, plan: 'Plan for cookies'});
+    mockSendMessage.mockResolvedValue({
+      session: {
+        ...session,
+        messages: [
+          ...session.messages,
+          {role: 'user', content: 'add vanilla'},
+          {role: 'assistant', content: 'Add vanilla extract'},
+        ],
+      },
+      reply: 'Add vanilla extract',
+    });
+    const user = userEvent.setup();
+    await renderWithProviders(<GenerateAiPage />);
+    await user.type(
+      screen.getByPlaceholderText(/quick weeknight vegetarian pasta/i),
+      'simple chocolate chip cookies for 12',
+    );
+    await user.click(screen.getByRole('button', {name: 'Start planning'}));
+    await screen.findByRole('button', {name: 'Approve plan'});
+    // Another tab has since started a newer session under the same key;
+    // the stored id now points at that session and must stay pointing
+    // there — ids are written at session start, not on every update.
+    localStorage.setItem('eciperay:create-ai-session-id:user-1', 'session-2');
+    await user.type(
+      screen.getByPlaceholderText('Ask for changes to the plan…'),
+      'add vanilla',
+    );
+    await user.click(screen.getByRole('button', {name: 'Refine plan'}));
+    expect(await screen.findByText('Add vanilla extract')).toBeInTheDocument();
+    expect(localStorage.getItem('eciperay:create-ai-session-id:user-1')).toBe(
+      'session-2',
+    );
+  });
+
+  test('cancelling an older session does not clear a newer stored id', async () => {
+    mockStart.mockResolvedValue({session, plan: 'Plan for cookies'});
+    mockCancel.mockResolvedValue({session: {...session, phase: 'cancelled'}});
+    const user = userEvent.setup();
+    await renderWithProviders(<GenerateAiPage />);
+    await user.type(
+      screen.getByPlaceholderText(/quick weeknight vegetarian pasta/i),
+      'simple chocolate chip cookies for 12',
+    );
+    await user.click(screen.getByRole('button', {name: 'Start planning'}));
+    await screen.findByRole('button', {name: 'Approve plan'});
+    // Another tab has since started a newer session under the same key.
+    localStorage.setItem('eciperay:create-ai-session-id:user-1', 'session-2');
+    await user.click(screen.getByText('Cancel session'));
+    expect(mockCancel).toHaveBeenCalledWith('session-1');
+    expect(localStorage.getItem('eciperay:create-ai-session-id:user-1')).toBe(
+      'session-2',
+    );
+  });
+
   test('shows error when start fails', async () => {
     mockStart.mockRejectedValue(new Error('Planning failed'));
     const user = userEvent.setup();
@@ -189,6 +675,9 @@ describe('GenerateAiPage', () => {
     await user.click(screen.getByText('Cancel session'));
     expect(mockCancel).toHaveBeenCalledWith('session-1');
     expect(mockNavigate).toHaveBeenCalledWith(-1);
+    expect(
+      localStorage.getItem('eciperay:create-ai-session-id:user-1'),
+    ).toBeNull();
   });
 
   test('shows default phase label for completed session', async () => {

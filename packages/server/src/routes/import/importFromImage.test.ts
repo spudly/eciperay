@@ -42,6 +42,8 @@ describe('POST /recipes/import/image', () => {
     mockBillingMetered(mockQuery, 'plus');
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([]))
+      // Duplicate check (#296): no candidates in the user's library.
+      .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([{id: 'recipe-uuid-1'}]))
       .mockResolvedValue(
         makeQueryResult([
@@ -55,6 +57,49 @@ describe('POST /recipes/import/image', () => {
     expect(res.status).toBe(201);
     expect(res.body.title).toBe('Scanned Cake');
     expect(res.body.servings).toBe(8);
+  });
+
+  test('returns 409 with the duplicate warning when the recipe already exists (#296)', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    nockAnthropicMessage(RECIPE_JSON);
+    mockBillingMetered(mockQuery, 'plus');
+    mockQuery
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          {
+            id: 'recipe-uuid-9',
+            title: 'Scanned Cake',
+            ingredients: [
+              {
+                name: 'flour',
+                quantity: 2,
+                unit: 'cups',
+                notes: null,
+                isOptional: false,
+              },
+            ],
+          },
+        ]),
+      );
+    const res = await request(getApp())
+      .post('/api/recipes/import/image')
+      .set('Authorization', 'Bearer valid-token')
+      .send({imageBase64: 'base64encodedimage=='});
+    expect(res.status).toBe(409);
+    // The parse succeeded, so its AI call stays charged: no refund on the
+    // duplicate path, or repeated duplicate imports would bypass the
+    // monthly quota entirely (#296).
+    const refundCall = mockQuery.mock.calls.find(args =>
+      args[0].includes('update ai_usage'),
+    );
+    expect(refundCall).toBeUndefined();
+    expect(res.body.error).toBe('duplicate_recipe');
+    expect(res.body.duplicate).toEqual({
+      recipeId: 'recipe-uuid-9',
+      title: 'Scanned Cake',
+    });
+    expect(res.body.message).toContain('already exists in your library');
   });
 
   test('refunds the AI quota and rethrows when Claude vision fails', async () => {
