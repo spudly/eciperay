@@ -3,14 +3,15 @@ import {
   queryKeys,
   recipeDetailToInput,
 } from '@eciperay/client';
+import {EditRecipePage as EditRecipeShell} from '@spudly/ui/pages';
 import {useQuery, useQueryClient} from '@tanstack/react-query';
 import {useNavigate, useParams} from 'react-router-dom';
 import type {RecipeInput} from '@eciperay/types';
 
-import {EditRecipeView} from '../components/recipe/EditRecipeView.js';
-import {RecipeForm} from '../components/recipe/RecipeForm.js';
 import {ScreenLoadingGate} from '../components/ScreenLoadingGate.js';
 import {eciperay} from '../lib/api.js';
+
+import {RecipeFormHost} from './RecipeFormHost.js';
 
 export const EditRecipePage = () => {
   const {recipeId = ''} = useParams();
@@ -36,14 +37,14 @@ export const EditRecipePage = () => {
   }
 
   return (
-    <EditRecipeView>
-      <RecipeForm
+    <EditRecipeShell>
+      <RecipeFormHost
         initial={recipeDetailToInput(recipe)}
         recipeId={recipeId}
         contentLocked
         submitLabel="Save Changes"
         onSubmit={handleSubmit}
       />
-    </EditRecipeView>
+    </EditRecipeShell>
   );
 };

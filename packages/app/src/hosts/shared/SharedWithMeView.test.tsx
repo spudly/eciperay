@@ -36,33 +36,43 @@ describe('SharedWithMeView element presence (#162)', () => {
   };
 
   test('renders the search input, all three select triggers, and the first recipe card', async () => {
-    const {getByPlaceholderText, getByText} = await renderWithProviders(
-      <SharedWithMeView
-        {...controls}
-        isLoading={false}
-        recipes={[
-          makeRecipeDetail({title: 'Shared Soup', userId: 'other-user'}),
-        ]}
-        isFetchingNextPage={false}
-        onLoadMore={jest.fn()}
-      />,
-    );
+    const {getByLabelText, getByPlaceholderText, getByText, findByText} =
+      await renderWithProviders(
+        <SharedWithMeView
+          {...controls}
+          isLoading={false}
+          recipes={[
+            makeRecipeDetail({title: 'Shared Soup', userId: 'other-user'}),
+          ]}
+          isFetchingNextPage={false}
+          onLoadMore={jest.fn()}
+        />,
+      );
 
     // Search input.
     expect(getByPlaceholderText('Search recipes…')).toBeTruthy();
+    // Since @spudly/ui 1.15.0 this screen renders RecipesPage (the
+    // SharedWithMePage consolidation), whose collapsed filter bar
+    // matches the Recipes screen's: the selects live behind the
+    // Filters chooser, so add each filter to render its select.
+    expect(getByText('Filters')).toBeTruthy();
+    await fireEvent.press(getByText('Filters'));
+    await fireEvent.press(getByLabelText('Add Status filter'));
     // The three select triggers: label + currently selected value.
-    expect(getByText('Status')).toBeTruthy();
-    expect(getByText('All statuses')).toBeTruthy();
-    expect(getByText('Sort by')).toBeTruthy();
-    expect(getByText('Newest')).toBeTruthy();
-    expect(getByText('Order')).toBeTruthy();
-    expect(getByText('High to low')).toBeTruthy();
-    // First shared recipe card.
-    expect(getByText('Shared Soup')).toBeTruthy();
+    expect(await findByText('Status')).toBeTruthy();
+    expect(await findByText('All statuses')).toBeTruthy();
+    await fireEvent.press(getByText('Filters'));
+    await fireEvent.press(getByLabelText('Add Sort filter'));
+    expect(await findByText('Sort by')).toBeTruthy();
+    expect(await findByText('Newest')).toBeTruthy();
+    expect(await findByText('Order')).toBeTruthy();
+    expect(await findByText('High to low')).toBeTruthy();
+    // First shared recipe card: rows are links, found by label.
+    expect(getByLabelText('Shared Soup')).toBeTruthy();
   });
 
   test('opens the recipe permalink in the browser when a row is pressed', async () => {
-    const {getByText} = await renderWithProviders(
+    const {getByLabelText} = await renderWithProviders(
       <SharedWithMeView
         {...controls}
         isLoading={false}
@@ -79,10 +89,12 @@ describe('SharedWithMeView element presence (#162)', () => {
       />,
     );
 
-    // The press behavior moved from SharedRecipeListCard into this host
-    // with the rewire (#49): the DS page reports the press by id, and
-    // the host builds the permalink and hands it to Linking.
-    await fireEvent.press(getByText('Shared Soup'));
+    // The row is a link whose href IS the permalink (#248): the host
+    // builds it from the base-URL constant when it maps the item,
+    // and the DS link hands it to Linking on press — the same
+    // destination SharedRecipeListCard opened by hand before the
+    // rewire (#49).
+    await fireEvent.press(getByLabelText('Shared Soup'));
     await waitFor(() => {
       expect(Linking.openURL).toHaveBeenCalledWith(
         `${WEB_APP_BASE_URL}/recipe/recipe-1/shared-soup`,

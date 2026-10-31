@@ -2,6 +2,7 @@ import {useAuth} from '@eciperay/client';
 import type {RecipeDetail, RecipeVersionSummary} from '@eciperay/types';
 import {fireEvent, userEvent, waitFor} from '@testing-library/react-native';
 import React, {useState} from 'react';
+import {Linking} from 'react-native';
 
 import {
   makeCookLog,
@@ -11,6 +12,11 @@ import {
 } from '../../__tests__/fixtures/recipe';
 import {makeQueryClient, renderWithProviders} from '../../__tests__/testUtils';
 import {api} from '../../lib/api';
+import {
+  recipeCookHref,
+  recipeEditHref,
+  recipeTweakAiHref,
+} from '../../lib/deepLinks';
 
 import {RecipeDetailView} from './RecipeDetailView';
 
@@ -31,23 +37,19 @@ const mockListCookLogs = api.cookLogs.list as jest.Mock;
 const mockCreateCookLog = api.cookLogs.create as jest.Mock;
 const mockListComments = api.recipes.listComments as jest.Mock;
 
+// The view's remaining screen callbacks: navigation left the prop
+// surface with @spudly/ui 1.15.0 (#248) — the overview's navigation
+// actions are hrefs the view composes itself — so only the true
+// actions (delete) and the view-state callbacks remain.
 type Callbacks = {
-  onStartCooking: jest.Mock;
   onDelete: jest.Mock;
-  onTweakAi: jest.Mock;
   onViewVersion: jest.Mock;
-  onEditRecipe: jest.Mock;
-  onEditVersion: jest.Mock;
   onSelectVersion: jest.Mock;
 };
 
 const makeCallbacks = (): Callbacks => ({
-  onStartCooking: jest.fn(),
   onDelete: jest.fn(),
-  onTweakAi: jest.fn(),
   onViewVersion: jest.fn(),
-  onEditRecipe: jest.fn(),
-  onEditVersion: jest.fn(),
   onSelectVersion: jest.fn(),
 });
 
@@ -90,12 +92,8 @@ const Harness = ({
       currentServings={currentServings}
       scaleFactor={currentServings / displayRecipe.servings}
       onServingsChange={setServings}
-      onStartCooking={callbacks.onStartCooking}
       onDelete={callbacks.onDelete}
-      onTweakAi={callbacks.onTweakAi}
       onViewVersion={callbacks.onViewVersion}
-      onEditRecipe={callbacks.onEditRecipe}
-      onEditVersion={callbacks.onEditVersion}
     />
   );
 };
@@ -132,9 +130,35 @@ const nutritionFixture = {
   disclaimer: 'Estimate only',
 };
 
+/**
+ * The scale presets are toggle Buttons since the chips retired: the selection
+ * reads from the pressable ancestor's accessibility state (the label queries
+ * the retired ToggleChip answered to are gone).
+ */
+const scaleSelected = (
+  utils: {getByText: (text: string) => {parent: unknown}},
+  label: string,
+): boolean | undefined => {
+  // The toggle Button's frame (role "button") is the first ancestor
+  // carrying the selected state; Tamagui's press handling does not
+  // surface as an onPress prop in the host tree.
+  let node = utils.getByText(label) as {
+    parent: typeof node;
+    props: {
+      accessibilityRole?: string;
+      accessibilityState?: {selected?: boolean};
+    };
+  } | null;
+  while (node && node.props.accessibilityRole !== 'button') {
+    node = node.parent;
+  }
+  return node?.props.accessibilityState?.selected;
+};
+
 describe('RecipeDetailView', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
     mockUseAuth.mockReturnValue({
       session: {user: {id: 'user-uuid-1', email: 'test@example.com'}},
     });
@@ -173,16 +197,18 @@ describe('RecipeDetailView', () => {
     expect(queryByText('Edit draft')).toBeNull();
   });
 
-  test('routes the overview action chips to the screen callbacks', async () => {
-    const {callbacks, findByText, getByLabelText} = await renderView();
+  test('routes the overview actions: hrefs open deep links, actions stay callbacks', async () => {
+    const {callbacks, recipe, findByText, getByLabelText} = await renderView();
     await fireEvent.press(await findByText('Start Cooking'));
-    expect(callbacks.onStartCooking).toHaveBeenCalledTimes(1);
+    expect(Linking.openURL).toHaveBeenCalledWith(
+      recipeCookHref(recipe.id, recipe.versionId, recipe.servings),
+    );
     await fireEvent.press(await findByText('Edit'));
-    expect(callbacks.onEditRecipe).toHaveBeenCalledTimes(1);
+    expect(Linking.openURL).toHaveBeenCalledWith(recipeEditHref(recipe.id));
     await fireEvent.press(await findByText('Delete'));
     expect(callbacks.onDelete).toHaveBeenCalledTimes(1);
     await fireEvent.press(await findByText('Tweak with AI'));
-    expect(callbacks.onTweakAi).toHaveBeenCalledTimes(1);
+    expect(Linking.openURL).toHaveBeenCalledWith(recipeTweakAiHref(recipe.id));
     expect(getByLabelText('Print recipe')).toBeTruthy();
     expect(getByLabelText('Share recipe')).toBeTruthy();
   });
@@ -236,18 +262,19 @@ describe('RecipeDetailView', () => {
     expect(queryByText('Tweak with AI')).toBeNull();
   });
 
-  test('perfected recipe: Edit draft creates a draft and opens it for editing', async () => {
-    const {callbacks, recipe, findByText} = await renderView({
-      status: 'perfected',
-    });
-    await fireEvent.press(await findByText('Edit draft'));
-    await waitFor(() => {
-      expect(mockCreateVersion).toHaveBeenCalledWith(recipe.id);
-    });
-    await waitFor(() => {
-      expect(callbacks.onEditVersion).toHaveBeenCalledWith('version-draft-1');
-    });
-    expect(callbacks.onEditRecipe).not.toHaveBeenCalled();
+  test('perfected recipe: no Edit draft chip while the DS page has no create-draft slot', async () => {
+    // The #264 flow (the chip creates a draft, then opens it) is a
+    // mutation-then-navigate control; @spudly/ui 1.15.0's overview
+    // offers only the editDraftHref link, which opens an EXISTING
+    // draft, so a perfected recipe without a draft shows no chip
+    // until the design system grows the slot (gap filed against
+    // spudly/design-system; see the PR body). Opening an existing
+    // draft keeps working through the href — the screen test covers
+    // it end to end.
+    const {findByText, queryByText} = await renderView({status: 'perfected'});
+    expect(await findByText('Test Recipe')).toBeTruthy();
+    expect(queryByText('Edit draft')).toBeNull();
+    expect(mockCreateVersion).not.toHaveBeenCalled();
   });
 
   test('perfected recipe viewed at an archived version has no Edit draft chip', async () => {
@@ -341,10 +368,14 @@ describe('RecipeDetailView', () => {
   });
 
   test('echoes a committed custom scale back as the selected scale value', async () => {
-    const {findByText, getByLabelText, queryByText} = await renderView();
+    const utils = await renderView();
+    const {findByText, getByLabelText, queryByText} = utils;
     await fireEvent.press(await findByText('Custom'));
-    await userEvent.type(getByLabelText('Custom scale'), '2.5');
-    fireEvent(getByLabelText('Custom scale'), 'submitEditing');
+    // The field's accessible label tracks the typed value in 1.15.0,
+    // so hold the element reference across the edit.
+    const customField = getByLabelText('Custom scale');
+    await userEvent.type(customField, '2.5');
+    fireEvent(customField, 'submitEditing');
     // The servings actually apply: 4 * 2.5 = 10, so the flour rescales
     // by the same factor the scale selection reports.
     expect(await findByText('5 cups Flour')).toBeTruthy();
@@ -352,26 +383,27 @@ describe('RecipeDetailView', () => {
     // falling back to the ½× preset (the pre-1.8.1 host derivation).
     expect(await findByText('2.5×')).toBeTruthy();
     expect(queryByText('Custom')).toBeNull();
-    expect(getByLabelText('½×').props['aria-pressed']).toBe(false);
-    expect(getByLabelText('2×').props['aria-pressed']).toBe(false);
+    expect(scaleSelected(utils, '½×')).toBe(false);
+    expect(scaleSelected(utils, '2×')).toBe(false);
   });
 
   test('derives the scale when the servings stepper lands off-preset', async () => {
-    const {findByText, getByLabelText} = await renderView();
+    const {findByText, getByLabelText, getByText} = await renderView();
     await findByText('Test Recipe');
     await fireEvent.press(getByLabelText('Increase Servings'));
     await fireEvent.press(getByLabelText('Increase Servings'));
     // 4 → 6 servings is a 1.5 ratio: no preset matches, so the custom
     // chip carries the derived ratio as the selected value.
     expect(await findByText('1.5×')).toBeTruthy();
-    expect(getByLabelText('½×').props['aria-pressed']).toBe(false);
+    expect(scaleSelected({getByText}, '½×')).toBe(false);
   });
 
   test('passes the preset string through when a preset chip is chosen', async () => {
-    const {findByText, getByLabelText} = await renderView();
+    const utils = await renderView();
+    const {findByText} = utils;
     await fireEvent.press(await findByText('2×'));
     expect(await findByText('4 cups Flour')).toBeTruthy();
-    expect(getByLabelText('2×').props['aria-pressed']).toBe(true);
+    expect(scaleSelected(utils, '2×')).toBe(true);
     // The custom chip stays at its resting label for a preset selection.
     expect(await findByText('Custom')).toBeTruthy();
   });
@@ -379,18 +411,20 @@ describe('RecipeDetailView', () => {
   test('derives the initial scale for servings starting on a preset', async () => {
     // Base servings 4 with the screen's servings already at 8: the 2×
     // preset is the selection, exactly as the old derivation had it.
-    const {findByText, getByLabelText} = await renderView({}, undefined, 8);
+    const utils = await renderView({}, undefined, 8);
+    const {findByText} = utils;
     expect(await findByText('4 cups Flour')).toBeTruthy();
-    expect(getByLabelText('2×').props['aria-pressed']).toBe(true);
+    expect(scaleSelected(utils, '2×')).toBe(true);
     expect(await findByText('Custom')).toBeTruthy();
   });
 
   test('derives the initial scale for servings starting off-preset', async () => {
     // Base servings 4 with the screen's servings already at 6: the
     // selection is the 1.5 ratio on the custom chip, not the ½× fallback.
-    const {findByText, getByLabelText} = await renderView({}, undefined, 6);
+    const utils = await renderView({}, undefined, 6);
+    const {findByText} = utils;
     expect(await findByText('1.5×')).toBeTruthy();
-    expect(getByLabelText('½×').props['aria-pressed']).toBe(false);
+    expect(scaleSelected(utils, '½×')).toBe(false);
   });
 
   test('renders the instruction steps', async () => {

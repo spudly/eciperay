@@ -37,6 +37,12 @@ const spacingValue = (spacing: PageTitleProps['spacing']) => {
 /**
  * Thin adapter over the DS Text primitive. Keeps the eciperay size/spacing prop
  * API while rendering token-driven type.
+ *
+ * Heading semantics come from the DS Text variant itself: since @spudly/ui 1.15
+ * (design-system#256) the heading/subheading variants carry the header role on
+ * native, so this adapter adds none of its own. (The web mirror's 1.15 change
+ * removed the native h1/h2 wrapper it used to need for the same semantics — see
+ * the web PageTitle; this mirror never had a wrapper to remove.)
  */
 export const PageTitle = ({
   children,

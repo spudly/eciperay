@@ -1,6 +1,5 @@
 /* eslint-disable max-lines -- detail host: every section's queries, mutations, and view-model mapping */
 import {
-  canCreateDraftVersion,
   canEditActiveRecipeMetadata,
   canEditDraftVersion,
   formatCommunityRatingLabel,
@@ -25,7 +24,7 @@ import type {
   RecipeStarRating,
   RecipeVersionSummary,
 } from '@eciperay/types';
-import {CookLogForm} from '@spudly/ui';
+import {RatingForm, tagColorNameForHex} from '@spudly/ui';
 import {
   RecipeDetailPage,
   type RecipeDetailPageNutritionProps,
@@ -34,6 +33,12 @@ import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useState} from 'react';
 
 import {api} from '../../lib/api';
+import {
+  recipeCookHref,
+  recipeEditHref,
+  recipeTweakAiHref,
+  recipeVersionEditHref,
+} from '../../lib/deepLinks';
 import {printRecipe} from '../../lib/printRecipe';
 import {shareRecipe} from '../../lib/shareRecipe';
 
@@ -49,12 +54,8 @@ type RecipeDetailViewProps = {
   currentServings: number;
   scaleFactor: number;
   onServingsChange: (servings: number) => void;
-  onStartCooking: () => void;
   onDelete: () => void;
-  onTweakAi: () => void;
   onViewVersion: (versionId: string) => void;
-  onEditRecipe: () => void;
-  onEditVersion: (versionId: string) => void;
 };
 
 /**
@@ -142,12 +143,8 @@ export const RecipeDetailView = ({
   currentServings,
   scaleFactor,
   onServingsChange,
-  onStartCooking,
   onDelete,
-  onTweakAi,
   onViewVersion,
-  onEditRecipe,
-  onEditVersion,
 }: RecipeDetailViewProps) => {
   const queryClient = useQueryClient();
   const {session} = useAuth();
@@ -194,15 +191,15 @@ export const RecipeDetailView = ({
       onViewVersion(version.id);
     },
   });
-  // A Perfected recipe's active version is locked, so its Edit draft chip
-  // creates the draft first and then opens it in the version editor (#264).
-  const createDraftMutation = useMutation({
-    mutationFn: () => api.versions.create(displayRecipe.id),
-    onSuccess: version => {
-      void invalidate();
-      onEditVersion(version.id);
-    },
-  });
+  // The Perfected recipe's create-a-draft flow (#264) has no
+  // expression in the @spudly/ui 1.15.0 page contract: the overview's
+  // draft action is the editDraftHref link, which covers opening an
+  // existing draft, but creating a draft is a mutation-then-navigate
+  // control (exempt from the href rule by the #248 borderline ruling)
+  // and the page offers no callback slot for it. The wiring is
+  // therefore removed rather than left dead; the gap is filed
+  // against the design system (see the PR body) and the flow returns
+  // when the page grows the slot.
 
   const isEditable =
     displayRecipe.status !== 'perfected' &&
@@ -401,13 +398,6 @@ export const RecipeDetailView = ({
   }, [displayRecipe.id, displayRecipe.versionId]);
 
   const canEditDraft = canEditDraftVersion(displayRecipe.versionId, versions);
-  // Creating a draft clones the ACTIVE version (the server's createVersion
-  // always clones it), so the chip is only offered while the active version
-  // is the one on display — on an archived version it would silently draft
-  // from a version the user is not looking at.
-  const canCreateDraft =
-    canCreateDraftVersion(displayRecipe.status) &&
-    displayRecipe.versionId === recipe.versionId;
   const canEditMetadata = canEditActiveRecipeMetadata(
     displayRecipe.status,
     displayRecipe.versionId,
@@ -438,31 +428,27 @@ export const RecipeDetailView = ({
           ? `${displayRecipe.cookTimeMin}m`
           : undefined,
         actionMessage,
-        onStartCooking,
+        cookingHref: recipeCookHref(
+          recipe.id,
+          displayRecipe.versionId,
+          currentServings,
+        ),
         onPrintPress: () => {
           void printRecipe(displayRecipe);
         },
         onSharePress: () => {
           void shareRecipe(displayRecipe);
         },
-        onEditPress: canEditMetadata ? onEditRecipe : undefined,
-        onEditDraftPress: canEditDraft
-          ? () => {
-              onEditVersion(displayRecipe.versionId);
-            }
-          : canCreateDraft
-            ? () => {
-                if (!createDraftMutation.isPending) {
-                  createDraftMutation.mutate();
-                }
-              }
-            : undefined,
+        editHref: canEditMetadata ? recipeEditHref(recipe.id) : undefined,
+        editDraftHref: canEditDraft
+          ? recipeVersionEditHref(recipe.id, displayRecipe.versionId)
+          : undefined,
         onDeletePress: onDelete,
         lifecycle,
         onTweakManuallyPress: () => {
           tweakManualMutation.mutate();
         },
-        onTweakAiPress: onTweakAi,
+        tweakAiHref: recipeTweakAiHref(recipe.id),
         onMarkPerfectedPress: () => {
           statusMutation.mutate('perfected');
         },
@@ -475,7 +461,7 @@ export const RecipeDetailView = ({
         tags: displayRecipe.tags.map(tag => ({
           id: tag.id,
           name: tag.name,
-          color: tag.color,
+          color: tagColorNameForHex(tag.color),
         })),
         ratings,
         onViewerRatingChange: (stars: number | null) => {
@@ -552,14 +538,18 @@ export const RecipeDetailView = ({
         },
         renderCookLogForm: () =>
           showCookLogForm ? (
-            <CookLogForm
+            <RatingForm
               variant="light"
+              notesPlaceholder="Notes from this cook (optional)"
               isPending={createCookLogMutation.isPending}
               onSkip={() => {
                 setShowCookLogForm(false);
               }}
-              onSubmit={(input: CookLogInput) => {
-                createCookLogMutation.mutate(input);
+              onSubmit={values => {
+                createCookLogMutation.mutate({
+                  authorStarRating: values.rating,
+                  notes: values.notes,
+                });
               }}
             />
           ) : null,

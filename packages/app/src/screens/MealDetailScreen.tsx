@@ -6,6 +6,7 @@ import {useQuery} from '@tanstack/react-query';
 
 import {ScreenLoadingGate} from '../components/ScreenLoadingGate';
 import {api} from '../lib/api';
+import {mealCookHref, mealEditHref, recipeHref} from '../lib/deepLinks';
 import type {MealsStackParamList} from '../navigation/types';
 
 type Props = NativeStackScreenProps<MealsStackParamList, 'MealDetail'>;
@@ -31,7 +32,7 @@ const formatMemberNutrition = (member: MealRecipeMember): string | null => {
   return parts.length > 0 ? parts.join(' · ') : null;
 };
 
-export const MealDetailScreen = ({route, navigation}: Props) => {
+export const MealDetailScreen = ({route}: Props) => {
   const {mealId} = route.params;
 
   const {data: meal, isLoading} = useQuery({
@@ -48,6 +49,7 @@ export const MealDetailScreen = ({route, navigation}: Props) => {
           nutritionLabel={formatSimpleNutrition(meal.nutrition)}
           members={meal.members.map(member => ({
             recipeId: member.recipeId,
+            href: recipeHref(member.recipeId),
             title: member.title,
             subtitle: `${member.servings} serving${
               member.servings === 1 ? '' : 's'
@@ -58,20 +60,8 @@ export const MealDetailScreen = ({route, navigation}: Props) => {
             }`,
             isUnavailable: member.accessLost,
           }))}
-          onEdit={() => {
-            navigation.navigate('MealEdit', {mealId});
-          }}
-          onCook={() => {
-            navigation.navigate('MealCookingMode', {mealId});
-          }}
-          onRecipePress={recipeId => {
-            navigation
-              .getParent()
-              ?.navigate('Recipes', {
-                screen: 'RecipeDetail',
-                params: {recipeId},
-              });
-          }}
+          cookHref={mealCookHref(mealId)}
+          editHref={mealEditHref(mealId)}
         />
       ) : null}
     </ScreenLoadingGate>

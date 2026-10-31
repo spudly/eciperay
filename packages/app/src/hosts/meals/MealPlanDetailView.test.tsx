@@ -1,4 +1,5 @@
 import {fireEvent} from '@testing-library/react-native';
+import {Linking} from 'react-native';
 import type {
   AggregatedNutrition,
   MealPlanDetail,
@@ -83,15 +84,26 @@ const makePlan = (overrides: Partial<MealPlanDetail> = {}): MealPlanDetail => ({
   ...overrides,
 });
 
+// The view's navigation inputs are hrefs since @spudly/ui 1.15.0
+// (#248): the screen composes deep links, and a press on a link in
+// the DS page opens its href through Linking.
+const TEST_GOALS_HREF = 'app://profile';
+const TEST_EDIT_HREF = 'app://meal-plans/plan-1/edit';
+const TEST_SHOPPING_LIST_HREF = 'app://meal-plans/plan-1/shopping-list';
+
 const handlers = () => ({
-  onEdit: jest.fn(),
-  onShoppingList: jest.fn(),
-  onMealPress: jest.fn(),
-  onRecipePress: jest.fn(),
-  onSetGoalsPress: jest.fn(),
+  editHref: TEST_EDIT_HREF,
+  shoppingListHref: TEST_SHOPPING_LIST_HREF,
+  goalsHref: TEST_GOALS_HREF,
+  entryHref: (kind: 'meal' | 'recipe', targetId: string) =>
+    kind === 'meal' ? `app://meals/${targetId}` : `app://recipes/${targetId}`,
 });
 
 describe('MealPlanDetailView', () => {
+  beforeEach(() => {
+    jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
+  });
+
   test('renders the plan meta lines composed from the plan', async () => {
     const {findByText} = await renderWithProviders(
       <MealPlanDetailView
@@ -228,7 +240,7 @@ describe('MealPlanDetailView', () => {
       await findByText('Set daily nutrition goals to compare this plan.'),
     ).toBeTruthy();
     fireEvent.press(await findByText('Set nutrition goals'));
-    expect(props.onSetGoalsPress).toHaveBeenCalledTimes(1);
+    expect(Linking.openURL).toHaveBeenCalledWith(TEST_GOALS_HREF);
   });
 
   test('shows the set-goals hint when nutrition is present but unavailable and there is no progress', async () => {
@@ -246,7 +258,7 @@ describe('MealPlanDetailView', () => {
       await findByText('Set daily nutrition goals to compare this plan.'),
     ).toBeTruthy();
     fireEvent.press(await findByText('Set nutrition goals'));
-    expect(props.onSetGoalsPress).toHaveBeenCalledTimes(1);
+    expect(Linking.openURL).toHaveBeenCalledWith(TEST_GOALS_HREF);
   });
 
   test('composes goal rows when nutrition is unavailable but progress exists', async () => {
@@ -294,20 +306,29 @@ describe('MealPlanDetailView', () => {
 
   test('composes entry meta lines and routes entry presses by kind', async () => {
     const props = handlers();
-    const {findByText} = await renderWithProviders(
+    const {findByLabelText} = await renderWithProviders(
       <MealPlanDetailView
         plan={makePlan()}
         {...props}
       />,
     );
+    // Entry rows are links: the meta line is part of the row's
+    // accessible name ("title, subtitle"), and the row itself is
+    // found by its title label.
     expect(
-      await findByText('Qty 2 · 3 recipes · 300 cal · 20g protein'),
+      await findByLabelText(/Qty 2 · 3 recipes · 300 cal · 20g protein/),
     ).toBeTruthy();
-    expect(await findByText('Qty 1 · 4 servings')).toBeTruthy();
-    fireEvent.press(await findByText('Meal · Sunday Dinner'));
-    expect(props.onMealPress).toHaveBeenCalledWith('meal-1');
-    fireEvent.press(await findByText('Recipe · Test Recipe'));
-    expect(props.onRecipePress).toHaveBeenCalledWith('recipe-1');
+    expect(await findByLabelText(/Qty 1 · 4 servings/)).toBeTruthy();
+    fireEvent.press(
+      await findByLabelText(
+        'Meal · Sunday Dinner, Qty 2 · 3 recipes · 300 cal · 20g protein',
+      ),
+    );
+    expect(Linking.openURL).toHaveBeenCalledWith('app://meals/meal-1');
+    fireEvent.press(
+      await findByLabelText('Recipe · Test Recipe, Qty 1 · 4 servings'),
+    );
+    expect(Linking.openURL).toHaveBeenCalledWith('app://recipes/recipe-1');
   });
 
   test('an access-lost recipe entry shows its suffix and carries no press', async () => {
@@ -341,7 +362,7 @@ describe('MealPlanDetailView', () => {
     }
     expect(sawPress).toBe(false);
     expect(sawDisabled).toBe(true);
-    expect(props.onRecipePress).not.toHaveBeenCalled();
+    expect(Linking.openURL).not.toHaveBeenCalledWith('app://recipes/recipe-1');
   });
 
   test('routes the Shopping list and Edit actions', async () => {
@@ -353,8 +374,8 @@ describe('MealPlanDetailView', () => {
       />,
     );
     fireEvent.press(await findByText('Shopping list'));
-    expect(props.onShoppingList).toHaveBeenCalledTimes(1);
+    expect(Linking.openURL).toHaveBeenCalledWith(TEST_SHOPPING_LIST_HREF);
     fireEvent.press(await findByText('Edit'));
-    expect(props.onEdit).toHaveBeenCalledTimes(1);
+    expect(Linking.openURL).toHaveBeenCalledWith(TEST_EDIT_HREF);
   });
 });

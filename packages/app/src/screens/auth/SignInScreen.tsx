@@ -4,13 +4,12 @@ import {Alert} from 'react-native';
 import {SignInPage} from '@spudly/ui/pages';
 
 import {api} from '../../lib/api';
+import {forgotPasswordHref, signUpHref} from '../../lib/deepLinks';
 import {
   normalizeAuthEmail,
   normalizeAuthPassword,
 } from '../../lib/normalizeAuthInput';
 import {supabase} from '../../lib/supabase';
-
-type SignInProps = {navigation: {navigate: (screen: string) => void}};
 
 const signIn = async (email: string, password: string) => {
   const {error} = await supabase.auth.signInWithPassword({email, password});
@@ -20,7 +19,7 @@ const signIn = async (email: string, password: string) => {
   await api.auth.syncUser();
 };
 
-export const SignInScreen = ({navigation}: SignInProps) => {
+export const SignInScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -46,12 +45,8 @@ export const SignInScreen = ({navigation}: SignInProps) => {
       onSubmit={() => {
         void handleSignIn();
       }}
-      onSignUpPress={() => {
-        navigation.navigate('SignUp');
-      }}
-      onForgotPasswordPress={() => {
-        navigation.navigate('ForgotPassword');
-      }}
+      signUpHref={signUpHref}
+      forgotPasswordHref={forgotPasswordHref}
     />
   );
 };

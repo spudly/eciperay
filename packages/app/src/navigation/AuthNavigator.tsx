@@ -5,7 +5,9 @@ import {ForgotPasswordScreen} from '../screens/auth/ForgotPasswordScreen';
 import {SignInScreen} from '../screens/auth/SignInScreen';
 import {SignUpScreen} from '../screens/auth/SignUpScreen';
 
-const Stack = createNativeStackNavigator();
+import type {AuthStackParamList} from './types';
+
+const Stack = createNativeStackNavigator<AuthStackParamList>();
 
 export const AuthNavigator = () => (
   <Stack.Navigator screenOptions={{headerShown: false}}>

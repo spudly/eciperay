@@ -4,14 +4,15 @@ import {
   useAnalytics,
   useAuth,
 } from '@eciperay/client';
+import {ManualEntryPage as ManualEntryShell} from '@spudly/ui/pages';
 import {useQueryClient} from '@tanstack/react-query';
 import {useNavigate} from 'react-router-dom';
 import type {RecipeInput} from '@eciperay/types';
 
-import {ManualEntryView} from '../components/recipe/ManualEntryView.js';
-import {RecipeForm} from '../components/recipe/RecipeForm.js';
 import {eciperay} from '../lib/api.js';
 import {supabase} from '../lib/supabase.js';
+
+import {RecipeFormHost} from './RecipeFormHost.js';
 
 const emptyInput: RecipeInput = {
   title: '',
@@ -51,12 +52,12 @@ export const ManualEntryPage = () => {
   };
 
   return (
-    <ManualEntryView>
-      <RecipeForm
+    <ManualEntryShell>
+      <RecipeFormHost
         initial={emptyInput}
         submitLabel="Create Recipe"
         onSubmit={handleSubmit}
       />
-    </ManualEntryView>
+    </ManualEntryShell>
   );
 };

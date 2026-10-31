@@ -79,9 +79,7 @@ export const SignupPage = () => {
       onSubmit={() => {
         void handleSignUp();
       }}
-      onSignInPress={() => {
-        void navigate('/login');
-      }}
+      signInHref="/login"
       legalNotice={<LegalLinks className="mbs-6" />}
     />
   );

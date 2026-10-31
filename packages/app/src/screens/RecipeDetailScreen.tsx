@@ -103,27 +103,11 @@ export const RecipeDetailScreen = ({route, navigation}: DetailProps) => {
       currentServings={currentServings}
       scaleFactor={scaleFactor}
       onServingsChange={setServings}
-      onStartCooking={() => {
-        navigation.navigate('CookingMode', {
-          recipeId: recipe.id,
-          versionId: displayRecipe.versionId,
-          servings: currentServings,
-        });
-      }}
       onDelete={() => {
         confirmDelete(recipe);
       }}
-      onTweakAi={() => {
-        navigation.navigate('TweakAi', {recipeId: recipe.id});
-      }}
       onViewVersion={versionId => {
         setSelectedVersionId(versionId);
-      }}
-      onEditRecipe={() => {
-        navigation.navigate('EditRecipe', {recipeId: recipe.id});
-      }}
-      onEditVersion={versionId => {
-        navigation.navigate('EditVersion', {recipeId: recipe.id, versionId});
       }}
     />
   );

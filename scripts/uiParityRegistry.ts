@@ -51,40 +51,10 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
       'Web cook-log form implementation; the app renders the design system CookLogForm (design-system#126). Web adoption is B7.',
   },
   {
-    path: 'recipe/RecipeForm.tsx',
+    path: 'recipe/sortableDrag.ts',
     platform: 'web',
     reason:
-      'Web recipe form implementation; the app renders the design system RecipeFormPage via its host (design-system#124). Web adoption is B7.',
-  },
-  {
-    path: 'recipe/EditRecipeView.tsx',
-    platform: 'web',
-    reason:
-      'Web shell for its recipe form pages; the app renders the design system EditRecipePage (design-system#124). Web adoption is B7.',
-  },
-  {
-    path: 'recipe/EditVersionView.tsx',
-    platform: 'web',
-    reason:
-      'Web shell for its recipe form pages; the app renders the design system EditVersionPage (design-system#124). Web adoption is B7.',
-  },
-  {
-    path: 'recipe/ManualEntryView.tsx',
-    platform: 'web',
-    reason:
-      'Web shell for its recipe form pages; the app renders the design system ManualEntryPage (design-system#124). Web adoption is B7.',
-  },
-  {
-    path: 'recipe/RecipeStatusPicker.tsx',
-    platform: 'web',
-    reason:
-      'Web status picker for its recipe form; the app form passes status options as props to the design system RecipeFormPage (design-system#124).',
-  },
-  {
-    path: 'recipe/TagPicker.tsx',
-    platform: 'web',
-    reason:
-      'Web tag picker for its recipe form; the app form host runs the tags query and passes options to the design system RecipeFormPage (design-system#124).',
+      "dnd-kit drag helper for web's sortable ingredient/instruction list slot implementations; the app lists carry their react-native-draggable-flatlist wiring inline.",
   },
   {
     path: 'meals/MealFormView.tsx',

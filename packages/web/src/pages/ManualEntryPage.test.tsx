@@ -14,6 +14,12 @@ vi.mock('@eciperay/client', async importOriginal => {
 
 const mockUploadRecipeImage = vi.mocked(uploadRecipeImage);
 
+// The design system form labels its title input "Title"; since
+// @spudly/ui 1.15 the label is a real <label> tied to the input, so a
+// standard label query finds the field (before the bump the label
+// leaked into a raw accessibilitylabel attribute in jsdom).
+const titleField = () => screen.getByLabelText('Title');
+
 describe('ManualEntryPage', () => {
   beforeEach(() => {
     mockUploadRecipeImage.mockReset();
@@ -34,7 +40,7 @@ describe('ManualEntryPage', () => {
       </Routes>,
       {route: '/add/manual'},
     );
-    await userEvent.type(screen.getByLabelText('Title'), 'New Recipe');
+    await userEvent.type(titleField()!, 'New Recipe');
     await userEvent.type(screen.getAllByPlaceholderText('Name')[0]!, 'Flour');
     const textareas = screen.getAllByRole('textbox');
     await userEvent.type(textareas.at(-1)!, 'Mix ingredients');
@@ -42,7 +48,12 @@ describe('ManualEntryPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Recipe Created')).toBeInTheDocument();
     });
-  });
+    // These two tests drive the full DS RecipeFormPage through
+    // userEvent typing; since the @spudly/ui 1.15 bump the form's
+    // render cost pushes them past the 5s default when the suite
+    // runs files in parallel on a loaded machine (they pass
+    // standalone), so they carry an explicit timeout.
+  }, 15_000);
 
   test('uploads a pending image after the recipe is created', async () => {
     await renderWithProviders(
@@ -58,7 +69,7 @@ describe('ManualEntryPage', () => {
       </Routes>,
       {route: '/add/manual'},
     );
-    await userEvent.type(screen.getByLabelText('Title'), 'New Recipe');
+    await userEvent.type(titleField()!, 'New Recipe');
     await userEvent.type(screen.getAllByPlaceholderText('Name')[0]!, 'Flour');
     const textareas = screen.getAllByRole('textbox');
     await userEvent.type(textareas.at(-1)!, 'Mix ingredients');
@@ -76,5 +87,5 @@ describe('ManualEntryPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Recipe Created')).toBeInTheDocument();
     });
-  });
+  }, 15_000);
 });

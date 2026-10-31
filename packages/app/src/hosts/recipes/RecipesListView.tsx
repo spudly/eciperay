@@ -16,22 +16,28 @@ import type {
   RecipeListSort,
   RecipeListSortDir,
 } from '@eciperay/types';
-import {CookLogForm} from '@spudly/ui';
+import {RatingForm} from '@spudly/ui';
 import {RecipesPage, type RecipesPageItem} from '@spudly/ui/pages';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useRef, useState} from 'react';
 
 import {api} from '../../lib/api';
+import {recipeHref} from '../../lib/deepLinks';
 
 /**
- * The app host's props: the shared view-props type minus `onRecipeDelete`. The
- * shared type keeps the prop because the web mirror's own DOM list still offers
- * per-row delete; the app list no longer does — @spudly/ui 1.8.0 removed
- * `onRecipeDelete` from RecipesPage (deleting a recipe is a recipe-detail
- * action, where RecipeDetailPage already exposes it), so this host neither
- * accepts nor forwards it.
+ * The app host's props: the shared view-props type minus `onRecipeDelete` and
+ * `onRecipePress`. The shared type keeps both because the web mirror's own DOM
+ * list still offers per-row delete and press handling; the app list offers
+ * neither — @spudly/ui 1.8.0 removed `onRecipeDelete` from RecipesPage
+ * (deleting a recipe is a recipe-detail action, where RecipeDetailPage already
+ * exposes it), and 1.15.0 made the rows links (#248): each item carries its
+ * deep-link `href` (see the item mapping below) and the page renders real
+ * links, so there is no row press to forward.
  */
-type RecipesListViewOwnProps = Omit<RecipesListViewProps, 'onRecipeDelete'>;
+type RecipesListViewOwnProps = Omit<
+  RecipesListViewProps,
+  'onRecipeDelete' | 'onRecipePress'
+>;
 
 /**
  * The subtitle for a RecipesPage row: servings · time · satiety, with no rating
@@ -143,16 +149,20 @@ export const InlineCookLogForm = ({
   }, []);
 
   return (
-    <CookLogForm
+    <RatingForm
       variant="light"
+      notesPlaceholder="Notes from this cook (optional)"
       isPending={createMutation.isPending}
       onSkip={() => {
         if (!createMutation.isPending) {
           onClose();
         }
       }}
-      onSubmit={input => {
-        createMutation.mutate(input);
+      onSubmit={values => {
+        createMutation.mutate({
+          authorStarRating: values.rating,
+          notes: values.notes,
+        });
       }}
     />
   );
@@ -162,7 +172,6 @@ export const RecipesListView = ({
   isLoading,
   recipes,
   isFetchingNextPage,
-  onRecipePress,
   onLoadMore,
   search,
   onSearchChange,
@@ -234,6 +243,7 @@ export const RecipesListView = ({
 
   const items: RecipesPageItem[] = recipes.map(recipe => ({
     id: recipe.id,
+    href: recipeHref(recipe.id),
     title: recipe.title,
     subtitle: formatRecipesPageSubtitle(recipe),
     rating: getDisplayRating(recipe),
@@ -245,7 +255,6 @@ export const RecipesListView = ({
       recipes={items}
       isLoading={isLoading}
       isFetchingNextPage={isFetchingNextPage}
-      onRecipePress={onRecipePress}
       onLogCookPress={openCookLog}
       renderRecipeAccessory={recipeId => {
         const recipe = recipesById.get(recipeId);

@@ -1,31 +1,36 @@
 import {
   buildRecipePermalink,
-  demoRecipeListFilters,
   formatRecipeListSubtitle,
-  makeRecipeDetail,
+  SHARED_WITH_ME_EMPTY_BODY,
+  SHARED_WITH_ME_EMPTY_TITLE,
   WEB_APP_BASE_URL,
   type RecipeStatusFilterValue,
   type SharedWithMeViewProps,
 } from '@eciperay/client';
 import type {RecipeListSort, RecipeListSortDir} from '@eciperay/types';
-import {SharedWithMePage, type SharedWithMePageItem} from '@spudly/ui/pages';
-import {Linking} from 'react-native';
+import {RecipesPage, type RecipesPageItem} from '@spudly/ui/pages';
 
 /**
  * The Shared-with-me screen's view (#49, Wave A): the design system's
- * SharedWithMePage renders the screen — filter bar, bounded list, rows — and
+ * recipes-list page renders the screen — filter bar, bounded list, rows — and
  * this component is its app-side host. Everything the page must not own stays
  * here: the view-model mapping (the subtitle is the app's list meta line,
- * formatted by the same helper the shared card uses), the row press, and the
- * boundary adaptations (the filter unions narrow back from the page's plain
- * strings with the same casts the old filter bar used).
+ * formatted by the same helper the shared card uses) and the boundary
+ * adaptations (the filter unions narrow back from the page's plain strings with
+ * the same casts the old filter bar used).
  *
- * The row press is the one piece of behavior this screen has that Recipes does
- * not: a shared recipe is not the viewer's to open in-app, so the press opens
- * the recipe's permalink in the browser. The page reports the press by id; the
- * host resolves the recipe from the app's own list, builds the permalink from
- * the app's base-URL constant, and hands it to Linking — exactly what
- * SharedRecipeListCard did per card.
+ * Until @spudly/ui 1.15.0 this host drove a dedicated SharedWithMePage; the
+ * design system consolidated the two list screens into RecipesPage
+ * (design-system#119), so this host now drives that page in its shared-with-me
+ * configuration: no log-cook control and no per-row accessory (shared rows are
+ * press-only), and the screen's own empty-state copy through the page's
+ * emptyTitle/emptyBody props.
+ *
+ * The row destination is the one piece of behavior this screen has that Recipes
+ * does not: a shared recipe is not the viewer's to open in-app, so each row's
+ * `href` is the recipe's permalink, built from the app's base-URL constant — on
+ * native the page's link opens it through Linking, exactly what this host (and
+ * SharedRecipeListCard before it) did by hand with the row press.
  *
  * The layout regressions the old hand-rolled list guarded in this file — #188
  * (bounded flex: 1 list, filters as its header, the list mounted while loading
@@ -59,27 +64,22 @@ export const SharedWithMeView = ({
   onSortDirChange,
   showStatusFilter,
 }: SharedWithMeViewProps) => {
-  const recipesById = new Map(recipes.map(recipe => [recipe.id, recipe]));
-
-  const items: SharedWithMePageItem[] = recipes.map(recipe => ({
+  const items: RecipesPageItem[] = recipes.map(recipe => ({
     id: recipe.id,
+    href: buildRecipePermalink(WEB_APP_BASE_URL, recipe),
     title: recipe.title,
     subtitle: formatRecipeListSubtitle(recipe),
     imageUrl: recipe.imageUrl,
   }));
 
   return (
-    <SharedWithMePage
+    <RecipesPage
       recipes={items}
       isLoading={isLoading}
       isFetchingNextPage={isFetchingNextPage}
-      onRecipePress={recipeId => {
-        const recipe = recipesById.get(recipeId);
-        if (recipe) {
-          void Linking.openURL(buildRecipePermalink(WEB_APP_BASE_URL, recipe));
-        }
-      }}
       onLoadMore={onLoadMore}
+      emptyTitle={SHARED_WITH_ME_EMPTY_TITLE}
+      emptyBody={SHARED_WITH_ME_EMPTY_BODY}
       search={search}
       onSearchChange={onSearchChange}
       statusFilter={statusFilter}

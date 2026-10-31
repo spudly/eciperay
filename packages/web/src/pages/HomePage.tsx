@@ -110,15 +110,9 @@ export const HomePage = () => {
           />
         );
       }}
-      onBrowsePress={() => {
-        void navigate('/recipes');
-      }}
-      onAddPress={() => {
-        void navigate('/add');
-      }}
-      onSharedWithMePress={() => {
-        void navigate('/shared-with-me');
-      }}
+      browseHref="/recipes"
+      addHref="/add"
+      sharedWithMeHref="/shared-with-me"
     />
   );
 };

@@ -9,6 +9,7 @@ import {
 
 import {makeStackProps, renderWithProviders} from '../__tests__/testUtils';
 import {api} from '../lib/api';
+import {tagsHref} from '../lib/deepLinks';
 import type {ProfileStackParamList} from '../navigation/types';
 
 import {ProfileScreen} from './ProfileScreen';
@@ -30,20 +31,13 @@ jest.mock('../lib/api');
 const mockGetNutritionGoals = api.account.getNutritionGoals as jest.Mock;
 const mockPutNutritionGoals = api.account.putNutritionGoals as jest.Mock;
 
-const mockNavigate = jest.fn();
-const stackProps = makeStackProps<ProfileStackParamList, 'ProfileHome'>(
-  'ProfileHome',
-  undefined,
-  {navigate: mockNavigate},
-);
-
 const renderProfileScreen = async () =>
   await renderWithProviders(
     <FeedbackPreferenceContextProvider
       enabled={false}
       setEnabled={jest.fn()}
     >
-      <ProfileScreen {...stackProps} />
+      <ProfileScreen />
     </FeedbackPreferenceContextProvider>,
   );
 
@@ -101,10 +95,13 @@ describe('ProfileScreen', () => {
     expect(await findByText('Show feedback shortcut')).toBeTruthy();
   });
 
-  test('navigates to Tags', async () => {
+  // Manage Tags is an href now (#248): a press opens the deep link
+  // through Linking and the container's linking config routes it to
+  // the Tags screen the old callback navigated to.
+  test('opens the tags deep link', async () => {
     const {findByText} = await renderProfileScreen();
     await fireEvent.press(await findByText('Manage Tags'));
-    expect(mockNavigate).toHaveBeenCalledWith('Tags');
+    expect(Linking.openURL).toHaveBeenCalledWith(tagsHref);
   });
 
   test('opens legal document URLs', async () => {

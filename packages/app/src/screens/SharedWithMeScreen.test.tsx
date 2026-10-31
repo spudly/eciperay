@@ -59,18 +59,18 @@ describe('SharedWithMeScreen', () => {
         userId: 'other-user',
       }),
     ]);
-    const {findByText} = await renderWithProviders(<SharedWithMeScreen />);
-    expect(await findByText('Shared Soup')).toBeTruthy();
+    const {findByLabelText} = await renderWithProviders(<SharedWithMeScreen />);
+    expect(await findByLabelText('Shared Soup')).toBeTruthy();
   });
 
   test('does not load more when there is no next page', async () => {
     mockListSharedWithMe.mockResolvedValue([
       makeRecipeDetail({title: 'Only Shared', userId: 'other-user'}),
     ]);
-    const {findByText, container} = await renderWithProviders(
+    const {findByLabelText, container} = await renderWithProviders(
       <SharedWithMeScreen />,
     );
-    await findByText('Only Shared');
+    await findByLabelText('Only Shared');
     await triggerEndReached(findList(container));
     await waitFor(() => {
       expect(mockListSharedWithMe).toHaveBeenCalledTimes(1);
@@ -102,11 +102,9 @@ describe('SharedWithMeScreen', () => {
       },
     );
     const client = makeQueryClient();
-    const {findByText, getByLabelText, container} = await renderWithProviders(
-      <SharedWithMeScreen />,
-      client,
-    );
-    await findByText('Shared 0');
+    const {findByLabelText, getByLabelText, container} =
+      await renderWithProviders(<SharedWithMeScreen />, client);
+    await findByLabelText('Shared 0');
     const list = findList(container);
     await act(async () => {
       list.props.onEndReached?.();
@@ -143,10 +141,10 @@ describe('SharedWithMeScreen', () => {
         ];
       },
     );
-    const {findByText, container} = await renderWithProviders(
+    const {findByLabelText, container} = await renderWithProviders(
       <SharedWithMeScreen />,
     );
-    await findByText('Shared 0');
+    await findByLabelText('Shared 0');
     await triggerEndReached(findList(container));
     await waitFor(() => {
       expect(mockListSharedWithMe).toHaveBeenCalledWith({

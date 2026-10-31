@@ -5,11 +5,21 @@ import {useQuery} from '@tanstack/react-query';
 import {MealPlanDetailView} from '../hosts/meals/MealPlanDetailView';
 import {ScreenLoadingGate} from '../components/ScreenLoadingGate';
 import {api} from '../lib/api';
+import {
+  mealHref,
+  mealPlanEditHref,
+  profileHref,
+  recipeHref,
+  shoppingListHref,
+} from '../lib/deepLinks';
 import type {MealsStackParamList} from '../navigation/types';
 
 type Props = NativeStackScreenProps<MealsStackParamList, 'MealPlanDetail'>;
 
-export const MealPlanDetailScreen = ({route, navigation}: Props) => {
+// Navigation crosses into the DS page as deep-link hrefs (#248,
+// @spudly/ui 1.15.0), so this screen no longer takes navigation
+// callbacks through the view — it composes the destinations.
+export const MealPlanDetailScreen = ({route}: Props) => {
   const {planId} = route.params;
 
   const {data: plan, isLoading} = useQuery({
@@ -22,28 +32,12 @@ export const MealPlanDetailScreen = ({route, navigation}: Props) => {
       {plan ? (
         <MealPlanDetailView
           plan={plan}
-          onEdit={() => {
-            navigation.navigate('MealPlanEdit', {planId});
-          }}
-          onShoppingList={() => {
-            navigation.navigate('ShoppingList', {planId});
-          }}
-          onMealPress={mealId => {
-            navigation.navigate('MealDetail', {mealId});
-          }}
-          onRecipePress={recipeId => {
-            navigation
-              .getParent()
-              ?.navigate('Recipes', {
-                screen: 'RecipeDetail',
-                params: {recipeId},
-              });
-          }}
-          onSetGoalsPress={() => {
-            navigation
-              .getParent()
-              ?.navigate('Profile', {screen: 'ProfileHome'});
-          }}
+          editHref={mealPlanEditHref(planId)}
+          shoppingListHref={shoppingListHref(planId)}
+          goalsHref={profileHref}
+          entryHref={(kind, targetId) =>
+            kind === 'meal' ? mealHref(targetId) : recipeHref(targetId)
+          }
         />
       ) : null}
     </ScreenLoadingGate>

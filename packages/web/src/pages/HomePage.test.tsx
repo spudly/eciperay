@@ -57,12 +57,14 @@ describe('HomePage', () => {
     await screen.findByText('Test Recipe');
     await userEvent.click(screen.getByText('Log cook'));
     expect(await screen.findByText('How did it go?')).toBeInTheDocument();
-    // The star rating is not clicked here: @spudly/ui 1.13.0 renders
-    // the DS StarRatingInput's label as a raw accessibilitylabel
-    // attribute on web (the leak design-system#237 fixes in a later
-    // release), so there is no role/label to query yet. The rating is
-    // optional — submitting without it sends a null rating, which
-    // still exercises the card's create mutation end to end.
+    // The star rating IS clicked here: @spudly/ui 1.13.0 rendered the
+    // DS StarRatingInput's label as a raw accessibilitylabel attribute
+    // on web (the leak design-system#237 reported), leaving no
+    // role/label to query; 1.15 ships the fix, so the stars are real
+    // radios with accessible names.
+    await userEvent.click(
+      screen.getByRole('radio', {name: 'Rate 4 out of 5 stars'}),
+    );
     await userEvent.type(
       screen.getByPlaceholderText('Notes from this cook (optional)'),
       'Great',
@@ -71,10 +73,10 @@ describe('HomePage', () => {
     await waitFor(() => {
       expect(screen.queryByText('How did it go?')).not.toBeInTheDocument();
     });
-    // The create mutation must carry the typed notes and a null rating
-    // (rating omitted by the user) — a regression that drops either
-    // must fail here, not just one that leaves the form open.
-    expect(submittedBody).toEqual({authorStarRating: null, notes: 'Great'});
+    // The create mutation must carry the typed notes and the clicked
+    // rating — a regression that drops either must fail here, not
+    // just one that leaves the form open.
+    expect(submittedBody).toEqual({authorStarRating: 4, notes: 'Great'});
   });
 
   test('deletes a recently viewed recipe on confirm', async () => {
@@ -94,12 +96,22 @@ describe('HomePage', () => {
   test('navigates from home actions and recently viewed recipes', async () => {
     await recordRecipeView(recipeViewHistoryStorage, 'recipe-uuid-1');
     await renderWithProviders(<HomePage />);
-    await userEvent.click(screen.getByText('Shared with me'));
-    expect(mockNavigate).toHaveBeenCalledWith('/shared-with-me');
-    await userEvent.click(screen.getByText('Browse Recipes'));
-    expect(mockNavigate).toHaveBeenCalledWith('/recipes');
-    await userEvent.click(screen.getByText('Add Recipe'));
-    expect(mockNavigate).toHaveBeenCalledWith('/add');
+    // The three page actions are real links since the @spudly/ui 1.15
+    // navigation rework (design-system#248): assert their destinations
+    // rather than a navigate() call.
+    expect(screen.getByRole('link', {name: 'Shared with me'})).toHaveAttribute(
+      'href',
+      '/shared-with-me',
+    );
+    expect(screen.getByRole('link', {name: 'Browse Recipes'})).toHaveAttribute(
+      'href',
+      '/recipes',
+    );
+    expect(screen.getByRole('link', {name: 'Add Recipe'})).toHaveAttribute(
+      'href',
+      '/add',
+    );
+    // Recently-viewed rows still press through the host's navigate.
     await userEvent.click(screen.getByRole('button', {name: /Test Recipe/i}));
     expect(mockNavigate).toHaveBeenCalledWith('/recipes/recipe-uuid-1');
   });

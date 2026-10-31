@@ -4,7 +4,6 @@ import {
   queryKeys,
   useAuth,
 } from '@eciperay/client';
-import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useState} from 'react';
 import type {NutritionGoals} from '@eciperay/types';
@@ -15,12 +14,10 @@ import {ProfileFeedbackPreference} from '../hosts/profile/ProfileFeedbackPrefere
 import {NutritionGoalsForm} from '@spudly/ui';
 import {ProfilePage} from '@spudly/ui/pages';
 import {api} from '../lib/api';
+import {tagsHref} from '../lib/deepLinks';
 import {supabase} from '../lib/supabase';
-import type {ProfileStackParamList} from '../navigation/types';
 
-type Props = NativeStackScreenProps<ProfileStackParamList, 'ProfileHome'>;
-
-export const ProfileScreen = ({navigation}: Props) => {
+export const ProfileScreen = () => {
   const {session} = useAuth();
   const queryClient = useQueryClient();
   const [nutritionGoals, setNutritionGoals] = useState<NutritionGoals>(
@@ -57,9 +54,7 @@ export const ProfileScreen = ({navigation}: Props) => {
   return (
     <ProfilePage
       email={session?.user.email ?? null}
-      onManageTagsPress={() => {
-        navigation.navigate('Tags');
-      }}
+      tagsHref={tagsHref}
       onSignOut={() => {
         void supabase.auth.signOut();
       }}
@@ -76,9 +71,9 @@ export const ProfileScreen = ({navigation}: Props) => {
             }}
           />
           <AccessTokensSection />
-          <ProfileFeedbackPreference />
         </>
       }
+      feedbackPreference={<ProfileFeedbackPreference />}
     />
   );
 };

@@ -1,5 +1,5 @@
 import React from 'react';
-import {Alert} from 'react-native';
+import {Alert, Linking} from 'react-native';
 import {fireEvent, waitFor} from '@testing-library/react-native';
 import {
   HOME_ADD_LABEL,
@@ -18,6 +18,7 @@ import {
   renderWithProviders,
 } from '../__tests__/testUtils';
 import {api} from '../lib/api';
+import {addHref, recipesHref, sharedWithMeHref} from '../lib/deepLinks';
 import {recipeViewHistoryStorage} from '../lib/recipeViewHistoryStorage';
 import type {RootTabParamList} from '../navigation/types';
 
@@ -68,6 +69,7 @@ describe('HomeScreen', () => {
     mockDelete.mockImplementation(async () => {});
     mockNavigate.mockReset();
     jest.spyOn(Alert, 'alert');
+    jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -86,29 +88,28 @@ describe('HomeScreen', () => {
     expect(await findByText('Recently viewed')).toBeTruthy();
   });
 
-  test('navigates to Recipes tab from browse action', async () => {
+  // The home actions are hrefs now (#248): a press opens the deep
+  // link through Linking and the container's linking config routes
+  // it to the same destinations the old callbacks navigated to.
+  test('opens the recipes deep link from browse action', async () => {
     const {findByText} = await renderHome();
     await findByText(HOME_TITLE);
     await fireEvent.press(await findByText(HOME_BROWSE_LABEL));
-    expect(mockNavigate).toHaveBeenCalledWith('Recipes', {
-      screen: 'RecipesList',
-    });
+    expect(Linking.openURL).toHaveBeenCalledWith(recipesHref);
   });
 
-  test('navigates to Add tab from add action', async () => {
+  test('opens the add deep link from add action', async () => {
     const {findByText} = await renderHome();
     await findByText(HOME_TITLE);
     await fireEvent.press(await findByText(HOME_ADD_LABEL));
-    expect(mockNavigate).toHaveBeenCalledWith('Add', {screen: 'AddScreen'});
+    expect(Linking.openURL).toHaveBeenCalledWith(addHref);
   });
 
-  test('navigates to Shared with me from home action', async () => {
+  test('opens the shared-with-me deep link from home action', async () => {
     const {findByText} = await renderHome();
     await findByText(HOME_TITLE);
     await fireEvent.press(await findByText(HOME_SHARED_WITH_ME_LABEL));
-    expect(mockNavigate).toHaveBeenCalledWith('Recipes', {
-      screen: 'SharedWithMe',
-    });
+    expect(Linking.openURL).toHaveBeenCalledWith(sharedWithMeHref);
   });
 
   test('shows recently viewed recipes from local history', async () => {

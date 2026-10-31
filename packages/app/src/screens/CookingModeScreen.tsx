@@ -5,7 +5,7 @@ import {
   scaleFactorFromServings,
 } from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {CookLogForm} from '@spudly/ui';
+import {RatingForm} from '@spudly/ui';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useState} from 'react';
 import KeepAwake from 'react-native-keep-awake';
@@ -117,11 +117,15 @@ export const CookingModeScreen = ({route, navigation}: CookingProps) => {
   if (showCookLogForm) {
     return (
       <CookingModeCookLogShell>
-        <CookLogForm
+        <RatingForm
+          notesPlaceholder="Notes from this cook (optional)"
           isPending={cookLogMutation.isPending}
           onSkip={navigation.goBack}
-          onSubmit={input => {
-            cookLogMutation.mutate(input);
+          onSubmit={values => {
+            cookLogMutation.mutate({
+              authorStarRating: values.rating,
+              notes: values.notes,
+            });
           }}
         />
       </CookingModeCookLogShell>

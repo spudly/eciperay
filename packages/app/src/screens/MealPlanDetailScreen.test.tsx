@@ -1,8 +1,16 @@
 import React from 'react';
 import {fireEvent} from '@testing-library/react-native';
+import {Linking} from 'react-native';
 
 import {makeStackProps, renderWithProviders} from '../__tests__/testUtils';
 import {api} from '../lib/api';
+import {
+  mealHref,
+  mealPlanEditHref,
+  profileHref,
+  recipeHref,
+  shoppingListHref,
+} from '../lib/deepLinks';
 import type {MealsStackParamList} from '../navigation/types';
 
 import {MealPlanDetailScreen} from './MealPlanDetailScreen';
@@ -89,24 +97,23 @@ describe('MealPlanDetailScreen', () => {
     expect(await findByText('Shopping list')).toBeTruthy();
   });
 
-  test('handles navigation actions', async () => {
-    const {findByText} = await renderWithProviders(
+  // Navigation crosses into the DS page as deep-link hrefs (#248):
+  // a press opens the URL through Linking and the container's
+  // linking config routes it to the same screens.
+  test('opens deep links for the navigation actions', async () => {
+    jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
+    const {findByText, findByLabelText} = await renderWithProviders(
       <MealPlanDetailScreen {...stackProps} />,
     );
     await fireEvent.press(await findByText('Edit'));
-    expect(mockNavigate).toHaveBeenCalledWith('MealPlanEdit', {planId});
+    expect(Linking.openURL).toHaveBeenCalledWith(mealPlanEditHref(planId));
     await fireEvent.press(await findByText('Shopping list'));
-    expect(mockNavigate).toHaveBeenCalledWith('ShoppingList', {planId});
-    await fireEvent.press(await findByText('Meal · Sunday Dinner'));
-    expect(mockNavigate).toHaveBeenCalledWith('MealDetail', {mealId});
-    await fireEvent.press(await findByText('Recipe · Test Recipe'));
-    expect(mockParentNavigate).toHaveBeenCalledWith('Recipes', {
-      screen: 'RecipeDetail',
-      params: {recipeId},
-    });
+    expect(Linking.openURL).toHaveBeenCalledWith(shoppingListHref(planId));
+    await fireEvent.press(await findByLabelText(/Meal · Sunday Dinner, Qty/));
+    expect(Linking.openURL).toHaveBeenCalledWith(mealHref(mealId));
+    await fireEvent.press(await findByLabelText(/Recipe · Test Recipe, Qty/));
+    expect(Linking.openURL).toHaveBeenCalledWith(recipeHref(recipeId));
     await fireEvent.press(await findByText('Set nutrition goals'));
-    expect(mockParentNavigate).toHaveBeenCalledWith('Profile', {
-      screen: 'ProfileHome',
-    });
+    expect(Linking.openURL).toHaveBeenCalledWith(profileHref);
   });
 });

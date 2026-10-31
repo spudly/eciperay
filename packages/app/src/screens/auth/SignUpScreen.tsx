@@ -4,6 +4,7 @@ import {Alert} from 'react-native';
 import {SignUpPage} from '@spudly/ui/pages';
 
 import {AUTH_DEEP_LINK_REDIRECT_URL} from '../../lib/authDeepLink';
+import {signInHref} from '../../lib/deepLinks';
 import {LegalLinks} from '../../components/LegalLinks';
 import {api} from '../../lib/api';
 import {
@@ -11,8 +12,6 @@ import {
   normalizeAuthPassword,
 } from '../../lib/normalizeAuthInput';
 import {supabase} from '../../lib/supabase';
-
-type SignUpProps = {navigation: {navigate: (screen: string) => void}};
 
 const signUp = async (email: string, password: string, displayName: string) => {
   const {data, error} = await supabase.auth.signUp({
@@ -59,7 +58,7 @@ const runSignUp = async (
   }
 };
 
-export const SignUpScreen = ({navigation}: SignUpProps) => {
+export const SignUpScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
@@ -77,9 +76,7 @@ export const SignUpScreen = ({navigation}: SignUpProps) => {
       onSubmit={() => {
         void runSignUp(email, password, displayName, setLoading);
       }}
-      onSignInPress={() => {
-        navigation.navigate('SignIn');
-      }}
+      signInHref={signInHref}
       legalNotice={<LegalLinks variant="inline" />}
     />
   );

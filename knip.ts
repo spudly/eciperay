@@ -27,7 +27,9 @@ const config: KnipConfig = {
         'metro-resolver', // required in metro.config.js (knip doesn't scan CJS configs)
       ],
     },
-    'packages/web': {ignore: ['src/test/**']}, // same as client/server above
+    // svgSoundModuleStub.ts is referenced only by vite/vitest resolve
+    // aliases (react-native-svg's native sound module), never imported.
+    'packages/web': {ignore: ['src/test/**', 'svgSoundModuleStub.ts']},
   },
   ignore: ['**/*.d.ts'], // ambient type declarations have no importable exports
 };
