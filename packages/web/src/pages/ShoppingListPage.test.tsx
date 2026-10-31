@@ -115,6 +115,25 @@ describe('ShoppingListPage', () => {
     );
   });
 
+  test('a toggle does not prune checks stored by another tab', async () => {
+    await renderPage();
+    const checkbox = await screen.findByRole('checkbox', {name: /Flour/});
+    // Another tab stores a check (for a line this tab's list does not
+    // have yet) after this page loaded and fetched.
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(['other-tab-line']));
+    fireEvent.click(checkbox);
+    expect(checkbox).toHaveAttribute('aria-checked', 'true');
+    // The toggle bases its write on the latest stored set, and pruning
+    // (keyed to list responses, not toggles) must not remove the other
+    // tab's check against this tab's older list.
+    await new Promise(resolve => {
+      setTimeout(resolve, 50);
+    });
+    expect(localStorage.getItem(STORAGE_KEY)).toBe(
+      JSON.stringify(['other-tab-line', 'flour']),
+    );
+  });
+
   test('restores stored checks and prunes lines no longer on the list', async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(['flour', 'gone']));
     await renderPage();

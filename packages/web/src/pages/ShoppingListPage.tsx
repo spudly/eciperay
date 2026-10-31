@@ -36,31 +36,55 @@ const ShoppingListPageContent = ({planId, userId}: ContentProps) => {
     [userId, planId],
   );
 
-  const {data, isFetchedAfterMount, isLoading} = useQuery({
+  const {data, dataUpdatedAt, isFetchedAfterMount, isLoading} = useQuery({
     queryKey: queryKeys.mealPlanShoppingList(planId),
     queryFn: () => eciperay.mealPlans.shoppingList(planId),
     enabled: planId.length > 0,
   });
   const lines = data ?? [];
 
-  // Once the current list is known, drop stored checks for lines that are
-  // no longer on it (the plan changed since they were checked), so a stale
-  // check cannot silently resurrect if the ingredient returns later. Only
-  // prune on a list fetched after this mount: a remount can briefly serve
-  // a cached list that predates checks another tab just stored for newer
-  // lines, and pruning from it would delete those valid checks.
+  const checkedKeysRef = useRef(checkedKeys);
+  checkedKeysRef.current = checkedKeys;
+  const lastPrunedAtRef = useRef<number | null>(null);
+
+  // When a fresh list arrives, drop stored checks for lines that are no
+  // longer on it (the plan changed since they were checked), so a stale
+  // check cannot silently resurrect if the ingredient returns later.
+  // Pruning is keyed to the list response (dataUpdatedAt), never to
+  // checkedKeys changes, and it prunes the latest stored set rather than
+  // this tab's snapshot:
+  // - a remount can serve a cached list that predates checks another tab
+  //   just stored for newer lines — no fetch after mount, no prune;
+  // - a toggle adopts the latest stored set into state — that must not
+  //   re-trigger pruning against this tab's possibly older list;
+  // - another tab may have stored a valid check for a line on the fresh
+  //   list after this tab restored its snapshot — pruning the snapshot
+  //   would delete it.
   useEffect(() => {
-    if (!data || !isFetchedAfterMount) {
+    if (
+      !data ||
+      !isFetchedAfterMount ||
+      lastPrunedAtRef.current === dataUpdatedAt
+    ) {
       return;
     }
+    lastPrunedAtRef.current = dataUpdatedAt;
     const lineKeys = new Set(data.map(line => line.key));
-    if ([...checkedKeys].every(key => lineKeys.has(key))) {
-      return;
+    const source = writeFailedRef.current
+      ? checkedKeysRef.current
+      : readShoppingListCheckedKeys(userId, planId);
+    const pruned = new Set([...source].filter(key => lineKeys.has(key)));
+    if (pruned.size !== source.size) {
+      persist(pruned);
     }
-    const pruned = new Set([...checkedKeys].filter(key => lineKeys.has(key)));
-    setCheckedKeys(pruned);
-    persist(pruned);
-  }, [data, isFetchedAfterMount, checkedKeys, persist]);
+    const current = checkedKeysRef.current;
+    if (
+      pruned.size !== current.size ||
+      [...pruned].some(key => !current.has(key))
+    ) {
+      setCheckedKeys(pruned);
+    }
+  }, [data, dataUpdatedAt, isFetchedAfterMount, persist, userId, planId]);
 
   return (
     <ShoppingListPageView
