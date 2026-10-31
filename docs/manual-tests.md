@@ -298,7 +298,8 @@ mode; there is no Playwright coverage of meals. The cases below are manual._
 **Run when:**
 `packages/app/src/screens/{MealsHub,MealDetail,MealEdit,MealCookingMode}Screen.tsx`,
 `packages/web/src/pages/{MealsHub,MealDetail,MealEdit,MealCookingMode}Page.tsx`,
-`packages/server` meal routes.
+`@spudly/ui` `MealsHubPage`, `MealDetailPage`, `MealFormPage`, or
+`MealCookingModePage`, `packages/server` meal routes.
 
 ---
 
@@ -347,6 +348,7 @@ are the manual remainder._
 `packages/app/src/screens/{MealPlanDetail,MealPlanEdit}Screen.tsx`,
 `packages/app/src/hosts/meals/**`,
 `packages/web/src/pages/{MealPlanDetail,MealPlanEdit}Page.tsx`,
+`@spudly/ui` `MealPlanDetailPage` or `MealPlanFormPage`,
 `packages/web/src/routes/router.tsx`, `packages/server` meal plan routes.
 
 ---
@@ -377,7 +379,8 @@ ingredient (e.g. both use eggs) and one recipe assigned twice in the week.
    **Expected:** a clear empty state, not an error or a stale list.
 
 **Run when:** `packages/app/src/screens/ShoppingListScreen.tsx`,
-`packages/web/src/pages/ShoppingListPage.tsx`, `packages/server`
+`packages/web/src/pages/ShoppingListPage.tsx`, `@spudly/ui`
+`ShoppingListPage`, `packages/server`
 shopping list generation.
 
 ---

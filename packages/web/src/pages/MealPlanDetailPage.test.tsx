@@ -198,4 +198,68 @@ describe('MealPlanDetailPage', () => {
       screen.getByRole('link', {name: 'Set nutrition goals'}),
     ).toHaveAttribute('href', '/profile');
   });
+
+  test('labels goal rows as plan totals for an undated plan', async () => {
+    // Undated plan: no per-day figure, so the host's qualifier must
+    // read "(plan total)" — the undated half of the #272 wiring the
+    // dated test above cannot catch.
+    server.use(
+      http.get(`http://localhost:8080/api/meal-plans/${PLAN_ID}`, () =>
+        HttpResponse.json({
+          id: PLAN_ID,
+          userId: 'user-uuid-1',
+          title: 'Someday',
+          notes: null,
+          startsOn: null,
+          endsOn: null,
+          entryCount: 0,
+          nutrition: {
+            calories: 500,
+            proteinG: 30,
+            carbsG: 40,
+            fatG: 10,
+            fiberG: 5,
+            sugarG: 8,
+            sodiumMg: 900,
+            preparedWeightG: 800,
+            satietyScore: 50,
+            status: 'ready',
+            perDay: null,
+          },
+          goalProgress: {
+            calories: {
+              goal: 2000,
+              actual: 500,
+              delta: -1500,
+              percentOfGoal: 25,
+              band: 'under',
+            },
+            proteinG: null,
+            carbsG: null,
+            fatG: null,
+            satietyScore: null,
+          },
+          createdAt: '2024-01-01T00:00:00.000Z',
+          updatedAt: '2024-01-01T00:00:00.000Z',
+          entries: [],
+        }),
+      ),
+    );
+
+    await renderWithProviders(
+      <Routes>
+        <Route
+          path="/meal-plans/:planId"
+          element={<MealPlanDetailPage />}
+        />
+      </Routes>,
+      {route: `/meal-plans/${PLAN_ID}`},
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Someday')).toBeInTheDocument();
+    });
+    expect(screen.getByText('Calories (plan total)')).toBeInTheDocument();
+    expect(screen.getByText('500 / 2000 · Below goal')).toBeInTheDocument();
+  });
 });

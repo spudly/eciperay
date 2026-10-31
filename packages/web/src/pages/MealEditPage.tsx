@@ -115,9 +115,13 @@ export const MealEditPage = () => {
         onNotesChange={setNotes}
         onToggleRecipe={handleToggleRecipe}
         onServingsChange={(recipeId, servings) => {
+          // The retired web view's NumberStepper adapter clamped at a
+          // minimum of 1; the DS page's stepper is unbounded and the
+          // server schema rejects 0 servings, so the clamp lives in
+          // the host callback (the C8 host-validation precedent).
           setServingsByRecipeId(current => ({
             ...current,
-            [recipeId]: servings,
+            [recipeId]: Math.max(1, servings),
           }));
         }}
         onSubmit={() => {

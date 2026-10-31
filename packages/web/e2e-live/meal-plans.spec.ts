@@ -77,7 +77,9 @@ test.describe('live meal plans', () => {
     await expect(page.getByText(recipe.title).first()).toBeVisible();
 
     // Shopping list: the recipe's ingredient appears and can be checked.
-    await page.getByRole('button', {name: 'Shopping list'}).click();
+    // The DS detail page renders the action in its href form (#248), so
+    // it is a link, not a button.
+    await page.getByRole('link', {name: 'Shopping list'}).click();
     await expect(page).toHaveURL(/\/shopping-list$/);
     await expect(page.getByText('CI Test Ingredient')).toBeVisible({
       timeout: 15_000,

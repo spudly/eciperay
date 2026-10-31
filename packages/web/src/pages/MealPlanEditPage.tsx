@@ -85,12 +85,18 @@ export const MealPlanEditPage = () => {
         onEndsOnChange={form.setEndsOn}
         onToggleEntry={form.handleToggleEntry}
         onQuantityChange={(key, quantity) => {
-          form.setQuantityByKey(current => ({...current, [key]: quantity}));
+          // Same minimum-of-1 clamp as the meal form host: the retired
+          // adapter enforced it, the DS page's steppers are unbounded,
+          // and the server schema rejects 0.
+          form.setQuantityByKey(current => ({
+            ...current,
+            [key]: Math.max(1, quantity),
+          }));
         }}
         onRecipeServingsChange={(recipeId, servings) => {
           form.setServingsByRecipeId(current => ({
             ...current,
-            [recipeId]: servings,
+            [recipeId]: Math.max(1, servings),
           }));
         }}
         onSubmit={() => {
