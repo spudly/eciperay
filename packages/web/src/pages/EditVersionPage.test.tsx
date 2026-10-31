@@ -162,4 +162,55 @@ describe('EditVersionPage', () => {
     // role leaks as a raw attribute in jsdom, so match its text.
     expect(await screen.findByText(/Revert to:/)).toBeInTheDocument();
   });
+
+  test('reverting to the parent version restores and saves its title', async () => {
+    let submittedBody: {title?: string} | undefined;
+    server.use(
+      http.get(
+        'http://localhost:8080/api/recipes/:id/versions/:versionId',
+        ({params}) => {
+          if (params['versionId'] === 'version-draft-1') {
+            return HttpResponse.json(
+              makeRecipeVersionDetail({
+                id: 'version-draft-1',
+                derivedFromVersionId: 'version-uuid-1',
+                derivedRole: 'draft',
+                isEditable: true,
+                versionNumber: 2,
+                title: 'Changed draft title',
+              }),
+            );
+          }
+          return HttpResponse.json(
+            makeRecipeVersionDetail({
+              id: 'version-uuid-1',
+              title: 'Parent title',
+            }),
+          );
+        },
+      ),
+      http.put(
+        'http://localhost:8080/api/recipes/:id/versions/:versionId',
+        async ({request}) => {
+          submittedBody = (await request.json()) as {title?: string};
+          return HttpResponse.json(
+            makeRecipeVersionDetail({id: 'version-draft-1'}),
+          );
+        },
+      ),
+    );
+    await renderEditVersion();
+    await waitFor(() => {
+      expect(titleField()).toHaveValue('Changed draft title');
+    });
+    await userEvent.click(await screen.findByText(/Revert to:/));
+    await waitFor(() => {
+      expect(titleField()).toHaveValue('Parent title');
+    });
+    await userEvent.click(screen.getByText('Save Draft'));
+    await waitFor(() => {
+      expect(screen.getByText('Saved')).toBeInTheDocument();
+    });
+    expect(submittedBody?.title).toBe('Parent title');
+  });
 });
