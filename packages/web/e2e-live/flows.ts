@@ -76,22 +76,33 @@ export const openRecipeFromList = async (
   await expect(page.getByRole('heading', {name: title})).toBeVisible();
 };
 
-/** Deletes a recipe through the list-card UI (in-page confirmation included). */
+/**
+ * Deletes a recipe through the UI (in-page confirmation included). Since the
+ * recipes list adopted the design-system RecipesPage (B7 cluster 5), list rows
+ * offer no Delete — deleting is a detail-page action — so this opens the recipe
+ * from the list and deletes it from its detail page.
+ */
 export const deleteRecipeViaUi = async (
   page: Page,
   title: string,
 ): Promise<void> => {
-  await page.goto('/recipes');
-  await page.getByPlaceholder('Search recipes…').fill(title);
-  await expect(page.getByText(title)).toBeVisible();
-  // exact: the recipe card itself is a button whose accessible name
-  // contains the recipe title — a title like "CI — Delete Me …" would
-  // otherwise match the substring locator too (strict-mode violation).
+  await openRecipeFromList(page, title);
   await page.getByRole('button', {name: 'Delete', exact: true}).click();
   // Deletion is confirmed in-page, not with a native dialog (#263):
-  // clicking Delete arms a Confirm delete / Cancel pair on the card
-  // (RecipeListCard), and only Confirm delete calls onDelete.
+  // clicking Delete arms a Confirm delete / Cancel pair in the detail
+  // page's Overview actions, and only Confirm delete deletes.
   await page.getByRole('button', {name: 'Confirm delete', exact: true}).click();
+  // Confirming returns to the recipes list; search for the recipe there
+  // and verify the (server-filtered) list no longer contains it.
+  await expect(page).toHaveURL(/\/recipes$/);
+  const searchResponse = page.waitForResponse(
+    response =>
+      response.url().includes('/api/recipes') &&
+      response.url().includes('search=') &&
+      response.request().method() === 'GET',
+  );
+  await page.getByPlaceholder('Search recipes…').fill(title);
+  await searchResponse;
   await expect(page.getByText(title)).toHaveCount(0, {timeout: 15_000});
 };
 
