@@ -4,12 +4,29 @@ import {
   queryKeys,
   useAuth,
 } from '@eciperay/client';
+import type {PersonalAccessToken} from '@eciperay/types';
+import {AccessTokensPanel} from '@spudly/ui';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useState} from 'react';
 
 import {eciperay} from '../../lib/api.js';
 
-import {AccessTokensView} from './AccessTokensView.js';
+const formatDate = (iso: string): string =>
+  new Date(iso).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+
+const describeToken = (token: PersonalAccessToken): string => {
+  const parts = [`Created ${formatDate(token.createdAt)}`];
+  parts.push(
+    token.lastUsedAt
+      ? `Last used ${formatDate(token.lastUsedAt)}`
+      : 'Never used',
+  );
+  return parts.join(' · ');
+};
 
 export const ProfileAccessTokensSection = () => {
   const {session} = useAuth();
@@ -67,8 +84,14 @@ export const ProfileAccessTokensSection = () => {
   });
 
   return (
-    <AccessTokensView
-      tokens={tokensQuery.data ?? []}
+    <AccessTokensPanel
+      tokens={(tokensQuery.data ?? []).map(token => ({
+        id: token.id,
+        name: token.name,
+        prefix: token.tokenPrefix,
+        metaLabel: describeToken(token),
+        revoked: Boolean(token.revokedAt),
+      }))}
       isLoading={tokensQuery.isLoading}
       tokenName={tokenName}
       onTokenNameChange={setTokenName}
