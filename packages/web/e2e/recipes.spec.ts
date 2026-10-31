@@ -46,10 +46,12 @@ test.describe('authenticated recipes', () => {
     await expect(
       page.getByRole('heading', {name: 'E2E Tomato Pasta'}),
     ).toBeVisible();
-    // Ingredients and steps live behind tabs on the detail page.
-    await page.getByRole('tab', {name: 'Ingredients'}).click();
-    await expect(page.getByText('Spaghetti')).toBeVisible();
-    await page.getByRole('tab', {name: 'Instructions'}).click();
+    // The detail page is single-scroll since B7 C7 (the design-system
+    // RecipeDetailPage): ingredients and steps render on the page —
+    // no tab switching. The ingredient renders as its scaled line
+    // ("400 g Spaghetti"); the bare name would also match inside the
+    // first instruction sentence.
+    await expect(page.getByText('400 g Spaghetti')).toBeVisible();
     await expect(
       page.getByText('Boil the spaghetti in salted water'),
     ).toBeVisible();

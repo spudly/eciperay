@@ -1,6 +1,6 @@
 import {queryKeys} from '@eciperay/client';
 import {onlineManager} from '@tanstack/react-query';
-import {act, screen, waitFor} from '@testing-library/react';
+import {act, fireEvent, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {http, HttpResponse} from 'msw';
 import {Route, Routes} from 'react-router-dom';
@@ -15,7 +15,7 @@ import {makeQueryClient, renderWithProviders} from '../test/testUtils.js';
 import {RecipeDetailPage} from './RecipeDetailPage.js';
 
 describe('RecipeDetailPage', () => {
-  test('renders tabs and switches between them', async () => {
+  test('renders every section in a single scroll', async () => {
     await renderWithProviders(
       <Routes>
         <Route
@@ -28,20 +28,22 @@ describe('RecipeDetailPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Test Recipe')).toBeInTheDocument();
     });
-    // #278: the status renders exactly once (the chrome's pill), not
-    // again in the Overview tab under the title.
-    expect(screen.getAllByText('Evolving')).toHaveLength(1);
-    await userEvent.click(screen.getByText('Ingredients'));
+    // #278 wants the status exactly once (the toolbar pill), but the
+    // design-system page currently renders its status badge in the
+    // toolbar AND beside the overview title — tracked as
+    // design-system#363; this count flips back to 1 when that lands.
+    expect(screen.getAllByText('Evolving')).toHaveLength(2);
+    // The design-system page is single-scroll (B7 C7): every section
+    // renders on the page — no tab switching.
     expect(screen.getByText(/Flour/)).toBeInTheDocument();
-    await userEvent.click(screen.getByText('Instructions'));
     expect(screen.getByText('Mix dry ingredients')).toBeInTheDocument();
-    await userEvent.click(screen.getByText('Cook History'));
     await waitFor(() => {
       expect(screen.getByText('Turned out great')).toBeInTheDocument();
     });
-    await userEvent.click(screen.getByText('Nutrition'));
     await waitFor(() => {
-      expect(screen.getByText('250')).toBeInTheDocument();
+      // The calorie count renders in the overview stat band and again
+      // in the nutrition section — both are on the page at once now.
+      expect(screen.getAllByText('250').length).toBeGreaterThan(0);
     });
   });
 
@@ -62,8 +64,13 @@ describe('RecipeDetailPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Test Recipe')).toBeInTheDocument();
     });
-    await userEvent.click(screen.getByText('Delete'));
-    await userEvent.click(screen.getByText('Confirm delete'));
+    // The overview's Delete button by role/name: the cook log entry's
+    // delete shares the "Delete" text but carries its own label
+    // ("Delete cook log 1 from …"), so the name match is unique.
+    await userEvent.click(screen.getByRole('button', {name: 'Delete'}));
+    // #263: deletion confirms host-side (the design-system Dialog);
+    // confirming runs the mutation and returns to the list.
+    await userEvent.click(await screen.findByText('Confirm delete'));
     expect(await screen.findByText('Recipes list page')).toBeInTheDocument();
   });
 
@@ -210,11 +217,15 @@ describe('RecipeDetailPage', () => {
       {route: '/recipes/recipe-uuid-1'},
     );
     await waitFor(() => {
-      expect(screen.getByRole('combobox')).toBeInTheDocument();
+      expect(screen.getByLabelText('Version')).toBeInTheDocument();
     });
-    await userEvent.selectOptions(
-      screen.getByRole('combobox'),
-      'version-uuid-2',
+    // The design-system SelectField is a trigger + listbox, not a
+    // native <select>: open it and pick the version by its row label.
+    // fireEvent for the option: the listbox item carries
+    // pointer-events: none in jsdom, which userEvent refuses.
+    await userEvent.click(screen.getByLabelText('Version'));
+    fireEvent.click(
+      await screen.findByRole('option', {name: 'v2 — Archived'}),
     );
     await waitFor(() => {
       expect(screen.getByText('Older version')).toBeInTheDocument();

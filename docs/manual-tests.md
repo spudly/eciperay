@@ -126,20 +126,21 @@ without); one recipe may be created fresh in case 1.
    version (`/recipes/:recipeId/versions/:versionId/edit`). **Expected:** the
    version editor opens with that version's content and saving behaves as the UI
    describes (no silent overwrite of the current version).
-4. **Detail tabs.** On a recipe with nutrition data and at least one cook log
-   entry, walk the detail tabs: Overview, Ingredients, Instructions, Nutrition,
-   Cook History, Comments. **Expected:** each tab renders its content with no
-   empty-shell or error states; the Nutrition tab values match the recipe's
-   stored nutrition.
-5. **Post a comment.** In the Comments tab, post `QA — comment check`, then
+4. **Detail sections.** On a recipe with nutrition data and at least one cook
+   log entry, walk the detail page's sections: Overview, Ingredients,
+   Instructions, Nutrition, Cook History, Comments. **Expected:** each section
+   renders its content with no empty-shell or error states; the Nutrition
+   values match the recipe's stored nutrition.
+5. **Post a comment.** In the Comments section, post `QA — comment check`, then
    reload. **Expected:** the comment appears with the QA account as author and
    persists after reload.
 6. **Delete.** Delete the `QA — Manual Entry Soup` recipe via the UI's delete
    path: on the recipe list (and on Home's recently-viewed cards) the Delete
    button arms an in-page **Confirm delete** / **Cancel** pair — Cancel keeps
    the recipe and restores the Delete button, Confirm delete removes it. The
-   recipe detail page's Overview actions offer the same Delete control with the
-   same in-page confirmation; confirming there returns to the recipe list.
+   recipe detail page's Delete control opens a confirmation dialog instead;
+   confirming there returns to the recipe list, and a failed delete shows its
+   error in the dialog.
    **Expected:** the deleted recipe disappears from the list and search; its old
    detail URL no longer renders the recipe; and if a delete request fails, an
    error is shown and the recipe stays listed (a delete never fails silently).
@@ -147,8 +148,9 @@ without); one recipe may be created fresh in case 1.
    detail and its list card render a clean placeholder — no broken image icon,
    no layout collapse.
 8. **Create a draft from a Perfected recipe.** Open a Perfected recipe's detail
-   and use its create-draft action (web: **Create draft**; app: the **Edit
-   draft** chip). **Expected:** a new draft version is created from the
+   and use its create-draft action (the **Edit draft** button on web and app
+   alike since the detail pages adopted the design system page).
+   **Expected:** a new draft version is created from the
    Perfected version and opens in the version editor; changing the title and one
    ingredient there and saving succeeds (no "Recipe cannot be modified in its
    current status" error), the recipe's status shows Evolving, and the
@@ -159,8 +161,10 @@ without); one recipe may be created fresh in case 1.
    recipe whose nutrition is still being computed (e.g. one just created or
    renamed) reads "Satiety pending" — never a bare "Satiety…" that looks
    truncated; other cards show a satiety value or "Satiety —". Open one recipe's
-   detail. **Expected:** the recipe status appears exactly once, as the pill in
-   the toolbar above the tabs — the Overview does not repeat it under the title.
+   detail. **Expected:** the recipe status appears as the pill in the page
+   toolbar; the design-system page currently ALSO repeats it beside the
+   overview title (design-system#363 tracks removing the duplicate — #278's
+   exactly-once rule returns when that lands).
 
 **Run when:**
 `packages/app/src/screens/{Recipes,RecipeDetail,EditRecipe,EditVersion,ManualEntry}Screen.tsx`,
@@ -258,12 +262,13 @@ list view, and the cooking-mode overlay.
    the recipe has loaded — a cook log can never be submitted with an empty
    version (regression: #247).
 9. **Delete an entry from Cook History (web).** In a recipe's Cook History, use
-   an entry's Delete control. **Expected:** an in-page confirmation appears (no
-   browser dialog); Cancel keeps the entry; Confirm delete removes it and the
-   history refreshes without it. If the delete request fails, an error alert
-   appears on the entry and the entry stays listed (regression: #266).
+   an entry's Delete control. **Expected:** a confirmation dialog appears in
+   the app (no browser-native dialog); Cancel keeps the entry; Confirm delete
+   removes it and the history refreshes without it. If the delete request
+   fails, an error alert appears in the dialog and the entry stays listed
+   (regression: #266).
 
-**Run when (case 9):** `packages/web/src/components/recipe/CookHistoryTab.tsx`,
+**Run when (case 9):** `packages/web/src/pages/RecipeDetailHost.tsx`,
 `packages/client/src/cookLogsApi.ts`, `packages/server` cook log routes,
 `@spudly/ui` `RecipeDetailPage` history section.
 
@@ -298,8 +303,8 @@ mode; there is no Playwright coverage of meals. The cases below are manual._
 **Run when:**
 `packages/app/src/screens/{MealsHub,MealDetail,MealEdit,MealCookingMode}Screen.tsx`,
 `packages/web/src/pages/{MealsHub,MealDetail,MealEdit,MealCookingMode}Page.tsx`,
-`packages/web/src/components/meals/**` (meal views), `packages/server` meal
-routes.
+`@spudly/ui` `MealsHubPage`, `MealDetailPage`, `MealFormPage`, or
+`MealCookingModePage`, `packages/server` meal routes.
 
 ---
 
@@ -328,17 +333,14 @@ are the manual remainder._
    sums of the assigned recipes and the progress view renders for days with and
    without entries. For a plan with a valid date range, the goal figures are the
    plan's **per-day average** against the daily goals and are labelled as such
-   ("Per-day average calories and protein for this plan, compared with your
-   daily goals. Satiety is a plan-wide score." on web; "(per-day avg)" row
-   labels in the app). For an undated plan (dates are optional), the figures are
+   ("(per-day avg)" row labels in the app and on web). For an undated plan
+   (dates are optional), the figures are
    the **plan total** against the daily goals and are labelled as such
-   ("Plan-total calories and protein for this plan, compared with your daily
-   goals. Satiety is a plan-wide score." on web; "(plan total)" row labels in
-   the app) — they must not be labelled as a daily average or read as an
+   ("(plan total)" row labels in the app and on web) — they must not be labelled as a daily average or read as an
    unexplained second total next to "Plan total" (regression: #266). Satiety is
    neither an average nor a total: it is a ratio-based score that is identical
    for the per-day and whole-plan figures, so both surfaces label it a plan-wide
-   score (app row: "Satiety (plan-wide score)").
+   score (row: "Satiety (plan-wide score)").
 5. **Delete the plan.** Delete `QA — Week Plan`. **Expected:** gone from the
    list; member recipes unaffected.
 6. **Direct `/meal-plans` visit + unknown routes (web).** Visit `/meal-plans`
@@ -351,7 +353,7 @@ are the manual remainder._
 `packages/app/src/screens/{MealPlanDetail,MealPlanEdit}Screen.tsx`,
 `packages/app/src/hosts/meals/**`,
 `packages/web/src/pages/{MealPlanDetail,MealPlanEdit}Page.tsx`,
-`packages/web/src/components/meals/{MealPlanDetailView,MealPlanFormView,NutritionGoalProgressView}.tsx`,
+`@spudly/ui` `MealPlanDetailPage` or `MealPlanFormPage`,
 `packages/web/src/routes/router.tsx`, `packages/server` meal plan routes.
 
 ---
@@ -382,8 +384,8 @@ ingredient (e.g. both use eggs) and one recipe assigned twice in the week.
    **Expected:** a clear empty state, not an error or a stale list.
 
 **Run when:** `packages/app/src/screens/ShoppingListScreen.tsx`,
-`packages/web/src/pages/ShoppingListPage.tsx`,
-`packages/web/src/components/meals/ShoppingListView.tsx`, `packages/server`
+`packages/web/src/pages/ShoppingListPage.tsx`, `@spudly/ui`
+`ShoppingListPage`, `packages/server`
 shopping list generation.
 
 ---

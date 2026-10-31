@@ -157,8 +157,6 @@ export type {
   ImportUrlViewProps,
   ManualEntryViewProps,
   ProfileViewProps,
-  RecipeDetailChromeProps,
-  RecipeDetailTab,
   RecipeListFilterControls,
   RecipesListViewProps,
   RecipeStatusFilterValue,
@@ -169,7 +167,6 @@ export type {
 export {useRecipeListFilters} from './useRecipeListFilters.js';
 export {demoRecipeListFilters} from './demoRecipeListFilters.js';
 export type {RecipeListFilters, RecipeListParams} from './recipesListUrl.js';
-export {RECIPE_DETAIL_TABS} from './ui/viewComponents.js';
 export {AuthProvider, useAuth} from './AuthProvider.js';
 export {AnalyticsErrorBoundaryProvider} from './AnalyticsErrorBoundary.js';
 export {AnalyticsProvider, useAnalytics} from './AnalyticsProvider.js';

@@ -1,3 +1,4 @@
+import {Button} from '@spudly/ui';
 import {useQuery} from '@tanstack/react-query';
 import {useMemo, useState} from 'react';
 
@@ -111,19 +112,15 @@ export const RecipeExportPicker = ({
           }}
         />
       </div>
-      <button
-        type="button"
-        className="
-          bg-primary rounded-lg px-4 py-2 text-sm font-medium text-white
-          disabled:opacity-50
-        "
+      <Button
+        variant="primary"
         disabled={disabled || exporting || selectedIds.size === 0}
-        onClick={() => {
+        onPress={() => {
           void handleExport();
         }}
       >
         {exporting ? 'Exporting…' : `Export selected (${selectedIds.size})`}
-      </button>
+      </Button>
     </div>
   );
 };

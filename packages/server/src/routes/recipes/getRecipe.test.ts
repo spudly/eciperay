@@ -12,19 +12,26 @@ const getApp = lazyTestApp({query: mockQuery});
 
 describe('GET /recipes/:id', () => {
   test('returns 200 with recipe detail when found', async () => {
+    const recipeId = '11111111-1111-4111-8111-111111111111';
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockImplementation(((sql: string) => {
       if (sql.includes('recipe_ratings rr')) {
         return Promise.resolve(makeQueryResult([]));
       }
-      return Promise.resolve(makeQueryResult([makeRecipeDetailRow()]));
+      return Promise.resolve(
+        makeQueryResult([makeRecipeDetailRow({id: recipeId})]),
+      );
     }) as typeof mockQuery);
     const res = await request(getApp())
-      .get('/api/recipes/recipe-uuid-1')
+      .get(`/api/recipes/${recipeId}`)
       .set('Authorization', 'Bearer valid-token');
     expect(res.status).toBe(200);
+    expect(mockQuery).toHaveBeenCalledWith(expect.any(String), [
+      recipeId,
+      'user-uuid-1',
+    ]);
     expect(res.body).toEqual({
-      ...makeRecipeDetail(),
+      ...makeRecipeDetail({id: recipeId}),
       communityRating: null,
       viewerRating: null,
       viewerRatingIsStale: false,
@@ -35,14 +42,36 @@ describe('GET /recipes/:id', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue(makeQueryResult([]));
     const res = await request(getApp())
-      .get('/api/recipes/missing-id')
+      .get('/api/recipes/22222222-2222-4222-8222-222222222222')
       .set('Authorization', 'Bearer valid-token');
     expect(res.status).toBe(404);
     expect(res.body).toMatchObject({error: 'Recipe not found'});
   });
 
+  test('returns 404 for the literal "public" segment without querying the database', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    const res = await request(getApp())
+      .get('/api/recipes/public')
+      .set('Authorization', 'Bearer valid-token');
+    expect(res.status).toBe(404);
+    expect(res.body).toMatchObject({error: 'Recipe not found'});
+    expect(mockQuery).not.toHaveBeenCalled();
+  });
+
+  test('returns 404 for a non-UUID id without querying the database', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    const res = await request(getApp())
+      .get('/api/recipes/not-a-uuid')
+      .set('Authorization', 'Bearer valid-token');
+    expect(res.status).toBe(404);
+    expect(res.body).toMatchObject({error: 'Recipe not found'});
+    expect(mockQuery).not.toHaveBeenCalled();
+  });
+
   test('returns 401 without auth token', async () => {
-    const res = await request(getApp()).get('/api/recipes/recipe-uuid-1');
+    const res = await request(getApp()).get(
+      '/api/recipes/11111111-1111-4111-8111-111111111111',
+    );
     expect(res.status).toBe(401);
   });
 });

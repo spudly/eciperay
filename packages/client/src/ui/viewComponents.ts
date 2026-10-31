@@ -1,5 +1,5 @@
 import type {ReactNode, RefObject} from 'react';
-import type {RecipeDetail, RecipeVersionSummary, Tag} from '@eciperay/types';
+import type {RecipeDetail, Tag} from '@eciperay/types';
 
 import type {RecipeListFilterControls} from './recipeListFilterControls.js';
 
@@ -121,28 +121,6 @@ export type EditVersionViewProps = {
 };
 
 export type ManualEntryViewProps = {children: ReactNode};
-
-export type RecipeDetailTab =
-  'overview' | 'ingredients' | 'instructions' | 'history' | 'nutrition';
-
-export const RECIPE_DETAIL_TABS: {key: RecipeDetailTab; label: string}[] = [
-  {key: 'overview', label: 'Overview'},
-  {key: 'ingredients', label: 'Ingredients'},
-  {key: 'instructions', label: 'Instructions'},
-  {key: 'history', label: 'Cook History'},
-  {key: 'nutrition', label: 'Nutrition'},
-];
-
-export type RecipeDetailChromeProps = {
-  status: RecipeDetail['status'];
-  recipeId?: string;
-  versions: RecipeVersionSummary[];
-  selectedVersionId: string;
-  onSelectVersion: (versionId: string) => void;
-  activeTab: RecipeDetailTab;
-  onSelectTab: (tab: RecipeDetailTab) => void;
-  children: ReactNode;
-};
 
 export type {
   MealCookingModeViewProps,

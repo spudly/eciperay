@@ -48,49 +48,13 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
     path: 'cooking/CookLogForm.tsx',
     platform: 'web',
     reason:
-      'Web cook-log form implementation; the app renders the design system CookLogForm (design-system#126). Web adoption is B7.',
+      'Web cook-log form implementation, still used by cooking mode; its recipe-detail consumer retired in B7 C7 (the detail host renders the design system RatingForm through the page slot, as the app host does) and its list-card consumer retired in B7 C5. The app renders the design system RatingForm (design-system#126).',
   },
   {
     path: 'recipe/sortableDrag.ts',
     platform: 'web',
     reason:
       "dnd-kit drag helper for web's sortable ingredient/instruction list slot implementations; the app lists carry their react-native-draggable-flatlist wiring inline.",
-  },
-  {
-    path: 'meals/MealFormView.tsx',
-    platform: 'web',
-    reason:
-      'Web meal form implementation; the app renders the design system MealFormPage (design-system#125). Web adoption is B7.',
-  },
-  {
-    path: 'meals/MealPlanFormView.tsx',
-    platform: 'web',
-    reason:
-      'Web meal plan form implementation; the app renders the design system MealPlanFormPage (design-system#125). Web adoption is B7.',
-  },
-  {
-    path: 'meals/ShoppingListView.tsx',
-    platform: 'web',
-    reason:
-      'Web shopping list implementation; the app renders the design system ShoppingListPage (design-system#125). Web adoption is B7.',
-  },
-  {
-    path: 'meals/MealCookingModeView.tsx',
-    platform: 'web',
-    reason:
-      'Web cooking-mode implementation; the app renders the design system MealCookingModePage (design-system#125). Web adoption is B7.',
-  },
-  {
-    path: 'meals/MealDetailView.tsx',
-    platform: 'web',
-    reason:
-      'Web meal detail implementation; the app renders the design system MealDetailPage (design-system#125). Web adoption is B7.',
-  },
-  {
-    path: 'meals/MealsHubView.tsx',
-    platform: 'web',
-    reason:
-      'Web meals hub implementation; the app renders the design system MealsHubPage (design-system#125). Web adoption is B7.',
   },
   {
     path: 'recipes/RecipeListNumberFilter.tsx',
@@ -216,40 +180,10 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
       'dnd-kit sortable row primitive for web; app uses react-native-draggable-flatlist in SortableInstructionList.',
   },
   {
-    path: 'profile/ProfileView.tsx',
-    platform: 'web',
-    reason:
-      'Web profile view; the app renders the design system ProfilePage (design-system#126). Web adoption is B7.',
-  },
-  {
-    path: 'profile/AccessTokensView.tsx',
-    platform: 'web',
-    reason:
-      'Web access tokens section; the app renders the design system AccessTokensPanel (design-system#126). Web adoption is B7.',
-  },
-  {
-    path: 'profile/AccessTokensTokenRow.tsx',
-    platform: 'web',
-    reason:
-      'Web token row; the app renders the design system AccessTokensPanel, whose rows are design system TokenRows (design-system#126). Web adoption is B7.',
-  },
-  {
-    path: 'profile/NutritionGoalsFormView.tsx',
-    platform: 'web',
-    reason:
-      'Web nutrition goals form; the app renders the design system NutritionGoalsForm (design-system#126). Web adoption is B7.',
-  },
-  {
     path: 'FeedbackForm.tsx',
     platform: 'web',
     reason:
-      'Web feedback form implementation; the app renders the design system FeedbackPage via its host (design-system#126). Web adoption is B7.',
-  },
-  {
-    path: 'meals/NutritionGoalProgressView.tsx',
-    platform: 'web',
-    reason:
-      'Web view remains; the app copy had no production consumer since MealPlanDetailView folded its composition into the design system MealPlanDetailPage view-models. Removed in B6 (design-system#129). Web retirement is B7.',
+      'Web feedback host; renders the design system FeedbackPage (design-system#126) — the local view retired in B7 C10 (design-system#130). The app host lives outside src/components (hosts/FeedbackForm.tsx).',
   },
   {
     path: 'recipes/RecipeListFiltersBar.tsx',
@@ -258,88 +192,46 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
       'Web bar remains; the app copy was superseded by the filter bars built into the design system RecipesPage/SharedWithMePage. Removed in B6 (design-system#129). Web retirement is B7.',
   },
   {
-    path: 'recipe/CookHistoryTab.tsx',
-    platform: 'web',
-    reason:
-      'Web tab remains for its tabbed detail page; the app copy was orphaned by the #71 single-scroll RecipeDetailPage rewire (cook-log wiring lives in the app host). Removed in B6 (design-system#129). Web retirement is B7.',
-  },
-  {
     path: 'recipe/IngredientsTab.tsx',
     platform: 'web',
     reason:
-      'Web tab remains for its tabbed detail page; the app copy was orphaned by the #71 single-scroll rewire (the design system page renders ingredients). Removed in B6 (design-system#129). Web retirement is B7.',
+      'Web tab remains for the public recipe page; its signed-in detail consumer retired in B7 C7 when the detail page adopted the design system RecipeDetailPage (the design system page renders ingredients). The app copy was orphaned by the #71 single-scroll rewire. Removed in B6 (design-system#129). Web retirement is B7 (C11).',
   },
   {
     path: 'recipe/InstructionsTab.tsx',
     platform: 'web',
     reason:
-      'Web tab remains for its tabbed detail page; the app copy was orphaned by the #71 single-scroll rewire (the design system page renders instructions). Removed in B6 (design-system#129). Web retirement is B7.',
-  },
-  {
-    path: 'recipe/NutritionTab.tsx',
-    platform: 'web',
-    reason:
-      'Web tab remains for its tabbed detail page; the app copy was orphaned by the #71 single-scroll rewire (nutrition query/refresh lives in the app host). Removed in B6 (design-system#129). Web retirement is B7.',
-  },
-  {
-    path: 'recipe/OverviewActions.tsx',
-    platform: 'web',
-    reason:
-      'Web actions remain; the app copy was only reachable via the removed OverviewTab (lifecycle mutations live in the app host). Removed in B6 (design-system#129). Web retirement is B7.',
-  },
-  {
-    path: 'recipe/OverviewTab.tsx',
-    platform: 'web',
-    reason:
-      'Web tab remains for its tabbed detail page; the app copy was orphaned by the #71 single-scroll rewire. Removed in B6 (design-system#129). Web retirement is B7.',
-  },
-  {
-    path: 'recipe/RecipeDetailChrome.tsx',
-    platform: 'web',
-    reason:
-      'Web chrome remains; the app copy was tab-era scaffolding superseded by the design system RecipeDetailPage chrome. Removed in B6 (design-system#129). Web retirement is B7.',
-  },
-  {
-    path: 'recipe/RecipeDetailTabPanel.tsx',
-    platform: 'web',
-    reason:
-      'Web panel remains; the app copy switched tabs for the removed native tab UI. Removed in B6 (design-system#129). Web retirement is B7.',
+      'Web tab remains for the public recipe page; its signed-in detail consumer retired in B7 C7 when the detail page adopted the design system RecipeDetailPage (the design system page renders instructions). The app copy was orphaned by the #71 single-scroll rewire. Removed in B6 (design-system#129). Web retirement is B7 (C11).',
   },
   {
     path: 'recipe/RecipeEngagementPanel.tsx',
     platform: 'web',
     reason:
-      'Web panel remains; the app copy was only consumed by the removed tab panel (the host slots comments/visibility into the design system page). Removed in B6 (design-system#129). Web retirement is B7.',
+      'Web panel remains for the public recipe page; its signed-in detail consumer retired in B7 C7 (the detail host slots comments into the design system page and view-models the ratings). The app copy was only consumed by the removed tab panel. Removed in B6 (design-system#129). Web retirement is B7 (C11).',
   },
   {
     path: 'recipe/RecipeRatingsSection.tsx',
     platform: 'web',
     reason:
-      'Web section remains; the app copy was only reachable via the removed engagement panel (rating mutation and labels live in the app host and design system page props). Removed in B6 (design-system#129). Web retirement is B7.',
+      'Web section remains via the engagement panel on the public recipe page; on the signed-in detail page the rating mutation and labels live in the host and design system page props since B7 C7. The app copy was only reachable via the removed engagement panel. Removed in B6 (design-system#129). Web retirement is B7 (C11).',
   },
   {
     path: 'recipe/RecipeStatusBadge.tsx',
     platform: 'web',
     reason:
-      'Web badge remains; the app copy was an adapter over ui/StatusBadge used only by the removed tab-era files. Removed in B6 (design-system#129). Web retirement is B7.',
+      'Web badge remains for the public recipe overview; its detail-chrome consumer retired in B7 C7 (the design system page renders the status badge). The app copy was an adapter over ui/StatusBadge used only by the removed tab-era files. Removed in B6 (design-system#129). Web retirement is B7 (C11).',
   },
   {
     path: 'recipe/ScaleMultiplierButtons.tsx',
     platform: 'web',
     reason:
-      'Web buttons remain; the app copy was superseded by the design system page scale controls including custom scale (@spudly/ui 1.8.1). Removed in B6 (design-system#129). Web retirement is B7.',
+      'Web buttons remain via the ingredients tab on the public recipe page; the signed-in detail page uses the design system page scale controls including custom scale (@spudly/ui 1.8.1) since B7 C7. The app copy was superseded by those controls. Removed in B6 (design-system#129). Web retirement is B7 (C11).',
   },
   {
     path: 'recipe/ServingsStepper.tsx',
     platform: 'web',
     reason:
-      'Web stepper remains; the app copy was superseded by the design system page direct-entry servings input (@spudly/ui 1.8.1). Removed in B6 (design-system#129). Web retirement is B7.',
-  },
-  {
-    path: 'recipe/VersionPicker.tsx',
-    platform: 'web',
-    reason:
-      'Web picker remains; the app copy was only consumed by the removed RecipeDetailChrome (the design system page has its own version picker). Removed in B6 (design-system#129). Web retirement is B7.',
+      'Web stepper remains via the ingredients tab on the public recipe page; the signed-in detail page uses the design system page direct-entry servings input (@spudly/ui 1.8.1) since B7 C7. The app copy was superseded by that input. Removed in B6 (design-system#129). Web retirement is B7 (C11).',
   },
   {
     path: 'ui/BulkSelectToolbar.tsx',
@@ -352,12 +244,6 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
     platform: 'web',
     reason:
       'Web adapter remains; the app copy lost its consumers when the meal forms moved to the design system in B3b (the widget moved to @spudly/ui in B2). Removed in B6 (design-system#129). Web retirement is B7.',
-  },
-  {
-    path: 'ui/DestructiveButton.tsx',
-    platform: 'web',
-    reason:
-      'Web adapter remains; the app copy had no production importer after screens adopted design system pages. Removed in B6 (design-system#129). Web retirement is B7.',
   },
   {
     path: 'ui/ErrorText.tsx',
@@ -402,12 +288,6 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
       'Web adapter remains; the app copy had no production importer after screens adopted design system pages. Removed in B6 (design-system#129). Web retirement is B7.',
   },
   {
-    path: 'ui/ScreenContainer.tsx',
-    platform: 'web',
-    reason:
-      'Web adapter remains; the app copy had no production importer after screens adopted design system pages. Removed in B6 (design-system#129). Web retirement is B7.',
-  },
-  {
     path: 'ui/StatBadge.tsx',
     platform: 'web',
     reason:
@@ -423,7 +303,7 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
     path: 'ui/TabBar.tsx',
     platform: 'web',
     reason:
-      'Web adapter remains; the app copy was only reachable via the removed tab-era chrome/panel. Removed in B6 (design-system#129). Web retirement is B7.',
+      'Web adapter remains for the meals hub; its tab-era detail chrome/panel consumers retired in B7 C7. The app copy was only reachable via the removed tab-era chrome/panel. Removed in B6 (design-system#129). Web retirement is B7 (C9).',
   },
   {
     path: 'ui/TagPill.tsx',
@@ -453,13 +333,13 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
     path: 'recipe/RecipeCommentItem.tsx',
     platform: 'web',
     reason:
-      'Web item remains; the app copy was deleted when RecipeCommentsSection adopted the design system CommentItem (the widget moved to @spudly/ui in B2). Removed in B6 (design-system#129). Web retirement is B7.',
+      'Web item remains via the comments section (slotted into the design system detail page and used by the public recipe page); the app copy was deleted when RecipeCommentsSection adopted the design system CommentItem (the widget moved to @spudly/ui in B2). Removed in B6 (design-system#129). Web retirement is B7.',
   },
   {
     path: 'recipe/StaleVersionHint.tsx',
     platform: 'web',
     reason:
-      'Web hint remains; the app copy was deleted with RecipeCommentItem — its stale marker is the design system CommentItem marker now. Removed in B6 (design-system#129). Web retirement is B7.',
+      'Web hint remains via the comments and ratings sections (public recipe page; the signed-in detail page renders stale hints from the design system page since B7 C7); the app copy was deleted with RecipeCommentItem — its stale marker is the design system CommentItem marker now. Removed in B6 (design-system#129). Web retirement is B7 (C11).',
   },
   {
     path: 'ui/SectionCard.tsx',
@@ -495,19 +375,13 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
     path: 'ui/EmptyMessage.tsx',
     platform: 'web',
     reason:
-      'Web copy remains — production views (recipes list, shared-with-me, meals, shopping list, discover, access tokens) consume it; the app copy was only consumed by the in-app component showcase and was removed with it (design-system#129). The web showcase was retired in B7 cluster C2 (design-system#130); this adapter retires as its consuming views swap.',
+      'Web copy remains — production views (recipes list, shared-with-me, discover, access tokens) consume it; the app copy was only consumed by the in-app component showcase and was removed with it (design-system#129). The web showcase was retired in B7 cluster C2 (design-system#130); this adapter retires as its consuming views swap.',
   },
   {
     path: 'ui/SelectField.tsx',
     platform: 'web',
     reason:
       'Web copy remains — production pickers and filter bars consume it; the app copy was only consumed by the in-app component showcase and was removed with it (design-system#129). The web showcase was retired in B7 cluster C2 (design-system#130); this adapter retires as its consuming views swap.',
-  },
-  {
-    path: 'meals/MealPlanDetailView.tsx',
-    platform: 'web',
-    reason:
-      'Web view remains; the app host moved out of components/ to packages/app/src/hosts in B6 (design-system#129) — it renders the design system MealPlanDetailPage. Web retirement is B7.',
   },
   {
     path: 'recipes/RecipesListView.tsx',
@@ -537,7 +411,7 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
     path: 'ProfileFeedbackPreference.tsx',
     platform: 'web',
     reason:
-      'Web mirror remains; the app container moved out of components/ to packages/app/src/hosts in B6 (design-system#129). Web retirement is B7.',
+      'Web host for the design system ProfilePage feedbackPreference slot (B7 C10, design-system#130); the analytics-consent state machine stays web-side (eciperay#256/#299). The app container lives outside src/components (hosts/profile/ProfileFeedbackPreference.tsx).',
   },
 ];
 

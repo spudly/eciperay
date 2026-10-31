@@ -1,9 +1,9 @@
 import {queryKeys} from '@eciperay/client';
+import {MealCookingModePage as MealCookingModePageView} from '@spudly/ui/pages';
 import {useQuery} from '@tanstack/react-query';
 import {useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
 
-import {MealCookingModeView} from '../components/meals/MealCookingModeView.js';
 import {ScreenLoadingGate} from '../components/ScreenLoadingGate.js';
 import {eciperay} from '../lib/api.js';
 
@@ -27,8 +27,8 @@ export const MealCookingModePage = () => {
   return (
     <ScreenLoadingGate pending={isLoading || !plan || !meal}>
       {plan && meal ? (
-        <MealCookingModeView
-          plan={plan}
+        <MealCookingModePageView
+          steps={plan.steps}
           mealTitle={meal.title}
           stepIndex={stepIndex}
           onPrev={() => {
