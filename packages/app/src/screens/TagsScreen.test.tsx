@@ -44,15 +44,30 @@ describe('TagsScreen', () => {
     const {findByText, getByDisplayValue, getByText} =
       await renderWithProviders(<TagsScreen />);
     await fireEvent.press(await findByText('Edit'));
-    // The edit form is seeded from the tag (name + its indigo color,
-    // which crosses back to the stored hex at the boundary).
+    // The edit form is seeded from the tag. A rename-only save sends no
+    // color: the stored hex survives untouched (the palette-name
+    // projection is lossy for non-palette colors).
     const editField = getByDisplayValue('Dinner');
     await fireEvent.changeText(editField, 'Supper');
     await fireEvent.press(getByText('Save'));
     await waitFor(() => {
+      expect(mockUpdate).toHaveBeenCalledWith('t1', {name: 'Supper'});
+    });
+  });
+
+  test('sends the new color hex when the edit changes the swatch', async () => {
+    const {findByText, getAllByLabelText, getByText} =
+      await renderWithProviders(<TagsScreen />);
+    await fireEvent.press(await findByText('Edit'));
+    // The edit form's swatches follow the create form's, so the edit
+    // form's green swatch is the second one rendered.
+    const greenSwatches = getAllByLabelText('Select color green');
+    await fireEvent.press(greenSwatches[1]!);
+    await fireEvent.press(getByText('Save'));
+    await waitFor(() => {
       expect(mockUpdate).toHaveBeenCalledWith('t1', {
-        name: 'Supper',
-        color: '#6366f1',
+        name: 'Dinner',
+        color: '#22c55e',
       });
     });
   });

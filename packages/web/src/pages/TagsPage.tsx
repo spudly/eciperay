@@ -24,6 +24,12 @@ export const TagsPage = () => {
   const [editingTagId, setEditingTagId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editColor, setEditColor] = useState<TagColorName>('indigo');
+  // The edit draft's color starts as the tag's color projected to a
+  // palette name — a lossy projection for stored non-palette hexes
+  // (unknown hexes fall back to gray). Track whether the user actually
+  // picked a swatch: Save sends a color only then, so a rename-only
+  // edit preserves the stored color exactly.
+  const [editColorTouched, setEditColorTouched] = useState(false);
   const queryClient = useQueryClient();
 
   const {data: tags = [], isLoading} = useQuery({
@@ -50,11 +56,18 @@ export const TagsPage = () => {
     mutationFn: () =>
       eciperay.tags.update(editingTagId!, {
         name: editName,
-        color: warmHarvestTagColors[editColor],
+        ...(editColorTouched ? {color: warmHarvestTagColors[editColor]} : {}),
       }),
     onSuccess: () => {
       setEditingTagId(null);
+      setEditColorTouched(false);
       void queryClient.invalidateQueries({queryKey: queryKeys.tags()});
+      // Recipe payloads embed their tags (name + color), so a rename
+      // must also refresh the recipe lists, recipe details, and the
+      // shared-with-me lists or they keep showing the old name/color.
+      void queryClient.invalidateQueries({queryKey: queryKeys.recipeLists()});
+      void queryClient.invalidateQueries({queryKey: ['recipe']});
+      void queryClient.invalidateQueries({queryKey: ['sharedWithMe']});
     },
   });
 
@@ -69,6 +82,12 @@ export const TagsPage = () => {
     setEditingTagId(tag.id);
     setEditName(tag.name);
     setEditColor(tag.color);
+    setEditColorTouched(false);
+  };
+
+  const handleEditColorChange = (colorName: TagColorName) => {
+    setEditColor(colorName);
+    setEditColorTouched(true);
   };
 
   const handleSaveEdit = () => {
@@ -80,6 +99,7 @@ export const TagsPage = () => {
 
   const handleCancelEdit = () => {
     setEditingTagId(null);
+    setEditColorTouched(false);
   };
 
   return (
@@ -101,7 +121,7 @@ export const TagsPage = () => {
       editColor={editColor}
       onStartEdit={handleStartEdit}
       onEditNameChange={setEditName}
-      onEditColorChange={setEditColor}
+      onEditColorChange={handleEditColorChange}
       onSaveEdit={handleSaveEdit}
       onCancelEdit={handleCancelEdit}
       isUpdating={updateMutation.isPending}

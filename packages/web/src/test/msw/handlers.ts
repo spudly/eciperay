@@ -12,6 +12,40 @@ const API = 'http://localhost:8080';
 
 const recipe = makeRecipeDetail();
 
+type TagsFixtureTag = {
+  id: string;
+  userId: string | null;
+  name: string;
+  color: string;
+  isPreset: boolean;
+};
+
+const defaultTagsFixture = (): TagsFixtureTag[] => [
+  {
+    id: 'tag-1',
+    userId: null,
+    name: 'Dinner',
+    color: '#6366f1',
+    isPreset: false,
+  },
+  {
+    id: 'tag-2',
+    userId: 'user-uuid-1',
+    name: 'Quick',
+    color: '#22c55e',
+    isPreset: false,
+  },
+];
+
+// The tags handlers are stateful so a PATCH is visible to the GET that
+// follows it (a rename shows up on refetch, like the real API). Tests
+// that mutate tags reset the fixture between tests.
+let tagsFixture = defaultTagsFixture();
+
+export const resetTagsFixture = (): void => {
+  tagsFixture = defaultTagsFixture();
+};
+
 export const handlers = [
   http.get(`${API}/api/recipes`, ({request}) => {
     const url = new URL(request.url);
@@ -586,24 +620,7 @@ export const handlers = [
   http.post(`${API}/api/recipes/ai/generate-description`, () =>
     HttpResponse.json({description: 'A delicious AI-generated description.'}),
   ),
-  http.get(`${API}/api/tags`, () =>
-    HttpResponse.json([
-      {
-        id: 'tag-1',
-        userId: null,
-        name: 'Dinner',
-        color: '#6366f1',
-        isPreset: false,
-      },
-      {
-        id: 'tag-2',
-        userId: 'user-uuid-1',
-        name: 'Quick',
-        color: '#22c55e',
-        isPreset: false,
-      },
-    ]),
-  ),
+  http.get(`${API}/api/tags`, () => HttpResponse.json(tagsFixture)),
   http.post(`${API}/api/tags`, async ({request}) => {
     const body = (await request.json()) as {name: string; color: string};
     return HttpResponse.json({
@@ -617,21 +634,22 @@ export const handlers = [
   http.patch(`${API}/api/tags/:id`, async ({request, params}) => {
     // Mirror the server: an update applies only to a tag the caller
     // owns (tag-2 here). tag-1 is served with userId null and unknown
-    // ids do not exist — the real PATCH returns 404 for both.
-    if (params['id'] !== 'tag-2') {
+    // ids do not exist — the real PATCH returns 404 for both. A
+    // successful PATCH mutates the fixture, so the refetch after the
+    // mutation shows the rename; fields the body does not mention are
+    // preserved.
+    const tag = tagsFixture.find(t => t.id === params['id']);
+    if (!tag || tag.userId === null) {
       return HttpResponse.json({error: 'Tag not found'}, {status: 404});
     }
     const body = (await request.json()) as {name?: string; color?: string};
-    // Merge over the tag the GET handler serves so a partial update
-    // preserves the fields it does not mention.
-    const existing = {name: 'Quick', color: '#22c55e'};
-    return HttpResponse.json({
-      id: params['id'],
-      userId: 'user-uuid-1',
-      name: body.name ?? existing.name,
-      color: body.color ?? existing.color,
-      isPreset: false,
-    });
+    if (body.name !== undefined) {
+      tag.name = body.name;
+    }
+    if (body.color !== undefined) {
+      tag.color = body.color;
+    }
+    return HttpResponse.json(tag);
   }),
   http.delete(
     `${API}/api/tags/:id`,

@@ -1,11 +1,17 @@
 import {screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
+import {resetTagsFixture} from '../test/msw/handlers.js';
 import {renderWithProviders} from '../test/testUtils.js';
 
 import {TagsPage} from './TagsPage.js';
 
 describe('TagsPage', () => {
+  beforeEach(() => {
+    // The mock tags API is stateful; start each test from the defaults.
+    resetTagsFixture();
+  });
+
   test('lists, creates, and deletes tags', async () => {
     await renderWithProviders(<TagsPage />);
     await waitFor(() => {
@@ -49,6 +55,41 @@ describe('TagsPage', () => {
       ).not.toBeInTheDocument();
     });
     expect(screen.getAllByText('Edit')).toHaveLength(2);
+    // The tags refetch after the save shows the renamed tag (the mock
+    // API persists the PATCH, like the real one).
+    expect(await screen.findByText('Fast')).toBeInTheDocument();
+    expect(screen.queryByText('Quick')).not.toBeInTheDocument();
+  });
+
+  test('recolors a tag through the inline edit form', async () => {
+    await renderWithProviders(<TagsPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Quick')).toBeInTheDocument();
+    });
+    const editButtons = screen.getAllByText('Edit');
+    await userEvent.click(editButtons[1]!);
+    // Pick red in the edit form (the second red swatch — the first
+    // belongs to the create form) and save without renaming.
+    const redSwatches = screen.getAllByRole('button', {
+      name: 'Select color red',
+    });
+    expect(redSwatches).toHaveLength(2);
+    await userEvent.click(redSwatches[1]!);
+    await userEvent.click(screen.getByRole('button', {name: 'Save'}));
+    await waitFor(() => {
+      expect(
+        screen.queryByRole('button', {name: 'Save'}),
+      ).not.toBeInTheDocument();
+    });
+    // Reopening the editor shows the persisted color: red is now the
+    // pressed swatch for Quick.
+    const editButtonsAfter = screen.getAllByText('Edit');
+    await userEvent.click(editButtonsAfter[1]!);
+    expect(screen.getByDisplayValue('Quick')).toBeInTheDocument();
+    const redSwatchesAfter = screen.getAllByRole('button', {
+      name: 'Select color red',
+    });
+    expect(redSwatchesAfter[1]).toHaveAttribute('aria-pressed', 'true');
   });
 
   test('cancelling an edit discards the draft', async () => {
