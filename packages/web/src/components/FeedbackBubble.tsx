@@ -29,11 +29,15 @@ export const FeedbackBubble = () => {
 
   return (
     <div className={bubbleContainerClasses}>
+      {/* Panel max block size: 100dvh minus the container's 5rem bottom
+          offset, the 3rem bubble button, the 0.75rem gap, and top clearance —
+          so the panel never overflows short viewports and scrolls instead. */}
       {open ? (
         <div
           className="
-            rounded-2xl border border-gray-200 bg-white p-4 shadow-lg
-            inline-[min(100vw-2rem,24rem)]
+            overflow-y-auto rounded-2xl border border-gray-200 bg-white p-4
+            shadow-lg inline-[min(100vw-2rem,24rem)]
+            max-block-[calc(100dvh-10rem)]
           "
           role="dialog"
           aria-label="Send feedback"
