@@ -76,7 +76,7 @@ export const PayPage = () => {
   const inCheckoutFlow = configured && transactionId !== null;
 
   return (
-    <ScreenContainer variant="padded">
+    <ScreenContainer variant="padded" scrollable={false}>
       <div style={{maxWidth: 480, margin: '0 auto'}}>
         <div
           style={{display: 'flex', justifyContent: 'center', marginBottom: 24}}
