@@ -1,14 +1,36 @@
-import {queryKeys} from '@eciperay/client';
+import {formatSimpleNutrition, queryKeys} from '@eciperay/client';
+import type {MealRecipeMember} from '@eciperay/types';
+import {MealDetailPage as MealDetailPageView} from '@spudly/ui/pages';
 import {useQuery} from '@tanstack/react-query';
-import {useNavigate, useParams} from 'react-router-dom';
+import {useParams} from 'react-router-dom';
 
-import {MealDetailView} from '../components/meals/MealDetailView.js';
 import {ScreenLoadingGate} from '../components/ScreenLoadingGate.js';
 import {eciperay} from '../lib/api.js';
 
+/**
+ * One member row's nutrition line, composed host-side for the DS page: the
+ * calories / protein / satiety parts the retired web view rendered inline.
+ * The string crosses the @spudly/ui/pages boundary pre-composed inside the
+ * member subtitle (the RecipesPage subtitle precedent): the rounding is
+ * the host's, so the page only renders it. Mirrors the app screen's
+ * composition.
+ */
+const formatMemberNutrition = (member: MealRecipeMember): string | null => {
+  const parts: string[] = [];
+  if (member.calories !== null) {
+    parts.push(`${Math.round(member.calories)} cal`);
+  }
+  if (member.proteinG !== null) {
+    parts.push(`${Math.round(member.proteinG)}g protein`);
+  }
+  if (member.satietyScore !== null) {
+    parts.push(`satiety ${Math.round(member.satietyScore)}`);
+  }
+  return parts.length > 0 ? parts.join(' · ') : null;
+};
+
 export const MealDetailPage = () => {
   const {mealId = ''} = useParams();
-  const navigate = useNavigate();
 
   const {data: meal, isLoading} = useQuery({
     queryKey: queryKeys.meal(mealId),
@@ -19,17 +41,25 @@ export const MealDetailPage = () => {
   return (
     <ScreenLoadingGate pending={isLoading || !meal}>
       {meal ? (
-        <MealDetailView
-          meal={meal}
-          onEdit={() => {
-            void navigate(`/meals/${mealId}/edit`);
-          }}
-          onCook={() => {
-            void navigate(`/meals/${mealId}/cook`);
-          }}
-          onRecipePress={recipeId => {
-            void navigate(`/recipes/${recipeId}`);
-          }}
+        <MealDetailPageView
+          title={meal.title}
+          notes={meal.notes}
+          nutritionLabel={formatSimpleNutrition(meal.nutrition)}
+          members={meal.members.map(member => ({
+            recipeId: member.recipeId,
+            href: `/recipes/${member.recipeId}`,
+            title: member.title,
+            subtitle: `${member.servings} serving${
+              member.servings === 1 ? '' : 's'
+            }${
+              formatMemberNutrition(member)
+                ? ` · ${formatMemberNutrition(member)}`
+                : ''
+            }`,
+            isUnavailable: member.accessLost,
+          }))}
+          cookHref={`/meals/${mealId}/cook`}
+          editHref={`/meals/${mealId}/edit`}
         />
       ) : null}
     </ScreenLoadingGate>

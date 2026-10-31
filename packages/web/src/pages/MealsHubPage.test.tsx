@@ -1,6 +1,5 @@
 import {act, fireEvent, screen, waitFor} from '@testing-library/react';
 import {http, HttpResponse} from 'msw';
-import {vi} from 'vitest';
 
 import {
   makeMealPlanSummary,
@@ -13,18 +12,7 @@ import {renderWithProviders} from '../test/testUtils.js';
 
 import {MealsHubPage} from './MealsHubPage.js';
 
-const mockNavigate = vi.fn();
-
-vi.mock('react-router-dom', async importOriginal => {
-  const actual = await importOriginal<typeof import('react-router-dom')>();
-  return {...actual, useNavigate: () => mockNavigate};
-});
-
 describe('MealsHubPage', () => {
-  beforeEach(() => {
-    mockNavigate.mockReset();
-  });
-
   test('renders meals from API', async () => {
     server.use(
       http.get('http://localhost:8080/api/meals', () =>
@@ -36,6 +24,12 @@ describe('MealsHubPage', () => {
       expect(screen.getByText('Sunday Dinner')).toBeInTheDocument();
     });
     expect(screen.getByText('New meal')).toBeInTheDocument();
+    // The create action navigates, so it crosses to the DS page as an
+    // href and renders as a real link (#248).
+    expect(screen.getByRole('link', {name: 'New meal'})).toHaveAttribute(
+      'href',
+      '/meals/new',
+    );
   });
 
   test('switches tabs and handles actions', async () => {
@@ -59,14 +53,10 @@ describe('MealsHubPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Sunday Dinner')).toBeInTheDocument();
     });
-    await act(async () => {
-      fireEvent.click(screen.getByText('New meal'));
-    });
-    expect(mockNavigate).toHaveBeenCalledWith('/meals/new');
-    await act(async () => {
-      fireEvent.click(screen.getByText('Sunday Dinner'));
-    });
-    expect(mockNavigate).toHaveBeenCalledWith(`/meals/${MEAL_ID}`);
+    // Rows navigate, so they render as links carrying the destination.
+    expect(
+      screen.getByRole('link', {name: /Sunday Dinner/}),
+    ).toHaveAttribute('href', `/meals/${MEAL_ID}`);
     await act(async () => {
       fireEvent.click(screen.getAllByText('Delete')[0]!);
     });
@@ -80,14 +70,14 @@ describe('MealsHubPage', () => {
     await waitFor(() => {
       expect(screen.getByText('This week')).toBeInTheDocument();
     });
-    await act(async () => {
-      fireEvent.click(screen.getByText('New meal plan'));
-    });
-    expect(mockNavigate).toHaveBeenCalledWith('/meal-plans/new');
-    await act(async () => {
-      fireEvent.click(screen.getByText('This week'));
-    });
-    expect(mockNavigate).toHaveBeenCalledWith(`/meal-plans/${PLAN_ID}`);
+    expect(screen.getByRole('link', {name: 'New meal plan'})).toHaveAttribute(
+      'href',
+      '/meal-plans/new',
+    );
+    expect(screen.getByRole('link', {name: /This week/})).toHaveAttribute(
+      'href',
+      `/meal-plans/${PLAN_ID}`,
+    );
     await act(async () => {
       fireEvent.click(screen.getAllByText('Delete')[0]!);
     });

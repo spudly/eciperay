@@ -1,9 +1,9 @@
 import {queryKeys} from '@eciperay/client';
+import {ShoppingListPage as ShoppingListPageView} from '@spudly/ui/pages';
 import {useQuery} from '@tanstack/react-query';
 import {useState} from 'react';
 import {useParams} from 'react-router-dom';
 
-import {ShoppingListView} from '../components/meals/ShoppingListView.js';
 import {eciperay} from '../lib/api.js';
 
 export const ShoppingListPage = () => {
@@ -17,11 +17,19 @@ export const ShoppingListPage = () => {
   });
 
   return (
-    <ShoppingListView
-      lines={lines}
+    <ShoppingListPageView
       isLoading={isLoading}
-      checkedKeys={checkedKeys}
-      onToggleChecked={key => {
+      lines={lines.map(line => ({
+        key: line.key,
+        name: line.name,
+        quantityLabel:
+          line.quantity === null
+            ? null
+            : `${line.quantity}${line.unit ? ` ${line.unit}` : ''}`,
+        isOptional: line.isOptional,
+        isChecked: checkedKeys.has(line.key),
+      }))}
+      onToggleLine={key => {
         setCheckedKeys(previous => {
           const next = new Set(previous);
           if (next.has(key)) {
