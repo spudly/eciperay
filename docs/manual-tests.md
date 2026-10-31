@@ -134,12 +134,12 @@ without); one recipe may be created fresh in case 1.
 5. **Post a comment.** In the Comments tab, post `QA — comment check`, then
    reload. **Expected:** the comment appears with the QA account as author and
    persists after reload.
-6. **Delete.** Delete the `QA — Manual Entry Soup` recipe via the UI's delete
-   path: on the recipe list (and on Home's recently-viewed cards) the Delete
-   button arms an in-page **Confirm delete** / **Cancel** pair — Cancel keeps
-   the recipe and restores the Delete button, Confirm delete removes it. The
-   recipe detail page's Overview actions offer the same Delete control with the
-   same in-page confirmation; confirming there returns to the recipe list.
+6. **Delete.** Delete the `QA — Manual Entry Soup` recipe from its detail page:
+   the Overview actions' Delete control arms an in-page **Confirm delete** /
+   **Cancel** pair — Cancel keeps the recipe and restores the Delete button;
+   confirming removes it and returns to the recipe list. (The recipe list itself
+   offers no Delete — deleting is a detail-page action. Home's recently-viewed
+   cards still carry their own Delete with the same in-page confirmation.)
    **Expected:** the deleted recipe disappears from the list and search; its old
    detail URL no longer renders the recipe; and if a delete request fails, an
    error is shown and the recipe stays listed (a delete never fails silently).
@@ -158,9 +158,12 @@ without); one recipe may be created fresh in case 1.
    subtitles: a 1-serving recipe reads "1 serving" (not "1 servings"), and a
    recipe whose nutrition is still being computed (e.g. one just created or
    renamed) reads "Satiety pending" — never a bare "Satiety…" that looks
-   truncated; other cards show a satiety value or "Satiety —". Open one recipe's
-   detail. **Expected:** the recipe status appears exactly once, as the pill in
-   the toolbar above the tabs — the Overview does not repeat it under the title.
+   truncated; other cards show a satiety value or "Satiety —". The subtitle
+   carries no rating text: a rated recipe's rating renders as the row's star
+   control, and an unrated recipe shows a single star (the log-a-cook control)
+   instead. Open one recipe's detail. **Expected:** the recipe status appears
+   exactly once, as the pill in the toolbar above the tabs — the Overview does
+   not repeat it under the title.
 
 **Run when:**
 `packages/app/src/screens/{Recipes,RecipeDetail,EditRecipe,EditVersion,ManualEntry}Screen.tsx`,
@@ -217,18 +220,20 @@ scale visibly (e.g. 2 cups flour, 0.5 tsp salt), such as
 
 ## Cook log
 
-_Automated: Jest covers the design-system CookLogForm component and the app
-hosts that embed it. Playwright live `e2e-live/cook-log.spec.ts` covers the
-cooking-mode surface against the QA dataset once the CI test account secrets
-exist (issue #233): submitting the form (rating + notes) records the cook in the
-recipe's history, and Skip dismisses it recording nothing; until then those
-cases remain manual. The other surfaces (detail slot, list card, inline form)
-and the cases below are the manual remainder._
+_Automated: Jest covers the design-system RatingForm component (the cook log
+form's current name in `@spudly/ui`) and the app hosts that embed it. Playwright
+live `e2e-live/cook-log.spec.ts` covers the cooking-mode surface against the QA
+dataset once the CI test account secrets exist (issue #233): submitting the form
+(rating + notes) records the cook in the recipe's history, and Skip dismisses it
+recording nothing; until then those cases remain manual. The other surfaces
+(detail slot, list card, inline form) and the cases below are the manual
+remainder._
 
 **Preconditions:** QA account with at least one recipe; the cook log form
 appears in four places and each is exercised: recipe detail (the
 `renderCookLogForm` slot), the recipe list card, the inline form in the recipes
-list view, and the cooking-mode overlay.
+list (opened from the row's rating control — the stars on a rated recipe, the
+single star on an unrated one), and the cooking-mode overlay.
 
 1. **Detail-slot submission, rating omitted.** Open a recipe, open the cook log
    form from the detail view, add notes only (no star rating), Save.
@@ -237,10 +242,11 @@ list view, and the cooking-mode overlay.
 2. **Notes trimming.** Submit an entry whose notes are only spaces.
    **Expected:** saves with no notes (empty becomes null) — the history entry
    shows no blank note block.
-3. **List-card entry.** From the recipes list, open the cook log form on a
-   recipe card, give a star rating and notes, Save. **Expected:** entry appears
-   in that recipe's Cook History with the rating shown.
-4. **Inline form entry.** In the recipes list view's inline cook log form,
+3. **List-card entry.** From the recipes list, open the cook log form via a
+   recipe row's rating control, give a star rating and notes, Save.
+   **Expected:** entry appears in that recipe's Cook History with the rating
+   shown.
+4. **Inline form entry.** With the recipes list's inline cook log form open,
    submit an entry. **Expected:** same result as case 3; the list does not lose
    scroll position or filters.
 5. **Cooking-mode overlay.** Start cooking mode (`/recipes/:recipeId/cook`),
@@ -267,10 +273,10 @@ list view, and the cooking-mode overlay.
 `packages/client/src/cookLogsApi.ts`, `packages/server` cook log routes,
 `@spudly/ui` `RecipeDetailPage` history section.
 
-**Run when:** `@spudly/ui` `CookLogForm` or `StarRatingInput`,
+**Run when:** `@spudly/ui` `RatingForm` or `StarRatingInput`,
 `packages/app/src/screens/CookingModeScreen.tsx`,
 `packages/app/src/hosts/recipes/RecipesListView.tsx`,
-`packages/web/src/pages/{RecipeDetail,CookingMode}Page.tsx`,
+`packages/web/src/pages/{Recipes,RecipeDetail,CookingMode}Page.tsx`,
 `packages/web/src/components/cooking/**`.
 
 ---
@@ -429,11 +435,11 @@ small set of known inputs so results are comparable across runs).
 7. **Duplicate awareness.** Import the same recipe twice (issue #296).
    **Expected:** the second import stops with a warning naming the existing
    library recipe — a recipe is a duplicate when its normalized title AND
-   normalized ingredient list match an existing recipe in the same library —
-   and no second copy is created. Choosing to import anyway after the
-   warning (re-submitting the same import, or the "Import anyway" action
-   on the app image import) creates the second copy. Applies to text, URL,
-   and image imports.
+   normalized ingredient list match an existing recipe in the same library — and
+   no second copy is created. Choosing to import anyway after the warning
+   (re-submitting the same import, or the "Import anyway" action on the app
+   image import) creates the second copy. Applies to text, URL, and image
+   imports.
 
 **Run when:**
 `packages/app/src/screens/{ImportText,ImportUrl,ImportImage,ImportReview}Screen.tsx`,

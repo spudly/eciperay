@@ -578,18 +578,6 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
       'Web view remains; the app host moved out of components/ to packages/app/src/hosts in B6 (design-system#129) — it renders the design system MealPlanDetailPage. Web retirement is B7.',
   },
   {
-    path: 'recipes/RecipesListView.tsx',
-    platform: 'web',
-    reason:
-      'Web view remains; the app host moved out of components/ to packages/app/src/hosts in B6 (design-system#129) — it renders the design system RecipesPage. Web retirement is B7.',
-  },
-  {
-    path: 'shared/SharedWithMeView.tsx',
-    platform: 'web',
-    reason:
-      'Web view remains; the app host moved out of components/ to packages/app/src/hosts in B6 (design-system#129) — it renders the design system SharedWithMePage. Web retirement is B7.',
-  },
-  {
     path: 'recipe/RecipeCommentsSection.tsx',
     platform: 'web',
     reason:

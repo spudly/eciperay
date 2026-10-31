@@ -62,14 +62,17 @@ test.describe('mobile web layout (390px)', () => {
     });
     expect(titleColumnWidth).toBeGreaterThan(150);
 
-    // Trailing actions stay on the page, inside the viewport.
-    for (const name of ['Log cook', 'Delete']) {
-      const button = page.getByRole('button', {name}).first();
-      await expect(button).toBeVisible();
-      const box = await button.boundingBox();
-      expect(box).not.toBeNull();
-      expect(box!.x + box!.width).toBeLessThanOrEqual(390);
-    }
+    // The row's trailing control stays on the page, inside the
+    // viewport. On the design-system RecipesPage the only trailing
+    // control is the log-a-cook star (the list offers no Delete —
+    // deleting is a detail-page action).
+    const button = page
+      .getByRole('button', {name: 'Log a cook of E2E Tomato Pasta'})
+      .first();
+    await expect(button).toBeVisible();
+    const box = await button.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box!.x + box!.width).toBeLessThanOrEqual(390);
   });
 
   test('recipe titles stay readable at wider phone widths (430px)', async ({
@@ -103,12 +106,11 @@ test.describe('mobile web layout (390px)', () => {
       const title = [...document.querySelectorAll('*')].find(
         el => el.children.length === 0 && el.textContent === 'E2E Shared Salad',
       );
-      let el: Element | null = title ?? null;
-      // Walk up to the anchor wrapping the card.
-      while (el && el.tagName !== 'A') {
-        el = el.parentElement;
-      }
-      const rect = el?.getBoundingClientRect();
+      // The design-system row: the title sits in the row's link
+      // text block; its parent is the card's row container, whose box
+      // tracks the card itself.
+      const row = title?.closest('a')?.parentElement;
+      const rect = row?.getBoundingClientRect();
       return {width: rect?.width ?? 0, height: rect?.height ?? 0};
     });
     expect(cardBox.width).toBeGreaterThan(300);
