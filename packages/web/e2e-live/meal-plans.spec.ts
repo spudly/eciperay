@@ -77,18 +77,22 @@ test.describe('live meal plans', () => {
     await expect(page.getByText(recipe.title).first()).toBeVisible();
 
     // Shopping list: the recipe's ingredient appears and can be checked.
-    await page.getByRole('button', {name: 'Shopping list'}).click();
+    // The DS detail page renders the action in its href form (#248), so
+    // it is a link, not a button.
+    await page.getByRole('link', {name: 'Shopping list'}).click();
     await expect(page).toHaveURL(/\/shopping-list$/);
     await expect(page.getByText('CI Test Ingredient')).toBeVisible({
       timeout: 15_000,
     });
-    // Target the checkbox on the ingredient's own row: the list is
-    // generated from a persistent dataset, so "the first checkbox" is
-    // not a stable identity for this item.
-    const checkbox = page
-      .getByRole('listitem')
-      .filter({hasText: 'CI Test Ingredient'})
-      .getByRole('checkbox');
+    // Target the ingredient's own row: the list is generated from a
+    // persistent dataset, so "the first checkbox" is not a stable
+    // identity for this item. On the DS shopping-list page the row
+    // itself carries the checkbox semantics (role + aria-checked,
+    // accessible name "CI Test Ingredient, <quantity>") — there is no
+    // listitem wrapper or nested control to scope through.
+    const checkbox = page.getByRole('checkbox', {
+      name: /CI Test Ingredient/,
+    });
     await checkbox.check();
     await expect(checkbox).toBeChecked();
   });
