@@ -10,6 +10,7 @@ jest.mock('../lib/api');
 
 const mockList = api.tags.list as jest.Mock;
 const mockCreate = api.tags.create as jest.Mock;
+const mockUpdate = api.tags.update as jest.Mock;
 const mockDelete = api.tags.delete as jest.Mock;
 
 describe('TagsScreen', () => {
@@ -24,6 +25,7 @@ describe('TagsScreen', () => {
       },
     ]);
     mockCreate.mockResolvedValue({});
+    mockUpdate.mockResolvedValue({});
     mockDelete.mockImplementation(async () => {});
   });
 
@@ -36,6 +38,36 @@ describe('TagsScreen', () => {
     await waitFor(() => {
       expect(mockCreate).toHaveBeenCalledWith('Lunch', '#6366f1');
     });
+  });
+
+  test('renames tag in place through the inline edit form', async () => {
+    const {findByText, getByDisplayValue, getByText} =
+      await renderWithProviders(<TagsScreen />);
+    await fireEvent.press(await findByText('Edit'));
+    // The edit form is seeded from the tag (name + its indigo color,
+    // which crosses back to the stored hex at the boundary).
+    const editField = getByDisplayValue('Dinner');
+    await fireEvent.changeText(editField, 'Supper');
+    await fireEvent.press(getByText('Save'));
+    await waitFor(() => {
+      expect(mockUpdate).toHaveBeenCalledWith('t1', {
+        name: 'Supper',
+        color: '#6366f1',
+      });
+    });
+  });
+
+  test('cancelling an edit discards the draft', async () => {
+    const {findByText, getByDisplayValue, getByText, queryByText} =
+      await renderWithProviders(<TagsScreen />);
+    await fireEvent.press(await findByText('Edit'));
+    await fireEvent.changeText(getByDisplayValue('Dinner'), 'Supper');
+    await fireEvent.press(getByText('Cancel'));
+    await waitFor(() => {
+      expect(queryByText('Save')).toBeNull();
+    });
+    expect(mockUpdate).not.toHaveBeenCalled();
+    expect(await findByText('Dinner')).toBeTruthy();
   });
 
   test('deletes tag', async () => {
