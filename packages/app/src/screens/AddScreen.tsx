@@ -1,46 +1,40 @@
-import type {AddRecipeMenuOption} from '@eciperay/client';
-import type {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {
+  AddRecipeMenuPage,
+  type AddRecipeMenuPageOption,
+} from '@spudly/ui/pages';
 
-import {AddRecipeMenuPage} from '@spudly/ui/pages';
-import type {AddStackParamList} from '../navigation/types';
+import {addOptionHrefs} from '../lib/deepLinks';
 
-type AddProps = NativeStackScreenProps<AddStackParamList, 'AddScreen'>;
-
-const OPTIONS: AddRecipeMenuOption[] = [
+// Navigation crosses as hrefs (#248): each option carries its
+// in-app deep link (routed by the linking config in RootNavigator)
+// and the page renders real links — no press callback, so this
+// screen no longer needs its navigation prop.
+const OPTIONS: AddRecipeMenuPageOption[] = [
   {
     label: 'Manual entry',
     description: 'Type your recipe from scratch',
-    target: 'ManualEntry',
+    href: addOptionHrefs.manual,
   },
   {
     label: 'Import from URL',
     description: 'Paste a link to any recipe website',
-    target: 'ImportUrl',
+    href: addOptionHrefs.url,
   },
   {
     label: 'Import from image',
     description: 'Take a photo or use your library',
-    target: 'ImportImage',
+    href: addOptionHrefs.image,
   },
   {
     label: 'Import from text',
     description: 'Paste rich text from Word or the web',
-    target: 'ImportText',
+    href: addOptionHrefs.text,
   },
   {
     label: 'Generate with AI',
     description: 'Describe the recipe you want and let AI create it',
-    target: 'GenerateAi',
+    href: addOptionHrefs.ai,
   },
 ];
 
-export const AddScreen = ({navigation}: AddProps) => (
-  <AddRecipeMenuPage
-    options={OPTIONS}
-    onSelect={target => {
-      navigation.navigate(
-        target as keyof Omit<AddStackParamList, 'AddScreen' | 'ImportReview'>,
-      );
-    }}
-  />
-);
+export const AddScreen = () => <AddRecipeMenuPage options={OPTIONS} />;

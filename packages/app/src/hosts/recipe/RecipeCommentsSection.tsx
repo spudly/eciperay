@@ -9,7 +9,7 @@ import {
   Button as DsButton,
   Card as DsCard,
   CommentItem as DsCommentItem,
-  MultilineField as DsMultilineField,
+  TextAreaField as DsTextAreaField,
   Text as DsText,
   tokens,
 } from '@spudly/ui';
@@ -138,7 +138,7 @@ export const RecipeCommentsSection = ({recipeId, ownerUserId}: Props) => {
       ))}
       {currentUserId ? (
         <YStack>
-          <DsMultilineField
+          <DsTextAreaField
             marginBlockEnd="$2"
             placeholder="Add a comment"
             value={draft}

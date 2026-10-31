@@ -1,4 +1,5 @@
 import React from 'react';
+import {Linking} from 'react-native';
 import {fireEvent, waitFor, act} from '@testing-library/react-native';
 import {queryKeys, RECIPE_LIST_PAGE_SIZE} from '@eciperay/client';
 
@@ -6,11 +7,10 @@ import {makeRecipeDetail} from '../__tests__/fixtures/recipe';
 import {
   flushQueryClient,
   makeQueryClient,
-  makeStackProps,
   renderWithProviders,
 } from '../__tests__/testUtils';
 import {api} from '../lib/api';
-import type {RecipesStackParamList} from '../navigation/types';
+import {recipeHref} from '../lib/deepLinks';
 
 import {RecipesScreen} from './RecipesScreen';
 
@@ -20,12 +20,6 @@ jest.mock('../lib/api');
 
 const mockList = api.recipes.list as jest.Mock;
 const mockDelete = api.recipes.delete as jest.Mock;
-const mockNavigate = jest.fn();
-const stackProps = makeStackProps<RecipesStackParamList, 'RecipesList'>(
-  'RecipesList',
-  undefined,
-  {navigate: mockNavigate},
-);
 
 // RNTL v14 renders host elements only: the list is the host scroll view
 // that receives the FlatList onEndReached prop.
@@ -40,9 +34,14 @@ const triggerEndReached = async (list: {
   });
 };
 
+// Since @spudly/ui 1.15.0 the list rows are links (#248): a row is
+// found by its accessible label (the recipe title) rather than by
+// text, and pressing it opens the recipe's deep link through
+// Linking — the screen itself takes no navigation prop anymore.
 describe('RecipesScreen', () => {
   beforeEach(() => {
     mockList.mockResolvedValue([]);
+    jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
   });
 
   test('renders list when the form picker cache holds a flat recipe array', async () => {
@@ -54,16 +53,16 @@ describe('RecipesScreen', () => {
     client.setQueryData(queryKeys.recipeFormOptions(), [
       makeRecipeDetail({title: 'PickerCached'}),
     ]);
-    const {findByText} = await renderWithProviders(
-      <RecipesScreen {...stackProps} />,
+    const {findByLabelText} = await renderWithProviders(
+      <RecipesScreen />,
       client,
     );
-    expect(await findByText('Pasta')).toBeTruthy();
+    expect(await findByLabelText('Pasta')).toBeTruthy();
   });
 
   test('renders search input', async () => {
     const {findByPlaceholderText} = await renderWithProviders(
-      <RecipesScreen {...stackProps} />,
+      <RecipesScreen />,
     );
     expect(await findByPlaceholderText('Search recipes…')).toBeTruthy();
   });
@@ -75,10 +74,10 @@ describe('RecipesScreen', () => {
         imageUrl: 'https://cdn.example/cake.jpg',
       }),
     ]);
-    const {findByText, container} = await renderWithProviders(
-      <RecipesScreen {...stackProps} />,
+    const {findByLabelText, container} = await renderWithProviders(
+      <RecipesScreen />,
     );
-    await findByText('Cake');
+    await findByLabelText('Cake');
     expect(container.queryAll(node => node.type === 'Image')[0]).toBeTruthy();
   });
 
@@ -86,44 +85,36 @@ describe('RecipesScreen', () => {
     mockList.mockResolvedValue([
       makeRecipeDetail({title: 'Pasta', cookTimeMin: 25}),
     ]);
-    const {findByText} = await renderWithProviders(
-      <RecipesScreen {...stackProps} />,
-    );
-    expect(await findByText(/25 min/)).toBeTruthy();
+    const {findByLabelText} = await renderWithProviders(<RecipesScreen />);
+    expect(await findByLabelText(/25 min/)).toBeTruthy();
   });
 
   test('shows recipes without cook time', async () => {
     mockList.mockResolvedValue([
       makeRecipeDetail({title: 'Salad', cookTimeMin: null}),
     ]);
-    const {findByText, queryByText} = await renderWithProviders(
-      <RecipesScreen {...stackProps} />,
+    const {findByLabelText, queryByLabelText} = await renderWithProviders(
+      <RecipesScreen />,
     );
-    expect(await findByText('Salad')).toBeTruthy();
-    expect(queryByText(/min/)).toBeNull();
+    expect(await findByLabelText('Salad')).toBeTruthy();
+    expect(queryByLabelText(/min/)).toBeNull();
   });
 
   test('shows recipes from API', async () => {
     mockList.mockResolvedValue([
       makeRecipeDetail({title: 'Pasta', cookTimeMin: null}),
     ]);
-    const {findByText} = await renderWithProviders(
-      <RecipesScreen {...stackProps} />,
-    );
-    expect(await findByText('Pasta')).toBeTruthy();
+    const {findByLabelText} = await renderWithProviders(<RecipesScreen />);
+    expect(await findByLabelText('Pasta')).toBeTruthy();
   });
 
-  test('navigates to RecipeDetail on card press', async () => {
+  test('opens the recipe deep link on card press', async () => {
     mockList.mockResolvedValue([
       makeRecipeDetail({id: 'recipe-1', title: 'Tacos'}),
     ]);
-    const {findByText} = await renderWithProviders(
-      <RecipesScreen {...stackProps} />,
-    );
-    await fireEvent.press(await findByText('Tacos'));
-    expect(mockNavigate).toHaveBeenCalledWith('RecipeDetail', {
-      recipeId: 'recipe-1',
-    });
+    const {findByLabelText} = await renderWithProviders(<RecipesScreen />);
+    await fireEvent.press(await findByLabelText('Tacos'));
+    expect(Linking.openURL).toHaveBeenCalledWith(recipeHref('recipe-1'));
   });
 
   test('shows loading state while fetching', async () => {
@@ -134,9 +125,7 @@ describe('RecipesScreen', () => {
           /* never resolves */
         }),
     );
-    const {getByLabelText} = await renderWithProviders(
-      <RecipesScreen {...stackProps} />,
-    );
+    const {getByLabelText} = await renderWithProviders(<RecipesScreen />);
 
     await act(() => {
       jest.advanceTimersByTime(100);
@@ -156,10 +145,10 @@ describe('RecipesScreen', () => {
       }
       return [makeRecipeDetail({id: 'recipe-20', title: 'Recipe 20'})];
     });
-    const {findByText, container} = await renderWithProviders(
-      <RecipesScreen {...stackProps} />,
+    const {findByLabelText, container} = await renderWithProviders(
+      <RecipesScreen />,
     );
-    await findByText('Recipe 0');
+    await findByLabelText('Recipe 0');
     const list = findList(container);
     await triggerEndReached(list);
     await waitFor(() => {
@@ -174,10 +163,10 @@ describe('RecipesScreen', () => {
 
   test('does not load more when there is no next page', async () => {
     mockList.mockResolvedValue([makeRecipeDetail({title: 'Only Recipe'})]);
-    const {findByText, container} = await renderWithProviders(
-      <RecipesScreen {...stackProps} />,
+    const {findByLabelText, container} = await renderWithProviders(
+      <RecipesScreen />,
     );
-    await findByText('Only Recipe');
+    await findByLabelText('Only Recipe');
     await triggerEndReached(findList(container));
     await waitFor(() => {
       expect(mockList).toHaveBeenCalledTimes(1);
@@ -203,11 +192,9 @@ describe('RecipesScreen', () => {
       return secondPagePromise;
     });
     const client = makeQueryClient();
-    const {findByText, getByLabelText, container} = await renderWithProviders(
-      <RecipesScreen {...stackProps} />,
-      client,
-    );
-    await findByText('Recipe 0');
+    const {findByLabelText, getByLabelText, container} =
+      await renderWithProviders(<RecipesScreen />, client);
+    await findByLabelText('Recipe 0');
     const list = findList(container);
     await act(async () => {
       list.props.onEndReached?.();
@@ -236,11 +223,11 @@ describe('RecipesScreen', () => {
       });
     });
     const client = makeQueryClient();
-    const {findByText, container} = await renderWithProviders(
-      <RecipesScreen {...stackProps} />,
+    const {findByLabelText, container} = await renderWithProviders(
+      <RecipesScreen />,
       client,
     );
-    await findByText('Recipe 0');
+    await findByLabelText('Recipe 0');
     const list = findList(container);
     await triggerEndReached(list);
     await waitFor(() => {
@@ -260,9 +247,9 @@ describe('RecipesScreen', () => {
       }
       return [makeRecipeDetail({title: 'Pasta'})];
     });
-    const {findByText, getByText, getByPlaceholderText} =
-      await renderWithProviders(<RecipesScreen {...stackProps} />);
-    await findByText('Pasta');
+    const {findByLabelText, getByText, getByPlaceholderText} =
+      await renderWithProviders(<RecipesScreen />);
+    await findByLabelText('Pasta');
     await fireEvent.changeText(
       getByPlaceholderText('Search recipes…'),
       'Nonexistent Recipe',
@@ -283,10 +270,10 @@ describe('RecipesScreen', () => {
 
   test('offers no delete action on list rows — deleting lives on the recipe detail screen', async () => {
     mockList.mockResolvedValue([makeRecipeDetail({title: 'Soup'})]);
-    const {findByText, queryByText} = await renderWithProviders(
-      <RecipesScreen {...stackProps} />,
+    const {findByLabelText, queryByText} = await renderWithProviders(
+      <RecipesScreen />,
     );
-    expect(await findByText('Soup')).toBeTruthy();
+    expect(await findByLabelText('Soup')).toBeTruthy();
     // @spudly/ui 1.8.0 removed the list row's Delete action and the
     // `onRecipeDelete` prop; the screen no longer wires any delete
     // mutation to the list.

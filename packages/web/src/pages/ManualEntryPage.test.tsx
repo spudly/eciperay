@@ -14,11 +14,11 @@ vi.mock('@eciperay/client', async importOriginal => {
 
 const mockUploadRecipeImage = vi.mocked(uploadRecipeImage);
 
-// The design system form labels its title input "Title"; in jsdom the
-// label lands in the accessibilitylabel attribute rather than an ARIA
-// role/name (the same leak the TagsPage tests work around).
-const titleField = () =>
-  document.querySelector<HTMLInputElement>('[accessibilitylabel="Title"]');
+// The design system form labels its title input "Title"; since
+// @spudly/ui 1.15 the label is a real <label> tied to the input, so a
+// standard label query finds the field (before the bump the label
+// leaked into a raw accessibilitylabel attribute in jsdom).
+const titleField = () => screen.getByLabelText('Title');
 
 describe('ManualEntryPage', () => {
   beforeEach(() => {
@@ -48,7 +48,12 @@ describe('ManualEntryPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Recipe Created')).toBeInTheDocument();
     });
-  });
+    // These two tests drive the full DS RecipeFormPage through
+    // userEvent typing; since the @spudly/ui 1.15 bump the form's
+    // render cost pushes them past the 5s default when the suite
+    // runs files in parallel on a loaded machine (they pass
+    // standalone), so they carry an explicit timeout.
+  }, 15_000);
 
   test('uploads a pending image after the recipe is created', async () => {
     await renderWithProviders(
@@ -82,5 +87,5 @@ describe('ManualEntryPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Recipe Created')).toBeInTheDocument();
     });
-  });
+  }, 15_000);
 });

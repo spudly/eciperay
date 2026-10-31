@@ -24,11 +24,11 @@ const renderEditVersion = (versionId = 'version-draft-1') =>
     {route: `/recipes/recipe-uuid-1/versions/${versionId}/edit`},
   );
 
-// The design system form labels its title input "Title"; in jsdom the
-// label lands in the accessibilitylabel attribute rather than an ARIA
-// role/name (the same leak the TagsPage tests work around).
-const titleField = () =>
-  document.querySelector<HTMLInputElement>('[accessibilitylabel="Title"]');
+// The design system form labels its title input "Title"; since
+// @spudly/ui 1.15 the label is a real <label> tied to the input, so a
+// standard label query finds the field (before the bump the label
+// leaked into a raw accessibilitylabel attribute in jsdom).
+const titleField = () => screen.getByLabelText('Title');
 
 describe('EditVersionPage', () => {
   test('blocks editing non-draft versions', async () => {
@@ -36,8 +36,13 @@ describe('EditVersionPage', () => {
     expect(
       await screen.findByText('This version can no longer be edited.'),
     ).toBeInTheDocument();
-    await userEvent.click(screen.getByText('Back to recipe'));
-    expect(await screen.findByText('Saved')).toBeInTheDocument();
+    // The back control is a real link since the @spudly/ui 1.15
+    // navigation rework (design-system#248): assert its destination
+    // rather than a click-through navigation.
+    expect(screen.getByRole('link', {name: 'Back to recipe'})).toHaveAttribute(
+      'href',
+      '/recipes/recipe-uuid-1',
+    );
   });
 
   test('loads and saves draft versions', async () => {

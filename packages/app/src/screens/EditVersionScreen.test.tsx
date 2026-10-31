@@ -1,4 +1,5 @@
 import React from 'react';
+import {Linking} from 'react-native';
 import {fireEvent, waitFor} from '@testing-library/react-native';
 
 import {
@@ -7,6 +8,7 @@ import {
 } from '../__tests__/fixtures/recipe';
 import {makeStackProps, renderWithProviders} from '../__tests__/testUtils';
 import {api} from '../lib/api';
+import {recipeHref} from '../lib/deepLinks';
 import type {RecipesStackParamList} from '../navigation/types';
 
 import {EditVersionScreen} from './EditVersionScreen';
@@ -149,8 +151,8 @@ describe('EditVersionScreen', () => {
       await findByText('This version can no longer be edited.'),
     ).toBeTruthy();
     await fireEvent.press(await findByText('Back to recipe'));
-    expect(mockNavigate).toHaveBeenCalledWith('RecipeDetail', {
-      recipeId: 'recipe-uuid-1',
-    });
+    // The back control is an href now (#248): the press opens the
+    // recipe's deep link through Linking.
+    expect(Linking.openURL).toHaveBeenCalledWith(recipeHref('recipe-uuid-1'));
   });
 });

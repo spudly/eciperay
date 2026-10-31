@@ -4,15 +4,17 @@ import {
   type MealsHubTab,
 } from '@eciperay/client';
 import type {MealPlan} from '@eciperay/types';
-import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {MealsHubPage, type MealPlansPageItem} from '@spudly/ui/pages';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useMemo, useState} from 'react';
 
 import {api} from '../lib/api';
-import type {MealsStackParamList} from '../navigation/types';
-
-type Props = NativeStackScreenProps<MealsStackParamList, 'MealsHub'>;
+import {
+  mealEditHref,
+  mealHref,
+  mealPlanEditHref,
+  mealPlanHref,
+} from '../lib/deepLinks';
 
 /**
  * One plan row's meta line, composed screen-side for the DS pages: the entry
@@ -27,7 +29,7 @@ const formatMealPlanSubtitle = (plan: MealPlan) =>
     plan.startsOn && plan.endsOn ? ` · ${plan.startsOn} – ${plan.endsOn}` : ''
   }${formatSimpleNutrition(plan.nutrition) ? ` · ${formatSimpleNutrition(plan.nutrition)}` : ''}`;
 
-export const MealsHubScreen = ({navigation}: Props) => {
+export const MealsHubScreen = () => {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<MealsHubTab>('meals');
 
@@ -62,6 +64,7 @@ export const MealsHubScreen = ({navigation}: Props) => {
 
   const planItems: MealPlansPageItem[] = plans.map(plan => ({
     id: plan.id,
+    href: mealPlanHref(plan.id),
     title: plan.title,
     subtitle: formatMealPlanSubtitle(plan),
   }));
@@ -72,6 +75,7 @@ export const MealsHubScreen = ({navigation}: Props) => {
       onSelectTab={setActiveTab}
       meals={meals.map(meal => ({
         id: meal.id,
+        href: mealHref(meal.id),
         title: meal.title,
         subtitle: `${meal.memberCount} recipe${
           meal.memberCount === 1 ? '' : 's'
@@ -83,18 +87,8 @@ export const MealsHubScreen = ({navigation}: Props) => {
       }))}
       plans={planItems}
       isLoading={isLoading}
-      onCreateMeal={() => {
-        navigation.navigate('MealEdit', {});
-      }}
-      onCreatePlan={() => {
-        navigation.navigate('MealPlanEdit', {});
-      }}
-      onMealPress={mealId => {
-        navigation.navigate('MealDetail', {mealId});
-      }}
-      onPlanPress={planId => {
-        navigation.navigate('MealPlanDetail', {planId});
-      }}
+      createMealHref={mealEditHref()}
+      createPlanHref={mealPlanEditHref()}
       onDeleteMeal={id => {
         deleteMealMutation.mutate(id);
       }}

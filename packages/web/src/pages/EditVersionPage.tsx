@@ -51,9 +51,7 @@ export const EditVersionPage = () => {
       }
       parentVersionNumber={parentVersion?.versionNumber}
       notEditable={!version.isEditable}
-      onBack={() => {
-        void navigate(`/recipes/${recipeId}`);
-      }}
+      backHref={`/recipes/${recipeId}`}
     >
       <RecipeFormHost
         initial={recipeVersionDetailToInput(version)}

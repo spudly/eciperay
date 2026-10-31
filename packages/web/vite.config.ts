@@ -80,7 +80,31 @@ export default defineConfig(({mode}) => {
     server: {port, proxy: {'/api': createApiProxy(apiTarget)}},
     resolve: {
       dedupe: ['react', 'react-dom', '@tanstack/react-query'],
+      // Platform extensions, web first (the design system's web
+      // Storybook makes the same choice): @spudly/ui 1.15's root graph
+      // reaches react-native-svg, whose package ships .web.js
+      // variants of its entry modules; resolving those keeps the
+      // native fabric codegen specs — which import APIs
+      // react-native-web does not export — out of the web bundle.
+      extensions: [
+        '.web.tsx',
+        '.web.ts',
+        '.web.js',
+        '.tsx',
+        '.ts',
+        '.jsx',
+        '.js',
+        '.json',
+      ],
       alias: [
+        // react-native-svg's sound module is native-only and breaks
+        // the web build (TurboModuleRegistry is not exported by
+        // react-native-web) — see svgSoundModuleStub.ts. This entry
+        // must precede the react-native alias below.
+        {
+          find: /^.*NativeSvgSoundModule(\.js)?$/,
+          replacement: path.join(pkgRoot, 'svgSoundModuleStub.ts'),
+        },
         // Design system page components (@spudly/ui/pages) render React
         // Native primitives such as FlatList; the web build resolves
         // react-native to react-native-web, the same substitution the
@@ -88,6 +112,13 @@ export default defineConfig(({mode}) => {
         // subpath imports (react-native/...) are not used and must not
         // be rewritten.
         {find: /^react-native$/, replacement: 'react-native-web'},
+        // @spudly/ui 1.15's Icon base imports react-native-svg;
+        // resolve the package to its ESM entry so the extension
+        // resolution above applies through its module graph.
+        {
+          find: /^react-native-svg$/,
+          replacement: 'react-native-svg/lib/module/index.js',
+        },
         {
           find: '@eciperay/client',
           replacement: path.join(monoRoot, 'packages/client/src/index.ts'),

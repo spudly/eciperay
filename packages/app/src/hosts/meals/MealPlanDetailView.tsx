@@ -1,11 +1,26 @@
-import type {MealPlanDetailViewProps} from '@eciperay/client';
 import {formatSimpleNutrition} from '@eciperay/client';
-import type {NutritionGoalFieldProgress} from '@eciperay/types';
+import type {MealPlanDetail, NutritionGoalFieldProgress} from '@eciperay/types';
 import {
   MealPlanDetailPage,
   type MealPlanDetailPageEntry,
   type MealPlanDetailPageNutritionGoals,
 } from '@spudly/ui/pages';
+
+/**
+ * The app host's own props. The shared client view-props type keeps the
+ * callback shape because the web mirror's DOM view consumes it; this host
+ * drives the DS page, whose navigation crosses as hrefs since @spudly/ui 1.15.0
+ * (#248) — so the screen composes the destinations as deep links and the
+ * entries' hrefs are built here from the entry's kind and target id through
+ * `entryHref`.
+ */
+type MealPlanDetailViewOwnProps = {
+  plan: MealPlanDetail;
+  editHref: string;
+  shoppingListHref: string;
+  goalsHref: string;
+  entryHref: (kind: 'meal' | 'recipe', targetId: string) => string;
+};
 
 /**
  * The Meal plan detail screen's view (#49, Wave A): the design system's
@@ -60,12 +75,11 @@ const goalValueLabel = (field: NutritionGoalFieldProgress): string =>
 
 export const MealPlanDetailView = ({
   plan,
-  onEdit,
-  onShoppingList,
-  onMealPress,
-  onRecipePress,
-  onSetGoalsPress,
-}: MealPlanDetailViewProps) => {
+  editHref,
+  shoppingListHref,
+  goalsHref,
+  entryHref,
+}: MealPlanDetailViewOwnProps) => {
   const nutritionLabel = formatSimpleNutrition(plan.nutrition) ?? undefined;
 
   const progress = plan.goalProgress;
@@ -139,6 +153,7 @@ export const MealPlanDetailView = ({
         id: entry.id,
         kind: 'meal',
         targetId: entry.mealId,
+        href: entryHref('meal', entry.mealId),
         title: entry.title,
         subtitle: `Qty ${entry.quantity} · ${entry.memberCount} recipes${nutritionSuffix}`,
       };
@@ -147,6 +162,7 @@ export const MealPlanDetailView = ({
       id: entry.id,
       kind: 'recipe',
       targetId: entry.recipeId,
+      href: entryHref('recipe', entry.recipeId),
       title: entry.title,
       subtitle: `Qty ${entry.quantity} · ${entry.servings} servings${nutritionSuffix}`,
       isUnavailable: entry.accessLost,
@@ -166,12 +182,10 @@ export const MealPlanDetailView = ({
       nutritionLabel={nutritionLabel}
       nutritionGoals={nutritionGoals}
       goalsSectionVisibility={goalsSectionVisibility}
-      onSetGoalsPress={onSetGoalsPress}
-      onShoppingListPress={onShoppingList}
-      onEditPress={onEdit}
+      goalsHref={goalsHref}
+      shoppingListHref={shoppingListHref}
+      editHref={editHref}
       entries={entries}
-      onMealPress={onMealPress}
-      onRecipePress={onRecipePress}
     />
   );
 };

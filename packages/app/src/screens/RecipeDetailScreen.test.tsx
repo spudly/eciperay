@@ -1,5 +1,5 @@
 import React from 'react';
-import {Alert} from 'react-native';
+import {Alert, Linking} from 'react-native';
 import {fireEvent, waitFor} from '@testing-library/react-native';
 
 import {
@@ -16,6 +16,12 @@ import {
   renderWithProviders,
 } from '../__tests__/testUtils';
 import {api} from '../lib/api';
+import {
+  recipeCookHref,
+  recipeEditHref,
+  recipeTweakAiHref,
+  recipeVersionEditHref,
+} from '../lib/deepLinks';
 import type {RecipesStackParamList} from '../navigation/types';
 
 import {RecipeDetailScreen} from './RecipeDetailScreen';
@@ -52,6 +58,7 @@ describe('RecipeDetailScreen', () => {
       disclaimer: 'Estimate only',
     });
     mockListCookLogs.mockResolvedValue([]);
+    jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
   });
 
   test('renders recipe title in overview tab', async () => {
@@ -70,19 +77,21 @@ describe('RecipeDetailScreen', () => {
     expect(await findByText(/Flour/)).toBeTruthy();
   });
 
-  test('navigates to cooking mode with versionId', async () => {
+  // The overview's navigation actions are deep-link hrefs now
+  // (#248): a press opens the URL through Linking and the
+  // container's linking config routes it to the same screens (the
+  // cooking link's query params arrive as its route params).
+  test('opens the cooking-mode deep link with versionId and servings', async () => {
     const {findByText} = await renderWithProviders(
       <RecipeDetailScreen {...stackProps} />,
     );
     await fireEvent.press(await findByText('Start Cooking'));
-    expect(mockNavigate).toHaveBeenCalledWith('CookingMode', {
-      recipeId: 'recipe-uuid-1',
-      versionId: VERSION_ID,
-      servings: 4,
-    });
+    expect(Linking.openURL).toHaveBeenCalledWith(
+      recipeCookHref('recipe-uuid-1', VERSION_ID, 4),
+    );
   });
 
-  test('passes scaled servings to cooking mode', async () => {
+  test('passes scaled servings to the cooking-mode deep link', async () => {
     const {findByText, getByText} = await renderWithProviders(
       <RecipeDetailScreen {...stackProps} />,
     );
@@ -92,24 +101,22 @@ describe('RecipeDetailScreen', () => {
     // No return trip to an overview tab: the single-scroll page keeps
     // every section mounted, so Start Cooking is already on screen.
     await fireEvent.press(await findByText('Start Cooking'));
-    expect(mockNavigate).toHaveBeenCalledWith('CookingMode', {
-      recipeId: 'recipe-uuid-1',
-      versionId: VERSION_ID,
-      servings: 8,
-    });
+    expect(Linking.openURL).toHaveBeenCalledWith(
+      recipeCookHref('recipe-uuid-1', VERSION_ID, 8),
+    );
   });
 
-  test('navigates to edit recipe screen for active versions', async () => {
+  test('opens the edit-recipe deep link for active versions', async () => {
     const {findByText} = await renderWithProviders(
       <RecipeDetailScreen {...stackProps} />,
     );
     await fireEvent.press(await findByText('Edit'));
-    expect(mockNavigate).toHaveBeenCalledWith('EditRecipe', {
-      recipeId: 'recipe-uuid-1',
-    });
+    expect(Linking.openURL).toHaveBeenCalledWith(
+      recipeEditHref('recipe-uuid-1'),
+    );
   });
 
-  test('navigates to edit draft screen', async () => {
+  test('opens the edit-draft deep link for an existing draft', async () => {
     const draftId = 'version-draft-1';
     mockListVersions.mockResolvedValue([
       makeRecipeVersionSummary(),
@@ -155,10 +162,9 @@ describe('RecipeDetailScreen', () => {
       {timeout: 5000},
     );
     await fireEvent.press(await findByText('Edit draft'));
-    expect(mockNavigate).toHaveBeenCalledWith('EditVersion', {
-      recipeId: 'recipe-uuid-1',
-      versionId: draftId,
-    });
+    expect(Linking.openURL).toHaveBeenCalledWith(
+      recipeVersionEditHref('recipe-uuid-1', draftId),
+    );
   });
 
   test('switches to instructions, cook history, and nutrition tabs', async () => {
@@ -219,7 +225,7 @@ describe('RecipeDetailScreen', () => {
     );
   });
 
-  test('navigates to tweak AI and edit version flows', async () => {
+  test('opens the tweak-AI deep link and keeps the tweak-manually flow', async () => {
     mockCreateVersion.mockResolvedValue(
       makeRecipeVersionSummary({id: 'version-draft-1'}),
     );
@@ -227,9 +233,9 @@ describe('RecipeDetailScreen', () => {
       <RecipeDetailScreen {...stackProps} />,
     );
     await fireEvent.press(await findByText('Tweak with AI'));
-    expect(mockNavigate).toHaveBeenCalledWith('TweakAi', {
-      recipeId: 'recipe-uuid-1',
-    });
+    expect(Linking.openURL).toHaveBeenCalledWith(
+      recipeTweakAiHref('recipe-uuid-1'),
+    );
     await fireEvent.press(await findByText('Tweak manually'));
     await waitFor(() => {
       expect(mockCreateVersion).toHaveBeenCalled();

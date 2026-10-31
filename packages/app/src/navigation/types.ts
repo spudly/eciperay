@@ -44,3 +44,15 @@ export type RootTabParamList = {
   Profile: NavigatorScreenParams<ProfileStackParamList>;
   Feedback: undefined;
 };
+
+export type AuthStackParamList = {
+  SignIn: undefined;
+  SignUp: undefined;
+  ForgotPassword: undefined;
+};
+
+export type RootStackParamList = {
+  Main: NavigatorScreenParams<RootTabParamList>;
+  Auth: NavigatorScreenParams<AuthStackParamList>;
+  ResetPassword: undefined;
+};

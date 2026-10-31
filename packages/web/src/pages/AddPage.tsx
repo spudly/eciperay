@@ -1,45 +1,36 @@
-import type {AddRecipeMenuOption} from '@eciperay/client';
-import {useNavigate} from 'react-router-dom';
+import {
+  AddRecipeMenuPage,
+  type AddRecipeMenuPageOption,
+} from '@spudly/ui/pages';
 
-import {AddRecipeMenuPage} from '@spudly/ui/pages';
-
-const OPTIONS: AddRecipeMenuOption[] = [
+// Navigation crosses as hrefs (#248): each option carries its route
+// and the page renders real links — no press callback.
+const OPTIONS: AddRecipeMenuPageOption[] = [
   {
     label: 'Manual entry',
     description: 'Type in a recipe from scratch',
-    target: '/add/manual',
+    href: '/add/manual',
   },
   {
     label: 'Import from URL',
     description: 'Paste a recipe link',
-    target: '/add/url',
+    href: '/add/url',
   },
   {
     label: 'Import from image',
     description: 'Upload a photo of a recipe',
-    target: '/add/image',
+    href: '/add/image',
   },
   {
     label: 'Import from text',
     description: 'Paste rich text from Word or the web',
-    target: '/add/text',
+    href: '/add/text',
   },
   {
     label: 'Generate with AI',
     description: 'Describe the recipe you want and let AI create it',
-    target: '/add/ai',
+    href: '/add/ai',
   },
 ];
 
-export const AddPage = () => {
-  const navigate = useNavigate();
-
-  return (
-    <AddRecipeMenuPage
-      options={OPTIONS}
-      onSelect={target => {
-        void navigate(target);
-      }}
-    />
-  );
-};
+export const AddPage = () => <AddRecipeMenuPage options={OPTIONS} />;

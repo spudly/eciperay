@@ -48,7 +48,6 @@ describe('RecipesListView element presence (#162)', () => {
           isLoading={false}
           recipes={[makeRecipeDetail({title: 'Pasta Night'})]}
           isFetchingNextPage={false}
-          onRecipePress={jest.fn()}
           onLoadMore={jest.fn()}
         />,
       );
@@ -70,8 +69,9 @@ describe('RecipesListView element presence (#162)', () => {
     expect(await findByText('Newest')).toBeTruthy();
     expect(await findByText('Order')).toBeTruthy();
     expect(await findByText('High to low')).toBeTruthy();
-    // First recipe card.
-    expect(getByText('Pasta Night')).toBeTruthy();
+    // First recipe card: rows are links since @spudly/ui 1.15.0, so
+    // the card is found by its accessible label (the recipe title).
+    expect(getByLabelText('Pasta Night')).toBeTruthy();
   });
 });
 
@@ -103,7 +103,6 @@ describe('RecipesListView list scrollability (#188)', () => {
         isLoading={false}
         recipes={[makeRecipeDetail({title: 'Pasta Night'})]}
         isFetchingNextPage={false}
-        onRecipePress={jest.fn()}
         onLoadMore={jest.fn()}
       />,
     );
@@ -138,7 +137,6 @@ describe('RecipesListView list scrollability (#188)', () => {
         isLoading
         recipes={[]}
         isFetchingNextPage={false}
-        onRecipePress={jest.fn()}
         onLoadMore={jest.fn()}
       />,
     );
@@ -194,7 +192,6 @@ describe('RecipesListView cook-log accessory (#49 stage 2)', () => {
         isLoading={false}
         recipes={[pasta, salad]}
         isFetchingNextPage={false}
-        onRecipePress={jest.fn()}
         onLoadMore={jest.fn()}
       />,
     );
@@ -230,22 +227,22 @@ describe('RecipesListView cook-log accessory (#49 stage 2)', () => {
       communityRating: {average: 4.5, count: 3, hasStaleRatings: false},
       satietyScore: 60,
     });
-    const {getByLabelText, getByText, queryByText} = await renderWithProviders(
-      <RecipesListView
-        {...controls}
-        isLoading={false}
-        recipes={[rated]}
-        isFetchingNextPage={false}
-        onRecipePress={jest.fn()}
-        onLoadMore={jest.fn()}
-      />,
-    );
+    const {getByLabelText, getByText, queryByLabelText} =
+      await renderWithProviders(
+        <RecipesListView
+          {...controls}
+          isLoading={false}
+          recipes={[rated]}
+          isFetchingNextPage={false}
+          onLoadMore={jest.fn()}
+        />,
+      );
 
     // The rating is passed as the item's `rating`, so the page renders
     // the stars from it and the subtitle keeps only the satiety
     // segment — the rating text must not appear a second time.
-    expect(getByText(/Satiety 60/)).toBeTruthy();
-    expect(queryByText(/4\.5★/)).toBeNull();
+    expect(getByLabelText(/Satiety 60/)).toBeTruthy();
+    expect(queryByLabelText(/4\.5★/)).toBeNull();
     expect(
       getByLabelText('Log a cook of Rated Stew, rated 4.5 out of 5 stars'),
     ).toBeTruthy();
@@ -338,7 +335,6 @@ describe('RecipesListView cook-log accessory (#49 stage 2)', () => {
         isLoading={false}
         recipes={list}
         isFetchingNextPage={false}
-        onRecipePress={jest.fn()}
         onLoadMore={jest.fn()}
       />
     );

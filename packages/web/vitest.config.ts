@@ -24,11 +24,44 @@ export default defineConfig({
   envDir: '../..',
   resolve: {
     dedupe: ['react', 'react-dom', '@tanstack/react-query'],
+    // Platform extensions, web first (the design system's web
+    // Storybook makes the same choice): @spudly/ui 1.15's root graph
+    // reaches react-native-svg, whose package ships .web.js variants
+    // of its entry modules; resolving those keeps the native fabric
+    // codegen specs — which import APIs react-native-web does not
+    // export — out of the web module graph.
+    extensions: [
+      '.web.tsx',
+      '.web.ts',
+      '.web.js',
+      '.tsx',
+      '.ts',
+      '.jsx',
+      '.js',
+      '.json',
+    ],
     alias: [
+      // react-native-svg's sound module is native-only and breaks
+      // web resolution (TurboModuleRegistry is not exported by
+      // react-native-web) — see svgSoundModuleStub.ts. This entry
+      // must precede the react-native alias below.
+      {
+        find: /^.*NativeSvgSoundModule(\.js)?$/,
+        replacement: path.join(pkgRoot, 'svgSoundModuleStub.ts'),
+      },
       // Same react-native substitution as vite.config.ts: design system
       // page components (@spudly/ui/pages) render React Native
       // primitives, resolved to react-native-web in web contexts.
       {find: /^react-native$/, replacement: 'react-native-web'},
+      // @spudly/ui 1.15's Icon base imports react-native-svg. Its
+      // CommonJS entry runtime-requires react-native (unparseable
+      // Flow syntax in Node, and unreachable by the alias above), so
+      // resolve the package to its ESM entry, whose module graph
+      // Vite processes — and aliases — end to end.
+      {
+        find: /^react-native-svg$/,
+        replacement: 'react-native-svg/lib/module/index.js',
+      },
       {
         find: '@eciperay/client',
         replacement: path.join(monoRoot, 'packages/client/src/index.ts'),
@@ -66,6 +99,12 @@ export default defineConfig({
           /@dnd-kit/,
           /@spudly/,
           /react-native-web/,
+          // @spudly/ui 1.15's root graph reaches react-native-svg
+          // (its Icon base, via the accordion/disclosure icons);
+          // externalized it loads natively and pulls the real
+          // react-native package, which Node cannot parse — the
+          // same failure the comment above describes.
+          /react-native-svg/,
         ],
       },
     },

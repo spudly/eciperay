@@ -4,6 +4,7 @@ import {Alert} from 'react-native';
 import {ForgotPasswordPage} from '@spudly/ui/pages';
 
 import {AUTH_DEEP_LINK_REDIRECT_URL} from '../../lib/authDeepLink';
+import {signInHref} from '../../lib/deepLinks';
 import {normalizeAuthEmail} from '../../lib/normalizeAuthInput';
 import {supabase} from '../../lib/supabase';
 
@@ -43,9 +44,7 @@ export const ForgotPasswordScreen = ({navigation}: ForgotProps) => {
       onSubmit={() => {
         void handleReset();
       }}
-      onBackPress={() => {
-        navigation.goBack();
-      }}
+      signInHref={signInHref}
     />
   );
 };

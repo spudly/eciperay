@@ -1,8 +1,10 @@
 import React from 'react';
+import {Linking} from 'react-native';
 import {fireEvent} from '@testing-library/react-native';
 
 import {makeStackProps, renderWithProviders} from '../__tests__/testUtils';
 import {api} from '../lib/api';
+import {mealCookHref, mealEditHref, recipeHref} from '../lib/deepLinks';
 import type {MealsStackParamList} from '../navigation/types';
 
 import {MealDetailScreen} from './MealDetailScreen';
@@ -59,18 +61,23 @@ describe('MealDetailScreen', () => {
     expect(await findByText('Cook meal')).toBeTruthy();
   });
 
-  test('handles navigation actions', async () => {
-    const {findByText} = await renderWithProviders(
+  // The page's navigation crosses as deep-link hrefs now (#248): a
+  // press opens the URL through Linking and the container's linking
+  // config routes it to the same screens the old callbacks used.
+  test('opens deep links for the navigation actions', async () => {
+    jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
+    const {findByText, findByRole} = await renderWithProviders(
       <MealDetailScreen {...stackProps} />,
     );
     await fireEvent.press(await findByText('Edit'));
-    expect(mockNavigate).toHaveBeenCalledWith('MealEdit', {mealId});
+    expect(Linking.openURL).toHaveBeenCalledWith(mealEditHref(mealId));
     await fireEvent.press(await findByText('Cook meal'));
-    expect(mockNavigate).toHaveBeenCalledWith('MealCookingMode', {mealId});
-    await fireEvent.press(await findByText('Test Recipe'));
-    expect(mockParentNavigate).toHaveBeenCalledWith('Recipes', {
-      screen: 'RecipeDetail',
-      params: {recipeId},
-    });
+    expect(Linking.openURL).toHaveBeenCalledWith(mealCookHref(mealId));
+    // A member row is a link whose accessible name carries the
+    // recipe's title and servings.
+    await fireEvent.press(
+      await findByRole('link', {name: 'Test Recipe, 4 servings'}),
+    );
+    expect(Linking.openURL).toHaveBeenCalledWith(recipeHref(recipeId));
   });
 });

@@ -56,9 +56,7 @@ export const ForgotPasswordPage = () => {
       onSubmit={() => {
         void handleSubmit();
       }}
-      onBackPress={() => {
-        void navigate('/login');
-      }}
+      signInHref="/login"
     />
   );
 };

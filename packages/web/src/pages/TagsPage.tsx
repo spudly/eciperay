@@ -1,15 +1,23 @@
 import {queryKeys} from '@eciperay/client';
+import {
+  tagColorNameForHex,
+  warmHarvestTagColors,
+  type TagColorName,
+} from '@spudly/ui';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useState} from 'react';
 
 import {TagsPage as TagsPageView} from '@spudly/ui/pages';
 
 import {eciperay} from '../lib/api.js';
-import {TAG_COLOR_OPTIONS} from '../lib/tagColors.js';
+import {TAG_COLOR_NAME_OPTIONS} from '../lib/tagColors.js';
 
 export const TagsPage = () => {
   const [name, setName] = useState('');
-  const [color, setColor] = useState('#6366f1');
+  // The form's color is a design-system color NAME (#207); the
+  // default is the name for the legacy default hex (#6366f1), and
+  // the create call converts back to the stored hex at the boundary.
+  const [color, setColor] = useState<TagColorName>('indigo');
   const queryClient = useQueryClient();
 
   const {data: tags = [], isLoading} = useQuery({
@@ -18,7 +26,7 @@ export const TagsPage = () => {
   });
 
   const createMutation = useMutation({
-    mutationFn: () => eciperay.tags.create(name, color),
+    mutationFn: () => eciperay.tags.create(name, warmHarvestTagColors[color]),
     onSuccess: () => {
       setName('');
       void queryClient.invalidateQueries({queryKey: queryKeys.tags()});
@@ -41,8 +49,8 @@ export const TagsPage = () => {
 
   return (
     <TagsPageView
-      colorOptions={TAG_COLOR_OPTIONS}
-      tags={tags}
+      colorOptions={TAG_COLOR_NAME_OPTIONS}
+      tags={tags.map(tag => ({...tag, color: tagColorNameForHex(tag.color)}))}
       isLoading={isLoading}
       name={name}
       color={color}

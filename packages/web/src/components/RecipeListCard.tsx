@@ -5,7 +5,7 @@ import {
   type ShowcaseFrameProps,
 } from '@eciperay/client';
 import type {CookLogInput, RecipeDetail} from '@eciperay/types';
-import {CookLogForm} from '@spudly/ui';
+import {RatingForm} from '@spudly/ui';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
 import {useState, type ComponentType} from 'react';
 
@@ -17,12 +17,16 @@ import {ThumbnailListCard} from './ui/ThumbnailListCard.js';
 // formatRecipeListSubtitle in @eciperay/client — the per-mirror local
 // copies are gone, so the servings pluralization and satiety label are
 // defined once for both mirrors and the app's DS-page hosts.
-// Parity note (design-system#126): both mirrors import
-// CookLogForm from @spudly/ui — the app mirror adopted it with the
+// Parity note (design-system#126): both mirrors import the
+// design system's rating form — the app mirror adopted it with the
 // design-system pages, and this mirror adopted it in B7 cluster C6
 // (design-system#130), when the web home list retired into the
-// design system HomePage. Web's local cooking/CookLogForm still
-// serves the recipe detail cook-history tab until cluster C7.
+// design system HomePage. The form shipped as CookLogForm until
+// @spudly/ui 1.15.0 generalized it into RatingForm
+// (design-system#176): the submit view-model's `rating` maps onto
+// the cook log's authorStarRating at this boundary. Web's local
+// cooking/CookLogForm still serves the recipe detail cook-history
+// tab until cluster C7.
 
 type RecipeListCardProps = {
   recipe: RecipeDetail;
@@ -137,14 +141,18 @@ export const RecipeListCard = ({
       ) : null}
       {showForm ? (
         <div className="mbe-3">
-          <CookLogForm
+          <RatingForm
             variant="light"
+            notesPlaceholder="Notes from this cook (optional)"
             isPending={createMutation.isPending}
             onSkip={() => {
               setShowForm(false);
             }}
-            onSubmit={input => {
-              createMutation.mutate(input);
+            onSubmit={values => {
+              createMutation.mutate({
+                authorStarRating: values.rating,
+                notes: values.notes,
+              });
             }}
           />
         </div>

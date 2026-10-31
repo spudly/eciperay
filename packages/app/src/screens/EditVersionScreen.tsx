@@ -11,6 +11,7 @@ import type {RecipeVersionInput} from '@eciperay/types';
 import {RecipeForm} from '../hosts/recipe/RecipeForm';
 import {ScreenLoadingGate} from '../components/ScreenLoadingGate';
 import {api} from '../lib/api';
+import {recipeHref} from '../lib/deepLinks';
 import type {RecipesStackParamList} from '../navigation/types';
 
 type Props = NativeStackScreenProps<RecipesStackParamList, 'EditVersion'>;
@@ -52,9 +53,7 @@ export const EditVersionScreen = ({route, navigation}: Props) => {
       }
       parentVersionNumber={parentVersion?.versionNumber}
       notEditable={!version.isEditable}
-      onBack={() => {
-        navigation.navigate('RecipeDetail', {recipeId});
-      }}
+      backHref={recipeHref(recipeId)}
     >
       <RecipeForm
         initial={recipeVersionDetailToInput(version)}

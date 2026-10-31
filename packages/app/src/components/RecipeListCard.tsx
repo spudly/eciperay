@@ -4,7 +4,7 @@ import {
   invalidateRecipeQueries,
   makeRecipeDetail,
 } from '@eciperay/client';
-import {Button as DsButton, CookLogForm, tokens} from '@spudly/ui';
+import {Button as DsButton, RatingForm, tokens} from '@spudly/ui';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
 import {useState} from 'react';
 import {View} from 'react-native';
@@ -16,9 +16,13 @@ import {ThumbnailListCard} from './ui/ThumbnailListCard';
 
 // The card subtitle is formatted by the shared formatRecipeListSubtitle
 // in @eciperay/client (#278) — see the web mirror's parity note.
-// B7 cluster C6 (design-system#130): the web mirror now imports
-// CookLogForm from @spudly/ui too (its home list renders the design
-// system HomePage), matching this mirror — no app-side change needed.
+// B7 cluster C6 (design-system#130): the web mirror imports the
+// design system's rating form from @spudly/ui too (its home list
+// renders the design system HomePage), matching this mirror. The
+// form shipped as CookLogForm until @spudly/ui 1.15.0 generalized
+// it into RatingForm (design-system#176): the submit view-model's
+// `rating` maps onto the cook log's authorStarRating at this
+// boundary.
 type Props = {recipe: RecipeDetail; onPress: () => void; onDelete: () => void};
 
 export const RecipeListCard = ({recipe, onPress, onDelete}: Props) => {
@@ -74,14 +78,18 @@ export const RecipeListCard = ({recipe, onPress, onDelete}: Props) => {
       />
       {showForm ? (
         <YStack marginBlockEnd="$3">
-          <CookLogForm
+          <RatingForm
             variant="light"
+            notesPlaceholder="Notes from this cook (optional)"
             isPending={createMutation.isPending}
             onSkip={() => {
               setShowForm(false);
             }}
-            onSubmit={input => {
-              createMutation.mutate(input);
+            onSubmit={values => {
+              createMutation.mutate({
+                authorStarRating: values.rating,
+                notes: values.notes,
+              });
             }}
           />
         </YStack>

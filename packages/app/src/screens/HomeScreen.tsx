@@ -21,6 +21,7 @@ import {HomePage} from '@spudly/ui/pages';
 
 import {RecipeListCard} from '../components/RecipeListCard';
 import {api} from '../lib/api';
+import {addHref, recipesHref, sharedWithMeHref} from '../lib/deepLinks';
 import {recipeViewHistoryStorage} from '../lib/recipeViewHistoryStorage';
 import type {RootTabParamList} from '../navigation/types';
 
@@ -106,15 +107,9 @@ export const HomeScreen = ({navigation}: Props) => {
           />
         );
       }}
-      onBrowsePress={() => {
-        navigation.navigate('Recipes', {screen: 'RecipesList'});
-      }}
-      onAddPress={() => {
-        navigation.navigate('Add', {screen: 'AddScreen'});
-      }}
-      onSharedWithMePress={() => {
-        navigation.navigate('Recipes', {screen: 'SharedWithMe'});
-      }}
+      browseHref={recipesHref}
+      addHref={addHref}
+      sharedWithMeHref={sharedWithMeHref}
     />
   );
 };
