@@ -1,4 +1,5 @@
 import type {Response} from 'express';
+import {z} from 'zod';
 
 import {query as defaultQuery} from '../../db/query.js';
 import type {AuthedRequest} from '../../middleware/requireAuth.js';
@@ -16,13 +17,14 @@ export const getRecipe = async (
   res: Response,
   queryFn: QueryFn,
 ) => {
-  const result = await queryFn(GET_RECIPE_DETAIL_SQL, [
-    getParam(req, 'id'),
-    req.userId,
-  ]);
+  const id = getParam(req, 'id');
+  if (!z.uuid().safeParse(id).success) {
+    res.status(404).json({error: 'Recipe not found'});
+    return;
+  }
+  const result = await queryFn(GET_RECIPE_DETAIL_SQL, [id, req.userId]);
   const row = result.rows[0] as
-    | Parameters<typeof mapRowToRecipeDetail>[0]
-    | undefined;
+    Parameters<typeof mapRowToRecipeDetail>[0] | undefined;
   if (!row || !canReadRecipe(toRecipeAccessRecord(row), {userId: req.userId})) {
     res.status(404).json({error: 'Recipe not found'});
     return;
