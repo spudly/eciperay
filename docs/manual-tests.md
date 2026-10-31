@@ -512,7 +512,8 @@ account (viewer); one QA recipe.
 **Run when:** `packages/app/src/screens/SharedWithMeScreen.tsx`,
 `packages/app/src/hosts/{shared,recipe/RecipeVisibilityControls}*`,
 `packages/web/src/pages/{SharedWithMe,Discover,PublicRecipe}Page.tsx`,
-`packages/web/src/components/{discover,public,shared}/**`, `packages/server`
+`packages/web/src/components/shared/**`, `@spudly/ui` `DiscoverPage`,
+`PublicRecipePage`, `PublicPageFrame`, `packages/server`
 sharing/visibility routes.
 
 ---
