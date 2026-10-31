@@ -39,7 +39,9 @@ describe('RecipeDetailPage', () => {
       expect(screen.getByText('Turned out great')).toBeInTheDocument();
     });
     await waitFor(() => {
-      expect(screen.getByText('250')).toBeInTheDocument();
+      // The calorie count renders in the overview stat band and again
+      // in the nutrition section — both are on the page at once now.
+      expect(screen.getAllByText('250').length).toBeGreaterThan(0);
     });
   });
 
@@ -60,7 +62,10 @@ describe('RecipeDetailPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Test Recipe')).toBeInTheDocument();
     });
-    await userEvent.click(screen.getByText('Delete'));
+    // The overview's Delete button by role/name: the cook log entry's
+    // delete shares the "Delete" text but carries its own label
+    // ("Delete cook log 1 from …"), so the name match is unique.
+    await userEvent.click(screen.getByRole('button', {name: 'Delete'}));
     // #263: deletion confirms host-side (the design-system Dialog);
     // confirming runs the mutation and returns to the list.
     await userEvent.click(await screen.findByText('Confirm delete'));
@@ -210,10 +215,10 @@ describe('RecipeDetailPage', () => {
       {route: '/recipes/recipe-uuid-1'},
     );
     await waitFor(() => {
-      expect(screen.getByRole('combobox')).toBeInTheDocument();
+      expect(screen.getByLabelText('Version')).toBeInTheDocument();
     });
     await userEvent.selectOptions(
-      screen.getByRole('combobox'),
+      screen.getByLabelText('Version'),
       'version-uuid-2',
     );
     await waitFor(() => {

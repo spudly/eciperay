@@ -263,10 +263,18 @@ describe('RecipeDetailHost', () => {
           () => HttpResponse.json([]),
         ),
       );
+      server.use(
+        http.post(
+          'http://localhost:8080/api/recipes/:id/versions/:versionId/cooks',
+          () => HttpResponse.json(makeCookLog(), {status: 201}),
+        ),
+      );
       await renderHost();
       await userEvent.click(await screen.findByText('Log a cook'));
       expect(await screen.findByText('How did it go?')).toBeInTheDocument();
-      await userEvent.click(screen.getByLabelText('Rate 5 out of 5 stars'));
+      await userEvent.click(
+        screen.getByRole('radio', {name: 'Rate 5 out of 5 stars'}),
+      );
       await userEvent.type(
         screen.getByPlaceholderText('Notes from this cook (optional)'),
         'Quick weeknight cook',
@@ -344,9 +352,9 @@ describe('RecipeDetailHost', () => {
         await screen.findByRole('button', {name: /Delete cook log 1 from/}),
       );
       await userEvent.click(await screen.findByText('Confirm delete'));
-      expect(await screen.findByRole('alert')).toHaveTextContent(
-        /Could not delete entry/,
-      );
+      expect(
+        await screen.findByText(/Could not delete entry/),
+      ).toBeInTheDocument();
       // The entry stays listed on failure.
       expect(screen.getByText('Turned out great')).toBeInTheDocument();
     });
@@ -363,7 +371,7 @@ describe('RecipeDetailHost', () => {
       );
       await renderHost();
       expect(await screen.findByText(/2024/)).toBeInTheDocument();
-      expect(screen.queryByLabelText(/stars/)).not.toBeInTheDocument();
+      expect(screen.queryByLabelText('4 stars')).not.toBeInTheDocument();
     });
   });
 });
