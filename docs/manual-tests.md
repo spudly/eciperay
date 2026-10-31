@@ -303,8 +303,8 @@ mode; there is no Playwright coverage of meals. The cases below are manual._
 **Run when:**
 `packages/app/src/screens/{MealsHub,MealDetail,MealEdit,MealCookingMode}Screen.tsx`,
 `packages/web/src/pages/{MealsHub,MealDetail,MealEdit,MealCookingMode}Page.tsx`,
-`packages/web/src/components/meals/**` (meal views), `packages/server` meal
-routes.
+`@spudly/ui` `MealsHubPage`, `MealDetailPage`, `MealFormPage`, or
+`MealCookingModePage`, `packages/server` meal routes.
 
 ---
 
@@ -333,17 +333,14 @@ are the manual remainder._
    sums of the assigned recipes and the progress view renders for days with and
    without entries. For a plan with a valid date range, the goal figures are the
    plan's **per-day average** against the daily goals and are labelled as such
-   ("Per-day average calories and protein for this plan, compared with your
-   daily goals. Satiety is a plan-wide score." on web; "(per-day avg)" row
-   labels in the app). For an undated plan (dates are optional), the figures are
+   ("(per-day avg)" row labels in the app and on web). For an undated plan
+   (dates are optional), the figures are
    the **plan total** against the daily goals and are labelled as such
-   ("Plan-total calories and protein for this plan, compared with your daily
-   goals. Satiety is a plan-wide score." on web; "(plan total)" row labels in
-   the app) — they must not be labelled as a daily average or read as an
+   ("(plan total)" row labels in the app and on web) — they must not be labelled as a daily average or read as an
    unexplained second total next to "Plan total" (regression: #266). Satiety is
    neither an average nor a total: it is a ratio-based score that is identical
    for the per-day and whole-plan figures, so both surfaces label it a plan-wide
-   score (app row: "Satiety (plan-wide score)").
+   score (row: "Satiety (plan-wide score)").
 5. **Delete the plan.** Delete `QA — Week Plan`. **Expected:** gone from the
    list; member recipes unaffected.
 6. **Direct `/meal-plans` visit + unknown routes (web).** Visit `/meal-plans`
@@ -356,7 +353,7 @@ are the manual remainder._
 `packages/app/src/screens/{MealPlanDetail,MealPlanEdit}Screen.tsx`,
 `packages/app/src/hosts/meals/**`,
 `packages/web/src/pages/{MealPlanDetail,MealPlanEdit}Page.tsx`,
-`packages/web/src/components/meals/{MealPlanDetailView,MealPlanFormView,NutritionGoalProgressView}.tsx`,
+`@spudly/ui` `MealPlanDetailPage` or `MealPlanFormPage`,
 `packages/web/src/routes/router.tsx`, `packages/server` meal plan routes.
 
 ---
@@ -387,8 +384,8 @@ ingredient (e.g. both use eggs) and one recipe assigned twice in the week.
    **Expected:** a clear empty state, not an error or a stale list.
 
 **Run when:** `packages/app/src/screens/ShoppingListScreen.tsx`,
-`packages/web/src/pages/ShoppingListPage.tsx`,
-`packages/web/src/components/meals/ShoppingListView.tsx`, `packages/server`
+`packages/web/src/pages/ShoppingListPage.tsx`, `@spudly/ui`
+`ShoppingListPage`, `packages/server`
 shopping list generation.
 
 ---

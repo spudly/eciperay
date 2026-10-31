@@ -1,14 +1,15 @@
 import {
   errorMessage,
+  mealPlanEntryKey,
   queryKeys,
   recipeFormOptionsQueryOptions,
   useMealPlanEditForm,
 } from '@eciperay/client';
+import {MealPlanFormPage as MealPlanFormPageView} from '@spudly/ui/pages';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
 
-import {MealPlanFormView} from '../components/meals/MealPlanFormView.js';
 import {ScreenLoadingGate} from '../components/ScreenLoadingGate.js';
 import {eciperay} from '../lib/api.js';
 
@@ -25,7 +26,7 @@ export const MealPlanEditPage = () => {
     enabled: isEdit,
   });
 
-  const {data: meals = [], isLoading: mealsLoading} = useQuery({
+  const {data: meals = []} = useQuery({
     queryKey: queryKeys.meals(),
     queryFn: () => eciperay.meals.list(),
   });
@@ -60,17 +61,23 @@ export const MealPlanEditPage = () => {
 
   return (
     <ScreenLoadingGate pending={isEdit && (planLoading || recipesLoading)}>
-      <MealPlanFormView
+      <MealPlanFormPageView
         title={form.title}
         notes={form.notes}
         startsOn={form.startsOn}
         endsOn={form.endsOn}
         selectedKeys={form.selectedKeys}
-        entryOptions={form.entryOptions}
-        entryOptionsLoading={mealsLoading || recipesLoading}
+        entryOptions={form.entryOptions.map(option => ({
+          key: mealPlanEntryKey(option.kind, option.id),
+          kind: option.kind,
+          title: option.title,
+          ...(option.kind === 'recipe'
+            ? {recipeId: option.id, servings: option.servings}
+            : {}),
+        }))}
         quantityByKey={form.quantityByKey}
         servingsByRecipeId={form.servingsByRecipeId}
-        saving={saveMutation.isPending}
+        isSaving={saveMutation.isPending}
         error={formError}
         onTitleChange={form.setTitle}
         onNotesChange={form.setNotes}
@@ -78,12 +85,18 @@ export const MealPlanEditPage = () => {
         onEndsOnChange={form.setEndsOn}
         onToggleEntry={form.handleToggleEntry}
         onQuantityChange={(key, quantity) => {
-          form.setQuantityByKey(current => ({...current, [key]: quantity}));
+          // Same minimum-of-1 clamp as the meal form host: the retired
+          // adapter enforced it, the DS page's steppers are unbounded,
+          // and the server schema rejects 0.
+          form.setQuantityByKey(current => ({
+            ...current,
+            [key]: Math.max(1, quantity),
+          }));
         }}
         onRecipeServingsChange={(recipeId, servings) => {
           form.setServingsByRecipeId(current => ({
             ...current,
-            [recipeId]: servings,
+            [recipeId]: Math.max(1, servings),
           }));
         }}
         onSubmit={() => {

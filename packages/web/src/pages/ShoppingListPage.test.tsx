@@ -37,5 +37,12 @@ describe('ShoppingListPage', () => {
     fireEvent.click(row);
     fireEvent.click(row);
     expect(row).toBeInTheDocument();
+    // The DS page's row itself carries the checkbox semantics (the
+    // contract the live Playwright spec locates by): role + accessible
+    // name + aria-checked state on the row element.
+    const checkbox = screen.getByRole('checkbox', {name: /Flour/});
+    expect(checkbox).toHaveAttribute('aria-checked', 'false');
+    fireEvent.click(checkbox);
+    expect(checkbox).toHaveAttribute('aria-checked', 'true');
   });
 });
