@@ -126,34 +126,35 @@ without); one recipe may be created fresh in case 1.
    version (`/recipes/:recipeId/versions/:versionId/edit`). **Expected:** the
    version editor opens with that version's content and saving behaves as the UI
    describes (no silent overwrite of the current version).
-4. **Detail tabs.** On a recipe with nutrition data and at least one cook log
-   entry, walk the detail tabs: Overview, Ingredients, Instructions, Nutrition,
-   Cook History, Comments. **Expected:** each tab renders its content with no
-   empty-shell or error states; the Nutrition tab values match the recipe's
-   stored nutrition.
-5. **Post a comment.** In the Comments tab, post `QA — comment check`, then
+4. **Detail sections.** On a recipe with nutrition data and at least one cook
+   log entry, walk the detail page's sections: Overview, Ingredients,
+   Instructions, Nutrition, Cook History, Comments. **Expected:** each section
+   renders its content with no empty-shell or error states; the Nutrition values
+   match the recipe's stored nutrition.
+5. **Post a comment.** In the Comments section, post `QA — comment check`, then
    reload. **Expected:** the comment appears with the QA account as author and
    persists after reload.
 6. **Delete.** Delete the `QA — Manual Entry Soup` recipe from its detail page:
-   the Overview actions' Delete control arms an in-page **Confirm delete** /
-   **Cancel** pair — Cancel keeps the recipe and restores the Delete button;
-   confirming removes it and returns to the recipe list. (The recipe list itself
-   offers no Delete — deleting is a detail-page action. Home's recently-viewed
-   cards still carry their own Delete with the same in-page confirmation.)
-   **Expected:** the deleted recipe disappears from the list and search; its old
-   detail URL no longer renders the recipe; and if a delete request fails, an
-   error is shown and the recipe stays listed (a delete never fails silently).
+   the detail page's Delete control opens a confirmation dialog — Cancel keeps
+   the recipe; confirming removes it and returns to the recipe list, and a
+   failed delete shows its error in the dialog. (The recipe list itself offers
+   no Delete — deleting is a detail-page action. Home's recently-viewed cards
+   still carry their own Delete with the in-page **Confirm delete** / **Cancel**
+   confirmation.) **Expected:** the deleted recipe disappears from the list and
+   search; its old detail URL no longer renders the recipe; and if a delete
+   request fails, an error is shown and the recipe stays listed (a delete never
+   fails silently).
 7. **Recipe without an image.** Open the image-less recipe. **Expected:** the
    detail and its list card render a clean placeholder — no broken image icon,
    no layout collapse.
 8. **Create a draft from a Perfected recipe.** Open a Perfected recipe's detail
-   and use its create-draft action (web: **Create draft**; app: the **Edit
-   draft** chip). **Expected:** a new draft version is created from the
-   Perfected version and opens in the version editor; changing the title and one
-   ingredient there and saving succeeds (no "Recipe cannot be modified in its
-   current status" error), the recipe's status shows Evolving, and the
-   previously Perfected version remains available unchanged in the version
-   history.
+   and use its create-draft action (the **Edit draft** button on web and app
+   alike since the detail pages adopted the design system page). **Expected:** a
+   new draft version is created from the Perfected version and opens in the
+   version editor; changing the title and one ingredient there and saving
+   succeeds (no "Recipe cannot be modified in its current status" error), the
+   recipe's status shows Evolving, and the previously Perfected version remains
+   available unchanged in the version history.
 9. **Card meta and detail status polish (#278).** On `/recipes`, check the card
    subtitles: a 1-serving recipe reads "1 serving" (not "1 servings"), and a
    recipe whose nutrition is still being computed (e.g. one just created or
@@ -161,9 +162,10 @@ without); one recipe may be created fresh in case 1.
    truncated; other cards show a satiety value or "Satiety —". The subtitle
    carries no rating text: a rated recipe's rating renders as the row's star
    control, and an unrated recipe shows a single star (the log-a-cook control)
-   instead. Open one recipe's detail. **Expected:** the recipe status appears
-   exactly once, as the pill in the toolbar above the tabs — the Overview does
-   not repeat it under the title.
+   instead. Open one recipe's detail. **Expected:** the recipe status appears as
+   the pill in the page toolbar; the design-system page currently ALSO repeats
+   it beside the overview title (design-system#363 tracks removing the duplicate
+   — #278's exactly-once rule returns when that lands).
 
 **Run when:**
 `packages/app/src/screens/{Recipes,RecipeDetail,EditRecipe,EditVersion,ManualEntry}Screen.tsx`,
@@ -264,12 +266,13 @@ single star on an unrated one), and the cooking-mode overlay.
    the recipe has loaded — a cook log can never be submitted with an empty
    version (regression: #247).
 9. **Delete an entry from Cook History (web).** In a recipe's Cook History, use
-   an entry's Delete control. **Expected:** an in-page confirmation appears (no
-   browser dialog); Cancel keeps the entry; Confirm delete removes it and the
-   history refreshes without it. If the delete request fails, an error alert
-   appears on the entry and the entry stays listed (regression: #266).
+   an entry's Delete control. **Expected:** a confirmation dialog appears in the
+   app (no browser-native dialog); Cancel keeps the entry; Confirm delete
+   removes it and the history refreshes without it. If the delete request fails,
+   an error alert appears in the dialog and the entry stays listed (regression:
+   #266).
 
-**Run when (case 9):** `packages/web/src/components/recipe/CookHistoryTab.tsx`,
+**Run when (case 9):** `packages/web/src/pages/RecipeDetailHost.tsx`,
 `packages/client/src/cookLogsApi.ts`, `packages/server` cook log routes,
 `@spudly/ui` `RecipeDetailPage` history section.
 
