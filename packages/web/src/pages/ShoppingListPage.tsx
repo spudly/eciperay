@@ -44,7 +44,12 @@ const ShoppingListPageContent = ({planId, userId}: ContentProps) => {
   const lines = data ?? [];
 
   const checkedKeysRef = useRef(checkedKeys);
-  checkedKeysRef.current = checkedKeys;
+  // Synced in an effect (not during render, which React may discard or
+  // replay). Declared before the pruning effect below, so the ref is
+  // current when pruning runs — effects run in declaration order.
+  useEffect(() => {
+    checkedKeysRef.current = checkedKeys;
+  }, [checkedKeys]);
   const lastPrunedAtRef = useRef<number | null>(null);
 
   // When a fresh list arrives, drop stored checks for lines that are no
