@@ -48,10 +48,12 @@ test.describe('signed out', () => {
     // lead-in and the contact email link it carries.
     await expect(page.getByText('Questions about this Privacy Policy?')).toBeVisible();
     await expect(
-      // The contact email recurs in earlier sections (Deletion,
-      // Analytics); the last one is this section's.
-      page.getByRole('link', {name: 'shuoink+eciperaylegal@gmail.com'}).last(),
-    ).toBeVisible();
+      // The contact email is linked from exactly three sections
+      // (Deletion, Analytics, and this final Contact section); the
+      // count pins every one — a count-based check cannot silently
+      // fall back to an earlier section's link.
+      page.locator('a[href="mailto:shuoink+eciperaylegal@gmail.com"]'),
+    ).toHaveCount(3);
     await expect(
       page.getByRole('link', {name: 'Terms of Service'}),
     ).toBeVisible();
@@ -73,10 +75,11 @@ test.describe('signed out', () => {
     ).toBeVisible();
     await expect(page.getByText('Questions about these Terms?')).toBeVisible();
     await expect(
-      // The contact email also appears under Termination; the last
-      // one is this section's.
-      page.getByRole('link', {name: 'shuoink+eciperaylegal@gmail.com'}).last(),
-    ).toBeVisible();
+      // The contact email is linked from exactly two sections
+      // (Termination and this final Contact section); the count
+      // pins every one.
+      page.locator('a[href="mailto:shuoink+eciperaylegal@gmail.com"]'),
+    ).toHaveCount(2);
     await expect(
       page.getByRole('link', {name: 'Privacy Policy'}),
     ).toBeVisible();
