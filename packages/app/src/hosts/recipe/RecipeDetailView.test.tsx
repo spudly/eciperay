@@ -40,17 +40,20 @@ const mockListComments = api.recipes.listComments as jest.Mock;
 // The view's remaining screen callbacks: navigation left the prop
 // surface with @spudly/ui 1.15.0 (#248) — the overview's navigation
 // actions are hrefs the view composes itself — so only the true
-// actions (delete) and the view-state callbacks remain.
+// actions (delete, create-a-draft's editor landing) and the
+// view-state callbacks remain.
 type Callbacks = {
   onDelete: jest.Mock;
   onViewVersion: jest.Mock;
   onSelectVersion: jest.Mock;
+  onEditVersion: jest.Mock;
 };
 
 const makeCallbacks = (): Callbacks => ({
   onDelete: jest.fn(),
   onViewVersion: jest.fn(),
   onSelectVersion: jest.fn(),
+  onEditVersion: jest.fn(),
 });
 
 /**
@@ -94,6 +97,7 @@ const Harness = ({
       onServingsChange={setServings}
       onDelete={callbacks.onDelete}
       onViewVersion={callbacks.onViewVersion}
+      onEditVersion={callbacks.onEditVersion}
     />
   );
 };
@@ -262,19 +266,35 @@ describe('RecipeDetailView', () => {
     expect(queryByText('Tweak with AI')).toBeNull();
   });
 
-  test('perfected recipe: no Edit draft chip while the DS page has no create-draft slot', async () => {
+  test('perfected recipe: Edit draft chip creates a draft and opens it in the editor (#264)', async () => {
     // The #264 flow (the chip creates a draft, then opens it) is a
-    // mutation-then-navigate control; @spudly/ui 1.15.0's overview
-    // offers only the editDraftHref link, which opens an EXISTING
-    // draft, so a perfected recipe without a draft shows no chip
-    // until the design system grows the slot (gap filed against
-    // spudly/design-system; see the PR body). Opening an existing
-    // draft keeps working through the href — the screen test covers
-    // it end to end.
-    const {findByText, queryByText} = await renderView({status: 'perfected'});
+    // mutation-then-navigate control; @spudly/ui 1.16.0 carries it as
+    // the onCreateDraftPress slot (design-system#357), rendered as
+    // the "Edit draft" button when no existing draft's editDraftHref
+    // is passed. (1.15.0 had no slot and the wiring was removed;
+    // opening an existing draft kept working through the href — the
+    // screen test covers it end to end.)
+    const {callbacks, recipe, findByText} = await renderView({
+      status: 'perfected',
+    });
     expect(await findByText('Test Recipe')).toBeTruthy();
-    expect(queryByText('Edit draft')).toBeNull();
-    expect(mockCreateVersion).not.toHaveBeenCalled();
+    await fireEvent.press(await findByText('Edit draft'));
+    await waitFor(() => {
+      expect(mockCreateVersion).toHaveBeenCalledWith(recipe.id);
+    });
+    await waitFor(() => {
+      expect(callbacks.onEditVersion).toHaveBeenCalledWith('version-draft-1');
+    });
+  });
+
+  test('perfected recipe: a failed draft creation shows feedback and does not navigate (#264)', async () => {
+    mockCreateVersion.mockRejectedValue(new Error('Server exploded'));
+    const {callbacks, findByText} = await renderView({status: 'perfected'});
+    await fireEvent.press(await findByText('Edit draft'));
+    expect(
+      await findByText('Could not create a draft. Please try again.'),
+    ).toBeTruthy();
+    expect(callbacks.onEditVersion).not.toHaveBeenCalled();
   });
 
   test('perfected recipe viewed at an archived version has no Edit draft chip', async () => {
