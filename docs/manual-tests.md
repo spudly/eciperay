@@ -228,12 +228,12 @@ live `e2e-live/cook-log.spec.ts` covers the cooking-mode surface against the QA
 dataset once the CI test account secrets exist (issue #233): submitting the form
 (rating + notes) records the cook in the recipe's history, and Skip dismisses it
 recording nothing; until then those cases remain manual. The other surfaces
-(detail slot, list card, inline form) and the cases below are the manual
+(detail slot, list row, inline form) and the cases below are the manual
 remainder._
 
 **Preconditions:** QA account with at least one recipe; the cook log form
 appears in four places and each is exercised: recipe detail (the
-`renderCookLogForm` slot), the recipe list card, the inline form in the recipes
+`renderCookLogForm` slot), the recipe list row, the inline form in the recipes
 list (opened from the row's rating control — the stars on a rated recipe, the
 single star on an unrated one), and the cooking-mode overlay.
 
@@ -244,7 +244,7 @@ single star on an unrated one), and the cooking-mode overlay.
 2. **Notes trimming.** Submit an entry whose notes are only spaces.
    **Expected:** saves with no notes (empty becomes null) — the history entry
    shows no blank note block.
-3. **List-card entry.** From the recipes list, open the cook log form via a
+3. **List-row entry.** From the recipes list, open the cook log form via a
    recipe row's rating control, give a star rating and notes, Save.
    **Expected:** entry appears in that recipe's Cook History with the rating
    shown.
