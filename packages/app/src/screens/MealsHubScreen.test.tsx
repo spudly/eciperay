@@ -70,7 +70,7 @@ describe('MealsHubScreen', () => {
   });
 
   test('opens deep links and deletes from both tabs', async () => {
-    const {findByText, findByLabelText, getByLabelText, getByText} =
+    const {findByText, findByLabelText, getByLabelText} =
       await renderWithProviders(<MealsHubScreen />);
     await fireEvent.press(await findByLabelText('Sunday Dinner, 1 recipe'));
     expect(Linking.openURL).toHaveBeenCalledWith(mealHref(mealId));
@@ -82,12 +82,12 @@ describe('MealsHubScreen', () => {
     await fireEvent.press(await findByText('Meal plans'));
     await fireEvent.press(await findByText('New meal plan'));
     expect(Linking.openURL).toHaveBeenCalledWith(mealPlanEditHref());
-    await fireEvent.press(await findByLabelText(/This week/));
+    await fireEvent.press(await findByLabelText('This week, 0 entries'));
     expect(Linking.openURL).toHaveBeenCalledWith(mealPlanHref(planId));
-    // The plan row's delete carries no accessible label of its own
-    // (unlike the meal row's "Delete {title}") — its text is the
-    // only handle.
-    await fireEvent.press(getByText('Delete'));
+    // The plan row's delete carries its own accessible label, like
+    // the meal row's (@spudly/ui 1.16.0 labeled TextActionCardRow's
+    // trailing action; before that its text was the only handle).
+    await fireEvent.press(getByLabelText('Delete This week'));
     await waitFor(() => {
       expect(mockDeletePlan).toHaveBeenCalledWith(planId);
     });

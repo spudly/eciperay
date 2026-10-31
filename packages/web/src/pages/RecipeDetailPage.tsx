@@ -1,21 +1,19 @@
 import {queryKeys, recordRecipeView} from '@eciperay/client';
-import type {RecipeDetailTab} from '@eciperay/client';
 import {useQuery, useQueryClient} from '@tanstack/react-query';
 import {useCallback, useEffect, useMemo, useState} from 'react';
 import {useParams, useSearchParams} from 'react-router-dom';
 
-import {RecipeDetailChrome} from '../components/recipe/RecipeDetailChrome.js';
-import {RecipeDetailTabPanel} from '../components/recipe/RecipeDetailTabPanel.js';
 import {RouteErrorView} from '../components/RouteErrorView.js';
 import {ScreenLoadingGate} from '../components/ScreenLoadingGate.js';
 import {eciperay} from '../lib/api.js';
 import {mergeVersionIntoRecipe} from '../lib/mergeVersionIntoRecipe.js';
 import {recipeViewHistoryStorage} from '../lib/recipeViewHistoryStorage.js';
 
+import {RecipeDetailHost} from './RecipeDetailHost.js';
+
 export const RecipeDetailPage = () => {
   const {recipeId = ''} = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState<RecipeDetailTab>('overview');
   const [servings, setServings] = useState<number | null>(null);
   const [selectedVersionId, setSelectedVersionId] = useState<string | null>(
     () => searchParams.get('versionId'),
@@ -131,24 +129,15 @@ export const RecipeDetailPage = () => {
   const scaleFactor = currentServings / displayRecipe.servings;
 
   return (
-    <RecipeDetailChrome
-      status={recipe.status}
-      recipeId={recipeId}
+    <RecipeDetailHost
+      recipe={recipe}
+      displayRecipe={displayRecipe}
       versions={versions}
       selectedVersionId={activeVersionId}
       onSelectVersion={setSelectedVersionId}
-      activeTab={activeTab}
-      onSelectTab={setActiveTab}
-    >
-      <RecipeDetailTabPanel
-        activeTab={activeTab}
-        recipe={recipe}
-        displayRecipe={displayRecipe}
-        versions={versions}
-        currentServings={currentServings}
-        scaleFactor={scaleFactor}
-        onServingsChange={setServings}
-      />
-    </RecipeDetailChrome>
+      currentServings={currentServings}
+      scaleFactor={scaleFactor}
+      onServingsChange={setServings}
+    />
   );
 };
