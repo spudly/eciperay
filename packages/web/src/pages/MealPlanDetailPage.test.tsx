@@ -1,8 +1,7 @@
 import {queryKeys} from '@eciperay/client';
-import {act, fireEvent, screen, waitFor} from '@testing-library/react';
+import {act, screen, waitFor} from '@testing-library/react';
 import {http, HttpResponse} from 'msw';
 import {Route, Routes} from 'react-router-dom';
-import {vi} from 'vitest';
 
 import {MEAL_ID, PLAN_ID} from '../test/fixtures/meal.js';
 import {server} from '../test/msw/server.js';
@@ -10,16 +9,8 @@ import {makeQueryClient, renderWithProviders} from '../test/testUtils.js';
 
 import {MealPlanDetailPage} from './MealPlanDetailPage.js';
 
-const mockNavigate = vi.fn();
-
-vi.mock('react-router-dom', async importOriginal => {
-  const actual = await importOriginal<typeof import('react-router-dom')>();
-  return {...actual, useNavigate: () => mockNavigate};
-});
-
 describe('MealPlanDetailPage', () => {
   beforeEach(() => {
-    mockNavigate.mockReset();
     server.use(
       http.get(`http://localhost:8080/api/meal-plans/${PLAN_ID}`, () =>
         HttpResponse.json({
@@ -166,7 +157,7 @@ describe('MealPlanDetailPage', () => {
     expect(screen.queryByText('This week')).not.toBeInTheDocument();
   });
 
-  test('renders meal plan detail and navigates', async () => {
+  test('renders meal plan detail and links', async () => {
     await renderWithProviders(
       <Routes>
         <Route
@@ -179,27 +170,32 @@ describe('MealPlanDetailPage', () => {
     await waitFor(() => {
       expect(screen.getByText('This week')).toBeInTheDocument();
     });
-    // Caller-level regression (#272): the per-day caption must render
-    // through MealPlanDetailPage, proving MealPlanDetailView passes
-    // progressIsPerDayAverage from the plan's perDay figure — the
-    // child component test supplies that flag directly and cannot
-    // catch the wiring breaking.
-    expect(
-      screen.getByText(
-        'Per-day average calories and protein for this plan, compared with your daily goals. Satiety is a plan-wide score.',
-      ),
-    ).toBeInTheDocument();
-    fireEvent.click(screen.getByText('Edit'));
-    expect(mockNavigate).toHaveBeenCalledWith(`/meal-plans/${PLAN_ID}/edit`);
-    fireEvent.click(screen.getByText('Shopping list'));
-    expect(mockNavigate).toHaveBeenCalledWith(
+    // Caller-level regression (#272): the goal rows must carry the
+    // per-day qualifier through MealPlanDetailPage, proving the host
+    // derives it from the plan's perDay figure — the DS page has no
+    // caption slot, so the qualifier rides on the row labels (the app's
+    // composition); the page-level test supplies the labels directly
+    // and cannot catch the wiring breaking.
+    expect(screen.getByText('Calories (per-day avg)')).toBeInTheDocument();
+    expect(screen.getByText('71 / 2000 · Below goal')).toBeInTheDocument();
+    // Navigation crosses to the DS page as hrefs (#248): the actions
+    // and entry rows render as real links.
+    expect(screen.getByRole('link', {name: 'Edit'})).toHaveAttribute(
+      'href',
+      `/meal-plans/${PLAN_ID}/edit`,
+    );
+    expect(screen.getByRole('link', {name: 'Shopping list'})).toHaveAttribute(
+      'href',
       `/meal-plans/${PLAN_ID}/shopping-list`,
     );
-    fireEvent.click(screen.getByText('Meal · Sunday Dinner'));
-    expect(mockNavigate).toHaveBeenCalledWith(`/meals/${MEAL_ID}`);
-    fireEvent.click(screen.getByText('Recipe · Test Recipe'));
-    expect(mockNavigate).toHaveBeenCalledWith('/recipes/recipe-uuid-1');
-    fireEvent.click(screen.getByText('Set nutrition goals'));
-    expect(mockNavigate).toHaveBeenCalledWith('/profile');
+    expect(
+      screen.getByRole('link', {name: /Meal · Sunday Dinner/}),
+    ).toHaveAttribute('href', `/meals/${MEAL_ID}`);
+    expect(
+      screen.getByRole('link', {name: /Recipe · Test Recipe/}),
+    ).toHaveAttribute('href', '/recipes/recipe-uuid-1');
+    expect(
+      screen.getByRole('link', {name: 'Set nutrition goals'}),
+    ).toHaveAttribute('href', '/profile');
   });
 });

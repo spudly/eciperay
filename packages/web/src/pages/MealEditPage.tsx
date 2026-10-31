@@ -4,11 +4,11 @@ import {
   queryKeys,
   recipeFormOptionsQueryOptions,
 } from '@eciperay/client';
+import {MealFormPage as MealFormPageView} from '@spudly/ui/pages';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
 
-import {MealFormView} from '../components/meals/MealFormView.js';
 import {ScreenLoadingGate} from '../components/ScreenLoadingGate.js';
 import {eciperay} from '../lib/api.js';
 
@@ -99,13 +99,17 @@ export const MealEditPage = () => {
 
   return (
     <ScreenLoadingGate pending={isEdit && (mealLoading || recipesLoading)}>
-      <MealFormView
+      <MealFormPageView
         title={title}
         notes={notes}
         selectedRecipeIds={selectedRecipeIds}
-        recipeOptions={recipeOptions}
+        recipeOptions={recipeOptions.map(recipe => ({
+          id: recipe.id,
+          label: recipe.title,
+          servings: recipe.servings,
+        }))}
         servingsByRecipeId={servingsByRecipeId}
-        saving={saveMutation.isPending}
+        isSaving={saveMutation.isPending}
         error={formError}
         onTitleChange={setTitle}
         onNotesChange={setNotes}
