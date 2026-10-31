@@ -1,11 +1,10 @@
 import {defaultNutritionGoals, errorMessage, queryKeys} from '@eciperay/client';
 import type {NutritionGoals} from '@eciperay/types';
+import {NutritionGoalsForm} from '@spudly/ui';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useState} from 'react';
 
 import {eciperay} from '../../lib/api.js';
-
-import {NutritionGoalsFormView} from './NutritionGoalsFormView.js';
 
 export const ProfileNutritionGoalsSection = () => {
   const queryClient = useQueryClient();
@@ -41,7 +40,7 @@ export const ProfileNutritionGoalsSection = () => {
   });
 
   return (
-    <NutritionGoalsFormView
+    <NutritionGoalsForm
       goals={nutritionGoals}
       saving={saveGoalsMutation.isPending}
       error={goalsError}

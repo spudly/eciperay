@@ -1,3 +1,4 @@
+import {Button, SectionCard, Text as DSText} from '@spudly/ui';
 import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
@@ -8,6 +9,11 @@ import {supabase} from '../lib/supabase.js';
 const formatAccountError = (error: unknown, fallback: string) =>
   error instanceof Error ? error.message : fallback;
 
+/**
+ * DS ProfilePage slot content (B7 C10, design-system#130): the account
+ * export/delete logic stays web-side; the section renders on design system
+ * widgets.
+ */
 export const ProfileAccountDataSection = () => {
   const navigate = useNavigate();
   const [exportingAccount, setExportingAccount] = useState(false);
@@ -48,44 +54,36 @@ export const ProfileAccountDataSection = () => {
   };
 
   return (
-    <section className="mbe-8 rounded-xl bg-white p-4 shadow-sm">
-      <h2 className="mbe-1 text-lg font-semibold text-gray-900">Your data</h2>
-      <p className="text-muted mbe-4 text-sm">
+    <SectionCard
+      title="Your data"
+      variant="elevated"
+      marginBottom="$8"
+    >
+      <DSText variant="hint">
         Download a copy of your profile, recipes, share grants, ratings, and
         comments, or permanently delete your account.
-      </p>
-      <div className="flex flex-wrap gap-3">
-        <button
-          type="button"
-          className="
-            rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm
-            font-medium text-gray-900
-            disabled:opacity-50
-          "
+      </DSText>
+      <div>
+        <Button
+          variant="secondary"
           disabled={exportingAccount || deletingAccount}
-          onClick={() => {
+          onPress={() => {
             void handleExportAccount();
           }}
         >
           {exportingAccount ? 'Preparing export…' : 'Download my data'}
-        </button>
-        <button
-          type="button"
-          className="
-            rounded-lg bg-red-50 px-4 py-2 text-sm font-medium text-red-600
-            disabled:opacity-50
-          "
+        </Button>
+        <Button
+          variant="danger"
           disabled={exportingAccount || deletingAccount}
-          onClick={() => {
+          onPress={() => {
             void handleDeleteAccount();
           }}
         >
           {deletingAccount ? 'Deleting account…' : 'Delete account'}
-        </button>
+        </Button>
       </div>
-      {accountError ? (
-        <p className="mbs-4 text-sm text-red-600">{accountError}</p>
-      ) : null}
-    </section>
+      {accountError ? <DSText variant="error">{accountError}</DSText> : null}
+    </SectionCard>
   );
 };

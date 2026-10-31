@@ -1,11 +1,6 @@
 import type {SubscriptionViewProps} from '@eciperay/client';
 import type {Entitlement, PlanName} from '@eciperay/types';
-import {Text as DSText} from '@spudly/ui';
-
-import {ErrorText} from '../ui/ErrorText.js';
-import {PrimaryButton} from '../ui/PrimaryButton.js';
-import {SecondaryButton} from '../ui/SecondaryButton.js';
-import {SectionCard} from '../ui/SectionCard.js';
+import {Button, SectionCard, Text as DSText} from '@spudly/ui';
 
 const PLAN_LABELS: Record<PlanName, string> = {
   free: 'Free',
@@ -70,10 +65,14 @@ export const SubscriptionView = ({
 }: SubscriptionViewProps) => {
   const status = entitlement ? statusText(entitlement) : null;
   return (
-    <SectionCard title="Subscription">
-      {error ? <ErrorText>{error}</ErrorText> : null}
+    <SectionCard
+      title="Subscription"
+      variant="elevated"
+      marginBottom="$8"
+    >
+      {error ? <DSText variant="error">{error}</DSText> : null}
       {isLoading ? (
-        <p className="text-sm text-slate-500">Loading subscription…</p>
+        <DSText variant="hint">Loading subscription…</DSText>
       ) : entitlement ? (
         <>
           <DSText variant="subheading">
@@ -93,19 +92,22 @@ export const SubscriptionView = ({
             </DSText>
           ) : null}
           {entitlement.paddleCustomerId ? (
-            <PrimaryButton
-              label="Manage subscription"
-              loading={isOpeningPortal}
-              loadingLabel="Opening…"
+            <Button
+              variant="primary"
+              disabled={isOpeningPortal}
               onPress={onManage}
-            />
+            >
+              {isOpeningPortal ? 'Opening…' : 'Manage subscription'}
+            </Button>
           ) : null}
           {onRefresh ? (
-            <SecondaryButton
-              label={isRefreshing ? 'Checking…' : 'Check again'}
+            <Button
+              variant="secondary"
               disabled={isRefreshing}
               onPress={onRefresh}
-            />
+            >
+              {isRefreshing ? 'Checking…' : 'Check again'}
+            </Button>
           ) : null}
           {portalUrl ? (
             <a
