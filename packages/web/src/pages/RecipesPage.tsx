@@ -55,6 +55,12 @@ const formatRecipesPageSubtitle = (recipe: RecipeDetail) =>
  * that scrolls back returns closed. And a save completing after its form was
  * replaced must not close the replacement, so the success close is guarded by
  * this form's mounted lifetime (invalidation itself always runs).
+ *
+ * One web-only divergence from the app host: the unmount reconcile is deferred
+ * a tick and cancelled if the effect re-runs, because the web app renders under
+ * StrictMode, whose development replay (setup, cleanup, setup on one mount)
+ * would otherwise reconcile a form that never truly unmounted and close it
+ * immediately.
  */
 const InlineCookLogForm = ({
   recipe,
@@ -86,13 +92,22 @@ const InlineCookLogForm = ({
 
   // This form's mounted lifetime: set on mount, cleared by the
   // unmount cleanup, which also reconciles the open flag (see the
-  // doc comment).
+  // doc comment). The reconcile is deferred one tick and cancelled
+  // if the effect re-runs first (the StrictMode replay — see the
+  // doc comment); a true unmount is never followed by a re-run.
   const isMountedRef = useRef(false);
+  const reconcileTimerRef = useRef<number | undefined>(undefined);
   useEffect(() => {
     isMountedRef.current = true;
+    if (reconcileTimerRef.current !== undefined) {
+      window.clearTimeout(reconcileTimerRef.current);
+      reconcileTimerRef.current = undefined;
+    }
     return () => {
       isMountedRef.current = false;
-      onCloseRef.current();
+      reconcileTimerRef.current = window.setTimeout(() => {
+        onCloseRef.current();
+      }, 0);
     };
   }, []);
 

@@ -102,7 +102,10 @@ export const deleteRecipeViaUi = async (
       response.request().method() === 'GET',
   );
   await page.getByPlaceholder('Search recipes…').fill(title);
-  await searchResponse;
+  const response = await searchResponse;
+  expect(response.ok()).toBe(true);
+  const recipes = (await response.json()) as Array<{title?: string}>;
+  expect(recipes.some(recipe => recipe.title === title)).toBe(false);
   await expect(page.getByText(title)).toHaveCount(0, {timeout: 15_000});
 };
 

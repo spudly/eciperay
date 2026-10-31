@@ -2,7 +2,7 @@ import {act, fireEvent, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {http, HttpResponse} from 'msw';
 
-import {makeRecipeDetail} from '../test/fixtures/recipe.js';
+import {makeCookLog, makeRecipeDetail} from '../test/fixtures/recipe.js';
 import {server} from '../test/msw/server.js';
 import {renderWithProviders} from '../test/testUtils.js';
 
@@ -178,6 +178,22 @@ describe('RecipesPage', () => {
   });
 
   test('logs a cook from the row without opening the recipe', async () => {
+    // Capture the create request: the host maps the DS form's `rating`
+    // onto the cook log's `authorStarRating` at this boundary, and a
+    // regression in that mapping must fail here, not just the close.
+    let postedBody: unknown;
+    server.use(
+      http.post(
+        'http://localhost:8080/api/recipes/:id/versions/:versionId/cooks',
+        async ({request}) => {
+          postedBody = await request.json();
+          return HttpResponse.json(
+            {...makeCookLog(), ...(postedBody as object)},
+            {status: 201},
+          );
+        },
+      ),
+    );
     await renderWithProviders(<RecipesPage />);
     await waitFor(() => {
       expect(screen.getByText('Test Recipe')).toBeInTheDocument();
@@ -191,9 +207,20 @@ describe('RecipesPage', () => {
     await waitFor(() => {
       expect(screen.getByText('How did it go?')).toBeInTheDocument();
     });
+    await userEvent.click(
+      screen.getByRole('radio', {name: 'Rate 4 out of 5 stars'}),
+    );
+    await userEvent.type(
+      screen.getByPlaceholderText('Notes from this cook (optional)'),
+      'Weeknight favorite',
+    );
     await userEvent.click(screen.getByRole('button', {name: 'Save'}));
     await waitFor(() => {
       expect(screen.queryByText('How did it go?')).not.toBeInTheDocument();
+    });
+    expect(postedBody).toEqual({
+      authorStarRating: 4,
+      notes: 'Weeknight favorite',
     });
   });
 
