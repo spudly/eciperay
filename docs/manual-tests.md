@@ -161,10 +161,9 @@ without); one recipe may be created fresh in case 1.
    recipe whose nutrition is still being computed (e.g. one just created or
    renamed) reads "Satiety pending" — never a bare "Satiety…" that looks
    truncated; other cards show a satiety value or "Satiety —". Open one recipe's
-   detail. **Expected:** the recipe status appears as the pill in the page
-   toolbar; the design-system page currently ALSO repeats it beside the
-   overview title (design-system#363 tracks removing the duplicate — #278's
-   exactly-once rule returns when that lands).
+   detail. **Expected:** the recipe status appears exactly once, as the pill
+   in the page toolbar — the Overview does not repeat it under the title
+   (the design-system#363 duplicate was removed in @spudly/ui 1.16.2).
 
 **Run when:**
 `packages/app/src/screens/{Recipes,RecipeDetail,EditRecipe,EditVersion,ManualEntry}Screen.tsx`,
