@@ -6,6 +6,7 @@ import {
   writeAnalyticsConsent,
   type AnalyticsConsentStatus,
 } from '@eciperay/client';
+import {Button, SectionCard, Text as DSText} from '@spudly/ui';
 import {useState} from 'react';
 import type {ComponentType} from 'react';
 import type {ShowcaseFrameProps} from '@eciperay/client';
@@ -14,15 +15,19 @@ import {analytics, disablePostHog, enablePostHog} from '../lib/analytics.js';
 import {POSTHOG_KEY} from '../lib/env.js';
 
 import {CheckboxField} from './ui/CheckboxField.js';
-import {PrimaryButton} from './ui/PrimaryButton.js';
-import {SecondaryButton} from './ui/SecondaryButton.js';
-import {SectionCard} from './ui/SectionCard.js';
 
 const CONSENT_LABELS: Record<AnalyticsConsentStatus, string> = {
   accepted: 'Accepted',
   declined: 'Declined',
 };
 
+/**
+ * The DS ProfilePage's feedbackPreference slot content (B7 C10,
+ * design-system#130): the consent state machine stays web-side
+ * (eciperay#256/#299 — enabling the shortcut always re-presents the consent
+ * prompt; declining consent forces the preference off), and the section renders
+ * on design system widgets directly, the app's post-B6 host pattern.
+ */
 export const ProfileFeedbackPreference = () => {
   const {enabled, setEnabled} = useFeedbackShortcutEnabled();
   const {session} = useAuth();
@@ -77,7 +82,11 @@ export const ProfileFeedbackPreference = () => {
   };
 
   return (
-    <SectionCard title="Preferences">
+    <SectionCard
+      title="Preferences"
+      variant="elevated"
+      marginBottom="$8"
+    >
       <CheckboxField
         checked={enabled}
         disabled={!analyticsConfigured}
@@ -86,59 +95,63 @@ export const ProfileFeedbackPreference = () => {
         description="Adds a floating feedback button so you can send product feedback. Submissions are sent to PostHog when you use it."
       >
         {analyticsConfigured ? null : (
-          <span className="mbs-1 block text-gray-500">
+          <DSText variant="hint">
             Feedback is unavailable because analytics is not configured in this
             environment.
-          </span>
+          </DSText>
         )}
         {analyticsConfigured ? (
-          <div className="mbs-2 flex flex-col gap-2">
-            <span className="block text-gray-500">
-              Analytics consent: {consent ? CONSENT_LABELS[consent] : 'Not set'}
-            </span>
+          <div>
+            <DSText variant="hint">
+              {`Analytics consent: ${consent ? CONSENT_LABELS[consent] : 'Not set'}`}
+            </DSText>
             {consentPromptOpen ? (
               <div
                 role="group"
                 aria-label="Analytics consent for feedback"
-                className="flex flex-col gap-2"
               >
-                <span className="block text-gray-700">
+                <DSText>
                   The feedback shortcut sends feedback through PostHog, which
                   needs your analytics consent. Accept to keep the shortcut on,
                   or decline to turn it off.
-                </span>
-                <div className="flex gap-2">
-                  <SecondaryButton
-                    label="Decline"
+                </DSText>
+                <div>
+                  <Button
+                    variant="secondary"
                     onPress={declineConsent}
-                  />
-                  <PrimaryButton
-                    label="Accept"
+                  >
+                    Decline
+                  </Button>
+                  <Button
+                    variant="primary"
                     onPress={acceptConsent}
-                  />
+                  >
+                    Accept
+                  </Button>
                 </div>
               </div>
             ) : consent === 'accepted' ? (
               <div>
-                <SecondaryButton
-                  label="Decline analytics consent"
+                <Button
+                  variant="secondary"
                   onPress={declineConsent}
-                />
+                >
+                  Decline analytics consent
+                </Button>
               </div>
             ) : (
               <div>
-                <PrimaryButton
-                  label="Accept analytics consent"
+                <Button
+                  variant="primary"
                   onPress={acceptConsent}
-                />
+                >
+                  Accept analytics consent
+                </Button>
               </div>
             )}
             {error ? (
-              <span
-                role="alert"
-                className="block text-red-600"
-              >
-                {error}
+              <span role="alert">
+                <DSText variant="error">{error}</DSText>
               </span>
             ) : null}
           </div>

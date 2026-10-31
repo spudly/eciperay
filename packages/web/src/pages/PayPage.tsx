@@ -1,11 +1,8 @@
-import {Text as DSText} from '@spudly/ui';
+import {Button, ScreenContainer, SectionCard, Text as DSText} from '@spudly/ui';
 import {useEffect, useState} from 'react';
 import {useNavigate, useSearchParams} from 'react-router-dom';
 
 import {BookLoadingSpinner} from '../components/ui/BookLoadingSpinner.js';
-import {PrimaryButton} from '../components/ui/PrimaryButton.js';
-import {ScreenContainer} from '../components/ui/ScreenContainer.js';
-import {SectionCard} from '../components/ui/SectionCard.js';
 import type {PaddleEvent} from '../lib/paddle.js';
 import {
   closeCheckout,
@@ -92,6 +89,7 @@ export const PayPage = () => {
         </div>
         <SectionCard
           title={inCheckoutFlow ? 'Complete your purchase' : 'Checkout'}
+          variant="elevated"
         >
           {configured ? (
             transactionId ? (
@@ -101,24 +99,28 @@ export const PayPage = () => {
                     The payment window couldn’t be opened. Check your connection
                     and try again.
                   </DSText>
-                  <PrimaryButton
-                    label="Try again"
+                  <Button
+                    variant="primary"
                     onPress={() => {
                       window.location.reload();
                     }}
-                  />
+                  >
+                    Try again
+                  </Button>
                 </>
               ) : status === 'closed' ? (
                 <>
                   <DSText>
                     The payment window was closed before the purchase finished.
                   </DSText>
-                  <PrimaryButton
-                    label="Reopen checkout"
+                  <Button
+                    variant="primary"
                     onPress={() => {
                       window.location.reload();
                     }}
-                  />
+                  >
+                    Reopen checkout
+                  </Button>
                 </>
               ) : (
                 <>
@@ -133,12 +135,14 @@ export const PayPage = () => {
                   needs the checkout link from that purchase to open a payment
                   window.
                 </DSText>
-                <PrimaryButton
-                  label="Go to Eciperay home"
+                <Button
+                  variant="primary"
                   onPress={() => {
                     void navigate('/');
                   }}
-                />
+                >
+                  Go to Eciperay home
+                </Button>
               </>
             )
           ) : (

@@ -4,11 +4,14 @@ import {useQueryClient} from '@tanstack/react-query';
 import {useRef, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
+import {ProfilePage as ProfilePageView} from '@spudly/ui/pages';
+
+import {LegalLinks} from '../components/LegalLinks.js';
 import {ProfileAccessTokensSection} from '../components/profile/ProfileAccessTokensSection.js';
 import {ProfileAccountDataSection} from '../components/ProfileAccountDataSection.js';
+import {ProfileFeedbackPreference} from '../components/ProfileFeedbackPreference.js';
 import {ProfileNutritionGoalsSection} from '../components/profile/ProfileNutritionGoalsSection.js';
 import {ProfileSubscriptionSection} from '../components/profile/ProfileSubscriptionSection.js';
-import {ProfileView} from '../components/profile/ProfileView.js';
 import {ProfileTransferSection} from '../components/profile/ProfileTransferSection.js';
 import {eciperay} from '../lib/api.js';
 import {supabase} from '../lib/supabase.js';
@@ -79,8 +82,8 @@ export const ProfilePage = () => {
   };
 
   return (
-    <ProfileView
-      email={session?.user.email}
+    <ProfilePageView
+      email={session?.user.email ?? null}
       onSignOut={() => {
         void handleSignOut();
       }}
@@ -104,7 +107,9 @@ export const ProfilePage = () => {
           />
         </>
       }
+      feedbackPreference={<ProfileFeedbackPreference />}
       sectionsAfterFeedback={<ProfileAccountDataSection />}
+      legalLinks={<LegalLinks variant="stacked" />}
     />
   );
 };

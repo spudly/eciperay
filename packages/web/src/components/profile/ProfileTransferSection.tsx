@@ -1,5 +1,5 @@
 import type {RefObject} from 'react';
-import {SectionCard} from '@spudly/ui';
+import {Button, SectionCard, Text as DSText, tokens} from '@spudly/ui';
 
 import {RecipeExportPicker} from '../RecipeExportPicker.js';
 
@@ -26,45 +26,36 @@ export const ProfileTransferSection = ({
     title="Transfer recipes"
     marginBottom="$8"
   >
-    <p className="text-muted mbe-4 text-sm">
+    <DSText variant="hint">
       Select recipes to export as JSON, then import them in another environment.
       Images and tags are included.
-    </p>
+    </DSText>
     <RecipeExportPicker
       disabled={importing}
       onError={onExportError}
     />
-    <div className="mbs-6 border-bs border-gray-100 pbs-4">
-      <button
-        type="button"
-        className="
-          rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm
-          font-medium text-gray-900
-          disabled:opacity-50
-        "
-        disabled={importing}
-        onClick={onImportClick}
-      >
-        {importing ? 'Importing…' : 'Import recipes'}
-      </button>
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="application/json,.json"
-        className="hidden"
-        onChange={event => {
-          const file = event.target.files?.[0];
-          if (file) {
-            onImportFile(file);
-          }
-        }}
-      />
-    </div>
+    <Button
+      variant="secondary"
+      disabled={importing}
+      onPress={onImportClick}
+    >
+      {importing ? 'Importing…' : 'Import recipes'}
+    </Button>
+    <input
+      ref={fileInputRef}
+      type="file"
+      accept="application/json,.json"
+      className="hidden"
+      onChange={event => {
+        const file = event.target.files?.[0];
+        if (file) {
+          onImportFile(file);
+        }
+      }}
+    />
     {importSummary ? (
-      <p className="mbs-4 text-sm text-green-700">{importSummary}</p>
+      <DSText color={tokens.colors.success.success8}>{importSummary}</DSText>
     ) : null}
-    {transferError ? (
-      <p className="mbs-4 text-sm text-red-600">{transferError}</p>
-    ) : null}
+    {transferError ? <DSText variant="error">{transferError}</DSText> : null}
   </SectionCard>
 );

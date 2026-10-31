@@ -284,34 +284,10 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
       'dnd-kit sortable row primitive for web; app uses react-native-draggable-flatlist in SortableInstructionList.',
   },
   {
-    path: 'profile/ProfileView.tsx',
-    platform: 'web',
-    reason:
-      'Web profile view; the app renders the design system ProfilePage (design-system#126). Web adoption is B7.',
-  },
-  {
-    path: 'profile/AccessTokensView.tsx',
-    platform: 'web',
-    reason:
-      'Web access tokens section; the app renders the design system AccessTokensPanel (design-system#126). Web adoption is B7.',
-  },
-  {
-    path: 'profile/AccessTokensTokenRow.tsx',
-    platform: 'web',
-    reason:
-      'Web token row; the app renders the design system AccessTokensPanel, whose rows are design system TokenRows (design-system#126). Web adoption is B7.',
-  },
-  {
-    path: 'profile/NutritionGoalsFormView.tsx',
-    platform: 'web',
-    reason:
-      'Web nutrition goals form; the app renders the design system NutritionGoalsForm (design-system#126). Web adoption is B7.',
-  },
-  {
     path: 'FeedbackForm.tsx',
     platform: 'web',
     reason:
-      'Web feedback form implementation; the app renders the design system FeedbackPage via its host (design-system#126). Web adoption is B7.',
+      'Web feedback host; renders the design system FeedbackPage (design-system#126) — the local view retired in B7 C10 (design-system#130). The app host lives outside src/components (hosts/FeedbackForm.tsx).',
   },
   {
     path: 'meals/NutritionGoalProgressView.tsx',
@@ -422,12 +398,6 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
       'Web adapter remains; the app copy lost its consumers when the meal forms moved to the design system in B3b (the widget moved to @spudly/ui in B2). Removed in B6 (design-system#129). Web retirement is B7.',
   },
   {
-    path: 'ui/DestructiveButton.tsx',
-    platform: 'web',
-    reason:
-      'Web adapter remains; the app copy had no production importer after screens adopted design system pages. Removed in B6 (design-system#129). Web retirement is B7.',
-  },
-  {
     path: 'ui/ErrorText.tsx',
     platform: 'web',
     reason:
@@ -465,12 +435,6 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
   },
   {
     path: 'ui/OptionCard.tsx',
-    platform: 'web',
-    reason:
-      'Web adapter remains; the app copy had no production importer after screens adopted design system pages. Removed in B6 (design-system#129). Web retirement is B7.',
-  },
-  {
-    path: 'ui/ScreenContainer.tsx',
     platform: 'web',
     reason:
       'Web adapter remains; the app copy had no production importer after screens adopted design system pages. Removed in B6 (design-system#129). Web retirement is B7.',
@@ -605,7 +569,7 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
     path: 'ProfileFeedbackPreference.tsx',
     platform: 'web',
     reason:
-      'Web mirror remains; the app container moved out of components/ to packages/app/src/hosts in B6 (design-system#129). Web retirement is B7.',
+      'Web host for the design system ProfilePage feedbackPreference slot (B7 C10, design-system#130); the analytics-consent state machine stays web-side (eciperay#256/#299). The app container lives outside src/components (hosts/profile/ProfileFeedbackPreference.tsx).',
   },
 ];
 
