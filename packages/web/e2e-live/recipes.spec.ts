@@ -33,7 +33,8 @@ test.describe('live recipes', () => {
       created = value;
     });
 
-    await page.getByRole('tab', {name: 'Ingredients'}).click();
+    // The detail page is single-scroll (B7 C7): the ingredients render
+    // without selecting a tab.
     await expect(page.getByText('CI Test Ingredient')).toBeVisible();
 
     await openRecipeFromList(page, created.title);
@@ -65,7 +66,6 @@ test.describe('live recipes', () => {
       created = value;
     });
 
-    await page.getByRole('tab', {name: 'Ingredients'}).click();
     await expect(page.getByText(/400\s*g/)).toBeVisible();
 
     await page.getByText('2×', {exact: true}).click();

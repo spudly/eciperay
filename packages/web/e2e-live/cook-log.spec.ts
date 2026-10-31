@@ -65,9 +65,9 @@ test.describe('live cook log', () => {
       timeout: 15_000,
     });
 
-    // Back on the recipe, the cook shows in its history.
+    // Back on the recipe, the cook shows in its history (the detail page
+    // is single-scroll since B7 C7 — no History tab to select).
     await page.goto(`/recipes/${created.id}`);
-    await page.getByRole('tab', {name: /history/i}).click();
     await expect(page.getByText('CI cook log notes')).toBeVisible({
       timeout: 15_000,
     });
@@ -92,7 +92,6 @@ test.describe('live cook log', () => {
     // The form closing is not enough: Skip must not have recorded a cook
     // on the way out. The new recipe's history is empty.
     await page.goto(`/recipes/${created.id}`);
-    await page.getByRole('tab', {name: /history/i}).click();
     await expect(page.getByText(/No cooks logged yet/)).toBeVisible({
       timeout: 15_000,
     });
