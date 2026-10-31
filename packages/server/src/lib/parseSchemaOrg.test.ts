@@ -404,6 +404,66 @@ describe('parseSchemaOrg with WP Recipe Maker markup', () => {
     expect(result?.ingredients[3]?.notes).toBeNull();
   });
 
+  test('does not select a WPRM card whose names only prefix-match', () => {
+    // Every name on this foreign card extends an expected name by a suffix,
+    // so prefix matching would count all six as identity evidence.
+    const foreignCard = `<div class="wprm-recipe-container"><ul>
+<li class="wprm-recipe-ingredient"><span class="wprm-recipe-ingredient-amount">9</span> <span class="wprm-recipe-ingredient-unit">cups</span> <span class="wprm-recipe-ingredient-name">avocado, pitted and peeled, extra</span></li>
+<li class="wprm-recipe-ingredient"><span class="wprm-recipe-ingredient-amount">9</span> <span class="wprm-recipe-ingredient-unit">cups</span> <span class="wprm-recipe-ingredient-name">lemon juice, freshly squeezed</span></li>
+<li class="wprm-recipe-ingredient"><span class="wprm-recipe-ingredient-amount">9</span> <span class="wprm-recipe-ingredient-unit">cups</span> <span class="wprm-recipe-ingredient-name">dill, fresh chopped, extra</span></li>
+<li class="wprm-recipe-ingredient"><span class="wprm-recipe-ingredient-amount">9</span> <span class="wprm-recipe-ingredient-unit">cups</span> <span class="wprm-recipe-ingredient-name">Hey Old Sport Overachiever to taste, extra</span></li>
+<li class="wprm-recipe-ingredient"><span class="wprm-recipe-ingredient-amount">9</span> <span class="wprm-recipe-ingredient-unit">cups</span> <span class="wprm-recipe-ingredient-name">honey, extra</span></li>
+<li class="wprm-recipe-ingredient"><span class="wprm-recipe-ingredient-amount">9</span> <span class="wprm-recipe-ingredient-unit">cups</span> <span class="wprm-recipe-ingredient-name">red onion, sliced, extra</span></li>
+</ul></div>`;
+    const html = WPRM_HTML.replace(
+      '<div class="wprm-recipe-container">',
+      `${foreignCard}\n<div class="wprm-recipe-container">`,
+    );
+    const $ = load(html);
+    const result = parseSchemaOrg($);
+    expect(result?.ingredients).toHaveLength(6);
+    expect(result?.ingredients[0]?.name).toBe('avocado, pitted and peeled');
+    expect(result?.ingredients[0]?.quantity).toBe(1);
+  });
+
+  test('matches a WPRM card whose name and ingredients are non-Latin', () => {
+    const html = `<html><head>
+<script type="application/ld+json">
+{"@type":"Recipe","name":"Салат Цезарь","recipeYield":"4",
+"recipeIngredient":["200 молоко","2 яйца"],
+"recipeInstructions":[{"text":"Смешать"}]}
+</script></head><body>
+<div class="wprm-recipe-container"><h2 class="wprm-recipe-name">Салат Цезарь</h2>
+<ul class="wprm-recipe-ingredients">
+<li class="wprm-recipe-ingredient"><span class="wprm-recipe-ingredient-amount">200</span> <span class="wprm-recipe-ingredient-unit">мл</span> <span class="wprm-recipe-ingredient-name">молоко</span></li>
+<li class="wprm-recipe-ingredient"><span class="wprm-recipe-ingredient-amount">2</span> <span class="wprm-recipe-ingredient-unit">шт</span> <span class="wprm-recipe-ingredient-name">яйца</span></li>
+</ul>
+</div>
+</body></html>`;
+    const $ = load(html);
+    const result = parseSchemaOrg($);
+    // The WPRM spans are used (units survive); the JSON-LD fallback would
+    // have produced unit: null for both ingredients.
+    expect(result?.ingredients).toEqual([
+      {
+        sortOrder: 0,
+        name: 'молоко',
+        quantity: 200,
+        unit: 'мл',
+        notes: null,
+        isOptional: false,
+      },
+      {
+        sortOrder: 1,
+        name: 'яйца',
+        quantity: 2,
+        unit: 'шт',
+        notes: null,
+        isOptional: false,
+      },
+    ]);
+  });
+
   test('matches a WPRM card by its rendered recipe name heading', () => {
     const card = (heading: string, names: string[]) =>
       `<div class="wprm-recipe-container"><h2 class="wprm-recipe-name">${heading}</h2><ul>${names

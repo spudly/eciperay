@@ -48,17 +48,21 @@ const toIngredient = (raw: string, i: number): IngredientInput => {
 const normalizeForMatch = (text: string): string =>
   text
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/[^\p{L}\p{M}\p{N}]+/gu, ' ')
     .trim();
 
-/** Two ingredient names match when one is the other, or a prefix of it. */
+/**
+ * Two ingredient names match only when they are exactly equal after
+ * normalization — a prefix match (e.g. "milk" vs "milk chocolate") is not
+ * identity evidence for selecting a WPRM card.
+ */
 const ingredientNamesMatch = (a: string, b: string): boolean => {
   const left = normalizeForMatch(a);
   const right = normalizeForMatch(b);
   if (!left || !right) {
     return false;
   }
-  return left === right || left.startsWith(right) || right.startsWith(left);
+  return left === right;
 };
 
 /**
