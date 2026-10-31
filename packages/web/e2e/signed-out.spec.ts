@@ -30,6 +30,44 @@ test.describe('signed out', () => {
     expect(pageErrors).toEqual([]);
   });
 
+  test('the privacy policy renders in full inside the public frame', async ({
+    page,
+  }) => {
+    const {pageErrors} = await installMocks(page, {signedIn: false});
+
+    await page.goto('/privacy');
+
+    await expect(
+      page.getByRole('heading', {name: 'Privacy Policy'}),
+    ).toBeVisible();
+    await expect(page.getByText('Last updated: July 22, 2026')).toBeVisible();
+    // The final section renders (the document is data-driven now;
+    // this pins that every section crosses, including the last).
+    await expect(page.getByText('Questions about this Privacy Policy?')).toBeVisible();
+    await expect(
+      page.getByRole('link', {name: 'Terms of Service'}),
+    ).toBeVisible();
+    expect(pageErrors).toEqual([]);
+  });
+
+  test('the terms of service render in full inside the public frame', async ({
+    page,
+  }) => {
+    const {pageErrors} = await installMocks(page, {signedIn: false});
+
+    await page.goto('/terms');
+
+    await expect(
+      page.getByRole('heading', {name: 'Terms of Service'}),
+    ).toBeVisible();
+    await expect(page.getByText('Last updated: June 18, 2026')).toBeVisible();
+    await expect(page.getByText('Questions about these Terms?')).toBeVisible();
+    await expect(
+      page.getByRole('link', {name: 'Privacy Policy'}),
+    ).toBeVisible();
+    expect(pageErrors).toEqual([]);
+  });
+
   test('scrolling Discover to the end loads the next page', async ({page}) => {
     const {pageErrors} = await installMocks(page, {signedIn: false});
 
