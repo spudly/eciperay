@@ -213,15 +213,22 @@ export const RecipeDetailHost = ({
   // server's createVersion always clones it), so the action is only
   // offered while the active version is the one on display — on an
   // archived version it would silently draft from a version the user
-  // is not looking at.
+  // is not looking at. The selection check closes the window where an
+  // archived version is selected but its detail has not replaced
+  // displayRecipe yet (still loading, or the fetch failed): the
+  // display alone would still read as the active version then.
   const canCreateDraft =
     canCreateDraftVersion(displayRecipe.status) &&
-    displayRecipe.versionId === recipe.versionId;
+    displayRecipe.versionId === recipe.versionId &&
+    selectedVersionId === recipe.versionId;
   const createDraftMutation = useMutation({
     mutationFn: () => eciperay.versions.create(recipe.id),
     onSuccess: version => {
       void invalidate();
       void navigate(`/recipes/${recipe.id}/versions/${version.id}/edit`);
+    },
+    onError: () => {
+      showActionMessage('Could not create a draft. Please try again.');
     },
   });
 
@@ -447,6 +454,8 @@ export const RecipeDetailHost = ({
         queryKey: queryKeys.recipe(recipe.id),
       });
       void queryClient.invalidateQueries({queryKey: queryKeys.recipeLists()});
+    } catch {
+      showActionMessage('Could not refresh nutrition. Please try again.');
     } finally {
       setIsRefreshingNutrition(false);
     }
@@ -676,7 +685,9 @@ export const RecipeDetailHost = ({
       <Dialog
         open={confirmingRecipeDelete}
         onOpenChange={open => {
-          if (!open) {
+          // While the delete is in flight, dismissal (backdrop, Escape)
+          // must not tear down the dialog's state under it.
+          if (!open && !deleteRecipeMutation.isPending) {
             setConfirmingRecipeDelete(false);
             setRecipeDeleteError(null);
           }
@@ -718,7 +729,9 @@ export const RecipeDetailHost = ({
       <Dialog
         open={confirmingCookLog !== undefined}
         onOpenChange={open => {
-          if (!open) {
+          // While the delete is in flight, dismissal (backdrop, Escape)
+          // must not tear down the dialog's state under it.
+          if (!open && !deleteCookLogMutation.isPending) {
             setConfirmingCookLogDeleteId(null);
             setCookLogDeleteError(null);
           }

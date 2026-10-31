@@ -1,4 +1,4 @@
-import {screen, waitFor} from '@testing-library/react';
+import {screen, waitFor, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {http, HttpResponse} from 'msw';
 import {useState} from 'react';
@@ -233,6 +233,21 @@ describe('RecipeDetailHost', () => {
       expect(screen.getByText('Activate')).toBeInTheDocument();
       expect(screen.queryByText('Tweak manually')).not.toBeInTheDocument();
     });
+
+    test('shows feedback when creating a draft fails', async () => {
+      server.use(
+        http.post('http://localhost:8080/api/recipes/:id/versions', () =>
+          HttpResponse.json({error: 'Server exploded'}, {status: 500}),
+        ),
+      );
+      await renderHost({status: 'perfected'}, []);
+      await userEvent.click(await screen.findByText('Edit draft'));
+      expect(
+        await screen.findByText('Could not create a draft. Please try again.'),
+      ).toBeInTheDocument();
+      // No navigation happened: the detail page is still shown.
+      expect(screen.getByText('Test Recipe')).toBeInTheDocument();
+    });
   });
 
   describe('cook history', () => {
@@ -271,15 +286,19 @@ describe('RecipeDetailHost', () => {
       );
       await renderHost();
       await userEvent.click(await screen.findByText('Log a cook'));
-      expect(await screen.findByText('How did it go?')).toBeInTheDocument();
+      // Scope the form's controls to the form itself: the page's own
+      // "Your rating" input carries the same star labels, so unscoped
+      // queries match both rating controls.
+      const formTitle = await screen.findByText('How did it go?');
+      const form = within(formTitle.parentElement as HTMLElement);
       await userEvent.click(
-        screen.getByRole('radio', {name: 'Rate 5 out of 5 stars'}),
+        form.getByRole('radio', {name: 'Rate 5 out of 5 stars'}),
       );
       await userEvent.type(
-        screen.getByPlaceholderText('Notes from this cook (optional)'),
+        form.getByPlaceholderText('Notes from this cook (optional)'),
         'Quick weeknight cook',
       );
-      await userEvent.click(screen.getByText('Save'));
+      await userEvent.click(form.getByText('Save'));
       await waitFor(() => {
         expect(screen.queryByText('How did it go?')).not.toBeInTheDocument();
       });

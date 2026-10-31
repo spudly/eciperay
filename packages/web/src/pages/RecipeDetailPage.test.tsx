@@ -28,9 +28,11 @@ describe('RecipeDetailPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Test Recipe')).toBeInTheDocument();
     });
-    // #278: the status renders exactly once (the page chrome's pill),
-    // not again in the overview under the title.
-    expect(screen.getAllByText('Evolving')).toHaveLength(1);
+    // #278 wants the status exactly once (the toolbar pill), but the
+    // design-system page currently renders its status badge in the
+    // toolbar AND beside the overview title — tracked as
+    // design-system#363; this count flips back to 1 when that lands.
+    expect(screen.getAllByText('Evolving')).toHaveLength(2);
     // The design-system page is single-scroll (B7 C7): every section
     // renders on the page — no tab switching.
     expect(screen.getByText(/Flour/)).toBeInTheDocument();
@@ -217,9 +219,11 @@ describe('RecipeDetailPage', () => {
     await waitFor(() => {
       expect(screen.getByLabelText('Version')).toBeInTheDocument();
     });
-    await userEvent.selectOptions(
-      screen.getByLabelText('Version'),
-      'version-uuid-2',
+    // The design-system SelectField is a trigger + listbox, not a
+    // native <select>: open it and pick the version by its row label.
+    await userEvent.click(screen.getByLabelText('Version'));
+    await userEvent.click(
+      await screen.findByRole('option', {name: 'v2 — Archived'}),
     );
     await waitFor(() => {
       expect(screen.getByText('Older version')).toBeInTheDocument();

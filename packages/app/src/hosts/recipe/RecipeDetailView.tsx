@@ -209,6 +209,9 @@ export const RecipeDetailView = ({
       void invalidate();
       onEditVersion(version.id);
     },
+    onError: () => {
+      showActionMessage('Could not create a draft. Please try again.');
+    },
   });
 
   const isEditable =
@@ -411,10 +414,14 @@ export const RecipeDetailView = ({
   // Creating a draft clones the ACTIVE version (the server's createVersion
   // always clones it), so the chip is only offered while the active version
   // is the one on display — on an archived version it would silently draft
-  // from a version the user is not looking at.
+  // from a version the user is not looking at. The selection check closes
+  // the window where an archived version is selected but its detail has
+  // not replaced displayRecipe yet (still loading, or the fetch failed):
+  // the display alone would still read as the active version then.
   const canCreateDraft =
     canCreateDraftVersion(displayRecipe.status) &&
-    displayRecipe.versionId === recipe.versionId;
+    displayRecipe.versionId === recipe.versionId &&
+    selectedVersionId === recipe.versionId;
   const canEditMetadata = canEditActiveRecipeMetadata(
     displayRecipe.status,
     displayRecipe.versionId,

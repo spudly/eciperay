@@ -287,6 +287,16 @@ describe('RecipeDetailView', () => {
     });
   });
 
+  test('perfected recipe: a failed draft creation shows feedback and does not navigate (#264)', async () => {
+    mockCreateVersion.mockRejectedValue(new Error('Server exploded'));
+    const {callbacks, findByText} = await renderView({status: 'perfected'});
+    await fireEvent.press(await findByText('Edit draft'));
+    expect(
+      await findByText('Could not create a draft. Please try again.'),
+    ).toBeTruthy();
+    expect(callbacks.onEditVersion).not.toHaveBeenCalled();
+  });
+
   test('perfected recipe viewed at an archived version has no Edit draft chip', async () => {
     const archived = makeRecipeVersionSummary({
       id: 'version-uuid-2',
