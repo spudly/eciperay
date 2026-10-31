@@ -1,6 +1,6 @@
 import {queryKeys} from '@eciperay/client';
 import {onlineManager} from '@tanstack/react-query';
-import {act, screen, waitFor} from '@testing-library/react';
+import {act, fireEvent, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {http, HttpResponse} from 'msw';
 import {Route, Routes} from 'react-router-dom';
@@ -221,8 +221,10 @@ describe('RecipeDetailPage', () => {
     });
     // The design-system SelectField is a trigger + listbox, not a
     // native <select>: open it and pick the version by its row label.
+    // fireEvent for the option: the listbox item carries
+    // pointer-events: none in jsdom, which userEvent refuses.
     await userEvent.click(screen.getByLabelText('Version'));
-    await userEvent.click(
+    fireEvent.click(
       await screen.findByRole('option', {name: 'v2 — Archived'}),
     );
     await waitFor(() => {
