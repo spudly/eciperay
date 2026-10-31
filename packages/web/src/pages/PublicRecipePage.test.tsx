@@ -3,7 +3,7 @@ import {screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as ReactQuery from '@tanstack/react-query';
 import {http, HttpResponse} from 'msw';
-import {Route, Routes} from 'react-router-dom';
+import {Route, Routes, useLocation} from 'react-router-dom';
 import {vi} from 'vitest';
 
 import {makeRecipeDetail} from '../test/fixtures/recipe.js';
@@ -13,6 +13,14 @@ import {renderWithProviders} from '../test/testUtils.js';
 import {PublicRecipePage} from './PublicRecipePage.js';
 
 const API = 'http://localhost:8080';
+
+// The sign-up stub echoes its search string so the clone test can
+// assert the navigation carried the clone target, not just that
+// the route rendered.
+function SignUpRoute() {
+  const {search} = useLocation();
+  return <div>{`Sign up route${search}`}</div>;
+}
 
 // The host renders the design system's PublicRecipePage inside
 // the DS PublicPageFrame (B7 cluster 11); these tests drive that
@@ -27,10 +35,7 @@ describe('PublicRecipePage', () => {
           path="/recipe/:id/:slug"
           element={<PublicRecipePage />}
         />
-        <Route
-          path="/signup"
-          element={<div>Sign up route</div>}
-        />
+        <Route path="/signup" element={<SignUpRoute />} />
       </Routes>,
       {route: '/recipe/recipe-uuid-1/test-recipe', withAuth: false},
     );
@@ -59,7 +64,9 @@ describe('PublicRecipePage', () => {
       screen.getByRole('button', {name: 'Clone this recipe'}),
     );
     await waitFor(() => {
-      expect(screen.getByText('Sign up route')).toBeInTheDocument();
+      expect(
+        screen.getByText('Sign up route?cloneRecipe=recipe-uuid-1'),
+      ).toBeInTheDocument();
     });
   });
 

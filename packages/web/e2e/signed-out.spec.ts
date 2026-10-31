@@ -40,10 +40,18 @@ test.describe('signed out', () => {
     await expect(
       page.getByRole('heading', {name: 'Privacy Policy'}),
     ).toBeVisible();
-    await expect(page.getByText('Last updated: July 22, 2026')).toBeVisible();
+    await expect(
+      page.getByText('Last updated: July 22, 2026', {exact: true}),
+    ).toBeVisible();
     // The final section renders (the document is data-driven now;
-    // this pins that every section crosses, including the last).
+    // this pins that every section crosses, including the last) —
+    // lead-in and the contact email link it carries.
     await expect(page.getByText('Questions about this Privacy Policy?')).toBeVisible();
+    await expect(
+      // The contact email recurs in earlier sections (Deletion,
+      // Analytics); the last one is this section's.
+      page.getByRole('link', {name: 'shuoink+eciperaylegal@gmail.com'}).last(),
+    ).toBeVisible();
     await expect(
       page.getByRole('link', {name: 'Terms of Service'}),
     ).toBeVisible();
@@ -60,8 +68,15 @@ test.describe('signed out', () => {
     await expect(
       page.getByRole('heading', {name: 'Terms of Service'}),
     ).toBeVisible();
-    await expect(page.getByText('Last updated: June 18, 2026')).toBeVisible();
+    await expect(
+      page.getByText('Last updated: June 18, 2026', {exact: true}),
+    ).toBeVisible();
     await expect(page.getByText('Questions about these Terms?')).toBeVisible();
+    await expect(
+      // The contact email also appears under Termination; the last
+      // one is this section's.
+      page.getByRole('link', {name: 'shuoink+eciperaylegal@gmail.com'}).last(),
+    ).toBeVisible();
     await expect(
       page.getByRole('link', {name: 'Privacy Policy'}),
     ).toBeVisible();
