@@ -71,6 +71,21 @@ describe('FeedbackBubble', () => {
     expect(readFeedbackShortcutEnabled()).toBe(true);
   });
 
+  test('panel is viewport-height constrained and scrollable', async () => {
+    writeFeedbackShortcutEnabled(true);
+    const user = userEvent.setup();
+    await renderWithProviders(
+      <FeedbackPreferenceProvider initialEnabled>
+        <FeedbackBubble />
+      </FeedbackPreferenceProvider>,
+    );
+
+    await user.click(screen.getByRole('button', {name: 'Send feedback'}));
+    const dialog = screen.getByRole('dialog', {name: 'Send feedback'});
+    expect(dialog.className).toContain('max-block-[calc(100dvh-10rem)]');
+    expect(dialog.className).toContain('overflow-y-auto');
+  });
+
   test('closes the dialog after submit or cancel', async () => {
     writeFeedbackShortcutEnabled(true);
     const user = userEvent.setup();

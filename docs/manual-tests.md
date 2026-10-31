@@ -129,8 +129,8 @@ without); one recipe may be created fresh in case 1.
 4. **Detail sections.** On a recipe with nutrition data and at least one cook
    log entry, walk the detail page's sections: Overview, Ingredients,
    Instructions, Nutrition, Cook History, Comments. **Expected:** each section
-   renders its content with no empty-shell or error states; the Nutrition
-   values match the recipe's stored nutrition.
+   renders its content with no empty-shell or error states; the Nutrition values
+   match the recipe's stored nutrition.
 5. **Post a comment.** In the Comments section, post `QA — comment check`, then
    reload. **Expected:** the comment appears with the QA account as author and
    persists after reload.
@@ -140,31 +140,30 @@ without); one recipe may be created fresh in case 1.
    the recipe and restores the Delete button, Confirm delete removes it. The
    recipe detail page's Delete control opens a confirmation dialog instead;
    confirming there returns to the recipe list, and a failed delete shows its
-   error in the dialog.
-   **Expected:** the deleted recipe disappears from the list and search; its old
-   detail URL no longer renders the recipe; and if a delete request fails, an
-   error is shown and the recipe stays listed (a delete never fails silently).
+   error in the dialog. **Expected:** the deleted recipe disappears from the
+   list and search; its old detail URL no longer renders the recipe; and if a
+   delete request fails, an error is shown and the recipe stays listed (a delete
+   never fails silently).
 7. **Recipe without an image.** Open the image-less recipe. **Expected:** the
    detail and its list card render a clean placeholder — no broken image icon,
    no layout collapse.
 8. **Create a draft from a Perfected recipe.** Open a Perfected recipe's detail
    and use its create-draft action (the **Edit draft** button on web and app
-   alike since the detail pages adopted the design system page).
-   **Expected:** a new draft version is created from the
-   Perfected version and opens in the version editor; changing the title and one
-   ingredient there and saving succeeds (no "Recipe cannot be modified in its
-   current status" error), the recipe's status shows Evolving, and the
-   previously Perfected version remains available unchanged in the version
-   history.
+   alike since the detail pages adopted the design system page). **Expected:** a
+   new draft version is created from the Perfected version and opens in the
+   version editor; changing the title and one ingredient there and saving
+   succeeds (no "Recipe cannot be modified in its current status" error), the
+   recipe's status shows Evolving, and the previously Perfected version remains
+   available unchanged in the version history.
 9. **Card meta and detail status polish (#278).** On `/recipes`, check the card
    subtitles: a 1-serving recipe reads "1 serving" (not "1 servings"), and a
    recipe whose nutrition is still being computed (e.g. one just created or
    renamed) reads "Satiety pending" — never a bare "Satiety…" that looks
    truncated; other cards show a satiety value or "Satiety —". Open one recipe's
    detail. **Expected:** the recipe status appears as the pill in the page
-   toolbar; the design-system page currently ALSO repeats it beside the
-   overview title (design-system#363 tracks removing the duplicate — #278's
-   exactly-once rule returns when that lands).
+   toolbar; the design-system page currently ALSO repeats it beside the overview
+   title (design-system#363 tracks removing the duplicate — #278's exactly-once
+   rule returns when that lands).
 
 **Run when:**
 `packages/app/src/screens/{Recipes,RecipeDetail,EditRecipe,EditVersion,ManualEntry}Screen.tsx`,
@@ -262,11 +261,11 @@ list view, and the cooking-mode overlay.
    the recipe has loaded — a cook log can never be submitted with an empty
    version (regression: #247).
 9. **Delete an entry from Cook History (web).** In a recipe's Cook History, use
-   an entry's Delete control. **Expected:** a confirmation dialog appears in
-   the app (no browser-native dialog); Cancel keeps the entry; Confirm delete
-   removes it and the history refreshes without it. If the delete request
-   fails, an error alert appears in the dialog and the entry stays listed
-   (regression: #266).
+   an entry's Delete control. **Expected:** a confirmation dialog appears in the
+   app (no browser-native dialog); Cancel keeps the entry; Confirm delete
+   removes it and the history refreshes without it. If the delete request fails,
+   an error alert appears in the dialog and the entry stays listed (regression:
+   #266).
 
 **Run when (case 9):** `packages/web/src/pages/RecipeDetailHost.tsx`,
 `packages/client/src/cookLogsApi.ts`, `packages/server` cook log routes,
@@ -431,11 +430,11 @@ small set of known inputs so results are comparable across runs).
 7. **Duplicate awareness.** Import the same recipe twice (issue #296).
    **Expected:** the second import stops with a warning naming the existing
    library recipe — a recipe is a duplicate when its normalized title AND
-   normalized ingredient list match an existing recipe in the same library —
-   and no second copy is created. Choosing to import anyway after the
-   warning (re-submitting the same import, or the "Import anyway" action
-   on the app image import) creates the second copy. Applies to text, URL,
-   and image imports.
+   normalized ingredient list match an existing recipe in the same library — and
+   no second copy is created. Choosing to import anyway after the warning
+   (re-submitting the same import, or the "Import anyway" action on the app
+   image import) creates the second copy. Applies to text, URL, and image
+   imports.
 
 **Run when:**
 `packages/app/src/screens/{ImportText,ImportUrl,ImportImage,ImportReview}Screen.tsx`,
@@ -565,7 +564,10 @@ plan-state rendering and section layout. The cases below are manual._
 2. **Send feedback.** With the shortcut on, open Feedback and submit
    `QA — feedback check` (at most one submission per sweep; submissions reach
    the feedback triage). **Expected:** a sent confirmation; empty submissions
-   are rejected with a message.
+   are rejected with a message. Repeat the open step at a 320×568 viewport (and
+   at 200% zoom): **Expected:** the panel stays within the viewport and scrolls
+   internally, so every field and both actions (Cancel and Submit feedback) are
+   reachable.
 3. **Access tokens.** Create a personal access token named `QA — token check`;
    copy it at creation. **Expected:** the full token is shown once at creation
    and masked afterwards; the token appears in the list. Revoke it.
@@ -586,7 +588,8 @@ plan-state rendering and section layout. The cases below are manual._
 
 **Run when:** `packages/app/src/screens/ProfileScreen.tsx`,
 `packages/app/src/hosts/profile/**`, `packages/web/src/pages/ProfilePage.tsx`,
-`packages/web/src/components/profile/**`, `packages/server`
+`packages/web/src/components/profile/**`,
+`packages/web/src/components/FeedbackBubble.tsx`, `packages/server`
 profile/token/transfer routes, entitlement override handling.
 
 ---
