@@ -5,6 +5,7 @@ import type {
 } from '@eciperay/types';
 
 import {query as defaultQuery} from '../db/query.js';
+import {parseIngredientText} from './parseIngredientText.js';
 
 type QueryFn = typeof defaultQuery;
 
@@ -14,6 +15,9 @@ type QueryFn = typeof defaultQuery;
  * when the normalized title matches AND the normalized ingredient list matches.
  * Normalization is case-insensitive with whitespace trimmed/collapsed. Title
  * alone is NOT a duplicate — two genuinely different recipes can share a name.
+ * Ingredients stored in the pre-split legacy shape are normalized through the
+ * importer's parser before fingerprinting (issue #309, see
+ * splitLegacyIngredient below); no stored data is migrated.
  */
 export const normalizeForDuplicateMatch = (value: string): string =>
   value.trim().replaceAll(/\s+/g, ' ').toLowerCase();
@@ -21,23 +25,63 @@ export const normalizeForDuplicateMatch = (value: string): string =>
 const normalizeQuantity = (quantity: number | null): string =>
   quantity === null ? '' : String(quantity);
 
+type IngredientForDuplicateMatch = Pick<
+  IngredientInput,
+  'name' | 'quantity' | 'unit' | 'notes' | 'isOptional'
+>;
+
+/**
+ * Legacy ingredient shape (issue #309): recipes imported before the amount/unit
+ * split (PR #308) stored the whole schema.org line as the name with null
+ * quantity and unit (e.g. name "200g pasta"). Running such a row through the
+ * same parser the importer now uses recovers the split shape (name "pasta",
+ * quantity 200, unit "g"), so a re-import of the same page fingerprints
+ * identically. Rows that already carry a quantity or a unit are normalized rows
+ * and are returned untouched, and a name with no parseable amount prefix parses
+ * to a null quantity and is likewise returned untouched — both keep their exact
+ * pre-#309 fingerprint.
+ */
+const splitLegacyIngredient = (
+  ingredient: IngredientForDuplicateMatch,
+): IngredientForDuplicateMatch => {
+  if (ingredient.quantity !== null && ingredient.quantity !== undefined) {
+    return ingredient;
+  }
+  if (ingredient.unit !== null && ingredient.unit !== undefined) {
+    return ingredient;
+  }
+  const parsed = parseIngredientText(ingredient.name);
+  if (parsed.quantity === null) {
+    return ingredient;
+  }
+  return {
+    ...ingredient,
+    name: parsed.name,
+    quantity: parsed.quantity,
+    unit: parsed.unit,
+    // A legacy row's own notes win; the parser's notes (the range text for
+    // a ranged amount) fill in only when the row carries none, which is
+    // exactly the shape the post-#308 importer stores for the same line.
+    notes: ingredient.notes ?? parsed.notes,
+  };
+};
+
 /**
  * One ingredient's normalized identity: name, quantity, unit, and notes.
  * Optional ingredients are a different list entry from required ones.
  */
 export const normalizeIngredientForDuplicateMatch = (
-  ingredient: Pick<
-    IngredientInput,
-    'name' | 'quantity' | 'unit' | 'notes' | 'isOptional'
-  >,
-): string =>
-  [
-    normalizeForDuplicateMatch(ingredient.name),
-    normalizeQuantity(ingredient.quantity ?? null),
-    normalizeForDuplicateMatch(ingredient.unit ?? ''),
-    normalizeForDuplicateMatch(ingredient.notes ?? ''),
-    ingredient.isOptional ? 'optional' : 'required',
+  ingredient: IngredientForDuplicateMatch,
+): string => {
+  const split = splitLegacyIngredient(ingredient);
+  return [
+    normalizeForDuplicateMatch(split.name),
+    normalizeQuantity(split.quantity ?? null),
+    normalizeForDuplicateMatch(split.unit ?? ''),
+    normalizeForDuplicateMatch(split.notes ?? ''),
+    split.isOptional ? 'optional' : 'required',
   ].join('|');
+};
 
 /**
  * Normalized ingredient-list fingerprint. Order-insensitive (a sorted
@@ -45,10 +89,7 @@ export const normalizeIngredientForDuplicateMatch = (
  * without making the recipe a different one.
  */
 export const ingredientListFingerprint = (
-  ingredients: readonly Pick<
-    IngredientInput,
-    'name' | 'quantity' | 'unit' | 'notes' | 'isOptional'
-  >[],
+  ingredients: readonly IngredientForDuplicateMatch[],
 ): string =>
   ingredients
     .map(ingredient => normalizeIngredientForDuplicateMatch(ingredient))
