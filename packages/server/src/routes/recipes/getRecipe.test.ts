@@ -12,19 +12,26 @@ const getApp = lazyTestApp({query: mockQuery});
 
 describe('GET /recipes/:id', () => {
   test('returns 200 with recipe detail when found', async () => {
+    const recipeId = '11111111-1111-4111-8111-111111111111';
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockImplementation(((sql: string) => {
       if (sql.includes('recipe_ratings rr')) {
         return Promise.resolve(makeQueryResult([]));
       }
-      return Promise.resolve(makeQueryResult([makeRecipeDetailRow()]));
+      return Promise.resolve(
+        makeQueryResult([makeRecipeDetailRow({id: recipeId})]),
+      );
     }) as typeof mockQuery);
     const res = await request(getApp())
-      .get('/api/recipes/11111111-1111-4111-8111-111111111111')
+      .get(`/api/recipes/${recipeId}`)
       .set('Authorization', 'Bearer valid-token');
     expect(res.status).toBe(200);
+    expect(mockQuery).toHaveBeenCalledWith(expect.any(String), [
+      recipeId,
+      'user-uuid-1',
+    ]);
     expect(res.body).toEqual({
-      ...makeRecipeDetail(),
+      ...makeRecipeDetail({id: recipeId}),
       communityRating: null,
       viewerRating: null,
       viewerRatingIsStale: false,
