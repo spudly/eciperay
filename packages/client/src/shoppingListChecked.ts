@@ -41,20 +41,28 @@ export const readShoppingListCheckedKeys = (
   }
 };
 
+/**
+ * Writes the checked set, returning whether it was persisted. Callers that keep
+ * toggling after a failed write (storage unavailable — private mode / quota)
+ * can use the false return to keep basing later toggles on their in-memory set
+ * instead of re-reading a stale stored one.
+ */
 export const writeShoppingListCheckedKeys = (
   userId: string,
   planId: string,
   checkedKeys: ReadonlySet<string>,
-) => {
+): boolean => {
   try {
     const key = shoppingListCheckedStorageKey(userId, planId);
     if (checkedKeys.size === 0) {
       localStorage.removeItem(key);
-      return;
+      return true;
     }
     localStorage.setItem(key, JSON.stringify([...checkedKeys]));
+    return true;
   } catch {
     // Storage unavailable (private mode / quota): the checked state
     // simply will not survive a reload.
+    return false;
   }
 };

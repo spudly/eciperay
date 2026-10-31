@@ -1,13 +1,13 @@
-import {shoppingListCheckedStorageKey} from '@eciperay/client';
+import {queryKeys, shoppingListCheckedStorageKey} from '@eciperay/client';
 import {fireEvent, screen, waitFor} from '@testing-library/react';
 import {Route, Routes} from 'react-router-dom';
 
 import {PLAN_ID} from '../test/fixtures/meal.js';
-import {renderWithProviders} from '../test/testUtils.js';
+import {makeQueryClient, renderWithProviders} from '../test/testUtils.js';
 
 import {ShoppingListPage} from './ShoppingListPage.js';
 
-const renderPage = () =>
+const renderPage = (queryClient?: ReturnType<typeof makeQueryClient>) =>
   renderWithProviders(
     <Routes>
       <Route
@@ -15,7 +15,10 @@ const renderPage = () =>
         element={<ShoppingListPage />}
       />
     </Routes>,
-    {route: `/meal-plans/${PLAN_ID}/shopping-list`},
+    {
+      route: `/meal-plans/${PLAN_ID}/shopping-list`,
+      ...(queryClient ? {queryClient} : {}),
+    },
   );
 
 // The web test setup's mocked Supabase session is user-1 (see test/setup.ts).
@@ -80,6 +83,36 @@ describe('ShoppingListPage', () => {
     fireEvent.click(restored);
     expect(restored).toHaveAttribute('aria-checked', 'false');
     expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
+  });
+
+  test('does not prune from a cached list (no fetch after mount)', async () => {
+    // The list comes from the query cache (seeded here; test queries use
+    // staleTime: Infinity, so no fetch happens after mount). A check
+    // another tab stored for a newer line — one this cached list does not
+    // know yet — must survive until a fresh list arrives; pruning from
+    // the cached list would delete it.
+    const queryClient = makeQueryClient();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(['flour', 'newer']));
+    queryClient.setQueryData(queryKeys.mealPlanShoppingList(PLAN_ID), [
+      {
+        key: 'flour',
+        name: 'Flour',
+        quantity: 2,
+        unit: 'cups',
+        isOptional: false,
+        sources: [],
+      },
+    ]);
+    await renderPage(queryClient);
+    const checkbox = await screen.findByRole('checkbox', {name: /Flour/});
+    expect(checkbox).toHaveAttribute('aria-checked', 'true');
+    // Give any (incorrect) pruning effect a chance to run.
+    await new Promise(resolve => {
+      setTimeout(resolve, 50);
+    });
+    expect(localStorage.getItem(STORAGE_KEY)).toBe(
+      JSON.stringify(['flour', 'newer']),
+    );
   });
 
   test('restores stored checks and prunes lines no longer on the list', async () => {

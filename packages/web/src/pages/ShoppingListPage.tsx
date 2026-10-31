@@ -7,7 +7,7 @@ import {
 } from '@eciperay/client';
 import {ShoppingListPage as ShoppingListPageView} from '@spudly/ui/pages';
 import {useQuery} from '@tanstack/react-query';
-import {useEffect, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import {useParams} from 'react-router-dom';
 
 import {eciperay} from '../lib/api.js';
@@ -21,8 +21,22 @@ const ShoppingListPageContent = ({planId, userId}: ContentProps) => {
   const [checkedKeys, setCheckedKeys] = useState<Set<string>>(() =>
     readShoppingListCheckedKeys(userId, planId),
   );
+  // True once a write has failed (storage unavailable): later toggles then
+  // keep basing themselves on the in-memory set, which holds checks that
+  // never reached storage, instead of re-reading the stale stored set.
+  const writeFailedRef = useRef(false);
+  const persist = useCallback(
+    (keys: ReadonlySet<string>) => {
+      writeFailedRef.current = !writeShoppingListCheckedKeys(
+        userId,
+        planId,
+        keys,
+      );
+    },
+    [userId, planId],
+  );
 
-  const {data, isLoading} = useQuery({
+  const {data, isFetchedAfterMount, isLoading} = useQuery({
     queryKey: queryKeys.mealPlanShoppingList(planId),
     queryFn: () => eciperay.mealPlans.shoppingList(planId),
     enabled: planId.length > 0,
@@ -31,9 +45,12 @@ const ShoppingListPageContent = ({planId, userId}: ContentProps) => {
 
   // Once the current list is known, drop stored checks for lines that are
   // no longer on it (the plan changed since they were checked), so a stale
-  // check cannot silently resurrect if the ingredient returns later.
+  // check cannot silently resurrect if the ingredient returns later. Only
+  // prune on a list fetched after this mount: a remount can briefly serve
+  // a cached list that predates checks another tab just stored for newer
+  // lines, and pruning from it would delete those valid checks.
   useEffect(() => {
-    if (!data) {
+    if (!data || !isFetchedAfterMount) {
       return;
     }
     const lineKeys = new Set(data.map(line => line.key));
@@ -42,8 +59,8 @@ const ShoppingListPageContent = ({planId, userId}: ContentProps) => {
     }
     const pruned = new Set([...checkedKeys].filter(key => lineKeys.has(key)));
     setCheckedKeys(pruned);
-    writeShoppingListCheckedKeys(userId, planId, pruned);
-  }, [data, checkedKeys, userId, planId]);
+    persist(pruned);
+  }, [data, isFetchedAfterMount, checkedKeys, persist]);
 
   return (
     <ShoppingListPageView
@@ -59,14 +76,22 @@ const ShoppingListPageContent = ({planId, userId}: ContentProps) => {
         isChecked: checkedKeys.has(line.key),
       }))}
       onToggleLine={key => {
-        const next = new Set(checkedKeys);
-        if (next.has(key)) {
+        // Base the write on the latest stored set so a check saved by
+        // another tab since this page loaded is not clobbered; the clicked
+        // key's new value still comes from what this page displays. If a
+        // previous write failed, the stored set is stale by definition —
+        // fall back to the in-memory set, which holds those unsaved checks.
+        const base = writeFailedRef.current
+          ? checkedKeys
+          : readShoppingListCheckedKeys(userId, planId);
+        const next = new Set(base);
+        if (checkedKeys.has(key)) {
           next.delete(key);
         } else {
           next.add(key);
         }
         setCheckedKeys(next);
-        writeShoppingListCheckedKeys(userId, planId, next);
+        persist(next);
       }}
     />
   );

@@ -39,6 +39,28 @@ describe('shoppingListChecked', () => {
     expect(readShoppingListCheckedKeys('user-1', 'plan-1')).toEqual(new Set());
   });
 
+  test('reports whether the write persisted', () => {
+    expect(
+      writeShoppingListCheckedKeys('user-1', 'plan-1', new Set(['flour'])),
+    ).toBe(true);
+    const setItem = jest
+      .spyOn(Storage.prototype, 'setItem')
+      .mockImplementation(() => {
+        throw new Error('quota exceeded');
+      });
+    try {
+      expect(
+        writeShoppingListCheckedKeys('user-1', 'plan-1', new Set(['eggs'])),
+      ).toBe(false);
+      // The failed write leaves the previously stored set untouched.
+      expect(readShoppingListCheckedKeys('user-1', 'plan-1')).toEqual(
+        new Set(['flour']),
+      );
+    } finally {
+      setItem.mockRestore();
+    }
+  });
+
   test('ignores corrupt or non-string stored values', () => {
     const key = shoppingListCheckedStorageKey('user-1', 'plan-1');
     localStorage.setItem(key, 'not json');
