@@ -1,20 +1,23 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import type {Session} from '@supabase/supabase-js';
 
 const mockSyncUser = jest.fn();
 const mockIdentifyAnalyticsUser = jest.fn();
 const mockReset = jest.fn();
 const mockSignOut = jest.fn();
+const mockGetSession = jest.fn();
 
-jest.mock('./api', () => ({
-  api: {auth: {syncUser: () => mockSyncUser()}},
-}));
+jest.mock('./api', () => ({api: {auth: {syncUser: () => mockSyncUser()}}}));
 
-jest.mock('./analytics', () => ({
-  analytics: {reset: () => mockReset()},
-}));
+jest.mock('./analytics', () => ({analytics: {reset: () => mockReset()}}));
 
 jest.mock('./supabase', () => ({
-  supabase: {auth: {signOut: () => mockSignOut()}},
+  supabase: {
+    auth: {
+      signOut: (options: unknown) => mockSignOut(options),
+      getSession: () => mockGetSession(),
+    },
+  },
 }));
 
 jest.mock('@eciperay/client', () => ({
@@ -26,16 +29,20 @@ import {analytics} from './analytics';
 import {onAuthenticated, onSignedOut} from './authSessionLifecycle';
 
 const session = {
+  access_token: 'token-a',
   user: {id: 'user-1', email: 'test@example.com'},
 } as Session;
 
 describe('authSessionLifecycle', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     mockSyncUser.mockReset();
     mockIdentifyAnalyticsUser.mockReset();
     mockReset.mockReset();
     mockSignOut.mockReset();
     mockSignOut.mockResolvedValue({error: null});
+    mockGetSession.mockReset();
+    mockGetSession.mockResolvedValue({data: {session}});
+    await AsyncStorage.clear();
   });
 
   test('syncs the user and identifies analytics when authenticated', async () => {
@@ -59,7 +66,7 @@ describe('authSessionLifecycle', () => {
 
     await expect(onAuthenticated(session)).resolves.toBeUndefined();
 
-    expect(mockSignOut).toHaveBeenCalled();
+    expect(mockSignOut).toHaveBeenCalledWith({scope: 'local'});
     expect(mockIdentifyAnalyticsUser).not.toHaveBeenCalled();
   });
 
@@ -70,7 +77,7 @@ describe('authSessionLifecycle', () => {
 
     await expect(onAuthenticated(session)).resolves.toBeUndefined();
 
-    expect(mockSignOut).toHaveBeenCalled();
+    expect(mockSignOut).toHaveBeenCalledWith({scope: 'local'});
     expect(mockIdentifyAnalyticsUser).not.toHaveBeenCalled();
   });
 
@@ -83,17 +90,127 @@ describe('authSessionLifecycle', () => {
 
     await expect(onAuthenticated(session)).resolves.toBeUndefined();
 
-    expect(mockSignOut).toHaveBeenCalled();
+    expect(mockSignOut).toHaveBeenCalledWith({scope: 'local'});
     expect(mockIdentifyAnalyticsUser).not.toHaveBeenCalled();
   });
 
-  test('still resets analytics when the expired-token sign-out itself fails (#351)', async () => {
-    mockSyncUser.mockRejectedValue(new Error('Invalid or expired token'));
-    mockSignOut.mockRejectedValue(new Error('network'));
+  test('ends in the signed-out flow when sync rejects with the missing-authorization-token message (#351)', async () => {
+    mockSyncUser.mockRejectedValue(new Error('Missing authorization token'));
 
     await expect(onAuthenticated(session)).resolves.toBeUndefined();
 
-    expect(mockSignOut).toHaveBeenCalled();
+    expect(mockSignOut).toHaveBeenCalledWith({scope: 'local'});
+    expect(mockIdentifyAnalyticsUser).not.toHaveBeenCalled();
+  });
+
+  test('ends in the signed-out flow when sync rejects with the missing-authorization-token error code (#351)', async () => {
+    mockSyncUser.mockRejectedValue(
+      Object.assign(new Error('Unauthorized'), {
+        code: 'Missing authorization token',
+      }),
+    );
+
+    await expect(onAuthenticated(session)).resolves.toBeUndefined();
+
+    expect(mockSignOut).toHaveBeenCalledWith({scope: 'local'});
+    expect(mockIdentifyAnalyticsUser).not.toHaveBeenCalled();
+  });
+
+  test('does not sign out a newer session when a stale token sync fails late (#351)', async () => {
+    mockSyncUser.mockRejectedValue(new Error('Invalid or expired token'));
+    mockGetSession.mockResolvedValue({
+      data: {session: {...session, access_token: 'token-b'}},
+    });
+
+    await expect(onAuthenticated(session)).resolves.toBeUndefined();
+
+    expect(mockSignOut).not.toHaveBeenCalled();
+    expect(mockIdentifyAnalyticsUser).not.toHaveBeenCalled();
+  });
+
+  test('does not sign out again when the session is already gone (#351)', async () => {
+    mockSyncUser.mockRejectedValue(new Error('Invalid or expired token'));
+    mockGetSession.mockResolvedValue({data: {session: null}});
+
+    await expect(onAuthenticated(session)).resolves.toBeUndefined();
+
+    expect(mockSignOut).not.toHaveBeenCalled();
+    expect(mockIdentifyAnalyticsUser).not.toHaveBeenCalled();
+  });
+
+  test('signs out when the current session cannot be read to prove staleness (#351)', async () => {
+    mockSyncUser.mockRejectedValue(new Error('Invalid or expired token'));
+    mockGetSession.mockRejectedValue(new Error('storage unavailable'));
+
+    await expect(onAuthenticated(session)).resolves.toBeUndefined();
+
+    expect(mockSignOut).toHaveBeenCalledWith({scope: 'local'});
+    expect(mockIdentifyAnalyticsUser).not.toHaveBeenCalled();
+  });
+
+  test('clears the persisted session and surfaces the failure when sign-out returns an error (#351)', async () => {
+    mockSyncUser.mockRejectedValue(new Error('Invalid or expired token'));
+    mockSignOut.mockResolvedValue({error: new Error('logout failed')});
+    await AsyncStorage.setItem('sb-test-auth-token', 'persisted-session');
+    await AsyncStorage.setItem('sb-test-auth-token-user', 'persisted-user');
+    await AsyncStorage.setItem('unrelated-key', 'keep-me');
+
+    await expect(onAuthenticated(session)).rejects.toThrow('logout failed');
+
+    expect(mockSignOut).toHaveBeenCalledWith({scope: 'local'});
+    await expect(
+      AsyncStorage.getItem('sb-test-auth-token'),
+    ).resolves.toBeNull();
+    await expect(
+      AsyncStorage.getItem('sb-test-auth-token-user'),
+    ).resolves.toBeNull();
+    await expect(AsyncStorage.getItem('unrelated-key')).resolves.toBe(
+      'keep-me',
+    );
+    expect(mockReset).toHaveBeenCalled();
+    expect(mockIdentifyAnalyticsUser).not.toHaveBeenCalled();
+  });
+
+  test('clears the persisted session and surfaces the failure when sign-out throws (#351)', async () => {
+    mockSyncUser.mockRejectedValue(new Error('Invalid or expired token'));
+    mockSignOut.mockRejectedValue(new Error('network'));
+    await AsyncStorage.setItem('sb-test-auth-token', 'persisted-session');
+
+    await expect(onAuthenticated(session)).rejects.toThrow('network');
+
+    expect(mockSignOut).toHaveBeenCalledWith({scope: 'local'});
+    await expect(
+      AsyncStorage.getItem('sb-test-auth-token'),
+    ).resolves.toBeNull();
+    expect(mockReset).toHaveBeenCalled();
+    expect(mockIdentifyAnalyticsUser).not.toHaveBeenCalled();
+  });
+
+  test('surfaces a generic failure when sign-out returns a non-Error error (#351)', async () => {
+    mockSyncUser.mockRejectedValue(new Error('Invalid or expired token'));
+    mockSignOut.mockResolvedValue({error: 'logout unavailable'});
+
+    await expect(onAuthenticated(session)).rejects.toThrow(
+      'Sign-out failed after the session token was rejected',
+    );
+
+    expect(mockReset).toHaveBeenCalled();
+    expect(mockIdentifyAnalyticsUser).not.toHaveBeenCalled();
+  });
+
+  test('still surfaces the sign-out failure when clearing the persisted session fails (#351)', async () => {
+    mockSyncUser.mockRejectedValue(new Error('Invalid or expired token'));
+    mockSignOut.mockResolvedValue({error: new Error('logout failed')});
+    const getAllKeysSpy = jest
+      .spyOn(AsyncStorage, 'getAllKeys')
+      .mockRejectedValue(new Error('storage unavailable'));
+
+    try {
+      await expect(onAuthenticated(session)).rejects.toThrow('logout failed');
+    } finally {
+      getAllKeysSpy.mockRestore();
+    }
+
     expect(mockReset).toHaveBeenCalled();
     expect(mockIdentifyAnalyticsUser).not.toHaveBeenCalled();
   });
