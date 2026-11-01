@@ -113,8 +113,62 @@ describe('recipeListQuery', () => {
     const infiniteKey = recipeListInfiniteQueryOptions(list, {}).queryKey;
     expect(options.queryKey).not.toEqual(infiniteKey);
     await options.queryFn();
-    expect(list).toHaveBeenCalledWith({limit: RECIPE_FORM_OPTIONS_LIMIT});
+    expect(list).toHaveBeenCalledTimes(1);
+    expect(list).toHaveBeenCalledWith({
+      limit: RECIPE_FORM_OPTIONS_LIMIT,
+      offset: 0,
+    });
     expect(RECIPE_FORM_OPTIONS_LIMIT).toBe(100);
+  });
+
+  test('form picker fetches every page so recipes past the first page are selectable (#359)', async () => {
+    const all = Array.from({length: 203}, (_, index) =>
+      makeListItem(String(index + 1)),
+    );
+    const list = jest
+      .fn()
+      .mockImplementation(
+        async (params?: {limit?: number; offset?: number}) => {
+          const offset = params?.offset ?? 0;
+          const limit = params?.limit ?? all.length;
+          return all.slice(offset, offset + limit);
+        },
+      );
+    const options = recipeFormOptionsQueryOptions(list);
+    const recipes = await options.queryFn();
+    expect(recipes.map(recipe => recipe.id)).toEqual(
+      all.map(recipe => recipe.id),
+    );
+    // The recipe that sat beyond the old single-page cap is present.
+    expect(recipes[200]?.id).toBe('201');
+    expect(list.mock.calls).toEqual([
+      [{limit: RECIPE_FORM_OPTIONS_LIMIT, offset: 0}],
+      [{limit: RECIPE_FORM_OPTIONS_LIMIT, offset: 100}],
+      [{limit: RECIPE_FORM_OPTIONS_LIMIT, offset: 200}],
+    ]);
+  });
+
+  test('form picker stops after an empty page when the library is an exact page multiple', async () => {
+    const all = Array.from({length: 200}, (_, index) =>
+      makeListItem(String(index + 1)),
+    );
+    const list = jest
+      .fn()
+      .mockImplementation(
+        async (params?: {limit?: number; offset?: number}) => {
+          const offset = params?.offset ?? 0;
+          const limit = params?.limit ?? all.length;
+          return all.slice(offset, offset + limit);
+        },
+      );
+    const options = recipeFormOptionsQueryOptions(list);
+    const recipes = await options.queryFn();
+    expect(recipes).toHaveLength(200);
+    expect(list).toHaveBeenCalledTimes(3);
+    expect(list).toHaveBeenLastCalledWith({
+      limit: RECIPE_FORM_OPTIONS_LIMIT,
+      offset: 200,
+    });
   });
 
   test('builds shared-with-me infinite query options with paging params', async () => {

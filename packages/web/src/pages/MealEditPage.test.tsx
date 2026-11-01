@@ -5,6 +5,7 @@ import {vi} from 'vitest';
 
 import {eciperay} from '../lib/api.js';
 import {makeMealDetail, MEAL_ID} from '../test/fixtures/meal.js';
+import {makeRecipeDetail} from '../test/fixtures/recipe.js';
 import {server} from '../test/msw/server.js';
 import {renderWithProviders} from '../test/testUtils.js';
 
@@ -29,6 +30,32 @@ describe('MealEditPage', () => {
     });
     expect(screen.getByText('Test Recipe')).toBeInTheDocument();
   });
+
+  test('offers recipes beyond the first 100 in the picker (#359)', async () => {
+    const library = Array.from({length: 101}, (_, index) =>
+      makeRecipeDetail({
+        id: `recipe-uuid-${index + 1}`,
+        title: `Recipe ${index + 1}`,
+        slug: `recipe-${index + 1}`,
+      }),
+    );
+    server.use(
+      http.get('http://localhost:8080/api/recipes', ({request}) => {
+        const url = new URL(request.url);
+        const offset = Number(url.searchParams.get('offset') ?? 0);
+        const limit = Number(url.searchParams.get('limit') ?? 100);
+        return HttpResponse.json(library.slice(offset, offset + limit));
+      }),
+    );
+    await renderWithProviders(<MealEditPage />, {route: '/meals/new'});
+    // Recipe 101 sat beyond the picker's old first-100 cap.
+    await waitFor(() => {
+      expect(screen.getByText('Recipe 101')).toBeInTheDocument();
+    });
+    expect(screen.getByText('Recipe 1')).toBeInTheDocument();
+    // Rendering 101 picker rows is slow; the default 5s test timeout
+    // is not enough on CI hardware.
+  }, 30000);
 
   test('creates a meal', async () => {
     server.use(

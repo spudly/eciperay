@@ -160,9 +160,9 @@ without); one recipe may be created fresh in case 1.
    recipe whose nutrition is still being computed (e.g. one just created or
    renamed) reads "Satiety pending" — never a bare "Satiety…" that looks
    truncated; other cards show a satiety value or "Satiety —". Open one recipe's
-   detail. **Expected:** the recipe status appears exactly once, as the pill
-   in the page toolbar — the Overview does not repeat it under the title
-   (the design-system#363 duplicate was removed in @spudly/ui 1.16.2).
+   detail. **Expected:** the recipe status appears exactly once, as the pill in
+   the page toolbar — the Overview does not repeat it under the title (the
+   design-system#363 duplicate was removed in @spudly/ui 1.16.2).
 
 **Run when:**
 `packages/app/src/screens/{Recipes,RecipeDetail,EditRecipe,EditVersion,ManualEntry}Screen.tsx`,
@@ -298,14 +298,21 @@ mode; there is no Playwright coverage of meals. The cases below are manual._
 4. **Delete a meal.** Delete `QA — Sunday Dinner`. **Expected:** the meal is
    gone from the hub; the member recipes still exist untouched.
 5. **Meal detail for a nonexistent meal.** Navigate directly to
-   `/meals/not-a-uuid`. **Expected:** a "Page not found" view with a link
-   home — never an indefinite Loading state.
+   `/meals/not-a-uuid`. **Expected:** a "Page not found" view with a link home —
+   never an indefinite Loading state.
+6. **Picker offers the full library (regression: #359).** Preconditions: an
+   account with more than 100 recipes. Open the meal form's recipe picker.
+   **Expected:** recipes beyond the first 100 are listed and can be selected
+   into the meal; saving keeps the beyond-100 recipe on the meal detail. (On
+   production-data review apps, verify read-only: confirm a beyond-100 recipe is
+   listed in the picker without saving.)
 
 **Run when:**
 `packages/app/src/screens/{MealsHub,MealDetail,MealEdit,MealCookingMode}Screen.tsx`,
 `packages/web/src/pages/{MealsHub,MealDetail,MealEdit,MealCookingMode}Page.tsx`,
-`@spudly/ui` `MealsHubPage`, `MealDetailPage`, `MealFormPage`, or
-`MealCookingModePage`, `packages/server` meal routes.
+`packages/client/src/recipeListQuery.ts`, `@spudly/ui` `MealsHubPage`,
+`MealDetailPage`, `MealFormPage`, or `MealCookingModePage`, `packages/server`
+meal routes.
 
 ---
 
@@ -335,13 +342,13 @@ are the manual remainder._
    without entries. For a plan with a valid date range, the goal figures are the
    plan's **per-day average** against the daily goals and are labelled as such
    ("(per-day avg)" row labels in the app and on web). For an undated plan
-   (dates are optional), the figures are
-   the **plan total** against the daily goals and are labelled as such
-   ("(plan total)" row labels in the app and on web) — they must not be labelled as a daily average or read as an
-   unexplained second total next to "Plan total" (regression: #266). Satiety is
-   neither an average nor a total: it is a ratio-based score that is identical
-   for the per-day and whole-plan figures, so both surfaces label it a plan-wide
-   score (row: "Satiety (plan-wide score)").
+   (dates are optional), the figures are the **plan total** against the daily
+   goals and are labelled as such ("(plan total)" row labels in the app and on
+   web) — they must not be labelled as a daily average or read as an unexplained
+   second total next to "Plan total" (regression: #266). Satiety is neither an
+   average nor a total: it is a ratio-based score that is identical for the
+   per-day and whole-plan figures, so both surfaces label it a plan-wide score
+   (row: "Satiety (plan-wide score)").
 5. **Delete the plan.** Delete `QA — Week Plan`. **Expected:** gone from the
    list; member recipes unaffected.
 6. **Direct `/meal-plans` visit + unknown routes (web).** Visit `/meal-plans`
@@ -353,9 +360,10 @@ are the manual remainder._
 **Run when:**
 `packages/app/src/screens/{MealPlanDetail,MealPlanEdit}Screen.tsx`,
 `packages/app/src/hosts/meals/**`,
-`packages/web/src/pages/{MealPlanDetail,MealPlanEdit}Page.tsx`,
-`@spudly/ui` `MealPlanDetailPage` or `MealPlanFormPage`,
-`packages/web/src/routes/router.tsx`, `packages/server` meal plan routes.
+`packages/web/src/pages/{MealPlanDetail,MealPlanEdit}Page.tsx`, `@spudly/ui`
+`MealPlanDetailPage` or `MealPlanFormPage`,
+`packages/client/src/recipeListQuery.ts`, `packages/web/src/routes/router.tsx`,
+`packages/server` meal plan routes.
 
 ---
 
@@ -385,9 +393,8 @@ ingredient (e.g. both use eggs) and one recipe assigned twice in the week.
    **Expected:** a clear empty state, not an error or a stale list.
 
 **Run when:** `packages/app/src/screens/ShoppingListScreen.tsx`,
-`packages/web/src/pages/ShoppingListPage.tsx`, `@spudly/ui`
-`ShoppingListPage`, `packages/server`
-shopping list generation.
+`packages/web/src/pages/ShoppingListPage.tsx`, `@spudly/ui` `ShoppingListPage`,
+`packages/server` shopping list generation.
 
 ---
 
@@ -516,8 +523,8 @@ account (viewer); one QA recipe.
 `packages/app/src/hosts/{shared,recipe/RecipeVisibilityControls}*`,
 `packages/web/src/pages/{SharedWithMe,Discover,PublicRecipe}Page.tsx`,
 `packages/web/src/components/shared/**`, `@spudly/ui` `DiscoverPage`,
-`PublicRecipePage`, `PublicPageFrame`, `packages/server`
-sharing/visibility routes.
+`PublicRecipePage`, `PublicPageFrame`, `packages/server` sharing/visibility
+routes.
 
 ---
 
