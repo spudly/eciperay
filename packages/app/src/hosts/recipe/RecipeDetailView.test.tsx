@@ -2,7 +2,7 @@ import {useAuth} from '@eciperay/client';
 import type {RecipeDetail, RecipeVersionSummary} from '@eciperay/types';
 import {fireEvent, userEvent, waitFor} from '@testing-library/react-native';
 import React, {useState} from 'react';
-import {Linking} from 'react-native';
+import {Alert, Linking} from 'react-native';
 
 import {
   makeCookLog,
@@ -163,6 +163,7 @@ describe('RecipeDetailView', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
+    jest.spyOn(Alert, 'alert').mockReturnValue(undefined);
     mockUseAuth.mockReturnValue({
       session: {user: {id: 'user-uuid-1', email: 'test@example.com'}},
     });
@@ -508,5 +509,53 @@ describe('RecipeDetailView', () => {
     await waitFor(() => {
       expect(mockNutrition).toHaveBeenCalledWith(recipe.id, {refresh: true});
     });
+  });
+
+  test('a failed nutrition estimate is handled, not an unhandled rejection (#345)', async () => {
+    // The initial (cached) lookup finds nothing, and the forced estimate
+    // fails the way the server's 502 does — the error text PostHog
+    // captured as an unhandled rejection on Android.
+    mockNutrition.mockImplementation(
+      (_recipeId: string, options?: {refresh?: boolean}) =>
+        options?.refresh
+          ? Promise.reject(new Error('Failed to estimate nutrition'))
+          : Promise.resolve(null),
+    );
+    const {findByText} = await renderView();
+    expect(await findByText('Nutrition is not available yet.')).toBeTruthy();
+    await fireEvent.press(await findByText('Estimate nutrition'));
+    // The failure surfaces as a viewport-visible alert — the overview
+    // action message sits at the top of the scroll view, far from the
+    // nutrition panel at the end — and the unavailable state (with
+    // its Estimate retry) stays in place.
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith(
+        'Could not refresh nutrition',
+        'Please try again.',
+      );
+    });
+    expect(await findByText('Nutrition is not available yet.')).toBeTruthy();
+    expect(await findByText('Estimate nutrition')).toBeTruthy();
+  });
+
+  test('a failed nutrition refresh keeps the current estimate and shows feedback (#345)', async () => {
+    mockNutrition.mockImplementation(
+      (_recipeId: string, options?: {refresh?: boolean}) =>
+        options?.refresh
+          ? Promise.reject(new Error('Failed to estimate nutrition'))
+          : Promise.resolve(nutritionFixture),
+    );
+    const {findByText} = await renderView();
+    expect(await findByText('250')).toBeTruthy();
+    await fireEvent.press(await findByText('Refresh'));
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith(
+        'Could not refresh nutrition',
+        'Please try again.',
+      );
+    });
+    // The previously loaded estimate is not discarded on failure.
+    expect(await findByText('250')).toBeTruthy();
+    expect(await findByText('Refresh')).toBeTruthy();
   });
 });

@@ -1,9 +1,14 @@
 import Anthropic from '@anthropic-ai/sdk';
 
+import {
+  resolveAnthropicApiKey,
+  resolveAnthropicFetch,
+} from './fakeAnthropicFetch.js';
+
 export const anthropic = new Anthropic({
-  apiKey: process.env['ANTHROPIC_API_KEY'],
+  apiKey: resolveAnthropicApiKey(),
   maxRetries: 4,
-  fetch: globalThis.fetch,
+  fetch: resolveAnthropicFetch(),
 });
 
 export const HAIKU = 'claude-haiku-4-5' as const;
