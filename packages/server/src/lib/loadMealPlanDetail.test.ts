@@ -240,6 +240,49 @@ describe('loadMealPlanDetail', () => {
     expect(plan?.endsOn).toBe('2026-01-07');
   });
 
+  test('returns string timestamps when pg returns Date objects for the plan row', async () => {
+    // Regression (#358/#360): node-postgres returns timestamptz columns
+    // (created_at / updated_at) as JS Date objects, like the DATE columns
+    // fixed in #252. The detail's declared createdAt / updatedAt are
+    // strings — returning the raw Date objects leaves the same
+    // type mismatch in the same row that threw in dateOnly.
+    const mockQuery = createMockQuery();
+    mockQuery.mockImplementation((async (sql: string) => {
+      if (sql.includes('from meal_plans') && sql.includes('where id =')) {
+        return makeQueryResult([
+          {
+            ...mealPlanRow,
+            starts_on: new Date(2026, 0, 1),
+            ends_on: new Date(2026, 0, 7),
+            created_at: new Date('2026-01-01T12:00:00.000Z'),
+            updated_at: new Date('2026-01-02T12:00:00.000Z'),
+          },
+        ]);
+      }
+      if (sql.includes('from meal_plan_entries')) {
+        return makeQueryResult([]);
+      }
+      if (sql.includes('goal_calories')) {
+        return makeQueryResult([
+          {
+            goal_calories: null,
+            goal_protein_g: null,
+            goal_carbs_g: null,
+            goal_fat_g: null,
+            goal_satiety_score: null,
+          },
+        ]);
+      }
+      return makeQueryResult([]);
+    }) as typeof mockQuery);
+
+    const plan = await loadMealPlanDetail(PLAN_ID, USER_ID, mockQuery);
+    expect(plan?.startsOn).toBe('2026-01-01');
+    expect(plan?.endsOn).toBe('2026-01-07');
+    expect(plan?.createdAt).toBe('2026-01-01T12:00:00.000Z');
+    expect(plan?.updatedAt).toBe('2026-01-02T12:00:00.000Z');
+  });
+
   test('defaults recipe entry servings from recipe row', async () => {
     const mockQuery = createMockQuery();
     mockQuery.mockImplementation((async (sql: string) => {

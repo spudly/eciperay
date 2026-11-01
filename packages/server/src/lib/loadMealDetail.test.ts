@@ -40,6 +40,28 @@ describe('loadMealDetail', () => {
     expect(meal?.members[0]?.accessLost).toBe(false);
   });
 
+  test('returns string timestamps when pg returns Date objects for the meal row', async () => {
+    // Same timestamptz mismatch as the meal-plan row (#358/#360):
+    // created_at / updated_at arrive as Date objects from node-postgres
+    // but are declared (and consumed) as strings.
+    const mockQuery = createMockQuery();
+    mockQuery
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          {
+            ...mealRow,
+            created_at: new Date('2026-01-01T12:00:00.000Z'),
+            updated_at: new Date('2026-01-02T12:00:00.000Z'),
+          },
+        ]),
+      )
+      .mockResolvedValueOnce(makeQueryResult([]));
+
+    const meal = await loadMealDetail(MEAL_ID, USER_ID, mockQuery);
+    expect(meal?.createdAt).toBe('2026-01-01T12:00:00.000Z');
+    expect(meal?.updatedAt).toBe('2026-01-02T12:00:00.000Z');
+  });
+
   test('marks inaccessible recipes as accessLost', async () => {
     const mockQuery = createMockQuery();
     const privateRecipe = {...accessibleRecipeRow, user_id: 'other-user'};
