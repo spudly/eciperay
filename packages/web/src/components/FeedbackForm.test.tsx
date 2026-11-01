@@ -286,5 +286,6 @@ describe('FeedbackForm', () => {
     const pageWrapper = root?.firstElementChild;
     expect(pageWrapper?.className).toContain('flex-1');
     expect(pageWrapper?.className).toContain('min-h-0');
+    expect(pageWrapper?.className).toContain('flex-col');
   });
 });

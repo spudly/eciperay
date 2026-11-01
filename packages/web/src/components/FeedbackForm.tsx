@@ -89,7 +89,7 @@ export const FeedbackForm = ({
     // definite height with no scrolling, and on short viewports the page's
     // own ScrollView scrolls internally while Cancel stays visible.
     <div className="flex h-full flex-col">
-      <div className="min-h-0 flex-1">
+      <div className="flex min-h-0 flex-1 flex-col">
         <FeedbackPage
           message={message}
           onMessageChange={setMessage}
