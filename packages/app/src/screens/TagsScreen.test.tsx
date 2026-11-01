@@ -72,6 +72,43 @@ describe('TagsScreen', () => {
     });
   });
 
+  test('ignores edit starts while a save is pending', async () => {
+    mockList.mockResolvedValue([
+      {
+        id: 't1',
+        name: 'Dinner',
+        color: '#6366f1',
+        userId: null,
+        isPreset: true,
+      },
+      {
+        id: 't2',
+        name: 'Quick',
+        color: '#22c55e',
+        userId: 'user-uuid-1',
+        isPreset: false,
+      },
+    ]);
+    // The save never lands, so the mutation stays pending.
+    mockUpdate.mockImplementation(() => new Promise(() => {}));
+    const {
+      findByText,
+      findAllByText,
+      getByDisplayValue,
+      getByText,
+      queryByDisplayValue,
+    } = await renderWithProviders(<TagsScreen />);
+    await fireEvent.press((await findAllByText('Edit'))[0]!);
+    await fireEvent.changeText(getByDisplayValue('Dinner'), 'Supper');
+    await fireEvent.press(getByText('Save'));
+    // Starting the other tag's edit while the save is in flight is
+    // ignored, so the pending draft survives.
+    await fireEvent.press((await findAllByText('Edit'))[0]!);
+    expect(getByDisplayValue('Supper')).toBeTruthy();
+    expect(queryByDisplayValue('Quick')).toBeNull();
+    expect(await findByText('Save')).toBeTruthy();
+  });
+
   test('cancelling an edit discards the draft', async () => {
     const {findByText, getByDisplayValue, getByText, queryByText} =
       await renderWithProviders(<TagsScreen />);

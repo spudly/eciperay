@@ -1,10 +1,14 @@
 import {screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import {delay, http, HttpResponse} from 'msw';
 
-import {resetTagsFixture} from '../test/msw/handlers.js';
+import {applyTagsPatch, resetTagsFixture} from '../test/msw/handlers.js';
+import {server} from '../test/msw/server.js';
 import {renderWithProviders} from '../test/testUtils.js';
 
 import {TagsPage} from './TagsPage.js';
+
+const API = 'http://localhost:8080';
 
 describe('TagsPage', () => {
   beforeEach(() => {
@@ -27,6 +31,19 @@ describe('TagsPage', () => {
   });
 
   test('renames a tag in place through the inline edit form', async () => {
+    // Capture the PATCH body: a rename-only save must send the name
+    // and no color key, so the stored color survives untouched.
+    let patchBody: {name?: string; color?: string} | undefined;
+    server.use(
+      http.patch(`${API}/api/tags/:id`, async ({request, params}) => {
+        patchBody = (await request.json()) as {name?: string; color?: string};
+        const updated = applyTagsPatch(String(params['id']), patchBody);
+        if (!updated) {
+          return HttpResponse.json({error: 'Tag not found'}, {status: 404});
+        }
+        return HttpResponse.json(updated);
+      }),
+    );
     await renderWithProviders(<TagsPage />);
     await waitFor(() => {
       expect(screen.getByText('Quick')).toBeInTheDocument();
@@ -59,6 +76,46 @@ describe('TagsPage', () => {
     // API persists the PATCH, like the real one).
     expect(await screen.findByText('Fast')).toBeInTheDocument();
     expect(screen.queryByText('Quick')).not.toBeInTheDocument();
+    expect(patchBody).toEqual({name: 'Fast'});
+  });
+
+  test('ignores edit starts while a save is pending', async () => {
+    server.use(
+      http.patch(`${API}/api/tags/:id`, async () => {
+        await delay(600);
+        return HttpResponse.json({
+          id: 'tag-2',
+          userId: 'user-uuid-1',
+          name: 'Fast',
+          color: '#22c55e',
+          isPreset: false,
+        });
+      }),
+    );
+    await renderWithProviders(<TagsPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Quick')).toBeInTheDocument();
+    });
+    const editButtons = screen.getAllByText('Edit');
+    await userEvent.click(editButtons[1]!);
+    const editField = screen.getByDisplayValue('Quick');
+    await userEvent.clear(editField);
+    await userEvent.type(editField, 'Fast');
+    await userEvent.click(screen.getByRole('button', {name: 'Save'}));
+    // The save is in flight (the mock PATCH takes 600 ms). Starting
+    // another row's edit now is ignored, so the pending draft is not
+    // discarded when the save lands.
+    const remainingEditButtons = screen.getAllByText('Edit');
+    await userEvent.click(remainingEditButtons[0]!);
+    expect(screen.getByDisplayValue('Fast')).toBeInTheDocument();
+    await waitFor(
+      () => {
+        expect(
+          screen.queryByRole('button', {name: 'Save'}),
+        ).not.toBeInTheDocument();
+      },
+      {timeout: 3000},
+    );
   });
 
   test('recolors a tag through the inline edit form', async () => {

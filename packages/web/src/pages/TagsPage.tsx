@@ -70,6 +70,7 @@ export const TagsPage = () => {
       void queryClient.invalidateQueries({queryKey: ['recipe']});
       void queryClient.invalidateQueries({queryKey: ['sharedWithMe']});
       void queryClient.invalidateQueries({queryKey: ['publicRecipe']});
+      void queryClient.invalidateQueries({queryKey: ['version']});
     },
   });
 
@@ -81,6 +82,12 @@ export const TagsPage = () => {
   };
 
   const handleStartEdit = (tag: TagsPageTag) => {
+    // While a save is in flight, ignore edit starts: reseeding the
+    // draft now would lose it when the pending save's onSuccess
+    // clears the editor.
+    if (updateMutation.isPending) {
+      return;
+    }
     setEditingTagId(tag.id);
     setEditName(tag.name);
     setEditColor(tag.color);

@@ -46,6 +46,27 @@ export const resetTagsFixture = (): void => {
   tagsFixture = defaultTagsFixture();
 };
 
+// Applies a PATCH body to the fixture tag, mirroring the server: only
+// a caller-owned tag updates (tag-2 here; tag-1's userId is null), and
+// fields the body does not mention are preserved. Returns the updated
+// tag, or null when the real PATCH would 404.
+export const applyTagsPatch = (
+  id: string,
+  body: {name?: string; color?: string},
+): TagsFixtureTag | null => {
+  const tag = tagsFixture.find(t => t.id === id);
+  if (!tag || tag.userId === null) {
+    return null;
+  }
+  if (body.name !== undefined) {
+    tag.name = body.name;
+  }
+  if (body.color !== undefined) {
+    tag.color = body.color;
+  }
+  return tag;
+};
+
 export const handlers = [
   http.get(`${API}/api/recipes`, ({request}) => {
     const url = new URL(request.url);
@@ -632,22 +653,10 @@ export const handlers = [
     });
   }),
   http.patch(`${API}/api/tags/:id`, async ({request, params}) => {
-    // Mirror the server: an update applies only to a tag the caller
-    // owns (tag-2 here). tag-1 is served with userId null and unknown
-    // ids do not exist — the real PATCH returns 404 for both. A
-    // successful PATCH mutates the fixture, so the refetch after the
-    // mutation shows the rename; fields the body does not mention are
-    // preserved.
-    const tag = tagsFixture.find(t => t.id === params['id']);
-    if (!tag || tag.userId === null) {
-      return HttpResponse.json({error: 'Tag not found'}, {status: 404});
-    }
     const body = (await request.json()) as {name?: string; color?: string};
-    if (body.name !== undefined) {
-      tag.name = body.name;
-    }
-    if (body.color !== undefined) {
-      tag.color = body.color;
+    const tag = applyTagsPatch(String(params['id']), body);
+    if (!tag) {
+      return HttpResponse.json({error: 'Tag not found'}, {status: 404});
     }
     return HttpResponse.json(tag);
   }),
