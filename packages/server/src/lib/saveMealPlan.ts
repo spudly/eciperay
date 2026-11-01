@@ -1,6 +1,7 @@
 import type {MealPlanDetail, MealPlanInput} from '@eciperay/types';
 
 import {query as defaultQuery} from '../db/query.js';
+import {runTransactional} from '../db/withTransaction.js';
 
 import {loadMealPlanDetail} from './loadMealPlanDetail.js';
 import {loadAccessibleRecipe} from './mealRecipeAccess.js';
@@ -105,20 +106,27 @@ export const saveNewMealPlan = async (
     return resolved;
   }
 
-  const planResult = await queryFn(
-    `insert into meal_plans (user_id, title, notes, starts_on, ends_on)
-     values ($1, $2, $3, $4, $5)
-     returning id`,
-    [
-      userId,
-      input.title,
-      input.notes ?? null,
-      input.startsOn ?? null,
-      input.endsOn ?? null,
-    ],
-  );
-  const planId = (planResult.rows[0] as {id: string}).id;
-  await insertEntries(planId, resolved.entries, queryFn);
+  // The plan row and its entries are written in one transaction: before
+  // this, a failure after the insert (e.g. while loading the saved plan)
+  // left an orphan plan the client was told had not saved — those orphans
+  // are what later 500ed the whole plan list (#358/#360, see #251).
+  const planId = await runTransactional(queryFn, async q => {
+    const planResult = await q(
+      `insert into meal_plans (user_id, title, notes, starts_on, ends_on)
+       values ($1, $2, $3, $4, $5)
+       returning id`,
+      [
+        userId,
+        input.title,
+        input.notes ?? null,
+        input.startsOn ?? null,
+        input.endsOn ?? null,
+      ],
+    );
+    const id = (planResult.rows[0] as {id: string}).id;
+    await insertEntries(id, resolved.entries, q);
+    return id;
+  });
 
   const plan = await loadMealPlanDetail(planId, userId, queryFn);
   if (!plan) {
@@ -146,23 +154,26 @@ export const replaceMealPlan = async (
     return resolved;
   }
 
-  await queryFn(
-    `update meal_plans
-     set title = $3, notes = $4, starts_on = $5, ends_on = $6, updated_at = now()
-     where id = $1 and user_id = $2`,
-    [
-      planId,
-      userId,
-      input.title,
-      input.notes ?? null,
-      input.startsOn ?? null,
-      input.endsOn ?? null,
-    ],
-  );
-  await queryFn(`delete from meal_plan_entries where meal_plan_id = $1`, [
-    planId,
-  ]);
-  await insertEntries(planId, resolved.entries, queryFn);
+  // Update, entry delete, and entry inserts are one transaction, so a
+  // failure midway cannot leave the plan updated with its entries
+  // deleted or partially replaced (see saveNewMealPlan / #358).
+  await runTransactional(queryFn, async q => {
+    await q(
+      `update meal_plans
+       set title = $3, notes = $4, starts_on = $5, ends_on = $6, updated_at = now()
+       where id = $1 and user_id = $2`,
+      [
+        planId,
+        userId,
+        input.title,
+        input.notes ?? null,
+        input.startsOn ?? null,
+        input.endsOn ?? null,
+      ],
+    );
+    await q(`delete from meal_plan_entries where meal_plan_id = $1`, [planId]);
+    await insertEntries(planId, resolved.entries, q);
+  });
 
   const plan = await loadMealPlanDetail(planId, userId, queryFn);
   if (!plan) {

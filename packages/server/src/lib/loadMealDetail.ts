@@ -35,9 +35,20 @@ type MealRow = {
   user_id: string;
   title: string;
   notes: string | null;
-  created_at: string;
-  updated_at: string;
+  // node-postgres returns timestamptz columns as JS Date objects; the
+  // detail type declares strings, so both representations are admitted
+  // here and normalized in loadMealDetail (see timestampString).
+  created_at: string | Date;
+  updated_at: string | Date;
 };
+
+/**
+ * Normalize a timestamptz value to the ISO string the detail types declare. A
+ * timestamp's instant is unambiguous, so `toISOString()` is the correct
+ * conversion for Date instances.
+ */
+const timestampString = (value: string | Date): string =>
+  value instanceof Date ? value.toISOString() : value;
 
 type MealRecipeRow = {
   meal_id: string;
@@ -142,8 +153,8 @@ export const loadMealDetail = async (
     notes: meal.notes,
     memberCount: members.length,
     nutrition,
-    createdAt: meal.created_at,
-    updatedAt: meal.updated_at,
+    createdAt: timestampString(meal.created_at),
+    updatedAt: timestampString(meal.updated_at),
     members,
   };
 };
