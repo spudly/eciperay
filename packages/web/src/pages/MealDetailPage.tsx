@@ -65,15 +65,23 @@ export const MealDetailPage = () => {
     return <RouteErrorView isNotFound />;
   }
 
-  // A settled query with no meal means the meal does not exist
-  // (deleted or a bad link): show a not-found state instead of gating on
-  // `!meal` forever, which left the page on the loading skeleton
-  // indefinitely (#356). No error at all also reads as not found;
-  // anything else is a generic load failure. `isPending`, not
-  // `isLoading`: a paused (offline) fetch has isLoading false while the
-  // query is still pending, and must stay on the loading gate.
+  // A settled non-404 error is a generic load failure — and it wins
+  // over a cached meal, just as a 404 does above: when a refetch fails
+  // (e.g. a 500), TanStack Query retains the cached data and exposes
+  // the error, so gating only on `!meal` would keep showing the stale
+  // meal instead of the error state. `isPending`, not `isLoading`: a
+  // paused (offline) fetch has isLoading false while the query is
+  // still pending, and must stay on the loading gate.
+  if (!isPending && error) {
+    return <RouteErrorView isNotFound={false} />;
+  }
+
+  // A settled query with no meal and no error means the meal does not
+  // exist (deleted or a bad link): show a not-found state instead of
+  // gating on `!meal` forever, which left the page on the loading
+  // skeleton indefinitely (#356).
   if (!isPending && !meal) {
-    return <RouteErrorView isNotFound={!error} />;
+    return <RouteErrorView isNotFound />;
   }
 
   return (

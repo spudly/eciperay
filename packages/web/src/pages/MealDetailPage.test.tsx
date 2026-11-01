@@ -139,6 +139,42 @@ describe('MealDetailPage', () => {
     expect(screen.queryByText('Sunday Dinner')).not.toBeInTheDocument();
   });
 
+  test('shows a generic error state when a refetch 500s over a cached meal', async () => {
+    const queryClient = makeQueryClient();
+    await renderWithProviders(
+      <Routes>
+        <Route
+          path="/meals/:mealId"
+          element={<MealDetailPage />}
+        />
+      </Routes>,
+      {route: `/meals/${MEAL_ID}`, queryClient},
+    );
+    await waitFor(() => {
+      expect(screen.getByText('Sunday Dinner')).toBeInTheDocument();
+    });
+
+    // The detail refetch now fails with a 500 while TanStack Query
+    // still holds the cached meal data: the settled error wins over
+    // the cached meal, mirroring the refetch-404 case above.
+    server.use(
+      http.get(`http://localhost:8080/api/meals/${MEAL_ID}`, () =>
+        HttpResponse.json({error: 'Internal error'}, {status: 500}),
+      ),
+    );
+    await act(async () => {
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.meal(MEAL_ID),
+      });
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Something went wrong')).toBeInTheDocument();
+    });
+    expect(screen.queryByText('Sunday Dinner')).not.toBeInTheDocument();
+    expect(screen.queryByText('Page not found')).not.toBeInTheDocument();
+  });
+
   test('shows a generic error state when the meal fails to load', async () => {
     server.use(
       http.get(`http://localhost:8080/api/meals/${MEAL_ID}`, () =>
