@@ -64,6 +64,16 @@ describe('mealSchemas', () => {
     ).toThrow(z.ZodError);
   });
 
+  test('MealPlanInputSchema rejects year zero, which Postgres has no date for', () => {
+    expect(() =>
+      MealPlanInputSchema.parse({
+        title: 'Week',
+        startsOn: '0000-01-01',
+        entries: [{mealId: recipeId}],
+      }),
+    ).toThrow(z.ZodError);
+  });
+
   test('MealPlanInputSchema rejects Feb 29 in a non-leap year', () => {
     expect(() =>
       MealPlanInputSchema.parse({
