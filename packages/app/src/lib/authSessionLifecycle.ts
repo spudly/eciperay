@@ -100,9 +100,11 @@ const clearPersistedSupabaseSession = async (
     const keys = await AsyncStorage.getAllKeys();
     const authKeys = keys.filter(key => SUPABASE_AUTH_STORAGE_KEY.test(key));
     const mainKey = authKeys.find(key => SUPABASE_AUTH_MAIN_KEY.test(key));
+    let identityBaseline: string | null = null;
     if (mainKey) {
       const stored = await AsyncStorage.getItem(mainKey);
       if (stored) {
+        identityBaseline = stored;
         try {
           const parsed: unknown = JSON.parse(stored);
           const storedToken =
@@ -124,6 +126,18 @@ const clearPersistedSupabaseSession = async (
       }
     }
     if (authKeys.length > 0) {
+      if (identityBaseline !== null && mainKey) {
+        // Confirm the identity immediately before removal: AsyncStorage
+        // offers no compare-and-swap and this Supabase client coordinates
+        // locklessly, so a value that changed since the identity read is
+        // the last observable chance to spare a replacement session that
+        // was persisted in between. The comparison and the removeMany
+        // call run in the same continuation, with no intervening await.
+        const confirmed = await AsyncStorage.getItem(mainKey);
+        if (confirmed !== identityBaseline) {
+          return false;
+        }
+      }
       await AsyncStorage.removeMany(authKeys);
     }
     return true;

@@ -208,6 +208,36 @@ describe('authSessionLifecycle', () => {
     expect(mockIdentifyAnalyticsUser).not.toHaveBeenCalled();
   });
 
+  test('aborts cleanup when a replacement session is persisted between the identity read and removal (#351)', async () => {
+    mockSyncUser.mockRejectedValue(new Error('Invalid or expired token'));
+    mockSignOut.mockResolvedValue({error: new Error('logout failed')});
+    const baseline = JSON.stringify({access_token: session.access_token});
+    await AsyncStorage.setItem('sb-test-auth-token', baseline);
+    const removeManySpy = jest.spyOn(AsyncStorage, 'removeMany');
+    let getItemCalls = 0;
+    const getItemSpy = jest
+      .spyOn(AsyncStorage, 'getItem')
+      .mockImplementation(async () => {
+        getItemCalls += 1;
+        return getItemCalls === 1
+          ? baseline
+          : JSON.stringify({access_token: 'replacement-token'});
+      });
+
+    try {
+      await expect(onAuthenticated(session)).rejects.toThrow('logout failed');
+    } finally {
+      getItemSpy.mockRestore();
+      removeManySpy.mockRestore();
+    }
+
+    expect(removeManySpy).not.toHaveBeenCalled();
+    expect(mockReset).not.toHaveBeenCalled();
+    await expect(AsyncStorage.getItem('sb-test-auth-token')).resolves.toBe(
+      baseline,
+    );
+  });
+
   test('clears the persisted session when the stored token is still the rejected one (#351)', async () => {
     mockSyncUser.mockRejectedValue(new Error('Invalid or expired token'));
     mockSignOut.mockResolvedValue({error: new Error('logout failed')});
