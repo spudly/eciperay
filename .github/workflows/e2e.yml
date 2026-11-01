@@ -110,10 +110,13 @@ jobs:
           PREVIEW_SUPABASE_SECRET_KEY:
             ${{ secrets.PREVIEW_SUPABASE_SECRET_KEY }}
           PREVIEW_DATABASE_URL: ${{ secrets.PREVIEW_DATABASE_URL }}
-          # Text import parses with Anthropic server-side. Inert until
-          # the ANTHROPIC_API_KEY secret exists; the imports spec skips
-          # with a stated reason while it is absent (see e2e-live/qa.ts).
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Run the server against its deterministic fake Anthropic
+          # transport (packages/server/src/lib/fakeAnthropicFetch.ts):
+          # text import parses with Anthropic server-side, and the live
+          # suite must not consume real API credits (issue #336). The
+          # startStack server boot inherits this env, and e2e-live/qa.ts
+          # activates the imports spec on it.
+          ECIPERAY_AI_FAKE: '1'
           E2E_QA_EMAIL: ${{ secrets.E2E_QA_EMAIL }}
           E2E_QA_PASSWORD: ${{ secrets.E2E_QA_PASSWORD }}
 
