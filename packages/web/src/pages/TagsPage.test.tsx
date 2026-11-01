@@ -79,6 +79,33 @@ describe('TagsPage', () => {
     expect(patchBody).toEqual({name: 'Fast'});
   });
 
+  test('saving an unchanged edit sends no update and closes the editor', async () => {
+    let patchBody: {name?: string; color?: string} | undefined;
+    server.use(
+      http.patch(`${API}/api/tags/:id`, async ({request, params}) => {
+        patchBody = (await request.json()) as {name?: string; color?: string};
+        const updated = applyTagsPatch(String(params['id']), patchBody);
+        if (!updated) {
+          return HttpResponse.json({error: 'Tag not found'}, {status: 404});
+        }
+        return HttpResponse.json(updated);
+      }),
+    );
+    await renderWithProviders(<TagsPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Quick')).toBeInTheDocument();
+    });
+    const editButtons = screen.getAllByText('Edit');
+    await userEvent.click(editButtons[1]!);
+    await userEvent.click(screen.getByRole('button', {name: 'Save'}));
+    await waitFor(() => {
+      expect(
+        screen.queryByRole('button', {name: 'Save'}),
+      ).not.toBeInTheDocument();
+    });
+    expect(patchBody).toBeUndefined();
+  });
+
   test('ignores edit starts while a save is pending', async () => {
     server.use(
       http.patch(`${API}/api/tags/:id`, async () => {

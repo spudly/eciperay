@@ -64,12 +64,39 @@ describe('TagsScreen', () => {
     const greenSwatches = getAllByLabelText('Select color green');
     await fireEvent.press(greenSwatches[1]!);
     await fireEvent.press(getByText('Save'));
+    // Only the changed field is sent: the name is left out, so a save
+    // seeded from a stale list can never write the old name back.
+    await waitFor(() => {
+      expect(mockUpdate).toHaveBeenCalledWith('t1', {color: '#22c55e'});
+    });
+  });
+
+  test('sends both fields when the edit renames and recolors', async () => {
+    const {findByText, getAllByLabelText, getByDisplayValue, getByText} =
+      await renderWithProviders(<TagsScreen />);
+    await fireEvent.press(await findByText('Edit'));
+    await fireEvent.changeText(getByDisplayValue('Dinner'), 'Supper');
+    const greenSwatches = getAllByLabelText('Select color green');
+    await fireEvent.press(greenSwatches[1]!);
+    await fireEvent.press(getByText('Save'));
     await waitFor(() => {
       expect(mockUpdate).toHaveBeenCalledWith('t1', {
-        name: 'Dinner',
+        name: 'Supper',
         color: '#22c55e',
       });
     });
+  });
+
+  test('saving an unchanged edit just closes the editor', async () => {
+    const {findByText, getByText, queryByText} = await renderWithProviders(
+      <TagsScreen />,
+    );
+    await fireEvent.press(await findByText('Edit'));
+    await fireEvent.press(getByText('Save'));
+    await waitFor(() => {
+      expect(queryByText('Save')).toBeNull();
+    });
+    expect(mockUpdate).not.toHaveBeenCalled();
   });
 
   test('ignores edit starts while a save is pending', async () => {
