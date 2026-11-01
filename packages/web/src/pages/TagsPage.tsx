@@ -63,11 +63,13 @@ export const TagsPage = () => {
       setEditColorTouched(false);
       void queryClient.invalidateQueries({queryKey: queryKeys.tags()});
       // Recipe payloads embed their tags (name + color), so a rename
-      // must also refresh the recipe lists, recipe details, and the
-      // shared-with-me lists or they keep showing the old name/color.
+      // must also refresh the recipe lists, recipe details, the
+      // shared-with-me lists, and public recipe views or they keep
+      // showing the old name/color.
       void queryClient.invalidateQueries({queryKey: queryKeys.recipeLists()});
       void queryClient.invalidateQueries({queryKey: ['recipe']});
       void queryClient.invalidateQueries({queryKey: ['sharedWithMe']});
+      void queryClient.invalidateQueries({queryKey: ['publicRecipe']});
     },
   });
 
