@@ -234,13 +234,15 @@ describe('authSessionLifecycle', () => {
   });
 
   test('tags a failed token-rejection recovery as an AuthSessionRejectedError (#351)', async () => {
+    const signOutError = new Error('logout failed');
     mockSyncUser.mockRejectedValue(new Error('Invalid or expired token'));
-    mockSignOut.mockResolvedValue({error: new Error('logout failed')});
+    mockSignOut.mockResolvedValue({error: signOutError});
 
     await expect(onAuthenticated(session)).rejects.toThrow(
       AuthSessionRejectedError,
     );
     await expect(onAuthenticated(session)).rejects.toThrow('logout failed');
+    expect(mockCaptureException).toHaveBeenCalledWith(signOutError);
   });
 
   test('reports and rethrows sync failures that are not an invalid/expired token', async () => {

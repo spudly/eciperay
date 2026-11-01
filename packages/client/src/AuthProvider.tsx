@@ -72,8 +72,17 @@ const subscribeSupabaseAuth = (
     } catch (error) {
       // Only a failed token-rejection recovery ends the restored session;
       // an ordinary sync failure leaves the still-valid session in place.
+      // The drop is guarded by access token, like the auth-event path: a
+      // newer session installed by an auth event while the restored
+      // session's lifecycle was still in flight must not be cleared by the
+      // restored session's late rejection.
       if (isAuthSessionRejectedError(error)) {
-        setAuth({session: null, isLoading: false});
+        setAuth(prev => {
+          if (prev.session?.access_token !== restoredSession.access_token) {
+            return prev;
+          }
+          return {session: null, isLoading: false};
+        });
       }
     }
   })();

@@ -125,6 +125,9 @@ const signOutAfterTokenRejection = async (): Promise<void> => {
   }
   await clearPersistedSupabaseSession();
   onSignedOut();
+  // AuthProvider consumes the tagged error silently (it only drops the
+  // session), so report the sign-out failure here to keep it visible.
+  analytics.captureException(signOutFailure);
   throw new AuthSessionRejectedError(
     signOutFailure instanceof Error
       ? signOutFailure.message

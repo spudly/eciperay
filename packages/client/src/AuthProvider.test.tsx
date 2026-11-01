@@ -226,6 +226,44 @@ describe('AuthProvider', () => {
     expect(result.current.isLoading).toBe(false);
   });
 
+  test('does not discard a newer session when the restored session rejects with a session-rejected error', async () => {
+    const {client, getSession, onAuthStateChange} = makeSupabase();
+    const restoredSession = {access_token: 'abc', user: {id: 'u1'}};
+    getSession.mockResolvedValue({data: {session: restoredSession}});
+    let rejectRestored: (error: Error) => void = () => {};
+    const restoredAttempt = new Promise<void>((_resolve, reject) => {
+      rejectRestored = reject;
+    });
+    const onAuthenticated = jest.fn((session: {access_token: string}) =>
+      session.access_token === 'abc' ? restoredAttempt : Promise.resolve(),
+    );
+    const wrapper = ({children}: {children: React.ReactNode}) => (
+      <AuthProvider
+        supabase={client}
+        onAuthenticated={onAuthenticated}
+      >
+        {children}
+      </AuthProvider>
+    );
+    const {result} = renderHook(() => useAuth(), {wrapper});
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(result.current.session).toEqual(restoredSession);
+    const callback = onAuthStateChange.mock.calls[0][0];
+    const newSession = {access_token: 'xyz', user: {id: 'u1'}};
+    act(() => {
+      callback('TOKEN_REFRESHED', newSession);
+    });
+    expect(result.current.session).toEqual(newSession);
+    await act(async () => {
+      rejectRestored(new AuthSessionRejectedError('stale recovery failure'));
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(result.current.session).toEqual(newSession);
+  });
+
   test('calls onAuthenticated when session is restored', async () => {
     const {client, getSession} = makeSupabase();
     const session = {access_token: 'abc', user: {id: 'u1'}};
