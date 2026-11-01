@@ -1,4 +1,7 @@
-import {identifyAnalyticsUser} from '@eciperay/client';
+import {
+  AuthSessionRejectedError,
+  identifyAnalyticsUser,
+} from '@eciperay/client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type {Session} from '@supabase/supabase-js';
 
@@ -100,10 +103,12 @@ const clearPersistedSupabaseSession = async (): Promise<void> => {
  * A failed sign-out — a returned `{error}` or a thrown exception, treated
  * identically — is NOT a completed recovery: onSignedOut() alone cannot replace
  * the SIGNED_OUT event AuthProvider never received. Recovery force-clears the
- * persisted session, runs the signed-out cleanup, and then rethrows so the
- * failure is surfaced instead of resolving as though the signed-out flow had
- * been entered (AuthProvider's restore path drops its in-memory session when
- * onAuthenticated rejects).
+ * persisted session, runs the signed-out cleanup, and then throws an
+ * AuthSessionRejectedError so the failure is surfaced instead of resolving as
+ * though the signed-out flow had been entered. The tag is the signal
+ * AuthProvider uses to drop its in-memory session: it drops the session ONLY
+ * for this tagged recovery failure, never for an ordinary sync failure, whose
+ * session is still valid.
  */
 const signOutAfterTokenRejection = async (): Promise<void> => {
   let signOutFailure: unknown = null;
@@ -120,9 +125,12 @@ const signOutAfterTokenRejection = async (): Promise<void> => {
   }
   await clearPersistedSupabaseSession();
   onSignedOut();
-  throw signOutFailure instanceof Error
-    ? signOutFailure
-    : new Error('Sign-out failed after the session token was rejected');
+  throw new AuthSessionRejectedError(
+    signOutFailure instanceof Error
+      ? signOutFailure.message
+      : 'Sign-out failed after the session token was rejected',
+    {cause: signOutFailure},
+  );
 };
 
 export const onAuthenticated = async (session: Session) => {
@@ -130,6 +138,12 @@ export const onAuthenticated = async (session: Session) => {
     await api.auth.syncUser();
   } catch (error) {
     if (!isInvalidOrExpiredTokenError(error)) {
+      // Ordinary sync failure (e.g. a transient 503 while the auth service
+      // is unavailable): the session's token was not rejected and the
+      // provider session is still valid. Report the failure and rethrow it
+      // untagged — AuthProvider preserves the session for untagged
+      // rejections and runs no signed-out cleanup.
+      analytics.captureException(error);
       throw error;
     }
     if (await isStaleSessionFailure(session)) {

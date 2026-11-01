@@ -3,13 +3,19 @@ import type {Session} from '@supabase/supabase-js';
 
 const mockSyncUser = jest.fn();
 const mockIdentifyAnalyticsUser = jest.fn();
+const mockCaptureException = jest.fn();
 const mockReset = jest.fn();
 const mockSignOut = jest.fn();
 const mockGetSession = jest.fn();
 
 jest.mock('./api', () => ({api: {auth: {syncUser: () => mockSyncUser()}}}));
 
-jest.mock('./analytics', () => ({analytics: {reset: () => mockReset()}}));
+jest.mock('./analytics', () => ({
+  analytics: {
+    reset: () => mockReset(),
+    captureException: (error: unknown) => mockCaptureException(error),
+  },
+}));
 
 jest.mock('./supabase', () => ({
   supabase: {
@@ -20,10 +26,21 @@ jest.mock('./supabase', () => ({
   },
 }));
 
-jest.mock('@eciperay/client', () => ({
-  identifyAnalyticsUser: (analytics: unknown, session: Session) =>
-    mockIdentifyAnalyticsUser(analytics, session),
-}));
+jest.mock('@eciperay/client', () => {
+  class MockAuthSessionRejectedError extends Error {
+    constructor(message: string, options?: {cause?: unknown}) {
+      super(message, options);
+      this.name = 'AuthSessionRejectedError';
+    }
+  }
+  return {
+    AuthSessionRejectedError: MockAuthSessionRejectedError,
+    identifyAnalyticsUser: (analytics: unknown, session: Session) =>
+      mockIdentifyAnalyticsUser(analytics, session),
+  };
+});
+
+import {AuthSessionRejectedError} from '@eciperay/client';
 
 import {analytics} from './analytics';
 import {onAuthenticated, onSignedOut} from './authSessionLifecycle';
@@ -37,6 +54,7 @@ describe('authSessionLifecycle', () => {
   beforeEach(async () => {
     mockSyncUser.mockReset();
     mockIdentifyAnalyticsUser.mockReset();
+    mockCaptureException.mockReset();
     mockReset.mockReset();
     mockSignOut.mockReset();
     mockSignOut.mockResolvedValue({error: null});
@@ -215,16 +233,46 @@ describe('authSessionLifecycle', () => {
     expect(mockIdentifyAnalyticsUser).not.toHaveBeenCalled();
   });
 
-  test('rethrows sync failures that are not an invalid/expired token', async () => {
-    mockSyncUser.mockRejectedValue(
-      Object.assign(new Error('API error 500: /auth/sync'), {status: 500}),
+  test('tags a failed token-rejection recovery as an AuthSessionRejectedError (#351)', async () => {
+    mockSyncUser.mockRejectedValue(new Error('Invalid or expired token'));
+    mockSignOut.mockResolvedValue({error: new Error('logout failed')});
+
+    await expect(onAuthenticated(session)).rejects.toThrow(
+      AuthSessionRejectedError,
     );
+    await expect(onAuthenticated(session)).rejects.toThrow('logout failed');
+  });
+
+  test('reports and rethrows sync failures that are not an invalid/expired token', async () => {
+    const failure = Object.assign(new Error('API error 500: /auth/sync'), {
+      status: 500,
+    });
+    mockSyncUser.mockRejectedValue(failure);
 
     await expect(onAuthenticated(session)).rejects.toThrow(
       'API error 500: /auth/sync',
     );
 
+    expect(mockCaptureException).toHaveBeenCalledWith(failure);
     expect(mockSignOut).not.toHaveBeenCalled();
+    expect(mockIdentifyAnalyticsUser).not.toHaveBeenCalled();
+  });
+
+  test('reports and rethrows a transient 503 sync failure untagged, without signing out (#351)', async () => {
+    const failure = Object.assign(new Error('API error 503: /auth/sync'), {
+      status: 503,
+    });
+    mockSyncUser.mockRejectedValue(failure);
+
+    const thrown: unknown = await onAuthenticated(session).catch(
+      (error: unknown) => error,
+    );
+
+    expect(thrown).toBe(failure);
+    expect(thrown).not.toBeInstanceOf(AuthSessionRejectedError);
+    expect(mockCaptureException).toHaveBeenCalledWith(failure);
+    expect(mockSignOut).not.toHaveBeenCalled();
+    expect(mockReset).not.toHaveBeenCalled();
     expect(mockIdentifyAnalyticsUser).not.toHaveBeenCalled();
   });
 
@@ -233,6 +281,7 @@ describe('authSessionLifecycle', () => {
 
     await expect(onAuthenticated(session)).rejects.toBe('sync failed');
 
+    expect(mockCaptureException).toHaveBeenCalledWith('sync failed');
     expect(mockSignOut).not.toHaveBeenCalled();
   });
 });
