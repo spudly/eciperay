@@ -1,4 +1,5 @@
 import type {Response} from 'express';
+import {z} from 'zod';
 
 import {query as defaultQuery} from '../../db/query.js';
 import type {AuthedRequest} from '../../middleware/requireAuth.js';
@@ -15,6 +16,10 @@ export const listVersions = async (
   queryFn: QueryFn,
 ) => {
   const recipeId = getParam(req, 'id');
+  if (!z.uuid().safeParse(recipeId).success) {
+    res.status(404).json({error: 'Recipe not found'});
+    return;
+  }
   const recipe = await queryFn(GET_RECIPE_DETAIL_SQL, [recipeId, req.userId]);
   if (recipe.rows.length === 0) {
     res.status(404).json({error: 'Recipe not found'});
