@@ -509,4 +509,44 @@ describe('RecipeDetailView', () => {
       expect(mockNutrition).toHaveBeenCalledWith(recipe.id, {refresh: true});
     });
   });
+
+  test('a failed nutrition estimate is handled, not an unhandled rejection (#345)', async () => {
+    // The initial (cached) lookup finds nothing, and the forced estimate
+    // fails the way the server's 502 does — the error text PostHog
+    // captured as an unhandled rejection on Android.
+    mockNutrition.mockImplementation(
+      (_recipeId: string, options?: {refresh?: boolean}) =>
+        options?.refresh
+          ? Promise.reject(new Error('Failed to estimate nutrition'))
+          : Promise.resolve(null),
+    );
+    const {findByText} = await renderView();
+    expect(await findByText('Nutrition is not available yet.')).toBeTruthy();
+    await fireEvent.press(await findByText('Estimate nutrition'));
+    // The failure surfaces as recoverable feedback and the unavailable
+    // state (with its Estimate retry) stays in place.
+    expect(
+      await findByText('Could not refresh nutrition. Please try again.'),
+    ).toBeTruthy();
+    expect(await findByText('Nutrition is not available yet.')).toBeTruthy();
+    expect(await findByText('Estimate nutrition')).toBeTruthy();
+  });
+
+  test('a failed nutrition refresh keeps the current estimate and shows feedback (#345)', async () => {
+    mockNutrition.mockImplementation(
+      (_recipeId: string, options?: {refresh?: boolean}) =>
+        options?.refresh
+          ? Promise.reject(new Error('Failed to estimate nutrition'))
+          : Promise.resolve(nutritionFixture),
+    );
+    const {findByText} = await renderView();
+    expect(await findByText('250')).toBeTruthy();
+    await fireEvent.press(await findByText('Refresh'));
+    expect(
+      await findByText('Could not refresh nutrition. Please try again.'),
+    ).toBeTruthy();
+    // The previously loaded estimate is not discarded on failure.
+    expect(await findByText('250')).toBeTruthy();
+    expect(await findByText('Refresh')).toBeTruthy();
+  });
 });

@@ -70,8 +70,8 @@ type RecipeDetailViewProps = {
  * OverviewActions used, ingredient lines scaled by the app's formatter,
  * nutrition rows composed by the client's row builder), and every mutation
  * (status, activation, tweak-manually, create-a-draft, rating, cook log) plus
- * the three slotted app panels (sharing controls, comments, cook-log form)
- * keep their state and API calls app-side.
+ * the three slotted app panels (sharing controls, comments, cook-log form) keep
+ * their state and API calls app-side.
  *
  * State lifetimes are mapped defensively: the tab components this page replaced
  * unmounted on every tab switch, which reset the ingredients tab's missing set
@@ -367,6 +367,8 @@ export const RecipeDetailView = ({
         queryKey: queryKeys.recipe(recipe.id),
       });
       void queryClient.invalidateQueries({queryKey: queryKeys.recipeLists()});
+    } catch {
+      showActionMessage('Could not refresh nutrition. Please try again.');
     } finally {
       setIsRefreshingNutrition(false);
     }
