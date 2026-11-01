@@ -24,15 +24,20 @@ export const TagsScreen = (): React.JSX.Element => {
   const [editingTagId, setEditingTagId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editColor, setEditColor] = useState<TagColorName>('indigo');
-  // The edit draft's color starts as the tag's color projected to a
-  // palette name — a lossy projection for stored non-palette hexes
-  // (unknown hexes fall back to gray). Track which fields the user
-  // actually changed: Save sends only those, so a rename-only edit
-  // preserves the stored color exactly, and a save seeded from a
-  // not-yet-refetched list can never write a stale field back over a
-  // just-saved one.
-  const [editNameTouched, setEditNameTouched] = useState(false);
-  const [editColorTouched, setEditColorTouched] = useState(false);
+  // Save sends only the fields whose final value differs from the
+  // value seeded at edit start (typing a change and restoring it is
+  // not a change). The color comparison matters because the draft's
+  // color is the stored hex projected to a palette name — a lossy
+  // projection for non-palette hexes (unknown hexes fall back to
+  // gray): sending an "unchanged" color would rewrite the stored hex
+  // with the palette hex. Changed-fields-only also means a save
+  // seeded from a not-yet-refetched list can never write a stale
+  // field back over a just-saved one.
+  const [editOriginalName, setEditOriginalName] = useState('');
+  const [editOriginalColor, setEditOriginalColor] =
+    useState<TagColorName>('indigo');
+  const editNameChanged = editName !== editOriginalName;
+  const editColorChanged = editColor !== editOriginalColor;
   const queryClient = useQueryClient();
 
   const {data: tags = [], isLoading} = useQuery({
@@ -58,13 +63,11 @@ export const TagsScreen = (): React.JSX.Element => {
   const updateMutation = useMutation({
     mutationFn: () =>
       api.tags.update(editingTagId!, {
-        ...(editNameTouched ? {name: editName} : {}),
-        ...(editColorTouched ? {color: warmHarvestTagColors[editColor]} : {}),
+        ...(editNameChanged ? {name: editName} : {}),
+        ...(editColorChanged ? {color: warmHarvestTagColors[editColor]} : {}),
       }),
     onSuccess: () => {
       setEditingTagId(null);
-      setEditNameTouched(false);
-      setEditColorTouched(false);
       void queryClient.invalidateQueries({queryKey: queryKeys.tags()});
       // Recipe payloads embed their tags (name + color), so a rename
       // must also refresh the recipe lists, recipe details, the
@@ -96,24 +99,12 @@ export const TagsScreen = (): React.JSX.Element => {
     setEditingTagId(tag.id);
     setEditName(tag.name);
     setEditColor(tag.color);
-    setEditNameTouched(false);
-    setEditColorTouched(false);
-  };
-
-  const handleEditNameChange = (value: string) => {
-    setEditName(value);
-    setEditNameTouched(true);
-  };
-
-  const handleEditColorChange = (colorName: TagColorName) => {
-    setEditColor(colorName);
-    setEditColorTouched(true);
+    setEditOriginalName(tag.name);
+    setEditOriginalColor(tag.color);
   };
 
   const handleCancelEdit = () => {
     setEditingTagId(null);
-    setEditNameTouched(false);
-    setEditColorTouched(false);
   };
 
   const handleSaveEdit = () => {
@@ -123,7 +114,7 @@ export const TagsScreen = (): React.JSX.Element => {
     }
     // Nothing changed: saving would send an empty update, so just
     // close the editor like a cancel.
-    if (!editNameTouched && !editColorTouched) {
+    if (!editNameChanged && !editColorChanged) {
       handleCancelEdit();
       return;
     }
@@ -148,8 +139,8 @@ export const TagsScreen = (): React.JSX.Element => {
       editName={editName}
       editColor={editColor}
       onStartEdit={handleStartEdit}
-      onEditNameChange={handleEditNameChange}
-      onEditColorChange={handleEditColorChange}
+      onEditNameChange={setEditName}
+      onEditColorChange={setEditColor}
       onSaveEdit={handleSaveEdit}
       onCancelEdit={handleCancelEdit}
       isUpdating={updateMutation.isPending}

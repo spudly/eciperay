@@ -79,6 +79,42 @@ describe('TagsPage', () => {
     expect(patchBody).toEqual({name: 'Fast'});
   });
 
+  test('a name typed then restored to its original value is not sent', async () => {
+    let patchBody: {name?: string; color?: string} | undefined;
+    server.use(
+      http.patch(`${API}/api/tags/:id`, async ({request, params}) => {
+        patchBody = (await request.json()) as {name?: string; color?: string};
+        const updated = applyTagsPatch(String(params['id']), patchBody);
+        if (!updated) {
+          return HttpResponse.json({error: 'Tag not found'}, {status: 404});
+        }
+        return HttpResponse.json(updated);
+      }),
+    );
+    await renderWithProviders(<TagsPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Quick')).toBeInTheDocument();
+    });
+    const editButtons = screen.getAllByText('Edit');
+    await userEvent.click(editButtons[1]!);
+    const editField = screen.getByDisplayValue('Quick');
+    await userEvent.clear(editField);
+    await userEvent.type(editField, 'Fast');
+    await userEvent.clear(editField);
+    await userEvent.type(editField, 'Quick');
+    const redSwatches = screen.getAllByRole('button', {
+      name: 'Select color red',
+    });
+    await userEvent.click(redSwatches[1]!);
+    await userEvent.click(screen.getByRole('button', {name: 'Save'}));
+    await waitFor(() => {
+      expect(
+        screen.queryByRole('button', {name: 'Save'}),
+      ).not.toBeInTheDocument();
+    });
+    expect(patchBody).toEqual({color: '#ef4444'});
+  });
+
   test('saving an unchanged edit sends no update and closes the editor', async () => {
     let patchBody: {name?: string; color?: string} | undefined;
     server.use(

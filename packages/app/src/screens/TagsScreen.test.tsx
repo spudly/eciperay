@@ -87,6 +87,21 @@ describe('TagsScreen', () => {
     });
   });
 
+  test('a name typed then restored to its original value is not sent', async () => {
+    const {findByText, getAllByLabelText, getByDisplayValue, getByText} =
+      await renderWithProviders(<TagsScreen />);
+    await fireEvent.press(await findByText('Edit'));
+    const editField = getByDisplayValue('Dinner');
+    await fireEvent.changeText(editField, 'Supper');
+    await fireEvent.changeText(editField, 'Dinner');
+    const greenSwatches = getAllByLabelText('Select color green');
+    await fireEvent.press(greenSwatches[1]!);
+    await fireEvent.press(getByText('Save'));
+    await waitFor(() => {
+      expect(mockUpdate).toHaveBeenCalledWith('t1', {color: '#22c55e'});
+    });
+  });
+
   test('saving an unchanged edit just closes the editor', async () => {
     const {findByText, getByText, queryByText} = await renderWithProviders(
       <TagsScreen />,
