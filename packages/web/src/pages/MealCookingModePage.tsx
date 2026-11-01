@@ -12,7 +12,11 @@ export const MealCookingModePage = () => {
   const navigate = useNavigate();
   const [stepIndex, setStepIndex] = useState(0);
 
-  const {data: meal, isError: isMealError} = useQuery({
+  const {
+    data: meal,
+    error: mealError,
+    isLoadingError: isMealLoadingError,
+  } = useQuery({
     queryKey: queryKeys.meal(mealId),
     queryFn: () => eciperay.meals.get(mealId),
     enabled: mealId.length > 0,
@@ -21,7 +25,8 @@ export const MealCookingModePage = () => {
   const {
     data: plan,
     isLoading,
-    isError: isPlanError,
+    error: planError,
+    isLoadingError: isPlanLoadingError,
   } = useQuery({
     queryKey: queryKeys.mealCookPlan(mealId),
     queryFn: () => eciperay.meals.cookPlan(mealId),
@@ -32,15 +37,38 @@ export const MealCookingModePage = () => {
     void navigate(`/meals/${mealId}`);
   };
 
+  // The meals routes answer a missing meal with 404 and
+  // `{error: 'Meal not found'}`, which the API client throws as that
+  // message (a body without an `error` field falls back to
+  // `API error <status>:`); either shape reads as not found. The
+  // cook-plan route returns the same 404 for a missing meal.
+  const isNotFoundError = [mealError, planError].some(
+    error =>
+      error instanceof Error &&
+      (error.message === 'Meal not found' ||
+        error.message.startsWith('API error 404')),
+  );
+
+  // A missing meal has no detail page to return to: MealDetailPage
+  // gates on `!meal` forever for an absent meal, so Done from the
+  // error state must go to the meals hub instead. Recoverable errors
+  // and cook-plan failures keep the meal-detail destination.
+  const onErrorDone = () => {
+    void navigate(isNotFoundError ? '/meals' : `/meals/${mealId}`);
+  };
+
   // A failed meal or cook-plan load must not hang on the loading gate
   // forever (#338): the DS page's error state renders as soon as either
   // query fails, carrying the meal title when that query succeeded.
-  if (isMealError || isPlanError) {
+  // Only an initial-load failure (or a 404, which wins over cached
+  // data like the detail pages) replaces the view: a background
+  // refetch error keeps the cooking controls while cached data lasts.
+  if (isMealLoadingError || isPlanLoadingError || isNotFoundError) {
     return (
       <MealCookingModePageView
         state="error"
         {...(meal ? {mealTitle: meal.title} : {})}
-        onDone={onDone}
+        onDone={onErrorDone}
       />
     );
   }
