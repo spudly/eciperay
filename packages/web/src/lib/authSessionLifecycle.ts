@@ -41,16 +41,36 @@ const isInvalidOrExpiredTokenError = (error: unknown): boolean => {
  * cannot be shown to be stale and is handled as current).
  */
 const isStaleSessionFailure = async (session: Session): Promise<boolean> => {
-  try {
-    const {data} = await supabase.auth.getSession();
-    if (!data.session) {
-      // Already signed out (or never persisted): nothing left to sign out.
-      return true;
+  // A read that fails — getSession throwing, or returning an error
+  // alongside a null session (e.g. a failed refresh, which does not remove
+  // the persisted session) — proves nothing about staleness: a returned
+  // error must not be read as "already signed out", or recovery is skipped
+  // and the rejected session survives. Retry the read once (a transient
+  // storage/refresh failure often clears, and a successful retry can still
+  // spare a newer session); only if the retry also fails is the failure
+  // handled as current, per the contract above.
+  const readStoredSession = async (): Promise<Session | null> => {
+    const {data, error} = await supabase.auth.getSession();
+    if (error) {
+      throw error;
     }
-    return data.session.access_token !== session.access_token;
+    return data.session;
+  };
+  let storedSession: Session | null;
+  try {
+    storedSession = await readStoredSession();
   } catch {
-    return false;
+    try {
+      storedSession = await readStoredSession();
+    } catch {
+      return false;
+    }
   }
+  if (!storedSession) {
+    // Already signed out (or never persisted): nothing left to sign out.
+    return true;
+  }
+  return storedSession.access_token !== session.access_token;
 };
 
 /**

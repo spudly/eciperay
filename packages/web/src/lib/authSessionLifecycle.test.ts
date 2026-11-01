@@ -132,6 +132,38 @@ describe('authSessionLifecycle', () => {
     expect(mockIdentifyAnalyticsUserIfConsented).not.toHaveBeenCalled();
   });
 
+  test('does not treat a returned getSession error as already signed out (#344)', async () => {
+    const {onAuthenticated} = await import('./authSessionLifecycle.js');
+    mockSyncUser.mockRejectedValue(new Error('Invalid or expired token'));
+    // A failed refresh returns an error with a null session WITHOUT
+    // removing the persisted session — that is a failed read, not a
+    // signed-out state, so recovery must still run.
+    mockGetSession.mockResolvedValue({
+      data: {session: null},
+      error: new Error('refresh failed'),
+    });
+
+    await expect(onAuthenticated(session)).resolves.toBeUndefined();
+
+    expect(mockSignOut).toHaveBeenCalledWith({scope: 'local'});
+    expect(mockIdentifyAnalyticsUserIfConsented).not.toHaveBeenCalled();
+  });
+
+  test('spares a newer session when a failed staleness read succeeds on retry (#344)', async () => {
+    const {onAuthenticated} = await import('./authSessionLifecycle.js');
+    mockSyncUser.mockRejectedValue(new Error('Invalid or expired token'));
+    mockGetSession
+      .mockRejectedValueOnce(new Error('storage unavailable'))
+      .mockResolvedValue({
+        data: {session: {...session, access_token: 'newer-token'}},
+      });
+
+    await expect(onAuthenticated(session)).resolves.toBeUndefined();
+
+    expect(mockSignOut).not.toHaveBeenCalled();
+    expect(mockIdentifyAnalyticsUserIfConsented).not.toHaveBeenCalled();
+  });
+
   test('signs out when the current session cannot be read to prove staleness (#344)', async () => {
     const {onAuthenticated} = await import('./authSessionLifecycle.js');
     mockSyncUser.mockRejectedValue(new Error('Invalid or expired token'));
