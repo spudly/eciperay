@@ -86,6 +86,79 @@ describe('AuthProvider', () => {
     expect(onAuthenticated).toHaveBeenCalledWith(newSession);
   });
 
+  test('clears the session when onAuthenticated rejects during an auth state change', async () => {
+    const {client, onAuthStateChange} = makeSupabase();
+    const onAuthenticated = jest.fn(async () => {
+      throw new Error('sign-out failed after token rejection');
+    });
+    const onSignedOut = jest.fn();
+    const wrapper = ({children}: {children: React.ReactNode}) => (
+      <AuthProvider
+        supabase={client}
+        onAuthenticated={onAuthenticated}
+        onSignedOut={onSignedOut}
+      >
+        {children}
+      </AuthProvider>
+    );
+    const {result} = renderHook(() => useAuth(), {wrapper});
+    await act(async () => {
+      await Promise.resolve();
+    });
+    const callback = onAuthStateChange.mock.calls[0][0];
+    const newSession = {access_token: 'xyz', user: {id: 'u2'}};
+    act(() => {
+      callback('SIGNED_IN', newSession);
+    });
+    expect(result.current.session).toEqual(newSession);
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(result.current.session).toBeNull();
+    expect(onSignedOut).toHaveBeenCalled();
+  });
+
+  test('does not discard a newer session when an earlier onAuthenticated rejects', async () => {
+    const {client, onAuthStateChange} = makeSupabase();
+    let rejectFirst: (error: Error) => void = () => {};
+    const firstAttempt = new Promise<void>((_resolve, reject) => {
+      rejectFirst = reject;
+    });
+    const onAuthenticated = jest.fn((session: {access_token: string}) =>
+      session.access_token === 'old-token' ? firstAttempt : Promise.resolve(),
+    );
+    const onSignedOut = jest.fn();
+    const wrapper = ({children}: {children: React.ReactNode}) => (
+      <AuthProvider
+        supabase={client}
+        onAuthenticated={onAuthenticated}
+        onSignedOut={onSignedOut}
+      >
+        {children}
+      </AuthProvider>
+    );
+    const {result} = renderHook(() => useAuth(), {wrapper});
+    await act(async () => {
+      await Promise.resolve();
+    });
+    const callback = onAuthStateChange.mock.calls[0][0];
+    const oldSession = {access_token: 'old-token', user: {id: 'u2'}};
+    const newSession = {access_token: 'new-token', user: {id: 'u2'}};
+    act(() => {
+      callback('SIGNED_IN', oldSession);
+      callback('TOKEN_REFRESHED', newSession);
+    });
+    expect(result.current.session).toEqual(newSession);
+    await act(async () => {
+      rejectFirst(new Error('stale lifecycle failure'));
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(result.current.session).toEqual(newSession);
+    expect(onSignedOut).not.toHaveBeenCalled();
+  });
+
   test('calls onAuthenticated when session is restored', async () => {
     const {client, getSession} = makeSupabase();
     const session = {access_token: 'abc', user: {id: 'u1'}};

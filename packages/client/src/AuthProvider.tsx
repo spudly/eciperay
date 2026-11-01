@@ -50,7 +50,20 @@ const subscribeSupabaseAuth = (
     (_event, session) => {
       setAuth(prev => applyAuthSessionChange(prev, session, onSignedOut));
       if (session) {
-        void onAuthenticated?.(session);
+        void Promise.resolve(onAuthenticated?.(session)).catch(() => {
+          // The lifecycle could not establish this session — e.g. its
+          // token was rejected and the recovery sign-out itself failed,
+          // so no SIGNED_OUT event is coming. Mirror the restore path
+          // above: drop the session rather than leaving an unhandled
+          // rejection and a stale authenticated state — unless a newer
+          // session has since replaced the one that failed.
+          setAuth(prev => {
+            if (prev.session?.access_token !== session.access_token) {
+              return prev;
+            }
+            return applyAuthSessionChange(prev, null, onSignedOut);
+          });
+        });
       }
     },
   );
