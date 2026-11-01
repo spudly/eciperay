@@ -153,6 +153,22 @@ describe('MealCookingModeScreen', () => {
     expect(mockNavigate).toHaveBeenCalledWith('MealsHub');
   });
 
+  test('routes Done to the meals hub when the meal fails with a non-404 error', async () => {
+    mockGetMeal.mockRejectedValue(new Error('Server unavailable'));
+    const {findByText} = await renderWithProviders(
+      <MealCookingModeScreen {...stackProps} />,
+    );
+    expect(
+      await findByText(
+        "Couldn't load the cook plan for this meal. Please try again.",
+      ),
+    ).toBeTruthy();
+    await fireEvent.press(await findByText('Done'));
+    // No meal data exists, so the detail screen would gate on `!meal`
+    // forever; Done goes to the meals hub.
+    expect(mockNavigate).toHaveBeenCalledWith('MealsHub');
+  });
+
   test('keeps the cooking view when a background refetch fails', async () => {
     const client = makeQueryClient();
     const {findByText, queryByText} = await renderWithProviders(

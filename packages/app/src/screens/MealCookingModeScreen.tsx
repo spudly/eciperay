@@ -49,12 +49,14 @@ export const MealCookingModeScreen = ({route, navigation}: Props) => {
         error.message.startsWith('API error 404')),
   );
 
-  // A missing meal has no detail screen to return to: MealDetailScreen
-  // gates on `!meal` forever for an absent meal, so Done from the
-  // error state must go to the meals hub instead. Recoverable errors
-  // and cook-plan failures keep the meal-detail destination.
+  // When there is no meal to return to, the meal detail is not a safe
+  // destination: MealDetailScreen gates on `!meal` forever and renders
+  // no navigation action, so a known-missing meal (404) — or any
+  // initial meal-load failure, which leaves no meal data at all —
+  // sends Done to the meals hub instead. A cook-plan-only failure
+  // with the meal loaded keeps the meal-detail destination.
   const onErrorDone = () => {
-    if (isNotFoundError) {
+    if (isNotFoundError || !meal) {
       navigation.navigate('MealsHub');
     } else {
       onDone();

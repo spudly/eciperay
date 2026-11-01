@@ -127,6 +127,32 @@ describe('MealCookingModePage', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/meals');
   });
 
+  test('routes Done to the meals hub when the meal fails with a non-404 error', async () => {
+    server.use(
+      http.get(`http://localhost:8080/api/meals/${MEAL_ID}`, () =>
+        HttpResponse.json({error: 'Server unavailable'}, {status: 500}),
+      ),
+    );
+    await renderWithProviders(
+      <Routes>
+        <Route
+          path="/meals/:mealId/cook"
+          element={<MealCookingModePage />}
+        />
+      </Routes>,
+      {route: `/meals/${MEAL_ID}/cook`},
+    );
+    expect(
+      await screen.findByText(
+        "Couldn't load the cook plan for this meal. Please try again.",
+      ),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByText('Done'));
+    // No meal data exists, so the detail page would gate on `!meal`
+    // forever; Done goes to the meals hub.
+    expect(mockNavigate).toHaveBeenCalledWith('/meals');
+  });
+
   test('shows the meal error while the cook plan is still pending', async () => {
     let releaseCookPlan!: () => void;
     const cookPlanGate = new Promise<void>(resolve => {
