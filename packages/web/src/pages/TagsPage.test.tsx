@@ -232,6 +232,71 @@ describe('TagsPage', () => {
     expect(screen.queryByDisplayValue('Supper')).not.toBeInTheDocument();
   });
 
+  test('a failed create shows the page error and keeps the typed name', async () => {
+    server.use(
+      http.post(`${API}/api/tags`, () =>
+        HttpResponse.json({error: 'Server error'}, {status: 500}),
+      ),
+    );
+    await renderWithProviders(<TagsPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Dinner')).toBeInTheDocument();
+    });
+    await userEvent.type(screen.getByPlaceholderText('Tag name'), 'Lunch');
+    await userEvent.click(screen.getByText('Add'));
+    // The host converts the rejected mutation to a `false` result,
+    // which is what makes the DS page render its error alert (#374).
+    expect(
+      await screen.findByText("Couldn't create the tag. Please try again."),
+    ).toBeInTheDocument();
+    // Only onSuccess clears the form, so the name survives to retry.
+    expect(screen.getByPlaceholderText('Tag name')).toHaveValue('Lunch');
+  });
+
+  test('a failed save shows the page error and keeps the editor open', async () => {
+    server.use(
+      http.patch(`${API}/api/tags/:id`, () =>
+        HttpResponse.json({error: 'Server error'}, {status: 500}),
+      ),
+    );
+    await renderWithProviders(<TagsPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Quick')).toBeInTheDocument();
+    });
+    const editButtons = screen.getAllByText('Edit');
+    await userEvent.click(editButtons[1]!);
+    const editField = screen.getByDisplayValue('Quick');
+    await userEvent.clear(editField);
+    await userEvent.type(editField, 'Fast');
+    await userEvent.click(screen.getByRole('button', {name: 'Save'}));
+    expect(
+      await screen.findByText(
+        "Couldn't save the tag changes. Please try again.",
+      ),
+    ).toBeInTheDocument();
+    // A failed save must not close the editor or lose the draft.
+    expect(screen.getByRole('button', {name: 'Save'})).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Fast')).toBeInTheDocument();
+  });
+
+  test('a failed delete shows the page error and keeps the tag listed', async () => {
+    server.use(
+      http.delete(`${API}/api/tags/:id`, () =>
+        HttpResponse.json({error: 'Server error'}, {status: 500}),
+      ),
+    );
+    await renderWithProviders(<TagsPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Dinner')).toBeInTheDocument();
+    });
+    const deleteButtons = screen.getAllByText('Delete');
+    await userEvent.click(deleteButtons[0]!);
+    expect(
+      await screen.findByText("Couldn't delete the tag. Please try again."),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Dinner')).toBeInTheDocument();
+  });
+
   test('ignores empty tag name and updates color', async () => {
     await renderWithProviders(<TagsPage />);
     await waitFor(() => {

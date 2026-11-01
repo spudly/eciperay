@@ -81,11 +81,21 @@ export const TagsPage = () => {
     },
   });
 
-  const handleCreate = () => {
+  // The mutating handlers report failure to the DS page (#374):
+  // the page awaits each handler, and resolving `false` (or
+  // rejecting) is what renders its page-level error alert. So the
+  // handlers drive the mutations with mutateAsync and convert a
+  // rejection to `false`; onSuccess behavior (clearing the form,
+  // closing the editor, invalidating) is unchanged.
+  const handleCreate = async () => {
     if (!name.trim()) {
       return;
     }
-    createMutation.mutate();
+    try {
+      await createMutation.mutateAsync();
+    } catch {
+      return false;
+    }
   };
 
   const handleStartEdit = (tag: TagsPageTag) => {
@@ -106,7 +116,7 @@ export const TagsPage = () => {
     setEditingTagId(null);
   };
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     if (!editingTagId || !editName.trim()) {
       return;
     }
@@ -116,7 +126,11 @@ export const TagsPage = () => {
       handleCancelEdit();
       return;
     }
-    updateMutation.mutate();
+    try {
+      await updateMutation.mutateAsync();
+    } catch {
+      return false;
+    }
   };
 
   return (
@@ -129,8 +143,12 @@ export const TagsPage = () => {
       onNameChange={setName}
       onColorChange={setColor}
       onCreate={handleCreate}
-      onDelete={id => {
-        deleteMutation.mutate(id);
+      onDelete={async id => {
+        try {
+          await deleteMutation.mutateAsync(id);
+        } catch {
+          return false;
+        }
       }}
       isCreating={createMutation.isPending}
       editingTagId={editingTagId}

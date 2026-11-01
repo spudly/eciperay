@@ -81,12 +81,22 @@ export const TagsScreen = (): React.JSX.Element => {
     },
   });
 
-  const handleCreate = () => {
+  // The mutating handlers report failure to the DS page (#374):
+  // the page awaits each handler, and resolving `false` (or
+  // rejecting) is what renders its page-level error alert. So the
+  // handlers drive the mutations with mutateAsync and convert a
+  // rejection to `false`; onSuccess behavior (clearing the form,
+  // closing the editor, invalidating) is unchanged.
+  const handleCreate = async () => {
     /* istanbul ignore next -- add button disabled when name is empty */
     if (!name.trim()) {
       return;
     }
-    createMutation.mutate();
+    try {
+      await createMutation.mutateAsync();
+    } catch {
+      return false;
+    }
   };
 
   const handleStartEdit = (tag: TagsPageTag) => {
@@ -107,7 +117,7 @@ export const TagsScreen = (): React.JSX.Element => {
     setEditingTagId(null);
   };
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     /* istanbul ignore next -- save button disabled when idle or name is empty */
     if (!editingTagId || !editName.trim()) {
       return;
@@ -118,7 +128,11 @@ export const TagsScreen = (): React.JSX.Element => {
       handleCancelEdit();
       return;
     }
-    updateMutation.mutate();
+    try {
+      await updateMutation.mutateAsync();
+    } catch {
+      return false;
+    }
   };
 
   return (
@@ -131,8 +145,12 @@ export const TagsScreen = (): React.JSX.Element => {
       onNameChange={setName}
       onColorChange={setColor}
       onCreate={handleCreate}
-      onDelete={id => {
-        deleteMutation.mutate(id);
+      onDelete={async id => {
+        try {
+          await deleteMutation.mutateAsync(id);
+        } catch {
+          return false;
+        }
       }}
       isCreating={createMutation.isPending}
       editingTagId={editingTagId}

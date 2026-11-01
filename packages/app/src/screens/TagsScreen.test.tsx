@@ -172,6 +172,48 @@ describe('TagsScreen', () => {
     });
   });
 
+  test('a failed create shows the page error and keeps the typed name', async () => {
+    mockCreate.mockRejectedValue(new Error('Server error'));
+    const {findByText, getByPlaceholderText, getByText} =
+      await renderWithProviders(<TagsScreen />);
+    expect(await findByText('Dinner')).toBeTruthy();
+    await fireEvent.changeText(getByPlaceholderText('Tag name'), 'Lunch');
+    await fireEvent.press(getByText('Add'));
+    // The host converts the rejected mutation to a `false` result,
+    // which is what makes the DS page render its error alert (#374).
+    expect(
+      await findByText("Couldn't create the tag. Please try again."),
+    ).toBeTruthy();
+    // Only onSuccess clears the form, so the name survives to retry.
+    expect(getByPlaceholderText('Tag name').props.value).toBe('Lunch');
+  });
+
+  test('a failed save shows the page error and keeps the editor open', async () => {
+    mockUpdate.mockRejectedValue(new Error('Server error'));
+    const {findByText, getByDisplayValue, getByText} = await renderWithProviders(
+      <TagsScreen />,
+    );
+    await fireEvent.press(await findByText('Edit'));
+    await fireEvent.changeText(getByDisplayValue('Dinner'), 'Supper');
+    await fireEvent.press(getByText('Save'));
+    expect(
+      await findByText("Couldn't save the tag changes. Please try again."),
+    ).toBeTruthy();
+    // A failed save must not close the editor or lose the draft.
+    expect(getByText('Save')).toBeTruthy();
+    expect(getByDisplayValue('Supper')).toBeTruthy();
+  });
+
+  test('a failed delete shows the page error and keeps the tag listed', async () => {
+    mockDelete.mockRejectedValue(new Error('Server error'));
+    const {findByText} = await renderWithProviders(<TagsScreen />);
+    await fireEvent.press(await findByText('Delete'));
+    expect(
+      await findByText("Couldn't delete the tag. Please try again."),
+    ).toBeTruthy();
+    expect(await findByText('Dinner')).toBeTruthy();
+  });
+
   test('ignores empty tag name', async () => {
     const {getByText, findByText} = await renderWithProviders(<TagsScreen />);
     await findByText('Dinner');
