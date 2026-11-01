@@ -454,7 +454,13 @@ describe('saveMealPlan on the default query path (transactions)', () => {
     });
   };
 
-  const makeTxClient = (failEntryInsert = false): MockClient => {
+  type TxClientOptions = {
+    failEntryInsert?: boolean;
+    planRowMissing?: boolean;
+    failPlanSelect?: boolean;
+  };
+
+  const makeTxClient = (options: TxClientOptions = {}): MockClient => {
     const query =
       jest.fn<(text: string, params?: unknown[]) => Promise<QueryResult>>();
     query.mockImplementation((text: string) => {
@@ -462,7 +468,7 @@ describe('saveMealPlan on the default query path (transactions)', () => {
         return Promise.resolve(makeQueryResult([]));
       }
       if (text.includes('insert into meal_plan_entries')) {
-        if (failEntryInsert) {
+        if (options.failEntryInsert) {
           return Promise.reject(new Error('entry insert failed'));
         }
         return Promise.resolve(makeQueryResult([]));
@@ -477,7 +483,12 @@ describe('saveMealPlan on the default query path (transactions)', () => {
         return Promise.resolve(makeQueryResult([]));
       }
       if (text.includes('from meal_plans') && text.includes('where id =')) {
-        return Promise.resolve(makeQueryResult([mealPlanRow]));
+        if (options.failPlanSelect) {
+          return Promise.reject(new Error('read-back failed'));
+        }
+        return Promise.resolve(
+          makeQueryResult(options.planRowMissing ? [] : [mealPlanRow]),
+        );
       }
       if (text.includes('from meal_plan_entries')) {
         return Promise.resolve(makeQueryResult([planEntryRow]));
@@ -527,7 +538,7 @@ describe('saveMealPlan on the default query path (transactions)', () => {
 
   test('create rolls back when an entry insert fails', async () => {
     installPoolRouting();
-    const client = makeTxClient(true);
+    const client = makeTxClient({failEntryInsert: true});
     mockConnect.mockResolvedValue(client);
     await expect(saveNewMealPlan(USER_ID, mealPlanInput)).rejects.toThrow(
       'entry insert failed',
@@ -564,7 +575,7 @@ describe('saveMealPlan on the default query path (transactions)', () => {
 
   test('replace rolls back when an entry insert fails after the delete', async () => {
     installPoolRouting();
-    const client = makeTxClient(true);
+    const client = makeTxClient({failEntryInsert: true});
     mockConnect.mockResolvedValue(client);
     await expect(
       replaceMealPlan(PLAN_ID, USER_ID, mealPlanInput),
@@ -585,5 +596,59 @@ describe('saveMealPlan on the default query path (transactions)', () => {
     expect(sql).not.toContain('COMMIT');
     expect(mockRelease).toHaveBeenCalledTimes(1);
     expect(sql.some(text => text.includes('from meal_plans'))).toBe(false);
+  });
+
+  test('create rolls back and returns 500 when the read-back finds no plan', async () => {
+    installPoolRouting();
+    const client = makeTxClient({planRowMissing: true});
+    mockConnect.mockResolvedValue(client);
+    const result = await saveNewMealPlan(USER_ID, mealPlanInput);
+    expect(result).toEqual({error: 'Failed to load meal plan', status: 500});
+    const sql = calledSql(client);
+    expect(sql[0]).toBe('BEGIN');
+    // The writes themselves succeeded before the read-back came up empty.
+    expect(sql.some(text => text.includes('insert into meal_plans'))).toBe(
+      true,
+    );
+    expect(
+      sql.some(text => text.includes('insert into meal_plan_entries')),
+    ).toBe(true);
+    expect(sql).toContain('ROLLBACK');
+    expect(sql).not.toContain('COMMIT');
+    expect(mockRelease).toHaveBeenCalledTimes(1);
+  });
+
+  test('create rolls back when the read-back query throws', async () => {
+    installPoolRouting();
+    const client = makeTxClient({failPlanSelect: true});
+    mockConnect.mockResolvedValue(client);
+    await expect(saveNewMealPlan(USER_ID, mealPlanInput)).rejects.toThrow(
+      'read-back failed',
+    );
+    const sql = calledSql(client);
+    expect(sql).toContain('ROLLBACK');
+    expect(sql).not.toContain('COMMIT');
+    expect(mockRelease).toHaveBeenCalledTimes(1);
+  });
+
+  test('replace rolls back and returns 500 when the read-back finds no plan', async () => {
+    installPoolRouting();
+    const client = makeTxClient({planRowMissing: true});
+    mockConnect.mockResolvedValue(client);
+    const result = await replaceMealPlan(PLAN_ID, USER_ID, mealPlanInput);
+    expect(result).toEqual({error: 'Failed to load meal plan', status: 500});
+    const sql = calledSql(client);
+    expect(sql[0]).toBe('BEGIN');
+    // The writes themselves succeeded before the read-back came up empty.
+    expect(sql.some(text => text.includes('update meal_plans'))).toBe(true);
+    expect(
+      sql.some(text => text.includes('delete from meal_plan_entries')),
+    ).toBe(true);
+    expect(
+      sql.some(text => text.includes('insert into meal_plan_entries')),
+    ).toBe(true);
+    expect(sql).toContain('ROLLBACK');
+    expect(sql).not.toContain('COMMIT');
+    expect(mockRelease).toHaveBeenCalledTimes(1);
   });
 });
