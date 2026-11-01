@@ -8,6 +8,19 @@ import {loadAccessibleRecipe} from './mealRecipeAccess.js';
 
 type QueryFn = typeof defaultQuery;
 
+/**
+ * Thrown inside a save transaction when the saved plan cannot be read back, so
+ * the writes roll back instead of leaving an orphan plan the client was told
+ * had not saved. Caught by the save functions and reported as the existing 500
+ * result.
+ */
+class MealPlanLoadError extends Error {
+  constructor() {
+    super('Failed to load meal plan');
+    this.name = 'MealPlanLoadError';
+  }
+}
+
 type ResolvedEntry =
   | {kind: 'meal'; mealId: string; quantity: number; sortOrder: number}
   | {
@@ -106,31 +119,41 @@ export const saveNewMealPlan = async (
     return resolved;
   }
 
-  // The plan row and its entries are written in one transaction: before
-  // this, a failure after the insert (e.g. while loading the saved plan)
-  // left an orphan plan the client was told had not saved — those orphans
-  // are what later 500ed the whole plan list (#358/#360, see #251).
-  const planId = await runTransactional(queryFn, async q => {
-    const planResult = await q(
-      `insert into meal_plans (user_id, title, notes, starts_on, ends_on)
-       values ($1, $2, $3, $4, $5)
-       returning id`,
-      [
-        userId,
-        input.title,
-        input.notes ?? null,
-        input.startsOn ?? null,
-        input.endsOn ?? null,
-      ],
-    );
-    const id = (planResult.rows[0] as {id: string}).id;
-    await insertEntries(id, resolved.entries, q);
-    return id;
-  });
-
-  const plan = await loadMealPlanDetail(planId, userId, queryFn);
-  if (!plan) {
-    return {error: 'Failed to load meal plan', status: 500};
+  // The plan row, its entries, and the read-back of the saved plan run
+  // in one transaction. Before this, the writes were not atomic and the
+  // read-back happened outside them: when loading the saved plan failed
+  // (the #251 dateOnly throw), the API returned a 500 but the plan row
+  // stayed — an orphan the client was told had not saved. Dated orphans
+  // then 500ed every later plan-list load (#358/#360). Loading through
+  // the transaction client means any failure rolls the whole save back.
+  let plan: MealPlanDetail;
+  try {
+    plan = await runTransactional(queryFn, async q => {
+      const planResult = await q(
+        `insert into meal_plans (user_id, title, notes, starts_on, ends_on)
+         values ($1, $2, $3, $4, $5)
+         returning id`,
+        [
+          userId,
+          input.title,
+          input.notes ?? null,
+          input.startsOn ?? null,
+          input.endsOn ?? null,
+        ],
+      );
+      const id = (planResult.rows[0] as {id: string}).id;
+      await insertEntries(id, resolved.entries, q);
+      const detail = await loadMealPlanDetail(id, userId, q);
+      if (!detail) {
+        throw new MealPlanLoadError();
+      }
+      return detail;
+    });
+  } catch (error) {
+    if (error instanceof MealPlanLoadError) {
+      return {error: 'Failed to load meal plan', status: 500};
+    }
+    throw error;
   }
   return {plan};
 };
@@ -154,30 +177,42 @@ export const replaceMealPlan = async (
     return resolved;
   }
 
-  // Update, entry delete, and entry inserts are one transaction, so a
-  // failure midway cannot leave the plan updated with its entries
-  // deleted or partially replaced (see saveNewMealPlan / #358).
-  await runTransactional(queryFn, async q => {
-    await q(
-      `update meal_plans
+  // Update, entry delete, entry inserts, and the read-back of the saved
+  // plan are one transaction, so a failure midway cannot leave the plan
+  // updated with its entries deleted or partially replaced, and a
+  // failed read-back cannot leave the client told the save failed when
+  // it landed (see saveNewMealPlan / #358).
+  let plan: MealPlanDetail;
+  try {
+    plan = await runTransactional(queryFn, async q => {
+      await q(
+        `update meal_plans
        set title = $3, notes = $4, starts_on = $5, ends_on = $6, updated_at = now()
        where id = $1 and user_id = $2`,
-      [
+        [
+          planId,
+          userId,
+          input.title,
+          input.notes ?? null,
+          input.startsOn ?? null,
+          input.endsOn ?? null,
+        ],
+      );
+      await q(`delete from meal_plan_entries where meal_plan_id = $1`, [
         planId,
-        userId,
-        input.title,
-        input.notes ?? null,
-        input.startsOn ?? null,
-        input.endsOn ?? null,
-      ],
-    );
-    await q(`delete from meal_plan_entries where meal_plan_id = $1`, [planId]);
-    await insertEntries(planId, resolved.entries, q);
-  });
-
-  const plan = await loadMealPlanDetail(planId, userId, queryFn);
-  if (!plan) {
-    return {error: 'Failed to load meal plan', status: 500};
+      ]);
+      await insertEntries(planId, resolved.entries, q);
+      const detail = await loadMealPlanDetail(planId, userId, q);
+      if (!detail) {
+        throw new MealPlanLoadError();
+      }
+      return detail;
+    });
+  } catch (error) {
+    if (error instanceof MealPlanLoadError) {
+      return {error: 'Failed to load meal plan', status: 500};
+    }
+    throw error;
   }
   return {plan};
 };

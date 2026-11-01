@@ -1,3 +1,6 @@
+import {jest} from '@jest/globals';
+import type {QueryResult} from 'pg';
+
 import {makeQueryResult} from '../test/fixtures/queryResult.js';
 import {
   accessibleRecipeRow,
@@ -7,17 +10,33 @@ import {
 import {
   emptyShareGrant,
   mealPlanInput,
+  nutritionGoalsRow,
   PLAN_ID,
   RECIPE_ID,
   USER_ID,
 } from '../test/mealQueryMock.js';
 import {createMockQuery} from '../test/mockQuery.js';
 
-import {
-  deleteMealPlan,
-  replaceMealPlan,
-  saveNewMealPlan,
-} from './saveMealPlan.js';
+type MockClient = {
+  query: jest.Mock<(text: string, params?: unknown[]) => Promise<QueryResult>>;
+  release: jest.Mock<() => void>;
+};
+
+const mockRelease = jest.fn<() => void>();
+const mockConnect = jest.fn<() => Promise<MockClient>>();
+const mockPoolQuery =
+  jest.fn<(text: string, params?: unknown[]) => Promise<QueryResult>>();
+
+// The default-query save paths run through the pool (runTransactional
+// opens a transaction only for the real pool query), so the pool is
+// mocked to exercise BEGIN/COMMIT/ROLLBACK behavior. Tests that inject
+// their own query function never touch it.
+jest.unstable_mockModule('../db/pool.js', () => ({
+  default: {connect: mockConnect, query: mockPoolQuery},
+}));
+
+const {deleteMealPlan, replaceMealPlan, saveNewMealPlan} =
+  await import('./saveMealPlan.js');
 
 describe('saveNewMealPlan', () => {
   test('creates plan with recipe entry', async () => {
@@ -404,5 +423,167 @@ describe('saveNewMealPlan meal entries', () => {
       throw new Error(result.error);
     }
     expect(result.plan.id).toBe(PLAN_ID);
+  });
+});
+
+describe('saveMealPlan on the default query path (transactions)', () => {
+  const planEntryRow = {
+    id: 'entry-1',
+    meal_plan_id: PLAN_ID,
+    sort_order: 0,
+    quantity: 1,
+    meal_id: null,
+    recipe_id: RECIPE_ID,
+    servings: 4,
+  };
+
+  // Queries that run outside the transaction (the replace existence
+  // check and entry resolution) go through the pool's shared query.
+  const installPoolRouting = () => {
+    mockPoolQuery.mockImplementation((text: string) => {
+      if (text.includes('select id from meal_plans')) {
+        return Promise.resolve(makeQueryResult([{id: PLAN_ID}]));
+      }
+      if (text.includes('from recipes r')) {
+        return Promise.resolve(makeQueryResult([accessibleRecipeRow]));
+      }
+      if (text.includes('share_grants')) {
+        return Promise.resolve(emptyShareGrant);
+      }
+      return Promise.resolve(makeQueryResult([]));
+    });
+  };
+
+  const makeTxClient = (failEntryInsert = false): MockClient => {
+    const query =
+      jest.fn<(text: string, params?: unknown[]) => Promise<QueryResult>>();
+    query.mockImplementation((text: string) => {
+      if (text === 'BEGIN' || text === 'COMMIT' || text === 'ROLLBACK') {
+        return Promise.resolve(makeQueryResult([]));
+      }
+      if (text.includes('insert into meal_plan_entries')) {
+        if (failEntryInsert) {
+          return Promise.reject(new Error('entry insert failed'));
+        }
+        return Promise.resolve(makeQueryResult([]));
+      }
+      if (text.includes('insert into meal_plans')) {
+        return Promise.resolve(makeQueryResult([{id: PLAN_ID}]));
+      }
+      if (
+        text.includes('update meal_plans') ||
+        text.includes('delete from meal_plan_entries')
+      ) {
+        return Promise.resolve(makeQueryResult([]));
+      }
+      if (text.includes('from meal_plans') && text.includes('where id =')) {
+        return Promise.resolve(makeQueryResult([mealPlanRow]));
+      }
+      if (text.includes('from meal_plan_entries')) {
+        return Promise.resolve(makeQueryResult([planEntryRow]));
+      }
+      if (text.includes('from recipes r')) {
+        return Promise.resolve(makeQueryResult([accessibleRecipeRow]));
+      }
+      if (text.includes('share_grants')) {
+        return Promise.resolve(emptyShareGrant);
+      }
+      if (text.includes('goal_calories')) {
+        return Promise.resolve(makeQueryResult([nutritionGoalsRow]));
+      }
+      return Promise.resolve(makeQueryResult([]));
+    });
+    return {query, release: mockRelease};
+  };
+
+  const calledSql = (client: MockClient): string[] =>
+    client.query.mock.calls.map(([text]) => text);
+
+  beforeEach(() => {
+    mockConnect.mockReset();
+    mockPoolQuery.mockReset();
+    mockRelease.mockReset();
+  });
+
+  test('create commits plan, entries, and read-back on one client', async () => {
+    installPoolRouting();
+    const client = makeTxClient();
+    mockConnect.mockResolvedValue(client);
+    const result = await saveNewMealPlan(USER_ID, mealPlanInput);
+    if ('error' in result) {
+      throw new Error(result.error);
+    }
+    expect(result.plan.id).toBe(PLAN_ID);
+    const sql = calledSql(client);
+    expect(sql[0]).toBe('BEGIN');
+    expect(sql[sql.length - 1]).toBe('COMMIT');
+    expect(sql).not.toContain('ROLLBACK');
+    expect(mockRelease).toHaveBeenCalledTimes(1);
+    // No write escaped the transaction onto the shared pool.
+    expect(
+      mockPoolQuery.mock.calls.some(([text]) => text.includes('insert into')),
+    ).toBe(false);
+  });
+
+  test('create rolls back when an entry insert fails', async () => {
+    installPoolRouting();
+    const client = makeTxClient(true);
+    mockConnect.mockResolvedValue(client);
+    await expect(saveNewMealPlan(USER_ID, mealPlanInput)).rejects.toThrow(
+      'entry insert failed',
+    );
+    const sql = calledSql(client);
+    expect(sql[0]).toBe('BEGIN');
+    expect(sql).toContain('ROLLBACK');
+    expect(sql).not.toContain('COMMIT');
+    expect(mockRelease).toHaveBeenCalledTimes(1);
+    // The read-back runs inside the transaction, so it is never attempted.
+    expect(sql.some(text => text.includes('from meal_plans'))).toBe(false);
+  });
+
+  test('replace commits update, delete, inserts, and read-back on one client', async () => {
+    installPoolRouting();
+    const client = makeTxClient();
+    mockConnect.mockResolvedValue(client);
+    const result = await replaceMealPlan(PLAN_ID, USER_ID, mealPlanInput);
+    if ('error' in result) {
+      throw new Error(result.error);
+    }
+    expect(result.plan.id).toBe(PLAN_ID);
+    const sql = calledSql(client);
+    expect(sql[0]).toBe('BEGIN');
+    expect(sql[sql.length - 1]).toBe('COMMIT');
+    expect(sql).not.toContain('ROLLBACK');
+    expect(mockRelease).toHaveBeenCalledTimes(1);
+    expect(
+      mockPoolQuery.mock.calls.some(([text]) =>
+        text.includes('update meal_plans'),
+      ),
+    ).toBe(false);
+  });
+
+  test('replace rolls back when an entry insert fails after the delete', async () => {
+    installPoolRouting();
+    const client = makeTxClient(true);
+    mockConnect.mockResolvedValue(client);
+    await expect(
+      replaceMealPlan(PLAN_ID, USER_ID, mealPlanInput),
+    ).rejects.toThrow('entry insert failed');
+    const sql = calledSql(client);
+    expect(sql[0]).toBe('BEGIN');
+    const updateAt = sql.findIndex(text => text.includes('update meal_plans'));
+    const deleteAt = sql.findIndex(text =>
+      text.includes('delete from meal_plan_entries'),
+    );
+    const insertAt = sql.findIndex(text =>
+      text.includes('insert into meal_plan_entries'),
+    );
+    expect(updateAt).toBeGreaterThan(-1);
+    expect(deleteAt).toBeGreaterThan(updateAt);
+    expect(insertAt).toBeGreaterThan(deleteAt);
+    expect(sql).toContain('ROLLBACK');
+    expect(sql).not.toContain('COMMIT');
+    expect(mockRelease).toHaveBeenCalledTimes(1);
+    expect(sql.some(text => text.includes('from meal_plans'))).toBe(false);
   });
 });
