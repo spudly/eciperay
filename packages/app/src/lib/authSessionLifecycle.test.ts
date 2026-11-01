@@ -224,14 +224,18 @@ describe('authSessionLifecycle', () => {
           : JSON.stringify({access_token: 'replacement-token'});
       });
 
+    let removeManyCalls = -1;
     try {
       await expect(onAuthenticated(session)).rejects.toThrow('logout failed');
+      // Read the call history before restoring the spy: mockRestore also
+      // clears it, which would make a post-restore assertion vacuous.
+      removeManyCalls = removeManySpy.mock.calls.length;
     } finally {
       getItemSpy.mockRestore();
       removeManySpy.mockRestore();
     }
 
-    expect(removeManySpy).not.toHaveBeenCalled();
+    expect(removeManyCalls).toBe(0);
     expect(mockReset).not.toHaveBeenCalled();
     await expect(AsyncStorage.getItem('sb-test-auth-token')).resolves.toBe(
       baseline,
