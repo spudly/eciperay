@@ -4,10 +4,13 @@ export type ApiClient = {
 
 /**
  * Error thrown for a non-OK API response. `code` carries the server's
- * machine-readable `error` code when it sent one (e.g. 'duplicate_recipe'),
- * so callers can branch on it instead of matching the human message.
+ * machine-readable `error` code when it sent one (e.g. 'duplicate_recipe'), so
+ * callers can branch on it instead of matching the human message. `status`
+ * carries the HTTP status (e.g. 401 for an invalid/expired token), so callers
+ * can branch on it even when the server's `error` value is a human sentence
+ * rather than a machine code.
  */
-export type ApiError = Error & {code?: string};
+export type ApiError = Error & {code?: string; status?: number};
 
 type ApiClientOptions = {
   baseUrl: string;
@@ -78,6 +81,7 @@ export const createApiClient = (opts: ApiClientOptions): ApiClient => {
       }
       const error: ApiError = new Error(message);
       error.code = code;
+      error.status = response.status;
       throw error;
     }
     if (response.status === 204) {
