@@ -270,4 +270,22 @@ describe('FeedbackForm', () => {
     fireEvent.click(screen.getByRole('button', {name: 'Cancel'}));
     expect(onCancel).toHaveBeenCalled();
   });
+
+  test('lays out the page and Cancel in a column that reserves Cancel space (#330)', () => {
+    const submitUserFeedback = vi.fn().mockResolvedValue({error: null});
+    renderForm(submitUserFeedback, {onCancel: vi.fn()});
+
+    // The DS page's ScrollView claims min-height: 100% of the bubble panel;
+    // without the flex column, Cancel flowed below the panel's fold and was
+    // clipped. The column root fills the panel, the page wrapper flexes and
+    // may shrink, and Cancel stays in flow below it.
+    const cancel = screen.getByRole('button', {name: 'Cancel'});
+    const root = cancel.closest('div.flex.flex-col');
+    expect(root).not.toBeNull();
+    expect(root?.className).toContain('h-full');
+    const pageWrapper = root?.firstElementChild;
+    expect(pageWrapper?.className).toContain('flex-1');
+    expect(pageWrapper?.className).toContain('min-h-0');
+    expect(pageWrapper?.className).toContain('flex-col');
+  });
 });

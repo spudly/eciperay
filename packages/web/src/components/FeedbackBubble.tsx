@@ -39,7 +39,11 @@ export const FeedbackBubble = () => {
           the container's 5rem bottom offset, the 3rem bubble button, the
           0.75rem gap, and top clearance (10rem total) so the panel never
           overflows short viewports; taller content scrolls inside the
-          page's own ScrollView instead. */}
+          page's own ScrollView instead. The height covers the page content
+          plus the host's Cancel button; FeedbackForm's flex column is what
+          reserves Cancel's space inside it (#330 — the ScrollView's
+          min-height:100% otherwise claims the whole panel and pushes Cancel
+          below the fold). */}
       {open ? (
         <div
           className="
