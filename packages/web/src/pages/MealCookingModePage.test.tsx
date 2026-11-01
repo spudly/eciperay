@@ -72,4 +72,56 @@ describe('MealCookingModePage', () => {
     fireEvent.click(screen.getByText('Done'));
     expect(mockNavigate).toHaveBeenCalledWith(`/meals/${MEAL_ID}`);
   });
+
+  test('shows the error state when the cook plan fails to load', async () => {
+    server.use(
+      http.get(`http://localhost:8080/api/meals/${MEAL_ID}/cook-plan`, () =>
+        HttpResponse.json(
+          {error: 'Unable to build cook plan for this meal'},
+          {status: 502},
+        ),
+      ),
+    );
+    await renderWithProviders(
+      <Routes>
+        <Route
+          path="/meals/:mealId/cook"
+          element={<MealCookingModePage />}
+        />
+      </Routes>,
+      {route: `/meals/${MEAL_ID}/cook`},
+    );
+    expect(
+      await screen.findByText(
+        "Couldn't load the cook plan for this meal. Please try again.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Sunday Dinner')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('Done'));
+    expect(mockNavigate).toHaveBeenCalledWith(`/meals/${MEAL_ID}`);
+  });
+
+  test('shows the error state when the meal fails to load', async () => {
+    server.use(
+      http.get(`http://localhost:8080/api/meals/${MEAL_ID}`, () =>
+        HttpResponse.json({error: 'Meal not found'}, {status: 404}),
+      ),
+    );
+    await renderWithProviders(
+      <Routes>
+        <Route
+          path="/meals/:mealId/cook"
+          element={<MealCookingModePage />}
+        />
+      </Routes>,
+      {route: `/meals/${MEAL_ID}/cook`},
+    );
+    expect(
+      await screen.findByText(
+        "Couldn't load the cook plan for this meal. Please try again.",
+      ),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByText('Done'));
+    expect(mockNavigate).toHaveBeenCalledWith(`/meals/${MEAL_ID}`);
+  });
 });

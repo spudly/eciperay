@@ -74,4 +74,35 @@ describe('MealCookingModeScreen', () => {
     await fireEvent.press(await findByText('Done'));
     expect(mockNavigate).toHaveBeenCalledWith('MealDetail', {mealId});
   });
+
+  test('shows the error state when the cook plan fails to load', async () => {
+    mockCookPlan.mockRejectedValue(
+      new Error('Unable to build cook plan for this meal'),
+    );
+    const {findByText} = await renderWithProviders(
+      <MealCookingModeScreen {...stackProps} />,
+    );
+    expect(
+      await findByText(
+        "Couldn't load the cook plan for this meal. Please try again.",
+      ),
+    ).toBeTruthy();
+    expect(await findByText('Sunday Dinner')).toBeTruthy();
+    await fireEvent.press(await findByText('Done'));
+    expect(mockNavigate).toHaveBeenCalledWith('MealDetail', {mealId});
+  });
+
+  test('shows the error state when the meal fails to load', async () => {
+    mockGetMeal.mockRejectedValue(new Error('Meal not found'));
+    const {findByText} = await renderWithProviders(
+      <MealCookingModeScreen {...stackProps} />,
+    );
+    expect(
+      await findByText(
+        "Couldn't load the cook plan for this meal. Please try again.",
+      ),
+    ).toBeTruthy();
+    await fireEvent.press(await findByText('Done'));
+    expect(mockNavigate).toHaveBeenCalledWith('MealDetail', {mealId});
+  });
 });

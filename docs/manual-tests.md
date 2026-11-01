@@ -297,6 +297,11 @@ mode; there is no Playwright coverage of meals. The cases below are manual._
    order; exiting returns to the meal detail.
 4. **Delete a meal.** Delete `QA — Sunday Dinner`. **Expected:** the meal is
    gone from the hub; the member recipes still exist untouched.
+5. **Meal cooking mode load failure.** Open cooking mode for a meal whose
+   cook plan cannot be built (e.g. a meal of newly created recipes whose
+   step timing cannot be generated). **Expected:** an error message
+   ("Couldn't load the cook plan for this meal. Please try again.") with a
+   Done action back to the meal detail — never an indefinite Loading state.
 
 **Run when:**
 `packages/app/src/screens/{MealsHub,MealDetail,MealEdit,MealCookingMode}Screen.tsx`,
