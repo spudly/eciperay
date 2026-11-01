@@ -3,7 +3,7 @@ import type {NextFunction, Request, Response} from 'express';
 import {query as defaultQuery} from '../db/query.js';
 import {
   extractBearerToken,
-  getAuthUserFromRequest,
+  lookupAuthUserFromRequest,
 } from '../lib/getAuthUser.js';
 import {
   PERSONAL_ACCESS_TOKEN_PREFIX,
@@ -34,10 +34,7 @@ const authenticateWithPersonalAccessToken = async (
   next: NextFunction,
   token: string,
 ) => {
-  const user = await resolveUserByPersonalAccessToken(
-    token,
-    resolveQuery(req),
-  );
+  const user = await resolveUserByPersonalAccessToken(token, resolveQuery(req));
   if (!user) {
     res.status(401).json({error: 'Invalid or revoked token'});
     return;
@@ -63,11 +60,19 @@ export const requireAuth = async (
     await authenticateWithPersonalAccessToken(req, res, next, token);
     return;
   }
-  const user = await getAuthUserFromRequest(req);
-  if (!user) {
+  const lookup = await lookupAuthUserFromRequest(req);
+  if (lookup.status === 'unavailable') {
+    // A transient Supabase auth failure is not a rejected token: a 503
+    // keeps clients from signing the user out over a temporary outage
+    // (they only treat 401 as a token rejection).
+    res.status(503).json({error: 'Authentication service unavailable'});
+    return;
+  }
+  if (lookup.status === 'invalid') {
     res.status(401).json({error: 'Invalid or expired token'});
     return;
   }
+  const user = lookup.user;
   const authed = req as AuthedRequest;
   authed.supabaseUid = user.id;
   authed.userEmail = user.email ?? '';
