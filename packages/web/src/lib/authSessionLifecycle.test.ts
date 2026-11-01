@@ -170,6 +170,56 @@ describe('authSessionLifecycle', () => {
     expect(mockIdentifyAnalyticsUserIfConsented).not.toHaveBeenCalled();
   });
 
+  test('does not delete a newer persisted session when the recovery sign-out fails (#344)', async () => {
+    const {onAuthenticated} = await import('./authSessionLifecycle.js');
+    mockSyncUser.mockRejectedValue(new Error('Invalid or expired token'));
+    let resolveSignOut: (value: {error: Error}) => void = () => {};
+    mockSignOut.mockImplementation(
+      () =>
+        new Promise<{error: Error}>(resolve => {
+          resolveSignOut = resolve;
+        }),
+    );
+    localStorage.setItem(
+      'sb-test-auth-token',
+      JSON.stringify({access_token: session.access_token}),
+    );
+
+    const attempt = onAuthenticated(session);
+    // Let the sync failure and staleness check run so the sign-out is
+    // pending, then persist a replacement session (concurrent sign-in).
+    await new Promise(resolve => setTimeout(resolve, 0));
+    const newerPersisted = JSON.stringify({access_token: 'newer-token'});
+    localStorage.setItem('sb-test-auth-token', newerPersisted);
+    resolveSignOut({error: new Error('logout failed')});
+
+    await expect(attempt).rejects.toThrow('logout failed');
+
+    expect(localStorage.getItem('sb-test-auth-token')).toBe(newerPersisted);
+    expect(mockReset).not.toHaveBeenCalled();
+    expect(mockIdentifyAnalyticsUserIfConsented).not.toHaveBeenCalled();
+  });
+
+  test('reports a failed recovery sign-out before resetting analytics (#344)', async () => {
+    const {onAuthenticated} = await import('./authSessionLifecycle.js');
+    mockSyncUser.mockRejectedValue(new Error('Invalid or expired token'));
+    const logoutFailure = new Error('logout failed');
+    mockSignOut.mockResolvedValue({error: logoutFailure});
+    localStorage.setItem(
+      'sb-test-auth-token',
+      JSON.stringify({access_token: session.access_token}),
+    );
+
+    await expect(onAuthenticated(session)).rejects.toThrow('logout failed');
+
+    expect(mockCaptureException).toHaveBeenCalledWith(logoutFailure);
+    expect(mockReset).toHaveBeenCalled();
+    expect(mockCaptureException.mock.invocationCallOrder[0]).toBeLessThan(
+      mockReset.mock.invocationCallOrder[0] ?? Number.POSITIVE_INFINITY,
+    );
+    expect(localStorage.getItem('sb-test-auth-token')).toBeNull();
+  });
+
   test('surfaces a generic failure when sign-out returns a non-Error error (#344)', async () => {
     const {onAuthenticated} = await import('./authSessionLifecycle.js');
     mockSyncUser.mockRejectedValue(new Error('Invalid or expired token'));
