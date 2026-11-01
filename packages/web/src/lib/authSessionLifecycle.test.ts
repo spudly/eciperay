@@ -21,6 +21,11 @@ vi.mock('./analytics.js', () => ({
     mockIdentifyAnalyticsUserIfConsented(session),
 }));
 
+vi.mock('./env.js', () => ({
+  SUPABASE_URL: 'https://test.supabase.co',
+  SUPABASE_ANON_KEY: 'test-anon-key',
+}));
+
 vi.mock('./supabase.js', () => ({
   supabase: {
     auth: {
@@ -198,6 +203,35 @@ describe('authSessionLifecycle', () => {
     expect(localStorage.getItem('sb-test-auth-token')).toBe(newerPersisted);
     expect(mockReset).not.toHaveBeenCalled();
     expect(mockIdentifyAnalyticsUserIfConsented).not.toHaveBeenCalled();
+  });
+
+  test('clears only this project\u2019s persisted session when another project shares the origin (#344)', async () => {
+    const {onAuthenticated} = await import('./authSessionLifecycle.js');
+    mockSyncUser.mockRejectedValue(new Error('Invalid or expired token'));
+    mockSignOut.mockResolvedValue({error: new Error('logout failed')});
+    // The other project's keys come first in storage order.
+    localStorage.setItem(
+      'sb-other-auth-token',
+      JSON.stringify({access_token: 'other-token'}),
+    );
+    localStorage.setItem('sb-other-auth-token-user', 'other-user');
+    localStorage.setItem(
+      'sb-test-auth-token',
+      JSON.stringify({access_token: session.access_token}),
+    );
+    localStorage.setItem('sb-test-auth-token-user', 'persisted-user');
+
+    await expect(onAuthenticated(session)).rejects.toThrow('logout failed');
+
+    expect(localStorage.getItem('sb-test-auth-token')).toBeNull();
+    expect(localStorage.getItem('sb-test-auth-token-user')).toBeNull();
+    expect(localStorage.getItem('sb-other-auth-token')).toBe(
+      JSON.stringify({access_token: 'other-token'}),
+    );
+    expect(localStorage.getItem('sb-other-auth-token-user')).toBe(
+      'other-user',
+    );
+    expect(mockReset).toHaveBeenCalled();
   });
 
   test('reports a failed recovery sign-out before resetting analytics (#344)', async () => {

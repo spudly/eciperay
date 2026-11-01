@@ -3,6 +3,7 @@ import type {Session} from '@supabase/supabase-js';
 
 import {analytics, identifyAnalyticsUserIfConsented} from './analytics.js';
 import {eciperay} from './api.js';
+import {SUPABASE_URL} from './env.js';
 import {supabase} from './supabase.js';
 
 export const onSignedOut = () => {
@@ -59,7 +60,28 @@ const isStaleSessionFailure = async (session: Session): Promise<boolean> => {
  * the last resort that keeps a reload from resurrecting the dead session.
  */
 const SUPABASE_AUTH_STORAGE_KEY = /^sb-.+-auth-token(-user)?$/;
-const SUPABASE_AUTH_MAIN_KEY = /^sb-.+-auth-token$/;
+
+/**
+ * This client's own Supabase storage keys. supabase-js derives its default
+ * storage key from the client URL — `sb-<hostname's first label>-auth-token`,
+ * plus a `-user` companion — so the fallback clear is scoped to exactly those
+ * two keys: scanning every `sb-*-auth-token` key on the origin could delete
+ * (or be confused by) another Supabase project's session stored on the same
+ * origin. Returns null when the configured URL cannot produce a key, in
+ * which case the caller falls back to the pattern scan.
+ */
+const ownSupabaseAuthStorageKeys = (): string[] | null => {
+  try {
+    const projectRef = new URL(SUPABASE_URL).hostname.split('.')[0];
+    if (!projectRef) {
+      return null;
+    }
+    const mainKey = `sb-${projectRef}-auth-token`;
+    return [mainKey, `${mainKey}-user`];
+  } catch {
+    return null;
+  }
+};
 
 /**
  * Removes the persisted session ONLY if it still belongs to the rejected
@@ -75,10 +97,15 @@ const SUPABASE_AUTH_MAIN_KEY = /^sb-.+-auth-token$/;
  */
 const clearPersistedSupabaseSession = (session: Session): boolean => {
   try {
-    const keys = Object.keys(localStorage).filter(key =>
-      SUPABASE_AUTH_STORAGE_KEY.test(key),
-    );
-    const mainKey = keys.find(key => SUPABASE_AUTH_MAIN_KEY.test(key));
+    const ownKeys = ownSupabaseAuthStorageKeys();
+    const keys = ownKeys
+      ? ownKeys.filter(key => localStorage.getItem(key) !== null)
+      : Object.keys(localStorage).filter(key =>
+          SUPABASE_AUTH_STORAGE_KEY.test(key),
+        );
+    const mainKey = ownKeys
+      ? ownKeys[0]
+      : keys.find(key => !key.endsWith('-user'));
     if (mainKey) {
       const stored = localStorage.getItem(mainKey);
       if (stored) {
