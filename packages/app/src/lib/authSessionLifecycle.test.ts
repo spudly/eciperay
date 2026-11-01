@@ -189,6 +189,45 @@ describe('authSessionLifecycle', () => {
     expect(mockIdentifyAnalyticsUser).not.toHaveBeenCalled();
   });
 
+  test('does not clear a replacement session persisted during sign-out recovery (#351)', async () => {
+    mockSyncUser.mockRejectedValue(new Error('Invalid or expired token'));
+    mockSignOut.mockResolvedValue({error: new Error('logout failed')});
+    const replacement = JSON.stringify({access_token: 'replacement-token'});
+    await AsyncStorage.setItem('sb-test-auth-token', replacement);
+    await AsyncStorage.setItem('sb-test-auth-token-user', 'replacement-user');
+
+    await expect(onAuthenticated(session)).rejects.toThrow('logout failed');
+
+    await expect(AsyncStorage.getItem('sb-test-auth-token')).resolves.toBe(
+      replacement,
+    );
+    await expect(AsyncStorage.getItem('sb-test-auth-token-user')).resolves.toBe(
+      'replacement-user',
+    );
+    expect(mockReset).not.toHaveBeenCalled();
+    expect(mockIdentifyAnalyticsUser).not.toHaveBeenCalled();
+  });
+
+  test('clears the persisted session when the stored token is still the rejected one (#351)', async () => {
+    mockSyncUser.mockRejectedValue(new Error('Invalid or expired token'));
+    mockSignOut.mockResolvedValue({error: new Error('logout failed')});
+    await AsyncStorage.setItem(
+      'sb-test-auth-token',
+      JSON.stringify({access_token: session.access_token}),
+    );
+    await AsyncStorage.setItem('sb-test-auth-token-user', 'persisted-user');
+
+    await expect(onAuthenticated(session)).rejects.toThrow('logout failed');
+
+    await expect(
+      AsyncStorage.getItem('sb-test-auth-token'),
+    ).resolves.toBeNull();
+    await expect(
+      AsyncStorage.getItem('sb-test-auth-token-user'),
+    ).resolves.toBeNull();
+    expect(mockReset).toHaveBeenCalled();
+  });
+
   test('clears the persisted session and surfaces the failure when sign-out throws (#351)', async () => {
     mockSyncUser.mockRejectedValue(new Error('Invalid or expired token'));
     mockSignOut.mockRejectedValue(new Error('network'));

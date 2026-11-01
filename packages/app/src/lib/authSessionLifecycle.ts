@@ -81,17 +81,56 @@ const isStaleSessionFailure = async (session: Session): Promise<boolean> => {
  * launch from resurrecting the dead session.
  */
 const SUPABASE_AUTH_STORAGE_KEY = /^sb-.+-auth-token(-user)?$/;
+const SUPABASE_AUTH_MAIN_KEY = /^sb-.+-auth-token$/;
 
-const clearPersistedSupabaseSession = async (): Promise<void> => {
+/**
+ * Removes the persisted session ONLY if it still belongs to the rejected
+ * session. A concurrent sign-in or refresh can persist a replacement session
+ * while recovery is running; deleting the shared storage keys then would
+ * destroy that newer session for the next launch even though AuthProvider
+ * preserves it in memory. Returns true when the persisted state was the
+ * rejected session's (keys removed, or nothing parseable tying the storage to
+ * another session), false when a different session now owns the storage — in
+ * which case its keys and the signed-out cleanup are both skipped.
+ */
+const clearPersistedSupabaseSession = async (
+  session: Session,
+): Promise<boolean> => {
   try {
     const keys = await AsyncStorage.getAllKeys();
     const authKeys = keys.filter(key => SUPABASE_AUTH_STORAGE_KEY.test(key));
+    const mainKey = authKeys.find(key => SUPABASE_AUTH_MAIN_KEY.test(key));
+    if (mainKey) {
+      const stored = await AsyncStorage.getItem(mainKey);
+      if (stored) {
+        try {
+          const parsed: unknown = JSON.parse(stored);
+          const storedToken =
+            parsed !== null &&
+            typeof parsed === 'object' &&
+            'access_token' in parsed
+              ? (parsed as {access_token?: unknown}).access_token
+              : undefined;
+          if (
+            typeof storedToken === 'string' &&
+            storedToken !== session.access_token
+          ) {
+            return false;
+          }
+        } catch {
+          // Unparseable stored value: it cannot belong to a working newer
+          // session, so it is safe to remove.
+        }
+      }
+    }
     if (authKeys.length > 0) {
       await AsyncStorage.removeMany(authKeys);
     }
+    return true;
   } catch {
     // Storage unavailable: nothing more can be cleared locally; the caller
-    // still surfaces the sign-out failure.
+    // still surfaces the sign-out failure and runs the signed-out cleanup.
+    return true;
   }
 };
 
@@ -103,14 +142,16 @@ const clearPersistedSupabaseSession = async (): Promise<void> => {
  * A failed sign-out — a returned `{error}` or a thrown exception, treated
  * identically — is NOT a completed recovery: onSignedOut() alone cannot replace
  * the SIGNED_OUT event AuthProvider never received. Recovery force-clears the
- * persisted session, runs the signed-out cleanup, and then throws an
+ * persisted session (identity-aware: a replacement session persisted by a
+ * concurrent sign-in or refresh is left untouched, and the signed-out cleanup
+ * is skipped with it), runs the signed-out cleanup, and then throws an
  * AuthSessionRejectedError so the failure is surfaced instead of resolving as
  * though the signed-out flow had been entered. The tag is the signal
  * AuthProvider uses to drop its in-memory session: it drops the session ONLY
  * for this tagged recovery failure, never for an ordinary sync failure, whose
  * session is still valid.
  */
-const signOutAfterTokenRejection = async (): Promise<void> => {
+const signOutAfterTokenRejection = async (session: Session): Promise<void> => {
   let signOutFailure: unknown = null;
   try {
     const {error} = await supabase.auth.signOut({scope: 'local'});
@@ -123,8 +164,10 @@ const signOutAfterTokenRejection = async (): Promise<void> => {
   if (!signOutFailure) {
     return;
   }
-  await clearPersistedSupabaseSession();
-  onSignedOut();
+  const clearedOwnSession = await clearPersistedSupabaseSession(session);
+  if (clearedOwnSession) {
+    onSignedOut();
+  }
   // AuthProvider consumes the tagged error silently (it only drops the
   // session), so report the sign-out failure here to keep it visible.
   analytics.captureException(signOutFailure);
@@ -162,7 +205,7 @@ export const onAuthenticated = async (session: Session) => {
     // onSignedOut, and the navigation guards return to the signed-out UI.
     // (Supabase ignores the 401 its own logout call gets for an expired
     // token and still removes the local session.)
-    await signOutAfterTokenRejection();
+    await signOutAfterTokenRejection(session);
     return;
   }
   identifyAnalyticsUser(analytics, session);
