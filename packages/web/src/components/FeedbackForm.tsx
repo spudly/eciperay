@@ -80,28 +80,38 @@ export const FeedbackForm = ({
   };
 
   return (
-    <>
-      <FeedbackPage
-        message={message}
-        onMessageChange={setMessage}
-        replyEmail={replyEmail}
-        onReplyEmailChange={value => {
-          replyEditedRef.current = true;
-          setReplyEmail(value);
-        }}
-        isBug={isBug}
-        onIsBugChange={setIsBug}
-        error={error}
-        submitting={submitting}
-        submitted={submitted}
-        submitDisabled={
-          validateUserFeedbackMessage(message) !== null ||
-          validateUserFeedbackReplyEmail(replyEmail) !== null
-        }
-        onSubmit={() => {
-          void handleSubmit();
-        }}
-      />
+    // Column layout (#330): the DS page's ScreenContainer ScrollView claims
+    // min-height: 100% of the bubble panel, so as a plain sibling the Cancel
+    // button flowed a full button-height (48px) below the panel's fold and
+    // rendered partially clipped until the panel was scrolled. The flex
+    // column reserves Cancel's space: the page wrapper flexes and may shrink
+    // (min-h-0), so on tall viewports both actions fit inside the panel's
+    // definite height with no scrolling, and on short viewports the page's
+    // own ScrollView scrolls internally while Cancel stays visible.
+    <div className="flex h-full flex-col">
+      <div className="min-h-0 flex-1">
+        <FeedbackPage
+          message={message}
+          onMessageChange={setMessage}
+          replyEmail={replyEmail}
+          onReplyEmailChange={value => {
+            replyEditedRef.current = true;
+            setReplyEmail(value);
+          }}
+          isBug={isBug}
+          onIsBugChange={setIsBug}
+          error={error}
+          submitting={submitting}
+          submitted={submitted}
+          submitDisabled={
+            validateUserFeedbackMessage(message) !== null ||
+            validateUserFeedbackReplyEmail(replyEmail) !== null
+          }
+          onSubmit={() => {
+            void handleSubmit();
+          }}
+        />
+      </div>
       {onCancel && !submitted ? (
         <Button
           variant="secondary"
@@ -110,6 +120,6 @@ export const FeedbackForm = ({
           Cancel
         </Button>
       ) : null}
-    </>
+    </div>
   );
 };
