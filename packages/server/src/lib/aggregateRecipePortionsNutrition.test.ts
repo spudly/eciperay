@@ -108,4 +108,18 @@ describe('aggregateRecipePortionsNutrition satiety', () => {
     ]);
     expect(result.satietyScore).toBeNull();
   });
+
+  test('omits satiety instead of throwing when a ready portion has zero calories', () => {
+    // A ready portion only requires calories to be a number, so a
+    // zero-calorie recipe with a positive prepared weight reached
+    // calculateSatiety, which throws for non-positive calories — 500ing
+    // every meal / meal-plan load that aggregates the recipe (#358/#360
+    // paths: plan detail, plan list, and the load after a plan save).
+    const result = aggregateRecipePortionsNutrition([
+      {...readyPortion, calories: 0},
+    ]);
+    expect(result.status).toBe('ready');
+    expect(result.calories).toBe(0);
+    expect(result.satietyScore).toBeNull();
+  });
 });
