@@ -81,12 +81,23 @@ export const TagsScreen = (): React.JSX.Element => {
     },
   });
 
-  const handleCreate = () => {
+  // The mutating handlers report failure to the DS page (#374):
+  // the page awaits each handler, and resolving `false` (or
+  // rejecting) is what renders its page-level error alert. So the
+  // handlers drive the mutations with mutateAsync and resolve
+  // `true`/`false` from the outcome; onSuccess behavior (clearing
+  // the form, closing the editor, invalidating) is unchanged.
+  const handleCreate = async () => {
     /* istanbul ignore next -- add button disabled when name is empty */
     if (!name.trim()) {
-      return;
+      return true;
     }
-    createMutation.mutate();
+    try {
+      await createMutation.mutateAsync();
+      return true;
+    } catch {
+      return false;
+    }
   };
 
   const handleStartEdit = (tag: TagsPageTag) => {
@@ -107,18 +118,23 @@ export const TagsScreen = (): React.JSX.Element => {
     setEditingTagId(null);
   };
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     /* istanbul ignore next -- save button disabled when idle or name is empty */
     if (!editingTagId || !editName.trim()) {
-      return;
+      return true;
     }
     // Nothing changed: saving would send an empty update, so just
     // close the editor like a cancel.
     if (!editNameChanged && !editColorChanged) {
       handleCancelEdit();
-      return;
+      return true;
     }
-    updateMutation.mutate();
+    try {
+      await updateMutation.mutateAsync();
+      return true;
+    } catch {
+      return false;
+    }
   };
 
   return (
@@ -131,8 +147,13 @@ export const TagsScreen = (): React.JSX.Element => {
       onNameChange={setName}
       onColorChange={setColor}
       onCreate={handleCreate}
-      onDelete={id => {
-        deleteMutation.mutate(id);
+      onDelete={async id => {
+        try {
+          await deleteMutation.mutateAsync(id);
+          return true;
+        } catch {
+          return false;
+        }
       }}
       isCreating={createMutation.isPending}
       editingTagId={editingTagId}
