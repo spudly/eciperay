@@ -23,7 +23,8 @@ export const queryKeys = {
     return ['recipes', normalizeFilters(filters)] as const;
   },
   // The meal / meal-plan form recipe picker caches a flat RecipeDetail[]
-  // (limit 100), while the recipe list caches an infinite-query
+  // (the full library, fetched in pages — #359), while the recipe list
+  // caches an infinite-query
   // {pages, pageParams} shape under queryKeys.recipes(filters). The two
   // MUST NOT share a key: the default list filters normalize to exactly
   // {sort: 'newest', sortDir: 'desc'}, so when the picker used
