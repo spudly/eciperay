@@ -72,8 +72,17 @@ const subscribeSupabaseAuth = (
     } catch (error) {
       // Only a failed token-rejection recovery ends the restored session;
       // an ordinary sync failure leaves the still-valid session in place.
+      // The drop is guarded by access token, like the auth-event path: a
+      // newer session installed by an auth event while the restored
+      // session's lifecycle was still in flight must not be cleared by the
+      // restored session's late rejection.
       if (isAuthSessionRejectedError(error)) {
-        setAuth({session: null, isLoading: false});
+        setAuth(prev => {
+          if (prev.session?.access_token !== restoredSession.access_token) {
+            return prev;
+          }
+          return {session: null, isLoading: false};
+        });
       }
     }
   })();
@@ -82,8 +91,17 @@ const subscribeSupabaseAuth = (
     (_event, session) => {
       setAuth(prev => applyAuthSessionChange(prev, session, onSignedOut));
       if (session) {
-        void Promise.resolve(onAuthenticated?.(session)).catch(
-          (error: unknown) => {
+        // Invoke the callback inside a try/catch and hand any synchronous
+        // throw to the same recovery path as a rejected promise: evaluating
+        // `onAuthenticated(session)` as the argument to `Promise.resolve(...)`
+        // would let a synchronous throw escape before `.catch` is attached.
+        let authenticated: Promise<void> | undefined;
+        try {
+          authenticated = onAuthenticated?.(session);
+        } catch (error) {
+          authenticated = Promise.reject(error);
+        }
+        void Promise.resolve(authenticated).catch((error: unknown) => {
             if (!isAuthSessionRejectedError(error)) {
               // Ordinary sync failure (e.g. a transient 503 during
               // TOKEN_REFRESHED): the provider still holds this valid

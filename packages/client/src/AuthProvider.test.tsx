@@ -200,6 +200,113 @@ describe('AuthProvider', () => {
     expect(onSignedOut).not.toHaveBeenCalled();
   });
 
+  test('does not discard a newer session when the restored session onAuthenticated later rejects with a session-rejected error', async () => {
+    const {client, getSession, onAuthStateChange} = makeSupabase();
+    const restoredSession = {access_token: 'restored-token'};
+    getSession.mockResolvedValue({data: {session: restoredSession}});
+    let rejectRestored: (error: Error) => void = () => {};
+    const restoredAttempt = new Promise<void>((_resolve, reject) => {
+      rejectRestored = reject;
+    });
+    const onAuthenticated = jest.fn(
+      (session: {access_token: string}) =>
+        session.access_token === 'restored-token'
+          ? restoredAttempt
+          : Promise.resolve(),
+    );
+    const onSignedOut = jest.fn();
+    const wrapper = ({children}: {children: React.ReactNode}) => (
+      <AuthProvider
+        supabase={client}
+        onAuthenticated={onAuthenticated}
+        onSignedOut={onSignedOut}
+      >
+        {children}
+      </AuthProvider>
+    );
+    const {result} = renderHook(() => useAuth(), {wrapper});
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(result.current.session).toEqual(restoredSession);
+    const callback = onAuthStateChange.mock.calls[0][0];
+    const newSession = {access_token: 'new-token'};
+    act(() => {
+      callback('SIGNED_IN', newSession);
+    });
+    expect(result.current.session).toEqual(newSession);
+    await act(async () => {
+      rejectRestored(
+        new AuthSessionRejectedError('stale recovery failure'),
+      );
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(result.current.session).toEqual(newSession);
+    expect(onSignedOut).not.toHaveBeenCalled();
+  });
+
+  test('clears a restored session when onAuthenticated rejects with a session-rejected error and no newer session replaced it', async () => {
+    const {client, getSession} = makeSupabase();
+    const session = {access_token: 'restored-token'};
+    getSession.mockResolvedValue({data: {session}});
+    const onAuthenticated = jest.fn(async () => {
+      throw new AuthSessionRejectedError(
+        'sign-out failed after token rejection',
+      );
+    });
+    const wrapper = ({children}: {children: React.ReactNode}) => (
+      <AuthProvider
+        supabase={client}
+        onAuthenticated={onAuthenticated}
+      >
+        {children}
+      </AuthProvider>
+    );
+    const {result} = renderHook(() => useAuth(), {wrapper});
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(result.current.session).toBeNull();
+    expect(result.current.isLoading).toBe(false);
+  });
+
+  test('routes a synchronously throwing onAuthenticated through the auth-event recovery path', async () => {
+    const {client, onAuthStateChange} = makeSupabase();
+    const onAuthenticated = jest.fn(() => {
+      throw new AuthSessionRejectedError(
+        'sign-out failed after token rejection',
+      );
+    });
+    const onSignedOut = jest.fn();
+    const wrapper = ({children}: {children: React.ReactNode}) => (
+      <AuthProvider
+        supabase={client}
+        onAuthenticated={onAuthenticated}
+        onSignedOut={onSignedOut}
+      >
+        {children}
+      </AuthProvider>
+    );
+    const {result} = renderHook(() => useAuth(), {wrapper});
+    await act(async () => {
+      await Promise.resolve();
+    });
+    const callback = onAuthStateChange.mock.calls[0][0];
+    const newSession = {access_token: 'token-1'};
+    act(() => {
+      callback('SIGNED_IN', newSession);
+    });
+    expect(result.current.session).toEqual(newSession);
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(result.current.session).toBeNull();
+    expect(onSignedOut).toHaveBeenCalled();
+  });
+
   test('preserves a restored session when onAuthenticated rejects with an ordinary sync failure', async () => {
     const {client, getSession} = makeSupabase();
     const session = {access_token: 'abc', user: {id: 'u1'}};

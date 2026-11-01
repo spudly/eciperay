@@ -24,11 +24,20 @@ export type AuthUserLookup =
 
 /**
  * Supabase reports a rejected credential with an HTTP 401/403 on the getUser
- * error. Anything else — a 5xx, or a retryable fetch failure with no meaningful
+ * error. One exception to the status rule: when the auth server answers
+ * `session_not_found` (the JWT's session row is gone — signed out, deleted,
+ * or terminated), auth-js converts it to an `AuthSessionMissingError` with
+ * status 400, so the error name must be checked before the status fallback.
+ * Anything else — a 5xx, or a retryable fetch failure with no meaningful
  * status — is a transient lookup failure.
  */
-const isCredentialRejection = (error: {status?: number}): boolean =>
-  error.status === 401 || error.status === 403;
+const isCredentialRejection = (error: {
+  status?: number;
+  name?: string;
+}): boolean =>
+  error.name === 'AuthSessionMissingError' ||
+  error.status === 401 ||
+  error.status === 403;
 
 export const lookupAuthUserFromRequest = async (
   req: Request,
@@ -38,7 +47,7 @@ export const lookupAuthUserFromRequest = async (
     return {status: 'invalid'};
   }
   let data: {user: User | null};
-  let error: {status?: number} | null;
+  let error: {status?: number; name?: string} | null;
   try {
     const result = await supabase.auth.getUser(token);
     data = result.data;

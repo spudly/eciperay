@@ -4,7 +4,7 @@ import type {User} from '@supabase/supabase-js';
 
 type GetUserResult = {
   data: {user: User | null};
-  error: {message: string; status?: number} | null;
+  error: {message: string; status?: number; name?: string} | null;
 };
 
 const mockGetUser = jest.fn<() => Promise<GetUserResult>>();
@@ -82,6 +82,23 @@ describe('lookupAuthUserFromRequest', () => {
     mockGetUser.mockResolvedValue({
       data: {user: null},
       error: {message: 'Invalid token', status: 401},
+    });
+    await expect(lookupAuthUserFromRequest(authedReq)).resolves.toEqual({
+      status: 'invalid',
+    });
+  });
+
+  test('reports invalid when Supabase reports the session is gone (session_not_found)', async () => {
+    // auth-js converts a `session_not_found` response into an
+    // AuthSessionMissingError with status 400 — the name, not the status,
+    // marks it as a credential rejection.
+    mockGetUser.mockResolvedValue({
+      data: {user: null},
+      error: {
+        message: 'Auth session missing!',
+        name: 'AuthSessionMissingError',
+        status: 400,
+      },
     });
     await expect(lookupAuthUserFromRequest(authedReq)).resolves.toEqual({
       status: 'invalid',
