@@ -1,4 +1,4 @@
-import type {ApiError} from '@eciperay/client';
+import {AuthSessionRejectedError, type ApiError} from '@eciperay/client';
 import type {Session} from '@supabase/supabase-js';
 
 import {analytics, identifyAnalyticsUserIfConsented} from './analytics.js';
@@ -33,11 +33,11 @@ const isInvalidOrExpiredTokenError = (error: unknown): boolean => {
 /**
  * True when the session this lifecycle call was started for is no longer the
  * stored session: AuthProvider starts a fresh onAuthenticated for every auth
- * event, so calls overlap — a refresh can install a newer, valid session
- * while an older token's sync is still in flight. A 401 belonging to the old
- * token must not sign the newer session out. Returns false when the stored
- * session still carries this call's token (or cannot be read, in which case
- * the failure cannot be shown to be stale and is handled as current).
+ * event, so calls overlap — a refresh can install a newer, valid session while
+ * an older token's sync is still in flight. A 401 belonging to the old token
+ * must not sign the newer session out. Returns false when the stored session
+ * still carries this call's token (or cannot be read, in which case the failure
+ * cannot be shown to be stale and is handled as current).
  */
 const isStaleSessionFailure = async (session: Session): Promise<boolean> => {
   try {
@@ -53,11 +53,10 @@ const isStaleSessionFailure = async (session: Session): Promise<boolean> => {
 };
 
 /**
- * Supabase persists the session in web storage under
- * `sb-<project>-auth-token` (plus a `-user` companion key). When signOut
- * itself fails before removing the session (e.g. the storage removal
- * rejects), removing those keys directly is the last resort that keeps a
- * reload from resurrecting the dead session.
+ * Supabase persists the session in web storage under `sb-<project>-auth-token`
+ * (plus a `-user` companion key). When signOut itself fails before removing the
+ * session (e.g. the storage removal rejects), removing those keys directly is
+ * the last resort that keeps a reload from resurrecting the dead session.
  */
 const SUPABASE_AUTH_STORAGE_KEY = /^sb-.+-auth-token(-user)?$/;
 
@@ -75,18 +74,20 @@ const clearPersistedSupabaseSession = () => {
 };
 
 /**
- * Ends the current session after its token was rejected. Local scope only:
- * the rejection proves this session's token is dead (and the server can map
- * a transient getUser failure to the same 401), so it must never revoke the
+ * Ends the current session after its token was rejected. Local scope only: the
+ * rejection proves this session's token is dead (and the server can map a
+ * transient getUser failure to the same 401), so it must never revoke the
  * user's sessions on other devices.
  *
  * A failed sign-out — a returned `{error}` or a thrown exception, treated
- * identically — is NOT a completed recovery: onSignedOut() alone cannot
- * replace the SIGNED_OUT event AuthProvider never received. Recovery
- * force-clears the persisted session, runs the signed-out cleanup, and then
- * rethrows so the failure is surfaced instead of resolving as though the
- * signed-out flow had been entered (AuthProvider's restore path drops its
- * in-memory session when onAuthenticated rejects).
+ * identically — is NOT a completed recovery: onSignedOut() alone cannot replace
+ * the SIGNED_OUT event AuthProvider never received. Recovery force-clears the
+ * persisted session, runs the signed-out cleanup, and then throws an
+ * AuthSessionRejectedError so the failure is surfaced instead of resolving as
+ * though the signed-out flow had been entered. The tag is the signal
+ * AuthProvider uses to drop its in-memory session: it drops the session ONLY
+ * for this tagged recovery failure, never for an ordinary sync failure, whose
+ * session is still valid.
  */
 const signOutAfterTokenRejection = async (): Promise<void> => {
   let signOutFailure: unknown = null;
@@ -103,9 +104,12 @@ const signOutAfterTokenRejection = async (): Promise<void> => {
   }
   clearPersistedSupabaseSession();
   onSignedOut();
-  throw signOutFailure instanceof Error
-    ? signOutFailure
-    : new Error('Sign-out failed after the session token was rejected');
+  throw new AuthSessionRejectedError(
+    signOutFailure instanceof Error
+      ? signOutFailure.message
+      : 'Sign-out failed after the session token was rejected',
+    {cause: signOutFailure},
+  );
 };
 
 export const onAuthenticated = async (session: Session) => {
@@ -113,6 +117,12 @@ export const onAuthenticated = async (session: Session) => {
     await eciperay.auth.syncUser();
   } catch (error) {
     if (!isInvalidOrExpiredTokenError(error)) {
+      // Ordinary sync failure (e.g. a transient 503 while the auth service
+      // is unavailable): the session's token was not rejected and the
+      // provider session is still valid. Report the failure and rethrow it
+      // untagged — AuthProvider preserves the session for untagged
+      // rejections and runs no signed-out cleanup.
+      analytics.captureException(error);
       throw error;
     }
     if (await isStaleSessionFailure(session)) {
