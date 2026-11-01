@@ -169,6 +169,30 @@ describe('MealCookingModeScreen', () => {
     expect(mockNavigate).toHaveBeenCalledWith('MealsHub');
   });
 
+  test('keeps the cooking view when a background cook-plan refetch 404s over cached data', async () => {
+    const client = makeQueryClient();
+    const {findByText, queryByText} = await renderWithProviders(
+      <MealCookingModeScreen {...stackProps} />,
+      client,
+    );
+    expect(await findByText('Mix dry ingredients')).toBeTruthy();
+    mockCookPlan.mockRejectedValue(new Error('Meal not found'));
+    await act(async () => {
+      await client.refetchQueries();
+    });
+    // The meal refetch still succeeds and a complete cached meal + plan
+    // exists, so a background plan 404 must not replace the cooking
+    // controls; Done keeps the meal-detail destination.
+    expect(await findByText('Mix dry ingredients')).toBeTruthy();
+    expect(
+      queryByText(
+        "Couldn't load the cook plan for this meal. Please try again.",
+      ),
+    ).toBeNull();
+    await fireEvent.press(await findByText('Done'));
+    expect(mockNavigate).toHaveBeenCalledWith('MealDetail', {mealId});
+  });
+
   test('keeps the cooking view when a background refetch fails', async () => {
     const client = makeQueryClient();
     const {findByText, queryByText} = await renderWithProviders(

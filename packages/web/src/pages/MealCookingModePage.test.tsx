@@ -195,6 +195,39 @@ describe('MealCookingModePage', () => {
     });
   });
 
+  test('keeps the cooking view when a background cook-plan refetch 404s over cached data', async () => {
+    const queryClient = makeQueryClient();
+    await renderWithProviders(
+      <Routes>
+        <Route
+          path="/meals/:mealId/cook"
+          element={<MealCookingModePage />}
+        />
+      </Routes>,
+      {route: `/meals/${MEAL_ID}/cook`, queryClient},
+    );
+    expect(await screen.findByText('Mix dry ingredients')).toBeInTheDocument();
+    server.use(
+      http.get(`http://localhost:8080/api/meals/${MEAL_ID}/cook-plan`, () =>
+        HttpResponse.json({error: 'Meal not found'}, {status: 404}),
+      ),
+    );
+    await act(async () => {
+      await queryClient.refetchQueries();
+    });
+    // The meal refetch still succeeds and a complete cached meal + plan
+    // exists, so a background plan 404 must not replace the cooking
+    // controls; Done keeps the meal-detail destination.
+    expect(screen.getByText('Mix dry ingredients')).toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        "Couldn't load the cook plan for this meal. Please try again.",
+      ),
+    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByText('Done'));
+    expect(mockNavigate).toHaveBeenCalledWith(`/meals/${MEAL_ID}`);
+  });
+
   test('keeps the cooking view when a background refetch fails', async () => {
     const queryClient = makeQueryClient();
     await renderWithProviders(
