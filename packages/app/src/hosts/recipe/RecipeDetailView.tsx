@@ -32,6 +32,7 @@ import {
 } from '@spudly/ui/pages';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useState} from 'react';
+import {Alert} from 'react-native';
 
 import {api} from '../../lib/api';
 import {
@@ -368,7 +369,13 @@ export const RecipeDetailView = ({
       });
       void queryClient.invalidateQueries({queryKey: queryKeys.recipeLists()});
     } catch {
-      showActionMessage('Could not refresh nutrition. Please try again.');
+      // Not showActionMessage: that message renders in the overview at
+      // the top of the page's single scroll view and clears after
+      // 2.5 seconds, while the nutrition panel is the last section —
+      // a user who pressed Estimate/Refresh there would likely never
+      // see it. A native alert is viewport-visible regardless of
+      // scroll position and stays up until dismissed.
+      Alert.alert('Could not refresh nutrition', 'Please try again.');
     } finally {
       setIsRefreshingNutrition(false);
     }
