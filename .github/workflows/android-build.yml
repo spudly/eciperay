@@ -81,7 +81,10 @@ jobs:
             exit 0
           fi
           git fetch --depth=1 origin "+refs/heads/$BASE_REF:refs/remotes/origin/$BASE_REF"
-          changed="$(git diff --name-only "origin/$BASE_REF...HEAD")"
+          # --no-renames: with rename detection, a file moved OUT of
+          # a matched directory reports only its destination path and
+          # the move would slip past the matcher.
+          changed="$(git diff --name-only --no-renames "origin/$BASE_REF...HEAD")"
           echo "Changed files:"
           echo "$changed"
           matched="$(echo "$changed" | grep -E '^(packages/(app|client|icons|types)/|patches/|package\.json$|package-lock\.json$|\.github/)' || true)"
