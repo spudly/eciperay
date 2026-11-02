@@ -208,6 +208,31 @@ describe('createApiClient', () => {
   });
 });
 
+describe('createApiClient network failures', () => {
+  const originalFetch = global.fetch;
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  test('wraps a rejected fetch as a typed network_error ApiError (#378)', async () => {
+    const cause = new TypeError('Failed to fetch');
+    global.fetch = jest.fn().mockRejectedValue(cause);
+    const client = createApiClient({
+      baseUrl: 'http://localhost:8080',
+      getToken: async () => null,
+    });
+    const thrown: unknown = await client
+      .fetch('/auth/sync')
+      .catch((error: unknown) => error);
+    expect(thrown).toBeInstanceOf(Error);
+    expect((thrown as Error).message).toBe('Network error: /auth/sync');
+    expect((thrown as {code?: string}).code).toBe('network_error');
+    expect((thrown as {status?: number}).status).toBe(0);
+    expect((thrown as {cause?: unknown}).cause).toBe(cause);
+  });
+});
+
 describe('createApiClient message-only error bodies', () => {
   const originalFetch = global.fetch;
 

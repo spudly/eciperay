@@ -38,6 +38,23 @@ const MISSING_AUTHORIZATION_TOKEN_MESSAGE = 'Missing authorization token';
 
 type ApiErrorLike = Error & {code?: string; status?: number};
 
+/**
+ * A network-level failure from createApiClient (typed `network_error` / status
+ * 0), or a raw fetch TypeError if one ever slips through untyped: the API was
+ * unreachable, which says nothing about the session's validity.
+ */
+const isNetworkError = (error: unknown): boolean => {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+  const apiError = error as ApiErrorLike;
+  return (
+    apiError.code === 'network_error' ||
+    apiError.status === 0 ||
+    (error instanceof TypeError && error.message === 'Failed to fetch')
+  );
+};
+
 const isInvalidOrExpiredTokenError = (error: unknown): boolean => {
   if (!(error instanceof Error)) {
     return false;
@@ -197,6 +214,15 @@ export const onAuthenticated = async (session: Session) => {
   try {
     await api.auth.syncUser();
   } catch (error) {
+    if (isNetworkError(error)) {
+      // Network-level failure (#378): the API was momentarily unreachable.
+      // The session is still valid and the sync is retried by the next auth
+      // event, so this is a handled failure: report it and resolve —
+      // rethrowing it surfaced as an unhandled exception in error tracking.
+      // No sign-out, no cleanup.
+      analytics.captureException(error);
+      return;
+    }
     if (!isInvalidOrExpiredTokenError(error)) {
       // Ordinary sync failure (e.g. a transient 503 while the auth service
       // is unavailable): the session's token was not rejected and the

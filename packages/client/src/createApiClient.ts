@@ -57,10 +57,23 @@ export const createApiClient = (opts: ApiClientOptions): ApiClient => {
     options: RequestInit = {},
   ): Promise<T> => {
     const token = await opts.getToken();
-    const response = await fetch(`${opts.baseUrl}${path}`, {
-      ...options,
-      headers: mergeHeaders(token, options.headers),
-    });
+    let response: Response;
+    try {
+      response = await fetch(`${opts.baseUrl}${path}`, {
+        ...options,
+        headers: mergeHeaders(token, options.headers),
+      });
+    } catch (cause) {
+      // A rejected fetch() is a network-level failure (offline, DNS, API
+      // unreachable): there is no response and no status. Surface it as a
+      // typed ApiError instead of the raw TypeError so callers can treat it
+      // as the transient failure it is (status 0 / code 'network_error')
+      // rather than an unhandled exception (#378).
+      const error: ApiError = new Error(`Network error: ${path}`, {cause});
+      error.code = 'network_error';
+      error.status = 0;
+      throw error;
+    }
     if (!response.ok) {
       let message = `API error ${response.status}: ${path}`;
       let code: string | undefined;

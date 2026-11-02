@@ -368,6 +368,33 @@ describe('authSessionLifecycle', () => {
     expect(mockIdentifyAnalyticsUserIfConsented).not.toHaveBeenCalled();
   });
 
+  test('handles a network-level sync failure without rethrowing or signing out (#378)', async () => {
+    const {onAuthenticated} = await import('./authSessionLifecycle.js');
+    const failure = Object.assign(new Error('Network error: /auth/sync'), {
+      code: 'network_error',
+      status: 0,
+    });
+    mockSyncUser.mockRejectedValue(failure);
+
+    await expect(onAuthenticated(session)).resolves.toBeUndefined();
+
+    expect(mockCaptureException).toHaveBeenCalledWith(failure);
+    expect(mockSignOut).not.toHaveBeenCalled();
+    expect(mockReset).not.toHaveBeenCalled();
+    expect(mockIdentifyAnalyticsUserIfConsented).not.toHaveBeenCalled();
+  });
+
+  test('handles a raw Failed to fetch sync failure the same way (#378)', async () => {
+    const {onAuthenticated} = await import('./authSessionLifecycle.js');
+    const failure = new TypeError('Failed to fetch');
+    mockSyncUser.mockRejectedValue(failure);
+
+    await expect(onAuthenticated(session)).resolves.toBeUndefined();
+
+    expect(mockCaptureException).toHaveBeenCalledWith(failure);
+    expect(mockSignOut).not.toHaveBeenCalled();
+  });
+
   test('rethrows non-Error sync failures', async () => {
     const {onAuthenticated} = await import('./authSessionLifecycle.js');
     mockSyncUser.mockRejectedValue('sync failed');
