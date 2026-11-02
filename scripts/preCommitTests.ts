@@ -89,6 +89,10 @@ export const runPackageTests = (
     'turbo',
     'run',
     'test',
+    // #369: cap package-level parallelism during the pre-commit gate so a
+    // busy/shared machine (several sessions running hooks at once) does not
+    // starve individual test workers into 5000ms timeouts.
+    '--concurrency=2',
     ...packages.flatMap(pkg => ['--filter', `@eciperay/${pkg}`]),
   ];
   const result = spawn('npx', args, {cwd: root, stdio: 'inherit'});
