@@ -46,6 +46,16 @@ jobs:
   # build check never reports — and a required check that never
   # reports blocks merges. Detecting the paths in a job lets the build
   # report "skipped" and the android-gate below report on every PR.
+  #
+  # The heavy build runs only when a PR touches paths that can affect
+  # the Android app: packages/app/** (which contains the app itself
+  # plus app.json, the metro/babel configs, react-native.config.cjs
+  # and android/**), packages/client/**, packages/icons/** and
+  # packages/types/** (workspace packages the app imports at runtime,
+  # so Metro bundles them into the app), the root package.json and
+  # package-lock.json (dependency and script changes reach the app
+  # bundle), patches/ (patch-package patches apply at install), and
+  # .github/ (this workflow and the shared CI actions it uses).
   changes:
     name: Detect Android-relevant changes
     runs-on: ubuntu-latest
@@ -62,16 +72,50 @@ jobs:
         id: detect
         env:
           BASE_REF: ${{ github.base_ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          THIS_REPO: ${{ github.repository }}
         run: |
           if [ "${{ github.event_name }}" != "pull_request" ]; then
             echo "run-build=true" >> "$GITHUB_OUTPUT"
+            echo "### Android build: running (non-PR event)" >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
           git fetch --depth=1 origin "+refs/heads/$BASE_REF:refs/remotes/origin/$BASE_REF"
-          if git diff --name-only "origin/$BASE_REF...HEAD" | grep -Eq '^(packages/app/|patches/|package-lock\.json$|\.github/)'; then
+          changed="$(git diff --name-only "origin/$BASE_REF...HEAD")"
+          echo "Changed files:"
+          echo "$changed"
+          matched="$(echo "$changed" | grep -E '^(packages/(app|client|icons|types)/|patches/|package\.json$|package-lock\.json$|\.github/)' || true)"
+          if [ -n "$matched" ]; then
             echo "run-build=true" >> "$GITHUB_OUTPUT"
+            if [ "$HEAD_REPO" != "$THIS_REPO" ]; then
+              # The android-build job's own same-repository condition
+              # skips the build for fork PRs; the summary must say so
+              # instead of claiming a build is running.
+              echo "::notice::Android build skipped: fork PRs are not built (no secrets access)."
+              {
+                echo "### Android build: skipped (fork PR)"
+                echo "App-affecting paths changed, but fork PR builds are unsupported (no secrets access), so the AAB build did not run. android-gate still reports for this PR."
+                echo "App-affecting paths changed:"
+                echo '```'
+                echo "$matched"
+                echo '```'
+              } >> "$GITHUB_STEP_SUMMARY"
+            else
+              {
+                echo "### Android build: running"
+                echo "App-affecting paths changed:"
+                echo '```'
+                echo "$matched"
+                echo '```'
+              } >> "$GITHUB_STEP_SUMMARY"
+            fi
           else
             echo "run-build=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Android build skipped by design: no app-affecting paths changed (packages/app/**, packages/client/**, packages/icons/**, packages/types/**, package.json, package-lock.json, patches/, .github/)."
+            {
+              echo "### Android build: skipped by design"
+              echo "No app-affecting paths changed (packages/app/**, packages/client/**, packages/icons/**, packages/types/**, package.json, package-lock.json, patches/, .github/), so the AAB build did not run. android-gate still reports for this PR."
+            } >> "$GITHUB_STEP_SUMMARY"
           fi
 
   android-build:
