@@ -88,13 +88,16 @@ beforeEach(() => {
     // incident, but react-native-web maps both pressables to
     // <button> elements, so React logs its nested-button warning
     // when the list renders in tests. This is a design-system
-    // rendering quirk on web, not an application error. Scoped to
-    // the exact button-in-button form of the warning: the filter
+    // rendering quirk on web, not an application error. The filter
     // matches warning text only, so it cannot tell this page's
-    // nesting from any other component's — but every other nesting
-    // shape still fails, and this one is the DS page's known,
-    // deliberate structure.
+    // nesting from any other component's — the exemption therefore
+    // applies only while one of the two host suites that render the
+    // page is running, and a button-in-button warning anywhere else
+    // in the suite still fails the test that produced it.
+    const testPath = expect.getState().testPath ?? '';
     if (
+      (testPath.endsWith('src/pages/RecipesPage.test.tsx') ||
+        testPath.endsWith('src/pages/SharedWithMePage.test.tsx')) &&
       typeof args[0] === 'string' &&
       ((args[0].includes('cannot be a descendant of') &&
         args[1] === '<button>' &&
