@@ -406,4 +406,55 @@ describe('RecipesPage', () => {
     });
     expect(screen.getByText('How did it go?')).toBeInTheDocument();
   });
+
+  // While a save is in flight, Skip is inert (the host guards the
+  // form's skip callback with the mutation's pending state): closing
+  // then would orphan the request and let a reopened form save a
+  // duplicate. The save's own success path closes the form when it
+  // lands.
+  test('skip does not close the form while its save is pending', async () => {
+    let resolveCreate: (() => void) | undefined;
+    const createGate = new Promise<void>(resolve => {
+      resolveCreate = () => {
+        resolve();
+      };
+    });
+    server.use(
+      http.post(
+        'http://localhost:8080/api/recipes/:id/versions/:versionId/cooks',
+        async () => {
+          await createGate;
+          return HttpResponse.json({...makeCookLog()}, {status: 201});
+        },
+      ),
+    );
+    await renderWithProviders(<RecipesPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Test Recipe')).toBeInTheDocument();
+    });
+    await userEvent.click(
+      screen.getByRole('button', {name: 'Log a cook of Test Recipe'}),
+    );
+    await waitFor(() => {
+      expect(screen.getByText('How did it go?')).toBeInTheDocument();
+    });
+    await userEvent.click(
+      screen.getByRole('radio', {name: 'Rate 4 out of 5 stars'}),
+    );
+    await userEvent.click(screen.getByRole('button', {name: 'Save'}));
+    // Let the save get fully in flight (the create handler is
+    // gated on the promise above), then try to skip out of it.
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 50));
+    });
+    await userEvent.click(screen.getByRole('button', {name: 'Skip'}));
+    expect(screen.getByText('How did it go?')).toBeInTheDocument();
+    // When the save lands, its success path closes the form.
+    await act(async () => {
+      resolveCreate?.();
+    });
+    await waitFor(() => {
+      expect(screen.queryByText('How did it go?')).not.toBeInTheDocument();
+    });
+  });
 });
