@@ -170,6 +170,60 @@ describe('recipeListQuery', () => {
     });
   });
 
+  test('form picker search collects matches past the first page (#359)', async () => {
+    // The server search is a newest-first title substring match, so an
+    // older recipe titled "Soup" sits behind a full first page of newer
+    // titles containing "Soup" even when its complete title is typed.
+    // The picker must page through every match, not stop at page one.
+    const firstPage = Array.from({length: RECIPE_FORM_SEARCH_LIMIT}, (_, i) =>
+      makeListItem(`newer-${i}`),
+    );
+    const older = makeListItem('older-soup');
+    const list = jest
+      .fn()
+      .mockImplementation(async (params?: {offset?: number}) =>
+        params?.offset === 0 ? firstPage : [older],
+      );
+    const options = recipeFormSearchQueryOptions(list, 'Soup');
+    const results = await options.queryFn();
+    expect(results.map(recipe => recipe.id)).toEqual([
+      ...firstPage.map(recipe => recipe.id),
+      'older-soup',
+    ]);
+    expect(list).toHaveBeenCalledTimes(2);
+    expect(list).toHaveBeenNthCalledWith(1, {
+      search: 'Soup',
+      sort: 'newest',
+      sortDir: 'desc',
+      limit: RECIPE_FORM_SEARCH_LIMIT,
+      offset: 0,
+    });
+    expect(list).toHaveBeenNthCalledWith(2, {
+      search: 'Soup',
+      sort: 'newest',
+      sortDir: 'desc',
+      limit: RECIPE_FORM_SEARCH_LIMIT,
+      offset: RECIPE_FORM_SEARCH_LIMIT,
+    });
+  });
+
+  test('form picker search stops paging on an empty page (#359)', async () => {
+    // A match count that is an exact multiple of the page size ends with
+    // a full page; the next (empty) page is what ends the collection.
+    const fullPage = Array.from({length: RECIPE_FORM_SEARCH_LIMIT}, (_, i) =>
+      makeListItem(String(i)),
+    );
+    const list = jest
+      .fn()
+      .mockImplementation(async (params?: {offset?: number}) =>
+        params?.offset === 0 ? fullPage : [],
+      );
+    const options = recipeFormSearchQueryOptions(list, 'Recipe');
+    const results = await options.queryFn();
+    expect(results).toHaveLength(RECIPE_FORM_SEARCH_LIMIT);
+    expect(list).toHaveBeenCalledTimes(2);
+  });
+
   test('builds shared-with-me infinite query options with paging params', async () => {
     const listSharedWithMe = jest.fn().mockResolvedValue([makeListItem('1')]);
     const options = sharedWithMeInfiniteQueryOptions(listSharedWithMe, {

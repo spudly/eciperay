@@ -23,7 +23,7 @@ export const queryKeys = {
     return ['recipes', normalizeFilters(filters)] as const;
   },
   // The meal / meal-plan form recipe search caches a flat RecipeDetail[]
-  // (one page of server-side search results — #359), while the recipe list
+  // (all matching pages of server-side search results — #359), while the recipe list
   // caches an infinite-query
   // {pages, pageParams} shape under queryKeys.recipes(filters). The two
   // MUST NOT share a key: the default list filters normalize to exactly

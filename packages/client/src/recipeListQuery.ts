@@ -94,21 +94,27 @@ export const recipeListInfiniteQueryOptions = (
 });
 
 /**
- * How many results one form-picker search returns. The picker is a search
+ * Page size for one form-picker search request. The picker is a search
  * autocomplete (#359, @spudly/ui 2.0.0): the host runs this server-side search
- * for the typed text and shows one page of matches — it no longer renders the
- * whole library, so the old single-request `limit: 100` cap (recipes beyond the
- * first 100 could never be added to a meal or meal plan) is gone by
- * construction: any recipe is reachable by searching for it, however large the
- * library is.
+ * for the typed text and shows the matches — it no longer renders the whole
+ * library, so the old single-request `limit: 100` cap (recipes beyond the first
+ * 100 could never be added to a meal or meal plan) is gone by construction: any
+ * recipe is reachable by searching for it, however large the library is. A
+ * single page is NOT enough on its own, though: the server's search is a title
+ * substring match ordered newest-first, so a recipe whose title is contained in
+ * more than a page of newer titles (an older "Soup" behind 20 newer "… Soup …"
+ * titles) would sit past the first page even when its complete title is typed.
+ * The query below therefore collects EVERY matching page, so every match is
+ * reachable.
  */
 export const RECIPE_FORM_SEARCH_LIMIT = 20;
 
-// One page of server-side recipe search results for the meal / meal-plan
-// form pickers, ordered newest-first with the list endpoint's total-order
-// tie-breaker (updated_at desc, id) so the order is deterministic. Uses
-// its own query key — see queryKeys.recipeFormSearch for why sharing the
-// infinite list's key crashes both consumers (#171, #172).
+// All matching pages of server-side recipe search results for the meal /
+// meal-plan form pickers, ordered newest-first with the list endpoint's
+// total-order tie-breaker (updated_at desc, id) so paging cannot skip or
+// duplicate a recipe and the order is deterministic. Uses its own query
+// key — see queryKeys.recipeFormSearch for why sharing the infinite
+// list's key crashes both consumers (#171, #172).
 export const recipeFormSearchQueryOptions = (
   list: ListRecipesFn,
   searchText: string,
@@ -116,14 +122,24 @@ export const recipeFormSearchQueryOptions = (
   const search = searchText.trim();
   return {
     queryKey: queryKeys.recipeFormSearch(search),
-    queryFn: async (): Promise<RecipeDetail[]> =>
-      list({
-        ...(search ? {search} : {}),
-        sort: 'newest',
-        sortDir: 'desc',
-        limit: RECIPE_FORM_SEARCH_LIMIT,
-        offset: 0,
-      }),
+    queryFn: async (): Promise<RecipeDetail[]> => {
+      const results: RecipeDetail[] = [];
+      let offset = 0;
+      for (;;) {
+        const page = await list({
+          ...(search ? {search} : {}),
+          sort: 'newest',
+          sortDir: 'desc',
+          limit: RECIPE_FORM_SEARCH_LIMIT,
+          offset,
+        });
+        results.push(...page);
+        if (page.length < RECIPE_FORM_SEARCH_LIMIT) {
+          return results;
+        }
+        offset += page.length;
+      }
+    },
   };
 };
 

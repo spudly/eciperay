@@ -84,32 +84,47 @@ export const useMealPlanEditForm = (args: {
     Map<string, MealPlanFormEntryOption>
   >(() => new Map());
   useEffect(() => {
+    // Merge the sources with plan precedence BEFORE comparing against
+    // the previous state: the plan being edited is authoritative for
+    // its own entries, so its options overwrite any list/search option
+    // for the same key in the merged set. Comparing only the merged
+    // result matters — applying the sources one after another directly
+    // to the accumulated map lets a disagreeing search result overwrite
+    // a plan entry and the plan pass then restore it, leaving `changed`
+    // true even though the final map is identical to the previous one.
+    // Both meal-plan hosts rebuild `recipes` on every render, so that
+    // spurious change returned a new map on every render, retriggered
+    // this effect, and froze the editor.
+    const merged = new Map<string, MealPlanFormEntryOption>();
+    for (const option of buildMealPlanFormEntryOptions(
+      args.meals,
+      args.recipes,
+    )) {
+      merged.set(mealPlanEntryKey(option.kind, option.id), option);
+    }
+    if (args.plan) {
+      for (const option of buildMealPlanFormEntryOptionsFromDetail(args.plan)) {
+        merged.set(mealPlanEntryKey(option.kind, option.id), option);
+      }
+    }
     setKnownOptions(previous => {
       // Bail out when nothing actually changed: hosts rebuild the meals /
       // recipes arrays on every render, so without this the effect would
       // set state on every render and loop forever.
       let changed = false;
       const next = new Map(previous);
-      const addAll = (options: MealPlanFormEntryOption[]) => {
-        for (const option of options) {
-          const key = mealPlanEntryKey(option.kind, option.id);
-          const existing = next.get(key);
-          if (
-            !existing ||
-            existing.title !== option.title ||
-            (existing.kind === 'recipe' && option.kind === 'recipe'
-              ? existing.servings !== option.servings
-              : existing.kind !== option.kind)
-          ) {
-            next.set(key, option);
-            changed = true;
-          }
+      for (const [key, option] of merged) {
+        const existing = next.get(key);
+        if (
+          !existing ||
+          existing.title !== option.title ||
+          (existing.kind === 'recipe' && option.kind === 'recipe'
+            ? existing.servings !== option.servings
+            : existing.kind !== option.kind)
+        ) {
+          next.set(key, option);
+          changed = true;
         }
-      };
-      addAll(buildMealPlanFormEntryOptions(args.meals, args.recipes));
-      if (args.plan) {
-        // The plan being edited is authoritative for its own entries.
-        addAll(buildMealPlanFormEntryOptionsFromDetail(args.plan));
       }
       return changed ? next : previous;
     });

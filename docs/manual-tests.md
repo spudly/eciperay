@@ -317,9 +317,12 @@ mode; there is no Playwright coverage of meals. The cases below are manual._
    with its servings stepper); saving keeps it on the meal detail. Also confirm:
    a search with no matches shows "No recipes found.", selecting a result leaves
    the picker available to search and add another recipe, and a selected
-   recipe's Remove action takes it back out. (On production-data review apps,
-   verify read-only: confirm a beyond-100 recipe appears as a search result
-   without saving.)
+   recipe's Remove action takes it back out. Repeat the search-and-select part
+   in the meal-plan form (`/meal-plans/new`, "Search meals & recipes" field) —
+   the same picker contract serves both forms (see also Meal plans case 7).
+   (Runs execute in the QA preview environment defined under "How runs work"
+   above; on any surface where writes are prohibited, verify read-only instead:
+   confirm a beyond-100 recipe appears as a search result without saving.)
 
 **Run when:**
 `packages/app/src/screens/{MealsHub,MealDetail,MealEdit,MealCookingMode}Screen.tsx`,
@@ -370,6 +373,16 @@ are the manual remainder._
    active (`/meals?tab=plans`) and the plan list renders — no 404. Then visit a
    nonsense path (e.g. `/no-such-page`). **Expected:** the app's own "Page not
    found" page with a link home, never the raw framework error screen.
+7. **Picker search reaches the full library (regression: #359).** Preconditions:
+   an account with more than 100 recipes. Open the meal-plan form
+   (`/meal-plans/new`) and type the title of a recipe beyond the first 100 into
+   the picker's "Search meals & recipes" field. **Expected:** the beyond-100
+   recipe appears as a search result and can be selected into the plan (it moves
+   to the selected list under the search field, with its quantity and servings
+   steppers); saving keeps it on the plan detail after reload. Also confirm a
+   match that sits behind more than one page of newer substring matches (an
+   older recipe whose title is contained in 20+ newer titles) is reachable by
+   typing its full title.
 
 **Run when:**
 `packages/app/src/screens/{MealPlanDetail,MealPlanEdit}Screen.tsx`,
