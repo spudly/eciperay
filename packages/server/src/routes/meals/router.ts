@@ -1,5 +1,6 @@
 import {Router} from 'express';
 import type {Response} from 'express';
+import {z} from 'zod';
 
 import {query as defaultQuery} from '../../db/query.js';
 import {buildMealCookPlan} from '../../lib/buildMealCookPlan.js';
@@ -41,7 +42,14 @@ const createMeal = async (
 };
 
 const getMeal = async (req: AuthedRequest, res: Response, queryFn: QueryFn) => {
-  const meal = await loadMealDetail(getParam(req, 'id'), req.userId, queryFn);
+  const id = getParam(req, 'id');
+  // meals.id is a uuid column: a malformed id would otherwise surface
+  // as a Postgres error (500) instead of the not-found response.
+  if (!z.uuid().safeParse(id).success) {
+    res.status(404).json({error: 'Meal not found'});
+    return;
+  }
+  const meal = await loadMealDetail(id, req.userId, queryFn);
   if (!meal) {
     res.status(404).json({error: 'Meal not found'});
     return;

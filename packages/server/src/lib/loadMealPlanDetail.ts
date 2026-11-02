@@ -46,8 +46,9 @@ type PlanRow = {
   // the row typing must admit both representations (see dateOnly).
   starts_on: string | Date | null;
   ends_on: string | Date | null;
-  created_at: string;
-  updated_at: string;
+  // timestamptz columns also arrive as JS Date objects (see dateOnly).
+  created_at: string | Date;
+  updated_at: string | Date;
 };
 
 type EntryRow = {
@@ -73,6 +74,14 @@ const dateOnly = (value: string | Date | null): string | null => {
   }
   return value.slice(0, 10);
 };
+
+/**
+ * Normalize a timestamptz value to the ISO string the detail types declare.
+ * Unlike the date-only fields, a timestamp's instant is unambiguous, so
+ * `toISOString()` is the correct conversion for Date instances.
+ */
+const timestampString = (value: string | Date): string =>
+  value instanceof Date ? value.toISOString() : value;
 
 const recipeEntryNutrition = (
   recipe: AccessibleRecipeRow,
@@ -222,8 +231,8 @@ export const loadMealPlanDetail = async (
     entryCount: entries.length,
     nutrition,
     goalProgress,
-    createdAt: plan.created_at,
-    updatedAt: plan.updated_at,
+    createdAt: timestampString(plan.created_at),
+    updatedAt: timestampString(plan.updated_at),
     entries,
   };
 };

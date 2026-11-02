@@ -2,6 +2,7 @@ import type {Request} from 'express';
 import type {User} from '@supabase/supabase-js';
 
 import {supabase} from '../supabase.js';
+import {logger} from './logger.js';
 
 export const extractBearerToken = (req: Request): string | null => {
   const header = req.headers.authorization ?? '';
@@ -25,11 +26,11 @@ export type AuthUserLookup =
 /**
  * Supabase reports a rejected credential with an HTTP 401/403 on the getUser
  * error. One exception to the status rule: when the auth server answers
- * `session_not_found` (the JWT's session row is gone — signed out, deleted,
- * or terminated), auth-js converts it to an `AuthSessionMissingError` with
- * status 400, so the error name must be checked before the status fallback.
- * Anything else — a 5xx, or a retryable fetch failure with no meaningful
- * status — is a transient lookup failure.
+ * `session_not_found` (the JWT's session row is gone — signed out, deleted, or
+ * terminated), auth-js converts it to an `AuthSessionMissingError` with status
+ * 400, so the error name must be checked before the status fallback. Anything
+ * else — a 5xx, or a retryable fetch failure with no meaningful status — is a
+ * transient lookup failure.
  */
 const isCredentialRejection = (error: {
   status?: number;
@@ -47,12 +48,18 @@ export const lookupAuthUserFromRequest = async (
     return {status: 'invalid'};
   }
   let data: {user: User | null};
-  let error: {status?: number; name?: string} | null;
+  let error: {status?: number; message?: string; name?: string} | null;
   try {
     const result = await supabase.auth.getUser(token);
     data = result.data;
     error = result.error;
-  } catch {
+  } catch (thrown) {
+    // Log the cause (never the bearer token): without it, an auth outage
+    // and a network failure are indistinguishable behind the caller's 503.
+    logger.warn(
+      {err: thrown},
+      'Supabase getUser threw; auth lookup unavailable',
+    );
     return {status: 'unavailable'};
   }
   if (!error && data.user) {
@@ -61,6 +68,10 @@ export const lookupAuthUserFromRequest = async (
   if (error && isCredentialRejection(error)) {
     return {status: 'invalid'};
   }
+  logger.warn(
+    {status: error?.status, supabaseError: error?.message},
+    'Supabase getUser did not return a user; auth lookup unavailable',
+  );
   return {status: 'unavailable'};
 };
 

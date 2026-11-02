@@ -82,6 +82,46 @@ describe('GET /meals/:id', () => {
 
     expect(res.status).toBe(404);
   });
+
+  test('returns 404 for the cuid-style id from #343 without querying for the meal', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
+
+    const res = await request(getApp())
+      .get('/api/meals/cmhgpjmfm00019p91zjsn04t2')
+      .set('Authorization', 'Bearer valid-token');
+
+    expect(res.status).toBe(404);
+    expect(res.body).toMatchObject({error: 'Meal not found'});
+    // The entitlement middleware queries billing tables first; the point
+    // is that no query ever looks up a meal by the non-UUID id (that is
+    // what threw the Postgres uuid syntax error).
+    const mealLookups = mockQuery.mock.calls.filter(args =>
+      String(args[0]).includes('from meals'),
+    );
+    expect(mealLookups).toEqual([]);
+    expect(
+      mockQuery.mock.calls.some(args =>
+        (args[1] ?? []).includes('cmhgpjmfm00019p91zjsn04t2'),
+      ),
+    ).toBe(false);
+  });
+
+  test('returns 404 for a non-UUID id without querying for the meal', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
+
+    const res = await request(getApp())
+      .get('/api/meals/not-a-uuid')
+      .set('Authorization', 'Bearer valid-token');
+
+    expect(res.status).toBe(404);
+    expect(res.body).toMatchObject({error: 'Meal not found'});
+    const mealLookups = mockQuery.mock.calls.filter(args =>
+      String(args[0]).includes('from meals'),
+    );
+    expect(mealLookups).toEqual([]);
+  });
 });
 
 describe('POST /meals', () => {

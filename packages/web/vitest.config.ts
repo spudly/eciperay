@@ -86,6 +86,14 @@ export default defineConfig({
     exclude: [...configDefaults.exclude, 'e2e/**', 'e2e-live/**'],
     environment: 'jsdom',
     globals: true,
+    // #369: the 5s vitest default is tight for these render-heavy jsdom
+    // suites — on a busy/shared machine the pre-commit affected-tests gate
+    // flaked on rotating 5000ms timeouts in tests that pass standalone and
+    // in CI (whole 508-test suite: ~86s wall in CI; individual tests are
+    // sub-second to low-second). 15s is load headroom, not a mask: a test
+    // that genuinely hangs still fails.
+    testTimeout: 15000,
+    hookTimeout: 15000,
     setupFiles: ['./src/test/setup.ts'],
     server: {
       deps: {

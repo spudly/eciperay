@@ -1,4 +1,4 @@
-import {screen, waitFor, within} from '@testing-library/react';
+import {act, screen, waitFor, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {http, HttpResponse} from 'msw';
 import {useState} from 'react';
@@ -18,10 +18,9 @@ import {renderWithProviders} from '../test/testUtils.js';
 import {RecipeDetailHost} from './RecipeDetailHost.js';
 
 /**
- * The page's stateful shell, minus its queries: servings and version
- * selection live here exactly as the page holds them, so version
- * switches and scaling flow through the host the way they do in the
- * page.
+ * The page's stateful shell, minus its queries: servings and version selection
+ * live here exactly as the page holds them, so version switches and scaling
+ * flow through the host the way they do in the page.
  */
 const Harness = ({
   recipe,
@@ -391,6 +390,174 @@ describe('RecipeDetailHost', () => {
       await renderHost();
       expect(await screen.findByText(/2024/)).toBeInTheDocument();
       expect(screen.queryByLabelText('4 stars')).not.toBeInTheDocument();
+    });
+  });
+  describe('nutrition (#354)', () => {
+    const nutritionPayload = {
+      servings: 4,
+      calories: 250,
+      proteinG: 10,
+      carbsG: 30,
+      fatG: 8,
+      fiberG: 2,
+      sugarG: null,
+      sodiumMg: 400,
+      disclaimer: 'Estimates only',
+    };
+
+    test('a failed estimate shows a viewport-visible dialog and keeps the unavailable state', async () => {
+      server.use(
+        http.get(
+          'http://localhost:8080/api/recipes/:id/ai/nutrition',
+          ({request}) =>
+            new URL(request.url).searchParams.get('refresh') === 'true'
+              ? HttpResponse.json(
+                  {error: 'Failed to estimate nutrition'},
+                  {status: 502},
+                )
+              : HttpResponse.json(null),
+        ),
+      );
+      await renderHost();
+      expect(
+        await screen.findByText('Nutrition is not available yet.'),
+      ).toBeInTheDocument();
+      await userEvent.click(screen.getByText('Estimate nutrition'));
+      // The failure surfaces in a modal dialog — not the overview
+      // action message at the top of the scroll view, which clears
+      // after 2.5s far from the nutrition panel (#354).
+      expect(
+        await screen.findByText('Could not refresh nutrition'),
+      ).toBeInTheDocument();
+      expect(screen.getByText('Please try again.')).toBeInTheDocument();
+      // The unavailable state (with its Estimate retry) stays in place.
+      expect(
+        screen.getByText('Nutrition is not available yet.'),
+      ).toBeInTheDocument();
+      expect(screen.getByText('Estimate nutrition')).toBeInTheDocument();
+      // The dialog stays up until dismissed.
+      await userEvent.click(screen.getByText('OK'));
+      await waitFor(() => {
+        expect(
+          screen.queryByText('Could not refresh nutrition'),
+        ).not.toBeInTheDocument();
+      });
+    });
+
+    test('a failed refresh shows the dialog and keeps the current estimate', async () => {
+      let refreshAttempts = 0;
+      server.use(
+        http.get(
+          'http://localhost:8080/api/recipes/:id/ai/nutrition',
+          ({request}) => {
+            if (new URL(request.url).searchParams.get('refresh') === 'true') {
+              refreshAttempts += 1;
+              return refreshAttempts === 1
+                ? HttpResponse.json(
+                    {error: 'Failed to estimate nutrition'},
+                    {status: 502},
+                  )
+                : HttpResponse.json({...nutritionPayload, calories: 300});
+            }
+            return HttpResponse.json(nutritionPayload);
+          },
+        ),
+      );
+      await renderHost();
+      expect(await screen.findByText('250')).toBeInTheDocument();
+      await userEvent.click(screen.getByText('Refresh'));
+      expect(
+        await screen.findByText('Could not refresh nutrition'),
+      ).toBeInTheDocument();
+      expect(screen.getByText('Please try again.')).toBeInTheDocument();
+      // The previously loaded estimate is not discarded on failure.
+      expect(screen.getByText('250')).toBeInTheDocument();
+      expect(screen.getByText('Refresh')).toBeInTheDocument();
+      // The refreshing flag is cleared on failure: after dismissing
+      // the dialog, Refresh runs again and the new estimate lands.
+      await userEvent.click(screen.getByText('OK'));
+      await waitFor(() => {
+        expect(
+          screen.queryByText('Could not refresh nutrition'),
+        ).not.toBeInTheDocument();
+      });
+      await userEvent.click(screen.getByText('Refresh'));
+      expect(await screen.findByText('300')).toBeInTheDocument();
+      expect(refreshAttempts).toBe(2);
+    });
+
+    test('a stale refresh failure for a previous recipe does not open the dialog', async () => {
+      let rejectFirstRefresh!: (error: Error) => void;
+      const firstRefreshPromise = new Promise<never>((_, reject) => {
+        rejectFirstRefresh = reject;
+      });
+      let resolveSecondRefresh!: (value: typeof nutritionPayload) => void;
+      const secondRefreshPromise = new Promise<typeof nutritionPayload>(
+        resolve => {
+          resolveSecondRefresh = resolve;
+        },
+      );
+      let refreshCalls = 0;
+      const nutritionSpy = vi
+        .spyOn(eciperay.ai, 'nutrition')
+        .mockImplementation((_recipeId, options) => {
+          if (!options?.refresh) {
+            return Promise.resolve(nutritionPayload) as never;
+          }
+          refreshCalls += 1;
+          return (
+            refreshCalls === 1 ? firstRefreshPromise : secondRefreshPromise
+          ) as never;
+        });
+      try {
+        const recipeB = makeRecipeDetail({
+          id: 'recipe-uuid-2',
+          title: 'Second Recipe',
+        });
+        const versions = [makeRecipeVersionSummary()];
+        const view = await renderWithProviders(
+          <Harness
+            recipe={makeRecipeDetail()}
+            versions={versions}
+          />,
+        );
+        expect(await screen.findByText('250')).toBeInTheDocument();
+        await userEvent.click(screen.getByText('Refresh'));
+        expect(nutritionSpy).toHaveBeenCalledWith('recipe-uuid-1', {
+          refresh: true,
+        });
+        view.rerender(
+          <Harness
+            recipe={recipeB}
+            versions={versions}
+          />,
+        );
+        expect(await screen.findByText('Second Recipe')).toBeInTheDocument();
+        // Start a refresh for the second recipe and keep it pending.
+        await userEvent.click(await screen.findByText('Refresh'));
+        expect(nutritionSpy).toHaveBeenCalledWith('recipe-uuid-2', {
+          refresh: true,
+        });
+        expect(await screen.findByText('Refreshing…')).toBeInTheDocument();
+        await act(async () => {
+          rejectFirstRefresh(new Error('Failed to estimate nutrition'));
+        });
+        // The first recipe's failure must not surface on the second
+        // recipe, and it must not clear the second refresh's busy
+        // state either.
+        expect(
+          screen.queryByText('Could not refresh nutrition'),
+        ).not.toBeInTheDocument();
+        expect(screen.getByText('Refreshing…')).toBeInTheDocument();
+        // The second refresh still completes normally afterwards.
+        await act(async () => {
+          resolveSecondRefresh({...nutritionPayload, calories: 300});
+        });
+        expect(await screen.findByText('300')).toBeInTheDocument();
+        expect(screen.getByText('Refresh')).toBeInTheDocument();
+      } finally {
+        nutritionSpy.mockRestore();
+      }
     });
   });
 });

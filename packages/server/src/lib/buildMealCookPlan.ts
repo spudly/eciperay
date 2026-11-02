@@ -60,6 +60,7 @@ export const buildMealCookPlan = async (
       };
     }
 
+    let timingFailed = false;
     try {
       await ensureRecipeStepTiming(
         recipe.version_id,
@@ -68,8 +69,7 @@ export const buildMealCookPlan = async (
         refresh,
       );
     } catch {
-      failedCount += 1;
-      continue;
+      timingFailed = true;
     }
 
     const refreshed = await loadAccessibleRecipe(
@@ -77,11 +77,24 @@ export const buildMealCookPlan = async (
       userId,
       queryFn,
     );
-    if (refreshed?.step_timing_status !== 'ready') {
-      failedCount += 1;
-      continue;
+    if (!refreshed) {
+      return {
+        error: 'One or more recipes in this meal are no longer accessible',
+        status: 409,
+      };
     }
-    readyCount += 1;
+    // Step timing is only an estimate overlay: a recipe whose timing is
+    // not ready (generation failed or has not completed) still belongs in
+    // the cook plan — its steps are included with whatever durations are
+    // stored, defaulting to five minutes when none is. Dropping the
+    // recipe here is what silently removed every recipe after the first
+    // from multi-recipe meals (#346). The failure is still counted so
+    // timingStatus reports the plan as partial/failed.
+    if (timingFailed || refreshed.step_timing_status !== 'ready') {
+      failedCount += 1;
+    } else {
+      readyCount += 1;
+    }
 
     const instructionsResult = await queryFn(INSTRUCTIONS_SQL, [
       refreshed.version_id,

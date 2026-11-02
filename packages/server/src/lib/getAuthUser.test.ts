@@ -13,6 +13,12 @@ jest.unstable_mockModule('../supabase.js', () => ({
   supabase: {auth: {getUser: mockGetUser}},
 }));
 
+const mockLoggerWarn = jest.fn();
+
+jest.unstable_mockModule('./logger.js', () => ({
+  logger: {warn: mockLoggerWarn},
+}));
+
 const {extractBearerToken, getAuthUserFromRequest, lookupAuthUserFromRequest} =
   await import('./getAuthUser.js');
 
@@ -116,6 +122,7 @@ describe('lookupAuthUserFromRequest', () => {
   });
 
   test('reports unavailable when Supabase fails with a 5xx', async () => {
+    mockLoggerWarn.mockClear();
     mockGetUser.mockResolvedValue({
       data: {user: null},
       error: {message: 'Internal error', status: 500},
@@ -123,6 +130,13 @@ describe('lookupAuthUserFromRequest', () => {
     await expect(lookupAuthUserFromRequest(authedReq)).resolves.toEqual({
       status: 'unavailable',
     });
+    // The unavailable classification is logged with its cause (status and
+    // Supabase message — never the bearer token) so an operator can tell
+    // an auth outage from a network failure behind the caller's 503.
+    expect(mockLoggerWarn).toHaveBeenCalledWith(
+      {status: 500, supabaseError: 'Internal error'},
+      expect.any(String),
+    );
   });
 
   test('reports unavailable when the lookup error carries no status (network failure)', async () => {
@@ -143,9 +157,14 @@ describe('lookupAuthUserFromRequest', () => {
   });
 
   test('reports unavailable when the getUser call itself throws', async () => {
+    mockLoggerWarn.mockClear();
     mockGetUser.mockRejectedValue(new Error('network unreachable'));
     await expect(lookupAuthUserFromRequest(authedReq)).resolves.toEqual({
       status: 'unavailable',
     });
+    expect(mockLoggerWarn).toHaveBeenCalledWith(
+      {err: expect.any(Error)},
+      expect.any(String),
+    );
   });
 });

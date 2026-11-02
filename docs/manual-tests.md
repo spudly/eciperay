@@ -134,16 +134,16 @@ without); one recipe may be created fresh in case 1.
 5. **Post a comment.** In the Comments section, post `QA — comment check`, then
    reload. **Expected:** the comment appears with the QA account as author and
    persists after reload.
-6. **Delete.** Delete the `QA — Manual Entry Soup` recipe via the UI's delete
-   path: on the recipe list (and on Home's recently-viewed cards) the Delete
-   button arms an in-page **Confirm delete** / **Cancel** pair — Cancel keeps
-   the recipe and restores the Delete button, Confirm delete removes it. The
-   recipe detail page's Delete control opens a confirmation dialog instead;
-   confirming there returns to the recipe list, and a failed delete shows its
-   error in the dialog. **Expected:** the deleted recipe disappears from the
-   list and search; its old detail URL no longer renders the recipe; and if a
-   delete request fails, an error is shown and the recipe stays listed (a delete
-   never fails silently).
+6. **Delete.** Delete the `QA — Manual Entry Soup` recipe from its detail page:
+   the detail page's Delete control opens a confirmation dialog — Cancel keeps
+   the recipe; confirming removes it and returns to the recipe list, and a
+   failed delete shows its error in the dialog. (The recipe list itself offers
+   no Delete — deleting is a detail-page action. Home's recently-viewed cards
+   still carry their own Delete with the in-page **Confirm delete** / **Cancel**
+   confirmation.) **Expected:** the deleted recipe disappears from the list and
+   search; its old detail URL no longer renders the recipe; and if a delete
+   request fails, an error is shown and the recipe stays listed (a delete never
+   fails silently).
 7. **Recipe without an image.** Open the image-less recipe. **Expected:** the
    detail and its list card render a clean placeholder — no broken image icon,
    no layout collapse.
@@ -159,10 +159,13 @@ without); one recipe may be created fresh in case 1.
    subtitles: a 1-serving recipe reads "1 serving" (not "1 servings"), and a
    recipe whose nutrition is still being computed (e.g. one just created or
    renamed) reads "Satiety pending" — never a bare "Satiety…" that looks
-   truncated; other cards show a satiety value or "Satiety —". Open one recipe's
-   detail. **Expected:** the recipe status appears exactly once, as the pill
-   in the page toolbar — the Overview does not repeat it under the title
-   (the design-system#363 duplicate was removed in @spudly/ui 1.16.2).
+   truncated; other cards show a satiety value or "Satiety —". The subtitle
+   carries no rating text: a rated recipe's rating renders as the row's star
+   control, and an unrated recipe shows a single star (the log-a-cook control)
+   instead. Open one recipe's detail. **Expected:** the recipe status appears
+   exactly once, as the pill in the page toolbar — the Overview does not repeat
+   it under the title (the design-system#363 duplicate was removed in @spudly/ui
+   1.16.2).
 
 **Run when:**
 `packages/app/src/screens/{Recipes,RecipeDetail,EditRecipe,EditVersion,ManualEntry}Screen.tsx`,
@@ -219,18 +222,20 @@ scale visibly (e.g. 2 cups flour, 0.5 tsp salt), such as
 
 ## Cook log
 
-_Automated: Jest covers the design-system CookLogForm component and the app
-hosts that embed it. Playwright live `e2e-live/cook-log.spec.ts` covers the
-cooking-mode surface against the QA dataset once the CI test account secrets
-exist (issue #233): submitting the form (rating + notes) records the cook in the
-recipe's history, and Skip dismisses it recording nothing; until then those
-cases remain manual. The other surfaces (detail slot, list card, inline form)
-and the cases below are the manual remainder._
+_Automated: Jest covers the design-system RatingForm component (the cook log
+form's current name in `@spudly/ui`) and the app hosts that embed it. Playwright
+live `e2e-live/cook-log.spec.ts` covers the cooking-mode surface against the QA
+dataset once the CI test account secrets exist (issue #233): submitting the form
+(rating + notes) records the cook in the recipe's history, and Skip dismisses it
+recording nothing; until then those cases remain manual. The other surfaces
+(detail slot, list row, inline form) and the cases below are the manual
+remainder._
 
 **Preconditions:** QA account with at least one recipe; the cook log form
 appears in four places and each is exercised: recipe detail (the
-`renderCookLogForm` slot), the recipe list card, the inline form in the recipes
-list view, and the cooking-mode overlay.
+`renderCookLogForm` slot), the recipe list row, the inline form in the recipes
+list (opened from the row's rating control — the stars on a rated recipe, the
+single star on an unrated one), and the cooking-mode overlay.
 
 1. **Detail-slot submission, rating omitted.** Open a recipe, open the cook log
    form from the detail view, add notes only (no star rating), Save.
@@ -239,10 +244,11 @@ list view, and the cooking-mode overlay.
 2. **Notes trimming.** Submit an entry whose notes are only spaces.
    **Expected:** saves with no notes (empty becomes null) — the history entry
    shows no blank note block.
-3. **List-card entry.** From the recipes list, open the cook log form on a
-   recipe card, give a star rating and notes, Save. **Expected:** entry appears
-   in that recipe's Cook History with the rating shown.
-4. **Inline form entry.** In the recipes list view's inline cook log form,
+3. **List-row entry.** From the recipes list, open the cook log form via a
+   recipe row's rating control, give a star rating and notes, Save.
+   **Expected:** entry appears in that recipe's Cook History with the rating
+   shown.
+4. **Inline form entry.** With the recipes list's inline cook log form open,
    submit an entry. **Expected:** same result as case 3; the list does not lose
    scroll position or filters.
 5. **Cooking-mode overlay.** Start cooking mode (`/recipes/:recipeId/cook`),
@@ -270,10 +276,10 @@ list view, and the cooking-mode overlay.
 `packages/client/src/cookLogsApi.ts`, `packages/server` cook log routes,
 `@spudly/ui` `RecipeDetailPage` history section.
 
-**Run when:** `@spudly/ui` `CookLogForm` or `StarRatingInput`,
+**Run when:** `@spudly/ui` `RecipesPage`, `RatingForm` or `StarRatingInput`,
 `packages/app/src/screens/CookingModeScreen.tsx`,
 `packages/app/src/hosts/recipes/RecipesListView.tsx`,
-`packages/web/src/pages/{RecipeDetail,CookingMode}Page.tsx`,
+`packages/web/src/pages/{Recipes,RecipeDetail,CookingMode}Page.tsx`,
 `packages/web/src/components/cooking/**`.
 
 ---
@@ -297,6 +303,18 @@ mode; there is no Playwright coverage of meals. The cases below are manual._
    order; exiting returns to the meal detail.
 4. **Delete a meal.** Delete `QA — Sunday Dinner`. **Expected:** the meal is
    gone from the hub; the member recipes still exist untouched.
+5. **Meal cooking mode load failure.** Set up a reproducible cook-plan failure:
+   create a recipe with a title and ingredients but **no instruction steps**,
+   then create `QA — No Steps Meal` whose only member is that recipe. (A recipe
+   with zero instructions produces an empty cook-plan timeline, so the server
+   answers the cook-plan request with 502 "Unable to build cook plan for this
+   meal".) Open cooking mode for the meal (`/meals/:mealId/cook`). **Expected:**
+   an error message ("Couldn't load the cook plan for this meal. Please try
+   again.") with a Done action back to the meal detail — never an indefinite
+   Loading state.
+6. **Meal detail for a nonexistent meal.** Navigate directly to
+   `/meals/not-a-uuid`. **Expected:** a "Page not found" view with a link home —
+   never an indefinite Loading state.
 
 **Run when:**
 `packages/app/src/screens/{MealsHub,MealDetail,MealEdit,MealCookingMode}Screen.tsx`,
@@ -315,30 +333,46 @@ and landing on its detail against the QA dataset once the CI test account
 secrets exist (issue #233); until then that case remains manual. The cases below
 are the manual remainder._
 
-**Preconditions:** QA account with at least three recipes.
+**Preconditions:** QA account with at least three recipes and at least one
+meal. (The seed pass seeds recipes only — if the account has no meal, create
+one first via Meals case 1 and do not delete it until this section is done.)
 
 1. **Create a plan.** Create a meal plan (`/meal-plans/new`) named
    `QA — Week Plan` spanning a week. **Expected:** it appears in the plans list
    and opens to its detail (`/meal-plans/:planId`).
-2. **Assign recipes to days.** In the plan detail/edit, assign recipes to
-   specific days (breakfast/dinner slots as offered). Save, reload.
-   **Expected:** assignments persist on the correct days.
-3. **Move and remove entries.** Move one entry to another day and remove one
-   entry entirely. **Expected:** detail reflects both changes; no duplicate or
-   orphaned entries.
+2. **Add meals and recipes as entries.** Meal plans have no day/slot
+   concept: a plan is a list of entries (meals and recipes, each with a
+   quantity/servings). In the plan edit form (Title, Notes, Starts on, Ends
+   on, and the Meals & recipes checklist), add at least three entries in
+   total, including at least one meal and one standalone recipe. Set a
+   non-default quantity on at least one meal entry and a non-default
+   quantity and servings on at least one recipe entry. Save, reload.
+   **Expected:** the entries persist in the detail, in the order selected,
+   with exactly those quantities/servings, and the plan totals reflect
+   them.
+3. **Reorder and remove entries.** The form has no drag or move control:
+   an entry's position is its selection order, and unchecking then
+   re-checking an entry moves it to the end of the list. Uncheck and
+   re-check one entry so it moves to the end, save, reload. **Expected:**
+   the detail shows the new order — the moved entry last, the others in
+   their previous relative order. Then remove a different entry by
+   unchecking its checkbox (the form has no separate remove control),
+   save, reload. **Expected:** the removed entry is gone, the remaining
+   entries keep their order, and there are no duplicate or orphaned
+   entries.
 4. **Nutrition goal progress.** If the account has nutrition goals set, open the
    plan detail's nutrition goal progress. **Expected:** totals are plausible
    sums of the assigned recipes and the progress view renders for days with and
    without entries. For a plan with a valid date range, the goal figures are the
    plan's **per-day average** against the daily goals and are labelled as such
    ("(per-day avg)" row labels in the app and on web). For an undated plan
-   (dates are optional), the figures are
-   the **plan total** against the daily goals and are labelled as such
-   ("(plan total)" row labels in the app and on web) — they must not be labelled as a daily average or read as an
-   unexplained second total next to "Plan total" (regression: #266). Satiety is
-   neither an average nor a total: it is a ratio-based score that is identical
-   for the per-day and whole-plan figures, so both surfaces label it a plan-wide
-   score (row: "Satiety (plan-wide score)").
+   (dates are optional), the figures are the **plan total** against the daily
+   goals and are labelled as such ("(plan total)" row labels in the app and on
+   web) — they must not be labelled as a daily average or read as an unexplained
+   second total next to "Plan total" (regression: #266). Satiety is neither an
+   average nor a total: it is a ratio-based score that is identical for the
+   per-day and whole-plan figures, so both surfaces label it a plan-wide score
+   (row: "Satiety (plan-wide score)").
 5. **Delete the plan.** Delete `QA — Week Plan`. **Expected:** gone from the
    list; member recipes unaffected.
 6. **Direct `/meal-plans` visit + unknown routes (web).** Visit `/meal-plans`
@@ -350,8 +384,8 @@ are the manual remainder._
 **Run when:**
 `packages/app/src/screens/{MealPlanDetail,MealPlanEdit}Screen.tsx`,
 `packages/app/src/hosts/meals/**`,
-`packages/web/src/pages/{MealPlanDetail,MealPlanEdit}Page.tsx`,
-`@spudly/ui` `MealPlanDetailPage` or `MealPlanFormPage`,
+`packages/web/src/pages/{MealPlanDetail,MealPlanEdit}Page.tsx`, `@spudly/ui`
+`MealPlanDetailPage` or `MealPlanFormPage`,
 `packages/web/src/routes/router.tsx`, `packages/server` meal plan routes.
 
 ---
@@ -382,9 +416,8 @@ ingredient (e.g. both use eggs) and one recipe assigned twice in the week.
    **Expected:** a clear empty state, not an error or a stale list.
 
 **Run when:** `packages/app/src/screens/ShoppingListScreen.tsx`,
-`packages/web/src/pages/ShoppingListPage.tsx`, `@spudly/ui`
-`ShoppingListPage`, `packages/server`
-shopping list generation.
+`packages/web/src/pages/ShoppingListPage.tsx`, `@spudly/ui` `ShoppingListPage`,
+`packages/server` shopping list generation.
 
 ---
 
@@ -513,8 +546,8 @@ account (viewer); one QA recipe.
 `packages/app/src/hosts/{shared,recipe/RecipeVisibilityControls}*`,
 `packages/web/src/pages/{SharedWithMe,Discover,PublicRecipe}Page.tsx`,
 `packages/web/src/components/shared/**`, `@spudly/ui` `DiscoverPage`,
-`PublicRecipePage`, `PublicPageFrame`, `packages/server`
-sharing/visibility routes.
+`PublicRecipePage`, `PublicPageFrame`, `packages/server` sharing/visibility
+routes.
 
 ---
 
@@ -612,13 +645,27 @@ account on the Free plan for case 3.
    the plan shown (Free / Plus / Power) matches the account's actual entitlement
    — for the QA account, Power via the comp override, presented without error or
    a spurious "subscribe" upsell blocking the page.
-2. **Pay page render.** Open `/pay`. **Expected:** the plans and prices render
-   (Plus and Power, monthly and yearly) and match the amounts configured in the
-   billing provider; selecting a plan proceeds toward checkout — STOP before any
-   payment confirmation.
+2. **Subscription information and prices.** Open Profile → subscription
+   section. **Expected:** the section shows the account's current plan and,
+   where the entitlement carries one, its status text (e.g. an active
+   renewal date or a payment-past-due notice). When no status text applies,
+   it shows the informational price hint — Plus ($3.99/mo) and Power
+   ($8.99/mo) with a one-line summary of what each adds — matching the
+   amounts configured in the billing provider. The web profile offers no
+   plan catalog, no monthly/yearly selector, and no checkout start: do not
+   look for upgrade controls there. Where the account has a billing-portal
+   link, a Manage subscription action is also shown (case 4). `/pay` itself
+   is NOT a plans page: it is the Paddle checkout-completion target. Open
+   `/pay` bare (no `_ptxn` parameter). **Expected:** a Checkout card
+   explaining it needs the checkout link from a purchase started elsewhere
+   — no plan prices render there.
 3. **Free-account upsell sanity.** On the Free account, open a plan-gated
-   feature and the pay page. **Expected:** gating messages are human-readable
-   and the upgrade path leads to `/pay`; no dead ends.
+   feature and the Profile subscription section. **Expected:** gating
+   messages are human-readable, and the subscription section shows the Free
+   plan with the informational Plus/Power price hint (the Free-plan
+   upsell). There is no checkout start in the web profile, so there is no
+   upgrade flow to follow from there — the hint rendering correctly, with
+   no dead-end controls, is the pass.
 4. **Manage-subscription entry.** If the account shows a manage/billing portal
    entry, open it up to the portal handoff. **Expected:** the handoff targets
    the billing provider's portal (do not change any setting inside the portal
