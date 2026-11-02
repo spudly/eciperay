@@ -68,7 +68,12 @@ export const createApiClient = (opts: ApiClientOptions): ApiClient => {
       // unreachable): there is no response and no status. Surface it as a
       // typed ApiError instead of the raw TypeError so callers can treat it
       // as the transient failure it is (status 0 / code 'network_error')
-      // rather than an unhandled exception (#378).
+      // rather than an unhandled exception (#378). A caller-initiated abort
+      // is not a network failure: rethrow the original abort reason
+      // unchanged so cancellation detection keeps working.
+      if (options.signal?.aborted) {
+        throw cause;
+      }
       const error: ApiError = new Error(`Network error: ${path}`, {cause});
       error.code = 'network_error';
       error.status = 0;

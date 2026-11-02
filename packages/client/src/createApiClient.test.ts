@@ -232,6 +232,20 @@ describe('createApiClient network failures', () => {
     expect((thrown as {cause?: unknown}).cause).toBe(cause);
   });
 
+  test('rethrows a rejected fetch unchanged when the caller aborted (#378)', async () => {
+    const cause = new DOMException('The operation was aborted', 'AbortError');
+    global.fetch = jest.fn().mockRejectedValue(cause);
+    const client = createApiClient({
+      baseUrl: 'http://localhost:8080',
+      getToken: async () => null,
+    });
+    const controller = new AbortController();
+    controller.abort();
+    await expect(
+      client.fetch('/auth/sync', {signal: controller.signal}),
+    ).rejects.toBe(cause);
+  });
+
   test('wraps a body-read TypeError as a network_error ApiError (#378)', async () => {
     const cause = new TypeError('Failed to fetch');
     global.fetch = jest.fn().mockResolvedValue({
