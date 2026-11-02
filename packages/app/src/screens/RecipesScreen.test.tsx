@@ -268,6 +268,109 @@ describe('RecipesScreen', () => {
     });
   });
 
+  test('a failed next page stops automatic retries and offers a manual retry', async () => {
+    // Regression (#371): the DS page's end-reached signal re-fires
+    // when a fetch adds no rows and cannot tell a failed page from an
+    // empty one, so an ungated onLoadMore cycles automatic retries
+    // after a next-page failure. The screen gates on the latched
+    // fetch-next-page error and surfaces a manual retry instead.
+    const firstPage = Array.from({length: RECIPE_LIST_PAGE_SIZE}, (_, index) =>
+      makeRecipeDetail({id: `recipe-${index}`, title: `Recipe ${index}`}),
+    );
+    let failNextPage = true;
+    let heldRetry: Promise<ReturnType<typeof makeRecipeDetail>[]> | null = null;
+    mockList.mockImplementation(async (params?: {offset?: number}) => {
+      if (params?.offset === 0) {
+        return firstPage;
+      }
+      if (failNextPage) {
+        throw new Error('Next page failed');
+      }
+      if (heldRetry) {
+        return heldRetry;
+      }
+      return [makeRecipeDetail({id: 'recipe-20', title: 'Recipe 20'})];
+    });
+    const client = makeQueryClient();
+    const {findByLabelText, findByText, getByText, queryByText, container} =
+      await renderWithProviders(<RecipesScreen />, client);
+    await findByLabelText('Recipe 0');
+    const list = findList(container);
+
+    // The first end-reached signal fetches the next page, which fails,
+    // and the retry alert appears under the list.
+    await triggerEndReached(list);
+    expect(await findByText("Couldn't load more recipes.")).toBeTruthy();
+    await waitFor(() => {
+      expect(mockList).toHaveBeenCalledTimes(2);
+    });
+
+    // Further end-reached signals must not cycle automatic retries
+    // while the failed page is latched.
+    await triggerEndReached(list);
+    await triggerEndReached(list);
+    await act(async () => {
+      await flushQueryClient(client);
+    });
+    expect(mockList).toHaveBeenCalledTimes(2);
+
+    // Layout reservation: the alert must sit inside the viewport,
+    // not below the full-height list shell (RecipesPage's
+    // ScreenContainer is flex: 1 / minHeight: "100%"). The screen
+    // root is a flex: 1 column whose first child is the flex: 1
+    // list container and whose second child is the alert container,
+    // so the list shrinks to make room for the alert.
+    const root = container.children[0] as TestInstance;
+    expect(root.props.style).toEqual(expect.objectContaining({flex: 1}));
+    expect(root.children).toHaveLength(2);
+    const [listContainer, alertContainer] = root.children as TestInstance[];
+    expect(listContainer?.props.style).toEqual(
+      expect.objectContaining({flex: 1}),
+    );
+    expect(alertContainer?.props.style).toEqual(
+      expect.objectContaining({paddingVertical: 12}),
+    );
+
+    // Repeated retry taps while a retry is in flight must not
+    // restart it: the error stays latched (so the alert and its
+    // action stay up) during the retry, and the retry is issued
+    // with cancelRefetch: false, which reuses the in-flight fetch
+    // instead of cancelling it and issuing a duplicate request.
+    failNextPage = false;
+    let resolveHeldRetry!: (
+      value: ReturnType<typeof makeRecipeDetail>[],
+    ) => void;
+    heldRetry = new Promise<ReturnType<typeof makeRecipeDetail>[]>(resolve => {
+      resolveHeldRetry = resolve;
+    });
+    await fireEvent.press(getByText('Try again'));
+    await waitFor(() => {
+      expect(mockList).toHaveBeenCalledTimes(3);
+    });
+    expect(queryByText("Couldn't load more recipes.")).toBeTruthy();
+    await fireEvent.press(getByText('Try again'));
+    await act(async () => {
+      await flushQueryClient(client);
+    });
+    expect(mockList).toHaveBeenCalledTimes(3);
+
+    // The manual retry loads the page once the endpoint recovers:
+    // the next page is fetched and the alert clears. (The new row
+    // itself sits beyond the virtualized list's rendered window in
+    // Jest, so the fetch and the cleared alert are the observable
+    // half of the contract here — the same half the load-more test
+    // above pins.)
+    await act(async () => {
+      resolveHeldRetry([
+        makeRecipeDetail({id: 'recipe-20', title: 'Recipe 20'}),
+      ]);
+      await flushQueryClient(client);
+    });
+    await waitFor(() => {
+      expect(queryByText("Couldn't load more recipes.")).toBeNull();
+    });
+  });
+
   test('offers no delete action on list rows — deleting lives on the recipe detail screen', async () => {
     mockList.mockResolvedValue([makeRecipeDetail({title: 'Soup'})]);
     const {findByLabelText, queryByText} = await renderWithProviders(
