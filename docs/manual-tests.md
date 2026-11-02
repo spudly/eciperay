@@ -307,8 +307,8 @@ mode; there is no Playwright coverage of meals. The cases below are manual._
    again.") with a Done action back to the meal detail — never an indefinite
    Loading state.
 6. **Meal detail for a nonexistent meal.** Navigate directly to
-   `/meals/not-a-uuid`. **Expected:** a "Page not found" view with a link
-   home — never an indefinite Loading state.
+   `/meals/not-a-uuid`. **Expected:** a "Page not found" view with a link home —
+   never an indefinite Loading state.
 
 **Run when:**
 `packages/app/src/screens/{MealsHub,MealDetail,MealEdit,MealCookingMode}Screen.tsx`,
