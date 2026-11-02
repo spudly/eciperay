@@ -91,8 +91,17 @@ const subscribeSupabaseAuth = (
     (_event, session) => {
       setAuth(prev => applyAuthSessionChange(prev, session, onSignedOut));
       if (session) {
-        void Promise.resolve(onAuthenticated?.(session)).catch(
-          (error: unknown) => {
+        // Invoke the callback inside a try/catch and hand any synchronous
+        // throw to the same recovery path as a rejected promise: evaluating
+        // `onAuthenticated(session)` as the argument to `Promise.resolve(...)`
+        // would let a synchronous throw escape before `.catch` is attached.
+        let authenticated: Promise<void> | undefined;
+        try {
+          authenticated = onAuthenticated?.(session);
+        } catch (error) {
+          authenticated = Promise.reject(error);
+        }
+        void Promise.resolve(authenticated).catch((error: unknown) => {
             if (!isAuthSessionRejectedError(error)) {
               // Ordinary sync failure (e.g. a transient 503 during
               // TOKEN_REFRESHED): the provider still holds this valid

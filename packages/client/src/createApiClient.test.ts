@@ -88,16 +88,18 @@ describe('createApiClient', () => {
   });
 
   test('attaches the server error code to the thrown error (#296)', async () => {
-    global.fetch = jest.fn().mockResolvedValue({
-      ok: false,
-      status: 409,
-      text: async () =>
-        JSON.stringify({
-          error: 'duplicate_recipe',
-          message: 'This recipe already exists in your library as "Pasta".',
-          duplicate: {recipeId: 'recipe-uuid-9', title: 'Pasta'},
-        }),
-    });
+    global.fetch = jest
+      .fn()
+      .mockResolvedValue({
+        ok: false,
+        status: 409,
+        text: async () =>
+          JSON.stringify({
+            error: 'duplicate_recipe',
+            message: 'This recipe already exists in your library as "Pasta".',
+            duplicate: {recipeId: 'recipe-uuid-9', title: 'Pasta'},
+          }),
+      });
     const client = createApiClient({
       baseUrl: 'http://localhost:8080',
       getToken: async () => null,
@@ -111,6 +113,27 @@ describe('createApiClient', () => {
     expect(isDuplicateRecipeError(error)).toBe(true);
     expect(isDuplicateRecipeError(new Error('other'))).toBe(false);
     expect(isDuplicateRecipeError(null)).toBe(false);
+  });
+
+  test('attaches the HTTP status to the thrown error (#344)', async () => {
+    global.fetch = jest
+      .fn()
+      .mockResolvedValue({
+        ok: false,
+        status: 401,
+        text: async () => JSON.stringify({error: 'Invalid or expired token'}),
+      });
+    const client = createApiClient({
+      baseUrl: 'http://localhost:8080',
+      getToken: async () => 'expired-token',
+    });
+    const error = await client
+      .fetch('/auth/sync', {method: 'POST'})
+      .catch((error_: unknown) => error_);
+    expect(error).toBeInstanceOf(Error);
+    expect((error as ApiError).status).toBe(401);
+    expect((error as ApiError).code).toBe('Invalid or expired token');
+    expect((error as Error).message).toBe('Invalid or expired token');
   });
 
   test('returns undefined for 204 responses', async () => {
