@@ -1,5 +1,4 @@
 /* eslint-disable max-lines -- tab navigator registers multiple nested stacks */
-import {tabIcons} from '@eciperay/icons';
 import {useFeedbackShortcutEnabled} from '@eciperay/client';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
@@ -35,6 +34,8 @@ import {
 import {TagsScreen} from '../screens/TagsScreen';
 import {TweakAiScreen} from '../screens/TweakAiScreen';
 import {POSTHOG_KEY} from '../lib/env';
+
+import {tabIcons} from './tabIcons';
 
 import type {
   AddStackParamList,

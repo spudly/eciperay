@@ -1,31 +1,53 @@
-import type {FeatherIconName} from '@eciperay/icons';
-import type {IconType} from 'react-icons';
+import type {IconComponentProps} from '@spudly/ui/icons';
+import type {ComponentType} from 'react';
 import {
-  FiAlertTriangle,
-  FiBookOpen,
-  FiCoffee,
-  FiHome,
-  FiMessageCircle,
-  FiPlus,
-  FiTag,
-  FiUser,
-  FiUsers,
-} from 'react-icons/fi';
+  AddIcon,
+  FeedbackIcon,
+  HomeIcon,
+  MealsIcon,
+  ProfileIcon,
+  RecipesIcon,
+  SharedIcon,
+  TagsIcon,
+  WarningIcon,
+} from '@spudly/ui/icons';
+import clsx from 'clsx';
 
-const featherIcons: Record<FeatherIconName, IconType> = {
-  'home': FiHome,
-  'book-open': FiBookOpen,
-  'users': FiUsers,
-  'plus': FiPlus,
-  'tag': FiTag,
-  'user': FiUser,
-  'coffee': FiCoffee,
-  'alert-triangle': FiAlertTriangle,
-  'message-circle': FiMessageCircle,
+/**
+ * The icon names this app renders, owned by the app: the design system ships
+ * the glyphs as semantic components (`@spudly/ui/icons`), but which glyph a
+ * given app concept uses is app configuration, so the name set and the
+ * name-to-component mapping live here (moved out of the retired
+ * `@eciperay/icons` package in #246).
+ */
+const iconNames = [
+  'home',
+  'book-open',
+  'users',
+  'plus',
+  'tag',
+  'user',
+  'coffee',
+  'alert-triangle',
+  'message-circle',
+] as const;
+
+type IconName = (typeof iconNames)[number];
+
+const icons: Record<IconName, ComponentType<IconComponentProps>> = {
+  'home': HomeIcon,
+  'book-open': RecipesIcon,
+  'users': SharedIcon,
+  'plus': AddIcon,
+  'tag': TagsIcon,
+  'user': ProfileIcon,
+  'coffee': MealsIcon,
+  'alert-triangle': WarningIcon,
+  'message-circle': FeedbackIcon,
 };
 
 type IconProps = {
-  'name': FeatherIconName;
+  'name': IconName;
   'size'?: number;
   'className'?: string;
   'aria-label'?: string;
@@ -42,16 +64,30 @@ export const Icon = ({
   'aria-label': ariaLabel,
   title,
 }: IconProps) => {
-  const Component = featherIcons[name];
-
-  return (
+  const Component = icons[name];
+  const glyph = (
     <Component
       size={size}
-      className={className}
-      aria-hidden={ariaLabel ? undefined : true}
-      aria-label={ariaLabel}
-      title={title}
+      accessibilityLabel={ariaLabel}
     />
+  );
+
+  // The design-system icons accept no className or title: they stroke
+  // `currentColor` and expose only an accessibility label. When a caller
+  // passes className/title, wrap the glyph so the class still colors it
+  // (the stroke inherits the wrapper's text color) and the title still
+  // shows as a tooltip.
+  if (!className && !title) {
+    return glyph;
+  }
+
+  return (
+    <span
+      className={clsx(className, 'inline-flex')}
+      title={title}
+    >
+      {glyph}
+    </span>
   );
 };
 

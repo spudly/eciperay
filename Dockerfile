@@ -18,7 +18,6 @@ RUN apt-get update \
 
 COPY package.json package-lock.json ./
 COPY packages/types/package.json packages/types/
-COPY packages/icons/package.json packages/icons/
 COPY packages/client/package.json packages/client/
 COPY packages/server/package.json packages/server/
 COPY packages/mcp-server/package.json packages/mcp-server/
@@ -36,11 +35,9 @@ RUN --mount=type=secret,id=NODE_AUTH_TOKEN,env=NODE_AUTH_TOKEN npm ci --ignore-s
   --workspace=@eciperay/web \
   --workspace=@eciperay/client \
   --workspace=@eciperay/types \
-  --workspace=@eciperay/icons \
   --include-workspace-root
 
 COPY packages/types packages/types
-COPY packages/icons packages/icons
 COPY packages/client packages/client
 COPY packages/web packages/web
 COPY assets assets
@@ -90,7 +87,6 @@ RUN corepack enable npm
 
 COPY package.json package-lock.json ./
 COPY packages/types/package.json packages/types/
-COPY packages/icons/package.json packages/icons/
 COPY packages/client/package.json packages/client/
 COPY packages/server/package.json packages/server/
 COPY packages/mcp-server/package.json packages/mcp-server/
