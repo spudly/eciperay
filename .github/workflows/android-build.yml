@@ -46,6 +46,14 @@ jobs:
   # build check never reports — and a required check that never
   # reports blocks merges. Detecting the paths in a job lets the build
   # report "skipped" and the android-gate below report on every PR.
+  #
+  # The heavy build runs only when a PR touches paths that can affect
+  # the Android app: packages/app/** (which contains the app itself
+  # plus app.json, the metro/babel configs, react-native.config.cjs
+  # and android/**), the root package.json and package-lock.json
+  # (dependency and script changes reach the app bundle), patches/
+  # (patch-package patches apply at install), and .github/ (this
+  # workflow and the shared CI actions it uses).
   changes:
     name: Detect Android-relevant changes
     runs-on: ubuntu-latest
@@ -65,13 +73,30 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" != "pull_request" ]; then
             echo "run-build=true" >> "$GITHUB_OUTPUT"
+            echo "### Android build: running (non-PR event)" >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
           git fetch --depth=1 origin "+refs/heads/$BASE_REF:refs/remotes/origin/$BASE_REF"
-          if git diff --name-only "origin/$BASE_REF...HEAD" | grep -Eq '^(packages/app/|patches/|package-lock\.json$|\.github/)'; then
+          changed="$(git diff --name-only "origin/$BASE_REF...HEAD")"
+          echo "Changed files:"
+          echo "$changed"
+          matched="$(echo "$changed" | grep -E '^(packages/app/|patches/|package\.json$|package-lock\.json$|\.github/)' || true)"
+          if [ -n "$matched" ]; then
             echo "run-build=true" >> "$GITHUB_OUTPUT"
+            {
+              echo "### Android build: running"
+              echo "App-affecting paths changed:"
+              echo '```'
+              echo "$matched"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
           else
             echo "run-build=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Android build skipped by design: no app-affecting paths changed (packages/app/**, package.json, package-lock.json, patches/, .github/)."
+            {
+              echo "### Android build: skipped by design"
+              echo "No app-affecting paths changed (packages/app/**, package.json, package-lock.json, patches/, .github/), so the AAB build did not run. android-gate still reports for this PR."
+            } >> "$GITHUB_STEP_SUMMARY"
           fi
 
   android-build:
