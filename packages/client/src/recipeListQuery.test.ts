@@ -224,6 +224,33 @@ describe('recipeListQuery', () => {
     expect(list).toHaveBeenCalledTimes(2);
   });
 
+  test('form picker search honours cancellation before the first page', async () => {
+    const list = jest.fn().mockResolvedValue([makeListItem('1')]);
+    const options = recipeFormSearchQueryOptions(list, 'Soup');
+    const controller = new AbortController();
+    controller.abort();
+    await expect(
+      options.queryFn({signal: controller.signal}),
+    ).rejects.toThrow();
+    expect(list).not.toHaveBeenCalled();
+  });
+
+  test('form picker search stops paging when cancelled between pages', async () => {
+    const controller = new AbortController();
+    const fullPage = Array.from({length: RECIPE_FORM_SEARCH_LIMIT}, (_, i) =>
+      makeListItem(String(i)),
+    );
+    const list = jest.fn().mockImplementation(async () => {
+      controller.abort();
+      return fullPage;
+    });
+    const options = recipeFormSearchQueryOptions(list, 'Recipe');
+    await expect(
+      options.queryFn({signal: controller.signal}),
+    ).rejects.toThrow();
+    expect(list).toHaveBeenCalledTimes(1);
+  });
+
   test('builds shared-with-me infinite query options with paging params', async () => {
     const listSharedWithMe = jest.fn().mockResolvedValue([makeListItem('1')]);
     const options = sharedWithMeInfiniteQueryOptions(listSharedWithMe, {

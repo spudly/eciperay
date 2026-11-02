@@ -382,7 +382,14 @@ are the manual remainder._
    steppers); saving keeps it on the plan detail after reload. Also confirm a
    match that sits behind more than one page of newer substring matches (an
    older recipe whose title is contained in 20+ newer titles) is reachable by
-   typing its full title.
+   typing its full title. Fixture for that last check (the standing QA seed in
+   `docs/qa-seed.md` has only three recipes, so build this one in the QA account
+   first and delete it afterwards): create a recipe titled `QA — Paging Soup`
+   FIRST, then create at least 21 newer recipes whose titles all contain that
+   exact string (e.g. `QA — Paging Soup 01` through `QA — Paging Soup 21`,
+   created in any order after it). Because search is newest-first, the older
+   `QA — Paging Soup` then sits behind a full page of newer substring matches;
+   typing its full title must still surface it as a selectable result.
 
 **Run when:**
 `packages/app/src/screens/{MealPlanDetail,MealPlanEdit}Screen.tsx`,

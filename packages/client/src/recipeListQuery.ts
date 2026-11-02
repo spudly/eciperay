@@ -122,10 +122,21 @@ export const recipeFormSearchQueryOptions = (
   const search = searchText.trim();
   return {
     queryKey: queryKeys.recipeFormSearch(search),
-    queryFn: async (): Promise<RecipeDetail[]> => {
+    queryFn: async ({signal}: {signal?: AbortSignal} = {}): Promise<
+      RecipeDetail[]
+    > => {
       const results: RecipeDetail[] = [];
       let offset = 0;
       for (;;) {
+        // TanStack Query aborts the signal when this search is superseded
+        // (new search text) or its host unmounts. The list client takes no
+        // signal, so honour cancellation between pages: an abandoned
+        // search must not keep paging through every remaining match.
+        if (signal?.aborted) {
+          throw signal.reason instanceof Error
+            ? signal.reason
+            : new Error('The recipe search was aborted.');
+        }
         const page = await list({
           ...(search ? {search} : {}),
           sort: 'newest',
