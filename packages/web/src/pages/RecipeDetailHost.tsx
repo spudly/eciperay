@@ -25,7 +25,13 @@ import type {
   RecipeStarRating,
   RecipeVersionSummary,
 } from '@eciperay/types';
-import {Alert, Button, Dialog, RatingForm, tagColorNameForHex} from '@spudly/ui';
+import {
+  Alert,
+  Button,
+  Dialog,
+  RatingForm,
+  tagColorNameForHex,
+} from '@spudly/ui';
 import {
   RecipeDetailPage,
   type RecipeDetailPageNutritionProps,
@@ -53,37 +59,34 @@ type RecipeDetailHostProps = {
 };
 
 /**
- * The web recipe detail page's host (B7 cluster C7, design-system#130):
- * the design system's RecipeDetailPage renders the surface — pinned
- * chrome above a single scroll view holding every section — and this
- * component is its web-side host, following the native app's
- * RecipeDetailView host prop-for-prop where the platforms agree.
- * Everything the page must not own stays here: the recipe/version
- * queries' results are mapped to the page's per-section view-models at
- * this boundary (picker and candidate labels formatted with the same
- * helpers the retired VersionPicker and OverviewActions used,
- * ingredient lines scaled by the client's formatter, nutrition rows
- * composed by the client's row builder), and every mutation (status,
- * activation, tweak-manually, create-a-draft, rating, cook log, recipe
- * delete) plus the two slotted web panels (sharing controls, comments)
- * keep their state and API calls web-side.
+ * The web recipe detail page's host (B7 cluster C7, design-system#130): the
+ * design system's RecipeDetailPage renders the surface — pinned chrome above a
+ * single scroll view holding every section — and this component is its web-side
+ * host, following the native app's RecipeDetailView host prop-for-prop where
+ * the platforms agree. Everything the page must not own stays here: the
+ * recipe/version queries' results are mapped to the page's per-section
+ * view-models at this boundary (picker and candidate labels formatted with the
+ * same helpers the retired VersionPicker and OverviewActions used, ingredient
+ * lines scaled by the client's formatter, nutrition rows composed by the
+ * client's row builder), and every mutation (status, activation,
+ * tweak-manually, create-a-draft, rating, cook log, recipe delete) plus the two
+ * slotted web panels (sharing controls, comments) keep their state and API
+ * calls web-side.
  *
  * State lifetimes are mapped defensively, as in the app host: the tab
- * components this page replaced unmounted on every tab switch, which
- * reset the ingredients tab's missing set and closed the history tab's
- * cook-log form. The single-scroll page never unmounts its sections,
- * so both resets hang off the displayed recipe/version changing
- * instead (see the effect below) — ingredient ids are per-version and
- * the cook-log form saves against the displayed version, so neither
- * piece of state may leak across versions.
+ * components this page replaced unmounted on every tab switch, which reset the
+ * ingredients tab's missing set and closed the history tab's cook-log form. The
+ * single-scroll page never unmounts its sections, so both resets hang off the
+ * displayed recipe/version changing instead (see the effect below) — ingredient
+ * ids are per-version and the cook-log form saves against the displayed
+ * version, so neither piece of state may leak across versions.
  *
- * Deletion confirmations (#263 recipe, #266 cook log) stay host-side,
- * as the page contract assigns them: the page's Delete presses only
- * report intent, and this host confirms through the design system's
- * Dialog — the web counterpart of the app's native Alert — because
- * window.confirm is suppressed in some browsers/webviews, which made
- * Delete a silent no-op. Failures surface inside the dialog instead of
- * failing silently.
+ * Deletion confirmations (#263 recipe, #266 cook log) stay host-side, as the
+ * page contract assigns them: the page's Delete presses only report intent, and
+ * this host confirms through the design system's Dialog — the web counterpart
+ * of the app's native Alert — because window.confirm is suppressed in some
+ * browsers/webviews, which made Delete a silent no-op. Failures surface inside
+ * the dialog instead of failing silently.
  */
 
 const VERSION_ROLE_LABELS: Record<RecipeVersionSummary['derivedRole'], string> =
@@ -95,8 +98,8 @@ const VERSION_ROLE_LABELS: Record<RecipeVersionSummary['derivedRole'], string> =
   };
 
 /**
- * The version picker's row label, formatted as the retired web
- * VersionPicker formatted it ("v3 — Active: summary").
+ * The version picker's row label, formatted as the retired web VersionPicker
+ * formatted it ("v3 — Active: summary").
  */
 const versionPickerLabel = (version: RecipeVersionSummary): string =>
   `v${version.versionNumber} — ${VERSION_ROLE_LABELS[version.derivedRole]}${
@@ -106,8 +109,8 @@ const versionPickerLabel = (version: RecipeVersionSummary): string =>
   }`;
 
 /**
- * The activation candidate's label, formatted as the retired
- * OverviewActions formatted it ("v3: summary").
+ * The activation candidate's label, formatted as the retired OverviewActions
+ * formatted it ("v3: summary").
  */
 const candidateLabel = (version: RecipeVersionSummary): string =>
   `v${version.versionNumber}${
@@ -117,12 +120,11 @@ const candidateLabel = (version: RecipeVersionSummary): string =>
   }`;
 
 /**
- * The scale string the page shows as selected for a base/current
- * servings pair when the servings were not set through a scale
- * selection: the preset's string when the applied servings are exactly
- * that preset's, otherwise the exact servings ratio as a plain number
- * string — the same form the page's custom chip formats ("2.5", never
- * "2.50").
+ * The scale string the page shows as selected for a base/current servings pair
+ * when the servings were not set through a scale selection: the preset's string
+ * when the applied servings are exactly that preset's, otherwise the exact
+ * servings ratio as a plain number string — the same form the page's custom
+ * chip formats ("2.5", never "2.50").
  */
 const deriveScaleValue = (
   baseServings: number,
@@ -274,9 +276,7 @@ export const RecipeDetailHost = ({
       void navigate('/recipes');
       // Runs after navigate so this page does not flash its not-found
       // state on the way out.
-      queryClient.removeQueries({
-        queryKey: queryKeys.recipe(recipe.id),
-      });
+      queryClient.removeQueries({queryKey: queryKeys.recipe(recipe.id)});
     },
     onError: error => {
       setRecipeDeleteError(
@@ -437,6 +437,7 @@ export const RecipeDetailHost = ({
   // manual refresh, mapped to the page's loading/unavailable/ready
   // union.
   const [isRefreshingNutrition, setIsRefreshingNutrition] = useState(false);
+  const [nutritionErrorVisible, setNutritionErrorVisible] = useState(false);
   const {
     data: nutrition,
     isLoading: isLoadingNutrition,
@@ -455,7 +456,14 @@ export const RecipeDetailHost = ({
       });
       void queryClient.invalidateQueries({queryKey: queryKeys.recipeLists()});
     } catch {
-      showActionMessage('Could not refresh nutrition. Please try again.');
+      // Not showActionMessage: that message renders in the overview at
+      // the top of the page's single scroll view and clears after
+      // 2.5 seconds, while the nutrition panel is the last section —
+      // a user who pressed Estimate/Refresh there would likely never
+      // see it (#354, mirroring the app fix in PR #349). The Dialog is
+      // the web counterpart of the app's native alert: viewport-visible
+      // regardless of scroll position and up until dismissed.
+      setNutritionErrorVisible(true);
     } finally {
       setIsRefreshingNutrition(false);
     }
@@ -775,6 +783,27 @@ export const RecipeDetailHost = ({
             message={cookLogDeleteError}
           />
         ) : null}
+      </Dialog>
+      <Dialog
+        open={nutritionErrorVisible}
+        onOpenChange={open => {
+          if (!open) {
+            setNutritionErrorVisible(false);
+          }
+        }}
+        title="Could not refresh nutrition"
+        description="Please try again."
+        actions={
+          <Button
+            onPress={() => {
+              setNutritionErrorVisible(false);
+            }}
+          >
+            OK
+          </Button>
+        }
+      >
+        {null}
       </Dialog>
     </>
   );
