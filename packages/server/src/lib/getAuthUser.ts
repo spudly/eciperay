@@ -2,6 +2,7 @@ import type {Request} from 'express';
 import type {User} from '@supabase/supabase-js';
 
 import {supabase} from '../supabase.js';
+import {logger} from './logger.js';
 
 export const extractBearerToken = (req: Request): string | null => {
   const header = req.headers.authorization ?? '';
@@ -38,12 +39,18 @@ export const lookupAuthUserFromRequest = async (
     return {status: 'invalid'};
   }
   let data: {user: User | null};
-  let error: {status?: number} | null;
+  let error: {status?: number; message?: string} | null;
   try {
     const result = await supabase.auth.getUser(token);
     data = result.data;
     error = result.error;
-  } catch {
+  } catch (thrown) {
+    // Log the cause (never the bearer token): without it, an auth outage
+    // and a network failure are indistinguishable behind the caller's 503.
+    logger.warn(
+      {err: thrown},
+      'Supabase getUser threw; auth lookup unavailable',
+    );
     return {status: 'unavailable'};
   }
   if (!error && data.user) {
@@ -52,6 +59,10 @@ export const lookupAuthUserFromRequest = async (
   if (error && isCredentialRejection(error)) {
     return {status: 'invalid'};
   }
+  logger.warn(
+    {status: error?.status, supabaseError: error?.message},
+    'Supabase getUser did not return a user; auth lookup unavailable',
+  );
   return {status: 'unavailable'};
 };
 
