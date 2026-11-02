@@ -251,7 +251,7 @@ describe('FeedbackForm', () => {
       window.setTimeout(resolve, 1600);
     });
     expect(onSubmitted).toHaveBeenCalled();
-  }, 5000);
+  });
 
   test('shows submit errors and supports cancel', async () => {
     const submitUserFeedback = vi
