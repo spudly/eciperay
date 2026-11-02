@@ -534,7 +534,7 @@ describe('RecipeDetailHost', () => {
         );
         expect(await screen.findByText('Second Recipe')).toBeInTheDocument();
         // Start a refresh for the second recipe and keep it pending.
-        await userEvent.click(screen.getByText('Refresh'));
+        await userEvent.click(await screen.findByText('Refresh'));
         expect(nutritionSpy).toHaveBeenCalledWith('recipe-uuid-2', {
           refresh: true,
         });
