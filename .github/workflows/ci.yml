@@ -389,7 +389,10 @@ jobs:
             if (fence !== null) continue;
             // A struck-through item counts as waived — the PR
             // template's convention for boxes that do not apply.
-            const item = line.match(/^\s*[-*+]\s+\[\s\]\s+(\S.*)$/);
+            // No `$` anchor: PR bodies with CRLF line endings leave
+            // a trailing \r on each line, which `.` cannot match, so
+            // an anchored pattern would silently skip those items.
+            const item = line.match(/^\s*[-*+]\s+\[\s\]\s+(\S.*)/);
             if (item && !line.includes('~~')) {
               if (selfReferential.some((re) => re.test(item[1]))) {
                 exempt.push(line.trim());
