@@ -17,7 +17,7 @@ export const ALLOWED_SCOPES = [
 ] as const;
 
 export type PackageName =
-  'app' | 'web' | 'server' | 'client' | 'types' | 'icons' | 'mcp-server';
+  'app' | 'web' | 'server' | 'client' | 'types' | 'mcp-server';
 
 export const SCOPE_TO_PACKAGE: Record<string, PackageName | null> = {
   app: 'app',
@@ -34,7 +34,6 @@ export const SCOPE_TO_PACKAGE: Record<string, PackageName | null> = {
 export const PACKAGE_DEPENDENTS: Record<PackageName, PackageName[]> = {
   'types': ['client', 'server', 'web', 'app'],
   'client': ['server', 'web', 'app'],
-  'icons': ['web', 'app'],
   'mcp-server': ['server'],
   'server': [],
   'web': [],
@@ -47,7 +46,6 @@ export const PACKAGE_DEPLOY_TARGETS: Record<PackageName, DeployTarget[]> = {
   'app': ['android'],
   'client': ['fly', 'android'],
   'types': [],
-  'icons': [],
   'mcp-server': [],
 };
 
@@ -121,8 +119,8 @@ export const packagesToDeployTargets = (
  * Resolve deploy targets from the set of files changed in a release.
  *
  * Paths under packages/<name>/ seed that package, and the seed set is expanded
- * through PACKAGE_DEPENDENTS, so a change to a shared package (types, client,
- * icons) deploys everything that consumes it.
+ * through PACKAGE_DEPENDENTS, so a change to a shared package (types, client)
+ * deploys everything that consumes it.
  *
  * Any path outside a known package — root package.json / package-lock.json,
  * shared tsconfig or turbo config, .github/workflows, scripts, docs — is a

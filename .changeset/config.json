@@ -8,7 +8,6 @@
     [
       "@eciperay/app",
       "@eciperay/client",
-      "@eciperay/icons",
       "@eciperay/mcp-server",
       "@eciperay/server",
       "@eciperay/types",

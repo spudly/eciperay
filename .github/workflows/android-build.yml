@@ -50,7 +50,7 @@ jobs:
   # The heavy build runs only when a PR touches paths that can affect
   # the Android app: packages/app/** (which contains the app itself
   # plus app.json, the metro/babel configs, react-native.config.cjs
-  # and android/**), packages/client/**, packages/icons/** and
+  # and android/**), packages/client/** and
   # packages/types/** (workspace packages the app imports at runtime,
   # so Metro bundles them into the app), the root package.json and
   # package-lock.json (dependency and script changes reach the app
@@ -87,7 +87,7 @@ jobs:
           changed="$(git diff --name-only --no-renames "origin/$BASE_REF...HEAD")"
           echo "Changed files:"
           echo "$changed"
-          matched="$(echo "$changed" | grep -E '^(packages/(app|client|icons|types)/|patches/|package\.json$|package-lock\.json$|\.github/)' || true)"
+          matched="$(echo "$changed" | grep -E '^(packages/(app|client|types)/|patches/|package\.json$|package-lock\.json$|\.github/)' || true)"
           if [ -n "$matched" ]; then
             echo "run-build=true" >> "$GITHUB_OUTPUT"
             if [ "$HEAD_REPO" != "$THIS_REPO" ]; then
@@ -114,10 +114,10 @@ jobs:
             fi
           else
             echo "run-build=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::Android build skipped by design: no app-affecting paths changed (packages/app/**, packages/client/**, packages/icons/**, packages/types/**, package.json, package-lock.json, patches/, .github/)."
+            echo "::notice::Android build skipped by design: no app-affecting paths changed (packages/app/**, packages/client/**, packages/types/**, package.json, package-lock.json, patches/, .github/)."
             {
               echo "### Android build: skipped by design"
-              echo "No app-affecting paths changed (packages/app/**, packages/client/**, packages/icons/**, packages/types/**, package.json, package-lock.json, patches/, .github/), so the AAB build did not run. android-gate still reports for this PR."
+              echo "No app-affecting paths changed (packages/app/**, packages/client/**, packages/types/**, package.json, package-lock.json, patches/, .github/), so the AAB build did not run. android-gate still reports for this PR."
             } >> "$GITHUB_STEP_SUMMARY"
           fi
 
