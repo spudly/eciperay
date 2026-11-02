@@ -14,15 +14,75 @@ export const MealCookingModeScreen = ({route, navigation}: Props) => {
   const {mealId} = route.params;
   const [stepIndex, setStepIndex] = useState(0);
 
-  const {data: meal} = useQuery({
+  const {
+    data: meal,
+    error: mealError,
+    isLoadingError: isMealLoadingError,
+  } = useQuery({
     queryKey: queryKeys.meal(mealId),
     queryFn: () => api.meals.get(mealId),
   });
 
-  const {data: plan, isLoading} = useQuery({
+  const {
+    data: plan,
+    isLoading,
+    error: planError,
+    isLoadingError: isPlanLoadingError,
+  } = useQuery({
     queryKey: queryKeys.mealCookPlan(mealId),
     queryFn: () => api.meals.cookPlan(mealId),
   });
+
+  const onDone = () => {
+    navigation.navigate('MealDetail', {mealId});
+  };
+
+  // The meals routes answer a missing meal with 404 and
+  // `{error: 'Meal not found'}`, which the API client throws as that
+  // message (a body without an `error` field falls back to
+  // `API error <status>:`); either shape reads as not found. The
+  // cook-plan route returns the same 404 for a missing meal.
+  const isNotFoundShape = (error: unknown) =>
+    error instanceof Error &&
+    (error.message === 'Meal not found' ||
+      error.message.startsWith('API error 404'));
+  const isMealNotFound = isNotFoundShape(mealError);
+  const isNotFoundError = isMealNotFound || isNotFoundShape(planError);
+
+  // When there is no meal to return to, the meal detail is not a safe
+  // destination: MealDetailScreen gates on `!meal` forever and renders
+  // no navigation action, so a meal its own query reports missing —
+  // or any initial meal-load failure, which leaves no meal data at
+  // all — sends Done to the meals hub instead. A cook-plan-only
+  // failure with the meal loaded keeps the meal-detail destination.
+  const onErrorDone = () => {
+    if (!meal || isMealNotFound) {
+      navigation.navigate('MealsHub');
+    } else {
+      onDone();
+    }
+  };
+
+  // A failed meal or cook-plan load must not hang on the loading gate
+  // forever (#338): the DS page's error state renders as soon as either
+  // query fails, carrying the meal title when that query succeeded.
+  // Only an initial-load failure replaces the view outright: a
+  // background refetch error (a 404 included) keeps the cooking
+  // controls while a complete cached meal + plan lasts, and a 404
+  // overrides the view only when some required data is missing.
+  if (
+    isMealLoadingError ||
+    isPlanLoadingError ||
+    (isNotFoundError && (!meal || !plan))
+  ) {
+    return (
+      <MealCookingModePage
+        state="error"
+        {...(meal ? {mealTitle: meal.title} : {})}
+        onDone={onErrorDone}
+      />
+    );
+  }
 
   return (
     <ScreenLoadingGate pending={isLoading || !plan || !meal}>
@@ -39,9 +99,7 @@ export const MealCookingModeScreen = ({route, navigation}: Props) => {
               Math.min(plan.steps.length - 1, current + 1),
             );
           }}
-          onDone={() => {
-            navigation.navigate('MealDetail', {mealId});
-          }}
+          onDone={onDone}
         />
       ) : null}
     </ScreenLoadingGate>
