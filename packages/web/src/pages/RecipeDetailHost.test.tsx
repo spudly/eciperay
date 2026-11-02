@@ -1,4 +1,4 @@
-import {screen, waitFor, within} from '@testing-library/react';
+import {act, screen, waitFor, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {http, HttpResponse} from 'msw';
 import {useState} from 'react';
@@ -484,6 +484,56 @@ describe('RecipeDetailHost', () => {
       await userEvent.click(screen.getByText('Refresh'));
       expect(await screen.findByText('300')).toBeInTheDocument();
       expect(refreshAttempts).toBe(2);
+    });
+
+    test('a stale refresh failure for a previous recipe does not open the dialog', async () => {
+      let rejectRefresh!: (error: Error) => void;
+      const refreshPromise = new Promise<never>((_, reject) => {
+        rejectRefresh = reject;
+      });
+      const nutritionSpy = vi
+        .spyOn(eciperay.ai, 'nutrition')
+        .mockImplementation((_recipeId, options) =>
+          options?.refresh
+            ? refreshPromise
+            : (Promise.resolve(nutritionPayload) as never),
+        );
+      try {
+        const recipeB = makeRecipeDetail({
+          id: 'recipe-uuid-2',
+          title: 'Second Recipe',
+        });
+        const versions = [makeRecipeVersionSummary()];
+        const view = await renderWithProviders(
+          <Harness
+            recipe={makeRecipeDetail()}
+            versions={versions}
+          />,
+        );
+        expect(await screen.findByText('250')).toBeInTheDocument();
+        await userEvent.click(screen.getByText('Refresh'));
+        expect(nutritionSpy).toHaveBeenCalledWith('recipe-uuid-1', {
+          refresh: true,
+        });
+        view.rerender(
+          <Harness
+            recipe={recipeB}
+            versions={versions}
+          />,
+        );
+        expect(await screen.findByText('Second Recipe')).toBeInTheDocument();
+        await act(async () => {
+          rejectRefresh(new Error('Failed to estimate nutrition'));
+        });
+        // The first recipe's failure must not surface on the second
+        // recipe, and the second recipe's Refresh stays usable.
+        expect(
+          screen.queryByText('Could not refresh nutrition'),
+        ).not.toBeInTheDocument();
+        expect(screen.getByText('Refresh')).toBeInTheDocument();
+      } finally {
+        nutritionSpy.mockRestore();
+      }
     });
   });
 });

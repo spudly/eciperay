@@ -37,7 +37,7 @@ import {
   type RecipeDetailPageNutritionProps,
 } from '@spudly/ui/pages';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
-import {useEffect, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
 import {RecipeCommentsSection} from '../components/recipe/RecipeCommentsSection.js';
@@ -438,6 +438,11 @@ export const RecipeDetailHost = ({
   // union.
   const [isRefreshingNutrition, setIsRefreshingNutrition] = useState(false);
   const [nutritionErrorVisible, setNutritionErrorVisible] = useState(false);
+  // Token for the in-flight nutrition refresh: bumped when a new
+  // refresh starts and when the displayed recipe changes, so a stale
+  // request settling later cannot open the error dialog or clear the
+  // refreshing flag for the recipe now on display.
+  const nutritionRequestRef = useRef(0);
   const {
     data: nutrition,
     isLoading: isLoadingNutrition,
@@ -447,15 +452,20 @@ export const RecipeDetailHost = ({
     queryFn: () => eciperay.ai.nutrition(recipe.id),
   });
   const handleNutritionRefresh = async () => {
+    const requestId = ++nutritionRequestRef.current;
+    const recipeId = recipe.id;
     setIsRefreshingNutrition(true);
     try {
-      const next = await eciperay.ai.nutrition(recipe.id, {refresh: true});
-      queryClient.setQueryData(queryKeys.nutrition(recipe.id), next);
+      const next = await eciperay.ai.nutrition(recipeId, {refresh: true});
+      queryClient.setQueryData(queryKeys.nutrition(recipeId), next);
       void queryClient.invalidateQueries({
-        queryKey: queryKeys.recipe(recipe.id),
+        queryKey: queryKeys.recipe(recipeId),
       });
       void queryClient.invalidateQueries({queryKey: queryKeys.recipeLists()});
     } catch {
+      if (nutritionRequestRef.current !== requestId) {
+        return;
+      }
       // Not showActionMessage: that message renders in the overview at
       // the top of the page's single scroll view and clears after
       // 2.5 seconds, while the nutrition panel is the last section —
@@ -465,7 +475,9 @@ export const RecipeDetailHost = ({
       // regardless of scroll position and up until dismissed.
       setNutritionErrorVisible(true);
     } finally {
-      setIsRefreshingNutrition(false);
+      if (nutritionRequestRef.current === requestId) {
+        setIsRefreshingNutrition(false);
+      }
     }
   };
   const nutritionProps: RecipeDetailPageNutritionProps = isLoadingNutrition
@@ -508,6 +520,11 @@ export const RecipeDetailHost = ({
     setShowCookLogForm(false);
     setConfirmingCookLogDeleteId(null);
     setCookLogDeleteError(null);
+    // A nutrition refresh in flight for the previous recipe is stale:
+    // invalidate it and reset its UI state for the new recipe.
+    nutritionRequestRef.current += 1;
+    setIsRefreshingNutrition(false);
+    setNutritionErrorVisible(false);
   }, [displayRecipe.id, displayRecipe.versionId]);
 
   const canEditDraft = canEditDraftVersion(displayRecipe.versionId, versions);
