@@ -1,3 +1,5 @@
+import {AuthError} from '@supabase/supabase-js';
+
 import {eciperay} from './api.js';
 import {supabase} from './supabase.js';
 
@@ -39,7 +41,7 @@ describe('api', () => {
   });
 
   test('propagates a getSession error instead of sending the request without a token', async () => {
-    const refreshFailure = new Error('refresh failed');
+    const refreshFailure = new AuthError('refresh failed', 500);
     vi.mocked(supabase.auth.getSession).mockResolvedValueOnce({
       data: {session: null},
       error: refreshFailure,
