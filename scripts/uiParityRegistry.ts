@@ -57,11 +57,6 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
       "dnd-kit drag helper for web's sortable ingredient/instruction list slot implementations; the app lists carry their react-native-draggable-flatlist wiring inline.",
   },
   {
-    path: 'discover/DiscoverView.tsx',
-    platform: 'web',
-    reason: 'Public recipe catalog UI; discover is a web-only SEO surface.',
-  },
-  {
     path: 'recipes/RecipeListNumberFilter.tsx',
     platform: 'web',
     reason:
@@ -98,30 +93,6 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
       'Web status/ingredient filter row extracted for max-lines; app inlines those fields in RecipeListFiltersBar.',
   },
   {
-    path: 'legal/LegalInlineLink.tsx',
-    platform: 'web',
-    reason:
-      'Styled mailto link for legal document content; app opens legal URLs externally.',
-  },
-  {
-    path: 'legal/LegalProseList.tsx',
-    platform: 'web',
-    reason:
-      'Prose list styling for in-app legal pages; no native legal document renderer.',
-  },
-  {
-    path: 'marketing/MarketingLandingView.tsx',
-    platform: 'web',
-    reason:
-      'Marketing/SEO landing page sections; no native marketing site equivalent.',
-  },
-  {
-    path: 'public/PublicRecipePageShell.tsx',
-    platform: 'web',
-    reason:
-      'Public recipe tab shell for SEO pages; no native public recipe surface.',
-  },
-  {
     path: 'AnalyticsConsentBanner.tsx',
     platform: 'web',
     reason: 'Browser cookie/consent banner; no native equivalent.',
@@ -151,17 +122,6 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
       'React Router route error page view (eciperay#257); the app uses React Navigation, which has no URL routing or router error boundary.',
   },
   {
-    path: 'LegalDocumentPage.tsx',
-    platform: 'web',
-    reason: 'Renders legal markdown for in-app web routes (/privacy, /terms).',
-  },
-  {
-    path: 'LegalPageLayout.tsx',
-    platform: 'web',
-    reason:
-      'Web legal page chrome; app opens legal URLs externally via Linking.',
-  },
-  {
     path: 'MobileAppInstallBanner.tsx',
     platform: 'web',
     reason: 'Promotes native app install from the mobile web experience.',
@@ -177,22 +137,6 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
     platform: 'web',
     reason:
       'Web profile recipe import/export UI; native app profile flow has no bulk transfer section.',
-  },
-  {
-    path: 'PublicPageLayout.tsx',
-    platform: 'web',
-    reason:
-      'Public/marketing page layout for SEO; no native marketing site equivalent.',
-  },
-  {
-    path: 'PublicRecipeDiscoveryCard.tsx',
-    platform: 'web',
-    reason: 'Discover page card for public web catalog; discover is web-only.',
-  },
-  {
-    path: 'PublicRecipeError.tsx',
-    platform: 'web',
-    reason: 'Public recipe error state for web SEO pages.',
   },
   {
     path: 'RecipeExportPicker.tsx',
@@ -222,18 +166,6 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
     platform: 'web',
     reason:
       'Web cooking ingredients panel; native cooking screen renders its own layout.',
-  },
-  {
-    path: 'recipe/PublicRecipeCtas.tsx',
-    platform: 'web',
-    reason:
-      'Public recipe call-to-action buttons for unauthenticated web visitors.',
-  },
-  {
-    path: 'recipe/PublicRecipeOverview.tsx',
-    platform: 'web',
-    reason:
-      'Public recipe overview for SEO pages; no native public recipe surface.',
   },
   {
     path: 'recipe/SortableIngredientRow.tsx',

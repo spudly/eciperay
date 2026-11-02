@@ -29,11 +29,27 @@ export const FeedbackBubble = () => {
 
   return (
     <div className={bubbleContainerClasses}>
+      {/* Panel block size is DEFINITE, not just capped (#326): the DS
+          FeedbackPage's ScreenContainer ScrollView (flex:1, min-height:100%)
+          collapses to a sliver inside a shrink-to-fit panel, because its
+          percentage/flex sizing has no definite height to resolve against —
+          a max-block-size alone left the panel height indefinite and the
+          form rendered ~130px tall on tall viewports. The size is the
+          form's measured natural height (35.125rem), capped at 100dvh minus
+          the container's 5rem bottom offset, the 3rem bubble button, the
+          0.75rem gap, and top clearance (10rem total) so the panel never
+          overflows short viewports; taller content scrolls inside the
+          page's own ScrollView instead. The height covers the page content
+          plus the host's Cancel button; FeedbackForm's flex column is what
+          reserves Cancel's space inside it (#330 — the ScrollView's
+          min-height:100% otherwise claims the whole panel and pushes Cancel
+          below the fold). */}
       {open ? (
         <div
           className="
-            rounded-2xl border border-gray-200 bg-white p-4 shadow-lg
-            inline-[min(100vw-2rem,24rem)]
+            overflow-y-auto rounded-2xl border border-gray-200 bg-white p-4
+            shadow-lg inline-[min(100vw-2rem,24rem)]
+            block-[min(35.125rem,calc(100dvh-10rem))]
           "
           role="dialog"
           aria-label="Send feedback"

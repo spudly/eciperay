@@ -162,10 +162,10 @@ without); one recipe may be created fresh in case 1.
    truncated; other cards show a satiety value or "Satiety —". The subtitle
    carries no rating text: a rated recipe's rating renders as the row's star
    control, and an unrated recipe shows a single star (the log-a-cook control)
-   instead. Open one recipe's detail. **Expected:** the recipe status appears as
-   the pill in the page toolbar; the design-system page currently ALSO repeats
-   it beside the overview title (design-system#363 tracks removing the duplicate
-   — #278's exactly-once rule returns when that lands).
+   instead. Open one recipe's detail. **Expected:** the recipe status appears
+   exactly once, as the pill in the page toolbar — the Overview does not repeat
+   it under the title (the design-system#363 duplicate was removed in @spudly/ui
+   1.16.2).
 
 **Run when:**
 `packages/app/src/screens/{Recipes,RecipeDetail,EditRecipe,EditVersion,ManualEntry}Screen.tsx`,
@@ -303,6 +303,18 @@ mode; there is no Playwright coverage of meals. The cases below are manual._
    order; exiting returns to the meal detail.
 4. **Delete a meal.** Delete `QA — Sunday Dinner`. **Expected:** the meal is
    gone from the hub; the member recipes still exist untouched.
+5. **Meal cooking mode load failure.** Set up a reproducible cook-plan failure:
+   create a recipe with a title and ingredients but **no instruction steps**,
+   then create `QA — No Steps Meal` whose only member is that recipe. (A recipe
+   with zero instructions produces an empty cook-plan timeline, so the server
+   answers the cook-plan request with 502 "Unable to build cook plan for this
+   meal".) Open cooking mode for the meal (`/meals/:mealId/cook`). **Expected:**
+   an error message ("Couldn't load the cook plan for this meal. Please try
+   again.") with a Done action back to the meal detail — never an indefinite
+   Loading state.
+6. **Meal detail for a nonexistent meal.** Navigate directly to
+   `/meals/not-a-uuid`. **Expected:** a "Page not found" view with a link home —
+   never an indefinite Loading state.
 
 **Run when:**
 `packages/app/src/screens/{MealsHub,MealDetail,MealEdit,MealCookingMode}Screen.tsx`,
@@ -517,8 +529,9 @@ account (viewer); one QA recipe.
 **Run when:** `packages/app/src/screens/SharedWithMeScreen.tsx`,
 `packages/app/src/hosts/{shared,recipe/RecipeVisibilityControls}*`,
 `packages/web/src/pages/{SharedWithMe,Discover,PublicRecipe}Page.tsx`,
-`packages/web/src/components/{discover,public,shared}/**`, `packages/server`
-sharing/visibility routes.
+`packages/web/src/components/shared/**`, `@spudly/ui` `DiscoverPage`,
+`PublicRecipePage`, `PublicPageFrame`, `packages/server` sharing/visibility
+routes.
 
 ---
 
@@ -568,7 +581,10 @@ plan-state rendering and section layout. The cases below are manual._
 2. **Send feedback.** With the shortcut on, open Feedback and submit
    `QA — feedback check` (at most one submission per sweep; submissions reach
    the feedback triage). **Expected:** a sent confirmation; empty submissions
-   are rejected with a message.
+   are rejected with a message. Repeat the open step at a 320×568 viewport (and
+   at 200% zoom): **Expected:** the panel stays within the viewport and scrolls
+   internally, so every field and both actions (Cancel and Submit feedback) are
+   reachable.
 3. **Access tokens.** Create a personal access token named `QA — token check`;
    copy it at creation. **Expected:** the full token is shown once at creation
    and masked afterwards; the token appears in the list. Revoke it.
@@ -589,7 +605,8 @@ plan-state rendering and section layout. The cases below are manual._
 
 **Run when:** `packages/app/src/screens/ProfileScreen.tsx`,
 `packages/app/src/hosts/profile/**`, `packages/web/src/pages/ProfilePage.tsx`,
-`packages/web/src/components/profile/**`, `packages/server`
+`packages/web/src/components/profile/**`,
+`packages/web/src/components/FeedbackBubble.tsx`, `packages/server`
 profile/token/transfer routes, entitlement override handling.
 
 ---

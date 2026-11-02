@@ -48,6 +48,12 @@ The authenticated specs (`auth`, `recipes`, `cook-log`, `meal-plans`, `imports`,
 - URL and image imports are deliberately not covered: URL import depends on
   third-party page content, image import on AI generation; neither is a stable
   CI target. Text import is covered.
+- AI calls never consume real Anthropic API credits in CI: the job sets
+  `ECIPERAY_AI_FAKE=1`, so the in-job server answers from its deterministic
+  canned fake transport (`packages/server/src/lib/fakeAnthropicFetch.ts`) — the
+  imports spec's parsed "Imported Soup" recipe comes from there (issue #336). A
+  local run may set a real `ANTHROPIC_API_KEY` instead; `e2e-live/qa.ts`
+  activates the imports spec when either is present.
 - The in-job server does not run migrations: the QA dataset's schema is kept at
   parity by the preview deploy flow (#234). A PR that adds migrations can
   therefore see schema-lag failures in this job until the change reaches the

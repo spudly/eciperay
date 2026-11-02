@@ -47,6 +47,90 @@ describe('mealSchemas', () => {
     ).toThrow(z.ZodError);
   });
 
+  test('MealPlanInputSchema rejects impossible calendar dates', () => {
+    expect(() =>
+      MealPlanInputSchema.parse({
+        title: 'Week',
+        startsOn: '2026-02-31',
+        entries: [{mealId: recipeId}],
+      }),
+    ).toThrow(z.ZodError);
+    expect(() =>
+      MealPlanInputSchema.parse({
+        title: 'Week',
+        endsOn: '2026-04-31',
+        entries: [{mealId: recipeId}],
+      }),
+    ).toThrow(z.ZodError);
+  });
+
+  test('MealPlanInputSchema rejects year zero, which Postgres has no date for', () => {
+    expect(() =>
+      MealPlanInputSchema.parse({
+        title: 'Week',
+        startsOn: '0000-01-01',
+        entries: [{mealId: recipeId}],
+      }),
+    ).toThrow(z.ZodError);
+  });
+
+  test('MealPlanInputSchema rejects Feb 29 in a non-leap year', () => {
+    expect(() =>
+      MealPlanInputSchema.parse({
+        title: 'Week',
+        startsOn: '2026-02-29',
+        entries: [{mealId: recipeId}],
+      }),
+    ).toThrow(z.ZodError);
+  });
+
+  test('MealPlanInputSchema accepts a leap day', () => {
+    expect(
+      MealPlanInputSchema.parse({
+        title: 'Week',
+        startsOn: '2028-02-29',
+        endsOn: '2028-03-01',
+        entries: [{mealId: recipeId}],
+      }),
+    ).toMatchObject({startsOn: '2028-02-29'});
+  });
+
+  test('MealPlanInputSchema rejects endsOn before startsOn', () => {
+    expect(() =>
+      MealPlanInputSchema.parse({
+        title: 'Week',
+        startsOn: '2026-01-07',
+        endsOn: '2026-01-01',
+        entries: [{mealId: recipeId}],
+      }),
+    ).toThrow(z.ZodError);
+  });
+
+  test('MealPlanInputSchema accepts a same-day range', () => {
+    expect(
+      MealPlanInputSchema.parse({
+        title: 'Week',
+        startsOn: '2026-01-01',
+        endsOn: '2026-01-01',
+        entries: [{mealId: recipeId}],
+      }),
+    ).toMatchObject({endsOn: '2026-01-01'});
+  });
+
+  test('MealPlanInputSchema accepts null and absent dates', () => {
+    expect(
+      MealPlanInputSchema.parse({
+        title: 'Week',
+        startsOn: null,
+        endsOn: null,
+        entries: [{mealId: recipeId}],
+      }),
+    ).toMatchObject({startsOn: null, endsOn: null});
+    expect(
+      MealPlanInputSchema.parse({title: 'Week', entries: [{mealId: recipeId}]}),
+    ).toMatchObject({title: 'Week'});
+  });
+
   test('NutritionGoalsSchema accepts nullable macros', () => {
     expect(
       NutritionGoalsSchema.parse({

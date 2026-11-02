@@ -154,6 +154,28 @@ describe('POST /meal-plans', () => {
     expect(res.status).toBe(400);
   });
 
+  test('returns 400 for an impossible calendar date', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
+    const res = await request(getApp())
+      .post('/api/meal-plans')
+      .set('Authorization', 'Bearer valid-token')
+      .send({...mealPlanInput, startsOn: '2026-02-31', endsOn: '2026-03-05'});
+
+    expect(res.status).toBe(400);
+  });
+
+  test('returns 400 when endsOn is before startsOn', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
+    const res = await request(getApp())
+      .post('/api/meal-plans')
+      .set('Authorization', 'Bearer valid-token')
+      .send({...mealPlanInput, startsOn: '2026-01-07', endsOn: '2026-01-01'});
+
+    expect(res.status).toBe(400);
+  });
+
   test('returns 400 when recipe is inaccessible', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockBillingPlan(mockQuery, 'plus');
@@ -241,6 +263,28 @@ describe('PUT /meal-plans/:id', () => {
       .put(`/api/meal-plans/${PLAN_ID}`)
       .set('Authorization', 'Bearer valid-token')
       .send({title: ''});
+
+    expect(res.status).toBe(400);
+  });
+
+  test('returns 400 for an impossible calendar date', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
+    const res = await request(getApp())
+      .put(`/api/meal-plans/${PLAN_ID}`)
+      .set('Authorization', 'Bearer valid-token')
+      .send({...mealPlanInput, startsOn: '2026-02-31', endsOn: '2026-03-05'});
+
+    expect(res.status).toBe(400);
+  });
+
+  test('returns 400 when endsOn is before startsOn', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
+    const res = await request(getApp())
+      .put(`/api/meal-plans/${PLAN_ID}`)
+      .set('Authorization', 'Bearer valid-token')
+      .send({...mealPlanInput, startsOn: '2026-01-07', endsOn: '2026-01-01'});
 
     expect(res.status).toBe(400);
   });
@@ -379,4 +423,3 @@ describe('GET /meal-plans/:id/shopping-list', () => {
     expect(res.status).toBe(404);
   });
 });
-

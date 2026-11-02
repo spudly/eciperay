@@ -7,7 +7,7 @@ import {
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import React, {useState} from 'react';
 
-import {TagsPage} from '@spudly/ui/pages';
+import {TagsPage, type TagsPageTag} from '@spudly/ui/pages';
 
 import {TAG_COLOR_NAME_OPTIONS} from '../lib/tagColors';
 import {api} from '../lib/api';
@@ -18,6 +18,26 @@ export const TagsScreen = (): React.JSX.Element => {
   // default is the name for the legacy default hex (#6366f1), and
   // the create call converts back to the stored hex at the boundary.
   const [color, setColor] = useState<TagColorName>('indigo');
+  // The inline edit draft (#254), controlled like the create form:
+  // starting an edit seeds it from the tag, Save applies it through
+  // tags.update(), and Cancel (or a successful save) clears it.
+  const [editingTagId, setEditingTagId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editColor, setEditColor] = useState<TagColorName>('indigo');
+  // Save sends only the fields whose final value differs from the
+  // value seeded at edit start (typing a change and restoring it is
+  // not a change). The color comparison matters because the draft's
+  // color is the stored hex projected to a palette name — a lossy
+  // projection for non-palette hexes (unknown hexes fall back to
+  // gray): sending an "unchanged" color would rewrite the stored hex
+  // with the palette hex. Changed-fields-only also means a save
+  // seeded from a not-yet-refetched list can never write a stale
+  // field back over a just-saved one.
+  const [editOriginalName, setEditOriginalName] = useState('');
+  const [editOriginalColor, setEditOriginalColor] =
+    useState<TagColorName>('indigo');
+  const editNameChanged = editName !== editOriginalName;
+  const editColorChanged = editColor !== editOriginalColor;
   const queryClient = useQueryClient();
 
   const {data: tags = [], isLoading} = useQuery({
@@ -40,12 +60,81 @@ export const TagsScreen = (): React.JSX.Element => {
     },
   });
 
-  const handleCreate = () => {
+  const updateMutation = useMutation({
+    mutationFn: () =>
+      api.tags.update(editingTagId!, {
+        ...(editNameChanged ? {name: editName} : {}),
+        ...(editColorChanged ? {color: warmHarvestTagColors[editColor]} : {}),
+      }),
+    onSuccess: () => {
+      setEditingTagId(null);
+      void queryClient.invalidateQueries({queryKey: queryKeys.tags()});
+      // Recipe payloads embed their tags (name + color), so a rename
+      // must also refresh the recipe lists, recipe details, the
+      // shared-with-me lists, and public recipe views or they keep
+      // showing the old name/color.
+      void queryClient.invalidateQueries({queryKey: queryKeys.recipeLists()});
+      void queryClient.invalidateQueries({queryKey: ['recipe']});
+      void queryClient.invalidateQueries({queryKey: ['sharedWithMe']});
+      void queryClient.invalidateQueries({queryKey: ['publicRecipe']});
+      void queryClient.invalidateQueries({queryKey: ['version']});
+    },
+  });
+
+  // The mutating handlers report failure to the DS page (#374):
+  // the page awaits each handler, and resolving `false` (or
+  // rejecting) is what renders its page-level error alert. So the
+  // handlers drive the mutations with mutateAsync and resolve
+  // `true`/`false` from the outcome; onSuccess behavior (clearing
+  // the form, closing the editor, invalidating) is unchanged.
+  const handleCreate = async () => {
     /* istanbul ignore next -- add button disabled when name is empty */
     if (!name.trim()) {
+      return true;
+    }
+    try {
+      await createMutation.mutateAsync();
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const handleStartEdit = (tag: TagsPageTag) => {
+    // While a save is in flight, ignore edit starts: reseeding the
+    // draft now would lose it when the pending save's onSuccess
+    // clears the editor.
+    if (updateMutation.isPending) {
       return;
     }
-    createMutation.mutate();
+    setEditingTagId(tag.id);
+    setEditName(tag.name);
+    setEditColor(tag.color);
+    setEditOriginalName(tag.name);
+    setEditOriginalColor(tag.color);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingTagId(null);
+  };
+
+  const handleSaveEdit = async () => {
+    /* istanbul ignore next -- save button disabled when idle or name is empty */
+    if (!editingTagId || !editName.trim()) {
+      return true;
+    }
+    // Nothing changed: saving would send an empty update, so just
+    // close the editor like a cancel.
+    if (!editNameChanged && !editColorChanged) {
+      handleCancelEdit();
+      return true;
+    }
+    try {
+      await updateMutation.mutateAsync();
+      return true;
+    } catch {
+      return false;
+    }
   };
 
   return (
@@ -58,10 +147,24 @@ export const TagsScreen = (): React.JSX.Element => {
       onNameChange={setName}
       onColorChange={setColor}
       onCreate={handleCreate}
-      onDelete={id => {
-        deleteMutation.mutate(id);
+      onDelete={async id => {
+        try {
+          await deleteMutation.mutateAsync(id);
+          return true;
+        } catch {
+          return false;
+        }
       }}
       isCreating={createMutation.isPending}
+      editingTagId={editingTagId}
+      editName={editName}
+      editColor={editColor}
+      onStartEdit={handleStartEdit}
+      onEditNameChange={setEditName}
+      onEditColorChange={setEditColor}
+      onSaveEdit={handleSaveEdit}
+      onCancelEdit={handleCancelEdit}
+      isUpdating={updateMutation.isPending}
     />
   );
 };

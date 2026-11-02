@@ -111,7 +111,11 @@ const resolveStatus = (
 };
 
 const satietyForTotals = (totals: MacroTotals): number | null => {
-  if (totals.preparedWeightG <= 0) {
+  // calculateSatiety throws for non-positive calories as well as weight:
+  // a ready portion only requires calories to be a number, so a
+  // zero-calorie recipe with a positive prepared weight must omit the
+  // score here instead of throwing out of every meal / plan load.
+  if (totals.preparedWeightG <= 0 || totals.calories <= 0) {
     return null;
   }
   return calculateSatiety({

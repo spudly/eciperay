@@ -207,6 +207,11 @@ export {
   writeFeedbackShortcutEnabled,
 } from './feedbackPreference.js';
 export {
+  readShoppingListCheckedKeys,
+  shoppingListCheckedStorageKey,
+  writeShoppingListCheckedKeys,
+} from './shoppingListChecked.js';
+export {
   FeedbackPreferenceContextProvider,
   FeedbackPreferenceProvider,
   useFeedbackShortcutEnabled,
@@ -361,6 +366,7 @@ export {
 } from './recipeStatusCopy.js';
 export {
   DISCOVER_EMPTY_MESSAGE,
+  DISCOVER_ERROR_MESSAGE,
   DISCOVER_NO_RATINGS_LABEL,
   DISCOVER_SEARCH_PLACEHOLDER,
   DISCOVER_TITLE,

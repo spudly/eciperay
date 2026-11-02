@@ -36,16 +36,22 @@ export const signOutStatePath = path.join(liveDir, '.auth', 'qa-signout.json');
 
 /**
  * Text import parses server-side with Anthropic, so the imports spec also needs
- * the API key in the job environment. The e2e-live CI job passes
- * ANTHROPIC_API_KEY through from secrets; while no secret exists the spec skips
- * with AI_SKIP_REASON instead of failing on the server's 500.
+ * a working AI transport in the job environment. The e2e-live CI job sets
+ * ECIPERAY_AI_FAKE=1, which switches the in-job server to its canned fake
+ * Anthropic transport (packages/server/src/lib/fakeAnthropicFetch.ts) so the
+ * suite consumes no real API credits (issue #336). A real ANTHROPIC_API_KEY
+ * also satisfies this (local runs against a real key); with neither present the
+ * spec skips with AI_SKIP_REASON instead of failing on the server's 500.
  */
-export const hasAiKey = (process.env['ANTHROPIC_API_KEY'] ?? '') !== '';
+export const hasAi =
+  process.env['ECIPERAY_AI_FAKE'] === '1' ||
+  (process.env['ANTHROPIC_API_KEY'] ?? '') !== '';
 
 export const AI_SKIP_REASON =
-  'ANTHROPIC_API_KEY is not set: text import parses with Anthropic ' +
-  'server-side, so the imports spec activates once the key is provided ' +
-  'as a CI secret (issue #233).';
+  'Neither ECIPERAY_AI_FAKE=1 nor ANTHROPIC_API_KEY is set: text import ' +
+  'parses with Anthropic server-side, so the imports spec activates once ' +
+  'the job enables the fake AI transport or provides a real key (issues ' +
+  '#233, #336).';
 
 /** Everything a live test creates is named with this prefix (hygiene rule). */
 const CI_PREFIX = 'CI — ';

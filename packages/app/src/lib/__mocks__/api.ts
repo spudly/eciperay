@@ -25,7 +25,12 @@ export const api = {
     cancel: jest.fn(),
   },
   auth: {syncUser: jest.fn()},
-  tags: {list: jest.fn(), create: jest.fn(), delete: jest.fn()},
+  tags: {
+    list: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+  },
   ai: {
     nutrition: jest.fn(),
     substitutions: jest.fn(),
