@@ -37,4 +37,13 @@ describe('api', () => {
     await eciperay.recipes.list();
     expect(supabase.auth.getSession).toHaveBeenCalled();
   });
+
+  test('propagates a getSession error instead of sending the request without a token', async () => {
+    const refreshFailure = new Error('refresh failed');
+    vi.mocked(supabase.auth.getSession).mockResolvedValueOnce({
+      data: {session: null},
+      error: refreshFailure,
+    });
+    await expect(eciperay.auth.syncUser()).rejects.toBe(refreshFailure);
+  });
 });
