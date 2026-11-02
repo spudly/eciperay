@@ -167,7 +167,12 @@ export type {
 export {useRecipeListFilters} from './useRecipeListFilters.js';
 export {demoRecipeListFilters} from './demoRecipeListFilters.js';
 export type {RecipeListFilters, RecipeListParams} from './recipesListUrl.js';
-export {AuthProvider, useAuth} from './AuthProvider.js';
+export {
+  AuthProvider,
+  AuthSessionRejectedError,
+  isAuthSessionRejectedError,
+  useAuth,
+} from './AuthProvider.js';
 export {AnalyticsErrorBoundaryProvider} from './AnalyticsErrorBoundary.js';
 export {AnalyticsProvider, useAnalytics} from './AnalyticsProvider.js';
 export {
