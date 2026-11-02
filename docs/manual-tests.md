@@ -332,12 +332,15 @@ are the manual remainder._
 1. **Create a plan.** Create a meal plan (`/meal-plans/new`) named
    `QA — Week Plan` spanning a week. **Expected:** it appears in the plans list
    and opens to its detail (`/meal-plans/:planId`).
-2. **Assign recipes to days.** In the plan detail/edit, assign recipes to
-   specific days (breakfast/dinner slots as offered). Save, reload.
-   **Expected:** assignments persist on the correct days.
-3. **Move and remove entries.** Move one entry to another day and remove one
-   entry entirely. **Expected:** detail reflects both changes; no duplicate or
-   orphaned entries.
+2. **Add meals and recipes as entries.** Meal plans have no day/slot
+   concept: a plan is a list of entries (meals and recipes, each with a
+   quantity/servings). In the plan edit form (Title, Notes, Starts on, Ends
+   on, and the Meals & recipes checklist), add at least one meal and one
+   standalone recipe. Save, reload. **Expected:** the entries persist in the
+   detail with their quantities/servings, and the plan totals reflect them.
+3. **Reorder and remove entries.** Change an entry's position (sort order)
+   and remove one entry entirely. Save, reload. **Expected:** detail
+   reflects both changes; no duplicate or orphaned entries.
 4. **Nutrition goal progress.** If the account has nutrition goals set, open the
    plan detail's nutrition goal progress. **Expected:** totals are plausible
    sums of the assigned recipes and the progress view renders for days with and
@@ -623,13 +626,19 @@ account on the Free plan for case 3.
    the plan shown (Free / Plus / Power) matches the account's actual entitlement
    — for the QA account, Power via the comp override, presented without error or
    a spurious "subscribe" upsell blocking the page.
-2. **Pay page render.** Open `/pay`. **Expected:** the plans and prices render
-   (Plus and Power, monthly and yearly) and match the amounts configured in the
-   billing provider; selecting a plan proceeds toward checkout — STOP before any
-   payment confirmation.
+2. **Plan catalog and prices.** Open Profile → subscription section.
+   **Expected:** the plan catalog renders there (Plus and Power, monthly and
+   yearly) with prices matching the amounts configured in the billing
+   provider; starting an upgrade proceeds toward checkout — STOP before any
+   payment confirmation. `/pay` itself is NOT a plans page: it is the Paddle
+   checkout-completion target. Open `/pay` bare (no `_ptxn` parameter).
+   **Expected:** a Checkout card explaining it needs the checkout link from
+   a purchase started elsewhere — no plan prices render there.
 3. **Free-account upsell sanity.** On the Free account, open a plan-gated
-   feature and the pay page. **Expected:** gating messages are human-readable
-   and the upgrade path leads to `/pay`; no dead ends.
+   feature and the Profile subscription section. **Expected:** gating
+   messages are human-readable and the upgrade path leads into the checkout
+   flow (via the subscription section / a Paddle payment link landing on
+   `/pay` with a transaction); no dead ends.
 4. **Manage-subscription entry.** If the account shows a manage/billing portal
    entry, open it up to the portal handoff. **Expected:** the handoff targets
    the billing provider's portal (do not change any setting inside the portal
