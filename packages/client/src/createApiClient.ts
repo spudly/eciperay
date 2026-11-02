@@ -57,10 +57,28 @@ export const createApiClient = (opts: ApiClientOptions): ApiClient => {
     options: RequestInit = {},
   ): Promise<T> => {
     const token = await opts.getToken();
-    const response = await fetch(`${opts.baseUrl}${path}`, {
-      ...options,
-      headers: mergeHeaders(token, options.headers),
-    });
+    let response: Response;
+    try {
+      response = await fetch(`${opts.baseUrl}${path}`, {
+        ...options,
+        headers: mergeHeaders(token, options.headers),
+      });
+    } catch (cause) {
+      // A rejected fetch() is a network-level failure (offline, DNS, API
+      // unreachable): there is no response and no status. Surface it as a
+      // typed ApiError instead of the raw TypeError so callers can treat it
+      // as the transient failure it is (status 0 / code 'network_error')
+      // rather than an unhandled exception (#378). A caller-initiated abort
+      // is not a network failure: rethrow the original abort reason
+      // unchanged so cancellation detection keeps working.
+      if (options.signal?.aborted) {
+        throw cause;
+      }
+      const error: ApiError = new Error(`Network error: ${path}`, {cause});
+      error.code = 'network_error';
+      error.status = 0;
+      throw error;
+    }
     if (!response.ok) {
       let message = `API error ${response.status}: ${path}`;
       let code: string | undefined;
@@ -87,7 +105,23 @@ export const createApiClient = (opts: ApiClientOptions): ApiClient => {
     if (response.status === 204) {
       return undefined as unknown as T;
     }
-    return response.json() as Promise<T>;
+    try {
+      return (await response.json()) as T;
+    } catch (cause) {
+      // fetch() resolves when the headers arrive; a connection that drops
+      // while the body is read makes json() reject with a TypeError. That
+      // is the same network-level failure as a rejected fetch() (#378) —
+      // convert it the same way. Anything else (a SyntaxError from a
+      // malformed body, or the caller's own abort reason) is rethrown
+      // unchanged.
+      if (!(cause instanceof TypeError) || options.signal?.aborted) {
+        throw cause;
+      }
+      const error: ApiError = new Error(`Network error: ${path}`, {cause});
+      error.code = 'network_error';
+      error.status = 0;
+      throw error;
+    }
   };
   return {fetch: fetchApi};
 };
