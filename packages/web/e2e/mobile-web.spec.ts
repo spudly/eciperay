@@ -1,5 +1,6 @@
 import {expect, test} from '@playwright/test';
 
+import {sharedRecipe} from './fixtures.js';
 import {installMocks} from './mockApi.js';
 
 /**
@@ -62,14 +63,17 @@ test.describe('mobile web layout (390px)', () => {
     });
     expect(titleColumnWidth).toBeGreaterThan(150);
 
-    // Trailing actions stay on the page, inside the viewport.
-    for (const name of ['Log cook', 'Delete']) {
-      const button = page.getByRole('button', {name}).first();
-      await expect(button).toBeVisible();
-      const box = await button.boundingBox();
-      expect(box).not.toBeNull();
-      expect(box!.x + box!.width).toBeLessThanOrEqual(390);
-    }
+    // The row's trailing control stays on the page, inside the
+    // viewport. On the design-system RecipesPage the only trailing
+    // control is the log-a-cook star (the list offers no Delete —
+    // deleting is a detail-page action).
+    const button = page
+      .getByRole('button', {name: 'Log a cook of E2E Tomato Pasta'})
+      .first();
+    await expect(button).toBeVisible();
+    const box = await button.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box!.x + box!.width).toBeLessThanOrEqual(390);
   });
 
   test('recipe titles stay readable at wider phone widths (430px)', async ({
@@ -103,12 +107,11 @@ test.describe('mobile web layout (390px)', () => {
       const title = [...document.querySelectorAll('*')].find(
         el => el.children.length === 0 && el.textContent === 'E2E Shared Salad',
       );
-      let el: Element | null = title ?? null;
-      // Walk up to the anchor wrapping the card.
-      while (el && el.tagName !== 'A') {
-        el = el.parentElement;
-      }
-      const rect = el?.getBoundingClientRect();
+      // The design-system row: the title sits in the row's link
+      // text block; its parent is the card's row container, whose box
+      // tracks the card itself.
+      const row = title?.closest('a')?.parentElement;
+      const rect = row?.getBoundingClientRect();
       return {width: rect?.width ?? 0, height: rect?.height ?? 0};
     });
     expect(cardBox.width).toBeGreaterThan(300);
@@ -116,6 +119,46 @@ test.describe('mobile web layout (390px)', () => {
     // layout: its height must stay content-sized (~110px), not stretch
     // to the 17rem row basis that only applies beside trailing actions.
     expect(cardBox.height).toBeLessThan(160);
+  });
+
+  test('scrolling to the end of the shared list loads the next page', async ({
+    page,
+  }) => {
+    // 21 shared recipes: one full page of 20 plus a single-recipe
+    // second page. The route honors offset/limit like the real API
+    // (the shared mockApi handler serves a single recipe), mirroring
+    // the recipes-list pagination case in recipes.spec.ts — the
+    // shared host's onLoadMore wiring has no other positive coverage
+    // (jsdom cannot drive the list's end-reached signal).
+    const shared = Array.from({length: 21}, (_, index) => ({
+      ...sharedRecipe,
+      id: `e2e-page-shared-${index}`,
+      slug: `e2e-page-shared-${index}`,
+      title: `E2E Page Shared ${index}`,
+    }));
+    await page.route('**/api/recipes/shared-with-me**', async route => {
+      const url = new URL(route.request().url());
+      const offset = Number(url.searchParams.get('offset') ?? 0);
+      const limit = Number(url.searchParams.get('limit') ?? 20);
+      await route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify(shared.slice(offset, offset + limit)),
+      });
+    });
+
+    await page.goto('/shared-with-me');
+    await expect(page.getByText('E2E Page Shared 0')).toBeVisible();
+    await expect(page.getByText('E2E Page Shared 20')).toHaveCount(0);
+
+    // The design-system page loads more from its list's end-reached
+    // signal: keep scrolling the list until the second page renders.
+    await page.mouse.move(195, 300);
+    await expect(async () => {
+      await page.mouse.wheel(0, 2400);
+      await expect(page.getByText('E2E Page Shared 20')).toBeVisible({
+        timeout: 1000,
+      });
+    }).toPass({timeout: 30_000});
   });
 
   test('home recently-viewed cards span the list width', async ({page}) => {
