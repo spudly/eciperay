@@ -14,6 +14,17 @@ const loadMoreErrorContainerStyle = {
   paddingVertical: tokens.spacing[3],
 } as const;
 
+// The list host must be bounded inside this column: RecipesPage's
+// ScreenContainer is a non-scrollable shell with flex: 1 and
+// minHeight: "100%", so as a direct sibling it takes the full screen
+// height and pushes the error alert below the viewport, where list
+// scrolling cannot reveal it. The flex: 1 wrapper reserves the
+// remaining space for the list and lets the alert take its own height
+// underneath it, inside the viewport.
+const screenStyle = {flex: 1} as const;
+
+const listContainerStyle = {flex: 1} as const;
+
 // No delete wiring lives here anymore: @spudly/ui 1.8.0 removed the
 // list row's Delete action (and its `onRecipeDelete` prop), so deleting
 // a recipe happens on the recipe detail screen, which already exposes
@@ -50,14 +61,16 @@ export const RecipesScreen = () => {
   };
 
   return (
-    <>
-      <RecipesListView
-        {...controls}
-        isLoading={isLoading}
-        recipes={recipes}
-        isFetchingNextPage={isFetchingNextPage}
-        onLoadMore={loadMore}
-      />
+    <View style={screenStyle}>
+      <View style={listContainerStyle}>
+        <RecipesListView
+          {...controls}
+          isLoading={isLoading}
+          recipes={recipes}
+          isFetchingNextPage={isFetchingNextPage}
+          onLoadMore={loadMore}
+        />
+      </View>
       {isFetchNextPageError ? (
         <View style={loadMoreErrorContainerStyle}>
           <Alert
@@ -67,13 +80,18 @@ export const RecipesScreen = () => {
               {
                 label: 'Try again',
                 onPress: () => {
-                  void fetchNextPage();
+                  // The error stays latched while a retry is in
+                  // flight, so this action stays tappable during it:
+                  // cancelRefetch: false reuses the in-flight retry
+                  // instead of cancelling and restarting it with a
+                  // duplicate request.
+                  void fetchNextPage({cancelRefetch: false});
                 },
               },
             ]}
           />
         </View>
       ) : null}
-    </>
+    </View>
   );
 };
