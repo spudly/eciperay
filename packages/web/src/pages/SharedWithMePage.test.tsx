@@ -14,6 +14,16 @@ import {SharedWithMePage} from './SharedWithMePage.js';
 // and this screen's own empty-state copy, which the page takes as
 // a title plus a body.
 describe('SharedWithMePage', () => {
+  test('renders the Shared with me page heading', async () => {
+    await renderWithProviders(<SharedWithMePage />);
+    expect(
+      screen.getByRole('heading', {name: 'Shared with me'}),
+    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('Shared Pasta')).toBeInTheDocument();
+    });
+  });
+
   test('lists shared recipes and links their rows to their public pages', async () => {
     await renderWithProviders(<SharedWithMePage />);
     await waitFor(() => {

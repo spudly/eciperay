@@ -1,6 +1,7 @@
 import {act, fireEvent, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {http, HttpResponse} from 'msw';
+import {StrictMode} from 'react';
 
 import {makeCookLog, makeRecipeDetail} from '../test/fixtures/recipe.js';
 import {server} from '../test/msw/server.js';
@@ -266,5 +267,143 @@ describe('RecipesPage', () => {
       expect(screen.getByText('Perfected Soup')).toBeInTheDocument();
       expect(screen.queryByText('Idea Soup')).not.toBeInTheDocument();
     });
+  });
+
+  // The retired list view rendered the screen's heading itself; the
+  // DS page renders none, so the host restores it — heading
+  // navigation must be able to identify the screen.
+  test('renders the Recipes page heading', async () => {
+    await renderWithProviders(<RecipesPage />);
+    expect(screen.getByRole('heading', {name: 'Recipes'})).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('Test Recipe')).toBeInTheDocument();
+    });
+  });
+
+  // The web app renders under StrictMode (src/main.tsx), whose
+  // development effect replay — setup, cleanup, setup on one mount —
+  // must not reconcile an opened cook-log form away: the form's
+  // unmount cleanup defers its close a tick and the replayed setup
+  // cancels it. Without the cancellation the form closes itself as
+  // soon as it opens.
+  test('an opened cook-log form survives StrictMode effect replay', async () => {
+    await renderWithProviders(
+      <StrictMode>
+        <RecipesPage />
+      </StrictMode>,
+    );
+    await waitFor(() => {
+      expect(screen.getByText('Test Recipe')).toBeInTheDocument();
+    });
+    await userEvent.click(
+      screen.getByRole('button', {name: 'Log a cook of Test Recipe'}),
+    );
+    await waitFor(() => {
+      expect(screen.getByText('How did it go?')).toBeInTheDocument();
+    });
+    // Let the deferred reconcile tick elapse; a close scheduled by
+    // the replay's cleanup and not cancelled would have fired by now.
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    });
+    expect(screen.getByText('How did it go?')).toBeInTheDocument();
+  });
+
+  // A row that leaves the list unmounts its open form; the form's
+  // deferred cleanup reconciles the lifted open set, so when the
+  // recipe returns it comes back closed (the pre-adoption cards got
+  // this for free when the card unmounted).
+  test('a row that leaves and returns comes back with its form closed', async () => {
+    await renderWithProviders(<RecipesPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Test Recipe')).toBeInTheDocument();
+    });
+    await userEvent.click(
+      screen.getByRole('button', {name: 'Log a cook of Test Recipe'}),
+    );
+    await waitFor(() => {
+      expect(screen.getByText('How did it go?')).toBeInTheDocument();
+    });
+    await userEvent.type(
+      screen.getByPlaceholderText('Search recipes…'),
+      'Nonexistent',
+    );
+    await waitFor(() => {
+      expect(screen.getByText('No recipes found.')).toBeInTheDocument();
+    });
+    await userEvent.clear(screen.getByPlaceholderText('Search recipes…'));
+    await waitFor(() => {
+      expect(screen.getByText('Test Recipe')).toBeInTheDocument();
+    });
+    expect(screen.queryByText('How did it go?')).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', {name: 'Log a cook of Test Recipe'}),
+    ).toBeInTheDocument();
+  });
+
+  // A save that completes after its form was replaced must not
+  // close the replacement: the first form's success close is guarded
+  // by its own mounted lifetime, while invalidation still runs. Here
+  // the first form's row leaves and returns while its save is in
+  // flight, a fresh form opens, and only then does the first save
+  // resolve.
+  test('a save completing after its form was replaced does not close the replacement', async () => {
+    let resolveCreate: (() => void) | undefined;
+    const createGate = new Promise<void>(resolve => {
+      resolveCreate = () => {
+        resolve();
+      };
+    });
+    server.use(
+      http.post(
+        'http://localhost:8080/api/recipes/:id/versions/:versionId/cooks',
+        async () => {
+          await createGate;
+          return HttpResponse.json({...makeCookLog()}, {status: 201});
+        },
+      ),
+    );
+    await renderWithProviders(<RecipesPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Test Recipe')).toBeInTheDocument();
+    });
+    await userEvent.click(
+      screen.getByRole('button', {name: 'Log a cook of Test Recipe'}),
+    );
+    await waitFor(() => {
+      expect(screen.getByText('How did it go?')).toBeInTheDocument();
+    });
+    await userEvent.click(
+      screen.getByRole('radio', {name: 'Rate 4 out of 5 stars'}),
+    );
+    await userEvent.click(screen.getByRole('button', {name: 'Save'}));
+    // The row leaves (its pending form unmounts with it) and returns.
+    await userEvent.type(
+      screen.getByPlaceholderText('Search recipes…'),
+      'Nonexistent',
+    );
+    await waitFor(() => {
+      expect(screen.getByText('No recipes found.')).toBeInTheDocument();
+    });
+    await userEvent.clear(screen.getByPlaceholderText('Search recipes…'));
+    await waitFor(() => {
+      expect(screen.getByText('Test Recipe')).toBeInTheDocument();
+    });
+    // The replacement form opens.
+    await userEvent.click(
+      screen.getByRole('button', {name: 'Log a cook of Test Recipe'}),
+    );
+    await waitFor(() => {
+      expect(screen.getByText('How did it go?')).toBeInTheDocument();
+    });
+    // The first save now completes; its guarded close must not
+    // reach the replacement form.
+    await act(async () => {
+      resolveCreate?.();
+    });
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    });
+    expect(screen.getByText('How did it go?')).toBeInTheDocument();
   });
 });

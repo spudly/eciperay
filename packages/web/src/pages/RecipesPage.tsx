@@ -25,6 +25,7 @@ import {
 } from '@tanstack/react-query';
 import {useCallback, useEffect, useRef, useState} from 'react';
 
+import {PageTitle} from '../components/ui/PageTitle.js';
 import {eciperay} from '../lib/api.js';
 
 /**
@@ -222,52 +223,55 @@ export const RecipesPage = () => {
   }));
 
   return (
-    <RecipesPageView
-      recipes={items}
-      isLoading={isLoading}
-      isFetchingNextPage={isFetchingNextPage}
-      onLogCookPress={openCookLog}
-      renderRecipeAccessory={recipeId => {
-        const recipe = recipesById.get(recipeId);
-        if (!recipe || !openCookLogIds.has(recipeId)) {
-          return null;
-        }
-        return (
-          <InlineCookLogForm
-            key={recipeId}
-            recipe={recipe}
-            onClose={() => {
-              closeCookLog(recipeId);
-            }}
-          />
-        );
-      }}
-      onLoadMore={handleLoadMore}
-      search={controls.search}
-      onSearchChange={controls.onSearchChange}
-      statusFilter={controls.statusFilter}
-      onStatusFilterChange={value => {
-        controls.onStatusFilterChange?.(value as RecipeStatusFilterValue);
-      }}
-      showStatusFilter={controls.showStatusFilter}
-      ingredient={controls.ingredient}
-      onIngredientChange={controls.onIngredientChange}
-      minCalories={controls.minCalories}
-      onMinCaloriesChange={controls.onMinCaloriesChange}
-      maxCalories={controls.maxCalories}
-      onMaxCaloriesChange={controls.onMaxCaloriesChange}
-      minSatiety={controls.minSatiety}
-      onMinSatietyChange={controls.onMinSatietyChange}
-      maxSatiety={controls.maxSatiety}
-      onMaxSatietyChange={controls.onMaxSatietyChange}
-      sort={controls.sort}
-      onSortChange={value => {
-        controls.onSortChange(value as RecipeListSort);
-      }}
-      sortDir={controls.sortDir}
-      onSortDirChange={value => {
-        controls.onSortDirChange(value as RecipeListSortDir);
-      }}
-    />
+    <>
+      <PageTitle spacing="section">Recipes</PageTitle>
+      <RecipesPageView
+        recipes={items}
+        isLoading={isLoading}
+        isFetchingNextPage={isFetchingNextPage}
+        onLogCookPress={openCookLog}
+        renderRecipeAccessory={recipeId => {
+          const recipe = recipesById.get(recipeId);
+          if (!recipe || !openCookLogIds.has(recipeId)) {
+            return null;
+          }
+          return (
+            <InlineCookLogForm
+              key={recipeId}
+              recipe={recipe}
+              onClose={() => {
+                closeCookLog(recipeId);
+              }}
+            />
+          );
+        }}
+        onLoadMore={handleLoadMore}
+        search={controls.search}
+        onSearchChange={controls.onSearchChange}
+        statusFilter={controls.statusFilter}
+        onStatusFilterChange={value => {
+          controls.onStatusFilterChange?.(value as RecipeStatusFilterValue);
+        }}
+        showStatusFilter={controls.showStatusFilter}
+        ingredient={controls.ingredient}
+        onIngredientChange={controls.onIngredientChange}
+        minCalories={controls.minCalories}
+        onMinCaloriesChange={controls.onMinCaloriesChange}
+        maxCalories={controls.maxCalories}
+        onMaxCaloriesChange={controls.onMaxCaloriesChange}
+        minSatiety={controls.minSatiety}
+        onMinSatietyChange={controls.onMinSatietyChange}
+        maxSatiety={controls.maxSatiety}
+        onMaxSatietyChange={controls.onMaxSatietyChange}
+        sort={controls.sort}
+        onSortChange={value => {
+          controls.onSortChange(value as RecipeListSort);
+        }}
+        sortDir={controls.sortDir}
+        onSortDirChange={value => {
+          controls.onSortDirChange(value as RecipeListSortDir);
+        }}
+      />
+    </>
   );
 };

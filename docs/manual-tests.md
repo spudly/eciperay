@@ -276,7 +276,7 @@ single star on an unrated one), and the cooking-mode overlay.
 `packages/client/src/cookLogsApi.ts`, `packages/server` cook log routes,
 `@spudly/ui` `RecipeDetailPage` history section.
 
-**Run when:** `@spudly/ui` `RatingForm` or `StarRatingInput`,
+**Run when:** `@spudly/ui` `RecipesPage`, `RatingForm` or `StarRatingInput`,
 `packages/app/src/screens/CookingModeScreen.tsx`,
 `packages/app/src/hosts/recipes/RecipesListView.tsx`,
 `packages/web/src/pages/{Recipes,RecipeDetail,CookingMode}Page.tsx`,

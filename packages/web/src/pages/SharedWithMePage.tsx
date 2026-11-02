@@ -1,6 +1,7 @@
 import {
   SHARED_WITH_ME_EMPTY_BODY,
   SHARED_WITH_ME_EMPTY_TITLE,
+  SHARED_WITH_ME_TITLE,
   formatRecipeListSubtitle,
   sharedWithMeInfiniteQueryOptions,
   useRecipeListFilters,
@@ -14,6 +15,7 @@ import {
 import {useInfiniteQuery} from '@tanstack/react-query';
 import {useCallback} from 'react';
 
+import {PageTitle} from '../components/ui/PageTitle.js';
 import {eciperay} from '../lib/api.js';
 
 /**
@@ -58,38 +60,41 @@ export const SharedWithMePage = () => {
   }));
 
   return (
-    <RecipesPageView
-      recipes={items}
-      isLoading={isLoading}
-      isFetchingNextPage={isFetchingNextPage}
-      onLoadMore={handleLoadMore}
-      emptyTitle={SHARED_WITH_ME_EMPTY_TITLE}
-      emptyBody={SHARED_WITH_ME_EMPTY_BODY}
-      search={controls.search}
-      onSearchChange={controls.onSearchChange}
-      statusFilter={controls.statusFilter}
-      onStatusFilterChange={value => {
-        controls.onStatusFilterChange?.(value as RecipeStatusFilterValue);
-      }}
-      showStatusFilter={controls.showStatusFilter}
-      ingredient={controls.ingredient}
-      onIngredientChange={controls.onIngredientChange}
-      minCalories={controls.minCalories}
-      onMinCaloriesChange={controls.onMinCaloriesChange}
-      maxCalories={controls.maxCalories}
-      onMaxCaloriesChange={controls.onMaxCaloriesChange}
-      minSatiety={controls.minSatiety}
-      onMinSatietyChange={controls.onMinSatietyChange}
-      maxSatiety={controls.maxSatiety}
-      onMaxSatietyChange={controls.onMaxSatietyChange}
-      sort={controls.sort}
-      onSortChange={value => {
-        controls.onSortChange(value as RecipeListSort);
-      }}
-      sortDir={controls.sortDir}
-      onSortDirChange={value => {
-        controls.onSortDirChange(value as RecipeListSortDir);
-      }}
-    />
+    <>
+      <PageTitle spacing="section">{SHARED_WITH_ME_TITLE}</PageTitle>
+      <RecipesPageView
+        recipes={items}
+        isLoading={isLoading}
+        isFetchingNextPage={isFetchingNextPage}
+        onLoadMore={handleLoadMore}
+        emptyTitle={SHARED_WITH_ME_EMPTY_TITLE}
+        emptyBody={SHARED_WITH_ME_EMPTY_BODY}
+        search={controls.search}
+        onSearchChange={controls.onSearchChange}
+        statusFilter={controls.statusFilter}
+        onStatusFilterChange={value => {
+          controls.onStatusFilterChange?.(value as RecipeStatusFilterValue);
+        }}
+        showStatusFilter={controls.showStatusFilter}
+        ingredient={controls.ingredient}
+        onIngredientChange={controls.onIngredientChange}
+        minCalories={controls.minCalories}
+        onMinCaloriesChange={controls.onMinCaloriesChange}
+        maxCalories={controls.maxCalories}
+        onMaxCaloriesChange={controls.onMaxCaloriesChange}
+        minSatiety={controls.minSatiety}
+        onMinSatietyChange={controls.onMinSatietyChange}
+        maxSatiety={controls.maxSatiety}
+        onMaxSatietyChange={controls.onMaxSatietyChange}
+        sort={controls.sort}
+        onSortChange={value => {
+          controls.onSortChange(value as RecipeListSort);
+        }}
+        sortDir={controls.sortDir}
+        onSortDirChange={value => {
+          controls.onSortDirChange(value as RecipeListSortDir);
+        }}
+      />
+    </>
   );
 };
