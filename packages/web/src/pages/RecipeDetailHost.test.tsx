@@ -445,16 +445,22 @@ describe('RecipeDetailHost', () => {
     });
 
     test('a failed refresh shows the dialog and keeps the current estimate', async () => {
+      let refreshAttempts = 0;
       server.use(
         http.get(
           'http://localhost:8080/api/recipes/:id/ai/nutrition',
-          ({request}) =>
-            new URL(request.url).searchParams.get('refresh') === 'true'
-              ? HttpResponse.json(
-                  {error: 'Failed to estimate nutrition'},
-                  {status: 502},
-                )
-              : HttpResponse.json(nutritionPayload),
+          ({request}) => {
+            if (new URL(request.url).searchParams.get('refresh') === 'true') {
+              refreshAttempts += 1;
+              return refreshAttempts === 1
+                ? HttpResponse.json(
+                    {error: 'Failed to estimate nutrition'},
+                    {status: 502},
+                  )
+                : HttpResponse.json({...nutritionPayload, calories: 300});
+            }
+            return HttpResponse.json(nutritionPayload);
+          },
         ),
       );
       await renderHost();
@@ -467,6 +473,17 @@ describe('RecipeDetailHost', () => {
       // The previously loaded estimate is not discarded on failure.
       expect(screen.getByText('250')).toBeInTheDocument();
       expect(screen.getByText('Refresh')).toBeInTheDocument();
+      // The refreshing flag is cleared on failure: after dismissing
+      // the dialog, Refresh runs again and the new estimate lands.
+      await userEvent.click(screen.getByText('OK'));
+      await waitFor(() => {
+        expect(
+          screen.queryByText('Could not refresh nutrition'),
+        ).not.toBeInTheDocument();
+      });
+      await userEvent.click(screen.getByText('Refresh'));
+      expect(await screen.findByText('300')).toBeInTheDocument();
+      expect(refreshAttempts).toBe(2);
     });
   });
 });
