@@ -35,21 +35,32 @@ import {eciperay} from '../lib/api.js';
 export const SharedWithMePage = () => {
   const {filters, controls} = useRecipeListFilters();
 
-  const {data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage} =
-    useInfiniteQuery(
-      sharedWithMeInfiniteQueryOptions(
-        params => eciperay.recipes.listSharedWithMe(params),
-        filters,
-      ),
-    );
+  const {
+    data,
+    isLoading,
+    isFetchingNextPage,
+    isFetchNextPageError,
+    hasNextPage,
+    fetchNextPage,
+  } = useInfiniteQuery(
+    sharedWithMeInfiniteQueryOptions(
+      params => eciperay.recipes.listSharedWithMe(params),
+      filters,
+    ),
+  );
 
   const recipes = data?.pages.flat() ?? [];
 
+  // Same pagination-error gate as the Recipes host: the shared
+  // pagination pattern re-fires onLoadMore when a fetch adds no rows
+  // and cannot tell an empty page from a failed one, so a failed next
+  // page stops automatic loading here and the alert under the list
+  // offers the manual retry.
   const handleLoadMore = useCallback(() => {
-    if (hasNextPage && !isFetchingNextPage) {
+    if (hasNextPage && !isFetchingNextPage && !isFetchNextPageError) {
       void fetchNextPage();
     }
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+  }, [fetchNextPage, hasNextPage, isFetchNextPageError, isFetchingNextPage]);
 
   const items: RecipesPageItem[] = recipes.map(recipe => ({
     id: recipe.id,
@@ -95,6 +106,23 @@ export const SharedWithMePage = () => {
           controls.onSortDirChange(value as RecipeListSortDir);
         }}
       />
+      {isFetchNextPageError ? (
+        <p
+          role="alert"
+          className="mbe-4 text-sm text-red-600"
+        >
+          Couldn't load more recipes.{' '}
+          <button
+            type="button"
+            className="underline"
+            onClick={() => {
+              void fetchNextPage();
+            }}
+          >
+            Try again
+          </button>
+        </p>
+      ) : null}
     </>
   );
 };

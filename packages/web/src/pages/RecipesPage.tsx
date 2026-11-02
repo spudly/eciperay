@@ -151,21 +151,33 @@ const InlineCookLogForm = ({
 export const RecipesPage = () => {
   const {filters, controls} = useRecipeListFilters();
 
-  const {data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage} =
-    useInfiniteQuery(
-      recipeListInfiniteQueryOptions(
-        params => eciperay.recipes.list(params),
-        filters,
-      ),
-    );
+  const {
+    data,
+    isLoading,
+    isFetchingNextPage,
+    isFetchNextPageError,
+    hasNextPage,
+    fetchNextPage,
+  } = useInfiniteQuery(
+    recipeListInfiniteQueryOptions(
+      params => eciperay.recipes.list(params),
+      filters,
+    ),
+  );
 
   const recipes = data?.pages.flat() ?? [];
 
+  // The shared pagination pattern re-fires onLoadMore when a fetch
+  // completes having added no rows (design-system#285) — it cannot
+  // tell an empty page from a failed one, so the host gates here: a
+  // failed next page latches isFetchNextPageError, automatic loading
+  // stops instead of cycling retries, and the alert under the list
+  // offers the manual retry.
   const handleLoadMore = useCallback(() => {
-    if (hasNextPage && !isFetchingNextPage) {
+    if (hasNextPage && !isFetchingNextPage && !isFetchNextPageError) {
       void fetchNextPage();
     }
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+  }, [fetchNextPage, hasNextPage, isFetchNextPageError, isFetchingNextPage]);
 
   // The cook-log forms' open state: a set of recipe ids, so forms
   // open and close independently and several may be open at once —
@@ -272,6 +284,23 @@ export const RecipesPage = () => {
           controls.onSortDirChange(value as RecipeListSortDir);
         }}
       />
+      {isFetchNextPageError ? (
+        <p
+          role="alert"
+          className="mbe-4 text-sm text-red-600"
+        >
+          Couldn't load more recipes.{' '}
+          <button
+            type="button"
+            className="underline"
+            onClick={() => {
+              void fetchNextPage();
+            }}
+          >
+            Try again
+          </button>
+        </p>
+      ) : null}
     </>
   );
 };
