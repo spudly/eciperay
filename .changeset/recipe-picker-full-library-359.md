@@ -5,15 +5,21 @@
 '@eciperay/app': patch
 ---
 
-Meal and meal-plan recipe pickers now offer the full recipe library (#359): the
-shared form-options query previously made a single list request capped at 100
-recipes, so any recipe beyond the first 100 (for example older recipes in a
-large account) could not be selected into a Meal or meal plan. The query now
-fetches the library in sequential 100-recipe pages until a partial page ends it,
-so every recipe is selectable in the meal form and the meal-plan form on web and
-in the app. To keep offset paging exact, the server's recipe list ordering is
-now total: every sort branch ends with a unique version-id tie-breaker (and the
-shared-with-me newest order with the recipe id), so recipes that tie on the sort
-keys cannot be skipped or duplicated across page boundaries. If the picker fetch
-fails, the meal and meal-plan forms now show a "Could not load recipes" error
-instead of a silently empty picker.
+Meal and meal-plan recipe pickers are now a search autocomplete (#359),
+replacing the checkbox list of library options: type in the picker's search
+field and matching recipes are searched server-side and offered as results —
+select one to add it, and repeat to add more; selected recipes are listed
+separately under the search field, each with a Remove action and its servings
+stepper (meal plans: quantity steppers for meals and recipes, plus servings for
+recipes), and the steppers keep working for a selection that is not in the
+current search results. This removes the old picker's cap — it only ever offered
+the first 100 recipes in an account, so older recipes beyond that (for example
+in a large account) could not be added to a Meal or meal plan; now any recipe is
+reachable by searching for it, in the meal form and the meal-plan form on web
+and in the app (@spudly/ui 2.0.0's MealFormPage / MealPlanFormPage autocomplete
+contract). The server's recipe list ordering is now total: every sort branch
+ends with a unique version-id tie-breaker (and the shared-with-me newest order
+with the recipe id), so recipes that tie on the sort keys cannot be skipped or
+duplicated across page boundaries and search results have a deterministic order.
+If a picker search fails, the meal and meal-plan forms show a "Could not load
+recipes" error instead of reading as no matches.

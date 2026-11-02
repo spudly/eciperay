@@ -309,12 +309,17 @@ mode; there is no Playwright coverage of meals. The cases below are manual._
 6. **Meal detail for a nonexistent meal.** Navigate directly to
    `/meals/not-a-uuid`. **Expected:** a "Page not found" view with a link home —
    never an indefinite Loading state.
-7. **Picker offers the full library (regression: #359).** Preconditions: an
-   account with more than 100 recipes. Open the meal form's recipe picker.
-   **Expected:** recipes beyond the first 100 are listed and can be selected
-   into the meal; saving keeps the beyond-100 recipe on the meal detail. (On
-   production-data review apps, verify read-only: confirm a beyond-100 recipe is
-   listed in the picker without saving.)
+7. **Picker search reaches the full library (regression: #359).** Preconditions:
+   an account with more than 100 recipes. Open the meal form and type the title
+   of a recipe beyond the first 100 into the picker's "Search recipes" field.
+   **Expected:** the beyond-100 recipe appears as a search result and can be
+   selected into the meal (it moves to the selected list under the search field,
+   with its servings stepper); saving keeps it on the meal detail. Also confirm:
+   a search with no matches shows "No recipes found.", selecting a result leaves
+   the picker available to search and add another recipe, and a selected
+   recipe's Remove action takes it back out. (On production-data review apps,
+   verify read-only: confirm a beyond-100 recipe appears as a search result
+   without saving.)
 
 **Run when:**
 `packages/app/src/screens/{MealsHub,MealDetail,MealEdit,MealCookingMode}Screen.tsx`,

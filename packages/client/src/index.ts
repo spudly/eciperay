@@ -256,12 +256,17 @@ export {
 } from './mealUiHelpers.js';
 export {
   buildMealPlanFormEntryOptions,
+  buildMealPlanFormEntryOptionsFromDetail,
   mealPlanEntryToggleResult,
   mealPlanFormDraftFromDetail,
   type MealPlanEditRecipeOption,
   type MealPlanFormDraft,
 } from './mealPlanFormHelpers.js';
 export {useMealPlanEditForm} from './useMealPlanEditForm.js';
+export {
+  DEBOUNCED_VALUE_DELAY_MS,
+  useDebouncedValue,
+} from './useDebouncedValue.js';
 export type {
   MealCookingModeViewProps,
   MealDetailViewProps,
@@ -280,9 +285,9 @@ export {
   getRecipeListNextPageParam,
   homeRecentlyViewedRecipesQueryOptions,
   publicRecipeDiscoveryInfiniteQueryOptions,
-  RECIPE_FORM_OPTIONS_LIMIT,
+  RECIPE_FORM_SEARCH_LIMIT,
   RECIPE_LIST_PAGE_SIZE,
-  recipeFormOptionsQueryOptions,
+  recipeFormSearchQueryOptions,
   recipeListInfiniteQueryOptions,
   sharedWithMeInfiniteQueryOptions,
 } from './recipeListQuery.js';

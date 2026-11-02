@@ -2,7 +2,8 @@ import {
   buildMealInputFromForm,
   errorMessage,
   queryKeys,
-  recipeFormOptionsQueryOptions,
+  recipeFormSearchQueryOptions,
+  useDebouncedValue,
 } from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {MealFormPage} from '@spudly/ui/pages';
@@ -15,6 +16,8 @@ import type {MealsStackParamList} from '../navigation/types';
 
 type Props = NativeStackScreenProps<MealsStackParamList, 'MealEdit'>;
 
+type SelectedRecipe = {id: string; label: string; servings: number};
+
 export const MealEditScreen = ({route, navigation}: Props) => {
   const mealId = route.params.mealId ?? '';
   const isEdit = mealId.length > 0;
@@ -22,11 +25,17 @@ export const MealEditScreen = ({route, navigation}: Props) => {
 
   const [title, setTitle] = useState('');
   const [notes, setNotes] = useState('');
-  const [selectedRecipeIds, setSelectedRecipeIds] = useState<string[]>([]);
+  // The selected recipes' view-models, in selection order: under the
+  // search autocomplete (#359) a selected recipe need not be in the
+  // current search results, so the selection carries its own label and
+  // servings instead of looking them up in a full-library option list.
+  const [selectedRecipes, setSelectedRecipes] = useState<SelectedRecipe[]>([]);
   const [servingsByRecipeId, setServingsByRecipeId] = useState<
     Record<string, number>
   >({});
   const [formError, setFormError] = useState<string | null>(null);
+  const [searchText, setSearchText] = useState('');
+  const debouncedSearch = useDebouncedValue(searchText);
 
   const {data: meal, isLoading: mealLoading} = useQuery({
     queryKey: queryKeys.meal(mealId),
@@ -35,12 +44,16 @@ export const MealEditScreen = ({route, navigation}: Props) => {
   });
 
   const {
-    data: recipes = [],
-    isLoading: recipesLoading,
-    error: recipesError,
-  } = useQuery(
-    recipeFormOptionsQueryOptions(params => api.recipes.list(params)),
-  );
+    data: searchResults = [],
+    isFetching: isSearching,
+    error: searchError,
+  } = useQuery({
+    ...recipeFormSearchQueryOptions(
+      params => api.recipes.list(params),
+      debouncedSearch,
+    ),
+    enabled: debouncedSearch.trim().length > 0,
+  });
 
   useEffect(() => {
     if (!meal) {
@@ -48,7 +61,13 @@ export const MealEditScreen = ({route, navigation}: Props) => {
     }
     setTitle(meal.title);
     setNotes(meal.notes ?? '');
-    setSelectedRecipeIds(meal.members.map(member => member.recipeId));
+    setSelectedRecipes(
+      meal.members.map(member => ({
+        id: member.recipeId,
+        label: member.title,
+        servings: member.recipeServings,
+      })),
+    );
     setServingsByRecipeId(
       Object.fromEntries(
         meal.members.map(member => [member.recipeId, member.servings]),
@@ -61,7 +80,7 @@ export const MealEditScreen = ({route, navigation}: Props) => {
       const input = buildMealInputFromForm({
         title,
         notes,
-        selectedRecipeIds,
+        selectedRecipeIds: selectedRecipes.map(recipe => recipe.id),
         servingsByRecipeId,
       });
       if (isEdit && mealId) {
@@ -79,54 +98,55 @@ export const MealEditScreen = ({route, navigation}: Props) => {
     },
   });
 
-  const recipeOptions = recipes.map(recipe => ({
-    id: recipe.id,
-    title: recipe.title,
-    servings: recipe.servings,
-  }));
+  const handleSelectRecipe = (recipeId: string) => {
+    const recipe = searchResults.find(item => item.id === recipeId);
+    if (!recipe || selectedRecipes.some(item => item.id === recipeId)) {
+      return;
+    }
+    setSelectedRecipes(previous => [
+      ...previous,
+      {id: recipe.id, label: recipe.title, servings: recipe.servings},
+    ]);
+    setServingsByRecipeId(current => ({
+      ...current,
+      [recipeId]: current[recipeId] ?? recipe.servings,
+    }));
+  };
 
-  const handleToggleRecipe = (recipeId: string) => {
-    setSelectedRecipeIds(previous => {
-      if (previous.includes(recipeId)) {
-        return previous.filter(id => id !== recipeId);
-      }
-      const recipe = recipes.find(item => item.id === recipeId);
-      /* istanbul ignore next -- checkbox list only toggles ids from recipeOptions */
-      if (!recipe) {
-        return previous;
-      }
-      setServingsByRecipeId(current => ({
-        ...current,
-        [recipeId]: current[recipeId] ?? recipe.servings,
-      }));
-      return [...previous, recipeId];
-    });
+  const handleRemoveRecipe = (recipeId: string) => {
+    setSelectedRecipes(previous =>
+      previous.filter(recipe => recipe.id !== recipeId),
+    );
   };
 
   return (
-    <ScreenLoadingGate pending={isEdit && (mealLoading || recipesLoading)}>
+    <ScreenLoadingGate pending={isEdit && mealLoading}>
       <MealFormPage
         title={title}
         notes={notes}
-        recipeOptions={recipeOptions.map(recipe => ({
+        searchText={searchText}
+        onSearchTextChange={setSearchText}
+        searchResults={searchResults.map(recipe => ({
           id: recipe.id,
           label: recipe.title,
           servings: recipe.servings,
         }))}
-        selectedRecipeIds={selectedRecipeIds}
+        isSearching={isSearching || debouncedSearch !== searchText}
+        selectedRecipes={selectedRecipes}
         servingsByRecipeId={servingsByRecipeId}
         isSaving={saveMutation.isPending}
         error={
           formError ??
           // Same picker-error surfacing as web (#359): a failed
-          // full-library fetch must not read as an empty library.
-          (recipesError
-            ? `Could not load recipes: ${errorMessage(recipesError)}`
+          // search must not read as "no matches".
+          (searchError
+            ? `Could not load recipes: ${errorMessage(searchError)}`
             : null)
         }
         onTitleChange={setTitle}
         onNotesChange={setNotes}
-        onToggleRecipe={handleToggleRecipe}
+        onSelectRecipe={handleSelectRecipe}
+        onRemoveRecipe={handleRemoveRecipe}
         onServingsChange={(recipeId, servings) => {
           setServingsByRecipeId(current => ({
             ...current,

@@ -19,6 +19,20 @@ vi.mock('react-router-dom', async importOriginal => {
   return {...actual, useNavigate: () => mockNavigate};
 });
 
+// The picker is a search autocomplete (#359): entry results only appear
+// after typing in the search field and the debounced search returning.
+const searchFor = async (text: string, resultLabel: string) => {
+  fireEvent.change(screen.getByPlaceholderText('Search meals & recipes…'), {
+    target: {value: text},
+  });
+  await waitFor(
+    () => {
+      expect(screen.getByText(resultLabel)).toBeInTheDocument();
+    },
+    {timeout: 5000},
+  );
+};
+
 describe('MealPlanEditPage', () => {
   beforeEach(() => {
     mockNavigate.mockReset();
@@ -30,6 +44,11 @@ describe('MealPlanEditPage', () => {
       expect(screen.getByText('Meal plan')).toBeInTheDocument();
     });
     expect(screen.getByText('Save plan')).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText('Search meals & recipes…'),
+    ).toBeInTheDocument();
+    // No entries are listed before a search is typed.
+    expect(screen.queryByText('Recipe · Test Recipe')).not.toBeInTheDocument();
   });
 
   test('shows save errors', async () => {
@@ -37,9 +56,7 @@ describe('MealPlanEditPage', () => {
       new Error('Plan failed'),
     );
     await renderWithProviders(<MealPlanEditPage />, {route: '/meal-plans/new'});
-    await waitFor(() => {
-      expect(screen.getByText('Recipe · Test Recipe')).toBeInTheDocument();
-    });
+    await searchFor('Test', 'Recipe · Test Recipe');
     fireEvent.change(screen.getByPlaceholderText('Plan title'), {
       target: {value: 'Week'},
     });
@@ -57,9 +74,7 @@ describe('MealPlanEditPage', () => {
       ),
     );
     await renderWithProviders(<MealPlanEditPage />, {route: '/meal-plans/new'});
-    await waitFor(() => {
-      expect(screen.getByText('Recipe · Test Recipe')).toBeInTheDocument();
-    });
+    await searchFor('Test', 'Recipe · Test Recipe');
     fireEvent.change(screen.getByPlaceholderText('Plan title'), {
       target: {value: 'Week'},
     });
@@ -113,6 +128,8 @@ describe('MealPlanEditPage', () => {
     await waitFor(() => {
       expect(screen.getByDisplayValue('This week')).toBeInTheDocument();
     });
+    // The plan's recipe entry is already selected — its quantity and
+    // servings steppers render without any search.
     fireEvent.click(screen.getAllByText('+')[0]!);
     fireEvent.click(screen.getAllByText('+')[1]!);
     fireEvent.click(screen.getByText('Save plan'));
@@ -148,6 +165,7 @@ describe('MealPlanEditPage', () => {
     await waitFor(() => {
       expect(screen.getByDisplayValue('This week')).toBeInTheDocument();
     });
+    await searchFor('Test', 'Recipe · Test Recipe');
     fireEvent.click(screen.getByText('Recipe · Test Recipe'));
     fireEvent.click(screen.getByText('Save plan'));
     await waitFor(() => {

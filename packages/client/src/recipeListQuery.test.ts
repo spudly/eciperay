@@ -5,9 +5,9 @@ import {
   getRecipeListNextPageParam,
   homeRecentlyViewedRecipesQueryOptions,
   publicRecipeDiscoveryInfiniteQueryOptions,
-  RECIPE_FORM_OPTIONS_LIMIT,
+  RECIPE_FORM_SEARCH_LIMIT,
   RECIPE_LIST_PAGE_SIZE,
-  recipeFormOptionsQueryOptions,
+  recipeFormSearchQueryOptions,
   recipeListInfiniteQueryOptions,
   sharedWithMeInfiniteQueryOptions,
 } from './recipeListQuery.js';
@@ -99,75 +99,74 @@ describe('recipeListQuery', () => {
     });
   });
 
-  test('builds form picker options on a key distinct from the infinite list', async () => {
+  test('builds form picker search on a key distinct from the infinite list', async () => {
     const list = jest.fn().mockResolvedValue([makeListItem('1')]);
-    const options = recipeFormOptionsQueryOptions(list);
+    const options = recipeFormSearchQueryOptions(list, 'pasta');
     expect(options.queryKey).toEqual([
       'recipes',
-      'form-options',
-      {sort: 'newest', sortDir: 'desc'},
+      'form-search',
+      {search: 'pasta', sort: 'newest', sortDir: 'desc'},
     ]);
     // Regression (#171, #172): the default-filter infinite list key
     // normalizes to {sort: 'newest', sortDir: 'desc'} — the picker key must
     // never equal it, or each query reads the other's cached data shape.
     const infiniteKey = recipeListInfiniteQueryOptions(list, {}).queryKey;
     expect(options.queryKey).not.toEqual(infiniteKey);
-    await options.queryFn();
+    const results = await options.queryFn();
+    expect(results).toEqual([makeListItem('1')]);
     expect(list).toHaveBeenCalledTimes(1);
     expect(list).toHaveBeenCalledWith({
-      limit: RECIPE_FORM_OPTIONS_LIMIT,
+      search: 'pasta',
+      sort: 'newest',
+      sortDir: 'desc',
+      limit: RECIPE_FORM_SEARCH_LIMIT,
       offset: 0,
     });
-    expect(RECIPE_FORM_OPTIONS_LIMIT).toBe(100);
+    expect(RECIPE_FORM_SEARCH_LIMIT).toBe(20);
   });
 
-  test('form picker fetches every page so recipes past the first page are selectable (#359)', async () => {
-    const all = Array.from({length: 203}, (_, index) =>
-      makeListItem(String(index + 1)),
-    );
-    const list = jest
-      .fn()
-      .mockImplementation(
-        async (params?: {limit?: number; offset?: number}) => {
-          const offset = params?.offset ?? 0;
-          const limit = params?.limit ?? all.length;
-          return all.slice(offset, offset + limit);
-        },
-      );
-    const options = recipeFormOptionsQueryOptions(list);
-    const recipes = await options.queryFn();
-    expect(recipes.map(recipe => recipe.id)).toEqual(
-      all.map(recipe => recipe.id),
-    );
-    // The recipe that sat beyond the old single-page cap is present.
-    expect(recipes[200]?.id).toBe('201');
-    expect(list.mock.calls).toEqual([
-      [{limit: RECIPE_FORM_OPTIONS_LIMIT, offset: 0}],
-      [{limit: RECIPE_FORM_OPTIONS_LIMIT, offset: 100}],
-      [{limit: RECIPE_FORM_OPTIONS_LIMIT, offset: 200}],
+  test('form picker search trims the text and omits an empty search', async () => {
+    const list = jest.fn().mockResolvedValue([]);
+    const options = recipeFormSearchQueryOptions(list, '  soup  ');
+    expect(options.queryKey).toEqual([
+      'recipes',
+      'form-search',
+      {search: 'soup', sort: 'newest', sortDir: 'desc'},
     ]);
+    await options.queryFn();
+    expect(list).toHaveBeenCalledWith({
+      search: 'soup',
+      sort: 'newest',
+      sortDir: 'desc',
+      limit: RECIPE_FORM_SEARCH_LIMIT,
+      offset: 0,
+    });
+
+    const empty = recipeFormSearchQueryOptions(list, '   ');
+    await empty.queryFn();
+    expect(list).toHaveBeenLastCalledWith({
+      sort: 'newest',
+      sortDir: 'desc',
+      limit: RECIPE_FORM_SEARCH_LIMIT,
+      offset: 0,
+    });
   });
 
-  test('form picker stops after an empty page when the library is an exact page multiple', async () => {
-    const all = Array.from({length: 200}, (_, index) =>
-      makeListItem(String(index + 1)),
-    );
-    const list = jest
-      .fn()
-      .mockImplementation(
-        async (params?: {limit?: number; offset?: number}) => {
-          const offset = params?.offset ?? 0;
-          const limit = params?.limit ?? all.length;
-          return all.slice(offset, offset + limit);
-        },
-      );
-    const options = recipeFormOptionsQueryOptions(list);
-    const recipes = await options.queryFn();
-    expect(recipes).toHaveLength(200);
-    expect(list).toHaveBeenCalledTimes(3);
-    expect(list).toHaveBeenLastCalledWith({
-      limit: RECIPE_FORM_OPTIONS_LIMIT,
-      offset: 200,
+  test('form picker search reaches recipes past the old first-100 cap (#359)', async () => {
+    // The old picker fetched the library in one capped request; the search
+    // asks the server for matches instead, so a recipe that only exists
+    // beyond position 100 is returned as a search result.
+    const deepRecipe = makeListItem('201');
+    const list = jest.fn().mockResolvedValue([deepRecipe]);
+    const options = recipeFormSearchQueryOptions(list, 'Recipe 201');
+    const results = await options.queryFn();
+    expect(results.map(recipe => recipe.id)).toEqual(['201']);
+    expect(list).toHaveBeenCalledWith({
+      search: 'Recipe 201',
+      sort: 'newest',
+      sortDir: 'desc',
+      limit: RECIPE_FORM_SEARCH_LIMIT,
+      offset: 0,
     });
   });
 

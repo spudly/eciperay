@@ -94,37 +94,38 @@ export const recipeListInfiniteQueryOptions = (
 });
 
 /**
- * Page size for the form pickers' sequential fetch — NOT a cap on how many
- * recipes the pickers can offer. (It was the cap until #359: a single `limit:
- * 100` request meant recipes beyond the first 100 could never be added to a
- * meal or meal plan.)
+ * How many results one form-picker search returns. The picker is a search
+ * autocomplete (#359, @spudly/ui 2.0.0): the host runs this server-side search
+ * for the typed text and shows one page of matches — it no longer renders the
+ * whole library, so the old single-request `limit: 100` cap (recipes beyond the
+ * first 100 could never be added to a meal or meal plan) is gone by
+ * construction: any recipe is reachable by searching for it, however large the
+ * library is.
  */
-export const RECIPE_FORM_OPTIONS_LIMIT = 100;
+export const RECIPE_FORM_SEARCH_LIMIT = 20;
 
-// Flat recipe list for the meal / meal-plan form pickers: every recipe
-// in the account, fetched in sequential pages of
-// RECIPE_FORM_OPTIONS_LIMIT until a partial (or empty) page ends the
-// library. The DS form pages render the whole option list through a
-// checkbox list with no search or load-more contract, so the host must
-// hand them the full library; paging here keeps each request at the
-// size the list endpoint already serves for the main recipe list.
-// Uses its own query key — see queryKeys.recipeFormOptions for why sharing
-// the infinite list's key crashes both consumers (#171, #172).
-export const recipeFormOptionsQueryOptions = (list: ListRecipesFn) => ({
-  queryKey: queryKeys.recipeFormOptions(),
-  queryFn: async (): Promise<RecipeDetail[]> => {
-    const recipes: RecipeDetail[] = [];
-    let offset = 0;
-    for (;;) {
-      const page = await list({limit: RECIPE_FORM_OPTIONS_LIMIT, offset});
-      recipes.push(...page);
-      if (page.length < RECIPE_FORM_OPTIONS_LIMIT) {
-        return recipes;
-      }
-      offset += page.length;
-    }
-  },
-});
+// One page of server-side recipe search results for the meal / meal-plan
+// form pickers, ordered newest-first with the list endpoint's total-order
+// tie-breaker (updated_at desc, id) so the order is deterministic. Uses
+// its own query key — see queryKeys.recipeFormSearch for why sharing the
+// infinite list's key crashes both consumers (#171, #172).
+export const recipeFormSearchQueryOptions = (
+  list: ListRecipesFn,
+  searchText: string,
+) => {
+  const search = searchText.trim();
+  return {
+    queryKey: queryKeys.recipeFormSearch(search),
+    queryFn: async (): Promise<RecipeDetail[]> =>
+      list({
+        ...(search ? {search} : {}),
+        sort: 'newest',
+        sortDir: 'desc',
+        limit: RECIPE_FORM_SEARCH_LIMIT,
+        offset: 0,
+      }),
+  };
+};
 
 export const sharedWithMeInfiniteQueryOptions = (
   listSharedWithMe: ListRecipesFn,

@@ -22,8 +22,8 @@ export const queryKeys = {
     }
     return ['recipes', normalizeFilters(filters)] as const;
   },
-  // The meal / meal-plan form recipe picker caches a flat RecipeDetail[]
-  // (the full library, fetched in pages — #359), while the recipe list
+  // The meal / meal-plan form recipe search caches a flat RecipeDetail[]
+  // (one page of server-side search results — #359), while the recipe list
   // caches an infinite-query
   // {pages, pageParams} shape under queryKeys.recipes(filters). The two
   // MUST NOT share a key: the default list filters normalize to exactly
@@ -31,8 +31,12 @@ export const queryKeys = {
   // queryKeys.recipes({sort: 'newest', sortDir: 'desc'}) each consumer read
   // the other's cached shape and crashed (#171, #172). This key stays under
   // the ['recipes'] prefix so invalidateRecipeQueries still refreshes it.
-  recipeFormOptions: () =>
-    ['recipes', 'form-options', {sort: 'newest', sortDir: 'desc'}] as const,
+  recipeFormSearch: (search: string) =>
+    [
+      'recipes',
+      'form-search',
+      {search: search.trim(), sort: 'newest', sortDir: 'desc'},
+    ] as const,
   recipe: (id: string) => ['recipe', id] as const,
   versions: (recipeId: string) => ['versions', recipeId] as const,
   version: (recipeId: string, versionId: string) =>
