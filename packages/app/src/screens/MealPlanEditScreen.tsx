@@ -60,7 +60,7 @@ export const MealPlanEditScreen = ({route, navigation}: Props) => {
     error: searchError,
   } = useQuery({
     ...recipeFormSearchQueryOptions(
-      params => api.recipes.list(params),
+      (params, signal) => api.recipes.list(params, signal),
       debouncedSearch,
     ),
     enabled: debouncedSearch.trim().length > 0,

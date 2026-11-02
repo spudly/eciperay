@@ -47,7 +47,7 @@ export const MealEditPage = () => {
     error: searchError,
   } = useQuery({
     ...recipeFormSearchQueryOptions(
-      params => eciperay.recipes.list(params),
+      (params, signal) => eciperay.recipes.list(params, signal),
       debouncedSearch,
     ),
     enabled: debouncedSearch.trim().length > 0,
