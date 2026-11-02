@@ -520,12 +520,17 @@ export const RecipeDetailHost = ({
     setShowCookLogForm(false);
     setConfirmingCookLogDeleteId(null);
     setCookLogDeleteError(null);
-    // A nutrition refresh in flight for the previous recipe is stale:
-    // invalidate it and reset its UI state for the new recipe.
+  }, [displayRecipe.id, displayRecipe.versionId]);
+
+  // Nutrition is keyed by recipe (not by displayed version): only a
+  // recipe change makes an in-flight refresh stale. Invalidate it and
+  // reset its UI state for the new recipe; a version switch of the
+  // same recipe leaves the refresh alone.
+  useEffect(() => {
     nutritionRequestRef.current += 1;
     setIsRefreshingNutrition(false);
     setNutritionErrorVisible(false);
-  }, [displayRecipe.id, displayRecipe.versionId]);
+  }, [recipe.id]);
 
   const canEditDraft = canEditDraftVersion(displayRecipe.versionId, versions);
   const canEditMetadata = canEditActiveRecipeMetadata(
