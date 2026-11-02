@@ -338,16 +338,19 @@ one first via Meals case 1 and do not delete it until this section is done.)
    concept: a plan is a list of entries (meals and recipes, each with a
    quantity/servings). In the plan edit form (Title, Notes, Starts on, Ends
    on, and the Meals & recipes checklist), add at least three entries in
-   total, including at least one meal and one standalone recipe. Save,
-   reload. **Expected:** the entries persist in the detail, in the order
-   selected, with their quantities/servings, and the plan totals reflect
+   total, including at least one meal and one standalone recipe. Set a
+   non-default quantity on at least one meal entry and a non-default
+   quantity and servings on at least one recipe entry. Save, reload.
+   **Expected:** the entries persist in the detail, in the order selected,
+   with exactly those quantities/servings, and the plan totals reflect
    them.
 3. **Reorder and remove entries.** The form has no drag or move control:
    an entry's position is its selection order, and unchecking then
    re-checking an entry moves it to the end of the list. Uncheck and
    re-check one entry so it moves to the end, save, reload. **Expected:**
    the detail shows the new order — the moved entry last, the others in
-   their previous relative order. Then remove a different entry entirely,
+   their previous relative order. Then remove a different entry by
+   unchecking its checkbox (the form has no separate remove control),
    save, reload. **Expected:** the removed entry is gone, the remaining
    entries keep their order, and there are no duplicate or orphaned
    entries.
