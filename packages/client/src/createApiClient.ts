@@ -100,7 +100,23 @@ export const createApiClient = (opts: ApiClientOptions): ApiClient => {
     if (response.status === 204) {
       return undefined as unknown as T;
     }
-    return response.json() as Promise<T>;
+    try {
+      return (await response.json()) as T;
+    } catch (cause) {
+      // fetch() resolves when the headers arrive; a connection that drops
+      // while the body is read makes json() reject with a TypeError. That
+      // is the same network-level failure as a rejected fetch() (#378) —
+      // convert it the same way. Anything else (a SyntaxError from a
+      // malformed body, or the caller's own abort reason) is rethrown
+      // unchanged.
+      if (!(cause instanceof TypeError) || options.signal?.aborted) {
+        throw cause;
+      }
+      const error: ApiError = new Error(`Network error: ${path}`, {cause});
+      error.code = 'network_error';
+      error.status = 0;
+      throw error;
+    }
   };
   return {fetch: fetchApi};
 };

@@ -231,6 +231,65 @@ describe('createApiClient network failures', () => {
     expect((thrown as {status?: number}).status).toBe(0);
     expect((thrown as {cause?: unknown}).cause).toBe(cause);
   });
+
+  test('wraps a body-read TypeError as a network_error ApiError (#378)', async () => {
+    const cause = new TypeError('Failed to fetch');
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => {
+        throw cause;
+      },
+    });
+    const client = createApiClient({
+      baseUrl: 'http://localhost:8080',
+      getToken: async () => null,
+    });
+    const thrown: unknown = await client
+      .fetch('/auth/sync')
+      .catch((error: unknown) => error);
+    expect(thrown).toBeInstanceOf(Error);
+    expect((thrown as Error).message).toBe('Network error: /auth/sync');
+    expect((thrown as {code?: string}).code).toBe('network_error');
+    expect((thrown as {status?: number}).status).toBe(0);
+    expect((thrown as {cause?: unknown}).cause).toBe(cause);
+  });
+
+  test('rethrows a body-read SyntaxError unchanged (#378)', async () => {
+    const cause = new SyntaxError('Unexpected end of JSON input');
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => {
+        throw cause;
+      },
+    });
+    const client = createApiClient({
+      baseUrl: 'http://localhost:8080',
+      getToken: async () => null,
+    });
+    await expect(client.fetch('/auth/sync')).rejects.toBe(cause);
+  });
+
+  test('rethrows a body-read TypeError when the caller aborted (#378)', async () => {
+    const cause = new TypeError('Failed to fetch');
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => {
+        throw cause;
+      },
+    });
+    const client = createApiClient({
+      baseUrl: 'http://localhost:8080',
+      getToken: async () => null,
+    });
+    const controller = new AbortController();
+    controller.abort();
+    await expect(
+      client.fetch('/auth/sync', {signal: controller.signal}),
+    ).rejects.toBe(cause);
+  });
 });
 
 describe('createApiClient message-only error bodies', () => {
