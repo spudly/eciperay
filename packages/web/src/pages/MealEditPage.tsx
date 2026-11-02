@@ -32,7 +32,11 @@ export const MealEditPage = () => {
     enabled: isEdit,
   });
 
-  const {data: recipes = [], isLoading: recipesLoading} = useQuery(
+  const {
+    data: recipes = [],
+    isLoading: recipesLoading,
+    error: recipesError,
+  } = useQuery(
     recipeFormOptionsQueryOptions(params => eciperay.recipes.list(params)),
   );
 
@@ -110,7 +114,15 @@ export const MealEditPage = () => {
         }))}
         servingsByRecipeId={servingsByRecipeId}
         isSaving={saveMutation.isPending}
-        error={formError}
+        error={
+          formError ??
+          // A failed picker fetch (the full-library fetch rejects as a
+          // whole if any page fails) must not read as an empty library:
+          // surface it in the form's error slot instead (#359).
+          (recipesError
+            ? `Could not load recipes: ${errorMessage(recipesError)}`
+            : null)
+        }
         onTitleChange={setTitle}
         onNotesChange={setNotes}
         onToggleRecipe={handleToggleRecipe}

@@ -31,7 +31,11 @@ export const MealPlanEditPage = () => {
     queryFn: () => eciperay.meals.list(),
   });
 
-  const {data: recipes = [], isLoading: recipesLoading} = useQuery(
+  const {
+    data: recipes = [],
+    isLoading: recipesLoading,
+    error: recipesError,
+  } = useQuery(
     recipeFormOptionsQueryOptions(params => eciperay.recipes.list(params)),
   );
 
@@ -78,7 +82,14 @@ export const MealPlanEditPage = () => {
         quantityByKey={form.quantityByKey}
         servingsByRecipeId={form.servingsByRecipeId}
         isSaving={saveMutation.isPending}
-        error={formError}
+        error={
+          formError ??
+          // Same picker-error surfacing as the meal form (#359): a
+          // failed full-library fetch must not read as an empty library.
+          (recipesError
+            ? `Could not load recipes: ${errorMessage(recipesError)}`
+            : null)
+        }
         onTitleChange={form.setTitle}
         onNotesChange={form.setNotes}
         onStartsOnChange={form.setStartsOn}

@@ -72,6 +72,15 @@ describe('MealEditScreen', () => {
     expect(await findByText('Pasta')).toBeTruthy();
   });
 
+  test('surfaces a recipe picker load failure instead of an empty picker', async () => {
+    mockListRecipes.mockRejectedValue(new Error('boom'));
+    const {findByText, queryByText} = await renderWithProviders(
+      <MealEditScreen {...createProps({})} />,
+    );
+    expect(await findByText('Could not load recipes: boom')).toBeTruthy();
+    expect(queryByText('Pasta')).toBeNull();
+  });
+
   test('renders new meal form', async () => {
     const {findByText} = await renderWithProviders(
       <MealEditScreen {...createProps({})} />,

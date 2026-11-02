@@ -57,6 +57,19 @@ describe('MealEditPage', () => {
     // is not enough on CI hardware.
   }, 30000);
 
+  test('surfaces a recipe picker load failure instead of an empty picker', async () => {
+    server.use(
+      http.get('http://localhost:8080/api/recipes', () =>
+        HttpResponse.json({error: 'boom'}, {status: 500}),
+      ),
+    );
+    await renderWithProviders(<MealEditPage />, {route: '/meals/new'});
+    await waitFor(() => {
+      expect(screen.getByText(/Could not load recipes:/)).toBeInTheDocument();
+    });
+    expect(screen.queryByText('Test Recipe')).not.toBeInTheDocument();
+  });
+
   test('creates a meal', async () => {
     server.use(
       http.post('http://localhost:8080/api/meals', async () =>

@@ -33,7 +33,11 @@ export const MealPlanEditScreen = ({route, navigation}: Props) => {
     queryFn: () => api.meals.list(),
   });
 
-  const {data: recipes = [], isLoading: recipesLoading} = useQuery(
+  const {
+    data: recipes = [],
+    isLoading: recipesLoading,
+    error: recipesError,
+  } = useQuery(
     recipeFormOptionsQueryOptions(params => api.recipes.list(params)),
   );
 
@@ -78,7 +82,14 @@ export const MealPlanEditScreen = ({route, navigation}: Props) => {
         quantityByKey={form.quantityByKey}
         servingsByRecipeId={form.servingsByRecipeId}
         isSaving={saveMutation.isPending}
-        error={formError}
+        error={
+          formError ??
+          // Same picker-error surfacing as web (#359): a failed
+          // full-library fetch must not read as an empty library.
+          (recipesError
+            ? `Could not load recipes: ${errorMessage(recipesError)}`
+            : null)
+        }
         onTitleChange={form.setTitle}
         onNotesChange={form.setNotes}
         onStartsOnChange={form.setStartsOn}

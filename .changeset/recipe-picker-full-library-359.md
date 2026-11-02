@@ -1,5 +1,6 @@
 ---
 '@eciperay/client': patch
+'@eciperay/server': patch
 '@eciperay/web': patch
 '@eciperay/app': patch
 ---
@@ -10,4 +11,9 @@ recipes, so any recipe beyond the first 100 (for example older recipes in a
 large account) could not be selected into a Meal or meal plan. The query now
 fetches the library in sequential 100-recipe pages until a partial page ends it,
 so every recipe is selectable in the meal form and the meal-plan form on web and
-in the app.
+in the app. To keep offset paging exact, the server's recipe list ordering is
+now total: every sort branch ends with a unique version-id tie-breaker (and the
+shared-with-me newest order with the recipe id), so recipes that tie on the sort
+keys cannot be skipped or duplicated across page boundaries. If the picker fetch
+fails, the meal and meal-plan forms now show a "Could not load recipes" error
+instead of a silently empty picker.
