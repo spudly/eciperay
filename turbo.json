@@ -17,7 +17,7 @@
     },
     "test:coverage": {
       "dependsOn": ["^typecheck"],
-      "inputs": ["src/**/*.{ts,tsx}", "vitest.config.ts"],
+      "inputs": ["src/**/*.{ts,tsx}", "vitest.config.ts", "coverageGlobs.json"],
       "outputs": ["coverage/**"]
     },
     "build": {
