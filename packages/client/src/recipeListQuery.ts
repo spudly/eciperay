@@ -14,7 +14,10 @@ export type {RecipeListFilters} from './recipesListUrl.js';
 
 export const RECIPE_LIST_PAGE_SIZE = 20;
 
-type ListRecipesFn = (params?: RecipeListParams) => Promise<RecipeDetail[]>;
+type ListRecipesFn = (
+  params?: RecipeListParams,
+  signal?: AbortSignal,
+) => Promise<RecipeDetail[]>;
 type GetRecipeFn = (id: string) => Promise<RecipeDetail>;
 type ListPublicRecipesFn = (
   params?: RecipeListParams,
@@ -129,21 +132,26 @@ export const recipeFormSearchQueryOptions = (
       let offset = 0;
       for (;;) {
         // TanStack Query aborts the signal when this search is superseded
-        // (new search text) or its host unmounts. The list client takes no
-        // signal, so honour cancellation between pages: an abandoned
-        // search must not keep paging through every remaining match.
+        // (new search text) or its host unmounts. The signal is forwarded
+        // to the list call so the in-flight request itself aborts; the
+        // between-pages check below covers list implementations that
+        // ignore the signal, so an abandoned search never keeps paging
+        // through every remaining match either way.
         if (signal?.aborted) {
           throw signal.reason instanceof Error
             ? signal.reason
             : new Error('The recipe search was aborted.');
         }
-        const page = await list({
-          ...(search ? {search} : {}),
-          sort: 'newest',
-          sortDir: 'desc',
-          limit: RECIPE_FORM_SEARCH_LIMIT,
-          offset,
-        });
+        const page = await list(
+          {
+            ...(search ? {search} : {}),
+            sort: 'newest',
+            sortDir: 'desc',
+            limit: RECIPE_FORM_SEARCH_LIMIT,
+            offset,
+          },
+          signal,
+        );
         results.push(...page);
         if (page.length < RECIPE_FORM_SEARCH_LIMIT) {
           return results;

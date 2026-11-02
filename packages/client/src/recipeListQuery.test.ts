@@ -115,13 +115,16 @@ describe('recipeListQuery', () => {
     const results = await options.queryFn();
     expect(results).toEqual([makeListItem('1')]);
     expect(list).toHaveBeenCalledTimes(1);
-    expect(list).toHaveBeenCalledWith({
-      search: 'pasta',
-      sort: 'newest',
-      sortDir: 'desc',
-      limit: RECIPE_FORM_SEARCH_LIMIT,
-      offset: 0,
-    });
+    expect(list).toHaveBeenCalledWith(
+      {
+        search: 'pasta',
+        sort: 'newest',
+        sortDir: 'desc',
+        limit: RECIPE_FORM_SEARCH_LIMIT,
+        offset: 0,
+      },
+      undefined,
+    );
     expect(RECIPE_FORM_SEARCH_LIMIT).toBe(20);
   });
 
@@ -134,22 +137,28 @@ describe('recipeListQuery', () => {
       {search: 'soup', sort: 'newest', sortDir: 'desc'},
     ]);
     await options.queryFn();
-    expect(list).toHaveBeenCalledWith({
-      search: 'soup',
-      sort: 'newest',
-      sortDir: 'desc',
-      limit: RECIPE_FORM_SEARCH_LIMIT,
-      offset: 0,
-    });
+    expect(list).toHaveBeenCalledWith(
+      {
+        search: 'soup',
+        sort: 'newest',
+        sortDir: 'desc',
+        limit: RECIPE_FORM_SEARCH_LIMIT,
+        offset: 0,
+      },
+      undefined,
+    );
 
     const empty = recipeFormSearchQueryOptions(list, '   ');
     await empty.queryFn();
-    expect(list).toHaveBeenLastCalledWith({
-      sort: 'newest',
-      sortDir: 'desc',
-      limit: RECIPE_FORM_SEARCH_LIMIT,
-      offset: 0,
-    });
+    expect(list).toHaveBeenLastCalledWith(
+      {
+        sort: 'newest',
+        sortDir: 'desc',
+        limit: RECIPE_FORM_SEARCH_LIMIT,
+        offset: 0,
+      },
+      undefined,
+    );
   });
 
   test('form picker search reaches recipes past the old first-100 cap (#359)', async () => {
@@ -161,13 +170,16 @@ describe('recipeListQuery', () => {
     const options = recipeFormSearchQueryOptions(list, 'Recipe 201');
     const results = await options.queryFn();
     expect(results.map(recipe => recipe.id)).toEqual(['201']);
-    expect(list).toHaveBeenCalledWith({
-      search: 'Recipe 201',
-      sort: 'newest',
-      sortDir: 'desc',
-      limit: RECIPE_FORM_SEARCH_LIMIT,
-      offset: 0,
-    });
+    expect(list).toHaveBeenCalledWith(
+      {
+        search: 'Recipe 201',
+        sort: 'newest',
+        sortDir: 'desc',
+        limit: RECIPE_FORM_SEARCH_LIMIT,
+        offset: 0,
+      },
+      undefined,
+    );
   });
 
   test('form picker search collects matches past the first page (#359)', async () => {
@@ -191,20 +203,28 @@ describe('recipeListQuery', () => {
       'older-soup',
     ]);
     expect(list).toHaveBeenCalledTimes(2);
-    expect(list).toHaveBeenNthCalledWith(1, {
-      search: 'Soup',
-      sort: 'newest',
-      sortDir: 'desc',
-      limit: RECIPE_FORM_SEARCH_LIMIT,
-      offset: 0,
-    });
-    expect(list).toHaveBeenNthCalledWith(2, {
-      search: 'Soup',
-      sort: 'newest',
-      sortDir: 'desc',
-      limit: RECIPE_FORM_SEARCH_LIMIT,
-      offset: RECIPE_FORM_SEARCH_LIMIT,
-    });
+    expect(list).toHaveBeenNthCalledWith(
+      1,
+      {
+        search: 'Soup',
+        sort: 'newest',
+        sortDir: 'desc',
+        limit: RECIPE_FORM_SEARCH_LIMIT,
+        offset: 0,
+      },
+      undefined,
+    );
+    expect(list).toHaveBeenNthCalledWith(
+      2,
+      {
+        search: 'Soup',
+        sort: 'newest',
+        sortDir: 'desc',
+        limit: RECIPE_FORM_SEARCH_LIMIT,
+        offset: RECIPE_FORM_SEARCH_LIMIT,
+      },
+      undefined,
+    );
   });
 
   test('form picker search stops paging on an empty page (#359)', async () => {
@@ -222,6 +242,23 @@ describe('recipeListQuery', () => {
     const results = await options.queryFn();
     expect(results).toHaveLength(RECIPE_FORM_SEARCH_LIMIT);
     expect(list).toHaveBeenCalledTimes(2);
+  });
+
+  test('form picker search forwards the query signal to every page request', async () => {
+    const list = jest.fn().mockResolvedValue([makeListItem('1')]);
+    const options = recipeFormSearchQueryOptions(list, 'Soup');
+    const controller = new AbortController();
+    await options.queryFn({signal: controller.signal});
+    expect(list).toHaveBeenCalledWith(
+      {
+        search: 'Soup',
+        sort: 'newest',
+        sortDir: 'desc',
+        limit: RECIPE_FORM_SEARCH_LIMIT,
+        offset: 0,
+      },
+      controller.signal,
+    );
   });
 
   test('form picker search honours cancellation before the first page', async () => {

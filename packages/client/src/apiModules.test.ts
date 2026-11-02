@@ -59,8 +59,13 @@ describe('createEciperayClient', () => {
     await client.recipes.deleteComment('r1', 'c1');
     await client.recipes.listPublicComments('r1');
     await client.recipes.listPublicComments('r1', {shareToken: 'tok'});
+    const controller = new AbortController();
+    await client.recipes.list({search: 'soup'}, controller.signal);
     expect(api.fetch).toHaveBeenCalledWith('/recipes');
     expect(api.fetch).toHaveBeenCalledWith('/recipes?limit=50&offset=10');
+    expect(api.fetch).toHaveBeenCalledWith('/recipes?search=soup', {
+      signal: controller.signal,
+    });
     expect(api.fetch).toHaveBeenCalledWith(
       '/recipes?search=pasta&limit=50&offset=10',
     );
