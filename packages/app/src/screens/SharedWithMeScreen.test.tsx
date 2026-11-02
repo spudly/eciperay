@@ -1,5 +1,5 @@
 import React from 'react';
-import {act, waitFor} from '@testing-library/react-native';
+import {act, fireEvent, waitFor} from '@testing-library/react-native';
 import {RECIPE_LIST_PAGE_SIZE} from '@eciperay/client';
 
 import {makeRecipeDetail} from '../__tests__/fixtures/recipe';
@@ -153,6 +153,73 @@ describe('SharedWithMeScreen', () => {
         sort: 'newest',
         sortDir: 'desc',
       });
+    });
+  });
+
+  test('a failed next page stops automatic retries and offers a manual retry', async () => {
+    // Regression (#371): same gate as the Recipes screen — a failed
+    // next page latches the fetch-next-page error, end-reached signals
+    // stop fetching, and the alert under the list offers the retry.
+    const firstPage = Array.from({length: RECIPE_LIST_PAGE_SIZE}, (_, index) =>
+      makeRecipeDetail({
+        id: `shared-${index}`,
+        title: `Shared ${index}`,
+        userId: 'other-user',
+      }),
+    );
+    let failNextPage = true;
+    mockListSharedWithMe.mockImplementation(
+      async (params?: {offset?: number}) => {
+        if (params?.offset === 0) {
+          return firstPage;
+        }
+        if (failNextPage) {
+          throw new Error('Next page failed');
+        }
+        return [
+          makeRecipeDetail({
+            id: 'shared-extra',
+            title: 'Extra Shared',
+            userId: 'other-user',
+          }),
+        ];
+      },
+    );
+    const client = makeQueryClient();
+    const {findByLabelText, findByText, getByText, queryByText, container} =
+      await renderWithProviders(<SharedWithMeScreen />, client);
+    await findByLabelText('Shared 0');
+    const list = findList(container);
+
+    // The first end-reached signal fetches the next page, which fails,
+    // and the retry alert appears under the list.
+    await triggerEndReached(list);
+    expect(await findByText("Couldn't load more recipes.")).toBeTruthy();
+    await waitFor(() => {
+      expect(mockListSharedWithMe).toHaveBeenCalledTimes(2);
+    });
+
+    // Further end-reached signals must not cycle automatic retries
+    // while the failed page is latched.
+    await triggerEndReached(list);
+    await triggerEndReached(list);
+    await act(async () => {
+      await flushQueryClient(client);
+    });
+    expect(mockListSharedWithMe).toHaveBeenCalledTimes(2);
+
+    // The manual retry loads the page once the endpoint recovers:
+    // the next page is fetched and the alert clears. (The new row
+    // itself sits beyond the virtualized list's rendered window in
+    // Jest, so the fetch and the cleared alert are the observable
+    // half of the contract here.)
+    failNextPage = false;
+    await fireEvent.press(getByText('Try again'));
+    await waitFor(() => {
+      expect(mockListSharedWithMe).toHaveBeenCalledTimes(3);
+    });
+    await waitFor(() => {
+      expect(queryByText("Couldn't load more recipes.")).toBeNull();
     });
   });
 });
