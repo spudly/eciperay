@@ -333,17 +333,33 @@ and landing on its detail against the QA dataset once the CI test account
 secrets exist (issue #233); until then that case remains manual. The cases below
 are the manual remainder._
 
-**Preconditions:** QA account with at least three recipes.
+**Preconditions:** QA account with at least three recipes and at least one
+meal. (The seed pass seeds recipes only — if the account has no meal, create
+one first via Meals case 1 and do not delete it until this section is done.)
 
 1. **Create a plan.** Create a meal plan (`/meal-plans/new`) named
    `QA — Week Plan` spanning a week. **Expected:** it appears in the plans list
    and opens to its detail (`/meal-plans/:planId`).
-2. **Assign recipes to days.** In the plan detail/edit, assign recipes to
-   specific days (breakfast/dinner slots as offered). Save, reload.
-   **Expected:** assignments persist on the correct days.
-3. **Move and remove entries.** Move one entry to another day and remove one
-   entry entirely. **Expected:** detail reflects both changes; no duplicate or
-   orphaned entries.
+2. **Add meals and recipes as entries.** Meal plans have no day/slot
+   concept: a plan is a list of entries (meals and recipes, each with a
+   quantity/servings). In the plan edit form (Title, Notes, Starts on, Ends
+   on, and the Meals & recipes checklist), add at least three entries in
+   total, including at least one meal and one standalone recipe. Set a
+   non-default quantity on at least one meal entry and a non-default
+   quantity and servings on at least one recipe entry. Save, reload.
+   **Expected:** the entries persist in the detail, in the order selected,
+   with exactly those quantities/servings, and the plan totals reflect
+   them.
+3. **Reorder and remove entries.** The form has no drag or move control:
+   an entry's position is its selection order, and unchecking then
+   re-checking an entry moves it to the end of the list. Uncheck and
+   re-check one entry so it moves to the end, save, reload. **Expected:**
+   the detail shows the new order — the moved entry last, the others in
+   their previous relative order. Then remove a different entry by
+   unchecking its checkbox (the form has no separate remove control),
+   save, reload. **Expected:** the removed entry is gone, the remaining
+   entries keep their order, and there are no duplicate or orphaned
+   entries.
 4. **Nutrition goal progress.** If the account has nutrition goals set, open the
    plan detail's nutrition goal progress. **Expected:** totals are plausible
    sums of the assigned recipes and the progress view renders for days with and
@@ -629,13 +645,27 @@ account on the Free plan for case 3.
    the plan shown (Free / Plus / Power) matches the account's actual entitlement
    — for the QA account, Power via the comp override, presented without error or
    a spurious "subscribe" upsell blocking the page.
-2. **Pay page render.** Open `/pay`. **Expected:** the plans and prices render
-   (Plus and Power, monthly and yearly) and match the amounts configured in the
-   billing provider; selecting a plan proceeds toward checkout — STOP before any
-   payment confirmation.
+2. **Subscription information and prices.** Open Profile → subscription
+   section. **Expected:** the section shows the account's current plan and,
+   where the entitlement carries one, its status text (e.g. an active
+   renewal date or a payment-past-due notice). When no status text applies,
+   it shows the informational price hint — Plus ($3.99/mo) and Power
+   ($8.99/mo) with a one-line summary of what each adds — matching the
+   amounts configured in the billing provider. The web profile offers no
+   plan catalog, no monthly/yearly selector, and no checkout start: do not
+   look for upgrade controls there. Where the account has a billing-portal
+   link, a Manage subscription action is also shown (case 4). `/pay` itself
+   is NOT a plans page: it is the Paddle checkout-completion target. Open
+   `/pay` bare (no `_ptxn` parameter). **Expected:** a Checkout card
+   explaining it needs the checkout link from a purchase started elsewhere
+   — no plan prices render there.
 3. **Free-account upsell sanity.** On the Free account, open a plan-gated
-   feature and the pay page. **Expected:** gating messages are human-readable
-   and the upgrade path leads to `/pay`; no dead ends.
+   feature and the Profile subscription section. **Expected:** gating
+   messages are human-readable, and the subscription section shows the Free
+   plan with the informational Plus/Power price hint (the Free-plan
+   upsell). There is no checkout start in the web profile, so there is no
+   upgrade flow to follow from there — the hint rendering correctly, with
+   no dead-end controls, is the pass.
 4. **Manage-subscription entry.** If the account shows a manage/billing portal
    entry, open it up to the portal handoff. **Expected:** the handoff targets
    the billing provider's portal (do not change any setting inside the portal
