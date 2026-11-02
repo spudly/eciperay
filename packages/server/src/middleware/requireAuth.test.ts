@@ -93,6 +93,24 @@ describe('requireAuth', () => {
     expect(res.body).toMatchObject({error: 'database unavailable'});
   });
 
+  test('returns 503 (not 401) when the Supabase user lookup fails transiently', async () => {
+    const supabaseUrl =
+      process.env['SUPABASE_URL'] ?? 'http://supabase-test.local';
+    nock(supabaseUrl)
+      .get('/auth/v1/user')
+      .times(5)
+      .reply(500, {message: 'Internal error'});
+
+    const res = await request(makeApp())
+      .get('/me')
+      .set('Authorization', 'Bearer valid-token');
+
+    expect(res.status).toBe(503);
+    expect(res.body).toMatchObject({
+      error: 'Authentication service unavailable',
+    });
+  });
+
   test('succeeds when the user upsert loses a concurrent first-login users_pkey race and retries', async () => {
     nockSupabaseGetUser('4e35e006-2ea0-40f2-8ef9-af42b51f266a');
     mockQuery

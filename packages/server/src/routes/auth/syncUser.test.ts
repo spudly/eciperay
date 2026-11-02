@@ -44,6 +44,23 @@ describe('POST /auth/sync', () => {
     expect(res.body).toMatchObject({error: 'Invalid or expired token'});
   });
 
+  test('returns 503 (not 401) when the Supabase user lookup fails transiently', async () => {
+    const supabaseUrl =
+      process.env['SUPABASE_URL'] ?? 'http://supabase-test.local';
+    nock(supabaseUrl)
+      .get('/auth/v1/user')
+      .times(5)
+      .reply(500, {message: 'Internal error'});
+    const res = await request(getApp())
+      .post('/api/auth/sync')
+      .set('Authorization', 'Bearer valid-token')
+      .send({});
+    expect(res.status).toBe(503);
+    expect(res.body).toMatchObject({
+      error: 'Authentication service unavailable',
+    });
+  });
+
   test('returns 200 when displayName is omitted (uses null fallback)', async () => {
     nockSupabaseGetUser('user-uuid-1');
     const res = await request(getApp())
