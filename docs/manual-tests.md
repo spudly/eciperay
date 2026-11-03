@@ -321,29 +321,30 @@ mode; there is no Playwright coverage of meals. The cases below are manual._
    **Expected:** the beyond-100 recipe appears as a search result and can be
    selected into the meal (it moves to the selected list under the search field,
    with its servings stepper); saving keeps it on the meal detail. Also confirm
-   word-by-word matching (regression: #385): searching a word from the middle
-   of a title (e.g. "First") and a multi-word partial title whose words are
-   not the title's opening words (e.g. "First Soup" for a recipe titled
-   "QA — First Soup") both surface the recipe; so do the same words in a
-   different order ("Soup First") and words that are not contiguous in the
-   title (e.g. "First Soup" for "QA — First Night Soup"), while a recipe
-   whose title contains only one of the searched words (e.g. "First Course"
-   for the search "First Soup") does NOT appear. Also confirm:
-   a search with no matches shows "No recipes found.", selecting a result leaves
-   the picker available to search and add another recipe, and a selected
-   recipe's Remove action takes it back out. Repeat the search-and-select part
-   in the meal-plan form (`/meal-plans/new`, "Search meals & recipes" field) —
-   the same picker contract serves both forms (see also Meal plans case 7).
-   (Runs execute in the QA preview environment defined under "How runs work"
-   above; on any surface where writes are prohibited, verify read-only instead:
-   confirm a beyond-100 recipe appears as a search result without saving.)
+   word-by-word matching (regression: #385): searching a word from the middle of
+   a title (e.g. "First") and a multi-word partial title whose words are not the
+   title's opening words (e.g. "First Soup" for a recipe titled "QA — First
+   Soup") both surface the recipe; so do the same words in a different order
+   ("Soup First") and words that are not contiguous in the title (e.g. "First
+   Soup" for "QA — First Night Soup"), while a recipe whose title contains only
+   one of the searched words (e.g. "First Course" for the search "First Soup")
+   does NOT appear. Also confirm: a search with no matches shows "No recipes
+   found.", selecting a result leaves the picker available to search and add
+   another recipe, and a selected recipe's Remove action takes it back out.
+   Repeat the search-and-select part in the meal-plan form (`/meal-plans/new`,
+   "Search meals & recipes" field) — the same picker contract serves both forms
+   (see also Meal plans case 7). (Runs execute in the QA preview environment
+   defined under "How runs work" above; on any surface where writes are
+   prohibited, verify read-only instead: confirm a beyond-100 recipe appears as
+   a search result without saving.)
 
 **Run when:**
 `packages/app/src/screens/{MealsHub,MealDetail,MealEdit,MealCookingMode}Screen.tsx`,
 `packages/web/src/pages/{MealsHub,MealDetail,MealEdit,MealCookingMode}Page.tsx`,
 `packages/client/src/recipeListQuery.ts`, `@spudly/ui` `MealsHubPage`,
 `MealDetailPage`, `MealFormPage`, or `MealCookingModePage`, `packages/server`
-meal routes, `packages/server` recipe search
+meal routes, `packages/server/src/lib/saveMeal.ts`, `packages/server` recipe
+search
 (`packages/server/src/routes/recipes/{listFilterParams,sqlConstants}.ts`),
 `packages/client/src/useMealPlanEditForm.ts`.
 
@@ -358,32 +359,30 @@ and landing on its detail against the QA dataset once the CI test account
 secrets exist (issue #233); until then that case remains manual. The cases below
 are the manual remainder._
 
-**Preconditions:** QA account with at least three recipes and at least one
-meal. (The seed pass seeds recipes only — if the account has no meal, create
-one first via Meals case 1 and do not delete it until this section is done.)
+**Preconditions:** QA account with at least three recipes and at least one meal.
+(The seed pass seeds recipes only — if the account has no meal, create one first
+via Meals case 1 and do not delete it until this section is done.)
 
 1. **Create a plan.** Create a meal plan (`/meal-plans/new`) named
    `QA — Week Plan` spanning a week. **Expected:** it appears in the plans list
    and opens to its detail (`/meal-plans/:planId`).
-2. **Add meals and recipes as entries.** Meal plans have no day/slot
-   concept: a plan is a list of entries (meals and recipes, each with a
-   quantity/servings). In the plan edit form (Title, Notes, Starts on, Ends
-   on, and the Meals & recipes checklist), add at least three entries in
-   total, including at least one meal and one standalone recipe. Set a
-   non-default quantity on at least one meal entry and a non-default
-   quantity and servings on at least one recipe entry. Save, reload.
-   **Expected:** the entries persist in the detail, in the order selected,
-   with exactly those quantities/servings, and the plan totals reflect
-   them.
-3. **Reorder and remove entries.** The form has no drag or move control:
-   an entry's position is its selection order, and unchecking then
-   re-checking an entry moves it to the end of the list. Uncheck and
-   re-check one entry so it moves to the end, save, reload. **Expected:**
-   the detail shows the new order — the moved entry last, the others in
-   their previous relative order. Then remove a different entry by
-   unchecking its checkbox (the form has no separate remove control),
-   save, reload. **Expected:** the removed entry is gone, the remaining
-   entries keep their order, and there are no duplicate or orphaned
+2. **Add meals and recipes as entries.** Meal plans have no day/slot concept: a
+   plan is a list of entries (meals and recipes, each with a quantity/servings).
+   In the plan edit form (Title, Notes, Starts on, Ends on, and the Meals &
+   recipes checklist), add at least three entries in total, including at least
+   one meal and one standalone recipe. Set a non-default quantity on at least
+   one meal entry and a non-default quantity and servings on at least one recipe
+   entry. Save, reload. **Expected:** the entries persist in the detail, in the
+   order selected, with exactly those quantities/servings, and the plan totals
+   reflect them.
+3. **Reorder and remove entries.** The form has no drag or move control: an
+   entry's position is its selection order, and unchecking then re-checking an
+   entry moves it to the end of the list. Uncheck and re-check one entry so it
+   moves to the end, save, reload. **Expected:** the detail shows the new order
+   — the moved entry last, the others in their previous relative order. Then
+   remove a different entry by unchecking its checkbox (the form has no separate
+   remove control), save, reload. **Expected:** the removed entry is gone, the
+   remaining entries keep their order, and there are no duplicate or orphaned
    entries.
 4. **Nutrition goal progress.** If the account has nutrition goals set, open the
    plan detail's nutrition goal progress. **Expected:** totals are plausible
@@ -429,7 +428,7 @@ one first via Meals case 1 and do not delete it until this section is done.)
 `packages/web/src/pages/{MealPlanDetail,MealPlanEdit}Page.tsx`, `@spudly/ui`
 `MealPlanDetailPage` or `MealPlanFormPage`,
 `packages/client/src/recipeListQuery.ts`, `packages/web/src/routes/router.tsx`,
-`packages/server` meal plan routes.
+`packages/server` meal plan routes, `packages/server/src/lib/saveMealPlan.ts`.
 
 ---
 
@@ -688,27 +687,25 @@ account on the Free plan for case 3.
    the plan shown (Free / Plus / Power) matches the account's actual entitlement
    — for the QA account, Power via the comp override, presented without error or
    a spurious "subscribe" upsell blocking the page.
-2. **Subscription information and prices.** Open Profile → subscription
-   section. **Expected:** the section shows the account's current plan and,
-   where the entitlement carries one, its status text (e.g. an active
-   renewal date or a payment-past-due notice). When no status text applies,
-   it shows the informational price hint — Plus ($3.99/mo) and Power
-   ($8.99/mo) with a one-line summary of what each adds — matching the
-   amounts configured in the billing provider. The web profile offers no
-   plan catalog, no monthly/yearly selector, and no checkout start: do not
-   look for upgrade controls there. Where the account has a billing-portal
-   link, a Manage subscription action is also shown (case 4). `/pay` itself
-   is NOT a plans page: it is the Paddle checkout-completion target. Open
-   `/pay` bare (no `_ptxn` parameter). **Expected:** a Checkout card
-   explaining it needs the checkout link from a purchase started elsewhere
-   — no plan prices render there.
+2. **Subscription information and prices.** Open Profile → subscription section.
+   **Expected:** the section shows the account's current plan and, where the
+   entitlement carries one, its status text (e.g. an active renewal date or a
+   payment-past-due notice). When no status text applies, it shows the
+   informational price hint — Plus ($3.99/mo) and Power ($8.99/mo) with a
+   one-line summary of what each adds — matching the amounts configured in the
+   billing provider. The web profile offers no plan catalog, no monthly/yearly
+   selector, and no checkout start: do not look for upgrade controls there.
+   Where the account has a billing-portal link, a Manage subscription action is
+   also shown (case 4). `/pay` itself is NOT a plans page: it is the Paddle
+   checkout-completion target. Open `/pay` bare (no `_ptxn` parameter).
+   **Expected:** a Checkout card explaining it needs the checkout link from a
+   purchase started elsewhere — no plan prices render there.
 3. **Free-account upsell sanity.** On the Free account, open a plan-gated
-   feature and the Profile subscription section. **Expected:** gating
-   messages are human-readable, and the subscription section shows the Free
-   plan with the informational Plus/Power price hint (the Free-plan
-   upsell). There is no checkout start in the web profile, so there is no
-   upgrade flow to follow from there — the hint rendering correctly, with
-   no dead-end controls, is the pass.
+   feature and the Profile subscription section. **Expected:** gating messages
+   are human-readable, and the subscription section shows the Free plan with the
+   informational Plus/Power price hint (the Free-plan upsell). There is no
+   checkout start in the web profile, so there is no upgrade flow to follow from
+   there — the hint rendering correctly, with no dead-end controls, is the pass.
 4. **Manage-subscription entry.** If the account shows a manage/billing portal
    entry, open it up to the portal handoff. **Expected:** the handoff targets
    the billing provider's portal (do not change any setting inside the portal

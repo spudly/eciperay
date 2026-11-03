@@ -437,7 +437,7 @@ describe('replaceMealPlan', () => {
       String(sql).includes('update meal_plans'),
     );
     expect(String(updateCall?.[0])).toContain(
-      "date_trunc('milliseconds', updated_at)",
+      "date_trunc('milliseconds', updated_at) = ANY($7::timestamptz[])",
     );
     expect(updateCall?.[1]).toContainEqual(['2024-01-01T00:00:00.123Z']);
     // The version must strictly advance on every replace: a plain now()

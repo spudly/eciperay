@@ -49,12 +49,15 @@ export const resolveExpectedUpdatedAts = (
   bodyExpectedUpdatedAt: string | undefined,
 ): string[] => {
   if (ifMatchHeader) {
+    // Only raw empty segments are dropped: a quoted empty tag (`""`) is a
+    // real candidate that can never match a stored timestamp, so it must
+    // survive as a precondition (the replace functions 409 on it) instead
+    // of degrading to the unconditional no-token path.
     const candidates = ifMatchHeader
       .split(',')
-      .map(candidate =>
-        candidate.trim().replace(/^W\//, '').replace(/^"|"$/g, ''),
-      )
-      .filter(candidate => candidate.length > 0);
+      .map(candidate => candidate.trim())
+      .filter(candidate => candidate.length > 0)
+      .map(candidate => candidate.replace(/^W\//, '').replace(/^"|"$/g, ''));
     if (candidates.includes('*')) {
       return [];
     }

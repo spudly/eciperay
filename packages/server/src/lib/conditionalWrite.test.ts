@@ -85,6 +85,13 @@ describe('resolveExpectedUpdatedAts', () => {
     ).toEqual([]);
   });
 
+  test('keeps a quoted empty If-Match tag as a nonmatching candidate', () => {
+    expect(resolveExpectedUpdatedAts('""', undefined)).toEqual(['']);
+    expect(resolveExpectedUpdatedAts('""', '2024-01-01T00:00:00.000Z')).toEqual(
+      [''],
+    );
+  });
+
   test('falls back to the body field when the header has no candidates', () => {
     expect(
       resolveExpectedUpdatedAts(' , ', '2024-01-01T00:00:00.000Z'),

@@ -254,7 +254,7 @@ describe('replaceMeal', () => {
       String(sql).includes('update meals'),
     );
     expect(String(updateCall?.[0])).toContain(
-      "date_trunc('milliseconds', updated_at)",
+      "date_trunc('milliseconds', updated_at) = ANY($5::timestamptz[])",
     );
     expect(updateCall?.[1]).toContainEqual(['2024-01-01T00:00:00.123Z']);
     // The version must strictly advance on every replace: a plain now()
@@ -263,6 +263,35 @@ describe('replaceMeal', () => {
     expect(String(updateCall?.[0])).toContain(
       "greatest(now(), date_trunc('milliseconds', updated_at) + interval '1 millisecond')",
     );
+  });
+
+  test('returns 409 and writes nothing for an empty If-Match tag (#384)', async () => {
+    const mockQuery = createMockQuery();
+    mockQuery.mockImplementation((async (sql: string) => {
+      if (sql.includes('select id, updated_at from meals')) {
+        return makeQueryResult([
+          {id: MEAL_ID, updated_at: '2024-01-01T00:00:00.000Z'},
+        ]);
+      }
+      return makeQueryResult([]);
+    }) as typeof mockQuery);
+
+    // `If-Match: ""` resolves to a single empty candidate: a precondition
+    // that can never match, not the unconditional no-token path.
+    const result = await replaceMeal(
+      MEAL_ID,
+      USER_ID,
+      {...mealInput, expectedUpdatedAts: ['']},
+      mockQuery,
+    );
+    expect(result).toEqual({
+      error: 'Meal has been modified since it was loaded',
+      status: 409,
+    });
+    const updates = mockQuery.mock.calls.filter(([sql]) =>
+      String(sql).includes('update meals'),
+    );
+    expect(updates).toEqual([]);
   });
 
   test('propagates unexpected errors from the replace writes', async () => {
