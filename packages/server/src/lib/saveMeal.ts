@@ -1,6 +1,7 @@
 import type {MealDetail, MealInput} from '@eciperay/types';
 
 import {query as defaultQuery} from '../db/query.js';
+import {runTransactional} from '../db/withTransaction.js';
 
 import {loadMealDetail} from './loadMealDetail.js';
 import {loadAccessibleRecipe} from './mealRecipeAccess.js';
@@ -91,27 +92,37 @@ export const replaceMeal = async (
     });
   }
 
-  // The token must advance monotonically at its millisecond precision —
-  // the same expression as the #394 delete trigger and
-  // touchMealsForRecipe — so a save that lands in the same millisecond as
-  // the meal's previous update (e.g. right after the trigger bumped the
-  // token for a member-recipe delete) never reissues the earlier ETag.
-  await queryFn(
-    `update meals set title = $3, notes = $4, updated_at = greatest(
+  // The update, member delete, and replacement inserts are one
+  // transaction (#403): a concurrent meal-detail read must never observe
+  // the intermediate state between the delete and the inserts (an empty
+  // member list), and a failed insert must not leave the meal updated
+  // with its members deleted or partially replaced. The existence and
+  // accessibility reads above stay outside the transaction, and the
+  // post-save detail load below keeps its existing semantics.
+  await runTransactional(queryFn, async q => {
+    // The token must advance monotonically at its millisecond precision —
+    // the same expression as the #394 delete trigger and
+    // touchMealsForRecipe — so a save that lands in the same millisecond
+    // as the meal's previous update (e.g. right after the trigger bumped
+    // the token for a member-recipe delete) never reissues the earlier
+    // ETag.
+    await q(
+      `update meals set title = $3, notes = $4, updated_at = greatest(
        now(),
        date_trunc('milliseconds', updated_at) + interval '1 millisecond'
      )
      where id = $1 and user_id = $2`,
-    [mealId, userId, input.title, input.notes ?? null],
-  );
-  await queryFn(`delete from meal_recipes where meal_id = $1`, [mealId]);
-  for (const recipe of resolved) {
-    await queryFn(
-      `insert into meal_recipes (meal_id, recipe_id, sort_order, servings)
-       values ($1, $2, $3, $4)`,
-      [mealId, recipe.recipeId, recipe.sortOrder, recipe.servings],
+      [mealId, userId, input.title, input.notes ?? null],
     );
-  }
+    await q(`delete from meal_recipes where meal_id = $1`, [mealId]);
+    for (const recipe of resolved) {
+      await q(
+        `insert into meal_recipes (meal_id, recipe_id, sort_order, servings)
+       values ($1, $2, $3, $4)`,
+        [mealId, recipe.recipeId, recipe.sortOrder, recipe.servings],
+      );
+    }
+  });
 
   const meal = await loadMealDetail(mealId, userId, queryFn);
   if (!meal) {
