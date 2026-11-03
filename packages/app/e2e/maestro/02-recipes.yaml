@@ -7,9 +7,11 @@
 # that bug shipped a build whose Recipes screen was one giant empty box
 # — no search field, no filter controls, no recipe cards — in a build
 # that compiled fine. If that failure mode returns, the assertions below
-# fail: the search field, the Filters control, both filter add-labels
-# (the same presence checks the #162-era Jest tests encode), and both
-# fixture recipe cards must all be present in the real native render.
+# fail: the search field, the Filters control, both fixture recipe
+# cards, and — mirroring the add-and-assert sequence in
+# RecipesListView.test.tsx — each add-filter control and the select
+# (label + selected value) that adding it renders must all be present
+# in the real native render.
 appId: com.eciperay
 ---
 - launchApp:
@@ -22,7 +24,19 @@ appId: com.eciperay
 # The add-filter controls live inside the collapsed Filters chooser —
 # they are not in the hierarchy until it opens (verified against the
 # 2026-11-03 CI hierarchy dump: the closed screen exposes only the
-# search field, the Filters button, and the cards).
+# search field, the Filters button, and the cards). Adding a filter
+# renders its select inline and closes the chooser, so the sort filter
+# is added through a second open — the same sequence the Jest test
+# runs.
 - tapOn: "Filters"
 - assertVisible: "Add Status filter"
 - assertVisible: "Add Sort filter"
+- tapOn: "Add Status filter"
+- assertVisible: "Status"
+- assertVisible: "All statuses"
+- tapOn: "Filters"
+- tapOn: "Add Sort filter"
+- assertVisible: "Sort by"
+- assertVisible: "Newest"
+- assertVisible: "Order"
+- assertVisible: "High to low"

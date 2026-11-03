@@ -47,6 +47,9 @@ SUPABASE_URL=https://fixture.invalid SUPABASE_ANON_KEY=fixture-anon-key \
   ./gradlew assembleRelease -PreactNativeArchitectures=x86_64
 adb install -r app/build/outputs/apk/release/app-release.apk
 
+# Back at the repository root (the flow paths below are root-relative):
+cd ../../..
+
 # Flows 01–02 navigate in the UI (launch, then the Recipes tab).
 # Flows 03–04 assert screens reached by deep link: the DS href rows
 # expose no clickable node to Maestro's hierarchy taps, and the
