@@ -110,20 +110,30 @@ describe('mealPlanFormHelpers', () => {
   test('dedupes entry options when a source repeats an item (#386)', () => {
     // The meal-plan suggestion list concatenates two sources (meals +
     // recipe search results); an item repeated in a source must appear
-    // at most once, first occurrence wins.
+    // at most once, first occurrence wins — the duplicates below carry
+    // different titles/servings so a last-wins implementation fails.
+    // A meal and a recipe sharing the same raw id are distinct entries
+    // (their keys are kind-prefixed) and both must survive.
     expect(
       buildMealPlanFormEntryOptions(
-        [meal('m1', 'Dinner'), meal('m1', 'Dinner')],
+        [
+          meal('m1', 'Dinner'),
+          meal('m1', 'Dinner — later duplicate'),
+          meal('shared', 'Shared Meal'),
+        ],
         [
           {id: 'r1', title: 'Salad', servings: 4},
-          {id: 'r1', title: 'Salad', servings: 4},
+          {id: 'r1', title: 'Salad — later duplicate', servings: 9},
           {id: 'r2', title: 'Soup', servings: 2},
+          {id: 'shared', title: 'Shared Recipe', servings: 3},
         ],
       ),
     ).toEqual([
       {kind: 'meal', id: 'm1', title: 'Dinner'},
+      {kind: 'meal', id: 'shared', title: 'Shared Meal'},
       {kind: 'recipe', id: 'r1', title: 'Salad', servings: 4},
       {kind: 'recipe', id: 'r2', title: 'Soup', servings: 2},
+      {kind: 'recipe', id: 'shared', title: 'Shared Recipe', servings: 3},
     ]);
   });
 
