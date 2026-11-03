@@ -8,10 +8,10 @@
 # immediately before running this flow, because the DS href rows
 # expose no clickable node to Maestro's hierarchy taps and a plain
 # VIEW intent does not resolve against the auth-scoped manifest
-# filter. This flow brings the already-navigated app forward and
-# asserts what the screen renders.
+# filter. This flow asserts against the already-navigated app without
+# launchApp, which would restart the process and reset navigation to
+# Home (see 03-recipe-detail).
 appId: com.eciperay
 ---
-- launchApp
 - assertVisible: "E2E Shared Tomato Soup"
 - assertVisible: "Search recipes…"

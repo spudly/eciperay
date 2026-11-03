@@ -11,11 +11,14 @@
 # href rows expose no clickable node to Maestro's hierarchy taps (the
 # Home browse row reports clickable=false — verified against the
 # 2026-11-03 CI run), so neither openLink nor a row tap can get here.
-# This flow therefore starts by bringing the already-navigated app to
-# the foreground and asserting what the detail screen renders.
+# This flow therefore asserts against the already-navigated app
+# WITHOUT launchApp: launchApp restarts the app process, which resets
+# the (unpersisted) navigation state back to Home and would undo the
+# intent's routing before the assertions run (verified against the
+# 2026-11-03 CI run — the detail visit was recorded in Home's Recently
+# viewed, but the flow asserted against the relaunched Home screen).
 appId: com.eciperay
 ---
-- launchApp
 - assertVisible: "E2E Weeknight Pasta"
 - scrollUntilVisible:
     element:
