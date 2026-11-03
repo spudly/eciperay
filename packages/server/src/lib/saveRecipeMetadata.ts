@@ -1,6 +1,7 @@
 import type {RecipeDetail, RecipeMetadataInput} from '@eciperay/types';
 
 import {query as defaultQuery} from '../db/query.js';
+import {runTransactional} from '../db/withTransaction.js';
 import {
   deleteRecipeTagsByVersionId,
   GET_RECIPE_DETAIL_SQL,
@@ -17,18 +18,21 @@ import {scheduleNutritionRefresh} from './refreshRecipeNutrition.js';
 import {RecipeNotFoundError} from './saveRecipeFromInput.js';
 import {resolveStatus} from './resolveStatus.js';
 import {slugifyRecipeTitle} from './slugifyRecipeTitle.js';
+import {touchMealsForRecipe} from './touchMealsForRecipe.js';
 
 type QueryFn = typeof defaultQuery;
 
-export const saveRecipeMetadata = async (
-  opts: {
-    userId: string;
-    recipeId: string;
-    versionId: string;
-    input: RecipeMetadataInput;
-  },
+type SaveRecipeMetadataOptions = {
+  userId: string;
+  recipeId: string;
+  versionId: string;
+  input: RecipeMetadataInput;
+};
+
+const saveMetadata = async (
+  opts: SaveRecipeMetadataOptions,
   queryFn: QueryFn,
-): Promise<RecipeDetail> => {
+) => {
   const result = await updateVersion(
     opts.versionId,
     {
@@ -53,6 +57,17 @@ export const saveRecipeMetadata = async (
   await updateRecipeStatus(opts.recipeId, resolveStatus(opts.input), queryFn);
   await deleteRecipeTagsByVersionId(opts.versionId, queryFn);
   await linkTags(opts.versionId, opts.input.tagIds, queryFn);
+  // A metadata-only edit changes what meal detail reads for each member
+  // meal, so advance those meals' updated_at (their ETag token, #384)
+  // inside this same transaction (#394).
+  await touchMealsForRecipe(opts.recipeId, queryFn);
+};
+
+export const saveRecipeMetadata = async (
+  opts: SaveRecipeMetadataOptions,
+  queryFn: QueryFn,
+): Promise<RecipeDetail> => {
+  await runTransactional(queryFn, q => saveMetadata(opts, q));
   scheduleNutritionRefresh(opts.versionId, queryFn);
   const detail = await queryFn(GET_RECIPE_DETAIL_SQL, [
     opts.recipeId,

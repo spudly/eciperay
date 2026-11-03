@@ -106,6 +106,37 @@ describe('replaceMeal', () => {
     expect(result.meal.id).toBe(MEAL_ID);
   });
 
+  // Regression for #394: replaceMeal runs after the meal_recipes delete,
+  // whose trigger may already have bumped the token in the same
+  // millisecond. The meal update itself must therefore use the monotonic
+  // token expression, not a bare now() that could reissue the old ETag.
+  test('advances updated_at monotonically on replace', async () => {
+    const mockQuery = createMockQuery();
+    mockQuery
+      .mockResolvedValueOnce(makeQueryResult([{id: MEAL_ID}]))
+      .mockResolvedValueOnce(makeQueryResult([accessibleRecipeRow]))
+      .mockResolvedValueOnce(emptyShareGrant)
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([]));
+    installLoadMealDetailMock(mockQuery);
+
+    const result = await replaceMeal(MEAL_ID, USER_ID, mealInput, mockQuery);
+    if ('error' in result) {
+      throw new Error(result.error);
+    }
+    const updateCall = mockQuery.mock.calls.find(([sql]) =>
+      (sql as unknown as string).includes('update meals set title'),
+    );
+    expect(updateCall).toBeDefined();
+    const sql = updateCall?.[0] as unknown as string;
+    expect(sql).toContain('greatest(');
+    expect(sql).toContain(
+      "date_trunc('milliseconds', updated_at) + interval '1 millisecond'",
+    );
+    expect(sql).not.toContain('updated_at = now()');
+  });
+
   test('returns 500 when replace cannot reload meal', async () => {
     const mockQuery = createMockQuery();
     mockQuery

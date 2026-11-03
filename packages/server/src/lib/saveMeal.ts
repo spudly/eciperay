@@ -91,8 +91,16 @@ export const replaceMeal = async (
     });
   }
 
+  // The token must advance monotonically at its millisecond precision —
+  // the same expression as the #394 delete trigger and
+  // touchMealsForRecipe — so a save that lands in the same millisecond as
+  // the meal's previous update (e.g. right after the trigger bumped the
+  // token for a member-recipe delete) never reissues the earlier ETag.
   await queryFn(
-    `update meals set title = $3, notes = $4, updated_at = now()
+    `update meals set title = $3, notes = $4, updated_at = greatest(
+       now(),
+       date_trunc('milliseconds', updated_at) + interval '1 millisecond'
+     )
      where id = $1 and user_id = $2`,
     [mealId, userId, input.title, input.notes ?? null],
   );
