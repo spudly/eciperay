@@ -2,9 +2,12 @@ import assert from 'node:assert/strict';
 import {afterEach, describe, test} from 'node:test';
 
 import {
+  buildMealPlanUpdatePayload,
+  buildMealUpdatePayload,
   buildRecipeUpdatePayload,
   createClient,
   EciperayApiError,
+  mealPlanEntryInputs,
 } from './eciperayClient.js';
 
 const storedRecipe = {
@@ -324,5 +327,465 @@ describe('client.updateRecipe', () => {
       /at least one field/,
     );
     assert.equal(calls.length, 0);
+  });
+});
+
+const storedMeal = {
+  id: 'meal-1',
+  title: 'Taco Night',
+  notes: 'Friday',
+  members: [
+    {recipeId: 'recipe-1', sortOrder: 1, servings: 4},
+    {recipeId: 'recipe-2', sortOrder: 0, servings: 2},
+  ],
+};
+
+const storedPlan = {
+  id: 'plan-1',
+  title: 'Week 1',
+  notes: null,
+  startsOn: '2026-11-02',
+  endsOn: '2026-11-08',
+  entries: [
+    {
+      type: 'recipe' as const,
+      id: 'entry-2',
+      recipeId: 'recipe-9',
+      sortOrder: 1,
+      quantity: 1,
+      servings: 6,
+    },
+    {
+      type: 'meal' as const,
+      id: 'entry-1',
+      mealId: 'meal-1',
+      sortOrder: 0,
+      quantity: 2,
+    },
+  ],
+};
+
+const putBodies = (calls: FetchCall[]) =>
+  calls
+    .filter(call => call.init?.method === 'PUT')
+    .map(
+      call => JSON.parse(String(call.init?.body)) as Record<string, unknown>,
+    );
+
+type MealPutBody = {
+  title: string;
+  notes: string | null;
+  recipes: {recipeId: string; servings?: number}[];
+};
+
+/**
+ * Stateful fetch stub for the concurrency tests: reads return a snapshot of the
+ * stored record; a PUT replaces it via `applyPut`. Returns an accessor for the
+ * current state.
+ */
+const stubStatefulFetch = <S, B>(
+  initial: S,
+  applyPut: (state: S, body: B) => S,
+): (() => S) => {
+  let state = structuredClone(initial);
+  globalThis.fetch = (async (_url: string | URL, init?: RequestInit) => {
+    if (init?.method === 'PUT') {
+      state = applyPut(state, JSON.parse(String(init.body)) as B);
+    }
+    const snapshot = structuredClone(state);
+    return {
+      ok: true,
+      status: 200,
+      text: async () => JSON.stringify(snapshot),
+      json: async () => snapshot,
+    } as Response;
+  }) as typeof fetch;
+  return () => state;
+};
+
+/** A meal PUT replaces the record's title and member list wholesale. */
+const applyMealPut = (
+  state: typeof storedMeal,
+  body: MealPutBody,
+): typeof storedMeal => ({
+  ...state,
+  title: body.title,
+  members: body.recipes.map((recipe, index) => ({
+    recipeId: recipe.recipeId,
+    sortOrder: index,
+    servings: recipe.servings ?? 1,
+  })),
+});
+
+describe('buildMealUpdatePayload', () => {
+  test('changing only the title preserves notes and members in stored order', () => {
+    const payload = buildMealUpdatePayload(storedMeal, {
+      title: 'Burrito Night',
+    });
+    assert.equal(payload.title, 'Burrito Night');
+    assert.equal(payload.notes, 'Friday');
+    assert.deepEqual(payload.recipes, [
+      {recipeId: 'recipe-2', servings: 2},
+      {recipeId: 'recipe-1', servings: 4},
+    ]);
+  });
+
+  test('explicit null clears notes; provided recipes replace the members', () => {
+    const payload = buildMealUpdatePayload(storedMeal, {
+      notes: null,
+      recipes: [{recipeId: 'recipe-3'}],
+    });
+    assert.equal(payload.notes, null);
+    assert.deepEqual(payload.recipes, [{recipeId: 'recipe-3'}]);
+  });
+
+  test('an empty patch is an error', () => {
+    assert.throws(
+      () => buildMealUpdatePayload(storedMeal, {}),
+      /at least one field/,
+    );
+  });
+});
+
+describe('buildMealPlanUpdatePayload', () => {
+  test('changing only the title preserves dates and entries in stored order', () => {
+    const payload = buildMealPlanUpdatePayload(storedPlan, {title: 'Week 2'});
+    assert.equal(payload.title, 'Week 2');
+    assert.equal(payload.startsOn, '2026-11-02');
+    assert.equal(payload.endsOn, '2026-11-08');
+    assert.deepEqual(payload.entries, [
+      {mealId: 'meal-1', quantity: 2},
+      {recipeId: 'recipe-9', servings: 6, quantity: 1},
+    ]);
+    assert.deepEqual(mealPlanEntryInputs(storedPlan), payload.entries);
+  });
+
+  test('explicit null clears the dates', () => {
+    const payload = buildMealPlanUpdatePayload(storedPlan, {
+      startsOn: null,
+      endsOn: null,
+    });
+    assert.equal(payload.startsOn, null);
+    assert.equal(payload.endsOn, null);
+  });
+
+  test('an empty patch is an error', () => {
+    assert.throws(
+      () => buildMealPlanUpdatePayload(storedPlan, {}),
+      /at least one field/,
+    );
+  });
+});
+
+describe('client meal writes', () => {
+  test('createMeal POSTs the input to /meals', async () => {
+    const calls = stubFetch(() => ({status: 201, body: storedMeal}));
+    const result = await client().createMeal({
+      title: 'Taco Night',
+      recipes: [{recipeId: 'recipe-1', servings: 4}],
+    });
+    assert.deepEqual(result, storedMeal);
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0]?.url, 'http://api.test/api/meals');
+    assert.equal(calls[0]?.init?.method, 'POST');
+  });
+
+  test('updateMeal GETs the stored meal and PUTs the merged payload', async () => {
+    const calls = stubFetch(call =>
+      call.init?.method === 'PUT'
+        ? {status: 200, body: {...storedMeal, title: 'Burrito Night'}}
+        : {status: 200, body: storedMeal},
+    );
+    await client().updateMeal('meal-1', {title: 'Burrito Night'});
+    const puts = putBodies(calls);
+    assert.equal(puts.length, 1);
+    assert.equal(puts[0]?.['title'], 'Burrito Night');
+    assert.deepEqual(puts[0]?.['recipes'], [
+      {recipeId: 'recipe-2', servings: 2},
+      {recipeId: 'recipe-1', servings: 4},
+    ]);
+  });
+
+  test('updateMeal with an empty patch errors before any API call', async () => {
+    const calls = stubFetch(() => ({status: 200, body: storedMeal}));
+    await assert.rejects(
+      client().updateMeal('meal-1', {}),
+      /at least one field/,
+    );
+    assert.equal(calls.length, 0);
+  });
+
+  test('deleteMeal DELETEs and reports the deletion', async () => {
+    const calls = stubFetch(() => ({status: 204, body: ''}));
+    const result = await client().deleteMeal('meal-1');
+    assert.deepEqual(result, {deleted: true, id: 'meal-1'});
+    assert.equal(calls[0]?.init?.method, 'DELETE');
+    assert.equal(calls[0]?.url, 'http://api.test/api/meals/meal-1');
+  });
+
+  test('addRecipeToMeal appends a new member last', async () => {
+    const calls = stubFetch(() => ({status: 200, body: storedMeal}));
+    await client().addRecipeToMeal('meal-1', {
+      recipeId: 'recipe-3',
+      servings: 3,
+    });
+    assert.deepEqual(putBodies(calls)[0]?.['recipes'], [
+      {recipeId: 'recipe-2', servings: 2},
+      {recipeId: 'recipe-1', servings: 4},
+      {recipeId: 'recipe-3', servings: 3},
+    ]);
+  });
+
+  test('addRecipeToMeal updates servings when the recipe is already a member', async () => {
+    const calls = stubFetch(() => ({status: 200, body: storedMeal}));
+    await client().addRecipeToMeal('meal-1', {
+      recipeId: 'recipe-1',
+      servings: 8,
+    });
+    assert.deepEqual(putBodies(calls)[0]?.['recipes'], [
+      {recipeId: 'recipe-2', servings: 2},
+      {recipeId: 'recipe-1', servings: 8},
+    ]);
+  });
+
+  test('concurrent addRecipeToMeal calls are serialized so both additions survive', async () => {
+    const getState = stubStatefulFetch(storedMeal, applyMealPut);
+
+    const c = client();
+    await Promise.all([
+      c.addRecipeToMeal('meal-1', {recipeId: 'recipe-3', servings: 3}),
+      c.addRecipeToMeal('meal-1', {recipeId: 'recipe-4', servings: 1}),
+    ]);
+    assert.deepEqual(
+      getState().members.map(member => member.recipeId),
+      ['recipe-2', 'recipe-1', 'recipe-3', 'recipe-4'],
+    );
+  });
+
+  test('addRecipeToMeal matches an existing member when the id case differs', async () => {
+    const calls = stubFetch(() => ({status: 200, body: storedMeal}));
+    await client().addRecipeToMeal('meal-1', {
+      recipeId: 'RECIPE-1',
+      servings: 8,
+    });
+    assert.deepEqual(putBodies(calls)[0]?.['recipes'], [
+      {recipeId: 'recipe-2', servings: 2},
+      {recipeId: 'recipe-1', servings: 8},
+    ]);
+  });
+
+  test('concurrent calls from separate client instances are serialized so both additions survive', async () => {
+    const getState = stubStatefulFetch(storedMeal, applyMealPut);
+
+    // The HTTP transport creates a fresh client per request; two instances
+    // with the same account must still serialize against each other.
+    const first = client();
+    const second = client();
+    await Promise.all([
+      first.addRecipeToMeal('meal-1', {recipeId: 'recipe-3', servings: 3}),
+      second.addRecipeToMeal('meal-1', {recipeId: 'recipe-4', servings: 1}),
+    ]);
+    assert.deepEqual(
+      getState().members.map(member => member.recipeId),
+      ['recipe-2', 'recipe-1', 'recipe-3', 'recipe-4'],
+    );
+  });
+
+  test('removeRecipeFromMeal PUTs the meal without that recipe', async () => {
+    const calls = stubFetch(() => ({status: 200, body: storedMeal}));
+    await client().removeRecipeFromMeal('meal-1', 'recipe-2');
+    assert.deepEqual(putBodies(calls)[0]?.['recipes'], [
+      {recipeId: 'recipe-1', servings: 4},
+    ]);
+  });
+
+  test('removeRecipeFromMeal matches the member when the id case differs', async () => {
+    const calls = stubFetch(() => ({status: 200, body: storedMeal}));
+    await client().removeRecipeFromMeal('meal-1', 'RECIPE-2');
+    assert.deepEqual(putBodies(calls)[0]?.['recipes'], [
+      {recipeId: 'recipe-1', servings: 4},
+    ]);
+  });
+
+  test('removeRecipeFromMeal refuses a recipe that is not a member, with no PUT', async () => {
+    const calls = stubFetch(() => ({status: 200, body: storedMeal}));
+    await assert.rejects(
+      client().removeRecipeFromMeal('meal-1', 'recipe-99'),
+      /not a member/,
+    );
+    assert.equal(putBodies(calls).length, 0);
+  });
+
+  test('removeRecipeFromMeal refuses to empty the meal, with no PUT', async () => {
+    const single = {...storedMeal, members: [storedMeal.members[0]]};
+    const calls = stubFetch(() => ({status: 200, body: single}));
+    await assert.rejects(
+      client().removeRecipeFromMeal('meal-1', 'recipe-1'),
+      /at least one recipe/,
+    );
+    assert.equal(putBodies(calls).length, 0);
+  });
+});
+
+describe('client meal plan writes', () => {
+  test('createMealPlan POSTs the input to /meal-plans', async () => {
+    const calls = stubFetch(() => ({status: 201, body: storedPlan}));
+    const input = {
+      title: 'Week 1',
+      startsOn: '2026-11-02',
+      endsOn: '2026-11-08',
+      entries: [{mealId: 'meal-1', quantity: 2}],
+    };
+    const result = await client().createMealPlan(input);
+    assert.deepEqual(result, storedPlan);
+    assert.equal(calls[0]?.url, 'http://api.test/api/meal-plans');
+    assert.equal(calls[0]?.init?.method, 'POST');
+    assert.deepEqual(JSON.parse(String(calls[0]?.init?.body)), input);
+  });
+
+  test('updateMealPlan GETs the stored plan and PUTs the merged payload', async () => {
+    const calls = stubFetch(() => ({status: 200, body: storedPlan}));
+    await client().updateMealPlan('plan-1', {endsOn: '2026-11-09'});
+    const puts = putBodies(calls);
+    assert.equal(puts.length, 1);
+    assert.equal(puts[0]?.['endsOn'], '2026-11-09');
+    assert.equal(puts[0]?.['startsOn'], '2026-11-02');
+    assert.deepEqual(puts[0]?.['entries'], [
+      {mealId: 'meal-1', quantity: 2},
+      {recipeId: 'recipe-9', servings: 6, quantity: 1},
+    ]);
+  });
+
+  test('updateMealPlan with an empty patch errors before any API call', async () => {
+    const calls = stubFetch(() => ({status: 200, body: storedPlan}));
+    await assert.rejects(
+      client().updateMealPlan('plan-1', {}),
+      /at least one field/,
+    );
+    assert.equal(calls.length, 0);
+  });
+
+  test('deleteMealPlan DELETEs and reports the deletion', async () => {
+    const calls = stubFetch(() => ({status: 204, body: ''}));
+    const result = await client().deleteMealPlan('plan-1');
+    assert.deepEqual(result, {deleted: true, id: 'plan-1'});
+    assert.equal(calls[0]?.url, 'http://api.test/api/meal-plans/plan-1');
+  });
+
+  test('addMealPlanEntry appends a new entry last', async () => {
+    const calls = stubFetch(() => ({status: 200, body: storedPlan}));
+    await client().addMealPlanEntry('plan-1', {mealId: 'meal-2'});
+    assert.deepEqual(putBodies(calls)[0]?.['entries'], [
+      {mealId: 'meal-1', quantity: 2},
+      {recipeId: 'recipe-9', servings: 6, quantity: 1},
+      {mealId: 'meal-2'},
+    ]);
+  });
+
+  test('addMealPlanEntry updates an existing recipe entry instead of duplicating it', async () => {
+    const calls = stubFetch(() => ({status: 200, body: storedPlan}));
+    await client().addMealPlanEntry('plan-1', {
+      recipeId: 'recipe-9',
+      quantity: 3,
+    });
+    assert.deepEqual(putBodies(calls)[0]?.['entries'], [
+      {mealId: 'meal-1', quantity: 2},
+      {recipeId: 'recipe-9', servings: 6, quantity: 3},
+    ]);
+  });
+
+  test('concurrent addMealPlanEntry calls are serialized so both additions survive', async () => {
+    const putEntryLists: string[][] = [];
+    stubStatefulFetch(
+      storedPlan,
+      (
+        state,
+        body: {entries: {mealId?: string; recipeId?: string}[]},
+      ): typeof storedPlan => {
+        putEntryLists.push(
+          body.entries.map(entry => entry.mealId ?? entry.recipeId ?? '?'),
+        );
+        return {
+          ...state,
+          entries: body.entries.map((entry, index) =>
+            entry.mealId !== undefined
+              ? {
+                  type: 'meal' as const,
+                  id: `entry-${entry.mealId}`,
+                  mealId: entry.mealId,
+                  sortOrder: index,
+                  quantity: 1,
+                }
+              : {
+                  type: 'recipe' as const,
+                  id: `entry-${entry.recipeId}`,
+                  recipeId: entry.recipeId ?? '',
+                  sortOrder: index,
+                  quantity: 1,
+                  servings: 1,
+                },
+          ),
+        };
+      },
+    );
+
+    const c = client();
+    await Promise.all([
+      c.addMealPlanEntry('plan-1', {mealId: 'meal-2'}),
+      c.addMealPlanEntry('plan-1', {mealId: 'meal-3'}),
+    ]);
+    assert.deepEqual(putEntryLists.at(-1), [
+      'meal-1',
+      'recipe-9',
+      'meal-2',
+      'meal-3',
+    ]);
+  });
+
+  test('addMealPlanEntry matches an existing entry when the id case differs', async () => {
+    const calls = stubFetch(() => ({status: 200, body: storedPlan}));
+    await client().addMealPlanEntry('plan-1', {
+      recipeId: 'RECIPE-9',
+      quantity: 3,
+    });
+    assert.deepEqual(putBodies(calls)[0]?.['entries'], [
+      {mealId: 'meal-1', quantity: 2},
+      {recipeId: 'recipe-9', servings: 6, quantity: 3},
+    ]);
+  });
+
+  test('removeMealPlanEntry PUTs the plan without that entry', async () => {
+    const calls = stubFetch(() => ({status: 200, body: storedPlan}));
+    await client().removeMealPlanEntry('plan-1', 'entry-1');
+    assert.deepEqual(putBodies(calls)[0]?.['entries'], [
+      {recipeId: 'recipe-9', servings: 6, quantity: 1},
+    ]);
+  });
+
+  test('removeMealPlanEntry refuses an unknown entry id, with no PUT', async () => {
+    const calls = stubFetch(() => ({status: 200, body: storedPlan}));
+    await assert.rejects(
+      client().removeMealPlanEntry('plan-1', 'entry-99'),
+      /not part of meal plan/,
+    );
+    assert.equal(putBodies(calls).length, 0);
+  });
+
+  test('reorderMealPlanEntries PUTs the entries in the requested order', async () => {
+    const calls = stubFetch(() => ({status: 200, body: storedPlan}));
+    await client().reorderMealPlanEntries('plan-1', ['entry-2', 'entry-1']);
+    assert.deepEqual(putBodies(calls)[0]?.['entries'], [
+      {recipeId: 'recipe-9', servings: 6, quantity: 1},
+      {mealId: 'meal-1', quantity: 2},
+    ]);
+  });
+
+  test('reorderMealPlanEntries refuses a non-permutation, with no PUT', async () => {
+    const calls = stubFetch(() => ({status: 200, body: storedPlan}));
+    await assert.rejects(
+      client().reorderMealPlanEntries('plan-1', ['entry-1']),
+      /exactly once/,
+    );
+    assert.equal(putBodies(calls).length, 0);
   });
 });
