@@ -343,8 +343,9 @@ mode; there is no Playwright coverage of meals. The cases below are manual._
 `packages/web/src/pages/{MealsHub,MealDetail,MealEdit,MealCookingMode}Page.tsx`,
 `packages/client/src/recipeListQuery.ts`, `@spudly/ui` `MealsHubPage`,
 `MealDetailPage`, `MealFormPage`, or `MealCookingModePage`, `packages/server`
-meal routes, `packages/server/src/lib/saveMeal.ts`, `packages/server` recipe
-search
+meal routes, `packages/server/src/lib/saveMeal.ts`,
+`packages/server/src/lib/conditionalWrite.ts`,
+`packages/server/src/lib/mealSchemas.ts`, `packages/server` recipe search
 (`packages/server/src/routes/recipes/{listFilterParams,sqlConstants}.ts`),
 `packages/client/src/useMealPlanEditForm.ts`.
 
@@ -428,7 +429,9 @@ via Meals case 1 and do not delete it until this section is done.)
 `packages/web/src/pages/{MealPlanDetail,MealPlanEdit}Page.tsx`, `@spudly/ui`
 `MealPlanDetailPage` or `MealPlanFormPage`,
 `packages/client/src/recipeListQuery.ts`, `packages/web/src/routes/router.tsx`,
-`packages/server` meal plan routes, `packages/server/src/lib/saveMealPlan.ts`.
+`packages/server` meal plan routes, `packages/server/src/lib/saveMealPlan.ts`,
+`packages/server/src/lib/conditionalWrite.ts`,
+`packages/server/src/lib/mealSchemas.ts`.
 
 ---
 
