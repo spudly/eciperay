@@ -335,6 +335,31 @@ describe('meal and meal plan write tools', () => {
       },
     });
     assert.equal(added.isError, true);
+    const planCreated = await client.callTool({
+      name: 'create_meal_plan',
+      arguments: {
+        title: 'Week 1',
+        entries: [{recipeId: RECIPE_UUID, servings: 2_147_483_648}],
+      },
+    });
+    assert.equal(planCreated.isError, true);
+    const planUpdated = await client.callTool({
+      name: 'update_meal_plan',
+      arguments: {
+        id: 'plan-1',
+        entries: [{mealId: MEAL_UUID, quantity: 2_147_483_648}],
+      },
+    });
+    assert.equal(planUpdated.isError, true);
+    const entryAdded = await client.callTool({
+      name: 'add_meal_plan_entry',
+      arguments: {
+        mealPlanId: MEAL_UUID,
+        recipeId: RECIPE_UUID,
+        servings: 2_147_483_648,
+      },
+    });
+    assert.equal(entryAdded.isError, true);
     assert.equal(fetchCalls, 0);
     await client.close();
   });
