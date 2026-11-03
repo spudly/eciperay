@@ -257,6 +257,12 @@ describe('replaceMeal', () => {
       "date_trunc('milliseconds', updated_at)",
     );
     expect(updateCall?.[1]).toContainEqual(['2024-01-01T00:00:00.123Z']);
+    // The version must strictly advance on every replace: a plain now()
+    // landing in the same millisecond as the previous write would
+    // reissue the same token, and a stale token could then match again.
+    expect(String(updateCall?.[0])).toContain(
+      "greatest(now(), date_trunc('milliseconds', updated_at) + interval '1 millisecond')",
+    );
   });
 
   test('propagates unexpected errors from the replace writes', async () => {

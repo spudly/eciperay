@@ -228,6 +228,11 @@ export const replaceMealPlan = async (
   // token reaching this cast has already normalized to a real timestamp,
   // so a malformed token cannot get here — it 409s above. Without a
   // token the predicate is null and the write stays unconditional.
+  // The SET clause also guarantees the version strictly advances:
+  // now() can land in the same millisecond as the previous write, which
+  // would hand the next reader the same token and let a stale token
+  // match again, so updated_at moves to at least one millisecond past
+  // the previous token.
   // Only tokens that parse as timestamps can be cast for the predicate;
   // a malformed candidate can never match a stored timestamp, and the
   // check above has already refused when no candidate matched, so a
@@ -242,7 +247,8 @@ export const replaceMealPlan = async (
     plan = await runTransactional(queryFn, async q => {
       const updated = await q(
         `update meal_plans
-       set title = $3, notes = $4, starts_on = $5, ends_on = $6, updated_at = now()
+       set title = $3, notes = $4, starts_on = $5, ends_on = $6,
+           updated_at = greatest(now(), date_trunc('milliseconds', updated_at) + interval '1 millisecond')
        where id = $1 and user_id = $2
          and ($7::timestamptz[] is null
            or date_trunc('milliseconds', updated_at) = ANY($7::timestamptz[]))`,
