@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+# CodeRabbit configuration for spudly/eciperay.
+# Path instructions mirror .github/muse-instructions.md so both AI reviewers
+# apply this repository's conventions.
+language: 'en-US'
+reviews:
+  path_instructions:
+    - path: '**'
+      instructions: >-
+        This is a TypeScript monorepo. Use type aliases (type), never
+        interfaces; do not suggest interfaces. New behavior needs a regression
+        test that fails without the change. Behavior changes should update the
+        matching "Run when" triggers in docs/manual-tests.md.
+    - path: '**/*.tsx'
+      instructions: >-
+        All styling lives in the @spudly/ui design system; app code passes
+        semantic props to design-system components. Flag Tailwind classes or
+        style props added in app code, and do not suggest adding styling props
+        to design-system components. New or changed interactive elements need an
+        accessible name/label; icon-only controls must be labeled. New data
+        surfaces must handle failure and empty results explicitly: no silent
+        spinners, and no empty-result message shown when a load has failed.
+    - path: 'package-lock.json'
+      instructions: >-
+        package-lock.json is never hand-edited; it is regenerated with the
+        pinned npm (the packageManager field in package.json, npm@10.9.4). Flag
+        changes that look hand-edited; do not nitpick ordinary generated
+        lockfile diffs. A @spudly/ui version bump must be a minimal-delta change
+        (only the version/resolved/integrity lines for @spudly/ui); flag a bump
+        that re-resolves the @spudly/ui dependency subtree, which breaks the
+        nested Tamagui 3.0.15 layout the Android build depends on.
