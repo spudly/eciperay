@@ -22,40 +22,22 @@
 # Instructions, Cook History, Nutrition (RecipeDetailPage's section
 # order) — and the Overview alone runs well past a full viewport
 # (versions, actions, tweak controls, sharing, ratings, comments).
-# scrollUntilVisible overshoots the short Ingredients and Instructions
-# bands: its fast swipes transit to the nutrition section at the
-# bottom without either band ever appearing in a polled hierarchy
-# (verified in two CI runs, 20s and 90s windows), and fixed drag
-# counts are brittle against the overview's height. So the flow
-# swipes in short drags only while the target is not yet visible,
-# then asserts it. Ingredient rows are single labels ("400 g Crushed
-# tomatoes" — formatScaledIngredientLine in packages/client), so a
-# name substring matches the row.
+# The flow scrolls to the Ingredients heading first; the sibling
+# section headings ("Cook History", "Nutrition") are plain-text nodes
+# in the native hierarchy (verified in the 2026-11-03 CI dumps).
+# Ingredient rows are single labels ("400 g Crushed tomatoes" —
+# formatScaledIngredientLine in packages/client), so a name substring
+# matches the row once the band is in the window.
 appId: com.eciperay
 ---
 - assertVisible: "E2E Weeknight Pasta"
-- repeat:
-    times: 8
-    commands:
-      - runFlow:
-          when:
-            notVisible: "Crushed tomatoes"
-          commands:
-            - swipe:
-                start: 50%, 70%
-                end: 50%, 45%
-                duration: 600
-- assertVisible: "Ingredients"
+- scrollUntilVisible:
+    element:
+      text: "Ingredients"
+    timeout: 60000
 - assertVisible: "Crushed tomatoes"
-- repeat:
-    times: 4
-    commands:
-      - runFlow:
-          when:
-            notVisible: "Simmer the sauce for 15 minutes."
-          commands:
-            - swipe:
-                start: 50%, 70%
-                end: 50%, 45%
-                duration: 600
+- scrollUntilVisible:
+    element:
+      text: "Simmer the sauce for 15 minutes."
+    timeout: 60000
 - assertVisible: "Simmer the sauce for 15 minutes."
