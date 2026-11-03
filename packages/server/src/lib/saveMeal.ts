@@ -1,12 +1,30 @@
 import type {MealDetail, MealInput} from '@eciperay/types';
 
 import {query as defaultQuery} from '../db/query.js';
+import {runTransactional} from '../db/withTransaction.js';
 
-import {staleWriteConflict, updatedAtMatches} from './conditionalWrite.js';
+import {
+  staleWriteConflict,
+  updatedAtMatches,
+  updatedAtToken,
+} from './conditionalWrite.js';
 import {loadMealDetail} from './loadMealDetail.js';
 import {loadAccessibleRecipe} from './mealRecipeAccess.js';
 
 type QueryFn = typeof defaultQuery;
+
+/**
+ * Thrown inside the replace transaction when the saved meal cannot be read
+ * back, so the writes roll back instead of leaving a meal the client was told
+ * had not saved. Caught by replaceMeal and reported as the existing 500 result
+ * (mirrors MealPlanLoadError in saveMealPlan.ts).
+ */
+class MealLoadError extends Error {
+  constructor() {
+    super('Failed to load meal');
+    this.name = 'MealLoadError';
+  }
+}
 
 export const saveNewMeal = async (
   userId: string,
@@ -104,25 +122,61 @@ export const replaceMeal = async (
     });
   }
 
-  await queryFn(
-    `update meals set title = $3, notes = $4, updated_at = now()
-     where id = $1 and user_id = $2`,
-    [mealId, userId, input.title, input.notes ?? null],
-  );
-  await queryFn(`delete from meal_recipes where meal_id = $1`, [mealId]);
-  for (const recipe of resolved) {
-    await queryFn(
-      `insert into meal_recipes (meal_id, recipe_id, sort_order, servings)
-       values ($1, $2, $3, $4)`,
-      [mealId, recipe.recipeId, recipe.sortOrder, recipe.servings],
-    );
-  }
+  // The token is bound into the UPDATE itself, so the check above is only
+  // a fast path: if a concurrent write lands between it and this update,
+  // the predicate no longer matches and the update writes no row. The
+  // comparison truncates the stored timestamp to milliseconds because
+  // that is the precision of the token the API hands out (a stored
+  // timestamptz can carry microseconds). The early check guarantees any
+  // token reaching this cast has already normalized to a real timestamp,
+  // so a malformed token cannot get here — it 409s above. Without a
+  // token the predicate is null and the write stays unconditional.
+  const expectedUpdatedAt = input.expectedUpdatedAt
+    ? updatedAtToken(input.expectedUpdatedAt)
+    : null;
 
-  const meal = await loadMealDetail(mealId, userId, queryFn);
-  if (!meal) {
-    return {error: 'Failed to load meal', status: 500};
+  // Update, member delete, member inserts, and the read-back run in one
+  // transaction (mirrors replaceMealPlan): a failure midway cannot leave
+  // the meal updated with its members deleted or partially replaced.
+  let outcome: {meal: MealDetail} | {conflict: true};
+  try {
+    outcome = await runTransactional(queryFn, async q => {
+      const updated = await q(
+        `update meals set title = $3, notes = $4, updated_at = now()
+         where id = $1 and user_id = $2
+           and ($5::timestamptz is null
+             or date_trunc('milliseconds', updated_at) = $5::timestamptz)`,
+        [mealId, userId, input.title, input.notes ?? null, expectedUpdatedAt],
+      );
+      if (expectedUpdatedAt && updated.rowCount === 0) {
+        // A concurrent write (or delete) won the race after the check
+        // above; nothing else is written.
+        return {conflict: true as const};
+      }
+      await q(`delete from meal_recipes where meal_id = $1`, [mealId]);
+      for (const recipe of resolved) {
+        await q(
+          `insert into meal_recipes (meal_id, recipe_id, sort_order, servings)
+           values ($1, $2, $3, $4)`,
+          [mealId, recipe.recipeId, recipe.sortOrder, recipe.servings],
+        );
+      }
+      const meal = await loadMealDetail(mealId, userId, q);
+      if (!meal) {
+        throw new MealLoadError();
+      }
+      return {meal};
+    });
+  } catch (error) {
+    if (error instanceof MealLoadError) {
+      return {error: 'Failed to load meal', status: 500};
+    }
+    throw error;
   }
-  return {meal};
+  if ('conflict' in outcome) {
+    return staleWriteConflict('Meal');
+  }
+  return {meal: outcome.meal};
 };
 
 export const deleteMeal = async (

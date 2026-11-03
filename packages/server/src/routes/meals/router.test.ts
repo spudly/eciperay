@@ -247,7 +247,7 @@ describe('PUT /meals/:id', () => {
       )
       .mockResolvedValueOnce(makeQueryResult([accessibleRecipeRow]))
       .mockResolvedValueOnce(emptyShareGrant)
-      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce({...makeQueryResult([]), rowCount: 1})
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([]));
     installLoadMealDetailMock(mockQuery);
@@ -316,7 +316,7 @@ describe('PUT /meals/:id', () => {
       )
       .mockResolvedValueOnce(makeQueryResult([accessibleRecipeRow]))
       .mockResolvedValueOnce(emptyShareGrant)
-      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce({...makeQueryResult([]), rowCount: 1})
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([]));
     installLoadMealDetailMock(mockQuery);

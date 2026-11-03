@@ -332,6 +332,106 @@ describe('replaceMealPlan', () => {
     }
     expect(result.plan.id).toBe(PLAN_ID);
   });
+
+  test('returns 409 and writes no entries when the conditional update matches no row (#384)', async () => {
+    const mockQuery = createMockQuery();
+    mockQuery.mockImplementation((async (sql: string) => {
+      if (sql.includes('select id, updated_at from meal_plans where id')) {
+        return makeQueryResult([
+          {id: PLAN_ID, updated_at: '2024-01-01T00:00:00.000Z'},
+        ]);
+      }
+      if (sql.includes('from recipes r')) {
+        return makeQueryResult([accessibleRecipeRow]);
+      }
+      if (sql.includes('share_grants')) {
+        return emptyShareGrant;
+      }
+      if (sql.includes('update meal_plans')) {
+        // A concurrent write landed after the early token check: the
+        // version predicate no longer matches.
+        return {...makeQueryResult([]), rowCount: 0};
+      }
+      return makeQueryResult([]);
+    }) as typeof mockQuery);
+
+    const result = await replaceMealPlan(
+      PLAN_ID,
+      USER_ID,
+      {...mealPlanInput, expectedUpdatedAt: '2024-01-01T00:00:00.000Z'},
+      mockQuery,
+    );
+    expect(result).toEqual({
+      error: 'Meal plan has been modified since it was loaded',
+      status: 409,
+    });
+    const entryWrites = mockQuery.mock.calls.filter(([sql]) =>
+      /delete from meal_plan_entries|insert into meal_plan_entries/.test(
+        String(sql),
+      ),
+    );
+    expect(entryWrites).toEqual([]);
+  });
+
+  test('matches a current token against a sub-millisecond stored timestamp (#384)', async () => {
+    const mockQuery = createMockQuery();
+    mockQuery.mockImplementation((async (sql: string) => {
+      if (sql.includes('select id, updated_at from meal_plans where id')) {
+        return makeQueryResult([
+          {id: PLAN_ID, updated_at: '2024-01-01T00:00:00.123456Z'},
+        ]);
+      }
+      if (sql.includes('from recipes r')) {
+        return makeQueryResult([accessibleRecipeRow]);
+      }
+      if (sql.includes('share_grants')) {
+        return emptyShareGrant;
+      }
+      if (sql.includes('update meal_plans')) {
+        return {...makeQueryResult([]), rowCount: 1};
+      }
+      if (
+        sql.includes('delete from meal_plan_entries') ||
+        sql.includes('insert into meal_plan_entries')
+      ) {
+        return makeQueryResult([]);
+      }
+      if (sql.includes('from meal_plans') && sql.includes('where id =')) {
+        return makeQueryResult([mealPlanRow]);
+      }
+      if (sql.includes('from meal_plan_entries')) {
+        return makeQueryResult([
+          {
+            id: 'entry-1',
+            meal_plan_id: PLAN_ID,
+            sort_order: 0,
+            quantity: 1,
+            meal_id: null,
+            recipe_id: RECIPE_ID,
+            servings: 4,
+          },
+        ]);
+      }
+      if (sql.includes('goal_calories')) {
+        return makeQueryResult([nutritionGoalsRow]);
+      }
+      return makeQueryResult([]);
+    }) as typeof mockQuery);
+
+    // The API token carries millisecond precision (.123Z) while the
+    // stored timestamptz carries microseconds (.123456Z); they name the
+    // same version and the write must succeed.
+    const result = await replaceMealPlan(
+      PLAN_ID,
+      USER_ID,
+      {...mealPlanInput, expectedUpdatedAt: '2024-01-01T00:00:00.123Z'},
+      mockQuery,
+    );
+    if ('error' in result) {
+      throw new Error(result.error);
+    }
+    expect(result.plan.id).toBe(PLAN_ID);
+  });
 });
 
 describe('deleteMealPlan', () => {

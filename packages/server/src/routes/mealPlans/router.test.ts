@@ -214,8 +214,10 @@ describe('PUT /meal-plans/:id', () => {
       if (sql.includes('share_grants')) {
         return emptyShareGrant;
       }
+      if (sql.includes('update meal_plans')) {
+        return {...makeQueryResult([]), rowCount: 1};
+      }
       if (
-        sql.includes('update meal_plans') ||
         sql.includes('delete from meal_plan_entries') ||
         sql.includes('insert into meal_plan_entries')
       ) {
