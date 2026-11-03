@@ -1,0 +1,23 @@
+# Use case: the Recipes screen renders its filter bar and recipe list
+# (#183 Phase 2), reached by tapping the Recipes tab — the tab bar is
+# standard React Navigation and its buttons are the clickable nodes in
+# the hierarchy.
+#
+# The filter-bar and list assertions are the #162 regression coverage:
+# that bug shipped a build whose Recipes screen was one giant empty box
+# — no search field, no filter controls, no recipe cards — in a build
+# that compiled fine. If that failure mode returns, the assertions below
+# fail: the search field, the Filters control, both filter add-labels
+# (the same presence checks the #162-era Jest tests encode), and both
+# fixture recipe cards must all be present in the real native render.
+appId: com.eciperay
+---
+- launchApp:
+    clearState: true
+- tapOn: "Recipes"
+- assertVisible: "Search recipes…"
+- assertVisible: "Filters"
+- assertVisible: "Add Status filter"
+- assertVisible: "Add Sort filter"
+- assertVisible: "E2E Weeknight Pasta"
+- assertVisible: "E2E Garden Salad"

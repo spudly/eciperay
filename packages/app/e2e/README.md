@@ -47,5 +47,18 @@ SUPABASE_URL=https://fixture.invalid SUPABASE_ANON_KEY=fixture-anon-key \
   ./gradlew assembleRelease -PreactNativeArchitectures=x86_64
 adb install -r app/build/outputs/apk/release/app-release.apk
 
-maestro test packages/app/e2e/maestro
+# Flows 01–02 navigate in the UI (launch, then the Recipes tab).
+# Flows 03–04 assert screens reached by deep link: the DS href rows
+# expose no clickable node to Maestro's hierarchy taps, and the
+# manifest's only VIEW intent filter is host-scoped to the Supabase
+# auth callback, so the CI step delivers the links to MainActivity
+# with explicit-component intents between the Maestro runs:
+maestro test packages/app/e2e/maestro/01-launch.yaml \
+  packages/app/e2e/maestro/02-recipes.yaml
+adb shell am start -W -n com.eciperay/.MainActivity \
+  -a android.intent.action.VIEW -d "com.eciperay://recipes/e2e-recipe-pasta"
+maestro test packages/app/e2e/maestro/03-recipe-detail.yaml
+adb shell am start -W -n com.eciperay/.MainActivity \
+  -a android.intent.action.VIEW -d "com.eciperay://shared-with-me"
+maestro test packages/app/e2e/maestro/04-shared-with-me.yaml
 ```

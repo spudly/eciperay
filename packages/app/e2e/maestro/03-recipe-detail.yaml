@@ -1,0 +1,27 @@
+# Use case: the recipe detail screen renders a recipe's ingredients
+# and instructions (#183 Phase 2).
+#
+# Navigation: the CI step delivers the recipe's deep link
+# (com.eciperay://recipes/e2e-recipe-pasta — recipeHref in
+# lib/deepLinks) to MainActivity with an explicit-component intent
+# immediately before running this flow, and the app's linking config
+# routes it to RecipeDetail. An explicit component is required because
+# the manifest's only VIEW intent filter is host-scoped to the Supabase
+# auth callback, so a plain VIEW intent does not resolve; and the DS
+# href rows expose no clickable node to Maestro's hierarchy taps (the
+# Home browse row reports clickable=false — verified against the
+# 2026-11-03 CI run), so neither openLink nor a row tap can get here.
+# This flow therefore starts by bringing the already-navigated app to
+# the foreground and asserting what the detail screen renders.
+appId: com.eciperay
+---
+- launchApp
+- assertVisible: "E2E Weeknight Pasta"
+- scrollUntilVisible:
+    element:
+      text: "Crushed tomatoes"
+- assertVisible: "Crushed tomatoes"
+- scrollUntilVisible:
+    element:
+      text: "Simmer the sauce for 15 minutes."
+- assertVisible: "Simmer the sauce for 15 minutes."
