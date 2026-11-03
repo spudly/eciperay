@@ -64,6 +64,7 @@ const fetchPage = async (url: string): Promise<string> => {
     signal: AbortSignal.timeout(10_000),
   });
   if (!retry.ok) {
+    await retry.body?.cancel().catch(() => undefined);
     throw new Error(`Failed to fetch ${url}: ${retry.status}`);
   }
   return retry.text();
