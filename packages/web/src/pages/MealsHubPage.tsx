@@ -15,13 +15,12 @@ import {useSearchParams} from 'react-router-dom';
 import {eciperay} from '../lib/api.js';
 
 /**
- * One plan row's meta line, composed host-side for the DS page: the entry
- * count with its pluralization, the plan's date range, and its nutrition
- * summary — the exact string the retired web view rendered inline. The
- * string crosses the @spudly/ui/pages boundary pre-composed (the
- * RecipesPage subtitle precedent): pluralization and the nutrition
- * formatter are the host's, so the page only renders it. Mirrors the app
- * screen's composition.
+ * One plan row's meta line, composed host-side for the DS page: the entry count
+ * with its pluralization, the plan's date range, and its nutrition summary —
+ * the exact string the retired web view rendered inline. The string crosses the
+ * @spudly/ui/pages boundary pre-composed (the RecipesPage subtitle precedent):
+ * pluralization and the nutrition formatter are the host's, so the page only
+ * renders it. Mirrors the app screen's composition.
  */
 const formatMealPlanSubtitle = (plan: MealPlan) =>
   `${plan.entryCount} entr${plan.entryCount === 1 ? 'y' : 'ies'}${
@@ -44,6 +43,11 @@ export const MealsHubPage = () => {
   const {data: plans = [], isLoading: plansLoading} = useQuery({
     queryKey: queryKeys.mealPlans(),
     queryFn: () => eciperay.mealPlans.list(),
+    // Always refetch on mount, ignoring the app-wide 30s staleTime: a
+    // plan deleted while this list is unmounted (e.g. from its detail
+    // page) invalidates nothing here, so serving the still-fresh cached
+    // list on return showed the deleted plan until a full reload (#387).
+    refetchOnMount: 'always',
   });
 
   const isLoading = useMemo(
@@ -61,6 +65,11 @@ export const MealsHubPage = () => {
   const deletePlanMutation = useMutation({
     mutationFn: (id: string) => eciperay.mealPlans.delete(id),
     onSuccess: (_data, id) => {
+      // Drop the deleted plan from the cached list immediately, so the
+      // row is gone even before the invalidation refetch lands (#387).
+      queryClient.setQueryData<MealPlan[]>(queryKeys.mealPlans(), current =>
+        current?.filter(plan => plan.id !== id),
+      );
       void queryClient.invalidateQueries({queryKey: queryKeys.mealPlans()});
       // Drop the deleted plan's detail cache too, so a later visit to its
       // detail page cannot render the stale cached plan (#268).
