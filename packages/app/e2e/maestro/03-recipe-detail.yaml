@@ -25,12 +25,19 @@
 # nutrition section at the bottom without either band ever appearing
 # in a polled hierarchy (verified in two CI runs, 20s and 90s
 # windows). This flow instead walks down with short, slow drags and
-# asserts each section as it enters the viewport. Ingredient rows are
+# asserts each section as it enters the viewport. The overview alone
+# is a full viewport tall (actions, tweak controls, sharing, ratings —
+# measured in the 2026-11-03 CI hierarchy dumps), so two drags are
+# needed before Ingredients enters the window. Ingredient rows are
 # single labels ("400 g Crushed tomatoes" — formatScaledIngredientLine
 # in packages/client), so a name substring matches the row.
 appId: com.eciperay
 ---
 - assertVisible: "E2E Weeknight Pasta"
+- swipe:
+    start: 50%, 70%
+    end: 50%, 45%
+    duration: 600
 - swipe:
     start: 50%, 70%
     end: 50%, 45%
