@@ -57,6 +57,8 @@ const fetchPage = async (url: string): Promise<string> => {
   if (!BOT_REFUSAL_STATUSES.has(response.status)) {
     throw new Error(`Failed to fetch ${url}: ${response.status}`);
   }
+  // Release the refused response's connection for reuse before retrying.
+  await response.body?.cancel().catch(() => undefined);
   const retry = await fetch(url, {
     headers: BROWSER_HEADERS,
     signal: AbortSignal.timeout(10_000),
