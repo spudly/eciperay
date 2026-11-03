@@ -16,10 +16,11 @@ Flag violations of them; do not suggest changes that contradict them.
   npm (the `packageManager` field in `package.json`, npm@10.9.4). Flag lockfile
   changes that look hand-edited; do not nitpick ordinary generated lockfile
   diffs.
-- A `@spudly/ui` version bump must be a minimal-delta lockfile change — only the
-  version/resolved/integrity lines for `@spudly/ui`. Flag a bump that
-  re-resolves the `@spudly/ui` dependency subtree: it breaks the nested Tamagui
-  3.0.15 layout the Android build depends on.
+- A `@spudly/ui` version bump must be a minimal-delta lockfile change — the
+  version/resolved/integrity lines for `@spudly/ui`, plus the matching range
+  update in the owning workspace's dependency entry (allow that required
+  metadata). Flag a bump that re-resolves the `@spudly/ui` dependency subtree:
+  it breaks the nested Tamagui 3.0.15 layout the Android build depends on.
 
 ## Styling
 
