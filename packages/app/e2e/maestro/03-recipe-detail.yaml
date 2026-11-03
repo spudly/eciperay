@@ -22,12 +22,15 @@
 # Instructions, Cook History, Nutrition (RecipeDetailPage's section
 # order) — and the Overview alone runs well past a full viewport
 # (versions, actions, tweak controls, sharing, ratings, comments).
-# The flow scrolls to the Ingredients heading first; the sibling
-# section headings ("Cook History", "Nutrition") are plain-text nodes
-# in the native hierarchy (verified in the 2026-11-03 CI dumps).
-# Ingredient rows are single labels ("400 g Crushed tomatoes" —
+# The section headings are plain-text nodes (verified in CI hierarchy
+# dumps), so the flow scrolls to the Ingredients heading, then takes
+# one short drag: when the heading first becomes visible the
+# ingredient rows sit clipped at the scroll container's bottom edge
+# (the "400 g Crushed tomatoes" row measured 25px of ~123px in the
+# dump), below Maestro's visibility threshold. Ingredient rows are
+# single labels ("400 g Crushed tomatoes" —
 # formatScaledIngredientLine in packages/client), so a name substring
-# matches the row once the band is in the window.
+# matches the row once it is fully in the window.
 appId: com.eciperay
 ---
 - assertVisible: "E2E Weeknight Pasta"
@@ -35,6 +38,11 @@ appId: com.eciperay
     element:
       text: "Ingredients"
     timeout: 60000
+- swipe:
+    start: 50%, 70%
+    end: 50%, 45%
+    duration: 600
+- assertVisible: "Spaghetti"
 - assertVisible: "Crushed tomatoes"
 - scrollUntilVisible:
     element:
