@@ -56,16 +56,20 @@ export const isReadyPortion = (portion: RecipePortionNutritionInput): boolean =>
 export const scalePortion = (
   portion: RecipePortionNutritionInput,
 ): MacroTotals => {
-  const scale = portion.servings / portion.recipeServings;
+  // Stored macros are per serving (NutritionInfo), so a portion of
+  // `servings` servings contributes per-serving × servings. The prepared
+  // weight is stored for the whole recipe, so it scales by the fraction
+  // of the recipe the portion represents.
+  const weightScale = portion.servings / portion.recipeServings;
   return {
-    calories: (portion.calories ?? 0) * scale,
-    proteinG: (portion.proteinG ?? 0) * scale,
-    carbsG: (portion.carbsG ?? 0) * scale,
-    fatG: (portion.fatG ?? 0) * scale,
-    fiberG: (portion.fiberG ?? 0) * scale,
-    sugarG: (portion.sugarG ?? 0) * scale,
-    sodiumMg: (portion.sodiumMg ?? 0) * scale,
-    preparedWeightG: (portion.preparedWeightG ?? 0) * scale,
+    calories: (portion.calories ?? 0) * portion.servings,
+    proteinG: (portion.proteinG ?? 0) * portion.servings,
+    carbsG: (portion.carbsG ?? 0) * portion.servings,
+    fatG: (portion.fatG ?? 0) * portion.servings,
+    fiberG: (portion.fiberG ?? 0) * portion.servings,
+    sugarG: (portion.sugarG ?? 0) * portion.servings,
+    sodiumMg: (portion.sodiumMg ?? 0) * portion.servings,
+    preparedWeightG: (portion.preparedWeightG ?? 0) * weightScale,
   };
 };
 

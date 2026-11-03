@@ -70,6 +70,14 @@ describe('loadMealPlanDetail', () => {
     expect(plan?.entries).toHaveLength(1);
     expect(plan?.entries[0]?.type).toBe('recipe');
     expect(plan?.entries[0]?.title).toBe('Soup');
+    expect(plan?.entries[0]).toEqual(
+      expect.objectContaining({
+        calories: 100,
+        proteinG: 10,
+        carbsG: 5,
+        fatG: 2,
+      }),
+    );
   });
 
   test('loads meal entry on plan', async () => {

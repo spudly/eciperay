@@ -28,6 +28,8 @@ describe('publicRecipeToRecipeDetail', () => {
       nutritionStatus: null,
       calories: null,
       proteinG: null,
+      carbsG: null,
+      fatG: null,
       nutrition: null,
       communityRating: null,
       ingredients: [],

@@ -76,6 +76,8 @@ const toMember = (
       null),
   calories: accessLost ? null : (recipe?.calories ?? null),
   proteinG: accessLost ? null : (recipe?.protein_g ?? null),
+  carbsG: accessLost ? null : (recipe?.carbs_g ?? null),
+  fatG: accessLost ? null : (recipe?.fat_g ?? null),
 });
 
 export const nutritionFromMembers = (

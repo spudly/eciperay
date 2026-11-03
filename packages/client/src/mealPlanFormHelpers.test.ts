@@ -80,6 +80,8 @@ describe('mealPlanFormHelpers', () => {
           nutritionStatus: null,
           calories: null,
           proteinG: null,
+          carbsG: null,
+          fatG: null,
         },
       ],
     };
@@ -177,6 +179,8 @@ describe('mealPlanFormHelpers', () => {
           nutritionStatus: null,
           calories: null,
           proteinG: null,
+          carbsG: null,
+          fatG: null,
         },
       ],
     };
