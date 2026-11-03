@@ -364,6 +364,122 @@ describe('meal and meal plan write tools', () => {
     await client.close();
   });
 
+  test('servings and quantity reject zero, negative, fractional and non-number values and write nothing', async () => {
+    let fetchCalls = 0;
+    globalThis.fetch = (async () => {
+      fetchCalls += 1;
+      return {
+        ok: true,
+        status: 200,
+        text: async () => '{}',
+        json: async () => ({}),
+      } as Response;
+    }) as typeof fetch;
+
+    const client = await connectClient();
+    const invalidValues: unknown[] = [0, -1, 1.5, '2'];
+    for (const value of invalidValues) {
+      const created = await client.callTool({
+        name: 'create_meal',
+        arguments: {
+          title: 'Taco Night',
+          recipes: [{recipeId: RECIPE_UUID, servings: value}],
+        },
+      });
+      assert.equal(
+        created.isError,
+        true,
+        `create_meal servings=${String(value)}`,
+      );
+      const added = await client.callTool({
+        name: 'add_recipe_to_meal',
+        arguments: {mealId: MEAL_UUID, recipeId: RECIPE_UUID, servings: value},
+      });
+      assert.equal(
+        added.isError,
+        true,
+        `add_recipe_to_meal servings=${String(value)}`,
+      );
+      const planCreated = await client.callTool({
+        name: 'create_meal_plan',
+        arguments: {
+          title: 'Week 1',
+          entries: [{recipeId: RECIPE_UUID, servings: value}],
+        },
+      });
+      assert.equal(
+        planCreated.isError,
+        true,
+        `create_meal_plan servings=${String(value)}`,
+      );
+      const planQuantity = await client.callTool({
+        name: 'create_meal_plan',
+        arguments: {
+          title: 'Week 1',
+          entries: [{mealId: MEAL_UUID, quantity: value}],
+        },
+      });
+      assert.equal(
+        planQuantity.isError,
+        true,
+        `create_meal_plan quantity=${String(value)}`,
+      );
+      const entryAdded = await client.callTool({
+        name: 'add_meal_plan_entry',
+        arguments: {mealPlanId: MEAL_UUID, mealId: MEAL_UUID, quantity: value},
+      });
+      assert.equal(
+        entryAdded.isError,
+        true,
+        `add_meal_plan_entry quantity=${String(value)}`,
+      );
+    }
+    assert.equal(fetchCalls, 0);
+    await client.close();
+  });
+
+  test('servings and quantity accept the boundaries 1 and 2147483647', async () => {
+    let fetchCalls = 0;
+    globalThis.fetch = (async () => {
+      fetchCalls += 1;
+      return {
+        ok: true,
+        status: 200,
+        text: async () => '{}',
+        json: async () => ({}),
+      } as Response;
+    }) as typeof fetch;
+
+    const client = await connectClient();
+    for (const value of [1, 2_147_483_647]) {
+      fetchCalls = 0;
+      await client.callTool({
+        name: 'create_meal',
+        arguments: {
+          title: 'Taco Night',
+          recipes: [{recipeId: RECIPE_UUID, servings: value}],
+        },
+      });
+      assert.ok(
+        fetchCalls > 0,
+        `create_meal servings=${value} should pass validation`,
+      );
+      fetchCalls = 0;
+      await client.callTool({
+        name: 'create_meal_plan',
+        arguments: {
+          title: 'Week 1',
+          entries: [{mealId: MEAL_UUID, quantity: value}],
+        },
+      });
+      assert.ok(
+        fetchCalls > 0,
+        `create_meal_plan quantity=${value} should pass validation`,
+      );
+    }
+    await client.close();
+  });
+
   test('create_meal_plan with an entry carrying both mealId and recipeId is an error and writes nothing', async () => {
     let fetchCalls = 0;
     globalThis.fetch = (async () => {
