@@ -109,6 +109,10 @@ describe('RecipeVisibilityControls', () => {
       screen.getByRole('button', {name: 'Save sharing settings'}),
     ).toBeDisabled();
     expect(called).toBe(false);
+    // The save handler's own consent guard is exercised separately in
+    // RecipeVisibilityControls.guard.test.tsx — the real DS Button
+    // suppresses activation while disabled, so no click dispatched to
+    // it here can reach the handler.
   });
 
   test('can return a recipe to private visibility', async () => {
