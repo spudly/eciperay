@@ -14,7 +14,10 @@ export type {RecipeListFilters} from './recipesListUrl.js';
 
 export const RECIPE_LIST_PAGE_SIZE = 20;
 
-type ListRecipesFn = (params?: RecipeListParams) => Promise<RecipeDetail[]>;
+type ListRecipesFn = (
+  params?: RecipeListParams,
+  signal?: AbortSignal,
+) => Promise<RecipeDetail[]>;
 type GetRecipeFn = (id: string) => Promise<RecipeDetail>;
 type ListPublicRecipesFn = (
   params?: RecipeListParams,
@@ -93,15 +96,71 @@ export const recipeListInfiniteQueryOptions = (
   getNextPageParam: getRecipeListNextPageParam,
 });
 
-export const RECIPE_FORM_OPTIONS_LIMIT = 100;
+/**
+ * Page size for one form-picker search request. The picker is a search
+ * autocomplete (#359, @spudly/ui 2.0.0): the host runs this server-side search
+ * for the typed text and shows the matches — it no longer renders the whole
+ * library, so the old single-request `limit: 100` cap (recipes beyond the first
+ * 100 could never be added to a meal or meal plan) is gone by construction: any
+ * recipe is reachable by searching for it, however large the library is. A
+ * single page is NOT enough on its own, though: the server's search is a title
+ * substring match ordered newest-first, so a recipe whose title is contained in
+ * more than a page of newer titles (an older "Soup" behind 20 newer "… Soup …"
+ * titles) would sit past the first page even when its complete title is typed.
+ * The query below therefore collects EVERY matching page, so every match is
+ * reachable.
+ */
+export const RECIPE_FORM_SEARCH_LIMIT = 20;
 
-// Flat (non-paginated) recipe list for the meal / meal-plan form pickers.
-// Uses its own query key — see queryKeys.recipeFormOptions for why sharing
-// the infinite list's key crashes both consumers (#171, #172).
-export const recipeFormOptionsQueryOptions = (list: ListRecipesFn) => ({
-  queryKey: queryKeys.recipeFormOptions(),
-  queryFn: () => list({limit: RECIPE_FORM_OPTIONS_LIMIT}),
-});
+// All matching pages of server-side recipe search results for the meal /
+// meal-plan form pickers, ordered newest-first with the list endpoint's
+// total-order tie-breaker (updated_at desc, id) so paging cannot skip or
+// duplicate a recipe and the order is deterministic. Uses its own query
+// key — see queryKeys.recipeFormSearch for why sharing the infinite
+// list's key crashes both consumers (#171, #172).
+export const recipeFormSearchQueryOptions = (
+  list: ListRecipesFn,
+  searchText: string,
+) => {
+  const search = searchText.trim();
+  return {
+    queryKey: queryKeys.recipeFormSearch(search),
+    queryFn: async ({signal}: {signal?: AbortSignal} = {}): Promise<
+      RecipeDetail[]
+    > => {
+      const results: RecipeDetail[] = [];
+      let offset = 0;
+      for (;;) {
+        // TanStack Query aborts the signal when this search is superseded
+        // (new search text) or its host unmounts. The signal is forwarded
+        // to the list call so the in-flight request itself aborts; the
+        // between-pages check below covers list implementations that
+        // ignore the signal, so an abandoned search never keeps paging
+        // through every remaining match either way.
+        if (signal?.aborted) {
+          throw signal.reason instanceof Error
+            ? signal.reason
+            : new Error('The recipe search was aborted.');
+        }
+        const page = await list(
+          {
+            ...(search ? {search} : {}),
+            sort: 'newest',
+            sortDir: 'desc',
+            limit: RECIPE_FORM_SEARCH_LIMIT,
+            offset,
+          },
+          signal,
+        );
+        results.push(...page);
+        if (page.length < RECIPE_FORM_SEARCH_LIMIT) {
+          return results;
+        }
+        offset += page.length;
+      }
+    },
+  };
+};
 
 export const sharedWithMeInfiniteQueryOptions = (
   listSharedWithMe: ListRecipesFn,

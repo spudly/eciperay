@@ -73,7 +73,9 @@ export const buildListSharedWithMeSql = (
   group by r.id, rv.id, g.granted_at
   order by ${
     sort === 'newest'
-      ? `g.granted_at ${sortDir === 'asc' ? 'asc' : 'desc'}`
+      ? // Same total-order requirement as orderBySql (#359): granted_at
+        // ties need the unique r.id tie-breaker for offset pagination.
+        `g.granted_at ${sortDir === 'asc' ? 'asc' : 'desc'}, r.id ${sortDir === 'asc' ? 'asc' : 'desc'}`
       : orderBySql(sort, sortDir)
   }
   limit $2 offset $3

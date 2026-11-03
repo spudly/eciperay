@@ -29,6 +29,20 @@ const createProps = (params: MealsStackParamList['MealEdit']) =>
     replace: mockReplace,
   });
 
+// The picker is a search autocomplete (#359): results only appear after
+// typing in the search field and the debounced server search returning.
+type Rendered = Awaited<ReturnType<typeof renderWithProviders>>;
+const searchForRecipe = async (
+  rendered: Rendered,
+  text = 'Pasta',
+): Promise<void> => {
+  await fireEvent.changeText(
+    rendered.getByPlaceholderText('Search recipes…'),
+    text,
+  );
+  await rendered.findByText('Pasta', {}, {timeout: 5000});
+};
+
 describe('MealEditScreen', () => {
   beforeEach(() => {
     mockReplace.mockReset();
@@ -57,37 +71,64 @@ describe('MealEditScreen', () => {
     });
   });
 
-  test('renders picker options when the list cache holds infinite-query data', async () => {
-    // Regression (#171): same cache-shape collision as MealPlanEditScreen.
+  test('renders picker results when the list cache holds infinite-query data', async () => {
+    // Regression (#171): same cache-shape collision as MealPlanEditScreen —
+    // the search query must not read the infinite list's cached shape.
     const client = makeQueryClient();
     client.setQueryData(
       recipeListInfiniteQueryOptions(params => api.recipes.list(params), {})
         .queryKey,
       {pages: [[recipe]], pageParams: [0]},
     );
-    const {findByText} = await renderWithProviders(
+    const rendered = await renderWithProviders(
       <MealEditScreen {...createProps({})} />,
       client,
     );
-    expect(await findByText('Pasta')).toBeTruthy();
+    await searchForRecipe(rendered);
+    expect(rendered.getByText('Pasta')).toBeTruthy();
+  });
+
+  test('surfaces a recipe search failure instead of no matches', async () => {
+    mockListRecipes.mockRejectedValue(new Error('boom'));
+    const rendered = await renderWithProviders(
+      <MealEditScreen {...createProps({})} />,
+    );
+    await fireEvent.changeText(
+      rendered.getByPlaceholderText('Search recipes…'),
+      'Pasta',
+    );
+    expect(
+      await rendered.findByText(
+        'Could not load recipes: boom',
+        {},
+        {timeout: 5000},
+      ),
+    ).toBeTruthy();
+    expect(rendered.queryByText('Pasta')).toBeNull();
   });
 
   test('renders new meal form', async () => {
-    const {findByText} = await renderWithProviders(
+    const rendered = await renderWithProviders(
       <MealEditScreen {...createProps({})} />,
     );
-    expect(await findByText('Meal')).toBeTruthy();
-    expect(await findByText('Title')).toBeTruthy();
-    expect(await findByText('Pasta')).toBeTruthy();
+    expect(await rendered.findByText('Meal')).toBeTruthy();
+    expect(await rendered.findByText('Title')).toBeTruthy();
+    // No library is listed before a search is typed.
+    expect(rendered.queryByText('Pasta')).toBeNull();
+    await searchForRecipe(rendered);
   });
 
   test('creates meal and navigates to detail', async () => {
-    const {findByText, getByPlaceholderText, getByText} =
-      await renderWithProviders(<MealEditScreen {...createProps({})} />);
-    await findByText('Pasta');
-    await fireEvent.changeText(getByPlaceholderText('Meal title'), 'Dinner');
-    await fireEvent.press(getByText('Pasta'));
-    await fireEvent.press(getByText('Save meal'));
+    const rendered = await renderWithProviders(
+      <MealEditScreen {...createProps({})} />,
+    );
+    await searchForRecipe(rendered);
+    await fireEvent.changeText(
+      rendered.getByPlaceholderText('Meal title'),
+      'Dinner',
+    );
+    await fireEvent.press(rendered.getByText('Pasta'));
+    await fireEvent.press(rendered.getByText('Save meal'));
     await waitFor(() => {
       expect(mockCreate).toHaveBeenCalled();
       expect(mockReplace).toHaveBeenCalledWith('MealDetail', {mealId});
@@ -120,10 +161,13 @@ describe('MealEditScreen', () => {
         },
       ],
     });
-    const {findByDisplayValue} = await renderWithProviders(
+    const rendered = await renderWithProviders(
       <MealEditScreen {...createProps({mealId})} />,
     );
-    expect(await findByDisplayValue('Sunday Dinner')).toBeTruthy();
+    expect(await rendered.findByDisplayValue('Sunday Dinner')).toBeTruthy();
+    // The meal's recipe is already selected — its stepper renders without
+    // any search.
+    expect(await rendered.findByText('Servings · Pasta')).toBeTruthy();
   });
 
   test('loads existing meal for edit', async () => {
@@ -152,37 +196,45 @@ describe('MealEditScreen', () => {
         },
       ],
     });
-    const {findByDisplayValue, getByText} = await renderWithProviders(
+    const rendered = await renderWithProviders(
       <MealEditScreen {...createProps({mealId})} />,
     );
-    expect(await findByDisplayValue('Sunday Dinner')).toBeTruthy();
-    await fireEvent.press(getByText('Save meal'));
+    expect(await rendered.findByDisplayValue('Sunday Dinner')).toBeTruthy();
+    await fireEvent.press(rendered.getByText('Save meal'));
     await waitFor(() => {
       expect(mockPut).toHaveBeenCalledWith(mealId, expect.any(Object));
     });
   });
 
-  test('toggles recipes and adjusts servings', async () => {
-    const {findByText, getByPlaceholderText, getByText, queryByText} =
-      await renderWithProviders(<MealEditScreen {...createProps({})} />);
-    await findByText('Pasta');
-    await fireEvent.changeText(getByPlaceholderText('Meal title'), 'Dinner');
-    await fireEvent.press(getByText('Pasta'));
-    await fireEvent.press(getByText('+'));
-    await fireEvent.press(getByText('Pasta'));
-    expect(queryByText('Servings · Pasta')).toBeNull();
+  test('selects, adjusts servings, and removes recipes', async () => {
+    const rendered = await renderWithProviders(
+      <MealEditScreen {...createProps({})} />,
+    );
+    await searchForRecipe(rendered);
+    await fireEvent.changeText(
+      rendered.getByPlaceholderText('Meal title'),
+      'Dinner',
+    );
+    await fireEvent.press(rendered.getByText('Pasta'));
+    await fireEvent.press(rendered.getByText('+'));
+    await fireEvent.press(rendered.getByText('Remove'));
+    expect(rendered.queryByText('Servings · Pasta')).toBeNull();
   });
 
   test('shows save errors', async () => {
     mockCreate.mockRejectedValue(new Error('Save failed'));
-    const {findByText, getByPlaceholderText, getByText} =
-      await renderWithProviders(<MealEditScreen {...createProps({})} />);
-    await findByText('Pasta');
-    await fireEvent.changeText(getByPlaceholderText('Meal title'), 'Dinner');
-    await fireEvent.press(getByText('Pasta'));
+    const rendered = await renderWithProviders(
+      <MealEditScreen {...createProps({})} />,
+    );
+    await searchForRecipe(rendered);
+    await fireEvent.changeText(
+      rendered.getByPlaceholderText('Meal title'),
+      'Dinner',
+    );
+    await fireEvent.press(rendered.getByText('Pasta'));
     await act(async () => {
-      await fireEvent.press(getByText('Save meal'));
+      await fireEvent.press(rendered.getByText('Save meal'));
     });
-    expect(await findByText('Save failed')).toBeTruthy();
+    expect(await rendered.findByText('Save failed')).toBeTruthy();
   });
 });

@@ -111,14 +111,20 @@ describe('listFilterParams sql helpers', () => {
     expect(ingredientFilterSql(2)).toContain('$2::text');
     expect(communityRatingSelectSql).toContain('community_rating_average');
     expect(nutritionSelectSql).toContain('rv.satiety_score');
-    expect(orderBySql('rating', 'asc')).toContain(
-      'community_rating_average asc nulls first',
+    expect(orderBySql('rating', 'asc')).toBe(
+      'community_rating_average asc nulls first, rv.updated_at desc, rv.id desc',
     );
-    expect(orderBySql('satiety', 'desc')).toContain(
-      'rv.satiety_score desc nulls last',
+    expect(orderBySql('satiety', 'desc')).toBe(
+      'rv.satiety_score desc nulls last, rv.updated_at desc, rv.id desc',
     );
-    expect(orderBySql('calories', 'asc')).toContain('rv.calories asc');
-    expect(orderBySql('newest', 'desc')).toBe('rv.updated_at desc');
+    expect(orderBySql('calories', 'asc')).toBe(
+      'rv.calories asc nulls first, rv.updated_at desc, rv.id desc',
+    );
+    // The unique rv.id tie-breaker makes the order total, so offset
+    // pagination cannot skip or duplicate rows that tie on updated_at
+    // across a page boundary (#359).
+    expect(orderBySql('newest', 'desc')).toBe('rv.updated_at desc, rv.id desc');
+    expect(orderBySql('newest', 'asc')).toBe('rv.updated_at asc, rv.id asc');
     expect(orderBySql('newest', 'asc', {fallback: 'r.created_at asc'})).toBe(
       'r.created_at asc',
     );

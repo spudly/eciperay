@@ -315,12 +315,27 @@ mode; there is no Playwright coverage of meals. The cases below are manual._
 6. **Meal detail for a nonexistent meal.** Navigate directly to
    `/meals/not-a-uuid`. **Expected:** a "Page not found" view with a link home —
    never an indefinite Loading state.
+7. **Picker search reaches the full library (regression: #359).** Preconditions:
+   an account with more than 100 recipes. Open the meal form and type the title
+   of a recipe beyond the first 100 into the picker's "Search recipes" field.
+   **Expected:** the beyond-100 recipe appears as a search result and can be
+   selected into the meal (it moves to the selected list under the search field,
+   with its servings stepper); saving keeps it on the meal detail. Also confirm:
+   a search with no matches shows "No recipes found.", selecting a result leaves
+   the picker available to search and add another recipe, and a selected
+   recipe's Remove action takes it back out. Repeat the search-and-select part
+   in the meal-plan form (`/meal-plans/new`, "Search meals & recipes" field) —
+   the same picker contract serves both forms (see also Meal plans case 7).
+   (Runs execute in the QA preview environment defined under "How runs work"
+   above; on any surface where writes are prohibited, verify read-only instead:
+   confirm a beyond-100 recipe appears as a search result without saving.)
 
 **Run when:**
 `packages/app/src/screens/{MealsHub,MealDetail,MealEdit,MealCookingMode}Screen.tsx`,
 `packages/web/src/pages/{MealsHub,MealDetail,MealEdit,MealCookingMode}Page.tsx`,
-`@spudly/ui` `MealsHubPage`, `MealDetailPage`, `MealFormPage`, or
-`MealCookingModePage`, `packages/server` meal routes.
+`packages/client/src/recipeListQuery.ts`, `@spudly/ui` `MealsHubPage`,
+`MealDetailPage`, `MealFormPage`, or `MealCookingModePage`, `packages/server`
+meal routes.
 
 ---
 
@@ -380,13 +395,31 @@ one first via Meals case 1 and do not delete it until this section is done.)
    active (`/meals?tab=plans`) and the plan list renders — no 404. Then visit a
    nonsense path (e.g. `/no-such-page`). **Expected:** the app's own "Page not
    found" page with a link home, never the raw framework error screen.
+7. **Picker search reaches the full library (regression: #359).** Preconditions:
+   an account with more than 100 recipes. Open the meal-plan form
+   (`/meal-plans/new`) and type the title of a recipe beyond the first 100 into
+   the picker's "Search meals & recipes" field. **Expected:** the beyond-100
+   recipe appears as a search result and can be selected into the plan (it moves
+   to the selected list under the search field, with its quantity and servings
+   steppers); saving keeps it on the plan detail after reload. Also confirm a
+   match that sits behind more than one page of newer substring matches (an
+   older recipe whose title is contained in 20+ newer titles) is reachable by
+   typing its full title. Fixture for that last check (the standing QA seed in
+   `docs/qa-seed.md` has only three recipes, so build this one in the QA account
+   first and delete it afterwards): create a recipe titled `QA — Paging Soup`
+   FIRST, then create at least 21 newer recipes whose titles all contain that
+   exact string (e.g. `QA — Paging Soup 01` through `QA — Paging Soup 21`,
+   created in any order after it). Because search is newest-first, the older
+   `QA — Paging Soup` then sits behind a full page of newer substring matches;
+   typing its full title must still surface it as a selectable result.
 
 **Run when:**
 `packages/app/src/screens/{MealPlanDetail,MealPlanEdit}Screen.tsx`,
 `packages/app/src/hosts/meals/**`,
 `packages/web/src/pages/{MealPlanDetail,MealPlanEdit}Page.tsx`, `@spudly/ui`
 `MealPlanDetailPage` or `MealPlanFormPage`,
-`packages/web/src/routes/router.tsx`, `packages/server` meal plan routes.
+`packages/client/src/recipeListQuery.ts`, `packages/web/src/routes/router.tsx`,
+`packages/server` meal plan routes.
 
 ---
 

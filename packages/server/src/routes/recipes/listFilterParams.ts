@@ -186,18 +186,25 @@ export const orderBySql = (
 ): string => {
   const dir = sortDir === 'asc' ? 'asc' : 'desc';
   const nulls = sortDir === 'asc' ? 'nulls first' : 'nulls last';
+  // Every branch ends with the unique `rv.id` tie-breaker (the list
+  // queries group by r.id, rv.id, so it is unique per row): without a
+  // total order, rows that tie on the sort keys — e.g. recipes sharing
+  // an updated_at — can be returned in a different relative order by
+  // separate offset requests, so paginated consumers (the infinite
+  // recipe list, and the meal picker's sequential page fetch, #359)
+  // could see duplicates or never see a tied recipe at all.
   switch (sort) {
     case 'rating': {
-      return `community_rating_average ${dir} ${nulls}, rv.updated_at desc`;
+      return `community_rating_average ${dir} ${nulls}, rv.updated_at desc, rv.id desc`;
     }
     case 'satiety': {
-      return `rv.satiety_score ${dir} ${nulls}, rv.updated_at desc`;
+      return `rv.satiety_score ${dir} ${nulls}, rv.updated_at desc, rv.id desc`;
     }
     case 'calories': {
-      return `rv.calories ${dir} ${nulls}, rv.updated_at desc`;
+      return `rv.calories ${dir} ${nulls}, rv.updated_at desc, rv.id desc`;
     }
     default: {
-      return options?.fallback ?? `rv.updated_at ${dir}`;
+      return options?.fallback ?? `rv.updated_at ${dir}, rv.id ${dir}`;
     }
   }
 };
