@@ -31,15 +31,43 @@ export const URL_IMPORT_FETCH_ERROR =
 export const URL_IMPORT_NO_RECIPE_ERROR =
   "That page doesn't appear to contain a recipe.";
 
+// Some recipe sites refuse the bot user agent from datacenter IPs
+// (#400: browneyedbaker.com answered 403 to EciperayBot while serving
+// browsers normally, which surfaced to the user as a 500 before #297
+// and as a fetch-failure 422 after it). When the site answers with a
+// bot-style refusal, retry once with ordinary browser headers before
+// giving up; a refusal of the browser request too is a genuine fetch
+// failure and keeps the #297 422 mapping.
+const BROWSER_HEADERS = {
+  'User-Agent':
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+  Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  'Accept-Language': 'en-US,en;q=0.9',
+};
+const BOT_REFUSAL_STATUSES = new Set([401, 403, 429]);
+
 const fetchPage = async (url: string): Promise<string> => {
   const response = await fetch(url, {
     headers: {'User-Agent': 'EciperayBot/1.0'},
     signal: AbortSignal.timeout(10_000),
   });
-  if (!response.ok) {
+  if (response.ok) {
+    return response.text();
+  }
+  if (!BOT_REFUSAL_STATUSES.has(response.status)) {
     throw new Error(`Failed to fetch ${url}: ${response.status}`);
   }
-  return response.text();
+  // Release the refused response's connection for reuse before retrying.
+  await response.body?.cancel().catch(() => undefined);
+  const retry = await fetch(url, {
+    headers: BROWSER_HEADERS,
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!retry.ok) {
+    await retry.body?.cancel().catch(() => undefined);
+    throw new Error(`Failed to fetch ${url}: ${retry.status}`);
+  }
+  return retry.text();
 };
 
 const parseFromHtml = async (html: string, url: string) => {

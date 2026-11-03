@@ -515,6 +515,11 @@ small set of known inputs so results are comparable across runs).
    "couldn't fetch that page — the site may be blocking imports" style message
    suggesting pasting the recipe text instead. A generic "Internal server error"
    or "AI service error" for either failure is a defect (issue #297).
+4b. **URL import from a bot-refusing site.** Submit the URL of a recipe page
+   on a site that refuses the importer's bot agent but serves browsers
+   (e.g. browneyedbaker.com, issue #400). **Expected:** the importer retries
+   with browser headers and the recipe imports successfully, reaching review
+   like case 3 — not the case-4 fetch-failure message.
 5. **Image import.** Add → Import from image (`/add/image`); upload a clear
    photo/scan of a printed recipe. **Expected:** extracted text reaches review
    in editable form; obvious misreads are correctable in review and the
