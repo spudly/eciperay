@@ -21,12 +21,28 @@ const readyPortion = {
 
 describe('aggregateRecipePortionsNutrition', () => {
   test('scales and sums ready portions', () => {
+    // Macros are stored per serving: 2 servings × 100 cal / 10 g protein.
+    // Prepared weight is stored whole-recipe: 2/4 of 400 g.
     const result = aggregateRecipePortionsNutrition([readyPortion]);
     expect(result.status).toBe('ready');
-    expect(result.calories).toBe(50);
-    expect(result.proteinG).toBe(5);
+    expect(result.calories).toBe(200);
+    expect(result.proteinG).toBe(20);
+    expect(result.carbsG).toBe(40);
+    expect(result.fatG).toBe(10);
+    expect(result.fiberG).toBe(4);
+    expect(result.sugarG).toBe(2);
+    expect(result.sodiumMg).toBe(200);
     expect(result.preparedWeightG).toBe(200);
     expect(result.satietyScore).not.toBeNull();
+  });
+
+  test('a portion matching the recipe servings totals the whole recipe', () => {
+    const result = aggregateRecipePortionsNutrition([
+      {...readyPortion, servings: 4},
+    ]);
+    expect(result.calories).toBe(400);
+    expect(result.carbsG).toBe(80);
+    expect(result.preparedWeightG).toBe(400);
   });
 
   test('treats missing optional macros as zero when scaling', () => {
@@ -81,8 +97,8 @@ describe('aggregatePlanNutrition', () => {
       [{kind: 'aggregated', nutrition: mealNutrition, quantity: 2}],
       2,
     );
-    expect(result.calories).toBe(100);
-    expect(result.perDay?.calories).toBe(50);
+    expect(result.calories).toBe(400);
+    expect(result.perDay?.calories).toBe(200);
   });
 });
 

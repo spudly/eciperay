@@ -23,4 +23,6 @@ export type RecipeNutritionSummary = {
   nutritionStatus: NutritionStatus | null;
   calories: number | null;
   proteinG: number | null;
+  carbsG: number | null;
+  fatG: number | null;
 };

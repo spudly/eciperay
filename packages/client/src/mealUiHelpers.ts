@@ -29,6 +29,8 @@ export const formatSimpleNutrition = (
   const parts = [
     `${Math.round(nutrition.calories)} cal`,
     `${Math.round(nutrition.proteinG)}g protein`,
+    `${Math.round(nutrition.carbsG)}g carbs`,
+    `${Math.round(nutrition.fatG)}g fat`,
   ];
   if (nutrition.satietyScore !== null) {
     parts.push(`satiety ${Math.round(nutrition.satietyScore)}`);

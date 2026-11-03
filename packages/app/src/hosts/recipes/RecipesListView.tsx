@@ -4,6 +4,7 @@ import type {
 } from '@eciperay/client';
 import {
   demoRecipeListFilters,
+  formatCondensedNutritionParts,
   formatSatietyLabel,
   formatServingsLabel,
   getDisplayRating,
@@ -40,17 +41,21 @@ type RecipesListViewOwnProps = Omit<
 >;
 
 /**
- * The subtitle for a RecipesPage row: servings · time · satiety, with no rating
- * segment. It mirrors the shared `formatRecipeListSubtitle` minus the rating
- * text `formatRecipeListMeta` embeds — the page renders the rating itself as
- * the row's stars (the log-cook control), so keeping the text would show the
- * rating twice. The card's helper is unchanged in shape: the Home list's card
- * renders no stars, so its subtitle keeps the rating text. The servings segment
- * uses the shared `formatServingsLabel` so the pluralization (#278) matches the
- * cards.
+ * The subtitle for a RecipesPage row: servings · time · condensed nutrition
+ * (calories · protein · carbs · fat, each only when known) · satiety, with no
+ * rating segment. It mirrors the shared `formatRecipeListSubtitle` minus the
+ * rating text `formatRecipeListMeta` embeds — the page renders the rating
+ * itself as the row's stars (the log-cook control), so keeping the text would
+ * show the rating twice. The card's helper is unchanged in shape: the Home
+ * list's card renders no stars, so its subtitle keeps the rating text. The
+ * servings segment uses the shared `formatServingsLabel` so the pluralization
+ * (#278) matches the cards.
  */
 const formatRecipesPageSubtitle = (recipe: RecipeDetail) =>
-  `${formatServingsLabel(recipe.servings)}${recipe.cookTimeMin ? ` · ${recipe.cookTimeMin} min` : ''} · ${formatSatietyLabel(recipe.satietyScore, recipe.nutritionStatus)}`;
+  `${formatServingsLabel(recipe.servings)}${recipe.cookTimeMin ? ` · ${recipe.cookTimeMin} min` : ''} · ${[
+    ...formatCondensedNutritionParts(recipe),
+    formatSatietyLabel(recipe.satietyScore, recipe.nutritionStatus),
+  ].join(' · ')}`;
 
 /**
  * The Recipes screen's view (#49, stage 2): the design system's RecipesPage

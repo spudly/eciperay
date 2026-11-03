@@ -36,6 +36,8 @@ const baseRecipe = {
   nutritionStatus: null,
   calories: null,
   proteinG: null,
+  carbsG: null,
+  fatG: null,
   nutrition: null,
   communityRating: null,
   tags: [],
@@ -143,6 +145,8 @@ export const publicRecipeSummary = {
   nutritionStatus: null,
   calories: null,
   proteinG: null,
+  carbsG: null,
+  fatG: null,
 };
 
 export const mealPlanFixture = {

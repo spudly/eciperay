@@ -161,6 +161,8 @@ export const handlers = [
       nutritionStatus: null,
       calories: null,
       proteinG: null,
+      carbsG: null,
+      fatG: null,
     };
     const offset = Number(url.searchParams.get('offset') ?? 0);
     const limit = Number(url.searchParams.get('limit') ?? 100);
@@ -777,6 +779,8 @@ export const handlers = [
           nutritionStatus: null,
           calories: null,
           proteinG: null,
+          carbsG: null,
+          fatG: null,
         },
       ],
     }),

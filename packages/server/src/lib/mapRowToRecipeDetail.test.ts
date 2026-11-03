@@ -117,6 +117,8 @@ describe('mapRowToPublicRecipeDiscoveryItem', () => {
       nutritionStatus: 'ready',
       calories: null,
       proteinG: null,
+      carbsG: null,
+      fatG: null,
       communityRating: {average: 4, count: 3, hasStaleRatings: false},
     });
   });

@@ -56,6 +56,56 @@ describe('MealDetailPage', () => {
     );
   });
 
+  test('shows all five condensed values on a populated member line (#361)', async () => {
+    server.use(
+      http.get(`http://localhost:8080/api/meals/${MEAL_ID}`, () =>
+        HttpResponse.json({
+          id: MEAL_ID,
+          userId: 'user-uuid-1',
+          title: 'Sunday Dinner',
+          notes: null,
+          memberCount: 1,
+          nutrition: null,
+          createdAt: '2024-01-01T00:00:00.000Z',
+          updatedAt: '2024-01-01T00:00:00.000Z',
+          members: [
+            {
+              recipeId: 'recipe-uuid-1',
+              sortOrder: 0,
+              servings: 4,
+              title: 'Test Recipe',
+              imageUrl: null,
+              recipeServings: 4,
+              accessLost: false,
+              satietyScore: 50,
+              nutritionStatus: 'ready',
+              calories: 100.4,
+              proteinG: 10,
+              carbsG: 25.6,
+              fatG: 5,
+            },
+          ],
+        }),
+      ),
+    );
+    await renderWithProviders(
+      <Routes>
+        <Route
+          path="/meals/:mealId"
+          element={<MealDetailPage />}
+        />
+      </Routes>,
+      {route: `/meals/${MEAL_ID}`},
+    );
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          '4 servings · 100 cal · 10g protein · 26g carbs · 5g fat · satiety 50',
+        ),
+      ).toBeInTheDocument();
+    });
+  });
+
   test('shows a not-found state for a nonexistent meal id', async () => {
     server.use(
       http.get('http://localhost:8080/api/meals/not-a-uuid', () =>
@@ -128,9 +178,7 @@ describe('MealDetailPage', () => {
       ),
     );
     await act(async () => {
-      await queryClient.invalidateQueries({
-        queryKey: queryKeys.meal(MEAL_ID),
-      });
+      await queryClient.invalidateQueries({queryKey: queryKeys.meal(MEAL_ID)});
     });
 
     await waitFor(() => {
@@ -163,9 +211,7 @@ describe('MealDetailPage', () => {
       ),
     );
     await act(async () => {
-      await queryClient.invalidateQueries({
-        queryKey: queryKeys.meal(MEAL_ID),
-      });
+      await queryClient.invalidateQueries({queryKey: queryKeys.meal(MEAL_ID)});
     });
 
     await waitFor(() => {

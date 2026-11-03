@@ -34,6 +34,8 @@ const makeDiscoveryItem = (
   nutritionStatus: null,
   calories: null,
   proteinG: null,
+  carbsG: null,
+  fatG: null,
   ...overrides,
 });
 

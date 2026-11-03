@@ -54,7 +54,7 @@ describe('mealUiHelpers', () => {
         satietyScore: 55,
         status: 'ready',
       }),
-    ).toBe('500 cal · 20g protein · satiety 55');
+    ).toBe('500 cal · 20g protein · 40g carbs · 10g fat · satiety 55');
   });
 
   test('builds meal and plan inputs', () => {

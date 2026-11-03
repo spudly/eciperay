@@ -79,6 +79,8 @@ const makePlan = (overrides: Partial<MealPlanDetail> = {}): MealPlanDetail => ({
       nutritionStatus: null,
       calories: null,
       proteinG: null,
+      carbsG: null,
+      fatG: null,
     },
   ],
   ...overrides,
@@ -117,9 +119,15 @@ describe('MealPlanDetailView', () => {
     expect(await findByText('2026-10-19 – 2026-10-25')).toBeTruthy();
     // The standalone nutrition line, and the same summary again inside
     // the goals section as its Plan total line.
-    expect(await findByText('500 cal · 30g protein · satiety 50')).toBeTruthy();
     expect(
-      await findByText('Plan total: 500 cal · 30g protein · satiety 50'),
+      await findByText(
+        '500 cal · 30g protein · 40g carbs · 10g fat · satiety 50',
+      ),
+    ).toBeTruthy();
+    expect(
+      await findByText(
+        'Plan total: 500 cal · 30g protein · 40g carbs · 10g fat · satiety 50',
+      ),
     ).toBeTruthy();
   });
 
@@ -321,7 +329,7 @@ describe('MealPlanDetailView', () => {
     expect(await findByLabelText(/Qty 1 · 4 servings/)).toBeTruthy();
     fireEvent.press(
       await findByLabelText(
-        'Meal · Sunday Dinner, Qty 2 · 3 recipes · 300 cal · 20g protein',
+        'Meal · Sunday Dinner, Qty 2 · 3 recipes · 300 cal · 20g protein · 40g carbs · 10g fat',
       ),
     );
     expect(Linking.openURL).toHaveBeenCalledWith('app://meals/meal-1');

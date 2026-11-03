@@ -200,6 +200,8 @@ export const loadMealPlanDetail = async (
       nutritionStatus,
       calories: readableRecipe?.calories ?? null,
       proteinG: readableRecipe?.protein_g ?? null,
+      carbsG: readableRecipe?.carbs_g ?? null,
+      fatG: readableRecipe?.fat_g ?? null,
     });
 
     if (nutrition) {

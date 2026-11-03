@@ -26,6 +26,8 @@ describe('mapNutritionSummary', () => {
       mapNutritionSummary({
         calories: 100,
         protein_g: 10,
+        carbs_g: 25,
+        fat_g: 5,
         satiety_score: 50,
         nutrition_status: 'pending',
       }),
@@ -34,11 +36,15 @@ describe('mapNutritionSummary', () => {
       nutritionStatus: 'pending',
       calories: 100,
       proteinG: 10,
+      carbsG: 25,
+      fatG: 5,
     });
     expect(
       mapNutritionSummary({
         calories: null,
         protein_g: null,
+        carbs_g: null,
+        fat_g: null,
         satiety_score: null,
         nutrition_status: null,
       }),
@@ -47,6 +53,8 @@ describe('mapNutritionSummary', () => {
       nutritionStatus: null,
       calories: null,
       proteinG: null,
+      carbsG: null,
+      fatG: null,
     });
   });
 });
