@@ -316,8 +316,8 @@ describe('POST /recipes/import/url', () => {
   test('cancels both response bodies when the browser-header retry also fails (#400)', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockBillingPlan(mockQuery, 'plus');
-    const botCancel = jest.fn().mockResolvedValue(undefined);
-    const retryCancel = jest.fn().mockResolvedValue(undefined);
+    const botCancel = jest.fn(() => Promise.resolve());
+    const retryCancel = jest.fn(() => Promise.resolve());
     const fetchSpy = jest
       .spyOn(globalThis, 'fetch')
       .mockImplementation((input, init) => {
