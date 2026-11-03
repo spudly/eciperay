@@ -118,6 +118,18 @@ describe('GET /public/recipes', () => {
     expect(LIST_PUBLIC_RECIPES_SQL).toContain("r.status <> 'idea'");
   });
 
+  test('searches title/description word by word, not as one phrase (#385)', () => {
+    expect(LIST_PUBLIC_RECIPES_SQL).toContain(
+      "regexp_split_to_array($3, '\\s+')",
+    );
+    expect(LIST_PUBLIC_RECIPES_SQL).toContain(
+      "rv.title not ilike '%' || search_token.token || '%'",
+    );
+    expect(LIST_PUBLIC_RECIPES_SQL).not.toContain(
+      "rv.title ilike '%' || $3 || '%'",
+    );
+  });
+
   test('returns 400 for invalid sort', async () => {
     const res = await request(getApp()).get('/api/public/recipes?sort=popular');
     expect(res.status).toBe(400);

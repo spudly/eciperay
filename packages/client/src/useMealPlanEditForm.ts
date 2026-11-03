@@ -70,10 +70,22 @@ export const useMealPlanEditForm = (args: {
 }) => {
   const fields = useMealPlanEditFormFields(args.plan);
   const entryOptions = useMemo(() => {
-    const query = (args.searchText ?? '').trim().toLowerCase();
-    const matchingMeals = query
-      ? args.meals.filter(meal => meal.title.toLowerCase().includes(query))
-      : args.meals;
+    // Word-by-word matching, mirroring the server's recipe search
+    // (#385): every word of the search text must appear somewhere in
+    // the meal's title, so a multi-word search matches even when the
+    // words are not contiguous in the title — the meals half of the
+    // picker must not be stricter than the recipe half.
+    const queryWords = (args.searchText ?? '')
+      .toLowerCase()
+      .split(/\s+/)
+      .filter(word => word.length > 0);
+    const matchingMeals =
+      queryWords.length > 0
+        ? args.meals.filter(meal => {
+            const title = meal.title.toLowerCase();
+            return queryWords.every(word => title.includes(word));
+          })
+        : args.meals;
     return buildMealPlanFormEntryOptions(matchingMeals, args.recipes);
   }, [args.meals, args.recipes, args.searchText]);
   // Every entry option the form has ever seen, accumulated across

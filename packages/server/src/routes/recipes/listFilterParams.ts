@@ -149,6 +149,48 @@ export const nutritionFilterSql = (paramOffset: number) => `
     and ($${paramOffset + 5}::float8 is null or rv.satiety_score <= $${paramOffset + 5})
 `;
 
+/**
+ * Title search (#385): the search text is matched word by word — every
+ * whitespace-separated word must appear somewhere in the title as a
+ * case-insensitive substring. A single word therefore behaves exactly like the
+ * old contiguous `%word%` match (a word in the middle of the title matches, not
+ * only a title prefix), and a multi-word search such as "First Soup" matches
+ * "QA — First Soup" even when the words are not contiguous in the title or
+ * appear in a different order — the old single-phrase `%First Soup%` match
+ * found nothing whenever anything (a prefix like "QA — ", punctuation, or
+ * another word) sat between or around the words. Implemented as "no search word
+ * is absent from the title" so the one search bind value keeps its position in
+ * every list query's parameter layout.
+ */
+export const titleSearchFilterSql = (paramIndex: number) => `
+    and (
+      $${paramIndex}::text is null
+      or not exists (
+        select 1
+        from unnest(regexp_split_to_array($${paramIndex}, '\\s+')) as search_token(token)
+        where rv.title not ilike '%' || search_token.token || '%'
+      )
+    )
+`;
+
+/**
+ * Public-discovery variant of {@link titleSearchFilterSql}: each search word
+ * must appear in the title or the description (per word, either field),
+ * preserving the old phrase match's title-or-description scope under the same
+ * word-by-word semantics (#385).
+ */
+export const titleOrDescriptionSearchFilterSql = (paramIndex: number) => `
+    and (
+      $${paramIndex}::text is null
+      or not exists (
+        select 1
+        from unnest(regexp_split_to_array($${paramIndex}, '\\s+')) as search_token(token)
+        where rv.title not ilike '%' || search_token.token || '%'
+          and coalesce(rv.description, '') not ilike '%' || search_token.token || '%'
+      )
+    )
+`;
+
 export const ingredientFilterSql = (paramIndex: number) => `
     and (
       $${paramIndex}::text is null

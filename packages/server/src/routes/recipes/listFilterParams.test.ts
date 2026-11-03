@@ -15,6 +15,8 @@ import {
   parseSort,
   parseSortDir,
   parseStatusFilter,
+  titleOrDescriptionSearchFilterSql,
+  titleSearchFilterSql,
 } from './listFilterParams.js';
 
 describe('listFilterParams parsers', () => {
@@ -102,6 +104,39 @@ describe('parseRecipeListFilterParams', () => {
       sort: 'calories',
       sortDir: 'asc',
     });
+  });
+});
+
+describe('title search sql (#385)', () => {
+  test('matches every search word as a title substring, not a phrase or prefix', () => {
+    const sql = titleSearchFilterSql(4);
+    // The search bind keeps its position and may be null (no search).
+    expect(sql).toContain('$4::text is null');
+    // Words come from splitting the one search value on whitespace…
+    expect(sql).toContain("regexp_split_to_array($4, '\\s+')");
+    // …and a title matches only when NO word is absent from it: each
+    // word is a case-insensitive substring check against the title, so
+    // "First" and "First Soup" both match "QA — First Soup" (a word in
+    // the middle of the title, not only a title prefix or a contiguous
+    // phrase).
+    expect(sql).toContain('not exists');
+    expect(sql).toContain(
+      "rv.title not ilike '%' || search_token.token || '%'",
+    );
+    // The old single-phrase match against the raw search value is gone.
+    expect(sql).not.toContain("rv.title ilike '%' || $4 || '%'");
+  });
+
+  test('public variant lets each word match the title or the description', () => {
+    const sql = titleOrDescriptionSearchFilterSql(3);
+    expect(sql).toContain('$3::text is null');
+    expect(sql).toContain("regexp_split_to_array($3, '\\s+')");
+    expect(sql).toContain(
+      "rv.title not ilike '%' || search_token.token || '%'",
+    );
+    expect(sql).toContain(
+      "coalesce(rv.description, '') not ilike '%' || search_token.token || '%'",
+    );
   });
 });
 

@@ -219,4 +219,26 @@ describe('useMealPlanEditForm', () => {
       {kind: 'recipe', id: 'r1', title: 'Salad', servings: 4},
     ]);
   });
+
+  test('multi-word search matches meal titles word by word (#385)', () => {
+    const {result} = renderHook(() =>
+      useMealPlanEditForm({
+        plan: null,
+        meals: [
+          meal('m1', 'QA — First Night Soup'),
+          meal('m2', 'First Course'),
+          meal('m3', 'Soup Night'),
+        ],
+        recipes: [],
+        // The words are not contiguous in m1's title, so a phrase
+        // search missed it (#385); each word alone also appears in a
+        // title that must NOT match, so a word-OR search would
+        // over-match.
+        searchText: 'First Soup',
+      }),
+    );
+    expect(result.current.entryOptions).toEqual([
+      {kind: 'meal', id: 'm1', title: 'QA — First Night Soup'},
+    ]);
+  });
 });

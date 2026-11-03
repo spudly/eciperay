@@ -6,6 +6,8 @@ import {
   nutritionFilterSql,
   nutritionSelectSql,
   orderBySql,
+  titleOrDescriptionSearchFilterSql,
+  titleSearchFilterSql,
 } from './listFilterParams.js';
 
 const listNutritionAndRatingSelect = `
@@ -34,7 +36,7 @@ export const buildListRecipesSql = (
   left join recipe_tags rt on rt.recipe_version_id = rv.id
   left join tags t on t.id = rt.tag_id
   where r.user_id = $1
-    and ($4::text is null or rv.title ilike '%' || $4 || '%')
+    ${titleSearchFilterSql(4)}
     and ($5::text is null or r.status = $5)
     ${ingredientFilterSql(6)}
     ${nutritionFilterSql(7)}
@@ -66,7 +68,7 @@ export const buildListSharedWithMeSql = (
   left join tags t on t.id = rt.tag_id
   where g.user_id = $1
     and r.user_id <> $1
-    and ($4::text is null or rv.title ilike '%' || $4 || '%')
+    ${titleSearchFilterSql(4)}
     and ($5::text is null or r.status = $5)
     ${ingredientFilterSql(6)}
     ${nutritionFilterSql(7)}
@@ -103,11 +105,7 @@ export const buildListPublicRecipesSql = (
   left join tags t on t.id = rt.tag_id
   where r.visibility = 'public'
     and r.status <> 'idea'
-    and (
-      $3::text is null
-      or rv.title ilike '%' || $3 || '%'
-      or coalesce(rv.description, '') ilike '%' || $3 || '%'
-    )
+    ${titleOrDescriptionSearchFilterSql(3)}
     and ($4::text is null or r.status = $4)
     ${ingredientFilterSql(5)}
     ${nutritionFilterSql(6)}

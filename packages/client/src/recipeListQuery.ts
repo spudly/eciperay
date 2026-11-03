@@ -103,12 +103,12 @@ export const recipeListInfiniteQueryOptions = (
  * library, so the old single-request `limit: 100` cap (recipes beyond the first
  * 100 could never be added to a meal or meal plan) is gone by construction: any
  * recipe is reachable by searching for it, however large the library is. A
- * single page is NOT enough on its own, though: the server's search is a title
- * substring match ordered newest-first, so a recipe whose title is contained in
- * more than a page of newer titles (an older "Soup" behind 20 newer "… Soup …"
- * titles) would sit past the first page even when its complete title is typed.
- * The query below therefore collects EVERY matching page, so every match is
- * reachable.
+ * single page is NOT enough on its own, though: the server's search is a
+ * word-by-word title match (#385) ordered newest-first, so a recipe whose title
+ * is contained in more than a page of newer titles (an older "Soup" behind 20
+ * newer "… Soup …" titles) would sit past the first page even when its complete
+ * title is typed. The query below therefore collects EVERY matching page, so
+ * every match is reachable.
  */
 export const RECIPE_FORM_SEARCH_LIMIT = 20;
 
