@@ -41,13 +41,21 @@ export const parseOptionalSearch = (value?: unknown): string | null => {
   if (typeof value !== 'string') {
     return null;
   }
-  // Collapse every run of whitespace to a single space (JS `\s` also
-  // covers non-breaking and other unicode spaces): a search typed or
-  // pasted with irregular spacing must denote the same words as its
-  // normally-spaced form, for the word-by-word title match (#385) and
-  // for the ingredient match alike.
-  const normalized = value.trim().replace(/\s+/g, ' ');
-  return normalized.length > 0 ? normalized : null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+};
+
+/**
+ * The title `search` value, with every run of whitespace collapsed to a single
+ * space (JS `\s` also covers non-breaking and other unicode spaces): a search
+ * typed or pasted with irregular spacing must denote the same words as its
+ * normally-spaced form for the word-by-word title match (#385). Only the title
+ * search is normalized this way — the `ingredient` filter phrase-matches stored
+ * ingredient names verbatim, so it keeps the trim-only parsing above.
+ */
+export const parseSearchQuery = (value?: unknown): string | null => {
+  const parsed = parseOptionalSearch(value);
+  return parsed === null ? null : parsed.replace(/\s+/g, ' ');
 };
 
 export const parseLimit = (value?: unknown): number => {
@@ -129,7 +137,7 @@ export const parseRecipeListFilterParams = (
 ): RecipeListFilterParams => ({
   limit: parseLimit(req.query['limit']),
   offset: parseOffset(req.query['offset']),
-  search: parseOptionalSearch(req.query['search']),
+  search: parseSearchQuery(req.query['search']),
   status: parseStatusFilter(req.query['status']),
   ingredient: parseOptionalSearch(req.query['ingredient']),
   minCalories: parseOptionalNumber(req.query['minCalories']),

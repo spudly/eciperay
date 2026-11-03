@@ -12,6 +12,7 @@ import {
   parseOptionalNumber,
   parseOptionalSearch,
   parseRecipeListFilterParams,
+  parseSearchQuery,
   parseSort,
   parseSortDir,
   parseStatusFilter,
@@ -26,11 +27,26 @@ describe('listFilterParams parsers', () => {
     expect(parseOptionalSearch(1)).toBeNull();
   });
 
-  test('parseOptionalSearch collapses irregular whitespace to single spaces (#385)', () => {
-    expect(parseOptionalSearch('First   Soup')).toBe('First Soup');
-    expect(parseOptionalSearch('First\tSoup')).toBe('First Soup');
+  test('parseSearchQuery collapses irregular whitespace to single spaces (#385)', () => {
+    expect(parseSearchQuery('First   Soup')).toBe('First Soup');
+    expect(parseSearchQuery('First\tSoup')).toBe('First Soup');
     // Non-breaking spaces (e.g. pasted search text) separate words too.
-    expect(parseOptionalSearch('First\u00A0Soup')).toBe('First Soup');
+    expect(parseSearchQuery('First\u00A0Soup')).toBe('First Soup');
+    expect(parseSearchQuery('   ')).toBeNull();
+    expect(parseSearchQuery(1)).toBeNull();
+  });
+
+  test('ingredient parsing keeps internal whitespace verbatim', () => {
+    // The ingredient filter phrase-matches stored ingredient names, so
+    // collapsing their whitespace would break searches for a stored
+    // name that itself contains irregular spacing.
+    expect(
+      parseRecipeListFilterParams({query: {ingredient: 'peanut  butter'}})
+        .ingredient,
+    ).toBe('peanut  butter');
+    expect(
+      parseRecipeListFilterParams({query: {search: 'First   Soup'}}).search,
+    ).toBe('First Soup');
   });
 
   test('parseLimit and parseOffset clamp invalid values', () => {

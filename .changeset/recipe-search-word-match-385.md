@@ -10,8 +10,9 @@ case-insensitive substring — on public discovery, in the title or the
 description — whatever order or spacing separates them, and irregular whitespace
 in the search text is collapsed before matching. Previously a search matched
 only when its words appeared in the title as one contiguous phrase in the same
-order and spacing, so a multi-word picker search could find nothing even though
-the recipe existed — the "First Soup" search that missed "QA — First Soup" in
-#385. Single-word searches behave as before (any part of the title matches, not
-only a prefix), and the meal half of the meal-plan picker matches meal titles
-with the same word-by-word rule.
+order and spacing, so a multi-word search could miss a recipe whose title held
+the same words separated by other words or punctuation, in a different order, or
+with different spacing — the class of picker miss investigated in #385.
+Single-word searches behave as before (any part of the title matches, not only a
+prefix), and the meal half of the meal-plan picker matches meal titles with the
+same word-by-word rule.
