@@ -20,11 +20,16 @@
 appId: com.eciperay
 ---
 - assertVisible: "E2E Weeknight Pasta"
+# The detail page is a long single scroll (versions, cooks, nutrition,
+# then ingredients and instructions). The default 20s scroll window
+# only reached the nutrition section in CI, so give both scrolls room.
 - scrollUntilVisible:
     element:
       text: "Crushed tomatoes"
+    timeout: 90000
 - assertVisible: "Crushed tomatoes"
 - scrollUntilVisible:
     element:
       text: "Simmer the sauce for 15 minutes."
+    timeout: 90000
 - assertVisible: "Simmer the sauce for 15 minutes."
