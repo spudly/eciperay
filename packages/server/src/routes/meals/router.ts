@@ -4,7 +4,7 @@ import {z} from 'zod';
 
 import {query as defaultQuery} from '../../db/query.js';
 import {buildMealCookPlan} from '../../lib/buildMealCookPlan.js';
-import {resolveExpectedUpdatedAt} from '../../lib/conditionalWrite.js';
+import {resolveExpectedUpdatedAts} from '../../lib/conditionalWrite.js';
 import {getParam} from '../../lib/getParam.js';
 import {listMealsForUser, loadMealDetail} from '../../lib/loadMealDetail.js';
 import {deleteMeal, replaceMeal, saveNewMeal} from '../../lib/saveMeal.js';
@@ -66,14 +66,14 @@ const putMeal = async (req: AuthedRequest, res: Response, queryFn: QueryFn) => {
   if (!body.ok) {
     return;
   }
-  const expectedUpdatedAt = resolveExpectedUpdatedAt(
+  const expectedUpdatedAts = resolveExpectedUpdatedAts(
     req.header('if-match'),
     body.data.expectedUpdatedAt,
   );
   const result = await replaceMeal(
     getParam(req, 'id'),
     req.userId,
-    {...body.data, expectedUpdatedAt},
+    {...body.data, expectedUpdatedAts},
     queryFn,
   );
   if ('error' in result) {

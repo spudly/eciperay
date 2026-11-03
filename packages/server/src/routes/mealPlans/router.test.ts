@@ -328,6 +328,36 @@ describe('PUT /meal-plans/:id', () => {
     expect(res.body.id).toBe(PLAN_ID);
   });
 
+  test('updates meal plan when any If-Match candidate matches (#384)', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
+    installReplacePlanMock('2024-01-01T00:00:00.000Z');
+
+    const res = await request(getApp())
+      .put(`/api/meal-plans/${PLAN_ID}`)
+      .set('Authorization', 'Bearer valid-token')
+      .set('If-Match', '"2023-06-01T00:00:00.000Z", "2024-01-01T00:00:00.000Z"')
+      .send(mealPlanInput);
+
+    expect(res.status).toBe(200);
+    expect(res.body.id).toBe(PLAN_ID);
+  });
+
+  test('updates meal plan when an If-Match list mixes a malformed and the current candidate (#384)', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
+    installReplacePlanMock('2024-01-01T00:00:00.000Z');
+
+    const res = await request(getApp())
+      .put(`/api/meal-plans/${PLAN_ID}`)
+      .set('Authorization', 'Bearer valid-token')
+      .set('If-Match', '"not-a-date", "2024-01-01T00:00:00.000Z"')
+      .send(mealPlanInput);
+
+    expect(res.status).toBe(200);
+    expect(res.body.id).toBe(PLAN_ID);
+  });
+
   test('returns 409 and writes nothing when the If-Match token is stale (#384)', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockBillingPlan(mockQuery, 'plus');

@@ -3,7 +3,7 @@ import type {Response} from 'express';
 
 import {query as defaultQuery} from '../../db/query.js';
 import {buildPlanShoppingList} from '../../lib/buildPlanShoppingList.js';
-import {resolveExpectedUpdatedAt} from '../../lib/conditionalWrite.js';
+import {resolveExpectedUpdatedAts} from '../../lib/conditionalWrite.js';
 import {getParam} from '../../lib/getParam.js';
 import {loadMealPlanDetail} from '../../lib/loadMealPlanDetail.js';
 import {listMealPlansForUser} from '../../lib/listMealPlansForUser.js';
@@ -66,14 +66,14 @@ const putPlan = async (req: AuthedRequest, res: Response, queryFn: QueryFn) => {
   if (!body.ok) {
     return;
   }
-  const expectedUpdatedAt = resolveExpectedUpdatedAt(
+  const expectedUpdatedAts = resolveExpectedUpdatedAts(
     req.header('if-match'),
     body.data.expectedUpdatedAt,
   );
   const result = await replaceMealPlan(
     getParam(req, 'id'),
     req.userId,
-    {...body.data, expectedUpdatedAt},
+    {...body.data, expectedUpdatedAts},
     queryFn,
   );
   if ('error' in result) {

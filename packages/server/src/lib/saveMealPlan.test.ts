@@ -439,7 +439,7 @@ describe('replaceMealPlan', () => {
     expect(String(updateCall?.[0])).toContain(
       "date_trunc('milliseconds', updated_at)",
     );
-    expect(updateCall?.[1]).toContain('2024-01-01T00:00:00.123Z');
+    expect(updateCall?.[1]).toContainEqual(['2024-01-01T00:00:00.123Z']);
   });
 });
 

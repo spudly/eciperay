@@ -179,7 +179,7 @@ export const saveNewMealPlan = async (
 export const replaceMealPlan = async (
   planId: string,
   userId: string,
-  input: MealPlanInput,
+  input: MealPlanInput & {expectedUpdatedAts?: string[]},
   queryFn: QueryFn = defaultQuery,
 ): Promise<{plan: MealPlanDetail} | {error: string; status: number}> => {
   const existing = await queryFn(
@@ -191,12 +191,20 @@ export const replaceMealPlan = async (
   if (!existingRow) {
     return {error: 'Meal plan not found', status: 404};
   }
-  // Optimistic concurrency (#384): same contract as replaceMeal — a stale
-  // expectedUpdatedAt refuses before any write, so a read-merge-PUT client
-  // can re-read, re-merge, and retry instead of silently overwriting.
+  // Optimistic concurrency (#384): same contract as replaceMeal — the
+  // routers resolve the If-Match header and the expectedUpdatedAt body
+  // field into expectedUpdatedAts, If-Match succeeds when ANY candidate
+  // matches, and when none does the write refuses before any write so a
+  // read-merge-PUT client can re-read, re-merge, and retry instead of
+  // silently overwriting.
+  const expectedTokens =
+    input.expectedUpdatedAts ??
+    (input.expectedUpdatedAt ? [input.expectedUpdatedAt] : []);
   if (
-    input.expectedUpdatedAt &&
-    !updatedAtMatches(existingRow.updated_at, input.expectedUpdatedAt)
+    expectedTokens.length > 0 &&
+    !expectedTokens.some(token =>
+      updatedAtMatches(existingRow.updated_at, token),
+    )
   ) {
     return staleWriteConflict('Meal plan');
   }
@@ -220,9 +228,14 @@ export const replaceMealPlan = async (
   // token reaching this cast has already normalized to a real timestamp,
   // so a malformed token cannot get here — it 409s above. Without a
   // token the predicate is null and the write stays unconditional.
-  const expectedUpdatedAt = input.expectedUpdatedAt
-    ? updatedAtToken(input.expectedUpdatedAt)
-    : null;
+  // Only tokens that parse as timestamps can be cast for the predicate;
+  // a malformed candidate can never match a stored timestamp, and the
+  // check above has already refused when no candidate matched, so a
+  // non-empty list always leaves at least one castable token here.
+  const castableTokens = expectedTokens
+    .map(token => updatedAtToken(token))
+    .filter(token => !Number.isNaN(Date.parse(token)));
+  const expectedUpdatedAts = castableTokens.length > 0 ? castableTokens : null;
 
   let plan: MealPlanDetail;
   try {
@@ -231,8 +244,8 @@ export const replaceMealPlan = async (
         `update meal_plans
        set title = $3, notes = $4, starts_on = $5, ends_on = $6, updated_at = now()
        where id = $1 and user_id = $2
-         and ($7::timestamptz is null
-           or date_trunc('milliseconds', updated_at) = $7::timestamptz)`,
+         and ($7::timestamptz[] is null
+           or date_trunc('milliseconds', updated_at) = ANY($7::timestamptz[]))`,
         [
           planId,
           userId,
@@ -240,10 +253,10 @@ export const replaceMealPlan = async (
           input.notes ?? null,
           input.startsOn ?? null,
           input.endsOn ?? null,
-          expectedUpdatedAt,
+          expectedUpdatedAts,
         ],
       );
-      if (expectedUpdatedAt && updated.rowCount === 0) {
+      if (expectedUpdatedAts && updated.rowCount === 0) {
         throw new MealPlanWriteConflictError();
       }
       await q(`delete from meal_plan_entries where meal_plan_id = $1`, [

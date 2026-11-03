@@ -34,16 +34,20 @@ export const updatedAtMatches = (
   updatedAtToken(storedUpdatedAt) === updatedAtToken(expectedUpdatedAt);
 
 /**
- * Resolve the token a PUT carries: the `If-Match` header wins over the
- * `expectedUpdatedAt` body field. Header values may be quoted ETags
- * (`"2026-…"`, optionally weak `W/"…"`) or a bare timestamp. `If-Match: *`
- * asserts only that the record exists — which the replace functions already
- * enforce with their 404 — so it resolves to no token.
+ * Resolve the tokens a PUT carries: the `If-Match` header wins over the
+ * `expectedUpdatedAt` body field. `If-Match` is a list of entity-tags and
+ * succeeds when ANY candidate matches the stored record, so every candidate is
+ * preserved for the any-match comparison in the replace functions. Header
+ * values may be quoted ETags (`"2026-…"`, optionally weak `W/"…"`) or bare
+ * timestamps. A `*` candidate asserts only that the record exists — which the
+ * replace functions already enforce with their 404 — so it resolves to no
+ * tokens, as does a request with no token at all (the unconditional
+ * backwards-compatible path).
  */
-export const resolveExpectedUpdatedAt = (
+export const resolveExpectedUpdatedAts = (
   ifMatchHeader: string | undefined,
   bodyExpectedUpdatedAt: string | undefined,
-): string | undefined => {
+): string[] => {
   if (ifMatchHeader) {
     const candidates = ifMatchHeader
       .split(',')
@@ -51,15 +55,14 @@ export const resolveExpectedUpdatedAt = (
         candidate.trim().replace(/^W\//, '').replace(/^"|"$/g, ''),
       )
       .filter(candidate => candidate.length > 0);
-    const first = candidates[0];
-    if (first && first !== '*') {
-      return first;
+    if (candidates.includes('*')) {
+      return [];
     }
-    if (first === '*') {
-      return undefined;
+    if (candidates.length > 0) {
+      return candidates;
     }
   }
-  return bodyExpectedUpdatedAt;
+  return bodyExpectedUpdatedAt ? [bodyExpectedUpdatedAt] : [];
 };
 
 /** The 409 result the replace functions return for a stale token. */

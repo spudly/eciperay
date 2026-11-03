@@ -1,5 +1,5 @@
 import {
-  resolveExpectedUpdatedAt,
+  resolveExpectedUpdatedAts,
   staleWriteConflict,
   updatedAtMatches,
   updatedAtToken,
@@ -40,37 +40,55 @@ describe('updatedAtMatches', () => {
   });
 });
 
-describe('resolveExpectedUpdatedAt', () => {
-  test('returns undefined when the request carries no token', () => {
-    expect(resolveExpectedUpdatedAt(undefined, undefined)).toBeUndefined();
+describe('resolveExpectedUpdatedAts', () => {
+  test('returns no tokens when the request carries no token', () => {
+    expect(resolveExpectedUpdatedAts(undefined, undefined)).toEqual([]);
   });
 
   test('uses the body field when there is no header', () => {
     expect(
-      resolveExpectedUpdatedAt(undefined, '2024-01-01T00:00:00.000Z'),
-    ).toBe('2024-01-01T00:00:00.000Z');
+      resolveExpectedUpdatedAts(undefined, '2024-01-01T00:00:00.000Z'),
+    ).toEqual(['2024-01-01T00:00:00.000Z']);
   });
 
   test('prefers the If-Match header over the body field', () => {
     expect(
-      resolveExpectedUpdatedAt(
+      resolveExpectedUpdatedAts(
         '"2024-01-02T00:00:00.000Z"',
         '2024-01-01T00:00:00.000Z',
       ),
-    ).toBe('2024-01-02T00:00:00.000Z');
+    ).toEqual(['2024-01-02T00:00:00.000Z']);
   });
 
   test('accepts bare and weak ETag header forms', () => {
     expect(
-      resolveExpectedUpdatedAt('2024-01-01T00:00:00.000Z', undefined),
-    ).toBe('2024-01-01T00:00:00.000Z');
+      resolveExpectedUpdatedAts('2024-01-01T00:00:00.000Z', undefined),
+    ).toEqual(['2024-01-01T00:00:00.000Z']);
     expect(
-      resolveExpectedUpdatedAt('W/"2024-01-01T00:00:00.000Z"', undefined),
-    ).toBe('2024-01-01T00:00:00.000Z');
+      resolveExpectedUpdatedAts('W/"2024-01-01T00:00:00.000Z"', undefined),
+    ).toEqual(['2024-01-01T00:00:00.000Z']);
   });
 
-  test('treats If-Match: * as no specific token', () => {
-    expect(resolveExpectedUpdatedAt('*', undefined)).toBeUndefined();
+  test('preserves every If-Match candidate for any-match evaluation', () => {
+    expect(
+      resolveExpectedUpdatedAts(
+        '"2023-06-01T00:00:00.000Z", W/"2024-01-01T00:00:00.000Z"',
+        undefined,
+      ),
+    ).toEqual(['2023-06-01T00:00:00.000Z', '2024-01-01T00:00:00.000Z']);
+  });
+
+  test('treats an If-Match list containing * as no specific token', () => {
+    expect(resolveExpectedUpdatedAts('*', undefined)).toEqual([]);
+    expect(
+      resolveExpectedUpdatedAts('"2024-01-01T00:00:00.000Z", *', undefined),
+    ).toEqual([]);
+  });
+
+  test('falls back to the body field when the header has no candidates', () => {
+    expect(
+      resolveExpectedUpdatedAts(' , ', '2024-01-01T00:00:00.000Z'),
+    ).toEqual(['2024-01-01T00:00:00.000Z']);
   });
 });
 

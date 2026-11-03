@@ -78,7 +78,7 @@ export const saveNewMeal = async (
 export const replaceMeal = async (
   mealId: string,
   userId: string,
-  input: MealInput,
+  input: MealInput & {expectedUpdatedAts?: string[]},
   queryFn: QueryFn = defaultQuery,
 ): Promise<{meal: MealDetail} | {error: string; status: number}> => {
   const existing = await queryFn(
@@ -91,12 +91,20 @@ export const replaceMeal = async (
     return {error: 'Meal not found', status: 404};
   }
   // Optimistic concurrency (#384): a client that read the meal and merged
-  // sends its `updatedAt` back as expectedUpdatedAt; if the stored record
-  // has moved since that read, refuse before any write so the caller can
-  // re-read, re-merge, and retry instead of silently overwriting.
+  // sends its `updatedAt` back (the routers resolve the If-Match header
+  // and the expectedUpdatedAt body field into expectedUpdatedAts; direct
+  // callers may pass the single body field). If-Match succeeds when ANY
+  // candidate matches; if none does, the stored record has moved since
+  // that read, so refuse before any write — the caller can re-read,
+  // re-merge, and retry instead of silently overwriting.
+  const expectedTokens =
+    input.expectedUpdatedAts ??
+    (input.expectedUpdatedAt ? [input.expectedUpdatedAt] : []);
   if (
-    input.expectedUpdatedAt &&
-    !updatedAtMatches(existingRow.updated_at, input.expectedUpdatedAt)
+    expectedTokens.length > 0 &&
+    !expectedTokens.some(token =>
+      updatedAtMatches(existingRow.updated_at, token),
+    )
   ) {
     return staleWriteConflict('Meal');
   }
@@ -131,9 +139,14 @@ export const replaceMeal = async (
   // token reaching this cast has already normalized to a real timestamp,
   // so a malformed token cannot get here — it 409s above. Without a
   // token the predicate is null and the write stays unconditional.
-  const expectedUpdatedAt = input.expectedUpdatedAt
-    ? updatedAtToken(input.expectedUpdatedAt)
-    : null;
+  // Only tokens that parse as timestamps can be cast for the predicate;
+  // a malformed candidate can never match a stored timestamp, and the
+  // check above has already refused when no candidate matched, so a
+  // non-empty list always leaves at least one castable token here.
+  const castableTokens = expectedTokens
+    .map(token => updatedAtToken(token))
+    .filter(token => !Number.isNaN(Date.parse(token)));
+  const expectedUpdatedAts = castableTokens.length > 0 ? castableTokens : null;
 
   // Update, member delete, member inserts, and the read-back run in one
   // transaction (mirrors replaceMealPlan): a failure midway cannot leave
@@ -144,11 +157,11 @@ export const replaceMeal = async (
       const updated = await q(
         `update meals set title = $3, notes = $4, updated_at = now()
          where id = $1 and user_id = $2
-           and ($5::timestamptz is null
-             or date_trunc('milliseconds', updated_at) = $5::timestamptz)`,
-        [mealId, userId, input.title, input.notes ?? null, expectedUpdatedAt],
+           and ($5::timestamptz[] is null
+             or date_trunc('milliseconds', updated_at) = ANY($5::timestamptz[]))`,
+        [mealId, userId, input.title, input.notes ?? null, expectedUpdatedAts],
       );
-      if (expectedUpdatedAt && updated.rowCount === 0) {
+      if (expectedUpdatedAts && updated.rowCount === 0) {
         // A concurrent write (or delete) won the race after the check
         // above; nothing else is written.
         return {conflict: true as const};
