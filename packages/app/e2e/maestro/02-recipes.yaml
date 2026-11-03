@@ -17,7 +17,12 @@ appId: com.eciperay
 - tapOn: "Recipes"
 - assertVisible: "Search recipes…"
 - assertVisible: "Filters"
-- assertVisible: "Add Status filter"
-- assertVisible: "Add Sort filter"
 - assertVisible: "E2E Weeknight Pasta"
 - assertVisible: "E2E Garden Salad"
+# The add-filter controls live inside the collapsed Filters chooser —
+# they are not in the hierarchy until it opens (verified against the
+# 2026-11-03 CI hierarchy dump: the closed screen exposes only the
+# search field, the Filters button, and the cards).
+- tapOn: "Filters"
+- assertVisible: "Add Status filter"
+- assertVisible: "Add Sort filter"
