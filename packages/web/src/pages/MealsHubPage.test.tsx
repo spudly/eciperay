@@ -94,13 +94,25 @@ describe('MealsHubPage', () => {
 
   test('deleting a meal plan removes its row from the list', async () => {
     let plans = [makeMealPlanSummary()];
+    let deleted = false;
+    let releaseRefetch: (() => void) | undefined;
+    const refetchGate = new Promise<void>(resolve => {
+      releaseRefetch = resolve;
+    });
     server.use(
       http.get('http://localhost:8080/api/meals', () => HttpResponse.json([])),
-      http.get('http://localhost:8080/api/meal-plans', () =>
-        HttpResponse.json(plans),
-      ),
+      http.get('http://localhost:8080/api/meal-plans', async () => {
+        // Hold the post-delete invalidation refetch open: the row must
+        // disappear before it lands, which only the mutation's removal
+        // of the plan from the cached list can do.
+        if (deleted) {
+          await refetchGate;
+        }
+        return HttpResponse.json(plans);
+      }),
       http.delete('http://localhost:8080/api/meal-plans/:id', ({params}) => {
         plans = plans.filter(plan => plan.id !== params['id']);
+        deleted = true;
         return new HttpResponse(null, {status: 204});
       }),
     );
@@ -114,7 +126,10 @@ describe('MealsHubPage', () => {
     await waitFor(() => {
       expect(screen.queryByText('This week')).not.toBeInTheDocument();
     });
-    expect(screen.getByText('No meal plans yet.')).toBeInTheDocument();
+    releaseRefetch?.();
+    await waitFor(() => {
+      expect(screen.getByText('No meal plans yet.')).toBeInTheDocument();
+    });
   });
 
   test('does not show a plan deleted while the list was unmounted (#387)', async () => {

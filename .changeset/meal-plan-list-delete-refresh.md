@@ -1,5 +1,5 @@
 ---
-'eciperay': patch
+'@eciperay/web': patch
 ---
 
 Meal plans list (web): a deleted meal plan no longer lingers in the list until a
