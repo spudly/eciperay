@@ -231,6 +231,7 @@ const buildVersionSummary = (recipe: RecipeDetail): RecipeVersionSummary => ({
   createdVia: recipe.createdVia,
   changeSummary: null,
   createdAt: recipe.createdAt,
+  updatedAt: recipe.updatedAt,
 });
 
 type FixtureApiError = Error & {code?: string; status?: number};
