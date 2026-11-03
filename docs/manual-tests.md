@@ -365,7 +365,10 @@ mode; there is no Playwright coverage of meals. The cases below are manual._
 `MealDetailPage`, `MealFormPage`, or `MealCookingModePage`, `packages/server`
 meal routes, `packages/server` recipe search
 (`packages/server/src/routes/recipes/{listFilterParams,sqlConstants}.ts`),
-`packages/client/src/useMealPlanEditForm.ts`.
+`packages/client/src/useMealPlanEditForm.ts`,
+`packages/server/src/lib/saveRecipeMetadata.ts`,
+`packages/server/src/lib/touchMealsForRecipe.ts`,
+`packages/server/src/db/migrations/020_meal_recipes_touch_meal.sql`.
 
 ---
 
