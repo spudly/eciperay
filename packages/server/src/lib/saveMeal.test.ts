@@ -249,6 +249,31 @@ describe('replaceMeal', () => {
     expect(result.meal.id).toBe(MEAL_ID);
     expect(result.meal.updatedAt).toBe('2024-01-01T00:00:00.123Z');
   });
+
+  test('propagates unexpected errors from the replace writes', async () => {
+    const mockQuery = createMockQuery();
+    mockQuery.mockImplementation((async (sql: string) => {
+      if (sql.includes('select id, updated_at from meals')) {
+        return makeQueryResult([
+          {id: MEAL_ID, updated_at: '2024-01-01T00:00:00.000Z'},
+        ]);
+      }
+      if (sql.includes('from recipes r')) {
+        return makeQueryResult([accessibleRecipeRow]);
+      }
+      if (sql.includes('share_grants')) {
+        return emptyShareGrant;
+      }
+      if (sql.includes('update meals')) {
+        throw new Error('db down');
+      }
+      return makeQueryResult([]);
+    }) as typeof mockQuery);
+
+    await expect(
+      replaceMeal(MEAL_ID, USER_ID, mealInput, mockQuery),
+    ).rejects.toThrow('db down');
+  });
 });
 
 describe('deleteMeal', () => {
