@@ -56,6 +56,8 @@ describe('e2e fixture API client', () => {
     expect(versions).toHaveLength(1);
     expect(versions[0].id).toBe('e2e-version-pasta');
     expect(versions[0].derivedRole).toBe('active');
+    expect(versions[0].createdAt).toBe('2024-01-01T00:00:00.000Z');
+    expect(versions[0].updatedAt).toBe('2024-01-01T00:00:00.000Z');
 
     await expect(
       api.cookLogs.list('e2e-recipe-pasta', 'e2e-version-pasta'),
