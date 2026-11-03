@@ -81,7 +81,7 @@ export const ImportImagePage = () => {
         accept="image/*"
         capture="environment"
         aria-label="Take a photo of a recipe"
-        className="hidden"
+        style={{display: 'none'}}
         onChange={handleFileChange}
       />
       <input
@@ -89,7 +89,7 @@ export const ImportImagePage = () => {
         type="file"
         accept="image/*"
         aria-label="Upload recipe image"
-        className="hidden"
+        style={{display: 'none'}}
         onChange={handleFileChange}
       />
     </>

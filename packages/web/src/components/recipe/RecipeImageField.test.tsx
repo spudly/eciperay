@@ -67,9 +67,9 @@ describe('RecipeImageField', () => {
     const dropZone = screen.getByLabelText('Recipe image drop zone');
     fireEvent.dragEnter(dropZone);
     fireEvent.dragOver(dropZone);
-    expect(dropZone.className).toContain('border-primary');
+    expect(dropZone.style.borderColor).toBe('rgb(194, 65, 12)');
     fireEvent.dragLeave(dropZone, {relatedTarget: document.body});
-    expect(dropZone.className).not.toContain('border-primary');
+    expect(dropZone.style.borderColor).toBe('rgb(212, 212, 212)');
   });
 
   test('ignores paste events that start in text inputs', () => {

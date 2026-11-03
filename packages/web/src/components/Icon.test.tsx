@@ -20,13 +20,13 @@ describe('Icon', () => {
     const {container} = await renderWithProviders(
       <Icon
         name="alert-triangle"
-        className="text-amber-600"
+        className="icon-amber"
         aria-label="Warning"
         title="Warning"
       />,
     );
     const wrapper = container.querySelector('span[title="Warning"]');
-    expect(wrapper).toHaveClass('text-amber-600');
+    expect(wrapper).toHaveClass('icon-amber');
     expect(wrapper).toHaveAttribute('title', 'Warning');
     expect(screen.getByLabelText('Warning')).toBeInTheDocument();
     expect(container.querySelector('svg')).toBeInTheDocument();
@@ -36,12 +36,12 @@ describe('Icon', () => {
     const {container} = await renderWithProviders(
       <Icon
         name="message-circle"
-        className="text-white"
+        className="icon-white"
       />,
     );
-    expect(container.querySelector('span.inline-flex')).toHaveClass(
-      'text-white',
-    );
+    const wrapper = container.querySelector('span');
+    expect(wrapper).toHaveClass('icon-white');
+    expect((wrapper as HTMLElement).style.display).toBe('inline-flex');
     expect(container.querySelector('svg')).toBeInTheDocument();
   });
 });

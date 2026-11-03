@@ -1,5 +1,5 @@
-import type {ReactNode} from 'react';
-import clsx from 'clsx';
+import type {CSSProperties, ReactNode} from 'react';
+import {eciperayTheme, tokens} from '@spudly/ui';
 import {NavLink, Outlet} from 'react-router-dom';
 
 import {Icon} from './Icon.js';
@@ -14,12 +14,84 @@ const navItems = [
   {to: '/profile', label: 'Profile', icon: 'user' as const},
 ];
 
-const navLinkClass = ({isActive}: {isActive: boolean}) =>
-  clsx('flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium', {
-    'bg-primary text-white': isActive,
-    'text-gray-700': !isActive,
-    'hover:bg-gray-100': !isActive,
-  });
+// The signed-in shell (B7 C12, design-system#130): the shell's structure
+// is web wiring — routing and the active-route state stay with
+// react-router — while its styling is design-system tokens only (the
+// Tailwind utilities it used to carry are gone with the dependency).
+// Semantic elements keep the header/nav/main landmarks; the style
+// objects below are the DS values the utilities resolved to.
+const shellStyle: CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  minHeight: '100dvh',
+};
+
+const headerStyle: CSSProperties = {
+  borderBottom: `1px solid ${eciperayTheme.semantic.border}`,
+  backgroundColor: eciperayTheme.semantic.surface,
+};
+
+const headerInnerStyle: CSSProperties = {
+  maxWidth: 1024,
+  marginLeft: 'auto',
+  marginRight: 'auto',
+  display: 'flex',
+  flexWrap: 'wrap',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  columnGap: tokens.spacing[4],
+  rowGap: tokens.spacing[2],
+  paddingLeft: tokens.spacing[4],
+  paddingRight: tokens.spacing[4],
+  paddingTop: tokens.spacing[3],
+  paddingBottom: tokens.spacing[3],
+};
+
+const brandLinkStyle: CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+};
+
+const logoStyle: CSSProperties = {
+  display: 'block',
+  height: tokens.spacing[12],
+  width: 'auto',
+};
+
+const navStyle: CSSProperties = {
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: tokens.spacing[1],
+};
+
+const navLinkStyle = ({isActive}: {isActive: boolean}): CSSProperties => ({
+  display: 'flex',
+  alignItems: 'center',
+  gap: 6,
+  borderRadius: 8,
+  paddingLeft: tokens.spacing[3],
+  paddingRight: tokens.spacing[3],
+  paddingTop: tokens.spacing[2],
+  paddingBottom: tokens.spacing[2],
+  fontFamily: tokens.typography.fontFamily.sans,
+  fontSize: tokens.typography.fontSize.sm,
+  fontWeight: tokens.typography.fontWeight.medium,
+  textDecoration: 'none',
+  ...(isActive
+    ? {backgroundColor: eciperayTheme.semantic.primary, color: '#ffffff'}
+    : {color: eciperayTheme.semantic.text}),
+});
+
+const mainStyle: CSSProperties = {
+  maxWidth: 1024,
+  width: '100%',
+  marginLeft: 'auto',
+  marginRight: 'auto',
+  display: 'flex',
+  flex: 1,
+  flexDirection: 'column',
+  padding: tokens.spacing[4],
+};
 
 type AppShellProps = {children?: ReactNode};
 
@@ -28,31 +100,26 @@ type AppShellProps = {children?: ReactNode};
 // overflowing the viewport and clipping labels. Desktop widths fit on
 // one row, so the wrap never engages there.
 export const AppShell = ({children}: AppShellProps) => (
-  <div className="flex flex-col min-block-screen">
-    <header className="border-be border-gray-200 bg-white">
-      <div
-        className="
-          mx-auto flex flex-wrap items-center justify-between gap-x-4 gap-y-2
-          px-4 py-3 max-inline-5xl
-        "
-      >
+  <div style={shellStyle}>
+    <header style={headerStyle}>
+      <div style={headerInnerStyle}>
         <NavLink
           to="/"
-          className="flex items-center"
+          style={brandLinkStyle}
         >
           <img
             src="/logo-horizontal.svg"
             alt="Eciperay"
-            className="block-12"
+            style={logoStyle}
           />
         </NavLink>
-        <nav className="flex flex-wrap gap-1">
+        <nav style={navStyle}>
           {navItems.map(({to, end, label, icon}) => (
             <NavLink
               key={to}
               to={to}
               end={end}
-              className={navLinkClass}
+              style={navLinkStyle}
             >
               <Icon
                 name={icon}
@@ -64,12 +131,6 @@ export const AppShell = ({children}: AppShellProps) => (
         </nav>
       </div>
     </header>
-    <main
-      className="
-      mx-auto flex flex-1 flex-col p-4 inline-full max-inline-5xl
-    "
-    >
-      {children ?? <Outlet />}
-    </main>
+    <main style={mainStyle}>{children ?? <Outlet />}</main>
   </div>
 );

@@ -11,7 +11,6 @@ import {
   TagsIcon,
   WarningIcon,
 } from '@spudly/ui/icons';
-import clsx from 'clsx';
 
 /**
  * The icon names this app renders, owned by the app: the design system ships
@@ -83,7 +82,8 @@ export const Icon = ({
 
   return (
     <span
-      className={clsx(className, 'inline-flex')}
+      className={className}
+      style={{display: 'inline-flex'}}
       title={title}
     >
       {glyph}

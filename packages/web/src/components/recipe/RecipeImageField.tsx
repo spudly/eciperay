@@ -1,5 +1,6 @@
 /* eslint-disable max-lines -- recipe image upload, paste, and generate controls */
-import clsx from 'clsx';
+import {eciperayTheme, tokens} from '@spudly/ui';
+import type {CSSProperties} from 'react';
 import {useState} from 'react';
 
 import {
@@ -17,6 +18,20 @@ type Props = {
   onImageFile: (file: File) => void | Promise<void>;
   onGenerateImage?: () => void | Promise<void>;
   onRemove: () => void;
+};
+
+// Style objects on DS tokens (B7 C12, design-system#130 — the Tailwind
+// utilities these replace are gone with the dependency).
+const browseLabelStyle: CSSProperties = {
+  backgroundColor: eciperayTheme.semantic.primary,
+  display: 'inline-flex',
+  cursor: 'pointer',
+  borderRadius: 8,
+  padding: '8px 16px',
+  fontSize: tokens.typography.fontSize.sm,
+  fontFamily: tokens.typography.fontFamily.sans,
+  fontWeight: tokens.typography.fontWeight.medium,
+  color: '#ffffff',
 };
 
 // Parity note (design-system#129): the app mirror's showcase demo was
@@ -66,10 +81,29 @@ export const RecipeImageField = ({
     setIsDragging(true);
   };
 
+  const generateDisabled = imageBusy || !canGenerateImage;
+
   return (
     <div onPaste={handlePaste}>
-      <div className="mbe-1 flex items-center justify-between gap-2">
-        <p className="text-sm font-medium text-gray-700">Recipe image</p>
+      <div
+        style={{
+          marginBottom: tokens.spacing[1],
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: tokens.spacing[2],
+        }}
+      >
+        <p
+          style={{
+            margin: 0,
+            fontSize: tokens.typography.fontSize.sm,
+            fontWeight: tokens.typography.fontWeight.medium,
+            color: tokens.colors.gray.gray8,
+          }}
+        >
+          Recipe image
+        </p>
         {headerAction}
       </div>
       <div
@@ -84,34 +118,53 @@ export const RecipeImageField = ({
           }
         }}
         onDrop={handleDrop}
-        className={clsx(
-          `mbe-3 rounded-lg border-2 border-dashed p-4 transition-colors`,
-          {
-            'border-primary bg-primary/5': isDragging,
-            'border-gray-300 bg-gray-50': !isDragging,
-          },
-        )}
+        style={{
+          marginBottom: tokens.spacing[3],
+          borderRadius: 8,
+          borderWidth: 2,
+          borderStyle: 'dashed',
+          padding: tokens.spacing[4],
+          borderColor: isDragging
+            ? eciperayTheme.semantic.primary
+            : tokens.colors.gray.gray4,
+          backgroundColor: isDragging
+            ? 'rgb(194 65 12 / 0.05)'
+            : tokens.colors.gray.gray1,
+        }}
       >
         {imagePreview ? (
           <img
             src={imagePreview}
             alt="Recipe preview"
-            className="mx-auto object-contain inline-full max-block-64"
+            style={{
+              display: 'block',
+              marginLeft: 'auto',
+              marginRight: 'auto',
+              objectFit: 'contain',
+              width: '100%',
+              maxHeight: 256,
+            }}
           />
         ) : (
-          <p className="text-muted text-center text-sm">
+          <p
+            style={{
+              margin: 0,
+              color: eciperayTheme.semantic.textMuted,
+              textAlign: 'center',
+              fontSize: tokens.typography.fontSize.sm,
+            }}
+          >
             Drag and drop an image here, paste from your clipboard, browse
             below, or generate one with AI
           </p>
         )}
       </div>
-      <div className="flex flex-wrap gap-3">
+      <div
+        style={{display: 'flex', flexWrap: 'wrap', gap: tokens.spacing[3]}}
+      >
         <label
           htmlFor="recipe-image-upload"
-          className="
-            bg-primary inline-flex cursor-pointer rounded-lg px-4 py-2 text-sm
-            font-medium text-white
-          "
+          style={browseLabelStyle}
         >
           {imageUploading ? 'Uploading…' : 'Browse images'}
         </label>
@@ -119,12 +172,20 @@ export const RecipeImageField = ({
           <button
             type="button"
             aria-label="Generate image with AI"
-            className="
-              border-primary text-primary inline-flex rounded-lg border bg-white
-              px-4 py-2 text-sm font-medium
-              disabled:cursor-not-allowed disabled:opacity-50
-            "
-            disabled={imageBusy || !canGenerateImage}
+            style={{
+              border: `1px solid ${eciperayTheme.semantic.primary}`,
+              color: eciperayTheme.semantic.primary,
+              display: 'inline-flex',
+              borderRadius: 8,
+              backgroundColor: '#ffffff',
+              padding: '8px 16px',
+              fontSize: tokens.typography.fontSize.sm,
+              fontFamily: tokens.typography.fontFamily.sans,
+              fontWeight: tokens.typography.fontWeight.medium,
+              cursor: generateDisabled ? 'not-allowed' : 'pointer',
+              opacity: generateDisabled ? 0.5 : 1,
+            }}
+            disabled={generateDisabled}
             onClick={() => {
               void onGenerateImage();
             }}
@@ -136,7 +197,7 @@ export const RecipeImageField = ({
           id="recipe-image-upload"
           type="file"
           accept="image/jpeg,image/png,image/gif,image/webp"
-          className="hidden"
+          style={{display: 'none'}}
           disabled={imageBusy}
           onChange={e => {
             acceptImage(e.target.files?.[0] ?? null);
@@ -146,7 +207,16 @@ export const RecipeImageField = ({
         {imagePreview ? (
           <button
             type="button"
-            className="rounded-lg bg-gray-100 px-4 py-2 text-sm text-gray-700"
+            style={{
+              borderRadius: 8,
+              border: 'none',
+              backgroundColor: tokens.colors.gray.gray2,
+              padding: '8px 16px',
+              fontSize: tokens.typography.fontSize.sm,
+              fontFamily: tokens.typography.fontFamily.sans,
+              color: tokens.colors.gray.gray8,
+              cursor: 'pointer',
+            }}
             onClick={onRemove}
           >
             Remove image
@@ -154,7 +224,16 @@ export const RecipeImageField = ({
         ) : null}
       </div>
       {imageError ? (
-        <p className="mbs-2 text-sm text-red-600">{imageError}</p>
+        <p
+          style={{
+            margin: 0,
+            marginTop: tokens.spacing[2],
+            fontSize: tokens.typography.fontSize.sm,
+            color: tokens.colors.danger.danger7,
+          }}
+        >
+          {imageError}
+        </p>
       ) : null}
     </div>
   );

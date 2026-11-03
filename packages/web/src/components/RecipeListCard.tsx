@@ -5,9 +5,25 @@ import {
   type ShowcaseFrameProps,
 } from '@eciperay/client';
 import type {CookLogInput, RecipeDetail} from '@eciperay/types';
-import {RatingForm} from '@spudly/ui';
+import {RatingForm, tokens} from '@spudly/ui';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
-import {useState, type ComponentType} from 'react';
+import {useState, type ComponentType, type CSSProperties} from 'react';
+
+// Style objects on DS tokens (B7 C12, design-system#130 — the Tailwind
+// utilities these replace are gone with the dependency; the design
+// system Button has no gray-filled or danger-tint variant for these
+// in-card actions, so the trailing slot keeps plain buttons).
+const cardActionStyle: CSSProperties = {
+  borderRadius: 8,
+  border: 'none',
+  paddingLeft: 12,
+  paddingRight: 12,
+  paddingTop: 4,
+  paddingBottom: 4,
+  fontSize: 14,
+  fontFamily: tokens.typography.fontFamily.sans,
+  cursor: 'pointer',
+};
 
 import {eciperay} from '../lib/api.js';
 
@@ -74,15 +90,25 @@ export const RecipeListCard = ({
         onPress={onPress}
         linkTo={onPress ? undefined : `/recipes/${recipe.id}`}
         trailing={
-          <div className="ms-3 flex shrink-0 items-center gap-2">
+          <div
+            style={{
+              marginLeft: tokens.spacing[3],
+              display: 'flex',
+              flexShrink: 0,
+              alignItems: 'center',
+              gap: tokens.spacing[2],
+            }}
+          >
             {showForm ? null : confirmingDelete ? (
               <>
                 <button
                   type="button"
-                  className="
-                    rounded-lg bg-red-600 px-3 py-1 text-sm text-white
-                    disabled:opacity-50
-                  "
+                  style={{
+                    ...cardActionStyle,
+                    backgroundColor: tokens.colors.danger.danger7,
+                    color: '#ffffff',
+                    opacity: isDeleting ? 0.5 : 1,
+                  }}
                   disabled={isDeleting}
                   onClick={() => {
                     onDelete(recipe.id);
@@ -92,10 +118,12 @@ export const RecipeListCard = ({
                 </button>
                 <button
                   type="button"
-                  className="
-                    rounded-lg bg-gray-100 px-3 py-1 text-sm text-gray-700
-                    disabled:opacity-50
-                  "
+                  style={{
+                    ...cardActionStyle,
+                    backgroundColor: tokens.colors.gray.gray2,
+                    color: tokens.colors.gray.gray8,
+                    opacity: isDeleting ? 0.5 : 1,
+                  }}
                   disabled={isDeleting}
                   onClick={() => {
                     setConfirmingDelete(false);
@@ -108,9 +136,11 @@ export const RecipeListCard = ({
               <>
                 <button
                   type="button"
-                  className="
-                    rounded-lg bg-gray-100 px-3 py-1 text-sm text-gray-700
-                  "
+                  style={{
+                    ...cardActionStyle,
+                    backgroundColor: tokens.colors.gray.gray2,
+                    color: tokens.colors.gray.gray8,
+                  }}
                   onClick={() => {
                     setShowForm(true);
                   }}
@@ -119,7 +149,11 @@ export const RecipeListCard = ({
                 </button>
                 <button
                   type="button"
-                  className="rounded-lg bg-red-50 px-3 py-1 text-sm text-red-600"
+                  style={{
+                    ...cardActionStyle,
+                    backgroundColor: tokens.colors.danger.danger1,
+                    color: tokens.colors.danger.danger7,
+                  }}
                   onClick={() => {
                     setConfirmingDelete(true);
                   }}
@@ -134,13 +168,18 @@ export const RecipeListCard = ({
       {deleteError ? (
         <p
           role="alert"
-          className="mbe-3 text-sm text-red-600"
+          style={{
+            margin: 0,
+            marginBottom: tokens.spacing[3],
+            fontSize: tokens.typography.fontSize.sm,
+            color: tokens.colors.danger.danger7,
+          }}
         >
           {deleteError}
         </p>
       ) : null}
       {showForm ? (
-        <div className="mbe-3">
+        <div style={{marginBottom: tokens.spacing[3]}}>
           <RatingForm
             variant="light"
             notesPlaceholder="Notes from this cook (optional)"

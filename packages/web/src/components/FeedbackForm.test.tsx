@@ -280,12 +280,14 @@ describe('FeedbackForm', () => {
     // clipped. The column root fills the panel, the page wrapper flexes and
     // may shrink, and Cancel stays in flow below it.
     const cancel = screen.getByRole('button', {name: 'Cancel'});
-    const root = cancel.closest('div.flex.flex-col');
+    const root = cancel.parentElement;
     expect(root).not.toBeNull();
-    expect(root?.className).toContain('h-full');
-    const pageWrapper = root?.firstElementChild;
-    expect(pageWrapper?.className).toContain('flex-1');
-    expect(pageWrapper?.className).toContain('min-h-0');
-    expect(pageWrapper?.className).toContain('flex-col');
+    expect(root?.style.height).toBe('100%');
+    expect(root?.style.display).toBe('flex');
+    expect(root?.style.flexDirection).toBe('column');
+    const pageWrapper = root?.firstElementChild as HTMLElement | null;
+    expect(pageWrapper?.style.flexGrow).toBe('1');
+    expect(pageWrapper?.style.minHeight).toBe('0px');
+    expect(pageWrapper?.style.flexDirection).toBe('column');
   });
 });

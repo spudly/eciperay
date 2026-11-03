@@ -2,6 +2,8 @@ import {
   readAnalyticsConsent,
   useFeedbackShortcutEnabled,
 } from '@eciperay/client';
+import {eciperayTheme, tokens} from '@spudly/ui';
+import type {CSSProperties} from 'react';
 import {useState} from 'react';
 import {useLocation} from 'react-router-dom';
 
@@ -13,10 +15,46 @@ import {Icon} from './Icon.js';
 const canShowFeedbackBubble = () =>
   POSTHOG_KEY.length > 0 && readAnalyticsConsent() === 'accepted';
 
-// Extracted so prettier and the better-tailwindcss line-wrapping rule do not
-// fight over the attribute string (same pattern as LegalLinks' linkClasses).
-const bubbleContainerClasses =
-  'fixed inset-e-4 inset-be-20 z-50 flex flex-col items-end gap-3';
+// Style objects on DS tokens (B7 C12, design-system#130 — the Tailwind
+// utilities these replace are gone with the dependency).
+const bubbleContainerStyle: CSSProperties = {
+  position: 'fixed',
+  right: tokens.spacing[4],
+  // 5rem: clears the bottom-pinned consent banner's space (was inset-be-20).
+  bottom: 80,
+  zIndex: 50,
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'flex-end',
+  gap: tokens.spacing[3],
+};
+
+const panelStyle: CSSProperties = {
+  overflowY: 'auto',
+  borderRadius: 16,
+  border: `1px solid ${eciperayTheme.semantic.border}`,
+  backgroundColor: eciperayTheme.semantic.surface,
+  padding: tokens.spacing[4],
+  boxShadow:
+    '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
+  width: 'min(100vw - 2rem, 24rem)',
+  height: 'min(35.125rem, calc(100dvh - 10rem))',
+};
+
+const bubbleButtonStyle: CSSProperties = {
+  backgroundColor: eciperayTheme.semantic.primary,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  borderRadius: 9999,
+  border: 'none',
+  color: '#ffffff',
+  cursor: 'pointer',
+  boxShadow:
+    '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
+  width: tokens.spacing[12],
+  height: tokens.spacing[12],
+};
 
 export const FeedbackBubble = () => {
   const {enabled} = useFeedbackShortcutEnabled();
@@ -28,7 +66,7 @@ export const FeedbackBubble = () => {
   }
 
   return (
-    <div className={bubbleContainerClasses}>
+    <div style={bubbleContainerStyle}>
       {/* Panel block size is DEFINITE, not just capped (#326): the DS
           FeedbackPage's ScreenContainer ScrollView (flex:1, min-height:100%)
           collapses to a sliver inside a shrink-to-fit panel, because its
@@ -46,11 +84,7 @@ export const FeedbackBubble = () => {
           below the fold). */}
       {open ? (
         <div
-          className="
-            overflow-y-auto rounded-2xl border border-gray-200 bg-white p-4
-            shadow-lg inline-[min(100vw-2rem,24rem)]
-            block-[min(35.125rem,calc(100dvh-10rem))]
-          "
+          style={panelStyle}
           role="dialog"
           aria-label="Send feedback"
         >
@@ -67,10 +101,7 @@ export const FeedbackBubble = () => {
       ) : null}
       <button
         type="button"
-        className="
-          bg-primary flex items-center justify-center rounded-full text-white
-          shadow-lg block-12 inline-12
-        "
+        style={bubbleButtonStyle}
         aria-label="Send feedback"
         aria-expanded={open}
         onClick={() => {
@@ -80,7 +111,6 @@ export const FeedbackBubble = () => {
         <Icon
           name="message-circle"
           size={22}
-          className="text-white"
         />
       </button>
     </div>

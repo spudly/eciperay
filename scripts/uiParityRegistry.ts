@@ -192,12 +192,6 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
       'Web adapter remains; the app copy had no production importer after screens adopted design system pages. Removed in B6 (design-system#129). Web retirement is B7.',
   },
   {
-    path: 'ui/FixedActionBanner.tsx',
-    platform: 'web',
-    reason:
-      'Web mirror remains live for the consent/install banners; the app copy was dev-showcase-only (the widget moved to @spudly/ui in B2). Removed in B6 (design-system#129). Web retirement is B7.',
-  },
-  {
     path: 'ui/FormScreenLayout.tsx',
     platform: 'web',
     reason:

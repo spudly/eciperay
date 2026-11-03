@@ -293,12 +293,26 @@ export const RecipesPage = () => {
       {isFetchNextPageError ? (
         <p
           role="alert"
-          className="mbe-4 text-sm text-red-600"
+          style={{
+            margin: 0,
+            marginBottom: 16,
+            fontSize: 14,
+            color: '#dc2626',
+          }}
         >
           Couldn't load more recipes.{' '}
           <button
             type="button"
-            className="underline"
+            style={{
+              textDecoration: 'underline',
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              cursor: 'pointer',
+              fontSize: 'inherit',
+              fontFamily: 'inherit',
+              color: 'inherit',
+            }}
             onClick={() => {
               void fetchNextPage();
             }}

@@ -17,11 +17,15 @@ import {InfoBanner} from './ui/InfoBanner.js';
 // Parity note (design-system#129): the app mirror's showcase demo was
 // removed with the in-app component showcase; this web mirror keeps its
 // own demo for the web showcase page, so no web change was needed.
+// The legacy `backgroundClassName` prop remains in the prop type (from
+// @eciperay/client) for API compatibility but is no longer applied (B7
+// C12, design-system#130 — the same treatment the app mirror shipped):
+// the shell background is the theme's semantic surface, as a Tamagui
+// prop instead of a Tailwind class.
 export const ScreenLoadingGate = ({
   pending,
   delayMs = DEFAULT_LOADING_DELAY_MS,
   children,
-  backgroundClassName = 'bg-white',
 }: ScreenLoadingGateProps) => {
   const showLoading = useDelayedTrue(pending, delayMs);
 
@@ -33,7 +37,7 @@ export const ScreenLoadingGate = ({
     return (
       <YStack
         minHeight="100%"
-        className={backgroundClassName}
+        backgroundColor="$surface"
       />
     );
   }
@@ -44,7 +48,7 @@ export const ScreenLoadingGate = ({
       alignItems="center"
       justifyContent="center"
       minHeight="100%"
-      className={backgroundClassName}
+      backgroundColor="$surface"
     >
       <BookLoadingSpinner size="lg" />
     </YStack>

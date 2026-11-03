@@ -45,7 +45,7 @@ export const ProfileTransferSection = ({
       ref={fileInputRef}
       type="file"
       accept="application/json,.json"
-      className="hidden"
+      style={{display: 'none'}}
       onChange={event => {
         const file = event.target.files?.[0];
         if (file) {

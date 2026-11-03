@@ -82,10 +82,8 @@ describe('FeedbackBubble', () => {
 
     await user.click(screen.getByRole('button', {name: 'Send feedback'}));
     const dialog = screen.getByRole('dialog', {name: 'Send feedback'});
-    expect(dialog.className).toContain(
-      'block-[min(35.125rem,calc(100dvh-10rem))]',
-    );
-    expect(dialog.className).toContain('overflow-y-auto');
+    expect(dialog.style.height).toBe('min(35.125rem, calc(100dvh - 10rem))');
+    expect(dialog.style.overflowY).toBe('auto');
   });
 
   test('closes the dialog after submit or cancel', async () => {

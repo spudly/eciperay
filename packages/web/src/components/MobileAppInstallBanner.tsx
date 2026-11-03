@@ -5,9 +5,9 @@ import {
   shouldShowMobileAppInstallPrompt,
   writeMobileAppInstallDismissal,
 } from '@eciperay/client';
+import {FixedActionBanner, Text, TextLink} from '@spudly/ui';
 import {useState} from 'react';
-
-import {FixedActionBanner} from './ui/FixedActionBanner.js';
+import {XStack} from 'tamagui';
 
 export const MobileAppInstallBanner = () => {
   const [visible, setVisible] = useState(shouldShowMobileAppInstallPrompt);
@@ -21,37 +21,40 @@ export const MobileAppInstallBanner = () => {
     setVisible(false);
   };
 
+  // The DS FixedActionBanner (B7 C12, design-system#130) carries the
+  // banner's layout and dismiss action; it accepts no container
+  // role/label, so the prompt's region semantics stay with the host
+  // wrapper — the same web-only ariaLabel/role contract the retired
+  // local adapter implemented from @eciperay/client's
+  // FixedActionBannerProps.
   return (
-    <FixedActionBanner
-      position="top"
+    <div
       role="region"
-      ariaLabel="Mobile app install prompt"
-      dismissAriaLabel="Dismiss mobile app install prompt"
-      onDismiss={dismiss}
-      message={
-        <div
-          className="
-            flex flex-col gap-2
-            sm:flex-row sm:items-center sm:justify-between
-          "
-        >
-          <p className="flex-1">{MOBILE_WEB_INSTALL_BANNER_MESSAGE}</p>
-          <div className="flex shrink-0 flex-wrap items-center gap-2">
-            <a
-              href={IOS_APP_STORE_URL}
-              className="text-primary font-medium underline"
+      aria-label="Mobile app install prompt"
+    >
+      <FixedActionBanner
+        position="top"
+        dismissAriaLabel="Dismiss mobile app install prompt"
+        onDismiss={dismiss}
+        message={
+          <XStack
+            flexWrap="wrap"
+            alignItems="center"
+            gap="$2"
+          >
+            <Text flex={1}>{MOBILE_WEB_INSTALL_BANNER_MESSAGE}</Text>
+            <XStack
+              flexShrink={0}
+              flexWrap="wrap"
+              alignItems="center"
+              gap="$2"
             >
-              App Store
-            </a>
-            <a
-              href={ANDROID_PLAY_STORE_URL}
-              className="text-primary font-medium underline"
-            >
-              Google Play
-            </a>
-          </div>
-        </div>
-      }
-    />
+              <TextLink href={IOS_APP_STORE_URL}>App Store</TextLink>
+              <TextLink href={ANDROID_PLAY_STORE_URL}>Google Play</TextLink>
+            </XStack>
+          </XStack>
+        }
+      />
+    </div>
   );
 };

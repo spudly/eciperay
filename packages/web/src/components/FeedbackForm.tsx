@@ -88,8 +88,21 @@ export const FeedbackForm = ({
     // (min-h-0), so on tall viewports both actions fit inside the panel's
     // definite height with no scrolling, and on short viewports the page's
     // own ScrollView scrolls internally while Cancel stays visible.
-    <div className="flex h-full flex-col">
-      <div className="flex min-h-0 flex-1 flex-col">
+    <div
+      style={{
+        display: 'flex',
+        height: '100%',
+        flexDirection: 'column',
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          minHeight: 0,
+          flex: 1,
+          flexDirection: 'column',
+        }}
+      >
         <FeedbackPage
           message={message}
           onMessageChange={setMessage}
