@@ -71,20 +71,37 @@ export const buildMealPlanFormEntryOptionsFromDetail = (
 export const buildMealPlanFormEntryOptions = (
   meals: Meal[],
   recipes: MealPlanEditRecipeOption[],
-): MealPlanFormEntryOption[] => [
-  ...meals.map(
-    meal => ({kind: 'meal', id: meal.id, title: meal.title}) as const,
-  ),
-  ...recipes.map(
-    recipe =>
-      ({
-        kind: 'recipe',
-        id: recipe.id,
-        title: recipe.title,
-        servings: recipe.servings,
-      }) as const,
-  ),
-];
+): MealPlanFormEntryOption[] => {
+  // The suggestion list is assembled from two sources concatenated here
+  // (client-matched meals + server-searched recipes) — dedupe by entry
+  // key (kind + id), first occurrence wins (#386), so the same recipe
+  // (or meal) can never appear twice in the picker's suggestions even
+  // if a source list itself contains it twice.
+  const seenKeys = new Set<string>();
+  const options: MealPlanFormEntryOption[] = [];
+  const all: MealPlanFormEntryOption[] = [
+    ...meals.map(
+      meal => ({kind: 'meal', id: meal.id, title: meal.title}) as const,
+    ),
+    ...recipes.map(
+      recipe =>
+        ({
+          kind: 'recipe',
+          id: recipe.id,
+          title: recipe.title,
+          servings: recipe.servings,
+        }) as const,
+    ),
+  ];
+  for (const option of all) {
+    const key = mealPlanEntryKey(option.kind, option.id);
+    if (!seenKeys.has(key)) {
+      seenKeys.add(key);
+      options.push(option);
+    }
+  }
+  return options;
+};
 
 const nextServingsForRecipeEntry = (
   key: string,

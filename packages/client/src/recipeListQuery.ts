@@ -115,7 +115,10 @@ export const RECIPE_FORM_SEARCH_LIMIT = 20;
 // All matching pages of server-side recipe search results for the meal /
 // meal-plan form pickers, ordered newest-first with the list endpoint's
 // total-order tie-breaker (updated_at desc, id) so paging cannot skip or
-// duplicate a recipe and the order is deterministic. Uses its own query
+// duplicate a recipe and the order is deterministic. The assembled list
+// is additionally deduped by recipe id (#386) as a host-side guarantee:
+// whatever the endpoint returns, a suggestion list never contains the
+// same recipe twice. Uses its own query
 // key — see queryKeys.recipeFormSearch for why sharing the infinite
 // list's key crashes both consumers (#171, #172).
 export const recipeFormSearchQueryOptions = (
@@ -129,6 +132,12 @@ export const recipeFormSearchQueryOptions = (
       RecipeDetail[]
     > => {
       const results: RecipeDetail[] = [];
+      // Suggestions are assembled from every matching page, concatenated
+      // here — dedupe by recipe id, first occurrence wins (#386): a
+      // recipe that appears on two pages (or twice on one page) must
+      // appear at most once in the picker's suggestion list, or the DS
+      // Autocomplete renders the same recipe twice.
+      const seenIds = new Set<string>();
       let offset = 0;
       for (;;) {
         // TanStack Query aborts the signal when this search is superseded
@@ -152,7 +161,12 @@ export const recipeFormSearchQueryOptions = (
           },
           signal,
         );
-        results.push(...page);
+        for (const recipe of page) {
+          if (!seenIds.has(recipe.id)) {
+            seenIds.add(recipe.id);
+            results.push(recipe);
+          }
+        }
         if (page.length < RECIPE_FORM_SEARCH_LIMIT) {
           return results;
         }
