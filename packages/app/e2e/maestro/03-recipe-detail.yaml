@@ -29,8 +29,11 @@
 # (the "400 g Crushed tomatoes" row measured 25px of ~123px in the
 # dump), below Maestro's visibility threshold. Ingredient rows are
 # single labels ("400 g Crushed tomatoes" —
-# formatScaledIngredientLine in packages/client), so a name substring
-# matches the row once it is fully in the window.
+# formatScaledIngredientLine in packages/client), and Maestro text
+# selectors are full-string regex matches, so the row assertions use
+# .*name.* patterns rather than bare substrings (a bare "Crushed
+# tomatoes" never matches the "400 g Crushed tomatoes" node —
+# verified across the 2026-11-03 CI runs).
 appId: com.eciperay
 ---
 - assertVisible: "E2E Weeknight Pasta"
@@ -42,8 +45,8 @@ appId: com.eciperay
     start: 50%, 70%
     end: 50%, 45%
     duration: 600
-- assertVisible: "Spaghetti"
-- assertVisible: "Crushed tomatoes"
+- assertVisible: ".*Spaghetti.*"
+- assertVisible: ".*Crushed tomatoes.*"
 - scrollUntilVisible:
     element:
       text: "Simmer the sauce for 15 minutes."
