@@ -1,8 +1,9 @@
-import {screen} from '@testing-library/react';
+import {screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {http, HttpResponse} from 'msw';
 import {vi} from 'vitest';
 
+import {eciperay} from '../../lib/api.js';
 import {makeRecipeDetail} from '../../test/fixtures/recipe.js';
 import {server} from '../../test/msw/server.js';
 import {renderWithProviders} from '../../test/testUtils.js';
@@ -49,6 +50,8 @@ describe('RecipeVisibilityControls save-handler consent guard', () => {
         return HttpResponse.json(makeRecipeDetail({visibility: 'unlisted'}));
       }),
     );
+    // Observe the mutation itself, not only its downstream handler.
+    const patchSharing = vi.spyOn(eciperay.recipes, 'patchSharing');
 
     await renderWithProviders(
       <RecipeVisibilityControls
@@ -59,7 +62,13 @@ describe('RecipeVisibilityControls save-handler consent guard', () => {
 
     await userEvent.click(screen.getByLabelText(/Unlisted link/i));
     await userEvent.click(screen.getByText('Save sharing settings'));
+    // Let any asynchronous save work settle before asserting none ran.
+    await new Promise(resolve => {
+      setTimeout(resolve, 100);
+    });
+    expect(patchSharing).not.toHaveBeenCalled();
     expect(called).toBe(false);
+    patchSharing.mockRestore();
   });
 
   test('publishes through the double once consent is given', async () => {
@@ -85,6 +94,10 @@ describe('RecipeVisibilityControls save-handler consent guard', () => {
       screen.getByRole('checkbox', {name: 'Publishing consent'}),
     );
     await userEvent.click(screen.getByText('Save sharing settings'));
-    expect(onActionMessage).toHaveBeenCalledWith('Sharing settings updated');
+    await waitFor(() => {
+      expect(onActionMessage).toHaveBeenCalledWith(
+        'Sharing settings updated',
+      );
+    });
   });
 });
