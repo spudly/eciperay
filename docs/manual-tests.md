@@ -357,7 +357,10 @@ mode; there is no Playwright coverage of meals. The cases below are manual._
 **Run when:**
 `packages/client/src/mealUiHelpers.ts`,
 `packages/app/src/screens/{MealsHub,MealDetail,MealEdit,MealCookingMode}Screen.tsx`,
+`packages/app/src/screens/{MealPlanDetail,MealPlanEdit}Screen.tsx`,
 `packages/web/src/pages/{MealsHub,MealDetail,MealEdit,MealCookingMode}Page.tsx`,
+`packages/web/src/pages/{MealPlanDetail,MealPlanEdit}Page.tsx`,
+`packages/server` meal plan routes,
 `packages/client/src/recipeListQuery.ts`, `@spudly/ui` `MealsHubPage`,
 `MealDetailPage`, `MealFormPage`, or `MealCookingModePage`, `packages/server`
 meal routes, `packages/server` recipe search

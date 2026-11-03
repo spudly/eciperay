@@ -55,6 +55,46 @@ describe('MealDetailScreen', () => {
     });
   });
 
+  test('shows all five condensed values on a populated member line (#361)', async () => {
+    mockGet.mockResolvedValue({
+      id: mealId,
+      userId: 'user-uuid-1',
+      title: 'Sunday Dinner',
+      notes: null,
+      memberCount: 1,
+      nutrition: null,
+      createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2024-01-01T00:00:00.000Z',
+      members: [
+        {
+          recipeId,
+          sortOrder: 0,
+          servings: 4,
+          title: 'Test Recipe',
+          imageUrl: null,
+          recipeServings: 4,
+          accessLost: false,
+          satietyScore: 50,
+          nutritionStatus: 'ready',
+          calories: 100.4,
+          proteinG: 10,
+          carbsG: 25.6,
+          fatG: 5,
+        },
+      ],
+    });
+    const {findByRole} = await renderWithProviders(
+      <MealDetailScreen {...stackProps} />,
+    );
+    // The member row is a link whose accessible name carries the
+    // title plus the composed subtitle (servings · condensed nutrition).
+    expect(
+      await findByRole('link', {
+        name: 'Test Recipe, 4 servings · 100 cal · 10g protein · 26g carbs · 5g fat · satiety 50',
+      }),
+    ).toBeTruthy();
+  });
+
   test('renders meal detail', async () => {
     const {findByText} = await renderWithProviders(
       <MealDetailScreen {...stackProps} />,
