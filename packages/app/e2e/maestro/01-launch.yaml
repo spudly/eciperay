@@ -1,0 +1,12 @@
+# Use case: the app launches to its initial screen without crashing
+# (#183 Phase 2). The fixture build boots signed in, so the initial
+# screen is the Home tab: its heading, quick links, and the tab bar.
+appId: com.eciperay
+---
+- launchApp:
+    clearState: true
+- assertVisible: "Welcome to Eciperay"
+- assertVisible: "Browse Recipes"
+- assertVisible: "Shared with me"
+- assertVisible: "Meals"
+- assertVisible: "Profile"

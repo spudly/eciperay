@@ -1,0 +1,26 @@
+# Use cases: the Recipes screen renders its filter bar and recipe list,
+# and opening a recipe renders its detail (#183 Phase 2).
+#
+# The filter-bar and list assertions are the #162 regression coverage:
+# that bug shipped a build whose Recipes screen was one giant empty box
+# — no search field, no filter controls, no recipe cards — in a build
+# that compiled fine. If that failure mode returns, the assertions below
+# fail: the search field, the Filters control, and both fixture recipe
+# cards must all be present in the real native render.
+appId: com.eciperay
+---
+- launchApp
+- tapOn: "Browse Recipes"
+- assertVisible: "Search recipes…"
+- assertVisible: "Filters"
+- assertVisible: "E2E Weeknight Pasta"
+- assertVisible: "E2E Garden Salad"
+- tapOn: "E2E Weeknight Pasta"
+- scrollUntilVisible:
+    element:
+      text: "Crushed tomatoes"
+- assertVisible: "Crushed tomatoes"
+- scrollUntilVisible:
+    element:
+      text: "Simmer the sauce for 15 minutes."
+- assertVisible: "Simmer the sauce for 15 minutes."

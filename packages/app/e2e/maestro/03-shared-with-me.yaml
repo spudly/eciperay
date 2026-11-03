@@ -1,0 +1,9 @@
+# Use case: the Shared with me screen renders its content (#183
+# Phase 2) — the fixture recipe another user shared, inside the same
+# filter-bar list the Recipes screen uses.
+appId: com.eciperay
+---
+- launchApp
+- tapOn: "Shared with me"
+- assertVisible: "E2E Shared Tomato Soup"
+- assertVisible: "Search recipes…"

@@ -20,8 +20,15 @@ name: Android Build
 # resolution failure) now surfaces on the release PR rather than on the
 # PR that caused it.
 #
-# Phase 2 (emulator use-case tests) is tracked in #183 and is not part of
-# this job yet.
+# Phase 2 of #183 is the android-e2e job below: Maestro use-case flows
+# (packages/app/e2e/maestro) run on an emulator against a fixture build
+# of the app (E2E_FIXTURE_MODE — a stub session plus seeded in-memory
+# data, so no production backend and no real account), covering launch,
+# the Recipes filter bar + list (the #162 regression), Shared with me,
+# and recipe detail. It inherits the release-only gating — it runs when
+# the AAB build runs — and also runs on manual workflow_dispatch, the
+# deliberate way to exercise the suite outside a release; ordinary PRs
+# skip it and android-gate still passes.
 #
 # Same-repo PRs only: fork PRs receive no secrets, so NODE_AUTH_TOKEN
 # would be empty and a cold-cache `npm ci` cannot fetch the private
@@ -66,6 +73,7 @@ jobs:
     timeout-minutes: 5
     outputs:
       run-build: ${{ steps.detect.outputs.run-build }}
+      run-e2e: ${{ steps.detect-e2e.outputs.run-e2e }}
     steps:
       - name: Detect release PR
         id: detect
@@ -97,6 +105,31 @@ jobs:
             {
               echo "### Android build: skipped by design"
               echo "Android builds run only on release PRs (head branch \`changeset-release/*\`), so the AAB build did not run. android-gate still reports for this PR."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      # The emulator suite (#183 Phase 2) inherits the build's
+      # release-only gating and additionally runs on manual dispatch:
+      # dispatching this workflow is a deliberate act, and it is how the
+      # suite is exercised — and proven — outside a release PR. The AAB
+      # build itself stays release-only even on dispatch (above).
+      - name: Detect emulator suite
+        id: detect-e2e
+        env:
+          RUN_BUILD: ${{ steps.detect.outputs.run-build }}
+        run: |
+          if [ "$RUN_BUILD" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "run-e2e=true" >> "$GITHUB_OUTPUT"
+            {
+              echo "### Android emulator tests: running"
+              echo "Release PR or manual dispatch, so the Maestro use-case suite runs on an emulator."
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "run-e2e=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Android emulator tests skipped by design: the suite runs only on release PRs and manual workflow_dispatch runs."
+            {
+              echo "### Android emulator tests: skipped by design"
+              echo "The emulator suite runs only on release PRs (head branch \`changeset-release/*\`) and manual dispatches, so it did not run. android-gate still reports for this PR."
             } >> "$GITHUB_STEP_SUMMARY"
           fi
 
@@ -155,13 +188,113 @@ jobs:
           path: packages/app/android/app/build/outputs/bundle/release/*.aab
           if-no-files-found: warn
 
+  # Phase 2 of #183: emulator use-case tests. Builds a fixture variant
+  # of the app (E2E_FIXTURE_MODE baked at bundle time — stub session and
+  # in-memory fixture API; see packages/app/src/lib/e2eFixtures.ts),
+  # installs it on an emulator, and runs the Maestro flows in
+  # packages/app/e2e/maestro: launch, Recipes filter bar + list (the
+  # #162 regression), Shared with me, and recipe detail. Self-contained:
+  # no production backend, no real account, and no secrets beyond the
+  # packages token npm ci already needs.
+  android-e2e:
+    name: Android emulator use-case tests
+    needs: changes
+    if:
+      needs.changes.outputs.run-e2e == 'true' && (github.event_name !=
+      'pull_request' || github.event.pull_request.head.repo.full_name ==
+      github.repository)
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js and install dependencies
+        uses: ./.github/actions/ci-setup
+        with:
+          install-command: npm ci
+          skip-install-on-cache-hit: 'true'
+
+      - name: Setup Android build environment
+        uses: ./.github/actions/android-build-setup
+
+      # GitHub's ubuntu runners expose /dev/kvm but the runner user
+      # cannot open it until this udev rule grants access.
+      - name: Enable KVM for the emulator
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Build fixture APK
+        working-directory: packages/app/android
+        run: |
+          # Same PostHog-upload disable as the AAB build: uploading is a
+          # publishing concern and must not fail this job. With no
+          # keystore env present, app/build.gradle falls back to the
+          # debug signing config, so the APK installs on the emulator.
+          # x86_64 only: the emulator image is x86_64, and skipping the
+          # ARM ABIs keeps this build as small as possible.
+          ./gradlew assembleRelease --build-cache \
+            -I "$GITHUB_WORKSPACE/.github/scripts/disable-posthog-upload.init.gradle" \
+            -PVERSION_CODE=${{ github.run_number }} \
+            -PreactNativeArchitectures=x86_64
+        env:
+          # Fixture mode: the app serves seeded data in memory and never
+          # calls these endpoints. The values only satisfy the bundle's
+          # production env assertion; the hosts are deliberately not
+          # real, so a misconfigured build fails instead of reaching a
+          # real backend.
+          APP_ENV: production
+          E2E_FIXTURE_MODE: 'true'
+          API_BASE_URL: https://fixture.invalid/api
+          SUPABASE_URL: https://fixture.invalid
+          SUPABASE_ANON_KEY: fixture-anon-key
+          POSTHOG_KEY: ''
+          POSTHOG_HOST: ''
+
+      # Pinned: Maestro's CLI behavior (flow syntax, exit codes) is part
+      # of this suite's contract, so it upgrades deliberately, never by
+      # floating on latest.
+      - name: Install Maestro
+        env:
+          MAESTRO_VERSION: cli-2.12.1
+        run: |
+          curl -Ls -o "$RUNNER_TEMP/maestro.zip" \
+            "https://github.com/mobile-dev-inc/Maestro/releases/download/${MAESTRO_VERSION}/maestro.zip"
+          unzip -q "$RUNNER_TEMP/maestro.zip" -d "$RUNNER_TEMP/maestro-dist"
+          echo "$RUNNER_TEMP/maestro-dist/maestro/bin" >> "$GITHUB_PATH"
+
+      - name: Run use-case suite on the emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          emulator-options: >-
+            -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio
+            -no-boot-anim -camera-back none
+          script: |
+            adb install -r packages/app/android/app/build/outputs/apk/release/app-release.apk
+            maestro test packages/app/e2e/maestro
+
+      - name: Upload Maestro results
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: maestro-results
+          path: ~/.maestro/tests
+          if-no-files-found: ignore
+
   # Always-reporting gate for branch protection: reports on every PR,
-  # fails only when the changes detection or the build failed or was
-  # cancelled, and passes when the build succeeded or was legitimately
-  # skipped (not a release PR, or a fork PR).
+  # fails only when the changes detection, the build, or the emulator
+  # suite failed or was cancelled, and passes when they succeeded or
+  # were legitimately skipped (not a release PR, or a fork PR).
   android-gate:
     name: android-gate
-    needs: [changes, android-build]
+    needs: [changes, android-build, android-e2e]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
