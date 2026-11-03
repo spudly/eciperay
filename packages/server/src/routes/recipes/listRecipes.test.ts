@@ -172,6 +172,43 @@ describe('GET /recipes', () => {
     ]);
   });
 
+  test('passes a multi-word search to the query unchanged (#385)', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockQuery.mockResolvedValue(makeQueryResult([]));
+    const res = await request(getApp())
+      .get('/api/recipes')
+      .query({search: 'First Soup'})
+      .set('Authorization', 'Bearer valid-token');
+    expect(res.status).toBe(200);
+    expect(mockQuery).toHaveBeenCalledWith(expect.any(String), [
+      'user-uuid-1',
+      DEFAULT_RECIPE_LIST_LIMIT,
+      0,
+      'First Soup',
+      null,
+      ...emptyFilterBinds,
+    ]);
+  });
+
+  test('searches titles word by word, not as one contiguous phrase (#385)', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockQuery.mockResolvedValue(makeQueryResult([]));
+    const res = await request(getApp())
+      .get('/api/recipes')
+      .query({search: 'First Soup'})
+      .set('Authorization', 'Bearer valid-token');
+    expect(res.status).toBe(200);
+    const sql = mockQuery.mock.calls[mockQuery.mock.calls.length - 1]?.[0];
+    // Every word of the search must appear somewhere in the title, so
+    // "First" / "First Soup" match "QA — First Soup": the SQL splits
+    // the search into words and rejects a title only when a word is
+    // absent from it.
+    expect(sql).toContain("regexp_split_to_array($4, '\\s+')");
+    expect(sql).toContain('rv.title not ilike');
+    expect(sql).toContain('search_token.token');
+    expect(sql).not.toContain("rv.title ilike '%' || $4 || '%'");
+  });
+
   test('passes status filter to the query', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue(makeQueryResult([]));

@@ -320,7 +320,15 @@ mode; there is no Playwright coverage of meals. The cases below are manual._
    of a recipe beyond the first 100 into the picker's "Search recipes" field.
    **Expected:** the beyond-100 recipe appears as a search result and can be
    selected into the meal (it moves to the selected list under the search field,
-   with its servings stepper); saving keeps it on the meal detail. Also confirm:
+   with its servings stepper); saving keeps it on the meal detail. Also confirm
+   word-by-word matching (regression: #385): searching a word from the middle
+   of a title (e.g. "First") and a multi-word partial title whose words are
+   not the title's opening words (e.g. "First Soup" for a recipe titled
+   "QA — First Soup") both surface the recipe; so do the same words in a
+   different order ("Soup First") and words that are not contiguous in the
+   title (e.g. "First Soup" for "QA — First Night Soup"), while a recipe
+   whose title contains only one of the searched words (e.g. "First Course"
+   for the search "First Soup") does NOT appear. Also confirm:
    a search with no matches shows "No recipes found.", selecting a result leaves
    the picker available to search and add another recipe, and a selected
    recipe's Remove action takes it back out. Repeat the search-and-select part
@@ -335,7 +343,9 @@ mode; there is no Playwright coverage of meals. The cases below are manual._
 `packages/web/src/pages/{MealsHub,MealDetail,MealEdit,MealCookingMode}Page.tsx`,
 `packages/client/src/recipeListQuery.ts`, `@spudly/ui` `MealsHubPage`,
 `MealDetailPage`, `MealFormPage`, or `MealCookingModePage`, `packages/server`
-meal routes.
+meal routes, `packages/server` recipe search
+(`packages/server/src/routes/recipes/{listFilterParams,sqlConstants}.ts`),
+`packages/client/src/useMealPlanEditForm.ts`.
 
 ---
 

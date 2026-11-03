@@ -12,9 +12,12 @@ import {
   parseOptionalNumber,
   parseOptionalSearch,
   parseRecipeListFilterParams,
+  parseSearchQuery,
   parseSort,
   parseSortDir,
   parseStatusFilter,
+  titleOrDescriptionSearchFilterSql,
+  titleSearchFilterSql,
 } from './listFilterParams.js';
 
 describe('listFilterParams parsers', () => {
@@ -22,6 +25,28 @@ describe('listFilterParams parsers', () => {
     expect(parseOptionalSearch('  pasta  ')).toBe('pasta');
     expect(parseOptionalSearch('   ')).toBeNull();
     expect(parseOptionalSearch(1)).toBeNull();
+  });
+
+  test('parseSearchQuery collapses irregular whitespace to single spaces (#385)', () => {
+    expect(parseSearchQuery('First   Soup')).toBe('First Soup');
+    expect(parseSearchQuery('First\tSoup')).toBe('First Soup');
+    // Non-breaking spaces (e.g. pasted search text) separate words too.
+    expect(parseSearchQuery('First\u00A0Soup')).toBe('First Soup');
+    expect(parseSearchQuery('   ')).toBeNull();
+    expect(parseSearchQuery(1)).toBeNull();
+  });
+
+  test('ingredient parsing keeps internal whitespace verbatim', () => {
+    // The ingredient filter phrase-matches stored ingredient names, so
+    // collapsing their whitespace would break searches for a stored
+    // name that itself contains irregular spacing.
+    expect(
+      parseRecipeListFilterParams({query: {ingredient: 'peanut  butter'}})
+        .ingredient,
+    ).toBe('peanut  butter');
+    expect(
+      parseRecipeListFilterParams({query: {search: 'First   Soup'}}).search,
+    ).toBe('First Soup');
   });
 
   test('parseLimit and parseOffset clamp invalid values', () => {
@@ -102,6 +127,45 @@ describe('parseRecipeListFilterParams', () => {
       sort: 'calories',
       sortDir: 'asc',
     });
+  });
+});
+
+// A search word with the ILIKE metacharacters escaped (backslash,
+// then %, then _), as the helpers embed it: words match literally, so
+// "50%" does not match "50g" and "a_b" does not match "axb".
+const escapedSearchTokenSql =
+  "replace(replace(replace(search_token.token, '\\', '\\\\'), '%', '\\%'), '_', '\\_')";
+
+describe('title search sql (#385)', () => {
+  test('matches every search word as a title substring, not a phrase or prefix', () => {
+    const sql = titleSearchFilterSql(4);
+    // The search bind keeps its position and may be null (no search).
+    expect(sql).toContain('$4::text is null');
+    // Words come from splitting the one search value on whitespace…
+    expect(sql).toContain("regexp_split_to_array($4, '\\s+')");
+    // …and a title matches only when NO word is absent from it: each
+    // word is a case-insensitive substring check against the title, so
+    // "First" and "First Soup" both match "QA — First Soup" (a word in
+    // the middle of the title, not only a title prefix or a contiguous
+    // phrase).
+    expect(sql).toContain('not exists');
+    expect(sql).toContain(
+      `rv.title not ilike '%' || ${escapedSearchTokenSql} || '%'`,
+    );
+    // The old single-phrase match against the raw search value is gone.
+    expect(sql).not.toContain("rv.title ilike '%' || $4 || '%'");
+  });
+
+  test('public variant lets each word match the title or the description', () => {
+    const sql = titleOrDescriptionSearchFilterSql(3);
+    expect(sql).toContain('$3::text is null');
+    expect(sql).toContain("regexp_split_to_array($3, '\\s+')");
+    expect(sql).toContain(
+      `rv.title not ilike '%' || ${escapedSearchTokenSql} || '%'`,
+    );
+    expect(sql).toContain(
+      `coalesce(rv.description, '') not ilike '%' || ${escapedSearchTokenSql} || '%'`,
+    );
   });
 });
 
