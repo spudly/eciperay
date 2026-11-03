@@ -17,8 +17,26 @@ const mealRecipeSchema = z.object({
     .describe('Servings of the recipe in the meal (defaults to the recipe’s)'),
 });
 
+/**
+ * A meal's member recipes. Duplicate recipeIds are rejected before any API
+ * call: the server's full-replace meal writes are not transactional, so a
+ * duplicate would fail mid-write and could lose the stored member list (on
+ * update) or leave a partially created meal (on create).
+ */
+const mealRecipeListSchema = z
+  .array(mealRecipeSchema)
+  .refine(
+    recipes =>
+      new Set(recipes.map(recipe => recipe.recipeId.toLowerCase())).size ===
+      recipes.length,
+    {
+      message:
+        'recipes must not contain the same recipeId more than once; combine the servings into a single entry instead',
+    },
+  );
+
 const mealPlanEntrySchema = z.union([
-  z.object({
+  z.strictObject({
     mealId: z.uuid().describe('Meal id, from list_meals'),
     quantity: z
       .number()
@@ -27,7 +45,7 @@ const mealPlanEntrySchema = z.union([
       .optional()
       .describe('How many times the meal appears (default 1)'),
   }),
-  z.object({
+  z.strictObject({
     recipeId: z.uuid().describe('Recipe id, from search_recipes'),
     servings: z
       .number()
@@ -318,8 +336,7 @@ export const registerTools = (
           .nullable()
           .optional()
           .describe('Notes for the meal'),
-        recipes: z
-          .array(mealRecipeSchema)
+        recipes: mealRecipeListSchema
           .min(1)
           .describe('Member recipes, in order'),
       },
@@ -349,8 +366,7 @@ export const registerTools = (
           .nullable()
           .optional()
           .describe('Notes for the meal, or null to clear them'),
-        recipes: z
-          .array(mealRecipeSchema)
+        recipes: mealRecipeListSchema
           .min(1)
           .optional()
           .describe('Member recipes, in order (replaces the stored list)'),

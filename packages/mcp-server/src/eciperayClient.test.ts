@@ -507,6 +507,51 @@ describe('client meal writes', () => {
     ]);
   });
 
+  test('concurrent addRecipeToMeal calls are serialized so both additions survive', async () => {
+    let state = structuredClone(storedMeal);
+    globalThis.fetch = (async (_url: string | URL, init?: RequestInit) => {
+      if (init?.method === 'PUT') {
+        const body = JSON.parse(String(init.body)) as {
+          title: string;
+          notes: string | null;
+          recipes: {recipeId: string; servings?: number}[];
+        };
+        state = {
+          ...state,
+          title: body.title,
+          members: body.recipes.map((recipe, index) => ({
+            recipeId: recipe.recipeId,
+            sortOrder: index,
+            servings: recipe.servings ?? 1,
+          })),
+        };
+        return {
+          ok: true,
+          status: 200,
+          text: async () => JSON.stringify(state),
+          json: async () => state,
+        } as Response;
+      }
+      const snapshot = structuredClone(state);
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify(snapshot),
+        json: async () => snapshot,
+      } as Response;
+    }) as typeof fetch;
+
+    const c = client();
+    await Promise.all([
+      c.addRecipeToMeal('meal-1', {recipeId: 'recipe-3', servings: 3}),
+      c.addRecipeToMeal('meal-1', {recipeId: 'recipe-4', servings: 1}),
+    ]);
+    assert.deepEqual(
+      state.members.map(member => member.recipeId),
+      ['recipe-2', 'recipe-1', 'recipe-3', 'recipe-4'],
+    );
+  });
+
   test('removeRecipeFromMeal PUTs the meal without that recipe', async () => {
     const calls = stubFetch(() => ({status: 200, body: storedMeal}));
     await client().removeRecipeFromMeal('meal-1', 'recipe-2');
@@ -599,6 +644,67 @@ describe('client meal plan writes', () => {
     assert.deepEqual(putBodies(calls)[0]?.['entries'], [
       {mealId: 'meal-1', quantity: 2},
       {recipeId: 'recipe-9', servings: 6, quantity: 3},
+    ]);
+  });
+
+  test('concurrent addMealPlanEntry calls are serialized so both additions survive', async () => {
+    const putEntryLists: string[][] = [];
+    let state = structuredClone(storedPlan);
+    globalThis.fetch = (async (_url: string | URL, init?: RequestInit) => {
+      if (init?.method === 'PUT') {
+        const body = JSON.parse(String(init.body)) as {
+          entries: {mealId?: string; recipeId?: string}[];
+        };
+        putEntryLists.push(
+          body.entries.map(entry => entry.mealId ?? entry.recipeId ?? '?'),
+        );
+        state = {
+          ...state,
+          entries: body.entries.map((entry, index) =>
+            entry.mealId !== undefined
+              ? {
+                  type: 'meal' as const,
+                  id: `entry-${entry.mealId}`,
+                  mealId: entry.mealId,
+                  sortOrder: index,
+                  quantity: 1,
+                }
+              : {
+                  type: 'recipe' as const,
+                  id: `entry-${entry.recipeId}`,
+                  recipeId: entry.recipeId ?? '',
+                  sortOrder: index,
+                  quantity: 1,
+                  servings: 1,
+                },
+          ),
+        };
+        return {
+          ok: true,
+          status: 200,
+          text: async () => JSON.stringify(state),
+          json: async () => state,
+        } as Response;
+      }
+      const snapshot = structuredClone(state);
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify(snapshot),
+        json: async () => snapshot,
+      } as Response;
+    }) as typeof fetch;
+
+    const c = client();
+    await Promise.all([
+      c.addMealPlanEntry('plan-1', {mealId: 'meal-2'}),
+      c.addMealPlanEntry('plan-1', {mealId: 'meal-3'}),
+    ]);
+    assert.deepEqual(putEntryLists.at(-1), [
+      'meal-1',
+      'recipe-9',
+      'meal-2',
+      'meal-3',
     ]);
   });
 

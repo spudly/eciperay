@@ -252,6 +252,106 @@ describe('meal and meal plan write tools', () => {
     await client.close();
   });
 
+  test('create_meal with a duplicate recipeId is an error and writes nothing', async () => {
+    let fetchCalls = 0;
+    globalThis.fetch = (async () => {
+      fetchCalls += 1;
+      return {
+        ok: true,
+        status: 200,
+        text: async () => '{}',
+        json: async () => ({}),
+      } as Response;
+    }) as typeof fetch;
+
+    const client = await connectClient();
+    const result = await client.callTool({
+      name: 'create_meal',
+      arguments: {
+        title: 'Taco Night',
+        recipes: [{recipeId: RECIPE_UUID}, {recipeId: RECIPE_UUID}],
+      },
+    });
+    assert.equal(result.isError, true);
+    assert.equal(fetchCalls, 0);
+    await client.close();
+  });
+
+  test('update_meal with a duplicate recipeId is an error and writes nothing', async () => {
+    let fetchCalls = 0;
+    globalThis.fetch = (async () => {
+      fetchCalls += 1;
+      return {
+        ok: true,
+        status: 200,
+        text: async () => '{}',
+        json: async () => ({}),
+      } as Response;
+    }) as typeof fetch;
+
+    const client = await connectClient();
+    const result = await client.callTool({
+      name: 'update_meal',
+      arguments: {
+        id: 'meal-1',
+        recipes: [
+          {recipeId: RECIPE_UUID, servings: 2},
+          {recipeId: RECIPE_UUID, servings: 4},
+        ],
+      },
+    });
+    assert.equal(result.isError, true);
+    assert.equal(fetchCalls, 0);
+    await client.close();
+  });
+
+  test('create_meal_plan with an entry carrying both mealId and recipeId is an error and writes nothing', async () => {
+    let fetchCalls = 0;
+    globalThis.fetch = (async () => {
+      fetchCalls += 1;
+      return {
+        ok: true,
+        status: 200,
+        text: async () => '{}',
+        json: async () => ({}),
+      } as Response;
+    }) as typeof fetch;
+
+    const client = await connectClient();
+    const result = await client.callTool({
+      name: 'create_meal_plan',
+      arguments: {
+        title: 'Week 1',
+        entries: [{mealId: MEAL_UUID, recipeId: RECIPE_UUID}],
+      },
+    });
+    assert.equal(result.isError, true);
+    assert.equal(fetchCalls, 0);
+    await client.close();
+  });
+
+  test('create_meal_plan with servings on a meal entry is an error and writes nothing', async () => {
+    let fetchCalls = 0;
+    globalThis.fetch = (async () => {
+      fetchCalls += 1;
+      return {
+        ok: true,
+        status: 200,
+        text: async () => '{}',
+        json: async () => ({}),
+      } as Response;
+    }) as typeof fetch;
+
+    const client = await connectClient();
+    const result = await client.callTool({
+      name: 'create_meal_plan',
+      arguments: {title: 'Week 1', entries: [{mealId: MEAL_UUID, servings: 4}]},
+    });
+    assert.equal(result.isError, true);
+    assert.equal(fetchCalls, 0);
+    await client.close();
+  });
+
   test('add_meal_plan_entry with both mealId and recipeId is an error and writes nothing', async () => {
     let fetchCalls = 0;
     globalThis.fetch = (async () => {

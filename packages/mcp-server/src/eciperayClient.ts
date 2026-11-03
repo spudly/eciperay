@@ -48,7 +48,46 @@ export const createClient = (config: EciperayClientConfig) => {
     return (await res.json()) as T;
   };
 
-  return {
+  /**
+   * Serialize a read-merge-PUT sequence per resource. The meal and meal-plan
+   * endpoints only offer full-replace PUTs, so two mutations of the same record
+   * that both read before either writes would silently lose one change — and an
+   * MCP caller can trigger exactly that by issuing tool calls in parallel.
+   * Chaining each mutation of a resource behind the previous one makes every
+   * read observe the previous write. Mutations of different resources still run
+   * concurrently.
+   */
+  const resourceLocks = new Map<string, Promise<void>>();
+  const withResourceLock = async <T>(
+    key: string,
+    run: () => Promise<T>,
+  ): Promise<T> => {
+    const previous = resourceLocks.get(key) ?? Promise.resolve();
+    let release: () => void = () => {};
+    const current = new Promise<void>(resolve => {
+      release = resolve;
+    });
+    const chained = previous.then(() => current);
+    resourceLocks.set(key, chained);
+    await previous;
+    try {
+      return await run();
+    } finally {
+      release();
+      if (resourceLocks.get(key) === chained) {
+        resourceLocks.delete(key);
+      }
+    }
+  };
+  const withFirstArgLock =
+    <A extends unknown[], R>(
+      keyPrefix: string,
+      fn: (id: string, ...args: A) => Promise<R>,
+    ) =>
+    (id: string, ...args: A): Promise<R> =>
+      withResourceLock(`${keyPrefix}:${id}`, () => fn(id, ...args));
+
+  const api = {
     listRecipes: (params: {
       search?: string;
       limit?: number;
@@ -320,6 +359,20 @@ export const createClient = (config: EciperayClientConfig) => {
         body: JSON.stringify(mealPlanPayload(current, entries)),
       });
     },
+  };
+
+  return {
+    ...api,
+    updateMeal: withFirstArgLock('meal', api.updateMeal),
+    addRecipeToMeal: withFirstArgLock('meal', api.addRecipeToMeal),
+    removeRecipeFromMeal: withFirstArgLock('meal', api.removeRecipeFromMeal),
+    updateMealPlan: withFirstArgLock('meal-plan', api.updateMealPlan),
+    addMealPlanEntry: withFirstArgLock('meal-plan', api.addMealPlanEntry),
+    removeMealPlanEntry: withFirstArgLock('meal-plan', api.removeMealPlanEntry),
+    reorderMealPlanEntries: withFirstArgLock(
+      'meal-plan',
+      api.reorderMealPlanEntries,
+    ),
   };
 };
 
@@ -611,9 +664,7 @@ const hasMealPlanUpdateFields = (patch: MealPlanUpdatePatch): boolean =>
   MEAL_PLAN_PATCH_FIELDS.some(field => patch[field] !== undefined);
 
 /** A stored meal's members as full-replace PUT inputs, in stored order. */
-const mealRecipeInputs = (
-  meal: MealDetailForUpdate,
-): MealRecipeInput[] =>
+const mealRecipeInputs = (meal: MealDetailForUpdate): MealRecipeInput[] =>
   [...meal.members]
     .sort((a, b) => a.sortOrder - b.sortOrder)
     .map(member => ({recipeId: member.recipeId, servings: member.servings}));
