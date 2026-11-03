@@ -107,6 +107,26 @@ describe('mealPlanFormHelpers', () => {
     ]);
   });
 
+  test('dedupes entry options when a source repeats an item (#386)', () => {
+    // The meal-plan suggestion list concatenates two sources (meals +
+    // recipe search results); an item repeated in a source must appear
+    // at most once, first occurrence wins.
+    expect(
+      buildMealPlanFormEntryOptions(
+        [meal('m1', 'Dinner'), meal('m1', 'Dinner')],
+        [
+          {id: 'r1', title: 'Salad', servings: 4},
+          {id: 'r1', title: 'Salad', servings: 4},
+          {id: 'r2', title: 'Soup', servings: 2},
+        ],
+      ),
+    ).toEqual([
+      {kind: 'meal', id: 'm1', title: 'Dinner'},
+      {kind: 'recipe', id: 'r1', title: 'Salad', servings: 4},
+      {kind: 'recipe', id: 'r2', title: 'Soup', servings: 2},
+    ]);
+  });
+
   test('builds entry options from a plan detail for already-selected entries', () => {
     const plan: MealPlanDetail = {
       id: 'p1',

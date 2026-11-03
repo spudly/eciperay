@@ -227,6 +227,38 @@ describe('recipeListQuery', () => {
     );
   });
 
+  test('form picker search dedupes a recipe repeated across pages (#386)', async () => {
+    // Regression (#386): the suggestion list is assembled by concatenating
+    // every matching page, so a recipe returned on two pages (an overlap)
+    // appeared twice in the picker. First occurrence wins, order preserved.
+    const firstPage = Array.from({length: RECIPE_FORM_SEARCH_LIMIT}, (_, i) =>
+      makeListItem(`recipe-${i}`),
+    );
+    const overlapping = makeListItem('recipe-5');
+    const older = makeListItem('older-soup');
+    const list = jest
+      .fn()
+      .mockImplementation(async (params?: {offset?: number}) =>
+        params?.offset === 0 ? firstPage : [overlapping, older],
+      );
+    const options = recipeFormSearchQueryOptions(list, 'Soup');
+    const results = await options.queryFn();
+    const ids = results.map(recipe => recipe.id);
+    expect(ids).toEqual([...firstPage.map(recipe => recipe.id), 'older-soup']);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(results.filter(recipe => recipe.id === 'recipe-5')).toHaveLength(1);
+  });
+
+  test('form picker search dedupes a recipe repeated within one page (#386)', async () => {
+    const soup = makeListItem('soup-1');
+    const list = jest
+      .fn()
+      .mockResolvedValue([soup, soup, makeListItem('soup-2')]);
+    const options = recipeFormSearchQueryOptions(list, 'Soup');
+    const results = await options.queryFn();
+    expect(results.map(recipe => recipe.id)).toEqual(['soup-1', 'soup-2']);
+  });
+
   test('form picker search stops paging on an empty page (#359)', async () => {
     // A match count that is an exact multiple of the page size ends with
     // a full page; the next (empty) page is what ends the collection.
