@@ -54,13 +54,17 @@ test.describe('live meal plans', () => {
     endsOn.setDate(endsOn.getDate() + 7);
     await page.getByLabel('Starts on').fill(toDateOnly(startsOn));
     await page.getByLabel('Ends on').fill(toDateOnly(endsOn));
-    // Include the CI recipe in the plan: checking its checkbox reveals
-    // its quantity/servings steppers (Save plan stays disabled until
-    // at least one recipe is checked). Quantity is a stepper, not a
-    // text field, and it already defaults to 1 — what this spec wants.
-    await page
-      .getByRole('checkbox', {name: `Recipe · ${recipe.title}`})
-      .check();
+    // Include the CI recipe in the plan through the picker's search
+    // autocomplete (#359, @spudly/ui 2.0.0): results only appear after
+    // typing in the search field, and picking a result reveals its
+    // quantity/servings steppers (Save plan stays disabled until at
+    // least one entry is selected). The result row and the selected
+    // entry both carry the DS kind prefix ("Recipe · <title>"); the
+    // quantity stepper's label is "Quantity · <title>" with no prefix.
+    // Quantity is a stepper, not a text field, and it already defaults
+    // to 1 — what this spec wants.
+    await page.getByPlaceholder('Search meals & recipes…').fill(recipe.title);
+    await page.getByText(`Recipe · ${recipe.title}`).click();
     await expect(page.getByText(`Quantity · ${recipe.title}`)).toBeVisible();
     await page.getByRole('button', {name: 'Save plan'}).click();
 
@@ -90,9 +94,7 @@ test.describe('live meal plans', () => {
     // itself carries the checkbox semantics (role + aria-checked,
     // accessible name "CI Test Ingredient, <quantity>") — there is no
     // listitem wrapper or nested control to scope through.
-    const checkbox = page.getByRole('checkbox', {
-      name: /CI Test Ingredient/,
-    });
+    const checkbox = page.getByRole('checkbox', {name: /CI Test Ingredient/});
     await checkbox.check();
     await expect(checkbox).toBeChecked();
   });

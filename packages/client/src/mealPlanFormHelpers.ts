@@ -48,6 +48,26 @@ export const mealPlanFormDraftFromDetail = (
   };
 };
 
+/**
+ * Entry options for the entries a plan already carries, built from the plan
+ * detail itself: under the search autocomplete (#359) a selected entry need not
+ * appear in the current search results, so its view-model (title, and a
+ * recipe's own servings) must come from the plan, not from a results lookup.
+ */
+export const buildMealPlanFormEntryOptionsFromDetail = (
+  plan: MealPlanDetail,
+): MealPlanFormEntryOption[] =>
+  plan.entries.map(entry =>
+    entry.type === 'meal'
+      ? ({kind: 'meal', id: entry.mealId, title: entry.title} as const)
+      : ({
+          kind: 'recipe',
+          id: entry.recipeId,
+          title: entry.title,
+          servings: entry.recipeServings,
+        } as const),
+  );
+
 export const buildMealPlanFormEntryOptions = (
   meals: Meal[],
   recipes: MealPlanEditRecipeOption[],

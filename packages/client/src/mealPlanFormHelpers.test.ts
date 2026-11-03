@@ -2,6 +2,7 @@ import type {Meal, MealPlanDetail} from '@eciperay/types';
 
 import {
   buildMealPlanFormEntryOptions,
+  buildMealPlanFormEntryOptionsFromDetail,
   mealPlanEntryToggleResult,
   mealPlanFormDraftFromDetail,
 } from './mealPlanFormHelpers.js';
@@ -101,6 +102,57 @@ describe('mealPlanFormHelpers', () => {
         [{id: 'r1', title: 'Salad', servings: 4}],
       ),
     ).toEqual([
+      {kind: 'meal', id: 'm1', title: 'Dinner'},
+      {kind: 'recipe', id: 'r1', title: 'Salad', servings: 4},
+    ]);
+  });
+
+  test('builds entry options from a plan detail for already-selected entries', () => {
+    const plan: MealPlanDetail = {
+      id: 'p1',
+      userId: 'u1',
+      title: 'Week',
+      notes: null,
+      startsOn: null,
+      endsOn: null,
+      entryCount: 2,
+      nutrition: null,
+      goalProgress: null,
+      createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2024-01-01T00:00:00.000Z',
+      entries: [
+        {
+          type: 'meal',
+          id: 'e1',
+          mealId: 'm1',
+          sortOrder: 0,
+          quantity: 2,
+          title: 'Dinner',
+          memberCount: 1,
+          nutrition: null,
+        },
+        {
+          type: 'recipe',
+          id: 'e2',
+          recipeId: 'r1',
+          sortOrder: 1,
+          quantity: 1,
+          servings: 3,
+          title: 'Salad',
+          imageUrl: null,
+          recipeServings: 4,
+          accessLost: false,
+          nutrition: null,
+          satietyScore: null,
+          nutritionStatus: null,
+          calories: null,
+          proteinG: null,
+        },
+      ],
+    };
+    // A recipe entry's option servings are the recipe's own servings
+    // (recipeServings), not the plan entry's servings override.
+    expect(buildMealPlanFormEntryOptionsFromDetail(plan)).toEqual([
       {kind: 'meal', id: 'm1', title: 'Dinner'},
       {kind: 'recipe', id: 'r1', title: 'Salad', servings: 4},
     ]);

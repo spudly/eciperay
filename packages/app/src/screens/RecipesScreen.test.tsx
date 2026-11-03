@@ -50,7 +50,7 @@ describe('RecipesScreen', () => {
     // (hasNextPage crashed reading .length of undefined pages).
     mockList.mockResolvedValue([makeRecipeDetail({title: 'Pasta'})]);
     const client = makeQueryClient();
-    client.setQueryData(queryKeys.recipeFormOptions(), [
+    client.setQueryData(queryKeys.recipeFormSearch('picker'), [
       makeRecipeDetail({title: 'PickerCached'}),
     ]);
     const {findByLabelText} = await renderWithProviders(

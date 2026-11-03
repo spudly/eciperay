@@ -42,8 +42,10 @@ const buildPublicRecipePath = (
 
 /* eslint-disable max-lines-per-function -- API method map */
 export const createRecipesApi = (client: ApiClient) => ({
-  list: (params?: RecipeListParams) =>
-    client.fetch<RecipeDetail[]>(buildListUrl(params)),
+  list: (params?: RecipeListParams, signal?: AbortSignal) =>
+    signal
+      ? client.fetch<RecipeDetail[]>(buildListUrl(params), {signal})
+      : client.fetch<RecipeDetail[]>(buildListUrl(params)),
   listSharedWithMe: (params?: RecipeListParams) =>
     client.fetch<RecipeDetail[]>(buildSharedWithMeUrl(params)),
   listAll: () => fetchAllRecipePages(client),
