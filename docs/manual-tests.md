@@ -607,6 +607,7 @@ account (viewer); one QA recipe.
 
 **Run when:** `packages/app/src/screens/SharedWithMeScreen.tsx`,
 `packages/app/src/hosts/{shared,recipe/RecipeVisibilityControls}*`,
+`packages/web/src/components/recipe/RecipeVisibilityControls.tsx`,
 `packages/web/src/pages/{SharedWithMe,Discover,PublicRecipe}Page.tsx`,
 `packages/web/src/components/shared/**`, `@spudly/ui` `DiscoverPage`,
 `PublicRecipePage`, `PublicPageFrame`, `packages/server` sharing/visibility
@@ -685,8 +686,11 @@ plan-state rendering and section layout. The cases below are manual._
 **Run when:** `packages/app/src/screens/ProfileScreen.tsx`,
 `packages/app/src/hosts/profile/**`, `packages/web/src/pages/ProfilePage.tsx`,
 `packages/web/src/components/profile/**`,
-`packages/web/src/components/FeedbackBubble.tsx`, `packages/server`
-profile/token/transfer routes, entitlement override handling.
+`packages/web/src/components/FeedbackBubble.tsx`,
+`packages/web/src/components/FeedbackForm.tsx`,
+`packages/web/src/index.css` (the `.feedback-panel` sizing),
+`packages/server` profile/token/transfer routes, entitlement override
+handling.
 
 ---
 

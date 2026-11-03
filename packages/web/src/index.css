@@ -67,6 +67,12 @@ textarea {
   resize: vertical;
 }
 
+/* Tailwind's preflight set the root line height to 1.5; text without
+   an explicit line height (DS Text sets its own) keeps that spacing. */
+html {
+  line-height: 1.5;
+}
+
 body {
   margin: 0;
   font-family: var(--font-sans);

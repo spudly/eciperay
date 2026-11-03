@@ -40,9 +40,14 @@ describe('AnalyticsConsentBanner', () => {
   test('accepts analytics consent and enables PostHog', async () => {
     await renderWithProviders(<AnalyticsConsentBanner />, {withAuth: true});
 
-    expect(
-      screen.getByRole('dialog', {name: /cookie and analytics consent/i}),
-    ).toBeInTheDocument();
+    const dialog = screen.getByRole('dialog', {
+      name: /cookie and analytics consent/i,
+    });
+    expect(dialog).toBeInTheDocument();
+    // The host wrapper pins the banner to the viewport's bottom edge
+    // (the DS bar positions absolute; design-system#405)...
+    expect(dialog.style.position).toBe('fixed');
+    expect(dialog.style.bottom).toBe('0px');
     await userEvent.click(screen.getByText('Accept'));
     expect(mockEnablePostHog).toHaveBeenCalled();
     expect(localStorage.getItem('eciperay.analyticsConsent')).toBe('accepted');

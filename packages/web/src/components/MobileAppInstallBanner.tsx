@@ -26,11 +26,23 @@ export const MobileAppInstallBanner = () => {
   // role/label, so the prompt's region semantics stay with the host
   // wrapper — the same web-only ariaLabel/role contract the retired
   // local adapter implemented from @eciperay/client's
-  // FixedActionBannerProps.
+  // FixedActionBannerProps. The wrapper also pins the banner to the
+  // viewport: the DS bar positions itself absolute
+  // (design-system#405), while the retired local banner was
+  // position:fixed — this fixed wrapper becomes the bar's containing
+  // block and restores the viewport-pinned behavior (and the old
+  // zIndex 50) until the DS pins fixed itself.
   return (
     <div
       role="region"
       aria-label="Mobile app install prompt"
+      style={{
+        position: 'fixed',
+        left: 0,
+        right: 0,
+        top: 0,
+        zIndex: 50,
+      }}
     >
       <FixedActionBanner
         position="top"
