@@ -90,6 +90,23 @@ describe('POST /recipes/import/url', () => {
     expect(res.body.userId).toBe('user-uuid-1');
   });
 
+  test('retries with browser headers when the site refuses the bot agent (#400)', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    nock('https://recipe.example.com')
+      .get('/blocked')
+      .reply(403, 'Forbidden')
+      .get('/blocked')
+      .matchHeader('user-agent', /Mozilla/)
+      .reply(200, SCHEMA_ORG_HTML);
+    mockSaveFlow();
+    const res = await request(getApp())
+      .post('/api/recipes/import/url')
+      .set('Authorization', 'Bearer valid-token')
+      .send({url: 'https://recipe.example.com/blocked'});
+    expect(res.status).toBe(201);
+    expect(res.body.title).toBe('Pasta');
+  });
+
   test('falls back to Claude when no schema.org Recipe found', async () => {
     nockSupabaseGetUser('user-uuid-1');
     nock('https://recipe.example.com').get('/plain').reply(200, PLAIN_HTML);
