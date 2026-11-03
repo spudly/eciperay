@@ -7,12 +7,18 @@ const textResult = (data: unknown) => ({
   content: [{type: 'text' as const, text: JSON.stringify(data, null, 2)}],
 });
 
+/**
+ * Servings and quantity land in PostgreSQL `integer` columns. Values beyond
+ * that range pass a plain int/positive check but fail at insert time — and the
+ * server's meal/plan replacement writes delete the stored rows before
+ * inserting, without a transaction, so an out-of-range value could erase stored
+ * entries. Reject it here, before any API call.
+ */
+const pgIntSchema = z.number().int().positive().max(2_147_483_647);
+
 const mealRecipeSchema = z.object({
   recipeId: z.uuid().describe('Recipe id, from search_recipes'),
-  servings: z
-    .number()
-    .int()
-    .positive()
+  servings: pgIntSchema
     .optional()
     .describe('Servings of the recipe in the meal (defaults to the recipe’s)'),
 });
@@ -38,25 +44,16 @@ const mealRecipeListSchema = z
 const mealPlanEntrySchema = z.union([
   z.strictObject({
     mealId: z.uuid().describe('Meal id, from list_meals'),
-    quantity: z
-      .number()
-      .int()
-      .positive()
+    quantity: pgIntSchema
       .optional()
       .describe('How many times the meal appears (default 1)'),
   }),
   z.strictObject({
     recipeId: z.uuid().describe('Recipe id, from search_recipes'),
-    servings: z
-      .number()
-      .int()
-      .positive()
+    servings: pgIntSchema
       .optional()
       .describe('Servings of the recipe (defaults to the recipe’s)'),
-    quantity: z
-      .number()
-      .int()
-      .positive()
+    quantity: pgIntSchema
       .optional()
       .describe('How many times the recipe appears (default 1)'),
   }),
@@ -395,10 +392,7 @@ export const registerTools = (
       inputSchema: {
         mealId: z.string().describe('Meal id, from list_meals'),
         recipeId: z.uuid().describe('Recipe id, from search_recipes'),
-        servings: z
-          .number()
-          .int()
-          .positive()
+        servings: pgIntSchema
           .optional()
           .describe('Servings of the recipe in the meal'),
       },
@@ -533,16 +527,10 @@ export const registerTools = (
           .describe(
             'Recipe id, from search_recipes (mutually exclusive with mealId)',
           ),
-        servings: z
-          .number()
-          .int()
-          .positive()
+        servings: pgIntSchema
           .optional()
           .describe('Servings of the recipe (recipe entries only)'),
-        quantity: z
-          .number()
-          .int()
-          .positive()
+        quantity: pgIntSchema
           .optional()
           .describe('How many times the entry appears (default 1)'),
       },

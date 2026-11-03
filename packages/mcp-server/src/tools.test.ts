@@ -305,6 +305,40 @@ describe('meal and meal plan write tools', () => {
     await client.close();
   });
 
+  test('servings beyond the PostgreSQL integer range are an error and write nothing', async () => {
+    let fetchCalls = 0;
+    globalThis.fetch = (async () => {
+      fetchCalls += 1;
+      return {
+        ok: true,
+        status: 200,
+        text: async () => '{}',
+        json: async () => ({}),
+      } as Response;
+    }) as typeof fetch;
+
+    const client = await connectClient();
+    const created = await client.callTool({
+      name: 'create_meal',
+      arguments: {
+        title: 'Taco Night',
+        recipes: [{recipeId: RECIPE_UUID, servings: 2_147_483_648}],
+      },
+    });
+    assert.equal(created.isError, true);
+    const added = await client.callTool({
+      name: 'add_recipe_to_meal',
+      arguments: {
+        mealId: MEAL_UUID,
+        recipeId: RECIPE_UUID,
+        servings: 2_147_483_648,
+      },
+    });
+    assert.equal(added.isError, true);
+    assert.equal(fetchCalls, 0);
+    await client.close();
+  });
+
   test('create_meal_plan with an entry carrying both mealId and recipeId is an error and writes nothing', async () => {
     let fetchCalls = 0;
     globalThis.fetch = (async () => {
