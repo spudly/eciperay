@@ -552,9 +552,77 @@ describe('client meal writes', () => {
     );
   });
 
+  test('addRecipeToMeal matches an existing member when the id case differs', async () => {
+    const calls = stubFetch(() => ({status: 200, body: storedMeal}));
+    await client().addRecipeToMeal('meal-1', {
+      recipeId: 'RECIPE-1',
+      servings: 8,
+    });
+    assert.deepEqual(putBodies(calls)[0]?.['recipes'], [
+      {recipeId: 'recipe-2', servings: 2},
+      {recipeId: 'recipe-1', servings: 8},
+    ]);
+  });
+
+  test('concurrent calls from separate client instances are serialized so both additions survive', async () => {
+    let state = structuredClone(storedMeal);
+    globalThis.fetch = (async (_url: string | URL, init?: RequestInit) => {
+      if (init?.method === 'PUT') {
+        const body = JSON.parse(String(init.body)) as {
+          title: string;
+          notes: string | null;
+          recipes: {recipeId: string; servings?: number}[];
+        };
+        state = {
+          ...state,
+          title: body.title,
+          members: body.recipes.map((recipe, index) => ({
+            recipeId: recipe.recipeId,
+            sortOrder: index,
+            servings: recipe.servings ?? 1,
+          })),
+        };
+        return {
+          ok: true,
+          status: 200,
+          text: async () => JSON.stringify(state),
+          json: async () => state,
+        } as Response;
+      }
+      const snapshot = structuredClone(state);
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify(snapshot),
+        json: async () => snapshot,
+      } as Response;
+    }) as typeof fetch;
+
+    // The HTTP transport creates a fresh client per request; two instances
+    // with the same account must still serialize against each other.
+    const first = client();
+    const second = client();
+    await Promise.all([
+      first.addRecipeToMeal('meal-1', {recipeId: 'recipe-3', servings: 3}),
+      second.addRecipeToMeal('meal-1', {recipeId: 'recipe-4', servings: 1}),
+    ]);
+    assert.deepEqual(
+      state.members.map(member => member.recipeId),
+      ['recipe-2', 'recipe-1', 'recipe-3', 'recipe-4'],
+    );
+  });
+
   test('removeRecipeFromMeal PUTs the meal without that recipe', async () => {
     const calls = stubFetch(() => ({status: 200, body: storedMeal}));
     await client().removeRecipeFromMeal('meal-1', 'recipe-2');
+    assert.deepEqual(putBodies(calls)[0]?.['recipes'], [
+      {recipeId: 'recipe-1', servings: 4},
+    ]);
+  });
+
+  test('removeRecipeFromMeal matches the member when the id case differs', async () => {
+    const calls = stubFetch(() => ({status: 200, body: storedMeal}));
+    await client().removeRecipeFromMeal('meal-1', 'RECIPE-2');
     assert.deepEqual(putBodies(calls)[0]?.['recipes'], [
       {recipeId: 'recipe-1', servings: 4},
     ]);
@@ -705,6 +773,18 @@ describe('client meal plan writes', () => {
       'recipe-9',
       'meal-2',
       'meal-3',
+    ]);
+  });
+
+  test('addMealPlanEntry matches an existing entry when the id case differs', async () => {
+    const calls = stubFetch(() => ({status: 200, body: storedPlan}));
+    await client().addMealPlanEntry('plan-1', {
+      recipeId: 'RECIPE-9',
+      quantity: 3,
+    });
+    assert.deepEqual(putBodies(calls)[0]?.['entries'], [
+      {mealId: 'meal-1', quantity: 2},
+      {recipeId: 'recipe-9', servings: 6, quantity: 3},
     ]);
   });
 

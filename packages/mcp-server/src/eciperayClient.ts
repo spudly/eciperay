@@ -6,6 +6,8 @@
  * and ECIPERAY_API_TOKEN.
  */
 
+import {createHash} from 'node:crypto';
+
 export type EciperayClientConfig = {apiUrl: string; apiToken: string};
 
 export const loadConfig = (): EciperayClientConfig => {
@@ -28,6 +30,45 @@ export class EciperayApiError extends Error {
     this.status = status;
   }
 }
+
+/**
+ * Process-wide registry of in-flight read-merge-PUT sequences, keyed by account
+ * scope + resource. Shared across every client created in this process so the
+ * HTTP transport's per-request clients still serialize against each other.
+ */
+const sharedResourceLocks = new Map<string, Promise<void>>();
+
+const withSharedResourceLock = async <T>(
+  key: string,
+  run: () => Promise<T>,
+): Promise<T> => {
+  const previous = sharedResourceLocks.get(key) ?? Promise.resolve();
+  let release: () => void = () => {};
+  const current = new Promise<void>(resolve => {
+    release = resolve;
+  });
+  const chained = previous.then(() => current);
+  sharedResourceLocks.set(key, chained);
+  await previous;
+  try {
+    return await run();
+  } finally {
+    release();
+    if (sharedResourceLocks.get(key) === chained) {
+      sharedResourceLocks.delete(key);
+    }
+  }
+};
+
+/**
+ * Ids are UUIDs: PostgreSQL returns them lowercase, but a caller may supply the
+ * same id with uppercase hex (z.uuid() accepts both). All id comparisons and
+ * lock keys go through this normalization so case never changes meaning.
+ */
+const normalizeId = (id: string): string => id.toLowerCase();
+
+const sameId = (a: string, b: string): boolean =>
+  normalizeId(a) === normalizeId(b);
 
 export const createClient = (config: EciperayClientConfig) => {
   const request = async <T>(path: string, init?: RequestInit): Promise<T> => {
@@ -56,36 +97,31 @@ export const createClient = (config: EciperayClientConfig) => {
    * Chaining each mutation of a resource behind the previous one makes every
    * read observe the previous write. Mutations of different resources still run
    * concurrently.
+   *
+   * The lock registry is process-wide (see `sharedResourceLocks` above), not
+   * per client: the HTTP transport creates a fresh server and client for every
+   * POST, so a per-client map would never serialize two remote calls. The lock
+   * key is scoped by API URL and a hash of the caller's token, so different
+   * accounts never block each other. Serialization across processes (and
+   * against other clients such as the web app) still needs API-side conditional
+   * writes — tracked in #384.
    */
-  const resourceLocks = new Map<string, Promise<void>>();
+  const lockScope = `${config.apiUrl}#${createHash('sha256')
+    .update(config.apiToken)
+    .digest('hex')}`;
   const withResourceLock = async <T>(
     key: string,
     run: () => Promise<T>,
-  ): Promise<T> => {
-    const previous = resourceLocks.get(key) ?? Promise.resolve();
-    let release: () => void = () => {};
-    const current = new Promise<void>(resolve => {
-      release = resolve;
-    });
-    const chained = previous.then(() => current);
-    resourceLocks.set(key, chained);
-    await previous;
-    try {
-      return await run();
-    } finally {
-      release();
-      if (resourceLocks.get(key) === chained) {
-        resourceLocks.delete(key);
-      }
-    }
-  };
+  ): Promise<T> => withSharedResourceLock(`${lockScope}:${key}`, run);
   const withFirstArgLock =
     <A extends unknown[], R>(
       keyPrefix: string,
       fn: (id: string, ...args: A) => Promise<R>,
     ) =>
     (id: string, ...args: A): Promise<R> =>
-      withResourceLock(`${keyPrefix}:${id}`, () => fn(id, ...args));
+      withResourceLock(`${keyPrefix}:${normalizeId(id)}`, () =>
+        fn(id, ...args),
+      );
 
   const api = {
     listRecipes: (params: {
@@ -207,8 +243,8 @@ export const createClient = (config: EciperayClientConfig) => {
       const path = `/meals/${encodeURIComponent(mealId)}`;
       const current = await request<MealDetailForUpdate>(path);
       const recipes = mealRecipeInputs(current);
-      const existing = recipes.find(
-        member => member.recipeId === recipe.recipeId,
+      const existing = recipes.find(member =>
+        sameId(member.recipeId, recipe.recipeId),
       );
       if (existing) {
         if (recipe.servings !== undefined) {
@@ -230,7 +266,7 @@ export const createClient = (config: EciperayClientConfig) => {
       const path = `/meals/${encodeURIComponent(mealId)}`;
       const current = await request<MealDetailForUpdate>(path);
       const recipes = mealRecipeInputs(current);
-      if (!recipes.some(member => member.recipeId === recipeId)) {
+      if (!recipes.some(member => sameId(member.recipeId, recipeId))) {
         throw new Error(
           `remove_recipe_from_meal: recipe ${recipeId} is not a member of meal ${mealId}; nothing was changed.`,
         );
@@ -245,7 +281,7 @@ export const createClient = (config: EciperayClientConfig) => {
         body: JSON.stringify({
           title: current.title,
           notes: current.notes,
-          recipes: recipes.filter(member => member.recipeId !== recipeId),
+          recipes: recipes.filter(member => !sameId(member.recipeId, recipeId)),
         }),
       });
     },
@@ -311,7 +347,7 @@ export const createClient = (config: EciperayClientConfig) => {
     removeMealPlanEntry: async (mealPlanId: string, entryId: string) => {
       const path = `/meal-plans/${encodeURIComponent(mealPlanId)}`;
       const current = await request<MealPlanDetailForUpdate>(path);
-      if (!current.entries.some(entry => entry.id === entryId)) {
+      if (!current.entries.some(entry => sameId(entry.id, entryId))) {
         throw new Error(
           `remove_meal_plan_entry: entry ${entryId} is not part of meal plan ${mealPlanId}; nothing was changed.`,
         );
@@ -323,7 +359,7 @@ export const createClient = (config: EciperayClientConfig) => {
       }
       const entries = [...current.entries]
         .sort((a, b) => a.sortOrder - b.sortOrder)
-        .filter(entry => entry.id !== entryId)
+        .filter(entry => !sameId(entry.id, entryId))
         .map(mealPlanEntryInput);
       return request<unknown>(path, {
         method: 'PUT',
@@ -338,20 +374,24 @@ export const createClient = (config: EciperayClientConfig) => {
     reorderMealPlanEntries: async (mealPlanId: string, entryIds: string[]) => {
       const path = `/meal-plans/${encodeURIComponent(mealPlanId)}`;
       const current = await request<MealPlanDetailForUpdate>(path);
-      const currentIds = current.entries.map(entry => entry.id);
+      const currentIds = current.entries.map(entry => normalizeId(entry.id));
+      const requestedIds = entryIds.map(normalizeId);
       const isPermutation =
-        entryIds.length === currentIds.length &&
-        new Set(entryIds).size === entryIds.length &&
-        currentIds.every(id => entryIds.includes(id));
+        requestedIds.length === currentIds.length &&
+        new Set(requestedIds).size === requestedIds.length &&
+        currentIds.every(id => requestedIds.includes(id));
       if (!isPermutation) {
         throw new Error(
           'reorder_meal_plan_entries: entryIds must list every entry of the plan exactly once (use the entry ids from get_meal_plan); nothing was changed.',
         );
       }
       const byId = new Map(
-        current.entries.map(entry => [entry.id, mealPlanEntryInput(entry)]),
+        current.entries.map(entry => [
+          normalizeId(entry.id),
+          mealPlanEntryInput(entry),
+        ]),
       );
-      const entries = entryIds
+      const entries = requestedIds
         .map(id => byId.get(id))
         .filter(entry => entry !== undefined);
       return request<unknown>(path, {
@@ -748,7 +788,7 @@ const mealPlanEntriesMatch = (
   a: MealPlanEntryInput,
   b: MealPlanEntryInput,
 ): boolean =>
-  ('mealId' in a && 'mealId' in b && a.mealId === b.mealId) ||
-  ('recipeId' in a && 'recipeId' in b && a.recipeId === b.recipeId);
+  ('mealId' in a && 'mealId' in b && sameId(a.mealId, b.mealId)) ||
+  ('recipeId' in a && 'recipeId' in b && sameId(a.recipeId, b.recipeId));
 
 export type EciperayClient = ReturnType<typeof createClient>;
