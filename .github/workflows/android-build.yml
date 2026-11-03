@@ -12,6 +12,14 @@ name: Android Build
 # back to the debug signing config when no keystore env is present, so no
 # signing secrets are needed on PRs.
 #
+# Since 2026-11-02 the build runs ONLY on release PRs (head branch
+# changeset-release/*) instead of on every PR that touches app-affecting
+# paths: the ~12-minute build was the long pole of the PR review loop,
+# and the release PR is where a native build is needed before publish.
+# The accepted tradeoff: a native-only break (e.g. a Metro module
+# resolution failure) now surfaces on the release PR rather than on the
+# PR that caused it.
+#
 # Phase 2 (emulator use-case tests) is tracked in #183 and is not part of
 # this job yet.
 #
@@ -40,55 +48,33 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  # The path filter that used to sit on the workflow trigger lives in
-  # this job instead. A workflow-level `paths:` filter means the
-  # workflow never runs on PRs that don't touch Android inputs, so the
-  # build check never reports — and a required check that never
-  # reports blocks merges. Detecting the paths in a job lets the build
-  # report "skipped" and the android-gate below report on every PR.
+  # The release-PR test lives in this job instead of on the workflow
+  # trigger. A workflow-level filter means the workflow never runs on
+  # ordinary PRs, so the build check never reports — and a required
+  # check that never reports blocks merges. Detecting the branch in a
+  # job lets the build report "skipped" and the android-gate below
+  # report on every PR.
   #
-  # The heavy build runs only when a PR touches paths that can affect
-  # the Android app: packages/app/** (which contains the app itself
-  # plus app.json, the metro/babel configs, react-native.config.cjs
-  # and android/**), packages/client/** and
-  # packages/types/** (workspace packages the app imports at runtime,
-  # so Metro bundles them into the app), the root package.json and
-  # package-lock.json (dependency and script changes reach the app
-  # bundle), patches/ (patch-package patches apply at install), and
-  # .github/ (this workflow and the shared CI actions it uses).
+  # The heavy build runs only on release PRs: pull requests whose head
+  # branch starts with changeset-release/ (the branch the changesets
+  # release automation opens, e.g. changeset-release/master). Every
+  # other event — ordinary PRs and manual workflow_dispatch runs —
+  # skips the build.
   changes:
-    name: Detect Android-relevant changes
+    name: Detect release PR
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
       run-build: ${{ steps.detect.outputs.run-build }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-
-      - name: Detect relevant paths
+      - name: Detect release PR
         id: detect
         env:
-          BASE_REF: ${{ github.base_ref }}
+          HEAD_REF: ${{ github.head_ref }}
           HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
           THIS_REPO: ${{ github.repository }}
         run: |
-          if [ "${{ github.event_name }}" != "pull_request" ]; then
-            echo "run-build=true" >> "$GITHUB_OUTPUT"
-            echo "### Android build: running (non-PR event)" >> "$GITHUB_STEP_SUMMARY"
-            exit 0
-          fi
-          git fetch --depth=1 origin "+refs/heads/$BASE_REF:refs/remotes/origin/$BASE_REF"
-          # --no-renames: with rename detection, a file moved OUT of
-          # a matched directory reports only its destination path and
-          # the move would slip past the matcher.
-          changed="$(git diff --name-only --no-renames "origin/$BASE_REF...HEAD")"
-          echo "Changed files:"
-          echo "$changed"
-          matched="$(echo "$changed" | grep -E '^(packages/(app|client|types)/|patches/|package\.json$|package-lock\.json$|\.github/)' || true)"
-          if [ -n "$matched" ]; then
+          if [ "${{ github.event_name }}" = "pull_request" ] && [[ "$HEAD_REF" == changeset-release/* ]]; then
             echo "run-build=true" >> "$GITHUB_OUTPUT"
             if [ "$HEAD_REPO" != "$THIS_REPO" ]; then
               # The android-build job's own same-repository condition
@@ -97,27 +83,20 @@ jobs:
               echo "::notice::Android build skipped: fork PRs are not built (no secrets access)."
               {
                 echo "### Android build: skipped (fork PR)"
-                echo "App-affecting paths changed, but fork PR builds are unsupported (no secrets access), so the AAB build did not run. android-gate still reports for this PR."
-                echo "App-affecting paths changed:"
-                echo '```'
-                echo "$matched"
-                echo '```'
+                echo "This is a release PR, but fork PR builds are unsupported (no secrets access), so the AAB build did not run. android-gate still reports for this PR."
               } >> "$GITHUB_STEP_SUMMARY"
             else
               {
                 echo "### Android build: running"
-                echo "App-affecting paths changed:"
-                echo '```'
-                echo "$matched"
-                echo '```'
+                echo "Release PR (head branch \`$HEAD_REF\`), so the AAB build runs."
               } >> "$GITHUB_STEP_SUMMARY"
             fi
           else
             echo "run-build=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::Android build skipped by design: no app-affecting paths changed (packages/app/**, packages/client/**, packages/types/**, package.json, package-lock.json, patches/, .github/)."
+            echo "::notice::Android build skipped by design: Android builds run only on release PRs (head branch changeset-release/*)."
             {
               echo "### Android build: skipped by design"
-              echo "No app-affecting paths changed (packages/app/**, packages/client/**, packages/types/**, package.json, package-lock.json, patches/, .github/), so the AAB build did not run. android-gate still reports for this PR."
+              echo "Android builds run only on release PRs (head branch \`changeset-release/*\`), so the AAB build did not run. android-gate still reports for this PR."
             } >> "$GITHUB_STEP_SUMMARY"
           fi
 
@@ -179,7 +158,7 @@ jobs:
   # Always-reporting gate for branch protection: reports on every PR,
   # fails only when the changes detection or the build failed or was
   # cancelled, and passes when the build succeeded or was legitimately
-  # skipped (no Android-relevant paths, or a fork PR).
+  # skipped (not a release PR, or a fork PR).
   android-gate:
     name: android-gate
     needs: [changes, android-build]
