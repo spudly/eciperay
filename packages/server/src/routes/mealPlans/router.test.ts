@@ -68,6 +68,10 @@ describe('GET /meal-plans/:id', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.title).toBe('This week');
+    // The updatedAt in the body is the optimistic-concurrency token for
+    // PUT (#384); it is also exposed as the ETag for If-Match.
+    expect(res.body.updatedAt).toBe('2024-01-01T00:00:00.000Z');
+    expect(res.headers['etag']).toBe('"2024-01-01T00:00:00.000Z"');
   });
 
   test('returns 404 when plan missing', async () => {
@@ -197,11 +201,62 @@ describe('PUT /meal-plans/:id', () => {
     mockQuery.mockReset();
   });
 
+  // Full successful-replace mock whose stored plan carries the given
+  // updated_at, for the optimistic-concurrency cases (#384).
+  const installReplacePlanMock = (storedUpdatedAt: string) => {
+    mockQuery.mockImplementation((async (sql: string) => {
+      if (sql.includes('select id, updated_at from meal_plans where id')) {
+        return makeQueryResult([{id: PLAN_ID, updated_at: storedUpdatedAt}]);
+      }
+      if (sql.includes('from recipes r')) {
+        return makeQueryResult([accessibleRecipeRow]);
+      }
+      if (sql.includes('share_grants')) {
+        return emptyShareGrant;
+      }
+      if (
+        sql.includes('update meal_plans') ||
+        sql.includes('delete from meal_plan_entries') ||
+        sql.includes('insert into meal_plan_entries')
+      ) {
+        return makeQueryResult([]);
+      }
+      if (sql.includes('from meal_plans') && sql.includes('where id =')) {
+        return makeQueryResult([mealPlanRow]);
+      }
+      if (sql.includes('from meal_plan_entries')) {
+        return makeQueryResult([
+          {
+            id: 'entry-1',
+            meal_plan_id: PLAN_ID,
+            sort_order: 0,
+            quantity: 1,
+            meal_id: null,
+            recipe_id: RECIPE_ID,
+            servings: 4,
+          },
+        ]);
+      }
+      if (sql.includes('goal_calories')) {
+        return makeQueryResult([
+          {
+            goal_calories: null,
+            goal_protein_g: null,
+            goal_carbs_g: null,
+            goal_fat_g: null,
+            goal_satiety_score: null,
+          },
+        ]);
+      }
+      return makeQueryResult([]);
+    }) as typeof mockQuery);
+  };
+
   test('updates meal plan', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockBillingPlan(mockQuery, 'plus');
     mockQuery.mockImplementation((async (sql: string) => {
-      if (sql.includes('select id from meal_plans where id')) {
+      if (sql.includes('select id, updated_at from meal_plans where id')) {
         return makeQueryResult([{id: PLAN_ID}]);
       }
       if (sql.includes('from recipes r')) {
@@ -251,6 +306,78 @@ describe('PUT /meal-plans/:id', () => {
       .put(`/api/meal-plans/${PLAN_ID}`)
       .set('Authorization', 'Bearer valid-token')
       .send(mealPlanInput);
+
+    expect(res.status).toBe(200);
+    expect(res.body.id).toBe(PLAN_ID);
+  });
+
+  test('updates meal plan when the If-Match token is current (#384)', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
+    installReplacePlanMock('2024-01-01T00:00:00.000Z');
+
+    const res = await request(getApp())
+      .put(`/api/meal-plans/${PLAN_ID}`)
+      .set('Authorization', 'Bearer valid-token')
+      .set('If-Match', '"2024-01-01T00:00:00.000Z"')
+      .send(mealPlanInput);
+
+    expect(res.status).toBe(200);
+    expect(res.body.id).toBe(PLAN_ID);
+  });
+
+  test('returns 409 and writes nothing when the If-Match token is stale (#384)', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
+    mockQuery.mockResolvedValueOnce(
+      makeQueryResult([{id: PLAN_ID, updated_at: '2024-01-01T00:00:00.000Z'}]),
+    );
+
+    const res = await request(getApp())
+      .put(`/api/meal-plans/${PLAN_ID}`)
+      .set('Authorization', 'Bearer valid-token')
+      .set('If-Match', '"2023-06-01T00:00:00.000Z"')
+      .send(mealPlanInput);
+
+    expect(res.status).toBe(409);
+    expect(res.body).toEqual({
+      error: 'Meal plan has been modified since it was loaded',
+    });
+    const writes = mockQuery.mock.calls.filter(args =>
+      /update meal_plans|delete from meal_plan_entries|insert into meal_plan_entries/.test(
+        String(args[0]),
+      ),
+    );
+    expect(writes).toEqual([]);
+  });
+
+  test('returns 409 when the expectedUpdatedAt body field is stale (#384)', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
+    mockQuery.mockResolvedValueOnce(
+      makeQueryResult([{id: PLAN_ID, updated_at: '2024-01-01T00:00:00.000Z'}]),
+    );
+
+    const res = await request(getApp())
+      .put(`/api/meal-plans/${PLAN_ID}`)
+      .set('Authorization', 'Bearer valid-token')
+      .send({...mealPlanInput, expectedUpdatedAt: '2023-06-01T00:00:00.000Z'});
+
+    expect(res.status).toBe(409);
+    expect(res.body).toEqual({
+      error: 'Meal plan has been modified since it was loaded',
+    });
+  });
+
+  test('updates meal plan when the expectedUpdatedAt body field is current (#384)', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
+    installReplacePlanMock('2024-01-01T00:00:00.000Z');
+
+    const res = await request(getApp())
+      .put(`/api/meal-plans/${PLAN_ID}`)
+      .set('Authorization', 'Bearer valid-token')
+      .send({...mealPlanInput, expectedUpdatedAt: '2024-01-01T00:00:00.000Z'});
 
     expect(res.status).toBe(200);
     expect(res.body.id).toBe(PLAN_ID);

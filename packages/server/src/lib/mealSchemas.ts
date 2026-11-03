@@ -10,6 +10,9 @@ export const AiStepTimingResponseSchema = z.array(
 export const MealInputSchema = z.object({
   title: z.string().trim().min(1).max(200),
   notes: z.string().trim().max(4000).nullish(),
+  // Optimistic-concurrency token for PUT (#384): the `updatedAt` from the
+  // client's read. Ignored on POST; on PUT a stale token fails with 409.
+  expectedUpdatedAt: z.string().trim().min(1).optional(),
   recipes: z
     .array(
       z.object({
@@ -80,6 +83,8 @@ export const MealPlanInputSchema = z
   .object({
     title: z.string().trim().min(1).max(200),
     notes: z.string().trim().max(4000).nullish(),
+    // Optimistic-concurrency token for PUT (#384): see MealInputSchema.
+    expectedUpdatedAt: z.string().trim().min(1).optional(),
     startsOn: MealPlanDateSchema.nullish(),
     endsOn: MealPlanDateSchema.nullish(),
     entries: z.array(MealPlanEntryInputSchema).min(1),

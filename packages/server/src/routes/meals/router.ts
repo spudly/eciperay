@@ -4,6 +4,7 @@ import {z} from 'zod';
 
 import {query as defaultQuery} from '../../db/query.js';
 import {buildMealCookPlan} from '../../lib/buildMealCookPlan.js';
+import {resolveExpectedUpdatedAt} from '../../lib/conditionalWrite.js';
 import {getParam} from '../../lib/getParam.js';
 import {listMealsForUser, loadMealDetail} from '../../lib/loadMealDetail.js';
 import {deleteMeal, replaceMeal, saveNewMeal} from '../../lib/saveMeal.js';
@@ -54,6 +55,9 @@ const getMeal = async (req: AuthedRequest, res: Response, queryFn: QueryFn) => {
     res.status(404).json({error: 'Meal not found'});
     return;
   }
+  // The updatedAt token doubles as an ETag so clients can send it back as
+  // If-Match on PUT for optimistic concurrency (#384).
+  res.set('ETag', `"${meal.updatedAt}"`);
   res.json(meal);
 };
 
@@ -62,16 +66,21 @@ const putMeal = async (req: AuthedRequest, res: Response, queryFn: QueryFn) => {
   if (!body.ok) {
     return;
   }
+  const expectedUpdatedAt = resolveExpectedUpdatedAt(
+    req.header('if-match'),
+    body.data.expectedUpdatedAt,
+  );
   const result = await replaceMeal(
     getParam(req, 'id'),
     req.userId,
-    body.data,
+    {...body.data, expectedUpdatedAt},
     queryFn,
   );
   if ('error' in result) {
     res.status(result.status).json({error: result.error});
     return;
   }
+  res.set('ETag', `"${result.meal.updatedAt}"`);
   res.json(result.meal);
 };
 

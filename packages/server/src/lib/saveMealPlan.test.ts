@@ -220,7 +220,7 @@ describe('replaceMealPlan', () => {
   test('returns 500 when updated plan cannot be loaded', async () => {
     const mockQuery = createMockQuery();
     mockQuery.mockImplementation((async (sql: string) => {
-      if (sql.includes('select id from meal_plans where id')) {
+      if (sql.includes('select id, updated_at from meal_plans where id')) {
         return makeQueryResult([{id: PLAN_ID}]);
       }
       if (sql.includes('from recipes r')) {
@@ -253,7 +253,7 @@ describe('replaceMealPlan', () => {
   test('updates existing plan', async () => {
     const mockQuery = createMockQuery();
     mockQuery.mockImplementation((async (sql: string) => {
-      if (sql.includes('select id from meal_plans where id')) {
+      if (sql.includes('select id, updated_at from meal_plans where id')) {
         return makeQueryResult([{id: PLAN_ID}]);
       }
       if (sql.includes('from recipes r')) {
@@ -441,7 +441,7 @@ describe('saveMealPlan on the default query path (transactions)', () => {
   // check and entry resolution) go through the pool's shared query.
   const installPoolRouting = () => {
     mockPoolQuery.mockImplementation((text: string) => {
-      if (text.includes('select id from meal_plans')) {
+      if (text.includes('select id, updated_at from meal_plans')) {
         return Promise.resolve(makeQueryResult([{id: PLAN_ID}]));
       }
       if (text.includes('from recipes r')) {

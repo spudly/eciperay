@@ -3,6 +3,7 @@ import type {Response} from 'express';
 
 import {query as defaultQuery} from '../../db/query.js';
 import {buildPlanShoppingList} from '../../lib/buildPlanShoppingList.js';
+import {resolveExpectedUpdatedAt} from '../../lib/conditionalWrite.js';
 import {getParam} from '../../lib/getParam.js';
 import {loadMealPlanDetail} from '../../lib/loadMealPlanDetail.js';
 import {listMealPlansForUser} from '../../lib/listMealPlansForUser.js';
@@ -54,6 +55,9 @@ const getPlan = async (req: AuthedRequest, res: Response, queryFn: QueryFn) => {
     res.status(404).json({error: 'Meal plan not found'});
     return;
   }
+  // The updatedAt token doubles as an ETag so clients can send it back as
+  // If-Match on PUT for optimistic concurrency (#384).
+  res.set('ETag', `"${plan.updatedAt}"`);
   res.json(plan);
 };
 
@@ -62,16 +66,21 @@ const putPlan = async (req: AuthedRequest, res: Response, queryFn: QueryFn) => {
   if (!body.ok) {
     return;
   }
+  const expectedUpdatedAt = resolveExpectedUpdatedAt(
+    req.header('if-match'),
+    body.data.expectedUpdatedAt,
+  );
   const result = await replaceMealPlan(
     getParam(req, 'id'),
     req.userId,
-    body.data,
+    {...body.data, expectedUpdatedAt},
     queryFn,
   );
   if ('error' in result) {
     res.status(result.status).json({error: result.error});
     return;
   }
+  res.set('ETag', `"${result.plan.updatedAt}"`);
   res.json(result.plan);
 };
 

@@ -29,6 +29,12 @@ export type MealRecipeInput = {recipeId: string; servings?: number};
 export type MealInput = {
   title: string;
   notes?: string | null;
+  /**
+   * Optimistic-concurrency token for PUT: the `updatedAt` of the meal as read.
+   * When present and stale, the server rejects the write with 409; when absent,
+   * the write is unconditional (the pre-#384 behavior).
+   */
+  expectedUpdatedAt?: string;
   recipes: MealRecipeInput[];
 };
 

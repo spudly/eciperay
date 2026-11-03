@@ -57,12 +57,17 @@ export type MealPlanRecipeEntryInput = {
 };
 
 export type MealPlanEntryInput =
-  | MealPlanMealEntryInput
-  | MealPlanRecipeEntryInput;
+  MealPlanMealEntryInput | MealPlanRecipeEntryInput;
 
 export type MealPlanInput = {
   title: string;
   notes?: string | null;
+  /**
+   * Optimistic-concurrency token for PUT: the `updatedAt` of the plan as read.
+   * When present and stale, the server rejects the write with 409; when absent,
+   * the write is unconditional (the pre-#384 behavior).
+   */
+  expectedUpdatedAt?: string;
   startsOn?: string | null;
   endsOn?: string | null;
   entries: MealPlanEntryInput[];

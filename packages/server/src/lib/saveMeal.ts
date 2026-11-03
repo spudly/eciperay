@@ -2,6 +2,7 @@ import type {MealDetail, MealInput} from '@eciperay/types';
 
 import {query as defaultQuery} from '../db/query.js';
 
+import {staleWriteConflict, updatedAtMatches} from './conditionalWrite.js';
 import {loadMealDetail} from './loadMealDetail.js';
 import {loadAccessibleRecipe} from './mealRecipeAccess.js';
 
@@ -63,11 +64,23 @@ export const replaceMeal = async (
   queryFn: QueryFn = defaultQuery,
 ): Promise<{meal: MealDetail} | {error: string; status: number}> => {
   const existing = await queryFn(
-    `select id from meals where id = $1 and user_id = $2`,
+    `select id, updated_at from meals where id = $1 and user_id = $2`,
     [mealId, userId],
   );
-  if (!existing.rows[0]) {
+  const existingRow = existing.rows[0] as
+    {id: string; updated_at: string | Date} | undefined;
+  if (!existingRow) {
     return {error: 'Meal not found', status: 404};
+  }
+  // Optimistic concurrency (#384): a client that read the meal and merged
+  // sends its `updatedAt` back as expectedUpdatedAt; if the stored record
+  // has moved since that read, refuse before any write so the caller can
+  // re-read, re-merge, and retry instead of silently overwriting.
+  if (
+    input.expectedUpdatedAt &&
+    !updatedAtMatches(existingRow.updated_at, input.expectedUpdatedAt)
+  ) {
+    return staleWriteConflict('Meal');
   }
 
   const resolved: {recipeId: string; servings: number; sortOrder: number}[] =
