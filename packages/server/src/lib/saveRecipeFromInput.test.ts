@@ -51,6 +51,38 @@ describe('saveRecipeFromInput', () => {
     ]);
   });
 
+  // Regression for #394: an editable-version save changes what meal
+  // detail reads for each member meal, so it must advance those meals'
+  // updated_at (their ETag token) as part of the save — the metadata-only
+  // path (saveRecipeMetadata) already does; this path must not lag it.
+  test('advances member meals updated_at when updating an existing version', async () => {
+    const mockQuery = createMockQuery();
+    mockQuery
+      .mockResolvedValueOnce({
+        ...makeQueryResult([{id: 'version-uuid-1'}]),
+        rowCount: 1,
+      })
+      .mockResolvedValue(makeQueryResult([makeRecipeDetailRow()]));
+    const result = await saveRecipeFromInput(
+      {
+        userId: 'user-uuid-1',
+        input: makeRecipeInput({status: 'perfected'}),
+        recipeId: 'recipe-uuid-1',
+        versionId: 'version-uuid-1',
+      },
+      mockQuery,
+    );
+    expect(result.title).toBe('Test Recipe');
+    const touchCall = mockQuery.mock.calls.find(([sql]) =>
+      (sql as unknown as string).includes('update meals'),
+    );
+    expect(touchCall).toBeDefined();
+    expect(touchCall?.[0]).toContain(
+      'select meal_id from meal_recipes where recipe_id = $1',
+    );
+    expect(touchCall?.[1]).toEqual(['recipe-uuid-1']);
+  });
+
   test('preserves the lineage status when an update omits status (#275)', async () => {
     const mockQuery = createMockQuery();
     mockQuery
