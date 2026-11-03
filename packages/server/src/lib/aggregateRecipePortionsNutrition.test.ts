@@ -29,6 +29,9 @@ describe('aggregateRecipePortionsNutrition', () => {
     expect(result.proteinG).toBe(20);
     expect(result.carbsG).toBe(40);
     expect(result.fatG).toBe(10);
+    expect(result.fiberG).toBe(4);
+    expect(result.sugarG).toBe(2);
+    expect(result.sodiumMg).toBe(200);
     expect(result.preparedWeightG).toBe(200);
     expect(result.satietyScore).not.toBeNull();
   });
