@@ -20,32 +20,42 @@
 #
 # Scrolling: the page is a single scroll — Overview, Ingredients,
 # Instructions, Cook History, Nutrition (RecipeDetailPage's section
-# order). scrollUntilVisible overshoots the short Ingredients and
-# Instructions bands: its fast swipes transit from the overview to the
-# nutrition section at the bottom without either band ever appearing
-# in a polled hierarchy (verified in two CI runs, 20s and 90s
-# windows). This flow instead walks down with short, slow drags and
-# asserts each section as it enters the viewport. The overview alone
-# is a full viewport tall (actions, tweak controls, sharing, ratings —
-# measured in the 2026-11-03 CI hierarchy dumps), so two drags are
-# needed before Ingredients enters the window. Ingredient rows are
-# single labels ("400 g Crushed tomatoes" — formatScaledIngredientLine
-# in packages/client), so a name substring matches the row.
+# order) — and the Overview alone runs well past a full viewport
+# (versions, actions, tweak controls, sharing, ratings, comments).
+# scrollUntilVisible overshoots the short Ingredients and Instructions
+# bands: its fast swipes transit to the nutrition section at the
+# bottom without either band ever appearing in a polled hierarchy
+# (verified in two CI runs, 20s and 90s windows), and fixed drag
+# counts are brittle against the overview's height. So the flow
+# swipes in short drags only while the target is not yet visible,
+# then asserts it. Ingredient rows are single labels ("400 g Crushed
+# tomatoes" — formatScaledIngredientLine in packages/client), so a
+# name substring matches the row.
 appId: com.eciperay
 ---
 - assertVisible: "E2E Weeknight Pasta"
-- swipe:
-    start: 50%, 70%
-    end: 50%, 45%
-    duration: 600
-- swipe:
-    start: 50%, 70%
-    end: 50%, 45%
-    duration: 600
+- repeat:
+    times: 8
+    commands:
+      - runFlow:
+          when:
+            notVisible: "Crushed tomatoes"
+          commands:
+            - swipe:
+                start: 50%, 70%
+                end: 50%, 45%
+                duration: 600
 - assertVisible: "Ingredients"
 - assertVisible: "Crushed tomatoes"
-- swipe:
-    start: 50%, 70%
-    end: 50%, 45%
-    duration: 600
+- repeat:
+    times: 4
+    commands:
+      - runFlow:
+          when:
+            notVisible: "Simmer the sauce for 15 minutes."
+          commands:
+            - swipe:
+                start: 50%, 70%
+                end: 50%, 45%
+                duration: 600
 - assertVisible: "Simmer the sauce for 15 minutes."
