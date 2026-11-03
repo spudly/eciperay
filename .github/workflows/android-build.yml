@@ -279,7 +279,13 @@ jobs:
           script: |
             set -e
             adb install -r packages/app/android/app/build/outputs/apk/release/app-release.apk
-            maestro test packages/app/e2e/maestro/01-launch.yaml packages/app/e2e/maestro/02-recipes.yaml
+            # The launch flow gets one retry: its launchApp step can
+            # flake on a cold emulator while every later flow runs
+            # fine (observed 2026-11-03 — 01 failed to launch, 02
+            # passed 20s later on the same install). The assertion
+            # flows below run exactly once.
+            maestro test packages/app/e2e/maestro/01-launch.yaml || (sleep 10 && maestro test packages/app/e2e/maestro/01-launch.yaml)
+            maestro test packages/app/e2e/maestro/02-recipes.yaml
             adb shell am start -W -n com.eciperay/.MainActivity -a android.intent.action.VIEW -d "com.eciperay://recipes/e2e-recipe-pasta"
             sleep 3
             maestro test packages/app/e2e/maestro/03-recipe-detail.yaml

@@ -53,8 +53,8 @@ adb install -r app/build/outputs/apk/release/app-release.apk
 # manifest's only VIEW intent filter is host-scoped to the Supabase
 # auth callback, so the CI step delivers the links to MainActivity
 # with explicit-component intents between the Maestro runs:
-maestro test packages/app/e2e/maestro/01-launch.yaml \
-  packages/app/e2e/maestro/02-recipes.yaml
+maestro test packages/app/e2e/maestro/01-launch.yaml
+maestro test packages/app/e2e/maestro/02-recipes.yaml
 adb shell am start -W -n com.eciperay/.MainActivity \
   -a android.intent.action.VIEW -d "com.eciperay://recipes/e2e-recipe-pasta"
 maestro test packages/app/e2e/maestro/03-recipe-detail.yaml
