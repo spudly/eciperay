@@ -12,12 +12,12 @@
     },
     "test": {
       "dependsOn": ["^typecheck"],
-      "inputs": ["src/**/*.{ts,tsx}"],
+      "inputs": ["src/**/*.{ts,tsx}", "vitest.config.ts"],
       "outputs": []
     },
     "test:coverage": {
       "dependsOn": ["^typecheck"],
-      "inputs": ["src/**/*.{ts,tsx}"],
+      "inputs": ["src/**/*.{ts,tsx}", "vitest.config.ts", "coverageGlobs.json"],
       "outputs": ["coverage/**"]
     },
     "build": {

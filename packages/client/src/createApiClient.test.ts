@@ -88,16 +88,18 @@ describe('createApiClient', () => {
   });
 
   test('attaches the server error code to the thrown error (#296)', async () => {
-    global.fetch = jest.fn().mockResolvedValue({
-      ok: false,
-      status: 409,
-      text: async () =>
-        JSON.stringify({
-          error: 'duplicate_recipe',
-          message: 'This recipe already exists in your library as "Pasta".',
-          duplicate: {recipeId: 'recipe-uuid-9', title: 'Pasta'},
-        }),
-    });
+    global.fetch = jest
+      .fn()
+      .mockResolvedValue({
+        ok: false,
+        status: 409,
+        text: async () =>
+          JSON.stringify({
+            error: 'duplicate_recipe',
+            message: 'This recipe already exists in your library as "Pasta".',
+            duplicate: {recipeId: 'recipe-uuid-9', title: 'Pasta'},
+          }),
+      });
     const client = createApiClient({
       baseUrl: 'http://localhost:8080',
       getToken: async () => null,
@@ -111,6 +113,27 @@ describe('createApiClient', () => {
     expect(isDuplicateRecipeError(error)).toBe(true);
     expect(isDuplicateRecipeError(new Error('other'))).toBe(false);
     expect(isDuplicateRecipeError(null)).toBe(false);
+  });
+
+  test('attaches the HTTP status to the thrown error (#344)', async () => {
+    global.fetch = jest
+      .fn()
+      .mockResolvedValue({
+        ok: false,
+        status: 401,
+        text: async () => JSON.stringify({error: 'Invalid or expired token'}),
+      });
+    const client = createApiClient({
+      baseUrl: 'http://localhost:8080',
+      getToken: async () => 'expired-token',
+    });
+    const error = await client
+      .fetch('/auth/sync', {method: 'POST'})
+      .catch((error_: unknown) => error_);
+    expect(error).toBeInstanceOf(Error);
+    expect((error as ApiError).status).toBe(401);
+    expect((error as ApiError).code).toBe('Invalid or expired token');
+    expect((error as Error).message).toBe('Invalid or expired token');
   });
 
   test('returns undefined for 204 responses', async () => {
@@ -182,6 +205,104 @@ describe('createApiClient', () => {
         headers: expect.objectContaining({'X-Custom': '3'}),
       }),
     );
+  });
+});
+
+describe('createApiClient network failures', () => {
+  const originalFetch = global.fetch;
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  test('wraps a rejected fetch as a typed network_error ApiError (#378)', async () => {
+    const cause = new TypeError('Failed to fetch');
+    global.fetch = jest.fn().mockRejectedValue(cause);
+    const client = createApiClient({
+      baseUrl: 'http://localhost:8080',
+      getToken: async () => null,
+    });
+    const thrown: unknown = await client
+      .fetch('/auth/sync')
+      .catch((error: unknown) => error);
+    expect(thrown).toBeInstanceOf(Error);
+    expect((thrown as Error).message).toBe('Network error: /auth/sync');
+    expect((thrown as {code?: string}).code).toBe('network_error');
+    expect((thrown as {status?: number}).status).toBe(0);
+    expect((thrown as {cause?: unknown}).cause).toBe(cause);
+  });
+
+  test('rethrows a rejected fetch unchanged when the caller aborted (#378)', async () => {
+    const cause = new DOMException('The operation was aborted', 'AbortError');
+    global.fetch = jest.fn().mockRejectedValue(cause);
+    const client = createApiClient({
+      baseUrl: 'http://localhost:8080',
+      getToken: async () => null,
+    });
+    const controller = new AbortController();
+    controller.abort();
+    await expect(
+      client.fetch('/auth/sync', {signal: controller.signal}),
+    ).rejects.toBe(cause);
+  });
+
+  test('wraps a body-read TypeError as a network_error ApiError (#378)', async () => {
+    const cause = new TypeError('Failed to fetch');
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => {
+        throw cause;
+      },
+    });
+    const client = createApiClient({
+      baseUrl: 'http://localhost:8080',
+      getToken: async () => null,
+    });
+    const thrown: unknown = await client
+      .fetch('/auth/sync')
+      .catch((error: unknown) => error);
+    expect(thrown).toBeInstanceOf(Error);
+    expect((thrown as Error).message).toBe('Network error: /auth/sync');
+    expect((thrown as {code?: string}).code).toBe('network_error');
+    expect((thrown as {status?: number}).status).toBe(0);
+    expect((thrown as {cause?: unknown}).cause).toBe(cause);
+  });
+
+  test('rethrows a body-read SyntaxError unchanged (#378)', async () => {
+    const cause = new SyntaxError('Unexpected end of JSON input');
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => {
+        throw cause;
+      },
+    });
+    const client = createApiClient({
+      baseUrl: 'http://localhost:8080',
+      getToken: async () => null,
+    });
+    await expect(client.fetch('/auth/sync')).rejects.toBe(cause);
+  });
+
+  test('rethrows a body-read TypeError when the caller aborted (#378)', async () => {
+    const cause = new TypeError('Failed to fetch');
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => {
+        throw cause;
+      },
+    });
+    const client = createApiClient({
+      baseUrl: 'http://localhost:8080',
+      getToken: async () => null,
+    });
+    const controller = new AbortController();
+    controller.abort();
+    await expect(
+      client.fetch('/auth/sync', {signal: controller.signal}),
+    ).rejects.toBe(cause);
   });
 });
 

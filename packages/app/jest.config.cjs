@@ -16,6 +16,7 @@ module.exports = {
     'src/**/*.{ts,tsx}',
     '!src/**/*.d.ts', // type declaration files only
     '!src/navigation/types.ts', // type aliases only, no runtime code
+    '!src/navigation/tabIcons.ts', // tab-to-icon mapping; navigation setup, no business logic
     '!src/lib/env.ts', // typeof branch unreachable when shim always provides a string
     '!src/lib/supabase.ts', // createSupabaseClient wrapper; tested via supabase.test.ts
     '!src/navigation/*.tsx', // React Navigation setup; no business logic to unit-test

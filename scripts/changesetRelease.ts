@@ -19,7 +19,7 @@ export type PublishResult = {
   tag: string;
 };
 
-// Changesets versions the seven workspace packages as one fixed group (see
+// Changesets versions the six workspace packages as one fixed group (see
 // .changeset/config.json) but never versions the workspace root, while the
 // root package.json version stays canonical (Android versionName, deploy
 // fallbacks). This script is the changesets/action publish step: it bridges
@@ -32,7 +32,6 @@ export const VERSION_SOURCE_PACKAGE_JSON = 'packages/app/package.json';
 export const CHANGELOG_PATHS = [
   'packages/app/CHANGELOG.md',
   'packages/client/CHANGELOG.md',
-  'packages/icons/CHANGELOG.md',
   'packages/mcp-server/CHANGELOG.md',
   'packages/server/CHANGELOG.md',
   'packages/types/CHANGELOG.md',

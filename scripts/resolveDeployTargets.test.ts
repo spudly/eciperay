@@ -197,7 +197,6 @@ describe('maybeRunResolveDeployTargetsCli', () => {
 describe('pathToPackage', () => {
   test('maps package paths to their package', () => {
     expect(pathToPackage('packages/app/src/App.tsx')).toBe('app');
-    expect(pathToPackage('packages/icons/assets/logo.svg')).toBe('icons');
     expect(pathToPackage('packages/mcp-server/src/index.ts')).toBe(
       'mcp-server',
     );
@@ -236,10 +235,6 @@ describe('resolveDeployTargetsFromPaths', () => {
     expect(
       resolveDeployTargetsFromPaths(['packages/client/src/auth.ts']),
     ).toEqual({fly: true, android: true});
-    expect(resolveDeployTargetsFromPaths(['packages/icons/logo.svg'])).toEqual({
-      fly: true,
-      android: true,
-    });
     expect(
       resolveDeployTargetsFromPaths(['packages/mcp-server/src/index.ts']),
     ).toEqual({fly: true, android: false});
@@ -256,6 +251,11 @@ describe('resolveDeployTargetsFromPaths', () => {
     expect(
       resolveDeployTargetsFromPaths(['packages/new-package/src/index.ts']),
     ).toEqual({fly: true, android: true});
+    // A removed package's paths are unrecognised, so they deploy both too.
+    expect(resolveDeployTargetsFromPaths(['packages/icons/logo.svg'])).toEqual({
+      fly: true,
+      android: true,
+    });
   });
 
   test('returns false when nothing changed', () => {

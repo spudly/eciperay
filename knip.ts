@@ -11,7 +11,6 @@ const config: KnipConfig = {
       ],
     },
     'packages/types': {entry: ['src/types/index.ts'], project: ['src/**/*.ts']},
-    'packages/icons': {},
     // test files use their own entry points; excluding avoids false "unused export" noise
     'packages/client': {ignore: ['src/test/**']},
     'packages/server': {ignore: ['src/test/**']},

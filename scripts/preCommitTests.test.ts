@@ -186,6 +186,25 @@ describe('preCommitTests', () => {
     }).not.toThrow();
   });
 
+  it('spawns turbo with the concurrency cap and one filter per package (#369)', () => {
+    const spawnSync = jest.fn().mockReturnValue({status: 0});
+    runPackageTests('/repo', ['client', 'web'], spawnSync);
+    expect(spawnSync).toHaveBeenCalledWith(
+      'npx',
+      [
+        'turbo',
+        'run',
+        'test',
+        '--concurrency=2',
+        '--filter',
+        '@eciperay/client',
+        '--filter',
+        '@eciperay/web',
+      ],
+      {cwd: '/repo', stdio: 'inherit'},
+    );
+  });
+
   it('returns early when nothing is staged', () => {
     const execSync = jest.fn().mockReturnValue('');
     const spawnSync = jest.fn();
