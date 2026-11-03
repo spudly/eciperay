@@ -9,15 +9,28 @@ authentication and permissions as the web and mobile apps.
 
 ## Tools
 
-| Tool                | Description                                        |
-| ------------------- | -------------------------------------------------- |
-| `search_recipes`    | Search recipes by keyword                          |
-| `get_recipe`        | Full recipe details: ingredients, steps, nutrition |
-| `create_recipe`     | Save a new recipe                                  |
-| `update_recipe`     | Update fields of an existing recipe (partial)      |
-| `list_meal_plans`   | List saved meal plans                              |
-| `get_meal_plan`     | Meal plan details with scheduled meals             |
-| `get_shopping_list` | Aggregated shopping list for a meal plan           |
+| Tool                        | Description                                        |
+| --------------------------- | -------------------------------------------------- |
+| `search_recipes`            | Search recipes by keyword                          |
+| `get_recipe`                | Full recipe details: ingredients, steps, nutrition |
+| `create_recipe`             | Save a new recipe                                  |
+| `update_recipe`             | Update fields of an existing recipe (partial)      |
+| `list_meals`                | List saved meals                                   |
+| `get_meal`                  | Meal details with member recipes                   |
+| `create_meal`               | Create a meal (a named bundle of recipes)          |
+| `update_meal`               | Update a meal's title, notes, or members           |
+| `delete_meal`               | Delete a meal (refused while a plan uses it)       |
+| `add_recipe_to_meal`        | Add a recipe to a meal, or update its servings     |
+| `remove_recipe_from_meal`   | Remove a recipe from a meal                        |
+| `list_meal_plans`           | List saved meal plans                              |
+| `get_meal_plan`             | Meal plan details with scheduled meals             |
+| `create_meal_plan`          | Create a meal plan from meal/recipe entries        |
+| `update_meal_plan`          | Update a plan's title, notes, dates, or entries    |
+| `delete_meal_plan`          | Delete a meal plan                                 |
+| `add_meal_plan_entry`       | Add a meal or standalone recipe entry to a plan    |
+| `remove_meal_plan_entry`    | Remove one entry from a plan                       |
+| `reorder_meal_plan_entries` | Reorder a plan's entries                           |
+| `get_shopping_list`         | Aggregated shopping list for a meal plan           |
 
 ## Modes
 

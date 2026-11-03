@@ -129,6 +129,197 @@ export const createClient = (config: EciperayClientConfig) => {
       request<unknown[]>(
         `/meal-plans/${encodeURIComponent(mealPlanId)}/shopping-list`,
       ),
+    listMeals: () => request<unknown[]>('/meals'),
+    getMeal: (id: string) =>
+      request<unknown>(`/meals/${encodeURIComponent(id)}`),
+    createMeal: (input: MealInput) =>
+      request<unknown>('/meals', {method: 'POST', body: JSON.stringify(input)}),
+    /**
+     * Partial update: the REST API only offers a full-replace PUT for meals, so
+     * read the current meal, merge the patch over it, and PUT the result. Both
+     * endpoints resolve meals by owner, so a meal that does not exist or
+     * belongs to someone else fails with the API's 404.
+     */
+    updateMeal: async (id: string, patch: MealUpdatePatch) => {
+      if (!hasMealUpdateFields(patch)) {
+        throw new Error(
+          'update_meal requires at least one field to update; every field was omitted.',
+        );
+      }
+      const path = `/meals/${encodeURIComponent(id)}`;
+      const current = await request<MealDetailForUpdate>(path);
+      return request<unknown>(path, {
+        method: 'PUT',
+        body: JSON.stringify(buildMealUpdatePayload(current, patch)),
+      });
+    },
+    deleteMeal: async (id: string) => {
+      await request<undefined>(`/meals/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+      });
+      return {deleted: true, id};
+    },
+    /**
+     * Add a recipe to a meal, or update its servings when the recipe is already
+     * a member. Implemented as read-merge-PUT over the REST API's full-replace
+     * meal endpoint; the new member goes last.
+     */
+    addRecipeToMeal: async (mealId: string, recipe: MealRecipeInput) => {
+      const path = `/meals/${encodeURIComponent(mealId)}`;
+      const current = await request<MealDetailForUpdate>(path);
+      const recipes = mealRecipeInputs(current);
+      const existing = recipes.find(
+        member => member.recipeId === recipe.recipeId,
+      );
+      if (existing) {
+        if (recipe.servings !== undefined) {
+          existing.servings = recipe.servings;
+        }
+      } else {
+        recipes.push({...recipe});
+      }
+      return request<unknown>(path, {
+        method: 'PUT',
+        body: JSON.stringify({
+          title: current.title,
+          notes: current.notes,
+          recipes,
+        }),
+      });
+    },
+    removeRecipeFromMeal: async (mealId: string, recipeId: string) => {
+      const path = `/meals/${encodeURIComponent(mealId)}`;
+      const current = await request<MealDetailForUpdate>(path);
+      const recipes = mealRecipeInputs(current);
+      if (!recipes.some(member => member.recipeId === recipeId)) {
+        throw new Error(
+          `remove_recipe_from_meal: recipe ${recipeId} is not a member of meal ${mealId}; nothing was changed.`,
+        );
+      }
+      if (recipes.length === 1) {
+        throw new Error(
+          'remove_recipe_from_meal: a meal must keep at least one recipe; add another recipe first or delete the meal instead.',
+        );
+      }
+      return request<unknown>(path, {
+        method: 'PUT',
+        body: JSON.stringify({
+          title: current.title,
+          notes: current.notes,
+          recipes: recipes.filter(member => member.recipeId !== recipeId),
+        }),
+      });
+    },
+    createMealPlan: (input: MealPlanInput) =>
+      request<unknown>('/meal-plans', {
+        method: 'POST',
+        body: JSON.stringify(input),
+      }),
+    /**
+     * Partial update: the REST API only offers a full-replace PUT for meal
+     * plans, so read the current plan, merge the patch over it, and PUT the
+     * result. A missing or foreign plan fails with the API's 404.
+     */
+    updateMealPlan: async (id: string, patch: MealPlanUpdatePatch) => {
+      if (!hasMealPlanUpdateFields(patch)) {
+        throw new Error(
+          'update_meal_plan requires at least one field to update; every field was omitted.',
+        );
+      }
+      const path = `/meal-plans/${encodeURIComponent(id)}`;
+      const current = await request<MealPlanDetailForUpdate>(path);
+      return request<unknown>(path, {
+        method: 'PUT',
+        body: JSON.stringify(buildMealPlanUpdatePayload(current, patch)),
+      });
+    },
+    deleteMealPlan: async (id: string) => {
+      await request<undefined>(`/meal-plans/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+      });
+      return {deleted: true, id};
+    },
+    /**
+     * Add an entry (a meal or a standalone recipe) to a plan, or update its
+     * quantity/servings when that meal or recipe is already an entry — the REST
+     * API rejects duplicate meals and duplicate recipes in one plan. The new
+     * entry goes last; use reorderMealPlanEntries to move it.
+     */
+    addMealPlanEntry: async (mealPlanId: string, entry: MealPlanEntryInput) => {
+      const path = `/meal-plans/${encodeURIComponent(mealPlanId)}`;
+      const current = await request<MealPlanDetailForUpdate>(path);
+      const entries = mealPlanEntryInputs(current);
+      const existing = entries.find(candidate =>
+        mealPlanEntriesMatch(candidate, entry),
+      );
+      if (existing) {
+        if (entry.quantity !== undefined) {
+          existing.quantity = entry.quantity;
+        }
+        if ('recipeId' in entry && 'recipeId' in existing) {
+          if (entry.servings !== undefined) {
+            existing.servings = entry.servings;
+          }
+        }
+      } else {
+        entries.push({...entry});
+      }
+      return request<unknown>(path, {
+        method: 'PUT',
+        body: JSON.stringify(mealPlanPayload(current, entries)),
+      });
+    },
+    removeMealPlanEntry: async (mealPlanId: string, entryId: string) => {
+      const path = `/meal-plans/${encodeURIComponent(mealPlanId)}`;
+      const current = await request<MealPlanDetailForUpdate>(path);
+      if (!current.entries.some(entry => entry.id === entryId)) {
+        throw new Error(
+          `remove_meal_plan_entry: entry ${entryId} is not part of meal plan ${mealPlanId}; nothing was changed.`,
+        );
+      }
+      if (current.entries.length === 1) {
+        throw new Error(
+          'remove_meal_plan_entry: a meal plan must keep at least one entry; add another entry first or delete the plan instead.',
+        );
+      }
+      const entries = [...current.entries]
+        .sort((a, b) => a.sortOrder - b.sortOrder)
+        .filter(entry => entry.id !== entryId)
+        .map(mealPlanEntryInput);
+      return request<unknown>(path, {
+        method: 'PUT',
+        body: JSON.stringify(mealPlanPayload(current, entries)),
+      });
+    },
+    /**
+     * Reorder a plan's entries. `entryIds` must name every current entry
+     * exactly once (the ids from get_meal_plan); anything else is an error and
+     * nothing is written.
+     */
+    reorderMealPlanEntries: async (mealPlanId: string, entryIds: string[]) => {
+      const path = `/meal-plans/${encodeURIComponent(mealPlanId)}`;
+      const current = await request<MealPlanDetailForUpdate>(path);
+      const currentIds = current.entries.map(entry => entry.id);
+      const isPermutation =
+        entryIds.length === currentIds.length &&
+        new Set(entryIds).size === entryIds.length &&
+        currentIds.every(id => entryIds.includes(id));
+      if (!isPermutation) {
+        throw new Error(
+          'reorder_meal_plan_entries: entryIds must list every entry of the plan exactly once (use the entry ids from get_meal_plan); nothing was changed.',
+        );
+      }
+      const byId = new Map(
+        current.entries.map(entry => [entry.id, mealPlanEntryInput(entry)]),
+      );
+      const entries = entryIds
+        .map(id => byId.get(id))
+        .filter(entry => entry !== undefined);
+      return request<unknown>(path, {
+        method: 'PUT',
+        body: JSON.stringify(mealPlanPayload(current, entries)),
+      });
+    },
   };
 };
 
@@ -315,5 +506,198 @@ export const buildRecipeUpdatePayload = (
     tagIds: patch.tagIds ?? current.tags.map(tag => tag.id),
   };
 };
+
+/** Recipe membership shapes accepted by the REST meal endpoints. */
+export type MealRecipeInput = {recipeId: string; servings?: number};
+
+export type MealInput = {
+  title: string;
+  notes?: string | null;
+  recipes: MealRecipeInput[];
+};
+
+/**
+ * The subset of meal fields `update_meal` may change. A field left `undefined`
+ * is preserved from the stored meal; `notes` set to `null` clears it. Providing
+ * `recipes` replaces the whole member list.
+ */
+export type MealUpdatePatch = {
+  title?: string;
+  notes?: string | null;
+  recipes?: MealRecipeInput[];
+};
+
+/** Entry shapes accepted by the REST meal-plan endpoints. */
+export type MealPlanEntryInput =
+  | {mealId: string; quantity?: number}
+  | {recipeId: string; servings?: number; quantity?: number};
+
+export type MealPlanInput = {
+  title: string;
+  notes?: string | null;
+  startsOn?: string | null;
+  endsOn?: string | null;
+  entries: MealPlanEntryInput[];
+};
+
+/**
+ * The subset of meal-plan fields `update_meal_plan` may change. A field left
+ * `undefined` is preserved from the stored plan; `notes`, `startsOn`, and
+ * `endsOn` set to `null` clear them. Providing `entries` replaces the whole
+ * entry list (in the given order).
+ */
+export type MealPlanUpdatePatch = {
+  title?: string;
+  notes?: string | null;
+  startsOn?: string | null;
+  endsOn?: string | null;
+  entries?: MealPlanEntryInput[];
+};
+
+/** The meal-detail shape returned by `GET /meals/:id`, as read here. */
+type MealDetailForUpdate = {
+  title: string;
+  notes: string | null;
+  members: {recipeId: string; sortOrder: number; servings: number}[];
+};
+
+/** The meal-plan entry shape returned by `GET /meal-plans/:id`. */
+type MealPlanEntryForUpdate =
+  | {
+      type: 'meal';
+      id: string;
+      mealId: string;
+      sortOrder: number;
+      quantity: number;
+    }
+  | {
+      type: 'recipe';
+      id: string;
+      recipeId: string;
+      sortOrder: number;
+      quantity: number;
+      servings: number;
+    };
+
+/** The meal-plan-detail shape returned by `GET /meal-plans/:id`. */
+type MealPlanDetailForUpdate = {
+  title: string;
+  notes: string | null;
+  startsOn: string | null;
+  endsOn: string | null;
+  entries: MealPlanEntryForUpdate[];
+};
+
+const MEAL_PATCH_FIELDS: (keyof MealUpdatePatch)[] = [
+  'title',
+  'notes',
+  'recipes',
+];
+
+const MEAL_PLAN_PATCH_FIELDS: (keyof MealPlanUpdatePatch)[] = [
+  'title',
+  'notes',
+  'startsOn',
+  'endsOn',
+  'entries',
+];
+
+/** True when the patch provides at least one field to change. */
+const hasMealUpdateFields = (patch: MealUpdatePatch): boolean =>
+  MEAL_PATCH_FIELDS.some(field => patch[field] !== undefined);
+
+/** True when the patch provides at least one field to change. */
+const hasMealPlanUpdateFields = (patch: MealPlanUpdatePatch): boolean =>
+  MEAL_PLAN_PATCH_FIELDS.some(field => patch[field] !== undefined);
+
+/** A stored meal's members as full-replace PUT inputs, in stored order. */
+const mealRecipeInputs = (
+  meal: MealDetailForUpdate,
+): MealRecipeInput[] =>
+  [...meal.members]
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .map(member => ({recipeId: member.recipeId, servings: member.servings}));
+
+/**
+ * Merge a partial meal update over the stored meal detail, producing the full
+ * payload the REST `PUT /meals/:id` endpoint expects.
+ */
+export const buildMealUpdatePayload = (
+  current: MealDetailForUpdate,
+  patch: MealUpdatePatch,
+): MealInput => {
+  if (!hasMealUpdateFields(patch)) {
+    throw new Error(
+      'update_meal requires at least one field to update; every field was omitted.',
+    );
+  }
+  return {
+    title: patch.title ?? current.title,
+    notes: patch.notes !== undefined ? patch.notes : current.notes,
+    recipes: patch.recipes ?? mealRecipeInputs(current),
+  };
+};
+
+/** One stored plan entry as a full-replace PUT input. */
+const mealPlanEntryInput = (
+  entry: MealPlanEntryForUpdate,
+): MealPlanEntryInput =>
+  entry.type === 'meal'
+    ? {mealId: entry.mealId, quantity: entry.quantity}
+    : {
+        recipeId: entry.recipeId,
+        servings: entry.servings,
+        quantity: entry.quantity,
+      };
+
+/** A stored plan's entries as full-replace PUT inputs, in stored order. */
+export const mealPlanEntryInputs = (
+  plan: MealPlanDetailForUpdate,
+): MealPlanEntryInput[] =>
+  [...plan.entries]
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .map(mealPlanEntryInput);
+
+/**
+ * Merge a partial meal-plan update over the stored plan detail, producing the
+ * full payload the REST `PUT /meal-plans/:id` endpoint expects.
+ */
+export const buildMealPlanUpdatePayload = (
+  current: MealPlanDetailForUpdate,
+  patch: MealPlanUpdatePatch,
+): MealPlanInput => {
+  if (!hasMealPlanUpdateFields(patch)) {
+    throw new Error(
+      'update_meal_plan requires at least one field to update; every field was omitted.',
+    );
+  }
+  return {
+    title: patch.title ?? current.title,
+    notes: patch.notes !== undefined ? patch.notes : current.notes,
+    startsOn: patch.startsOn !== undefined ? patch.startsOn : current.startsOn,
+    endsOn: patch.endsOn !== undefined ? patch.endsOn : current.endsOn,
+    entries: patch.entries ?? mealPlanEntryInputs(current),
+  };
+};
+
+/** Full-replace plan payload carrying the stored fields plus new entries. */
+const mealPlanPayload = (
+  current: MealPlanDetailForUpdate,
+  entries: MealPlanEntryInput[],
+): MealPlanInput => ({
+  title: current.title,
+  notes: current.notes,
+  startsOn: current.startsOn,
+  endsOn: current.endsOn,
+  entries,
+});
+
+/** True when two entry inputs name the same meal or the same recipe. */
+const mealPlanEntriesMatch = (
+  a: MealPlanEntryInput,
+  b: MealPlanEntryInput,
+): boolean =>
+  ('mealId' in a && 'mealId' in b && a.mealId === b.mealId) ||
+  ('recipeId' in a && 'recipeId' in b && a.recipeId === b.recipeId);
 
 export type EciperayClient = ReturnType<typeof createClient>;
