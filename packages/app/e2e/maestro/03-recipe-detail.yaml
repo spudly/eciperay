@@ -17,19 +17,28 @@
 # intent's routing before the assertions run (verified against the
 # 2026-11-03 CI run — the detail visit was recorded in Home's Recently
 # viewed, but the flow asserted against the relaunched Home screen).
+#
+# Scrolling: the page is a single scroll — Overview, Ingredients,
+# Instructions, Cook History, Nutrition (RecipeDetailPage's section
+# order). scrollUntilVisible overshoots the short Ingredients and
+# Instructions bands: its fast swipes transit from the overview to the
+# nutrition section at the bottom without either band ever appearing
+# in a polled hierarchy (verified in two CI runs, 20s and 90s
+# windows). This flow instead walks down with short, slow drags and
+# asserts each section as it enters the viewport. Ingredient rows are
+# single labels ("400 g Crushed tomatoes" — formatScaledIngredientLine
+# in packages/client), so a name substring matches the row.
 appId: com.eciperay
 ---
 - assertVisible: "E2E Weeknight Pasta"
-# The detail page is a long single scroll (versions, cooks, nutrition,
-# then ingredients and instructions). The default 20s scroll window
-# only reached the nutrition section in CI, so give both scrolls room.
-- scrollUntilVisible:
-    element:
-      text: "Crushed tomatoes"
-    timeout: 90000
+- swipe:
+    start: 50%, 70%
+    end: 50%, 45%
+    duration: 600
+- assertVisible: "Ingredients"
 - assertVisible: "Crushed tomatoes"
-- scrollUntilVisible:
-    element:
-      text: "Simmer the sauce for 15 minutes."
-    timeout: 90000
+- swipe:
+    start: 50%, 70%
+    end: 50%, 45%
+    duration: 600
 - assertVisible: "Simmer the sauce for 15 minutes."
