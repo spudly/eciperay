@@ -39,7 +39,7 @@ describe('Icon', () => {
         className="icon-white"
       />,
     );
-    const wrapper = container.querySelector('span');
+    const wrapper = container.querySelector('span.icon-white');
     expect(wrapper).toHaveClass('icon-white');
     expect((wrapper as HTMLElement).style.display).toBe('inline-flex');
     expect(container.querySelector('svg')).toBeInTheDocument();

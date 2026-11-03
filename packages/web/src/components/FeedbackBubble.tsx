@@ -29,6 +29,11 @@ const bubbleContainerStyle: CSSProperties = {
   gap: tokens.spacing[3],
 };
 
+// The panel's width/height live in the `.feedback-panel` rule in
+// index.css, not here: their min()/dvh values are not representable in
+// the jsdom style model the tests assert against (the same reason the
+// branded loader's sizing lives in plain CSS). Everything else about
+// the panel stays in this style object.
 const panelStyle: CSSProperties = {
   overflowY: 'auto',
   borderRadius: 16,
@@ -37,8 +42,6 @@ const panelStyle: CSSProperties = {
   padding: tokens.spacing[4],
   boxShadow:
     '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
-  width: 'min(100vw - 2rem, 24rem)',
-  height: 'min(35.125rem, calc(100dvh - 10rem))',
 };
 
 const bubbleButtonStyle: CSSProperties = {
@@ -84,6 +87,7 @@ export const FeedbackBubble = () => {
           below the fold). */}
       {open ? (
         <div
+          className="feedback-panel"
           style={panelStyle}
           role="dialog"
           aria-label="Send feedback"

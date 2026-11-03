@@ -87,6 +87,17 @@ body,
   flex-direction: column;
 }
 
+/* Feedback bubble panel sizing (#326): the definite height the DS
+   FeedbackPage's ScrollView resolves against — the form's measured
+   natural height (35.125rem), capped at 100dvh minus the bubble's
+   offsets (10rem) — and its responsive width cap. Plain CSS because
+   the min()/dvh values are not representable in the jsdom style model
+   the component tests assert against. */
+.feedback-panel {
+  width: min(100vw - 2rem, 24rem);
+  height: min(35.125rem, calc(100dvh - 10rem));
+}
+
 /* Cook-log notes placeholder color (the one style an inline style object
    cannot express; variants keyed by CookLogForm's data-variant). */
 .cook-log-notes::placeholder {

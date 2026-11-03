@@ -99,7 +99,12 @@ export const FeedbackForm = ({
         style={{
           display: 'flex',
           minHeight: 0,
-          flex: 1,
+          // The flex:1 longhands, spelled out: the shorthand's expansion
+          // is not observable in the jsdom style model the tests assert
+          // against, and the longhands are the same layout contract.
+          flexGrow: 1,
+          flexShrink: 1,
+          flexBasis: '0%',
           flexDirection: 'column',
         }}
       >

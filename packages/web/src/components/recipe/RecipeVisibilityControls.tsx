@@ -153,6 +153,19 @@ export const RecipeVisibilityControls = ({recipe, onActionMessage}: Props) => {
               !publishingConsent)
           }
           onPress={() => {
+            // The consent gate is enforced here, not only by the
+            // button's disabled state: a press must never publish
+            // without the consent the UI is asking for.
+            if (
+              sharingMutation.isPending ||
+              (requiresPublishingConsent(
+                recipe.visibility,
+                pendingVisibility,
+              ) &&
+                !publishingConsent)
+            ) {
+              return;
+            }
             sharingMutation.mutate({
               visibility: pendingVisibility,
               ...(requiresPublishingConsent(
