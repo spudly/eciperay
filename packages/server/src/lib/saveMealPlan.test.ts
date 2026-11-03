@@ -431,6 +431,15 @@ describe('replaceMealPlan', () => {
       throw new Error(result.error);
     }
     expect(result.plan.id).toBe(PLAN_ID);
+    // The UPDATE itself must compare at millisecond precision — with raw
+    // equality the sub-millisecond stored value would match no row.
+    const updateCall = mockQuery.mock.calls.find(([sql]) =>
+      String(sql).includes('update meal_plans'),
+    );
+    expect(String(updateCall?.[0])).toContain(
+      "date_trunc('milliseconds', updated_at)",
+    );
+    expect(updateCall?.[1]).toContain('2024-01-01T00:00:00.123Z');
   });
 });
 

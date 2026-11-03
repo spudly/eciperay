@@ -248,6 +248,15 @@ describe('replaceMeal', () => {
     }
     expect(result.meal.id).toBe(MEAL_ID);
     expect(result.meal.updatedAt).toBe('2024-01-01T00:00:00.123Z');
+    // The UPDATE itself must compare at millisecond precision — with raw
+    // equality the sub-millisecond stored value would match no row.
+    const updateCall = mockQuery.mock.calls.find(([sql]) =>
+      String(sql).includes('update meals'),
+    );
+    expect(String(updateCall?.[0])).toContain(
+      "date_trunc('milliseconds', updated_at)",
+    );
+    expect(updateCall?.[1]).toContain('2024-01-01T00:00:00.123Z');
   });
 
   test('propagates unexpected errors from the replace writes', async () => {
