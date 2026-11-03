@@ -313,6 +313,40 @@ describe('POST /recipes/import/url', () => {
     });
   });
 
+  test('cancels both response bodies when the browser-header retry also fails (#400)', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
+    const botCancel = jest.fn().mockResolvedValue(undefined);
+    const retryCancel = jest.fn().mockResolvedValue(undefined);
+    const fetchSpy = jest
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation((input, init) => {
+        if (typeof input === 'string' && input.includes('recipe.example.com')) {
+          const headers = (init?.headers ?? {}) as Record<string, string>;
+          const isRetry = (headers['User-Agent'] ?? '').includes('Mozilla');
+          return Promise.resolve({
+            ok: false,
+            status: 403,
+            body: {cancel: isRetry ? retryCancel : botCancel},
+          } as unknown as Response);
+        }
+        return REAL_FETCH(input, init);
+      });
+
+    const res = await request(getApp())
+      .post('/api/recipes/import/url')
+      .set('Authorization', 'Bearer <redacted>')
+      .send({url: 'https://recipe.example.com/blocked'});
+    fetchSpy.mockRestore();
+    expect(botCancel).toHaveBeenCalledTimes(1);
+    expect(retryCancel).toHaveBeenCalledTimes(1);
+    expect(res.status).toBe(422);
+    expect(res.body).toEqual({
+      error:
+        "We couldn't fetch that page \u2014 the site may be blocking imports. Try pasting the recipe text instead.",
+    });
+  });
+
   test('returns 422 with a fetch message when the fetch itself fails (#297)', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockBillingPlan(mockQuery, 'plus');
