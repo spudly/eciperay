@@ -26,6 +26,13 @@ describe('listFilterParams parsers', () => {
     expect(parseOptionalSearch(1)).toBeNull();
   });
 
+  test('parseOptionalSearch collapses irregular whitespace to single spaces (#385)', () => {
+    expect(parseOptionalSearch('First   Soup')).toBe('First Soup');
+    expect(parseOptionalSearch('First\tSoup')).toBe('First Soup');
+    // Non-breaking spaces (e.g. pasted search text) separate words too.
+    expect(parseOptionalSearch('First\u00A0Soup')).toBe('First Soup');
+  });
+
   test('parseLimit and parseOffset clamp invalid values', () => {
     expect(parseLimit()).toBe(DEFAULT_RECIPE_LIST_LIMIT);
     expect(parseLimit(0)).toBe(DEFAULT_RECIPE_LIST_LIMIT);
@@ -107,6 +114,12 @@ describe('parseRecipeListFilterParams', () => {
   });
 });
 
+// A search word with the ILIKE metacharacters escaped (backslash,
+// then %, then _), as the helpers embed it: words match literally, so
+// "50%" does not match "50g" and "a_b" does not match "axb".
+const escapedSearchTokenSql =
+  "replace(replace(replace(search_token.token, '\\', '\\\\'), '%', '\\%'), '_', '\\_')";
+
 describe('title search sql (#385)', () => {
   test('matches every search word as a title substring, not a phrase or prefix', () => {
     const sql = titleSearchFilterSql(4);
@@ -121,7 +134,7 @@ describe('title search sql (#385)', () => {
     // phrase).
     expect(sql).toContain('not exists');
     expect(sql).toContain(
-      "rv.title not ilike '%' || search_token.token || '%'",
+      `rv.title not ilike '%' || ${escapedSearchTokenSql} || '%'`,
     );
     // The old single-phrase match against the raw search value is gone.
     expect(sql).not.toContain("rv.title ilike '%' || $4 || '%'");
@@ -132,10 +145,10 @@ describe('title search sql (#385)', () => {
     expect(sql).toContain('$3::text is null');
     expect(sql).toContain("regexp_split_to_array($3, '\\s+')");
     expect(sql).toContain(
-      "rv.title not ilike '%' || search_token.token || '%'",
+      `rv.title not ilike '%' || ${escapedSearchTokenSql} || '%'`,
     );
     expect(sql).toContain(
-      "coalesce(rv.description, '') not ilike '%' || search_token.token || '%'",
+      `coalesce(rv.description, '') not ilike '%' || ${escapedSearchTokenSql} || '%'`,
     );
   });
 });

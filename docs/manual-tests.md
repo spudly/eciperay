@@ -324,7 +324,11 @@ mode; there is no Playwright coverage of meals. The cases below are manual._
    word-by-word matching (regression: #385): searching a word from the middle
    of a title (e.g. "First") and a multi-word partial title whose words are
    not the title's opening words (e.g. "First Soup" for a recipe titled
-   "QA — First Soup") both surface the recipe. Also confirm:
+   "QA — First Soup") both surface the recipe; so do the same words in a
+   different order ("Soup First") and words that are not contiguous in the
+   title (e.g. "First Soup" for "QA — First Night Soup"), while a recipe
+   whose title contains only one of the searched words (e.g. "First Course"
+   for the search "First Soup") does NOT appear. Also confirm:
    a search with no matches shows "No recipes found.", selecting a result leaves
    the picker available to search and add another recipe, and a selected
    recipe's Remove action takes it back out. Repeat the search-and-select part

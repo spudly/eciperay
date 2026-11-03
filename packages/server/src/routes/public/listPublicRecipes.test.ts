@@ -122,9 +122,8 @@ describe('GET /public/recipes', () => {
     expect(LIST_PUBLIC_RECIPES_SQL).toContain(
       "regexp_split_to_array($3, '\\s+')",
     );
-    expect(LIST_PUBLIC_RECIPES_SQL).toContain(
-      "rv.title not ilike '%' || search_token.token || '%'",
-    );
+    expect(LIST_PUBLIC_RECIPES_SQL).toContain('rv.title not ilike');
+    expect(LIST_PUBLIC_RECIPES_SQL).toContain('search_token.token');
     expect(LIST_PUBLIC_RECIPES_SQL).not.toContain(
       "rv.title ilike '%' || $3 || '%'",
     );

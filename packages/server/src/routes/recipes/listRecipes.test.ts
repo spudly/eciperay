@@ -204,9 +204,8 @@ describe('GET /recipes', () => {
     // the search into words and rejects a title only when a word is
     // absent from it.
     expect(sql).toContain("regexp_split_to_array($4, '\\s+')");
-    expect(sql).toContain(
-      "rv.title not ilike '%' || search_token.token || '%'",
-    );
+    expect(sql).toContain('rv.title not ilike');
+    expect(sql).toContain('search_token.token');
     expect(sql).not.toContain("rv.title ilike '%' || $4 || '%'");
   });
 

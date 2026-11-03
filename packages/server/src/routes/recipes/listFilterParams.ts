@@ -41,8 +41,13 @@ export const parseOptionalSearch = (value?: unknown): string | null => {
   if (typeof value !== 'string') {
     return null;
   }
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
+  // Collapse every run of whitespace to a single space (JS `\s` also
+  // covers non-breaking and other unicode spaces): a search typed or
+  // pasted with irregular spacing must denote the same words as its
+  // normally-spaced form, for the word-by-word title match (#385) and
+  // for the ingredient match alike.
+  const normalized = value.trim().replace(/\s+/g, ' ');
+  return normalized.length > 0 ? normalized : null;
 };
 
 export const parseLimit = (value?: unknown): number => {
@@ -155,20 +160,28 @@ export const nutritionFilterSql = (paramOffset: number) => `
  * case-insensitive substring. A single word therefore behaves exactly like the
  * old contiguous `%word%` match (a word in the middle of the title matches, not
  * only a title prefix), and a multi-word search such as "First Soup" matches
- * "QA — First Soup" even when the words are not contiguous in the title or
- * appear in a different order — the old single-phrase `%First Soup%` match
- * found nothing whenever anything (a prefix like "QA — ", punctuation, or
- * another word) sat between or around the words. Implemented as "no search word
- * is absent from the title" so the one search bind value keeps its position in
+ * "QA — First Soup" even when the words are not contiguous in the title, are
+ * separated by different spacing or punctuation, or appear in a different order
+ * — the old single-phrase `%First Soup%` match required the words to appear in
+ * the title as one contiguous phrase in the same order and spacing, and found
+ * nothing otherwise (the #385 picker miss). Implemented as "no search word is
+ * absent from the title" so the one search bind value keeps its position in
  * every list query's parameter layout.
  */
+/**
+ * A search word with the ILIKE pattern metacharacters escaped (backslash first,
+ * then `%` and `_`), so a word is matched literally: without this, searching
+ * "50%" would also match "50g" and "a_b" would match "axb".
+ */
+const escapedSearchTokenSql = `replace(replace(replace(search_token.token, '\\', '\\\\'), '%', '\\%'), '_', '\\_')`;
+
 export const titleSearchFilterSql = (paramIndex: number) => `
     and (
       $${paramIndex}::text is null
       or not exists (
         select 1
         from unnest(regexp_split_to_array($${paramIndex}, '\\s+')) as search_token(token)
-        where rv.title not ilike '%' || search_token.token || '%'
+        where rv.title not ilike '%' || ${escapedSearchTokenSql} || '%'
       )
     )
 `;
@@ -185,8 +198,8 @@ export const titleOrDescriptionSearchFilterSql = (paramIndex: number) => `
       or not exists (
         select 1
         from unnest(regexp_split_to_array($${paramIndex}, '\\s+')) as search_token(token)
-        where rv.title not ilike '%' || search_token.token || '%'
-          and coalesce(rv.description, '') not ilike '%' || search_token.token || '%'
+        where rv.title not ilike '%' || ${escapedSearchTokenSql} || '%'
+          and coalesce(rv.description, '') not ilike '%' || ${escapedSearchTokenSql} || '%'
       )
     )
 `;

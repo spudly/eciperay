@@ -88,9 +88,8 @@ describe('GET /recipes/shared-with-me', () => {
     expect(LIST_SHARED_WITH_ME_SQL).toContain(
       "regexp_split_to_array($4, '\\s+')",
     );
-    expect(LIST_SHARED_WITH_ME_SQL).toContain(
-      "rv.title not ilike '%' || search_token.token || '%'",
-    );
+    expect(LIST_SHARED_WITH_ME_SQL).toContain('rv.title not ilike');
+    expect(LIST_SHARED_WITH_ME_SQL).toContain('search_token.token');
     expect(LIST_SHARED_WITH_ME_SQL).not.toContain(
       "rv.title ilike '%' || $4 || '%'",
     );
