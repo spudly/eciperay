@@ -36,6 +36,13 @@ describe('MobileAppInstallBanner', () => {
     expect(
       screen.getByText(MOBILE_WEB_INSTALL_BANNER_MESSAGE),
     ).toBeInTheDocument();
+    // The host wrapper pins the banner to the viewport's top edge
+    // (the DS bar positions absolute; design-system#405)...
+    const region = screen.getByRole('region', {
+      name: /mobile app install prompt/i,
+    });
+    expect(region.style.position).toBe('fixed');
+    expect(region.style.top).toBe('0px');
     expect(screen.getByRole('link', {name: 'App Store'})).toHaveAttribute(
       'href',
       IOS_APP_STORE_URL,

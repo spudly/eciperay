@@ -1,5 +1,6 @@
 import type {StarRatingInputProps} from '@eciperay/client';
-import clsx from 'clsx';
+import {tokens} from '@spudly/ui';
+import type {CSSProperties} from 'react';
 import {useState} from 'react';
 
 // Parity note (design-system#126): the app no longer mirrors this
@@ -16,22 +17,35 @@ export const StarRatingInput = ({
 }: StarRatingInputProps) => {
   const stars = Array.from({length: max}, (_, index) => index + 1);
 
-  const starClass = (star: number) =>
-    clsx('text-2xl', {
-      'text-yellow-400': value !== null && star <= value,
-      'text-gray-300': tone !== 'dark' && (value === null || star > value),
-      'text-white/30': tone === 'dark' && (value === null || star > value),
-    });
+  // Style objects on DS tokens (B7 C12, design-system#130).
+  const starStyle = (star: number): CSSProperties => ({
+    fontSize: tokens.typography.fontSize['2xl'],
+    lineHeight: 1,
+    color:
+      value !== null && star <= value
+        ? tokens.colors.warning.warning4
+        : tone === 'dark'
+          ? 'rgb(255 255 255 / 0.3)'
+          : tokens.colors.gray.gray4,
+  });
+
+  const starButtonStyle = (star: number): CSSProperties => ({
+    ...starStyle(star),
+    background: 'none',
+    border: 'none',
+    padding: 0,
+    cursor: 'pointer',
+  });
 
   return (
-    <div className="flex gap-2">
+    <div style={{display: 'flex', gap: tokens.spacing[2]}}>
       {stars.map(star => {
         if (readOnly || !onChange) {
           return (
             <span
               key={star}
               aria-label={`${star} stars`}
-              className={starClass(star)}
+              style={starStyle(star)}
             >
               ★
             </span>
@@ -42,7 +56,7 @@ export const StarRatingInput = ({
             key={star}
             type="button"
             aria-label={`${star} stars`}
-            className={starClass(star)}
+            style={starButtonStyle(star)}
             disabled={disabled}
             onClick={() => {
               onChange(value === star ? null : star);

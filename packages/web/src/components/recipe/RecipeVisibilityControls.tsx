@@ -8,6 +8,7 @@ import {
   requiresPublishingConsent,
 } from '@eciperay/client';
 import type {RecipeDetail, RecipeVisibility} from '@eciperay/types';
+import {Button, eciperayTheme, tokens} from '@spudly/ui';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useState} from 'react';
 
@@ -71,8 +72,25 @@ export const RecipeVisibilityControls = ({recipe, onActionMessage}: Props) => {
         : null;
 
   return (
-    <section className="mbe-4 rounded-xl border border-gray-200 p-4">
-      <h3 className="mbe-2 text-sm font-semibold text-gray-900">Sharing</h3>
+    <section
+      style={{
+        marginBottom: tokens.spacing[4],
+        borderRadius: 12,
+        border: `1px solid ${tokens.colors.gray.gray3}`,
+        padding: tokens.spacing[4],
+      }}
+    >
+      <h3
+        style={{
+          margin: 0,
+          marginBottom: tokens.spacing[2],
+          fontSize: tokens.typography.fontSize.sm,
+          fontWeight: tokens.typography.fontWeight.semibold,
+          color: tokens.colors.gray.gray10,
+        }}
+      >
+        Sharing
+      </h3>
       <RadioOptionGroup
         name={`visibility-${recipe.id}`}
         value={pendingVisibility ?? recipe.visibility}
@@ -87,7 +105,14 @@ export const RecipeVisibilityControls = ({recipe, onActionMessage}: Props) => {
         }}
       />
       {pendingVisibility === 'public' ? (
-        <p className="mbs-3 text-sm text-amber-800">
+        <p
+          style={{
+            margin: 0,
+            marginTop: tokens.spacing[3],
+            fontSize: tokens.typography.fontSize.sm,
+            color: tokens.colors.warning.warning9,
+          }}
+        >
           This recipe will be discoverable by anyone browsing Eciperay.
         </p>
       ) : null}
@@ -103,7 +128,10 @@ export const RecipeVisibilityControls = ({recipe, onActionMessage}: Props) => {
               agree to the{' '}
               <a
                 href={PRIVACY_POLICY_URL}
-                className="text-primary underline"
+                style={{
+                  color: eciperayTheme.semantic.primary,
+                  textDecoration: 'underline',
+                }}
                 target="_blank"
                 rel="noreferrer"
               >
@@ -115,18 +143,29 @@ export const RecipeVisibilityControls = ({recipe, onActionMessage}: Props) => {
         />
       ) : null}
       {pendingVisibility && pendingVisibility !== recipe.visibility ? (
-        <button
-          type="button"
-          className="
-            bg-primary mbs-3 rounded-lg px-3 py-2 text-sm font-medium text-white
-            disabled:opacity-50
-          "
+        <Button
+          variant="primary"
+          size="sm"
+          marginTop="$3"
           disabled={
             sharingMutation.isPending ||
             (requiresPublishingConsent(recipe.visibility, pendingVisibility) &&
               !publishingConsent)
           }
-          onClick={() => {
+          onPress={() => {
+            // The consent gate is enforced here, not only by the
+            // button's disabled state: a press must never publish
+            // without the consent the UI is asking for.
+            if (
+              sharingMutation.isPending ||
+              (requiresPublishingConsent(
+                recipe.visibility,
+                pendingVisibility,
+              ) &&
+                !publishingConsent)
+            ) {
+              return;
+            }
             sharingMutation.mutate({
               visibility: pendingVisibility,
               ...(requiresPublishingConsent(
@@ -139,61 +178,76 @@ export const RecipeVisibilityControls = ({recipe, onActionMessage}: Props) => {
           }}
         >
           Save sharing settings
-        </button>
+        </Button>
       ) : null}
       {activeVisibility === 'unlisted' ? (
-        <div className="mbs-3 space-y-2">
-          <button
-            type="button"
-            className="
-              rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium
-              text-gray-700
-              disabled:opacity-50
-            "
+        <div style={{marginTop: tokens.spacing[3]}}>
+          <Button
+            variant="secondary"
+            size="sm"
             disabled={rotateMutation.isPending}
-            onClick={() => {
+            onPress={() => {
               rotateMutation.mutate();
             }}
           >
             {shareToken ? 'Rotate share link' : 'Generate share link'}
-          </button>
+          </Button>
           {shareUrl ? (
-            <button
-              type="button"
-              className="
-                ms-2 rounded-lg border border-gray-200 px-3 py-2 text-sm
-                font-medium text-gray-700
-              "
-              onClick={() => {
+            <Button
+              variant="secondary"
+              size="sm"
+              marginLeft="$2"
+              onPress={() => {
                 void navigator.clipboard.writeText(shareUrl);
                 onActionMessage('Share link copied');
               }}
             >
               Copy share link
-            </button>
+            </Button>
           ) : null}
         </div>
       ) : null}
       {activeVisibility === 'public' ? (
-        <div className="mbs-3">
-          <p className="text-xs text-gray-500">Public permalink</p>
-          <div className="mbs-1 flex items-center gap-2">
-            <code className="flex-1 truncate text-xs text-gray-700">
+        <div style={{marginTop: tokens.spacing[3]}}>
+          <p
+            style={{
+              margin: 0,
+              fontSize: tokens.typography.fontSize.xs,
+              color: tokens.colors.gray.gray6,
+            }}
+          >
+            Public permalink
+          </p>
+          <div
+            style={{
+              marginTop: tokens.spacing[1],
+              display: 'flex',
+              alignItems: 'center',
+              gap: tokens.spacing[2],
+            }}
+          >
+            <code
+              style={{
+                flex: 1,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                fontSize: tokens.typography.fontSize.xs,
+                color: tokens.colors.gray.gray8,
+              }}
+            >
               {permalink}
             </code>
-            <button
-              type="button"
-              className="
-                rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium
-                text-gray-700
-              "
-              onClick={() => {
+            <Button
+              variant="secondary"
+              size="sm"
+              onPress={() => {
                 void navigator.clipboard.writeText(permalink);
                 onActionMessage('Permalink copied');
               }}
             >
               Copy
-            </button>
+            </Button>
           </div>
         </div>
       ) : null}

@@ -16,10 +16,14 @@ import {PrimaryButton} from './ui/PrimaryButton.js';
 // Parity note (design-system#129): the app mirror's showcase demo was
 // removed with the in-app component showcase; this web mirror keeps its
 // own demo for the web showcase page, so no web change was needed.
+// The legacy `className` prop remains in the prop type (from
+// @eciperay/client) for API compatibility but is no longer applied (B7
+// C12, design-system#130 — the same treatment the app mirror shipped);
+// callers that need offset wrap the indicator in a margin container
+// instead, as the demo below does.
 export const InlineLoadingIndicator = ({
   loading,
   delayMs = DEFAULT_LOADING_DELAY_MS,
-  className,
 }: InlineLoadingIndicatorProps) => {
   const showLoading = useDelayedTrue(loading, delayMs);
 
@@ -32,7 +36,6 @@ export const InlineLoadingIndicator = ({
       flex={1}
       alignItems="center"
       justifyContent="center"
-      className={className}
     >
       <BookLoadingSpinner size="md" />
     </YStack>
@@ -51,10 +54,9 @@ if (import.meta.env.DEV) {
             setLoading(current => !current);
           }}
         />
-        <InlineLoadingIndicator
-          loading={loading}
-          className="mbs-2"
-        />
+        <YStack marginTop="$2">
+          <InlineLoadingIndicator loading={loading} />
+        </YStack>
       </>
     );
   };

@@ -278,14 +278,18 @@ describe('FeedbackForm', () => {
     // The DS page's ScrollView claims min-height: 100% of the bubble panel;
     // without the flex column, Cancel flowed below the panel's fold and was
     // clipped. The column root fills the panel, the page wrapper flexes and
-    // may shrink, and Cancel stays in flow below it.
+    // may shrink, and Cancel stays in flow below it. (Tamagui renders the
+    // button inside display:contents theme spans, so the layout root is
+    // the nearest ancestor div, not the direct parent.)
     const cancel = screen.getByRole('button', {name: 'Cancel'});
-    const root = cancel.closest('div.flex.flex-col');
+    const root = cancel.closest('div');
     expect(root).not.toBeNull();
-    expect(root?.className).toContain('h-full');
-    const pageWrapper = root?.firstElementChild;
-    expect(pageWrapper?.className).toContain('flex-1');
-    expect(pageWrapper?.className).toContain('min-h-0');
-    expect(pageWrapper?.className).toContain('flex-col');
+    expect(root?.style.height).toBe('100%');
+    expect(root?.style.display).toBe('flex');
+    expect(root?.style.flexDirection).toBe('column');
+    const pageWrapper = root?.firstElementChild as HTMLElement | null;
+    expect(pageWrapper?.style.flexGrow).toBe('1');
+    expect(pageWrapper?.style.minHeight).toBe('0px');
+    expect(pageWrapper?.style.flexDirection).toBe('column');
   });
 });

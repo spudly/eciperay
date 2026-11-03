@@ -1,8 +1,30 @@
 import type {LegalLinksProps} from '@eciperay/client';
-import clsx from 'clsx';
+import type {CSSProperties} from 'react';
+import {eciperayTheme, tokens} from '@spudly/ui';
 import {Link} from 'react-router-dom';
 
-const linkClasses = 'text-primary font-medium hover:underline';
+// Style objects on DS tokens (B7 C12, design-system#130 — the Tailwind
+// utilities these replace are gone with the dependency).
+const linkStyle: CSSProperties = {
+  color: eciperayTheme.semantic.primary,
+  fontWeight: tokens.typography.fontWeight.medium,
+  textDecoration: 'none',
+};
+
+const stackedStyle: CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: tokens.spacing[2],
+  fontFamily: tokens.typography.fontFamily.sans,
+  fontSize: tokens.typography.fontSize.sm,
+};
+
+const inlineStyle: CSSProperties = {
+  color: eciperayTheme.semantic.textMuted,
+  textAlign: 'center',
+  fontFamily: tokens.typography.fontFamily.sans,
+  fontSize: tokens.typography.fontSize.sm,
+};
 
 // Parity note (design-system#129): the app mirror's showcase demo was
 // removed with the in-app component showcase; this web mirror keeps its
@@ -14,18 +36,19 @@ export const LegalLinks = ({
   if (variant === 'stacked') {
     return (
       <nav
-        className={clsx('flex flex-col gap-2 text-sm', className)}
+        style={stackedStyle}
+        className={className || undefined}
         aria-label="Legal"
       >
         <Link
           to="/privacy"
-          className={linkClasses}
+          style={linkStyle}
         >
           Privacy Policy
         </Link>
         <Link
           to="/terms"
-          className={linkClasses}
+          style={linkStyle}
         >
           Terms of Service
         </Link>
@@ -34,18 +57,21 @@ export const LegalLinks = ({
   }
 
   return (
-    <p className={clsx('text-muted text-center text-sm', className)}>
+    <p
+      style={inlineStyle}
+      className={className || undefined}
+    >
       By creating an account, you agree to our{' '}
       <Link
         to="/terms"
-        className={linkClasses}
+        style={linkStyle}
       >
         Terms of Service
       </Link>{' '}
       and{' '}
       <Link
         to="/privacy"
-        className={linkClasses}
+        style={linkStyle}
       >
         Privacy Policy
       </Link>

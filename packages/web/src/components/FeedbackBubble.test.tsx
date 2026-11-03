@@ -82,10 +82,12 @@ describe('FeedbackBubble', () => {
 
     await user.click(screen.getByRole('button', {name: 'Send feedback'}));
     const dialog = screen.getByRole('dialog', {name: 'Send feedback'});
-    expect(dialog.className).toContain(
-      'block-[min(35.125rem,calc(100dvh-10rem))]',
-    );
-    expect(dialog.className).toContain('overflow-y-auto');
+    // The definite height itself (min(35.125rem, calc(100dvh - 10rem)))
+    // lives in the .feedback-panel rule in index.css — the min()/dvh
+    // values are not representable in jsdom's style model, so the test
+    // asserts the class that carries them plus the inline overflow.
+    expect(dialog).toHaveClass('feedback-panel');
+    expect(dialog.style.overflowY).toBe('auto');
   });
 
   test('closes the dialog after submit or cancel', async () => {

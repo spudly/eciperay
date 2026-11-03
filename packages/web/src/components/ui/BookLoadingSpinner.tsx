@@ -23,7 +23,9 @@ export const BookLoadingSpinner = ({
 if (import.meta.env.DEV) {
   BookLoadingSpinner.demo = function BookLoadingSpinnerDemo() {
     return (
-      <div className="flex flex-col gap-6">
+      <div
+        style={{display: 'flex', flexDirection: 'column', gap: 24}}
+      >
         <BookLoadingSpinner size="sm" />
         <BookLoadingSpinner size="md" />
         <BookLoadingSpinner size="lg" />
