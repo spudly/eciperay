@@ -34,13 +34,20 @@ export type CommunityRatingColumns = {
 export const mapNutritionSummary = (
   row: Pick<
     NutritionColumns,
-    'calories' | 'protein_g' | 'satiety_score' | 'nutrition_status'
+    | 'calories'
+    | 'protein_g'
+    | 'carbs_g'
+    | 'fat_g'
+    | 'satiety_score'
+    | 'nutrition_status'
   >,
 ): RecipeNutritionSummary => ({
   satietyScore: row.satiety_score ?? null,
   nutritionStatus: row.nutrition_status satisfies NutritionStatus | null,
   calories: row.calories ?? null,
   proteinG: row.protein_g ?? null,
+  carbsG: row.carbs_g ?? null,
+  fatG: row.fat_g ?? null,
 });
 
 export const mapNutritionInfoFromDetailRow = (

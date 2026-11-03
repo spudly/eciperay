@@ -166,13 +166,23 @@ without); one recipe may be created fresh in case 1.
    exactly once, as the pill in the page toolbar — the Overview does not repeat
    it under the title (the design-system#363 duplicate was removed in @spudly/ui
    1.16.2).
+10. **Condensed nutrition shows all five values (#361).** On `/recipes`, on a
+    public discovery card (signed-out Discover), and on a shared-with-me card,
+    check the subtitle of a recipe with ready nutrition. **Expected:** the
+    condensed line shows calories, protein, carbs, and fat (each rounded, e.g.
+    "400 cal · 20g protein · 40g carbs · 10g fat") followed by the satiety
+    value — all five values without opening the recipe. A recipe whose
+    nutrition is not ready shows no macro values and keeps the "Satiety
+    pending" / "Satiety —" wording.
 
 **Run when:**
 `packages/app/src/screens/{Recipes,RecipeDetail,EditRecipe,EditVersion,ManualEntry}Screen.tsx`,
 `packages/app/src/hosts/{recipe,recipes}/**`,
 `packages/web/src/pages/{Recipes,RecipeDetail,EditRecipe,EditVersion,ManualEntry}Page.tsx`,
 `packages/web/src/components/{recipe,recipes}/**`, `@spudly/ui` recipe form or
-recipe page components, `packages/server` recipe routes.
+recipe page components, `packages/server` recipe routes,
+`packages/client/src/recipeListDisplay.ts`, recipe nutrition summary fields in
+`packages/types` / `packages/server` nutrition mapping.
 
 ---
 
@@ -337,8 +347,15 @@ mode; there is no Playwright coverage of meals. The cases below are manual._
    (Runs execute in the QA preview environment defined under "How runs work"
    above; on any surface where writes are prohibited, verify read-only instead:
    confirm a beyond-100 recipe appears as a search result without saving.)
+8. **Condensed nutrition shows all five values (#361).** Open a meal whose
+   member recipes have ready nutrition. **Expected:** the meal total line and
+   each member recipe's line on the meal detail show calories, protein, carbs,
+   fat, and satiety (member values only for fields known for that recipe; a
+   member with no nutrition shows no macro values). The same five values
+   appear on meal-plan totals and entry lines.
 
 **Run when:**
+`packages/client/src/mealUiHelpers.ts`,
 `packages/app/src/screens/{MealsHub,MealDetail,MealEdit,MealCookingMode}Screen.tsx`,
 `packages/web/src/pages/{MealsHub,MealDetail,MealEdit,MealCookingMode}Page.tsx`,
 `packages/client/src/recipeListQuery.ts`, `@spudly/ui` `MealsHubPage`,

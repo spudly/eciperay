@@ -38,6 +38,10 @@ describe('loadMealDetail', () => {
     expect(meal?.members).toHaveLength(1);
     expect(meal?.members[0]?.title).toBe('Soup');
     expect(meal?.members[0]?.accessLost).toBe(false);
+    expect(meal?.members[0]?.calories).toBe(100);
+    expect(meal?.members[0]?.proteinG).toBe(10);
+    expect(meal?.members[0]?.carbsG).toBe(5);
+    expect(meal?.members[0]?.fatG).toBe(2);
   });
 
   test('returns string timestamps when pg returns Date objects for the meal row', async () => {
@@ -106,6 +110,8 @@ describe('loadMealDetail', () => {
     const meal = await loadMealDetail(MEAL_ID, USER_ID, mockQuery);
     expect(meal?.members[0]?.calories).toBeNull();
     expect(meal?.members[0]?.proteinG).toBeNull();
+    expect(meal?.members[0]?.carbsG).toBeNull();
+    expect(meal?.members[0]?.fatG).toBeNull();
     expect(meal?.members[0]?.satietyScore).toBeNull();
   });
 
@@ -116,6 +122,8 @@ describe('loadMealDetail', () => {
       satiety_score: null,
       calories: null,
       protein_g: null,
+      carbs_g: null,
+      fat_g: null,
     };
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([mealRow]))
@@ -127,6 +135,8 @@ describe('loadMealDetail', () => {
     expect(meal?.members[0]?.satietyScore).toBeNull();
     expect(meal?.members[0]?.calories).toBeNull();
     expect(meal?.members[0]?.proteinG).toBeNull();
+    expect(meal?.members[0]?.carbsG).toBeNull();
+    expect(meal?.members[0]?.fatG).toBeNull();
   });
 
   test('leaves nutrition fields null when status is missing', async () => {
@@ -176,6 +186,8 @@ describe('nutritionFromMembers', () => {
           nutritionStatus: 'ready',
           calories: 100,
           proteinG: 10,
+          carbsG: 5,
+          fatG: 2,
         },
       ],
       recipesById,

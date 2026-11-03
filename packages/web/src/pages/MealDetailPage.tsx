@@ -10,11 +10,11 @@ import {eciperay} from '../lib/api.js';
 
 /**
  * One member row's nutrition line, composed host-side for the DS page: the
- * calories / protein / satiety parts the retired web view rendered inline.
- * The string crosses the @spudly/ui/pages boundary pre-composed inside the
- * member subtitle (the RecipesPage subtitle precedent): the rounding is
- * the host's, so the page only renders it. Mirrors the app screen's
- * composition.
+ * calories / protein / carbs / fat / satiety parts the retired web view
+ * rendered inline. The string crosses the @spudly/ui/pages boundary
+ * pre-composed inside the member subtitle (the RecipesPage subtitle precedent):
+ * the rounding is the host's, so the page only renders it. Mirrors the app
+ * screen's composition.
  */
 const formatMemberNutrition = (member: MealRecipeMember): string | null => {
   const parts: string[] = [];
@@ -23,6 +23,12 @@ const formatMemberNutrition = (member: MealRecipeMember): string | null => {
   }
   if (member.proteinG !== null) {
     parts.push(`${Math.round(member.proteinG)}g protein`);
+  }
+  if (member.carbsG !== null) {
+    parts.push(`${Math.round(member.carbsG)}g carbs`);
+  }
+  if (member.fatG !== null) {
+    parts.push(`${Math.round(member.fatG)}g fat`);
   }
   if (member.satietyScore !== null) {
     parts.push(`satiety ${Math.round(member.satietyScore)}`);

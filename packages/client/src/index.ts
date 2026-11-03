@@ -242,6 +242,7 @@ export {
   STALE_VIEWER_RATING_HINT,
 } from './recipeEngagement.js';
 export {
+  formatCondensedNutritionParts,
   formatDiscoveryListMeta,
   formatDisplayRatingLabel,
   formatRecipeListMeta,
