@@ -7,6 +7,7 @@ import {YStack} from 'tamagui';
 
 import {eciperay} from '../../lib/api.js';
 import {BookLoadingSpinner} from '../ui/BookLoadingSpinner.js';
+import {ErrorText} from '../ui/ErrorText.js';
 
 import {RecipeCommentItem} from './RecipeCommentItem.js';
 
@@ -109,17 +110,11 @@ export const RecipeCommentsSection = ({
         Comments
       </h3>
       {commentError ? (
-        <p
-          role="alert"
-          style={{
-            margin: 0,
-            marginBottom: tokens.spacing[3],
-            fontSize: tokens.typography.fontSize.sm,
-            color: tokens.colors.danger.danger7,
-          }}
-        >
-          {commentError}
-        </p>
+        <div style={{marginBottom: tokens.spacing[3]}}>
+          <span role="alert">
+            <ErrorText>{commentError}</ErrorText>
+          </span>
+        </div>
       ) : null}
       {isLoading ? (
         <YStack

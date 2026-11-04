@@ -130,6 +130,21 @@ describe('RecipeDetailHost', () => {
       ).toBeInTheDocument();
     });
 
+    test('shows the server error when saving a rating fails (#418)', async () => {
+      vi.spyOn(eciperay.recipes, 'putRating').mockRejectedValue(
+        new Error('Recipe cannot be modified in its current status'),
+      );
+      await renderHost();
+      await userEvent.click(
+        await screen.findByRole('radio', {name: 'Rate 4 out of 5 stars'}),
+      );
+      expect(
+        await screen.findByText(
+          'Could not save your rating: Recipe cannot be modified in its current status',
+        ),
+      ).toBeInTheDocument();
+    });
+
     test('marks recipe perfected and abandoned', async () => {
       const patchStatus = vi
         .spyOn(eciperay.recipes, 'patchStatus')
