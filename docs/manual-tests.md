@@ -753,6 +753,37 @@ billing/entitlement routes, plan catalog or pricing changes.
 
 ---
 
+## Web — Privacy choices / consent management
+
+_Preconditions: signed-out browser session and the QA account; a browser profile
+where analytics (PostHog) is configured._
+
+1. **Footer link opens the surface (signed out).** From a public page, use the
+   "Do Not Sell or Share My Personal Information" footer link. **Expected:** the
+   privacy choices page at `/privacy/consent` opens, showing the current choice
+   (Not set on a fresh profile).
+2. **Accept takes effect immediately.** Choose Accept on the privacy choices
+   page. **Expected:** the choice shows Accepted, persists across a reload, and
+   analytics is enabled without a second reload.
+3. **Withdraw returns to undecided.** Choose Withdraw consent. **Expected:** the
+   stored choice is removed, the page shows Not set, analytics is off, and the
+   consent banner re-presents on the next page view, exactly as for a new
+   visitor.
+4. **Decline persists.** From the banner or the privacy choices page, decline.
+   **Expected:** no analytics collection, the choice shows Declined after
+   reload, and the banner does not re-appear.
+5. **Profile interplay (#256).** In Profile preferences, withdraw consent while
+   the feedback shortcut is on. **Expected:** the shortcut is forced off with
+   the explanatory message; re-enabling it re-presents the consent prompt.
+
+**Run when:** `packages/client/src/analyticsConsent.ts`,
+`packages/web/src/pages/ConsentPreferencesPage.tsx`,
+`packages/web/src/components/AnalyticsConsentBanner.tsx`,
+`packages/web/src/components/ProfileFeedbackPreference.tsx`,
+`packages/web/src/lib/analytics.ts`, footer/legal-link data changes.
+
+---
+
 ## Visual & responsive
 
 _Automated: Playwright `mobile-web.spec.ts` covers 390px/430px layout checks

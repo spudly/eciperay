@@ -5,5 +5,7 @@ export const IOS_APP_STORE_URL = 'https://apps.apple.com/app/eciperay';
 export const ANDROID_PLAY_STORE_URL =
   'https://play.google.com/store/apps/details?id=com.eciperay';
 export const TERMS_OF_SERVICE_URL = 'https://www.eciperay.com/terms';
+export const CONSENT_PREFERENCES_URL =
+  'https://www.eciperay.com/privacy/consent';
 export const LEGAL_OPERATOR_NAME = 'Stephen Sorensen';
 export const LEGAL_CONTACT_EMAIL = 'shuoink+eciperaylegal@gmail.com';

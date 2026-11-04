@@ -106,7 +106,7 @@ export const privacyPolicySections: LegalDocumentSection[] = [
         listItem([
           strongSpan('Cookie and consent preferences:'),
           textSpan(
-            " when you respond to our analytics consent banner on the web, we store your choice in your browser's local storage so we can remember it on future visits. This preference is not sent to our servers.",
+            ' when you respond to our analytics consent banner on the web, we store your choice in your browser\'s local storage so we can remember it on future visits. You can accept, decline, or withdraw that choice at any time on the privacy choices page linked from every page\'s footer ("Do Not Sell or Share My Personal Information"); withdrawing removes the stored choice and turns analytics off until you choose again. This preference is not sent to our servers.',
           ),
         ]),
         listItem([
@@ -145,7 +145,9 @@ export const privacyPolicySections: LegalDocumentSection[] = [
     title: 'How we use your information',
     blocks: [
       listBlock([
-        listItem([textSpan('Provide, maintain, and improve the Eciperay service.')]),
+        listItem([
+          textSpan('Provide, maintain, and improve the Eciperay service.'),
+        ]),
         listItem([
           textSpan(
             'Understand how features are used and measure product performance, including page views on our marketing landing page, public recipe pages, and public recipe browse traffic when you are not signed in.',
@@ -161,10 +163,18 @@ export const privacyPolicySections: LegalDocumentSection[] = [
             'Diagnose errors, investigate reliability issues, and improve stability.',
           ),
         ]),
-        listItem([textSpan('Run product experiments and roll out features gradually.')]),
+        listItem([
+          textSpan('Run product experiments and roll out features gradually.'),
+        ]),
         listItem([textSpan('Authenticate your account and keep it secure.')]),
-        listItem([textSpan('Store and sync your recipes across your devices.')]),
-        listItem([textSpan('Power AI-assisted recipe import, editing, and suggestions.')]),
+        listItem([
+          textSpan('Store and sync your recipes across your devices.'),
+        ]),
+        listItem([
+          textSpan(
+            'Power AI-assisted recipe import, editing, and suggestions.',
+          ),
+        ]),
         listItem([
           textSpan(
             'Review voluntary product feedback, prioritize bug reports, and improve reliability and usability (including using linked session replays to understand what you experienced).',

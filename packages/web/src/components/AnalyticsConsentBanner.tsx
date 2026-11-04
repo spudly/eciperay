@@ -1,11 +1,12 @@
 import {
   identifyAnalyticsUser,
   readAnalyticsConsent,
+  subscribeAnalyticsConsent,
   useAuth,
   writeAnalyticsConsent,
 } from '@eciperay/client';
 import {FixedActionBanner, TextLink} from '@spudly/ui';
-import {useState} from 'react';
+import {useEffect, useState} from 'react';
 
 import {analytics, disablePostHog, enablePostHog} from '../lib/analytics.js';
 import {POSTHOG_KEY} from '../lib/env.js';
@@ -16,6 +17,18 @@ const shouldPromptForConsent = () =>
 export const AnalyticsConsentBanner = () => {
   const {session} = useAuth();
   const [visible, setVisible] = useState(shouldPromptForConsent);
+
+  // A withdraw/reset from another surface (Profile, the consent
+  // preferences page) returns this browser to undecided in the same
+  // session: re-present the banner without waiting for a reload (#408).
+  // An accept/decline elsewhere hides a banner still showing here.
+  useEffect(
+    () =>
+      subscribeAnalyticsConsent(() => {
+        setVisible(shouldPromptForConsent());
+      }),
+    [],
+  );
 
   if (!visible) {
     return null;
@@ -50,13 +63,7 @@ export const AnalyticsConsentBanner = () => {
     <div
       role="dialog"
       aria-label="Cookie and analytics consent"
-      style={{
-        position: 'fixed',
-        left: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: 50,
-      }}
+      style={{position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 50}}
     >
       <FixedActionBanner
         position="bottom"

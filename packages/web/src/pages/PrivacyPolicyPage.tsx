@@ -11,7 +11,7 @@ export const PrivacyPolicyPage = () => {
   return (
     <LegalDocumentPage
       title="Privacy Policy"
-      lastUpdated="July 22, 2026"
+      lastUpdated="November 4, 2026"
       sections={privacyPolicySections}
       {...legalDocumentFrameProps}
     />

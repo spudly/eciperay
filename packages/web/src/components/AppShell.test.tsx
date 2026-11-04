@@ -24,6 +24,13 @@ describe('AppShell', () => {
     expect(screen.getByText('Recipes')).toBeInTheDocument();
     expect(screen.getByText('Shared with me')).toBeInTheDocument();
     expect(screen.getByText('Page Content')).toBeInTheDocument();
+    // The shell footer carries the legal links on every signed-in page,
+    // including the Do Not Sell or Share link to the consent surface.
+    expect(
+      screen.getByRole('link', {
+        name: 'Do Not Sell or Share My Personal Information',
+      }),
+    ).toHaveAttribute('href', '/privacy/consent');
   });
 
   test('renders children when provided instead of outlet', async () => {

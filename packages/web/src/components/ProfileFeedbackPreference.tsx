@@ -1,13 +1,15 @@
 import {
+  clearAnalyticsConsent,
   identifyAnalyticsUser,
   readAnalyticsConsent,
+  subscribeAnalyticsConsent,
   useAuth,
   useFeedbackShortcutEnabled,
   writeAnalyticsConsent,
   type AnalyticsConsentStatus,
 } from '@eciperay/client';
-import {Button, SectionCard, Text as DSText} from '@spudly/ui';
-import {useState} from 'react';
+import {Button, SectionCard, Text as DSText, TextLink} from '@spudly/ui';
+import {useEffect, useState} from 'react';
 import type {ComponentType} from 'react';
 import type {ShowcaseFrameProps} from '@eciperay/client';
 
@@ -36,6 +38,17 @@ export const ProfileFeedbackPreference = () => {
     readAnalyticsConsent,
   );
   const [consentPromptOpen, setConsentPromptOpen] = useState(false);
+
+  // Follow consent changes made on other surfaces (the banner, the
+  // privacy choices page, another tab) while Profile is open, so the
+  // displayed state and the withdraw action stay accurate (#408).
+  useEffect(
+    () =>
+      subscribeAnalyticsConsent(status => {
+        setConsent(status);
+      }),
+    [],
+  );
   const [error, setError] = useState<string | null>(null);
 
   const acceptConsent = () => {
@@ -60,6 +73,22 @@ export const ProfileFeedbackPreference = () => {
       // The shortcut cannot send feedback without analytics consent, so
       // declining consent forces the preference off rather than leaving it
       // on with no visible effect.
+      setEnabled(false);
+      setError(
+        'The feedback shortcut needs analytics consent to send feedback, so it has been turned off.',
+      );
+    }
+  };
+
+  const withdrawConsent = () => {
+    clearAnalyticsConsent();
+    // Withdrawing returns the browser to undecided; analytics stops now,
+    // and (like declining) the feedback shortcut cannot stay on without
+    // consent, so it is forced off with the same explanation (#408/#256).
+    disablePostHog();
+    setConsent(null);
+    setConsentPromptOpen(false);
+    if (enabled) {
       setEnabled(false);
       setError(
         'The feedback shortcut needs analytics consent to send feedback, so it has been turned off.',
@@ -149,6 +178,20 @@ export const ProfileFeedbackPreference = () => {
                 </Button>
               </div>
             )}
+            {consent ? (
+              <div>
+                <Button
+                  variant="secondary"
+                  onPress={withdrawConsent}
+                >
+                  Withdraw analytics consent
+                </Button>
+              </div>
+            ) : null}
+            <DSText variant="hint">
+              Manage your choice at any time on the{' '}
+              <TextLink href="/privacy/consent">privacy choices page</TextLink>.
+            </DSText>
             {error ? (
               <span role="alert">
                 <DSText variant="error">{error}</DSText>

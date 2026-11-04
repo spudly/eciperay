@@ -52,6 +52,12 @@ export const LegalLinks = ({
         >
           Terms of Service
         </Link>
+        <Link
+          to="/privacy/consent"
+          style={linkStyle}
+        >
+          Do Not Sell or Share My Personal Information
+        </Link>
       </nav>
     );
   }

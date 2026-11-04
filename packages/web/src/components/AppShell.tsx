@@ -3,6 +3,7 @@ import {eciperayTheme, tokens} from '@spudly/ui';
 import {NavLink, Outlet} from 'react-router-dom';
 
 import {Icon} from './Icon.js';
+import {LegalLinks} from './LegalLinks.js';
 
 const navItems = [
   {to: '/', end: true, label: 'Home', icon: 'home' as const},
@@ -47,10 +48,7 @@ const headerInnerStyle: CSSProperties = {
   paddingBottom: tokens.spacing[3],
 };
 
-const brandLinkStyle: CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-};
+const brandLinkStyle: CSSProperties = {display: 'flex', alignItems: 'center'};
 
 const logoStyle: CSSProperties = {
   display: 'block',
@@ -82,7 +80,31 @@ const navLinkStyle = ({isActive}: {isActive: boolean}): CSSProperties => ({
     : {color: eciperayTheme.semantic.text}),
 });
 
+const footerStyle: CSSProperties = {
+  position: 'relative',
+  zIndex: 0,
+  borderTop: `1px solid ${eciperayTheme.semantic.border}`,
+  backgroundColor: eciperayTheme.semantic.surface,
+};
+
+const footerInnerStyle: CSSProperties = {
+  maxWidth: 1024,
+  marginLeft: 'auto',
+  marginRight: 'auto',
+  paddingLeft: tokens.spacing[4],
+  paddingRight: tokens.spacing[4],
+  paddingTop: tokens.spacing[3],
+  paddingBottom: tokens.spacing[3],
+};
+
 const mainStyle: CSSProperties = {
+  // Positioned above the shell footer (zIndex 0): DS pages pin their
+  // list error/loading bars to the bottom of the page, and at maximum
+  // scroll those bars share the viewport's bottom strip with the
+  // footer — the bar (inside main) must win hit-testing there, or its
+  // actions (e.g. a list's Try again) become unclickable.
+  position: 'relative',
+  zIndex: 1,
   maxWidth: 1024,
   width: '100%',
   marginLeft: 'auto',
@@ -132,5 +154,10 @@ export const AppShell = ({children}: AppShellProps) => (
       </div>
     </header>
     <main style={mainStyle}>{children ?? <Outlet />}</main>
+    <footer style={footerStyle}>
+      <div style={footerInnerStyle}>
+        <LegalLinks variant="stacked" />
+      </div>
+    </footer>
   </div>
 );
