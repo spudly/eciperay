@@ -51,14 +51,20 @@ describe('RecipeImageField', () => {
 
   test('browse input forwards the selected file', async () => {
     const onImageFile = vi.fn();
-    render(
+    const {container} = render(
       <RecipeImageField
         {...defaultProps}
         onImageFile={onImageFile}
       />,
     );
+    expect(
+      screen.getByRole('button', {name: 'Browse images'}),
+    ).toBeInTheDocument();
     const file = new File(['pixels'], 'recipe.png', {type: 'image/png'});
-    await userEvent.upload(screen.getByLabelText('Browse images'), file);
+    await userEvent.upload(
+      container.querySelector('#recipe-image-upload') as HTMLElement,
+      file,
+    );
     expect(onImageFile).toHaveBeenCalledWith(file);
   });
 
@@ -125,9 +131,10 @@ describe('RecipeImageField', () => {
         onImageFile={onImageFile}
       />,
     );
-    fireEvent.change(screen.getByLabelText('Browse images'), {
-      target: {files: []},
-    });
+    fireEvent.change(
+      document.querySelector('#recipe-image-upload') as HTMLElement,
+      {target: {files: []}},
+    );
     expect(onImageFile).not.toHaveBeenCalled();
   });
 
@@ -168,7 +175,7 @@ describe('RecipeImageField', () => {
       />,
     );
     expect(screen.getByText('Generating…')).toBeInTheDocument();
-    expect(screen.getByLabelText('Browse images')).toBeDisabled();
+    expect(screen.getByRole('button', {name: 'Browse images'})).toBeDisabled();
     const file = new File(['pixels'], 'recipe.png', {type: 'image/png'});
     fireEvent.drop(screen.getByLabelText('Recipe image drop zone'), {
       dataTransfer: {files: [file], items: []},

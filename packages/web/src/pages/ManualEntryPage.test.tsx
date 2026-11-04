@@ -74,7 +74,10 @@ describe('ManualEntryPage', () => {
     const textareas = screen.getAllByRole('textbox');
     await userEvent.type(textareas.at(-1)!, 'Mix ingredients');
     const file = new File(['pixels'], 'recipe.png', {type: 'image/png'});
-    await userEvent.upload(screen.getByLabelText('Browse images'), file);
+    await userEvent.upload(
+      document.querySelector('#recipe-image-upload') as HTMLElement,
+      file,
+    );
     await userEvent.click(screen.getByText('Create Recipe'));
     await waitFor(() => {
       expect(mockUploadRecipeImage).toHaveBeenCalledWith(

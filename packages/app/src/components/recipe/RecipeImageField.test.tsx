@@ -344,4 +344,25 @@ describe('RecipeImageField', () => {
     });
     expect(onImagePicked).not.toHaveBeenCalled();
   });
+
+  test('reports a camera-specific message when the camera is unavailable', async () => {
+    const onImageError = jest.fn();
+    mockLaunchCamera.mockResolvedValue({errorCode: 'camera_unavailable'});
+    const {getByLabelText} = await renderWithProviders(
+      <RecipeImageField
+        imagePreview={null}
+        imageUploading={false}
+        imageError={null}
+        onImagePicked={jest.fn()}
+        onImageError={onImageError}
+        onRemove={jest.fn()}
+      />,
+    );
+    await fireEvent.press(getByLabelText('Take photo of recipe'));
+    await waitFor(() => {
+      expect(onImageError).toHaveBeenCalledWith(
+        'Camera is unavailable on this device',
+      );
+    });
+  });
 });

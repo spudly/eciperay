@@ -55,7 +55,12 @@ export const RecipeImageField = ({
       return;
     }
     if (result.errorCode) {
-      onImageError?.(result.errorMessage ?? 'Failed to read image');
+      onImageError?.(
+        result.errorMessage ??
+          (result.errorCode === 'camera_unavailable'
+            ? 'Camera is unavailable on this device'
+            : 'Failed to read image'),
+      );
       return;
     }
     const asset = result.assets?.[0];

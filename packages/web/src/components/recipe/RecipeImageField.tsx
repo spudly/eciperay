@@ -63,6 +63,7 @@ export const RecipeImageField = ({
 }: Props) => {
   const [isDragging, setIsDragging] = useState(false);
   const captureInputRef = useRef<HTMLInputElement>(null);
+  const browseInputRef = useRef<HTMLInputElement>(null);
   const imageBusy = imageUploading || imageGenerating;
 
   const acceptImage = (file: File | null) => {
@@ -174,12 +175,21 @@ export const RecipeImageField = ({
         )}
       </div>
       <div style={{display: 'flex', flexWrap: 'wrap', gap: tokens.spacing[3]}}>
-        <label
-          htmlFor="recipe-image-upload"
-          style={browseLabelStyle}
+        <button
+          type="button"
+          style={{
+            ...browseLabelStyle,
+            border: 'none',
+            cursor: imageBusy ? 'not-allowed' : 'pointer',
+            opacity: imageBusy ? 0.5 : 1,
+          }}
+          disabled={imageBusy}
+          onClick={() => {
+            browseInputRef.current?.click();
+          }}
         >
           {imageUploading ? 'Uploading…' : 'Browse images'}
-        </label>
+        </button>
         <button
           type="button"
           aria-label="Take photo"
@@ -221,6 +231,7 @@ export const RecipeImageField = ({
           </button>
         ) : null}
         <input
+          ref={browseInputRef}
           id="recipe-image-upload"
           type="file"
           accept="image/jpeg,image/png,image/gif,image/webp"
