@@ -165,12 +165,29 @@ export const RecipeDetailHost = ({
   // passed to its panels; the page renders it from the overview
   // view-model.
   const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const actionMessageTimer = useRef<number | null>(null);
   const showActionMessage = (message: string) => {
     setActionMessage(message);
-    window.setTimeout(() => {
+    // Cancel the previous dismissal: without this, a message shown
+    // within 2.5s of an earlier one is cleared early by the earlier
+    // timer — exactly the rapid success-then-error (or error-then-error)
+    // sequence the #418 error messages can produce.
+    if (actionMessageTimer.current !== null) {
+      window.clearTimeout(actionMessageTimer.current);
+    }
+    actionMessageTimer.current = window.setTimeout(() => {
       setActionMessage(null);
+      actionMessageTimer.current = null;
     }, 2500);
   };
+  useEffect(
+    () => () => {
+      if (actionMessageTimer.current !== null) {
+        window.clearTimeout(actionMessageTimer.current);
+      }
+    },
+    [],
+  );
 
   const invalidate = () =>
     invalidateRecipeQueries(

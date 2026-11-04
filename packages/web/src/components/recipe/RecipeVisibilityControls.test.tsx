@@ -80,6 +80,12 @@ describe('RecipeVisibilityControls', () => {
         screen.queryByText('Save sharing settings'),
       ).not.toBeInTheDocument();
     });
+    // Retrying the change starts from a clean slate: the consent given
+    // for the rejected attempt was cleared along with the selection.
+    await userEvent.click(screen.getByLabelText(/Unlisted link/i));
+    expect(
+      screen.getByRole('checkbox', {name: 'Publishing consent'}),
+    ).not.toBeChecked();
   });
 
   test('surfaces a rejected share-link rotation (#418)', async () => {
