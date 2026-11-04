@@ -81,6 +81,8 @@ const navLinkStyle = ({isActive}: {isActive: boolean}): CSSProperties => ({
 });
 
 const footerStyle: CSSProperties = {
+  position: 'relative',
+  zIndex: 0,
   borderTop: `1px solid ${eciperayTheme.semantic.border}`,
   backgroundColor: eciperayTheme.semantic.surface,
 };
@@ -96,6 +98,13 @@ const footerInnerStyle: CSSProperties = {
 };
 
 const mainStyle: CSSProperties = {
+  // Positioned above the shell footer (zIndex 0): DS pages pin their
+  // list error/loading bars to the bottom of the page, and at maximum
+  // scroll those bars share the viewport's bottom strip with the
+  // footer — the bar (inside main) must win hit-testing there, or its
+  // actions (e.g. a list's Try again) become unclickable.
+  position: 'relative',
+  zIndex: 1,
   maxWidth: 1024,
   width: '100%',
   marginLeft: 'auto',

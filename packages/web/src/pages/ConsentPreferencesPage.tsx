@@ -29,10 +29,7 @@ const CONSENT_LABELS: Record<AnalyticsConsentStatus, string> = {
  */
 export const ConsentPreferencesPage = () => {
   const {session} = useAuth();
-  const {
-    enabled: feedbackShortcutEnabled,
-    setEnabled: setFeedbackShortcutEnabled,
-  } = useFeedbackShortcutEnabled();
+  const {setEnabled: setFeedbackShortcutEnabled} = useFeedbackShortcutEnabled();
   const [consent, setConsent] = useState<AnalyticsConsentStatus | null>(
     readAnalyticsConsent,
   );
@@ -59,11 +56,12 @@ export const ConsentPreferencesPage = () => {
   // The feedback shortcut sends through PostHog, so any transition that
   // removes consent (decline or withdraw) forces the shortcut preference
   // off — the same #256 rule Profile applies — rather than leaving it on
-  // to silently revive at a later accept.
+  // to silently revive at a later accept. The write is unconditional:
+  // this tab's shortcut state can be stale (another tab may
+  // have enabled the shortcut), and the persisted preference is what
+  // must end up off.
   const forceFeedbackShortcutOff = () => {
-    if (feedbackShortcutEnabled) {
-      setFeedbackShortcutEnabled(false);
-    }
+    setFeedbackShortcutEnabled(false);
   };
 
   const decline = () => {

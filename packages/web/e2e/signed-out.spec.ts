@@ -41,12 +41,14 @@ test.describe('signed out', () => {
       page.getByRole('heading', {name: 'Privacy Policy'}),
     ).toBeVisible();
     await expect(
-      page.getByText('Last updated: July 22, 2026', {exact: true}),
+      page.getByText('Last updated: November 4, 2026', {exact: true}),
     ).toBeVisible();
     // The final section renders (the document is data-driven now;
     // this pins that every section crosses, including the last) —
     // lead-in and the contact email link it carries.
-    await expect(page.getByText('Questions about this Privacy Policy?')).toBeVisible();
+    await expect(
+      page.getByText('Questions about this Privacy Policy?'),
+    ).toBeVisible();
     await expect(
       // The contact email is linked from exactly three sections
       // (Deletion, Analytics, and this final Contact section); the

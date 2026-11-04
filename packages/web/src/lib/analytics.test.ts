@@ -1,6 +1,7 @@
 import {
   ANALYTICS_CONSENT_STORAGE_KEY,
   readAnalyticsConsent,
+  subscribeAnalyticsConsent,
 } from '@eciperay/client';
 import {vi} from 'vitest';
 
@@ -74,6 +75,36 @@ describe('analytics', () => {
     );
 
     expect(mockDisablePostHog).toHaveBeenCalled();
+  });
+
+  test('notifies consent subscribers when another tab changes consent', async () => {
+    await import('./analytics.js');
+    const listener = vi.fn();
+    const unsubscribe = subscribeAnalyticsConsent(listener);
+
+    window.dispatchEvent(
+      new StorageEvent('storage', {
+        key: ANALYTICS_CONSENT_STORAGE_KEY,
+        newValue: 'declined',
+      }),
+    );
+    window.dispatchEvent(
+      new StorageEvent('storage', {
+        key: ANALYTICS_CONSENT_STORAGE_KEY,
+        newValue: null,
+      }),
+    );
+
+    // The banner and preferences surfaces subscribe through the same
+    // registry; a storage handler that only flipped PostHog directly
+    // would leave them stale, which this pins against. (Exact call
+    // counts are not asserted: earlier tests in this file re-import the
+    // module, and each import leaves a storage listener behind, so one
+    // event can notify once per import — the delivered values are the
+    // contract.)
+    expect(listener.mock.calls[0]).toEqual(['declined']);
+    expect(listener).toHaveBeenCalledWith(null);
+    unsubscribe();
   });
 
   test('enables PostHog when consent is accepted in another tab', async () => {
