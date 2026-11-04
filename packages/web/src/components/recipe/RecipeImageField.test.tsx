@@ -191,4 +191,20 @@ describe('RecipeImageField', () => {
     });
     expect(onImageFile).not.toHaveBeenCalled();
   });
+
+  test('take photo input uses the device camera and forwards the file', async () => {
+    const onImageFile = vi.fn();
+    const {container} = render(
+      <RecipeImageField
+        {...defaultProps}
+        onImageFile={onImageFile}
+      />,
+    );
+    const captureInput = container.querySelector('#recipe-image-capture');
+    expect(captureInput).not.toBeNull();
+    expect(captureInput?.getAttribute('capture')).toBe('environment');
+    const file = new File(['pixels'], 'captured.png', {type: 'image/png'});
+    await userEvent.upload(screen.getByLabelText('Take photo'), file);
+    expect(onImageFile).toHaveBeenCalledWith(file);
+  });
 });

@@ -2,14 +2,21 @@
 import {Button as DsButton, Text as DsText, tokens} from '@spudly/ui';
 import React from 'react';
 import {Image, View} from 'react-native';
-import {launchImageLibrary} from 'react-native-image-picker';
+import {
+  launchCamera,
+  launchImageLibrary,
+  type ImagePickerResponse,
+} from 'react-native-image-picker';
 import {XStack, YStack} from 'tamagui';
 
 import {
   recipeImageFromAsset,
   type PendingRecipeImage,
 } from '../../lib/recipeImageAsset';
-import {confirmPhotoLibraryAccess} from '../../lib/androidPermissions';
+import {
+  confirmPhotoLibraryAccess,
+  ensureCameraPermission,
+} from '../../lib/androidPermissions';
 
 import {recipeImagePreviewStyles} from './recipeImagePreviewStyles';
 
@@ -43,16 +50,7 @@ export const RecipeImageField = ({
 }: Props) => {
   const imageBusy = imageUploading || imageGenerating;
 
-  const handlePick = async () => {
-    const confirmed = await confirmPhotoLibraryAccess();
-    if (!confirmed) {
-      return;
-    }
-
-    const result = await launchImageLibrary({
-      mediaType: 'photo',
-      includeBase64: true,
-    });
+  const handleResult = async (result: ImagePickerResponse) => {
     if (result.didCancel) {
       return;
     }
@@ -68,6 +66,28 @@ export const RecipeImageField = ({
         error_ instanceof Error ? error_.message : 'Failed to read image',
       );
     }
+  };
+
+  const handlePick = async () => {
+    const confirmed = await confirmPhotoLibraryAccess();
+    if (!confirmed) {
+      return;
+    }
+
+    await handleResult(
+      await launchImageLibrary({mediaType: 'photo', includeBase64: true}),
+    );
+  };
+
+  const handleTakePhoto = async () => {
+    const granted = await ensureCameraPermission();
+    if (!granted) {
+      return;
+    }
+
+    await handleResult(
+      await launchCamera({mediaType: 'photo', includeBase64: true}),
+    );
   };
 
   return (
@@ -116,7 +136,8 @@ export const RecipeImageField = ({
               variant="hint"
               textAlign="center"
             >
-              Choose an image from your library or generate one with AI
+              Take a photo, choose an image from your library, or generate one
+              with AI
             </DsText>
           </View>
         )}
@@ -135,6 +156,17 @@ export const RecipeImageField = ({
           }}
         >
           {imageUploading ? 'Uploading…' : 'Choose image'}
+        </DsButton>
+        <DsButton
+          variant="secondary"
+          size="sm"
+          accessibilityLabel="Take photo of recipe"
+          disabled={imageBusy}
+          onPress={() => {
+            void handleTakePhoto();
+          }}
+        >
+          Take photo
         </DsButton>
         {onGenerateImage ? (
           <DsButton

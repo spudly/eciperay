@@ -175,6 +175,16 @@ without); one recipe may be created fresh in case 1.
     not ready shows no macro values and keeps the "Satiety pending" / "Satiety
     —" wording.
 
+11. **Take a photo for a recipe image (#405).** On the recipe create/edit form,
+    check the image controls: beside **Browse images** / **Choose image** there
+    is a **Take photo** control. On a mobile browser (or a device with a
+    camera), activating it opens the camera in place; taking a photo attaches it
+    as the recipe image with the usual preview, and cancelling leaves the form
+    unchanged. In the app, **Take photo** asks for camera permission first;
+    denying it opens nothing and leaves the form unchanged. **Expected:** a
+    captured photo flows through the same upload/preview path as a browsed or
+    library-picked image.
+
 **Run when:**
 `packages/app/src/screens/{Recipes,RecipeDetail,EditRecipe,EditVersion,ManualEntry}Screen.tsx`,
 `packages/app/src/hosts/{recipe,recipes}/**`,

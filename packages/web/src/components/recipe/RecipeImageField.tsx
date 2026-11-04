@@ -34,6 +34,19 @@ const browseLabelStyle: CSSProperties = {
   color: '#ffffff',
 };
 
+const captureLabelStyle: CSSProperties = {
+  backgroundColor: '#ffffff',
+  border: `1px solid ${eciperayTheme.semantic.primary}`,
+  color: eciperayTheme.semantic.primary,
+  display: 'inline-flex',
+  cursor: 'pointer',
+  borderRadius: 8,
+  padding: '8px 16px',
+  fontSize: tokens.typography.fontSize.sm,
+  fontFamily: tokens.typography.fontFamily.sans,
+  fontWeight: tokens.typography.fontWeight.medium,
+};
+
 // Parity note (design-system#129): the app mirror's showcase demo was
 // removed with the in-app component showcase; this web mirror keeps its
 // own demo for the web showcase page, so no web change was needed.
@@ -154,19 +167,23 @@ export const RecipeImageField = ({
               fontSize: tokens.typography.fontSize.sm,
             }}
           >
-            Drag and drop an image here, paste from your clipboard, browse
-            below, or generate one with AI
+            Drag and drop an image here, paste from your clipboard, browse or
+            take a photo below, or generate one with AI
           </p>
         )}
       </div>
-      <div
-        style={{display: 'flex', flexWrap: 'wrap', gap: tokens.spacing[3]}}
-      >
+      <div style={{display: 'flex', flexWrap: 'wrap', gap: tokens.spacing[3]}}>
         <label
           htmlFor="recipe-image-upload"
           style={browseLabelStyle}
         >
           {imageUploading ? 'Uploading…' : 'Browse images'}
+        </label>
+        <label
+          htmlFor="recipe-image-capture"
+          style={captureLabelStyle}
+        >
+          Take photo
         </label>
         {onGenerateImage ? (
           <button
@@ -197,6 +214,18 @@ export const RecipeImageField = ({
           id="recipe-image-upload"
           type="file"
           accept="image/jpeg,image/png,image/gif,image/webp"
+          style={{display: 'none'}}
+          disabled={imageBusy}
+          onChange={e => {
+            acceptImage(e.target.files?.[0] ?? null);
+            e.target.value = '';
+          }}
+        />
+        <input
+          id="recipe-image-capture"
+          type="file"
+          accept="image/jpeg,image/png,image/gif,image/webp"
+          capture="environment"
           style={{display: 'none'}}
           disabled={imageBusy}
           onChange={e => {

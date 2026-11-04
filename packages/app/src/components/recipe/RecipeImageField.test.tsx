@@ -1,21 +1,27 @@
 import React from 'react';
 import {fireEvent, waitFor} from '@testing-library/react-native';
-import {launchImageLibrary} from 'react-native-image-picker';
+import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 
 import {renderWithProviders} from '../../__tests__/testUtils';
 
 import {RecipeImageField} from './RecipeImageField';
 
-jest.mock('react-native-image-picker', () => ({launchImageLibrary: jest.fn()}));
+jest.mock('react-native-image-picker', () => ({
+  launchCamera: jest.fn(),
+  launchImageLibrary: jest.fn(),
+}));
 jest.mock('../../lib/androidPermissions', () => ({
   confirmPhotoLibraryAccess: jest.fn().mockResolvedValue(true),
+  ensureCameraPermission: jest.fn().mockResolvedValue(true),
 }));
 
 const mockLaunchImageLibrary = launchImageLibrary as jest.Mock;
+const mockLaunchCamera = launchCamera as jest.Mock;
 
 describe('RecipeImageField', () => {
   beforeEach(() => {
     mockLaunchImageLibrary.mockReset();
+    mockLaunchCamera.mockReset();
   });
 
   test('does not open picker when rationale is dismissed', async () => {
@@ -236,5 +242,82 @@ describe('RecipeImageField', () => {
       />,
     );
     expect(queryByLabelText('Generate image with AI')).toBeNull();
+  });
+
+  test('takes a photo with the camera after permission is granted', async () => {
+    const {ensureCameraPermission} = require('../../lib/androidPermissions');
+    const onImagePicked = jest.fn();
+    mockLaunchCamera.mockResolvedValue({
+      assets: [
+        {
+          uri: 'file://captured.png',
+          base64: btoa('pixels'),
+          type: 'image/png',
+          fileSize: 6,
+        },
+      ],
+    });
+    const {getByLabelText} = await renderWithProviders(
+      <RecipeImageField
+        imagePreview={null}
+        imageUploading={false}
+        imageError={null}
+        onImagePicked={onImagePicked}
+        onGenerateImage={jest.fn()}
+        onRemove={jest.fn()}
+      />,
+    );
+    await fireEvent.press(getByLabelText('Take photo of recipe'));
+    await waitFor(() => {
+      expect(onImagePicked).toHaveBeenCalledWith(
+        {base64: btoa('pixels'), contentType: 'image/png'},
+        'file://captured.png',
+      );
+    });
+    expect(ensureCameraPermission).toHaveBeenCalled();
+    expect(mockLaunchCamera).toHaveBeenCalledWith({
+      mediaType: 'photo',
+      includeBase64: true,
+    });
+  });
+
+  test('does not open the camera when permission is denied', async () => {
+    const {ensureCameraPermission} = require('../../lib/androidPermissions');
+    ensureCameraPermission.mockResolvedValueOnce(false);
+    const onImagePicked = jest.fn();
+    const {getByLabelText} = await renderWithProviders(
+      <RecipeImageField
+        imagePreview={null}
+        imageUploading={false}
+        imageError={null}
+        onImagePicked={onImagePicked}
+        onRemove={jest.fn()}
+      />,
+    );
+    await fireEvent.press(getByLabelText('Take photo of recipe'));
+    await waitFor(() => {
+      expect(ensureCameraPermission).toHaveBeenCalled();
+    });
+    expect(mockLaunchCamera).not.toHaveBeenCalled();
+    expect(onImagePicked).not.toHaveBeenCalled();
+  });
+
+  test('ignores cancelled camera captures', async () => {
+    const onImagePicked = jest.fn();
+    mockLaunchCamera.mockResolvedValue({didCancel: true});
+    const {getByLabelText} = await renderWithProviders(
+      <RecipeImageField
+        imagePreview={null}
+        imageUploading={false}
+        imageError={null}
+        onImagePicked={onImagePicked}
+        onRemove={jest.fn()}
+      />,
+    );
+    await fireEvent.press(getByLabelText('Take photo of recipe'));
+    await waitFor(() => {
+      expect(mockLaunchCamera).toHaveBeenCalled();
+    });
+    expect(onImagePicked).not.toHaveBeenCalled();
   });
 });
