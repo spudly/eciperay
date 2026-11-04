@@ -56,6 +56,16 @@ jobs:
         uses: changesets/action@v2
         with:
           github-token: ${{ secrets.CHANGESETS_TOKEN || secrets.GITHUB_TOKEN }}
+          # The version step also syncs package-lock.json's workspace
+          # versions to the bumped manifests (issue #416): `changeset
+          # version` alone leaves them at the previous release's version,
+          # and a manual fix on the release branch is wiped by the next
+          # regeneration. Running the sync inside the version command
+          # means every regeneration commit leaves a synced lockfile.
+          # It must be a single npm script: the action executes
+          # version-script via @actions/exec without a shell, so a
+          # compound command (`a && b`) would never run its second half.
+          version-script: npm run release:version
           publish-script: npx tsx scripts/changesetRelease.ts
           commit-message: 'chore(release): pending release'
           pr-title: 'chore(release): pending release'

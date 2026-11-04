@@ -326,6 +326,32 @@ jobs:
       - name: Merge coverage and verify thresholds
         run: npm run test:coverage:merge --workspace=packages/server
 
+  # Issue #416: on Pending Release PRs, package-lock.json's workspace
+  # entries must match the bumped manifests. The release workflow syncs
+  # them during regeneration; this assertion makes a stale regeneration
+  # fail loudly instead of reaching a reviewer thread. Gated to
+  # changeset-release/* heads only (the repo's release-only gating
+  # pattern); everywhere else the job is skipped, which ci-gate treats
+  # as a pass.
+  lockfile-versions:
+    name: lockfile versions
+    if: >-
+      github.event_name == 'pull_request' && startsWith(github.head_ref,
+      'changeset-release/')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup
+        uses: ./.github/actions/ci-setup
+        with:
+          skip-install-on-cache-hit: 'true'
+
+      - name: Check lockfile workspace versions
+        run: npm run check:lockfile-versions
+
   # Enforces the PR template's pre-merge checklist: a PR whose body
   # still has unchecked task-list items fails here, and ci-gate needs
   # this job, so such a PR cannot merge. Dependabot PRs are exempt —
@@ -442,6 +468,7 @@ jobs:
       - test-server
       - test-server-coverage
       - merge-guard
+      - lockfile-versions
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
