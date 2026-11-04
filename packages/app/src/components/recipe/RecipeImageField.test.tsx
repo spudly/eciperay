@@ -365,4 +365,23 @@ describe('RecipeImageField', () => {
       );
     });
   });
+
+  test('reports a thrown camera error through onImageError', async () => {
+    const onImageError = jest.fn();
+    mockLaunchCamera.mockRejectedValue(new Error('camera exploded'));
+    const {getByLabelText} = await renderWithProviders(
+      <RecipeImageField
+        imagePreview={null}
+        imageUploading={false}
+        imageError={null}
+        onImagePicked={jest.fn()}
+        onImageError={onImageError}
+        onRemove={jest.fn()}
+      />,
+    );
+    await fireEvent.press(getByLabelText('Take photo of recipe'));
+    await waitFor(() => {
+      expect(onImageError).toHaveBeenCalledWith('camera exploded');
+    });
+  });
 });

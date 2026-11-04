@@ -50,6 +50,12 @@ export const RecipeImageField = ({
 }: Props) => {
   const imageBusy = imageUploading || imageGenerating;
 
+  const reportReadError = (error_: unknown) => {
+    onImageError?.(
+      error_ instanceof Error ? error_.message : 'Failed to read image',
+    );
+  };
+
   const handleResult = async (result: ImagePickerResponse) => {
     if (result.didCancel) {
       return;
@@ -71,9 +77,7 @@ export const RecipeImageField = ({
       const image = recipeImageFromAsset(asset);
       await onImagePicked(image, asset.uri);
     } catch (error_) {
-      onImageError?.(
-        error_ instanceof Error ? error_.message : 'Failed to read image',
-      );
+      reportReadError(error_);
     }
   };
 
@@ -83,9 +87,13 @@ export const RecipeImageField = ({
       return;
     }
 
-    await handleResult(
-      await launchImageLibrary({mediaType: 'photo', includeBase64: true}),
-    );
+    try {
+      await handleResult(
+        await launchImageLibrary({mediaType: 'photo', includeBase64: true}),
+      );
+    } catch (error_) {
+      reportReadError(error_);
+    }
   };
 
   const handleTakePhoto = async () => {
@@ -94,9 +102,13 @@ export const RecipeImageField = ({
       return;
     }
 
-    await handleResult(
-      await launchCamera({mediaType: 'photo', includeBase64: true}),
-    );
+    try {
+      await handleResult(
+        await launchCamera({mediaType: 'photo', includeBase64: true}),
+      );
+    } catch (error_) {
+      reportReadError(error_);
+    }
   };
 
   return (

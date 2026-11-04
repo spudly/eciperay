@@ -217,4 +217,20 @@ describe('RecipeImageField', () => {
     await userEvent.upload(captureInput as HTMLElement, file);
     expect(onImageFile).toHaveBeenCalledWith(file);
   });
+
+  test('browse and take photo buttons open their file inputs', async () => {
+    const {container} = render(<RecipeImageField {...defaultProps} />);
+    const browseInput = container.querySelector(
+      '#recipe-image-upload',
+    ) as HTMLElement;
+    const captureInput = container.querySelector(
+      '#recipe-image-capture',
+    ) as HTMLElement;
+    const browseClick = vi.spyOn(browseInput, 'click');
+    const captureClick = vi.spyOn(captureInput, 'click');
+    await userEvent.click(screen.getByText('Browse images'));
+    expect(browseClick).toHaveBeenCalled();
+    await userEvent.click(screen.getByText('Take photo'));
+    expect(captureClick).toHaveBeenCalled();
+  });
 });

@@ -1,6 +1,5 @@
 /* eslint-disable max-lines -- recipe image upload, paste, and generate controls */
-import {eciperayTheme, tokens} from '@spudly/ui';
-import type {CSSProperties} from 'react';
+import {Button, eciperayTheme, tokens} from '@spudly/ui';
 import {useRef, useState} from 'react';
 
 import {
@@ -22,31 +21,6 @@ type Props = {
 
 // Style objects on DS tokens (B7 C12, design-system#130 — the Tailwind
 // utilities these replace are gone with the dependency).
-const browseLabelStyle: CSSProperties = {
-  backgroundColor: eciperayTheme.semantic.primary,
-  display: 'inline-flex',
-  cursor: 'pointer',
-  borderRadius: 8,
-  padding: '8px 16px',
-  fontSize: tokens.typography.fontSize.sm,
-  fontFamily: tokens.typography.fontFamily.sans,
-  fontWeight: tokens.typography.fontWeight.medium,
-  color: '#ffffff',
-};
-
-const captureButtonStyle: CSSProperties = {
-  backgroundColor: '#ffffff',
-  border: `1px solid ${eciperayTheme.semantic.primary}`,
-  color: eciperayTheme.semantic.primary,
-  display: 'inline-flex',
-  cursor: 'pointer',
-  borderRadius: 8,
-  padding: '8px 16px',
-  fontSize: tokens.typography.fontSize.sm,
-  fontFamily: tokens.typography.fontFamily.sans,
-  fontWeight: tokens.typography.fontWeight.medium,
-};
-
 // Parity note (design-system#129): the app mirror's showcase demo was
 // removed with the in-app component showcase; this web mirror keeps its
 // own demo for the web showcase page, so no web change was needed.
@@ -175,36 +149,28 @@ export const RecipeImageField = ({
         )}
       </div>
       <div style={{display: 'flex', flexWrap: 'wrap', gap: tokens.spacing[3]}}>
-        <button
+        <Button
           type="button"
-          style={{
-            ...browseLabelStyle,
-            border: 'none',
-            cursor: imageBusy ? 'not-allowed' : 'pointer',
-            opacity: imageBusy ? 0.5 : 1,
-          }}
+          variant="primary"
+          size="sm"
           disabled={imageBusy}
-          onClick={() => {
+          onPress={() => {
             browseInputRef.current?.click();
           }}
         >
           {imageUploading ? 'Uploading…' : 'Browse images'}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
-          aria-label="Take photo"
-          style={{
-            ...captureButtonStyle,
-            cursor: imageBusy ? 'not-allowed' : 'pointer',
-            opacity: imageBusy ? 0.5 : 1,
-          }}
+          variant="secondary"
+          size="sm"
           disabled={imageBusy}
-          onClick={() => {
+          onPress={() => {
             captureInputRef.current?.click();
           }}
         >
           Take photo
-        </button>
+        </Button>
         {onGenerateImage ? (
           <button
             type="button"
