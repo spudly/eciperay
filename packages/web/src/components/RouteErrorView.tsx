@@ -1,8 +1,26 @@
+import type {CSSProperties} from 'react';
+import {eciperayTheme, Text} from '@spudly/ui';
 import {Link} from 'react-router-dom';
 
 import {PageTitle} from './ui/PageTitle.js';
 
 type RouteErrorViewProps = {isNotFound: boolean};
+
+const mainStyle: CSSProperties = {
+  marginLeft: 'auto',
+  marginRight: 'auto',
+  paddingLeft: 24,
+  paddingRight: 24,
+  paddingTop: 40,
+  paddingBottom: 40,
+  maxWidth: 768,
+};
+
+const homeLinkStyle: CSSProperties = {
+  color: eciperayTheme.semantic.primary,
+  fontWeight: 500,
+  textDecoration: 'none',
+};
 
 /**
  * Presentation for the app-level route error page (eciperay#257). A 404 gets a
@@ -11,23 +29,25 @@ type RouteErrorViewProps = {isNotFound: boolean};
  */
 export const RouteErrorView = ({isNotFound}: RouteErrorViewProps) => {
   return (
-    <main className="mx-auto px-6 py-10 max-inline-3xl">
+    <main style={mainStyle}>
       <PageTitle>
         {isNotFound ? 'Page not found' : 'Something went wrong'}
       </PageTitle>
-      <p className="text-base/relaxed text-gray-700">
+      <Text style={{lineHeight: 1.625}}>
         {isNotFound
           ? "The page you're looking for doesn't exist or may have moved."
           : 'An unexpected error occurred while loading this page.'}
-      </p>
-      <p className="mbe-8 text-base/relaxed text-gray-700">
+      </Text>
+      <Text
+        style={{lineHeight: 1.625, marginBottom: 32, marginTop: 12}}
+      >
         <Link
           to="/"
-          className="text-primary font-medium"
+          style={homeLinkStyle}
         >
           Go to the home page
         </Link>
-      </p>
+      </Text>
     </main>
   );
 };

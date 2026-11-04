@@ -1,4 +1,4 @@
-import {Button} from '@spudly/ui';
+import {Button, tokens} from '@spudly/ui';
 import {useQuery} from '@tanstack/react-query';
 import {useMemo, useState} from 'react';
 
@@ -97,9 +97,13 @@ export const RecipeExportPicker = ({
         }}
       />
       <div
-        className="
-          mbe-4 overflow-y-auto rounded-lg border border-gray-200 max-block-64
-        "
+        style={{
+          marginBottom: tokens.spacing[4],
+          overflowY: 'auto',
+          borderRadius: 8,
+          border: `1px solid ${tokens.colors.gray.gray3}`,
+          maxHeight: 256,
+        }}
       >
         <CheckboxSelectList
           items={items}

@@ -114,7 +114,7 @@ export const SubscriptionView = ({
               href={portalUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm underline"
+              style={{fontSize: 14, textDecoration: 'underline'}}
             >
               Open subscription portal
             </a>

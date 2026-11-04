@@ -79,7 +79,16 @@ export const CookingModeView = ({
       >
         Done
       </button>
-      <p className="mbe-4 text-sm tracking-widest text-white/60 uppercase">
+      <p
+        style={{
+          margin: 0,
+          marginBottom: 16,
+          fontSize: 14,
+          letterSpacing: '0.1em',
+          color: 'rgb(255 255 255 / 0.6)',
+          textTransform: 'uppercase',
+        }}
+      >
         Step {current ? current.stepNumber : 1} of {steps.length}
       </p>
       {displayRecipe ? (
@@ -89,7 +98,15 @@ export const CookingModeView = ({
           servings={servings}
         />
       ) : null}
-      <p className="mbe-8 text-2xl/relaxed text-white">
+      <p
+        style={{
+          margin: 0,
+          marginBottom: 32,
+          fontSize: 24,
+          lineHeight: 1.625,
+          color: '#ffffff',
+        }}
+      >
         {current ? current.body : ''}
       </p>
       <ProgressDots

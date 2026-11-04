@@ -13,19 +13,6 @@ import {loadAccessibleRecipe} from './mealRecipeAccess.js';
 
 type QueryFn = typeof defaultQuery;
 
-/**
- * Thrown inside the replace transaction when the saved meal cannot be read
- * back, so the writes roll back instead of leaving a meal the client was told
- * had not saved. Caught by replaceMeal and reported as the existing 500 result
- * (mirrors MealPlanLoadError in saveMealPlan.ts).
- */
-class MealLoadError extends Error {
-  constructor() {
-    super('Failed to load meal');
-    this.name = 'MealLoadError';
-  }
-}
-
 export const saveNewMeal = async (
   userId: string,
   input: MealInput,
@@ -153,50 +140,53 @@ export const replaceMeal = async (
     .filter(token => !Number.isNaN(Date.parse(token)));
   const expectedUpdatedAts = castableTokens.length > 0 ? castableTokens : null;
 
-  // Update, member delete, member inserts, and the read-back run in one
-  // transaction (mirrors replaceMealPlan): a failure midway cannot leave
-  // the meal updated with its members deleted or partially replaced.
-  let outcome: {meal: MealDetail} | {conflict: true};
-  try {
-    outcome = await runTransactional(queryFn, async q => {
-      const updated = await q(
-        `update meals
-         set title = $3, notes = $4,
-             updated_at = greatest(now(), date_trunc('milliseconds', updated_at) + interval '1 millisecond')
-         where id = $1 and user_id = $2
-           and ($5::timestamptz[] is null
-             or date_trunc('milliseconds', updated_at) = ANY($5::timestamptz[]))`,
-        [mealId, userId, input.title, input.notes ?? null, expectedUpdatedAts],
-      );
-      if (expectedUpdatedAts && updated.rowCount === 0) {
-        // A concurrent write (or delete) won the race after the check
-        // above; nothing else is written.
-        return {conflict: true as const};
-      }
-      await q(`delete from meal_recipes where meal_id = $1`, [mealId]);
-      for (const recipe of resolved) {
-        await q(
-          `insert into meal_recipes (meal_id, recipe_id, sort_order, servings)
-           values ($1, $2, $3, $4)`,
-          [mealId, recipe.recipeId, recipe.sortOrder, recipe.servings],
-        );
-      }
-      const meal = await loadMealDetail(mealId, userId, q);
-      if (!meal) {
-        throw new MealLoadError();
-      }
-      return {meal};
-    });
-  } catch (error) {
-    if (error instanceof MealLoadError) {
-      return {error: 'Failed to load meal', status: 500};
+  // The update, member delete, and replacement inserts are one
+  // transaction (#403): a concurrent meal-detail read must never observe
+  // the intermediate state between the delete and the inserts (an empty
+  // member list), and a failed insert must not leave the meal updated
+  // with its members deleted or partially replaced. The existence and
+  // accessibility reads above stay outside the transaction, and the
+  // post-save detail load below keeps its existing semantics.
+  const conflict = await runTransactional(queryFn, async q => {
+    // The token must advance monotonically at its millisecond precision —
+    // the same expression as the #394 delete trigger and
+    // touchMealsForRecipe — so a save that lands in the same millisecond
+    // as the meal's previous update (e.g. right after the trigger bumped
+    // the token for a member-recipe delete) never reissues the earlier
+    // ETag.
+    const updated = await q(
+      `update meals
+       set title = $3, notes = $4,
+           updated_at = greatest(now(), date_trunc('milliseconds', updated_at) + interval '1 millisecond')
+       where id = $1 and user_id = $2
+         and ($5::timestamptz[] is null
+           or date_trunc('milliseconds', updated_at) = ANY($5::timestamptz[]))`,
+      [mealId, userId, input.title, input.notes ?? null, expectedUpdatedAts],
+    );
+    if (expectedUpdatedAts && updated.rowCount === 0) {
+      // A concurrent write (or delete) won the race after the check
+      // above; nothing else is written.
+      return true;
     }
-    throw error;
-  }
-  if ('conflict' in outcome) {
+    await q(`delete from meal_recipes where meal_id = $1`, [mealId]);
+    for (const recipe of resolved) {
+      await q(
+        `insert into meal_recipes (meal_id, recipe_id, sort_order, servings)
+         values ($1, $2, $3, $4)`,
+        [mealId, recipe.recipeId, recipe.sortOrder, recipe.servings],
+      );
+    }
+    return false;
+  });
+  if (conflict) {
     return staleWriteConflict('Meal');
   }
-  return {meal: outcome.meal};
+
+  const meal = await loadMealDetail(mealId, userId, queryFn);
+  if (!meal) {
+    return {error: 'Failed to load meal', status: 500};
+  }
+  return {meal};
 };
 
 export const deleteMeal = async (

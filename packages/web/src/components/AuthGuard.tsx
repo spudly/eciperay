@@ -8,10 +8,7 @@ export const AuthGuard = () => {
 
   if (isLoading) {
     return (
-      <ScreenLoadingGate
-        pending
-        backgroundClassName="min-h-screen"
-      >
+      <ScreenLoadingGate pending>
         {null}
       </ScreenLoadingGate>
     );

@@ -31,6 +31,7 @@ import {mapRowToRecipeDetail} from './mapRowToRecipeDetail.js';
 import {scheduleNutritionRefresh} from './refreshRecipeNutrition.js';
 import {resolveStatus} from './resolveStatus.js';
 import {slugifyRecipeTitle} from './slugifyRecipeTitle.js';
+import {touchMealsForRecipe} from './touchMealsForRecipe.js';
 
 type QueryFn = typeof defaultQuery;
 
@@ -123,6 +124,11 @@ const updateExistingVersion = async (
   }
   await incrementContentRevision(recipeId, queryFn);
   await replaceVersionChildren(versionId, input, queryFn);
+  // An editable-version save changes what meal detail reads for each
+  // member meal, so advance those meals' updated_at (their ETag token,
+  // #384) inside this same transaction (#394) — the metadata-only path
+  // through saveRecipeMetadata does the same.
+  await touchMealsForRecipe(recipeId, queryFn);
   return versionId;
 };
 

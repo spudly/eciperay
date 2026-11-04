@@ -80,7 +80,11 @@ export const SignupPage = () => {
         void handleSignUp();
       }}
       signInHref="/login"
-      legalNotice={<LegalLinks className="mbs-6" />}
+      legalNotice={
+        <div style={{marginTop: 24}}>
+          <LegalLinks />
+        </div>
+      }
     />
   );
 };

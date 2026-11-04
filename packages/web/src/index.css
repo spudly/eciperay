@@ -1,8 +1,8 @@
-@import 'tailwindcss';
-
-/* Design-system theme values (from @spudly/ui eciperay "Warm Harvest" theme).
-   These CSS variables bridge Tailwind utilities to the DS theme. */
-@theme {
+/* Design-system theme values (from @spudly/ui eciperay "Warm Harvest"
+   theme), kept as plain CSS custom properties after the Tailwind removal
+   (B7 C12, design-system#130): components take these values from the DS
+   tokens in code; only the global rules below consume the variables. */
+:root {
   --font-sans: Georgia, 'Times New Roman', serif;
   --color-primary: #c2410c;
   --color-primary-dark: #7c2d12;
@@ -11,6 +11,66 @@
      form field uses, matching the @spudly/ui field components. */
   --color-field: #fffdf8;
   --color-muted: #57534e;
+}
+
+/* Minimal reset replacing the preflight the Tailwind import used to
+   provide (B7 C12): the rules the app's markup relies on — border-box
+   sizing, zeroed margins/padding, inherited fonts on form controls,
+   block media, and unstyled links/lists (components opt back in with
+   explicit styles where the design calls for them). */
+*,
+::after,
+::before {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border: 0 solid;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  background: transparent;
+}
+
+img,
+svg,
+video {
+  display: block;
+  max-width: 100%;
+}
+
+img,
+video {
+  height: auto;
+}
+
+a {
+  color: inherit;
+  text-decoration: inherit;
+}
+
+ol,
+ul,
+menu {
+  list-style: none;
+}
+
+textarea {
+  resize: vertical;
+}
+
+/* Tailwind's preflight set the root line height to 1.5; text without
+   an explicit line height (DS Text sets its own) keeps that spacing. */
+html {
+  line-height: 1.5;
 }
 
 body {
@@ -31,6 +91,27 @@ body,
 #root {
   display: flex;
   flex-direction: column;
+}
+
+/* Feedback bubble panel sizing (#326): the definite height the DS
+   FeedbackPage's ScrollView resolves against — the form's measured
+   natural height (35.125rem), capped at 100dvh minus the bubble's
+   offsets (10rem) — and its responsive width cap. Plain CSS because
+   the min()/dvh values are not representable in the jsdom style model
+   the component tests assert against. */
+.feedback-panel {
+  width: min(100vw - 2rem, 24rem);
+  height: min(35.125rem, calc(100dvh - 10rem));
+}
+
+/* Cook-log notes placeholder color (the one style an inline style object
+   cannot express; variants keyed by CookLogForm's data-variant). */
+.cook-log-notes::placeholder {
+  color: #a3a3a3;
+}
+
+.cook-log-notes[data-variant='dark']::placeholder {
+  color: rgb(255 255 255 / 0.5);
 }
 
 /* Book loading spinner animation (migrated from @eciperay/theme) */

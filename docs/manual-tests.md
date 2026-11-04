@@ -366,7 +366,12 @@ mode; there is no Playwright coverage of meals. The cases below are manual._
 `packages/server/src/lib/conditionalWrite.ts`,
 `packages/server/src/lib/mealSchemas.ts`, `packages/server` recipe search
 (`packages/server/src/routes/recipes/{listFilterParams,sqlConstants}.ts`),
-`packages/client/src/useMealPlanEditForm.ts`.
+`packages/client/src/useMealPlanEditForm.ts`,
+`packages/server/src/lib/saveRecipeMetadata.ts`,
+`packages/server/src/lib/saveRecipeFromInput.ts`,
+`packages/server/src/lib/saveMeal.ts`,
+`packages/server/src/lib/touchMealsForRecipe.ts`,
+`packages/server/src/db/migrations/020_meal_recipes_touch_meal.sql`.
 
 ---
 
@@ -515,7 +520,12 @@ small set of known inputs so results are comparable across runs).
    (a site that blocks the importer, or an unreachable URL). **Expected:** a
    "couldn't fetch that page — the site may be blocking imports" style message
    suggesting pasting the recipe text instead. A generic "Internal server error"
-   or "AI service error" for either failure is a defect (issue #297).
+   or "AI service error" for either failure is a defect (issue #297). 4b. **URL
+   import from a bot-refusing site.** Submit the URL of a recipe page on a site
+   that refuses the importer's bot agent but serves browsers (e.g.
+   browneyedbaker.com, issue #400). **Expected:** the importer retries with
+   browser headers and the recipe imports successfully, reaching review like
+   case 3 — not the case-4 fetch-failure message.
 5. **Image import.** Add → Import from image (`/add/image`); upload a clear
    photo/scan of a printed recipe. **Expected:** extracted text reaches review
    in editable form; obvious misreads are correctable in review and the
@@ -608,6 +618,7 @@ account (viewer); one QA recipe.
 
 **Run when:** `packages/app/src/screens/SharedWithMeScreen.tsx`,
 `packages/app/src/hosts/{shared,recipe/RecipeVisibilityControls}*`,
+`packages/web/src/components/recipe/RecipeVisibilityControls.tsx`,
 `packages/web/src/pages/{SharedWithMe,Discover,PublicRecipe}Page.tsx`,
 `packages/web/src/components/shared/**`, `@spudly/ui` `DiscoverPage`,
 `PublicRecipePage`, `PublicPageFrame`, `packages/server` sharing/visibility
@@ -686,8 +697,10 @@ plan-state rendering and section layout. The cases below are manual._
 **Run when:** `packages/app/src/screens/ProfileScreen.tsx`,
 `packages/app/src/hosts/profile/**`, `packages/web/src/pages/ProfilePage.tsx`,
 `packages/web/src/components/profile/**`,
-`packages/web/src/components/FeedbackBubble.tsx`, `packages/server`
-profile/token/transfer routes, entitlement override handling.
+`packages/web/src/components/FeedbackBubble.tsx`,
+`packages/web/src/components/FeedbackForm.tsx`, `packages/web/src/index.css`
+(the `.feedback-panel` sizing), `packages/server` profile/token/transfer routes,
+entitlement override handling.
 
 ---
 

@@ -17,6 +17,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
+import {TextAction, tokens} from '@spudly/ui';
 import {useState} from 'react';
 
 import {SortableIngredientRow} from './SortableIngredientRow.js';
@@ -36,7 +37,7 @@ type Props = {
 };
 
 // Field backgrounds (issue #167): the row inputs rendered by this list
-// (see the platform-only Sortable*Row primitives) use the shared bg-field
+// (see the platform-only Sortable*Row primitives) use the shared field
 // background (#fffdf8, the Warm Harvest surface). The app mirror's row
 // inputs fill with eciperayTheme.semantic.surface — the same value.
 // Parity note (design-system#129): the app mirror's showcase demo was
@@ -55,15 +56,31 @@ export const SortableIngredientList = ({
 
   return (
     <div>
-      <div className="mbe-2 flex items-center justify-between">
-        <p className="text-sm font-medium text-gray-700">Ingredients</p>
-        <button
-          type="button"
-          className="text-primary text-sm"
-          onClick={onAdd}
+      <div
+        style={{
+          marginBottom: tokens.spacing[2],
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
+        <p
+          style={{
+            margin: 0,
+            fontSize: tokens.typography.fontSize.sm,
+            fontWeight: tokens.typography.fontWeight.medium,
+            color: tokens.colors.gray.gray8,
+          }}
+        >
+          Ingredients
+        </p>
+        <TextAction
+          color="$primary"
+          fontSize={tokens.typography.fontSize.sm}
+          onPress={onAdd}
         >
           + Add
-        </button>
+        </TextAction>
       </div>
       <DndContext
         sensors={sensors}

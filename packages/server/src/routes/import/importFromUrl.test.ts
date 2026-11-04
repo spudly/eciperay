@@ -90,6 +90,23 @@ describe('POST /recipes/import/url', () => {
     expect(res.body.userId).toBe('user-uuid-1');
   });
 
+  test('retries with browser headers when the site refuses the bot agent (#400)', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    nock('https://recipe.example.com')
+      .get('/blocked')
+      .reply(403, 'Forbidden')
+      .get('/blocked')
+      .matchHeader('user-agent', /Mozilla/)
+      .reply(200, SCHEMA_ORG_HTML);
+    mockSaveFlow();
+    const res = await request(getApp())
+      .post('/api/recipes/import/url')
+      .set('Authorization', 'Bearer valid-token')
+      .send({url: 'https://recipe.example.com/blocked'});
+    expect(res.status).toBe(201);
+    expect(res.body.title).toBe('Pasta');
+  });
+
   test('falls back to Claude when no schema.org Recipe found', async () => {
     nockSupabaseGetUser('user-uuid-1');
     nock('https://recipe.example.com').get('/plain').reply(200, PLAIN_HTML);
@@ -289,6 +306,40 @@ describe('POST /recipes/import/url', () => {
       .set('Authorization', 'Bearer <redacted>')
       .send({url: 'https://recipe.example.com/unavailable'});
     fetchSpy.mockRestore();
+    expect(res.status).toBe(422);
+    expect(res.body).toEqual({
+      error:
+        "We couldn't fetch that page \u2014 the site may be blocking imports. Try pasting the recipe text instead.",
+    });
+  });
+
+  test('cancels both response bodies when the browser-header retry also fails (#400)', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
+    const botCancel = jest.fn(() => Promise.resolve());
+    const retryCancel = jest.fn(() => Promise.resolve());
+    const fetchSpy = jest
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation((input, init) => {
+        if (typeof input === 'string' && input.includes('recipe.example.com')) {
+          const headers = (init?.headers ?? {}) as Record<string, string>;
+          const isRetry = (headers['User-Agent'] ?? '').includes('Mozilla');
+          return Promise.resolve({
+            ok: false,
+            status: 403,
+            body: {cancel: isRetry ? retryCancel : botCancel},
+          } as unknown as Response);
+        }
+        return REAL_FETCH(input, init);
+      });
+
+    const res = await request(getApp())
+      .post('/api/recipes/import/url')
+      .set('Authorization', 'Bearer <redacted>')
+      .send({url: 'https://recipe.example.com/blocked'});
+    fetchSpy.mockRestore();
+    expect(botCancel).toHaveBeenCalledTimes(1);
+    expect(retryCancel).toHaveBeenCalledTimes(1);
     expect(res.status).toBe(422);
     expect(res.body).toEqual({
       error:

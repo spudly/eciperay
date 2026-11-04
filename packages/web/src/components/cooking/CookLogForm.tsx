@@ -1,4 +1,5 @@
-import clsx from 'clsx';
+import {eciperayTheme, tokens} from '@spudly/ui';
+import type {CSSProperties} from 'react';
 import {useState} from 'react';
 import type {CookLogInput} from '@eciperay/types';
 
@@ -26,22 +27,88 @@ export const CookLogForm = ({
   const [notes, setNotes] = useState('');
   const isLight = variant === 'light';
 
+  // Style objects on DS tokens (B7 C12, design-system#130 — the Tailwind
+  // utilities these replace are gone with the dependency). The textarea
+  // placeholder color cannot be expressed in an inline style; it lives in
+  // index.css under .cook-log-notes (plain CSS, like .book-loader).
+  const containerStyle: CSSProperties = {
+    marginLeft: 'auto',
+    marginRight: 'auto',
+    borderRadius: 16,
+    padding: tokens.spacing[6],
+    width: '100%',
+    maxWidth: 448,
+    boxSizing: 'border-box',
+    ...(isLight
+      ? {
+          border: `1px solid ${tokens.colors.gray.gray3}`,
+          backgroundColor: tokens.colors.gray.gray1,
+        }
+      : {backgroundColor: 'rgb(255 255 255 / 0.1)'}),
+  };
+
+  const notesStyle: CSSProperties = {
+    marginBottom: tokens.spacing[4],
+    borderRadius: 12,
+    padding: '12px 16px',
+    fontSize: tokens.typography.fontSize.md,
+    fontFamily: tokens.typography.fontFamily.sans,
+    width: '100%',
+    boxSizing: 'border-box',
+    ...(isLight
+      ? {
+          border: `1px solid ${tokens.colors.gray.gray4}`,
+          backgroundColor: eciperayTheme.semantic.surface,
+          color: tokens.colors.gray.gray10,
+        }
+      : {
+          border: 'none',
+          backgroundColor: 'rgb(255 255 255 / 0.1)',
+          color: '#ffffff',
+        }),
+  };
+
+  const skipStyle: CSSProperties = {
+    flex: 1,
+    borderRadius: 12,
+    paddingTop: 12,
+    paddingBottom: 12,
+    fontSize: tokens.typography.fontSize.md,
+    fontFamily: tokens.typography.fontFamily.sans,
+    cursor: 'pointer',
+    ...(isLight
+      ? {
+          border: `1px solid ${tokens.colors.gray.gray3}`,
+          backgroundColor: '#ffffff',
+          color: tokens.colors.gray.gray8,
+        }
+      : {
+          border: 'none',
+          backgroundColor: 'rgb(255 255 255 / 0.1)',
+          color: '#ffffff',
+        }),
+  };
+
   return (
-    <div
-      className={clsx('mx-auto rounded-2xl p-6 inline-full max-inline-md', {
-        'bg-white/10': !isLight,
-        'border border-gray-200 bg-gray-50': isLight,
-      })}
-    >
+    <div style={containerStyle}>
       <h2
-        className={clsx('mbe-4 text-xl font-semibold', {
-          'text-white': !isLight,
-          'text-gray-900': isLight,
-        })}
+        style={{
+          margin: 0,
+          marginBottom: tokens.spacing[4],
+          fontSize: tokens.typography.fontSize.xl,
+          fontWeight: tokens.typography.fontWeight.semibold,
+          color: isLight ? tokens.colors.gray.gray10 : '#ffffff',
+        }}
       >
         How did it go?
       </h2>
-      <div className="mbe-4 flex justify-center">
+      <div
+        style={{
+          marginBottom: tokens.spacing[4],
+          display: 'flex',
+          justifyContent: 'center',
+        }}
+      >
         <StarRatingInput
           value={rating}
           tone={isLight ? 'default' : 'dark'}
@@ -51,18 +118,9 @@ export const CookLogForm = ({
         />
       </div>
       <textarea
-        className={clsx(
-          'mbe-4 rounded-xl px-4 py-3 text-base inline-full',
-          isLight
-            ? `
-              border border-gray-300 bg-field text-gray-900
-              placeholder:text-gray-400
-            `
-            : `
-              bg-white/10 text-white
-              placeholder:text-white/50
-            `,
-        )}
+        className="cook-log-notes"
+        data-variant={isLight ? 'light' : 'dark'}
+        style={notesStyle}
         placeholder="Notes from this cook (optional)"
         rows={3}
         value={notes}
@@ -70,23 +128,30 @@ export const CookLogForm = ({
           setNotes(e.target.value);
         }}
       />
-      <div className="flex gap-3">
+      <div style={{display: 'flex', gap: tokens.spacing[3]}}>
         <button
           type="button"
-          className={clsx('flex-1 rounded-xl py-3 text-base', {
-            'bg-white/10 text-white': !isLight,
-            'border border-gray-200 bg-white text-gray-700': isLight,
-          })}
+          style={skipStyle}
           onClick={onSkip}
         >
           {secondaryLabel}
         </button>
         <button
           type="button"
-          className="
-            bg-primary flex-1 rounded-xl py-3 text-base font-semibold text-white
-            disabled:opacity-50
-          "
+          style={{
+            flex: 1,
+            borderRadius: 12,
+            border: 'none',
+            paddingTop: 12,
+            paddingBottom: 12,
+            fontSize: tokens.typography.fontSize.md,
+            fontFamily: tokens.typography.fontFamily.sans,
+            fontWeight: tokens.typography.fontWeight.semibold,
+            backgroundColor: eciperayTheme.semantic.primary,
+            color: '#ffffff',
+            cursor: 'pointer',
+            opacity: isPending ? 0.5 : 1,
+          }}
           disabled={isPending}
           onClick={() => {
             onSubmit({authorStarRating: rating, notes: notes.trim() || null});

@@ -11,10 +11,7 @@ export const HomeEntry = () => {
 
   if (isLoading) {
     return (
-      <ScreenLoadingGate
-        pending
-        backgroundClassName="min-h-screen"
-      >
+      <ScreenLoadingGate pending>
         {null}
       </ScreenLoadingGate>
     );

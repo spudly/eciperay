@@ -2,7 +2,6 @@ import path from 'node:path';
 import {readFileSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
 
-import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import {configDefaults, defineConfig} from 'vitest/config';
 
@@ -20,7 +19,7 @@ const pkgRoot = path.dirname(fileURLToPath(import.meta.url));
 const monoRoot = path.resolve(pkgRoot, '../..');
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react()],
   envDir: '../..',
   resolve: {
     dedupe: ['react', 'react-dom', '@tanstack/react-query'],

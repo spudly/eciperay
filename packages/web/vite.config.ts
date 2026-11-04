@@ -2,7 +2,6 @@ import {readFileSync} from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 
-import tailwindcss from '@tailwindcss/vite';
 import posthog from '@posthog/rollup-plugin';
 import react from '@vitejs/plugin-react';
 import {defineConfig, loadEnv} from 'vite';
@@ -60,11 +59,7 @@ export default defineConfig(({mode}) => {
   const posthogPlugin = createPostHogSourceMapPlugin(mode);
 
   return {
-    plugins: [
-      react(),
-      tailwindcss(),
-      ...(posthogPlugin ? [posthogPlugin] : []),
-    ],
+    plugins: [react(), ...(posthogPlugin ? [posthogPlugin] : [])],
     define: {
       // Tamagui and its dependencies reference process.env at runtime.
       // Vite does not polyfill process by default, so provide a minimal stub.

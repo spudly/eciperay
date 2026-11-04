@@ -1,5 +1,6 @@
 /* eslint-disable max-lines -- recipe comments with create/edit/delete flows */
 import {queryKeys, useAuth} from '@eciperay/client';
+import {eciperayTheme, tokens} from '@spudly/ui';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useState} from 'react';
 import {YStack} from 'tamagui';
@@ -70,8 +71,25 @@ export const RecipeCommentsSection = ({
   });
 
   return (
-    <div className="mbe-4 rounded-xl border border-gray-100 p-4">
-      <h3 className="mbe-3 text-sm font-semibold text-gray-900">Comments</h3>
+    <div
+      style={{
+        marginBottom: tokens.spacing[4],
+        borderRadius: 12,
+        border: `1px solid ${tokens.colors.gray.gray2}`,
+        padding: tokens.spacing[4],
+      }}
+    >
+      <h3
+        style={{
+          margin: 0,
+          marginBottom: tokens.spacing[3],
+          fontSize: tokens.typography.fontSize.sm,
+          fontWeight: tokens.typography.fontWeight.semibold,
+          color: tokens.colors.gray.gray10,
+        }}
+      >
+        Comments
+      </h3>
       {isLoading ? (
         <YStack
           alignItems="center"
@@ -82,9 +100,27 @@ export const RecipeCommentsSection = ({
         </YStack>
       ) : null}
       {!isLoading && comments.length === 0 ? (
-        <p className="mbe-3 text-sm text-gray-600">No comments yet</p>
+        <p
+          style={{
+            margin: 0,
+            marginBottom: tokens.spacing[3],
+            fontSize: tokens.typography.fontSize.sm,
+            color: tokens.colors.gray.gray7,
+          }}
+        >
+          No comments yet
+        </p>
       ) : null}
-      <ul className="mbe-4 space-y-3">
+      <ul
+        style={{
+          margin: 0,
+          marginBottom: tokens.spacing[4],
+          padding: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: tokens.spacing[3],
+        }}
+      >
         {comments.map(comment => (
           <RecipeCommentItem
             key={comment.id}
@@ -118,16 +154,27 @@ export const RecipeCommentsSection = ({
       </ul>
       {currentUserId ? (
         <form
-          className="space-y-2"
+          style={{display: 'flex', flexDirection: 'column', gap: tokens.spacing[2]}}
           onSubmit={event => {
             event.preventDefault();
             createMutation.mutate(draft.trim());
           }}
         >
           <textarea
-            className="
-              rounded-lg border border-gray-300 bg-field px-3 py-2 text-sm inline-full
-            "
+            style={{
+              borderRadius: 8,
+              border: `1px solid ${tokens.colors.gray.gray4}`,
+              backgroundColor: eciperayTheme.semantic.surface,
+              paddingLeft: tokens.spacing[3],
+              paddingRight: tokens.spacing[3],
+              paddingTop: tokens.spacing[2],
+              paddingBottom: tokens.spacing[2],
+              fontSize: tokens.typography.fontSize.sm,
+              fontFamily: tokens.typography.fontFamily.sans,
+              color: tokens.colors.gray.gray10,
+              width: '100%',
+              boxSizing: 'border-box',
+            }}
             placeholder="Add a comment"
             value={draft}
             onChange={event => {
@@ -136,16 +183,34 @@ export const RecipeCommentsSection = ({
           />
           <button
             type="submit"
-            className="
-              bg-primary rounded-lg px-4 py-2 text-sm font-medium text-white
-            "
+            style={{
+              backgroundColor: eciperayTheme.semantic.primary,
+              borderRadius: 8,
+              border: 'none',
+              paddingLeft: tokens.spacing[4],
+              paddingRight: tokens.spacing[4],
+              paddingTop: tokens.spacing[2],
+              paddingBottom: tokens.spacing[2],
+              fontSize: tokens.typography.fontSize.sm,
+              fontWeight: tokens.typography.fontWeight.medium,
+              color: '#ffffff',
+              cursor: 'pointer',
+              alignSelf: 'flex-start',
+              fontFamily: tokens.typography.fontFamily.sans,
+            }}
             disabled={createMutation.isPending || !draft.trim()}
           >
             Post comment
           </button>
         </form>
       ) : (
-        <p className="text-sm text-gray-600">
+        <p
+          style={{
+            margin: 0,
+            fontSize: tokens.typography.fontSize.sm,
+            color: tokens.colors.gray.gray7,
+          }}
+        >
           Sign in to join the conversation
         </p>
       )}
