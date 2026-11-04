@@ -97,6 +97,107 @@ describe('RecipeDetailHost', () => {
       expect(await screen.findByText('Version activated')).toBeInTheDocument();
     });
 
+    test('shows the server error when activating a candidate fails (#418)', async () => {
+      vi.spyOn(eciperay.versions, 'activate').mockRejectedValue(
+        new Error('Recipe cannot be modified in its current status'),
+      );
+      await renderHost({}, [
+        makeRecipeVersionSummary({
+          id: 'v2',
+          versionNumber: 2,
+          derivedRole: 'candidate',
+          changeSummary: 'More spice',
+        }),
+      ]);
+      await userEvent.click(await screen.findByText('Activate'));
+      expect(
+        await screen.findByText(
+          'Could not activate version: Recipe cannot be modified in its current status',
+        ),
+      ).toBeInTheDocument();
+    });
+
+    test('shows the server error when a status change fails (#418)', async () => {
+      vi.spyOn(eciperay.recipes, 'patchStatus').mockRejectedValue(
+        new Error('Recipe cannot be modified in its current status'),
+      );
+      await renderHost();
+      await userEvent.click(await screen.findByText('Mark perfected'));
+      expect(
+        await screen.findByText(
+          'Could not change status: Recipe cannot be modified in its current status',
+        ),
+      ).toBeInTheDocument();
+    });
+
+    test('shows the server error when saving a rating fails (#418)', async () => {
+      vi.spyOn(eciperay.recipes, 'putRating').mockRejectedValue(
+        new Error('Recipe cannot be modified in its current status'),
+      );
+      await renderHost();
+      await userEvent.click(
+        await screen.findByRole('radio', {name: 'Rate 4 out of 5 stars'}),
+      );
+      expect(
+        await screen.findByText(
+          'Could not save your rating: Recipe cannot be modified in its current status',
+        ),
+      ).toBeInTheDocument();
+    });
+
+    test('a second action message is not cleared by the first message timer (#418)', async () => {
+      vi.useFakeTimers({shouldAdvanceTime: true});
+      const activate = vi
+        .spyOn(eciperay.versions, 'activate')
+        .mockRejectedValue(new Error('first failure'));
+      const patchStatus = vi
+        .spyOn(eciperay.recipes, 'patchStatus')
+        .mockRejectedValue(new Error('second failure'));
+      try {
+        const user = userEvent.setup({
+          advanceTimers: vi.advanceTimersByTime,
+        });
+        await renderHost({}, [
+          makeRecipeVersionSummary({
+            id: 'v2',
+            versionNumber: 2,
+            derivedRole: 'candidate',
+            changeSummary: 'More spice',
+          }),
+        ]);
+        await user.click(await screen.findByText('Activate'));
+        expect(
+          await screen.findByText('Could not activate version: first failure'),
+        ).toBeInTheDocument();
+        act(() => {
+          vi.advanceTimersByTime(2000);
+        });
+        await user.click(screen.getByText('Mark perfected'));
+        expect(
+          await screen.findByText('Could not change status: second failure'),
+        ).toBeInTheDocument();
+        // Past the first message's 2.5s dismissal deadline but before
+        // the second message's own: the second message must survive —
+        // without the timer cancellation it was cleared here.
+        act(() => {
+          vi.advanceTimersByTime(1000);
+        });
+        expect(
+          screen.getByText('Could not change status: second failure'),
+        ).toBeInTheDocument();
+        act(() => {
+          vi.advanceTimersByTime(1600);
+        });
+        expect(
+          screen.queryByText('Could not change status: second failure'),
+        ).not.toBeInTheDocument();
+      } finally {
+        activate.mockRestore();
+        patchStatus.mockRestore();
+        vi.useRealTimers();
+      }
+    });
+
     test('marks recipe perfected and abandoned', async () => {
       const patchStatus = vi
         .spyOn(eciperay.recipes, 'patchStatus')
@@ -141,6 +242,23 @@ describe('RecipeDetailHost', () => {
       await waitFor(() => {
         expect(onSelectVersion).toHaveBeenCalledWith('version-draft-1');
       });
+    });
+
+    test('shows the server error when tweak manually fails (#418)', async () => {
+      const create = vi
+        .spyOn(eciperay.versions, 'create')
+        .mockRejectedValue(
+          new Error('Recipe cannot be modified in its current status'),
+        );
+      await renderHost();
+      await userEvent.click(await screen.findByText('Tweak manually'));
+      expect(
+        await screen.findByText(
+          'Could not create a new version: Recipe cannot be modified in its current status',
+        ),
+      ).toBeInTheDocument();
+      // The create-draft tests below share this method through MSW.
+      create.mockRestore();
     });
   });
 
@@ -242,7 +360,7 @@ describe('RecipeDetailHost', () => {
       await renderHost({status: 'perfected'}, []);
       await userEvent.click(await screen.findByText('Edit draft'));
       expect(
-        await screen.findByText('Could not create a draft. Please try again.'),
+        await screen.findByText('Could not create a draft: Server exploded'),
       ).toBeInTheDocument();
       // No navigation happened: the detail page is still shown.
       expect(screen.getByText('Test Recipe')).toBeInTheDocument();

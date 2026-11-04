@@ -1,4 +1,4 @@
-import {screen} from '@testing-library/react';
+import {screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {http, HttpResponse} from 'msw';
 import {vi} from 'vitest';
@@ -42,6 +42,77 @@ describe('RecipeVisibilityControls', () => {
     expect(screen.getByText('Copy share link')).toBeInTheDocument();
     await userEvent.click(screen.getByText('Copy share link'));
     expect(onActionMessage).toHaveBeenCalledWith('Share link copied');
+  });
+
+  test('surfaces a rejected sharing change and clears the pending selection (#418)', async () => {
+    const onActionMessage = vi.fn();
+    server.use(
+      http.patch(`${API}/api/recipes/:id/sharing`, () =>
+        HttpResponse.json(
+          {error: 'Recipe cannot be modified in its current status'},
+          {status: 409},
+        ),
+      ),
+    );
+
+    await renderWithProviders(
+      <RecipeVisibilityControls
+        recipe={makeRecipeDetail()}
+        onActionMessage={onActionMessage}
+      />,
+    );
+
+    await userEvent.click(screen.getByLabelText(/Unlisted link/i));
+    await userEvent.click(
+      screen.getByRole('checkbox', {name: 'Publishing consent'}),
+    );
+    await userEvent.click(screen.getByText('Save sharing settings'));
+
+    await waitFor(() => {
+      expect(onActionMessage).toHaveBeenCalledWith(
+        'Could not update sharing settings: Recipe cannot be modified in its current status',
+      );
+    });
+    // The failed change is not left looking saved: the pending selection
+    // (and its Save button) is gone, matching the server's visibility.
+    await waitFor(() => {
+      expect(
+        screen.queryByText('Save sharing settings'),
+      ).not.toBeInTheDocument();
+    });
+    // Retrying the change starts from a clean slate: the consent given
+    // for the rejected attempt was cleared along with the selection.
+    await userEvent.click(screen.getByLabelText(/Unlisted link/i));
+    expect(
+      screen.getByRole('checkbox', {name: 'Publishing consent'}),
+    ).not.toBeChecked();
+  });
+
+  test('surfaces a rejected share-link rotation (#418)', async () => {
+    const onActionMessage = vi.fn();
+    server.use(
+      http.post(`${API}/api/recipes/:id/sharing/rotate-token`, () =>
+        HttpResponse.json(
+          {error: 'Recipe cannot be modified in its current status'},
+          {status: 409},
+        ),
+      ),
+    );
+
+    await renderWithProviders(
+      <RecipeVisibilityControls
+        recipe={makeRecipeDetail({visibility: 'unlisted'})}
+        onActionMessage={onActionMessage}
+      />,
+    );
+
+    await userEvent.click(screen.getByText('Generate share link'));
+    await waitFor(() => {
+      expect(onActionMessage).toHaveBeenCalledWith(
+        'Could not rotate the share link: Recipe cannot be modified in its current status',
+      );
+    });
+    expect(onActionMessage).not.toHaveBeenCalledWith('Share link rotated');
   });
 
   test('shows public warning and permalink copy for public recipes', async () => {

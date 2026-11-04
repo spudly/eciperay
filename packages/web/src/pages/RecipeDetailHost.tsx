@@ -165,12 +165,29 @@ export const RecipeDetailHost = ({
   // passed to its panels; the page renders it from the overview
   // view-model.
   const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const actionMessageTimer = useRef<number | null>(null);
   const showActionMessage = (message: string) => {
     setActionMessage(message);
-    window.setTimeout(() => {
+    // Cancel the previous dismissal: without this, a message shown
+    // within 2.5s of an earlier one is cleared early by the earlier
+    // timer — exactly the rapid success-then-error (or error-then-error)
+    // sequence the #418 error messages can produce.
+    if (actionMessageTimer.current !== null) {
+      window.clearTimeout(actionMessageTimer.current);
+    }
+    actionMessageTimer.current = window.setTimeout(() => {
       setActionMessage(null);
+      actionMessageTimer.current = null;
     }, 2500);
   };
+  useEffect(
+    () => () => {
+      if (actionMessageTimer.current !== null) {
+        window.clearTimeout(actionMessageTimer.current);
+      }
+    },
+    [],
+  );
 
   const invalidate = () =>
     invalidateRecipeQueries(
@@ -181,12 +198,21 @@ export const RecipeDetailHost = ({
 
   // Lifecycle mutations (the retired OverviewActions): status changes,
   // candidate activation, and tweak-manually version creation.
+  // Every lifecycle mutation surfaces a rejection through the action
+  // message (#418): the server refuses edits to a locked/Perfected
+  // recipe with a 409 ("Recipe cannot be modified in its current
+  // status"), and without an onError that failure was silent — the
+  // user believed the change had landed.
+  const showMutationError = (action: string) => (error: Error) => {
+    showActionMessage(`${action}: ${error.message}`);
+  };
   const statusMutation = useMutation({
     mutationFn: (status: RecipeDetail['status']) =>
       eciperay.recipes.patchStatus(displayRecipe.id, status),
     onSuccess: () => {
       void invalidate();
     },
+    onError: showMutationError('Could not change status'),
   });
   const activateMutation = useMutation({
     mutationFn: (versionId: string) =>
@@ -195,6 +221,7 @@ export const RecipeDetailHost = ({
       void invalidate();
       showActionMessage('Version activated');
     },
+    onError: showMutationError('Could not activate version'),
   });
   const tweakManualMutation = useMutation({
     mutationFn: () => eciperay.versions.create(displayRecipe.id),
@@ -202,6 +229,7 @@ export const RecipeDetailHost = ({
       void invalidate();
       onSelectVersion(version.id);
     },
+    onError: showMutationError('Could not create a new version'),
   });
 
   // A Perfected recipe's active version is locked, so creating a draft
@@ -229,8 +257,12 @@ export const RecipeDetailHost = ({
       void invalidate();
       void navigate(`/recipes/${recipe.id}/versions/${version.id}/edit`);
     },
-    onError: () => {
-      showActionMessage('Could not create a draft. Please try again.');
+    onError: error => {
+      showActionMessage(
+        `Could not create a draft: ${
+          error instanceof Error ? error.message : 'Please try again.'
+        }`,
+      );
     },
   });
 
@@ -301,6 +333,7 @@ export const RecipeDetailHost = ({
     onSuccess: data => {
       queryClient.setQueryData(queryKeys.recipe(recipe.id), data);
     },
+    onError: showMutationError('Could not save your rating'),
   });
   const communityRating = ratingsSummary.communityRating;
   const ratings = {

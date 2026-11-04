@@ -96,6 +96,88 @@ describe('RecipeCommentsSection', () => {
     });
   });
 
+  test('shows the server error when posting a comment fails (#418)', async () => {
+    server.use(
+      http.get(`${API}/api/recipes/:id/comments`, () => HttpResponse.json([])),
+      http.post(`${API}/api/recipes/:id/comments`, () =>
+        HttpResponse.json({error: 'Comments are closed'}, {status: 403}),
+      ),
+    );
+
+    await renderWithProviders(
+      <RecipeCommentsSection
+        recipeId="recipe-uuid-1"
+        ownerUserId="owner-uuid"
+      />,
+      {withAuth: true},
+    );
+
+    await userEvent.type(screen.getByPlaceholderText('Add a comment'), 'Nice!');
+    await userEvent.click(screen.getByText('Post comment'));
+    expect(
+      await screen.findByText('Could not post comment: Comments are closed'),
+    ).toBeInTheDocument();
+    // The draft is kept so the failed comment is not lost.
+    expect(screen.getByPlaceholderText('Add a comment')).toHaveValue('Nice!');
+  });
+
+  test('shows the server error and keeps the edit when updating a comment fails (#418)', async () => {
+    server.use(
+      http.get(`${API}/api/recipes/:id/comments`, () =>
+        HttpResponse.json([sampleComment]),
+      ),
+      http.put(`${API}/api/recipes/:id/comments/:commentId`, () =>
+        HttpResponse.json({error: 'Comment is stale'}, {status: 409}),
+      ),
+    );
+
+    await renderWithProviders(
+      <RecipeCommentsSection
+        recipeId="recipe-uuid-1"
+        ownerUserId="owner-uuid"
+      />,
+      {withAuth: true},
+    );
+
+    await screen.findByText('Delicious!');
+    await userEvent.click(screen.getByText('Edit'));
+    const editArea = screen.getByDisplayValue('Delicious!');
+    await userEvent.clear(editArea);
+    await userEvent.type(editArea, 'Updated');
+    await userEvent.click(screen.getByText('Save'));
+    expect(
+      await screen.findByText('Could not update comment: Comment is stale'),
+    ).toBeInTheDocument();
+    // The edit stays open with its text so the failed change is not lost.
+    expect(screen.getByDisplayValue('Updated')).toBeInTheDocument();
+  });
+
+  test('shows the server error and keeps the comment when deleting fails (#418)', async () => {
+    server.use(
+      http.get(`${API}/api/recipes/:id/comments`, () =>
+        HttpResponse.json([sampleComment]),
+      ),
+      http.delete(`${API}/api/recipes/:id/comments/:commentId`, () =>
+        HttpResponse.json({error: 'Comment is stale'}, {status: 409}),
+      ),
+    );
+
+    await renderWithProviders(
+      <RecipeCommentsSection
+        recipeId="recipe-uuid-1"
+        ownerUserId="owner-uuid"
+      />,
+      {withAuth: true},
+    );
+
+    await screen.findByText('Delicious!');
+    await userEvent.click(screen.getByText('Delete'));
+    expect(
+      await screen.findByText('Could not delete comment: Comment is stale'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Delicious!')).toBeInTheDocument();
+  });
+
   test('edits and deletes comments', async () => {
     let updated = false;
     let deleted = false;

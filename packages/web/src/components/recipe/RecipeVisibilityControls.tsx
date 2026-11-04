@@ -50,6 +50,18 @@ export const RecipeVisibilityControls = ({recipe, onActionMessage}: Props) => {
       void invalidate();
       onActionMessage('Sharing settings updated');
     },
+    onError: error => {
+      // A rejected sharing change must not stay selected as if it had
+      // saved (#418): drop the pending selection so the controls match
+      // the server's visibility again, and surface the reason.
+      setPendingVisibility(null);
+      setPublishingConsent(false);
+      onActionMessage(
+        `Could not update sharing settings: ${
+          error instanceof Error ? error.message : 'Please try again.'
+        }`,
+      );
+    },
   });
 
   const rotateMutation = useMutation({
@@ -60,6 +72,13 @@ export const RecipeVisibilityControls = ({recipe, onActionMessage}: Props) => {
       }
       void invalidate();
       onActionMessage('Share link rotated');
+    },
+    onError: error => {
+      onActionMessage(
+        `Could not rotate the share link: ${
+          error instanceof Error ? error.message : 'Please try again.'
+        }`,
+      );
     },
   });
 

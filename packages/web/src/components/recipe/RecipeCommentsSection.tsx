@@ -7,6 +7,7 @@ import {YStack} from 'tamagui';
 
 import {eciperay} from '../../lib/api.js';
 import {BookLoadingSpinner} from '../ui/BookLoadingSpinner.js';
+import {ErrorText} from '../ui/ErrorText.js';
 
 import {RecipeCommentItem} from './RecipeCommentItem.js';
 
@@ -29,6 +30,16 @@ export const RecipeCommentsSection = ({
   const [draft, setDraft] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState('');
+  const [commentError, setCommentError] = useState<string | null>(null);
+
+  // Comment mutations surface rejections instead of failing silently
+  // (#418): the draft/edit text stays in place so nothing is lost, and
+  // the server's reason is shown above the comment list.
+  const showCommentError = (action: string) => (error: Error) => {
+    setCommentError(
+      `${action}: ${error instanceof Error ? error.message : 'Please try again.'}`,
+    );
+  };
 
   const commentsQueryKey = queryKeys.recipeComments(recipeId, shareToken);
 
@@ -50,8 +61,10 @@ export const RecipeCommentsSection = ({
       eciperay.recipes.createComment(recipeId, {body}),
     onSuccess: () => {
       setDraft('');
+      setCommentError(null);
       invalidateComments();
     },
+    onError: showCommentError('Could not post comment'),
   });
 
   const updateMutation = useMutation({
@@ -60,14 +73,20 @@ export const RecipeCommentsSection = ({
     onSuccess: () => {
       setEditingId(null);
       setEditDraft('');
+      setCommentError(null);
       invalidateComments();
     },
+    onError: showCommentError('Could not update comment'),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (commentId: string) =>
       eciperay.recipes.deleteComment(recipeId, commentId),
-    onSuccess: invalidateComments,
+    onSuccess: () => {
+      setCommentError(null);
+      invalidateComments();
+    },
+    onError: showCommentError('Could not delete comment'),
   });
 
   return (
@@ -90,6 +109,13 @@ export const RecipeCommentsSection = ({
       >
         Comments
       </h3>
+      {commentError ? (
+        <div style={{marginBottom: tokens.spacing[3]}}>
+          <span role="alert">
+            <ErrorText>{commentError}</ErrorText>
+          </span>
+        </div>
+      ) : null}
       {isLoading ? (
         <YStack
           alignItems="center"
