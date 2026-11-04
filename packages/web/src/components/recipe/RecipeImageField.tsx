@@ -1,7 +1,6 @@
 /* eslint-disable max-lines -- recipe image upload, paste, and generate controls */
-import {eciperayTheme, tokens} from '@spudly/ui';
-import type {CSSProperties} from 'react';
-import {useState} from 'react';
+import {Button, eciperayTheme, tokens} from '@spudly/ui';
+import {useRef, useState} from 'react';
 
 import {
   getImageFileFromDataTransfer,
@@ -22,18 +21,6 @@ type Props = {
 
 // Style objects on DS tokens (B7 C12, design-system#130 — the Tailwind
 // utilities these replace are gone with the dependency).
-const browseLabelStyle: CSSProperties = {
-  backgroundColor: eciperayTheme.semantic.primary,
-  display: 'inline-flex',
-  cursor: 'pointer',
-  borderRadius: 8,
-  padding: '8px 16px',
-  fontSize: tokens.typography.fontSize.sm,
-  fontFamily: tokens.typography.fontFamily.sans,
-  fontWeight: tokens.typography.fontWeight.medium,
-  color: '#ffffff',
-};
-
 // Parity note (design-system#129): the app mirror's showcase demo was
 // removed with the in-app component showcase; this web mirror keeps its
 // own demo for the web showcase page, so no web change was needed.
@@ -49,6 +36,8 @@ export const RecipeImageField = ({
   onRemove,
 }: Props) => {
   const [isDragging, setIsDragging] = useState(false);
+  const captureInputRef = useRef<HTMLInputElement>(null);
+  const browseInputRef = useRef<HTMLInputElement>(null);
   const imageBusy = imageUploading || imageGenerating;
 
   const acceptImage = (file: File | null) => {
@@ -154,20 +143,34 @@ export const RecipeImageField = ({
               fontSize: tokens.typography.fontSize.sm,
             }}
           >
-            Drag and drop an image here, paste from your clipboard, browse
-            below, or generate one with AI
+            Drag and drop an image here, paste from your clipboard, browse or
+            take a photo below, or generate one with AI
           </p>
         )}
       </div>
-      <div
-        style={{display: 'flex', flexWrap: 'wrap', gap: tokens.spacing[3]}}
-      >
-        <label
-          htmlFor="recipe-image-upload"
-          style={browseLabelStyle}
+      <div style={{display: 'flex', flexWrap: 'wrap', gap: tokens.spacing[3]}}>
+        <Button
+          type="button"
+          variant="primary"
+          size="sm"
+          disabled={imageBusy}
+          onPress={() => {
+            browseInputRef.current?.click();
+          }}
         >
           {imageUploading ? 'Uploading…' : 'Browse images'}
-        </label>
+        </Button>
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          disabled={imageBusy}
+          onPress={() => {
+            captureInputRef.current?.click();
+          }}
+        >
+          Take photo
+        </Button>
         {onGenerateImage ? (
           <button
             type="button"
@@ -194,9 +197,23 @@ export const RecipeImageField = ({
           </button>
         ) : null}
         <input
+          ref={browseInputRef}
           id="recipe-image-upload"
           type="file"
           accept="image/jpeg,image/png,image/gif,image/webp"
+          style={{display: 'none'}}
+          disabled={imageBusy}
+          onChange={e => {
+            acceptImage(e.target.files?.[0] ?? null);
+            e.target.value = '';
+          }}
+        />
+        <input
+          ref={captureInputRef}
+          id="recipe-image-capture"
+          type="file"
+          accept="image/jpeg,image/png,image/gif,image/webp"
+          capture="environment"
           style={{display: 'none'}}
           disabled={imageBusy}
           onChange={e => {
