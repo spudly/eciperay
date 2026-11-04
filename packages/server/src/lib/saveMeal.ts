@@ -3,6 +3,11 @@ import type {MealDetail, MealInput} from '@eciperay/types';
 import {query as defaultQuery} from '../db/query.js';
 import {runTransactional} from '../db/withTransaction.js';
 
+import {
+  staleWriteConflict,
+  updatedAtMatches,
+  updatedAtToken,
+} from './conditionalWrite.js';
 import {loadMealDetail} from './loadMealDetail.js';
 import {loadAccessibleRecipe} from './mealRecipeAccess.js';
 
@@ -60,15 +65,35 @@ export const saveNewMeal = async (
 export const replaceMeal = async (
   mealId: string,
   userId: string,
-  input: MealInput,
+  input: MealInput & {expectedUpdatedAts?: string[]},
   queryFn: QueryFn = defaultQuery,
 ): Promise<{meal: MealDetail} | {error: string; status: number}> => {
   const existing = await queryFn(
-    `select id from meals where id = $1 and user_id = $2`,
+    `select id, updated_at from meals where id = $1 and user_id = $2`,
     [mealId, userId],
   );
-  if (!existing.rows[0]) {
+  const existingRow = existing.rows[0] as
+    {id: string; updated_at: string | Date} | undefined;
+  if (!existingRow) {
     return {error: 'Meal not found', status: 404};
+  }
+  // Optimistic concurrency (#384): a client that read the meal and merged
+  // sends its `updatedAt` back (the routers resolve the If-Match header
+  // and the expectedUpdatedAt body field into expectedUpdatedAts; direct
+  // callers may pass the single body field). If-Match succeeds when ANY
+  // candidate matches; if none does, the stored record has moved since
+  // that read, so refuse before any write — the caller can re-read,
+  // re-merge, and retry instead of silently overwriting.
+  const expectedTokens =
+    input.expectedUpdatedAts ??
+    (input.expectedUpdatedAt ? [input.expectedUpdatedAt] : []);
+  if (
+    expectedTokens.length > 0 &&
+    !expectedTokens.some(token =>
+      updatedAtMatches(existingRow.updated_at, token),
+    )
+  ) {
+    return staleWriteConflict('Meal');
   }
 
   const resolved: {recipeId: string; servings: number; sortOrder: number}[] =
@@ -92,6 +117,29 @@ export const replaceMeal = async (
     });
   }
 
+  // The token is bound into the UPDATE itself, so the check above is only
+  // a fast path: if a concurrent write lands between it and this update,
+  // the predicate no longer matches and the update writes no row. The
+  // comparison truncates the stored timestamp to milliseconds because
+  // that is the precision of the token the API hands out (a stored
+  // timestamptz can carry microseconds). The early check guarantees any
+  // token reaching this cast has already normalized to a real timestamp,
+  // so a malformed token cannot get here — it 409s above. Without a
+  // token the predicate is null and the write stays unconditional.
+  // The SET clause also guarantees the version strictly advances:
+  // now() can land in the same millisecond as the previous write, which
+  // would hand the next reader the same token and let a stale token
+  // match again, so updated_at moves to at least one millisecond past
+  // the previous token.
+  // Only tokens that parse as timestamps can be cast for the predicate;
+  // a malformed candidate can never match a stored timestamp, and the
+  // check above has already refused when no candidate matched, so a
+  // non-empty list always leaves at least one castable token here.
+  const castableTokens = expectedTokens
+    .map(token => updatedAtToken(token))
+    .filter(token => !Number.isNaN(Date.parse(token)));
+  const expectedUpdatedAts = castableTokens.length > 0 ? castableTokens : null;
+
   // The update, member delete, and replacement inserts are one
   // transaction (#403): a concurrent meal-detail read must never observe
   // the intermediate state between the delete and the inserts (an empty
@@ -99,30 +147,40 @@ export const replaceMeal = async (
   // with its members deleted or partially replaced. The existence and
   // accessibility reads above stay outside the transaction, and the
   // post-save detail load below keeps its existing semantics.
-  await runTransactional(queryFn, async q => {
+  const conflict = await runTransactional(queryFn, async q => {
     // The token must advance monotonically at its millisecond precision —
     // the same expression as the #394 delete trigger and
     // touchMealsForRecipe — so a save that lands in the same millisecond
     // as the meal's previous update (e.g. right after the trigger bumped
     // the token for a member-recipe delete) never reissues the earlier
     // ETag.
-    await q(
-      `update meals set title = $3, notes = $4, updated_at = greatest(
-       now(),
-       date_trunc('milliseconds', updated_at) + interval '1 millisecond'
-     )
-     where id = $1 and user_id = $2`,
-      [mealId, userId, input.title, input.notes ?? null],
+    const updated = await q(
+      `update meals
+       set title = $3, notes = $4,
+           updated_at = greatest(now(), date_trunc('milliseconds', updated_at) + interval '1 millisecond')
+       where id = $1 and user_id = $2
+         and ($5::timestamptz[] is null
+           or date_trunc('milliseconds', updated_at) = ANY($5::timestamptz[]))`,
+      [mealId, userId, input.title, input.notes ?? null, expectedUpdatedAts],
     );
+    if (expectedUpdatedAts && updated.rowCount === 0) {
+      // A concurrent write (or delete) won the race after the check
+      // above; nothing else is written.
+      return true;
+    }
     await q(`delete from meal_recipes where meal_id = $1`, [mealId]);
     for (const recipe of resolved) {
       await q(
         `insert into meal_recipes (meal_id, recipe_id, sort_order, servings)
-       values ($1, $2, $3, $4)`,
+         values ($1, $2, $3, $4)`,
         [mealId, recipe.recipeId, recipe.sortOrder, recipe.servings],
       );
     }
+    return false;
   });
+  if (conflict) {
+    return staleWriteConflict('Meal');
+  }
 
   const meal = await loadMealDetail(mealId, userId, queryFn);
   if (!meal) {

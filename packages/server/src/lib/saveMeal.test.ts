@@ -126,7 +126,9 @@ describe('replaceMeal', () => {
       throw new Error(result.error);
     }
     const updateCall = mockQuery.mock.calls.find(([sql]) =>
-      (sql as unknown as string).includes('update meals set title'),
+      (sql as unknown as string)
+        .replaceAll(/\s+/g, ' ')
+        .includes('update meals set title'),
     );
     expect(updateCall).toBeDefined();
     const sql = updateCall?.[0] as unknown as string;
@@ -186,6 +188,172 @@ describe('replaceMeal', () => {
       error: `Recipe not found or not accessible: ${RECIPE_ID}`,
       status: 400,
     });
+  });
+
+  test('returns 409 and writes no members when the conditional update matches no row (#384)', async () => {
+    const mockQuery = createMockQuery();
+    mockQuery.mockImplementation((async (sql: string) => {
+      if (sql.includes('select id, updated_at from meals')) {
+        return makeQueryResult([
+          {id: MEAL_ID, updated_at: '2024-01-01T00:00:00.000Z'},
+        ]);
+      }
+      if (sql.includes('from recipes r')) {
+        return makeQueryResult([accessibleRecipeRow]);
+      }
+      if (sql.includes('share_grants')) {
+        return emptyShareGrant;
+      }
+      if (sql.includes('update meals')) {
+        // A concurrent write landed after the early token check: the
+        // version predicate no longer matches.
+        return {...makeQueryResult([]), rowCount: 0};
+      }
+      return makeQueryResult([]);
+    }) as typeof mockQuery);
+
+    const result = await replaceMeal(
+      MEAL_ID,
+      USER_ID,
+      {...mealInput, expectedUpdatedAt: '2024-01-01T00:00:00.000Z'},
+      mockQuery,
+    );
+    expect(result).toEqual({
+      error: 'Meal has been modified since it was loaded',
+      status: 409,
+    });
+    const memberWrites = mockQuery.mock.calls.filter(([sql]) =>
+      /delete from meal_recipes|insert into meal_recipes/.test(String(sql)),
+    );
+    expect(memberWrites).toEqual([]);
+  });
+
+  test('matches a current token against a sub-millisecond stored timestamp (#384)', async () => {
+    const mockQuery = createMockQuery();
+    mockQuery.mockImplementation((async (sql: string) => {
+      if (sql.includes('select id, updated_at from meals')) {
+        return makeQueryResult([
+          {id: MEAL_ID, updated_at: '2024-01-01T00:00:00.123456Z'},
+        ]);
+      }
+      if (sql.includes('from recipes r')) {
+        return makeQueryResult([accessibleRecipeRow]);
+      }
+      if (sql.includes('share_grants')) {
+        return emptyShareGrant;
+      }
+      if (sql.includes('update meals')) {
+        return {...makeQueryResult([]), rowCount: 1};
+      }
+      if (sql.includes('from meals') && sql.includes('where id =')) {
+        return makeQueryResult([
+          {
+            id: MEAL_ID,
+            user_id: USER_ID,
+            title: 'Sunday Dinner',
+            notes: null,
+            created_at: '2024-01-01T00:00:00.000Z',
+            // node-postgres hands timestamptz back as a Date, which the
+            // detail loader normalizes to the millisecond token. The
+            // read-back value models the UPDATE's monotonic bump: the
+            // stored version has advanced past the token that was sent.
+            updated_at: new Date('2024-01-01T00:00:00.124456Z'),
+          },
+        ]);
+      }
+      if (sql.includes('from meal_recipes')) {
+        return makeQueryResult([
+          {meal_id: MEAL_ID, recipe_id: RECIPE_ID, sort_order: 0, servings: 4},
+        ]);
+      }
+      return makeQueryResult([]);
+    }) as typeof mockQuery);
+
+    // The API token carries millisecond precision (.123Z) while the
+    // stored timestamptz carries microseconds (.123456Z); they name the
+    // same version and the write must succeed.
+    const result = await replaceMeal(
+      MEAL_ID,
+      USER_ID,
+      {...mealInput, expectedUpdatedAt: '2024-01-01T00:00:00.123Z'},
+      mockQuery,
+    );
+    if ('error' in result) {
+      throw new Error(result.error);
+    }
+    expect(result.meal.id).toBe(MEAL_ID);
+    // The returned token must have advanced past the token that was
+    // sent (.123Z): the read-back above carries the bumped version.
+    expect(result.meal.updatedAt).toBe('2024-01-01T00:00:00.124Z');
+    // The UPDATE itself must compare at millisecond precision — with raw
+    // equality the sub-millisecond stored value would match no row.
+    const updateCall = mockQuery.mock.calls.find(([sql]) =>
+      String(sql).includes('update meals'),
+    );
+    expect(String(updateCall?.[0])).toContain(
+      "date_trunc('milliseconds', updated_at) = ANY($5::timestamptz[])",
+    );
+    expect(updateCall?.[1]).toContainEqual(['2024-01-01T00:00:00.123Z']);
+    // The version must strictly advance on every replace: a plain now()
+    // landing in the same millisecond as the previous write would
+    // reissue the same token, and a stale token could then match again.
+    expect(String(updateCall?.[0])).toContain(
+      "greatest(now(), date_trunc('milliseconds', updated_at) + interval '1 millisecond')",
+    );
+  });
+
+  test('returns 409 and writes nothing for an empty If-Match tag (#384)', async () => {
+    const mockQuery = createMockQuery();
+    mockQuery.mockImplementation((async (sql: string) => {
+      if (sql.includes('select id, updated_at from meals')) {
+        return makeQueryResult([
+          {id: MEAL_ID, updated_at: '2024-01-01T00:00:00.000Z'},
+        ]);
+      }
+      return makeQueryResult([]);
+    }) as typeof mockQuery);
+
+    // `If-Match: ""` resolves to a single empty candidate: a precondition
+    // that can never match, not the unconditional no-token path.
+    const result = await replaceMeal(
+      MEAL_ID,
+      USER_ID,
+      {...mealInput, expectedUpdatedAts: ['']},
+      mockQuery,
+    );
+    expect(result).toEqual({
+      error: 'Meal has been modified since it was loaded',
+      status: 409,
+    });
+    const updates = mockQuery.mock.calls.filter(([sql]) =>
+      String(sql).includes('update meals'),
+    );
+    expect(updates).toEqual([]);
+  });
+
+  test('propagates unexpected errors from the replace writes', async () => {
+    const mockQuery = createMockQuery();
+    mockQuery.mockImplementation((async (sql: string) => {
+      if (sql.includes('select id, updated_at from meals')) {
+        return makeQueryResult([
+          {id: MEAL_ID, updated_at: '2024-01-01T00:00:00.000Z'},
+        ]);
+      }
+      if (sql.includes('from recipes r')) {
+        return makeQueryResult([accessibleRecipeRow]);
+      }
+      if (sql.includes('share_grants')) {
+        return emptyShareGrant;
+      }
+      if (sql.includes('update meals')) {
+        throw new Error('db down');
+      }
+      return makeQueryResult([]);
+    }) as typeof mockQuery);
+
+    await expect(
+      replaceMeal(MEAL_ID, USER_ID, mealInput, mockQuery),
+    ).rejects.toThrow('db down');
   });
 });
 

@@ -3,6 +3,11 @@ import type {MealPlanDetail, MealPlanInput} from '@eciperay/types';
 import {query as defaultQuery} from '../db/query.js';
 import {runTransactional} from '../db/withTransaction.js';
 
+import {
+  staleWriteConflict,
+  updatedAtMatches,
+  updatedAtToken,
+} from './conditionalWrite.js';
 import {loadMealPlanDetail} from './loadMealPlanDetail.js';
 import {loadAccessibleRecipe} from './mealRecipeAccess.js';
 
@@ -18,6 +23,19 @@ class MealPlanLoadError extends Error {
   constructor() {
     super('Failed to load meal plan');
     this.name = 'MealPlanLoadError';
+  }
+}
+
+/**
+ * Thrown inside the replace transaction when the conditional UPDATE matched no
+ * row — a concurrent write landed between the early token check and the update
+ * — so the transaction rolls back and replaceMealPlan reports the 409 conflict
+ * instead of overwriting.
+ */
+class MealPlanWriteConflictError extends Error {
+  constructor() {
+    super('Meal plan has been modified since it was loaded');
+    this.name = 'MealPlanWriteConflictError';
   }
 }
 
@@ -161,15 +179,34 @@ export const saveNewMealPlan = async (
 export const replaceMealPlan = async (
   planId: string,
   userId: string,
-  input: MealPlanInput,
+  input: MealPlanInput & {expectedUpdatedAts?: string[]},
   queryFn: QueryFn = defaultQuery,
 ): Promise<{plan: MealPlanDetail} | {error: string; status: number}> => {
   const existing = await queryFn(
-    `select id from meal_plans where id = $1 and user_id = $2`,
+    `select id, updated_at from meal_plans where id = $1 and user_id = $2`,
     [planId, userId],
   );
-  if (!existing.rows[0]) {
+  const existingRow = existing.rows[0] as
+    {id: string; updated_at: string | Date} | undefined;
+  if (!existingRow) {
     return {error: 'Meal plan not found', status: 404};
+  }
+  // Optimistic concurrency (#384): same contract as replaceMeal — the
+  // routers resolve the If-Match header and the expectedUpdatedAt body
+  // field into expectedUpdatedAts, If-Match succeeds when ANY candidate
+  // matches, and when none does the write refuses before any write so a
+  // read-merge-PUT client can re-read, re-merge, and retry instead of
+  // silently overwriting.
+  const expectedTokens =
+    input.expectedUpdatedAts ??
+    (input.expectedUpdatedAt ? [input.expectedUpdatedAt] : []);
+  if (
+    expectedTokens.length > 0 &&
+    !expectedTokens.some(token =>
+      updatedAtMatches(existingRow.updated_at, token),
+    )
+  ) {
+    return staleWriteConflict('Meal plan');
   }
 
   const resolved = await resolveEntries(userId, input, queryFn);
@@ -182,13 +219,39 @@ export const replaceMealPlan = async (
   // updated with its entries deleted or partially replaced, and a
   // failed read-back cannot leave the client told the save failed when
   // it landed (see saveNewMealPlan / #358).
+  // The token is bound into the UPDATE itself, so the check above is only
+  // a fast path: if a concurrent write lands between it and this update,
+  // the predicate no longer matches and the update writes no row. The
+  // comparison truncates the stored timestamp to milliseconds because
+  // that is the precision of the token the API hands out (a stored
+  // timestamptz can carry microseconds). The early check guarantees any
+  // token reaching this cast has already normalized to a real timestamp,
+  // so a malformed token cannot get here — it 409s above. Without a
+  // token the predicate is null and the write stays unconditional.
+  // The SET clause also guarantees the version strictly advances:
+  // now() can land in the same millisecond as the previous write, which
+  // would hand the next reader the same token and let a stale token
+  // match again, so updated_at moves to at least one millisecond past
+  // the previous token.
+  // Only tokens that parse as timestamps can be cast for the predicate;
+  // a malformed candidate can never match a stored timestamp, and the
+  // check above has already refused when no candidate matched, so a
+  // non-empty list always leaves at least one castable token here.
+  const castableTokens = expectedTokens
+    .map(token => updatedAtToken(token))
+    .filter(token => !Number.isNaN(Date.parse(token)));
+  const expectedUpdatedAts = castableTokens.length > 0 ? castableTokens : null;
+
   let plan: MealPlanDetail;
   try {
     plan = await runTransactional(queryFn, async q => {
-      await q(
+      const updated = await q(
         `update meal_plans
-       set title = $3, notes = $4, starts_on = $5, ends_on = $6, updated_at = now()
-       where id = $1 and user_id = $2`,
+       set title = $3, notes = $4, starts_on = $5, ends_on = $6,
+           updated_at = greatest(now(), date_trunc('milliseconds', updated_at) + interval '1 millisecond')
+       where id = $1 and user_id = $2
+         and ($7::timestamptz[] is null
+           or date_trunc('milliseconds', updated_at) = ANY($7::timestamptz[]))`,
         [
           planId,
           userId,
@@ -196,8 +259,12 @@ export const replaceMealPlan = async (
           input.notes ?? null,
           input.startsOn ?? null,
           input.endsOn ?? null,
+          expectedUpdatedAts,
         ],
       );
+      if (expectedUpdatedAts && updated.rowCount === 0) {
+        throw new MealPlanWriteConflictError();
+      }
       await q(`delete from meal_plan_entries where meal_plan_id = $1`, [
         planId,
       ]);
@@ -211,6 +278,9 @@ export const replaceMealPlan = async (
   } catch (error) {
     if (error instanceof MealPlanLoadError) {
       return {error: 'Failed to load meal plan', status: 500};
+    }
+    if (error instanceof MealPlanWriteConflictError) {
+      return staleWriteConflict('Meal plan');
     }
     throw error;
   }

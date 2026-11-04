@@ -69,6 +69,10 @@ describe('GET /meals/:id', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.title).toBe('Sunday Dinner');
+    // The updatedAt in the body is the optimistic-concurrency token for
+    // PUT (#384); it is also exposed as the ETag for If-Match.
+    expect(res.body.updatedAt).toBe('2024-01-01T00:00:00.000Z');
+    expect(res.headers['etag']).toBe('"2024-01-01T00:00:00.000Z"');
   });
 
   test('returns 404 when meal missing', async () => {
@@ -230,6 +234,152 @@ describe('PUT /meals/:id', () => {
       .send(mealInput);
 
     expect(res.status).toBe(404);
+  });
+
+  test('updates meal when the If-Match token is current (#384)', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
+    mockQuery
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          {id: MEAL_ID, updated_at: '2024-01-01T00:00:00.000Z'},
+        ]),
+      )
+      .mockResolvedValueOnce(makeQueryResult([accessibleRecipeRow]))
+      .mockResolvedValueOnce(emptyShareGrant)
+      .mockResolvedValueOnce({...makeQueryResult([]), rowCount: 1})
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([]));
+    installLoadMealDetailMock(mockQuery);
+
+    const res = await request(getApp())
+      .put(`/api/meals/${MEAL_ID}`)
+      .set('Authorization', 'Bearer valid-token')
+      .set('If-Match', '"2024-01-01T00:00:00.000Z"')
+      .send(mealInput);
+
+    expect(res.status).toBe(200);
+    expect(res.body.id).toBe(MEAL_ID);
+  });
+
+  test('updates meal when any If-Match candidate matches (#384)', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
+    mockQuery
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          {id: MEAL_ID, updated_at: '2024-01-01T00:00:00.000Z'},
+        ]),
+      )
+      .mockResolvedValueOnce(makeQueryResult([accessibleRecipeRow]))
+      .mockResolvedValueOnce(emptyShareGrant)
+      .mockResolvedValueOnce({...makeQueryResult([]), rowCount: 1})
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([]));
+    installLoadMealDetailMock(mockQuery);
+
+    const res = await request(getApp())
+      .put(`/api/meals/${MEAL_ID}`)
+      .set('Authorization', 'Bearer valid-token')
+      .set('If-Match', '"2023-06-01T00:00:00.000Z", "2024-01-01T00:00:00.000Z"')
+      .send(mealInput);
+
+    expect(res.status).toBe(200);
+    expect(res.body.id).toBe(MEAL_ID);
+  });
+
+  test('updates meal when an If-Match list mixes a malformed and the current candidate (#384)', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
+    mockQuery
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          {id: MEAL_ID, updated_at: '2024-01-01T00:00:00.000Z'},
+        ]),
+      )
+      .mockResolvedValueOnce(makeQueryResult([accessibleRecipeRow]))
+      .mockResolvedValueOnce(emptyShareGrant)
+      .mockResolvedValueOnce({...makeQueryResult([]), rowCount: 1})
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([]));
+    installLoadMealDetailMock(mockQuery);
+
+    const res = await request(getApp())
+      .put(`/api/meals/${MEAL_ID}`)
+      .set('Authorization', 'Bearer valid-token')
+      .set('If-Match', '"not-a-date", "2024-01-01T00:00:00.000Z"')
+      .send(mealInput);
+
+    expect(res.status).toBe(200);
+    expect(res.body.id).toBe(MEAL_ID);
+  });
+
+  test('returns 409 and writes nothing when the If-Match token is stale (#384)', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
+    mockQuery.mockResolvedValueOnce(
+      makeQueryResult([{id: MEAL_ID, updated_at: '2024-01-01T00:00:00.000Z'}]),
+    );
+
+    const res = await request(getApp())
+      .put(`/api/meals/${MEAL_ID}`)
+      .set('Authorization', 'Bearer valid-token')
+      .set('If-Match', '"2023-06-01T00:00:00.000Z"')
+      .send(mealInput);
+
+    expect(res.status).toBe(409);
+    expect(res.body).toEqual({
+      error: 'Meal has been modified since it was loaded',
+    });
+    const writes = mockQuery.mock.calls.filter(args =>
+      /update meals|delete from meal_recipes|insert into meal_recipes/.test(
+        String(args[0]),
+      ),
+    );
+    expect(writes).toEqual([]);
+  });
+
+  test('returns 409 when the expectedUpdatedAt body field is stale (#384)', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
+    mockQuery.mockResolvedValueOnce(
+      makeQueryResult([{id: MEAL_ID, updated_at: '2024-01-01T00:00:00.000Z'}]),
+    );
+
+    const res = await request(getApp())
+      .put(`/api/meals/${MEAL_ID}`)
+      .set('Authorization', 'Bearer valid-token')
+      .send({...mealInput, expectedUpdatedAt: '2023-06-01T00:00:00.000Z'});
+
+    expect(res.status).toBe(409);
+    expect(res.body).toEqual({
+      error: 'Meal has been modified since it was loaded',
+    });
+  });
+
+  test('updates meal when the expectedUpdatedAt body field is current (#384)', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
+    mockQuery
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          {id: MEAL_ID, updated_at: '2024-01-01T00:00:00.000Z'},
+        ]),
+      )
+      .mockResolvedValueOnce(makeQueryResult([accessibleRecipeRow]))
+      .mockResolvedValueOnce(emptyShareGrant)
+      .mockResolvedValueOnce({...makeQueryResult([]), rowCount: 1})
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([]));
+    installLoadMealDetailMock(mockQuery);
+
+    const res = await request(getApp())
+      .put(`/api/meals/${MEAL_ID}`)
+      .set('Authorization', 'Bearer valid-token')
+      .send({...mealInput, expectedUpdatedAt: '2024-01-01T00:00:00.000Z'});
+
+    expect(res.status).toBe(200);
+    expect(res.body.id).toBe(MEAL_ID);
   });
 
   test('returns 400 when recipe is inaccessible', async () => {
@@ -435,4 +585,3 @@ describe('GET /meals/:id/cook-plan', () => {
     expect(res.status).toBe(502);
   });
 });
-
