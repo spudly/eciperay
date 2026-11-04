@@ -1,6 +1,7 @@
 import {
   ANALYTICS_CONSENT_STORAGE_KEY,
   identifyAnalyticsUser,
+  notifyAnalyticsConsentListeners,
   readAnalyticsConsent,
   subscribeAnalyticsConsent,
 } from '@eciperay/client';
@@ -49,7 +50,14 @@ window.addEventListener('storage', event => {
   if (event.key !== ANALYTICS_CONSENT_STORAGE_KEY) {
     return;
   }
-  applyConsentToPostHog(event.newValue);
+  // Route through the consent registry (whose subscriber above applies
+  // the change to PostHog) so the banner and the preferences surfaces in
+  // this tab follow cross-tab changes too, not just the PostHog switch.
+  notifyAnalyticsConsentListeners(
+    event.newValue === 'accepted' || event.newValue === 'declined'
+      ? event.newValue
+      : null,
+  );
 });
 
 export const identifyAnalyticsUserIfConsented = (session: Session) => {

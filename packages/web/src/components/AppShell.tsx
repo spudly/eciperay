@@ -3,6 +3,7 @@ import {eciperayTheme, tokens} from '@spudly/ui';
 import {NavLink, Outlet} from 'react-router-dom';
 
 import {Icon} from './Icon.js';
+import {LegalLinks} from './LegalLinks.js';
 
 const navItems = [
   {to: '/', end: true, label: 'Home', icon: 'home' as const},
@@ -47,10 +48,7 @@ const headerInnerStyle: CSSProperties = {
   paddingBottom: tokens.spacing[3],
 };
 
-const brandLinkStyle: CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-};
+const brandLinkStyle: CSSProperties = {display: 'flex', alignItems: 'center'};
 
 const logoStyle: CSSProperties = {
   display: 'block',
@@ -81,6 +79,21 @@ const navLinkStyle = ({isActive}: {isActive: boolean}): CSSProperties => ({
     ? {backgroundColor: eciperayTheme.semantic.primary, color: '#ffffff'}
     : {color: eciperayTheme.semantic.text}),
 });
+
+const footerStyle: CSSProperties = {
+  borderTop: `1px solid ${eciperayTheme.semantic.border}`,
+  backgroundColor: eciperayTheme.semantic.surface,
+};
+
+const footerInnerStyle: CSSProperties = {
+  maxWidth: 1024,
+  marginLeft: 'auto',
+  marginRight: 'auto',
+  paddingLeft: tokens.spacing[4],
+  paddingRight: tokens.spacing[4],
+  paddingTop: tokens.spacing[3],
+  paddingBottom: tokens.spacing[3],
+};
 
 const mainStyle: CSSProperties = {
   maxWidth: 1024,
@@ -132,5 +145,10 @@ export const AppShell = ({children}: AppShellProps) => (
       </div>
     </header>
     <main style={mainStyle}>{children ?? <Outlet />}</main>
+    <footer style={footerStyle}>
+      <div style={footerInnerStyle}>
+        <LegalLinks variant="stacked" />
+      </div>
+    </footer>
   </div>
 );

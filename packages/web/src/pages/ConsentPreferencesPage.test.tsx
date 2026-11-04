@@ -2,6 +2,8 @@ import {screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {vi} from 'vitest';
 
+import {FeedbackPreferenceProvider} from '@eciperay/client';
+
 import {renderWithProviders} from '../test/testUtils.js';
 
 import {ConsentPreferencesPage} from './ConsentPreferencesPage.js';
@@ -58,6 +60,35 @@ describe('ConsentPreferencesPage', () => {
     expect(
       screen.getByText(/Your current choice: Declined/),
     ).toBeInTheDocument();
+  });
+
+  test('declining forces the feedback shortcut preference off (#256)', async () => {
+    localStorage.setItem('eciperay.feedbackShortcutEnabled', 'true');
+    await renderWithProviders(
+      <FeedbackPreferenceProvider initialEnabled>
+        <ConsentPreferencesPage />
+      </FeedbackPreferenceProvider>,
+      {withAuth: false},
+    );
+    await userEvent.click(
+      screen.getByRole('button', {name: 'Decline analytics consent'}),
+    );
+    expect(localStorage.getItem('eciperay.feedbackShortcutEnabled')).toBeNull();
+  });
+
+  test('withdrawing forces the feedback shortcut preference off (#256)', async () => {
+    localStorage.setItem('eciperay.analyticsConsent', 'accepted');
+    localStorage.setItem('eciperay.feedbackShortcutEnabled', 'true');
+    await renderWithProviders(
+      <FeedbackPreferenceProvider initialEnabled>
+        <ConsentPreferencesPage />
+      </FeedbackPreferenceProvider>,
+      {withAuth: false},
+    );
+    await userEvent.click(
+      screen.getByRole('button', {name: 'Withdraw consent'}),
+    );
+    expect(localStorage.getItem('eciperay.feedbackShortcutEnabled')).toBeNull();
   });
 
   test('withdraw clears the stored choice and disables PostHog', async () => {

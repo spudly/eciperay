@@ -2,13 +2,14 @@ import {
   clearAnalyticsConsent,
   identifyAnalyticsUser,
   readAnalyticsConsent,
+  subscribeAnalyticsConsent,
   useAuth,
   useFeedbackShortcutEnabled,
   writeAnalyticsConsent,
   type AnalyticsConsentStatus,
 } from '@eciperay/client';
 import {Button, SectionCard, Text as DSText, TextLink} from '@spudly/ui';
-import {useState} from 'react';
+import {useEffect, useState} from 'react';
 import type {ComponentType} from 'react';
 import type {ShowcaseFrameProps} from '@eciperay/client';
 
@@ -37,6 +38,17 @@ export const ProfileFeedbackPreference = () => {
     readAnalyticsConsent,
   );
   const [consentPromptOpen, setConsentPromptOpen] = useState(false);
+
+  // Follow consent changes made on other surfaces (the banner, the
+  // privacy choices page, another tab) while Profile is open, so the
+  // displayed state and the withdraw action stay accurate (#408).
+  useEffect(
+    () =>
+      subscribeAnalyticsConsent(status => {
+        setConsent(status);
+      }),
+    [],
+  );
   const [error, setError] = useState<string | null>(null);
 
   const acceptConsent = () => {

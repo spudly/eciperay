@@ -203,6 +203,7 @@ export {identifyAnalyticsUser} from './identifyAnalyticsUser.js';
 export {
   ANALYTICS_CONSENT_STORAGE_KEY,
   clearAnalyticsConsent,
+  notifyAnalyticsConsentListeners,
   readAnalyticsConsent,
   subscribeAnalyticsConsent,
   writeAnalyticsConsent,

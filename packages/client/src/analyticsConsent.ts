@@ -8,7 +8,13 @@ export type AnalyticsConsentListener = (
 
 const listeners = new Set<AnalyticsConsentListener>();
 
-const notifyAnalyticsConsentListeners = (
+/**
+ * Notify subscribers of a consent value learned outside this tab's own writes
+ * (the web host calls this from its `storage` listener when another tab
+ * accepts, declines, or withdraws, so in-tab surfaces and the analytics switch
+ * follow cross-tab changes too).
+ */
+export const notifyAnalyticsConsentListeners = (
   status: AnalyticsConsentStatus | null,
 ) => {
   for (const listener of listeners) {

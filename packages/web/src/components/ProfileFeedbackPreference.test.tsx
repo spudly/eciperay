@@ -1,8 +1,9 @@
 import {
   FeedbackPreferenceProvider,
   readAnalyticsConsent,
+  writeAnalyticsConsent,
 } from '@eciperay/client';
-import {screen} from '@testing-library/react';
+import {act, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {beforeEach, describe, expect, test, vi} from 'vitest';
 
@@ -73,6 +74,28 @@ describe('ProfileFeedbackPreference', () => {
     expect(screen.getByText(/analytics consent:/i)).toHaveTextContent(
       'Accepted',
     );
+  });
+
+  test('follows consent changes made on another surface while open', async () => {
+    vi.mocked(readAnalyticsConsent).mockReturnValue(null);
+    await renderPreference();
+    expect(screen.getByText(/analytics consent:/i)).toHaveTextContent(
+      'Not set',
+    );
+    expect(
+      screen.queryByRole('button', {name: 'Withdraw analytics consent'}),
+    ).not.toBeInTheDocument();
+
+    act(() => {
+      writeAnalyticsConsent('accepted');
+    });
+
+    expect(screen.getByText(/analytics consent:/i)).toHaveTextContent(
+      'Accepted',
+    );
+    expect(
+      screen.getByRole('button', {name: 'Withdraw analytics consent'}),
+    ).toBeInTheDocument();
   });
 
   test('enabling the shortcut re-presents the consent prompt even when consent was already accepted', async () => {

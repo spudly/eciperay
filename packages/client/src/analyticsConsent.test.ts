@@ -1,6 +1,7 @@
 import {
   ANALYTICS_CONSENT_STORAGE_KEY,
   clearAnalyticsConsent,
+  notifyAnalyticsConsentListeners,
   readAnalyticsConsent,
   subscribeAnalyticsConsent,
   writeAnalyticsConsent,
@@ -32,6 +33,15 @@ describe('analyticsConsent', () => {
     clearAnalyticsConsent();
     expect(localStorage.getItem(ANALYTICS_CONSENT_STORAGE_KEY)).toBeNull();
     expect(readAnalyticsConsent()).toBeNull();
+  });
+
+  test('notify reaches subscribers (cross-tab changes routed by the host)', () => {
+    const listener = jest.fn();
+    const unsubscribe = subscribeAnalyticsConsent(listener);
+    notifyAnalyticsConsentListeners('declined');
+    notifyAnalyticsConsentListeners(null);
+    expect(listener.mock.calls).toEqual([['declined'], [null]]);
+    unsubscribe();
   });
 
   test('notifies subscribers of write and clear transitions', () => {

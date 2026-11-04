@@ -4,6 +4,7 @@ import {
   readAnalyticsConsent,
   subscribeAnalyticsConsent,
   useAuth,
+  useFeedbackShortcutEnabled,
   writeAnalyticsConsent,
   type AnalyticsConsentStatus,
 } from '@eciperay/client';
@@ -28,6 +29,10 @@ const CONSENT_LABELS: Record<AnalyticsConsentStatus, string> = {
  */
 export const ConsentPreferencesPage = () => {
   const {session} = useAuth();
+  const {
+    enabled: feedbackShortcutEnabled,
+    setEnabled: setFeedbackShortcutEnabled,
+  } = useFeedbackShortcutEnabled();
   const [consent, setConsent] = useState<AnalyticsConsentStatus | null>(
     readAnalyticsConsent,
   );
@@ -51,15 +56,27 @@ export const ConsentPreferencesPage = () => {
     setConsent('accepted');
   };
 
+  // The feedback shortcut sends through PostHog, so any transition that
+  // removes consent (decline or withdraw) forces the shortcut preference
+  // off — the same #256 rule Profile applies — rather than leaving it on
+  // to silently revive at a later accept.
+  const forceFeedbackShortcutOff = () => {
+    if (feedbackShortcutEnabled) {
+      setFeedbackShortcutEnabled(false);
+    }
+  };
+
   const decline = () => {
     writeAnalyticsConsent('declined');
     disablePostHog();
+    forceFeedbackShortcutOff();
     setConsent('declined');
   };
 
   const withdraw = () => {
     clearAnalyticsConsent();
     disablePostHog();
+    forceFeedbackShortcutOff();
     setConsent(null);
   };
 
