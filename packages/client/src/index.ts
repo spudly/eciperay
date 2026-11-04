@@ -202,8 +202,11 @@ export {
 export {identifyAnalyticsUser} from './identifyAnalyticsUser.js';
 export {
   ANALYTICS_CONSENT_STORAGE_KEY,
+  clearAnalyticsConsent,
   readAnalyticsConsent,
+  subscribeAnalyticsConsent,
   writeAnalyticsConsent,
+  type AnalyticsConsentListener,
   type AnalyticsConsentStatus,
 } from './analyticsConsent.js';
 export {
@@ -351,6 +354,7 @@ export {
   ANDROID_PLAY_STORE_URL,
   IOS_APP_STORE_URL,
   MOBILE_APP_INSTALL_URL,
+  CONSENT_PREFERENCES_URL,
   PRIVACY_POLICY_URL,
   TERMS_OF_SERVICE_URL,
   WEB_APP_BASE_URL,

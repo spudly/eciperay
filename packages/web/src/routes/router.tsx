@@ -18,6 +18,7 @@ import {ImportTextPage} from '../pages/ImportTextPage.js';
 import {ImportUrlPage} from '../pages/ImportUrlPage.js';
 import {LoginPage} from '../pages/auth/LoginPage.js';
 import {ManualEntryPage} from '../pages/ManualEntryPage.js';
+import {ConsentPreferencesPage} from '../pages/ConsentPreferencesPage.js';
 import {PrivacyPolicyPage} from '../pages/PrivacyPolicyPage.js';
 import {ProfilePage} from '../pages/ProfilePage.js';
 import {PublicRecipePage} from '../pages/PublicRecipePage.js';
@@ -89,6 +90,7 @@ export const router = createBrowserRouter([
       {path: '/reset-password', element: <ResetPasswordPage />},
       {path: '/pay', element: <PayPage />},
       {path: '/privacy', element: <PrivacyPolicyPage />},
+      {path: '/privacy/consent', element: <ConsentPreferencesPage />},
       {path: '/terms', element: <TermsOfServicePage />},
       {path: '/recipe/:id/:slug', element: <PublicRecipePage />},
       {path: '/discover', element: <DiscoverPage />},

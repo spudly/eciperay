@@ -35,9 +35,8 @@ export const listBlock = (
   items: LegalDocumentSpan[][],
 ): LegalDocumentBlock => ({type: 'list', items});
 
-export const listItem = (
-  spans: LegalDocumentSpan[],
-): LegalDocumentSpan[] => spans;
+export const listItem = (spans: LegalDocumentSpan[]): LegalDocumentSpan[] =>
+  spans;
 
 /** The contact address as a link span (the retired LegalInlineLink). */
 export const legalContactLinkSpan: LegalDocumentSpan = {
@@ -66,5 +65,9 @@ export const legalDocumentFrameProps: {
   footerLinks: [
     {label: 'Privacy Policy', href: '/privacy'},
     {label: 'Terms of Service', href: '/terms'},
+    {
+      label: 'Do Not Sell or Share My Personal Information',
+      href: '/privacy/consent',
+    },
   ],
 };

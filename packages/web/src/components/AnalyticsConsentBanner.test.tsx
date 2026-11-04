@@ -1,4 +1,5 @@
-import {screen} from '@testing-library/react';
+import {clearAnalyticsConsent} from '@eciperay/client';
+import {act, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {vi} from 'vitest';
 
@@ -62,6 +63,22 @@ describe('AnalyticsConsentBanner', () => {
     expect(mockEnablePostHog).not.toHaveBeenCalled();
     expect(mockDisablePostHog).toHaveBeenCalled();
     expect(localStorage.getItem('eciperay.analyticsConsent')).toBe('declined');
+  });
+
+  test('re-presents after consent is withdrawn on another surface', async () => {
+    localStorage.setItem('eciperay.analyticsConsent', 'accepted');
+    await renderWithProviders(<AnalyticsConsentBanner />, {withAuth: false});
+    expect(
+      screen.queryByRole('dialog', {name: /cookie and analytics consent/i}),
+    ).not.toBeInTheDocument();
+    act(() => {
+      clearAnalyticsConsent();
+    });
+    expect(
+      await screen.findByRole('dialog', {
+        name: /cookie and analytics consent/i,
+      }),
+    ).toBeInTheDocument();
   });
 
   test('stays hidden when consent was already stored', async () => {

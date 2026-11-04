@@ -1,4 +1,5 @@
 import {
+  CONSENT_PREFERENCES_URL,
   PRIVACY_POLICY_URL,
   TERMS_OF_SERVICE_URL,
   type LegalLinksProps,
@@ -82,6 +83,15 @@ export const LegalLinks = ({variant = 'stacked'}: LegalLinksProps) => {
         }}
       >
         <Text style={styles.stackedLink}>Terms of Service</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        onPress={() => {
+          openUrl(CONSENT_PREFERENCES_URL);
+        }}
+      >
+        <Text style={styles.stackedLink}>
+          Do Not Sell or Share My Personal Information
+        </Text>
       </TouchableOpacity>
     </View>
   );

@@ -2,6 +2,7 @@ import {
   ANALYTICS_CONSENT_STORAGE_KEY,
   identifyAnalyticsUser,
   readAnalyticsConsent,
+  subscribeAnalyticsConsent,
 } from '@eciperay/client';
 import type {Session} from '@supabase/supabase-js';
 
@@ -20,21 +21,35 @@ if (readAnalyticsConsent() === 'accepted') {
   enablePostHog();
 }
 
+const applyConsentToPostHog = (status: string | null) => {
+  if (status === 'accepted') {
+    enablePostHog();
+  } else {
+    // Declined or withdrawn (undecided): analytics stays/goes off until a
+    // new accept (#408 — withdraw must take effect without a reload).
+    disablePostHog();
+  }
+};
+
+// Same-tab changes (banner, Profile, consent preferences page) notify
+// through the client consent registry, so a decline or withdraw from any
+// surface disables PostHog immediately in this tab too.
+subscribeAnalyticsConsent(status => {
+  applyConsentToPostHog(status);
+});
+
 // Consent is shared across tabs via localStorage, but this tab's PostHog
 // state only changes when this tab acts. Follow changes made in other tabs:
-// a decline elsewhere must stop this tab's collection too (its own
-// disablePostHog() call happens in the tab that wrote the value, and the
+// a decline or withdraw elsewhere must stop this tab's collection too (its
+// own disablePostHog() call happens in the tab that wrote the value, and the
 // `storage` event fires only in the other tabs), and an accept elsewhere
-// enables this tab the same way a fresh load would.
+// enables this tab the same way a fresh load would. A withdraw removes the
+// key, so the event's newValue is null.
 window.addEventListener('storage', event => {
   if (event.key !== ANALYTICS_CONSENT_STORAGE_KEY) {
     return;
   }
-  if (event.newValue === 'accepted') {
-    enablePostHog();
-  } else if (event.newValue === 'declined') {
-    disablePostHog();
-  }
+  applyConsentToPostHog(event.newValue);
 });
 
 export const identifyAnalyticsUserIfConsented = (session: Session) => {

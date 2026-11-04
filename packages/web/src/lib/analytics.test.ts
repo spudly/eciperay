@@ -61,6 +61,21 @@ describe('analytics', () => {
     expect(mockDisablePostHog).toHaveBeenCalled();
   });
 
+  test('disables PostHog when consent is withdrawn in another tab', async () => {
+    vi.mocked(readAnalyticsConsent).mockReturnValue('accepted');
+    await import('./analytics.js');
+    mockDisablePostHog.mockClear();
+
+    window.dispatchEvent(
+      new StorageEvent('storage', {
+        key: ANALYTICS_CONSENT_STORAGE_KEY,
+        newValue: null,
+      }),
+    );
+
+    expect(mockDisablePostHog).toHaveBeenCalled();
+  });
+
   test('enables PostHog when consent is accepted in another tab', async () => {
     vi.mocked(readAnalyticsConsent).mockReturnValue('declined');
     await import('./analytics.js');
