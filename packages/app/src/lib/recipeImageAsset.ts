@@ -56,7 +56,10 @@ export const deleteImagePreviewFile = async (uri: string): Promise<void> => {
 
 export const recipeImageFromAsset = (asset: Asset): PendingRecipeImage => {
   const base64 = asset.base64;
-  const contentType = asset.type ?? 'image/jpeg';
+  // react-native-image-picker reports iOS JPEGs as image/jpg, which the
+  // validator (and the server schema) only accept as image/jpeg.
+  const contentType =
+    asset.type === 'image/jpg' ? 'image/jpeg' : (asset.type ?? 'image/jpeg');
   if (!base64) {
     throw new Error('Failed to read image');
   }

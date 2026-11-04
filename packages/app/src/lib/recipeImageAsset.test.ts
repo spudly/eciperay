@@ -25,6 +25,17 @@ describe('recipeImageFromAsset', () => {
     ).toEqual({base64: btoa('pixels'), contentType: 'image/png'});
   });
 
+  test('normalizes the iOS image/jpg type to image/jpeg', () => {
+    expect(
+      recipeImageFromAsset({
+        base64: btoa('pixels'),
+        type: 'image/jpg',
+        uri: 'file://recipe.jpg',
+        fileSize: 6,
+      }),
+    ).toEqual({base64: btoa('pixels'), contentType: 'image/jpeg'});
+  });
+
   test('throws when base64 data is missing', () => {
     expect(() => {
       recipeImageFromAsset({uri: 'file://recipe.png', type: 'image/png'});
