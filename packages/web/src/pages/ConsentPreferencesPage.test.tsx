@@ -91,6 +91,40 @@ describe('ConsentPreferencesPage', () => {
     expect(localStorage.getItem('eciperay.feedbackShortcutEnabled')).toBeNull();
   });
 
+  test('declining clears a stale stored shortcut preference this tab never saw (#256)', async () => {
+    // This tab's provider mounted disabled, but another tab enabled
+    // the shortcut afterwards: the stored preference is 'true' while
+    // this tab's state says off. The decline write must be
+    // unconditional — gated on this tab's state, it would skip the
+    // write and leave the stored preference on.
+    localStorage.setItem('eciperay.feedbackShortcutEnabled', 'true');
+    await renderWithProviders(
+      <FeedbackPreferenceProvider initialEnabled={false}>
+        <ConsentPreferencesPage />
+      </FeedbackPreferenceProvider>,
+      {withAuth: false},
+    );
+    await userEvent.click(
+      screen.getByRole('button', {name: 'Decline analytics consent'}),
+    );
+    expect(localStorage.getItem('eciperay.feedbackShortcutEnabled')).toBeNull();
+  });
+
+  test('withdrawing clears a stale stored shortcut preference this tab never saw (#256)', async () => {
+    localStorage.setItem('eciperay.analyticsConsent', 'accepted');
+    localStorage.setItem('eciperay.feedbackShortcutEnabled', 'true');
+    await renderWithProviders(
+      <FeedbackPreferenceProvider initialEnabled={false}>
+        <ConsentPreferencesPage />
+      </FeedbackPreferenceProvider>,
+      {withAuth: false},
+    );
+    await userEvent.click(
+      screen.getByRole('button', {name: 'Withdraw consent'}),
+    );
+    expect(localStorage.getItem('eciperay.feedbackShortcutEnabled')).toBeNull();
+  });
+
   test('withdraw clears the stored choice and disables PostHog', async () => {
     localStorage.setItem('eciperay.analyticsConsent', 'accepted');
     await renderWithProviders(<ConsentPreferencesPage />, {withAuth: false});

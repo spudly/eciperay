@@ -152,6 +152,61 @@ test.describe('authenticated recipes', () => {
     }).toPass({timeout: 30_000});
   });
 
+  test('the footer consent link stays clickable while the list error bar is shown', async ({
+    page,
+  }) => {
+    // Same failed-next-page setup as above: the error bar pins to the
+    // bottom of the page while the shell footer renders below it. The
+    // bar must win hit-testing over the footer in its own strip (the
+    // test above), without swallowing the footer's links: at maximum
+    // scroll the consent link sits below the bar and stays clickable.
+    const recipes = Array.from({length: 21}, (_, index) => ({
+      ...pastaRecipe,
+      id: `e2e-page-recipe-${index}`,
+      slug: `e2e-page-recipe-${index}`,
+      title: `E2E Page Recipe ${index}`,
+    }));
+    await page.route('**/api/recipes**', async route => {
+      const url = new URL(route.request().url());
+      if (url.pathname !== '/api/recipes') {
+        await route.fallback();
+        return;
+      }
+      const offset = Number(url.searchParams.get('offset') ?? 0);
+      const limit = Number(url.searchParams.get('limit') ?? 20);
+      if (offset > 0) {
+        await route.fulfill({
+          status: 500,
+          contentType: 'application/json',
+          body: '{}',
+        });
+        return;
+      }
+      await route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify(recipes.slice(offset, offset + limit)),
+      });
+    });
+
+    await page.goto('/recipes');
+    await expect(page.getByText('E2E Page Recipe 0')).toBeVisible();
+    await page.mouse.move(400, 300);
+    await expect(async () => {
+      await page.mouse.wheel(0, 2400);
+      await expect(
+        page
+          .getByRole('alert')
+          .filter({hasText: "Couldn't load more recipes."}),
+      ).toBeVisible({timeout: 1000});
+    }).toPass({timeout: 30_000});
+
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await page
+      .getByRole('link', {name: 'Do Not Sell or Share My Personal Information'})
+      .click();
+    await expect(page).toHaveURL(/\/privacy\/consent$/);
+  });
+
   test('opening a recipe renders its detail', async ({page}) => {
     await page.goto('/recipes');
     await page.getByText('E2E Tomato Pasta').click();
