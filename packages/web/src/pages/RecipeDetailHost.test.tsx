@@ -145,6 +145,59 @@ describe('RecipeDetailHost', () => {
       ).toBeInTheDocument();
     });
 
+    test('a second action message is not cleared by the first message timer (#418)', async () => {
+      vi.useFakeTimers({shouldAdvanceTime: true});
+      const activate = vi
+        .spyOn(eciperay.versions, 'activate')
+        .mockRejectedValue(new Error('first failure'));
+      const patchStatus = vi
+        .spyOn(eciperay.recipes, 'patchStatus')
+        .mockRejectedValue(new Error('second failure'));
+      try {
+        const user = userEvent.setup({
+          advanceTimers: vi.advanceTimersByTime,
+        });
+        await renderHost({}, [
+          makeRecipeVersionSummary({
+            id: 'v2',
+            versionNumber: 2,
+            derivedRole: 'candidate',
+            changeSummary: 'More spice',
+          }),
+        ]);
+        await user.click(await screen.findByText('Activate'));
+        expect(
+          await screen.findByText('Could not activate version: first failure'),
+        ).toBeInTheDocument();
+        act(() => {
+          vi.advanceTimersByTime(2000);
+        });
+        await user.click(screen.getByText('Mark perfected'));
+        expect(
+          await screen.findByText('Could not change status: second failure'),
+        ).toBeInTheDocument();
+        // Past the first message's 2.5s dismissal deadline but before
+        // the second message's own: the second message must survive —
+        // without the timer cancellation it was cleared here.
+        act(() => {
+          vi.advanceTimersByTime(1000);
+        });
+        expect(
+          screen.getByText('Could not change status: second failure'),
+        ).toBeInTheDocument();
+        act(() => {
+          vi.advanceTimersByTime(1600);
+        });
+        expect(
+          screen.queryByText('Could not change status: second failure'),
+        ).not.toBeInTheDocument();
+      } finally {
+        activate.mockRestore();
+        patchStatus.mockRestore();
+        vi.useRealTimers();
+      }
+    });
+
     test('marks recipe perfected and abandoned', async () => {
       const patchStatus = vi
         .spyOn(eciperay.recipes, 'patchStatus')
