@@ -1,0 +1,17 @@
+# Use case: the Shared with me screen renders its content (#183
+# Phase 2) — the fixture recipe another user shared, inside the same
+# filter-bar list the Recipes screen uses.
+#
+# Navigation: as in 03-recipe-detail, the CI step delivers the
+# screen's deep link (com.eciperay://shared-with-me — sharedWithMeHref
+# in lib/deepLinks) to MainActivity with an explicit-component intent
+# immediately before running this flow, because the DS href rows
+# expose no clickable node to Maestro's hierarchy taps and a plain
+# VIEW intent does not resolve against the auth-scoped manifest
+# filter. This flow asserts against the already-navigated app without
+# launchApp, which would restart the process and reset navigation to
+# Home (see 03-recipe-detail).
+appId: com.eciperay
+---
+- assertVisible: "E2E Shared Tomato Soup"
+- assertVisible: "Search recipes…"

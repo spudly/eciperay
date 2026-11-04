@@ -8,7 +8,8 @@ const dotenv = require('dotenv');
  *   | 'SUPABASE_URL'
  *   | 'SUPABASE_ANON_KEY'
  *   | 'POSTHOG_KEY'
- *   | 'POSTHOG_HOST'} AppEnvKey
+ *   | 'POSTHOG_HOST'
+ *   | 'E2E_FIXTURE_MODE'} AppEnvKey
  */
 
 /** @type {readonly AppEnvKey[]} */
@@ -25,6 +26,12 @@ const APP_ENV_KEYS = Object.freeze([
   'SUPABASE_ANON_KEY',
   'POSTHOG_KEY',
   'POSTHOG_HOST',
+  // Opt-in only: set to 'true' solely by the Android emulator CI job
+  // (#183 Phase 2) so the e2e build runs on fixture data with a stub
+  // session instead of the production backend. Never set for release
+  // or preview builds; absent everywhere else, which env.ts reads as
+  // fixture mode off.
+  'E2E_FIXTURE_MODE',
 ]);
 
 const isProductionAppEnv = () =>

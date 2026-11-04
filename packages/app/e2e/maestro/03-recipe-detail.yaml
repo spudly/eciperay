@@ -1,0 +1,54 @@
+# Use case: the recipe detail screen renders a recipe's ingredients
+# and instructions (#183 Phase 2).
+#
+# Navigation: the CI step delivers the recipe's deep link
+# (com.eciperay://recipes/e2e-recipe-pasta — recipeHref in
+# lib/deepLinks) to MainActivity with an explicit-component intent
+# immediately before running this flow, and the app's linking config
+# routes it to RecipeDetail. An explicit component is required because
+# the manifest's only VIEW intent filter is host-scoped to the Supabase
+# auth callback, so a plain VIEW intent does not resolve; and the DS
+# href rows expose no clickable node to Maestro's hierarchy taps (the
+# Home browse row reports clickable=false — verified against the
+# 2026-11-03 CI run), so neither openLink nor a row tap can get here.
+# This flow therefore asserts against the already-navigated app
+# WITHOUT launchApp: launchApp restarts the app process, which resets
+# the (unpersisted) navigation state back to Home and would undo the
+# intent's routing before the assertions run (verified against the
+# 2026-11-03 CI run — the detail visit was recorded in Home's Recently
+# viewed, but the flow asserted against the relaunched Home screen).
+#
+# Scrolling: the page is a single scroll — Overview, Ingredients,
+# Instructions, Cook History, Nutrition (RecipeDetailPage's section
+# order) — and the Overview alone runs well past a full viewport
+# (versions, actions, tweak controls, sharing, ratings, comments).
+# The section headings are plain-text nodes (verified in CI hierarchy
+# dumps), so the flow scrolls to the Ingredients heading, then takes
+# one short drag: when the heading first becomes visible the
+# ingredient rows sit clipped at the scroll container's bottom edge
+# (the "400 g Crushed tomatoes" row measured 25px of ~123px in the
+# dump), below Maestro's visibility threshold. Ingredient rows are
+# single labels ("400 g Crushed tomatoes" —
+# formatScaledIngredientLine in packages/client), and Maestro text
+# selectors are full-string regex matches, so the row assertions use
+# .*name.* patterns rather than bare substrings (a bare "Crushed
+# tomatoes" never matches the "400 g Crushed tomatoes" node —
+# verified across the 2026-11-03 CI runs).
+appId: com.eciperay
+---
+- assertVisible: "E2E Weeknight Pasta"
+- scrollUntilVisible:
+    element:
+      text: "Ingredients"
+    timeout: 60000
+- swipe:
+    start: 50%, 70%
+    end: 50%, 45%
+    duration: 600
+- assertVisible: ".*Spaghetti.*"
+- assertVisible: ".*Crushed tomatoes.*"
+- scrollUntilVisible:
+    element:
+      text: "Simmer the sauce for 15 minutes."
+    timeout: 60000
+- assertVisible: "Simmer the sauce for 15 minutes."

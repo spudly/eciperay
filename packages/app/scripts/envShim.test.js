@@ -45,6 +45,7 @@ describe('envShim', () => {
       SUPABASE_URL: 'https://dev.supabase.co',
       POSTHOG_KEY: undefined,
       POSTHOG_HOST: undefined,
+      E2E_FIXTURE_MODE: undefined,
     });
   });
 
@@ -65,6 +66,7 @@ describe('envShim', () => {
       SUPABASE_URL: 'https://prod.supabase.co',
       POSTHOG_KEY: undefined,
       POSTHOG_HOST: undefined,
+      E2E_FIXTURE_MODE: undefined,
     });
   });
 
@@ -95,7 +97,20 @@ describe('envShim', () => {
         'exports.SUPABASE_URL = "https://prod.supabase.co";\n' +
         'exports.SUPABASE_ANON_KEY = "anon";\n' +
         'exports.POSTHOG_KEY = undefined;\n' +
-        'exports.POSTHOG_HOST = undefined;\n',
+        'exports.POSTHOG_HOST = undefined;\n' +
+        'exports.E2E_FIXTURE_MODE = undefined;\n',
+    );
+  });
+
+  test('bakes E2E_FIXTURE_MODE when exported for the emulator build', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'env-shim-e2e-'));
+    delete process.env.APP_ENV;
+    delete process.env.NODE_ENV;
+    process.env.E2E_FIXTURE_MODE = 'true';
+
+    expect(loadAppEnvVars(root).E2E_FIXTURE_MODE).toBe('true');
+    expect(buildEnvShimSource({E2E_FIXTURE_MODE: 'true'})).toContain(
+      'exports.E2E_FIXTURE_MODE = "true";',
     );
   });
 
