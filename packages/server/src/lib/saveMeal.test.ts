@@ -254,8 +254,10 @@ describe('replaceMeal', () => {
             notes: null,
             created_at: '2024-01-01T00:00:00.000Z',
             // node-postgres hands timestamptz back as a Date, which the
-            // detail loader normalizes to the millisecond token.
-            updated_at: new Date('2024-01-01T00:00:00.123456Z'),
+            // detail loader normalizes to the millisecond token. The
+            // read-back value models the UPDATE's monotonic bump: the
+            // stored version has advanced past the token that was sent.
+            updated_at: new Date('2024-01-01T00:00:00.124456Z'),
           },
         ]);
       }
@@ -280,7 +282,9 @@ describe('replaceMeal', () => {
       throw new Error(result.error);
     }
     expect(result.meal.id).toBe(MEAL_ID);
-    expect(result.meal.updatedAt).toBe('2024-01-01T00:00:00.123Z');
+    // The returned token must have advanced past the token that was
+    // sent (.123Z): the read-back above carries the bumped version.
+    expect(result.meal.updatedAt).toBe('2024-01-01T00:00:00.124Z');
     // The UPDATE itself must compare at millisecond precision — with raw
     // equality the sub-millisecond stored value would match no row.
     const updateCall = mockQuery.mock.calls.find(([sql]) =>
