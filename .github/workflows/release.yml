@@ -62,8 +62,10 @@ jobs:
           # and a manual fix on the release branch is wiped by the next
           # regeneration. Running the sync inside the version command
           # means every regeneration commit leaves a synced lockfile.
-          version-script: >-
-            npx changeset version && npm run sync:lockfile-versions
+          # It must be a single npm script: the action executes
+          # version-script via @actions/exec without a shell, so a
+          # compound command (`a && b`) would never run its second half.
+          version-script: npm run release:version
           publish-script: npx tsx scripts/changesetRelease.ts
           commit-message: 'chore(release): pending release'
           pr-title: 'chore(release): pending release'
