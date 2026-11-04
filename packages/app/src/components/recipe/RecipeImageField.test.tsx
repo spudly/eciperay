@@ -320,4 +320,28 @@ describe('RecipeImageField', () => {
     });
     expect(onImagePicked).not.toHaveBeenCalled();
   });
+
+  test('reports camera failures through onImageError', async () => {
+    const onImageError = jest.fn();
+    const onImagePicked = jest.fn();
+    mockLaunchCamera.mockResolvedValue({
+      errorCode: 'camera_unavailable',
+      errorMessage: 'Camera is unavailable',
+    });
+    const {getByLabelText} = await renderWithProviders(
+      <RecipeImageField
+        imagePreview={null}
+        imageUploading={false}
+        imageError={null}
+        onImagePicked={onImagePicked}
+        onImageError={onImageError}
+        onRemove={jest.fn()}
+      />,
+    );
+    await fireEvent.press(getByLabelText('Take photo of recipe'));
+    await waitFor(() => {
+      expect(onImageError).toHaveBeenCalledWith('Camera is unavailable');
+    });
+    expect(onImagePicked).not.toHaveBeenCalled();
+  });
 });

@@ -203,8 +203,11 @@ describe('RecipeImageField', () => {
     const captureInput = container.querySelector('#recipe-image-capture');
     expect(captureInput).not.toBeNull();
     expect(captureInput?.getAttribute('capture')).toBe('environment');
+    expect(
+      screen.getByRole('button', {name: 'Take photo'}),
+    ).toBeInTheDocument();
     const file = new File(['pixels'], 'captured.png', {type: 'image/png'});
-    await userEvent.upload(screen.getByLabelText('Take photo'), file);
+    await userEvent.upload(captureInput as HTMLElement, file);
     expect(onImageFile).toHaveBeenCalledWith(file);
   });
 });

@@ -1,7 +1,7 @@
 /* eslint-disable max-lines -- recipe image upload, paste, and generate controls */
 import {eciperayTheme, tokens} from '@spudly/ui';
 import type {CSSProperties} from 'react';
-import {useState} from 'react';
+import {useRef, useState} from 'react';
 
 import {
   getImageFileFromDataTransfer,
@@ -34,7 +34,7 @@ const browseLabelStyle: CSSProperties = {
   color: '#ffffff',
 };
 
-const captureLabelStyle: CSSProperties = {
+const captureButtonStyle: CSSProperties = {
   backgroundColor: '#ffffff',
   border: `1px solid ${eciperayTheme.semantic.primary}`,
   color: eciperayTheme.semantic.primary,
@@ -62,6 +62,7 @@ export const RecipeImageField = ({
   onRemove,
 }: Props) => {
   const [isDragging, setIsDragging] = useState(false);
+  const captureInputRef = useRef<HTMLInputElement>(null);
   const imageBusy = imageUploading || imageGenerating;
 
   const acceptImage = (file: File | null) => {
@@ -179,12 +180,21 @@ export const RecipeImageField = ({
         >
           {imageUploading ? 'Uploading…' : 'Browse images'}
         </label>
-        <label
-          htmlFor="recipe-image-capture"
-          style={captureLabelStyle}
+        <button
+          type="button"
+          aria-label="Take photo"
+          style={{
+            ...captureButtonStyle,
+            cursor: imageBusy ? 'not-allowed' : 'pointer',
+            opacity: imageBusy ? 0.5 : 1,
+          }}
+          disabled={imageBusy}
+          onClick={() => {
+            captureInputRef.current?.click();
+          }}
         >
           Take photo
-        </label>
+        </button>
         {onGenerateImage ? (
           <button
             type="button"
@@ -222,6 +232,7 @@ export const RecipeImageField = ({
           }}
         />
         <input
+          ref={captureInputRef}
           id="recipe-image-capture"
           type="file"
           accept="image/jpeg,image/png,image/gif,image/webp"

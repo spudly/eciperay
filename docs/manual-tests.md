@@ -187,6 +187,7 @@ without); one recipe may be created fresh in case 1.
 
 **Run when:**
 `packages/app/src/screens/{Recipes,RecipeDetail,EditRecipe,EditVersion,ManualEntry}Screen.tsx`,
+`packages/app/src/components/recipe/**`,
 `packages/app/src/hosts/{recipe,recipes}/**`,
 `packages/web/src/pages/{Recipes,RecipeDetail,EditRecipe,EditVersion,ManualEntry}Page.tsx`,
 `packages/web/src/components/{recipe,recipes}/**`, `@spudly/ui` recipe form or

@@ -54,6 +54,10 @@ export const RecipeImageField = ({
     if (result.didCancel) {
       return;
     }
+    if (result.errorCode) {
+      onImageError?.(result.errorMessage ?? 'Failed to read image');
+      return;
+    }
     const asset = result.assets?.[0];
     if (!asset?.uri) {
       return;
