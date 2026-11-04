@@ -96,6 +96,31 @@ describe('RecipeCommentsSection', () => {
     });
   });
 
+  test('shows the server error when posting a comment fails (#418)', async () => {
+    server.use(
+      http.get(`${API}/api/recipes/:id/comments`, () => HttpResponse.json([])),
+      http.post(`${API}/api/recipes/:id/comments`, () =>
+        HttpResponse.json({error: 'Comments are closed'}, {status: 403}),
+      ),
+    );
+
+    await renderWithProviders(
+      <RecipeCommentsSection
+        recipeId="recipe-uuid-1"
+        ownerUserId="owner-uuid"
+      />,
+      {withAuth: true},
+    );
+
+    await userEvent.type(screen.getByPlaceholderText('Add a comment'), 'Nice!');
+    await userEvent.click(screen.getByText('Post comment'));
+    expect(
+      await screen.findByText('Could not post comment: Comments are closed'),
+    ).toBeInTheDocument();
+    // The draft is kept so the failed comment is not lost.
+    expect(screen.getByPlaceholderText('Add a comment')).toHaveValue('Nice!');
+  });
+
   test('edits and deletes comments', async () => {
     let updated = false;
     let deleted = false;

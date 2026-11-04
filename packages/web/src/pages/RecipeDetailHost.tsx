@@ -181,12 +181,21 @@ export const RecipeDetailHost = ({
 
   // Lifecycle mutations (the retired OverviewActions): status changes,
   // candidate activation, and tweak-manually version creation.
+  // Every lifecycle mutation surfaces a rejection through the action
+  // message (#418): the server refuses edits to a locked/Perfected
+  // recipe with a 409 ("Recipe cannot be modified in its current
+  // status"), and without an onError that failure was silent — the
+  // user believed the change had landed.
+  const showMutationError = (action: string) => (error: Error) => {
+    showActionMessage(`${action}: ${error.message}`);
+  };
   const statusMutation = useMutation({
     mutationFn: (status: RecipeDetail['status']) =>
       eciperay.recipes.patchStatus(displayRecipe.id, status),
     onSuccess: () => {
       void invalidate();
     },
+    onError: showMutationError('Could not change status'),
   });
   const activateMutation = useMutation({
     mutationFn: (versionId: string) =>
@@ -195,6 +204,7 @@ export const RecipeDetailHost = ({
       void invalidate();
       showActionMessage('Version activated');
     },
+    onError: showMutationError('Could not activate version'),
   });
   const tweakManualMutation = useMutation({
     mutationFn: () => eciperay.versions.create(displayRecipe.id),
@@ -202,6 +212,7 @@ export const RecipeDetailHost = ({
       void invalidate();
       onSelectVersion(version.id);
     },
+    onError: showMutationError('Could not create a new version'),
   });
 
   // A Perfected recipe's active version is locked, so creating a draft
@@ -229,8 +240,12 @@ export const RecipeDetailHost = ({
       void invalidate();
       void navigate(`/recipes/${recipe.id}/versions/${version.id}/edit`);
     },
-    onError: () => {
-      showActionMessage('Could not create a draft. Please try again.');
+    onError: error => {
+      showActionMessage(
+        `Could not create a draft: ${
+          error instanceof Error ? error.message : 'Please try again.'
+        }`,
+      );
     },
   });
 
@@ -301,6 +316,7 @@ export const RecipeDetailHost = ({
     onSuccess: data => {
       queryClient.setQueryData(queryKeys.recipe(recipe.id), data);
     },
+    onError: showMutationError('Could not save your rating'),
   });
   const communityRating = ratingsSummary.communityRating;
   const ratings = {

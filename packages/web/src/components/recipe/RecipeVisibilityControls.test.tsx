@@ -44,6 +44,40 @@ describe('RecipeVisibilityControls', () => {
     expect(onActionMessage).toHaveBeenCalledWith('Share link copied');
   });
 
+  test('surfaces a rejected sharing change and clears the pending selection (#418)', async () => {
+    const onActionMessage = vi.fn();
+    server.use(
+      http.patch(`${API}/api/recipes/:id/sharing`, () =>
+        HttpResponse.json(
+          {error: 'Recipe cannot be modified in its current status'},
+          {status: 409},
+        ),
+      ),
+    );
+
+    await renderWithProviders(
+      <RecipeVisibilityControls
+        recipe={makeRecipeDetail()}
+        onActionMessage={onActionMessage}
+      />,
+    );
+
+    await userEvent.click(screen.getByLabelText(/Unlisted link/i));
+    await userEvent.click(
+      screen.getByRole('checkbox', {name: 'Publishing consent'}),
+    );
+    await userEvent.click(screen.getByText('Save sharing settings'));
+
+    expect(onActionMessage).toHaveBeenCalledWith(
+      'Could not update sharing settings: Recipe cannot be modified in its current status',
+    );
+    // The failed change is not left looking saved: the pending selection
+    // (and its Save button) is gone, matching the server's visibility.
+    expect(
+      screen.queryByText('Save sharing settings'),
+    ).not.toBeInTheDocument();
+  });
+
   test('shows public warning and permalink copy for public recipes', async () => {
     const onActionMessage = vi.fn();
     const writeText = vi.fn().mockImplementation(() => Promise.resolve());
