@@ -37,6 +37,8 @@
     "lint:fix": "eslint packages --fix --cache --cache-location .eslintcache --cache-strategy content",
     "validate:node-version": "tsx scripts/validateNodeVersion.ts",
     "validate:ui-parity": "tsx scripts/checkMirrorPairsCli.ts",
+    "sync:lockfile-versions": "tsx scripts/syncPackageVersionsCli.ts",
+    "check:lockfile-versions": "tsx scripts/syncPackageVersionsCli.ts --check",
     "build:logos": "tsx scripts/buildLogos.ts",
     "discover:workspace-packages": "tsx scripts/discoverWorkspacePackages.ts",
     "discover:affected-packages": "tsx scripts/discoverAffectedPackages.ts",
