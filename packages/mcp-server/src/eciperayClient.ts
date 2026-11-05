@@ -259,6 +259,7 @@ export const createClient = (config: EciperayClientConfig) => {
           title: current.title,
           notes: current.notes,
           recipes,
+          ...preservedMealIngredients(current),
         }),
       });
     },
@@ -282,6 +283,7 @@ export const createClient = (config: EciperayClientConfig) => {
           title: current.title,
           notes: current.notes,
           recipes: recipes.filter(member => !sameId(member.recipeId, recipeId)),
+          ...preservedMealIngredients(current),
         }),
       });
     },
@@ -603,10 +605,19 @@ export const buildRecipeUpdatePayload = (
 /** Recipe membership shapes accepted by the REST meal endpoints. */
 export type MealRecipeInput = {recipeId: string; servings?: number};
 
+/** Direct-ingredient shapes accepted by the REST meal endpoints (#362). */
+export type MealIngredientInput = {
+  name: string;
+  quantity?: number | null;
+  unit?: string | null;
+  servings?: number;
+};
+
 export type MealInput = {
   title: string;
   notes?: string | null;
   recipes: MealRecipeInput[];
+  ingredients?: MealIngredientInput[];
 };
 
 /**
@@ -652,6 +663,16 @@ type MealDetailForUpdate = {
   title: string;
   notes: string | null;
   members: {recipeId: string; sortOrder: number; servings: number}[];
+  // Direct ingredients (#362); absent on detail responses from before
+  // the field existed, in which case update payloads omit the field
+  // and the server preserves the stored rows.
+  ingredients?: {
+    name: string;
+    quantity: number | null;
+    unit: string | null;
+    sortOrder: number;
+    servings: number;
+  }[];
 };
 
 /** The meal-plan entry shape returned by `GET /meal-plans/:id`. */
@@ -710,6 +731,33 @@ const mealRecipeInputs = (meal: MealDetailForUpdate): MealRecipeInput[] =>
     .map(member => ({recipeId: member.recipeId, servings: member.servings}));
 
 /**
+ * A stored meal's direct ingredients as full-replace PUT inputs, in stored
+ * order.
+ */
+const mealIngredientInputs = (
+  meal: MealDetailForUpdate,
+): MealIngredientInput[] =>
+  [...(meal.ingredients ?? [])]
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .map(ingredient => ({
+      name: ingredient.name,
+      quantity: ingredient.quantity,
+      unit: ingredient.unit,
+      servings: ingredient.servings,
+    }));
+
+/**
+ * The `ingredients` field for a full-replace meal PUT built from a stored meal:
+ * carry the stored direct ingredients so the replace does not drop them (#432).
+ * When the stored detail has no ingredients field at all, omit it — the server
+ * preserves the stored rows for an omitted list.
+ */
+const preservedMealIngredients = (
+  meal: MealDetailForUpdate,
+): {ingredients: MealIngredientInput[]} | Record<string, never> =>
+  meal.ingredients ? {ingredients: mealIngredientInputs(meal)} : {};
+
+/**
  * Merge a partial meal update over the stored meal detail, producing the full
  * payload the REST `PUT /meals/:id` endpoint expects.
  */
@@ -726,6 +774,7 @@ export const buildMealUpdatePayload = (
     title: patch.title ?? current.title,
     notes: patch.notes !== undefined ? patch.notes : current.notes,
     recipes: patch.recipes ?? mealRecipeInputs(current),
+    ...preservedMealIngredients(current),
   };
 };
 

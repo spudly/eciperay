@@ -95,6 +95,15 @@ export const saveNewMeal = async (
   input: MealInput,
   queryFn: QueryFn = defaultQuery,
 ): Promise<{meal: MealDetail} | {error: string; status: number}> => {
+  // The schema defers the at-least-one-member rule when `ingredients`
+  // is omitted (a PUT may be preserving stored rows — see replaceMeal);
+  // a create has no stored rows, so the rule is enforced here.
+  if (input.recipes.length === 0 && (input.ingredients ?? []).length === 0) {
+    return {
+      error: 'A meal must contain at least one recipe or ingredient',
+      status: 400,
+    };
+  }
   const resolved: {recipeId: string; servings: number; sortOrder: number}[] =
     [];
   for (const [index, recipe] of input.recipes.entries()) {
@@ -177,6 +186,28 @@ export const replaceMeal = async (
     return staleWriteConflict('Meal');
   }
 
+  // Direct ingredients are full-replace only when the client sends
+  // them (#432): an omitted `ingredients` preserves the stored rows.
+  // The MCP client's read-merge-PUT (update_meal, add_recipe_to_meal,
+  // remove_recipe_from_meal) historically sent only title/notes/recipes,
+  // and defaulting a missing list to [] silently deleted a mixed meal's
+  // direct ingredients. A sent list — [] included — still replaces.
+  const preserveIngredients = input.ingredients === undefined;
+  if (preserveIngredients && input.recipes.length === 0) {
+    // The schema deferred the at-least-one-member rule for this
+    // omission; validate it against the stored rows before any write.
+    const storedIngredients = await queryFn(
+      `select 1 from meal_ingredients where meal_id = $1 limit 1`,
+      [mealId],
+    );
+    if (!storedIngredients.rows[0]) {
+      return {
+        error: 'A meal must contain at least one recipe or ingredient',
+        status: 400,
+      };
+    }
+  }
+
   const resolved: {recipeId: string; servings: number; sortOrder: number}[] =
     [];
   for (const [index, recipe] of input.recipes.entries()) {
@@ -199,8 +230,11 @@ export const replaceMeal = async (
   }
   // Direct ingredients resolve (and estimate) here too — after the
   // stale-token check above, before any write — so a 409 writes nothing
-  // and spends no estimation calls.
-  const resolvedIngredients = await resolveMealIngredients(input);
+  // and spends no estimation calls. When they are preserved (omitted),
+  // nothing resolves and no estimation is spent.
+  const resolvedIngredients = preserveIngredients
+    ? []
+    : await resolveMealIngredients(input);
 
   // The token is bound into the UPDATE itself, so the check above is only
   // a fast path: if a concurrent write lands between it and this update,
@@ -254,7 +288,9 @@ export const replaceMeal = async (
       return true;
     }
     await q(`delete from meal_recipes where meal_id = $1`, [mealId]);
-    await q(`delete from meal_ingredients where meal_id = $1`, [mealId]);
+    if (!preserveIngredients) {
+      await q(`delete from meal_ingredients where meal_id = $1`, [mealId]);
+    }
     for (const recipe of resolved) {
       await q(
         `insert into meal_recipes (meal_id, recipe_id, sort_order, servings)

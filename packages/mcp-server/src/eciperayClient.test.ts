@@ -340,6 +340,15 @@ const storedMeal = {
   ],
 };
 
+/** A mixed meal (#362): recipes plus stored direct ingredients. */
+const storedMixedMeal = {
+  ...storedMeal,
+  ingredients: [
+    {name: 'Rice', quantity: 2, unit: 'cups', sortOrder: 1, servings: 2},
+    {name: 'Beans', quantity: 1, unit: 'can', sortOrder: 0, servings: 1},
+  ],
+};
+
 const storedPlan = {
   id: 'plan-1',
   title: 'Week 1',
@@ -445,6 +454,23 @@ describe('buildMealUpdatePayload', () => {
       /at least one field/,
     );
   });
+
+  test('stored direct ingredients are carried in stored order (#432)', () => {
+    const payload = buildMealUpdatePayload(storedMixedMeal, {
+      title: 'Burrito Night',
+    });
+    assert.deepEqual(payload.ingredients, [
+      {name: 'Beans', quantity: 1, unit: 'can', servings: 1},
+      {name: 'Rice', quantity: 2, unit: 'cups', servings: 2},
+    ]);
+  });
+
+  test('a stored meal without an ingredients field omits it from the payload (#432)', () => {
+    const payload = buildMealUpdatePayload(storedMeal, {
+      title: 'Burrito Night',
+    });
+    assert.equal('ingredients' in payload, false);
+  });
 });
 
 describe('buildMealPlanUpdatePayload', () => {
@@ -534,6 +560,37 @@ describe('client meal writes', () => {
       {recipeId: 'recipe-1', servings: 4},
       {recipeId: 'recipe-3', servings: 3},
     ]);
+  });
+
+  test('meal write PUTs carry the stored direct ingredients (#432)', async () => {
+    const expectedIngredients = [
+      {name: 'Beans', quantity: 1, unit: 'can', servings: 1},
+      {name: 'Rice', quantity: 2, unit: 'cups', servings: 2},
+    ];
+
+    const updateCalls = stubFetch(() => ({status: 200, body: storedMixedMeal}));
+    await client().updateMeal('meal-1', {title: 'Burrito Night'});
+    assert.deepEqual(
+      putBodies(updateCalls)[0]?.['ingredients'],
+      expectedIngredients,
+    );
+
+    const addCalls = stubFetch(() => ({status: 200, body: storedMixedMeal}));
+    await client().addRecipeToMeal('meal-1', {
+      recipeId: 'recipe-3',
+      servings: 3,
+    });
+    assert.deepEqual(
+      putBodies(addCalls)[0]?.['ingredients'],
+      expectedIngredients,
+    );
+
+    const removeCalls = stubFetch(() => ({status: 200, body: storedMixedMeal}));
+    await client().removeRecipeFromMeal('meal-1', 'recipe-2');
+    assert.deepEqual(
+      putBodies(removeCalls)[0]?.['ingredients'],
+      expectedIngredients,
+    );
   });
 
   test('addRecipeToMeal updates servings when the recipe is already a member', async () => {

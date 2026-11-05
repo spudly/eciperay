@@ -48,9 +48,45 @@ describe('mealSchemas', () => {
   });
 
   test('MealInputSchema rejects a meal with no members of either kind (#362)', () => {
-    expect(() => MealInputSchema.parse({title: 'Empty'})).toThrow(z.ZodError);
     expect(() =>
       MealInputSchema.parse({title: 'Empty', recipes: [], ingredients: []}),
+    ).toThrow(z.ZodError);
+  });
+
+  test('MealInputSchema keeps omitted ingredients distinct from an explicit empty list (#432)', () => {
+    // A PUT that omits `ingredients` (e.g. the MCP read-merge-PUT) must
+    // not be read as "clear all direct ingredients": the omission stays
+    // visible in the parsed value so replaceMeal can preserve the
+    // stored rows, and the at-least-one-member rule defers to the save
+    // layer, which validates it against those stored rows.
+    const omitted = MealInputSchema.parse({
+      title: 'Dinner',
+      recipes: [{recipeId}],
+    });
+    expect(omitted.ingredients).toBeUndefined();
+    const explicit = MealInputSchema.parse({
+      title: 'Dinner',
+      recipes: [{recipeId}],
+      ingredients: [],
+    });
+    expect(explicit.ingredients).toEqual([]);
+    // With no recipes either, an omitted list still parses — the save
+    // layer rejects it unless stored ingredients remain.
+    expect(MealInputSchema.parse({title: 'Empty'}).ingredients).toBeUndefined();
+  });
+
+  test('MealInputSchema caps direct ingredients at 50 (#432)', () => {
+    const fifty = Array.from({length: 50}, (_, i) => ({
+      name: `Item ${String(i)}`,
+    }));
+    expect(
+      MealInputSchema.parse({title: 'Big', ingredients: fifty}).ingredients,
+    ).toHaveLength(50);
+    expect(() =>
+      MealInputSchema.parse({
+        title: 'Huge',
+        ingredients: [...fifty, {name: 'One too many'}],
+      }),
     ).toThrow(z.ZodError);
   });
 
@@ -76,7 +112,7 @@ describe('mealSchemas', () => {
       title: 'X',
       ingredients: [{name: 'Rice', calories: 999}],
     } as unknown as Parameters<typeof MealInputSchema.parse>[0]);
-    expect(parsed.ingredients[0]).toEqual({name: 'Rice'});
+    expect(parsed.ingredients?.[0]).toEqual({name: 'Rice'});
   });
 
   test('MealPlanInputSchema accepts valid plan', () => {

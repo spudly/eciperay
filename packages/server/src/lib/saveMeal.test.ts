@@ -104,7 +104,6 @@ describe('replaceMeal', () => {
       .mockResolvedValueOnce(emptyShareGrant)
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([]))
-      .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([]));
     installLoadMealDetailMock(mockQuery);
 
@@ -125,7 +124,6 @@ describe('replaceMeal', () => {
       .mockResolvedValueOnce(makeQueryResult([{id: MEAL_ID}]))
       .mockResolvedValueOnce(makeQueryResult([accessibleRecipeRow]))
       .mockResolvedValueOnce(emptyShareGrant)
-      .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([]));
@@ -171,7 +169,6 @@ describe('replaceMeal', () => {
       .mockResolvedValueOnce(makeQueryResult([{id: MEAL_ID}]))
       .mockResolvedValueOnce(makeQueryResult([accessibleRecipeRow]))
       .mockResolvedValueOnce(emptyShareGrant)
-      .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([]));
@@ -524,6 +521,112 @@ describe('direct ingredients (#362)', () => {
     expect(result.meal.ingredients).toHaveLength(1);
     expect(findCall(mockQuery, 'delete from meal_ingredients')).toBeDefined();
     expect(findCall(mockQuery, 'insert into meal_ingredients')).toBeDefined();
+  });
+
+  test('saveNewMeal rejects a meal with no recipes and no ingredients (#432)', async () => {
+    const mockQuery = createMockQuery();
+    const result = await saveNewMeal(
+      USER_ID,
+      {title: 'Empty', recipes: []},
+      mockQuery,
+    );
+    expect(result).toEqual({
+      error: 'A meal must contain at least one recipe or ingredient',
+      status: 400,
+    });
+    expect(mockQuery).not.toHaveBeenCalled();
+  });
+
+  test('replaceMeal preserves stored direct ingredients when the input omits them (#432)', async () => {
+    const mockQuery = createMockQuery();
+    mockQuery
+      .mockResolvedValueOnce(makeQueryResult([{id: MEAL_ID}]))
+      .mockResolvedValueOnce(makeQueryResult([accessibleRecipeRow]))
+      .mockResolvedValueOnce(emptyShareGrant)
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([]));
+    installLoadMealDetailMock(mockQuery);
+
+    // mealInput sends recipes but no `ingredients` key — the MCP
+    // read-merge-PUT shape that used to delete the stored rows.
+    const result = await replaceMeal(MEAL_ID, USER_ID, mealInput, mockQuery);
+    if ('error' in result) {
+      throw new Error(result.error);
+    }
+    expect(result.meal.id).toBe(MEAL_ID);
+    expect(findCall(mockQuery, 'delete from meal_ingredients')).toBeUndefined();
+    expect(findCall(mockQuery, 'insert into meal_ingredients')).toBeUndefined();
+    expect(anthropicCreateSpy).not.toHaveBeenCalled();
+  });
+
+  test('replaceMeal with an explicit empty ingredients list clears the stored rows (#432)', async () => {
+    const mockQuery = createMockQuery();
+    mockQuery
+      .mockResolvedValueOnce(makeQueryResult([{id: MEAL_ID}]))
+      .mockResolvedValueOnce(makeQueryResult([accessibleRecipeRow]))
+      .mockResolvedValueOnce(emptyShareGrant)
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([]));
+    installLoadMealDetailMock(mockQuery);
+
+    const result = await replaceMeal(
+      MEAL_ID,
+      USER_ID,
+      {...mealInput, ingredients: []},
+      mockQuery,
+    );
+    if ('error' in result) {
+      throw new Error(result.error);
+    }
+    expect(findCall(mockQuery, 'delete from meal_ingredients')).toBeDefined();
+    expect(findCall(mockQuery, 'insert into meal_ingredients')).toBeUndefined();
+  });
+
+  test('replaceMeal accepts an omitted-ingredients update with no recipes when stored ingredients remain (#432)', async () => {
+    const mockQuery = createMockQuery();
+    mockQuery
+      .mockResolvedValueOnce(makeQueryResult([{id: MEAL_ID}]))
+      .mockResolvedValueOnce(makeQueryResult([{exists: 1}]))
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([mealRow]))
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([mealIngredientRow]));
+
+    const result = await replaceMeal(
+      MEAL_ID,
+      USER_ID,
+      {title: 'Snack', recipes: []},
+      mockQuery,
+    );
+    if ('error' in result) {
+      throw new Error(result.error);
+    }
+    expect(result.meal.ingredients).toHaveLength(1);
+    expect(findCall(mockQuery, 'delete from meal_ingredients')).toBeUndefined();
+    expect(findCall(mockQuery, 'insert into meal_ingredients')).toBeUndefined();
+  });
+
+  test('replaceMeal rejects an omitted-ingredients update with no recipes when nothing is stored (#432)', async () => {
+    const mockQuery = createMockQuery();
+    mockQuery
+      .mockResolvedValueOnce(makeQueryResult([{id: MEAL_ID}]))
+      .mockResolvedValueOnce(makeQueryResult([]));
+
+    const result = await replaceMeal(
+      MEAL_ID,
+      USER_ID,
+      {title: 'Empty', recipes: []},
+      mockQuery,
+    );
+    expect(result).toEqual({
+      error: 'A meal must contain at least one recipe or ingredient',
+      status: 400,
+    });
+    expect(findCall(mockQuery, 'update meals')).toBeUndefined();
   });
 
   test('replaceMeal with a stale token writes no direct ingredients and spends no estimation (#384/#362)', async () => {

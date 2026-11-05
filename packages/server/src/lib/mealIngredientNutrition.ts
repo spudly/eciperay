@@ -1,5 +1,6 @@
 import type {MealIngredientInput, NutritionStatus} from '@eciperay/types';
 
+import {logger} from './logger.js';
 import {estimateNutritionFromAi} from './refreshRecipeNutrition.js';
 import {calculateSatiety} from './satiety.js';
 
@@ -88,7 +89,11 @@ export const estimateMealIngredientNutrition = async (
       nutritionStatus: 'ready',
       nutritionDisclaimer: estimated.disclaimer,
     };
-  } catch {
+  } catch (error) {
+    // Log the cause (never the ingredient text): without it, an
+    // Anthropic outage, bad model output, and a satiety failure are
+    // indistinguishable behind the stored 'failed' status.
+    logger.warn({err: error}, 'Meal ingredient nutrition estimate failed');
     return failedNutrition;
   }
 };
