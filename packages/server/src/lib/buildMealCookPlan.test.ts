@@ -162,6 +162,42 @@ describe('buildMealCookPlan', () => {
     });
   });
 
+  test('returns 409 when the recipe disappears between the timing check and the reload', async () => {
+    const mockQuery = createMockQuery();
+    let recipeLoads = 0;
+    mockQuery.mockImplementation((async (sql: string) => {
+      if (sql.includes('from meals') && sql.includes('where id =')) {
+        return makeQueryResult([mealRow]);
+      }
+      if (sql.includes('from meal_recipes')) {
+        return makeQueryResult([mealRecipeRow]);
+      }
+      if (sql.includes('from meal_ingredients')) {
+        return makeQueryResult([]);
+      }
+      if (sql.includes('from recipes r')) {
+        recipeLoads += 1;
+        // Loads: (1) meal detail member, (2) cook plan's first load —
+        // both succeed; (3) the reload after the timing check finds the
+        // recipe gone.
+        return recipeLoads < 3
+          ? makeQueryResult([accessibleRecipeRow])
+          : makeQueryResult([]);
+      }
+      if (sql.includes('share_grants')) {
+        return emptyShareGrant;
+      }
+      return makeQueryResult([]);
+    }) as typeof mockQuery);
+
+    const result = await buildMealCookPlan(MEAL_ID, USER_ID, mockQuery);
+    expect(result).toEqual({
+      error: 'One or more recipes in this meal are no longer accessible',
+      status: 409,
+    });
+    expect(recipeLoads).toBe(3);
+  });
+
   test('returns 502 when no steps can be built', async () => {
     const mockQuery = createMockQuery();
     mockQuery.mockImplementation((async (sql: string) => {

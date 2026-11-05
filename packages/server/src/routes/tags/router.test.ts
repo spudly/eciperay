@@ -129,6 +129,25 @@ describe('PATCH /tags/:id', () => {
     expect(res.status).toBe(409);
   });
 
+  test('returns 400 when the request has no body at all', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    const res = await request(getApp())
+      .patch(`/api/tags/${TAG_ID}`)
+      .set('Authorization', AUTH);
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('Nothing to update');
+  });
+
+  test('returns 500 when the update fails with a non-conflict error', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockQuery.mockRejectedValue(new Error('connection lost'));
+    const res = await request(getApp())
+      .patch(`/api/tags/${TAG_ID}`)
+      .set('Authorization', AUTH)
+      .send({name: 'Dinner'});
+    expect(res.status).toBe(500);
+  });
+
   test('returns 401 without auth token', async () => {
     const res = await request(getApp())
       .patch(`/api/tags/${TAG_ID}`)

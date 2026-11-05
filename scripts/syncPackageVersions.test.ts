@@ -1,6 +1,7 @@
 import {
   findLockfileVersionMismatches,
   findLockfileWorkspaceVersionMismatches,
+  formatLockfileVersionMismatches,
   readWorkspaceVersions,
   setPackageJsonVersion,
   syncLockfileVersions,
@@ -91,6 +92,65 @@ describe('readWorkspaceVersions', () => {
       'Expected a string version in packages/app/package.json',
     );
   });
+
+  test('throws when a workspace manifest version is an empty string', () => {
+    const files = makeRepoFiles('1.0.0', '2.0.0');
+    files['/repo/packages/app/package.json'] = JSON.stringify({
+      name: '@demo/app',
+      version: '',
+    });
+    expect(() => readWorkspaceVersions('/repo', makeFs(files))).toThrow(
+      'Expected a string version in packages/app/package.json',
+    );
+  });
+
+  test('throws when the root manifest has no version', () => {
+    const files = makeRepoFiles('1.0.0', '2.0.0');
+    files['/repo/package.json'] = JSON.stringify({
+      name: 'demo',
+      workspaces: ['packages/app'],
+    });
+    expect(() => readWorkspaceVersions('/repo', makeFs(files))).toThrow(
+      'Expected a string version in package.json',
+    );
+  });
+
+  test('throws when the root manifest version is an empty string', () => {
+    const files = makeRepoFiles('1.0.0', '2.0.0');
+    files['/repo/package.json'] = JSON.stringify({
+      name: 'demo',
+      version: '',
+      workspaces: ['packages/app'],
+    });
+    expect(() => readWorkspaceVersions('/repo', makeFs(files))).toThrow(
+      'Expected a string version in package.json',
+    );
+  });
+
+  test('ignores a non-array workspaces field in the root manifest', () => {
+    const files = makeRepoFiles('1.0.0', '2.0.0');
+    files['/repo/package.json'] = JSON.stringify({
+      name: 'demo',
+      version: '1.0.0',
+      workspaces: 'packages/app',
+    });
+    expect(readWorkspaceVersions('/repo', makeFs(files))).toEqual({
+      '': '1.0.0',
+    });
+  });
+
+  test('filters non-string entries out of the workspaces list', () => {
+    const files = makeRepoFiles('1.0.0', '2.0.0');
+    files['/repo/package.json'] = JSON.stringify({
+      name: 'demo',
+      version: '1.0.0',
+      workspaces: ['packages/app', 42, null],
+    });
+    expect(readWorkspaceVersions('/repo', makeFs(files))).toEqual({
+      '': '1.0.0',
+      'packages/app': '2.0.0',
+    });
+  });
 });
 
 describe('syncLockfileWorkspaceVersions', () => {
@@ -152,5 +212,42 @@ describe('findLockfileVersionMismatches', () => {
     expect(fixed).toHaveLength(2);
     expect(lock.version).toBe('1.0.0');
     expect(lock.packages[''].version).toBe('1.0.0');
+  });
+
+  test('reports the lockfile version mismatch against an empty manifest version when the root entry is absent', () => {
+    const mismatches = findLockfileVersionMismatches(
+      {version: '0.9.0', packages: {}},
+      {'packages/app': '2.0.0'},
+    );
+    expect(mismatches).toContainEqual({
+      entry: '(lockfile version)',
+      lockfileVersion: '0.9.0',
+      manifestVersion: '',
+    });
+  });
+
+  test('syncLockfileVersions names the root entry when the lockfile has no packages map', () => {
+    expect(() =>
+      syncLockfileVersions({version: '0.9.0'}, {'': '1.0.0'}),
+    ).toThrow('missing workspace entries: (root)');
+  });
+});
+
+describe('formatLockfileVersionMismatches', () => {
+  test('renders the root entry and missing lockfile versions', () => {
+    const text = formatLockfileVersionMismatches([
+      {entry: '', lockfileVersion: undefined, manifestVersion: '1.0.0'},
+      {
+        entry: 'packages/app',
+        lockfileVersion: '1.9.0',
+        manifestVersion: '2.0.0',
+      },
+    ]);
+    expect(text).toContain(
+      '(root): lockfile has (missing), manifest has 1.0.0',
+    );
+    expect(text).toContain(
+      'packages/app: lockfile has 1.9.0, manifest has 2.0.0',
+    );
   });
 });

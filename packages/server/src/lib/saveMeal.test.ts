@@ -436,6 +436,31 @@ describe('direct ingredients (#362)', () => {
     ]);
   });
 
+  test('saveNewMeal defaults a bare direct ingredient to one serving with null quantity and unit', async () => {
+    nockAnthropicMessage(DIRECT_NUTRITION_RESPONSE);
+    const mockQuery = createMockQuery();
+    mockQuery
+      .mockResolvedValueOnce(makeQueryResult([{id: MEAL_ID}]))
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([mealRow]))
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([mealIngredientRow]));
+
+    const result = await saveNewMeal(
+      USER_ID,
+      {title: 'Snack', recipes: [], ingredients: [{name: 'Rice'}]},
+      mockQuery,
+    );
+    if ('error' in result) {
+      throw new Error(result.error);
+    }
+    expect(result.meal.ingredients).toHaveLength(1);
+    const insert = findCall(mockQuery, 'insert into meal_ingredients');
+    expect(insert).toBeDefined();
+    // quantity, unit fall back to null; servings defaults to 1.
+    expect(insert?.[1]?.slice(1, 6)).toEqual(['Rice', null, null, 1, 0]);
+  });
+
   test('saveNewMeal creates a mixed meal (recipes + direct ingredients)', async () => {
     nockAnthropicMessage(DIRECT_NUTRITION_RESPONSE);
     const mockQuery = createMockQuery();
