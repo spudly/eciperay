@@ -191,7 +191,6 @@ export const editVersionContent = async (
     if (!updated.rows[0]) {
       throw new Error('Failed to update version');
     }
-    await updateRecipeSlug(recipeId, slugifyRecipeTitle(input.title), q);
     if (input.status !== undefined) {
       await updateRecipeStatus(recipeId, input.status, q);
     }
@@ -200,6 +199,9 @@ export const editVersionContent = async (
     await touchMealsForRecipe(recipeId, q);
     if (activate) {
       await setActiveVersion(recipeId, versionId, q);
+      // The lineage slug follows the active version's title, so it moves
+      // only when this edit becomes the active version.
+      await updateRecipeSlug(recipeId, slugifyRecipeTitle(input.title), q);
     }
     return versionId;
   });

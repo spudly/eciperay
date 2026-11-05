@@ -221,6 +221,18 @@ export const createClient = (config: EciperayClientConfig) => {
       }
       for (let attempt = 0; attempt < 2; attempt += 1) {
         const fresh = await request<RecipeDetailForUpdate>(path);
+        if (
+          patch.versionId !== undefined &&
+          !sameId(patch.versionId, fresh.versionId)
+        ) {
+          // The caller named a version: a PUT targets whatever version is
+          // active, so an activation landing between the reads would move
+          // this edit to a version the caller did not name. Abort instead
+          // of re-merging onto the new active version.
+          throw new Error(
+            'update_recipe aborted: the active version changed while the update was being applied, so no changes were written. Re-read the recipe and retry with its current versionId.',
+          );
+        }
         if (recipeSnapshot(fresh) === recipeSnapshot(current)) {
           await request<unknown>(path, {
             method: 'PUT',

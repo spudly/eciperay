@@ -429,6 +429,29 @@ describe('client.updateRecipe', () => {
     assert.equal(putBody?.['description'], 'Edited elsewhere');
   });
 
+  test('an activation between reads aborts a metadata update that named the old version', async () => {
+    // The caller named version-1; between the first read and the re-read a
+    // different version was activated. A PUT would land on the new active
+    // version — not the one named — so the update must abort with no write.
+    let getCount = 0;
+    const calls = stubFetch(() => {
+      getCount += 1;
+      return {
+        status: 200,
+        body:
+          getCount === 1
+            ? storedRecipe
+            : {...storedRecipe, versionId: 'version-9', contentRevision: 2},
+      };
+    });
+    await assert.rejects(
+      client().updateRecipe('recipe-1', {servings: 40, versionId: 'version-1'}),
+      /active version changed/,
+    );
+    assert.equal(calls.filter(call => call.init?.method === 'PUT').length, 0);
+    assert.equal(calls.filter(call => call.init?.method === 'POST').length, 0);
+  });
+
   test('a recipe that keeps changing aborts with a conflict error and no PUT', async () => {
     let revision = 0;
     const calls = stubFetch(() => {
