@@ -308,8 +308,27 @@ describe('cli helpers', () => {
       'b.ts',
     ]);
     expect(exec).toHaveBeenCalledWith(
-      'git diff --name-only origin/master..HEAD',
+      'git diff --no-renames --name-only origin/master..HEAD',
       {encoding: 'utf8', cwd: '/repo'},
+    );
+  });
+
+  it('reports both paths of a rename (deletion plus addition)', () => {
+    // With --no-renames, git lists the source and destination of a move as
+    // separate lines; both must reach path-mapping consumers so a file
+    // moved out of a tree still counts as a change to that tree.
+    const exec = jest
+      .fn()
+      .mockReturnValue(
+        'packages/web/src/lib/moved.ts\npackages/app/src/lib/moved.ts\n',
+      );
+    expect(getChangedFiles('/repo', 'origin/master', exec)).toEqual([
+      'packages/web/src/lib/moved.ts',
+      'packages/app/src/lib/moved.ts',
+    ]);
+    expect(exec).toHaveBeenCalledWith(
+      expect.stringContaining('--no-renames'),
+      expect.anything(),
     );
   });
 

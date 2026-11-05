@@ -32,10 +32,7 @@ export const isScriptsAffectingFile = (relPath: string): boolean => {
   if (SCRIPTS_AFFECTING.has(relPath)) {
     return true;
   }
-  return (
-    relPath.startsWith('scripts/') ||
-    relPath.startsWith('eslint-rules/')
-  );
+  return relPath.startsWith('scripts/') || relPath.startsWith('eslint-rules/');
 };
 
 export const isIgnoredFile = (relPath: string): boolean => {
@@ -94,8 +91,12 @@ export const getChangedFiles = (
   // Two-dot tree diff: needs only the two trees, so it works with shallow
   // clones. Never under-includes: any file the PR changed differs between
   // the two trees (unless master already contains it, in which case master
-  // CI ran the full matrix on it).
-  const output = exec(`git diff --name-only ${baseRef}..HEAD`, {
+  // CI ran the full matrix on it). --no-renames: a rename is reported as a
+  // deletion plus an addition, so consumers that map paths (package
+  // discovery, the e2e spec selector) see the source path too — with rename
+  // detection, only the destination is listed and a file moved out of a
+  // tree would escape that tree's coverage.
+  const output = exec(`git diff --no-renames --name-only ${baseRef}..HEAD`, {
     encoding: 'utf8',
     cwd: root,
   }).trim();

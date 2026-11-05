@@ -110,6 +110,19 @@ describe('selectE2eSpecs', () => {
     }
   });
 
+  it('fails open when a rename moves an unmapped web file out of the web tree', () => {
+    // getChangedFiles passes --no-renames, so a move out of packages/web
+    // arrives as the web source path plus the destination; the unmapped
+    // web source must fail open even alongside a mapped change.
+    const result = selectE2eSpecs([
+      'packages/web/src/lib/moved.ts',
+      'packages/app/src/lib/moved.ts',
+      'packages/web/src/pages/recipes/RecipeDetail.tsx',
+    ]);
+    expect(result.mocked).toBe('all');
+    expect(result.live).toBe('all');
+  });
+
   it('ignores unit test files', () => {
     const result = selectE2eSpecs([
       'packages/web/src/pages/auth/LoginPage.test.tsx',
