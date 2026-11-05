@@ -15,6 +15,11 @@ name: e2e
 #   the dedicated CI test account (E2E_QA_EMAIL / E2E_QA_PASSWORD) and
 #   skip with a stated reason until those secrets exist. Neither job is
 #   a required merge check; failures surface here, not as merge gates.
+#
+# Both jobs are change-scoped on PRs (issue #439): scripts/selectE2eSpecs.ts
+# maps the PR's changed files to the specs covering them (fail-open —
+# anything unmapped runs the full suite). workflow_dispatch and the weekly
+# schedule run both suites in full.
 
 on:
   pull_request:
@@ -22,9 +27,18 @@ on:
     paths:
       - 'packages/web/**'
       - 'packages/client/**'
+      - 'packages/server/**'
+      - 'package.json'
       - 'package-lock.json'
+      - 'scripts/selectE2eSpecs.ts'
+      - 'scripts/affectedFiles.ts'
       - '.github/workflows/e2e.yml'
   workflow_dispatch:
+  # Weekly full-suite backstop (issue #439): the selector below is
+  # fail-open, and this run exercises every spec regardless, so a mapping
+  # gap surfaces here instead of silently dropping coverage.
+  schedule:
+    - cron: '17 9 * * 1'
 
 permissions:
   contents: read
@@ -59,13 +73,30 @@ jobs:
           install-command: npm ci
           skip-install-on-cache-hit: 'true'
 
+      - name: Fetch base branch
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run:
+          git fetch --depth=1 origin
+          "+refs/heads/$BASE_REF:refs/remotes/origin/$BASE_REF"
+
+      # Change-scoped spec selection (issue #439): on PRs, run only the
+      # specs covering the changed files; anything unmapped fails open to
+      # the full suite. Non-PR events always select the full suite.
+      - name: Select e2e specs
+        id: select-specs
+        run: npm run discover:e2e-specs
+
       - name: Install Chromium for Playwright
+        if: steps.select-specs.outputs.mocked-run == 'true'
         working-directory: packages/web
         run: npx playwright install --with-deps chromium
 
       - name: Run Playwright tests
+        if: steps.select-specs.outputs.mocked-run == 'true'
         working-directory: packages/web
-        run: npm run test:e2e
+        run: npx playwright test ${{ steps.select-specs.outputs.mocked-specs }}
         env:
           CI: true
 
@@ -94,13 +125,31 @@ jobs:
           install-command: npm ci
           skip-install-on-cache-hit: 'true'
 
+      - name: Fetch base branch
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run:
+          git fetch --depth=1 origin
+          "+refs/heads/$BASE_REF:refs/remotes/origin/$BASE_REF"
+
+      # Change-scoped spec selection (issue #439), same rules as the
+      # mocked job above; non-PR events run the full live suite.
+      - name: Select e2e specs
+        id: select-specs
+        run: npm run discover:e2e-specs
+
       - name: Install Chromium for Playwright
+        if: steps.select-specs.outputs.live-run == 'true'
         working-directory: packages/web
         run: npx playwright install --with-deps chromium
 
       - name: Run live Playwright tests
+        if: steps.select-specs.outputs.live-run == 'true'
         working-directory: packages/web
-        run: npm run test:e2e:live
+        run:
+          npx playwright test --config playwright.live.config.ts ${{
+          steps.select-specs.outputs.live-specs }}
         env:
           CI: true
           PREVIEW_VITE_SUPABASE_URL: ${{ secrets.PREVIEW_VITE_SUPABASE_URL }}

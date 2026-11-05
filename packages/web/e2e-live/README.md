@@ -74,3 +74,26 @@ The authenticated specs (`auth`, `recipes`, `cook-log`, `meal-plans`, `imports`,
 | Text import                                                   | `imports.spec.ts`               |
 | Sharing visibility (public readable signed-out)               | `sharing.spec.ts`               |
 | Signed-out redirects, bad-password rejection, Discover render | `public.spec.ts`                |
+
+## Change-scoped runs (issue #439)
+
+On pull requests, neither suite runs in full by default:
+`scripts/selectE2eSpecs.ts` (`npm run discover:e2e-specs`) maps the PR's changed
+files to the specs that cover them, using the area mapping in that file (auth
+paths → the live `auth`/`sign-out` specs and the mocked `signed-out` spec,
+recipe paths → the `recipes` specs, and so on). The rules are fail-open:
+
+- A change inside a suite's own directory runs that whole suite.
+- Shared web plumbing (entry point, router, components, Playwright configs, the
+  web manifest, the selector itself) runs both suites.
+- Any other file under `packages/web`, `packages/client`, or `packages/server`
+  that matches no mapping runs both suites in full — a mapping gap costs time,
+  never coverage.
+- Files outside those trees select nothing, and that suite's job still succeeds
+  (its test step is skipped).
+
+`workflow_dispatch` and the weekly scheduled run always execute both suites in
+full, so a mapping gap also surfaces as a scheduled failure rather than a silent
+miss. To extend coverage for a new area, add its paths and specs to
+`AREA_MAPPINGS` in `scripts/selectE2eSpecs.ts` and cover the mapping in
+`scripts/selectE2eSpecs.test.ts`.

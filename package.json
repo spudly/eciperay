@@ -43,6 +43,7 @@
     "build:logos": "tsx scripts/buildLogos.ts",
     "discover:workspace-packages": "tsx scripts/discoverWorkspacePackages.ts",
     "discover:affected-packages": "tsx scripts/discoverAffectedPackages.ts",
+    "discover:e2e-specs": "tsx scripts/selectE2eSpecs.ts",
     "test:scripts": "NODE_OPTIONS='--experimental-vm-modules --no-warnings' jest --config jest.config.cjs --coverage",
     "test:scripts:quick": "NODE_OPTIONS='--experimental-vm-modules --no-warnings' jest --config jest.config.cjs",
     "precommit:affected-tests": "tsx scripts/preCommitTests.ts",
