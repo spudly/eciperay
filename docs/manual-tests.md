@@ -691,9 +691,10 @@ plan-state rendering and section layout. The cases below are manual._
 3. **Access tokens.** Create a personal access token named `QA — token check`;
    copy it at creation. **Expected:** the full token is shown once at creation
    and masked afterwards; the token appears in the list. Revoke it.
-   **Expected:** it leaves the list and no longer authenticates (verify via an
-   MCP/API call if tooling is at hand, otherwise record as unverified rather
-   than skipping silently).
+   **Expected:** the token stays in the list as an annotated "(Revoked)" row
+   (an audit trail that it was revoked), its Revoke action is gone, and it no
+   longer authenticates (verify via an MCP/API call if tooling is at hand,
+   otherwise record as unverified rather than skipping silently).
 4. **Nutrition goals.** Set daily goals (calories, protein, carbs, fat) in the
    nutrition goals form; save; reload. **Expected:** values persist and meal
    plan progress (see Meal plans, case 4) uses the new goals. Clear one goal.
