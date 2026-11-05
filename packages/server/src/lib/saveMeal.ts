@@ -9,15 +9,101 @@ import {
   updatedAtToken,
 } from './conditionalWrite.js';
 import {loadMealDetail} from './loadMealDetail.js';
+import {
+  estimateMealIngredientNutrition,
+  type MealIngredientNutrition,
+} from './mealIngredientNutrition.js';
 import {loadAccessibleRecipe} from './mealRecipeAccess.js';
 
 type QueryFn = typeof defaultQuery;
+
+type ResolvedMealIngredient = {
+  name: string;
+  quantity: number | null;
+  unit: string | null;
+  servings: number;
+  sortOrder: number;
+  nutrition: MealIngredientNutrition;
+};
+
+const INSERT_MEAL_INGREDIENT_SQL = `
+  insert into meal_ingredients
+    (meal_id, name, quantity, unit, servings, sort_order,
+     calories, protein_g, carbs_g, fat_g, fiber_g, sugar_g, sodium_mg,
+     prepared_weight_g, satiety_score, nutrition_status,
+     nutrition_disclaimer, nutrition_updated_at)
+  values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, now())
+`;
+
+const insertMealIngredient = async (
+  queryFn: QueryFn,
+  mealId: string,
+  ingredient: ResolvedMealIngredient,
+) => {
+  const {nutrition} = ingredient;
+  await queryFn(INSERT_MEAL_INGREDIENT_SQL, [
+    mealId,
+    ingredient.name,
+    ingredient.quantity,
+    ingredient.unit,
+    ingredient.servings,
+    ingredient.sortOrder,
+    nutrition.calories,
+    nutrition.proteinG,
+    nutrition.carbsG,
+    nutrition.fatG,
+    nutrition.fiberG,
+    nutrition.sugarG,
+    nutrition.sodiumMg,
+    nutrition.preparedWeightG,
+    nutrition.satietyScore,
+    nutrition.nutritionStatus,
+    nutrition.nutritionDisclaimer,
+  ]);
+};
+
+/**
+ * Resolve direct-ingredient entries for a save (#362): default the entry-level
+ * servings and estimate + attach each entry's nutrition via the recipe lookup.
+ * Runs before any write, alongside recipe resolution, so a rejected save never
+ * leaves partial members behind.
+ */
+const resolveMealIngredients = async (
+  input: MealInput,
+): Promise<ResolvedMealIngredient[]> => {
+  const resolved: ResolvedMealIngredient[] = [];
+  for (const [index, ingredient] of (input.ingredients ?? []).entries()) {
+    const servings = ingredient.servings ?? 1;
+    const nutrition = await estimateMealIngredientNutrition({
+      ...ingredient,
+      servings,
+    });
+    resolved.push({
+      name: ingredient.name,
+      quantity: ingredient.quantity ?? null,
+      unit: ingredient.unit ?? null,
+      servings,
+      sortOrder: index,
+      nutrition,
+    });
+  }
+  return resolved;
+};
 
 export const saveNewMeal = async (
   userId: string,
   input: MealInput,
   queryFn: QueryFn = defaultQuery,
 ): Promise<{meal: MealDetail} | {error: string; status: number}> => {
+  // The schema defers the at-least-one-member rule when `ingredients`
+  // is omitted (a PUT may be preserving stored rows — see replaceMeal);
+  // a create has no stored rows, so the rule is enforced here.
+  if (input.recipes.length === 0 && (input.ingredients ?? []).length === 0) {
+    return {
+      error: 'A meal must contain at least one recipe or ingredient',
+      status: 400,
+    };
+  }
   const resolved: {recipeId: string; servings: number; sortOrder: number}[] =
     [];
   for (const [index, recipe] of input.recipes.entries()) {
@@ -38,6 +124,7 @@ export const saveNewMeal = async (
       sortOrder: index,
     });
   }
+  const resolvedIngredients = await resolveMealIngredients(input);
 
   const mealResult = await queryFn(
     `insert into meals (user_id, title, notes)
@@ -53,6 +140,9 @@ export const saveNewMeal = async (
        values ($1, $2, $3, $4)`,
       [mealId, recipe.recipeId, recipe.sortOrder, recipe.servings],
     );
+  }
+  for (const ingredient of resolvedIngredients) {
+    await insertMealIngredient(queryFn, mealId, ingredient);
   }
 
   const meal = await loadMealDetail(mealId, userId, queryFn);
@@ -96,6 +186,14 @@ export const replaceMeal = async (
     return staleWriteConflict('Meal');
   }
 
+  // Direct ingredients are full-replace only when the client sends
+  // them (#432): an omitted `ingredients` preserves the stored rows.
+  // The MCP client's read-merge-PUT (update_meal, add_recipe_to_meal,
+  // remove_recipe_from_meal) historically sent only title/notes/recipes,
+  // and defaulting a missing list to [] silently deleted a mixed meal's
+  // direct ingredients. A sent list — [] included — still replaces.
+  const preserveIngredients = input.ingredients === undefined;
+
   const resolved: {recipeId: string; servings: number; sortOrder: number}[] =
     [];
   for (const [index, recipe] of input.recipes.entries()) {
@@ -116,6 +214,13 @@ export const replaceMeal = async (
       sortOrder: index,
     });
   }
+  // Direct ingredients resolve (and estimate) here too — after the
+  // stale-token check above, before any write — so a 409 writes nothing
+  // and spends no estimation calls. When they are preserved (omitted),
+  // nothing resolves and no estimation is spent.
+  const resolvedIngredients = preserveIngredients
+    ? []
+    : await resolveMealIngredients(input);
 
   // The token is bound into the UPDATE itself, so the check above is only
   // a fast path: if a concurrent write lands between it and this update,
@@ -147,7 +252,29 @@ export const replaceMeal = async (
   // with its members deleted or partially replaced. The existence and
   // accessibility reads above stay outside the transaction, and the
   // post-save detail load below keeps its existing semantics.
-  const conflict = await runTransactional(queryFn, async q => {
+  const outcome = await runTransactional(queryFn, async q => {
+    if (preserveIngredients && input.recipes.length === 0) {
+      // The schema deferred the at-least-one-member rule for an omitted
+      // `ingredients` list; validate it against the stored rows INSIDE
+      // the transaction, after locking the meal row (#432). Checking
+      // before the lock raced a concurrent replacement: both writers
+      // could pass against the old rows, after which the preserving
+      // writer deleted the other's recipe member and preserved
+      // ingredients that were no longer there, leaving zero members.
+      // Locked first, the check observes the state the lock protects;
+      // returning here has written nothing, so the commit is a no-op.
+      await q(
+        `select id from meals where id = $1 and user_id = $2 for update`,
+        [mealId, userId],
+      );
+      const storedIngredients = await q(
+        `select 1 from meal_ingredients where meal_id = $1 limit 1`,
+        [mealId],
+      );
+      if (!storedIngredients.rows[0]) {
+        return 'no-members' as const;
+      }
+    }
     // The token must advance monotonically at its millisecond precision —
     // the same expression as the #394 delete trigger and
     // touchMealsForRecipe — so a save that lands in the same millisecond
@@ -166,9 +293,12 @@ export const replaceMeal = async (
     if (expectedUpdatedAts && updated.rowCount === 0) {
       // A concurrent write (or delete) won the race after the check
       // above; nothing else is written.
-      return true;
+      return 'conflict' as const;
     }
     await q(`delete from meal_recipes where meal_id = $1`, [mealId]);
+    if (!preserveIngredients) {
+      await q(`delete from meal_ingredients where meal_id = $1`, [mealId]);
+    }
     for (const recipe of resolved) {
       await q(
         `insert into meal_recipes (meal_id, recipe_id, sort_order, servings)
@@ -176,10 +306,19 @@ export const replaceMeal = async (
         [mealId, recipe.recipeId, recipe.sortOrder, recipe.servings],
       );
     }
-    return false;
+    for (const ingredient of resolvedIngredients) {
+      await insertMealIngredient(q, mealId, ingredient);
+    }
+    return 'ok' as const;
   });
-  if (conflict) {
+  if (outcome === 'conflict') {
     return staleWriteConflict('Meal');
+  }
+  if (outcome === 'no-members') {
+    return {
+      error: 'A meal must contain at least one recipe or ingredient',
+      status: 400,
+    };
   }
 
   const meal = await loadMealDetail(mealId, userId, queryFn);

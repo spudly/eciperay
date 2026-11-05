@@ -7,21 +7,57 @@ export const AiStepTimingResponseSchema = z.array(
   }),
 );
 
-export const MealInputSchema = z.object({
-  title: z.string().trim().min(1).max(200),
-  notes: z.string().trim().max(4000).nullish(),
-  // Optimistic-concurrency token for PUT (#384): the `updatedAt` from the
-  // client's read. Ignored on POST; on PUT a stale token fails with 409.
-  expectedUpdatedAt: z.string().trim().min(1).optional(),
-  recipes: z
-    .array(
-      z.object({
-        recipeId: z.uuid(),
-        servings: z.number().int().positive().optional(),
-      }),
-    )
-    .min(1),
-});
+export const MealInputSchema = z
+  .object({
+    title: z.string().trim().min(1).max(200),
+    notes: z.string().trim().max(4000).nullish(),
+    // Optimistic-concurrency token for PUT (#384): the `updatedAt` from the
+    // client's read. Ignored on POST; on PUT a stale token fails with 409.
+    expectedUpdatedAt: z.string().trim().min(1).optional(),
+    // A meal needs at least one member of either kind (#362): recipes are
+    // no longer required on their own now that direct ingredients exist.
+    recipes: z
+      .array(
+        z.object({
+          recipeId: z.uuid(),
+          servings: z.number().int().positive().optional(),
+        }),
+      )
+      .default([]),
+    // Direct ingredients (#362): one-off entries stored on the meal.
+    // Nutrition is estimated server-side at save time — clients never
+    // send nutrition values for an entry. Capped at 50 (#432): every
+    // entry costs one AI nutrition estimate at save time, so an
+    // unbounded list would let one request fan out into unbounded
+    // sequential estimation calls. Deliberately NO default: an omitted
+    // list must stay distinguishable from an explicitly empty one —
+    // on PUT an omitted list preserves the stored rows (see
+    // replaceMeal), while a sent list, [] included, replaces them.
+    ingredients: z
+      .array(
+        z.object({
+          name: z.string().trim().min(1).max(200),
+          quantity: z.number().positive().nullish(),
+          unit: z.string().trim().min(1).max(50).nullish(),
+          servings: z.number().int().positive().optional(),
+        }),
+      )
+      .max(50)
+      .optional(),
+  })
+  .refine(
+    data =>
+      // When ingredients are omitted the at-least-one-member rule
+      // cannot be judged here (a PUT may be preserving stored direct
+      // ingredients), so it defers to the save layer, which validates
+      // it against the stored rows; see saveMeal.
+      data.ingredients === undefined ||
+      data.recipes.length + data.ingredients.length >= 1,
+    {
+      message: 'A meal must contain at least one recipe or ingredient',
+      path: ['recipes'],
+    },
+  );
 
 export const MealPlanEntryInputSchema = z.union([
   z.object({

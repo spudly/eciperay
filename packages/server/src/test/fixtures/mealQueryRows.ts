@@ -20,6 +20,31 @@ export const mealRecipeRow = {
   servings: 4,
 };
 
+/**
+ * A direct ingredient (#362) as stored by migration 021: per-serving macros of
+ * 200 cal, 4 protein, 44 carbs, 1 fat, 1 fiber, 0 sugar, 5 sodium, 300 g
+ * whole-entry weight, at entry-level servings 2. Hand-computed contribution:
+ * 400 cal, 8 protein, 88 carbs, 2 fat, 2 fiber, 0 sugar, 10 sodium, 300 g.
+ */
+export const mealIngredientRow = {
+  meal_id: MEAL_ID,
+  name: 'Rice',
+  quantity: 2,
+  unit: 'cups',
+  servings: 2,
+  sort_order: 0,
+  calories: 200,
+  protein_g: 4,
+  carbs_g: 44,
+  fat_g: 1,
+  fiber_g: 1,
+  sugar_g: 0,
+  sodium_mg: 5,
+  prepared_weight_g: 300,
+  satiety_score: 60,
+  nutrition_status: 'ready',
+};
+
 export const accessibleRecipeRow = {
   id: RECIPE_ID,
   user_id: USER_ID,

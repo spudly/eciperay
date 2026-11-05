@@ -340,6 +340,15 @@ const storedMeal = {
   ],
 };
 
+/** A mixed meal (#362): recipes plus stored direct ingredients. */
+const storedMixedMeal = {
+  ...storedMeal,
+  ingredients: [
+    {name: 'Rice', quantity: 2, unit: 'cups', sortOrder: 1, servings: 2},
+    {name: 'Beans', quantity: 1, unit: 'can', sortOrder: 0, servings: 1},
+  ],
+};
+
 const storedPlan = {
   id: 'plan-1',
   title: 'Week 1',
@@ -445,6 +454,26 @@ describe('buildMealUpdatePayload', () => {
       /at least one field/,
     );
   });
+
+  test('stored direct ingredients are omitted so the server preserves them without re-estimating (#432)', () => {
+    const payload = buildMealUpdatePayload(storedMixedMeal, {
+      title: 'Burrito Night',
+    });
+    // An omitted field preserves the stored rows server-side (and the
+    // server spends no estimation calls on that path); a sent list —
+    // even the stored one — would be full-replaced and re-estimated.
+    // It must be absent, never an explicit empty list, which the
+    // server would treat as a replacement that clears the rows.
+    assert.equal('ingredients' in payload, false);
+    assert.equal(payload.ingredients, undefined);
+  });
+
+  test('a stored meal without an ingredients field omits it from the payload (#432)', () => {
+    const payload = buildMealUpdatePayload(storedMeal, {
+      title: 'Burrito Night',
+    });
+    assert.equal('ingredients' in payload, false);
+  });
 });
 
 describe('buildMealPlanUpdatePayload', () => {
@@ -534,6 +563,27 @@ describe('client meal writes', () => {
       {recipeId: 'recipe-1', servings: 4},
       {recipeId: 'recipe-3', servings: 3},
     ]);
+  });
+
+  test('meal write PUTs omit the stored direct ingredients so the server preserves them (#432)', async () => {
+    // All three read-merge-PUT paths omit `ingredients`: the server
+    // preserves the stored rows for an omitted field and spends no
+    // estimation calls on them, while any sent list (including an
+    // explicit empty one) would replace — or clear — them.
+    const updateCalls = stubFetch(() => ({status: 200, body: storedMixedMeal}));
+    await client().updateMeal('meal-1', {title: 'Burrito Night'});
+    assert.equal('ingredients' in (putBodies(updateCalls)[0] ?? {}), false);
+
+    const addCalls = stubFetch(() => ({status: 200, body: storedMixedMeal}));
+    await client().addRecipeToMeal('meal-1', {
+      recipeId: 'recipe-3',
+      servings: 3,
+    });
+    assert.equal('ingredients' in (putBodies(addCalls)[0] ?? {}), false);
+
+    const removeCalls = stubFetch(() => ({status: 200, body: storedMixedMeal}));
+    await client().removeRecipeFromMeal('meal-1', 'recipe-2');
+    assert.equal('ingredients' in (putBodies(removeCalls)[0] ?? {}), false);
   });
 
   test('addRecipeToMeal updates servings when the recipe is already a member', async () => {

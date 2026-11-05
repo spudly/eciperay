@@ -603,10 +603,19 @@ export const buildRecipeUpdatePayload = (
 /** Recipe membership shapes accepted by the REST meal endpoints. */
 export type MealRecipeInput = {recipeId: string; servings?: number};
 
+/** Direct-ingredient shapes accepted by the REST meal endpoints (#362). */
+export type MealIngredientInput = {
+  name: string;
+  quantity?: number | null;
+  unit?: string | null;
+  servings?: number;
+};
+
 export type MealInput = {
   title: string;
   notes?: string | null;
   recipes: MealRecipeInput[];
+  ingredients?: MealIngredientInput[];
 };
 
 /**
@@ -652,6 +661,17 @@ type MealDetailForUpdate = {
   title: string;
   notes: string | null;
   members: {recipeId: string; sortOrder: number; servings: number}[];
+  // Direct ingredients (#362); absent on detail responses from before
+  // the field existed. Read here only as part of the detail shape:
+  // meal-write payloads always omit the field so the server preserves
+  // the stored rows instead of re-estimating them (#432).
+  ingredients?: {
+    name: string;
+    quantity: number | null;
+    unit: string | null;
+    sortOrder: number;
+    servings: number;
+  }[];
 };
 
 /** The meal-plan entry shape returned by `GET /meal-plans/:id`. */
@@ -726,6 +746,10 @@ export const buildMealUpdatePayload = (
     title: patch.title ?? current.title,
     notes: patch.notes !== undefined ? patch.notes : current.notes,
     recipes: patch.recipes ?? mealRecipeInputs(current),
+    // No `ingredients` key on purpose (#432): the server preserves the
+    // stored direct-ingredient rows when the field is omitted, while a
+    // sent list would be full-replaced — re-estimating (and possibly
+    // nulling) nutrition for ingredients this update never touched.
   };
 };
 
