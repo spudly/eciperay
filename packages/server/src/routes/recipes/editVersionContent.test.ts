@@ -63,6 +63,8 @@ type MockOptions = {
   recipeRow?: ReturnType<typeof makeRecipeDetailRow> | null;
   targetRow?: ReturnType<typeof makeVersionDetailRow> | null;
   branchActive?: boolean;
+  matchingRevision?: boolean;
+  inTxTargetRow?: ReturnType<typeof makeVersionDetailRow>;
 };
 
 /**
@@ -72,9 +74,18 @@ type MockOptions = {
  */
 const mockEditFlow = (options: MockOptions = {}) => {
   const executed: string[] = [];
+  let versionFetches = 0;
   mockQuery.mockImplementation(((sql: string, params?: unknown[]) => {
     executed.push(sql);
+    if (sql.includes('and content_revision')) {
+      return Promise.resolve(
+        makeQueryResult(
+          options.matchingRevision ? [{id: 'recipe-uuid-1'}] : [],
+        ),
+      );
+    }
     if (sql.includes('cook_log_count')) {
+      versionFetches += 1;
       const versionId = params?.[0];
       if (versionId === 'version-uuid-3') {
         return Promise.resolve(
@@ -97,6 +108,9 @@ const mockEditFlow = (options: MockOptions = {}) => {
       }
       if (options.targetRow === null) {
         return Promise.resolve(makeQueryResult([]));
+      }
+      if (options.inTxTargetRow && versionFetches > 1) {
+        return Promise.resolve(makeQueryResult([options.inTxTargetRow]));
       }
       const row =
         options.targetRow ??
@@ -260,6 +274,53 @@ describe('POST /recipes/:id/versions/:versionId/edit', () => {
       .send(editBody());
 
     expect(res.status).toBe(404);
+  });
+
+  test('returns 409 and writes nothing when expectedContentRevision is stale', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    const executed = mockEditFlow();
+
+    const res = await request(getApp())
+      .post('/api/recipes/recipe-uuid-1/versions/version-uuid-2/edit')
+      .set('Authorization', 'Bearer <redacted>')
+      .send(editBody({expectedContentRevision: 99}));
+
+    expect(res.status).toBe(409);
+    expect(executed.some(sql => sql.includes('update recipe_versions'))).toBe(
+      false,
+    );
+    expect(
+      executed.some(sql => sql.includes('insert into recipe_versions')),
+    ).toBe(false);
+  });
+
+  test('proceeds when expectedContentRevision still matches', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockEditFlow({matchingRevision: true});
+
+    const res = await request(getApp())
+      .post('/api/recipes/recipe-uuid-1/versions/version-uuid-2/edit')
+      .set('Authorization', 'Bearer <redacted>')
+      .send(editBody({expectedContentRevision: 7}));
+
+    expect(res.status).toBe(200);
+  });
+
+  test('returns 409 when a cook log lands between the first read and the write', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    const executed = mockEditFlow({
+      inTxTargetRow: draftVersionRow({cook_log_count: 1}),
+    });
+
+    const res = await request(getApp())
+      .post('/api/recipes/recipe-uuid-1/versions/version-uuid-2/edit')
+      .set('Authorization', 'Bearer <redacted>')
+      .send(editBody());
+
+    expect(res.status).toBe(409);
+    expect(executed.some(sql => sql.includes('update recipe_versions'))).toBe(
+      false,
+    );
   });
 
   test('returns 400 when the body is missing required fields', async () => {

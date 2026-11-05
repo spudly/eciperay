@@ -263,6 +263,7 @@ describe('client.updateRecipe', () => {
     const sent = JSON.parse(String(posts[0]?.init?.body)) as {
       title: string;
       activate: boolean;
+      expectedContentRevision: number;
       ingredients: {name: string}[];
       instructions: {body: string}[];
     };
@@ -270,6 +271,7 @@ describe('client.updateRecipe', () => {
     // activation defaults to off.
     assert.equal(sent.title, 'Salt Water Taffy');
     assert.equal(sent.activate, false);
+    assert.equal(sent.expectedContentRevision, storedRecipe.contentRevision);
     assert.deepEqual(
       sent.ingredients.map(ingredient => ingredient.name),
       ['brown sugar'],
@@ -355,6 +357,9 @@ describe('client.updateRecipe', () => {
     assert.equal(postBody?.['title'], 'Draft Taffy');
     assert.equal(postBody?.['servings'], 8);
     assert.deepEqual(postBody?.['tagIds'], ['tag-1']);
+    // The payload was built from the recipe read at revision 1; the server
+    // rejects the edit if the recipe has moved past it.
+    assert.equal(postBody?.['expectedContentRevision'], 1);
     assert.equal(calls.filter(call => call.init?.method === 'PUT').length, 0);
   });
 

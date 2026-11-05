@@ -199,7 +199,9 @@ export const createClient = (config: EciperayClientConfig) => {
         const target = await request<VersionDetailForUpdate>(targetPath);
         return request<unknown>(`${targetPath}/edit`, {
           method: 'POST',
-          body: JSON.stringify(buildVersionEditPayload(target, patch)),
+          body: JSON.stringify(
+            buildVersionEditPayload(target, patch, current.contentRevision),
+          ),
         });
       }
       if (recipeContentChanged(current, patch)) {
@@ -215,6 +217,7 @@ export const createClient = (config: EciperayClientConfig) => {
             body: JSON.stringify({
               ...buildRecipeUpdatePayload(current, patch),
               activate: patch.activate ?? false,
+              expectedContentRevision: current.contentRevision,
             }),
           },
         );
@@ -561,6 +564,7 @@ const instructionInputs = (
 export const buildVersionEditPayload = (
   current: VersionDetailForUpdate,
   patch: RecipeUpdatePatch,
+  expectedContentRevision?: number,
 ): Record<string, unknown> => {
   if (!hasRecipeUpdateFields(patch)) {
     throw new Error(
@@ -582,6 +586,10 @@ export const buildVersionEditPayload = (
     instructions: instructionInputs(patch.instructions ?? current.instructions),
     tagIds: patch.tagIds ?? current.tags.map(tag => tag.id),
     activate: patch.activate ?? false,
+    // The recipe revision the merged payload was built from: the server
+    // bumps it only if it still matches, so a payload built from a stale
+    // snapshot aborts with a conflict instead of overwriting a newer edit.
+    ...(expectedContentRevision !== undefined ? {expectedContentRevision} : {}),
   };
 };
 

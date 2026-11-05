@@ -44,7 +44,27 @@ import type {RecipeVersionInput} from '@eciperay/types';
 
 type QueryFn = typeof defaultQuery;
 
-type EditInput = RecipeVersionInput & {activate?: boolean};
+type EditInput = RecipeVersionInput & {
+  activate?: boolean;
+  expectedContentRevision?: number;
+};
+
+/** A 409 the client can resolve by re-reading the recipe and retrying. */
+class VersionEditConflictError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'VersionEditConflictError';
+  }
+}
+
+const LOCK_VERSION_SQL =
+  'select id from recipe_versions where id = $1 for update';
+
+const BUMP_REVISION_IF_CURRENT_SQL = `
+  update recipes set content_revision = content_revision + 1
+  where id = $1 and content_revision = $2
+  returning id
+`;
 
 const replaceChildren = async (
   versionId: string,
@@ -80,6 +100,15 @@ const replaceChildren = async (
  * authenticated edit path, so the cook-log gate that guards the app-facing
  * activate endpoint does not apply (general owner activation in the app is
  * #417).
+ *
+ * Concurrency: the transaction locks the named version's row first (a
+ * concurrent cook-log insert waits on it), then — when the caller sends
+ * `expectedContentRevision`, the recipe revision its payload was built from —
+ * bumps the revision only if it still matches, so an edit built from a stale
+ * snapshot aborts with 409 instead of overwriting a newer edit. Eligibility
+ * (active-vs-draft mode, editability) is re-read and re-checked inside the
+ * transaction before any write, so state that changed after the pre-transaction
+ * reads cannot slip through.
  */
 export const editVersionContent = async (
   req: AuthedRequest,
@@ -129,13 +158,118 @@ export const editVersionContent = async (
     return;
   }
 
-  const editedVersionId = await runTransactional(queryFn, async q => {
-    if (branchesFromActive) {
-      const versionNumber = await getNextVersionNumber(recipeId, q);
-      const created = await insertVersion(
-        {
+  let editedVersionId: string;
+  try {
+    editedVersionId = await runTransactional(queryFn, async q => {
+      // Lock the named version's row first: a concurrent cook-log insert
+      // (which takes a key-share lock on this row) waits for this
+      // transaction, so the re-read below sees committed state.
+      await q(LOCK_VERSION_SQL, [versionId]);
+      if (input.expectedContentRevision !== undefined) {
+        const bumped = await q(BUMP_REVISION_IF_CURRENT_SQL, [
           recipeId,
-          versionNumber,
+          input.expectedContentRevision,
+        ]);
+        if (!bumped.rows[0]) {
+          throw new VersionEditConflictError(
+            'Recipe changed since it was read; re-read the recipe and retry the edit.',
+          );
+        }
+      }
+      // Re-read and re-verify inside the transaction: the pre-transaction
+      // reads above decided the 404s, but eligibility must hold at write
+      // time, not at read time.
+      const freshRow = (await q(GET_RECIPE_DETAIL_SQL, [recipeId, req.userId]))
+        .rows[0];
+      if (!freshRow) {
+        throw new VersionEditConflictError(
+          'Recipe changed since it was read; re-read the recipe and retry the edit.',
+        );
+      }
+      const freshRecipe = mapRowToRecipeDetail(
+        freshRow as Parameters<typeof mapRowToRecipeDetail>[0],
+      );
+      const freshTarget = await fetchVersionDetail(
+        versionId,
+        recipeId,
+        req.userId,
+        q,
+      );
+      if (!freshTarget) {
+        throw new VersionEditConflictError(
+          'Recipe changed since it was read; re-read the recipe and retry the edit.',
+        );
+      }
+      const freshBranches = freshTarget.id === freshRecipe.versionId;
+      if (freshBranches !== branchesFromActive) {
+        throw new VersionEditConflictError(
+          'The active version changed since the recipe was read; re-read the recipe and retry the edit.',
+        );
+      }
+      if (freshBranches) {
+        if (
+          !isRecipeEditable(freshRecipe.status) &&
+          freshRecipe.status !== 'perfected'
+        ) {
+          throw new VersionEditConflictError(recipeEditBlockedError());
+        }
+      } else if (!isVersionEditable(freshTarget, freshRecipe.status)) {
+        throw new VersionEditConflictError(versionEditBlockedError());
+      }
+      if (input.expectedContentRevision === undefined) {
+        await incrementContentRevision(recipeId, q);
+      }
+      if (freshBranches) {
+        const versionNumber = await getNextVersionNumber(recipeId, q);
+        const created = await insertVersion(
+          {
+            recipeId,
+            versionNumber,
+            title: input.title,
+            description: input.description ?? null,
+            servings: input.servings,
+            prepTimeMin: input.prepTimeMin ?? null,
+            cookTimeMin: input.cookTimeMin ?? null,
+            imageUrl: input.imageUrl ?? null,
+            sourceUrl: input.sourceUrl ?? null,
+            createdVia: 'tweak_manual',
+            derivedFromVersionId: target.id,
+          },
+          q,
+        );
+        const newVersionId = created.rows[0]?.id;
+        if (!newVersionId) {
+          throw new Error('Failed to create version');
+        }
+        await insertIngredients(newVersionId, input.ingredients, q);
+        await insertInstructions(newVersionId, input.instructions, q);
+        await linkTags(newVersionId, input.tagIds, q);
+        if (freshRecipe.status === 'idea') {
+          await setLineageStatus(recipeId, req.userId, 'evolving', q);
+        }
+        if (freshRecipe.status === 'perfected') {
+          const reopened = await reopenPerfectedLineage(
+            recipeId,
+            req.userId,
+            q,
+          );
+          if (!reopened.rows[0]) {
+            throw new VersionEditConflictError(
+              'Recipe status changed while creating a draft version',
+            );
+          }
+        }
+        if (activate) {
+          await setActiveVersion(recipeId, newVersionId, q);
+          // The lineage slug follows the active version's title.
+          await updateRecipeSlug(recipeId, slugifyRecipeTitle(input.title), q);
+        }
+        await touchMealsForRecipe(recipeId, q);
+        return newVersionId;
+      }
+      const updated = await updateVersion(
+        versionId,
+        {
           title: input.title,
           description: input.description ?? null,
           servings: input.servings,
@@ -143,68 +277,32 @@ export const editVersionContent = async (
           cookTimeMin: input.cookTimeMin ?? null,
           imageUrl: input.imageUrl ?? null,
           sourceUrl: input.sourceUrl ?? null,
-          createdVia: 'tweak_manual',
-          derivedFromVersionId: target.id,
         },
         q,
       );
-      const newVersionId = created.rows[0]?.id;
-      if (!newVersionId) {
-        throw new Error('Failed to create version');
+      if (!updated.rows[0]) {
+        throw new Error('Failed to update version');
       }
-      await insertIngredients(newVersionId, input.ingredients, q);
-      await insertInstructions(newVersionId, input.instructions, q);
-      await linkTags(newVersionId, input.tagIds, q);
-      if (recipe.status === 'idea') {
-        await setLineageStatus(recipeId, req.userId, 'evolving', q);
+      if (input.status !== undefined) {
+        await updateRecipeStatus(recipeId, input.status, q);
       }
-      if (recipe.status === 'perfected') {
-        const reopened = await reopenPerfectedLineage(recipeId, req.userId, q);
-        if (!reopened.rows[0]) {
-          throw new Error(
-            'Recipe status changed while creating a draft version',
-          );
-        }
-      }
+      await replaceChildren(versionId, input, q);
+      await touchMealsForRecipe(recipeId, q);
       if (activate) {
-        await setActiveVersion(recipeId, newVersionId, q);
-        // The lineage slug follows the active version's title.
+        await setActiveVersion(recipeId, versionId, q);
+        // The lineage slug follows the active version's title, so it moves
+        // only when this edit becomes the active version.
         await updateRecipeSlug(recipeId, slugifyRecipeTitle(input.title), q);
       }
-      await incrementContentRevision(recipeId, q);
-      await touchMealsForRecipe(recipeId, q);
-      return newVersionId;
+      return versionId;
+    });
+  } catch (error) {
+    if (error instanceof VersionEditConflictError) {
+      res.status(409).json({error: error.message});
+      return;
     }
-    const updated = await updateVersion(
-      versionId,
-      {
-        title: input.title,
-        description: input.description ?? null,
-        servings: input.servings,
-        prepTimeMin: input.prepTimeMin ?? null,
-        cookTimeMin: input.cookTimeMin ?? null,
-        imageUrl: input.imageUrl ?? null,
-        sourceUrl: input.sourceUrl ?? null,
-      },
-      q,
-    );
-    if (!updated.rows[0]) {
-      throw new Error('Failed to update version');
-    }
-    if (input.status !== undefined) {
-      await updateRecipeStatus(recipeId, input.status, q);
-    }
-    await incrementContentRevision(recipeId, q);
-    await replaceChildren(versionId, input, q);
-    await touchMealsForRecipe(recipeId, q);
-    if (activate) {
-      await setActiveVersion(recipeId, versionId, q);
-      // The lineage slug follows the active version's title, so it moves
-      // only when this edit becomes the active version.
-      await updateRecipeSlug(recipeId, slugifyRecipeTitle(input.title), q);
-    }
-    return versionId;
-  });
+    throw error;
+  }
 
   scheduleNutritionRefresh(editedVersionId, queryFn);
   const detail = await fetchVersionDetail(
