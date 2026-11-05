@@ -95,15 +95,15 @@ export const getChangedFiles = (
   // deletion plus an addition, so consumers that map paths (package
   // discovery, the e2e spec selector) see the source path too — with rename
   // detection, only the destination is listed and a file moved out of a
-  // tree would escape that tree's coverage.
-  const output = exec(`git diff --no-renames --name-only ${baseRef}..HEAD`, {
+  // tree would escape that tree's coverage. -z: paths are NUL-delimited and
+  // never C-quoted — with newline output, git quotes non-ASCII paths
+  // (core.quotePath), and a quoted path matches no prefix or glob in the
+  // consumers, silently escaping their coverage the same way.
+  const output = exec(`git diff --no-renames --name-only -z ${baseRef}..HEAD`, {
     encoding: 'utf8',
     cwd: root,
-  }).trim();
-  if (!output) {
-    return [];
-  }
-  return output.split('\n');
+  });
+  return output.split('\0').filter(Boolean);
 };
 
 export const writeOutput = (body: string): void => {

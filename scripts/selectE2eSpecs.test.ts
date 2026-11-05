@@ -1,6 +1,10 @@
-import {describe, expect, it} from '@jest/globals';
+import {describe, expect, it, jest} from '@jest/globals';
 
-import {formatGithubOutput, selectE2eSpecs} from './selectE2eSpecs.ts';
+import {
+  formatGithubOutput,
+  runSelectE2eSpecsCli,
+  selectE2eSpecs,
+} from './selectE2eSpecs.ts';
 
 describe('selectE2eSpecs', () => {
   it('selects only the live auth specs and mocked signed-out for an auth diff', () => {
@@ -129,6 +133,36 @@ describe('selectE2eSpecs', () => {
     ]);
     expect(result.mocked).toEqual([]);
     expect(result.live).toEqual([]);
+  });
+});
+
+describe('runSelectE2eSpecsCli', () => {
+  it('writes full-suite output for manual and scheduled events', () => {
+    const originalGithubOutput = process.env['GITHUB_OUTPUT'];
+    delete process.env['GITHUB_OUTPUT'];
+    const stdoutSpy = jest
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+    try {
+      for (const eventName of ['workflow_dispatch', 'schedule']) {
+        stdoutSpy.mockClear();
+        runSelectE2eSpecsCli({execSync: jest.fn()}, ['node', 'script'], {
+          GITHUB_EVENT_NAME: eventName,
+        });
+        const output = stdoutSpy.mock.calls
+          .map(call => String(call[0]))
+          .join('');
+        expect(output).toContain('mocked-specs=\nmocked-run=true');
+        expect(output).toContain('live-specs=\nlive-run=true');
+      }
+    } finally {
+      stdoutSpy.mockRestore();
+      if (originalGithubOutput === undefined) {
+        delete process.env['GITHUB_OUTPUT'];
+      } else {
+        process.env['GITHUB_OUTPUT'] = originalGithubOutput;
+      }
+    }
   });
 });
 
