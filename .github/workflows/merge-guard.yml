@@ -18,9 +18,13 @@ on:
 # Each box tick fires its own `edited` event and starts a run; without
 # a group the runs race in parallel, and a stale run that fetched an
 # older body can finish last and leave a failing check on a completed
-# checklist. Only the newest run for a PR completes.
+# checklist. The group is per PR and per head commit: runs for the
+# same commit replace each other (only the newest completes), while
+# runs for different commits never cancel each other.
 concurrency:
-  group: merge-guard-${{ github.event.pull_request.number }}
+  group:
+    merge-guard-${{ github.event.pull_request.number }}-${{
+    github.event.pull_request.head.sha }}
   cancel-in-progress: true
 
 jobs:
