@@ -25,6 +25,7 @@ export const installLoadMealDetailMock = (
   mockQuery
     .mockResolvedValueOnce(makeQueryResult([mealRow]))
     .mockResolvedValueOnce(makeQueryResult([mealRecipeRow]))
+    .mockResolvedValueOnce(makeQueryResult([]))
     .mockResolvedValueOnce(makeQueryResult([accessibleRecipeRow]))
     .mockResolvedValueOnce(emptyShareGrant);
 };

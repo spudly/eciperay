@@ -4,6 +4,7 @@ import {
   RECIPE_ID,
   USER_ID,
   accessibleRecipeRow,
+  mealIngredientRow,
   mealRecipeRow,
   mealRow,
 } from '../test/fixtures/mealQueryRows.js';
@@ -30,6 +31,7 @@ describe('loadMealDetail', () => {
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([mealRow]))
       .mockResolvedValueOnce(makeQueryResult([mealRecipeRow]))
+      .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([accessibleRecipeRow]))
       .mockResolvedValueOnce(emptyShareGrant);
 
@@ -59,6 +61,7 @@ describe('loadMealDetail', () => {
           },
         ]),
       )
+      .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([]));
 
     const meal = await loadMealDetail(MEAL_ID, USER_ID, mockQuery);
@@ -72,6 +75,7 @@ describe('loadMealDetail', () => {
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([mealRow]))
       .mockResolvedValueOnce(makeQueryResult([mealRecipeRow]))
+      .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([privateRecipe]))
       .mockResolvedValueOnce(emptyShareGrant)
       .mockResolvedValueOnce(makeQueryResult([privateRecipe]))
@@ -88,6 +92,7 @@ describe('loadMealDetail', () => {
       .mockResolvedValueOnce(makeQueryResult([mealRow]))
       .mockResolvedValueOnce(makeQueryResult([mealRecipeRow]))
       .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(emptyShareGrant)
       .mockResolvedValueOnce(makeQueryResult([]));
 
@@ -102,6 +107,7 @@ describe('loadMealDetail', () => {
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([mealRow]))
       .mockResolvedValueOnce(makeQueryResult([mealRecipeRow]))
+      .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(emptyShareGrant)
       .mockResolvedValueOnce(makeQueryResult([privateRecipe]))
@@ -128,6 +134,7 @@ describe('loadMealDetail', () => {
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([mealRow]))
       .mockResolvedValueOnce(makeQueryResult([mealRecipeRow]))
+      .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([recipe]))
       .mockResolvedValueOnce(emptyShareGrant);
 
@@ -145,6 +152,7 @@ describe('loadMealDetail', () => {
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([mealRow]))
       .mockResolvedValueOnce(makeQueryResult([mealRecipeRow]))
+      .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([recipe]))
       .mockResolvedValueOnce(emptyShareGrant);
 
@@ -160,12 +168,107 @@ describe('listMealsForUser', () => {
       .mockResolvedValueOnce(makeQueryResult([{id: MEAL_ID}]))
       .mockResolvedValueOnce(makeQueryResult([mealRow]))
       .mockResolvedValueOnce(makeQueryResult([mealRecipeRow]))
+      .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([accessibleRecipeRow]))
       .mockResolvedValueOnce(emptyShareGrant);
 
     const meals = await listMealsForUser(USER_ID, mockQuery);
     expect(meals).toHaveLength(1);
     expect(meals[0]?.title).toBe('Sunday Dinner');
+  });
+});
+
+describe('loadMealDetail direct ingredients (#362)', () => {
+  test('loads a direct-only meal with hand-computed nutrition totals', async () => {
+    const mockQuery = createMockQuery();
+    mockQuery
+      .mockResolvedValueOnce(makeQueryResult([mealRow]))
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([mealIngredientRow]));
+
+    const meal = await loadMealDetail(MEAL_ID, USER_ID, mockQuery);
+    expect(meal?.members).toHaveLength(0);
+    expect(meal?.ingredients).toHaveLength(1);
+    expect(meal?.ingredients[0]).toMatchObject({
+      name: 'Rice',
+      quantity: 2,
+      unit: 'cups',
+      servings: 2,
+      calories: 200,
+    });
+    expect(meal?.memberCount).toBe(1);
+    // Per-serving 200 cal × entry servings 2 = 400; weight is the
+    // whole-entry 300 g (not scaled again).
+    expect(meal?.nutrition).toMatchObject({
+      calories: 400,
+      proteinG: 8,
+      carbsG: 88,
+      fatG: 2,
+      fiberG: 2,
+      sugarG: 0,
+      sodiumMg: 10,
+      preparedWeightG: 300,
+      status: 'ready',
+    });
+  });
+
+  test('sums recipes and direct ingredients in a mixed meal', async () => {
+    const mockQuery = createMockQuery();
+    mockQuery
+      .mockResolvedValueOnce(makeQueryResult([mealRow]))
+      .mockResolvedValueOnce(makeQueryResult([mealRecipeRow]))
+      .mockResolvedValueOnce(makeQueryResult([mealIngredientRow]))
+      .mockResolvedValueOnce(makeQueryResult([accessibleRecipeRow]))
+      .mockResolvedValueOnce(emptyShareGrant);
+
+    const meal = await loadMealDetail(MEAL_ID, USER_ID, mockQuery);
+    expect(meal?.members).toHaveLength(1);
+    expect(meal?.ingredients).toHaveLength(1);
+    expect(meal?.memberCount).toBe(2);
+    // Recipe: 100 cal/serving × 4 servings = 400 cal, 40 protein,
+    // 20 carbs, 8 fat, 400 g. Direct: 400 cal, 8 protein, 88 carbs,
+    // 2 fat, 2 fiber, 10 sodium, 300 g (see fixture).
+    expect(meal?.nutrition).toMatchObject({
+      calories: 800,
+      proteinG: 48,
+      carbsG: 108,
+      fatG: 10,
+      fiberG: 2,
+      sugarG: 0,
+      sodiumMg: 10,
+      preparedWeightG: 700,
+      status: 'ready',
+    });
+  });
+
+  test('marks totals partial when a direct ingredient has no ready nutrition', async () => {
+    const mockQuery = createMockQuery();
+    mockQuery
+      .mockResolvedValueOnce(makeQueryResult([mealRow]))
+      .mockResolvedValueOnce(makeQueryResult([mealRecipeRow]))
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          {
+            ...mealIngredientRow,
+            calories: null,
+            protein_g: null,
+            carbs_g: null,
+            fat_g: null,
+            fiber_g: null,
+            sugar_g: null,
+            sodium_mg: null,
+            prepared_weight_g: null,
+            satiety_score: null,
+            nutrition_status: 'failed',
+          },
+        ]),
+      )
+      .mockResolvedValueOnce(makeQueryResult([accessibleRecipeRow]))
+      .mockResolvedValueOnce(emptyShareGrant);
+
+    const meal = await loadMealDetail(MEAL_ID, USER_ID, mockQuery);
+    expect(meal?.nutrition?.status).toBe('partial');
+    expect(meal?.nutrition?.calories).toBe(400);
   });
 });
 
@@ -193,5 +296,35 @@ describe('nutritionFromMembers', () => {
       recipesById,
     );
     expect(nutrition.calories).toBeGreaterThan(0);
+  });
+
+  test('scales direct ingredients by their own entry-level servings', () => {
+    const nutrition = nutritionFromMembers([], new Map(), [
+      {
+        name: 'Rice',
+        quantity: 2,
+        unit: 'cups',
+        sortOrder: 0,
+        servings: 3,
+        satietyScore: 60,
+        nutritionStatus: 'ready',
+        calories: 200,
+        proteinG: 4,
+        carbsG: 44,
+        fatG: 1,
+        fiberG: 1,
+        sugarG: 0,
+        sodiumMg: 5,
+        preparedWeightG: 300,
+      },
+    ]);
+    // 200 cal × 3 servings; the 300 g stored weight is already the
+    // whole entry, so it is not scaled by servings again.
+    expect(nutrition).toMatchObject({
+      calories: 600,
+      proteinG: 12,
+      preparedWeightG: 300,
+      status: 'ready',
+    });
   });
 });

@@ -1,5 +1,13 @@
 import {makeQueryResult} from '../test/fixtures/queryResult.js';
-import {accessibleRecipeRow} from '../test/fixtures/mealQueryRows.js';
+import {
+  accessibleRecipeRow,
+  mealIngredientRow,
+  mealRow,
+} from '../test/fixtures/mealQueryRows.js';
+import {
+  anthropicCreateSpy,
+  nockAnthropicMessage,
+} from '../test/mockNockAnthropic.js';
 import {
   emptyShareGrant,
   installLoadMealDetailMock,
@@ -96,6 +104,7 @@ describe('replaceMeal', () => {
       .mockResolvedValueOnce(emptyShareGrant)
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([]));
     installLoadMealDetailMock(mockQuery);
 
@@ -116,6 +125,7 @@ describe('replaceMeal', () => {
       .mockResolvedValueOnce(makeQueryResult([{id: MEAL_ID}]))
       .mockResolvedValueOnce(makeQueryResult([accessibleRecipeRow]))
       .mockResolvedValueOnce(emptyShareGrant)
+      .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([]));
@@ -148,6 +158,7 @@ describe('replaceMeal', () => {
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([]));
 
     const result = await replaceMeal(MEAL_ID, USER_ID, mealInput, mockQuery);
@@ -160,6 +171,7 @@ describe('replaceMeal', () => {
       .mockResolvedValueOnce(makeQueryResult([{id: MEAL_ID}]))
       .mockResolvedValueOnce(makeQueryResult([accessibleRecipeRow]))
       .mockResolvedValueOnce(emptyShareGrant)
+      .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([]));
@@ -354,6 +366,187 @@ describe('replaceMeal', () => {
     await expect(
       replaceMeal(MEAL_ID, USER_ID, mealInput, mockQuery),
     ).rejects.toThrow('db down');
+  });
+});
+
+const DIRECT_NUTRITION_RESPONSE = JSON.stringify({
+  calories: 200,
+  proteinG: 4,
+  carbsG: 44,
+  fatG: 1,
+  fiberG: 1,
+  sugarG: 0,
+  sodiumMg: 5,
+  preparedWeightG: 300,
+  disclaimer: 'Estimated.',
+});
+
+const directIngredientInput = {
+  title: 'Snack',
+  recipes: [] as {recipeId: string}[],
+  ingredients: [{name: 'Rice', quantity: 2, unit: 'cups', servings: 2}],
+};
+
+const findCall = (
+  mockQuery: ReturnType<typeof createMockQuery>,
+  fragment: string,
+) =>
+  mockQuery.mock.calls.find(([sql]) => String(sql).includes(fragment)) as
+    [string, unknown[]] | undefined;
+
+describe('direct ingredients (#362)', () => {
+  test('saveNewMeal creates a direct-only meal, estimating nutrition at save', async () => {
+    nockAnthropicMessage(DIRECT_NUTRITION_RESPONSE);
+    const mockQuery = createMockQuery();
+    mockQuery
+      .mockResolvedValueOnce(makeQueryResult([{id: MEAL_ID}]))
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([mealRow]))
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([mealIngredientRow]));
+
+    const result = await saveNewMeal(USER_ID, directIngredientInput, mockQuery);
+    if ('error' in result) {
+      throw new Error(result.error);
+    }
+    expect(result.meal.ingredients).toHaveLength(1);
+    expect(result.meal.ingredients[0]?.name).toBe('Rice');
+    expect(result.meal.memberCount).toBe(1);
+    expect(result.meal.nutrition?.calories).toBe(400);
+
+    // The stored row carries the AI-estimated per-serving macros —
+    // never user-entered values.
+    const insert = findCall(mockQuery, 'insert into meal_ingredients');
+    expect(insert).toBeDefined();
+    expect(insert?.[1]).toEqual([
+      MEAL_ID,
+      'Rice',
+      2,
+      'cups',
+      2,
+      0,
+      200,
+      4,
+      44,
+      1,
+      1,
+      0,
+      5,
+      300,
+      expect.any(Number) as number,
+      'ready',
+      'Estimated.',
+    ]);
+  });
+
+  test('saveNewMeal creates a mixed meal (recipes + direct ingredients)', async () => {
+    nockAnthropicMessage(DIRECT_NUTRITION_RESPONSE);
+    const mockQuery = createMockQuery();
+    mockQuery
+      .mockResolvedValueOnce(makeQueryResult([accessibleRecipeRow]))
+      .mockResolvedValueOnce(emptyShareGrant)
+      .mockResolvedValueOnce(makeQueryResult([{id: MEAL_ID}]))
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([mealRow]))
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          {meal_id: MEAL_ID, recipe_id: RECIPE_ID, sort_order: 0, servings: 4},
+        ]),
+      )
+      .mockResolvedValueOnce(makeQueryResult([mealIngredientRow]))
+      .mockResolvedValueOnce(makeQueryResult([accessibleRecipeRow]))
+      .mockResolvedValueOnce(emptyShareGrant);
+
+    const result = await saveNewMeal(
+      USER_ID,
+      {
+        title: 'Dinner',
+        recipes: [{recipeId: RECIPE_ID, servings: 4}],
+        ingredients: [{name: 'Rice', quantity: 2, unit: 'cups', servings: 2}],
+      },
+      mockQuery,
+    );
+    if ('error' in result) {
+      throw new Error(result.error);
+    }
+    expect(result.meal.members).toHaveLength(1);
+    expect(result.meal.ingredients).toHaveLength(1);
+    expect(result.meal.memberCount).toBe(2);
+    // Hand-computed: recipe 400 cal + direct 400 cal (fixture math).
+    expect(result.meal.nutrition?.calories).toBe(800);
+    expect(findCall(mockQuery, 'insert into meal_recipes')).toBeDefined();
+    expect(findCall(mockQuery, 'insert into meal_ingredients')).toBeDefined();
+  });
+
+  test('saveNewMeal stores failed nutrition when estimation fails, without failing the save', async () => {
+    nockAnthropicMessage('not json');
+    const mockQuery = createMockQuery();
+    mockQuery
+      .mockResolvedValueOnce(makeQueryResult([{id: MEAL_ID}]))
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([mealRow]))
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([mealIngredientRow]));
+
+    const result = await saveNewMeal(USER_ID, directIngredientInput, mockQuery);
+    if ('error' in result) {
+      throw new Error(result.error);
+    }
+    const insert = findCall(mockQuery, 'insert into meal_ingredients');
+    expect(insert?.[1]).toContain('failed');
+    expect(insert?.[1]).toContain(null);
+    expect(insert?.[1]?.[6]).toBeNull();
+  });
+
+  test('replaceMeal replaces direct ingredients alongside recipes', async () => {
+    nockAnthropicMessage(DIRECT_NUTRITION_RESPONSE);
+    const mockQuery = createMockQuery();
+    mockQuery
+      .mockResolvedValueOnce(makeQueryResult([{id: MEAL_ID}]))
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([mealRow]))
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([mealIngredientRow]));
+
+    const result = await replaceMeal(
+      MEAL_ID,
+      USER_ID,
+      directIngredientInput,
+      mockQuery,
+    );
+    if ('error' in result) {
+      throw new Error(result.error);
+    }
+    expect(result.meal.ingredients).toHaveLength(1);
+    expect(findCall(mockQuery, 'delete from meal_ingredients')).toBeDefined();
+    expect(findCall(mockQuery, 'insert into meal_ingredients')).toBeDefined();
+  });
+
+  test('replaceMeal with a stale token writes no direct ingredients and spends no estimation (#384/#362)', async () => {
+    const mockQuery = createMockQuery();
+    mockQuery.mockResolvedValueOnce(
+      makeQueryResult([{id: MEAL_ID, updated_at: '2024-01-01T00:00:00.000Z'}]),
+    );
+
+    const result = await replaceMeal(
+      MEAL_ID,
+      USER_ID,
+      {...directIngredientInput, expectedUpdatedAt: '1999-01-01T00:00:00.000Z'},
+      mockQuery,
+    );
+    expect(result).toEqual({
+      error: 'Meal has been modified since it was loaded',
+      status: 409,
+    });
+    const memberWrites = mockQuery.mock.calls.filter(([sql]) =>
+      /meal_ingredients|meal_recipes/.test(String(sql)),
+    );
+    expect(memberWrites).toEqual([]);
+    expect(anthropicCreateSpy).not.toHaveBeenCalled();
   });
 });
 

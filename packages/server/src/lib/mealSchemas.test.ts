@@ -26,6 +26,59 @@ describe('mealSchemas', () => {
     ).toThrow(z.ZodError);
   });
 
+  test('MealInputSchema accepts a direct-only meal (#362)', () => {
+    const parsed = MealInputSchema.parse({
+      title: 'Snack',
+      ingredients: [{name: 'Rice', quantity: 2, unit: 'cups', servings: 2}],
+    });
+    expect(parsed.recipes).toEqual([]);
+    expect(parsed.ingredients).toEqual([
+      {name: 'Rice', quantity: 2, unit: 'cups', servings: 2},
+    ]);
+  });
+
+  test('MealInputSchema accepts a mixed meal (#362)', () => {
+    const parsed = MealInputSchema.parse({
+      title: 'Dinner',
+      recipes: [{recipeId}],
+      ingredients: [{name: 'Protein shake'}],
+    });
+    expect(parsed.recipes).toHaveLength(1);
+    expect(parsed.ingredients).toHaveLength(1);
+  });
+
+  test('MealInputSchema rejects a meal with no members of either kind (#362)', () => {
+    expect(() => MealInputSchema.parse({title: 'Empty'})).toThrow(z.ZodError);
+    expect(() =>
+      MealInputSchema.parse({title: 'Empty', recipes: [], ingredients: []}),
+    ).toThrow(z.ZodError);
+  });
+
+  test('MealInputSchema rejects invalid direct ingredients (#362)', () => {
+    expect(() =>
+      MealInputSchema.parse({title: 'X', ingredients: [{name: ''}]}),
+    ).toThrow(z.ZodError);
+    expect(() =>
+      MealInputSchema.parse({
+        title: 'X',
+        ingredients: [{name: 'Rice', quantity: 0}],
+      }),
+    ).toThrow(z.ZodError);
+    expect(() =>
+      MealInputSchema.parse({
+        title: 'X',
+        ingredients: [{name: 'Rice', servings: 0}],
+      }),
+    ).toThrow(z.ZodError);
+    // Clients never send nutrition for a direct entry — it is estimated
+    // server-side — but unknown keys are stripped, not stored.
+    const parsed = MealInputSchema.parse({
+      title: 'X',
+      ingredients: [{name: 'Rice', calories: 999}],
+    } as unknown as Parameters<typeof MealInputSchema.parse>[0]);
+    expect(parsed.ingredients[0]).toEqual({name: 'Rice'});
+  });
+
   test('MealPlanInputSchema accepts valid plan', () => {
     expect(
       MealPlanInputSchema.parse({

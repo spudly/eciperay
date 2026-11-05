@@ -1,6 +1,7 @@
 import type {
   AggregatedNutrition,
   MealDetail,
+  MealIngredientMember,
   MealRecipeMember,
 } from '@eciperay/types';
 
@@ -30,6 +31,15 @@ const MEAL_RECIPES_SQL = `
   order by sort_order asc, recipe_id asc
 `;
 
+const MEAL_INGREDIENTS_SQL = `
+  select meal_id, name, quantity, unit, servings, sort_order,
+         calories, protein_g, carbs_g, fat_g, fiber_g, sugar_g, sodium_mg,
+         prepared_weight_g, satiety_score, nutrition_status
+  from meal_ingredients
+  where meal_id = $1
+  order by sort_order asc, name asc
+`;
+
 type MealRow = {
   id: string;
   user_id: string;
@@ -57,6 +67,46 @@ type MealRecipeRow = {
   servings: number;
 };
 
+type MealIngredientRow = {
+  meal_id: string;
+  name: string;
+  // node-postgres returns numeric/double columns as numbers for
+  // double precision; quantity is a double precision column (021).
+  quantity: number | null;
+  unit: string | null;
+  servings: number;
+  sort_order: number;
+  calories: number | null;
+  protein_g: number | null;
+  carbs_g: number | null;
+  fat_g: number | null;
+  fiber_g: number | null;
+  sugar_g: number | null;
+  sodium_mg: number | null;
+  prepared_weight_g: number | null;
+  satiety_score: number | null;
+  nutrition_status: string | null;
+};
+
+const toIngredientMember = (row: MealIngredientRow): MealIngredientMember => ({
+  name: row.name,
+  quantity: row.quantity,
+  unit: row.unit,
+  sortOrder: row.sort_order,
+  servings: row.servings,
+  satietyScore: row.satiety_score,
+  nutritionStatus:
+    (row.nutrition_status as MealIngredientMember['nutritionStatus']) ?? null,
+  calories: row.calories,
+  proteinG: row.protein_g,
+  carbsG: row.carbs_g,
+  fatG: row.fat_g,
+  fiberG: row.fiber_g,
+  sugarG: row.sugar_g,
+  sodiumMg: row.sodium_mg,
+  preparedWeightG: row.prepared_weight_g,
+});
+
 const toMember = (
   row: MealRecipeRow,
   recipe: AccessibleRecipeRow | null,
@@ -83,9 +133,10 @@ const toMember = (
 export const nutritionFromMembers = (
   members: MealRecipeMember[],
   recipesById: Map<string, AccessibleRecipeRow>,
+  ingredients: MealIngredientMember[] = [],
 ): AggregatedNutrition =>
-  aggregateRecipePortionsNutrition(
-    members.map(member => {
+  aggregateRecipePortionsNutrition([
+    ...members.map(member => {
       const recipe = recipesById.get(member.recipeId);
       return {
         servings: member.servings,
@@ -102,7 +153,25 @@ export const nutritionFromMembers = (
         accessLost: member.accessLost,
       };
     }),
-  );
+    // Direct ingredients (#362): stored macros are per serving (the
+    // recipe shape), so an entry contributes per-serving × its own
+    // entry-level servings. Its stored prepared weight already covers
+    // the whole entry, so the portion's recipeServings equals its
+    // servings and the weight scale is 1.
+    ...ingredients.map(ingredient => ({
+      servings: ingredient.servings,
+      recipeServings: ingredient.servings,
+      calories: ingredient.calories,
+      proteinG: ingredient.proteinG,
+      carbsG: ingredient.carbsG,
+      fatG: ingredient.fatG,
+      fiberG: ingredient.fiberG,
+      sugarG: ingredient.sugarG,
+      sodiumMg: ingredient.sodiumMg,
+      preparedWeightG: ingredient.preparedWeightG,
+      nutritionStatus: ingredient.nutritionStatus,
+    })),
+  ]);
 
 export const loadMealDetail = async (
   mealId: string,
@@ -117,6 +186,10 @@ export const loadMealDetail = async (
 
   const membersResult = await queryFn(MEAL_RECIPES_SQL, [mealId]);
   const memberRows = membersResult.rows as MealRecipeRow[];
+  const ingredientsResult = await queryFn(MEAL_INGREDIENTS_SQL, [mealId]);
+  const ingredients = (ingredientsResult.rows as MealIngredientRow[]).map(
+    toIngredientMember,
+  );
   const recipesById = new Map<string, AccessibleRecipeRow>();
   const members: MealRecipeMember[] = [];
 
@@ -146,18 +219,21 @@ export const loadMealDetail = async (
     members.push(toMember(row, raw, accessLost));
   }
 
-  const nutrition = nutritionFromMembers(members, recipesById);
+  const nutrition = nutritionFromMembers(members, recipesById, ingredients);
 
   return {
     id: meal.id,
     userId: meal.user_id,
     title: meal.title,
     notes: meal.notes,
-    memberCount: members.length,
+    // Member count covers both kinds of member (#362): a direct-only
+    // meal is not a zero-member meal.
+    memberCount: members.length + ingredients.length,
     nutrition,
     createdAt: timestampString(meal.created_at),
     updatedAt: timestampString(meal.updated_at),
     members,
+    ingredients,
   };
 };
 
@@ -173,7 +249,7 @@ export const listMealsForUser = async (
   for (const row of result.rows as {id: string}[]) {
     const detail = await loadMealDetail(row.id, userId, queryFn);
     if (detail) {
-      const {members: _members, ...summary} = detail;
+      const {members: _members, ingredients: _ingredients, ...summary} = detail;
       meals.push(summary);
     }
   }

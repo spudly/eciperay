@@ -61,6 +61,8 @@ export type {
   Meal,
   MealCookPlan,
   MealDetail,
+  MealIngredientInput,
+  MealIngredientMember,
   MealInput,
   MealRecipeInput,
   MealRecipeMember,

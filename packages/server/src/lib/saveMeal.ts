@@ -9,9 +9,86 @@ import {
   updatedAtToken,
 } from './conditionalWrite.js';
 import {loadMealDetail} from './loadMealDetail.js';
+import {
+  estimateMealIngredientNutrition,
+  type MealIngredientNutrition,
+} from './mealIngredientNutrition.js';
 import {loadAccessibleRecipe} from './mealRecipeAccess.js';
 
 type QueryFn = typeof defaultQuery;
+
+type ResolvedMealIngredient = {
+  name: string;
+  quantity: number | null;
+  unit: string | null;
+  servings: number;
+  sortOrder: number;
+  nutrition: MealIngredientNutrition;
+};
+
+const INSERT_MEAL_INGREDIENT_SQL = `
+  insert into meal_ingredients
+    (meal_id, name, quantity, unit, servings, sort_order,
+     calories, protein_g, carbs_g, fat_g, fiber_g, sugar_g, sodium_mg,
+     prepared_weight_g, satiety_score, nutrition_status,
+     nutrition_disclaimer, nutrition_updated_at)
+  values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, now())
+`;
+
+const insertMealIngredient = async (
+  queryFn: QueryFn,
+  mealId: string,
+  ingredient: ResolvedMealIngredient,
+) => {
+  const {nutrition} = ingredient;
+  await queryFn(INSERT_MEAL_INGREDIENT_SQL, [
+    mealId,
+    ingredient.name,
+    ingredient.quantity,
+    ingredient.unit,
+    ingredient.servings,
+    ingredient.sortOrder,
+    nutrition.calories,
+    nutrition.proteinG,
+    nutrition.carbsG,
+    nutrition.fatG,
+    nutrition.fiberG,
+    nutrition.sugarG,
+    nutrition.sodiumMg,
+    nutrition.preparedWeightG,
+    nutrition.satietyScore,
+    nutrition.nutritionStatus,
+    nutrition.nutritionDisclaimer,
+  ]);
+};
+
+/**
+ * Resolve direct-ingredient entries for a save (#362): default the entry-level
+ * servings and estimate + attach each entry's nutrition via the recipe lookup.
+ * Runs before any write, alongside recipe resolution, so a rejected save never
+ * leaves partial members behind.
+ */
+const resolveMealIngredients = async (
+  input: MealInput,
+): Promise<ResolvedMealIngredient[]> => {
+  const resolved: ResolvedMealIngredient[] = [];
+  for (const [index, ingredient] of (input.ingredients ?? []).entries()) {
+    const servings = ingredient.servings ?? 1;
+    const nutrition = await estimateMealIngredientNutrition({
+      ...ingredient,
+      servings,
+    });
+    resolved.push({
+      name: ingredient.name,
+      quantity: ingredient.quantity ?? null,
+      unit: ingredient.unit ?? null,
+      servings,
+      sortOrder: index,
+      nutrition,
+    });
+  }
+  return resolved;
+};
 
 export const saveNewMeal = async (
   userId: string,
@@ -38,6 +115,7 @@ export const saveNewMeal = async (
       sortOrder: index,
     });
   }
+  const resolvedIngredients = await resolveMealIngredients(input);
 
   const mealResult = await queryFn(
     `insert into meals (user_id, title, notes)
@@ -53,6 +131,9 @@ export const saveNewMeal = async (
        values ($1, $2, $3, $4)`,
       [mealId, recipe.recipeId, recipe.sortOrder, recipe.servings],
     );
+  }
+  for (const ingredient of resolvedIngredients) {
+    await insertMealIngredient(queryFn, mealId, ingredient);
   }
 
   const meal = await loadMealDetail(mealId, userId, queryFn);
@@ -116,6 +197,10 @@ export const replaceMeal = async (
       sortOrder: index,
     });
   }
+  // Direct ingredients resolve (and estimate) here too — after the
+  // stale-token check above, before any write — so a 409 writes nothing
+  // and spends no estimation calls.
+  const resolvedIngredients = await resolveMealIngredients(input);
 
   // The token is bound into the UPDATE itself, so the check above is only
   // a fast path: if a concurrent write lands between it and this update,
@@ -169,12 +254,16 @@ export const replaceMeal = async (
       return true;
     }
     await q(`delete from meal_recipes where meal_id = $1`, [mealId]);
+    await q(`delete from meal_ingredients where meal_id = $1`, [mealId]);
     for (const recipe of resolved) {
       await q(
         `insert into meal_recipes (meal_id, recipe_id, sort_order, servings)
          values ($1, $2, $3, $4)`,
         [mealId, recipe.recipeId, recipe.sortOrder, recipe.servings],
       );
+    }
+    for (const ingredient of resolvedIngredients) {
+      await insertMealIngredient(q, mealId, ingredient);
     }
     return false;
   });
