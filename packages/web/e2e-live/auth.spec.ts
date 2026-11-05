@@ -30,6 +30,16 @@ test.describe('live auth', () => {
     });
     const page = await context.newPage();
     try {
+      // Intercept the Supabase recover call and fulfill a mocked success so
+      // the confirmation UI renders without dispatching a real reset email
+      // to the QA account on every live run (issue #438).
+      await page.route('**/auth/v1/recover**', route =>
+        route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: '{}',
+        }),
+      );
       await page.goto('/forgot-password');
       await page.getByLabel('Email').fill(qaEmail);
       await page.getByRole('button', {name: 'Send Reset Link'}).click();
