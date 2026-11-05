@@ -316,6 +316,17 @@ describe('recipeListQuery', () => {
     expect(list).not.toHaveBeenCalled();
   });
 
+  test('form picker search throws a generic abort error when the abort reason is not an Error', async () => {
+    const list = jest.fn().mockResolvedValue([makeListItem('1')]);
+    const options = recipeFormSearchQueryOptions(list, 'Soup');
+    const controller = new AbortController();
+    controller.abort('superseded by a newer search');
+    await expect(options.queryFn({signal: controller.signal})).rejects.toThrow(
+      'The recipe search was aborted.',
+    );
+    expect(list).not.toHaveBeenCalled();
+  });
+
   test('form picker search stops paging when cancelled between pages', async () => {
     const controller = new AbortController();
     const fullPage = Array.from({length: RECIPE_FORM_SEARCH_LIMIT}, (_, i) =>

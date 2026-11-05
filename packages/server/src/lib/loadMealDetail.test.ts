@@ -212,6 +212,20 @@ describe('loadMealDetail direct ingredients (#362)', () => {
     });
   });
 
+  test('maps a direct ingredient with no nutrition status to null', async () => {
+    const mockQuery = createMockQuery();
+    mockQuery
+      .mockResolvedValueOnce(makeQueryResult([mealRow]))
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(
+        makeQueryResult([{...mealIngredientRow, nutrition_status: null}]),
+      );
+
+    const meal = await loadMealDetail(MEAL_ID, USER_ID, mockQuery);
+    expect(meal?.ingredients).toHaveLength(1);
+    expect(meal?.ingredients[0]?.nutritionStatus).toBeNull();
+  });
+
   test('sums recipes and direct ingredients in a mixed meal', async () => {
     const mockQuery = createMockQuery();
     mockQuery

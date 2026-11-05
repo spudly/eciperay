@@ -1,4 +1,10 @@
-import {runSyncPackageVersionsCli} from './syncPackageVersionsCli.ts';
+import {join} from 'node:path';
+
+import {
+  isDirectRun,
+  maybeRunSyncPackageVersionsCli,
+  runSyncPackageVersionsCli,
+} from './syncPackageVersionsCli.ts';
 import type {SyncFs} from './syncPackageVersions.ts';
 
 const makeFs = (files: Record<string, string>): SyncFs => ({
@@ -79,5 +85,115 @@ describe('runSyncPackageVersionsCli', () => {
     runSyncPackageVersionsCli('/repo', ['--check'], deps);
     expect(exits).toEqual([]);
     expect(logs.join('\n')).toContain('match the manifests');
+  });
+
+  test('sync mode uses the singular noun when exactly one entry is fixed', () => {
+    const files = makeRepoFiles();
+    files['/repo/package-lock.json'] = JSON.stringify({
+      name: 'demo',
+      version: '1.0.0',
+      packages: {'': {name: 'demo', version: '0.9.0'}},
+    });
+    const {deps, logs, exits} = makeDeps(files);
+    runSyncPackageVersionsCli('/repo', [], deps);
+    expect(exits).toEqual([]);
+    expect(logs.join('\n')).toContain(
+      'Synced 1 package-lock.json workspace version entry to',
+    );
+  });
+
+  test('sync mode reports when the lockfile already matches', () => {
+    const files = makeRepoFiles();
+    files['/repo/package-lock.json'] = JSON.stringify({
+      name: 'demo',
+      version: '1.0.0',
+      packages: {'': {name: 'demo', version: '1.0.0'}},
+    });
+    const {deps, logs, exits} = makeDeps(files);
+    runSyncPackageVersionsCli('/repo', [], deps);
+    expect(exits).toEqual([]);
+    expect(logs.join('\n')).toContain('already match the manifests');
+  });
+
+  test('sync mode is the default when argv is omitted', () => {
+    const files = makeRepoFiles();
+    const {deps, logs} = makeDeps(files);
+    runSyncPackageVersionsCli('/repo', undefined, deps);
+    expect(logs.join('\n')).toContain('Synced 2');
+  });
+
+  test('uses process.exit when exit dep is omitted and --check fails', () => {
+    const exitSpy = jest
+      .spyOn(process, 'exit')
+      .mockImplementation((() => {}) as never);
+    const files = makeRepoFiles();
+    const {deps} = makeDeps(files);
+    runSyncPackageVersionsCli('/repo', ['--check'], {
+      fs: deps.fs,
+      log: deps.log,
+    });
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    exitSpy.mockRestore();
+  });
+
+  test('uses the real filesystem and console when all deps are omitted', () => {
+    const root = join(import.meta.dirname, '..');
+    expect(() => runSyncPackageVersionsCli(root, ['--check'])).not.toThrow();
+  });
+});
+
+describe('isDirectRun', () => {
+  test('detects direct execution from argv', () => {
+    expect(
+      isDirectRun(
+        ['node', '/repo/scripts/syncPackageVersionsCli.ts'],
+        '/repo/scripts/syncPackageVersionsCli.ts',
+      ),
+    ).toBe(true);
+    expect(
+      isDirectRun(
+        ['node', '/repo/scripts/other.ts'],
+        '/repo/scripts/syncPackageVersionsCli.ts',
+      ),
+    ).toBe(false);
+    expect(isDirectRun([], '/repo/scripts/syncPackageVersionsCli.ts')).toBe(
+      false,
+    );
+    expect(isDirectRun()).toBe(false);
+  });
+});
+
+describe('maybeRunSyncPackageVersionsCli', () => {
+  test('runs only when invoked directly', () => {
+    const run = jest.fn();
+    maybeRunSyncPackageVersionsCli(false, run);
+    maybeRunSyncPackageVersionsCli(true, run);
+    expect(run).toHaveBeenCalledTimes(1);
+  });
+
+  test('does not run by default under the test runner', () => {
+    expect(() => {
+      maybeRunSyncPackageVersionsCli();
+    }).not.toThrow();
+  });
+
+  test('runs the default CLI entrypoint when invoked directly', () => {
+    // Keep the default entrypoint read-only: with --check in argv it
+    // verifies the real repository's lockfile instead of rewriting it
+    // if the manifests have drifted. The exit spy keeps a drifted
+    // lockfile's exit(1) from killing the test worker.
+    const originalArgv = process.argv;
+    const exitSpy = jest
+      .spyOn(process, 'exit')
+      .mockImplementation((() => {}) as never);
+    process.argv = [...originalArgv.slice(0, 2), '--check'];
+    try {
+      expect(() => {
+        maybeRunSyncPackageVersionsCli(true);
+      }).not.toThrow();
+    } finally {
+      process.argv = originalArgv;
+      exitSpy.mockRestore();
+    }
   });
 });

@@ -65,6 +65,13 @@ type MockOptions = {
   branchActive?: boolean;
   matchingRevision?: boolean;
   inTxTargetRow?: ReturnType<typeof makeVersionDetailRow>;
+  inTxRecipeRow?: ReturnType<typeof makeRecipeDetailRow>;
+  inTxRecipeMissing?: boolean;
+  inTxTargetMissing?: boolean;
+  insertReturnsNoId?: boolean;
+  updateReturnsNoRow?: boolean;
+  reopenSucceeds?: boolean;
+  finalFetchMissing?: boolean;
 };
 
 /**
@@ -75,8 +82,14 @@ type MockOptions = {
 const mockEditFlow = (options: MockOptions = {}) => {
   const executed: string[] = [];
   let versionFetches = 0;
+  let recipeFetches = 0;
   mockQuery.mockImplementation(((sql: string, params?: unknown[]) => {
     executed.push(sql);
+    if (sql.includes('and status = $4')) {
+      return Promise.resolve(
+        makeQueryResult(options.reopenSucceeds ? [{id: 'recipe-uuid-1'}] : []),
+      );
+    }
     if (sql.includes('and content_revision')) {
       return Promise.resolve(
         makeQueryResult(
@@ -86,6 +99,12 @@ const mockEditFlow = (options: MockOptions = {}) => {
     }
     if (sql.includes('cook_log_count')) {
       versionFetches += 1;
+      if (options.finalFetchMissing && versionFetches > 2) {
+        return Promise.resolve(makeQueryResult([]));
+      }
+      if (options.inTxTargetMissing && versionFetches > 1) {
+        return Promise.resolve(makeQueryResult([]));
+      }
       const versionId = params?.[0];
       if (versionId === 'version-uuid-3') {
         return Promise.resolve(
@@ -120,8 +139,15 @@ const mockEditFlow = (options: MockOptions = {}) => {
       return Promise.resolve(makeQueryResult([row]));
     }
     if (sql.includes('from recipes r')) {
+      recipeFetches += 1;
       if (options.recipeRow === null) {
         return Promise.resolve(makeQueryResult([]));
+      }
+      if (recipeFetches > 1 && options.inTxRecipeMissing) {
+        return Promise.resolve(makeQueryResult([]));
+      }
+      if (recipeFetches > 1 && options.inTxRecipeRow) {
+        return Promise.resolve(makeQueryResult([options.inTxRecipeRow]));
       }
       return Promise.resolve(
         makeQueryResult([options.recipeRow ?? makeRecipeDetailRow()]),
@@ -131,9 +157,16 @@ const mockEditFlow = (options: MockOptions = {}) => {
       return Promise.resolve(makeQueryResult([{max: 2}]));
     }
     if (sql.includes('insert into recipe_versions')) {
-      return Promise.resolve(makeQueryResult([{id: 'version-uuid-3'}]));
+      return Promise.resolve(
+        makeQueryResult(
+          options.insertReturnsNoId ? [] : [{id: 'version-uuid-3'}],
+        ),
+      );
     }
     if (sql.includes('update recipe_versions')) {
+      if (options.updateReturnsNoRow) {
+        return Promise.resolve({...makeQueryResult([]), rowCount: 0});
+      }
       return Promise.resolve({
         ...makeQueryResult([{id: 'version-uuid-2'}]),
         rowCount: 1,
@@ -240,6 +273,18 @@ describe('POST /recipes/:id/versions/:versionId/edit', () => {
     expect(res.status).toBe(409);
   });
 
+  test('returns 409 when branching from the active version of an abandoned recipe', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockEditFlow({recipeRow: makeRecipeDetailRow({status: 'abandoned'})});
+
+    const res = await request(getApp())
+      .post('/api/recipes/recipe-uuid-1/versions/version-uuid-1/edit')
+      .set('Authorization', 'Bearer <redacted>')
+      .send(editBody());
+
+    expect(res.status).toBe(409);
+  });
+
   test('returns 409 for a candidate version with cook logs', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockEditFlow({targetRow: draftVersionRow({cook_log_count: 1})});
@@ -321,6 +366,205 @@ describe('POST /recipes/:id/versions/:versionId/edit', () => {
     expect(executed.some(sql => sql.includes('update recipe_versions'))).toBe(
       false,
     );
+  });
+
+  test('branches with null optional fields stored as nulls', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockEditFlow();
+
+    const res = await request(getApp())
+      .post('/api/recipes/recipe-uuid-1/versions/version-uuid-1/edit')
+      .set('Authorization', 'Bearer <redacted>')
+      .send(
+        editBody({description: null, prepTimeMin: null, cookTimeMin: null}),
+      );
+
+    expect(res.status).toBe(201);
+    const insert = mockQuery.mock.calls.find(([sql]) =>
+      String(sql).includes('insert into recipe_versions'),
+    );
+    const insertParams = insert?.[1] as unknown[];
+    // description, prepTimeMin, cookTimeMin land in the insert as nulls.
+    expect(insertParams[3]).toBeNull();
+    expect(insertParams[5]).toBeNull();
+    expect(insertParams[6]).toBeNull();
+  });
+
+  test('edits a draft in place with null optional fields stored as nulls', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockEditFlow();
+
+    const res = await request(getApp())
+      .post('/api/recipes/recipe-uuid-1/versions/version-uuid-2/edit')
+      .set('Authorization', 'Bearer <redacted>')
+      .send(
+        editBody({description: null, prepTimeMin: null, cookTimeMin: null}),
+      );
+
+    expect(res.status).toBe(200);
+    const update = mockQuery.mock.calls.find(([sql]) =>
+      String(sql).includes('update recipe_versions'),
+    );
+    const updateParams = update?.[1] as unknown[];
+    // description, prepTimeMin, cookTimeMin land in the update as nulls.
+    expect(updateParams[2]).toBeNull();
+    expect(updateParams[4]).toBeNull();
+    expect(updateParams[5]).toBeNull();
+  });
+
+  test('applies a lineage status change sent with an in-place edit', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    const executed = mockEditFlow();
+
+    const res = await request(getApp())
+      .post('/api/recipes/recipe-uuid-1/versions/version-uuid-2/edit')
+      .set('Authorization', 'Bearer <redacted>')
+      .send(editBody({status: 'evolving'}));
+
+    expect(res.status).toBe(200);
+    expect(
+      executed.some(
+        sql => sql === 'update recipes set status = $2 where id = $1',
+      ),
+    ).toBe(true);
+  });
+
+  test('returns 409 when the recipe vanishes inside the transaction', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockEditFlow({inTxRecipeMissing: true});
+
+    const res = await request(getApp())
+      .post('/api/recipes/recipe-uuid-1/versions/version-uuid-2/edit')
+      .set('Authorization', 'Bearer <redacted>')
+      .send(editBody());
+
+    expect(res.status).toBe(409);
+    expect(res.body.error).toContain('Recipe changed since it was read');
+  });
+
+  test('returns 409 when the named version vanishes inside the transaction', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockEditFlow({inTxTargetMissing: true});
+
+    const res = await request(getApp())
+      .post('/api/recipes/recipe-uuid-1/versions/version-uuid-2/edit')
+      .set('Authorization', 'Bearer <redacted>')
+      .send(editBody());
+
+    expect(res.status).toBe(409);
+    expect(res.body.error).toContain('Recipe changed since it was read');
+  });
+
+  test('returns 409 when a different version becomes active inside the transaction', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    // A concurrent activation lands between the first read and the
+    // write: the named version (version-uuid-2) is still the row the
+    // version query returns, but the recipe row now names it as the
+    // active version, so the in-transaction re-read sees this edit
+    // would branch when the pre-transaction read said in-place.
+    mockEditFlow({
+      inTxTargetRow: draftVersionRow({
+        active_version_id: 'version-uuid-2',
+        active_version_number: 2,
+      }),
+      inTxRecipeRow: makeRecipeDetailRow({
+        version_id: 'version-uuid-2',
+        active_version_id: 'version-uuid-2',
+        version_number: 2,
+      }),
+    });
+
+    const res = await request(getApp())
+      .post('/api/recipes/recipe-uuid-1/versions/version-uuid-2/edit')
+      .set('Authorization', 'Bearer <redacted>')
+      .send(editBody());
+
+    expect(res.status).toBe(409);
+    expect(res.body.error).toContain('The active version changed');
+  });
+
+  test('returns 409 when the lineage becomes uneditable inside the transaction', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockEditFlow({
+      recipeRow: makeRecipeDetailRow({status: 'perfected'}),
+      inTxRecipeRow: makeRecipeDetailRow({status: 'abandoned'}),
+    });
+
+    const res = await request(getApp())
+      .post('/api/recipes/recipe-uuid-1/versions/version-uuid-1/edit')
+      .set('Authorization', 'Bearer <redacted>')
+      .send(editBody());
+
+    expect(res.status).toBe(409);
+  });
+
+  test('branches from a perfected recipe and reopens the lineage', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    const executed = mockEditFlow({
+      recipeRow: makeRecipeDetailRow({status: 'perfected'}),
+      reopenSucceeds: true,
+      branchActive: false,
+    });
+
+    const res = await request(getApp())
+      .post('/api/recipes/recipe-uuid-1/versions/version-uuid-1/edit')
+      .set('Authorization', 'Bearer <redacted>')
+      .send(editBody());
+
+    expect(res.status).toBe(201);
+    expect(executed.some(sql => sql.includes('and status = $4'))).toBe(true);
+  });
+
+  test('returns 409 when reopening a perfected lineage matches no row', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockEditFlow({recipeRow: makeRecipeDetailRow({status: 'perfected'})});
+
+    const res = await request(getApp())
+      .post('/api/recipes/recipe-uuid-1/versions/version-uuid-1/edit')
+      .set('Authorization', 'Bearer <redacted>')
+      .send(editBody());
+
+    expect(res.status).toBe(409);
+    expect(res.body.error).toContain(
+      'Recipe status changed while creating a draft version',
+    );
+  });
+
+  test('returns 500 when branching creates no version row', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockEditFlow({insertReturnsNoId: true});
+
+    const res = await request(getApp())
+      .post('/api/recipes/recipe-uuid-1/versions/version-uuid-1/edit')
+      .set('Authorization', 'Bearer <redacted>')
+      .send(editBody());
+
+    expect(res.status).toBe(500);
+  });
+
+  test('returns 500 when the in-place update matches no row', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockEditFlow({updateReturnsNoRow: true});
+
+    const res = await request(getApp())
+      .post('/api/recipes/recipe-uuid-1/versions/version-uuid-2/edit')
+      .set('Authorization', 'Bearer <redacted>')
+      .send(editBody());
+
+    expect(res.status).toBe(500);
+  });
+
+  test('returns 500 when the edited version cannot be re-read', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockEditFlow({finalFetchMissing: true});
+
+    const res = await request(getApp())
+      .post('/api/recipes/recipe-uuid-1/versions/version-uuid-2/edit')
+      .set('Authorization', 'Bearer <redacted>')
+      .send(editBody());
+
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe('Failed to fetch edited version');
   });
 
   test('returns 400 when the body is missing required fields', async () => {

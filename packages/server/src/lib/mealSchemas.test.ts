@@ -184,6 +184,26 @@ describe('mealSchemas', () => {
     ).toMatchObject({startsOn: '2028-02-29'});
   });
 
+  test('MealPlanInputSchema applies the century leap-year rules to Feb 29', () => {
+    // Divisible by 100 but not by 400: not a leap year.
+    expect(() =>
+      MealPlanInputSchema.parse({
+        title: 'Week',
+        startsOn: '1900-02-29',
+        entries: [{mealId: recipeId}],
+      }),
+    ).toThrow(z.ZodError);
+    // Divisible by 400: a leap year.
+    expect(
+      MealPlanInputSchema.parse({
+        title: 'Week',
+        startsOn: '2000-02-29',
+        endsOn: '2000-03-01',
+        entries: [{mealId: recipeId}],
+      }),
+    ).toMatchObject({startsOn: '2000-02-29'});
+  });
+
   test('MealPlanInputSchema rejects endsOn before startsOn', () => {
     expect(() =>
       MealPlanInputSchema.parse({

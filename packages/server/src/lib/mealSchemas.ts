@@ -98,10 +98,11 @@ const isCalendarDate = (value: string): boolean => {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
     return false;
   }
-  const [year, month, day] = value.split('-').map(Number);
-  if (year === undefined || month === undefined || day === undefined) {
-    return false;
-  }
+  // The format check above guarantees exactly YYYY-MM-DD, so the three
+  // fields sit at fixed offsets and always parse to numbers.
+  const year = Number(value.slice(0, 4));
+  const month = Number(value.slice(5, 7));
+  const day = Number(value.slice(8, 10));
   // Year zero does not exist in the Postgres `date` type, so 0000-01-01
   // would pass the calendar math and still fail at insert time.
   if (year < 1 || month < 1 || month > 12 || day < 1) {
