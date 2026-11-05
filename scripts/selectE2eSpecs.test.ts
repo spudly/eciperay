@@ -9,9 +9,28 @@ describe('selectE2eSpecs', () => {
     ]);
     expect(result.live).toEqual([
       'e2e-live/auth.spec.ts',
+      'e2e-live/public.spec.ts',
       'e2e-live/sign-out.spec.ts',
     ]);
     expect(result.mocked).toEqual(['e2e/signed-out.spec.ts']);
+  });
+
+  it('selects the public live spec for a login page change', () => {
+    // The wrong-password rejection check lives in the live public spec, so
+    // an auth-page change must select it, not just the auth/sign-out specs.
+    const result = selectE2eSpecs([
+      'packages/web/src/pages/auth/LoginPage.tsx',
+    ]);
+    expect(result.live).toContain('e2e-live/public.spec.ts');
+  });
+
+  it('selects the Discover specs for a Discover page change', () => {
+    const result = selectE2eSpecs(['packages/web/src/pages/DiscoverPage.tsx']);
+    expect(result.mocked).toContain('e2e/signed-out.spec.ts');
+    expect(result.live).toContain('e2e-live/public.spec.ts');
+    // The existing recipes mapping for DiscoverPage is preserved.
+    expect(result.mocked).toContain('e2e/recipes.spec.ts');
+    expect(result.live).toContain('e2e-live/recipes.spec.ts');
   });
 
   it('selects the recipes specs for a recipe diff', () => {

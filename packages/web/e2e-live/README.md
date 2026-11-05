@@ -80,8 +80,9 @@ The authenticated specs (`auth`, `recipes`, `cook-log`, `meal-plans`, `imports`,
 On pull requests, neither suite runs in full by default:
 `scripts/selectE2eSpecs.ts` (`npm run discover:e2e-specs`) maps the PR's changed
 files to the specs that cover them, using the area mapping in that file (auth
-paths → the live `auth`/`sign-out` specs and the mocked `signed-out` spec,
-recipe paths → the `recipes` specs, and so on). The rules are fail-open:
+paths → the live `auth`/`public`/`sign-out` specs and the mocked `signed-out`
+spec, recipe paths → the `recipes` specs, Discover → the `signed-out` and live
+`public` specs, and so on). The rules are fail-open:
 
 - A change inside a suite's own directory runs that whole suite.
 - Shared web plumbing (entry point, router, components, Playwright configs, the
