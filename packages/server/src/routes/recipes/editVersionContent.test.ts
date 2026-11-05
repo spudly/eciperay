@@ -150,6 +150,9 @@ describe('POST /recipes/:id/versions/:versionId/edit', () => {
       executed.some(sql => sql.includes('insert into recipe_versions')),
     ).toBe(true);
     expect(executed.some(sql => sql.includes(SET_ACTIVE_SQL))).toBe(false);
+    // An unactivated branch must not move the lineage slug off the active
+    // version's title; it catches up when the version is later activated.
+    expect(executed.some(sql => sql.includes('set slug'))).toBe(false);
   });
 
   test('branches and activates in one request when activate is true', async () => {
@@ -185,6 +188,7 @@ describe('POST /recipes/:id/versions/:versionId/edit', () => {
       true,
     );
     expect(executed.some(sql => sql.includes(SET_ACTIVE_SQL))).toBe(false);
+    expect(executed.some(sql => sql.includes('set slug'))).toBe(false);
   });
 
   test('activates an edited draft when activate is true', async () => {

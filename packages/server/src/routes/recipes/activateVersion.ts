@@ -10,9 +10,10 @@ import {
 import {fetchVersionDetail} from '../../lib/fetchVersionDetail.js';
 import {getParam} from '../../lib/getParam.js';
 import {mapRowToRecipeDetail} from '../../lib/mapRowToRecipeDetail.js';
+import {slugifyRecipeTitle} from '../../lib/slugifyRecipeTitle.js';
 
 import {GET_RECIPE_DETAIL_SQL} from './queries.js';
-import {setActiveVersion} from './versionQueries.js';
+import {setActiveVersion, updateRecipeSlug} from './versionQueries.js';
 
 type QueryFn = typeof defaultQuery;
 
@@ -43,9 +44,13 @@ export const activateVersion = async (
     res.status(409).json({error: recipeEditBlockedError()});
     return;
   }
-  await runTransactional(queryFn, q =>
-    setActiveVersion(recipeId, versionId, q),
-  );
+  await runTransactional(queryFn, async q => {
+    await setActiveVersion(recipeId, versionId, q);
+    // The lineage slug follows the active version's title. A draft renamed
+    // without activation (e.g. an MCP version edit, #410) has not moved the
+    // slug, so activation is where it catches up.
+    await updateRecipeSlug(recipeId, slugifyRecipeTitle(version.title), q);
+  });
   const recipe = await queryFn(GET_RECIPE_DETAIL_SQL, [recipeId, req.userId]);
   const row = recipe.rows[0];
   if (!row) {
