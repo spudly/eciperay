@@ -120,6 +120,71 @@ describe('update_recipe tool', () => {
     await client.close();
   });
 
+  test('a content edit with versionId posts a version edit and returns the new version', async () => {
+    const postBodies: Record<string, unknown>[] = [];
+    globalThis.fetch = (async (url: string | URL, init?: RequestInit) => {
+      if (init?.method === 'POST') {
+        postBodies.push(
+          JSON.parse(String(init.body)) as Record<string, unknown>,
+        );
+        const edited = {
+          id: 'version-2',
+          recipeId: 'recipe-1',
+          versionNumber: 2,
+          derivedRole: 'active',
+          title: 'Salt Water Taffy',
+        };
+        return {
+          ok: true,
+          status: 201,
+          text: async () => JSON.stringify(edited),
+          json: async () => edited,
+        } as Response;
+      }
+      assert.equal(String(url), 'http://api.test/api/recipes/recipe-1');
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify(storedRecipe),
+        json: async () => storedRecipe,
+      } as Response;
+    }) as typeof fetch;
+
+    const client = await connectClient();
+    const result = await client.callTool({
+      name: 'update_recipe',
+      arguments: {
+        id: 'recipe-1',
+        versionId: 'version-1',
+        activate: true,
+        ingredients: [
+          {
+            name: 'brown sugar',
+            quantity: 2,
+            unit: 'cups',
+            notes: null,
+            isOptional: false,
+          },
+        ],
+      },
+    });
+    assert.notEqual(result.isError, true);
+    assert.equal(postBodies.length, 1);
+    assert.equal(postBodies[0]?.['activate'], true);
+    assert.deepEqual(
+      (postBodies[0]?.['ingredients'] as {name: string}[]).map(
+        ingredient => ingredient.name,
+      ),
+      ['brown sugar'],
+    );
+    const text = (result.content as {type: string; text: string}[])[0]?.text;
+    assert.equal(
+      (JSON.parse(String(text)) as {versionNumber: number}).versionNumber,
+      2,
+    );
+    await client.close();
+  });
+
   test('an unknown recipe id surfaces an error instead of a silent no-op', async () => {
     globalThis.fetch = (async () =>
       ({

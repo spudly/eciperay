@@ -39,6 +39,31 @@ describe('POST /recipes/:id/versions/:versionId/activate', () => {
     expect(res.body.versionId).toBe('version-uuid-1');
   });
 
+  test('updates the lineage slug to the activated version title', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    const executed: {sql: string; params?: unknown[]}[] = [];
+    mockQuery.mockImplementation(((sql: string, params?: unknown[]) => {
+      executed.push({sql, params});
+      if (sql.includes('cook_log_count')) {
+        return Promise.resolve(
+          makeQueryResult([candidateVersionRow({title: 'Renamed Draft'})]),
+        );
+      }
+      if (sql.includes('from recipes r')) {
+        return Promise.resolve(makeQueryResult([makeRecipeDetailRow()]));
+      }
+      return Promise.resolve(makeQueryResult([]));
+    }) as typeof mockQuery);
+
+    const res = await request(getApp())
+      .post('/api/recipes/recipe-uuid-1/versions/version-uuid-2/activate')
+      .set('Authorization', 'Bearer <redacted>');
+
+    expect(res.status).toBe(200);
+    const slugUpdate = executed.find(call => call.sql.includes('set slug'));
+    expect(slugUpdate?.params).toEqual(['recipe-uuid-1', 'renamed-draft']);
+  });
+
   test('returns 404 when version is not found', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue(makeQueryResult([]));

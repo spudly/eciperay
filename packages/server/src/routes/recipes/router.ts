@@ -13,6 +13,7 @@ import {deleteCookLog} from '../cooks/deleteCookLog.js';
 import {listCookLogs} from '../cooks/listCookLogs.js';
 
 import {activateVersion} from './activateVersion.js';
+import {editVersionContent} from './editVersionContent.js';
 import {acceptImport} from './acceptImport.js';
 import {cloneRecipe} from './cloneRecipe.js';
 import {createRecipeComment} from './createRecipeComment.js';
@@ -183,6 +184,9 @@ export const createRecipesRouter = (queryFn: QueryFn) => {
   );
   router.put('/:id/versions/:versionId', requireAuth, (req, res) =>
     putVersion(a(req), res, queryFn),
+  );
+  router.post('/:id/versions/:versionId/edit', requireAuth, (req, res) =>
+    editVersionContent(a(req), res, queryFn),
   );
   router.post('/:id/versions/:versionId/activate', requireAuth, (req, res) =>
     activateVersion(a(req), res, queryFn),

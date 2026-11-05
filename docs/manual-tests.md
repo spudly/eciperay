@@ -691,10 +691,10 @@ plan-state rendering and section layout. The cases below are manual._
 3. **Access tokens.** Create a personal access token named `QA — token check`;
    copy it at creation. **Expected:** the full token is shown once at creation
    and masked afterwards; the token appears in the list. Revoke it.
-   **Expected:** the token stays in the list as an annotated "(Revoked)" row
-   (an audit trail that it was revoked), its Revoke action is gone, and it no
-   longer authenticates (verify via an MCP/API call if tooling is at hand,
-   otherwise record as unverified rather than skipping silently).
+   **Expected:** the token stays in the list as an annotated "(Revoked)" row (an
+   audit trail that it was revoked), its Revoke action is gone, and it no longer
+   authenticates (verify via an MCP/API call if tooling is at hand, otherwise
+   record as unverified rather than skipping silently).
 4. **Nutrition goals.** Set daily goals (calories, protein, carbs, fat) in the
    nutrition goals form; save; reload. **Expected:** values persist and meal
    plan progress (see Meal plans, case 4) uses the new goals. Clear one goal.
@@ -831,6 +831,35 @@ images included).
 **Run when:** any `@spudly/ui` release adoption, theme/token changes,
 `packages/web/src/components/ui/**`, navigation/AppShell changes,
 `packages/app/src/navigation/**`.
+
+---
+
+## MCP recipe content edits
+
+Runs against a deployed environment with the MCP server connected to the QA
+account (never production data — content edits create real versions).
+
+1. **Branch from the active version (default).** Pick a QA recipe; note its
+   active `versionId`/`versionNumber` from `get_recipe`. Call `update_recipe`
+   with that `versionId` and a changed ingredient list, without `activate`.
+   **Expected:** the result is a new version (number incremented, `derivedRole`
+   draft) carrying the new content; `get_recipe` still shows the previously
+   active version unchanged, and the prior version is intact in the version
+   history.
+2. **Atomic activation.** Repeat case 1 on another QA recipe with
+   `activate: true`. **Expected:** the result's `derivedRole` is active and
+   `get_recipe` shows the new content under the new version number; the new
+   version's nutrition status reaches ready without any app interaction.
+3. **Metadata-only call unchanged.** Call `update_recipe` with only `servings`
+   (no `versionId`). **Expected:** the value changes in place, no new version is
+   created.
+4. **Missing versionId refused.** Call `update_recipe` with a changed ingredient
+   list and no `versionId`. **Expected:** a clear error naming `versionId`; no
+   version is created and nothing changes.
+
+**Run when:** `packages/mcp-server`,
+`packages/server/src/routes/recipes/editVersionContent.ts`, recipe version
+routes in `packages/server`.
 
 ---
 

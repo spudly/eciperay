@@ -150,18 +150,15 @@ export const createClient = (config: EciperayClientConfig) => {
         body: JSON.stringify(input),
       }),
     /**
-     * Partial update: the REST API only offers a full-replace PUT, so read the
-     * current recipe, merge the patch over it, and PUT the result. Both
+     * Partial update. Metadata-only patches take the read-merge-PUT path: the
+     * REST API only offers a full-replace PUT for the active version, so read
+     * the current recipe, merge the patch over it, and PUT the result. Both
      * endpoints resolve recipes by owner, so a recipe that does not exist or
      * belongs to someone else fails with the API's 404 instead of silently
      * doing nothing.
      *
-     * Three safeguards on top of the raw read-merge-write:
+     * Safeguards on the metadata path:
      *
-     * - Content edits are refused with a clear error (see
-     *   assertContentUnchanged): the API locks ingredients/instructions on the
-     *   active version, so a changed list would only fail with a raw 409 from
-     *   the PUT.
      * - The recipe is re-read just before the PUT and the merge is built from
      *   that freshest read, so a concurrent edit is not silently overwritten
      *   with stale preserved fields. The comparison covers every preserved
@@ -171,6 +168,20 @@ export const createClient = (config: EciperayClientConfig) => {
      *   is raised instead.
      * - The result is a fresh GET, so callers receive the same representation as
      *   get_recipe (the PUT response omits the ratings enrichment GET adds).
+     *
+     * Content patches (ingredients/instructions that differ from the stored
+     * lists) take the version path instead (#410): the API locks content on the
+     * active version, so the caller must name the version to edit with
+     * `versionId` — the server's version-edit endpoint then applies the whole
+     * patch (content plus any metadata in the same call) to that version in one
+     * transaction: an editable draft is edited in place, while naming the
+     * active version branches a new version from it and leaves the named one
+     * untouched. The edited version becomes active only when the patch also
+     * sets `activate: true` (default false). The result of a version-path
+     * update is the edited version's detail, not the recipe detail: with
+     * activation off, get_recipe still shows the previously active version.
+     * Naming a non-active version routes even a metadata-only patch to that
+     * version, so the edit lands on the version the caller named.
      */
     updateRecipe: async (id: string, patch: RecipeUpdatePatch) => {
       if (!hasRecipeUpdateFields(patch)) {
@@ -180,9 +191,51 @@ export const createClient = (config: EciperayClientConfig) => {
       }
       const path = `/recipes/${encodeURIComponent(id)}`;
       let current = await request<RecipeDetailForUpdate>(path);
-      assertContentUnchanged(current, patch);
+      if (
+        patch.versionId !== undefined &&
+        !sameId(patch.versionId, current.versionId)
+      ) {
+        const targetPath = `${path}/versions/${encodeURIComponent(patch.versionId)}`;
+        const target = await request<VersionDetailForUpdate>(targetPath);
+        return request<unknown>(`${targetPath}/edit`, {
+          method: 'POST',
+          body: JSON.stringify(
+            buildVersionEditPayload(target, patch, current.contentRevision),
+          ),
+        });
+      }
+      if (recipeContentChanged(current, patch)) {
+        if (patch.versionId === undefined) {
+          throw new Error(
+            'update_recipe: changing ingredients or instructions requires versionId (the versionId from get_recipe), so the edit lands on the version you name. The changed content is written atomically to that version — a draft is edited in place; the active version is branched, leaving the original untouched — and becomes active only with activate: true (default false). No changes were written.',
+          );
+        }
+        return request<unknown>(
+          `${path}/versions/${encodeURIComponent(patch.versionId)}/edit`,
+          {
+            method: 'POST',
+            body: JSON.stringify({
+              ...buildRecipeUpdatePayload(current, patch),
+              activate: patch.activate ?? false,
+              expectedContentRevision: current.contentRevision,
+            }),
+          },
+        );
+      }
       for (let attempt = 0; attempt < 2; attempt += 1) {
         const fresh = await request<RecipeDetailForUpdate>(path);
+        if (
+          patch.versionId !== undefined &&
+          !sameId(patch.versionId, fresh.versionId)
+        ) {
+          // The caller named a version: a PUT targets whatever version is
+          // active, so an activation landing between the reads would move
+          // this edit to a version the caller did not name. Abort instead
+          // of re-merging onto the new active version.
+          throw new Error(
+            'update_recipe aborted: the active version changed while the update was being applied, so no changes were written. Re-read the recipe and retry with its current versionId.',
+          );
+        }
         if (recipeSnapshot(fresh) === recipeSnapshot(current)) {
           await request<unknown>(path, {
             method: 'PUT',
@@ -191,7 +244,11 @@ export const createClient = (config: EciperayClientConfig) => {
           return request<unknown>(path);
         }
         current = fresh;
-        assertContentUnchanged(current, patch);
+        if (recipeContentChanged(current, patch)) {
+          throw new Error(
+            'update_recipe aborted: the recipe content changed while the update was being applied, so no changes were written. Re-read the recipe and retry with its current versionId.',
+          );
+        }
       }
       throw new Error(
         'update_recipe aborted: the recipe kept changing while the update was being applied, so no changes were written. Retry the update.',
@@ -403,6 +460,7 @@ export const createClient = (config: EciperayClientConfig) => {
 
   return {
     ...api,
+    updateRecipe: withFirstArgLock('recipe', api.updateRecipe),
     updateMeal: withFirstArgLock('meal', api.updateMeal),
     addRecipeToMeal: withFirstArgLock('meal', api.addRecipeToMeal),
     removeRecipeFromMeal: withFirstArgLock('meal', api.removeRecipeFromMeal),
@@ -442,6 +500,97 @@ export type RecipeUpdatePatch = {
   ingredients?: RecipeIngredientInput[];
   instructions?: RecipeInstructionInput[];
   tagIds?: string[];
+  /**
+   * The version a content edit applies to (#410). Required when
+   * ingredients/instructions change; naming a non-active version routes the
+   * whole patch to that version. Not itself an update field.
+   */
+  versionId?: string;
+  /**
+   * With a version-path edit, make the edited version active. Defaults to
+   * false: the edited version stays a draft. Not itself an update field.
+   */
+  activate?: boolean;
+};
+
+/**
+ * The version-detail shape returned by `GET /recipes/:id/versions/:versionId`,
+ * as read here.
+ */
+type VersionDetailForUpdate = {
+  id: string;
+  title: string;
+  description: string | null;
+  servings: number;
+  prepTimeMin: number | null;
+  cookTimeMin: number | null;
+  imageUrl: string | null;
+  sourceUrl: string | null;
+  ingredients: (RecipeIngredientInput & Record<string, unknown>)[];
+  instructions: (RecipeInstructionInput & Record<string, unknown>)[];
+  tags: {id: string}[];
+};
+
+/** Stored or patched ingredients normalized to the REST input shape. */
+const ingredientInputs = (
+  ingredients: readonly (Partial<RecipeIngredientInput> &
+    Record<string, unknown>)[],
+): RecipeIngredientInput[] =>
+  ingredients.map((ingredient, index) => ({
+    sortOrder: ingredient.sortOrder ?? index,
+    name: ingredient.name as string,
+    quantity: ingredient.quantity ?? null,
+    unit: ingredient.unit ?? null,
+    notes: ingredient.notes ?? null,
+    isOptional: ingredient.isOptional ?? false,
+  }));
+
+/** Stored or patched instructions normalized to the REST input shape. */
+const instructionInputs = (
+  instructions: readonly (Partial<RecipeInstructionInput> &
+    Record<string, unknown>)[],
+): RecipeInstructionInput[] =>
+  instructions.map((instruction, index) => ({
+    stepNumber: instruction.stepNumber ?? index + 1,
+    body: instruction.body as string,
+  }));
+
+/**
+ * Merge a partial update over a stored version detail, producing the payload
+ * the REST version-edit endpoint expects (#410). Fields the patch does not
+ * provide are carried over from the named version (not the active one), so the
+ * edit lands entirely on the version the caller specified.
+ */
+export const buildVersionEditPayload = (
+  current: VersionDetailForUpdate,
+  patch: RecipeUpdatePatch,
+  expectedContentRevision?: number,
+): Record<string, unknown> => {
+  if (!hasRecipeUpdateFields(patch)) {
+    throw new Error(
+      'update_recipe requires at least one field to update; every field was omitted.',
+    );
+  }
+  return {
+    title: patch.title ?? current.title,
+    description:
+      patch.description !== undefined ? patch.description : current.description,
+    servings: patch.servings ?? current.servings,
+    prepTimeMin:
+      patch.prepTimeMin !== undefined ? patch.prepTimeMin : current.prepTimeMin,
+    cookTimeMin:
+      patch.cookTimeMin !== undefined ? patch.cookTimeMin : current.cookTimeMin,
+    imageUrl: current.imageUrl,
+    sourceUrl: current.sourceUrl,
+    ingredients: ingredientInputs(patch.ingredients ?? current.ingredients),
+    instructions: instructionInputs(patch.instructions ?? current.instructions),
+    tagIds: patch.tagIds ?? current.tags.map(tag => tag.id),
+    activate: patch.activate ?? false,
+    // The recipe revision the merged payload was built from: the server
+    // bumps it only if it still matches, so a payload built from a stale
+    // snapshot aborts with a conflict instead of overwriting a newer edit.
+    ...(expectedContentRevision !== undefined ? {expectedContentRevision} : {}),
+  };
 };
 
 /** The recipe-detail shape returned by `GET /recipes/:id`, as read here. */
@@ -498,32 +647,28 @@ const serializeInstructions = (
     .map(instruction => `${instruction.stepNumber}:${instruction.body}`)
     .join(';');
 
-/**
- * Refuse ingredient/instruction changes with a clear error. The REST API locks
- * content on a recipe's active version (only draft versions are
- * content-editable, via the version workflow), so the full-replace PUT would
- * reject a changed list with a raw 409. Lists identical to the stored ones are
- * fine: they keep the PUT on its metadata-only path. Mirrors the comparison in
- * the server's recipeContentEquals.
- */
-export const assertContentUnchanged = (
-  current: RecipeDetailForUpdate,
-  patch: RecipeUpdatePatch,
-): void => {
-  const ingredientsChanged =
-    patch.ingredients !== undefined &&
-    serializeIngredients(patch.ingredients) !==
-      serializeIngredients(current.ingredients);
-  const instructionsChanged =
-    patch.instructions !== undefined &&
-    serializeInstructions(patch.instructions) !==
-      serializeInstructions(current.instructions);
-  if (ingredientsChanged || instructionsChanged) {
-    throw new Error(
-      'update_recipe cannot change ingredients or instructions: content is locked on the active version of a recipe. Create a new version in the app to edit content, or update metadata fields only (title, description, servings, prepTimeMin, cookTimeMin, tagIds).',
-    );
-  }
+/** The content lists of a stored recipe or version detail, as read here. */
+type ContentLists = {
+  ingredients: (RecipeIngredientInput & Record<string, unknown>)[];
+  instructions: (RecipeInstructionInput & Record<string, unknown>)[];
 };
+
+/**
+ * True when the patch's ingredients or instructions differ from the stored
+ * lists. Lists identical to the stored ones are not a content change: they keep
+ * the update on its metadata-only path. Mirrors the comparison in the server's
+ * recipeContentEquals.
+ */
+export const recipeContentChanged = (
+  current: ContentLists,
+  patch: RecipeUpdatePatch,
+): boolean =>
+  (patch.ingredients !== undefined &&
+    serializeIngredients(patch.ingredients) !==
+      serializeIngredients(current.ingredients)) ||
+  (patch.instructions !== undefined &&
+    serializeInstructions(patch.instructions) !==
+      serializeInstructions(current.instructions));
 
 /**
  * The fields a merged PUT would carry over from a stored recipe, serialized for
@@ -580,22 +725,8 @@ export const buildRecipeUpdatePayload = (
     imageUrl: current.imageUrl,
     sourceUrl: current.sourceUrl,
     ...(current.status !== undefined ? {status: current.status} : {}),
-    ingredients: (patch.ingredients ?? current.ingredients).map(
-      (ingredient, index) => ({
-        sortOrder: ingredient.sortOrder ?? index,
-        name: ingredient.name,
-        quantity: ingredient.quantity ?? null,
-        unit: ingredient.unit ?? null,
-        notes: ingredient.notes ?? null,
-        isOptional: ingredient.isOptional ?? false,
-      }),
-    ),
-    instructions: (patch.instructions ?? current.instructions).map(
-      (instruction, index) => ({
-        stepNumber: instruction.stepNumber ?? index + 1,
-        body: instruction.body,
-      }),
-    ),
+    ingredients: ingredientInputs(patch.ingredients ?? current.ingredients),
+    instructions: instructionInputs(patch.instructions ?? current.instructions),
     tagIds: patch.tagIds ?? current.tags.map(tag => tag.id),
   };
 };
