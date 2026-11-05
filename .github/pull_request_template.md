@@ -11,7 +11,6 @@
 All boxes must be checked (or struck through with a one-line reason) before this
 PR is merged. For UI changes, also complete the PR checklist in CONTRIBUTING.md.
 
-- [ ] Review feedback addressed (Copilot and/or human)
 - [ ] Manual test pass posted for this head SHA in this PR's preview deployment,
       scoped to this PR's changes, or exempt (release/Dependabot/docs-CI-only,
       or no matching manual-test triggers)
