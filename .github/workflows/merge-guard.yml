@@ -93,11 +93,16 @@ jobs:
             if (fence !== null) continue;
             // A struck-through item counts as waived — the PR
             // template's convention for boxes that do not apply.
-            // No `$` anchor: PR bodies with CRLF line endings leave
-            // a trailing \r on each line, which `.` cannot match, so
-            // an anchored pattern would silently skip those items.
+            // The strike must open the item text itself: a `~~`
+            // appearing later in the line (e.g. inside a note) does
+            // not waive the item. The closing `~~` may sit on a
+            // wrapped continuation line, so only the opening is
+            // tested. No `$` anchor: PR bodies with CRLF line endings
+            // leave a trailing \r on each line, which `.` cannot
+            // match, so an anchored pattern would silently skip
+            // those items.
             const item = line.match(/^\s*[-*+]\s+\[\s\]\s+(\S.*)/);
-            if (item && !line.includes('~~')) {
+            if (item && !item[1].startsWith('~~')) {
               if (selfReferential.some((re) => re.test(item[1]))) {
                 exempt.push(line.trim());
               } else {
