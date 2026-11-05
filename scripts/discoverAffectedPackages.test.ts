@@ -302,14 +302,46 @@ describe('cli helpers', () => {
   });
 
   it('reads changed files from git diff', () => {
-    const exec = jest.fn().mockReturnValue('a.ts\nb.ts\n');
+    const exec = jest.fn().mockReturnValue('a.ts\0b.ts\0');
     expect(getChangedFiles('/repo', 'origin/master', exec)).toEqual([
       'a.ts',
       'b.ts',
     ]);
     expect(exec).toHaveBeenCalledWith(
-      'git diff --name-only origin/master..HEAD',
+      'git diff --no-renames --name-only -z origin/master..HEAD',
       {encoding: 'utf8', cwd: '/repo'},
+    );
+  });
+
+  it('reports both paths of a rename (deletion plus addition)', () => {
+    // With --no-renames, git lists the source and destination of a move as
+    // separate lines; both must reach path-mapping consumers so a file
+    // moved out of a tree still counts as a change to that tree.
+    const exec = jest
+      .fn()
+      .mockReturnValue(
+        'packages/web/src/lib/moved.ts\0packages/app/src/lib/moved.ts\0',
+      );
+    expect(getChangedFiles('/repo', 'origin/master', exec)).toEqual([
+      'packages/web/src/lib/moved.ts',
+      'packages/app/src/lib/moved.ts',
+    ]);
+    expect(exec).toHaveBeenCalledWith(
+      expect.stringContaining('--no-renames'),
+      expect.anything(),
+    );
+  });
+
+  it('returns non-ASCII paths verbatim (NUL-delimited, never quoted)', () => {
+    // Without -z, git C-quotes non-ASCII paths (core.quotePath), and the
+    // quoted form matches no prefix/glob in path-mapping consumers.
+    const exec = jest.fn().mockReturnValue('packages/web/src/lib/café.ts\0');
+    expect(getChangedFiles('/repo', 'origin/master', exec)).toEqual([
+      'packages/web/src/lib/café.ts',
+    ]);
+    expect(exec).toHaveBeenCalledWith(
+      expect.stringContaining('--name-only -z'),
+      expect.anything(),
     );
   });
 
@@ -336,7 +368,7 @@ describe('cli helpers', () => {
   });
 
   it('returns an empty list when the diff is empty', () => {
-    const exec = jest.fn().mockReturnValue('  \n');
+    const exec = jest.fn().mockReturnValue('');
     expect(getChangedFiles('/repo', 'origin/master', exec)).toEqual([]);
   });
 });
@@ -407,7 +439,7 @@ describe('diffedResult', () => {
   const fs = makeRepoFs();
 
   it('discovers from the diff on success', () => {
-    const exec = jest.fn().mockReturnValue('packages/web/src/app.tsx\n');
+    const exec = jest.fn().mockReturnValue('packages/web/src/app.tsx\0');
     const result = diffedResult({
       root: '/repo',
       workspaces: WORKSPACES,
@@ -501,7 +533,7 @@ describe('runDiscoverAffectedPackagesCli', () => {
       .mockImplementation(() => true);
     const {runDiscoverAffectedPackagesCli} =
       await import('./discoverAffectedPackages.ts');
-    const execSync = jest.fn().mockReturnValue('packages/web/src/app.tsx\n');
+    const execSync = jest.fn().mockReturnValue('packages/web/src/app.tsx\0');
     runDiscoverAffectedPackagesCli(
       {execSync},
       ['node', 'script', '--base', 'origin/master'],
