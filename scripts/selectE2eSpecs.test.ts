@@ -95,6 +95,21 @@ describe('selectE2eSpecs', () => {
     }
   });
 
+  it('runs both suites in full for shared root configuration, even with a mapped change', () => {
+    for (const file of [
+      'tsconfig.base.json',
+      'turbo.json',
+      'patches/x.patch',
+    ]) {
+      const result = selectE2eSpecs([
+        file,
+        'packages/web/src/pages/recipes/RecipeDetail.tsx',
+      ]);
+      expect(result.mocked).toBe('all');
+      expect(result.live).toBe('all');
+    }
+  });
+
   it('ignores unit test files', () => {
     const result = selectE2eSpecs([
       'packages/web/src/pages/auth/LoginPage.test.tsx',

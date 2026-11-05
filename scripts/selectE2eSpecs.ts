@@ -19,9 +19,10 @@ import {
  * - A changed file inside a suite's directory selects that whole suite (specs,
  *   fixtures, and helpers are shared within a suite).
  * - A changed file matching an area mapping selects that area's specs.
- * - Shared web plumbing (entry point, router, app shell) and suite-wide plumbing
- *   (Playwright configs, web package manifest, this selector) select both
- *   suites in full.
+ * - Shared web plumbing (entry point, router, app shell), suite-wide plumbing
+ *   (Playwright configs, web package manifest, this selector), and shared root
+ *   configuration (base tsconfig, turbo, dependency patches) select both suites
+ *   in full.
  * - Anything else under packages/web, packages/client, or packages/server that
  *   matches no mapping selects BOTH suites in full (fail-open: a mapping gap
  *   costs time, never coverage).
@@ -181,6 +182,13 @@ const AREA_MAPPINGS: AreaMapping[] = [
 const FULL_BOTH_PATTERNS = [
   'package.json',
   'package-lock.json',
+  // Shared root configuration: the base tsconfig is extended by every
+  // package (including web), turbo orchestrates the build the suites run
+  // against, and patches/ rewrites installed dependencies at install time.
+  'tsconfig.json',
+  'tsconfig.base.json',
+  'turbo.json',
+  'patches/**',
   '.github/workflows/e2e.yml',
   'scripts/selectE2eSpecs.ts',
   'scripts/selectE2eSpecs.test.ts',
