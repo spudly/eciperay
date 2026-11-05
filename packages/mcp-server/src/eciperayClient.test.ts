@@ -205,7 +205,7 @@ describe('client.updateRecipe', () => {
     assert.equal(sent.title, 'Salt Water Taffy');
   });
 
-  test('changing ingredients is refused with a clear error and no PUT', async () => {
+  test('changing ingredients without versionId is refused with a clear error and no write', async () => {
     const calls = stubFetch(() => ({status: 200, body: storedRecipe}));
     await assert.rejects(
       client().updateRecipe('recipe-1', {
@@ -220,8 +220,141 @@ describe('client.updateRecipe', () => {
           },
         ],
       }),
-      /cannot change ingredients or instructions/,
+      /requires versionId/,
     );
+    assert.equal(calls.filter(call => call.init?.method === 'PUT').length, 0);
+    assert.equal(calls.filter(call => call.init?.method === 'POST').length, 0);
+  });
+
+  test('changing ingredients on the active version posts one atomic version edit', async () => {
+    const editedVersion = {
+      id: 'version-2',
+      recipeId: 'recipe-1',
+      versionNumber: 2,
+      derivedRole: 'draft',
+      title: 'Salt Water Taffy',
+    };
+    const calls = stubFetch(call => {
+      if (call.init?.method === 'POST') {
+        return {status: 201, body: editedVersion};
+      }
+      return {status: 200, body: storedRecipe};
+    });
+    const result = await client().updateRecipe('recipe-1', {
+      versionId: 'version-1',
+      ingredients: [
+        {
+          sortOrder: 0,
+          name: 'brown sugar',
+          quantity: 2,
+          unit: 'cups',
+          notes: null,
+          isOptional: false,
+        },
+      ],
+    });
+    assert.deepEqual(result, editedVersion);
+    const posts = calls.filter(call => call.init?.method === 'POST');
+    assert.equal(posts.length, 1);
+    assert.equal(
+      posts[0]?.url,
+      'http://api.test/api/recipes/recipe-1/versions/version-1/edit',
+    );
+    const sent = JSON.parse(String(posts[0]?.init?.body)) as {
+      title: string;
+      activate: boolean;
+      ingredients: {name: string}[];
+      instructions: {body: string}[];
+    };
+    // Metadata in the same call is carried over from the named version, and
+    // activation defaults to off.
+    assert.equal(sent.title, 'Salt Water Taffy');
+    assert.equal(sent.activate, false);
+    assert.deepEqual(
+      sent.ingredients.map(ingredient => ingredient.name),
+      ['brown sugar'],
+    );
+    assert.deepEqual(
+      sent.instructions.map(instruction => instruction.body),
+      ['Boil to 260F', 'Pull until opaque'],
+    );
+    assert.equal(calls.filter(call => call.init?.method === 'PUT').length, 0);
+  });
+
+  test('activate: true is forwarded to the version edit', async () => {
+    let postBody: Record<string, unknown> | undefined;
+    stubFetch(call => {
+      if (call.init?.method === 'POST') {
+        postBody = JSON.parse(String(call.init.body)) as Record<
+          string,
+          unknown
+        >;
+        return {status: 201, body: {id: 'version-2', derivedRole: 'active'}};
+      }
+      return {status: 200, body: storedRecipe};
+    });
+    await client().updateRecipe('recipe-1', {
+      versionId: 'version-1',
+      activate: true,
+      instructions: [{stepNumber: 1, body: 'Boil harder'}],
+    });
+    assert.equal(postBody?.['activate'], true);
+  });
+
+  test('naming a draft version merges the patch over that version, not the active one', async () => {
+    const storedDraft = {
+      id: 'version-2',
+      recipeId: 'recipe-1',
+      versionNumber: 2,
+      title: 'Draft Taffy',
+      description: 'Draft description',
+      servings: 2,
+      prepTimeMin: 5,
+      cookTimeMin: 15,
+      imageUrl: null,
+      sourceUrl: null,
+      ingredients: [
+        {
+          id: 'ing-9',
+          recipeVersionId: 'version-2',
+          sortOrder: 0,
+          name: 'sugar',
+          quantity: 1,
+          unit: 'cup',
+          notes: null,
+          isOptional: false,
+        },
+      ],
+      instructions: [{stepNumber: 1, body: 'Boil'}],
+      tags: [{id: 'tag-1', name: 'candy', color: '#ff0000'}],
+    };
+    const editedDraft = {...storedDraft, servings: 8};
+    let postBody: Record<string, unknown> | undefined;
+    const calls = stubFetch(call => {
+      if (call.init?.method === 'POST') {
+        postBody = JSON.parse(String(call.init.body)) as Record<
+          string,
+          unknown
+        >;
+        return {status: 200, body: editedDraft};
+      }
+      if (call.url.endsWith('/versions/version-2')) {
+        return {status: 200, body: storedDraft};
+      }
+      return {status: 200, body: storedRecipe};
+    });
+    const result = await client().updateRecipe('recipe-1', {
+      versionId: 'version-2',
+      servings: 8,
+    });
+    assert.deepEqual(result, editedDraft);
+    assert.equal(
+      calls.some(call => call.url.endsWith('/versions/version-2')),
+      true,
+    );
+    assert.equal(postBody?.['title'], 'Draft Taffy');
+    assert.equal(postBody?.['servings'], 8);
+    assert.deepEqual(postBody?.['tagIds'], ['tag-1']);
     assert.equal(calls.filter(call => call.init?.method === 'PUT').length, 0);
   });
 

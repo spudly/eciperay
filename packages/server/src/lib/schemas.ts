@@ -94,6 +94,10 @@ export const RecipeVersionInputSchema = z.object({
   status: RecipeStatusSchema.optional(),
 });
 
+export const RecipeVersionEditInputSchema = RecipeVersionInputSchema.extend({
+  activate: z.boolean().optional(),
+});
+
 export const RecipeStatusPatchSchema = z.object({status: RecipeStatusSchema});
 
 export const RecipeSharingPatchSchema = z.object({

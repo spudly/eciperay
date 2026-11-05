@@ -190,9 +190,21 @@ export const registerTools = (
     {
       title: 'Update recipe',
       description:
-        'Update an existing recipe in your Eciperay collection. Only the fields you provide change; omitted fields keep their stored values. Provide null for description, prepTimeMin, or cookTimeMin to clear them. Only your own recipes can be updated. Note: ingredients and instructions cannot be changed here — content is locked on the active version of a recipe, so passing a changed list returns an error; create a new version in the app to edit content.',
+        'Update an existing recipe in your Eciperay collection. Only the fields you provide change; omitted fields keep their stored values. Provide null for description, prepTimeMin, or cookTimeMin to clear them. Only your own recipes can be updated. To change ingredients or instructions, also pass versionId (from get_recipe) naming the version to edit: the edit is applied atomically — an editable draft version is edited in place, while naming the active version branches a new version from it, leaving the named version untouched in history. Any metadata fields in the same call are applied to that same version. The edited version becomes active only when you also pass activate: true; by default it stays a draft and get_recipe keeps showing the previously active version. The result of a content edit is the edited version, including its versionId and versionNumber. Metadata-only updates need versionId only when they should land on a specific draft version instead of the active one.',
       inputSchema: {
         id: z.string().describe('Recipe id, from search_recipes'),
+        versionId: z
+          .string()
+          .optional()
+          .describe(
+            'Version to edit, from get_recipe. Required when changing ingredients or instructions; the edit applies to this version',
+          ),
+        activate: z
+          .boolean()
+          .optional()
+          .describe(
+            'With a version edit: make the edited version the active one. Defaults to false — the edited version stays a draft',
+          ),
         title: z.string().min(1).optional().describe('Recipe title'),
         servings: z
           .number()
@@ -235,10 +247,12 @@ export const registerTools = (
           .describe('Tag ids to attach to the recipe (replaces stored tags)'),
       },
     },
-    async ({id, ingredients, instructions, ...fields}) =>
+    async ({id, versionId, activate, ingredients, instructions, ...fields}) =>
       textResult(
         await client.updateRecipe(id, {
           ...fields,
+          ...(versionId !== undefined ? {versionId} : {}),
+          ...(activate !== undefined ? {activate} : {}),
           ...(ingredients !== undefined
             ? {
                 ingredients: ingredients.map((ingredient, index) => ({
