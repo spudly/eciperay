@@ -69,9 +69,11 @@ _Automated: Jest covers the auth screens/forms (app `screens/auth/*`, web auth
 pages); Playwright `signed-out.spec.ts` covers the redirect-to-sign-in and
 sign-in render. Playwright live `e2e-live/auth.setup.ts` covers real sign-in;
 `e2e-live/sign-out.spec.ts` covers real sign-out; and `e2e-live/auth.spec.ts`
-covers the password-reset request against the QA dataset once the CI test
-account secrets exist (issue #233); until then those cases remain manual. The
-cases below are the manual remainder._
+covers the password-reset request once the CI test account secrets exist (issue
+#233) — the Supabase recover call itself is intercepted and fulfilled with a
+mocked success (issue #438), so that case verifies the confirmation UI only: it
+does not exercise the QA auth endpoint and sends no real reset email; until then
+those cases remain manual. The cases below are the manual remainder._
 
 **Preconditions:** QA account credentials; a second browser profile or private
 window for signed-out checks; access to the QA account's email inbox for

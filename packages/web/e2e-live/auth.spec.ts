@@ -30,10 +30,26 @@ test.describe('live auth', () => {
     });
     const page = await context.newPage();
     try {
+      // Intercept the Supabase recover call and fulfill a mocked success so
+      // the confirmation UI renders without dispatching a real reset email
+      // to the QA account on every live run (issue #438). The invocation is
+      // recorded and asserted below: if the route ever stops matching, the
+      // request would fall through to the live endpoint and send a real
+      // email while the UI assertion still passes.
+      let recoverIntercepted = false;
+      await page.route('**/auth/v1/recover**', route => {
+        recoverIntercepted = true;
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: '{}',
+        });
+      });
       await page.goto('/forgot-password');
       await page.getByLabel('Email').fill(qaEmail);
       await page.getByRole('button', {name: 'Send Reset Link'}).click();
       await expect(page.getByText('Email sent')).toBeVisible({timeout: 15_000});
+      expect(recoverIntercepted).toBe(true);
     } finally {
       await context.close();
     }
