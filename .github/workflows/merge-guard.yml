@@ -15,11 +15,20 @@ on:
     # must re-run when the pre-merge checklist changes.
     types: [opened, synchronize, reopened, edited]
 
+# Each box tick fires its own `edited` event and starts a run; without
+# a group the runs race in parallel, and a stale run that fetched an
+# older body can finish last and leave a failing check on a completed
+# checklist. Only the newest run for a PR completes.
+concurrency:
+  group: merge-guard-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   # Enforces the PR template's pre-merge checklist: a PR whose body
   # still has unchecked task-list items fails here, and the check
-  # is a required status check in the repo's ruleset, so such a PR
-  # cannot merge. Dependabot PRs are exempt —
+  # becomes a required status check in the repo's ruleset when this
+  # split lands, so such a PR cannot merge. Dependabot PRs are
+  # exempt —
   # their bodies quote upstream changelogs that can contain task
   # lists, and the checklist is for PRs authored in this repo.
   # Self-referential items are also exempt: a box whose truth depends
