@@ -380,6 +380,14 @@ describe('POST /recipes/:id/versions/:versionId/edit', () => {
       );
 
     expect(res.status).toBe(201);
+    const insert = mockQuery.mock.calls.find(([sql]) =>
+      String(sql).includes('insert into recipe_versions'),
+    );
+    const insertParams = insert?.[1] as unknown[];
+    // description, prepTimeMin, cookTimeMin land in the insert as nulls.
+    expect(insertParams[3]).toBeNull();
+    expect(insertParams[5]).toBeNull();
+    expect(insertParams[6]).toBeNull();
   });
 
   test('edits a draft in place with null optional fields stored as nulls', async () => {
@@ -394,6 +402,14 @@ describe('POST /recipes/:id/versions/:versionId/edit', () => {
       );
 
     expect(res.status).toBe(200);
+    const update = mockQuery.mock.calls.find(([sql]) =>
+      String(sql).includes('update recipe_versions'),
+    );
+    const updateParams = update?.[1] as unknown[];
+    // description, prepTimeMin, cookTimeMin land in the update as nulls.
+    expect(updateParams[2]).toBeNull();
+    expect(updateParams[4]).toBeNull();
+    expect(updateParams[5]).toBeNull();
   });
 
   test('applies a lineage status change sent with an in-place edit', async () => {
@@ -441,7 +457,22 @@ describe('POST /recipes/:id/versions/:versionId/edit', () => {
 
   test('returns 409 when a different version becomes active inside the transaction', async () => {
     nockSupabaseGetUser('user-uuid-1');
-    mockEditFlow({inTxTargetRow: activeVersionRow()});
+    // A concurrent activation lands between the first read and the
+    // write: the named version (version-uuid-2) is still the row the
+    // version query returns, but the recipe row now names it as the
+    // active version, so the in-transaction re-read sees this edit
+    // would branch when the pre-transaction read said in-place.
+    mockEditFlow({
+      inTxTargetRow: draftVersionRow({
+        active_version_id: 'version-uuid-2',
+        active_version_number: 2,
+      }),
+      inTxRecipeRow: makeRecipeDetailRow({
+        version_id: 'version-uuid-2',
+        active_version_id: 'version-uuid-2',
+        version_number: 2,
+      }),
+    });
 
     const res = await request(getApp())
       .post('/api/recipes/recipe-uuid-1/versions/version-uuid-2/edit')

@@ -178,8 +178,22 @@ describe('maybeRunSyncPackageVersionsCli', () => {
   });
 
   test('runs the default CLI entrypoint when invoked directly', () => {
-    expect(() => {
-      maybeRunSyncPackageVersionsCli(true);
-    }).not.toThrow();
+    // Keep the default entrypoint read-only: with --check in argv it
+    // verifies the real repository's lockfile instead of rewriting it
+    // if the manifests have drifted. The exit spy keeps a drifted
+    // lockfile's exit(1) from killing the test worker.
+    const originalArgv = process.argv;
+    const exitSpy = jest
+      .spyOn(process, 'exit')
+      .mockImplementation((() => {}) as never);
+    process.argv = [...originalArgv.slice(0, 2), '--check'];
+    try {
+      expect(() => {
+        maybeRunSyncPackageVersionsCli(true);
+      }).not.toThrow();
+    } finally {
+      process.argv = originalArgv;
+      exitSpy.mockRestore();
+    }
   });
 });
