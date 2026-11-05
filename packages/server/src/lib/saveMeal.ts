@@ -193,20 +193,6 @@ export const replaceMeal = async (
   // and defaulting a missing list to [] silently deleted a mixed meal's
   // direct ingredients. A sent list — [] included — still replaces.
   const preserveIngredients = input.ingredients === undefined;
-  if (preserveIngredients && input.recipes.length === 0) {
-    // The schema deferred the at-least-one-member rule for this
-    // omission; validate it against the stored rows before any write.
-    const storedIngredients = await queryFn(
-      `select 1 from meal_ingredients where meal_id = $1 limit 1`,
-      [mealId],
-    );
-    if (!storedIngredients.rows[0]) {
-      return {
-        error: 'A meal must contain at least one recipe or ingredient',
-        status: 400,
-      };
-    }
-  }
 
   const resolved: {recipeId: string; servings: number; sortOrder: number}[] =
     [];
@@ -266,7 +252,29 @@ export const replaceMeal = async (
   // with its members deleted or partially replaced. The existence and
   // accessibility reads above stay outside the transaction, and the
   // post-save detail load below keeps its existing semantics.
-  const conflict = await runTransactional(queryFn, async q => {
+  const outcome = await runTransactional(queryFn, async q => {
+    if (preserveIngredients && input.recipes.length === 0) {
+      // The schema deferred the at-least-one-member rule for an omitted
+      // `ingredients` list; validate it against the stored rows INSIDE
+      // the transaction, after locking the meal row (#432). Checking
+      // before the lock raced a concurrent replacement: both writers
+      // could pass against the old rows, after which the preserving
+      // writer deleted the other's recipe member and preserved
+      // ingredients that were no longer there, leaving zero members.
+      // Locked first, the check observes the state the lock protects;
+      // returning here has written nothing, so the commit is a no-op.
+      await q(
+        `select id from meals where id = $1 and user_id = $2 for update`,
+        [mealId, userId],
+      );
+      const storedIngredients = await q(
+        `select 1 from meal_ingredients where meal_id = $1 limit 1`,
+        [mealId],
+      );
+      if (!storedIngredients.rows[0]) {
+        return 'no-members' as const;
+      }
+    }
     // The token must advance monotonically at its millisecond precision —
     // the same expression as the #394 delete trigger and
     // touchMealsForRecipe — so a save that lands in the same millisecond
@@ -285,7 +293,7 @@ export const replaceMeal = async (
     if (expectedUpdatedAts && updated.rowCount === 0) {
       // A concurrent write (or delete) won the race after the check
       // above; nothing else is written.
-      return true;
+      return 'conflict' as const;
     }
     await q(`delete from meal_recipes where meal_id = $1`, [mealId]);
     if (!preserveIngredients) {
@@ -301,10 +309,16 @@ export const replaceMeal = async (
     for (const ingredient of resolvedIngredients) {
       await insertMealIngredient(q, mealId, ingredient);
     }
-    return false;
+    return 'ok' as const;
   });
-  if (conflict) {
+  if (outcome === 'conflict') {
     return staleWriteConflict('Meal');
+  }
+  if (outcome === 'no-members') {
+    return {
+      error: 'A meal must contain at least one recipe or ingredient',
+      status: 400,
+    };
   }
 
   const meal = await loadMealDetail(mealId, userId, queryFn);

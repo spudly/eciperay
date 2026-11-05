@@ -589,6 +589,8 @@ describe('direct ingredients (#362)', () => {
     const mockQuery = createMockQuery();
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([{id: MEAL_ID}]))
+      // In-transaction row lock, then the preserved-ingredient check.
+      .mockResolvedValueOnce(makeQueryResult([{id: MEAL_ID}]))
       .mockResolvedValueOnce(makeQueryResult([{exists: 1}]))
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([]))
@@ -614,6 +616,8 @@ describe('direct ingredients (#362)', () => {
     const mockQuery = createMockQuery();
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([{id: MEAL_ID}]))
+      // In-transaction row lock, then the preserved-ingredient check.
+      .mockResolvedValueOnce(makeQueryResult([{id: MEAL_ID}]))
       .mockResolvedValueOnce(makeQueryResult([]));
 
     const result = await replaceMeal(
@@ -627,6 +631,78 @@ describe('direct ingredients (#362)', () => {
       status: 400,
     });
     expect(findCall(mockQuery, 'update meals')).toBeUndefined();
+  });
+
+  // Regression for the #432 race: two tokenless replacements both start
+  // from a meal whose only member is a direct ingredient. The other
+  // replacement (recipes sent, ingredients explicitly cleared) commits
+  // first; this preserving replacement must observe that state — its
+  // in-transaction check runs after the meal row lock, which in a real
+  // transaction is only acquired once the other writer commits — and
+  // refuse, instead of deleting the other's recipe and preserving
+  // ingredients that no longer exist (zero members, both "successful").
+  // The mock seam runs the callback without a real transaction, so the
+  // other writer's commit is modelled as landing at the moment this
+  // writer takes the row lock.
+  test('replaceMeal preserving replacement loses the race to a concurrent full replacement (#432)', async () => {
+    let storedIngredientPresent = true;
+    let recipeMembers = 0;
+    const mockQuery = createMockQuery();
+    mockQuery.mockImplementation((async (sql: string) => {
+      const text = String(sql);
+      if (text.includes('select id, updated_at from meals')) {
+        return makeQueryResult([
+          {id: MEAL_ID, updated_at: '2024-01-01T00:00:00.000Z'},
+        ]);
+      }
+      if (text.includes('for update')) {
+        // The concurrent replacement commits while this writer waits
+        // for the lock: the ingredient is gone, a recipe member remains.
+        storedIngredientPresent = false;
+        recipeMembers = 1;
+        return makeQueryResult([{id: MEAL_ID}]);
+      }
+      if (text.includes('select 1 from meal_ingredients')) {
+        return storedIngredientPresent
+          ? makeQueryResult([{exists: 1}])
+          : makeQueryResult([]);
+      }
+      if (text.includes('delete from meal_recipes')) {
+        recipeMembers = 0;
+        return makeQueryResult([]);
+      }
+      if (text.includes('delete from meal_ingredients')) {
+        storedIngredientPresent = false;
+        return makeQueryResult([]);
+      }
+      return makeQueryResult([]);
+    }) as typeof mockQuery);
+
+    const result = await replaceMeal(
+      MEAL_ID,
+      USER_ID,
+      {title: 'Renamed', recipes: []},
+      mockQuery,
+    );
+    expect(result).toEqual({
+      error: 'A meal must contain at least one recipe or ingredient',
+      status: 400,
+    });
+    // The losing writer wrote nothing: the winner's recipe member and
+    // the (already cleared) ingredient state are untouched, so the meal
+    // still has exactly one member.
+    expect(findCall(mockQuery, 'update meals')).toBeUndefined();
+    expect(findCall(mockQuery, 'delete from meal_recipes')).toBeUndefined();
+    expect(recipeMembers).toBe(1);
+    expect(storedIngredientPresent).toBe(false);
+    // Ordering proof: the lock is taken before the existence check.
+    const sqlSequence = mockQuery.mock.calls.map(([sql]) => String(sql));
+    const lockAt = sqlSequence.findIndex(text => text.includes('for update'));
+    const checkAt = sqlSequence.findIndex(text =>
+      text.includes('select 1 from meal_ingredients'),
+    );
+    expect(lockAt).toBeGreaterThan(-1);
+    expect(checkAt).toBeGreaterThan(lockAt);
   });
 
   test('replaceMeal with a stale token writes no direct ingredients and spends no estimation (#384/#362)', async () => {

@@ -160,6 +160,44 @@ describe('replaceMeal on the default query path (transactions)', () => {
     ).toBe(false);
   });
 
+  test('validates preserved ingredients under the row lock inside the transaction, writing nothing when none remain (#432)', async () => {
+    mockPoolQuery.mockImplementation((text: string) => {
+      if (text.includes('select id, updated_at from meals')) {
+        return Promise.resolve(
+          makeQueryResult([
+            {id: MEAL_ID, updated_at: '2024-01-01T00:00:00.000Z'},
+          ]),
+        );
+      }
+      return Promise.resolve(makeQueryResult([]));
+    });
+    const client = makeTxClient();
+    mockConnect.mockResolvedValue(client);
+    // Omitted `ingredients`, no recipes: preservation is the only way
+    // this meal keeps a member, and the tx client reports none stored.
+    const result = await replaceMeal(MEAL_ID, USER_ID, {
+      title: 'Snack',
+      recipes: [],
+    });
+    expect(result).toEqual({
+      error: 'A meal must contain at least one recipe or ingredient',
+      status: 400,
+    });
+    const sql = calledSql(client);
+    expect(sql[0]).toBe('BEGIN');
+    expect(sql[sql.length - 1]).toBe('COMMIT');
+    const lockAt = sql.findIndex(text => text.includes('for update'));
+    const checkAt = sql.findIndex(text =>
+      text.includes('select 1 from meal_ingredients'),
+    );
+    expect(lockAt).toBeGreaterThan(-1);
+    expect(checkAt).toBeGreaterThan(lockAt);
+    // Validation precedes every write on the transaction client.
+    expect(sql.some(text => text.includes('update meals'))).toBe(false);
+    expect(sql.some(text => text.includes('delete from'))).toBe(false);
+    expect(mockRelease).toHaveBeenCalledTimes(1);
+  });
+
   test('does not open a transaction when the meal is missing', async () => {
     mockPoolQuery.mockResolvedValue(makeQueryResult([]));
     const result = await replaceMeal(MEAL_ID, USER_ID, mealInput);

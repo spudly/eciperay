@@ -259,7 +259,6 @@ export const createClient = (config: EciperayClientConfig) => {
           title: current.title,
           notes: current.notes,
           recipes,
-          ...preservedMealIngredients(current),
         }),
       });
     },
@@ -283,7 +282,6 @@ export const createClient = (config: EciperayClientConfig) => {
           title: current.title,
           notes: current.notes,
           recipes: recipes.filter(member => !sameId(member.recipeId, recipeId)),
-          ...preservedMealIngredients(current),
         }),
       });
     },
@@ -664,8 +662,9 @@ type MealDetailForUpdate = {
   notes: string | null;
   members: {recipeId: string; sortOrder: number; servings: number}[];
   // Direct ingredients (#362); absent on detail responses from before
-  // the field existed, in which case update payloads omit the field
-  // and the server preserves the stored rows.
+  // the field existed. Read here only as part of the detail shape:
+  // meal-write payloads always omit the field so the server preserves
+  // the stored rows instead of re-estimating them (#432).
   ingredients?: {
     name: string;
     quantity: number | null;
@@ -731,33 +730,6 @@ const mealRecipeInputs = (meal: MealDetailForUpdate): MealRecipeInput[] =>
     .map(member => ({recipeId: member.recipeId, servings: member.servings}));
 
 /**
- * A stored meal's direct ingredients as full-replace PUT inputs, in stored
- * order.
- */
-const mealIngredientInputs = (
-  meal: MealDetailForUpdate,
-): MealIngredientInput[] =>
-  [...(meal.ingredients ?? [])]
-    .sort((a, b) => a.sortOrder - b.sortOrder)
-    .map(ingredient => ({
-      name: ingredient.name,
-      quantity: ingredient.quantity,
-      unit: ingredient.unit,
-      servings: ingredient.servings,
-    }));
-
-/**
- * The `ingredients` field for a full-replace meal PUT built from a stored meal:
- * carry the stored direct ingredients so the replace does not drop them (#432).
- * When the stored detail has no ingredients field at all, omit it — the server
- * preserves the stored rows for an omitted list.
- */
-const preservedMealIngredients = (
-  meal: MealDetailForUpdate,
-): {ingredients: MealIngredientInput[]} | Record<string, never> =>
-  meal.ingredients ? {ingredients: mealIngredientInputs(meal)} : {};
-
-/**
  * Merge a partial meal update over the stored meal detail, producing the full
  * payload the REST `PUT /meals/:id` endpoint expects.
  */
@@ -774,7 +746,10 @@ export const buildMealUpdatePayload = (
     title: patch.title ?? current.title,
     notes: patch.notes !== undefined ? patch.notes : current.notes,
     recipes: patch.recipes ?? mealRecipeInputs(current),
-    ...preservedMealIngredients(current),
+    // No `ingredients` key on purpose (#432): the server preserves the
+    // stored direct-ingredient rows when the field is omitted, while a
+    // sent list would be full-replaced — re-estimating (and possibly
+    // nulling) nutrition for ingredients this update never touched.
   };
 };
 
