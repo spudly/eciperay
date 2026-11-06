@@ -119,6 +119,14 @@ export const RecipeImageField = ({
     setPreviewError(null);
   };
 
+  // Parity note (#446): the app mirror serializes its native picker
+  // launches (pickerInFlightRef / pickerBusy) because
+  // react-native-image-picker stores a single native callback that an
+  // overlapping launch can steal. There is no web equivalent: each
+  // file input delivers its own change event, and acceptImage below
+  // already refuses a new file while busy or while the crop dialog is
+  // open, so overlapping selections cannot replace a pending one here.
+
   /** Stage a file as the pending selection; false when refused. */
   const acceptImage = (file: File | null): boolean => {
     // Also refuse while the crop dialog is open: a paste into the crop

@@ -456,7 +456,12 @@ export const RecipeFormHost = ({
   const handleSubmit = async () => {
     // Guard the save (Option 1 on #446): a selected image that is still
     // pending in the image field would otherwise be silently dropped.
-    if (imageSelectionPending) {
+    // A staged paste the field has not accepted yet (it refuses while
+    // busy or while the crop dialog is open) is guarded the same way:
+    // it is not pending in the field, so without this check a save
+    // could persist and leave the page while the pasted file is still
+    // waiting to be staged, losing it silently.
+    if (imageSelectionPending || stagedPasteFile) {
       setError('Use, crop, or discard the selected image before saving.');
       return;
     }

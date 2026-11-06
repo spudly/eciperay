@@ -110,23 +110,13 @@ describe('RecipeImageField', () => {
     });
   });
 
-  test('a late result from an earlier pick does not replace the image being cropped', async () => {
+  test('serializes picker launches while one is in flight', async () => {
     const onImagePicked = jest.fn();
-    const laterAsset = {
-      uri: 'file://later.png',
-      base64: btoa('later'),
-      type: 'image/png',
-      fileSize: 5,
-      width: 1200,
-      height: 900,
-    };
-    let resolveFirstPick: (value: unknown) => void = () => undefined;
-    const firstPick = new Promise<unknown>(resolve => {
-      resolveFirstPick = resolve;
+    let resolvePick: (value: unknown) => void = () => undefined;
+    const pick = new Promise<unknown>(resolve => {
+      resolvePick = resolve;
     });
-    mockLaunchImageLibrary
-      .mockImplementationOnce(() => firstPick)
-      .mockResolvedValueOnce({assets: [laterAsset]});
+    mockLaunchImageLibrary.mockImplementationOnce(() => pick);
     const {getByLabelText} = await renderWithProviders(
       <RecipeImageField
         imagePreview={null}
@@ -136,38 +126,48 @@ describe('RecipeImageField', () => {
         onRemove={jest.fn()}
       />,
     );
-    // First pick stays in flight; a second pick completes and its
-    // image is opened in the crop overlay.
-    await fireEvent.press(getByLabelText('Choose recipe image'));
+    // First pick stays in flight: both picker controls are disabled,
+    // and further activations launch nothing — react-native-image-picker
+    // keeps a single native callback, so an overlapping launch could
+    // steal or drop the first result (#446).
     await fireEvent.press(getByLabelText('Choose recipe image'));
     await waitFor(() => {
-      expect(getByLabelText('Crop image')).toBeTruthy();
+      expect(mockLaunchImageLibrary).toHaveBeenCalledTimes(1);
     });
-    await fireEvent.press(getByLabelText('Crop image'));
-    await waitFor(() => {
-      expect(getByLabelText('Apply crop')).toBeTruthy();
-    });
-    // The earlier pick now returns. Its result must be ignored: the
-    // overlay stays open on the later image instead of the stale
-    // result replacing the pending asset and closing the overlay.
+    expect(
+      getByLabelText('Choose recipe image').props.accessibilityState,
+    ).toMatchObject({disabled: true});
+    expect(
+      getByLabelText('Take photo of recipe').props.accessibilityState,
+    ).toMatchObject({disabled: true});
+    await fireEvent.press(getByLabelText('Choose recipe image'));
+    await fireEvent.press(getByLabelText('Take photo of recipe'));
+    expect(mockLaunchImageLibrary).toHaveBeenCalledTimes(1);
+    expect(mockLaunchCamera).not.toHaveBeenCalled();
+    // The in-flight pick resolves and stages as the pending image;
+    // the guard is released for the next decision.
     await act(async () => {
-      resolveFirstPick({
+      resolvePick({
         assets: [
           {
-            uri: 'file://earlier.png',
-            base64: btoa('earlier'),
+            uri: 'file://recipe.png',
+            base64: btoa('pixels'),
             type: 'image/png',
-            fileSize: 7,
+            fileSize: 6,
+            width: 1200,
+            height: 900,
           },
         ],
       });
     });
-    expect(getByLabelText('Apply crop')).toBeTruthy();
-    await fireEvent.press(getByLabelText('Cancel crop'));
+    await waitFor(() => {
+      expect(getByLabelText('Use image')).toBeTruthy();
+    });
+    await fireEvent.press(getByLabelText('Use image'));
     await waitFor(() => {
       expect(onImagePicked).toHaveBeenCalledWith(
-        {base64: btoa('later'), contentType: 'image/png'},
-        'file://later.png',
+        {base64: btoa('pixels'), contentType: 'image/png'},
+        'file://recipe.png',
       );
     });
   });

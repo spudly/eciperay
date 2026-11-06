@@ -73,6 +73,13 @@ export const RecipeImageField = ({
   const [cropRect, setCropRect] = useState<CropRect | null>(null);
   const [cropBusy, setCropBusy] = useState(false);
   const [cropError, setCropError] = useState<string | null>(null);
+  // Picker launches are serialized (#446): react-native-image-picker
+  // stores a single native callback, so a second launch while one is
+  // pending can steal or drop the first result. The ref guards the
+  // whole permission-check + launch flow; the state disables the
+  // picker controls while a launch is in flight.
+  const [pickerBusy, setPickerBusy] = useState(false);
+  const pickerInFlightRef = useRef(false);
   const cropFrameSizeRef = useRef({width: 0, height: 0});
   const cropDragRef = useRef<{
     startRect: CropRect;
@@ -319,32 +326,46 @@ export const RecipeImageField = ({
   };
 
   const handlePick = async () => {
-    const confirmed = await confirmPhotoLibraryAccess();
-    if (!confirmed) {
+    if (pickerInFlightRef.current) {
       return;
     }
-
+    pickerInFlightRef.current = true;
+    setPickerBusy(true);
     try {
+      const confirmed = await confirmPhotoLibraryAccess();
+      if (!confirmed) {
+        return;
+      }
       await handleResult(
         await launchImageLibrary({mediaType: 'photo', includeBase64: true}),
       );
     } catch (error_) {
       reportReadError(error_);
+    } finally {
+      pickerInFlightRef.current = false;
+      setPickerBusy(false);
     }
   };
 
   const handleTakePhoto = async () => {
-    const granted = await ensureCameraPermission();
-    if (!granted) {
+    if (pickerInFlightRef.current) {
       return;
     }
-
+    pickerInFlightRef.current = true;
+    setPickerBusy(true);
     try {
+      const granted = await ensureCameraPermission();
+      if (!granted) {
+        return;
+      }
       await handleResult(
         await launchCamera({mediaType: 'photo', includeBase64: true}),
       );
     } catch (error_) {
       reportReadError(error_);
+    } finally {
+      pickerInFlightRef.current = false;
+      setPickerBusy(false);
     }
   };
 
@@ -442,7 +463,7 @@ export const RecipeImageField = ({
               variant="primary"
               size="sm"
               accessibilityLabel="Choose recipe image"
-              disabled={imageBusy}
+              disabled={imageBusy || pickerBusy}
               onPress={() => {
                 void handlePick();
               }}
@@ -453,7 +474,7 @@ export const RecipeImageField = ({
               variant="secondary"
               size="sm"
               accessibilityLabel="Take photo of recipe"
-              disabled={imageBusy}
+              disabled={imageBusy || pickerBusy}
               onPress={() => {
                 void handleTakePhoto();
               }}
