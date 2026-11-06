@@ -138,6 +138,11 @@ export const RecipeImageField = ({
     acceptPendingImage();
   };
 
+  // Parity note (#446): web cropping is canvas-based and always available,
+  // so a failure here is a genuine crop error (reported below). The app
+  // mirror instead loads a native manipulator that is not registered until
+  // #453, so its applyCrop falls back to the uncropped image when the
+  // manipulator is unavailable.
   const applyCrop = async () => {
     if (!pendingFile) {
       return;

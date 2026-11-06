@@ -152,6 +152,13 @@ export const RecipeImageField = ({
         effectiveCropRect,
         sourceType,
       );
+      if (!cropped) {
+        // Native crop is unavailable (expo-image-manipulator is not
+        // registered until #453 wires Expo autolinking): fall back to the
+        // uncropped image instead of failing (Option 3 on #446).
+        acceptPendingImage();
+        return;
+      }
       const asset: Asset = {
         uri: cropped.uri,
         base64: cropped.base64,

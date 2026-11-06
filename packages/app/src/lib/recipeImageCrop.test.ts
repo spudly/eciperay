@@ -101,7 +101,7 @@ describe('cropPickedImage', () => {
       {x: 0, y: 0, width: 300, height: 200},
       'image/gif',
     );
-    expect(result.contentType).toBe('image/jpeg');
+    expect(result?.contentType).toBe('image/jpeg');
     expect(mockManipulate).toHaveBeenCalledWith(
       'file://recipe.gif',
       [{crop: {originX: 0, originY: 0, width: 300, height: 200}}],
@@ -122,5 +122,29 @@ describe('cropPickedImage', () => {
         'image/jpeg',
       ),
     ).rejects.toThrow('Failed to crop image');
+  });
+
+  test('returns null when the native manipulator module cannot load', async () => {
+    // The current native builds do not register Expo modules (#453), so
+    // evaluating expo-image-manipulator throws requireNativeModule. The
+    // helper must turn that into a null fallback, never a throw at load.
+    jest.resetModules();
+    jest.doMock('expo-image-manipulator', () => {
+      throw new Error("Cannot find native module 'ExpoImageManipulator'");
+    });
+    try {
+      const fresh =
+        require('./recipeImageCrop') as typeof import('./recipeImageCrop');
+      await expect(
+        fresh.cropPickedImage(
+          'file://recipe.png',
+          {x: 0, y: 0, width: 300, height: 200},
+          'image/png',
+        ),
+      ).resolves.toBeNull();
+    } finally {
+      jest.dontMock('expo-image-manipulator');
+      jest.resetModules();
+    }
   });
 });
