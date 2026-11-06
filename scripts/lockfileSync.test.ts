@@ -200,6 +200,24 @@ describe('versionSatisfiesSpec wildcards, partials, and hyphen ranges', () => {
   });
 });
 
+describe('versionSatisfiesSpec operator whitespace (npm trims it)', () => {
+  test('a spaced operator still binds its version', () => {
+    expect(versionSatisfiesSpec('1.0.0', '>= 2.0.0')).toBe(false);
+    expect(versionSatisfiesSpec('2.0.0', '>= 2.0.0')).toBe(true);
+    expect(versionSatisfiesSpec('1.0.0', '< 2.0.0')).toBe(true);
+    expect(versionSatisfiesSpec('2.0.0', '<= 1.2.3')).toBe(false);
+    expect(versionSatisfiesSpec('1.2.3', '= 1.2.3')).toBe(true);
+    expect(versionSatisfiesSpec('1.2.3', '^ 1.2.0')).toBe(true);
+    expect(versionSatisfiesSpec('2.0.0', '^ 1.2.0')).toBe(false);
+    expect(versionSatisfiesSpec('1.2.3', '~ 1.2')).toBe(true);
+    expect(versionSatisfiesSpec('1.3.0', '~ 1.2')).toBe(false);
+    expect(versionSatisfiesSpec('1.2.3', '> 1.2')).toBe(false);
+    expect(versionSatisfiesSpec('1.5.0', '> 1.2')).toBe(true);
+    expect(versionSatisfiesSpec('1.5.0', '>= 1.2.3 < 2.0.0')).toBe(true);
+    expect(versionSatisfiesSpec('1.2.3-beta.1', '>= 1.2.3-alpha')).toBe(true);
+  });
+});
+
 describe('aliasSpecRange', () => {
   test('extracts the range from alias specs, including scoped targets', () => {
     expect(aliasSpecRange('npm:react@^18.2.0')).toBe('^18.2.0');

@@ -374,7 +374,15 @@ const satisfiesAlternative = (
   versionPre: string[] | null,
   alternative: string,
 ): boolean | 'not-judged' => {
-  const tokens = alternative.trim().split(/\s+/).filter(Boolean);
+  // npm trims whitespace between an operator and its version
+  // ('>= 1.2.3', '^ 1.2') before tokenizing; join them first, or the
+  // bare operator token is unparseable and the whole set would be
+  // silently treated as not judged.
+  const joined = alternative.replace(
+    /(>=|<=|>|<|=|\^|~)\s+(?=[\dvxX*])/g,
+    '$1',
+  );
+  const tokens = joined.trim().split(/\s+/).filter(Boolean);
   const comparators: PrimitiveComparator[] = [];
   for (let i = 0; i < tokens.length; i += 1) {
     const token = tokens[i] ?? '';
