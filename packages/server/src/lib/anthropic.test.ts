@@ -14,6 +14,14 @@ type CapturedRequest = {url: string; headers: Headers};
 
 const captured: CapturedRequest[] = [];
 
+beforeEach(() => {
+  captured.length = 0;
+});
+
+// Ordering is load-bearing: the stubbed fetch must be installed BEFORE
+// anthropic.js is imported, because anthropic.ts resolves its fetch once,
+// at module load (resolveAnthropicFetch). Keep the stub assignment and the
+// dynamic import below together, in this order.
 const originalFetch = globalThis.fetch;
 const originalApiKey = process.env['ANTHROPIC_API_KEY'];
 const originalFakeFlag = process.env['ECIPERAY_AI_FAKE'];
