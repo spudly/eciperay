@@ -141,6 +141,24 @@ export const versionSatisfiesSpec = (
   );
 };
 
+// npm alias specs ('npm:<name>@<range>') install the target package under
+// the manifest's own dependency name, so the lockfile entry lives under
+// that name while the version must satisfy the range after the last '@'.
+// Returns the embedded range, or null when the spec is not an alias or
+// carries no range (a bare 'npm:<name>' means the latest tag, which this
+// check does not judge — the same stance as a bare dist-tag spec).
+export const aliasSpecRange = (spec: string): string | null => {
+  if (!spec.startsWith('npm:')) {
+    return null;
+  }
+  const target = spec.slice('npm:'.length);
+  const at = target.lastIndexOf('@');
+  if (at <= 0 || at === target.length - 1) {
+    return null;
+  }
+  return target.slice(at + 1);
+};
+
 // npm resolves a dependency of the workspace at `workspacePath` by walking
 // from that workspace's own node_modules up through each ancestor's
 // node_modules to the repo root — the nested per-workspace entries are
@@ -211,9 +229,12 @@ export const findLockfileDependencyMismatches = (
         continue;
       }
       const lockfileVersion = entry?.version;
+      // Alias specs resolve under the manifest's dependency name (already
+      // the lookup key above) but are judged against the embedded range.
+      const judgedSpec = aliasSpecRange(spec) ?? spec;
       if (
         lockfileVersion === undefined ||
-        !versionSatisfiesSpec(lockfileVersion, spec)
+        !versionSatisfiesSpec(lockfileVersion, judgedSpec)
       ) {
         mismatches.push({workspace, dependency, spec, lockfileVersion});
       }

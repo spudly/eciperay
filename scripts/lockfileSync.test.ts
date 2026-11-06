@@ -1,6 +1,7 @@
 import {join} from 'node:path';
 
 import {
+  aliasSpecRange,
   findLockfileDependencyMismatches,
   formatLockfileDependencyMismatches,
   parseVersionParts,
@@ -85,6 +86,20 @@ describe('versionSatisfiesSpec', () => {
   });
 });
 
+describe('aliasSpecRange', () => {
+  test('extracts the range from alias specs, including scoped targets', () => {
+    expect(aliasSpecRange('npm:react@^18.2.0')).toBe('^18.2.0');
+    expect(aliasSpecRange('npm:@scope/ui@1.2.3')).toBe('1.2.3');
+    expect(aliasSpecRange('npm:react@beta')).toBe('beta');
+  });
+
+  test('returns null for non-alias specs and aliases without a range', () => {
+    expect(aliasSpecRange('^18.2.0')).toBeNull();
+    expect(aliasSpecRange('npm:react')).toBeNull();
+    expect(aliasSpecRange('npm:@scope/ui')).toBeNull();
+  });
+});
+
 describe('resolutionCandidates', () => {
   test('walks from the workspace up to the repo root', () => {
     expect(resolutionCandidates('packages/server', 'posthog-node')).toEqual([
@@ -159,6 +174,42 @@ describe('findLockfileDependencyMismatches', () => {
       },
     });
     expect(findLockfileDependencyMismatches('/repo', fs as never)).toEqual([]);
+  });
+
+  test('judges alias specs against the embedded range, resolved under the alias name', () => {
+    const fs = fakeFs({
+      'package.json': {
+        workspaces: ['packages/web'],
+        dependencies: {
+          'react-legacy': 'npm:react@^18.2.0',
+          'ui': 'npm:@scope/ui@1.2.3',
+          'anything': 'npm:react@beta',
+        },
+      },
+      'packages/web/package.json': {
+        dependencies: {'react-next': 'npm:react@^19.0.0'},
+      },
+      'package-lock.json': {
+        packages: {
+          'node_modules/react-legacy': {version: '17.0.2'},
+          'node_modules/ui': {version: '1.2.3'},
+          'node_modules/anything': {version: '0.0.1'},
+          'packages/web/node_modules/react-next': {version: '19.3.1'},
+        },
+      },
+    });
+    // react-legacy resolves 17.0.2 against the alias range ^18.2.0: a
+    // mismatch reported with the original alias spec. The exact scoped
+    // alias and the in-range nested alias pass; the dist-tag alias is
+    // not judged, like a bare dist-tag spec.
+    expect(findLockfileDependencyMismatches('/repo', fs as never)).toEqual([
+      {
+        workspace: '',
+        dependency: 'react-legacy',
+        spec: 'npm:react@^18.2.0',
+        lockfileVersion: '17.0.2',
+      },
+    ]);
   });
 
   test('handles a manifest without workspaces and a lockfile without packages', () => {
