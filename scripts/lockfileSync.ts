@@ -231,7 +231,14 @@ const desugarToken = (token: string): Desugared => {
   if (parsed === null) {
     return 'not-judged';
   }
-  const op = match[1] ?? '';
+  const rawOp = match[1] ?? '';
+  // node-semver tolerates '~>' and '~=' as tilde aliases; any other
+  // multi-character operator run ('^>', '=>', '>>') is an invalid
+  // range there — it matches nothing, like a partial prerelease.
+  const op = rawOp === '~>' || rawOp === '~=' ? '~' : rawOp;
+  if (op.length > 1 && op !== '>=' && op !== '<=') {
+    return 'invalid';
+  }
   const {segments, specified, pre} = parsed;
   if (pre !== null && specified < 3) {
     // npm rejects prereleases on partial versions ('>=1.2-alpha',
@@ -379,7 +386,7 @@ const satisfiesAlternative = (
   // bare operator token is unparseable and the whole set would be
   // silently treated as not judged.
   const joined = alternative.replace(
-    /(>=|<=|>|<|=|\^|~)\s+(?=[\dvxX*])/g,
+    /(>=|<=|~>|~=|>|<|=|\^|~)\s+(?=[\dvxX*])/g,
     '$1',
   );
   const tokens = joined.trim().split(/\s+/).filter(Boolean);

@@ -218,6 +218,27 @@ describe('versionSatisfiesSpec operator whitespace (npm trims it)', () => {
   });
 });
 
+describe('versionSatisfiesSpec tilde aliases and invalid operators', () => {
+  test("'~>' and '~=' are tilde aliases, as node-semver parses them", () => {
+    expect(versionSatisfiesSpec('1.2.3', '~>1.2.3')).toBe(true);
+    expect(versionSatisfiesSpec('1.2.9', '~>1.2.3')).toBe(true);
+    expect(versionSatisfiesSpec('1.3.0', '~>1.2.3')).toBe(false);
+    expect(versionSatisfiesSpec('2.0.0', '~>1.2.3')).toBe(false);
+    expect(versionSatisfiesSpec('1.2.9', '~>1.2')).toBe(true);
+    expect(versionSatisfiesSpec('1.9.9', '~>1')).toBe(true);
+    expect(versionSatisfiesSpec('2.0.0', '~>1')).toBe(false);
+    expect(versionSatisfiesSpec('1.2.9', '~=1.2.3')).toBe(true);
+    expect(versionSatisfiesSpec('2.0.0', '~=1.2.3')).toBe(false);
+    expect(versionSatisfiesSpec('1.2.9', '~> 1.2.3')).toBe(true);
+  });
+
+  test('other multi-character operator runs are invalid and match nothing', () => {
+    expect(versionSatisfiesSpec('1.2.3', '^>1.2.3')).toBe(false);
+    expect(versionSatisfiesSpec('1.2.3', '=>1.2.3')).toBe(false);
+    expect(versionSatisfiesSpec('1.2.3', '>>1.0.0')).toBe(false);
+  });
+});
+
 describe('aliasSpecRange', () => {
   test('extracts the range from alias specs, including scoped targets', () => {
     expect(aliasSpecRange('npm:react@^18.2.0')).toBe('^18.2.0');
