@@ -34,8 +34,9 @@ type LockfilePackages = Record<
 
 // Parses a version or partial version into [major, minor, patch]; a
 // wildcard or missing segment is null. Returns null when a segment is
-// neither numeric nor a wildcard. Prerelease/build suffixes are ignored:
-// the specs used in this repo never carry them.
+// neither numeric nor a wildcard. Only the core is returned here;
+// prerelease identifiers are parsed separately (prereleaseIdentifiers)
+// and build metadata is ignored, as semver precedence ignores it.
 export const parseVersionParts = (
   version: string,
 ): (number | null)[] | null => {
@@ -67,19 +68,93 @@ const compareParts = (a: (number | null)[], b: (number | null)[]): number => {
   return 0;
 };
 
+// The dot-separated prerelease identifiers of a version or spec body
+// ('1.2.3-beta.1+build' -> ['beta', '1']), or null when there is no
+// prerelease. Build metadata (after '+') never affects precedence.
+export const prereleaseIdentifiers = (version: string): string[] | null => {
+  const withoutBuild = version.replace(/^[v=]+/, '').split('+')[0] ?? '';
+  const dash = withoutBuild.indexOf('-');
+  if (dash === -1) {
+    return null;
+  }
+  return withoutBuild.slice(dash + 1).split('.');
+};
+
+// Semver prerelease precedence: a release outranks its prereleases;
+// numeric identifiers compare numerically and rank below alphanumeric
+// ones; a shorter identifier list ranks below a longer one it prefixes.
+const comparePrereleases = (a: string[] | null, b: string[] | null): number => {
+  if (a === null && b === null) {
+    return 0;
+  }
+  if (a === null) {
+    return 1;
+  }
+  if (b === null) {
+    return -1;
+  }
+  for (let i = 0; i < Math.max(a.length, b.length); i += 1) {
+    const left = a[i];
+    const right = b[i];
+    if (left === undefined) {
+      return -1;
+    }
+    if (right === undefined) {
+      return 1;
+    }
+    const leftNumeric = /^\d+$/.test(left);
+    const rightNumeric = /^\d+$/.test(right);
+    if (leftNumeric && rightNumeric) {
+      const diff = Number(left) - Number(right);
+      if (diff !== 0) {
+        return diff;
+      }
+    } else if (leftNumeric) {
+      return -1;
+    } else if (rightNumeric) {
+      return 1;
+    } else if (left !== right) {
+      return left < right ? -1 : 1;
+    }
+  }
+  return 0;
+};
+
+// Full semver comparison (core, then prerelease precedence) of two
+// version bodies whose cores both parsed.
+const compareFull = (
+  versionParts: (number | null)[],
+  versionPre: string[] | null,
+  specParts: (number | null)[],
+  specPre: string[] | null,
+): number => {
+  const core = compareParts(versionParts, specParts);
+  return core !== 0 ? core : comparePrereleases(versionPre, specPre);
+};
+
 const satisfiesSingle = (version: string, spec: string): boolean => {
   const versionParts = parseVersionParts(version);
   const match = /^([~^><=]*)(.+)$/.exec(spec);
   const specBody = match?.[2];
   const specParts = specBody === undefined ? null : parseVersionParts(specBody);
-  if (versionParts === null || specParts === null || match === null) {
+  if (
+    versionParts === null ||
+    specParts === null ||
+    match === null ||
+    specBody === undefined
+  ) {
     // A spec or version this check cannot parse is not this check's to
     // judge (non-registry specs are filtered by the caller); never fail
     // a build over a form the checker does not understand.
     return true;
   }
   const op = match[1];
-  const cmp = compareParts(versionParts, specParts);
+  const cmp = compareFull(
+    versionParts,
+    prereleaseIdentifiers(version),
+    specParts,
+    prereleaseIdentifiers(specBody),
+  );
   if (op === '^') {
     if (cmp < 0) {
       return false;
@@ -117,14 +192,27 @@ const satisfiesSingle = (version: string, spec: string): boolean => {
   if (op === '<') {
     return cmp < 0;
   }
-  // Exact ('' or '='): every specified segment must match.
-  return specParts.every(
+  // Exact ('' or '='): every specified segment must match, and a spec
+  // prerelease must equal the version's prerelease.
+  const coreMatches = specParts.every(
     (part, index) => part === null || part === versionParts[index],
   );
+  if (!coreMatches) {
+    return false;
+  }
+  const specPre = prereleaseIdentifiers(specBody);
+  if (specPre === null) {
+    return prereleaseIdentifiers(version) === null;
+  }
+  return comparePrereleases(prereleaseIdentifiers(version), specPre) === 0;
 };
 
 // Supports the spec forms used in this repo's manifests: '*', exact,
 // caret, tilde, comparators, space-separated AND sets, and '||' OR sets.
+// Prereleases follow npm's rule: a prerelease version satisfies a set
+// only when some comparator in the set carries a prerelease with the
+// same core version — '^1.2.0' does not admit '1.2.3-beta.1', while
+// '^1.2.3-beta.1' admits '1.2.3-beta.2' but not '1.2.4-beta.1'.
 export const versionSatisfiesSpec = (
   version: string,
   spec: string,
@@ -133,12 +221,31 @@ export const versionSatisfiesSpec = (
   if (trimmed === '' || trimmed === '*' || trimmed === 'latest') {
     return true;
   }
-  return trimmed.split('||').some(alternative =>
-    alternative
-      .trim()
-      .split(/\s+/)
-      .every(token => satisfiesSingle(version, token)),
-  );
+  const versionParts = parseVersionParts(version);
+  const versionPre = prereleaseIdentifiers(version);
+  return trimmed.split('||').some(alternative => {
+    const tokens = alternative.trim().split(/\s+/);
+    if (!tokens.every(token => satisfiesSingle(version, token))) {
+      return false;
+    }
+    if (versionPre === null || versionParts === null) {
+      return true;
+    }
+    return tokens.some(token => {
+      const match = /^([~^><=]*)(.+)$/.exec(token);
+      const body = match?.[2];
+      if (body === undefined || prereleaseIdentifiers(body) === null) {
+        return false;
+      }
+      const bodyParts = parseVersionParts(body);
+      return (
+        bodyParts !== null &&
+        bodyParts.every(
+          (part, index) => part === null || part === versionParts[index],
+        )
+      );
+    });
+  });
 };
 
 // npm alias specs ('npm:<name>@<range>') install the target package under

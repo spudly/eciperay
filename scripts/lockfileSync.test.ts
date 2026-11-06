@@ -5,6 +5,7 @@ import {
   findLockfileDependencyMismatches,
   formatLockfileDependencyMismatches,
   parseVersionParts,
+  prereleaseIdentifiers,
   resolutionCandidates,
   versionSatisfiesSpec,
 } from './lockfileSync.ts';
@@ -83,6 +84,58 @@ describe('versionSatisfiesSpec', () => {
   test('does not judge specs or versions it cannot parse', () => {
     expect(versionSatisfiesSpec('1.0.0', 'not-a-version')).toBe(true);
     expect(versionSatisfiesSpec('not-a-version', '^1.0.0')).toBe(true);
+  });
+});
+
+describe('prereleaseIdentifiers', () => {
+  test('extracts dot-separated identifiers, ignoring build metadata', () => {
+    expect(prereleaseIdentifiers('1.2.3-beta.1+build5')).toEqual(['beta', '1']);
+    expect(prereleaseIdentifiers('1.2.3-alpha')).toEqual(['alpha']);
+    expect(prereleaseIdentifiers('=0.300.0-rc.1')).toEqual(['rc', '1']);
+  });
+
+  test('returns null when there is no prerelease', () => {
+    expect(prereleaseIdentifiers('1.2.3')).toBeNull();
+    expect(prereleaseIdentifiers('1.2.3+build5')).toBeNull();
+  });
+});
+
+describe('versionSatisfiesSpec prerelease rules (npm semantics)', () => {
+  test('rejects prerelease versions the spec does not accept', () => {
+    expect(versionSatisfiesSpec('1.2.3-beta.1', '^1.2.0')).toBe(false);
+    expect(versionSatisfiesSpec('1.2.3-beta.1', '~1.2.0')).toBe(false);
+    expect(versionSatisfiesSpec('1.2.3-beta.1', '1.2.3')).toBe(false);
+    expect(versionSatisfiesSpec('1.2.3-beta.1', '>=1.0.0')).toBe(false);
+    expect(versionSatisfiesSpec('5.63.0-beta.1', '^5.57.0')).toBe(false);
+  });
+
+  test('a release does not satisfy a prerelease spec', () => {
+    expect(versionSatisfiesSpec('1.2.3', '1.2.3-beta.1')).toBe(false);
+    expect(versionSatisfiesSpec('1.2.4', '^1.2.3-beta.1')).toBe(true);
+  });
+
+  test('accepts prereleases within the tuple the spec names', () => {
+    expect(versionSatisfiesSpec('1.2.3-beta.1', '1.2.3-beta.1')).toBe(true);
+    expect(versionSatisfiesSpec('1.2.3-beta.2', '^1.2.3-beta.1')).toBe(true);
+    expect(versionSatisfiesSpec('1.2.3-beta.2', '~1.2.3-beta.1')).toBe(true);
+    expect(versionSatisfiesSpec('1.2.3-alpha', '^1.2.3-beta.1')).toBe(false);
+    expect(versionSatisfiesSpec('1.2.3-rc.1', '>=1.2.3-alpha <2.0.0')).toBe(
+      true,
+    );
+  });
+
+  test('gates prereleases of other tuples out of the set', () => {
+    expect(versionSatisfiesSpec('1.2.4-beta.1', '^1.2.3-beta.1')).toBe(false);
+    expect(versionSatisfiesSpec('2.0.0-beta.1', '>=1.2.3-alpha <2.0.0')).toBe(
+      false,
+    );
+  });
+
+  test('build metadata never affects satisfaction', () => {
+    expect(versionSatisfiesSpec('1.2.3+build5', '^1.2.0')).toBe(true);
+    expect(versionSatisfiesSpec('1.2.3-beta.1+build5', '^1.2.3-beta.1')).toBe(
+      true,
+    );
   });
 });
 
@@ -208,6 +261,30 @@ describe('findLockfileDependencyMismatches', () => {
         dependency: 'react-legacy',
         spec: 'npm:react@^18.2.0',
         lockfileVersion: '17.0.2',
+      },
+    ]);
+  });
+
+  test('flags a prerelease resolution under a release-only spec', () => {
+    const fs = fakeFs({
+      'package.json': {workspaces: ['packages/server']},
+      'packages/server/package.json': {
+        dependencies: {'posthog-node': '^5.57.0'},
+      },
+      'package-lock.json': {
+        packages: {
+          'packages/server/node_modules/posthog-node': {
+            version: '5.63.0-beta.1',
+          },
+        },
+      },
+    });
+    expect(findLockfileDependencyMismatches('/repo', fs as never)).toEqual([
+      {
+        workspace: 'packages/server',
+        dependency: 'posthog-node',
+        spec: '^5.57.0',
+        lockfileVersion: '5.63.0-beta.1',
       },
     ]);
   });
