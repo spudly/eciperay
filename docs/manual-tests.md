@@ -199,11 +199,13 @@ without); one recipe may be created fresh in case 1.
 **Run when:**
 `packages/app/src/screens/{Recipes,RecipeDetail,EditRecipe,EditVersion,ManualEntry}Screen.tsx`,
 `packages/app/src/components/recipe/**`,
+`packages/app/src/lib/recipeImageCrop.ts`,
 `packages/app/src/hosts/{recipe,recipes}/**`,
 `packages/web/src/pages/{Recipes,RecipeDetail,EditRecipe,EditVersion,ManualEntry}Page.tsx`,
 `packages/web/src/pages/RecipeDetailHost.tsx`,
-`packages/web/src/components/{recipe,recipes}/**`, `@spudly/ui` recipe form or
-recipe page components, `packages/server` recipe routes,
+`packages/web/src/components/{recipe,recipes}/**`,
+`packages/web/src/lib/recipeImageCrop.ts`, `@spudly/ui` recipe form or recipe
+page components, `packages/server` recipe routes,
 `packages/client/src/recipeListDisplay.ts`, recipe nutrition summary fields in
 `packages/types` / `packages/server` nutrition mapping.
 

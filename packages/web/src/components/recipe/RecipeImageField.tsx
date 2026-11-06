@@ -65,6 +65,10 @@ export const RecipeImageField = ({
   const [cropError, setCropError] = useState<string | null>(null);
   const cropBoxRef = useRef<HTMLDivElement>(null);
   const cropImageRef = useRef<HTMLImageElement>(null);
+  // The pending preview's object URL, owned outside React state so its
+  // create/revoke never runs inside a state updater (Strict Mode invokes
+  // updaters twice, which would leak one URL per selection).
+  const pendingPreviewUrlRef = useRef<string | null>(null);
   const dragStateRef = useRef<{
     mode: 'move' | 'resize';
     startX: number;
@@ -82,12 +86,11 @@ export const RecipeImageField = ({
 
   const clearPending = () => {
     setPendingFile(null);
-    setPendingPreviewUrl(previous => {
-      if (previous) {
-        URL.revokeObjectURL(previous);
-      }
-      return null;
-    });
+    if (pendingPreviewUrlRef.current) {
+      URL.revokeObjectURL(pendingPreviewUrlRef.current);
+      pendingPreviewUrlRef.current = null;
+    }
+    setPendingPreviewUrl(null);
     setNaturalSize(null);
     setCropOpen(false);
     setCropRect(null);
@@ -100,12 +103,12 @@ export const RecipeImageField = ({
       return;
     }
     setPendingFile(file);
-    setPendingPreviewUrl(previous => {
-      if (previous) {
-        URL.revokeObjectURL(previous);
-      }
-      return URL.createObjectURL(file);
-    });
+    if (pendingPreviewUrlRef.current) {
+      URL.revokeObjectURL(pendingPreviewUrlRef.current);
+    }
+    const previewUrl = URL.createObjectURL(file);
+    pendingPreviewUrlRef.current = previewUrl;
+    setPendingPreviewUrl(previewUrl);
     setNaturalSize(null);
     setCropRect(null);
     setCropError(null);
@@ -113,7 +116,7 @@ export const RecipeImageField = ({
   };
 
   /** Skip: hand the original, uncropped file to the existing callback. */
-  const usePendingImage = () => {
+  const acceptPendingImage = () => {
     if (!pendingFile) {
       return;
     }
@@ -132,7 +135,7 @@ export const RecipeImageField = ({
 
   /** Cancel inside the crop dialog also passes the original file through. */
   const cancelCrop = () => {
-    usePendingImage();
+    acceptPendingImage();
   };
 
   const applyCrop = async () => {
@@ -170,6 +173,17 @@ export const RecipeImageField = ({
       cropBoxRef.current?.focus();
     }
   }, [cropOpen]);
+
+  // Revoke the pending preview URL if the component unmounts mid-selection.
+  useEffect(
+    () => () => {
+      if (pendingPreviewUrlRef.current) {
+        URL.revokeObjectURL(pendingPreviewUrlRef.current);
+        pendingPreviewUrlRef.current = null;
+      }
+    },
+    [],
+  );
 
   const cropBoxPercent = {
     left: `${(effectiveCropRect.x / effectiveNaturalSize.width) * 100}%`,
@@ -366,7 +380,7 @@ export const RecipeImageField = ({
               type="button"
               variant="primary"
               size="sm"
-              onPress={usePendingImage}
+              onPress={acceptPendingImage}
             >
               Use image
             </Button>

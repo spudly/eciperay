@@ -1,6 +1,6 @@
 /* eslint-disable max-lines -- recipe image upload, paste, and generate controls */
 import {Button as DsButton, Text as DsText, tokens} from '@spudly/ui';
-import React, {useRef, useState} from 'react';
+import React, {useLayoutEffect, useRef, useState} from 'react';
 import {Image, Modal, PanResponder, View} from 'react-native';
 import {
   launchCamera,
@@ -113,7 +113,7 @@ export const RecipeImageField = ({
   };
 
   /** Skip: hand the original, uncropped asset to the existing callback. */
-  const usePendingImage = () => {
+  const acceptPendingImage = () => {
     if (!pendingAsset?.uri) {
       return;
     }
@@ -133,7 +133,7 @@ export const RecipeImageField = ({
 
   /** Cancel inside the crop overlay also passes the original asset through. */
   const cancelCrop = () => {
-    usePendingImage();
+    acceptPendingImage();
   };
 
   const applyCrop = async () => {
@@ -190,11 +190,16 @@ export const RecipeImageField = ({
     );
   };
 
-  cropStateRef.current = {
-    rect: effectiveCropRect,
-    width: pendingWidth,
-    height: pendingHeight,
-  };
+  // Keep the ref the PanResponder callbacks read in sync after commit —
+  // never write refs during render (a discarded render could leak a value
+  // that was never committed).
+  useLayoutEffect(() => {
+    cropStateRef.current = {
+      rect: effectiveCropRect,
+      width: pendingWidth,
+      height: pendingHeight,
+    };
+  });
 
   const makeCropPanResponder = (mode: 'move' | 'resize') =>
     PanResponder.create({
@@ -368,7 +373,7 @@ export const RecipeImageField = ({
               variant="primary"
               size="sm"
               accessibilityLabel="Use image"
-              onPress={usePendingImage}
+              onPress={acceptPendingImage}
             >
               Use image
             </DsButton>
@@ -454,7 +459,14 @@ export const RecipeImageField = ({
       <Modal
         visible={cropOpen && pendingAsset !== null}
         animationType="slide"
-        onRequestClose={cancelCrop}
+        onRequestClose={() => {
+          // Guarded like the Cancel button: a back press mid-crop must not
+          // deliver the original while applyCrop is still in flight, or
+          // onImagePicked would fire twice.
+          if (!cropBusy) {
+            cancelCrop();
+          }
+        }}
       >
         <YStack
           flex={1}
