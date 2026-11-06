@@ -384,6 +384,9 @@ export const RecipeImageField = ({
             >
               Use image
             </DsButton>
+            {/* Parity with the web mirror's dimensions gate: the app only
+                offers crop once the picker asset's dimensions are known
+                (canCrop), so crop rectangles are always in real pixels. */}
             {canCrop ? (
               <DsButton
                 variant="secondary"

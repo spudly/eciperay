@@ -389,10 +389,15 @@ export const RecipeImageField = ({
             >
               Use image
             </Button>
+            {/* Disabled until the preview loads: crop rectangles are in the
+                real image's pixel space, so a rect computed from the
+                fallback dimensions before load would crop the wrong
+                region. */}
             <Button
               type="button"
               variant="secondary"
               size="sm"
+              disabled={!naturalSize}
               onPress={openCrop}
             >
               Crop image

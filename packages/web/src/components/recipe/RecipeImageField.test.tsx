@@ -13,6 +13,18 @@ vi.mock('../../lib/recipeImageCrop.js', async importOriginal => {
 
 const mockCropImageFile = vi.mocked(cropImageFile);
 
+/**
+ * Simulate the pending preview finishing loading at 1200x900: jsdom never fires
+ * img load on its own, and the component reads naturalWidth/Height from the
+ * load event before it enables cropping.
+ */
+const loadPendingPreview = () => {
+  const preview = screen.getByAltText('Recipe preview');
+  Object.defineProperty(preview, 'naturalWidth', {value: 1200});
+  Object.defineProperty(preview, 'naturalHeight', {value: 900});
+  fireEvent.load(preview);
+};
+
 /** Select a file through the drop zone, then skip cropping ("Use image"). */
 const dropAndUse = async (file: File) => {
   fireEvent.drop(screen.getByLabelText('Recipe image drop zone'), {
@@ -289,6 +301,7 @@ describe('RecipeImageField', () => {
     fireEvent.drop(screen.getByLabelText('Recipe image drop zone'), {
       dataTransfer: {files: [file], items: []},
     });
+    loadPendingPreview();
     await userEvent.click(screen.getByRole('button', {name: 'Crop image'}));
     expect(
       screen.getByRole('dialog', {name: 'Crop recipe image'}),
@@ -312,6 +325,29 @@ describe('RecipeImageField', () => {
     expect(onImageFile.mock.calls[0]?.[0]).not.toBe(file);
   });
 
+  test('crop stays disabled until the preview reports its dimensions', async () => {
+    const onImageFile = vi.fn();
+    render(
+      <RecipeImageField
+        {...defaultProps}
+        onImageFile={onImageFile}
+      />,
+    );
+    const file = new File(['pixels'], 'recipe.png', {type: 'image/png'});
+    fireEvent.drop(screen.getByLabelText('Recipe image drop zone'), {
+      dataTransfer: {files: [file], items: []},
+    });
+    // Crop rectangles are in real-image pixels: until the preview load
+    // reports them, opening crop would seed the rect from fallback dims.
+    expect(screen.getByRole('button', {name: 'Crop image'})).toBeDisabled();
+    loadPendingPreview();
+    await waitFor(() => {
+      expect(
+        screen.getByRole('button', {name: 'Crop image'}),
+      ).not.toBeDisabled();
+    });
+  });
+
   test('cancelling crop passes the original file unchanged', async () => {
     const onImageFile = vi.fn();
     render(
@@ -324,6 +360,7 @@ describe('RecipeImageField', () => {
     fireEvent.drop(screen.getByLabelText('Recipe image drop zone'), {
       dataTransfer: {files: [file], items: []},
     });
+    loadPendingPreview();
     await userEvent.click(screen.getByRole('button', {name: 'Crop image'}));
     await userEvent.click(screen.getByRole('button', {name: 'Cancel crop'}));
     expect(onImageFile).toHaveBeenCalledWith(file);
@@ -343,6 +380,7 @@ describe('RecipeImageField', () => {
     fireEvent.drop(screen.getByLabelText('Recipe image drop zone'), {
       dataTransfer: {files: [file], items: []},
     });
+    loadPendingPreview();
     await userEvent.click(screen.getByRole('button', {name: 'Crop image'}));
     await userEvent.click(screen.getByRole('button', {name: 'Apply crop'}));
     await waitFor(() => {
