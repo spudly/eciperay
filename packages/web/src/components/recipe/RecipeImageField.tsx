@@ -31,6 +31,14 @@ type Props = {
    * pending selection is never silently dropped on save (#406).
    */
   onPendingChange?: (pending: boolean) => void;
+  /**
+   * A file handed in from outside the field (the host's form-wide paste) to
+   * stage as the pending selection, so pasted images get the same use/crop
+   * decision as browsed or dropped ones instead of bypassing the crop step. The
+   * field calls onStagedFileHandled once staged.
+   */
+  stagedFile?: File | null;
+  onStagedFileHandled?: () => void;
 };
 
 // Style objects on DS tokens (B7 C12, design-system#130 — the Tailwind
@@ -49,6 +57,8 @@ export const RecipeImageField = ({
   onGenerateImage,
   onRemove,
   onPendingChange,
+  stagedFile = null,
+  onStagedFileHandled,
 }: Props) => {
   const [isDragging, setIsDragging] = useState(false);
   const captureInputRef = useRef<HTMLInputElement>(null);
@@ -130,6 +140,18 @@ export const RecipeImageField = ({
   useEffect(() => {
     onPendingChange?.(pendingFile !== null);
   }, [pendingFile, onPendingChange]);
+
+  // Stage a file handed in from outside the field (form-wide paste)
+  // through the same pending flow as a browse/drop/paste in the field.
+  // The ref guard stages each distinct file exactly once.
+  const lastStagedFileRef = useRef<File | null>(null);
+  useEffect(() => {
+    if (stagedFile && stagedFile !== lastStagedFileRef.current) {
+      lastStagedFileRef.current = stagedFile;
+      acceptImage(stagedFile);
+      onStagedFileHandled?.();
+    }
+  });
 
   /** Skip: hand the original, uncropped file to the existing callback. */
   const acceptPendingImage = () => {

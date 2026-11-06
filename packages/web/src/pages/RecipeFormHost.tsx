@@ -132,6 +132,9 @@ export const RecipeFormHost = ({
   // A selection still pending inside RecipeImageField (not yet used,
   // cropped, or discarded) blocks submit — see onPendingChange (#406).
   const [imageSelectionPending, setImageSelectionPending] = useState(false);
+  // A form-wide paste hands its file to the image field for staging
+  // (the field clears it via onStagedFileHandled once staged).
+  const [stagedPasteFile, setStagedPasteFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -322,7 +325,10 @@ export const RecipeFormHost = ({
       return;
     }
     e.preventDefault();
-    void processImageFile(file);
+    // Stage the paste in the image field instead of processing it here:
+    // a form-wide paste gets the same use/crop decision as any other
+    // selection, so it can never bypass the pending step (#406).
+    setStagedPasteFile(file);
   };
 
   const updateIngredient = (
@@ -571,6 +577,10 @@ export const RecipeFormHost = ({
             headerAction={revertAction}
             onImageFile={processImageFile}
             onPendingChange={setImageSelectionPending}
+            stagedFile={stagedPasteFile}
+            onStagedFileHandled={() => {
+              setStagedPasteFile(null);
+            }}
             onGenerateImage={handleGenerateImage}
             onRemove={() => {
               clearPendingImage();

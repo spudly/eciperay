@@ -437,6 +437,32 @@ describe('RecipeImageField', () => {
     });
   });
 
+  test('stages a file handed in through stagedFile', async () => {
+    const onImageFile = vi.fn();
+    const onPendingChange = vi.fn();
+    const onStagedFileHandled = vi.fn();
+    const file = new File(['pixels'], 'pasted.png', {type: 'image/png'});
+    render(
+      <RecipeImageField
+        {...defaultProps}
+        onImageFile={onImageFile}
+        onPendingChange={onPendingChange}
+        stagedFile={file}
+        onStagedFileHandled={onStagedFileHandled}
+      />,
+    );
+    // The pasted file becomes the pending selection — nothing is
+    // processed until the user uses, crops, or discards it.
+    await waitFor(() => {
+      expect(onStagedFileHandled).toHaveBeenCalledTimes(1);
+    });
+    expect(screen.getByRole('button', {name: 'Use image'})).toBeInTheDocument();
+    expect(onPendingChange).toHaveBeenLastCalledWith(true);
+    expect(onImageFile).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole('button', {name: 'Use image'}));
+    expect(onImageFile).toHaveBeenCalledWith(file);
+  });
+
   test('shows an error when the selected image cannot be loaded', async () => {
     render(<RecipeImageField {...defaultProps} />);
     const file = new File(['pixels'], 'recipe.png', {type: 'image/png'});

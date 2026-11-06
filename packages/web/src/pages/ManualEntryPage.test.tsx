@@ -93,4 +93,42 @@ describe('ManualEntryPage', () => {
       expect(screen.getByText('Recipe Created')).toBeInTheDocument();
     });
   }, 15_000);
+
+  test('blocks saving while a selected image is still pending', async () => {
+    await renderWithProviders(
+      <Routes>
+        <Route
+          path="/add/manual"
+          element={<ManualEntryPage />}
+        />
+        <Route
+          path="/recipes/:recipeId"
+          element={<div>Recipe Created</div>}
+        />
+      </Routes>,
+      {route: '/add/manual'},
+    );
+    await userEvent.type(titleField()!, 'New Recipe');
+    await userEvent.type(screen.getAllByPlaceholderText('Name')[0]!, 'Flour');
+    const textareas = screen.getAllByRole('textbox');
+    await userEvent.type(textareas.at(-1)!, 'Mix ingredients');
+    const file = new File(['pixels'], 'recipe.png', {type: 'image/png'});
+    await userEvent.upload(
+      document.querySelector('#recipe-image-upload') as HTMLElement,
+      file,
+    );
+    // The image is pending (no "Use image" click): saving must be
+    // guarded so the selection is not silently dropped (#406).
+    expect(screen.getByRole('button', {name: 'Use image'})).toBeInTheDocument();
+    await userEvent.click(screen.getByText('Create Recipe'));
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          'Use, crop, or discard the selected image before saving.',
+        ),
+      ).toBeInTheDocument();
+    });
+    expect(screen.queryByText('Recipe Created')).not.toBeInTheDocument();
+    expect(mockUploadRecipeImage).not.toHaveBeenCalled();
+  }, 15_000);
 });

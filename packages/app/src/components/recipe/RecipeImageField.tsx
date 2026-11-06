@@ -111,6 +111,12 @@ export const RecipeImageField = ({
     onPendingChange?.(pendingAsset !== null);
   }, [pendingAsset, onPendingChange]);
 
+  // Parity note (#446): the web mirror also stages files handed in from
+  // outside the field (stagedFile, for the host's form-wide paste). There
+  // is no native equivalent — images here arrive only through the picker
+  // or camera, which already stage as pending above — so the app field
+  // has no stagedFile prop.
+
   /** Deliver an asset through the existing picked-image callback. */
   const deliverAsset = async (asset: Asset) => {
     const {uri} = asset;
