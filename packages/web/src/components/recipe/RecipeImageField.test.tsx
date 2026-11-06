@@ -497,6 +497,40 @@ describe('RecipeImageField', () => {
     expect(onImageFile).toHaveBeenCalledWith(file);
   });
 
+  test('does not acknowledge a staged file refused while busy, and stages it on retry', async () => {
+    const onStagedFileHandled = vi.fn();
+    const onPendingChange = vi.fn();
+    const file = new File(['pixels'], 'pasted.png', {type: 'image/png'});
+    const {rerender} = render(
+      <RecipeImageField
+        {...defaultProps}
+        imageUploading
+        onPendingChange={onPendingChange}
+        stagedFile={file}
+        onStagedFileHandled={onStagedFileHandled}
+      />,
+    );
+    // While an upload is in progress, acceptImage refuses the staged
+    // file — it must NOT be marked handled, or the host would clear
+    // (and silently drop) a file that was never staged.
+    expect(onStagedFileHandled).not.toHaveBeenCalled();
+    expect(onPendingChange).toHaveBeenLastCalledWith(false);
+    // Once the field is free, the same file is retried and staged.
+    rerender(
+      <RecipeImageField
+        {...defaultProps}
+        onPendingChange={onPendingChange}
+        stagedFile={file}
+        onStagedFileHandled={onStagedFileHandled}
+      />,
+    );
+    await waitFor(() => {
+      expect(onStagedFileHandled).toHaveBeenCalledTimes(1);
+    });
+    expect(screen.getByRole('button', {name: 'Use image'})).toBeInTheDocument();
+    expect(onPendingChange).toHaveBeenLastCalledWith(true);
+  });
+
   test('shows an error when the selected image cannot be loaded', async () => {
     render(<RecipeImageField {...defaultProps} />);
     const file = new File(['pixels'], 'recipe.png', {type: 'image/png'});

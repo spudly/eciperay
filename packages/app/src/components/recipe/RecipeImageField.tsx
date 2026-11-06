@@ -84,6 +84,10 @@ export const RecipeImageField = ({
     width: number;
     height: number;
   }>({rect: null, width: 0, height: 0});
+  // Whether the crop overlay is open, readable at picker-result time:
+  // an async pick captures the cropOpen of the render that launched
+  // it, which can be stale by the time its result arrives (#446).
+  const cropOpenRef = useRef(false);
 
   const reportReadError = (error_: unknown) => {
     onImageError?.(
@@ -225,6 +229,7 @@ export const RecipeImageField = ({
       width: pendingWidth,
       height: pendingHeight,
     };
+    cropOpenRef.current = cropOpen;
   });
 
   const makeCropPanResponder = (mode: 'move' | 'resize') =>
@@ -278,9 +283,11 @@ export const RecipeImageField = ({
   const handleResult = async (result: ImagePickerResponse) => {
     // Parity with the web mirror (#446): while the crop overlay is
     // open, a new pick must not replace the pending asset or close
-    // the overlay before the user decides on the crop. (The overlay
-    // covers the pick buttons, so this is defense in depth.)
-    if (result.didCancel || cropOpen) {
+    // the overlay before the user decides on the crop. Read the ref,
+    // not the state: this result can arrive after a later pick has
+    // already opened the overlay, and the closure's cropOpen is the
+    // stale value from the render that launched this pick.
+    if (result.didCancel || cropOpenRef.current) {
       return;
     }
     if (result.errorCode) {

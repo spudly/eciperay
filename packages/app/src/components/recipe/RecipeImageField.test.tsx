@@ -1,5 +1,5 @@
 import React from 'react';
-import {fireEvent, waitFor} from '@testing-library/react-native';
+import {act, fireEvent, waitFor} from '@testing-library/react-native';
 import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 
 import {renderWithProviders} from '../../__tests__/testUtils';
@@ -106,6 +106,68 @@ describe('RecipeImageField', () => {
       expect(onImagePicked).toHaveBeenCalledWith(
         {base64: btoa('pixels'), contentType: 'image/png'},
         'file://recipe.png',
+      );
+    });
+  });
+
+  test('a late result from an earlier pick does not replace the image being cropped', async () => {
+    const onImagePicked = jest.fn();
+    const laterAsset = {
+      uri: 'file://later.png',
+      base64: btoa('later'),
+      type: 'image/png',
+      fileSize: 5,
+      width: 1200,
+      height: 900,
+    };
+    let resolveFirstPick: (value: unknown) => void = () => undefined;
+    const firstPick = new Promise<unknown>(resolve => {
+      resolveFirstPick = resolve;
+    });
+    mockLaunchImageLibrary
+      .mockImplementationOnce(() => firstPick)
+      .mockResolvedValueOnce({assets: [laterAsset]});
+    const {getByLabelText} = await renderWithProviders(
+      <RecipeImageField
+        imagePreview={null}
+        imageUploading={false}
+        imageError={null}
+        onImagePicked={onImagePicked}
+        onRemove={jest.fn()}
+      />,
+    );
+    // First pick stays in flight; a second pick completes and its
+    // image is opened in the crop overlay.
+    await fireEvent.press(getByLabelText('Choose recipe image'));
+    await fireEvent.press(getByLabelText('Choose recipe image'));
+    await waitFor(() => {
+      expect(getByLabelText('Crop image')).toBeTruthy();
+    });
+    await fireEvent.press(getByLabelText('Crop image'));
+    await waitFor(() => {
+      expect(getByLabelText('Apply crop')).toBeTruthy();
+    });
+    // The earlier pick now returns. Its result must be ignored: the
+    // overlay stays open on the later image instead of the stale
+    // result replacing the pending asset and closing the overlay.
+    await act(async () => {
+      resolveFirstPick({
+        assets: [
+          {
+            uri: 'file://earlier.png',
+            base64: btoa('earlier'),
+            type: 'image/png',
+            fileSize: 7,
+          },
+        ],
+      });
+    });
+    expect(getByLabelText('Apply crop')).toBeTruthy();
+    await fireEvent.press(getByLabelText('Cancel crop'));
+    await waitFor(() => {
+      expect(onImagePicked).toHaveBeenCalledWith(
+        {base64: btoa('later'), contentType: 'image/png'},
+        'file://later.png',
       );
     });
   });

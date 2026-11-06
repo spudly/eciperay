@@ -35,7 +35,9 @@ type Props = {
    * A file handed in from outside the field (the host's form-wide paste) to
    * stage as the pending selection, so pasted images get the same use/crop
    * decision as browsed or dropped ones instead of bypassing the crop step. The
-   * field calls onStagedFileHandled once staged.
+   * field calls onStagedFileHandled only once the file is actually staged —
+   * while staging is refused (busy / crop open) the caller keeps the file and
+   * the field retries on a later render.
    */
   stagedFile?: File | null;
   onStagedFileHandled?: () => void;
@@ -117,12 +119,13 @@ export const RecipeImageField = ({
     setPreviewError(null);
   };
 
-  const acceptImage = (file: File | null) => {
+  /** Stage a file as the pending selection; false when refused. */
+  const acceptImage = (file: File | null): boolean => {
     // Also refuse while the crop dialog is open: a paste into the crop
     // area must not replace the pending image or close the dialog
     // before the user decides on the crop (#446).
     if (!file || imageBusy || cropOpen) {
-      return;
+      return false;
     }
     setPendingFile(file);
     if (pendingPreviewUrlRef.current) {
@@ -136,6 +139,7 @@ export const RecipeImageField = ({
     setCropError(null);
     setCropOpen(false);
     setPreviewError(null);
+    return true;
   };
 
   // Keep the host informed about the pending selection so it can guard
@@ -146,13 +150,18 @@ export const RecipeImageField = ({
 
   // Stage a file handed in from outside the field (form-wide paste)
   // through the same pending flow as a browse/drop/paste in the field.
-  // The ref guard stages each distinct file exactly once.
+  // Acknowledge the file ONLY once it is actually staged: when
+  // acceptImage refuses it (busy, or the crop dialog is open), the
+  // host keeps it and this effect retries on a later render, so the
+  // file is never silently dropped (#446). The ref guard stages each
+  // distinct file exactly once.
   const lastStagedFileRef = useRef<File | null>(null);
   useEffect(() => {
     if (stagedFile && stagedFile !== lastStagedFileRef.current) {
-      lastStagedFileRef.current = stagedFile;
-      acceptImage(stagedFile);
-      onStagedFileHandled?.();
+      if (acceptImage(stagedFile)) {
+        lastStagedFileRef.current = stagedFile;
+        onStagedFileHandled?.();
+      }
     }
   });
 
