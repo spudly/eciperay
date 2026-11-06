@@ -139,6 +139,67 @@ describe('versionSatisfiesSpec prerelease rules (npm semantics)', () => {
   });
 });
 
+describe('versionSatisfiesSpec wildcards, partials, and hyphen ranges', () => {
+  test('wildcard and partial specs desugar to bounded ranges', () => {
+    expect(versionSatisfiesSpec('1.2.3', '1.2.x')).toBe(true);
+    expect(versionSatisfiesSpec('1.3.0', '1.2.x')).toBe(false);
+    expect(versionSatisfiesSpec('1.2.3', '1.2')).toBe(true);
+    expect(versionSatisfiesSpec('1.2.3', '1')).toBe(true);
+    expect(versionSatisfiesSpec('2.0.0', '1')).toBe(false);
+    expect(versionSatisfiesSpec('0.0.3', '0.0.x')).toBe(true);
+    expect(versionSatisfiesSpec('0.1.0', '0.0.x')).toBe(false);
+    expect(versionSatisfiesSpec('1.9.9', '~1')).toBe(true);
+    expect(versionSatisfiesSpec('1.9.9', '~1.x')).toBe(true);
+    expect(versionSatisfiesSpec('1.9.9', '^1.2')).toBe(true);
+  });
+
+  test('partial comparators bound the whole partial range', () => {
+    expect(versionSatisfiesSpec('1.2.3', '>1.2')).toBe(false);
+    expect(versionSatisfiesSpec('1.3.0', '>1.2')).toBe(true);
+    expect(versionSatisfiesSpec('1.2.3', '<=1.2')).toBe(true);
+    expect(versionSatisfiesSpec('1.3.0', '<=1.2')).toBe(false);
+    expect(versionSatisfiesSpec('1.2.3', '>1')).toBe(false);
+    expect(versionSatisfiesSpec('2.0.0', '>1')).toBe(true);
+    expect(versionSatisfiesSpec('2.9.9', '<=2')).toBe(true);
+    expect(versionSatisfiesSpec('3.0.0', '<=2')).toBe(false);
+    expect(versionSatisfiesSpec('1.2.0', '>=1.2')).toBe(true);
+    expect(versionSatisfiesSpec('1.1.9', '<1.2')).toBe(true);
+  });
+
+  test('prereleases against wildcard and partial specs follow npm', () => {
+    expect(versionSatisfiesSpec('1.2.3-beta.1', '*')).toBe(false);
+    expect(versionSatisfiesSpec('1.2.3-beta.1', '')).toBe(false);
+    expect(versionSatisfiesSpec('1.2.3-beta.1', '1.2.x')).toBe(false);
+    expect(versionSatisfiesSpec('1.2.3-beta.1', '1.x')).toBe(false);
+    expect(versionSatisfiesSpec('1.2.3-beta.1', '>=1.2')).toBe(false);
+    expect(versionSatisfiesSpec('1.2.3-beta.1', '>1.2')).toBe(false);
+    // A wildcard spec carrying a prerelease drops it (npm desugars
+    // '1.2.x-beta.1' to the plain x-range).
+    expect(versionSatisfiesSpec('1.2.3', '1.2.x-beta.1')).toBe(true);
+    expect(versionSatisfiesSpec('1.2.3-beta.1', '1.2.x-beta.1')).toBe(false);
+    // A prerelease on a partial version is an invalid range in npm:
+    // it matches nothing, not even its own tuple.
+    expect(versionSatisfiesSpec('1.2.0', '>=1.2-alpha')).toBe(false);
+    expect(versionSatisfiesSpec('1.2.0-alpha.1', '>=1.2-alpha')).toBe(false);
+    expect(versionSatisfiesSpec('1.2.3', '1.2-alpha')).toBe(false);
+  });
+
+  test('hyphen ranges are inclusive at both ends', () => {
+    expect(versionSatisfiesSpec('1.2.3', '1.2.3 - 2.0.0')).toBe(true);
+    expect(versionSatisfiesSpec('2.0.0', '1.2.3 - 2.0.0')).toBe(true);
+    expect(versionSatisfiesSpec('2.0.1', '1.2.3 - 2.0.0')).toBe(false);
+    expect(versionSatisfiesSpec('1.2.2', '1.2.3 - 2.0.0')).toBe(false);
+    expect(versionSatisfiesSpec('2.9.9', '1.2 - 2')).toBe(true);
+    expect(versionSatisfiesSpec('3.0.0', '1.2 - 2')).toBe(false);
+    expect(versionSatisfiesSpec('1.2.3-beta.2', '1.2.3-beta.1 - 2.0.0')).toBe(
+      true,
+    );
+    expect(versionSatisfiesSpec('1.2.4-beta.1', '1.2.3-beta.1 - 2.0.0')).toBe(
+      false,
+    );
+  });
+});
+
 describe('aliasSpecRange', () => {
   test('extracts the range from alias specs, including scoped targets', () => {
     expect(aliasSpecRange('npm:react@^18.2.0')).toBe('^18.2.0');

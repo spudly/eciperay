@@ -132,120 +132,331 @@ const compareFull = (
   return core !== 0 ? core : comparePrereleases(versionPre, specPre);
 };
 
-const satisfiesSingle = (version: string, spec: string): boolean => {
-  const versionParts = parseVersionParts(version);
-  const match = /^([~^><=]*)(.+)$/.exec(spec);
-  const specBody = match?.[2];
-  const specParts = specBody === undefined ? null : parseVersionParts(specBody);
-  if (
-    versionParts === null ||
-    specParts === null ||
-    match === null ||
-    specBody === undefined
-  ) {
-    // A spec or version this check cannot parse is not this check's to
-    // judge (non-registry specs are filtered by the caller); never fail
-    // a build over a form the checker does not understand.
-    return true;
-  }
-  const op = match[1];
-  const cmp = compareFull(
-    versionParts,
-    prereleaseIdentifiers(version),
-    specParts,
-    prereleaseIdentifiers(specBody),
-  );
-  if (op === '^') {
-    if (cmp < 0) {
-      return false;
-    }
-    const major = specParts[0] ?? null;
-    const minor = specParts[1] ?? null;
-    if (major !== null && major > 0) {
-      return versionParts[0] === major;
-    }
-    if (minor !== null && minor > 0) {
-      return versionParts[0] === 0 && versionParts[1] === minor;
-    }
-    return (
-      versionParts[0] === 0 &&
-      versionParts[1] === 0 &&
-      versionParts[2] === specParts[2]
-    );
-  }
-  if (op === '~') {
-    return (
-      cmp >= 0 &&
-      versionParts[0] === specParts[0] &&
-      versionParts[1] === specParts[1]
-    );
-  }
-  if (op === '>=') {
-    return cmp >= 0;
-  }
-  if (op === '<=') {
-    return cmp <= 0;
-  }
-  if (op === '>') {
-    return cmp > 0;
-  }
-  if (op === '<') {
-    return cmp < 0;
-  }
-  // Exact ('' or '='): every specified segment must match, and a spec
-  // prerelease must equal the version's prerelease.
-  const coreMatches = specParts.every(
-    (part, index) => part === null || part === versionParts[index],
-  );
-  if (!coreMatches) {
-    return false;
-  }
-  const specPre = prereleaseIdentifiers(specBody);
-  if (specPre === null) {
-    return prereleaseIdentifiers(version) === null;
-  }
-  return comparePrereleases(prereleaseIdentifiers(version), specPre) === 0;
+type PrimitiveComparator = {
+  op: '<' | '<=' | '>' | '>=' | '=';
+  core: [number, number, number];
+  pre: string[] | null;
 };
 
-// Supports the spec forms used in this repo's manifests: '*', exact,
-// caret, tilde, comparators, space-separated AND sets, and '||' OR sets.
-// Prereleases follow npm's rule: a prerelease version satisfies a set
-// only when some comparator in the set carries a prerelease with the
-// same core version — '^1.2.0' does not admit '1.2.3-beta.1', while
-// '^1.2.3-beta.1' admits '1.2.3-beta.2' but not '1.2.4-beta.1'.
+type SpecBody = {
+  // Core segments, padded to three; null marks a wildcard or a segment
+  // the spec did not specify ('1.2' and '1.2.x' both give [1, 2, null]).
+  segments: (number | null)[];
+  // How many leading segments are concrete numbers.
+  specified: number;
+  // Whether the raw body literally ended in a wildcard segment
+  // ('1.2.x'), as opposed to a merely missing one ('1.2').
+  trailingWildcard: boolean;
+  pre: string[] | null;
+};
+
+// Parses a comparator body ('1.2.x', '0.300.0-rc.1') into segments and
+// prerelease; null when a segment is neither numeric nor a wildcard, or
+// a concrete segment follows a wildcard — forms this check does not
+// judge.
+const parseSpecBody = (body: string): SpecBody | null => {
+  const withoutBuild = body.replace(/^[v=]+/, '').split('+')[0] ?? '';
+  const dash = withoutBuild.indexOf('-');
+  const coreText = dash === -1 ? withoutBuild : withoutBuild.slice(0, dash);
+  const rawSegments = coreText.split('.');
+  if (rawSegments.length > 3) {
+    return null;
+  }
+  const segments: (number | null)[] = [];
+  let specified = 0;
+  let sawWildcard = false;
+  for (const segment of rawSegments) {
+    if (segment === 'x' || segment === 'X' || segment === '*') {
+      sawWildcard = true;
+      segments.push(null);
+    } else if (/^\d+$/.test(segment)) {
+      if (sawWildcard) {
+        return null;
+      }
+      specified += 1;
+      segments.push(Number(segment));
+    } else {
+      return null;
+    }
+  }
+  const trailingWildcard =
+    rawSegments.length === 3 &&
+    (rawSegments[2] === 'x' ||
+      rawSegments[2] === 'X' ||
+      rawSegments[2] === '*');
+  while (segments.length < 3) {
+    segments.push(null);
+  }
+  return {
+    segments,
+    specified,
+    trailingWildcard,
+    pre: prereleaseIdentifiers(body),
+  };
+};
+
+const fillZero = (segments: (number | null)[]): [number, number, number] => [
+  segments[0] ?? 0,
+  segments[1] ?? 0,
+  segments[2] ?? 0,
+];
+
+// The core one step past the segment at `index` ('1.2' bumped at the
+// minor gives 1.3.0) — the exclusive upper bound of a partial range.
+const bumped = (
+  segments: (number | null)[],
+  index: number,
+): [number, number, number] => {
+  const core = fillZero(segments);
+  core[index] = (core[index] ?? 0) + 1;
+  for (let i = index + 1; i < 3; i += 1) {
+    core[i] = 0;
+  }
+  return core;
+};
+
+// A token desugars to primitive comparators, 'not-judged' (a form this
+// check cannot parse — never a failure), or 'invalid' (a form npm
+// itself rejects, e.g. a prerelease on a partial version: it matches
+// nothing).
+type Desugared = PrimitiveComparator[] | 'not-judged' | 'invalid';
+
+const desugarToken = (token: string): Desugared => {
+  const match = /^([~^><=]*)(.+)$/.exec(token);
+  const body = match?.[2];
+  if (match === null || body === undefined) {
+    return 'not-judged';
+  }
+  const parsed = parseSpecBody(body);
+  if (parsed === null) {
+    return 'not-judged';
+  }
+  const op = match[1] ?? '';
+  const {segments, specified, pre} = parsed;
+  if (pre !== null && specified < 3) {
+    // npm rejects prereleases on partial versions ('>=1.2-alpha',
+    // '^1.2-beta') — except a trailing-wildcard form like '1.2.x-beta.1',
+    // which desugars to the plain x-range with the prerelease dropped.
+    const trailingWildcard =
+      (op === '' || op === '=') &&
+      parsed.trailingWildcard &&
+      segments[0] !== null &&
+      segments[1] !== null;
+    if (!trailingWildcard) {
+      return 'invalid';
+    }
+    return desugarToken(`=${body.slice(0, body.indexOf('-'))}`);
+  }
+  const filled = fillZero(segments);
+  const lower: PrimitiveComparator = {op: '>=', core: filled, pre};
+  switch (op) {
+    case '':
+    case '=':
+      if (specified === 0) {
+        return [];
+      }
+      if (specified < 3) {
+        return [
+          {op: '>=', core: filled, pre: null},
+          {op: '<', core: bumped(segments, specified - 1), pre: ['0']},
+        ];
+      }
+      return [{op: '=', core: filled, pre}];
+    case '^': {
+      if (specified === 0) {
+        return [];
+      }
+      // Bump the first non-zero segment, or the last specified segment
+      // when all are zero ('^0.0' -> <0.1.0-0, '^0' -> <1.0.0-0).
+      let bumpIndex = specified - 1;
+      for (let i = 0; i < specified; i += 1) {
+        if ((segments[i] ?? 0) > 0) {
+          bumpIndex = i;
+          break;
+        }
+      }
+      return [lower, {op: '<', core: bumped(segments, bumpIndex), pre: ['0']}];
+    }
+    case '~': {
+      if (specified === 0) {
+        return [];
+      }
+      const bumpIndex = specified === 1 ? 0 : 1;
+      return [lower, {op: '<', core: bumped(segments, bumpIndex), pre: ['0']}];
+    }
+    case '>':
+      return specified < 3
+        ? [{op: '>=', core: bumped(segments, specified - 1), pre: null}]
+        : [{op: '>', core: filled, pre}];
+    case '>=':
+      return specified < 3
+        ? [{op: '>=', core: filled, pre: null}]
+        : [{op: '>=', core: filled, pre}];
+    case '<':
+      return specified < 3
+        ? [{op: '<', core: filled, pre: ['0']}]
+        : [{op: '<', core: filled, pre}];
+    case '<=':
+      return specified < 3
+        ? [{op: '<', core: bumped(segments, specified - 1), pre: ['0']}]
+        : [{op: '<=', core: filled, pre}];
+    default:
+      return 'not-judged';
+  }
+};
+
+// Hyphen ranges ('1.2.3 - 2.0.0') desugar to a lower '>'=' bound and,
+// for a partial upper bound, an exclusive bumped bound ('1.2 - 2' ->
+// '>=1.2.0 <3.0.0-0'); a full upper bound stays inclusive.
+const desugarHyphen = (from: string, to: string): Desugared => {
+  const fromParsed = parseSpecBody(from);
+  const toParsed = parseSpecBody(to);
+  if (fromParsed === null || toParsed === null) {
+    return 'not-judged';
+  }
+  if (
+    (fromParsed.pre !== null && fromParsed.specified < 3) ||
+    (toParsed.pre !== null && toParsed.specified < 3)
+  ) {
+    return 'invalid';
+  }
+  const comparators: PrimitiveComparator[] = [
+    {op: '>=', core: fillZero(fromParsed.segments), pre: fromParsed.pre},
+  ];
+  if (toParsed.specified < 3) {
+    if (toParsed.specified > 0) {
+      comparators.push({
+        op: '<',
+        core: bumped(toParsed.segments, toParsed.specified - 1),
+        pre: ['0'],
+      });
+    }
+  } else {
+    comparators.push({
+      op: '<=',
+      core: fillZero(toParsed.segments),
+      pre: toParsed.pre,
+    });
+  }
+  return comparators;
+};
+
+const matchesComparator = (
+  versionParts: [number, number, number],
+  versionPre: string[] | null,
+  comparator: PrimitiveComparator,
+): boolean => {
+  const cmp = compareFull(
+    versionParts,
+    versionPre,
+    comparator.core,
+    comparator.pre,
+  );
+  switch (comparator.op) {
+    case '<':
+      return cmp < 0;
+    case '<=':
+      return cmp <= 0;
+    case '>':
+      return cmp > 0;
+    case '>=':
+      return cmp >= 0;
+    case '=':
+      return cmp === 0;
+  }
+};
+
+// One OR alternative: a space-separated AND set of comparators (with at
+// most one hyphen range). 'not-judged' propagates: a set containing a
+// form this check cannot parse is not this check's to judge.
+const satisfiesAlternative = (
+  versionParts: [number, number, number],
+  versionPre: string[] | null,
+  alternative: string,
+): boolean | 'not-judged' => {
+  const tokens = alternative.trim().split(/\s+/).filter(Boolean);
+  const comparators: PrimitiveComparator[] = [];
+  for (let i = 0; i < tokens.length; i += 1) {
+    const token = tokens[i] ?? '';
+    if (token === '-' && i > 0 && i < tokens.length - 1) {
+      continue;
+    }
+    const previous = tokens[i - 1];
+    const next = tokens[i + 1];
+    const desugared =
+      next === '-'
+        ? desugarHyphen(token, tokens[i + 2] ?? '')
+        : previous === '-'
+          ? []
+          : desugarToken(token);
+    if (desugared === 'not-judged') {
+      return 'not-judged';
+    }
+    if (desugared === 'invalid') {
+      return false;
+    }
+    comparators.push(...desugared);
+  }
+  if (!comparators.every(c => matchesComparator(versionParts, versionPre, c))) {
+    return false;
+  }
+  // npm's prerelease gate: a prerelease version satisfies a set only
+  // when some comparator in it carries a prerelease with the same core
+  // version — '^1.2.0' does not admit '1.2.3-beta.1', while
+  // '^1.2.3-beta.1' admits '1.2.3-beta.2' but not '1.2.4-beta.1'.
+  if (versionPre === null) {
+    return true;
+  }
+  return comparators.some(
+    c =>
+      c.pre !== null &&
+      c.core[0] === versionParts[0] &&
+      c.core[1] === versionParts[1] &&
+      c.core[2] === versionParts[2],
+  );
+};
+
+// npm-compatible satisfaction for registry specs: '*', exact, caret,
+// tilde, comparators, partial and wildcard forms ('1.2', '1.2.x'),
+// hyphen ranges, space-separated AND sets, and '||' OR sets. Forms
+// this check cannot parse (dist-tags like 'beta', non-version text)
+// are not judged and report satisfied — the caller filters
+// non-registry specs, and a lockfile desync must never hide behind a
+// parser gap for the forms above, which are judged exactly.
 export const versionSatisfiesSpec = (
   version: string,
   spec: string,
 ): boolean => {
   const trimmed = spec.trim();
-  if (trimmed === '' || trimmed === '*' || trimmed === 'latest') {
+  if (trimmed === 'latest') {
     return true;
   }
-  const versionParts = parseVersionParts(version);
+  const rawParts = parseVersionParts(version);
+  if (rawParts === null) {
+    return true;
+  }
+  const versionParts: [number, number, number] = [
+    rawParts[0] ?? 0,
+    rawParts[1] ?? 0,
+    rawParts[2] ?? 0,
+  ];
   const versionPre = prereleaseIdentifiers(version);
-  return trimmed.split('||').some(alternative => {
-    const tokens = alternative.trim().split(/\s+/);
-    if (!tokens.every(token => satisfiesSingle(version, token))) {
-      return false;
-    }
-    if (versionPre === null || versionParts === null) {
+  if (trimmed === '' || trimmed === '*' || trimmed === 'x' || trimmed === 'X') {
+    // The any-range admits releases only; npm never resolves it to a
+    // prerelease.
+    return versionPre === null;
+  }
+  let sawNotJudged = false;
+  for (const alternative of trimmed.split('||')) {
+    const result = satisfiesAlternative(versionParts, versionPre, alternative);
+    if (result === true) {
       return true;
     }
-    return tokens.some(token => {
-      const match = /^([~^><=]*)(.+)$/.exec(token);
-      const body = match?.[2];
-      if (body === undefined || prereleaseIdentifiers(body) === null) {
-        return false;
-      }
-      const bodyParts = parseVersionParts(body);
-      return (
-        bodyParts !== null &&
-        bodyParts.every(
-          (part, index) => part === null || part === versionParts[index],
-        )
-      );
-    });
-  });
+    if (result === 'not-judged') {
+      sawNotJudged = true;
+    }
+  }
+  return sawNotJudged;
 };
 
 // npm alias specs ('npm:<name>@<range>') install the target package under
