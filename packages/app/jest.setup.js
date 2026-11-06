@@ -47,6 +47,18 @@ jest.mock('react-native-image-picker', () => ({
   launchImageLibrary: jest.fn(),
 }));
 
+jest.mock('expo-image-manipulator', () => ({
+  manipulateAsync: jest
+    .fn()
+    .mockResolvedValue({
+      uri: 'file:///cache/manipulated.jpg',
+      width: 0,
+      height: 0,
+      base64: '',
+    }),
+  SaveFormat: {JPEG: 'jpeg', PNG: 'png', WEBP: 'webp'},
+}));
+
 jest.mock('posthog-react-native', () => ({
   __esModule: true,
   default: jest

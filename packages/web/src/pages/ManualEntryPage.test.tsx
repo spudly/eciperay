@@ -78,6 +78,8 @@ describe('ManualEntryPage', () => {
       document.querySelector('#recipe-image-upload') as HTMLElement,
       file,
     );
+    // #406: the selected image is pending until used (or cropped).
+    await userEvent.click(screen.getByRole('button', {name: 'Use image'}));
     await userEvent.click(screen.getByText('Create Recipe'));
     await waitFor(() => {
       expect(mockUploadRecipeImage).toHaveBeenCalledWith(

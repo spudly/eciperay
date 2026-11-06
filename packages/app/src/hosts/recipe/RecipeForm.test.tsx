@@ -574,6 +574,9 @@ describe('RecipeForm', () => {
       ],
     });
     await fireEvent.press(getByLabelText('Choose recipe image'));
+    // #406: the picked image is pending until used (or cropped) — the
+    // host's sign-in check runs when the pending image is confirmed.
+    await fireEvent.press(await findByText('Use image'));
     expect(await findByText('Sign in to upload images')).toBeTruthy();
   });
 

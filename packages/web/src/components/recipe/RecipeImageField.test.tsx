@@ -1,7 +1,25 @@
 import {fireEvent, render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
+import {cropImageFile} from '../../lib/recipeImageCrop.js';
+
 import {RecipeImageField} from './RecipeImageField.js';
+
+vi.mock('../../lib/recipeImageCrop.js', async importOriginal => {
+  const actual =
+    await importOriginal<typeof import('../../lib/recipeImageCrop.js')>();
+  return {...actual, cropImageFile: vi.fn()};
+});
+
+const mockCropImageFile = vi.mocked(cropImageFile);
+
+/** Select a file through the drop zone, then skip cropping ("Use image"). */
+const dropAndUse = async (file: File) => {
+  fireEvent.drop(screen.getByLabelText('Recipe image drop zone'), {
+    dataTransfer: {files: [file], items: []},
+  });
+  await userEvent.click(screen.getByRole('button', {name: 'Use image'}));
+};
 
 describe('RecipeImageField', () => {
   const defaultProps = {
@@ -21,9 +39,7 @@ describe('RecipeImageField', () => {
       />,
     );
     const file = new File(['pixels'], 'recipe.png', {type: 'image/png'});
-    fireEvent.drop(screen.getByLabelText('Recipe image drop zone'), {
-      dataTransfer: {files: [file], items: []},
-    });
+    await dropAndUse(file);
     await waitFor(() => {
       expect(onImageFile).toHaveBeenCalledWith(file);
     });
@@ -44,6 +60,7 @@ describe('RecipeImageField', () => {
         items: [{kind: 'file', type: 'image/png', getAsFile: () => file}],
       },
     });
+    await userEvent.click(screen.getByRole('button', {name: 'Use image'}));
     await waitFor(() => {
       expect(onImageFile).toHaveBeenCalledWith(file);
     });
@@ -65,6 +82,8 @@ describe('RecipeImageField', () => {
       container.querySelector('#recipe-image-upload') as HTMLElement,
       file,
     );
+    expect(onImageFile).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole('button', {name: 'Use image'}));
     expect(onImageFile).toHaveBeenCalledWith(file);
   });
 
@@ -215,6 +234,7 @@ describe('RecipeImageField', () => {
     ).toBeInTheDocument();
     const file = new File(['pixels'], 'captured.png', {type: 'image/png'});
     await userEvent.upload(captureInput as HTMLElement, file);
+    await userEvent.click(screen.getByRole('button', {name: 'Use image'}));
     expect(onImageFile).toHaveBeenCalledWith(file);
   });
 
@@ -232,5 +252,126 @@ describe('RecipeImageField', () => {
     expect(browseClick).toHaveBeenCalled();
     await userEvent.click(screen.getByText('Take photo'));
     expect(captureClick).toHaveBeenCalled();
+  });
+
+  test('offers crop after a selection without calling onImageFile yet', async () => {
+    const onImageFile = vi.fn();
+    render(
+      <RecipeImageField
+        {...defaultProps}
+        onImageFile={onImageFile}
+      />,
+    );
+    const file = new File(['pixels'], 'recipe.png', {type: 'image/png'});
+    fireEvent.drop(screen.getByLabelText('Recipe image drop zone'), {
+      dataTransfer: {files: [file], items: []},
+    });
+    expect(
+      screen.getByRole('button', {name: 'Crop image'}),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', {name: 'Use image'})).toBeInTheDocument();
+    expect(onImageFile).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole('button', {name: 'Use image'}));
+    expect(onImageFile).toHaveBeenCalledWith(file);
+  });
+
+  test('confirming crop passes the cropped file to onImageFile', async () => {
+    const onImageFile = vi.fn();
+    const cropped = new File(['cropped'], 'recipe.png', {type: 'image/png'});
+    mockCropImageFile.mockResolvedValue(cropped);
+    render(
+      <RecipeImageField
+        {...defaultProps}
+        onImageFile={onImageFile}
+      />,
+    );
+    const file = new File(['pixels'], 'recipe.png', {type: 'image/png'});
+    fireEvent.drop(screen.getByLabelText('Recipe image drop zone'), {
+      dataTransfer: {files: [file], items: []},
+    });
+    await userEvent.click(screen.getByRole('button', {name: 'Crop image'}));
+    expect(
+      screen.getByRole('dialog', {name: 'Crop recipe image'}),
+    ).toBeInTheDocument();
+    expect(screen.getByAltText('Image to crop')).toBeInTheDocument();
+    expect(screen.getByLabelText(/Crop area/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', {name: 'Apply crop'}));
+    await waitFor(() => {
+      expect(onImageFile).toHaveBeenCalledWith(cropped);
+    });
+    expect(mockCropImageFile).toHaveBeenCalledWith(
+      file,
+      expect.objectContaining({
+        x: expect.any(Number),
+        y: expect.any(Number),
+        width: expect.any(Number),
+        height: expect.any(Number),
+      }),
+    );
+    expect(onImageFile.mock.calls[0]?.[0]).toBe(cropped);
+    expect(onImageFile.mock.calls[0]?.[0]).not.toBe(file);
+  });
+
+  test('cancelling crop passes the original file unchanged', async () => {
+    const onImageFile = vi.fn();
+    render(
+      <RecipeImageField
+        {...defaultProps}
+        onImageFile={onImageFile}
+      />,
+    );
+    const file = new File(['pixels'], 'recipe.png', {type: 'image/png'});
+    fireEvent.drop(screen.getByLabelText('Recipe image drop zone'), {
+      dataTransfer: {files: [file], items: []},
+    });
+    await userEvent.click(screen.getByRole('button', {name: 'Crop image'}));
+    await userEvent.click(screen.getByRole('button', {name: 'Cancel crop'}));
+    expect(onImageFile).toHaveBeenCalledWith(file);
+    expect(mockCropImageFile).not.toHaveBeenCalled();
+  });
+
+  test('a crop failure keeps the pending image and shows an error', async () => {
+    const onImageFile = vi.fn();
+    mockCropImageFile.mockRejectedValue(new Error('canvas failed'));
+    render(
+      <RecipeImageField
+        {...defaultProps}
+        onImageFile={onImageFile}
+      />,
+    );
+    const file = new File(['pixels'], 'recipe.png', {type: 'image/png'});
+    fireEvent.drop(screen.getByLabelText('Recipe image drop zone'), {
+      dataTransfer: {files: [file], items: []},
+    });
+    await userEvent.click(screen.getByRole('button', {name: 'Crop image'}));
+    await userEvent.click(screen.getByRole('button', {name: 'Apply crop'}));
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toBeInTheDocument();
+    });
+    expect(onImageFile).not.toHaveBeenCalled();
+  });
+
+  test('discarding a pending image restores the browse controls', async () => {
+    const onImageFile = vi.fn();
+    render(
+      <RecipeImageField
+        {...defaultProps}
+        onImageFile={onImageFile}
+      />,
+    );
+    const file = new File(['pixels'], 'recipe.png', {type: 'image/png'});
+    fireEvent.drop(screen.getByLabelText('Recipe image drop zone'), {
+      dataTransfer: {files: [file], items: []},
+    });
+    await userEvent.click(
+      screen.getByRole('button', {name: 'Discard selected image'}),
+    );
+    expect(onImageFile).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole('button', {name: 'Browse images'}),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', {name: 'Crop image'}),
+    ).not.toBeInTheDocument();
   });
 });

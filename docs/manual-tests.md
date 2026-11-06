@@ -187,6 +187,15 @@ without); one recipe may be created fresh in case 1.
     captured photo flows through the same upload/preview path as a browsed or
     library-picked image.
 
+12. **Crop a recipe image before saving (#406).** On the recipe create/edit
+    form, pick or take a photo: before it is used, **Crop image** and **Use
+    image** appear. **Use image** attaches the photo unchanged. Open **Crop
+    image**, move/resize the crop box, and apply: the preview shows the cropped
+    framing and the saved recipe's image is the cropped one. Repeat, but cancel
+    the crop: the original, uncropped photo is attached instead. **Expected:**
+    cropping is optional, never forced, and applies only to the pending recipe
+    image (not meal photos or photo import).
+
 **Run when:**
 `packages/app/src/screens/{Recipes,RecipeDetail,EditRecipe,EditVersion,ManualEntry}Screen.tsx`,
 `packages/app/src/components/recipe/**`,
