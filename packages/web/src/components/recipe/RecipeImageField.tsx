@@ -118,7 +118,10 @@ export const RecipeImageField = ({
   };
 
   const acceptImage = (file: File | null) => {
-    if (!file || imageBusy) {
+    // Also refuse while the crop dialog is open: a paste into the crop
+    // area must not replace the pending image or close the dialog
+    // before the user decides on the crop (#446).
+    if (!file || imageBusy || cropOpen) {
       return;
     }
     setPendingFile(file);

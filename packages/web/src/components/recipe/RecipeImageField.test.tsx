@@ -325,6 +325,40 @@ describe('RecipeImageField', () => {
     expect(onImageFile.mock.calls[0]?.[0]).not.toBe(file);
   });
 
+  test('pasting while the crop dialog is open keeps the pending image', async () => {
+    const onImageFile = vi.fn();
+    render(
+      <RecipeImageField
+        {...defaultProps}
+        onImageFile={onImageFile}
+      />,
+    );
+    const file = new File(['pixels'], 'recipe.png', {type: 'image/png'});
+    fireEvent.drop(screen.getByLabelText('Recipe image drop zone'), {
+      dataTransfer: {files: [file], items: []},
+    });
+    loadPendingPreview();
+    await userEvent.click(screen.getByRole('button', {name: 'Crop image'}));
+    expect(
+      screen.getByRole('dialog', {name: 'Crop recipe image'}),
+    ).toBeInTheDocument();
+    // A paste that lands while cropping must not replace the pending
+    // image or close the dialog without a crop decision (#446).
+    const other = new File(['other'], 'other.png', {type: 'image/png'});
+    fireEvent.paste(screen.getByLabelText('Recipe image drop zone'), {
+      clipboardData: {files: [other], items: []},
+    });
+    expect(
+      screen.getByRole('dialog', {name: 'Crop recipe image'}),
+    ).toBeInTheDocument();
+    expect(onImageFile).not.toHaveBeenCalled();
+    // Cancelling the crop delivers the ORIGINAL pending file, proving
+    // the paste did not replace it.
+    await userEvent.click(screen.getByRole('button', {name: 'Cancel crop'}));
+    expect(onImageFile).toHaveBeenCalledTimes(1);
+    expect(onImageFile).toHaveBeenCalledWith(file);
+  });
+
   test('crop stays disabled until the preview reports its dimensions', async () => {
     const onImageFile = vi.fn();
     render(

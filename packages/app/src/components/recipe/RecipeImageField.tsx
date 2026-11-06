@@ -276,7 +276,11 @@ export const RecipeImageField = ({
   const resizePanResponder = useRef(makeCropPanResponder('resize')).current;
 
   const handleResult = async (result: ImagePickerResponse) => {
-    if (result.didCancel) {
+    // Parity with the web mirror (#446): while the crop overlay is
+    // open, a new pick must not replace the pending asset or close
+    // the overlay before the user decides on the crop. (The overlay
+    // covers the pick buttons, so this is defense in depth.)
+    if (result.didCancel || cropOpen) {
       return;
     }
     if (result.errorCode) {
