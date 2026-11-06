@@ -130,6 +130,9 @@ export const RecipeForm = ({
   const [pendingImage, setPendingImage] = useState<PendingRecipeImage | null>(
     null,
   );
+  // A selection still pending inside RecipeImageField (not yet used,
+  // cropped, or discarded) blocks submit — see onPendingChange (#406).
+  const [imageSelectionPending, setImageSelectionPending] = useState(false);
   const [previewUri, setPreviewUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -416,6 +419,12 @@ export const RecipeForm = ({
   };
 
   const handleSubmit = async () => {
+    // Guard the save (Option 1 on #446): a selected image that is still
+    // pending in the image field would otherwise be silently dropped.
+    if (imageSelectionPending) {
+      setError('Use, crop, or discard the selected image before saving.');
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -504,6 +513,7 @@ export const RecipeForm = ({
           canGenerateImage={title.trim().length > 0}
           headerAction={revertAction}
           onImagePicked={processImage}
+          onPendingChange={setImageSelectionPending}
           onImageError={message => {
             setImageError(message);
           }}

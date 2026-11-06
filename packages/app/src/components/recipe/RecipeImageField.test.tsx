@@ -568,4 +568,28 @@ describe('RecipeImageField', () => {
     expect(queryByLabelText('Crop image')).toBeNull();
     expect(onImagePicked).not.toHaveBeenCalled();
   });
+
+  test('reports the pending selection through onPendingChange', async () => {
+    const onPendingChange = jest.fn();
+    mockLaunchImageLibrary.mockResolvedValue({assets: [pickedAssetWithSize]});
+    const {getByLabelText} = await renderWithProviders(
+      <RecipeImageField
+        imagePreview={null}
+        imageUploading={false}
+        imageError={null}
+        onImagePicked={jest.fn()}
+        onPendingChange={onPendingChange}
+        onRemove={jest.fn()}
+      />,
+    );
+    expect(onPendingChange).toHaveBeenLastCalledWith(false);
+    await fireEvent.press(getByLabelText('Choose recipe image'));
+    await waitFor(() => {
+      expect(onPendingChange).toHaveBeenLastCalledWith(true);
+    });
+    await fireEvent.press(getByLabelText('Discard selected image'));
+    await waitFor(() => {
+      expect(onPendingChange).toHaveBeenLastCalledWith(false);
+    });
+  });
 });

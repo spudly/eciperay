@@ -25,6 +25,12 @@ type Props = {
   onImageFile: (file: File) => void | Promise<void>;
   onGenerateImage?: () => void | Promise<void>;
   onRemove: () => void;
+  /**
+   * Reports whether a selected image is still pending (the user has not yet
+   * used, cropped, or discarded it). The host guards its submit on this so a
+   * pending selection is never silently dropped on save (#406).
+   */
+  onPendingChange?: (pending: boolean) => void;
 };
 
 // Style objects on DS tokens (B7 C12, design-system#130 — the Tailwind
@@ -42,6 +48,7 @@ export const RecipeImageField = ({
   onImageFile,
   onGenerateImage,
   onRemove,
+  onPendingChange,
 }: Props) => {
   const [isDragging, setIsDragging] = useState(false);
   const captureInputRef = useRef<HTMLInputElement>(null);
@@ -63,6 +70,7 @@ export const RecipeImageField = ({
   const [cropRect, setCropRect] = useState<CropRect | null>(null);
   const [cropBusy, setCropBusy] = useState(false);
   const [cropError, setCropError] = useState<string | null>(null);
+  const [previewError, setPreviewError] = useState<string | null>(null);
   const cropBoxRef = useRef<HTMLDivElement>(null);
   const cropImageRef = useRef<HTMLImageElement>(null);
   // The pending preview's object URL, owned outside React state so its
@@ -96,6 +104,7 @@ export const RecipeImageField = ({
     setCropRect(null);
     setCropError(null);
     setCropBusy(false);
+    setPreviewError(null);
   };
 
   const acceptImage = (file: File | null) => {
@@ -113,7 +122,14 @@ export const RecipeImageField = ({
     setCropRect(null);
     setCropError(null);
     setCropOpen(false);
+    setPreviewError(null);
   };
+
+  // Keep the host informed about the pending selection so it can guard
+  // its submit (Option 1 on #446: no silent loss of a selected image).
+  useEffect(() => {
+    onPendingChange?.(pendingFile !== null);
+  }, [pendingFile, onPendingChange]);
 
   /** Skip: hand the original, uncropped file to the existing callback. */
   const acceptPendingImage = () => {
@@ -162,6 +178,7 @@ export const RecipeImageField = ({
   };
 
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    setPreviewError(null);
     const {naturalWidth, naturalHeight} = e.currentTarget;
     if (naturalWidth > 0 && naturalHeight > 0) {
       setNaturalSize({width: naturalWidth, height: naturalHeight});
@@ -171,6 +188,14 @@ export const RecipeImageField = ({
           : defaultCropRect(naturalWidth, naturalHeight),
       );
     }
+  };
+
+  // A selected image that cannot decode never fires load, which would
+  // otherwise leave Crop disabled with no explanation.
+  const handlePreviewError = () => {
+    setPreviewError(
+      'That image could not be loaded — discard it and choose a different image.',
+    );
   };
 
   useEffect(() => {
@@ -355,6 +380,7 @@ export const RecipeImageField = ({
             src={displayedPreview}
             alt="Recipe preview"
             onLoad={pendingPreviewUrl ? handleImageLoad : undefined}
+            onError={pendingPreviewUrl ? handlePreviewError : undefined}
             style={{
               display: 'block',
               marginLeft: 'auto',
@@ -514,6 +540,19 @@ export const RecipeImageField = ({
           </>
         )}
       </div>
+      {previewError && pendingFile ? (
+        <p
+          role="alert"
+          style={{
+            margin: 0,
+            marginTop: tokens.spacing[2],
+            fontSize: tokens.typography.fontSize.sm,
+            color: tokens.colors.danger.danger7,
+          }}
+        >
+          {previewError}
+        </p>
+      ) : null}
       {cropOpen && pendingFile && pendingPreviewUrl ? (
         <div
           role="dialog"

@@ -624,6 +624,54 @@ describe('RecipeForm', () => {
     });
   });
 
+  test('blocks submit while a picked image is still pending', async () => {
+    const {launchImageLibrary} = require('react-native-image-picker');
+    launchImageLibrary.mockResolvedValue({
+      assets: [
+        {
+          uri: 'file://recipe.png',
+          base64: btoa('pixels'),
+          type: 'image/png',
+          fileSize: 6,
+          width: 1200,
+          height: 900,
+        },
+      ],
+    });
+    const onSubmit = mockOnSubmit();
+    const {getByLabelText, getByText, findByText} = await renderForm(
+      <RecipeForm
+        initial={{
+          title: 'New Recipe',
+          servings: 4,
+          ingredients: [],
+          instructions: [],
+          tagIds: [],
+        }}
+        submitLabel="Create"
+        onSubmit={onSubmit}
+      />,
+    );
+    await fireEvent.press(getByLabelText('Choose recipe image'));
+    await waitFor(() => {
+      expect(getByLabelText('Use image')).toBeTruthy();
+    });
+    // The picked image is still pending (not used, cropped, or discarded):
+    // saving now must refuse instead of silently dropping the selection.
+    await fireEvent.press(getByText('Create'));
+    expect(
+      await findByText(
+        'Use, crop, or discard the selected image before saving.',
+      ),
+    ).toBeTruthy();
+    expect(onSubmit).not.toHaveBeenCalled();
+    await fireEvent.press(getByLabelText('Discard selected image'));
+    await fireEvent.press(getByText('Create'));
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalled();
+    });
+  });
+
   test('shows parent version diff UI and reverts changed title', async () => {
     const parentVersion = makeRecipeVersionDetail({
       title: 'Original Title',

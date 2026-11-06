@@ -129,6 +129,9 @@ export const RecipeFormHost = ({
   const [tagIds, setTagIds] = useState<string[]>(initial.tagIds);
   const [status, setStatus] = useState<RecipeStatus>(initial.status ?? 'idea');
   const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
+  // A selection still pending inside RecipeImageField (not yet used,
+  // cropped, or discarded) blocks submit — see onPendingChange (#406).
+  const [imageSelectionPending, setImageSelectionPending] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -445,6 +448,12 @@ export const RecipeFormHost = ({
   };
 
   const handleSubmit = async () => {
+    // Guard the save (Option 1 on #446): a selected image that is still
+    // pending in the image field would otherwise be silently dropped.
+    if (imageSelectionPending) {
+      setError('Use, crop, or discard the selected image before saving.');
+      return;
+    }
     // The design-system page is not a DOM form, so the native
     // required/min blocking the old web form relied on is gone; keep
     // values the API schemas reject (or would silently null out, like
@@ -561,6 +570,7 @@ export const RecipeFormHost = ({
             canGenerateImage={title.trim().length > 0}
             headerAction={revertAction}
             onImageFile={processImageFile}
+            onPendingChange={setImageSelectionPending}
             onGenerateImage={handleGenerateImage}
             onRemove={() => {
               clearPendingImage();

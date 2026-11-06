@@ -412,4 +412,46 @@ describe('RecipeImageField', () => {
       screen.queryByRole('button', {name: 'Crop image'}),
     ).not.toBeInTheDocument();
   });
+
+  test('reports the pending selection through onPendingChange', async () => {
+    const onPendingChange = vi.fn();
+    render(
+      <RecipeImageField
+        {...defaultProps}
+        onPendingChange={onPendingChange}
+      />,
+    );
+    expect(onPendingChange).toHaveBeenLastCalledWith(false);
+    const file = new File(['pixels'], 'recipe.png', {type: 'image/png'});
+    fireEvent.drop(screen.getByLabelText('Recipe image drop zone'), {
+      dataTransfer: {files: [file], items: []},
+    });
+    await waitFor(() => {
+      expect(onPendingChange).toHaveBeenLastCalledWith(true);
+    });
+    await userEvent.click(
+      screen.getByRole('button', {name: 'Discard selected image'}),
+    );
+    await waitFor(() => {
+      expect(onPendingChange).toHaveBeenLastCalledWith(false);
+    });
+  });
+
+  test('shows an error when the selected image cannot be loaded', async () => {
+    render(<RecipeImageField {...defaultProps} />);
+    const file = new File(['pixels'], 'recipe.png', {type: 'image/png'});
+    fireEvent.drop(screen.getByLabelText('Recipe image drop zone'), {
+      dataTransfer: {files: [file], items: []},
+    });
+    fireEvent.error(screen.getByAltText('Recipe preview'));
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'That image could not be loaded',
+      );
+    });
+    // The pending controls stay available so the user can discard it.
+    expect(
+      screen.getByRole('button', {name: 'Discard selected image'}),
+    ).toBeInTheDocument();
+  });
 });

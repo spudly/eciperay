@@ -1,6 +1,6 @@
 /* eslint-disable max-lines -- recipe image upload, paste, and generate controls */
 import {Button as DsButton, Text as DsText, tokens} from '@spudly/ui';
-import React, {useLayoutEffect, useRef, useState} from 'react';
+import React, {useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {Image, Modal, PanResponder, View} from 'react-native';
 import {
   launchCamera,
@@ -42,6 +42,12 @@ type Props = {
   onImageError?: (message: string) => void;
   onGenerateImage?: () => void | Promise<void>;
   onRemove: () => void;
+  /**
+   * Reports whether a picked image is still pending (the user has not yet used,
+   * cropped, or discarded it). The host guards its submit on this so a pending
+   * selection is never silently dropped on save (#406).
+   */
+  onPendingChange?: (pending: boolean) => void;
 };
 
 export const RecipeImageField = ({
@@ -55,6 +61,7 @@ export const RecipeImageField = ({
   onImageError,
   onGenerateImage,
   onRemove,
+  onPendingChange,
 }: Props) => {
   const imageBusy = imageUploading || imageGenerating;
 
@@ -97,6 +104,12 @@ export const RecipeImageField = ({
     setCropError(null);
     setCropBusy(false);
   };
+
+  // Keep the host informed about the pending selection so it can guard
+  // its submit (Option 1 on #446: no silent loss of a selected image).
+  useEffect(() => {
+    onPendingChange?.(pendingAsset !== null);
+  }, [pendingAsset, onPendingChange]);
 
   /** Deliver an asset through the existing picked-image callback. */
   const deliverAsset = async (asset: Asset) => {
