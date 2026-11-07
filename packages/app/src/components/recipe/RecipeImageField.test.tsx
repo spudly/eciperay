@@ -577,35 +577,6 @@ describe('RecipeImageField', () => {
     expect(onImagePicked).not.toHaveBeenCalled();
   });
 
-  test('when native crop is unavailable, apply crop passes the original asset unchanged', async () => {
-    const onImagePicked = jest.fn();
-    mockLaunchImageLibrary.mockResolvedValue({assets: [pickedAssetWithSize]});
-    // Null = the native manipulator is not registered (#446 Option 3):
-    // the crop step falls back to the uncropped image instead of failing.
-    mockCropPickedImage.mockResolvedValue(null);
-    const {getByLabelText, queryByText} = await renderWithProviders(
-      <RecipeImageField
-        imagePreview={null}
-        imageUploading={false}
-        imageError={null}
-        onImagePicked={onImagePicked}
-        onRemove={jest.fn()}
-      />,
-    );
-    await fireEvent.press(getByLabelText('Choose recipe image'));
-    await waitFor(() => {
-      expect(getByLabelText('Crop image')).toBeTruthy();
-    });
-    await fireEvent.press(getByLabelText('Crop image'));
-    await fireEvent.press(getByLabelText('Apply crop'));
-    await waitFor(() => {
-      expect(onImagePicked).toHaveBeenCalledWith(
-        {base64: btoa('pixels'), contentType: 'image/png'},
-        'file://recipe.png',
-      );
-    });
-    expect(queryByText(/Failed to crop image/)).toBeNull();
-  });
 
   test('discarding a pending image returns to the picker controls', async () => {
     const onImagePicked = jest.fn();

@@ -4,13 +4,11 @@
  * pixels into a cropped image. Mirrors the web helper in
  * packages/web/src/lib/recipeImageCrop.ts.
  *
- * Expo-image-manipulator is loaded lazily inside cropPickedImage, never at
- * module scope: the app does not register Expo native modules yet (no Expo
- * autolinking — split into #453), so a static import throws requireNativeModule
- * at load time and takes the whole recipe form down with it. The lazy load
- * turns that into a graceful fallback to the uncropped image (Stephen's Option
- * 3 decision on #446, 2026-11-06).
+ * Expo native modules are registered through Expo autolinking (#453: the
+ * iOS Podfile's use_expo_modules! and the Android expo-autolinking-settings
+ * Gradle plugin), so expo-image-manipulator is imported statically here.
  */
+import {manipulateAsync, SaveFormat} from 'expo-image-manipulator';
 
 export type CropRect = {x: number; y: number; width: number; height: number};
 
@@ -99,41 +97,18 @@ export type CroppedRecipeImage = {
   uri: string;
 };
 
-type ImageManipulator = typeof import('expo-image-manipulator');
-
-/**
- * Load expo-image-manipulator on demand. Returns null when the package's native
- * module is not registered (the current native builds): evaluating the package
- * entry calls requireNativeModule, which throws in that case.
- */
-const loadImageManipulator = (): ImageManipulator | null => {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports -- deliberate lazy load, see the module header
-    return require('expo-image-manipulator') as ImageManipulator;
-  } catch {
-    return null;
-  }
-};
-
 /**
  * Crop `uri` to `rect` (natural pixels) with expo-image-manipulator. PNG
  * sources stay PNG; everything else is written as JPEG (the manipulator only
  * emits JPEG/PNG), and the returned content type says so honestly.
  *
- * Returns null when the native manipulator is unavailable, so the caller can
- * fall back to the uncropped image instead of failing; a crop that the
- * manipulator attempts but cannot produce still throws.
+ * A crop the manipulator attempts but cannot produce throws.
  */
 export const cropPickedImage = async (
   uri: string,
   rect: CropRect,
   sourceContentType: string,
-): Promise<CroppedRecipeImage | null> => {
-  const manipulator = loadImageManipulator();
-  if (!manipulator) {
-    return null;
-  }
-  const {manipulateAsync, SaveFormat} = manipulator;
+): Promise<CroppedRecipeImage> => {
   const keepPng = sourceContentType === 'image/png';
   // manipulateAsync is marked deprecated upstream in favour of the
   // useImageManipulator hook; a hook cannot run inside this plain async
