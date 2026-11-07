@@ -1,6 +1,7 @@
 import type {RecipeVersionSummary} from '@eciperay/types';
 
 import {
+  activationCandidates,
   canCreateDraftVersion,
   canEditActiveRecipeMetadata,
   canEditDraftVersion,
@@ -38,6 +39,49 @@ describe('recipeEditActions', () => {
     expect(canCreateDraftVersion('evolving')).toBe(false);
     expect(canCreateDraftVersion('idea')).toBe(false);
     expect(canCreateDraftVersion('abandoned')).toBe(false);
+  });
+
+  test('activationCandidates offers candidates and archived versions', () => {
+    const candidate = versions({
+      id: 'version-2',
+      derivedRole: 'candidate' as const,
+    });
+    const archived = versions({
+      id: 'version-0',
+      derivedRole: 'archived' as const,
+    });
+    const draft = versions({id: 'version-3', derivedRole: 'draft' as const});
+    const active = versions();
+    expect(
+      activationCandidates('evolving', [
+        ...active,
+        ...candidate,
+        ...archived,
+        ...draft,
+      ]),
+    ).toEqual([...candidate, ...archived]);
+  });
+
+  test('activationCandidates offers every non-active version of a perfected recipe', () => {
+    const draft = versions({id: 'version-3', derivedRole: 'draft' as const});
+    const active = versions();
+    expect(activationCandidates('perfected', [...active, ...draft])).toEqual(
+      draft,
+    );
+  });
+
+  test('activationCandidates offers nothing for an abandoned recipe', () => {
+    const candidate = versions({
+      id: 'version-2',
+      derivedRole: 'candidate' as const,
+    });
+    const archived = versions({
+      id: 'version-0',
+      derivedRole: 'archived' as const,
+    });
+    expect(
+      activationCandidates('abandoned', [...candidate, ...archived]),
+    ).toEqual([]);
   });
 
   test('canEditDraftVersion reflects version isEditable', () => {

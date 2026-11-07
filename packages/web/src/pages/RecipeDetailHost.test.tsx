@@ -97,6 +97,67 @@ describe('RecipeDetailHost', () => {
       expect(await screen.findByText('Version activated')).toBeInTheDocument();
     });
 
+    test('activates a draft version of a perfected recipe without a cook log (#417)', async () => {
+      const activate = vi
+        .spyOn(eciperay.versions, 'activate')
+        .mockResolvedValue(makeRecipeDetail());
+      await renderHost({status: 'perfected'}, [
+        makeRecipeVersionSummary({
+          id: 'v2',
+          versionNumber: 2,
+          derivedRole: 'draft',
+          changeSummary: 'Salsa split out',
+        }),
+      ]);
+      await userEvent.click(await screen.findByText('Activate'));
+      expect(activate).toHaveBeenCalledWith('recipe-uuid-1', 'v2');
+      expect(await screen.findByText('Version activated')).toBeInTheDocument();
+    });
+
+    test('offers re-activation for a previously active version (#417)', async () => {
+      const activate = vi
+        .spyOn(eciperay.versions, 'activate')
+        .mockResolvedValue(makeRecipeDetail());
+      await renderHost({}, [
+        makeRecipeVersionSummary({
+          id: 'v1',
+          versionNumber: 1,
+          derivedRole: 'archived',
+        }),
+      ]);
+      await userEvent.click(await screen.findByText('Activate'));
+      expect(activate).toHaveBeenCalledWith('recipe-uuid-1', 'v1');
+    });
+
+    test('does not offer activation for archived or candidate versions of an abandoned recipe (#417)', async () => {
+      await renderHost({status: 'abandoned'}, [
+        makeRecipeVersionSummary({
+          id: 'v1',
+          versionNumber: 1,
+          derivedRole: 'archived',
+        }),
+        makeRecipeVersionSummary({
+          id: 'v2',
+          versionNumber: 2,
+          derivedRole: 'candidate',
+        }),
+      ]);
+      expect(await screen.findByText('Test Recipe')).toBeInTheDocument();
+      expect(screen.queryByText('Activate')).not.toBeInTheDocument();
+    });
+
+    test('does not offer activation for a draft version of an evolving recipe (#417)', async () => {
+      await renderHost({}, [
+        makeRecipeVersionSummary({
+          id: 'v2',
+          versionNumber: 2,
+          derivedRole: 'draft',
+        }),
+      ]);
+      expect(await screen.findByText('Test Recipe')).toBeInTheDocument();
+      expect(screen.queryByText('Activate')).not.toBeInTheDocument();
+    });
+
     test('shows the server error when activating a candidate fails (#418)', async () => {
       vi.spyOn(eciperay.versions, 'activate').mockRejectedValue(
         new Error('Recipe cannot be modified in its current status'),

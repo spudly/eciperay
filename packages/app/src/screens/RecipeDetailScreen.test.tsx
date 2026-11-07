@@ -217,7 +217,10 @@ describe('RecipeDetailScreen', () => {
     );
     await findByText('Test Recipe');
     await fireEvent.press(await findByText(/v1 — Active/));
-    await fireEvent.press(getByText(/v2/));
+    // Since #417 the archived version also appears under "Ready to
+    // activate" (re-activation), so the picker row is matched by its
+    // full picker label rather than any text containing "v2".
+    await fireEvent.press(getByText(/v2 — Archived/));
     expect(await findByText('Archived Recipe')).toBeTruthy();
     expect(mockGetVersion).toHaveBeenCalledWith(
       'recipe-uuid-1',

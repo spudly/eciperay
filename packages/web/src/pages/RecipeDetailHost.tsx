@@ -1,5 +1,6 @@
 /* eslint-disable max-lines -- detail host: every section's queries, mutations, and view-model mapping */
 import {
+  activationCandidates,
   canCreateDraftVersion,
   canEditActiveRecipeMetadata,
   canEditDraftVersion,
@@ -431,7 +432,9 @@ export const RecipeDetailHost = ({
   const isEditable =
     displayRecipe.status !== 'perfected' &&
     displayRecipe.status !== 'abandoned';
-  const candidates = versions.filter(v => v.derivedRole === 'candidate');
+  // Activation (#417): the shared client rule decides what the page
+  // offers; the server enforces the same rule.
+  const candidates = activationCandidates(displayRecipe.status, versions);
   const lifecycle =
     isEditable || candidates.length > 0
       ? {
