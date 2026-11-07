@@ -80,6 +80,10 @@ export const handlers = [
   }),
   http.get(`${API}/api/recipes/shared-with-me`, ({request}) => {
     const url = new URL(request.url);
+    const search = url.searchParams.get('search')?.trim();
+    if (search && !'shared pasta'.includes(search.toLowerCase())) {
+      return HttpResponse.json([]);
+    }
     const offset = Number(url.searchParams.get('offset') ?? 0);
     const limit = Number(url.searchParams.get('limit') ?? 100);
     const sharedRecipe = makeRecipeDetail({

@@ -25,7 +25,6 @@ import {PublicRecipePage} from '../pages/PublicRecipePage.js';
 import {RecipeDetailPage} from '../pages/RecipeDetailPage.js';
 import {RecipesPage} from '../pages/RecipesPage.js';
 import {RouteErrorPage} from '../pages/RouteErrorPage.js';
-import {SharedWithMePage} from '../pages/SharedWithMePage.js';
 import {ResetPasswordPage} from '../pages/auth/ResetPasswordPage.js';
 import {SignupPage} from '../pages/auth/SignupPage.js';
 import {MealCookingModePage} from '../pages/MealCookingModePage.js';
@@ -59,7 +58,17 @@ const authenticatedAppRoutes = [
   {path: '/meal-plans/:planId', element: <MealPlanDetailPage />},
   {path: '/meal-plans/:planId/edit', element: <MealPlanEditPage />},
   {path: '/meal-plans/:planId/shopping-list', element: <ShoppingListPage />},
-  {path: '/shared-with-me', element: <SharedWithMePage />},
+  // Shared-with-me lives on the unified Recipes browse now (#409);
+  // the old route redirects so existing links and bookmarks land there.
+  {
+    path: '/shared-with-me',
+    element: (
+      <Navigate
+        replace
+        to="/recipes"
+      />
+    ),
+  },
   {path: '/recipes/:recipeId', element: <RecipeDetailPage />},
   {path: '/recipes/:recipeId/edit', element: <EditRecipePage />},
   {

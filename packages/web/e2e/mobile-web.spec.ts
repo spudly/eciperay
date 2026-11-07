@@ -22,15 +22,9 @@ test.describe('mobile web layout (390px)', () => {
     await expect(page.getByText('E2E Tomato Pasta')).toBeVisible();
 
     const nav = page.locator('header nav');
-    const labels = [
-      'Home',
-      'Recipes',
-      'Meals',
-      'Shared with me',
-      'Add',
-      'Tags',
-      'Profile',
-    ];
+    // No 'Shared with me': it lives on the unified Recipes browse
+    // now (#409) instead of taking a nav slot.
+    const labels = ['Home', 'Recipes', 'Meals', 'Add', 'Tags', 'Profile'];
     for (const label of labels) {
       const link = nav.getByRole('link', {name: label});
       await expect(link).toBeVisible();
@@ -99,8 +93,12 @@ test.describe('mobile web layout (390px)', () => {
     expect(scrollWidth).toBeLessThanOrEqual(430);
   });
 
-  test('shared-with-me cards span the list width', async ({page}) => {
-    await page.goto('/shared-with-me');
+  test('shared cards on the unified browse span the list width', async ({
+    page,
+  }) => {
+    // Shared-with-me lives on the unified Recipes browse (#409): the
+    // shared rows render in its own section.
+    await page.goto('/recipes');
     await expect(page.getByText('E2E Shared Salad')).toBeVisible();
 
     const cardBox = await page.evaluate(() => {
@@ -115,20 +113,23 @@ test.describe('mobile web layout (390px)', () => {
       return {width: rect?.width ?? 0, height: rect?.height ?? 0};
     });
     expect(cardBox.width).toBeGreaterThan(300);
-    // The standalone (no trailing actions) card is a child of a column
-    // layout: its height must stay content-sized (~110px), not stretch
-    // to the 17rem row basis that only applies beside trailing actions.
-    expect(cardBox.height).toBeLessThan(160);
+    // On the unified browse the shared row is a full own-section row
+    // (badge + subtitle + the page's log-cook control), so it renders
+    // taller than the old standalone shared card — ~206px measured at
+    // this width. The bound still guards the original failure: the
+    // height must stay content-sized, not stretch to the 17rem
+    // (272px) row basis that only applies beside trailing actions.
+    expect(cardBox.height).toBeLessThan(260);
   });
 
-  test('scrolling to the end of the shared list loads the next page', async ({
+  test('scrolling to the end of the unified list loads the next shared page', async ({
     page,
   }) => {
     // 21 shared recipes: one full page of 20 plus a single-recipe
     // second page. The route honors offset/limit like the real API
     // (the shared mockApi handler serves a single recipe), mirroring
     // the recipes-list pagination case in recipes.spec.ts — the
-    // shared host's onLoadMore wiring has no other positive coverage
+    // unified host's onLoadMore wiring has no other positive coverage
     // (jsdom cannot drive the list's end-reached signal).
     const shared = Array.from({length: 21}, (_, index) => ({
       ...sharedRecipe,
@@ -146,7 +147,7 @@ test.describe('mobile web layout (390px)', () => {
       });
     });
 
-    await page.goto('/shared-with-me');
+    await page.goto('/recipes');
     await expect(page.getByText('E2E Page Shared 0')).toBeVisible();
     await expect(page.getByText('E2E Page Shared 20')).toHaveCount(0);
 

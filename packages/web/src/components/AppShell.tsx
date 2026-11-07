@@ -1,6 +1,12 @@
-import type {CSSProperties, ReactNode} from 'react';
+import {
+  useEffect,
+  useState,
+  type CSSProperties,
+  type FormEvent,
+  type ReactNode,
+} from 'react';
 import {eciperayTheme, tokens} from '@spudly/ui';
-import {NavLink, Outlet} from 'react-router-dom';
+import {NavLink, Outlet, useNavigate, useSearchParams} from 'react-router-dom';
 
 import {Icon} from './Icon.js';
 import {LegalLinks} from './LegalLinks.js';
@@ -9,7 +15,6 @@ const navItems = [
   {to: '/', end: true, label: 'Home', icon: 'home' as const},
   {to: '/recipes', label: 'Recipes', icon: 'book-open' as const},
   {to: '/meals', label: 'Meals', icon: 'coffee' as const},
-  {to: '/shared-with-me', label: 'Shared with me', icon: 'users' as const},
   {to: '/add', label: 'Add', icon: 'plus' as const},
   {to: '/tags', label: 'Tags', icon: 'tag' as const},
   {to: '/profile', label: 'Profile', icon: 'user' as const},
@@ -80,6 +85,40 @@ const navLinkStyle = ({isActive}: {isActive: boolean}): CSSProperties => ({
     : {color: eciperayTheme.semantic.text}),
 });
 
+const searchFormStyle: CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: tokens.spacing[2],
+};
+
+const searchInputStyle: CSSProperties = {
+  border: `1px solid ${eciperayTheme.semantic.border}`,
+  borderRadius: 8,
+  backgroundColor: eciperayTheme.semantic.surface,
+  color: eciperayTheme.semantic.text,
+  fontFamily: tokens.typography.fontFamily.sans,
+  fontSize: tokens.typography.fontSize.sm,
+  paddingLeft: tokens.spacing[3],
+  paddingRight: tokens.spacing[3],
+  paddingTop: tokens.spacing[2],
+  paddingBottom: tokens.spacing[2],
+};
+
+const searchButtonStyle: CSSProperties = {
+  border: 'none',
+  borderRadius: 8,
+  backgroundColor: eciperayTheme.semantic.primary,
+  color: '#ffffff',
+  cursor: 'pointer',
+  fontFamily: tokens.typography.fontFamily.sans,
+  fontSize: tokens.typography.fontSize.sm,
+  fontWeight: tokens.typography.fontWeight.medium,
+  paddingLeft: tokens.spacing[3],
+  paddingRight: tokens.spacing[3],
+  paddingTop: tokens.spacing[2],
+  paddingBottom: tokens.spacing[2],
+};
+
 const footerStyle: CSSProperties = {
   position: 'relative',
   zIndex: 0,
@@ -115,6 +154,56 @@ const mainStyle: CSSProperties = {
   padding: tokens.spacing[4],
 };
 
+// Header search (#409): recipe search lives in the shell header and
+// targets the unified Recipes browse — submitting navigates to
+// /recipes with the term as the page's `q` param, which the Recipes
+// host seeds its one search state from. An empty term just navigates
+// to the browse.
+const HeaderSearch = () => {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const queryParam = searchParams.get('q') ?? '';
+  const [term, setTerm] = useState(queryParam);
+  // Keep the input in sync with the URL: landing on /recipes?q=pasta
+  // (a shared link, or the Recipes host seeding from the same param)
+  // shows the active term here instead of an empty box that disagrees
+  // with the page's filter.
+  useEffect(() => {
+    setTerm(queryParam);
+  }, [queryParam]);
+  const onSubmit = (event: FormEvent) => {
+    event.preventDefault();
+    const query = term.trim();
+    void navigate(
+      query ? `/recipes?q=${encodeURIComponent(query)}` : '/recipes',
+    );
+  };
+  return (
+    <form
+      role="search"
+      style={searchFormStyle}
+      onSubmit={onSubmit}
+    >
+      <input
+        type="search"
+        aria-label="Search recipes"
+        placeholder="Search recipes…"
+        style={searchInputStyle}
+        value={term}
+        onChange={event => {
+          setTerm(event.target.value);
+        }}
+      />
+      <button
+        type="submit"
+        style={searchButtonStyle}
+      >
+        Search
+      </button>
+    </form>
+  );
+};
+
 type AppShellProps = {children?: ReactNode};
 
 // The header wraps (#189): at phone widths the logo and the 7-item nav
@@ -135,6 +224,7 @@ export const AppShell = ({children}: AppShellProps) => (
             style={logoStyle}
           />
         </NavLink>
+        <HeaderSearch />
         <nav style={navStyle}>
           {navItems.map(({to, end, label, icon}) => (
             <NavLink
