@@ -127,15 +127,11 @@ describe('RecipeListCard', () => {
     );
 
     await userEvent.click(screen.getByText('Log cook'));
-    // The star rating IS clicked here: the card renders the design
-    // system RatingForm (CookLogForm's 1.15 successor), and while
-    // @spudly/ui 1.13.0 rendered the DS StarRatingInput's label as a
-    // raw accessibilitylabel attribute on web (the leak
-    // design-system#237 reported), 1.15 ships the fix — the stars
-    // are real radios with accessible names.
-    await userEvent.click(
-      screen.getByRole('radio', {name: 'Rate 5 out of 5 stars'}),
-    );
+    // The star rating IS clicked here: the card renders the host's
+    // CookLogForm (@spudly/ui 6.x has no RatingForm), whose rating
+    // input is the relocated host StarRatingInput — its stars are
+    // buttons labelled "N stars".
+    await userEvent.click(screen.getByLabelText('5 stars'));
     await userEvent.type(
       screen.getByPlaceholderText('Notes from this cook (optional)'),
       'Weeknight favorite',

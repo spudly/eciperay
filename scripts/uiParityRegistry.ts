@@ -15,18 +15,9 @@ export const MIRROR_PAIRS = [
   'RecipeListCard.tsx',
   'ScreenLoadingGate.tsx',
   'SharedRecipeListCard.tsx',
-  'ui/BookLoadingSpinner.tsx',
-  'ui/CheckboxField.tsx',
-  'ui/InfoBanner.tsx',
-  'ui/PageTitle.tsx',
-  'ui/PrevNextNav.tsx',
-  'ui/ScreenScroll.tsx',
-  'ui/SearchField.tsx',
-  'ui/ThumbnailListCard.tsx',
+  'BookLoadingSpinner.tsx',
   'recipe/RecipeImageField.tsx',
   'recipe/RecipeInputPreview.tsx',
-  'recipe/SortableIngredientList.tsx',
-  'recipe/SortableInstructionList.tsx',
 ] as const;
 
 export type MirrorPairPath = (typeof MIRROR_PAIRS)[number];
@@ -39,16 +30,58 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
       'Native cooking-mode UI fragments; web uses CookingModeView with DOM layout instead.',
   },
   {
-    path: 'ui/StarRatingInput.tsx',
+    path: 'StarRatingInput.tsx',
     platform: 'web',
     reason:
-      'Web star-rating input for its cook-log form; the app renders the design system CookLogForm with the design system StarRatingInput (design-system#126). Web adoption is B7.',
+      'Web star-rating input for its cook-log form, relocated out of the retired ui/ wrapper library in the @spudly/ui 6.x migration; the app has its own React Native implementation (also platform-only).',
+  },
+  {
+    path: 'StarRatingInput.tsx',
+    platform: 'app',
+    reason:
+      'React Native star-rating input for the app cook-log form, created in the @spudly/ui 6.x migration (the design system RatingForm is an internal view in 6.x); web has its own DOM implementation.',
+  },
+  {
+    path: 'CookLogForm.tsx',
+    platform: 'app',
+    reason:
+      'App cook-log form, created in the @spudly/ui 6.x migration as the host replacement for the design system RatingForm (an internal view in 6.x); web has its own implementation at cooking/CookLogForm.tsx.',
+  },
+  {
+    path: 'ThumbnailListCard.tsx',
+    platform: 'app',
+    reason:
+      'App list-card component, relocated out of the retired ui/ wrapper library in the @spudly/ui 6.x migration; web composes its card rows inline in RecipeListCard instead.',
+  },
+  {
+    path: 'recipe/SortableIngredientList.tsx',
+    platform: 'web',
+    reason:
+      'Web sortable list slot implementation (dnd-kit) for the design system RecipeFormPage; the app implementation uses react-native-draggable-flatlist. The mirror-pair registration was retired in the @spudly/ui 6.x migration, where the web side dropped the design system TextAction the app side never used.',
+  },
+  {
+    path: 'recipe/SortableIngredientList.tsx',
+    platform: 'app',
+    reason:
+      'App sortable list slot implementation (react-native-draggable-flatlist) for the design system RecipeFormPage; the web implementation uses dnd-kit. The mirror-pair registration was retired in the @spudly/ui 6.x migration (see the web entry).',
+  },
+  {
+    path: 'recipe/SortableInstructionList.tsx',
+    platform: 'web',
+    reason:
+      'Web sortable list slot implementation (dnd-kit) for the design system RecipeFormPage; the app implementation uses react-native-draggable-flatlist. The mirror-pair registration was retired in the @spudly/ui 6.x migration, where the web side dropped the design system TextAction the app side never used.',
+  },
+  {
+    path: 'recipe/SortableInstructionList.tsx',
+    platform: 'app',
+    reason:
+      'App sortable list slot implementation (react-native-draggable-flatlist) for the design system RecipeFormPage; the web implementation uses dnd-kit. The mirror-pair registration was retired in the @spudly/ui 6.x migration (see the web entry).',
   },
   {
     path: 'cooking/CookLogForm.tsx',
     platform: 'web',
     reason:
-      'Web cook-log form implementation, still used by cooking mode; its recipe-detail consumer retired in B7 C7 (the detail host renders the design system RatingForm through the page slot, as the app host does) and its list-card consumer retired in B7 C5. The app renders the design system RatingForm (design-system#126).',
+      'Web cook-log form implementation, used by cooking mode and the recipe-list cook-log accessory; the app has its own implementation at components/CookLogForm.tsx.',
   },
   {
     path: 'recipe/sortableDrag.ts',
@@ -67,18 +100,6 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
     platform: 'web',
     reason:
       'Web ProfilePage extract for max-lines; app ProfileScreen uses AccessTokensSection.',
-  },
-  {
-    path: 'profile/ProfileSubscriptionSection.tsx',
-    platform: 'web',
-    reason:
-      'Web ProfilePage section for plan display and the Paddle portal link; the app has no billing surface yet (mobile billing is deferred).',
-  },
-  {
-    path: 'profile/SubscriptionView.tsx',
-    platform: 'web',
-    reason:
-      'Web presenter for the profile subscription section; the app has no billing surface yet (mobile billing is deferred).',
   },
   {
     path: 'AnalyticsConsentBanner.tsx',
@@ -115,18 +136,6 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
     reason: 'Promotes native app install from the mobile web experience.',
   },
   {
-    path: 'ProfileAccountDataSection.tsx',
-    platform: 'web',
-    reason:
-      'Web account data export UI; not exposed in the native app profile flow.',
-  },
-  {
-    path: 'profile/ProfileTransferSection.tsx',
-    platform: 'web',
-    reason:
-      'Web profile recipe import/export UI; native app profile flow has no bulk transfer section.',
-  },
-  {
     path: 'RecipeExportPicker.tsx',
     platform: 'web',
     reason: 'Recipe export selection UI; export flow is web-only.',
@@ -150,12 +159,6 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
       'Web cooking mode page shell; app uses CookingScreen with CookingModeParts.',
   },
   {
-    path: 'cooking/ScaledIngredientsList.tsx',
-    platform: 'web',
-    reason:
-      'Web cooking ingredients panel; native cooking screen renders its own layout.',
-  },
-  {
     path: 'recipe/SortableIngredientRow.tsx',
     platform: 'web',
     reason:
@@ -174,90 +177,6 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
       'Web feedback host; renders the design system FeedbackPage (design-system#126) — the local view retired in B7 C10 (design-system#130). The app host lives outside src/components (hosts/FeedbackForm.tsx).',
   },
   {
-    path: 'ui/BulkSelectToolbar.tsx',
-    platform: 'web',
-    reason:
-      'Web mirror remains live for its banners/lists; the app copy was dev-showcase-only (the widget moved to @spudly/ui in B2). Removed in B6 (design-system#129). Web retirement is B7.',
-  },
-  {
-    path: 'ui/CheckboxSelectList.tsx',
-    platform: 'web',
-    reason:
-      'Web adapter remains; the app copy lost its consumers when the meal forms moved to the design system in B3b (the widget moved to @spudly/ui in B2). Removed in B6 (design-system#129). Web retirement is B7.',
-  },
-  {
-    path: 'ui/ErrorText.tsx',
-    platform: 'web',
-    reason:
-      'Web adapter remains; the app copy had no production importer after screens adopted design system pages. Removed in B6 (design-system#129). Web retirement is B7.',
-  },
-  {
-    path: 'ui/FormScreenLayout.tsx',
-    platform: 'web',
-    reason:
-      'Web adapter remains; the app copy had no production importer after the B3 form pages moved to the design system. Removed in B6 (design-system#129). Web retirement is B7.',
-  },
-  {
-    path: 'ui/ListLoadingFooter.tsx',
-    platform: 'web',
-    reason:
-      'Web adapter remains; the app copy had no production importer after screens adopted design system pages. Removed in B6 (design-system#129). Web retirement is B7.',
-  },
-  {
-    path: 'ui/MultilineField.tsx',
-    platform: 'web',
-    reason:
-      'Web adapter remains; the app copy had no production importer after the B3 form pages moved to the design system. Removed in B6 (design-system#129). Web retirement is B7.',
-  },
-  {
-    path: 'ui/NumberStepper.tsx',
-    platform: 'web',
-    reason:
-      'Web adapter remains; the app copy was only reachable via the removed ServingsStepper. Removed in B6 (design-system#129). Web retirement is B7.',
-  },
-  {
-    path: 'ui/OptionCard.tsx',
-    platform: 'web',
-    reason:
-      'Web adapter remains; the app copy had no production importer after screens adopted design system pages. Removed in B6 (design-system#129). Web retirement is B7.',
-  },
-  {
-    path: 'ui/StatBadge.tsx',
-    platform: 'web',
-    reason:
-      'Web adapter remains; the app copy was only reachable via the removed OverviewTab (the row layout moved to @spudly/ui as StatRow in B2). Removed in B6 (design-system#129). Web retirement is B7.',
-  },
-  {
-    path: 'ui/StatusBadge.tsx',
-    platform: 'web',
-    reason:
-      'Web adapter remains; the app copy was only reachable via the removed RecipeStatusBadge. Removed in B6 (design-system#129). Web retirement is B7.',
-  },
-  {
-    path: 'ui/TagPill.tsx',
-    platform: 'web',
-    reason:
-      'Web adapter remains; the app copy was only reachable via the removed OverviewTab (the widget moved to @spudly/ui in B2). Removed in B6 (design-system#129). Web retirement is B7.',
-  },
-  {
-    path: 'ui/TextField.tsx',
-    platform: 'web',
-    reason:
-      'Web adapter remains; the app copy had no production importer after the B3 form pages moved to the design system. Removed in B6 (design-system#129). Web retirement is B7.',
-  },
-  {
-    path: 'ui/TextLinkButton.tsx',
-    platform: 'web',
-    reason:
-      'Web adapter remains; the app copy was only reachable via the removed NutritionGoalProgressView. Removed in B6 (design-system#129). Web retirement is B7.',
-  },
-  {
-    path: 'ui/ToggleChipGroup.tsx',
-    platform: 'web',
-    reason:
-      'Web adapter remains; the app copy was only reachable via the removed ScaleMultiplierButtons (callers use @spudly/ui directly). Removed in B6 (design-system#129). Web retirement is B7.',
-  },
-  {
     path: 'recipe/RecipeCommentItem.tsx',
     platform: 'web',
     reason:
@@ -270,46 +189,10 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
       'Web hint remains via the comments and ratings sections (public recipe page; the signed-in detail page renders stale hints from the design system page since B7 C7); the app copy was deleted with RecipeCommentItem — its stale marker is the design system CommentItem marker now. Removed in B6 (design-system#129). Web retirement is B7 (C11).',
   },
   {
-    path: 'ui/SectionCard.tsx',
+    path: 'SelectField.tsx',
     platform: 'web',
     reason:
-      'Web adapter remains; the app copy was deleted when its last caller (ProfileFeedbackPreference) adopted the design system SectionCard directly. Removed in B6 (design-system#129). Web retirement is B7.',
-  },
-  {
-    path: 'ui/RadioOptionGroup.tsx',
-    platform: 'web',
-    reason:
-      'Web adapter remains; the app copy was deleted when RecipeVisibilityControls adopted the design system RadioOptionGroup directly. Removed in B6 (design-system#129). Web retirement is B7.',
-  },
-  {
-    path: 'ui/PrimaryButton.tsx',
-    platform: 'web',
-    reason:
-      'Web adapter remains; the app copy was deleted when its last callers adopted the design system Button directly. Removed in B6 (design-system#129). Web retirement is B7.',
-  },
-  {
-    path: 'ui/SecondaryButton.tsx',
-    platform: 'web',
-    reason:
-      'Web adapter remains; the app copy had no production importer (test/showcase only) and was deleted with the design system Button adoption. Removed in B6 (design-system#129). Web retirement is B7.',
-  },
-  {
-    path: 'ui/ProgressDots.tsx',
-    platform: 'web',
-    reason:
-      'Web adapter remains; the app copy was deleted when CookingModeParts adopted the design system StepDots directly. Removed in B6 (design-system#129). Web retirement is B7.',
-  },
-  {
-    path: 'ui/EmptyMessage.tsx',
-    platform: 'web',
-    reason:
-      'Web copy remains — production views (recipes list, shared-with-me, discover, access tokens) consume it; the app copy was only consumed by the in-app component showcase and was removed with it (design-system#129). The web showcase was retired in B7 cluster C2 (design-system#130); this adapter retires as its consuming views swap.',
-  },
-  {
-    path: 'ui/SelectField.tsx',
-    platform: 'web',
-    reason:
-      'Web copy remains — production pickers and filter bars consume it; the app copy was only consumed by the in-app component showcase and was removed with it (design-system#129). The web showcase was retired in B7 cluster C2 (design-system#130); this adapter retires as its consuming views swap.',
+      'Web select field used by production pickers and filter bars, relocated out of the retired ui/ wrapper library in the @spudly/ui 6.x migration; the app copy was removed earlier (design-system#129).',
   },
   {
     path: 'recipe/RecipeCommentsSection.tsx',

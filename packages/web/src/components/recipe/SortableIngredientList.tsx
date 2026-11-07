@@ -17,7 +17,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import {TextAction, tokens} from '@spudly/ui';
+import {eciperayTheme, tokens} from '@spudly/ui';
 import {useState} from 'react';
 
 import {SortableIngredientRow} from './SortableIngredientRow.js';
@@ -74,13 +74,21 @@ export const SortableIngredientList = ({
         >
           Ingredients
         </p>
-        <TextAction
-          color="$primary"
-          fontSize={tokens.typography.fontSize.sm}
-          onPress={onAdd}
+        <button
+          type="button"
+          style={{
+            background: 'none',
+            border: 'none',
+            padding: 0,
+            cursor: 'pointer',
+            color: eciperayTheme.semantic.primary,
+            fontSize: tokens.typography.fontSize.sm,
+            fontFamily: tokens.typography.fontFamily.sans,
+          }}
+          onClick={onAdd}
         >
           + Add
-        </TextAction>
+        </button>
       </div>
       <DndContext
         sensors={sensors}

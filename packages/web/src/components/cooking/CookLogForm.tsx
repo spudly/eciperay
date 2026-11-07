@@ -3,7 +3,7 @@ import type {CSSProperties} from 'react';
 import {useState} from 'react';
 import type {CookLogInput} from '@eciperay/types';
 
-import {StarRatingInput} from '../ui/StarRatingInput.js';
+import {StarRatingInput} from '../StarRatingInput.js';
 
 type Props = {
   onSubmit: (input: CookLogInput) => void;

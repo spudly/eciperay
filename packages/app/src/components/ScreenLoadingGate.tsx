@@ -3,12 +3,10 @@ import {
   useDelayedTrue,
   type ScreenLoadingGateProps,
 } from '@eciperay/client';
-import {Button as DsButton, eciperayTheme} from '@spudly/ui';
-import {useState} from 'react';
+import {eciperayTheme} from '@spudly/ui';
 import {View} from 'react-native';
 
-import {BookLoadingSpinner} from './ui/BookLoadingSpinner';
-import {InfoBanner} from './ui/InfoBanner';
+import {BookLoadingSpinner} from './BookLoadingSpinner';
 
 /**
  * Full-screen loading gate (the old ui-loading-center + flex-1 over a white

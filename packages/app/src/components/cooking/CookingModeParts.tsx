@@ -1,56 +1,47 @@
-/* eslint-disable max-lines -- cooking-mode overlay family with scaled ingredients list and step display */
-import {
-  formatScaledIngredientLine,
-  formatServingsLabel,
-  sortIngredientsByOrder,
-} from '@eciperay/client';
-import {eciperayTheme, StepDots, Text as DsText, tokens} from '@spudly/ui';
+import {eciperayTheme, tokens} from '@spudly/ui';
 import type {ReactNode} from 'react';
 import {useState} from 'react';
 import {
   GestureResponderEvent,
-  ScrollView,
+  Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
-import {YStack} from 'tamagui';
-import type {RecipeDetail} from '@eciperay/types';
-
-import {PrevNextNav} from '../ui/PrevNextNav';
+import {XStack, YStack} from 'tamagui';
 
 /**
- * G9: the cooking-mode overlay family is an app-domain composite — a dark,
- * immersive full-screen shell composed here from @spudly/ui tokens rather than
- * a DS component. The shells keep RN Views (the swipe shell needs responder
- * props) with token-valued styles: the old ui-cooking-mode-overlay was flex-1,
- * justify-center, bg-gray-900 (gray ramp step 10), px-6. The overlay's "white"
- * is the DS semantic surface; Tailwind's white-alpha steps are composed as hex
- * alpha suffixes the way TagPill composes data colors (white/5 '0d', /10 '1a',
- * /60 '99', /70 'b3', /80 'cc'). tracking-widest (0.1em) at text-sm is 1.4px of
- * letterSpacing geometry; the ingredients card's max-block-40 (160px) is layout
- * geometry with no DS spacing step.
+ * Host remnants for cooking mode after the @spudly/ui 6.x migration.
+ *
+ * The step presentation itself is now the DS CookingModePage: it composes the
+ * step overlay, the scaled-ingredients panel, StepDots and PrevNextNav
+ * internally, so the old StepDisplay / NavButtons / CookingModeDoneButton /
+ * ScaledIngredientsList composition is deleted — the screen passes the page its
+ * step state, pre-composed ingredients heading/lines, and callbacks.
+ *
+ * What stays here is only what the page contract cannot express:
+ *
+ * - The swipe shell (gestures are host behavior; the page deliberately has no
+ *   swipe navigation — its docblock leaves the swipe shell app-side),
+ * - The cook-log shell + form: the cook log is not part of CookingModePage, and
+ *   its old DS component (RatingForm) is a DS _view_ in 6.x — internal and
+ *   unexported — so the form is re-expressed host-side below with the same
+ *   contract (title, star toggle-off, trimmed notes crossing as null, Save
+ *   disabled while pending, Skip always live).
  */
 const WHITE = eciperayTheme.semantic.surface;
 
-const overlayStyle = {
+const shellStyle = {flex: 1} as const;
+
+/* The old ui-cooking-mode-overlay: flex-1, justify-center, bg-gray-900
+   (gray ramp step 10), px-6 — kept for the cook-log state, whose dark
+   shell the DS page does not provide. */
+const cookLogShellStyle = {
   flex: 1,
   justifyContent: 'center',
+  alignItems: 'center',
   backgroundColor: tokens.colors.gray.gray10,
   paddingHorizontal: tokens.spacing[6],
-} as const;
-
-const cookLogShellStyle = {...overlayStyle, alignItems: 'center'} as const;
-
-/* The old ui-cooking-mode-done-button: absolute right-6 top-12, full radius,
-   white/10 fill, px-4 py-2. */
-const doneButtonStyle = {
-  position: 'absolute',
-  right: tokens.spacing[6],
-  top: tokens.spacing[12],
-  borderRadius: tokens.radii.full,
-  backgroundColor: `${WHITE}1a`,
-  paddingHorizontal: tokens.spacing[4],
-  paddingVertical: tokens.spacing[2],
 } as const;
 
 export const CookingModeShell = ({
@@ -63,7 +54,7 @@ export const CookingModeShell = ({
   onResponderRelease?: (e: GestureResponderEvent) => void;
 }) => (
   <View
-    style={overlayStyle}
+    style={shellStyle}
     onStartShouldSetResponder={
       /* istanbul ignore next -- touch responder required for swipe gestures */
       () => true
@@ -77,64 +68,6 @@ export const CookingModeShell = ({
 
 export const CookingModeCookLogShell = ({children}: {children: ReactNode}) => (
   <View style={cookLogShellStyle}>{children}</View>
-);
-
-export const CookingModeDoneButton = ({onPress}: {onPress: () => void}) => (
-  <TouchableOpacity
-    style={doneButtonStyle}
-    onPress={onPress}
-  >
-    <DsText
-      fontSize={tokens.typography.fontSize.sm}
-      color={WHITE}
-    >
-      Done
-    </DsText>
-  </TouchableOpacity>
-);
-
-type Step = RecipeDetail['instructions'][number];
-
-const ScaledIngredientsList = ({
-  recipe,
-  scaleFactor,
-  servings,
-}: {
-  recipe: RecipeDetail;
-  scaleFactor: number;
-  servings: number;
-}) => (
-  <YStack
-    marginBlockEnd="$6"
-    borderRadius={tokens.radii.xl}
-    backgroundColor={`${WHITE}0d`}
-    padding="$4"
-    maxHeight={160}
-  >
-    <DsText
-      marginBlockEnd="$2"
-      fontSize={tokens.typography.fontSize.sm}
-      fontWeight={tokens.typography.fontWeight.medium}
-      color={`${WHITE}cc`}
-    >
-      Ingredients
-      {scaleFactor === 1
-        ? ` (${formatServingsLabel(servings)})`
-        : ` (scaled to ${formatServingsLabel(servings)})`}
-    </DsText>
-    <ScrollView>
-      {sortIngredientsByOrder(recipe.ingredients).map(ingredient => (
-        <DsText
-          key={ingredient.id}
-          paddingVertical="$1"
-          fontSize={tokens.typography.fontSize.sm}
-          color={`${WHITE}b3`}
-        >
-          {formatScaledIngredientLine(ingredient, scaleFactor)}
-        </DsText>
-      ))}
-    </ScrollView>
-  </YStack>
 );
 
 /* istanbul ignore next -- swipe gesture handlers; tested via button navigation; not simulatable in RNTL */
@@ -155,69 +88,152 @@ export const useSwipeNav = (onNext: () => void, onPrev: () => void) => {
   return {onStart, onEnd};
 };
 
-type StepDisplayProps = {
-  step: number;
-  steps: Step[];
-  current: Step | undefined;
-  recipe: RecipeDetail | undefined;
-  scaleFactor: number;
-  servings: number;
+type CookLogFormValues = {
+  rating: 1 | 2 | 3 | 4 | 5 | null;
+  notes: string | null;
 };
 
-export const StepDisplay = ({
-  step,
-  steps,
-  current,
-  recipe,
-  scaleFactor,
-  servings,
-}: StepDisplayProps) => (
-  <>
-    <DsText
-      marginBlockEnd="$4"
-      fontSize={tokens.typography.fontSize.sm}
-      letterSpacing={1.4}
-      color={`${WHITE}99`}
-      textTransform="uppercase"
+type CookLogFormProps = {
+  onSubmit: (values: CookLogFormValues) => void;
+  onSkip: () => void;
+  isPending: boolean;
+  notesPlaceholder?: string;
+};
+
+const formActionStyle = {
+  flex: 1,
+  alignItems: 'center',
+  borderRadius: tokens.radii.xl,
+  paddingVertical: tokens.spacing[3],
+} as const;
+
+/**
+ * Host-side cook-log form (the DS RatingForm's dark variant, re-expressed with
+ * Tamagui stacks + RN primitives and @spudly/ui tokens): a star rating plus
+ * free-text notes. Rating and notes are internal state; only the submit
+ * view-model crosses the boundary, with notes trimmed and empty notes crossing
+ * as null. Pressing the current star clears the rating. `isPending` disables
+ * Save (at half opacity); Skip stays live.
+ */
+export const CookLogForm = ({
+  onSubmit,
+  onSkip,
+  isPending,
+  notesPlaceholder = 'Notes (optional)',
+}: CookLogFormProps) => {
+  const [rating, setRating] = useState<1 | 2 | 3 | 4 | 5 | null>(null);
+  const [notes, setNotes] = useState('');
+
+  const handleRatingChange = (star: 1 | 2 | 3 | 4 | 5) => {
+    setRating(current => (current === star ? null : star));
+  };
+
+  return (
+    <YStack
+      borderRadius={tokens.radii.xl}
+      width="100%"
+      backgroundColor={`${WHITE}1a`}
+      padding="$6"
+      gap="$4"
     >
-      Step {current ? current.stepNumber : 1} of {steps.length}
-    </DsText>
-    {recipe ? (
-      <ScaledIngredientsList
-        recipe={recipe}
-        scaleFactor={scaleFactor}
-        servings={servings}
+      <Text
+        style={{
+          fontSize: tokens.typography.fontSize.xl,
+          fontWeight: tokens.typography.fontWeight.semibold,
+          color: WHITE,
+        }}
+      >
+        How did it go?
+      </Text>
+      <XStack
+        justifyContent="center"
+        accessibilityRole="radiogroup"
+        accessibilityLabel="Your rating"
+      >
+        {([1, 2, 3, 4, 5] as const).map(star => {
+          const selected = rating !== null && star <= rating;
+          return (
+            <TouchableOpacity
+              key={star}
+              accessibilityRole="radio"
+              accessibilityLabel={`${star} star${star === 1 ? '' : 's'}`}
+              accessibilityState={{checked: rating === star}}
+              onPress={() => {
+                handleRatingChange(star);
+              }}
+              style={{
+                minWidth: 44,
+                minHeight: 44,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: tokens.typography.fontSize['3xl'],
+                  color: selected ? tokens.colors.warning.warning6 : WHITE,
+                  opacity: selected ? 1 : 0.3,
+                }}
+              >
+                ★
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </XStack>
+      <TextInput
+        multiline
+        value={notes}
+        onChangeText={setNotes}
+        placeholder={notesPlaceholder}
+        placeholderTextColor={tokens.colors.gray.gray5}
+        style={{
+          borderRadius: tokens.radii.xl,
+          paddingHorizontal: tokens.spacing[4],
+          paddingVertical: tokens.spacing[3],
+          fontSize: tokens.typography.fontSize.md,
+          backgroundColor: `${WHITE}1a`,
+          color: WHITE,
+        }}
       />
-    ) : null}
-    <DsText
-      marginBlockEnd="$8"
-      fontSize={tokens.typography.fontSize['2xl']}
-      lineHeight={
-        tokens.typography.fontSize['2xl'] * tokens.typography.lineHeight.relaxed
-      }
-      color={WHITE}
-    >
-      {current ? current.body : ''}
-    </DsText>
-    <StepDots
-      count={steps.length}
-      activeIndex={step}
-    />
-  </>
-);
-
-type NavButtonsProps = {
-  step: number;
-  total: number;
-  onNext: () => void;
-  onPrev: () => void;
+      <XStack gap="$3">
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Skip"
+          onPress={onSkip}
+          style={[formActionStyle, {backgroundColor: `${WHITE}1a`}]}
+        >
+          <Text style={{fontSize: tokens.typography.fontSize.md, color: WHITE}}>
+            Skip
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Save"
+          accessibilityState={{disabled: isPending}}
+          disabled={isPending}
+          onPress={() => {
+            onSubmit({rating, notes: notes.trim() || null});
+          }}
+          style={[
+            formActionStyle,
+            {
+              backgroundColor: eciperayTheme.semantic.primary,
+              opacity: isPending ? 0.5 : 1,
+            },
+          ]}
+        >
+          <Text
+            style={{
+              fontSize: tokens.typography.fontSize.md,
+              fontWeight: tokens.typography.fontWeight.semibold,
+              color: eciperayTheme.semantic.onPrimary,
+            }}
+          >
+            Save
+          </Text>
+        </TouchableOpacity>
+      </XStack>
+    </YStack>
+  );
 };
-
-export const NavButtons = ({step, total, onNext, onPrev}: NavButtonsProps) => (
-  <PrevNextNav
-    onBack={onPrev}
-    onNext={onNext}
-    disableBack={step === 0}
-    disableNext={step === total - 1}
-  />
-);

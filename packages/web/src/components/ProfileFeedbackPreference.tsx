@@ -8,27 +8,101 @@ import {
   writeAnalyticsConsent,
   type AnalyticsConsentStatus,
 } from '@eciperay/client';
-import {Button, SectionCard, Text as DSText, TextLink} from '@spudly/ui';
-import {useEffect, useState} from 'react';
-import type {ComponentType} from 'react';
+import {tokens} from '@spudly/ui';
+import {useEffect, useId, useState} from 'react';
+import type {ComponentType, ReactNode} from 'react';
 import type {ShowcaseFrameProps} from '@eciperay/client';
+import {
+  Anchor,
+  Button,
+  Checkbox,
+  Label,
+  Text,
+  XStack,
+  YStack,
+  styled,
+} from 'tamagui';
 
 import {analytics, disablePostHog, enablePostHog} from '../lib/analytics.js';
 import {POSTHOG_KEY} from '../lib/env.js';
-
-import {CheckboxField} from './ui/CheckboxField.js';
 
 const CONSENT_LABELS: Record<AnalyticsConsentStatus, string> = {
   accepted: 'Accepted',
   declined: 'Declined',
 };
 
+const StyledCheckbox = styled(Checkbox, {
+  name: 'ProfileCheckbox',
+
+  width: 44,
+  height: 44,
+  alignItems: 'center',
+  justifyContent: 'center',
+  backgroundColor: 'transparent',
+  borderWidth: 0,
+});
+
+const StyledCheckboxBox = styled(XStack, {
+  name: 'ProfileCheckboxBox',
+
+  width: 24,
+  height: 24,
+  overflow: 'hidden',
+  borderWidth: 2,
+  borderRadius: tokens.radii.sm,
+  alignItems: 'center',
+  justifyContent: 'center',
+});
+
+const PreferenceButton = ({
+  variant,
+  onPress,
+  children,
+}: {
+  variant: 'primary' | 'secondary';
+  onPress: () => void;
+  children: string;
+}) => (
+  <Button
+    backgroundColor={
+      variant === 'primary' ? '$primary' : tokens.colors.gray.gray3
+    }
+    borderColor={
+      variant === 'primary' ? 'transparent' : tokens.colors.gray.gray10
+    }
+    borderWidth={1}
+    borderRadius={tokens.radii.md}
+    color={variant === 'primary' ? '$onPrimary' : tokens.colors.gray.gray10}
+    fontSize={tokens.typography.fontSize.md}
+    fontWeight={tokens.typography.fontWeight.semibold}
+    paddingHorizontal={tokens.spacing[4]}
+    paddingVertical={tokens.spacing[3]}
+    onPress={onPress}
+  >
+    {children}
+  </Button>
+);
+
+const HintText = ({children}: {children: ReactNode}) => (
+  <Text
+    fontSize={tokens.typography.fontSize.sm}
+    color="$textMuted"
+  >
+    {children}
+  </Text>
+);
+
 /**
- * The DS ProfilePage's feedbackPreference slot content (B7 C10,
- * design-system#130): the consent state machine stays web-side
- * (eciperay#256/#299 — enabling the shortcut always re-presents the consent
- * prompt; declining consent forces the preference off), and the section renders
- * on design system widgets directly, the app's post-B6 host pattern.
+ * The DS ProfilePage's feedbackPreference slot content: the consent state
+ * machine stays web-side (eciperay#256/#299 — enabling the shortcut always
+ * re-presents the consent prompt; declining consent forces the preference off).
+ * It stays in the slot rather than moving to the page's
+ * feedbackPreferenceSection data prop because its presentation does not fit
+ * that view contract: outside the prompt it offers a single state-dependent
+ * action with long labels ("Decline analytics consent" / "Accept analytics
+ * consent"), while the prompt itself uses the short "Accept" / "Decline" pair —
+ * the view renders both actions with one shared label set. The section is
+ * therefore composed host-side from Tamagui primitives.
  */
 export const ProfileFeedbackPreference = () => {
   const {enabled, setEnabled} = useFeedbackShortcutEnabled();
@@ -110,97 +184,170 @@ export const ProfileFeedbackPreference = () => {
     setConsentPromptOpen(true);
   };
 
+  const checkboxId = useId();
+  const checkboxLabelId = `${checkboxId}-label`;
+
   return (
-    <SectionCard
-      title="Preferences"
-      variant="elevated"
+    <YStack
+      backgroundColor="$surface"
+      borderWidth={0}
+      borderRadius={tokens.radii.lg}
+      padding={tokens.spacing[4]}
+      shadowColor={tokens.shadows.md.shadowColor}
+      shadowOffset={tokens.shadows.md.shadowOffset}
+      shadowOpacity={tokens.shadows.md.shadowOpacity}
+      shadowRadius={tokens.shadows.md.shadowRadius}
       marginBottom="$8"
     >
-      <CheckboxField
-        checked={enabled}
-        disabled={!analyticsConfigured}
-        onChange={handleToggle}
-        label="Show feedback shortcut"
-        description="Adds a floating feedback button so you can send product feedback. Submissions are sent to PostHog when you use it."
-      >
+      <YStack paddingBottom={tokens.spacing[3]}>
+        <Text
+          fontSize={tokens.typography.fontSize.xl}
+          fontWeight={tokens.typography.fontWeight.semibold}
+        >
+          Preferences
+        </Text>
+      </YStack>
+      <YStack gap={tokens.spacing[1]}>
+        <XStack
+          alignItems="center"
+          gap={tokens.spacing[3]}
+          minHeight={44}
+        >
+          <StyledCheckbox
+            id={checkboxId}
+            checked={enabled}
+            onCheckedChange={handleToggle}
+            disabled={!analyticsConfigured}
+            aria-labelledby={checkboxLabelId}
+          >
+            <StyledCheckboxBox
+              borderColor={enabled ? '$primary' : '$textMuted'}
+              backgroundColor={enabled ? '$primary' : '$surface'}
+            >
+              <Checkbox.Indicator>
+                <Text
+                  aria-hidden
+                  color="$onPrimary"
+                  fontSize={tokens.typography.fontSize.sm}
+                  fontWeight={tokens.typography.fontWeight.bold}
+                >
+                  ✓
+                </Text>
+              </Checkbox.Indicator>
+            </StyledCheckboxBox>
+          </StyledCheckbox>
+          <YStack
+            flex={1}
+            gap={tokens.spacing[1]}
+          >
+            <Label
+              id={checkboxLabelId}
+              onPress={() => {
+                handleToggle(!enabled);
+              }}
+              fontSize={tokens.typography.fontSize.md}
+            >
+              Show feedback shortcut
+            </Label>
+            <HintText>
+              Adds a floating feedback button so you can send product feedback.
+              Submissions are sent to PostHog when you use it.
+            </HintText>
+          </YStack>
+        </XStack>
         {analyticsConfigured ? null : (
-          <DSText variant="hint">
+          <HintText>
             Feedback is unavailable because analytics is not configured in this
             environment.
-          </DSText>
+          </HintText>
         )}
         {analyticsConfigured ? (
-          <div>
-            <DSText variant="hint">
+          <YStack gap="$2">
+            <HintText>
               {`Analytics consent: ${consent ? CONSENT_LABELS[consent] : 'Not set'}`}
-            </DSText>
+            </HintText>
             {consentPromptOpen ? (
-              <div
+              <YStack
                 role="group"
                 aria-label="Analytics consent for feedback"
+                gap="$2"
               >
-                <DSText>
+                <Text fontSize={tokens.typography.fontSize.md}>
                   The feedback shortcut sends feedback through PostHog, which
                   needs your analytics consent. Accept to keep the shortcut on,
                   or decline to turn it off.
-                </DSText>
-                <div>
-                  <Button
+                </Text>
+                <XStack gap="$2">
+                  <PreferenceButton
                     variant="secondary"
                     onPress={declineConsent}
                   >
                     Decline
-                  </Button>
-                  <Button
+                  </PreferenceButton>
+                  <PreferenceButton
                     variant="primary"
                     onPress={acceptConsent}
                   >
                     Accept
-                  </Button>
-                </div>
-              </div>
+                  </PreferenceButton>
+                </XStack>
+              </YStack>
             ) : consent === 'accepted' ? (
               <div>
-                <Button
+                <PreferenceButton
                   variant="secondary"
                   onPress={declineConsent}
                 >
                   Decline analytics consent
-                </Button>
+                </PreferenceButton>
               </div>
             ) : (
               <div>
-                <Button
+                <PreferenceButton
                   variant="primary"
                   onPress={acceptConsent}
                 >
                   Accept analytics consent
-                </Button>
+                </PreferenceButton>
               </div>
             )}
             {consent ? (
               <div>
-                <Button
+                <PreferenceButton
                   variant="secondary"
                   onPress={withdrawConsent}
                 >
                   Withdraw analytics consent
-                </Button>
+                </PreferenceButton>
               </div>
             ) : null}
-            <DSText variant="hint">
+            <HintText>
               Manage your choice at any time on the{' '}
-              <TextLink href="/privacy/consent">privacy choices page</TextLink>.
-            </DSText>
+              <Anchor
+                href="/privacy/consent"
+                color="$link"
+                fontSize={tokens.typography.fontSize.sm}
+                fontWeight={tokens.typography.fontWeight.medium}
+                textDecorationLine="underline"
+              >
+                privacy choices page
+              </Anchor>
+              .
+            </HintText>
             {error ? (
-              <span role="alert">
-                <DSText variant="error">{error}</DSText>
-              </span>
+              <YStack role="alert">
+                <Text
+                  fontSize={tokens.typography.fontSize.sm}
+                  color="$errorText"
+                >
+                  {error}
+                </Text>
+              </YStack>
             ) : null}
-          </div>
+          </YStack>
         ) : null}
-      </CheckboxField>
-    </SectionCard>
+      </YStack>
+    </YStack>
   );
 };
 

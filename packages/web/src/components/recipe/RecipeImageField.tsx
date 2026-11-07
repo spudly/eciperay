@@ -1,5 +1,5 @@
 /* eslint-disable max-lines -- recipe image upload, paste, and generate controls */
-import {Button, eciperayTheme, tokens} from '@spudly/ui';
+import {eciperayTheme, tokens} from '@spudly/ui';
 import {useRef, useState} from 'react';
 
 import {
@@ -149,28 +149,48 @@ export const RecipeImageField = ({
         )}
       </div>
       <div style={{display: 'flex', flexWrap: 'wrap', gap: tokens.spacing[3]}}>
-        <Button
+        <button
           type="button"
-          variant="primary"
-          size="sm"
+          style={{
+            borderRadius: 8,
+            border: 'none',
+            backgroundColor: eciperayTheme.semantic.primary,
+            padding: '8px 16px',
+            fontSize: tokens.typography.fontSize.sm,
+            fontFamily: tokens.typography.fontFamily.sans,
+            fontWeight: tokens.typography.fontWeight.medium,
+            color: '#ffffff',
+            cursor: imageBusy ? 'not-allowed' : 'pointer',
+            opacity: imageBusy ? 0.5 : 1,
+          }}
           disabled={imageBusy}
-          onPress={() => {
+          onClick={() => {
             browseInputRef.current?.click();
           }}
         >
           {imageUploading ? 'Uploading…' : 'Browse images'}
-        </Button>
-        <Button
+        </button>
+        <button
           type="button"
-          variant="secondary"
-          size="sm"
+          style={{
+            borderRadius: 8,
+            border: `1px solid ${tokens.colors.gray.gray4}`,
+            backgroundColor: '#ffffff',
+            padding: '8px 16px',
+            fontSize: tokens.typography.fontSize.sm,
+            fontFamily: tokens.typography.fontFamily.sans,
+            fontWeight: tokens.typography.fontWeight.medium,
+            color: tokens.colors.gray.gray8,
+            cursor: imageBusy ? 'not-allowed' : 'pointer',
+            opacity: imageBusy ? 0.5 : 1,
+          }}
           disabled={imageBusy}
-          onPress={() => {
+          onClick={() => {
             captureInputRef.current?.click();
           }}
         >
           Take photo
-        </Button>
+        </button>
         {onGenerateImage ? (
           <button
             type="button"

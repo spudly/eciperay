@@ -6,8 +6,7 @@ import {useState} from 'react';
 import {YStack} from 'tamagui';
 
 import {eciperay} from '../../lib/api.js';
-import {BookLoadingSpinner} from '../ui/BookLoadingSpinner.js';
-import {ErrorText} from '../ui/ErrorText.js';
+import {BookLoadingSpinner} from '../BookLoadingSpinner.js';
 
 import {RecipeCommentItem} from './RecipeCommentItem.js';
 
@@ -111,8 +110,14 @@ export const RecipeCommentsSection = ({
       </h3>
       {commentError ? (
         <div style={{marginBottom: tokens.spacing[3]}}>
-          <span role="alert">
-            <ErrorText>{commentError}</ErrorText>
+          <span
+            role="alert"
+            style={{
+              fontSize: tokens.typography.fontSize.sm,
+              color: tokens.colors.danger.danger7,
+            }}
+          >
+            {commentError}
           </span>
         </div>
       ) : null}
@@ -180,7 +185,11 @@ export const RecipeCommentsSection = ({
       </ul>
       {currentUserId ? (
         <form
-          style={{display: 'flex', flexDirection: 'column', gap: tokens.spacing[2]}}
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: tokens.spacing[2],
+          }}
           onSubmit={event => {
             event.preventDefault();
             createMutation.mutate(draft.trim());

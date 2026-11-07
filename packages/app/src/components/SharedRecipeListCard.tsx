@@ -7,7 +7,7 @@ import {
 import {Linking} from 'react-native';
 import type {RecipeDetail} from '@eciperay/types';
 
-import {ThumbnailListCard} from './ui/ThumbnailListCard';
+import {ThumbnailListCard} from './ThumbnailListCard';
 
 // The card subtitle is formatted by the shared formatRecipeListSubtitle
 // in @eciperay/client (#278); the Shared-with-me host imports it from
