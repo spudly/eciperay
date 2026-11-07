@@ -4,7 +4,7 @@ import {
   MealPlanDetailPage as MealPlanDetailPageView,
   type MealPlanDetailPageEntry,
   type MealPlanDetailPageNutritionGoals,
-} from '@spudly/ui/pages';
+} from '@spudly/ui';
 import {useQuery} from '@tanstack/react-query';
 import {useParams} from 'react-router-dom';
 
@@ -26,23 +26,22 @@ const goalValueLabel = (field: NutritionGoalFieldProgress): string =>
   `${Math.round(field.actual)} / ${Math.round(field.goal)} · ${bandLabel(field.band)}`;
 
 /**
- * The composition the retired web view rendered, folded into the DS
- * page's view-models exactly as the app host composes it: the date range
- * joined from the plan's raw date strings, the nutrition summary from the
- * shared formatter, and the goal rows' rounded labels. The row labels
- * carry the qualifier naming what the server compared against the daily
- * goals (#266): the per-day average only when the plan has a valid date
- * range (`nutrition.perDay` is set then); the whole-plan total otherwise.
- * Satiety carries neither qualifier — it is a plan-wide score at any plan
- * length. The DS page has no caption slot, so the label is the lever (the
- * app's composition since its rewire).
+ * The composition the retired web view rendered, folded into the DS page's
+ * view-models exactly as the app host composes it: the date range joined from
+ * the plan's raw date strings, the nutrition summary from the shared formatter,
+ * and the goal rows' rounded labels. The row labels carry the qualifier naming
+ * what the server compared against the daily goals (#266): the per-day average
+ * only when the plan has a valid date range (`nutrition.perDay` is set then);
+ * the whole-plan total otherwise. Satiety carries neither qualifier — it is a
+ * plan-wide score at any plan length. The DS page has no caption slot, so the
+ * label is the lever (the app's composition since its rewire).
  *
- * One visibility nuance rides on the DS contract: the page renders the
- * goals section when the plan has goal progress or a nutrition summary;
- * the retired view keyed the section on the raw nutrition object, so a
- * plan whose nutrition is present but unavailable with no goal progress
- * still showed the set-goals hint card. `goalsSectionVisibility` (DS #78)
- * passes "shown" for exactly that case and "auto" otherwise.
+ * One visibility nuance rides on the DS contract: the page renders the goals
+ * section when the plan has goal progress or a nutrition summary; the retired
+ * view keyed the section on the raw nutrition object, so a plan whose nutrition
+ * is present but unavailable with no goal progress still showed the set-goals
+ * hint card. `goalsSectionVisibility` (DS #78) passes "shown" for exactly that
+ * case and "auto" otherwise.
  */
 const planDetailViewProps = (plan: MealPlanDetail, planId: string) => {
   const nutritionLabel = formatSimpleNutrition(plan.nutrition) ?? undefined;

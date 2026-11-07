@@ -1,31 +1,35 @@
-/* eslint-disable max-lines -- comments section with compose form */
 import {
   makeRecipeDetail,
   queryKeys,
   STALE_COMMENT_HINT,
   useAuth,
 } from '@eciperay/client';
-import {
-  Button as DsButton,
-  Card as DsCard,
-  CommentItem as DsCommentItem,
-  TextAreaField as DsTextAreaField,
-  Text as DsText,
-  tokens,
-} from '@spudly/ui';
+import type {RecipeDetailPageComments} from '@spudly/ui';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
-import React, {useState} from 'react';
-import {YStack} from 'tamagui';
+import {useState} from 'react';
 
 import {api} from '../../lib/api';
-import {BookLoadingSpinner} from '../../components/ui/BookLoadingSpinner';
 
-type Props = {recipeId: string; ownerUserId: string};
-
-// Field backgrounds (issue #167): fields here render through @spudly/ui
-// components, which all share the Warm Harvest $surface field background.
-// The web mirror matches via its bg-field token (#fffdf8, the same surface).
-export const RecipeCommentsSection = ({recipeId, ownerUserId}: Props) => {
+/**
+ * The recipe comments section's host logic (#438 Part 3): the section's query,
+ * compose/edit draft state, and three mutations stay app-side, and the section
+ * crosses into RecipeDetailPage as its `comments` data prop
+ * (RecipeCommentsView's view-model) — @spudly/ui 6.x exports pages only, so the
+ * DS Card / CommentItem / TextAreaField this file used to compose are the
+ * page's own composition now. Every mapping below is the one the composed
+ * section rendered: the author fallback, the stale hint, the edit/delete
+ * eligibility (author, or the recipe owner for delete), and the composer
+ * offered only to signed-in viewers.
+ *
+ * Two presentation deltas ride with the view, both the DS view's own treatment:
+ * loading renders the view's spinner (labeled "Loading comments") instead of
+ * the app's book loader, and the composer carries the view's "Add a comment"
+ * label above the field whose placeholder keeps the same copy.
+ */
+export const useRecipeCommentsProps = (
+  recipeId: string,
+  ownerUserId: string,
+): RecipeDetailPageComments => {
   const {session} = useAuth();
   const queryClient = useQueryClient();
   const currentUserId = session?.user.id;
@@ -69,94 +73,51 @@ export const RecipeCommentsSection = ({recipeId, ownerUserId}: Props) => {
     onSuccess: invalidateComments,
   });
 
-  return (
-    <DsCard
-      variant="bordered"
-      marginBlockEnd="$4"
-    >
-      <DsText
-        marginBlockEnd="$3"
-        fontSize={tokens.typography.fontSize.sm}
-        fontWeight={tokens.typography.fontWeight.semibold}
-        color={tokens.colors.gray.gray10}
-      >
-        Comments
-      </DsText>
-      {isLoading ? (
-        <YStack
-          alignItems="center"
-          justifyContent="center"
-          marginBlockEnd="$3"
-        >
-          <BookLoadingSpinner size="sm" />
-        </YStack>
-      ) : null}
-      {!isLoading && comments.length === 0 ? (
-        <DsText
-          marginBlockEnd="$3"
-          fontSize={tokens.typography.fontSize.sm}
-          color={tokens.colors.gray.gray7}
-        >
-          No comments yet
-        </DsText>
-      ) : null}
-      {comments.map(comment => (
-        <DsCommentItem
-          key={comment.id}
-          authorName={comment.authorDisplayName?.trim() ?? 'Anonymous'}
-          body={comment.body}
-          isStale={comment.isStale}
-          staleHintLabel={STALE_COMMENT_HINT}
-          canEdit={comment.authorUserId === currentUserId}
-          canDelete={
-            comment.authorUserId === currentUserId ||
-            ownerUserId === currentUserId
-          }
-          isEditing={editingId === comment.id}
-          editDraft={editDraft}
-          isUpdatePending={updateMutation.isPending}
-          isDeletePending={deleteMutation.isPending}
-          onEditDraftChange={setEditDraft}
-          onStartEdit={() => {
-            setEditingId(comment.id);
-            setEditDraft(comment.body);
-          }}
-          onCancelEdit={() => {
-            setEditingId(null);
-            setEditDraft('');
-          }}
-          onSaveEdit={() => {
-            updateMutation.mutate({
-              commentId: comment.id,
-              body: editDraft.trim(),
-            });
-          }}
-          onDelete={() => {
-            deleteMutation.mutate(comment.id);
-          }}
-        />
-      ))}
-      {currentUserId ? (
-        <YStack>
-          <DsTextAreaField
-            marginBlockEnd="$2"
-            placeholder="Add a comment"
-            value={draft}
-            onChangeText={setDraft}
-          />
-          <DsButton
-            variant="primary"
-            size="sm"
-            alignSelf="flex-start"
-            disabled={createMutation.isPending || !draft.trim()}
-            onPress={() => {
-              createMutation.mutate(draft.trim());
-            }}
-          >
-            Post comment
-          </DsButton>
-        </YStack>
-      ) : null}
-    </DsCard>
-  );
+  return {
+    comments: comments.map(comment => ({
+      id: comment.id,
+      authorName: comment.authorDisplayName?.trim() ?? 'Anonymous',
+      body: comment.body,
+      isStale: comment.isStale,
+      canEdit: comment.authorUserId === currentUserId,
+      canDelete:
+        comment.authorUserId === currentUserId || ownerUserId === currentUserId,
+    })),
+    loading: isLoading,
+    staleHintLabel: STALE_COMMENT_HINT,
+    editingCommentId: editingId,
+    editDraft,
+    isUpdatePending: updateMutation.isPending,
+    isDeletePending: deleteMutation.isPending,
+    onEditDraftChange: setEditDraft,
+    onStartEdit: (commentId: string) => {
+      const comment = comments.find(item => item.id === commentId);
+      if (!comment) {
+        return;
+      }
+      setEditingId(comment.id);
+      setEditDraft(comment.body);
+    },
+    onCancelEdit: () => {
+      setEditingId(null);
+      setEditDraft('');
+    },
+    onSaveEdit: (commentId: string) => {
+      updateMutation.mutate({commentId, body: editDraft.trim()});
+    },
+    onDeleteComment: (commentId: string) => {
+      deleteMutation.mutate(commentId);
+    },
+    ...(currentUserId
+      ? {
+          draft,
+          onDraftChange: setDraft,
+          onPost: () => {
+            createMutation.mutate(draft.trim());
+          },
+          isPostPending: createMutation.isPending,
+          composerPlaceholder: 'Add a comment',
+        }
+      : {}),
+  };
 };

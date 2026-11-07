@@ -8,14 +8,11 @@ import {
   type RecipeStatusFilterValue,
 } from '@eciperay/client';
 import type {RecipeListSort, RecipeListSortDir} from '@eciperay/types';
-import {
-  RecipesPage as RecipesPageView,
-  type RecipesPageItem,
-} from '@spudly/ui/pages';
+import {tokens} from '@spudly/ui';
+import {RecipesPage as RecipesPageView, type RecipesPageItem} from '@spudly/ui';
 import {useInfiniteQuery} from '@tanstack/react-query';
 import {useCallback} from 'react';
 
-import {PageTitle} from '../components/ui/PageTitle.js';
 import {eciperay} from '../lib/api.js';
 
 /**
@@ -31,6 +28,19 @@ import {eciperay} from '../lib/api.js';
  * the permalink path (`/recipe/:id/:slug`) — exactly where the old card's link
  * pointed. Pagination is the page's end-reached signal now; the old view's
  * IntersectionObserver sentinel is gone.
+ *
+ * @spudly/ui 6.x sectioned contract: the page renders an own section and a
+ * discovery section under one filter bar. This host's recipes are the shared
+ * ones, so they populate the own section — each item carrying the
+ * caller-supplied `badgeLabel` that distinguishes shared-with-me content inside
+ * the own section — with this screen's empty copy passed through
+ * `ownEmptyTitle` / `ownEmptyBody`, and an empty discovery section (this
+ * surface has no discovery feed). The old flat props map as: `recipes` →
+ * `ownRecipes`, `isLoading` → `loadingOwn`, `isFetchingNextPage` →
+ * `isFetchingNextOwnPage`, `emptyTitle` / `emptyBody` → `ownEmptyTitle` /
+ * `ownEmptyBody`, and the host-rendered load-more error alert →
+ * `ownLoadMoreErrorMessage` / `onOwnLoadMoreRetry`, which the page renders as
+ * the own section's error row.
  */
 export const SharedWithMePage = () => {
   const {filters, controls} = useRecipeListFilters();
@@ -54,8 +64,8 @@ export const SharedWithMePage = () => {
   // Same pagination-error gate as the Recipes host: the shared
   // pagination pattern re-fires onLoadMore when a fetch adds no rows
   // and cannot tell an empty page from a failed one, so a failed next
-  // page stops automatic loading here and the alert under the list
-  // offers the manual retry.
+  // page stops automatic loading here and the own section's load-more
+  // error row offers the manual retry.
   const handleLoadMore = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage && !isFetchNextPageError) {
       void fetchNextPage();
@@ -68,18 +78,39 @@ export const SharedWithMePage = () => {
     title: recipe.title,
     subtitle: formatRecipeListSubtitle(recipe),
     imageUrl: recipe.imageUrl,
+    badgeLabel: 'Shared',
   }));
 
   return (
     <>
-      <PageTitle spacing="section">{SHARED_WITH_ME_TITLE}</PageTitle>
+      <h1
+        style={{
+          margin: 0,
+          marginBottom: tokens.spacing[4],
+          fontSize: tokens.typography.fontSize['3xl'],
+          fontWeight: tokens.typography.fontWeight.bold,
+          fontFamily: tokens.typography.fontFamily.sans,
+        }}
+      >
+        {SHARED_WITH_ME_TITLE}
+      </h1>
       <RecipesPageView
-        recipes={items}
-        isLoading={isLoading}
-        isFetchingNextPage={isFetchingNextPage}
+        ownTitle="Shared with you"
+        ownRecipes={items}
+        loadingOwn={isLoading}
+        isFetchingNextOwnPage={isFetchingNextPage}
+        ownLoadMoreErrorMessage={
+          isFetchNextPageError ? "Couldn't load more recipes." : null
+        }
+        onOwnLoadMoreRetry={() => {
+          void fetchNextPage();
+        }}
+        ownEmptyTitle={SHARED_WITH_ME_EMPTY_TITLE}
+        ownEmptyBody={SHARED_WITH_ME_EMPTY_BODY}
+        discoveryTitle="Discover"
+        discoveryRecipes={[]}
+        loadingDiscovery={false}
         onLoadMore={handleLoadMore}
-        emptyTitle={SHARED_WITH_ME_EMPTY_TITLE}
-        emptyBody={SHARED_WITH_ME_EMPTY_BODY}
         search={controls.search}
         onSearchChange={controls.onSearchChange}
         statusFilter={controls.statusFilter}
@@ -106,37 +137,6 @@ export const SharedWithMePage = () => {
           controls.onSortDirChange(value as RecipeListSortDir);
         }}
       />
-      {isFetchNextPageError ? (
-        <p
-          role="alert"
-          style={{
-            margin: 0,
-            marginBottom: 16,
-            fontSize: 14,
-            color: '#dc2626',
-          }}
-        >
-          Couldn't load more recipes.{' '}
-          <button
-            type="button"
-            style={{
-              textDecoration: 'underline',
-              background: 'none',
-              border: 'none',
-              padding: 0,
-              cursor: 'pointer',
-              fontSize: 'inherit',
-              fontFamily: 'inherit',
-              color: 'inherit',
-            }}
-            onClick={() => {
-              void fetchNextPage();
-            }}
-          >
-            Try again
-          </button>
-        </p>
-      ) : null}
     </>
   );
 };

@@ -28,7 +28,7 @@ import type {
   RecipeStatus,
   RecipeVersionDetail,
 } from '@eciperay/types';
-import {RecipeFormPage, type RecipeFormPageField} from '@spudly/ui/pages';
+import {RecipeFormPage, type RecipeFormPageField} from '@spudly/ui';
 import {useQuery} from '@tanstack/react-query';
 import React, {useMemo, useState} from 'react';
 
@@ -455,7 +455,7 @@ export const RecipeForm = ({
       tagOptions={tagOptions}
       tagIds={tagIds}
       onTagIdsChange={setTagIds}
-      isLoadingTags={isLoadingTags}
+      loadingTags={isLoadingTags}
       changedFields={changedFields}
       revertLabels={revertLabels}
       onRevertField={handleRevertField}

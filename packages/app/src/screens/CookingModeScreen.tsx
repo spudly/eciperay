@@ -1,11 +1,14 @@
 import {
+  formatScaledIngredientLine,
+  formatServingsLabel,
   invalidateRecipeQueries,
   queryKeys,
   resolveRecipeServings,
   scaleFactorFromServings,
+  sortIngredientsByOrder,
 } from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {RatingForm} from '@spudly/ui';
+import {CookingModePage} from '@spudly/ui';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useState} from 'react';
 import KeepAwake from 'react-native-keep-awake';
@@ -13,11 +16,9 @@ import type {CookLogInput} from '@eciperay/types';
 
 import {ScreenLoadingGate} from '../components/ScreenLoadingGate';
 import {
+  CookLogForm,
   CookingModeCookLogShell,
-  CookingModeDoneButton,
   CookingModeShell,
-  NavButtons,
-  StepDisplay,
   useSwipeNav,
 } from '../components/cooking/CookingModeParts';
 import {api} from '../lib/api';
@@ -80,7 +81,6 @@ export const CookingModeScreen = ({route, navigation}: CookingProps) => {
   const steps = [...(displayRecipe?.instructions ?? [])].sort(
     (a, b) => a.stepNumber - b.stepNumber,
   );
-  const current = steps[step];
   const servings = resolveRecipeServings(
     servingsOverride,
     displayRecipe?.servings ?? 1,
@@ -117,7 +117,7 @@ export const CookingModeScreen = ({route, navigation}: CookingProps) => {
   if (showCookLogForm) {
     return (
       <CookingModeCookLogShell>
-        <RatingForm
+        <CookLogForm
           notesPlaceholder="Notes from this cook (optional)"
           isPending={cookLogMutation.isPending}
           onSkip={navigation.goBack}
@@ -132,29 +132,38 @@ export const CookingModeScreen = ({route, navigation}: CookingProps) => {
     );
   }
 
+  // The DS CookingModePage composes the step overlay, the scaled-ingredients
+  // panel, the progress dots and prev/next nav; the host supplies the step
+  // state, the pre-composed ingredients heading/lines (scaling + formatting
+  // stay host-side), and the callbacks, wrapped in the host swipe shell.
   return (
     <CookingModeShell
       onResponderGrant={onStart}
       onResponderRelease={onEnd}
     >
-      <CookingModeDoneButton
-        onPress={() => {
+      <CookingModePage
+        recipeTitle={displayRecipe?.title ?? ''}
+        steps={steps.map(s => ({stepNumber: s.stepNumber, body: s.body}))}
+        stepIndex={step}
+        ingredients={
+          displayRecipe
+            ? {
+                heading:
+                  scaleFactor === 1
+                    ? `Ingredients (${formatServingsLabel(servings)})`
+                    : `Ingredients (scaled to ${formatServingsLabel(servings)})`,
+                lines: sortIngredientsByOrder(displayRecipe.ingredients).map(
+                  ingredient =>
+                    formatScaledIngredientLine(ingredient, scaleFactor),
+                ),
+              }
+            : null
+        }
+        onPrev={goPrev}
+        onNext={goNext}
+        onDone={() => {
           setShowCookLogForm(true);
         }}
-      />
-      <StepDisplay
-        step={step}
-        steps={steps}
-        current={current}
-        recipe={displayRecipe}
-        scaleFactor={scaleFactor}
-        servings={servings}
-      />
-      <NavButtons
-        step={step}
-        total={steps.length}
-        onNext={goNext}
-        onPrev={goPrev}
       />
     </CookingModeShell>
   );

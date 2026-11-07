@@ -15,7 +15,7 @@ import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 import type {RecipeDetail} from '@eciperay/types';
 
-import {HomePage as HomePageView} from '@spudly/ui/pages';
+import {HomePage as HomePageView} from '@spudly/ui';
 
 import {RecipeListCard} from '../components/RecipeListCard.js';
 import {eciperay} from '../lib/api.js';
@@ -86,7 +86,7 @@ export const HomePage = () => {
       sharedWithMeLabel={HOME_SHARED_WITH_ME_LABEL}
       recipesTitle={HOME_RECIPES_SECTION_TITLE}
       emptyMessage={HOME_EMPTY_MESSAGE}
-      isLoading={isLoading}
+      loading={isLoading}
       recipes={recipes.map(recipe => ({id: recipe.id}))}
       renderRecipeRow={row => {
         const recipe = recipesById.get(row.id);

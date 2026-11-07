@@ -5,7 +5,7 @@ import {
   useAuth,
   writeShoppingListCheckedKeys,
 } from '@eciperay/client';
-import {ShoppingListPage as ShoppingListPageView} from '@spudly/ui/pages';
+import {ShoppingListPage as ShoppingListPageView} from '@spudly/ui';
 import {useQuery} from '@tanstack/react-query';
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {useParams} from 'react-router-dom';
@@ -93,7 +93,7 @@ const ShoppingListPageContent = ({planId, userId}: ContentProps) => {
 
   return (
     <ShoppingListPageView
-      isLoading={isLoading}
+      loading={isLoading}
       lines={lines.map(line => ({
         key: line.key,
         name: line.name,

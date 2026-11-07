@@ -57,14 +57,10 @@ describe('HomePage', () => {
     await screen.findByText('Test Recipe');
     await userEvent.click(screen.getByText('Log cook'));
     expect(await screen.findByText('How did it go?')).toBeInTheDocument();
-    // The star rating IS clicked here: @spudly/ui 1.13.0 rendered the
-    // DS StarRatingInput's label as a raw accessibilitylabel attribute
-    // on web (the leak design-system#237 reported), leaving no
-    // role/label to query; 1.15 ships the fix, so the stars are real
-    // radios with accessible names.
-    await userEvent.click(
-      screen.getByRole('radio', {name: 'Rate 4 out of 5 stars'}),
-    );
+    // The star rating IS clicked here: since the @spudly/ui 6.x
+    // migration the cook-log form is host-side and its stars are the
+    // host StarRatingInput's buttons, labelled "N stars".
+    await userEvent.click(screen.getByLabelText('4 stars'));
     await userEvent.type(
       screen.getByPlaceholderText('Notes from this cook (optional)'),
       'Great',

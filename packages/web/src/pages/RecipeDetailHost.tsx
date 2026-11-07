@@ -26,16 +26,12 @@ import type {
   RecipeVersionSummary,
 } from '@eciperay/types';
 import {
-  Alert,
-  Button,
-  Dialog,
-  RatingForm,
-  tagColorNameForHex,
-} from '@spudly/ui';
-import {
+  eciperayTheme,
   RecipeDetailPage,
+  tagColorNameForHex,
+  tokens,
   type RecipeDetailPageNutritionProps,
-} from '@spudly/ui/pages';
+} from '@spudly/ui';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useRef, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
@@ -81,12 +77,18 @@ type RecipeDetailHostProps = {
  * ids are per-version and the cook-log form saves against the displayed
  * version, so neither piece of state may leak across versions.
  *
- * Deletion confirmations (#263 recipe, #266 cook log) stay host-side, as the
- * page contract assigns them: the page's Delete presses only report intent, and
- * this host confirms through the design system's Dialog — the web counterpart
- * of the app's native Alert — because window.confirm is suppressed in some
- * browsers/webviews, which made Delete a silent no-op. Failures surface inside
- * the dialog instead of failing silently.
+ * Deletion confirmations (#263 recipe, #266 cook log) and the nutrition notice
+ * cross to the page as confirmation data props (ConfirmActionView view-models):
+ * the page's Delete presses only report intent, and this host owns the dialogs'
+ * open/pending/error state and the mutations behind them — a real dialog, not
+ * window.confirm, which is suppressed in some browsers/webviews and made Delete
+ * a silent no-op. Failures surface inside the dialog instead of failing
+ * silently. Sharing and comments stay in their render slots: the sharing
+ * controls own a pending-selection / publishing-consent state machine and the
+ * comments section is shared with the public recipe page (whose design-system
+ * page offers only the slot), and its mutation errors render above the list
+ * rather than replacing it — neither fits the page's data-prop views without
+ * losing behavior, so both sections remain host compositions.
  */
 
 const VERSION_ROLE_LABELS: Record<RecipeVersionSummary['derivedRole'], string> =
@@ -144,6 +146,165 @@ const formatCookLogDate = (cookedAt: string): string =>
     month: 'short',
     day: 'numeric',
   });
+
+type CookLogFormValues = {
+  rating: 1 | 2 | 3 | 4 | 5 | null;
+  notes: string | null;
+};
+
+type CookLogFormProps = {
+  isPending: boolean;
+  onSkip: () => void;
+  onSubmit: (values: CookLogFormValues) => void;
+};
+
+/**
+ * The cook-log form for the history slot: the host re-expression of the design
+ * system's retired RatingForm (light variant), which @spudly/ui 6.x no longer
+ * exports. Behavior is the form's own, preserved exactly: the rating and notes
+ * are internal state, pressing the current star clears the rating, notes cross
+ * trimmed (empty as null), Save is inert while a save is pending, and Skip
+ * stays live throughout. The star controls keep the form's radiogroup semantics
+ * ("Rate N out of 5 stars", aria-checked by position up to the current
+ * rating).
+ */
+const CookLogForm = ({isPending, onSkip, onSubmit}: CookLogFormProps) => {
+  const [rating, setRating] = useState<1 | 2 | 3 | 4 | 5 | null>(null);
+  const [notes, setNotes] = useState('');
+
+  return (
+    <div
+      style={{
+        marginLeft: 'auto',
+        marginRight: 'auto',
+        borderRadius: 16,
+        padding: tokens.spacing[6],
+        width: '100%',
+        maxWidth: 448,
+        boxSizing: 'border-box',
+        border: `1px solid ${tokens.colors.gray.gray3}`,
+        backgroundColor: tokens.colors.gray.gray1,
+      }}
+    >
+      <h2
+        style={{
+          margin: 0,
+          marginBottom: tokens.spacing[4],
+          fontSize: tokens.typography.fontSize.xl,
+          fontWeight: tokens.typography.fontWeight.semibold,
+          fontFamily: tokens.typography.fontFamily.sans,
+          color: tokens.colors.gray.gray10,
+        }}
+      >
+        How did it go?
+      </h2>
+      <div
+        role="radiogroup"
+        aria-label="Star rating"
+        style={{
+          marginBottom: tokens.spacing[4],
+          display: 'flex',
+          justifyContent: 'center',
+          gap: tokens.spacing[2],
+        }}
+      >
+        {[1, 2, 3, 4, 5].map(star => (
+          <button
+            key={star}
+            type="button"
+            role="radio"
+            aria-checked={rating !== null && star <= rating}
+            aria-label={`Rate ${star} out of 5 stars`}
+            style={{
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              cursor: 'pointer',
+              fontSize: tokens.typography.fontSize['3xl'],
+              lineHeight: 1,
+              color:
+                rating !== null && star <= rating
+                  ? tokens.colors.warning.warning6
+                  : tokens.colors.gray.gray4,
+            }}
+            onClick={() => {
+              setRating(current =>
+                current === star ? null : (star as 1 | 2 | 3 | 4 | 5),
+              );
+            }}
+          >
+            ★
+          </button>
+        ))}
+      </div>
+      <textarea
+        className="cook-log-notes"
+        data-variant="light"
+        style={{
+          marginBottom: tokens.spacing[4],
+          borderRadius: 12,
+          padding: '12px 16px',
+          fontSize: tokens.typography.fontSize.md,
+          fontFamily: tokens.typography.fontFamily.sans,
+          width: '100%',
+          boxSizing: 'border-box',
+          border: `1px solid ${tokens.colors.gray.gray4}`,
+          backgroundColor: eciperayTheme.semantic.surface,
+          color: tokens.colors.gray.gray10,
+        }}
+        placeholder="Notes from this cook (optional)"
+        rows={3}
+        value={notes}
+        onChange={event => {
+          setNotes(event.target.value);
+        }}
+      />
+      <div style={{display: 'flex', gap: tokens.spacing[3]}}>
+        <button
+          type="button"
+          style={{
+            flex: 1,
+            borderRadius: 12,
+            paddingTop: 12,
+            paddingBottom: 12,
+            fontSize: tokens.typography.fontSize.md,
+            fontFamily: tokens.typography.fontFamily.sans,
+            cursor: 'pointer',
+            border: `1px solid ${tokens.colors.gray.gray3}`,
+            backgroundColor: '#ffffff',
+            color: tokens.colors.gray.gray8,
+          }}
+          onClick={onSkip}
+        >
+          Skip
+        </button>
+        <button
+          type="button"
+          style={{
+            flex: 1,
+            borderRadius: 12,
+            border: 'none',
+            paddingTop: 12,
+            paddingBottom: 12,
+            fontSize: tokens.typography.fontSize.md,
+            fontFamily: tokens.typography.fontFamily.sans,
+            fontWeight: tokens.typography.fontWeight.semibold,
+            backgroundColor: eciperayTheme.semantic.primary,
+            color: '#ffffff',
+            cursor: 'pointer',
+            opacity: isPending ? 0.5 : 1,
+          }}
+          disabled={isPending}
+          onClick={() => {
+            onSubmit({rating, notes: notes.trim() || null});
+          }}
+        >
+          Save
+        </button>
+      </div>
+    </div>
+  );
+};
 
 export const RecipeDetailHost = ({
   recipe,
@@ -432,10 +593,10 @@ export const RecipeDetailHost = ({
     },
   });
 
-  // Cook-log deletion (#266) confirms host-side through the Dialog,
-  // mirroring the recipe deletion above: the page's per-entry Delete
-  // press reports the entry's id, and the mutation plus its error
-  // surface live here.
+  // Cook-log deletion (#266) confirms through the page's
+  // cookLogDeleteConfirmation data prop, mirroring the recipe deletion
+  // above: the page's per-entry Delete press reports the entry's id,
+  // and the mutation plus its error surface live here.
   const [confirmingCookLogDeleteId, setConfirmingCookLogDeleteId] = useState<
     string | null
   >(null);
@@ -503,8 +664,9 @@ export const RecipeDetailHost = ({
       // the top of the page's single scroll view and clears after
       // 2.5 seconds, while the nutrition panel is the last section —
       // a user who pressed Estimate/Refresh there would likely never
-      // see it (#354, mirroring the app fix in PR #349). The Dialog is
-      // the web counterpart of the app's native alert: viewport-visible
+      // see it (#354, mirroring the app fix in PR #349). The notice
+      // dialog (the page's nutritionNotice data prop) is the web
+      // counterpart of the app's native alert: viewport-visible
       // regardless of scroll position and up until dismissed.
       setNutritionErrorVisible(true);
     } finally {
@@ -588,278 +750,226 @@ export const RecipeDetailHost = ({
   };
 
   return (
-    <>
-      <RecipeDetailPage
-        state="ready"
-        status={recipe.status}
-        versions={versions.map(version => ({
-          id: version.id,
-          label: versionPickerLabel(version),
-          versionNumber: version.versionNumber,
-        }))}
-        selectedVersionId={selectedVersionId}
-        onSelectVersion={onSelectVersion}
-        overview={{
-          imageUrl: displayRecipe.imageUrl,
-          title: displayRecipe.title,
-          description: displayRecipe.description,
-          servingsLabel: String(currentServings),
-          prepTimeLabel: displayRecipe.prepTimeMin
-            ? `${displayRecipe.prepTimeMin}m`
-            : undefined,
-          cookTimeLabel: displayRecipe.cookTimeMin
-            ? `${displayRecipe.cookTimeMin}m`
-            : undefined,
-          actionMessage,
-          cookingHref: `/recipes/${recipe.id}/cook?versionId=${displayRecipe.versionId}&servings=${currentServings}`,
-          onPrintPress: () => {
-            printRecipe(displayRecipe);
-          },
-          onSharePress: () => {
-            void handleShare();
-          },
-          editHref: canEditMetadata ? `/recipes/${recipe.id}/edit` : undefined,
-          editDraftHref: canEditDraft
-            ? `/recipes/${recipe.id}/versions/${displayRecipe.versionId}/edit`
-            : undefined,
-          onCreateDraftPress: canCreateDraft
-            ? () => {
-                if (!createDraftMutation.isPending) {
-                  createDraftMutation.mutate();
-                }
+    <RecipeDetailPage
+      state="ready"
+      status={recipe.status}
+      versions={versions.map(version => ({
+        id: version.id,
+        label: versionPickerLabel(version),
+        versionNumber: version.versionNumber,
+      }))}
+      selectedVersionId={selectedVersionId}
+      onSelectVersion={onSelectVersion}
+      overview={{
+        imageUrl: displayRecipe.imageUrl,
+        title: displayRecipe.title,
+        description: displayRecipe.description,
+        servingsLabel: String(currentServings),
+        prepTimeLabel: displayRecipe.prepTimeMin
+          ? `${displayRecipe.prepTimeMin}m`
+          : undefined,
+        cookTimeLabel: displayRecipe.cookTimeMin
+          ? `${displayRecipe.cookTimeMin}m`
+          : undefined,
+        actionMessage,
+        cookingHref: `/recipes/${recipe.id}/cook?versionId=${displayRecipe.versionId}&servings=${currentServings}`,
+        onPrintPress: () => {
+          printRecipe(displayRecipe);
+        },
+        onSharePress: () => {
+          void handleShare();
+        },
+        editHref: canEditMetadata ? `/recipes/${recipe.id}/edit` : undefined,
+        editDraftHref: canEditDraft
+          ? `/recipes/${recipe.id}/versions/${displayRecipe.versionId}/edit`
+          : undefined,
+        onCreateDraftPress: canCreateDraft
+          ? () => {
+              if (!createDraftMutation.isPending) {
+                createDraftMutation.mutate();
               }
-            : undefined,
-          onDeletePress: () => {
-            setRecipeDeleteError(null);
-            setConfirmingRecipeDelete(true);
-          },
-          lifecycle,
-          onTweakManuallyPress: () => {
-            tweakManualMutation.mutate();
-          },
-          tweakAiHref: `/recipes/${recipe.id}/tweak-ai`,
-          onMarkPerfectedPress: () => {
-            statusMutation.mutate('perfected');
-          },
-          onAbandonPress: () => {
-            statusMutation.mutate('abandoned');
-          },
-          onActivateCandidatePress: (versionId: string) => {
-            activateMutation.mutate(versionId);
-          },
-          tags: displayRecipe.tags.map(tag => ({
-            id: tag.id,
-            name: tag.name,
-            color: tagColorNameForHex(tag.color),
-          })),
-          ratings,
-          onViewerRatingChange: (stars: number | null) => {
-            ratingMutation.mutate(stars as RecipeStarRating | null);
-          },
-          renderSharingControls: () => (
-            <RecipeVisibilityControls
-              recipe={displayRecipe}
-              onActionMessage={showActionMessage}
+            }
+          : undefined,
+        onDeletePress: () => {
+          setRecipeDeleteError(null);
+          setConfirmingRecipeDelete(true);
+        },
+        lifecycle,
+        onTweakManuallyPress: () => {
+          tweakManualMutation.mutate();
+        },
+        tweakAiHref: `/recipes/${recipe.id}/tweak-ai`,
+        onMarkPerfectedPress: () => {
+          statusMutation.mutate('perfected');
+        },
+        onAbandonPress: () => {
+          statusMutation.mutate('abandoned');
+        },
+        onActivateCandidatePress: (versionId: string) => {
+          activateMutation.mutate(versionId);
+        },
+        tags: displayRecipe.tags.map(tag => ({
+          id: tag.id,
+          name: tag.name,
+          color: tagColorNameForHex(tag.color),
+        })),
+        ratings,
+        onViewerRatingChange: (stars: number | null) => {
+          ratingMutation.mutate(stars as RecipeStarRating | null);
+        },
+        renderSharingControls: () => (
+          <RecipeVisibilityControls
+            recipe={displayRecipe}
+            onActionMessage={showActionMessage}
+          />
+        ),
+        renderComments: () => (
+          <RecipeCommentsSection
+            recipeId={recipe.id}
+            ownerUserId={recipe.userId}
+          />
+        ),
+      }}
+      ingredients={{
+        servings: currentServings,
+        onServingsChange: (servings: number) => {
+          setScaleSelection({
+            baseServings,
+            servings,
+            value: deriveScaleValue(baseServings, servings),
+          });
+          onServingsChange(servings);
+        },
+        scaleValue,
+        onScaleChange: (value: string) => {
+          const nextServings = servingsForMultiplier(
+            baseServings,
+            Number(value) as RecipeScaleMultiplier,
+          );
+          setScaleSelection({baseServings, servings: nextServings, value});
+          onServingsChange(nextServings);
+        },
+        ingredients: sortIngredientsByOrder(displayRecipe.ingredients).map(
+          ingredient => ({
+            id: ingredient.id,
+            label: formatScaledIngredientLine(ingredient, scaleFactor),
+            isOptional: ingredient.isOptional,
+            isMissing: missingIds.has(ingredient.id),
+          }),
+        ),
+        onIngredientPress: toggleMissing,
+        loadingSubstitutions: isLoadingSubstitutions,
+        substitutions: substitutions.map(substitution => ({
+          ingredient: substitution.ingredient,
+          suggestions: substitution.suggestions.join(', '),
+        })),
+      }}
+      instructions={{
+        instructions: displayRecipe.instructions.map(instruction => ({
+          id: instruction.id,
+          stepNumber: instruction.stepNumber,
+          body: instruction.body,
+        })),
+      }}
+      history={{
+        loading: isLoadingCookLogs,
+        cookLogs: cookLogs.map(log => ({
+          id: log.id,
+          dateLabel: formatCookLogDate(log.cookedAt),
+          starRating: log.authorStarRating,
+          notes: log.notes,
+        })),
+        onLogCookPress: () => {
+          setShowCookLogForm(true);
+        },
+        onDeleteCookLogPress: (cookLogId: string) => {
+          setCookLogDeleteError(null);
+          setConfirmingCookLogDeleteId(cookLogId);
+        },
+        renderCookLogForm: () =>
+          showCookLogForm ? (
+            <CookLogForm
+              isPending={createCookLogMutation.isPending}
+              onSkip={() => {
+                setShowCookLogForm(false);
+              }}
+              onSubmit={(values: CookLogFormValues) => {
+                createCookLogMutation.mutate({
+                  authorStarRating: values.rating,
+                  notes: values.notes,
+                });
+              }}
             />
-          ),
-          renderComments: () => (
-            <RecipeCommentsSection
-              recipeId={recipe.id}
-              ownerUserId={recipe.userId}
-            />
-          ),
-        }}
-        ingredients={{
-          servings: currentServings,
-          onServingsChange: (servings: number) => {
-            setScaleSelection({
-              baseServings,
-              servings,
-              value: deriveScaleValue(baseServings, servings),
-            });
-            onServingsChange(servings);
-          },
-          scaleValue,
-          onScaleChange: (value: string) => {
-            const nextServings = servingsForMultiplier(
-              baseServings,
-              Number(value) as RecipeScaleMultiplier,
-            );
-            setScaleSelection({baseServings, servings: nextServings, value});
-            onServingsChange(nextServings);
-          },
-          ingredients: sortIngredientsByOrder(displayRecipe.ingredients).map(
-            ingredient => ({
-              id: ingredient.id,
-              label: formatScaledIngredientLine(ingredient, scaleFactor),
-              isOptional: ingredient.isOptional,
-              isMissing: missingIds.has(ingredient.id),
-            }),
-          ),
-          onIngredientPress: toggleMissing,
-          isLoadingSubstitutions,
-          substitutions: substitutions.map(substitution => ({
-            ingredient: substitution.ingredient,
-            suggestions: substitution.suggestions.join(', '),
-          })),
-        }}
-        instructions={{
-          instructions: displayRecipe.instructions.map(instruction => ({
-            id: instruction.id,
-            stepNumber: instruction.stepNumber,
-            body: instruction.body,
-          })),
-        }}
-        history={{
-          isLoading: isLoadingCookLogs,
-          cookLogs: cookLogs.map(log => ({
-            id: log.id,
-            dateLabel: formatCookLogDate(log.cookedAt),
-            starRating: log.authorStarRating,
-            notes: log.notes,
-          })),
-          onLogCookPress: () => {
-            setShowCookLogForm(true);
-          },
-          onDeleteCookLogPress: (cookLogId: string) => {
-            setCookLogDeleteError(null);
-            setConfirmingCookLogDeleteId(cookLogId);
-          },
-          renderCookLogForm: () =>
-            showCookLogForm ? (
-              <RatingForm
-                variant="light"
-                notesPlaceholder="Notes from this cook (optional)"
-                isPending={createCookLogMutation.isPending}
-                onSkip={() => {
-                  setShowCookLogForm(false);
-                }}
-                onSubmit={values => {
-                  createCookLogMutation.mutate({
-                    authorStarRating: values.rating,
-                    notes: values.notes,
-                  });
-                }}
-              />
-            ) : null,
-        }}
-        nutrition={nutritionProps}
-      />
-      <Dialog
-        open={confirmingRecipeDelete}
-        onOpenChange={open => {
+          ) : null,
+      }}
+      nutrition={nutritionProps}
+      recipeDeleteConfirmation={{
+        open: confirmingRecipeDelete,
+        onOpenChange: (open: boolean) => {
           // While the delete is in flight, dismissal (backdrop, Escape)
-          // must not tear down the dialog's state under it.
+          // must not tear down the dialog's state under it. The view
+          // also swallows close requests while pending; this guard is
+          // the host's own record of the same rule.
           if (!open && !deleteRecipeMutation.isPending) {
             setConfirmingRecipeDelete(false);
             setRecipeDeleteError(null);
           }
-        }}
-        title="Delete recipe"
-        description={`Delete "${displayRecipe.title}"?`}
-        actions={
-          <>
-            <Button
-              variant="secondary"
-              disabled={deleteRecipeMutation.isPending}
-              onPress={() => {
-                setConfirmingRecipeDelete(false);
-                setRecipeDeleteError(null);
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="danger"
-              disabled={deleteRecipeMutation.isPending}
-              onPress={() => {
-                setRecipeDeleteError(null);
-                deleteRecipeMutation.mutate();
-              }}
-            >
-              {deleteRecipeMutation.isPending ? 'Deleting…' : 'Confirm delete'}
-            </Button>
-          </>
-        }
-      >
-        {recipeDeleteError ? (
-          <Alert
-            severity="error"
-            message={recipeDeleteError}
-          />
-        ) : null}
-      </Dialog>
-      <Dialog
-        open={confirmingCookLog !== undefined}
-        onOpenChange={open => {
+        },
+        title: 'Delete recipe',
+        description: `Delete "${displayRecipe.title}"?`,
+        error: recipeDeleteError,
+        confirmLabel: 'Confirm delete',
+        confirmPendingLabel: 'Deleting…',
+        pending: deleteRecipeMutation.isPending,
+        onConfirm: () => {
+          setRecipeDeleteError(null);
+          deleteRecipeMutation.mutate();
+        },
+        cancelLabel: 'Cancel',
+      }}
+      cookLogDeleteConfirmation={{
+        open: confirmingCookLog !== undefined,
+        onOpenChange: (open: boolean) => {
           // While the delete is in flight, dismissal (backdrop, Escape)
           // must not tear down the dialog's state under it.
           if (!open && !deleteCookLogMutation.isPending) {
             setConfirmingCookLogDeleteId(null);
             setCookLogDeleteError(null);
           }
-        }}
-        title="Delete cook log entry"
-        description={
-          confirmingCookLog
-            ? `Delete the cook log from ${formatCookLogDate(confirmingCookLog.cookedAt)}?`
-            : undefined
-        }
-        actions={
-          <>
-            <Button
-              variant="secondary"
-              disabled={deleteCookLogMutation.isPending}
-              onPress={() => {
-                setConfirmingCookLogDeleteId(null);
-                setCookLogDeleteError(null);
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="danger"
-              disabled={deleteCookLogMutation.isPending}
-              onPress={() => {
-                if (confirmingCookLogDeleteId) {
-                  setCookLogDeleteError(null);
-                  deleteCookLogMutation.mutate(confirmingCookLogDeleteId);
-                }
-              }}
-            >
-              {deleteCookLogMutation.isPending ? 'Deleting…' : 'Confirm delete'}
-            </Button>
-          </>
-        }
-      >
-        {cookLogDeleteError ? (
-          <Alert
-            severity="error"
-            message={cookLogDeleteError}
-          />
-        ) : null}
-      </Dialog>
-      <Dialog
-        open={nutritionErrorVisible}
-        onOpenChange={open => {
+        },
+        title: 'Delete cook log entry',
+        ...(confirmingCookLog
+          ? {
+              description: `Delete the cook log from ${formatCookLogDate(confirmingCookLog.cookedAt)}?`,
+            }
+          : {}),
+        error: cookLogDeleteError,
+        confirmLabel: 'Confirm delete',
+        confirmPendingLabel: 'Deleting…',
+        pending: deleteCookLogMutation.isPending,
+        onConfirm: () => {
+          if (confirmingCookLogDeleteId) {
+            setCookLogDeleteError(null);
+            deleteCookLogMutation.mutate(confirmingCookLogDeleteId);
+          }
+        },
+        cancelLabel: 'Cancel',
+      }}
+      nutritionNotice={{
+        open: nutritionErrorVisible,
+        onOpenChange: (open: boolean) => {
           if (!open) {
             setNutritionErrorVisible(false);
           }
-        }}
-        title="Could not refresh nutrition"
-        description="Please try again."
-        actions={
-          <Button
-            onPress={() => {
-              setNutritionErrorVisible(false);
-            }}
-          >
-            OK
-          </Button>
-        }
-      >
-        {null}
-      </Dialog>
-    </>
+        },
+        title: 'Could not refresh nutrition',
+        description: 'Please try again.',
+        confirmLabel: 'OK',
+        confirmTone: 'primary',
+        onConfirm: () => {
+          setNutritionErrorVisible(false);
+        },
+      }}
+    />
   );
 };

@@ -1,11 +1,12 @@
 import React from 'react';
-import {fireEvent, waitFor} from '@testing-library/react-native';
+import {act, waitFor} from '@testing-library/react-native';
 import {STALE_COMMENT_HINT, useAuth} from '@eciperay/client';
+import type {RecipeDetailPageComments} from '@spudly/ui';
 
 import {renderWithProviders} from '../../__tests__/testUtils';
 import {api} from '../../lib/api';
 
-import {RecipeCommentsSection} from './RecipeCommentsSection';
+import {useRecipeCommentsProps} from './RecipeCommentsSection';
 
 jest.mock('../../lib/api');
 jest.mock('@eciperay/client', () => ({
@@ -31,7 +32,33 @@ const sampleComment = {
   updatedAt: '2024-01-01T00:00:00.000Z',
 };
 
-describe('RecipeCommentsSection', () => {
+/**
+ * The comments section crosses into RecipeDetailPage as data props (#438 Part
+ * 3), so its host logic is a hook: these tests drive the hook through a probe
+ * that captures the props it returns for RecipeCommentsView, and pin the
+ * mapping and mutation wiring the composed section used to render directly.
+ */
+const renderCommentsProps = async (
+  recipeId = 'recipe-uuid-1',
+  ownerUserId = 'owner-uuid',
+) => {
+  let captured: RecipeDetailPageComments | null = null;
+  const Probe = () => {
+    captured = useRecipeCommentsProps(recipeId, ownerUserId);
+    return null;
+  };
+  await renderWithProviders(<Probe />);
+  return {
+    props: () => {
+      if (!captured) {
+        throw new Error('hook did not render');
+      }
+      return captured;
+    },
+  };
+};
+
+describe('useRecipeCommentsProps', () => {
   beforeEach(() => {
     mockUseAuth.mockReturnValue({
       session: {user: {id: 'user-uuid-1', email: 'test@example.com'}},
@@ -46,46 +73,39 @@ describe('RecipeCommentsSection', () => {
     mockDeleteComment.mockImplementation(async () => {});
   });
 
-  test('renders comments with stale badges', async () => {
-    const {findByText, getByLabelText} = await renderWithProviders(
-      <RecipeCommentsSection
-        recipeId="recipe-uuid-1"
-        ownerUserId="owner-uuid"
-      />,
-    );
-    expect(await findByText('Great!')).toBeTruthy();
-    expect(getByLabelText(STALE_COMMENT_HINT)).toBeTruthy();
+  test('maps comments with stale flags and author eligibility', async () => {
+    const {props} = await renderCommentsProps();
+    await waitFor(() => {
+      expect(props().comments).toHaveLength(1);
+    });
+    expect(props().loading).toBe(false);
+    expect(props().staleHintLabel).toBe(STALE_COMMENT_HINT);
+    expect(props().comments[0]).toEqual({
+      id: 'comment-1',
+      authorName: 'Alex',
+      body: 'Great!',
+      isStale: true,
+      canEdit: true,
+      canDelete: true,
+    });
   });
 
-  test('renders loading, empty, and anonymous author states', async () => {
+  test('reports loading while the query is in flight', async () => {
     mockListComments.mockImplementation(() => new Promise(() => {}));
-    const loading = await renderWithProviders(
-      <RecipeCommentsSection
-        recipeId="recipe-uuid-1"
-        ownerUserId="owner-uuid"
-      />,
-    );
-    expect(loading.getByLabelText('Loading')).toBeTruthy();
+    const {props} = await renderCommentsProps();
+    expect(props().loading).toBe(true);
+    expect(props().comments).toEqual([]);
+  });
 
-    mockListComments.mockResolvedValue([]);
-    const empty = await renderWithProviders(
-      <RecipeCommentsSection
-        recipeId="recipe-uuid-1"
-        ownerUserId="owner-uuid"
-      />,
-    );
-    expect(await empty.findByText('No comments yet')).toBeTruthy();
-
+  test('falls back to Anonymous for a missing display name', async () => {
     mockListComments.mockResolvedValue([
       {...sampleComment, authorDisplayName: null, isStale: false},
     ]);
-    const anonymous = await renderWithProviders(
-      <RecipeCommentsSection
-        recipeId="recipe-uuid-1"
-        ownerUserId="owner-uuid"
-      />,
-    );
-    expect(await anonymous.findByText('Anonymous')).toBeTruthy();
+    const {props} = await renderCommentsProps();
+    await waitFor(() => {
+      expect(props().comments).toHaveLength(1);
+    });
+    expect(props().comments[0]?.authorName).toBe('Anonymous');
   });
 
   test('lets owners delete comments they did not author', async () => {
@@ -95,15 +115,15 @@ describe('RecipeCommentsSection', () => {
     mockListComments.mockResolvedValue([
       {...sampleComment, authorUserId: 'other-user', isStale: false},
     ]);
-
-    const {findByText} = await renderWithProviders(
-      <RecipeCommentsSection
-        recipeId="recipe-uuid-1"
-        ownerUserId="owner-uuid"
-      />,
-    );
-
-    await fireEvent.press(await findByText('Delete'));
+    const {props} = await renderCommentsProps();
+    await waitFor(() => {
+      expect(props().comments).toHaveLength(1);
+    });
+    expect(props().comments[0]?.canEdit).toBe(false);
+    expect(props().comments[0]?.canDelete).toBe(true);
+    await act(async () => {
+      props().onDeleteComment?.('comment-1');
+    });
     await waitFor(() => {
       expect(mockDeleteComment).toHaveBeenCalledWith(
         'recipe-uuid-1',
@@ -119,47 +139,52 @@ describe('RecipeCommentsSection', () => {
     mockListComments.mockResolvedValue([
       {...sampleComment, authorUserId: 'other-user', isStale: false},
     ]);
-
-    const {findByText, queryByText} = await renderWithProviders(
-      <RecipeCommentsSection
-        recipeId="recipe-uuid-1"
-        ownerUserId="owner-uuid"
-      />,
-    );
-
-    expect(await findByText('Great!')).toBeTruthy();
-    expect(queryByText('Edit')).toBeNull();
-    expect(queryByText('Delete')).toBeNull();
+    const {props} = await renderCommentsProps();
+    await waitFor(() => {
+      expect(props().comments).toHaveLength(1);
+    });
+    expect(props().comments[0]?.canEdit).toBe(false);
+    expect(props().comments[0]?.canDelete).toBe(false);
   });
 
   test('posts, edits, and deletes comments', async () => {
-    const {getByPlaceholderText, getByText, getByDisplayValue} =
-      await renderWithProviders(
-        <RecipeCommentsSection
-          recipeId="recipe-uuid-1"
-          ownerUserId="owner-uuid"
-        />,
-      );
-
+    const {props} = await renderCommentsProps();
     await waitFor(() => {
-      expect(getByText('Great!')).toBeTruthy();
+      expect(props().comments).toHaveLength(1);
     });
 
-    await fireEvent.changeText(getByPlaceholderText('Add a comment'), 'Nice!');
-    await fireEvent.press(getByText('Post comment'));
+    await act(async () => {
+      props().onDraftChange?.('Nice!');
+    });
+    await act(async () => {
+      props().onPost?.();
+    });
     await waitFor(() => {
       expect(mockCreateComment).toHaveBeenCalledWith('recipe-uuid-1', {
         body: 'Nice!',
       });
     });
 
-    await fireEvent.press(getByText('Edit'));
-    await fireEvent.press(getByText('Cancel'));
-    expect(getByText('Great!')).toBeTruthy();
+    await act(async () => {
+      props().onStartEdit?.('comment-1');
+    });
+    expect(props().editingCommentId).toBe('comment-1');
+    expect(props().editDraft).toBe('Great!');
+    await act(async () => {
+      props().onCancelEdit?.();
+    });
+    expect(props().editingCommentId).toBeNull();
+    expect(props().editDraft).toBe('');
 
-    await fireEvent.press(getByText('Edit'));
-    await fireEvent.changeText(getByDisplayValue('Great!'), 'Updated');
-    await fireEvent.press(getByText('Save'));
+    await act(async () => {
+      props().onStartEdit?.('comment-1');
+    });
+    await act(async () => {
+      props().onEditDraftChange?.('Updated');
+    });
+    await act(async () => {
+      props().onSaveEdit?.('comment-1');
+    });
     await waitFor(() => {
       expect(mockUpdateComment).toHaveBeenCalledWith(
         'recipe-uuid-1',
@@ -168,12 +193,24 @@ describe('RecipeCommentsSection', () => {
       );
     });
 
-    await fireEvent.press(getByText('Delete'));
+    await act(async () => {
+      props().onDeleteComment?.('comment-1');
+    });
     await waitFor(() => {
       expect(mockDeleteComment).toHaveBeenCalledWith(
         'recipe-uuid-1',
         'comment-1',
       );
     });
+  });
+
+  test('offers no composer to signed-out viewers', async () => {
+    mockUseAuth.mockReturnValue({session: null});
+    const {props} = await renderCommentsProps();
+    await waitFor(() => {
+      expect(props().comments).toHaveLength(1);
+    });
+    expect(props().onPost).toBeUndefined();
+    expect(props().draft).toBeUndefined();
   });
 });

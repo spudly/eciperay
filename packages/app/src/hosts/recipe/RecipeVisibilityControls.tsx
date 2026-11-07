@@ -1,4 +1,3 @@
-/* eslint-disable max-lines -- sharing controls include consent and link actions */
 import {
   buildRecipePermalink,
   invalidateRecipeQueries,
@@ -10,55 +9,40 @@ import {
   WEB_APP_BASE_URL,
 } from '@eciperay/client';
 import type {RecipeDetail, RecipeVisibility} from '@eciperay/types';
-import {
-  Button as DsButton,
-  Card as DsCard,
-  RadioOptionGroup as DsRadioOptionGroup,
-  Text as DsText,
-  TextLink as DsTextLink,
-  tokens,
-} from '@spudly/ui';
+import type {RecipeDetailPageSharing} from '@spudly/ui';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useState} from 'react';
 import {Linking, Share} from 'react-native';
-import {YStack} from 'tamagui';
+import {Text} from 'tamagui';
 
 import {api} from '../../lib/api';
-import {CheckboxField} from '../../components/ui/CheckboxField';
-
-type Props = {recipe: RecipeDetail; onActionMessage: (message: string) => void};
 
 const visibilityOptions: RecipeVisibility[] = ['private', 'unlisted', 'public'];
 
 /**
- * The secondary actions (rotate/share) keep their old outline-neutral look — a
- * transparent fill with a hairline border and gray label — expressed as token
- * overrides on the DS secondary Button.
+ * The recipe sharing/visibility panel's host logic (#438 Part 3): the
+ * pending-selection state, the publishing-consent flow, the share-token state,
+ * and the two mutations stay app-side, and the panel crosses into
+ * RecipeDetailPage as its `sharing` data prop (RecipeSharingView's view-model)
+ * — @spudly/ui 6.x exports pages only, so the DS Card / RadioOptionGroup /
+ * Button this file used to compose are the page's own composition now.
+ *
+ * The conditional composition is preserved by passing each block only when the
+ * old panel rendered it: Save crosses only while a changed selection is
+ * pending, the consent block only while the pending transition requires
+ * consent, the share-link block only for unlisted recipes, and the permalink
+ * block only for public ones. The consent gate itself (Save disabled until
+ * consent is checked) is the view's presentation of `consentRequired`. The
+ * native share actions stay native: the view's copy intents are wired to RN's
+ * Share sheet, with the labels the panel used ("Share link" / "Share
+ * permalink"). One presentation delta rides with the view: the share-link block
+ * carries the view's hint line ("Anyone with this link can view this recipe.")
+ * above its actions.
  */
-const OutlineActionButton = ({
-  label,
-  disabled = false,
-  onPress,
-}: {
-  label: string;
-  disabled?: boolean;
-  onPress: () => void;
-}) => (
-  <DsButton
-    variant="secondary"
-    size="sm"
-    backgroundColor="transparent"
-    borderWidth={1}
-    borderColor="$borderColor"
-    color={tokens.colors.gray.gray7}
-    disabled={disabled}
-    onPress={onPress}
-  >
-    {label}
-  </DsButton>
-);
-
-export const RecipeVisibilityControls = ({recipe, onActionMessage}: Props) => {
+export const useRecipeSharingProps = (
+  recipe: RecipeDetail,
+  onActionMessage: (message: string) => void,
+): RecipeDetailPageSharing => {
   const queryClient = useQueryClient();
   const [pendingVisibility, setPendingVisibility] =
     useState<RecipeVisibility | null>(null);
@@ -107,139 +91,89 @@ export const RecipeVisibilityControls = ({recipe, onActionMessage}: Props) => {
         ? permalink
         : null;
 
-  return (
-    <DsCard
-      variant="bordered"
-      marginBlockEnd="$4"
-    >
-      <DsText
-        fontSize={tokens.typography.fontSize.sm}
-        fontWeight={tokens.typography.fontWeight.semibold}
-        marginBlockEnd="$2"
-      >
-        Sharing
-      </DsText>
-      <DsRadioOptionGroup
-        id={`visibility-${recipe.id}`}
-        value={pendingVisibility ?? recipe.visibility}
-        disabled={sharingMutation.isPending}
-        options={visibilityOptions.map(option => ({
-          value: option,
-          label: recipeVisibilityLabels[option],
-          description: recipeVisibilityDescriptions[option],
-        }))}
-        onValueChange={value => {
-          setPendingVisibility(value as RecipeVisibility);
-        }}
-      />
-      {pendingVisibility === 'public' ? (
-        <DsText
-          fontSize={tokens.typography.fontSize.sm}
-          color={tokens.colors.warning.warning9}
-          marginBlockStart="$2"
-        >
-          This recipe will be discoverable by anyone browsing Eciperay.
-        </DsText>
-      ) : null}
-      {pendingVisibility &&
-      requiresPublishingConsent(recipe.visibility, pendingVisibility) ? (
-        <CheckboxField
-          checked={publishingConsent}
-          onChange={setPublishingConsent}
-          label="Publishing consent"
-          description={
-            <>
+  const consentRequired =
+    pendingVisibility !== null &&
+    requiresPublishingConsent(recipe.visibility, pendingVisibility);
+
+  return {
+    options: visibilityOptions.map(option => ({
+      value: option,
+      label: recipeVisibilityLabels[option],
+      description: recipeVisibilityDescriptions[option],
+    })),
+    value: pendingVisibility ?? recipe.visibility,
+    onValueChange: (value: string) => {
+      setPendingVisibility(value as RecipeVisibility);
+    },
+    pending: sharingMutation.isPending,
+    publicWarning:
+      pendingVisibility === 'public'
+        ? 'This recipe will be discoverable by anyone browsing Eciperay.'
+        : null,
+    ...(consentRequired
+      ? {
+          consentLabel: 'Publishing consent',
+          consentDescription: (
+            <Text>
               I understand this recipe may be viewed without signing in and I
               agree to the{' '}
-              <DsTextLink
-                fontSize={tokens.typography.fontSize.sm}
+              <Text
+                color="$primary"
+                textDecorationLine="underline"
                 onPress={() => {
                   void Linking.openURL(PRIVACY_POLICY_URL);
                 }}
               >
                 Privacy Policy
-              </DsTextLink>
+              </Text>
               .
-            </>
-          }
-        />
-      ) : null}
-      {pendingVisibility && pendingVisibility !== recipe.visibility ? (
-        <YStack marginBlockStart="$3">
-          <DsButton
-            variant="primary"
-            accessibilityLabel="Save sharing settings"
-            disabled={
-              sharingMutation.isPending ||
-              (requiresPublishingConsent(
-                recipe.visibility,
-                pendingVisibility,
-              ) &&
-                !publishingConsent)
-            }
-            onPress={() => {
-              sharingMutation.mutate({
-                visibility: pendingVisibility,
-                ...(requiresPublishingConsent(
-                  recipe.visibility,
-                  pendingVisibility,
-                )
-                  ? {publishingConsent: true}
-                  : {}),
-              });
-            }}
-          >
-            Save sharing settings
-          </DsButton>
-        </YStack>
-      ) : null}
-      {activeVisibility === 'unlisted' ? (
-        <YStack
-          marginBlockStart="$3"
-          gap="$2"
-        >
-          <OutlineActionButton
-            label={shareToken ? 'Rotate share link' : 'Generate share link'}
-            disabled={rotateMutation.isPending}
-            onPress={() => {
-              rotateMutation.mutate();
-            }}
-          />
-          {shareUrl ? (
-            <OutlineActionButton
-              label="Share link"
-              onPress={() => {
-                void Share.share({message: shareUrl});
-              }}
-            />
-          ) : null}
-        </YStack>
-      ) : null}
-      {activeVisibility === 'public' ? (
-        <YStack marginBlockStart="$3">
-          <DsText
-            fontSize={tokens.typography.fontSize.xs}
-            color={tokens.colors.gray.gray6}
-          >
-            Public permalink
-          </DsText>
-          <DsText
-            fontSize={tokens.typography.fontSize.xs}
-            color={tokens.colors.gray.gray7}
-            marginBlockStart="$1"
-          >
-            {permalink}
-          </DsText>
-          <YStack marginBlockStart="$2">
-            <OutlineActionButton
-              label="Share permalink"
-              onPress={() => {
-                void Share.share({message: permalink});
-              }}
-            />
-          </YStack>
-        </YStack>
-      ) : null}
-    </DsCard>
-  );
+            </Text>
+          ),
+          consentChecked: publishingConsent,
+          onConsentCheckedChange: setPublishingConsent,
+          consentRequired: true,
+        }
+      : {}),
+    ...(pendingVisibility && pendingVisibility !== recipe.visibility
+      ? {
+          onSave: () => {
+            sharingMutation.mutate({
+              visibility: pendingVisibility,
+              ...(consentRequired ? {publishingConsent: true} : {}),
+            });
+          },
+          saveLabel: 'Save sharing settings',
+        }
+      : {}),
+    ...(activeVisibility === 'unlisted'
+      ? {
+          shareLinkUrl: shareUrl,
+          onRotateShareLink: () => {
+            rotateMutation.mutate();
+          },
+          rotateShareLinkLabel: shareToken
+            ? 'Rotate share link'
+            : 'Generate share link',
+          shareLinkPending: rotateMutation.isPending,
+          ...(shareUrl
+            ? {
+                onCopyShareLink: () => {
+                  void Share.share({message: shareUrl});
+                },
+                copyShareLinkLabel: 'Share link',
+              }
+            : {}),
+        }
+      : {}),
+    ...(activeVisibility === 'public'
+      ? {
+          permalinkLabel: 'Public permalink',
+          permalinkUrl: permalink,
+          onCopyPermalink: () => {
+            void Share.share({message: permalink});
+          },
+          copyPermalinkLabel: 'Share permalink',
+        }
+      : {}),
+  };
 };
