@@ -113,6 +113,12 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
       'Web top-nav shell; app uses React Navigation tab and stack navigators.',
   },
   {
+    path: 'PublicHeader.tsx',
+    platform: 'web',
+    reason:
+      'Signed-out public surfaces header (brand + Sign in) for the web public pages, added in the @spudly/ui 7.0.0 adoption (#452) when the DS retired PublicPageFrame; the public surfaces are web-only, so the app has no mirror.',
+  },
+  {
     path: 'AuthGuard.tsx',
     platform: 'web',
     reason:

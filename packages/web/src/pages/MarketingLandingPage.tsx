@@ -7,27 +7,28 @@ import {
   LANDING_SIGNUP_CTA,
   MOBILE_APP_INSTALL_URL,
 } from '@eciperay/client';
-import {LandingPage, PublicPageFrame} from '@spudly/ui';
+import {LandingPage} from '@spudly/ui';
+
+import {PublicHeader} from '../components/PublicHeader.js';
 
 import {sharedFooter} from './legal/legalDocumentData.js';
 
 // The signed-out landing's host (B7 cluster 11): the design
-// system's LandingPage renders the surface (#171) inside the DS
-// PublicPageFrame; the copy and the CTA destinations stay
-// app-owned content, passed in as data — the three CTAs as
-// {label, href} pairs (rendered as link buttons) and the three
-// features in the page's fixed slots.
+// system's LandingPage renders the surface (#171) and its own
+// footer from the shared footer data (#452 — the DS frame that
+// used to wrap it was retired in @spudly/ui 7.0.0); the host
+// supplies the header band (PublicHeader) the frame used to
+// provide. The copy and the CTA destinations stay app-owned
+// content, passed in as data — the three CTAs as {label, href}
+// pairs (rendered as link buttons) and the three features in
+// the page's fixed slots.
 export const MarketingLandingPage = () => {
   const [featureOne, featureTwo, featureThree] = LANDING_FEATURES;
   return (
-    <PublicPageFrame
-      brandHref="/"
-      signInHref="/login"
-      privacyHref="/privacy"
-      termsHref="/terms"
-      footer={sharedFooter}
-    >
+    <>
+      <PublicHeader />
       <LandingPage
+        footer={sharedFooter}
         heroTitle={LANDING_HERO_TITLE}
         heroSubtitle={LANDING_HERO_SUBTITLE}
         discoverCta={{label: LANDING_DISCOVER_CTA, href: '/discover'}}
@@ -40,6 +41,6 @@ export const MarketingLandingPage = () => {
         featureTwo={featureTwo}
         featureThree={featureThree}
       />
-    </PublicPageFrame>
+    </>
   );
 };

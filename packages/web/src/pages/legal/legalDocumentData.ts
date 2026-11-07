@@ -52,12 +52,12 @@ export const legalOperatorIntroSpan: LegalDocumentSpan = textSpan(
 
 /**
  * The ONE shared BigFooter data object for every signed-out public surface
- * (#425): the DS PublicPageFrame's DEFAULT footer omits the Do Not Sell link,
- * so every public host passes this object explicitly — the Legal column carries
- * all three legal links, including Do Not Sell or Share, exactly as the legal
- * pages have always rendered them. There are no app-store or social links today
- * (production ships none), so those sets are empty, matching what the legal
- * pages render now.
+ * (#425): a DS page's own default footer omits the Do Not Sell link, so every
+ * public host passes this object explicitly as the page's `footer` prop — the
+ * Legal column carries all three legal links, including Do Not Sell or Share,
+ * exactly as the legal pages have always rendered them. There are no app-store
+ * or social links today (production ships none), so those sets are empty,
+ * matching what the legal pages render now.
  */
 export const sharedFooter: BigFooterData = {
   brand: {label: 'Eciperay', href: '/'},

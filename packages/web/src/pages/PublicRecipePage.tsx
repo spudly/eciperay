@@ -16,7 +16,6 @@ import {
 import type {RecipeStarRating} from '@eciperay/types';
 import {tagColorNameForHex} from '@spudly/ui';
 import {
-  PublicPageFrame,
   PublicRecipePage as PublicRecipePageView,
   type PublicRecipePageProps,
 } from '@spudly/ui';
@@ -29,6 +28,7 @@ import {
   useSearchParams,
 } from 'react-router-dom';
 
+import {PublicHeader} from '../components/PublicHeader.js';
 import {RecipeCommentsSection} from '../components/recipe/RecipeCommentsSection.js';
 import {RecipePageHead} from '../components/RecipePageHead.js';
 import {eciperay} from '../lib/api.js';
@@ -44,8 +44,10 @@ import {sharedFooter} from './legal/legalDocumentData.js';
  * rating mutations, and the per-section view-model mapping (servings/scale
  * selection, the missing-ingredient set and the substitutions lookup it drives,
  * the ratings view-model), which mirrors the app detail host's mapping for
- * RecipeDetailPage. Every state of the page renders inside the DS
- * PublicPageFrame.
+ * RecipeDetailPage. Every state of the page renders under the host's
+ * PublicHeader with the page's own footer from the shared footer data (#452 —
+ * the DS PublicPageFrame that used to wrap it was retired in @spudly/ui
+ * 7.0.0).
  */
 
 /**
@@ -160,15 +162,13 @@ export const PublicRecipePage = () => {
     });
 
   const frame = (props: PublicRecipePageProps) => (
-    <PublicPageFrame
-      brandHref="/"
-      signInHref="/login"
-      privacyHref="/privacy"
-      termsHref="/terms"
-      footer={sharedFooter}
-    >
-      <PublicRecipePageView {...props} />
-    </PublicPageFrame>
+    <>
+      <PublicHeader />
+      <PublicRecipePageView
+        {...props}
+        footer={sharedFooter}
+      />
+    </>
   );
 
   if (!id || !slug) {

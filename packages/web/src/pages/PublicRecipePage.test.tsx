@@ -1,5 +1,5 @@
 import {buildRecipePageTitle} from '@eciperay/client';
-import {screen, waitFor} from '@testing-library/react';
+import {screen, waitFor, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as ReactQuery from '@tanstack/react-query';
 import {http, HttpResponse} from 'msw';
@@ -22,11 +22,13 @@ function SignUpRoute() {
   return <div>{`Sign up route${search}`}</div>;
 }
 
-// The host renders the design system's PublicRecipePage inside
-// the DS PublicPageFrame (B7 cluster 11); these tests drive that
-// page's real DOM: the sections stack in a single scroll (no
-// tabs), and the CTA bar's intents are buttons whose callbacks the
-// host wires to navigation and the clone mutation.
+// The host renders the design system's PublicRecipePage under its
+// own PublicHeader, with the page rendering its footer from the
+// shared footer data (B7 cluster 11; #452 retired the DS
+// PublicPageFrame); these tests drive that page's real DOM: the
+// sections stack in a single scroll (no tabs), and the CTA bar's
+// intents are buttons whose callbacks the host wires to navigation
+// and the clone mutation.
 describe('PublicRecipePage', () => {
   test('renders public recipe sections in a single scroll without auth', async () => {
     await renderWithProviders(
@@ -35,7 +37,10 @@ describe('PublicRecipePage', () => {
           path="/recipe/:id/:slug"
           element={<PublicRecipePage />}
         />
-        <Route path="/signup" element={<SignUpRoute />} />
+        <Route
+          path="/signup"
+          element={<SignUpRoute />}
+        />
       </Routes>,
       {route: '/recipe/recipe-uuid-1/test-recipe', withAuth: false},
     );
@@ -52,6 +57,18 @@ describe('PublicRecipePage', () => {
     expect(screen.getByRole('link', {name: 'Privacy Policy'})).toHaveAttribute(
       'href',
       '/privacy',
+    );
+    // The header the retired DS frame supplied is host chrome now
+    // (#452): the brand wordmark links home and Sign in links to
+    // the login route.
+    const header = within(screen.getByRole('banner'));
+    expect(header.getByRole('link', {name: 'Eciperay'})).toHaveAttribute(
+      'href',
+      '/',
+    );
+    expect(header.getByRole('link', {name: 'Sign in'})).toHaveAttribute(
+      'href',
+      '/login',
     );
 
     // Single scroll: ingredients and instructions render with the

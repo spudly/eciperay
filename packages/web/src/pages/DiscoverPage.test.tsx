@@ -1,6 +1,6 @@
 import {DISCOVER_EMPTY_MESSAGE, RECIPE_LIST_PAGE_SIZE} from '@eciperay/client';
 import type {PublicRecipeDiscoveryItem} from '@eciperay/types';
-import {screen, waitFor} from '@testing-library/react';
+import {screen, waitFor, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {http, HttpResponse} from 'msw';
 
@@ -9,10 +9,12 @@ import {renderWithProviders} from '../test/testUtils.js';
 
 import {DiscoverPage} from './DiscoverPage.js';
 
-// The host renders the design system's DiscoverPage inside the DS
-// PublicPageFrame (B7 cluster 11); these tests drive that page's
-// real DOM: cards are anchors named for the recipe, and the filters
-// sit behind the page's collapsed chooser until added.
+// The host renders the design system's DiscoverPage under its own
+// PublicHeader, with the page rendering its footer from the shared
+// footer data (B7 cluster 11; #452 retired the DS PublicPageFrame);
+// these tests drive that page's real DOM: cards are anchors named
+// for the recipe, and the filters sit behind the page's collapsed
+// chooser until added.
 
 const makeDiscoveryItem = (
   overrides: Partial<PublicRecipeDiscoveryItem> = {},
@@ -51,6 +53,25 @@ describe('DiscoverPage', () => {
       '/recipe/public-recipe-1/shared-pasta',
     );
     expect(screen.getByText(/By Chef Alex/)).toBeInTheDocument();
+    // The header the retired DS frame supplied is host chrome now
+    // (#452): the brand wordmark links home and Sign in links to
+    // the login route.
+    const header = within(screen.getByRole('banner'));
+    expect(header.getByRole('link', {name: 'Eciperay'})).toHaveAttribute(
+      'href',
+      '/',
+    );
+    expect(header.getByRole('link', {name: 'Sign in'})).toHaveAttribute(
+      'href',
+      '/login',
+    );
+    // The page renders its own footer from the shared footer data,
+    // including the Do Not Sell link (#425).
+    expect(
+      screen.getByRole('link', {
+        name: 'Do Not Sell or Share My Personal Information',
+      }),
+    ).toHaveAttribute('href', '/privacy/consent');
   });
 
   test('shows empty state when no public recipes match', async () => {
