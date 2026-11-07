@@ -603,22 +603,24 @@ entitlement gating for AI features.
 
 ## Sharing, Discover & public pages
 
-_Automated: Jest covers the shared-with-me view/host and the public recipe page;
-Playwright `signed-out.spec.ts` covers Discover rendering. The cross-account
-cases below are manual._
+_Automated: Jest covers the unified Recipes host (own + shared + discovery
+sections) and the public recipe page; Playwright `signed-out.spec.ts` covers
+Discover rendering. The cross-account cases below are manual._
 
 **Preconditions:** Two accounts: the QA account (owner) and a second test
 account (viewer); one QA recipe.
 
 1. **Share with a user.** As owner, share `QA — Shared Pie` with the viewer
    account using the recipe's sharing controls. **Expected:** the recipe appears
-   in the viewer's Shared with me (`/shared-with-me`) with owner attribution.
+   in the viewer's unified Recipes browse (`/recipes`), in the "Your recipes"
+   section with a Shared badge and owner attribution; `/shared-with-me`
+   redirects to `/recipes`.
 2. **Viewer is read-only.** As viewer, open the shared recipe. **Expected:**
    full detail renders; edit/delete controls are absent or clearly disabled; the
    owner-only actions (share, visibility) are not offered.
 3. **Unshare.** As owner, remove the share. Reload as viewer. **Expected:** the
-   recipe leaves Shared with me and its detail URL no longer opens for the
-   viewer.
+   recipe leaves the viewer's unified Recipes browse and its detail URL no
+   longer opens for the viewer.
 4. **Public visibility.** Set a recipe's visibility to public and open its
    public page (`/recipe/:id/:slug`) signed out. **Expected:** the public page
    renders the recipe with sign-up CTAs; no private account data (email, other
@@ -629,11 +631,18 @@ account (viewer); one QA recipe.
 6. **Discover.** Signed out, open `/discover` and open a public recipe from it.
    **Expected:** only public recipes are listed; the opened public page matches
    case 4.
+7. **Unified browse + header search.** Signed in, open `/recipes`. **Expected:**
+   "Your recipes" (own recipes first, then shared-with-me recipes badged Shared)
+   sits above the Discover section of public recipes, all under one
+   search/filter bar; searching from the shell header lands on `/recipes` with
+   that search applied to every section.
 
 **Run when:** `packages/app/src/screens/SharedWithMeScreen.tsx`,
 `packages/app/src/hosts/{shared,recipe/RecipeVisibilityControls}*`,
 `packages/web/src/components/recipe/RecipeVisibilityControls.tsx`,
-`packages/web/src/pages/{SharedWithMe,Discover,PublicRecipe}Page.tsx`,
+`packages/web/src/pages/{Recipes,Discover,PublicRecipe}Page.tsx`,
+`packages/web/src/components/AppShell.tsx`,
+`packages/web/src/routes/router.tsx`,
 `packages/web/src/pages/MarketingLandingPage.tsx`,
 `packages/web/src/pages/legal/**`, `packages/web/src/components/shared/**`,
 `@spudly/ui` `DiscoverPage`, `PublicRecipePage`, `PublicPageFrame`,

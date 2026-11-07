@@ -95,9 +95,11 @@ describe('HomePage', () => {
     // The three page actions are real links since the @spudly/ui 1.15
     // navigation rework (design-system#248): assert their destinations
     // rather than a navigate() call.
+    // Shared-with-me lives on the unified Recipes browse (#409): the
+    // home action keeps its label and lands on /recipes.
     expect(screen.getByRole('link', {name: 'Shared with me'})).toHaveAttribute(
       'href',
-      '/shared-with-me',
+      '/recipes',
     );
     expect(screen.getByRole('link', {name: 'Browse Recipes'})).toHaveAttribute(
       'href',

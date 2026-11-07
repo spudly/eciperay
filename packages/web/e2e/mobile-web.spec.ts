@@ -99,8 +99,12 @@ test.describe('mobile web layout (390px)', () => {
     expect(scrollWidth).toBeLessThanOrEqual(430);
   });
 
-  test('shared-with-me cards span the list width', async ({page}) => {
-    await page.goto('/shared-with-me');
+  test('shared cards on the unified browse span the list width', async ({
+    page,
+  }) => {
+    // Shared-with-me lives on the unified Recipes browse (#409): the
+    // shared rows render in its own section.
+    await page.goto('/recipes');
     await expect(page.getByText('E2E Shared Salad')).toBeVisible();
 
     const cardBox = await page.evaluate(() => {
@@ -121,14 +125,14 @@ test.describe('mobile web layout (390px)', () => {
     expect(cardBox.height).toBeLessThan(160);
   });
 
-  test('scrolling to the end of the shared list loads the next page', async ({
+  test('scrolling to the end of the unified list loads the next shared page', async ({
     page,
   }) => {
     // 21 shared recipes: one full page of 20 plus a single-recipe
     // second page. The route honors offset/limit like the real API
     // (the shared mockApi handler serves a single recipe), mirroring
     // the recipes-list pagination case in recipes.spec.ts — the
-    // shared host's onLoadMore wiring has no other positive coverage
+    // unified host's onLoadMore wiring has no other positive coverage
     // (jsdom cannot drive the list's end-reached signal).
     const shared = Array.from({length: 21}, (_, index) => ({
       ...sharedRecipe,
@@ -146,7 +150,7 @@ test.describe('mobile web layout (390px)', () => {
       });
     });
 
-    await page.goto('/shared-with-me');
+    await page.goto('/recipes');
     await expect(page.getByText('E2E Page Shared 0')).toBeVisible();
     await expect(page.getByText('E2E Page Shared 20')).toHaveCount(0);
 

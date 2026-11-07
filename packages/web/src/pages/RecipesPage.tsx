@@ -1,27 +1,38 @@
 import {
+  DISCOVER_ERROR_MESSAGE,
   formatCondensedNutritionParts,
+  formatDiscoveryListMeta,
+  formatRecipeListSubtitle,
   formatSatietyLabel,
   formatServingsLabel,
   getDisplayRating,
   invalidateRecipeQueries,
+  publicRecipeDiscoveryInfiniteQueryOptions,
   recipeListInfiniteQueryOptions,
+  sharedWithMeInfiniteQueryOptions,
   useRecipeListFilters,
   type RecipeStatusFilterValue,
 } from '@eciperay/client';
 import type {
   CookLogInput,
+  PublicRecipeDiscoveryItem,
   RecipeDetail,
   RecipeListSort,
   RecipeListSortDir,
 } from '@eciperay/types';
 import {tokens} from '@spudly/ui';
-import {RecipesPage as RecipesPageView, type RecipesPageItem} from '@spudly/ui';
+import {
+  RecipesPage as RecipesPageView,
+  type RecipesPageDiscoveryItem,
+  type RecipesPageItem,
+} from '@spudly/ui';
 import {
   useInfiniteQuery,
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query';
 import {useCallback, useEffect, useRef, useState} from 'react';
+import {useSearchParams} from 'react-router-dom';
 
 import {CookLogForm} from '../components/cooking/CookLogForm.js';
 import {eciperay} from '../lib/api.js';
@@ -131,71 +142,159 @@ const InlineCookLogForm = ({
   );
 };
 
+const formatDiscoveryAuthorName = (authorDisplayName: string | null) => {
+  if (authorDisplayName?.trim()) {
+    return authorDisplayName.trim();
+  }
+  return 'Anonymous';
+};
+
+// One discovery-section row, composed exactly as the signed-out
+// Discover host composes its rows (author fallback plus the discovery
+// meta line; the DS page only renders the string).
+const toDiscoveryItem = (
+  recipe: PublicRecipeDiscoveryItem,
+): RecipesPageDiscoveryItem => ({
+  id: recipe.id,
+  title: recipe.title,
+  subtitle: `By ${formatDiscoveryAuthorName(recipe.authorDisplayName)} · ${formatDiscoveryListMeta(recipe)}`,
+  imageUrl: recipe.imageUrl,
+  href: `/recipe/${recipe.id}/${recipe.slug}`,
+});
+
 /**
- * The Recipes screen's host (#130, B7 cluster 5): the design system's
- * RecipesPage renders the screen — collapsed filter bar, bounded list, rows —
- * and this component keeps everything the page must not own: the infinite
- * query, the filter state, navigation, the item mapping above, and the cook-log
- * composition.
+ * The unified Recipes browse (#409, Stephen's approved plan): one page
+ * combining the user's own material with preferred placement and the public
+ * discovery catalog below it, under the page's one search / filter state. The
+ * design system's RecipesPage renders the screen — own section, discovery
+ * section, collapsed filter bar — and this host keeps everything the page must
+ * not own: the three infinite queries, the filter state, navigation targets,
+ * the item mappings, and the cook-log composition.
  *
- * Two deliberate behavior changes ride with the adoption, both inherited from
- * the page's contract (the app adopted both with @spudly/ui 1.8.0): the list
- * rows no longer offer Delete — deleting a recipe is a recipe-detail action,
- * and the detail page's delete keeps the in-page confirmation and the
- * never-silent failure handling (#263) — and the filters collapse behind the
- * page's "Add a filter" chooser instead of rendering every control at once.
- * Pagination is the page's end-reached signal now; the old view's
- * IntersectionObserver sentinel is gone.
+ * The own section is the user's created recipes followed by the recipes shared
+ * with them (each shared row carries the caller-supplied "Shared" badge and
+ * keeps its public-permalink destination — the retired standalone
+ * Shared-with-me screen's rows were link-only, and they stay that way here:
+ * cook logs are owner-only on the server, so the host ignores log-cook presses
+ * on shared rows even though the page renders the control for every own-section
+ * row). The old flat props map as: created `recipes` → `ownRecipes` (with the
+ * shared rows appended), `isLoading` → `loadingOwn`, `isFetchingNextPage` →
+ * `isFetchingNextOwnPage`, and the host-rendered load-more error alert →
+ * `ownLoadMoreErrorMessage` / `onOwnLoadMoreRetry`, which the page renders as
+ * the own section's error row.
  *
- * @spudly/ui 6.x sectioned contract: the page renders an own section and a
- * discovery section under one filter bar. This host populates only the own
- * section — the user's own recipes, paginated through the own-section load-more
- * props — and passes an empty discovery section (this surface has no discovery
- * feed today; the section collapses to its empty state inside the page). The
- * old flat props map as: `recipes` → `ownRecipes`, `isLoading` → `loadingOwn`,
- * `isFetchingNextPage` → `isFetchingNextOwnPage`, and the host-rendered
- * load-more error alert → `ownLoadMoreErrorMessage` / `onOwnLoadMoreRetry`,
- * which the page renders as the own section's error row.
+ * Pagination: the page's end-reached signal (`onLoadMore`) is the discovery
+ * section's continuation in the page's contract, and the own section paginates
+ * separately on the host's own queries — so the host's handler continues every
+ * query that has a next page, each gated on its own fetch state. A failed next
+ * page latches that query's isFetchNextPageError, automatic loading for it
+ * stops instead of cycling retries (the shared pagination pattern re-fires
+ * onLoadMore when a fetch completes having added no rows, design-system#285,
+ * and cannot tell an empty page from a failed one), and the own section's
+ * load-more error row offers the manual retry.
+ *
+ * Header search (Stephen's decision: in scope with the unified browse): the
+ * shell's search form navigates here with `?q=<term>`, and this host seeds the
+ * page's one search state from that param whenever it changes.
  */
 export const RecipesPage = () => {
   const {filters, controls} = useRecipeListFilters();
+  const [searchParams] = useSearchParams();
+  const headerSearch = searchParams.get('q') ?? '';
 
-  const {
-    data,
-    isLoading,
-    isError,
-    isFetchingNextPage,
-    isFetchNextPageError,
-    hasNextPage,
-    fetchNextPage,
-  } = useInfiniteQuery(
+  // Seed the page search from the header search's `q` param. The
+  // latest onSearchChange, for the seeding effect below: the controls
+  // object is rebuilt every render, so the effect cannot depend on
+  // the callback itself without re-seeding on every render.
+  const onSearchChangeRef = useRef(controls.onSearchChange);
+  useEffect(() => {
+    onSearchChangeRef.current = controls.onSearchChange;
+  });
+  useEffect(() => {
+    if (headerSearch) {
+      onSearchChangeRef.current(headerSearch);
+    }
+  }, [headerSearch]);
+
+  const ownQuery = useInfiniteQuery(
     recipeListInfiniteQueryOptions(
       params => eciperay.recipes.list(params),
       filters,
     ),
   );
+  const sharedQuery = useInfiniteQuery(
+    sharedWithMeInfiniteQueryOptions(
+      params => eciperay.recipes.listSharedWithMe(params),
+      filters,
+    ),
+  );
+  const discoveryQuery = useInfiniteQuery(
+    publicRecipeDiscoveryInfiniteQueryOptions(
+      params => eciperay.recipes.listPublic(params),
+      filters,
+    ),
+  );
 
-  const recipes = data?.pages.flat() ?? [];
+  const ownRecipes = ownQuery.data?.pages.flat() ?? [];
+  const sharedRecipes = sharedQuery.data?.pages.flat() ?? [];
+  const discoveryRecipes = discoveryQuery.data?.pages.flat() ?? [];
 
   // A failed FIRST page is not a load-more failure and not an empty
-  // list: with no pages loaded the page would otherwise render its
+  // list: with no rows loaded the page would otherwise render its
   // empty state for what is actually an error. It crosses as the own
   // section's first-load error (`ownErrorMessage`); once any rows are
-  // loaded, a failure is the load-more path below instead.
+  // loaded, a failure is the load-more path below instead. The two
+  // own-section queries fail independently — either one's failure
+  // surfaces, and neither hides the discovery section.
+  const ownSectionFailed = ownQuery.isError || sharedQuery.isError;
+  const ownRowCount = ownRecipes.length + sharedRecipes.length;
   const ownErrorMessage =
-    isError && recipes.length === 0 ? "Couldn't load your recipes." : null;
+    ownSectionFailed && ownRowCount === 0
+      ? "Couldn't load your recipes."
+      : null;
+  const ownLoadMoreErrorMessage =
+    ownQuery.isFetchNextPageError ||
+    sharedQuery.isFetchNextPageError ||
+    (ownSectionFailed && ownRowCount > 0)
+      ? "Couldn't load more recipes."
+      : null;
 
-  // The shared pagination pattern re-fires onLoadMore when a fetch
-  // completes having added no rows (design-system#285) — it cannot
-  // tell an empty page from a failed one, so the host gates here: a
-  // failed next page latches isFetchNextPageError, automatic loading
-  // stops instead of cycling retries, and the own section's load-more
-  // error row offers the manual retry.
-  const handleLoadMore = useCallback(() => {
-    if (hasNextPage && !isFetchingNextPage && !isFetchNextPageError) {
-      void fetchNextPage();
+  const handleOwnLoadMoreRetry = useCallback(() => {
+    if (ownQuery.isFetchNextPageError) {
+      void ownQuery.fetchNextPage();
+    } else if (ownQuery.isError) {
+      void ownQuery.refetch();
     }
-  }, [fetchNextPage, hasNextPage, isFetchNextPageError, isFetchingNextPage]);
+    if (sharedQuery.isFetchNextPageError) {
+      void sharedQuery.fetchNextPage();
+    } else if (sharedQuery.isError) {
+      void sharedQuery.refetch();
+    }
+  }, [ownQuery, sharedQuery]);
+
+  const handleLoadMore = useCallback(() => {
+    if (
+      ownQuery.hasNextPage &&
+      !ownQuery.isFetchingNextPage &&
+      !ownQuery.isFetchNextPageError
+    ) {
+      void ownQuery.fetchNextPage();
+    }
+    if (
+      sharedQuery.hasNextPage &&
+      !sharedQuery.isFetchingNextPage &&
+      !sharedQuery.isFetchNextPageError
+    ) {
+      void sharedQuery.fetchNextPage();
+    }
+    if (
+      discoveryQuery.hasNextPage &&
+      !discoveryQuery.isFetchingNextPage &&
+      !discoveryQuery.isFetchNextPageError
+    ) {
+      void discoveryQuery.fetchNextPage();
+    }
+  }, [ownQuery, sharedQuery, discoveryQuery]);
 
   // The cook-log forms' open state: a set of recipe ids, so forms
   // open and close independently and several may be open at once —
@@ -207,7 +306,15 @@ export const RecipesPage = () => {
     () => new Set(),
   );
 
+  const ownRecipesById = new Map(ownRecipes.map(recipe => [recipe.id, recipe]));
+
   const openCookLog = (recipeId: string) => {
+    // Shared rows are link-only (cook logs are owner-only); the page
+    // renders the log-cook control for every own-section row, so
+    // presses on shared rows land here and are ignored.
+    if (!ownRecipesById.has(recipeId)) {
+      return;
+    }
     setOpenCookLogIds(current => new Set(current).add(recipeId));
   };
 
@@ -233,23 +340,35 @@ export const RecipesPage = () => {
       if (current.size === 0) {
         return current;
       }
-      const present = new Set(recipes.map(recipe => recipe.id));
+      const present = new Set(ownRecipes.map(recipe => recipe.id));
       const next = new Set(
         [...current].filter(recipeId => present.has(recipeId)),
       );
       return next.size === current.size ? current : next;
     });
-  }, [recipes]);
+  }, [ownRecipes]);
 
-  const recipesById = new Map(recipes.map(recipe => [recipe.id, recipe]));
-
-  const items: RecipesPageItem[] = recipes.map(recipe => ({
+  const ownItems: RecipesPageItem[] = ownRecipes.map(recipe => ({
     id: recipe.id,
     href: `/recipes/${recipe.id}`,
     title: recipe.title,
     subtitle: formatRecipesPageSubtitle(recipe),
     rating: getDisplayRating(recipe),
     imageUrl: recipe.imageUrl,
+  }));
+
+  // Shared-with-me rows, in the shared query's order after the user's
+  // own recipes: same subtitle composition the retired shared screen
+  // used (its rating stays in the text — these rows have no log-cook
+  // rating control), with the shared badge and the public permalink
+  // the old card's link pointed at.
+  const sharedItems: RecipesPageItem[] = sharedRecipes.map(recipe => ({
+    id: recipe.id,
+    href: `/recipe/${recipe.id}/${recipe.slug}`,
+    title: recipe.title,
+    subtitle: formatRecipeListSubtitle(recipe),
+    imageUrl: recipe.imageUrl,
+    badgeLabel: 'Shared',
   }));
 
   return (
@@ -267,22 +386,26 @@ export const RecipesPage = () => {
       </h1>
       <RecipesPageView
         ownTitle="Your recipes"
-        ownRecipes={items}
-        loadingOwn={isLoading}
+        ownRecipes={[...ownItems, ...sharedItems]}
+        loadingOwn={ownQuery.isLoading || sharedQuery.isLoading}
         ownErrorMessage={ownErrorMessage}
-        isFetchingNextOwnPage={isFetchingNextPage}
-        ownLoadMoreErrorMessage={
-          isFetchNextPageError ? "Couldn't load more recipes." : null
+        isFetchingNextOwnPage={
+          ownQuery.isFetchingNextPage || sharedQuery.isFetchingNextPage
         }
-        onOwnLoadMoreRetry={() => {
-          void fetchNextPage();
-        }}
+        ownLoadMoreErrorMessage={ownLoadMoreErrorMessage}
+        onOwnLoadMoreRetry={handleOwnLoadMoreRetry}
         discoveryTitle="Discover"
-        discoveryRecipes={[]}
-        loadingDiscovery={false}
+        discoveryRecipes={discoveryRecipes.map(toDiscoveryItem)}
+        loadingDiscovery={discoveryQuery.isLoading}
+        discoveryErrorMessage={
+          discoveryQuery.isError && discoveryRecipes.length === 0
+            ? DISCOVER_ERROR_MESSAGE
+            : null
+        }
+        isFetchingNextPage={discoveryQuery.isFetchingNextPage}
         onLogCookPress={openCookLog}
         renderRecipeAccessory={recipeId => {
-          const recipe = recipesById.get(recipeId);
+          const recipe = ownRecipesById.get(recipeId);
           if (!recipe || !openCookLogIds.has(recipeId)) {
             return null;
           }

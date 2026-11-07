@@ -112,7 +112,7 @@ export const HomePage = () => {
       }}
       browseHref="/recipes"
       addHref="/add"
-      sharedWithMeHref="/shared-with-me"
+      sharedWithMeHref="/recipes"
     />
   );
 };

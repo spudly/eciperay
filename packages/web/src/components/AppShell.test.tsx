@@ -1,5 +1,6 @@
 import {screen} from '@testing-library/react';
-import {Route, Routes} from 'react-router-dom';
+import userEvent from '@testing-library/user-event';
+import {Route, Routes, useLocation} from 'react-router-dom';
 
 import {renderWithProviders} from '../test/testUtils.js';
 
@@ -22,7 +23,9 @@ describe('AppShell', () => {
     );
     expect(screen.getByRole('img', {name: 'Eciperay'})).toBeInTheDocument();
     expect(screen.getByText('Recipes')).toBeInTheDocument();
-    expect(screen.getByText('Shared with me')).toBeInTheDocument();
+    // Shared-with-me has no nav item of its own: it lives on the
+    // unified Recipes browse (#409).
+    expect(screen.queryByText('Shared with me')).not.toBeInTheDocument();
     expect(screen.getByText('Page Content')).toBeInTheDocument();
     // The shell footer carries the legal links on every signed-in page,
     // including the Do Not Sell or Share link to the consent surface.
@@ -40,5 +43,35 @@ describe('AppShell', () => {
       </AppShell>,
     );
     expect(screen.getByText('Inline Content')).toBeInTheDocument();
+  });
+
+  test('header search navigates to the unified Recipes browse with the term', async () => {
+    const LocationProbe = () => {
+      const {pathname, search} = useLocation();
+      return <div>{`${pathname}${search}`}</div>;
+    };
+    await renderWithProviders(
+      <Routes>
+        <Route
+          element={<AppShell />}
+          path="/"
+        >
+          <Route
+            index
+            element={<div>Page Content</div>}
+          />
+          <Route
+            path="/recipes"
+            element={<LocationProbe />}
+          />
+        </Route>
+      </Routes>,
+    );
+    await userEvent.type(
+      screen.getByRole('searchbox', {name: 'Search recipes'}),
+      'pasta',
+    );
+    await userEvent.click(screen.getByRole('button', {name: 'Search'}));
+    expect(await screen.findByText('/recipes?q=pasta')).toBeInTheDocument();
   });
 });

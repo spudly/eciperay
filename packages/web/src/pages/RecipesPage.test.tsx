@@ -452,4 +452,60 @@ describe('RecipesPage', () => {
       expect(screen.queryByText('How did it go?')).not.toBeInTheDocument();
     });
   });
+
+  // The unified browse (#409): one page carries the user's own
+  // recipes, the recipes shared with them (badged, in the own
+  // section), and the public discovery catalog (its own section).
+  test('unifies own, shared and discovery recipes on one page', async () => {
+    const {container} = await renderWithProviders(<RecipesPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Test Recipe')).toBeInTheDocument();
+    });
+    // Shared-with-me row: badged in the own section, linking to the
+    // shared recipe's public permalink.
+    await waitFor(() => {
+      expect(
+        container.querySelector(
+          'a[href="/recipe/shared-recipe-1/shared-pasta"]',
+        ),
+      ).not.toBeNull();
+    });
+    expect(screen.getByText('Shared')).toBeInTheDocument();
+    // Discovery row: the public catalog item, linking to its public
+    // permalink under its own id.
+    await waitFor(() => {
+      expect(
+        container.querySelector(
+          'a[href="/recipe/public-recipe-1/shared-pasta"]',
+        ),
+      ).not.toBeNull();
+    });
+    expect(screen.getByText('Your recipes')).toBeInTheDocument();
+    expect(screen.getByText('Discover')).toBeInTheDocument();
+  });
+
+  test('shared rows offer no log-cook form', async () => {
+    await renderWithProviders(<RecipesPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Shared')).toBeInTheDocument();
+    });
+    await userEvent.click(
+      screen.getByRole('button', {name: 'Log a cook of Shared Pasta'}),
+    );
+    // Cook logs are owner-only: the press is ignored for shared rows
+    // and no cook-log form opens.
+    expect(screen.queryByText('How did it go?')).not.toBeInTheDocument();
+  });
+
+  test('seeds the search from the header search q param', async () => {
+    await renderWithProviders(<RecipesPage />, {route: '/recipes?q=Test'});
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('Search recipes…')).toHaveValue(
+        'Test',
+      );
+    });
+    await waitFor(() => {
+      expect(screen.getByText('Test Recipe')).toBeInTheDocument();
+    });
+  });
 });
