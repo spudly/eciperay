@@ -1,5 +1,6 @@
 ignores:
   - '@spudly/ui' # Design-system package; wired for upcoming component migration, not yet imported
+  - '@tamagui/native' # Imported by @tamagui/create-menu's native menu code; declared in packages/app so Metro can resolve it in the Android release bundle (#457), not imported directly in app source
   - '@babel/preset-env' # Babel preset used by React Native toolchain, not imported directly in app source
   - '@babel/runtime' # Babel runtime helpers injected by the compiler, not imported directly in app source
   - '@react-native-community/cli' # React Native CLI entry point; invoked via npm scripts (start, ios, android)
