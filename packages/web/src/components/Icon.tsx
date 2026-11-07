@@ -1,23 +1,23 @@
-import type {IconComponentProps} from '@spudly/ui/icons';
-import type {ComponentType} from 'react';
+import type {IconType} from 'react-icons';
 import {
-  AddIcon,
-  FeedbackIcon,
-  HomeIcon,
-  MealsIcon,
-  ProfileIcon,
-  RecipesIcon,
-  SharedIcon,
-  TagsIcon,
-  WarningIcon,
-} from '@spudly/ui/icons';
+  FiAlertTriangle,
+  FiBookOpen,
+  FiCoffee,
+  FiHome,
+  FiMessageCircle,
+  FiPlus,
+  FiTag,
+  FiUser,
+  FiUsers,
+} from 'react-icons/fi';
 
 /**
- * The icon names this app renders, owned by the app: the design system ships
- * the glyphs as semantic components (`@spudly/ui/icons`), but which glyph a
- * given app concept uses is app configuration, so the name set and the
- * name-to-component mapping live here (moved out of the retired
- * `@eciperay/icons` package in #246).
+ * The icon names this app renders, owned by the app: the glyphs are host-side
+ * Feather icons rendered via react-icons — a temporary measure pending the
+ * design-system shell work (follow-up issue #451) — but which glyph a given app
+ * concept uses is app configuration, so the name set and the name-to-component
+ * mapping live here (moved out of the retired `@eciperay/icons` package in
+ * #246).
  */
 const iconNames = [
   'home',
@@ -33,16 +33,16 @@ const iconNames = [
 
 type IconName = (typeof iconNames)[number];
 
-const icons: Record<IconName, ComponentType<IconComponentProps>> = {
-  'home': HomeIcon,
-  'book-open': RecipesIcon,
-  'users': SharedIcon,
-  'plus': AddIcon,
-  'tag': TagsIcon,
-  'user': ProfileIcon,
-  'coffee': MealsIcon,
-  'alert-triangle': WarningIcon,
-  'message-circle': FeedbackIcon,
+const icons: Record<IconName, IconType> = {
+  'home': FiHome,
+  'book-open': FiBookOpen,
+  'users': FiUsers,
+  'plus': FiPlus,
+  'tag': FiTag,
+  'user': FiUser,
+  'coffee': FiCoffee,
+  'alert-triangle': FiAlertTriangle,
+  'message-circle': FiMessageCircle,
 };
 
 type IconProps = {
@@ -67,13 +67,14 @@ export const Icon = ({
   const glyph = (
     <Component
       size={size}
-      accessibilityLabel={ariaLabel}
+      {...(ariaLabel
+        ? {'aria-label': ariaLabel}
+        : {'aria-hidden': true as const})}
     />
   );
 
-  // The design-system icons accept no className or title: they stroke
-  // `currentColor` and expose only an accessibility label. When a caller
-  // passes className/title, wrap the glyph so the class still colors it
+  // The Feather glyphs stroke `currentColor`. When a caller passes
+  // className/title, wrap the glyph so the class still colors it
   // (the stroke inherits the wrapper's text color) and the title still
   // shows as a tooltip.
   if (!className && !title) {
