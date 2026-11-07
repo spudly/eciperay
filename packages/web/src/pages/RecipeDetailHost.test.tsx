@@ -129,6 +129,23 @@ describe('RecipeDetailHost', () => {
       expect(activate).toHaveBeenCalledWith('recipe-uuid-1', 'v1');
     });
 
+    test('does not offer activation for archived or candidate versions of an abandoned recipe (#417)', async () => {
+      await renderHost({status: 'abandoned'}, [
+        makeRecipeVersionSummary({
+          id: 'v1',
+          versionNumber: 1,
+          derivedRole: 'archived',
+        }),
+        makeRecipeVersionSummary({
+          id: 'v2',
+          versionNumber: 2,
+          derivedRole: 'candidate',
+        }),
+      ]);
+      expect(await screen.findByText('Test Recipe')).toBeInTheDocument();
+      expect(screen.queryByText('Activate')).not.toBeInTheDocument();
+    });
+
     test('does not offer activation for a draft version of an evolving recipe (#417)', async () => {
       await renderHost({}, [
         makeRecipeVersionSummary({

@@ -282,6 +282,27 @@ describe('RecipeDetailView', () => {
     expect(await findByText('Version activated')).toBeTruthy();
   });
 
+  test('does not offer activation for archived or candidate versions of an abandoned recipe (#417)', async () => {
+    const archived = makeRecipeVersionSummary({
+      id: 'version-archived-1',
+      versionNumber: 1,
+      derivedRole: 'archived',
+    });
+    const candidate = makeRecipeVersionSummary({
+      id: 'version-candidate-1',
+      versionNumber: 2,
+      derivedRole: 'candidate',
+      changeSummary: 'Better crust',
+    });
+    const {findByText, queryByText} = await renderView({status: 'abandoned'}, [
+      archived,
+      candidate,
+    ]);
+    expect(await findByText('Test Recipe')).toBeTruthy();
+    expect(queryByText('Ready to activate')).toBeNull();
+    expect(queryByText('Activate')).toBeNull();
+  });
+
   test('hides the lifecycle section for a perfected recipe', async () => {
     const {findByText, queryByText} = await renderView({status: 'perfected'});
     expect(await findByText('Test Recipe')).toBeTruthy();
