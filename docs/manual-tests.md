@@ -207,6 +207,7 @@ without); one recipe may be created fresh in case 1.
 `packages/app/src/screens/{Recipes,RecipeDetail,EditRecipe,EditVersion,ManualEntry}Screen.tsx`,
 `packages/app/src/components/recipe/**`,
 `packages/app/src/lib/recipeImageCrop.ts`,
+`packages/app/android/settings.gradle`, `packages/app/ios/Podfile`,
 `packages/app/src/hosts/{recipe,recipes}/**`,
 `packages/web/src/pages/{Recipes,RecipeDetail,EditRecipe,EditVersion,ManualEntry}Page.tsx`,
 `packages/web/src/pages/RecipeDetailHost.tsx`,
