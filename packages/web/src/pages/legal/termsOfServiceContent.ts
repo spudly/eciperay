@@ -1,5 +1,5 @@
 import {LEGAL_OPERATOR_NAME} from '@eciperay/client';
-import type {LegalDocumentSection} from '@spudly/ui/pages';
+import type {LegalDocumentSection} from '@spudly/ui';
 
 import {
   legalContactLinkSpan,
@@ -42,12 +42,18 @@ export const termsOfServiceSections: LegalDocumentSection[] = [
       listBlock([
         listItem([textSpan('You must provide accurate account information.')]),
         listItem([
-          textSpan('You are responsible for keeping your login credentials secure.'),
+          textSpan(
+            'You are responsible for keeping your login credentials secure.',
+          ),
         ]),
         listItem([
-          textSpan('You are responsible for activity that occurs under your account.'),
+          textSpan(
+            'You are responsible for activity that occurs under your account.',
+          ),
         ]),
-        listItem([textSpan('You must be at least 13 years old to use Eciperay.')]),
+        listItem([
+          textSpan('You must be at least 13 years old to use Eciperay.'),
+        ]),
       ]),
     ],
   },
@@ -81,14 +87,18 @@ export const termsOfServiceSections: LegalDocumentSection[] = [
     blocks: [
       listBlock([
         listItem([textSpan('Do not use the service for unlawful purposes.')]),
-        listItem([textSpan("Do not attempt to access other users' accounts or data.")]),
+        listItem([
+          textSpan("Do not attempt to access other users' accounts or data."),
+        ]),
         listItem([
           textSpan(
             'Do not interfere with or disrupt the service, including by automated scraping or abuse.',
           ),
         ]),
         listItem([
-          textSpan("Do not upload malware or content that infringes others' rights."),
+          textSpan(
+            "Do not upload malware or content that infringes others' rights.",
+          ),
         ]),
       ]),
     ],

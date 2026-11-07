@@ -15,12 +15,11 @@ import type {
 } from '@eciperay/types';
 import {useInfiniteQuery} from '@tanstack/react-query';
 
-import {
-  DiscoverPage as DiscoverPageView,
-  PublicPageFrame,
-} from '@spudly/ui/pages';
+import {DiscoverPage as DiscoverPageView, PublicPageFrame} from '@spudly/ui';
 
 import {eciperay} from '../lib/api.js';
+
+import {sharedFooter} from './legal/legalDocumentData.js';
 
 const formatAuthorName = (authorDisplayName: string | null) => {
   if (authorDisplayName?.trim()) {
@@ -46,13 +45,19 @@ export const DiscoverPage = () => {
     defaultSort: 'newest',
   });
 
-  const {data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage, error} =
-    useInfiniteQuery(
-      publicRecipeDiscoveryInfiniteQueryOptions(
-        params => eciperay.recipes.listPublic(params),
-        filters,
-      ),
-    );
+  const {
+    data,
+    isLoading,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+    error,
+  } = useInfiniteQuery(
+    publicRecipeDiscoveryInfiniteQueryOptions(
+      params => eciperay.recipes.listPublic(params),
+      filters,
+    ),
+  );
 
   const recipes = data?.pages.flat() ?? [];
 
@@ -62,6 +67,7 @@ export const DiscoverPage = () => {
       signInHref="/login"
       privacyHref="/privacy"
       termsHref="/terms"
+      footer={sharedFooter}
     >
       <DiscoverPageView
         title={DISCOVER_TITLE}
@@ -69,7 +75,7 @@ export const DiscoverPage = () => {
         emptyMessage={DISCOVER_EMPTY_MESSAGE}
         errorMessage={error ? DISCOVER_ERROR_MESSAGE : null}
         recipes={recipes.map(toDiscoverItem)}
-        isLoading={isLoading}
+        loading={isLoading}
         isFetchingNextPage={isFetchingNextPage}
         onLoadMore={() => {
           if (hasNextPage) {

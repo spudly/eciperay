@@ -19,35 +19,40 @@ import {
   PublicPageFrame,
   PublicRecipePage as PublicRecipePageView,
   type PublicRecipePageProps,
-} from '@spudly/ui/pages';
+} from '@spudly/ui';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useState} from 'react';
-import {Navigate, useNavigate, useParams, useSearchParams} from 'react-router-dom';
+import {
+  Navigate,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from 'react-router-dom';
 
 import {RecipeCommentsSection} from '../components/recipe/RecipeCommentsSection.js';
 import {RecipePageHead} from '../components/RecipePageHead.js';
 import {eciperay} from '../lib/api.js';
 
+import {sharedFooter} from './legal/legalDocumentData.js';
+
 /**
- * The public recipe route's host (B7 cluster 11): the design
- * system's PublicRecipePage renders the surface — a single scroll
- * holding the overview, ingredients, instructions, and engagement
- * sections (#169) — and this component keeps everything the page
- * must not own: the getPublic query and the slug-canonical
- * redirect, the document head (RecipePageHead), the clone and
- * rating mutations, and the per-section view-model mapping
- * (servings/scale selection, the missing-ingredient set and the
- * substitutions lookup it drives, the ratings view-model), which
- * mirrors the app detail host's mapping for RecipeDetailPage.
- * Every state of the page renders inside the DS PublicPageFrame.
+ * The public recipe route's host (B7 cluster 11): the design system's
+ * PublicRecipePage renders the surface — a single scroll holding the overview,
+ * ingredients, instructions, and engagement sections (#169) — and this
+ * component keeps everything the page must not own: the getPublic query and the
+ * slug-canonical redirect, the document head (RecipePageHead), the clone and
+ * rating mutations, and the per-section view-model mapping (servings/scale
+ * selection, the missing-ingredient set and the substitutions lookup it drives,
+ * the ratings view-model), which mirrors the app detail host's mapping for
+ * RecipeDetailPage. Every state of the page renders inside the DS
+ * PublicPageFrame.
  */
 
 /**
- * The scale string the page shows as selected for a base/current
- * servings pair when the servings were not set through a scale
- * selection (copied from the app detail host): the preset's string
- * when the applied servings are exactly that preset's, otherwise
- * the exact servings ratio as a plain number string.
+ * The scale string the page shows as selected for a base/current servings pair
+ * when the servings were not set through a scale selection (copied from the app
+ * detail host): the preset's string when the applied servings are exactly that
+ * preset's, otherwise the exact servings ratio as a plain number string.
  */
 const deriveScaleValue = (
   baseServings: number,
@@ -160,6 +165,7 @@ export const PublicRecipePage = () => {
       signInHref="/login"
       privacyHref="/privacy"
       termsHref="/terms"
+      footer={sharedFooter}
     >
       <PublicRecipePageView {...props} />
     </PublicPageFrame>
@@ -304,7 +310,7 @@ export const PublicRecipePage = () => {
             }),
           ),
           onIngredientPress: toggleMissing,
-          isLoadingSubstitutions,
+          loadingSubstitutions: isLoadingSubstitutions,
           substitutions: substitutions.map(substitution => ({
             ingredient: substitution.ingredient,
             suggestions: substitution.suggestions.join(', '),
