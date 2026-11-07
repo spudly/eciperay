@@ -71,7 +71,9 @@ export const openRecipeFromList = async (
   title: string,
 ): Promise<void> => {
   await page.goto('/recipes');
-  await page.getByPlaceholder('Search recipes…').fill(title);
+  // Scoped to <main>: the shell header carries its own search box
+  // with the same placeholder (#409).
+  await page.getByRole('main').getByPlaceholder('Search recipes…').fill(title);
   await page.getByText(title).click();
   await expect(page.getByRole('heading', {name: title})).toBeVisible();
 };
@@ -101,7 +103,9 @@ export const deleteRecipeViaUi = async (
       response.url().includes('search=') &&
       response.request().method() === 'GET',
   );
-  await page.getByPlaceholder('Search recipes…').fill(title);
+  // Scoped to <main>: the shell header carries its own search box
+  // with the same placeholder (#409).
+  await page.getByRole('main').getByPlaceholder('Search recipes…').fill(title);
   const response = await searchResponse;
   expect(response.ok()).toBe(true);
   const recipes = (await response.json()) as Array<{title?: string}>;

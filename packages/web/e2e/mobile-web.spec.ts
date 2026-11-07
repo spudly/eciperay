@@ -22,15 +22,9 @@ test.describe('mobile web layout (390px)', () => {
     await expect(page.getByText('E2E Tomato Pasta')).toBeVisible();
 
     const nav = page.locator('header nav');
-    const labels = [
-      'Home',
-      'Recipes',
-      'Meals',
-      'Shared with me',
-      'Add',
-      'Tags',
-      'Profile',
-    ];
+    // No 'Shared with me': it lives on the unified Recipes browse
+    // now (#409) instead of taking a nav slot.
+    const labels = ['Home', 'Recipes', 'Meals', 'Add', 'Tags', 'Profile'];
     for (const label of labels) {
       const link = nav.getByRole('link', {name: label});
       await expect(link).toBeVisible();
@@ -119,10 +113,13 @@ test.describe('mobile web layout (390px)', () => {
       return {width: rect?.width ?? 0, height: rect?.height ?? 0};
     });
     expect(cardBox.width).toBeGreaterThan(300);
-    // The standalone (no trailing actions) card is a child of a column
-    // layout: its height must stay content-sized (~110px), not stretch
-    // to the 17rem row basis that only applies beside trailing actions.
-    expect(cardBox.height).toBeLessThan(160);
+    // On the unified browse the shared row is a full own-section row
+    // (badge + subtitle + the page's log-cook control), so it renders
+    // taller than the old standalone shared card — ~206px measured at
+    // this width. The bound still guards the original failure: the
+    // height must stay content-sized, not stretch to the 17rem
+    // (272px) row basis that only applies beside trailing actions.
+    expect(cardBox.height).toBeLessThan(260);
   });
 
   test('scrolling to the end of the unified list loads the next shared page', async ({

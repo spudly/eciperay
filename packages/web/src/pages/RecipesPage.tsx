@@ -32,7 +32,7 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import {useCallback, useEffect, useRef, useState} from 'react';
-import {useSearchParams} from 'react-router-dom';
+import {useLocation, useSearchParams} from 'react-router-dom';
 
 import {CookLogForm} from '../components/cooking/CookLogForm.js';
 import {eciperay} from '../lib/api.js';
@@ -201,6 +201,7 @@ export const RecipesPage = () => {
   const {filters, controls} = useRecipeListFilters();
   const [searchParams] = useSearchParams();
   const headerSearch = searchParams.get('q') ?? '';
+  const location = useLocation();
 
   // Seed the page search from the header search's `q` param. The
   // latest onSearchChange, for the seeding effect below: the controls
@@ -210,11 +211,14 @@ export const RecipesPage = () => {
   useEffect(() => {
     onSearchChangeRef.current = controls.onSearchChange;
   });
+  // Seed on every navigation (location.key), not only when the term
+  // changes: re-submitting the same header term after editing the
+  // page search must re-apply it, and clearing the header search
+  // (navigation to bare /recipes) must clear the page filter too —
+  // the URL is the search state the two surfaces share.
   useEffect(() => {
-    if (headerSearch) {
-      onSearchChangeRef.current(headerSearch);
-    }
-  }, [headerSearch]);
+    onSearchChangeRef.current(headerSearch);
+  }, [headerSearch, location.key]);
 
   const ownQuery = useInfiniteQuery(
     recipeListInfiniteQueryOptions(

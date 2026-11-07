@@ -74,4 +74,24 @@ describe('AppShell', () => {
     await userEvent.click(screen.getByRole('button', {name: 'Search'}));
     expect(await screen.findByText('/recipes?q=pasta')).toBeInTheDocument();
   });
+
+  test('header search input reflects the q param in the URL', async () => {
+    await renderWithProviders(
+      <Routes>
+        <Route
+          element={<AppShell />}
+          path="/recipes"
+        >
+          <Route
+            index
+            element={<div>Page Content</div>}
+          />
+        </Route>
+      </Routes>,
+      {route: '/recipes?q=pasta'},
+    );
+    expect(screen.getByRole('searchbox', {name: 'Search recipes'})).toHaveValue(
+      'pasta',
+    );
+  });
 });

@@ -3,6 +3,8 @@ import userEvent from '@testing-library/user-event';
 import {http, HttpResponse} from 'msw';
 import {StrictMode} from 'react';
 
+import {Route, Routes, useNavigate} from 'react-router-dom';
+
 import {makeCookLog, makeRecipeDetail} from '../test/fixtures/recipe.js';
 import {server} from '../test/msw/server.js';
 import {renderWithProviders} from '../test/testUtils.js';
@@ -503,6 +505,55 @@ describe('RecipesPage', () => {
       expect(screen.getByPlaceholderText('Search recipes…')).toHaveValue(
         'Test',
       );
+    });
+    await waitFor(() => {
+      expect(screen.getByText('Test Recipe')).toBeInTheDocument();
+    });
+  });
+
+  test('clearing the header search clears the page filter', async () => {
+    const ClearHeaderSearch = () => {
+      const navigate = useNavigate();
+      return (
+        <button
+          type="button"
+          onClick={() => {
+            void navigate('/recipes');
+          }}
+        >
+          Clear header search
+        </button>
+      );
+    };
+    await renderWithProviders(
+      <Routes>
+        <Route
+          path="/recipes"
+          element={
+            <>
+              <ClearHeaderSearch />
+              <RecipesPage />
+            </>
+          }
+        />
+      </Routes>,
+      {route: '/recipes?q=Shared'},
+    );
+    // Seeded from the header search: the filter holds the term and
+    // the unfiltered own recipe is filtered out.
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('Search recipes…')).toHaveValue(
+        'Shared',
+      );
+    });
+    expect(screen.queryByText('Test Recipe')).not.toBeInTheDocument();
+    // The header search clearing navigates to bare /recipes; the
+    // page filter follows the URL and clears with it.
+    await userEvent.click(
+      screen.getByRole('button', {name: 'Clear header search'}),
+    );
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('Search recipes…')).toHaveValue('');
     });
     await waitFor(() => {
       expect(screen.getByText('Test Recipe')).toBeInTheDocument();

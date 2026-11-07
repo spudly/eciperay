@@ -1,11 +1,12 @@
 import {
+  useEffect,
   useState,
   type CSSProperties,
   type FormEvent,
   type ReactNode,
 } from 'react';
 import {eciperayTheme, tokens} from '@spudly/ui';
-import {NavLink, Outlet, useNavigate} from 'react-router-dom';
+import {NavLink, Outlet, useNavigate, useSearchParams} from 'react-router-dom';
 
 import {Icon} from './Icon.js';
 import {LegalLinks} from './LegalLinks.js';
@@ -160,7 +161,16 @@ const mainStyle: CSSProperties = {
 // to the browse.
 const HeaderSearch = () => {
   const navigate = useNavigate();
-  const [term, setTerm] = useState('');
+  const [searchParams] = useSearchParams();
+  const queryParam = searchParams.get('q') ?? '';
+  const [term, setTerm] = useState(queryParam);
+  // Keep the input in sync with the URL: landing on /recipes?q=pasta
+  // (a shared link, or the Recipes host seeding from the same param)
+  // shows the active term here instead of an empty box that disagrees
+  // with the page's filter.
+  useEffect(() => {
+    setTerm(queryParam);
+  }, [queryParam]);
   const onSubmit = (event: FormEvent) => {
     event.preventDefault();
     const query = term.trim();
