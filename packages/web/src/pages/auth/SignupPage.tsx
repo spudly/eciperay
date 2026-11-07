@@ -2,7 +2,7 @@ import {errorMessage, useAuth} from '@eciperay/client';
 import {useState} from 'react';
 import {Navigate, useNavigate} from 'react-router-dom';
 
-import {SignUpPage as SignUpPageView} from '@spudly/ui/pages';
+import {SignUpPage as SignUpPageView} from '@spudly/ui';
 
 import {LegalLinks} from '../../components/LegalLinks.js';
 import {eciperay} from '../../lib/api.js';

@@ -1,6 +1,6 @@
 import {queryKeys} from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {MealCookingModePage} from '@spudly/ui/pages';
+import {MealCookingModePage} from '@spudly/ui';
 import {useQuery} from '@tanstack/react-query';
 import {useState} from 'react';
 

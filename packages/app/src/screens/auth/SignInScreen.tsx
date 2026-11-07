@@ -1,7 +1,7 @@
 import {errorMessage} from '@eciperay/client';
 import {useState} from 'react';
 import {Alert} from 'react-native';
-import {SignInPage} from '@spudly/ui/pages';
+import {SignInPage} from '@spudly/ui';
 
 import {api} from '../../lib/api';
 import {forgotPasswordHref, signUpHref} from '../../lib/deepLinks';

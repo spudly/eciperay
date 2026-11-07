@@ -2,7 +2,7 @@ import {errorMessage, useAuth} from '@eciperay/client';
 import {useState} from 'react';
 import {Navigate} from 'react-router-dom';
 
-import {SignInPage as SignInPageView} from '@spudly/ui/pages';
+import {SignInPage as SignInPageView} from '@spudly/ui';
 
 import {eciperay} from '../../lib/api.js';
 import {supabase} from '../../lib/supabase.js';

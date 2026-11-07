@@ -3,7 +3,7 @@ import {
   queryKeys,
   recipeDetailToInput,
 } from '@eciperay/client';
-import {EditRecipePage as EditRecipeShell} from '@spudly/ui/pages';
+import {EditRecipePage as EditRecipeShell} from '@spudly/ui';
 import {useQuery, useQueryClient} from '@tanstack/react-query';
 import {useNavigate, useParams} from 'react-router-dom';
 import type {RecipeInput} from '@eciperay/types';

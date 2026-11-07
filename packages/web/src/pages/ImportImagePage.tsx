@@ -2,7 +2,7 @@ import {isDuplicateRecipeError, useAnalytics} from '@eciperay/client';
 import {useRef, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
-import {ImportImagePage as ImportImagePageView} from '@spudly/ui/pages';
+import {ImportImagePage as ImportImagePageView} from '@spudly/ui';
 
 import {eciperay} from '../lib/api.js';
 

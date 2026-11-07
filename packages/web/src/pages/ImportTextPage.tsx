@@ -2,7 +2,7 @@ import {isDuplicateRecipeError, useAnalytics} from '@eciperay/client';
 import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
-import {ImportTextPage as ImportTextPageView} from '@spudly/ui/pages';
+import {ImportTextPage as ImportTextPageView} from '@spudly/ui';
 
 import {eciperay} from '../lib/api.js';
 

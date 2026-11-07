@@ -3,7 +3,7 @@ import {
   queryKeys,
   recipeVersionDetailToInput,
 } from '@eciperay/client';
-import {EditVersionPage as EditVersionShell} from '@spudly/ui/pages';
+import {EditVersionPage as EditVersionShell} from '@spudly/ui';
 import {useQuery, useQueryClient} from '@tanstack/react-query';
 import {useNavigate, useParams} from 'react-router-dom';
 import type {RecipeVersionInput} from '@eciperay/types';

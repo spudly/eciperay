@@ -3,7 +3,7 @@ import {useMutation} from '@tanstack/react-query';
 import {useEffect, useRef, useState} from 'react';
 import type {TweakAiMessage, TweakAiPhase} from '@eciperay/types';
 
-import {AiSessionPage} from '@spudly/ui/pages';
+import {AiSessionPage} from '@spudly/ui';
 
 import {RecipeInputPreview} from '../components/recipe/RecipeInputPreview.js';
 

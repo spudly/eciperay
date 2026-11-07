@@ -2,7 +2,7 @@ import {errorMessage, queryKeys, recipeDetailToInput} from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
-import {ImportReviewPage} from '@spudly/ui/pages';
+import {ImportReviewPage} from '@spudly/ui';
 import {RecipeInputPreview} from '../components/recipe/RecipeInputPreview';
 import {ScreenLoadingGate} from '../components/ScreenLoadingGate';
 import {api} from '../lib/api';

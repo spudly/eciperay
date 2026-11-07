@@ -5,7 +5,7 @@ import {
   recipeFormSearchQueryOptions,
   useDebouncedValue,
 } from '@eciperay/client';
-import {MealFormPage as MealFormPageView} from '@spudly/ui/pages';
+import {MealFormPage as MealFormPageView} from '@spudly/ui';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
