@@ -1,12 +1,11 @@
-import {Button, tokens} from '@spudly/ui';
+import {eciperayTheme, tokens} from '@spudly/ui';
 import {useQuery} from '@tanstack/react-query';
-import {useMemo, useState} from 'react';
+import {useMemo, useState, type CSSProperties} from 'react';
 
 import {eciperay} from '../lib/api.js';
 import {downloadRecipeExportBundle} from '../lib/downloadRecipeExport.js';
 
-import {BulkSelectToolbar} from './ui/BulkSelectToolbar.js';
-import {CheckboxSelectList} from './ui/CheckboxSelectList.js';
+import {BookLoadingSpinner} from './BookLoadingSpinner.js';
 
 const toggleId = (ids: Set<string>, id: string) => {
   const next = new Set(ids);
@@ -16,6 +15,193 @@ const toggleId = (ids: Set<string>, id: string) => {
     next.add(id);
   }
   return next;
+};
+
+// The bulk-select toolbar and checkbox select list this file used to
+// take from the host components/ui wrapper library (themselves
+// adapters over design-system widgets, all gone in @spudly/ui 6.x),
+// re-expressed in-file with plain elements styled on DS tokens: a
+// search input, Select all / Clear selection ghost actions with the
+// selected count, and one native checkbox row per item (loading and
+// empty states included). API and behavior are unchanged.
+const toolbarButtonStyle: CSSProperties = {
+  background: 'none',
+  border: 'none',
+  padding: 0,
+  fontSize: tokens.typography.fontSize.sm,
+  fontFamily: tokens.typography.fontFamily.sans,
+  color: eciperayTheme.semantic.primary,
+  cursor: 'pointer',
+};
+
+type BulkSelectToolbarProps = {
+  search: string;
+  searchPlaceholder?: string;
+  selectedCount: number;
+  filteredCount: number;
+  disabled?: boolean;
+  busy?: boolean;
+  onSearchChange: (value: string) => void;
+  onSelectAll: () => void;
+  onClearSelection: () => void;
+};
+
+const BulkSelectToolbar = ({
+  search,
+  searchPlaceholder = 'Search…',
+  selectedCount,
+  filteredCount,
+  disabled = false,
+  busy = false,
+  onSearchChange,
+  onSelectAll,
+  onClearSelection,
+}: BulkSelectToolbarProps) => {
+  const controlsDisabled = disabled || busy;
+
+  return (
+    <div
+      style={{display: 'flex', flexDirection: 'column', gap: tokens.spacing[2]}}
+    >
+      <input
+        type="search"
+        value={search}
+        placeholder={searchPlaceholder}
+        disabled={controlsDisabled}
+        onChange={event => {
+          onSearchChange(event.target.value);
+        }}
+        style={{
+          width: '100%',
+          boxSizing: 'border-box',
+          borderRadius: 8,
+          border: `1px solid ${tokens.colors.gray.gray3}`,
+          padding: '8px 12px',
+          fontSize: tokens.typography.fontSize.md,
+          fontFamily: tokens.typography.fontFamily.sans,
+          color: tokens.colors.gray.gray10,
+          backgroundColor: eciperayTheme.semantic.surface,
+        }}
+      />
+      <div
+        style={{display: 'flex', alignItems: 'center', gap: tokens.spacing[3]}}
+      >
+        <button
+          type="button"
+          style={{
+            ...toolbarButtonStyle,
+            opacity: controlsDisabled || filteredCount === 0 ? 0.5 : 1,
+          }}
+          disabled={controlsDisabled || filteredCount === 0}
+          onClick={onSelectAll}
+        >
+          Select all
+        </button>
+        <button
+          type="button"
+          style={{
+            ...toolbarButtonStyle,
+            opacity: controlsDisabled || filteredCount === 0 ? 0.5 : 1,
+          }}
+          disabled={controlsDisabled || filteredCount === 0}
+          onClick={onClearSelection}
+        >
+          Clear selection
+        </button>
+        {selectedCount > 0 ? (
+          <span
+            style={{
+              fontSize: tokens.typography.fontSize.sm,
+              color: tokens.colors.gray.gray6,
+            }}
+          >
+            {selectedCount} selected
+          </span>
+        ) : null}
+      </div>
+    </div>
+  );
+};
+
+type CheckboxSelectListProps = {
+  items: {id: string; label: string}[];
+  selectedIds: Set<string>;
+  disabled?: boolean;
+  isLoading?: boolean;
+  emptyMessage?: string;
+  onToggle: (id: string) => void;
+};
+
+const CheckboxSelectList = ({
+  items,
+  selectedIds,
+  disabled = false,
+  isLoading = false,
+  emptyMessage = 'No items found.',
+  onToggle,
+}: CheckboxSelectListProps) => {
+  if (isLoading) {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          padding: tokens.spacing[4],
+        }}
+      >
+        <BookLoadingSpinner size="sm" />
+      </div>
+    );
+  }
+  if (items.length === 0) {
+    return (
+      <p
+        style={{
+          margin: 0,
+          padding: tokens.spacing[2],
+          fontSize: tokens.typography.fontSize.sm,
+          color: tokens.colors.gray.gray6,
+        }}
+      >
+        {emptyMessage}
+      </p>
+    );
+  }
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: tokens.spacing[2],
+        padding: tokens.spacing[2],
+      }}
+    >
+      {items.map(item => (
+        <label
+          key={item.id}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: tokens.spacing[2],
+            fontSize: tokens.typography.fontSize.md,
+            fontFamily: tokens.typography.fontFamily.sans,
+            color: tokens.colors.gray.gray10,
+            cursor: disabled ? 'default' : 'pointer',
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={selectedIds.has(item.id)}
+            disabled={disabled}
+            onChange={() => {
+              onToggle(item.id);
+            }}
+          />
+          {item.label}
+        </label>
+      ))}
+    </div>
+  );
 };
 
 export const RecipeExportPicker = ({
@@ -116,15 +302,30 @@ export const RecipeExportPicker = ({
           }}
         />
       </div>
-      <Button
-        variant="primary"
+      <button
+        type="button"
+        style={{
+          borderRadius: 12,
+          border: 'none',
+          paddingTop: 12,
+          paddingBottom: 12,
+          paddingLeft: 16,
+          paddingRight: 16,
+          fontSize: tokens.typography.fontSize.md,
+          fontFamily: tokens.typography.fontFamily.sans,
+          fontWeight: tokens.typography.fontWeight.semibold,
+          backgroundColor: eciperayTheme.semantic.primary,
+          color: '#ffffff',
+          cursor: 'pointer',
+          opacity: disabled || exporting || selectedIds.size === 0 ? 0.5 : 1,
+        }}
         disabled={disabled || exporting || selectedIds.size === 0}
-        onPress={() => {
+        onClick={() => {
           void handleExport();
         }}
       >
         {exporting ? 'Exporting…' : `Export selected (${selectedIds.size})`}
-      </Button>
+      </button>
     </div>
   );
 };

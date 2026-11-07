@@ -7,15 +7,19 @@
  * `createTamagui()` globally — `TamaguiProvider`'s `config` prop does not
  * install its config — and @spudly/ui creates several configs at module scope.
  * The app therefore creates its own config via the DS factory in
- * `src/lib/tamaguiConfig.ts`; this suite renders the real Home-screen buttons
+ * `src/lib/tamaguiConfig.ts`; this suite renders themed Tamagui primitives
  * under that production config module and asserts the resolved colors are Warm
- * Harvest values. Importing the prebuilt `eciperayTamaguiConfig` (or any other
- * brand's config last) makes these assertions fail.
+ * Harvest values. (@spudly/ui 6.x exports no Button widget — pages compose
+ * their own — so the subject is now a Tamagui stack + text pair carrying the
+ * same theme tokens the Home-screen buttons carried: $primary / $onPrimary for
+ * the primary action and the theme text color for the secondary label.)
+ * Importing the prebuilt `eciperayTamaguiConfig` (or any other brand's config
+ * last) makes these assertions fail.
  */
+import {tokens} from '@spudly/ui';
 import {render} from '@testing-library/react-native';
-import {Button as DsButton} from '@spudly/ui';
 import React from 'react';
-import {TamaguiProvider, View} from 'tamagui';
+import {TamaguiProvider, Text, View, YStack} from 'tamagui';
 
 import {appTamaguiConfig} from '../lib/tamaguiConfig';
 
@@ -25,10 +29,10 @@ const ON_PRIMARY = '#fff7ed';
 const WARM_CREAM_BACKGROUND = '#faf6f0';
 const SECONDARY_LABEL = '#171717';
 
-interface StyledNode {
+type StyledNode = {
   props: {style?: Record<string, unknown>};
   parent: StyledNode | null;
-}
+};
 
 const styleOf = (node: StyledNode | null): Record<string, unknown> =>
   node?.props.style ?? {};
@@ -44,20 +48,14 @@ describe('app Tamagui theme resolution (regression #149)', () => {
           backgroundColor="$background"
           testID="themed-root"
         >
-          <DsButton
-            variant="primary"
-            accessibilityLabel="Browse Recipes"
-            onPress={() => undefined}
-          >
-            Browse Recipes
-          </DsButton>
-          <DsButton
-            variant="secondary"
-            accessibilityLabel="Add a Recipe"
-            onPress={() => undefined}
-          >
-            Add a Recipe
-          </DsButton>
+          <YStack backgroundColor="$primary">
+            <Text color="$onPrimary">Browse Recipes</Text>
+          </YStack>
+          {/* The DS secondary button's label/fill are the raw gray ramp
+              (gray10 label on gray3), not the theme text color. */}
+          <YStack backgroundColor={tokens.colors.gray.gray3}>
+            <Text color={tokens.colors.gray.gray10}>Add a Recipe</Text>
+          </YStack>
         </View>
       </TamaguiProvider>,
     );

@@ -5,8 +5,9 @@ import {
   useAuth,
   writeAnalyticsConsent,
 } from '@eciperay/client';
-import {FixedActionBanner, TextLink} from '@spudly/ui';
+import {tokens} from '@spudly/ui';
 import {useEffect, useState} from 'react';
+import {Anchor, Button, Text, XStack, YStack} from 'tamagui';
 
 import {analytics, disablePostHog, enablePostHog} from '../lib/analytics.js';
 import {POSTHOG_KEY} from '../lib/env.js';
@@ -49,33 +50,113 @@ export const AnalyticsConsentBanner = () => {
     setVisible(false);
   };
 
-  // The DS FixedActionBanner (B7 C12, design-system#130) carries the
-  // banner's layout and actions; it accepts no container role/label, so
-  // the consent prompt's dialog semantics stay with the host wrapper —
-  // the same web-only ariaLabel/role contract the retired local adapter
-  // implemented from @eciperay/client's FixedActionBannerProps. The
-  // wrapper also pins the banner to the viewport: the DS bar positions
-  // itself absolute (design-system#405), while the retired local banner
-  // was position:fixed — this fixed wrapper becomes the bar's
-  // containing block and restores the viewport-pinned behavior (and
-  // the old zIndex 50) until the DS pins fixed itself.
+  // Host re-expression of the former DS FixedActionBanner (the DS
+  // ConsentBannerView exists but is not exported in @spudly/ui 6.x, and
+  // no DS page consumes it): a surface pinned to the bottom edge,
+  // holding an info alert above a wrapping row of actions — secondary
+  // first, then primary. The banner accepts no container role/label,
+  // so the consent prompt's dialog semantics stay with the host
+  // wrapper — the same web-only ariaLabel/role contract the retired
+  // local adapter implemented. The wrapper also pins the banner to
+  // the viewport with the old zIndex 50.
   return (
     <div
       role="dialog"
       aria-label="Cookie and analytics consent"
       style={{position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 50}}
     >
-      <FixedActionBanner
-        position="bottom"
-        message={
-          <>
-            We use cookies and product analytics to improve Eciperay. See our{' '}
-            <TextLink href="/privacy">Privacy Policy</TextLink> for details.
-          </>
-        }
-        secondaryAction={{label: 'Decline', onPress: decline}}
-        primaryAction={{label: 'Accept', onPress: accept}}
-      />
+      <YStack
+        backgroundColor="$surface"
+        borderColor="$borderColor"
+        borderWidth={0}
+        borderTopWidth={1}
+        padding={tokens.spacing[4]}
+        gap={tokens.spacing[3]}
+        shadowColor={tokens.shadows.lg.shadowColor}
+        shadowOpacity={tokens.shadows.lg.shadowOpacity}
+        shadowRadius={tokens.shadows.lg.shadowRadius}
+        shadowOffset={{
+          width: 0,
+          height: -tokens.shadows.lg.shadowOffset.height,
+        }}
+      >
+        <YStack
+          width="100%"
+          maxWidth={1024}
+          alignSelf="center"
+          gap="$3"
+        >
+          <YStack
+            backgroundColor="$primarySubtle"
+            borderColor="$primary"
+            borderWidth={1}
+            borderRadius={tokens.radii.md}
+            padding={tokens.spacing[3]}
+            gap={tokens.spacing[2]}
+          >
+            <XStack
+              justifyContent="space-between"
+              alignItems="flex-start"
+              gap={tokens.spacing[2]}
+            >
+              <Text
+                color="$primaryEmphasis"
+                flex={1}
+                fontSize={tokens.typography.fontSize.md}
+              >
+                We use cookies and product analytics to improve Eciperay. See
+                our{' '}
+                <Anchor
+                  href="/privacy"
+                  color="$link"
+                  fontSize={tokens.typography.fontSize.md}
+                  fontWeight={tokens.typography.fontWeight.medium}
+                  textDecorationLine="underline"
+                >
+                  Privacy Policy
+                </Anchor>{' '}
+                for details.
+              </Text>
+            </XStack>
+          </YStack>
+          <XStack
+            flexWrap="wrap"
+            alignItems="center"
+            gap="$2"
+          >
+            <Button
+              backgroundColor={tokens.colors.gray.gray3}
+              borderColor={tokens.colors.gray.gray10}
+              borderWidth={1}
+              borderRadius={tokens.radii.md}
+              color={tokens.colors.gray.gray10}
+              fontFamily="body"
+              fontSize={tokens.typography.fontSize.md}
+              fontWeight={tokens.typography.fontWeight.semibold}
+              paddingHorizontal={tokens.spacing[4]}
+              paddingVertical={tokens.spacing[3]}
+              onPress={decline}
+            >
+              Decline
+            </Button>
+            <Button
+              backgroundColor="$primary"
+              borderColor="transparent"
+              borderWidth={1}
+              borderRadius={tokens.radii.md}
+              color="$onPrimary"
+              fontFamily="body"
+              fontSize={tokens.typography.fontSize.md}
+              fontWeight={tokens.typography.fontWeight.semibold}
+              paddingHorizontal={tokens.spacing[4]}
+              paddingVertical={tokens.spacing[3]}
+              onPress={accept}
+            >
+              Accept
+            </Button>
+          </XStack>
+        </YStack>
+      </YStack>
     </div>
   );
 };

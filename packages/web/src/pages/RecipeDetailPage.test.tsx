@@ -217,16 +217,19 @@ describe('RecipeDetailPage', () => {
       {route: '/recipes/recipe-uuid-1'},
     );
     await waitFor(() => {
-      expect(screen.getByLabelText('Version')).toBeInTheDocument();
+      expect(
+        screen.getByRole('combobox', {name: 'Version'}),
+      ).toBeInTheDocument();
     });
     // The design-system SelectField is a trigger + listbox, not a
     // native <select>: open it and pick the version by its row label.
-    // fireEvent for the option: the listbox item carries
-    // pointer-events: none in jsdom, which userEvent refuses.
-    await userEvent.click(screen.getByLabelText('Version'));
-    fireEvent.click(
-      await screen.findByRole('option', {name: 'v2 — Archived'}),
-    );
+    // (In @spudly/ui 6.x the field's label element and an inner
+    // aria-labelled element both match a label-text query, so query
+    // the trigger by its combobox role.) fireEvent for the option:
+    // the listbox item carries pointer-events: none in jsdom, which
+    // userEvent refuses.
+    await userEvent.click(screen.getByRole('combobox', {name: 'Version'}));
+    fireEvent.click(await screen.findByRole('option', {name: 'v2 — Archived'}));
     await waitFor(() => {
       expect(screen.getByText('Older version')).toBeInTheDocument();
     });

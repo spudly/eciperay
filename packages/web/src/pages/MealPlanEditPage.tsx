@@ -6,7 +6,7 @@ import {
   useDebouncedValue,
   useMealPlanEditForm,
 } from '@eciperay/client';
-import {MealPlanFormPage as MealPlanFormPageView} from '@spudly/ui/pages';
+import {MealPlanFormPage as MealPlanFormPageView} from '@spudly/ui';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';

@@ -2,7 +2,7 @@ import {isDuplicateRecipeError, useAnalytics} from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useState} from 'react';
 
-import {ImportTextPage} from '@spudly/ui/pages';
+import {ImportTextPage} from '@spudly/ui';
 import {api} from '../lib/api';
 import type {AddStackParamList} from '../navigation/types';
 

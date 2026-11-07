@@ -1,7 +1,7 @@
 import {formatSimpleNutrition, queryKeys} from '@eciperay/client';
 import type {MealRecipeMember} from '@eciperay/types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {MealDetailPage} from '@spudly/ui/pages';
+import {MealDetailPage} from '@spudly/ui';
 import {useQuery} from '@tanstack/react-query';
 
 import {ScreenLoadingGate} from '../components/ScreenLoadingGate';

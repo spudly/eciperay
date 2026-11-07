@@ -1,5 +1,5 @@
 import {queryKeys} from '@eciperay/client';
-import {MealCookingModePage as MealCookingModePageView} from '@spudly/ui/pages';
+import {MealCookingModePage as MealCookingModePageView} from '@spudly/ui';
 import {useQuery} from '@tanstack/react-query';
 import {useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';

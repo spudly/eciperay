@@ -154,9 +154,7 @@ describe('RecipeDetailHost', () => {
         .spyOn(eciperay.recipes, 'patchStatus')
         .mockRejectedValue(new Error('second failure'));
       try {
-        const user = userEvent.setup({
-          advanceTimers: vi.advanceTimersByTime,
-        });
+        const user = userEvent.setup({advanceTimers: vi.advanceTimersByTime});
         await renderHost({}, [
           makeRecipeVersionSummary({
             id: 'v2',
@@ -388,7 +386,7 @@ describe('RecipeDetailHost', () => {
       ).toBeInTheDocument();
     });
 
-    test('logs a cook through the design-system RatingForm slot', async () => {
+    test('logs a cook through the cook-log form slot', async () => {
       server.use(
         http.get(
           'http://localhost:8080/api/recipes/:id/versions/:versionId/cooks',

@@ -7,7 +7,7 @@ import {
   useMealPlanEditForm,
 } from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {MealPlanFormPage} from '@spudly/ui/pages';
+import {MealPlanFormPage} from '@spudly/ui';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useState} from 'react';
 

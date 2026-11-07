@@ -29,7 +29,7 @@ import type {
   RecipeStatus,
   RecipeVersionDetail,
 } from '@eciperay/types';
-import {RecipeFormPage, type RecipeFormPageField} from '@spudly/ui/pages';
+import {RecipeFormPage, type RecipeFormPageField} from '@spudly/ui';
 import {useQuery} from '@tanstack/react-query';
 import {useEffect, useMemo, useState} from 'react';
 
@@ -508,7 +508,15 @@ export const RecipeFormHost = ({
       : imageUrl);
 
   return (
-    <div onPaste={handleFormPaste}>
+    <div
+      onPaste={handleFormPaste}
+      // The design-system shell pages place this host as a flex child of
+      // their ScreenContainer column, and RecipeFormPage's scroll region
+      // is flex:1 — the wrapper must pass the column's height through
+      // (flex column, grow, shrinkable), or the region collapses to zero
+      // height on web and the form's controls become unreachable.
+      style={{display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0}}
+    >
       <RecipeFormPage
         title={title}
         onTitleChange={setTitle}
@@ -530,7 +538,7 @@ export const RecipeFormHost = ({
         tagOptions={tagOptions}
         tagIds={tagIds}
         onTagIdsChange={setTagIds}
-        isLoadingTags={isLoadingTags}
+        loadingTags={isLoadingTags}
         changedFields={changedFields}
         revertLabels={revertLabels}
         onRevertField={handleRevertField}

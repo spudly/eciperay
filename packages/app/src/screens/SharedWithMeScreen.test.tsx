@@ -16,6 +16,37 @@ import type {TestInstance} from 'test-renderer';
 
 jest.mock('../lib/api');
 
+// The props the screen most recently passed its view, captured by the
+// wrapper mock below. Since @spudly/ui 6.x the load-more error row
+// sits after a full page of own rows, beyond the virtualized list's
+// rendered window in Jest, so the screen-level retry contract is
+// exercised by invoking the view's onLoadMoreRetry prop and reading
+// its loadMoreErrorMessage prop — the row's own rendering and press
+// are pinned in SharedWithMeView's tests, where the row is in window.
+type CapturedSharedViewProps = {
+  loadMoreErrorMessage?: string | null;
+  ownErrorMessage?: string | null;
+  onLoadMoreRetry?: () => void;
+};
+
+let mockSharedViewProps: CapturedSharedViewProps | null = null;
+
+jest.mock('../hosts/shared/SharedWithMeView', () => {
+  const actual = jest.requireActual<
+    typeof import('../hosts/shared/SharedWithMeView')
+  >('../hosts/shared/SharedWithMeView');
+  const React = jest.requireActual<typeof import('react')>('react');
+  return {
+    ...actual,
+    SharedWithMeView: (
+      props: Parameters<typeof actual.SharedWithMeView>[0],
+    ) => {
+      mockSharedViewProps = props;
+      return React.createElement(actual.SharedWithMeView, props);
+    },
+  };
+});
+
 const mockListSharedWithMe = api.recipes.listSharedWithMe as jest.Mock;
 
 // RNTL v14 renders host elements only: the list is the host scroll view
@@ -33,6 +64,7 @@ const triggerEndReached = async (list: {
 
 describe('SharedWithMeScreen', () => {
   beforeEach(() => {
+    mockSharedViewProps = null;
     mockListSharedWithMe.mockResolvedValue([]);
   });
 
@@ -167,6 +199,62 @@ describe('SharedWithMeScreen', () => {
         userId: 'other-user',
       }),
     );
+    mockListSharedWithMe.mockImplementation(
+      async (params?: {offset?: number}) => {
+        if (params?.offset === 0) {
+          return firstPage;
+        }
+        throw new Error('Next page failed');
+      },
+    );
+    const client = makeQueryClient();
+    const {findByLabelText, container} = await renderWithProviders(
+      <SharedWithMeScreen />,
+      client,
+    );
+    await findByLabelText('Shared 0');
+    const list = findList(container);
+
+    // The first end-reached signal fetches the next page, which
+    // fails and latches the fetch-next-page error. Since
+    // @spudly/ui 6.x the failure surfaces as the page's own-section
+    // load-more error row (the screen passes it through the host's
+    // loadMoreErrorMessage / onLoadMoreRetry props); the row sits
+    // after the page of own rows, beyond the virtualized list's
+    // rendered window in Jest, so its rendering and its "Try
+    // again" press are pinned in SharedWithMeView's tests, where
+    // the row is in the window. The screen-level half of the
+    // contract is the latch below.
+    await triggerEndReached(list);
+    await waitFor(() => {
+      expect(mockListSharedWithMe).toHaveBeenCalledTimes(2);
+    });
+
+    // Further end-reached signals must not cycle automatic retries
+    // while the failed page is latched.
+    await triggerEndReached(list);
+    await triggerEndReached(list);
+    await act(async () => {
+      await flushQueryClient(client);
+    });
+    expect(mockListSharedWithMe).toHaveBeenCalledTimes(2);
+  });
+
+  test('a manual retry fetches the failed page once, dedupes while in flight, and clears the error on recovery', async () => {
+    // The retry half of the #371 contract, restored at screen level:
+    // the latch test above stops at the latched error because the
+    // page's error row is beyond the virtualized list's rendered
+    // window in Jest — so this test drives the retry through the
+    // props the screen passes its view (captured by the wrapper mock
+    // at the top of this file), which is exactly what the row's
+    // "Try again" press invokes in the view's own tests.
+    const firstPage = Array.from({length: RECIPE_LIST_PAGE_SIZE}, (_, index) =>
+      makeRecipeDetail({
+        id: `shared-${index}`,
+        title: `Shared ${index}`,
+        userId: 'other-user',
+      }),
+    );
     let failNextPage = true;
     let heldRetry: Promise<ReturnType<typeof makeRecipeDetail>[]> | null = null;
     mockListSharedWithMe.mockImplementation(
@@ -190,48 +278,28 @@ describe('SharedWithMeScreen', () => {
       },
     );
     const client = makeQueryClient();
-    const {findByLabelText, findByText, getByText, queryByText, container} =
-      await renderWithProviders(<SharedWithMeScreen />, client);
+    const {findByLabelText, container} = await renderWithProviders(
+      <SharedWithMeScreen />,
+      client,
+    );
     await findByLabelText('Shared 0');
     const list = findList(container);
 
-    // The first end-reached signal fetches the next page, which fails,
-    // and the retry alert appears under the list.
+    // The next page fails and the error latches onto the view's props.
     await triggerEndReached(list);
-    expect(await findByText("Couldn't load more recipes.")).toBeTruthy();
     await waitFor(() => {
       expect(mockListSharedWithMe).toHaveBeenCalledTimes(2);
     });
-
-    // Further end-reached signals must not cycle automatic retries
-    // while the failed page is latched.
-    await triggerEndReached(list);
-    await triggerEndReached(list);
-    await act(async () => {
-      await flushQueryClient(client);
+    await waitFor(() => {
+      expect(mockSharedViewProps?.loadMoreErrorMessage).toBe(
+        "Couldn't load more recipes.",
+      );
     });
-    expect(mockListSharedWithMe).toHaveBeenCalledTimes(2);
 
-    // Layout reservation: same structure as the Recipes screen —
-    // the screen root is a flex: 1 column whose first child is the
-    // flex: 1 list container and whose second child is the alert
-    // container, so the alert sits inside the viewport instead of
-    // below the full-height list shell.
-    const root = container.children[0] as TestInstance;
-    expect(root.props.style).toEqual(expect.objectContaining({flex: 1}));
-    expect(root.children).toHaveLength(2);
-    const [listContainer, alertContainer] = root.children as TestInstance[];
-    expect(listContainer?.props.style).toEqual(
-      expect.objectContaining({flex: 1}),
-    );
-    expect(alertContainer?.props.style).toEqual(
-      expect.objectContaining({paddingVertical: 12}),
-    );
-
-    // Repeated retry taps while a retry is in flight must not
-    // restart it (cancelRefetch: false reuses the in-flight fetch;
-    // the alert stays up while it runs because the error is still
-    // latched).
+    // The manual retry fetches the failed page again (2 → 3 calls).
+    // The retry is held in flight: the error stays latched while it
+    // runs (so the row and its action stay up), exactly as the
+    // pre-6.x alert did.
     failNextPage = false;
     let resolveHeldRetry!: (
       value: ReturnType<typeof makeRecipeDetail>[],
@@ -239,22 +307,28 @@ describe('SharedWithMeScreen', () => {
     heldRetry = new Promise<ReturnType<typeof makeRecipeDetail>[]>(resolve => {
       resolveHeldRetry = resolve;
     });
-    await fireEvent.press(getByText('Try again'));
+    await act(async () => {
+      mockSharedViewProps?.onLoadMoreRetry?.();
+    });
     await waitFor(() => {
       expect(mockListSharedWithMe).toHaveBeenCalledTimes(3);
     });
-    expect(queryByText("Couldn't load more recipes.")).toBeTruthy();
-    await fireEvent.press(getByText('Try again'));
+    expect(mockSharedViewProps?.loadMoreErrorMessage).toBe(
+      "Couldn't load more recipes.",
+    );
+
+    // A retry invoked while a retry is already in flight issues no
+    // duplicate request: the screen retries with
+    // fetchNextPage({cancelRefetch: false}), which reuses the
+    // in-flight fetch instead of cancelling and restarting it.
     await act(async () => {
+      mockSharedViewProps?.onLoadMoreRetry?.();
       await flushQueryClient(client);
     });
     expect(mockListSharedWithMe).toHaveBeenCalledTimes(3);
 
-    // The manual retry loads the page once the endpoint recovers:
-    // the next page is fetched and the alert clears. (The new row
-    // itself sits beyond the virtualized list's rendered window in
-    // Jest, so the fetch and the cleared alert are the observable
-    // half of the contract here.)
+    // Once the held retry resolves, the page is loaded and the
+    // load-more error clears from the view's props.
     await act(async () => {
       resolveHeldRetry([
         makeRecipeDetail({
@@ -266,7 +340,7 @@ describe('SharedWithMeScreen', () => {
       await flushQueryClient(client);
     });
     await waitFor(() => {
-      expect(queryByText("Couldn't load more recipes.")).toBeNull();
+      expect(mockSharedViewProps?.loadMoreErrorMessage).toBeNull();
     });
   });
 });

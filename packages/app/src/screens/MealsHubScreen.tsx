@@ -4,7 +4,7 @@ import {
   type MealsHubTab,
 } from '@eciperay/client';
 import type {MealPlan} from '@eciperay/types';
-import {MealsHubPage, type MealPlansPageItem} from '@spudly/ui/pages';
+import {MealsHubPage, type MealPlansPageItem} from '@spudly/ui';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useMemo, useState} from 'react';
 
@@ -86,7 +86,7 @@ export const MealsHubScreen = () => {
         }`,
       }))}
       plans={planItems}
-      isLoading={isLoading}
+      loading={isLoading}
       createMealHref={mealEditHref()}
       createPlanHref={mealPlanEditHref()}
       onDeleteMeal={id => {

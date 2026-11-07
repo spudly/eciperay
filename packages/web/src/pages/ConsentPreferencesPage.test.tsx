@@ -39,9 +39,7 @@ describe('ConsentPreferencesPage', () => {
 
   test('accept stores the choice and enables PostHog immediately', async () => {
     await renderWithProviders(<ConsentPreferencesPage />, {withAuth: false});
-    await userEvent.click(
-      screen.getByRole('button', {name: 'Accept analytics consent'}),
-    );
+    await userEvent.click(screen.getByRole('button', {name: 'Accept'}));
     expect(localStorage.getItem('eciperay.analyticsConsent')).toBe('accepted');
     expect(mockEnablePostHog).toHaveBeenCalled();
     expect(
@@ -52,9 +50,7 @@ describe('ConsentPreferencesPage', () => {
   test('decline stores the choice and disables PostHog immediately', async () => {
     localStorage.setItem('eciperay.analyticsConsent', 'accepted');
     await renderWithProviders(<ConsentPreferencesPage />, {withAuth: false});
-    await userEvent.click(
-      screen.getByRole('button', {name: 'Decline analytics consent'}),
-    );
+    await userEvent.click(screen.getByRole('button', {name: 'Decline'}));
     expect(localStorage.getItem('eciperay.analyticsConsent')).toBe('declined');
     expect(mockDisablePostHog).toHaveBeenCalled();
     expect(
@@ -70,9 +66,7 @@ describe('ConsentPreferencesPage', () => {
       </FeedbackPreferenceProvider>,
       {withAuth: false},
     );
-    await userEvent.click(
-      screen.getByRole('button', {name: 'Decline analytics consent'}),
-    );
+    await userEvent.click(screen.getByRole('button', {name: 'Decline'}));
     expect(localStorage.getItem('eciperay.feedbackShortcutEnabled')).toBeNull();
   });
 
@@ -85,9 +79,7 @@ describe('ConsentPreferencesPage', () => {
       </FeedbackPreferenceProvider>,
       {withAuth: false},
     );
-    await userEvent.click(
-      screen.getByRole('button', {name: 'Withdraw consent'}),
-    );
+    await userEvent.click(screen.getByRole('button', {name: 'Withdraw'}));
     expect(localStorage.getItem('eciperay.feedbackShortcutEnabled')).toBeNull();
   });
 
@@ -104,9 +96,7 @@ describe('ConsentPreferencesPage', () => {
       </FeedbackPreferenceProvider>,
       {withAuth: false},
     );
-    await userEvent.click(
-      screen.getByRole('button', {name: 'Decline analytics consent'}),
-    );
+    await userEvent.click(screen.getByRole('button', {name: 'Decline'}));
     expect(localStorage.getItem('eciperay.feedbackShortcutEnabled')).toBeNull();
   });
 
@@ -119,18 +109,14 @@ describe('ConsentPreferencesPage', () => {
       </FeedbackPreferenceProvider>,
       {withAuth: false},
     );
-    await userEvent.click(
-      screen.getByRole('button', {name: 'Withdraw consent'}),
-    );
+    await userEvent.click(screen.getByRole('button', {name: 'Withdraw'}));
     expect(localStorage.getItem('eciperay.feedbackShortcutEnabled')).toBeNull();
   });
 
   test('withdraw clears the stored choice and disables PostHog', async () => {
     localStorage.setItem('eciperay.analyticsConsent', 'accepted');
     await renderWithProviders(<ConsentPreferencesPage />, {withAuth: false});
-    await userEvent.click(
-      screen.getByRole('button', {name: 'Withdraw consent'}),
-    );
+    await userEvent.click(screen.getByRole('button', {name: 'Withdraw'}));
     expect(localStorage.getItem('eciperay.analyticsConsent')).toBeNull();
     expect(mockDisablePostHog).toHaveBeenCalled();
     expect(

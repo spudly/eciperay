@@ -1,6 +1,6 @@
 import {formatSimpleNutrition, queryKeys} from '@eciperay/client';
 import type {MealRecipeMember} from '@eciperay/types';
-import {MealDetailPage as MealDetailPageView} from '@spudly/ui/pages';
+import {MealDetailPage as MealDetailPageView} from '@spudly/ui';
 import {useQuery} from '@tanstack/react-query';
 import {useParams} from 'react-router-dom';
 

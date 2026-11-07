@@ -1,7 +1,7 @@
 import {errorMessage} from '@eciperay/client';
 import {useState} from 'react';
 import {Alert} from 'react-native';
-import {ResetPasswordPage} from '@spudly/ui/pages';
+import {ResetPasswordPage} from '@spudly/ui';
 
 import {normalizeAuthPassword} from '../../lib/normalizeAuthInput';
 import {supabase} from '../../lib/supabase';

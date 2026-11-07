@@ -645,9 +645,10 @@ account (viewer); one QA recipe.
 `packages/app/src/hosts/{shared,recipe/RecipeVisibilityControls}*`,
 `packages/web/src/components/recipe/RecipeVisibilityControls.tsx`,
 `packages/web/src/pages/{SharedWithMe,Discover,PublicRecipe}Page.tsx`,
-`packages/web/src/components/shared/**`, `@spudly/ui` `DiscoverPage`,
-`PublicRecipePage`, `PublicPageFrame`, `packages/server` sharing/visibility
-routes.
+`packages/web/src/pages/MarketingLandingPage.tsx`,
+`packages/web/src/pages/legal/**`, `packages/web/src/components/shared/**`,
+`@spudly/ui` `DiscoverPage`, `PublicRecipePage`, `PublicPageFrame`,
+`packages/server` sharing/visibility routes.
 
 ---
 

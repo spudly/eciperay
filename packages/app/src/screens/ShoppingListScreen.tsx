@@ -1,6 +1,6 @@
 import {queryKeys} from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {ShoppingListPage} from '@spudly/ui/pages';
+import {ShoppingListPage} from '@spudly/ui';
 import {useQuery} from '@tanstack/react-query';
 import {useState} from 'react';
 
@@ -20,7 +20,7 @@ export const ShoppingListScreen = ({route}: Props) => {
 
   return (
     <ShoppingListPage
-      isLoading={isLoading}
+      loading={isLoading}
       lines={lines.map(line => ({
         key: line.key,
         name: line.name,

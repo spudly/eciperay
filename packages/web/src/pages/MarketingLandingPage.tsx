@@ -7,7 +7,9 @@ import {
   LANDING_SIGNUP_CTA,
   MOBILE_APP_INSTALL_URL,
 } from '@eciperay/client';
-import {LandingPage, PublicPageFrame} from '@spudly/ui/pages';
+import {LandingPage, PublicPageFrame} from '@spudly/ui';
+
+import {sharedFooter} from './legal/legalDocumentData.js';
 
 // The signed-out landing's host (B7 cluster 11): the design
 // system's LandingPage renders the surface (#171) inside the DS
@@ -23,13 +25,17 @@ export const MarketingLandingPage = () => {
       signInHref="/login"
       privacyHref="/privacy"
       termsHref="/terms"
+      footer={sharedFooter}
     >
       <LandingPage
         heroTitle={LANDING_HERO_TITLE}
         heroSubtitle={LANDING_HERO_SUBTITLE}
         discoverCta={{label: LANDING_DISCOVER_CTA, href: '/discover'}}
         signUpCta={{label: LANDING_SIGNUP_CTA, href: '/signup'}}
-        getAppCta={{label: LANDING_MOBILE_APP_CTA, href: MOBILE_APP_INSTALL_URL}}
+        getAppCta={{
+          label: LANDING_MOBILE_APP_CTA,
+          href: MOBILE_APP_INSTALL_URL,
+        }}
         featureOne={featureOne}
         featureTwo={featureTwo}
         featureThree={featureThree}

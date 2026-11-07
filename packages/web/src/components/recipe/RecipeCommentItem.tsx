@@ -1,10 +1,51 @@
 import {STALE_COMMENT_HINT} from '@eciperay/client';
 import type {RecipeComment} from '@eciperay/types';
-import {eciperayTheme, TextAction, tokens} from '@spudly/ui';
-import type {CSSProperties} from 'react';
+import {eciperayTheme, tokens} from '@spudly/ui';
+import type {CSSProperties, ReactNode} from 'react';
 import {useState} from 'react';
 
 import {StaleVersionHint} from './StaleVersionHint.js';
+
+// The design system's TextAction is no longer exported (6.x is
+// pages-only), so the comment row's small text actions are a host
+// text pressable: a real button (keyboard-focusable and
+// Enter/Space-operable natively) carrying only text chrome.
+type CommentTextActionProps = {
+  color: string;
+  fontSize: number | string;
+  fontWeight?: number;
+  disabled?: boolean;
+  onPress: () => void;
+  children: ReactNode;
+};
+
+const CommentTextAction = ({
+  color,
+  fontSize,
+  fontWeight,
+  disabled = false,
+  onPress,
+  children,
+}: CommentTextActionProps) => (
+  <button
+    type="button"
+    disabled={disabled}
+    onClick={onPress}
+    style={{
+      background: 'none',
+      border: 'none',
+      padding: 0,
+      cursor: disabled ? 'default' : 'pointer',
+      color,
+      fontSize,
+      fontWeight,
+      fontFamily: tokens.typography.fontFamily.sans,
+      opacity: disabled ? 0.5 : 1,
+    }}
+  >
+    {children}
+  </button>
+);
 
 const formatAuthorName = (comment: RecipeComment) =>
   comment.authorDisplayName?.trim() ?? 'Anonymous';
@@ -117,42 +158,42 @@ export const RecipeCommentItem = ({
           {isAuthor ? (
             isEditing ? (
               <>
-                <TextAction
+                <CommentTextAction
                   fontSize={tokens.typography.fontSize.xs}
-                  color="$primary"
+                  color={eciperayTheme.semantic.primary}
                   fontWeight={500}
                   disabled={isUpdatePending || !editDraft.trim()}
                   onPress={onSaveEdit}
                 >
                   Save
-                </TextAction>
-                <TextAction
+                </CommentTextAction>
+                <CommentTextAction
                   fontSize={tokens.typography.fontSize.xs}
                   color={tokens.colors.gray.gray7}
                   onPress={onCancelEdit}
                 >
                   Cancel
-                </TextAction>
+                </CommentTextAction>
               </>
             ) : (
-              <TextAction
-                  fontSize={tokens.typography.fontSize.xs}
-                color="$primary"
+              <CommentTextAction
+                fontSize={tokens.typography.fontSize.xs}
+                color={eciperayTheme.semantic.primary}
                 fontWeight={500}
                 onPress={onStartEdit}
               >
                 Edit
-              </TextAction>
+              </CommentTextAction>
             )
           ) : null}
-          <TextAction
-                  fontSize={tokens.typography.fontSize.xs}
+          <CommentTextAction
+            fontSize={tokens.typography.fontSize.xs}
             color={tokens.colors.danger.danger7}
             disabled={isDeletePending}
             onPress={onDelete}
           >
             Delete
-          </TextAction>
+          </CommentTextAction>
         </div>
       ) : null}
     </li>

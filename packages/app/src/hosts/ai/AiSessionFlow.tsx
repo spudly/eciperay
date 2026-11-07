@@ -1,5 +1,5 @@
 import {errorMessage, parseProposedRecipe} from '@eciperay/client';
-import {AiSessionPage} from '@spudly/ui/pages';
+import {AiSessionPage} from '@spudly/ui';
 import {useMutation} from '@tanstack/react-query';
 import React, {useState} from 'react';
 import type {TweakAiMessage, TweakAiPhase} from '@eciperay/types';

@@ -1,5 +1,5 @@
 /* eslint-disable max-lines -- recipe image upload, paste, and generate controls */
-import {Button as DsButton, Text as DsText, tokens} from '@spudly/ui';
+import {tokens} from '@spudly/ui';
 import React, {useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {Image, Modal, PanResponder, View} from 'react-native';
 import {
@@ -8,7 +8,7 @@ import {
   type Asset,
   type ImagePickerResponse,
 } from 'react-native-image-picker';
-import {XStack, YStack} from 'tamagui';
+import {Text, XStack, YStack} from 'tamagui';
 
 import {
   recipeImageFromAsset,
@@ -48,6 +48,75 @@ type Props = {
    * selection is never silently dropped on save (#406).
    */
   onPendingChange?: (pending: boolean) => void;
+};
+
+/**
+ * The field's small action buttons, re-expressed host-side (@spudly/ui 6.x is
+ * pages-only, so the DS Button no longer crosses the package boundary): the DS
+ * Button's small geometry (md radius, sm semibold text, spacing 3/2 padding,
+ * 1px border on the filled variants, half opacity while disabled) with the
+ * variant treatments the field used — primary ($primary fill, $onPrimary ink),
+ * secondary (gray-3 fill, gray-10 ink and border), and the generate action's
+ * ghost form (surface fill, primary border and ink, from the overrides the
+ * field passed).
+ */
+const FieldButton = ({
+  label,
+  accessibilityLabel,
+  variant,
+  disabled = false,
+  onPress,
+}: {
+  label: string;
+  accessibilityLabel: string;
+  variant: 'primary' | 'secondary' | 'generate';
+  disabled?: boolean;
+  onPress: () => void;
+}) => {
+  const treatment =
+    variant === 'primary'
+      ? {
+          backgroundColor: '$primary' as const,
+          borderColor: 'transparent' as const,
+          color: '$onPrimary' as const,
+        }
+      : variant === 'secondary'
+        ? {
+            backgroundColor: tokens.colors.gray.gray3,
+            borderColor: tokens.colors.gray.gray10,
+            color: tokens.colors.gray.gray10,
+          }
+        : {
+            backgroundColor: '$surface' as const,
+            borderColor: '$primary' as const,
+            color: '$primary' as const,
+          };
+  return (
+    <YStack
+      backgroundColor={treatment.backgroundColor}
+      borderWidth={1}
+      borderColor={treatment.borderColor}
+      borderRadius={tokens.radii.md}
+      paddingHorizontal={tokens.spacing[3]}
+      paddingVertical={tokens.spacing[2]}
+      alignItems="center"
+      justifyContent="center"
+      opacity={disabled ? 0.5 : 1}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      accessibilityState={{disabled}}
+      onPress={disabled ? undefined : onPress}
+      cursor="pointer"
+    >
+      <Text
+        fontSize={tokens.typography.fontSize.sm}
+        fontWeight={tokens.typography.fontWeight.semibold}
+        color={treatment.color}
+      >
+        {label}
+      </Text>
+    </YStack>
+  );
 };
 
 export const RecipeImageField = ({
@@ -377,13 +446,13 @@ export const RecipeImageField = ({
         justifyContent="space-between"
         gap="$2"
       >
-        <DsText
+        <Text
           fontSize={tokens.typography.fontSize.sm}
           fontWeight={tokens.typography.fontWeight.medium}
           color={tokens.colors.gray.gray8}
         >
           Recipe image
-        </DsText>
+        </Text>
         {headerAction}
       </XStack>
       <YStack
@@ -411,13 +480,14 @@ export const RecipeImageField = ({
               {paddingHorizontal: tokens.spacing[4]},
             ]}
           >
-            <DsText
-              variant="hint"
+            <Text
+              fontSize={tokens.typography.fontSize.sm}
+              color="$textMuted"
               textAlign="center"
             >
               Take a photo, choose an image from your library, or generate one
               with AI
-            </DsText>
+            </Text>
           </View>
         )}
       </YStack>
@@ -427,95 +497,80 @@ export const RecipeImageField = ({
       >
         {pendingAsset ? (
           <>
-            <DsButton
-              variant="primary"
-              size="sm"
+            <FieldButton
+              label="Use image"
               accessibilityLabel="Use image"
+              variant="primary"
               onPress={acceptPendingImage}
-            >
-              Use image
-            </DsButton>
+            />
             {/* Parity with the web mirror's dimensions gate: the app only
                 offers crop once the picker asset's dimensions are known
                 (canCrop), so crop rectangles are always in real pixels. */}
             {canCrop ? (
-              <DsButton
-                variant="secondary"
-                size="sm"
+              <FieldButton
+                label="Crop image"
                 accessibilityLabel="Crop image"
+                variant="secondary"
                 onPress={openCrop}
-              >
-                Crop image
-              </DsButton>
+              />
             ) : null}
-            <DsButton
-              variant="secondary"
-              size="sm"
+            <FieldButton
+              label="Discard"
               accessibilityLabel="Discard selected image"
+              variant="secondary"
               onPress={clearPending}
-            >
-              Discard
-            </DsButton>
+            />
           </>
         ) : (
           <>
-            <DsButton
-              variant="primary"
-              size="sm"
+            <FieldButton
+              label={imageUploading ? 'Uploading…' : 'Choose image'}
               accessibilityLabel="Choose recipe image"
+              variant="primary"
               disabled={imageBusy || pickerBusy}
               onPress={() => {
                 void handlePick();
               }}
-            >
-              {imageUploading ? 'Uploading…' : 'Choose image'}
-            </DsButton>
-            <DsButton
-              variant="secondary"
-              size="sm"
+            />
+            <FieldButton
+              label="Take photo"
               accessibilityLabel="Take photo of recipe"
+              variant="secondary"
               disabled={imageBusy || pickerBusy}
               onPress={() => {
                 void handleTakePhoto();
               }}
-            >
-              Take photo
-            </DsButton>
+            />
             {onGenerateImage ? (
-              <DsButton
-                variant="ghost"
-                size="sm"
+              <FieldButton
+                label={imageGenerating ? 'Generating…' : 'Generate with AI'}
                 accessibilityLabel="Generate image with AI"
-                borderWidth={1}
-                borderColor="$primary"
-                backgroundColor="$surface"
+                variant="generate"
                 disabled={imageBusy || !canGenerateImage}
                 onPress={() => {
                   void onGenerateImage();
                 }}
-              >
-                {imageGenerating ? 'Generating…' : 'Generate with AI'}
-              </DsButton>
+              />
             ) : null}
             {imagePreview ? (
-              <DsButton
+              <FieldButton
+                label="Remove image"
+                accessibilityLabel="Remove image"
                 variant="secondary"
-                size="sm"
                 onPress={onRemove}
-              >
-                Remove image
-              </DsButton>
+              />
             ) : null}
           </>
         )}
       </XStack>
       {imageError ? (
-        <DsText
-          variant="error"
+        <Text
+          fontSize={tokens.typography.fontSize.sm}
+          color="$errorText"
           marginBlockStart="$2"
         >
           {imageError}
-        </DsText>
+        </Text>
       ) : null}
       <Modal
         visible={cropOpen && pendingAsset !== null}
@@ -535,14 +590,14 @@ export const RecipeImageField = ({
           gap="$3"
           backgroundColor="$surface"
         >
-          <DsText
+          <Text
             fontSize={tokens.typography.fontSize.sm}
             fontWeight={tokens.typography.fontWeight.medium}
             color={tokens.colors.gray.gray8}
           >
             Crop image — drag the box to move it, drag its corner to resize, or
             use the move and resize buttons.
-          </DsText>
+          </Text>
           {pendingAsset?.uri && effectiveCropRect ? (
             <View
               onLayout={e => {
@@ -606,50 +661,42 @@ export const RecipeImageField = ({
             flexWrap="wrap"
             gap="$2"
           >
-            <DsButton
-              variant="secondary"
-              size="sm"
+            <FieldButton
+              label="◀ Move"
               accessibilityLabel="Move crop area left"
+              variant="secondary"
               onPress={() => {
                 nudgeCrop(-Math.round(pendingWidth * 0.05), 0);
               }}
-            >
-              ◀ Move
-            </DsButton>
-            <DsButton
-              variant="secondary"
-              size="sm"
+            />
+            <FieldButton
+              label="Move ▶"
               accessibilityLabel="Move crop area right"
+              variant="secondary"
               onPress={() => {
                 nudgeCrop(Math.round(pendingWidth * 0.05), 0);
               }}
-            >
-              Move ▶
-            </DsButton>
-            <DsButton
-              variant="secondary"
-              size="sm"
+            />
+            <FieldButton
+              label="▲ Move"
               accessibilityLabel="Move crop area up"
+              variant="secondary"
               onPress={() => {
                 nudgeCrop(0, -Math.round(pendingHeight * 0.05));
               }}
-            >
-              ▲ Move
-            </DsButton>
-            <DsButton
-              variant="secondary"
-              size="sm"
+            />
+            <FieldButton
+              label="Move ▼"
               accessibilityLabel="Move crop area down"
+              variant="secondary"
               onPress={() => {
                 nudgeCrop(0, Math.round(pendingHeight * 0.05));
               }}
-            >
-              Move ▼
-            </DsButton>
-            <DsButton
-              variant="secondary"
-              size="sm"
+            />
+            <FieldButton
+              label="Grow"
               accessibilityLabel="Grow crop area"
+              variant="secondary"
               onPress={() => {
                 nudgeCrop(
                   Math.round(pendingWidth * 0.05),
@@ -657,13 +704,11 @@ export const RecipeImageField = ({
                   true,
                 );
               }}
-            >
-              Grow
-            </DsButton>
-            <DsButton
-              variant="secondary"
-              size="sm"
+            />
+            <FieldButton
+              label="Shrink"
               accessibilityLabel="Shrink crop area"
+              variant="secondary"
               onPress={() => {
                 nudgeCrop(
                   -Math.round(pendingWidth * 0.05),
@@ -671,35 +716,36 @@ export const RecipeImageField = ({
                   true,
                 );
               }}
-            >
-              Shrink
-            </DsButton>
+            />
           </XStack>
-          {cropError ? <DsText variant="error">{cropError}</DsText> : null}
+          {cropError ? (
+            <Text
+              fontSize={tokens.typography.fontSize.sm}
+              color="$errorText"
+            >
+              {cropError}
+            </Text>
+          ) : null}
           <XStack
             flexWrap="wrap"
             gap="$3"
           >
-            <DsButton
-              variant="primary"
-              size="sm"
+            <FieldButton
+              label={cropBusy ? 'Cropping…' : 'Apply crop'}
               accessibilityLabel="Apply crop"
+              variant="primary"
               disabled={cropBusy}
               onPress={() => {
                 void applyCrop();
               }}
-            >
-              {cropBusy ? 'Cropping…' : 'Apply crop'}
-            </DsButton>
-            <DsButton
-              variant="secondary"
-              size="sm"
+            />
+            <FieldButton
+              label="Cancel crop"
               accessibilityLabel="Cancel crop"
+              variant="secondary"
               disabled={cropBusy}
               onPress={cancelCrop}
-            >
-              Cancel crop
-            </DsButton>
+            />
           </XStack>
         </YStack>
       </Modal>

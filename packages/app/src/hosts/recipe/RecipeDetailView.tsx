@@ -25,15 +25,16 @@ import type {
   RecipeStarRating,
   RecipeVersionSummary,
 } from '@eciperay/types';
-import {RatingForm, tagColorNameForHex} from '@spudly/ui';
 import {
   RecipeDetailPage,
+  tagColorNameForHex,
   type RecipeDetailPageNutritionProps,
-} from '@spudly/ui/pages';
+} from '@spudly/ui';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useState} from 'react';
 import {Alert} from 'react-native';
 
+import {CookLogForm} from '../../components/CookLogForm';
 import {api} from '../../lib/api';
 import {
   recipeCookHref,
@@ -44,8 +45,8 @@ import {
 import {printRecipe} from '../../lib/printRecipe';
 import {shareRecipe} from '../../lib/shareRecipe';
 
-import {RecipeCommentsSection} from './RecipeCommentsSection';
-import {RecipeVisibilityControls} from './RecipeVisibilityControls';
+import {useRecipeCommentsProps} from './RecipeCommentsSection';
+import {useRecipeSharingProps} from './RecipeVisibilityControls';
 
 type RecipeDetailViewProps = {
   recipe: RecipeDetail;
@@ -71,8 +72,15 @@ type RecipeDetailViewProps = {
  * OverviewActions used, ingredient lines scaled by the app's formatter,
  * nutrition rows composed by the client's row builder), and every mutation
  * (status, activation, tweak-manually, create-a-draft, rating, cook log) plus
- * the three slotted app panels (sharing controls, comments, cook-log form) keep
- * their state and API calls app-side.
+ * the sharing and comments sections keep their state and API calls app-side —
+ * sharing and comments cross as the page's data props (#438 Part 3; their host
+ * logic lives in useRecipeSharingProps / useRecipeCommentsProps), and the
+ * cook-log form enters through the page's form slot, rendered by the host
+ * CookLogForm. The page's three confirmation-dialog props stay unpassed: this
+ * host has no in-view dialogs — recipe deletion confirms through the screen's
+ * RN Alert (useDeleteRecipe), cook-log deletion is not offered in the app, and
+ * a nutrition refresh failure raises the RN Alert below — so the dialogs'
+ * absence preserves the app's behavior.
  *
  * State lifetimes are mapped defensively: the tab components this page replaced
  * unmounted on every tab switch, which reset the ingredients tab's missing set
@@ -170,6 +178,12 @@ export const RecipeDetailView = ({
       displayRecipe.id,
       displayRecipe.versionId,
     );
+
+  // Sharing and comments (#438 Part 3): their queries, drafts,
+  // and mutations live in the section hooks; the sections cross
+  // into the page as data props at the render below.
+  const sharingProps = useRecipeSharingProps(displayRecipe, showActionMessage);
+  const commentsProps = useRecipeCommentsProps(recipe.id, recipe.userId);
 
   // Lifecycle mutations (the old OverviewActions): status changes,
   // candidate activation, and tweak-manually version creation.
@@ -507,18 +521,8 @@ export const RecipeDetailView = ({
         onViewerRatingChange: (stars: number | null) => {
           ratingMutation.mutate(stars as RecipeStarRating | null);
         },
-        renderSharingControls: () => (
-          <RecipeVisibilityControls
-            recipe={displayRecipe}
-            onActionMessage={showActionMessage}
-          />
-        ),
-        renderComments: () => (
-          <RecipeCommentsSection
-            recipeId={recipe.id}
-            ownerUserId={recipe.userId}
-          />
-        ),
+        sharing: sharingProps,
+        comments: commentsProps,
       }}
       ingredients={{
         servings: currentServings,
@@ -548,7 +552,7 @@ export const RecipeDetailView = ({
           }),
         ),
         onIngredientPress: toggleMissing,
-        isLoadingSubstitutions,
+        loadingSubstitutions: isLoadingSubstitutions,
         substitutions: substitutions.map(substitution => ({
           ingredient: substitution.ingredient,
           suggestions: substitution.suggestions.join(', '),
@@ -562,7 +566,7 @@ export const RecipeDetailView = ({
         })),
       }}
       history={{
-        isLoading: isLoadingCookLogs,
+        loading: isLoadingCookLogs,
         cookLogs: cookLogs.map(log => ({
           id: log.id,
           dateLabel: new Date(log.cookedAt).toLocaleDateString(undefined, {
@@ -578,7 +582,7 @@ export const RecipeDetailView = ({
         },
         renderCookLogForm: () =>
           showCookLogForm ? (
-            <RatingForm
+            <CookLogForm
               variant="light"
               notesPlaceholder="Notes from this cook (optional)"
               isPending={createCookLogMutation.isPending}

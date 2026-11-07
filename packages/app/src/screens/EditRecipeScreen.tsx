@@ -4,7 +4,7 @@ import {
   recipeDetailToInput,
 } from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {EditRecipePage} from '@spudly/ui/pages';
+import {EditRecipePage} from '@spudly/ui';
 import {useQuery, useQueryClient} from '@tanstack/react-query';
 import type {RecipeInput} from '@eciperay/types';
 

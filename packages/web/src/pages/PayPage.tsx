@@ -1,8 +1,7 @@
-import {Button, ScreenContainer, SectionCard, Text as DSText} from '@spudly/ui';
+import {PayPage as PayPageView, type PayPageStatus} from '@spudly/ui';
 import {useEffect, useState} from 'react';
 import {useNavigate, useSearchParams} from 'react-router-dom';
 
-import {BookLoadingSpinner} from '../components/ui/BookLoadingSpinner.js';
 import type {PaddleEvent} from '../lib/paddle.js';
 import {
   closeCheckout,
@@ -11,7 +10,7 @@ import {
   releasePaddle,
 } from '../lib/paddle.js';
 
-type PayStatus = 'opening' | 'closed' | 'error';
+type PayStatus = Extract<PayPageStatus, 'opening' | 'closed' | 'error'>;
 
 /**
  * Checkout completion page — the target of Paddle's "default payment link".
@@ -20,6 +19,12 @@ type PayStatus = 'opening' | 'closed' | 'error';
  * transaction's checkout overlay automatically. On completion the buyer lands
  * on their profile, where the new plan is in effect via the webhook-driven
  * entitlement.
+ *
+ * The DS PayPage renders the surface; this host keeps the provider session: it
+ * opens the checkout window from the transaction it was handed and reports the
+ * outcome as the page's `status` union. The way out of the terminal states is a
+ * reload (re-running initialization), and home is the page's `homeHref` because
+ * it navigates.
  */
 export const PayPage = () => {
   const [searchParams] = useSearchParams();
@@ -73,85 +78,20 @@ export const PayPage = () => {
     };
   }, [transactionId, configured, navigate]);
 
-  const inCheckoutFlow = configured && transactionId !== null;
+  const pageStatus: PayPageStatus = !configured
+    ? 'unconfigured'
+    : transactionId === null
+      ? 'needs-transaction'
+      : status;
 
   return (
-    <ScreenContainer variant="padded" scrollable={false}>
-      <div style={{maxWidth: 480, margin: '0 auto'}}>
-        <div
-          style={{display: 'flex', justifyContent: 'center', marginBottom: 24}}
-        >
-          <img
-            src="/logo-horizontal.svg"
-            alt="Eciperay"
-            style={{height: 44}}
-          />
-        </div>
-        <SectionCard
-          title={inCheckoutFlow ? 'Complete your purchase' : 'Checkout'}
-          variant="elevated"
-        >
-          {configured ? (
-            transactionId ? (
-              status === 'error' ? (
-                <>
-                  <DSText>
-                    The payment window couldn’t be opened. Check your connection
-                    and try again.
-                  </DSText>
-                  <Button
-                    variant="primary"
-                    onPress={() => {
-                      window.location.reload();
-                    }}
-                  >
-                    Try again
-                  </Button>
-                </>
-              ) : status === 'closed' ? (
-                <>
-                  <DSText>
-                    The payment window was closed before the purchase finished.
-                  </DSText>
-                  <Button
-                    variant="primary"
-                    onPress={() => {
-                      window.location.reload();
-                    }}
-                  >
-                    Reopen checkout
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <BookLoadingSpinner />
-                  <DSText>Opening the secure payment window…</DSText>
-                </>
-              )
-            ) : (
-              <>
-                <DSText>
-                  This page completes a purchase started somewhere else — it
-                  needs the checkout link from that purchase to open a payment
-                  window.
-                </DSText>
-                <Button
-                  variant="primary"
-                  onPress={() => {
-                    void navigate('/');
-                  }}
-                >
-                  Go to Eciperay home
-                </Button>
-              </>
-            )
-          ) : (
-            <DSText>
-              Checkout isn’t configured yet, so there’s nothing to pay for here.
-            </DSText>
-          )}
-        </SectionCard>
-      </div>
-    </ScreenContainer>
+    <PayPageView
+      status={pageStatus}
+      onRetryPress={() => {
+        window.location.reload();
+      }}
+      homeHref="/"
+      homeLabel="Go to Eciperay home"
+    />
   );
 };

@@ -181,3 +181,40 @@ describe('SharedWithMeView list scrollability (#188)', () => {
     ).toHaveLength(1);
   });
 });
+
+/**
+ * Load-more error row (@spudly/ui 6.x): the screen's latched next-page failure
+ * crosses through the host's loadMoreErrorMessage / onLoadMoreRetry props and
+ * renders as the page's own-section error row after the own rows — the surface
+ * the DS Alert under the list provided until 6.x. The row and its retry press
+ * are pinned here, with a short list, because at the screen level the row sits
+ * beyond the virtualized list's rendered window in Jest.
+ */
+describe('SharedWithMeView load-more error row', () => {
+  const controls = {
+    ...demoRecipeListFilters(),
+    statusFilter: RECIPE_STATUS_FILTER_ALL as RecipeStatusFilterValue,
+    onStatusFilterChange: () => undefined,
+  };
+
+  test('renders the load-more error and fires the retry', async () => {
+    const onLoadMoreRetry = jest.fn();
+    const {getByText} = await renderWithProviders(
+      <SharedWithMeView
+        {...controls}
+        isLoading={false}
+        recipes={[
+          makeRecipeDetail({title: 'Shared Soup', userId: 'other-user'}),
+        ]}
+        isFetchingNextPage={false}
+        onLoadMore={jest.fn()}
+        loadMoreErrorMessage="Couldn't load more recipes."
+        onLoadMoreRetry={onLoadMoreRetry}
+      />,
+    );
+
+    expect(getByText("Couldn't load more recipes.")).toBeTruthy();
+    await fireEvent.press(getByText('Try again'));
+    expect(onLoadMoreRetry).toHaveBeenCalledTimes(1);
+  });
+});

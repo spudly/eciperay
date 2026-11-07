@@ -8,13 +8,182 @@ import {
   requiresPublishingConsent,
 } from '@eciperay/client';
 import type {RecipeDetail, RecipeVisibility} from '@eciperay/types';
-import {Button, eciperayTheme, tokens} from '@spudly/ui';
+import {eciperayTheme, tokens} from '@spudly/ui';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
-import {useEffect, useState} from 'react';
+import {
+  useEffect,
+  useId,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from 'react';
 
 import {eciperay} from '../../lib/api.js';
-import {CheckboxField} from '../ui/CheckboxField.js';
-import {RadioOptionGroup} from '../ui/RadioOptionGroup.js';
+
+// The radio option group, checkbox field, and buttons this file used
+// to take from the design system and the host components/ui wrapper
+// library (all gone in @spudly/ui 6.x), re-expressed in-file with
+// native form elements styled on DS tokens. The accessible names are
+// the option titles / field label alone — descriptions render beside
+// the control, outside its label — exactly as the DS controls
+// announced them. API and behavior are unchanged.
+type RadioOptionGroupProps = {
+  name: string;
+  value: string;
+  disabled?: boolean;
+  options: {value: string; title: string; description?: string}[];
+  onChange: (value: string) => void;
+};
+
+const RadioOptionGroup = ({
+  name,
+  value,
+  disabled = false,
+  options,
+  onChange,
+}: RadioOptionGroupProps) => (
+  <div
+    role="radiogroup"
+    style={{display: 'flex', flexDirection: 'column', gap: tokens.spacing[2]}}
+  >
+    {options.map(option => {
+      const inputId = `${name}-${option.value}`;
+      return (
+        <div key={option.value}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: tokens.spacing[2],
+            }}
+          >
+            <input
+              type="radio"
+              id={inputId}
+              name={name}
+              value={option.value}
+              checked={value === option.value}
+              disabled={disabled}
+              onChange={() => {
+                onChange(option.value);
+              }}
+            />
+            <label
+              htmlFor={inputId}
+              style={{
+                fontSize: tokens.typography.fontSize.md,
+                fontFamily: tokens.typography.fontFamily.sans,
+                fontWeight: tokens.typography.fontWeight.semibold,
+                color: tokens.colors.gray.gray10,
+              }}
+            >
+              {option.title}
+            </label>
+          </div>
+          {option.description ? (
+            <p
+              style={{
+                margin: 0,
+                marginLeft: tokens.spacing[5],
+                fontSize: tokens.typography.fontSize.sm,
+                color: tokens.colors.gray.gray6,
+              }}
+            >
+              {option.description}
+            </p>
+          ) : null}
+        </div>
+      );
+    })}
+  </div>
+);
+
+type CheckboxFieldProps = {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  disabled?: boolean;
+  label: string;
+  description?: ReactNode;
+};
+
+const CheckboxField = ({
+  checked,
+  onChange,
+  disabled = false,
+  label,
+  description,
+}: CheckboxFieldProps) => {
+  const inputId = useId();
+  return (
+    <div>
+      <div
+        style={{display: 'flex', alignItems: 'center', gap: tokens.spacing[2]}}
+      >
+        <input
+          type="checkbox"
+          id={inputId}
+          checked={checked}
+          disabled={disabled}
+          onChange={event => {
+            onChange(event.target.checked);
+          }}
+        />
+        <label
+          htmlFor={inputId}
+          style={{
+            fontSize: tokens.typography.fontSize.md,
+            fontFamily: tokens.typography.fontFamily.sans,
+            fontWeight: tokens.typography.fontWeight.semibold,
+            color: tokens.colors.gray.gray10,
+          }}
+        >
+          {label}
+        </label>
+      </div>
+      {description ? (
+        <div
+          style={{
+            marginLeft: tokens.spacing[5],
+            fontSize: tokens.typography.fontSize.sm,
+            color: tokens.colors.gray.gray6,
+          }}
+        >
+          {description}
+        </div>
+      ) : null}
+    </div>
+  );
+};
+
+const primaryButtonStyle: CSSProperties = {
+  borderRadius: 12,
+  border: 'none',
+  paddingTop: 6,
+  paddingBottom: 6,
+  paddingLeft: 12,
+  paddingRight: 12,
+  fontSize: tokens.typography.fontSize.sm,
+  fontFamily: tokens.typography.fontFamily.sans,
+  fontWeight: tokens.typography.fontWeight.semibold,
+  backgroundColor: eciperayTheme.semantic.primary,
+  color: '#ffffff',
+  cursor: 'pointer',
+};
+
+const secondaryButtonStyle: CSSProperties = {
+  borderRadius: 12,
+  border: `1px solid ${tokens.colors.gray.gray3}`,
+  paddingTop: 6,
+  paddingBottom: 6,
+  paddingLeft: 12,
+  paddingRight: 12,
+  fontSize: tokens.typography.fontSize.sm,
+  fontFamily: tokens.typography.fontFamily.sans,
+  fontWeight: tokens.typography.fontWeight.semibold,
+  backgroundColor: tokens.colors.gray.gray2,
+  color: tokens.colors.gray.gray8,
+  cursor: 'pointer',
+};
 
 type Props = {recipe: RecipeDetail; onActionMessage: (message: string) => void};
 
@@ -90,6 +259,12 @@ export const RecipeVisibilityControls = ({recipe, onActionMessage}: Props) => {
         ? permalink
         : null;
 
+  const saveDisabled =
+    sharingMutation.isPending ||
+    (pendingVisibility !== null &&
+      requiresPublishingConsent(recipe.visibility, pendingVisibility) &&
+      !publishingConsent);
+
   return (
     <section
       style={{
@@ -162,16 +337,15 @@ export const RecipeVisibilityControls = ({recipe, onActionMessage}: Props) => {
         />
       ) : null}
       {pendingVisibility && pendingVisibility !== recipe.visibility ? (
-        <Button
-          variant="primary"
-          size="sm"
-          marginTop="$3"
-          disabled={
-            sharingMutation.isPending ||
-            (requiresPublishingConsent(recipe.visibility, pendingVisibility) &&
-              !publishingConsent)
-          }
-          onPress={() => {
+        <button
+          type="button"
+          style={{
+            ...primaryButtonStyle,
+            marginTop: tokens.spacing[3],
+            opacity: saveDisabled ? 0.5 : 1,
+          }}
+          disabled={saveDisabled}
+          onClick={() => {
             // The consent gate is enforced here, not only by the
             // button's disabled state: a press must never publish
             // without the consent the UI is asking for.
@@ -197,32 +371,34 @@ export const RecipeVisibilityControls = ({recipe, onActionMessage}: Props) => {
           }}
         >
           Save sharing settings
-        </Button>
+        </button>
       ) : null}
       {activeVisibility === 'unlisted' ? (
         <div style={{marginTop: tokens.spacing[3]}}>
-          <Button
-            variant="secondary"
-            size="sm"
+          <button
+            type="button"
+            style={{
+              ...secondaryButtonStyle,
+              opacity: rotateMutation.isPending ? 0.5 : 1,
+            }}
             disabled={rotateMutation.isPending}
-            onPress={() => {
+            onClick={() => {
               rotateMutation.mutate();
             }}
           >
             {shareToken ? 'Rotate share link' : 'Generate share link'}
-          </Button>
+          </button>
           {shareUrl ? (
-            <Button
-              variant="secondary"
-              size="sm"
-              marginLeft="$2"
-              onPress={() => {
+            <button
+              type="button"
+              style={{...secondaryButtonStyle, marginLeft: tokens.spacing[2]}}
+              onClick={() => {
                 void navigator.clipboard.writeText(shareUrl);
                 onActionMessage('Share link copied');
               }}
             >
               Copy share link
-            </Button>
+            </button>
           ) : null}
         </div>
       ) : null}
@@ -257,16 +433,16 @@ export const RecipeVisibilityControls = ({recipe, onActionMessage}: Props) => {
             >
               {permalink}
             </code>
-            <Button
-              variant="secondary"
-              size="sm"
-              onPress={() => {
+            <button
+              type="button"
+              style={secondaryButtonStyle}
+              onClick={() => {
                 void navigator.clipboard.writeText(permalink);
                 onActionMessage('Permalink copied');
               }}
             >
               Copy
-            </Button>
+            </button>
           </div>
         </div>
       ) : null}

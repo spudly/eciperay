@@ -1,5 +1,5 @@
 /* eslint-disable max-lines -- privacy policy sections are naturally long */
-import type {LegalDocumentSection} from '@spudly/ui/pages';
+import type {LegalDocumentSection} from '@spudly/ui';
 
 import {
   codeSpan,

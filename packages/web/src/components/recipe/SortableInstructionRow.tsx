@@ -1,7 +1,7 @@
 import type {FormInstructionRow} from '@eciperay/client';
 import {useSortable} from '@dnd-kit/sortable';
 import {CSS} from '@dnd-kit/utilities';
-import {eciperayTheme, TextAction, tokens} from '@spudly/ui';
+import {eciperayTheme, tokens} from '@spudly/ui';
 
 import {dragRowOpacity} from './sortableDrag.js';
 
@@ -87,13 +87,23 @@ export const SortableInstructionRow = ({
       >
         Drag
       </button>
-      <TextAction
-        color={tokens.colors.danger.danger7}
-        fontSize={tokens.typography.fontSize.sm}
-        onPress={onRemove}
+      <button
+        type="button"
+        style={{
+          alignSelf: 'flex-start',
+          padding: 0,
+          paddingTop: tokens.spacing[2],
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          fontSize: tokens.typography.fontSize.sm,
+          fontFamily: tokens.typography.fontFamily.sans,
+          color: tokens.colors.danger.danger7,
+        }}
+        onClick={onRemove}
       >
         Remove
-      </TextAction>
+      </button>
     </div>
   );
 };

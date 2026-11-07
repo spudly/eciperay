@@ -2,7 +2,7 @@ import {errorMessage, queryKeys, recipeDetailToInput} from '@eciperay/client';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useNavigate, useParams} from 'react-router-dom';
 
-import {ImportReviewPage as ImportReviewPageView} from '@spudly/ui/pages';
+import {ImportReviewPage as ImportReviewPageView} from '@spudly/ui';
 
 import {RecipeInputPreview} from '../components/recipe/RecipeInputPreview.js';
 import {ScreenLoadingGate} from '../components/ScreenLoadingGate.js';

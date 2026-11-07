@@ -51,7 +51,7 @@ describe('PayPage', () => {
   test('reports when checkout is not configured', async () => {
     mockConfigured.mockReturnValue(false);
     await renderPay('/pay?_ptxn=txn_123');
-    expect(screen.getByText(/isn’t configured yet/i)).toBeInTheDocument();
+    expect(screen.getByText(/isn.t configured yet/i)).toBeInTheDocument();
     expect(mockInitialize).not.toHaveBeenCalled();
   });
 
@@ -99,7 +99,7 @@ describe('PayPage', () => {
     mockConfigured.mockReturnValue(true);
     mockInitialize.mockRejectedValue(new Error('network'));
     await renderPay('/pay?_ptxn=txn_123');
-    expect(await screen.findByText(/couldn’t be opened/i)).toBeInTheDocument();
+    expect(await screen.findByText(/couldn.t be opened/i)).toBeInTheDocument();
     expect(screen.getByRole('button', {name: 'Try again'})).toBeInTheDocument();
   });
 
@@ -110,7 +110,7 @@ describe('PayPage', () => {
     await act(async () => {
       onEvent?.({name: 'checkout.error'});
     });
-    expect(screen.getByText(/couldn’t be opened/i)).toBeInTheDocument();
+    expect(screen.getByText(/couldn.t be opened/i)).toBeInTheDocument();
   });
 
   test('ignores unrelated Paddle events', async () => {
@@ -135,7 +135,7 @@ describe('PayPage', () => {
     await userEvent.click(
       await screen.findByRole('button', {name: 'Try again'}),
     );
-    expect(screen.getByText(/couldn’t be opened/i)).toBeInTheDocument();
+    expect(screen.getByText(/couldn.t be opened/i)).toBeInTheDocument();
   });
 
   test('reopen checkout reloads the page after the buyer closes it', async () => {
@@ -151,13 +151,14 @@ describe('PayPage', () => {
     expect(screen.getByText(/was closed before/i)).toBeInTheDocument();
   });
 
-  test('home button navigates away from the explainer state', async () => {
+  test('home link points at the host home from the explainer state', async () => {
     mockConfigured.mockReturnValue(true);
     await renderPay('/pay');
-    await userEvent.click(
-      screen.getByRole('button', {name: 'Go to Eciperay home'}),
-    );
-    expect(screen.queryByText(/completes a purchase/i)).not.toBeInTheDocument();
+    // The DS page renders the way home as a real link (it navigates),
+    // carrying the host's home href and label.
+    expect(
+      screen.getByRole('link', {name: 'Go to Eciperay home'}),
+    ).toHaveAttribute('href', '/');
   });
 
   test('ignores events that arrive after unmount', async () => {
@@ -186,7 +187,7 @@ describe('PayPage', () => {
     await act(async () => {
       rejectLoad(new Error('late failure'));
     });
-    expect(screen.queryByText(/couldn’t be opened/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/couldn.t be opened/i)).not.toBeInTheDocument();
   });
 
   // StrictMode effect replay (setup, cleanup, setup on one mounted

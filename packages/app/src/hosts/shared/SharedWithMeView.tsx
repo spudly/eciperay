@@ -3,12 +3,13 @@ import {
   formatRecipeListSubtitle,
   SHARED_WITH_ME_EMPTY_BODY,
   SHARED_WITH_ME_EMPTY_TITLE,
+  SHARED_WITH_ME_TITLE,
   WEB_APP_BASE_URL,
   type RecipeStatusFilterValue,
   type SharedWithMeViewProps,
 } from '@eciperay/client';
 import type {RecipeListSort, RecipeListSortDir} from '@eciperay/types';
-import {RecipesPage, type RecipesPageItem} from '@spudly/ui/pages';
+import {RecipesPage, type RecipesPageItem} from '@spudly/ui';
 
 /**
  * The Shared-with-me screen's view (#49, Wave A): the design system's
@@ -39,11 +40,32 @@ import {RecipesPage, type RecipesPageItem} from '@spudly/ui/pages';
  * here still pin the rendered contract (bounded scroll view, header filters,
  * element presence).
  */
+/**
+ * The host's own props: the shared view-props type plus the own list's
+ * next-page failure surface, composed by the screen (which owns the infinite
+ * query's error latch) and rendered by the page as its own-section load-more
+ * error row — the surface the DS Alert under the list used to provide
+ * (@spudly/ui 6.x is pages-only).
+ */
+type SharedWithMeViewOwnProps = SharedWithMeViewProps & {
+  loadMoreErrorMessage?: string | null;
+  onLoadMoreRetry?: () => void;
+  /**
+   * The own list's first-load failure, composed by the screen (which owns the
+   * infinite query): the page renders it as the own section's error state
+   * (`ownErrorMessage`), distinct from the load-more failure above.
+   */
+  ownErrorMessage?: string | null;
+};
+
 export const SharedWithMeView = ({
   isLoading,
   recipes,
   isFetchingNextPage,
   onLoadMore,
+  loadMoreErrorMessage,
+  onLoadMoreRetry,
+  ownErrorMessage,
   search,
   onSearchChange,
   statusFilter,
@@ -63,23 +85,40 @@ export const SharedWithMeView = ({
   sortDir,
   onSortDirChange,
   showStatusFilter,
-}: SharedWithMeViewProps) => {
+}: SharedWithMeViewOwnProps) => {
+  // The 6.x page is sectioned: the shared recipes are the own
+  // section's items, each carrying the shared-with-me badge (the
+  // caller's marker distinguishing them inside the own section),
+  // and no discovery content is populated (the app has no public
+  // catalog query on this screen), so the discovery section
+  // renders its empty state under its heading. The screen's own
+  // empty-state copy crosses as the own section's empty title /
+  // body, as it did through the retired shared configuration.
   const items: RecipesPageItem[] = recipes.map(recipe => ({
     id: recipe.id,
     href: buildRecipePermalink(WEB_APP_BASE_URL, recipe),
     title: recipe.title,
     subtitle: formatRecipeListSubtitle(recipe),
     imageUrl: recipe.imageUrl,
+    badgeLabel: 'Shared with you',
   }));
 
   return (
     <RecipesPage
-      recipes={items}
-      isLoading={isLoading}
+      ownTitle={SHARED_WITH_ME_TITLE}
+      ownRecipes={items}
+      loadingOwn={isLoading}
+      ownErrorMessage={ownErrorMessage ?? null}
       isFetchingNextPage={isFetchingNextPage}
+      ownLoadMoreErrorMessage={loadMoreErrorMessage ?? null}
+      onOwnLoadMoreRetry={onLoadMoreRetry}
+      ownLoadMoreRetryLabel="Try again"
+      discoveryTitle="Discover"
+      discoveryRecipes={[]}
+      loadingDiscovery={false}
       onLoadMore={onLoadMore}
-      emptyTitle={SHARED_WITH_ME_EMPTY_TITLE}
-      emptyBody={SHARED_WITH_ME_EMPTY_BODY}
+      ownEmptyTitle={SHARED_WITH_ME_EMPTY_TITLE}
+      ownEmptyBody={SHARED_WITH_ME_EMPTY_BODY}
       search={search}
       onSearchChange={onSearchChange}
       statusFilter={statusFilter}
