@@ -15,8 +15,9 @@ import type {
 } from '@eciperay/types';
 import {useInfiniteQuery} from '@tanstack/react-query';
 
-import {DiscoverPage as DiscoverPageView, PublicPageFrame} from '@spudly/ui';
+import {DiscoverPage as DiscoverPageView} from '@spudly/ui';
 
+import {PublicHeader} from '../components/PublicHeader.js';
 import {eciperay} from '../lib/api.js';
 
 import {sharedFooter} from './legal/legalDocumentData.js';
@@ -62,14 +63,10 @@ export const DiscoverPage = () => {
   const recipes = data?.pages.flat() ?? [];
 
   return (
-    <PublicPageFrame
-      brandHref="/"
-      signInHref="/login"
-      privacyHref="/privacy"
-      termsHref="/terms"
-      footer={sharedFooter}
-    >
+    <>
+      <PublicHeader />
       <DiscoverPageView
+        footer={sharedFooter}
         title={DISCOVER_TITLE}
         searchPlaceholder={DISCOVER_SEARCH_PLACEHOLDER}
         emptyMessage={DISCOVER_EMPTY_MESSAGE}
@@ -108,6 +105,6 @@ export const DiscoverPage = () => {
           controls.onSortDirChange(value as RecipeListSortDir);
         }}
       />
-    </PublicPageFrame>
+    </>
   );
 };
