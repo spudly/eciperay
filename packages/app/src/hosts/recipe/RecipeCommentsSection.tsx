@@ -39,7 +39,7 @@ export const useRecipeCommentsProps = (
 
   const commentsQueryKey = queryKeys.recipeComments(recipeId);
 
-  const {data, isLoading} = useQuery({
+  const {data, isLoading, error} = useQuery({
     queryKey: commentsQueryKey,
     queryFn: () => api.recipes.listComments(recipeId),
   });
@@ -84,6 +84,7 @@ export const useRecipeCommentsProps = (
         comment.authorUserId === currentUserId || ownerUserId === currentUserId,
     })),
     loading: isLoading,
+    error: error ? "Couldn't load comments." : null,
     staleHintLabel: STALE_COMMENT_HINT,
     editingCommentId: editingId,
     editDraft,

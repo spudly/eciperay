@@ -163,6 +163,7 @@ export const LabeledTextInput = ({
       </Label>
       <Input
         id={id}
+        aria-label={label}
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}

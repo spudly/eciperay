@@ -163,10 +163,10 @@ type CookLogFormProps = {
  * system's retired RatingForm (light variant), which @spudly/ui 6.x no longer
  * exports. Behavior is the form's own, preserved exactly: the rating and notes
  * are internal state, pressing the current star clears the rating, notes cross
- * trimmed (empty as null), Save is inert while a save is pending, and Skip
- * stays live throughout. The star controls keep the form's radiogroup semantics
- * ("Rate N out of 5 stars", aria-checked by position up to the current
- * rating).
+ * trimmed (empty as null), Save is inert while a save is pending, and the host
+ * keeps Skip inert while a save is pending. The star controls keep the form's
+ * radiogroup semantics ("Rate N out of 5 stars", aria-checked by position up to
+ * the current rating).
  */
 const CookLogForm = ({isPending, onSkip, onSubmit}: CookLogFormProps) => {
   const [rating, setRating] = useState<1 | 2 | 3 | 4 | 5 | null>(null);
@@ -253,6 +253,7 @@ const CookLogForm = ({isPending, onSkip, onSubmit}: CookLogFormProps) => {
           color: tokens.colors.gray.gray10,
         }}
         placeholder="Notes from this cook (optional)"
+        aria-label="Notes from this cook (optional)"
         rows={3}
         value={notes}
         onChange={event => {
@@ -891,7 +892,9 @@ export const RecipeDetailHost = ({
             <CookLogForm
               isPending={createCookLogMutation.isPending}
               onSkip={() => {
-                setShowCookLogForm(false);
+                if (!createCookLogMutation.isPending) {
+                  setShowCookLogForm(false);
+                }
               }}
               onSubmit={(values: CookLogFormValues) => {
                 createCookLogMutation.mutate({

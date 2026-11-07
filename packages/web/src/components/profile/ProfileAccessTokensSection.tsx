@@ -241,7 +241,7 @@ const AccessTokensPanel = ({
                   fontSize={tokens.typography.fontSize.xs}
                   color={tokens.colors.warning.warning9}
                 >
-                  Long-press the token to copy it.
+                  Select the token text to copy it.
                 </Text>
               </YStack>
               <XStack gap="$2">

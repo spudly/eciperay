@@ -51,6 +51,12 @@ const GoalField = ({
   onChange: (value: number | null) => void;
 }) => {
   const id = useId();
+  const [text, setText] = useState(() => formatGoalValue(value));
+  useEffect(() => {
+    setText(current =>
+      parseOptionalNumber(current) === value ? current : formatGoalValue(value),
+    );
+  }, [value]);
   return (
     <YStack gap={tokens.spacing[1]}>
       <Label
@@ -61,9 +67,10 @@ const GoalField = ({
       </Label>
       <FieldInput
         id={id}
-        value={formatGoalValue(value)}
-        onChangeText={text => {
-          onChange(parseOptionalNumber(text));
+        value={text}
+        onChangeText={next => {
+          setText(next);
+          onChange(parseOptionalNumber(next));
         }}
         placeholder="Optional"
         placeholderTextColor="$textMuted"

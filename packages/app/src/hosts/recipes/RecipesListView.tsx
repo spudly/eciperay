@@ -49,6 +49,12 @@ type RecipesListViewOwnProps = Omit<
   loadMoreErrorMessage?: string | null;
   /** The load-more error row's retry intent. */
   onLoadMoreRetry?: () => void;
+  /**
+   * The own list's first-load failure, composed by the screen (which owns the
+   * infinite query): the page renders it as the own section's error state
+   * (`ownErrorMessage`), distinct from the load-more failure above.
+   */
+  ownErrorMessage?: string | null;
 };
 
 /**
@@ -210,6 +216,7 @@ export const RecipesListView = ({
   showStatusFilter,
   loadMoreErrorMessage,
   onLoadMoreRetry,
+  ownErrorMessage,
 }: RecipesListViewOwnProps) => {
   // The cook-log forms' open state: a set of recipe ids, so forms
   // open and close independently and several may be open at once —
@@ -280,6 +287,7 @@ export const RecipesListView = ({
       ownTitle="Your recipes"
       ownRecipes={items}
       loadingOwn={isLoading}
+      ownErrorMessage={ownErrorMessage ?? null}
       isFetchingNextPage={isFetchingNextPage}
       ownLoadMoreErrorMessage={loadMoreErrorMessage ?? null}
       onOwnLoadMoreRetry={onLoadMoreRetry}

@@ -101,6 +101,19 @@ describe('useRecipeSharingProps', () => {
     expect(mockPatchSharing).not.toHaveBeenCalled();
   });
 
+  test('does not save a first publish without publishing consent', async () => {
+    const {props} = await renderSharingProps();
+    await act(async () => {
+      props().onValueChange('unlisted');
+    });
+    expect(props().consentRequired).toBe(true);
+    expect(props().consentChecked).toBe(false);
+    await act(async () => {
+      props().onSave?.();
+    });
+    expect(mockPatchSharing).not.toHaveBeenCalled();
+  });
+
   test('saves visibility after publishing consent', async () => {
     const {props, onActionMessage} = await renderSharingProps();
     await act(async () => {

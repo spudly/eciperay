@@ -27,6 +27,7 @@ export const RecipesScreen = () => {
   const {
     data,
     isLoading,
+    isError,
     isFetchingNextPage,
     isFetchNextPageError,
     hasNextPage,
@@ -36,6 +37,14 @@ export const RecipesScreen = () => {
   );
 
   const recipes = data?.pages.flat() ?? [];
+
+  // A failed FIRST page is not a load-more failure and not an empty
+  // list: with no pages loaded the page would otherwise render its
+  // empty state for what is actually an error. It crosses through the
+  // host as the own section's first-load error (`ownErrorMessage`);
+  // once any rows are loaded, a failure is the load-more path instead.
+  const ownErrorMessage =
+    isError && recipes.length === 0 ? "Couldn't load your recipes." : null;
 
   // The shared pagination pattern re-fires onLoadMore when a fetch
   // completes having added no rows (design-system#285) — it cannot
@@ -57,6 +66,7 @@ export const RecipesScreen = () => {
         {...controls}
         isLoading={isLoading}
         recipes={recipes}
+        ownErrorMessage={ownErrorMessage}
         isFetchingNextPage={isFetchingNextPage}
         onLoadMore={loadMore}
         loadMoreErrorMessage={

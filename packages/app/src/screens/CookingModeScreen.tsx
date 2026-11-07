@@ -14,9 +14,9 @@ import {useEffect, useState} from 'react';
 import KeepAwake from 'react-native-keep-awake';
 import type {CookLogInput} from '@eciperay/types';
 
+import {CookLogForm} from '../components/CookLogForm';
 import {ScreenLoadingGate} from '../components/ScreenLoadingGate';
 import {
-  CookLogForm,
   CookingModeCookLogShell,
   CookingModeShell,
   useSwipeNav,
@@ -118,6 +118,7 @@ export const CookingModeScreen = ({route, navigation}: CookingProps) => {
     return (
       <CookingModeCookLogShell>
         <CookLogForm
+          variant="dark"
           notesPlaceholder="Notes from this cook (optional)"
           isPending={cookLogMutation.isPending}
           onSkip={navigation.goBack}

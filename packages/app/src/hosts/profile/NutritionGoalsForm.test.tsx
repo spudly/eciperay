@@ -30,6 +30,21 @@ describe('NutritionGoalsForm', () => {
     expect(onChange).toHaveBeenCalledWith({...goals, calories: 2100});
   });
 
+  test('preserves decimal text while typing and reports the parsed value', async () => {
+    const onChange = jest.fn();
+    const {getByDisplayValue} = await renderWithProviders(
+      <NutritionGoalsForm
+        goals={goals}
+        onChange={onChange}
+        onSave={jest.fn()}
+      />,
+    );
+
+    await fireEvent.changeText(getByDisplayValue('2000'), '1.5');
+    expect(getByDisplayValue('1.5')).toBeTruthy();
+    expect(onChange).toHaveBeenCalledWith({...goals, calories: 1.5});
+  });
+
   test('invokes onSave from the save button and shows errors', async () => {
     const onSave = jest.fn();
     const {getByText} = await renderWithProviders(

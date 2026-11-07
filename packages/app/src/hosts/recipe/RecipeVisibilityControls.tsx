@@ -137,6 +137,12 @@ export const useRecipeSharingProps = (
     ...(pendingVisibility && pendingVisibility !== recipe.visibility
       ? {
           onSave: () => {
+            // The view disables Save until consent is checked, but the
+            // hook must not assert consent the user did not give if
+            // onSave is invoked while consent is still outstanding.
+            if (consentRequired && !publishingConsent) {
+              return;
+            }
             sharingMutation.mutate({
               visibility: pendingVisibility,
               ...(consentRequired ? {publishingConsent: true} : {}),

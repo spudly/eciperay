@@ -50,6 +50,12 @@ import {RecipesPage, type RecipesPageItem} from '@spudly/ui';
 type SharedWithMeViewOwnProps = SharedWithMeViewProps & {
   loadMoreErrorMessage?: string | null;
   onLoadMoreRetry?: () => void;
+  /**
+   * The own list's first-load failure, composed by the screen (which owns the
+   * infinite query): the page renders it as the own section's error state
+   * (`ownErrorMessage`), distinct from the load-more failure above.
+   */
+  ownErrorMessage?: string | null;
 };
 
 export const SharedWithMeView = ({
@@ -59,6 +65,7 @@ export const SharedWithMeView = ({
   onLoadMore,
   loadMoreErrorMessage,
   onLoadMoreRetry,
+  ownErrorMessage,
   search,
   onSearchChange,
   statusFilter,
@@ -101,6 +108,7 @@ export const SharedWithMeView = ({
       ownTitle={SHARED_WITH_ME_TITLE}
       ownRecipes={items}
       loadingOwn={isLoading}
+      ownErrorMessage={ownErrorMessage ?? null}
       isFetchingNextPage={isFetchingNextPage}
       ownLoadMoreErrorMessage={loadMoreErrorMessage ?? null}
       onOwnLoadMoreRetry={onLoadMoreRetry}

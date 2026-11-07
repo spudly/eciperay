@@ -97,6 +97,16 @@ describe('useRecipeCommentsProps', () => {
     expect(props().comments).toEqual([]);
   });
 
+  test('reports an error instead of an empty list when the query fails', async () => {
+    mockListComments.mockRejectedValue(new Error('boom'));
+    const {props} = await renderCommentsProps();
+    await waitFor(() => {
+      expect(props().error).toBe("Couldn't load comments.");
+    });
+    expect(props().loading).toBe(false);
+    expect(props().comments).toEqual([]);
+  });
+
   test('falls back to Anonymous for a missing display name', async () => {
     mockListComments.mockResolvedValue([
       {...sampleComment, authorDisplayName: null, isStale: false},

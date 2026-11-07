@@ -50,6 +50,7 @@ export const ProfileFeedbackPreference = () => {
                 setEnabled(next === true);
               }}
               aria-labelledby={labelId}
+              accessibilityLabel="Show feedback shortcut"
               width={24}
               height={24}
               borderWidth={2}
@@ -60,11 +61,9 @@ export const ProfileFeedbackPreference = () => {
               <Checkbox.Indicator>
                 <Text
                   aria-hidden
-                  style={{
-                    color: '$onPrimary',
-                    fontSize: tokens.typography.fontSize.sm,
-                    fontWeight: tokens.typography.fontWeight.bold,
-                  }}
+                  color="$onPrimary"
+                  fontSize={tokens.typography.fontSize.sm}
+                  fontWeight={tokens.typography.fontWeight.bold}
                 >
                   ✓
                 </Text>

@@ -1,4 +1,5 @@
 import type {NutritionGoals} from '@eciperay/types';
+import {useEffect, useRef, useState} from 'react';
 import {YStack} from 'tamagui';
 
 import {
@@ -48,16 +49,39 @@ type GoalFieldProps = {
   onChange: (value: number | null) => void;
 };
 
-const GoalField = ({label, value, onChange}: GoalFieldProps) => (
-  <LabeledTextInput
-    label={label}
-    value={formatGoalValue(value)}
-    onChangeText={text => {
-      onChange(parseOptionalNumber(text));
-    }}
-    placeholder="Optional"
-  />
-);
+const GoalField = ({label, value, onChange}: GoalFieldProps) => {
+  // Keep the raw text locally so intermediate input (e.g. "1." on the way
+  // to "1.5", which the server schema accepts as a non-negative decimal)
+  // is not clobbered by re-rendering the parsed number on every keystroke.
+  // The parent still receives the parsed value for each keystroke.
+  const [text, setTextState] = useState(() => formatGoalValue(value));
+  const textRef = useRef(text);
+  const setText = (next: string) => {
+    textRef.current = next;
+    setTextState(next);
+  };
+
+  // Resync from the prop only when it changes to a value the current
+  // text does not already parse to (an external change, not our own
+  // keystroke echoing back through the parent).
+  useEffect(() => {
+    if (parseOptionalNumber(textRef.current) !== value) {
+      setText(formatGoalValue(value));
+    }
+  }, [value]);
+
+  return (
+    <LabeledTextInput
+      label={label}
+      value={text}
+      onChangeText={nextText => {
+        setText(nextText);
+        onChange(parseOptionalNumber(nextText));
+      }}
+      placeholder="Optional"
+    />
+  );
+};
 
 export const NutritionGoalsForm = ({
   goals,

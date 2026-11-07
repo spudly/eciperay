@@ -216,7 +216,7 @@ export const ProfileFeedbackPreference = () => {
           <StyledCheckbox
             id={checkboxId}
             checked={enabled}
-            onCheckedChange={handleToggle}
+            onCheckedChange={next => handleToggle(next === true)}
             disabled={!analyticsConfigured}
             aria-labelledby={checkboxLabelId}
           >
