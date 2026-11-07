@@ -186,6 +186,13 @@ without); one recipe may be created fresh in case 1.
     denying it opens nothing and leaves the form unchanged. **Expected:** a
     captured photo flows through the same upload/preview path as a browsed or
     library-picked image.
+12. **Activate a version directly (#417).** On a Perfected recipe with a newer
+    saved version that has no cook logs (the version picker labels it Draft),
+    use **Activate** in the detail page's "Ready to activate" section.
+    **Expected:** the recipe page immediately serves the activated version's
+    content with no cook logged, and the previously active version stays in the
+    version history and can be re-activated the same way. On an Evolving recipe,
+    a Draft version with no cook logs offers no Activate action.
 
 **Run when:**
 `packages/app/src/screens/{Recipes,RecipeDetail,EditRecipe,EditVersion,ManualEntry}Screen.tsx`,

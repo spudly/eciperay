@@ -1,12 +1,10 @@
+import type {RecipeVersionDetail} from '@eciperay/types';
 import type {Response} from 'express';
 
 import {runTransactional} from '../../db/withTransaction.js';
 import {query as defaultQuery} from '../../db/query.js';
 import type {AuthedRequest} from '../../middleware/requireAuth.js';
-import {
-  isRecipeEditable,
-  recipeEditBlockedError,
-} from '../../lib/assertRecipeEditable.js';
+import {recipeEditBlockedError} from '../../lib/assertRecipeEditable.js';
 import {fetchVersionDetail} from '../../lib/fetchVersionDetail.js';
 import {getParam} from '../../lib/getParam.js';
 import {mapRowToRecipeDetail} from '../../lib/mapRowToRecipeDetail.js';
@@ -16,6 +14,30 @@ import {GET_RECIPE_DETAIL_SQL} from './queries.js';
 import {setActiveVersion, updateRecipeSlug} from './versionQueries.js';
 
 type QueryFn = typeof defaultQuery;
+
+/**
+ * Whether the owner may activate this version directly (#417).
+ *
+ * Three paths qualify:
+ *
+ * - Candidate: a newer version with cook logs — the original cook-log path,
+ *   unchanged.
+ * - Archived: a version that was active before; the previously active version
+ *   stays re-activatable.
+ * - Any saved version of a Perfected recipe: marking a recipe Perfected is the
+ *   owner's statement that its content is settled, so a newer saved version
+ *   (still labelled Draft in the picker because it has no cook logs) can be
+ *   promoted without pretending to cook it. This is the direct path #417 adds;
+ *   it deliberately carves activation out of the Perfected content lock (#418),
+ *   which still governs edits.
+ *
+ * A Draft version of a recipe that is not Perfected qualifies on no path: it
+ * must be Perfected first, or cooked into a candidate.
+ */
+const isActivatable = (version: RecipeVersionDetail): boolean =>
+  (version.derivedRole === 'candidate' && version.cookLogCount > 0) ||
+  version.derivedRole === 'archived' ||
+  version.status === 'perfected';
 
 export const activateVersion = async (
   req: AuthedRequest,
@@ -34,14 +56,21 @@ export const activateVersion = async (
     res.status(404).json({error: 'Version not found'});
     return;
   }
-  if (version.derivedRole !== 'candidate' || version.cookLogCount === 0) {
-    res
-      .status(409)
-      .json({error: 'Only candidate versions with cook logs can be activated'});
+  if (version.derivedRole === 'active') {
+    res.status(409).json({error: 'This version is already active'});
     return;
   }
-  if (!isRecipeEditable(version.status)) {
+  if (version.status === 'abandoned') {
     res.status(409).json({error: recipeEditBlockedError()});
+    return;
+  }
+  if (!isActivatable(version)) {
+    res
+      .status(409)
+      .json({
+        error:
+          'Draft versions cannot be activated directly — mark the recipe Perfected first, or log a cook against the version',
+      });
     return;
   }
   await runTransactional(queryFn, async q => {
