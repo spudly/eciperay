@@ -1,5 +1,5 @@
 /* eslint-disable max-lines -- recipe image upload, paste, and generate controls */
-import {Button as DsButton, Text as DsText, tokens} from '@spudly/ui';
+import {tokens} from '@spudly/ui';
 import React from 'react';
 import {Image, View} from 'react-native';
 import {
@@ -7,7 +7,7 @@ import {
   launchImageLibrary,
   type ImagePickerResponse,
 } from 'react-native-image-picker';
-import {XStack, YStack} from 'tamagui';
+import {Text, XStack, YStack} from 'tamagui';
 
 import {
   recipeImageFromAsset,
@@ -34,6 +34,75 @@ type Props = {
   onImageError?: (message: string) => void;
   onGenerateImage?: () => void | Promise<void>;
   onRemove: () => void;
+};
+
+/**
+ * The field's small action buttons, re-expressed host-side (@spudly/ui 6.x is
+ * pages-only, so the DS Button no longer crosses the package boundary): the DS
+ * Button's small geometry (md radius, sm semibold text, spacing 3/2 padding,
+ * 1px border on the filled variants, half opacity while disabled) with the
+ * variant treatments the field used — primary ($primary fill, $onPrimary ink),
+ * secondary (gray-3 fill, gray-10 ink and border), and the generate action's
+ * ghost form (surface fill, primary border and ink, from the overrides the
+ * field passed).
+ */
+const FieldButton = ({
+  label,
+  accessibilityLabel,
+  variant,
+  disabled = false,
+  onPress,
+}: {
+  label: string;
+  accessibilityLabel: string;
+  variant: 'primary' | 'secondary' | 'generate';
+  disabled?: boolean;
+  onPress: () => void;
+}) => {
+  const treatment =
+    variant === 'primary'
+      ? {
+          backgroundColor: '$primary' as const,
+          borderColor: 'transparent' as const,
+          color: '$onPrimary' as const,
+        }
+      : variant === 'secondary'
+        ? {
+            backgroundColor: tokens.colors.gray.gray3,
+            borderColor: tokens.colors.gray.gray10,
+            color: tokens.colors.gray.gray10,
+          }
+        : {
+            backgroundColor: '$surface' as const,
+            borderColor: '$primary' as const,
+            color: '$primary' as const,
+          };
+  return (
+    <YStack
+      backgroundColor={treatment.backgroundColor}
+      borderWidth={1}
+      borderColor={treatment.borderColor}
+      borderRadius={tokens.radii.md}
+      paddingHorizontal={tokens.spacing[3]}
+      paddingVertical={tokens.spacing[2]}
+      alignItems="center"
+      justifyContent="center"
+      opacity={disabled ? 0.5 : 1}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      accessibilityState={{disabled}}
+      onPress={disabled ? undefined : onPress}
+      cursor="pointer"
+    >
+      <Text
+        fontSize={tokens.typography.fontSize.sm}
+        fontWeight={tokens.typography.fontWeight.semibold}
+        color={treatment.color}
+      >
+        {label}
+      </Text>
+    </YStack>
+  );
 };
 
 export const RecipeImageField = ({
@@ -119,13 +188,13 @@ export const RecipeImageField = ({
         justifyContent="space-between"
         gap="$2"
       >
-        <DsText
+        <Text
           fontSize={tokens.typography.fontSize.sm}
           fontWeight={tokens.typography.fontWeight.medium}
           color={tokens.colors.gray.gray8}
         >
           Recipe image
-        </DsText>
+        </Text>
         {headerAction}
       </XStack>
       <YStack
@@ -153,13 +222,14 @@ export const RecipeImageField = ({
               {paddingHorizontal: tokens.spacing[4]},
             ]}
           >
-            <DsText
-              variant="hint"
+            <Text
+              fontSize={tokens.typography.fontSize.sm}
+              color="$textMuted"
               textAlign="center"
             >
               Take a photo, choose an image from your library, or generate one
               with AI
-            </DsText>
+            </Text>
           </View>
         )}
       </YStack>
@@ -167,61 +237,52 @@ export const RecipeImageField = ({
         flexWrap="wrap"
         gap="$3"
       >
-        <DsButton
-          variant="primary"
-          size="sm"
+        <FieldButton
+          label={imageUploading ? 'Uploading…' : 'Choose image'}
           accessibilityLabel="Choose recipe image"
+          variant="primary"
           disabled={imageBusy}
           onPress={() => {
             void handlePick();
           }}
-        >
-          {imageUploading ? 'Uploading…' : 'Choose image'}
-        </DsButton>
-        <DsButton
-          variant="secondary"
-          size="sm"
+        />
+        <FieldButton
+          label="Take photo"
           accessibilityLabel="Take photo of recipe"
+          variant="secondary"
           disabled={imageBusy}
           onPress={() => {
             void handleTakePhoto();
           }}
-        >
-          Take photo
-        </DsButton>
+        />
         {onGenerateImage ? (
-          <DsButton
-            variant="ghost"
-            size="sm"
+          <FieldButton
+            label={imageGenerating ? 'Generating…' : 'Generate with AI'}
             accessibilityLabel="Generate image with AI"
-            borderWidth={1}
-            borderColor="$primary"
-            backgroundColor="$surface"
+            variant="generate"
             disabled={imageBusy || !canGenerateImage}
             onPress={() => {
               void onGenerateImage();
             }}
-          >
-            {imageGenerating ? 'Generating…' : 'Generate with AI'}
-          </DsButton>
+          />
         ) : null}
         {imagePreview ? (
-          <DsButton
+          <FieldButton
+            label="Remove image"
+            accessibilityLabel="Remove image"
             variant="secondary"
-            size="sm"
             onPress={onRemove}
-          >
-            Remove image
-          </DsButton>
+          />
         ) : null}
       </XStack>
       {imageError ? (
-        <DsText
-          variant="error"
+        <Text
+          fontSize={tokens.typography.fontSize.sm}
+          color="$errorText"
           marginBlockStart="$2"
         >
           {imageError}
-        </DsText>
+        </Text>
       ) : null}
     </YStack>
   );

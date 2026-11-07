@@ -1,7 +1,4 @@
-import {
-  AddRecipeMenuPage,
-  type AddRecipeMenuPageOption,
-} from '@spudly/ui/pages';
+import {AddRecipeMenuPage, type AddRecipeMenuPageOption} from '@spudly/ui';
 
 // Navigation crosses as hrefs (#248): each option carries its route
 // and the page renders real links — no press callback.

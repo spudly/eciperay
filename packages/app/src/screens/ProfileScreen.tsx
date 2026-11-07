@@ -8,11 +8,12 @@ import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useState} from 'react';
 import type {NutritionGoals} from '@eciperay/types';
 
+import {ProfilePage} from '@spudly/ui';
+
 import {LegalLinks} from '../components/LegalLinks';
 import {AccessTokensSection} from '../hosts/profile/AccessTokensSection';
+import {NutritionGoalsForm} from '../hosts/profile/NutritionGoalsForm';
 import {ProfileFeedbackPreference} from '../hosts/profile/ProfileFeedbackPreference';
-import {NutritionGoalsForm} from '@spudly/ui';
-import {ProfilePage} from '@spudly/ui/pages';
 import {api} from '../lib/api';
 import {tagsHref} from '../lib/deepLinks';
 import {supabase} from '../lib/supabase';

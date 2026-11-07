@@ -3,11 +3,10 @@ import {
   useDelayedTrue,
   type InlineLoadingIndicatorProps,
 } from '@eciperay/client';
-import {Button as DsButton, tokens} from '@spudly/ui';
-import {useState} from 'react';
+import {tokens} from '@spudly/ui';
 import {View} from 'react-native';
 
-import {BookLoadingSpinner} from './ui/BookLoadingSpinner';
+import {BookLoadingSpinner} from './BookLoadingSpinner';
 
 /**
  * Centered inline loading composition (the old ui-loading-center: flex,

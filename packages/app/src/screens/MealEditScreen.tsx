@@ -6,7 +6,7 @@ import {
   useDebouncedValue,
 } from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {MealFormPage} from '@spudly/ui/pages';
+import {MealFormPage} from '@spudly/ui';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useState} from 'react';
 

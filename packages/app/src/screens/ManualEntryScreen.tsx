@@ -5,7 +5,7 @@ import {
   useAuth,
 } from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {ManualEntryPage} from '@spudly/ui/pages';
+import {ManualEntryPage} from '@spudly/ui';
 import {useQueryClient} from '@tanstack/react-query';
 import type {RecipeInput} from '@eciperay/types';
 

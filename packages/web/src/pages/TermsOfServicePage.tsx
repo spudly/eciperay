@@ -1,4 +1,4 @@
-import {LegalDocumentPage} from '@spudly/ui/pages';
+import {LegalDocumentPage} from '@spudly/ui';
 
 import {legalDocumentFrameProps} from './legal/legalDocumentData.js';
 import {termsOfServiceSections} from './legal/termsOfServiceContent.js';

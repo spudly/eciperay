@@ -8,9 +8,10 @@ import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useState} from 'react';
 
 import type {PersonalAccessToken} from '@eciperay/types';
-import {AccessTokensPanel} from '@spudly/ui';
 
 import {api} from '../../lib/api';
+
+import {AccessTokensPanel} from './AccessTokensPanel';
 
 const formatDate = (iso: string): string =>
   new Date(iso).toLocaleDateString(undefined, {
@@ -89,7 +90,7 @@ export const AccessTokensSection = () => {
         metaLabel: describeToken(token),
         revoked: Boolean(token.revokedAt),
       }))}
-      isLoading={tokensQuery.isLoading}
+      loading={tokensQuery.isLoading}
       tokenName={tokenName}
       onTokenNameChange={setTokenName}
       onCreate={() => {
@@ -104,7 +105,7 @@ export const AccessTokensSection = () => {
         setCreatedSecret(null);
       }}
       revokingId={revokeMutation.isPending ? revokeMutation.variables : null}
-      onRevoke={id => {
+      onRevoke={(id: string) => {
         revokeMutation.mutate(id);
       }}
       error={

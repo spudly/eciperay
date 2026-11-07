@@ -5,9 +5,9 @@ import {
   validateUserFeedbackReplyEmail,
   type SubmitUserFeedbackInput,
 } from '@eciperay/client';
-import {Button} from '@spudly/ui';
-import {FeedbackPage} from '@spudly/ui/pages';
+import {FeedbackPage, tokens} from '@spudly/ui';
 import {useEffect, useRef, useState} from 'react';
+import {Button} from 'tamagui';
 
 import {APP_VERSION} from '../lib/env.js';
 
@@ -88,13 +88,7 @@ export const FeedbackForm = ({
     // (min-h-0), so on tall viewports both actions fit inside the panel's
     // definite height with no scrolling, and on short viewports the page's
     // own ScrollView scrolls internally while Cancel stays visible.
-    <div
-      style={{
-        display: 'flex',
-        height: '100%',
-        flexDirection: 'column',
-      }}
-    >
+    <div style={{display: 'flex', height: '100%', flexDirection: 'column'}}>
       <div
         style={{
           display: 'flex',
@@ -132,7 +126,16 @@ export const FeedbackForm = ({
       </div>
       {onCancel && !submitted ? (
         <Button
-          variant="secondary"
+          backgroundColor={tokens.colors.gray.gray3}
+          borderColor={tokens.colors.gray.gray10}
+          borderWidth={1}
+          borderRadius={tokens.radii.md}
+          color={tokens.colors.gray.gray10}
+          fontFamily="body"
+          fontSize={tokens.typography.fontSize.md}
+          fontWeight={tokens.typography.fontWeight.semibold}
+          paddingHorizontal={tokens.spacing[4]}
+          paddingVertical={tokens.spacing[3]}
           onPress={onCancel}
         >
           Cancel

@@ -3,20 +3,12 @@ import {
   useDelayedTrue,
   type ScreenLoadingGateProps,
 } from '@eciperay/client';
+import {tokens} from '@spudly/ui';
 import {useState} from 'react';
-import {YStack} from 'tamagui';
+import {Button, Text, YStack} from 'tamagui';
 
-import {BookLoadingSpinner} from './ui/BookLoadingSpinner.js';
-import {PrimaryButton} from './ui/PrimaryButton.js';
-import {InfoBanner} from './ui/InfoBanner.js';
+import {BookLoadingSpinner} from './BookLoadingSpinner.js';
 
-// Parity note (B6, design-system#129): the app mirror's showcase demo now
-// renders the design system Button directly (the app ui/PrimaryButton
-// adapter was deleted); this web mirror still uses its own PrimaryButton
-// adapter, so no web change was needed.
-// Parity note (design-system#129): the app mirror's showcase demo was
-// removed with the in-app component showcase; this web mirror keeps its
-// own demo for the web showcase page, so no web change was needed.
 // The legacy `backgroundClassName` prop remains in the prop type (from
 // @eciperay/client) for API compatibility but is no longer applied (B7
 // C12, design-system#130 — the same treatment the app mirror shipped):
@@ -61,14 +53,35 @@ if (import.meta.env.DEV) {
 
     return (
       <>
-        <PrimaryButton
-          label={pending ? 'Mark ready' : 'Mark pending'}
+        <Button
+          backgroundColor="$primary"
+          color="$onPrimary"
+          borderColor="transparent"
+          borderWidth={1}
+          borderRadius={tokens.radii.md}
+          fontSize={tokens.typography.fontSize.md}
+          fontWeight={tokens.typography.fontWeight.semibold}
+          paddingHorizontal={tokens.spacing[4]}
+          paddingVertical={tokens.spacing[3]}
           onPress={() => {
             setPending(current => !current);
           }}
-        />
+        >
+          {pending ? 'Mark ready' : 'Mark pending'}
+        </Button>
         <ScreenLoadingGate pending={pending}>
-          <InfoBanner>Loaded content behind the gate.</InfoBanner>
+          <YStack
+            backgroundColor="$primarySubtle"
+            borderColor="$primary"
+            borderWidth={1}
+            borderRadius={tokens.radii.md}
+            padding={tokens.spacing[3]}
+            gap={tokens.spacing[2]}
+          >
+            <Text color="$primaryEmphasis">
+              Loaded content behind the gate.
+            </Text>
+          </YStack>
         </ScreenLoadingGate>
       </>
     );

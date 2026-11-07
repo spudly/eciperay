@@ -17,7 +17,7 @@ import {useCallback} from 'react';
 import {Alert} from 'react-native';
 import type {RecipeDetail} from '@eciperay/types';
 
-import {HomePage} from '@spudly/ui/pages';
+import {HomePage} from '@spudly/ui';
 
 import {RecipeListCard} from '../components/RecipeListCard';
 import {api} from '../lib/api';
@@ -88,7 +88,7 @@ export const HomeScreen = ({navigation}: Props) => {
       sharedWithMeLabel={HOME_SHARED_WITH_ME_LABEL}
       recipesTitle={HOME_RECIPES_SECTION_TITLE}
       emptyMessage={HOME_EMPTY_MESSAGE}
-      isLoading={isLoading}
+      loading={isLoading}
       recipes={recipes.map(recipe => ({id: recipe.id}))}
       renderRecipeRow={row => {
         const recipe = recipesById.get(row.id);

@@ -5,10 +5,10 @@ import {act, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {vi} from 'vitest';
 
-import {eciperay} from '../../lib/api.js';
-import {renderWithProviders} from '../../test/testUtils.js';
+import {eciperay} from '../lib/api.js';
+import {renderWithProviders} from '../test/testUtils.js';
 
-import {ProfileSubscriptionSection} from './ProfileSubscriptionSection.js';
+import {ProfilePage} from './ProfilePage.js';
 
 // A controllable session: the account can switch mid-test while the
 // component stays mounted, mirroring a sign-out/sign-in in the same
@@ -47,7 +47,7 @@ const plusEntitlement: Entitlement = {
   cancelAtPeriodEnd: false,
 };
 
-describe('ProfileSubscriptionSection account switch during refresh', () => {
+describe('ProfilePage subscription account switch during refresh', () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
@@ -79,7 +79,7 @@ describe('ProfileSubscriptionSection account switch during refresh', () => {
         },
       },
     });
-    const view = await renderWithProviders(<ProfileSubscriptionSection />, {
+    const view = await renderWithProviders(<ProfilePage />, {
       withAuth: false,
       queryClient,
     });
@@ -91,7 +91,7 @@ describe('ProfileSubscriptionSection account switch during refresh', () => {
     // The session switches to user-b while the POST is in flight and
     // the component stays mounted; user-b's own entitlement loads.
     authState.userId = 'user-b';
-    view.rerender(<ProfileSubscriptionSection />);
+    view.rerender(<ProfilePage />);
     expect(await screen.findByText('Free plan')).toBeInTheDocument();
 
     // The pending refresh now resolves with user-a's Plus

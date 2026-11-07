@@ -4,7 +4,7 @@ import {render} from '@testing-library/react-native';
 import {Icon} from './Icon';
 
 describe('Icon', () => {
-  test('renders a design-system icon with label', async () => {
+  test('renders a host-side icon with label', async () => {
     const {getByLabelText} = await render(
       <Icon
         name="home"

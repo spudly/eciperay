@@ -2,7 +2,7 @@ import {errorMessage} from '@eciperay/client';
 import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
-import {ForgotPasswordPage as ForgotPasswordPageView} from '@spudly/ui/pages';
+import {ForgotPasswordPage as ForgotPasswordPageView} from '@spudly/ui';
 
 import {supabase} from '../../lib/supabase.js';
 

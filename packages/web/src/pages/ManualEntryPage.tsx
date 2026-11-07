@@ -4,7 +4,7 @@ import {
   useAnalytics,
   useAuth,
 } from '@eciperay/client';
-import {ManualEntryPage as ManualEntryShell} from '@spudly/ui/pages';
+import {ManualEntryPage as ManualEntryShell} from '@spudly/ui';
 import {useQueryClient} from '@tanstack/react-query';
 import {useNavigate} from 'react-router-dom';
 import type {RecipeInput} from '@eciperay/types';

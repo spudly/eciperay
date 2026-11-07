@@ -6,7 +6,7 @@ import {
   type SubmitUserFeedbackInput,
 } from '@eciperay/client';
 import {useFocusEffect} from '@react-navigation/native';
-import {FeedbackPage} from '@spudly/ui/pages';
+import {FeedbackPage} from '@spudly/ui';
 import {useCallback, useEffect, useRef, useState} from 'react';
 
 import {APP_VERSION} from '../lib/env';

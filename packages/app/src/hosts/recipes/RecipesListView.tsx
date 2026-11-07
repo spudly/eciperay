@@ -17,11 +17,11 @@ import type {
   RecipeListSort,
   RecipeListSortDir,
 } from '@eciperay/types';
-import {RatingForm} from '@spudly/ui';
-import {RecipesPage, type RecipesPageItem} from '@spudly/ui/pages';
+import {RecipesPage, type RecipesPageItem} from '@spudly/ui';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useRef, useState} from 'react';
 
+import {CookLogForm} from '../../components/CookLogForm';
 import {api} from '../../lib/api';
 import {recipeHref} from '../../lib/deepLinks';
 
@@ -38,7 +38,24 @@ import {recipeHref} from '../../lib/deepLinks';
 type RecipesListViewOwnProps = Omit<
   RecipesListViewProps,
   'onRecipeDelete' | 'onRecipePress'
->;
+> & {
+  /**
+   * The own list's next-page failure, composed by the screen (which owns the
+   * infinite query's error latch): the page renders it as the own section's
+   * load-more error row, in place of the DS Alert the screen used to render
+   * under the list (@spudly/ui 6.x is pages-only; the alert's surface is the
+   * page's `ownLoadMoreErrorMessage` prop now).
+   */
+  loadMoreErrorMessage?: string | null;
+  /** The load-more error row's retry intent. */
+  onLoadMoreRetry?: () => void;
+  /**
+   * The own list's first-load failure, composed by the screen (which owns the
+   * infinite query): the page renders it as the own section's error state
+   * (`ownErrorMessage`), distinct from the load-more failure above.
+   */
+  ownErrorMessage?: string | null;
+};
 
 /**
  * The subtitle for a RecipesPage row: servings · time · condensed nutrition
@@ -154,7 +171,7 @@ export const InlineCookLogForm = ({
   }, []);
 
   return (
-    <RatingForm
+    <CookLogForm
       variant="light"
       notesPlaceholder="Notes from this cook (optional)"
       isPending={createMutation.isPending}
@@ -197,6 +214,9 @@ export const RecipesListView = ({
   sortDir,
   onSortDirChange,
   showStatusFilter,
+  loadMoreErrorMessage,
+  onLoadMoreRetry,
+  ownErrorMessage,
 }: RecipesListViewOwnProps) => {
   // The cook-log forms' open state: a set of recipe ids, so forms
   // open and close independently and several may be open at once —
@@ -255,11 +275,26 @@ export const RecipesListView = ({
     imageUrl: recipe.imageUrl,
   }));
 
+  // The 6.x page is sectioned: this screen's recipes are the own
+  // section (its complete, paginated collection — the host's
+  // onLoadMore stays its continuation, carried on the page's
+  // end-reached signal and its own-section fetch/error rows), and
+  // no discovery content is populated (the app has no public
+  // catalog query on this screen), so the discovery section
+  // renders its empty state under its heading.
   return (
     <RecipesPage
-      recipes={items}
-      isLoading={isLoading}
+      ownTitle="Your recipes"
+      ownRecipes={items}
+      loadingOwn={isLoading}
+      ownErrorMessage={ownErrorMessage ?? null}
       isFetchingNextPage={isFetchingNextPage}
+      ownLoadMoreErrorMessage={loadMoreErrorMessage ?? null}
+      onOwnLoadMoreRetry={onLoadMoreRetry}
+      ownLoadMoreRetryLabel="Try again"
+      discoveryTitle="Discover"
+      discoveryRecipes={[]}
+      loadingDiscovery={false}
       onLogCookPress={openCookLog}
       renderRecipeAccessory={recipeId => {
         const recipe = recipesById.get(recipeId);

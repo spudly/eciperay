@@ -14,11 +14,8 @@ import type {
   RecipeListSort,
   RecipeListSortDir,
 } from '@eciperay/types';
-import {RatingForm} from '@spudly/ui';
-import {
-  RecipesPage as RecipesPageView,
-  type RecipesPageItem,
-} from '@spudly/ui/pages';
+import {tokens} from '@spudly/ui';
+import {RecipesPage as RecipesPageView, type RecipesPageItem} from '@spudly/ui';
 import {
   useInfiniteQuery,
   useMutation,
@@ -26,7 +23,7 @@ import {
 } from '@tanstack/react-query';
 import {useCallback, useEffect, useRef, useState} from 'react';
 
-import {PageTitle} from '../components/ui/PageTitle.js';
+import {CookLogForm} from '../components/cooking/CookLogForm.js';
 import {eciperay} from '../lib/api.js';
 
 /**
@@ -47,11 +44,11 @@ const formatRecipesPageSubtitle = (recipe: RecipeDetail) =>
 /**
  * One row's inline cook-log form, rendered through the page's per-row accessory
  * slot — the composition the app host established for this page. The form is
- * the design system's RatingForm (the generalized cook-log form: CookLogForm in
- * @spudly/ui up to 1.14, renamed and generalized in the release this adoption
- * targets), with the notes placeholder carrying the cook-log copy the old web
- * form used. Its submit values map at this boundary: the form's generic
- * `rating` crosses as the cook log's `authorStarRating`.
+ * the host's own CookLogForm (the design system's generalized RatingForm is
+ * gone in @spudly/ui 6.x, so the accessory is the web cook-log form that serves
+ * the recipe detail cook-history tab, driven by the relocated host
+ * StarRatingInput). Its submit values are already a CookLogInput, so they cross
+ * to the mutation unchanged.
  *
  * The lifetime guards mirror the app host's, for the same reasons: this
  * component unmounts with the slot, so a cancel during a pending save would
@@ -119,20 +116,16 @@ const InlineCookLogForm = ({
   }, []);
 
   return (
-    <RatingForm
+    <CookLogForm
       variant="light"
-      notesPlaceholder="Notes from this cook (optional)"
       isPending={createMutation.isPending}
       onSkip={() => {
         if (!createMutation.isPending) {
           onClose();
         }
       }}
-      onSubmit={values => {
-        createMutation.mutate({
-          authorStarRating: values.rating,
-          notes: values.notes,
-        });
+      onSubmit={input => {
+        createMutation.mutate(input);
       }}
     />
   );
@@ -153,6 +146,16 @@ const InlineCookLogForm = ({
  * page's "Add a filter" chooser instead of rendering every control at once.
  * Pagination is the page's end-reached signal now; the old view's
  * IntersectionObserver sentinel is gone.
+ *
+ * @spudly/ui 6.x sectioned contract: the page renders an own section and a
+ * discovery section under one filter bar. This host populates only the own
+ * section — the user's own recipes, paginated through the own-section load-more
+ * props — and passes an empty discovery section (this surface has no discovery
+ * feed today; the section collapses to its empty state inside the page). The
+ * old flat props map as: `recipes` → `ownRecipes`, `isLoading` → `loadingOwn`,
+ * `isFetchingNextPage` → `isFetchingNextOwnPage`, and the host-rendered
+ * load-more error alert → `ownLoadMoreErrorMessage` / `onOwnLoadMoreRetry`,
+ * which the page renders as the own section's error row.
  */
 export const RecipesPage = () => {
   const {filters, controls} = useRecipeListFilters();
@@ -160,6 +163,7 @@ export const RecipesPage = () => {
   const {
     data,
     isLoading,
+    isError,
     isFetchingNextPage,
     isFetchNextPageError,
     hasNextPage,
@@ -173,12 +177,20 @@ export const RecipesPage = () => {
 
   const recipes = data?.pages.flat() ?? [];
 
+  // A failed FIRST page is not a load-more failure and not an empty
+  // list: with no pages loaded the page would otherwise render its
+  // empty state for what is actually an error. It crosses as the own
+  // section's first-load error (`ownErrorMessage`); once any rows are
+  // loaded, a failure is the load-more path below instead.
+  const ownErrorMessage =
+    isError && recipes.length === 0 ? "Couldn't load your recipes." : null;
+
   // The shared pagination pattern re-fires onLoadMore when a fetch
   // completes having added no rows (design-system#285) — it cannot
   // tell an empty page from a failed one, so the host gates here: a
   // failed next page latches isFetchNextPageError, automatic loading
-  // stops instead of cycling retries, and the alert under the list
-  // offers the manual retry.
+  // stops instead of cycling retries, and the own section's load-more
+  // error row offers the manual retry.
   const handleLoadMore = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage && !isFetchNextPageError) {
       void fetchNextPage();
@@ -242,11 +254,32 @@ export const RecipesPage = () => {
 
   return (
     <>
-      <PageTitle spacing="section">Recipes</PageTitle>
+      <h1
+        style={{
+          margin: 0,
+          marginBottom: tokens.spacing[4],
+          fontSize: tokens.typography.fontSize['3xl'],
+          fontWeight: tokens.typography.fontWeight.bold,
+          fontFamily: tokens.typography.fontFamily.sans,
+        }}
+      >
+        Recipes
+      </h1>
       <RecipesPageView
-        recipes={items}
-        isLoading={isLoading}
-        isFetchingNextPage={isFetchingNextPage}
+        ownTitle="Your recipes"
+        ownRecipes={items}
+        loadingOwn={isLoading}
+        ownErrorMessage={ownErrorMessage}
+        isFetchingNextOwnPage={isFetchingNextPage}
+        ownLoadMoreErrorMessage={
+          isFetchNextPageError ? "Couldn't load more recipes." : null
+        }
+        onOwnLoadMoreRetry={() => {
+          void fetchNextPage();
+        }}
+        discoveryTitle="Discover"
+        discoveryRecipes={[]}
+        loadingDiscovery={false}
         onLogCookPress={openCookLog}
         renderRecipeAccessory={recipeId => {
           const recipe = recipesById.get(recipeId);
@@ -290,37 +323,6 @@ export const RecipesPage = () => {
           controls.onSortDirChange(value as RecipeListSortDir);
         }}
       />
-      {isFetchNextPageError ? (
-        <p
-          role="alert"
-          style={{
-            margin: 0,
-            marginBottom: 16,
-            fontSize: 14,
-            color: '#dc2626',
-          }}
-        >
-          Couldn't load more recipes.{' '}
-          <button
-            type="button"
-            style={{
-              textDecoration: 'underline',
-              background: 'none',
-              border: 'none',
-              padding: 0,
-              cursor: 'pointer',
-              fontSize: 'inherit',
-              fontFamily: 'inherit',
-              color: 'inherit',
-            }}
-            onClick={() => {
-              void fetchNextPage();
-            }}
-          >
-            Try again
-          </button>
-        </p>
-      ) : null}
     </>
   );
 };

@@ -4,7 +4,7 @@ import {
   MealPlanDetailPage,
   type MealPlanDetailPageEntry,
   type MealPlanDetailPageNutritionGoals,
-} from '@spudly/ui/pages';
+} from '@spudly/ui';
 
 /**
  * The app host's own props. The shared client view-props type keeps the

@@ -1,13 +1,18 @@
 import type {ThumbnailListCardProps} from '@eciperay/client';
-import {Card, Text as DsText, tokens} from '@spudly/ui';
+import {tokens} from '@spudly/ui';
 import {TouchableOpacity} from 'react-native';
-import {Image, View} from 'tamagui';
+import {Image, Text, View, XStack} from 'tamagui';
 
 /**
- * G8 (ThumbnailListCard): an app-domain list-row composite that stays in the
- * adapter layer — DS Card + thumbnail + title/meta text composed from DS
- * components and token props. The 64px thumbnail (old block-16/inline-16) is
- * the $16 size token; rounded-lg is the md radius token.
+ * G8 (ThumbnailListCard): an app-domain list-row composite in the adapter layer
+ * — thumbnail + title/meta text on an elevated card surface. It lived in the
+ * app components/ui wrapper library until @spudly/ui 6.x (pages-only exports)
+ * retired the DS Card / Text it composed; it now re-expresses that composition
+ * host-side with tamagui primitives and @spudly/ui tokens: the elevated card is
+ * the $surface fill with the md shadow token and lg radius, the title is
+ * semibold body text, the subtitle is the hint treatment (sm, muted ink). The
+ * 64px thumbnail (old block-16/inline-16) is the $16 size token; rounded-lg is
+ * the md radius token.
  *
  * Parity note (#190): the web mirror wraps its trailing actions onto their own
  * row at phone widths because the browser squeezed the title column beside them
@@ -25,9 +30,9 @@ import {Image, View} from 'tamagui';
  * target — the web card itself is pressable, but its padding sat on the outer
  * card while onPress lived on an inner stack, so the padded ring never pressed.
  * This mirror's card is not a pressable surface: its press targets are the
- * thumbnail and text TouchableOpacities, and the DS Card's default padding is
- * layout space around them, so there is no counterpart change. Comment-only; no
- * behavior change.
+ * thumbnail and text TouchableOpacities, and the card's padding is layout space
+ * around them, so there is no counterpart change. Comment-only; no behavior
+ * change.
  */
 
 // Structural flex only (the old flex-1 min-inline-0): the text block
@@ -59,9 +64,14 @@ export const ThumbnailListCard = ({
   onPress,
   trailing,
 }: ThumbnailListCardProps) => (
-  <Card
-    variant="elevated"
-    flexDirection="row"
+  <XStack
+    backgroundColor="$surface"
+    borderRadius={tokens.radii.lg}
+    padding={tokens.spacing[4]}
+    shadowColor={tokens.shadows.md.shadowColor}
+    shadowOffset={tokens.shadows.md.shadowOffset}
+    shadowOpacity={tokens.shadows.md.shadowOpacity}
+    shadowRadius={tokens.shadows.md.shadowRadius}
     alignItems="center"
     gap="$3"
     marginBottom="$3"
@@ -73,18 +83,17 @@ export const ThumbnailListCard = ({
       style={textBlockStyle}
       onPress={onPress}
     >
-      <DsText fontWeight={tokens.typography.fontWeight.semibold}>
-        {title}
-      </DsText>
+      <Text fontWeight={tokens.typography.fontWeight.semibold}>{title}</Text>
       {subtitle ? (
-        <DsText
-          variant="hint"
+        <Text
+          fontSize={tokens.typography.fontSize.sm}
+          color="$textMuted"
           marginTop="$1"
         >
           {subtitle}
-        </DsText>
+        </Text>
       ) : null}
     </TouchableOpacity>
     {trailing}
-  </Card>
+  </XStack>
 );

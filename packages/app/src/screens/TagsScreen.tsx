@@ -7,7 +7,7 @@ import {
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import React, {useState} from 'react';
 
-import {TagsPage, type TagsPageTag} from '@spudly/ui/pages';
+import {TagsPage, type TagsPageTag} from '@spudly/ui';
 
 import {TAG_COLOR_NAME_OPTIONS} from '../lib/tagColors';
 import {api} from '../lib/api';
@@ -141,7 +141,7 @@ export const TagsScreen = (): React.JSX.Element => {
     <TagsPage
       colorOptions={TAG_COLOR_NAME_OPTIONS}
       tags={tags.map(tag => ({...tag, color: tagColorNameForHex(tag.color)}))}
-      isLoading={isLoading}
+      loading={isLoading}
       name={name}
       color={color}
       onNameChange={setName}

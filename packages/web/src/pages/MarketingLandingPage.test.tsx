@@ -31,6 +31,14 @@ describe('MarketingLandingPage', () => {
     expect(
       screen.getByRole('link', {name: 'Terms of Service'}),
     ).toHaveAttribute('href', '/terms');
+    // Regression (#425): the signed-out public footer must carry all
+    // three legal links — the DS frame's default footer omits Do Not
+    // Sell, so the host passes the shared footer data explicitly.
+    expect(
+      screen.getByRole('link', {
+        name: 'Do Not Sell or Share My Personal Information',
+      }),
+    ).toHaveAttribute('href', '/privacy/consent');
     expect(screen.getByText('Import from anywhere')).toBeInTheDocument();
   });
 });

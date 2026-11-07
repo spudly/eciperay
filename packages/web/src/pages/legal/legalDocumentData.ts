@@ -1,9 +1,9 @@
 import {LEGAL_CONTACT_EMAIL, LEGAL_OPERATOR_NAME} from '@eciperay/client';
 import type {
+  BigFooterData,
   LegalDocumentBlock,
-  LegalDocumentLink,
   LegalDocumentSpan,
-} from '@spudly/ui/pages';
+} from '@spudly/ui';
 
 // Builders for the legal documents' structured block model (#170):
 // the DS LegalDocumentPage renders sections of paragraph/list
@@ -50,24 +50,45 @@ export const legalOperatorIntroSpan: LegalDocumentSpan = textSpan(
   `Eciperay is operated by ${LEGAL_OPERATOR_NAME} ("we", "us", or "our"). Eciperay is not a registered legal entity.`,
 );
 
+/**
+ * The ONE shared BigFooter data object for every signed-out public surface
+ * (#425): the DS PublicPageFrame's DEFAULT footer omits the Do Not Sell link,
+ * so every public host passes this object explicitly — the Legal column carries
+ * all three legal links, including Do Not Sell or Share, exactly as the legal
+ * pages have always rendered them. There are no app-store or social links today
+ * (production ships none), so those sets are empty, matching what the legal
+ * pages render now.
+ */
+export const sharedFooter: BigFooterData = {
+  brand: {label: 'Eciperay', href: '/'},
+  columns: [
+    {
+      title: 'Legal',
+      links: [
+        {label: 'Privacy Policy', href: '/privacy'},
+        {label: 'Terms of Service', href: '/terms'},
+        {
+          label: 'Do Not Sell or Share My Personal Information',
+          href: '/privacy/consent',
+        },
+      ],
+    },
+  ],
+  storeLinks: [],
+  socialLinks: [],
+};
+
 /** The DS legal page's frame props, shared by both documents. */
 export const legalDocumentFrameProps: {
   brandLabel: string;
   brandHref: string;
   signInLabel: string;
   signInHref: string;
-  footerLinks: LegalDocumentLink[];
+  footer: BigFooterData;
 } = {
   brandLabel: 'Eciperay',
   brandHref: '/',
   signInLabel: 'Sign in',
   signInHref: '/login',
-  footerLinks: [
-    {label: 'Privacy Policy', href: '/privacy'},
-    {label: 'Terms of Service', href: '/terms'},
-    {
-      label: 'Do Not Sell or Share My Personal Information',
-      href: '/privacy/consent',
-    },
-  ],
+  footer: sharedFooter,
 };

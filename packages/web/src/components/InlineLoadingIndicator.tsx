@@ -3,19 +3,12 @@ import {
   useDelayedTrue,
   type InlineLoadingIndicatorProps,
 } from '@eciperay/client';
+import {tokens} from '@spudly/ui';
 import {useState} from 'react';
-import {YStack} from 'tamagui';
+import {Button, YStack} from 'tamagui';
 
-import {BookLoadingSpinner} from './ui/BookLoadingSpinner.js';
-import {PrimaryButton} from './ui/PrimaryButton.js';
+import {BookLoadingSpinner} from './BookLoadingSpinner.js';
 
-// Parity note (B6, design-system#129): the app mirror's showcase demo now
-// renders the design system Button directly (the app ui/PrimaryButton
-// adapter was deleted); this web mirror still uses its own PrimaryButton
-// adapter, so no web change was needed.
-// Parity note (design-system#129): the app mirror's showcase demo was
-// removed with the in-app component showcase; this web mirror keeps its
-// own demo for the web showcase page, so no web change was needed.
 // The legacy `className` prop remains in the prop type (from
 // @eciperay/client) for API compatibility but is no longer applied (B7
 // C12, design-system#130 — the same treatment the app mirror shipped);
@@ -48,12 +41,22 @@ if (import.meta.env.DEV) {
 
     return (
       <>
-        <PrimaryButton
-          label={loading ? 'Hide spinner' : 'Show spinner'}
+        <Button
+          backgroundColor="$primary"
+          color="$onPrimary"
+          borderColor="transparent"
+          borderWidth={1}
+          borderRadius={tokens.radii.md}
+          fontSize={tokens.typography.fontSize.md}
+          fontWeight={tokens.typography.fontWeight.semibold}
+          paddingHorizontal={tokens.spacing[4]}
+          paddingVertical={tokens.spacing[3]}
           onPress={() => {
             setLoading(current => !current);
           }}
-        />
+        >
+          {loading ? 'Hide spinner' : 'Show spinner'}
+        </Button>
         <YStack marginTop="$2">
           <InlineLoadingIndicator loading={loading} />
         </YStack>

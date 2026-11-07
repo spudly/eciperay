@@ -8,15 +8,10 @@ import {
   writeAnalyticsConsent,
   type AnalyticsConsentStatus,
 } from '@eciperay/client';
-import {Button, ScreenContainer, SectionCard, Text as DSText} from '@spudly/ui';
+import {ConsentPreferencesPage as ConsentPreferencesPageView} from '@spudly/ui';
 import {useEffect, useState} from 'react';
 
 import {analytics, disablePostHog, enablePostHog} from '../lib/analytics.js';
-
-const CONSENT_LABELS: Record<AnalyticsConsentStatus, string> = {
-  accepted: 'Accepted',
-  declined: 'Declined',
-};
 
 /**
  * Consent preferences surface (eciperay#408): the on-demand counterpart to the
@@ -26,6 +21,11 @@ const CONSENT_LABELS: Record<AnalyticsConsentStatus, string> = {
  * returns the browser to the undecided state: the stored choice is removed,
  * analytics stops immediately, and the banner re-presents on the next page view
  * as for a new visitor.
+ *
+ * The DS ConsentPreferencesPage renders the surface; this host keeps the
+ * consent record and its side effects: the current choice crosses as data, the
+ * three intents report back here, and the host's precise analytics wording
+ * crosses as the page's description/hint copy.
  */
 export const ConsentPreferencesPage = () => {
   const {session} = useAuth();
@@ -79,52 +79,13 @@ export const ConsentPreferencesPage = () => {
   };
 
   return (
-    <ScreenContainer
-      variant="padded"
-      scrollable
-    >
-      <div style={{maxWidth: 640, margin: '0 auto'}}>
-        <SectionCard
-          title="Privacy choices"
-          variant="elevated"
-        >
-          <DSText>
-            Eciperay uses cookies and product analytics (PostHog) to improve the
-            service, only with your consent. You can change your choice at any
-            time here — changes take effect immediately, without reloading the
-            page.
-          </DSText>
-          <DSText>
-            {`Your current choice: ${consent ? CONSENT_LABELS[consent] : 'Not set'}`}
-          </DSText>
-          <div>
-            <Button
-              variant="primary"
-              onPress={accept}
-            >
-              Accept analytics consent
-            </Button>
-            <Button
-              variant="secondary"
-              onPress={decline}
-            >
-              Decline analytics consent
-            </Button>
-            <Button
-              variant="secondary"
-              onPress={withdraw}
-            >
-              Withdraw consent
-            </Button>
-          </div>
-          <DSText variant="hint">
-            Withdrawing consent removes your stored choice and turns analytics
-            off until you make a new choice; the consent banner will ask again,
-            as it does for a new visitor. See our Privacy Policy for what
-            analytics collects when it is on.
-          </DSText>
-        </SectionCard>
-      </div>
-    </ScreenContainer>
+    <ConsentPreferencesPageView
+      currentChoice={consent}
+      onAccept={accept}
+      onDecline={decline}
+      onWithdraw={withdraw}
+      description="Eciperay uses cookies and product analytics (PostHog) to improve the service, only with your consent. You can change your choice at any time here — changes take effect immediately, without reloading the page."
+      hint="Withdrawing consent removes your stored choice and turns analytics off until you make a new choice; the consent banner will ask again, as it does for a new visitor. See our Privacy Policy for what analytics collects when it is on."
+    />
   );
 };

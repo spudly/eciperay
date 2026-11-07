@@ -1,12 +1,11 @@
 import {isDuplicateRecipeError, useAnalytics} from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useState} from 'react';
-import {Alert, View} from 'react-native';
+import {Alert} from 'react-native';
 
 import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 
-import {Button as DsButton, tokens} from '@spudly/ui';
-import {ImportImagePage} from '@spudly/ui/pages';
+import {ImportImagePage} from '@spudly/ui';
 import {api} from '../lib/api';
 import {
   confirmPhotoLibraryAccess,
@@ -17,11 +16,6 @@ import type {AddStackParamList} from '../navigation/types';
 type Props = NativeStackScreenProps<AddStackParamList, 'ImportImage'>;
 
 type PickSource = 'camera' | 'library';
-
-const importAnywayContainerStyle = {
-  paddingHorizontal: tokens.spacing[4],
-  marginTop: tokens.spacing[3],
-} as const;
 
 export const ImportImageScreen = ({navigation}: Props) => {
   const [loading, setLoading] = useState(false);
@@ -125,31 +119,27 @@ export const ImportImageScreen = ({navigation}: Props) => {
   };
 
   return (
-    <>
-      <ImportImagePage
-        loading={loading}
-        error={error}
-        onPickCamera={() => {
-          void handlePick('camera');
-        }}
-        onPickLibrary={() => {
-          void handlePick('library');
-        }}
-      />
-      {duplicateWarnedCapture !== null ? (
-        <View style={importAnywayContainerStyle}>
-          <DsButton
-            variant="primary"
-            disabled={loading}
-            onPress={() => {
+    <ImportImagePage
+      loading={loading}
+      error={error}
+      onPickCamera={() => {
+        void handlePick('camera');
+      }}
+      onPickLibrary={() => {
+        void handlePick('library');
+      }}
+      {...(duplicateWarnedCapture !== null
+        ? {
+            // The page's own duplicate-override action (@spudly/ui
+            // 6.x): rendered only while a warned capture is
+            // retained, and resubmits THAT capture with the
+            // override — the separately labeled action this flow
+            // always kept distinct from the pick actions (#296).
+            onImportAnyway: () => {
               void handleImportAnyway(duplicateWarnedCapture);
-            }}
-            accessibilityLabel="Import anyway"
-          >
-            Import anyway
-          </DsButton>
-        </View>
-      ) : null}
-    </>
+            },
+          }
+        : {})}
+    />
   );
 };

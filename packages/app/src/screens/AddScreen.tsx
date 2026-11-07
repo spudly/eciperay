@@ -1,7 +1,4 @@
-import {
-  AddRecipeMenuPage,
-  type AddRecipeMenuPageOption,
-} from '@spudly/ui/pages';
+import {AddRecipeMenuPage, type AddRecipeMenuPageOption} from '@spudly/ui';
 
 import {addOptionHrefs} from '../lib/deepLinks';
 

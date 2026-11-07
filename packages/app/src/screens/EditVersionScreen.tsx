@@ -4,7 +4,7 @@ import {
   recipeVersionDetailToInput,
 } from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {EditVersionPage} from '@spudly/ui/pages';
+import {EditVersionPage} from '@spudly/ui';
 import {useQuery, useQueryClient} from '@tanstack/react-query';
 import type {RecipeVersionInput} from '@eciperay/types';
 

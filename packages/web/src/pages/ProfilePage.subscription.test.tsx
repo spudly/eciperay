@@ -4,10 +4,10 @@ import {act, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {vi} from 'vitest';
 
-import {eciperay} from '../../lib/api.js';
-import {renderWithProviders} from '../../test/testUtils.js';
+import {eciperay} from '../lib/api.js';
+import {renderWithProviders} from '../test/testUtils.js';
 
-import {ProfileSubscriptionSection} from './ProfileSubscriptionSection.js';
+import {ProfilePage} from './ProfilePage.js';
 
 const plusEntitlement: Entitlement = {
   plan: 'plus',
@@ -19,7 +19,7 @@ const plusEntitlement: Entitlement = {
   cancelAtPeriodEnd: false,
 };
 
-describe('ProfileSubscriptionSection', () => {
+describe('ProfilePage subscription section', () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
@@ -28,9 +28,7 @@ describe('ProfileSubscriptionSection', () => {
     vi.spyOn(eciperay.account, 'getEntitlement').mockResolvedValue(
       plusEntitlement,
     );
-    await renderWithProviders(<ProfileSubscriptionSection />, {
-      withAuth: false,
-    });
+    await renderWithProviders(<ProfilePage />, {withAuth: false});
     expect(await screen.findByText('Plus plan')).toBeInTheDocument();
     expect(
       screen.getByText('Active — renews Nov 16, 2026'),
@@ -41,9 +39,7 @@ describe('ProfileSubscriptionSection', () => {
     const getEntitlement = vi
       .spyOn(eciperay.account, 'getEntitlement')
       .mockResolvedValue(plusEntitlement);
-    await renderWithProviders(<ProfileSubscriptionSection />, {
-      withAuth: false,
-    });
+    await renderWithProviders(<ProfilePage />, {withAuth: false});
     expect(
       await screen.findByText('Active — renews Nov 16, 2026'),
     ).toBeInTheDocument();
@@ -84,9 +80,7 @@ describe('ProfileSubscriptionSection', () => {
       .spyOn(eciperay.account, 'getEntitlement')
       .mockResolvedValueOnce(freeEntitlement)
       .mockResolvedValue(plusEntitlement);
-    await renderWithProviders(<ProfileSubscriptionSection />, {
-      withAuth: false,
-    });
+    await renderWithProviders(<ProfilePage />, {withAuth: false});
     expect(await screen.findByText('Free plan')).toBeInTheDocument();
     expect(
       await screen.findByText('Plus plan', undefined, {timeout: 6000}),
@@ -114,9 +108,7 @@ describe('ProfileSubscriptionSection', () => {
     const open = vi
       .spyOn(window, 'open')
       .mockImplementation(() => portalTab as unknown as Window);
-    await renderWithProviders(<ProfileSubscriptionSection />, {
-      withAuth: false,
-    });
+    await renderWithProviders(<ProfilePage />, {withAuth: false});
     await userEvent.click(
       await screen.findByRole('button', {name: 'Manage subscription'}),
     );
@@ -139,9 +131,7 @@ describe('ProfileSubscriptionSection', () => {
       url: 'https://portal.example/session',
     });
     vi.spyOn(window, 'open').mockImplementation(() => null);
-    await renderWithProviders(<ProfileSubscriptionSection />, {
-      withAuth: false,
-    });
+    await renderWithProviders(<ProfilePage />, {withAuth: false});
     await userEvent.click(
       await screen.findByRole('button', {name: 'Manage subscription'}),
     );
@@ -167,9 +157,7 @@ describe('ProfileSubscriptionSection', () => {
     const refresh = vi
       .spyOn(eciperay.account, 'refreshEntitlement')
       .mockResolvedValue(plusEntitlement);
-    await renderWithProviders(<ProfileSubscriptionSection />, {
-      withAuth: false,
-    });
+    await renderWithProviders(<ProfilePage />, {withAuth: false});
     expect(await screen.findByText('Free plan')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', {name: 'Check again'}));
     expect(await screen.findByText('Plus plan')).toBeInTheDocument();
@@ -184,9 +172,7 @@ describe('ProfileSubscriptionSection', () => {
     vi.spyOn(eciperay.account, 'refreshEntitlement').mockResolvedValue(
       plusEntitlement,
     );
-    await renderWithProviders(<ProfileSubscriptionSection />, {
-      withAuth: false,
-    });
+    await renderWithProviders(<ProfilePage />, {withAuth: false});
     await userEvent.click(
       await screen.findByRole('button', {name: 'Check again'}),
     );
@@ -205,9 +191,7 @@ describe('ProfileSubscriptionSection', () => {
     vi.spyOn(eciperay.account, 'refreshEntitlement').mockRejectedValue(
       new Error('billing not configured'),
     );
-    await renderWithProviders(<ProfileSubscriptionSection />, {
-      withAuth: false,
-    });
+    await renderWithProviders(<ProfilePage />, {withAuth: false});
     await userEvent.click(
       await screen.findByRole('button', {name: 'Check again'}),
     );
@@ -220,9 +204,7 @@ describe('ProfileSubscriptionSection', () => {
     vi.spyOn(eciperay.account, 'getEntitlement').mockResolvedValue(
       plusEntitlement,
     );
-    await renderWithProviders(<ProfileSubscriptionSection />, {
-      withAuth: false,
-    });
+    await renderWithProviders(<ProfilePage />, {withAuth: false});
     expect(await screen.findByText('Plus plan')).toBeInTheDocument();
     expect(
       screen.queryByText('Checking for the latest subscription status…'),
@@ -233,9 +215,7 @@ describe('ProfileSubscriptionSection', () => {
     vi.spyOn(eciperay.account, 'getEntitlement').mockRejectedValue(
       new Error('boom'),
     );
-    await renderWithProviders(<ProfileSubscriptionSection />, {
-      withAuth: false,
-    });
+    await renderWithProviders(<ProfilePage />, {withAuth: false});
     expect(await screen.findByText('boom')).toBeInTheDocument();
   });
 
@@ -255,9 +235,7 @@ describe('ProfileSubscriptionSection', () => {
     vi.spyOn(window, 'open').mockImplementation(
       () => portalTab as unknown as Window,
     );
-    await renderWithProviders(<ProfileSubscriptionSection />, {
-      withAuth: false,
-    });
+    await renderWithProviders(<ProfilePage />, {withAuth: false});
     await userEvent.click(
       await screen.findByRole('button', {name: 'Manage subscription'}),
     );
@@ -285,9 +263,7 @@ describe('ProfileSubscriptionSection', () => {
     vi.spyOn(window, 'open').mockImplementation(
       () => portalTab as unknown as Window,
     );
-    const view = await renderWithProviders(<ProfileSubscriptionSection />, {
-      withAuth: false,
-    });
+    const view = await renderWithProviders(<ProfilePage />, {withAuth: false});
     await userEvent.click(
       await screen.findByRole('button', {name: 'Manage subscription'}),
     );
@@ -323,9 +299,7 @@ describe('ProfileSubscriptionSection', () => {
     vi.spyOn(window, 'open').mockImplementation(
       () => portalTab as unknown as Window,
     );
-    const view = await renderWithProviders(<ProfileSubscriptionSection />, {
-      withAuth: false,
-    });
+    const view = await renderWithProviders(<ProfilePage />, {withAuth: false});
     await userEvent.click(
       await screen.findByRole('button', {name: 'Manage subscription'}),
     );
