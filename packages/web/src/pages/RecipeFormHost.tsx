@@ -129,6 +129,12 @@ export const RecipeFormHost = ({
   const [tagIds, setTagIds] = useState<string[]>(initial.tagIds);
   const [status, setStatus] = useState<RecipeStatus>(initial.status ?? 'idea');
   const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
+  // A selection still pending inside RecipeImageField (not yet used,
+  // cropped, or discarded) blocks submit — see onPendingChange (#406).
+  const [imageSelectionPending, setImageSelectionPending] = useState(false);
+  // A form-wide paste hands its file to the image field for staging
+  // (the field clears it via onStagedFileHandled once staged).
+  const [stagedPasteFile, setStagedPasteFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -319,7 +325,10 @@ export const RecipeFormHost = ({
       return;
     }
     e.preventDefault();
-    void processImageFile(file);
+    // Stage the paste in the image field instead of processing it here:
+    // a form-wide paste gets the same use/crop decision as any other
+    // selection, so it can never bypass the pending step (#406).
+    setStagedPasteFile(file);
   };
 
   const updateIngredient = (
@@ -445,6 +454,17 @@ export const RecipeFormHost = ({
   };
 
   const handleSubmit = async () => {
+    // Guard the save (Option 1 on #446): a selected image that is still
+    // pending in the image field would otherwise be silently dropped.
+    // A staged paste the field has not accepted yet (it refuses while
+    // busy or while the crop dialog is open) is guarded the same way:
+    // it is not pending in the field, so without this check a save
+    // could persist and leave the page while the pasted file is still
+    // waiting to be staged, losing it silently.
+    if (imageSelectionPending || stagedPasteFile) {
+      setError('Use, crop, or discard the selected image before saving.');
+      return;
+    }
     // The design-system page is not a DOM form, so the native
     // required/min blocking the old web form relied on is gone; keep
     // values the API schemas reject (or would silently null out, like
@@ -569,6 +589,11 @@ export const RecipeFormHost = ({
             canGenerateImage={title.trim().length > 0}
             headerAction={revertAction}
             onImageFile={processImageFile}
+            onPendingChange={setImageSelectionPending}
+            stagedFile={stagedPasteFile}
+            onStagedFileHandled={() => {
+              setStagedPasteFile(null);
+            }}
             onGenerateImage={handleGenerateImage}
             onRemove={() => {
               clearPendingImage();

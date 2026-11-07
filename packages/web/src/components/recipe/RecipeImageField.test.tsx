@@ -1,7 +1,37 @@
 import {fireEvent, render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
+import {cropImageFile} from '../../lib/recipeImageCrop.js';
+
 import {RecipeImageField} from './RecipeImageField.js';
+
+vi.mock('../../lib/recipeImageCrop.js', async importOriginal => {
+  const actual =
+    await importOriginal<typeof import('../../lib/recipeImageCrop.js')>();
+  return {...actual, cropImageFile: vi.fn()};
+});
+
+const mockCropImageFile = vi.mocked(cropImageFile);
+
+/**
+ * Simulate the pending preview finishing loading at 1200x900: jsdom never fires
+ * img load on its own, and the component reads naturalWidth/Height from the
+ * load event before it enables cropping.
+ */
+const loadPendingPreview = () => {
+  const preview = screen.getByAltText('Recipe preview');
+  Object.defineProperty(preview, 'naturalWidth', {value: 1200});
+  Object.defineProperty(preview, 'naturalHeight', {value: 900});
+  fireEvent.load(preview);
+};
+
+/** Select a file through the drop zone, then skip cropping ("Use image"). */
+const dropAndUse = async (file: File) => {
+  fireEvent.drop(screen.getByLabelText('Recipe image drop zone'), {
+    dataTransfer: {files: [file], items: []},
+  });
+  await userEvent.click(screen.getByRole('button', {name: 'Use image'}));
+};
 
 describe('RecipeImageField', () => {
   const defaultProps = {
@@ -21,9 +51,7 @@ describe('RecipeImageField', () => {
       />,
     );
     const file = new File(['pixels'], 'recipe.png', {type: 'image/png'});
-    fireEvent.drop(screen.getByLabelText('Recipe image drop zone'), {
-      dataTransfer: {files: [file], items: []},
-    });
+    await dropAndUse(file);
     await waitFor(() => {
       expect(onImageFile).toHaveBeenCalledWith(file);
     });
@@ -44,6 +72,7 @@ describe('RecipeImageField', () => {
         items: [{kind: 'file', type: 'image/png', getAsFile: () => file}],
       },
     });
+    await userEvent.click(screen.getByRole('button', {name: 'Use image'}));
     await waitFor(() => {
       expect(onImageFile).toHaveBeenCalledWith(file);
     });
@@ -65,6 +94,8 @@ describe('RecipeImageField', () => {
       container.querySelector('#recipe-image-upload') as HTMLElement,
       file,
     );
+    expect(onImageFile).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole('button', {name: 'Use image'}));
     expect(onImageFile).toHaveBeenCalledWith(file);
   });
 
@@ -215,6 +246,7 @@ describe('RecipeImageField', () => {
     ).toBeInTheDocument();
     const file = new File(['pixels'], 'captured.png', {type: 'image/png'});
     await userEvent.upload(captureInput as HTMLElement, file);
+    await userEvent.click(screen.getByRole('button', {name: 'Use image'}));
     expect(onImageFile).toHaveBeenCalledWith(file);
   });
 
@@ -232,5 +264,288 @@ describe('RecipeImageField', () => {
     expect(browseClick).toHaveBeenCalled();
     await userEvent.click(screen.getByText('Take photo'));
     expect(captureClick).toHaveBeenCalled();
+  });
+
+  test('offers crop after a selection without calling onImageFile yet', async () => {
+    const onImageFile = vi.fn();
+    render(
+      <RecipeImageField
+        {...defaultProps}
+        onImageFile={onImageFile}
+      />,
+    );
+    const file = new File(['pixels'], 'recipe.png', {type: 'image/png'});
+    fireEvent.drop(screen.getByLabelText('Recipe image drop zone'), {
+      dataTransfer: {files: [file], items: []},
+    });
+    expect(
+      screen.getByRole('button', {name: 'Crop image'}),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', {name: 'Use image'})).toBeInTheDocument();
+    expect(onImageFile).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole('button', {name: 'Use image'}));
+    expect(onImageFile).toHaveBeenCalledWith(file);
+  });
+
+  test('confirming crop passes the cropped file to onImageFile', async () => {
+    const onImageFile = vi.fn();
+    const cropped = new File(['cropped'], 'recipe.png', {type: 'image/png'});
+    mockCropImageFile.mockResolvedValue(cropped);
+    render(
+      <RecipeImageField
+        {...defaultProps}
+        onImageFile={onImageFile}
+      />,
+    );
+    const file = new File(['pixels'], 'recipe.png', {type: 'image/png'});
+    fireEvent.drop(screen.getByLabelText('Recipe image drop zone'), {
+      dataTransfer: {files: [file], items: []},
+    });
+    loadPendingPreview();
+    await userEvent.click(screen.getByRole('button', {name: 'Crop image'}));
+    expect(
+      screen.getByRole('dialog', {name: 'Crop recipe image'}),
+    ).toBeInTheDocument();
+    expect(screen.getByAltText('Image to crop')).toBeInTheDocument();
+    expect(screen.getByLabelText(/Crop area/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', {name: 'Apply crop'}));
+    await waitFor(() => {
+      expect(onImageFile).toHaveBeenCalledWith(cropped);
+    });
+    expect(mockCropImageFile).toHaveBeenCalledWith(
+      file,
+      expect.objectContaining({
+        x: expect.any(Number),
+        y: expect.any(Number),
+        width: expect.any(Number),
+        height: expect.any(Number),
+      }),
+    );
+    expect(onImageFile.mock.calls[0]?.[0]).toBe(cropped);
+    expect(onImageFile.mock.calls[0]?.[0]).not.toBe(file);
+  });
+
+  test('pasting while the crop dialog is open keeps the pending image', async () => {
+    const onImageFile = vi.fn();
+    render(
+      <RecipeImageField
+        {...defaultProps}
+        onImageFile={onImageFile}
+      />,
+    );
+    const file = new File(['pixels'], 'recipe.png', {type: 'image/png'});
+    fireEvent.drop(screen.getByLabelText('Recipe image drop zone'), {
+      dataTransfer: {files: [file], items: []},
+    });
+    loadPendingPreview();
+    await userEvent.click(screen.getByRole('button', {name: 'Crop image'}));
+    expect(
+      screen.getByRole('dialog', {name: 'Crop recipe image'}),
+    ).toBeInTheDocument();
+    // A paste that lands while cropping must not replace the pending
+    // image or close the dialog without a crop decision (#446).
+    const other = new File(['other'], 'other.png', {type: 'image/png'});
+    fireEvent.paste(screen.getByLabelText('Recipe image drop zone'), {
+      clipboardData: {files: [other], items: []},
+    });
+    expect(
+      screen.getByRole('dialog', {name: 'Crop recipe image'}),
+    ).toBeInTheDocument();
+    expect(onImageFile).not.toHaveBeenCalled();
+    // Cancelling the crop delivers the ORIGINAL pending file, proving
+    // the paste did not replace it.
+    await userEvent.click(screen.getByRole('button', {name: 'Cancel crop'}));
+    expect(onImageFile).toHaveBeenCalledTimes(1);
+    expect(onImageFile).toHaveBeenCalledWith(file);
+  });
+
+  test('crop stays disabled until the preview reports its dimensions', async () => {
+    const onImageFile = vi.fn();
+    render(
+      <RecipeImageField
+        {...defaultProps}
+        onImageFile={onImageFile}
+      />,
+    );
+    const file = new File(['pixels'], 'recipe.png', {type: 'image/png'});
+    fireEvent.drop(screen.getByLabelText('Recipe image drop zone'), {
+      dataTransfer: {files: [file], items: []},
+    });
+    // Crop rectangles are in real-image pixels: until the preview load
+    // reports them, opening crop would seed the rect from fallback dims.
+    expect(screen.getByRole('button', {name: 'Crop image'})).toBeDisabled();
+    loadPendingPreview();
+    await waitFor(() => {
+      expect(
+        screen.getByRole('button', {name: 'Crop image'}),
+      ).not.toBeDisabled();
+    });
+  });
+
+  test('cancelling crop passes the original file unchanged', async () => {
+    const onImageFile = vi.fn();
+    render(
+      <RecipeImageField
+        {...defaultProps}
+        onImageFile={onImageFile}
+      />,
+    );
+    const file = new File(['pixels'], 'recipe.png', {type: 'image/png'});
+    fireEvent.drop(screen.getByLabelText('Recipe image drop zone'), {
+      dataTransfer: {files: [file], items: []},
+    });
+    loadPendingPreview();
+    await userEvent.click(screen.getByRole('button', {name: 'Crop image'}));
+    await userEvent.click(screen.getByRole('button', {name: 'Cancel crop'}));
+    expect(onImageFile).toHaveBeenCalledWith(file);
+    expect(mockCropImageFile).not.toHaveBeenCalled();
+  });
+
+  test('a crop failure keeps the pending image and shows an error', async () => {
+    const onImageFile = vi.fn();
+    mockCropImageFile.mockRejectedValue(new Error('canvas failed'));
+    render(
+      <RecipeImageField
+        {...defaultProps}
+        onImageFile={onImageFile}
+      />,
+    );
+    const file = new File(['pixels'], 'recipe.png', {type: 'image/png'});
+    fireEvent.drop(screen.getByLabelText('Recipe image drop zone'), {
+      dataTransfer: {files: [file], items: []},
+    });
+    loadPendingPreview();
+    await userEvent.click(screen.getByRole('button', {name: 'Crop image'}));
+    await userEvent.click(screen.getByRole('button', {name: 'Apply crop'}));
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toBeInTheDocument();
+    });
+    expect(onImageFile).not.toHaveBeenCalled();
+  });
+
+  test('discarding a pending image restores the browse controls', async () => {
+    const onImageFile = vi.fn();
+    render(
+      <RecipeImageField
+        {...defaultProps}
+        onImageFile={onImageFile}
+      />,
+    );
+    const file = new File(['pixels'], 'recipe.png', {type: 'image/png'});
+    fireEvent.drop(screen.getByLabelText('Recipe image drop zone'), {
+      dataTransfer: {files: [file], items: []},
+    });
+    await userEvent.click(
+      screen.getByRole('button', {name: 'Discard selected image'}),
+    );
+    expect(onImageFile).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole('button', {name: 'Browse images'}),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', {name: 'Crop image'}),
+    ).not.toBeInTheDocument();
+  });
+
+  test('reports the pending selection through onPendingChange', async () => {
+    const onPendingChange = vi.fn();
+    render(
+      <RecipeImageField
+        {...defaultProps}
+        onPendingChange={onPendingChange}
+      />,
+    );
+    expect(onPendingChange).toHaveBeenLastCalledWith(false);
+    const file = new File(['pixels'], 'recipe.png', {type: 'image/png'});
+    fireEvent.drop(screen.getByLabelText('Recipe image drop zone'), {
+      dataTransfer: {files: [file], items: []},
+    });
+    await waitFor(() => {
+      expect(onPendingChange).toHaveBeenLastCalledWith(true);
+    });
+    await userEvent.click(
+      screen.getByRole('button', {name: 'Discard selected image'}),
+    );
+    await waitFor(() => {
+      expect(onPendingChange).toHaveBeenLastCalledWith(false);
+    });
+  });
+
+  test('stages a file handed in through stagedFile', async () => {
+    const onImageFile = vi.fn();
+    const onPendingChange = vi.fn();
+    const onStagedFileHandled = vi.fn();
+    const file = new File(['pixels'], 'pasted.png', {type: 'image/png'});
+    render(
+      <RecipeImageField
+        {...defaultProps}
+        onImageFile={onImageFile}
+        onPendingChange={onPendingChange}
+        stagedFile={file}
+        onStagedFileHandled={onStagedFileHandled}
+      />,
+    );
+    // The pasted file becomes the pending selection — nothing is
+    // processed until the user uses, crops, or discards it.
+    await waitFor(() => {
+      expect(onStagedFileHandled).toHaveBeenCalledTimes(1);
+    });
+    expect(screen.getByRole('button', {name: 'Use image'})).toBeInTheDocument();
+    expect(onPendingChange).toHaveBeenLastCalledWith(true);
+    expect(onImageFile).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole('button', {name: 'Use image'}));
+    expect(onImageFile).toHaveBeenCalledWith(file);
+  });
+
+  test('does not acknowledge a staged file refused while busy, and stages it on retry', async () => {
+    const onStagedFileHandled = vi.fn();
+    const onPendingChange = vi.fn();
+    const file = new File(['pixels'], 'pasted.png', {type: 'image/png'});
+    const {rerender} = render(
+      <RecipeImageField
+        {...defaultProps}
+        imageUploading
+        onPendingChange={onPendingChange}
+        stagedFile={file}
+        onStagedFileHandled={onStagedFileHandled}
+      />,
+    );
+    // While an upload is in progress, acceptImage refuses the staged
+    // file — it must NOT be marked handled, or the host would clear
+    // (and silently drop) a file that was never staged.
+    expect(onStagedFileHandled).not.toHaveBeenCalled();
+    expect(onPendingChange).toHaveBeenLastCalledWith(false);
+    // Once the field is free, the same file is retried and staged.
+    rerender(
+      <RecipeImageField
+        {...defaultProps}
+        onPendingChange={onPendingChange}
+        stagedFile={file}
+        onStagedFileHandled={onStagedFileHandled}
+      />,
+    );
+    await waitFor(() => {
+      expect(onStagedFileHandled).toHaveBeenCalledTimes(1);
+    });
+    expect(screen.getByRole('button', {name: 'Use image'})).toBeInTheDocument();
+    expect(onPendingChange).toHaveBeenLastCalledWith(true);
+  });
+
+  test('shows an error when the selected image cannot be loaded', async () => {
+    render(<RecipeImageField {...defaultProps} />);
+    const file = new File(['pixels'], 'recipe.png', {type: 'image/png'});
+    fireEvent.drop(screen.getByLabelText('Recipe image drop zone'), {
+      dataTransfer: {files: [file], items: []},
+    });
+    fireEvent.error(screen.getByAltText('Recipe preview'));
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'That image could not be loaded',
+      );
+    });
+    // The pending controls stay available so the user can discard it.
+    expect(
+      screen.getByRole('button', {name: 'Discard selected image'}),
+    ).toBeInTheDocument();
   });
 });

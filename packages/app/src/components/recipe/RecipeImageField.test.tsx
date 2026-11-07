@@ -1,5 +1,5 @@
 import React from 'react';
-import {fireEvent, waitFor} from '@testing-library/react-native';
+import {act, fireEvent, waitFor} from '@testing-library/react-native';
 import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 
 import {renderWithProviders} from '../../__tests__/testUtils';
@@ -14,6 +14,17 @@ jest.mock('../../lib/androidPermissions', () => ({
   confirmPhotoLibraryAccess: jest.fn().mockResolvedValue(true),
   ensureCameraPermission: jest.fn().mockResolvedValue(true),
 }));
+jest.mock('expo-image-manipulator', () => ({
+  manipulateAsync: jest.fn(),
+  SaveFormat: {JPEG: 'jpeg', PNG: 'png'},
+}));
+jest.mock('../../lib/recipeImageCrop', () => {
+  const actual = jest.requireActual('../../lib/recipeImageCrop');
+  return {...actual, cropPickedImage: jest.fn()};
+});
+
+const {cropPickedImage} = require('../../lib/recipeImageCrop');
+const mockCropPickedImage = cropPickedImage as jest.Mock;
 
 const mockLaunchImageLibrary = launchImageLibrary as jest.Mock;
 const mockLaunchCamera = launchCamera as jest.Mock;
@@ -22,6 +33,7 @@ describe('RecipeImageField', () => {
   beforeEach(() => {
     mockLaunchImageLibrary.mockReset();
     mockLaunchCamera.mockReset();
+    mockCropPickedImage.mockReset();
   });
 
   test('does not open picker when rationale is dismissed', async () => {
@@ -84,6 +96,74 @@ describe('RecipeImageField', () => {
       />,
     );
     await fireEvent.press(getByLabelText('Choose recipe image'));
+    // The picked image is pending until the crop step is skipped or used.
+    await waitFor(() => {
+      expect(getByLabelText('Use image')).toBeTruthy();
+    });
+    expect(onImagePicked).not.toHaveBeenCalled();
+    await fireEvent.press(getByLabelText('Use image'));
+    await waitFor(() => {
+      expect(onImagePicked).toHaveBeenCalledWith(
+        {base64: btoa('pixels'), contentType: 'image/png'},
+        'file://recipe.png',
+      );
+    });
+  });
+
+  test('serializes picker launches while one is in flight', async () => {
+    const onImagePicked = jest.fn();
+    let resolvePick: (value: unknown) => void = () => undefined;
+    const pick = new Promise<unknown>(resolve => {
+      resolvePick = resolve;
+    });
+    mockLaunchImageLibrary.mockImplementationOnce(() => pick);
+    const {getByLabelText} = await renderWithProviders(
+      <RecipeImageField
+        imagePreview={null}
+        imageUploading={false}
+        imageError={null}
+        onImagePicked={onImagePicked}
+        onRemove={jest.fn()}
+      />,
+    );
+    // First pick stays in flight: both picker controls are disabled,
+    // and further activations launch nothing — react-native-image-picker
+    // keeps a single native callback, so an overlapping launch could
+    // steal or drop the first result (#446).
+    await fireEvent.press(getByLabelText('Choose recipe image'));
+    await waitFor(() => {
+      expect(mockLaunchImageLibrary).toHaveBeenCalledTimes(1);
+    });
+    expect(
+      getByLabelText('Choose recipe image').props.accessibilityState,
+    ).toMatchObject({disabled: true});
+    expect(
+      getByLabelText('Take photo of recipe').props.accessibilityState,
+    ).toMatchObject({disabled: true});
+    await fireEvent.press(getByLabelText('Choose recipe image'));
+    await fireEvent.press(getByLabelText('Take photo of recipe'));
+    expect(mockLaunchImageLibrary).toHaveBeenCalledTimes(1);
+    expect(mockLaunchCamera).not.toHaveBeenCalled();
+    // The in-flight pick resolves and stages as the pending image;
+    // the guard is released for the next decision.
+    await act(async () => {
+      resolvePick({
+        assets: [
+          {
+            uri: 'file://recipe.png',
+            base64: btoa('pixels'),
+            type: 'image/png',
+            fileSize: 6,
+            width: 1200,
+            height: 900,
+          },
+        ],
+      });
+    });
+    await waitFor(() => {
+      expect(getByLabelText('Use image')).toBeTruthy();
+    });
+    await fireEvent.press(getByLabelText('Use image'));
     await waitFor(() => {
       expect(onImagePicked).toHaveBeenCalledWith(
         {base64: btoa('pixels'), contentType: 'image/png'},
@@ -213,6 +293,10 @@ describe('RecipeImageField', () => {
     );
     await fireEvent.press(getByLabelText('Choose recipe image'));
     await waitFor(() => {
+      expect(getByLabelText('Use image')).toBeTruthy();
+    });
+    await fireEvent.press(getByLabelText('Use image'));
+    await waitFor(() => {
       expect(onImageError).toHaveBeenCalledWith('Failed to read image');
     });
   });
@@ -268,6 +352,10 @@ describe('RecipeImageField', () => {
       />,
     );
     await fireEvent.press(getByLabelText('Take photo of recipe'));
+    await waitFor(() => {
+      expect(getByLabelText('Use image')).toBeTruthy();
+    });
+    await fireEvent.press(getByLabelText('Use image'));
     await waitFor(() => {
       expect(onImagePicked).toHaveBeenCalledWith(
         {base64: btoa('pixels'), contentType: 'image/png'},
@@ -382,6 +470,188 @@ describe('RecipeImageField', () => {
     await fireEvent.press(getByLabelText('Take photo of recipe'));
     await waitFor(() => {
       expect(onImageError).toHaveBeenCalledWith('camera exploded');
+    });
+  });
+
+  const pickedAssetWithSize = {
+    uri: 'file://recipe.png',
+    base64: btoa('pixels'),
+    type: 'image/png',
+    fileSize: 6,
+    width: 1200,
+    height: 900,
+  };
+
+  test('offers crop on a picked image and passes the cropped image on confirm', async () => {
+    const onImagePicked = jest.fn();
+    mockLaunchImageLibrary.mockResolvedValue({assets: [pickedAssetWithSize]});
+    mockCropPickedImage.mockResolvedValue({
+      base64: btoa('cropped'),
+      contentType: 'image/png',
+      uri: 'file:///cache/cropped.png',
+    });
+    const {getByLabelText} = await renderWithProviders(
+      <RecipeImageField
+        imagePreview={null}
+        imageUploading={false}
+        imageError={null}
+        onImagePicked={onImagePicked}
+        onRemove={jest.fn()}
+      />,
+    );
+    await fireEvent.press(getByLabelText('Choose recipe image'));
+    await waitFor(() => {
+      expect(getByLabelText('Crop image')).toBeTruthy();
+    });
+    expect(onImagePicked).not.toHaveBeenCalled();
+    await fireEvent.press(getByLabelText('Crop image'));
+    await waitFor(() => {
+      expect(getByLabelText('Apply crop')).toBeTruthy();
+    });
+    await fireEvent.press(getByLabelText('Apply crop'));
+    await waitFor(() => {
+      expect(onImagePicked).toHaveBeenCalledWith(
+        {base64: btoa('cropped'), contentType: 'image/png'},
+        'file:///cache/cropped.png',
+      );
+    });
+    expect(mockCropPickedImage).toHaveBeenCalledWith(
+      'file://recipe.png',
+      {x: 0, y: 0, width: 1200, height: 900},
+      'image/png',
+    );
+  });
+
+  test('cancelling crop passes the original asset unchanged', async () => {
+    const onImagePicked = jest.fn();
+    mockLaunchImageLibrary.mockResolvedValue({assets: [pickedAssetWithSize]});
+    const {getByLabelText} = await renderWithProviders(
+      <RecipeImageField
+        imagePreview={null}
+        imageUploading={false}
+        imageError={null}
+        onImagePicked={onImagePicked}
+        onRemove={jest.fn()}
+      />,
+    );
+    await fireEvent.press(getByLabelText('Choose recipe image'));
+    await waitFor(() => {
+      expect(getByLabelText('Crop image')).toBeTruthy();
+    });
+    await fireEvent.press(getByLabelText('Crop image'));
+    await waitFor(() => {
+      expect(getByLabelText('Cancel crop')).toBeTruthy();
+    });
+    await fireEvent.press(getByLabelText('Cancel crop'));
+    await waitFor(() => {
+      expect(onImagePicked).toHaveBeenCalledWith(
+        {base64: btoa('pixels'), contentType: 'image/png'},
+        'file://recipe.png',
+      );
+    });
+    expect(mockCropPickedImage).not.toHaveBeenCalled();
+  });
+
+  test('a crop failure keeps the crop overlay open with an error', async () => {
+    const onImagePicked = jest.fn();
+    mockLaunchImageLibrary.mockResolvedValue({assets: [pickedAssetWithSize]});
+    mockCropPickedImage.mockRejectedValue(new Error('manipulator failed'));
+    const {getByLabelText, getByText} = await renderWithProviders(
+      <RecipeImageField
+        imagePreview={null}
+        imageUploading={false}
+        imageError={null}
+        onImagePicked={onImagePicked}
+        onRemove={jest.fn()}
+      />,
+    );
+    await fireEvent.press(getByLabelText('Choose recipe image'));
+    await waitFor(() => {
+      expect(getByLabelText('Crop image')).toBeTruthy();
+    });
+    await fireEvent.press(getByLabelText('Crop image'));
+    await fireEvent.press(getByLabelText('Apply crop'));
+    await waitFor(() => {
+      expect(getByText(/Failed to crop image/)).toBeTruthy();
+    });
+    expect(onImagePicked).not.toHaveBeenCalled();
+  });
+
+  test('when native crop is unavailable, apply crop passes the original asset unchanged', async () => {
+    const onImagePicked = jest.fn();
+    mockLaunchImageLibrary.mockResolvedValue({assets: [pickedAssetWithSize]});
+    // Null = the native manipulator is not registered (#446 Option 3):
+    // the crop step falls back to the uncropped image instead of failing.
+    mockCropPickedImage.mockResolvedValue(null);
+    const {getByLabelText, queryByText} = await renderWithProviders(
+      <RecipeImageField
+        imagePreview={null}
+        imageUploading={false}
+        imageError={null}
+        onImagePicked={onImagePicked}
+        onRemove={jest.fn()}
+      />,
+    );
+    await fireEvent.press(getByLabelText('Choose recipe image'));
+    await waitFor(() => {
+      expect(getByLabelText('Crop image')).toBeTruthy();
+    });
+    await fireEvent.press(getByLabelText('Crop image'));
+    await fireEvent.press(getByLabelText('Apply crop'));
+    await waitFor(() => {
+      expect(onImagePicked).toHaveBeenCalledWith(
+        {base64: btoa('pixels'), contentType: 'image/png'},
+        'file://recipe.png',
+      );
+    });
+    expect(queryByText(/Failed to crop image/)).toBeNull();
+  });
+
+  test('discarding a pending image returns to the picker controls', async () => {
+    const onImagePicked = jest.fn();
+    mockLaunchImageLibrary.mockResolvedValue({assets: [pickedAssetWithSize]});
+    const {getByLabelText, queryByLabelText} = await renderWithProviders(
+      <RecipeImageField
+        imagePreview={null}
+        imageUploading={false}
+        imageError={null}
+        onImagePicked={onImagePicked}
+        onRemove={jest.fn()}
+      />,
+    );
+    await fireEvent.press(getByLabelText('Choose recipe image'));
+    await waitFor(() => {
+      expect(getByLabelText('Discard selected image')).toBeTruthy();
+    });
+    await fireEvent.press(getByLabelText('Discard selected image'));
+    await waitFor(() => {
+      expect(getByLabelText('Choose recipe image')).toBeTruthy();
+    });
+    expect(queryByLabelText('Crop image')).toBeNull();
+    expect(onImagePicked).not.toHaveBeenCalled();
+  });
+
+  test('reports the pending selection through onPendingChange', async () => {
+    const onPendingChange = jest.fn();
+    mockLaunchImageLibrary.mockResolvedValue({assets: [pickedAssetWithSize]});
+    const {getByLabelText} = await renderWithProviders(
+      <RecipeImageField
+        imagePreview={null}
+        imageUploading={false}
+        imageError={null}
+        onImagePicked={jest.fn()}
+        onPendingChange={onPendingChange}
+        onRemove={jest.fn()}
+      />,
+    );
+    expect(onPendingChange).toHaveBeenLastCalledWith(false);
+    await fireEvent.press(getByLabelText('Choose recipe image'));
+    await waitFor(() => {
+      expect(onPendingChange).toHaveBeenLastCalledWith(true);
+    });
+    await fireEvent.press(getByLabelText('Discard selected image'));
+    await waitFor(() => {
+      expect(onPendingChange).toHaveBeenLastCalledWith(false);
     });
   });
 });

@@ -1,5 +1,5 @@
 import {uploadRecipeImage} from '@eciperay/client';
-import {screen, waitFor} from '@testing-library/react';
+import {fireEvent, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {Route, Routes} from 'react-router-dom';
 
@@ -78,6 +78,8 @@ describe('ManualEntryPage', () => {
       document.querySelector('#recipe-image-upload') as HTMLElement,
       file,
     );
+    // #406: the selected image is pending until used (or cropped).
+    await userEvent.click(screen.getByRole('button', {name: 'Use image'}));
     await userEvent.click(screen.getByText('Create Recipe'));
     await waitFor(() => {
       expect(mockUploadRecipeImage).toHaveBeenCalledWith(
@@ -90,5 +92,87 @@ describe('ManualEntryPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Recipe Created')).toBeInTheDocument();
     });
+  }, 15_000);
+
+  test('stages an image pasted outside the drop zone as pending', async () => {
+    await renderWithProviders(
+      <Routes>
+        <Route
+          path="/add/manual"
+          element={<ManualEntryPage />}
+        />
+        <Route
+          path="/recipes/:recipeId"
+          element={<div>Recipe Created</div>}
+        />
+      </Routes>,
+      {route: '/add/manual'},
+    );
+    await userEvent.type(titleField()!, 'New Recipe');
+    await userEvent.type(screen.getAllByPlaceholderText('Name')[0]!, 'Flour');
+    const textareas = screen.getAllByRole('textbox');
+    await userEvent.type(textareas.at(-1)!, 'Mix ingredients');
+    const file = new File(['pixels'], 'pasted.png', {type: 'image/png'});
+    // Paste on the page outside the image field: the host must stage
+    // the file in the field's pending flow, not process it directly
+    // (#446 — a form-wide paste gets the same use/crop decision).
+    fireEvent.paste(screen.getByText('Create Recipe'), {
+      clipboardData: {files: [file], items: []},
+    });
+    expect(
+      await screen.findByRole('button', {name: 'Use image'}),
+    ).toBeInTheDocument();
+    expect(mockUploadRecipeImage).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole('button', {name: 'Use image'}));
+    await userEvent.click(screen.getByText('Create Recipe'));
+    await waitFor(() => {
+      expect(mockUploadRecipeImage).toHaveBeenCalledWith(
+        expect.anything(),
+        file,
+        'user-1',
+        'new-recipe-id',
+      );
+    });
+    await waitFor(() => {
+      expect(screen.getByText('Recipe Created')).toBeInTheDocument();
+    });
+  }, 15_000);
+
+  test('blocks saving while a selected image is still pending', async () => {
+    await renderWithProviders(
+      <Routes>
+        <Route
+          path="/add/manual"
+          element={<ManualEntryPage />}
+        />
+        <Route
+          path="/recipes/:recipeId"
+          element={<div>Recipe Created</div>}
+        />
+      </Routes>,
+      {route: '/add/manual'},
+    );
+    await userEvent.type(titleField()!, 'New Recipe');
+    await userEvent.type(screen.getAllByPlaceholderText('Name')[0]!, 'Flour');
+    const textareas = screen.getAllByRole('textbox');
+    await userEvent.type(textareas.at(-1)!, 'Mix ingredients');
+    const file = new File(['pixels'], 'recipe.png', {type: 'image/png'});
+    await userEvent.upload(
+      document.querySelector('#recipe-image-upload') as HTMLElement,
+      file,
+    );
+    // The image is pending (no "Use image" click): saving must be
+    // guarded so the selection is not silently dropped (#406).
+    expect(screen.getByRole('button', {name: 'Use image'})).toBeInTheDocument();
+    await userEvent.click(screen.getByText('Create Recipe'));
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          'Use, crop, or discard the selected image before saving.',
+        ),
+      ).toBeInTheDocument();
+    });
+    expect(screen.queryByText('Recipe Created')).not.toBeInTheDocument();
+    expect(mockUploadRecipeImage).not.toHaveBeenCalled();
   }, 15_000);
 });
