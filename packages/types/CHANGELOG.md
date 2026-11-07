@@ -1,5 +1,9 @@
 # @eciperay/types
 
+## 1.34.1
+
+No changes in this release.
+
 ## 1.34.0
 
 ### Patch Changes

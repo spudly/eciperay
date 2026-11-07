@@ -1,5 +1,41 @@
 # @eciperay/app
 
+## 1.34.1
+
+### Patch Changes
+
+- 43ff8bc: Recipe image upload now offers optional cropping before the image is
+  saved (#406): after choosing or taking a photo, the pending recipe image can
+  be cropped with a draggable/resizable crop box (defaulting to the 4:3 recipe
+  display ratio), used as-is, or discarded. Confirming the crop replaces the
+  pending image with the cropped result before the existing upload path runs;
+  cancelling or skipping passes the original photo through unchanged. Cropping
+  applies only to the pending recipe image — meal photos and photo import are
+  untouched, and no upload API or schema changed.
+- c589f52: Public pages adopt @spudly/ui 7.0.0, which retired the
+  PublicPageFrame (#452): Discover, the marketing landing, and public recipe
+  pages now render their own footer from the shared footer data (the Legal
+  column still carries Privacy, Terms, and Do Not Sell or Share), and the brand
+  wordmark + Sign in header the frame used to supply is rendered by the host's
+  PublicHeader with the same destinations (brand → /, Sign in → /login). No
+  public page content or routes changed.
+- 697d575: Recipe image cropping now actually crops on native (#453): Expo
+  autolinking is wired into the app (use_expo_modules! in the iOS Podfile and
+  the expo-autolinking-settings Gradle plugin on Android), so the
+  expo-image-manipulator module is registered and applying a crop in the recipe
+  form produces the cropped image instead of silently passing the original photo
+  through. Web cropping is unchanged. Linking ExpoModulesCore also raises the
+  app's minimum iOS version from 15.1 to 16.4 (the pod's deployment-target
+  floor).
+- 20fdd94: Recipe image upload now offers **Take photo** beside the existing
+  browse/choose controls (#405): in the app it opens the camera after the
+  existing camera-permission flow, and on web it uses a camera-capture file
+  input, so a photo can be snapped in place instead of leaving for the camera
+  app first. Captured photos flow through the same upload and preview path as
+  picked images.
+- @eciperay/client@1.34.1
+  - @eciperay/types@1.34.1
+
 ## 1.34.0
 
 ### Minor Changes
