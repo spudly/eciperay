@@ -14,11 +14,49 @@ includeBuild('../node_modules/@react-native/gradle-plugin')
 
 // Override repository declarations from all subprojects (including legacy libraries
 // that still call jcenter(), which was removed in Gradle 7+).
+//
+// PREFER_SETTINGS makes Gradle ignore project-level repositories — including
+// the per-package `local-maven-repo` directories that expo-modules-autolinking
+// registers at project level for its AAR-published modules (expo-asset,
+// expo-file-system, expo-font, ...). Without them mirrored here, resolving
+// :app:releaseRuntimeClasspath fails with "Could not find
+// expo.modules.asset:expo.modules.asset" (and the host.exp.exponent
+// expo.modules.* artifacts), because those artifacts exist only in the
+// packages' shipped local-maven-repo directories. Mirror every such directory
+// found under node_modules (top level, @scope/*, and expo's nested
+// node_modules, where Expo nests some of its own dependencies).
+def expoLocalMavenRepos = []
+def collectExpoLocalMavenRepos = { File nodeModulesDir ->
+    if (!nodeModulesDir.isDirectory()) {
+        return
+    }
+    nodeModulesDir.eachDir { File pkgDir ->
+        def direct = new File(pkgDir, "local-maven-repo")
+        if (direct.isDirectory()) {
+            expoLocalMavenRepos << direct
+        }
+        if (pkgDir.name.startsWith("@")) {
+            pkgDir.eachDir { File scopedPkgDir ->
+                def scoped = new File(scopedPkgDir, "local-maven-repo")
+                if (scoped.isDirectory()) {
+                    expoLocalMavenRepos << scoped
+                }
+            }
+        }
+    }
+}
+def appNodeModules = new File(settingsDir, "../node_modules")
+collectExpoLocalMavenRepos(appNodeModules)
+collectExpoLocalMavenRepos(new File(appNodeModules, "expo/node_modules"))
+
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
     repositories {
         google()
         mavenCentral()
         maven { url 'https://jitpack.io' }
+        expoLocalMavenRepos.each { File repoDir ->
+            maven { url repoDir.toURI() }
+        }
     }
 }
