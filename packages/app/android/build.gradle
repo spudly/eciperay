@@ -1,8 +1,15 @@
 buildscript {
     ext {
-        buildToolsVersion = "36.0.0"
+        buildToolsVersion = "37.0.0"
         minSdkVersion = 24
-        compileSdkVersion = 36
+        // Expo SDK 58's AAR-published modules (expo-asset, expo-file-system,
+        // expo-font, expo-image-loader, expo-image-manipulator, expo-keep-awake)
+        // declare minCompileSdk 37 in their AAR metadata, so every consumer —
+        // including the :expo library itself, which reads this value through
+        // the expo-module Gradle plugin — must compile against 37 or
+        // checkReleaseAarMetadata fails. targetSdk stays 36: compileSdk does
+        // not change runtime behavior.
+        compileSdkVersion = 37
         targetSdkVersion = 36
         ndkVersion = "27.1.12297006"
         kotlinVersion = "2.1.20"
