@@ -14,11 +14,71 @@ includeBuild('../node_modules/@react-native/gradle-plugin')
 
 // Override repository declarations from all subprojects (including legacy libraries
 // that still call jcenter(), which was removed in Gradle 7+).
+//
+// PREFER_SETTINGS makes Gradle ignore project-level repositories — including
+// the per-package `local-maven-repo` directories that expo-modules-autolinking
+// registers at project level for its AAR-published modules (expo-asset,
+// expo-file-system, expo-font, ...). Without them mirrored here, resolving
+// :app:releaseRuntimeClasspath fails with "Could not find
+// expo.modules.asset:expo.modules.asset" (and the host.exp.exponent
+// expo.modules.* artifacts), because those artifacts exist only in the
+// packages' shipped local-maven-repo directories. Mirror every such directory
+// found anywhere under either node_modules tree (see below for why the
+// layout cannot be assumed).
+// Where a given package's directory lands is NOT stable: npm workspaces
+// hoist between two node_modules roots (packages/app/node_modules and the
+// workspace-root node_modules), and a package can also nest inside another
+// package's node_modules (expo nests some of its own dependencies, and
+// expo-image nests expo-image-loader). Scanning only the app root's top
+// level (the first version of this fix) still missed
+// host.exp.exponent:expo.modules.imageloader and expo.modules.imagemanipulator
+// in the dispatched Android run on this branch — their packages were not in
+// the app root's top level. So: scan BOTH roots, and recurse into each
+// package's own node_modules (bounded depth) instead of guessing the layout.
+def expoLocalMavenRepos = []
+def expoLocalMavenRepoPaths = [] as Set
+def addExpoLocalMavenRepo
+addExpoLocalMavenRepo = { File pkgDir ->
+    def repo = new File(pkgDir, "local-maven-repo")
+    if (repo.isDirectory() && expoLocalMavenRepoPaths.add(repo.canonicalPath)) {
+        expoLocalMavenRepos << repo
+    }
+}
+def collectExpoLocalMavenRepos
+collectExpoLocalMavenRepos = { File nodeModulesDir, int depth ->
+    if (!nodeModulesDir.isDirectory()) {
+        return
+    }
+    nodeModulesDir.eachDir { File pkgDir ->
+        if (pkgDir.name == "node_modules" || pkgDir.name == "local-maven-repo") {
+            return
+        }
+        if (pkgDir.name.startsWith("@")) {
+            pkgDir.eachDir { File scopedPkgDir ->
+                addExpoLocalMavenRepo(scopedPkgDir)
+                if (depth > 0) {
+                    collectExpoLocalMavenRepos(new File(scopedPkgDir, "node_modules"), depth - 1)
+                }
+            }
+        } else {
+            addExpoLocalMavenRepo(pkgDir)
+            if (depth > 0) {
+                collectExpoLocalMavenRepos(new File(pkgDir, "node_modules"), depth - 1)
+            }
+        }
+    }
+}
+collectExpoLocalMavenRepos(new File(settingsDir, "../node_modules"), 2)
+collectExpoLocalMavenRepos(new File(settingsDir, "../../../node_modules"), 2)
+
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
     repositories {
         google()
         mavenCentral()
         maven { url 'https://jitpack.io' }
+        expoLocalMavenRepos.each { File repoDir ->
+            maven { url repoDir.toURI() }
+        }
     }
 }
