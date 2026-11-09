@@ -1,5 +1,14 @@
 # @eciperay/server
 
+## 1.34.1
+
+### Patch Changes
+
+- Updated dependencies [6c51c21]
+  - @eciperay/mcp-server@1.34.1
+  - @eciperay/client@1.34.1
+  - @eciperay/types@1.34.1
+
 ## 1.34.0
 
 ### Patch Changes

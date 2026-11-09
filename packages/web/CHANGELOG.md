@@ -1,5 +1,55 @@
 # @eciperay/web
 
+## 1.34.1
+
+### Patch Changes
+
+- e8df363: Consent management (#408): a new privacy choices page at
+  `/privacy/consent` lets any visitor accept, decline, or withdraw analytics
+  consent at any time — changes take effect immediately without a reload, and
+  withdrawing returns the browser to the undecided state so the consent banner
+  re-presents. The "Do Not Sell or Share My Personal Information" footer link
+  opens the page, and Profile preferences gain a withdraw action plus a link to
+  the page.
+- 43ff8bc: Recipe image upload now offers optional cropping before the image is
+  saved (#406): after choosing or taking a photo, the pending recipe image can
+  be cropped with a draggable/resizable crop box (defaulting to the 4:3 recipe
+  display ratio), used as-is, or discarded. Confirming the crop replaces the
+  pending image with the cropped result before the existing upload path runs;
+  cancelling or skipping passes the original photo through unchanged. Cropping
+  applies only to the pending recipe image — meal photos and photo import are
+  untouched, and no upload API or schema changed.
+- c589f52: Public pages adopt @spudly/ui 7.0.0, which retired the
+  PublicPageFrame (#452): Discover, the marketing landing, and public recipe
+  pages now render their own footer from the shared footer data (the Legal
+  column still carries Privacy, Terms, and Do Not Sell or Share), and the brand
+  wordmark + Sign in header the frame used to supply is rendered by the host's
+  PublicHeader with the same destinations (brand → /, Sign in → /login). No
+  public page content or routes changed.
+- 43eae2c: Recipe edit failures are no longer silent (#418): when the API
+  rejects a recipe change — for example activating a version, changing status,
+  creating a version or draft, saving sharing settings, rating, or
+  posting/editing/deleting a comment on a recipe that cannot be modified in its
+  current status — the web app now shows the server's reason in the page's
+  action feedback (or, for comments, an inline error that keeps the draft text),
+  and a rejected sharing change no longer stays selected as if it had saved. The
+  recipe edit form's rejected-save path is covered by regression tests.
+- 20fdd94: Recipe image upload now offers **Take photo** beside the existing
+  browse/choose controls (#405): in the app it opens the camera after the
+  existing camera-permission flow, and on web it uses a camera-capture file
+  input, so a photo can be snapped in place instead of leaving for the camera
+  app first. Captured photos flow through the same upload and preview path as
+  picked images.
+- 6bf0518: Web recipe browsing is now one unified **Recipes** page (#409): your
+  own recipes come first — including recipes shared with you, badged "Shared" —
+  with the public Discover catalog below them, all under one search and filter
+  bar. The signed-in header gains a recipe search that lands on the unified page
+  with the search applied, the separate "Shared with me" nav item is gone (its
+  route redirects to `/recipes`), and the Home "Shared with me" action lands on
+  the unified page too. The signed-out Discover page is unchanged.
+- @eciperay/client@1.34.1
+  - @eciperay/types@1.34.1
+
 ## 1.34.0
 
 ### Patch Changes
