@@ -56,12 +56,15 @@ jobs:
         uses: changesets/action@v2
         with:
           github-token: ${{ secrets.CHANGESETS_TOKEN || secrets.GITHUB_TOKEN }}
-          # The version step also syncs package-lock.json's workspace
-          # versions to the bumped manifests (issue #416): `changeset
-          # version` alone leaves them at the previous release's version,
-          # and a manual fix on the release branch is wiped by the next
-          # regeneration. Running the sync inside the version command
-          # means every regeneration commit leaves a synced lockfile.
+          # The version step also syncs the root version to the group's
+          # version (issue #474: the publish step cannot push it to
+          # master — the ruleset declines direct pushes) and syncs
+          # package-lock.json's workspace versions to the bumped
+          # manifests (issue #416): `changeset version` alone leaves
+          # them at the previous release's version, and a manual fix on
+          # the release branch is wiped by the next regeneration.
+          # Running the syncs inside the version command means every
+          # regeneration commit leaves a synced root and lockfile.
           # It must be a single npm script: the action executes
           # version-script via @actions/exec without a shell, so a
           # compound command (`a && b`) would never run its second half.

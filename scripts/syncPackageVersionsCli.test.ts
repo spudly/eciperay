@@ -64,6 +64,27 @@ describe('runSyncPackageVersionsCli', () => {
     );
   });
 
+  test('--sync-root stamps the group version into the root manifest and lockfile root entries', () => {
+    const files = makeRepoFiles();
+    files['/repo/packages/app/package.json'] = JSON.stringify({
+      name: '@eciperay/app',
+      version: '1.34.0',
+    });
+    const {deps, logs, exits} = makeDeps(files);
+    runSyncPackageVersionsCli('/repo', ['--sync-root'], deps);
+    expect(exits).toEqual([]);
+    expect(logs.join('\n')).toContain('Synced the root version to 1.34.0.');
+    expect(JSON.parse(files['/repo/package.json'] ?? '').version).toBe(
+      '1.34.0',
+    );
+    const lock = JSON.parse(files['/repo/package-lock.json'] ?? '') as {
+      version: string;
+      packages: Record<string, {version: string}>;
+    };
+    expect(lock.version).toBe('1.34.0');
+    expect(lock.packages[''].version).toBe('1.34.0');
+  });
+
   test('--check exits 1 without writing when the lockfile is stale', () => {
     const files = makeRepoFiles();
     const before = files['/repo/package-lock.json'];

@@ -4,8 +4,10 @@ import {
   formatLockfileVersionMismatches,
   readWorkspaceVersions,
   setPackageJsonVersion,
+  readGroupVersion,
   syncLockfileVersions,
   syncLockfileWorkspaceVersions,
+  syncRootVersionToGroupVersion,
   type SyncFs,
 } from './syncPackageVersions.ts';
 
@@ -248,6 +250,41 @@ describe('formatLockfileVersionMismatches', () => {
     );
     expect(text).toContain(
       'packages/app: lockfile has 1.9.0, manifest has 2.0.0',
+    );
+  });
+});
+
+describe('syncRootVersionToGroupVersion', () => {
+  test('syncs the root manifest and lockfile root entries to the app version', () => {
+    const files: Record<string, string> = {
+      '/repo/package.json': JSON.stringify({name: 'demo', version: '1.33.0'}),
+      '/repo/packages/app/package.json': JSON.stringify({
+        name: '@eciperay/app',
+        version: '1.34.0',
+      }),
+      '/repo/package-lock.json': JSON.stringify({
+        version: '1.33.0',
+        packages: {'': {version: '1.33.0'}},
+      }),
+    };
+    const fs = makeFs(files);
+    expect(readGroupVersion('/repo', fs)).toBe('1.34.0');
+    expect(syncRootVersionToGroupVersion('/repo', fs)).toBe('1.34.0');
+    expect(JSON.parse(files['/repo/package.json']).version).toBe('1.34.0');
+    const lock = JSON.parse(files['/repo/package-lock.json']) as {
+      version: string;
+      packages: Record<string, {version: string}>;
+    };
+    expect(lock.version).toBe('1.34.0');
+    expect(lock.packages[''].version).toBe('1.34.0');
+  });
+
+  test('throws when the app version is missing', () => {
+    const fs = makeFs({
+      '/repo/packages/app/package.json': JSON.stringify({name: 'app'}),
+    });
+    expect(() => readGroupVersion('/repo', fs)).toThrow(
+      'Expected a string version in packages/app/package.json',
     );
   });
 });

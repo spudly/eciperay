@@ -6,6 +6,7 @@ import {
   findLockfileWorkspaceVersionMismatches,
   formatLockfileVersionMismatches,
   syncLockfileWorkspaceVersions,
+  syncRootVersionToGroupVersion,
   type SyncFs,
 } from './syncPackageVersions.ts';
 
@@ -19,8 +20,11 @@ export type SyncPackageVersionsCliDeps = {
 
 // Default mode stamps the workspace manifest versions into
 // package-lock.json (run by the release workflow's version step, issue
-// #416). `--check` writes nothing and exits 1 when any owned lockfile
-// entry disagrees with its manifest (run by CI on release PRs).
+// #416). `--sync-root` stamps the fixed group's version into the root
+// manifest and the lockfile's root entries (run first by the same
+// version step, issue #474). `--check` writes nothing and exits 1 when
+// any owned lockfile entry disagrees with its manifest (run by CI on
+// release PRs).
 export const runSyncPackageVersionsCli = (
   root: string,
   argv: string[] = [],
@@ -34,6 +38,12 @@ export const runSyncPackageVersionsCli = (
       /* c8 ignore next -- default process exit wrapper; tests inject exit */
       process.exit(code);
     });
+
+  if (argv.includes('--sync-root')) {
+    const version = syncRootVersionToGroupVersion(root, fs);
+    log.log(`Synced the root version to ${version}.`);
+    return;
+  }
 
   if (argv.includes('--check')) {
     const mismatches = findLockfileWorkspaceVersionMismatches(root, fs);

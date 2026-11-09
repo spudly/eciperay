@@ -212,12 +212,18 @@ describe('publishChangesetRelease', () => {
     log.mockRestore();
   });
 
-  test('syncs root, commits, tags, and opens the release', () => {
+  test('tags HEAD and opens the release without committing or pushing to master', () => {
     const files = releaseFiles();
+    files['/repo/package.json'] = JSON.stringify({
+      name: 'eciperay',
+      version: '1.34.0',
+    });
+    files['/repo/package-lock.json'] = JSON.stringify({
+      version: '1.34.0',
+      packages: {'': {version: '1.34.0'}, 'packages/app': {version: '1.34.0'}},
+    });
     const fs = makeFs(files);
-    const {calls, exec} = makeExec((_command, args) =>
-      args[0] === 'diff' ? 'package.json\npackage-lock.json' : '',
-    );
+    const {calls, exec} = makeExec(() => '');
     const log = jest.spyOn(console, 'log').mockImplementation(() => {});
     const result = publishChangesetRelease('/repo', fs, exec);
     expect(result).toEqual({
@@ -225,14 +231,8 @@ describe('publishChangesetRelease', () => {
       version: '1.34.0',
       tag: 'v1.34.0',
     });
-    expect(JSON.parse(files['/repo/package.json']).version).toBe('1.34.0');
-    expect(calls).toContainEqual([
-      'git',
-      'commit',
-      '-m',
-      'chore(release): 1.34.0 [skip ci]',
-    ]);
-    expect(calls).toContainEqual(['git', 'push', 'origin', 'HEAD:master']);
+    expect(calls.some(call => call[1] === 'commit')).toBe(false);
+    expect(calls).not.toContainEqual(['git', 'push', 'origin', 'HEAD:master']);
     expect(calls).toContainEqual(['git', 'tag', 'v1.34.0']);
     expect(calls).toContainEqual(['git', 'push', 'origin', 'v1.34.0']);
     expect(calls).toContainEqual([
@@ -248,24 +248,14 @@ describe('publishChangesetRelease', () => {
     log.mockRestore();
   });
 
-  test('tags HEAD without a commit when the root is already synced', () => {
+  test('throws when the root version was not synced by the version step', () => {
     const files = releaseFiles();
-    files['/repo/package.json'] = JSON.stringify({
-      name: 'eciperay',
-      version: '1.34.0',
-    });
-    files['/repo/package-lock.json'] = JSON.stringify({
-      version: '1.34.0',
-      packages: {'': {version: '1.34.0'}, 'packages/app': {version: '1.34.0'}},
-    });
     const fs = makeFs(files);
     const {calls, exec} = makeExec(() => '');
-    const log = jest.spyOn(console, 'log').mockImplementation(() => {});
-    const result = publishChangesetRelease('/repo', fs, exec);
-    expect(result.status).toBe('published');
-    expect(calls.some(call => call[1] === 'commit')).toBe(false);
-    expect(calls).toContainEqual(['git', 'tag', 'v1.34.0']);
-    log.mockRestore();
+    expect(() => publishChangesetRelease('/repo', fs, exec)).toThrow(
+      'Root package.json version 1.33.0 does not match the release version 1.34.0',
+    );
+    expect(calls.some(call => call[1] === 'tag')).toBe(false);
   });
 });
 
@@ -314,7 +304,7 @@ describe('runChangesetReleaseCli', () => {
     mkdirSync(join(root, 'packages', 'app'), {recursive: true});
     writeFileSync(
       join(root, 'package.json'),
-      JSON.stringify({name: 'eciperay', version: '1.33.0'}),
+      JSON.stringify({name: 'eciperay', version: '1.34.0'}),
     );
     writeFileSync(
       join(root, 'packages', 'app', 'package.json'),
@@ -322,7 +312,7 @@ describe('runChangesetReleaseCli', () => {
     );
     writeFileSync(
       join(root, 'package-lock.json'),
-      JSON.stringify({version: '1.33.0', packages: {'': {version: '1.33.0'}}}),
+      JSON.stringify({version: '1.34.0', packages: {'': {version: '1.34.0'}}}),
     );
     writeFileSync(
       join(root, 'packages', 'app', 'CHANGELOG.md'),
