@@ -1,9 +1,14 @@
 /** @type {import('jest').Config} */
+const os = require('node:os');
+
 module.exports = {
   displayName: 'client',
-  // Cap local workers at 2: Jest's default pool sizes from host cores and
-  // oversubscribes small shared-vCPU machines. CI keeps 50%.
-  maxWorkers: process.env.CI ? '50%' : 2,
+  // Cap local workers at 2 (never above Jest's own cores-1 sizing): the
+  // default pool oversubscribes small shared-vCPU machines. On CI the key
+  // is omitted entirely, leaving Jest's default (cores - 1) untouched.
+  ...(process.env.CI
+    ? {}
+    : {maxWorkers: Math.max(1, Math.min(2, os.availableParallelism() - 1))}),
   testEnvironment: 'jsdom',
   roots: ['<rootDir>/src'],
   testMatch: ['**/*.test.ts', '**/*.test.tsx'],
