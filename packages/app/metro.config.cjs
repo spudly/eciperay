@@ -44,6 +44,29 @@ const resolveTypeScriptEsmImport = (context, moduleName, platform) => {
   }
 };
 
+const clientRoot = path.resolve(monorepoRoot, 'packages/client');
+
+const resolveRequest = (context, moduleName, platform) => {
+  // @eciperay/client declares zod ^4 and uses the Zod 4 top-level formats
+  // (z.email). With disableHierarchicalLookup and the app-first
+  // nodeModulesPaths below, a bare `zod` import from client files would
+  // resolve to the app-local zod 3 copy (an Expo transitive dependency),
+  // which has no z.email — so resolve `zod` from the monorepo root (the
+  // client's declared copy) when the importer is a client file. Every
+  // other package keeps the default resolution and its own zod copy.
+  if (moduleName === 'zod' && context.originModulePath.startsWith(clientRoot)) {
+    return metroResolve(
+      {
+        ...context,
+        nodeModulesPaths: [path.resolve(monorepoRoot, 'node_modules')],
+      },
+      moduleName,
+      platform,
+    );
+  }
+  return resolveTypeScriptEsmImport(context, moduleName, platform);
+};
+
 const appReact = path.resolve(monorepoRoot, 'node_modules/react');
 
 const config = mergeConfig(getDefaultConfig(projectRoot), {
@@ -60,7 +83,7 @@ const config = mergeConfig(getDefaultConfig(projectRoot), {
       'react': appReact,
     },
     // @eciperay/client uses NodeNext ESM imports (e.g. ./AuthProvider.js → AuthProvider.tsx).
-    resolveRequest: resolveTypeScriptEsmImport,
+    resolveRequest,
   },
 });
 
