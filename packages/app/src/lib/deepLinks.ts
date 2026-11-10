@@ -18,7 +18,14 @@ export const APP_LINKING_PREFIX = `${AUTH_DEEP_LINK_SCHEME}://`;
 
 export const recipesHref = appHref('recipes');
 export const addHref = appHref('add');
-export const sharedWithMeHref = appHref('shared-with-me');
+/**
+ * Home's shared-with-me entry lands on the unified Recipes browse
+ * (#412): shared recipes live in the Recipes tab's own section now,
+ * so this href is the Recipes destination. The `shared-with-me`
+ * route itself still resolves — it mounts the redirect screen —
+ * so deep links minted by older builds keep working.
+ */
+export const sharedWithMeHref = appHref('recipes');
 export const recipeHref = (recipeId: string) => appHref(`recipes/${recipeId}`);
 export const recipeEditHref = (recipeId: string) =>
   appHref(`recipes/${recipeId}/edit`);

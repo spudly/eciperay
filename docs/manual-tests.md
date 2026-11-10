@@ -230,7 +230,8 @@ without); one recipe may be created fresh in case 1.
     still works and swaps the image.
 
 **Run when:**
-`packages/app/src/screens/{Recipes,RecipeDetail,EditRecipe,EditVersion,ManualEntry}Screen.tsx`,
+`packages/app/src/screens/{Recipes,RecipeDetail,EditRecipe,EditVersion,ManualEntry,SharedWithMe,Home}Screen.tsx`,
+`packages/app/src/lib/deepLinks.ts`,
 `packages/app/src/components/recipe/**`,
 `packages/app/src/lib/recipeImageCrop.ts`,
 `packages/app/android/settings.gradle`, `packages/app/ios/Podfile`,
@@ -654,9 +655,10 @@ entitlement gating for AI features.
 
 ## Sharing, Discover & public pages
 
-_Automated: Jest covers the unified Recipes host (own + shared + discovery
-sections) and the public recipe page; Playwright `signed-out.spec.ts` covers
-Discover rendering. The cross-account cases below are manual._
+_Automated: Jest covers the unified Recipes hosts (web page and native
+screen/view: own + shared + discovery sections) and the public recipe page;
+Playwright `signed-out.spec.ts` covers Discover rendering. The cross-account
+cases below are manual._
 
 **Preconditions:** Two accounts: the QA account (owner) and a second test
 account (viewer); one QA recipe.
@@ -665,7 +667,10 @@ account (viewer); one QA recipe.
    account using the recipe's sharing controls. **Expected:** the recipe appears
    in the viewer's unified Recipes browse (`/recipes`), in the "Your recipes"
    section with a Shared badge and owner attribution; `/shared-with-me`
-   redirects to `/recipes`.
+   redirects to `/recipes`. In the app, the same recipe appears in the viewer's
+   Recipes tab in the "Your recipes" section (after their own recipes) with a
+   Shared badge and no log-cook control on the row; Home's "Shared with me"
+   entry and the `shared-with-me` deep link land on the Recipes tab.
 2. **Viewer is read-only.** As viewer, open the shared recipe. **Expected:**
    full detail renders; edit/delete controls are absent or clearly disabled; the
    owner-only actions (share, visibility) are not offered.
@@ -687,16 +692,25 @@ account (viewer); one QA recipe.
    sits above the Discover section of public recipes, all under one
    search/filter bar; searching from the shell header lands on `/recipes` with
    that search applied to every section.
+8. **Unified browse in the app.** Signed in, open the Recipes tab.
+   **Expected:** the same composition as web — "Your recipes" (own recipes
+   first, then shared-with-me recipes badged Shared, opening their public
+   permalink) above the Discover section of public recipes, all under the
+   page's one search/filter bar (the app has no shell header search; the
+   page search is the only search surface); scrolling to the end loads more
+   of each section independently, and a discovery first-page failure shows
+   the discovery error without hiding your recipes.
 
-**Run when:** `packages/app/src/screens/SharedWithMeScreen.tsx`,
-`packages/app/src/hosts/{shared,recipe/RecipeVisibilityControls}*`,
+**Run when:** `packages/app/src/screens/{SharedWithMe,Recipes,Home}Screen.tsx`,
+`packages/app/src/hosts/{recipes,recipe/RecipeVisibilityControls}*`,
+`packages/app/src/lib/deepLinks.ts`,
 `packages/web/src/components/recipe/RecipeVisibilityControls.tsx`,
 `packages/web/src/pages/{Recipes,Discover,PublicRecipe}Page.tsx`,
 `packages/web/src/components/AppShell.tsx`,
 `packages/web/src/routes/router.tsx`,
 `packages/web/src/pages/MarketingLandingPage.tsx`,
 `packages/web/src/pages/legal/**`, `packages/web/src/components/shared/**`,
-`@spudly/ui` `DiscoverPage`, `PublicRecipePage`,
+`@spudly/ui` `DiscoverPage`, `PublicRecipePage`, `RecipesPage`,
 `packages/web/src/components/PublicHeader.tsx`, `packages/server`
 sharing/visibility routes.
 
