@@ -241,6 +241,9 @@ without); one recipe may be created fresh in case 1.
 `packages/web/src/components/{recipe,recipes}/**`,
 `packages/web/src/lib/recipeImageCrop.ts`, `@spudly/ui` recipe form or recipe
 page components, `packages/server` recipe routes,
+`packages/server/src/lib/autoGenerateRecipeImage.ts`,
+`packages/server/src/db/migrations/022_recipe_auto_image_attempt.sql`,
+`packages/web/src/pages/RecipeFormHost.tsx`,
 `packages/client/src/recipeListDisplay.ts`,
 `packages/client/src/useRecipeListFilters.ts`,
 `packages/client/src/useFilterFieldState.ts`, recipe nutrition summary fields in
