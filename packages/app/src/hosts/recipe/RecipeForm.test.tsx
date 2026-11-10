@@ -471,8 +471,8 @@ describe('RecipeForm', () => {
     expect(await findByText('Failed to generate image')).toBeTruthy();
   });
 
-  test('removes the current image preview', async () => {
-    const {getByText, queryByLabelText} = await renderForm(
+  test('offers no way to remove the current image (#407)', async () => {
+    const {queryByText, getByLabelText} = await renderForm(
       <RecipeForm
         initial={recipeDetailToInput(
           makeRecipeDetail({imageUrl: 'https://cdn.example/recipe.png'}),
@@ -482,12 +482,13 @@ describe('RecipeForm', () => {
         onSubmit={jest.fn()}
       />,
     );
-    await fireEvent.press(getByText('Remove image'));
-    expect(queryByLabelText('Recipe preview')).toBeNull();
+    // Stephen's #407 ruling: photos can be replaced, never deleted.
+    expect(getByLabelText('Recipe preview')).toBeTruthy();
+    expect(queryByText('Remove image')).toBeNull();
   });
 
-  test('removes a generated image preview', async () => {
-    const {getByLabelText, getByText, queryByLabelText} = await renderForm(
+  test('offers no way to remove a generated image (#407)', async () => {
+    const {getByLabelText, queryByText} = await renderForm(
       <RecipeForm
         initial={{
           title: 'New Recipe',
@@ -505,8 +506,7 @@ describe('RecipeForm', () => {
       expect(mockGenerateImage).toHaveBeenCalled();
     });
     expect(getByLabelText('Recipe preview')).toBeTruthy();
-    await fireEvent.press(getByText('Remove image'));
-    expect(queryByLabelText('Recipe preview')).toBeNull();
+    expect(queryByText('Remove image')).toBeNull();
   });
 
   test('requires sign-in before generating a description', async () => {

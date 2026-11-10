@@ -2,6 +2,10 @@ import type {Response} from 'express';
 
 import {query as defaultQuery} from '../../db/query.js';
 import type {AuthedRequest} from '../../middleware/requireAuth.js';
+import {
+  autoImageContextFromDetail,
+  scheduleAutoGenerateRecipeImage,
+} from '../../lib/autoGenerateRecipeImage.js';
 import {fetchVersionDetail} from '../../lib/fetchVersionDetail.js';
 import {getParam} from '../../lib/getParam.js';
 import {
@@ -63,5 +67,15 @@ export const putVersion = async (
     res.status(500).json({error: 'Failed to fetch updated version'});
     return;
   }
+  // #407: a version save is also a recipe save — a still-imageless
+  // recipe gets an auto-generated image (once per recipe).
+  scheduleAutoGenerateRecipeImage(
+    {
+      userId: req.userId,
+      supabaseUid: req.supabaseUid,
+      recipe: autoImageContextFromDetail({...updated, versionId}),
+    },
+    queryFn,
+  );
   res.json(updated);
 };
