@@ -582,7 +582,7 @@ describe('RecipesListView unified sections (#412)', () => {
   });
 
   test('renders shared rows after created rows with the Shared badge and no log-cook control', async () => {
-    const {getByLabelText, queryByLabelText, toJSON} =
+    const {container, getByLabelText, queryByLabelText} =
       await renderWithProviders(
         <RecipesListView
           {...controls}
@@ -604,11 +604,21 @@ describe('RecipesListView unified sections (#412)', () => {
     // renders none at all.
     expect(getByLabelText('Log a cook of Pasta Night')).toBeTruthy();
     expect(queryByLabelText('Log a cook of Shared Soup')).toBeNull();
-    // Order: created rows come before shared rows in the own section.
-    const rendered = JSON.stringify(toJSON());
-    expect(rendered.indexOf('Shared Soup')).toBeGreaterThan(
-      rendered.indexOf('Pasta Night'),
+    // Order: created rows come before shared rows in the own section
+    // — compare the rows' accessible labels in tree order.
+    const labels = container
+      .queryAll(
+        node => typeof node.props?.accessibilityLabel === 'string',
+      )
+      .map(node => node.props.accessibilityLabel as string);
+    const pastaIndex = labels.findIndex(label =>
+      label.startsWith('Pasta Night'),
     );
+    const sharedIndex = labels.findIndex(label =>
+      label.startsWith('Shared Soup'),
+    );
+    expect(pastaIndex).toBeGreaterThanOrEqual(0);
+    expect(sharedIndex).toBeGreaterThan(pastaIndex);
   });
 
   test('opens the public permalink when a shared row is pressed', async () => {

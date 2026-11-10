@@ -503,7 +503,7 @@ describe('RecipesScreen unified browse (#412)', () => {
         userId: 'other-user',
       }),
     ]);
-    const {findByLabelText, getByLabelText, queryByLabelText, toJSON} =
+    const {container, findByLabelText, getByLabelText, queryByLabelText} =
       await renderWithProviders(<RecipesScreen />);
 
     expect(await findByLabelText('Pasta Night')).toBeTruthy();
@@ -516,12 +516,19 @@ describe('RecipesScreen unified browse (#412)', () => {
     // none at all (canLogCook: false — cook logs are owner-only).
     expect(queryByLabelText('Log a cook of Pasta Night')).toBeTruthy();
     expect(queryByLabelText('Log a cook of Shared Soup')).toBeNull();
-    // Order: the created row renders before the shared row.
-    const rendered = JSON.stringify(toJSON());
-    expect(rendered.indexOf('Pasta Night')).toBeGreaterThanOrEqual(0);
-    expect(rendered.indexOf('Shared Soup')).toBeGreaterThan(
-      rendered.indexOf('Pasta Night'),
+    // Order: the created row renders before the shared row —
+    // compare the rows' accessible labels in tree order.
+    const labels = container
+      .queryAll(node => typeof node.props?.accessibilityLabel === 'string')
+      .map(node => node.props.accessibilityLabel as string);
+    const pastaIndex = labels.findIndex(label =>
+      label.startsWith('Pasta Night'),
     );
+    const sharedIndex = labels.findIndex(label =>
+      label.startsWith('Shared Soup'),
+    );
+    expect(pastaIndex).toBeGreaterThanOrEqual(0);
+    expect(sharedIndex).toBeGreaterThan(pastaIndex);
     // The screen passes both collections to the view separately.
     expect(mockListViewProps?.sharedRecipes).toHaveLength(1);
   });
