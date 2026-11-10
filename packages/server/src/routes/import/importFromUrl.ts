@@ -76,6 +76,19 @@ const fetchDirect = async (url: string): Promise<string> => {
 // When CRAWLBASE_TOKEN is unset the direct behavior is exactly as
 // before. The token travels in the proxy request URL, so that URL is
 // never logged and never appears in an error message.
+// Crawlbase reports the origin's own status in a response header
+// alongside its proxy status; a missing or unparsable header yields
+// null and the proxy status alone decides.
+const originalStatusOf = (headers: Headers): number | null => {
+  const raw =
+    headers.get('original-status') ?? headers.get('original_status');
+  if (raw === null) {
+    return null;
+  }
+  const parsed = Number(raw);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+};
+
 const fetchViaCrawlbase = async (url: string): Promise<string> => {
   const token = process.env['CRAWLBASE_TOKEN']?.trim();
   if (!token) {
@@ -85,16 +98,11 @@ const fetchViaCrawlbase = async (url: string): Promise<string> => {
   const response = await fetch(proxyUrl, {
     signal: AbortSignal.timeout(30_000),
   });
-  const originalStatus = Number(
-    response.headers.get('original-status') ??
-      response.headers.get('original_status'),
-  );
-  if (!response.ok || (originalStatus >= 400 && originalStatus < 600)) {
+  const originalStatus = originalStatusOf(response.headers);
+  const originalFailed = originalStatus !== null && originalStatus >= 400;
+  if (!response.ok || originalFailed) {
     await response.body?.cancel().catch(() => undefined);
-    const status =
-      originalStatus >= 400 && originalStatus < 600
-        ? originalStatus
-        : response.status;
+    const status = originalFailed ? originalStatus : response.status;
     throw new Error(`Failed to fetch ${url}: ${status}`);
   }
   return response.text();

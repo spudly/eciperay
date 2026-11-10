@@ -173,6 +173,40 @@ describe('POST /recipes/import/url', () => {
     }
   });
 
+  test('returns the fetch error when Crawlbase reports a blocked original status (#476)', async () => {
+    const previous = process.env['CRAWLBASE_TOKEN'];
+    process.env['CRAWLBASE_TOKEN'] = 'test-crawlbase-token';
+    try {
+      nockSupabaseGetUser('user-uuid-1');
+      mockBillingPlan(mockQuery, 'plus');
+      nock('https://recipe.example.com')
+        .get('/blocked')
+        .reply(403, 'Forbidden')
+        .get('/blocked')
+        .reply(403, 'Forbidden');
+      // The proxy itself answers 200, but the origin's own status was
+      // a 404: the import must fail rather than parse the body. No
+      // save flow is mocked, so reaching the save would fail here.
+      const crawlbase = nock('https://api.crawlbase.com')
+        .get('/')
+        .query(true)
+        .reply(200, SCHEMA_ORG_HTML, {original_status: '404'});
+      const res = await request(getApp())
+        .post('/api/recipes/import/url')
+        .set('Authorization', 'Bearer valid-token')
+        .send({url: 'https://recipe.example.com/blocked'});
+      expect(crawlbase.isDone()).toBe(true);
+      expect(res.status).toBe(422);
+      expect(res.body.error).toContain("couldn't fetch that page");
+    } finally {
+      if (previous === undefined) {
+        delete process.env['CRAWLBASE_TOKEN'];
+      } else {
+        process.env['CRAWLBASE_TOKEN'] = previous;
+      }
+    }
+  });
+
   test('does not call Crawlbase when the direct fetch succeeds (#476)', async () => {
     const previous = process.env['CRAWLBASE_TOKEN'];
     process.env['CRAWLBASE_TOKEN'] = 'test-crawlbase-token';
