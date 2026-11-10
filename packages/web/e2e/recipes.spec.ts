@@ -26,12 +26,11 @@ test.describe('authenticated recipes', () => {
     await expect(page.getByText('E2E Tomato Pasta')).toBeVisible();
     await expect(page.getByText('E2E Lentil Soup')).toBeVisible();
 
-    // Scoped to <main>: the shell header carries its own search box
-    // with the same placeholder (#409).
-    await page
-      .getByRole('main')
-      .getByPlaceholder('Search recipes…')
-      .fill('Lentil');
+    // The page's own search box: the DS shell renders no <main>
+    // landmark (#451), so distinguish by accessible name — the shell
+    // header's search field is named 'Search recipes' (its label,
+    // #542) while the page field's name is its placeholder text.
+    await page.getByRole('textbox', {name: 'Search recipes…'}).fill('Lentil');
 
     // One retrying assertion over both titles: the pair must hold in
     // the SAME state. Soup alone is visible in the unfiltered list,

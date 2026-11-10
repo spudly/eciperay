@@ -23,7 +23,10 @@ test.describe('profile / billing', () => {
 
     await page.goto('/profile');
     await expect(page.getByText('Subscription')).toBeVisible();
-    await expect(page.getByText('Legal')).toBeVisible();
+    // 'Legal' also appears as the shell footer's heading (#451: the
+    // DS shell carries the shared BigFooter) — the profile card is
+    // the first match, in page content above the footer.
+    await expect(page.getByText('Legal').first()).toBeVisible();
 
     const gaps = await page.evaluate(() => {
       const titles = [
@@ -37,7 +40,11 @@ test.describe('profile / billing', () => {
       ];
       const cardRectFor = (title: string) => {
         const leaf = [...document.querySelectorAll('*')].find(
-          el => el.children.length === 0 && el.textContent === title,
+          el =>
+            el.children.length === 0 &&
+            el.textContent === title &&
+            // Skip the shell footer's own 'Legal' text (#451).
+            !el.closest('footer, [role="contentinfo"]'),
         );
         if (!leaf) {
           return null;
