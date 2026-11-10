@@ -8,7 +8,7 @@
     "./sanitizeAnalyticsProperties": "./src/sanitizeAnalyticsProperties.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit --incremental",
     "test": "NODE_OPTIONS='--experimental-vm-modules --no-warnings' jest",
     "test:coverage": "NODE_OPTIONS='--experimental-vm-modules --no-warnings' jest --coverage"
   },

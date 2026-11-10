@@ -13,7 +13,7 @@
     "start": "tsx src/index.ts",
     "test": "tsx --test src/*.test.ts",
     "test:coverage": "tsx --test --experimental-test-coverage src/*.test.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit --incremental"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.1",
