@@ -4,14 +4,14 @@ import {Route, Routes, useLocation} from 'react-router-dom';
 
 import {renderWithProviders} from '../test/testUtils.js';
 
-import {AppShell} from './AppShell.js';
+import {AuthenticatedShell} from './AuthenticatedShell.js';
 
-describe('AppShell', () => {
-  test('renders navigation and outlet', async () => {
+describe('AuthenticatedShell', () => {
+  test('renders the DS shell nav and outlet', async () => {
     await renderWithProviders(
       <Routes>
         <Route
-          element={<AppShell />}
+          element={<AuthenticatedShell />}
           path="/"
         >
           <Route
@@ -21,28 +21,38 @@ describe('AppShell', () => {
         </Route>
       </Routes>,
     );
-    expect(screen.getByRole('img', {name: 'Eciperay'})).toBeInTheDocument();
-    expect(screen.getByText('Recipes')).toBeInTheDocument();
+    // The brand wordmark is a real link home (the DS BrandLink) —
+    // and the BigFooter's brand anchor is the second such link.
+    const brandLinks = screen.getAllByRole('link', {name: 'Eciperay'});
+    expect(brandLinks).toHaveLength(2);
+    for (const brandLink of brandLinks) {
+      expect(brandLink).toHaveAttribute('href', '/');
+    }
+    // Nav items cross as data with DS icon names; every item is a
+    // real link with its href.
+    expect(screen.getByRole('link', {name: 'Recipes'})).toHaveAttribute(
+      'href',
+      '/recipes',
+    );
+    expect(screen.getByRole('link', {name: 'Meals'})).toHaveAttribute(
+      'href',
+      '/meals',
+    );
+    expect(screen.getByRole('link', {name: 'Profile'})).toHaveAttribute(
+      'href',
+      '/profile',
+    );
     // Shared-with-me has no nav item of its own: it lives on the
     // unified Recipes browse (#409).
     expect(screen.queryByText('Shared with me')).not.toBeInTheDocument();
     expect(screen.getByText('Page Content')).toBeInTheDocument();
-    // The shell footer carries the legal links on every signed-in page,
-    // including the Do Not Sell or Share link to the consent surface.
+    // The shell footer is the one shared BigFooter, carrying the
+    // Do Not Sell or Share link to the consent surface (#425).
     expect(
       screen.getByRole('link', {
         name: 'Do Not Sell or Share My Personal Information',
       }),
     ).toHaveAttribute('href', '/privacy/consent');
-  });
-
-  test('renders children when provided instead of outlet', async () => {
-    await renderWithProviders(
-      <AppShell>
-        <div>Inline Content</div>
-      </AppShell>,
-    );
-    expect(screen.getByText('Inline Content')).toBeInTheDocument();
   });
 
   test('header search navigates to the unified Recipes browse with the term', async () => {
@@ -53,7 +63,7 @@ describe('AppShell', () => {
     await renderWithProviders(
       <Routes>
         <Route
-          element={<AppShell />}
+          element={<AuthenticatedShell />}
           path="/"
         >
           <Route
@@ -67,11 +77,12 @@ describe('AppShell', () => {
         </Route>
       </Routes>,
     );
+    // The DS SearchField submits on Enter (its onSubmitEditing
+    // contract) — there is no separate Search button in the shell.
     await userEvent.type(
-      screen.getByRole('searchbox', {name: 'Search recipes'}),
-      'pasta',
+      screen.getByPlaceholderText('Search recipes…'),
+      'pasta{enter}',
     );
-    await userEvent.click(screen.getByRole('button', {name: 'Search'}));
     expect(await screen.findByText('/recipes?q=pasta')).toBeInTheDocument();
   });
 
@@ -79,7 +90,7 @@ describe('AppShell', () => {
     await renderWithProviders(
       <Routes>
         <Route
-          element={<AppShell />}
+          element={<AuthenticatedShell />}
           path="/recipes"
         >
           <Route
@@ -90,8 +101,6 @@ describe('AppShell', () => {
       </Routes>,
       {route: '/recipes?q=pasta'},
     );
-    expect(screen.getByRole('searchbox', {name: 'Search recipes'})).toHaveValue(
-      'pasta',
-    );
+    expect(screen.getByPlaceholderText('Search recipes…')).toHaveValue('pasta');
   });
 });

@@ -107,10 +107,10 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
     reason: 'Browser cookie/consent banner; no native equivalent.',
   },
   {
-    path: 'AppShell.tsx',
+    path: 'AuthenticatedShell.tsx',
     platform: 'web',
     reason:
-      'Web top-nav shell; app uses React Navigation tab and stack navigators.',
+      'Web routed shell layout adopting the DS AppShellPage (#451); app uses React Navigation tab and stack navigators.',
   },
   {
     path: 'PublicHeader.tsx',

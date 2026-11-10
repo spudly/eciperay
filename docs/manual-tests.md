@@ -209,13 +209,13 @@ without); one recipe may be created fresh in case 1.
     the crop: the original, uncropped photo is attached instead. **Expected:**
     cropping is optional, never forced, and applies only to the pending recipe
     image (not meal photos or photo import).
-13. **Browse filters survive a recipe visit (#468).** On `/recipes`, set a
-    search term and at least one more filter (e.g. a status or an ingredient)
-    so the list narrows. Open a recipe from the list, then use the browser
-    Back button. **Expected:** the browse returns with the search and filters
-    exactly as left and the list still narrowed. Press Back once more:
-    **Expected:** it leaves the browse in a single step — the filter edits
-    did not add history entries of their own.
+14. **Browse filters survive a recipe visit (#468).** On `/recipes`, set a
+    search term and at least one more filter (e.g. a status or an ingredient) so
+    the list narrows. Open a recipe from the list, then use the browser Back
+    button. **Expected:** the browse returns with the search and filters exactly
+    as left and the list still narrowed. Press Back once more: **Expected:** it
+    leaves the browse in a single step — the filter edits did not add history
+    entries of their own.
 
 **Run when:**
 `packages/app/src/screens/{Recipes,RecipeDetail,EditRecipe,EditVersion,ManualEntry}Screen.tsx`,
@@ -677,7 +677,7 @@ account (viewer); one QA recipe.
 `packages/app/src/hosts/{shared,recipe/RecipeVisibilityControls}*`,
 `packages/web/src/components/recipe/RecipeVisibilityControls.tsx`,
 `packages/web/src/pages/{Recipes,Discover,PublicRecipe}Page.tsx`,
-`packages/web/src/components/AppShell.tsx`,
+`packages/web/src/components/AuthenticatedShell.tsx`,
 `packages/web/src/routes/router.tsx`,
 `packages/web/src/pages/MarketingLandingPage.tsx`,
 `packages/web/src/pages/legal/**`, `packages/web/src/components/shared/**`,

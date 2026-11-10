@@ -1,6 +1,6 @@
 import {createBrowserRouter, Navigate} from 'react-router-dom';
 
-import {AppShell} from '../components/AppShell.js';
+import {AuthenticatedShell} from '../components/AuthenticatedShell.js';
 import {AuthGuard} from '../components/AuthGuard.js';
 import {RootLayout} from '../components/RootLayout.js';
 import {AddPage} from '../pages/AddPage.js';
@@ -106,7 +106,9 @@ export const router = createBrowserRouter([
       {path: '/', element: <HomeEntry />},
       {
         element: <AuthGuard />,
-        children: [{element: <AppShell />, children: authenticatedAppRoutes}],
+        children: [
+          {element: <AuthenticatedShell />, children: authenticatedAppRoutes},
+        ],
       },
     ],
   },
