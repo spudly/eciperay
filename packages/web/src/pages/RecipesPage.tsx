@@ -341,6 +341,18 @@ export const RecipesPage = () => {
     c.onSortDirChange(restored.sortDir);
   }, [location.key, location.state, navigationType]);
 
+  // Once the live values catch up with a POP restore, the restore
+  // is complete: clear the pending marker so later edits on this
+  // entry sync normally again (#468, CodeRabbit round 3 — without
+  // this, the write guard below kept blocking the sync for this
+  // entry and a post-restore edit was lost on the next Back).
+  useEffect(() => {
+    const pending = pendingRestoreRef.current;
+    if (pending && pending.serialized === JSON.stringify(values)) {
+      pendingRestoreRef.current = null;
+    }
+  }, [values]);
+
   // Keep this history entry's location state holding the current
   // filter values (#468), so Back from a recipe restores them. The
   // write REPLACES the current entry (Stephen, 2026-11-09): filter
@@ -401,9 +413,19 @@ export const RecipesPage = () => {
       }
       writeFilterState(valuesRef.current);
     };
+    // The shell's header search leaves via a form submit, not a
+    // link: flush on any document submit (capture phase, before the
+    // submit handler navigates) so a header search submitted before
+    // the debounce settles still records the latest edits on the
+    // entry being left (#468, CodeRabbit round 3).
+    const flushOnSubmit = () => {
+      writeFilterState(valuesRef.current);
+    };
     document.addEventListener('click', flushOnLinkClick, true);
+    document.addEventListener('submit', flushOnSubmit, true);
     return () => {
       document.removeEventListener('click', flushOnLinkClick, true);
+      document.removeEventListener('submit', flushOnSubmit, true);
     };
   }, [writeFilterState]);
 

@@ -257,6 +257,7 @@ describe('RecipesPage', () => {
     });
     // The status control renders only once its filter is added from
     // the page's filter chooser.
+    await user.type(screen.getByPlaceholderText('Search recipes…'), 'Soup');
     await user.click(screen.getByRole('button', {name: 'Add a filter'}));
     await user.click(screen.getByRole('button', {name: 'Add Status filter'}));
     await user.click(await screen.findByRole('combobox'));
@@ -736,6 +737,7 @@ describe('RecipesPage', () => {
       expect(screen.getByText('Perfected Soup')).toBeInTheDocument();
       expect(screen.getByText('Idea Soup')).toBeInTheDocument();
     });
+    await user.type(screen.getByPlaceholderText('Search recipes…'), 'Soup');
     await user.click(screen.getByRole('button', {name: 'Add a filter'}));
     await user.click(screen.getByRole('button', {name: 'Add Status filter'}));
     await user.click(await screen.findByRole('combobox'));
@@ -751,6 +753,161 @@ describe('RecipesPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Perfected Soup')).toBeInTheDocument();
       expect(screen.getByText('Idea Soup')).toBeInTheDocument();
+    });
+    expect(screen.getByPlaceholderText('Search recipes…')).toHaveValue('');
+  });
+
+  test('a filter edit after a Back restore still syncs and restores (#468)', async () => {
+    const NavButtons = () => {
+      const navigate = useNavigate();
+      return (
+        <>
+          <button
+            type="button"
+            onClick={() => {
+              void navigate(-1);
+            }}
+          >
+            Go back
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              void navigate('/recipes?q=Other');
+            }}
+          >
+            Header search
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              void navigate('/recipes/recipe-uuid-1');
+            }}
+          >
+            Open recipe
+          </button>
+        </>
+      );
+    };
+    await renderWithProviders(
+      <>
+        <NavButtons />
+        <Routes>
+          <Route
+            path="/recipes"
+            element={<RecipesPage />}
+          />
+          <Route
+            path="/recipes/:id"
+            element={<p>Recipe detail</p>}
+          />
+        </Routes>
+      </>,
+      {routerProps: {initialEntries: ['/recipes']}},
+    );
+    await waitFor(() => {
+      expect(screen.getByText('Test Recipe')).toBeInTheDocument();
+    });
+    await userEvent.type(
+      screen.getByPlaceholderText('Search recipes…'),
+      'Test',
+    );
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 400));
+    });
+    await userEvent.click(screen.getByRole('button', {name: 'Header search'}));
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('Search recipes…')).toHaveValue(
+        'Other',
+      );
+    });
+    // Back: the POP restore re-applies 'Test'.
+    await userEvent.click(screen.getByRole('button', {name: 'Go back'}));
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('Search recipes…')).toHaveValue(
+        'Test',
+      );
+    });
+    // Edit AFTER the restore: the edit must sync to this entry like
+    // any other (a stale pending-restore marker must not block it).
+    await userEvent.clear(screen.getByPlaceholderText('Search recipes…'));
+    await userEvent.type(
+      screen.getByPlaceholderText('Search recipes…'),
+      'New',
+    );
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 400));
+    });
+    await userEvent.click(screen.getByRole('button', {name: 'Open recipe'}));
+    await waitFor(() => {
+      expect(screen.getByText('Recipe detail')).toBeInTheDocument();
+    });
+    await userEvent.click(screen.getByRole('button', {name: 'Go back'}));
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('Search recipes…')).toHaveValue(
+        'New',
+      );
+    });
+  });
+
+  test('a header search submitted before the debounce settles keeps the edits on Back (#468)', async () => {
+    const HeaderForm = () => {
+      const navigate = useNavigate();
+      return (
+        <>
+          <form
+            onSubmit={event => {
+              event.preventDefault();
+              void navigate('/recipes?q=Other');
+            }}
+          >
+            <button type="submit">Submit header search</button>
+          </form>
+          <button
+            type="button"
+            onClick={() => {
+              void navigate(-1);
+            }}
+          >
+            Go back
+          </button>
+        </>
+      );
+    };
+    await renderWithProviders(
+      <>
+        <HeaderForm />
+        <Routes>
+          <Route
+            path="/recipes"
+            element={<RecipesPage />}
+          />
+        </Routes>
+      </>,
+      {routerProps: {initialEntries: ['/recipes']}},
+    );
+    await waitFor(() => {
+      expect(screen.getByText('Test Recipe')).toBeInTheDocument();
+    });
+    // Type and IMMEDIATELY submit the header search — no debounce
+    // settle: the submit flush must record 'Test' on this entry.
+    await userEvent.type(
+      screen.getByPlaceholderText('Search recipes…'),
+      'Test',
+    );
+    await userEvent.click(
+      screen.getByRole('button', {name: 'Submit header search'}),
+    );
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('Search recipes…')).toHaveValue(
+        'Other',
+      );
+    });
+    await userEvent.click(screen.getByRole('button', {name: 'Go back'}));
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('Search recipes…')).toHaveValue(
+        'Test',
+      );
     });
   });
 
