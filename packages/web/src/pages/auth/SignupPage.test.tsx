@@ -63,6 +63,20 @@ describe('SignupPage', () => {
     });
   });
 
+  test('shows a field error and makes no auth call for a malformed email', async () => {
+    vi.mocked(supabase.auth.signUp).mockClear();
+    await renderWithProviders(<SignupPage />, {withAuth: false});
+    await userEvent.type(screen.getByLabelText('Email'), 'stephen');
+    await userEvent.type(screen.getByLabelText('Password'), 'pass1234');
+    await userEvent.click(screen.getByText('Create Account'));
+    await waitFor(() => {
+      expect(
+        screen.getByText('Enter a valid email address'),
+      ).toBeInTheDocument();
+    });
+    expect(supabase.auth.signUp).not.toHaveBeenCalled();
+  });
+
   test('shows error on failure', async () => {
     vi.mocked(supabase.auth.signUp).mockResolvedValueOnce({
       data: {session: null, user: null},

@@ -49,7 +49,13 @@ describe('SignInScreen', () => {
   test('calls auth sync on successful sign-in', async () => {
     mockSignIn.mockResolvedValue({error: null});
     mockSyncUser.mockImplementation(async () => {});
-    const {getByText} = await renderWithProviders(<SignInScreen />);
+    const {getByLabelText, getByText} = await renderWithProviders(
+      <SignInScreen />,
+    );
+    await act(async () => {
+      await fireEvent.changeText(getByLabelText('Email'), 'user@test.com');
+      await Promise.resolve();
+    });
     await fireEvent.press(getByText('Sign In'));
     await waitFor(() => {
       expect(mockSyncUser).toHaveBeenCalled();
@@ -58,7 +64,13 @@ describe('SignInScreen', () => {
 
   test('shows error alert on sign-in failure', async () => {
     mockSignIn.mockResolvedValue({error: new Error('Invalid credentials')});
-    const {getByText} = await renderWithProviders(<SignInScreen />);
+    const {getByLabelText, getByText} = await renderWithProviders(
+      <SignInScreen />,
+    );
+    await act(async () => {
+      await fireEvent.changeText(getByLabelText('Email'), 'user@test.com');
+      await Promise.resolve();
+    });
     await fireEvent.press(getByText('Sign In'));
     await waitFor(() => {
       expect(mockAlert).toHaveBeenCalledWith(
@@ -66,6 +78,24 @@ describe('SignInScreen', () => {
         'Invalid credentials',
       );
     });
+  });
+
+  test('shows a field error and makes no auth call for a malformed email', async () => {
+    mockSignIn.mockClear();
+    mockAlert.mockClear();
+    const {getByLabelText, getByText} = await renderWithProviders(
+      <SignInScreen />,
+    );
+    await act(async () => {
+      await fireEvent.changeText(getByLabelText('Email'), 'stephen');
+      await Promise.resolve();
+    });
+    await fireEvent.press(getByText('Sign In'));
+    await waitFor(() => {
+      expect(getByText('Enter a valid email address')).toBeTruthy();
+    });
+    expect(mockSignIn).not.toHaveBeenCalled();
+    expect(mockAlert).not.toHaveBeenCalled();
   });
 
   // The footer links are hrefs now (#248): a press opens the deep

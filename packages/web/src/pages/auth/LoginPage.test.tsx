@@ -38,6 +38,20 @@ describe('LoginPage', () => {
     });
   });
 
+  test('shows a field error and makes no auth call for a malformed email', async () => {
+    vi.mocked(supabase.auth.signInWithPassword).mockClear();
+    await renderWithProviders(<LoginPage />, {withAuth: false});
+    await userEvent.type(screen.getByLabelText('Email'), 'stephen');
+    await userEvent.type(screen.getByLabelText('Password'), 'pass');
+    await userEvent.click(screen.getByText('Sign In'));
+    await waitFor(() => {
+      expect(
+        screen.getByText('Enter a valid email address'),
+      ).toBeInTheDocument();
+    });
+    expect(supabase.auth.signInWithPassword).not.toHaveBeenCalled();
+  });
+
   test('shows error on failure', async () => {
     vi.mocked(supabase.auth.signInWithPassword).mockResolvedValueOnce({
       error: Object.assign(new Error('Invalid'), {

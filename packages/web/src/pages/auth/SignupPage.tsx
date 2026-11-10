@@ -1,4 +1,4 @@
-import {errorMessage, useAuth} from '@eciperay/client';
+import {errorMessage, useAuth, validateAuthEmail} from '@eciperay/client';
 import {useState} from 'react';
 import {Navigate, useNavigate} from 'react-router-dom';
 
@@ -18,6 +18,7 @@ export const SignupPage = () => {
   const [displayName, setDisplayName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
   const [confirmationSent, setConfirmationSent] = useState(false);
 
   if (!isLoading && session) {
@@ -30,6 +31,12 @@ export const SignupPage = () => {
   }
 
   const handleSignUp = async () => {
+    const validationError = validateAuthEmail(email);
+    if (validationError) {
+      setEmailError(validationError);
+      return;
+    }
+    setEmailError(null);
     setLoading(true);
     setError(null);
     try {
@@ -72,10 +79,14 @@ export const SignupPage = () => {
       email={email}
       password={password}
       onDisplayNameChange={setDisplayName}
-      onEmailChange={setEmail}
+      onEmailChange={value => {
+        setEmail(value);
+        setEmailError(null);
+      }}
       onPasswordChange={setPassword}
       loading={loading}
       error={error}
+      emailError={emailError}
       onSubmit={() => {
         void handleSignUp();
       }}

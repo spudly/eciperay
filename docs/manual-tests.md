@@ -94,11 +94,18 @@ password-reset cases.
 5. **Sign out everywhere effect.** Sign out, then use the browser Back button
    toward an authenticated page. **Expected:** no authenticated content is
    served from cache; the app redirects to sign-in.
+6. **Malformed email validation (sign-in / sign-up / forgot password).** On each
+   of the three forms, enter a value that is not an email address (e.g. a bare
+   username with no `@`) and submit. **Expected:** "Enter a valid email address"
+   appears under the email field, no sign-in/sign-up/reset request is attempted,
+   and no credentials error appears; correcting the email and resubmitting
+   proceeds normally.
 
 **Run when:** `packages/app/src/screens/auth/**`,
-`packages/web/src/pages/auth/**`, `@spudly/ui` `SignInPage`, `SignUpPage`,
-`ForgotPasswordPage`, `ResetPasswordPage`, `packages/server` auth/session code,
-Supabase auth configuration changes.
+`packages/web/src/pages/auth/**`, `packages/client/src/authEmail.ts`,
+`@spudly/ui` `SignInPage`, `SignUpPage`, `ForgotPasswordPage`,
+`ResetPasswordPage`, `packages/server` auth/session code, Supabase auth
+configuration changes.
 
 ---
 
@@ -194,7 +201,7 @@ without); one recipe may be created fresh in case 1.
     version history and can be re-activated the same way. On an Evolving recipe,
     a Draft version with no cook logs offers no Activate action.
 
-12. **Crop a recipe image before saving (#406).** On the recipe create/edit
+13. **Crop a recipe image before saving (#406).** On the recipe create/edit
     form, pick or take a photo: before it is used, **Crop image** and **Use
     image** appear. **Use image** attaches the photo unchanged. Open **Crop
     image**, move/resize the crop box, and apply: the preview shows the cropped

@@ -1,6 +1,6 @@
 import React from 'react';
 import {Alert, Linking} from 'react-native';
-import {fireEvent, waitFor} from '@testing-library/react-native';
+import {act, fireEvent, waitFor} from '@testing-library/react-native';
 
 import {renderWithProviders} from '../../__tests__/testUtils';
 import {signInHref} from '../../lib/deepLinks';
@@ -30,7 +30,13 @@ describe('SignUpScreen', () => {
   test('syncs user when session is returned', async () => {
     mockSignUp.mockResolvedValue({data: {session: {}}, error: null});
     mockSyncUser.mockImplementation(async () => {});
-    const {getByText} = await renderWithProviders(<SignUpScreen />);
+    const {getByLabelText, getByText} = await renderWithProviders(
+      <SignUpScreen />,
+    );
+    await act(async () => {
+      await fireEvent.changeText(getByLabelText('Email'), 'user@test.com');
+      await Promise.resolve();
+    });
     await fireEvent.press(getByText('Create Account'));
     await waitFor(() => {
       expect(mockSyncUser).toHaveBeenCalled();
@@ -39,7 +45,13 @@ describe('SignUpScreen', () => {
 
   test('shows confirmation alert when email confirmation required', async () => {
     mockSignUp.mockResolvedValue({data: {session: null}, error: null});
-    const {getByText} = await renderWithProviders(<SignUpScreen />);
+    const {getByLabelText, getByText} = await renderWithProviders(
+      <SignUpScreen />,
+    );
+    await act(async () => {
+      await fireEvent.changeText(getByLabelText('Email'), 'user@test.com');
+      await Promise.resolve();
+    });
     await fireEvent.press(getByText('Create Account'));
     await waitFor(() => {
       expect(mockAlert).toHaveBeenCalledWith(
@@ -54,11 +66,35 @@ describe('SignUpScreen', () => {
       data: {session: null},
       error: new Error('Email taken'),
     });
-    const {getByText} = await renderWithProviders(<SignUpScreen />);
+    const {getByLabelText, getByText} = await renderWithProviders(
+      <SignUpScreen />,
+    );
+    await act(async () => {
+      await fireEvent.changeText(getByLabelText('Email'), 'user@test.com');
+      await Promise.resolve();
+    });
     await fireEvent.press(getByText('Create Account'));
     await waitFor(() => {
       expect(mockAlert).toHaveBeenCalledWith('Sign up failed', 'Email taken');
     });
+  });
+
+  test('shows a field error and makes no auth call for a malformed email', async () => {
+    mockSignUp.mockClear();
+    mockAlert.mockClear();
+    const {getByLabelText, getByText} = await renderWithProviders(
+      <SignUpScreen />,
+    );
+    await act(async () => {
+      await fireEvent.changeText(getByLabelText('Email'), 'stephen');
+      await Promise.resolve();
+    });
+    await fireEvent.press(getByText('Create Account'));
+    await waitFor(() => {
+      expect(getByText('Enter a valid email address')).toBeTruthy();
+    });
+    expect(mockSignUp).not.toHaveBeenCalled();
+    expect(mockAlert).not.toHaveBeenCalled();
   });
 
   test('opens the sign-in deep link', async () => {

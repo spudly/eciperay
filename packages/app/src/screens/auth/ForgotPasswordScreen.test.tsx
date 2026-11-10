@@ -47,9 +47,13 @@ describe('ForgotPasswordScreen', () => {
 
   test('shows success alert and goes back on success', async () => {
     mockReset.mockResolvedValue({error: null});
-    const {getByText} = await renderWithProviders(
+    const {getByLabelText, getByText} = await renderWithProviders(
       <ForgotPasswordScreen navigation={nav} />,
     );
+    await act(async () => {
+      await fireEvent.changeText(getByLabelText('Email'), 'user@test.com');
+      await Promise.resolve();
+    });
     await fireEvent.press(getByText('Send Reset Link'));
     await waitFor(() => {
       expect(mockAlert).toHaveBeenCalledWith(
@@ -73,11 +77,33 @@ describe('ForgotPasswordScreen', () => {
     expect(Linking.openURL).toHaveBeenCalledWith(signInHref);
   });
 
-  test('shows error alert on failure', async () => {
-    mockReset.mockResolvedValue({error: new Error('User not found')});
-    const {getByText} = await renderWithProviders(
+  test('shows a field error and makes no auth call for a malformed email', async () => {
+    mockReset.mockClear();
+    mockAlert.mockClear();
+    const {getByLabelText, getByText} = await renderWithProviders(
       <ForgotPasswordScreen navigation={nav} />,
     );
+    await act(async () => {
+      await fireEvent.changeText(getByLabelText('Email'), 'stephen');
+      await Promise.resolve();
+    });
+    await fireEvent.press(getByText('Send Reset Link'));
+    await waitFor(() => {
+      expect(getByText('Enter a valid email address')).toBeTruthy();
+    });
+    expect(mockReset).not.toHaveBeenCalled();
+    expect(mockAlert).not.toHaveBeenCalled();
+  });
+
+  test('shows error alert on failure', async () => {
+    mockReset.mockResolvedValue({error: new Error('User not found')});
+    const {getByLabelText, getByText} = await renderWithProviders(
+      <ForgotPasswordScreen navigation={nav} />,
+    );
+    await act(async () => {
+      await fireEvent.changeText(getByLabelText('Email'), 'user@test.com');
+      await Promise.resolve();
+    });
     await fireEvent.press(getByText('Send Reset Link'));
     await waitFor(() => {
       expect(mockAlert).toHaveBeenCalledWith('Error', 'User not found');

@@ -1,4 +1,4 @@
-import {errorMessage} from '@eciperay/client';
+import {errorMessage, validateAuthEmail} from '@eciperay/client';
 import {useState} from 'react';
 import {Alert} from 'react-native';
 import {SignInPage} from '@spudly/ui';
@@ -23,8 +23,15 @@ export const SignInScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
 
   const handleSignIn = async () => {
+    const validationError = validateAuthEmail(email);
+    if (validationError) {
+      setEmailError(validationError);
+      return;
+    }
+    setEmailError(null);
     setLoading(true);
     try {
       await signIn(normalizeAuthEmail(email), normalizeAuthPassword(password));
@@ -39,9 +46,13 @@ export const SignInScreen = () => {
     <SignInPage
       email={email}
       password={password}
-      onEmailChange={setEmail}
+      onEmailChange={value => {
+        setEmail(value);
+        setEmailError(null);
+      }}
       onPasswordChange={setPassword}
       loading={loading}
+      emailError={emailError}
       onSubmit={() => {
         void handleSignIn();
       }}
