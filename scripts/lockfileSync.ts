@@ -586,3 +586,85 @@ export const formatLockfileDependencyMismatches = (
       return `  ${workspace}: ${mismatch.dependency} spec ${mismatch.spec}, lockfile has ${lockfileVersion}`;
     })
     .join('\n');
+
+export type DependencyOverrideMismatch = {
+  subject: string;
+  expected: string;
+  actual: string | undefined;
+};
+
+// Issue #201 Part 1: the root `overrides` force test-exclude to ^8.0.0 so
+// the babel-plugin-istanbul coverage chain resolves glob >= 11 instead of
+// the deprecated glob@10.5.0 that test-exclude 7.x pulled in. Nothing in
+// `npm ci` fails if the override is dropped or the lockfile drifts back —
+// the deprecated glob would return with only a warning — so this check
+// pins the override spec, the test-exclude version babel-plugin-istanbul
+// resolves, and the glob that resolution reaches. The test-exclude 6.x
+// copy in the React Native jest-preset workspace chain is upstream-held
+// (the override graph does not reach it) and is deliberately not judged
+// here; only the root babel-plugin-istanbul chain is.
+export const findTestExcludeOverrideMismatches = (
+  root: string,
+  fs: Pick<SyncFs, 'readFileSync'> = {readFileSync},
+): DependencyOverrideMismatch[] => {
+  const manifest = JSON.parse(
+    fs.readFileSync(join(root, 'package.json'), 'utf8'),
+  ) as {overrides?: Record<string, string>};
+  const lock = JSON.parse(
+    fs.readFileSync(join(root, 'package-lock.json'), 'utf8'),
+  ) as {packages?: Record<string, {version?: string} | undefined>};
+  const packages = lock.packages ?? {};
+  const mismatches: DependencyOverrideMismatch[] = [];
+
+  const override = manifest.overrides?.['test-exclude'];
+  if (
+    override === undefined ||
+    !versionSatisfiesSpec('8.0.0', override) ||
+    versionSatisfiesSpec('7.0.2', override)
+  ) {
+    mismatches.push({
+      subject: 'package.json overrides',
+      expected: 'test-exclude ^8.0.0',
+      actual: override,
+    });
+  }
+
+  const resolved =
+    packages['node_modules/babel-plugin-istanbul/node_modules/test-exclude'] ??
+    packages['node_modules/test-exclude'];
+  const resolvedVersion = resolved?.version;
+  if (
+    resolvedVersion === undefined ||
+    override === undefined ||
+    !versionSatisfiesSpec(resolvedVersion, override)
+  ) {
+    mismatches.push({
+      subject: 'babel-plugin-istanbul test-exclude resolution',
+      expected: override ?? '(missing override)',
+      actual: resolvedVersion,
+    });
+  }
+
+  const globVersion = packages['node_modules/glob']?.version;
+  const globMajor =
+    globVersion === undefined ? null : parseVersionParts(globVersion)?.[0];
+  if (globMajor === null || globMajor === undefined || globMajor < 11) {
+    mismatches.push({
+      subject: 'test-exclude glob resolution',
+      expected: 'glob >=11',
+      actual: globVersion,
+    });
+  }
+
+  return mismatches;
+};
+
+export const formatDependencyOverrideMismatches = (
+  mismatches: DependencyOverrideMismatch[],
+): string =>
+  mismatches
+    .map(
+      mismatch =>
+        `  ${mismatch.subject}: expected ${mismatch.expected}, found ${mismatch.actual ?? '(missing)'}`,
+    )
+    .join('\n');

@@ -3,6 +3,8 @@ import {join} from 'node:path';
 import {
   aliasSpecRange,
   findLockfileDependencyMismatches,
+  findTestExcludeOverrideMismatches,
+  formatDependencyOverrideMismatches,
   formatLockfileDependencyMismatches,
   parseVersionParts,
   prereleaseIdentifiers,
@@ -430,6 +432,183 @@ describe('formatLockfileDependencyMismatches', () => {
     ).toBe(
       '  packages/server: posthog-node spec ^5.57.0, lockfile has 5.56.1\n' +
         '  (root): gone spec ^1.0.0, lockfile has (missing)',
+    );
+  });
+});
+
+describe('findTestExcludeOverrideMismatches', () => {
+  const overrideManifest = {overrides: {'test-exclude': '^8.0.0'}};
+  const fixedLock = {
+    packages: {
+      'node_modules/babel-plugin-istanbul/node_modules/test-exclude': {
+        version: '8.0.0',
+      },
+      'node_modules/glob': {version: '13.0.7'},
+    },
+  };
+
+  test('accepts the override, the 8.x resolution, and glob >= 11', () => {
+    const fs = fakeFs({
+      'package.json': overrideManifest,
+      'package-lock.json': fixedLock,
+    });
+    expect(findTestExcludeOverrideMismatches('/repo', fs as never)).toEqual([]);
+  });
+
+  test('accepts a hoisted test-exclude resolution', () => {
+    const fs = fakeFs({
+      'package.json': overrideManifest,
+      'package-lock.json': {
+        packages: {
+          'node_modules/test-exclude': {version: '8.0.0'},
+          'node_modules/glob': {version: '11.0.0'},
+        },
+      },
+    });
+    expect(findTestExcludeOverrideMismatches('/repo', fs as never)).toEqual([]);
+  });
+
+  test('flags the pre-override lockfile (test-exclude 7.x, glob 10.5.0)', () => {
+    const fs = fakeFs({
+      'package.json': overrideManifest,
+      'package-lock.json': {
+        packages: {
+          'node_modules/babel-plugin-istanbul/node_modules/test-exclude': {
+            version: '7.0.2',
+          },
+          'node_modules/glob': {version: '10.5.0'},
+        },
+      },
+    });
+    expect(findTestExcludeOverrideMismatches('/repo', fs as never)).toEqual([
+      {
+        subject: 'babel-plugin-istanbul test-exclude resolution',
+        expected: '^8.0.0',
+        actual: '7.0.2',
+      },
+      {
+        subject: 'test-exclude glob resolution',
+        expected: 'glob >=11',
+        actual: '10.5.0',
+      },
+    ]);
+  });
+
+  test('flags a missing override even when the lockfile still resolves 8.x', () => {
+    const fs = fakeFs({'package.json': {}, 'package-lock.json': fixedLock});
+    expect(findTestExcludeOverrideMismatches('/repo', fs as never)).toEqual([
+      {
+        subject: 'package.json overrides',
+        expected: 'test-exclude ^8.0.0',
+        actual: undefined,
+      },
+      {
+        subject: 'babel-plugin-istanbul test-exclude resolution',
+        expected: '(missing override)',
+        actual: '8.0.0',
+      },
+    ]);
+  });
+
+  test('flags an override that also admits 7.x', () => {
+    const fs = fakeFs({
+      'package.json': {overrides: {'test-exclude': '*'}},
+      'package-lock.json': fixedLock,
+    });
+    expect(findTestExcludeOverrideMismatches('/repo', fs as never)).toEqual([
+      {
+        subject: 'package.json overrides',
+        expected: 'test-exclude ^8.0.0',
+        actual: '*',
+      },
+    ]);
+  });
+
+  test('flags an override pinned to 7.x', () => {
+    const fs = fakeFs({
+      'package.json': {overrides: {'test-exclude': '^7.0.0'}},
+      'package-lock.json': {
+        packages: {
+          'node_modules/babel-plugin-istanbul/node_modules/test-exclude': {
+            version: '7.0.2',
+          },
+          'node_modules/glob': {version: '13.0.7'},
+        },
+      },
+    });
+    expect(findTestExcludeOverrideMismatches('/repo', fs as never)).toEqual([
+      {
+        subject: 'package.json overrides',
+        expected: 'test-exclude ^8.0.0',
+        actual: '^7.0.0',
+      },
+    ]);
+  });
+
+  test('flags a lockfile with no test-exclude or glob entries', () => {
+    const fs = fakeFs({
+      'package.json': overrideManifest,
+      'package-lock.json': {},
+    });
+    expect(findTestExcludeOverrideMismatches('/repo', fs as never)).toEqual([
+      {
+        subject: 'babel-plugin-istanbul test-exclude resolution',
+        expected: '^8.0.0',
+        actual: undefined,
+      },
+      {
+        subject: 'test-exclude glob resolution',
+        expected: 'glob >=11',
+        actual: undefined,
+      },
+    ]);
+  });
+
+  test('flags an unparseable glob version', () => {
+    const fs = fakeFs({
+      'package.json': overrideManifest,
+      'package-lock.json': {
+        packages: {
+          'node_modules/babel-plugin-istanbul/node_modules/test-exclude': {
+            version: '8.0.0',
+          },
+          'node_modules/glob': {version: 'next'},
+        },
+      },
+    });
+    expect(findTestExcludeOverrideMismatches('/repo', fs as never)).toEqual([
+      {
+        subject: 'test-exclude glob resolution',
+        expected: 'glob >=11',
+        actual: 'next',
+      },
+    ]);
+  });
+
+  test('the real repo override and lockfile satisfy the check', () => {
+    const root = join(import.meta.dirname, '..');
+    expect(findTestExcludeOverrideMismatches(root)).toEqual([]);
+  });
+});
+
+describe('formatDependencyOverrideMismatches', () => {
+  test('renders subject, expected, and actual (or missing)', () => {
+    expect(
+      formatDependencyOverrideMismatches([
+        {
+          subject: 'package.json overrides',
+          expected: 'test-exclude ^8.0.0',
+          actual: undefined,
+        },
+        {
+          subject: 'test-exclude glob resolution',
+          expected: 'glob >=11',
+          actual: '10.5.0',
+        },
+      ]),
+    ).toBe(
+      '  package.json overrides: expected test-exclude ^8.0.0, found (missing)\n' +
+        '  test-exclude glob resolution: expected glob >=11, found 10.5.0',
     );
   });
 });
