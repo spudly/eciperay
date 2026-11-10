@@ -238,6 +238,13 @@ export const RecipesPage = () => {
   useEffect(() => {
     onSearchChangeRef.current = controls.onSearchChange;
   });
+  // The latest controls, for the navigation effects below: the
+  // controls object is rebuilt every render, so effects cannot
+  // depend on its callbacks directly without re-firing every render.
+  const controlsRef = useRef(controls);
+  useEffect(() => {
+    controlsRef.current = controls;
+  });
   // Seed on every navigation (location.key), not only when the term
   // changes: re-submitting the same header term after editing the
   // page search must re-apply it, and clearing the header search
@@ -251,7 +258,22 @@ export const RecipesPage = () => {
     if (parseRecipeListFilterValues(location.state)) {
       return;
     }
-    onSearchChangeRef.current(headerSearch);
+    // A stateless entry is a fresh arrival (menu, header, direct
+    // link): it starts from default filters, with the search seeded
+    // from `q` (#468, CodeRabbit round 2 — clearing only the search
+    // here left the other filters from the previous entry applied
+    // when the arrival did not remount the page). Entries carrying
+    // saved filters are handled above and by the POP restore below.
+    const c = controlsRef.current;
+    c.onSearchChange(headerSearch);
+    c.onStatusFilterChange?.(RECIPE_STATUS_FILTER_ALL);
+    c.onIngredientChange('');
+    c.onMinCaloriesChange('');
+    c.onMaxCaloriesChange('');
+    c.onMinSatietyChange('');
+    c.onMaxSatietyChange('');
+    c.onSortChange('newest');
+    c.onSortDirChange('desc');
   }, [headerSearch, location.key, location.state]);
 
   // Restore on POP navigations between two browse entries (#468,
@@ -264,10 +286,6 @@ export const RecipesPage = () => {
   // (above), and this page's own sync writes are REPLACEs whose saved
   // values already equal the live ones.
   const navigationType = useNavigationType();
-  const controlsRef = useRef(controls);
-  useEffect(() => {
-    controlsRef.current = controls;
-  });
   const valuesRef = useRef(values);
   useEffect(() => {
     valuesRef.current = values;

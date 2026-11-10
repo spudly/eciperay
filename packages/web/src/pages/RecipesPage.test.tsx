@@ -683,6 +683,77 @@ describe('RecipesPage', () => {
     });
   });
 
+  test('a fresh Recipes menu arrival resets all filters (#468)', async () => {
+    const perfected = makeRecipeDetail({
+      id: 'perfected-id',
+      title: 'Perfected Soup',
+      status: 'perfected',
+    });
+    const idea = makeRecipeDetail({
+      id: 'idea-id',
+      title: 'Idea Soup',
+      status: 'idea',
+    });
+    server.use(
+      http.get('http://localhost:8080/api/recipes', ({request}) => {
+        const status = new URL(request.url).searchParams.get('status');
+        const items = [perfected, idea];
+        if (status) {
+          return HttpResponse.json(
+            items.filter(recipe => recipe.status === status),
+          );
+        }
+        return HttpResponse.json(items);
+      }),
+    );
+    const MenuButton = () => {
+      const navigate = useNavigate();
+      return (
+        <button
+          type="button"
+          onClick={() => {
+            void navigate('/recipes');
+          }}
+        >
+          Recipes menu
+        </button>
+      );
+    };
+    const user = userEvent.setup();
+    await renderWithProviders(
+      <>
+        <MenuButton />
+        <Routes>
+          <Route
+            path="/recipes"
+            element={<RecipesPage />}
+          />
+        </Routes>
+      </>,
+      {routerProps: {initialEntries: ['/recipes']}},
+    );
+    await waitFor(() => {
+      expect(screen.getByText('Perfected Soup')).toBeInTheDocument();
+      expect(screen.getByText('Idea Soup')).toBeInTheDocument();
+    });
+    await user.click(screen.getByRole('button', {name: 'Add a filter'}));
+    await user.click(screen.getByRole('button', {name: 'Add Status filter'}));
+    await user.click(await screen.findByRole('combobox'));
+    fireEvent.click(await screen.findByRole('option', {name: 'Perfected'}));
+    await waitFor(() => {
+      expect(screen.getByText('Perfected Soup')).toBeInTheDocument();
+      expect(screen.queryByText('Idea Soup')).not.toBeInTheDocument();
+    });
+    // A fresh menu arrival PUSHES a stateless /recipes entry and
+    // does not remount the page: every filter — not just the search —
+    // returns to defaults, so the full list comes back.
+    await user.click(screen.getByRole('button', {name: 'Recipes menu'}));
+    await waitFor(() => {
+      expect(screen.getByText('Perfected Soup')).toBeInTheDocument();
+      expect(screen.getByText('Idea Soup')).toBeInTheDocument();
+    });
+  });
+
   test('clearing the header search clears the page filter', async () => {
     const ClearHeaderSearch = () => {
       const navigate = useNavigate();
