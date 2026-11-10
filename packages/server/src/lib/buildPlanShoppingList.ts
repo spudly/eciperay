@@ -58,7 +58,7 @@ export const buildPlanShoppingList = async (
       const mealIngredientsResult = await queryFn(MEAL_INGREDIENTS_SQL, [
         entry.mealId,
       ]);
-      const mealIngredientRows = (mealIngredientsResult.rows ?? []) as {
+      const mealIngredientRows = mealIngredientsResult.rows as {
         name: string;
         quantity: number | null;
         unit: string | null;

@@ -62,10 +62,16 @@ export const MealEditPage = () => {
     enabled: debouncedSearch.trim().length > 0,
   });
 
+  // Hydrate the form once per meal: a background refetch of the same
+  // meal must not overwrite rows the user has already edited. The guard
+  // is keyed by meal id, so navigating to a different meal hydrates
+  // that meal's values afresh.
+  const hydratedMealIdRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!meal) {
+    if (!meal || hydratedMealIdRef.current === meal.id) {
       return;
     }
+    hydratedMealIdRef.current = meal.id;
     setTitle(meal.title);
     setNotes(meal.notes ?? '');
     setSelectedRecipes(

@@ -6,6 +6,7 @@ import {
   mealIngredientsToForm,
   mealPlanEntryKey,
   parseMealPlanEntryKey,
+  type MealFormIngredient,
 } from './mealUiHelpers.js';
 
 describe('mealUiHelpers', () => {
@@ -173,6 +174,47 @@ describe('mealUiHelpers', () => {
         ],
       }),
     ).toThrow(/valid quantity/);
+
+    // The parser mirrors the server schema's caps so over-limit entries
+    // fail here with a field-specific message, not a generic rejection.
+    const build = (formIngredients: MealFormIngredient[]) => () =>
+      buildMealInputFromForm({
+        title: 'Dinner',
+        notes: '',
+        selectedRecipeIds: [],
+        servingsByRecipeId: {},
+        formIngredients,
+      });
+    expect(
+      build([
+        {
+          id: 'a',
+          name: 'x'.repeat(200),
+          quantity: '',
+          unit: 'u'.repeat(50),
+          servings: '1',
+        },
+      ])().ingredients,
+    ).toHaveLength(1);
+    expect(
+      build([
+        {id: 'a', name: 'x'.repeat(201), quantity: '', unit: '', servings: '1'},
+      ]),
+    ).toThrow(/200 characters/);
+    expect(
+      build([
+        {
+          id: 'a',
+          name: 'Rice',
+          quantity: '',
+          unit: 'u'.repeat(51),
+          servings: '1',
+        },
+      ]),
+    ).toThrow(/50 characters/);
+    expect(
+      build([{id: 'a', name: 'Rice', quantity: '', unit: '', servings: '1.5'}]),
+    ).toThrow(/valid servings/);
   });
 
   test('hydrates form rows from stored meal ingredients (#362)', () => {

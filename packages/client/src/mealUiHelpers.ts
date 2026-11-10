@@ -39,6 +39,16 @@ const parseFormIngredient = (
   if (!name) {
     return null;
   }
+  // Mirror the server schema's caps (MealInputSchema: name ≤ 200, unit
+  // ≤ 50, servings a positive integer) so an over-limit entry fails here
+  // with a field-specific message instead of a generic server rejection.
+  if (name.length > 200) {
+    throw new Error('Enter an ingredient name of 200 characters or fewer.');
+  }
+  const unit = formIngredient.unit.trim();
+  if (unit.length > 50) {
+    throw new Error(`Enter a unit of 50 characters or fewer for “${name}”.`);
+  }
   const quantityText = formIngredient.quantity.trim();
   const quantity = quantityText === '' ? null : Number(quantityText);
   if (quantity !== null && (!Number.isFinite(quantity) || quantity <= 0)) {
@@ -46,10 +56,10 @@ const parseFormIngredient = (
   }
   const servingsText = formIngredient.servings.trim();
   const servings = servingsText === '' ? 1 : Number(servingsText);
-  if (!Number.isFinite(servings) || servings <= 0) {
+  if (!Number.isInteger(servings) || servings <= 0) {
     throw new Error(`Enter valid servings for “${name}”.`);
   }
-  return {name, quantity, unit: formIngredient.unit.trim() || null, servings};
+  return {name, quantity, unit: unit || null, servings};
 };
 
 export const mealPlanEntryKey = (kind: 'meal' | 'recipe', id: string): string =>
