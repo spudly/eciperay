@@ -46,7 +46,7 @@ const BROWSER_HEADERS = {
 };
 const BOT_REFUSAL_STATUSES = new Set([401, 403, 429]);
 
-const fetchPage = async (url: string): Promise<string> => {
+const fetchDirect = async (url: string): Promise<string> => {
   const response = await fetch(url, {
     headers: {'User-Agent': 'EciperayBot/1.0'},
     signal: AbortSignal.timeout(10_000),
@@ -68,6 +68,61 @@ const fetchPage = async (url: string): Promise<string> => {
     throw new Error(`Failed to fetch ${url}: ${retry.status}`);
   }
   return retry.text();
+};
+
+// Crawlbase fallback (#476, Stephen's adjustment 2026-11-09): the proxy
+// is used ONLY when the direct fetches above have already failed, so
+// Crawlbase tokens are spent only on pages that block direct imports.
+// When CRAWLBASE_TOKEN is unset the direct behavior is exactly as
+// before. The token travels in the proxy request URL, so that URL is
+// never logged and never appears in an error message.
+// Crawlbase reports the origin's own status in a response header
+// alongside its proxy status; a missing or unparsable header yields
+// null and the proxy status alone decides.
+const originalStatusOf = (headers: Headers): number | null => {
+  const raw =
+    headers.get('original-status') ?? headers.get('original_status');
+  if (raw === null) {
+    return null;
+  }
+  const parsed = Number(raw);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+};
+
+const fetchViaCrawlbase = async (url: string): Promise<string> => {
+  const token = process.env['CRAWLBASE_TOKEN']?.trim();
+  if (!token) {
+    throw new Error(`Failed to fetch ${url}`);
+  }
+  const proxyUrl = `https://api.crawlbase.com/?token=${encodeURIComponent(token)}&url=${encodeURIComponent(url)}`;
+  const response = await fetch(proxyUrl, {
+    signal: AbortSignal.timeout(30_000),
+  });
+  const originalStatus = originalStatusOf(response.headers);
+  const originalFailed = originalStatus !== null && originalStatus >= 400;
+  if (!response.ok || originalFailed) {
+    await response.body?.cancel().catch(() => undefined);
+    const status = originalFailed ? originalStatus : response.status;
+    throw new Error(`Failed to fetch ${url}: ${status}`);
+  }
+  return response.text();
+};
+
+const fetchPage = async (url: string): Promise<string> => {
+  try {
+    return await fetchDirect(url);
+  } catch (directError) {
+    if (!process.env['CRAWLBASE_TOKEN']?.trim()) {
+      throw directError;
+    }
+    try {
+      return await fetchViaCrawlbase(url);
+    } catch {
+      // The direct failure is the user-relevant one; the proxy attempt
+      // (and its token-bearing URL) must not leak into errors or logs.
+      throw directError;
+    }
+  }
 };
 
 const parseFromHtml = async (html: string, url: string) => {
