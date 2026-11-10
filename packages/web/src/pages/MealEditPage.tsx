@@ -137,8 +137,10 @@ export const MealEditPage = () => {
   // saveable form: the save is a full replace, so submitting it would
   // wipe the meal's stored recipes and ingredients. Show the load
   // error instead — there is nothing safe to edit until the meal
-  // loads. (Create mode has no load and is unaffected.)
-  if (isEdit && mealError) {
+  // loads. (Create mode has no load and is unaffected.) A failed
+  // background refetch is different: the cached meal is still present,
+  // so keep the form (and its edits) rather than hiding it.
+  if (isEdit && mealError && !meal) {
     return (
       <RouteErrorView
         isNotFound={

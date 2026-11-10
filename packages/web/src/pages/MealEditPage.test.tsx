@@ -251,6 +251,65 @@ describe('MealEditPage', () => {
     });
   });
 
+  test('keeps the form when a background refetch fails (#362)', async () => {
+    const stored = makeMealDetail({
+      ingredients: [
+        {
+          name: 'Rice',
+          quantity: 2,
+          unit: 'cups',
+          sortOrder: 0,
+          servings: 2,
+          fiberG: null,
+          sugarG: null,
+          sodiumMg: null,
+          preparedWeightG: null,
+          satietyScore: null,
+          nutritionStatus: null,
+          calories: null,
+          proteinG: null,
+          carbsG: null,
+          fatG: null,
+        },
+      ],
+    });
+    let getCount = 0;
+    server.use(
+      http.get(`http://localhost:8080/api/meals/${MEAL_ID}`, () => {
+        getCount += 1;
+        return getCount === 1
+          ? HttpResponse.json(stored)
+          : HttpResponse.json({error: 'boom'}, {status: 500});
+      }),
+    );
+    const queryClient = makeQueryClient();
+    await renderWithProviders(
+      <Routes>
+        <Route
+          path="/meals/:mealId/edit"
+          element={<MealEditPage />}
+        />
+      </Routes>,
+      {route: `/meals/${MEAL_ID}/edit`, queryClient},
+    );
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('Rice')).toBeInTheDocument();
+    });
+    fireEvent.change(screen.getByDisplayValue('Rice'), {
+      target: {value: 'Brown rice'},
+    });
+    // The refetch fails, but the cached meal is still available, so the
+    // form and the in-progress edit must stay — not the error view.
+    await act(async () => {
+      await queryClient
+        .invalidateQueries({queryKey: queryKeys.meal(MEAL_ID)})
+        .catch(() => undefined);
+    });
+    expect(screen.getByDisplayValue('Brown rice')).toBeInTheDocument();
+    expect(screen.getByText('Save meal')).toBeInTheDocument();
+    expect(screen.queryByText('Something went wrong')).not.toBeInTheDocument();
+  });
+
   test('blocks saving when the meal fails to load (#362)', async () => {
     server.use(
       http.get(`http://localhost:8080/api/meals/${MEAL_ID}`, () =>
