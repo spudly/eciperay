@@ -91,6 +91,13 @@ describe('metroResolveRequest zod resolution', () => {
     expect(zodVersionAt(result.filePath)).toMatch(/^4\./);
   });
 
+  test('does not apply the override to sibling prefixes of the client root', () => {
+    const origin = path.join(monorepoRoot, 'packages/client-foo/src/index.ts');
+    const result = resolveRequest(makeContext(origin), 'zod', 'ios');
+    expect(result.type).toBe('sourceFile');
+    expect(zodVersionAt(result.filePath)).toMatch(/^3\./);
+  });
+
   test('keeps the app-local zod 3 copy for non-client files', () => {
     const origin = path.join(appRoot, 'node_modules/expo/src/index.ts');
     const result = resolveRequest(makeContext(origin), 'zod', 'ios');

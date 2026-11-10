@@ -29,7 +29,10 @@ const resolveRequest = (context, moduleName, platform) => {
   // monorepo root (the client's declared copy) when the importer is a
   // client file. Every other package keeps the default resolution and
   // its own zod copy.
-  if (moduleName === 'zod' && context.originModulePath.startsWith(clientRoot)) {
+  if (
+    moduleName === 'zod' &&
+    context.originModulePath.startsWith(clientRoot + path.sep)
+  ) {
     return metroResolve(
       {
         ...context,
