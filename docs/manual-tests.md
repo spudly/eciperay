@@ -231,8 +231,7 @@ without); one recipe may be created fresh in case 1.
 
 **Run when:**
 `packages/app/src/screens/{Recipes,RecipeDetail,EditRecipe,EditVersion,ManualEntry,SharedWithMe,Home}Screen.tsx`,
-`packages/app/src/lib/deepLinks.ts`,
-`packages/app/src/components/recipe/**`,
+`packages/app/src/lib/deepLinks.ts`, `packages/app/src/components/recipe/**`,
 `packages/app/src/lib/recipeImageCrop.ts`,
 `packages/app/android/settings.gradle`, `packages/app/ios/Podfile`,
 `packages/app/react-native.config.cjs`,
@@ -692,14 +691,14 @@ account (viewer); one QA recipe.
    sits above the Discover section of public recipes, all under one
    search/filter bar; searching from the shell header lands on `/recipes` with
    that search applied to every section.
-8. **Unified browse in the app.** Signed in, open the Recipes tab.
-   **Expected:** the same composition as web — "Your recipes" (own recipes
-   first, then shared-with-me recipes badged Shared, opening their public
-   permalink) above the Discover section of public recipes, all under the
-   page's one search/filter bar (the app has no shell header search; the
-   page search is the only search surface); scrolling to the end loads more
-   of each section independently, and a discovery first-page failure shows
-   the discovery error without hiding your recipes.
+8. **Unified browse in the app.** Signed in, open the Recipes tab. **Expected:**
+   the same composition as web — "Your recipes" (own recipes first, then
+   shared-with-me recipes badged Shared, opening their public permalink) above
+   the Discover section of public recipes, all under the page's one
+   search/filter bar (the app has no shell header search; the page search is the
+   only search surface); scrolling to the end loads more of each section
+   independently, and a discovery first-page failure shows the discovery error
+   without hiding your recipes.
 
 **Run when:** `packages/app/src/screens/{SharedWithMe,Recipes,Home}Screen.tsx`,
 `packages/app/src/hosts/{recipes,recipe/RecipeVisibilityControls}*`,
@@ -710,7 +709,7 @@ account (viewer); one QA recipe.
 `packages/web/src/routes/router.tsx`,
 `packages/web/src/pages/MarketingLandingPage.tsx`,
 `packages/web/src/pages/legal/**`, `packages/web/src/components/shared/**`,
-`@spudly/ui` `DiscoverPage`, `PublicRecipePage`, `RecipesPage`,
+`@spudly/ui` `DiscoverPage`, `PublicRecipePage`, `RecipesPage`, `AppShellPage`,
 `packages/web/src/components/PublicHeader.tsx`, `packages/server`
 sharing/visibility routes.
 

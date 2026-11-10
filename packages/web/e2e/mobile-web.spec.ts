@@ -76,9 +76,7 @@ test.describe('mobile web layout (390px)', () => {
     expect(box!.x + box!.width).toBeLessThanOrEqual(390);
   });
 
-  // fixme: same DS AppTopBar overflow as above — scrollWidth is 434
-  // at this width (spudly/design-system#564).
-  test.fixme('recipe titles stay readable at wider phone widths (430px)', async ({
+  test('recipe titles stay readable at wider phone widths (430px)', async ({
     page,
   }) => {
     // The 414–430px band: the trailing actions must not rejoin the card
@@ -94,6 +92,16 @@ test.describe('mobile web layout (390px)', () => {
       return title?.parentElement?.getBoundingClientRect().width ?? 0;
     });
     expect(titleColumnWidth).toBeGreaterThan(150);
+  });
+
+  // fixme: the page scrolls sideways at this width because the DS
+  // AppTopBar nav row overflows (scrollWidth 434) —
+  // spudly/design-system#564. Only the overflow assertion is parked;
+  // the title-width check above stays active.
+  test.fixme('the page does not scroll sideways at 430px', async ({page}) => {
+    await page.setViewportSize({width: 430, height: 844});
+    await page.goto('/recipes');
+    await expect(page.getByText('E2E Tomato Pasta')).toBeVisible();
 
     const scrollWidth = await page.evaluate(
       () => document.documentElement.scrollWidth,
