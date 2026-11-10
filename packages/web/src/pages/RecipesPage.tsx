@@ -8,10 +8,13 @@ import {
   getDisplayRating,
   invalidateRecipeQueries,
   parseRecipeListFilterValues,
+  RECIPE_STATUS_FILTER_ALL,
+  useDebouncedValue,
   publicRecipeDiscoveryInfiniteQueryOptions,
   recipeListInfiniteQueryOptions,
   sharedWithMeInfiniteQueryOptions,
   useRecipeListFilters,
+  type RecipeListFilterValues,
   type RecipeStatusFilterValue,
 } from '@eciperay/client';
 import type {
@@ -33,7 +36,12 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import {useCallback, useEffect, useRef, useState} from 'react';
-import {useLocation, useNavigate, useSearchParams} from 'react-router-dom';
+import {
+  useLocation,
+  useNavigate,
+  useNavigationType,
+  useSearchParams,
+} from 'react-router-dom';
 
 import {CookLogForm} from '../components/cooking/CookLogForm.js';
 import {eciperay} from '../lib/api.js';
@@ -246,30 +254,140 @@ export const RecipesPage = () => {
     onSearchChangeRef.current(headerSearch);
   }, [headerSearch, location.key, location.state]);
 
-  // Keep this history entry's location state holding the current
-  // filter values (#468), so Back from a recipe restores them. The
-  // write REPLACES the current entry (Stephen, 2026-11-09): filter
-  // tweaks must never become Back stops of their own. The serialized
-  // comparison keeps the effect from re-navigating on its own write.
-  const syncedFiltersRef = useRef<string | null>(null);
+  // Restore on POP navigations between two browse entries (#468,
+  // CodeRabbit round 1): React Router does NOT remount this page when
+  // Back/Forward moves between two `/recipes` entries, so the mount
+  // seeding above never re-runs and the entry's saved values would be
+  // ignored. On a POP, re-apply the now-active entry's saved values
+  // whenever they differ from the live fields. PUSH/REPLACE
+  // navigations are excluded: a header-search PUSH seeds from `q`
+  // (above), and this page's own sync writes are REPLACEs whose saved
+  // values already equal the live ones.
+  const navigationType = useNavigationType();
+  const controlsRef = useRef(controls);
   useEffect(() => {
-    const serialized = JSON.stringify(values);
-    if (syncedFiltersRef.current === serialized) {
+    controlsRef.current = controls;
+  });
+  const valuesRef = useRef(values);
+  useEffect(() => {
+    valuesRef.current = values;
+  });
+  const locationRef = useRef(location);
+  useEffect(() => {
+    locationRef.current = location;
+  });
+  // While a POP restore is in flight (saved values applied, field
+  // state not yet caught up), the sync write below must not overwrite
+  // the active entry's saved state with the stale live values.
+  const pendingRestoreRef = useRef<{
+    key: string;
+    serialized: string;
+  } | null>(null);
+  useEffect(() => {
+    if (navigationType !== 'POP') {
       return;
     }
     const saved = parseRecipeListFilterValues(location.state);
-    if (saved && JSON.stringify({...values, ...saved}) === serialized) {
-      // The entry already carries exactly these values (the mount
-      // this page was seeded from, or our own previous write).
-      syncedFiltersRef.current = serialized;
+    if (!saved) {
       return;
     }
-    syncedFiltersRef.current = serialized;
-    void navigate(
-      {pathname: location.pathname, search: location.search},
-      {replace: true, state: {recipeListFilters: values}},
-    );
-  }, [location.pathname, location.search, location.state, navigate, values]);
+    const restored: RecipeListFilterValues = {
+      search: '',
+      statusFilter: RECIPE_STATUS_FILTER_ALL,
+      ingredient: '',
+      minCalories: '',
+      maxCalories: '',
+      minSatiety: '',
+      maxSatiety: '',
+      sort: 'newest',
+      sortDir: 'desc',
+      ...saved,
+    };
+    const serialized = JSON.stringify(restored);
+    if (serialized === JSON.stringify(valuesRef.current)) {
+      if (pendingRestoreRef.current?.key === location.key) {
+        pendingRestoreRef.current = null;
+      }
+      return;
+    }
+    pendingRestoreRef.current = {key: location.key, serialized};
+    const c = controlsRef.current;
+    c.onSearchChange(restored.search);
+    c.onStatusFilterChange(restored.statusFilter);
+    c.onIngredientChange(restored.ingredient);
+    c.onMinCaloriesChange(restored.minCalories);
+    c.onMaxCaloriesChange(restored.maxCalories);
+    c.onMinSatietyChange(restored.minSatiety);
+    c.onMaxSatietyChange(restored.maxSatiety);
+    c.onSortChange(restored.sort);
+    c.onSortDirChange(restored.sortDir);
+  }, [location.key, location.state, navigationType]);
+
+  // Keep this history entry's location state holding the current
+  // filter values (#468), so Back from a recipe restores them. The
+  // write REPLACES the current entry (Stephen, 2026-11-09): filter
+  // tweaks must never become Back stops of their own.
+  const syncedFiltersRef = useRef<string | null>(null);
+  const writeFilterState = useCallback(
+    (currentValues: RecipeListFilterValues) => {
+      const serialized = JSON.stringify(currentValues);
+      if (syncedFiltersRef.current === serialized) {
+        return;
+      }
+      const pending = pendingRestoreRef.current;
+      if (
+        pending &&
+        pending.key === locationRef.current.key &&
+        pending.serialized !== serialized
+      ) {
+        // A POP restore for this entry is still catching up; its
+        // saved state is newer than these live values.
+        return;
+      }
+      const saved = parseRecipeListFilterValues(locationRef.current.state);
+      if (saved && JSON.stringify({...currentValues, ...saved}) === serialized) {
+        // The entry already carries exactly these values (the mount
+        // this page was seeded from, or our own previous write).
+        syncedFiltersRef.current = serialized;
+        return;
+      }
+      syncedFiltersRef.current = serialized;
+      void navigate(
+        {
+          pathname: locationRef.current.pathname,
+          search: locationRef.current.search,
+        },
+        {replace: true, state: {recipeListFilters: currentValues}},
+      );
+    },
+    [navigate],
+  );
+
+  // The sync write is debounced (#468, CodeRabbit round 1): browsers
+  // rate-limit history.replaceState (Safari throws a SecurityError
+  // after ~100 calls in 30 seconds), so a burst of keystrokes must
+  // settle into ONE write for the settled values, not one per
+  // keystroke. The capture-phase link-click flush below covers the
+  // remaining race — leaving via a link before the debounce settles —
+  // by writing the latest values synchronously before the router's
+  // own click handling pushes the new entry.
+  const debouncedFilterValues = useDebouncedValue(values);
+  useEffect(() => {
+    writeFilterState(debouncedFilterValues);
+  }, [debouncedFilterValues, writeFilterState]);
+  useEffect(() => {
+    const flushOnLinkClick = (event: MouseEvent) => {
+      const target = event.target as Element | null;
+      if (!target?.closest?.('a[href]')) {
+        return;
+      }
+      writeFilterState(valuesRef.current);
+    };
+    document.addEventListener('click', flushOnLinkClick, true);
+    return () => {
+      document.removeEventListener('click', flushOnLinkClick, true);
+    };
+  }, [writeFilterState]);
 
   const ownQuery = useInfiniteQuery(
     recipeListInfiniteQueryOptions(

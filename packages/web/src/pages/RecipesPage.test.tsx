@@ -587,6 +587,9 @@ describe('RecipesPage', () => {
         'Test',
       );
     });
+    // Let the debounced sync write settle, so the current entry's
+    // location state holds the typed filters before leaving.
+    await new Promise(resolve => setTimeout(resolve, 400));
     // Leave for a recipe (a push, as the row link performs), then go
     // Back: the browse remounts seeded from the entry's saved state.
     await userEvent.click(screen.getByRole('button', {name: 'Open recipe'}));
@@ -604,6 +607,74 @@ describe('RecipesPage', () => {
     await userEvent.click(screen.getByRole('button', {name: 'Go back'}));
     await waitFor(() => {
       expect(screen.getByText('Other page')).toBeInTheDocument();
+    });
+  });
+
+  test('Back from a header-search entry restores the earlier entry filters (#468)', async () => {
+    const NavButtons = () => {
+      const navigate = useNavigate();
+      return (
+        <>
+          <button
+            type="button"
+            onClick={() => {
+              void navigate(-1);
+            }}
+          >
+            Go back
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              void navigate('/recipes?q=Other');
+            }}
+          >
+            Header search
+          </button>
+        </>
+      );
+    };
+    await renderWithProviders(
+      <>
+        <NavButtons />
+        <Routes>
+          <Route
+            path="/recipes"
+            element={<RecipesPage />}
+          />
+        </Routes>
+      </>,
+      {routerProps: {initialEntries: ['/recipes']}},
+    );
+    await waitFor(() => {
+      expect(screen.getByText('Test Recipe')).toBeInTheDocument();
+    });
+    await userEvent.type(
+      screen.getByPlaceholderText('Search recipes…'),
+      'Test',
+    );
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('Search recipes…')).toHaveValue(
+        'Test',
+      );
+    });
+    // Let the debounced sync write settle into this entry's state.
+    await new Promise(resolve => setTimeout(resolve, 400));
+    // A header search PUSHES a second /recipes entry; React Router
+    // does not remount the page, and the new entry seeds from `q`.
+    await userEvent.click(screen.getByRole('button', {name: 'Header search'}));
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('Search recipes…')).toHaveValue(
+        'Other',
+      );
+    });
+    // Back (POP) to the first entry — still no remount: the page must
+    // re-apply that entry's saved filters, not keep the stale 'Other'.
+    await userEvent.click(screen.getByRole('button', {name: 'Go back'}));
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('Search recipes…')).toHaveValue(
+        'Test',
+      );
     });
   });
 
