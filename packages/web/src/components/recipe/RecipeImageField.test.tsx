@@ -138,7 +138,7 @@ describe('RecipeImageField', () => {
     expect(onImageFile).not.toHaveBeenCalled();
   });
 
-  test('shows preview, errors, and remove action', async () => {
+  test('shows preview and errors, with no remove action (#407)', () => {
     const onRemove = vi.fn();
     render(
       <RecipeImageField
@@ -150,8 +150,10 @@ describe('RecipeImageField', () => {
     );
     expect(screen.getByAltText('Recipe preview')).toBeInTheDocument();
     expect(screen.getByText('Upload failed')).toBeInTheDocument();
-    await userEvent.click(screen.getByText('Remove image'));
-    expect(onRemove).toHaveBeenCalled();
+    // Stephen's #407 ruling: a recipe photo can be replaced but never
+    // deleted — once a recipe has an image it keeps one.
+    expect(screen.queryByText('Remove image')).not.toBeInTheDocument();
+    expect(onRemove).not.toHaveBeenCalled();
   });
 
   test('ignores browse changes without a selected file', () => {

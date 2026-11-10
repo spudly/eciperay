@@ -209,13 +209,25 @@ without); one recipe may be created fresh in case 1.
     the crop: the original, uncropped photo is attached instead. **Expected:**
     cropping is optional, never forced, and applies only to the pending recipe
     image (not meal photos or photo import).
-13. **Browse filters survive a recipe visit (#468).** On `/recipes`, set a
-    search term and at least one more filter (e.g. a status or an ingredient)
-    so the list narrows. Open a recipe from the list, then use the browser
-    Back button. **Expected:** the browse returns with the search and filters
-    exactly as left and the list still narrowed. Press Back once more:
-    **Expected:** it leaves the browse in a single step — the filter edits
-    did not add history entries of their own.
+14. **Browse filters survive a recipe visit (#468).** On `/recipes`, set a
+    search term and at least one more filter (e.g. a status or an ingredient) so
+    the list narrows. Open a recipe from the list, then use the browser Back
+    button. **Expected:** the browse returns with the search and filters exactly
+    as left and the list still narrowed. Press Back once more: **Expected:** it
+    leaves the browse in a single step — the filter edits did not add history
+    entries of their own.
+15. **Auto-generated image on save (#407).** Save a new recipe with no image (AI
+    calls follow the QA budget/mocking rules — `ECIPERAY_AI_FAKE=1` where the
+    preview supports it). **Expected:** the save succeeds immediately; shortly
+    after, the recipe shows a generated image in the detail view and its list
+    card. Edit and re-save the recipe (still before checking the image, or with
+    the generated image in place): **Expected:** no second generation — the
+    image is unchanged. Save a recipe that already has a photo: **Expected:**
+    its photo is untouched.
+16. **Recipe photos cannot be deleted (#407).** On the recipe create/edit form
+    with an image in place, check the image controls. **Expected:** there is no
+    Remove/Delete action for the photo; uploading or generating a replacement
+    still works and swaps the image.
 
 **Run when:**
 `packages/app/src/screens/{Recipes,RecipeDetail,EditRecipe,EditVersion,ManualEntry}Screen.tsx`,

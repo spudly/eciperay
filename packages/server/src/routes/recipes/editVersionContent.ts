@@ -13,6 +13,10 @@ import {
   isVersionEditable,
   versionEditBlockedError,
 } from '../../lib/isVersionEditable.js';
+import {
+  autoImageContextFromDetail,
+  scheduleAutoGenerateRecipeImage,
+} from '../../lib/autoGenerateRecipeImage.js';
 import {mapRowToRecipeDetail} from '../../lib/mapRowToRecipeDetail.js';
 import {scheduleNutritionRefresh} from '../../lib/refreshRecipeNutrition.js';
 import {RecipeVersionEditInputSchema, validate} from '../../lib/schemas.js';
@@ -315,5 +319,18 @@ export const editVersionContent = async (
     res.status(500).json({error: 'Failed to fetch edited version'});
     return;
   }
+  // #407: a version-content save is also a recipe save — a
+  // still-imageless recipe gets an auto-generated image (once per recipe).
+  scheduleAutoGenerateRecipeImage(
+    {
+      userId: req.userId,
+      supabaseUid: req.supabaseUid,
+      recipe: autoImageContextFromDetail({
+        ...detail,
+        versionId: editedVersionId,
+      }),
+    },
+    queryFn,
+  );
   res.status(branchesFromActive ? 201 : 200).json(detail);
 };

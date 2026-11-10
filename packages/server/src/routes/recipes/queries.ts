@@ -137,3 +137,18 @@ export const setVersionImageUrl = (
     'update recipe_versions set image_url = $2 where id = $1 returning id',
     [versionId, imageUrl],
   );
+
+/**
+ * Attach an image only while the version still has none (#407): the
+ * auto-generation job runs after the save, and a photo the user uploads in the
+ * meantime must never be overwritten by the generated one.
+ */
+export const setVersionImageUrlIfEmpty = (
+  versionId: string,
+  imageUrl: string,
+  queryFn: QueryFn,
+) =>
+  queryFn(
+    'update recipe_versions set image_url = $2 where id = $1 and image_url is null returning id',
+    [versionId, imageUrl],
+  );

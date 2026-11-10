@@ -57,6 +57,22 @@ describe('RecipeImageField', () => {
     expect(onImagePicked).not.toHaveBeenCalled();
   });
 
+  test('renders no remove action for an existing image (#407)', async () => {
+    const onRemove = jest.fn();
+    const {queryByLabelText} = await renderWithProviders(
+      <RecipeImageField
+        imagePreview="https://example.com/preview.png"
+        imageUploading={false}
+        imageError={null}
+        onImagePicked={jest.fn()}
+        onRemove={onRemove}
+      />,
+    );
+    // Stephen's #407 ruling: photos can be replaced, never deleted.
+    expect(queryByLabelText('Remove image')).toBeNull();
+    expect(onRemove).not.toHaveBeenCalled();
+  });
+
   test('calls onGenerateImage from the generate button', async () => {
     const onGenerateImage = jest.fn();
     const {getByLabelText} = await renderWithProviders(
@@ -576,7 +592,6 @@ describe('RecipeImageField', () => {
     });
     expect(onImagePicked).not.toHaveBeenCalled();
   });
-
 
   test('discarding a pending image returns to the picker controls', async () => {
     const onImagePicked = jest.fn();
