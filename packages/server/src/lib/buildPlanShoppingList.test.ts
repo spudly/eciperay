@@ -285,4 +285,70 @@ describe('buildPlanShoppingList', () => {
     }
     expect(result.lines).toEqual([]);
   });
+
+  test('includes a meal entry’s direct ingredients, scaled by plan quantity (#362)', async () => {
+    const mockQuery = createMockQuery();
+    mockQuery.mockImplementation((async (sql: string) => {
+      if (sql.includes('from meal_plans') && sql.includes('where id =')) {
+        return makeQueryResult([mealPlanRow]);
+      }
+      if (sql.includes('from meal_plan_entries')) {
+        return makeQueryResult([
+          {
+            id: 'entry-1',
+            meal_plan_id: PLAN_ID,
+            sort_order: 0,
+            quantity: 2,
+            meal_id: MEAL_ID,
+            recipe_id: null,
+            servings: null,
+          },
+        ]);
+      }
+      if (sql.includes('from meals') && sql.includes('where id =')) {
+        return makeQueryResult([mealRow]);
+      }
+      if (sql.includes('from meal_ingredients')) {
+        return makeQueryResult([
+          {name: 'Rice', quantity: 2, unit: 'cups'},
+          {name: 'Protein shake', quantity: null, unit: null},
+        ]);
+      }
+      if (sql.includes('from meal_recipes')) {
+        return makeQueryResult([]);
+      }
+      if (sql.includes('goal_calories')) {
+        return makeQueryResult([
+          {
+            goal_calories: null,
+            goal_protein_g: null,
+            goal_carbs_g: null,
+            goal_fat_g: null,
+            goal_satiety_score: null,
+          },
+        ]);
+      }
+      return makeQueryResult([]);
+    }) as typeof mockQuery);
+
+    const result = await buildPlanShoppingList(PLAN_ID, USER_ID, mockQuery);
+    if ('error' in result) {
+      throw new Error(result.error);
+    }
+    const rice = result.lines.find(line => line.name === 'Rice');
+    // Entered quantity 2 cups, meal included twice in the plan → 4 cups,
+    // with no recipe source (the ingredient belongs to the meal itself).
+    expect(rice?.quantity).toBe(4);
+    expect(rice?.unit).toBe('cups');
+    expect(rice?.sources).toEqual([
+      {
+        mealId: MEAL_ID,
+        mealTitle: mealRow.title,
+        recipeId: null,
+        recipeTitle: null,
+      },
+    ]);
+    const shake = result.lines.find(line => line.name === 'Protein shake');
+    expect(shake?.quantity).toBeNull();
+  });
 });

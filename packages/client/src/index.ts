@@ -285,8 +285,10 @@ export {
   buildMealPlanInputFromForm,
   defaultNutritionGoals,
   formatSimpleNutrition,
+  mealIngredientsToForm,
   mealPlanEntryKey,
   parseMealPlanEntryKey,
+  type MealFormIngredient,
 } from './mealUiHelpers.js';
 export {
   buildMealPlanFormEntryOptions,
