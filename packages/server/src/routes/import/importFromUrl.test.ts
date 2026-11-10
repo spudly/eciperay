@@ -107,6 +107,99 @@ describe('POST /recipes/import/url', () => {
     expect(res.body.title).toBe('Pasta');
   });
 
+  test('falls back to Crawlbase only after the direct fetches fail (#476)', async () => {
+    const previous = process.env['CRAWLBASE_TOKEN'];
+    process.env['CRAWLBASE_TOKEN'] = 'test-crawlbase-token';
+    try {
+      nockSupabaseGetUser('user-uuid-1');
+      // Bot fetch refused, browser-header retry refused too.
+      nock('https://recipe.example.com')
+        .get('/blocked')
+        .reply(403, 'Forbidden')
+        .get('/blocked')
+        .reply(403, 'Forbidden');
+      const crawlbase = nock('https://api.crawlbase.com')
+        .get('/')
+        .query({
+          token: 'test-crawlbase-token',
+          url: 'https://recipe.example.com/blocked',
+        })
+        .reply(200, SCHEMA_ORG_HTML);
+      mockSaveFlow();
+      const res = await request(getApp())
+        .post('/api/recipes/import/url')
+        .set('Authorization', 'Bearer valid-token')
+        .send({url: 'https://recipe.example.com/blocked'});
+      expect(res.status).toBe(201);
+      expect(res.body.title).toBe('Pasta');
+      expect(crawlbase.isDone()).toBe(true);
+    } finally {
+      if (previous === undefined) {
+        delete process.env['CRAWLBASE_TOKEN'];
+      } else {
+        process.env['CRAWLBASE_TOKEN'] = previous;
+      }
+    }
+  });
+
+  test('returns the direct fetch error when Crawlbase also fails, without leaking the token (#476)', async () => {
+    const previous = process.env['CRAWLBASE_TOKEN'];
+    process.env['CRAWLBASE_TOKEN'] = 'test-crawlbase-token';
+    try {
+      nockSupabaseGetUser('user-uuid-1');
+      mockBillingPlan(mockQuery, 'plus');
+      nock('https://recipe.example.com')
+        .get('/blocked')
+        .reply(403, 'Forbidden')
+        .get('/blocked')
+        .reply(403, 'Forbidden');
+      nock('https://api.crawlbase.com')
+        .get('/')
+        .query(true)
+        .reply(403, 'Forbidden');
+      const res = await request(getApp())
+        .post('/api/recipes/import/url')
+        .set('Authorization', 'Bearer valid-token')
+        .send({url: 'https://recipe.example.com/blocked'});
+      expect(res.status).toBe(422);
+      expect(JSON.stringify(res.body)).not.toContain('test-crawlbase-token');
+      expect(JSON.stringify(res.body)).not.toContain('crawlbase');
+    } finally {
+      if (previous === undefined) {
+        delete process.env['CRAWLBASE_TOKEN'];
+      } else {
+        process.env['CRAWLBASE_TOKEN'] = previous;
+      }
+    }
+  });
+
+  test('does not call Crawlbase when the direct fetch succeeds (#476)', async () => {
+    const previous = process.env['CRAWLBASE_TOKEN'];
+    process.env['CRAWLBASE_TOKEN'] = 'test-crawlbase-token';
+    try {
+      nockSupabaseGetUser('user-uuid-1');
+      nock('https://recipe.example.com').get('/').reply(200, SCHEMA_ORG_HTML);
+      const crawlbase = nock('https://api.crawlbase.com')
+        .get('/')
+        .query(true)
+        .reply(200, 'should not be used');
+      mockSaveFlow();
+      const res = await request(getApp())
+        .post('/api/recipes/import/url')
+        .set('Authorization', 'Bearer valid-token')
+        .send({url: 'https://recipe.example.com/'});
+      expect(res.status).toBe(201);
+      expect(crawlbase.isDone()).toBe(false);
+    } finally {
+      if (previous === undefined) {
+        delete process.env['CRAWLBASE_TOKEN'];
+      } else {
+        process.env['CRAWLBASE_TOKEN'] = previous;
+      }
+      nock.cleanAll();
+    }
+  });
+
   test('falls back to Claude when no schema.org Recipe found', async () => {
     nockSupabaseGetUser('user-uuid-1');
     nock('https://recipe.example.com').get('/plain').reply(200, PLAIN_HTML);
