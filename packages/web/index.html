@@ -5,7 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <title>Eciperay</title>
+    <!-- Default head values for the home page, from the shared head
+         config (#414, @eciperay/client STATIC_PUBLIC_PAGES '/'); the
+         per-page PageHead components refine them per route, and the
+         #304 server-rendering layer will render them per page.
+         Canonical and og:url are PageHead-only, so a non-home route
+         never advertises the home URL. -->
+    <title>Eciperay — Your recipes, organized and ready to cook</title>
+    <meta
+      name="description"
+      content="Save recipes from anywhere, tweak them with AI, and share what you love with friends or the community."
+    />
+    <meta
+      property="og:title"
+      content="Eciperay — Your recipes, organized and ready to cook"
+    />
+    <meta
+      property="og:description"
+      content="Save recipes from anywhere, tweak them with AI, and share what you love with friends or the community."
+    />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary" />
+    <meta
+      name="twitter:title"
+      content="Eciperay — Your recipes, organized and ready to cook"
+    />
+    <meta
+      name="twitter:description"
+      content="Save recipes from anywhere, tweak them with AI, and share what you love with friends or the community."
+    />
   </head>
   <body>
     <div id="root"></div>
