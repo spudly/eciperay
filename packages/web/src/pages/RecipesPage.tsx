@@ -7,10 +7,14 @@ import {
   formatServingsLabel,
   getDisplayRating,
   invalidateRecipeQueries,
+  parseRecipeListFilterValues,
+  RECIPE_STATUS_FILTER_ALL,
+  useDebouncedValue,
   publicRecipeDiscoveryInfiniteQueryOptions,
   recipeListInfiniteQueryOptions,
   sharedWithMeInfiniteQueryOptions,
   useRecipeListFilters,
+  type RecipeListFilterValues,
   type RecipeStatusFilterValue,
 } from '@eciperay/client';
 import type {
@@ -32,7 +36,12 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import {useCallback, useEffect, useRef, useState} from 'react';
-import {useLocation, useSearchParams} from 'react-router-dom';
+import {
+  useLocation,
+  useNavigate,
+  useNavigationType,
+  useSearchParams,
+} from 'react-router-dom';
 
 import {CookLogForm} from '../components/cooking/CookLogForm.js';
 import {eciperay} from '../lib/api.js';
@@ -196,12 +205,30 @@ const toDiscoveryItem = (
  * Header search (Stephen's decision: in scope with the unified browse): the
  * shell's search form navigates here with `?q=<term>`, and this host seeds the
  * page's one search state from that param whenever it changes.
+ *
+ * Filter persistence (#468): the current filter values are kept in this history
+ * entry's location state (written with replace, never push), and a mount seeds
+ * the filter state from any saved values it finds there — so opening a recipe
+ * and pressing Back restores the filters exactly as left, while Back from the
+ * browse itself still leaves in one step.
  */
 export const RecipesPage = () => {
-  const {filters, controls} = useRecipeListFilters();
+  const location = useLocation();
+  const navigate = useNavigate();
+  // Filter persistence across back-navigation (#468, Stephen's spec):
+  // the browse entry's location state carries the filter values, so
+  // leaving for a recipe and pressing Back returns to this entry —
+  // and this mount — with its state intact. Capture the saved values
+  // once, at mount, and seed the filter state from them; later mounts
+  // of this same entry (Back) re-read the then-current state.
+  const [initialFilterValues] = useState(() =>
+    parseRecipeListFilterValues(location.state),
+  );
+  const {filters, controls, values} = useRecipeListFilters({
+    initialValues: initialFilterValues,
+  });
   const [searchParams] = useSearchParams();
   const headerSearch = searchParams.get('q') ?? '';
-  const location = useLocation();
 
   // Seed the page search from the header search's `q` param. The
   // latest onSearchChange, for the seeding effect below: the controls
@@ -211,14 +238,196 @@ export const RecipesPage = () => {
   useEffect(() => {
     onSearchChangeRef.current = controls.onSearchChange;
   });
+  // The latest controls, for the navigation effects below: the
+  // controls object is rebuilt every render, so effects cannot
+  // depend on its callbacks directly without re-firing every render.
+  const controlsRef = useRef(controls);
+  useEffect(() => {
+    controlsRef.current = controls;
+  });
   // Seed on every navigation (location.key), not only when the term
   // changes: re-submitting the same header term after editing the
   // page search must re-apply it, and clearing the header search
   // (navigation to bare /recipes) must clear the page filter too —
-  // the URL is the search state the two surfaces share.
+  // the URL is the search state the two surfaces share. EXCEPT when
+  // the current entry carries saved filter values in its location
+  // state (#468): that entry is this page's own state-managed entry
+  // (a filter-sync replace, or a Back return to it), and its saved
+  // values — search included — are newer than the URL's `q`.
   useEffect(() => {
-    onSearchChangeRef.current(headerSearch);
-  }, [headerSearch, location.key]);
+    if (parseRecipeListFilterValues(location.state)) {
+      return;
+    }
+    // A stateless entry is a fresh arrival (menu, header, direct
+    // link): it starts from default filters, with the search seeded
+    // from `q` (#468, CodeRabbit round 2 — clearing only the search
+    // here left the other filters from the previous entry applied
+    // when the arrival did not remount the page). Entries carrying
+    // saved filters are handled above and by the POP restore below.
+    const c = controlsRef.current;
+    c.onSearchChange(headerSearch);
+    c.onStatusFilterChange?.(RECIPE_STATUS_FILTER_ALL);
+    c.onIngredientChange('');
+    c.onMinCaloriesChange('');
+    c.onMaxCaloriesChange('');
+    c.onMinSatietyChange('');
+    c.onMaxSatietyChange('');
+    c.onSortChange('newest');
+    c.onSortDirChange('desc');
+  }, [headerSearch, location.key, location.state]);
+
+  // Restore on POP navigations between two browse entries (#468,
+  // CodeRabbit round 1): React Router does NOT remount this page when
+  // Back/Forward moves between two `/recipes` entries, so the mount
+  // seeding above never re-runs and the entry's saved values would be
+  // ignored. On a POP, re-apply the now-active entry's saved values
+  // whenever they differ from the live fields. PUSH/REPLACE
+  // navigations are excluded: a header-search PUSH seeds from `q`
+  // (above), and this page's own sync writes are REPLACEs whose saved
+  // values already equal the live ones.
+  const navigationType = useNavigationType();
+  const valuesRef = useRef(values);
+  useEffect(() => {
+    valuesRef.current = values;
+  });
+  const locationRef = useRef(location);
+  useEffect(() => {
+    locationRef.current = location;
+  });
+  // While a POP restore is in flight (saved values applied, field
+  // state not yet caught up), the sync write below must not overwrite
+  // the active entry's saved state with the stale live values.
+  const pendingRestoreRef = useRef<{
+    key: string;
+    serialized: string;
+  } | null>(null);
+  useEffect(() => {
+    if (navigationType !== 'POP') {
+      return;
+    }
+    const saved = parseRecipeListFilterValues(location.state);
+    if (!saved) {
+      return;
+    }
+    const restored: RecipeListFilterValues = {
+      search: '',
+      statusFilter: RECIPE_STATUS_FILTER_ALL,
+      ingredient: '',
+      minCalories: '',
+      maxCalories: '',
+      minSatiety: '',
+      maxSatiety: '',
+      sort: 'newest',
+      sortDir: 'desc',
+      ...saved,
+    };
+    const serialized = JSON.stringify(restored);
+    if (serialized === JSON.stringify(valuesRef.current)) {
+      if (pendingRestoreRef.current?.key === location.key) {
+        pendingRestoreRef.current = null;
+      }
+      return;
+    }
+    pendingRestoreRef.current = {key: location.key, serialized};
+    const c = controlsRef.current;
+    c.onSearchChange(restored.search);
+    c.onStatusFilterChange?.(restored.statusFilter);
+    c.onIngredientChange(restored.ingredient);
+    c.onMinCaloriesChange(restored.minCalories);
+    c.onMaxCaloriesChange(restored.maxCalories);
+    c.onMinSatietyChange(restored.minSatiety);
+    c.onMaxSatietyChange(restored.maxSatiety);
+    c.onSortChange(restored.sort);
+    c.onSortDirChange(restored.sortDir);
+  }, [location.key, location.state, navigationType]);
+
+  // Once the live values catch up with a POP restore, the restore
+  // is complete: clear the pending marker so later edits on this
+  // entry sync normally again (#468, CodeRabbit round 3 — without
+  // this, the write guard below kept blocking the sync for this
+  // entry and a post-restore edit was lost on the next Back).
+  useEffect(() => {
+    const pending = pendingRestoreRef.current;
+    if (pending && pending.serialized === JSON.stringify(values)) {
+      pendingRestoreRef.current = null;
+    }
+  }, [values]);
+
+  // Keep this history entry's location state holding the current
+  // filter values (#468), so Back from a recipe restores them. The
+  // write REPLACES the current entry (Stephen, 2026-11-09): filter
+  // tweaks must never become Back stops of their own.
+  const syncedFiltersRef = useRef<string | null>(null);
+  const writeFilterState = useCallback(
+    (currentValues: RecipeListFilterValues) => {
+      const serialized = JSON.stringify(currentValues);
+      if (syncedFiltersRef.current === serialized) {
+        return;
+      }
+      const pending = pendingRestoreRef.current;
+      if (
+        pending &&
+        pending.key === locationRef.current.key &&
+        pending.serialized !== serialized
+      ) {
+        // A POP restore for this entry is still catching up; its
+        // saved state is newer than these live values.
+        return;
+      }
+      const saved = parseRecipeListFilterValues(locationRef.current.state);
+      if (saved && JSON.stringify({...currentValues, ...saved}) === serialized) {
+        // The entry already carries exactly these values (the mount
+        // this page was seeded from, or our own previous write).
+        syncedFiltersRef.current = serialized;
+        return;
+      }
+      syncedFiltersRef.current = serialized;
+      void navigate(
+        {
+          pathname: locationRef.current.pathname,
+          search: locationRef.current.search,
+        },
+        {replace: true, state: {recipeListFilters: currentValues}},
+      );
+    },
+    [navigate],
+  );
+
+  // The sync write is debounced (#468, CodeRabbit round 1): browsers
+  // rate-limit history.replaceState (Safari throws a SecurityError
+  // after ~100 calls in 30 seconds), so a burst of keystrokes must
+  // settle into ONE write for the settled values, not one per
+  // keystroke. The capture-phase link-click flush below covers the
+  // remaining race — leaving via a link before the debounce settles —
+  // by writing the latest values synchronously before the router's
+  // own click handling pushes the new entry.
+  const debouncedFilterValues = useDebouncedValue(values);
+  useEffect(() => {
+    writeFilterState(debouncedFilterValues);
+  }, [debouncedFilterValues, writeFilterState]);
+  useEffect(() => {
+    const flushOnLinkClick = (event: MouseEvent) => {
+      const target = event.target as Element | null;
+      if (!target?.closest?.('a[href]')) {
+        return;
+      }
+      writeFilterState(valuesRef.current);
+    };
+    // The shell's header search leaves via a form submit, not a
+    // link: flush on any document submit (capture phase, before the
+    // submit handler navigates) so a header search submitted before
+    // the debounce settles still records the latest edits on the
+    // entry being left (#468, CodeRabbit round 3).
+    const flushOnSubmit = () => {
+      writeFilterState(valuesRef.current);
+    };
+    document.addEventListener('click', flushOnLinkClick, true);
+    document.addEventListener('submit', flushOnSubmit, true);
+    return () => {
+      document.removeEventListener('click', flushOnLinkClick, true);
+      document.removeEventListener('submit', flushOnSubmit, true);
+    };
+  }, [writeFilterState]);
 
   const ownQuery = useInfiniteQuery(
     recipeListInfiniteQueryOptions(

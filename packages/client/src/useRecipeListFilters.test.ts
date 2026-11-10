@@ -32,6 +32,30 @@ describe('useRecipeListFilters', () => {
     });
   });
 
+  test('seeds from initialValues and round-trips through values', () => {
+    const {result} = renderHook(() =>
+      useRecipeListFilters({initialValues: {search: 'soup', sortDir: 'asc'}}),
+    );
+
+    expect(result.current.controls.search).toBe('soup');
+    expect(result.current.values).toMatchObject({
+      search: 'soup',
+      sortDir: 'asc',
+      sort: 'newest',
+    });
+
+    act(() => {
+      result.current.controls.onIngredientChange('bean');
+    });
+    expect(result.current.values.ingredient).toBe('bean');
+
+    // A remount seeded from the carried values restores them (#468).
+    const {result: restored} = renderHook(() =>
+      useRecipeListFilters({initialValues: result.current.values}),
+    );
+    expect(restored.current.values).toEqual(result.current.values);
+  });
+
   test('honors includeStatus false and custom defaultSort', () => {
     const {result} = renderHook(() =>
       useRecipeListFilters({includeStatus: false, defaultSort: 'calories'}),
