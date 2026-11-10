@@ -33,7 +33,11 @@ describe('deepLinks', () => {
   test('top-level destinations mirror the web route table', () => {
     expect(recipesHref).toBe(`${base}recipes`);
     expect(addHref).toBe(`${base}add`);
-    expect(sharedWithMeHref).toBe(`${base}shared-with-me`);
+    // The shared-with-me entry repointed to the unified Recipes
+    // browse in #412: shared recipes live in the Recipes tab's own
+    // section, so the href is the Recipes destination (the
+    // `shared-with-me` route itself still resolves to a redirect).
+    expect(sharedWithMeHref).toBe(`${base}recipes`);
     expect(profileHref).toBe(`${base}profile`);
     expect(tagsHref).toBe(`${base}tags`);
     expect(signInHref).toBe(`${base}login`);

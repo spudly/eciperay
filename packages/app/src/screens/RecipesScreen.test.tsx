@@ -1,9 +1,16 @@
 import React from 'react';
 import {Linking} from 'react-native';
 import {fireEvent, waitFor, act} from '@testing-library/react-native';
-import {queryKeys, RECIPE_LIST_PAGE_SIZE} from '@eciperay/client';
+import {
+  DISCOVER_ERROR_MESSAGE,
+  queryKeys,
+  RECIPE_LIST_PAGE_SIZE,
+} from '@eciperay/client';
 
-import {makeRecipeDetail} from '../__tests__/fixtures/recipe';
+import {
+  makePublicRecipeDiscoveryItem,
+  makeRecipeDetail,
+} from '../__tests__/fixtures/recipe';
 import {
   flushQueryClient,
   makeQueryClient,
@@ -29,6 +36,10 @@ type CapturedListViewProps = {
   loadMoreErrorMessage?: string | null;
   ownErrorMessage?: string | null;
   onLoadMoreRetry?: () => void;
+  sharedRecipes?: unknown[];
+  discoveryRecipes?: unknown[];
+  discoveryErrorMessage?: string | null;
+  loadingDiscovery?: boolean;
 };
 
 let mockListViewProps: CapturedListViewProps | null = null;
@@ -48,6 +59,8 @@ jest.mock('../hosts/recipes/RecipesListView', () => {
 });
 
 const mockList = api.recipes.list as jest.Mock;
+const mockListSharedWithMe = api.recipes.listSharedWithMe as jest.Mock;
+const mockListPublic = api.recipes.listPublic as jest.Mock;
 const mockDelete = api.recipes.delete as jest.Mock;
 
 // RNTL v14 renders host elements only: the list is the host scroll view
@@ -71,6 +84,8 @@ describe('RecipesScreen', () => {
   beforeEach(() => {
     mockListViewProps = null;
     mockList.mockResolvedValue([]);
+    mockListSharedWithMe.mockResolvedValue([]);
+    mockListPublic.mockResolvedValue([]);
     jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
   });
 
@@ -445,5 +460,167 @@ describe('RecipesScreen', () => {
     // mutation to the list.
     expect(queryByText('Delete')).toBeNull();
     expect(mockDelete).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * The unified browse (#412): the screen drives three infinite queries
+ * — own, shared-with-me, and public discovery — from the one filter
+ * state, and the view renders them as the own section (created rows
+ * first, then shared rows) above the discovery section.
+ */
+describe('RecipesScreen unified browse (#412)', () => {
+  beforeEach(() => {
+    mockListViewProps = null;
+    mockList.mockResolvedValue([]);
+    mockListSharedWithMe.mockResolvedValue([]);
+    mockListPublic.mockResolvedValue([]);
+    jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
+  });
+
+  test('renders shared recipes after created rows, badged, with no log-cook control on shared rows', async () => {
+    mockList.mockResolvedValue([
+      makeRecipeDetail({id: 'own-1', title: 'Pasta Night'}),
+    ]);
+    mockListSharedWithMe.mockResolvedValue([
+      makeRecipeDetail({
+        id: 'shared-1',
+        slug: 'shared-soup',
+        title: 'Shared Soup',
+        userId: 'other-user',
+      }),
+    ]);
+    const {findByLabelText, getByText, queryByLabelText, toJSON} =
+      await renderWithProviders(<RecipesScreen />);
+
+    expect(await findByLabelText('Pasta Night')).toBeTruthy();
+    expect(await findByLabelText('Shared Soup')).toBeTruthy();
+    expect(getByText('Shared')).toBeTruthy();
+    // Created rows keep their log-cook control; shared rows render
+    // none at all (canLogCook: false — cook logs are owner-only).
+    expect(queryByLabelText('Log a cook of Pasta Night')).toBeTruthy();
+    expect(queryByLabelText('Log a cook of Shared Soup')).toBeNull();
+    // Order: the created row renders before the shared row.
+    const rendered = JSON.stringify(toJSON());
+    expect(rendered.indexOf('Pasta Night')).toBeGreaterThanOrEqual(0);
+    expect(rendered.indexOf('Shared Soup')).toBeGreaterThan(
+      rendered.indexOf('Pasta Night'),
+    );
+    // The screen passes both collections to the view separately.
+    expect(mockListViewProps?.sharedRecipes).toHaveLength(1);
+  });
+
+  test('renders the discovery section', async () => {
+    mockListPublic.mockResolvedValue([
+      makePublicRecipeDiscoveryItem({
+        id: 'public-1',
+        slug: 'public-pie',
+        title: 'Public Pie',
+      }),
+    ]);
+    const {findByLabelText, findByText} = await renderWithProviders(
+      <RecipesScreen />,
+    );
+
+    expect(await findByLabelText('Public Pie')).toBeTruthy();
+    expect(await findByText(/By Pat Public/)).toBeTruthy();
+    expect(mockListViewProps?.discoveryRecipes).toHaveLength(1);
+    expect(mockListViewProps?.discoveryErrorMessage).toBeNull();
+  });
+
+  test('a discovery first-page failure shows the discovery error, not an empty section', async () => {
+    mockListPublic.mockRejectedValue(new Error('Discovery failed'));
+    const {findByText} = await renderWithProviders(<RecipesScreen />);
+
+    expect(await findByText(DISCOVER_ERROR_MESSAGE)).toBeTruthy();
+    await waitFor(() => {
+      expect(mockListViewProps?.discoveryErrorMessage).toBe(
+        DISCOVER_ERROR_MESSAGE,
+      );
+    });
+    // The own section is unaffected by the discovery failure.
+    expect(mockListViewProps?.ownErrorMessage).toBeNull();
+  });
+
+  test('one search state drives all three queries', async () => {
+    const {findByPlaceholderText, getByPlaceholderText} =
+      await renderWithProviders(<RecipesScreen />);
+    await findByPlaceholderText('Search recipes…');
+    await fireEvent.changeText(
+      getByPlaceholderText('Search recipes…'),
+      'Soup',
+    );
+
+    await waitFor(() => {
+      expect(mockList).toHaveBeenCalledWith(
+        expect.objectContaining({search: 'Soup'}),
+      );
+    });
+    await waitFor(() => {
+      expect(mockListSharedWithMe).toHaveBeenCalledWith(
+        expect.objectContaining({search: 'Soup'}),
+      );
+    });
+    await waitFor(() => {
+      expect(mockListPublic).toHaveBeenCalledWith(
+        expect.objectContaining({search: 'Soup'}),
+      );
+    });
+  });
+
+  test('end-reached paginates each query independently', async () => {
+    const ownFirstPage = Array.from({length: RECIPE_LIST_PAGE_SIZE}, (_, i) =>
+      makeRecipeDetail({id: `own-${i}`, title: `Own ${i}`}),
+    );
+    const sharedFirstPage = Array.from(
+      {length: RECIPE_LIST_PAGE_SIZE},
+      (_, i) =>
+        makeRecipeDetail({
+          id: `shared-${i}`,
+          title: `Shared ${i}`,
+          userId: 'other-user',
+        }),
+    );
+    const discoveryFirstPage = Array.from(
+      {length: RECIPE_LIST_PAGE_SIZE},
+      (_, i) =>
+        makePublicRecipeDiscoveryItem({
+          id: `public-${i}`,
+          slug: `public-${i}`,
+          title: `Public ${i}`,
+        }),
+    );
+    mockList.mockImplementation(async (params?: {offset?: number}) =>
+      params?.offset === 0 ? ownFirstPage : [],
+    );
+    mockListSharedWithMe.mockImplementation(
+      async (params?: {offset?: number}) =>
+        params?.offset === 0 ? sharedFirstPage : [],
+    );
+    mockListPublic.mockImplementation(async (params?: {offset?: number}) =>
+      params?.offset === 0 ? discoveryFirstPage : [],
+    );
+    const {findByLabelText, container} = await renderWithProviders(
+      <RecipesScreen />,
+    );
+    await findByLabelText('Own 0');
+
+    await triggerEndReached(findList(container));
+
+    await waitFor(() => {
+      expect(mockList).toHaveBeenCalledWith(
+        expect.objectContaining({offset: RECIPE_LIST_PAGE_SIZE}),
+      );
+    });
+    await waitFor(() => {
+      expect(mockListSharedWithMe).toHaveBeenCalledWith(
+        expect.objectContaining({offset: RECIPE_LIST_PAGE_SIZE}),
+      );
+    });
+    await waitFor(() => {
+      expect(mockListPublic).toHaveBeenCalledWith(
+        expect.objectContaining({offset: RECIPE_LIST_PAGE_SIZE}),
+      );
+    });
   });
 });

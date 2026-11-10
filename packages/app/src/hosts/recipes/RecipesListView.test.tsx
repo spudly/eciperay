@@ -2,15 +2,22 @@ import {tokens} from '@spudly/ui';
 import {act, fireEvent, waitFor} from '@testing-library/react-native';
 import type {RecipeDetail} from '@eciperay/types';
 import React from 'react';
+import {Linking} from 'react-native';
 import {useQuery} from '@tanstack/react-query';
 import {
+  DISCOVER_ERROR_MESSAGE,
   RECIPE_STATUS_FILTER_ALL,
+  WEB_APP_BASE_URL,
   demoRecipeListFilters,
   queryKeys,
   type RecipeStatusFilterValue,
 } from '@eciperay/client';
 
-import {makeCookLog, makeRecipeDetail} from '../../__tests__/fixtures/recipe';
+import {
+  makeCookLog,
+  makePublicRecipeDiscoveryItem,
+  makeRecipeDetail,
+} from '../../__tests__/fixtures/recipe';
 import {makeQueryClient, renderWithProviders} from '../../__tests__/testUtils';
 import {api} from '../../lib/api';
 
@@ -541,5 +548,132 @@ describe('RecipesListView load-more error row', () => {
     );
 
     expect(queryByText("Couldn't load more recipes.")).toBeNull();
+  });
+});
+
+/**
+ * Unified browse sections (#412): the view appends the shared-with-me
+ * rows to the own section after the created rows — "Shared" badge,
+ * public-permalink destination, and no log-cook control
+ * (`canLogCook: false`, DS #543) — and renders the discovery section
+ * from the public catalog items, with its own first-page error state.
+ * This mapping moved here from the retired SharedWithMeView.
+ */
+describe('RecipesListView unified sections (#412)', () => {
+  const controls = {
+    ...demoRecipeListFilters(),
+    statusFilter: RECIPE_STATUS_FILTER_ALL as RecipeStatusFilterValue,
+    onStatusFilterChange: () => undefined,
+  };
+  const pasta = makeRecipeDetail({id: 'pasta-id', title: 'Pasta Night'});
+  const sharedSoup = makeRecipeDetail({
+    id: 'shared-1',
+    slug: 'shared-soup',
+    title: 'Shared Soup',
+    userId: 'other-user',
+  });
+
+  beforeEach(() => {
+    jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  test('renders shared rows after created rows with the Shared badge and no log-cook control', async () => {
+    const {getByLabelText, getByText, queryByLabelText, toJSON} =
+      await renderWithProviders(
+        <RecipesListView
+          {...controls}
+          isLoading={false}
+          recipes={[pasta]}
+          sharedRecipes={[sharedSoup]}
+          isFetchingNextPage={false}
+          onLoadMore={jest.fn()}
+        />,
+      );
+
+    expect(getByLabelText('Pasta Night')).toBeTruthy();
+    expect(getByLabelText('Shared Soup')).toBeTruthy();
+    expect(getByText('Shared')).toBeTruthy();
+    // The created row keeps its log-cook control; the shared row
+    // renders none at all.
+    expect(getByLabelText('Log a cook of Pasta Night')).toBeTruthy();
+    expect(queryByLabelText('Log a cook of Shared Soup')).toBeNull();
+    // Order: created rows come before shared rows in the own section.
+    const rendered = JSON.stringify(toJSON());
+    expect(rendered.indexOf('Shared Soup')).toBeGreaterThan(
+      rendered.indexOf('Pasta Night'),
+    );
+  });
+
+  test('opens the public permalink when a shared row is pressed', async () => {
+    const {getByLabelText} = await renderWithProviders(
+      <RecipesListView
+        {...controls}
+        isLoading={false}
+        recipes={[pasta]}
+        sharedRecipes={[sharedSoup]}
+        isFetchingNextPage={false}
+        onLoadMore={jest.fn()}
+      />,
+    );
+
+    await fireEvent.press(getByLabelText('Shared Soup'));
+    await waitFor(() => {
+      expect(Linking.openURL).toHaveBeenCalledWith(
+        `${WEB_APP_BASE_URL}/recipe/shared-1/shared-soup`,
+      );
+    });
+  });
+
+  test('renders discovery rows with author and discovery meta, linking to the permalink', async () => {
+    const {getByLabelText, getByText} = await renderWithProviders(
+      <RecipesListView
+        {...controls}
+        isLoading={false}
+        recipes={[pasta]}
+        discoveryRecipes={[
+          makePublicRecipeDiscoveryItem({
+            id: 'public-1',
+            slug: 'public-pie',
+            title: 'Public Pie',
+          }),
+        ]}
+        isFetchingNextPage={false}
+        onLoadMore={jest.fn()}
+      />,
+    );
+
+    expect(getByText('Discover')).toBeTruthy();
+    expect(getByLabelText('Public Pie')).toBeTruthy();
+    expect(getByText(/By Pat Public/)).toBeTruthy();
+
+    await fireEvent.press(getByLabelText('Public Pie'));
+    await waitFor(() => {
+      expect(Linking.openURL).toHaveBeenCalledWith(
+        `${WEB_APP_BASE_URL}/recipe/public-1/public-pie`,
+      );
+    });
+  });
+
+  test('renders the discovery error state from the discovery error prop', async () => {
+    const {getByLabelText, getByText} = await renderWithProviders(
+      <RecipesListView
+        {...controls}
+        isLoading={false}
+        recipes={[pasta]}
+        discoveryRecipes={[]}
+        discoveryErrorMessage={DISCOVER_ERROR_MESSAGE}
+        isFetchingNextPage={false}
+        onLoadMore={jest.fn()}
+      />,
+    );
+
+    expect(getByText(DISCOVER_ERROR_MESSAGE)).toBeTruthy();
+    // The own section still renders its rows — a discovery failure
+    // never hides it.
+    expect(getByLabelText('Pasta Night')).toBeTruthy();
   });
 });
