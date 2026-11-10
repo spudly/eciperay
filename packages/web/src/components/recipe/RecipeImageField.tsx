@@ -24,7 +24,12 @@ type Props = {
   headerAction?: React.ReactNode;
   onImageFile: (file: File) => void | Promise<void>;
   onGenerateImage?: () => void | Promise<void>;
-  onRemove: () => void;
+  /**
+   * Accepted for host compatibility but deliberately never invoked: recipe
+   * photos can be replaced, never deleted (#407, Stephen's ruling) — once a
+   * recipe has an image it keeps one.
+   */
+  onRemove?: () => void;
   /**
    * Reports whether a selected image is still pending (the user has not yet
    * used, cropped, or discarded it). The host guards its submit on this so a
@@ -57,7 +62,6 @@ export const RecipeImageField = ({
   headerAction,
   onImageFile,
   onGenerateImage,
-  onRemove,
   onPendingChange,
   stagedFile = null,
   onStagedFileHandled,
@@ -600,24 +604,9 @@ export const RecipeImageField = ({
                 e.target.value = '';
               }}
             />
-            {imagePreview ? (
-              <button
-                type="button"
-                style={{
-                  borderRadius: 8,
-                  border: 'none',
-                  backgroundColor: tokens.colors.gray.gray2,
-                  padding: '8px 16px',
-                  fontSize: tokens.typography.fontSize.sm,
-                  fontFamily: tokens.typography.fontFamily.sans,
-                  color: tokens.colors.gray.gray8,
-                  cursor: 'pointer',
-                }}
-                onClick={onRemove}
-              >
-                Remove image
-              </button>
-            ) : null}
+            {/* #407 (Stephen): a recipe photo can be replaced but never
+                deleted — once a recipe has an image it keeps one, so
+                there is deliberately no Remove action here. */}
           </>
         )}
       </div>

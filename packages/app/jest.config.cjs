@@ -1,5 +1,15 @@
+const os = require('node:os');
+
 module.exports = {
   preset: '@react-native/jest-preset',
+  // Cap local workers at 2 (never above Jest's own cores-1 sizing): the
+  // default pool oversubscribes small shared-vCPU machines. On CI the key
+  // is omitted entirely, leaving Jest's default (cores - 1) untouched.
+  // The CI check compares against the literal 'true': a truthy CI='false'
+  // must still count as a local run and keep the cap.
+  ...(process.env.CI === 'true'
+    ? {}
+    : {maxWorkers: Math.max(1, Math.min(2, os.availableParallelism() - 1))}),
   testTimeout: 15_000,
   setupFiles: ['<rootDir>/jest.env.js'],
   setupFilesAfterEnv: ['./jest.setup.js'],

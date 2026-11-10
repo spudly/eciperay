@@ -9,6 +9,8 @@ import {
 
 import {sharedFooter} from '../pages/legal/legalDocumentData.js';
 
+import {AuthenticatedPageHead} from './AuthenticatedPageHead.js';
+
 // The signed-in shell (#451): the design system owns the shell's
 // design via AppShellPage (#437) — the host supplies only content
 // and routing: the brand, the nav as data with DS icon registry
@@ -61,26 +63,31 @@ export const AuthenticatedShell = ({children}: AuthenticatedShellProps) => {
   }, [queryParam]);
 
   return (
-    <AppShellPage
-      brand={{label: 'Eciperay', href: '/'}}
-      navItems={navItems}
-      navLabel="Eciperay sections"
-      activeItemId={activeItemIdFor(pathname)}
-      search={{
-        label: 'Search recipes',
-        placeholder: 'Search recipes…',
-        value: term,
-        onValueChange: setTerm,
-        onSubmit: () => {
-          const query = term.trim();
-          void navigate(
-            query ? `/recipes?q=${encodeURIComponent(query)}` : '/recipes',
-          );
-        },
-      }}
-      footer={sharedFooter}
-    >
-      {children ?? <Outlet />}
-    </AppShellPage>
+    <>
+      {/* The authenticated head (#414) the retired host shell
+          applied: title + noindex for every signed-in page. */}
+      <AuthenticatedPageHead />
+      <AppShellPage
+        brand={{label: 'Eciperay', href: '/'}}
+        navItems={navItems}
+        navLabel="Eciperay sections"
+        activeItemId={activeItemIdFor(pathname)}
+        search={{
+          label: 'Search recipes',
+          placeholder: 'Search recipes…',
+          value: term,
+          onValueChange: setTerm,
+          onSubmit: () => {
+            const query = term.trim();
+            void navigate(
+              query ? `/recipes?q=${encodeURIComponent(query)}` : '/recipes',
+            );
+          },
+        }}
+        footer={sharedFooter}
+      >
+        {children ?? <Outlet />}
+      </AppShellPage>
+    </>
   );
 };

@@ -60,6 +60,22 @@ export {
   type RecipeCommunityRating,
   type RecipeSocialMeta,
 } from './recipeSeo.js';
+export {
+  buildAuthenticatedPageHead,
+  buildCanonicalUrl,
+  buildPageTitle,
+  buildPublicPageHead,
+  buildPublicRecipeHead,
+  buildStaticPageHead,
+  DEFAULT_WEB_BASE_URL,
+  SEO_SITE_NAME,
+  STATIC_PUBLIC_PAGES,
+  type PageHeadConfig,
+  type PageOpenGraph,
+  type PageRobotsDirective,
+  type PageTwitterCard,
+  type StaticPublicPage,
+} from './pageHead.js';
 export {publicRecipeToRecipeDetail} from './publicRecipe.js';
 export {
   createApiClient,

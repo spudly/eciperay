@@ -1,5 +1,6 @@
 import type {
   CookLog,
+  PublicRecipeDiscoveryItem,
   RecipeDetail,
   RecipeVersionDetail,
   RecipeVersionSummary,
@@ -119,6 +120,31 @@ export const makeRecipeVersionDetail = (
     ...overrides,
   };
 };
+
+export const makePublicRecipeDiscoveryItem = (
+  overrides: Partial<PublicRecipeDiscoveryItem> = {},
+): PublicRecipeDiscoveryItem => ({
+  id: 'public-recipe-uuid-1',
+  slug: 'public-test-recipe',
+  title: 'Public Test Recipe',
+  description: 'A public test recipe',
+  servings: 4,
+  prepTimeMin: 15,
+  cookTimeMin: 30,
+  imageUrl: null,
+  visibility: 'public',
+  authorDisplayName: 'Pat Public',
+  updatedAt: '2024-01-01T00:00:00.000Z',
+  tags: [],
+  communityRating: null,
+  satietyScore: null,
+  nutritionStatus: null,
+  calories: null,
+  proteinG: null,
+  carbsG: null,
+  fatG: null,
+  ...overrides,
+});
 
 export const makeCookLog = (overrides: Partial<CookLog> = {}): CookLog => ({
   id: 'cook-log-1',

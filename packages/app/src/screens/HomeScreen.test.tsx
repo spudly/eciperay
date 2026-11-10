@@ -110,6 +110,9 @@ describe('HomeScreen', () => {
     await findByText(HOME_TITLE);
     await fireEvent.press(await findByText(HOME_SHARED_WITH_ME_LABEL));
     expect(Linking.openURL).toHaveBeenCalledWith(sharedWithMeHref);
+    // Since #412 the shared-with-me entry lands on the unified
+    // Recipes browse, so its href IS the Recipes destination.
+    expect(sharedWithMeHref).toBe(recipesHref);
   });
 
   test('shows recently viewed recipes from local history', async () => {

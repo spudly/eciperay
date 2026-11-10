@@ -1,4 +1,4 @@
-import {screen} from '@testing-library/react';
+import {screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {Route, Routes, useLocation} from 'react-router-dom';
 
@@ -53,6 +53,31 @@ describe('AuthenticatedShell', () => {
         name: 'Do Not Sell or Share My Personal Information',
       }),
     ).toHaveAttribute('href', '/privacy/consent');
+  });
+
+  test('applies the authenticated page head: site title and noindex (#414)', async () => {
+    await renderWithProviders(
+      <Routes>
+        <Route
+          element={<AuthenticatedShell />}
+          path="/"
+        >
+          <Route
+            index
+            element={<div>Page Content</div>}
+          />
+        </Route>
+      </Routes>,
+    );
+    // The head the retired host AppShell applied on master (#488)
+    // must survive the move to AuthenticatedShell.
+    await waitFor(() => {
+      expect(document.title).toBe('Eciperay');
+    });
+    expect(document.head.querySelector('meta[name="robots"]')).toHaveAttribute(
+      'content',
+      'noindex, nofollow',
+    );
   });
 
   test('header search navigates to the unified Recipes browse with the term', async () => {

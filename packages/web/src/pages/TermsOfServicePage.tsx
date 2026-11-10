@@ -1,5 +1,7 @@
 import {LegalDocumentPage} from '@spudly/ui';
 
+import {StaticPageHead} from '../components/StaticPageHead.js';
+
 import {legalDocumentFrameProps} from './legal/legalDocumentData.js';
 import {termsOfServiceSections} from './legal/termsOfServiceContent.js';
 
@@ -9,11 +11,14 @@ import {termsOfServiceSections} from './legal/termsOfServiceContent.js';
 // frame's brand/sign-in/footer links are app-supplied.
 export const TermsOfServicePage = () => {
   return (
-    <LegalDocumentPage
-      title="Terms of Service"
-      lastUpdated="June 18, 2026"
-      sections={termsOfServiceSections}
-      {...legalDocumentFrameProps}
-    />
+    <>
+      <StaticPageHead path="/terms" />
+      <LegalDocumentPage
+        title="Terms of Service"
+        lastUpdated="June 18, 2026"
+        sections={termsOfServiceSections}
+        {...legalDocumentFrameProps}
+      />
+    </>
   );
 };

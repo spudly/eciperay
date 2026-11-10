@@ -153,6 +153,24 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
       'Sets document title and social meta tags for SEO; no native equivalent.',
   },
   {
+    path: 'PageHead.tsx',
+    platform: 'web',
+    reason:
+      'Applies the shared page head config (#414) to the DOM document head; no native equivalent.',
+  },
+  {
+    path: 'StaticPageHead.tsx',
+    platform: 'web',
+    reason:
+      'Web head for static public pages from the shared head config (#414); no native equivalent.',
+  },
+  {
+    path: 'AuthenticatedPageHead.tsx',
+    platform: 'web',
+    reason:
+      'Web noindex head for the authenticated shell from the shared head config (#414); no native equivalent.',
+  },
+  {
     path: 'RootLayout.tsx',
     platform: 'web',
     reason:

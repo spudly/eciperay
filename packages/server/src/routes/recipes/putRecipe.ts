@@ -6,6 +6,10 @@ import {
   isRecipeEditable,
   recipeEditBlockedError,
 } from '../../lib/assertRecipeEditable.js';
+import {
+  autoImageContextFromDetail,
+  scheduleAutoGenerateRecipeImage,
+} from '../../lib/autoGenerateRecipeImage.js';
 import {fetchVersionDetail} from '../../lib/fetchVersionDetail.js';
 import {getParam} from '../../lib/getParam.js';
 import {
@@ -81,6 +85,16 @@ export const putRecipe = async (
         {userId: req.userId, recipeId, versionId, input: metadata.data},
         queryFn,
       );
+      // #407: edit saves of a still-imageless recipe also trigger
+      // auto-generation (once per recipe; see autoGenerateRecipeImage).
+      scheduleAutoGenerateRecipeImage(
+        {
+          userId: req.userId,
+          supabaseUid: req.supabaseUid,
+          recipe: autoImageContextFromDetail(detail),
+        },
+        queryFn,
+      );
       res.json(detail);
     } catch (error) {
       if (error instanceof RecipeNotFoundError) {
@@ -100,6 +114,14 @@ export const putRecipe = async (
   try {
     const detail = await saveRecipeFromInput(
       {userId: req.userId, input: body.data, recipeId, versionId},
+      queryFn,
+    );
+    scheduleAutoGenerateRecipeImage(
+      {
+        userId: req.userId,
+        supabaseUid: req.supabaseUid,
+        recipe: autoImageContextFromDetail(detail),
+      },
       queryFn,
     );
     res.json(detail);

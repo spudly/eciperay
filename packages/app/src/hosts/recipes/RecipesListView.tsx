@@ -3,21 +3,30 @@ import type {
   RecipesListViewProps,
 } from '@eciperay/client';
 import {
+  buildRecipePermalink,
   demoRecipeListFilters,
   formatCondensedNutritionParts,
+  formatDiscoveryListMeta,
+  formatRecipeListSubtitle,
   formatSatietyLabel,
   formatServingsLabel,
   getDisplayRating,
   invalidateRecipeQueries,
   makeRecipeDetail,
+  WEB_APP_BASE_URL,
 } from '@eciperay/client';
 import type {
   CookLogInput,
+  PublicRecipeDiscoveryItem,
   RecipeDetail,
   RecipeListSort,
   RecipeListSortDir,
 } from '@eciperay/types';
-import {RecipesPage, type RecipesPageItem} from '@spudly/ui';
+import {
+  RecipesPage,
+  type RecipesPageDiscoveryItem,
+  type RecipesPageItem,
+} from '@spudly/ui';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useRef, useState} from 'react';
 
@@ -55,6 +64,32 @@ type RecipesListViewOwnProps = Omit<
    * (`ownErrorMessage`), distinct from the load-more failure above.
    */
   ownErrorMessage?: string | null;
+  /**
+   * Recipes shared with the user, in the shared query's order: the view
+   * appends them to the own section after the created rows (the unified
+   * browse, #412 — the mapping that used to live in SharedWithMeView).
+   */
+  sharedRecipes?: RecipeDetail[];
+  /**
+   * Public discovery recipes: the view maps them into the page's
+   * discovery section under the same filter state as the own section.
+   */
+  discoveryRecipes?: PublicRecipeDiscoveryItem[];
+  /** The discovery section's first load in flight, composed by the screen. */
+  loadingDiscovery?: boolean;
+  /**
+   * The discovery section's first-load failure, composed by the screen:
+   * the page renders it as the discovery section's error state, distinct
+   * from the own section's errors (neither section hides the other).
+   */
+  discoveryErrorMessage?: string | null;
+  /**
+   * The own section's next page in flight (created or shared query),
+   * composed by the screen: the page renders its own-section loading
+   * row. Distinct from `isFetchingNextPage`, which is the discovery
+   * section's fetch signal in the page's contract.
+   */
+  isFetchingNextOwnPage?: boolean;
 };
 
 /**
@@ -73,6 +108,28 @@ const formatRecipesPageSubtitle = (recipe: RecipeDetail) =>
     ...formatCondensedNutritionParts(recipe),
     formatSatietyLabel(recipe.satietyScore, recipe.nutritionStatus),
   ].join(' · ')}`;
+
+const formatDiscoveryAuthorName = (authorDisplayName: string | null) => {
+  if (authorDisplayName?.trim()) {
+    return authorDisplayName.trim();
+  }
+  return 'Anonymous';
+};
+
+// One discovery-section row, composed exactly as the web host composes
+// its rows (author fallback plus the discovery meta line; the DS page
+// only renders the string). The destination is the recipe's public
+// permalink — on native the page's link opens it through Linking, the
+// same treatment shared rows get.
+const toDiscoveryItem = (
+  recipe: PublicRecipeDiscoveryItem,
+): RecipesPageDiscoveryItem => ({
+  id: recipe.id,
+  title: recipe.title,
+  subtitle: `By ${formatDiscoveryAuthorName(recipe.authorDisplayName)} · ${formatDiscoveryListMeta(recipe)}`,
+  imageUrl: recipe.imageUrl,
+  href: buildRecipePermalink(WEB_APP_BASE_URL, recipe),
+});
 
 /**
  * The Recipes screen's view (#49, stage 2): the design system's RecipesPage
@@ -193,6 +250,11 @@ export const InlineCookLogForm = ({
 export const RecipesListView = ({
   isLoading,
   recipes,
+  sharedRecipes = [],
+  discoveryRecipes = [],
+  loadingDiscovery = false,
+  discoveryErrorMessage,
+  isFetchingNextOwnPage = false,
   isFetchingNextPage,
   onLoadMore,
   search,
@@ -229,7 +291,16 @@ export const RecipesListView = ({
     () => new Set(),
   );
 
+  const recipesById = new Map(recipes.map(recipe => [recipe.id, recipe]));
+
   const openCookLog = (recipeId: string) => {
+    // Shared rows carry `canLogCook: false`, so the page renders no
+    // log-cook control for them; this guard is the host's half of the
+    // same rule (cook logs are owner-only), mirroring the web host —
+    // a press for an id that is not a created recipe is ignored.
+    if (!recipesById.has(recipeId)) {
+      return;
+    }
     setOpenCookLogIds(current => new Set(current).add(recipeId));
   };
 
@@ -264,8 +335,6 @@ export const RecipesListView = ({
     });
   }, [recipes]);
 
-  const recipesById = new Map(recipes.map(recipe => [recipe.id, recipe]));
-
   const items: RecipesPageItem[] = recipes.map(recipe => ({
     id: recipe.id,
     href: recipeHref(recipe.id),
@@ -275,26 +344,46 @@ export const RecipesListView = ({
     imageUrl: recipe.imageUrl,
   }));
 
-  // The 6.x page is sectioned: this screen's recipes are the own
-  // section (its complete, paginated collection — the host's
-  // onLoadMore stays its continuation, carried on the page's
-  // end-reached signal and its own-section fetch/error rows), and
-  // no discovery content is populated (the app has no public
-  // catalog query on this screen), so the discovery section
-  // renders its empty state under its heading.
+  // Shared-with-me rows, in the shared query's order after the user's
+  // own recipes (the unified browse, #412 — this mapping moved here
+  // from the retired SharedWithMeView): same subtitle composition the
+  // shared screen used (its rating stays in the text — these rows
+  // have no log-cook rating control), with the "Shared" badge, the
+  // public permalink the old row's link pointed at, and
+  // `canLogCook: false` so the page renders no log-cook control for
+  // them at all (DS #543; cook logs are owner-only).
+  const sharedItems: RecipesPageItem[] = sharedRecipes.map(recipe => ({
+    id: recipe.id,
+    href: buildRecipePermalink(WEB_APP_BASE_URL, recipe),
+    title: recipe.title,
+    subtitle: formatRecipeListSubtitle(recipe),
+    imageUrl: recipe.imageUrl,
+    badgeLabel: 'Shared',
+    canLogCook: false,
+  }));
+
+  // The unified page (#412): the own section is the user's created
+  // recipes followed by the recipes shared with them, and the
+  // discovery section below it carries the public catalog — both
+  // under the page's one search / filter state, with each section's
+  // pagination and errors carried on its own props (the host's
+  // onLoadMore stays the shared end-reached signal; the screen
+  // coordinates which queries it continues).
   return (
     <RecipesPage
       ownTitle="Your recipes"
-      ownRecipes={items}
+      ownRecipes={[...items, ...sharedItems]}
       loadingOwn={isLoading}
       ownErrorMessage={ownErrorMessage ?? null}
+      isFetchingNextOwnPage={isFetchingNextOwnPage}
       isFetchingNextPage={isFetchingNextPage}
       ownLoadMoreErrorMessage={loadMoreErrorMessage ?? null}
       onOwnLoadMoreRetry={onLoadMoreRetry}
       ownLoadMoreRetryLabel="Try again"
       discoveryTitle="Discover"
-      discoveryRecipes={[]}
-      loadingDiscovery={false}
+      discoveryRecipes={discoveryRecipes.map(toDiscoveryItem)}
+      loadingDiscovery={loadingDiscovery}
+      discoveryErrorMessage={discoveryErrorMessage ?? null}
       onLogCookPress={openCookLog}
       renderRecipeAccessory={recipeId => {
         const recipe = recipesById.get(recipeId);

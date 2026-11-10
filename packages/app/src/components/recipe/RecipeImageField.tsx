@@ -41,7 +41,12 @@ type Props = {
   ) => void | Promise<void>;
   onImageError?: (message: string) => void;
   onGenerateImage?: () => void | Promise<void>;
-  onRemove: () => void;
+  /**
+   * Accepted for host compatibility but deliberately never invoked: recipe
+   * photos can be replaced, never deleted (#407, Stephen's ruling) — once a
+   * recipe has an image it keeps one.
+   */
+  onRemove?: () => void;
   /**
    * Reports whether a picked image is still pending (the user has not yet used,
    * cropped, or discarded it). The host guards its submit on this so a pending
@@ -129,7 +134,6 @@ export const RecipeImageField = ({
   onImagePicked,
   onImageError,
   onGenerateImage,
-  onRemove,
   onPendingChange,
 }: Props) => {
   const imageBusy = imageUploading || imageGenerating;
@@ -545,14 +549,9 @@ export const RecipeImageField = ({
                 }}
               />
             ) : null}
-            {imagePreview ? (
-              <FieldButton
-                label="Remove image"
-                accessibilityLabel="Remove image"
-                variant="secondary"
-                onPress={onRemove}
-              />
-            ) : null}
+            {/* #407 (Stephen): a recipe photo can be replaced but never
+                deleted — once a recipe has an image it keeps one, so
+                there is deliberately no Remove action here. */}
           </>
         )}
       </XStack>
