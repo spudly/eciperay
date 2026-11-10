@@ -5,7 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./sanitizeAnalyticsProperties": "./src/sanitizeAnalyticsProperties.ts"
+    "./sanitizeAnalyticsProperties": "./src/sanitizeAnalyticsProperties.ts",
+    "./pageHead": "./src/pageHead.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit --incremental",

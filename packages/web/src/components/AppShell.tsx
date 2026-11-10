@@ -8,6 +8,7 @@ import {
 import {eciperayTheme, tokens} from '@spudly/ui';
 import {NavLink, Outlet, useNavigate, useSearchParams} from 'react-router-dom';
 
+import {AuthenticatedPageHead} from './AuthenticatedPageHead.js';
 import {Icon} from './Icon.js';
 import {LegalLinks} from './LegalLinks.js';
 
@@ -212,6 +213,7 @@ type AppShellProps = {children?: ReactNode};
 // one row, so the wrap never engages there.
 export const AppShell = ({children}: AppShellProps) => (
   <div style={shellStyle}>
+    <AuthenticatedPageHead />
     <header style={headerStyle}>
       <div style={headerInnerStyle}>
         <NavLink

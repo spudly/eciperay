@@ -10,6 +10,7 @@ import {
 import {LandingPage} from '@spudly/ui';
 
 import {PublicHeader} from '../components/PublicHeader.js';
+import {StaticPageHead} from '../components/StaticPageHead.js';
 
 import {sharedFooter} from './legal/legalDocumentData.js';
 
@@ -26,6 +27,7 @@ export const MarketingLandingPage = () => {
   const [featureOne, featureTwo, featureThree] = LANDING_FEATURES;
   return (
     <>
+      <StaticPageHead path="/" />
       <PublicHeader />
       <LandingPage
         footer={sharedFooter}

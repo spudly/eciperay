@@ -1,5 +1,7 @@
 import {LegalDocumentPage} from '@spudly/ui';
 
+import {StaticPageHead} from '../components/StaticPageHead.js';
+
 import {legalDocumentFrameProps} from './legal/legalDocumentData.js';
 import {privacyPolicySections} from './legal/privacyPolicyContent.js';
 
@@ -9,11 +11,14 @@ import {privacyPolicySections} from './legal/privacyPolicyContent.js';
 // frame's brand/sign-in/footer links are app-supplied.
 export const PrivacyPolicyPage = () => {
   return (
-    <LegalDocumentPage
-      title="Privacy Policy"
-      lastUpdated="November 4, 2026"
-      sections={privacyPolicySections}
-      {...legalDocumentFrameProps}
-    />
+    <>
+      <StaticPageHead path="/privacy" />
+      <LegalDocumentPage
+        title="Privacy Policy"
+        lastUpdated="November 4, 2026"
+        sections={privacyPolicySections}
+        {...legalDocumentFrameProps}
+      />
+    </>
   );
 };
