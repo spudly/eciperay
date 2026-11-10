@@ -4,6 +4,7 @@ import {join} from 'node:path';
 
 import {
   findLockfileWorkspaceVersionMismatches,
+  findRootVersionMismatch,
   formatLockfileVersionMismatches,
   syncLockfileWorkspaceVersions,
   syncRootVersionToGroupVersion,
@@ -23,8 +24,9 @@ export type SyncPackageVersionsCliDeps = {
 // #416). `--sync-root` stamps the fixed group's version into the root
 // manifest and the lockfile's root entries (run first by the same
 // version step, issue #474). `--check` writes nothing and exits 1 when
-// any owned lockfile entry disagrees with its manifest (run by CI on
-// release PRs).
+// any owned lockfile entry disagrees with its manifest, or when the root
+// version disagrees with the fixed group's version (run by CI on
+// release PRs only — off a release branch the root legitimately lags).
 export const runSyncPackageVersionsCli = (
   root: string,
   argv: string[] = [],
@@ -53,6 +55,15 @@ export const runSyncPackageVersionsCli = (
       );
       log.error(formatLockfileVersionMismatches(mismatches));
       log.error('Run `npm run sync:lockfile-versions` to fix.');
+      exit(1);
+      return;
+    }
+    const rootMismatch = findRootVersionMismatch(root, fs);
+    if (rootMismatch) {
+      log.error(
+        `Root package.json version ${rootMismatch.rootVersion} does not match the release group version ${rootMismatch.groupVersion}.`,
+      );
+      log.error('Run `npm run sync:root-version` to fix.');
       exit(1);
       return;
     }

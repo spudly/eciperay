@@ -87,6 +87,10 @@ describe('runSyncPackageVersionsCli', () => {
 
   test('--check exits 1 without writing when the lockfile is stale', () => {
     const files = makeRepoFiles();
+    files['/repo/packages/app/package.json'] = JSON.stringify({
+      name: '@eciperay/app',
+      version: '1.0.0',
+    });
     const before = files['/repo/package-lock.json'];
     const {deps, errors, exits} = makeDeps(files);
     runSyncPackageVersionsCli('/repo', ['--check'], deps);
@@ -97,6 +101,10 @@ describe('runSyncPackageVersionsCli', () => {
 
   test('--check passes when the lockfile is synced', () => {
     const files = makeRepoFiles();
+    files['/repo/packages/app/package.json'] = JSON.stringify({
+      name: '@eciperay/app',
+      version: '1.0.0',
+    });
     files['/repo/package-lock.json'] = JSON.stringify({
       name: 'demo',
       version: '1.0.0',
@@ -106,6 +114,25 @@ describe('runSyncPackageVersionsCli', () => {
     runSyncPackageVersionsCli('/repo', ['--check'], deps);
     expect(exits).toEqual([]);
     expect(logs.join('\n')).toContain('match the manifests');
+  });
+
+  test('--check exits 1 when the root version differs from the group version even if the lockfile agrees with the root', () => {
+    const files = makeRepoFiles();
+    files['/repo/packages/app/package.json'] = JSON.stringify({
+      name: '@eciperay/app',
+      version: '1.34.0',
+    });
+    files['/repo/package-lock.json'] = JSON.stringify({
+      name: 'demo',
+      version: '1.0.0',
+      packages: {'': {name: 'demo', version: '1.0.0'}},
+    });
+    const {deps, errors, exits} = makeDeps(files);
+    runSyncPackageVersionsCli('/repo', ['--check'], deps);
+    expect(exits).toEqual([1]);
+    expect(errors.join('\n')).toContain(
+      'Root package.json version 1.0.0 does not match the release group version 1.34.0.',
+    );
   });
 
   test('sync mode uses the singular noun when exactly one entry is fixed', () => {
