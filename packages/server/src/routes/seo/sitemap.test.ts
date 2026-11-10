@@ -80,6 +80,41 @@ describe('serveSitemap', () => {
     );
   });
 
+  test('deduplicates concurrent refreshes into one query', async () => {
+    let releaseQuery: (() => void) | undefined;
+    const gate = new Promise<void>(resolve => {
+      releaseQuery = resolve;
+    });
+    mockQuery.mockImplementation(async () => {
+      await gate;
+      return makeQueryResult([]);
+    });
+    const first = makeResponse();
+    const second = makeResponse();
+
+    const firstServe = serveSitemap(first.res, mockQuery);
+    const secondServe = serveSitemap(second.res, mockQuery);
+    expect(mockQuery).toHaveBeenCalledTimes(1);
+    if (!releaseQuery) {
+      throw new Error('expected the sitemap query to be in flight');
+    }
+    releaseQuery();
+    await Promise.all([firstServe, secondServe]);
+
+    expect(first.calls.send[0]).toBe(second.calls.send[0]);
+  });
+
+  test('does not set headers or send a body when the query fails', async () => {
+    mockQuery.mockRejectedValue(new Error('db down'));
+    const {res, calls} = makeResponse();
+
+    await expect(serveSitemap(res, mockQuery)).rejects.toThrow('db down');
+
+    expect(calls.type).toEqual([]);
+    expect(calls.set).toEqual([]);
+    expect(calls.send).toEqual([]);
+  });
+
   test('serves the cached sitemap within the TTL and refreshes after it', async () => {
     mockQuery.mockResolvedValue(makeQueryResult([]));
     const first = makeResponse();

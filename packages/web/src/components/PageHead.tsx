@@ -3,35 +3,55 @@ import {useEffect} from 'react';
 
 type PageHeadProps = {config: PageHeadConfig};
 
+type RestoreHeadValue = () => void;
+
 const upsertMeta = (
   attribute: 'name' | 'property',
   key: string,
   content: string,
-): HTMLMetaElement => {
+): RestoreHeadValue => {
   const selector = `meta[${attribute}="${key}"]`;
   const existing = document.head.querySelector(selector);
   if (existing instanceof HTMLMetaElement) {
+    const previous = existing.getAttribute('content');
     existing.content = content;
-    return existing;
+    return () => {
+      if (previous === null) {
+        existing.removeAttribute('content');
+      } else {
+        existing.setAttribute('content', previous);
+      }
+    };
   }
   const meta = document.createElement('meta');
   meta.setAttribute(attribute, key);
   meta.content = content;
   document.head.appendChild(meta);
-  return meta;
+  return () => {
+    meta.remove();
+  };
 };
 
-const upsertCanonicalLink = (href: string): HTMLLinkElement => {
+const upsertCanonicalLink = (href: string): RestoreHeadValue => {
   const existing = document.head.querySelector('link[rel="canonical"]');
   if (existing instanceof HTMLLinkElement) {
+    const previous = existing.getAttribute('href');
     existing.href = href;
-    return existing;
+    return () => {
+      if (previous === null) {
+        existing.removeAttribute('href');
+      } else {
+        existing.setAttribute('href', previous);
+      }
+    };
   }
   const link = document.createElement('link');
   link.rel = 'canonical';
   link.href = href;
   document.head.appendChild(link);
-  return link;
+  return () => {
+    link.remove();
+  };
 };
 
 // Applies a shared PageHeadConfig (#414, @eciperay/client pageHead) to
@@ -43,7 +63,7 @@ export const PageHead = ({config}: PageHeadProps) => {
     const previousTitle = document.title;
     document.title = config.title;
 
-    const managedNodes: HTMLElement[] = [
+    const managedNodes: RestoreHeadValue[] = [
       upsertMeta('name', 'robots', config.robots),
     ];
 
@@ -81,8 +101,8 @@ export const PageHead = ({config}: PageHeadProps) => {
 
     return () => {
       document.title = previousTitle;
-      for (const node of managedNodes) {
-        node.remove();
+      for (const restore of managedNodes) {
+        restore();
       }
     };
   }, [config]);

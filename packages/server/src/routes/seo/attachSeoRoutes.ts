@@ -18,7 +18,7 @@ export const attachSeoRoutes = (
     res.send(buildRobotsTxt(sitemapUrl));
   });
 
-  app.get('/sitemap.xml', (_req, res) => {
-    void serveSitemap(res, queryFn);
+  app.get('/sitemap.xml', (_req, res, next) => {
+    serveSitemap(res, queryFn).catch(next);
   });
 };

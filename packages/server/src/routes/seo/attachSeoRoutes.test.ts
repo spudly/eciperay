@@ -46,6 +46,15 @@ describe('attachSeoRoutes', () => {
     expect(mockQuery).toHaveBeenCalledWith(LIST_PUBLIC_RECIPES_SITEMAP_SQL, []);
   });
 
+  test('GET /sitemap.xml returns 500 when the recipe query fails', async () => {
+    mockQuery.mockRejectedValue(new Error('db down'));
+
+    const res = await request(getApp()).get('/sitemap.xml');
+
+    expect(res.status).toBe(500);
+    expect(res.headers['cache-control'] ?? '').not.toContain('max-age=300');
+  });
+
   test('GET /sitemap.xml includes the static public pages', async () => {
     mockQuery.mockResolvedValue(makeQueryResult([]));
 
