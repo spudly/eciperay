@@ -40,6 +40,7 @@ type CapturedListViewProps = {
   discoveryRecipes?: unknown[];
   discoveryErrorMessage?: string | null;
   loadingDiscovery?: boolean;
+  isFetchingNextOwnPage?: boolean;
 };
 
 let mockListViewProps: CapturedListViewProps | null = null;
@@ -237,21 +238,33 @@ describe('RecipesScreen', () => {
       return secondPagePromise;
     });
     const client = makeQueryClient();
-    const {findByLabelText, getByLabelText, container} =
-      await renderWithProviders(<RecipesScreen />, client);
+    const {findByLabelText, container} = await renderWithProviders(
+      <RecipesScreen />,
+      client,
+    );
     await findByLabelText('Recipe 0');
     const list = findList(container);
     await act(async () => {
       list.props.onEndReached?.();
     });
+    // Since the unified browse (#412) the own section's fetching
+    // state crosses as the page's `isFetchingNextOwnPage` row, which
+    // follows all 20 own rows in the virtualized list — outside
+    // Jest's rendered window — so the screen-level contract is the
+    // prop it passes its view (captured by the wrapper mock above);
+    // the row's own rendering with a short list is pinned in
+    // RecipesListView's tests, where the row is in window.
     await waitFor(() => {
-      expect(getByLabelText('Loading')).toBeTruthy();
+      expect(mockListViewProps?.isFetchingNextOwnPage).toBe(true);
     });
     await act(async () => {
       resolveSecondPage([
         makeRecipeDetail({id: 'recipe-20', title: 'Recipe 20'}),
       ]);
       await flushQueryClient(client);
+    });
+    await waitFor(() => {
+      expect(mockListViewProps?.isFetchingNextOwnPage).toBe(false);
     });
   });
 
@@ -490,12 +503,15 @@ describe('RecipesScreen unified browse (#412)', () => {
         userId: 'other-user',
       }),
     ]);
-    const {findByLabelText, getByText, queryByLabelText, toJSON} =
+    const {findByLabelText, getByLabelText, queryByLabelText, toJSON} =
       await renderWithProviders(<RecipesScreen />);
 
     expect(await findByLabelText('Pasta Night')).toBeTruthy();
     expect(await findByLabelText('Shared Soup')).toBeTruthy();
-    expect(getByText('Shared')).toBeTruthy();
+    // On native the badge folds into the row's composite accessible
+    // label ("title, subtitle, Shared"); there is no standalone
+    // badge text node to find.
+    expect(getByLabelText(/, Shared$/)).toBeTruthy();
     // Created rows keep their log-cook control; shared rows render
     // none at all (canLogCook: false — cook logs are owner-only).
     expect(queryByLabelText('Log a cook of Pasta Night')).toBeTruthy();
@@ -518,12 +534,12 @@ describe('RecipesScreen unified browse (#412)', () => {
         title: 'Public Pie',
       }),
     ]);
-    const {findByLabelText, findByText} = await renderWithProviders(
-      <RecipesScreen />,
-    );
+    const {findByLabelText} = await renderWithProviders(<RecipesScreen />);
 
-    expect(await findByLabelText('Public Pie')).toBeTruthy();
-    expect(await findByText(/By Pat Public/)).toBeTruthy();
+    // The discovery card's accessible name is its composite label
+    // ("title, subtitle"), so both are asserted through it.
+    expect(await findByLabelText(/^Public Pie/)).toBeTruthy();
+    expect(await findByLabelText(/By Pat Public/)).toBeTruthy();
     expect(mockListViewProps?.discoveryRecipes).toHaveLength(1);
     expect(mockListViewProps?.discoveryErrorMessage).toBeNull();
   });

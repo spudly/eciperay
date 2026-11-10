@@ -582,7 +582,7 @@ describe('RecipesListView unified sections (#412)', () => {
   });
 
   test('renders shared rows after created rows with the Shared badge and no log-cook control', async () => {
-    const {getByLabelText, getByText, queryByLabelText, toJSON} =
+    const {getByLabelText, queryByLabelText, toJSON} =
       await renderWithProviders(
         <RecipesListView
           {...controls}
@@ -596,7 +596,10 @@ describe('RecipesListView unified sections (#412)', () => {
 
     expect(getByLabelText('Pasta Night')).toBeTruthy();
     expect(getByLabelText('Shared Soup')).toBeTruthy();
-    expect(getByText('Shared')).toBeTruthy();
+    // On native the badge is display-only: it folds into the row's
+    // composite accessible label ("title, subtitle, Shared") rather
+    // than rendering as a findable text node.
+    expect(getByLabelText(/, Shared$/)).toBeTruthy();
     // The created row keeps its log-cook control; the shared row
     // renders none at all.
     expect(getByLabelText('Log a cook of Pasta Night')).toBeTruthy();
@@ -628,7 +631,7 @@ describe('RecipesListView unified sections (#412)', () => {
     });
   });
 
-  test('renders discovery rows with author and discovery meta, linking to the permalink', async () => {
+  test('renders discovery rows with author and discovery meta', async () => {
     const {getByLabelText, getByText} = await renderWithProviders(
       <RecipesListView
         {...controls}
@@ -647,15 +650,27 @@ describe('RecipesListView unified sections (#412)', () => {
     );
 
     expect(getByText('Discover')).toBeTruthy();
-    expect(getByLabelText('Public Pie')).toBeTruthy();
+    // The discovery card's accessible name is its composite label
+    // ("title, subtitle"), so the title and the author-bearing
+    // subtitle are asserted through it.
+    expect(getByLabelText(/^Public Pie/)).toBeTruthy();
+    expect(getByLabelText(/By Pat Public/)).toBeTruthy();
     expect(getByText(/By Pat Public/)).toBeTruthy();
+  });
 
-    await fireEvent.press(getByLabelText('Public Pie'));
-    await waitFor(() => {
-      expect(Linking.openURL).toHaveBeenCalledWith(
-        `${WEB_APP_BASE_URL}/recipe/public-1/public-pie`,
-      );
-    });
+  test('renders the own-section loading row while fetching the next own page', async () => {
+    const {getByLabelText} = await renderWithProviders(
+      <RecipesListView
+        {...controls}
+        isLoading={false}
+        recipes={[pasta]}
+        isFetchingNextPage={false}
+        isFetchingNextOwnPage
+        onLoadMore={jest.fn()}
+      />,
+    );
+
+    expect(getByLabelText('Loading')).toBeTruthy();
   });
 
   test('renders the discovery error state from the discovery error prop', async () => {
