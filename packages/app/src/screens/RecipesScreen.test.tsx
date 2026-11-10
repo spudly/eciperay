@@ -646,4 +646,143 @@ describe('RecipesScreen unified browse (#412)', () => {
       );
     });
   });
+
+  test('a shared first-page failure with no own rows shows the own-section error', async () => {
+    mockListSharedWithMe.mockRejectedValue(new Error('Shared failed'));
+    await renderWithProviders(<RecipesScreen />);
+
+    await waitFor(() => {
+      expect(mockListViewProps?.ownErrorMessage).toBe(
+        "Couldn't load your recipes.",
+      );
+    });
+    expect(mockListViewProps?.loadMoreErrorMessage).toBeNull();
+  });
+
+  test('a shared-only failure with own rows present shows the load-more error', async () => {
+    mockList.mockResolvedValue([
+      makeRecipeDetail({id: 'own-1', title: 'Pasta Night'}),
+    ]);
+    mockListSharedWithMe.mockRejectedValue(new Error('Shared failed'));
+    const {findByLabelText} = await renderWithProviders(<RecipesScreen />);
+    await findByLabelText('Pasta Night');
+
+    await waitFor(() => {
+      expect(mockListViewProps?.loadMoreErrorMessage).toBe(
+        "Couldn't load more recipes.",
+      );
+    });
+    expect(mockListViewProps?.ownErrorMessage).toBeNull();
+  });
+
+  test('a shared next-page failure latches, and the manual retry refetches that page', async () => {
+    const sharedFirstPage = Array.from(
+      {length: RECIPE_LIST_PAGE_SIZE},
+      (_, i) =>
+        makeRecipeDetail({
+          id: `shared-${i}`,
+          title: `Shared ${i}`,
+          userId: 'other-user',
+        }),
+    );
+    let failNextPage = true;
+    mockListSharedWithMe.mockImplementation(
+      async (params?: {offset?: number}) => {
+        if (params?.offset === 0) {
+          return sharedFirstPage;
+        }
+        if (failNextPage) {
+          throw new Error('Shared next page failed');
+        }
+        return [
+          makeRecipeDetail({
+            id: 'shared-20',
+            title: 'Shared 20',
+            userId: 'other-user',
+          }),
+        ];
+      },
+    );
+    const client = makeQueryClient();
+    const {findByLabelText, container} = await renderWithProviders(
+      <RecipesScreen />,
+      client,
+    );
+    await findByLabelText('Shared 0');
+    const list = findList(container);
+
+    // The next shared page fails and the error latches.
+    await triggerEndReached(list);
+    await waitFor(() => {
+      expect(mockListSharedWithMe).toHaveBeenCalledTimes(2);
+    });
+    await waitFor(() => {
+      expect(mockListViewProps?.loadMoreErrorMessage).toBe(
+        "Couldn't load more recipes.",
+      );
+    });
+
+    // Further end-reached signals must not cycle automatic retries
+    // for the latched shared query.
+    await triggerEndReached(list);
+    await act(async () => {
+      await flushQueryClient(client);
+    });
+    expect(mockListSharedWithMe).toHaveBeenCalledTimes(2);
+
+    // The manual retry refetches the failed shared page (the screen
+    // retries a latched next-page error through
+    // fetchNextPage({cancelRefetch: false})) and the error clears.
+    failNextPage = false;
+    await act(async () => {
+      mockListViewProps?.onLoadMoreRetry?.();
+    });
+    await waitFor(() => {
+      expect(mockListSharedWithMe).toHaveBeenCalledTimes(3);
+    });
+    await waitFor(() => {
+      expect(mockListViewProps?.loadMoreErrorMessage).toBeNull();
+    });
+  });
+
+  test('the manual retry refetches a failed shared first page', async () => {
+    let failFirstPage = true;
+    mockListSharedWithMe.mockImplementation(async () => {
+      if (failFirstPage) {
+        throw new Error('Shared failed');
+      }
+      return [
+        makeRecipeDetail({
+          id: 'shared-1',
+          slug: 'shared-soup',
+          title: 'Shared Soup',
+          userId: 'other-user',
+        }),
+      ];
+    });
+    const {findByLabelText} = await renderWithProviders(<RecipesScreen />);
+
+    await waitFor(() => {
+      expect(mockListViewProps?.ownErrorMessage).toBe(
+        "Couldn't load your recipes.",
+      );
+    });
+    const callsBeforeRetry = mockListSharedWithMe.mock.calls.length;
+
+    // A first-page failure has no next page to fetch, so the retry
+    // goes through the shared query's refetch.
+    failFirstPage = false;
+    await act(async () => {
+      mockListViewProps?.onLoadMoreRetry?.();
+    });
+    await waitFor(() => {
+      expect(mockListSharedWithMe.mock.calls.length).toBeGreaterThan(
+        callsBeforeRetry,
+      );
+    });
+    expect(await findByLabelText('Shared Soup')).toBeTruthy();
+    await waitFor(() => {
+      expect(mockListViewProps?.ownErrorMessage).toBeNull();
+    });
+  });
 });
