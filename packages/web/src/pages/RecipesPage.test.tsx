@@ -588,8 +588,11 @@ describe('RecipesPage', () => {
       );
     });
     // Let the debounced sync write settle, so the current entry's
-    // location state holds the typed filters before leaving.
-    await new Promise(resolve => setTimeout(resolve, 400));
+    // location state holds the typed filters before leaving. The
+    // wait is act-wrapped: the debounced write lands during it.
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 400));
+    });
     // Leave for a recipe (a push, as the row link performs), then go
     // Back: the browse remounts seeded from the entry's saved state.
     await userEvent.click(screen.getByRole('button', {name: 'Open recipe'}));
@@ -659,7 +662,9 @@ describe('RecipesPage', () => {
       );
     });
     // Let the debounced sync write settle into this entry's state.
-    await new Promise(resolve => setTimeout(resolve, 400));
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 400));
+    });
     // A header search PUSHES a second /recipes entry; React Router
     // does not remount the page, and the new entry seeds from `q`.
     await userEvent.click(screen.getByRole('button', {name: 'Header search'}));

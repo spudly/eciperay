@@ -313,7 +313,7 @@ export const RecipesPage = () => {
     pendingRestoreRef.current = {key: location.key, serialized};
     const c = controlsRef.current;
     c.onSearchChange(restored.search);
-    c.onStatusFilterChange(restored.statusFilter);
+    c.onStatusFilterChange?.(restored.statusFilter);
     c.onIngredientChange(restored.ingredient);
     c.onMinCaloriesChange(restored.minCalories);
     c.onMaxCaloriesChange(restored.maxCalories);
