@@ -1,4 +1,4 @@
-import {errorMessage} from '@eciperay/client';
+import {errorMessage, validateAuthEmail} from '@eciperay/client';
 import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
@@ -13,9 +13,16 @@ export const ForgotPasswordPage = () => {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
 
   const handleSubmit = async () => {
+    const validationError = validateAuthEmail(email);
+    if (validationError) {
+      setEmailError(validationError);
+      return;
+    }
+    setEmailError(null);
     setLoading(true);
     setError(null);
     try {
@@ -50,9 +57,13 @@ export const ForgotPasswordPage = () => {
   return (
     <ForgotPasswordPageView
       email={email}
-      onEmailChange={setEmail}
+      onEmailChange={value => {
+        setEmail(value);
+        setEmailError(null);
+      }}
       loading={loading}
       error={error}
+      emailError={emailError}
       onSubmit={() => {
         void handleSubmit();
       }}

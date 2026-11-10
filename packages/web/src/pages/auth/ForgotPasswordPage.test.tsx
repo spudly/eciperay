@@ -18,6 +18,19 @@ describe('ForgotPasswordPage', () => {
     expect(supabase.auth.resetPasswordForEmail).toHaveBeenCalled();
   });
 
+  test('shows a field error and makes no auth call for a malformed email', async () => {
+    vi.mocked(supabase.auth.resetPasswordForEmail).mockClear();
+    await renderWithProviders(<ForgotPasswordPage />);
+    await userEvent.type(screen.getByLabelText('Email'), 'stephen');
+    await userEvent.click(screen.getByText('Send Reset Link'));
+    await waitFor(() => {
+      expect(
+        screen.getByText('Enter a valid email address'),
+      ).toBeInTheDocument();
+    });
+    expect(supabase.auth.resetPasswordForEmail).not.toHaveBeenCalled();
+  });
+
   test('shows error on failure', async () => {
     vi.mocked(supabase.auth.resetPasswordForEmail).mockResolvedValueOnce({
       error: Object.assign(new Error('Reset failed'), {

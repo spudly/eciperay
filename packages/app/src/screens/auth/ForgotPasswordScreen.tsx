@@ -1,4 +1,4 @@
-import {errorMessage} from '@eciperay/client';
+import {errorMessage, validateAuthEmail} from '@eciperay/client';
 import {useState} from 'react';
 import {Alert} from 'react-native';
 import {ForgotPasswordPage} from '@spudly/ui';
@@ -22,8 +22,15 @@ const sendReset = async (email: string) => {
 export const ForgotPasswordScreen = ({navigation}: ForgotProps) => {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
 
   const handleReset = async () => {
+    const validationError = validateAuthEmail(email);
+    if (validationError) {
+      setEmailError(validationError);
+      return;
+    }
+    setEmailError(null);
     setLoading(true);
     try {
       await sendReset(normalizeAuthEmail(email));
@@ -39,8 +46,12 @@ export const ForgotPasswordScreen = ({navigation}: ForgotProps) => {
   return (
     <ForgotPasswordPage
       email={email}
-      onEmailChange={setEmail}
+      onEmailChange={value => {
+        setEmail(value);
+        setEmailError(null);
+      }}
       loading={loading}
+      emailError={emailError}
       onSubmit={() => {
         void handleReset();
       }}
