@@ -1,4 +1,5 @@
-import {fireEvent, screen, waitFor} from '@testing-library/react';
+import {queryKeys} from '@eciperay/client';
+import {act, fireEvent, screen, waitFor} from '@testing-library/react';
 import {http, HttpResponse} from 'msw';
 import {Route, Routes} from 'react-router-dom';
 import {vi} from 'vitest';
@@ -7,7 +8,7 @@ import {eciperay} from '../lib/api.js';
 import {makeMealDetail, MEAL_ID} from '../test/fixtures/meal.js';
 import {makeRecipeDetail} from '../test/fixtures/recipe.js';
 import {server} from '../test/msw/server.js';
-import {renderWithProviders} from '../test/testUtils.js';
+import {makeQueryClient, renderWithProviders} from '../test/testUtils.js';
 
 import {MealEditPage} from './MealEditPage.js';
 
@@ -180,5 +181,96 @@ describe('MealEditPage', () => {
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith(`/meals/${MEAL_ID}`);
     });
+  });
+
+  test('keeps edited ingredient rows across a same-meal refetch (#362)', async () => {
+    const stored = makeMealDetail({
+      ingredients: [
+        {
+          name: 'Rice',
+          quantity: 2,
+          unit: 'cups',
+          sortOrder: 0,
+          servings: 2,
+          fiberG: null,
+          sugarG: null,
+          sodiumMg: null,
+          preparedWeightG: null,
+          satietyScore: null,
+          nutritionStatus: null,
+          calories: null,
+          proteinG: null,
+          carbsG: null,
+          fatG: null,
+        },
+      ],
+    });
+    let putBody: unknown = null;
+    server.use(
+      http.get(`http://localhost:8080/api/meals/${MEAL_ID}`, () =>
+        HttpResponse.json(stored),
+      ),
+      http.put(
+        `http://localhost:8080/api/meals/${MEAL_ID}`,
+        async ({request}) => {
+          putBody = await request.json();
+          return HttpResponse.json(makeMealDetail());
+        },
+      ),
+    );
+    const queryClient = makeQueryClient();
+    await renderWithProviders(
+      <Routes>
+        <Route
+          path="/meals/:mealId/edit"
+          element={<MealEditPage />}
+        />
+      </Routes>,
+      {route: `/meals/${MEAL_ID}/edit`, queryClient},
+    );
+    // The stored ingredient hydrates into an editable row.
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('Rice')).toBeInTheDocument();
+    });
+    fireEvent.change(screen.getByDisplayValue('Rice'), {
+      target: {value: 'Brown rice'},
+    });
+    // A background refetch of the same meal must not clobber the edit.
+    await act(async () => {
+      await queryClient.invalidateQueries({queryKey: queryKeys.meal(MEAL_ID)});
+    });
+    expect(screen.getByDisplayValue('Brown rice')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('Save meal'));
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith(`/meals/${MEAL_ID}`);
+    });
+    expect(putBody).toMatchObject({
+      ingredients: [
+        {name: 'Brown rice', quantity: 2, unit: 'cups', servings: 2},
+      ],
+    });
+  });
+
+  test('blocks saving when the meal fails to load (#362)', async () => {
+    server.use(
+      http.get(`http://localhost:8080/api/meals/${MEAL_ID}`, () =>
+        HttpResponse.json({error: 'boom'}, {status: 500}),
+      ),
+    );
+    await renderWithProviders(
+      <Routes>
+        <Route
+          path="/meals/:mealId/edit"
+          element={<MealEditPage />}
+        />
+      </Routes>,
+      {route: `/meals/${MEAL_ID}/edit`},
+    );
+    await waitFor(() => {
+      expect(screen.getByText('Something went wrong')).toBeInTheDocument();
+    });
+    // No saveable form: submitting an empty full-replace save would
+    // wipe the meal's stored recipes and ingredients.
+    expect(screen.queryByText('Save meal')).not.toBeInTheDocument();
   });
 });

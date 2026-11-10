@@ -12,6 +12,7 @@ import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useRef, useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
 
+import {RouteErrorView} from '../components/RouteErrorView.js';
 import {ScreenLoadingGate} from '../components/ScreenLoadingGate.js';
 import {eciperay} from '../lib/api.js';
 
@@ -44,7 +45,11 @@ export const MealEditPage = () => {
   const [searchText, setSearchText] = useState('');
   const debouncedSearch = useDebouncedValue(searchText);
 
-  const {data: meal, isLoading: mealLoading} = useQuery({
+  const {
+    data: meal,
+    isLoading: mealLoading,
+    error: mealError,
+  } = useQuery({
     queryKey: queryKeys.meal(mealId),
     queryFn: () => eciperay.meals.get(mealId),
     enabled: isEdit,
@@ -127,6 +132,23 @@ export const MealEditPage = () => {
       [recipeId]: current[recipeId] ?? recipe.servings,
     }));
   };
+
+  // A failed initial load in edit mode must not leave an empty,
+  // saveable form: the save is a full replace, so submitting it would
+  // wipe the meal's stored recipes and ingredients. Show the load
+  // error instead — there is nothing safe to edit until the meal
+  // loads. (Create mode has no load and is unaffected.)
+  if (isEdit && mealError) {
+    return (
+      <RouteErrorView
+        isNotFound={
+          mealError instanceof Error &&
+          (mealError.message === 'Meal not found' ||
+            mealError.message.startsWith('API error 404'))
+        }
+      />
+    );
+  }
 
   const handleRemoveRecipe = (recipeId: string) => {
     setSelectedRecipes(previous =>
