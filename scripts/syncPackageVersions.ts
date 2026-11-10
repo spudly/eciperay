@@ -6,15 +6,96 @@ export type SyncFs = {
   writeFileSync: typeof writeFileSync;
 };
 
-// Stamps a version into a single package.json. This is the one piece of the
-// old version-sync module the pending-release publish step still uses:
-// changesets versions the workspace packages itself, and
-// scripts/changesetRelease.ts (the publish step) only needs to sync the
-// workspace ROOT manifest to the group's version, because changesets never
-// versions the root. The former sync-everything entry point —
-// semantic-release's prepare step, which rewrote every manifest and the
-// lockfile in one pass — was removed with the rest of the semantic-release
-// remnants (issue #234).
+// The fixed changeset group's version lives in the app package's manifest
+// (.changeset/config.json): changesets versions the six workspace packages
+// together but never the workspace root.
+export const GROUP_VERSION_PACKAGE_JSON = 'packages/app/package.json';
+
+export const readGroupVersion = (
+  root: string,
+  fs: Pick<SyncFs, 'readFileSync'>,
+): string => {
+  const pkg = JSON.parse(
+    fs.readFileSync(join(root, GROUP_VERSION_PACKAGE_JSON), 'utf8'),
+  ) as {version?: unknown};
+  if (typeof pkg.version !== 'string' || pkg.version === '') {
+    throw new Error(
+      `Expected a string version in ${GROUP_VERSION_PACKAGE_JSON}`,
+    );
+  }
+  return pkg.version;
+};
+
+// Stamps a version into a single package.json (see setPackageJsonVersion
+// below). Changesets versions the workspace packages itself, but never the
+// workspace ROOT manifest, so the release version step syncs the root to
+// the group's version with syncRootVersion (issue #474). The former
+// sync-everything entry point — semantic-release's prepare step, which
+// rewrote every manifest and the lockfile in one pass — was removed with
+// the rest of the semantic-release remnants (issue #234).
+
+// Syncs only what changesets does not: the root package.json version and
+// the root entries of package-lock.json. Workspace package manifests and
+// their lockfile entries were already bumped by `changeset version`.
+export const syncRootVersion = (
+  root: string,
+  version: string,
+  fs: SyncFs,
+): void => {
+  setPackageJsonVersion(join(root, 'package.json'), version, fs);
+
+  const lockfilePath = join(root, 'package-lock.json');
+  const lock = JSON.parse(fs.readFileSync(lockfilePath, 'utf8')) as {
+    version?: string;
+    packages?: Record<string, {version?: string}>;
+  };
+  lock.version = version;
+  const rootEntry = lock.packages?.[''];
+  if (rootEntry) {
+    rootEntry.version = version;
+  }
+  fs.writeFileSync(lockfilePath, `${JSON.stringify(lock, null, 2)}\n`);
+};
+
+// Issue #474: the root version sync runs inside the release workflow's
+// version step (on the Pending Release branch, through the reviewed PR),
+// not in the publish step — the publish step's direct push to master is
+// declined by the "Require CI before merge" ruleset.
+export const syncRootVersionToGroupVersion = (
+  root: string,
+  fs: SyncFs,
+): string => {
+  const version = readGroupVersion(root, fs);
+  syncRootVersion(root, version, fs);
+  return version;
+};
+
+export type RootVersionMismatch = {
+  rootVersion: string;
+  groupVersion: string;
+};
+
+// Issue #474 (CodeRabbit round on PR #475): the lockfile check compares
+// each lockfile entry with its own manifest, so a root manifest edited to
+// a wrong version still passes when the lockfile agrees with it — and the
+// publish step then hard-errors on the stale root. On release PRs (the
+// only place CI runs the check) the root must equal the group's version.
+export const findRootVersionMismatch = (
+  root: string,
+  fs: Pick<SyncFs, 'readFileSync'>,
+): RootVersionMismatch | null => {
+  const rootPkg = JSON.parse(
+    fs.readFileSync(join(root, 'package.json'), 'utf8'),
+  ) as {version?: unknown};
+  if (typeof rootPkg.version !== 'string' || rootPkg.version === '') {
+    throw new Error('Expected a string version in package.json');
+  }
+  const groupVersion = readGroupVersion(root, fs);
+  return rootPkg.version === groupVersion
+    ? null
+    : {rootVersion: rootPkg.version, groupVersion};
+};
+
 export const setPackageJsonVersion = (
   filePath: string,
   version: string,

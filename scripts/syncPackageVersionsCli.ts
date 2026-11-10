@@ -4,8 +4,10 @@ import {join} from 'node:path';
 
 import {
   findLockfileWorkspaceVersionMismatches,
+  findRootVersionMismatch,
   formatLockfileVersionMismatches,
   syncLockfileWorkspaceVersions,
+  syncRootVersionToGroupVersion,
   type SyncFs,
 } from './syncPackageVersions.ts';
 
@@ -19,8 +21,12 @@ export type SyncPackageVersionsCliDeps = {
 
 // Default mode stamps the workspace manifest versions into
 // package-lock.json (run by the release workflow's version step, issue
-// #416). `--check` writes nothing and exits 1 when any owned lockfile
-// entry disagrees with its manifest (run by CI on release PRs).
+// #416). `--sync-root` stamps the fixed group's version into the root
+// manifest and the lockfile's root entries (run first by the same
+// version step, issue #474). `--check` writes nothing and exits 1 when
+// any owned lockfile entry disagrees with its manifest, or when the root
+// version disagrees with the fixed group's version (run by CI on
+// release PRs only — off a release branch the root legitimately lags).
 export const runSyncPackageVersionsCli = (
   root: string,
   argv: string[] = [],
@@ -35,6 +41,12 @@ export const runSyncPackageVersionsCli = (
       process.exit(code);
     });
 
+  if (argv.includes('--sync-root')) {
+    const version = syncRootVersionToGroupVersion(root, fs);
+    log.log(`Synced the root version to ${version}.`);
+    return;
+  }
+
   if (argv.includes('--check')) {
     const mismatches = findLockfileWorkspaceVersionMismatches(root, fs);
     if (mismatches.length > 0) {
@@ -43,6 +55,15 @@ export const runSyncPackageVersionsCli = (
       );
       log.error(formatLockfileVersionMismatches(mismatches));
       log.error('Run `npm run sync:lockfile-versions` to fix.');
+      exit(1);
+      return;
+    }
+    const rootMismatch = findRootVersionMismatch(root, fs);
+    if (rootMismatch) {
+      log.error(
+        `Root package.json version ${rootMismatch.rootVersion} does not match the release group version ${rootMismatch.groupVersion}.`,
+      );
+      log.error('Run `npm run sync:root-version` to fix.');
       exit(1);
       return;
     }

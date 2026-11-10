@@ -28,4 +28,23 @@ describe('release:version script', () => {
       'syncPackageVersionsCli.ts',
     );
   });
+
+  // Issue #474: the root version sync must run inside the version step
+  // (after `changeset version` bumps the group, before the lockfile sync
+  // reads the root manifest), because the publish step can no longer push
+  // a root-version commit to master.
+  test('runs the root-version sync after changeset version and before the lockfile sync', () => {
+    const script = pkg.scripts?.['release:version'];
+    const versionIndex = script?.indexOf('changeset version') ?? -1;
+    const rootIndex = script?.indexOf('npm run sync:root-version') ?? -1;
+    const syncIndex = script?.indexOf('npm run sync:lockfile-versions') ?? -1;
+    expect(rootIndex).toBeGreaterThan(versionIndex);
+    expect(syncIndex).toBeGreaterThan(rootIndex);
+  });
+
+  test('the root sync script it calls exists', () => {
+    expect(pkg.scripts?.['sync:root-version']).toContain(
+      'syncPackageVersionsCli.ts --sync-root',
+    );
+  });
 });

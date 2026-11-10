@@ -3,7 +3,13 @@ import {existsSync, readFileSync, writeFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
-import {setPackageJsonVersion} from './syncPackageVersions.ts';
+import {
+  GROUP_VERSION_PACKAGE_JSON,
+  readGroupVersion,
+  syncRootVersion,
+} from './syncPackageVersions.ts';
+
+export {readGroupVersion, syncRootVersion};
 
 export type ReleaseFs = {
   readFileSync: typeof readFileSync;
@@ -22,9 +28,12 @@ export type PublishResult = {
 // Changesets versions the six workspace packages as one fixed group (see
 // .changeset/config.json) but never versions the workspace root, while the
 // root package.json version stays canonical (Android versionName, deploy
-// fallbacks). This script is the changesets/action publish step: it bridges
-// that gap. It runs from the repo root (the action's publish cwd).
-export const VERSION_SOURCE_PACKAGE_JSON = 'packages/app/package.json';
+// fallbacks). The root sync now happens in the release workflow's version
+// step (issue #474), so the Pending Release PR carries it through review;
+// this script is the changesets/action publish step and only tags the
+// already-synced master commit. It runs from the repo root (the action's
+// publish cwd).
+export const VERSION_SOURCE_PACKAGE_JSON = GROUP_VERSION_PACKAGE_JSON;
 
 // Changelogs are searched in this order for the new version's section when
 // building the GitHub Release notes: the app package first, then the rest
@@ -38,42 +47,17 @@ export const CHANGELOG_PATHS = [
   'packages/web/CHANGELOG.md',
 ];
 
-export const readGroupVersion = (
+export const readRootVersion = (
   root: string,
   fs: Pick<ReleaseFs, 'readFileSync'>,
 ): string => {
   const pkg = JSON.parse(
-    fs.readFileSync(join(root, VERSION_SOURCE_PACKAGE_JSON), 'utf8'),
+    fs.readFileSync(join(root, 'package.json'), 'utf8'),
   ) as {version?: unknown};
   if (typeof pkg.version !== 'string' || pkg.version === '') {
-    throw new Error(
-      `Expected a string version in ${VERSION_SOURCE_PACKAGE_JSON}`,
-    );
+    throw new Error('Expected a string version in package.json');
   }
   return pkg.version;
-};
-
-// Syncs only what changesets does not: the root package.json version and
-// the root entries of package-lock.json. Workspace package manifests and
-// their lockfile entries were already bumped by `changeset version`.
-export const syncRootVersion = (
-  root: string,
-  version: string,
-  fs: Pick<ReleaseFs, 'readFileSync' | 'writeFileSync'>,
-): void => {
-  setPackageJsonVersion(join(root, 'package.json'), version, fs);
-
-  const lockfilePath = join(root, 'package-lock.json');
-  const lock = JSON.parse(fs.readFileSync(lockfilePath, 'utf8')) as {
-    version?: string;
-    packages?: Record<string, {version?: string}>;
-  };
-  lock.version = version;
-  const rootEntry = lock.packages?.[''];
-  if (rootEntry) {
-    rootEntry.version = version;
-  }
-  fs.writeFileSync(lockfilePath, `${JSON.stringify(lock, null, 2)}\n`);
 };
 
 export const remoteTagExists = (exec: ReleaseExec, tag: string): boolean =>
@@ -117,10 +101,12 @@ export const readReleaseNotes = (
 
 // Idempotent: if the tag for the group's current version already exists
 // on the remote, a previous run published this release and there is
-// nothing to do. Otherwise sync the root version, commit it in the
-// established `chore(release):` shape (the deploy-target resolver excludes
-// those commits from its path diff), tag that commit, and open the GitHub
-// Release with the changelog section as its notes.
+// nothing to do. Otherwise tag HEAD and open the GitHub Release with the
+// changelog section as its notes. HEAD must already carry the root
+// version sync (the release version step puts it on the release branch,
+// issue #474): a direct push to master from here is declined by the
+// "Require CI before merge" ruleset, so a stale root version is a hard
+// error rather than something this step repairs.
 export const publishChangesetRelease = (
   root: string,
   fs: ReleaseFs,
@@ -134,19 +120,11 @@ export const publishChangesetRelease = (
     return {status: 'already-released', version, tag};
   }
 
-  syncRootVersion(root, version, fs);
-
-  exec('git', ['config', 'user.name', 'github-actions[bot]']);
-  exec('git', [
-    'config',
-    'user.email',
-    '41898282+github-actions[bot]@users.noreply.github.com',
-  ]);
-  exec('git', ['add', 'package.json', 'package-lock.json']);
-  const stagedFiles = exec('git', ['diff', '--cached', '--name-only']);
-  if (stagedFiles.length > 0) {
-    exec('git', ['commit', '-m', `chore(release): ${version} [skip ci]`]);
-    exec('git', ['push', 'origin', 'HEAD:master']);
+  const rootVersion = readRootVersion(root, fs);
+  if (rootVersion !== version) {
+    throw new Error(
+      `Root package.json version ${rootVersion} does not match the release version ${version}; the release version step must sync the root version before publish.`,
+    );
   }
 
   exec('git', ['tag', tag]);

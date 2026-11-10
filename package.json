@@ -1,6 +1,6 @@
 {
   "name": "eciperay",
-  "version": "1.33.0",
+  "version": "1.34.1",
   "private": true,
   "type": "module",
   "packageManager": "npm@10.9.4",
@@ -38,8 +38,9 @@
     "validate:node-version": "tsx scripts/validateNodeVersion.ts",
     "validate:ui-parity": "tsx scripts/checkMirrorPairsCli.ts",
     "sync:lockfile-versions": "tsx scripts/syncPackageVersionsCli.ts",
+    "sync:root-version": "tsx scripts/syncPackageVersionsCli.ts --sync-root",
     "check:lockfile-versions": "tsx scripts/syncPackageVersionsCli.ts --check",
-    "release:version": "changeset version && npm run sync:lockfile-versions",
+    "release:version": "changeset version && npm run sync:root-version && npm run sync:lockfile-versions",
     "build:logos": "tsx scripts/buildLogos.ts",
     "discover:workspace-packages": "tsx scripts/discoverWorkspacePackages.ts",
     "discover:affected-packages": "tsx scripts/discoverAffectedPackages.ts",
