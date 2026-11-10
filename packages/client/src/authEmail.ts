@@ -2,7 +2,14 @@ import {z} from 'zod';
 
 export const AUTH_EMAIL_ERROR_MESSAGE = 'Enter a valid email address';
 
-export const authEmailSchema = z.email(AUTH_EMAIL_ERROR_MESSAGE);
+// The pattern is zod's RFC 5322 email regex rather than its default:
+// the default rejects valid local parts containing characters such as
+// `%` (e.g. user%tag@example.com) that mail providers accept, and those
+// addresses must not be blocked before the auth call.
+export const authEmailSchema = z.email({
+  pattern: z.regexes.rfc5322Email,
+  message: AUTH_EMAIL_ERROR_MESSAGE,
+});
 
 /**
  * Returns the user-facing validation message when `email` is not a valid email

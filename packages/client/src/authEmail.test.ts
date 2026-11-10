@@ -29,6 +29,8 @@ describe('validateAuthEmail', () => {
   test.each([
     ['well-formed email', 'chef@example.com'],
     ['padded email is trimmed for the check', ' chef@example.com '],
+    ['percent in the local part (RFC 5322 atext)', 'user%tag@example.com'],
+    ['plus tag in the local part', 'user+tag@example.com'],
   ])('returns null for %s', (_label, email) => {
     expect(validateAuthEmail(email)).toBeNull();
   });
