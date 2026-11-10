@@ -1,6 +1,9 @@
 /** @type {import('jest').Config} */
 module.exports = {
   displayName: 'root',
+  // Cap local workers at 2: Jest's default pool sizes from host cores and
+  // oversubscribes small shared-vCPU machines. CI keeps 50%.
+  maxWorkers: process.env.CI ? '50%' : 2,
   testEnvironment: 'node',
   roots: ['<rootDir>/scripts', '<rootDir>/eslint-rules', '<rootDir>/test'],
   testMatch: ['**/*.test.ts', '**/*.test.cjs'],
