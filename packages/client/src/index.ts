@@ -166,6 +166,8 @@ export type {
   TagsViewProps,
 } from './ui/viewComponents.js';
 export {useRecipeListFilters} from './useRecipeListFilters.js';
+export {parseRecipeListFilterValues} from './useFilterFieldState.js';
+export type {RecipeListFilterValues} from './useFilterFieldState.js';
 export {demoRecipeListFilters} from './demoRecipeListFilters.js';
 export type {RecipeListFilters, RecipeListParams} from './recipesListUrl.js';
 export {

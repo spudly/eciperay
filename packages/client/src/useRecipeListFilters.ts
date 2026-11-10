@@ -6,6 +6,7 @@ import type {RecipeListFilterControls} from './ui/recipeListFilterControls.js';
 import {
   useFilterFieldState,
   type FilterFieldState,
+  type RecipeListFilterValues,
 } from './useFilterFieldState.js';
 
 const toControls = (
@@ -36,9 +37,13 @@ const toControls = (
 export const useRecipeListFilters = (options?: {
   includeStatus?: boolean;
   defaultSort?: RecipeListSort;
+  initialValues?: Partial<RecipeListFilterValues>;
 }) => {
   const includeStatus = options?.includeStatus ?? true;
-  const fields = useFilterFieldState(options?.defaultSort ?? 'newest');
+  const fields = useFilterFieldState(
+    options?.defaultSort ?? 'newest',
+    options?.initialValues,
+  );
   const deferredSearch = useDeferredValue(fields.search.trim());
   const deferredIngredient = useDeferredValue(fields.ingredient.trim());
 
@@ -53,5 +58,20 @@ export const useRecipeListFilters = (options?: {
     [deferredIngredient, deferredSearch, fields, includeStatus],
   );
 
-  return {filters, controls: toControls(fields, includeStatus)};
+  // The current raw field values, for hosts that persist them across
+  // navigation (#468): serializable as-is and accepted back through
+  // the `initialValues` option.
+  const values: RecipeListFilterValues = {
+    search: fields.search,
+    statusFilter: fields.statusFilter,
+    ingredient: fields.ingredient,
+    minCalories: fields.minCalories,
+    maxCalories: fields.maxCalories,
+    minSatiety: fields.minSatiety,
+    maxSatiety: fields.maxSatiety,
+    sort: fields.sort,
+    sortDir: fields.sortDir,
+  };
+
+  return {filters, controls: toControls(fields, includeStatus), values};
 };

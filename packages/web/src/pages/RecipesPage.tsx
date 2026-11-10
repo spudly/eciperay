@@ -7,6 +7,7 @@ import {
   formatServingsLabel,
   getDisplayRating,
   invalidateRecipeQueries,
+  parseRecipeListFilterValues,
   publicRecipeDiscoveryInfiniteQueryOptions,
   recipeListInfiniteQueryOptions,
   sharedWithMeInfiniteQueryOptions,
@@ -32,7 +33,7 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import {useCallback, useEffect, useRef, useState} from 'react';
-import {useLocation, useSearchParams} from 'react-router-dom';
+import {useLocation, useNavigate, useSearchParams} from 'react-router-dom';
 
 import {CookLogForm} from '../components/cooking/CookLogForm.js';
 import {eciperay} from '../lib/api.js';
@@ -196,12 +197,30 @@ const toDiscoveryItem = (
  * Header search (Stephen's decision: in scope with the unified browse): the
  * shell's search form navigates here with `?q=<term>`, and this host seeds the
  * page's one search state from that param whenever it changes.
+ *
+ * Filter persistence (#468): the current filter values are kept in this history
+ * entry's location state (written with replace, never push), and a mount seeds
+ * the filter state from any saved values it finds there — so opening a recipe
+ * and pressing Back restores the filters exactly as left, while Back from the
+ * browse itself still leaves in one step.
  */
 export const RecipesPage = () => {
-  const {filters, controls} = useRecipeListFilters();
+  const location = useLocation();
+  const navigate = useNavigate();
+  // Filter persistence across back-navigation (#468, Stephen's spec):
+  // the browse entry's location state carries the filter values, so
+  // leaving for a recipe and pressing Back returns to this entry —
+  // and this mount — with its state intact. Capture the saved values
+  // once, at mount, and seed the filter state from them; later mounts
+  // of this same entry (Back) re-read the then-current state.
+  const [initialFilterValues] = useState(() =>
+    parseRecipeListFilterValues(location.state),
+  );
+  const {filters, controls, values} = useRecipeListFilters({
+    initialValues: initialFilterValues,
+  });
   const [searchParams] = useSearchParams();
   const headerSearch = searchParams.get('q') ?? '';
-  const location = useLocation();
 
   // Seed the page search from the header search's `q` param. The
   // latest onSearchChange, for the seeding effect below: the controls
@@ -215,10 +234,42 @@ export const RecipesPage = () => {
   // changes: re-submitting the same header term after editing the
   // page search must re-apply it, and clearing the header search
   // (navigation to bare /recipes) must clear the page filter too —
-  // the URL is the search state the two surfaces share.
+  // the URL is the search state the two surfaces share. EXCEPT when
+  // the current entry carries saved filter values in its location
+  // state (#468): that entry is this page's own state-managed entry
+  // (a filter-sync replace, or a Back return to it), and its saved
+  // values — search included — are newer than the URL's `q`.
   useEffect(() => {
+    if (parseRecipeListFilterValues(location.state)) {
+      return;
+    }
     onSearchChangeRef.current(headerSearch);
-  }, [headerSearch, location.key]);
+  }, [headerSearch, location.key, location.state]);
+
+  // Keep this history entry's location state holding the current
+  // filter values (#468), so Back from a recipe restores them. The
+  // write REPLACES the current entry (Stephen, 2026-11-09): filter
+  // tweaks must never become Back stops of their own. The serialized
+  // comparison keeps the effect from re-navigating on its own write.
+  const syncedFiltersRef = useRef<string | null>(null);
+  useEffect(() => {
+    const serialized = JSON.stringify(values);
+    if (syncedFiltersRef.current === serialized) {
+      return;
+    }
+    const saved = parseRecipeListFilterValues(location.state);
+    if (saved && JSON.stringify({...values, ...saved}) === serialized) {
+      // The entry already carries exactly these values (the mount
+      // this page was seeded from, or our own previous write).
+      syncedFiltersRef.current = serialized;
+      return;
+    }
+    syncedFiltersRef.current = serialized;
+    void navigate(
+      {pathname: location.pathname, search: location.search},
+      {replace: true, state: {recipeListFilters: values}},
+    );
+  }, [location.pathname, location.search, location.state, navigate, values]);
 
   const ownQuery = useInfiniteQuery(
     recipeListInfiniteQueryOptions(

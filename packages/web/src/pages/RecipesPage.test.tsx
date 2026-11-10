@@ -511,6 +511,102 @@ describe('RecipesPage', () => {
     });
   });
 
+  test('seeds filters from location state saved by an earlier visit (#468)', async () => {
+    await renderWithProviders(<RecipesPage />, {
+      routerProps: {
+        initialEntries: [
+          {pathname: '/recipes', state: {recipeListFilters: {search: 'Test'}}},
+        ],
+      },
+    });
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('Search recipes…')).toHaveValue(
+        'Test',
+      );
+    });
+    await waitFor(() => {
+      expect(screen.getByText('Test Recipe')).toBeInTheDocument();
+    });
+  });
+
+  test('restores filters on Back and keeps filter edits out of the history stack (#468)', async () => {
+    const BackButton = () => {
+      const navigate = useNavigate();
+      return (
+        <>
+          <button
+            type="button"
+            onClick={() => {
+              void navigate(-1);
+            }}
+          >
+            Go back
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              void navigate('/recipes/recipe-uuid-1');
+            }}
+          >
+            Open recipe
+          </button>
+        </>
+      );
+    };
+    await renderWithProviders(
+      <>
+        <BackButton />
+        <Routes>
+          <Route
+            path="/other"
+            element={<p>Other page</p>}
+          />
+          <Route
+            path="/recipes"
+            element={<RecipesPage />}
+          />
+          <Route
+            path="/recipes/:id"
+            element={<p>Recipe detail</p>}
+          />
+        </Routes>
+      </>,
+      {routerProps: {initialEntries: ['/other', '/recipes'], initialIndex: 1}},
+    );
+    await waitFor(() => {
+      expect(screen.getByText('Test Recipe')).toBeInTheDocument();
+    });
+    // Several keystrokes of filter edits: each is written to the
+    // current entry's location state with replace, never a push.
+    await userEvent.type(
+      screen.getByPlaceholderText('Search recipes…'),
+      'Test',
+    );
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('Search recipes…')).toHaveValue(
+        'Test',
+      );
+    });
+    // Leave for a recipe (a push, as the row link performs), then go
+    // Back: the browse remounts seeded from the entry's saved state.
+    await userEvent.click(screen.getByRole('button', {name: 'Open recipe'}));
+    await waitFor(() => {
+      expect(screen.getByText('Recipe detail')).toBeInTheDocument();
+    });
+    await userEvent.click(screen.getByRole('button', {name: 'Go back'}));
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('Search recipes…')).toHaveValue(
+        'Test',
+      );
+    });
+    // One more Back leaves the browse entirely — the filter edits
+    // added no history entries of their own.
+    await userEvent.click(screen.getByRole('button', {name: 'Go back'}));
+    await waitFor(() => {
+      expect(screen.getByText('Other page')).toBeInTheDocument();
+    });
+  });
+
   test('clearing the header search clears the page filter', async () => {
     const ClearHeaderSearch = () => {
       const navigate = useNavigate();
