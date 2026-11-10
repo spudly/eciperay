@@ -76,8 +76,12 @@ export type MealPlanInput = {
 export type ShoppingListSource = {
   mealId: string | null;
   mealTitle: string | null;
-  recipeId: string;
-  recipeTitle: string;
+  /**
+   * Null for a meal's direct ingredients (#362): they belong to the meal
+   * itself, not to any recipe.
+   */
+  recipeId: string | null;
+  recipeTitle: string | null;
 };
 
 export type ShoppingListLine = {

@@ -106,6 +106,65 @@ describe('MealDetailPage', () => {
     });
   });
 
+  test('renders direct ingredients in their own section (#362)', async () => {
+    server.use(
+      http.get(`http://localhost:8080/api/meals/${MEAL_ID}`, () =>
+        HttpResponse.json({
+          id: MEAL_ID,
+          userId: 'user-uuid-1',
+          title: 'Sunday Dinner',
+          notes: null,
+          memberCount: 1,
+          nutrition: null,
+          createdAt: '2024-01-01T00:00:00.000Z',
+          updatedAt: '2024-01-01T00:00:00.000Z',
+          members: [],
+          ingredients: [
+            {
+              name: 'Rice',
+              quantity: 2,
+              unit: 'cups',
+              sortOrder: 0,
+              servings: 2,
+              fiberG: null,
+              sugarG: null,
+              sodiumMg: null,
+              preparedWeightG: null,
+              satietyScore: null,
+              nutritionStatus: 'ready',
+              calories: 100,
+              proteinG: 3,
+              carbsG: 20,
+              fatG: 1,
+            },
+          ],
+        }),
+      ),
+    );
+    await renderWithProviders(
+      <Routes>
+        <Route
+          path="/meals/:mealId"
+          element={<MealDetailPage />}
+        />
+      </Routes>,
+      {route: `/meals/${MEAL_ID}`},
+    );
+    await waitFor(() => {
+      expect(screen.getByText('Rice')).toBeInTheDocument();
+    });
+    expect(screen.getByText('Ingredients')).toBeInTheDocument();
+    // Stored nutrition is per serving: the row shows the entry's total
+    // contribution (2 servings × 100 cal / 3g protein / 20g carbs / 1g fat).
+    expect(
+      screen.getByText(
+        '2 cups · 2 servings · 200 cal · 6g protein · 40g carbs · 2g fat',
+      ),
+    ).toBeInTheDocument();
+    // A direct ingredient has no destination: its row is not a link.
+    expect(screen.queryByRole('link', {name: /Rice/})).not.toBeInTheDocument();
+  });
+
   test('shows a not-found state for a nonexistent meal id', async () => {
     server.use(
       http.get('http://localhost:8080/api/meals/not-a-uuid', () =>

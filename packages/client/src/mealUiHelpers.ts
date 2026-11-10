@@ -1,9 +1,56 @@
 import type {
   AggregatedNutrition,
+  MealIngredientInput,
+  MealIngredientMember,
   MealInput,
   MealPlanInput,
   NutritionGoals,
 } from '@eciperay/types';
+
+/**
+ * One direct-ingredient row of the meal form (#362 tranche 2), mirroring the DS
+ * MealFormPage ingredient shape: quantity / unit / servings cross the DS
+ * boundary as free-text strings, so the row keeps them as entered and
+ * parsing/validation happens host-side in buildMealInputFromForm.
+ */
+export type MealFormIngredient = {
+  id: string;
+  name: string;
+  quantity: string;
+  unit: string;
+  servings: string;
+};
+
+export const mealIngredientsToForm = (
+  ingredients: MealIngredientMember[],
+): MealFormIngredient[] =>
+  ingredients.map((ingredient, index) => ({
+    id: `ingredient-${index}`,
+    name: ingredient.name,
+    quantity: ingredient.quantity === null ? '' : String(ingredient.quantity),
+    unit: ingredient.unit ?? '',
+    servings: String(ingredient.servings),
+  }));
+
+const parseFormIngredient = (
+  formIngredient: MealFormIngredient,
+): MealIngredientInput | null => {
+  const name = formIngredient.name.trim();
+  if (!name) {
+    return null;
+  }
+  const quantityText = formIngredient.quantity.trim();
+  const quantity = quantityText === '' ? null : Number(quantityText);
+  if (quantity !== null && (!Number.isFinite(quantity) || quantity <= 0)) {
+    throw new Error(`Enter a valid quantity for “${name}”.`);
+  }
+  const servingsText = formIngredient.servings.trim();
+  const servings = servingsText === '' ? 1 : Number(servingsText);
+  if (!Number.isFinite(servings) || servings <= 0) {
+    throw new Error(`Enter valid servings for “${name}”.`);
+  }
+  return {name, quantity, unit: formIngredient.unit.trim() || null, servings};
+};
 
 export const mealPlanEntryKey = (kind: 'meal' | 'recipe', id: string): string =>
   `${kind}:${id}`;
@@ -43,6 +90,13 @@ export const buildMealInputFromForm = (args: {
   notes: string;
   selectedRecipeIds: string[];
   servingsByRecipeId: Record<string, number>;
+  /**
+   * The form's direct-ingredient rows (#362). Omitted means the caller does not
+   * manage direct ingredients, so the payload omits them too (the server
+   * preserves stored rows on an omitted list); a provided list — empty included
+   * — is sent in full and replaces them.
+   */
+  formIngredients?: MealFormIngredient[];
 }): MealInput => ({
   title: args.title.trim(),
   notes: args.notes.trim() || null,
@@ -50,6 +104,16 @@ export const buildMealInputFromForm = (args: {
     recipeId,
     servings: args.servingsByRecipeId[recipeId],
   })),
+  ...(args.formIngredients
+    ? {
+        ingredients: args.formIngredients
+          .map(parseFormIngredient)
+          .filter(
+            (ingredient): ingredient is MealIngredientInput =>
+              ingredient !== null,
+          ),
+      }
+    : {}),
 });
 
 export const buildMealPlanInputFromForm = (args: {

@@ -3,6 +3,7 @@ import {
   buildMealPlanInputFromForm,
   defaultNutritionGoals,
   formatSimpleNutrition,
+  mealIngredientsToForm,
   mealPlanEntryKey,
   parseMealPlanEntryKey,
 } from './mealUiHelpers.js';
@@ -122,5 +123,87 @@ describe('mealUiHelpers', () => {
         {recipeId: 'r1', quantity: 1, servings: undefined},
       ],
     });
+  });
+
+  test('builds direct ingredients from form rows (#362)', () => {
+    const input = buildMealInputFromForm({
+      title: 'Dinner',
+      notes: '',
+      selectedRecipeIds: [],
+      servingsByRecipeId: {},
+      formIngredients: [
+        {id: 'a', name: ' Rice ', quantity: '2', unit: ' cups ', servings: '2'},
+        {id: 'b', name: 'Protein shake', quantity: '', unit: '', servings: ''},
+        {id: 'c', name: '  ', quantity: '1', unit: '', servings: '1'},
+      ],
+    });
+    expect(input.ingredients).toEqual([
+      {name: 'Rice', quantity: 2, unit: 'cups', servings: 2},
+      {name: 'Protein shake', quantity: null, unit: null, servings: 1},
+    ]);
+
+    // An explicitly empty row list still sends the key (full replace),
+    // while omitting the rows omits the key entirely.
+    expect(
+      buildMealInputFromForm({
+        title: 'Dinner',
+        notes: '',
+        selectedRecipeIds: [],
+        servingsByRecipeId: {},
+        formIngredients: [],
+      }).ingredients,
+    ).toEqual([]);
+    expect(
+      buildMealInputFromForm({
+        title: 'Dinner',
+        notes: '',
+        selectedRecipeIds: [],
+        servingsByRecipeId: {},
+      }),
+    ).not.toHaveProperty('ingredients');
+
+    expect(() =>
+      buildMealInputFromForm({
+        title: 'Dinner',
+        notes: '',
+        selectedRecipeIds: [],
+        servingsByRecipeId: {},
+        formIngredients: [
+          {id: 'a', name: 'Rice', quantity: 'lots', unit: '', servings: '1'},
+        ],
+      }),
+    ).toThrow(/valid quantity/);
+  });
+
+  test('hydrates form rows from stored meal ingredients (#362)', () => {
+    expect(
+      mealIngredientsToForm([
+        {
+          name: 'Rice',
+          quantity: 2,
+          unit: 'cups',
+          sortOrder: 0,
+          servings: 2,
+          fiberG: null,
+          sugarG: null,
+          sodiumMg: null,
+          preparedWeightG: null,
+          calories: 100,
+          proteinG: 3,
+          carbsG: 20,
+          fatG: 1,
+          satietyScore: null,
+          nutritionStatus: 'ready',
+        },
+      ]),
+    ).toEqual([
+      {
+        id: 'ingredient-0',
+        name: 'Rice',
+        quantity: '2',
+        unit: 'cups',
+        servings: '2',
+      },
+    ]);
   });
 });

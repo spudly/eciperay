@@ -25,6 +25,13 @@ const MEAL_RECIPES_SQL = `
   order by sort_order asc
 `;
 
+const MEAL_INGREDIENTS_SQL = `
+  select name, quantity, unit
+  from meal_ingredients
+  where meal_id = $1
+  order by sort_order asc
+`;
+
 export const buildPlanShoppingList = async (
   planId: string,
   userId: string,
@@ -44,6 +51,35 @@ export const buildPlanShoppingList = async (
         recipe_id: string;
         servings: number;
       }[];
+      // Direct ingredients (#362) are things to buy too: they join the
+      // list at their entered quantity, scaled only by how many times
+      // the plan includes the meal (their quantity already covers the
+      // entry's own servings, so no servings scaling applies).
+      const mealIngredientsResult = await queryFn(MEAL_INGREDIENTS_SQL, [
+        entry.mealId,
+      ]);
+      const mealIngredientRows = (mealIngredientsResult.rows ?? []) as {
+        name: string;
+        quantity: number | null;
+        unit: string | null;
+      }[];
+      for (const row of mealIngredientRows) {
+        ingredients.push({
+          name: row.name,
+          quantity: row.quantity,
+          unit: row.unit,
+          isOptional: false,
+          servings: 1,
+          recipeServings: 1,
+          quantityMultiplier: entry.quantity,
+          source: {
+            mealId: entry.mealId,
+            mealTitle: entry.title,
+            recipeId: null,
+            recipeTitle: null,
+          },
+        });
+      }
       for (const mealRecipe of mealRecipes) {
         const recipe = await loadAccessibleRecipe(
           mealRecipe.recipe_id,
