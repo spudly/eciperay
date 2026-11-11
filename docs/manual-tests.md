@@ -254,6 +254,8 @@ without); one recipe may be created fresh in case 1.
 **Run when:**
 `packages/app/src/screens/{Recipes,RecipeDetail,EditRecipe,EditVersion,ManualEntry,SharedWithMe,Home}Screen.tsx`,
 `packages/app/src/lib/deepLinks.ts`, `packages/app/src/navigation/linking.ts`,
+`packages/app/android/app/src/main/AndroidManifest.xml`,
+`packages/app/android/app/build.gradle`,
 `packages/app/src/components/recipe/**`,
 `packages/app/src/lib/recipeImageCrop.ts`,
 `packages/app/android/settings.gradle`, `packages/app/ios/Podfile`,
