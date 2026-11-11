@@ -370,6 +370,11 @@ describe('meal and meal plan write tools', () => {
       arguments: {title: 'Bad', ingredients: [{name: '   '}]},
     });
     assert.equal(created.isError, true);
+    const badUnit = await client.callTool({
+      name: 'create_meal',
+      arguments: {title: 'Bad', ingredients: [{name: 'Rice', unit: '   '}]},
+    });
+    assert.equal(badUnit.isError, true);
     assert.equal(writes, 0);
     await client.close();
   });
@@ -392,16 +397,17 @@ describe('meal and meal plan write tools', () => {
 
     const client = await connectClient();
     const paddedName = `  ${'a'.repeat(200)}  `;
+    const paddedUnit = ` ${'u'.repeat(50)} `;
     const created = await client.callTool({
       name: 'create_meal',
       arguments: {
         title: 'Padded',
-        ingredients: [{name: paddedName, quantity: 1, unit: ' bottle '}],
+        ingredients: [{name: paddedName, quantity: 1, unit: paddedUnit}],
       },
     });
     assert.notEqual(created.isError, true);
     assert.deepEqual(postBodies[0]?.['ingredients'], [
-      {name: 'a'.repeat(200), quantity: 1, unit: 'bottle'},
+      {name: 'a'.repeat(200), quantity: 1, unit: 'u'.repeat(50)},
     ]);
     await client.close();
   });
