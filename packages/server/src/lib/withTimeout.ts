@@ -35,6 +35,38 @@ export const withTimeout = <T>(
 };
 
 /**
+ * Like {@link withTimeout}, but the operation receives an
+ * {@link AbortSignal} that fires when the bound expires, so work that
+ * supports cancellation (Anthropic requests) actually stops instead of
+ * running to completion after its result has been abandoned — a
+ * timed-out provider call that keeps running still consumes provider
+ * capacity and can still incur charges after the route has refunded
+ * the quota for it. Stages chained inside the operation must check the
+ * signal before starting new work (see `prepareImportedRecipeInput`):
+ * a late completion of an earlier stage must not start a fresh request
+ * after the deadline.
+ */
+export const withTimeoutSignal = <T>(
+  operation: (signal: AbortSignal) => Promise<T>,
+  timeoutMs: number,
+  label: string,
+): Promise<T> => {
+  const controller = new AbortController();
+  let timer!: ReturnType<typeof setTimeout>;
+  const timeout = new Promise<never>((_resolve, reject) => {
+    timer = setTimeout(() => {
+      controller.abort();
+      reject(new StageTimeoutError(label, timeoutMs));
+    }, timeoutMs);
+  });
+  return Promise.race([operation(controller.signal), timeout]).finally(
+    () => {
+      clearTimeout(timer);
+    },
+  );
+};
+
+/**
  * Like {@link withTimeout}, but a timeout resolves to `null` instead of
  * rejecting — for stages whose absence is a normal outcome (the imported
  * image: an import without an image is a successful import). Non-timeout

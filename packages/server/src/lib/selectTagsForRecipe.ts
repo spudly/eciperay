@@ -39,22 +39,30 @@ export const selectTagIdsForRecipe = async (
   recipe: RecipeImport,
   availableTags: TagOption[],
   client: AnthropicClient = defaultAnthropic,
+  signal?: AbortSignal,
 ): Promise<string[]> => {
   if (availableTags.length === 0) {
     return [];
   }
+  // Do not start a provider request after the caller's stage deadline:
+  // the tag-options query that produced `availableTags` may only have
+  // completed after the caller already timed out and moved on.
+  signal?.throwIfAborted();
   const tagNames = availableTags.map(tag => tag.name);
-  const message = await client.messages.create({
-    model: HAIKU,
-    max_tokens: 200,
-    system: `Select tags that apply to this recipe. Return ONLY a JSON array of tag names from the provided list. Use exact names only. Pick 1-5 relevant tags.`,
-    messages: [
-      {
-        role: 'user',
-        content: `Available tags: ${JSON.stringify(tagNames)}\n\nRecipe:\n${summarizeRecipeForTags(recipe)}`,
-      },
-    ],
-  });
+  const message = await client.messages.create(
+    {
+      model: HAIKU,
+      max_tokens: 200,
+      system: `Select tags that apply to this recipe. Return ONLY a JSON array of tag names from the provided list. Use exact names only. Pick 1-5 relevant tags.`,
+      messages: [
+        {
+          role: 'user',
+          content: `Available tags: ${JSON.stringify(tagNames)}\n\nRecipe:\n${summarizeRecipeForTags(recipe)}`,
+        },
+      ],
+    },
+    {signal},
+  );
   const first = message.content[0];
   if (first?.type !== 'text') {
     return [];

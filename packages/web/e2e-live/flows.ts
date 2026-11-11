@@ -195,8 +195,19 @@ export const deleteRecipesByTitleViaApi = async (
       const blocking: string[] = [];
       for (const id of candidates) {
         const detailResponse = await fetch(`/api/recipes/${id}`, {headers});
-        if (!detailResponse.ok) {
+        if (detailResponse.status === 404) {
+          // Already gone (e.g. deleted by a concurrent teardown): the
+          // candidate cannot block the import, so skipping is safe.
           continue;
+        }
+        if (!detailResponse.ok) {
+          // Any other failure (401, 5xx) means the pre-clean could not
+          // tell whether this candidate blocks the import: surface it,
+          // like the search step above, instead of silently leaving a
+          // leaked copy behind to fail the import later.
+          throw new Error(
+            `deleteRecipesByTitleViaApi: recipe detail failed with status ${detailResponse.status}`,
+          );
         }
         const detail = (await detailResponse.json()) as {
           ingredients?: Array<{name?: string}>;

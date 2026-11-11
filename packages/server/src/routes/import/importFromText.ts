@@ -25,6 +25,7 @@ import {
   StageTimeoutError,
   withTimeout,
   withTimeoutOrNull,
+  withTimeoutSignal,
 } from '../../lib/withTimeout.js';
 import {GET_RECIPE_DETAIL_SQL, setVersionImageUrl} from '../recipes/queries.js';
 import {
@@ -104,8 +105,12 @@ export const importFromText = async (
   }
   let parsed: Awaited<ReturnType<typeof parseWithClaude>>;
   try {
-    parsed = await withTimeout(
-      parseWithClaude(plainText, null),
+    // Cancellable bound: on timeout the signal aborts the in-flight
+    // Anthropic request (and blocks the description fallback from
+    // starting), instead of leaving the provider call running after
+    // the quota refund below.
+    parsed = await withTimeoutSignal(
+      signal => parseWithClaude(plainText, null, undefined, signal),
       parseTimeoutMs(),
       'recipe text parse',
     );
@@ -116,12 +121,17 @@ export const importFromText = async (
   try {
     let input: Awaited<ReturnType<typeof prepareImportedRecipeInput>>;
     try {
-      input = await withTimeout(
-        prepareImportedRecipeInput({
-          recipe: parsed,
-          userId: req.userId,
-          queryFn,
-        }),
+      // Same cancellable bound for preparation: the signal reaches tag
+      // selection, so a late tag-options completion cannot start a new
+      // Anthropic request after the deadline.
+      input = await withTimeoutSignal(
+        signal =>
+          prepareImportedRecipeInput({
+            recipe: parsed,
+            userId: req.userId,
+            queryFn,
+            signal,
+          }),
         prepareTimeoutMs(),
         'imported recipe preparation',
       );
@@ -189,11 +199,19 @@ export const importFromText = async (
         if (!(settlementError instanceof StageTimeoutError)) {
           throw settlementError;
         }
-        const committed = await findDuplicateRecipe(
-          req.userId,
-          input,
-          queryFn,
-        ).catch(() => null);
+        // Skip the lookup when the user already opted into a duplicate:
+        // it would find the pre-existing copy and wrongly answer the 409
+        // warning instead of the retryable 504. Bound the lookup like
+        // every other stage — the save likely timed out because the DB
+        // is slow, so an unbounded lookup could hang the request again;
+        // a lookup failure or timeout maps to null (504) via the catch.
+        const committed = body.data.allowDuplicate
+          ? null
+          : await withTimeout(
+              findDuplicateRecipe(req.userId, input, queryFn),
+              saveTimeoutMs(),
+              'imported recipe duplicate lookup',
+            ).catch(() => null);
         if (committed) {
           res.status(409).json(duplicateRecipeBody(committed));
         } else {

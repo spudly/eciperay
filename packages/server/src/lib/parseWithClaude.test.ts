@@ -115,6 +115,20 @@ describe('parseWithClaude', () => {
     expect(result.description).toBeNull();
   });
 
+  test('does not start description generation when the signal aborted during the parse', async () => {
+    const create = jest
+      .fn<() => Promise<Anthropic.Message>>()
+      .mockResolvedValue({
+        content: [{type: 'text', text: JSON.stringify(VALID_RECIPE)}],
+      } as unknown as Anthropic.Message);
+    const client = {messages: {create}} as unknown as Anthropic;
+    await expect(
+      parseWithClaude('some page text', null, client, AbortSignal.abort()),
+    ).rejects.toThrow();
+    // Only the parse request ran; the description fallback never started.
+    expect(create).toHaveBeenCalledTimes(1);
+  });
+
   test('generates a description when the parsed recipe has none', async () => {
     const create = jest
       .fn<() => Promise<Anthropic.Message>>()

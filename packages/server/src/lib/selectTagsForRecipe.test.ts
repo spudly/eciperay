@@ -69,6 +69,24 @@ describe('selectTagIdsForRecipe', () => {
     );
   });
 
+  test('does not start a request when the signal is already aborted', async () => {
+    const create = jest
+      .fn<() => Promise<Anthropic.Message>>()
+      .mockResolvedValue({
+        content: [{type: 'text', text: JSON.stringify(['Dinner'])}],
+      } as unknown as Anthropic.Message);
+    const client = {messages: {create}} as unknown as Anthropic;
+    await expect(
+      selectTagIdsForRecipe(
+        recipe,
+        availableTags,
+        client,
+        AbortSignal.abort(),
+      ),
+    ).rejects.toThrow();
+    expect(create).not.toHaveBeenCalled();
+  });
+
   test('returns an empty array when AI response is invalid', async () => {
     const client = makeClient('not json');
     await expect(

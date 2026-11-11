@@ -52,4 +52,26 @@ describe('prepareImportedRecipeInput', () => {
     });
     expect(input.tagIds).toEqual(['tag-dinner']);
   });
+
+  test('does not start tag selection when the signal aborted during the tag query', async () => {
+    const mockQuery = createMockQuery();
+    mockQuery.mockResolvedValueOnce(
+      makeQueryResult([{id: 'tag-dinner', name: 'Dinner'}]),
+    );
+    const create = jest
+      .fn<() => Promise<{content: {type: string; text: string}[]}>>()
+      .mockResolvedValue({
+        content: [{type: 'text', text: JSON.stringify(['Dinner'])}],
+      });
+    await expect(
+      prepareImportedRecipeInput({
+        recipe,
+        userId: 'user-uuid-1',
+        queryFn: mockQuery,
+        client: {messages: {create}} as never,
+        signal: AbortSignal.abort(),
+      }),
+    ).rejects.toThrow();
+    expect(create).not.toHaveBeenCalled();
+  });
 });
