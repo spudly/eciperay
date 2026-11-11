@@ -135,6 +135,33 @@ describe('MealEditScreen', () => {
     });
   });
 
+  test('creates a meal with a direct ingredient and no recipe (#362)', async () => {
+    const rendered = await renderWithProviders(
+      <MealEditScreen {...createProps({})} />,
+    );
+    await fireEvent.changeText(
+      rendered.getByPlaceholderText('Meal title'),
+      'Shake only',
+    );
+    await fireEvent.press(rendered.getByText('Add ingredient'));
+    await fireEvent.changeText(
+      rendered.getByPlaceholderText('Ingredient name'),
+      'Protein shake',
+    );
+    await fireEvent.press(rendered.getByText('Save meal'));
+    await waitFor(() => {
+      expect(mockCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: 'Shake only',
+          recipes: [],
+          ingredients: [
+            {name: 'Protein shake', quantity: null, unit: null, servings: 1},
+          ],
+        }),
+      );
+    });
+  });
+
   test('loads existing meal with null notes', async () => {
     mockGetMeal.mockResolvedValue({
       id: mealId,

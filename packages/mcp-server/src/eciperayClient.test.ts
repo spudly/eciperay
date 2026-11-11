@@ -635,6 +635,28 @@ describe('buildMealUpdatePayload', () => {
     });
     assert.equal('ingredients' in payload, false);
   });
+
+  test('provided ingredients are sent in full and replace the stored list (#362)', () => {
+    const payload = buildMealUpdatePayload(storedMixedMeal, {
+      ingredients: [{name: 'Protein shake', quantity: 1, unit: 'bottle'}],
+    });
+    assert.deepEqual(payload.ingredients, [
+      {name: 'Protein shake', quantity: 1, unit: 'bottle'},
+    ]);
+  });
+
+  test('an update that would empty the meal entirely is an error (#362)', () => {
+    assert.throws(
+      () => buildMealUpdatePayload(storedMeal, {recipes: [], ingredients: []}),
+      /no recipes and no direct ingredients/,
+    );
+  });
+
+  test('clearing the recipes is allowed when direct ingredients remain (#362)', () => {
+    const payload = buildMealUpdatePayload(storedMixedMeal, {recipes: []});
+    assert.deepEqual(payload.recipes, []);
+    assert.equal('ingredients' in payload, false);
+  });
 });
 
 describe('buildMealPlanUpdatePayload', () => {

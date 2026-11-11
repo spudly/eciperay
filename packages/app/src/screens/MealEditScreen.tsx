@@ -1,14 +1,16 @@
 import {
   buildMealInputFromForm,
   errorMessage,
+  mealIngredientsToForm,
   queryKeys,
   recipeFormSearchQueryOptions,
   useDebouncedValue,
+  type MealFormIngredient,
 } from '@eciperay/client';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {MealFormPage} from '@spudly/ui';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
-import {useEffect, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 
 import {ScreenLoadingGate} from '../components/ScreenLoadingGate';
 import {api} from '../lib/api';
@@ -33,6 +35,13 @@ export const MealEditScreen = ({route, navigation}: Props) => {
   const [servingsByRecipeId, setServingsByRecipeId] = useState<
     Record<string, number>
   >({});
+  // Direct ingredients entered on the meal itself (#362), as form rows:
+  // quantity / unit / servings stay free-text until buildMealInputFromForm
+  // parses them at save time — the web MealEditPage wiring, mirrored here.
+  const [formIngredients, setFormIngredients] = useState<MealFormIngredient[]>(
+    [],
+  );
+  const nextIngredientId = useRef(0);
   const [formError, setFormError] = useState<string | null>(null);
   const [searchText, setSearchText] = useState('');
   const debouncedSearch = useDebouncedValue(searchText);
@@ -73,6 +82,7 @@ export const MealEditScreen = ({route, navigation}: Props) => {
         meal.members.map(member => [member.recipeId, member.servings]),
       ),
     );
+    setFormIngredients(mealIngredientsToForm(meal.ingredients ?? []));
   }, [meal]);
 
   const saveMutation = useMutation({
@@ -82,6 +92,7 @@ export const MealEditScreen = ({route, navigation}: Props) => {
         notes,
         selectedRecipeIds: selectedRecipes.map(recipe => recipe.id),
         servingsByRecipeId,
+        formIngredients,
       });
       if (isEdit && mealId) {
         return api.meals.put(mealId, input);
@@ -134,6 +145,34 @@ export const MealEditScreen = ({route, navigation}: Props) => {
         isSearching={isSearching || debouncedSearch !== searchText}
         selectedRecipes={selectedRecipes}
         servingsByRecipeId={servingsByRecipeId}
+        ingredients={formIngredients}
+        onAddIngredient={() => {
+          nextIngredientId.current += 1;
+          setFormIngredients(previous => [
+            ...previous,
+            {
+              id: `new-ingredient-${nextIngredientId.current}`,
+              name: '',
+              quantity: '',
+              unit: '',
+              servings: '1',
+            },
+          ]);
+        }}
+        onRemoveIngredient={ingredientId => {
+          setFormIngredients(previous =>
+            previous.filter(ingredient => ingredient.id !== ingredientId),
+          );
+        }}
+        onIngredientChange={(ingredientId, patch) => {
+          setFormIngredients(previous =>
+            previous.map(ingredient =>
+              ingredient.id === ingredientId
+                ? {...ingredient, ...patch}
+                : ingredient,
+            ),
+          );
+        }}
         isSaving={saveMutation.isPending}
         error={
           formError ??

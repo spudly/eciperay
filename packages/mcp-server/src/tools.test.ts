@@ -317,6 +317,63 @@ describe('meal and meal plan write tools', () => {
     await client.close();
   });
 
+  test('create_meal with direct ingredients and no recipes POSTs them (#362)', async () => {
+    const postBodies: Record<string, unknown>[] = [];
+    globalThis.fetch = (async (_url: string | URL, init?: RequestInit) => {
+      if (init?.method === 'POST') {
+        postBodies.push(
+          JSON.parse(String(init.body)) as Record<string, unknown>,
+        );
+      }
+      return {
+        ok: true,
+        status: 201,
+        text: async () => JSON.stringify({id: 'meal-1'}),
+        json: async () => ({id: 'meal-1'}),
+      } as Response;
+    }) as typeof fetch;
+
+    const client = await connectClient();
+    const created = await client.callTool({
+      name: 'create_meal',
+      arguments: {
+        title: 'Shake only',
+        ingredients: [{name: 'Protein shake', quantity: 1, unit: 'bottle'}],
+      },
+    });
+    assert.notEqual(created.isError, true);
+    assert.equal(postBodies.length, 1);
+    assert.deepEqual(postBodies[0]?.['recipes'], []);
+    assert.deepEqual(postBodies[0]?.['ingredients'], [
+      {name: 'Protein shake', quantity: 1, unit: 'bottle'},
+    ]);
+    await client.close();
+  });
+
+  test('create_meal with no recipes and no ingredients is an error and writes nothing (#362)', async () => {
+    let writes = 0;
+    globalThis.fetch = (async (_url: string | URL, init?: RequestInit) => {
+      if (init?.method === 'POST' || init?.method === 'PUT') {
+        writes += 1;
+      }
+      return {
+        ok: true,
+        status: 201,
+        text: async () => JSON.stringify({id: 'meal-1'}),
+        json: async () => ({id: 'meal-1'}),
+      } as Response;
+    }) as typeof fetch;
+
+    const client = await connectClient();
+    const created = await client.callTool({
+      name: 'create_meal',
+      arguments: {title: 'Empty meal'},
+    });
+    assert.equal(created.isError, true);
+    assert.equal(writes, 0);
+    await client.close();
+  });
+
   test('create_meal with a duplicate recipeId is an error and writes nothing', async () => {
     let fetchCalls = 0;
     globalThis.fetch = (async () => {
