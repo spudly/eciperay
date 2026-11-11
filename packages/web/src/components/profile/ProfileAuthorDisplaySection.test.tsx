@@ -21,9 +21,7 @@ describe('ProfileAuthorDisplaySection', () => {
     const putSpy = vi
       .spyOn(eciperay.account, 'putAuthorDisplay')
       .mockImplementation(async settings => settings);
-    await renderWithProviders(<ProfileAuthorDisplaySection />, {
-      withAuth: false,
-    });
+    await renderWithProviders(<ProfileAuthorDisplaySection />);
 
     expect(
       await screen.findByText(
@@ -53,9 +51,7 @@ describe('ProfileAuthorDisplaySection', () => {
     const putSpy = vi
       .spyOn(eciperay.account, 'putAuthorDisplay')
       .mockImplementation(async settings => settings);
-    await renderWithProviders(<ProfileAuthorDisplaySection />, {
-      withAuth: false,
-    });
+    await renderWithProviders(<ProfileAuthorDisplaySection />);
 
     const checkbox = await screen.findByRole('checkbox', {
       name: 'Show my name as the author on my published recipes',

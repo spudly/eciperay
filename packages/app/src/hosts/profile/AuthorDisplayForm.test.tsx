@@ -31,6 +31,44 @@ describe('AuthorDisplayForm', () => {
     });
   });
 
+  test('toggling the visibility checkbox reports the new value', async () => {
+    const onChange = jest.fn();
+    const {getByText} = await renderWithProviders(
+      <AuthorDisplayForm
+        settings={settings}
+        onChange={onChange}
+        onSave={jest.fn()}
+      />,
+    );
+
+    await fireEvent.press(
+      getByText('Show my name as the author on my published recipes'),
+    );
+    expect(onChange).toHaveBeenCalledWith({
+      ...settings,
+      showOnPublicRecipes: false,
+    });
+  });
+
+  test('reflects an initially hidden setting and toggles it back on', async () => {
+    const onChange = jest.fn();
+    const {getByText} = await renderWithProviders(
+      <AuthorDisplayForm
+        settings={{...settings, showOnPublicRecipes: false}}
+        onChange={onChange}
+        onSave={jest.fn()}
+      />,
+    );
+
+    await fireEvent.press(
+      getByText('Show my name as the author on my published recipes'),
+    );
+    expect(onChange).toHaveBeenCalledWith({
+      ...settings,
+      showOnPublicRecipes: true,
+    });
+  });
+
   test('invokes onSave from the save button and shows errors', async () => {
     const onSave = jest.fn();
     const {getByText} = await renderWithProviders(

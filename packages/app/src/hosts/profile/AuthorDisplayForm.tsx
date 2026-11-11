@@ -22,6 +22,8 @@ export type AuthorDisplayFormProps = {
   settings: AuthorDisplaySettings;
   onChange: (settings: AuthorDisplaySettings) => void;
   saving?: boolean;
+  /** Disable Save (e.g. until the stored settings have loaded). */
+  saveDisabled?: boolean;
   error?: string | null;
   onSave: () => void;
 };
@@ -30,6 +32,7 @@ export const AuthorDisplayForm = ({
   settings,
   onChange,
   saving = false,
+  saveDisabled = false,
   error,
   onSave,
 }: AuthorDisplayFormProps) => {
@@ -103,7 +106,7 @@ export const AuthorDisplayForm = ({
         />
       ) : null}
       <SectionButton
-        disabled={saving}
+        disabled={saving || saveDisabled}
         onPress={onSave}
       >
         Save author display

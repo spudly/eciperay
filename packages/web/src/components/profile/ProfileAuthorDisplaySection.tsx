@@ -1,4 +1,4 @@
-import {errorMessage, queryKeys} from '@eciperay/client';
+import {errorMessage, queryKeys, useAuth} from '@eciperay/client';
 import type {AuthorDisplaySettings} from '@eciperay/types';
 import {tokens} from '@spudly/ui';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
@@ -59,6 +59,10 @@ const StyledCheckboxBox = styled(XStack, {
 });
 
 export const ProfileAuthorDisplaySection = () => {
+  const {session} = useAuth();
+  // Scope the cache entry to the account (as ProfilePage does for the
+  // entitlement): the shared QueryClient outlives an account switch.
+  const userId = session?.user.id ?? 'anonymous';
   const queryClient = useQueryClient();
   const nameFieldId = useId();
   const checkboxId = useId();
@@ -69,8 +73,12 @@ export const ProfileAuthorDisplaySection = () => {
   });
   const [saveError, setSaveError] = useState<string | null>(null);
 
-  const {data: savedSettings} = useQuery({
-    queryKey: queryKeys.authorDisplay(),
+  const {
+    data: savedSettings,
+    isError: loadFailed,
+    error: loadError,
+  } = useQuery({
+    queryKey: queryKeys.authorDisplay(userId),
     queryFn: () => eciperay.account.getAuthorDisplay(),
   });
 
@@ -85,10 +93,13 @@ export const ProfileAuthorDisplaySection = () => {
     onSuccess: data => {
       setSettings(data);
       setSaveError(null);
-      void queryClient.invalidateQueries({queryKey: queryKeys.authorDisplay()});
       void queryClient.invalidateQueries({
-        queryKey: queryKeys.publicRecipeDiscovery(),
+        queryKey: queryKeys.authorDisplay(userId),
       });
+      // Prefix invalidations: cached discovery lists (any filter set)
+      // and public recipe details carry the old author name otherwise.
+      void queryClient.invalidateQueries({queryKey: ['publicRecipeDiscovery']});
+      void queryClient.invalidateQueries({queryKey: ['publicRecipe']});
     },
     onError: error => {
       setSaveError(errorMessage(error));
@@ -186,6 +197,22 @@ export const ProfileAuthorDisplaySection = () => {
             Show my name as the author on my published recipes
           </Label>
         </XStack>
+        {loadFailed ? (
+          <YStack
+            borderWidth={1}
+            borderRadius={tokens.radii.md}
+            padding={tokens.spacing[3]}
+            backgroundColor={tokens.colors.danger.danger1}
+            borderColor={tokens.colors.danger.danger4}
+          >
+            <Text
+              fontSize={tokens.typography.fontSize.sm}
+              color={tokens.colors.danger.danger8}
+            >
+              {`Could not load your author display settings: ${errorMessage(loadError)}. Reload the page to try again.`}
+            </Text>
+          </YStack>
+        ) : null}
         {saveError ? (
           <YStack
             borderWidth={1}
@@ -213,8 +240,8 @@ export const ProfileAuthorDisplaySection = () => {
             fontWeight={tokens.typography.fontWeight.semibold}
             paddingHorizontal={tokens.spacing[4]}
             paddingVertical={tokens.spacing[3]}
-            opacity={saving ? 0.5 : 1}
-            disabled={saving}
+            opacity={saving || !savedSettings ? 0.5 : 1}
+            disabled={saving || !savedSettings}
             onPress={() => {
               saveMutation.mutate();
             }}

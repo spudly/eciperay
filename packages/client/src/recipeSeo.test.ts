@@ -118,6 +118,19 @@ describe('recipeSeo', () => {
     expect(jsonLd['totalTime']).toBe('PT35M');
   });
 
+  test('includes totalTime when one part is a known zero minutes', () => {
+    const jsonLd = buildRecipeJsonLd(
+      {...recipe, prepTimeMin: 0, cookTimeMin: 25},
+      'https://www.eciperay.com/recipe/r1/pasta',
+    );
+    expect(jsonLd['totalTime']).toBe('PT25M');
+    const bothZero = buildRecipeJsonLd(
+      {...recipe, prepTimeMin: 0, cookTimeMin: 0},
+      'https://www.eciperay.com/recipe/r1/pasta',
+    );
+    expect(bothZero['totalTime']).toBeUndefined();
+  });
+
   test('omits totalTime when either prep or cook time is unknown', () => {
     const noPrep = buildRecipeJsonLd(
       {...recipe, prepTimeMin: null},

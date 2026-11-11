@@ -61,8 +61,15 @@ export const ProfileScreen = () => {
     null,
   );
 
-  const {data: savedAuthorDisplay} = useQuery({
-    queryKey: queryKeys.authorDisplay(),
+  // Scope the cache entry to the account, as the web profile does for
+  // its account-scoped keys: a shared QueryClient outlives a switch.
+  const authorDisplayUserId = session?.user.id ?? 'anonymous';
+  const {
+    data: savedAuthorDisplay,
+    isError: authorDisplayLoadFailed,
+    error: authorDisplayLoadError,
+  } = useQuery({
+    queryKey: queryKeys.authorDisplay(authorDisplayUserId),
     queryFn: () => api.account.getAuthorDisplay(),
   });
 
@@ -77,7 +84,10 @@ export const ProfileScreen = () => {
     onSuccess: data => {
       setAuthorDisplay(data);
       setAuthorDisplayError(null);
-      void queryClient.invalidateQueries({queryKey: queryKeys.authorDisplay()});
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.authorDisplay(authorDisplayUserId),
+      });
+      void queryClient.invalidateQueries({queryKey: ['publicRecipeDiscovery']});
     },
     onError: error => {
       setAuthorDisplayError(errorMessage(error));
@@ -106,7 +116,13 @@ export const ProfileScreen = () => {
           <AuthorDisplayForm
             settings={authorDisplay}
             saving={saveAuthorDisplayMutation.isPending}
-            error={authorDisplayError}
+            saveDisabled={!savedAuthorDisplay}
+            error={
+              authorDisplayError ??
+              (authorDisplayLoadFailed
+                ? `Could not load your author display settings: ${errorMessage(authorDisplayLoadError)}`
+                : null)
+            }
             onChange={setAuthorDisplay}
             onSave={() => {
               saveAuthorDisplayMutation.mutate();

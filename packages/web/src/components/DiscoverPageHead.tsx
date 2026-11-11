@@ -8,7 +8,8 @@ type DiscoverPageHeadProps = {recipes: PublicRecipeDiscoveryItem[]};
 // head-injection path RecipePageHead uses for the Recipe JSON-LD.
 export const DiscoverPageHead = ({recipes}: DiscoverPageHeadProps) => {
   useEffect(() => {
-    if (recipes.length === 0) {
+    // Google's carousel markup needs at least two listed recipes.
+    if (recipes.filter(recipe => recipe.visibility === 'public').length < 2) {
       return;
     }
     const jsonLd = document.createElement('script');

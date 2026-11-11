@@ -73,6 +73,17 @@ describe('DiscoverPageHead', () => {
     ]);
   });
 
+  test('injects nothing when only one recipe is listed', async () => {
+    await renderWithProviders(
+      <DiscoverPageHead recipes={[makeDiscoveryItem()]} />,
+      {withAuth: false},
+    );
+
+    expect(
+      document.head.querySelector('script[type="application/ld+json"]'),
+    ).toBeNull();
+  });
+
   test('injects nothing when no recipes are listed', async () => {
     await renderWithProviders(<DiscoverPageHead recipes={[]} />, {
       withAuth: false,

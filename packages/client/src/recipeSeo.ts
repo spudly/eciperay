@@ -76,13 +76,10 @@ const applyRecipeTimingFields = (
   if (cookTime) {
     jsonLd['cookTime'] = cookTime;
   }
-  // totalTime is only honest when both parts are known.
-  if (
-    prepTime &&
-    cookTime &&
-    recipe.prepTimeMin !== null &&
-    recipe.cookTimeMin !== null
-  ) {
+  // totalTime is only honest when both parts are known. A known
+  // zero-minute part still counts: decide from the nullable source
+  // values, not from the formatted (positive-only) durations.
+  if (recipe.prepTimeMin !== null && recipe.cookTimeMin !== null) {
     const totalTime = formatSchemaDuration(
       recipe.prepTimeMin + recipe.cookTimeMin,
     );
