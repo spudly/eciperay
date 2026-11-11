@@ -53,6 +53,37 @@ describe('prepareImportedRecipeInput', () => {
     expect(input.tagIds).toEqual(['tag-dinner']);
   });
 
+  test('forwards an active signal to the provider request via tag selection', async () => {
+    const mockQuery = createMockQuery();
+    mockQuery.mockResolvedValueOnce(
+      makeQueryResult([{id: 'tag-dinner', name: 'Dinner'}]),
+    );
+    const create = jest
+      .fn<() => Promise<{content: {type: string; text: string}[]}>>()
+      .mockResolvedValue({
+        content: [{type: 'text', text: JSON.stringify(['Dinner'])}],
+      });
+    const signal = new AbortController().signal;
+    const input = await prepareImportedRecipeInput({
+      recipe,
+      userId: 'user-uuid-1',
+      queryFn: mockQuery,
+      client: {messages: {create}} as never,
+      signal,
+    });
+    expect(input.tagIds).toEqual(['tag-dinner']);
+    expect(create).toHaveBeenCalledTimes(1);
+    // The active signal lets the request run: this exercises forwarding
+    // into selectTagIdsForRecipe (not the post-query abort guard), and
+    // the provider request must receive that same signal in its request
+    // options ({signal} is the established request shape).
+    const firstCall = create.mock.calls[0] as unknown as [
+      unknown,
+      {signal?: AbortSignal} | undefined,
+    ];
+    expect(firstCall[1]).toEqual({signal});
+  });
+
   test('does not start tag selection when the signal aborted during the tag query', async () => {
     const mockQuery = createMockQuery();
     mockQuery.mockResolvedValueOnce(

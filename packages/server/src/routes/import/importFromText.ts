@@ -28,10 +28,7 @@ import {
   withTimeoutSignal,
 } from '../../lib/withTimeout.js';
 import {GET_RECIPE_DETAIL_SQL, setVersionImageUrl} from '../recipes/queries.js';
-import {
-  duplicateRecipeBody,
-  respondIfDuplicateImport,
-} from './respondIfDuplicateImport.js';
+import {duplicateRecipeBody} from './respondIfDuplicateImport.js';
 
 type QueryFn = typeof defaultQuery;
 
@@ -62,6 +59,8 @@ const saveTimeoutMs = () =>
   stageTimeoutMs('IMPORT_TEXT_SAVE_TIMEOUT_MS', 15_000);
 const imageTimeoutMs = () =>
   stageTimeoutMs('IMPORT_TEXT_IMAGE_TIMEOUT_MS', 20_000);
+const postImageTimeoutMs = () =>
+  stageTimeoutMs('IMPORT_TEXT_POST_IMAGE_TIMEOUT_MS', 10_000);
 
 export const importFromText = async (
   req: EntitledRequest,
@@ -155,15 +154,33 @@ export const importFromText = async (
     // imports of an already-owned recipe bypass the monthly quota
     // entirely (each attempt costs a real provider call but would never
     // count). Refunds remain for failed provider calls only (above).
-    if (
-      await respondIfDuplicateImport(res, {
-        userId: req.userId,
-        input,
-        allowDuplicate: body.data.allowDuplicate,
-        queryFn,
-      })
-    ) {
-      return;
+    // Bound the underlying query, not respondIfDuplicateImport: that
+    // helper writes the 409 itself, so racing it could let a lookup
+    // that completes after a timeout response still write a late 409.
+    // Racing findDuplicateRecipe here means a late result is simply
+    // abandoned — nothing writes a response from it. The helper stays
+    // in place for its other caller (the image import route).
+    if (!body.data.allowDuplicate) {
+      let duplicate: Awaited<ReturnType<typeof findDuplicateRecipe>>;
+      try {
+        duplicate = await withTimeout(
+          findDuplicateRecipe(req.userId, input, queryFn),
+          saveTimeoutMs(),
+          'imported recipe duplicate lookup',
+        );
+      } catch (error) {
+        if (!(error instanceof StageTimeoutError)) {
+          throw error;
+        }
+        res
+          .status(504)
+          .json({error: 'Duplicate lookup timed out — please retry'});
+        return;
+      }
+      if (duplicate) {
+        res.status(409).json(duplicateRecipeBody(duplicate));
+        return;
+      }
     }
     // The save runs in a transaction the timeout race cannot cancel,
     // so a timeout must not simply report a retryable failure while
@@ -234,12 +251,21 @@ export const importFromText = async (
         'imported image resolution',
       );
       if (imageUrl) {
-        await setVersionImageUrl(versionId, imageUrl, queryFn);
-        const refreshed = await queryFn(GET_RECIPE_DETAIL_SQL, [
-          recipeId,
-          req.userId,
-        ]);
-        const row = refreshed.rows[0];
+        // The recipe is already saved at this point, so the post-image
+        // DB work must not hang or fail the 201: bound the image-url
+        // update and the detail refresh together under one deadline,
+        // and on timeout fall through to the saved detail below (with
+        // the image URL unset) instead of answering a 5xx — the save
+        // succeeded; only whether the image attached is unresolved.
+        const refreshed = await withTimeoutOrNull(
+          (async () => {
+            await setVersionImageUrl(versionId, imageUrl, queryFn);
+            return queryFn(GET_RECIPE_DETAIL_SQL, [recipeId, req.userId]);
+          })(),
+          postImageTimeoutMs(),
+          'imported recipe post-image update',
+        );
+        const row = refreshed?.rows[0];
         if (row) {
           const detail = mapRowToRecipeDetail(
             row as Parameters<typeof mapRowToRecipeDetail>[0],
