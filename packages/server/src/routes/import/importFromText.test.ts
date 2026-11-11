@@ -1,4 +1,5 @@
 import {jest} from '@jest/globals';
+import type {QueryResultRow} from 'pg';
 import request from 'supertest';
 
 import {makeRecipeDetailRow} from '../../test/fixtures/recipeRow.js';
@@ -413,7 +414,7 @@ describe('POST /recipes/import/text', () => {
         // window, inside the second (settlement) window.
         .mockImplementationOnce(async () => {
           await new Promise(resolve => setTimeout(resolve, 150));
-          return makeQueryResult([{id: 'recipe-uuid-1'}]);
+          return makeQueryResult<QueryResultRow>([{id: 'recipe-uuid-1'}]);
         })
         .mockResolvedValue(
           makeQueryResult([makeRecipeDetailRow({title: 'Pasted Pasta'})]),
