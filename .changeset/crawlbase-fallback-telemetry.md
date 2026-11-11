@@ -1,0 +1,5 @@
+---
+'@eciperay/server': patch
+---
+
+URL imports that fall back to the Crawlbase proxy now log one token-free structured line per fallback attempt (direct status, proxy status, the origin's original-status, and the error class — timeout, network, or HTTP), and a page that fetches but contains no readable recipe logs its parse-stage outcome the same way, so a failed fallback like the browneyedbaker.com import (#497) is diagnosable from server logs instead of surfacing only as a generic fetch failure. The lines go to both the stdout logger and the PostHog serverLog pipeline, a fallback skipped for a missing token logs its own `skipped` outcome, and the startup environment log now reports whether `CRAWLBASE_TOKEN` is set (presence only, never the value). The proxy request budget rises from 30s to 90s, matching the Crawlbase client default, so a slow proxy success is no longer discarded as a timeout. Test: block a recipe page so both direct fetches are refused, let the proxy succeed, refuse, report a blocked original-status, and time out in turn, and confirm each outcome class appears in the server log with no token present.

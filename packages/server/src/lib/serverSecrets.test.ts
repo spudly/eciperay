@@ -29,6 +29,7 @@ describe('serverEnvironmentAttributes', () => {
     delete process.env['OPENAI_API_KEY'];
     delete process.env['OPENAI_IMAGE_MODEL'];
     delete process.env['POSTHOG_KEY'];
+    delete process.env['CRAWLBASE_TOKEN'];
     delete process.env['POSTHOG_HOST'];
     delete process.env['PADDLE_API_KEY'];
     delete process.env['PADDLE_WEBHOOK_SECRET'];
@@ -42,6 +43,7 @@ describe('serverEnvironmentAttributes', () => {
       ANTHROPIC_API_KEY: SET_SECRET_VALUE,
       OPENAI_API_KEY: UNSET_CONFIG_VALUE,
       POSTHOG_KEY: UNSET_CONFIG_VALUE,
+      CRAWLBASE_TOKEN: UNSET_CONFIG_VALUE,
       PADDLE_API_KEY: UNSET_CONFIG_VALUE,
       PADDLE_WEBHOOK_SECRET: UNSET_CONFIG_VALUE,
       PADDLE_ENVIRONMENT: UNSET_CONFIG_VALUE,
@@ -55,6 +57,16 @@ describe('serverEnvironmentAttributes', () => {
     });
     expect(JSON.stringify(serverEnvironmentAttributes())).not.toContain(
       'anthropic-key',
+    );
+  });
+
+  test('marks a configured CRAWLBASE_TOKEN as set without leaking it', () => {
+    process.env['CRAWLBASE_TOKEN'] = 'crawlbase-sentinel-token';
+
+    const attributes = serverEnvironmentAttributes();
+    expect(attributes['CRAWLBASE_TOKEN']).toBe(SET_SECRET_VALUE);
+    expect(JSON.stringify(attributes)).not.toContain(
+      'crawlbase-sentinel-token',
     );
   });
 

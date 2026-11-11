@@ -18,6 +18,8 @@ import {saveNewRecipeFromInput} from '../../lib/saveRecipeFromInput.js';
 import {ImportUrlSchema, validate} from '../../lib/schemas.js';
 import {AiResponseParseError} from '../../lib/validate.js';
 import {findDuplicateRecipe} from '../../lib/findDuplicateRecipe.js';
+import {logger} from '../../lib/logger.js';
+import {serverLog} from '../../lib/posthogLogs.js';
 import {duplicateRecipeBody} from './respondIfDuplicateImport.js';
 
 type QueryFn = typeof defaultQuery;
@@ -46,6 +48,93 @@ const BROWSER_HEADERS = {
 };
 const BOT_REFUSAL_STATUSES = new Set([401, 403, 429]);
 
+// Token-free fetch telemetry (#497): every URL-import fetch failure used
+// to be indistinguishable from every other — fetchPage swallowed the
+// Crawlbase outcome entirely, which is how the #476 fallback shipped
+// "working" while never working end-to-end. Fetch errors now carry the
+// outcome class only (HTTP status / timeout / network, plus the proxy's
+// original-status where relevant) so fetchPage can log one structured
+// line per fallback attempt. The log line never carries the token, the
+// token-bearing proxy URL, or the target URL beyond its host.
+export type FetchErrorClass = 'http' | 'timeout' | 'network';
+
+export class FetchFailure extends Error {
+  readonly status: number | null;
+  readonly errorClass: FetchErrorClass;
+  readonly originalStatus: number | null;
+
+  constructor(
+    message: string,
+    status: number | null,
+    errorClass: FetchErrorClass,
+    originalStatus: number | null = null,
+  ) {
+    super(message);
+    this.name = 'FetchFailure';
+    this.status = status;
+    this.errorClass = errorClass;
+    this.originalStatus = originalStatus;
+  }
+}
+
+export const fetchErrorClassOf = (error: unknown): FetchErrorClass => {
+  if (error instanceof FetchFailure) {
+    return error.errorClass;
+  }
+  const name = (error as {name?: unknown} | null)?.name;
+  return name === 'TimeoutError' || name === 'AbortError'
+    ? 'timeout'
+    : 'network';
+};
+
+export const fetchStatusOf = (error: unknown): number | null =>
+  error instanceof FetchFailure ? error.status : null;
+
+const hostOf = (url: string): string => {
+  try {
+    return new URL(url).host;
+  } catch {
+    return 'unknown';
+  }
+};
+
+type FetchOutcomeFields = {
+  event: 'url_import_fetch';
+  host: string;
+  directStatus: number | null;
+  directErrorClass: FetchErrorClass;
+  proxyOutcome: 'success' | 'failure' | 'skipped';
+  proxyStatus: number | null;
+  originalStatus: number | null;
+  proxyErrorClass: FetchErrorClass | null;
+  crawlbaseTokenPresent: boolean;
+};
+
+// Emit one fallback outcome to both observability pipelines: the pino
+// logger (local + Fly stdout) and serverLog (PostHog, the production
+// pipeline the rest of the server uses). serverLog attributes are
+// scalars only, so absent statuses flatten to 'none'. Every field is
+// an outcome class or a status — never the token, the proxy URL, or
+// the target URL beyond its host.
+const logFetchOutcome = (
+  level: 'info' | 'warn',
+  fields: FetchOutcomeFields,
+  message: string,
+) => {
+  logger[level](fields, message);
+  serverLog(level, message, {
+    event: fields.event,
+    host: fields.host,
+    directStatus: fields.directStatus ?? 'none',
+    directErrorClass: fields.directErrorClass,
+    proxyOutcome: fields.proxyOutcome,
+    proxyStatus: fields.proxyStatus ?? 'none',
+    originalStatus: fields.originalStatus ?? 'none',
+    proxyErrorClass: fields.proxyErrorClass ?? 'none',
+    crawlbaseTokenPresent: fields.crawlbaseTokenPresent,
+  });
+};
+
 const fetchDirect = async (url: string): Promise<string> => {
   const response = await fetch(url, {
     headers: {'User-Agent': 'EciperayBot/1.0'},
@@ -55,7 +144,11 @@ const fetchDirect = async (url: string): Promise<string> => {
     return response.text();
   }
   if (!BOT_REFUSAL_STATUSES.has(response.status)) {
-    throw new Error(`Failed to fetch ${url}: ${response.status}`);
+    throw new FetchFailure(
+      `Failed to fetch ${url}: ${response.status}`,
+      response.status,
+      'http',
+    );
   }
   // Release the refused response's connection for reuse before retrying.
   await response.body?.cancel().catch(() => undefined);
@@ -65,7 +158,11 @@ const fetchDirect = async (url: string): Promise<string> => {
   });
   if (!retry.ok) {
     await retry.body?.cancel().catch(() => undefined);
-    throw new Error(`Failed to fetch ${url}: ${retry.status}`);
+    throw new FetchFailure(
+      `Failed to fetch ${url}: ${retry.status}`,
+      retry.status,
+      'http',
+    );
   }
   return retry.text();
 };
@@ -89,37 +186,110 @@ const originalStatusOf = (headers: Headers): number | null => {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
 };
 
-const fetchViaCrawlbase = async (url: string): Promise<string> => {
+// Crawlbase's own clients default to a 90s request timeout: rendering
+// or proxying a slow origin routinely takes longer than the 30s budget
+// this fallback originally allowed, so a slow proxy success was
+// discarded as a timeout before it could return (#497).
+export const CRAWLBASE_TIMEOUT_MS = 90_000;
+
+type CrawlbaseResult = {
+  html: string;
+  proxyStatus: number;
+  originalStatus: number | null;
+};
+
+const fetchViaCrawlbase = async (url: string): Promise<CrawlbaseResult> => {
   const token = process.env['CRAWLBASE_TOKEN']?.trim();
   if (!token) {
-    throw new Error(`Failed to fetch ${url}`);
+    throw new FetchFailure(`Failed to fetch ${url}`, null, 'network');
   }
   const proxyUrl = `https://api.crawlbase.com/?token=${encodeURIComponent(token)}&url=${encodeURIComponent(url)}`;
   const response = await fetch(proxyUrl, {
-    signal: AbortSignal.timeout(30_000),
+    signal: AbortSignal.timeout(CRAWLBASE_TIMEOUT_MS),
   });
   const originalStatus = originalStatusOf(response.headers);
   const originalFailed = originalStatus !== null && originalStatus >= 400;
   if (!response.ok || originalFailed) {
     await response.body?.cancel().catch(() => undefined);
     const status = originalFailed ? originalStatus : response.status;
-    throw new Error(`Failed to fetch ${url}: ${status}`);
+    throw new FetchFailure(
+      `Failed to fetch ${url}: ${status}`,
+      response.status,
+      'http',
+      originalStatus,
+    );
   }
-  return response.text();
+  return {
+    html: await response.text(),
+    proxyStatus: response.status,
+    originalStatus,
+  };
 };
 
 const fetchPage = async (url: string): Promise<string> => {
   try {
     return await fetchDirect(url);
   } catch (directError) {
+    const directFields = {
+      event: 'url_import_fetch' as const,
+      host: hostOf(url),
+      directStatus: fetchStatusOf(directError),
+      directErrorClass: fetchErrorClassOf(directError),
+    };
     if (!process.env['CRAWLBASE_TOKEN']?.trim()) {
+      // A missing token silently skipped the fallback before #497's
+      // review round — indistinguishable in the logs from a fallback
+      // that ran and failed. Record the skip (token presence only,
+      // never the value) so the config question is answerable from
+      // the logs alone.
+      logFetchOutcome(
+        'warn',
+        {
+          ...directFields,
+          proxyOutcome: 'skipped',
+          proxyStatus: null,
+          originalStatus: null,
+          proxyErrorClass: null,
+          crawlbaseTokenPresent: false,
+        },
+        'URL import Crawlbase fallback skipped: token not configured',
+      );
       throw directError;
     }
     try {
-      return await fetchViaCrawlbase(url);
-    } catch {
+      const result = await fetchViaCrawlbase(url);
+      logFetchOutcome(
+        'info',
+        {
+          ...directFields,
+          proxyOutcome: 'success',
+          proxyStatus: result.proxyStatus,
+          originalStatus: result.originalStatus,
+          proxyErrorClass: null,
+          crawlbaseTokenPresent: true,
+        },
+        'URL import fetch fell back to Crawlbase',
+      );
+      return result.html;
+    } catch (proxyError) {
       // The direct failure is the user-relevant one; the proxy attempt
-      // (and its token-bearing URL) must not leak into errors or logs.
+      // (and its token-bearing URL) must not leak into errors. The log
+      // line here carries only outcome classes and statuses (#497).
+      logFetchOutcome(
+        'warn',
+        {
+          ...directFields,
+          proxyOutcome: 'failure',
+          proxyStatus: fetchStatusOf(proxyError),
+          originalStatus:
+            proxyError instanceof FetchFailure
+              ? proxyError.originalStatus
+              : null,
+          proxyErrorClass: fetchErrorClassOf(proxyError),
+          crawlbaseTokenPresent: true,
+        },
+        'URL import Crawlbase fallback failed',
+      );
       throw directError;
     }
   }
@@ -254,6 +424,18 @@ export const importFromUrl = async (
     // 'AI service error', which is reserved for genuine provider
     // failures (Anthropic.APIError still rethrows to it) (#297).
     if (error instanceof AiResponseParseError) {
+      // Parse-stage outcome, logged token-free like the fetch stage
+      // (#497): the page was fetched, but no recipe could be read
+      // from it — distinct from every fetch failure above.
+      logger.warn(
+        {event: 'url_import_parse', host: hostOf(url), outcome: 'no_recipe'},
+        'URL import fetched the page but found no readable recipe',
+      );
+      serverLog('warn', 'URL import fetched the page but found no readable recipe', {
+        event: 'url_import_parse',
+        host: hostOf(url),
+        outcome: 'no_recipe',
+      });
       res.status(422).json({error: URL_IMPORT_NO_RECIPE_ERROR});
       return;
     }
