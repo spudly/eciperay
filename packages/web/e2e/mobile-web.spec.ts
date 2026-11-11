@@ -15,11 +15,10 @@ test.describe('mobile web layout (390px)', () => {
     await installMocks(page, {signedIn: true});
   });
 
-  // fixme: the DS AppTopBar nav overflows phone widths (the Profile
-  // link is clipped off-viewport and the page scrolls sideways) —
-  // spudly/design-system#564. Un-fixme when the fixed @spudly/ui
-  // ships and eciperay bumps to it (eciperay #413: no host workaround).
-  test.fixme('every nav destination is reachable and no label is clipped', async ({
+  // Regression check for spudly/design-system#564 (the DS AppTopBar
+  // nav overflowed phone widths, clipping the Profile link): fixed in
+  // @spudly/ui 9.2.0, which this repo now resolves.
+  test('every nav destination is reachable and no label is clipped', async ({
     page,
   }) => {
     await page.goto('/recipes');
@@ -94,11 +93,10 @@ test.describe('mobile web layout (390px)', () => {
     expect(titleColumnWidth).toBeGreaterThan(150);
   });
 
-  // fixme: the page scrolls sideways at this width because the DS
-  // AppTopBar nav row overflows (scrollWidth 434) —
-  // spudly/design-system#564. Only the overflow assertion is parked;
-  // the title-width check above stays active.
-  test.fixme('the page does not scroll sideways at 430px', async ({page}) => {
+  // Regression check for spudly/design-system#564 at 430px (the DS
+  // AppTopBar nav row overflowed, scrollWidth 434): fixed in
+  // @spudly/ui 9.2.0, which this repo now resolves.
+  test('the page does not scroll sideways at 430px', async ({page}) => {
     await page.setViewportSize({width: 430, height: 844});
     await page.goto('/recipes');
     await expect(page.getByText('E2E Tomato Pasta')).toBeVisible();
