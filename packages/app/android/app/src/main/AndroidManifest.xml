@@ -56,6 +56,19 @@
               android:scheme="${authDeepLinkScheme}"
               android:host="auth" />
         </intent-filter>
+        <!-- In-app deep links (#484): every other URL under the app's own
+             scheme (com.eciperay, or com.eciperay.dev in dev builds via the
+             same placeholder) is delivered to MainActivity for all
+             hosts/paths, where the navigation linking config
+             (src/navigation/linking.ts) routes it to a screen. Without
+             this filter Android has no handler for those URLs and the
+             open fails with "No Activity found to handle Intent". -->
+        <intent-filter>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="${authDeepLinkScheme}" />
+        </intent-filter>
       </activity>
     </application>
 </manifest>

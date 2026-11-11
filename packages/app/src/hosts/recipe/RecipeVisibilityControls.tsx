@@ -12,10 +12,11 @@ import type {RecipeDetail, RecipeVisibility} from '@eciperay/types';
 import type {RecipeDetailPageSharing} from '@spudly/ui';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useState} from 'react';
-import {Linking, Share} from 'react-native';
+import {Share} from 'react-native';
 import {Text} from 'tamagui';
 
 import {api} from '../../lib/api';
+import {safeOpenUrl} from '../../lib/safeOpenUrl';
 
 const visibilityOptions: RecipeVisibility[] = ['private', 'unlisted', 'public'];
 
@@ -121,7 +122,7 @@ export const useRecipeSharingProps = (
                 color="$primary"
                 textDecorationLine="underline"
                 onPress={() => {
-                  void Linking.openURL(PRIVACY_POLICY_URL);
+                  void safeOpenUrl(PRIVACY_POLICY_URL);
                 }}
               >
                 Privacy Policy

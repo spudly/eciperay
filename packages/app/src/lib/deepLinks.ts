@@ -5,11 +5,11 @@ import {AUTH_DEEP_LINK_SCHEME} from './authDeepLink';
  * (#248, @spudly/ui 1.15.0): DS pages take navigation destinations as hrefs,
  * never press callbacks, and on native a press opens the href verbatim through
  * Linking. So every in-app destination is a scheme-bearing URL under the app's
- * own scheme, and the linking config in RootNavigator routes those URLs back
- * into the navigators. Paths mirror the web app's route table, so a destination
- * reads the same on both platforms; the edit screens' optional-id paths
- * (`meals/:mealId?/edit`) serve both create (no id) and edit (id) from the one
- * registered screen.
+ * own scheme, and the linking config in navigation/linking routes those URLs
+ * back into the navigators. Paths mirror the web app's route table, so a
+ * destination reads the same on both platforms; the edit screens' optional-id
+ * paths (`meals/:mealId?/edit`) serve both create (no id) and edit (id) from
+ * the one registered screen.
  */
 const appHref = (path: string): string => `${AUTH_DEEP_LINK_SCHEME}://${path}`;
 
@@ -19,11 +19,11 @@ export const APP_LINKING_PREFIX = `${AUTH_DEEP_LINK_SCHEME}://`;
 export const recipesHref = appHref('recipes');
 export const addHref = appHref('add');
 /**
- * Home's shared-with-me entry lands on the unified Recipes browse
- * (#412): shared recipes live in the Recipes tab's own section now,
- * so this href is the Recipes destination. The `shared-with-me`
- * route itself still resolves — it mounts the redirect screen —
- * so deep links minted by older builds keep working.
+ * Home's shared-with-me entry lands on the unified Recipes browse (#412):
+ * shared recipes live in the Recipes tab's own section now, so this href is the
+ * Recipes destination. The `shared-with-me` route itself still resolves — it
+ * mounts the redirect screen — so deep links minted by older builds keep
+ * working.
  */
 export const sharedWithMeHref = appHref('recipes');
 export const recipeHref = (recipeId: string) => appHref(`recipes/${recipeId}`);
