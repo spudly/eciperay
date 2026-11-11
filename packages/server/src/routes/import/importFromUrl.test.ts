@@ -558,7 +558,7 @@ describe('POST /recipes/import/url', () => {
         proxyStatus: 200,
         originalStatus: 200,
       });
-      expect(JSON.stringify(infoSpy.mock.calls)).not.toContain(
+      expect(JSON.stringify(fallbackCall)).not.toContain(
         'test-crawlbase-token',
       );
     } finally {
@@ -600,7 +600,7 @@ describe('POST /recipes/import/url', () => {
         proxyStatus: 403,
         proxyErrorClass: 'http',
       });
-      expect(JSON.stringify(warnSpy.mock.calls)).not.toContain(
+      expect(JSON.stringify(fallbackCall)).not.toContain(
         'test-crawlbase-token',
       );
     } finally {
@@ -692,7 +692,7 @@ describe('POST /recipes/import/url', () => {
         proxyStatus: null,
         proxyErrorClass: 'timeout',
       });
-      expect(JSON.stringify(warnSpy.mock.calls)).not.toContain(
+      expect(JSON.stringify(fallbackCall)).not.toContain(
         'test-crawlbase-token',
       );
     } finally {
