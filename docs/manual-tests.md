@@ -443,6 +443,15 @@ mode; there is no Playwright coverage of meals. The cases below are manual._
    fat, and satiety (member values only for fields known for that recipe; a
    member with no nutrition shows no macro values). The same five values appear
    on meal-plan totals and entry lines.
+9. **Direct ingredients on a meal (#362).** In the meal form, use "Add
+   ingredient" to add a one-off item (e.g. `QA — Protein Shake`, quantity 1,
+   unit `bottle`, 2 servings) alongside — or instead of — member recipes, and
+   save. **Expected:** the meal detail shows an Ingredients section listing the
+   entry with its quantity and servings-scaled nutrition; the meal total
+   includes it. Edit the meal: the entry is listed in the form and can be
+   changed or removed. Repeat create/edit/detail in the native app and via the
+   MCP `create_meal` / `update_meal` / `get_meal` tools — the same entries
+   appear on every surface.
 
 **Run when:** `packages/client/src/mealUiHelpers.ts`,
 `packages/app/src/screens/{MealsHub,MealDetail,MealEdit,MealCookingMode}Screen.tsx`,
@@ -454,7 +463,8 @@ mode; there is no Playwright coverage of meals. The cases below are manual._
 `MealCookingModePage`, `packages/server` meal routes,
 `packages/server/src/lib/saveMeal.ts`,
 `packages/server/src/lib/conditionalWrite.ts`,
-`packages/server/src/lib/mealSchemas.ts`, `packages/server` recipe search
+`packages/server/src/lib/mealSchemas.ts`, `packages/mcp-server/src/tools.ts`,
+`packages/mcp-server/src/eciperayClient.ts`, `packages/server` recipe search
 (`packages/server/src/routes/recipes/{listFilterParams,sqlConstants}.ts`),
 `packages/client/src/useMealPlanEditForm.ts`,
 `packages/server/src/lib/saveRecipeMetadata.ts`,

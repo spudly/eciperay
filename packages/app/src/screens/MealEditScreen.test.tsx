@@ -135,6 +135,48 @@ describe('MealEditScreen', () => {
     });
   });
 
+  test('creates a meal with a direct ingredient and no recipe (#362)', async () => {
+    const rendered = await renderWithProviders(
+      <MealEditScreen {...createProps({})} />,
+    );
+    await fireEvent.changeText(
+      rendered.getByPlaceholderText('Meal title'),
+      'Shake only',
+    );
+    await fireEvent.press(rendered.getByText('Add ingredient'));
+    await fireEvent.changeText(
+      rendered.getByPlaceholderText('Ingredient name'),
+      'Protein shake',
+    );
+    await fireEvent.press(rendered.getByText('Save meal'));
+    await waitFor(() => {
+      expect(mockCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: 'Shake only',
+          recipes: [],
+          ingredients: [
+            {name: 'Protein shake', quantity: null, unit: null, servings: 1},
+          ],
+        }),
+      );
+    });
+  });
+
+  test('a failed meal load shows the error and blocks saving (#362)', async () => {
+    mockGetMeal.mockRejectedValue(new Error('boom'));
+    const rendered = await renderWithProviders(
+      <MealEditScreen {...createProps({mealId})} />,
+    );
+    expect(
+      await rendered.findByText('Could not load this meal: boom'),
+    ).toBeTruthy();
+    await fireEvent.press(rendered.getByText('Save meal'));
+    // The full-replace save must never fire over an unloaded meal —
+    // it would wipe the stored recipes and direct ingredients.
+    expect(mockPut).not.toHaveBeenCalled();
+    expect(mockCreate).not.toHaveBeenCalled();
+  });
+
   test('loads existing meal with null notes', async () => {
     mockGetMeal.mockResolvedValue({
       id: mealId,

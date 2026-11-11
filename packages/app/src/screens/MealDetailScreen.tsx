@@ -1,5 +1,5 @@
 import {formatSimpleNutrition, queryKeys} from '@eciperay/client';
-import type {MealRecipeMember} from '@eciperay/types';
+import type {RecipeNutritionSummary} from '@eciperay/types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {MealDetailPage} from '@spudly/ui';
 import {useQuery} from '@tanstack/react-query';
@@ -18,22 +18,25 @@ type Props = NativeStackScreenProps<MealsStackParamList, 'MealDetail'>;
  * the member subtitle (the RecipesPage subtitle precedent): the rounding is the
  * app's, so the page only renders it.
  */
-const formatMemberNutrition = (member: MealRecipeMember): string | null => {
+const formatMemberNutrition = (
+  summary: RecipeNutritionSummary,
+  scale = 1,
+): string | null => {
   const parts: string[] = [];
-  if (member.calories !== null) {
-    parts.push(`${Math.round(member.calories)} cal`);
+  if (summary.calories !== null) {
+    parts.push(`${Math.round(summary.calories * scale)} cal`);
   }
-  if (member.proteinG !== null) {
-    parts.push(`${Math.round(member.proteinG)}g protein`);
+  if (summary.proteinG !== null) {
+    parts.push(`${Math.round(summary.proteinG * scale)}g protein`);
   }
-  if (member.carbsG !== null) {
-    parts.push(`${Math.round(member.carbsG)}g carbs`);
+  if (summary.carbsG !== null) {
+    parts.push(`${Math.round(summary.carbsG * scale)}g carbs`);
   }
-  if (member.fatG !== null) {
-    parts.push(`${Math.round(member.fatG)}g fat`);
+  if (summary.fatG !== null) {
+    parts.push(`${Math.round(summary.fatG * scale)}g fat`);
   }
-  if (member.satietyScore !== null) {
-    parts.push(`satiety ${Math.round(member.satietyScore)}`);
+  if (summary.satietyScore !== null) {
+    parts.push(`satiety ${Math.round(summary.satietyScore)}`);
   }
   return parts.length > 0 ? parts.join(' · ') : null;
 };
@@ -66,6 +69,35 @@ export const MealDetailScreen = ({route}: Props) => {
             }`,
             isUnavailable: member.accessLost,
           }))}
+          ingredients={(meal.ingredients ?? []).map((ingredient, index) => {
+            // A direct ingredient's stored nutrition is per serving, so
+            // its row shows the entry's total contribution (scaled by
+            // its servings), like each member recipe's row — the web
+            // MealDetailPage mapping (#362 tranche 2), mirrored here.
+            const quantityLabel =
+              ingredient.quantity === null
+                ? null
+                : `${ingredient.quantity}${
+                    ingredient.unit ? ` ${ingredient.unit}` : ''
+                  }`;
+            const nutritionLabel = formatMemberNutrition(
+              ingredient,
+              ingredient.servings,
+            );
+            return {
+              id: `ingredient-${ingredient.sortOrder}-${index}`,
+              name: ingredient.name,
+              subtitle: [
+                quantityLabel,
+                `${ingredient.servings} serving${
+                  ingredient.servings === 1 ? '' : 's'
+                }`,
+                nutritionLabel,
+              ]
+                .filter(Boolean)
+                .join(' · '),
+            };
+          })}
           cookHref={mealCookHref(mealId)}
           editHref={mealEditHref(mealId)}
         />

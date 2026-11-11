@@ -635,6 +635,28 @@ describe('buildMealUpdatePayload', () => {
     });
     assert.equal('ingredients' in payload, false);
   });
+
+  test('provided ingredients are sent in full and replace the stored list (#362)', () => {
+    const payload = buildMealUpdatePayload(storedMixedMeal, {
+      ingredients: [{name: 'Protein shake', quantity: 1, unit: 'bottle'}],
+    });
+    assert.deepEqual(payload.ingredients, [
+      {name: 'Protein shake', quantity: 1, unit: 'bottle'},
+    ]);
+  });
+
+  test('an update that would empty the meal entirely is an error (#362)', () => {
+    assert.throws(
+      () => buildMealUpdatePayload(storedMeal, {recipes: [], ingredients: []}),
+      /no recipes and no direct ingredients/,
+    );
+  });
+
+  test('clearing the recipes is allowed when direct ingredients remain (#362)', () => {
+    const payload = buildMealUpdatePayload(storedMixedMeal, {recipes: []});
+    assert.deepEqual(payload.recipes, []);
+    assert.equal('ingredients' in payload, false);
+  });
 });
 
 describe('buildMealPlanUpdatePayload', () => {
@@ -825,6 +847,22 @@ describe('client meal writes', () => {
       /not a member/,
     );
     assert.equal(putBodies(calls).length, 0);
+  });
+
+  test('removeRecipeFromMeal may remove the last recipe when direct ingredients remain (#362)', async () => {
+    const mixed = {
+      ...storedMixedMeal,
+      members: [
+        storedMeal.members.find(member => member.recipeId === 'recipe-2'),
+      ],
+    };
+    const calls = stubFetch(() => ({status: 200, body: mixed}));
+    await client().removeRecipeFromMeal('meal-1', 'recipe-2');
+    const body = putBodies(calls)[0];
+    assert.deepEqual(body?.['recipes'], []);
+    // The stored direct ingredients are preserved server-side by
+    // omitting the field (#432) — it must not be sent.
+    assert.equal(body !== undefined && 'ingredients' in body, false);
   });
 
   test('removeRecipeFromMeal refuses to empty the meal, with no PUT', async () => {

@@ -328,9 +328,9 @@ export const createClient = (config: EciperayClientConfig) => {
           `remove_recipe_from_meal: recipe ${recipeId} is not a member of meal ${mealId}; nothing was changed.`,
         );
       }
-      if (recipes.length === 1) {
+      if (recipes.length === 1 && (current.ingredients?.length ?? 0) === 0) {
         throw new Error(
-          'remove_recipe_from_meal: a meal must keep at least one recipe; add another recipe first or delete the meal instead.',
+          'remove_recipe_from_meal: a meal must keep at least one recipe or direct ingredient; add another member first or delete the meal instead.',
         );
       }
       return request<unknown>(path, {
@@ -752,12 +752,14 @@ export type MealInput = {
 /**
  * The subset of meal fields `update_meal` may change. A field left `undefined`
  * is preserved from the stored meal; `notes` set to `null` clears it. Providing
- * `recipes` replaces the whole member list.
+ * `recipes` replaces the whole member list; providing `ingredients` replaces
+ * the whole direct-ingredient list (and re-estimates its nutrition).
  */
 export type MealUpdatePatch = {
   title?: string;
   notes?: string | null;
   recipes?: MealRecipeInput[];
+  ingredients?: MealIngredientInput[];
 };
 
 /** Entry shapes accepted by the REST meal-plan endpoints. */
@@ -793,9 +795,11 @@ type MealDetailForUpdate = {
   notes: string | null;
   members: {recipeId: string; sortOrder: number; servings: number}[];
   // Direct ingredients (#362); absent on detail responses from before
-  // the field existed. Read here only as part of the detail shape:
-  // meal-write payloads always omit the field so the server preserves
-  // the stored rows instead of re-estimating them (#432).
+  // the field existed. Read here so update payloads can judge the
+  // at-least-one-member rule against the stored rows; the rows
+  // themselves are re-sent only when a patch explicitly provides
+  // `ingredients` — an omitted field preserves them server-side
+  // instead of re-estimating them (#432).
   ingredients?: {
     name: string;
     quantity: number | null;
@@ -836,6 +840,7 @@ const MEAL_PATCH_FIELDS: (keyof MealUpdatePatch)[] = [
   'title',
   'notes',
   'recipes',
+  'ingredients',
 ];
 
 const MEAL_PLAN_PATCH_FIELDS: (keyof MealPlanUpdatePatch)[] = [
@@ -873,14 +878,28 @@ export const buildMealUpdatePayload = (
       'update_meal requires at least one field to update; every field was omitted.',
     );
   }
+  const recipes = patch.recipes ?? mealRecipeInputs(current);
+  const ingredientCount =
+    patch.ingredients !== undefined
+      ? patch.ingredients.length
+      : (current.ingredients?.length ?? 0);
+  if (recipes.length + ingredientCount < 1) {
+    throw new Error(
+      'update_meal would leave the meal with no recipes and no direct ingredients; a meal must keep at least one of either. Nothing was changed.',
+    );
+  }
   return {
     title: patch.title ?? current.title,
     notes: patch.notes !== undefined ? patch.notes : current.notes,
-    recipes: patch.recipes ?? mealRecipeInputs(current),
-    // No `ingredients` key on purpose (#432): the server preserves the
-    // stored direct-ingredient rows when the field is omitted, while a
-    // sent list would be full-replaced — re-estimating (and possibly
-    // nulling) nutrition for ingredients this update never touched.
+    recipes,
+    // `ingredients` is sent only when the patch provides it (#432): the
+    // server preserves the stored direct-ingredient rows when the field
+    // is omitted, while a sent list is full-replaced — re-estimating
+    // (and possibly nulling) nutrition for every entry in it. That cost
+    // is correct only for an update that actually edits the ingredients.
+    ...(patch.ingredients !== undefined
+      ? {ingredients: patch.ingredients}
+      : {}),
   };
 };
 

@@ -41,6 +41,43 @@ const mealRecipeListSchema = z
     },
   );
 
+/**
+ * A meal's direct ingredients (#362): one-off entries stored on the meal
+ * itself, not through a recipe. Nutrition is estimated server-side at save
+ * time, so no nutrition fields exist here. Mirrors the server schema's caps
+ * (name ≤ 200, unit ≤ 50, at most 50 entries — every entry costs one AI
+ * nutrition estimate at save time).
+ */
+const mealIngredientSchema = z.object({
+  // `.trim()` first: the server trims both text fields before its own
+  // length checks, so MCP validation must judge the trimmed value too —
+  // a whitespace-only name is empty, and padding must not push a valid
+  // name or unit over the cap.
+  name: z.string().trim().min(1).max(200).describe('Ingredient name'),
+  quantity: z
+    .number()
+    .positive()
+    .nullable()
+    .optional()
+    .describe('Amount of the ingredient (omit when not applicable)'),
+  unit: z
+    .string()
+    .trim()
+    .min(1)
+    .max(50)
+    .nullable()
+    .optional()
+    .describe('Unit for the quantity, e.g. "g" or "bottle"'),
+  servings: pgIntSchema
+    .optional()
+    .describe('Servings of the ingredient in the meal (default 1)'),
+});
+
+const mealIngredientListSchema = z
+  .array(mealIngredientSchema)
+  .max(50)
+  .describe('Direct ingredients, in order');
+
 const mealPlanEntrySchema = z.union([
   z.strictObject({
     mealId: z.uuid().describe('Meal id, from list_meals'),
@@ -327,7 +364,8 @@ export const registerTools = (
     'get_meal',
     {
       title: 'Get meal details',
-      description: 'Fetch a meal with its member recipes and servings.',
+      description:
+        'Fetch a meal with its member recipes, direct ingredients, and servings.',
       inputSchema: {id: z.string().describe('Meal id, from list_meals')},
     },
     async ({id}) => textResult(await client.getMeal(id)),
@@ -338,7 +376,7 @@ export const registerTools = (
     {
       title: 'Create meal',
       description:
-        'Create a meal: a named bundle of recipes that can be scheduled in meal plans. A meal needs at least one recipe.',
+        'Create a meal: a named bundle of recipes and/or direct ingredients (one-off items entered on the meal itself, e.g. a shake or a side) that can be scheduled in meal plans. A meal needs at least one recipe or direct ingredient. Direct-ingredient nutrition is estimated server-side at save time.',
       inputSchema: {
         title: z.string().min(1).max(200).describe('Meal title'),
         notes: z
@@ -348,18 +386,28 @@ export const registerTools = (
           .optional()
           .describe('Notes for the meal'),
         recipes: mealRecipeListSchema
-          .min(1)
+          .optional()
           .describe('Member recipes, in order'),
+        ingredients: mealIngredientListSchema.optional(),
       },
     },
-    async args =>
-      textResult(
+    async args => {
+      const recipes = args.recipes ?? [];
+      const ingredients = args.ingredients ?? [];
+      if (recipes.length + ingredients.length < 1) {
+        throw new Error(
+          'create_meal requires at least one recipe or direct ingredient; both were empty or omitted, so nothing was created.',
+        );
+      }
+      return textResult(
         await client.createMeal({
           title: args.title,
           notes: args.notes ?? null,
-          recipes: args.recipes,
+          recipes,
+          ...(args.ingredients !== undefined ? {ingredients} : {}),
         }),
-      ),
+      );
+    },
   );
 
   server.registerTool(
@@ -367,7 +415,7 @@ export const registerTools = (
     {
       title: 'Update meal',
       description:
-        'Update an existing meal. Only the fields you provide change; omitted fields keep their stored values. Provide null for notes to clear it. Providing recipes replaces the whole member list. Only your own meals can be updated.',
+        'Update an existing meal. Only the fields you provide change; omitted fields keep their stored values. Provide null for notes to clear it. Providing recipes replaces the whole member list; providing ingredients replaces the whole direct-ingredient list and re-estimates their nutrition server-side (an empty list removes all direct ingredients). A meal must keep at least one recipe or direct ingredient across the update. Only your own meals can be updated.',
       inputSchema: {
         id: z.string().describe('Meal id, from list_meals'),
         title: z.string().min(1).max(200).optional().describe('Meal title'),
@@ -378,9 +426,15 @@ export const registerTools = (
           .optional()
           .describe('Notes for the meal, or null to clear them'),
         recipes: mealRecipeListSchema
-          .min(1)
           .optional()
-          .describe('Member recipes, in order (replaces the stored list)'),
+          .describe(
+            'Member recipes, in order (replaces the stored list; may be empty when the meal keeps direct ingredients)',
+          ),
+        ingredients: mealIngredientListSchema
+          .optional()
+          .describe(
+            'Direct ingredients, in order (replaces the stored list and re-estimates their nutrition)',
+          ),
       },
     },
     async ({id, ...patch}) => textResult(await client.updateMeal(id, patch)),
@@ -425,7 +479,7 @@ export const registerTools = (
     {
       title: 'Remove recipe from meal',
       description:
-        'Remove a recipe from a meal. A meal must keep at least one recipe, so removing its last recipe is an error.',
+        'Remove a recipe from a meal. A meal must keep at least one recipe or direct ingredient, so removing its last recipe is an error only when the meal has no direct ingredients.',
       inputSchema: {
         mealId: z.string().describe('Meal id, from list_meals'),
         recipeId: z.uuid().describe('Recipe id, from search_recipes'),
