@@ -294,7 +294,7 @@ describe('POST /recipes/import/text', () => {
       // refundAiCall's UPDATE after the timed-out provider call.
       mockQuery.mockResolvedValueOnce(makeQueryResult([]));
       anthropicCreateSpy.mockImplementationOnce(
-        () => new Promise<never>(() => {}),
+        () => new Promise<never>(() => {}) as never,
       );
 
       const res = await request(getApp())

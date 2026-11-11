@@ -1,6 +1,6 @@
 import {expect, type Page} from '@playwright/test';
 
-import {apiDelete} from './qa.js';
+import {apiDelete, getAccessToken} from './qa.js';
 
 /**
  * UI flows shared by the authenticated live specs (issue #233). Everything
@@ -117,6 +117,53 @@ export const deleteRecipeViaApi = async (
   page: Page,
   id: string,
 ): Promise<void> => apiDelete(page, `/recipes/${id}`);
+
+/**
+ * Deletes every library recipe whose title matches exactly, through the
+ * real API. The imports spec's self-healing pre-clean (issue #492): the
+ * canned fake-AI parse always produces the same title + ingredients, so a
+ * copy leaked by an earlier suite run (imported, then neither renamed nor
+ * deleted because a later step failed) makes every later import draw the
+ * duplicate warning (409, issue #296) instead of creating a recipe.
+ * The caller must have navigated to an app page first so the session
+ * token is readable.
+ */
+export const deleteRecipesByTitleViaApi = async (
+  page: Page,
+  title: string,
+): Promise<void> => {
+  const token = await getAccessToken(page);
+  if (!token) {
+    throw new Error(
+      `deleteRecipesByTitleViaApi: no access token to list recipes titled "${title}"; ` +
+        'a leaked copy may still exist in the QA dataset.',
+    );
+  }
+  const ids = await page.evaluate(
+    async ({title: t, token: tk}) => {
+      const response = await fetch(
+        `/api/recipes?search=${encodeURIComponent(t)}`,
+        {headers: {Authorization: `Bearer ${tk}`}},
+      );
+      if (!response.ok) {
+        return [];
+      }
+      const recipes = (await response.json()) as Array<{
+        id?: string;
+        recipeId?: string;
+        title?: string;
+      }>;
+      return recipes
+        .filter(recipe => recipe.title === t)
+        .map(recipe => recipe.id ?? recipe.recipeId)
+        .filter((id): id is string => typeof id === 'string');
+    },
+    {title, token},
+  );
+  for (const id of ids) {
+    await deleteRecipeViaApi(page, id);
+  }
+};
 
 export const deleteMealPlanViaApi = async (
   page: Page,
