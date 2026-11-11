@@ -3,6 +3,11 @@ module.exports = api => {
 
   return {
     presets: ['module:@react-native/babel-preset'],
-    plugins: isTest ? [] : ['react-native-reanimated/plugin'],
+    plugins: [
+      // zod v4 ships `export * as ns from` re-exports; the RN preset's
+      // commonjs transform asserts unless this transform runs first.
+      '@babel/plugin-transform-export-namespace-from',
+      ...(isTest ? [] : ['react-native-reanimated/plugin']),
+    ],
   };
 };
