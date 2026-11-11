@@ -13,6 +13,8 @@ import {
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
 import {lazyTestApp} from '../../test/lazyTestApp.js';
 import {mockBillingMetered, mockBillingPlan} from '../../test/mockBilling.js';
+import {logger} from '../../lib/logger.js';
+import {CRAWLBASE_TIMEOUT_MS} from './importFromUrl.js';
 
 const mockQuery = createMockQuery();
 const getApp = lazyTestApp({query: mockQuery});
@@ -515,6 +517,193 @@ describe('POST /recipes/import/url', () => {
     expect(res.body).toEqual({
       error: "That page doesn't appear to contain a recipe.",
     });
+  });
+
+  test('budgets the Crawlbase fallback at 90s, matching the Crawlbase client default (#497)', () => {
+    expect(CRAWLBASE_TIMEOUT_MS).toBe(90_000);
+  });
+
+  test('logs a token-free success line when the Crawlbase fallback rescues the import (#497)', async () => {
+    const previous = process.env['CRAWLBASE_TOKEN'];
+    process.env['CRAWLBASE_TOKEN'] = 'test-crawlbase-token';
+    const infoSpy = jest.spyOn(logger, 'info');
+    try {
+      nockSupabaseGetUser('user-uuid-1');
+      nock('https://recipe.example.com')
+        .get('/blocked')
+        .reply(403, 'Forbidden')
+        .get('/blocked')
+        .reply(403, 'Forbidden');
+      nock('https://api.crawlbase.com')
+        .get('/')
+        .query(true)
+        .reply(200, SCHEMA_ORG_HTML, {original_status: '200'});
+      mockSaveFlow();
+      const res = await request(getApp())
+        .post('/api/recipes/import/url')
+        .set('Authorization', 'Bearer <redacted>')
+        .send({url: 'https://recipe.example.com/blocked'});
+      expect(res.status).toBe(201);
+      const fallbackCall = infoSpy.mock.calls.find(
+        call =>
+          (call[0] as {event?: string} | undefined)?.event ===
+          'url_import_fetch',
+      );
+      expect(fallbackCall).toBeDefined();
+      expect(fallbackCall?.[0]).toMatchObject({
+        host: 'recipe.example.com',
+        directStatus: 403,
+        directErrorClass: 'http',
+        proxyOutcome: 'success',
+        proxyStatus: 200,
+        originalStatus: 200,
+      });
+      expect(JSON.stringify(infoSpy.mock.calls)).not.toContain(
+        'test-crawlbase-token',
+      );
+    } finally {
+      infoSpy.mockRestore();
+      if (previous === undefined) {
+        delete process.env['CRAWLBASE_TOKEN'];
+      } else {
+        process.env['CRAWLBASE_TOKEN'] = previous;
+      }
+    }
+  });
+
+  test('logs the proxy status when Crawlbase itself refuses the request (#497)', async () => {
+    const previous = process.env['CRAWLBASE_TOKEN'];
+    process.env['CRAWLBASE_TOKEN'] = 'test-crawlbase-token';
+    const warnSpy = jest.spyOn(logger, 'warn');
+    try {
+      nockSupabaseGetUser('user-uuid-1');
+      mockBillingPlan(mockQuery, 'plus');
+      nock('https://recipe.example.com')
+        .get('/blocked')
+        .reply(403, 'Forbidden')
+        .get('/blocked')
+        .reply(403, 'Forbidden');
+      nock('https://api.crawlbase.com').get('/').query(true).reply(403, 'No');
+      const res = await request(getApp())
+        .post('/api/recipes/import/url')
+        .set('Authorization', 'Bearer <redacted>')
+        .send({url: 'https://recipe.example.com/blocked'});
+      expect(res.status).toBe(422);
+      const fallbackCall = warnSpy.mock.calls.find(
+        call =>
+          (call[0] as {event?: string} | undefined)?.event ===
+          'url_import_fetch',
+      );
+      expect(fallbackCall?.[0]).toMatchObject({
+        directStatus: 403,
+        proxyOutcome: 'failure',
+        proxyStatus: 403,
+        proxyErrorClass: 'http',
+      });
+      expect(JSON.stringify(warnSpy.mock.calls)).not.toContain(
+        'test-crawlbase-token',
+      );
+    } finally {
+      warnSpy.mockRestore();
+      if (previous === undefined) {
+        delete process.env['CRAWLBASE_TOKEN'];
+      } else {
+        process.env['CRAWLBASE_TOKEN'] = previous;
+      }
+    }
+  });
+
+  test('logs original-status when the origin still refuses through the proxy (#497)', async () => {
+    const previous = process.env['CRAWLBASE_TOKEN'];
+    process.env['CRAWLBASE_TOKEN'] = 'test-crawlbase-token';
+    const warnSpy = jest.spyOn(logger, 'warn');
+    try {
+      nockSupabaseGetUser('user-uuid-1');
+      mockBillingPlan(mockQuery, 'plus');
+      nock('https://recipe.example.com')
+        .get('/blocked')
+        .reply(403, 'Forbidden')
+        .get('/blocked')
+        .reply(403, 'Forbidden');
+      nock('https://api.crawlbase.com')
+        .get('/')
+        .query(true)
+        .reply(200, 'Forbidden', {original_status: '403'});
+      const res = await request(getApp())
+        .post('/api/recipes/import/url')
+        .set('Authorization', 'Bearer <redacted>')
+        .send({url: 'https://recipe.example.com/blocked'});
+      expect(res.status).toBe(422);
+      const fallbackCall = warnSpy.mock.calls.find(
+        call =>
+          (call[0] as {event?: string} | undefined)?.event ===
+          'url_import_fetch',
+      );
+      expect(fallbackCall?.[0]).toMatchObject({
+        proxyOutcome: 'failure',
+        proxyStatus: 200,
+        originalStatus: 403,
+        proxyErrorClass: 'http',
+      });
+    } finally {
+      warnSpy.mockRestore();
+      if (previous === undefined) {
+        delete process.env['CRAWLBASE_TOKEN'];
+      } else {
+        process.env['CRAWLBASE_TOKEN'] = previous;
+      }
+    }
+  });
+
+  test('logs a timeout class when the Crawlbase attempt times out (#497)', async () => {
+    const previous = process.env['CRAWLBASE_TOKEN'];
+    process.env['CRAWLBASE_TOKEN'] = 'test-crawlbase-token';
+    const warnSpy = jest.spyOn(logger, 'warn');
+    const fetchSpy = jest
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation((input, init) => {
+        if (String(input).startsWith('https://api.crawlbase.com')) {
+          return Promise.reject(
+            new DOMException('The operation timed out', 'TimeoutError'),
+          );
+        }
+        return REAL_FETCH(input, init);
+      });
+    try {
+      nockSupabaseGetUser('user-uuid-1');
+      mockBillingPlan(mockQuery, 'plus');
+      nock('https://recipe.example.com')
+        .get('/blocked')
+        .reply(403, 'Forbidden')
+        .get('/blocked')
+        .reply(403, 'Forbidden');
+      const res = await request(getApp())
+        .post('/api/recipes/import/url')
+        .set('Authorization', 'Bearer <redacted>')
+        .send({url: 'https://recipe.example.com/blocked'});
+      expect(res.status).toBe(422);
+      const fallbackCall = warnSpy.mock.calls.find(
+        call =>
+          (call[0] as {event?: string} | undefined)?.event ===
+          'url_import_fetch',
+      );
+      expect(fallbackCall?.[0]).toMatchObject({
+        proxyOutcome: 'failure',
+        proxyStatus: null,
+        proxyErrorClass: 'timeout',
+      });
+      expect(JSON.stringify(warnSpy.mock.calls)).not.toContain(
+        'test-crawlbase-token',
+      );
+    } finally {
+      fetchSpy.mockRestore();
+      warnSpy.mockRestore();
+      if (previous === undefined) {
+        delete process.env['CRAWLBASE_TOKEN'];
+      } else {
+        process.env['CRAWLBASE_TOKEN'] = previous;
+      }
+    }
   });
 
   test('returns 502 AI service error for a genuine provider failure (#297)', async () => {
