@@ -1,5 +1,9 @@
 # @eciperay/mcp-server
 
+## 1.34.2
+
+No changes in this release.
+
 ## 1.34.1
 
 ### Patch Changes
