@@ -20,6 +20,7 @@ import {
 } from '../../__tests__/fixtures/recipe';
 import {makeQueryClient, renderWithProviders} from '../../__tests__/testUtils';
 import {api} from '../../lib/api';
+import {recipeHref} from '../../lib/deepLinks';
 
 import {InlineCookLogForm, RecipesListView} from './RecipesListView';
 
@@ -552,12 +553,12 @@ describe('RecipesListView load-more error row', () => {
 });
 
 /**
- * Unified browse sections (#412): the view appends the shared-with-me
- * rows to the own section after the created rows — "Shared" badge,
- * public-permalink destination, and no log-cook control
- * (`canLogCook: false`, DS #543) — and renders the discovery section
- * from the public catalog items, with its own first-page error state.
- * This mapping moved here from the retired SharedWithMeView.
+ * Unified browse sections (#412): the view appends the shared-with-me rows to
+ * the own section after the created rows — "Shared" badge, public-permalink
+ * destination, and no log-cook control (`canLogCook: false`, DS #543) — and
+ * renders the discovery section from the public catalog items, with its own
+ * first-page error state. This mapping moved here from the retired
+ * SharedWithMeView.
  */
 describe('RecipesListView unified sections (#412)', () => {
   const controls = {
@@ -607,9 +608,7 @@ describe('RecipesListView unified sections (#412)', () => {
     // Order: created rows come before shared rows in the own section
     // — compare the rows' accessible labels in tree order.
     const labels = container
-      .queryAll(
-        node => typeof node.props?.accessibilityLabel === 'string',
-      )
+      .queryAll(node => typeof node.props?.accessibilityLabel === 'string')
       .map(node => node.props.accessibilityLabel as string);
     const pastaIndex = labels.findIndex(label =>
       label.startsWith('Pasta Night'),
@@ -619,6 +618,28 @@ describe('RecipesListView unified sections (#412)', () => {
     );
     expect(pastaIndex).toBeGreaterThanOrEqual(0);
     expect(sharedIndex).toBeGreaterThan(pastaIndex);
+  });
+
+  // A created row's card is an href surface (#491): pressing it must
+  // open the recipe's scheme deep link, which the navigation linking
+  // config routes to RecipeDetail (see navigation/linking.test.ts).
+  // Before #484's manifest + linking fix this press was swallowed on
+  // Android and the tap did nothing.
+  test('opens the recipe deep link when a created row is pressed', async () => {
+    const {getByLabelText} = await renderWithProviders(
+      <RecipesListView
+        {...controls}
+        isLoading={false}
+        recipes={[pasta]}
+        isFetchingNextPage={false}
+        onLoadMore={jest.fn()}
+      />,
+    );
+
+    await fireEvent.press(getByLabelText('Pasta Night'));
+    await waitFor(() => {
+      expect(Linking.openURL).toHaveBeenCalledWith(recipeHref('pasta-id'));
+    });
   });
 
   test('opens the public permalink when a shared row is pressed', async () => {
