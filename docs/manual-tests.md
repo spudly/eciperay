@@ -100,12 +100,26 @@ password-reset cases.
    appears under the email field, no sign-in/sign-up/reset request is attempted,
    and no credentials error appears; correcting the email and resubmitting
    proceeds normally.
+7. **Android app deep links (#484).** Install the Android build (use the
+   `com.eciperay.dev://` scheme for a dev build, `com.eciperay://` for release).
+   Signed in, fire each route as an intent, e.g.
+   `adb shell am start -a android.intent.action.VIEW -d "com.eciperay://recipes"`:
+   `signup`, `forgot-password`, `recipes`, `add`, `meal-plans/edit`,
+   `add/manual`, `tags`, `shared-with-me`, `add/url`, `add/image`, `add/text`,
+   `add/ai`, `meals/edit`. **Expected:** the app opens on the matching screen
+   for every route (sign-up / forgot-password in the auth flow; the create forms
+   for `meal-plans/edit` and `meals/edit`), with no "No Activity found to handle
+   Intent" failure and no unhandled-rejection error report. Fire `auth/callback`
+   with a valid reset/confirmation payload. **Expected:** it completes the
+   Supabase auth flow only — no navigation route claims it.
 
 **Run when:** `packages/app/src/screens/auth/**`,
 `packages/web/src/pages/auth/**`, `packages/client/src/authEmail.ts`,
 `@spudly/ui` `SignInPage`, `SignUpPage`, `ForgotPasswordPage`,
 `ResetPasswordPage`, `packages/server` auth/session code, Supabase auth
-configuration changes.
+configuration changes, `packages/app/android/app/src/main/AndroidManifest.xml`,
+`packages/app/src/navigation/linking.ts`,
+`packages/app/src/lib/{deepLinks,safeOpenUrl,authDeepLink}.ts`.
 
 ---
 
@@ -228,10 +242,21 @@ without); one recipe may be created fresh in case 1.
     with an image in place, check the image controls. **Expected:** there is no
     Remove/Delete action for the photo; uploading or generating a replacement
     still works and swaps the image.
+17. **Android in-app href taps (#490, #491).** On the Android app, signed in: on
+    Home, tap **Browse Recipes**, **Add a recipe**, and the shared-with-me
+    action; then on the Recipes page, tap one of your own recipe cards.
+    **Expected:** every tap navigates in-app — Browse Recipes and the
+    shared-with-me action land on the Recipes browse, Add lands on the Add
+    screen, and the card opens that recipe's detail — with no dead taps and no
+    "No Activity found to handle Intent" failure. (Shared and discovery rows
+    deliberately open their public permalink instead.)
 
 **Run when:**
 `packages/app/src/screens/{Recipes,RecipeDetail,EditRecipe,EditVersion,ManualEntry,SharedWithMe,Home}Screen.tsx`,
-`packages/app/src/lib/deepLinks.ts`, `packages/app/src/components/recipe/**`,
+`packages/app/src/lib/deepLinks.ts`, `packages/app/src/navigation/linking.ts`,
+`packages/app/android/app/src/main/AndroidManifest.xml`,
+`packages/app/android/app/build.gradle`,
+`packages/app/src/components/recipe/**`,
 `packages/app/src/lib/recipeImageCrop.ts`,
 `packages/app/android/settings.gradle`, `packages/app/ios/Podfile`,
 `packages/app/react-native.config.cjs`,
