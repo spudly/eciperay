@@ -1,4 +1,5 @@
 import {jest} from '@jest/globals';
+import type {QueryResult, QueryResultRow} from 'pg';
 import request from 'supertest';
 
 import {makeRecipeDetailRow} from '../../test/fixtures/recipeRow.js';
@@ -11,6 +12,8 @@ import {
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
 import {lazyTestApp} from '../../test/lazyTestApp.js';
 import {mockBillingMetered, mockBillingPlan} from '../../test/mockBilling.js';
+
+import {duplicateRecipeBody} from './respondIfDuplicateImport.js';
 
 const resolveImportedImageUrl = jest.fn<() => Promise<string | null>>();
 
@@ -284,6 +287,388 @@ describe('POST /recipes/import/text', () => {
       .send({text: 'a'.repeat(100_001)});
     expect(res.status).toBe(400);
     expect(res.body.issues[0]?.path).toBe('text');
+  });
+
+  test('fails fast instead of hanging when the Claude parse never settles (#492)', async () => {
+    process.env['IMPORT_TEXT_PARSE_TIMEOUT_MS'] = '50';
+    try {
+      nockSupabaseGetUser('user-uuid-1');
+      mockBillingMetered(mockQuery, 'plus');
+      // refundAiCall's UPDATE after the timed-out provider call.
+      mockQuery.mockResolvedValueOnce(makeQueryResult([]));
+      anthropicCreateSpy.mockImplementationOnce(
+        () => new Promise<never>(() => {}) as never,
+      );
+
+      const res = await request(getApp())
+        .post('/api/recipes/import/text')
+        .set('Authorization', 'Bearer valid-token')
+        .send({text: 'Pasta\n\nIngredients:\n200g pasta\n\nBoil pasta.'});
+
+      // A stage timeout is a retryable 504, not a generic 500.
+      expect(res.status).toBe(504);
+      const refundCall = mockQuery.mock.calls.find(args =>
+        args[0].includes('update ai_usage'),
+      );
+      expect(refundCall).toBeDefined();
+    } finally {
+      delete process.env['IMPORT_TEXT_PARSE_TIMEOUT_MS'];
+    }
+  });
+
+  test('still returns 201 without an image when image resolution never settles (#492)', async () => {
+    process.env['IMPORT_TEXT_IMAGE_TIMEOUT_MS'] = '50';
+    try {
+      resolveImportedImageUrl.mockImplementationOnce(
+        () => new Promise<never>(() => {}),
+      );
+      nockSupabaseGetUser('user-uuid-1');
+      nockAnthropicMessage(CLAUDE_RESPONSE);
+      mockSaveFlow();
+      const res = await request(getApp())
+        .post('/api/recipes/import/text')
+        .set('Authorization', 'Bearer valid-token')
+        .send({
+          text: '<h1>Pasta</h1><img src="https://example.com/photo.jpg" /><p>Boil pasta.</p>',
+        });
+      expect(res.status).toBe(201);
+      expect(res.body.title).toBe('Pasted Pasta');
+      expect(res.body.imageUrl ?? null).toBeNull();
+    } finally {
+      delete process.env['IMPORT_TEXT_IMAGE_TIMEOUT_MS'];
+    }
+  });
+
+  test('ignores a non-numeric stage timeout override (#492)', async () => {
+    process.env['IMPORT_TEXT_PARSE_TIMEOUT_MS'] = 'not-a-number';
+    try {
+      nockSupabaseGetUser('user-uuid-1');
+      nockAnthropicMessage(CLAUDE_RESPONSE);
+      mockSaveFlow();
+      const res = await request(getApp())
+        .post('/api/recipes/import/text')
+        .set('Authorization', 'Bearer valid-token')
+        .send({text: 'Pasta\n\nIngredients:\n200g pasta\n\nBoil pasta.'});
+      expect(res.status).toBe(201);
+    } finally {
+      delete process.env['IMPORT_TEXT_PARSE_TIMEOUT_MS'];
+    }
+  });
+
+  test('ignores a non-positive stage timeout override (#492)', async () => {
+    process.env['IMPORT_TEXT_PARSE_TIMEOUT_MS'] = '0';
+    try {
+      nockSupabaseGetUser('user-uuid-1');
+      nockAnthropicMessage(CLAUDE_RESPONSE);
+      mockSaveFlow();
+      const res = await request(getApp())
+        .post('/api/recipes/import/text')
+        .set('Authorization', 'Bearer valid-token')
+        .send({text: 'Pasta\n\nIngredients:\n200g pasta\n\nBoil pasta.'});
+      expect(res.status).toBe(201);
+    } finally {
+      delete process.env['IMPORT_TEXT_PARSE_TIMEOUT_MS'];
+    }
+  });
+
+  test('returns 504 and refunds when preparation never settles (#492)', async () => {
+    process.env['IMPORT_TEXT_PREPARE_TIMEOUT_MS'] = '50';
+    try {
+      nockSupabaseGetUser('user-uuid-1');
+      nockAnthropicMessage(CLAUDE_RESPONSE);
+      mockBillingMetered(mockQuery, 'plus');
+      // Preparation's first step (listTagOptionsForUser) never settles.
+      mockQuery.mockImplementationOnce(
+        () => new Promise<never>(() => {}),
+      );
+      // refundAiCall's UPDATE after the timed-out preparation.
+      mockQuery.mockResolvedValueOnce(makeQueryResult([]));
+
+      const res = await request(getApp())
+        .post('/api/recipes/import/text')
+        .set('Authorization', 'Bearer valid-token')
+        .send({text: 'Pasta\n\nIngredients:\n200g pasta\n\nBoil pasta.'});
+
+      expect(res.status).toBe(504);
+      expect(res.body.error).toContain('preparation timed out');
+      const refundCall = mockQuery.mock.calls.find(args =>
+        args[0].includes('update ai_usage'),
+      );
+      expect(refundCall).toBeDefined();
+    } finally {
+      delete process.env['IMPORT_TEXT_PREPARE_TIMEOUT_MS'];
+    }
+  });
+
+  test('returns 201 when a timed-out save settles in the second window (#492)', async () => {
+    process.env['IMPORT_TEXT_SAVE_TIMEOUT_MS'] = '100';
+    try {
+      nockSupabaseGetUser('user-uuid-1');
+      nockAnthropicMessage(CLAUDE_RESPONSE);
+      mockBillingMetered(mockQuery, 'plus');
+      mockQuery
+        .mockResolvedValueOnce(makeQueryResult([]))
+        // Duplicate check (#296): no candidates in the user's library.
+        .mockResolvedValueOnce(makeQueryResult([]))
+        // The save's first query lands at ~150ms: past the first 100ms
+        // window, inside the second (settlement) window.
+        .mockImplementationOnce(
+          async <T extends QueryResultRow>(): Promise<QueryResult<T>> => {
+            await new Promise(resolve => setTimeout(resolve, 150));
+            return makeQueryResult([
+              {id: 'recipe-uuid-1'},
+            ]) as unknown as QueryResult<T>;
+          },
+        )
+        .mockResolvedValue(
+          makeQueryResult([makeRecipeDetailRow({title: 'Pasted Pasta'})]),
+        );
+
+      const res = await request(getApp())
+        .post('/api/recipes/import/text')
+        .set('Authorization', 'Bearer valid-token')
+        .send({text: 'Pasta\n\nIngredients:\n200g pasta\n\nBoil pasta.'});
+
+      expect(res.status).toBe(201);
+      expect(res.body.title).toBe('Pasted Pasta');
+    } finally {
+      delete process.env['IMPORT_TEXT_SAVE_TIMEOUT_MS'];
+    }
+  });
+
+  // Arms the save flow up to a first save query that never settles;
+  // `lookup` queues the response for the post-timeout duplicate lookup.
+  const mockUnsettledSaveFlow = (
+    lookup: (mock: typeof mockQuery) => void,
+  ) => {
+    mockBillingMetered(mockQuery, 'plus');
+    mockQuery
+      .mockResolvedValueOnce(makeQueryResult([]))
+      // Duplicate check (#296): no candidates in the user's library.
+      .mockResolvedValueOnce(makeQueryResult([]))
+      // The save's first query never settles.
+      .mockImplementationOnce(() => new Promise<never>(() => {}));
+    lookup(mockQuery);
+  };
+
+  test('returns 409 when an unsettled save committed a duplicate (#492)', async () => {
+    process.env['IMPORT_TEXT_SAVE_TIMEOUT_MS'] = '50';
+    try {
+      nockSupabaseGetUser('user-uuid-1');
+      nockAnthropicMessage(CLAUDE_RESPONSE);
+      mockUnsettledSaveFlow(mock =>
+        mock.mockResolvedValueOnce(
+          makeQueryResult([DUPLICATE_CANDIDATE_ROW]),
+        ),
+      );
+
+      const res = await request(getApp())
+        .post('/api/recipes/import/text')
+        .set('Authorization', 'Bearer valid-token')
+        .send({text: 'Pasta\n\nIngredients:\n200g pasta\n\nBoil pasta.'});
+
+      expect(res.status).toBe(409);
+      expect(res.body).toEqual(duplicateRecipeBody({
+        recipeId: 'recipe-uuid-9',
+        title: 'Pasted Pasta',
+      }));
+    } finally {
+      delete process.env['IMPORT_TEXT_SAVE_TIMEOUT_MS'];
+    }
+  });
+
+  test('returns 504 when an unsettled save committed no duplicate (#492)', async () => {
+    process.env['IMPORT_TEXT_SAVE_TIMEOUT_MS'] = '50';
+    try {
+      nockSupabaseGetUser('user-uuid-1');
+      nockAnthropicMessage(CLAUDE_RESPONSE);
+      mockUnsettledSaveFlow(mock =>
+        mock.mockResolvedValueOnce(makeQueryResult([])),
+      );
+
+      const res = await request(getApp())
+        .post('/api/recipes/import/text')
+        .set('Authorization', 'Bearer valid-token')
+        .send({text: 'Pasta\n\nIngredients:\n200g pasta\n\nBoil pasta.'});
+
+      expect(res.status).toBe(504);
+      expect(res.body.error).toContain('save timed out');
+    } finally {
+      delete process.env['IMPORT_TEXT_SAVE_TIMEOUT_MS'];
+    }
+  });
+
+  test('returns 504 when the post-save-timeout duplicate lookup fails (#492)', async () => {
+    process.env['IMPORT_TEXT_SAVE_TIMEOUT_MS'] = '50';
+    try {
+      nockSupabaseGetUser('user-uuid-1');
+      nockAnthropicMessage(CLAUDE_RESPONSE);
+      mockUnsettledSaveFlow(mock =>
+        mock.mockRejectedValueOnce(new Error('DB down during lookup')),
+      );
+
+      const res = await request(getApp())
+        .post('/api/recipes/import/text')
+        .set('Authorization', 'Bearer valid-token')
+        .send({text: 'Pasta\n\nIngredients:\n200g pasta\n\nBoil pasta.'});
+
+      expect(res.status).toBe(504);
+      expect(res.body.error).toContain('save timed out');
+    } finally {
+      delete process.env['IMPORT_TEXT_SAVE_TIMEOUT_MS'];
+    }
+  });
+
+  test('skips the duplicate lookup after a save timeout when allowDuplicate is set (#492)', async () => {
+    process.env['IMPORT_TEXT_SAVE_TIMEOUT_MS'] = '50';
+    try {
+      nockSupabaseGetUser('user-uuid-1');
+      nockAnthropicMessage(CLAUDE_RESPONSE);
+      mockBillingMetered(mockQuery, 'plus');
+      mockQuery
+        .mockResolvedValueOnce(makeQueryResult([]))
+        // No pre-save duplicate check with allowDuplicate, so the
+        // save's first (never-settling) query is next.
+        .mockImplementationOnce(() => new Promise<never>(() => {}));
+
+      const res = await request(getApp())
+        .post('/api/recipes/import/text')
+        .set('Authorization', 'Bearer valid-token')
+        .send({
+          text: 'Pasta\n\nIngredients:\n200g pasta\n\nBoil pasta.',
+          allowDuplicate: true,
+        });
+
+      expect(res.status).toBe(504);
+      // The candidate lookup (findDuplicateRecipe's SQL) never ran:
+      // had it run, it would have found the pre-existing copy and the
+      // route would have answered the 409 warning instead of 504.
+      const lookupCall = mockQuery.mock.calls.find(args =>
+        String(args[0]).includes('recipe_versions rv on rv.id'),
+      );
+      expect(lookupCall).toBeUndefined();
+    } finally {
+      delete process.env['IMPORT_TEXT_SAVE_TIMEOUT_MS'];
+    }
+  });
+
+  test('returns 504 and does not save when the pre-save duplicate lookup stalls and later finds a duplicate (#492)', async () => {
+    process.env['IMPORT_TEXT_SAVE_TIMEOUT_MS'] = '50';
+    try {
+      nockSupabaseGetUser('user-uuid-1');
+      nockAnthropicMessage(CLAUDE_RESPONSE);
+      mockBillingMetered(mockQuery, 'plus');
+      mockQuery
+        .mockResolvedValueOnce(makeQueryResult([]))
+        // The duplicate lookup stalls past the bound, then finds a
+        // duplicate: the route must already have answered 504, must
+        // not have started the save, and the late result must not
+        // write a 409 after that response.
+        .mockImplementationOnce(
+          async <T extends QueryResultRow>(): Promise<QueryResult<T>> => {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            return makeQueryResult([
+              DUPLICATE_CANDIDATE_ROW,
+            ]) as unknown as QueryResult<T>;
+          },
+        );
+
+      const res = await request(getApp())
+        .post('/api/recipes/import/text')
+        .set('Authorization', 'Bearer valid-token')
+        .send({text: 'Pasta\n\nIngredients:\n200g pasta\n\nBoil pasta.'});
+
+      expect(res.status).toBe(504);
+      expect(res.body.error).toBe(
+        'Duplicate lookup timed out — please retry',
+      );
+      const insertCall = mockQuery.mock.calls.find(args =>
+        String(args[0]).includes('insert into recipes'),
+      );
+      expect(insertCall).toBeUndefined();
+    } finally {
+      delete process.env['IMPORT_TEXT_SAVE_TIMEOUT_MS'];
+    }
+  });
+
+  // Queues the full flow through the save's own detail query, leaving
+  // the post-image DB work (setVersionImageUrl, then the refreshed
+  // detail query) to be armed by each test.
+  const mockFlowThroughSave = () => {
+    mockBillingMetered(mockQuery, 'plus');
+    mockQuery
+      .mockResolvedValueOnce(makeQueryResult([]))
+      // Duplicate check (#296): no candidates in the user's library.
+      .mockResolvedValueOnce(makeQueryResult([]))
+      // Save: lineage, version, active version, ingredients,
+      // instructions, then the save's own detail query.
+      .mockResolvedValueOnce(makeQueryResult([{id: 'recipe-uuid-1'}]))
+      .mockResolvedValueOnce(makeQueryResult([{id: 'version-uuid-1'}]))
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(
+        makeQueryResult([makeRecipeDetailRow({title: 'Pasted Pasta'})]),
+      );
+  };
+
+  test('still returns 201 when the post-image image-url update never settles (#492)', async () => {
+    process.env['IMPORT_TEXT_POST_IMAGE_TIMEOUT_MS'] = '50';
+    try {
+      const bucketUrl =
+        'https://storage.supabase.co/object/public/recipe-images/user-uuid-1/recipe-uuid-1';
+      resolveImportedImageUrl.mockResolvedValueOnce(bucketUrl);
+      nockSupabaseGetUser('user-uuid-1');
+      nockAnthropicMessage(CLAUDE_RESPONSE);
+      mockFlowThroughSave();
+      // setVersionImageUrl never settles.
+      mockQuery.mockImplementationOnce(() => new Promise<never>(() => {}));
+
+      const res = await request(getApp())
+        .post('/api/recipes/import/text')
+        .set('Authorization', 'Bearer valid-token')
+        .send({
+          text: '<h1>Pasta</h1><img src="https://example.com/photo.jpg" /><p>Boil pasta.</p>',
+        });
+
+      // The recipe was already saved: a stalled post-image update
+      // degrades to the saved detail without the image, never a 5xx.
+      expect(res.status).toBe(201);
+      expect(res.body.title).toBe('Pasted Pasta');
+      expect(res.body.imageUrl ?? null).toBeNull();
+    } finally {
+      delete process.env['IMPORT_TEXT_POST_IMAGE_TIMEOUT_MS'];
+    }
+  });
+
+  test('still returns 201 when the post-image detail refresh never settles (#492)', async () => {
+    process.env['IMPORT_TEXT_POST_IMAGE_TIMEOUT_MS'] = '50';
+    try {
+      const bucketUrl =
+        'https://storage.supabase.co/object/public/recipe-images/user-uuid-1/recipe-uuid-1';
+      resolveImportedImageUrl.mockResolvedValueOnce(bucketUrl);
+      nockSupabaseGetUser('user-uuid-1');
+      nockAnthropicMessage(CLAUDE_RESPONSE);
+      mockFlowThroughSave();
+      mockQuery
+        // setVersionImageUrl succeeds...
+        .mockResolvedValueOnce(makeQueryResult([{id: 'version-uuid-1'}]))
+        // ...but the refreshed detail query never settles.
+        .mockImplementationOnce(() => new Promise<never>(() => {}));
+
+      const res = await request(getApp())
+        .post('/api/recipes/import/text')
+        .set('Authorization', 'Bearer valid-token')
+        .send({
+          text: '<h1>Pasta</h1><img src="https://example.com/photo.jpg" /><p>Boil pasta.</p>',
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.title).toBe('Pasted Pasta');
+      expect(res.body.imageUrl ?? null).toBeNull();
+    } finally {
+      delete process.env['IMPORT_TEXT_POST_IMAGE_TIMEOUT_MS'];
+    }
   });
 
   test('returns 401 without auth token', async () => {

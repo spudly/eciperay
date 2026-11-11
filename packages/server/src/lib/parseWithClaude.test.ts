@@ -115,6 +115,31 @@ describe('parseWithClaude', () => {
     expect(result.description).toBeNull();
   });
 
+  test('does not start description generation when the signal aborted during the parse', async () => {
+    const create = jest
+      .fn<() => Promise<Anthropic.Message>>()
+      .mockResolvedValue({
+        content: [{type: 'text', text: JSON.stringify(VALID_RECIPE)}],
+      } as unknown as Anthropic.Message);
+    const client = {messages: {create}} as unknown as Anthropic;
+    const signal = AbortSignal.abort();
+    await expect(
+      parseWithClaude('some page text', null, client, signal),
+    ).rejects.toThrow();
+    // Only the parse request ran; the description fallback never started.
+    expect(create).toHaveBeenCalledTimes(1);
+    // The initial parse request itself must receive the supplied signal
+    // in its request options ({signal} is the established request
+    // shape): without that forwarding, an in-flight parse could not be
+    // cancelled, and this test would still pass via the description
+    // fallback's own abort guard.
+    const firstCall = create.mock.calls[0] as unknown as [
+      unknown,
+      {signal?: AbortSignal} | undefined,
+    ];
+    expect(firstCall[1]).toEqual({signal});
+  });
+
   test('generates a description when the parsed recipe has none', async () => {
     const create = jest
       .fn<() => Promise<Anthropic.Message>>()

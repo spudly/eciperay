@@ -69,6 +69,46 @@ describe('selectTagIdsForRecipe', () => {
     );
   });
 
+  test('does not start a request when the signal is already aborted', async () => {
+    const create = jest
+      .fn<() => Promise<Anthropic.Message>>()
+      .mockResolvedValue({
+        content: [{type: 'text', text: JSON.stringify(['Dinner'])}],
+      } as unknown as Anthropic.Message);
+    const client = {messages: {create}} as unknown as Anthropic;
+    await expect(
+      selectTagIdsForRecipe(
+        recipe,
+        availableTags,
+        client,
+        AbortSignal.abort(),
+      ),
+    ).rejects.toThrow();
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  test('forwards an active signal to the provider request', async () => {
+    const create = jest
+      .fn<() => Promise<Anthropic.Message>>()
+      .mockResolvedValue({
+        content: [{type: 'text', text: JSON.stringify(['Dinner'])}],
+      } as unknown as Anthropic.Message);
+    const client = {messages: {create}} as unknown as Anthropic;
+    const signal = new AbortController().signal;
+    await expect(
+      selectTagIdsForRecipe(recipe, availableTags, client, signal),
+    ).resolves.toEqual(['tag-dinner']);
+    expect(create).toHaveBeenCalledTimes(1);
+    // The request must run (active signal) and receive that same signal
+    // in its request options ({signal} is the established request
+    // shape), so removing the forwarding fails this test.
+    const firstCall = create.mock.calls[0] as unknown as [
+      unknown,
+      {signal?: AbortSignal} | undefined,
+    ];
+    expect(firstCall[1]).toEqual({signal});
+  });
+
   test('returns an empty array when AI response is invalid', async () => {
     const client = makeClient('not json');
     await expect(

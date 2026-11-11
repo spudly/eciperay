@@ -19,6 +19,7 @@ import {httpLogger, logger, toLoggableUrl} from './lib/logger.js';
 import {initPostHogLogs, serverLog} from './lib/posthogLogs.js';
 import {logServerSecretsOnStartup} from './lib/serverSecrets.js';
 import {AiResponseParseError} from './lib/validate.js';
+import {StageTimeoutError} from './lib/withTimeout.js';
 import {createAccountRouter} from './routes/account/router.js';
 import {createAuthRouter} from './routes/auth/router.js';
 import {createBillingRouter} from './routes/billing/router.js';
@@ -115,6 +116,18 @@ export const handleUnexpectedError = (
   _next: NextFunction,
 ) => {
   if (res.headersSent) {
+    return;
+  }
+  if (err instanceof StageTimeoutError) {
+    // A bounded stage timed out (issue #492): that is a retryable
+    // gateway failure, not an opaque 500 the client cannot tell from
+    // a real error.
+    serverLog('warn', 'Stage timeout', {
+      method: req.method,
+      path: toLoggableUrl(req.originalUrl),
+      status: 504,
+    });
+    res.status(504).json({error: 'Request timed out — please retry'});
     return;
   }
   if (

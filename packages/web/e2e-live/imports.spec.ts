@@ -1,6 +1,6 @@
 import {expect, test} from '@playwright/test';
 
-import {deleteRecipeViaApi} from './flows.js';
+import {deleteRecipeViaApi, deleteRecipesByTitleViaApi} from './flows.js';
 import {
   AI_SKIP_REASON,
   QA_SKIP_REASON,
@@ -37,6 +37,20 @@ test.describe('live imports', () => {
 
   test('pasting recipe text imports a recipe', async ({page}) => {
     const title = uniqueCiName('Imported Soup');
+
+    // Self-healing pre-clean (issue #492): the canned parse always yields
+    // the title "Imported Soup" with the same two ingredients, which is
+    // exactly the duplicate fingerprint (title + ingredients, issue #296).
+    // A copy leaked by an earlier run — imported, then neither renamed by
+    // this spec's last step nor deleted by its teardown because a step in
+    // between failed — makes this import return the 409 duplicate warning
+    // instead of a 201, and the waitForResponse below times out even
+    // though the server answered in ~0.5s (diagnosed from the Playwright
+    // trace of run 42953528221: POST /api/recipes/import/text → 409
+    // duplicate_recipe naming the leaked copy). Remove any exact-title
+    // copies first so the import below always starts from a clean library.
+    await page.goto('/recipes');
+    await deleteRecipesByTitleViaApi(page, 'Imported Soup', ['water', 'salt']);
 
     await page.goto('/add/text');
     // The design system ImportTextPage renders a plain text field (the

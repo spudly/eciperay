@@ -1,6 +1,7 @@
 import {supabase} from '../supabase.js';
 
 import {downloadRemoteImage} from './remoteImageDownload.js';
+import {withTimeoutOrNull} from './withTimeout.js';
 
 export {fetchImageAsBase64} from './remoteImageDownload.js';
 
@@ -49,17 +50,28 @@ type UploadBufferFn = (
 
 type FetchFn = typeof fetch;
 
-type ResolveImportedImageDeps = {uploadFn?: UploadBufferFn; fetchFn?: FetchFn};
+type ResolveImportedImageDeps = {
+  uploadFn?: UploadBufferFn;
+  fetchFn?: FetchFn;
+  timeoutMs?: number;
+};
 
-export const resolveImportedImageUrl = async (
+/**
+ * Default bound for resolving an imported image (download + storage upload).
+ * The download leg already aborts at 10s (remoteImageDownload), but the
+ * storage upload had no bound at all: a stuck upload held the import
+ * response indefinitely (issue #492). On timeout the import degrades to
+ * "no image" — a null result is already a normal outcome of this function.
+ */
+export const IMPORTED_IMAGE_TIMEOUT_MS = 15_000;
+
+const resolveImportedImageUrlWithinBound = async (
   candidate: string,
   supabaseUid: string,
   recipeId: string,
-  {
-    uploadFn = uploadRecipeImageBuffer,
-    fetchFn = fetch,
-  }: ResolveImportedImageDeps = {},
-) => {
+  uploadFn: UploadBufferFn,
+  fetchFn: FetchFn,
+): Promise<string | null> => {
   if (candidate.startsWith('http://') || candidate.startsWith('https://')) {
     const downloaded = await downloadRemoteImage(candidate, fetchFn);
     if (!downloaded) {
@@ -78,3 +90,25 @@ export const resolveImportedImageUrl = async (
   }
   return uploadFn(supabaseUid, recipeId, parsed.buffer, parsed.contentType);
 };
+
+export const resolveImportedImageUrl = async (
+  candidate: string,
+  supabaseUid: string,
+  recipeId: string,
+  {
+    uploadFn = uploadRecipeImageBuffer,
+    fetchFn = fetch,
+    timeoutMs = IMPORTED_IMAGE_TIMEOUT_MS,
+  }: ResolveImportedImageDeps = {},
+): Promise<string | null> =>
+  withTimeoutOrNull(
+    resolveImportedImageUrlWithinBound(
+      candidate,
+      supabaseUid,
+      recipeId,
+      uploadFn,
+      fetchFn,
+    ),
+    timeoutMs,
+    'imported image resolution',
+  );
