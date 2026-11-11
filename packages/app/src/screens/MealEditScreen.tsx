@@ -46,11 +46,28 @@ export const MealEditScreen = ({route, navigation}: Props) => {
   const [searchText, setSearchText] = useState('');
   const debouncedSearch = useDebouncedValue(searchText);
 
-  const {data: meal, isLoading: mealLoading} = useQuery({
+  const {
+    data: meal,
+    isLoading: mealLoading,
+    error: mealError,
+    isLoadingError: isMealLoadingError,
+  } = useQuery({
     queryKey: queryKeys.meal(mealId),
     queryFn: () => api.meals.get(mealId),
     enabled: isEdit,
   });
+
+  // A failed initial load in edit mode must not leave an empty,
+  // saveable form: the save is a full replace, so submitting it would
+  // wipe the meal's stored recipes and direct ingredients (#362 — the
+  // web MealEditPage gate, mirrored here). The load error shows in the
+  // form's error slot and saving stays blocked until a meal is loaded.
+  // A failed background refetch is different: the cached meal is still
+  // present, so the form (and its edits) stays usable.
+  const mealLoadFailed = isEdit && isMealLoadingError && !meal;
+  const mealLoadErrorMessage = mealLoadFailed
+    ? `Could not load this meal: ${errorMessage(mealError)}`
+    : null;
 
   const {
     data: searchResults = [],
@@ -176,6 +193,7 @@ export const MealEditScreen = ({route, navigation}: Props) => {
         isSaving={saveMutation.isPending}
         error={
           formError ??
+          mealLoadErrorMessage ??
           // Same picker-error surfacing as web (#359): a failed
           // search must not read as "no matches".
           (searchError
@@ -193,6 +211,13 @@ export const MealEditScreen = ({route, navigation}: Props) => {
           }));
         }}
         onSubmit={() => {
+          if (mealLoadFailed) {
+            // Never submit the empty form over a meal that failed to
+            // load — the full-replace save would wipe its stored
+            // recipes and direct ingredients.
+            setFormError(mealLoadErrorMessage);
+            return;
+          }
           setFormError(null);
           saveMutation.mutate();
         }}

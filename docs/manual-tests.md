@@ -463,7 +463,8 @@ mode; there is no Playwright coverage of meals. The cases below are manual._
 `MealCookingModePage`, `packages/server` meal routes,
 `packages/server/src/lib/saveMeal.ts`,
 `packages/server/src/lib/conditionalWrite.ts`,
-`packages/server/src/lib/mealSchemas.ts`, `packages/server` recipe search
+`packages/server/src/lib/mealSchemas.ts`, `packages/mcp-server/src/tools.ts`,
+`packages/mcp-server/src/eciperayClient.ts`, `packages/server` recipe search
 (`packages/server/src/routes/recipes/{listFilterParams,sqlConstants}.ts`),
 `packages/client/src/useMealPlanEditForm.ts`,
 `packages/server/src/lib/saveRecipeMetadata.ts`,

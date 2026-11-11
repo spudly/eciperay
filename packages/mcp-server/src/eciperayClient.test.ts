@@ -849,6 +849,22 @@ describe('client meal writes', () => {
     assert.equal(putBodies(calls).length, 0);
   });
 
+  test('removeRecipeFromMeal may remove the last recipe when direct ingredients remain (#362)', async () => {
+    const mixed = {
+      ...storedMixedMeal,
+      members: [
+        storedMeal.members.find(member => member.recipeId === 'recipe-2'),
+      ],
+    };
+    const calls = stubFetch(() => ({status: 200, body: mixed}));
+    await client().removeRecipeFromMeal('meal-1', 'recipe-2');
+    const body = putBodies(calls)[0];
+    assert.deepEqual(body?.['recipes'], []);
+    // The stored direct ingredients are preserved server-side by
+    // omitting the field (#432) — it must not be sent.
+    assert.equal(body !== undefined && 'ingredients' in body, false);
+  });
+
   test('removeRecipeFromMeal refuses to empty the meal, with no PUT', async () => {
     const single = {...storedMeal, members: [storedMeal.members[0]]};
     const calls = stubFetch(() => ({status: 200, body: single}));

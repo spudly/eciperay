@@ -49,7 +49,11 @@ const mealRecipeListSchema = z
  * nutrition estimate at save time).
  */
 const mealIngredientSchema = z.object({
-  name: z.string().min(1).max(200).describe('Ingredient name'),
+  // `.trim()` first: the server trims both text fields before its own
+  // length checks, so MCP validation must judge the trimmed value too —
+  // a whitespace-only name is empty, and padding must not push a valid
+  // name or unit over the cap.
+  name: z.string().trim().min(1).max(200).describe('Ingredient name'),
   quantity: z
     .number()
     .positive()
@@ -58,6 +62,7 @@ const mealIngredientSchema = z.object({
     .describe('Amount of the ingredient (omit when not applicable)'),
   unit: z
     .string()
+    .trim()
     .min(1)
     .max(50)
     .nullable()
