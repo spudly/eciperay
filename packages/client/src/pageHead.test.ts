@@ -44,12 +44,13 @@ describe('pageHead', () => {
   });
 
   test('public recipe head carries social cards and the recipe image', () => {
-    const {userId: _userId, ...recipe} = makeRecipeDetail({
+    const {userId: _userId, ...detail} = makeRecipeDetail({
       title: 'Public Pasta',
       description: 'A tasty pasta dish.',
       imageUrl: 'https://cdn.example/pasta.jpg',
       visibility: 'public',
     });
+    const recipe = {...detail, authorDisplayName: null};
     const head = buildPublicRecipeHead(
       recipe,
       'https://www.eciperay.com/recipe/r1/public-pasta',
@@ -63,11 +64,12 @@ describe('pageHead', () => {
   });
 
   test('public recipe head omits og:image when the recipe has no image', () => {
-    const {userId: _userId, ...recipe} = makeRecipeDetail({
+    const {userId: _userId, ...detail} = makeRecipeDetail({
       title: 'Plain Salad',
       imageUrl: null,
       visibility: 'public',
     });
+    const recipe = {...detail, authorDisplayName: null};
     const head = buildPublicRecipeHead(
       recipe,
       'https://www.eciperay.com/recipe/r2/plain-salad',

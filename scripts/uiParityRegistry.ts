@@ -96,6 +96,18 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
       'Web ProfilePage extract for max-lines; app ProfileScreen keeps goals query state inline.',
   },
   {
+    path: 'profile/ProfileAuthorDisplaySection.tsx',
+    platform: 'web',
+    reason:
+      'Web profile section for the author-display setting (#411); the app renders its own AuthorDisplayForm host component in hosts/profile.',
+  },
+  {
+    path: 'DiscoverPageHead.tsx',
+    platform: 'web',
+    reason:
+      'Injects the Discover ItemList JSON-LD (#411) into the document head; no native equivalent.',
+  },
+  {
     path: 'profile/ProfileAccessTokensSection.tsx',
     platform: 'web',
     reason:

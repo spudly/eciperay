@@ -96,7 +96,7 @@ export type {
   AccountExportCommunityRating,
   AccountExportShareGrant,
 } from './accountExport.js';
-export type {User} from './user.js';
+export type {AuthorDisplaySettings, User} from './user.js';
 export type {
   PersonalAccessToken,
   PersonalAccessTokenWithSecret,

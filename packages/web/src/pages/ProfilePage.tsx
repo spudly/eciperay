@@ -8,6 +8,7 @@ import {ProfilePage as ProfilePageView} from '@spudly/ui';
 
 import {LegalLinks} from '../components/LegalLinks.js';
 import {ProfileAccessTokensSection} from '../components/profile/ProfileAccessTokensSection.js';
+import {ProfileAuthorDisplaySection} from '../components/profile/ProfileAuthorDisplaySection.js';
 import {ProfileFeedbackPreference} from '../components/ProfileFeedbackPreference.js';
 import {ProfileNutritionGoalsSection} from '../components/profile/ProfileNutritionGoalsSection.js';
 import {buildSubscriptionData} from '../components/profile/subscriptionData.js';
@@ -348,6 +349,7 @@ export const ProfilePage = () => {
         sectionsBeforeFeedback={
           <>
             <ProfileNutritionGoalsSection />
+            <ProfileAuthorDisplaySection />
             <ProfileAccessTokensSection />
           </>
         }

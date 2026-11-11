@@ -90,7 +90,8 @@ export const buildListPublicRecipesSql = (
   select r.id, r.slug, r.visibility,
          rv.title, rv.description, rv.servings, rv.prep_time_min,
          rv.cook_time_min, rv.image_url, rv.updated_at,
-         u.display_name as author_display_name,
+         case when u.show_author_on_public_recipes
+           then u.display_name else null end as author_display_name,
          ${listNutritionAndRatingSelect},
          coalesce(
            json_agg(
@@ -109,7 +110,7 @@ export const buildListPublicRecipesSql = (
     and ($4::text is null or r.status = $4)
     ${ingredientFilterSql(5)}
     ${nutritionFilterSql(6)}
-  group by r.id, rv.id, u.display_name
+  group by r.id, rv.id, u.display_name, u.show_author_on_public_recipes
   order by ${orderBySql(sort, sortDir)}
   limit $1 offset $2
 `;
@@ -184,6 +185,8 @@ export const GET_PUBLIC_RECIPE_DETAIL_SQL = `
          rv.id as version_id, rv.version_number, rv.title, rv.description,
          rv.servings, rv.prep_time_min, rv.cook_time_min, rv.image_url,
          rv.source_url, rv.created_via, rv.created_at, rv.updated_at,
+         case when u.show_author_on_public_recipes
+           then u.display_name else null end as author_display_name,
          ${nutritionSelectSql},
     coalesce((
       select json_agg(
@@ -213,10 +216,11 @@ export const GET_PUBLIC_RECIPE_DETAIL_SQL = `
     )) filter (where t.id is not null), '[]') as tags
   from recipes r
   join recipe_versions rv on rv.id = r.active_version_id
+  join users u on u.id = r.user_id
   left join recipe_tags rt on rt.recipe_version_id = rv.id
   left join tags t on t.id = rt.tag_id
   where r.id = $1
-  group by r.id, rv.id
+  group by r.id, rv.id, u.display_name, u.show_author_on_public_recipes
 `;
 
 export {

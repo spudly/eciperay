@@ -1,5 +1,6 @@
 import type {
   AccountExportBundle,
+  AuthorDisplaySettings,
   Entitlement,
   NutritionGoals,
   PersonalAccessToken,
@@ -16,6 +17,13 @@ export const createAccountApi = (client: ApiClient) => ({
     client.fetch<NutritionGoals>('/account/nutrition-goals', {
       method: 'PUT',
       body: JSON.stringify(goals),
+    }),
+  getAuthorDisplay: () =>
+    client.fetch<AuthorDisplaySettings>('/account/author-display'),
+  putAuthorDisplay: (settings: AuthorDisplaySettings) =>
+    client.fetch<AuthorDisplaySettings>('/account/author-display', {
+      method: 'PUT',
+      body: JSON.stringify(settings),
     }),
   deleteAccount: () => client.fetch<undefined>('/account', {method: 'DELETE'}),
   getEntitlement: () => client.fetch<Entitlement>('/account/entitlement'),

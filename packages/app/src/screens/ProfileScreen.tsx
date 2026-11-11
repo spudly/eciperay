@@ -6,12 +6,13 @@ import {
 } from '@eciperay/client';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useState} from 'react';
-import type {NutritionGoals} from '@eciperay/types';
+import type {AuthorDisplaySettings, NutritionGoals} from '@eciperay/types';
 
 import {ProfilePage} from '@spudly/ui';
 
 import {LegalLinks} from '../components/LegalLinks';
 import {AccessTokensSection} from '../hosts/profile/AccessTokensSection';
+import {AuthorDisplayForm} from '../hosts/profile/AuthorDisplayForm';
 import {NutritionGoalsForm} from '../hosts/profile/NutritionGoalsForm';
 import {ProfileFeedbackPreference} from '../hosts/profile/ProfileFeedbackPreference';
 import {api} from '../lib/api';
@@ -52,6 +53,37 @@ export const ProfileScreen = () => {
     },
   });
 
+  const [authorDisplay, setAuthorDisplay] = useState<AuthorDisplaySettings>({
+    displayName: '',
+    showOnPublicRecipes: true,
+  });
+  const [authorDisplayError, setAuthorDisplayError] = useState<string | null>(
+    null,
+  );
+
+  const {data: savedAuthorDisplay} = useQuery({
+    queryKey: queryKeys.authorDisplay(),
+    queryFn: () => api.account.getAuthorDisplay(),
+  });
+
+  useEffect(() => {
+    if (savedAuthorDisplay) {
+      setAuthorDisplay(savedAuthorDisplay);
+    }
+  }, [savedAuthorDisplay]);
+
+  const saveAuthorDisplayMutation = useMutation({
+    mutationFn: () => api.account.putAuthorDisplay(authorDisplay),
+    onSuccess: data => {
+      setAuthorDisplay(data);
+      setAuthorDisplayError(null);
+      void queryClient.invalidateQueries({queryKey: queryKeys.authorDisplay()});
+    },
+    onError: error => {
+      setAuthorDisplayError(errorMessage(error));
+    },
+  });
+
   return (
     <ProfilePage
       email={session?.user.email ?? null}
@@ -69,6 +101,15 @@ export const ProfileScreen = () => {
             onChange={setNutritionGoals}
             onSave={() => {
               saveGoalsMutation.mutate();
+            }}
+          />
+          <AuthorDisplayForm
+            settings={authorDisplay}
+            saving={saveAuthorDisplayMutation.isPending}
+            error={authorDisplayError}
+            onChange={setAuthorDisplay}
+            onSave={() => {
+              saveAuthorDisplayMutation.mutate();
             }}
           />
           <AccessTokensSection />

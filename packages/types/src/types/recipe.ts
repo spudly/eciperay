@@ -80,8 +80,14 @@ export type RecipeSharingUpdateResult = RecipeDetail & {shareToken?: string};
 
 export type RecipeShareGrantVia = 'link' | 'explicit';
 
-/** Recipe detail safe for anonymous viewers (no owner identifiers). */
-export type PublicRecipeDetail = Omit<RecipeDetail, 'userId'>;
+/**
+ * Recipe detail safe for anonymous viewers (no owner identifiers).
+ * `authorDisplayName` is the owner's display name when they allow it to be
+ * shown on public recipes, otherwise null.
+ */
+export type PublicRecipeDetail = Omit<RecipeDetail, 'userId'> & {
+  authorDisplayName: string | null;
+};
 
 export type PublicRecipeDiscoverySort = RecipeListSort;
 

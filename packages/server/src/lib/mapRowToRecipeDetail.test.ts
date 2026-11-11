@@ -24,8 +24,16 @@ describe('mapRowToPublicRecipeDetail', () => {
     expect(mapped).toEqual({
       ...makeRecipeDetail({userId: 'owner-uuid'}),
       userId: undefined,
+      authorDisplayName: null,
     });
     expect('userId' in mapped).toBe(false);
+  });
+
+  test('exposes the author display name the query resolved', () => {
+    const mapped = mapRowToPublicRecipeDetail(
+      makeRecipeDetailRow({author_display_name: 'Chef Alex'}),
+    );
+    expect(mapped.authorDisplayName).toBe('Chef Alex');
   });
 });
 

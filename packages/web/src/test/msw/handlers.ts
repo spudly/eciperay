@@ -733,6 +733,12 @@ export const handlers = [
   http.put(`${API}/api/account/nutrition-goals`, async ({request}) =>
     HttpResponse.json(await request.json()),
   ),
+  http.get(`${API}/api/account/author-display`, () =>
+    HttpResponse.json({displayName: 'Test User', showOnPublicRecipes: true}),
+  ),
+  http.put(`${API}/api/account/author-display`, async ({request}) =>
+    HttpResponse.json(await request.json()),
+  ),
   http.get(`${API}/api/account/personal-access-tokens`, () =>
     HttpResponse.json([]),
   ),

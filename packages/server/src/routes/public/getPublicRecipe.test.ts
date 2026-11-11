@@ -48,6 +48,23 @@ describe('GET /public/recipes/:id', () => {
     expect(res.body.viewerRatingIsStale).toBe(false);
   });
 
+  test('exposes the author display name resolved by the query', async () => {
+    mockPublicRecipeQueries(
+      makeRecipeDetailRow({
+        visibility: 'public',
+        slug: 'pasta',
+        author_display_name: 'Chef Alex',
+      }),
+    );
+
+    const res = await request(getApp()).get(
+      '/api/public/recipes/recipe-uuid-1',
+    );
+
+    expect(res.status).toBe(200);
+    expect(res.body.recipe.authorDisplayName).toBe('Chef Alex');
+  });
+
   test('returns slug mismatch hint when slug does not match', async () => {
     mockPublicRecipeQueries(
       makeRecipeDetailRow({visibility: 'public', slug: 'pasta'}),

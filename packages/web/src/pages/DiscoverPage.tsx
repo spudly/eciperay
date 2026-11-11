@@ -17,6 +17,7 @@ import {useInfiniteQuery} from '@tanstack/react-query';
 
 import {DiscoverPage as DiscoverPageView} from '@spudly/ui';
 
+import {DiscoverPageHead} from '../components/DiscoverPageHead.js';
 import {PublicHeader} from '../components/PublicHeader.js';
 import {StaticPageHead} from '../components/StaticPageHead.js';
 import {eciperay} from '../lib/api.js';
@@ -66,6 +67,7 @@ export const DiscoverPage = () => {
   return (
     <>
       <StaticPageHead path="/discover" />
+      <DiscoverPageHead recipes={recipes} />
       <PublicHeader />
       <DiscoverPageView
         footer={sharedFooter}
