@@ -1,5 +1,5 @@
 import {jest} from '@jest/globals';
-import type {QueryResultRow} from 'pg';
+import type {QueryResult, QueryResultRow} from 'pg';
 import request from 'supertest';
 
 import {makeRecipeDetailRow} from '../../test/fixtures/recipeRow.js';
@@ -412,10 +412,14 @@ describe('POST /recipes/import/text', () => {
         .mockResolvedValueOnce(makeQueryResult([]))
         // The save's first query lands at ~150ms: past the first 100ms
         // window, inside the second (settlement) window.
-        .mockImplementationOnce(async () => {
-          await new Promise(resolve => setTimeout(resolve, 150));
-          return makeQueryResult<QueryResultRow>([{id: 'recipe-uuid-1'}]);
-        })
+        .mockImplementationOnce(
+          async <T extends QueryResultRow>(): Promise<QueryResult<T>> => {
+            await new Promise(resolve => setTimeout(resolve, 150));
+            return makeQueryResult([
+              {id: 'recipe-uuid-1'},
+            ]) as unknown as QueryResult<T>;
+          },
+        )
         .mockResolvedValue(
           makeQueryResult([makeRecipeDetailRow({title: 'Pasted Pasta'})]),
         );
