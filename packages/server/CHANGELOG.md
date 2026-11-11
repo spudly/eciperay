@@ -11,11 +11,13 @@
   on or fails because of generation, and at most once per recipe. Recipe photos
   can now be replaced but no longer deleted: the Remove image action is gone
   from the web and app recipe forms, so once a recipe has an image it keeps one.
-- 5bc4ecc: URL imports now fall back to the Crawlbase proxy when a recipe site
-  blocks the direct fetch (#476): the direct fetch (including the browser-header
-  retry for bot refusals) runs first, and Crawlbase is used only after it fails,
-  so proxy tokens are spent only on blocked pages. When the optional
-  `CRAWLBASE_TOKEN` Fly secret is not set, imports behave exactly as before.
+- 5bc4ecc: URL imports now fall back to the Crawlbase proxy when the direct
+  fetch fails (#476): the direct fetch (including the browser-header retry for
+  bot refusals) runs first, and Crawlbase is used only after it fails — whether
+  the site blocked the request or the fetch otherwise failed (for example a
+  404, 500, or timeout) — so proxy tokens are spent only when the direct fetch
+  does not succeed. When the optional `CRAWLBASE_TOKEN` Fly secret is not set,
+  imports behave exactly as before.
 - bc4ae95: Text recipe imports can no longer hang indefinitely (#492): every
   awaited stage of POST /api/recipes/import/text — the AI parse, recipe
   preparation, the save, and the imported-image download/upload — now has an
