@@ -14,7 +14,6 @@ import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
 import {lazyTestApp} from '../../test/lazyTestApp.js';
 import {mockBillingMetered, mockBillingPlan} from '../../test/mockBilling.js';
 import {logger} from '../../lib/logger.js';
-import {CRAWLBASE_TIMEOUT_MS} from './importFromUrl.js';
 
 type ServerLogAttributes = Record<string, string | number | boolean>;
 const mockServerLog = jest.fn<
@@ -546,7 +545,7 @@ describe('POST /recipes/import/url', () => {
       // The PostHog pipeline gets its own serverLog emission, separate
       // from the pino line: absent statuses flatten to 'none' (#497).
       const serverLogCall = mockServerLog.mock.calls.find(
-        call => call[2]?.event === 'url_import_fetch',
+        call => call[2]?.['event'] === 'url_import_fetch',
       );
       expect(serverLogCall?.[2]).toMatchObject({
         host: 'recipe.example.com',
@@ -597,7 +596,7 @@ describe('POST /recipes/import/url', () => {
     // The parse stage's serverLog emission is its own, separate from any
     // fetch-stage emission: its own event and outcome (#497 review round).
     const parseServerLogCall = mockServerLog.mock.calls.find(
-      call => call[2]?.event === 'url_import_parse',
+      call => call[2]?.['event'] === 'url_import_parse',
     );
     expect(parseServerLogCall?.[2]).toMatchObject({
       host: 'recipe.example.com',
@@ -606,7 +605,11 @@ describe('POST /recipes/import/url', () => {
     parseWarnSpy.mockRestore();
   });
 
-  test('budgets the Crawlbase fallback at 90s, matching the Crawlbase client default (#497)', () => {
+  test('budgets the Crawlbase fallback at 90s, matching the Crawlbase client default (#497)', async () => {
+    // Dynamic import only: a static import of this module at the top of
+    // the file would load it (with the real posthogLogs) before the
+    // unstable_mockModule registration for posthogLogs takes effect.
+    const {CRAWLBASE_TIMEOUT_MS} = await import('./importFromUrl.js');
     expect(CRAWLBASE_TIMEOUT_MS).toBe(90_000);
   });
 
@@ -652,7 +655,7 @@ describe('POST /recipes/import/url', () => {
       // The separate serverLog emission carries the same outcome with
       // flattened attributes — and never the token (#497 review round).
       const serverLogCall = mockServerLog.mock.calls.find(
-        call => call[2]?.event === 'url_import_fetch',
+        call => call[2]?.['event'] === 'url_import_fetch',
       );
       expect(serverLogCall?.[2]).toMatchObject({
         host: 'recipe.example.com',
