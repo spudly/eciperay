@@ -621,7 +621,9 @@ small set of known inputs so results are comparable across runs).
    it — confirm in the server log that the attempt's `url_import_fetch` line
    records `proxyOutcome: success` (a `skipped` outcome means the serving
    app has no `CRAWLBASE_TOKEN` configured; a `failure` outcome's
-   proxy/original statuses name the failing hop).
+   proxy/original statuses name the failing hop — when both statuses are
+   absent, as on a timeout or network failure, inspect `proxyErrorClass`
+   to identify the cause).
 5. **Image import.** Add → Import from image (`/add/image`); upload a clear
    photo/scan of a printed recipe. **Expected:** extracted text reaches review
    in editable form; obvious misreads are correctable in review and the

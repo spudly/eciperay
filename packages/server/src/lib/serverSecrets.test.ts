@@ -60,6 +60,16 @@ describe('serverEnvironmentAttributes', () => {
     );
   });
 
+  test('marks a configured CRAWLBASE_TOKEN as set without leaking it', () => {
+    process.env['CRAWLBASE_TOKEN'] = 'crawlbase-sentinel-token';
+
+    const attributes = serverEnvironmentAttributes();
+    expect(attributes['CRAWLBASE_TOKEN']).toBe(SET_SECRET_VALUE);
+    expect(JSON.stringify(attributes)).not.toContain(
+      'crawlbase-sentinel-token',
+    );
+  });
+
   test('treats blank secrets as unset', () => {
     for (const envVar of Object.values(SERVER_SECRET_ENV_VARS)) {
       process.env[envVar] = '   ';

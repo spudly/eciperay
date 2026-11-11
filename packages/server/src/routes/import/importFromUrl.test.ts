@@ -16,6 +16,20 @@ import {mockBillingMetered, mockBillingPlan} from '../../test/mockBilling.js';
 import {logger} from '../../lib/logger.js';
 import {CRAWLBASE_TIMEOUT_MS} from './importFromUrl.js';
 
+type ServerLogAttributes = Record<string, string | number | boolean>;
+const mockServerLog = jest.fn<
+  (level: string, message: string, attributes?: ServerLogAttributes) => void
+>();
+
+// serverLog (the PostHog pipeline) is a separate emission from the pino
+// logger; mock it so tests can assert both pipelines carry the import
+// outcomes (#497 review round). Route modules load lazily, after mocks.
+jest.unstable_mockModule('../../lib/posthogLogs.js', () => ({
+  initPostHogLogs: () => {},
+  serverLog: mockServerLog,
+  shutdownPostHogLogs: async () => {},
+}));
+
 const mockQuery = createMockQuery();
 const getApp = lazyTestApp({query: mockQuery});
 
@@ -504,6 +518,7 @@ describe('POST /recipes/import/url', () => {
     const previous = process.env['CRAWLBASE_TOKEN'];
     delete process.env['CRAWLBASE_TOKEN'];
     const warnSpy = jest.spyOn(logger, 'warn');
+    mockServerLog.mockClear();
     try {
       nockSupabaseGetUser('user-uuid-1');
       mockBillingPlan(mockQuery, 'plus');
@@ -528,6 +543,20 @@ describe('POST /recipes/import/url', () => {
         proxyOutcome: 'skipped',
         crawlbaseTokenPresent: false,
       });
+      // The PostHog pipeline gets its own serverLog emission, separate
+      // from the pino line: absent statuses flatten to 'none' (#497).
+      const serverLogCall = mockServerLog.mock.calls.find(
+        call => call[2]?.event === 'url_import_fetch',
+      );
+      expect(serverLogCall?.[2]).toMatchObject({
+        host: 'recipe.example.com',
+        directStatus: 403,
+        proxyOutcome: 'skipped',
+        proxyStatus: 'none',
+        originalStatus: 'none',
+        proxyErrorClass: 'none',
+        crawlbaseTokenPresent: false,
+      });
     } finally {
       warnSpy.mockRestore();
       if (previous !== undefined) {
@@ -538,6 +567,7 @@ describe('POST /recipes/import/url', () => {
 
   test('returns 422 with a no-recipe message when the page contains no recipe (#297)', async () => {
     const parseWarnSpy = jest.spyOn(logger, 'warn');
+    mockServerLog.mockClear();
     nockSupabaseGetUser('user-uuid-1');
     nock('https://recipe.example.com').get('/plain').reply(200, PLAIN_HTML);
     // Claude cannot extract a recipe from the page text, so its reply
@@ -564,6 +594,15 @@ describe('POST /recipes/import/url', () => {
       host: 'recipe.example.com',
       outcome: 'no_recipe',
     });
+    // The parse stage's serverLog emission is its own, separate from any
+    // fetch-stage emission: its own event and outcome (#497 review round).
+    const parseServerLogCall = mockServerLog.mock.calls.find(
+      call => call[2]?.event === 'url_import_parse',
+    );
+    expect(parseServerLogCall?.[2]).toMatchObject({
+      host: 'recipe.example.com',
+      outcome: 'no_recipe',
+    });
     parseWarnSpy.mockRestore();
   });
 
@@ -575,6 +614,7 @@ describe('POST /recipes/import/url', () => {
     const previous = process.env['CRAWLBASE_TOKEN'];
     process.env['CRAWLBASE_TOKEN'] = 'test-crawlbase-token';
     const infoSpy = jest.spyOn(logger, 'info');
+    mockServerLog.mockClear();
     try {
       nockSupabaseGetUser('user-uuid-1');
       nock('https://recipe.example.com')
@@ -607,6 +647,22 @@ describe('POST /recipes/import/url', () => {
         originalStatus: 200,
       });
       expect(JSON.stringify(fallbackCall)).not.toContain(
+        'test-crawlbase-token',
+      );
+      // The separate serverLog emission carries the same outcome with
+      // flattened attributes — and never the token (#497 review round).
+      const serverLogCall = mockServerLog.mock.calls.find(
+        call => call[2]?.event === 'url_import_fetch',
+      );
+      expect(serverLogCall?.[2]).toMatchObject({
+        host: 'recipe.example.com',
+        directStatus: 403,
+        proxyOutcome: 'success',
+        proxyStatus: 200,
+        originalStatus: 200,
+        crawlbaseTokenPresent: true,
+      });
+      expect(JSON.stringify(serverLogCall)).not.toContain(
         'test-crawlbase-token',
       );
     } finally {
