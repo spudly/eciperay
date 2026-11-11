@@ -242,10 +242,21 @@ without); one recipe may be created fresh in case 1.
     with an image in place, check the image controls. **Expected:** there is no
     Remove/Delete action for the photo; uploading or generating a replacement
     still works and swaps the image.
+17. **Android in-app href taps (#490, #491).** On the Android app, signed in: on
+    Home, tap **Browse Recipes**, **Add a recipe**, and the shared-with-me
+    action; then on the Recipes page, tap one of your own recipe cards.
+    **Expected:** every tap navigates in-app — Browse Recipes and the
+    shared-with-me action land on the Recipes browse, Add lands on the Add
+    screen, and the card opens that recipe's detail — with no dead taps and no
+    "No Activity found to handle Intent" failure. (Shared and discovery rows
+    deliberately open their public permalink instead.)
 
 **Run when:**
 `packages/app/src/screens/{Recipes,RecipeDetail,EditRecipe,EditVersion,ManualEntry,SharedWithMe,Home}Screen.tsx`,
-`packages/app/src/lib/deepLinks.ts`, `packages/app/src/components/recipe/**`,
+`packages/app/src/lib/deepLinks.ts`, `packages/app/src/navigation/linking.ts`,
+`packages/app/android/app/src/main/AndroidManifest.xml`,
+`packages/app/android/app/build.gradle`,
+`packages/app/src/components/recipe/**`,
 `packages/app/src/lib/recipeImageCrop.ts`,
 `packages/app/android/settings.gradle`, `packages/app/ios/Podfile`,
 `packages/app/react-native.config.cjs`,
