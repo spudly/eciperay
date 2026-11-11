@@ -50,7 +50,7 @@ test.describe('live imports', () => {
     // duplicate_recipe naming the leaked copy). Remove any exact-title
     // copies first so the import below always starts from a clean library.
     await page.goto('/recipes');
-    await deleteRecipesByTitleViaApi(page, 'Imported Soup');
+    await deleteRecipesByTitleViaApi(page, 'Imported Soup', ['water', 'salt']);
 
     await page.goto('/add/text');
     // The design system ImportTextPage renders a plain text field (the

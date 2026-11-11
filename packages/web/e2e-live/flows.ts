@@ -131,6 +131,7 @@ export const deleteRecipeViaApi = async (
 export const deleteRecipesByTitleViaApi = async (
   page: Page,
   title: string,
+  expectedIngredientNames?: readonly string[],
 ): Promise<void> => {
   const token = await getAccessToken(page);
   if (!token) {
@@ -140,25 +141,81 @@ export const deleteRecipesByTitleViaApi = async (
     );
   }
   const ids = await page.evaluate(
-    async ({title: t, token: tk}) => {
-      const response = await fetch(
-        `/api/recipes?search=${encodeURIComponent(t)}`,
-        {headers: {Authorization: `Bearer ${tk}`}},
-      );
-      if (!response.ok) {
-        return [];
-      }
-      const recipes = (await response.json()) as Array<{
+    async ({title: t, token: tk, ingredientNames}) => {
+      // Same normalization the server's duplicate guard applies
+      // (findDuplicateRecipe): case-insensitive, whitespace collapsed —
+      // a leaked copy whose title differs only in case/spacing still
+      // blocks the import, so it must be found here too.
+      const normalize = (value: string): string =>
+        value.trim().replaceAll(/\s+/g, ' ').toLowerCase();
+      const headers = {Authorization: `Bearer ${tk}`};
+      // The list endpoint paginates (default limit 100): walk every
+      // page, or a leaked copy behind 100 newer matches is missed.
+      const recipes: Array<{
         id?: string;
         recipeId?: string;
         title?: string;
-      }>;
-      return recipes
-        .filter(recipe => recipe.title === t)
+      }> = [];
+      const pageSize = 500;
+      for (let offset = 0; ; offset += pageSize) {
+        const response = await fetch(
+          `/api/recipes?search=${encodeURIComponent(t)}&limit=${pageSize}&offset=${offset}`,
+          {headers},
+        );
+        if (!response.ok) {
+          // A failed search is not an empty library: surface it, or
+          // the import test fails later with no hint the pre-clean
+          // never ran.
+          throw new Error(
+            `deleteRecipesByTitleViaApi: recipe search failed with status ${response.status}`,
+          );
+        }
+        const pageRecipes = (await response.json()) as typeof recipes;
+        recipes.push(...pageRecipes);
+        if (pageRecipes.length < pageSize) {
+          break;
+        }
+      }
+      const candidates = recipes
+        .filter(
+          recipe =>
+            typeof recipe.title === 'string' &&
+            normalize(recipe.title) === normalize(t),
+        )
         .map(recipe => recipe.id ?? recipe.recipeId)
         .filter((id): id is string => typeof id === 'string');
+      if (!ingredientNames) {
+        return candidates;
+      }
+      // Only a recipe that can actually block the import — same
+      // normalized title AND ingredient fingerprint, the duplicate
+      // guard's rule — may be deleted; a same-title recipe with
+      // different ingredients is not a leaked copy of this import.
+      const expected = ingredientNames.map(normalize).sort();
+      const blocking: string[] = [];
+      for (const id of candidates) {
+        const detailResponse = await fetch(`/api/recipes/${id}`, {headers});
+        if (!detailResponse.ok) {
+          continue;
+        }
+        const detail = (await detailResponse.json()) as {
+          ingredients?: Array<{name?: string}>;
+        };
+        const names = (detail.ingredients ?? [])
+          .map(ingredient => ingredient.name)
+          .filter((name): name is string => typeof name === 'string')
+          .map(normalize)
+          .sort();
+        if (
+          names.length === expected.length &&
+          names.every((name, index) => name === expected[index])
+        ) {
+          blocking.push(id);
+        }
+      }
+      return blocking;
     },
-    {title, token},
+    {title, token, ingredientNames: expectedIngredientNames ?? null},
   );
   for (const id of ids) {
     await deleteRecipeViaApi(page, id);

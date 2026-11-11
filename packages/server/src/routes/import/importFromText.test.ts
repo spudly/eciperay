@@ -302,7 +302,8 @@ describe('POST /recipes/import/text', () => {
         .set('Authorization', 'Bearer valid-token')
         .send({text: 'Pasta\n\nIngredients:\n200g pasta\n\nBoil pasta.'});
 
-      expect(res.status).toBe(500);
+      // A stage timeout is a retryable 504, not a generic 500.
+      expect(res.status).toBe(504);
       const refundCall = mockQuery.mock.calls.find(args =>
         args[0].includes('update ai_usage'),
       );

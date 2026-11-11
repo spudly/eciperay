@@ -19,10 +19,18 @@ import {
   ImportTextSchema,
   validate,
 } from '../../lib/schemas.js';
+import {findDuplicateRecipe} from '../../lib/findDuplicateRecipe.js';
 import {resolveImportedImageUrl} from '../../lib/uploadRecipeImageServer.js';
-import {withTimeout, withTimeoutOrNull} from '../../lib/withTimeout.js';
+import {
+  StageTimeoutError,
+  withTimeout,
+  withTimeoutOrNull,
+} from '../../lib/withTimeout.js';
 import {GET_RECIPE_DETAIL_SQL, setVersionImageUrl} from '../recipes/queries.js';
-import {respondIfDuplicateImport} from './respondIfDuplicateImport.js';
+import {
+  duplicateRecipeBody,
+  respondIfDuplicateImport,
+} from './respondIfDuplicateImport.js';
 
 type QueryFn = typeof defaultQuery;
 
@@ -106,15 +114,30 @@ export const importFromText = async (
     throw error;
   }
   try {
-    const input = await withTimeout(
-      prepareImportedRecipeInput({
-        recipe: parsed,
-        userId: req.userId,
-        queryFn,
-      }),
-      prepareTimeoutMs(),
-      'imported recipe preparation',
-    );
+    let input: Awaited<ReturnType<typeof prepareImportedRecipeInput>>;
+    try {
+      input = await withTimeout(
+        prepareImportedRecipeInput({
+          recipe: parsed,
+          userId: req.userId,
+          queryFn,
+        }),
+        prepareTimeoutMs(),
+        'imported recipe preparation',
+      );
+    } catch (error) {
+      if (error instanceof StageTimeoutError) {
+        // Preparation can call Anthropic, so a timeout here is a
+        // failed provider call: refund it (as the parse stage does)
+        // and answer a retryable 504 instead of a generic 500.
+        await refundAiCall(req.userId, queryFn, quota.periodStart);
+        res
+          .status(504)
+          .json({error: 'Recipe preparation timed out — please retry'});
+        return;
+      }
+      throw error;
+    }
     // Duplicate warning (#296): warn before a second copy is created;
     // the client resubmits with allowDuplicate to import anyway. The AI
     // call is NOT refunded here: the parse succeeded and produced the
@@ -132,14 +155,56 @@ export const importFromText = async (
     ) {
       return;
     }
-    const {recipeId, versionId, recipe} = await withTimeout(
-      saveNewRecipeFromInput(
-        {userId: req.userId, input, createdVia: 'import_text'},
-        queryFn,
-      ),
-      saveTimeoutMs(),
-      'imported recipe save',
+    // The save runs in a transaction the timeout race cannot cancel,
+    // so a timeout must not simply report a retryable failure while
+    // the transaction may still commit (a blind retry could then
+    // duplicate the recipe). On timeout, first give the save one
+    // more bounded window to settle and use its real outcome; only
+    // if it still has not settled, check whether it committed in the
+    // meantime (answer the duplicate warning a retry would draw) and
+    // otherwise answer 504 — a later retry is still protected by the
+    // pre-save duplicate guard above.
+    const savePromise = saveNewRecipeFromInput(
+      {userId: req.userId, input, createdVia: 'import_text'},
+      queryFn,
     );
+    let saved: Awaited<typeof savePromise>;
+    try {
+      saved = await withTimeout(
+        savePromise,
+        saveTimeoutMs(),
+        'imported recipe save',
+      );
+    } catch (error) {
+      if (!(error instanceof StageTimeoutError)) {
+        throw error;
+      }
+      try {
+        saved = await withTimeout(
+          savePromise,
+          saveTimeoutMs(),
+          'imported recipe save settlement',
+        );
+      } catch (settlementError) {
+        if (!(settlementError instanceof StageTimeoutError)) {
+          throw settlementError;
+        }
+        const committed = await findDuplicateRecipe(
+          req.userId,
+          input,
+          queryFn,
+        ).catch(() => null);
+        if (committed) {
+          res.status(409).json(duplicateRecipeBody(committed));
+        } else {
+          res
+            .status(504)
+            .json({error: 'Recipe save timed out — please retry'});
+        }
+        return;
+      }
+    }
+    const {recipeId, versionId, recipe} = saved;
     if (imageCandidate) {
       // resolveImportedImageUrl bounds itself and resolves null on a
       // download/upload timeout; this race is the route-level backstop
