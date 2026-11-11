@@ -1,5 +1,44 @@
 # @eciperay/app
 
+## 1.34.2
+
+### Patch Changes
+
+- a149e08: Android deep links now open the matching in-app screen (#484): the
+  manifest delivers every URL under the app's own scheme to MainActivity
+  (previously only the `auth` host was registered, so other links failed with
+  "No Activity found to handle Intent"), the navigation linking config lives in
+  its own module covering both the production and dev schemes, and in-app URL
+  opens go through a helper that swallows a failed open instead of leaking an
+  unhandled rejection.
+- 717a009: Auth forms now validate the email address before submitting (#461):
+  on sign-in, sign-up, and forgot-password (web and native), a malformed email
+  shows "Enter a valid email address" under the email field and no auth request
+  is made, instead of surfacing the generic invalid-credentials error.
+  Well-formed emails behave exactly as before. The forms render through
+  @spudly/ui 9.1.0, whose auth pages accept the field-level `emailError` prop
+  this validation uses.
+- 2e4e169: Saving a recipe without an image now generates one automatically
+  (#407): on any save (create or edit, from web, app, or MCP) of a recipe that
+  currently has no image, the server generates an image with the existing AI
+  generation machinery and attaches it — asynchronously, so the save never waits
+  on or fails because of generation, and at most once per recipe. Recipe photos
+  can now be replaced but no longer deleted: the Remove image action is gone
+  from the web and app recipe forms, so once a recipe has an image it keeps one.
+- a88e931: The app's Recipes tab is now the unified browse (#412): your own
+  recipes appear first, followed by the recipes shared with you (badged
+  "Shared", opening their public permalink, with no log-cook control on shared
+  rows), and the public Discover catalog appears below in its own section — all
+  under the one search/filter bar, with each section loading more as you scroll
+  and showing its own error state if its first page fails. Home's "Shared with
+  me" entry and the shared-with-me deep link now land on the Recipes tab, and
+  the old standalone Shared with me screen redirects there.
+- Updated dependencies [717a009]
+- Updated dependencies [8f1506d]
+- Updated dependencies [99ef1b0]
+  - @eciperay/client@1.34.2
+  - @eciperay/types@1.34.2
+
 ## 1.34.1
 
 ### Patch Changes

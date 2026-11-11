@@ -1,5 +1,58 @@
 # @eciperay/server
 
+## 1.34.2
+
+### Patch Changes
+
+- 2e4e169: Saving a recipe without an image now generates one automatically
+  (#407): on any save (create or edit, from web, app, or MCP) of a recipe that
+  currently has no image, the server generates an image with the existing AI
+  generation machinery and attaches it — asynchronously, so the save never waits
+  on or fails because of generation, and at most once per recipe. Recipe photos
+  can now be replaced but no longer deleted: the Remove image action is gone
+  from the web and app recipe forms, so once a recipe has an image it keeps one.
+- 5bc4ecc: URL imports now fall back to the Crawlbase proxy when the direct
+  fetch fails (#476): the direct fetch (including the browser-header retry for
+  bot refusals) runs first, and Crawlbase is used only after it fails — whether
+  the site blocked the request or the fetch otherwise failed (for example a
+  404, 500, or timeout) — so proxy tokens are spent only when the direct fetch
+  does not succeed. When the optional `CRAWLBASE_TOKEN` Fly secret is not set,
+  imports behave exactly as before.
+- bc4ae95: Text recipe imports can no longer hang indefinitely (#492): every
+  awaited stage of POST /api/recipes/import/text — the AI parse, recipe
+  preparation, the save, and the imported-image download/upload — now has an
+  explicit time bound. A stage that breaches its bound fails fast with a
+  retryable 504 error (or, for the image stage, completes the import without an
+  image) instead of holding the response past the caller's timeout; a
+  preparation timeout refunds the AI call, and a save timeout resolves the
+  transaction's real outcome before answering.
+- 8f1506d: Meals now show and edit their direct ingredients on the web (#362
+  tranche 2): the meal detail page renders direct ingredients in their own
+  Ingredients section (quantity, servings, and nutrition scaled to the entry's
+  total contribution; rows are plain rows, never links), the meal form gains an
+  ingredients section for adding, editing, and removing direct ingredients
+  (name, quantity, unit, entry servings — validated by the host at save time),
+  and a meal plan's shopping list now includes the meal's direct ingredients at
+  their entered quantity scaled by how many times the plan includes the meal.
+  Shopping-list sources for direct ingredients carry a null recipe id/title,
+  since the ingredient belongs to the meal itself. Native and MCP parity remain
+  tranche 3.
+- 99ef1b0: SEO foundations (#414): every page now draws its title, description,
+  canonical URL, and Open Graph / Twitter values from one shared head config in
+  @eciperay/client — full social cards for public pages (home, Discover, public
+  recipes, privacy, terms), title + noindex only for authenticated pages, and no
+  share image emitted when a page has none. The sitemap now includes the static
+  public pages alongside public recipes and is cached for five minutes with a
+  matching Cache-Control header, and robots.txt now disallows every
+  authenticated and app-internal path (meals, meal plans, pay, and the rest)
+  while allowing the public pages and referencing the sitemap.
+- Updated dependencies [717a009]
+- Updated dependencies [8f1506d]
+- Updated dependencies [99ef1b0]
+  - @eciperay/client@1.34.2
+  - @eciperay/types@1.34.2
+  - @eciperay/mcp-server@1.34.2
+
 ## 1.34.1
 
 ### Patch Changes
