@@ -20,10 +20,39 @@ import {
   validate,
 } from '../../lib/schemas.js';
 import {resolveImportedImageUrl} from '../../lib/uploadRecipeImageServer.js';
+import {withTimeout, withTimeoutOrNull} from '../../lib/withTimeout.js';
 import {GET_RECIPE_DETAIL_SQL, setVersionImageUrl} from '../recipes/queries.js';
 import {respondIfDuplicateImport} from './respondIfDuplicateImport.js';
 
 type QueryFn = typeof defaultQuery;
+
+/**
+ * Per-stage bounds for this route (issue #492). Every stage below was
+ * awaited unboundedly, so a single stuck dependency held the 201 response
+ * past the live e2e suite's 60s budget (and, for real imports, past any
+ * client timeout). The defaults sum to under 60s; a stage that breaches
+ * its bound fails fast — a retryable 5xx for the parse/prepare/save
+ * stages, "import without image" for the image stage — instead of
+ * hanging. Each bound can be overridden by environment variable (the
+ * route's tests use this to exercise the timeout path in milliseconds).
+ */
+const stageTimeoutMs = (envName: string, fallback: number): number => {
+  const raw = process.env[envName];
+  if (raw === undefined) {
+    return fallback;
+  }
+  const parsed = Number.parseInt(raw, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+};
+
+const parseTimeoutMs = () =>
+  stageTimeoutMs('IMPORT_TEXT_PARSE_TIMEOUT_MS', 20_000);
+const prepareTimeoutMs = () =>
+  stageTimeoutMs('IMPORT_TEXT_PREPARE_TIMEOUT_MS', 10_000);
+const saveTimeoutMs = () =>
+  stageTimeoutMs('IMPORT_TEXT_SAVE_TIMEOUT_MS', 15_000);
+const imageTimeoutMs = () =>
+  stageTimeoutMs('IMPORT_TEXT_IMAGE_TIMEOUT_MS', 20_000);
 
 export const importFromText = async (
   req: EntitledRequest,
@@ -67,17 +96,25 @@ export const importFromText = async (
   }
   let parsed: Awaited<ReturnType<typeof parseWithClaude>>;
   try {
-    parsed = await parseWithClaude(plainText, null);
+    parsed = await withTimeout(
+      parseWithClaude(plainText, null),
+      parseTimeoutMs(),
+      'recipe text parse',
+    );
   } catch (error) {
     await refundAiCall(req.userId, queryFn, quota.periodStart);
     throw error;
   }
   try {
-    const input = await prepareImportedRecipeInput({
-      recipe: parsed,
-      userId: req.userId,
-      queryFn,
-    });
+    const input = await withTimeout(
+      prepareImportedRecipeInput({
+        recipe: parsed,
+        userId: req.userId,
+        queryFn,
+      }),
+      prepareTimeoutMs(),
+      'imported recipe preparation',
+    );
     // Duplicate warning (#296): warn before a second copy is created;
     // the client resubmits with allowDuplicate to import anyway. The AI
     // call is NOT refunded here: the parse succeeded and produced the
@@ -95,15 +132,23 @@ export const importFromText = async (
     ) {
       return;
     }
-    const {recipeId, versionId, recipe} = await saveNewRecipeFromInput(
-      {userId: req.userId, input, createdVia: 'import_text'},
-      queryFn,
+    const {recipeId, versionId, recipe} = await withTimeout(
+      saveNewRecipeFromInput(
+        {userId: req.userId, input, createdVia: 'import_text'},
+        queryFn,
+      ),
+      saveTimeoutMs(),
+      'imported recipe save',
     );
     if (imageCandidate) {
-      const imageUrl = await resolveImportedImageUrl(
-        imageCandidate,
-        req.supabaseUid,
-        recipeId,
+      // resolveImportedImageUrl bounds itself and resolves null on a
+      // download/upload timeout; this race is the route-level backstop
+      // (and covers test doubles of that module): a stuck image stage
+      // degrades to an import without an image, never a hung 201.
+      const imageUrl = await withTimeoutOrNull(
+        resolveImportedImageUrl(imageCandidate, req.supabaseUid, recipeId),
+        imageTimeoutMs(),
+        'imported image resolution',
       );
       if (imageUrl) {
         await setVersionImageUrl(versionId, imageUrl, queryFn);

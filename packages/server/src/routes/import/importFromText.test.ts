@@ -286,6 +286,87 @@ describe('POST /recipes/import/text', () => {
     expect(res.body.issues[0]?.path).toBe('text');
   });
 
+  test('fails fast instead of hanging when the Claude parse never settles (#492)', async () => {
+    process.env['IMPORT_TEXT_PARSE_TIMEOUT_MS'] = '50';
+    try {
+      nockSupabaseGetUser('user-uuid-1');
+      mockBillingMetered(mockQuery, 'plus');
+      // refundAiCall's UPDATE after the timed-out provider call.
+      mockQuery.mockResolvedValueOnce(makeQueryResult([]));
+      anthropicCreateSpy.mockImplementationOnce(
+        () => new Promise<never>(() => {}),
+      );
+
+      const res = await request(getApp())
+        .post('/api/recipes/import/text')
+        .set('Authorization', 'Bearer valid-token')
+        .send({text: 'Pasta\n\nIngredients:\n200g pasta\n\nBoil pasta.'});
+
+      expect(res.status).toBe(500);
+      const refundCall = mockQuery.mock.calls.find(args =>
+        args[0].includes('update ai_usage'),
+      );
+      expect(refundCall).toBeDefined();
+    } finally {
+      delete process.env['IMPORT_TEXT_PARSE_TIMEOUT_MS'];
+    }
+  });
+
+  test('still returns 201 without an image when image resolution never settles (#492)', async () => {
+    process.env['IMPORT_TEXT_IMAGE_TIMEOUT_MS'] = '50';
+    try {
+      resolveImportedImageUrl.mockImplementationOnce(
+        () => new Promise<never>(() => {}),
+      );
+      nockSupabaseGetUser('user-uuid-1');
+      nockAnthropicMessage(CLAUDE_RESPONSE);
+      mockSaveFlow();
+      const res = await request(getApp())
+        .post('/api/recipes/import/text')
+        .set('Authorization', 'Bearer valid-token')
+        .send({
+          text: '<h1>Pasta</h1><img src="https://example.com/photo.jpg" /><p>Boil pasta.</p>',
+        });
+      expect(res.status).toBe(201);
+      expect(res.body.title).toBe('Pasted Pasta');
+      expect(res.body.imageUrl ?? null).toBeNull();
+    } finally {
+      delete process.env['IMPORT_TEXT_IMAGE_TIMEOUT_MS'];
+    }
+  });
+
+  test('ignores a non-numeric stage timeout override (#492)', async () => {
+    process.env['IMPORT_TEXT_PARSE_TIMEOUT_MS'] = 'not-a-number';
+    try {
+      nockSupabaseGetUser('user-uuid-1');
+      nockAnthropicMessage(CLAUDE_RESPONSE);
+      mockSaveFlow();
+      const res = await request(getApp())
+        .post('/api/recipes/import/text')
+        .set('Authorization', 'Bearer valid-token')
+        .send({text: 'Pasta\n\nIngredients:\n200g pasta\n\nBoil pasta.'});
+      expect(res.status).toBe(201);
+    } finally {
+      delete process.env['IMPORT_TEXT_PARSE_TIMEOUT_MS'];
+    }
+  });
+
+  test('ignores a non-positive stage timeout override (#492)', async () => {
+    process.env['IMPORT_TEXT_PARSE_TIMEOUT_MS'] = '0';
+    try {
+      nockSupabaseGetUser('user-uuid-1');
+      nockAnthropicMessage(CLAUDE_RESPONSE);
+      mockSaveFlow();
+      const res = await request(getApp())
+        .post('/api/recipes/import/text')
+        .set('Authorization', 'Bearer valid-token')
+        .send({text: 'Pasta\n\nIngredients:\n200g pasta\n\nBoil pasta.'});
+      expect(res.status).toBe(201);
+    } finally {
+      delete process.env['IMPORT_TEXT_PARSE_TIMEOUT_MS'];
+    }
+  });
+
   test('returns 401 without auth token', async () => {
     const res = await request(getApp())
       .post('/api/recipes/import/text')

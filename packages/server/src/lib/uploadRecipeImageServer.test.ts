@@ -123,6 +123,20 @@ describe('resolveImportedImageUrl', () => {
     );
   });
 
+  test('returns null within the bound when the storage upload never settles (#492)', async () => {
+    const uploadFn = jest
+      .fn<() => Promise<string>>()
+      .mockImplementation(() => new Promise<string>(() => {}));
+    const dataUrl = `data:image/png;base64,${Buffer.from('pixels').toString('base64')}`;
+    await expect(
+      resolveImportedImageUrl(dataUrl, 'user-uuid-1', 'recipe-uuid-1', {
+        uploadFn,
+        timeoutMs: 20,
+      }),
+    ).resolves.toBeNull();
+    expect(uploadFn).toHaveBeenCalled();
+  });
+
   test('returns null for invalid data URLs', async () => {
     const uploadFn = jest.fn<() => Promise<string>>();
     await expect(
