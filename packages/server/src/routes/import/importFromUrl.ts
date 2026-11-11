@@ -19,6 +19,7 @@ import {ImportUrlSchema, validate} from '../../lib/schemas.js';
 import {AiResponseParseError} from '../../lib/validate.js';
 import {findDuplicateRecipe} from '../../lib/findDuplicateRecipe.js';
 import {logger} from '../../lib/logger.js';
+import {serverLog} from '../../lib/posthogLogs.js';
 import {duplicateRecipeBody} from './respondIfDuplicateImport.js';
 
 type QueryFn = typeof defaultQuery;
@@ -95,6 +96,43 @@ const hostOf = (url: string): string => {
   } catch {
     return 'unknown';
   }
+};
+
+type FetchOutcomeFields = {
+  event: 'url_import_fetch';
+  host: string;
+  directStatus: number | null;
+  directErrorClass: FetchErrorClass;
+  proxyOutcome: 'success' | 'failure' | 'skipped';
+  proxyStatus: number | null;
+  originalStatus: number | null;
+  proxyErrorClass: FetchErrorClass | null;
+  crawlbaseTokenPresent: boolean;
+};
+
+// Emit one fallback outcome to both observability pipelines: the pino
+// logger (local + Fly stdout) and serverLog (PostHog, the production
+// pipeline the rest of the server uses). serverLog attributes are
+// scalars only, so absent statuses flatten to 'none'. Every field is
+// an outcome class or a status — never the token, the proxy URL, or
+// the target URL beyond its host.
+const logFetchOutcome = (
+  level: 'info' | 'warn',
+  fields: FetchOutcomeFields,
+  message: string,
+) => {
+  logger[level](fields, message);
+  serverLog(level, message, {
+    event: fields.event,
+    host: fields.host,
+    directStatus: fields.directStatus ?? 'none',
+    directErrorClass: fields.directErrorClass,
+    proxyOutcome: fields.proxyOutcome,
+    proxyStatus: fields.proxyStatus ?? 'none',
+    originalStatus: fields.originalStatus ?? 'none',
+    proxyErrorClass: fields.proxyErrorClass ?? 'none',
+    crawlbaseTokenPresent: fields.crawlbaseTokenPresent,
+  });
 };
 
 const fetchDirect = async (url: string): Promise<string> => {
@@ -192,24 +230,43 @@ const fetchPage = async (url: string): Promise<string> => {
   try {
     return await fetchDirect(url);
   } catch (directError) {
-    if (!process.env['CRAWLBASE_TOKEN']?.trim()) {
-      throw directError;
-    }
     const directFields = {
-      event: 'url_import_fetch',
+      event: 'url_import_fetch' as const,
       host: hostOf(url),
       directStatus: fetchStatusOf(directError),
       directErrorClass: fetchErrorClassOf(directError),
     };
+    if (!process.env['CRAWLBASE_TOKEN']?.trim()) {
+      // A missing token silently skipped the fallback before #497's
+      // review round — indistinguishable in the logs from a fallback
+      // that ran and failed. Record the skip (token presence only,
+      // never the value) so the config question is answerable from
+      // the logs alone.
+      logFetchOutcome(
+        'warn',
+        {
+          ...directFields,
+          proxyOutcome: 'skipped',
+          proxyStatus: null,
+          originalStatus: null,
+          proxyErrorClass: null,
+          crawlbaseTokenPresent: false,
+        },
+        'URL import Crawlbase fallback skipped: token not configured',
+      );
+      throw directError;
+    }
     try {
       const result = await fetchViaCrawlbase(url);
-      logger.info(
+      logFetchOutcome(
+        'info',
         {
           ...directFields,
           proxyOutcome: 'success',
           proxyStatus: result.proxyStatus,
           originalStatus: result.originalStatus,
           proxyErrorClass: null,
+          crawlbaseTokenPresent: true,
         },
         'URL import fetch fell back to Crawlbase',
       );
@@ -218,7 +275,8 @@ const fetchPage = async (url: string): Promise<string> => {
       // The direct failure is the user-relevant one; the proxy attempt
       // (and its token-bearing URL) must not leak into errors. The log
       // line here carries only outcome classes and statuses (#497).
-      logger.warn(
+      logFetchOutcome(
+        'warn',
         {
           ...directFields,
           proxyOutcome: 'failure',
@@ -228,6 +286,7 @@ const fetchPage = async (url: string): Promise<string> => {
               ? proxyError.originalStatus
               : null,
           proxyErrorClass: fetchErrorClassOf(proxyError),
+          crawlbaseTokenPresent: true,
         },
         'URL import Crawlbase fallback failed',
       );
@@ -372,6 +431,11 @@ export const importFromUrl = async (
         {event: 'url_import_parse', host: hostOf(url), outcome: 'no_recipe'},
         'URL import fetched the page but found no readable recipe',
       );
+      serverLog('warn', 'URL import fetched the page but found no readable recipe', {
+        event: 'url_import_parse',
+        host: hostOf(url),
+        outcome: 'no_recipe',
+      });
       res.status(422).json({error: URL_IMPORT_NO_RECIPE_ERROR});
       return;
     }

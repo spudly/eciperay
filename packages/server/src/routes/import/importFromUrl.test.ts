@@ -500,7 +500,44 @@ describe('POST /recipes/import/url', () => {
     });
   });
 
+  test('logs a skipped outcome when the fallback has no token configured (#497)', async () => {
+    const previous = process.env['CRAWLBASE_TOKEN'];
+    delete process.env['CRAWLBASE_TOKEN'];
+    const warnSpy = jest.spyOn(logger, 'warn');
+    try {
+      nockSupabaseGetUser('user-uuid-1');
+      mockBillingPlan(mockQuery, 'plus');
+      nock('https://recipe.example.com')
+        .get('/blocked')
+        .reply(403, 'Forbidden')
+        .get('/blocked')
+        .reply(403, 'Forbidden');
+      const res = await request(getApp())
+        .post('/api/recipes/import/url')
+        .set('Authorization', 'Bearer <redacted>')
+        .send({url: 'https://recipe.example.com/blocked'});
+      expect(res.status).toBe(422);
+      const fallbackCall = warnSpy.mock.calls.find(
+        call =>
+          (call[0] as {event?: string} | undefined)?.event ===
+          'url_import_fetch',
+      );
+      expect(fallbackCall?.[0]).toMatchObject({
+        host: 'recipe.example.com',
+        directStatus: 403,
+        proxyOutcome: 'skipped',
+        crawlbaseTokenPresent: false,
+      });
+    } finally {
+      warnSpy.mockRestore();
+      if (previous !== undefined) {
+        process.env['CRAWLBASE_TOKEN'] = previous;
+      }
+    }
+  });
+
   test('returns 422 with a no-recipe message when the page contains no recipe (#297)', async () => {
+    const parseWarnSpy = jest.spyOn(logger, 'warn');
     nockSupabaseGetUser('user-uuid-1');
     nock('https://recipe.example.com').get('/plain').reply(200, PLAIN_HTML);
     // Claude cannot extract a recipe from the page text, so its reply
@@ -517,6 +554,17 @@ describe('POST /recipes/import/url', () => {
     expect(res.body).toEqual({
       error: "That page doesn't appear to contain a recipe.",
     });
+    // The parse stage logs its outcome token-free (#497 review round).
+    const parseCall = parseWarnSpy.mock.calls.find(
+      call =>
+        (call[0] as {event?: string} | undefined)?.event ===
+        'url_import_parse',
+    );
+    expect(parseCall?.[0]).toMatchObject({
+      host: 'recipe.example.com',
+      outcome: 'no_recipe',
+    });
+    parseWarnSpy.mockRestore();
   });
 
   test('budgets the Crawlbase fallback at 90s, matching the Crawlbase client default (#497)', () => {

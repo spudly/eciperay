@@ -615,7 +615,13 @@ small set of known inputs so results are comparable across runs).
    that refuses the importer's bot agent but serves browsers (e.g.
    browneyedbaker.com, issue #400). **Expected:** the importer retries with
    browser headers and the recipe imports successfully, reaching review like
-   case 3 — not the case-4 fetch-failure message.
+   case 3 — not the case-4 fetch-failure message. When the browser-header
+   retry also fails (browneyedbaker.com refuses both), the Crawlbase fallback
+   is the path under test (#476, #497): reaching review alone does not verify
+   it — confirm in the server log that the attempt's `url_import_fetch` line
+   records `proxyOutcome: success` (a `skipped` outcome means the serving
+   app has no `CRAWLBASE_TOKEN` configured; a `failure` outcome's
+   proxy/original statuses name the failing hop).
 5. **Image import.** Add → Import from image (`/add/image`); upload a clear
    photo/scan of a printed recipe. **Expected:** extracted text reaches review
    in editable form; obvious misreads are correctable in review and the
