@@ -231,6 +231,37 @@ describe('RecipesScreen', () => {
     });
   });
 
+  test('does not fetch the next page when end is reached before any scroll', async () => {
+    // Regression (DS #570): a mount-time end-reached fire — before
+    // any scroll has armed pagination — must not fetch the next
+    // page, even when a next page exists. Unlike the other
+    // end-reached tests this one deliberately does NOT drive
+    // onScroll first (see triggerEndReached for the armed path).
+    const firstPage = Array.from({length: 20}, (_, index) =>
+      makeRecipeDetail({id: `recipe-${index}`, title: `Recipe ${index}`}),
+    );
+    mockList.mockImplementation(async (params?: {offset?: number}) => {
+      if (params?.offset === 0) {
+        return firstPage;
+      }
+      return [makeRecipeDetail({id: 'recipe-20', title: 'Recipe 20'})];
+    });
+    const client = makeQueryClient();
+    const {findByLabelText, container} = await renderWithProviders(
+      <RecipesScreen />,
+      client,
+    );
+    await findByLabelText('Recipe 0');
+    const list = findList(container);
+    await act(async () => {
+      list.props.onEndReached?.();
+    });
+    await act(async () => {
+      await flushQueryClient(client);
+    });
+    expect(mockList).toHaveBeenCalledTimes(1);
+  });
+
   test('shows loading footer while fetching next page', async () => {
     const firstPage = Array.from({length: 20}, (_, index) =>
       makeRecipeDetail({id: `recipe-${index}`, title: `Recipe ${index}`}),
