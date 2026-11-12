@@ -35,7 +35,7 @@ describe('loadPublicRecipe', () => {
       return;
     }
     expect(result.body.recipe.id).toBe('recipe-uuid-1');
-    expect(result.body.recipe.userId).toBeUndefined();
+    expect('userId' in result.body.recipe).toBe(false);
     expect(result.body.canonicalSlug).toBe('pasta');
     expect(result.body.slugMismatch).toBeUndefined();
   });
