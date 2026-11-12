@@ -1,4 +1,8 @@
+import {jest} from '@jest/globals';
+import type {Response} from 'express';
 import request from 'supertest';
+
+import {RecipeImportError} from '../../lib/recipeImportToInput.js';
 
 import {makeRecipeDetailRow} from '../../test/fixtures/recipeRow.js';
 import {makeVersionDetailRow} from '../../test/fixtures/versionRow.js';
@@ -14,6 +18,69 @@ import {mockBillingPlan} from '../../test/mockBilling.js';
 
 const mockQuery = createMockQuery();
 const getApp = lazyTestApp({query: mockQuery});
+
+// #460 tranche 1: the former qualifier-segment files for this route
+// (tweakAiSessions.implementParseError / .importError / .rethrow)
+// are merged below. They mocked prepareImportedRecipeInput (two
+// scenarios) and validate (one scenario), so the merges sit behind
+// per-describe mutable mock factories: each factory delegates to a
+// jest.fn whose implementation a describe installs in beforeEach;
+// the default implementation (installed by the root beforeEach) is
+// the real module, loaded before the mocks were registered.
+const actualPrepareModule =
+  await import('../../lib/prepareImportedRecipeInput.js');
+const actualValidateModule = await import('../../lib/validate.js');
+
+const mockPrepareImportedRecipeInput =
+  jest.fn<typeof actualPrepareModule.prepareImportedRecipeInput>();
+const mockValidate = jest.fn<typeof actualValidateModule.validate>();
+const mockParseAiJson = jest.fn<typeof actualValidateModule.parseAiJson>();
+const mockExtractJsonFromAiText =
+  jest.fn<typeof actualValidateModule.extractJsonFromAiText>();
+
+jest.unstable_mockModule('../../lib/prepareImportedRecipeInput.js', () => ({
+  prepareImportedRecipeInput: (
+    ...args: Parameters<typeof actualPrepareModule.prepareImportedRecipeInput>
+  ) => mockPrepareImportedRecipeInput(...args),
+}));
+
+jest.unstable_mockModule('../../lib/validate.js', () => ({
+  validate: (...args: Parameters<typeof actualValidateModule.validate>) =>
+    mockValidate(...args),
+  parseAiJson: (...args: Parameters<typeof actualValidateModule.parseAiJson>) =>
+    mockParseAiJson(...args),
+  extractJsonFromAiText: (
+    ...args: Parameters<typeof actualValidateModule.extractJsonFromAiText>
+  ) => mockExtractJsonFromAiText(...args),
+  AiResponseParseError: actualValidateModule.AiResponseParseError,
+}));
+
+const {implementTweakAiSession} = await import('./tweakAiSessions.js');
+
+// Default: every mocked module behaves as the real implementation.
+// Qualifier describes override only the factories they exercise.
+beforeEach(() => {
+  mockPrepareImportedRecipeInput.mockImplementation(
+    actualPrepareModule.prepareImportedRecipeInput,
+  );
+  mockValidate.mockImplementation(actualValidateModule.validate);
+  mockParseAiJson.mockImplementation(actualValidateModule.parseAiJson);
+  mockExtractJsonFromAiText.mockImplementation(
+    actualValidateModule.extractJsonFromAiText,
+  );
+});
+
+const makeRes = () => {
+  const res = {
+    statusCode: 200,
+    status(code: number) {
+      this.statusCode = code;
+      return this;
+    },
+    json: jest.fn(),
+  };
+  return res as unknown as Response & {statusCode: number; json: jest.Mock};
+};
 
 const SESSION_ID = 'session-uuid-1';
 const PROMPT = 'make this pasta creamier and easier to follow';
@@ -1104,5 +1171,194 @@ describe('AI quota 402s', () => {
 
     expect(res.status).toBe(402);
     expect(res.body.error).toBe('ai_quota_exhausted');
+  });
+});
+
+// Former tweakAiSessions.importError.test.ts.
+const approvedSession = () => ({
+  id: SESSION_ID,
+  recipe_id: 'recipe-uuid-1',
+  user_id: 'user-uuid-1',
+  phase: 'plan_approved',
+  messages: [
+    {role: 'user', content: 'make this pasta creamier and easier to follow'},
+    {role: 'assistant', content: PLAN_TEXT},
+  ],
+  approved_plan: PLAN_TEXT,
+  proposed_recipe: null,
+  parent_version_id: 'version-uuid-1',
+  change_summary: null,
+  created_at: '2024-01-01T00:00:00.000Z',
+  updated_at: '2024-01-01T00:00:00.000Z',
+});
+
+describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/implement import errors', () => {
+  beforeEach(() => {
+    mockPrepareImportedRecipeInput.mockImplementation(async () => {
+      throw new RecipeImportError('servings is required');
+    });
+  });
+
+  test('returns 422 when prepareImportedRecipeInput fails', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    nockAnthropicMessage(IMPLEMENT_JSON);
+    mockQuery
+      .mockResolvedValueOnce(makeQueryResult([approvedSession()]))
+      .mockResolvedValueOnce(makeQueryResult([approvedSession()]))
+      .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
+      .mockResolvedValueOnce(makeQueryResult([makeVersionDetailRow()]))
+      .mockResolvedValueOnce(makeQueryResult([]));
+
+    const res = await request(getApp())
+      .post(
+        `/api/recipes/recipe-uuid-1/tweak-ai-sessions/${SESSION_ID}/implement`,
+      )
+      .set('Authorization', 'Bearer valid-token');
+
+    expect(res.status).toBe(422);
+    expect(res.body.error).toBe('servings is required');
+  });
+});
+
+// Former tweakAiSessions.rethrow.test.ts.
+describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/implement unexpected errors', () => {
+  beforeEach(() => {
+    mockPrepareImportedRecipeInput.mockImplementation(async () => {
+      throw new Error('unexpected');
+    });
+  });
+
+  test('rethrows unexpected prepareImportedRecipeInput errors', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    nockAnthropicMessage(IMPLEMENT_JSON);
+    mockQuery
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          {
+            id: SESSION_ID,
+            recipe_id: 'recipe-uuid-1',
+            user_id: 'user-uuid-1',
+            phase: 'plan_approved',
+            messages: [],
+            approved_plan: PLAN_TEXT,
+            proposed_recipe: null,
+            parent_version_id: 'version-uuid-1',
+            change_summary: null,
+            created_at: '2024-01-01T00:00:00.000Z',
+            updated_at: '2024-01-01T00:00:00.000Z',
+          },
+        ]),
+      )
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          {
+            id: SESSION_ID,
+            recipe_id: 'recipe-uuid-1',
+            user_id: 'user-uuid-1',
+            phase: 'plan_approved',
+            messages: [],
+            approved_plan: PLAN_TEXT,
+            proposed_recipe: null,
+            parent_version_id: 'version-uuid-1',
+            change_summary: null,
+            created_at: '2024-01-01T00:00:00.000Z',
+            updated_at: '2024-01-01T00:00:00.000Z',
+          },
+        ]),
+      )
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          {
+            id: SESSION_ID,
+            recipe_id: 'recipe-uuid-1',
+            user_id: 'user-uuid-1',
+            phase: 'plan_approved',
+            messages: [],
+            approved_plan: PLAN_TEXT,
+            proposed_recipe: null,
+            parent_version_id: 'version-uuid-1',
+            change_summary: null,
+            created_at: '2024-01-01T00:00:00.000Z',
+            updated_at: '2024-01-01T00:00:00.000Z',
+          },
+        ]),
+      )
+      .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
+      .mockResolvedValueOnce(makeQueryResult([makeVersionDetailRow()]))
+      .mockResolvedValueOnce(makeQueryResult([]));
+
+    await expect(
+      request(getApp())
+        .post(
+          `/api/recipes/recipe-uuid-1/tweak-ai-sessions/${SESSION_ID}/implement`,
+        )
+        .set('Authorization', 'Bearer valid-token'),
+    ).resolves.toMatchObject({status: 500});
+  });
+});
+
+// Former tweakAiSessions.implementParseError.test.ts.
+describe('implementTweakAiSession parse errors', () => {
+  beforeEach(() => {
+    mockValidate.mockImplementation((() => ({ok: true, data: {}})) as never);
+    mockParseAiJson.mockImplementation((() => {
+      throw new RecipeImportError('invalid recipe shape');
+    }) as never);
+    mockExtractJsonFromAiText.mockImplementation((text: string) => text);
+  });
+
+  test('returns 422 when parseAiJson throws RecipeImportError', async () => {
+    nockAnthropicMessage('{}');
+    mockQuery
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          {
+            id: SESSION_ID,
+            recipe_id: 'recipe-uuid-1',
+            user_id: 'user-uuid-1',
+            phase: 'plan_approved',
+            messages: [],
+            approved_plan: PLAN_TEXT,
+            proposed_recipe: null,
+            parent_version_id: 'version-uuid-1',
+            change_summary: null,
+            created_at: '2024-01-01T00:00:00.000Z',
+            updated_at: '2024-01-01T00:00:00.000Z',
+          },
+        ]),
+      )
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          {
+            id: SESSION_ID,
+            recipe_id: 'recipe-uuid-1',
+            user_id: 'user-uuid-1',
+            phase: 'plan_approved',
+            messages: [],
+            approved_plan: PLAN_TEXT,
+            proposed_recipe: null,
+            parent_version_id: 'version-uuid-1',
+            change_summary: null,
+            created_at: '2024-01-01T00:00:00.000Z',
+            updated_at: '2024-01-01T00:00:00.000Z',
+          },
+        ]),
+      )
+      .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
+      .mockResolvedValueOnce(makeQueryResult([makeVersionDetailRow()]))
+      .mockResolvedValueOnce(makeQueryResult([]));
+
+    const res = makeRes();
+    await implementTweakAiSession(
+      {
+        userId: 'user-uuid-1',
+        params: {id: 'recipe-uuid-1', sessionId: SESSION_ID},
+      } as never,
+      res,
+      mockQuery,
+    );
+
+    expect(res.statusCode).toBe(422);
+    expect(res.json).toHaveBeenCalledWith({error: 'invalid recipe shape'});
   });
 });

@@ -1,4 +1,7 @@
+import {jest} from '@jest/globals';
 import request from 'supertest';
+
+import {RecipeImportError} from '../../lib/recipeImportToInput.js';
 
 import {makeCookLogRow} from '../../test/fixtures/cookLogRow.js';
 import {makeRecipeDetailRow} from '../../test/fixtures/recipeRow.js';
@@ -12,6 +15,29 @@ import {mockBillingPlan} from '../../test/mockBilling.js';
 
 const mockQuery = createMockQuery();
 const getApp = lazyTestApp({query: mockQuery});
+
+// #460 tranche 1: the former tweakVersionWithAi.importError.test.ts
+// is merged below behind a per-describe mutable mock factory: the
+// factory delegates to a jest.fn whose implementation a describe
+// installs in beforeEach; the default is the real module, loaded
+// before the mock was registered.
+const actualPrepareModule =
+  await import('../../lib/prepareImportedRecipeInput.js');
+
+const mockPrepareImportedRecipeInput =
+  jest.fn<typeof actualPrepareModule.prepareImportedRecipeInput>();
+
+jest.unstable_mockModule('../../lib/prepareImportedRecipeInput.js', () => ({
+  prepareImportedRecipeInput: (
+    ...args: Parameters<typeof actualPrepareModule.prepareImportedRecipeInput>
+  ) => mockPrepareImportedRecipeInput(...args),
+}));
+
+beforeEach(() => {
+  mockPrepareImportedRecipeInput.mockImplementation(
+    actualPrepareModule.prepareImportedRecipeInput,
+  );
+});
 
 const CLAUDE_RESPONSE = JSON.stringify({
   title: 'Improved Pasta',
@@ -209,5 +235,63 @@ describe('POST /recipes/:id/versions/ai', () => {
         .set('Authorization', 'Bearer valid-token')
         .send({prompt: 'make this pasta creamier and easier to follow'}),
     ).resolves.toMatchObject({status: 500});
+  });
+});
+
+// Former tweakVersionWithAi.importError.test.ts.
+describe('POST /recipes/:id/versions/ai import errors', () => {
+  beforeEach(() => {
+    mockPrepareImportedRecipeInput.mockImplementation(async () => {
+      throw new RecipeImportError('servings is required');
+    });
+  });
+
+  test('returns 422 when prepareImportedRecipeInput fails', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    nockAnthropicMessage(CLAUDE_RESPONSE);
+    // loadEntitlement (2 queries) runs before the handler's own queries.
+    mockBillingPlan(mockQuery, 'plus');
+    mockQuery
+      .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
+      .mockResolvedValueOnce(makeQueryResult([makeVersionDetailRow()]))
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          {calls: 1, period_start: '2026-10-01', allowed: true},
+        ]),
+      )
+      .mockResolvedValueOnce(makeQueryResult([])); // refundAiCall UPDATE
+
+    const res = await request(getApp())
+      .post('/api/recipes/recipe-uuid-1/versions/ai')
+      .set('Authorization', 'Bearer valid-token')
+      .send({prompt: 'make this pasta creamier and easier to follow'});
+
+    expect(res.status).toBe(422);
+    expect(res.body.error).toBe('servings is required');
+  });
+});
+
+describe('AI quota 402', () => {
+  test('402s when AI quota is exhausted', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, null);
+    mockQuery
+      .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
+      .mockResolvedValueOnce(makeQueryResult([makeVersionDetailRow()]))
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          {calls: 999, period_start: '2026-10-01', allowed: false},
+        ]),
+      );
+
+    const res = await request(getApp())
+      .post('/api/recipes/recipe-uuid-1/versions/ai')
+      .set('Authorization', 'Bearer test-token')
+      .send({prompt: 'make this pasta creamier and easier to follow'});
+
+    expect(res.status).toBe(402);
+    expect(res.body.error).toBe('ai_quota_exhausted');
   });
 });
