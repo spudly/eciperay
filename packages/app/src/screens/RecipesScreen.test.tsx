@@ -70,9 +70,21 @@ const findList = (container: TestInstance) =>
   container.queryAll(node => typeof node.props?.onEndReached === 'function')[0];
 
 const triggerEndReached = async (list: {
-  props: {onEndReached?: () => void};
+  props: {onEndReached?: () => void; onScroll?: (event: unknown) => void};
 }) => {
   await act(async () => {
+    // Since @spudly/ui 9.2.1 the DS catalog pagination guards
+    // end-reached against mount-time fires (DS #570): the handler
+    // is swallowed until a real scroll arms pagination. Drive a
+    // scroll with a non-zero offset and content longer than the
+    // viewport first, exactly as a user reaching the end would.
+    list.props.onScroll?.({
+      nativeEvent: {
+        contentOffset: {x: 0, y: 120},
+        contentSize: {width: 400, height: 2000},
+        layoutMeasurement: {width: 400, height: 800},
+      },
+    });
     list.props.onEndReached?.();
   });
 };
@@ -219,6 +231,37 @@ describe('RecipesScreen', () => {
     });
   });
 
+  test('does not fetch the next page when end is reached before any scroll', async () => {
+    // Regression (DS #570): a mount-time end-reached fire — before
+    // any scroll has armed pagination — must not fetch the next
+    // page, even when a next page exists. Unlike the other
+    // end-reached tests this one deliberately does NOT drive
+    // onScroll first (see triggerEndReached for the armed path).
+    const firstPage = Array.from({length: 20}, (_, index) =>
+      makeRecipeDetail({id: `recipe-${index}`, title: `Recipe ${index}`}),
+    );
+    mockList.mockImplementation(async (params?: {offset?: number}) => {
+      if (params?.offset === 0) {
+        return firstPage;
+      }
+      return [makeRecipeDetail({id: 'recipe-20', title: 'Recipe 20'})];
+    });
+    const client = makeQueryClient();
+    const {findByLabelText, container} = await renderWithProviders(
+      <RecipesScreen />,
+      client,
+    );
+    await findByLabelText('Recipe 0');
+    const list = findList(container);
+    await act(async () => {
+      list.props.onEndReached?.();
+    });
+    await act(async () => {
+      await flushQueryClient(client);
+    });
+    expect(mockList).toHaveBeenCalledTimes(1);
+  });
+
   test('shows loading footer while fetching next page', async () => {
     const firstPage = Array.from({length: 20}, (_, index) =>
       makeRecipeDetail({id: `recipe-${index}`, title: `Recipe ${index}`}),
@@ -244,9 +287,7 @@ describe('RecipesScreen', () => {
     );
     await findByLabelText('Recipe 0');
     const list = findList(container);
-    await act(async () => {
-      list.props.onEndReached?.();
-    });
+    await triggerEndReached(list);
     // Since the unified browse (#412) the own section's fetching
     // state crosses as the page's `isFetchingNextOwnPage` row, which
     // follows all 20 own rows in the virtualized list — outside
@@ -477,10 +518,10 @@ describe('RecipesScreen', () => {
 });
 
 /**
- * The unified browse (#412): the screen drives three infinite queries
- * — own, shared-with-me, and public discovery — from the one filter
- * state, and the view renders them as the own section (created rows
- * first, then shared rows) above the discovery section.
+ * The unified browse (#412): the screen drives three infinite queries — own,
+ * shared-with-me, and public discovery — from the one filter state, and the
+ * view renders them as the own section (created rows first, then shared rows)
+ * above the discovery section.
  */
 describe('RecipesScreen unified browse (#412)', () => {
   beforeEach(() => {
@@ -569,10 +610,7 @@ describe('RecipesScreen unified browse (#412)', () => {
     const {findByPlaceholderText, getByPlaceholderText} =
       await renderWithProviders(<RecipesScreen />);
     await findByPlaceholderText('Search recipes…');
-    await fireEvent.changeText(
-      getByPlaceholderText('Search recipes…'),
-      'Soup',
-    );
+    await fireEvent.changeText(getByPlaceholderText('Search recipes…'), 'Soup');
 
     await waitFor(() => {
       expect(mockList).toHaveBeenCalledWith(

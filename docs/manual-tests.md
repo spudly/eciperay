@@ -748,11 +748,11 @@ account (viewer); one QA recipe.
 `packages/app/src/lib/deepLinks.ts`,
 `packages/web/src/components/recipe/RecipeVisibilityControls.tsx`,
 `packages/web/src/pages/{Recipes,Discover,PublicRecipe}Page.tsx`,
-`packages/web/src/components/AppShell.tsx`,
+`packages/web/src/components/AuthenticatedShell.tsx`,
 `packages/web/src/routes/router.tsx`,
 `packages/web/src/pages/MarketingLandingPage.tsx`,
 `packages/web/src/pages/legal/**`, `packages/web/src/components/shared/**`,
-`@spudly/ui` `DiscoverPage`, `PublicRecipePage`, `RecipesPage`,
+`@spudly/ui` `DiscoverPage`, `PublicRecipePage`, `RecipesPage`, `AppShellPage`,
 `packages/web/src/components/PublicHeader.tsx`, `packages/server`
 sharing/visibility routes.
 

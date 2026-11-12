@@ -71,9 +71,11 @@ export const openRecipeFromList = async (
   title: string,
 ): Promise<void> => {
   await page.goto('/recipes');
-  // Scoped to <main>: the shell header carries its own search box
-  // with the same placeholder (#409).
-  await page.getByRole('main').getByPlaceholder('Search recipes…').fill(title);
+  // The page's own search box, by accessible name: the DS shell
+  // renders no <main> landmark (#451), and the shell header's search
+  // field is named 'Search recipes' (its label, #542) while the page
+  // field's name is its placeholder text.
+  await page.getByRole('textbox', {name: 'Search recipes…'}).fill(title);
   await page.getByText(title).click();
   await expect(page.getByRole('heading', {name: title})).toBeVisible();
 };
@@ -103,9 +105,11 @@ export const deleteRecipeViaUi = async (
       response.url().includes('search=') &&
       response.request().method() === 'GET',
   );
-  // Scoped to <main>: the shell header carries its own search box
-  // with the same placeholder (#409).
-  await page.getByRole('main').getByPlaceholder('Search recipes…').fill(title);
+  // The page's own search box, by accessible name: the DS shell
+  // renders no <main> landmark (#451), and the shell header's search
+  // field is named 'Search recipes' (its label, #542) while the page
+  // field's name is its placeholder text.
+  await page.getByRole('textbox', {name: 'Search recipes…'}).fill(title);
   const response = await searchResponse;
   expect(response.ok()).toBe(true);
   const recipes = (await response.json()) as Array<{title?: string}>;

@@ -13,11 +13,17 @@ import {
 
 /**
  * The icon names this app renders, owned by the app: the glyphs are host-side
- * Feather icons rendered via react-icons — a temporary measure pending the
- * design-system shell work (follow-up issue #451) — but which glyph a given app
- * concept uses is app configuration, so the name set and the name-to-component
- * mapping live here (moved out of the retired `@eciperay/icons` package in
- * #246).
+ * Feather icons rendered via react-icons, but which glyph a given app concept
+ * uses is app configuration, so the name set and the name-to-component mapping
+ * live here (moved out of the retired `@eciperay/icons` package in #246).
+ *
+ * The shell's glyphs are NOT rendered through this component any more: #451
+ * adopted the design system's AppShellPage, whose nav takes DS icon registry
+ * names as data. What remains here serves the two non-shell surfaces no DS page
+ * owns yet — FeedbackBubble (`message-circle`) and StaleVersionHint
+ * (`alert-triangle`). Per Stephen's 2026-11-07 ruling on #451, the DS will own
+ * those surfaces through exported pages; when such pages land, these usages
+ * migrate and this component retires.
  */
 const iconNames = [
   'home',

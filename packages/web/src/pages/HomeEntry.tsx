@@ -1,6 +1,6 @@
 import {useAuth} from '@eciperay/client';
 
-import {AppShell} from '../components/AppShell.js';
+import {AuthenticatedShell} from '../components/AuthenticatedShell.js';
 import {ScreenLoadingGate} from '../components/ScreenLoadingGate.js';
 
 import {HomePage} from './HomePage.js';
@@ -10,18 +10,14 @@ export const HomeEntry = () => {
   const {session, isLoading} = useAuth();
 
   if (isLoading) {
-    return (
-      <ScreenLoadingGate pending>
-        {null}
-      </ScreenLoadingGate>
-    );
+    return <ScreenLoadingGate pending>{null}</ScreenLoadingGate>;
   }
 
   if (session) {
     return (
-      <AppShell>
+      <AuthenticatedShell>
         <HomePage />
-      </AppShell>
+      </AuthenticatedShell>
     );
   }
 

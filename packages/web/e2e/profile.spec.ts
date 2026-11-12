@@ -23,7 +23,27 @@ test.describe('profile / billing', () => {
 
     await page.goto('/profile');
     await expect(page.getByText('Subscription')).toBeVisible();
-    await expect(page.getByText('Legal')).toBeVisible();
+    // 'Legal' also appears as the shell footer's heading (#451: the
+    // DS shell carries the shared BigFooter), so a plain text match
+    // could be satisfied by the footer alone: assert on the 'Legal'
+    // leaf OUTSIDE the footer (the profile card's title), using the
+    // same footer-excluding finder as the gap measurement below.
+    await expect(async () => {
+      const legalTitleVisible = await page.evaluate(() => {
+        const leaf = [...document.querySelectorAll('*')].find(
+          el =>
+            el.children.length === 0 &&
+            el.textContent === 'Legal' &&
+            !el.closest('footer, [role="contentinfo"]'),
+        );
+        if (!leaf) {
+          return false;
+        }
+        const rect = leaf.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0;
+      });
+      expect(legalTitleVisible).toBe(true);
+    }).toPass();
 
     const gaps = await page.evaluate(() => {
       const titles = [
@@ -37,7 +57,11 @@ test.describe('profile / billing', () => {
       ];
       const cardRectFor = (title: string) => {
         const leaf = [...document.querySelectorAll('*')].find(
-          el => el.children.length === 0 && el.textContent === title,
+          el =>
+            el.children.length === 0 &&
+            el.textContent === title &&
+            // Skip the shell footer's own 'Legal' text (#451).
+            !el.closest('footer, [role="contentinfo"]'),
         );
         if (!leaf) {
           return null;

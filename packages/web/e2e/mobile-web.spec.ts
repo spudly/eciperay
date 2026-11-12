@@ -15,13 +15,18 @@ test.describe('mobile web layout (390px)', () => {
     await installMocks(page, {signedIn: true});
   });
 
+  // Regression check for spudly/design-system#564 (the DS AppTopBar
+  // nav overflowed phone widths, clipping the Profile link): fixed in
+  // @spudly/ui 9.2.0, which this repo now resolves.
   test('every nav destination is reachable and no label is clipped', async ({
     page,
   }) => {
     await page.goto('/recipes');
     await expect(page.getByText('E2E Tomato Pasta')).toBeVisible();
 
-    const nav = page.locator('header nav');
+    // The DS shell renders the nav as a navigation landmark named by
+    // the host's navLabel, not as a <nav> inside a <header>.
+    const nav = page.getByRole('navigation', {name: 'Eciperay sections'});
     // No 'Shared with me': it lives on the unified Recipes browse
     // now (#409) instead of taking a nav slot.
     const labels = ['Home', 'Recipes', 'Meals', 'Add', 'Tags', 'Profile'];
@@ -86,6 +91,15 @@ test.describe('mobile web layout (390px)', () => {
       return title?.parentElement?.getBoundingClientRect().width ?? 0;
     });
     expect(titleColumnWidth).toBeGreaterThan(150);
+  });
+
+  // Regression check for spudly/design-system#564 at 430px (the DS
+  // AppTopBar nav row overflowed, scrollWidth 434): fixed in
+  // @spudly/ui 9.2.0, which this repo now resolves.
+  test('the page does not scroll sideways at 430px', async ({page}) => {
+    await page.setViewportSize({width: 430, height: 844});
+    await page.goto('/recipes');
+    await expect(page.getByText('E2E Tomato Pasta')).toBeVisible();
 
     const scrollWidth = await page.evaluate(
       () => document.documentElement.scrollWidth,
