@@ -18,9 +18,16 @@ const pgIntSchema = z.number().int().positive().max(2_147_483_647);
 
 const mealRecipeSchema = z.object({
   recipeId: z.uuid().describe('Recipe id, from search_recipes'),
-  servings: pgIntSchema
+  servingsToCook: pgIntSchema
     .optional()
-    .describe('Servings of the recipe in the meal (defaults to the recipe’s)'),
+    .describe(
+      'Servings of the recipe to cook in the meal (defaults to the recipe’s)',
+    ),
+  servingsToEat: pgIntSchema
+    .optional()
+    .describe(
+      'Servings of the recipe the meal’s owner eats (defaults to servings-to-cook)',
+    ),
 });
 
 /**
@@ -68,9 +75,14 @@ const mealIngredientSchema = z.object({
     .nullable()
     .optional()
     .describe('Unit for the quantity, e.g. "g" or "bottle"'),
-  servings: pgIntSchema
+  servingsToCook: pgIntSchema
     .optional()
-    .describe('Servings of the ingredient in the meal (default 1)'),
+    .describe('Servings of the ingredient to cook in the meal (default 1)'),
+  servingsToEat: pgIntSchema
+    .optional()
+    .describe(
+      'Servings of the ingredient the meal’s owner eats (defaults to servings-to-cook)',
+    ),
 });
 
 const mealIngredientListSchema = z
@@ -87,9 +99,14 @@ const mealPlanEntrySchema = z.union([
   }),
   z.strictObject({
     recipeId: z.uuid().describe('Recipe id, from search_recipes'),
-    servings: pgIntSchema
+    servingsToCook: pgIntSchema
       .optional()
-      .describe('Servings of the recipe (defaults to the recipe’s)'),
+      .describe('Servings of the recipe to cook (defaults to the recipe’s)'),
+    servingsToEat: pgIntSchema
+      .optional()
+      .describe(
+        'Servings of the recipe the plan’s owner eats (defaults to servings-to-cook)',
+      ),
     quantity: pgIntSchema
       .optional()
       .describe('How many times the recipe appears (default 1)'),
@@ -456,20 +473,26 @@ export const registerTools = (
     {
       title: 'Add recipe to meal',
       description:
-        'Add a recipe to a meal, appended last. If the recipe is already a member, its servings are updated instead (when provided).',
+        'Add a recipe to a meal, appended last. If the recipe is already a member, its servings-to-cook / servings-to-eat are updated instead (when provided).',
       inputSchema: {
         mealId: z.string().describe('Meal id, from list_meals'),
         recipeId: z.uuid().describe('Recipe id, from search_recipes'),
-        servings: pgIntSchema
+        servingsToCook: pgIntSchema
           .optional()
-          .describe('Servings of the recipe in the meal'),
+          .describe('Servings of the recipe to cook in the meal'),
+        servingsToEat: pgIntSchema
+          .optional()
+          .describe(
+            'Servings of the recipe the meal’s owner eats (defaults to servings-to-cook)',
+          ),
       },
     },
-    async ({mealId, recipeId, servings}) =>
+    async ({mealId, recipeId, servingsToCook, servingsToEat}) =>
       textResult(
         await client.addRecipeToMeal(mealId, {
           recipeId,
-          ...(servings !== undefined ? {servings} : {}),
+          ...(servingsToCook !== undefined ? {servingsToCook} : {}),
+          ...(servingsToEat !== undefined ? {servingsToEat} : {}),
         }),
       ),
   );
@@ -595,23 +618,38 @@ export const registerTools = (
           .describe(
             'Recipe id, from search_recipes (mutually exclusive with mealId)',
           ),
-        servings: pgIntSchema
+        servingsToCook: pgIntSchema
           .optional()
-          .describe('Servings of the recipe (recipe entries only)'),
+          .describe('Servings of the recipe to cook (recipe entries only)'),
+        servingsToEat: pgIntSchema
+          .optional()
+          .describe(
+            'Servings of the recipe the plan’s owner eats (recipe entries only; defaults to servings-to-cook)',
+          ),
         quantity: pgIntSchema
           .optional()
           .describe('How many times the entry appears (default 1)'),
       },
     },
-    async ({mealPlanId, mealId, recipeId, servings, quantity}) => {
+    async ({
+      mealPlanId,
+      mealId,
+      recipeId,
+      servingsToCook,
+      servingsToEat,
+      quantity,
+    }) => {
       if ((mealId === undefined) === (recipeId === undefined)) {
         throw new Error(
           'add_meal_plan_entry requires exactly one of mealId or recipeId.',
         );
       }
-      if (servings !== undefined && recipeId === undefined) {
+      if (
+        (servingsToCook !== undefined || servingsToEat !== undefined) &&
+        recipeId === undefined
+      ) {
         throw new Error(
-          'add_meal_plan_entry: servings applies only to recipe entries; give a recipeId or omit servings.',
+          'add_meal_plan_entry: servingsToCook/servingsToEat apply only to recipe entries; give a recipeId or omit them.',
         );
       }
       if (mealId !== undefined) {
@@ -625,7 +663,8 @@ export const registerTools = (
       return textResult(
         await client.addMealPlanEntry(mealPlanId, {
           recipeId: recipeId as string,
-          ...(servings !== undefined ? {servings} : {}),
+          ...(servingsToCook !== undefined ? {servingsToCook} : {}),
+          ...(servingsToEat !== undefined ? {servingsToEat} : {}),
           ...(quantity !== undefined ? {quantity} : {}),
         }),
       );

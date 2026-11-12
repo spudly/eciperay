@@ -258,8 +258,18 @@ describe('meal and meal plan write tools', () => {
       title: 'Taco Night',
       notes: null,
       members: [
-        {recipeId: RECIPE_UUID, sortOrder: 0, servings: 4},
-        {recipeId: RECIPE2_UUID, sortOrder: 1, servings: 2},
+        {
+          recipeId: RECIPE_UUID,
+          sortOrder: 0,
+          servingsToCook: 4,
+          servingsToEat: 4,
+        },
+        {
+          recipeId: RECIPE2_UUID,
+          sortOrder: 1,
+          servingsToCook: 2,
+          servingsToEat: 2,
+        },
       ],
     };
     const putBodies: Record<string, unknown>[] = [];
@@ -298,7 +308,7 @@ describe('meal and meal plan write tools', () => {
       arguments: {
         title: 'Taco Night',
         recipes: [
-          {recipeId: RECIPE_UUID, servings: 4},
+          {recipeId: RECIPE_UUID, servingsToCook: 4},
           {recipeId: RECIPE2_UUID},
         ],
       },
@@ -312,7 +322,7 @@ describe('meal and meal plan write tools', () => {
     assert.notEqual(removed.isError, true);
     assert.equal(putBodies.length, 1);
     assert.deepEqual(putBodies[0]?.['recipes'], [
-      {recipeId: RECIPE_UUID, servings: 4},
+      {recipeId: RECIPE_UUID, servingsToCook: 4, servingsToEat: 4},
     ]);
     await client.close();
   });
@@ -479,8 +489,8 @@ describe('meal and meal plan write tools', () => {
       arguments: {
         id: 'meal-1',
         recipes: [
-          {recipeId: RECIPE_UUID, servings: 2},
-          {recipeId: RECIPE_UUID, servings: 4},
+          {recipeId: RECIPE_UUID, servingsToCook: 2},
+          {recipeId: RECIPE_UUID, servingsToCook: 4},
         ],
       },
     });
@@ -489,7 +499,7 @@ describe('meal and meal plan write tools', () => {
     await client.close();
   });
 
-  test('servings beyond the PostgreSQL integer range are an error and write nothing', async () => {
+  test('servings-to-cook beyond the PostgreSQL integer range are an error and write nothing', async () => {
     let fetchCalls = 0;
     globalThis.fetch = (async () => {
       fetchCalls += 1;
@@ -506,7 +516,7 @@ describe('meal and meal plan write tools', () => {
       name: 'create_meal',
       arguments: {
         title: 'Taco Night',
-        recipes: [{recipeId: RECIPE_UUID, servings: 2_147_483_648}],
+        recipes: [{recipeId: RECIPE_UUID, servingsToCook: 2_147_483_648}],
       },
     });
     assert.equal(created.isError, true);
@@ -515,7 +525,7 @@ describe('meal and meal plan write tools', () => {
       arguments: {
         mealId: MEAL_UUID,
         recipeId: RECIPE_UUID,
-        servings: 2_147_483_648,
+        servingsToCook: 2_147_483_648,
       },
     });
     assert.equal(added.isError, true);
@@ -523,7 +533,7 @@ describe('meal and meal plan write tools', () => {
       name: 'create_meal_plan',
       arguments: {
         title: 'Week 1',
-        entries: [{recipeId: RECIPE_UUID, servings: 2_147_483_648}],
+        entries: [{recipeId: RECIPE_UUID, servingsToCook: 2_147_483_648}],
       },
     });
     assert.equal(planCreated.isError, true);
@@ -540,7 +550,7 @@ describe('meal and meal plan write tools', () => {
       arguments: {
         mealPlanId: MEAL_UUID,
         recipeId: RECIPE_UUID,
-        servings: 2_147_483_648,
+        servingsToCook: 2_147_483_648,
       },
     });
     assert.equal(entryAdded.isError, true);
@@ -548,7 +558,7 @@ describe('meal and meal plan write tools', () => {
     await client.close();
   });
 
-  test('servings and quantity reject zero, negative, fractional and non-number values and write nothing', async () => {
+  test('servings-to-cook and quantity reject zero, negative, fractional and non-number values and write nothing', async () => {
     let fetchCalls = 0;
     globalThis.fetch = (async () => {
       fetchCalls += 1;
@@ -567,34 +577,38 @@ describe('meal and meal plan write tools', () => {
         name: 'create_meal',
         arguments: {
           title: 'Taco Night',
-          recipes: [{recipeId: RECIPE_UUID, servings: value}],
+          recipes: [{recipeId: RECIPE_UUID, servingsToCook: value}],
         },
       });
       assert.equal(
         created.isError,
         true,
-        `create_meal servings=${String(value)}`,
+        `create_meal servingsToCook=${String(value)}`,
       );
       const added = await client.callTool({
         name: 'add_recipe_to_meal',
-        arguments: {mealId: MEAL_UUID, recipeId: RECIPE_UUID, servings: value},
+        arguments: {
+          mealId: MEAL_UUID,
+          recipeId: RECIPE_UUID,
+          servingsToCook: value,
+        },
       });
       assert.equal(
         added.isError,
         true,
-        `add_recipe_to_meal servings=${String(value)}`,
+        `add_recipe_to_meal servingsToCook=${String(value)}`,
       );
       const planCreated = await client.callTool({
         name: 'create_meal_plan',
         arguments: {
           title: 'Week 1',
-          entries: [{recipeId: RECIPE_UUID, servings: value}],
+          entries: [{recipeId: RECIPE_UUID, servingsToCook: value}],
         },
       });
       assert.equal(
         planCreated.isError,
         true,
-        `create_meal_plan servings=${String(value)}`,
+        `create_meal_plan servingsToCook=${String(value)}`,
       );
       const planQuantity = await client.callTool({
         name: 'create_meal_plan',
@@ -622,7 +636,7 @@ describe('meal and meal plan write tools', () => {
     await client.close();
   });
 
-  test('servings and quantity accept the boundaries 1 and 2147483647', async () => {
+  test('servings-to-cook and quantity accept the boundaries 1 and 2147483647', async () => {
     let fetchCalls = 0;
     globalThis.fetch = (async () => {
       fetchCalls += 1;
@@ -641,12 +655,12 @@ describe('meal and meal plan write tools', () => {
         name: 'create_meal',
         arguments: {
           title: 'Taco Night',
-          recipes: [{recipeId: RECIPE_UUID, servings: value}],
+          recipes: [{recipeId: RECIPE_UUID, servingsToCook: value}],
         },
       });
       assert.ok(
         fetchCalls > 0,
-        `create_meal servings=${value} should pass validation`,
+        `create_meal servingsToCook=${value} should pass validation`,
       );
       fetchCalls = 0;
       await client.callTool({
@@ -689,7 +703,7 @@ describe('meal and meal plan write tools', () => {
     await client.close();
   });
 
-  test('create_meal_plan with servings on a meal entry is an error and writes nothing', async () => {
+  test('create_meal_plan with servings-to-cook on a meal entry is an error and writes nothing', async () => {
     let fetchCalls = 0;
     globalThis.fetch = (async () => {
       fetchCalls += 1;
@@ -704,7 +718,10 @@ describe('meal and meal plan write tools', () => {
     const client = await connectClient();
     const result = await client.callTool({
       name: 'create_meal_plan',
-      arguments: {title: 'Week 1', entries: [{mealId: MEAL_UUID, servings: 4}]},
+      arguments: {
+        title: 'Week 1',
+        entries: [{mealId: MEAL_UUID, servingsToCook: 4}],
+      },
     });
     assert.equal(result.isError, true);
     assert.equal(fetchCalls, 0);
@@ -759,7 +776,8 @@ describe('meal and meal plan write tools', () => {
           recipeId: RECIPE_UUID,
           sortOrder: 1,
           quantity: 1,
-          servings: 4,
+          servingsToCook: 4,
+          servingsToEat: 4,
         },
       ],
     };
@@ -785,7 +803,7 @@ describe('meal and meal plan write tools', () => {
     });
     assert.notEqual(result.isError, true);
     assert.deepEqual(putBodies[0]?.['entries'], [
-      {recipeId: RECIPE_UUID, servings: 4, quantity: 1},
+      {recipeId: RECIPE_UUID, servingsToCook: 4, servingsToEat: 4, quantity: 1},
       {mealId: MEAL_UUID, quantity: 1},
     ]);
     await client.close();
