@@ -3,9 +3,10 @@ import {onlineManager} from '@tanstack/react-query';
 import {act, fireEvent, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {http, HttpResponse} from 'msw';
-import {Route, Routes} from 'react-router-dom';
+import {Route, Routes, useLocation} from 'react-router-dom';
 
 import {
+  makeRecipeDetail,
   makeRecipeVersionDetail,
   makeRecipeVersionSummary,
 } from '../test/fixtures/recipe.js';
@@ -14,12 +15,39 @@ import {makeQueryClient, renderWithProviders} from '../test/testUtils.js';
 
 import {RecipeDetailPage} from './RecipeDetailPage.js';
 
+const LocationProbe = () => {
+  const location = useLocation();
+  return <div data-testid="location">{location.pathname}</div>;
+};
+
+const renderDetailAt = async (route: string) =>
+  renderWithProviders(
+    <>
+      <Routes>
+        <Route
+          path="/recipes/:recipeId"
+          element={<RecipeDetailPage />}
+        />
+        <Route
+          path="/recipes/:recipeId/:slug"
+          element={<RecipeDetailPage />}
+        />
+      </Routes>
+      <LocationProbe />
+    </>,
+    {route},
+  );
+
 describe('RecipeDetailPage', () => {
   test('renders every section in a single scroll', async () => {
     await renderWithProviders(
       <Routes>
         <Route
           path="/recipes/:recipeId"
+          element={<RecipeDetailPage />}
+        />
+        <Route
+          path="/recipes/:recipeId/:slug"
           element={<RecipeDetailPage />}
         />
       </Routes>,
@@ -52,6 +80,10 @@ describe('RecipeDetailPage', () => {
       <Routes>
         <Route
           path="/recipes/:recipeId"
+          element={<RecipeDetailPage />}
+        />
+        <Route
+          path="/recipes/:recipeId/:slug"
           element={<RecipeDetailPage />}
         />
         <Route
@@ -89,6 +121,10 @@ describe('RecipeDetailPage', () => {
           path="/recipes/:recipeId"
           element={<RecipeDetailPage />}
         />
+        <Route
+          path="/recipes/:recipeId/:slug"
+          element={<RecipeDetailPage />}
+        />
       </Routes>,
       {route: `/recipes/${missingId}`},
     );
@@ -105,6 +141,10 @@ describe('RecipeDetailPage', () => {
       <Routes>
         <Route
           path="/recipes/:recipeId"
+          element={<RecipeDetailPage />}
+        />
+        <Route
+          path="/recipes/:recipeId/:slug"
           element={<RecipeDetailPage />}
         />
       </Routes>,
@@ -213,6 +253,10 @@ describe('RecipeDetailPage', () => {
           path="/recipes/:recipeId"
           element={<RecipeDetailPage />}
         />
+        <Route
+          path="/recipes/:recipeId/:slug"
+          element={<RecipeDetailPage />}
+        />
       </Routes>,
       {route: '/recipes/recipe-uuid-1'},
     );
@@ -268,11 +312,62 @@ describe('RecipeDetailPage', () => {
           path="/recipes/:recipeId"
           element={<RecipeDetailPage />}
         />
+        <Route
+          path="/recipes/:recipeId/:slug"
+          element={<RecipeDetailPage />}
+        />
       </Routes>,
       {route: '/recipes/recipe-uuid-1?versionId=version-uuid-2'},
     );
     await waitFor(() => {
       expect(screen.getByText('Older version')).toBeInTheDocument();
     });
+  });
+  test('canonicalizes a bare-ID URL to the slugged URL (#419)', async () => {
+    await renderDetailAt('/recipes/recipe-uuid-1');
+    await waitFor(() => {
+      expect(screen.getByText('Test Recipe')).toBeInTheDocument();
+    });
+    expect(screen.getByTestId('location')).toHaveTextContent(
+      '/recipes/recipe-uuid-1/test-recipe',
+    );
+  });
+
+  test('canonicalizes a wrong or stale slug (#419)', async () => {
+    await renderDetailAt('/recipes/recipe-uuid-1/stale-slug');
+    await waitFor(() => {
+      expect(screen.getByText('Test Recipe')).toBeInTheDocument();
+    });
+    expect(screen.getByTestId('location')).toHaveTextContent(
+      '/recipes/recipe-uuid-1/test-recipe',
+    );
+  });
+
+  test('renders a correct slug in place without a redirect loop (#419)', async () => {
+    await renderDetailAt('/recipes/recipe-uuid-1/test-recipe');
+    await waitFor(() => {
+      expect(screen.getByText('Test Recipe')).toBeInTheDocument();
+    });
+    expect(screen.getByTestId('location')).toHaveTextContent(
+      '/recipes/recipe-uuid-1/test-recipe',
+    );
+    expect(screen.getByText(/Flour/)).toBeInTheDocument();
+  });
+
+  test("lands a renamed recipe's old URL on the new canonical URL (#419)", async () => {
+    server.use(
+      http.get('http://localhost:8080/api/recipes/:id', () =>
+        HttpResponse.json(
+          makeRecipeDetail({title: 'Renamed Recipe', slug: 'renamed-recipe'}),
+        ),
+      ),
+    );
+    await renderDetailAt('/recipes/recipe-uuid-1/test-recipe');
+    await waitFor(() => {
+      expect(screen.getByText('Renamed Recipe')).toBeInTheDocument();
+    });
+    expect(screen.getByTestId('location')).toHaveTextContent(
+      '/recipes/recipe-uuid-1/renamed-recipe',
+    );
   });
 });

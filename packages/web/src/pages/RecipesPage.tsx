@@ -1,4 +1,5 @@
 import {
+  buildRecipePath,
   DISCOVER_ERROR_MESSAGE,
   formatCondensedNutritionParts,
   formatDiscoveryListMeta,
@@ -570,7 +571,7 @@ export const RecipesPage = () => {
 
   const ownItems: RecipesPageItem[] = ownRecipes.map(recipe => ({
     id: recipe.id,
-    href: `/recipes/${recipe.id}`,
+    href: buildRecipePath(recipe),
     title: recipe.title,
     subtitle: formatRecipesPageSubtitle(recipe),
     rating: getDisplayRating(recipe),

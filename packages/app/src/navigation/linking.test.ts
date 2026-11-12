@@ -96,6 +96,27 @@ describe('linking', () => {
     },
   );
 
+  // #419: the slugged recipeHref resolves to RecipeDetail carrying
+  // both params, and the static subroutes still outrank the slug
+  // segment (a recipe's cook link must not land on the detail screen
+  // with slug 'cook').
+  test('the slugged recipeHref resolves to RecipeDetail with id and slug', () => {
+    const route = resolveLeafRoute(
+      recipeHref({id: 'recipe-42', slug: 'test-recipe'}),
+    );
+    expect(route?.name).toBe('RecipeDetail');
+    expect(route?.params).toMatchObject({
+      recipeId: 'recipe-42',
+      slug: 'test-recipe',
+    });
+  });
+
+  test('the cook subroute is not swallowed by the slug segment', () => {
+    expect(resolveLeafScreenName('com.eciperay://recipes/recipe-42/cook')).toBe(
+      'CookingMode',
+    );
+  });
+
   test('the recipeHref constant itself resolves to RecipeDetail with its id', () => {
     const route = resolveLeafRoute(recipeHref('recipe-42'));
     expect(route?.name).toBe('RecipeDetail');

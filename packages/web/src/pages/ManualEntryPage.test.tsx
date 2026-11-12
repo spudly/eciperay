@@ -37,6 +37,10 @@ describe('ManualEntryPage', () => {
           path="/recipes/:recipeId"
           element={<div>Recipe Created</div>}
         />
+        <Route
+          path="/recipes/:recipeId/:slug"
+          element={<div>Recipe Created</div>}
+        />
       </Routes>,
       {route: '/add/manual'},
     );
@@ -64,6 +68,10 @@ describe('ManualEntryPage', () => {
         />
         <Route
           path="/recipes/:recipeId"
+          element={<div>Recipe Created</div>}
+        />
+        <Route
+          path="/recipes/:recipeId/:slug"
           element={<div>Recipe Created</div>}
         />
       </Routes>,
@@ -103,6 +111,10 @@ describe('ManualEntryPage', () => {
         />
         <Route
           path="/recipes/:recipeId"
+          element={<div>Recipe Created</div>}
+        />
+        <Route
+          path="/recipes/:recipeId/:slug"
           element={<div>Recipe Created</div>}
         />
       </Routes>,
@@ -147,6 +159,10 @@ describe('ManualEntryPage', () => {
         />
         <Route
           path="/recipes/:recipeId"
+          element={<div>Recipe Created</div>}
+        />
+        <Route
+          path="/recipes/:recipeId/:slug"
           element={<div>Recipe Created</div>}
         />
       </Routes>,

@@ -1,4 +1,5 @@
 import {
+  buildRecipePath,
   invalidateRecipeQueries,
   queryKeys,
   recipeDetailToInput,
@@ -27,9 +28,9 @@ export const EditRecipePage = () => {
   const versionId = recipe?.versionId;
 
   const handleSubmit = async (input: RecipeInput) => {
-    await eciperay.recipes.put(recipeId, input);
+    const updated = await eciperay.recipes.put(recipeId, input);
     await invalidateRecipeQueries(queryClient, recipeId, versionId);
-    void navigate(`/recipes/${recipeId}`);
+    void navigate(buildRecipePath(updated));
   };
 
   if (isLoading || !recipe) {

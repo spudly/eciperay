@@ -1,4 +1,9 @@
-import {errorMessage, queryKeys, recipeDetailToInput} from '@eciperay/client';
+import {
+  buildRecipePath,
+  errorMessage,
+  queryKeys,
+  recipeDetailToInput,
+} from '@eciperay/client';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useNavigate, useParams} from 'react-router-dom';
 
@@ -21,11 +26,11 @@ export const ImportReviewPage = () => {
 
   const acceptMutation = useMutation({
     mutationFn: () => eciperay.recipes.acceptImport(recipeId),
-    onSuccess: async () => {
+    onSuccess: async accepted => {
       await queryClient.invalidateQueries({
         queryKey: queryKeys.recipe(recipeId),
       });
-      void navigate(`/recipes/${recipeId}`);
+      void navigate(buildRecipePath(accepted));
     },
   });
 

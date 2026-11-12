@@ -28,7 +28,7 @@ export const linking: LinkingOptions<RootStackParamList> = {
             screens: {
               RecipesList: 'recipes',
               SharedWithMe: 'shared-with-me',
-              RecipeDetail: 'recipes/:recipeId',
+              RecipeDetail: 'recipes/:recipeId/:slug?',
               CookingMode: {
                 path: 'recipes/:recipeId/cook',
                 // The cooking href carries servings as a query

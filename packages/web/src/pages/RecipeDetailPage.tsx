@@ -1,7 +1,17 @@
-import {queryKeys, recordRecipeView} from '@eciperay/client';
+import {
+  buildRecipePath,
+  queryKeys,
+  recipeSlugFor,
+  recordRecipeView,
+} from '@eciperay/client';
 import {useQuery, useQueryClient} from '@tanstack/react-query';
 import {useCallback, useEffect, useMemo, useState} from 'react';
-import {useParams, useSearchParams} from 'react-router-dom';
+import {
+  Navigate,
+  useLocation,
+  useParams,
+  useSearchParams,
+} from 'react-router-dom';
 
 import {RouteErrorView} from '../components/RouteErrorView.js';
 import {ScreenLoadingGate} from '../components/ScreenLoadingGate.js';
@@ -12,7 +22,8 @@ import {recipeViewHistoryStorage} from '../lib/recipeViewHistoryStorage.js';
 import {RecipeDetailHost} from './RecipeDetailHost.js';
 
 export const RecipeDetailPage = () => {
-  const {recipeId = ''} = useParams();
+  const {recipeId = '', slug} = useParams();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [servings, setServings] = useState<number | null>(null);
   const [selectedVersionId, setSelectedVersionId] = useState<string | null>(
@@ -123,6 +134,25 @@ export const RecipeDetailPage = () => {
 
   if (isPending || !recipe || !displayRecipe) {
     return <ScreenLoadingGate pending>{null}</ScreenLoadingGate>;
+  }
+
+  // Canonicalization (#419): the ID alone resolved the recipe, and its
+  // stored slug is the canonical final segment. A bare-ID URL or a
+  // wrong/stale slug (e.g. the pre-rename slug after a rename) replaces
+  // to the canonical slugged URL — client-side, since a true 301 needs
+  // the SSR layer (#304); a correct slug renders in place with no
+  // redirect, so there is no loop. The comparison goes through the
+  // shared helper's canonical slug (stored slug, title-derived as a
+  // fallback) so the target of the redirect is exactly the value that
+  // stops it. The search string rides along (the versionId effect
+  // above consumes it as before).
+  if (slug !== recipeSlugFor(recipe)) {
+    return (
+      <Navigate
+        replace
+        to={`${buildRecipePath(recipe)}${location.search}`}
+      />
+    );
   }
 
   const currentServings = servings ?? displayRecipe.servings;

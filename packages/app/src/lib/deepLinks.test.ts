@@ -47,6 +47,15 @@ describe('deepLinks', () => {
 
   test('recipe destinations carry their ids', () => {
     expect(recipeHref('r1')).toBe(`${base}recipes/r1`);
+    // #419: a recipe source yields the canonical slugged form — the
+    // stored slug verbatim, or the title slugified when no slug is
+    // known (meal / meal-plan members carry only a title).
+    expect(recipeHref({id: 'r1', slug: 'test-recipe'})).toBe(
+      `${base}recipes/r1/test-recipe`,
+    );
+    expect(recipeHref({id: 'r1', title: 'Test Recipe'})).toBe(
+      `${base}recipes/r1/test-recipe`,
+    );
     expect(recipeEditHref('r1')).toBe(`${base}recipes/r1/edit`);
     expect(recipeVersionEditHref('r1', 'v2')).toBe(
       `${base}recipes/r1/versions/v2/edit`,

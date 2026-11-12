@@ -32,6 +32,10 @@ describe('EditRecipePage', () => {
           path="/recipes/:recipeId"
           element={<div>Saved</div>}
         />
+        <Route
+          path="/recipes/:recipeId/:slug"
+          element={<div>Saved</div>}
+        />
       </Routes>,
       {route: '/recipes/recipe-uuid-1/edit'},
     );
@@ -60,6 +64,10 @@ describe('EditRecipePage', () => {
         />
         <Route
           path="/recipes/:recipeId"
+          element={<div>Saved</div>}
+        />
+        <Route
+          path="/recipes/:recipeId/:slug"
           element={<div>Saved</div>}
         />
       </Routes>,
@@ -139,6 +147,10 @@ describe('EditRecipePage', () => {
         />
         <Route
           path="/recipes/:recipeId"
+          element={<div>Saved</div>}
+        />
+        <Route
+          path="/recipes/:recipeId/:slug"
           element={<div>Saved</div>}
         />
       </Routes>,

@@ -73,6 +73,10 @@ describe('ImportReviewPage', () => {
           path="/recipes/:recipeId"
           element={<div>Saved</div>}
         />
+        <Route
+          path="/recipes/:recipeId/:slug"
+          element={<div>Saved</div>}
+        />
       </Routes>,
       {route: '/import/review/recipe-uuid-1'},
     );

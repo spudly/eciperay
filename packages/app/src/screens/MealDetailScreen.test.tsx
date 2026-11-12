@@ -184,6 +184,8 @@ describe('MealDetailScreen', () => {
     await fireEvent.press(
       await findByRole('link', {name: 'Test Recipe, 4 servings'}),
     );
-    expect(Linking.openURL).toHaveBeenCalledWith(recipeHref(recipeId));
+    expect(Linking.openURL).toHaveBeenCalledWith(
+      recipeHref({id: recipeId, title: 'Test Recipe'}),
+    );
   });
 });
