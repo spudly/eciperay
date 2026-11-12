@@ -1,4 +1,8 @@
-import {invalidateRecipeQueries, useAuth} from '@eciperay/client';
+import {
+  buildRecipePath,
+  invalidateRecipeQueries,
+  useAuth,
+} from '@eciperay/client';
 import {useQueryClient} from '@tanstack/react-query';
 import {useNavigate, useParams} from 'react-router-dom';
 import type {TweakAiApproveResult, TweakAiPhase} from '@eciperay/types';
@@ -101,10 +105,10 @@ export const TweakAiPage = () => {
       // Partitioned by recipe and by account (see GenerateAiPage).
       storageKey={storageKey}
       onEmptyCancel={() => {
-        void navigate(`/recipes/${recipeId}`);
+        void navigate(buildRecipePath({id: recipeId}));
       }}
       onCancelSuccess={() => {
-        void navigate(`/recipes/${recipeId}`);
+        void navigate(buildRecipePath({id: recipeId}));
       }}
       onFinalizeSuccess={async result => {
         const {versionId} = result as TweakAiApproveResult;

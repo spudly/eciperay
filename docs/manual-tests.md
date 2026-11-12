@@ -250,6 +250,14 @@ without); one recipe may be created fresh in case 1.
     screen, and the card opens that recipe's detail — with no dead taps and no
     "No Activity found to handle Intent" failure. (Shared and discovery rows
     deliberately open their public permalink instead.)
+18. **Slugged recipe URLs canonicalize (#419).** Signed in, open a recipe from
+    the list. **Expected:** the address bar shows `/recipes/<id>/<title-slug>`.
+    Edit the URL to the bare form (`/recipes/<id>`) and reload, then to a wrong
+    slug (`/recipes/<id>/wrong-slug`) and reload. **Expected:** both land back
+    on the canonical slugged URL showing the same recipe (client-side replace; a
+    true 301 awaits SSR, #304). Rename the recipe and revisit its previous
+    slugged URL. **Expected:** it lands on the new canonical URL for the new
+    title.
 
 **Run when:**
 `packages/app/src/screens/{Recipes,RecipeDetail,EditRecipe,EditVersion,ManualEntry,SharedWithMe,Home}Screen.tsx`,
@@ -269,7 +277,8 @@ page components, `packages/server` recipe routes,
 `packages/server/src/lib/autoGenerateRecipeImage.ts`,
 `packages/server/src/db/migrations/022_recipe_auto_image_attempt.sql`,
 `packages/web/src/pages/RecipeFormHost.tsx`,
-`packages/client/src/recipeListDisplay.ts`,
+`packages/client/src/recipeListDisplay.ts`, `packages/client/src/recipeUrl.ts`,
+`packages/web/src/routes/router.tsx`,
 `packages/client/src/useRecipeListFilters.ts`,
 `packages/client/src/useFilterFieldState.ts`, recipe nutrition summary fields in
 `packages/types` / `packages/server` nutrition mapping.

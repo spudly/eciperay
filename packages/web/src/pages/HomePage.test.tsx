@@ -111,6 +111,8 @@ describe('HomePage', () => {
     );
     // Recently-viewed rows still press through the host's navigate.
     await userEvent.click(screen.getByRole('button', {name: /Test Recipe/i}));
-    expect(mockNavigate).toHaveBeenCalledWith('/recipes/recipe-uuid-1');
+    expect(mockNavigate).toHaveBeenCalledWith(
+      '/recipes/recipe-uuid-1/test-recipe',
+    );
   });
 });

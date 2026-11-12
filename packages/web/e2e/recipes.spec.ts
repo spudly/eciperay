@@ -215,7 +215,9 @@ test.describe('authenticated recipes', () => {
     await page.goto('/recipes');
     await page.getByText('E2E Tomato Pasta').click();
 
-    await expect(page).toHaveURL(/\/recipes\/e2e-recipe-pasta$/);
+    await expect(page).toHaveURL(
+      /\/recipes\/e2e-recipe-pasta\/e2e-tomato-pasta$/,
+    );
     await expect(
       page.getByRole('heading', {name: 'E2E Tomato Pasta'}),
     ).toBeVisible();

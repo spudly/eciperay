@@ -1,4 +1,5 @@
 import {
+  buildRecipePath,
   buildWeeklyTotalsBand,
   formatSimpleNutrition,
   queryKeys,
@@ -109,7 +110,7 @@ const planDetailViewProps = (plan: MealPlanDetail, planId: string) => {
       id: entry.id,
       kind: 'recipe',
       targetId: entry.recipeId,
-      href: `/recipes/${entry.recipeId}`,
+      href: buildRecipePath({id: entry.recipeId, title: entry.title}),
       title: entry.title,
       subtitle: `Qty ${entry.quantity} · Servings to cook: ${entry.servingsToCook} · Servings to eat: ${entry.servingsToEat}${nutritionSuffix}`,
       isUnavailable: entry.accessLost,

@@ -96,7 +96,7 @@ test.describe('live imports', () => {
     await expect(page.getByText('2 cups water')).toBeVisible();
     await page.getByRole('button', {name: 'Looks good'}).click();
 
-    await expect(page).toHaveURL(/\/recipes\/[^/]+$/, {timeout: 15_000});
+    await expect(page).toHaveURL(/\/recipes\/[^/]+\/[^/]+$/, {timeout: 15_000});
     await expect(
       page.getByRole('heading', {name: 'Imported Soup'}),
     ).toBeVisible();

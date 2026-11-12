@@ -43,6 +43,13 @@ export {
   isRecipeStatusEditable,
 } from './recipeEditActions.js';
 export {
+  buildRecipeCanonicalUrl,
+  buildRecipePath,
+  recipeSlugFor,
+  slugifyRecipeTitle,
+  type RecipeUrlSource,
+} from './recipeUrl.js';
+export {
   buildRecipePermalink,
   buildRecipeShareUrl,
   isPublishedVisibility,

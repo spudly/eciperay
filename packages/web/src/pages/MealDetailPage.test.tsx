@@ -52,7 +52,7 @@ describe('MealDetailPage', () => {
     );
     expect(screen.getByRole('link', {name: /Test Recipe/})).toHaveAttribute(
       'href',
-      '/recipes/recipe-uuid-1',
+      '/recipes/recipe-uuid-1/test-recipe',
     );
   });
 

@@ -1,4 +1,5 @@
 import {
+  buildRecipePath,
   invalidateRecipeQueries,
   uploadRecipeImage,
   useAnalytics,
@@ -48,7 +49,7 @@ export const ManualEntryPage = () => {
       recipe.recipeId,
       recipe.versionId,
     );
-    void navigate(`/recipes/${recipe.recipeId}`);
+    void navigate(buildRecipePath({id: recipe.recipeId, title: input.title}));
   };
 
   return (

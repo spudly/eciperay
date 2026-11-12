@@ -1,4 +1,5 @@
 import {
+  buildRecipePath,
   HOME_ADD_LABEL,
   HOME_BROWSE_LABEL,
   HOME_EMPTY_MESSAGE,
@@ -99,7 +100,7 @@ export const HomePage = () => {
             isDeleting={deleteMutation.isPending}
             deleteError={deleteErrorRecipeId === recipe.id ? deleteError : null}
             onPress={() => {
-              void navigate(`/recipes/${recipe.id}`);
+              void navigate(buildRecipePath(recipe));
             }}
             onDelete={id => {
               const match = recipes.find(item => item.id === id);

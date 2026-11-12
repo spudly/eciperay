@@ -213,7 +213,7 @@ describe('MealPlanDetailPage', () => {
     expect(screen.getByText(/Qty 1 · 1 recipe(?!s)/)).toBeInTheDocument();
     expect(
       screen.getByRole('link', {name: /Recipe · Test Recipe/}),
-    ).toHaveAttribute('href', '/recipes/recipe-uuid-1');
+    ).toHaveAttribute('href', '/recipes/recipe-uuid-1/test-recipe');
     expect(
       screen.getByRole('link', {name: 'Set nutrition goals'}),
     ).toHaveAttribute('href', '/profile');

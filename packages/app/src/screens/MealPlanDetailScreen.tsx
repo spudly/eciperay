@@ -35,8 +35,10 @@ export const MealPlanDetailScreen = ({route}: Props) => {
           editHref={mealPlanEditHref(planId)}
           shoppingListHref={shoppingListHref(planId)}
           goalsHref={profileHref}
-          entryHref={(kind, targetId) =>
-            kind === 'meal' ? mealHref(targetId) : recipeHref(targetId)
+          entryHref={(kind, targetId, title) =>
+            kind === 'meal'
+              ? mealHref(targetId)
+              : recipeHref({id: targetId, title})
           }
         />
       ) : null}

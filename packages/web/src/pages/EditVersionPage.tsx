@@ -1,4 +1,5 @@
 import {
+  buildRecipePath,
   invalidateRecipeQueries,
   queryKeys,
   recipeVersionDetailToInput,
@@ -35,7 +36,7 @@ export const EditVersionPage = () => {
   const handleSubmit = async (input: RecipeVersionInput) => {
     await eciperay.versions.put(recipeId, versionId, input);
     await invalidateRecipeQueries(queryClient, recipeId, versionId);
-    void navigate(`/recipes/${recipeId}?versionId=${versionId}`);
+    void navigate(`${buildRecipePath({id: recipeId})}?versionId=${versionId}`);
   };
 
   if (isLoading || !version) {
@@ -51,7 +52,7 @@ export const EditVersionPage = () => {
       }
       parentVersionNumber={parentVersion?.versionNumber}
       notEditable={!version.isEditable}
-      backHref={`/recipes/${recipeId}`}
+      backHref={buildRecipePath({id: recipeId})}
     >
       <RecipeFormHost
         initial={recipeVersionDetailToInput(version)}

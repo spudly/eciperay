@@ -1,5 +1,6 @@
 /* eslint-disable max-lines -- public recipe host: every section's queries, mutations, and view-model mapping */
 import {
+  buildRecipePath,
   buildRecipePermalink,
   formatCommunityRatingLabel,
   formatScaledIngredientLine,
@@ -111,7 +112,7 @@ export const PublicRecipePage = () => {
     mutationFn: () => eciperay.recipes.clone(id, {shareToken}),
     onSuccess: data => {
       void invalidateRecipeQueries(queryClient, data.id, data.versionId);
-      void navigate(`/recipes/${data.id}`);
+      void navigate(buildRecipePath(data));
     },
   });
 

@@ -68,7 +68,7 @@ describe('recipeVisibility', () => {
       sourceUrl: null,
     };
     expect(buildRecipeShareUrl('https://www.eciperay.com', recipe)).toBe(
-      'https://www.eciperay.com/recipes/recipe-1',
+      'https://www.eciperay.com/recipes/recipe-1/pasta',
     );
     expect(
       buildRecipeShareUrl('https://www.eciperay.com', {

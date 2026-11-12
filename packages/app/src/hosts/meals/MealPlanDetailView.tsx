@@ -19,7 +19,11 @@ type MealPlanDetailViewOwnProps = {
   editHref: string;
   shoppingListHref: string;
   goalsHref: string;
-  entryHref: (kind: 'meal' | 'recipe', targetId: string) => string;
+  entryHref: (
+    kind: 'meal' | 'recipe',
+    targetId: string,
+    title: string,
+  ) => string;
 };
 
 /**
@@ -153,7 +157,7 @@ export const MealPlanDetailView = ({
         id: entry.id,
         kind: 'meal',
         targetId: entry.mealId,
-        href: entryHref('meal', entry.mealId),
+        href: entryHref('meal', entry.mealId, entry.title),
         title: entry.title,
         subtitle: `Qty ${entry.quantity} · ${entry.recipeCount} recipe${entry.recipeCount === 1 ? '' : 's'}${nutritionSuffix}`,
       };
@@ -162,7 +166,7 @@ export const MealPlanDetailView = ({
       id: entry.id,
       kind: 'recipe',
       targetId: entry.recipeId,
-      href: entryHref('recipe', entry.recipeId),
+      href: entryHref('recipe', entry.recipeId, entry.title),
       title: entry.title,
       subtitle: `Qty ${entry.quantity} · Servings to cook: ${entry.servingsToCook} · Servings to eat: ${entry.servingsToEat}${nutritionSuffix}`,
       isUnavailable: entry.accessLost,

@@ -342,7 +342,7 @@ export const RecipesListView = ({
 
   const items: RecipesPageItem[] = recipes.map(recipe => ({
     id: recipe.id,
-    href: recipeHref(recipe.id),
+    href: recipeHref(recipe),
     title: recipe.title,
     subtitle: formatRecipesPageSubtitle(recipe),
     rating: getDisplayRating(recipe),

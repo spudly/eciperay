@@ -190,6 +190,8 @@ describe('MealDetailScreen', () => {
         name: 'Test Recipe, Servings to cook: 4 · Servings to eat: 4',
       }),
     );
-    expect(Linking.openURL).toHaveBeenCalledWith(recipeHref(recipeId));
+    expect(Linking.openURL).toHaveBeenCalledWith(
+      recipeHref({id: recipeId, title: 'Test Recipe'}),
+    );
   });
 });

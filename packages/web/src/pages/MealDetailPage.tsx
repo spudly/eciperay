@@ -1,4 +1,8 @@
-import {formatSimpleNutrition, queryKeys} from '@eciperay/client';
+import {
+  buildRecipePath,
+  formatSimpleNutrition,
+  queryKeys,
+} from '@eciperay/client';
 import type {RecipeNutritionSummary} from '@eciperay/types';
 import {MealDetailPage as MealDetailPageView} from '@spudly/ui';
 import {useQuery} from '@tanstack/react-query';
@@ -102,7 +106,7 @@ export const MealDetailPage = () => {
           nutritionLabel={formatSimpleNutrition(meal.nutrition)}
           members={meal.members.map(member => ({
             recipeId: member.recipeId,
-            href: `/recipes/${member.recipeId}`,
+            href: buildRecipePath({id: member.recipeId, title: member.title}),
             title: member.title,
             subtitle: `Servings to cook: ${member.servingsToCook} · Servings to eat: ${member.servingsToEat}${
               formatMemberNutrition(member)

@@ -2,7 +2,10 @@ import {getStateFromPath} from '@react-navigation/native';
 
 import {
   addHref,
+  recipeCookHref,
+  recipeEditHref,
   recipeHref,
+  recipeTweakAiHref,
   recipesHref,
   sharedWithMeHref,
 } from '../lib/deepLinks';
@@ -93,6 +96,69 @@ describe('linking', () => {
       const route = resolveLeafRoute(`${prefix}recipes/recipe-42`);
       expect(route?.name).toBe('RecipeDetail');
       expect(route?.params).toMatchObject({recipeId: 'recipe-42'});
+    },
+  );
+
+  // #419: the slugged recipeHref resolves to RecipeDetail carrying
+  // both params, and the static subroutes still outrank the slug
+  // segment (a recipe's cook link must not land on the detail screen
+  // with slug 'cook').
+  test('the slugged recipeHref resolves to RecipeDetail with id and slug', () => {
+    const route = resolveLeafRoute(
+      recipeHref({id: 'recipe-42', slug: 'test-recipe'}),
+    );
+    expect(route?.name).toBe('RecipeDetail');
+    expect(route?.params).toMatchObject({
+      recipeId: 'recipe-42',
+      slug: 'test-recipe',
+    });
+  });
+
+  test('the cook subroute is not swallowed by the slug segment', () => {
+    expect(resolveLeafScreenName('com.eciperay://recipes/recipe-42/cook')).toBe(
+      'CookingMode',
+    );
+  });
+
+  // A recipe whose slug is a reserved action segment: recipeHref
+  // disambiguates it (cook → cook-recipe), so the detail destination
+  // resolves to RecipeDetail while the action hrefs keep resolving to
+  // their own screens.
+  test.each([
+    ['cook', 'cook-recipe'],
+    ['edit', 'edit-recipe'],
+    ['tweak-ai', 'tweak-ai-recipe'],
+  ])(
+    'recipeHref for the reserved slug %s resolves to RecipeDetail',
+    (slug, disambiguated) => {
+      const route = resolveLeafRoute(recipeHref({id: 'recipe-42', slug}));
+      expect(route?.name).toBe('RecipeDetail');
+      expect(route?.params).toMatchObject({
+        recipeId: 'recipe-42',
+        slug: disambiguated,
+      });
+    },
+  );
+
+  test('recipeHref for a recipe titled Cook resolves to RecipeDetail', () => {
+    const route = resolveLeafRoute(
+      recipeHref({id: 'recipe-42', title: 'Cook'}),
+    );
+    expect(route?.name).toBe('RecipeDetail');
+    expect(route?.params).toMatchObject({
+      recipeId: 'recipe-42',
+      slug: 'cook-recipe',
+    });
+  });
+
+  test.each([
+    ['cook', recipeCookHref('recipe-42', 'version-1', 4), 'CookingMode'],
+    ['edit', recipeEditHref('recipe-42'), 'EditRecipe'],
+    ['tweak-ai', recipeTweakAiHref('recipe-42'), 'TweakAi'],
+  ])(
+    'the %s action href still resolves to its own screen',
+    (_label, href, screen) => {
+      expect(resolveLeafScreenName(href)).toBe(screen);
     },
   );
 
