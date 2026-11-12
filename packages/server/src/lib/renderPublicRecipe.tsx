@@ -1,4 +1,5 @@
 import {Writable} from 'node:stream';
+import type {ReactNode} from 'react';
 
 import type {PublicRecipeResponse} from '@eciperay/types';
 import {createTamaguiConfig, eciperayTheme, PublicRecipePage} from '@spudly/ui';
@@ -31,9 +32,16 @@ import {buildPublicRecipePageProps} from './buildPublicRecipePageProps.js';
  */
 const serverTamaguiConfig = createTamaguiConfig(eciperayTheme);
 
-export const renderPublicRecipeHtml = (
-  body: PublicRecipeResponse,
-): Promise<string> =>
+/**
+ * Collect a `renderToPipeableStream` render of `element` into a string,
+ * resolving on `onAllReady` with the complete document. A render error rejects
+ * instead of resolving with partial/fallback HTML: React can recover from an
+ * error inside a Suspense boundary and finish with fallback markup, so without
+ * the `onError: reject` wiring a failed page would silently ship its fallback.
+ * Exported for the regression test of that rejection path (a controlled
+ * throwing component cannot be driven through the recipe page's own props).
+ */
+export const renderElementToHtml = (element: ReactNode): Promise<string> =>
   new Promise<string>((resolve, reject) => {
     const chunks: string[] = [];
     const output = new Writable({
@@ -46,19 +54,23 @@ export const renderPublicRecipeHtml = (
         callback();
       },
     });
-    const {pipe} = renderToPipeableStream(
-      <TamaguiProvider
-        config={serverTamaguiConfig}
-        defaultTheme="light"
-      >
-        <PublicRecipePage {...buildPublicRecipePageProps(body)} />
-      </TamaguiProvider>,
-      {
-        onAllReady: () => {
-          pipe(output);
-        },
-        onShellError: reject,
-        onError: reject,
+    const {pipe} = renderToPipeableStream(element, {
+      onAllReady: () => {
+        pipe(output);
       },
-    );
+      onShellError: reject,
+      onError: reject,
+    });
   });
+
+export const renderPublicRecipeHtml = (
+  body: PublicRecipeResponse,
+): Promise<string> =>
+  renderElementToHtml(
+    <TamaguiProvider
+      config={serverTamaguiConfig}
+      defaultTheme="light"
+    >
+      <PublicRecipePage {...buildPublicRecipePageProps(body)} />
+    </TamaguiProvider>,
+  );
