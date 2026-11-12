@@ -38,7 +38,6 @@
     "react-dom": "19.3.1",
     "react-native-svg": "^15.15.1",
     "react-native-web": "^0.21.4",
-    "tamagui": "^3.1.9",
     "tsx": "^4.23.15",
     "zod": "^4.6.7"
   },
