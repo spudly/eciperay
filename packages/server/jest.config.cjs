@@ -24,8 +24,9 @@ module.exports = {
   injectGlobals: true,
   coverageProvider: 'v8',
   collectCoverageFrom: [
-    'src/**/*.ts',
+    'src/**/*.{ts,tsx}',
     '!**/*.test.ts',
+    '!**/*.test.tsx',
     '!**/test/**',
     '!src/loadEnv.ts', // env setup side-effect only
     '!src/db/migrate.ts', // CLI script, DB-dependent
@@ -39,7 +40,7 @@ module.exports = {
           global: {branches: 100, functions: 100, lines: 100, statements: 100},
         },
       }),
-  extensionsToTreatAsEsm: ['.ts'],
+  extensionsToTreatAsEsm: ['.ts', '.tsx'],
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
     // #304 SSR spike: @spudly/ui page components import react-native;
@@ -58,6 +59,19 @@ module.exports = {
       {
         jsc: {
           parser: {syntax: 'typescript', tsx: true, decorators: false},
+          target: 'es2022',
+        },
+        module: {type: 'es6'},
+      },
+    ],
+    // .tsx files (the SSR renderer's JSX) need the automatic JSX runtime,
+    // mirroring packages/client's @swc/jest setup.
+    '^.+\\.tsx$': [
+      '@swc/jest',
+      {
+        jsc: {
+          parser: {syntax: 'typescript', tsx: true, decorators: false},
+          transform: {react: {runtime: 'automatic'}},
           target: 'es2022',
         },
         module: {type: 'es6'},

@@ -1,7 +1,8 @@
+import {Writable} from 'node:stream';
+
 import type {PublicRecipeResponse} from '@eciperay/types';
 import {createTamaguiConfig, eciperayTheme, PublicRecipePage} from '@spudly/ui';
-import {createElement} from 'react';
-import {renderToString} from 'react-dom/server';
+import {renderToPipeableStream} from 'react-dom/server';
 // TamaguiProvider comes from @tamagui/core directly: the 'tamagui'
 // package re-exports it through an extensionless path that this
 // package's NodeNext module resolution cannot follow (the web
@@ -21,14 +22,43 @@ import {buildPublicRecipePageProps} from './buildPublicRecipePageProps.js';
  * keeping SSR as a rendering layer inside `server` (no package merge), with the
  * route wiring tranche owing a bundled/transpiled SSR entry, because the DS
  * module graph ships untranspiled ESM plain Node cannot load.
+ *
+ * Rendering uses `renderToPipeableStream` — the streaming renderer the route
+ * wiring tranche will pipe straight into the HTTP response. This spike collects
+ * the piped output into a string (resolving on `onAllReady`, so the collected
+ * HTML is the complete page) so the experiment can measure and assert on the
+ * full document; a render error rejects instead of returning partial HTML.
  */
 const serverTamaguiConfig = createTamaguiConfig(eciperayTheme);
 
-export const renderPublicRecipeHtml = (body: PublicRecipeResponse): string =>
-  renderToString(
-    createElement(
-      TamaguiProvider,
-      {config: serverTamaguiConfig, defaultTheme: 'light'},
-      createElement(PublicRecipePage, buildPublicRecipePageProps(body)),
-    ),
-  );
+export const renderPublicRecipeHtml = (
+  body: PublicRecipeResponse,
+): Promise<string> =>
+  new Promise<string>((resolve, reject) => {
+    const chunks: string[] = [];
+    const output = new Writable({
+      write(chunk, _encoding, callback) {
+        chunks.push(chunk.toString());
+        callback();
+      },
+      final(callback) {
+        resolve(chunks.join(''));
+        callback();
+      },
+    });
+    const {pipe} = renderToPipeableStream(
+      <TamaguiProvider
+        config={serverTamaguiConfig}
+        defaultTheme="light"
+      >
+        <PublicRecipePage {...buildPublicRecipePageProps(body)} />
+      </TamaguiProvider>,
+      {
+        onAllReady: () => {
+          pipe(output);
+        },
+        onShellError: reject,
+        onError: reject,
+      },
+    );
+  });

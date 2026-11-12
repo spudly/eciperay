@@ -67,15 +67,16 @@ internal HTTP hop.
 
 ## Spike — render experiment (landed 2026-11-12)
 
-`packages/server/src/lib/renderPublicRecipe.ts` renders the DS PublicRecipePage
+`packages/server/src/lib/renderPublicRecipe.tsx` renders the DS PublicRecipePage
 with `react-dom/server` inside the server package, fed by
 `buildPublicRecipePageProps.ts` (the loader response mapped to the DS page's
 ready-state props, mirroring the web host's mapping for the anonymous first
 paint). Findings:
 
-- **It renders.** The full page HTML comes out of `renderToString` in-process:
-  title, scaled ingredient lines, and instruction steps all present (asserted in
-  renderPublicRecipe.test.ts).
+- **It renders.** The full page HTML comes out of `renderToPipeableStream`
+  in-process (the spike collects the piped stream into a string on
+  `onAllReady`): title, scaled ingredient lines, and instruction steps all
+  present (asserted in renderPublicRecipe.test.ts).
 - **Payload/time (fixture recipe, this dev VM, jest-transpiled pipeline —
   indicative only):** 46,647 bytes of HTML; ~186 ms cold / ~90 ms warm per
   render. Warm renders are not byte-identical across calls (Tamagui class/id
