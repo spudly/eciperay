@@ -16,7 +16,10 @@ export type MealPlanFormDraft = {
   endsOn: string;
   selectedKeys: string[];
   quantityByKey: Record<string, number>;
+  /** Servings to cook by recipe id (#363). */
   servingsByRecipeId: Record<string, number>;
+  /** Servings to eat by recipe id (#363). */
+  servingsToEatByRecipeId: Record<string, number>;
 };
 
 export const mealPlanFormDraftFromDetail = (
@@ -25,6 +28,7 @@ export const mealPlanFormDraftFromDetail = (
   const keys: string[] = [];
   const quantities: Record<string, number> = {};
   const servings: Record<string, number> = {};
+  const servingsToEat: Record<string, number> = {};
   for (const entry of plan.entries) {
     if (entry.type === 'meal') {
       const key = mealPlanEntryKey('meal', entry.mealId);
@@ -34,7 +38,8 @@ export const mealPlanFormDraftFromDetail = (
       const key = mealPlanEntryKey('recipe', entry.recipeId);
       keys.push(key);
       quantities[key] = entry.quantity;
-      servings[entry.recipeId] = entry.servings;
+      servings[entry.recipeId] = entry.servingsToCook;
+      servingsToEat[entry.recipeId] = entry.servingsToEat;
     }
   }
   return {
@@ -45,6 +50,7 @@ export const mealPlanFormDraftFromDetail = (
     selectedKeys: keys,
     quantityByKey: quantities,
     servingsByRecipeId: servings,
+    servingsToEatByRecipeId: servingsToEat,
   };
 };
 
@@ -122,31 +128,70 @@ const nextServingsForRecipeEntry = (
   };
 };
 
+/**
+ * The eat twin of nextServingsForRecipeEntry (#363): when a recipe entry is
+ * first added, servings-to-eat defaults to servings-to-cook (the recipe's own
+ * servings, or the cook value already recorded).
+ */
+const nextServingsToEatForRecipeEntry = (
+  key: string,
+  servingsToEatByRecipeId: Record<string, number>,
+  servingsByRecipeId: Record<string, number>,
+  recipes: MealPlanEditRecipeOption[],
+): Record<string, number> => {
+  if (!key.startsWith('recipe:')) {
+    return servingsToEatByRecipeId;
+  }
+  const recipeId = key.slice('recipe:'.length);
+  const recipe = recipes.find(item => item.id === recipeId);
+  const value =
+    servingsToEatByRecipeId[recipeId] ??
+    servingsByRecipeId[recipeId] ??
+    recipe?.servings;
+  if (value === undefined) {
+    return servingsToEatByRecipeId;
+  }
+  return {...servingsToEatByRecipeId, [recipeId]: value};
+};
+
 export const mealPlanEntryToggleResult = (args: {
   key: string;
   previous: string[];
   quantityByKey: Record<string, number>;
   servingsByRecipeId: Record<string, number>;
+  servingsToEatByRecipeId?: Record<string, number>;
   recipes: MealPlanEditRecipeOption[];
 }): {
   selectedKeys: string[];
   quantityByKey: Record<string, number>;
   servingsByRecipeId: Record<string, number>;
+  servingsToEatByRecipeId: Record<string, number>;
 } => {
-  const {key, previous, quantityByKey, servingsByRecipeId, recipes} = args;
+  const {
+    key,
+    previous,
+    quantityByKey,
+    servingsByRecipeId,
+    servingsToEatByRecipeId = {},
+    recipes,
+  } = args;
   if (previous.includes(key)) {
     return {
       selectedKeys: previous.filter(item => item !== key),
       quantityByKey,
       servingsByRecipeId,
+      servingsToEatByRecipeId,
     };
   }
+  const nextCook = nextServingsForRecipeEntry(key, servingsByRecipeId, recipes);
   return {
     selectedKeys: [...previous, key],
     quantityByKey: {...quantityByKey, [key]: quantityByKey[key] ?? 1},
-    servingsByRecipeId: nextServingsForRecipeEntry(
+    servingsByRecipeId: nextCook,
+    servingsToEatByRecipeId: nextServingsToEatForRecipeEntry(
       key,
-      servingsByRecipeId,
+      servingsToEatByRecipeId,
+      nextCook,
       recipes,
     ),
   };

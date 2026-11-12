@@ -461,6 +461,20 @@ mode; there is no Playwright coverage of meals. The cases below are manual._
    changed or removed. Repeat create/edit/detail in the native app and via the
    MCP `create_meal` / `update_meal` / `get_meal` tools — the same entries
    appear on every surface.
+10. **Servings to cook vs servings to eat (#363).** Every meal entry (member
+    recipe and direct ingredient) and every meal-plan recipe entry carries two
+    numbers: servings to cook and servings to eat. Create a meal whose member
+    recipe makes 8 servings; via the MCP tools (`create_meal` / `update_meal`
+    accept `servingsToCook` / `servingsToEat` on each entry) set servings to
+    cook 8 and servings to eat 2, and save a direct ingredient with servings to
+    cook 4 and servings to eat 1. **Expected:** the meal detail shows both
+    numbers per entry; the meal total and the ingredient's row reflect only what
+    is eaten (the recipe contributes its 2-serving share, the ingredient one
+    quarter of its cooked-entry nutrition); a plan containing the meal or the
+    recipe shows eaten totals, while the plan's shopping list still scales by
+    servings to cook. Entries created before #363 (or with only one value set)
+    read servings to eat = servings to cook, so their numbers are unchanged.
+    Repeat the read checks in the native app.
 
 **Run when:** `packages/client/src/mealUiHelpers.ts`,
 `packages/app/src/screens/{MealsHub,MealDetail,MealEdit,MealCookingMode}Screen.tsx`,
@@ -480,7 +494,12 @@ mode; there is no Playwright coverage of meals. The cases below are manual._
 `packages/server/src/lib/saveRecipeFromInput.ts`,
 `packages/server/src/lib/saveMeal.ts`,
 `packages/server/src/lib/touchMealsForRecipe.ts`,
-`packages/server/src/db/migrations/020_meal_recipes_touch_meal.sql`.
+`packages/server/src/db/migrations/020_meal_recipes_touch_meal.sql`,
+`packages/server/src/db/migrations/023_cook_eat_servings.sql`,
+`packages/server/src/lib/loadMealDetail.ts`,
+`packages/server/src/lib/loadMealPlanDetail.ts`,
+`packages/server/src/lib/buildPlanShoppingList.ts`,
+`packages/server/src/lib/saveMealPlan.ts`.
 
 ---
 
@@ -555,6 +574,14 @@ via Meals case 1 and do not delete it until this section is done.)
    created in any order after it). Because search is newest-first, the older
    `QA — Paging Soup` then sits behind a full page of newer substring matches;
    typing its full title must still surface it as a selectable result.
+8. **Weekly totals and averages band (#363, DS #414).** Open a plan whose
+   entries have servings to eat different from servings to cook (see Meals case
+   10). **Expected:** the plan detail shows a weekly band with one "· Weekly
+   total" row and one "· Daily average" row per macro (calories, protein, carbs,
+   fat); the totals are the plan's eaten totals, and each daily average is the
+   total divided by the plan's day count (the starts-on/ends-on range). The
+   recipe entries show both "Servings to cook" and "Servings to eat". Repeat in
+   the native app.
 
 **Run when:**
 `packages/app/src/screens/{MealPlanDetail,MealPlanEdit}Screen.tsx`,
@@ -562,7 +589,9 @@ via Meals case 1 and do not delete it until this section is done.)
 `packages/web/src/pages/{MealPlanDetail,MealPlanEdit}Page.tsx`, `@spudly/ui`
 `MealPlanDetailPage` or `MealPlanFormPage`,
 `packages/client/src/recipeListQuery.ts`, `packages/web/src/routes/router.tsx`,
-`packages/server` meal plan routes, `packages/server/src/lib/saveMealPlan.ts`,
+`packages/client/src/mealUiHelpers.ts`,
+`packages/server/src/lib/loadMealPlanDetail.ts`, `packages/server` meal plan
+routes, `packages/server/src/lib/saveMealPlan.ts`,
 `packages/server/src/lib/conditionalWrite.ts`,
 `packages/server/src/lib/mealSchemas.ts`.
 

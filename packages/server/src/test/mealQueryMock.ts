@@ -47,6 +47,7 @@ export const installLoadMealPlanDetailRecipeMock = (
           meal_id: null,
           recipe_id: RECIPE_ID,
           servings: 4,
+          servings_to_eat: 4,
         },
       ]);
     }
@@ -71,12 +72,12 @@ export const installLoadMealPlanDetailRecipeMock = (
 
 export const mealInput = {
   title: 'Dinner',
-  recipes: [{recipeId: RECIPE_ID, servings: 4}],
+  recipes: [{recipeId: RECIPE_ID, servingsToCook: 4}],
 };
 
 export const mealPlanInput = {
   title: 'Week',
-  entries: [{recipeId: RECIPE_ID, quantity: 1, servings: 4}],
+  entries: [{recipeId: RECIPE_ID, quantity: 1, servingsToCook: 4}],
 };
 
 export {

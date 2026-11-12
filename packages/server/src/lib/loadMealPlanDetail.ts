@@ -31,7 +31,7 @@ const PLAN_SQL = `
 `;
 
 const ENTRIES_SQL = `
-  select id, meal_plan_id, sort_order, quantity, meal_id, recipe_id, servings
+  select id, meal_plan_id, sort_order, quantity, meal_id, recipe_id, servings, servings_to_eat
   from meal_plan_entries
   where meal_plan_id = $1
   order by sort_order asc, id asc
@@ -59,6 +59,7 @@ type EntryRow = {
   meal_id: string | null;
   recipe_id: string | null;
   servings: number | null;
+  servings_to_eat: number | null;
 };
 
 const dateOnly = (value: string | Date | null): string | null => {
@@ -177,9 +178,13 @@ export const loadMealPlanDetail = async (
       !accessible ||
       !raw ||
       !canReadRecipe(toRecipeAccessRecord(raw), {userId, hasShareGrant});
-    const servings = row.servings ?? raw?.servings ?? 1;
+    const servingsToCook = row.servings ?? raw?.servings ?? 1;
+    const servingsToEat = row.servings_to_eat ?? servingsToCook;
+    // Plan nutrition is what the owner eats (#363): scale the entry's
+    // nutrition by servings-to-eat. (Meal entries need no split here:
+    // a meal's own eaten nutrition already comes from loadMealDetail.)
     const nutrition = raw
-      ? recipeEntryNutrition(raw, servings, accessLost)
+      ? recipeEntryNutrition(raw, servingsToEat, accessLost)
       : null;
     const readableRecipe = accessLost ? null : raw;
     const nutritionStatus = (readableRecipe?.nutrition_status ??
@@ -191,10 +196,11 @@ export const loadMealPlanDetail = async (
       recipeId: row.recipe_id,
       sortOrder: row.sort_order,
       quantity: row.quantity,
-      servings,
+      servingsToCook,
+      servingsToEat,
       title: raw?.title ?? 'Unavailable recipe',
       imageUrl: raw?.image_url ?? null,
-      recipeServings: raw?.servings ?? servings,
+      recipeServings: raw?.servings ?? servingsToCook,
       accessLost,
       nutrition,
       satietyScore: readableRecipe?.satiety_score ?? null,
@@ -216,6 +222,12 @@ export const loadMealPlanDetail = async (
 
   const startsOn = dateOnly(plan.starts_on);
   const endsOn = dateOnly(plan.ends_on);
+  // Per-day averages (#363): the approved denominator is the days that
+  // have entries, but plan entries carry no day assignment (a plan is a
+  // flat entry list — see docs/manual-tests.md), so a days-with-entries
+  // count cannot be derived from the stored data. The date-range day
+  // count stays the denominator, as before; the totals above are the
+  // eaten totals either way.
   const dayCount = planDayCount(startsOn, endsOn);
   const nutrition: MealPlanNutrition = aggregatePlanNutrition(
     planNutritionInputs,

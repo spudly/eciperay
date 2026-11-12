@@ -4,7 +4,13 @@ import type {RecipeNutritionSummary} from './nutrition.js';
 export type MealRecipeMember = {
   recipeId: string;
   sortOrder: number;
-  servings: number;
+  /** Servings of the recipe cooked for this meal (#363). */
+  servingsToCook: number;
+  /**
+   * Servings of the recipe the meal's owner eats (#363): meal nutrition is
+   * computed from this number, not from what was cooked.
+   */
+  servingsToEat: number;
   title: string;
   imageUrl: string | null;
   recipeServings: number;
@@ -31,15 +37,18 @@ export type Meal = {
 /**
  * A plain ingredient entered directly on a meal (#362) — not a recipe.
  * Nutrition is stored per serving, estimated at save time by the same lookup
- * full recipes use; `servings` is this entry's own servings within the meal
- * (#363), used to scale it in aggregation.
+ * full recipes use (at the entry's servings-to-cook, which its quantity
+ * covers); aggregation scales it by the entry's servings-to-eat (#363).
  */
 export type MealIngredientMember = {
   name: string;
   quantity: number | null;
   unit: string | null;
   sortOrder: number;
-  servings: number;
+  /** Servings of the entry cooked (#363); its quantity covers these. */
+  servingsToCook: number;
+  /** Servings of the entry the meal's owner eats (#363). */
+  servingsToEat: number;
   fiberG: number | null;
   sugarG: number | null;
   sodiumMg: number | null;
@@ -51,7 +60,18 @@ export type MealDetail = Meal & {
   ingredients: MealIngredientMember[];
 };
 
-export type MealRecipeInput = {recipeId: string; servings?: number};
+export type MealRecipeInput = {
+  recipeId: string;
+  /** Defaults to the recipe's own servings. */
+  servingsToCook?: number;
+  /** Defaults to servingsToCook (eat = cook). */
+  servingsToEat?: number;
+  /**
+   * Legacy pre-#363 alias for servingsToCook, used only when servingsToCook is
+   * absent.
+   */
+  servings?: number;
+};
 
 /**
  * A one-off direct ingredient for a meal (#362). Nutrition is never entered by
@@ -62,6 +82,14 @@ export type MealIngredientInput = {
   name: string;
   quantity?: number | null;
   unit?: string | null;
+  /** Defaults to 1. */
+  servingsToCook?: number;
+  /** Defaults to servingsToCook (eat = cook). */
+  servingsToEat?: number;
+  /**
+   * Legacy pre-#363 alias for servingsToCook, used only when servingsToCook is
+   * absent.
+   */
   servings?: number;
 };
 

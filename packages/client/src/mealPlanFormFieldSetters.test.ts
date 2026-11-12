@@ -12,6 +12,7 @@ const emptyDraft = (): MealPlanFormDraft => ({
   selectedKeys: [],
   quantityByKey: {},
   servingsByRecipeId: {},
+  servingsToEatByRecipeId: {},
 });
 
 describe('createMealPlanFormFieldSetters', () => {
@@ -31,6 +32,7 @@ describe('createMealPlanFormFieldSetters', () => {
     setters.setSelectedKeys(['meal:m1']);
     setters.setQuantityByKey({'meal:m1': 2});
     setters.setServingsByRecipeId(current => ({...current, r1: 3}));
+    setters.setServingsToEatByRecipeId(current => ({...current, r1: 2}));
 
     expect(draft).toEqual({
       title: 'Week',
@@ -40,6 +42,7 @@ describe('createMealPlanFormFieldSetters', () => {
       selectedKeys: ['meal:m1'],
       quantityByKey: {'meal:m1': 2},
       servingsByRecipeId: {r1: 3},
+      servingsToEatByRecipeId: {r1: 2},
     });
   });
 

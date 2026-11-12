@@ -304,8 +304,11 @@ export const createClient = (config: EciperayClientConfig) => {
         sameId(member.recipeId, recipe.recipeId),
       );
       if (existing) {
-        if (recipe.servings !== undefined) {
-          existing.servings = recipe.servings;
+        if (recipe.servingsToCook !== undefined) {
+          existing.servingsToCook = recipe.servingsToCook;
+        }
+        if (recipe.servingsToEat !== undefined) {
+          existing.servingsToEat = recipe.servingsToEat;
         }
       } else {
         recipes.push({...recipe});
@@ -389,8 +392,11 @@ export const createClient = (config: EciperayClientConfig) => {
           existing.quantity = entry.quantity;
         }
         if ('recipeId' in entry && 'recipeId' in existing) {
-          if (entry.servings !== undefined) {
-            existing.servings = entry.servings;
+          if (entry.servingsToCook !== undefined) {
+            existing.servingsToCook = entry.servingsToCook;
+          }
+          if (entry.servingsToEat !== undefined) {
+            existing.servingsToEat = entry.servingsToEat;
           }
         }
       } else {
@@ -732,14 +738,19 @@ export const buildRecipeUpdatePayload = (
 };
 
 /** Recipe membership shapes accepted by the REST meal endpoints. */
-export type MealRecipeInput = {recipeId: string; servings?: number};
+export type MealRecipeInput = {
+  recipeId: string;
+  servingsToCook?: number;
+  servingsToEat?: number;
+};
 
 /** Direct-ingredient shapes accepted by the REST meal endpoints (#362). */
 export type MealIngredientInput = {
   name: string;
   quantity?: number | null;
   unit?: string | null;
-  servings?: number;
+  servingsToCook?: number;
+  servingsToEat?: number;
 };
 
 export type MealInput = {
@@ -765,7 +776,12 @@ export type MealUpdatePatch = {
 /** Entry shapes accepted by the REST meal-plan endpoints. */
 export type MealPlanEntryInput =
   | {mealId: string; quantity?: number}
-  | {recipeId: string; servings?: number; quantity?: number};
+  | {
+      recipeId: string;
+      servingsToCook?: number;
+      servingsToEat?: number;
+      quantity?: number;
+    };
 
 export type MealPlanInput = {
   title: string;
@@ -793,7 +809,12 @@ export type MealPlanUpdatePatch = {
 type MealDetailForUpdate = {
   title: string;
   notes: string | null;
-  members: {recipeId: string; sortOrder: number; servings: number}[];
+  members: {
+    recipeId: string;
+    sortOrder: number;
+    servingsToCook: number;
+    servingsToEat: number;
+  }[];
   // Direct ingredients (#362); absent on detail responses from before
   // the field existed. Read here so update payloads can judge the
   // at-least-one-member rule against the stored rows; the rows
@@ -805,7 +826,8 @@ type MealDetailForUpdate = {
     quantity: number | null;
     unit: string | null;
     sortOrder: number;
-    servings: number;
+    servingsToCook: number;
+    servingsToEat: number;
   }[];
 };
 
@@ -824,7 +846,8 @@ type MealPlanEntryForUpdate =
       recipeId: string;
       sortOrder: number;
       quantity: number;
-      servings: number;
+      servingsToCook: number;
+      servingsToEat: number;
     };
 
 /** The meal-plan-detail shape returned by `GET /meal-plans/:id`. */
@@ -863,7 +886,11 @@ const hasMealPlanUpdateFields = (patch: MealPlanUpdatePatch): boolean =>
 const mealRecipeInputs = (meal: MealDetailForUpdate): MealRecipeInput[] =>
   [...meal.members]
     .sort((a, b) => a.sortOrder - b.sortOrder)
-    .map(member => ({recipeId: member.recipeId, servings: member.servings}));
+    .map(member => ({
+      recipeId: member.recipeId,
+      servingsToCook: member.servingsToCook,
+      servingsToEat: member.servingsToEat,
+    }));
 
 /**
  * Merge a partial meal update over the stored meal detail, producing the full
@@ -911,7 +938,8 @@ const mealPlanEntryInput = (
     ? {mealId: entry.mealId, quantity: entry.quantity}
     : {
         recipeId: entry.recipeId,
-        servings: entry.servings,
+        servingsToCook: entry.servingsToCook,
+        servingsToEat: entry.servingsToEat,
         quantity: entry.quantity,
       };
 

@@ -73,7 +73,8 @@ describe('MealDetailPage', () => {
             {
               recipeId: 'recipe-uuid-1',
               sortOrder: 0,
-              servings: 4,
+              servingsToCook: 4,
+              servingsToEat: 4,
               title: 'Test Recipe',
               imageUrl: null,
               recipeServings: 4,
@@ -101,7 +102,7 @@ describe('MealDetailPage', () => {
     await waitFor(() => {
       expect(
         screen.getByText(
-          '4 servings · 100 cal · 10g protein · 26g carbs · 5g fat · satiety 50',
+          'Servings to cook: 4 · Servings to eat: 4 · 100 cal · 10g protein · 26g carbs · 5g fat · satiety 50',
         ),
       ).toBeInTheDocument();
     });
@@ -130,7 +131,8 @@ describe('MealDetailPage', () => {
               quantity: 2,
               unit: 'cups',
               sortOrder: 0,
-              servings: 2,
+              servingsToCook: 4,
+              servingsToEat: 2,
               fiberG: null,
               sugarG: null,
               sodiumMg: null,
@@ -160,10 +162,12 @@ describe('MealDetailPage', () => {
     });
     expect(screen.getByText('Ingredients')).toBeInTheDocument();
     // Stored nutrition is per serving: the row shows the entry's total
-    // contribution (2 servings × 100 cal / 3g protein / 20g carbs / 1g fat).
+    // eaten contribution (2 servings to eat × 100 cal / 3g protein /
+    // 20g carbs / 1g fat) — with cook 4 / eat 2, a row that scaled by
+    // servings-to-cook instead would show double these values (#363).
     expect(
       screen.getByText(
-        '2 cups · 2 servings · 200 cal · 6g protein · 40g carbs · 2g fat',
+        '2 cups · Servings to cook: 4 · Servings to eat: 2 · 200 cal · 6g protein · 40g carbs · 2g fat',
       ),
     ).toBeInTheDocument();
     // A direct ingredient has no destination: its row is not a link.

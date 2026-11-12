@@ -136,9 +136,21 @@ export const MealPlanEditPage = () => {
           }));
         }}
         onRecipeServingsChange={(recipeId, servings) => {
+          const nextCook = Math.max(1, servings);
+          // The DS form edits servings-to-cook; servings-to-eat
+          // follows while it still equals the old cook value (#363),
+          // and a divergent stored eat is preserved.
+          form.setServingsToEatByRecipeId(current => ({
+            ...current,
+            [recipeId]:
+              current[recipeId] === undefined ||
+              current[recipeId] === form.servingsByRecipeId[recipeId]
+                ? nextCook
+                : current[recipeId],
+          }));
           form.setServingsByRecipeId(current => ({
             ...current,
-            [recipeId]: Math.max(1, servings),
+            [recipeId]: nextCook,
           }));
         }}
         onSubmit={() => {

@@ -43,7 +43,9 @@ describe('useMealPlanEditForm', () => {
       notes: null,
       startsOn: null,
       endsOn: null,
-      entries: [{recipeId: 'r1', quantity: 1, servings: 4}],
+      entries: [
+        {recipeId: 'r1', quantity: 1, servingsToCook: 4, servingsToEat: 4},
+      ],
     });
   });
 
@@ -134,7 +136,7 @@ describe('useMealPlanEditForm', () => {
       {kind: 'recipe', id: 'r1', title: 'Salad', servings: 4},
     ]);
     expect(result.current.buildInput().entries).toEqual([
-      {recipeId: 'r1', quantity: 1, servings: 4},
+      {recipeId: 'r1', quantity: 1, servingsToCook: 4, servingsToEat: 4},
     ]);
   });
 
@@ -167,7 +169,8 @@ describe('useMealPlanEditForm', () => {
           recipeId: 'r1',
           sortOrder: 0,
           quantity: 1,
-          servings: 2,
+          servingsToCook: 2,
+          servingsToEat: 2,
           title: 'Plan Salad',
           imageUrl: null,
           recipeServings: 2,

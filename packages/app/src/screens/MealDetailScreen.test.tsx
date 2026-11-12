@@ -40,7 +40,8 @@ describe('MealDetailScreen', () => {
         {
           recipeId,
           sortOrder: 0,
-          servings: 4,
+          servingsToCook: 4,
+          servingsToEat: 4,
           title: 'Test Recipe',
           imageUrl: null,
           recipeServings: 4,
@@ -71,7 +72,8 @@ describe('MealDetailScreen', () => {
         {
           recipeId,
           sortOrder: 0,
-          servings: 4,
+          servingsToCook: 4,
+          servingsToEat: 4,
           title: 'Test Recipe',
           imageUrl: null,
           recipeServings: 4,
@@ -92,7 +94,7 @@ describe('MealDetailScreen', () => {
     // title plus the composed subtitle (servings · condensed nutrition).
     expect(
       await findByRole('link', {
-        name: 'Test Recipe, 4 servings · 100 cal · 10g protein · 26g carbs · 5g fat · satiety 50',
+        name: 'Test Recipe, Servings to cook: 4 · Servings to eat: 4 · 100 cal · 10g protein · 26g carbs · 5g fat · satiety 50',
       }),
     ).toBeTruthy();
   });
@@ -112,7 +114,8 @@ describe('MealDetailScreen', () => {
         {
           recipeId,
           sortOrder: 0,
-          servings: 4,
+          servingsToCook: 4,
+          servingsToEat: 4,
           title: 'Test Recipe',
           imageUrl: null,
           recipeServings: 4,
@@ -131,7 +134,8 @@ describe('MealDetailScreen', () => {
           quantity: 1,
           unit: 'bottle',
           sortOrder: 0,
-          servings: 2,
+          servingsToCook: 2,
+          servingsToEat: 2,
           fiberG: null,
           sugarG: null,
           sodiumMg: null,
@@ -151,10 +155,10 @@ describe('MealDetailScreen', () => {
     expect(await findByText('Ingredients')).toBeTruthy();
     expect(await findByText('Protein shake')).toBeTruthy();
     // Stored nutrition is per serving; the row shows the total for the
-    // entry's 2 servings (300 cal, not 150).
+    // entry's 2 servings to eat (300 cal, not 150).
     expect(
       await findByText(
-        '1 bottle · 2 servings · 300 cal · 60g protein · 6g carbs · 2g fat',
+        '1 bottle · Servings to cook: 2 · Servings to eat: 2 · 300 cal · 60g protein · 6g carbs · 2g fat',
       ),
     ).toBeTruthy();
   });
@@ -182,7 +186,9 @@ describe('MealDetailScreen', () => {
     // A member row is a link whose accessible name carries the
     // recipe's title and servings.
     await fireEvent.press(
-      await findByRole('link', {name: 'Test Recipe, 4 servings'}),
+      await findByRole('link', {
+        name: 'Test Recipe, Servings to cook: 4 · Servings to eat: 4',
+      }),
     );
     expect(Linking.openURL).toHaveBeenCalledWith(
       recipeHref({id: recipeId, title: 'Test Recipe'}),

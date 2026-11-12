@@ -113,6 +113,71 @@ describe('saveNewMealPlan', () => {
     expect(result.plan.id).toBe(PLAN_ID);
   });
 
+  test('persists servings-to-cook and servings-to-eat distinctly (#363)', async () => {
+    const mockQuery = createMockQuery();
+    let entryInsertParams: unknown[] | undefined;
+    mockQuery.mockImplementation((async (sql: string, params?: unknown[]) => {
+      if (sql.includes('from recipes r')) {
+        return makeQueryResult([accessibleRecipeRow]);
+      }
+      if (sql.includes('share_grants')) {
+        return emptyShareGrant;
+      }
+      if (sql.includes('insert into meal_plans')) {
+        return makeQueryResult([{id: PLAN_ID}]);
+      }
+      if (sql.includes('insert into meal_plan_entries')) {
+        entryInsertParams = params;
+        return makeQueryResult([]);
+      }
+      if (sql.includes('from meal_plans') && sql.includes('where id =')) {
+        return makeQueryResult([mealPlanRow]);
+      }
+      if (sql.includes('from meal_plan_entries')) {
+        return makeQueryResult([
+          {
+            id: 'entry-1',
+            meal_plan_id: PLAN_ID,
+            sort_order: 0,
+            quantity: 1,
+            meal_id: null,
+            recipe_id: RECIPE_ID,
+            servings: 8,
+            servings_to_eat: 2,
+          },
+        ]);
+      }
+      if (sql.includes('goal_calories')) {
+        return makeQueryResult([nutritionGoalsRow]);
+      }
+      return makeQueryResult([]);
+    }) as typeof mockQuery);
+
+    const result = await saveNewMealPlan(
+      USER_ID,
+      {
+        title: 'Week',
+        entries: [
+          {
+            recipeId: RECIPE_ID,
+            quantity: 1,
+            servingsToCook: 8,
+            servingsToEat: 2,
+          },
+        ],
+      },
+      mockQuery,
+    );
+    if ('error' in result) {
+      throw new Error(result.error);
+    }
+    // Insert params: [planId, sortOrder, quantity, recipeId, cook, eat].
+    expect(entryInsertParams?.slice(4)).toEqual([8, 2]);
+    expect(result.plan.entries[0]).toEqual(
+      expect.objectContaining({servingsToCook: 8, servingsToEat: 2}),
+    );
+  });
+
   test('rejects missing meal reference', async () => {
     const mockQuery = createMockQuery();
     mockQuery.mockResolvedValueOnce(makeQueryResult([]));

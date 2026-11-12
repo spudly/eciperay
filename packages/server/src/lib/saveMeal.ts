@@ -17,22 +17,30 @@ import {loadAccessibleRecipe} from './mealRecipeAccess.js';
 
 type QueryFn = typeof defaultQuery;
 
+type ResolvedMealRecipe = {
+  recipeId: string;
+  servingsToCook: number;
+  servingsToEat: number;
+  sortOrder: number;
+};
+
 type ResolvedMealIngredient = {
   name: string;
   quantity: number | null;
   unit: string | null;
-  servings: number;
+  servingsToCook: number;
+  servingsToEat: number;
   sortOrder: number;
   nutrition: MealIngredientNutrition;
 };
 
 const INSERT_MEAL_INGREDIENT_SQL = `
   insert into meal_ingredients
-    (meal_id, name, quantity, unit, servings, sort_order,
+    (meal_id, name, quantity, unit, servings, servings_to_eat, sort_order,
      calories, protein_g, carbs_g, fat_g, fiber_g, sugar_g, sodium_mg,
      prepared_weight_g, satiety_score, nutrition_status,
      nutrition_disclaimer, nutrition_updated_at)
-  values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, now())
+  values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, now())
 `;
 
 const insertMealIngredient = async (
@@ -46,7 +54,8 @@ const insertMealIngredient = async (
     ingredient.name,
     ingredient.quantity,
     ingredient.unit,
-    ingredient.servings,
+    ingredient.servingsToCook,
+    ingredient.servingsToEat,
     ingredient.sortOrder,
     nutrition.calories,
     nutrition.proteinG,
@@ -73,16 +82,25 @@ const resolveMealIngredients = async (
 ): Promise<ResolvedMealIngredient[]> => {
   const resolved: ResolvedMealIngredient[] = [];
   for (const [index, ingredient] of (input.ingredients ?? []).entries()) {
-    const servings = ingredient.servings ?? 1;
+    // Legacy `servings` is the pre-#363 alias for servingsToCook.
+    const servingsToCook =
+      ingredient.servingsToCook ?? ingredient.servings ?? 1;
+    // Eat defaults to cook (#363) when the client sends only one number.
+    const servingsToEat = ingredient.servingsToEat ?? servingsToCook;
+    // Nutrition is estimated at servings-to-cook: the entry's quantity
+    // is the amount cooked, and aggregation re-scales it to eat.
     const nutrition = await estimateMealIngredientNutrition({
-      ...ingredient,
-      servings,
+      name: ingredient.name,
+      quantity: ingredient.quantity ?? null,
+      unit: ingredient.unit ?? null,
+      servings: servingsToCook,
     });
     resolved.push({
       name: ingredient.name,
       quantity: ingredient.quantity ?? null,
       unit: ingredient.unit ?? null,
-      servings,
+      servingsToCook,
+      servingsToEat,
       sortOrder: index,
       nutrition,
     });
@@ -104,8 +122,7 @@ export const saveNewMeal = async (
       status: 400,
     };
   }
-  const resolved: {recipeId: string; servings: number; sortOrder: number}[] =
-    [];
+  const resolved: ResolvedMealRecipe[] = [];
   for (const [index, recipe] of input.recipes.entries()) {
     const accessible = await loadAccessibleRecipe(
       recipe.recipeId,
@@ -118,9 +135,13 @@ export const saveNewMeal = async (
         status: 400,
       };
     }
+    // Legacy `servings` is the pre-#363 alias for servingsToCook.
+    const servingsToCook =
+      recipe.servingsToCook ?? recipe.servings ?? accessible.servings;
     resolved.push({
       recipeId: recipe.recipeId,
-      servings: recipe.servings ?? accessible.servings,
+      servingsToCook,
+      servingsToEat: recipe.servingsToEat ?? servingsToCook,
       sortOrder: index,
     });
   }
@@ -136,9 +157,16 @@ export const saveNewMeal = async (
 
   for (const recipe of resolved) {
     await queryFn(
-      `insert into meal_recipes (meal_id, recipe_id, sort_order, servings)
-       values ($1, $2, $3, $4)`,
-      [mealId, recipe.recipeId, recipe.sortOrder, recipe.servings],
+      `insert into meal_recipes
+         (meal_id, recipe_id, sort_order, servings, servings_to_eat)
+       values ($1, $2, $3, $4, $5)`,
+      [
+        mealId,
+        recipe.recipeId,
+        recipe.sortOrder,
+        recipe.servingsToCook,
+        recipe.servingsToEat,
+      ],
     );
   }
   for (const ingredient of resolvedIngredients) {
@@ -194,8 +222,7 @@ export const replaceMeal = async (
   // direct ingredients. A sent list — [] included — still replaces.
   const preserveIngredients = input.ingredients === undefined;
 
-  const resolved: {recipeId: string; servings: number; sortOrder: number}[] =
-    [];
+  const resolved: ResolvedMealRecipe[] = [];
   for (const [index, recipe] of input.recipes.entries()) {
     const accessible = await loadAccessibleRecipe(
       recipe.recipeId,
@@ -208,9 +235,13 @@ export const replaceMeal = async (
         status: 400,
       };
     }
+    // Legacy `servings` is the pre-#363 alias for servingsToCook.
+    const servingsToCook =
+      recipe.servingsToCook ?? recipe.servings ?? accessible.servings;
     resolved.push({
       recipeId: recipe.recipeId,
-      servings: recipe.servings ?? accessible.servings,
+      servingsToCook,
+      servingsToEat: recipe.servingsToEat ?? servingsToCook,
       sortOrder: index,
     });
   }
@@ -301,9 +332,16 @@ export const replaceMeal = async (
     }
     for (const recipe of resolved) {
       await q(
-        `insert into meal_recipes (meal_id, recipe_id, sort_order, servings)
-         values ($1, $2, $3, $4)`,
-        [mealId, recipe.recipeId, recipe.sortOrder, recipe.servings],
+        `insert into meal_recipes
+           (meal_id, recipe_id, sort_order, servings, servings_to_eat)
+         values ($1, $2, $3, $4, $5)`,
+        [
+          mealId,
+          recipe.recipeId,
+          recipe.sortOrder,
+          recipe.servingsToCook,
+          recipe.servingsToEat,
+        ],
       );
     }
     for (const ingredient of resolvedIngredients) {

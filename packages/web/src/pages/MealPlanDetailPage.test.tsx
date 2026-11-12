@@ -84,7 +84,8 @@ describe('MealPlanDetailPage', () => {
               recipeId: 'recipe-uuid-1',
               sortOrder: 1,
               quantity: 1,
-              servings: 4,
+              servingsToCook: 4,
+              servingsToEat: 2,
               title: 'Test Recipe',
               imageUrl: null,
               recipeServings: 4,
@@ -196,6 +197,16 @@ describe('MealPlanDetailPage', () => {
     expect(
       screen.getByRole('link', {name: /Meal · Sunday Dinner/}),
     ).toHaveAttribute('href', `/meals/${MEAL_ID}`);
+    // The recipe entry shows both servings numbers (#363), and the
+    // weekly band renders the eaten totals + daily averages for this
+    // seven-day plan (500 total / 71 per day in the fixture).
+    expect(
+      screen.getByText('Qty 1 · Servings to cook: 4 · Servings to eat: 2'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Calories · Weekly total')).toBeInTheDocument();
+    expect(screen.getByText('500 cal')).toBeInTheDocument();
+    expect(screen.getByText('Calories · Daily average')).toBeInTheDocument();
+    expect(screen.getByText('71 cal')).toBeInTheDocument();
     // The meal entry's subtitle counts recipes only (#498): the
     // fixture meal has 2 members (1 recipe + 1 direct ingredient) and
     // must read "1 recipe" (singular), not "2 recipes".

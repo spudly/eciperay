@@ -4,6 +4,7 @@ import type {
   MealIngredientMember,
   MealInput,
   MealPlanInput,
+  MealPlanNutrition,
   NutritionGoals,
 } from '@eciperay/types';
 
@@ -18,7 +19,10 @@ export type MealFormIngredient = {
   name: string;
   quantity: string;
   unit: string;
+  /** Servings to cook, as entered (#363). */
   servings: string;
+  /** Servings to eat, as entered (#363); defaults to cook when blank. */
+  servingsToEat: string;
 };
 
 export const mealIngredientsToForm = (
@@ -29,7 +33,8 @@ export const mealIngredientsToForm = (
     name: ingredient.name,
     quantity: ingredient.quantity === null ? '' : String(ingredient.quantity),
     unit: ingredient.unit ?? '',
-    servings: String(ingredient.servings),
+    servings: String(ingredient.servingsToCook),
+    servingsToEat: String(ingredient.servingsToEat),
   }));
 
 const parseFormIngredient = (
@@ -55,11 +60,17 @@ const parseFormIngredient = (
     throw new Error(`Enter a valid quantity for “${name}”.`);
   }
   const servingsText = formIngredient.servings.trim();
-  const servings = servingsText === '' ? 1 : Number(servingsText);
-  if (!Number.isInteger(servings) || servings <= 0) {
-    throw new Error(`Enter valid servings for “${name}”.`);
+  const servingsToCook = servingsText === '' ? 1 : Number(servingsText);
+  if (!Number.isInteger(servingsToCook) || servingsToCook <= 0) {
+    throw new Error(`Enter valid servings to cook for “${name}”.`);
   }
-  return {name, quantity, unit: unit || null, servings};
+  const servingsToEatText = formIngredient.servingsToEat.trim();
+  const servingsToEat =
+    servingsToEatText === '' ? servingsToCook : Number(servingsToEatText);
+  if (!Number.isInteger(servingsToEat) || servingsToEat <= 0) {
+    throw new Error(`Enter valid servings to eat for “${name}”.`);
+  }
+  return {name, quantity, unit: unit || null, servingsToCook, servingsToEat};
 };
 
 export const mealPlanEntryKey = (kind: 'meal' | 'recipe', id: string): string =>
@@ -99,7 +110,13 @@ export const buildMealInputFromForm = (args: {
   title: string;
   notes: string;
   selectedRecipeIds: string[];
+  /** Servings to cook by recipe id (#363). */
   servingsByRecipeId: Record<string, number>;
+  /**
+   * Servings to eat by recipe id (#363); a missing entry defaults server-side
+   * to that entry's servings-to-cook (eat = cook).
+   */
+  servingsToEatByRecipeId?: Record<string, number>;
   /**
    * The form's direct-ingredient rows (#362). Omitted means the caller does not
    * manage direct ingredients, so the payload omits them too (the server
@@ -112,7 +129,8 @@ export const buildMealInputFromForm = (args: {
   notes: args.notes.trim() || null,
   recipes: args.selectedRecipeIds.map(recipeId => ({
     recipeId,
-    servings: args.servingsByRecipeId[recipeId],
+    servingsToCook: args.servingsByRecipeId[recipeId],
+    servingsToEat: args.servingsToEatByRecipeId?.[recipeId],
   })),
   ...(args.formIngredients
     ? {
@@ -133,7 +151,13 @@ export const buildMealPlanInputFromForm = (args: {
   endsOn: string;
   selectedKeys: string[];
   quantityByKey: Record<string, number>;
+  /** Servings to cook by recipe id (#363). */
   servingsByRecipeId: Record<string, number>;
+  /**
+   * Servings to eat by recipe id (#363); a missing entry defaults server-side
+   * to that entry's servings-to-cook (eat = cook).
+   */
+  servingsToEatByRecipeId?: Record<string, number>;
 }): MealPlanInput => ({
   title: args.title.trim(),
   notes: args.notes.trim() || null,
@@ -147,7 +171,8 @@ export const buildMealPlanInputFromForm = (args: {
     return {
       recipeId: id,
       quantity: args.quantityByKey[key] ?? 1,
-      servings: args.servingsByRecipeId[id],
+      servingsToCook: args.servingsByRecipeId[id],
+      servingsToEat: args.servingsToEatByRecipeId?.[id],
     };
   }),
 });
@@ -159,3 +184,62 @@ export const defaultNutritionGoals = (): NutritionGoals => ({
   fatG: null,
   satietyScore: null,
 });
+
+/**
+ * The DS MealPlanDetailPage weekly-totals band's view-model (#363 / DS #414):
+ * the plan's eaten totals and per-day averages as field-labelled rows (the DS
+ * page composes the "· Weekly total" / "· Daily average" wording and pairs rows
+ * by label). Totals come from the plan nutrition itself; averages from its
+ * `perDay` (null for undated plans, in which case the band carries totals
+ * only). Returns null when there is no usable nutrition, so hosts can pass the
+ * result straight to the page.
+ */
+export const buildWeeklyTotalsBand = (
+  nutrition: MealPlanNutrition | null | undefined,
+): {
+  totals: {label: string; valueLabel: string}[];
+  averages: {label: string; valueLabel: string}[];
+} | null => {
+  if (!nutrition || nutrition.status === 'unavailable') {
+    return null;
+  }
+  // DS #414 contract: rows are labelled by field only — the DS page
+  // pairs each average to its total by exact label match and composes
+  // the kind wording into the rendered label itself ("Calories ·
+  // Weekly total" / "Calories · Daily average").
+  const fields: {
+    label: string;
+    pick: (n: AggregatedNutrition) => number;
+    format: (value: number) => string;
+  }[] = [
+    {
+      label: 'Calories',
+      pick: n => n.calories,
+      format: v => `${Math.round(v)} cal`,
+    },
+    {
+      label: 'Protein',
+      pick: n => n.proteinG,
+      format: v => `${Math.round(v)}g protein`,
+    },
+    {
+      label: 'Carbs',
+      pick: n => n.carbsG,
+      format: v => `${Math.round(v)}g carbs`,
+    },
+    {label: 'Fat', pick: n => n.fatG, format: v => `${Math.round(v)}g fat`},
+  ];
+  const totals = fields.map(field => ({
+    label: field.label,
+    valueLabel: field.format(field.pick(nutrition)),
+  }));
+  const averages = nutrition.perDay
+    ? fields.map(field => ({
+        label: field.label,
+        valueLabel: field.format(
+          field.pick(nutrition.perDay as AggregatedNutrition),
+        ),
+      }))
+    : [];
+  return {totals, averages};
+};

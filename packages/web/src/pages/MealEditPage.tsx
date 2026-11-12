@@ -34,6 +34,14 @@ export const MealEditPage = () => {
   const [servingsByRecipeId, setServingsByRecipeId] = useState<
     Record<string, number>
   >({});
+  // Servings-to-eat per recipe (#363), carried alongside the cook
+  // values the DS form's stepper edits: the DS MealFormPage (9.2.x)
+  // has no eat stepper, so eat defaults to cook on selection and
+  // follows a cook edit while it still equals the previous cook value
+  // (a stored eat that differs from cook is preserved).
+  const [servingsToEatByRecipeId, setServingsToEatByRecipeId] = useState<
+    Record<string, number>
+  >({});
   // Direct ingredients entered on the meal itself (#362), as form rows:
   // quantity / unit / servings stay free-text until buildMealInputFromForm
   // parses them at save time.
@@ -88,7 +96,12 @@ export const MealEditPage = () => {
     );
     setServingsByRecipeId(
       Object.fromEntries(
-        meal.members.map(member => [member.recipeId, member.servings]),
+        meal.members.map(member => [member.recipeId, member.servingsToCook]),
+      ),
+    );
+    setServingsToEatByRecipeId(
+      Object.fromEntries(
+        meal.members.map(member => [member.recipeId, member.servingsToEat]),
       ),
     );
     setFormIngredients(mealIngredientsToForm(meal.ingredients ?? []));
@@ -101,6 +114,7 @@ export const MealEditPage = () => {
         notes,
         selectedRecipeIds: selectedRecipes.map(recipe => recipe.id),
         servingsByRecipeId,
+        servingsToEatByRecipeId,
         formIngredients,
       });
       if (isEdit && mealId) {
@@ -128,6 +142,11 @@ export const MealEditPage = () => {
       {id: recipe.id, label: recipe.title, servings: recipe.servings},
     ]);
     setServingsByRecipeId(current => ({
+      ...current,
+      [recipeId]: current[recipeId] ?? recipe.servings,
+    }));
+    // Eat defaults to cook when an entry is added (#363).
+    setServingsToEatByRecipeId(current => ({
       ...current,
       [recipeId]: current[recipeId] ?? recipe.servings,
     }));
@@ -184,6 +203,9 @@ export const MealEditPage = () => {
               quantity: '',
               unit: '',
               servings: '1',
+              // Blank servings-to-eat defaults to servings-to-cook
+              // at parse time (#363).
+              servingsToEat: '',
             },
           ]);
         }}
@@ -194,11 +216,24 @@ export const MealEditPage = () => {
         }}
         onIngredientChange={(ingredientId, patch) => {
           setFormIngredients(previous =>
-            previous.map(ingredient =>
-              ingredient.id === ingredientId
-                ? {...ingredient, ...patch}
-                : ingredient,
-            ),
+            previous.map(ingredient => {
+              if (ingredient.id !== ingredientId) {
+                return ingredient;
+              }
+              const merged = {...ingredient, ...patch};
+              // Servings-to-eat follows a servings-to-cook edit
+              // while it is blank or still equals the previous cook
+              // value (#363); a divergent stored eat is preserved —
+              // the DS form has no separate eat control.
+              if (
+                patch.servings !== undefined &&
+                (ingredient.servingsToEat === '' ||
+                  ingredient.servingsToEat === ingredient.servings)
+              ) {
+                merged.servingsToEat = patch.servings;
+              }
+              return merged;
+            }),
           );
         }}
         isSaving={saveMutation.isPending}
@@ -219,9 +254,20 @@ export const MealEditPage = () => {
           // minimum of 1; the DS page's stepper is unbounded and the
           // server schema rejects 0 servings, so the clamp lives in
           // the host callback (the C8 host-validation precedent).
+          const nextCook = Math.max(1, servings);
+          // Eat follows a cook edit while it still equals the old
+          // cook value (#363); a divergent stored eat is preserved.
+          setServingsToEatByRecipeId(current => ({
+            ...current,
+            [recipeId]:
+              current[recipeId] === undefined ||
+              current[recipeId] === servingsByRecipeId[recipeId]
+                ? nextCook
+                : current[recipeId],
+          }));
           setServingsByRecipeId(current => ({
             ...current,
-            [recipeId]: Math.max(1, servings),
+            [recipeId]: nextCook,
           }));
         }}
         onSubmit={() => {

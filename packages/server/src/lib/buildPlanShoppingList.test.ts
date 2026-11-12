@@ -74,6 +74,62 @@ describe('buildPlanShoppingList', () => {
     expect(result.lines[0]?.name).toBe('Flour');
   });
 
+  test('scales recipe entries by servings-to-cook, not servings-to-eat (#363)', async () => {
+    const mockQuery = createMockQuery();
+    mockQuery.mockImplementation((async (sql: string) => {
+      if (sql.includes('from meal_plans') && sql.includes('where id =')) {
+        return makeQueryResult([mealPlanRow]);
+      }
+      if (sql.includes('from meal_plan_entries')) {
+        return makeQueryResult([
+          {
+            id: 'entry-1',
+            meal_plan_id: PLAN_ID,
+            sort_order: 0,
+            quantity: 1,
+            meal_id: null,
+            recipe_id: RECIPE_ID,
+            servings: 8,
+            servings_to_eat: 2,
+          },
+        ]);
+      }
+      if (sql.includes('from recipes r')) {
+        return makeQueryResult([accessibleRecipeRow]);
+      }
+      if (sql.includes('share_grants')) {
+        return emptyShareGrant;
+      }
+      if (sql.includes('goal_calories')) {
+        return makeQueryResult([
+          {
+            goal_calories: null,
+            goal_protein_g: null,
+            goal_carbs_g: null,
+            goal_fat_g: null,
+            goal_satiety_score: null,
+          },
+        ]);
+      }
+      if (sql.includes('from ingredients')) {
+        return makeQueryResult([
+          {name: 'Flour', quantity: 2, unit: 'cups', is_optional: false},
+        ]);
+      }
+      return makeQueryResult([]);
+    }) as typeof mockQuery);
+
+    const result = await buildPlanShoppingList(PLAN_ID, USER_ID, mockQuery);
+    if ('error' in result) {
+      throw new Error(result.error);
+    }
+    // Recipe serves 4 with 2 cups flour: cooking 8 servings doubles it
+    // to 4 cups; the 2 servings eaten must not shrink the shopping list.
+    expect(result.lines).toEqual([
+      expect.objectContaining({name: 'Flour', quantity: 4}),
+    ]);
+  });
+
   test('includes ingredients from meal entries', async () => {
     const mockQuery = createMockQuery();
     mockQuery.mockImplementation((async (sql: string) => {

@@ -24,7 +24,16 @@ export type MealPlanRecipeEntry = {
   recipeId: string;
   sortOrder: number;
   quantity: number;
-  servings: number;
+  /**
+   * Servings of the recipe cooked for this plan entry (#363): the plan shopping
+   * list scales from this number.
+   */
+  servingsToCook: number;
+  /**
+   * Servings of the recipe the plan's owner eats (#363): plan nutrition scales
+   * from this number.
+   */
+  servingsToEat: number;
   title: string;
   imageUrl: string | null;
   recipeServings: number;
@@ -54,6 +63,14 @@ export type MealPlanMealEntryInput = {mealId: string; quantity?: number};
 
 export type MealPlanRecipeEntryInput = {
   recipeId: string;
+  /** Defaults to the recipe's own servings. */
+  servingsToCook?: number;
+  /** Defaults to servingsToCook (eat = cook). */
+  servingsToEat?: number;
+  /**
+   * Legacy pre-#363 alias for servingsToCook, used only when servingsToCook is
+   * absent.
+   */
   servings?: number;
   quantity?: number;
 };

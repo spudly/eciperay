@@ -29,7 +29,13 @@ test.describe('live meal plans', () => {
     }
   });
 
-  test('create a plan, add the recipe, check off the shopping list', async ({
+  // Temporarily skipped at Stephen's direction (2026-11-12): this case adds
+  // a recipe to a meal plan, whose SQL now references
+  // meal_plan_entries.servings_to_eat (migration 023). That migration
+  // reaches the shared QA dataset only when the release containing PR #507
+  // ships and the deploy applies it, so the case cannot pass in the live
+  // environment until then. Re-enable tracked in #512.
+  test.skip('create a plan, add the recipe, check off the shopping list', async ({
     page,
   }) => {
     recipe = await createRecipeViaUi(page, uniqueCiName('Planned'), value => {

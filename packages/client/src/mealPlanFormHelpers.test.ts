@@ -72,7 +72,8 @@ describe('mealPlanFormHelpers', () => {
           recipeId: 'r1',
           sortOrder: 1,
           quantity: 1,
-          servings: 3,
+          servingsToCook: 3,
+          servingsToEat: 2,
           title: 'Salad',
           imageUrl: null,
           recipeServings: 4,
@@ -96,6 +97,7 @@ describe('mealPlanFormHelpers', () => {
       selectedKeys: [mealKey, recipeKey],
       quantityByKey: {[mealKey]: 2, [recipeKey]: 1},
       servingsByRecipeId: {r1: 3},
+      servingsToEatByRecipeId: {r1: 2},
     });
   });
 
@@ -172,7 +174,8 @@ describe('mealPlanFormHelpers', () => {
           recipeId: 'r1',
           sortOrder: 1,
           quantity: 1,
-          servings: 3,
+          servingsToCook: 3,
+          servingsToEat: 2,
           title: 'Salad',
           imageUrl: null,
           recipeServings: 4,
@@ -207,6 +210,8 @@ describe('mealPlanFormHelpers', () => {
     expect(added.selectedKeys).toEqual([key]);
     expect(added.quantityByKey[key]).toBe(1);
     expect(added.servingsByRecipeId['r1']).toBe(4);
+    // Eat defaults to cook when an entry is added (#363).
+    expect(added.servingsToEatByRecipeId['r1']).toBe(4);
 
     const removed = mealPlanEntryToggleResult({
       key,
@@ -229,6 +234,7 @@ describe('mealPlanFormHelpers', () => {
       recipes: [{id: 'r1', title: 'Salad', servings: 4}],
     });
     expect(added.servingsByRecipeId).toEqual({});
+    expect(added.servingsToEatByRecipeId).toEqual({});
   });
 
   test('recipe toggle ignores unknown recipe id', () => {
