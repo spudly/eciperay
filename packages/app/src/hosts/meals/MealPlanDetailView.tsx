@@ -155,7 +155,7 @@ export const MealPlanDetailView = ({
         targetId: entry.mealId,
         href: entryHref('meal', entry.mealId),
         title: entry.title,
-        subtitle: `Qty ${entry.quantity} · ${entry.memberCount} recipes${nutritionSuffix}`,
+        subtitle: `Qty ${entry.quantity} · ${entry.recipeCount} recipe${entry.recipeCount === 1 ? '' : 's'}${nutritionSuffix}`,
       };
     }
     return {

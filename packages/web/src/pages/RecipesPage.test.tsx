@@ -515,12 +515,26 @@ describe('RecipesPage', () => {
         ]),
       ),
     );
-    await renderWithProviders(<RecipesPage />);
+    const {container} = await renderWithProviders(<RecipesPage />);
+    // Wait for the discovery recipe itself to render — the 'Discover'
+    // section label alone can appear before its rows load, which would
+    // let the negative byline assertions pass vacuously.
     await waitFor(() => {
-      expect(screen.getByText('Discover')).toBeInTheDocument();
+      expect(
+        container.querySelector(
+          'a[href="/recipe/public-recipe-1/shared-pasta"]',
+        ),
+      ).not.toBeNull();
     });
+    const discoveryLink = container.querySelector(
+      'a[href="/recipe/public-recipe-1/shared-pasta"]',
+    );
+    // No byline at all when the author has no display name: reject any
+    // "By …" subtitle (and the old "Anonymous" fallback), not just one
+    // specific name.
+    expect(discoveryLink?.textContent).not.toMatch(/By\s/);
+    expect(discoveryLink?.textContent).not.toMatch(/Anonymous/);
     expect(screen.queryByText(/Anonymous/)).not.toBeInTheDocument();
-    expect(screen.queryByText(/By Chef Alex/)).not.toBeInTheDocument();
   });
 
   test('shared rows offer no log-cook form', async () => {

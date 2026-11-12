@@ -33,6 +33,23 @@ describe('MealsHubPage', () => {
     );
   });
 
+  test('labels a mixed-member meal with its recipe count only (#498)', async () => {
+    server.use(
+      http.get('http://localhost:8080/api/meals', () =>
+        // 1 recipe + 1 direct ingredient: memberCount 2, recipeCount 1.
+        HttpResponse.json([makeMealSummary({memberCount: 2, recipeCount: 1})]),
+      ),
+    );
+    await renderWithProviders(<MealsHubPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Sunday Dinner')).toBeInTheDocument();
+    });
+    // The subtitle counts recipes only and uses the singular form; a
+    // regression to memberCount would render "2 recipes" here.
+    expect(screen.getByText('1 recipe')).toBeInTheDocument();
+    expect(screen.queryByText('2 recipes')).not.toBeInTheDocument();
+  });
+
   test('switches tabs and handles actions', async () => {
     server.use(
       http.get('http://localhost:8080/api/meals', () =>

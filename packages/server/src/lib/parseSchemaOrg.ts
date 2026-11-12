@@ -89,8 +89,17 @@ const parseWprmIngredients = (
         $(container).find('.wprm-recipe-ingredient').toArray(),
       )
     : [$('.wprm-recipe-ingredient').toArray()];
-  const expectedNames = (expected ?? []).map(
-    raw => parseIngredientText(raw).name,
+  // Comparison-only normalization: split the trailing preparation
+  // qualifier off BOTH sides, regardless of notes. parseIngredientText
+  // keeps the qualifier in the name when its notes already carry a
+  // quantity range ("1-2 tbsp honey, divided" -> name "honey, divided",
+  // notes "1-2"), so comparing a rendered name split with null notes
+  // against the raw parsed name would reject a card that matches.
+  // Range-note preservation stays in the returned ingredients, below.
+  const comparisonName = (name: string): string =>
+    splitPreparationQualifier(name, null).name;
+  const expectedNames = (expected ?? []).map(raw =>
+    comparisonName(parseIngredientText(raw).name),
   );
   let items: (typeof cardItems)[number] | null = null;
   for (const [index, candidate] of cardItems.entries()) {
@@ -116,14 +125,9 @@ const parseWprmIngredients = (
     if (!headingMatches) {
       const matchingNames = candidate.filter((el, i) =>
         ingredientNamesMatch(
-          // The expected names come from parseIngredientText, which
-          // moves a trailing preparation qualifier into notes (#498);
-          // apply the same split to the rendered name so the identity
-          // comparison compares like with like.
-          splitPreparationQualifier(
+          comparisonName(
             $(el).find('.wprm-recipe-ingredient-name').first().text(),
-            null,
-          ).name,
+          ),
           /* c8 ignore next -- candidate and expected lengths are equality-checked above */
           expectedNames[i] ?? '',
         ),
@@ -157,7 +161,7 @@ const parseWprmIngredients = (
       .trim();
     // Combine what the amount span carries (a range, or text that does not
     // parse as an amount) with the WPRM notes instead of dropping one.
-    const notes =
+    const combinedNotes =
       [
         amount.notes ??
           (amount.quantity === null && amountText ? amountText : null),
@@ -165,12 +169,17 @@ const parseWprmIngredients = (
       ]
         .filter(Boolean)
         .join('; ') || null;
+    // The returned ingredient gets the same qualifier split as the
+    // JSON-LD path (#498): a trailing preparation qualifier moves from
+    // the name into notes. Existing combined notes win, exactly as in
+    // parseIngredientText (a range note keeps "honey, divided" whole).
+    const split = splitPreparationQualifier(name, combinedNotes);
     return {
       sortOrder: i,
-      name,
+      name: split.name,
       quantity: amount.quantity,
       unit: unit ? unit.toLowerCase() : null,
-      notes,
+      notes: split.notes,
       isOptional: false,
     };
   });

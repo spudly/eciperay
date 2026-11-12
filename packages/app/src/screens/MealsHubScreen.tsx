@@ -77,8 +77,8 @@ export const MealsHubScreen = () => {
         id: meal.id,
         href: mealHref(meal.id),
         title: meal.title,
-        subtitle: `${meal.memberCount} recipe${
-          meal.memberCount === 1 ? '' : 's'
+        subtitle: `${meal.recipeCount} recipe${
+          meal.recipeCount === 1 ? '' : 's'
         }${
           formatSimpleNutrition(meal.nutrition)
             ? ` · ${formatSimpleNutrition(meal.nutrition)}`

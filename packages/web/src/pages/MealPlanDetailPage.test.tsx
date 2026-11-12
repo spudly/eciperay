@@ -198,8 +198,8 @@ describe('MealPlanDetailPage', () => {
     ).toHaveAttribute('href', `/meals/${MEAL_ID}`);
     // The meal entry's subtitle counts recipes only (#498): the
     // fixture meal has 2 members (1 recipe + 1 direct ingredient) and
-    // must read "1 recipes", not "2 recipes".
-    expect(screen.getByText(/Qty 1 · 1 recipes/)).toBeInTheDocument();
+    // must read "1 recipe" (singular), not "2 recipes".
+    expect(screen.getByText(/Qty 1 · 1 recipe(?!s)/)).toBeInTheDocument();
     expect(
       screen.getByRole('link', {name: /Recipe · Test Recipe/}),
     ).toHaveAttribute('href', '/recipes/recipe-uuid-1');

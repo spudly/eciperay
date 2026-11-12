@@ -301,11 +301,13 @@ describe('parseSchemaOrg with WP Recipe Maker markup', () => {
     expect(result?.title).toBe('Cucumber Crunch Salad');
     expect(result?.ingredients).toEqual([
       {
+        // The WPRM path applies the same qualifier split as the
+        // JSON-LD path (#498): the qualifier moves into notes.
         sortOrder: 0,
-        name: 'avocado, pitted and peeled',
+        name: 'avocado',
         quantity: 1,
         unit: 'medium',
-        notes: null,
+        notes: 'pitted and peeled',
         isOptional: false,
       },
       {
@@ -318,10 +320,10 @@ describe('parseSchemaOrg with WP Recipe Maker markup', () => {
       },
       {
         sortOrder: 2,
-        name: 'dill, fresh chopped',
+        name: 'dill',
         quantity: 0.25,
         unit: 'cup',
-        notes: null,
+        notes: 'fresh chopped',
         isOptional: false,
       },
       {
@@ -342,10 +344,42 @@ describe('parseSchemaOrg with WP Recipe Maker markup', () => {
       },
       {
         sortOrder: 5,
-        name: 'red onion, sliced',
+        name: 'red onion',
         quantity: 0.5,
         unit: null,
-        notes: null,
+        notes: 'sliced',
+        isOptional: false,
+      },
+    ]);
+  });
+
+  test('matches a heading-less card whose name keeps a qualifier behind range notes', () => {
+    // "1-2 tbsp honey, divided": parseIngredientText keeps the qualifier
+    // in the expected name because the range occupies notes, while a
+    // null-notes split of the rendered name drops it — the identity
+    // comparison must normalize both sides the same way, or this card
+    // is rejected and its WPRM-only "for glaze" note is lost.
+    const html = `<html><head>
+<script type="application/ld+json">
+{"@type":"Recipe","name":"Glazed Thing","recipeYield":"4",
+"recipeIngredient":["1-2 tbsp honey, divided"],
+"recipeInstructions":[{"text":"Glaze it"}]}
+</script></head><body>
+<div class="wprm-recipe-container">
+<ul class="wprm-recipe-ingredients">
+<li class="wprm-recipe-ingredient"><span class="wprm-recipe-ingredient-amount">1-2</span> <span class="wprm-recipe-ingredient-unit">tbsp</span> <span class="wprm-recipe-ingredient-name">honey, divided</span> <span class="wprm-recipe-ingredient-notes">(for glaze)</span></li>
+</ul>
+</div>
+</body></html>`;
+    const $ = load(html);
+    const result = parseSchemaOrg($);
+    expect(result?.ingredients).toEqual([
+      {
+        sortOrder: 0,
+        name: 'honey, divided',
+        quantity: 1,
+        unit: 'tbsp',
+        notes: '1-2; for glaze',
         isOptional: false,
       },
     ]);
@@ -378,7 +412,7 @@ describe('parseSchemaOrg with WP Recipe Maker markup', () => {
     const $ = load(html);
     const result = parseSchemaOrg($);
     expect(result?.ingredients).toHaveLength(6);
-    expect(result?.ingredients[0]?.name).toBe('avocado, pitted and peeled');
+    expect(result?.ingredients[0]?.name).toBe('avocado');
     expect(result?.ingredients[3]?.notes).toBe('can substitute salt');
   });
 
@@ -422,7 +456,7 @@ describe('parseSchemaOrg with WP Recipe Maker markup', () => {
     const $ = load(html);
     const result = parseSchemaOrg($);
     expect(result?.ingredients).toHaveLength(6);
-    expect(result?.ingredients[0]?.name).toBe('avocado, pitted and peeled');
+    expect(result?.ingredients[0]?.name).toBe('avocado');
     expect(result?.ingredients[0]?.quantity).toBe(1);
   });
 
@@ -507,7 +541,7 @@ describe('parseSchemaOrg with WP Recipe Maker markup', () => {
     const $ = load(html);
     const result = parseSchemaOrg($);
     expect(result?.ingredients).toHaveLength(6);
-    expect(result?.ingredients[0]?.name).toBe('avocado, pitted and peeled');
+    expect(result?.ingredients[0]?.name).toBe('avocado');
   });
 
   test('falls back to the JSON-LD strings when the WPRM list is incomplete', () => {
