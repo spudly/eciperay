@@ -23,23 +23,27 @@ import {eciperay} from '../lib/api.js';
 
 import {sharedFooter} from './legal/legalDocumentData.js';
 
-const formatAuthorName = (authorDisplayName: string | null) => {
-  if (authorDisplayName?.trim()) {
-    return authorDisplayName.trim();
-  }
-  return 'Anonymous';
+// The author byline is omitted entirely when the author has no
+// display name (#498): "By Anonymous" reads as a named author and
+// adds noise, so the subtitle is just the discovery meta.
+const formatAuthorName = (authorDisplayName: string | null): string | null => {
+  const trimmed = authorDisplayName?.trim();
+  return trimmed ? trimmed : null;
 };
 
-// The card's subtitle line, composed app-side (the author fallback
-// plus the discovery meta) exactly as the retired web card composed
-// it; the DS page only renders the string.
-const toDiscoverItem = (recipe: PublicRecipeDiscoveryItem) => ({
-  id: recipe.id,
-  title: recipe.title,
-  subtitle: `By ${formatAuthorName(recipe.authorDisplayName)} · ${formatDiscoveryListMeta(recipe)}`,
-  imageUrl: recipe.imageUrl,
-  href: `/recipe/${recipe.id}/${recipe.slug}`,
-});
+// The card's subtitle line, composed app-side (the author byline,
+// when there is one, plus the discovery meta) exactly as the retired
+// web card composed it; the DS page only renders the string.
+const toDiscoverItem = (recipe: PublicRecipeDiscoveryItem) => {
+  const authorName = formatAuthorName(recipe.authorDisplayName);
+  return {
+    id: recipe.id,
+    title: recipe.title,
+    subtitle: `${authorName ? `By ${authorName} · ` : ''}${formatDiscoveryListMeta(recipe)}`,
+    imageUrl: recipe.imageUrl,
+    href: `/recipe/${recipe.id}/${recipe.slug}`,
+  };
+};
 
 export const DiscoverPage = () => {
   const {filters, controls} = useRecipeListFilters({

@@ -17,6 +17,12 @@ export type Meal = {
   title: string;
   notes: string | null;
   memberCount: number;
+  /**
+   * Recipe members only (#498): `memberCount` also counts direct ingredients
+   * (#362), so surfaces that label the count "recipes" must use this field
+   * instead.
+   */
+  recipeCount: number;
   nutrition: AggregatedNutrition | null;
   createdAt: string;
   updatedAt: string;

@@ -1,6 +1,7 @@
 import {
   parseIngredientAmount,
   parseIngredientText,
+  splitPreparationQualifier,
 } from './parseIngredientText.js';
 
 describe('parseIngredientText', () => {
@@ -17,8 +18,47 @@ describe('parseIngredientText', () => {
     expect(parseIngredientText('1/4 cup dill, fresh chopped')).toEqual({
       quantity: 0.25,
       unit: 'cup',
-      name: 'dill, fresh chopped',
-      notes: null,
+      name: 'dill',
+      notes: 'fresh chopped',
+    });
+  });
+
+  test('moves a trailing preparation qualifier into notes (#498)', () => {
+    expect(parseIngredientText('3 carrots, chopped')).toEqual({
+      quantity: 3,
+      unit: null,
+      name: 'carrots',
+      notes: 'chopped',
+    });
+    expect(parseIngredientText('carrots, chopped')).toEqual({
+      quantity: null,
+      unit: null,
+      name: 'carrots',
+      notes: 'chopped',
+    });
+    expect(parseIngredientText('1 onion, peeled, diced')).toEqual({
+      quantity: 1,
+      unit: null,
+      name: 'onion',
+      notes: 'peeled, diced',
+    });
+  });
+
+  test('moves a comma-separated "to taste" into notes (#498)', () => {
+    expect(parseIngredientText('1 tsp salt, to taste')).toEqual({
+      quantity: 1,
+      unit: 'tsp',
+      name: 'salt',
+      notes: 'to taste',
+    });
+  });
+
+  test('does not move a qualifier when notes already carry a range (#498)', () => {
+    expect(parseIngredientText('1-2 tbsp honey, divided')).toEqual({
+      quantity: 1,
+      unit: 'tbsp',
+      name: 'honey, divided',
+      notes: '1-2',
     });
   });
 
@@ -62,16 +102,16 @@ describe('parseIngredientText', () => {
     expect(parseIngredientText('6 radishes, quartered')).toEqual({
       quantity: 6,
       unit: null,
-      name: 'radishes, quartered',
-      notes: null,
+      name: 'radishes',
+      notes: 'quartered',
     });
     expect(
       parseIngredientText('2 English cucumbers, cut into 1in pieces'),
     ).toEqual({
       quantity: 2,
       unit: null,
-      name: 'English cucumbers, cut into 1in pieces',
-      notes: null,
+      name: 'English cucumbers',
+      notes: 'cut into 1in pieces',
     });
   });
 
@@ -79,8 +119,8 @@ describe('parseIngredientText', () => {
     expect(parseIngredientText('1 medium avocado, pitted and peeled')).toEqual({
       quantity: 1,
       unit: 'medium',
-      name: 'avocado, pitted and peeled',
-      notes: null,
+      name: 'avocado',
+      notes: 'pitted and peeled',
     });
   });
 
@@ -258,6 +298,36 @@ describe('parseIngredientText', () => {
       unit: null,
       name: '2',
       notes: null,
+    });
+  });
+});
+
+describe('splitPreparationQualifier', () => {
+  test('splits a trailing preparation qualifier into notes', () => {
+    expect(splitPreparationQualifier('carrots, chopped', null)).toEqual({
+      name: 'carrots',
+      notes: 'chopped',
+    });
+    expect(splitPreparationQualifier('butter, divided', null)).toEqual({
+      name: 'butter',
+      notes: 'divided',
+    });
+  });
+
+  test('leaves names without a preparation qualifier untouched', () => {
+    expect(splitPreparationQualifier('lemon juice, fresh', null)).toEqual({
+      name: 'lemon juice, fresh',
+      notes: null,
+    });
+    expect(splitPreparationQualifier('Salt and pepper to taste', null)).toEqual(
+      {name: 'Salt and pepper to taste', notes: null},
+    );
+  });
+
+  test('never overwrites existing notes', () => {
+    expect(splitPreparationQualifier('honey, divided', '1-2')).toEqual({
+      name: 'honey, divided',
+      notes: '1-2',
     });
   });
 });

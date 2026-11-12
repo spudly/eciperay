@@ -72,7 +72,10 @@ describe('MealPlanDetailPage', () => {
               sortOrder: 0,
               quantity: 1,
               title: 'Sunday Dinner',
-              memberCount: 1,
+              // 1 recipe + 1 direct ingredient (#498): the subtitle
+              // must count recipes only, not every member.
+              memberCount: 2,
+              recipeCount: 1,
               nutrition: null,
             },
             {
@@ -193,6 +196,10 @@ describe('MealPlanDetailPage', () => {
     expect(
       screen.getByRole('link', {name: /Meal · Sunday Dinner/}),
     ).toHaveAttribute('href', `/meals/${MEAL_ID}`);
+    // The meal entry's subtitle counts recipes only (#498): the
+    // fixture meal has 2 members (1 recipe + 1 direct ingredient) and
+    // must read "1 recipe" (singular), not "2 recipes".
+    expect(screen.getByText(/Qty 1 · 1 recipe(?!s)/)).toBeInTheDocument();
     expect(
       screen.getByRole('link', {name: /Recipe · Test Recipe/}),
     ).toHaveAttribute('href', '/recipes/recipe-uuid-1');

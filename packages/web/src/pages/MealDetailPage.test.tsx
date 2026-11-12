@@ -65,6 +65,7 @@ describe('MealDetailPage', () => {
           title: 'Sunday Dinner',
           notes: null,
           memberCount: 1,
+          recipeCount: 1,
           nutrition: null,
           createdAt: '2024-01-01T00:00:00.000Z',
           updatedAt: '2024-01-01T00:00:00.000Z',
@@ -114,7 +115,11 @@ describe('MealDetailPage', () => {
           userId: 'user-uuid-1',
           title: 'Sunday Dinner',
           notes: null,
+          // Direct-ingredient-only meal: no recipe members, so the
+          // server returns memberCount 1 (the ingredient) and
+          // recipeCount 0 — a response loadMealDetail can produce.
           memberCount: 1,
+          recipeCount: 0,
           nutrition: null,
           createdAt: '2024-01-01T00:00:00.000Z',
           updatedAt: '2024-01-01T00:00:00.000Z',

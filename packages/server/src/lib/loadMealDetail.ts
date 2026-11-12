@@ -229,6 +229,9 @@ export const loadMealDetail = async (
     // Member count covers both kinds of member (#362): a direct-only
     // meal is not a zero-member meal.
     memberCount: members.length + ingredients.length,
+    // Recipe-only count (#498): surfaces that label the count "recipes"
+    // must not fold direct ingredients into it.
+    recipeCount: members.length,
     nutrition,
     createdAt: timestampString(meal.created_at),
     updatedAt: timestampString(meal.updated_at),

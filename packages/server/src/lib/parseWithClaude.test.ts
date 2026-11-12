@@ -48,6 +48,30 @@ describe('parseWithClaude', () => {
     expect(result.sourceUrl).toBe('https://example.com');
   });
 
+  test('moves a preparation qualifier glued to an ingredient name into notes (#498)', async () => {
+    const recipe = {
+      ...VALID_RECIPE,
+      description: 'A carrot side.',
+      ingredients: [
+        {
+          sortOrder: 0,
+          name: 'carrots, chopped',
+          quantity: 3,
+          unit: null,
+          notes: null,
+          isOptional: false,
+        },
+      ],
+    };
+    const client = makeClient([{type: 'text', text: JSON.stringify(recipe)}]);
+    const result = await parseWithClaude('3 carrots, chopped', null, client);
+    expect(result.ingredients[0]).toMatchObject({
+      name: 'carrots',
+      quantity: 3,
+      notes: 'chopped',
+    });
+  });
+
   test('throws when Anthropic returns a non-text content block', async () => {
     const client = makeClient([{type: 'tool_use', id: 'x'}]);
     await expect(

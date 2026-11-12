@@ -38,7 +38,12 @@ describe('MealsHubScreen', () => {
         userId: 'user-uuid-1',
         title: 'Sunday Dinner',
         notes: null,
-        memberCount: 1,
+        // 1 recipe + 1 direct ingredient (#498): the hub subtitle
+        // labels recipes, so it must read recipeCount, not the
+        // member total — the '1 recipe' assertions below fail on
+        // memberCount.
+        memberCount: 2,
+        recipeCount: 1,
         nutrition: null,
         createdAt: '2024-01-01T00:00:00.000Z',
         updatedAt: '2024-01-01T00:00:00.000Z',

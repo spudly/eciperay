@@ -60,7 +60,10 @@ const makePlan = (overrides: Partial<MealPlanDetail> = {}): MealPlanDetail => ({
       sortOrder: 0,
       quantity: 2,
       title: 'Sunday Dinner',
-      memberCount: 3,
+      // Distinct counts (#498): the subtitle labels recipes, so it
+      // must read recipeCount (3), not the member total (4).
+      memberCount: 4,
+      recipeCount: 3,
       nutrition: nutrition({calories: 300, proteinG: 20, satietyScore: null}),
     },
     {

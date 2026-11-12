@@ -144,6 +144,7 @@ export const loadMealPlanDetail = async (
         quantity: row.quantity,
         title: meal.title,
         memberCount: meal.memberCount,
+        recipeCount: meal.recipeCount,
         nutrition: meal.nutrition,
       });
       if (meal.nutrition) {

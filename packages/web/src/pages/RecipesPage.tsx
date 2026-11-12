@@ -151,25 +151,30 @@ const InlineCookLogForm = ({
   );
 };
 
-const formatDiscoveryAuthorName = (authorDisplayName: string | null) => {
-  if (authorDisplayName?.trim()) {
-    return authorDisplayName.trim();
-  }
-  return 'Anonymous';
+// The author byline is omitted entirely when the author has no
+// display name (#498) — see the Discover host's formatAuthorName.
+const formatDiscoveryAuthorName = (
+  authorDisplayName: string | null,
+): string | null => {
+  const trimmed = authorDisplayName?.trim();
+  return trimmed ? trimmed : null;
 };
 
 // One discovery-section row, composed exactly as the signed-out
-// Discover host composes its rows (author fallback plus the discovery
-// meta line; the DS page only renders the string).
+// Discover host composes its rows (author byline, when there is one,
+// plus the discovery meta line; the DS page only renders the string).
 const toDiscoveryItem = (
   recipe: PublicRecipeDiscoveryItem,
-): RecipesPageDiscoveryItem => ({
-  id: recipe.id,
-  title: recipe.title,
-  subtitle: `By ${formatDiscoveryAuthorName(recipe.authorDisplayName)} · ${formatDiscoveryListMeta(recipe)}`,
-  imageUrl: recipe.imageUrl,
-  href: `/recipe/${recipe.id}/${recipe.slug}`,
-});
+): RecipesPageDiscoveryItem => {
+  const authorName = formatDiscoveryAuthorName(recipe.authorDisplayName);
+  return {
+    id: recipe.id,
+    title: recipe.title,
+    subtitle: `${authorName ? `By ${authorName} · ` : ''}${formatDiscoveryListMeta(recipe)}`,
+    imageUrl: recipe.imageUrl,
+    href: `/recipe/${recipe.id}/${recipe.slug}`,
+  };
+};
 
 /**
  * The unified Recipes browse (#409, Stephen's approved plan): one page
@@ -297,10 +302,9 @@ export const RecipesPage = () => {
   // While a POP restore is in flight (saved values applied, field
   // state not yet caught up), the sync write below must not overwrite
   // the active entry's saved state with the stale live values.
-  const pendingRestoreRef = useRef<{
-    key: string;
-    serialized: string;
-  } | null>(null);
+  const pendingRestoreRef = useRef<{key: string; serialized: string} | null>(
+    null,
+  );
   useEffect(() => {
     if (navigationType !== 'POP') {
       return;
@@ -375,7 +379,10 @@ export const RecipesPage = () => {
         return;
       }
       const saved = parseRecipeListFilterValues(locationRef.current.state);
-      if (saved && JSON.stringify({...currentValues, ...saved}) === serialized) {
+      if (
+        saved &&
+        JSON.stringify({...currentValues, ...saved}) === serialized
+      ) {
         // The entry already carries exactly these values (the mount
         // this page was seeded from, or our own previous write).
         syncedFiltersRef.current = serialized;

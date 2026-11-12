@@ -15,6 +15,7 @@ export const makeMealSummary = (overrides: Partial<Meal> = {}): Meal => ({
   title: 'Sunday Dinner',
   notes: null,
   memberCount: 1,
+  recipeCount: 1,
   nutrition: null,
   createdAt: '2024-01-01T00:00:00.000Z',
   updatedAt: '2024-01-01T00:00:00.000Z',

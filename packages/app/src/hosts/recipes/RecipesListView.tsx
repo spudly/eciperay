@@ -65,29 +65,29 @@ type RecipesListViewOwnProps = Omit<
    */
   ownErrorMessage?: string | null;
   /**
-   * Recipes shared with the user, in the shared query's order: the view
-   * appends them to the own section after the created rows (the unified
-   * browse, #412 — the mapping that used to live in SharedWithMeView).
+   * Recipes shared with the user, in the shared query's order: the view appends
+   * them to the own section after the created rows (the unified browse, #412 —
+   * the mapping that used to live in SharedWithMeView).
    */
   sharedRecipes?: RecipeDetail[];
   /**
-   * Public discovery recipes: the view maps them into the page's
-   * discovery section under the same filter state as the own section.
+   * Public discovery recipes: the view maps them into the page's discovery
+   * section under the same filter state as the own section.
    */
   discoveryRecipes?: PublicRecipeDiscoveryItem[];
   /** The discovery section's first load in flight, composed by the screen. */
   loadingDiscovery?: boolean;
   /**
-   * The discovery section's first-load failure, composed by the screen:
-   * the page renders it as the discovery section's error state, distinct
-   * from the own section's errors (neither section hides the other).
+   * The discovery section's first-load failure, composed by the screen: the
+   * page renders it as the discovery section's error state, distinct from the
+   * own section's errors (neither section hides the other).
    */
   discoveryErrorMessage?: string | null;
   /**
-   * The own section's next page in flight (created or shared query),
-   * composed by the screen: the page renders its own-section loading
-   * row. Distinct from `isFetchingNextPage`, which is the discovery
-   * section's fetch signal in the page's contract.
+   * The own section's next page in flight (created or shared query), composed
+   * by the screen: the page renders its own-section loading row. Distinct from
+   * `isFetchingNextPage`, which is the discovery section's fetch signal in the
+   * page's contract.
    */
   isFetchingNextOwnPage?: boolean;
 };
@@ -109,27 +109,32 @@ const formatRecipesPageSubtitle = (recipe: RecipeDetail) =>
     formatSatietyLabel(recipe.satietyScore, recipe.nutritionStatus),
   ].join(' · ')}`;
 
-const formatDiscoveryAuthorName = (authorDisplayName: string | null) => {
-  if (authorDisplayName?.trim()) {
-    return authorDisplayName.trim();
-  }
-  return 'Anonymous';
+// The author byline is omitted entirely when the author has no
+// display name (#498) — see the web Discover host's formatAuthorName.
+const formatDiscoveryAuthorName = (
+  authorDisplayName: string | null,
+): string | null => {
+  const trimmed = authorDisplayName?.trim();
+  return trimmed ? trimmed : null;
 };
 
 // One discovery-section row, composed exactly as the web host composes
-// its rows (author fallback plus the discovery meta line; the DS page
-// only renders the string). The destination is the recipe's public
-// permalink — on native the page's link opens it through Linking, the
-// same treatment shared rows get.
+// its rows (author byline, when there is one, plus the discovery meta
+// line; the DS page only renders the string). The destination is the
+// recipe's public permalink — on native the page's link opens it
+// through Linking, the same treatment shared rows get.
 const toDiscoveryItem = (
   recipe: PublicRecipeDiscoveryItem,
-): RecipesPageDiscoveryItem => ({
-  id: recipe.id,
-  title: recipe.title,
-  subtitle: `By ${formatDiscoveryAuthorName(recipe.authorDisplayName)} · ${formatDiscoveryListMeta(recipe)}`,
-  imageUrl: recipe.imageUrl,
-  href: buildRecipePermalink(WEB_APP_BASE_URL, recipe),
-});
+): RecipesPageDiscoveryItem => {
+  const authorName = formatDiscoveryAuthorName(recipe.authorDisplayName);
+  return {
+    id: recipe.id,
+    title: recipe.title,
+    subtitle: `${authorName ? `By ${authorName} · ` : ''}${formatDiscoveryListMeta(recipe)}`,
+    imageUrl: recipe.imageUrl,
+    href: buildRecipePermalink(WEB_APP_BASE_URL, recipe),
+  };
+};
 
 /**
  * The Recipes screen's view (#49, stage 2): the design system's RecipesPage

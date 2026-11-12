@@ -14,6 +14,7 @@ const meal = (id: string, title: string): Meal => ({
   title,
   notes: null,
   memberCount: 1,
+  recipeCount: 1,
   nutrition: null,
   createdAt: '2024-01-01T00:00:00.000Z',
   updatedAt: '2024-01-01T00:00:00.000Z',
@@ -62,6 +63,7 @@ describe('mealPlanFormHelpers', () => {
           quantity: 2,
           title: 'Dinner',
           memberCount: 1,
+          recipeCount: 1,
           nutrition: null,
         },
         {
@@ -161,6 +163,7 @@ describe('mealPlanFormHelpers', () => {
           quantity: 2,
           title: 'Dinner',
           memberCount: 1,
+          recipeCount: 1,
           nutrition: null,
         },
         {

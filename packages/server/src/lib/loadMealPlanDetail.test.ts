@@ -131,6 +131,9 @@ describe('loadMealPlanDetail', () => {
     const plan = await loadMealPlanDetail(PLAN_ID, USER_ID, mockQuery);
     expect(plan?.entries[0]?.type).toBe('meal');
     expect(plan?.entries[0]?.title).toBe('Sunday Dinner');
+    // The meal entry threads the meal's counts through (#498): this
+    // fixture meal has no members at all, so both counts are zero.
+    expect(plan?.entries[0]).toMatchObject({memberCount: 0, recipeCount: 0});
   });
 
   test('skips missing meals and blank entry rows', async () => {

@@ -487,6 +487,56 @@ describe('RecipesPage', () => {
     expect(screen.getByText('Discover')).toBeInTheDocument();
   });
 
+  test('omits the byline on discovery rows whose author has no display name (#498)', async () => {
+    server.use(
+      http.get('http://localhost:8080/api/public/recipes', () =>
+        HttpResponse.json([
+          {
+            id: 'public-recipe-1',
+            slug: 'shared-pasta',
+            title: 'Shared Pasta',
+            description: 'A public recipe',
+            servings: 4,
+            prepTimeMin: 10,
+            cookTimeMin: 25,
+            imageUrl: null,
+            visibility: 'public',
+            authorDisplayName: null,
+            updatedAt: '2024-01-01T00:00:00.000Z',
+            tags: [],
+            communityRating: null,
+            satietyScore: null,
+            nutritionStatus: null,
+            calories: null,
+            proteinG: null,
+            carbsG: null,
+            fatG: null,
+          },
+        ]),
+      ),
+    );
+    const {container} = await renderWithProviders(<RecipesPage />);
+    // Wait for the discovery recipe itself to render — the 'Discover'
+    // section label alone can appear before its rows load, which would
+    // let the negative byline assertions pass vacuously.
+    await waitFor(() => {
+      expect(
+        container.querySelector(
+          'a[href="/recipe/public-recipe-1/shared-pasta"]',
+        ),
+      ).not.toBeNull();
+    });
+    const discoveryLink = container.querySelector(
+      'a[href="/recipe/public-recipe-1/shared-pasta"]',
+    );
+    // No byline at all when the author has no display name: reject any
+    // "By …" subtitle (and the old "Anonymous" fallback), not just one
+    // specific name.
+    expect(discoveryLink?.textContent).not.toMatch(/By\s/);
+    expect(discoveryLink?.textContent).not.toMatch(/Anonymous/);
+    expect(screen.queryByText(/Anonymous/)).not.toBeInTheDocument();
+  });
+
   test('shared rows offer no log-cook form', async () => {
     await renderWithProviders(<RecipesPage />);
     await waitFor(() => {
@@ -831,10 +881,7 @@ describe('RecipesPage', () => {
     // Edit AFTER the restore: the edit must sync to this entry like
     // any other (a stale pending-restore marker must not block it).
     await userEvent.clear(screen.getByPlaceholderText('Search recipes…'));
-    await userEvent.type(
-      screen.getByPlaceholderText('Search recipes…'),
-      'New',
-    );
+    await userEvent.type(screen.getByPlaceholderText('Search recipes…'), 'New');
     await act(async () => {
       await new Promise(resolve => setTimeout(resolve, 400));
     });
@@ -844,9 +891,7 @@ describe('RecipesPage', () => {
     });
     await userEvent.click(screen.getByRole('button', {name: 'Go back'}));
     await waitFor(() => {
-      expect(screen.getByPlaceholderText('Search recipes…')).toHaveValue(
-        'New',
-      );
+      expect(screen.getByPlaceholderText('Search recipes…')).toHaveValue('New');
     });
   });
 
