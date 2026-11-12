@@ -44,7 +44,8 @@ just the landing/Discover/recipe starter set.
 
 - Already served by the server: `packages/server/src/routes/seo/`
   (`attachSeoRoutes`, wired in `server.ts`) with
-  `lib/buildRobotsTxt.ts` and `lib/buildSitemapXml.ts`. These were the
+  `packages/server/src/lib/buildRobotsTxt.ts` and
+  `packages/server/src/lib/buildSitemapXml.ts`. These were the
   Phase 1 artifacts split out of #304 — they exist and are out of scope
   here beyond confirming the routes keep working under SSR.
 
