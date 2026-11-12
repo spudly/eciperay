@@ -82,7 +82,9 @@ const resolveMealIngredients = async (
 ): Promise<ResolvedMealIngredient[]> => {
   const resolved: ResolvedMealIngredient[] = [];
   for (const [index, ingredient] of (input.ingredients ?? []).entries()) {
-    const servingsToCook = ingredient.servingsToCook ?? 1;
+    // Legacy `servings` is the pre-#363 alias for servingsToCook.
+    const servingsToCook =
+      ingredient.servingsToCook ?? ingredient.servings ?? 1;
     // Eat defaults to cook (#363) when the client sends only one number.
     const servingsToEat = ingredient.servingsToEat ?? servingsToCook;
     // Nutrition is estimated at servings-to-cook: the entry's quantity
@@ -133,7 +135,9 @@ export const saveNewMeal = async (
         status: 400,
       };
     }
-    const servingsToCook = recipe.servingsToCook ?? accessible.servings;
+    // Legacy `servings` is the pre-#363 alias for servingsToCook.
+    const servingsToCook =
+      recipe.servingsToCook ?? recipe.servings ?? accessible.servings;
     resolved.push({
       recipeId: recipe.recipeId,
       servingsToCook,
@@ -231,7 +235,9 @@ export const replaceMeal = async (
         status: 400,
       };
     }
-    const servingsToCook = recipe.servingsToCook ?? accessible.servings;
+    // Legacy `servings` is the pre-#363 alias for servingsToCook.
+    const servingsToCook =
+      recipe.servingsToCook ?? recipe.servings ?? accessible.servings;
     resolved.push({
       recipeId: recipe.recipeId,
       servingsToCook,

@@ -258,6 +258,125 @@ describe('MealEditPage', () => {
     });
   });
 
+  test('servings-to-eat follows a cook edit on a direct ingredient (#363)', async () => {
+    const stored = makeMealDetail({
+      ingredients: [
+        {
+          name: 'Rice',
+          quantity: null,
+          unit: null,
+          sortOrder: 0,
+          servingsToCook: 2,
+          servingsToEat: 2,
+          fiberG: null,
+          sugarG: null,
+          sodiumMg: null,
+          preparedWeightG: null,
+          satietyScore: null,
+          nutritionStatus: null,
+          calories: null,
+          proteinG: null,
+          carbsG: null,
+          fatG: null,
+        },
+      ],
+    });
+    let putBody: unknown = null;
+    server.use(
+      http.get(`http://localhost:8080/api/meals/${MEAL_ID}`, () =>
+        HttpResponse.json(stored),
+      ),
+      http.put(
+        `http://localhost:8080/api/meals/${MEAL_ID}`,
+        async ({request}) => {
+          putBody = await request.json();
+          return HttpResponse.json(makeMealDetail());
+        },
+      ),
+    );
+    await renderWithProviders(
+      <Routes>
+        <Route
+          path="/meals/:mealId/edit"
+          element={<MealEditPage />}
+        />
+      </Routes>,
+      {route: `/meals/${MEAL_ID}/edit`},
+    );
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('Rice')).toBeInTheDocument();
+    });
+    // The ingredient's servings field is its servings-to-cook; with
+    // eat equal to cook, raising cook to 5 must raise eat with it —
+    // the DS form has no separate eat control.
+    fireEvent.change(screen.getByDisplayValue('2'), {target: {value: '5'}});
+    fireEvent.click(screen.getByText('Save meal'));
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith(`/meals/${MEAL_ID}`);
+    });
+    expect(putBody).toMatchObject({
+      ingredients: [{name: 'Rice', servingsToCook: 5, servingsToEat: 5}],
+    });
+  });
+
+  test('a divergent servings-to-eat survives a cook edit on a direct ingredient (#363)', async () => {
+    const stored = makeMealDetail({
+      ingredients: [
+        {
+          name: 'Rice',
+          quantity: null,
+          unit: null,
+          sortOrder: 0,
+          servingsToCook: 2,
+          servingsToEat: 1,
+          fiberG: null,
+          sugarG: null,
+          sodiumMg: null,
+          preparedWeightG: null,
+          satietyScore: null,
+          nutritionStatus: null,
+          calories: null,
+          proteinG: null,
+          carbsG: null,
+          fatG: null,
+        },
+      ],
+    });
+    let putBody: unknown = null;
+    server.use(
+      http.get(`http://localhost:8080/api/meals/${MEAL_ID}`, () =>
+        HttpResponse.json(stored),
+      ),
+      http.put(
+        `http://localhost:8080/api/meals/${MEAL_ID}`,
+        async ({request}) => {
+          putBody = await request.json();
+          return HttpResponse.json(makeMealDetail());
+        },
+      ),
+    );
+    await renderWithProviders(
+      <Routes>
+        <Route
+          path="/meals/:mealId/edit"
+          element={<MealEditPage />}
+        />
+      </Routes>,
+      {route: `/meals/${MEAL_ID}/edit`},
+    );
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('Rice')).toBeInTheDocument();
+    });
+    fireEvent.change(screen.getByDisplayValue('2'), {target: {value: '5'}});
+    fireEvent.click(screen.getByText('Save meal'));
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith(`/meals/${MEAL_ID}`);
+    });
+    expect(putBody).toMatchObject({
+      ingredients: [{name: 'Rice', servingsToCook: 5, servingsToEat: 1}],
+    });
+  });
+
   test('keeps the form when a background refetch fails (#362)', async () => {
     const stored = makeMealDetail({
       ingredients: [

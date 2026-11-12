@@ -92,7 +92,9 @@ const resolveEntries = async (
       };
     }
     seenRecipes.add(entry.recipeId);
-    const servingsToCook = entry.servingsToCook ?? recipe.servings;
+    // Legacy `servings` is the pre-#363 alias for servingsToCook.
+    const servingsToCook =
+      entry.servingsToCook ?? entry.servings ?? recipe.servings;
     entries.push({
       kind: 'recipe',
       recipeId: entry.recipeId,

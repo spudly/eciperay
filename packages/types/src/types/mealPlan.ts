@@ -67,6 +67,11 @@ export type MealPlanRecipeEntryInput = {
   servingsToCook?: number;
   /** Defaults to servingsToCook (eat = cook). */
   servingsToEat?: number;
+  /**
+   * Legacy pre-#363 alias for servingsToCook, used only when servingsToCook is
+   * absent.
+   */
+  servings?: number;
   quantity?: number;
 };
 

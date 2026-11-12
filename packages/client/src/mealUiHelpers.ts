@@ -187,11 +187,12 @@ export const defaultNutritionGoals = (): NutritionGoals => ({
 
 /**
  * The DS MealPlanDetailPage weekly-totals band's view-model (#363 / DS #414):
- * the plan's eaten totals and per-day averages as pre-labelled rows. Totals
- * come from the plan nutrition itself; averages from its `perDay` (null for
- * undated plans, in which case the band carries totals only). Returns null when
- * there is no usable nutrition, so hosts can pass the result straight to the
- * page.
+ * the plan's eaten totals and per-day averages as field-labelled rows (the DS
+ * page composes the "· Weekly total" / "· Daily average" wording and pairs rows
+ * by label). Totals come from the plan nutrition itself; averages from its
+ * `perDay` (null for undated plans, in which case the band carries totals
+ * only). Returns null when there is no usable nutrition, so hosts can pass the
+ * result straight to the page.
  */
 export const buildWeeklyTotalsBand = (
   nutrition: MealPlanNutrition | null | undefined,
@@ -202,6 +203,10 @@ export const buildWeeklyTotalsBand = (
   if (!nutrition || nutrition.status === 'unavailable') {
     return null;
   }
+  // DS #414 contract: rows are labelled by field only — the DS page
+  // pairs each average to its total by exact label match and composes
+  // the kind wording into the rendered label itself ("Calories ·
+  // Weekly total" / "Calories · Daily average").
   const fields: {
     label: string;
     pick: (n: AggregatedNutrition) => number;
@@ -225,12 +230,12 @@ export const buildWeeklyTotalsBand = (
     {label: 'Fat', pick: n => n.fatG, format: v => `${Math.round(v)}g fat`},
   ];
   const totals = fields.map(field => ({
-    label: `${field.label} · Weekly total`,
+    label: field.label,
     valueLabel: field.format(field.pick(nutrition)),
   }));
   const averages = nutrition.perDay
     ? fields.map(field => ({
-        label: `${field.label} · Daily average`,
+        label: field.label,
         valueLabel: field.format(
           field.pick(nutrition.perDay as AggregatedNutrition),
         ),

@@ -70,6 +70,30 @@ describe('saveNewMeal', () => {
     expect(result.meal.id).toBe(MEAL_ID);
   });
 
+  test('a legacy `servings` payload becomes servingsToCook, with eat defaulting to cook (#363)', async () => {
+    const mockQuery = createMockQuery();
+    mockQuery
+      .mockResolvedValueOnce(makeQueryResult([accessibleRecipeRow]))
+      .mockResolvedValueOnce(emptyShareGrant)
+      .mockResolvedValueOnce(makeQueryResult([{id: MEAL_ID}]))
+      .mockResolvedValueOnce(makeQueryResult([]));
+    installLoadMealDetailMock(mockQuery);
+
+    const result = await saveNewMeal(
+      USER_ID,
+      {title: 'Dinner', recipes: [{recipeId: RECIPE_ID, servings: 3}]},
+      mockQuery,
+    );
+    if ('error' in result) {
+      throw new Error(result.error);
+    }
+    const insert = mockQuery.mock.calls.find(([sql]) =>
+      String(sql).includes('insert into meal_recipes'),
+    );
+    // meal_recipes insert params: [mealId, recipeId, sortOrder, cook, eat].
+    expect(insert?.[1]).toEqual([MEAL_ID, RECIPE_ID, 0, 3, 3]);
+  });
+
   test('rejects inaccessible recipe', async () => {
     const mockQuery = createMockQuery();
     mockQuery

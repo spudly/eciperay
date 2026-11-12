@@ -350,16 +350,16 @@ describe('mealUiHelpers', () => {
     };
     expect(buildWeeklyTotalsBand(nutrition)).toEqual({
       totals: [
-        {label: 'Calories · Weekly total', valueLabel: '1400 cal'},
-        {label: 'Protein · Weekly total', valueLabel: '70g protein'},
-        {label: 'Carbs · Weekly total', valueLabel: '140g carbs'},
-        {label: 'Fat · Weekly total', valueLabel: '35g fat'},
+        {label: 'Calories', valueLabel: '1400 cal'},
+        {label: 'Protein', valueLabel: '70g protein'},
+        {label: 'Carbs', valueLabel: '140g carbs'},
+        {label: 'Fat', valueLabel: '35g fat'},
       ],
       averages: [
-        {label: 'Calories · Daily average', valueLabel: '200 cal'},
-        {label: 'Protein · Daily average', valueLabel: '10g protein'},
-        {label: 'Carbs · Daily average', valueLabel: '20g carbs'},
-        {label: 'Fat · Daily average', valueLabel: '5g fat'},
+        {label: 'Calories', valueLabel: '200 cal'},
+        {label: 'Protein', valueLabel: '10g protein'},
+        {label: 'Carbs', valueLabel: '20g carbs'},
+        {label: 'Fat', valueLabel: '5g fat'},
       ],
     });
     expect(buildWeeklyTotalsBand(null)).toBeNull();

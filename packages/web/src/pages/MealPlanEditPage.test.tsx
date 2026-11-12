@@ -86,6 +86,7 @@ describe('MealPlanEditPage', () => {
   });
 
   test('loads and updates an existing plan', async () => {
+    let putBody: unknown = null;
     server.use(
       http.get(`http://localhost:8080/api/meal-plans/${PLAN_ID}`, () =>
         HttpResponse.json(
@@ -115,8 +116,12 @@ describe('MealPlanEditPage', () => {
           }),
         ),
       ),
-      http.put(`http://localhost:8080/api/meal-plans/${PLAN_ID}`, () =>
-        HttpResponse.json(makeMealPlanDetail()),
+      http.put(
+        `http://localhost:8080/api/meal-plans/${PLAN_ID}`,
+        async ({request}) => {
+          putBody = await request.json();
+          return HttpResponse.json(makeMealPlanDetail());
+        },
       ),
     );
     await renderWithProviders(
@@ -138,6 +143,89 @@ describe('MealPlanEditPage', () => {
     fireEvent.click(screen.getByText('Save plan'));
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith(`/meal-plans/${PLAN_ID}`);
+    });
+    // The servings stepper edits servings-to-cook (4 -> 5); with eat
+    // equal to cook, servings-to-eat follows it in the saved payload
+    // (#363).
+    expect(putBody).toMatchObject({
+      entries: [
+        {
+          recipeId: 'recipe-uuid-1',
+          quantity: 2,
+          servingsToCook: 5,
+          servingsToEat: 5,
+        },
+      ],
+    });
+  });
+
+  test('preserves a divergent servings-to-eat when cook servings change (#363)', async () => {
+    let putBody: unknown = null;
+    server.use(
+      http.get(`http://localhost:8080/api/meal-plans/${PLAN_ID}`, () =>
+        HttpResponse.json(
+          makeMealPlanDetail({
+            entries: [
+              {
+                type: 'recipe',
+                id: 'entry-1',
+                recipeId: 'recipe-uuid-1',
+                sortOrder: 0,
+                quantity: 1,
+                servingsToCook: 4,
+                servingsToEat: 2,
+                title: 'Test Recipe',
+                imageUrl: null,
+                recipeServings: 4,
+                accessLost: false,
+                nutrition: null,
+                satietyScore: null,
+                nutritionStatus: null,
+                calories: null,
+                proteinG: null,
+                carbsG: null,
+                fatG: null,
+              },
+            ],
+          }),
+        ),
+      ),
+      http.put(
+        `http://localhost:8080/api/meal-plans/${PLAN_ID}`,
+        async ({request}) => {
+          putBody = await request.json();
+          return HttpResponse.json(makeMealPlanDetail());
+        },
+      ),
+    );
+    await renderWithProviders(
+      <Routes>
+        <Route
+          path="/meal-plans/:planId/edit"
+          element={<MealPlanEditPage />}
+        />
+      </Routes>,
+      {route: `/meal-plans/${PLAN_ID}/edit`},
+    );
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('This week')).toBeInTheDocument();
+    });
+    // Only the servings stepper ([1]; [0] is quantity): cook 4 -> 5,
+    // and the stored eat of 2 must survive the save untouched.
+    fireEvent.click(screen.getAllByText('+')[1]!);
+    fireEvent.click(screen.getByText('Save plan'));
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith(`/meal-plans/${PLAN_ID}`);
+    });
+    expect(putBody).toMatchObject({
+      entries: [
+        {
+          recipeId: 'recipe-uuid-1',
+          quantity: 1,
+          servingsToCook: 5,
+          servingsToEat: 2,
+        },
+      ],
     });
   });
 

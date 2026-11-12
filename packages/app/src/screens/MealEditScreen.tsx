@@ -192,7 +192,9 @@ export const MealEditScreen = ({route, navigation}: Props) => {
               quantity: '',
               unit: '',
               servings: '1',
-              servingsToEat: '1',
+              // Blank servings-to-eat defaults to servings-to-cook
+              // at parse time (#363).
+              servingsToEat: '',
             },
           ]);
         }}
@@ -203,11 +205,24 @@ export const MealEditScreen = ({route, navigation}: Props) => {
         }}
         onIngredientChange={(ingredientId, patch) => {
           setFormIngredients(previous =>
-            previous.map(ingredient =>
-              ingredient.id === ingredientId
-                ? {...ingredient, ...patch}
-                : ingredient,
-            ),
+            previous.map(ingredient => {
+              if (ingredient.id !== ingredientId) {
+                return ingredient;
+              }
+              const merged = {...ingredient, ...patch};
+              // Servings-to-eat follows a servings-to-cook edit
+              // while it is blank or still equals the previous cook
+              // value (#363); a divergent stored eat is preserved —
+              // the DS form has no separate eat control.
+              if (
+                patch.servings !== undefined &&
+                (ingredient.servingsToEat === '' ||
+                  ingredient.servingsToEat === ingredient.servings)
+              ) {
+                merged.servingsToEat = patch.servings;
+              }
+              return merged;
+            }),
           );
         }}
         isSaving={saveMutation.isPending}

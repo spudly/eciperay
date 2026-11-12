@@ -580,7 +580,9 @@ via Meals case 1 and do not delete it until this section is done.)
 `packages/web/src/pages/{MealPlanDetail,MealPlanEdit}Page.tsx`, `@spudly/ui`
 `MealPlanDetailPage` or `MealPlanFormPage`,
 `packages/client/src/recipeListQuery.ts`, `packages/web/src/routes/router.tsx`,
-`packages/server` meal plan routes, `packages/server/src/lib/saveMealPlan.ts`,
+`packages/client/src/mealUiHelpers.ts`,
+`packages/server/src/lib/loadMealPlanDetail.ts`, `packages/server` meal plan
+routes, `packages/server/src/lib/saveMealPlan.ts`,
 `packages/server/src/lib/conditionalWrite.ts`,
 `packages/server/src/lib/mealSchemas.ts`.
 

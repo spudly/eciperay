@@ -20,6 +20,24 @@ describe('mealSchemas', () => {
     ).toMatchObject({title: 'Dinner'});
   });
 
+  test('MealInputSchema keeps a legacy `servings` value instead of stripping it (#363)', () => {
+    // Pre-#363 clients send `servings`; Zod strips unknown keys by
+    // default, which would silently lose the value — the schemas accept
+    // it as the servingsToCook fallback and the save layer consumes it.
+    const parsed = MealInputSchema.parse({
+      title: 'Dinner',
+      recipes: [{recipeId, servings: 3}],
+      ingredients: [{name: 'Rice', servings: 2}],
+    });
+    expect(parsed.recipes[0]).toEqual({recipeId, servings: 3});
+    expect(parsed.ingredients?.[0]).toEqual({name: 'Rice', servings: 2});
+    const plan = MealPlanInputSchema.parse({
+      title: 'Week',
+      entries: [{recipeId, servings: 5}],
+    });
+    expect(plan.entries[0]).toEqual({recipeId, servings: 5});
+  });
+
   test('MealInputSchema rejects empty title', () => {
     expect(() =>
       MealInputSchema.parse({title: '', recipes: [{recipeId}]}),
