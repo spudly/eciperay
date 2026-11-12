@@ -23,11 +23,13 @@ const createMealPlanEditFormActions = (
       previous: fields.selectedKeys,
       quantityByKey: fields.quantityByKey,
       servingsByRecipeId: fields.servingsByRecipeId,
+      servingsToEatByRecipeId: fields.servingsToEatByRecipeId,
       recipes,
     });
     fields.setSelectedKeys(next.selectedKeys);
     fields.setQuantityByKey(next.quantityByKey);
     fields.setServingsByRecipeId(next.servingsByRecipeId);
+    fields.setServingsToEatByRecipeId(next.servingsToEatByRecipeId);
   };
   return {
     // The autocomplete contract (#359): selecting a result adds it (a
@@ -53,6 +55,7 @@ const createMealPlanEditFormActions = (
         selectedKeys: fields.selectedKeys,
         quantityByKey: fields.quantityByKey,
         servingsByRecipeId: fields.servingsByRecipeId,
+        servingsToEatByRecipeId: fields.servingsToEatByRecipeId,
       }),
   };
 };
@@ -161,6 +164,7 @@ export const useMealPlanEditForm = (args: {
     selectedEntries,
     quantityByKey: fields.quantityByKey,
     servingsByRecipeId: fields.servingsByRecipeId,
+    servingsToEatByRecipeId: fields.servingsToEatByRecipeId,
     setTitle: fields.setTitle,
     setNotes: fields.setNotes,
     setStartsOn: fields.setStartsOn,
@@ -169,6 +173,7 @@ export const useMealPlanEditForm = (args: {
     handleRemoveEntry: actions.handleRemoveEntry,
     setQuantityByKey: fields.setQuantityByKey,
     setServingsByRecipeId: fields.setServingsByRecipeId,
+    setServingsToEatByRecipeId: fields.setServingsToEatByRecipeId,
     buildInput: actions.buildInput,
   };
 };

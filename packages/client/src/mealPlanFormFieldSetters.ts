@@ -17,7 +17,7 @@ const patchMealPlanDraft = (
 
 const createRecordFieldUpdater = (
   setDraft: Dispatch<SetStateAction<MealPlanFormDraft>>,
-  field: 'quantityByKey' | 'servingsByRecipeId',
+  field: 'quantityByKey' | 'servingsByRecipeId' | 'servingsToEatByRecipeId',
 ): RecordFieldUpdater => {
   return value => {
     setDraft(current => ({
@@ -47,6 +47,10 @@ export const createMealPlanFormFieldSetters = (
     setServingsByRecipeId: createRecordFieldUpdater(
       setDraft,
       'servingsByRecipeId',
+    ),
+    setServingsToEatByRecipeId: createRecordFieldUpdater(
+      setDraft,
+      'servingsToEatByRecipeId',
     ),
   };
 };

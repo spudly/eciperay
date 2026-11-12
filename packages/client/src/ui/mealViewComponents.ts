@@ -44,13 +44,17 @@ export type MealFormViewProps = {
   notes: string;
   selectedRecipeIds: string[];
   recipeOptions: MealFormRecipeOption[];
+  /** Servings to cook by recipe id (#363). */
   servingsByRecipeId: Record<string, number>;
+  /** Servings to eat by recipe id (#363). */
+  servingsToEatByRecipeId: Record<string, number>;
   saving: boolean;
   error?: string | null;
   onTitleChange: (value: string) => void;
   onNotesChange: (value: string) => void;
   onToggleRecipe: (recipeId: string) => void;
   onServingsChange: (recipeId: string, servings: number) => void;
+  onServingsToEatChange: (recipeId: string, servings: number) => void;
   onSubmit: () => void;
 };
 
@@ -90,7 +94,10 @@ export type MealPlanFormViewProps = {
    */
   entryOptionsLoading?: boolean;
   quantityByKey: Record<string, number>;
+  /** Servings to cook by recipe id (#363). */
   servingsByRecipeId: Record<string, number>;
+  /** Servings to eat by recipe id (#363). */
+  servingsToEatByRecipeId: Record<string, number>;
   saving: boolean;
   error?: string | null;
   onTitleChange: (value: string) => void;
@@ -100,6 +107,7 @@ export type MealPlanFormViewProps = {
   onToggleEntry: (key: string) => void;
   onQuantityChange: (key: string, quantity: number) => void;
   onRecipeServingsChange: (recipeId: string, servings: number) => void;
+  onRecipeServingsToEatChange: (recipeId: string, servings: number) => void;
   onSubmit: () => void;
 };
 

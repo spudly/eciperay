@@ -283,6 +283,7 @@ export {
 export {nutritionTabRows, type NutritionTabRow} from './nutritionTabRows.js';
 export {
   buildMealInputFromForm,
+  buildWeeklyTotalsBand,
   buildMealPlanInputFromForm,
   defaultNutritionGoals,
   formatSimpleNutrition,

@@ -1,5 +1,6 @@
 import {
   buildMealInputFromForm,
+  buildWeeklyTotalsBand,
   buildMealPlanInputFromForm,
   defaultNutritionGoals,
   formatSimpleNutrition,
@@ -70,7 +71,7 @@ describe('mealUiHelpers', () => {
     ).toEqual({
       title: 'Dinner',
       notes: 'notes',
-      recipes: [{recipeId: 'r1', servings: 3}],
+      recipes: [{recipeId: 'r1', servingsToCook: 3, servingsToEat: undefined}],
     });
 
     expect(
@@ -83,7 +84,9 @@ describe('mealUiHelpers', () => {
     ).toEqual({
       title: 'Dinner',
       notes: null,
-      recipes: [{recipeId: 'r1', servings: undefined}],
+      recipes: [
+        {recipeId: 'r1', servingsToCook: undefined, servingsToEat: undefined},
+      ],
     });
 
     const key = mealPlanEntryKey('meal', 'm1');
@@ -101,7 +104,12 @@ describe('mealUiHelpers', () => {
       }).entries,
     ).toEqual([
       {mealId: 'm1', quantity: 2},
-      {recipeId: 'r1', quantity: 1, servings: 2},
+      {
+        recipeId: 'r1',
+        quantity: 1,
+        servingsToCook: 2,
+        servingsToEat: undefined,
+      },
     ]);
 
     expect(
@@ -121,7 +129,12 @@ describe('mealUiHelpers', () => {
       endsOn: null,
       entries: [
         {mealId: 'm1', quantity: 1},
-        {recipeId: 'r1', quantity: 1, servings: undefined},
+        {
+          recipeId: 'r1',
+          quantity: 1,
+          servingsToCook: undefined,
+          servingsToEat: undefined,
+        },
       ],
     });
   });
@@ -133,14 +146,48 @@ describe('mealUiHelpers', () => {
       selectedRecipeIds: [],
       servingsByRecipeId: {},
       formIngredients: [
-        {id: 'a', name: ' Rice ', quantity: '2', unit: ' cups ', servings: '2'},
-        {id: 'b', name: 'Protein shake', quantity: '', unit: '', servings: ''},
-        {id: 'c', name: '  ', quantity: '1', unit: '', servings: '1'},
+        {
+          id: 'a',
+          name: ' Rice ',
+          quantity: '2',
+          unit: ' cups ',
+          servings: '2',
+          servingsToEat: '1',
+        },
+        {
+          id: 'b',
+          name: 'Protein shake',
+          quantity: '',
+          unit: '',
+          servings: '',
+          servingsToEat: '',
+        },
+        {
+          id: 'c',
+          name: '  ',
+          quantity: '1',
+          unit: '',
+          servings: '1',
+          servingsToEat: '1',
+        },
       ],
     });
     expect(input.ingredients).toEqual([
-      {name: 'Rice', quantity: 2, unit: 'cups', servings: 2},
-      {name: 'Protein shake', quantity: null, unit: null, servings: 1},
+      {
+        name: 'Rice',
+        quantity: 2,
+        unit: 'cups',
+        servingsToCook: 2,
+        servingsToEat: 1,
+      },
+      // A blank eat field defaults to the entry's servings-to-cook.
+      {
+        name: 'Protein shake',
+        quantity: null,
+        unit: null,
+        servingsToCook: 1,
+        servingsToEat: 1,
+      },
     ]);
 
     // An explicitly empty row list still sends the key (full replace),
@@ -170,7 +217,14 @@ describe('mealUiHelpers', () => {
         selectedRecipeIds: [],
         servingsByRecipeId: {},
         formIngredients: [
-          {id: 'a', name: 'Rice', quantity: 'lots', unit: '', servings: '1'},
+          {
+            id: 'a',
+            name: 'Rice',
+            quantity: 'lots',
+            unit: '',
+            servings: '1',
+            servingsToEat: '1',
+          },
         ],
       }),
     ).toThrow(/valid quantity/);
@@ -193,12 +247,20 @@ describe('mealUiHelpers', () => {
           quantity: '',
           unit: 'u'.repeat(50),
           servings: '1',
+          servingsToEat: '1',
         },
       ])().ingredients,
     ).toHaveLength(1);
     expect(
       build([
-        {id: 'a', name: 'x'.repeat(201), quantity: '', unit: '', servings: '1'},
+        {
+          id: 'a',
+          name: 'x'.repeat(201),
+          quantity: '',
+          unit: '',
+          servings: '1',
+          servingsToEat: '1',
+        },
       ]),
     ).toThrow(/200 characters/);
     expect(
@@ -209,12 +271,22 @@ describe('mealUiHelpers', () => {
           quantity: '',
           unit: 'u'.repeat(51),
           servings: '1',
+          servingsToEat: '1',
         },
       ]),
     ).toThrow(/50 characters/);
     expect(
-      build([{id: 'a', name: 'Rice', quantity: '', unit: '', servings: '1.5'}]),
-    ).toThrow(/valid servings/);
+      build([
+        {
+          id: 'a',
+          name: 'Rice',
+          quantity: '',
+          unit: '',
+          servings: '1.5',
+          servingsToEat: '1',
+        },
+      ]),
+    ).toThrow(/valid servings to cook/);
   });
 
   test('hydrates form rows from stored meal ingredients (#362)', () => {
@@ -225,7 +297,8 @@ describe('mealUiHelpers', () => {
           quantity: 2,
           unit: 'cups',
           sortOrder: 0,
-          servings: 2,
+          servingsToCook: 4,
+          servingsToEat: 2,
           fiberG: null,
           sugarG: null,
           sodiumMg: null,
@@ -244,8 +317,54 @@ describe('mealUiHelpers', () => {
         name: 'Rice',
         quantity: '2',
         unit: 'cups',
-        servings: '2',
+        servings: '4',
+        servingsToEat: '2',
       },
     ]);
+  });
+
+  test('builds the weekly totals band from eaten totals and per-day averages (#363)', () => {
+    const nutrition = {
+      calories: 1400,
+      proteinG: 70,
+      carbsG: 140,
+      fatG: 35,
+      fiberG: 14,
+      sugarG: 7,
+      sodiumMg: 700,
+      preparedWeightG: 1400,
+      satietyScore: 50,
+      status: 'ready' as const,
+      perDay: {
+        calories: 200,
+        proteinG: 10,
+        carbsG: 20,
+        fatG: 5,
+        fiberG: 2,
+        sugarG: 1,
+        sodiumMg: 100,
+        preparedWeightG: 200,
+        satietyScore: 50,
+        status: 'ready' as const,
+      },
+    };
+    expect(buildWeeklyTotalsBand(nutrition)).toEqual({
+      totals: [
+        {label: 'Calories · Weekly total', valueLabel: '1400 cal'},
+        {label: 'Protein · Weekly total', valueLabel: '70g protein'},
+        {label: 'Carbs · Weekly total', valueLabel: '140g carbs'},
+        {label: 'Fat · Weekly total', valueLabel: '35g fat'},
+      ],
+      averages: [
+        {label: 'Calories · Daily average', valueLabel: '200 cal'},
+        {label: 'Protein · Daily average', valueLabel: '10g protein'},
+        {label: 'Carbs · Daily average', valueLabel: '20g carbs'},
+        {label: 'Fat · Daily average', valueLabel: '5g fat'},
+      ],
+    });
+    expect(buildWeeklyTotalsBand(null)).toBeNull();
+    expect(
+      buildWeeklyTotalsBand({...nutrition, perDay: null})?.averages,
+    ).toEqual([]);
   });
 });
