@@ -51,6 +51,12 @@ just the landing/Discover/recipe starter set.
 
 ## Spike (next step in this tranche)
 
+First spike step landed: the public-recipe data load now lives in
+`packages/server/src/lib/loadPublicRecipe.ts` (extracted from the
+`getPublicRecipe` HTTP handler, which keeps identical status/body
+behavior), so the SSR renderer can load view data through the server's
+own data access with no internal HTTP hop.
+
 - Server-render ONE public page (`/recipe/:id/:slug`, PublicRecipePage)
   with `react-dom/server` inside the Express process, reusing the DS page
   components and the server's own data access (no internal HTTP hop).
