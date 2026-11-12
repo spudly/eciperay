@@ -21,17 +21,26 @@ vi.mock('../lib/analytics.js', () => ({
   disablePostHog: () => mockDisablePostHog(),
 }));
 
+// #460 tranche 1: the former AnalyticsConsentBanner.noPosthog.test.tsx
+// is merged below. The two files differed only in the mocked
+// POSTHOG_KEY, so the env mock now reads it through a getter over a
+// hoisted mutable value that each describe sets in beforeEach.
+const posthogKeyState = vi.hoisted(() => ({value: 'phc_test'}));
+
 vi.mock('../lib/env.js', async importOriginal => {
   const actual = await importOriginal<typeof import('../lib/env.js')>();
   return {
     ...actual,
-    POSTHOG_KEY: 'phc_test',
+    get POSTHOG_KEY() {
+      return posthogKeyState.value;
+    },
     POSTHOG_HOST: 'https://us.i.posthog.com',
   };
 });
 
 describe('AnalyticsConsentBanner', () => {
   beforeEach(() => {
+    posthogKeyState.value = 'phc_test';
     localStorage.clear();
     mockEnablePostHog.mockClear();
     mockDisablePostHog.mockClear();
@@ -83,6 +92,25 @@ describe('AnalyticsConsentBanner', () => {
 
   test('stays hidden when consent was already stored', async () => {
     localStorage.setItem('eciperay.analyticsConsent', 'accepted');
+    await renderWithProviders(<AnalyticsConsentBanner />, {withAuth: false});
+    expect(
+      screen.queryByRole('dialog', {name: /cookie and analytics consent/i}),
+    ).not.toBeInTheDocument();
+  });
+});
+
+// Former AnalyticsConsentBanner.noPosthog.test.tsx.
+describe('AnalyticsConsentBanner without PostHog', () => {
+  beforeEach(() => {
+    posthogKeyState.value = '';
+    localStorage.clear();
+  });
+
+  afterEach(() => {
+    posthogKeyState.value = 'phc_test';
+  });
+
+  test('does not render when analytics is not configured', async () => {
     await renderWithProviders(<AnalyticsConsentBanner />, {withAuth: false});
     expect(
       screen.queryByRole('dialog', {name: /cookie and analytics consent/i}),

@@ -1,4 +1,8 @@
+import {jest} from '@jest/globals';
 import request from 'supertest';
+
+import {RecipeImportError} from '../../lib/recipeImportToInput.js';
+import {makeRecipeDetail} from '../../test/fixtures/recipe.js';
 
 import {makeQueryResult} from '../../test/fixtures/queryResult.js';
 import {createMockQuery} from '../../test/mockQuery.js';
@@ -16,6 +20,59 @@ import {
 
 const mockQuery = createMockQuery();
 const getApp = lazyTestApp({query: mockQuery});
+
+// #460 tranche 1: the former qualifier-segment files for this route
+// (createAiSessions.anthropic / .prepare / .prepareRethrow /
+// .recipe / .recipeErrors / .recipeNotFound / .recipeRethrow) are
+// merged below. Two of them mocked prepareImportedRecipeInput and
+// four mocked saveRecipeFromInput, each with a different scenario,
+// so the merges sit behind per-describe mutable mock factories:
+// each factory delegates to a jest.fn whose implementation a
+// describe installs in beforeEach; the default implementation
+// (installed by the root beforeEach) is the real module, loaded
+// before the mocks were registered.
+const actualPrepareModule =
+  await import('../../lib/prepareImportedRecipeInput.js');
+const actualSaveRecipeModule = await import('../../lib/saveRecipeFromInput.js');
+
+const {RecipeNotFoundError} = actualSaveRecipeModule;
+
+const mockPrepareImportedRecipeInput =
+  jest.fn<typeof actualPrepareModule.prepareImportedRecipeInput>();
+const mockSaveRecipeFromInput =
+  jest.fn<typeof actualSaveRecipeModule.saveRecipeFromInput>();
+const mockSaveNewRecipeFromInput =
+  jest.fn<typeof actualSaveRecipeModule.saveNewRecipeFromInput>();
+
+jest.unstable_mockModule('../../lib/prepareImportedRecipeInput.js', () => ({
+  prepareImportedRecipeInput: (
+    ...args: Parameters<typeof actualPrepareModule.prepareImportedRecipeInput>
+  ) => mockPrepareImportedRecipeInput(...args),
+}));
+
+jest.unstable_mockModule('../../lib/saveRecipeFromInput.js', () => ({
+  saveRecipeFromInput: (
+    ...args: Parameters<typeof actualSaveRecipeModule.saveRecipeFromInput>
+  ) => mockSaveRecipeFromInput(...args),
+  saveNewRecipeFromInput: (
+    ...args: Parameters<typeof actualSaveRecipeModule.saveNewRecipeFromInput>
+  ) => mockSaveNewRecipeFromInput(...args),
+  RecipeNotFoundError,
+}));
+
+// Default: every mocked module behaves as the real implementation.
+// Qualifier describes override only the factories they exercise.
+beforeEach(() => {
+  mockPrepareImportedRecipeInput.mockImplementation(
+    actualPrepareModule.prepareImportedRecipeInput,
+  );
+  mockSaveRecipeFromInput.mockImplementation(
+    actualSaveRecipeModule.saveRecipeFromInput,
+  );
+  mockSaveNewRecipeFromInput.mockImplementation(
+    actualSaveRecipeModule.saveNewRecipeFromInput,
+  );
+});
 
 const SESSION_ID = 'session-uuid-1';
 const PROMPT = 'simple chocolate chip cookies for 12';
@@ -69,6 +126,25 @@ const makeSessionRow = (overrides: Partial<SessionRow> = {}): SessionRow => ({
   updated_at: '2024-01-01T00:00:00.000Z',
   ...overrides,
 });
+
+// The preview-ready session row shared by the former
+// createAiSessions.recipe* files.
+const previewSessionRow = {
+  id: SESSION_ID,
+  user_id: 'user-uuid-1',
+  phase: 'preview_ready',
+  messages: [],
+  approved_plan: 'Plan',
+  proposed_recipe: {
+    title: 'Cookies',
+    servings: 12,
+    ingredients: [],
+    instructions: [],
+  },
+  change_summary: 'AI recipe',
+  created_at: '2024-01-01T00:00:00.000Z',
+  updated_at: '2024-01-01T00:00:00.000Z',
+};
 
 describe('POST /recipes/import/ai/sessions', () => {
   beforeEach(() => {
@@ -517,5 +593,239 @@ describe('AI quota 402s', () => {
           "This feature requires the Plus plan. You're on the Free plan.",
       });
     }
+  });
+});
+
+// Former createAiSessions.anthropic.test.ts.
+describe('create AI session anthropic edge cases', () => {
+  beforeEach(() => {
+    mockQuery.mockReset();
+    anthropicCreateSpy.mockReset();
+  });
+
+  test('returns 502 when anthropic returns non-text content on approve', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    anthropicCreateSpy.mockResolvedValueOnce({
+      id: 'msg-test',
+      type: 'message',
+      role: 'assistant',
+      content: [{type: 'tool_use', id: 'tool-1', name: 'x', input: {}}],
+      model: 'claude-haiku-4-5',
+      stop_reason: 'end_turn',
+      stop_sequence: null,
+      usage: {input_tokens: 10, output_tokens: 10},
+    } as never);
+    mockQuery.mockImplementation(((sql: string) => {
+      if (sql.includes('from subscriptions')) {
+        return Promise.resolve(
+          makeQueryResult([{plan: 'plus', status: 'active'}]),
+        );
+      }
+      if (sql.includes('from ai_usage')) {
+        return Promise.resolve(makeQueryResult([{calls: 0}]));
+      }
+      if (sql.includes('from ai_create_sessions')) {
+        return Promise.resolve(makeQueryResult([makeSessionRow()]));
+      }
+      return Promise.resolve(makeQueryResult([]));
+    }) as typeof mockQuery);
+    const res = await request(getApp())
+      .post(`/api/recipes/import/ai/sessions/${SESSION_ID}/approve-plan`)
+      .set('Authorization', 'Bearer valid-token')
+      .send();
+    expect(res.status).toBe(502);
+  });
+});
+
+// Former createAiSessions.prepare.test.ts.
+describe('create AI session implement prepare errors', () => {
+  beforeEach(() => {
+    mockPrepareImportedRecipeInput.mockImplementation(async () => {
+      throw new RecipeImportError('invalid imported recipe');
+    });
+  });
+
+  beforeEach(() => {
+    mockQuery.mockReset();
+    anthropicCreateSpy.mockReset();
+  });
+
+  test('returns 422 when prepareImportedRecipeInput throws RecipeImportError', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    nockAnthropicMessage(IMPLEMENT_JSON);
+    mockQuery.mockImplementation(((sql: string) => {
+      if (sql.includes('from subscriptions')) {
+        return Promise.resolve(
+          makeQueryResult([{plan: 'plus', status: 'active'}]),
+        );
+      }
+      if (sql.includes('from ai_usage')) {
+        return Promise.resolve(makeQueryResult([{calls: 0}]));
+      }
+      if (sql.includes('from ai_create_sessions')) {
+        return Promise.resolve(makeQueryResult([makeSessionRow()]));
+      }
+      return Promise.resolve(makeQueryResult([]));
+    }) as typeof mockQuery);
+    const res = await request(getApp())
+      .post(`/api/recipes/import/ai/sessions/${SESSION_ID}/approve-plan`)
+      .set('Authorization', 'Bearer valid-token')
+      .send();
+    expect(res.status).toBe(422);
+    expect(res.body.error).toBe('invalid imported recipe');
+  });
+});
+
+// Former createAiSessions.prepareRethrow.test.ts.
+describe('create AI session implement prepare rethrow', () => {
+  beforeEach(() => {
+    mockPrepareImportedRecipeInput.mockImplementation(async () => {
+      throw new Error('prepare failed');
+    });
+  });
+
+  beforeEach(() => {
+    mockQuery.mockReset();
+    anthropicCreateSpy.mockReset();
+  });
+
+  test('returns 500 when prepareImportedRecipeInput throws unexpectedly', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    nockAnthropicMessage(IMPLEMENT_JSON);
+    mockQuery.mockImplementation(((sql: string) => {
+      if (sql.includes('from subscriptions')) {
+        return Promise.resolve(
+          makeQueryResult([{plan: 'plus', status: 'active'}]),
+        );
+      }
+      if (sql.includes('from ai_usage')) {
+        return Promise.resolve(makeQueryResult([{calls: 0}]));
+      }
+      if (sql.includes('from ai_create_sessions')) {
+        return Promise.resolve(makeQueryResult([makeSessionRow()]));
+      }
+      return Promise.resolve(makeQueryResult([]));
+    }) as typeof mockQuery);
+    const res = await request(getApp())
+      .post(`/api/recipes/import/ai/sessions/${SESSION_ID}/approve-plan`)
+      .set('Authorization', 'Bearer valid-token')
+      .send();
+    expect(res.status).toBe(500);
+  });
+});
+
+// Former createAiSessions.recipe.test.ts.
+describe('POST /recipes/import/ai/sessions/:sessionId/create-recipe (mocked save)', () => {
+  beforeEach(() => {
+    mockSaveNewRecipeFromInput.mockImplementation(async () => ({
+      recipeId: 'recipe-uuid-1',
+      versionId: 'version-uuid-1',
+      recipe: makeRecipeDetail(),
+    }));
+    mockSaveRecipeFromInput.mockImplementation(async () => {
+      throw new Error('not used');
+    });
+  });
+
+  test('creates recipe from preview', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    let state = previewSessionRow;
+    mockQuery.mockImplementation(((sql: string) => {
+      if (sql.includes('from subscriptions')) {
+        return Promise.resolve(
+          makeQueryResult([{plan: 'plus', status: 'active'}]),
+        );
+      }
+      if (sql.includes('from ai_usage')) {
+        return Promise.resolve(makeQueryResult([{calls: 0}]));
+      }
+      if (sql.includes('from ai_create_sessions')) {
+        return Promise.resolve(makeQueryResult([state]));
+      }
+      if (sql.includes('update ai_create_sessions')) {
+        state = {...state, phase: 'completed'};
+        return Promise.resolve(makeQueryResult([state]));
+      }
+      return Promise.resolve(makeQueryResult([]));
+    }) as typeof mockQuery);
+
+    const res = await request(getApp())
+      .post(`/api/recipes/import/ai/sessions/${SESSION_ID}/create-recipe`)
+      .set('Authorization', 'Bearer valid-token')
+      .send();
+
+    expect(res.status).toBe(201);
+    expect(res.body.recipeId).toBe('recipe-uuid-1');
+    expect(res.body.session.phase).toBe('completed');
+  });
+});
+
+// Former createAiSessions.recipeErrors.test.ts.
+describe('POST /recipes/import/ai/sessions/:sessionId/create-recipe errors', () => {
+  beforeEach(() => {
+    mockSaveNewRecipeFromInput.mockImplementation(async () => {
+      throw new RecipeImportError('invalid recipe');
+    });
+    mockSaveRecipeFromInput.mockImplementation(async () => {
+      throw new Error('not used');
+    });
+  });
+
+  test('returns 422 when save fails validation', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
+    mockQuery.mockResolvedValueOnce(makeQueryResult([previewSessionRow]));
+    const res = await request(getApp())
+      .post(`/api/recipes/import/ai/sessions/${SESSION_ID}/create-recipe`)
+      .set('Authorization', 'Bearer valid-token')
+      .send();
+    expect(res.status).toBe(422);
+    expect(res.body.error).toBe('invalid recipe');
+  });
+});
+
+// Former createAiSessions.recipeNotFound.test.ts.
+describe('POST /recipes/import/ai/sessions/:sessionId/create-recipe not found', () => {
+  beforeEach(() => {
+    mockSaveNewRecipeFromInput.mockImplementation(async () => {
+      throw new RecipeNotFoundError();
+    });
+    mockSaveRecipeFromInput.mockImplementation(async () => {
+      throw new Error('not used');
+    });
+  });
+
+  test('returns 404 when save cannot find recipe', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'plus');
+    mockQuery.mockResolvedValueOnce(makeQueryResult([previewSessionRow]));
+    const res = await request(getApp())
+      .post(`/api/recipes/import/ai/sessions/${SESSION_ID}/create-recipe`)
+      .set('Authorization', 'Bearer valid-token')
+      .send();
+    expect(res.status).toBe(404);
+    expect(res.body.error).toBe('Recipe not found');
+  });
+});
+
+// Former createAiSessions.recipeRethrow.test.ts.
+describe('POST /recipes/import/ai/sessions/:sessionId/create-recipe rethrow', () => {
+  beforeEach(() => {
+    mockSaveNewRecipeFromInput.mockImplementation(async () => {
+      throw new Error('save boom');
+    });
+    mockSaveRecipeFromInput.mockImplementation(async () => {
+      throw new Error('not used');
+    });
+  });
+
+  test('propagates unexpected save errors', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockQuery.mockResolvedValueOnce(makeQueryResult([previewSessionRow]));
+    const res = await request(getApp())
+      .post(`/api/recipes/import/ai/sessions/${SESSION_ID}/create-recipe`)
+      .set('Authorization', 'Bearer valid-token')
+      .send();
+    expect(res.status).toBe(500);
   });
 });

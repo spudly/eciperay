@@ -3,11 +3,46 @@ import userEvent from '@testing-library/user-event';
 import {http, HttpResponse} from 'msw';
 import {vi} from 'vitest';
 
+import {eciperay} from '../../lib/api.js';
 import {makeRecipeDetail} from '../../test/fixtures/recipe.js';
 import {server} from '../../test/msw/server.js';
 import {renderWithProviders} from '../../test/testUtils.js';
 
 import {RecipeVisibilityControls} from './RecipeVisibilityControls.js';
+
+// #460 tranche 1: the former RecipeVisibilityControls.guard.test.tsx
+// is merged below. It replaced the DS Button with a double that
+// always dispatches onPress; the canonical tests need the real
+// Button, so the mock below swaps in the double only while the
+// hoisted flag is set (the guard describe sets it in beforeEach).
+const buttonDoubleState = vi.hoisted(() => ({enabled: false}));
+
+vi.mock('@spudly/ui', async importOriginal => {
+  const actual = await importOriginal<typeof import('@spudly/ui')>();
+  const React = await import('react');
+  type DoubleProps = {onPress?: () => void; children?: React.ReactNode};
+  const ButtonDouble = ({onPress, children}: DoubleProps) =>
+    React.createElement(
+      'button',
+      {
+        type: 'button',
+        onClick: () => {
+          onPress?.();
+        },
+      },
+      children,
+    );
+  // @spudly/ui no longer exports a Button (the controls in this
+  // tree are native elements now); where an actual Button exists it
+  // is used whenever the double is not enabled.
+  const ActualButton = (actual as Record<string, unknown>)['Button'] as
+    React.ComponentType<DoubleProps & Record<string, unknown>> | undefined;
+  const Button = (props: DoubleProps & Record<string, unknown>) =>
+    buttonDoubleState.enabled || !ActualButton
+      ? React.createElement(ButtonDouble, props)
+      : React.createElement(ActualButton, props);
+  return {...actual, Button};
+});
 
 const API = 'http://localhost:8080';
 
@@ -181,9 +216,9 @@ describe('RecipeVisibilityControls', () => {
     ).toBeDisabled();
     expect(called).toBe(false);
     // The save handler's own consent guard is exercised separately in
-    // RecipeVisibilityControls.guard.test.tsx — the real DS Button
-    // suppresses activation while disabled, so no click dispatched to
-    // it here can reach the handler.
+    // the guard describe below — the real DS Button suppresses
+    // activation while disabled, so no click dispatched to it here
+    // can reach the handler.
   });
 
   test('can return a recipe to private visibility', async () => {
@@ -239,5 +274,80 @@ describe('RecipeVisibilityControls', () => {
     expect(
       screen.getByText(/This recipe will be discoverable by anyone/i),
     ).toBeInTheDocument();
+  });
+});
+
+// Former RecipeVisibilityControls.guard.test.tsx.
+/**
+ * The save handler's consent guard, exercised in isolation. The real DS Button
+ * suppresses activation while disabled, so no click dispatched to it can reach
+ * the handler — the guard (the second line of defense behind the disabled
+ * state) is only observable through a Button double that always dispatches
+ * onPress, the way a non-suppressing pressable would.
+ */
+describe('RecipeVisibilityControls save-handler consent guard', () => {
+  beforeEach(() => {
+    buttonDoubleState.enabled = true;
+  });
+
+  afterEach(() => {
+    buttonDoubleState.enabled = false;
+  });
+
+  test('does not publish when the handler is invoked without consent', async () => {
+    let called = false;
+    server.use(
+      http.patch(`${API}/api/recipes/:id/sharing`, () => {
+        called = true;
+        return HttpResponse.json(makeRecipeDetail({visibility: 'unlisted'}));
+      }),
+    );
+    // Observe the mutation itself, not only its downstream handler.
+    const patchSharing = vi.spyOn(eciperay.recipes, 'patchSharing');
+
+    await renderWithProviders(
+      <RecipeVisibilityControls
+        recipe={makeRecipeDetail()}
+        onActionMessage={() => {}}
+      />,
+    );
+
+    await userEvent.click(screen.getByLabelText(/Unlisted link/i));
+    await userEvent.click(screen.getByText('Save sharing settings'));
+    // Let any asynchronous save work settle before asserting none ran.
+    await new Promise(resolve => {
+      setTimeout(resolve, 100);
+    });
+    expect(patchSharing).not.toHaveBeenCalled();
+    expect(called).toBe(false);
+    patchSharing.mockRestore();
+  });
+
+  test('publishes through the double once consent is given', async () => {
+    const onActionMessage = vi.fn();
+    server.use(
+      http.patch(`${API}/api/recipes/:id/sharing`, () =>
+        HttpResponse.json({
+          ...makeRecipeDetail({visibility: 'unlisted'}),
+          shareToken: 'token-abc',
+        }),
+      ),
+    );
+
+    await renderWithProviders(
+      <RecipeVisibilityControls
+        recipe={makeRecipeDetail()}
+        onActionMessage={onActionMessage}
+      />,
+    );
+
+    await userEvent.click(screen.getByLabelText(/Unlisted link/i));
+    await userEvent.click(
+      screen.getByRole('checkbox', {name: 'Publishing consent'}),
+    );
+    await userEvent.click(screen.getByText('Save sharing settings'));
+    await waitFor(() => {
+      expect(onActionMessage).toHaveBeenCalledWith('Sharing settings updated');
+    });
   });
 });

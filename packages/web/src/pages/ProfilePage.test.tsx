@@ -1,3 +1,6 @@
+import {queryKeys} from '@eciperay/client';
+import type {Entitlement} from '@eciperay/types';
+import {focusManager, QueryClient} from '@tanstack/react-query';
 import {act, fireEvent, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {http, HttpResponse} from 'msw';
@@ -13,6 +16,17 @@ import {supabase} from '../lib/supabase.js';
 import {ProfilePage} from './ProfilePage.js';
 
 const mockUseAuth = vi.fn();
+
+// #460 tranche 1: the former ProfilePage.subscription.test.tsx and
+// ProfilePage.accountSwitch.test.tsx are merged below. All three
+// files share the single @eciperay/client mock above; each describe
+// installs the useAuth behavior it needs on mockUseAuth in
+// beforeEach — the canonical describe returns the email session,
+// the subscription describe returns the provider-less default
+// (no session), and the account-switch describe returns a session
+// whose user id follows authState, so the account can switch
+// mid-test while the component stays mounted.
+const authState = vi.hoisted(() => ({userId: 'user-a'}));
 const mockNavigate = vi.fn();
 
 vi.mock('@eciperay/client', async importOriginal => {
@@ -333,5 +347,403 @@ describe('ProfilePage', () => {
     await act(async () => {
       finishImport?.();
     });
+  });
+});
+
+// Former ProfilePage.subscription.test.tsx.
+describe('ProfilePage subscription section', () => {
+  const plusEntitlement: Entitlement = {
+    plan: 'plus',
+    status: 'active',
+    aiUsed: 3,
+    aiLimit: 200,
+    periodEndsAt: '2026-11-16T12:00:00.000Z',
+    paddleCustomerId: 'ctm_123',
+    cancelAtPeriodEnd: false,
+  };
+  beforeEach(() => {
+    mockUseAuth.mockReturnValue({session: null, isLoading: true});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  test('loads and displays the entitlement', async () => {
+    vi.spyOn(eciperay.account, 'getEntitlement').mockResolvedValue(
+      plusEntitlement,
+    );
+    await renderWithProviders(<ProfilePage />, {withAuth: false});
+    expect(await screen.findByText('Plus plan')).toBeInTheDocument();
+    expect(
+      screen.getByText('Active — renews Nov 16, 2026'),
+    ).toBeInTheDocument();
+  });
+
+  test('refetches the entitlement on window focus even while the cached entry is fresh', async () => {
+    const getEntitlement = vi
+      .spyOn(eciperay.account, 'getEntitlement')
+      .mockResolvedValue(plusEntitlement);
+    await renderWithProviders(<ProfilePage />, {withAuth: false});
+    expect(
+      await screen.findByText('Active — renews Nov 16, 2026'),
+    ).toBeInTheDocument();
+    // The user changes the subscription in the portal and returns
+    // while the cached entitlement is still fresh (the test client
+    // uses staleTime: Infinity): focus must refetch anyway, or the
+    // profile keeps showing the pre-portal plan/status.
+    getEntitlement.mockResolvedValue({
+      ...plusEntitlement,
+      cancelAtPeriodEnd: true,
+    });
+    await act(async () => {
+      focusManager.setFocused(false);
+      focusManager.setFocused(true);
+    });
+    expect(
+      await screen.findByText('Cancelling — access until Nov 16, 2026'),
+    ).toBeInTheDocument();
+    expect(getEntitlement).toHaveBeenCalledTimes(2);
+  });
+
+  test('reconciles a delayed webhook update without another focus event', async () => {
+    const freeEntitlement: Entitlement = {
+      plan: 'free',
+      status: null,
+      aiUsed: 0,
+      aiLimit: 25,
+      periodEndsAt: null,
+      paddleCustomerId: null,
+      cancelAtPeriodEnd: false,
+    };
+    // The first fetch beats the checkout webhook and returns the old
+    // (free) entitlement; the webhook then lands, but no further focus
+    // event occurs while the profile stays open. The bounded
+    // reconciliation cycle must refetch on its own and pick the new
+    // plan up.
+    const getEntitlement = vi
+      .spyOn(eciperay.account, 'getEntitlement')
+      .mockResolvedValueOnce(freeEntitlement)
+      .mockResolvedValue(plusEntitlement);
+    await renderWithProviders(<ProfilePage />, {withAuth: false});
+    expect(await screen.findByText('Free plan')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Plus plan', undefined, {timeout: 6000}),
+    ).toBeInTheDocument();
+    expect(getEntitlement.mock.calls.length).toBeGreaterThanOrEqual(2);
+  });
+
+  test('manage subscription pre-opens a tab and navigates it to the portal link', async () => {
+    vi.spyOn(eciperay.account, 'getEntitlement').mockResolvedValue(
+      plusEntitlement,
+    );
+    let resolvePortal!: (value: {url: string}) => void;
+    vi.spyOn(eciperay.billing, 'createPortalLink').mockImplementation(
+      () =>
+        new Promise<{url: string}>(resolve => {
+          resolvePortal = resolve;
+        }),
+    );
+    const portalTab = {
+      closed: false,
+      opener: {} as unknown,
+      location: {href: ''},
+      close: vi.fn(),
+    };
+    const open = vi
+      .spyOn(window, 'open')
+      .mockImplementation(() => portalTab as unknown as Window);
+    await renderWithProviders(<ProfilePage />, {withAuth: false});
+    await userEvent.click(
+      await screen.findByRole('button', {name: 'Manage subscription'}),
+    );
+    // The tab opens synchronously on click, before the request resolves,
+    // so the browser's popup blocker cannot eat it.
+    expect(open).toHaveBeenCalledWith('', '_blank');
+    expect(portalTab.location.href).toBe('');
+    resolvePortal({url: 'https://portal.example/session'});
+    await screen.findByRole('button', {name: 'Manage subscription'});
+    expect(portalTab.location.href).toBe('https://portal.example/session');
+    expect(portalTab.opener).toBeNull();
+    expect(portalTab.close).not.toHaveBeenCalled();
+  });
+
+  test('shows a clickable portal link when the pre-opened tab is blocked', async () => {
+    vi.spyOn(eciperay.account, 'getEntitlement').mockResolvedValue(
+      plusEntitlement,
+    );
+    vi.spyOn(eciperay.billing, 'createPortalLink').mockResolvedValue({
+      url: 'https://portal.example/session',
+    });
+    vi.spyOn(window, 'open').mockImplementation(() => null);
+    await renderWithProviders(<ProfilePage />, {withAuth: false});
+    await userEvent.click(
+      await screen.findByRole('button', {name: 'Manage subscription'}),
+    );
+    const link = await screen.findByRole('link', {
+      name: 'Open subscription portal',
+    });
+    expect(link).toHaveAttribute('href', 'https://portal.example/session');
+  });
+
+  test('check again reconciles with the server and shows the new plan', async () => {
+    const freeEntitlement: Entitlement = {
+      plan: 'free',
+      status: null,
+      aiUsed: 0,
+      aiLimit: 25,
+      periodEndsAt: null,
+      paddleCustomerId: null,
+      cancelAtPeriodEnd: false,
+    };
+    vi.spyOn(eciperay.account, 'getEntitlement').mockResolvedValue(
+      freeEntitlement,
+    );
+    const refresh = vi
+      .spyOn(eciperay.account, 'refreshEntitlement')
+      .mockResolvedValue(plusEntitlement);
+    await renderWithProviders(<ProfilePage />, {withAuth: false});
+    expect(await screen.findByText('Free plan')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', {name: 'Check again'}));
+    expect(await screen.findByText('Plus plan')).toBeInTheDocument();
+    expect(refresh).toHaveBeenCalledTimes(1);
+  });
+
+  test('check again cancels in-flight entitlement fetches before caching', async () => {
+    const cancelQueries = vi.spyOn(QueryClient.prototype, 'cancelQueries');
+    vi.spyOn(eciperay.account, 'getEntitlement').mockResolvedValue(
+      plusEntitlement,
+    );
+    vi.spyOn(eciperay.account, 'refreshEntitlement').mockResolvedValue(
+      plusEntitlement,
+    );
+    await renderWithProviders(<ProfilePage />, {withAuth: false});
+    await userEvent.click(
+      await screen.findByRole('button', {name: 'Check again'}),
+    );
+    expect(await screen.findByText('Plus plan')).toBeInTheDocument();
+    // A slower in-flight GET must not be able to land afterwards and
+    // overwrite the refreshed entitlement with its older snapshot.
+    expect(cancelQueries).toHaveBeenCalledWith({
+      queryKey: ['entitlement', 'anonymous'],
+    });
+  });
+
+  test('check again surfaces a refresh failure', async () => {
+    vi.spyOn(eciperay.account, 'getEntitlement').mockResolvedValue(
+      plusEntitlement,
+    );
+    vi.spyOn(eciperay.account, 'refreshEntitlement').mockRejectedValue(
+      new Error('billing not configured'),
+    );
+    await renderWithProviders(<ProfilePage />, {withAuth: false});
+    await userEvent.click(
+      await screen.findByRole('button', {name: 'Check again'}),
+    );
+    expect(
+      await screen.findByText('billing not configured'),
+    ).toBeInTheDocument();
+  });
+
+  test('does not show the checking hint while idle', async () => {
+    vi.spyOn(eciperay.account, 'getEntitlement').mockResolvedValue(
+      plusEntitlement,
+    );
+    await renderWithProviders(<ProfilePage />, {withAuth: false});
+    expect(await screen.findByText('Plus plan')).toBeInTheDocument();
+    expect(
+      screen.queryByText('Checking for the latest subscription status…'),
+    ).not.toBeInTheDocument();
+  });
+
+  test('shows an error when the entitlement fails to load', async () => {
+    vi.spyOn(eciperay.account, 'getEntitlement').mockRejectedValue(
+      new Error('boom'),
+    );
+    await renderWithProviders(<ProfilePage />, {withAuth: false});
+    expect(await screen.findByText('boom')).toBeInTheDocument();
+  });
+
+  test('shows an error and closes the pre-opened tab when the portal link fails', async () => {
+    vi.spyOn(eciperay.account, 'getEntitlement').mockResolvedValue(
+      plusEntitlement,
+    );
+    vi.spyOn(eciperay.billing, 'createPortalLink').mockRejectedValue(
+      new Error('portal down'),
+    );
+    const portalTab = {
+      closed: false,
+      opener: null,
+      location: {href: ''},
+      close: vi.fn(),
+    };
+    vi.spyOn(window, 'open').mockImplementation(
+      () => portalTab as unknown as Window,
+    );
+    await renderWithProviders(<ProfilePage />, {withAuth: false});
+    await userEvent.click(
+      await screen.findByRole('button', {name: 'Manage subscription'}),
+    );
+    expect(await screen.findByText('portal down')).toBeInTheDocument();
+    expect(portalTab.close).toHaveBeenCalledTimes(1);
+  });
+
+  test('navigates the pre-opened tab even when unmounted while the portal request is pending', async () => {
+    vi.spyOn(eciperay.account, 'getEntitlement').mockResolvedValue(
+      plusEntitlement,
+    );
+    let resolvePortal!: (value: {url: string}) => void;
+    vi.spyOn(eciperay.billing, 'createPortalLink').mockImplementation(
+      () =>
+        new Promise<{url: string}>(resolve => {
+          resolvePortal = resolve;
+        }),
+    );
+    const portalTab = {
+      closed: false,
+      opener: {} as unknown,
+      location: {href: ''},
+      close: vi.fn(),
+    };
+    vi.spyOn(window, 'open').mockImplementation(
+      () => portalTab as unknown as Window,
+    );
+    const view = await renderWithProviders(<ProfilePage />, {withAuth: false});
+    await userEvent.click(
+      await screen.findByRole('button', {name: 'Manage subscription'}),
+    );
+    // Leaving /profile mid-request must not strand the blank tab:
+    // per-call mutate callbacks are skipped after unmount, so the tab
+    // is driven from the mutateAsync promise instead.
+    view.unmount();
+    await act(async () => {
+      resolvePortal({url: 'https://portal.example/session'});
+    });
+    expect(portalTab.location.href).toBe('https://portal.example/session');
+    expect(portalTab.opener).toBeNull();
+    expect(portalTab.close).not.toHaveBeenCalled();
+  });
+
+  test('closes the pre-opened tab even when unmounted while the portal request is pending and then fails', async () => {
+    vi.spyOn(eciperay.account, 'getEntitlement').mockResolvedValue(
+      plusEntitlement,
+    );
+    let rejectPortal!: (reason: unknown) => void;
+    vi.spyOn(eciperay.billing, 'createPortalLink').mockImplementation(
+      () =>
+        new Promise<{url: string}>((_, reject) => {
+          rejectPortal = reject;
+        }),
+    );
+    const portalTab = {
+      closed: false,
+      opener: null,
+      location: {href: ''},
+      close: vi.fn(),
+    };
+    vi.spyOn(window, 'open').mockImplementation(
+      () => portalTab as unknown as Window,
+    );
+    const view = await renderWithProviders(<ProfilePage />, {withAuth: false});
+    await userEvent.click(
+      await screen.findByRole('button', {name: 'Manage subscription'}),
+    );
+    view.unmount();
+    await act(async () => {
+      rejectPortal(new Error('portal down'));
+    });
+    expect(portalTab.close).toHaveBeenCalledTimes(1);
+    expect(portalTab.location.href).toBe('');
+  });
+});
+
+// Former ProfilePage.accountSwitch.test.tsx.
+describe('ProfilePage subscription account switch during refresh', () => {
+  const freeEntitlement: Entitlement = {
+    plan: 'free',
+    status: null,
+    aiUsed: 0,
+    aiLimit: 25,
+    periodEndsAt: null,
+    paddleCustomerId: null,
+    cancelAtPeriodEnd: false,
+  };
+
+  const plusEntitlement: Entitlement = {
+    plan: 'plus',
+    status: 'active',
+    aiUsed: 3,
+    aiLimit: 200,
+    periodEndsAt: '2026-11-16T12:00:00.000Z',
+    paddleCustomerId: 'ctm_a',
+    cancelAtPeriodEnd: false,
+  };
+  beforeEach(() => {
+    mockUseAuth.mockImplementation(() => ({
+      session: {user: {id: authState.userId}},
+      isLoading: false,
+    }));
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  test('a refresh response is cached under the account that started it', async () => {
+    authState.userId = 'user-a';
+    vi.spyOn(eciperay.account, 'getEntitlement').mockResolvedValue(
+      freeEntitlement,
+    );
+    let resolveRefresh!: (value: Entitlement) => void;
+    vi.spyOn(eciperay.account, 'refreshEntitlement').mockImplementation(
+      () =>
+        new Promise<Entitlement>(resolve => {
+          resolveRefresh = resolve;
+        }),
+    );
+    // Production-like cache retention: the shared QueryClient keeps
+    // an unobserved entry for minutes (React Query's default gcTime),
+    // which is exactly why a misdirected cache write would survive
+    // the account switch. The shared test client uses gcTime: 0,
+    // which would collect user-a's entry before the assertion.
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+          gcTime: 60_000,
+          staleTime: Infinity,
+          refetchOnWindowFocus: false,
+        },
+      },
+    });
+    const view = await renderWithProviders(<ProfilePage />, {
+      withAuth: false,
+      queryClient,
+    });
+    expect(await screen.findByText('Free plan')).toBeInTheDocument();
+
+    // user-a starts a "Check again" refresh; the POST stays pending.
+    await userEvent.click(screen.getByRole('button', {name: 'Check again'}));
+
+    // The session switches to user-b while the POST is in flight and
+    // the component stays mounted; user-b's own entitlement loads.
+    authState.userId = 'user-b';
+    view.rerender(<ProfilePage />);
+    expect(await screen.findByText('Free plan')).toBeInTheDocument();
+
+    // The pending refresh now resolves with user-a's Plus
+    // entitlement. It must land in user-a's cache entry only: cached
+    // under user-b, it would display user-a's plan and Paddle
+    // customer id on user-b's profile.
+    await act(async () => {
+      resolveRefresh(plusEntitlement);
+    });
+    expect(queryClient.getQueryData(queryKeys.entitlement('user-a'))).toEqual(
+      plusEntitlement,
+    );
+    expect(queryClient.getQueryData(queryKeys.entitlement('user-b'))).toEqual(
+      freeEntitlement,
+    );
+    expect(screen.queryByText('Plus plan')).not.toBeInTheDocument();
   });
 });
