@@ -48,6 +48,7 @@ type RecipeDetailRow = {
   ingredients: RecipeDetail['ingredients'];
   instructions: RecipeDetail['instructions'];
   tags: RecipeDetail['tags'];
+  author_display_name?: string | null;
 } & NutritionColumns &
   Partial<CommunityRatingColumns>;
 
@@ -216,7 +217,8 @@ export const mapRowToPublicRecipeDetail = (
   row: RecipeDetailRow,
 ): PublicRecipeDetail => {
   const {userId, ...recipe} = mapRowToRecipeDetail(row);
-  return recipe;
+  void userId;
+  return {...recipe, authorDisplayName: row.author_display_name ?? null};
 };
 
 export const mapRowToVersionSummary = (

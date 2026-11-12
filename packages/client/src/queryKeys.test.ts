@@ -80,5 +80,12 @@ describe('queryKeys', () => {
     expect(queryKeys.entitlement('user-2')).not.toEqual(
       queryKeys.entitlement('user-1'),
     );
+    expect(queryKeys.authorDisplay('user-1')).toEqual([
+      'authorDisplay',
+      'user-1',
+    ]);
+    expect(queryKeys.authorDisplay('user-2')).not.toEqual(
+      queryKeys.authorDisplay('user-1'),
+    );
   });
 });

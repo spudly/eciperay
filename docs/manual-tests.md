@@ -826,6 +826,13 @@ plan-state rendering and section layout. The cases below are manual._
    **Expected:** the flow completes and reports what was imported; no existing
    recipe is silently overwritten or corrupted (duplicates follow the import
    duplicate behavior and are reported).
+7. **Author display on public recipes (#411).** In the "Author name on public
+   recipes" section, set a display name, leave "Show my name as the author" on,
+   and save. Signed out, open one of your public recipes (and Discover).
+   **Expected:** the name appears as the recipe's author. Then turn "Show my
+   name as the author" off and save. Signed out, reload the recipe and Discover.
+   **Expected:** no author name is shown anywhere for your recipes, and the
+   recipe page's JSON-LD has no `author` entry.
 
 **Run when:** `packages/app/src/screens/ProfileScreen.tsx`,
 `packages/app/src/hosts/profile/**`, `packages/web/src/pages/ProfilePage.tsx`,

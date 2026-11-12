@@ -13,6 +13,7 @@ import {createToken, listTokens, revokeToken} from './personalAccessTokens.js';
 import {exportAccount} from './exportAccount.js';
 import {getEntitlement} from './getEntitlement.js';
 import {refreshEntitlement} from './refreshEntitlement.js';
+import {getAuthorDisplay, putAuthorDisplay} from './authorDisplay.js';
 import {getNutritionGoals, putNutritionGoals} from './nutritionGoals.js';
 
 type QueryFn = typeof defaultQuery;
@@ -40,6 +41,12 @@ export const createAccountRouter = (queryFn: QueryFn) => {
   );
   router.put('/nutrition-goals', requireAuth, (req, res) =>
     putNutritionGoals(req as AuthedRequest, res, queryFn),
+  );
+  router.get('/author-display', requireAuth, (req, res) =>
+    getAuthorDisplay(req as AuthedRequest, res, queryFn),
+  );
+  router.put('/author-display', requireAuth, (req, res) =>
+    putAuthorDisplay(req as AuthedRequest, res, queryFn),
   );
   router.delete('/', requireAuth, (req, res) =>
     deleteAccount(req as AuthedRequest, res, queryFn),

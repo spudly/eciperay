@@ -51,6 +51,7 @@ export {
   requiresPublishingConsent,
 } from './recipeVisibility.js';
 export {
+  buildDiscoverItemListJsonLd,
   buildRecipeJsonLd,
   buildRecipeMetaDescription,
   buildRecipePageTitle,

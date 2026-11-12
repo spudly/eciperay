@@ -25,6 +25,7 @@ export const makeRecipeDetailRow = (
     created_via?: RecipeDetail['createdVia'];
     created_at?: string;
     updated_at?: string;
+    author_display_name?: string | null;
   } = {},
 ) => {
   const detail = makeRecipeDetail(overrides);
@@ -69,5 +70,6 @@ export const makeRecipeDetailRow = (
     nutrition_updated_at: null,
     community_rating_average: detail.communityRating?.average ?? null,
     community_rating_count: detail.communityRating?.count ?? 0,
+    author_display_name: overrides.author_display_name ?? null,
   };
 };

@@ -210,6 +210,11 @@ export const SyncUserSchema = z.object({
   displayName: z.string().max(100).optional(),
 });
 
+export const AuthorDisplaySchema = z.object({
+  displayName: z.string().max(100).nullable(),
+  showOnPublicRecipes: z.boolean(),
+});
+
 const GenerateRecipeImageIngredientSchema = z.object({
   name: z.string().min(1),
   quantity: z.number().nullable().optional(),

@@ -8,12 +8,13 @@ import {RecipePageHead} from './RecipePageHead.js';
 
 describe('RecipePageHead', () => {
   test('sets document title, meta tags, canonical link, and JSON-LD', async () => {
-    const {userId: _userId, ...recipe} = makeRecipeDetail({
+    const {userId: _userId, ...detail} = makeRecipeDetail({
       title: 'SEO Pasta',
       description: 'A public pasta recipe.',
       imageUrl: 'https://cdn.example/pasta.jpg',
       visibility: 'public',
     });
+    const recipe = {...detail, authorDisplayName: 'Chef Alex'};
 
     await renderWithProviders(
       <RecipePageHead
@@ -49,11 +50,12 @@ describe('RecipePageHead', () => {
   });
 
   test('uses summary twitter card when recipe has no image', async () => {
-    const {userId: _userId, ...recipe} = makeRecipeDetail({
+    const {userId: _userId, ...detail} = makeRecipeDetail({
       title: 'Plain Salad',
       imageUrl: null,
       visibility: 'public',
     });
+    const recipe = {...detail, authorDisplayName: 'Chef Alex'};
 
     await renderWithProviders(
       <RecipePageHead
@@ -74,10 +76,11 @@ describe('RecipePageHead', () => {
   });
 
   test('includes aggregateRating in JSON-LD when provided', async () => {
-    const {userId: _userId, ...recipe} = makeRecipeDetail({
+    const {userId: _userId, ...detail} = makeRecipeDetail({
       title: 'Rated Soup',
       visibility: 'public',
     });
+    const recipe = {...detail, authorDisplayName: 'Chef Alex'};
 
     await renderWithProviders(
       <RecipePageHead
@@ -110,10 +113,11 @@ describe('RecipePageHead', () => {
     canonical.href = 'https://old.example/recipe';
     document.head.appendChild(canonical);
 
-    const {userId: _userId, ...recipe} = makeRecipeDetail({
+    const {userId: _userId, ...detail} = makeRecipeDetail({
       title: 'Reused Tags',
       visibility: 'public',
     });
+    const recipe = {...detail, authorDisplayName: 'Chef Alex'};
 
     await renderWithProviders(
       <RecipePageHead
@@ -135,10 +139,11 @@ describe('RecipePageHead', () => {
   });
 
   test('updates existing head tags when props change', async () => {
-    const {userId: _userId, ...recipe} = makeRecipeDetail({
+    const {userId: _userId, ...detail} = makeRecipeDetail({
       title: 'First Title',
       visibility: 'public',
     });
+    const recipe = {...detail, authorDisplayName: 'Chef Alex'};
 
     const {rerender} = await renderWithProviders(
       <RecipePageHead
@@ -175,10 +180,11 @@ describe('RecipePageHead', () => {
 
   test('restores the previous document title on unmount', async () => {
     document.title = `Previous | ${RECIPE_SEO_SITE_NAME}`;
-    const {userId: _userId, ...recipe} = makeRecipeDetail({
+    const {userId: _userId, ...detail} = makeRecipeDetail({
       title: 'Temporary',
       visibility: 'public',
     });
+    const recipe = {...detail, authorDisplayName: 'Chef Alex'};
 
     const {unmount} = await renderWithProviders(
       <RecipePageHead
