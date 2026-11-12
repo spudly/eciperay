@@ -130,6 +130,17 @@ export const MealPlanEditScreen = ({route, navigation}: Props) => {
           form.setQuantityByKey(current => ({...current, [key]: quantity}));
         }}
         onRecipeServingsChange={(recipeId, servings) => {
+          // The DS form edits servings-to-cook; servings-to-eat
+          // follows while it still equals the old cook value (#363),
+          // and a divergent stored eat is preserved.
+          form.setServingsToEatByRecipeId(current => ({
+            ...current,
+            [recipeId]:
+              current[recipeId] === undefined ||
+              current[recipeId] === form.servingsByRecipeId[recipeId]
+                ? servings
+                : current[recipeId],
+          }));
           form.setServingsByRecipeId(current => ({
             ...current,
             [recipeId]: servings,

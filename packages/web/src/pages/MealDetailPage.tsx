@@ -104,9 +104,7 @@ export const MealDetailPage = () => {
             recipeId: member.recipeId,
             href: `/recipes/${member.recipeId}`,
             title: member.title,
-            subtitle: `${member.servings} serving${
-              member.servings === 1 ? '' : 's'
-            }${
+            subtitle: `Servings to cook: ${member.servingsToCook} · Servings to eat: ${member.servingsToEat}${
               formatMemberNutrition(member)
                 ? ` · ${formatMemberNutrition(member)}`
                 : ''
@@ -123,18 +121,18 @@ export const MealDetailPage = () => {
                 : `${ingredient.quantity}${
                     ingredient.unit ? ` ${ingredient.unit}` : ''
                   }`;
+            // The row's nutrition is what the owner eats (#363): the
+            // per-serving macros scale by servings-to-eat.
             const nutritionLabel = formatMemberNutrition(
               ingredient,
-              ingredient.servings,
+              ingredient.servingsToEat,
             );
             return {
               id: `ingredient-${ingredient.sortOrder}-${index}`,
               name: ingredient.name,
               subtitle: [
                 quantityLabel,
-                `${ingredient.servings} serving${
-                  ingredient.servings === 1 ? '' : 's'
-                }`,
+                `Servings to cook: ${ingredient.servingsToCook} · Servings to eat: ${ingredient.servingsToEat}`,
                 nutritionLabel,
               ]
                 .filter(Boolean)

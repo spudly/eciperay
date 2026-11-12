@@ -30,7 +30,8 @@ export const makeMealDetail = (
     {
       recipeId: 'recipe-uuid-1',
       sortOrder: 0,
-      servings: 4,
+      servingsToCook: 4,
+      servingsToEat: 4,
       title: 'Test Recipe',
       imageUrl: null,
       recipeServings: 4,

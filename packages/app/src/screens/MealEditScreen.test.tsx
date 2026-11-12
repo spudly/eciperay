@@ -157,7 +157,13 @@ describe('MealEditScreen', () => {
           title: 'Shake only',
           recipes: [],
           ingredients: [
-            {name: 'Protein shake', quantity: null, unit: null, servings: 1},
+            {
+              name: 'Protein shake',
+              quantity: null,
+              unit: null,
+              servingsToCook: 1,
+              servingsToEat: 1,
+            },
           ],
         }),
       );
@@ -194,7 +200,8 @@ describe('MealEditScreen', () => {
         {
           recipeId: recipe.id,
           sortOrder: 0,
-          servings: 4,
+          servingsToCook: 4,
+          servingsToEat: 4,
           title: 'Pasta',
           imageUrl: null,
           recipeServings: 4,
@@ -232,7 +239,8 @@ describe('MealEditScreen', () => {
         {
           recipeId: recipe.id,
           sortOrder: 0,
-          servings: 4,
+          servingsToCook: 4,
+          servingsToEat: 4,
           title: 'Pasta',
           imageUrl: null,
           recipeServings: 4,

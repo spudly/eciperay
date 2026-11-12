@@ -72,7 +72,8 @@ const makePlan = (overrides: Partial<MealPlanDetail> = {}): MealPlanDetail => ({
       recipeId: 'recipe-1',
       sortOrder: 1,
       quantity: 1,
-      servings: 4,
+      servingsToCook: 4,
+      servingsToEat: 4,
       title: 'Test Recipe',
       imageUrl: null,
       recipeServings: 4,
@@ -329,7 +330,9 @@ describe('MealPlanDetailView', () => {
     expect(
       await findByLabelText(/Qty 2 · 3 recipes · 300 cal · 20g protein/),
     ).toBeTruthy();
-    expect(await findByLabelText(/Qty 1 · 4 servings/)).toBeTruthy();
+    expect(
+      await findByLabelText(/Qty 1 · Servings to cook: 4 · Servings to eat: 4/),
+    ).toBeTruthy();
     fireEvent.press(
       await findByLabelText(
         'Meal · Sunday Dinner, Qty 2 · 3 recipes · 300 cal · 20g protein · 40g carbs · 10g fat',
@@ -337,7 +340,9 @@ describe('MealPlanDetailView', () => {
     );
     expect(Linking.openURL).toHaveBeenCalledWith('app://meals/meal-1');
     fireEvent.press(
-      await findByLabelText('Recipe · Test Recipe, Qty 1 · 4 servings'),
+      await findByLabelText(
+        'Recipe · Test Recipe, Qty 1 · Servings to cook: 4 · Servings to eat: 4',
+      ),
     );
     expect(Linking.openURL).toHaveBeenCalledWith('app://recipes/recipe-1');
   });

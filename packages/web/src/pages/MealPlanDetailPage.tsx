@@ -1,4 +1,8 @@
-import {formatSimpleNutrition, queryKeys} from '@eciperay/client';
+import {
+  buildWeeklyTotalsBand,
+  formatSimpleNutrition,
+  queryKeys,
+} from '@eciperay/client';
 import type {MealPlanDetail, NutritionGoalFieldProgress} from '@eciperay/types';
 import {
   MealPlanDetailPage as MealPlanDetailPageView,
@@ -107,7 +111,7 @@ const planDetailViewProps = (plan: MealPlanDetail, planId: string) => {
       targetId: entry.recipeId,
       href: `/recipes/${entry.recipeId}`,
       title: entry.title,
-      subtitle: `Qty ${entry.quantity} · ${entry.servings} servings${nutritionSuffix}`,
+      subtitle: `Qty ${entry.quantity} · Servings to cook: ${entry.servingsToCook} · Servings to eat: ${entry.servingsToEat}${nutritionSuffix}`,
       isUnavailable: entry.accessLost,
     };
   });
@@ -121,6 +125,10 @@ const planDetailViewProps = (plan: MealPlanDetail, planId: string) => {
         ? `${plan.startsOn} – ${plan.endsOn}`
         : undefined,
     nutritionLabel,
+    // Weekly totals + per-day averages band (DS #414), composed from
+    // the plan's eaten nutrition (#363): totals from the plan totals,
+    // averages from its per-day figure.
+    weeklyTotals: buildWeeklyTotalsBand(plan.nutrition),
     nutritionGoals,
     goalsSectionVisibility,
     goalsHref: '/profile',

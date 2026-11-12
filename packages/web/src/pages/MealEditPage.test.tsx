@@ -191,7 +191,8 @@ describe('MealEditPage', () => {
           quantity: 2,
           unit: 'cups',
           sortOrder: 0,
-          servings: 2,
+          servingsToCook: 2,
+          servingsToEat: 2,
           fiberG: null,
           sugarG: null,
           sodiumMg: null,
@@ -246,7 +247,13 @@ describe('MealEditPage', () => {
     });
     expect(putBody).toMatchObject({
       ingredients: [
-        {name: 'Brown rice', quantity: 2, unit: 'cups', servings: 2},
+        {
+          name: 'Brown rice',
+          quantity: 2,
+          unit: 'cups',
+          servingsToCook: 2,
+          servingsToEat: 2,
+        },
       ],
     });
   });
@@ -259,7 +266,8 @@ describe('MealEditPage', () => {
           quantity: 2,
           unit: 'cups',
           sortOrder: 0,
-          servings: 2,
+          servingsToCook: 2,
+          servingsToEat: 2,
           fiberG: null,
           sugarG: null,
           sodiumMg: null,

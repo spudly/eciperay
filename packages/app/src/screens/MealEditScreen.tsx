@@ -35,6 +35,14 @@ export const MealEditScreen = ({route, navigation}: Props) => {
   const [servingsByRecipeId, setServingsByRecipeId] = useState<
     Record<string, number>
   >({});
+  // Servings-to-eat per recipe (#363), carried alongside the cook
+  // values the DS form's stepper edits: the DS MealFormPage (9.2.x)
+  // has no eat stepper, so eat defaults to cook on selection and
+  // follows a cook edit while it still equals the previous cook value
+  // (a stored eat that differs from cook is preserved).
+  const [servingsToEatByRecipeId, setServingsToEatByRecipeId] = useState<
+    Record<string, number>
+  >({});
   // Direct ingredients entered on the meal itself (#362), as form rows:
   // quantity / unit / servings stay free-text until buildMealInputFromForm
   // parses them at save time — the web MealEditPage wiring, mirrored here.
@@ -96,7 +104,12 @@ export const MealEditScreen = ({route, navigation}: Props) => {
     );
     setServingsByRecipeId(
       Object.fromEntries(
-        meal.members.map(member => [member.recipeId, member.servings]),
+        meal.members.map(member => [member.recipeId, member.servingsToCook]),
+      ),
+    );
+    setServingsToEatByRecipeId(
+      Object.fromEntries(
+        meal.members.map(member => [member.recipeId, member.servingsToEat]),
       ),
     );
     setFormIngredients(mealIngredientsToForm(meal.ingredients ?? []));
@@ -109,6 +122,7 @@ export const MealEditScreen = ({route, navigation}: Props) => {
         notes,
         selectedRecipeIds: selectedRecipes.map(recipe => recipe.id),
         servingsByRecipeId,
+        servingsToEatByRecipeId,
         formIngredients,
       });
       if (isEdit && mealId) {
@@ -136,6 +150,11 @@ export const MealEditScreen = ({route, navigation}: Props) => {
       {id: recipe.id, label: recipe.title, servings: recipe.servings},
     ]);
     setServingsByRecipeId(current => ({
+      ...current,
+      [recipeId]: current[recipeId] ?? recipe.servings,
+    }));
+    // Eat defaults to cook when an entry is added (#363).
+    setServingsToEatByRecipeId(current => ({
       ...current,
       [recipeId]: current[recipeId] ?? recipe.servings,
     }));
@@ -173,6 +192,7 @@ export const MealEditScreen = ({route, navigation}: Props) => {
               quantity: '',
               unit: '',
               servings: '1',
+              servingsToEat: '1',
             },
           ]);
         }}
@@ -205,6 +225,16 @@ export const MealEditScreen = ({route, navigation}: Props) => {
         onSelectRecipe={handleSelectRecipe}
         onRemoveRecipe={handleRemoveRecipe}
         onServingsChange={(recipeId, servings) => {
+          // Eat follows a cook edit while it still equals the old
+          // cook value (#363); a divergent stored eat is preserved.
+          setServingsToEatByRecipeId(current => ({
+            ...current,
+            [recipeId]:
+              current[recipeId] === undefined ||
+              current[recipeId] === servingsByRecipeId[recipeId]
+                ? servings
+                : current[recipeId],
+          }));
           setServingsByRecipeId(current => ({
             ...current,
             [recipeId]: servings,

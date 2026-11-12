@@ -1,4 +1,4 @@
-import {formatSimpleNutrition} from '@eciperay/client';
+import {buildWeeklyTotalsBand, formatSimpleNutrition} from '@eciperay/client';
 import type {MealPlanDetail, NutritionGoalFieldProgress} from '@eciperay/types';
 import {
   MealPlanDetailPage,
@@ -164,7 +164,7 @@ export const MealPlanDetailView = ({
       targetId: entry.recipeId,
       href: entryHref('recipe', entry.recipeId),
       title: entry.title,
-      subtitle: `Qty ${entry.quantity} · ${entry.servings} servings${nutritionSuffix}`,
+      subtitle: `Qty ${entry.quantity} · Servings to cook: ${entry.servingsToCook} · Servings to eat: ${entry.servingsToEat}${nutritionSuffix}`,
       isUnavailable: entry.accessLost,
     };
   });
@@ -180,6 +180,7 @@ export const MealPlanDetailView = ({
           : undefined
       }
       nutritionLabel={nutritionLabel}
+      weeklyTotals={buildWeeklyTotalsBand(plan.nutrition)}
       nutritionGoals={nutritionGoals}
       goalsSectionVisibility={goalsSectionVisibility}
       goalsHref={goalsHref}
