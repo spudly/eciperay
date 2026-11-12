@@ -1,11 +1,16 @@
 import {screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import {Route, Routes} from 'react-router-dom';
+import {Route, Routes, useLocation} from 'react-router-dom';
 import {beforeEach, describe, expect, test, vi} from 'vitest';
 
 import {renderWithProviders} from '../test/testUtils.js';
 
 import {ImportReviewPage} from './ImportReviewPage.js';
+
+const LocationProbe = () => {
+  const location = useLocation();
+  return <div data-testid="location">{location.pathname}</div>;
+};
 
 const {mockAcceptImport, mockStartImportEdits} = vi.hoisted(() => ({
   mockAcceptImport: vi.fn(),
@@ -63,21 +68,32 @@ describe('ImportReviewPage', () => {
   });
 
   test('accepts import and navigates to recipe detail', async () => {
+    // The accept response carries the stored slug: navigation must use
+    // it, so assert the exact destination pathname — both destination
+    // routes render 'Saved', which alone would also pass for bare-ID
+    // navigation.
+    mockAcceptImport.mockResolvedValue({
+      id: 'recipe-uuid-1',
+      slug: 'imported-pasta',
+    });
     await renderWithProviders(
-      <Routes>
-        <Route
-          path="/import/review/:recipeId"
-          element={<ImportReviewPage />}
-        />
-        <Route
-          path="/recipes/:recipeId"
-          element={<div>Saved</div>}
-        />
-        <Route
-          path="/recipes/:recipeId/:slug"
-          element={<div>Saved</div>}
-        />
-      </Routes>,
+      <>
+        <Routes>
+          <Route
+            path="/import/review/:recipeId"
+            element={<ImportReviewPage />}
+          />
+          <Route
+            path="/recipes/:recipeId"
+            element={<div>Saved</div>}
+          />
+          <Route
+            path="/recipes/:recipeId/:slug"
+            element={<div>Saved</div>}
+          />
+        </Routes>
+        <LocationProbe />
+      </>,
       {route: '/import/review/recipe-uuid-1'},
     );
     await waitFor(() => {
@@ -88,6 +104,9 @@ describe('ImportReviewPage', () => {
       expect(mockAcceptImport).toHaveBeenCalledWith('recipe-uuid-1');
     });
     expect(await screen.findByText('Saved')).toBeInTheDocument();
+    expect(screen.getByTestId('location')).toHaveTextContent(
+      '/recipes/recipe-uuid-1/imported-pasta',
+    );
   });
 
   test('shows error when accept fails', async () => {

@@ -75,6 +75,25 @@ describe('recipeSlugFor', () => {
   test('returns null when neither slug nor title is known', () => {
     expect(recipeSlugFor({id: 'recipe-1'})).toBeNull();
   });
+
+  // The detail route's final segment is shared with the action
+  // subroutes (cook / edit / tweak-ai), whose static segments outrank
+  // :slug — a reserved slug must be disambiguated or the recipe would
+  // open the action screen instead of its detail page.
+  test.each(['cook', 'edit', 'tweak-ai'])(
+    'disambiguates the reserved stored slug %s',
+    slug => {
+      expect(recipeSlugFor({id: 'recipe-1', slug})).toBe(`${slug}-recipe`);
+    },
+  );
+
+  test.each([
+    ['Cook', 'cook-recipe'],
+    ['Edit', 'edit-recipe'],
+    ['Tweak Ai', 'tweak-ai-recipe'],
+  ])('disambiguates the reserved title-derived slug for %s', (title, slug) => {
+    expect(recipeSlugFor({id: 'recipe-1', title})).toBe(slug);
+  });
 });
 
 describe('buildRecipePath', () => {
@@ -92,6 +111,15 @@ describe('buildRecipePath', () => {
 
   test('falls back to the bare-ID path when no slug can be derived', () => {
     expect(buildRecipePath({id: 'recipe-1'})).toBe('/recipes/recipe-1');
+  });
+
+  test('builds the disambiguated path for a reserved slug', () => {
+    expect(buildRecipePath({id: 'recipe-1', slug: 'cook'})).toBe(
+      '/recipes/recipe-1/cook-recipe',
+    );
+    expect(buildRecipePath({id: 'recipe-1', title: 'Cook'})).toBe(
+      '/recipes/recipe-1/cook-recipe',
+    );
   });
 });
 

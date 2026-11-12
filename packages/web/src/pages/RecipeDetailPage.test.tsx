@@ -333,6 +333,22 @@ describe('RecipeDetailPage', () => {
     );
   });
 
+  test('canonicalizes a bare-ID URL for a reserved slug to its disambiguated form (#419)', async () => {
+    server.use(
+      http.get('http://localhost:8080/api/recipes/:id', () =>
+        HttpResponse.json(makeRecipeDetail({title: 'Cook', slug: 'cook'})),
+      ),
+    );
+    await renderDetailAt('/recipes/recipe-uuid-1');
+    // '/recipes/recipe-uuid-1/cook' is the cooking-mode route, so the
+    // canonical detail URL must use the disambiguated slug.
+    await waitFor(() => {
+      expect(screen.getByTestId('location')).toHaveTextContent(
+        '/recipes/recipe-uuid-1/cook-recipe',
+      );
+    });
+  });
+
   test('canonicalizes a wrong or stale slug (#419)', async () => {
     await renderDetailAt('/recipes/recipe-uuid-1/stale-slug');
     await waitFor(() => {

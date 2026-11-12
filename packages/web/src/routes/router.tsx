@@ -73,7 +73,10 @@ const authenticatedAppRoutes = [
   // The canonical slugged detail route (#419): the bare route above
   // stays so existing links resolve, and the page canonicalizes it to
   // this form once the recipe loads. Static subroutes (edit, cook,
-  // tweak-ai, versions) outrank the :slug segment in route matching.
+  // tweak-ai) outrank the :slug segment in route matching, so
+  // buildRecipePath disambiguates a slug equal to one of them
+  // (cook → cook-recipe) — canonical detail paths never collide with
+  // the action routes below.
   {path: '/recipes/:recipeId/:slug', element: <RecipeDetailPage />},
   {path: '/recipes/:recipeId/edit', element: <EditRecipePage />},
   {

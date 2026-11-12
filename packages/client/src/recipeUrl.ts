@@ -19,6 +19,19 @@
  * 3. No slug at all when neither is known (a create/clone result carries only
  *    IDs): the bare `/recipes/:id` path, which the detail page canonicalizes to
  *    the slugged form once the recipe resolves.
+ *
+ * Reserved segments: the detail route shares its final segment with the action
+ * subroutes (`/recipes/:id/cook`, `/recipes/:id/edit`,
+ * `/recipes/:id/tweak-ai`), and static segments outrank the `:slug` segment in
+ * both the web router and the native linking config — so a recipe whose slug is
+ * exactly one of those words (a recipe titled "Cook") would open the action
+ * screen instead of its detail page. `recipeSlugFor` therefore disambiguates a
+ * reserved slug by appending `-recipe` (`cook` → `cook-recipe`): the canonical
+ * detail path stays a single slug segment, the detail page's canonical check
+ * compares against this same helper (so the disambiguated form is accepted in
+ * place, with no redirect loop), and the action routes keep their exact paths.
+ * The public `/recipe/:id/:slug` URL is unaffected — it has no action siblings
+ * and keeps the stored slug verbatim.
  */
 
 /**
@@ -52,17 +65,25 @@ export type RecipeUrlSource = {
   title?: string | null;
 };
 
+/** Final segments claimed by action subroutes under `/recipes/:id/`. */
+const RESERVED_RECIPE_SLUGS = new Set(['cook', 'edit', 'tweak-ai']);
+
+const disambiguateReservedSlug = (slug: string): string =>
+  RESERVED_RECIPE_SLUGS.has(slug) ? `${slug}-recipe` : slug;
+
 /**
  * The canonical slug for a recipe, or null when neither a stored slug nor a
- * title is known (the bare-ID fallback in buildRecipePath).
+ * title is known (the bare-ID fallback in buildRecipePath). A slug that
+ * collides with an action subroute is returned in its disambiguated `-recipe`
+ * form (see the header's reserved-segments note).
  */
 export const recipeSlugFor = (source: RecipeUrlSource): string | null => {
   const stored = source.slug?.trim();
   if (stored) {
-    return stored;
+    return disambiguateReservedSlug(stored);
   }
   if (source.title) {
-    return slugifyRecipeTitle(source.title);
+    return disambiguateReservedSlug(slugifyRecipeTitle(source.title));
   }
   return null;
 };
