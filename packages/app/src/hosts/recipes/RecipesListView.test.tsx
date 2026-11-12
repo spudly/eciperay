@@ -689,6 +689,30 @@ describe('RecipesListView unified sections (#412)', () => {
     expect(getByText(/By Pat Public/)).toBeTruthy();
   });
 
+  test('omits the byline on discovery rows whose author has no display name (#498)', async () => {
+    const {getByLabelText, queryByText} = await renderWithProviders(
+      <RecipesListView
+        {...controls}
+        isLoading={false}
+        recipes={[pasta]}
+        discoveryRecipes={[
+          makePublicRecipeDiscoveryItem({
+            id: 'public-1',
+            slug: 'public-pie',
+            title: 'Public Pie',
+            authorDisplayName: null,
+          }),
+        ]}
+        isFetchingNextPage={false}
+        onLoadMore={jest.fn()}
+      />,
+    );
+
+    expect(getByLabelText(/^Public Pie/)).toBeTruthy();
+    expect(queryByText(/Anonymous/)).toBeNull();
+    expect(queryByText(/By /)).toBeNull();
+  });
+
   test('renders the own-section loading row while fetching the next own page', async () => {
     const {getByLabelText} = await renderWithProviders(
       <RecipesListView

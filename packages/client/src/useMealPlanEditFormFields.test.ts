@@ -28,6 +28,7 @@ describe('useMealPlanEditFormFields', () => {
           quantity: 1,
           title: 'Dinner',
           memberCount: 1,
+          recipeCount: 1,
           nutrition: null,
         },
       ],

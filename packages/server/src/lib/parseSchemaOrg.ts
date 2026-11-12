@@ -4,6 +4,7 @@ import type {IngredientInput, RecipeImport} from '@eciperay/types';
 import {
   parseIngredientAmount,
   parseIngredientText,
+  splitPreparationQualifier,
 } from './parseIngredientText.js';
 
 type SchemaRecipe = {
@@ -115,7 +116,14 @@ const parseWprmIngredients = (
     if (!headingMatches) {
       const matchingNames = candidate.filter((el, i) =>
         ingredientNamesMatch(
-          $(el).find('.wprm-recipe-ingredient-name').first().text(),
+          // The expected names come from parseIngredientText, which
+          // moves a trailing preparation qualifier into notes (#498);
+          // apply the same split to the rendered name so the identity
+          // comparison compares like with like.
+          splitPreparationQualifier(
+            $(el).find('.wprm-recipe-ingredient-name').first().text(),
+            null,
+          ).name,
           /* c8 ignore next -- candidate and expected lengths are equality-checked above */
           expectedNames[i] ?? '',
         ),

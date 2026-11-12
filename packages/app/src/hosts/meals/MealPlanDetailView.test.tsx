@@ -61,6 +61,7 @@ const makePlan = (overrides: Partial<MealPlanDetail> = {}): MealPlanDetail => ({
       quantity: 2,
       title: 'Sunday Dinner',
       memberCount: 3,
+      recipeCount: 3,
       nutrition: nutrition({calories: 300, proteinG: 20, satietyScore: null}),
     },
     {

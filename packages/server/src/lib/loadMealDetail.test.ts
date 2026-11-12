@@ -197,6 +197,8 @@ describe('loadMealDetail direct ingredients (#362)', () => {
       calories: 200,
     });
     expect(meal?.memberCount).toBe(1);
+    // A direct-only meal has no recipe members (#498).
+    expect(meal?.recipeCount).toBe(0);
     // Per-serving 200 cal × entry servings 2 = 400; weight is the
     // whole-entry 300 g (not scaled again).
     expect(meal?.nutrition).toMatchObject({
@@ -239,6 +241,9 @@ describe('loadMealDetail direct ingredients (#362)', () => {
     expect(meal?.members).toHaveLength(1);
     expect(meal?.ingredients).toHaveLength(1);
     expect(meal?.memberCount).toBe(2);
+    // Only the recipe member counts toward the recipe count (#498):
+    // a meal of 1 recipe + 1 direct ingredient reads "1 recipe".
+    expect(meal?.recipeCount).toBe(1);
     // Recipe: 100 cal/serving × 4 servings = 400 cal, 40 protein,
     // 20 carbs, 8 fat, 400 g. Direct: 400 cal, 8 protein, 88 carbs,
     // 2 fat, 2 fiber, 10 sodium, 300 g (see fixture).

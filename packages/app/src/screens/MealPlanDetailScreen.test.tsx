@@ -66,6 +66,7 @@ describe('MealPlanDetailScreen', () => {
           quantity: 1,
           title: 'Sunday Dinner',
           memberCount: 1,
+          recipeCount: 1,
           nutrition: null,
         },
         {

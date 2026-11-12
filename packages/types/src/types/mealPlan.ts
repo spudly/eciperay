@@ -13,6 +13,8 @@ export type MealPlanMealEntry = {
   quantity: number;
   title: string;
   memberCount: number;
+  /** Recipe members only — see `Meal.recipeCount` (#498). */
+  recipeCount: number;
   nutrition: AggregatedNutrition | null;
 };
 

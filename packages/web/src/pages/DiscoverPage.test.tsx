@@ -74,6 +74,20 @@ describe('DiscoverPage', () => {
     ).toHaveAttribute('href', '/privacy/consent');
   });
 
+  test('omits the author byline when the author has no display name (#498)', async () => {
+    server.use(
+      http.get('http://localhost:8080/api/public/recipes', () =>
+        HttpResponse.json([makeDiscoveryItem({authorDisplayName: null})]),
+      ),
+    );
+    await renderWithProviders(<DiscoverPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Shared Pasta')).toBeInTheDocument();
+    });
+    expect(screen.queryByText(/Anonymous/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^By /)).not.toBeInTheDocument();
+  });
+
   test('shows empty state when no public recipes match', async () => {
     server.use(
       http.get('http://localhost:8080/api/public/recipes', () =>

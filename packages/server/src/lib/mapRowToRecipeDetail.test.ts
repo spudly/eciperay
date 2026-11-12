@@ -14,6 +14,16 @@ describe('mapRowToRecipeDetail', () => {
       makeRecipeDetail(),
     );
   });
+
+  test('returns the stored slug verbatim, suffix included (#498)', () => {
+    // The stored slug is the canonical slug (the same value Discover
+    // and the sitemap serve): the detail DTO must not re-derive,
+    // strip, or otherwise rewrite it.
+    const mapped = mapRowToRecipeDetail(
+      makeRecipeDetailRow({slug: 'qa-finalization-public-pie-3'}),
+    );
+    expect(mapped.slug).toBe('qa-finalization-public-pie-3');
+  });
 });
 
 describe('mapRowToPublicRecipeDetail', () => {

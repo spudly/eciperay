@@ -242,10 +242,10 @@ describe('parseSchemaOrg', () => {
     expect(result?.ingredients).toEqual([
       {
         sortOrder: 0,
-        name: 'dill, fresh chopped',
+        name: 'dill',
         quantity: 0.25,
         unit: 'cup',
-        notes: null,
+        notes: 'fresh chopped',
         isOptional: false,
       },
       {
@@ -394,10 +394,10 @@ describe('parseSchemaOrg with WP Recipe Maker markup', () => {
     expect(result?.ingredients).toHaveLength(6);
     expect(result?.ingredients[0]).toEqual({
       sortOrder: 0,
-      name: 'avocado, pitted and peeled',
+      name: 'avocado',
       quantity: 1,
       unit: 'medium',
-      notes: null,
+      notes: 'pitted and peeled',
       isOptional: false,
     });
     // The WPRM-only notes span must not leak in from the other recipe's card.
@@ -521,10 +521,10 @@ describe('parseSchemaOrg with WP Recipe Maker markup', () => {
     expect(result?.ingredients[3]?.notes).toBeNull();
     expect(result?.ingredients[5]).toEqual({
       sortOrder: 5,
-      name: 'red onion, sliced',
+      name: 'red onion',
       quantity: 0.5,
       unit: null,
-      notes: null,
+      notes: 'sliced',
       isOptional: false,
     });
   });

@@ -36,6 +36,30 @@ describe('recipeVisibility', () => {
     ).toBe('https://www.eciperay.com/recipe/recipe-1/pasta?t=token-123');
   });
 
+  test('renders the stored slug verbatim, including a de-duplicated suffix (#498)', () => {
+    // The server owns the canonical slug: when the stored slug carries
+    // a numeric suffix, the permalink must display it exactly — the
+    // client never re-derives or strips it.
+    expect(
+      buildRecipePermalink('https://www.eciperay.com', {
+        id: 'recipe-1',
+        slug: 'qa-finalization-public-pie-3',
+      }),
+    ).toBe(
+      'https://www.eciperay.com/recipe/recipe-1/qa-finalization-public-pie-3',
+    );
+    expect(
+      buildRecipeShareUrl('https://www.eciperay.com', {
+        id: 'recipe-1',
+        slug: 'qa-finalization-public-pie-3',
+        visibility: 'public',
+        sourceUrl: null,
+      }),
+    ).toBe(
+      'https://www.eciperay.com/recipe/recipe-1/qa-finalization-public-pie-3',
+    );
+  });
+
   test('builds share URLs for visibility and source links', () => {
     const recipe = {
       id: 'recipe-1',

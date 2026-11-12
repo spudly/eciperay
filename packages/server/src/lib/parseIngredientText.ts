@@ -5,8 +5,9 @@
  *
  * Examples:
  *
- * - "1/4 cup dill, fresh chopped" -> {quantity: 0.25, unit: "cup", name: "dill,
- *   fresh chopped"}
+ * - "1/4 cup dill, fresh chopped" -> {quantity: 0.25, unit: "cup", name: "dill",
+ *   notes: "fresh chopped"} — a trailing comma-separated preparation qualifier
+ *   moves to notes (#498; see splitPreparationQualifier)
  * - "200g pasta" -> {quantity: 200, unit: "g", name: "pasta"}
  * - "Salt and pepper to taste" -> {quantity: null, unit: null, name: "Salt and
  *   pepper to taste"}
@@ -26,6 +27,101 @@ export type ParsedIngredientText = {
 export type ParsedIngredientAmount = {
   quantity: number | null;
   notes: string | null;
+};
+
+/**
+ * Preparation words that turn a trailing comma segment of an ingredient name
+ * into a preparation qualifier belonging in `notes` (#498): "3 carrots,
+ * chopped" is the ingredient "carrots" prepared "chopped", and the qualifier
+ * must not stay glued to the name (where it reads as part of the ingredient) or
+ * vanish.
+ */
+const PREPARATION_QUALIFIER_WORDS = new Set([
+  'beaten',
+  'chopped',
+  'cooked',
+  'crumbled',
+  'crushed',
+  'cubed',
+  'cut',
+  'deveined',
+  'diced',
+  'divided',
+  'drained',
+  'grated',
+  'ground',
+  'halved',
+  'juiced',
+  'mashed',
+  'melted',
+  'minced',
+  'peeled',
+  'pitted',
+  'quartered',
+  'rinsed',
+  'seeded',
+  'shredded',
+  'sifted',
+  'sliced',
+  'softened',
+  'thawed',
+  'torn',
+  'trimmed',
+  'washed',
+  'whisked',
+  'zested',
+]);
+
+const isPreparationQualifier = (segment: string): boolean => {
+  const normalized = segment.trim().toLowerCase().replace(/\.$/, '');
+  if (!normalized) {
+    return false;
+  }
+  if (normalized === 'to taste') {
+    return true;
+  }
+  const words = normalized.split(/\s+/);
+  const first = words[0] ?? '';
+  const last = words[words.length - 1] ?? '';
+  return (
+    PREPARATION_QUALIFIER_WORDS.has(first) ||
+    PREPARATION_QUALIFIER_WORDS.has(last)
+  );
+};
+
+/**
+ * Moves trailing comma-separated preparation qualifiers from an ingredient name
+ * into its notes (#498). Shared by the deterministic parser below and the LLM
+ * import parse, which can return the qualifier glued to the name despite the
+ * prompt. Only applies when notes is empty — existing notes (e.g. a quantity
+ * range) always win.
+ */
+export const splitPreparationQualifier = (
+  name: string,
+  notes: string | null,
+): {name: string; notes: string | null} => {
+  if (notes !== null && notes !== '') {
+    return {name, notes};
+  }
+  let currentName = name;
+  let qualifier: string | null = null;
+  for (;;) {
+    const commaIndex = currentName.lastIndexOf(',');
+    if (commaIndex < 0) {
+      break;
+    }
+    const head = currentName.slice(0, commaIndex).trim();
+    const tail = currentName.slice(commaIndex + 1).trim();
+    if (!head || !isPreparationQualifier(tail)) {
+      break;
+    }
+    qualifier = qualifier === null ? tail : `${tail}, ${qualifier}`;
+    currentName = head;
+  }
+  if (qualifier === null) {
+    return {name, notes};
+  }
+  return {name: currentName, notes: qualifier};
 };
 
 const UNICODE_FRACTIONS: Record<string, number> = {
@@ -263,7 +359,8 @@ export const parseIngredientText = (raw: string): ParsedIngredientText => {
   const text = raw.trim();
   const amount = matchAmountPrefix(text);
   if (!amount) {
-    return {quantity: null, unit: null, name: text, notes: null};
+    const split = splitPreparationQualifier(text, null);
+    return {quantity: null, unit: null, name: split.name, notes: split.notes};
   }
   // A hyphen that is not part of a range ("1-inch piece …") is not part of
   // the name either.
@@ -286,5 +383,6 @@ export const parseIngredientText = (raw: string): ParsedIngredientText => {
   if (!name) {
     return {quantity: null, unit: null, name: text, notes: null};
   }
-  return {quantity: amount.value, unit, name, notes: amount.notes};
+  const split = splitPreparationQualifier(name, amount.notes);
+  return {quantity: amount.value, unit, name: split.name, notes: split.notes};
 };

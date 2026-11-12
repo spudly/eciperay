@@ -1,6 +1,7 @@
 import type {RecipeImport} from '@eciperay/types';
 
 import {anthropic as defaultAnthropic, HAIKU, SONNET} from './anthropic.js';
+import {splitPreparationQualifier} from './parseIngredientText.js';
 import {RecipeImportSchema} from './schemas.js';
 import {parseAiJson} from './validate.js';
 
@@ -18,6 +19,7 @@ and return ONLY valid JSON matching this exact shape (no markdown, no explanatio
   "instructions": [{"stepNumber": number, "body": string}]
 }
 Preserve the original ingredient and instruction order from the source text. Number ingredients with sortOrder starting at 0 and steps starting at 1 in sequence.
+Put each ingredient's preparation qualifier (words like chopped, diced, minced, divided, or "to taste" that follow the ingredient name after a comma) in that ingredient's "notes" field, never appended to its "name": for example, "3 carrots, chopped" becomes {"name": "carrots", "quantity": 3, "unit": null, "notes": "chopped"}.
 If the source text does not include a description, write a brief appetizing 1-2 sentence summary based on the recipe contents.`;
 
 const callClaude = (
@@ -91,10 +93,18 @@ export const parseWithClaude = async (
   }
   const text = extractText(first);
   const parsed = parseAiJson(RecipeImportSchema, text);
+  // Deterministic backstop for the prompt rule above (#498): when the
+  // model still returns a preparation qualifier glued to an
+  // ingredient's name with empty notes, split it into notes — the same
+  // post-parse step the schema.org parser applies.
+  const ingredients = parsed.ingredients.map(ingredient => {
+    const split = splitPreparationQualifier(ingredient.name, ingredient.notes);
+    return {...ingredient, name: split.name, notes: split.notes};
+  });
   const trimmedDescription = parsed.description?.trim();
   const description =
     trimmedDescription && trimmedDescription.length > 0
       ? trimmedDescription
       : await generateDescription(pageText, parsed.title, client, signal);
-  return {...parsed, description, sourceUrl};
+  return {...parsed, ingredients, description, sourceUrl};
 };

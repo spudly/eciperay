@@ -98,7 +98,7 @@ const planDetailViewProps = (plan: MealPlanDetail, planId: string) => {
         targetId: entry.mealId,
         href: `/meals/${entry.mealId}`,
         title: entry.title,
-        subtitle: `Qty ${entry.quantity} · ${entry.memberCount} recipes${nutritionSuffix}`,
+        subtitle: `Qty ${entry.quantity} · ${entry.recipeCount} recipes${nutritionSuffix}`,
       };
     }
     return {
