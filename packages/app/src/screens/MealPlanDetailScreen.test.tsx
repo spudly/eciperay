@@ -115,7 +115,9 @@ describe('MealPlanDetailScreen', () => {
     await fireEvent.press(await findByLabelText(/Meal · Sunday Dinner, Qty/));
     expect(Linking.openURL).toHaveBeenCalledWith(mealHref(mealId));
     await fireEvent.press(await findByLabelText(/Recipe · Test Recipe, Qty/));
-    expect(Linking.openURL).toHaveBeenCalledWith(recipeHref(recipeId));
+    expect(Linking.openURL).toHaveBeenCalledWith(
+      recipeHref({id: recipeId, title: 'Test Recipe'}),
+    );
     await fireEvent.press(await findByText('Set nutrition goals'));
     expect(Linking.openURL).toHaveBeenCalledWith(profileHref);
   });

@@ -1,4 +1,5 @@
 import {
+  buildRecipePath,
   formatRecipeListSubtitle,
   invalidateRecipeQueries,
   makeRecipeDetail,
@@ -385,7 +386,7 @@ export const RecipeListCard = ({
         title={recipe.title}
         subtitle={formatRecipeListSubtitle(recipe)}
         onPress={onPress}
-        linkTo={onPress ? undefined : `/recipes/${recipe.id}`}
+        linkTo={onPress ? undefined : buildRecipePath(recipe)}
         trailing={
           <div
             style={{

@@ -1,7 +1,7 @@
 import {uploadRecipeImage} from '@eciperay/client';
 import {fireEvent, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import {Route, Routes} from 'react-router-dom';
+import {Route, Routes, useLocation} from 'react-router-dom';
 
 import {renderWithProviders} from '../test/testUtils.js';
 
@@ -13,6 +13,11 @@ vi.mock('@eciperay/client', async importOriginal => {
 });
 
 const mockUploadRecipeImage = vi.mocked(uploadRecipeImage);
+
+const LocationProbe = () => {
+  const location = useLocation();
+  return <div data-testid="location">{location.pathname}</div>;
+};
 
 // The design system form labels its title input "Title"; since
 // @spudly/ui 1.15 the label is a real <label> tied to the input, so a
@@ -28,16 +33,23 @@ describe('ManualEntryPage', () => {
 
   test('creates recipe', async () => {
     await renderWithProviders(
-      <Routes>
-        <Route
-          path="/add/manual"
-          element={<ManualEntryPage />}
-        />
-        <Route
-          path="/recipes/:recipeId"
-          element={<div>Recipe Created</div>}
-        />
-      </Routes>,
+      <>
+        <Routes>
+          <Route
+            path="/add/manual"
+            element={<ManualEntryPage />}
+          />
+          <Route
+            path="/recipes/:recipeId"
+            element={<div>Recipe Created</div>}
+          />
+          <Route
+            path="/recipes/:recipeId/:slug"
+            element={<div>Recipe Created</div>}
+          />
+        </Routes>
+        <LocationProbe />
+      </>,
       {route: '/add/manual'},
     );
     await userEvent.type(titleField()!, 'New Recipe');
@@ -48,6 +60,12 @@ describe('ManualEntryPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Recipe Created')).toBeInTheDocument();
     });
+    // Assert the exact destination pathname: both destination routes
+    // render 'Recipe Created', which alone would also pass for the old
+    // bare-ID navigation; the slugged form uses the entered title.
+    expect(screen.getByTestId('location')).toHaveTextContent(
+      '/recipes/new-recipe-id/new-recipe',
+    );
     // These two tests drive the full DS RecipeFormPage through
     // userEvent typing; since the @spudly/ui 1.15 bump the form's
     // render cost pushes them past the 5s default when the suite
@@ -64,6 +82,10 @@ describe('ManualEntryPage', () => {
         />
         <Route
           path="/recipes/:recipeId"
+          element={<div>Recipe Created</div>}
+        />
+        <Route
+          path="/recipes/:recipeId/:slug"
           element={<div>Recipe Created</div>}
         />
       </Routes>,
@@ -103,6 +125,10 @@ describe('ManualEntryPage', () => {
         />
         <Route
           path="/recipes/:recipeId"
+          element={<div>Recipe Created</div>}
+        />
+        <Route
+          path="/recipes/:recipeId/:slug"
           element={<div>Recipe Created</div>}
         />
       </Routes>,
@@ -147,6 +173,10 @@ describe('ManualEntryPage', () => {
         />
         <Route
           path="/recipes/:recipeId"
+          element={<div>Recipe Created</div>}
+        />
+        <Route
+          path="/recipes/:recipeId/:slug"
           element={<div>Recipe Created</div>}
         />
       </Routes>,

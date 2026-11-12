@@ -2,7 +2,8 @@ import {makeRecipeDetail} from '../test/fixtures/recipe.js';
 
 import {shareRecipe} from './shareRecipe.js';
 
-const privateRecipeUrl = 'http://localhost:8081/recipes/recipe-uuid-1';
+const privateRecipeUrl =
+  'http://localhost:8081/recipes/recipe-uuid-1/test-recipe';
 const publicRecipeUrl =
   'http://localhost:8081/recipe/recipe-uuid-1/test-recipe';
 const unlistedRecipeUrl =

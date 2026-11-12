@@ -1,3 +1,5 @@
+import {buildRecipePath, type RecipeUrlSource} from '@eciperay/client';
+
 import {AUTH_DEEP_LINK_SCHEME} from './authDeepLink';
 
 /**
@@ -26,7 +28,18 @@ export const addHref = appHref('add');
  * working.
  */
 export const sharedWithMeHref = appHref('recipes');
-export const recipeHref = (recipeId: string) => appHref(`recipes/${recipeId}`);
+/**
+ * The recipe detail destination, in the web app's canonical slugged form (#419)
+ * via the shared client helper: a recipe (or a member's id + title) yields
+ * `recipes/:id/:slug`; a bare ID string yields the bare form, which still
+ * resolves (see navigation/linking).
+ */
+export const recipeHref = (recipe: string | RecipeUrlSource) =>
+  appHref(
+    buildRecipePath(typeof recipe === 'string' ? {id: recipe} : recipe).slice(
+      1,
+    ),
+  );
 export const recipeEditHref = (recipeId: string) =>
   appHref(`recipes/${recipeId}/edit`);
 export const recipeVersionEditHref = (recipeId: string, versionId: string) =>

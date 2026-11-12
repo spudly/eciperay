@@ -60,7 +60,7 @@ export const createRecipeViaUi = async (
   onCreated?.(created);
 
   // Saving lands on the new recipe's detail page.
-  await expect(page).toHaveURL(/\/recipes\/[^/]+$/, {timeout: 15_000});
+  await expect(page).toHaveURL(/\/recipes\/[^/]+\/[^/]+$/, {timeout: 15_000});
   await expect(page.getByRole('heading', {name: title})).toBeVisible();
   return created;
 };
@@ -123,14 +123,13 @@ export const deleteRecipeViaApi = async (
 ): Promise<void> => apiDelete(page, `/recipes/${id}`);
 
 /**
- * Deletes every library recipe whose title matches exactly, through the
- * real API. The imports spec's self-healing pre-clean (issue #492): the
- * canned fake-AI parse always produces the same title + ingredients, so a
- * copy leaked by an earlier suite run (imported, then neither renamed nor
- * deleted because a later step failed) makes every later import draw the
- * duplicate warning (409, issue #296) instead of creating a recipe.
- * The caller must have navigated to an app page first so the session
- * token is readable.
+ * Deletes every library recipe whose title matches exactly, through the real
+ * API. The imports spec's self-healing pre-clean (issue #492): the canned
+ * fake-AI parse always produces the same title + ingredients, so a copy leaked
+ * by an earlier suite run (imported, then neither renamed nor deleted because a
+ * later step failed) makes every later import draw the duplicate warning (409,
+ * issue #296) instead of creating a recipe. The caller must have navigated to
+ * an app page first so the session token is readable.
  */
 export const deleteRecipesByTitleViaApi = async (
   page: Page,
@@ -155,11 +154,8 @@ export const deleteRecipesByTitleViaApi = async (
       const headers = {Authorization: `Bearer ${tk}`};
       // The list endpoint paginates (default limit 100): walk every
       // page, or a leaked copy behind 100 newer matches is missed.
-      const recipes: Array<{
-        id?: string;
-        recipeId?: string;
-        title?: string;
-      }> = [];
+      const recipes: Array<{id?: string; recipeId?: string; title?: string}> =
+        [];
       const pageSize = 500;
       for (let offset = 0; ; offset += pageSize) {
         const response = await fetch(

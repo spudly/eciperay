@@ -2,8 +2,9 @@ import {uploadRecipeImage} from '@eciperay/client';
 import {fireEvent, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {http, HttpResponse} from 'msw';
-import {Route, Routes} from 'react-router-dom';
+import {Route, Routes, useLocation} from 'react-router-dom';
 
+import {makeRecipeDetail} from '../test/fixtures/recipe.js';
 import {server} from '../test/msw/server.js';
 import {renderWithProviders} from '../test/testUtils.js';
 
@@ -16,23 +17,45 @@ vi.mock('@eciperay/client', async importOriginal => {
 
 const mockUploadRecipeImage = vi.mocked(uploadRecipeImage);
 
+const LocationProbe = () => {
+  const location = useLocation();
+  return <div data-testid="location">{location.pathname}</div>;
+};
+
 describe('EditRecipePage', () => {
   beforeEach(() => {
     mockUploadRecipeImage.mockReset();
     mockUploadRecipeImage.mockResolvedValue('https://cdn.example/recipe.png');
   });
   test('loads and saves recipe', async () => {
+    // The save response carries a slug that differs from the loaded
+    // recipe's slug ('test-recipe'): navigation must use the returned
+    // slug, so assert the exact destination pathname — both destination
+    // routes render 'Saved', which alone would also pass for the old
+    // bare-ID navigation.
+    server.use(
+      http.put('http://localhost:8080/api/recipes/:id', () =>
+        HttpResponse.json(makeRecipeDetail({slug: 'renamed-recipe'})),
+      ),
+    );
     await renderWithProviders(
-      <Routes>
-        <Route
-          path="/recipes/:recipeId/edit"
-          element={<EditRecipePage />}
-        />
-        <Route
-          path="/recipes/:recipeId"
-          element={<div>Saved</div>}
-        />
-      </Routes>,
+      <>
+        <Routes>
+          <Route
+            path="/recipes/:recipeId/edit"
+            element={<EditRecipePage />}
+          />
+          <Route
+            path="/recipes/:recipeId"
+            element={<div>Saved</div>}
+          />
+          <Route
+            path="/recipes/:recipeId/:slug"
+            element={<div>Saved</div>}
+          />
+        </Routes>
+        <LocationProbe />
+      </>,
       {route: '/recipes/recipe-uuid-1/edit'},
     );
     await waitFor(() => {
@@ -42,6 +65,9 @@ describe('EditRecipePage', () => {
     await waitFor(() => {
       expect(screen.getByText('Saved')).toBeInTheDocument();
     });
+    expect(screen.getByTestId('location')).toHaveTextContent(
+      '/recipes/recipe-uuid-1/renamed-recipe',
+    );
   });
 
   test('blocks saving while a staged paste waits behind an image upload (#446)', async () => {
@@ -60,6 +86,10 @@ describe('EditRecipePage', () => {
         />
         <Route
           path="/recipes/:recipeId"
+          element={<div>Saved</div>}
+        />
+        <Route
+          path="/recipes/:recipeId/:slug"
           element={<div>Saved</div>}
         />
       </Routes>,
@@ -139,6 +169,10 @@ describe('EditRecipePage', () => {
         />
         <Route
           path="/recipes/:recipeId"
+          element={<div>Saved</div>}
+        />
+        <Route
+          path="/recipes/:recipeId/:slug"
           element={<div>Saved</div>}
         />
       </Routes>,

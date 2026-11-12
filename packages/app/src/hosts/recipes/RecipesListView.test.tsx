@@ -638,7 +638,7 @@ describe('RecipesListView unified sections (#412)', () => {
 
     await fireEvent.press(getByLabelText('Pasta Night'));
     await waitFor(() => {
-      expect(Linking.openURL).toHaveBeenCalledWith(recipeHref('pasta-id'));
+      expect(Linking.openURL).toHaveBeenCalledWith(recipeHref(pasta));
     });
   });
 

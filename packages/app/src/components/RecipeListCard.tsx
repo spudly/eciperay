@@ -17,6 +17,12 @@ import {ThumbnailListCard} from './ThumbnailListCard';
 
 // The card subtitle is formatted by the shared formatRecipeListSubtitle
 // in @eciperay/client (#278) — see the web mirror's parity note.
+// Slugged URLs (#419): the web mirror's card links to the canonical
+// `/recipes/:id/:slug` path (shared buildRecipePath) when it has no
+// press handler; this native card is press-only by contract, and the
+// detail destinations its hosts compose carry the same canonical form
+// through recipeHref in lib/deepLinks — there is no href for the card
+// itself to build.
 // The cook-log form is the host CookLogForm (the DS RatingForm
 // until @spudly/ui 6.x made the package pages-only): the submit
 // view-model's `rating` maps onto the cook log's authorStarRating

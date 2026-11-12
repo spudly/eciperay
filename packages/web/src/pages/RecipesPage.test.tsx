@@ -176,7 +176,7 @@ describe('RecipesPage', () => {
     // the link itself — there is no row press to forward.
     expect(screen.getByRole('link', {name: /^Test Recipe, /})).toHaveAttribute(
       'href',
-      '/recipes/recipe-uuid-1',
+      '/recipes/recipe-uuid-1/test-recipe',
     );
   });
 

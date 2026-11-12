@@ -172,7 +172,9 @@ describe('RecipesScreen', () => {
     ]);
     const {findByLabelText} = await renderWithProviders(<RecipesScreen />);
     await fireEvent.press(await findByLabelText('Tacos'));
-    expect(Linking.openURL).toHaveBeenCalledWith(recipeHref('recipe-1'));
+    expect(Linking.openURL).toHaveBeenCalledWith(
+      recipeHref({id: 'recipe-1', slug: 'test-recipe'}),
+    );
   });
 
   test('shows loading state while fetching', async () => {

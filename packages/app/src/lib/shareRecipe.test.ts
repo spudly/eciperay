@@ -9,7 +9,7 @@ jest
   .spyOn(Share, 'share')
   .mockResolvedValue({action: 'sharedAction', activityType: undefined});
 
-const privateRecipeUrl = `${WEB_APP_BASE_URL}/recipes/recipe-uuid-1`;
+const privateRecipeUrl = `${WEB_APP_BASE_URL}/recipes/recipe-uuid-1/test-recipe`;
 const publicRecipeUrl = `${WEB_APP_BASE_URL}/recipe/recipe-uuid-1/test-recipe`;
 const unlistedRecipeUrl = `${WEB_APP_BASE_URL}/recipe/recipe-uuid-1/test-recipe?t=share-token`;
 

@@ -58,7 +58,7 @@ export const MealDetailScreen = ({route}: Props) => {
           nutritionLabel={formatSimpleNutrition(meal.nutrition)}
           members={meal.members.map(member => ({
             recipeId: member.recipeId,
-            href: recipeHref(member.recipeId),
+            href: recipeHref({id: member.recipeId, title: member.title}),
             title: member.title,
             subtitle: `${member.servings} serving${
               member.servings === 1 ? '' : 's'

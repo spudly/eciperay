@@ -1,4 +1,8 @@
-import {formatSimpleNutrition, queryKeys} from '@eciperay/client';
+import {
+  buildRecipePath,
+  formatSimpleNutrition,
+  queryKeys,
+} from '@eciperay/client';
 import type {MealPlanDetail, NutritionGoalFieldProgress} from '@eciperay/types';
 import {
   MealPlanDetailPage as MealPlanDetailPageView,
@@ -105,7 +109,7 @@ const planDetailViewProps = (plan: MealPlanDetail, planId: string) => {
       id: entry.id,
       kind: 'recipe',
       targetId: entry.recipeId,
-      href: `/recipes/${entry.recipeId}`,
+      href: buildRecipePath({id: entry.recipeId, title: entry.title}),
       title: entry.title,
       subtitle: `Qty ${entry.quantity} · ${entry.servings} servings${nutritionSuffix}`,
       isUnavailable: entry.accessLost,
