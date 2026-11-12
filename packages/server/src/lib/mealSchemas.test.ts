@@ -15,7 +15,7 @@ describe('mealSchemas', () => {
       MealInputSchema.parse({
         title: 'Dinner',
         notes: 'notes',
-        recipes: [{recipeId, servings: 2}],
+        recipes: [{recipeId, servingsToCook: 2, servingsToEat: 1}],
       }),
     ).toMatchObject({title: 'Dinner'});
   });
@@ -29,11 +29,25 @@ describe('mealSchemas', () => {
   test('MealInputSchema accepts a direct-only meal (#362)', () => {
     const parsed = MealInputSchema.parse({
       title: 'Snack',
-      ingredients: [{name: 'Rice', quantity: 2, unit: 'cups', servings: 2}],
+      ingredients: [
+        {
+          name: 'Rice',
+          quantity: 2,
+          unit: 'cups',
+          servingsToCook: 2,
+          servingsToEat: 1,
+        },
+      ],
     });
     expect(parsed.recipes).toEqual([]);
     expect(parsed.ingredients).toEqual([
-      {name: 'Rice', quantity: 2, unit: 'cups', servings: 2},
+      {
+        name: 'Rice',
+        quantity: 2,
+        unit: 'cups',
+        servingsToCook: 2,
+        servingsToEat: 1,
+      },
     ]);
   });
 
@@ -103,7 +117,13 @@ describe('mealSchemas', () => {
     expect(() =>
       MealInputSchema.parse({
         title: 'X',
-        ingredients: [{name: 'Rice', servings: 0}],
+        ingredients: [{name: 'Rice', servingsToCook: 0}],
+      }),
+    ).toThrow(z.ZodError);
+    expect(() =>
+      MealInputSchema.parse({
+        title: 'X',
+        ingredients: [{name: 'Rice', servingsToEat: 0}],
       }),
     ).toThrow(z.ZodError);
     // Clients never send nutrition for a direct entry — it is estimated
@@ -121,7 +141,10 @@ describe('mealSchemas', () => {
         title: 'Week',
         startsOn: '2026-01-01',
         endsOn: '2026-01-07',
-        entries: [{mealId: recipeId}, {recipeId, servings: 2}],
+        entries: [
+          {mealId: recipeId},
+          {recipeId, servingsToCook: 2, servingsToEat: 1},
+        ],
       }),
     ).toMatchObject({title: 'Week'});
   });

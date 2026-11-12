@@ -18,13 +18,16 @@ export const mealRecipeRow = {
   recipe_id: RECIPE_ID,
   sort_order: 0,
   servings: 4,
+  servings_to_eat: 4,
 };
 
 /**
  * A direct ingredient (#362) as stored by migration 021: per-serving macros of
  * 200 cal, 4 protein, 44 carbs, 1 fat, 1 fiber, 0 sugar, 5 sodium, 300 g
- * whole-entry weight, at entry-level servings 2. Hand-computed contribution:
- * 400 cal, 8 protein, 88 carbs, 2 fat, 2 fiber, 0 sugar, 10 sodium, 300 g.
+ * whole-entry weight, at entry-level servings-to-cook 2 and servings-to-eat 2
+ * (#363: eat = cook reproduces the pre-split numbers). Hand-computed
+ * contribution: 400 cal, 8 protein, 88 carbs, 2 fat, 2 fiber, 0 sugar, 10
+ * sodium, 300 g.
  */
 export const mealIngredientRow = {
   meal_id: MEAL_ID,
@@ -32,6 +35,7 @@ export const mealIngredientRow = {
   quantity: 2,
   unit: 'cups',
   servings: 2,
+  servings_to_eat: 2,
   sort_order: 0,
   calories: 200,
   protein_g: 4,

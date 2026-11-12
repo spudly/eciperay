@@ -25,14 +25,14 @@ const MEAL_SQL = `
 `;
 
 const MEAL_RECIPES_SQL = `
-  select meal_id, recipe_id, sort_order, servings
+  select meal_id, recipe_id, sort_order, servings, servings_to_eat
   from meal_recipes
   where meal_id = $1
   order by sort_order asc, recipe_id asc
 `;
 
 const MEAL_INGREDIENTS_SQL = `
-  select meal_id, name, quantity, unit, servings, sort_order,
+  select meal_id, name, quantity, unit, servings, servings_to_eat, sort_order,
          calories, protein_g, carbs_g, fat_g, fiber_g, sugar_g, sodium_mg,
          prepared_weight_g, satiety_score, nutrition_status
   from meal_ingredients
@@ -65,6 +65,7 @@ type MealRecipeRow = {
   recipe_id: string;
   sort_order: number;
   servings: number;
+  servings_to_eat: number;
 };
 
 type MealIngredientRow = {
@@ -75,6 +76,7 @@ type MealIngredientRow = {
   quantity: number | null;
   unit: string | null;
   servings: number;
+  servings_to_eat: number;
   sort_order: number;
   calories: number | null;
   protein_g: number | null;
@@ -93,7 +95,10 @@ const toIngredientMember = (row: MealIngredientRow): MealIngredientMember => ({
   quantity: row.quantity,
   unit: row.unit,
   sortOrder: row.sort_order,
-  servings: row.servings,
+  servingsToCook: row.servings,
+  // A row without the eat column (pre-023 data shape) reads as
+  // eat = cook, matching the migration's backfill.
+  servingsToEat: row.servings_to_eat ?? row.servings,
   satietyScore: row.satiety_score,
   nutritionStatus:
     (row.nutrition_status as MealIngredientMember['nutritionStatus']) ?? null,
@@ -114,7 +119,8 @@ const toMember = (
 ): MealRecipeMember => ({
   recipeId: row.recipe_id,
   sortOrder: row.sort_order,
-  servings: row.servings,
+  servingsToCook: row.servings,
+  servingsToEat: row.servings_to_eat ?? row.servings,
   title: recipe?.title ?? 'Unavailable recipe',
   imageUrl: recipe?.image_url ?? null,
   recipeServings: recipe?.servings ?? row.servings,
@@ -139,7 +145,9 @@ export const nutritionFromMembers = (
     ...members.map(member => {
       const recipe = recipesById.get(member.recipeId);
       return {
-        servings: member.servings,
+        // Meal nutrition is what the owner eats (#363): scale by
+        // servings-to-eat, not by what was cooked.
+        servings: member.servingsToEat,
         recipeServings: member.recipeServings,
         calories: recipe?.calories ?? null,
         proteinG: recipe?.protein_g ?? null,
@@ -154,13 +162,14 @@ export const nutritionFromMembers = (
       };
     }),
     // Direct ingredients (#362): stored macros are per serving (the
-    // recipe shape), so an entry contributes per-serving × its own
-    // entry-level servings. Its stored prepared weight already covers
-    // the whole entry, so the portion's recipeServings equals its
-    // servings and the weight scale is 1.
+    // recipe shape), estimated at the entry's servings-to-cook, so an
+    // entry contributes per-serving × its servings-to-eat (#363). Its
+    // stored prepared weight covers the whole cooked entry, so the
+    // portion's recipeServings is its servings-to-cook and the weight
+    // scales proportionally (eat / cook).
     ...ingredients.map(ingredient => ({
-      servings: ingredient.servings,
-      recipeServings: ingredient.servings,
+      servings: ingredient.servingsToEat,
+      recipeServings: ingredient.servingsToCook,
       calories: ingredient.calories,
       proteinG: ingredient.proteinG,
       carbsG: ingredient.carbsG,

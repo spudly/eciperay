@@ -14,6 +14,14 @@ import {loadMealPlanDetail} from './loadMealPlanDetail.js';
 
 const emptyShareGrant = {...makeQueryResult([]), rowCount: 0};
 
+const nutritionGoalsRow = {
+  goal_calories: null,
+  goal_protein_g: null,
+  goal_carbs_g: null,
+  goal_fat_g: null,
+  goal_satiety_score: null,
+};
+
 describe('loadMealPlanDetail', () => {
   test('returns null when plan is missing', async () => {
     const mockQuery = createMockQuery();
@@ -78,6 +86,55 @@ describe('loadMealPlanDetail', () => {
         fatG: 2,
       }),
     );
+  });
+
+  test('scales recipe entry nutrition by servings-to-eat, not servings-to-cook (#363)', async () => {
+    const mockQuery = createMockQuery();
+    mockQuery.mockImplementation((async (sql: string) => {
+      if (sql.includes('from meal_plans') && sql.includes('where id =')) {
+        return makeQueryResult([mealPlanRow]);
+      }
+      if (sql.includes('from meal_plan_entries')) {
+        return makeQueryResult([
+          {
+            id: 'entry-1',
+            meal_plan_id: PLAN_ID,
+            sort_order: 0,
+            quantity: 1,
+            meal_id: null,
+            recipe_id: RECIPE_ID,
+            servings: 8,
+            servings_to_eat: 2,
+          },
+        ]);
+      }
+      if (sql.includes('from recipes r')) {
+        return makeQueryResult([accessibleRecipeRow]);
+      }
+      if (sql.includes('share_grants')) {
+        return emptyShareGrant;
+      }
+      if (sql.includes('goal_calories')) {
+        return makeQueryResult([nutritionGoalsRow]);
+      }
+      return makeQueryResult([]);
+    }) as typeof mockQuery);
+
+    const plan = await loadMealPlanDetail(PLAN_ID, USER_ID, mockQuery);
+    const entry = plan?.entries[0];
+    expect(entry).toEqual(
+      expect.objectContaining({
+        type: 'recipe',
+        servingsToCook: 8,
+        servingsToEat: 2,
+      }),
+    );
+    // Recipe is 100 cal per serving: eaten total is 2 x 100 = 200, not
+    // the 800 the cooked servings would give. The plan range is 7 days
+    // (2026-01-01 to 2026-01-07), so the per-day average divides by 7.
+    expect(entry?.nutrition?.calories).toBe(200);
+    expect(plan?.nutrition?.calories).toBe(200);
+    expect(plan?.nutrition?.perDay?.calories).toBeCloseTo(200 / 7);
   });
 
   test('loads meal entry on plan', async () => {
@@ -337,7 +394,8 @@ describe('loadMealPlanDetail', () => {
     expect(plan?.entries[0]).toEqual(
       expect.objectContaining({
         type: 'recipe',
-        servings: accessibleRecipeRow.servings,
+        servingsToCook: accessibleRecipeRow.servings,
+        servingsToEat: accessibleRecipeRow.servings,
       }),
     );
   });
@@ -383,7 +441,11 @@ describe('loadMealPlanDetail', () => {
 
     const plan = await loadMealPlanDetail(PLAN_ID, USER_ID, mockQuery);
     expect(plan?.entries[0]).toEqual(
-      expect.objectContaining({type: 'recipe', servings: 1}),
+      expect.objectContaining({
+        type: 'recipe',
+        servingsToCook: 1,
+        servingsToEat: 1,
+      }),
     );
   });
 

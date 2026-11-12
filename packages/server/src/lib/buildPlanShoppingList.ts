@@ -54,7 +54,8 @@ export const buildPlanShoppingList = async (
       // Direct ingredients (#362) are things to buy too: they join the
       // list at their entered quantity, scaled only by how many times
       // the plan includes the meal (their quantity already covers the
-      // entry's own servings, so no servings scaling applies).
+      // entry's servings-to-cook (#363), so no servings scaling
+      // applies — shopping follows what is cooked, not what is eaten).
       const mealIngredientsResult = await queryFn(MEAL_INGREDIENTS_SQL, [
         entry.mealId,
       ]);
@@ -104,6 +105,8 @@ export const buildPlanShoppingList = async (
             quantity: row.quantity,
             unit: row.unit,
             isOptional: row.is_optional,
+            // Shopping scales by servings-to-cook (#363): meal_recipes
+            // `servings` is the cook column.
             servings: mealRecipe.servings,
             recipeServings: recipe.servings,
             quantityMultiplier: entry.quantity,
@@ -141,7 +144,8 @@ export const buildPlanShoppingList = async (
         quantity: row.quantity,
         unit: row.unit,
         isOptional: row.is_optional,
-        servings: entry.servings,
+        // Shopping scales by servings-to-cook (#363), never by eat.
+        servings: entry.servingsToCook,
         recipeServings: recipe.servings,
         quantityMultiplier: entry.quantity,
         source: {

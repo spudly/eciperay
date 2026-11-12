@@ -20,7 +20,8 @@ export const MealInputSchema = z
       .array(
         z.object({
           recipeId: z.uuid(),
-          servings: z.number().int().positive().optional(),
+          servingsToCook: z.number().int().positive().optional(),
+          servingsToEat: z.number().int().positive().optional(),
         }),
       )
       .default([]),
@@ -39,7 +40,8 @@ export const MealInputSchema = z
           name: z.string().trim().min(1).max(200),
           quantity: z.number().positive().nullish(),
           unit: z.string().trim().min(1).max(50).nullish(),
-          servings: z.number().int().positive().optional(),
+          servingsToCook: z.number().int().positive().optional(),
+          servingsToEat: z.number().int().positive().optional(),
         }),
       )
       .max(50)
@@ -66,7 +68,8 @@ export const MealPlanEntryInputSchema = z.union([
   }),
   z.object({
     recipeId: z.uuid(),
-    servings: z.number().int().positive().optional(),
+    servingsToCook: z.number().int().positive().optional(),
+    servingsToEat: z.number().int().positive().optional(),
     quantity: z.number().int().positive().optional(),
   }),
 ]);

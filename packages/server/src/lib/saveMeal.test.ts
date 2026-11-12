@@ -381,7 +381,15 @@ const DIRECT_NUTRITION_RESPONSE = JSON.stringify({
 const directIngredientInput = {
   title: 'Snack',
   recipes: [] as {recipeId: string}[],
-  ingredients: [{name: 'Rice', quantity: 2, unit: 'cups', servings: 2}],
+  ingredients: [
+    {
+      name: 'Rice',
+      quantity: 2,
+      unit: 'cups',
+      servingsToCook: 2,
+      servingsToEat: 1,
+    },
+  ],
 };
 
 const findCall = (
@@ -421,6 +429,8 @@ describe('direct ingredients (#362)', () => {
       2,
       'cups',
       2,
+      // servings_to_eat persists distinctly from servings-to-cook (#363).
+      1,
       0,
       200,
       4,
@@ -457,8 +467,9 @@ describe('direct ingredients (#362)', () => {
     expect(result.meal.ingredients).toHaveLength(1);
     const insert = findCall(mockQuery, 'insert into meal_ingredients');
     expect(insert).toBeDefined();
-    // quantity, unit fall back to null; servings defaults to 1.
-    expect(insert?.[1]?.slice(1, 6)).toEqual(['Rice', null, null, 1, 0]);
+    // quantity, unit fall back to null; servings-to-cook defaults to
+    // 1 and servings-to-eat defaults to servings-to-cook (#363).
+    expect(insert?.[1]?.slice(1, 7)).toEqual(['Rice', null, null, 1, 1, 0]);
   });
 
   test('saveNewMeal creates a mixed meal (recipes + direct ingredients)', async () => {
@@ -484,8 +495,10 @@ describe('direct ingredients (#362)', () => {
       USER_ID,
       {
         title: 'Dinner',
-        recipes: [{recipeId: RECIPE_ID, servings: 4}],
-        ingredients: [{name: 'Rice', quantity: 2, unit: 'cups', servings: 2}],
+        recipes: [{recipeId: RECIPE_ID, servingsToCook: 4}],
+        ingredients: [
+          {name: 'Rice', quantity: 2, unit: 'cups', servingsToCook: 2},
+        ],
       },
       mockQuery,
     );
@@ -518,7 +531,7 @@ describe('direct ingredients (#362)', () => {
     const insert = findCall(mockQuery, 'insert into meal_ingredients');
     expect(insert?.[1]).toContain('failed');
     expect(insert?.[1]).toContain(null);
-    expect(insert?.[1]?.[6]).toBeNull();
+    expect(insert?.[1]?.[7]).toBeNull();
   });
 
   test('replaceMeal replaces direct ingredients alongside recipes', async () => {

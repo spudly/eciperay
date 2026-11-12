@@ -44,7 +44,8 @@ type ResolvedEntry =
   | {
       kind: 'recipe';
       recipeId: string;
-      servings: number;
+      servingsToCook: number;
+      servingsToEat: number;
       quantity: number;
       sortOrder: number;
     };
@@ -91,10 +92,13 @@ const resolveEntries = async (
       };
     }
     seenRecipes.add(entry.recipeId);
+    const servingsToCook = entry.servingsToCook ?? recipe.servings;
     entries.push({
       kind: 'recipe',
       recipeId: entry.recipeId,
-      servings: entry.servings ?? recipe.servings,
+      servingsToCook,
+      // Eat defaults to cook (#363) when the client sends only cook.
+      servingsToEat: entry.servingsToEat ?? servingsToCook,
       quantity: entry.quantity ?? 1,
       sortOrder: index,
     });
@@ -112,17 +116,26 @@ const insertEntries = async (
     if (entry.kind === 'meal') {
       await queryFn(
         `insert into meal_plan_entries
-           (meal_plan_id, sort_order, quantity, meal_id, recipe_id, servings)
-         values ($1, $2, $3, $4, null, null)`,
+           (meal_plan_id, sort_order, quantity, meal_id, recipe_id,
+            servings, servings_to_eat)
+         values ($1, $2, $3, $4, null, null, null)`,
         [planId, entry.sortOrder, entry.quantity, entry.mealId],
       );
       continue;
     }
     await queryFn(
       `insert into meal_plan_entries
-         (meal_plan_id, sort_order, quantity, meal_id, recipe_id, servings)
-       values ($1, $2, $3, null, $4, $5)`,
-      [planId, entry.sortOrder, entry.quantity, entry.recipeId, entry.servings],
+         (meal_plan_id, sort_order, quantity, meal_id, recipe_id,
+          servings, servings_to_eat)
+       values ($1, $2, $3, null, $4, $5, $6)`,
+      [
+        planId,
+        entry.sortOrder,
+        entry.quantity,
+        entry.recipeId,
+        entry.servingsToCook,
+        entry.servingsToEat,
+      ],
     );
   }
 };

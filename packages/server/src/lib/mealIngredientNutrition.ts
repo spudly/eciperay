@@ -49,6 +49,10 @@ const failedNutrition: MealIngredientNutrition = {
  * instead of inventing numbers.
  */
 export const estimateMealIngredientNutrition = async (
+  // `servings` here is the entry's servings-to-cook (#363): the
+  // estimate covers the amount cooked (the entry's quantity), and the
+  // aggregation layer re-scales the stored per-serving macros to the
+  // servings actually eaten.
   ingredient: MealIngredientInput & {servings: number},
 ): Promise<MealIngredientNutrition> => {
   try {

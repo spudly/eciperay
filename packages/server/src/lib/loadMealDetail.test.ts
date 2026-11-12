@@ -193,14 +193,16 @@ describe('loadMealDetail direct ingredients (#362)', () => {
       name: 'Rice',
       quantity: 2,
       unit: 'cups',
-      servings: 2,
+      servingsToCook: 2,
+      servingsToEat: 2,
       calories: 200,
     });
     expect(meal?.memberCount).toBe(1);
     // A direct-only meal has no recipe members (#498).
     expect(meal?.recipeCount).toBe(0);
-    // Per-serving 200 cal × entry servings 2 = 400; weight is the
-    // whole-entry 300 g (not scaled again).
+    // Per-serving 200 cal × servings eaten 2 = 400; weight is the
+    // whole-entry 300 g × (eat 2 / cook 2), so also unchanged. This is
+    // the #363 backfill case: eat = cook reproduces the old numbers.
     expect(meal?.nutrition).toMatchObject({
       calories: 400,
       proteinG: 8,
@@ -299,7 +301,8 @@ describe('nutritionFromMembers', () => {
         {
           recipeId: RECIPE_ID,
           sortOrder: 0,
-          servings: 4,
+          servingsToCook: 4,
+          servingsToEat: 4,
           title: 'Soup',
           imageUrl: null,
           recipeServings: 4,
@@ -324,7 +327,8 @@ describe('nutritionFromMembers', () => {
         quantity: 2,
         unit: 'cups',
         sortOrder: 0,
-        servings: 3,
+        servingsToCook: 3,
+        servingsToEat: 3,
         satietyScore: 60,
         nutritionStatus: 'ready',
         calories: 200,
@@ -337,12 +341,76 @@ describe('nutritionFromMembers', () => {
         preparedWeightG: 300,
       },
     ]);
-    // 200 cal × 3 servings; the 300 g stored weight is already the
-    // whole entry, so it is not scaled by servings again.
+    // 200 cal × 3 servings eaten; the 300 g stored weight covers the
+    // 3 servings cooked, and eat = cook, so it is not scaled either.
     expect(nutrition).toMatchObject({
       calories: 600,
       proteinG: 12,
       preparedWeightG: 300,
+      status: 'ready',
+    });
+  });
+
+  test('scales members by servings-to-eat, not servings-to-cook (#363)', () => {
+    const recipesById = new Map([[RECIPE_ID, accessibleRecipeRow]]);
+    const nutrition = nutritionFromMembers(
+      [
+        {
+          recipeId: RECIPE_ID,
+          sortOrder: 0,
+          servingsToCook: 8,
+          servingsToEat: 2,
+          title: 'Soup',
+          imageUrl: null,
+          recipeServings: 4,
+          accessLost: false,
+          satietyScore: 50,
+          nutritionStatus: 'ready',
+          calories: 100,
+          proteinG: 10,
+          carbsG: 5,
+          fatG: 2,
+        },
+      ],
+      recipesById,
+    );
+    // Per-serving 100 cal × 2 eaten = 200 (not × 8 cooked); the whole
+    // recipe's 400 g scales by 2 eaten / 4 recipe servings = 200 g.
+    expect(nutrition).toMatchObject({
+      calories: 200,
+      proteinG: 20,
+      preparedWeightG: 200,
+      status: 'ready',
+    });
+  });
+
+  test('scales a direct ingredient proportionally eat/cook (#363)', () => {
+    const nutrition = nutritionFromMembers([], new Map(), [
+      {
+        name: 'Rice',
+        quantity: 2,
+        unit: 'cups',
+        sortOrder: 0,
+        servingsToCook: 4,
+        servingsToEat: 1,
+        satietyScore: 60,
+        nutritionStatus: 'ready',
+        calories: 200,
+        proteinG: 4,
+        carbsG: 44,
+        fatG: 1,
+        fiberG: 1,
+        sugarG: 0,
+        sodiumMg: 5,
+        preparedWeightG: 300,
+      },
+    ]);
+    // Per-serving macros × 1 eaten; the 300 g whole-cooked-entry
+    // weight scales by eat / cook = 1/4.
+    expect(nutrition).toMatchObject({
+      calories: 200,
+      proteinG: 4,
+      preparedWeightG: 75,
       status: 'ready',
     });
   });
