@@ -29,6 +29,7 @@ import {createMealsRouter} from './routes/meals/router.js';
 import {createPublicRecipesRouter} from './routes/public/router.js';
 import {createRecipesRouter} from './routes/recipes/router.js';
 import {attachSeoRoutes} from './routes/seo/attachSeoRoutes.js';
+import {attachSsrRoutes} from './routes/ssr/attachSsrRoutes.js';
 import {createTagsRouter} from './routes/tags/router.js';
 import {attachWebStatic, isWebDistAvailable} from './staticWeb.js';
 
@@ -100,6 +101,9 @@ export const createApp = ({
   });
   app.use(API_PREFIX, api);
   attachSeoRoutes(app, queryFn);
+  // SSR routes attach before the web static/SPA fallback so an enabled
+  // SSR route wins over the SPA catch-all for its path (#304).
+  attachSsrRoutes(app, queryFn);
   app.use(handleUnexpectedError);
 
   if (serveWeb) {

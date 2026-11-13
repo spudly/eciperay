@@ -274,6 +274,10 @@ without); one recipe may be created fresh in case 1.
 `packages/web/src/components/{recipe,recipes}/**`,
 `packages/web/src/lib/recipeImageCrop.ts`, `@spudly/ui` recipe form or recipe
 page components, `packages/server` recipe routes,
+`packages/server/src/routes/ssr/**`,
+`packages/server/src/lib/renderPublicRecipe.tsx`,
+`packages/server/src/lib/loadPublicRecipe.ts`, the SSR route registration in
+`packages/server/src/server.ts` / `createApp`, and the `SSR_PUBLIC_RECIPE` gate,
 `packages/server/src/lib/autoGenerateRecipeImage.ts`,
 `packages/server/src/db/migrations/022_recipe_auto_image_attempt.sql`,
 `packages/web/src/pages/RecipeFormHost.tsx`,
@@ -791,7 +795,10 @@ account (viewer); one QA recipe.
 `packages/web/src/pages/legal/**`, `packages/web/src/components/shared/**`,
 `@spudly/ui` `DiscoverPage`, `PublicRecipePage`, `RecipesPage`, `AppShellPage`,
 `packages/web/src/components/PublicHeader.tsx`, `packages/server`
-sharing/visibility routes.
+sharing/visibility routes, `packages/server/src/routes/ssr/**`,
+`packages/server/src/lib/renderPublicRecipe.tsx`,
+`packages/server/src/lib/loadPublicRecipe.ts`, the SSR route registration in
+`packages/server/src/server.ts` / `createApp`, and the `SSR_PUBLIC_RECIPE` gate.
 
 ---
 

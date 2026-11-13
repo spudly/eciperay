@@ -13,6 +13,7 @@ import {renderToPipeableStream} from 'react-dom/server';
 import {TamaguiProvider} from '@tamagui/core';
 
 import {buildPublicRecipePageProps} from './buildPublicRecipePageProps.js';
+import {buildPublicRecipeCanonicalUrl, getWebAppBaseUrl} from './seoUrls.js';
 
 /**
  * The #304 Phase 0 spike renderer: renders the DS PublicRecipePage inside the
@@ -44,6 +45,17 @@ export const renderPublicRecipeStream = (
       config={serverTamaguiConfig}
       defaultTheme="light"
     >
+      {/* The slug is optional on the route, so the server-rendered page
+          itself declares the canonical URL (React hoists the link into
+          the document head) — crawlers and shared links resolve to the
+          slugged canonical address regardless of the requested form. */}
+      <link
+        rel="canonical"
+        href={buildPublicRecipeCanonicalUrl(getWebAppBaseUrl(), {
+          id: body.recipe.id,
+          slug: body.canonicalSlug,
+        })}
+      />
       <PublicRecipePage {...buildPublicRecipePageProps(body)} />
     </TamaguiProvider>,
     options,
