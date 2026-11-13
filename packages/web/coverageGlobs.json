@@ -1,11 +1,14 @@
 {
-  "include": ["src/**/*.{ts,tsx}"],
+  "include": [
+    "src/**/*.{ts,tsx}"
+  ],
   "exclude": [
     "src/main.tsx",
     "src/lib/env.ts",
     "src/vite-env.d.ts",
     "src/test/testUtils.tsx",
     "src/components/**",
-    "src/routes/router.tsx"
+    "src/routes/router.tsx",
+    "src/i18n/locales/**"
   ]
 }

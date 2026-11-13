@@ -34,6 +34,8 @@ module.exports = {
     '!src/screens/ComponentShowcaseScreen.tsx', // dev-only showcase entry
     '!src/components/**', // mirrored components; covered by screen/view tests and co-located demos
     '!src/__tests__/testUtils.tsx', // shared render/query helpers; not app code
+    '!src/i18n/locales/**', // generated Lingui catalogs (#465)
+    '!src/i18n/polyfills.ts', // side-effect-only Intl polyfill imports (#465)
   ],
   coverageThreshold: {
     global: {branches: 100, functions: 100, lines: 100, statements: 100},
@@ -45,7 +47,7 @@ module.exports = {
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(react-native|@react-native|@react-native-async-storage|@react-navigation|react-native-reanimated|react-native-worklets|react-native-safe-area-context|react-native-screens|react-native-blob-util|react-native-gesture-handler|react-native-draggable-flatlist|@tanstack/react-query|@eciperay|@spudly|tamagui|@tamagui)/)',
+    'node_modules/(?!(react-native|@react-native|@react-native-async-storage|@react-navigation|react-native-reanimated|react-native-worklets|react-native-safe-area-context|react-native-screens|react-native-blob-util|react-native-gesture-handler|react-native-draggable-flatlist|@tanstack/react-query|@eciperay|@spudly|tamagui|@tamagui|@lingui|@messageformat)/)', // @lingui/core + its @messageformat deps are ESM-only — transform them like tamagui (#465)
   ],
   // Explicit babel-jest transform: tamagui/@spudly are hoisted to the
   // workspace root node_modules, outside babel's config-file lookup, so point
