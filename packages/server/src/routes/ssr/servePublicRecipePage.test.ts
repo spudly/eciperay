@@ -11,7 +11,7 @@ import type {PublicRecipeStreamRenderer} from './servePublicRecipePage.js';
 
 const mockQuery = createMockQuery();
 
-const fakeRender: PublicRecipeStreamRenderer = (body, options) => {
+const fakeRender: PublicRecipeStreamRenderer = async (body, options) => {
   // Mirror react-dom/server: onShellReady fires after render returns,
   // and the handler pipes the stream into the response from there.
   queueMicrotask(() => options.onShellReady?.());
@@ -23,7 +23,10 @@ const fakeRender: PublicRecipeStreamRenderer = (body, options) => {
   } as unknown as PipeableStream;
 };
 
-const fakeShellErrorRender: PublicRecipeStreamRenderer = (_body, options) => {
+const fakeShellErrorRender: PublicRecipeStreamRenderer = async (
+  _body,
+  options,
+) => {
   queueMicrotask(() => options.onShellError?.(new Error('render failed')));
   return {
     pipe(dest: NodeJS.WritableStream) {
@@ -32,7 +35,7 @@ const fakeShellErrorRender: PublicRecipeStreamRenderer = (_body, options) => {
   } as unknown as PipeableStream;
 };
 
-const fakeOnErrorRender: PublicRecipeStreamRenderer = (body, options) => {
+const fakeOnErrorRender: PublicRecipeStreamRenderer = async (body, options) => {
   // Mirror a render error reported before the shell is ready: onError
   // fires first (the handler marks the response 500 + no-store), then the
   // recovered shell streams.

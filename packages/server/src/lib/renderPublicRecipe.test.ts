@@ -5,7 +5,10 @@ import {renderToPipeableStream} from 'react-dom/server';
 import {makePublicRecipeResponse} from '../test/fixtures/publicRecipeResponse.js';
 import {renderStreamToHtml} from '../test/renderStreamToHtml.js';
 
-import {renderPublicRecipeStream} from './renderPublicRecipe.js';
+import {
+  renderPublicRecipeStream,
+  renderPublicRecipeStreamDeterministic,
+} from './renderPublicRecipe.js';
 
 describe('renderPublicRecipeStream', () => {
   test('renders the public recipe page to HTML in-process (SSR spike)', async () => {
@@ -16,6 +19,30 @@ describe('renderPublicRecipeStream', () => {
     expect(html).toContain('Test Recipe');
     expect(html).toContain('2 cups Flour');
     expect(html).toContain('Mix the ingredients together.');
+  });
+
+  test('deterministic renders are byte-identical, including the first', async () => {
+    // Raw renders are not: in a cold process the first render's hoisted
+    // Tamagui <style> block snapshots the CSS registry before the page's
+    // own styles register, so render 1 differs from render 2 (renders 2+
+    // agree). The deterministic renderer's warm-up pass absorbs that —
+    // without it, the first assertion pair here is exactly the pair that
+    // diverges in a cold process.
+    const first = await renderStreamToHtml(async options =>
+      renderPublicRecipeStreamDeterministic(
+        makePublicRecipeResponse(),
+        options,
+      ),
+    );
+    const second = await renderStreamToHtml(async options =>
+      renderPublicRecipeStreamDeterministic(
+        makePublicRecipeResponse(),
+        options,
+      ),
+    );
+
+    expect(first).toBe(second);
+    expect(first).toContain('Test Recipe');
   });
 
   test('renders a canonical link tag for the slugged canonical URL', async () => {

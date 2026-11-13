@@ -1,14 +1,16 @@
 import type {Request, Response} from 'express';
+import type {PipeableStream} from 'react-dom/server';
 
 import {query as defaultQuery} from '../../db/query.js';
 import {getParam} from '../../lib/getParam.js';
 import {getShareTokenFromQuery} from '../../lib/getShareTokenFromQuery.js';
 import {loadPublicRecipe} from '../../lib/loadPublicRecipe.js';
-import type {renderPublicRecipeStream} from '../../lib/renderPublicRecipe.js';
+import type {renderPublicRecipeStreamDeterministic} from '../../lib/renderPublicRecipe.js';
 
 type QueryFn = typeof defaultQuery;
 
-export type PublicRecipeStreamRenderer = typeof renderPublicRecipeStream;
+export type PublicRecipeStreamRenderer =
+  typeof renderPublicRecipeStreamDeterministic;
 
 /**
  * Route-wiring tranche for #304: serve the public recipe page as streamed
@@ -58,9 +60,20 @@ export const servePublicRecipePage = async (
   res.status(200).type('text/html');
   res.set('Cache-Control', 'public, max-age=60');
 
-  const stream = render(result.body, {
-    onShellReady() {
+  // The renderer is async (its warm-up pass completes before the served
+  // stream exists), so onShellReady can fire before the stream has been
+  // assigned here — pipe from whichever of the two arrives second.
+  let shellReady = false;
+  let stream: PipeableStream | undefined;
+  const pipeWhenReady = (): void => {
+    if (shellReady && stream !== undefined) {
       stream.pipe(res);
+    }
+  };
+  stream = await render(result.body, {
+    onShellReady() {
+      shellReady = true;
+      pipeWhenReady();
     },
     onShellError() {
       if (!res.headersSent) {
@@ -81,5 +94,6 @@ export const servePublicRecipePage = async (
       }
     },
   });
+  pipeWhenReady();
   return true;
 };

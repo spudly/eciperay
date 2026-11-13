@@ -7,7 +7,7 @@ import type {
 
 type StreamRenderer = (
   options: RenderToPipeableStreamOptions,
-) => PipeableStream;
+) => PipeableStream | Promise<PipeableStream>;
 
 /**
  * Test-only helper: collect a streaming render (`renderToPipeableStream`) into
@@ -21,7 +21,9 @@ type StreamRenderer = (
  * pass as its fallback. The render-error regression test fails if that wiring
  * is removed.
  */
-export const renderStreamToHtml = (render: StreamRenderer): Promise<string> =>
+export const renderStreamToHtml = async (
+  render: StreamRenderer,
+): Promise<string> =>
   new Promise<string>((resolve, reject) => {
     const chunks: string[] = [];
     const output = new Writable({
@@ -34,5 +36,12 @@ export const renderStreamToHtml = (render: StreamRenderer): Promise<string> =>
         callback();
       },
     });
-    render({onError: reject, onShellError: reject}).pipe(output);
+    void (async () => {
+      try {
+        const stream = await render({onError: reject, onShellError: reject});
+        stream.pipe(output);
+      } catch (error) {
+        reject(error instanceof Error ? error : new Error(String(error)));
+      }
+    })();
   });
