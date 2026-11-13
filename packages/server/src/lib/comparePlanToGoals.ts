@@ -7,46 +7,59 @@ import type {
   NutritionGoals,
 } from '@eciperay/types';
 
-const ON_TRACK_TOLERANCE = 0.1;
-
 export const hasAnyNutritionGoal = (goals: NutritionGoals): boolean =>
-  goals.calories !== null ||
-  goals.proteinG !== null ||
-  goals.carbsG !== null ||
-  goals.fatG !== null ||
-  goals.satietyScore !== null;
+  goals.caloriesMin !== null ||
+  goals.caloriesMax !== null ||
+  goals.proteinGMin !== null ||
+  goals.proteinGMax !== null ||
+  goals.carbsGMin !== null ||
+  goals.carbsGMax !== null ||
+  goals.fatGMin !== null ||
+  goals.fatGMax !== null ||
+  goals.satietyScoreMin !== null ||
+  goals.satietyScoreMax !== null;
 
-const macroBand = (actual: number, goal: number): NutritionGoalBand => {
-  const low = goal * (1 - ON_TRACK_TOLERANCE);
-  const high = goal * (1 + ON_TRACK_TOLERANCE);
-  if (actual < low) {
+// One unified band rule for every field, satiety included (#521): the
+// user-set range replaces the old implicit semantics (macros ±10% of a
+// single target, satiety as a floor). An unset side never bands.
+const rangeBand = (
+  actual: number,
+  min: number | null,
+  max: number | null,
+): NutritionGoalBand => {
+  if (min !== null && actual < min) {
     return 'under';
   }
-  if (actual > high) {
+  if (max !== null && actual > max) {
     return 'over';
   }
   return 'onTrack';
 };
 
-const satietyBand = (actual: number, goal: number): NutritionGoalBand =>
-  actual >= goal ? 'onTrack' : 'under';
-
 const fieldProgress = (
   actual: number | null | undefined,
-  goal: number | null,
-  kind: 'macro' | 'satiety',
+  min: number | null,
+  max: number | null,
 ): NutritionGoalFieldProgress | null => {
-  if (goal === null || actual === null || actual === undefined) {
+  if (
+    (min === null && max === null) ||
+    actual === null ||
+    actual === undefined
+  ) {
     return null;
   }
-  const percentOfGoal = goal === 0 ? null : (actual / goal) * 100;
+  const band = rangeBand(actual, min, max);
   return {
-    goal,
+    min,
+    max,
     actual,
-    delta: actual - goal,
-    percentOfGoal,
-    band:
-      kind === 'satiety' ? satietyBand(actual, goal) : macroBand(actual, goal),
+    delta:
+      band === 'under' && min !== null
+        ? actual - min
+        : band === 'over' && max !== null
+          ? actual - max
+          : 0,
+    band,
   };
 };
 
@@ -75,14 +88,22 @@ export const comparePlanToGoals = (
   }
 
   return {
-    calories: fieldProgress(actual.calories, goals.calories, 'macro'),
-    proteinG: fieldProgress(actual.proteinG, goals.proteinG, 'macro'),
-    carbsG: fieldProgress(actual.carbsG, goals.carbsG, 'macro'),
-    fatG: fieldProgress(actual.fatG, goals.fatG, 'macro'),
+    calories: fieldProgress(
+      actual.calories,
+      goals.caloriesMin,
+      goals.caloriesMax,
+    ),
+    proteinG: fieldProgress(
+      actual.proteinG,
+      goals.proteinGMin,
+      goals.proteinGMax,
+    ),
+    carbsG: fieldProgress(actual.carbsG, goals.carbsGMin, goals.carbsGMax),
+    fatG: fieldProgress(actual.fatG, goals.fatGMin, goals.fatGMax),
     satietyScore: fieldProgress(
       actual.satietyScore,
-      goals.satietyScore,
-      'satiety',
+      goals.satietyScoreMin,
+      goals.satietyScoreMax,
     ),
   };
 };

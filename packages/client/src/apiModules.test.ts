@@ -173,11 +173,16 @@ describe('createEciperayClient', () => {
     await client.account.exportData();
     await client.account.getNutritionGoals();
     await client.account.putNutritionGoals({
-      calories: 2000,
-      proteinG: 150,
-      carbsG: null,
-      fatG: null,
-      satietyScore: 70,
+      caloriesMin: 1800,
+      caloriesMax: 2200,
+      proteinGMin: 150,
+      proteinGMax: null,
+      carbsGMin: null,
+      carbsGMax: null,
+      fatGMin: null,
+      fatGMax: null,
+      satietyScoreMin: 70,
+      satietyScoreMax: null,
     });
     await client.account.deleteAccount();
     await client.meals.list();

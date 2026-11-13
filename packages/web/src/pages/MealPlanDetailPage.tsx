@@ -27,19 +27,37 @@ const bandLabel = (band: NutritionGoalFieldProgress['band']): string => {
   return 'On track';
 };
 
+const formatGoalNumber = (value: number): string =>
+  Math.round(value).toLocaleString('en-US');
+
+const goalRangeLabel = (field: NutritionGoalFieldProgress): string => {
+  if (field.min !== null && field.max !== null) {
+    return `${formatGoalNumber(field.min)}–${formatGoalNumber(field.max)}`;
+  }
+  if (field.min !== null) {
+    return `at least ${formatGoalNumber(field.min)}`;
+  }
+  if (field.max !== null) {
+    return `up to ${formatGoalNumber(field.max)}`;
+  }
+  // Unreachable: progress is produced only when a bound is set.
+  return '';
+};
+
 const goalValueLabel = (field: NutritionGoalFieldProgress): string =>
-  `${Math.round(field.actual)} / ${Math.round(field.goal)} · ${bandLabel(field.band)}`;
+  `${formatGoalNumber(field.actual)} / ${goalRangeLabel(field)} · ${bandLabel(field.band)}`;
 
 /**
  * The composition the retired web view rendered, folded into the DS page's
  * view-models exactly as the app host composes it: the date range joined from
  * the plan's raw date strings, the nutrition summary from the shared formatter,
- * and the goal rows' rounded labels. The row labels carry the qualifier naming
- * what the server compared against the daily goals (#266): the per-day average
- * only when the plan has a valid date range (`nutrition.perDay` is set then);
- * the whole-plan total otherwise. Satiety carries neither qualifier — it is a
- * plan-wide score at any plan length. The DS page has no caption slot, so the
- * label is the lever (the app's composition since its rewire).
+ * and the goal rows' rounded actual / range labels. The row labels carry the
+ * qualifier naming what the server compared against the daily goals (#266): the
+ * per-day average only when the plan has a valid date range (`nutrition.perDay`
+ * is set then); the whole-plan total otherwise. Satiety carries neither
+ * qualifier — it is a plan-wide score at any plan length. The DS page has no
+ * caption slot, so the label is the lever (the app's composition since its
+ * rewire).
  *
  * One visibility nuance rides on the DS contract: the page renders the goals
  * section when the plan has goal progress or a nutrition summary; the retired

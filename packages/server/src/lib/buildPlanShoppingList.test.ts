@@ -50,11 +50,16 @@ describe('buildPlanShoppingList', () => {
       if (sql.includes('goal_calories')) {
         return makeQueryResult([
           {
-            goal_calories: null,
-            goal_protein_g: null,
-            goal_carbs_g: null,
-            goal_fat_g: null,
-            goal_satiety_score: null,
+            goal_calories_min: null,
+            goal_calories_max: null,
+            goal_protein_g_min: null,
+            goal_protein_g_max: null,
+            goal_carbs_g_min: null,
+            goal_carbs_g_max: null,
+            goal_fat_g_min: null,
+            goal_fat_g_max: null,
+            goal_satiety_score_min: null,
+            goal_satiety_score_max: null,
           },
         ]);
       }
@@ -103,11 +108,16 @@ describe('buildPlanShoppingList', () => {
       if (sql.includes('goal_calories')) {
         return makeQueryResult([
           {
-            goal_calories: null,
-            goal_protein_g: null,
-            goal_carbs_g: null,
-            goal_fat_g: null,
-            goal_satiety_score: null,
+            goal_calories_min: null,
+            goal_calories_max: null,
+            goal_protein_g_min: null,
+            goal_protein_g_max: null,
+            goal_carbs_g_min: null,
+            goal_carbs_g_max: null,
+            goal_fat_g_min: null,
+            goal_fat_g_max: null,
+            goal_satiety_score_min: null,
+            goal_satiety_score_max: null,
           },
         ]);
       }
@@ -161,11 +171,16 @@ describe('buildPlanShoppingList', () => {
       if (sql.includes('goal_calories')) {
         return makeQueryResult([
           {
-            goal_calories: null,
-            goal_protein_g: null,
-            goal_carbs_g: null,
-            goal_fat_g: null,
-            goal_satiety_score: null,
+            goal_calories_min: null,
+            goal_calories_max: null,
+            goal_protein_g_min: null,
+            goal_protein_g_max: null,
+            goal_carbs_g_min: null,
+            goal_carbs_g_max: null,
+            goal_fat_g_min: null,
+            goal_fat_g_max: null,
+            goal_satiety_score_min: null,
+            goal_satiety_score_max: null,
           },
         ]);
       }
@@ -221,11 +236,16 @@ describe('buildPlanShoppingList', () => {
       if (sql.includes('goal_calories')) {
         return makeQueryResult([
           {
-            goal_calories: null,
-            goal_protein_g: null,
-            goal_carbs_g: null,
-            goal_fat_g: null,
-            goal_satiety_score: null,
+            goal_calories_min: null,
+            goal_calories_max: null,
+            goal_protein_g_min: null,
+            goal_protein_g_max: null,
+            goal_carbs_g_min: null,
+            goal_carbs_g_max: null,
+            goal_fat_g_min: null,
+            goal_fat_g_max: null,
+            goal_satiety_score_min: null,
+            goal_satiety_score_max: null,
           },
         ]);
       }
@@ -273,11 +293,16 @@ describe('buildPlanShoppingList', () => {
       if (sql.includes('goal_calories')) {
         return makeQueryResult([
           {
-            goal_calories: null,
-            goal_protein_g: null,
-            goal_carbs_g: null,
-            goal_fat_g: null,
-            goal_satiety_score: null,
+            goal_calories_min: null,
+            goal_calories_max: null,
+            goal_protein_g_min: null,
+            goal_protein_g_max: null,
+            goal_carbs_g_min: null,
+            goal_carbs_g_max: null,
+            goal_fat_g_min: null,
+            goal_fat_g_max: null,
+            goal_satiety_score_min: null,
+            goal_satiety_score_max: null,
           },
         ]);
       }
@@ -324,11 +349,16 @@ describe('buildPlanShoppingList', () => {
       if (sql.includes('goal_calories')) {
         return makeQueryResult([
           {
-            goal_calories: null,
-            goal_protein_g: null,
-            goal_carbs_g: null,
-            goal_fat_g: null,
-            goal_satiety_score: null,
+            goal_calories_min: null,
+            goal_calories_max: null,
+            goal_protein_g_min: null,
+            goal_protein_g_max: null,
+            goal_carbs_g_min: null,
+            goal_carbs_g_max: null,
+            goal_fat_g_min: null,
+            goal_fat_g_max: null,
+            goal_satiety_score_min: null,
+            goal_satiety_score_max: null,
           },
         ]);
       }
@@ -376,11 +406,16 @@ describe('buildPlanShoppingList', () => {
       if (sql.includes('goal_calories')) {
         return makeQueryResult([
           {
-            goal_calories: null,
-            goal_protein_g: null,
-            goal_carbs_g: null,
-            goal_fat_g: null,
-            goal_satiety_score: null,
+            goal_calories_min: null,
+            goal_calories_max: null,
+            goal_protein_g_min: null,
+            goal_protein_g_max: null,
+            goal_carbs_g_min: null,
+            goal_carbs_g_max: null,
+            goal_fat_g_min: null,
+            goal_fat_g_max: null,
+            goal_satiety_score_min: null,
+            goal_satiety_score_max: null,
           },
         ]);
       }

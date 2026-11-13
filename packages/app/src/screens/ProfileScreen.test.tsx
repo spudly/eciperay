@@ -45,18 +45,28 @@ describe('ProfileScreen', () => {
   beforeEach(() => {
     jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
     mockGetNutritionGoals.mockResolvedValue({
-      calories: null,
-      proteinG: null,
-      carbsG: null,
-      fatG: null,
-      satietyScore: null,
+      caloriesMin: null,
+      caloriesMax: null,
+      proteinGMin: null,
+      proteinGMax: null,
+      carbsGMin: null,
+      carbsGMax: null,
+      fatGMin: null,
+      fatGMax: null,
+      satietyScoreMin: null,
+      satietyScoreMax: null,
     });
     mockPutNutritionGoals.mockResolvedValue({
-      calories: 2000,
-      proteinG: null,
-      carbsG: null,
-      fatG: null,
-      satietyScore: null,
+      caloriesMin: 2000,
+      caloriesMax: null,
+      proteinGMin: null,
+      proteinGMax: null,
+      carbsGMin: null,
+      carbsGMax: null,
+      fatGMin: null,
+      fatGMax: null,
+      satietyScoreMin: null,
+      satietyScoreMax: null,
     });
   });
 

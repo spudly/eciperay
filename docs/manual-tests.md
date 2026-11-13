@@ -541,19 +541,25 @@ via Meals case 1 and do not delete it until this section is done.)
    remove control), save, reload. **Expected:** the removed entry is gone, the
    remaining entries keep their order, and there are no duplicate or orphaned
    entries.
-4. **Nutrition goal progress.** If the account has nutrition goals set, open the
-   plan detail's nutrition goal progress. **Expected:** totals are plausible
-   sums of the assigned recipes and the progress view renders for days with and
-   without entries. For a plan with a valid date range, the goal figures are the
-   plan's **per-day average** against the daily goals and are labelled as such
-   ("(per-day avg)" row labels in the app and on web). For an undated plan
-   (dates are optional), the figures are the **plan total** against the daily
-   goals and are labelled as such ("(plan total)" row labels in the app and on
-   web) — they must not be labelled as a daily average or read as an unexplained
-   second total next to "Plan total" (regression: #266). Satiety is neither an
-   average nor a total: it is a ratio-based score that is identical for the
-   per-day and whole-plan figures, so both surfaces label it a plan-wide score
-   (row: "Satiety (plan-wide score)").
+4. **Nutrition goal progress.** If the account has nutrition goal ranges set,
+   open the plan detail's nutrition goal progress. **Expected:** totals are
+   plausible sums of the assigned recipes and the progress view renders for days
+   with and without entries. Each row reads `actual / range · band`: both bounds
+   set renders the range (`1,940 / 1,800–2,200 · On track`), a min-only goal
+   renders `at least <min>`, and a max-only goal renders `up to <max>`. A figure
+   below the min reads "Below goal", above the max reads "Above goal", and a
+   figure inside the range — or on the unset side of a single-bound goal — reads
+   "On track"; a figure exactly on a bound is on track. Satiety follows the same
+   range rule as the macros. For a plan with a valid date range, the goal
+   figures are the plan's **per-day average** against the daily goals and are
+   labelled as such ("(per-day avg)" row labels in the app and on web). For an
+   undated plan (dates are optional), the figures are the **plan total** against
+   the daily goals and are labelled as such ("(plan total)" row labels in the
+   app and on web) — they must not be labelled as a daily average or read as an
+   unexplained second total next to "Plan total" (regression: #266). Satiety is
+   neither an average nor a total: it is a ratio-based score that is identical
+   for the per-day and whole-plan figures, so both surfaces label it a plan-wide
+   score (row: "Satiety (plan-wide score)").
 5. **Delete the plan.** Delete `QA — Week Plan`. **Expected:** gone from the
    list; member recipes unaffected.
 6. **Direct `/meal-plans` visit + unknown routes (web).** Visit `/meal-plans`
@@ -859,11 +865,14 @@ plan-state rendering and section layout. The cases below are manual._
    audit trail that it was revoked), its Revoke action is gone, and it no longer
    authenticates (verify via an MCP/API call if tooling is at hand, otherwise
    record as unverified rather than skipping silently).
-4. **Nutrition goals.** Set daily goals (calories, protein, carbs, fat) in the
-   nutrition goals form; save; reload. **Expected:** values persist and meal
-   plan progress (see Meal plans, case 4) uses the new goals. Clear one goal.
-   **Expected:** that goal's progress display degrades gracefully (no NaN or
-   error).
+4. **Nutrition goals.** In the nutrition goals form, set a min and a max for
+   some daily goals (calories, protein, carbs, fat, satiety), only a min for one
+   goal, and only a max for another; save; reload. **Expected:** every bound
+   persists (blank bounds stay blank) and meal plan progress (see Meal plans,
+   case 4) uses the new ranges. Set a min above its max and save. **Expected:**
+   the save is rejected with an error naming the field. Clear both bounds of one
+   goal. **Expected:** that goal's progress display degrades gracefully (no NaN
+   or error).
 5. **Transfer recipes — export.** Use Transfer recipes → Export. **Expected:** a
    file downloads containing the account's recipes.
 6. **Transfer recipes — import round trip.** Import the exported file back.

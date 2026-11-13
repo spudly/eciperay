@@ -74,8 +74,25 @@ const bandLabel = (band: NutritionGoalFieldProgress['band']): string => {
   return 'On track';
 };
 
+const formatGoalNumber = (value: number): string =>
+  Math.round(value).toLocaleString('en-US');
+
+const goalRangeLabel = (field: NutritionGoalFieldProgress): string => {
+  if (field.min !== null && field.max !== null) {
+    return `${formatGoalNumber(field.min)}–${formatGoalNumber(field.max)}`;
+  }
+  if (field.min !== null) {
+    return `at least ${formatGoalNumber(field.min)}`;
+  }
+  if (field.max !== null) {
+    return `up to ${formatGoalNumber(field.max)}`;
+  }
+  // Unreachable: progress is produced only when a bound is set.
+  return '';
+};
+
 const goalValueLabel = (field: NutritionGoalFieldProgress): string =>
-  `${Math.round(field.actual)} / ${Math.round(field.goal)} · ${bandLabel(field.band)}`;
+  `${formatGoalNumber(field.actual)} / ${goalRangeLabel(field)} · ${bandLabel(field.band)}`;
 
 export const MealPlanDetailView = ({
   plan,

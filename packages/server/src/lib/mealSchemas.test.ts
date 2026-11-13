@@ -281,22 +281,111 @@ describe('mealSchemas', () => {
     ).toMatchObject({title: 'Week'});
   });
 
-  test('NutritionGoalsSchema accepts nullable macros', () => {
+  test('NutritionGoalsSchema accepts nullable ranges', () => {
     expect(
       NutritionGoalsSchema.parse({
-        calories: 2000,
-        proteinG: null,
-        carbsG: null,
-        fatG: null,
-        satietyScore: 50,
+        caloriesMin: 1800,
+        caloriesMax: 2200,
+        proteinGMin: null,
+        proteinGMax: null,
+        carbsGMin: null,
+        carbsGMax: null,
+        fatGMin: null,
+        fatGMax: null,
+        satietyScoreMin: 50,
+        satietyScoreMax: null,
       }),
     ).toEqual({
-      calories: 2000,
-      proteinG: null,
-      carbsG: null,
-      fatG: null,
-      satietyScore: 50,
+      caloriesMin: 1800,
+      caloriesMax: 2200,
+      proteinGMin: null,
+      proteinGMax: null,
+      carbsGMin: null,
+      carbsGMax: null,
+      fatGMin: null,
+      fatGMax: null,
+      satietyScoreMin: 50,
+      satietyScoreMax: null,
     });
+  });
+
+  test('NutritionGoalsSchema accepts partial bounds and equal bounds', () => {
+    const base = {
+      caloriesMin: null,
+      caloriesMax: null,
+      proteinGMin: null,
+      proteinGMax: null,
+      carbsGMin: null,
+      carbsGMax: null,
+      fatGMin: null,
+      fatGMax: null,
+      satietyScoreMin: null,
+      satietyScoreMax: null,
+    };
+    expect(
+      NutritionGoalsSchema.parse({...base, proteinGMin: 110}),
+    ).toMatchObject({proteinGMin: 110});
+    expect(NutritionGoalsSchema.parse({...base, fatGMax: 80})).toMatchObject({
+      fatGMax: 80,
+    });
+    expect(
+      NutritionGoalsSchema.parse({
+        ...base,
+        caloriesMin: 2000,
+        caloriesMax: 2000,
+      }),
+    ).toMatchObject({caloriesMin: 2000, caloriesMax: 2000});
+  });
+
+  test('NutritionGoalsSchema rejects min greater than max per field', () => {
+    const base = {
+      caloriesMin: null,
+      caloriesMax: null,
+      proteinGMin: null,
+      proteinGMax: null,
+      carbsGMin: null,
+      carbsGMax: null,
+      fatGMin: null,
+      fatGMax: null,
+      satietyScoreMin: null,
+      satietyScoreMax: null,
+    };
+    const inverted: Partial<Record<string, Record<string, number>>> = {
+      calories: {caloriesMin: 2200, caloriesMax: 1800},
+      proteinG: {proteinGMin: 150, proteinGMax: 100},
+      carbsG: {carbsGMin: 300, carbsGMax: 200},
+      fatG: {fatGMin: 90, fatGMax: 60},
+      satietyScore: {satietyScoreMin: 80, satietyScoreMax: 50},
+    };
+    for (const patch of Object.values(inverted)) {
+      expect(() => NutritionGoalsSchema.parse({...base, ...patch})).toThrow(
+        z.ZodError,
+      );
+    }
+  });
+
+  test('NutritionGoalsSchema rejects out-of-range bounds', () => {
+    const base = {
+      caloriesMin: null,
+      caloriesMax: null,
+      proteinGMin: null,
+      proteinGMax: null,
+      carbsGMin: null,
+      carbsGMax: null,
+      fatGMin: null,
+      fatGMax: null,
+      satietyScoreMin: null,
+      satietyScoreMax: null,
+    };
+    expect(() =>
+      NutritionGoalsSchema.parse({...base, caloriesMin: -1}),
+    ).toThrow(z.ZodError);
+    expect(() =>
+      NutritionGoalsSchema.parse({...base, satietyScoreMax: 101}),
+    ).toThrow(z.ZodError);
+    expect(() =>
+      NutritionGoalsSchema.parse({...base, satietyScoreMin: 50.5}),
+    ).toThrow(z.ZodError);
   });
 
   test('AiStepTimingResponseSchema validates timing array', () => {

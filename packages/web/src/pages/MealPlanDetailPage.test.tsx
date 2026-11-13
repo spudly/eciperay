@@ -51,10 +51,10 @@ describe('MealPlanDetailPage', () => {
           },
           goalProgress: {
             calories: {
-              goal: 2000,
+              min: 1800,
+              max: 2200,
               actual: 71,
-              delta: -1929,
-              percentOfGoal: 3.55,
+              delta: -1729,
               band: 'under',
             },
             proteinG: null,
@@ -183,7 +183,9 @@ describe('MealPlanDetailPage', () => {
     // composition); the page-level test supplies the labels directly
     // and cannot catch the wiring breaking.
     expect(screen.getByText('Calories (per-day avg)')).toBeInTheDocument();
-    expect(screen.getByText('71 / 2000 · Below goal')).toBeInTheDocument();
+    expect(
+      screen.getByText('71 / 1,800–2,200 · Below goal'),
+    ).toBeInTheDocument();
     // Navigation crosses to the DS page as hrefs (#248): the actions
     // and entry rows render as real links.
     expect(screen.getByRole('link', {name: 'Edit'})).toHaveAttribute(
@@ -248,10 +250,10 @@ describe('MealPlanDetailPage', () => {
           },
           goalProgress: {
             calories: {
-              goal: 2000,
+              min: 1800,
+              max: 2200,
               actual: 500,
-              delta: -1500,
-              percentOfGoal: 25,
+              delta: -1300,
               band: 'under',
             },
             proteinG: null,
@@ -280,6 +282,8 @@ describe('MealPlanDetailPage', () => {
       expect(screen.getByText('Someday')).toBeInTheDocument();
     });
     expect(screen.getByText('Calories (plan total)')).toBeInTheDocument();
-    expect(screen.getByText('500 / 2000 · Below goal')).toBeInTheDocument();
+    expect(
+      screen.getByText('500 / 1,800–2,200 · Below goal'),
+    ).toBeInTheDocument();
   });
 });

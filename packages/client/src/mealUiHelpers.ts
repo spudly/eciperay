@@ -178,11 +178,16 @@ export const buildMealPlanInputFromForm = (args: {
 });
 
 export const defaultNutritionGoals = (): NutritionGoals => ({
-  calories: null,
-  proteinG: null,
-  carbsG: null,
-  fatG: null,
-  satietyScore: null,
+  caloriesMin: null,
+  caloriesMax: null,
+  proteinGMin: null,
+  proteinGMax: null,
+  carbsGMin: null,
+  carbsGMax: null,
+  fatGMin: null,
+  fatGMax: null,
+  satietyScoreMin: null,
+  satietyScoreMax: null,
 });
 
 /**

@@ -9,11 +9,16 @@ import {renderWithProviders} from '../../test/testUtils.js';
 import {ProfileNutritionGoalsSection} from './ProfileNutritionGoalsSection.js';
 
 const emptyGoals: NutritionGoals = {
-  calories: null,
-  proteinG: null,
-  carbsG: null,
-  fatG: null,
-  satietyScore: null,
+  caloriesMin: null,
+  caloriesMax: null,
+  proteinGMin: null,
+  proteinGMax: null,
+  carbsGMin: null,
+  carbsGMax: null,
+  fatGMin: null,
+  fatGMax: null,
+  satietyScoreMin: null,
+  satietyScoreMax: null,
 };
 
 describe('ProfileNutritionGoalsSection', () => {
@@ -33,13 +38,13 @@ describe('ProfileNutritionGoalsSection', () => {
       withAuth: false,
     });
 
-    const caloriesField = await screen.findByLabelText('Calories');
+    const caloriesField = await screen.findByLabelText('Calories min');
     await user.type(caloriesField, '1.5');
     expect(caloriesField).toHaveValue('1.5');
 
     await user.click(screen.getByRole('button', {name: 'Save goals'}));
     await waitFor(() => {
-      expect(putSpy).toHaveBeenCalledWith({...emptyGoals, calories: 1.5});
+      expect(putSpy).toHaveBeenCalledWith({...emptyGoals, caloriesMin: 1.5});
     });
     expect(caloriesField).toHaveValue('1.5');
   });
