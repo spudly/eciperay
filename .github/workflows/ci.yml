@@ -95,6 +95,37 @@ jobs:
       - name: Lint GitHub Actions workflows
         run: npm run workflows:lint
 
+  # Issue #514 Phase 1: knip already runs in the local `npm run ci`
+  # aggregate but never in GitHub Actions, so dead code is invisible on
+  # PRs. Warn mode only: this job is deliberately NOT in ci-gate's
+  # needs and is not a required check — a knip finding (or knip itself
+  # erroring) can never fail a PR. Full output goes to the step summary.
+  knip:
+    name: knip (warn mode)
+    needs: install
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup
+        uses: ./.github/actions/ci-setup
+        with:
+          skip-install-on-cache-hit: 'true'
+
+      - name: Knip (warn mode, report to step summary)
+        shell: bash
+        run: |
+          {
+            echo '## Knip — warn mode (#514 Phase 1)'
+            echo ''
+            echo '```text'
+            npm run knip 2>&1 || true
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
   typecheck:
     name: typecheck
     needs: install
