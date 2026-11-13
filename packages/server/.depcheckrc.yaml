@@ -1,3 +1,6 @@
 specials:
   - bin
   - jest
+ignores:
+  - react-native-web # jest moduleNameMapper target for the react-native imports of @spudly/ui/pages in the #304 SSR graph; referenced by jest.config.cjs, not imported in source
+  - react-native-svg # jest moduleNameMapper target for @spudly/ui's react-native-svg imports in the #304 SSR graph; referenced by jest.config.cjs, not imported in source

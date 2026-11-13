@@ -94,7 +94,13 @@ COPY packages/web/package.json packages/web/
 COPY packages/app/package.json packages/app/
 COPY patches/ patches/
 
-RUN npm ci --omit=dev --ignore-scripts \
+# The server's production closure now includes @spudly/ui (the #304 SSR
+# renderer), which is served from GitHub Packages and needs an auth
+# token — same BuildKit-secret pattern as the build stage above: the
+# token is mounted only for this npm ci step and never lands in a layer.
+RUN printf '@spudly:registry=https://npm.pkg.github.com/\n//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}\n' > .npmrc
+
+RUN --mount=type=secret,id=NODE_AUTH_TOKEN,env=NODE_AUTH_TOKEN npm ci --omit=dev --ignore-scripts \
   --workspace=@eciperay/server \
   --workspace=@eciperay/client \
   --workspace=@eciperay/types \
