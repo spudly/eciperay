@@ -47,7 +47,7 @@ module.exports = {
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(react-native|@react-native|@react-native-async-storage|@react-navigation|react-native-reanimated|react-native-worklets|react-native-safe-area-context|react-native-screens|react-native-blob-util|react-native-gesture-handler|react-native-draggable-flatlist|@tanstack/react-query|@eciperay|@spudly|tamagui|@tamagui)/)',
+    'node_modules/(?!(react-native|@react-native|@react-native-async-storage|@react-navigation|react-native-reanimated|react-native-worklets|react-native-safe-area-context|react-native-screens|react-native-blob-util|react-native-gesture-handler|react-native-draggable-flatlist|@tanstack/react-query|@eciperay|@spudly|tamagui|@tamagui|@lingui|@messageformat)/)', // @lingui/core + its @messageformat deps are ESM-only — transform them like tamagui (#465)
   ],
   // Explicit babel-jest transform: tamagui/@spudly are hoisted to the
   // workspace root node_modules, outside babel's config-file lookup, so point
