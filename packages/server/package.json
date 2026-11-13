@@ -9,6 +9,7 @@
     "test:coverage": "NODE_OPTIONS='--experimental-vm-modules --no-warnings --max-old-space-size=4096' jest --coverage",
     "test:coverage:ci": "NODE_OPTIONS='--experimental-vm-modules --no-warnings --max-old-space-size=4096' jest --coverage --coverageDirectory=coverage/shard-${JEST_SHARD_INDEX} --shard=${JEST_SHARD_INDEX}/${JEST_SHARD_TOTAL}",
     "test:coverage:merge": "tsx scripts/mergeCoverage.ts",
+    "build:ssr": "node scripts/buildSsrBundle.mjs",
     "start": "tsx src/server.ts",
     "dev": "tsx watch src/server.ts",
     "migrate": "tsx src/db/migrate.ts"
@@ -53,6 +54,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@types/supertest": "^7.2.1",
+    "esbuild": "^0.28.1",
     "istanbul-lib-coverage": "^3.2.2",
     "istanbul-lib-report": "^3.0.1",
     "istanbul-reports": "^3.2.0",

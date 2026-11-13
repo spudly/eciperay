@@ -75,6 +75,14 @@ ENV GITHUB_SHA=${GITHUB_SHA}
 
 RUN npm run build --workspace=packages/web
 
+# Build the bundled SSR runtime entry (#304): the server's public-recipe
+# renderer pulls in the @spudly/ui graph, which plain Node cannot load
+# untranspiled, so it is bundled with the web substitutions into a single
+# self-contained ESM file the runner stage loads directly (see
+# packages/server/scripts/buildSsrBundle.mjs).
+COPY packages/server packages/server
+RUN npm run build:ssr --workspace=@eciperay/server
+
 FROM node:22-bookworm-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
@@ -109,6 +117,7 @@ RUN --mount=type=secret,id=NODE_AUTH_TOKEN,env=NODE_AUTH_TOKEN npm ci --omit=dev
 COPY --from=build /app/packages/types packages/types
 COPY packages/client packages/client
 COPY packages/server packages/server
+COPY --from=build /app/packages/server/dist-ssr packages/server/dist-ssr
 COPY packages/mcp-server packages/mcp-server
 COPY --from=build /app/packages/web/dist packages/web/dist
 

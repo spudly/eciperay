@@ -24,11 +24,12 @@ import {buildPublicRecipeCanonicalUrl, getWebAppBaseUrl} from './seoUrls.js';
  * entry (packages/web/src/main.tsx): the DS config factory over the Eciperay
  * theme, light default theme. The route-wiring tranche (#517) serves it at GET
  * /recipe/:id/:slug behind the SSR_PUBLIC_RECIPE flag; the findings and
- * measurements live in docs/ssr-phase0-inventory.md. Still owed before the flag
- * can enable in production: a bundled/transpiled SSR runtime entry, because the
- * DS module graph ships untranspiled ESM plain Node cannot load (the Jest
- * pipeline and tsx dev entry apply the web substitutions; a bare Node
- * production entry does not).
+ * measurements live in docs/ssr-phase0-inventory.md. Production loads this
+ * module through the bundled SSR runtime entry (scripts/buildSsrBundle.mjs →
+ * dist-ssr/renderPublicRecipe.mjs, wired in attachSsrRoutes via
+ * SSR_RENDERER_BUNDLE_PATH), because the DS module graph ships untranspiled ESM
+ * plain Node cannot load (the Jest pipeline and tsx dev entry apply the web
+ * substitutions; a bare Node production entry does not).
  *
  * The render returns the `PipeableStream` from `renderToPipeableStream`
  * directly: wrapping it in a promise would defeat the streaming renderer — the

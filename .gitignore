@@ -11,6 +11,7 @@ node_modules
 
 # build output
 dist
+dist-ssr/
 build
 dist-e2e/
 test-results/
