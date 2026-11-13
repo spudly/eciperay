@@ -277,7 +277,9 @@ page components, `packages/server` recipe routes,
 `packages/server/src/routes/ssr/**`,
 `packages/server/src/lib/renderPublicRecipe.tsx`,
 `packages/server/src/lib/loadPublicRecipe.ts`, the SSR route registration in
-`packages/server/src/server.ts` / `createApp`, and the `SSR_PUBLIC_RECIPE` gate,
+`packages/server/src/server.ts` / `createApp`, the `SSR_PUBLIC_RECIPE` and
+`SSR_RENDERER_BUNDLE_PATH` settings, `fly.toml`, `Dockerfile`, and the SSR
+bundle build (`packages/server/scripts/buildSsrBundle.mjs`),
 `packages/server/src/lib/autoGenerateRecipeImage.ts`,
 `packages/server/src/db/migrations/022_recipe_auto_image_attempt.sql`,
 `packages/web/src/pages/RecipeFormHost.tsx`,
@@ -808,7 +810,9 @@ account (viewer); one QA recipe.
 sharing/visibility routes, `packages/server/src/routes/ssr/**`,
 `packages/server/src/lib/renderPublicRecipe.tsx`,
 `packages/server/src/lib/loadPublicRecipe.ts`, the SSR route registration in
-`packages/server/src/server.ts` / `createApp`, and the `SSR_PUBLIC_RECIPE` gate.
+`packages/server/src/server.ts` / `createApp`, the `SSR_PUBLIC_RECIPE` and
+`SSR_RENDERER_BUNDLE_PATH` settings, `fly.toml`, `Dockerfile`, and the SSR
+bundle build (`packages/server/scripts/buildSsrBundle.mjs`).
 
 ---
 
