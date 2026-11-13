@@ -603,7 +603,11 @@ via Meals case 1 and do not delete it until this section is done.)
 `packages/server/src/lib/loadMealPlanDetail.ts`, `packages/server` meal plan
 routes, `packages/server/src/lib/saveMealPlan.ts`,
 `packages/server/src/lib/conditionalWrite.ts`,
-`packages/server/src/lib/mealSchemas.ts`.
+`packages/server/src/lib/mealSchemas.ts`,
+`packages/server/src/lib/comparePlanToGoals.ts`,
+`packages/server/src/lib/nutritionGoalsQueries.ts`,
+`packages/types/src/types/nutritionGoals.ts`,
+`packages/server/src/db/migrations/024_nutrition_goal_ranges.sql`.
 
 ---
 
@@ -893,7 +897,11 @@ plan-state rendering and section layout. The cases below are manual._
 `packages/web/src/components/FeedbackBubble.tsx`,
 `packages/web/src/components/FeedbackForm.tsx`, `packages/web/src/index.css`
 (the `.feedback-panel` sizing), `packages/server` profile/token/transfer routes,
-entitlement override handling.
+`packages/server/src/lib/nutritionGoalsQueries.ts`,
+`packages/server/src/lib/mealSchemas.ts`,
+`packages/types/src/types/nutritionGoals.ts`,
+`packages/server/src/db/migrations/024_nutrition_goal_ranges.sql`, entitlement
+override handling.
 
 ---
 
