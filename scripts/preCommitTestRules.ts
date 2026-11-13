@@ -51,8 +51,12 @@ const hasColocatedTest = (
 ): boolean => {
   // Colocation mapping comes from @spudly/tooling (shared tooling
   // standard, #516): a staged colocated test counts, as does one that
-  // already exists on disk.
-  if (findAffectedTests([sourceRelPath], [...stagedSet]).length > 0) {
+  // already exists on disk. The shared discovery also accepts *.spec.*
+  // and any extension, so results are filtered through this repo's
+  // test-file predicate (.test.ts/.test.tsx only — the runners match
+  // nothing else).
+  const discovered = findAffectedTests([sourceRelPath], [...stagedSet]);
+  if (discovered.some(isTestFile)) {
     return true;
   }
   return colocatedTestPaths(root, sourceRelPath).some(candidate =>

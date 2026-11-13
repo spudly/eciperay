@@ -42,6 +42,34 @@ describe('findMissingColocatedTests', () => {
     expect(failures).toEqual([]);
   });
 
+  it('does not accept a staged .test.md file as the colocated test', () => {
+    const failures = findMissingColocatedTests(
+      root,
+      ['packages/web/src/lib/newExportHelper.ts'],
+      [
+        'packages/web/src/lib/newExportHelper.ts',
+        'packages/web/src/lib/newExportHelper.test.md',
+      ],
+    );
+    expect(failures).toEqual([
+      'packages/web/src/lib/newExportHelper.ts (expected packages/web/src/lib/newExportHelper.test.ts or packages/web/src/lib/newExportHelper.test.tsx)',
+    ]);
+  });
+
+  it('does not accept a staged .spec.ts file as the colocated test', () => {
+    const failures = findMissingColocatedTests(
+      root,
+      ['packages/web/src/lib/newExportHelper.ts'],
+      [
+        'packages/web/src/lib/newExportHelper.ts',
+        'packages/web/src/lib/newExportHelper.spec.ts',
+      ],
+    );
+    expect(failures).toEqual([
+      'packages/web/src/lib/newExportHelper.ts (expected packages/web/src/lib/newExportHelper.test.ts or packages/web/src/lib/newExportHelper.test.tsx)',
+    ]);
+  });
+
   it('does not require colocated tests for new app components', () => {
     expect(
       requiresColocatedTest('packages/app/src/components/NewExample.tsx'),

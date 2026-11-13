@@ -1,4 +1,4 @@
-npx lint-staged
+npx lint-staged --relative
 
 # Two stages are gated on staged files that can actually affect them
 # (~11s saved on commits that can't). Triggers mirror what each check
