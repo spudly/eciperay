@@ -796,8 +796,9 @@ account (viewer); one QA recipe.
 `@spudly/ui` `DiscoverPage`, `PublicRecipePage`, `RecipesPage`, `AppShellPage`,
 `packages/web/src/components/PublicHeader.tsx`, `packages/server`
 sharing/visibility routes, `packages/server/src/routes/ssr/**`,
-`packages/server/src/lib/renderPublicRecipe.tsx`, and the `SSR_PUBLIC_RECIPE`
-gate.
+`packages/server/src/lib/renderPublicRecipe.tsx`,
+`packages/server/src/lib/loadPublicRecipe.ts`, the SSR route registration in
+`packages/server/src/server.ts` / `createApp`, and the `SSR_PUBLIC_RECIPE` gate.
 
 ---
 

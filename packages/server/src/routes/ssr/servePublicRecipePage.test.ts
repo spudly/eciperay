@@ -32,6 +32,22 @@ const fakeShellErrorRender: PublicRecipeStreamRenderer = (_body, options) => {
   } as unknown as PipeableStream;
 };
 
+const fakeOnErrorRender: PublicRecipeStreamRenderer = (body, options) => {
+  // Mirror a render error reported before the shell is ready: onError
+  // fires first (the handler marks the response 500 + no-store), then the
+  // recovered shell streams.
+  queueMicrotask(() => {
+    options.onError?.(new Error('render error'), {componentStack: ''});
+    options.onShellReady?.();
+  });
+  return {
+    pipe(dest: NodeJS.WritableStream) {
+      dest.end(`<html><body>${body.recipe.title}</body></html>`);
+      return dest;
+    },
+  } as unknown as PipeableStream;
+};
+
 const buildApp = (render: PublicRecipeStreamRenderer = fakeRender) => {
   const app = express();
   attachSsrRoutes(app, mockQuery, render);
@@ -114,6 +130,18 @@ describe('GET /recipe/:id/:slug (SSR)', () => {
     mockPublicRecipeQueries();
 
     const res = await request(buildApp(fakeShellErrorRender)).get(
+      '/recipe/recipe-uuid-1/pasta',
+    );
+
+    expect(res.status).toBe(500);
+    expect(res.headers['cache-control']).toContain('no-store');
+    expect(res.headers['cache-control']).not.toContain('max-age=60');
+  });
+
+  test('marks the response 500 + no-store when onError fires before headers are sent', async () => {
+    mockPublicRecipeQueries();
+
+    const res = await request(buildApp(fakeOnErrorRender)).get(
       '/recipe/recipe-uuid-1/pasta',
     );
 
