@@ -33,7 +33,7 @@
     "prettier:check": "prettier --check .",
     "actionlint": "github-actionlint .github/workflows/*.yml",
     "workflows:lint": "prettier --check .github/workflows && npm run actionlint",
-    "lint": "eslint packages --max-warnings 0 --cache --cache-location .eslintcache --cache-strategy content",
+    "lint": "eslint packages --cache --cache-location .eslintcache --cache-strategy content",
     "lint:fix": "eslint packages --fix --cache --cache-location .eslintcache --cache-strategy content",
     "validate:node-version": "tsx scripts/validateNodeVersion.ts",
     "validate:ui-parity": "tsx scripts/checkMirrorPairsCli.ts",
@@ -51,8 +51,7 @@
     "audit": "npm audit --audit-level=low",
     "knip": "knip",
     "jscpd": "jscpd packages/*/src scripts",
-    "depcheck": "depcheck && find packages -mindepth 1 -maxdepth 1 -type d -print0 | xargs -0 -n1 depcheck",
-    "ci": "concurrently --group --names validate,typecheck,lint,workflows,depcheck,knip,jscpd,test --prefix-colors white,blue,yellow,white,red,gray,gray,green \"npm run validate:node-version && npm run validate:ui-parity\" \"npm run typecheck\" \"npm run lint\" \"npm run workflows:lint\" \"npm run depcheck\" \"npm run knip\" \"npm run jscpd\" \"npm run test:coverage\"",
+    "ci": "concurrently --group --names validate,typecheck,lint,workflows,knip,jscpd,drift,test --prefix-colors white,blue,yellow,white,gray,gray,red,green \"npm run validate:node-version && npm run validate:ui-parity\" \"npm run typecheck\" \"npm run lint\" \"npm run workflows:lint\" \"npm run knip\" \"npm run jscpd\" \"npx spudly-tooling check-drift\" \"npm run test:coverage\"",
     "test": "npm run test:scripts && TURBO_TELEMETRY_DISABLED=1 turbo test",
     "test:coverage": "npm run test:scripts && TURBO_TELEMETRY_DISABLED=1 turbo test:coverage",
     "start:server": "npm run start --workspace=packages/server",
@@ -62,24 +61,24 @@
   "lint-staged": {
     "*.{js,jsx,cjs,mjs,mts,cts,ts,tsx}": [
       "prettier --write",
-      "eslint --max-warnings 0 --fix --no-warn-ignored --cache --cache-location .eslintcache --cache-strategy content"
+      "eslint --fix --no-warn-ignored --cache --cache-location .eslintcache --cache-strategy content"
     ],
     "*.{json,yml,yaml,md}": "prettier --write",
-    ".github/workflows/*.{yml,yaml}": "github-actionlint"
+    ".github/workflows/*.{yml,yaml}": "spudly-tooling actionlint --staged"
   },
   "devDependencies": {
     "@changesets/cli": "^3.0.3",
     "@commitlint/cli": "^21.2.4",
-    "@commitlint/config-conventional": "^21.2.3",
+    "@spudly/commitlint-config": "^0.2.0",
     "@jest/globals": "^30.5.2",
     "@spudly/eslint-config": "^0.2.0",
+    "@spudly/tooling": "^0.2.0",
     "@swc/core": "^1.16.20",
     "@swc/jest": "^0.2.39",
     "@types/jest": "^30.0.0",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^26.6.5",
     "concurrently": "^10.0.6",
-    "depcheck": "^1.4.7",
     "eslint": "^10.13.0",
     "github-actionlint": "^1.7.12",
     "husky": "^9.1.7",
