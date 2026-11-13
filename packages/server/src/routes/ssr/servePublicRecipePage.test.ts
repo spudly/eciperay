@@ -35,6 +35,10 @@ const fakeShellErrorRender: PublicRecipeStreamRenderer = async (
   } as unknown as PipeableStream;
 };
 
+const fakeRejectingRender: PublicRecipeStreamRenderer = async () => {
+  throw new Error('warm-up render failed');
+};
+
 const fakeOnErrorRender: PublicRecipeStreamRenderer = async (body, options) => {
   // Mirror a render error reported before the shell is ready: onError
   // fires first (the handler marks the response 500 + no-store), then the
@@ -145,6 +149,18 @@ describe('GET /recipe/:id/:slug (SSR)', () => {
     mockPublicRecipeQueries();
 
     const res = await request(buildApp(fakeOnErrorRender)).get(
+      '/recipe/recipe-uuid-1/pasta',
+    );
+
+    expect(res.status).toBe(500);
+    expect(res.headers['cache-control']).toContain('no-store');
+    expect(res.headers['cache-control']).not.toContain('max-age=60');
+  });
+
+  test('marks the response no-store when the renderer rejects before returning a stream', async () => {
+    mockPublicRecipeQueries();
+
+    const res = await request(buildApp(fakeRejectingRender)).get(
       '/recipe/recipe-uuid-1/pasta',
     );
 

@@ -70,30 +70,41 @@ export const servePublicRecipePage = async (
       stream.pipe(res);
     }
   };
-  stream = await render(result.body, {
-    onShellReady() {
-      shellReady = true;
-      pipeWhenReady();
-    },
-    onShellError() {
-      if (!res.headersSent) {
-        // The 200 path set a public cache TTL before rendering; an error
-        // response must never inherit it — a transient render failure
-        // would otherwise stay cacheable for the TTL.
-        res.set('Cache-Control', 'no-store');
-        res.status(500).type('text/html');
-        res.send('<h1>Something went wrong</h1>');
-      }
-    },
-    onError() {
-      // React has already logged the render error; a mid-stream failure
-      // cannot change the status, so the response simply ends short.
-      if (!res.headersSent) {
-        res.set('Cache-Control', 'no-store');
-        res.status(500);
-      }
-    },
-  });
+  try {
+    stream = await render(result.body, {
+      onShellReady() {
+        shellReady = true;
+        pipeWhenReady();
+      },
+      onShellError() {
+        if (!res.headersSent) {
+          // The 200 path set a public cache TTL before rendering; an error
+          // response must never inherit it — a transient render failure
+          // would otherwise stay cacheable for the TTL.
+          res.set('Cache-Control', 'no-store');
+          res.status(500).type('text/html');
+          res.send('<h1>Something went wrong</h1>');
+        }
+      },
+      onError() {
+        // React has already logged the render error; a mid-stream failure
+        // cannot change the status, so the response simply ends short.
+        if (!res.headersSent) {
+          res.set('Cache-Control', 'no-store');
+          res.status(500);
+        }
+      },
+    });
+  } catch (error) {
+    // A rejected render (e.g. the warm-up pass failing) propagates to the
+    // caller's error handling, but the public cache TTL set above must not
+    // ride along on the error response it produces.
+    if (!res.headersSent) {
+      res.set('Cache-Control', 'no-store');
+      res.status(500);
+    }
+    throw error;
+  }
   pipeWhenReady();
   return true;
 };
