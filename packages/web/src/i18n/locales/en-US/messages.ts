@@ -1,0 +1,1 @@
+/*eslint-disable*/import type{Messages}from"@lingui/core";export const messages=JSON.parse("{\"spike.recipeCount\":[[\"count\",\"plural\",{\"one\":[\"#\",\" recipe\"],\"other\":[\"#\",\" recipes\"]}]]}")as Messages;

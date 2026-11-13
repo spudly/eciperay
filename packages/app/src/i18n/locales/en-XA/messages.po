@@ -1,0 +1,10 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: eciperay\n"
+"Language: en-XA\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#. js-lingui-explicit-id
+msgid "spike.recipeCount"
+msgstr "{count, plural, one {# recipe~} other {# recipes~~}}"

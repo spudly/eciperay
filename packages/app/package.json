@@ -11,7 +11,9 @@
     "start": "react-native start",
     "test": "jest",
     "test:coverage": "jest --coverage --maxWorkers=1",
-    "link:fonts": "react-native-asset -a ./assets/fonts"
+    "link:fonts": "react-native-asset -a ./assets/fonts",
+    "i18n:extract": "lingui extract",
+    "i18n:compile": "lingui compile --typescript"
   },
   "dependencies": {
     "@eciperay/client": "*",
@@ -23,8 +25,8 @@
     "@react-navigation/native": "^7.5.1",
     "@react-navigation/native-stack": "^7.21.0",
     "@spudly/ui": "^9.2.0",
-    "@tamagui/native": "^3.1.9",
     "@supabase/supabase-js": "^2.118.0",
+    "@tamagui/native": "^3.1.9",
     "@tanstack/react-query": "^5.104.5",
     "expo": "~58.0.17",
     "expo-image-manipulator": "~58.0.15",
@@ -53,6 +55,10 @@
     "@babel/plugin-transform-export-namespace-from": "^7.29.7",
     "@babel/preset-env": "^8.0.7",
     "@babel/runtime": "^7.29.10",
+    "@formatjs/intl-locale": "^5.4.3",
+    "@formatjs/intl-pluralrules": "^7.0.4",
+    "@lingui/cli": "^6.12.0",
+    "@lingui/core": "^6.12.0",
     "@posthog/cli": "~0.18.12",
     "@react-native-community/cli": "^20.2.0",
     "@react-native-community/cli-platform-android": "^20.2.0",
