@@ -1,14 +1,16 @@
 import type {Request, Response} from 'express';
+import type {PipeableStream} from 'react-dom/server';
 
 import {query as defaultQuery} from '../../db/query.js';
 import {getParam} from '../../lib/getParam.js';
 import {getShareTokenFromQuery} from '../../lib/getShareTokenFromQuery.js';
 import {loadPublicRecipe} from '../../lib/loadPublicRecipe.js';
-import type {renderPublicRecipeStream} from '../../lib/renderPublicRecipe.js';
+import type {renderPublicRecipeStreamDeterministic} from '../../lib/renderPublicRecipe.js';
 
 type QueryFn = typeof defaultQuery;
 
-export type PublicRecipeStreamRenderer = typeof renderPublicRecipeStream;
+export type PublicRecipeStreamRenderer =
+  typeof renderPublicRecipeStreamDeterministic;
 
 /**
  * Route-wiring tranche for #304: serve the public recipe page as streamed
@@ -58,28 +60,51 @@ export const servePublicRecipePage = async (
   res.status(200).type('text/html');
   res.set('Cache-Control', 'public, max-age=60');
 
-  const stream = render(result.body, {
-    onShellReady() {
+  // The renderer is async (its warm-up pass completes before the served
+  // stream exists), so onShellReady can fire before the stream has been
+  // assigned here — pipe from whichever of the two arrives second.
+  let shellReady = false;
+  let stream: PipeableStream | undefined;
+  const pipeWhenReady = (): void => {
+    if (shellReady && stream !== undefined) {
       stream.pipe(res);
-    },
-    onShellError() {
-      if (!res.headersSent) {
-        // The 200 path set a public cache TTL before rendering; an error
-        // response must never inherit it — a transient render failure
-        // would otherwise stay cacheable for the TTL.
-        res.set('Cache-Control', 'no-store');
-        res.status(500).type('text/html');
-        res.send('<h1>Something went wrong</h1>');
-      }
-    },
-    onError() {
-      // React has already logged the render error; a mid-stream failure
-      // cannot change the status, so the response simply ends short.
-      if (!res.headersSent) {
-        res.set('Cache-Control', 'no-store');
-        res.status(500);
-      }
-    },
-  });
+    }
+  };
+  try {
+    stream = await render(result.body, {
+      onShellReady() {
+        shellReady = true;
+        pipeWhenReady();
+      },
+      onShellError() {
+        if (!res.headersSent) {
+          // The 200 path set a public cache TTL before rendering; an error
+          // response must never inherit it — a transient render failure
+          // would otherwise stay cacheable for the TTL.
+          res.set('Cache-Control', 'no-store');
+          res.status(500).type('text/html');
+          res.send('<h1>Something went wrong</h1>');
+        }
+      },
+      onError() {
+        // React has already logged the render error; a mid-stream failure
+        // cannot change the status, so the response simply ends short.
+        if (!res.headersSent) {
+          res.set('Cache-Control', 'no-store');
+          res.status(500);
+        }
+      },
+    });
+  } catch (error) {
+    // A rejected render (e.g. the warm-up pass failing) propagates to the
+    // caller's error handling, but the public cache TTL set above must not
+    // ride along on the error response it produces.
+    if (!res.headersSent) {
+      res.set('Cache-Control', 'no-store');
+      res.status(500);
+    }
+    throw error;
+  }
+  pipeWhenReady();
   return true;
 };

@@ -39,7 +39,7 @@ export const attachSsrRoutes = (
       const render =
         injectedRender ??
         (await import('../../lib/renderPublicRecipe.js'))
-          .renderPublicRecipeStream;
+          .renderPublicRecipeStreamDeterministic;
       const handled = await servePublicRecipePage(req, res, queryFn, render);
       if (!handled) {
         next();
