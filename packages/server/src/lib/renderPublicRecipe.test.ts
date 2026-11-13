@@ -17,6 +17,17 @@ describe('renderPublicRecipeStream', () => {
     expect(html).toContain('2 cups Flour');
     expect(html).toContain('Mix the ingredients together.');
   });
+
+  test('renders a canonical link tag for the slugged canonical URL', async () => {
+    const html = await renderStreamToHtml(options =>
+      renderPublicRecipeStream(makePublicRecipeResponse(), options),
+    );
+
+    expect(html).toContain('rel="canonical"');
+    expect(html).toContain(
+      'href="https://www.eciperay.com/recipe/recipe-uuid-1/test-recipe"',
+    );
+  });
 });
 
 const renderError = new Error('controlled render failure');

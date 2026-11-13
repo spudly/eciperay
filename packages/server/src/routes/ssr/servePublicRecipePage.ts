@@ -12,7 +12,9 @@ export type PublicRecipeStreamRenderer = typeof renderPublicRecipeStream;
 
 /**
  * Route-wiring tranche for #304: serve the public recipe page as streamed
- * server-rendered HTML at GET /recipe/:id/:slug.
+ * server-rendered HTML at GET /recipe/:id/:slug, with the slug optional — GET
+ * /recipe/:id serves the same page, whose rendered head declares the canonical
+ * (slugged) URL.
  *
  * Anonymous only: the HTML is publicly cacheable, so a request carrying an
  * Authorization header or a share token returns `false` here and the caller

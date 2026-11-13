@@ -59,6 +59,16 @@ describe('GET /recipe/:id/:slug (SSR)', () => {
     expect(res.text).toContain('Test Recipe');
   });
 
+  test('streams SSR HTML when the slug is omitted (slug is optional)', async () => {
+    mockPublicRecipeQueries();
+
+    const res = await request(buildApp()).get('/recipe/recipe-uuid-1');
+
+    expect(res.status).toBe(200);
+    expect(res.headers['content-type']).toContain('text/html');
+    expect(res.text).toContain('Test Recipe');
+  });
+
   test('redirects a slug mismatch to the canonical slug', async () => {
     mockPublicRecipeQueries();
 

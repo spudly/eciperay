@@ -30,7 +30,11 @@ export const attachSsrRoutes = (
     return;
   }
 
-  app.get('/recipe/:id/:slug', (req, res, next) => {
+  // The slug is optional: /recipe/:id serves the page directly (the
+  // canonical URL is declared in the rendered head — see
+  // renderPublicRecipe), while a present-but-wrong slug 301-redirects to
+  // the canonical slug inside servePublicRecipePage.
+  app.get(['/recipe/:id/:slug', '/recipe/:id'], (req, res, next) => {
     const run = async (): Promise<void> => {
       const render =
         injectedRender ??
