@@ -74,9 +74,11 @@ ready-state props, mirroring the web host's mapping for the anonymous first
 paint). Findings:
 
 - **It renders.** The full page HTML comes out of `renderToPipeableStream`
-  in-process (the spike collects the piped stream into a string on
-  `onAllReady`): title, scaled ingredient lines, and instruction steps all
-  present (asserted in renderPublicRecipe.test.ts).
+  in-process: the renderer returns the `PipeableStream` itself (the route
+  tranche pipes it into the response for streaming TTFB + Suspense), and the
+  tests collect it into a string via the test helper
+  `src/test/renderStreamToHtml.ts`: title, scaled ingredient lines, and
+  instruction steps all present (asserted in renderPublicRecipe.test.ts).
 - **Payload/time (fixture recipe, this dev VM, jest-transpiled pipeline —
   indicative only):** 46,647 bytes of HTML; ~186 ms cold / ~90 ms warm per
   render. Warm renders are not byte-identical across calls (Tamagui class/id
