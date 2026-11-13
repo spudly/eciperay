@@ -1,18 +1,23 @@
 export type NutritionGoals = {
-  calories: number | null;
-  proteinG: number | null;
-  carbsG: number | null;
-  fatG: number | null;
-  satietyScore: number | null;
+  caloriesMin: number | null;
+  caloriesMax: number | null;
+  proteinGMin: number | null;
+  proteinGMax: number | null;
+  carbsGMin: number | null;
+  carbsGMax: number | null;
+  fatGMin: number | null;
+  fatGMax: number | null;
+  satietyScoreMin: number | null;
+  satietyScoreMax: number | null;
 };
 
 export type NutritionGoalBand = 'under' | 'onTrack' | 'over';
 
 export type NutritionGoalFieldProgress = {
-  goal: number;
+  min: number | null;
+  max: number | null;
   actual: number;
   delta: number;
-  percentOfGoal: number | null;
   band: NutritionGoalBand;
 };
 

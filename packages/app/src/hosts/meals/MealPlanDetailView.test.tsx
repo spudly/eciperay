@@ -152,28 +152,16 @@ describe('MealPlanDetailView', () => {
       nutrition: {...planNutrition(), perDay: nutrition()},
       goalProgress: {
         calories: {
-          goal: 2000,
+          min: 1800,
+          max: 2200,
           actual: 850.4,
-          delta: -1149.6,
-          percentOfGoal: 42.5,
+          delta: -949.6,
           band: 'under',
         },
-        proteinG: {
-          goal: 120,
-          actual: 120,
-          delta: 0,
-          percentOfGoal: 100,
-          band: 'onTrack',
-        },
+        proteinG: {min: 110, max: null, actual: 120, delta: 0, band: 'onTrack'},
         carbsG: null,
         fatG: null,
-        satietyScore: {
-          goal: 60,
-          actual: 75,
-          delta: 15,
-          percentOfGoal: 125,
-          band: 'over',
-        },
+        satietyScore: {min: null, max: 60, actual: 75, delta: 15, band: 'over'},
       },
     });
     const {findByText, queryByText} = await renderWithProviders(
@@ -182,7 +170,7 @@ describe('MealPlanDetailView', () => {
         {...handlers()}
       />,
     );
-    expect(await findByText('850 / 2000 · Below goal')).toBeTruthy();
+    expect(await findByText('850 / 1,800–2,200 · Below goal')).toBeTruthy();
     // #266: goal rows are labelled as per-day averages (the plan has a
     // perDay figure) so they do not read as a conflicting plan total.
     expect(await findByText('Calories (per-day avg)')).toBeTruthy();
@@ -191,8 +179,8 @@ describe('MealPlanDetailView', () => {
     // per-day / plan-total qualifier (CodeRabbit on #272).
     expect(await findByText('Satiety (plan-wide score)')).toBeTruthy();
     expect(queryByText('Satiety (per-day avg)')).toBeNull();
-    expect(await findByText('120 / 120 · On track')).toBeTruthy();
-    expect(await findByText('75 / 60 · Above goal')).toBeTruthy();
+    expect(await findByText('120 / at least 110 · On track')).toBeTruthy();
+    expect(await findByText('75 / up to 60 · Above goal')).toBeTruthy();
     // Progress present: no set-goals hint.
     expect(
       queryByText('Set daily nutrition goals to compare this plan.'),
@@ -208,22 +196,16 @@ describe('MealPlanDetailView', () => {
       endsOn: null,
       goalProgress: {
         calories: {
-          goal: 2000,
+          min: 1800,
+          max: 2200,
           actual: 850.4,
-          delta: -1149.6,
-          percentOfGoal: 42.5,
+          delta: -949.6,
           band: 'under',
         },
         proteinG: null,
         carbsG: null,
         fatG: null,
-        satietyScore: {
-          goal: 60,
-          actual: 75,
-          delta: 15,
-          percentOfGoal: 125,
-          band: 'over',
-        },
+        satietyScore: {min: null, max: 60, actual: 75, delta: 15, band: 'over'},
       },
     });
     const {findByText, queryByText} = await renderWithProviders(
@@ -278,10 +260,10 @@ describe('MealPlanDetailView', () => {
       nutrition: planNutrition({status: 'unavailable'}),
       goalProgress: {
         calories: {
-          goal: 2000,
+          min: 1800,
+          max: 2200,
           actual: 500,
-          delta: -1500,
-          percentOfGoal: 25,
+          delta: -1300,
           band: 'under',
         },
         proteinG: null,
@@ -297,7 +279,7 @@ describe('MealPlanDetailView', () => {
       />,
     );
     // "auto" branch: progress alone drives the section — rows, no hint.
-    expect(await findByText('500 / 2000 · Below goal')).toBeTruthy();
+    expect(await findByText('500 / 1,800–2,200 · Below goal')).toBeTruthy();
     expect(
       queryByText('Set daily nutrition goals to compare this plan.'),
     ).toBeNull();

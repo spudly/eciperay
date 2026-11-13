@@ -5,44 +5,64 @@ import {query as defaultQuery} from '../db/query.js';
 type QueryFn = typeof defaultQuery;
 
 const GOALS_SELECT_SQL = `
-  select goal_calories, goal_protein_g, goal_carbs_g, goal_fat_g, goal_satiety_score
+  select goal_calories_min, goal_calories_max, goal_protein_g_min, goal_protein_g_max, goal_carbs_g_min, goal_carbs_g_max, goal_fat_g_min, goal_fat_g_max, goal_satiety_score_min, goal_satiety_score_max
   from users
   where id = $1
 `;
 
 const GOALS_UPDATE_SQL = `
   update users
-  set goal_calories = $2,
-      goal_protein_g = $3,
-      goal_carbs_g = $4,
-      goal_fat_g = $5,
-      goal_satiety_score = $6
+  set goal_calories_min = $2,
+      goal_calories_max = $3,
+      goal_protein_g_min = $4,
+      goal_protein_g_max = $5,
+      goal_carbs_g_min = $6,
+      goal_carbs_g_max = $7,
+      goal_fat_g_min = $8,
+      goal_fat_g_max = $9,
+      goal_satiety_score_min = $10,
+      goal_satiety_score_max = $11
   where id = $1
-  returning goal_calories, goal_protein_g, goal_carbs_g, goal_fat_g, goal_satiety_score
+  returning goal_calories_min, goal_calories_max, goal_protein_g_min, goal_protein_g_max, goal_carbs_g_min, goal_carbs_g_max, goal_fat_g_min, goal_fat_g_max, goal_satiety_score_min, goal_satiety_score_max
 `;
 
 type GoalsRow = {
-  goal_calories: number | null;
-  goal_protein_g: number | null;
-  goal_carbs_g: number | null;
-  goal_fat_g: number | null;
-  goal_satiety_score: number | null;
+  goal_calories_min: number | null;
+  goal_calories_max: number | null;
+  goal_protein_g_min: number | null;
+  goal_protein_g_max: number | null;
+  goal_carbs_g_min: number | null;
+  goal_carbs_g_max: number | null;
+  goal_fat_g_min: number | null;
+  goal_fat_g_max: number | null;
+  goal_satiety_score_min: number | null;
+  goal_satiety_score_max: number | null;
 };
 
 export const mapRowToNutritionGoals = (row: GoalsRow): NutritionGoals => ({
-  calories: row.goal_calories,
-  proteinG: row.goal_protein_g,
-  carbsG: row.goal_carbs_g,
-  fatG: row.goal_fat_g,
-  satietyScore: row.goal_satiety_score,
+  caloriesMin: row.goal_calories_min,
+  caloriesMax: row.goal_calories_max,
+  proteinGMin: row.goal_protein_g_min,
+  proteinGMax: row.goal_protein_g_max,
+  carbsGMin: row.goal_carbs_g_min,
+  carbsGMax: row.goal_carbs_g_max,
+  fatGMin: row.goal_fat_g_min,
+  fatGMax: row.goal_fat_g_max,
+  satietyScoreMin: row.goal_satiety_score_min,
+  satietyScoreMax: row.goal_satiety_score_max,
 });
 
 export const emptyNutritionGoals = (): NutritionGoals => ({
-  calories: null,
-  proteinG: null,
-  carbsG: null,
-  fatG: null,
-  satietyScore: null,
+  caloriesMin: null,
+  caloriesMax: null,
+  proteinGMin: null,
+  proteinGMax: null,
+  carbsGMin: null,
+  carbsGMax: null,
+  fatGMin: null,
+  fatGMax: null,
+  satietyScoreMin: null,
+  satietyScoreMax: null,
 });
 
 export const fetchNutritionGoals = async (
@@ -64,11 +84,16 @@ export const updateNutritionGoals = async (
 ): Promise<NutritionGoals | null> => {
   const result = await queryFn(GOALS_UPDATE_SQL, [
     userId,
-    goals.calories,
-    goals.proteinG,
-    goals.carbsG,
-    goals.fatG,
-    goals.satietyScore,
+    goals.caloriesMin,
+    goals.caloriesMax,
+    goals.proteinGMin,
+    goals.proteinGMax,
+    goals.carbsGMin,
+    goals.carbsGMax,
+    goals.fatGMin,
+    goals.fatGMax,
+    goals.satietyScoreMin,
+    goals.satietyScoreMax,
   ]);
   const row = result.rows[0] as GoalsRow | undefined;
   if (!row) {

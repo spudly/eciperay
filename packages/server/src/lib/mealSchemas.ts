@@ -147,10 +147,37 @@ export const MealPlanInputSchema = z
     {message: 'endsOn must be on or after startsOn', path: ['endsOn']},
   );
 
-export const NutritionGoalsSchema = z.object({
-  calories: z.number().nonnegative().nullable(),
-  proteinG: z.number().nonnegative().nullable(),
-  carbsG: z.number().nonnegative().nullable(),
-  fatG: z.number().nonnegative().nullable(),
-  satietyScore: z.number().int().min(0).max(100).nullable(),
-});
+const NUTRITION_GOAL_RANGE_FIELDS = [
+  ['caloriesMin', 'caloriesMax', 'calories'],
+  ['proteinGMin', 'proteinGMax', 'proteinG'],
+  ['carbsGMin', 'carbsGMax', 'carbsG'],
+  ['fatGMin', 'fatGMax', 'fatG'],
+  ['satietyScoreMin', 'satietyScoreMax', 'satietyScore'],
+] as const;
+
+export const NutritionGoalsSchema = z
+  .object({
+    caloriesMin: z.number().nonnegative().nullable(),
+    caloriesMax: z.number().nonnegative().nullable(),
+    proteinGMin: z.number().nonnegative().nullable(),
+    proteinGMax: z.number().nonnegative().nullable(),
+    carbsGMin: z.number().nonnegative().nullable(),
+    carbsGMax: z.number().nonnegative().nullable(),
+    fatGMin: z.number().nonnegative().nullable(),
+    fatGMax: z.number().nonnegative().nullable(),
+    satietyScoreMin: z.number().int().min(0).max(100).nullable(),
+    satietyScoreMax: z.number().int().min(0).max(100).nullable(),
+  })
+  .superRefine((goals, ctx) => {
+    for (const [minField, maxField, label] of NUTRITION_GOAL_RANGE_FIELDS) {
+      const min = goals[minField];
+      const max = goals[maxField];
+      if (min !== null && max !== null && min > max) {
+        ctx.addIssue({
+          code: 'custom',
+          message: `${label} min must be less than or equal to ${label} max`,
+          path: [maxField],
+        });
+      }
+    }
+  });

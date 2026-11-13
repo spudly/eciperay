@@ -115,13 +115,19 @@ describe('msw handlers', () => {
     const shoppingList = await eciperay.mealPlans.shoppingList('plan-uuid-1');
     expect(shoppingList[0]?.name).toBe('Flour');
     const goals = await eciperay.account.putNutritionGoals({
-      calories: 2000,
-      proteinG: null,
-      carbsG: null,
-      fatG: null,
-      satietyScore: null,
+      caloriesMin: 1800,
+      caloriesMax: 2200,
+      proteinGMin: null,
+      proteinGMax: null,
+      carbsGMin: null,
+      carbsGMax: null,
+      fatGMin: null,
+      fatGMax: null,
+      satietyScoreMin: null,
+      satietyScoreMax: null,
     });
-    expect(goals.calories).toBe(2000);
+    expect(goals.caloriesMin).toBe(1800);
+    expect(goals.caloriesMax).toBe(2200);
   });
 
   test('covers personal access token endpoints', async () => {

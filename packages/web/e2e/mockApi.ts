@@ -218,11 +218,16 @@ export const installMocks = async (
     if (path === '/api/account/nutrition-goals') {
       await route.fulfill(
         json({
-          calories: null,
-          proteinG: null,
-          carbsG: null,
-          fatG: null,
-          satietyScore: null,
+          caloriesMin: null,
+          caloriesMax: null,
+          proteinGMin: null,
+          proteinGMax: null,
+          carbsGMin: null,
+          carbsGMax: null,
+          fatGMin: null,
+          fatGMax: null,
+          satietyScoreMin: null,
+          satietyScoreMax: null,
         }),
       );
       return;

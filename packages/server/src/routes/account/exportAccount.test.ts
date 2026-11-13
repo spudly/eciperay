@@ -32,11 +32,16 @@ describe('GET /account/export', () => {
       .mockResolvedValueOnce(
         makeQueryResult([
           {
-            goal_calories: null,
-            goal_protein_g: null,
-            goal_carbs_g: null,
-            goal_fat_g: null,
-            goal_satiety_score: null,
+            goal_calories_min: null,
+            goal_calories_max: null,
+            goal_protein_g_min: null,
+            goal_protein_g_max: null,
+            goal_carbs_g_min: null,
+            goal_carbs_g_max: null,
+            goal_fat_g_min: null,
+            goal_fat_g_max: null,
+            goal_satiety_score_min: null,
+            goal_satiety_score_max: null,
           },
         ]),
       );
@@ -54,11 +59,16 @@ describe('GET /account/export', () => {
         createdAt: '2024-01-01T00:00:00.000Z',
       },
       nutritionGoals: {
-        calories: null,
-        proteinG: null,
-        carbsG: null,
-        fatG: null,
-        satietyScore: null,
+        caloriesMin: null,
+        caloriesMax: null,
+        proteinGMin: null,
+        proteinGMax: null,
+        carbsGMin: null,
+        carbsGMax: null,
+        fatGMin: null,
+        fatGMax: null,
+        satietyScoreMin: null,
+        satietyScoreMax: null,
       },
       recipes: [],
       shareGrants: [],
@@ -115,11 +125,16 @@ describe('GET /account/export', () => {
       .mockResolvedValueOnce(
         makeQueryResult([
           {
-            goal_calories: 2000,
-            goal_protein_g: 150,
-            goal_carbs_g: null,
-            goal_fat_g: null,
-            goal_satiety_score: 70,
+            goal_calories_min: 1800,
+            goal_calories_max: 2200,
+            goal_protein_g_min: 150,
+            goal_protein_g_max: null,
+            goal_carbs_g_min: null,
+            goal_carbs_g_max: null,
+            goal_fat_g_min: null,
+            goal_fat_g_max: null,
+            goal_satiety_score_min: 70,
+            goal_satiety_score_max: null,
           },
         ]),
       );
@@ -130,11 +145,16 @@ describe('GET /account/export', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.nutritionGoals).toEqual({
-      calories: 2000,
-      proteinG: 150,
-      carbsG: null,
-      fatG: null,
-      satietyScore: 70,
+      caloriesMin: 1800,
+      caloriesMax: 2200,
+      proteinGMin: 150,
+      proteinGMax: null,
+      carbsGMin: null,
+      carbsGMax: null,
+      fatGMin: null,
+      fatGMax: null,
+      satietyScoreMin: 70,
+      satietyScoreMax: null,
     });
     expect(res.body.shareGrants).toEqual([
       {

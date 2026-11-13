@@ -97,38 +97,73 @@ export const NutritionGoalsForm = ({
   return (
     <SectionCard title="Daily nutrition goals">
       <GoalField
-        label="Calories"
-        value={goals.calories}
-        onChange={calories => {
-          patch({calories});
+        label="Calories min"
+        value={goals.caloriesMin}
+        onChange={caloriesMin => {
+          patch({caloriesMin});
         }}
       />
       <GoalField
-        label="Protein (g)"
-        value={goals.proteinG}
-        onChange={proteinG => {
-          patch({proteinG});
+        label="Calories max"
+        value={goals.caloriesMax}
+        onChange={caloriesMax => {
+          patch({caloriesMax});
         }}
       />
       <GoalField
-        label="Carbs (g)"
-        value={goals.carbsG}
-        onChange={carbsG => {
-          patch({carbsG});
+        label="Protein (g) min"
+        value={goals.proteinGMin}
+        onChange={proteinGMin => {
+          patch({proteinGMin});
         }}
       />
       <GoalField
-        label="Fat (g)"
-        value={goals.fatG}
-        onChange={fatG => {
-          patch({fatG});
+        label="Protein (g) max"
+        value={goals.proteinGMax}
+        onChange={proteinGMax => {
+          patch({proteinGMax});
         }}
       />
       <GoalField
-        label="Satiety score"
-        value={goals.satietyScore}
-        onChange={satietyScore => {
-          patch({satietyScore});
+        label="Carbs (g) min"
+        value={goals.carbsGMin}
+        onChange={carbsGMin => {
+          patch({carbsGMin});
+        }}
+      />
+      <GoalField
+        label="Carbs (g) max"
+        value={goals.carbsGMax}
+        onChange={carbsGMax => {
+          patch({carbsGMax});
+        }}
+      />
+      <GoalField
+        label="Fat (g) min"
+        value={goals.fatGMin}
+        onChange={fatGMin => {
+          patch({fatGMin});
+        }}
+      />
+      <GoalField
+        label="Fat (g) max"
+        value={goals.fatGMax}
+        onChange={fatGMax => {
+          patch({fatGMax});
+        }}
+      />
+      <GoalField
+        label="Satiety score min"
+        value={goals.satietyScoreMin}
+        onChange={satietyScoreMin => {
+          patch({satietyScoreMin});
+        }}
+      />
+      <GoalField
+        label="Satiety score max"
+        value={goals.satietyScoreMax}
+        onChange={satietyScoreMax => {
+          patch({satietyScoreMax});
         }}
       />
       {error ? (
