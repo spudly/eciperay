@@ -1,6 +1,8 @@
 import {existsSync} from 'node:fs';
 import {basename, dirname, join, relative} from 'node:path';
 
+import {affectedWorkspaces, findAffectedTests} from '@spudly/tooling';
+
 import {isCoverageCollected} from './packageCoveragePatterns.ts';
 
 export const PACKAGES_WITH_COVERAGE = [
@@ -47,10 +49,19 @@ const hasColocatedTest = (
   sourceRelPath: string,
   stagedSet: Set<string>,
 ): boolean => {
-  return colocatedTestPaths(root, sourceRelPath).some(candidate => {
-    const candidateRel = relative(root, candidate);
-    return existsSync(candidate) || stagedSet.has(candidateRel);
-  });
+  // Colocation mapping comes from @spudly/tooling (shared tooling
+  // standard, #516): a staged colocated test counts, as does one that
+  // already exists on disk. The shared discovery also accepts *.spec.*
+  // and any extension, so results are filtered through this repo's
+  // test-file predicate (.test.ts/.test.tsx only — the runners match
+  // nothing else).
+  const discovered = findAffectedTests([sourceRelPath], [...stagedSet]);
+  if (discovered.some(isTestFile)) {
+    return true;
+  }
+  return colocatedTestPaths(root, sourceRelPath).some(candidate =>
+    existsSync(candidate),
+  );
 };
 
 export const findMissingColocatedTests = (
@@ -80,15 +91,16 @@ export const findMissingColocatedTests = (
 export const affectedCoveragePackages = (
   stagedFiles: string[],
 ): PackageName[] => {
-  const packages = new Set<PackageName>();
-  for (const file of stagedFiles) {
-    if (isTestFile(file)) {
-      continue;
-    }
-    const match = /^packages\/(app|client|server|web)\/src\//.exec(file);
-    if (match) {
-      packages.add(match[1] as PackageName);
-    }
-  }
+  // Workspace mapping comes from @spudly/tooling (shared tooling
+  // standard, #516); the coverage semantics stay eciperay's: only
+  // non-test files under a coverage package's src/ tree affect it.
+  const eligible = stagedFiles.filter(
+    file =>
+      !isTestFile(file) &&
+      /^packages\/(app|client|server|web)\/src\//.test(file),
+  );
+  const packages = new Set(
+    affectedWorkspaces(eligible).map(ws => ws.replace(/^packages\//, '')),
+  );
   return PACKAGES_WITH_COVERAGE.filter(pkg => packages.has(pkg));
 };

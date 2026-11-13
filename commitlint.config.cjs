@@ -12,7 +12,7 @@ const ALLOWED_SCOPES = [
 
 /** @type {import('@commitlint/types').UserConfig} */
 module.exports = {
-  extends: ['@commitlint/config-conventional'],
+  extends: ['@spudly/commitlint-config'],
   rules: {
     'scope-empty': [2, 'never'],
     'scope-enum': [0],

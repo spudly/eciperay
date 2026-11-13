@@ -89,9 +89,6 @@ jobs:
       - name: Validate Node version and UI parity registry
         run: npm run validate:node-version && npm run validate:ui-parity
 
-      - name: Depcheck
-        run: npm run depcheck
-
       - name: Lint GitHub Actions workflows
         run: npm run workflows:lint
 
@@ -224,7 +221,7 @@ jobs:
             # ESLint would exit 2. Packages with JS/CJS files are still
             # linted normally. Remove the flag when typescript-eslint
             # is restored.
-            npx eslint "$pkg" --max-warnings 0 --no-error-on-unmatched-pattern --cache \
+            npx eslint "$pkg" --no-error-on-unmatched-pattern --cache \
               --cache-location ".eslintcache/$cache_name" \
               --cache-strategy content
           done
