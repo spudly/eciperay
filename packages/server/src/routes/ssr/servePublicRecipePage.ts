@@ -64,6 +64,10 @@ export const servePublicRecipePage = async (
     },
     onShellError() {
       if (!res.headersSent) {
+        // The 200 path set a public cache TTL before rendering; an error
+        // response must never inherit it — a transient render failure
+        // would otherwise stay cacheable for the TTL.
+        res.set('Cache-Control', 'no-store');
         res.status(500).type('text/html');
         res.send('<h1>Something went wrong</h1>');
       }
@@ -72,6 +76,7 @@ export const servePublicRecipePage = async (
       // React has already logged the render error; a mid-stream failure
       // cannot change the status, so the response simply ends short.
       if (!res.headersSent) {
+        res.set('Cache-Control', 'no-store');
         res.status(500);
       }
     },

@@ -23,9 +23,18 @@ const fakeRender: PublicRecipeStreamRenderer = (body, options) => {
   } as unknown as PipeableStream;
 };
 
-const buildApp = () => {
+const fakeShellErrorRender: PublicRecipeStreamRenderer = (_body, options) => {
+  queueMicrotask(() => options.onShellError?.(new Error('render failed')));
+  return {
+    pipe(dest: NodeJS.WritableStream) {
+      return dest;
+    },
+  } as unknown as PipeableStream;
+};
+
+const buildApp = (render: PublicRecipeStreamRenderer = fakeRender) => {
   const app = express();
-  attachSsrRoutes(app, mockQuery, fakeRender);
+  attachSsrRoutes(app, mockQuery, render);
   app.use((_req, res) => {
     res.status(200).type('text/html').send('<html>SPA fallback</html>');
   });
@@ -99,6 +108,18 @@ describe('GET /recipe/:id/:slug (SSR)', () => {
     const res = await request(buildApp()).get('/recipe/recipe-uuid-1/pasta');
 
     expect(res.status).toBe(404);
+  });
+
+  test('sends a non-cacheable 500 when the render shell fails', async () => {
+    mockPublicRecipeQueries();
+
+    const res = await request(buildApp(fakeShellErrorRender)).get(
+      '/recipe/recipe-uuid-1/pasta',
+    );
+
+    expect(res.status).toBe(500);
+    expect(res.headers['cache-control']).toContain('no-store');
+    expect(res.headers['cache-control']).not.toContain('max-age=60');
   });
 
   test('falls through to the SPA when an Authorization header is present', async () => {
