@@ -1,5 +1,84 @@
 # @eciperay/app
 
+## 1.34.3
+
+### Patch Changes
+
+- b645447: Meal and meal-plan entries now split servings into servings to cook
+  and servings to eat (#363): meal recipe members and direct meal ingredients,
+  and meal-plan recipe entries, each carry `servingsToCook` and `servingsToEat`
+  (eat defaults to cook). Meal and plan nutrition is computed from what is
+  eaten, while the plan shopping list scales by what is cooked; meal and plan
+  detail surfaces show both numbers per entry, and the plan detail gains the
+  weekly totals / daily averages band over the eaten totals. The MCP meal and
+  meal-plan tools accept and return both fields. Note: the design-system meal
+  and meal-plan forms (9.2.x) expose a single servings stepper, which edits
+  servings to cook — servings to eat follows it while the two are equal and is
+  otherwise preserved — so setting a distinct servings-to-eat in the web/native
+  forms awaits a design-system companion.
+- 233bc5e: Meals can now carry direct ingredients on native and through the MCP
+  tools, completing the direct-ingredients feature (#362): the native meal
+  detail screen lists a meal's direct ingredients with quantity, servings, and
+  servings-scaled nutrition, the native meal form can add, edit, and remove
+  direct ingredients and can save a meal built from direct ingredients alone,
+  and the MCP `create_meal` / `update_meal` tools accept an `ingredients` list
+  (at least one recipe or direct ingredient is required; omitting the list on
+  update preserves the stored ingredients).
+- 1ba5a4a: Daily nutrition goals are now min/max ranges instead of single
+  targets (#521): each of calories, protein, carbs, fat, and satiety carries an
+  optional `Min` and `Max` (either may be left blank), saving rejects a min
+  above its max, and meal-plan goal progress bands the per-day average (or plan
+  total) against the range — below the min is "Below goal", above the max is
+  "Above goal", inside (or on the unset side) is "On track" — with rows reading
+  `actual / range · band` (e.g. `1,940 / 1,800–2,200 · On track`,
+  `128 / at least 110 · On track`, `2,300 / up to 2,200 · Above goal`). Existing
+  single goals migrate without changing anyone's bands: macro goals become
+  90%–110% of the old value and a satiety goal becomes a min at the old value.
+  Account export carries the new range shape.
+- 721d643: QA polish rollup from the 1.34.2 finalization sweep (#498, items 1,
+  2, 3, 5; item 4 is tracked in the design system):
+
+  - Meal counts: meal and meal-plan payloads now carry a recipe-only
+    `recipeCount` alongside `memberCount` (which still counts direct ingredients
+    too), and the web meal-plan detail and meals hub subtitles use it — a meal
+    of 1 recipe + 1 direct ingredient now reads "1 recipe" instead of "2
+    recipes".
+  - Text and URL imports no longer drop the preparation word: for "3 carrots,
+    chopped" the qualifier lands in the ingredient's notes. The Claude import
+    prompt now instructs qualifier → notes, and a deterministic post-parse step
+    shared with the schema.org parser splits a trailing comma-separated
+    preparation qualifier (chopped, diced, minced, divided, to taste, …) into
+    notes whenever notes is empty.
+  - Permalinks: the recipe detail response returns the stored slug verbatim
+    (pinned by regression tests on the server DTO and the client permalink
+    builder), so a stored slug carrying a numeric suffix displays exactly as
+    stored in the Sharing section.
+  - Discover bylines: public recipes whose author has no display name no longer
+    show a "By Anonymous" byline — the byline is omitted entirely on the web
+    Discover page, the web Recipes page, and the app's Recipes list, leaving
+    just the discovery meta line.
+
+  Test: unit tests per fix — server meal-detail/plan-detail counts (recipe-only
+  vs total members), ingredient-parser and Claude-parse tests including the
+  exact "3 carrots, chopped" case for both import paths, schema.org WPRM
+  card-matching normalization, server DTO and client permalink tests rendering a
+  suffixed slug verbatim, and web/app list tests asserting the byline is omitted
+  (and "Anonymous" never appears) for a nameless author.
+
+- 9a42977: Complete Google Recipe structured data (#411): public recipe JSON-LD
+  now includes totalTime, author, datePublished, recipeCategory/recipeCuisine
+  and keywords from the displayed tags, and per-serving nutrition; Discover
+  emits an ItemList of its listed public recipes. Recipe authors control the
+  name shown on their published recipes from their profile (name + show/hide),
+  backed by a new `show_author_on_public_recipes` user setting that gates the
+  author name on public recipe payloads.
+- Updated dependencies [b645447]
+- Updated dependencies [1ba5a4a]
+- Updated dependencies [721d643]
+- Updated dependencies [9a42977]
+  - @eciperay/types@1.34.3
+  - @eciperay/client@1.34.3
+
 ## 1.34.2
 
 ### Patch Changes
