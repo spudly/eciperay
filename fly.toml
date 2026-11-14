@@ -18,6 +18,10 @@ primary_region = 'iad'
 [env]
   NODE_ENV = 'production'
   HOST = '0.0.0.0'
+  # SSR for public recipe pages (#304): enable the route and point the
+  # server at the bundled SSR runtime entry built into the image.
+  SSR_PUBLIC_RECIPE = '1'
+  SSR_RENDERER_BUNDLE_PATH = '/app/packages/server/dist-ssr/renderPublicRecipe.mjs'
 
 [http_service]
   internal_port = 8080
