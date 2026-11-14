@@ -29,13 +29,7 @@ test.describe('live sharing', () => {
     }
   });
 
-  // Temporarily skipped at Stephen's direction (2026-11-11): this case reads
-  // public recipes, whose SQL now references
-  // users.show_author_on_public_recipes (migration 016). That migration
-  // reaches the shared QA dataset only when the release containing PR #504
-  // ships and the preview deploy applies it, so the case cannot pass in the
-  // live environment until then. Re-enable tracked in #506.
-  test.skip('a public recipe is readable signed-out; a private one is not listed', async ({
+  test('a public recipe is readable signed-out; a private one is not listed', async ({
     page,
     browser,
   }) => {
