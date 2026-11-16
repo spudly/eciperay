@@ -26,7 +26,7 @@ const MEAL_RECIPES_SQL = `
 `;
 
 const MEAL_INGREDIENTS_SQL = `
-  select name, quantity, unit
+  select name, quantity, unit, servings
   from meal_ingredients
   where meal_id = $1
   order by sort_order asc
@@ -63,8 +63,15 @@ export const buildPlanShoppingList = async (
         name: string;
         quantity: number | null;
         unit: string | null;
+        servings: number;
       }[];
       for (const row of mealIngredientRows) {
+        // A direct ingredient with servings-to-cook 0 is a leftover
+        // (#540): nothing is cooked, so nothing is bought for it,
+        // however many servings are eaten.
+        if (row.servings === 0) {
+          continue;
+        }
         ingredients.push({
           name: row.name,
           quantity: row.quantity,
@@ -82,6 +89,10 @@ export const buildPlanShoppingList = async (
         });
       }
       for (const mealRecipe of mealRecipes) {
+        // A meal member with servings-to-cook 0 is a leftover (#540).
+        if (mealRecipe.servings === 0) {
+          continue;
+        }
         const recipe = await loadAccessibleRecipe(
           mealRecipe.recipe_id,
           userId,
@@ -123,6 +134,11 @@ export const buildPlanShoppingList = async (
     }
 
     if (entry.accessLost) {
+      continue;
+    }
+    // Leftover entries cook nothing (#540): they contribute no
+    // ingredients to buy, however many servings are eaten.
+    if (entry.type === 'recipe' && entry.servingsToCook === 0) {
       continue;
     }
     const recipe = await loadAccessibleRecipe(entry.recipeId, userId, queryFn);

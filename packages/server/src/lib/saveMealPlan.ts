@@ -100,7 +100,11 @@ const resolveEntries = async (
       recipeId: entry.recipeId,
       servingsToCook,
       // Eat defaults to cook (#363) when the client sends only cook.
-      servingsToEat: entry.servingsToEat ?? servingsToCook,
+      // Cook 0 = leftovers (#540): omitted eat falls back to the
+      // recipe's servings so eat stays positive.
+      servingsToEat:
+        entry.servingsToEat ??
+        (servingsToCook > 0 ? servingsToCook : recipe.servings),
       quantity: entry.quantity ?? 1,
       sortOrder: index,
     });

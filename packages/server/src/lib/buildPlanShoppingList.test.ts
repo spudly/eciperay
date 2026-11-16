@@ -14,6 +14,19 @@ import {buildPlanShoppingList} from './buildPlanShoppingList.js';
 
 const emptyShareGrant = {...makeQueryResult([]), rowCount: 0};
 
+const nutritionGoalsRowForShopping = {
+  goal_calories_min: null,
+  goal_calories_max: null,
+  goal_protein_g_min: null,
+  goal_protein_g_max: null,
+  goal_carbs_g_min: null,
+  goal_carbs_g_max: null,
+  goal_fat_g_min: null,
+  goal_fat_g_max: null,
+  goal_satiety_score_min: null,
+  goal_satiety_score_max: null,
+};
+
 describe('buildPlanShoppingList', () => {
   test('returns 404 when plan is missing', async () => {
     const mockQuery = createMockQuery();
@@ -138,6 +151,128 @@ describe('buildPlanShoppingList', () => {
     expect(result.lines).toEqual([
       expect.objectContaining({name: 'Flour', quantity: 4}),
     ]);
+  });
+
+  test('leftover entries (cook 0) add nothing to the list (#540)', async () => {
+    const mockQuery = createMockQuery();
+    mockQuery.mockImplementation((async (sql: string) => {
+      if (sql.includes('from meal_plans') && sql.includes('where id =')) {
+        return makeQueryResult([mealPlanRow]);
+      }
+      if (sql.includes('from meal_plan_entries')) {
+        return makeQueryResult([
+          {
+            id: 'entry-1',
+            meal_plan_id: PLAN_ID,
+            sort_order: 0,
+            quantity: 1,
+            meal_id: null,
+            recipe_id: RECIPE_ID,
+            servings: 4,
+            servings_to_eat: 4,
+          },
+          {
+            id: 'entry-2',
+            meal_plan_id: PLAN_ID,
+            sort_order: 1,
+            quantity: 1,
+            meal_id: null,
+            recipe_id: RECIPE_ID,
+            servings: 0,
+            servings_to_eat: 2,
+          },
+        ]);
+      }
+      if (sql.includes('from recipes r')) {
+        return makeQueryResult([accessibleRecipeRow]);
+      }
+      if (sql.includes('share_grants')) {
+        return emptyShareGrant;
+      }
+      if (sql.includes('goal_calories')) {
+        return makeQueryResult([
+          {
+            goal_calories_min: null,
+            goal_calories_max: null,
+            goal_protein_g_min: null,
+            goal_protein_g_max: null,
+            goal_carbs_g_min: null,
+            goal_carbs_g_max: null,
+            goal_fat_g_min: null,
+            goal_fat_g_max: null,
+            goal_satiety_score_min: null,
+            goal_satiety_score_max: null,
+          },
+        ]);
+      }
+      if (sql.includes('from ingredients')) {
+        return makeQueryResult([
+          {name: 'Flour', quantity: 2, unit: 'cups', is_optional: false},
+        ]);
+      }
+      return makeQueryResult([]);
+    }) as typeof mockQuery);
+
+    const result = await buildPlanShoppingList(PLAN_ID, USER_ID, mockQuery);
+    if ('error' in result) {
+      throw new Error(result.error);
+    }
+    // Only the cook entry counts: 2 cups at the recipe's 4 servings.
+    expect(result.lines).toEqual([
+      expect.objectContaining({name: 'Flour', quantity: 2}),
+    ]);
+    // The leftover entry must be skipped, not scaled to 0: a scaled
+    // entry would still sum to 2 but would add a second source.
+    expect(result.lines[0]?.sources).toHaveLength(1);
+  });
+
+  test('zero-cook direct ingredients add nothing to the list (#540)', async () => {
+    const mockQuery = createMockQuery();
+    mockQuery.mockImplementation((async (sql: string) => {
+      if (sql.includes('from meal_plans') && sql.includes('where id =')) {
+        return makeQueryResult([mealPlanRow]);
+      }
+      if (sql.includes('from meal_plan_entries')) {
+        return makeQueryResult([
+          {
+            id: 'entry-1',
+            meal_plan_id: PLAN_ID,
+            sort_order: 0,
+            quantity: 1,
+            meal_id: MEAL_ID,
+            recipe_id: null,
+            servings: null,
+          },
+        ]);
+      }
+      if (sql.includes('from meals') && sql.includes('where id =')) {
+        return makeQueryResult([mealRow]);
+      }
+      if (sql.includes('from meal_ingredients')) {
+        return makeQueryResult([
+          {
+            name: 'Rice',
+            quantity: 2,
+            unit: 'cups',
+            servings: 0,
+            servings_to_eat: 2,
+          },
+        ]);
+      }
+      if (sql.includes('from meal_recipes')) {
+        return makeQueryResult([]);
+      }
+      if (sql.includes('goal_calories')) {
+        return makeQueryResult([nutritionGoalsRowForShopping]);
+      }
+      return makeQueryResult([]);
+    }) as typeof mockQuery);
+
+    const result = await buildPlanShoppingList(PLAN_ID, USER_ID, mockQuery);
+    if ('error' in result) {
+      throw new Error(result.error);
+    }
+    expect(result.lines).toEqual([]);
   });
 
   test('includes ingredients from meal entries', async () => {

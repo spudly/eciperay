@@ -219,7 +219,23 @@ export const MealEditScreen = ({route, navigation}: Props) => {
                 (ingredient.servingsToEat === '' ||
                   ingredient.servingsToEat === ingredient.servings)
               ) {
-                merged.servingsToEat = patch.servings;
+                // Cook 0 = leftovers (#540): eat must stay positive
+                // (parseFormIngredient rejects eat 0), so keep the
+                // previous eat when it is positive, else the previous
+                // cook when positive, else '1' — matching the recipe
+                // callbacks above.
+                if (patch.servings === '0') {
+                  const previousEat = Number(ingredient.servingsToEat);
+                  const previousCook = Number(ingredient.servings);
+                  merged.servingsToEat =
+                    Number.isInteger(previousEat) && previousEat > 0
+                      ? ingredient.servingsToEat
+                      : Number.isInteger(previousCook) && previousCook > 0
+                        ? ingredient.servings
+                        : '1';
+                } else {
+                  merged.servingsToEat = patch.servings;
+                }
               }
               return merged;
             }),
@@ -247,12 +263,15 @@ export const MealEditScreen = ({route, navigation}: Props) => {
             [recipeId]:
               current[recipeId] === undefined ||
               current[recipeId] === servingsByRecipeId[recipeId]
-                ? servings
+                ? // Cook 0 = leftovers (#540): eat stays positive.
+                  servings === 0
+                  ? (current[recipeId] ?? servingsByRecipeId[recipeId] ?? 1)
+                  : servings
                 : current[recipeId],
           }));
           setServingsByRecipeId(current => ({
             ...current,
-            [recipeId]: servings,
+            [recipeId]: Math.max(0, servings),
           }));
         }}
         onSubmit={() => {

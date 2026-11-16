@@ -81,6 +81,14 @@ describe('aggregateRecipePortionsNutrition', () => {
     });
   });
 
+  test('scalePortion guards a zero recipeServings basis (#540)', () => {
+    const scaled = scalePortion({...readyPortion, recipeServings: 0});
+    expect(Number.isFinite(scaled.preparedWeightG)).toBe(true);
+    expect(scaled.preparedWeightG).toBe(0);
+    // Macros are per-serving and do not use the basis.
+    expect(scaled.calories).toBe(200);
+  });
+
   test('marks partial when some portions lack nutrition', () => {
     const result = aggregateRecipePortionsNutrition([
       readyPortion,

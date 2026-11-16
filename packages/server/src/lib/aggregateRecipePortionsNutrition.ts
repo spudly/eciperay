@@ -60,7 +60,12 @@ export const scalePortion = (
   // `servings` servings contributes per-serving × servings. The prepared
   // weight is stored for the whole recipe, so it scales by the fraction
   // of the recipe the portion represents.
-  const weightScale = portion.servings / portion.recipeServings;
+  // Guard the division: a non-positive basis has no defined fraction
+  // of the whole, so it contributes no prepared weight rather than
+  // Infinity/NaN. (Ready portions are already gated on a positive
+  // basis by isReadyPortion; direct callers get the same safety.)
+  const weightScale =
+    portion.recipeServings > 0 ? portion.servings / portion.recipeServings : 0;
   return {
     calories: (portion.calories ?? 0) * portion.servings,
     proteinG: (portion.proteinG ?? 0) * portion.servings,

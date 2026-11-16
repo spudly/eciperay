@@ -252,9 +252,9 @@ export const MealEditPage = () => {
         onServingsChange={(recipeId, servings) => {
           // The retired web view's NumberStepper adapter clamped at a
           // minimum of 1; the DS page's stepper is unbounded and the
-          // server schema rejects 0 servings, so the clamp lives in
+          // 0 servings-to-cook is allowed (#540: leftovers), so the clamp lives in
           // the host callback (the C8 host-validation precedent).
-          const nextCook = Math.max(1, servings);
+          const nextCook = Math.max(0, servings);
           // Eat follows a cook edit while it still equals the old
           // cook value (#363); a divergent stored eat is preserved.
           setServingsToEatByRecipeId(current => ({
@@ -262,7 +262,11 @@ export const MealEditPage = () => {
             [recipeId]:
               current[recipeId] === undefined ||
               current[recipeId] === servingsByRecipeId[recipeId]
-                ? nextCook
+                ? // Cook 0 = leftovers (#540): eat must stay positive,
+                  // so it keeps its previous value instead of following.
+                  nextCook === 0
+                  ? (current[recipeId] ?? servingsByRecipeId[recipeId] ?? 1)
+                  : nextCook
                 : current[recipeId],
           }));
           setServingsByRecipeId(current => ({

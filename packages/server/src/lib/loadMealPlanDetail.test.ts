@@ -5,6 +5,7 @@ import {
   RECIPE_ID,
   USER_ID,
   accessibleRecipeRow,
+  mealIngredientRow,
   mealPlanRow,
   mealRow,
 } from '../test/fixtures/mealQueryRows.js';
@@ -258,6 +259,53 @@ describe('loadMealPlanDetail', () => {
     // The meal entry threads the meal's counts through (#498): this
     // fixture meal has no members at all, so both counts are zero.
     expect(plan?.entries[0]).toMatchObject({memberCount: 0, recipeCount: 0});
+  });
+
+  test('plan totals include a zero-cook direct ingredient on the eat basis (#540)', async () => {
+    const mockQuery = createMockQuery();
+    mockQuery.mockImplementation((async (sql: string) => {
+      if (sql.includes('from meal_plans') && sql.includes('where id =')) {
+        return makeQueryResult([mealPlanRow]);
+      }
+      if (sql.includes('from meal_plan_entries')) {
+        return makeQueryResult([
+          {
+            id: 'entry-meal',
+            meal_plan_id: PLAN_ID,
+            sort_order: 0,
+            quantity: 1,
+            meal_id: MEAL_ID,
+            recipe_id: null,
+            servings: null,
+          },
+        ]);
+      }
+      if (sql.includes('from meal_ingredients')) {
+        return makeQueryResult([
+          {...mealIngredientRow, servings: 0, servings_to_eat: 2},
+        ]);
+      }
+      if (sql.includes('from meal_recipes')) {
+        return makeQueryResult([]);
+      }
+      if (sql.includes('from meals') && sql.includes('where id =')) {
+        return makeQueryResult([mealRow]);
+      }
+      if (sql.includes('goal_calories')) {
+        return makeQueryResult([nutritionGoalsRow]);
+      }
+      return makeQueryResult([]);
+    }) as typeof mockQuery);
+
+    const plan = await loadMealPlanDetail(PLAN_ID, USER_ID, mockQuery);
+    expect(plan?.entries[0]?.type).toBe('meal');
+    // Meal nutrition: per-serving 200 cal × 2 eaten = 400, ready —
+    // the plan total must carry it, not drop it as unavailable.
+    expect(plan?.entries[0]?.nutrition).toMatchObject({
+      calories: 400,
+      status: 'ready',
+    });
+    expect(plan?.nutrition).toMatchObject({calories: 400, status: 'ready'});
   });
 
   test('skips missing meals and blank entry rows', async () => {

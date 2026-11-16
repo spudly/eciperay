@@ -179,10 +179,19 @@ export const nutritionFromMembers = (
     // entry contributes per-serving × its servings-to-eat (#363). Its
     // stored prepared weight covers the whole cooked entry, so the
     // portion's recipeServings is its servings-to-cook and the weight
-    // scales proportionally (eat / cook).
+    // scales proportionally (eat / cook). Cook 0 = leftovers (#540):
+    // saveMeal estimates nutrition on the servings-to-eat basis in
+    // that case, so the basis here is servings-to-eat too — it stays
+    // positive, the portion stays ready-eligible, and the weight
+    // scales eat / eat = the whole entry.
     ...ingredients.map(ingredient => ({
       servings: ingredient.servingsToEat,
-      recipeServings: ingredient.servingsToCook,
+      recipeServings:
+        ingredient.servingsToCook > 0
+          ? ingredient.servingsToCook
+          : ingredient.servingsToEat > 0
+            ? ingredient.servingsToEat
+            : 1,
       calories: ingredient.calories,
       proteinG: ingredient.proteinG,
       carbsG: ingredient.carbsG,
