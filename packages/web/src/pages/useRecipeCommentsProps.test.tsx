@@ -102,6 +102,10 @@ describe('useRecipeCommentsProps', () => {
     expect(requestUrl).toContain('t=share-token');
     // Signed out on the public page: no composer is offered.
     expect(props().onPost).toBeUndefined();
+    // And no delete eligibility: the omitted ownerUserId must not match
+    // the signed-out viewer's undefined id.
+    expect(props().comments[0]?.canDelete).toBe(false);
+    expect(props().comments[0]?.canEdit).toBe(false);
   });
 
   test('reports loading while the query is in flight', async () => {

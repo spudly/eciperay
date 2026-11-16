@@ -69,7 +69,7 @@ const deriveScaleValue = (
     : String(preset);
 };
 
-export const PublicRecipePage = () => {
+const PublicRecipePageContent = () => {
   const {id = '', slug = ''} = useParams();
   const [searchParams] = useSearchParams();
   const shareToken = searchParams.get('t') ?? undefined;
@@ -345,4 +345,15 @@ export const PublicRecipePage = () => {
       })}
     </>
   );
+};
+
+/**
+ * Route wrapper: keying the content by recipe id remounts it when the route
+ * moves directly between two recipes, so per-recipe state (the comments hook's
+ * draft/edit/error state, the rating selection) never carries over to a
+ * different recipe.
+ */
+export const PublicRecipePage = () => {
+  const {id = ''} = useParams();
+  return <PublicRecipePageContent key={id} />;
 };

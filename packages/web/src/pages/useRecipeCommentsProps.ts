@@ -122,8 +122,13 @@ export const useRecipeCommentsProps = ({
       body: comment.body,
       isStale: comment.isStale,
       canEdit: comment.authorUserId === currentUserId,
+      // A signed-out viewer has no id: without the guard, the public
+      // page's omitted ownerUserId (undefined) would equal the viewer's
+      // undefined id and grant delete eligibility on every comment.
       canDelete:
-        comment.authorUserId === currentUserId || ownerUserId === currentUserId,
+        currentUserId !== undefined &&
+        (comment.authorUserId === currentUserId ||
+          ownerUserId === currentUserId),
     })),
     loading: isLoading,
     error: commentError ?? (queryError ? "Couldn't load comments." : null),

@@ -840,6 +840,10 @@ recipe containing "buttermilk").
    the recipes that had it.
 5. **Combined state.** Apply a tag filter, then search within it, then clear
    both. **Expected:** the full list restores; no stale filter chips remain.
+6. **Android Recipes smoke.** On an Android device, open Recipes. **Expected:**
+   the recipe list and its controls (search, tag filters) render and respond —
+   this is the smoke case that verifies the durable ScreenContainer fix behind
+   the removed patch (see the note below).
 
 > **ScreenContainer patch (issue #528) — REMOVED:** the Android Recipes list
 > depended on `patches/@spudly+ui+9.2.1.patch`, which restored `flex: 1` for the
