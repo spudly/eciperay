@@ -801,7 +801,7 @@ account (viewer); one QA recipe.
 **Run when:** `packages/app/src/screens/{SharedWithMe,Recipes,Home}Screen.tsx`,
 `packages/app/src/hosts/{recipes,recipe/RecipeVisibilityControls}*`,
 `packages/app/src/lib/deepLinks.ts`,
-`packages/web/src/components/recipe/RecipeVisibilityControls.tsx`,
+`packages/web/src/pages/useRecipeSharingProps.tsx`,
 `packages/web/src/pages/{Recipes,Discover,PublicRecipe}Page.tsx`,
 `packages/web/src/components/AuthenticatedShell.tsx`,
 `packages/web/src/routes/router.tsx`,
