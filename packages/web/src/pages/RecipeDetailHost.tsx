@@ -37,12 +37,13 @@ import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useRef, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
-import {RecipeCommentsSection} from '../components/recipe/RecipeCommentsSection.js';
-import {RecipeVisibilityControls} from '../components/recipe/RecipeVisibilityControls.js';
 import {eciperay} from '../lib/api.js';
 import {printRecipe} from '../lib/printRecipe.js';
 import {recipeViewHistoryStorage} from '../lib/recipeViewHistoryStorage.js';
 import {shareRecipe} from '../lib/shareRecipe.js';
+
+import {useRecipeCommentsProps} from './useRecipeCommentsProps.js';
+import {useRecipeSharingProps} from './useRecipeSharingProps.js';
 
 type RecipeDetailHostProps = {
   recipe: RecipeDetail;
@@ -66,9 +67,11 @@ type RecipeDetailHostProps = {
  * same helpers the retired VersionPicker and OverviewActions used, ingredient
  * lines scaled by the client's formatter, nutrition rows composed by the
  * client's row builder), and every mutation (status, activation,
- * tweak-manually, create-a-draft, rating, cook log, recipe delete) plus the two
- * slotted web panels (sharing controls, comments) keep their state and API
- * calls web-side.
+ * tweak-manually, create-a-draft, rating, cook log, recipe delete) plus the
+ * sharing and comments sections keep their state and API calls web-side —
+ * sharing and comments cross as the page's data props (B7 T1, #552; their host
+ * logic lives in useRecipeSharingProps / useRecipeCommentsProps, following the
+ * native app's prop-builder hooks).
  *
  * State lifetimes are mapped defensively, as in the app host: the tab
  * components this page replaced unmounted on every tab switch, which reset the
@@ -84,12 +87,7 @@ type RecipeDetailHostProps = {
  * open/pending/error state and the mutations behind them — a real dialog, not
  * window.confirm, which is suppressed in some browsers/webviews and made Delete
  * a silent no-op. Failures surface inside the dialog instead of failing
- * silently. Sharing and comments stay in their render slots: the sharing
- * controls own a pending-selection / publishing-consent state machine and the
- * comments section is shared with the public recipe page (whose design-system
- * page offers only the slot), and its mutation errors render above the list
- * rather than replacing it — neither fits the page's data-prop views without
- * losing behavior, so both sections remain host compositions.
+ * silently.
  */
 
 const VERSION_ROLE_LABELS: Record<RecipeVersionSummary['derivedRole'], string> =
@@ -358,6 +356,15 @@ export const RecipeDetailHost = ({
       displayRecipe.id,
       displayRecipe.versionId,
     );
+
+  // Sharing and comments (B7 T1, #552): their queries, drafts, and
+  // mutations live in the section hooks; the sections cross into the
+  // page as data props at the render below.
+  const sharingProps = useRecipeSharingProps(displayRecipe, showActionMessage);
+  const commentsProps = useRecipeCommentsProps({
+    recipeId: recipe.id,
+    ownerUserId: recipe.userId,
+  });
 
   // Lifecycle mutations (the retired OverviewActions): status changes,
   // candidate activation, and tweak-manually version creation.
@@ -821,18 +828,8 @@ export const RecipeDetailHost = ({
         onViewerRatingChange: (stars: number | null) => {
           ratingMutation.mutate(stars as RecipeStarRating | null);
         },
-        renderSharingControls: () => (
-          <RecipeVisibilityControls
-            recipe={displayRecipe}
-            onActionMessage={showActionMessage}
-          />
-        ),
-        renderComments: () => (
-          <RecipeCommentsSection
-            recipeId={recipe.id}
-            ownerUserId={recipe.userId}
-          />
-        ),
+        sharing: sharingProps,
+        comments: commentsProps,
       }}
       ingredients={{
         servings: currentServings,

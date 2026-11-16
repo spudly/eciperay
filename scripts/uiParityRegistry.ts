@@ -229,13 +229,7 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
     path: 'recipe/RecipeCommentsSection.tsx',
     platform: 'web',
     reason:
-      'Web section remains; the app host moved out of components/ to packages/app/src/hosts in B6 (design-system#129). Web retirement is B7.',
-  },
-  {
-    path: 'recipe/RecipeVisibilityControls.tsx',
-    platform: 'web',
-    reason:
-      'Web controls remain; the app host moved out of components/ to packages/app/src/hosts in B6 (design-system#129). Web retirement is B7.',
+      'Web section remains for the public recipe page only (the signed-in detail page adopted the comments data prop in B7 T1, eciperay#552); the app host moved out of components/ to packages/app/src/hosts in B6 (design-system#129). Web retirement is B7 T7 (eciperay#557), when PublicRecipePage takes the comments data prop.',
   },
   {
     path: 'ProfileFeedbackPreference.tsx',
