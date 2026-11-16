@@ -65,7 +65,9 @@ type MealRecipeRow = {
   recipe_id: string;
   sort_order: number;
   servings: number;
-  servings_to_eat: number;
+  // numeric since #541: node-postgres returns numeric columns as
+  // strings, so the stored value may arrive as e.g. "0.5".
+  servings_to_eat: number | string;
 };
 
 type MealIngredientRow = {
@@ -76,7 +78,8 @@ type MealIngredientRow = {
   quantity: number | null;
   unit: string | null;
   servings: number;
-  servings_to_eat: number;
+  // numeric since #541 (see MealRecipeRow): may arrive as a string.
+  servings_to_eat: number | string;
   sort_order: number;
   calories: number | null;
   protein_g: number | null;
@@ -90,15 +93,25 @@ type MealIngredientRow = {
   nutrition_status: string | null;
 };
 
+/**
+ * Parse a servings_to_eat value to the number the detail types declare (#541):
+ * the column is numeric, which node-postgres returns as a string ("0", "0.5").
+ * A missing value (pre-023 data shape) reads as eat = cook, matching the
+ * migration's backfill — note a stored "0" is a real value (eats none), never a
+ * fallback trigger.
+ */
+const eatServings = (
+  value: number | string | null | undefined,
+  servingsToCook: number,
+): number => (value == null ? servingsToCook : Number(value));
+
 const toIngredientMember = (row: MealIngredientRow): MealIngredientMember => ({
   name: row.name,
   quantity: row.quantity,
   unit: row.unit,
   sortOrder: row.sort_order,
   servingsToCook: row.servings,
-  // A row without the eat column (pre-023 data shape) reads as
-  // eat = cook, matching the migration's backfill.
-  servingsToEat: row.servings_to_eat ?? row.servings,
+  servingsToEat: eatServings(row.servings_to_eat, row.servings),
   satietyScore: row.satiety_score,
   nutritionStatus:
     (row.nutrition_status as MealIngredientMember['nutritionStatus']) ?? null,
@@ -120,7 +133,7 @@ const toMember = (
   recipeId: row.recipe_id,
   sortOrder: row.sort_order,
   servingsToCook: row.servings,
-  servingsToEat: row.servings_to_eat ?? row.servings,
+  servingsToEat: eatServings(row.servings_to_eat, row.servings),
   title: recipe?.title ?? 'Unavailable recipe',
   imageUrl: recipe?.image_url ?? null,
   recipeServings: recipe?.servings ?? row.servings,

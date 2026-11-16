@@ -144,6 +144,30 @@ describe('mealUiHelpers', () => {
     });
   });
 
+  test('form ingredient servings-to-eat accepts 0 and fractions, rejects negatives (#541)', () => {
+    const buildWithEat = (servingsToEat: string) =>
+      buildMealInputFromForm({
+        title: 'Dinner',
+        notes: '',
+        selectedRecipeIds: [],
+        servingsByRecipeId: {},
+        formIngredients: [
+          {
+            id: 'a',
+            name: 'Rice',
+            quantity: '2',
+            unit: 'cups',
+            servings: '2',
+            servingsToEat,
+          },
+        ],
+      });
+    expect(buildWithEat('0').ingredients?.[0]?.servingsToEat).toBe(0);
+    expect(buildWithEat('0.5').ingredients?.[0]?.servingsToEat).toBe(0.5);
+    expect(buildWithEat('1.5').ingredients?.[0]?.servingsToEat).toBe(1.5);
+    expect(() => buildWithEat('-0.5')).toThrow(/valid servings to eat/);
+  });
+
   test('builds direct ingredients from form rows (#362)', () => {
     const input = buildMealInputFromForm({
       title: 'Dinner',

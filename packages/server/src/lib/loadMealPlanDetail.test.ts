@@ -147,6 +147,58 @@ describe('loadMealPlanDetail', () => {
     expect(plan?.nutrition?.perDay?.calories).toBeCloseTo(200 / 7);
   });
 
+  test('eat 0 contributes nothing and eat 0.5 contributes half, with pg numeric strings parsed (#541)', async () => {
+    // pg returns the numeric servings_to_eat column as a string.
+    for (const [stored, expectedEat, expectedCalories] of [
+      ['0', 0, 0],
+      ['0.5', 0.5, 50],
+    ] as const) {
+      const mockQuery = createMockQuery();
+      mockQuery.mockImplementation((async (sql: string) => {
+        if (sql.includes('from meal_plans') && sql.includes('where id =')) {
+          return makeQueryResult([mealPlanRow]);
+        }
+        if (sql.includes('from meal_plan_entries')) {
+          return makeQueryResult([
+            {
+              id: 'entry-1',
+              meal_plan_id: PLAN_ID,
+              sort_order: 0,
+              quantity: 1,
+              meal_id: null,
+              recipe_id: RECIPE_ID,
+              servings: 4,
+              servings_to_eat: stored,
+            },
+          ]);
+        }
+        if (sql.includes('from recipes r')) {
+          return makeQueryResult([accessibleRecipeRow]);
+        }
+        if (sql.includes('share_grants')) {
+          return emptyShareGrant;
+        }
+        if (sql.includes('goal_calories')) {
+          return makeQueryResult([nutritionGoalsRow]);
+        }
+        return makeQueryResult([]);
+      }) as typeof mockQuery);
+
+      const plan = await loadMealPlanDetail(PLAN_ID, USER_ID, mockQuery);
+      const entry = plan?.entries[0];
+      expect(entry).toEqual(
+        expect.objectContaining({
+          type: 'recipe',
+          servingsToCook: 4,
+          servingsToEat: expectedEat,
+        }),
+      );
+      // Recipe is 100 cal per serving: eat scales the eaten total.
+      expect(entry?.nutrition?.calories).toBe(expectedCalories);
+      expect(plan?.nutrition?.calories).toBe(expectedCalories);
+    }
+  });
+
   test('loads meal entry on plan', async () => {
     const mockQuery = createMockQuery();
     mockQuery.mockImplementation((async (sql: string) => {

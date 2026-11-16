@@ -16,6 +16,13 @@ const textResult = (data: unknown) => ({
  */
 const pgIntSchema = z.number().int().positive().max(2_147_483_647);
 
+/**
+ * Servings-to-eat land in a PostgreSQL `numeric` column (#541): any
+ * non-negative number is valid — 0 (eats none) and fractions (0.5, 1.5)
+ * included. The integer-range cap above still bounds the value.
+ */
+const pgNonNegativeNumberSchema = z.number().nonnegative().max(2_147_483_647);
+
 const mealRecipeSchema = z.object({
   recipeId: z.uuid().describe('Recipe id, from search_recipes'),
   servingsToCook: pgIntSchema
@@ -23,10 +30,10 @@ const mealRecipeSchema = z.object({
     .describe(
       'Servings of the recipe to cook in the meal (defaults to the recipe’s)',
     ),
-  servingsToEat: pgIntSchema
+  servingsToEat: pgNonNegativeNumberSchema
     .optional()
     .describe(
-      'Servings of the recipe the meal’s owner eats (defaults to servings-to-cook)',
+      'Servings of the recipe the meal’s owner eats (defaults to servings-to-cook; 0 = eats none, fractions allowed)',
     ),
 });
 
@@ -78,10 +85,10 @@ const mealIngredientSchema = z.object({
   servingsToCook: pgIntSchema
     .optional()
     .describe('Servings of the ingredient to cook in the meal (default 1)'),
-  servingsToEat: pgIntSchema
+  servingsToEat: pgNonNegativeNumberSchema
     .optional()
     .describe(
-      'Servings of the ingredient the meal’s owner eats (defaults to servings-to-cook)',
+      'Servings of the ingredient the meal’s owner eats (defaults to servings-to-cook; 0 = eats none, fractions allowed)',
     ),
 });
 
@@ -102,10 +109,10 @@ const mealPlanEntrySchema = z.union([
     servingsToCook: pgIntSchema
       .optional()
       .describe('Servings of the recipe to cook (defaults to the recipe’s)'),
-    servingsToEat: pgIntSchema
+    servingsToEat: pgNonNegativeNumberSchema
       .optional()
       .describe(
-        'Servings of the recipe the plan’s owner eats (defaults to servings-to-cook)',
+        'Servings of the recipe the plan’s owner eats (defaults to servings-to-cook; 0 = eats none, fractions allowed)',
       ),
     quantity: pgIntSchema
       .optional()
@@ -480,10 +487,10 @@ export const registerTools = (
         servingsToCook: pgIntSchema
           .optional()
           .describe('Servings of the recipe to cook in the meal'),
-        servingsToEat: pgIntSchema
+        servingsToEat: pgNonNegativeNumberSchema
           .optional()
           .describe(
-            'Servings of the recipe the meal’s owner eats (defaults to servings-to-cook)',
+            'Servings of the recipe the meal’s owner eats (defaults to servings-to-cook; 0 = eats none, fractions allowed)',
           ),
       },
     },
@@ -621,10 +628,10 @@ export const registerTools = (
         servingsToCook: pgIntSchema
           .optional()
           .describe('Servings of the recipe to cook (recipe entries only)'),
-        servingsToEat: pgIntSchema
+        servingsToEat: pgNonNegativeNumberSchema
           .optional()
           .describe(
-            'Servings of the recipe the plan’s owner eats (recipe entries only; defaults to servings-to-cook)',
+            'Servings of the recipe the plan’s owner eats (recipe entries only; defaults to servings-to-cook; 0 = eats none, fractions allowed)',
           ),
         quantity: pgIntSchema
           .optional()

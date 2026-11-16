@@ -46,6 +46,31 @@ describe('loadMealDetail', () => {
     expect(meal?.members[0]?.fatG).toBe(2);
   });
 
+  test('parses pg numeric-string servings_to_eat, including "0" (#541)', async () => {
+    // pg returns the numeric eat column as a string; a stored "0" is a
+    // real value (eats none), not a missing one.
+    for (const [stored, expected] of [
+      ['0', 0],
+      ['0.5', 0.5],
+    ] as const) {
+      const mockQuery = createMockQuery();
+      mockQuery
+        .mockResolvedValueOnce(makeQueryResult([mealRow]))
+        .mockResolvedValueOnce(
+          makeQueryResult([{...mealRecipeRow, servings_to_eat: stored}]),
+        )
+        .mockResolvedValueOnce(makeQueryResult([]))
+        .mockResolvedValueOnce(makeQueryResult([accessibleRecipeRow]))
+        .mockResolvedValueOnce(emptyShareGrant);
+
+      const meal = await loadMealDetail(MEAL_ID, USER_ID, mockQuery);
+      expect(meal?.members[0]?.servingsToEat).toBe(expected);
+      // Recipe is 100 cal per serving: eat 0 contributes nothing and
+      // eat 0.5 contributes half a serving.
+      expect(meal?.nutrition?.calories).toBe(100 * expected);
+    }
+  });
+
   test('returns string timestamps when pg returns Date objects for the meal row', async () => {
     // Same timestamptz mismatch as the meal-plan row (#358/#360):
     // created_at / updated_at arrive as Date objects from node-postgres
