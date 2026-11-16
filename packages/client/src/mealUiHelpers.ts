@@ -66,10 +66,18 @@ const parseFormIngredient = (
     throw new Error(`Enter valid servings to cook for “${name}”.`);
   }
   const servingsToEatText = formIngredient.servingsToEat.trim();
+  // Blank eat defaults to cook (#363); cook 0 = leftovers (#540), so a
+  // blank eat falls back to 1 instead of following cook to 0 — mirroring
+  // the server's positive fallback in saveMeal. An explicitly entered
+  // eat may be 0 (eats none) or fractional (#541).
   const servingsToEat =
-    servingsToEatText === '' ? servingsToCook : Number(servingsToEatText);
+    servingsToEatText === ''
+      ? servingsToCook > 0
+        ? servingsToCook
+        : 1
+      : Number(servingsToEatText);
   // Servings-to-eat may be 0 (eats none) or fractional (#541); only the
-  // cook side stays a positive integer.
+  // cook side stays an integer.
   if (!Number.isFinite(servingsToEat) || servingsToEat < 0) {
     throw new Error(`Enter valid servings to eat for “${name}”.`);
   }

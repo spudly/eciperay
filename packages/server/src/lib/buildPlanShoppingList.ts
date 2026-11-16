@@ -26,7 +26,7 @@ const MEAL_RECIPES_SQL = `
 `;
 
 const MEAL_INGREDIENTS_SQL = `
-  select name, quantity, unit
+  select name, quantity, unit, servings
   from meal_ingredients
   where meal_id = $1
   order by sort_order asc
@@ -63,8 +63,15 @@ export const buildPlanShoppingList = async (
         name: string;
         quantity: number | null;
         unit: string | null;
+        servings: number;
       }[];
       for (const row of mealIngredientRows) {
+        // A direct ingredient with servings-to-cook 0 is a leftover
+        // (#540): nothing is cooked, so nothing is bought for it,
+        // however many servings are eaten.
+        if (row.servings === 0) {
+          continue;
+        }
         ingredients.push({
           name: row.name,
           quantity: row.quantity,

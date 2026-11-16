@@ -241,6 +241,31 @@ describe('loadMealDetail direct ingredients (#362)', () => {
     });
   });
 
+  test('loads a zero-cook direct ingredient with ready nutrition (#540)', async () => {
+    const mockQuery = createMockQuery();
+    mockQuery
+      .mockResolvedValueOnce(makeQueryResult([mealRow]))
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          {...mealIngredientRow, servings: 0, servings_to_eat: 2},
+        ]),
+      );
+
+    const meal = await loadMealDetail(MEAL_ID, USER_ID, mockQuery);
+    expect(meal?.ingredients[0]).toMatchObject({
+      servingsToCook: 0,
+      servingsToEat: 2,
+    });
+    // Per-serving 200 cal × 2 eaten; weight is the whole entry.
+    expect(meal?.nutrition).toMatchObject({
+      calories: 400,
+      proteinG: 8,
+      preparedWeightG: 300,
+      status: 'ready',
+    });
+  });
+
   test('maps a direct ingredient with no nutrition status to null', async () => {
     const mockQuery = createMockQuery();
     mockQuery
@@ -405,6 +430,38 @@ describe('nutritionFromMembers', () => {
       calories: 200,
       proteinG: 20,
       preparedWeightG: 200,
+      status: 'ready',
+    });
+  });
+
+  test('zero-cook direct ingredient keeps its nutrition on the eat basis (#540)', () => {
+    const nutrition = nutritionFromMembers([], new Map(), [
+      {
+        name: 'Rice',
+        quantity: 2,
+        unit: 'cups',
+        sortOrder: 0,
+        servingsToCook: 0,
+        servingsToEat: 2,
+        satietyScore: 60,
+        nutritionStatus: 'ready',
+        calories: 200,
+        proteinG: 4,
+        carbsG: 44,
+        fatG: 1,
+        fiberG: 1,
+        sugarG: 0,
+        sodiumMg: 5,
+        preparedWeightG: 300,
+      },
+    ]);
+    // Stored per-serving macros were estimated at servings-to-eat
+    // (saveMeal's zero-cook basis): 200 cal × 2 eaten = 400, and the
+    // 300 g whole-entry weight scales eat / eat, so it is whole.
+    expect(nutrition).toMatchObject({
+      calories: 400,
+      proteinG: 8,
+      preparedWeightG: 300,
       status: 'ready',
     });
   });

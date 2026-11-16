@@ -92,11 +92,17 @@ const resolveMealIngredients = async (
       ingredient.servingsToEat ?? (servingsToCook > 0 ? servingsToCook : 1);
     // Nutrition is estimated at servings-to-cook: the entry's quantity
     // is the amount cooked, and aggregation re-scales it to eat.
+    // Cook 0 = leftovers (#540): there is no cooked basis, so estimate
+    // at servings-to-eat instead — the stored per-serving macros and
+    // whole-entry weight are then on the eat basis, which stays
+    // positive, and aggregation uses that same basis (loadMealDetail).
+    const nutritionServings =
+      servingsToCook > 0 ? servingsToCook : servingsToEat;
     const nutrition = await estimateMealIngredientNutrition({
       name: ingredient.name,
       quantity: ingredient.quantity ?? null,
       unit: ingredient.unit ?? null,
-      servings: servingsToCook,
+      servings: nutritionServings,
     });
     resolved.push({
       name: ingredient.name,

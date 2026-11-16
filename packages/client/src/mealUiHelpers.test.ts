@@ -318,6 +318,61 @@ describe('mealUiHelpers', () => {
     ).toThrow(/valid servings to cook/);
   });
 
+  test('blank eat with cook 0 falls back to a positive eat (#540)', () => {
+    const input = buildMealInputFromForm({
+      title: 'Dinner',
+      notes: '',
+      selectedRecipeIds: [],
+      servingsByRecipeId: {},
+      formIngredients: [
+        {
+          id: 'a',
+          name: 'Rice',
+          quantity: '2',
+          unit: 'cups',
+          servings: '0',
+          servingsToEat: '',
+        },
+      ],
+    });
+    expect(input.ingredients).toEqual([
+      {
+        name: 'Rice',
+        quantity: 2,
+        unit: 'cups',
+        servingsToCook: 0,
+        servingsToEat: 1,
+      },
+    ]);
+    // An explicitly entered eat of 0 is valid (#541: eats none) — only
+    // the blank field gets the positive fallback above.
+    const explicitZero = buildMealInputFromForm({
+      title: 'Dinner',
+      notes: '',
+      selectedRecipeIds: [],
+      servingsByRecipeId: {},
+      formIngredients: [
+        {
+          id: 'a',
+          name: 'Rice',
+          quantity: '2',
+          unit: 'cups',
+          servings: '0',
+          servingsToEat: '0',
+        },
+      ],
+    });
+    expect(explicitZero.ingredients).toEqual([
+      {
+        name: 'Rice',
+        quantity: 2,
+        unit: 'cups',
+        servingsToCook: 0,
+        servingsToEat: 0,
+      },
+    ]);
+  });
+
   test('hydrates form rows from stored meal ingredients (#362)', () => {
     expect(
       mealIngredientsToForm([
