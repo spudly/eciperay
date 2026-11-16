@@ -15,23 +15,47 @@ const migrationSql = readFileSync(
   'utf8',
 ).toLowerCase();
 
+// Statements are asserted per table: a table-name match in one
+// statement must not satisfy another table's type or CHECK change.
+const statements = migrationSql
+  .split(';')
+  .map(statement => statement.trim())
+  .filter(statement => statement.length > 0);
+
+const statementsFor = (table: string): string[] =>
+  statements.filter(statement => statement.includes(`alter table ${table}`));
+
+const entryTables = [
+  {table: 'meal_recipes', eatCheck: 'check (servings_to_eat >= 0)'},
+  {table: 'meal_ingredients', eatCheck: 'check (servings_to_eat >= 0)'},
+  {
+    table: 'meal_plan_entries',
+    eatCheck: 'check (servings_to_eat is null or servings_to_eat >= 0)',
+  },
+] as const;
+
 describe('migration 025: servings-to-eat may be 0 or fractional', () => {
   test('re-types servings_to_eat to numeric on all three entry tables', () => {
-    for (const table of [
-      'meal_recipes',
-      'meal_ingredients',
-      'meal_plan_entries',
-    ]) {
-      expect(migrationSql).toContain(`alter table ${table}`);
+    for (const {table} of entryTables) {
+      expect(
+        statementsFor(table).some(statement =>
+          statement.includes('alter column servings_to_eat type numeric'),
+        ),
+      ).toBe(true);
     }
-    expect(migrationSql).toContain('alter column servings_to_eat type numeric');
   });
 
   test('relaxes the eat check to >= 0 on all three entry tables', () => {
-    expect(migrationSql).toContain('check (servings_to_eat >= 0)');
-    expect(migrationSql).toContain(
-      'check (servings_to_eat is null or servings_to_eat >= 0)',
-    );
+    for (const {table, eatCheck} of entryTables) {
+      expect(
+        statementsFor(table).some(
+          statement =>
+            statement.includes(
+              `add constraint ${table}_servings_to_eat_check`,
+            ) && statement.includes(eatCheck),
+        ),
+      ).toBe(true);
+    }
   });
 
   test('does not re-type or relax the cook columns', () => {

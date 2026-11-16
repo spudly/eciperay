@@ -502,6 +502,7 @@ mode; there is no Playwright coverage of meals. The cases below are manual._
 `packages/server/src/lib/touchMealsForRecipe.ts`,
 `packages/server/src/db/migrations/020_meal_recipes_touch_meal.sql`,
 `packages/server/src/db/migrations/023_cook_eat_servings.sql`,
+`packages/server/src/db/migrations/025_eat_servings_fractional.sql`,
 `packages/server/src/lib/loadMealDetail.ts`,
 `packages/server/src/lib/loadMealPlanDetail.ts`,
 `packages/server/src/lib/buildPlanShoppingList.ts`,
@@ -609,7 +610,8 @@ routes, `packages/server/src/lib/saveMealPlan.ts`,
 `packages/server/src/lib/comparePlanToGoals.ts`,
 `packages/server/src/lib/nutritionGoalsQueries.ts`,
 `packages/types/src/types/nutritionGoals.ts`,
-`packages/server/src/db/migrations/024_nutrition_goal_ranges.sql`.
+`packages/server/src/db/migrations/024_nutrition_goal_ranges.sql`,
+`packages/server/src/db/migrations/025_eat_servings_fractional.sql`.
 
 ---
 
