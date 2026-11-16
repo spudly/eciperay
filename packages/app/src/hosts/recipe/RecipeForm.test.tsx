@@ -26,9 +26,13 @@ jest.mock('../../lib/api', () => ({
   },
 }));
 jest.mock('../../lib/supabase', () => ({supabase: {}}));
-jest.mock('react-native-image-picker', () => ({launchImageLibrary: jest.fn()}));
+jest.mock('react-native-image-picker', () => ({
+  launchImageLibrary: jest.fn(),
+  launchCamera: jest.fn(),
+}));
 jest.mock('../../lib/androidPermissions', () => ({
   confirmPhotoLibraryAccess: jest.fn().mockResolvedValue(true),
+  ensureCameraPermission: jest.fn().mockResolvedValue(true),
 }));
 
 jest.mock('@eciperay/client', () => {
@@ -471,8 +475,8 @@ describe('RecipeForm', () => {
     expect(await findByText('Failed to generate image')).toBeTruthy();
   });
 
-  test('offers no way to remove the current image (#407)', async () => {
-    const {queryByText, getByLabelText} = await renderForm(
+  test('removes the current image through the DS image view (#554)', async () => {
+    const {getByText, getByLabelText, queryByLabelText} = await renderForm(
       <RecipeForm
         initial={recipeDetailToInput(
           makeRecipeDetail({imageUrl: 'https://cdn.example/recipe.png'}),
@@ -482,13 +486,19 @@ describe('RecipeForm', () => {
         onSubmit={jest.fn()}
       />,
     );
-    // Stephen's #407 ruling: photos can be replaced, never deleted.
+    // B7 T3 (#554): the DS RecipeImageView renders its Remove action
+    // while a preview shows (the #124 contract's onRemoveImage); the
+    // host's remove handler clears the image, superseding the retired
+    // host field's no-remove treatment from #407.
     expect(getByLabelText('Recipe preview')).toBeTruthy();
-    expect(queryByText('Remove image')).toBeNull();
+    await fireEvent.press(getByText('Remove image'));
+    await waitFor(() => {
+      expect(queryByLabelText('Recipe preview')).toBeNull();
+    });
   });
 
-  test('offers no way to remove a generated image (#407)', async () => {
-    const {getByLabelText, queryByText} = await renderForm(
+  test('removes a generated image through the DS image view (#554)', async () => {
+    const {getByLabelText, getByText, queryByLabelText} = await renderForm(
       <RecipeForm
         initial={{
           title: 'New Recipe',
@@ -506,7 +516,10 @@ describe('RecipeForm', () => {
       expect(mockGenerateImage).toHaveBeenCalled();
     });
     expect(getByLabelText('Recipe preview')).toBeTruthy();
-    expect(queryByText('Remove image')).toBeNull();
+    await fireEvent.press(getByText('Remove image'));
+    await waitFor(() => {
+      expect(queryByLabelText('Recipe preview')).toBeNull();
+    });
   });
 
   test('requires sign-in before generating a description', async () => {
@@ -554,7 +567,7 @@ describe('RecipeForm', () => {
 
   test('requires sign-in before uploading an image', async () => {
     mockUseAuth.mockReturnValue({session: null, isLoading: false});
-    const {getByLabelText, findByText} = await renderForm(
+    const {getByText, findByText} = await renderForm(
       <RecipeForm
         initial={recipeDetailToInput(makeRecipeDetail())}
         recipeId="recipe-uuid-1"
@@ -573,7 +586,9 @@ describe('RecipeForm', () => {
         },
       ],
     });
-    await fireEvent.press(getByLabelText('Choose recipe image'));
+    // B7 T3 (#554): the pick intent is the DS image view's browse
+    // action; the host opens its own picker flow from it.
+    await fireEvent.press(getByText('Browse images'));
     // #406: the picked image is pending until used (or cropped) — the
     // host's sign-in check runs when the pending image is confirmed.
     await fireEvent.press(await findByText('Use image'));
@@ -585,14 +600,14 @@ describe('RecipeForm', () => {
     launchImageLibrary.mockResolvedValue({
       assets: [{uri: 'file://recipe.png', type: 'image/png'}],
     });
-    const {getByLabelText, findByText} = await renderForm(
+    const {getByText, findByText} = await renderForm(
       <RecipeForm
         initial={recipeDetailToInput(makeRecipeDetail())}
         submitLabel="Save"
         onSubmit={jest.fn()}
       />,
     );
-    await fireEvent.press(getByLabelText('Choose recipe image'));
+    await fireEvent.press(getByText('Browse images'));
     expect(await findByText('Failed to read image')).toBeTruthy();
   });
 
@@ -652,7 +667,7 @@ describe('RecipeForm', () => {
         onSubmit={onSubmit}
       />,
     );
-    await fireEvent.press(getByLabelText('Choose recipe image'));
+    await fireEvent.press(getByText('Browse images'));
     await waitFor(() => {
       expect(getByLabelText('Use image')).toBeTruthy();
     });
