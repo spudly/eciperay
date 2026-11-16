@@ -1,7 +1,7 @@
 /**
  * Layout geometry for the recipe image preview (plain objects — no StyleSheet;
- * the values are dimensions, not theme styling). Shared by RecipeImageField and
- * OverviewTab.
+ * the values are dimensions, not theme styling). Used by the recipe form
+ * host's pending-image flow (hosts/recipe/RecipeForm).
  */
 const RECIPE_IMAGE_PREVIEW_HEIGHT = 256;
 

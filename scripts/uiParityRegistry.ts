@@ -16,7 +16,6 @@ export const MIRROR_PAIRS = [
   'ScreenLoadingGate.tsx',
   'SharedRecipeListCard.tsx',
   'BookLoadingSpinner.tsx',
-  'recipe/RecipeImageField.tsx',
   'recipe/RecipeInputPreview.tsx',
 ] as const;
 

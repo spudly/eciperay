@@ -23,7 +23,8 @@ cd packages/app/android
 `react-native-image-picker` uses the system photo picker on supported Android
 versions, so `READ_MEDIA_*` / `READ_EXTERNAL_STORAGE` are not declared.
 Before opening the picker, the app shows an in-app rationale dialog
-(`confirmPhotoLibraryAccess`) on `ImportImageScreen` and `RecipeImageField`.
+(`confirmPhotoLibraryAccess`) on `ImportImageScreen` and the recipe form host
+(`hosts/recipe/RecipeForm`).
 
 ## Removed library permissions
 
