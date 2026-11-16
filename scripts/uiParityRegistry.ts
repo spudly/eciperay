@@ -27,7 +27,7 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
     path: 'cooking/CookingModeParts.tsx',
     platform: 'app',
     reason:
-      'Native cooking-mode UI fragments; web uses CookingModeView with DOM layout instead.',
+      'Native cooking-mode UI fragments; web renders the DS CookingModePage directly in its host page (B7 T2, eciperay#553) with its own cook-log shell.',
   },
   {
     path: 'StarRatingInput.tsx',
@@ -182,12 +182,6 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
     platform: 'web',
     reason:
       'React Router root layout with providers; app uses App.tsx entry instead.',
-  },
-  {
-    path: 'cooking/CookingModeView.tsx',
-    platform: 'web',
-    reason:
-      'Web cooking mode page shell; app uses CookingScreen with CookingModeParts.',
   },
   {
     path: 'recipe/SortableIngredientRow.tsx',
