@@ -12,9 +12,10 @@ import type {Voice} from '@spudly/ui';
  * and safety copy stays plain too: when something goes wrong, clarity beats
  * personality.
  *
- * This file is duplicated in packages/web and packages/app (the same pattern
- * PR1 used for src/i18n/locale.ts and src/i18n/i18n.ts) — keep the two copies
- * identical.
+ * This file is duplicated in packages/web, packages/app, and packages/server
+ * (the server copy feeds the SSR renderer for the public recipe page; the same
+ * pattern PR1 used for src/i18n/locale.ts and src/i18n/i18n.ts) — keep the
+ * copies identical.
  */
 export const eciperayVoice: Voice = {
   common: {

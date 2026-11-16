@@ -1,7 +1,12 @@
 import {Writable} from 'node:stream';
 
 import type {PublicRecipeResponse} from '@eciperay/types';
-import {createTamaguiConfig, eciperayTheme, PublicRecipePage} from '@spudly/ui';
+import {
+  createTamaguiConfig,
+  eciperayTheme,
+  PublicRecipePage,
+  VoiceProvider,
+} from '@spudly/ui';
 import type {
   PipeableStream,
   RenderToPipeableStreamOptions,
@@ -14,6 +19,7 @@ import {renderToPipeableStream} from 'react-dom/server';
 // imports it from 'tamagui').
 import {TamaguiProvider} from '@tamagui/core';
 
+import {eciperayVoice} from '../i18n/voice.js';
 import {buildPublicRecipePageProps} from './buildPublicRecipePageProps.js';
 import {buildPublicRecipeCanonicalUrl, getWebAppBaseUrl} from './seoUrls.js';
 
@@ -46,23 +52,25 @@ export const renderPublicRecipeStream = (
   options: RenderToPipeableStreamOptions,
 ): PipeableStream =>
   renderToPipeableStream(
-    <TamaguiProvider
-      config={serverTamaguiConfig}
-      defaultTheme="light"
-    >
-      {/* The slug is optional on the route, so the server-rendered page
+    <VoiceProvider voice={eciperayVoice}>
+      <TamaguiProvider
+        config={serverTamaguiConfig}
+        defaultTheme="light"
+      >
+        {/* The slug is optional on the route, so the server-rendered page
           itself declares the canonical URL (React hoists the link into
           the document head) — crawlers and shared links resolve to the
           slugged canonical address regardless of the requested form. */}
-      <link
-        rel="canonical"
-        href={buildPublicRecipeCanonicalUrl(getWebAppBaseUrl(), {
-          id: body.recipe.id,
-          slug: body.canonicalSlug,
-        })}
-      />
-      <PublicRecipePage {...buildPublicRecipePageProps(body)} />
-    </TamaguiProvider>,
+        <link
+          rel="canonical"
+          href={buildPublicRecipeCanonicalUrl(getWebAppBaseUrl(), {
+            id: body.recipe.id,
+            slug: body.canonicalSlug,
+          })}
+        />
+        <PublicRecipePage {...buildPublicRecipePageProps(body)} />
+      </TamaguiProvider>
+    </VoiceProvider>,
     options,
   );
 

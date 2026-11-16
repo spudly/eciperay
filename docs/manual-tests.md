@@ -115,9 +115,11 @@ password-reset cases.
 
 **Run when:** `packages/app/src/screens/auth/**`,
 `packages/web/src/pages/auth/**`, `packages/client/src/authEmail.ts`,
-`@spudly/ui` `SignInPage`, `SignUpPage`, `ForgotPasswordPage`,
-`ResetPasswordPage`, `packages/server` auth/session code, Supabase auth
-configuration changes, `packages/app/android/app/src/main/AndroidManifest.xml`,
+`packages/web/src/i18n/voice.ts`, `packages/app/src/i18n/voice.ts`,
+`packages/server/src/i18n/voice.ts`, `@spudly/ui` `SignInPage`, `SignUpPage`,
+`ForgotPasswordPage`, `ResetPasswordPage`, `packages/server` auth/session code,
+Supabase auth configuration changes,
+`packages/app/android/app/src/main/AndroidManifest.xml`,
 `packages/app/src/navigation/linking.ts`,
 `packages/app/src/lib/{deepLinks,safeOpenUrl,authDeepLink}.ts`.
 
@@ -993,6 +995,7 @@ where analytics (PostHog) is configured._
    the explanatory message; re-enabling it re-presents the consent prompt.
 
 **Run when:** `packages/client/src/analyticsConsent.ts`,
+`packages/web/src/i18n/voice.ts`, `packages/app/src/i18n/voice.ts`,
 `packages/web/src/pages/ConsentPreferencesPage.tsx`,
 `packages/web/src/components/AnalyticsConsentBanner.tsx`,
 `packages/web/src/components/ProfileFeedbackPreference.tsx`,

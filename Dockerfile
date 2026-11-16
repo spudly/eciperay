@@ -31,8 +31,13 @@ COPY patches/ patches/
 # image layer; this .npmrc holds just the ${NODE_AUTH_TOKEN} placeholder.
 RUN printf '@spudly:registry=https://npm.pkg.github.com/\n//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}\n' > .npmrc
 
+# The server workspace is installed in this stage too: the SSR bundle step
+# below resolves @spudly/ui from packages/server, and since the
+# @spudly/ui 10 lockfile the package is installed per-workspace rather
+# than hoisted to the root.
 RUN --mount=type=secret,id=NODE_AUTH_TOKEN,env=NODE_AUTH_TOKEN npm ci --ignore-scripts \
   --workspace=@eciperay/web \
+  --workspace=@eciperay/server \
   --workspace=@eciperay/client \
   --workspace=@eciperay/types \
   --include-workspace-root
