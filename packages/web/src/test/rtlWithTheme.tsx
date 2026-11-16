@@ -10,9 +10,11 @@
  */
 import {createRequire} from 'node:module';
 
+import {VoiceProvider} from '@spudly/ui';
 import type {ReactElement, ReactNode} from 'react';
 import {TamaguiProvider} from 'tamagui';
 
+import {eciperayVoice} from '../i18n/voice.js';
 import {webTamaguiConfig} from '../lib/tamaguiConfig.js';
 
 // Use Node resolution (bypasses the Vite alias) to get the real package.
@@ -24,12 +26,14 @@ const rtl =
 
 function ThemeWrapper({children}: {children: ReactNode}) {
   return (
-    <TamaguiProvider
-      config={webTamaguiConfig}
-      defaultTheme="light"
-    >
-      {children}
-    </TamaguiProvider>
+    <VoiceProvider voice={eciperayVoice}>
+      <TamaguiProvider
+        config={webTamaguiConfig}
+        defaultTheme="light"
+      >
+        {children}
+      </TamaguiProvider>
+    </VoiceProvider>
   );
 }
 

@@ -5,6 +5,7 @@ import {
   createNoopAnalyticsAdapter,
   FeedbackPreferenceProvider,
 } from '@eciperay/client';
+import {VoiceProvider} from '@spudly/ui';
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 import {
   act,
@@ -15,6 +16,7 @@ import {
 import type {ReactElement, ReactNode} from 'react';
 import {MemoryRouter, type MemoryRouterProps} from 'react-router-dom';
 
+import {eciperayVoice} from '../i18n/voice.js';
 import {supabase} from '../lib/supabase.js';
 
 const testAnalytics = createAnalytics(createNoopAnalyticsAdapter(), 'web');
@@ -51,18 +53,20 @@ export const createWrapper = ({
       children
     );
     return (
-      <QueryClientProvider client={queryClient}>
-        <AnalyticsProvider analytics={testAnalytics}>
-          <FeedbackPreferenceProvider initialEnabled={false}>
-            <MemoryRouter
-              initialEntries={[route]}
-              {...routerProps}
-            >
-              {inner}
-            </MemoryRouter>
-          </FeedbackPreferenceProvider>
-        </AnalyticsProvider>
-      </QueryClientProvider>
+      <VoiceProvider voice={eciperayVoice}>
+        <QueryClientProvider client={queryClient}>
+          <AnalyticsProvider analytics={testAnalytics}>
+            <FeedbackPreferenceProvider initialEnabled={false}>
+              <MemoryRouter
+                initialEntries={[route]}
+                {...routerProps}
+              >
+                {inner}
+              </MemoryRouter>
+            </FeedbackPreferenceProvider>
+          </AnalyticsProvider>
+        </QueryClientProvider>
+      </VoiceProvider>
     );
   };
   return {Wrapper, queryClient};
