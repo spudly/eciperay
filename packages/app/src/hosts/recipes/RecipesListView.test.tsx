@@ -714,7 +714,7 @@ describe('RecipesListView unified sections (#412)', () => {
   });
 
   test('renders the own-section loading row while fetching the next own page', async () => {
-    const {getByLabelText} = await renderWithProviders(
+    const {container} = await renderWithProviders(
       <RecipesListView
         {...controls}
         isLoading={false}
@@ -725,7 +725,15 @@ describe('RecipesListView unified sections (#412)', () => {
       />,
     );
 
-    expect(getByLabelText('Loading')).toBeTruthy();
+    // @spudly/ui 10 renders the load-more row as skeleton cards marked
+    // busy (DS #278 loading scope) — there is no labelled spinner.
+    expect(
+      container.queryAll(
+        node =>
+          (node.props.accessibilityState as {busy?: boolean} | undefined)
+            ?.busy === true,
+      ).length,
+    ).toBeGreaterThan(0);
   });
 
   test('renders the discovery error state from the discovery error prop', async () => {

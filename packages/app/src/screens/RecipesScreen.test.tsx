@@ -185,13 +185,21 @@ describe('RecipesScreen', () => {
           /* never resolves */
         }),
     );
-    const {getByLabelText} = await renderWithProviders(<RecipesScreen />);
+    const {container} = await renderWithProviders(<RecipesScreen />);
 
     await act(() => {
       jest.advanceTimersByTime(100);
     });
 
-    expect(getByLabelText('Loading')).toBeTruthy();
+    // @spudly/ui 10 renders loading rows as skeleton cards marked busy
+    // (DS #278 loading scope) — there is no labelled spinner.
+    expect(
+      container.queryAll(
+        node =>
+          (node.props.accessibilityState as {busy?: boolean} | undefined)
+            ?.busy === true,
+      ).length,
+    ).toBeGreaterThan(0);
     jest.useRealTimers();
   });
 

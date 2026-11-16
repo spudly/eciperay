@@ -263,9 +263,12 @@ describe('PublicRecipePage', () => {
       {route: '/recipe/recipe-uuid-1/test-recipe', withAuth: false},
     );
 
-    expect(
-      screen.getByRole('progressbar', {name: 'Loading recipe'}),
-    ).toBeInTheDocument();
+    // @spudly/ui 10 renders the loading state as a skeleton composition
+    // (DS #278) — same shell and section headings as the ready layout,
+    // every content region skeletonized, no real recipe content.
+    expect(screen.getByText('Ingredients')).toBeInTheDocument();
+    expect(screen.getByText('Instructions')).toBeInTheDocument();
+    expect(screen.queryByText('Test Recipe')).not.toBeInTheDocument();
     await waitFor(() => {
       expect(screen.getByText('Test Recipe')).toBeInTheDocument();
     });

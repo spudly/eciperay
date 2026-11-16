@@ -6,6 +6,7 @@ import {
   createAnalytics,
   createNoopAnalyticsAdapter,
 } from '@eciperay/client';
+import {VoiceProvider} from '@spudly/ui';
 import {
   notifyManager,
   QueryClient,
@@ -20,6 +21,7 @@ import {
 import React from 'react';
 import {TamaguiProvider} from 'tamagui';
 
+import {eciperayVoice} from '../i18n/voice';
 import {appTamaguiConfig} from '../lib/tamaguiConfig';
 
 const testAnalytics = createAnalytics(createNoopAnalyticsAdapter(), 'android');
@@ -124,16 +126,18 @@ export const renderWithProviders = async (
   return await render(ui, {
     ...options,
     wrapper: ({children}) => (
-      <TamaguiProvider
-        config={appTamaguiConfig}
-        defaultTheme="light"
-      >
-        <QueryClientProvider client={client}>
-          <AnalyticsProvider analytics={testAnalytics}>
-            {children}
-          </AnalyticsProvider>
-        </QueryClientProvider>
-      </TamaguiProvider>
+      <VoiceProvider voice={eciperayVoice}>
+        <TamaguiProvider
+          config={appTamaguiConfig}
+          defaultTheme="light"
+        >
+          <QueryClientProvider client={client}>
+            <AnalyticsProvider analytics={testAnalytics}>
+              {children}
+            </AnalyticsProvider>
+          </QueryClientProvider>
+        </TamaguiProvider>
+      </VoiceProvider>
     ),
   });
 };
