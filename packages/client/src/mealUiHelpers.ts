@@ -45,7 +45,8 @@ const parseFormIngredient = (
     return null;
   }
   // Mirror the server schema's caps (MealInputSchema: name ≤ 200, unit
-  // ≤ 50, servings a positive integer) so an over-limit entry fails here
+  // ≤ 50, servings-to-cook a positive integer, servings-to-eat any
+  // non-negative number) so an over-limit entry fails here
   // with a field-specific message instead of a generic server rejection.
   if (name.length > 200) {
     throw new Error('Enter an ingredient name of 200 characters or fewer.');
@@ -67,7 +68,9 @@ const parseFormIngredient = (
   const servingsToEatText = formIngredient.servingsToEat.trim();
   const servingsToEat =
     servingsToEatText === '' ? servingsToCook : Number(servingsToEatText);
-  if (!Number.isInteger(servingsToEat) || servingsToEat <= 0) {
+  // Servings-to-eat may be 0 (eats none) or fractional (#541); only the
+  // cook side stays a positive integer.
+  if (!Number.isFinite(servingsToEat) || servingsToEat < 0) {
     throw new Error(`Enter valid servings to eat for “${name}”.`);
   }
   return {name, quantity, unit: unit || null, servingsToCook, servingsToEat};

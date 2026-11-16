@@ -138,12 +138,6 @@ describe('mealSchemas', () => {
         ingredients: [{name: 'Rice', servingsToCook: 0}],
       }),
     ).toThrow(z.ZodError);
-    expect(() =>
-      MealInputSchema.parse({
-        title: 'X',
-        ingredients: [{name: 'Rice', servingsToEat: 0}],
-      }),
-    ).toThrow(z.ZodError);
     // Clients never send nutrition for a direct entry — it is estimated
     // server-side — but unknown keys are stripped, not stored.
     const parsed = MealInputSchema.parse({
@@ -151,6 +145,49 @@ describe('mealSchemas', () => {
       ingredients: [{name: 'Rice', calories: 999}],
     } as unknown as Parameters<typeof MealInputSchema.parse>[0]);
     expect(parsed.ingredients?.[0]).toEqual({name: 'Rice'});
+  });
+
+  test('servingsToEat may be 0 or fractional (#541); servingsToCook may not', () => {
+    for (const servingsToEat of [0, 0.5, 1.5]) {
+      const meal = MealInputSchema.parse({
+        title: 'Dinner',
+        recipes: [{recipeId, servingsToCook: 2, servingsToEat}],
+        ingredients: [{name: 'Rice', servingsToCook: 2, servingsToEat}],
+      });
+      expect(meal.recipes[0]?.servingsToEat).toBe(servingsToEat);
+      expect(meal.ingredients?.[0]?.servingsToEat).toBe(servingsToEat);
+      const plan = MealPlanInputSchema.parse({
+        title: 'Week',
+        entries: [{recipeId, servingsToCook: 2, servingsToEat}],
+      });
+      expect(plan.entries[0]).toMatchObject({servingsToEat});
+    }
+    // Omitted servingsToEat stays omitted (defaults unchanged).
+    const omitted = MealInputSchema.parse({
+      title: 'Dinner',
+      recipes: [{recipeId, servingsToCook: 2}],
+    });
+    expect(omitted.recipes[0]?.servingsToEat).toBeUndefined();
+    for (const servingsToEat of [-0.5, -1]) {
+      expect(() =>
+        MealInputSchema.parse({
+          title: 'X',
+          recipes: [{recipeId, servingsToEat}],
+        }),
+      ).toThrow(z.ZodError);
+      expect(() =>
+        MealInputSchema.parse({
+          title: 'X',
+          ingredients: [{name: 'Rice', servingsToEat}],
+        }),
+      ).toThrow(z.ZodError);
+      expect(() =>
+        MealPlanInputSchema.parse({
+          title: 'Week',
+          entries: [{recipeId, servingsToEat}],
+        }),
+      ).toThrow(z.ZodError);
+    }
   });
 
   test('MealPlanInputSchema accepts valid plan', () => {

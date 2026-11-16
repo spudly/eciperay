@@ -678,6 +678,67 @@ describe('meal and meal plan write tools', () => {
     await client.close();
   });
 
+  test('servings-to-eat accepts 0 and fractional values and rejects negative values (#541)', async () => {
+    let fetchCalls = 0;
+    globalThis.fetch = (async () => {
+      fetchCalls += 1;
+      return {
+        ok: true,
+        status: 200,
+        text: async () => '{}',
+        json: async () => ({}),
+      } as Response;
+    }) as typeof fetch;
+
+    const client = await connectClient();
+    for (const value of [0, 0.5, 1.5]) {
+      fetchCalls = 0;
+      await client.callTool({
+        name: 'create_meal',
+        arguments: {
+          title: 'Taco Night',
+          recipes: [{recipeId: RECIPE_UUID, servingsToEat: value}],
+          ingredients: [{name: 'Rice', servingsToEat: value}],
+        },
+      });
+      assert.ok(
+        fetchCalls > 0,
+        `create_meal servingsToEat=${value} should pass validation`,
+      );
+      fetchCalls = 0;
+      await client.callTool({
+        name: 'create_meal_plan',
+        arguments: {
+          title: 'Week 1',
+          entries: [{recipeId: RECIPE_UUID, servingsToEat: value}],
+        },
+      });
+      assert.ok(
+        fetchCalls > 0,
+        `create_meal_plan servingsToEat=${value} should pass validation`,
+      );
+    }
+    fetchCalls = 0;
+    const created = await client.callTool({
+      name: 'create_meal',
+      arguments: {
+        title: 'Taco Night',
+        recipes: [{recipeId: RECIPE_UUID, servingsToEat: -0.5}],
+      },
+    });
+    assert.equal(created.isError, true);
+    const planCreated = await client.callTool({
+      name: 'create_meal_plan',
+      arguments: {
+        title: 'Week 1',
+        entries: [{recipeId: RECIPE_UUID, servingsToEat: -0.5}],
+      },
+    });
+    assert.equal(planCreated.isError, true);
+    assert.equal(fetchCalls, 0);
+    await client.close();
+  });
+
   test('create_meal_plan with an entry carrying both mealId and recipeId is an error and writes nothing', async () => {
     let fetchCalls = 0;
     globalThis.fetch = (async () => {

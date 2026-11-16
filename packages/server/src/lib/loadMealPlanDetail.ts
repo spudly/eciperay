@@ -59,7 +59,9 @@ type EntryRow = {
   meal_id: string | null;
   recipe_id: string | null;
   servings: number | null;
-  servings_to_eat: number | null;
+  // numeric since #541: node-postgres returns numeric columns as
+  // strings, so the stored value may arrive as e.g. "0.5".
+  servings_to_eat: number | string | null;
 };
 
 const dateOnly = (value: string | Date | null): string | null => {
@@ -179,7 +181,13 @@ export const loadMealPlanDetail = async (
       !raw ||
       !canReadRecipe(toRecipeAccessRecord(raw), {userId, hasShareGrant});
     const servingsToCook = row.servings ?? raw?.servings ?? 1;
-    const servingsToEat = row.servings_to_eat ?? servingsToCook;
+    // Parse the numeric eat column back to a number (#541: pg returns
+    // numeric as a string); a stored 0 is a real value (eats none) and
+    // only a null falls back to servings-to-cook.
+    const servingsToEat =
+      row.servings_to_eat == null
+        ? servingsToCook
+        : Number(row.servings_to_eat);
     // Plan nutrition is what the owner eats (#363): scale the entry's
     // nutrition by servings-to-eat. (Meal entries need no split here:
     // a meal's own eaten nutrition already comes from loadMealDetail.)
