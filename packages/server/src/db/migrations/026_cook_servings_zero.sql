@@ -1,8 +1,9 @@
 -- Servings-to-cook may be 0 (#540): a leftover entry cooks nothing, but
 -- the cook columns' `> 0` checks made 0 unrepresentable, so leftover
 -- meals inflated the shopping list. Relax the cook checks to >= 0 on
--- meal_recipes, meal_ingredients, and meal_plan_entries. Servings-to-eat
--- keeps its `> 0` check — a leftover is still eaten.
+-- meal_recipes, meal_ingredients, and meal_plan_entries. (Renumbered
+-- 025 -> 026: migration 025 is the servings-to-eat change from #541,
+-- which merged first.)
 
 alter table meal_recipes
   drop constraint if exists meal_recipes_servings_check;

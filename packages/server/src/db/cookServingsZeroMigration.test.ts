@@ -10,12 +10,12 @@ const migrationSql = readFileSync(
     fileURLToPath(import.meta.url),
     '..',
     'migrations',
-    '025_cook_servings_zero.sql',
+    '026_cook_servings_zero.sql',
   ),
   'utf8',
 ).toLowerCase();
 
-describe('migration 025: servings-to-cook may be 0', () => {
+describe('migration 026: servings-to-cook may be 0', () => {
   test('relaxes the cook check on all three entry tables', () => {
     for (const table of [
       'meal_recipes',
