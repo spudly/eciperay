@@ -106,7 +106,7 @@ export const CookingModePage = () => {
         return;
       }
       if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-        setStep(s => Math.min(s + 1, steps.length - 1));
+        setStep(s => Math.max(0, Math.min(s + 1, steps.length - 1)));
       }
       if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
         setStep(s => Math.max(s - 1, 0));
@@ -175,7 +175,7 @@ export const CookingModePage = () => {
         setStep(s => Math.max(s - 1, 0));
       }}
       onNext={() => {
-        setStep(s => Math.min(s + 1, steps.length - 1));
+        setStep(s => Math.max(0, Math.min(s + 1, steps.length - 1)));
       }}
     />
   );
