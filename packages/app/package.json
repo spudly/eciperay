@@ -52,7 +52,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
-    "@babel/plugin-transform-export-namespace-from": "^7.29.7",
+    "@babel/plugin-transform-export-namespace-from": "^8.1.0",
     "@babel/preset-env": "^8.0.7",
     "@babel/runtime": "^7.29.10",
     "@formatjs/intl-locale": "^5.4.3",
