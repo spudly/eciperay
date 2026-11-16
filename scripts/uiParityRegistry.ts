@@ -154,11 +154,6 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
     reason: 'Promotes native app install from the mobile web experience.',
   },
   {
-    path: 'RecipeExportPicker.tsx',
-    platform: 'web',
-    reason: 'Recipe export selection UI; export flow is web-only.',
-  },
-  {
     path: 'RecipePageHead.tsx',
     platform: 'web',
     reason:
