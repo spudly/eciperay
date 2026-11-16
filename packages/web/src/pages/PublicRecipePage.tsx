@@ -30,11 +30,11 @@ import {
 } from 'react-router-dom';
 
 import {PublicHeader} from '../components/PublicHeader.js';
-import {RecipeCommentsSection} from '../components/recipe/RecipeCommentsSection.js';
 import {RecipePageHead} from '../components/RecipePageHead.js';
 import {eciperay} from '../lib/api.js';
 
 import {sharedFooter} from './legal/legalDocumentData.js';
+import {useRecipeCommentsProps} from './useRecipeCommentsProps.js';
 
 /**
  * The public recipe route's host (B7 cluster 11): the design system's
@@ -85,6 +85,19 @@ export const PublicRecipePage = () => {
   });
 
   const recipe = data?.recipe;
+
+  // Comments (B7 T7, #557): the section's query, drafts, and mutations
+  // live in useRecipeCommentsProps in its public-list mode, and the
+  // section crosses into the DS page as its `comments` data prop —
+  // the composed RecipeCommentsSection is retired. Called before the
+  // recipe loads with an empty id; the hook's query stays disabled
+  // until the id exists. No ownerUserId: on the public page delete
+  // eligibility is author-only, as the composed section behaved.
+  const commentsProps = useRecipeCommentsProps({
+    recipeId: recipe?.id ?? '',
+    shareToken,
+    publicList: true,
+  });
 
   // Ratings (the old RecipeRatingsSection, in its public context):
   // the community rating is display data; the viewer's star input
@@ -328,13 +341,7 @@ export const PublicRecipePage = () => {
         onViewerRatingChange: (stars: number | null) => {
           ratingMutation.mutate(stars as RecipeStarRating | null);
         },
-        renderComments: () => (
-          <RecipeCommentsSection
-            recipeId={recipe.id}
-            shareToken={shareToken}
-            publicList
-          />
-        ),
+        comments: commentsProps,
       })}
     </>
   );

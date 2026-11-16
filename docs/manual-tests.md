@@ -841,18 +841,18 @@ recipe containing "buttermilk").
 5. **Combined state.** Apply a tag filter, then search within it, then clear
    both. **Expected:** the full list restores; no stale filter chips remain.
 
-> **ScreenContainer patch (issue #528):** the Android Recipes list depends on
-> `patches/@spudly+ui+9.2.1.patch`, which restores `flex: 1` for the native
-> `list` variant of `@spudly/ui` `ScreenContainer` (the fix that unblocked the
-> Android Recipes screen in release PR #503 / issue #526). The patch exists only
-> until eciperay adopts a published `@spudly/ui` carrying the durable
-> design-system fix (spudly/design-system PR #619, 9.3.0+); removing the patch
-> is itself a trigger for the Android Recipes smoke cases in this section.
+> **ScreenContainer patch (issue #528) — REMOVED:** the Android Recipes list
+> depended on `patches/@spudly+ui+9.2.1.patch`, which restored `flex: 1` for the
+> native `list` variant of `@spudly/ui` `ScreenContainer` (the fix that
+> unblocked the Android Recipes screen in release PR #503 / issue #526). The
+> patch and its regression test were deleted with the @spudly/ui 10.0.0 adoption
+> (eciperay#557), which carries the durable design-system fix
+> (spudly/design-system PR #619); the Android Recipes smoke cases in this
+> section are the verification that the durable fix holds.
 
 **Run when:** `packages/app/src/screens/{Tags,Recipes}Screen.tsx`,
 `packages/web/src/pages/{Tags,Recipes}Page.tsx`, `@spudly/ui` `TagsPage`,
-`@spudly/ui` `ScreenContainer` (including the patch-package patch in
-`patches/@spudly+ui+*.patch`), `packages/server` search/tag routes.
+`@spudly/ui` `ScreenContainer`, `packages/server` search/tag routes.
 
 ---
 
@@ -1035,8 +1035,7 @@ images included).
    raw error.
 
 **Run when:** any `@spudly/ui` release adoption, theme/token changes,
-`@spudly/ui` `ScreenContainer` (including the patch-package patch in
-`patches/@spudly+ui+*.patch`), `packages/web/src/components/ui/**`,
+`@spudly/ui` `ScreenContainer`, `packages/web/src/components/ui/**`,
 navigation/AppShell changes, `packages/app/src/navigation/**`.
 
 ---

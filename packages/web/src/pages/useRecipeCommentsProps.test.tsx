@@ -32,7 +32,12 @@ const sampleComment = {
  * used to render directly (including its #418 error surfacing).
  */
 const renderCommentsProps = async (
-  options: {recipeId?: string; ownerUserId?: string} = {},
+  options: {
+    recipeId?: string;
+    ownerUserId?: string;
+    shareToken?: string;
+    publicList?: boolean;
+  } = {},
   renderOptions: {withAuth?: boolean} = {},
 ) => {
   let captured: RecipeDetailPageComments | null = null;
@@ -40,6 +45,8 @@ const renderCommentsProps = async (
     captured = useRecipeCommentsProps({
       recipeId: options.recipeId ?? 'recipe-uuid-1',
       ownerUserId: options.ownerUserId,
+      shareToken: options.shareToken,
+      publicList: options.publicList,
     });
     return null;
   };
@@ -75,6 +82,26 @@ describe('useRecipeCommentsProps', () => {
       canEdit: true,
       canDelete: true,
     });
+  });
+
+  test('public mode lists via the public endpoint with the share token (B7 T7)', async () => {
+    let requestUrl = '';
+    server.use(
+      http.get(`${API}/api/public/recipes/:id/comments`, ({request}) => {
+        requestUrl = request.url;
+        return HttpResponse.json([sampleComment]);
+      }),
+    );
+    const {props} = await renderCommentsProps(
+      {shareToken: 'share-token', publicList: true},
+      {withAuth: false},
+    );
+    await waitFor(() => {
+      expect(props().comments).toHaveLength(1);
+    });
+    expect(requestUrl).toContain('t=share-token');
+    // Signed out on the public page: no composer is offered.
+    expect(props().onPost).toBeUndefined();
   });
 
   test('reports loading while the query is in flight', async () => {
