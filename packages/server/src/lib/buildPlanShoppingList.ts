@@ -82,6 +82,10 @@ export const buildPlanShoppingList = async (
         });
       }
       for (const mealRecipe of mealRecipes) {
+        // A meal member with servings-to-cook 0 is a leftover (#540).
+        if (mealRecipe.servings === 0) {
+          continue;
+        }
         const recipe = await loadAccessibleRecipe(
           mealRecipe.recipe_id,
           userId,
@@ -123,6 +127,11 @@ export const buildPlanShoppingList = async (
     }
 
     if (entry.accessLost) {
+      continue;
+    }
+    // Leftover entries cook nothing (#540): they contribute no
+    // ingredients to buy, however many servings are eaten.
+    if (entry.type === 'recipe' && entry.servingsToCook === 0) {
       continue;
     }
     const recipe = await loadAccessibleRecipe(entry.recipeId, userId, queryFn);

@@ -135,7 +135,9 @@ describe('mealSchemas', () => {
     expect(() =>
       MealInputSchema.parse({
         title: 'X',
-        ingredients: [{name: 'Rice', servingsToCook: 0}],
+        // Cook 0 (#540) and eat 0 (#541) are both valid now; a
+        // negative cook count is still rejected.
+        ingredients: [{name: 'Rice', servingsToCook: -1}],
       }),
     ).toThrow(z.ZodError);
     // Clients never send nutrition for a direct entry — it is estimated
@@ -188,6 +190,32 @@ describe('mealSchemas', () => {
         }),
       ).toThrow(z.ZodError);
     }
+  });
+
+  test('servingsToCook may be 0 (leftovers, #540); negative cook counts may not', () => {
+    const meal = MealInputSchema.parse({
+      title: 'Leftovers',
+      recipes: [{recipeId, servingsToCook: 0, servingsToEat: 2}],
+      ingredients: [{name: 'Rice', servingsToCook: 0, servingsToEat: 1}],
+    });
+    expect(meal.recipes[0]?.servingsToCook).toBe(0);
+    const plan = MealPlanInputSchema.parse({
+      title: 'Week',
+      entries: [{recipeId, servingsToCook: 0, servingsToEat: 2}],
+    });
+    expect(plan.entries[0]).toMatchObject({servingsToCook: 0});
+    expect(() =>
+      MealInputSchema.parse({
+        title: 'X',
+        recipes: [{recipeId, servingsToCook: -1}],
+      }),
+    ).toThrow(z.ZodError);
+    expect(() =>
+      MealPlanInputSchema.parse({
+        title: 'Week',
+        entries: [{recipeId, servingsToCook: -1}],
+      }),
+    ).toThrow(z.ZodError);
   });
 
   test('MealPlanInputSchema accepts valid plan', () => {

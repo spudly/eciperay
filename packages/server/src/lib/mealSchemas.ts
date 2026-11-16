@@ -20,12 +20,12 @@ export const MealInputSchema = z
       .array(
         z.object({
           recipeId: z.uuid(),
-          servingsToCook: z.number().int().positive().optional(),
+          servingsToCook: z.number().int().nonnegative().optional(),
           servingsToEat: z.number().nonnegative().optional(),
           // Legacy pre-#363 alias for servingsToCook: accepted so an
           // older client payload is not silently stripped by Zod; the
           // save layer uses it only when servingsToCook is absent.
-          servings: z.number().int().positive().optional(),
+          servings: z.number().int().nonnegative().optional(),
         }),
       )
       .default([]),
@@ -44,10 +44,10 @@ export const MealInputSchema = z
           name: z.string().trim().min(1).max(200),
           quantity: z.number().positive().nullish(),
           unit: z.string().trim().min(1).max(50).nullish(),
-          servingsToCook: z.number().int().positive().optional(),
+          servingsToCook: z.number().int().nonnegative().optional(),
           servingsToEat: z.number().nonnegative().optional(),
           // Legacy pre-#363 alias for servingsToCook (see recipes).
-          servings: z.number().int().positive().optional(),
+          servings: z.number().int().nonnegative().optional(),
         }),
       )
       .max(50)
@@ -74,10 +74,10 @@ export const MealPlanEntryInputSchema = z.union([
   }),
   z.object({
     recipeId: z.uuid(),
-    servingsToCook: z.number().int().positive().optional(),
+    servingsToCook: z.number().int().nonnegative().optional(),
     servingsToEat: z.number().nonnegative().optional(),
     // Legacy pre-#363 alias for servingsToCook (see MealInputSchema).
-    servings: z.number().int().positive().optional(),
+    servings: z.number().int().nonnegative().optional(),
     quantity: z.number().int().positive().optional(),
   }),
 ]);

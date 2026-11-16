@@ -129,14 +129,14 @@ export const MealPlanEditPage = () => {
         onQuantityChange={(key, quantity) => {
           // Same minimum-of-1 clamp as the meal form host: the retired
           // adapter enforced it, the DS page's steppers are unbounded,
-          // and the server schema rejects 0.
+          // and 0 servings-to-cook is allowed (#540: leftovers).
           form.setQuantityByKey(current => ({
             ...current,
             [key]: Math.max(1, quantity),
           }));
         }}
         onRecipeServingsChange={(recipeId, servings) => {
-          const nextCook = Math.max(1, servings);
+          const nextCook = Math.max(0, servings);
           // The DS form edits servings-to-cook; servings-to-eat
           // follows while it still equals the old cook value (#363),
           // and a divergent stored eat is preserved.
@@ -145,7 +145,12 @@ export const MealPlanEditPage = () => {
             [recipeId]:
               current[recipeId] === undefined ||
               current[recipeId] === form.servingsByRecipeId[recipeId]
-                ? nextCook
+                ? // Cook 0 = leftovers (#540): eat stays positive.
+                  nextCook === 0
+                  ? (current[recipeId] ??
+                    form.servingsByRecipeId[recipeId] ??
+                    1)
+                  : nextCook
                 : current[recipeId],
           }));
           form.setServingsByRecipeId(current => ({

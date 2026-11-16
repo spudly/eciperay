@@ -62,7 +62,7 @@ const parseFormIngredient = (
   }
   const servingsText = formIngredient.servings.trim();
   const servingsToCook = servingsText === '' ? 1 : Number(servingsText);
-  if (!Number.isInteger(servingsToCook) || servingsToCook <= 0) {
+  if (!Number.isInteger(servingsToCook) || servingsToCook < 0) {
     throw new Error(`Enter valid servings to cook for “${name}”.`);
   }
   const servingsToEatText = formIngredient.servingsToEat.trim();

@@ -23,12 +23,19 @@ const pgIntSchema = z.number().int().positive().max(2_147_483_647);
  */
 const pgNonNegativeNumberSchema = z.number().nonnegative().max(2_147_483_647);
 
+/** Servings-to-cook may be 0: a leftover entry cooks nothing (#540). */
+const pgNonNegativeIntSchema = z
+  .number()
+  .int()
+  .nonnegative()
+  .max(2_147_483_647);
+
 const mealRecipeSchema = z.object({
   recipeId: z.uuid().describe('Recipe id, from search_recipes'),
-  servingsToCook: pgIntSchema
+  servingsToCook: pgNonNegativeIntSchema
     .optional()
     .describe(
-      'Servings of the recipe to cook in the meal (defaults to the recipe’s)',
+      'Servings of the recipe to cook in the meal (defaults to the recipe’s; 0 = leftovers — nothing to cook)',
     ),
   servingsToEat: pgNonNegativeNumberSchema
     .optional()
@@ -82,9 +89,11 @@ const mealIngredientSchema = z.object({
     .nullable()
     .optional()
     .describe('Unit for the quantity, e.g. "g" or "bottle"'),
-  servingsToCook: pgIntSchema
+  servingsToCook: pgNonNegativeIntSchema
     .optional()
-    .describe('Servings of the ingredient to cook in the meal (default 1)'),
+    .describe(
+      'Servings of the ingredient to cook in the meal (default 1; 0 = leftovers — nothing to cook)',
+    ),
   servingsToEat: pgNonNegativeNumberSchema
     .optional()
     .describe(
@@ -106,9 +115,11 @@ const mealPlanEntrySchema = z.union([
   }),
   z.strictObject({
     recipeId: z.uuid().describe('Recipe id, from search_recipes'),
-    servingsToCook: pgIntSchema
+    servingsToCook: pgNonNegativeIntSchema
       .optional()
-      .describe('Servings of the recipe to cook (defaults to the recipe’s)'),
+      .describe(
+        'Servings of the recipe to cook (defaults to the recipe’s; 0 = leftovers — nothing to cook)',
+      ),
     servingsToEat: pgNonNegativeNumberSchema
       .optional()
       .describe(
@@ -484,9 +495,11 @@ export const registerTools = (
       inputSchema: {
         mealId: z.string().describe('Meal id, from list_meals'),
         recipeId: z.uuid().describe('Recipe id, from search_recipes'),
-        servingsToCook: pgIntSchema
+        servingsToCook: pgNonNegativeIntSchema
           .optional()
-          .describe('Servings of the recipe to cook in the meal'),
+          .describe(
+            'Servings of the recipe to cook in the meal (0 = leftovers — nothing to cook)',
+          ),
         servingsToEat: pgNonNegativeNumberSchema
           .optional()
           .describe(
@@ -625,9 +638,11 @@ export const registerTools = (
           .describe(
             'Recipe id, from search_recipes (mutually exclusive with mealId)',
           ),
-        servingsToCook: pgIntSchema
+        servingsToCook: pgNonNegativeIntSchema
           .optional()
-          .describe('Servings of the recipe to cook (recipe entries only)'),
+          .describe(
+            'Servings of the recipe to cook (recipe entries only; 0 = leftovers — nothing to cook)',
+          ),
         servingsToEat: pgNonNegativeNumberSchema
           .optional()
           .describe(

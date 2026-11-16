@@ -247,12 +247,15 @@ export const MealEditScreen = ({route, navigation}: Props) => {
             [recipeId]:
               current[recipeId] === undefined ||
               current[recipeId] === servingsByRecipeId[recipeId]
-                ? servings
+                ? // Cook 0 = leftovers (#540): eat stays positive.
+                  servings === 0
+                  ? (current[recipeId] ?? servingsByRecipeId[recipeId] ?? 1)
+                  : servings
                 : current[recipeId],
           }));
           setServingsByRecipeId(current => ({
             ...current,
-            [recipeId]: servings,
+            [recipeId]: Math.max(0, servings),
           }));
         }}
         onSubmit={() => {

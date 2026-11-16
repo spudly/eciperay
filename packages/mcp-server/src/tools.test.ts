@@ -558,7 +558,7 @@ describe('meal and meal plan write tools', () => {
     await client.close();
   });
 
-  test('servings-to-cook and quantity reject zero, negative, fractional and non-number values and write nothing', async () => {
+  test('quantity rejects zero and servings-to-cook rejects negative, fractional and non-number values and write nothing (#540: cook 0 is valid)', async () => {
     let fetchCalls = 0;
     globalThis.fetch = (async () => {
       fetchCalls += 1;
@@ -572,12 +572,14 @@ describe('meal and meal plan write tools', () => {
 
     const client = await connectClient();
     const invalidValues: unknown[] = [0, -1, 1.5, '2'];
+    const invalidCookValues: unknown[] = [-1, 1.5, '2'];
     for (const value of invalidValues) {
+      const cookValue = invalidCookValues.includes(value) ? value : -1;
       const created = await client.callTool({
         name: 'create_meal',
         arguments: {
           title: 'Taco Night',
-          recipes: [{recipeId: RECIPE_UUID, servingsToCook: value}],
+          recipes: [{recipeId: RECIPE_UUID, servingsToCook: cookValue}],
         },
       });
       assert.equal(
@@ -590,7 +592,7 @@ describe('meal and meal plan write tools', () => {
         arguments: {
           mealId: MEAL_UUID,
           recipeId: RECIPE_UUID,
-          servingsToCook: value,
+          servingsToCook: cookValue,
         },
       });
       assert.equal(
@@ -602,7 +604,7 @@ describe('meal and meal plan write tools', () => {
         name: 'create_meal_plan',
         arguments: {
           title: 'Week 1',
-          entries: [{recipeId: RECIPE_UUID, servingsToCook: value}],
+          entries: [{recipeId: RECIPE_UUID, servingsToCook: cookValue}],
         },
       });
       assert.equal(
@@ -636,7 +638,7 @@ describe('meal and meal plan write tools', () => {
     await client.close();
   });
 
-  test('servings-to-cook and quantity accept the boundaries 1 and 2147483647', async () => {
+  test('servings-to-cook accepts 0 (leftovers, #540) and the boundaries 1 and 2147483647; quantity accepts 1 and 2147483647', async () => {
     let fetchCalls = 0;
     globalThis.fetch = (async () => {
       fetchCalls += 1;
@@ -649,7 +651,7 @@ describe('meal and meal plan write tools', () => {
     }) as typeof fetch;
 
     const client = await connectClient();
-    for (const value of [1, 2_147_483_647]) {
+    for (const value of [0, 1, 2_147_483_647]) {
       fetchCalls = 0;
       await client.callTool({
         name: 'create_meal',
@@ -667,12 +669,12 @@ describe('meal and meal plan write tools', () => {
         name: 'create_meal_plan',
         arguments: {
           title: 'Week 1',
-          entries: [{mealId: MEAL_UUID, quantity: value}],
+          entries: [{mealId: MEAL_UUID, quantity: Math.max(1, value)}],
         },
       });
       assert.ok(
         fetchCalls > 0,
-        `create_meal_plan quantity=${value} should pass validation`,
+        `create_meal_plan quantity=${Math.max(1, value)} should pass validation`,
       );
     }
     await client.close();
