@@ -1,21 +1,44 @@
 import {
+  formatScaledIngredientLine,
+  formatServingsLabel,
   invalidateRecipeQueries,
   queryKeys,
   resolveRecipeServings,
   scaleFactorFromServings,
+  sortIngredientsByOrder,
 } from '@eciperay/client';
+import {CookingModePage as CookingModePageView} from '@spudly/ui';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
-import {useEffect, useState} from 'react';
+import {useEffect, useState, type ReactNode} from 'react';
 import {useNavigate, useParams, useSearchParams} from 'react-router-dom';
 import type {CookLogInput} from '@eciperay/types';
 
 import {ScreenLoadingGate} from '../components/ScreenLoadingGate.js';
 import {CookLogForm} from '../components/cooking/CookLogForm.js';
-import {
-  CookingModeCookLogShell,
-  CookingModeView,
-} from '../components/cooking/CookingModeView.js';
 import {eciperay} from '../lib/api.js';
+
+/**
+ * Dark full-screen shell for the cook-log form shown when cooking mode ends.
+ * The form itself is not part of the DS CookingModePage, so the host keeps
+ * this layout (mirrors the native CookingModeCookLogShell).
+ */
+const CookingModeCookLogShell = ({children}: {children: ReactNode}) => (
+  <div
+    style={{
+      position: 'fixed',
+      inset: 0,
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: '#111827',
+      paddingLeft: 24,
+      paddingRight: 24,
+    }}
+  >
+    {children}
+  </div>
+);
 
 export const CookingModePage = () => {
   const {recipeId = ''} = useParams();
@@ -83,7 +106,7 @@ export const CookingModePage = () => {
         return;
       }
       if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-        setStep(s => Math.min(s + 1, steps.length - 1));
+        setStep(s => Math.max(0, Math.min(s + 1, steps.length - 1)));
       }
       if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
         setStep(s => Math.max(s - 1, 0));
@@ -123,12 +146,28 @@ export const CookingModePage = () => {
   }
 
   return (
-    <CookingModeView
-      displayRecipe={displayRecipe}
-      steps={steps}
-      step={step}
-      scaleFactor={scaleFactor}
-      servings={servings}
+    <CookingModePageView
+      recipeTitle={displayRecipe ? displayRecipe.title : ''}
+      steps={steps.map(instruction => ({
+        stepNumber: instruction.stepNumber,
+        body: instruction.body,
+      }))}
+      stepIndex={step}
+      ingredients={
+        displayRecipe
+          ? {
+              heading: `Ingredients${
+                scaleFactor === 1
+                  ? ` (${formatServingsLabel(servings)})`
+                  : ` (scaled to ${formatServingsLabel(servings)})`
+              }`,
+              lines: sortIngredientsByOrder(displayRecipe.ingredients).map(
+                ingredient =>
+                  formatScaledIngredientLine(ingredient, scaleFactor),
+              ),
+            }
+          : null
+      }
       onDone={() => {
         setShowCookLogForm(true);
       }}
@@ -136,7 +175,7 @@ export const CookingModePage = () => {
         setStep(s => Math.max(s - 1, 0));
       }}
       onNext={() => {
-        setStep(s => Math.min(s + 1, steps.length - 1));
+        setStep(s => Math.max(0, Math.min(s + 1, steps.length - 1)));
       }}
     />
   );
