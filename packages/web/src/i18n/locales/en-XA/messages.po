@@ -21,6 +21,11 @@ msgid "pay.homeLabel"
 msgstr "Go to Eciperay home~"
 
 #. js-lingui-explicit-id
+#: src/pages/TermsOfServicePage.tsx:27
+msgid "termsOfService.lastUpdated"
+msgstr "June 18, 2026~"
+
+#. js-lingui-explicit-id
 #: src/pages/PrivacyPolicyPage.tsx:27
 msgid "privacyPolicy.lastUpdated"
 msgstr "November 4, 2026~"
@@ -29,6 +34,11 @@ msgstr "November 4, 2026~"
 #: src/pages/PrivacyPolicyPage.tsx:23
 msgid "privacyPolicy.title"
 msgstr "Privacy Policy~"
+
+#. js-lingui-explicit-id
+#: src/pages/TermsOfServicePage.tsx:23
+msgid "termsOfService.title"
+msgstr "Terms of Service~"
 
 #. js-lingui-explicit-id
 #: src/pages/ConsentPreferencesPage.tsx:96
