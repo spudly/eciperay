@@ -151,6 +151,14 @@ describe('PayPage', () => {
     expect(screen.getByText(/was closed before/i)).toBeInTheDocument();
   });
 
+  test('shows the home label from the Lingui catalog (#465)', async () => {
+    mockConfigured.mockReturnValue(true);
+    await renderPay('/pay');
+    expect(
+      screen.getByRole('link', {name: 'Go to Eciperay home'}),
+    ).toBeInTheDocument();
+  });
+
   test('home link points at the host home from the explainer state', async () => {
     mockConfigured.mockReturnValue(true);
     await renderPay('/pay');
