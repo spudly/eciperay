@@ -221,7 +221,9 @@ describe('MealEditScreen', () => {
     expect(await rendered.findByDisplayValue('Sunday Dinner')).toBeTruthy();
     // The meal's recipe is already selected — its stepper renders without
     // any search.
-    expect(await rendered.findByText('Servings · Pasta')).toBeTruthy();
+    // @spudly/ui 11 renders separate cook and eat steppers (DS #659).
+    expect(await rendered.findByText('Servings to cook · Pasta')).toBeTruthy();
+    expect(await rendered.findByText('Servings to eat · Pasta')).toBeTruthy();
   });
 
   test('loads existing meal for edit', async () => {
@@ -274,9 +276,11 @@ describe('MealEditScreen', () => {
       'Dinner',
     );
     await fireEvent.press(rendered.getByText('Pasta'));
-    await fireEvent.press(rendered.getByText('+'));
+    // Two steppers render now (cook and eat, DS #659): press the
+    // first one's '+'.
+    await fireEvent.press(rendered.getAllByText('+')[0]!);
     await fireEvent.press(rendered.getByText('Remove'));
-    expect(rendered.queryByText('Servings · Pasta')).toBeNull();
+    expect(rendered.queryByText('Servings to cook · Pasta')).toBeNull();
   });
 
   test('shows save errors', async () => {

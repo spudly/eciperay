@@ -36,10 +36,9 @@ export const MealEditScreen = ({route, navigation}: Props) => {
     Record<string, number>
   >({});
   // Servings-to-eat per recipe (#363), carried alongside the cook
-  // values the DS form's stepper edits: the DS MealFormPage (9.2.x)
-  // has no eat stepper, so eat defaults to cook on selection and
-  // follows a cook edit while it still equals the previous cook value
-  // (a stored eat that differs from cook is preserved).
+  // values: @spudly/ui 11's MealFormPage renders its own eat stepper
+  // (DS #659), so eat is edited directly; it only defaults to cook
+  // when a recipe is first selected.
   const [servingsToEatByRecipeId, setServingsToEatByRecipeId] = useState<
     Record<string, number>
   >({});
@@ -181,6 +180,13 @@ export const MealEditScreen = ({route, navigation}: Props) => {
         isSearching={isSearching || debouncedSearch !== searchText}
         selectedRecipes={selectedRecipes}
         servingsByRecipeId={servingsByRecipeId}
+        servingsToEatByRecipeId={servingsToEatByRecipeId}
+        onServingsToEatChange={(recipeId, servings) => {
+          setServingsToEatByRecipeId(current => ({
+            ...current,
+            [recipeId]: Math.max(0, servings),
+          }));
+        }}
         ingredients={formIngredients}
         onAddIngredient={() => {
           nextIngredientId.current += 1;
@@ -209,35 +215,11 @@ export const MealEditScreen = ({route, navigation}: Props) => {
               if (ingredient.id !== ingredientId) {
                 return ingredient;
               }
-              const merged = {...ingredient, ...patch};
-              // Servings-to-eat follows a servings-to-cook edit
-              // while it is blank or still equals the previous cook
-              // value (#363); a divergent stored eat is preserved —
-              // the DS form has no separate eat control.
-              if (
-                patch.servings !== undefined &&
-                (ingredient.servingsToEat === '' ||
-                  ingredient.servingsToEat === ingredient.servings)
-              ) {
-                // Cook 0 = leftovers (#540): eat must stay positive
-                // (parseFormIngredient rejects eat 0), so keep the
-                // previous eat when it is positive, else the previous
-                // cook when positive, else '1' — matching the recipe
-                // callbacks above.
-                if (patch.servings === '0') {
-                  const previousEat = Number(ingredient.servingsToEat);
-                  const previousCook = Number(ingredient.servings);
-                  merged.servingsToEat =
-                    Number.isInteger(previousEat) && previousEat > 0
-                      ? ingredient.servingsToEat
-                      : Number.isInteger(previousCook) && previousCook > 0
-                        ? ingredient.servings
-                        : '1';
-                } else {
-                  merged.servingsToEat = patch.servings;
-                }
-              }
-              return merged;
+              // The DS form (ui 11, DS #659) edits servings-to-eat
+              // through its own field, so a cook edit no longer
+              // rewrites eat; a blank eat still defaults to the cook
+              // value at parse time (#363).
+              return {...ingredient, ...patch};
             }),
           );
         }}
@@ -256,19 +238,8 @@ export const MealEditScreen = ({route, navigation}: Props) => {
         onSelectRecipe={handleSelectRecipe}
         onRemoveRecipe={handleRemoveRecipe}
         onServingsChange={(recipeId, servings) => {
-          // Eat follows a cook edit while it still equals the old
-          // cook value (#363); a divergent stored eat is preserved.
-          setServingsToEatByRecipeId(current => ({
-            ...current,
-            [recipeId]:
-              current[recipeId] === undefined ||
-              current[recipeId] === servingsByRecipeId[recipeId]
-                ? // Cook 0 = leftovers (#540): eat stays positive.
-                  servings === 0
-                  ? (current[recipeId] ?? servingsByRecipeId[recipeId] ?? 1)
-                  : servings
-                : current[recipeId],
-          }));
+          // Eat is edited through its own stepper now (ui 11) and no
+          // longer follows cook edits.
           setServingsByRecipeId(current => ({
             ...current,
             [recipeId]: Math.max(0, servings),

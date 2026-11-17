@@ -79,7 +79,9 @@ describe('MealEditPage', () => {
     fireEvent.click(screen.getByText('Recipe 101'));
     // Selected: it leaves the results and shows its servings stepper.
     await waitFor(() => {
-      expect(screen.getByText('Servings · Recipe 101')).toBeInTheDocument();
+      expect(
+        screen.getByText('Servings to cook · Recipe 101'),
+      ).toBeInTheDocument();
     });
   }, 30000);
 
@@ -144,12 +146,16 @@ describe('MealEditPage', () => {
     });
     fireEvent.click(screen.getByText('Test Recipe'));
     await waitFor(() => {
-      expect(screen.getByText('Servings · Test Recipe')).toBeInTheDocument();
+      expect(
+        screen.getByText('Servings to cook · Test Recipe'),
+      ).toBeInTheDocument();
     });
-    fireEvent.click(screen.getByText('+'));
+    // Two steppers render now (cook and eat, DS #659): press the
+    // first one's '+'.
+    fireEvent.click(screen.getAllByText('+')[0]!);
     fireEvent.click(screen.getByText('Remove'));
     expect(
-      screen.queryByText('Servings · Test Recipe'),
+      screen.queryByText('Servings to cook · Test Recipe'),
     ).not.toBeInTheDocument();
   });
 
@@ -176,7 +182,9 @@ describe('MealEditPage', () => {
     });
     // The meal's recipe is already selected — its stepper renders without
     // any search, even though it is in no current search result.
-    expect(screen.getByText('Servings · Test Recipe')).toBeInTheDocument();
+    expect(
+      screen.getByText('Servings to cook · Test Recipe'),
+    ).toBeInTheDocument();
     fireEvent.click(screen.getByText('Save meal'));
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith(`/meals/${MEAL_ID}`);
@@ -258,7 +266,7 @@ describe('MealEditPage', () => {
     });
   });
 
-  test('servings-to-eat follows a cook edit on a direct ingredient (#363)', async () => {
+  test('servings-to-eat edits independently on a direct ingredient (#363)', async () => {
     const stored = makeMealDetail({
       ingredients: [
         {
@@ -306,10 +314,12 @@ describe('MealEditPage', () => {
     await waitFor(() => {
       expect(screen.getByDisplayValue('Rice')).toBeInTheDocument();
     });
-    // The ingredient's servings field is its servings-to-cook; with
-    // eat equal to cook, raising cook to 5 must raise eat with it —
-    // the DS form has no separate eat control.
-    fireEvent.change(screen.getByDisplayValue('2'), {target: {value: '5'}});
+    // The DS form (ui 11, DS #659) renders the ingredient's cook and
+    // eat servings as separate fields, both starting at 2: raise each
+    // to 5 through its own field.
+    const servingsFields = screen.getAllByDisplayValue('2');
+    fireEvent.change(servingsFields[0]!, {target: {value: '5'}});
+    fireEvent.change(servingsFields[1]!, {target: {value: '5'}});
     fireEvent.click(screen.getByText('Save meal'));
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith(`/meals/${MEAL_ID}`);

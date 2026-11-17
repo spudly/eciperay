@@ -111,6 +111,13 @@ export const MealPlanEditScreen = ({route, navigation}: Props) => {
         selectedEntries={form.selectedEntries.map(toEntryOption)}
         quantityByKey={form.quantityByKey}
         servingsByRecipeId={form.servingsByRecipeId}
+        servingsToEatByRecipeId={form.servingsToEatByRecipeId}
+        onRecipeServingsToEatChange={(recipeId, servings) => {
+          form.setServingsToEatByRecipeId(current => ({
+            ...current,
+            [recipeId]: Math.max(0, servings),
+          }));
+        }}
         isSaving={saveMutation.isPending}
         error={
           formError ??
@@ -130,20 +137,11 @@ export const MealPlanEditScreen = ({route, navigation}: Props) => {
           form.setQuantityByKey(current => ({...current, [key]: quantity}));
         }}
         onRecipeServingsChange={(recipeId, servings) => {
-          // The DS form edits servings-to-cook; servings-to-eat
-          // follows while it still equals the old cook value (#363),
-          // and a divergent stored eat is preserved.
-          form.setServingsToEatByRecipeId(current => ({
-            ...current,
-            [recipeId]:
-              current[recipeId] === undefined ||
-              current[recipeId] === form.servingsByRecipeId[recipeId]
-                ? servings
-                : current[recipeId],
-          }));
+          // Eat is edited through its own stepper now (ui 11,
+          // DS #659) and no longer follows cook edits.
           form.setServingsByRecipeId(current => ({
             ...current,
-            [recipeId]: servings,
+            [recipeId]: Math.max(0, servings),
           }));
         }}
         onSubmit={() => {

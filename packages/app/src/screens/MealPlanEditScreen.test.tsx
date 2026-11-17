@@ -179,7 +179,9 @@ describe('MealPlanEditScreen', () => {
     expect(await rendered.findByDisplayValue('This week')).toBeTruthy();
     // The plan's recipe entry is already selected — its steppers render
     // without any search.
-    expect(await rendered.findByText('Servings · Pasta')).toBeTruthy();
+    // @spudly/ui 11 renders separate cook and eat steppers (DS #659).
+    expect(await rendered.findByText('Servings to cook · Pasta')).toBeTruthy();
+    expect(await rendered.findByText('Servings to eat · Pasta')).toBeTruthy();
     await fireEvent.press(rendered.getByText('Save plan'));
     await waitFor(() => {
       expect(mockPut).toHaveBeenCalledWith(planId, expect.any(Object));

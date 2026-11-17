@@ -140,13 +140,16 @@ describe('MealPlanEditPage', () => {
     // servings steppers render without any search.
     fireEvent.click(screen.getAllByText('+')[0]!);
     fireEvent.click(screen.getAllByText('+')[1]!);
+    // The eat stepper is its own control since @spudly/ui 11
+    // (DS #659): raising eat to match the new cook value is a
+    // separate click on the third stepper.
+    fireEvent.click(screen.getAllByText('+')[2]!);
     fireEvent.click(screen.getByText('Save plan'));
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith(`/meal-plans/${PLAN_ID}`);
     });
-    // The servings stepper edits servings-to-cook (4 -> 5); with eat
-    // equal to cook, servings-to-eat follows it in the saved payload
-    // (#363).
+    // The cook stepper edits servings-to-cook (4 -> 5) and the eat
+    // stepper edits servings-to-eat independently (4 -> 5) (#363).
     expect(putBody).toMatchObject({
       entries: [
         {
