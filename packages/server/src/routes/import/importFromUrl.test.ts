@@ -581,7 +581,7 @@ describe('POST /recipes/import/url', () => {
       .send({url: 'https://recipe.example.com/plain'});
     expect(res.status).toBe(422);
     expect(res.body).toEqual({
-      error: "That page doesn't appear to contain a recipe.",
+      error: "Sorry, we weren't able to find the recipe on that page.",
     });
     // The parse stage logs its outcome token-free (#497 review round).
     const parseCall = parseWarnSpy.mock.calls.find(
