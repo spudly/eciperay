@@ -4,6 +4,8 @@ import request from 'supertest';
 
 import {RecipeImportError} from '../../lib/recipeImportToInput.js';
 
+import {makeIngredient} from '../../test/fixtures/ingredient.js';
+import {makeInstruction} from '../../test/fixtures/instruction.js';
 import {makeRecipeDetailRow} from '../../test/fixtures/recipeRow.js';
 import {makeVersionDetailRow} from '../../test/fixtures/versionRow.js';
 import {makeQueryResult} from '../../test/fixtures/queryResult.js';
@@ -30,6 +32,17 @@ const getApp = lazyTestApp({query: mockQuery});
 const actualPrepareModule =
   await import('../../lib/prepareImportedRecipeInput.js');
 const actualValidateModule = await import('../../lib/validate.js');
+
+type ServerLogAttributes = Record<string, string | number | boolean>;
+const mockServerLog = jest.fn<
+  (level: string, message: string, attributes?: ServerLogAttributes) => void
+>();
+
+jest.unstable_mockModule('../../lib/posthogLogs.js', () => ({
+  initPostHogLogs: () => {},
+  serverLog: mockServerLog,
+  shutdownPostHogLogs: async () => {},
+}));
 
 const mockPrepareImportedRecipeInput =
   jest.fn<typeof actualPrepareModule.prepareImportedRecipeInput>();
@@ -1297,16 +1310,22 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/implement unexpected er
 });
 
 // Former tweakAiSessions.implementParseError.test.ts.
+// #536: the real parseAiJson throws AiResponseParseError (never
+// RecipeImportError) for malformed or schema-invalid AI output, so a
+// parse failure surfaces as the generic 502 — not a 422. The 422 path
+// remains covered by the prepareImportedRecipeInput suite above.
 describe('implementTweakAiSession parse errors', () => {
   beforeEach(() => {
     mockValidate.mockImplementation((() => ({ok: true, data: {}})) as never);
     mockParseAiJson.mockImplementation((() => {
-      throw new RecipeImportError('invalid recipe shape');
+      throw new actualValidateModule.AiResponseParseError(
+        new Error('invalid recipe shape'),
+      );
     }) as never);
     mockExtractJsonFromAiText.mockImplementation((text: string) => text);
   });
 
-  test('returns 422 when parseAiJson throws RecipeImportError', async () => {
+  test('returns 502 when parseAiJson throws AiResponseParseError', async () => {
     nockAnthropicMessage('{}');
     mockQuery
       .mockResolvedValueOnce(
@@ -1357,7 +1376,152 @@ describe('implementTweakAiSession parse errors', () => {
       mockQuery,
     );
 
-    expect(res.statusCode).toBe(422);
-    expect(res.json).toHaveBeenCalledWith({error: 'invalid recipe shape'});
+    expect(res.statusCode).toBe(502);
+    expect(res.json).toHaveBeenCalledWith({
+      error: 'AI implementation failed',
+    });
+    expect(mockServerLog).toHaveBeenCalledWith(
+      'warn',
+      'AI tweak implementation failed',
+      expect.objectContaining({
+        sessionId: SESSION_ID,
+        recipeId: 'recipe-uuid-1',
+        errorName: 'AiResponseParseError',
+      }),
+    );
+  });
+});
+
+// #536: imported recipes are the longest in the system — approving a
+// tweak plan on one must succeed, a truncated implement response must
+// surface its specific error, and failures must be logged.
+describe('#536 imported-recipe implement', () => {
+  const longIngredients = Array.from({length: 30}, (_, i) =>
+    makeIngredient({
+      id: `ingredient-uuid-${i}`,
+      sortOrder: i,
+      name: `Imported ingredient ${i} with a long descriptive name`,
+      notes: 'a long imported note describing preparation in detail',
+    }),
+  );
+  const longInstructions = Array.from({length: 25}, (_, i) =>
+    makeInstruction({
+      id: `instruction-uuid-${i}`,
+      stepNumber: i + 1,
+      body: `Step ${i + 1}: a long imported instruction describing the technique, timing, and visual cues in considerable detail.`,
+    }),
+  );
+  const importedRecipeRow = () =>
+    makeRecipeDetailRow({
+      status: 'idea',
+      ingredients: longIngredients,
+      instructions: longInstructions,
+    });
+  const importedVersionRow = () =>
+    makeVersionDetailRow({
+      status: 'evolving',
+      ingredients: longIngredients,
+      instructions: longInstructions,
+      cook_log_count: 0,
+    });
+  const mockApproveContext = () => {
+    mockQuery
+      .mockResolvedValueOnce(makeQueryResult([makeSessionRow()]))
+      .mockResolvedValueOnce(makeQueryResult([makeSessionRow()]))
+      .mockResolvedValueOnce(makeQueryResult([importedRecipeRow()]))
+      .mockResolvedValueOnce(makeQueryResult([importedVersionRow()]))
+      .mockResolvedValueOnce(makeQueryResult([]));
+  };
+
+  test('approve-plan succeeds on an imported-recipe-shaped fixture', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    nockAnthropicMessage(IMPLEMENT_JSON);
+    mockApproveContext();
+    mockQuery
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          makeSessionRow({
+            phase: 'preview_ready',
+            approved_plan: PLAN_TEXT,
+            proposed_recipe: JSON.parse(IMPLEMENT_JSON) as Record<
+              string,
+              unknown
+            >,
+          }),
+        ]),
+      );
+
+    const res = await request(getApp())
+      .post(
+        `/api/recipes/recipe-uuid-1/tweak-ai-sessions/${SESSION_ID}/approve-plan`,
+      )
+      .set('Authorization', 'Bearer valid-token');
+
+    expect(res.status).toBe(200);
+    expect(res.body.session.phase).toBe('preview_ready');
+    expect(res.body.preview.title).toBe('Improved Pasta');
+    expect(anthropicCreateSpy).toHaveBeenCalledWith(
+      expect.objectContaining({max_tokens: 16384}),
+    );
+  });
+
+  test('returns the specific error and logs when implement is truncated at max_tokens', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    anthropicCreateSpy.mockResolvedValueOnce({
+      id: 'msg-test',
+      type: 'message',
+      role: 'assistant',
+      content: [{type: 'text', text: '{"title":"Improved Pasta","descri'}],
+      model: 'claude-sonnet-4-5',
+      stop_reason: 'max_tokens',
+      stop_sequence: null,
+      usage: {input_tokens: 10, output_tokens: 16384},
+    } as never);
+    mockApproveContext();
+
+    const res = await request(getApp())
+      .post(
+        `/api/recipes/recipe-uuid-1/tweak-ai-sessions/${SESSION_ID}/approve-plan`,
+      )
+      .set('Authorization', 'Bearer valid-token');
+
+    expect(res.status).toBe(502);
+    expect(res.body.error).toBe('Recipe too large to implement in one pass');
+    expect(mockServerLog).toHaveBeenCalledWith(
+      'warn',
+      'AI tweak implementation failed',
+      expect.objectContaining({
+        sessionId: SESSION_ID,
+        recipeId: 'recipe-uuid-1',
+        errorName: 'AiResponseTruncatedError',
+        errorMessage: 'Recipe too large to implement in one pass',
+      }),
+    );
+  });
+
+  test('logs the caught error on a generic implement failure', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    anthropicCreateSpy.mockRejectedValueOnce(new Error('AI down'));
+    mockApproveContext();
+
+    const res = await request(getApp())
+      .post(
+        `/api/recipes/recipe-uuid-1/tweak-ai-sessions/${SESSION_ID}/approve-plan`,
+      )
+      .set('Authorization', 'Bearer valid-token');
+
+    expect(res.status).toBe(502);
+    expect(res.body.error).toBe('AI implementation failed');
+    expect(mockServerLog).toHaveBeenCalledWith(
+      'warn',
+      'AI tweak implementation failed',
+      expect.objectContaining({
+        sessionId: SESSION_ID,
+        recipeId: 'recipe-uuid-1',
+        errorName: 'Error',
+        errorMessage: 'AI down',
+      }),
+    );
   });
 });

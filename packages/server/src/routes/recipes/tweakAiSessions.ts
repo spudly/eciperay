@@ -32,6 +32,7 @@ import {
   ingredientsOrInstructionsChanged,
   preserveTweakDescription,
 } from '../../lib/preserveTweakDescription.js';
+import {serverLog} from '../../lib/posthogLogs.js';
 import {prepareImportedRecipeInput} from '../../lib/prepareImportedRecipeInput.js';
 import {fetchRecipeDetail} from '../../lib/recipeQueries.js';
 import {RecipeImportError} from '../../lib/recipeImportToInput.js';
@@ -132,10 +133,31 @@ const mapSessionRow = (row: SessionRow): TweakAiSession => ({
   updatedAt: row.updated_at,
 });
 
-const callClaudeText = async (system: string, userContent: string) => {
+const RECIPE_TOO_LARGE_ERROR = 'Recipe too large to implement in one pass';
+
+class AiResponseTruncatedError extends Error {
+  constructor() {
+    super(RECIPE_TOO_LARGE_ERROR);
+    this.name = 'AiResponseTruncatedError';
+  }
+}
+
+const errorLogAttributes = (error: unknown) => ({
+  errorName: error instanceof Error ? error.name : 'UnknownError',
+  errorMessage: error instanceof Error ? error.message : String(error),
+});
+
+const PLAN_MAX_TOKENS = 4096;
+const IMPLEMENT_MAX_TOKENS = 16384;
+
+const callClaudeText = async (
+  system: string,
+  userContent: string,
+  maxTokens: number = PLAN_MAX_TOKENS,
+) => {
   const response = await anthropic.messages.create({
     model: SONNET,
-    max_tokens: 4096,
+    max_tokens: maxTokens,
     system,
     messages: [{role: 'user', content: userContent}],
   });
@@ -143,7 +165,7 @@ const callClaudeText = async (system: string, userContent: string) => {
   if (content?.type !== 'text') {
     throw new Error('Unexpected Claude response');
   }
-  return content.text.trim();
+  return {text: content.text.trim(), stopReason: response.stop_reason};
 };
 
 type SessionContextError = {error: string; status: number};
@@ -293,11 +315,17 @@ export const createTweakAiSession = async (
 
   let plan: string;
   try {
-    plan = await callClaudeText(
-      PLAN_SYSTEM,
-      `Recipe and cook logs:\n${context}\n\nUser request: ${body.data.prompt}`,
-    );
-  } catch {
+    plan = (
+      await callClaudeText(
+        PLAN_SYSTEM,
+        `Recipe and cook logs:\n${context}\n\nUser request: ${body.data.prompt}`,
+      )
+    ).text;
+  } catch (error) {
+    serverLog('warn', 'AI tweak planning failed', {
+      recipeId,
+      ...errorLogAttributes(error),
+    });
     await refundAiCall(req.userId, queryFn, quota.periodStart);
     res.status(502).json({error: 'AI planning failed'});
     return;
@@ -365,11 +393,18 @@ export const sendTweakAiMessage = async (
     .join('\n\n');
   let reply: string;
   try {
-    reply = await callClaudeText(
-      PLAN_SYSTEM,
-      `Recipe and cook logs:\n${context}\n\nConversation so far:\n${priorMessages}\n\nUser: ${body.data.content}`,
-    );
-  } catch {
+    reply = (
+      await callClaudeText(
+        PLAN_SYSTEM,
+        `Recipe and cook logs:\n${context}\n\nConversation so far:\n${priorMessages}\n\nUser: ${body.data.content}`,
+      )
+    ).text;
+  } catch (error) {
+    serverLog('warn', 'AI tweak planning failed', {
+      sessionId,
+      recipeId,
+      ...errorLogAttributes(error),
+    });
     await refundAiCall(req.userId, queryFn, quota.periodStart);
     res.status(502).json({error: 'AI planning failed'});
     return;
@@ -415,12 +450,24 @@ const implementTweakAiSessionCore = async ({
 
   let parsed;
   try {
-    const text = await callClaudeText(
+    const {text, stopReason} = await callClaudeText(
       IMPLEMENT_SYSTEM,
       `Recipe and cook logs:\n${context}\n\nApproved plan:\n${approvedPlan}`,
+      IMPLEMENT_MAX_TOKENS,
     );
+    if (stopReason === 'max_tokens') {
+      throw new AiResponseTruncatedError();
+    }
     parsed = parseAiJson(RecipeImportSchema, text);
   } catch (error) {
+    serverLog('warn', 'AI tweak implementation failed', {
+      sessionId: sessionRow.id,
+      recipeId,
+      ...errorLogAttributes(error),
+    });
+    if (error instanceof AiResponseTruncatedError) {
+      return {error: error.message, status: 502};
+    }
     if (error instanceof RecipeImportError) {
       return {error: error.message, status: 422};
     }
