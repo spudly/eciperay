@@ -24,14 +24,14 @@ export const canReadRecipe = (
     return true;
   }
 
-  if (recipe.visibility === 'private') {
-    return false;
-  }
-
   if (recipe.visibility === 'public') {
     return true;
   }
 
+  // Private and unlisted recipes alike (#534): a valid share token is a
+  // bearer link — it grants read access even when the recipe is private,
+  // and an existing share grant does the same. Without either, a private
+  // recipe stays closed to everyone but its owner.
   if (hasShareGrant) {
     return true;
   }
@@ -53,12 +53,11 @@ export const resolvePublicRecipeAccess = (
     return 'not_found';
   }
 
-  if (recipe.visibility === 'private') {
-    return 'not_found';
-  }
-
   if (!canReadRecipe(recipe, opts)) {
-    return 'forbidden';
+    // A private recipe the caller cannot read is indistinguishable from
+    // a missing one — never leak that it exists. A valid share token (or
+    // an existing grant) is the only way in for a non-owner (#534).
+    return recipe.visibility === 'private' ? 'not_found' : 'forbidden';
   }
 
   return null;

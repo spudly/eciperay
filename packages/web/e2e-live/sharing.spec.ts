@@ -94,4 +94,64 @@ test.describe('live sharing', () => {
       await context.close();
     }
   });
+
+  test('a private recipe opens for a guest through its share link (#534)', async ({
+    page,
+    browser,
+  }) => {
+    created = await createRecipeViaUi(
+      page,
+      uniqueCiName('ShareLink'),
+      value => {
+        created = value;
+      },
+    );
+
+    // The recipe stays private. Obtain its share link the way the Share
+    // action does: the share-link endpoint mints a token on first use.
+    const token = await getAccessToken(page);
+    const link = await page.evaluate(
+      async ({id, t}) => {
+        const detailRes = await fetch(`/api/recipes/${id}`, {
+          headers: {Authorization: `Bearer ${t}`},
+        });
+        const detail = (await detailRes.json()) as {slug?: string};
+        const res = await fetch(`/api/recipes/${id}/sharing/share-link`, {
+          method: 'POST',
+          headers: {Authorization: `Bearer ${t}`},
+        });
+        const body = (await res.json()) as {shareToken?: string};
+        return {slug: detail.slug ?? null, shareToken: body.shareToken ?? null};
+      },
+      {id: created.id, t: token},
+    );
+    expect(link.slug).toBeTruthy();
+    expect(link.shareToken).toBeTruthy();
+
+    const context = await browser.newContext({
+      storageState: {cookies: [], origins: []},
+    });
+    const anon = await context.newPage();
+    try {
+      // Without the token the private recipe does not render for a guest.
+      await anon.goto(`/recipe/${created.id}/${link.slug}`);
+      await expect(
+        anon.getByRole('heading', {name: created.title}),
+      ).toHaveCount(0);
+
+      // With the token the guest sees the full recipe, plus the sign-in /
+      // sign-up option the public page offers signed-out visitors.
+      await anon.goto(
+        `/recipe/${created.id}/${link.slug}?t=${link.shareToken}`,
+      );
+      await expect(
+        anon.getByRole('heading', {name: created.title}),
+      ).toBeVisible({timeout: 15_000});
+      await expect(anon.locator('a[href*="/signup"]').first()).toBeVisible({
+        timeout: 15_000,
+      });
+    } finally {
+      await context.close();
+    }
+  });
 });

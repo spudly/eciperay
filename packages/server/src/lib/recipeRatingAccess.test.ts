@@ -10,9 +10,15 @@ import {respondWithRecipeAndRatings} from './recipeRatingAccess.js';
 describe('recipeRatingAccess', () => {
   test('returns null when the viewer cannot read the recipe', async () => {
     const mockQuery = createMockQuery();
-    mockQuery.mockResolvedValue(
-      makeQueryResult([makeRecipeDetailRow({visibility: 'private'})]),
-    );
+    // The viewer holds no share grant: the grant lookup comes back empty
+    // (a grant holder CAN read a private recipe since #534 — that case
+    // is covered in recipeAccess.test.ts).
+    mockQuery.mockImplementation(((sql: string) =>
+      Promise.resolve(
+        sql.includes('recipe_share_grants')
+          ? makeQueryResult([])
+          : makeQueryResult([makeRecipeDetailRow({visibility: 'private'})]),
+      )) as typeof mockQuery);
 
     const row = await loadReadableRecipeRow(
       'recipe-uuid-1',

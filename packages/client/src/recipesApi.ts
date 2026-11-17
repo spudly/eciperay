@@ -80,6 +80,11 @@ export const createRecipesApi = (client: ApiClient) => ({
       `/recipes/${id}/sharing/rotate-token`,
       {method: 'POST'},
     ),
+  getShareLink: (id: string) =>
+    client.fetch<RecipeSharingUpdateResult>(
+      `/recipes/${id}/sharing/share-link`,
+      {method: 'POST'},
+    ),
   delete: (id: string) =>
     client.fetch<undefined>(`/recipes/${id}`, {method: 'DELETE'}),
   exportRecipes: (recipeIds: string[]) =>

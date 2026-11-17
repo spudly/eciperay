@@ -2,6 +2,8 @@ import {makeQueryResult} from '../test/fixtures/queryResult.js';
 import {makeRecipeDetailRow} from '../test/fixtures/recipeRow.js';
 import {createMockQuery} from '../test/mockQuery.js';
 
+import {hashShareToken} from './shareToken.js';
+
 import {loadPublicRecipe} from './loadPublicRecipe.js';
 
 const mockQuery = createMockQuery();
@@ -69,6 +71,41 @@ describe('loadPublicRecipe', () => {
     );
 
     const result = await loadPublicRecipe({id: 'recipe-uuid-1'}, mockQuery);
+
+    expect(result).toEqual({kind: 'denied', denial: 'not_found'});
+  });
+
+  test('serves a private recipe to a valid share token (#534)', async () => {
+    mockPublicRecipeQueries(
+      makeRecipeDetailRow({
+        visibility: 'private',
+        slug: 'pasta',
+        share_token_hash: hashShareToken('share-token'),
+      }),
+    );
+
+    const result = await loadPublicRecipe(
+      {id: 'recipe-uuid-1', requestedSlug: 'pasta', shareToken: 'share-token'},
+      mockQuery,
+    );
+
+    expect(result.kind).toBe('ok');
+  });
+
+  test('denies a private recipe with a bad share token (#534)', async () => {
+    mockQuery.mockResolvedValue(
+      makeQueryResult([
+        makeRecipeDetailRow({
+          visibility: 'private',
+          share_token_hash: hashShareToken('share-token'),
+        }),
+      ]),
+    );
+
+    const result = await loadPublicRecipe(
+      {id: 'recipe-uuid-1', shareToken: 'bad-token'},
+      mockQuery,
+    );
 
     expect(result).toEqual({kind: 'denied', denial: 'not_found'});
   });

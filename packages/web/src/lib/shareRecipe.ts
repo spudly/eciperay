@@ -1,4 +1,4 @@
-import {buildRecipeShareUrl, buildShareText} from '@eciperay/client';
+import {buildRecipeShareUrl} from '@eciperay/client';
 import type {RecipeDetail} from '@eciperay/types';
 
 export type ShareRecipeResult = 'shared' | 'copied';
@@ -9,7 +9,8 @@ export const shareRecipe = async (
   recipe: RecipeDetail,
   options: ShareRecipeOptions = {},
 ): Promise<ShareRecipeResult> => {
-  const text = buildShareText(recipe);
+  // Share a link, never the recipe text (#534): the payload is the title
+  // plus the Eciperay permalink (carrying the share token when supplied).
   const url = buildRecipeShareUrl(
     window.location.origin,
     recipe,
@@ -18,7 +19,7 @@ export const shareRecipe = async (
 
   if (typeof navigator.share === 'function') {
     try {
-      await navigator.share({title: recipe.title, text, url});
+      await navigator.share({title: recipe.title, url});
       return 'shared';
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') {
@@ -27,6 +28,6 @@ export const shareRecipe = async (
     }
   }
 
-  await navigator.clipboard.writeText(`${text}\n\n${url}`);
+  await navigator.clipboard.writeText(url);
   return 'copied';
 };

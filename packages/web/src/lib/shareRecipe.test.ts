@@ -3,7 +3,8 @@ import {makeRecipeDetail} from '../test/fixtures/recipe.js';
 import {shareRecipe} from './shareRecipe.js';
 
 const privateRecipeUrl =
-  'http://localhost:8081/recipes/recipe-uuid-1/test-recipe';
+  'http://localhost:8081/recipe/recipe-uuid-1/test-recipe';
+const privateShareUrl = `${privateRecipeUrl}?t=share-token`;
 const publicRecipeUrl =
   'http://localhost:8081/recipe/recipe-uuid-1/test-recipe';
 const unlistedRecipeUrl =
@@ -14,15 +15,16 @@ describe('shareRecipe', () => {
     vi.stubGlobal('window', {location: {origin: 'http://localhost:8081'}});
   });
 
-  test('uses navigator.share when available', async () => {
+  test('uses navigator.share when available, with title and URL only', async () => {
     const share = vi.fn(async () => {});
     vi.stubGlobal('navigator', {share, clipboard: {writeText: vi.fn()}});
     await expect(
       shareRecipe(makeRecipeDetail({sourceUrl: null})),
     ).resolves.toBe('shared');
-    expect(share).toHaveBeenCalledWith(
-      expect.objectContaining({url: privateRecipeUrl}),
-    );
+    expect(share).toHaveBeenCalledWith({
+      title: expect.any(String),
+      url: privateRecipeUrl,
+    });
   });
 
   test('uses permalink URLs for published recipes', async () => {
@@ -48,6 +50,17 @@ describe('shareRecipe', () => {
     );
   });
 
+  test('appends share token for private recipes when provided (#534)', async () => {
+    const share = vi.fn(async () => {});
+    vi.stubGlobal('navigator', {share, clipboard: {writeText: vi.fn()}});
+    await shareRecipe(makeRecipeDetail({sourceUrl: null}), {
+      shareToken: 'share-token',
+    });
+    expect(share).toHaveBeenCalledWith(
+      expect.objectContaining({url: privateShareUrl}),
+    );
+  });
+
   test('falls back to clipboard when share unavailable', async () => {
     const writeText = vi.fn(async () => {});
     vi.stubGlobal('navigator', {clipboard: {writeText}});
@@ -55,15 +68,13 @@ describe('shareRecipe', () => {
     expect(writeText).toHaveBeenCalled();
   });
 
-  test('copies formatted recipe text with share URL', async () => {
+  test('copies the share URL alone, never recipe text (#534)', async () => {
     const writeText = vi.fn(async () => {});
     vi.stubGlobal('navigator', {clipboard: {writeText}});
     await expect(
       shareRecipe(makeRecipeDetail({sourceUrl: null, visibility: 'public'})),
     ).resolves.toBe('copied');
-    expect(writeText).toHaveBeenCalledWith(
-      expect.stringContaining(publicRecipeUrl),
-    );
+    expect(writeText).toHaveBeenCalledWith(publicRecipeUrl);
   });
 
   test('falls back to clipboard when share fails with a non-abort error', async () => {
@@ -74,13 +85,16 @@ describe('shareRecipe', () => {
     expect(writeText).toHaveBeenCalled();
   });
 
-  test('uses sourceUrl when provided', async () => {
+  test('never shares the source URL (#534)', async () => {
     const share = vi.fn(async () => {});
     vi.stubGlobal('navigator', {share, clipboard: {writeText: vi.fn()}});
     await shareRecipe(
       makeRecipeDetail({sourceUrl: 'https://example.com/original'}),
     );
     expect(share).toHaveBeenCalledWith(
+      expect.objectContaining({url: privateRecipeUrl}),
+    );
+    expect(share).not.toHaveBeenCalledWith(
       expect.objectContaining({url: 'https://example.com/original'}),
     );
   });

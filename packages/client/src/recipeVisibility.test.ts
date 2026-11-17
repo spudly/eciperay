@@ -60,16 +60,21 @@ describe('recipeVisibility', () => {
     );
   });
 
-  test('builds share URLs for visibility and source links', () => {
+  test('builds share URLs that always point at Eciperay (#534)', () => {
     const recipe = {
       id: 'recipe-1',
       slug: 'pasta',
       visibility: 'private' as const,
       sourceUrl: null,
     };
+    // Private recipes share the canonical permalink too — with a token
+    // it opens through the public route; the old app-route form is gone.
     expect(buildRecipeShareUrl('https://www.eciperay.com', recipe)).toBe(
-      'https://www.eciperay.com/recipes/recipe-1/pasta',
+      'https://www.eciperay.com/recipe/recipe-1/pasta',
     );
+    expect(
+      buildRecipeShareUrl('https://www.eciperay.com', recipe, 'token-123'),
+    ).toBe('https://www.eciperay.com/recipe/recipe-1/pasta?t=token-123');
     expect(
       buildRecipeShareUrl('https://www.eciperay.com', {
         ...recipe,
@@ -83,12 +88,21 @@ describe('recipeVisibility', () => {
         'token-123',
       ),
     ).toBe('https://www.eciperay.com/recipe/recipe-1/pasta?t=token-123');
+    // A token supplied for a public recipe rides along too.
+    expect(
+      buildRecipeShareUrl(
+        'https://www.eciperay.com',
+        {...recipe, visibility: 'public'},
+        'token-123',
+      ),
+    ).toBe('https://www.eciperay.com/recipe/recipe-1/pasta?t=token-123');
+    // Never the source URL, whatever the visibility.
     expect(
       buildRecipeShareUrl('https://www.eciperay.com', {
         ...recipe,
         sourceUrl: 'https://example.com/original',
       }),
-    ).toBe('https://example.com/original');
+    ).toBe('https://www.eciperay.com/recipe/recipe-1/pasta');
   });
 
   test('exposes labels and descriptions for each visibility level', () => {

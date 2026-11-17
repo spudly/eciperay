@@ -24,10 +24,13 @@ export const rotateRecipeShareToken = async (
     return;
   }
 
-  if (row.visibility !== 'unlisted') {
+  if (row.visibility !== 'unlisted' && row.visibility !== 'private') {
     res
       .status(409)
-      .json({error: 'Share links can only be rotated for unlisted recipes'});
+      .json({
+        error:
+          'Share links can only be rotated for private or unlisted recipes',
+      });
     return;
   }
 
@@ -36,7 +39,7 @@ export const rotateRecipeShareToken = async (
     {
       recipeId,
       userId: req.userId,
-      visibility: 'unlisted',
+      visibility: row.visibility,
       shareTokenHash: hashShareToken(shareToken),
     },
     queryFn,

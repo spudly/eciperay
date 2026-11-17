@@ -92,6 +92,75 @@ describe('GET /public/recipes/:id', () => {
     expect(res.body.error).toMatch(/not found/i);
   });
 
+  test('returns a private recipe with a valid share token (#534)', async () => {
+    mockPublicRecipeQueries(
+      makeRecipeDetailRow({
+        visibility: 'private',
+        slug: 'secret-pasta',
+        share_token_hash: shareTokenHash,
+      }),
+    );
+
+    const res = await request(getApp()).get(
+      `/api/public/recipes/recipe-uuid-1/secret-pasta?t=${shareToken}`,
+    );
+
+    expect(res.status).toBe(200);
+    expect(res.body.recipe.visibility).toBe('private');
+    expect(res.body.recipe.userId).toBeUndefined();
+  });
+
+  test('returns 404 for a private recipe with a bad share token (#534)', async () => {
+    mockPublicRecipeQueries(
+      makeRecipeDetailRow({
+        visibility: 'private',
+        share_token_hash: shareTokenHash,
+      }),
+    );
+
+    const res = await request(getApp()).get(
+      '/api/public/recipes/recipe-uuid-1?t=bad-token',
+    );
+
+    expect(res.status).toBe(404);
+  });
+
+  test('records a link share grant when a signed-in user opens a private recipe link (#534)', async () => {
+    nockSupabaseGetUser('viewer-uuid');
+    mockQuery.mockImplementation(((sql: string) => {
+      if (sql.includes('recipe_ratings rr')) {
+        return Promise.resolve(makeQueryResult([]));
+      }
+      if (sql === INSERT_SHARE_GRANT_SQL) {
+        return Promise.resolve(makeQueryResult([]));
+      }
+      if (sql.includes('recipe_share_grants')) {
+        return Promise.resolve(makeQueryResult([]));
+      }
+      return Promise.resolve(
+        makeQueryResult([
+          makeRecipeDetailRow({
+            visibility: 'private',
+            slug: 'secret-pasta',
+            share_token_hash: shareTokenHash,
+            user_id: 'owner-uuid',
+          }),
+        ]),
+      );
+    }) as typeof mockQuery);
+
+    const res = await request(getApp())
+      .get(`/api/public/recipes/recipe-uuid-1/secret-pasta?t=${shareToken}`)
+      .set('Authorization', 'Bearer valid-token');
+
+    expect(res.status).toBe(200);
+    expect(mockQuery).toHaveBeenCalledWith(INSERT_SHARE_GRANT_SQL, [
+      'recipe-uuid-1',
+      'viewer-uuid',
+      'link',
+    ]);
+  });
+
   test('returns 404 when recipe does not exist', async () => {
     mockQuery.mockResolvedValue(makeQueryResult([]));
 

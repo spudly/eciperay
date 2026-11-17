@@ -36,9 +36,19 @@ describe('canReadRecipe', () => {
     expect(canReadRecipe(publicRecipe, {userId: ownerId})).toBe(true);
   });
 
-  test('blocks non-owners for private recipes', () => {
+  test('blocks non-owners for private recipes without a token or grant', () => {
     expect(canReadRecipe(privateRecipe, {userId: otherId})).toBe(false);
     expect(canReadRecipe(privateRecipe, {shareToken})).toBe(false);
+    expect(canReadRecipe(privateRecipe, {})).toBe(false);
+  });
+
+  test('allows private reads with a valid share token or grant (#534)', () => {
+    const privateWithToken = {...privateRecipe, shareTokenHash};
+    expect(canReadRecipe(privateWithToken, {shareToken})).toBe(true);
+    expect(canReadRecipe(privateWithToken, {shareToken: 'bad-token'})).toBe(
+      false,
+    );
+    expect(canReadRecipe(privateWithToken, {hasShareGrant: true})).toBe(true);
   });
 
   test('allows public reads for anyone', () => {
@@ -81,6 +91,22 @@ describe('resolvePublicRecipeAccess', () => {
   test('returns not_found when recipe is missing or private', () => {
     expect(resolvePublicRecipeAccess(null)).toBe('not_found');
     expect(resolvePublicRecipeAccess(privateRecipe)).toBe('not_found');
+  });
+
+  test('allows a private recipe through the public route with a valid token (#534)', () => {
+    const privateWithToken = {...privateRecipe, shareTokenHash};
+    expect(
+      resolvePublicRecipeAccess(privateWithToken, {shareToken}),
+    ).toBeNull();
+    // A bad or absent token stays not_found — the recipe's existence
+    // must not leak.
+    expect(
+      resolvePublicRecipeAccess(privateWithToken, {shareToken: 'bad-token'}),
+    ).toBe('not_found');
+    expect(resolvePublicRecipeAccess(privateWithToken)).toBe('not_found');
+    expect(
+      resolvePublicRecipeAccess(privateWithToken, {hasShareGrant: true}),
+    ).toBeNull();
   });
 
   test('returns forbidden for unlisted without valid access', () => {

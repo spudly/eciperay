@@ -487,7 +487,22 @@ export const RecipeDetailView = ({
           void printRecipe(displayRecipe);
         },
         onSharePress: () => {
-          void shareRecipe(displayRecipe);
+          // #534: share an Eciperay link, not recipe text — obtain the
+          // share link first for private/unlisted recipes (the server
+          // mints a token on first use for a private recipe, without
+          // changing its visibility); public recipes need no token.
+          void (async () => {
+            try {
+              const shareToken =
+                displayRecipe.visibility === 'public'
+                  ? undefined
+                  : (await api.recipes.getShareLink(displayRecipe.id))
+                      .shareToken;
+              await shareRecipe(displayRecipe, {shareToken});
+            } catch {
+              Alert.alert('Could not share recipe');
+            }
+          })();
         },
         editHref: canEditMetadata ? recipeEditHref(recipe.id) : undefined,
         editDraftHref: canEditDraft
