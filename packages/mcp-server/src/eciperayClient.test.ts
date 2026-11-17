@@ -936,8 +936,14 @@ describe('client meal plan writes', () => {
     assert.equal(puts[0]?.['endsOn'], '2026-11-09');
     assert.equal(puts[0]?.['startsOn'], '2026-11-02');
     assert.deepEqual(puts[0]?.['entries'], [
-      {mealId: 'meal-1', quantity: 2},
-      {recipeId: 'recipe-9', servingsToCook: 6, servingsToEat: 6, quantity: 1},
+      {mealId: 'meal-1', quantity: 2, day: null},
+      {
+        recipeId: 'recipe-9',
+        servingsToCook: 6,
+        servingsToEat: 6,
+        quantity: 1,
+        day: null,
+      },
     ]);
   });
 

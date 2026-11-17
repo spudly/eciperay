@@ -597,6 +597,12 @@ via Meals case 1 and do not delete it until this section is done.)
    total divided by the plan's day count (the starts-on/ends-on range). The
    recipe entries show both "Servings to cook" and "Servings to eat". Repeat in
    the native app.
+9. **Week view (#539).** Open a plan whose entries carry days (set a day on
+   entries in the editor). **Expected:** the detail view renders one column per
+   day of the plan's range (empty days included), each column lists its entries
+   and shows per-day totals computed from servings eaten; an entry with no day
+   appears under the plan's first day. A plan with no dates at all keeps the
+   flat entry list. Repeat in the native app.
 
 **Run when:**
 `packages/app/src/screens/{MealPlanDetail,MealPlanEdit}Screen.tsx`,
@@ -613,7 +619,9 @@ routes, `packages/server/src/lib/saveMealPlan.ts`,
 `packages/server/src/lib/nutritionGoalsQueries.ts`,
 `packages/types/src/types/nutritionGoals.ts`,
 `packages/server/src/db/migrations/024_nutrition_goal_ranges.sql`,
-`packages/server/src/db/migrations/025_eat_servings_fractional.sql`.
+`packages/server/src/db/migrations/025_eat_servings_fractional.sql`,
+`packages/client/src/mealPlanWeek.ts`,
+`packages/server/src/db/migrations/028_meal_plan_entry_day.sql`.
 
 ---
 
