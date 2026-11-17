@@ -6,6 +6,16 @@ import {renderWithProviders} from '../test/testUtils.js';
 import {TermsOfServicePage} from './TermsOfServicePage.js';
 
 describe('TermsOfServicePage', () => {
+  test('renders the title from the en-XA Lingui catalog (#465)', async () => {
+    await renderWithProviders(<TermsOfServicePage />, {
+      withAuth: false,
+      locale: 'en-XA',
+    });
+    expect(
+      screen.getByRole('heading', {name: 'Terms of Service~'}),
+    ).toBeInTheDocument();
+  });
+
   test('renders terms content without requiring auth', async () => {
     await renderWithProviders(<TermsOfServicePage />, {withAuth: false});
     expect(
