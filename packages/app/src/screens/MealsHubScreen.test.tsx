@@ -67,24 +67,27 @@ describe('MealsHubScreen', () => {
   });
 
   test('opens on the Meal plans tab by default', async () => {
-    const {findByText} = await renderWithProviders(<MealsHubScreen />);
+    const {findByLabelText, findByText} = await renderWithProviders(
+      <MealsHubScreen />,
+    );
     expect(await findByText('New meal plan')).toBeTruthy();
     expect(await findByLabelText('This week, 0 entries')).toBeTruthy();
   });
 
   test('renders meals from API', async () => {
-    const {findByLabelText, findByText} = await renderWithProviders(
-      <MealsHubScreen />,
-    );
-    await fireEvent.press(await findByText('Meals'));
+    const {findByLabelText, findByRole, findByText} =
+      await renderWithProviders(<MealsHubScreen />);
+    // The page heading also reads 'Meals', so the tab is selected
+    // by its tab role rather than by text.
+    await fireEvent.press(await findByRole('tab', {name: 'Meals'}));
     expect(await findByLabelText('Sunday Dinner, 1 recipe')).toBeTruthy();
     expect(await findByText('New meal')).toBeTruthy();
   });
 
   test('opens deep links and deletes from both tabs', async () => {
-    const {findByText, findByLabelText, getByLabelText} =
+    const {findByText, findByLabelText, findByRole, getByLabelText} =
       await renderWithProviders(<MealsHubScreen />);
-    await fireEvent.press(await findByText('Meals'));
+    await fireEvent.press(await findByRole('tab', {name: 'Meals'}));
     await fireEvent.press(await findByLabelText('Sunday Dinner, 1 recipe'));
     expect(Linking.openURL).toHaveBeenCalledWith(mealHref(mealId));
     await fireEvent.press(getByLabelText('Delete Sunday Dinner'));
@@ -107,8 +110,10 @@ describe('MealsHubScreen', () => {
   });
 
   test('creates a new meal', async () => {
-    const {findByText} = await renderWithProviders(<MealsHubScreen />);
-    await fireEvent.press(await findByText('Meals'));
+    const {findByRole, findByText} = await renderWithProviders(
+      <MealsHubScreen />,
+    );
+    await fireEvent.press(await findByRole('tab', {name: 'Meals'}));
     await fireEvent.press(await findByText('New meal'));
     expect(Linking.openURL).toHaveBeenCalledWith(mealEditHref());
   });
