@@ -55,7 +55,11 @@ describe('HomePage', () => {
     await recordRecipeView(recipeViewHistoryStorage, 'recipe-uuid-1');
     await renderWithProviders(<HomePage />);
     await screen.findByText('Test Recipe');
-    await userEvent.click(screen.getByText('Log cook'));
+    // The DS shared row's log-cook control is its stars (#532): an
+    // unrated recipe gets the icon-only button carrying this label.
+    await userEvent.click(
+      screen.getByRole('button', {name: 'Log a cook of Test Recipe'}),
+    );
     expect(await screen.findByText('How did it go?')).toBeInTheDocument();
     // The star rating IS clicked here: since the @spudly/ui 6.x
     // migration the cook-log form is host-side and its stars are the
@@ -75,18 +79,13 @@ describe('HomePage', () => {
     expect(submittedBody).toEqual({authorStarRating: 4, notes: 'Great'});
   });
 
-  test('deletes a recently viewed recipe on confirm', async () => {
+  test('offers no delete control on recently viewed rows (#532)', async () => {
     await recordRecipeView(recipeViewHistoryStorage, 'recipe-uuid-1');
     await renderWithProviders(<HomePage />);
     await screen.findByText('Test Recipe');
-    await userEvent.click(screen.getByText('Delete'));
-    await userEvent.click(screen.getByText('Confirm delete'));
-    await waitFor(() => {
-      expect(screen.queryByText('Test Recipe')).not.toBeInTheDocument();
-    });
-    expect(
-      screen.getByText('Recipes you view will appear here.'),
-    ).toBeInTheDocument();
+    // Delete lives on the recipe details page only (Stephen,
+    // 2026-10-24): the shared DS row renders no delete control.
+    expect(screen.queryByText('Delete')).not.toBeInTheDocument();
   });
 
   test('navigates from home actions and recently viewed recipes', async () => {
@@ -109,10 +108,17 @@ describe('HomePage', () => {
       'href',
       '/add',
     );
-    // Recently-viewed rows still press through the host's navigate.
-    await userEvent.click(screen.getByRole('button', {name: /Test Recipe/i}));
-    expect(mockNavigate).toHaveBeenCalledWith(
-      '/recipes/recipe-uuid-1/test-recipe',
-    );
+    // Recently-viewed rows are real links to the recipe (#532, the
+    // shared DS row), not host navigate() buttons.
+    // Both of the row's targets (thumbnail and text block) render
+    // as links carrying the recipe href.
+    const rowLinks = screen.getAllByRole('link', {name: /Test Recipe/i});
+    expect(rowLinks.length).toBeGreaterThan(0);
+    for (const link of rowLinks) {
+      expect(link).toHaveAttribute(
+        'href',
+        '/recipes/recipe-uuid-1/test-recipe',
+      );
+    }
   });
 });

@@ -35,10 +35,10 @@ export const MealEditPage = () => {
     Record<string, number>
   >({});
   // Servings-to-eat per recipe (#363), carried alongside the cook
-  // values the DS form's stepper edits: the DS MealFormPage (9.2.x)
-  // has no eat stepper, so eat defaults to cook on selection and
-  // follows a cook edit while it still equals the previous cook value
-  // (a stored eat that differs from cook is preserved).
+  // values: @spudly/ui 11's MealFormPage renders its own eat stepper
+  // (DS #659), so eat is edited directly through
+  // onServingsToEatChange; it only defaults to cook when a recipe is
+  // first selected.
   const [servingsToEatByRecipeId, setServingsToEatByRecipeId] = useState<
     Record<string, number>
   >({});
@@ -192,6 +192,13 @@ export const MealEditPage = () => {
         isSearching={isSearching || debouncedSearch !== searchText}
         selectedRecipes={selectedRecipes}
         servingsByRecipeId={servingsByRecipeId}
+        servingsToEatByRecipeId={servingsToEatByRecipeId}
+        onServingsToEatChange={(recipeId, servings) => {
+          setServingsToEatByRecipeId(current => ({
+            ...current,
+            [recipeId]: Math.max(0, servings),
+          }));
+        }}
         ingredients={formIngredients}
         onAddIngredient={() => {
           nextIngredientId.current += 1;
@@ -220,19 +227,11 @@ export const MealEditPage = () => {
               if (ingredient.id !== ingredientId) {
                 return ingredient;
               }
-              const merged = {...ingredient, ...patch};
-              // Servings-to-eat follows a servings-to-cook edit
-              // while it is blank or still equals the previous cook
-              // value (#363); a divergent stored eat is preserved —
-              // the DS form has no separate eat control.
-              if (
-                patch.servings !== undefined &&
-                (ingredient.servingsToEat === '' ||
-                  ingredient.servingsToEat === ingredient.servings)
-              ) {
-                merged.servingsToEat = patch.servings;
-              }
-              return merged;
+              // The DS form (ui 11, DS #659) edits servings-to-eat
+              // through its own field, so a cook edit no longer
+              // rewrites eat; a blank eat still defaults to the cook
+              // value at parse time (#363).
+              return {...ingredient, ...patch};
             }),
           );
         }}
@@ -250,28 +249,14 @@ export const MealEditPage = () => {
         onSelectRecipe={handleSelectRecipe}
         onRemoveRecipe={handleRemoveRecipe}
         onServingsChange={(recipeId, servings) => {
-          // The retired web view's NumberStepper adapter clamped at a
-          // minimum of 1; the DS page's stepper is unbounded and the
-          // 0 servings-to-cook is allowed (#540: leftovers), so the clamp lives in
-          // the host callback (the C8 host-validation precedent).
-          const nextCook = Math.max(0, servings);
-          // Eat follows a cook edit while it still equals the old
-          // cook value (#363); a divergent stored eat is preserved.
-          setServingsToEatByRecipeId(current => ({
-            ...current,
-            [recipeId]:
-              current[recipeId] === undefined ||
-              current[recipeId] === servingsByRecipeId[recipeId]
-                ? // Cook 0 = leftovers (#540): eat must stay positive,
-                  // so it keeps its previous value instead of following.
-                  nextCook === 0
-                  ? (current[recipeId] ?? servingsByRecipeId[recipeId] ?? 1)
-                  : nextCook
-                : current[recipeId],
-          }));
+          // The DS page's stepper is unbounded and 0 servings-to-cook
+          // is allowed (#540: leftovers), so the clamp lives in the
+          // host callback (the C8 host-validation precedent). Eat is
+          // edited through its own stepper now (ui 11) and no longer
+          // follows cook edits.
           setServingsByRecipeId(current => ({
             ...current,
-            [recipeId]: nextCook,
+            [recipeId]: Math.max(0, servings),
           }));
         }}
         onSubmit={() => {

@@ -18,7 +18,12 @@ import {
   renderWithProviders,
 } from '../__tests__/testUtils';
 import {api} from '../lib/api';
-import {addHref, recipesHref, sharedWithMeHref} from '../lib/deepLinks';
+import {
+  addHref,
+  recipeHref,
+  recipesHref,
+  sharedWithMeHref,
+} from '../lib/deepLinks';
 import {recipeViewHistoryStorage} from '../lib/recipeViewHistoryStorage';
 import type {RootTabParamList} from '../navigation/types';
 
@@ -121,7 +126,7 @@ describe('HomeScreen', () => {
     const invalidateSpy = jest
       .spyOn(client, 'invalidateQueries')
       .mockResolvedValue();
-    const {findByText} = await renderWithProviders(
+    const {findByLabelText} = await renderWithProviders(
       <HomeScreen {...homeProps} />,
       client,
     );
@@ -132,7 +137,9 @@ describe('HomeScreen', () => {
     await waitFor(() => {
       expect(mockGet).toHaveBeenCalledWith('recipe-1');
     });
-    expect(await findByText('Soup')).toBeTruthy();
+    // Row titles are the DS link rows' accessible names on native
+    // (the RecipesListView test convention), not plain text nodes.
+    expect(await findByLabelText('Soup')).toBeTruthy();
   });
 
   test('shows empty state when there is no view history', async () => {
@@ -140,31 +147,25 @@ describe('HomeScreen', () => {
     expect(await findByText(/Recipes you view will appear here/)).toBeTruthy();
   });
 
-  test('navigates to recipe detail when a recipe is pressed', async () => {
+  test('opens the recipe deep link when a recipe row is pressed', async () => {
     await recordRecipeView(recipeViewHistoryStorage, 'recipe-1');
-    const {findByText} = await renderHome();
-    await fireEvent.press(await findByText('Soup'));
-    expect(mockNavigate).toHaveBeenCalledWith('Recipes', {
-      screen: 'RecipeDetail',
-      params: {recipeId: 'recipe-1'},
-    });
+    const {findByLabelText} = await renderHome();
+    // Rows are real links in the shared DS row (#532): a press opens
+    // the recipe's deep link through Linking.
+    await fireEvent.press(await findByLabelText('Soup'));
+    expect(Linking.openURL).toHaveBeenCalledWith(
+      recipeHref(makeRecipeDetail({id: 'recipe-1', title: 'Soup'})),
+    );
   });
 
-  test('deletes a recipe after confirmation', async () => {
+  test('offers no delete control on recently viewed rows (#532)', async () => {
     await recordRecipeView(recipeViewHistoryStorage, 'recipe-1');
-    const {findByText} = await renderHome();
-    await findByText('Soup');
-
-    (Alert.alert as jest.Mock).mockImplementation(
-      (_title, _message, buttons) => {
-        buttons?.find((b: {text: string}) => b.text === 'Delete')?.onPress?.();
-      },
-    );
-
-    await fireEvent.press(await findByText('Delete'));
-    await waitFor(() => {
-      expect(mockDelete).toHaveBeenCalledWith('recipe-1');
-    });
+    const {findByLabelText, queryByText} = await renderHome();
+    await findByLabelText('Soup');
+    // Delete lives on the recipe details page only (Stephen,
+    // 2026-10-24): the shared DS row renders no delete control.
+    expect(queryByText('Delete')).toBeNull();
+    expect(mockDelete).not.toHaveBeenCalled();
   });
 
   test('fetches at most the configured number of recently viewed recipes', async () => {
@@ -176,11 +177,11 @@ describe('HomeScreen', () => {
       makeRecipeDetail({id, title: `Recipe ${id}`}),
     );
 
-    const {findByText, queryByText} = await renderHome();
+    const {findByLabelText, queryByLabelText} = await renderHome();
 
-    expect(await findByText('Recipe recipe-4')).toBeTruthy();
-    expect(await findByText('Recipe recipe-2')).toBeTruthy();
-    expect(queryByText('Recipe recipe-1')).toBeNull();
+    expect(await findByLabelText('Recipe recipe-4')).toBeTruthy();
+    expect(await findByLabelText('Recipe recipe-2')).toBeTruthy();
+    expect(queryByLabelText('Recipe recipe-1')).toBeNull();
     expect(mockGet).toHaveBeenCalledTimes(HOME_RECENT_RECIPE_COUNT);
   });
 });
