@@ -8,6 +8,12 @@ type RecordFieldUpdater = (
     | ((current: Record<string, number>) => Record<string, number>),
 ) => void;
 
+type StringRecordFieldUpdater = (
+  value:
+    | Record<string, string>
+    | ((current: Record<string, string>) => Record<string, string>),
+) => void;
+
 const patchMealPlanDraft = (
   setDraft: Dispatch<SetStateAction<MealPlanFormDraft>>,
   patch: Partial<MealPlanFormDraft>,
@@ -19,6 +25,18 @@ const createRecordFieldUpdater = (
   setDraft: Dispatch<SetStateAction<MealPlanFormDraft>>,
   field: 'quantityByKey' | 'servingsByRecipeId' | 'servingsToEatByRecipeId',
 ): RecordFieldUpdater => {
+  return value => {
+    setDraft(current => ({
+      ...current,
+      [field]: typeof value === 'function' ? value(current[field]) : value,
+    }));
+  };
+};
+
+const createStringRecordFieldUpdater = (
+  setDraft: Dispatch<SetStateAction<MealPlanFormDraft>>,
+  field: 'dayByKey',
+): StringRecordFieldUpdater => {
   return value => {
     setDraft(current => ({
       ...current,
@@ -52,5 +70,6 @@ export const createMealPlanFormFieldSetters = (
       setDraft,
       'servingsToEatByRecipeId',
     ),
+    setDayByKey: createStringRecordFieldUpdater(setDraft, 'dayByKey'),
   };
 };

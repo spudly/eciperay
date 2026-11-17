@@ -98,6 +98,9 @@ export type MealPlanFormViewProps = {
   servingsByRecipeId: Record<string, number>;
   /** Servings to eat by recipe id (#363). */
   servingsToEatByRecipeId: Record<string, number>;
+  /** Day assignment by entry key (#539): `YYYY-MM-DD` or ''. */
+  dayByKey?: Record<string, string>;
+  onDayChange?: (key: string, day: string) => void;
   saving: boolean;
   error?: string | null;
   onTitleChange: (value: string) => void;

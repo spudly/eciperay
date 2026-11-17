@@ -169,6 +169,12 @@ export const buildMealPlanInputFromForm = (args: {
    * to that entry's servings-to-cook (eat = cook).
    */
   servingsToEatByRecipeId?: Record<string, number>;
+  /**
+   * Day assignment by entry key (#539): `YYYY-MM-DD`, or '' / missing for no
+   * day. Sent as `day` only when non-empty, so an unassigned entry stays
+   * day-less instead of being pinned to a fabricated date.
+   */
+  dayByKey?: Record<string, string>;
 }): MealPlanInput => ({
   title: args.title.trim(),
   notes: args.notes.trim() || null,
@@ -176,14 +182,16 @@ export const buildMealPlanInputFromForm = (args: {
   endsOn: args.endsOn.trim() || null,
   entries: args.selectedKeys.map(key => {
     const {kind, id} = parseMealPlanEntryKey(key);
+    const day = args.dayByKey?.[key]?.trim() || null;
     if (kind === 'meal') {
-      return {mealId: id, quantity: args.quantityByKey[key] ?? 1};
+      return {mealId: id, quantity: args.quantityByKey[key] ?? 1, day};
     }
     return {
       recipeId: id,
       quantity: args.quantityByKey[key] ?? 1,
       servingsToCook: args.servingsByRecipeId[id],
       servingsToEat: args.servingsToEatByRecipeId?.[id],
+      day,
     };
   }),
 });

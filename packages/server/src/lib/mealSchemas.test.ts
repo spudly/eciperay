@@ -38,6 +38,26 @@ describe('mealSchemas', () => {
     expect(plan.entries[0]).toEqual({recipeId, servings: 5});
   });
 
+  test('MealPlanInputSchema accepts an entry day and rejects impossible dates (#539)', () => {
+    const plan = MealPlanInputSchema.parse({
+      title: 'Week',
+      entries: [{recipeId, servings: 5, day: '2026-11-17'}],
+    });
+    expect(plan.entries[0]).toEqual({recipeId, servings: 5, day: '2026-11-17'});
+    expect(() =>
+      MealPlanInputSchema.parse({
+        title: 'Week',
+        entries: [{mealId: recipeId, day: '2026-02-31'}],
+      }),
+    ).toThrow(z.ZodError);
+    expect(() =>
+      MealPlanInputSchema.parse({
+        title: 'Week',
+        entries: [{recipeId, day: 'Nov 17'}],
+      }),
+    ).toThrow(z.ZodError);
+  });
+
   test('MealInputSchema rejects empty title', () => {
     expect(() =>
       MealInputSchema.parse({title: '', recipes: [{recipeId}]}),

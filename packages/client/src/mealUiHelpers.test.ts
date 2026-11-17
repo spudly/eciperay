@@ -108,12 +108,13 @@ describe('mealUiHelpers', () => {
         servingsByRecipeId: {r1: 2},
       }).entries,
     ).toEqual([
-      {mealId: 'm1', quantity: 2},
+      {mealId: 'm1', quantity: 2, day: null},
       {
         recipeId: 'r1',
         quantity: 1,
         servingsToCook: 2,
         servingsToEat: undefined,
+        day: null,
       },
     ]);
 

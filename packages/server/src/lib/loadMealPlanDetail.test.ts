@@ -29,6 +29,56 @@ const nutritionGoalsRow = {
 };
 
 describe('loadMealPlanDetail', () => {
+  test('returns the entry day as a YYYY-MM-DD string (#539)', async () => {
+    const mockQuery = createMockQuery();
+    mockQuery.mockImplementation((async (sql: string) => {
+      if (sql.includes('from meal_plans') && sql.includes('where id =')) {
+        return makeQueryResult([mealPlanRow]);
+      }
+      if (sql.includes('from meal_plan_entries')) {
+        return makeQueryResult([
+          {
+            id: 'entry-1',
+            meal_plan_id: PLAN_ID,
+            sort_order: 0,
+            quantity: 1,
+            meal_id: null,
+            recipe_id: RECIPE_ID,
+            servings: 4,
+            servings_to_eat: 4,
+            // pg returns DATE columns as JS Date objects (local midnight).
+            day: new Date(2026, 10, 17),
+          },
+          {
+            id: 'entry-2',
+            meal_plan_id: PLAN_ID,
+            sort_order: 1,
+            quantity: 1,
+            meal_id: null,
+            recipe_id: RECIPE_ID,
+            servings: 4,
+            servings_to_eat: 4,
+            day: null,
+          },
+        ]);
+      }
+      if (sql.includes('from recipes r')) {
+        return makeQueryResult([accessibleRecipeRow]);
+      }
+      if (sql.includes('share_grants')) {
+        return emptyShareGrant;
+      }
+      if (sql.includes('goal_calories')) {
+        return makeQueryResult([nutritionGoalsRow]);
+      }
+      return makeQueryResult([]);
+    }) as typeof mockQuery);
+
+    const plan = await loadMealPlanDetail(PLAN_ID, USER_ID, mockQuery);
+    expect(plan?.entries[0]?.day).toBe('2026-11-17');
+    expect(plan?.entries[1]?.day).toBeNull();
+  });
+
   test('returns null when plan is missing', async () => {
     const mockQuery = createMockQuery();
     mockQuery.mockResolvedValueOnce(makeQueryResult([]));

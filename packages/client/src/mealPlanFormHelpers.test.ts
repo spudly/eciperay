@@ -61,6 +61,7 @@ describe('mealPlanFormHelpers', () => {
           mealId: 'm1',
           sortOrder: 0,
           quantity: 2,
+          day: null,
           title: 'Dinner',
           memberCount: 1,
           recipeCount: 1,
@@ -72,6 +73,7 @@ describe('mealPlanFormHelpers', () => {
           recipeId: 'r1',
           sortOrder: 1,
           quantity: 1,
+          day: null,
           servingsToCook: 3,
           servingsToEat: 2,
           title: 'Salad',
@@ -98,6 +100,7 @@ describe('mealPlanFormHelpers', () => {
       quantityByKey: {[mealKey]: 2, [recipeKey]: 1},
       servingsByRecipeId: {r1: 3},
       servingsToEatByRecipeId: {r1: 2},
+      dayByKey: {[mealKey]: '', [recipeKey]: ''},
     });
   });
 
@@ -163,6 +166,7 @@ describe('mealPlanFormHelpers', () => {
           mealId: 'm1',
           sortOrder: 0,
           quantity: 2,
+          day: null,
           title: 'Dinner',
           memberCount: 1,
           recipeCount: 1,
@@ -174,6 +178,7 @@ describe('mealPlanFormHelpers', () => {
           recipeId: 'r1',
           sortOrder: 1,
           quantity: 1,
+          day: null,
           servingsToCook: 3,
           servingsToEat: 2,
           title: 'Salad',

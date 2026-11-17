@@ -44,7 +44,13 @@ describe('useMealPlanEditForm', () => {
       startsOn: null,
       endsOn: null,
       entries: [
-        {recipeId: 'r1', quantity: 1, servingsToCook: 4, servingsToEat: 4},
+        {
+          recipeId: 'r1',
+          quantity: 1,
+          servingsToCook: 4,
+          servingsToEat: 4,
+          day: null,
+        },
       ],
     });
   });
@@ -69,6 +75,7 @@ describe('useMealPlanEditForm', () => {
           mealId: 'm1',
           sortOrder: 0,
           quantity: 2,
+          day: null,
           title: 'Dinner',
           memberCount: 1,
           recipeCount: 1,
@@ -83,7 +90,7 @@ describe('useMealPlanEditForm', () => {
 
     expect(result.current.title).toBe('Week');
     expect(result.current.buildInput().entries).toEqual([
-      {mealId: 'm1', quantity: 2},
+      {mealId: 'm1', quantity: 2, day: null},
     ]);
     // The selected entry's view-model comes from the plan detail itself,
     // not from the meals/recipes the form was handed.
@@ -136,7 +143,13 @@ describe('useMealPlanEditForm', () => {
       {kind: 'recipe', id: 'r1', title: 'Salad', servings: 4},
     ]);
     expect(result.current.buildInput().entries).toEqual([
-      {recipeId: 'r1', quantity: 1, servingsToCook: 4, servingsToEat: 4},
+      {
+        recipeId: 'r1',
+        quantity: 1,
+        servingsToCook: 4,
+        servingsToEat: 4,
+        day: null,
+      },
     ]);
   });
 
@@ -169,6 +182,7 @@ describe('useMealPlanEditForm', () => {
           recipeId: 'r1',
           sortOrder: 0,
           quantity: 1,
+          day: null,
           servingsToCook: 2,
           servingsToEat: 2,
           title: 'Plan Salad',

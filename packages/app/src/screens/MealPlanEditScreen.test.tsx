@@ -157,6 +157,7 @@ describe('MealPlanEditScreen', () => {
           recipeId: recipe.id,
           sortOrder: 0,
           quantity: 1,
+          day: null,
           servingsToCook: 4,
           servingsToEat: 4,
           title: 'Pasta',

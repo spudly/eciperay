@@ -1,5 +1,13 @@
-import {buildWeeklyTotalsBand, formatSimpleNutrition} from '@eciperay/client';
-import type {MealPlanDetail, NutritionGoalFieldProgress} from '@eciperay/types';
+import {
+  buildMealPlanWeekView,
+  buildWeeklyTotalsBand,
+  formatSimpleNutrition,
+} from '@eciperay/client';
+import type {
+  MealPlanDetail,
+  MealPlanEntry,
+  NutritionGoalFieldProgress,
+} from '@eciperay/types';
 import {
   MealPlanDetailPage,
   type MealPlanDetailPageEntry,
@@ -166,7 +174,7 @@ export const MealPlanDetailView = ({
       ? 'shown'
       : 'auto';
 
-  const entries: MealPlanDetailPageEntry[] = plan.entries.map(entry => {
+  const toDetailEntry = (entry: MealPlanEntry): MealPlanDetailPageEntry => {
     const entryNutrition = formatSimpleNutrition(entry.nutrition);
     const nutritionSuffix = entryNutrition ? ` · ${entryNutrition}` : '';
     if (entry.type === 'meal') {
@@ -188,7 +196,8 @@ export const MealPlanDetailView = ({
       subtitle: `Qty ${entry.quantity} · Servings to cook: ${entry.servingsToCook} · Servings to eat: ${entry.servingsToEat}${nutritionSuffix}`,
       isUnavailable: entry.accessLost,
     };
-  });
+  };
+  const entries: MealPlanDetailPageEntry[] = plan.entries.map(toDetailEntry);
 
   return (
     <MealPlanDetailPage
@@ -202,6 +211,7 @@ export const MealPlanDetailView = ({
       }
       nutritionLabel={nutritionLabel}
       weeklyTotals={buildWeeklyTotalsBand(plan.nutrition)}
+      weekView={buildMealPlanWeekView(plan, toDetailEntry)}
       nutritionGoals={nutritionGoals}
       goalsSectionVisibility={goalsSectionVisibility}
       goalsHref={goalsHref}

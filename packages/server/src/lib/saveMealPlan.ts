@@ -40,7 +40,14 @@ class MealPlanWriteConflictError extends Error {
 }
 
 type ResolvedEntry =
-  | {kind: 'meal'; mealId: string; quantity: number; sortOrder: number}
+  | {
+      kind: 'meal';
+      mealId: string;
+      quantity: number;
+      sortOrder: number;
+      /** Optional day assignment (#539); null = no day. */
+      day: string | null;
+    }
   | {
       kind: 'recipe';
       recipeId: string;
@@ -48,6 +55,8 @@ type ResolvedEntry =
       servingsToEat: number;
       quantity: number;
       sortOrder: number;
+      /** Optional day assignment (#539); null = no day. */
+      day: string | null;
     };
 
 const resolveEntries = async (
@@ -77,6 +86,7 @@ const resolveEntries = async (
         mealId: entry.mealId,
         quantity: entry.quantity ?? 1,
         sortOrder: index,
+        day: entry.day ?? null,
       });
       continue;
     }
@@ -107,6 +117,7 @@ const resolveEntries = async (
         (servingsToCook > 0 ? servingsToCook : recipe.servings),
       quantity: entry.quantity ?? 1,
       sortOrder: index,
+      day: entry.day ?? null,
     });
   }
 
@@ -123,17 +134,17 @@ const insertEntries = async (
       await queryFn(
         `insert into meal_plan_entries
            (meal_plan_id, sort_order, quantity, meal_id, recipe_id,
-            servings, servings_to_eat)
-         values ($1, $2, $3, $4, null, null, null)`,
-        [planId, entry.sortOrder, entry.quantity, entry.mealId],
+            servings, servings_to_eat, day)
+         values ($1, $2, $3, $4, null, null, null, $5)`,
+        [planId, entry.sortOrder, entry.quantity, entry.mealId, entry.day],
       );
       continue;
     }
     await queryFn(
       `insert into meal_plan_entries
          (meal_plan_id, sort_order, quantity, meal_id, recipe_id,
-          servings, servings_to_eat)
-       values ($1, $2, $3, null, $4, $5, $6)`,
+          servings, servings_to_eat, day)
+       values ($1, $2, $3, null, $4, $5, $6, $7)`,
       [
         planId,
         entry.sortOrder,
@@ -141,6 +152,7 @@ const insertEntries = async (
         entry.recipeId,
         entry.servingsToCook,
         entry.servingsToEat,
+        entry.day,
       ],
     );
   }

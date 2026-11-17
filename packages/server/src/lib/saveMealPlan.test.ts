@@ -168,6 +168,7 @@ describe('saveNewMealPlan', () => {
             quantity: 1,
             servingsToCook: 8,
             servingsToEat: 2,
+            day: '2026-11-17',
           },
         ],
       },
@@ -176,8 +177,8 @@ describe('saveNewMealPlan', () => {
     if ('error' in result) {
       throw new Error(result.error);
     }
-    // Insert params: [planId, sortOrder, quantity, recipeId, cook, eat].
-    expect(entryInsertParams?.slice(4)).toEqual([8, 2]);
+    // Insert params: [planId, sortOrder, quantity, recipeId, cook, eat, day].
+    expect(entryInsertParams?.slice(4)).toEqual([8, 2, '2026-11-17']);
     expect(result.plan.entries[0]).toEqual(
       expect.objectContaining({servingsToCook: 8, servingsToEat: 2}),
     );
