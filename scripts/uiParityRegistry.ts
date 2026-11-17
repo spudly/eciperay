@@ -54,21 +54,9 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
   },
   {
     path: 'recipe/SortableIngredientList.tsx',
-    platform: 'web',
-    reason:
-      'Web sortable list slot implementation (dnd-kit) for the design system RecipeFormPage; the app implementation uses react-native-draggable-flatlist. The mirror-pair registration was retired in the @spudly/ui 6.x migration, where the web side dropped the design system TextAction the app side never used.',
-  },
-  {
-    path: 'recipe/SortableIngredientList.tsx',
     platform: 'app',
     reason:
       'App sortable list slot implementation (react-native-draggable-flatlist) for the design system RecipeFormPage; the web implementation uses dnd-kit. The mirror-pair registration was retired in the @spudly/ui 6.x migration (see the web entry).',
-  },
-  {
-    path: 'recipe/SortableInstructionList.tsx',
-    platform: 'web',
-    reason:
-      'Web sortable list slot implementation (dnd-kit) for the design system RecipeFormPage; the app implementation uses react-native-draggable-flatlist. The mirror-pair registration was retired in the @spudly/ui 6.x migration, where the web side dropped the design system TextAction the app side never used.',
   },
   {
     path: 'recipe/SortableInstructionList.tsx',
@@ -86,7 +74,13 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
     path: 'recipe/sortableDrag.ts',
     platform: 'web',
     reason:
-      "dnd-kit drag helper for web's sortable ingredient/instruction list slot implementations; the app lists carry their react-native-draggable-flatlist wiring inline.",
+      "dnd-kit drag helper for web's recipe-form drag container (B7 T5: the DS list views render the rows; the host container routes drag-ends back as new rows arrays); the app lists carry their react-native-draggable-flatlist wiring inline.",
+  },
+  {
+    path: 'recipe/SortableDragHandle.tsx',
+    platform: 'web',
+    reason:
+      'Web dnd-kit sortable activator bound into the DS recipe-form row views through renderDragHandle (B7 T5, design-system#130 boundary: hosts keep their drag containers); the app binds its DraggableFlatList handle in its own lists.',
   },
   {
     path: 'profile/ProfileNutritionGoalsSection.tsx',
@@ -181,18 +175,6 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
     platform: 'web',
     reason:
       'React Router root layout with providers; app uses App.tsx entry instead.',
-  },
-  {
-    path: 'recipe/SortableIngredientRow.tsx',
-    platform: 'web',
-    reason:
-      'dnd-kit sortable row primitive for web; app uses react-native-draggable-flatlist in SortableIngredientList.',
-  },
-  {
-    path: 'recipe/SortableInstructionRow.tsx',
-    platform: 'web',
-    reason:
-      'dnd-kit sortable row primitive for web; app uses react-native-draggable-flatlist in SortableInstructionList.',
   },
   {
     path: 'FeedbackForm.tsx',

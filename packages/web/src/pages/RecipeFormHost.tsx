@@ -1,6 +1,7 @@
 /* eslint-disable max-lines -- shared recipe form host with dynamic ingredient/instruction lists */
 import {
   compareVersionToParent,
+  createFormRowKey,
   ensureIngredientRowKeys,
   ensureInstructionRowKeys,
   formatParentListSummary,
@@ -35,6 +36,20 @@ import {
   tokens,
   type RecipeFormPageField,
 } from '@spudly/ui';
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 import {useQuery} from '@tanstack/react-query';
 import {useEffect, useMemo, useRef, useState} from 'react';
 
@@ -58,14 +73,26 @@ import {
 } from '../lib/recipeImagePreviewUrl.js';
 import {supabase} from '../lib/supabase.js';
 
-import {
-  createEmptyIngredientRow,
-  SortableIngredientList,
-} from '../components/recipe/SortableIngredientList.js';
-import {
-  createEmptyInstructionRow,
-  SortableInstructionList,
-} from '../components/recipe/SortableInstructionList.js';
+import {SortableDragHandle} from '../components/recipe/SortableDragHandle.js';
+import {handleKeyedDragEnd} from '../components/recipe/sortableDrag.js';
+
+// Empty-row factories (minted host-side: the host owns row keys
+// and shape defaults — the DS list views' add intent is bare).
+const createEmptyIngredientRow = (sortOrder: number): FormIngredientRow => ({
+  key: createFormRowKey(),
+  sortOrder,
+  name: '',
+  quantity: null,
+  unit: null,
+  notes: null,
+  isOptional: false,
+});
+
+const createEmptyInstructionRow = (stepNumber: number): FormInstructionRow => ({
+  key: createFormRowKey(),
+  stepNumber,
+  body: '',
+});
 
 type Props = {
   initial: RecipeFormInitial;
@@ -94,9 +121,14 @@ const toQuantity = (value: number | string | null): number | null => {
  * eciperay#554: the DS RecipeImageView renders the preview and action row from
  * data; the picker invocation, the pending-selection crop flow, and paste /
  * drop staging stay web-side in this host, per the #124 contract) and the
- * sortable lists in its render slots (the dnd-kit drag lists stay web-side as
- * the slot implementations, B3a Option A). The route pages wrap this host in
- * the DS shell pages (EditRecipePage / EditVersionPage / ManualEntryPage).
+ * `ingredients` / `instructions` data props (B7 T5, eciperay#555: the DS list
+ * views render the rows and list chrome from data; the dnd-kit drag container
+ * stays web-side per Stephen's 2026-11-09 boundary on design-system#130 — one
+ * DndContext wraps the page, each row's sortable activator binds through the
+ * views' renderDragHandle as SortableDragHandle, and a drag-end crosses back to
+ * the owning list as a new rows array via sortableDrag.ts). The route pages
+ * wrap this host in the DS shell pages (EditRecipePage / EditVersionPage /
+ * ManualEntryPage).
  */
 export const RecipeFormHost = ({
   initial,
@@ -627,6 +659,26 @@ export const RecipeFormHost = ({
     );
   };
 
+  // One drag container for both lists (B7 T5): the DS page
+  // renders both list views, so a single DndContext wraps the
+  // page and the drag-end routes to the list that owns the
+  // active row's key; a drop over the other list's rows finds
+  // no target index in the owning list and is ignored by
+  // handleKeyedDragEnd. Row keys are unique across both lists
+  // (createFormRowKey), so one SortableContext carries all ids.
+  const dragSensors = useSensors(
+    useSensor(PointerSensor, {activationConstraint: {distance: 5}}),
+    useSensor(KeyboardSensor, {coordinateGetter: sortableKeyboardCoordinates}),
+  );
+
+  const handleFormDragEnd = (event: DragEndEvent) => {
+    if (ingredients.some(row => row.key === event.active.id)) {
+      handleKeyedDragEnd(event, ingredients, setIngredients);
+    } else if (instructions.some(row => row.key === event.active.id)) {
+      handleKeyedDragEnd(event, instructions, setInstructions);
+    }
+  };
+
   const buildInput = (): RecipeInput => ({
     title,
     description: description || null,
@@ -819,126 +871,188 @@ export const RecipeFormHost = ({
       // height on web and the form's controls become unreachable.
       style={{display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0}}
     >
-      <RecipeFormPage
-        title={title}
-        onTitleChange={setTitle}
-        description={description}
-        onDescriptionChange={setDescription}
-        servings={servings}
-        onServingsChange={setServings}
-        prepTimeMin={prepTimeMin}
-        onPrepTimeMinChange={setPrepTimeMin}
-        cookTimeMin={cookTimeMin}
-        onCookTimeMinChange={setCookTimeMin}
-        sourceUrl={sourceUrl}
-        onSourceUrlChange={setSourceUrl}
-        statusOptions={statusOptions}
-        status={status}
-        onStatusChange={value => {
-          setStatus(value as RecipeStatus);
-        }}
-        tagOptions={tagOptions}
-        tagIds={tagIds}
-        onTagIdsChange={setTagIds}
-        loadingTags={isLoadingTags}
-        changedFields={changedFields}
-        revertLabels={revertLabels}
-        onRevertField={handleRevertField}
-        {...(parentVersion && versionDiff?.tagsChanged
-          ? {
-              tagsRevertLabel: formatParentTagNames(parentVersion),
-              onRevertTags: () => {
-                setTagIds(parentTagIds(parentVersion));
+      <DndContext
+        sensors={dragSensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleFormDragEnd}
+      >
+        <SortableContext
+          items={[
+            ...ingredients.map(row => row.key),
+            ...instructions.map(row => row.key),
+          ]}
+          strategy={verticalListSortingStrategy}
+        >
+          <RecipeFormPage
+            title={title}
+            onTitleChange={setTitle}
+            description={description}
+            onDescriptionChange={setDescription}
+            servings={servings}
+            onServingsChange={setServings}
+            prepTimeMin={prepTimeMin}
+            onPrepTimeMinChange={setPrepTimeMin}
+            cookTimeMin={cookTimeMin}
+            onCookTimeMinChange={setCookTimeMin}
+            sourceUrl={sourceUrl}
+            onSourceUrlChange={setSourceUrl}
+            statusOptions={statusOptions}
+            status={status}
+            onStatusChange={value => {
+              setStatus(value as RecipeStatus);
+            }}
+            tagOptions={tagOptions}
+            tagIds={tagIds}
+            onTagIdsChange={setTagIds}
+            loadingTags={isLoadingTags}
+            changedFields={changedFields}
+            revertLabels={revertLabels}
+            onRevertField={handleRevertField}
+            {...(parentVersion && versionDiff?.tagsChanged
+              ? {
+                  tagsRevertLabel: formatParentTagNames(parentVersion),
+                  onRevertTags: () => {
+                    setTagIds(parentTagIds(parentVersion));
+                  },
+                }
+              : {})}
+            {...(parentVersion && versionDiff?.ingredientsChanged
+              ? {
+                  ingredientsChangedLabel: `Ingredients changed from parent version (${formatParentListSummary(parentVersion, 'ingredients')})`,
+                  onRevertIngredients: () => {
+                    setIngredients(
+                      ensureIngredientRowKeys(
+                        parentIngredientsInput(parentVersion),
+                      ),
+                    );
+                  },
+                }
+              : {})}
+            {...(parentVersion && versionDiff?.instructionsChanged
+              ? {
+                  instructionsChangedLabel: `Instructions changed from parent version (${formatParentListSummary(parentVersion, 'instructions')})`,
+                  onRevertInstructions: () => {
+                    setInstructions(
+                      ensureInstructionRowKeys(
+                        parentInstructionsInput(parentVersion),
+                      ),
+                    );
+                  },
+                }
+              : {})}
+            onGenerateDescription={() => {
+              void handleGenerateDescription();
+            }}
+            isGeneratingDescription={descriptionGenerating}
+            descriptionError={descriptionError}
+            contentLocked={contentLocked}
+            image={{
+              imagePreviewUri: imagePreview || null,
+              isUploading: imageUploading,
+              isGenerating: imageGenerating,
+              error: imageError,
+              canGenerateImage: title.trim().length > 0,
+              emptyMessage:
+                'Drag and drop an image here, paste from your clipboard, browse or take a photo below, or generate one with AI',
+              onPickImageRequest: () => {
+                browseInputRef.current?.click();
               },
-            }
-          : {})}
-        {...(parentVersion && versionDiff?.ingredientsChanged
-          ? {
-              ingredientsChangedLabel: `Ingredients changed from parent version (${formatParentListSummary(parentVersion, 'ingredients')})`,
-              onRevertIngredients: () => {
-                setIngredients(
-                  ensureIngredientRowKeys(
-                    parentIngredientsInput(parentVersion),
-                  ),
-                );
+              onTakePhotoRequest: () => {
+                captureInputRef.current?.click();
               },
-            }
-          : {})}
-        {...(parentVersion && versionDiff?.instructionsChanged
-          ? {
-              instructionsChangedLabel: `Instructions changed from parent version (${formatParentListSummary(parentVersion, 'instructions')})`,
-              onRevertInstructions: () => {
-                setInstructions(
-                  ensureInstructionRowKeys(
-                    parentInstructionsInput(parentVersion),
-                  ),
-                );
+              onGenerateImageRequest: () => {
+                void handleGenerateImage();
               },
-            }
-          : {})}
-        onGenerateDescription={() => {
-          void handleGenerateDescription();
-        }}
-        isGeneratingDescription={descriptionGenerating}
-        descriptionError={descriptionError}
-        contentLocked={contentLocked}
-        image={{
-          imagePreviewUri: imagePreview || null,
-          isUploading: imageUploading,
-          isGenerating: imageGenerating,
-          error: imageError,
-          canGenerateImage: title.trim().length > 0,
-          emptyMessage:
-            'Drag and drop an image here, paste from your clipboard, browse or take a photo below, or generate one with AI',
-          onPickImageRequest: () => {
-            browseInputRef.current?.click();
-          },
-          onTakePhotoRequest: () => {
-            captureInputRef.current?.click();
-          },
-          onGenerateImageRequest: () => {
-            void handleGenerateImage();
-          },
-          onRemoveImage: () => {
-            clearPendingImage();
-            setImageUrl('');
-            setImageCacheKey(0);
-            setImageError(null);
-          },
-        }}
-        renderIngredientsSection={() => (
-          <SortableIngredientList
-            ingredients={ingredients}
-            onChange={setIngredients}
-            onUpdate={updateIngredient}
-            onAdd={() => {
-              setIngredients(prev => [
-                ...prev,
-                createEmptyIngredientRow(prev.length),
-              ]);
+              onRemoveImage: () => {
+                clearPendingImage();
+                setImageUrl('');
+                setImageCacheKey(0);
+                setImageError(null);
+              },
+            }}
+            ingredients={{
+              rows: ingredients.map(ingredient => ({
+                key: ingredient.key,
+                quantity:
+                  ingredient.quantity === null
+                    ? ''
+                    : String(ingredient.quantity),
+                unit: ingredient.unit ?? '',
+                name: ingredient.name,
+              })),
+              onFieldChange: (rowKey, field, value) => {
+                const index = ingredients.findIndex(row => row.key === rowKey);
+                if (index === -1) {
+                  return;
+                }
+                // The DS row crosses quantity / unit as text; the
+                // host folds an empty text back to null, the retired
+                // host row's rule. Notes / isOptional never cross —
+                // they ride in the host row untouched by key.
+                if (field === 'quantity') {
+                  updateIngredient(
+                    index,
+                    'quantity',
+                    value === '' ? null : value,
+                  );
+                } else if (field === 'unit') {
+                  updateIngredient(index, 'unit', value === '' ? null : value);
+                } else {
+                  updateIngredient(index, 'name', value);
+                }
+              },
+              onRemove: rowKey => {
+                setIngredients(prev => prev.filter(row => row.key !== rowKey));
+              },
+              onAdd: () => {
+                setIngredients(prev => [
+                  ...prev,
+                  createEmptyIngredientRow(prev.length),
+                ]);
+              },
+              renderDragHandle: (row, index) => (
+                <SortableDragHandle
+                  rowKey={row.key}
+                  label={`Reorder ingredient ${index + 1}`}
+                />
+              ),
+            }}
+            instructions={{
+              rows: instructions.map(instruction => ({
+                key: instruction.key,
+                body: instruction.body,
+              })),
+              onBodyChange: (rowKey, value) => {
+                const index = instructions.findIndex(row => row.key === rowKey);
+                if (index !== -1) {
+                  updateInstruction(index, value);
+                }
+              },
+              onRemove: rowKey => {
+                setInstructions(prev => prev.filter(row => row.key !== rowKey));
+              },
+              onAdd: () => {
+                setInstructions(prev => [
+                  ...prev,
+                  createEmptyInstructionRow(prev.length + 1),
+                ]);
+              },
+              renderDragHandle: (row, index) => (
+                <SortableDragHandle
+                  rowKey={row.key}
+                  label={`Reorder step ${index + 1}`}
+                />
+              ),
+            }}
+            submitLabel={submitLabel}
+            isSubmitting={loading}
+            submitError={error}
+            onSubmit={() => {
+              void handleSubmit();
             }}
           />
-        )}
-        renderInstructionsSection={() => (
-          <SortableInstructionList
-            instructions={instructions}
-            onChange={setInstructions}
-            onUpdate={updateInstruction}
-            onAdd={() => {
-              setInstructions(prev => [
-                ...prev,
-                createEmptyInstructionRow(prev.length + 1),
-              ]);
-            }}
-          />
-        )}
-        submitLabel={submitLabel}
-        isSubmitting={loading}
-        submitError={error}
-        onSubmit={() => {
-          void handleSubmit();
-        }}
-      />
+        </SortableContext>
+      </DndContext>
       {/* The DS image view's pick / take-photo intents land here: the
           hidden file inputs the #124 contract leaves with the host. */}
       <input
