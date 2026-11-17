@@ -6,5 +6,16 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #. js-lingui-explicit-id
+#: src/i18n/i18n.ts:25
 msgid "spike.recipeCount"
 msgstr "{count, plural, one {# recipe~} other {# recipes~~}}"
+
+#. js-lingui-explicit-id
+#: src/pages/ConsentPreferencesPage.tsx:91
+msgid "consentPreferences.description"
+msgstr "Eciperay uses cookies and product analytics (PostHog) to improve the service, only with your consent. You can change your choice at any time here — changes take effect immediately, without reloading the page.~"
+
+#. js-lingui-explicit-id
+#: src/pages/ConsentPreferencesPage.tsx:96
+msgid "consentPreferences.hint"
+msgstr "Withdrawing consent removes your stored choice and turns analytics off until you make a new choice; the consent banner will ask again, as it does for a new visitor. See our Privacy Policy for what analytics collects when it is on.~"

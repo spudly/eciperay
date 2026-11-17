@@ -8,6 +8,7 @@ import {
   writeAnalyticsConsent,
   type AnalyticsConsentStatus,
 } from '@eciperay/client';
+import {useLingui} from '@lingui/react';
 import {ConsentPreferencesPage as ConsentPreferencesPageView} from '@spudly/ui';
 import {useEffect, useState} from 'react';
 
@@ -25,9 +26,12 @@ import {analytics, disablePostHog, enablePostHog} from '../lib/analytics.js';
  * The DS ConsentPreferencesPage renders the surface; this host keeps the
  * consent record and its side effects: the current choice crosses as data, the
  * three intents report back here, and the host's precise analytics wording
- * crosses as the page's description/hint copy.
+ * crosses as the page's description/hint copy — page-unique copy that flows
+ * through the Lingui catalogs (#465 tranche 1: explicit ids
+ * `consentPreferences.description` / `consentPreferences.hint`).
  */
 export const ConsentPreferencesPage = () => {
+  const {i18n} = useLingui();
   const {session} = useAuth();
   const {setEnabled: setFeedbackShortcutEnabled} = useFeedbackShortcutEnabled();
   const [consent, setConsent] = useState<AnalyticsConsentStatus | null>(
@@ -84,8 +88,16 @@ export const ConsentPreferencesPage = () => {
       onAccept={accept}
       onDecline={decline}
       onWithdraw={withdraw}
-      description="Eciperay uses cookies and product analytics (PostHog) to improve the service, only with your consent. You can change your choice at any time here — changes take effect immediately, without reloading the page."
-      hint="Withdrawing consent removes your stored choice and turns analytics off until you make a new choice; the consent banner will ask again, as it does for a new visitor. See our Privacy Policy for what analytics collects when it is on."
+      description={i18n._({
+        id: 'consentPreferences.description',
+        message:
+          'Eciperay uses cookies and product analytics (PostHog) to improve the service, only with your consent. You can change your choice at any time here — changes take effect immediately, without reloading the page.',
+      })}
+      hint={i18n._({
+        id: 'consentPreferences.hint',
+        message:
+          'Withdrawing consent removes your stored choice and turns analytics off until you make a new choice; the consent banner will ask again, as it does for a new visitor. See our Privacy Policy for what analytics collects when it is on.',
+      })}
     />
   );
 };
