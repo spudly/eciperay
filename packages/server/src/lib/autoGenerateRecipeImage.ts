@@ -99,6 +99,12 @@ const CLAIM_ATTEMPT_SQL = `
    returning id
 `;
 
+const RELEASE_CLAIM_SQL = `
+  update recipes
+     set auto_image_attempted_at = null
+   where id = $1 and auto_image_attempted_at is not null
+`;
+
 /**
  * Generates and attaches an image for a just-saved recipe that has none.
  *
@@ -109,8 +115,10 @@ const CLAIM_ATTEMPT_SQL = `
  * Once-per-recipe guard: the attempt is claimed atomically (a conditional
  * UPDATE on recipes.auto_image_attempted_at, migration 022) BEFORE any AI call,
  * so concurrent saves and every later edit save see the claim and skip. The
- * claim stands even when generation fails or quota is exhausted — at most one
- * auto-generation per recipe, per the approved plan.
+ * claim is RELEASED when the attempt fails or quota is exhausted (#535), so a
+ * transient failure does not permanently forfeit the recipe's only attempt —
+ * a later save or the backfill sweep can retry. A successful attach (or a
+ * raced user upload) keeps the claim.
  */
 export const autoGenerateRecipeImage = async (
   args: AutoGenerateRecipeImageArgs,
@@ -121,6 +129,16 @@ export const autoGenerateRecipeImage = async (
   if (recipe.imageUrl) {
     return 'skipped-has-image';
   }
+  // Best-effort claim release (#535): a failed release must never turn a
+  // contained outcome into a throw — the next save/backfill simply sees the
+  // claim still standing and skips, exactly as before this change.
+  const releaseClaim = async () => {
+    try {
+      await queryFn(RELEASE_CLAIM_SQL, [recipe.recipeId]);
+    } catch {
+      // Ignored: see the best-effort note above.
+    }
+  };
   let periodStart: string | undefined;
   let consumed = false;
   try {
@@ -139,6 +157,8 @@ export const autoGenerateRecipeImage = async (
       serverLog('info', 'Auto recipe image generation skipped: quota', {
         recipeId: recipe.recipeId,
       });
+      // Quota may free up next period — don't burn the claim (#535).
+      await releaseClaim();
       return 'skipped-quota-exhausted';
     }
     consumed = true;
@@ -188,6 +208,8 @@ export const autoGenerateRecipeImage = async (
       recipeId: recipe.recipeId,
       ...serializeErrorForLog(error),
     });
+    // A transient failure must not burn the recipe's only attempt (#535).
+    await releaseClaim();
     return 'failed';
   }
 };

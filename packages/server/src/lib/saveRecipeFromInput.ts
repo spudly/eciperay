@@ -27,6 +27,10 @@ import {
 } from '../routes/recipes/versionQueries.js';
 import {updateRecipeStatus} from '../routes/recipes/recipeStatusQueries.js';
 
+import {
+  autoImageContextFromDetail,
+  scheduleAutoGenerateRecipeImage,
+} from './autoGenerateRecipeImage.js';
 import {mapRowToRecipeDetail} from './mapRowToRecipeDetail.js';
 import {scheduleNutritionRefresh} from './refreshRecipeNutrition.js';
 import {resolveStatus} from './resolveStatus.js';
@@ -37,6 +41,7 @@ type QueryFn = typeof defaultQuery;
 
 type SaveRecipeFromInputOptions = {
   userId: string;
+  supabaseUid?: string;
   input: RecipeInput;
   recipeId?: string;
   versionId?: string;
@@ -193,10 +198,25 @@ export const saveNewRecipeFromInput = async (
   if (!row) {
     throw new RecipeNotFoundError();
   }
-  return {
-    ...ids,
-    recipe: mapRowToRecipeDetail(
-      row as Parameters<typeof mapRowToRecipeDetail>[0],
-    ),
-  };
+  const recipe = mapRowToRecipeDetail(
+    row as Parameters<typeof mapRowToRecipeDetail>[0],
+  );
+  // #535: fire the auto-image trigger from the shared save layer so every
+  // new-recipe path is covered in one place — import URL/text/image, AI
+  // create-session saves, bulk import, and manual/MCP create (createRecipe
+  // no longer schedules separately). Best-effort and deferred, mirroring
+  // scheduleNutritionRefresh above; the scheduler itself skips recipes
+  // that already carry an image. Callers without a supabaseUid (internal
+  // saves) simply don't schedule.
+  if (opts.supabaseUid && !recipe.imageUrl) {
+    scheduleAutoGenerateRecipeImage(
+      {
+        userId: opts.userId,
+        supabaseUid: opts.supabaseUid,
+        recipe: autoImageContextFromDetail(recipe),
+      },
+      queryFn,
+    );
+  }
+  return {...ids, recipe};
 };

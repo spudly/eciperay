@@ -55,7 +55,7 @@ export const importBulk = async (
       );
       const input = recipeExportRecordToInput(record, tagIds);
       const {recipeId, versionId, recipe} = await saveNewRecipeFromInput(
-        {userId: req.userId, input, createdVia: 'import_bulk'},
+        {userId: req.userId, supabaseUid: req.supabaseUid, input, createdVia: 'import_bulk'},
         queryFn,
       );
 

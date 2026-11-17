@@ -387,7 +387,7 @@ export const importFromUrl = async (
           return {kind: 'duplicate', duplicate} as const;
         }
         const saved = await saveNewRecipeFromInput(
-          {userId: req.userId, input, createdVia: 'import_url'},
+          {userId: req.userId, supabaseUid: req.supabaseUid, input, createdVia: 'import_url'},
           q,
         );
         return {kind: 'saved', saved} as const;

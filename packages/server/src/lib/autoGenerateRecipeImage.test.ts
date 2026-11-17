@@ -106,6 +106,12 @@ describe('autoGenerateRecipeImage (#407)', () => {
       'https://cdn.example/user-uuid-1/recipe-uuid-1',
     ]);
     expect(deps.refund).not.toHaveBeenCalled();
+    // The claim is RETAINED on a successful attach (#535): exactly the
+    // claim + attach queries ran, and neither released the claim.
+    expect(mockQuery).toHaveBeenCalledTimes(2);
+    for (const call of mockQuery.mock.calls) {
+      expect(call[0]).not.toContain('auto_image_attempted_at = null');
+    }
   });
 
   test('save with an image does not generate', async () => {
@@ -159,8 +165,14 @@ describe('autoGenerateRecipeImage (#407)', () => {
       '2026-11-01',
     );
     expect(deps.uploadImage).not.toHaveBeenCalled();
-    // Only the claim query ran — no attach was attempted.
-    expect(mockQuery).toHaveBeenCalledTimes(1);
+    // No attach was attempted — but the claim IS released (#535), so a
+    // later save or the backfill can retry instead of the transient
+    // failure permanently forfeiting the recipe's only attempt.
+    expect(mockQuery).toHaveBeenCalledTimes(2);
+    expect(mockQuery.mock.calls[1]?.[0]).toContain(
+      'auto_image_attempted_at = null',
+    );
+    expect(mockQuery.mock.calls[1]?.[1]).toEqual(['recipe-uuid-1']);
   });
 
   test('quota exhaustion skips generation without refunding', async () => {
@@ -178,6 +190,13 @@ describe('autoGenerateRecipeImage (#407)', () => {
     expect(outcome).toBe('skipped-quota-exhausted');
     expect(deps.generateImage).not.toHaveBeenCalled();
     expect(deps.refund).not.toHaveBeenCalled();
+    // The claim is released (#535): quota may free up next period, and a
+    // later save or the backfill must be able to retry.
+    expect(mockQuery).toHaveBeenCalledTimes(2);
+    expect(mockQuery.mock.calls[1]?.[0]).toContain(
+      'auto_image_attempted_at = null',
+    );
+    expect(mockQuery.mock.calls[1]?.[1]).toEqual(['recipe-uuid-1']);
   });
 
   test('a claim failure is contained and never thrown to the save', async () => {

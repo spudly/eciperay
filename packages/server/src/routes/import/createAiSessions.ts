@@ -380,7 +380,7 @@ export const createRecipeFromCreateAiSession = async (
   const input = session.proposedRecipe as unknown as RecipeInput;
   try {
     const {recipeId, versionId, recipe} = await saveNewRecipeFromInput(
-      {userId: req.userId, input, createdVia: 'ai'},
+      {userId: req.userId, supabaseUid: req.supabaseUid, input, createdVia: 'ai'},
       queryFn,
     );
     const row = await queryFn(GET_SESSION_SQL, [sessionId, req.userId]);

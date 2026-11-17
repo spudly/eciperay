@@ -3,10 +3,6 @@ import type {Response} from 'express';
 import {query as defaultQuery} from '../../db/query.js';
 import {quotaExhaustedBody, withRecipeCap} from '../../lib/aiMetering.js';
 import type {EntitledRequest} from '../../middleware/loadEntitlement.js';
-import {
-  autoImageContextFromDetail,
-  scheduleAutoGenerateRecipeImage,
-} from '../../lib/autoGenerateRecipeImage.js';
 import {saveNewRecipeFromInput} from '../../lib/saveRecipeFromInput.js';
 import {RecipeInputSchema, validate} from '../../lib/schemas.js';
 
@@ -31,7 +27,12 @@ export const createRecipe = async (
     queryFn,
     async q => {
       const {recipeId, versionId, recipe} = await saveNewRecipeFromInput(
-        {userId: req.userId, input: body.data, createdVia: 'manual'},
+        {
+          userId: req.userId,
+          supabaseUid: req.supabaseUid,
+          input: body.data,
+          createdVia: 'manual',
+        },
         q,
       );
       return {recipeId, versionId, recipe};
@@ -44,16 +45,9 @@ export const createRecipe = async (
     return;
   }
   const {recipeId, versionId, recipe} = result.value;
-  // #407: a recipe saved without an image gets one generated for it,
-  // async and best-effort — the save response never waits on or fails
-  // because of generation.
-  scheduleAutoGenerateRecipeImage(
-    {
-      userId: req.userId,
-      supabaseUid: req.supabaseUid,
-      recipe: autoImageContextFromDetail(recipe),
-    },
-    queryFn,
-  );
+  // #407/#535: a recipe saved without an image gets one generated for it,
+  // async and best-effort — saveNewRecipeFromInput schedules the trigger
+  // from the shared save layer, so the save response never waits on or
+  // fails because of generation.
   res.status(201).json({...recipe, recipeId, versionId});
 };
