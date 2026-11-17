@@ -5,6 +5,7 @@ import {
   createNoopAnalyticsAdapter,
   FeedbackPreferenceProvider,
 } from '@eciperay/client';
+import {I18nProvider} from '@lingui/react';
 import {VoiceProvider} from '@spudly/ui';
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 import {
@@ -16,6 +17,7 @@ import {
 import type {ReactElement, ReactNode} from 'react';
 import {MemoryRouter, type MemoryRouterProps} from 'react-router-dom';
 
+import {createI18n} from '../i18n/i18n.js';
 import {eciperayVoice} from '../i18n/voice.js';
 import {supabase} from '../lib/supabase.js';
 
@@ -53,20 +55,22 @@ export const createWrapper = ({
       children
     );
     return (
-      <VoiceProvider voice={eciperayVoice}>
-        <QueryClientProvider client={queryClient}>
-          <AnalyticsProvider analytics={testAnalytics}>
-            <FeedbackPreferenceProvider initialEnabled={false}>
-              <MemoryRouter
-                initialEntries={[route]}
-                {...routerProps}
-              >
-                {inner}
-              </MemoryRouter>
-            </FeedbackPreferenceProvider>
-          </AnalyticsProvider>
-        </QueryClientProvider>
-      </VoiceProvider>
+      <I18nProvider i18n={createI18n('en-US')}>
+        <VoiceProvider voice={eciperayVoice}>
+          <QueryClientProvider client={queryClient}>
+            <AnalyticsProvider analytics={testAnalytics}>
+              <FeedbackPreferenceProvider initialEnabled={false}>
+                <MemoryRouter
+                  initialEntries={[route]}
+                  {...routerProps}
+                >
+                  {inner}
+                </MemoryRouter>
+              </FeedbackPreferenceProvider>
+            </AnalyticsProvider>
+          </QueryClientProvider>
+        </VoiceProvider>
+      </I18nProvider>
     );
   };
   return {Wrapper, queryClient};

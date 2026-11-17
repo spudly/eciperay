@@ -37,6 +37,16 @@ describe('ConsentPreferencesPage', () => {
     ).toBeInTheDocument();
   });
 
+  test('shows the page-unique copy from the Lingui catalog (#465)', async () => {
+    await renderWithProviders(<ConsentPreferencesPage />, {withAuth: false});
+    expect(
+      screen.getByText(/Eciperay uses cookies and product analytics/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Withdrawing consent removes your stored choice/),
+    ).toBeInTheDocument();
+  });
+
   test('accept stores the choice and enables PostHog immediately', async () => {
     await renderWithProviders(<ConsentPreferencesPage />, {withAuth: false});
     await userEvent.click(screen.getByRole('button', {name: 'Accept'}));
