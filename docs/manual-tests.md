@@ -706,6 +706,12 @@ small set of known inputs so results are comparable across runs).
    (re-submitting the same import, or the "Import anyway" action on the app
    image import) creates the second copy. Applies to text, URL, and image
    imports.
+8. **Add tab starts fresh after a completed flow (app, issue #533).** Import a
+   recipe and accept it in review, landing on the recipe page; then tap
+   **Add**. **Expected:** the fresh Add screen, not the completed import's
+   review page. Repeat with the review's "Make edits" exit instead of
+   accepting, and again after completing a manual entry. **Expected:** the
+   same fresh Add screen in both cases.
 
 **Run when:**
 `packages/app/src/screens/{ImportText,ImportUrl,ImportImage,ImportReview}Screen.tsx`,

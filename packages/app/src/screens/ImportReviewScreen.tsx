@@ -24,7 +24,16 @@ export const ImportReviewScreen = ({route, navigation}: Props) => {
   // Leaving the import flow for the Recipes tab completes the import
   // session: reset the Add stack to its root so a later tap on the Add tab
   // starts a fresh import instead of resurrecting this review (#533).
+  // Guarded: if this review already left the Add stack while the mutation
+  // was in flight, a stale completion must not reset the stack out from
+  // under a newer screen (e.g. a fresh ManualEntry form).
   const resetAddStack = () => {
+    const stillInStack = navigation
+      .getState()
+      .routes.some(stackRoute => stackRoute.key === route.key);
+    if (!stillInStack) {
+      return;
+    }
     navigation.dispatch(
       CommonActions.reset({index: 0, routes: [{name: 'AddScreen'}]}),
     );

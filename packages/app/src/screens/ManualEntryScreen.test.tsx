@@ -56,10 +56,13 @@ const mockGetParent = jest
   .fn()
   .mockReturnValue({navigate: mockParentNavigate});
 const mockDispatch = jest.fn();
+const mockGetState = jest.fn(() => ({
+  routes: [{key: 'ManualEntry-test', name: 'ManualEntry'}],
+}));
 const stackProps = makeStackProps<AddStackParamList, 'ManualEntry'>(
   'ManualEntry',
   undefined,
-  {getParent: mockGetParent, dispatch: mockDispatch},
+  {getParent: mockGetParent, dispatch: mockDispatch, getState: mockGetState},
 );
 
 /** Host types rendered for a tree, via the RNTL JSON snapshot. */
