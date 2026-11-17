@@ -6,6 +6,9 @@ export type RecipeAccessRecord = {
   ownerUserId: string;
   visibility: RecipeVisibility;
   shareTokenHash: string | null;
+  // Every issued share-link token hash (#534, migration 027): a link stays
+  // valid until rotation or a visibility reset clears the issued set.
+  shareTokenHashes?: readonly string[];
 };
 
 export type ReadAccessOptions = {
@@ -37,7 +40,12 @@ export const canReadRecipe = (
   }
 
   if (shareToken) {
-    return verifyShareToken(shareToken, recipe.shareTokenHash);
+    if (verifyShareToken(shareToken, recipe.shareTokenHash)) {
+      return true;
+    }
+    return (recipe.shareTokenHashes ?? []).some(hash =>
+      verifyShareToken(shareToken, hash),
+    );
   }
 
   return false;
@@ -74,8 +82,10 @@ export const toRecipeAccessRecord = (row: {
   user_id: string;
   visibility: RecipeVisibility;
   share_token_hash: string | null;
+  share_token_hashes?: readonly string[] | null;
 }): RecipeAccessRecord => ({
   ownerUserId: row.user_id,
   visibility: row.visibility,
   shareTokenHash: row.share_token_hash,
+  ...(row.share_token_hashes ? {shareTokenHashes: row.share_token_hashes} : {}),
 });

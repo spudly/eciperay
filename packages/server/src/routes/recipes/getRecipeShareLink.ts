@@ -7,7 +7,12 @@ import {mapRowToRecipeDetail} from '../../lib/mapRowToRecipeDetail.js';
 import {generateShareToken, hashShareToken} from '../../lib/shareToken.js';
 
 import {GET_RECIPE_DETAIL_SQL} from './queries.js';
-import {getRecipeSharingRow, updateRecipeVisibility} from './versionQueries.js';
+import {
+  getRecipeSharingRow,
+  insertRecipeShareToken,
+  updateRecipeShareTokenHash,
+  type RecipeSharingRow,
+} from './versionQueries.js';
 
 type QueryFn = typeof defaultQuery;
 
@@ -15,14 +20,18 @@ type QueryFn = typeof defaultQuery;
  * Obtains a usable share link for the recipe's owner (#534).
  *
  * Public recipes need no token — the caller builds the plain permalink. For
- * private and unlisted recipes the link carries a share token. Tokens are
- * hashed at rest, so the plaintext of an existing token cannot be handed back:
- * when the recipe already has a token this mints a fresh one (the previous link
- * stops working, exactly like an explicit rotation); when it has none, this is
- * the first mint. Visibility is never changed — a private recipe stays private,
- * and its link works through the token-bearing public route only. Owner-only:
- * the sharing row lookup is scoped to the requesting user, so a non-owner gets
- * a 404.
+ * private and unlisted recipes the link carries a share token. Every mint ADDS
+ * a token (migration 027): links already sent keep working until the owner
+ * explicitly rotates the link or resets visibility — sharing the same recipe
+ * with a second person never revokes the first person's link. Visibility is
+ * never changed — a private recipe stays private, and its link works through
+ * the token-bearing public route only. Owner-only: the sharing row lookup is
+ * scoped to the requesting user, so a non-owner gets a 404.
+ *
+ * The token-hash write is guarded on the visibility read above
+ * (updateRecipeShareTokenHash): if visibility changed concurrently, the mint
+ * retries once against the fresh row instead of writing the stale visibility
+ * back, and never resurrects a token on a recipe that has since gone public.
  */
 export const getRecipeShareLink = async (
   req: AuthedRequest,
@@ -31,7 +40,7 @@ export const getRecipeShareLink = async (
 ) => {
   const recipeId = getParam(req, 'id');
   const sharing = await getRecipeSharingRow(recipeId, req.userId, queryFn);
-  const row = sharing.rows[0];
+  let row: RecipeSharingRow | undefined = sharing.rows[0];
   if (!row) {
     res.status(404).json({error: 'Recipe not found'});
     return;
@@ -40,18 +49,44 @@ export const getRecipeShareLink = async (
   let shareToken: string | undefined;
   if (row.visibility !== 'public') {
     shareToken = generateShareToken();
-    const updated = await updateRecipeVisibility(
+    const tokenHash = hashShareToken(shareToken);
+    let updated = await updateRecipeShareTokenHash(
       {
         recipeId,
         userId: req.userId,
-        visibility: row.visibility,
-        shareTokenHash: hashShareToken(shareToken),
+        expectedVisibility: row.visibility,
+        shareTokenHash: tokenHash,
       },
       queryFn,
     );
     if (updated.rowCount === 0) {
-      res.status(404).json({error: 'Recipe not found'});
-      return;
+      // Visibility moved under us — re-read once and act on the fresh row.
+      const fresh = await getRecipeSharingRow(recipeId, req.userId, queryFn);
+      row = fresh.rows[0];
+      if (!row) {
+        res.status(404).json({error: 'Recipe not found'});
+        return;
+      }
+      if (row.visibility === 'public') {
+        shareToken = undefined;
+      } else {
+        updated = await updateRecipeShareTokenHash(
+          {
+            recipeId,
+            userId: req.userId,
+            expectedVisibility: row.visibility,
+            shareTokenHash: tokenHash,
+          },
+          queryFn,
+        );
+        if (updated.rowCount === 0) {
+          res.status(409).json({error: 'Sharing changed — try again'});
+          return;
+        }
+      }
+    }
+    if (shareToken) {
+      await insertRecipeShareToken(recipeId, tokenHash, queryFn);
     }
   }
 

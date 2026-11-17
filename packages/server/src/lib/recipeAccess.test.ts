@@ -51,6 +51,38 @@ describe('canReadRecipe', () => {
     expect(canReadRecipe(privateWithToken, {hasShareGrant: true})).toBe(true);
   });
 
+  test('allows private reads with any issued share token, not just the latest (#534)', () => {
+    const firstToken = 'first-issued-token';
+    const secondToken = 'second-issued-token';
+    const recipeWithIssuedTokens = {
+      ...privateRecipe,
+      // The column carries only the most recently minted hash; earlier
+      // links verify against the issued-token set.
+      shareTokenHash: hashShareToken(secondToken),
+      shareTokenHashes: [
+        hashShareToken(firstToken),
+        hashShareToken(secondToken),
+      ],
+    };
+    expect(
+      canReadRecipe(recipeWithIssuedTokens, {shareToken: firstToken}),
+    ).toBe(true);
+    expect(
+      canReadRecipe(recipeWithIssuedTokens, {shareToken: secondToken}),
+    ).toBe(true);
+    expect(
+      canReadRecipe(recipeWithIssuedTokens, {shareToken: 'never-issued'}),
+    ).toBe(false);
+    // toRecipeAccessRecord carries the issued set through from the row.
+    const record = toRecipeAccessRecord({
+      user_id: ownerId,
+      visibility: 'private',
+      share_token_hash: hashShareToken(secondToken),
+      share_token_hashes: [hashShareToken(firstToken)],
+    });
+    expect(canReadRecipe(record, {shareToken: firstToken})).toBe(true);
+  });
+
   test('allows public reads for anyone', () => {
     expect(canReadRecipe(publicRecipe, {userId: otherId})).toBe(true);
     expect(canReadRecipe(publicRecipe, {})).toBe(true);

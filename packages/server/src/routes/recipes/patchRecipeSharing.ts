@@ -9,8 +9,15 @@ import {planRequiredBody} from '../../lib/plans.js';
 import {RecipeSharingPatchSchema, validate} from '../../lib/schemas.js';
 import {generateShareToken, hashShareToken} from '../../lib/shareToken.js';
 
+import {deleteRecipeShareGrants} from '../../lib/shareGrant.js';
+
 import {GET_RECIPE_DETAIL_SQL} from './queries.js';
-import {getRecipeSharingRow, updateRecipeVisibility} from './versionQueries.js';
+import {
+  deleteRecipeShareTokens,
+  getRecipeSharingRow,
+  insertRecipeShareToken,
+  updateRecipeVisibility,
+} from './versionQueries.js';
 
 type QueryFn = typeof defaultQuery;
 
@@ -94,6 +101,20 @@ export const patchRecipeSharing = async (
   if (updated.rowCount === 0) {
     res.status(404).json({error: 'Recipe not found'});
     return;
+  }
+
+  // Visibility resets revoke link access (#534): going back to private is a
+  // revocation — issued share tokens AND existing recipient grants are
+  // removed, so nobody who got in while the recipe was shared keeps access.
+  // Going public needs no tokens either; an unlisted recipe's live hash is
+  // recorded in the issued-token set so the link keeps working.
+  if (nextVisibility === 'private') {
+    await deleteRecipeShareGrants(recipeId, queryFn);
+    await deleteRecipeShareTokens(recipeId, queryFn);
+  } else if (nextVisibility === 'public') {
+    await deleteRecipeShareTokens(recipeId, queryFn);
+  } else if (hash) {
+    await insertRecipeShareToken(recipeId, hash, queryFn);
   }
 
   const detail = await queryFn(GET_RECIPE_DETAIL_SQL, [recipeId, req.userId]);

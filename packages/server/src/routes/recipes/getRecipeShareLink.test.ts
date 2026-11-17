@@ -48,6 +48,44 @@ describe('POST /recipes/:id/sharing/share-link', () => {
     expect(updateCall?.[1]?.[3]).toEqual(expect.any(String));
   });
 
+  test('a mint records the token in the issued-token set and writes only the hash, guarded on current visibility', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockQuery
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          {...sharingRow, visibility: 'unlisted', share_token_hash: 'old'},
+        ]),
+      )
+      .mockResolvedValue({
+        ...makeQueryResult([{id: 'recipe-uuid-1'}]),
+        rowCount: 1,
+      });
+
+    const res = await request(getApp())
+      .post('/api/recipes/recipe-uuid-1/sharing/share-link')
+      .set('Authorization', 'Bearer <redacted>');
+
+    expect(res.status).toBe(200);
+    expect(res.body.shareToken).toEqual(expect.any(String));
+    const sqls = mockQuery.mock.calls.map(call => String(call[0]));
+    // Previously issued links keep working: the mint inserts into the
+    // issued-token set and never deletes from it.
+    expect(
+      sqls.some(sql => sql.includes('insert into recipe_share_tokens')),
+    ).toBe(true);
+    expect(
+      sqls.some(sql => sql.includes('delete from recipe_share_tokens')),
+    ).toBe(false);
+    // The update writes only the token hash, guarded on the visibility the
+    // handler read — a concurrent visibility change is not overwritten.
+    const updateCall = mockQuery.mock.calls.find(call =>
+      String(call[0]).includes('update recipes'),
+    );
+    expect(String(updateCall?.[0])).toContain('set share_token_hash');
+    expect(String(updateCall?.[0])).not.toContain('set visibility');
+    expect(String(updateCall?.[0])).toContain('visibility = $3');
+  });
+
   test('returns a fresh token for an unlisted recipe that already has one', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery

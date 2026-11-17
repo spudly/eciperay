@@ -101,6 +101,39 @@ describe('POST /recipes/:id/sharing/rotate-token', () => {
     expect(res.status).toBe(404);
   });
 
+  test('rotation deletes every previously issued share token before inserting the fresh one', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockQuery
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          {...sharingRow, visibility: 'unlisted', share_token_hash: 'old-hash'},
+        ]),
+      )
+      .mockResolvedValue({
+        ...makeQueryResult([{id: 'recipe-uuid-1'}]),
+        rowCount: 1,
+      });
+
+    const res = await request(getApp())
+      .post('/api/recipes/recipe-uuid-1/sharing/rotate-token')
+      .set('Authorization', 'Bearer <redacted>');
+
+    expect(res.status).toBe(200);
+    const sqls = mockQuery.mock.calls.map(call => String(call[0]));
+    const deleteIdx = sqls.findIndex(sql =>
+      sql.includes('delete from recipe_share_tokens'),
+    );
+    const insertIdx = sqls.findIndex(sql =>
+      sql.includes('insert into recipe_share_tokens'),
+    );
+    expect(deleteIdx).toBeGreaterThan(-1);
+    expect(insertIdx).toBeGreaterThan(deleteIdx);
+    // The guarded update writes only the token hash — never visibility.
+    const updateSql = sqls.find(sql => sql.includes('update recipes'));
+    expect(updateSql).toContain('set share_token_hash');
+    expect(updateSql).not.toContain('set visibility');
+  });
+
   test('returns 404 when recipe is not found', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue(makeQueryResult([]));
@@ -112,7 +145,7 @@ describe('POST /recipes/:id/sharing/rotate-token', () => {
     expect(res.status).toBe(404);
   });
 
-  test('returns 404 when visibility update affects no rows', async () => {
+  test('returns 404 when the guarded token update affects no rows and the recipe is gone on re-read', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery
       .mockResolvedValueOnce(
@@ -120,7 +153,8 @@ describe('POST /recipes/:id/sharing/rotate-token', () => {
           {...sharingRow, visibility: 'unlisted', share_token_hash: 'old-hash'},
         ]),
       )
-      .mockResolvedValueOnce({...makeQueryResult([]), rowCount: 0});
+      .mockResolvedValueOnce({...makeQueryResult([]), rowCount: 0})
+      .mockResolvedValueOnce(makeQueryResult([]));
 
     const res = await request(getApp())
       .post('/api/recipes/recipe-uuid-1/sharing/rotate-token')

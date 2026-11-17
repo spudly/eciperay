@@ -134,7 +134,13 @@ test.describe('live sharing', () => {
     const anon = await context.newPage();
     try {
       // Without the token the private recipe does not render for a guest.
+      // Wait for the completed denial (the page's not-found state) first —
+      // asserting heading absence during the loading state could pass
+      // while the untokened request is still pending.
       await anon.goto(`/recipe/${created.id}/${link.slug}`);
+      await expect(anon.getByText('Recipe not found')).toBeVisible({
+        timeout: 15_000,
+      });
       await expect(
         anon.getByRole('heading', {name: created.title}),
       ).toHaveCount(0);

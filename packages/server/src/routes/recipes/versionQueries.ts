@@ -207,6 +207,44 @@ export const getRecipeSharingRow = (
   queryFn: QueryFn,
 ) => queryFn<RecipeSharingRow>(GET_RECIPE_SHARING_SQL, [recipeId, userId]);
 
+/**
+ * Sets ONLY the share token hash, atomically requiring the recipe's current
+ * visibility to still be `expectedVisibility` — a concurrent visibility change
+ * is never overwritten by a share-link mint/rotation that read the row earlier.
+ * rowCount 0 means the caller's view is stale (or not owner).
+ */
+export const updateRecipeShareTokenHash = (
+  opts: {
+    recipeId: string;
+    userId: string;
+    expectedVisibility: string;
+    shareTokenHash: string | null;
+  },
+  queryFn: QueryFn,
+) =>
+  queryFn(
+    `update recipes
+     set share_token_hash = $4
+     where id = $1 and user_id = $2 and visibility = $3
+     returning id`,
+    [opts.recipeId, opts.userId, opts.expectedVisibility, opts.shareTokenHash],
+  );
+
+export const insertRecipeShareToken = (
+  recipeId: string,
+  tokenHash: string,
+  queryFn: QueryFn,
+) =>
+  queryFn(
+    `insert into recipe_share_tokens (recipe_id, token_hash)
+     values ($1, $2)
+     on conflict do nothing`,
+    [recipeId, tokenHash],
+  );
+
+export const deleteRecipeShareTokens = (recipeId: string, queryFn: QueryFn) =>
+  queryFn(`delete from recipe_share_tokens where recipe_id = $1`, [recipeId]);
+
 export const updateRecipeVisibility = (
   opts: {
     recipeId: string;
