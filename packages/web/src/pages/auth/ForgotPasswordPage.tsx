@@ -1,4 +1,5 @@
 import {errorMessage, validateAuthEmail} from '@eciperay/client';
+import {useLingui} from '@lingui/react';
 import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
@@ -8,7 +9,13 @@ import {supabase} from '../../lib/supabase.js';
 
 import {AuthConfirmation} from './AuthConfirmation.js';
 
+// The confirmation state's copy is page-unique and flows through the
+// Lingui catalogs (#465 tranche 5: explicit ids
+// `forgotPassword.confirmationTitle` / `forgotPassword.confirmationBody`
+// / `forgotPassword.backLabel`); the form itself is rendered by the
+// design system's ForgotPasswordPage, whose copy is DS-owned.
 export const ForgotPasswordPage = () => {
+  const {i18n} = useLingui();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
@@ -44,9 +51,18 @@ export const ForgotPasswordPage = () => {
   if (sent) {
     return (
       <AuthConfirmation
-        title="Email sent"
-        body="Check your inbox for a password reset link."
-        backLabel="Back to sign in"
+        title={i18n._({
+          id: 'forgotPassword.confirmationTitle',
+          message: 'Email sent',
+        })}
+        body={i18n._({
+          id: 'forgotPassword.confirmationBody',
+          message: 'Check your inbox for a password reset link.',
+        })}
+        backLabel={i18n._({
+          id: 'forgotPassword.backLabel',
+          message: 'Back to sign in',
+        })}
         onBackPress={() => {
           void navigate('/login');
         }}

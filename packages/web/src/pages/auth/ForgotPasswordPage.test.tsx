@@ -8,6 +8,15 @@ import {renderWithProviders} from '../../test/testUtils.js';
 import {ForgotPasswordPage} from './ForgotPasswordPage.js';
 
 describe('ForgotPasswordPage', () => {
+  test('renders the confirmation title from the en-XA Lingui catalog (#465)', async () => {
+    await renderWithProviders(<ForgotPasswordPage />, {locale: 'en-XA'});
+    await userEvent.type(screen.getByLabelText('Email'), 'a@b.com');
+    await userEvent.click(screen.getByText('Send Reset Link'));
+    await waitFor(() => {
+      expect(screen.getByText('Email sent~')).toBeInTheDocument();
+    });
+  });
+
   test('sends reset email', async () => {
     await renderWithProviders(<ForgotPasswordPage />);
     await userEvent.type(screen.getByLabelText('Email'), 'a@b.com');

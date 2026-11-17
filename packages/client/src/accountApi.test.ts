@@ -12,6 +12,21 @@ describe('createAccountApi', () => {
     expect(fetch).toHaveBeenCalledWith('/account', {method: 'DELETE'});
   });
 
+  test('calls the author display endpoints', async () => {
+    const settings = {displayName: 'Stephen', showOnPublicRecipes: true};
+    const fetch = jest.fn().mockResolvedValue(settings);
+    const api = createAccountApi({fetch});
+
+    await expect(api.getAuthorDisplay()).resolves.toEqual(settings);
+    await expect(api.putAuthorDisplay(settings)).resolves.toEqual(settings);
+
+    expect(fetch).toHaveBeenCalledWith('/account/author-display');
+    expect(fetch).toHaveBeenCalledWith('/account/author-display', {
+      method: 'PUT',
+      body: JSON.stringify(settings),
+    });
+  });
+
   test('calls the entitlement endpoint', async () => {
     const fetch = jest.fn().mockResolvedValue({plan: 'plus'});
     const api = createAccountApi({fetch});
