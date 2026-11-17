@@ -5,17 +5,24 @@ import {useState} from 'react';
 
 import {eciperay} from '../lib/api.js';
 
-type UseRecipeCommentsPropsOptions = {recipeId: string; ownerUserId?: string};
+type UseRecipeCommentsPropsOptions = {
+  recipeId: string;
+  ownerUserId?: string;
+  shareToken?: string;
+  publicList?: boolean;
+};
 
 /**
  * The recipe comments section's web host logic (B7 T1, eciperay#552): the
  * section's query, compose/edit draft state, and three mutations stay web-side,
  * and the section crosses into RecipeDetailPage as its `comments` data prop
  * (RecipeCommentsView's view-model) — the native app's useRecipeCommentsProps
- * (packages/app/src/hosts/recipe) is the template. The public recipe page keeps
- * the composed RecipeCommentsSection until B7 T7 (eciperay#557): the
- * PublicRecipePage comments data prop is not in the @spudly/ui version eciperay
- * resolves yet.
+ * (packages/app/src/hosts/recipe) is the template. Since B7 T7 (eciperay#557,
+ * @spudly/ui 10.0.0) the public recipe page uses this hook too, with
+ * `publicList` set: its list query goes through the public comments endpoint
+ * carrying the page's share token, and no ownerUserId is passed, so delete
+ * eligibility stays author-only there, exactly as the retired composed
+ * RecipeCommentsSection behaved on that page.
  *
  * The web section's #418 error handling carries over: a rejected create,
  * update, or delete keeps its draft/edit text and surfaces the server's reason
@@ -31,6 +38,8 @@ type UseRecipeCommentsPropsOptions = {recipeId: string; ownerUserId?: string};
 export const useRecipeCommentsProps = ({
   recipeId,
   ownerUserId,
+  shareToken,
+  publicList = false,
 }: UseRecipeCommentsPropsOptions): RecipeDetailPageComments => {
   const {session} = useAuth();
   const queryClient = useQueryClient();
@@ -49,7 +58,9 @@ export const useRecipeCommentsProps = ({
     );
   };
 
-  const commentsQueryKey = queryKeys.recipeComments(recipeId);
+  const commentsQueryKey = publicList
+    ? queryKeys.recipeComments(recipeId, shareToken)
+    : queryKeys.recipeComments(recipeId);
 
   const {
     data,
@@ -57,7 +68,13 @@ export const useRecipeCommentsProps = ({
     error: queryError,
   } = useQuery({
     queryKey: commentsQueryKey,
-    queryFn: () => eciperay.recipes.listComments(recipeId),
+    queryFn: () =>
+      publicList
+        ? eciperay.recipes.listPublicComments(recipeId, {shareToken})
+        : eciperay.recipes.listComments(recipeId),
+    // The public page calls this hook before its recipe has loaded
+    // (empty id); the detail host always has an id.
+    enabled: recipeId.length > 0,
   });
   const comments = Array.isArray(data) ? data : [];
 
@@ -105,8 +122,13 @@ export const useRecipeCommentsProps = ({
       body: comment.body,
       isStale: comment.isStale,
       canEdit: comment.authorUserId === currentUserId,
+      // A signed-out viewer has no id: without the guard, the public
+      // page's omitted ownerUserId (undefined) would equal the viewer's
+      // undefined id and grant delete eligibility on every comment.
       canDelete:
-        comment.authorUserId === currentUserId || ownerUserId === currentUserId,
+        currentUserId !== undefined &&
+        (comment.authorUserId === currentUserId ||
+          ownerUserId === currentUserId),
     })),
     loading: isLoading,
     error: commentError ?? (queryError ? "Couldn't load comments." : null),

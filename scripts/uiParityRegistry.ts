@@ -201,12 +201,6 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
       'Web feedback host; renders the design system FeedbackPage (design-system#126) — the local view retired in B7 C10 (design-system#130). The app host lives outside src/components (hosts/FeedbackForm.tsx).',
   },
   {
-    path: 'recipe/RecipeCommentItem.tsx',
-    platform: 'web',
-    reason:
-      'Web item remains via the comments section (slotted into the design system detail page and used by the public recipe page); the app copy was deleted when RecipeCommentsSection adopted the design system CommentItem (the widget moved to @spudly/ui in B2). Removed in B6 (design-system#129). Web retirement is B7.',
-  },
-  {
     path: 'recipe/StaleVersionHint.tsx',
     platform: 'web',
     reason:
@@ -217,12 +211,6 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
     platform: 'web',
     reason:
       'Web select field used by production pickers and filter bars, relocated out of the retired ui/ wrapper library in the @spudly/ui 6.x migration; the app copy was removed earlier (design-system#129).',
-  },
-  {
-    path: 'recipe/RecipeCommentsSection.tsx',
-    platform: 'web',
-    reason:
-      'Web section remains for the public recipe page only (the signed-in detail page adopted the comments data prop in B7 T1, eciperay#552); the app host moved out of components/ to packages/app/src/hosts in B6 (design-system#129). Web retirement is B7 T7 (eciperay#557), when PublicRecipePage takes the comments data prop.',
   },
   {
     path: 'ProfileFeedbackPreference.tsx',
