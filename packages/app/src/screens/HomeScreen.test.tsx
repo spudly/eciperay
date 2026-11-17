@@ -2,11 +2,7 @@ import React from 'react';
 import {Alert, Linking} from 'react-native';
 import {fireEvent, waitFor} from '@testing-library/react-native';
 import {
-  HOME_ADD_LABEL,
-  HOME_BROWSE_LABEL,
   HOME_RECENT_RECIPE_COUNT,
-  HOME_SHARED_WITH_ME_LABEL,
-  HOME_TITLE,
   queryKeys,
   recordRecipeView,
 } from '@eciperay/client';
@@ -84,12 +80,20 @@ describe('HomeScreen', () => {
   const renderHome = async () =>
     await renderWithProviders(<HomeScreen {...homeProps} />, makeQueryClient());
 
+  test('renders the title from the en-XA Lingui catalog (#465)', async () => {
+    const {findByText} = await renderWithProviders(
+      <HomeScreen {...homeProps} />,
+      {client: makeQueryClient(), locale: 'en-XA'},
+    );
+    expect(await findByText('Welcome to Eciperay~')).toBeTruthy();
+  });
+
   test('displays welcome content and actions', async () => {
     const {findByText} = await renderHome();
-    expect(await findByText(HOME_TITLE)).toBeTruthy();
-    expect(await findByText(HOME_BROWSE_LABEL)).toBeTruthy();
-    expect(await findByText(HOME_ADD_LABEL)).toBeTruthy();
-    expect(await findByText(HOME_SHARED_WITH_ME_LABEL)).toBeTruthy();
+    expect(await findByText('Welcome to Eciperay')).toBeTruthy();
+    expect(await findByText('Browse Recipes')).toBeTruthy();
+    expect(await findByText('Add Recipe')).toBeTruthy();
+    expect(await findByText('Shared with me')).toBeTruthy();
     expect(await findByText('Recently viewed')).toBeTruthy();
   });
 
@@ -98,22 +102,22 @@ describe('HomeScreen', () => {
   // it to the same destinations the old callbacks navigated to.
   test('opens the recipes deep link from browse action', async () => {
     const {findByText} = await renderHome();
-    await findByText(HOME_TITLE);
-    await fireEvent.press(await findByText(HOME_BROWSE_LABEL));
+    await findByText('Welcome to Eciperay');
+    await fireEvent.press(await findByText('Browse Recipes'));
     expect(Linking.openURL).toHaveBeenCalledWith(recipesHref);
   });
 
   test('opens the add deep link from add action', async () => {
     const {findByText} = await renderHome();
-    await findByText(HOME_TITLE);
-    await fireEvent.press(await findByText(HOME_ADD_LABEL));
+    await findByText('Welcome to Eciperay');
+    await fireEvent.press(await findByText('Add Recipe'));
     expect(Linking.openURL).toHaveBeenCalledWith(addHref);
   });
 
   test('opens the shared-with-me deep link from home action', async () => {
     const {findByText} = await renderHome();
-    await findByText(HOME_TITLE);
-    await fireEvent.press(await findByText(HOME_SHARED_WITH_ME_LABEL));
+    await findByText('Welcome to Eciperay');
+    await fireEvent.press(await findByText('Shared with me'));
     expect(Linking.openURL).toHaveBeenCalledWith(sharedWithMeHref);
     // Since #412 the shared-with-me entry lands on the unified
     // Recipes browse, so its href IS the Recipes destination.

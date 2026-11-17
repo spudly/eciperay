@@ -3,16 +3,10 @@ import {
   formatSatietyLabel,
   formatServingsLabel,
   getDisplayRating,
-  HOME_ADD_LABEL,
-  HOME_BROWSE_LABEL,
-  HOME_EMPTY_MESSAGE,
-  HOME_RECIPES_SECTION_TITLE,
-  HOME_SHARED_WITH_ME_LABEL,
-  HOME_SUBTITLE,
-  HOME_TITLE,
   homeRecentlyViewedRecipesQueryOptions,
   queryKeys,
 } from '@eciperay/client';
+import {useLingui} from '@lingui/react';
 import type {BottomTabScreenProps} from '@react-navigation/bottom-tabs';
 import {useFocusEffect} from '@react-navigation/native';
 import {useQuery, useQueryClient} from '@tanstack/react-query';
@@ -46,7 +40,14 @@ const formatHomeRecipeSubtitle = (recipe: RecipeDetail) =>
     formatSatietyLabel(recipe.satietyScore, recipe.nutritionStatus),
   ].join(' · ')}`;
 
+// The Home screen's page-unique copy flows through the Lingui catalogs
+// (#465 tranche 6: explicit ids `home.title` / `home.subtitle` /
+// `home.browseLabel` / `home.addLabel` / `home.sharedWithMeLabel` /
+// `home.recipesSectionTitle` / `home.emptyMessage`) instead of the
+// shared `@eciperay/client` homeCopy constants — the same ids the web
+// HomePage resolves from its own catalogs.
 export const HomeScreen = (_props: Props) => {
+  const {i18n} = useLingui();
   const queryClient = useQueryClient();
 
   useFocusEffect(
@@ -73,13 +74,28 @@ export const HomeScreen = (_props: Props) => {
   return (
     <>
       <HomePage
-        title={HOME_TITLE}
-        subtitle={HOME_SUBTITLE}
-        browseLabel={HOME_BROWSE_LABEL}
-        addLabel={HOME_ADD_LABEL}
-        sharedWithMeLabel={HOME_SHARED_WITH_ME_LABEL}
-        recipesTitle={HOME_RECIPES_SECTION_TITLE}
-        emptyMessage={HOME_EMPTY_MESSAGE}
+        title={i18n._({id: 'home.title', message: 'Welcome to Eciperay'})}
+        subtitle={i18n._({
+          id: 'home.subtitle',
+          message: 'Your personal recipe collection',
+        })}
+        browseLabel={i18n._({
+          id: 'home.browseLabel',
+          message: 'Browse Recipes',
+        })}
+        addLabel={i18n._({id: 'home.addLabel', message: 'Add Recipe'})}
+        sharedWithMeLabel={i18n._({
+          id: 'home.sharedWithMeLabel',
+          message: 'Shared with me',
+        })}
+        recipesTitle={i18n._({
+          id: 'home.recipesSectionTitle',
+          message: 'Recently viewed',
+        })}
+        emptyMessage={i18n._({
+          id: 'home.emptyMessage',
+          message: 'Recipes you view will appear here.',
+        })}
         loading={isLoading}
         recipes={recipes.map(recipe => ({
           id: recipe.id,

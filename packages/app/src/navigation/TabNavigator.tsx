@@ -1,5 +1,6 @@
 /* eslint-disable max-lines -- tab navigator registers multiple nested stacks */
 import {useFeedbackShortcutEnabled} from '@eciperay/client';
+import {useLingui} from '@lingui/react';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {useTheme} from 'tamagui';
@@ -51,45 +52,48 @@ const MealsStack = createNativeStackNavigator<MealsStackParamList>();
 const AddStack = createNativeStackNavigator<AddStackParamList>();
 const ProfileStack = createNativeStackNavigator<ProfileStackParamList>();
 
-const RecipesStackNavigator = () => (
-  <RecipesStack.Navigator>
-    <RecipesStack.Screen
-      name="RecipesList"
-      component={RecipesScreen}
-      options={{title: 'Recipes'}}
-    />
-    <RecipesStack.Screen
-      name="SharedWithMe"
-      component={SharedWithMeScreen}
-      options={sharedWithMeScreenOptions}
-    />
-    <RecipesStack.Screen
-      name="RecipeDetail"
-      component={RecipeDetailScreen}
-      options={{title: ''}}
-    />
-    <RecipesStack.Screen
-      name="CookingMode"
-      component={CookingModeScreen}
-      options={{headerShown: false, presentation: 'fullScreenModal'}}
-    />
-    <RecipesStack.Screen
-      name="EditRecipe"
-      component={EditRecipeScreen}
-      options={{title: 'Edit Recipe'}}
-    />
-    <RecipesStack.Screen
-      name="TweakAi"
-      component={TweakAiScreen}
-      options={{title: 'Tweak with AI'}}
-    />
-    <RecipesStack.Screen
-      name="EditVersion"
-      component={EditVersionScreen}
-      options={{title: 'Edit Draft'}}
-    />
-  </RecipesStack.Navigator>
-);
+const RecipesStackNavigator = () => {
+  const {i18n} = useLingui();
+  return (
+    <RecipesStack.Navigator>
+      <RecipesStack.Screen
+        name="RecipesList"
+        component={RecipesScreen}
+        options={{title: 'Recipes'}}
+      />
+      <RecipesStack.Screen
+        name="SharedWithMe"
+        component={SharedWithMeScreen}
+        options={sharedWithMeScreenOptions(i18n)}
+      />
+      <RecipesStack.Screen
+        name="RecipeDetail"
+        component={RecipeDetailScreen}
+        options={{title: ''}}
+      />
+      <RecipesStack.Screen
+        name="CookingMode"
+        component={CookingModeScreen}
+        options={{headerShown: false, presentation: 'fullScreenModal'}}
+      />
+      <RecipesStack.Screen
+        name="EditRecipe"
+        component={EditRecipeScreen}
+        options={{title: 'Edit Recipe'}}
+      />
+      <RecipesStack.Screen
+        name="TweakAi"
+        component={TweakAiScreen}
+        options={{title: 'Tweak with AI'}}
+      />
+      <RecipesStack.Screen
+        name="EditVersion"
+        component={EditVersionScreen}
+        options={{title: 'Edit Draft'}}
+      />
+    </RecipesStack.Navigator>
+  );
+};
 
 const MealsStackNavigator = () => (
   <MealsStack.Navigator>

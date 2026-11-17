@@ -1,4 +1,4 @@
-import {HOME_TITLE, LANDING_HERO_TITLE} from '@eciperay/client';
+import {LANDING_HERO_TITLE} from '@eciperay/client';
 import {act, screen} from '@testing-library/react';
 import {afterEach, beforeEach, vi} from 'vitest';
 
@@ -46,7 +46,7 @@ describe('HomeEntry', () => {
       isLoading: false,
     });
     await renderWithProviders(<HomeEntry />, {withAuth: false});
-    expect(screen.getByText(HOME_TITLE)).toBeInTheDocument();
+    expect(screen.getByText('Welcome to Eciperay')).toBeInTheDocument();
     expect(screen.getByText('Recipes')).toBeInTheDocument();
   });
 });

@@ -6,6 +6,7 @@ import {
   createAnalytics,
   createNoopAnalyticsAdapter,
 } from '@eciperay/client';
+import {I18nProvider} from '@lingui/react';
 import {VoiceProvider} from '@spudly/ui';
 import {
   notifyManager,
@@ -21,6 +22,8 @@ import {
 import React from 'react';
 import {TamaguiProvider} from 'tamagui';
 
+import {createI18n} from '../i18n/i18n';
+import type {SupportedLocale} from '../i18n/locale';
 import {eciperayVoice} from '../i18n/voice';
 import {appTamaguiConfig} from '../lib/tamaguiConfig';
 
@@ -105,6 +108,7 @@ export const makeQueryClient = () => {
 
 type RenderWithProvidersOptions = Omit<RenderOptions, 'wrapper'> & {
   client?: QueryClient;
+  locale?: SupportedLocale;
 };
 
 export const renderWithProviders = async (
@@ -126,18 +130,20 @@ export const renderWithProviders = async (
   return await render(ui, {
     ...options,
     wrapper: ({children}) => (
-      <VoiceProvider voice={eciperayVoice}>
-        <TamaguiProvider
-          config={appTamaguiConfig}
-          defaultTheme="light"
-        >
-          <QueryClientProvider client={client}>
-            <AnalyticsProvider analytics={testAnalytics}>
-              {children}
-            </AnalyticsProvider>
-          </QueryClientProvider>
-        </TamaguiProvider>
-      </VoiceProvider>
+      <I18nProvider i18n={createI18n(options?.locale ?? 'en-US')}>
+        <VoiceProvider voice={eciperayVoice}>
+          <TamaguiProvider
+            config={appTamaguiConfig}
+            defaultTheme="light"
+          >
+            <QueryClientProvider client={client}>
+              <AnalyticsProvider analytics={testAnalytics}>
+                {children}
+              </AnalyticsProvider>
+            </QueryClientProvider>
+          </TamaguiProvider>
+        </VoiceProvider>
+      </I18nProvider>
     ),
   });
 };

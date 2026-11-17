@@ -1,12 +1,11 @@
-export const HOME_TITLE = 'Welcome to Eciperay';
-export const HOME_SUBTITLE = 'Your personal recipe collection';
-export const HOME_BROWSE_LABEL = 'Browse Recipes';
-export const HOME_ADD_LABEL = 'Add Recipe';
+// The Home page's title, subtitle, action labels, section title, and
+// empty message — and the native Shared-with-me screen title — moved
+// to the hosts' Lingui catalogs in #465 tranche 6 (`home.*` /
+// `sharedWithMe.title` ids, resolved in the web HomePage and the
+// native HomeScreen / navigator). What remains here is the non-copy
+// recent-recipe count and the shared-with-me copy still consumed by
+// the SharedWithMe views, which migrate in a later tranche.
 export const HOME_RECENT_RECIPE_COUNT = 3;
-export const HOME_RECIPES_SECTION_TITLE = 'Recently viewed';
-export const HOME_EMPTY_MESSAGE = 'Recipes you view will appear here.';
-export const HOME_SHARED_WITH_ME_LABEL = 'Shared with me';
-export const SHARED_WITH_ME_TITLE = 'Shared with me';
 // The shared-with-me empty state in its two sentences: hosts that
 // render a single message use the composed constant; the DS
 // RecipesPage's shared-with-me configuration takes the sentences
