@@ -66,10 +66,17 @@ describe('MealsHubScreen', () => {
     ]);
   });
 
+  test('opens on the Meal plans tab by default', async () => {
+    const {findByText} = await renderWithProviders(<MealsHubScreen />);
+    expect(await findByText('New meal plan')).toBeTruthy();
+    expect(await findByLabelText('This week, 0 entries')).toBeTruthy();
+  });
+
   test('renders meals from API', async () => {
     const {findByLabelText, findByText} = await renderWithProviders(
       <MealsHubScreen />,
     );
+    await fireEvent.press(await findByText('Meals'));
     expect(await findByLabelText('Sunday Dinner, 1 recipe')).toBeTruthy();
     expect(await findByText('New meal')).toBeTruthy();
   });
@@ -77,6 +84,7 @@ describe('MealsHubScreen', () => {
   test('opens deep links and deletes from both tabs', async () => {
     const {findByText, findByLabelText, getByLabelText} =
       await renderWithProviders(<MealsHubScreen />);
+    await fireEvent.press(await findByText('Meals'));
     await fireEvent.press(await findByLabelText('Sunday Dinner, 1 recipe'));
     expect(Linking.openURL).toHaveBeenCalledWith(mealHref(mealId));
     await fireEvent.press(getByLabelText('Delete Sunday Dinner'));
@@ -100,6 +108,7 @@ describe('MealsHubScreen', () => {
 
   test('creates a new meal', async () => {
     const {findByText} = await renderWithProviders(<MealsHubScreen />);
+    await fireEvent.press(await findByText('Meals'));
     await fireEvent.press(await findByText('New meal'));
     expect(Linking.openURL).toHaveBeenCalledWith(mealEditHref());
   });

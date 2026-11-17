@@ -36,7 +36,7 @@ describe('AuthenticatedShell', () => {
     );
     expect(screen.getByRole('link', {name: 'Meals'})).toHaveAttribute(
       'href',
-      '/meals',
+      '/meals?tab=plans',
     );
     expect(screen.getByRole('link', {name: 'Profile'})).toHaveAttribute(
       'href',

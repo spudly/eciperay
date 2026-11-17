@@ -20,7 +20,9 @@ import {AuthenticatedPageHead} from './AuthenticatedPageHead.js';
 const navItems: AppShellPageNavItem[] = [
   {id: 'home', label: 'Home', href: '/', icon: 'home'},
   {id: 'recipes', label: 'Recipes', href: '/recipes', icon: 'recipes'},
-  {id: 'meals', label: 'Meals', href: '/meals', icon: 'meals'},
+  // The Meals item lands on the hub's Plans tab (#538): meal plans
+  // are the primary surface, so the top bar goes straight there.
+  {id: 'meals', label: 'Meals', href: '/meals?tab=plans', icon: 'meals'},
   {id: 'add', label: 'Add', href: '/add', icon: 'add'},
   {id: 'tags', label: 'Tags', href: '/tags', icon: 'tags'},
   {id: 'profile', label: 'Profile', href: '/profile', icon: 'profile'},
@@ -32,10 +34,13 @@ const navItems: AppShellPageNavItem[] = [
 const activeItemIdFor = (pathname: string): string | null => {
   let best: AppShellPageNavItem | null = null;
   for (const item of navItems) {
+    // An item's href may carry a query (the Meals item lands on the
+    // hub's Plans tab, #538); active matching is against the path.
+    const itemPath = item.href.split('?')[0];
     const matches =
-      item.href === '/'
+      itemPath === '/'
         ? pathname === '/'
-        : pathname === item.href || pathname.startsWith(`${item.href}/`);
+        : pathname === itemPath || pathname.startsWith(`${itemPath}/`);
     if (matches && (!best || item.href.length > best.href.length)) {
       best = item;
     }
