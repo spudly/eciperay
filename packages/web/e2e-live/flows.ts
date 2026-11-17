@@ -36,9 +36,11 @@ export const createRecipeViaUi = async (
   await page.getByPlaceholder('Unit').first().fill('g');
   await page.getByPlaceholder('Name').first().fill('CI Test Ingredient');
 
-  // One instruction step (the textarea beside the "Reorder step 1" handle).
+  // One instruction step: since the DS RecipeFormPage adoption (#555), the
+  // step's textarea carries the accessible name "Step 1" (the DS row view's
+  // stepLabel) rather than sitting beside the "Reorder step 1" handle.
   await page
-    .locator('div:has(> button[aria-label="Reorder step 1"]) > textarea')
+    .getByLabel('Step 1', {exact: true})
     .fill('Mix everything and cook.');
 
   // The page host's submit label (ManualEntryPage passes "Create Recipe";
