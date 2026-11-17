@@ -850,7 +850,6 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/create-version', () => 
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([]))
-      .mockResolvedValueOnce(makeQueryResult([{id: 'recipe-uuid-1'}]))
       .mockResolvedValueOnce(
         makeQueryResult([
           makeVersionDetailRow({

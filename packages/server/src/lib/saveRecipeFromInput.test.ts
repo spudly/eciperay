@@ -16,8 +16,7 @@ const mockScheduleAutoGenerateRecipeImage =
 
 jest.unstable_mockModule('./autoGenerateRecipeImage.js', () => ({
   autoGenerateRecipeImage: actualAutoImageModule.autoGenerateRecipeImage,
-  autoImageContextFromDetail:
-    actualAutoImageModule.autoImageContextFromDetail,
+  autoImageContextFromDetail: actualAutoImageModule.autoImageContextFromDetail,
   scheduleAutoGenerateRecipeImage: (
     ...args: Parameters<
       typeof actualAutoImageModule.scheduleAutoGenerateRecipeImage
@@ -25,11 +24,8 @@ jest.unstable_mockModule('./autoGenerateRecipeImage.js', () => ({
   ) => mockScheduleAutoGenerateRecipeImage(...args),
 }));
 
-const {
-  RecipeNotFoundError,
-  saveNewRecipeFromInput,
-  saveRecipeFromInput,
-} = await import('./saveRecipeFromInput.js');
+const {RecipeNotFoundError, saveNewRecipeFromInput, saveRecipeFromInput} =
+  await import('./saveRecipeFromInput.js');
 
 beforeEach(() => {
   mockScheduleAutoGenerateRecipeImage.mockReset();
@@ -261,7 +257,7 @@ describe('saveNewRecipeFromInput', () => {
     mockQuery
       .mockResolvedValueOnce(makeQueryResult([{id: 'recipe-uuid-1'}]))
       .mockResolvedValueOnce(makeQueryResult([{id: 'version-uuid-1'}]))
-      .mockResolvedValueOnce(
+      .mockResolvedValue(
         makeQueryResult([
           makeRecipeDetailRow({image_url: 'https://cdn.example/photo.png'}),
         ]),
