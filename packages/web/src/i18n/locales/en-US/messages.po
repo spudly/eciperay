@@ -21,6 +21,16 @@ msgid "pay.homeLabel"
 msgstr "Go to Eciperay home"
 
 #. js-lingui-explicit-id
+#: src/pages/PrivacyPolicyPage.tsx:27
+msgid "privacyPolicy.lastUpdated"
+msgstr "November 4, 2026"
+
+#. js-lingui-explicit-id
+#: src/pages/PrivacyPolicyPage.tsx:23
+msgid "privacyPolicy.title"
+msgstr "Privacy Policy"
+
+#. js-lingui-explicit-id
 #: src/pages/ConsentPreferencesPage.tsx:96
 msgid "consentPreferences.hint"
 msgstr "Withdrawing consent removes your stored choice and turns analytics off until you make a new choice; the consent banner will ask again, as it does for a new visitor. See our Privacy Policy for what analytics collects when it is on."

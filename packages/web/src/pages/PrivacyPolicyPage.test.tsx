@@ -6,6 +6,16 @@ import {renderWithProviders} from '../test/testUtils.js';
 import {PrivacyPolicyPage} from './PrivacyPolicyPage.js';
 
 describe('PrivacyPolicyPage', () => {
+  test('renders the title from the en-XA Lingui catalog (#465)', async () => {
+    await renderWithProviders(<PrivacyPolicyPage />, {
+      withAuth: false,
+      locale: 'en-XA',
+    });
+    expect(
+      screen.getByRole('heading', {name: 'Privacy Policy~'}),
+    ).toBeInTheDocument();
+  });
+
   test('renders policy content without requiring auth', async () => {
     await renderWithProviders(<PrivacyPolicyPage />, {withAuth: false});
     expect(
