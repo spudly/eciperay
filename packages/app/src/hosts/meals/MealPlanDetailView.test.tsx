@@ -152,6 +152,10 @@ describe('MealPlanDetailView', () => {
     expect(await findByText('Monday')).toBeTruthy();
     expect(await findByText('Tuesday')).toBeTruthy();
     expect(await findByText('2026-10-19')).toBeTruthy();
+    // The day's Calories row comes from the host-provided dailyTotals:
+    // the meal entry's 300 cal scaled by its quantity of 2 (the recipe
+    // entry has no usable nutrition and contributes nothing).
+    expect(await findByText('600 cal')).toBeTruthy();
   });
 
   test('omits the date range unless the plan has both dates', async () => {

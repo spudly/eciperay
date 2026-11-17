@@ -6,6 +6,7 @@ import type {
 
 import {
   buildMealPlanDayTotals,
+  buildMealPlanWeekView,
   groupMealPlanEntriesByDay,
   mealPlanDayLabel,
 } from './mealPlanWeek.js';
@@ -231,6 +232,35 @@ describe('groupMealPlanEntriesByDay (#539)', () => {
     ]);
     // Prepared-weight-weighted: (80×100 + 40×300) / 400 = 50.
     expect(satietyLabel).toBe('Satiety 50');
+  });
+});
+
+describe('buildMealPlanWeekView (#539)', () => {
+  test('returns null when an undated entry has no startsOn anchor, so hosts render the complete flat list', () => {
+    const view = buildMealPlanWeekView(
+      plan({
+        startsOn: null,
+        endsOn: null,
+        entries: [
+          recipeEntry('e1', 0, {day: '2026-11-16'}),
+          recipeEntry('e2', 1),
+        ],
+      }),
+      entry => entry,
+    );
+    expect(view).toBeNull();
+  });
+
+  test('returns the week view when every entry can be grouped', () => {
+    const view = buildMealPlanWeekView(
+      plan({
+        startsOn: null,
+        endsOn: null,
+        entries: [recipeEntry('e1', 0, {day: '2026-11-16'})],
+      }),
+      entry => entry,
+    );
+    expect(view?.days.map(day => day.id)).toEqual(['2026-11-16']);
   });
 });
 

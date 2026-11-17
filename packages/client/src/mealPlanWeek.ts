@@ -218,7 +218,13 @@ export const buildMealPlanWeekView = <TEntry>(
   }[];
 } | null => {
   const groups = groupMealPlanEntriesByDay(plan);
-  if (groups.length === 0) {
+  if (
+    groups.length === 0 ||
+    // An undated entry in a plan with no startsOn anchor can never be
+    // grouped; returning a week view would hide it. Fall back to the
+    // flat list, which contains every entry.
+    plan.entries.some(entry => !entry.day && !plan.startsOn)
+  ) {
     return null;
   }
   return {
