@@ -407,6 +407,52 @@ describe('mealUiHelpers', () => {
     ]);
   });
 
+  test('hydrates form rows with blank quantity and unit when they are null (#362)', () => {
+    expect(
+      mealIngredientsToForm([
+        {
+          name: 'Salt',
+          quantity: null,
+          unit: null,
+          sortOrder: 0,
+          servingsToCook: 1,
+          servingsToEat: 1,
+          fiberG: null,
+          sugarG: null,
+          sodiumMg: null,
+          preparedWeightG: null,
+          calories: null,
+          proteinG: null,
+          carbsG: null,
+          fatG: null,
+          satietyScore: null,
+          nutritionStatus: 'failed',
+        },
+      ]),
+    ).toEqual([
+      {
+        id: 'ingredient-0',
+        name: 'Salt',
+        quantity: '',
+        unit: '',
+        servings: '1',
+        servingsToEat: '1',
+      },
+    ]);
+  });
+
+  test('uses the servings-to-eat map when one is provided', () => {
+    expect(
+      buildMealInputFromForm({
+        title: 'Dinner',
+        notes: '',
+        selectedRecipeIds: ['r1'],
+        servingsByRecipeId: {r1: 3},
+        servingsToEatByRecipeId: {r1: 2},
+      }).recipes,
+    ).toEqual([{recipeId: 'r1', servingsToCook: 3, servingsToEat: 2}]);
+  });
+
   test('builds the weekly totals band from eaten totals and per-day averages (#363)', () => {
     const nutrition = {
       calories: 1400,

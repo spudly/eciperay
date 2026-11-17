@@ -3,6 +3,7 @@ import {
   buildCanonicalUrl,
   buildPublicPageHead,
   buildPublicRecipeHead,
+  buildStaticPageHead,
   DEFAULT_WEB_BASE_URL,
   STATIC_PUBLIC_PAGES,
 } from './pageHead.js';
@@ -79,6 +80,17 @@ describe('pageHead', () => {
     expect(head.twitter?.imageUrl).toBeUndefined();
   });
 
+  test('a non-home static page with no page title falls back to the site name', () => {
+    const head = buildStaticPageHead(DEFAULT_WEB_BASE_URL, {
+      path: '/about',
+      pageTitle: null,
+      description: 'About Eciperay.',
+    });
+    expect(head.title).toBe('Eciperay | Eciperay');
+    expect(head.canonicalUrl).toBe('https://www.eciperay.com/about');
+    expect(head.description).toBe('About Eciperay.');
+  });
+
   test('authenticated pages get a title and noindex, with no social cards', () => {
     const head = buildAuthenticatedPageHead('Recipes');
     expect(head.title).toBe('Recipes | Eciperay');
@@ -87,5 +99,11 @@ describe('pageHead', () => {
     expect(head.canonicalUrl).toBeUndefined();
     expect(head.openGraph).toBeUndefined();
     expect(head.twitter).toBeUndefined();
+  });
+
+  test('an authenticated page without a title uses the bare site name', () => {
+    const head = buildAuthenticatedPageHead();
+    expect(head.title).toBe('Eciperay');
+    expect(head.robots).toBe('noindex, nofollow');
   });
 });

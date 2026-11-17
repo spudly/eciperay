@@ -141,6 +141,50 @@ describe('versionSatisfiesSpec prerelease rules (npm semantics)', () => {
   });
 });
 
+describe('versionSatisfiesSpec prerelease identifier ordering', () => {
+  test('a shorter prerelease list ranks below a longer one it prefixes', () => {
+    expect(versionSatisfiesSpec('1.2.3-alpha', '1.2.3-alpha.1')).toBe(false);
+    expect(versionSatisfiesSpec('1.2.3-alpha.1', '1.2.3-alpha')).toBe(false);
+    expect(versionSatisfiesSpec('1.2.3-alpha.1', '1.2.3-alpha.1')).toBe(true);
+  });
+
+  test('numeric prerelease identifiers rank below alphanumeric ones', () => {
+    expect(versionSatisfiesSpec('1.2.3-1', '1.2.3-alpha')).toBe(false);
+    expect(versionSatisfiesSpec('1.2.3-alpha', '1.2.3-1')).toBe(false);
+    expect(versionSatisfiesSpec('1.2.3-1', '1.2.3-1')).toBe(true);
+  });
+});
+
+describe('versionSatisfiesSpec unparseable and degenerate forms', () => {
+  test('does not judge specs with too many segments or a numeric segment after a wildcard', () => {
+    expect(versionSatisfiesSpec('1.2.3', '1.2.3.4')).toBe(true);
+    expect(versionSatisfiesSpec('1.2.3', '1.x.3')).toBe(true);
+    expect(versionSatisfiesSpec('1.2.3', '1.2.3.4 - 2.0.0')).toBe(true);
+  });
+
+  test('wildcard-only comparators admit any release', () => {
+    expect(versionSatisfiesSpec('1.5.0', '* || 2.0.0')).toBe(true);
+    expect(versionSatisfiesSpec('1.5.0', '^*')).toBe(true);
+    expect(versionSatisfiesSpec('1.5.0', '~*')).toBe(true);
+    expect(versionSatisfiesSpec('1.5.0', '>=x')).toBe(true);
+  });
+
+  test('a prerelease on a partial hyphen-range bound matches nothing', () => {
+    expect(versionSatisfiesSpec('1.5.0', '1.2-alpha - 2.0.0')).toBe(false);
+    expect(versionSatisfiesSpec('1.5.0', '1.2 - 2-alpha')).toBe(false);
+  });
+
+  test('a trailing hyphen with no upper bound is not judged', () => {
+    expect(versionSatisfiesSpec('1.2.3', '1.2.3 -')).toBe(true);
+  });
+
+  test('partial versions are padded with zeros before comparison', () => {
+    expect(versionSatisfiesSpec('1.2', '^1.0.0')).toBe(true);
+    expect(versionSatisfiesSpec('1', '^1.0.0')).toBe(true);
+    expect(versionSatisfiesSpec('x', '^1.0.0')).toBe(false);
+  });
+});
+
 describe('versionSatisfiesSpec wildcards, partials, and hyphen ranges', () => {
   test('wildcard and partial specs desugar to bounded ranges', () => {
     expect(versionSatisfiesSpec('1.2.3', '1.2.x')).toBe(true);
