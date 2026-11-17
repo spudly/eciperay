@@ -121,6 +121,23 @@ describe('POST /recipes/import/image', () => {
     expect(refundCall).toBeDefined();
   });
 
+  test('returns 422 with a no-recipe message when the image contains no recipe (#537)', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    // Claude cannot extract a recipe from the image, so its reply
+    // fails recipe-schema validation (AiResponseParseError).
+    nockAnthropicMessage('This image is not a recipe.');
+    mockBillingMetered(mockQuery, 'plus');
+    mockQuery.mockResolvedValueOnce(makeQueryResult([]));
+    const res = await request(getApp())
+      .post('/api/recipes/import/image')
+      .set('Authorization', 'Bearer <redacted>')
+      .send({imageBase64: 'base64encodedimage=='});
+    expect(res.status).toBe(422);
+    expect(res.body).toEqual({
+      error: "Sorry, we couldn't find a recipe in that image.",
+    });
+  });
+
   test('returns 400 when imageBase64 is empty', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockBillingPlan(mockQuery, 'plus');

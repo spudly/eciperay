@@ -11,6 +11,7 @@ import {htmlToText} from '../../lib/htmlToText.js';
 import {normalizePastedRecipeHtml} from '../../lib/normalizePastedRecipeHtml.js';
 import {mapRowToRecipeDetail} from '../../lib/mapRowToRecipeDetail.js';
 import {parseWithClaude} from '../../lib/parseWithClaude.js';
+import {AiResponseParseError} from '../../lib/validate.js';
 import {RecipeImportError} from '../../lib/recipeImportToInput.js';
 import {prepareImportedRecipeInput} from '../../lib/prepareImportedRecipeInput.js';
 import {saveNewRecipeFromInput} from '../../lib/saveRecipeFromInput.js';
@@ -76,7 +77,7 @@ export const importFromText = async (
   if (plainText.length === 0) {
     res
       .status(400)
-      .json({error: 'No recipe text found after removing formatting'});
+      .json({error: "Sorry, we couldn't find recipe text in what you pasted."});
     return;
   }
   if (plainText.length > IMPORT_TEXT_PLAIN_MAX) {
@@ -115,6 +116,16 @@ export const importFromText = async (
     );
   } catch (error) {
     await refundAiCall(req.userId, queryFn, quota.periodStart);
+    // A parse failure means no recipe could be read from the pasted
+    // text — say so in the own-the-fault voice instead of the global
+    // handler's 'AI service error', which is reserved for genuine
+    // provider failures (#537, mirroring the URL route's #297 mapping).
+    if (error instanceof AiResponseParseError) {
+      res
+        .status(422)
+        .json({error: "Sorry, we couldn't find a recipe in the text you pasted."});
+      return;
+    }
     throw error;
   }
   try {

@@ -18,6 +18,7 @@ import {
   parseAiJson,
   validate,
 } from '../../lib/schemas.js';
+import {AiResponseParseError} from '../../lib/validate.js';
 import {respondIfDuplicateImport} from './respondIfDuplicateImport.js';
 
 type QueryFn = typeof defaultQuery;
@@ -97,6 +98,16 @@ export const importFromImage = async (
     parsed = parseAiJson(RecipeImportSchema, text);
   } catch (error) {
     await refundAiCall(req.userId, queryFn, quota.periodStart);
+    // A parse failure means no recipe could be read from the image —
+    // say so in the own-the-fault voice instead of the global handler's
+    // 'AI service error', which is reserved for genuine provider
+    // failures (#537, mirroring the URL route's #297 mapping).
+    if (error instanceof AiResponseParseError) {
+      res
+        .status(422)
+        .json({error: "Sorry, we couldn't find a recipe in that image."});
+      return;
+    }
     throw error;
   }
   try {

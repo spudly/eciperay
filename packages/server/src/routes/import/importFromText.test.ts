@@ -244,8 +244,26 @@ describe('POST /recipes/import/text', () => {
       .send({text: '<div><img src="https://example.com/photo.jpg" /></div>'});
     expect(res.status).toBe(400);
     expect(res.body.error).toBe(
-      'No recipe text found after removing formatting',
+      "Sorry, we couldn't find recipe text in what you pasted.",
     );
+  });
+
+  test('returns 422 with a no-recipe message when the pasted text contains no recipe (#537)', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    // Claude cannot extract a recipe from the pasted text, so its reply
+    // fails recipe-schema validation (AiResponseParseError).
+    nockAnthropicMessage('This text is not a recipe.');
+    mockBillingMetered(mockQuery, 'plus');
+    // One more response for refundAiCall's UPDATE on the failure path.
+    mockQuery.mockResolvedValueOnce(makeQueryResult([]));
+    const res = await request(getApp())
+      .post('/api/recipes/import/text')
+      .set('Authorization', 'Bearer <redacted>')
+      .send({text: 'Just some prose with no recipe in it at all.'});
+    expect(res.status).toBe(422);
+    expect(res.body).toEqual({
+      error: "Sorry, we couldn't find a recipe in the text you pasted.",
+    });
   });
 
   test('accepts pasted HTML with a large embedded base64 image', async () => {

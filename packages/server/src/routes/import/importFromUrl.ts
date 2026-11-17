@@ -31,7 +31,7 @@ type QueryFn = typeof defaultQuery;
 export const URL_IMPORT_FETCH_ERROR =
   "We couldn't fetch that page — the site may be blocking imports. Try pasting the recipe text instead.";
 export const URL_IMPORT_NO_RECIPE_ERROR =
-  "That page doesn't appear to contain a recipe.";
+  "Sorry, we weren't able to find the recipe on that page.";
 
 // Some recipe sites refuse the bot user agent from datacenter IPs
 // (#400: browneyedbaker.com answered 403 to EciperayBot while serving
