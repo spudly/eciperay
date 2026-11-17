@@ -31,7 +31,9 @@ const formatMealPlanSubtitle = (plan: MealPlan) =>
 
 export const MealsHubScreen = () => {
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<MealsHubTab>('meals');
+  // The hub opens on the Plans tab (#538): meal plans are the
+  // primary surface, matching the web top bar's direct landing.
+  const [activeTab, setActiveTab] = useState<MealsHubTab>('plans');
 
   const {data: meals = [], isLoading: mealsLoading} = useQuery({
     queryKey: queryKeys.meals(),
