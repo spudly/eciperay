@@ -78,6 +78,12 @@ export const canWriteRecipe = (
   return Boolean(userId && userId === recipe.ownerUserId);
 };
 
+export const withIssuedShareTokenHashes = (
+  record: RecipeAccessRecord,
+  hashes: readonly string[],
+): RecipeAccessRecord =>
+  hashes.length > 0 ? {...record, shareTokenHashes: hashes} : record;
+
 export const toRecipeAccessRecord = (row: {
   user_id: string;
   visibility: RecipeVisibility;

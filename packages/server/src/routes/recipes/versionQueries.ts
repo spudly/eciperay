@@ -230,21 +230,6 @@ export const updateRecipeShareTokenHash = (
     [opts.recipeId, opts.userId, opts.expectedVisibility, opts.shareTokenHash],
   );
 
-export const insertRecipeShareToken = (
-  recipeId: string,
-  tokenHash: string,
-  queryFn: QueryFn,
-) =>
-  queryFn(
-    `insert into recipe_share_tokens (recipe_id, token_hash)
-     values ($1, $2)
-     on conflict do nothing`,
-    [recipeId, tokenHash],
-  );
-
-export const deleteRecipeShareTokens = (recipeId: string, queryFn: QueryFn) =>
-  queryFn(`delete from recipe_share_tokens where recipe_id = $1`, [recipeId]);
-
 export const updateRecipeVisibility = (
   opts: {
     recipeId: string;

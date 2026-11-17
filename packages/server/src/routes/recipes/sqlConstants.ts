@@ -138,8 +138,6 @@ export const LIST_PUBLIC_RECIPES_SITEMAP_SQL = `
 
 export const GET_RECIPE_DETAIL_SQL = `
   select r.id, r.user_id, r.status, r.visibility, r.slug, r.share_token_hash,
-         coalesce((select array_agg(st.token_hash) from recipe_share_tokens st
-                    where st.recipe_id = r.id), '{}') as share_token_hashes,
          r.content_revision, r.cloned_from_recipe_id,
          r.star_rating, r.active_version_id,
          rv.id as version_id, rv.version_number, rv.title, rv.description,
@@ -182,8 +180,6 @@ export const GET_RECIPE_DETAIL_SQL = `
 
 export const GET_PUBLIC_RECIPE_DETAIL_SQL = `
   select r.id, r.user_id, r.status, r.visibility, r.slug, r.share_token_hash,
-         coalesce((select array_agg(st.token_hash) from recipe_share_tokens st
-                    where st.recipe_id = r.id), '{}') as share_token_hashes,
          r.content_revision, r.cloned_from_recipe_id,
          r.star_rating, r.active_version_id,
          rv.id as version_id, rv.version_number, rv.title, rv.description,

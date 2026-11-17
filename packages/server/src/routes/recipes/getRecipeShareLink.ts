@@ -6,10 +6,11 @@ import {getParam} from '../../lib/getParam.js';
 import {mapRowToRecipeDetail} from '../../lib/mapRowToRecipeDetail.js';
 import {generateShareToken, hashShareToken} from '../../lib/shareToken.js';
 
+import {recordIssuedShareToken} from '../../lib/issuedShareTokens.js';
+
 import {GET_RECIPE_DETAIL_SQL} from './queries.js';
 import {
   getRecipeSharingRow,
-  insertRecipeShareToken,
   updateRecipeShareTokenHash,
   type RecipeSharingRow,
 } from './versionQueries.js';
@@ -86,7 +87,7 @@ export const getRecipeShareLink = async (
       }
     }
     if (shareToken) {
-      await insertRecipeShareToken(recipeId, tokenHash, queryFn);
+      await recordIssuedShareToken(recipeId, tokenHash, queryFn);
     }
   }
 

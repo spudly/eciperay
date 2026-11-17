@@ -6,11 +6,14 @@ import {getParam} from '../../lib/getParam.js';
 import {mapRowToRecipeDetail} from '../../lib/mapRowToRecipeDetail.js';
 import {generateShareToken, hashShareToken} from '../../lib/shareToken.js';
 
+import {
+  clearIssuedShareTokens,
+  recordIssuedShareToken,
+} from '../../lib/issuedShareTokens.js';
+
 import {GET_RECIPE_DETAIL_SQL} from './queries.js';
 import {
-  deleteRecipeShareTokens,
   getRecipeSharingRow,
-  insertRecipeShareToken,
   updateRecipeShareTokenHash,
   type RecipeSharingRow,
 } from './versionQueries.js';
@@ -90,8 +93,8 @@ export const rotateRecipeShareToken = async (
 
   // Rotation is the explicit revocation: all previously issued links die,
   // and the fresh token becomes the only issued one.
-  await deleteRecipeShareTokens(recipeId, queryFn);
-  await insertRecipeShareToken(recipeId, tokenHash, queryFn);
+  await clearIssuedShareTokens(recipeId, queryFn);
+  await recordIssuedShareToken(recipeId, tokenHash, queryFn);
 
   const detail = await queryFn(GET_RECIPE_DETAIL_SQL, [recipeId, req.userId]);
   const detailRow = detail.rows[0];

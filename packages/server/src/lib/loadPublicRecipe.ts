@@ -5,9 +5,11 @@ import {GET_PUBLIC_RECIPE_DETAIL_SQL} from '../routes/recipes/sqlConstants.js';
 
 import {buildRecipeDetailWithRatings} from './buildRecipeDetailWithRatings.js';
 import {mapRowToPublicRecipeDetail} from './mapRowToRecipeDetail.js';
+import {loadIssuedShareTokenHashes} from './issuedShareTokens.js';
 import {
   resolvePublicRecipeAccess,
   toRecipeAccessRecord,
+  withIssuedShareTokenHashes,
   type PublicReadDenial,
 } from './recipeAccess.js';
 import {
@@ -30,12 +32,12 @@ export type LoadPublicRecipeArgs = {
 };
 
 /**
- * The public-recipe data load, extracted from the HTTP handler (#304 SSR
- * Phase 0 spike) so a server-side renderer can load the exact same
- * view data through the server's own data access — no internal HTTP hop.
- * Behavior matches the handler it was extracted from: access resolution,
- * the auto-recorded share grant for signed-in non-owners, the canonical
- * slug / slug-mismatch flag, and the ratings view data.
+ * The public-recipe data load, extracted from the HTTP handler (#304 SSR Phase
+ * 0 spike) so a server-side renderer can load the exact same view data through
+ * the server's own data access — no internal HTTP hop. Behavior matches the
+ * handler it was extracted from: access resolution, the auto-recorded share
+ * grant for signed-in non-owners, the canonical slug / slug-mismatch flag, and
+ * the ratings view data.
  */
 export const loadPublicRecipe = async (
   args: LoadPublicRecipeArgs,
@@ -45,14 +47,16 @@ export const loadPublicRecipe = async (
 
   const result = await queryFn(GET_PUBLIC_RECIPE_DETAIL_SQL, [id]);
   const row = result.rows[0] as
-    | Parameters<typeof mapRowToPublicRecipeDetail>[0]
-    | undefined;
+    Parameters<typeof mapRowToPublicRecipeDetail>[0] | undefined;
 
   if (!row) {
     return {kind: 'denied', denial: 'not_found'};
   }
 
-  const accessRecord = toRecipeAccessRecord(row);
+  const accessRecord = withIssuedShareTokenHashes(
+    toRecipeAccessRecord(row),
+    shareToken ? await loadIssuedShareTokenHashes(id, queryFn) : [],
+  );
   const hasShareGrant = userId
     ? await userHasShareGrant(id, userId, queryFn)
     : false;

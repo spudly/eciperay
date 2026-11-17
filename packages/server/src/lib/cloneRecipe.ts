@@ -17,7 +17,12 @@ import {
 } from '../routes/recipes/versionQueries.js';
 
 import {mapRowToRecipeDetail} from './mapRowToRecipeDetail.js';
-import {canReadRecipe, toRecipeAccessRecord} from './recipeAccess.js';
+import {loadIssuedShareTokenHashes} from './issuedShareTokens.js';
+import {
+  canReadRecipe,
+  toRecipeAccessRecord,
+  withIssuedShareTokenHashes,
+} from './recipeAccess.js';
 import {RecipeNotFoundError} from './saveRecipeFromInput.js';
 import {userHasShareGrant} from './shareGrant.js';
 import {slugifyRecipeTitle} from './slugifyRecipeTitle.js';
@@ -84,8 +89,7 @@ export const recipeDetailToCloneInput = (
 const loadSourceRecipe = async (sourceRecipeId: string, queryFn: QueryFn) => {
   const result = await queryFn(GET_PUBLIC_RECIPE_DETAIL_SQL, [sourceRecipeId]);
   const row = result.rows[0] as
-    | Parameters<typeof mapRowToRecipeDetail>[0]
-    | undefined;
+    Parameters<typeof mapRowToRecipeDetail>[0] | undefined;
   if (!row) {
     throw new RecipeNotFoundError();
   }
@@ -98,7 +102,10 @@ const assertCanCloneRecipe = async (
   shareToken: string | undefined,
   queryFn: QueryFn,
 ) => {
-  const accessRecord = toRecipeAccessRecord(row);
+  const accessRecord = withIssuedShareTokenHashes(
+    toRecipeAccessRecord(row),
+    shareToken ? await loadIssuedShareTokenHashes(row.id, queryFn) : [],
+  );
 
   if (accessRecord.visibility === 'private') {
     throw new RecipeNotFoundError();

@@ -3,11 +3,13 @@ import {query as defaultQuery} from '../db/query.js';
 import {GET_PUBLIC_RECIPE_DETAIL_SQL} from '../routes/recipes/sqlConstants.js';
 
 import {getShareTokenFromQuery} from './getShareTokenFromQuery.js';
+import {loadIssuedShareTokenHashes} from './issuedShareTokens.js';
 import {mapRowToRecipeDetail} from './mapRowToRecipeDetail.js';
 import {
   canReadRecipe,
   resolvePublicRecipeAccess,
   toRecipeAccessRecord,
+  withIssuedShareTokenHashes,
   type RecipeAccessRecord,
 } from './recipeAccess.js';
 import {userHasShareGrant} from './shareGrant.js';
@@ -51,13 +53,17 @@ export const loadPublicReadableRecipeRow = async (
     return {status: 'not_found'};
   }
 
-  const accessRecord = toRecipeAccessRecord(row);
+  const shareToken = getShareTokenFromQuery(req);
+  const accessRecord = withIssuedShareTokenHashes(
+    toRecipeAccessRecord(row),
+    shareToken ? await loadIssuedShareTokenHashes(recipeId, queryFn) : [],
+  );
   const hasShareGrant = req.userId
     ? await userHasShareGrant(recipeId, req.userId, queryFn)
     : false;
 
   const denial = resolvePublicRecipeAccess(accessRecord, {
-    shareToken: getShareTokenFromQuery(req),
+    shareToken,
     userId: req.userId,
     hasShareGrant,
   });

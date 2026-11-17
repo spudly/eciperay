@@ -9,15 +9,14 @@ import {planRequiredBody} from '../../lib/plans.js';
 import {RecipeSharingPatchSchema, validate} from '../../lib/schemas.js';
 import {generateShareToken, hashShareToken} from '../../lib/shareToken.js';
 
+import {
+  clearIssuedShareTokens,
+  recordIssuedShareToken,
+} from '../../lib/issuedShareTokens.js';
 import {deleteRecipeShareGrants} from '../../lib/shareGrant.js';
 
 import {GET_RECIPE_DETAIL_SQL} from './queries.js';
-import {
-  deleteRecipeShareTokens,
-  getRecipeSharingRow,
-  insertRecipeShareToken,
-  updateRecipeVisibility,
-} from './versionQueries.js';
+import {getRecipeSharingRow, updateRecipeVisibility} from './versionQueries.js';
 
 type QueryFn = typeof defaultQuery;
 
@@ -110,11 +109,11 @@ export const patchRecipeSharing = async (
   // recorded in the issued-token set so the link keeps working.
   if (nextVisibility === 'private') {
     await deleteRecipeShareGrants(recipeId, queryFn);
-    await deleteRecipeShareTokens(recipeId, queryFn);
+    await clearIssuedShareTokens(recipeId, queryFn);
   } else if (nextVisibility === 'public') {
-    await deleteRecipeShareTokens(recipeId, queryFn);
+    await clearIssuedShareTokens(recipeId, queryFn);
   } else if (hash) {
-    await insertRecipeShareToken(recipeId, hash, queryFn);
+    await recordIssuedShareToken(recipeId, hash, queryFn);
   }
 
   const detail = await queryFn(GET_RECIPE_DETAIL_SQL, [recipeId, req.userId]);
