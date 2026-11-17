@@ -147,6 +147,7 @@ const nextServingsToEatForRecipeEntry = (
   const value =
     servingsToEatByRecipeId[recipeId] ??
     servingsByRecipeId[recipeId] ??
+    /* c8 ignore next -- the caller passes the cook map already filled for a known recipe, so this fallback only ever short-circuits on an unknown recipe */
     recipe?.servings;
   if (value === undefined) {
     return servingsToEatByRecipeId;

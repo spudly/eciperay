@@ -292,6 +292,37 @@ describe('recipeSeo', () => {
     });
   });
 
+  test('includes sugar content when sugar is known', () => {
+    const jsonLd = buildRecipeJsonLd(
+      {
+        ...recipe,
+        nutrition: {
+          servings: 4,
+          calories: 520,
+          proteinG: 24,
+          carbsG: 60,
+          fatG: 18,
+          fiberG: null,
+          sugarG: 12,
+          sodiumMg: null,
+          preparedWeightG: 900,
+          disclaimer: '',
+          satietyScore: 70,
+          status: 'ready',
+        },
+      },
+      'https://www.eciperay.com/recipe/r1/pasta',
+    );
+    expect(jsonLd['nutrition']).toEqual({
+      '@type': 'NutritionInformation',
+      'calories': '520 calories',
+      'proteinContent': '24 g',
+      'carbohydrateContent': '60 g',
+      'fatContent': '18 g',
+      'sugarContent': '12 g',
+    });
+  });
+
   test('omits nutrition when it is missing or not ready', () => {
     const missing = buildRecipeJsonLd(
       recipe,
