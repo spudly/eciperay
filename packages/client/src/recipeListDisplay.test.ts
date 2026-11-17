@@ -60,6 +60,26 @@ describe('recipeListDisplay', () => {
     ).toContain('4.2 (8)');
   });
 
+  test('uses a caller-supplied no-ratings label when given (#465)', () => {
+    expect(formatDisplayRatingLabel({}, 'No ratings yet~')).toBe(
+      'No ratings yet~',
+    );
+    expect(
+      formatDiscoveryListMeta(
+        {
+          communityRating: null,
+          satietyScore: null,
+          nutritionStatus: null,
+          calories: null,
+          proteinG: null,
+          carbsG: null,
+          fatG: null,
+        },
+        'No ratings yet~',
+      ),
+    ).toContain('No ratings yet~');
+  });
+
   test('condensed meta shows all five nutrition values (#361)', () => {
     expect(
       formatCondensedNutritionParts({

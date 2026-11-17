@@ -22,7 +22,10 @@ export const getDisplayRating = (source: RatingSource): number | null => {
   return source.communityRating?.average ?? null;
 };
 
-export const formatDisplayRatingLabel = (source: RatingSource): string => {
+export const formatDisplayRatingLabel = (
+  source: RatingSource,
+  noRatingsLabel: string = DISCOVER_NO_RATINGS_LABEL,
+): string => {
   if (typeof source.starRating === 'number') {
     return `${source.starRating.toFixed(1)}★`;
   }
@@ -32,7 +35,7 @@ export const formatDisplayRatingLabel = (source: RatingSource): string => {
       source.communityRating.count,
     );
   }
-  return DISCOVER_NO_RATINGS_LABEL;
+  return noRatingsLabel;
 };
 
 export const formatSatietyLabel = (
@@ -139,9 +142,13 @@ export const formatDiscoveryListMeta = (
     | 'carbsG'
     | 'fatG'
   >,
+  noRatingsLabel?: string,
 ): string =>
   [
-    formatDisplayRatingLabel({communityRating: recipe.communityRating}),
+    formatDisplayRatingLabel(
+      {communityRating: recipe.communityRating},
+      noRatingsLabel,
+    ),
     ...formatCondensedNutritionParts(recipe),
     formatSatietyLabel(recipe.satietyScore, recipe.nutritionStatus),
   ].join(' · ');
