@@ -18,6 +18,7 @@ import type {ReactElement, ReactNode} from 'react';
 import {MemoryRouter, type MemoryRouterProps} from 'react-router-dom';
 
 import {createI18n} from '../i18n/i18n.js';
+import type {SupportedLocale} from '../i18n/locale.js';
 import {eciperayVoice} from '../i18n/voice.js';
 import {supabase} from '../lib/supabase.js';
 
@@ -40,6 +41,7 @@ type WrapperOptions = {
   routerProps?: MemoryRouterProps;
   queryClient?: QueryClient;
   withAuth?: boolean;
+  locale?: SupportedLocale;
 };
 
 export const createWrapper = ({
@@ -47,6 +49,7 @@ export const createWrapper = ({
   routerProps,
   queryClient = makeQueryClient(),
   withAuth = true,
+  locale = 'en-US',
 }: WrapperOptions = {}) => {
   const Wrapper = ({children}: {children: ReactNode}) => {
     const inner = withAuth ? (
@@ -55,7 +58,7 @@ export const createWrapper = ({
       children
     );
     return (
-      <I18nProvider i18n={createI18n('en-US')}>
+      <I18nProvider i18n={createI18n(locale)}>
         <VoiceProvider voice={eciperayVoice}>
           <QueryClientProvider client={queryClient}>
             <AnalyticsProvider analytics={testAnalytics}>
@@ -80,8 +83,15 @@ export const renderWithProviders = async (
   ui: ReactElement,
   options: WrapperOptions & Omit<RenderOptions, 'wrapper'> = {},
 ): Promise<RenderResult> => {
-  const {route, routerProps, queryClient, withAuth, ...renderOptions} = options;
-  const {Wrapper} = createWrapper({route, routerProps, queryClient, withAuth});
+  const {route, routerProps, queryClient, withAuth, locale, ...renderOptions} =
+    options;
+  const {Wrapper} = createWrapper({
+    route,
+    routerProps,
+    queryClient,
+    withAuth,
+    locale,
+  });
   let view!: RenderResult;
   await act(async () => {
     view = render(ui, {wrapper: Wrapper, ...renderOptions});
