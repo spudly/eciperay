@@ -11,9 +11,24 @@ msgid "spike.recipeCount"
 msgstr "{count, plural, one {# recipe} other {# recipes}}"
 
 #. js-lingui-explicit-id
+#: src/pages/auth/ForgotPasswordPage.tsx:62
+msgid "forgotPassword.backLabel"
+msgstr "Back to sign in"
+
+#. js-lingui-explicit-id
+#: src/pages/auth/ForgotPasswordPage.tsx:58
+msgid "forgotPassword.confirmationBody"
+msgstr "Check your inbox for a password reset link."
+
+#. js-lingui-explicit-id
 #: src/pages/ConsentPreferencesPage.tsx:91
 msgid "consentPreferences.description"
 msgstr "Eciperay uses cookies and product analytics (PostHog) to improve the service, only with your consent. You can change your choice at any time here — changes take effect immediately, without reloading the page."
+
+#. js-lingui-explicit-id
+#: src/pages/auth/ForgotPasswordPage.tsx:54
+msgid "forgotPassword.confirmationTitle"
+msgstr "Email sent"
 
 #. js-lingui-explicit-id
 #: src/pages/PayPage.tsx:97
