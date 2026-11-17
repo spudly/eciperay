@@ -6,7 +6,6 @@ import {
   type EntitledRequest,
 } from '../../middleware/loadEntitlement.js';
 import {requireAuth, type AuthedRequest} from '../../middleware/requireAuth.js';
-import {requirePlan} from '../../middleware/requirePlan.js';
 import {createAiRouter} from '../ai/router.js';
 import {createCookLog} from '../cooks/createCookLog.js';
 import {deleteCookLog} from '../cooks/deleteCookLog.js';
@@ -25,6 +24,7 @@ import {generateRecipeDescriptionRoute} from './generateRecipeDescription.js';
 import {generateRecipeImage} from './generateRecipeImage.js';
 import {deleteRecipe} from './deleteRecipe.js';
 import {getRecipe} from './getRecipe.js';
+import {getRecipeShareLink} from './getRecipeShareLink.js';
 import {getVersion} from './getVersion.js';
 import {listRecipeCommentsRoute} from './listRecipeComments.js';
 import {listRecipes} from './listRecipes.js';
@@ -122,12 +122,16 @@ export const createRecipesRouter = (queryFn: QueryFn) => {
     loadEntitlement(queryFn),
     (req, res) => patchRecipeSharing(e(req), res, queryFn),
   );
-  router.post(
-    '/:id/sharing/rotate-token',
-    requireAuth,
-    loadEntitlement(queryFn),
-    requirePlan('plus'),
-    (req, res) => rotateRecipeShareToken(a(req), res, queryFn),
+  // Obtaining a share link (#534): owner-only, no plan gate — minting a
+  // link for a private recipe is not publishing, and gating the share
+  // funnel would work against its purpose.
+  router.post('/:id/sharing/share-link', requireAuth, (req, res) =>
+    getRecipeShareLink(a(req), res, queryFn),
+  );
+  // Rotating a share link is the revocation path for a link already sent
+  // out, including private-recipe links (#534) — likewise not plan-gated.
+  router.post('/:id/sharing/rotate-token', requireAuth, (req, res) =>
+    rotateRecipeShareToken(a(req), res, queryFn),
   );
   router.delete('/:id', requireAuth, (req, res) =>
     deleteRecipe(a(req), res, queryFn),

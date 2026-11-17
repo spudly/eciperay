@@ -707,11 +707,11 @@ small set of known inputs so results are comparable across runs).
    image import) creates the second copy. Applies to text, URL, and image
    imports.
 8. **Add tab starts fresh after a completed flow (app, issue #533).** Import a
-   recipe and accept it in review, landing on the recipe page; then tap
-   **Add**. **Expected:** the fresh Add screen, not the completed import's
-   review page. Repeat with the review's "Make edits" exit instead of
-   accepting, and again after completing a manual entry. **Expected:** the
-   same fresh Add screen in both cases.
+   recipe and accept it in review, landing on the recipe page; then tap **Add**.
+   **Expected:** the fresh Add screen, not the completed import's review page.
+   Repeat with the review's "Make edits" exit instead of accepting, and again
+   after completing a manual entry. **Expected:** the same fresh Add screen in
+   both cases.
 
 **Run when:**
 `packages/app/src/screens/{ImportText,ImportUrl,ImportImage,ImportReview}Screen.tsx`,
@@ -788,7 +788,17 @@ account (viewer); one QA recipe.
    recipes) is exposed.
 5. **Private means private.** Set the recipe back to private and reload the
    public URL signed out. **Expected:** the public page no longer serves the
-   recipe (not-found/redirect behavior).
+   recipe (not-found/redirect behavior). 5a. **Share link for a private recipe
+   (#534).** With the recipe private, tap Share as owner and send the link to
+   the viewer. **Expected:** the share carries only the Eciperay link (never the
+   recipe text or the import source URL); signed out, the link opens the full
+   recipe with a sign-up prompt; signed in as the viewer, it opens the recipe
+   and the recipe appears in the viewer's "Shared with me". Share the same
+   recipe a second time: **Expected:** the first link still opens the recipe.
+   Rotate the share link as owner: **Expected:** the old links no longer open
+   the recipe; the new one does. Set the recipe back to private after it was
+   unlisted/shared: **Expected:** previously granted viewers lose access (no
+   longer in their "Shared with me", detail URL denied).
 6. **Discover.** Signed out, open `/discover` and open a public recipe from it.
    **Expected:** only public recipes are listed; the opened public page matches
    case 4.
@@ -817,7 +827,11 @@ account (viewer); one QA recipe.
 `packages/web/src/pages/legal/**`, `packages/web/src/components/shared/**`,
 `@spudly/ui` `DiscoverPage`, `PublicRecipePage`, `RecipesPage`, `AppShellPage`,
 `packages/web/src/components/PublicHeader.tsx`, `packages/server`
-sharing/visibility routes, `packages/server/src/routes/ssr/**`,
+sharing/visibility routes (including `sharing/share-link` and the share-token
+rotation route),
+`packages/server/src/lib/{recipeAccess,shareGrant,shareToken}.ts`,
+`packages/server/src/db/migrations/027_recipe_share_tokens.sql`,
+`packages/server/src/routes/ssr/**`,
 `packages/server/src/lib/renderPublicRecipe.tsx`,
 `packages/server/src/lib/loadPublicRecipe.ts`, the SSR route registration in
 `packages/server/src/server.ts` / `createApp`, the `SSR_PUBLIC_RECIPE` and

@@ -748,9 +748,19 @@ export const RecipeDetailHost = ({
 
   const handleShare = async () => {
     try {
-      const result = await shareRecipe(displayRecipe);
+      // #534: the Share action shares an Eciperay link, not recipe text.
+      // Public recipes need no token; for private/unlisted recipes obtain
+      // the share link first (the server mints a token on first use for a
+      // private recipe, without changing its visibility).
+      const shareToken =
+        displayRecipe.visibility === 'public'
+          ? undefined
+          : (await eciperay.recipes.getShareLink(displayRecipe.id)).shareToken;
+      const result = await shareRecipe(displayRecipe, {shareToken});
       showActionMessage(
-        result === 'copied' ? 'Recipe copied to clipboard' : 'Recipe shared',
+        result === 'copied'
+          ? 'Share link copied to clipboard'
+          : 'Recipe shared',
       );
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') {

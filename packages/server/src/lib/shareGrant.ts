@@ -19,6 +19,15 @@ export const INSERT_SHARE_GRANT_SQL = `
         via = excluded.via
 `;
 
+export const deleteRecipeShareGrants = async (
+  recipeId: string,
+  queryFn: QueryFn,
+) => {
+  await queryFn(`delete from recipe_share_grants where recipe_id = $1`, [
+    recipeId,
+  ]);
+};
+
 export const userHasShareGrant = async (
   recipeId: string,
   userId: string,

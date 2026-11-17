@@ -36,9 +36,51 @@ describe('canReadRecipe', () => {
     expect(canReadRecipe(publicRecipe, {userId: ownerId})).toBe(true);
   });
 
-  test('blocks non-owners for private recipes', () => {
+  test('blocks non-owners for private recipes without a token or grant', () => {
     expect(canReadRecipe(privateRecipe, {userId: otherId})).toBe(false);
     expect(canReadRecipe(privateRecipe, {shareToken})).toBe(false);
+    expect(canReadRecipe(privateRecipe, {})).toBe(false);
+  });
+
+  test('allows private reads with a valid share token or grant (#534)', () => {
+    const privateWithToken = {...privateRecipe, shareTokenHash};
+    expect(canReadRecipe(privateWithToken, {shareToken})).toBe(true);
+    expect(canReadRecipe(privateWithToken, {shareToken: 'bad-token'})).toBe(
+      false,
+    );
+    expect(canReadRecipe(privateWithToken, {hasShareGrant: true})).toBe(true);
+  });
+
+  test('allows private reads with any issued share token, not just the latest (#534)', () => {
+    const firstToken = 'first-issued-token';
+    const secondToken = 'second-issued-token';
+    const recipeWithIssuedTokens = {
+      ...privateRecipe,
+      // The column carries only the most recently minted hash; earlier
+      // links verify against the issued-token set.
+      shareTokenHash: hashShareToken(secondToken),
+      shareTokenHashes: [
+        hashShareToken(firstToken),
+        hashShareToken(secondToken),
+      ],
+    };
+    expect(
+      canReadRecipe(recipeWithIssuedTokens, {shareToken: firstToken}),
+    ).toBe(true);
+    expect(
+      canReadRecipe(recipeWithIssuedTokens, {shareToken: secondToken}),
+    ).toBe(true);
+    expect(
+      canReadRecipe(recipeWithIssuedTokens, {shareToken: 'never-issued'}),
+    ).toBe(false);
+    // toRecipeAccessRecord carries the issued set through from the row.
+    const record = toRecipeAccessRecord({
+      user_id: ownerId,
+      visibility: 'private',
+      share_token_hash: hashShareToken(secondToken),
+      share_token_hashes: [hashShareToken(firstToken)],
+    });
+    expect(canReadRecipe(record, {shareToken: firstToken})).toBe(true);
   });
 
   test('allows public reads for anyone', () => {
@@ -81,6 +123,22 @@ describe('resolvePublicRecipeAccess', () => {
   test('returns not_found when recipe is missing or private', () => {
     expect(resolvePublicRecipeAccess(null)).toBe('not_found');
     expect(resolvePublicRecipeAccess(privateRecipe)).toBe('not_found');
+  });
+
+  test('allows a private recipe through the public route with a valid token (#534)', () => {
+    const privateWithToken = {...privateRecipe, shareTokenHash};
+    expect(
+      resolvePublicRecipeAccess(privateWithToken, {shareToken}),
+    ).toBeNull();
+    // A bad or absent token stays not_found — the recipe's existence
+    // must not leak.
+    expect(
+      resolvePublicRecipeAccess(privateWithToken, {shareToken: 'bad-token'}),
+    ).toBe('not_found');
+    expect(resolvePublicRecipeAccess(privateWithToken)).toBe('not_found');
+    expect(
+      resolvePublicRecipeAccess(privateWithToken, {hasShareGrant: true}),
+    ).toBeNull();
   });
 
   test('returns forbidden for unlisted without valid access', () => {

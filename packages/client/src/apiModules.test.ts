@@ -45,6 +45,7 @@ describe('createEciperayClient', () => {
       publishingConsent: true,
     });
     await client.recipes.rotateShareToken('r1');
+    await client.recipes.getShareLink('r1');
     await client.recipes.delete('r1');
     await client.recipes.exportRecipes([
       'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
@@ -97,6 +98,10 @@ describe('createEciperayClient', () => {
     );
     expect(api.fetch).toHaveBeenCalledWith(
       '/recipes/r1/sharing/rotate-token',
+      expect.objectContaining({method: 'POST'}),
+    );
+    expect(api.fetch).toHaveBeenCalledWith(
+      '/recipes/r1/sharing/share-link',
       expect.objectContaining({method: 'POST'}),
     );
     expect(api.fetch).toHaveBeenCalledWith(

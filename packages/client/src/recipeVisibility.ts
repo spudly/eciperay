@@ -1,7 +1,5 @@
 import type {RecipeVisibility} from '@eciperay/types';
 
-import {buildRecipePath} from './recipeUrl.js';
-
 export const isPublishedVisibility = (
   visibility: RecipeVisibility,
 ): boolean => {
@@ -41,21 +39,11 @@ export const buildRecipeShareUrl = (
   recipe: RecipeShareLinkInput,
   shareToken?: string,
 ): string => {
-  if (recipe.sourceUrl) {
-    return recipe.sourceUrl;
-  }
-
-  if (recipe.visibility === 'private') {
-    // The share link for a private recipe points at the app route,
-    // which is the slugged canonical form since #419.
-    return `${baseUrl.replace(/\/$/, '')}${buildRecipePath(recipe)}`;
-  }
-
-  return buildRecipePermalink(
-    baseUrl,
-    recipe,
-    recipe.visibility === 'unlisted' ? shareToken : undefined,
-  );
+  // A share link always points at the recipe on Eciperay (#534) — never
+  // at the source the recipe was imported from. A supplied share token
+  // rides on the permalink for any visibility: for private and unlisted
+  // recipes it is what lets the recipient in through the public route.
+  return buildRecipePermalink(baseUrl, recipe, shareToken);
 };
 
 export const recipeVisibilityLabels: Record<RecipeVisibility, string> = {

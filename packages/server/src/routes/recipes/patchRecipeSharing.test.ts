@@ -120,6 +120,33 @@ describe('PATCH /recipes/:id/sharing', () => {
     expect(res.body.visibility).toBe('private');
   });
 
+  test('switching back to private revokes share grants and issued share tokens', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockBillingPlan(mockQuery, 'free');
+    mockQuery
+      .mockResolvedValueOnce(
+        makeQueryResult([{...sharingRow, visibility: 'unlisted'}]),
+      )
+      .mockResolvedValue({
+        ...makeQueryResult([{id: 'recipe-uuid-1'}]),
+        rowCount: 1,
+      });
+
+    const res = await request(getApp())
+      .patch('/api/recipes/recipe-uuid-1/sharing')
+      .set('Authorization', 'Bearer <redacted>')
+      .send({visibility: 'private'});
+
+    expect(res.status).toBe(200);
+    const sqls = mockQuery.mock.calls.map(call => String(call[0]));
+    expect(
+      sqls.some(sql => sql.includes('delete from recipe_share_grants')),
+    ).toBe(true);
+    expect(
+      sqls.some(sql => sql.includes('delete from recipe_share_tokens')),
+    ).toBe(true);
+  });
+
   test('returns 404 when recipe is not found', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockBillingPlan(mockQuery, 'plus');
