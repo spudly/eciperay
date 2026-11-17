@@ -1,18 +1,19 @@
-/* eslint-disable max-lines -- draggable ingredient rows */
-import {
-  createFormRowKey,
-  ensureIngredientRowKeys,
-  type FormIngredientRow,
-} from '@eciperay/client';
+import {createFormRowKey, type FormIngredientRow} from '@eciperay/client';
 import type {IngredientInput} from '@eciperay/types';
-import {eciperayTheme, tokens} from '@spudly/ui';
-import React, {useState} from 'react';
-import {Text, TextInput, TouchableOpacity, View} from 'react-native';
+import {eciperayTheme, RecipeIngredientRowView, tokens} from '@spudly/ui';
+import React from 'react';
+import {Text, TouchableOpacity, View} from 'react-native';
 import DraggableFlatList, {
   type RenderItemParams,
 } from 'react-native-draggable-flatlist';
 
 type FormIngredient = FormIngredientRow & {quantity: number | string | null};
+
+/**
+ * The DS row view's field-change contract (its field type is not exported from
+ * the package root — only the view and its props are).
+ */
+type RecipeIngredientField = 'quantity' | 'unit' | 'name';
 
 export const resolveDragIndex = (getIndex: () => number | undefined): number =>
   getIndex() ?? 0;
@@ -24,17 +25,13 @@ type UpdateIngredient = (
 ) => void;
 
 /**
- * This list also renders without a TamaguiProvider (its unit test uses a plain
- * render), so rows stay on RN primitives with every visual value sourced from
- * @spudly/ui tokens — the BookLoadingSpinner pattern. Qty column width (56) is
- * row geometry; it has no step on the DS spacing scale.
+ * B7 T5 native tranche (#555): the DraggableFlatList container stays host-side
+ * (Stephen's 2026-11-09 boundary — no drag library enters the DS) and renders
+ * the DS `RecipeIngredientRowView` from its renderItem, binding the host drag
+ * handle into the row. The list header (title + add intent) is list chrome the
+ * host still owns: @spudly/ui exports the row views only, not the list view.
  */
 const styles = {
-  row: {
-    marginBottom: tokens.spacing[2],
-    flexDirection: 'row',
-    gap: tokens.spacing[2],
-  } as const,
   dragHandle: {
     justifyContent: 'center',
     borderRadius: tokens.radii.sm,
@@ -46,40 +43,6 @@ const styles = {
   dragLabel: {
     fontSize: tokens.typography.fontSize.xs,
     color: tokens.colors.gray.gray8,
-  } as const,
-  qtyInput: {
-    borderRadius: tokens.radii.sm,
-    borderWidth: 1,
-    borderColor: tokens.colors.gray.gray4,
-    backgroundColor: eciperayTheme.semantic.surface,
-    paddingHorizontal: tokens.spacing[2],
-    paddingVertical: tokens.spacing[1],
-    fontSize: tokens.typography.fontSize.sm,
-    width: 56,
-  } as const,
-  unitInput: {
-    borderRadius: tokens.radii.sm,
-    borderWidth: 1,
-    borderColor: tokens.colors.gray.gray4,
-    backgroundColor: eciperayTheme.semantic.surface,
-    paddingHorizontal: tokens.spacing[2],
-    paddingVertical: tokens.spacing[1],
-    fontSize: tokens.typography.fontSize.sm,
-    width: tokens.spacing[16],
-  } as const,
-  nameInput: {
-    borderRadius: tokens.radii.sm,
-    borderWidth: 1,
-    borderColor: tokens.colors.gray.gray4,
-    backgroundColor: eciperayTheme.semantic.surface,
-    paddingHorizontal: tokens.spacing[2],
-    paddingVertical: tokens.spacing[1],
-    fontSize: tokens.typography.fontSize.sm,
-    flex: 1,
-  } as const,
-  removeLabel: {
-    fontSize: tokens.typography.fontSize.sm,
-    color: tokens.colors.danger.danger7,
   } as const,
   header: {
     marginBottom: tokens.spacing[2],
@@ -97,60 +60,6 @@ const styles = {
     color: eciperayTheme.semantic.primary,
   } as const,
 };
-
-type RowProps = {
-  ingredient: FormIngredient;
-  index: number;
-  drag: () => void;
-  onUpdate: UpdateIngredient;
-  onRemove: () => void;
-};
-
-const IngredientRow = ({
-  ingredient,
-  index,
-  drag,
-  onUpdate,
-  onRemove,
-}: RowProps) => (
-  <View style={styles.row}>
-    <TouchableOpacity
-      accessibilityLabel={`Reorder ingredient ${index + 1}`}
-      style={styles.dragHandle}
-      onLongPress={drag}
-      delayLongPress={0}
-    >
-      <Text style={styles.dragLabel}>Drag</Text>
-    </TouchableOpacity>
-    <TextInput
-      style={styles.qtyInput}
-      placeholder="Qty"
-      value={ingredient.quantity === null ? '' : String(ingredient.quantity)}
-      onChangeText={val => {
-        onUpdate(index, 'quantity', val === '' ? null : val);
-      }}
-    />
-    <TextInput
-      style={styles.unitInput}
-      placeholder="Unit"
-      value={ingredient.unit ?? ''}
-      onChangeText={val => {
-        onUpdate(index, 'unit', val || null);
-      }}
-    />
-    <TextInput
-      style={styles.nameInput}
-      placeholder="Name"
-      value={ingredient.name}
-      onChangeText={val => {
-        onUpdate(index, 'name', val);
-      }}
-    />
-    <TouchableOpacity onPress={onRemove}>
-      <Text style={styles.removeLabel}>Remove</Text>
-    </TouchableOpacity>
-  </View>
-);
 
 type Props = {
   ingredients: FormIngredient[];
@@ -172,13 +81,39 @@ export const SortableIngredientList = ({
   }: RenderItemParams<FormIngredient>) => {
     const index = resolveDragIndex(getIndex);
     return (
-      <IngredientRow
-        ingredient={item}
+      <RecipeIngredientRowView
+        row={{
+          key: item.key,
+          quantity: item.quantity === null ? '' : String(item.quantity),
+          unit: item.unit ?? '',
+          name: item.name,
+        }}
         index={index}
-        drag={drag}
-        onUpdate={onUpdate}
+        dragHandle={
+          <TouchableOpacity
+            accessibilityLabel={`Reorder ingredient ${index + 1}`}
+            style={styles.dragHandle}
+            onLongPress={drag}
+            delayLongPress={0}
+          >
+            <Text style={styles.dragLabel}>Drag</Text>
+          </TouchableOpacity>
+        }
+        onFieldChange={(
+          _rowKey: string,
+          field: RecipeIngredientField,
+          value: string,
+        ) => {
+          // Preserve the retired host row's fold: an emptied quantity
+          // or unit crosses to the form state as null, never "".
+          onUpdate(
+            index,
+            field,
+            value === '' && field !== 'name' ? null : value,
+          );
+        }}
         onRemove={() => {
-          onChange(ingredients.filter((_, idx) => idx !== index));
+          onChange(ingredients.filter(entry => entry.key !== item.key));
         }}
       />
     );

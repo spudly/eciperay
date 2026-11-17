@@ -1,8 +1,7 @@
-/* eslint-disable max-lines -- draggable instruction rows */
 import {createFormRowKey, type FormInstructionRow} from '@eciperay/client';
-import {eciperayTheme, tokens} from '@spudly/ui';
-import React, {useState} from 'react';
-import {Text, TextInput, TouchableOpacity, View} from 'react-native';
+import {eciperayTheme, RecipeInstructionRowView, tokens} from '@spudly/ui';
+import React from 'react';
+import {Text, TouchableOpacity, View} from 'react-native';
 import DraggableFlatList, {
   type RenderItemParams,
 } from 'react-native-draggable-flatlist';
@@ -11,16 +10,13 @@ export const resolveDragIndex = (getIndex: () => number | undefined): number =>
   getIndex() ?? 0;
 
 /**
- * This list also renders without a TamaguiProvider (its unit test uses a plain
- * render), so rows stay on RN primitives with every visual value sourced from
- * @spudly/ui tokens — the BookLoadingSpinner pattern.
+ * B7 T5 native tranche (#555): the DraggableFlatList container stays host-side
+ * (Stephen's 2026-11-09 boundary — no drag library enters the DS) and renders
+ * the DS `RecipeInstructionRowView` from its renderItem, binding the host drag
+ * handle into the row. The list header (title + add intent) is list chrome the
+ * host still owns: @spudly/ui exports the row views only, not the list view.
  */
 const styles = {
-  row: {
-    marginBottom: tokens.spacing[2],
-    flexDirection: 'row',
-    gap: tokens.spacing[2],
-  } as const,
   dragHandle: {
     justifyContent: 'center',
     borderRadius: tokens.radii.sm,
@@ -32,25 +28,6 @@ const styles = {
   dragLabel: {
     fontSize: tokens.typography.fontSize.xs,
     color: tokens.colors.gray.gray8,
-  } as const,
-  stepNumber: {
-    color: eciperayTheme.semantic.textMuted,
-    paddingTop: tokens.spacing[2],
-    fontSize: tokens.typography.fontSize.sm,
-  } as const,
-  input: {
-    flex: 1,
-    borderRadius: tokens.radii.sm,
-    borderWidth: 1,
-    borderColor: tokens.colors.gray.gray4,
-    backgroundColor: eciperayTheme.semantic.surface,
-    paddingHorizontal: tokens.spacing[2],
-    paddingVertical: tokens.spacing[1],
-    fontSize: tokens.typography.fontSize.sm,
-  } as const,
-  removeLabel: {
-    fontSize: tokens.typography.fontSize.sm,
-    color: tokens.colors.danger.danger7,
   } as const,
   header: {
     marginBottom: tokens.spacing[2],
@@ -68,45 +45,6 @@ const styles = {
     color: eciperayTheme.semantic.primary,
   } as const,
 };
-
-type RowProps = {
-  instruction: FormInstructionRow;
-  index: number;
-  drag: () => void;
-  onUpdate: (index: number, body: string) => void;
-  onRemove: () => void;
-};
-
-const InstructionRow = ({
-  instruction,
-  index,
-  drag,
-  onUpdate,
-  onRemove,
-}: RowProps) => (
-  <View style={styles.row}>
-    <TouchableOpacity
-      accessibilityLabel={`Reorder step ${index + 1}`}
-      style={styles.dragHandle}
-      onLongPress={drag}
-      delayLongPress={0}
-    >
-      <Text style={styles.dragLabel}>Drag</Text>
-    </TouchableOpacity>
-    <Text style={styles.stepNumber}>{index + 1}.</Text>
-    <TextInput
-      style={styles.input}
-      multiline
-      value={instruction.body}
-      onChangeText={val => {
-        onUpdate(index, val);
-      }}
-    />
-    <TouchableOpacity onPress={onRemove}>
-      <Text style={styles.removeLabel}>Remove</Text>
-    </TouchableOpacity>
-  </View>
-);
 
 type Props = {
   instructions: FormInstructionRow[];
@@ -128,13 +66,24 @@ export const SortableInstructionList = ({
   }: RenderItemParams<FormInstructionRow>) => {
     const index = resolveDragIndex(getIndex);
     return (
-      <InstructionRow
-        instruction={item}
+      <RecipeInstructionRowView
+        row={{key: item.key, body: item.body}}
         index={index}
-        drag={drag}
-        onUpdate={onUpdate}
+        dragHandle={
+          <TouchableOpacity
+            accessibilityLabel={`Reorder step ${index + 1}`}
+            style={styles.dragHandle}
+            onLongPress={drag}
+            delayLongPress={0}
+          >
+            <Text style={styles.dragLabel}>Drag</Text>
+          </TouchableOpacity>
+        }
+        onBodyChange={(_rowKey: string, value: string) => {
+          onUpdate(index, value);
+        }}
         onRemove={() => {
-          onChange(instructions.filter((_, idx) => idx !== index));
+          onChange(instructions.filter(entry => entry.key !== item.key));
         }}
       />
     );
