@@ -1,5 +1,6 @@
 import {
   findLockfileVersionMismatches,
+  findRootVersionMismatch,
   findLockfileWorkspaceVersionMismatches,
   formatLockfileVersionMismatches,
   readWorkspaceVersions,
@@ -250,6 +251,46 @@ describe('formatLockfileVersionMismatches', () => {
     );
     expect(text).toContain(
       'packages/app: lockfile has 1.9.0, manifest has 2.0.0',
+    );
+  });
+});
+
+describe('findRootVersionMismatch', () => {
+  const repoFiles = (rootVersion: unknown): Record<string, string> => ({
+    '/repo/package.json': JSON.stringify({
+      name: 'demo',
+      ...(rootVersion === undefined ? {} : {version: rootVersion}),
+    }),
+    '/repo/packages/app/package.json': JSON.stringify({
+      name: '@eciperay/app',
+      version: '1.34.0',
+    }),
+  });
+
+  test('returns null when the root version matches the group version', () => {
+    const fs = makeFs(repoFiles('1.34.0'));
+    expect(findRootVersionMismatch('/repo', fs)).toBeNull();
+  });
+
+  test('reports both versions when the root version differs', () => {
+    const fs = makeFs(repoFiles('1.33.0'));
+    expect(findRootVersionMismatch('/repo', fs)).toEqual({
+      rootVersion: '1.33.0',
+      groupVersion: '1.34.0',
+    });
+  });
+
+  test('throws when the root version is missing', () => {
+    const fs = makeFs(repoFiles(undefined));
+    expect(() => findRootVersionMismatch('/repo', fs)).toThrow(
+      'Expected a string version in package.json',
+    );
+  });
+
+  test('throws when the root version is empty', () => {
+    const fs = makeFs(repoFiles(''));
+    expect(() => findRootVersionMismatch('/repo', fs)).toThrow(
+      'Expected a string version in package.json',
     );
   });
 });

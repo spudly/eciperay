@@ -9,6 +9,7 @@ import {
   maybeRunChangesetReleaseCli,
   publishChangesetRelease,
   readGroupVersion,
+  readRootVersion,
   readReleaseNotes,
   remoteTagExists,
   runChangesetReleaseCli,
@@ -91,6 +92,36 @@ describe('readGroupVersion', () => {
     });
     expect(() => readGroupVersion('/repo', fs)).toThrow(
       'Expected a string version in packages/app/package.json',
+    );
+  });
+});
+
+describe('readRootVersion', () => {
+  test('reads the version from the root package', () => {
+    const fs = makeFs(releaseFiles());
+    expect(readRootVersion('/repo', fs)).toBe('1.33.0');
+  });
+
+  test('throws when the version is missing', () => {
+    const fs = makeFs({
+      '/repo/package.json': JSON.stringify({name: 'eciperay'}),
+    });
+    expect(() => readRootVersion('/repo', fs)).toThrow(
+      'Expected a string version in package.json',
+    );
+  });
+
+  test('throws when the version is empty', () => {
+    const fs = makeFs({'/repo/package.json': JSON.stringify({version: ''})});
+    expect(() => readRootVersion('/repo', fs)).toThrow(
+      'Expected a string version in package.json',
+    );
+  });
+
+  test('throws when the version is not a string', () => {
+    const fs = makeFs({'/repo/package.json': JSON.stringify({version: 134})});
+    expect(() => readRootVersion('/repo', fs)).toThrow(
+      'Expected a string version in package.json',
     );
   });
 });

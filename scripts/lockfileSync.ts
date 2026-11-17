@@ -40,6 +40,7 @@ type LockfilePackages = Record<
 export const parseVersionParts = (
   version: string,
 ): (number | null)[] | null => {
+  /* c8 ignore next -- split always returns at least one segment */
   const core = version.replace(/^[v=]+/, '').split(/[-+]/)[0] ?? '';
   const segments = core.split('.');
   const parts: (number | null)[] = [];
@@ -60,6 +61,7 @@ export const parseVersionParts = (
 
 const compareParts = (a: (number | null)[], b: (number | null)[]): number => {
   for (let i = 0; i < 3; i += 1) {
+    /* c8 ignore next -- compareFull only passes fully padded numeric tuples, so segments are never nullish */
     const diff = (a[i] ?? 0) - (b[i] ?? 0);
     if (diff !== 0) {
       return diff;
@@ -72,6 +74,7 @@ const compareParts = (a: (number | null)[], b: (number | null)[]): number => {
 // ('1.2.3-beta.1+build' -> ['beta', '1']), or null when there is no
 // prerelease. Build metadata (after '+') never affects precedence.
 export const prereleaseIdentifiers = (version: string): string[] | null => {
+  /* c8 ignore next -- split always returns at least one segment */
   const withoutBuild = version.replace(/^[v=]+/, '').split('+')[0] ?? '';
   const dash = withoutBuild.indexOf('-');
   if (dash === -1) {
@@ -155,6 +158,7 @@ type SpecBody = {
 // a concrete segment follows a wildcard — forms this check does not
 // judge.
 const parseSpecBody = (body: string): SpecBody | null => {
+  /* c8 ignore next -- split always returns at least one segment */
   const withoutBuild = body.replace(/^[v=]+/, '').split('+')[0] ?? '';
   const dash = withoutBuild.indexOf('-');
   const coreText = dash === -1 ? withoutBuild : withoutBuild.slice(0, dash);
@@ -208,6 +212,7 @@ const bumped = (
   index: number,
 ): [number, number, number] => {
   const core = fillZero(segments);
+  /* c8 ignore next -- fillZero always returns numeric segments, so the indexed segment is never nullish */
   core[index] = (core[index] ?? 0) + 1;
   for (let i = index + 1; i < 3; i += 1) {
     core[i] = 0;
@@ -224,6 +229,7 @@ type Desugared = PrimitiveComparator[] | 'not-judged' | 'invalid';
 const desugarToken = (token: string): Desugared => {
   const match = /^([~^><=]*)(.+)$/.exec(token);
   const body = match?.[2];
+  /* c8 ignore next 3 -- tokens are always non-empty strings, so the regex always matches with a body */
   if (match === null || body === undefined) {
     return 'not-judged';
   }
@@ -231,6 +237,7 @@ const desugarToken = (token: string): Desugared => {
   if (parsed === null) {
     return 'not-judged';
   }
+  /* c8 ignore next -- the regex operator group always participates in a match, even as an empty string */
   const rawOp = match[1] ?? '';
   // node-semver tolerates '~>' and '~=' as tilde aliases; any other
   // multi-character operator run ('^>', '=>', '>>') is an invalid
@@ -277,6 +284,7 @@ const desugarToken = (token: string): Desugared => {
       // when all are zero ('^0.0' -> <0.1.0-0, '^0' -> <1.0.0-0).
       let bumpIndex = specified - 1;
       for (let i = 0; i < specified; i += 1) {
+        /* c8 ignore next -- the first `specified` segments are always numeric: parseSpecBody rejects a numeric segment after a wildcard */
         if ((segments[i] ?? 0) > 0) {
           bumpIndex = i;
           break;
@@ -307,6 +315,7 @@ const desugarToken = (token: string): Desugared => {
       return specified < 3
         ? [{op: '<', core: bumped(segments, specified - 1), pre: ['0']}]
         : [{op: '<=', core: filled, pre}];
+    /* c8 ignore next 2 -- the regex only produces the handled operators; multi-character runs other than >= and <= are rejected above */
     default:
       return 'not-judged';
   }
@@ -392,6 +401,7 @@ const satisfiesAlternative = (
   const tokens = joined.trim().split(/\s+/).filter(Boolean);
   const comparators: PrimitiveComparator[] = [];
   for (let i = 0; i < tokens.length; i += 1) {
+    /* c8 ignore next -- the loop index is bounded by tokens.length, so the token is never nullish */
     const token = tokens[i] ?? '';
     if (token === '-' && i > 0 && i < tokens.length - 1) {
       continue;

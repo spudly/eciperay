@@ -2,6 +2,8 @@ import {describe, expect, it, jest} from '@jest/globals';
 
 import {
   formatGithubOutput,
+  isDirectRun,
+  maybeRunSelectE2eSpecsCli,
   runSelectE2eSpecsCli,
   selectE2eSpecs,
 } from './selectE2eSpecs.ts';
@@ -163,6 +165,71 @@ describe('runSelectE2eSpecsCli', () => {
         process.env['GITHUB_OUTPUT'] = originalGithubOutput;
       }
     }
+  });
+});
+
+describe('runSelectE2eSpecsCli with a base ref', () => {
+  it('selects specs from the changed files reported by git diff', () => {
+    const originalGithubOutput = process.env['GITHUB_OUTPUT'];
+    delete process.env['GITHUB_OUTPUT'];
+    const stdoutSpy = jest
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+    const execSync = jest
+      .fn()
+      .mockReturnValue('packages/web/src/pages/auth/LoginPage.tsx\0');
+    try {
+      runSelectE2eSpecsCli(
+        {execSync},
+        ['node', 'script', '--base', 'origin/master'],
+        {},
+      );
+      const output = stdoutSpy.mock.calls.map(call => String(call[0])).join('');
+      expect(execSync).toHaveBeenCalledWith(
+        expect.stringContaining('origin/master..HEAD'),
+        expect.anything(),
+      );
+      expect(output).toContain('mocked-specs=e2e/signed-out.spec.ts');
+      expect(output).toContain(
+        'live-specs=e2e-live/auth.spec.ts e2e-live/public.spec.ts e2e-live/sign-out.spec.ts',
+      );
+    } finally {
+      stdoutSpy.mockRestore();
+      if (originalGithubOutput === undefined) {
+        delete process.env['GITHUB_OUTPUT'];
+      } else {
+        process.env['GITHUB_OUTPUT'] = originalGithubOutput;
+      }
+    }
+  });
+});
+
+describe('isDirectRun', () => {
+  it('returns false without an argv entry', () => {
+    expect(isDirectRun([], '/module.ts')).toBe(false);
+    expect(isDirectRun(['node'], '/module.ts')).toBe(false);
+  });
+
+  it('returns false when argv names another module', () => {
+    expect(isDirectRun(['node', '/other.ts'], '/module.ts')).toBe(false);
+  });
+
+  it('returns true when argv matches the module path', () => {
+    expect(isDirectRun(['node', '/module.ts'], '/module.ts')).toBe(true);
+  });
+});
+
+describe('maybeRunSelectE2eSpecsCli', () => {
+  it('runs the cli when invoked directly', () => {
+    const run = jest.fn();
+    maybeRunSelectE2eSpecsCli(true, run);
+    expect(run).toHaveBeenCalledTimes(1);
+  });
+
+  it('skips the cli when imported', () => {
+    const run = jest.fn();
+    maybeRunSelectE2eSpecsCli(false, run);
+    expect(run).not.toHaveBeenCalled();
   });
 });
 
