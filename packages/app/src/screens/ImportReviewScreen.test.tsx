@@ -28,11 +28,17 @@ const mockAcceptImport = api.recipes.acceptImport as jest.Mock;
 const mockStartImportEdits = api.versions.startImportEdits as jest.Mock;
 const mockParentNavigate = jest.fn();
 const mockGetParent = jest.fn().mockReturnValue({navigate: mockParentNavigate});
+const mockDispatch = jest.fn();
 const stackProps = makeStackProps<AddStackParamList, 'ImportReview'>(
   'ImportReview',
   {recipeId: 'recipe-uuid-1'},
-  {getParent: mockGetParent},
+  {getParent: mockGetParent, dispatch: mockDispatch},
 );
+
+const addStackReset = {
+  type: 'RESET',
+  payload: {index: 0, routes: [{name: 'AddScreen'}]},
+};
 
 describe('ImportReviewScreen', () => {
   beforeEach(() => {
@@ -43,6 +49,7 @@ describe('ImportReviewScreen', () => {
       versionNumber: 2,
     });
     mockParentNavigate.mockReset();
+    mockDispatch.mockReset();
   });
 
   test('accepts import and navigates to recipe detail', async () => {
@@ -58,6 +65,10 @@ describe('ImportReviewScreen', () => {
       screen: 'RecipeDetail',
       params: {recipeId: 'recipe-uuid-1'},
     });
+    // #533: the completed import session is cleared from the Add stack.
+    expect(mockDispatch).toHaveBeenCalledWith(
+      expect.objectContaining(addStackReset),
+    );
   });
 
   test('shows error when accept fails', async () => {
@@ -162,5 +173,9 @@ describe('ImportReviewScreen', () => {
       screen: 'EditVersion',
       params: {recipeId: 'recipe-uuid-1', versionId: 'version-draft-2'},
     });
+    // #533: the improve path also clears the completed import session.
+    expect(mockDispatch).toHaveBeenCalledWith(
+      expect.objectContaining(addStackReset),
+    );
   });
 });

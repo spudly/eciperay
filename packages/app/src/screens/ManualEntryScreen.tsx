@@ -4,6 +4,7 @@ import {
   useAnalytics,
   useAuth,
 } from '@eciperay/client';
+import {CommonActions} from '@react-navigation/native';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {ManualEntryPage} from '@spudly/ui';
 import {useQueryClient} from '@tanstack/react-query';
@@ -51,6 +52,11 @@ export const ManualEntryScreen = ({navigation}: Props) => {
       await api.recipes.put(recipeId, {...input, imageUrl});
     }
     await invalidateRecipeQueries(queryClient, recipeId, recipe.versionId);
+    // Same Add-stack reset as ImportReviewScreen (#533): leaving for the
+    // Recipes tab completes this flow, so the Add tab restarts at its root.
+    navigation.dispatch(
+      CommonActions.reset({index: 0, routes: [{name: 'AddScreen'}]}),
+    );
     navigation
       .getParent()
       ?.navigate('Recipes', {screen: 'RecipeDetail', params: {recipeId}});

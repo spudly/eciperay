@@ -1,4 +1,5 @@
 import {errorMessage, queryKeys, recipeDetailToInput} from '@eciperay/client';
+import {CommonActions} from '@react-navigation/native';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
@@ -20,12 +21,22 @@ export const ImportReviewScreen = ({route, navigation}: Props) => {
     enabled: recipeId.length > 0,
   });
 
+  // Leaving the import flow for the Recipes tab completes the import
+  // session: reset the Add stack to its root so a later tap on the Add tab
+  // starts a fresh import instead of resurrecting this review (#533).
+  const resetAddStack = () => {
+    navigation.dispatch(
+      CommonActions.reset({index: 0, routes: [{name: 'AddScreen'}]}),
+    );
+  };
+
   const acceptMutation = useMutation({
     mutationFn: () => api.recipes.acceptImport(recipeId),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: queryKeys.recipe(recipeId),
       });
+      resetAddStack();
       navigation
         .getParent()
         ?.navigate('Recipes', {screen: 'RecipeDetail', params: {recipeId}});
@@ -38,6 +49,7 @@ export const ImportReviewScreen = ({route, navigation}: Props) => {
       await queryClient.invalidateQueries({
         queryKey: queryKeys.recipe(recipeId),
       });
+      resetAddStack();
       navigation
         .getParent()
         ?.navigate('Recipes', {

@@ -51,11 +51,15 @@ const mockPut = api.recipes.put as jest.Mock;
 const mockListTags = api.tags.list as jest.Mock;
 const mockUploadRecipeImageFromBase64 =
   uploadRecipeImageFromBase64 as jest.Mock;
-const mockGetParent = jest.fn().mockReturnValue({navigate: jest.fn()});
+const mockParentNavigate = jest.fn();
+const mockGetParent = jest
+  .fn()
+  .mockReturnValue({navigate: mockParentNavigate});
+const mockDispatch = jest.fn();
 const stackProps = makeStackProps<AddStackParamList, 'ManualEntry'>(
   'ManualEntry',
   undefined,
-  {getParent: mockGetParent},
+  {getParent: mockGetParent, dispatch: mockDispatch},
 );
 
 /** Host types rendered for a tree, via the RNTL JSON snapshot. */
@@ -122,6 +126,15 @@ describe('ManualEntryScreen', () => {
     await fireEvent.press(getByText('Create Recipe'));
     await waitFor(() => {
       expect(mockCreate).toHaveBeenCalled();
+    });
+    // #533: leaving for the Recipes tab resets the Add stack to its root.
+    await waitFor(() => {
+      expect(mockDispatch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'RESET',
+          payload: {index: 0, routes: [{name: 'AddScreen'}]},
+        }),
+      );
     });
   });
 
