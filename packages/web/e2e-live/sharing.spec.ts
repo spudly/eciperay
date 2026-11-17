@@ -147,9 +147,14 @@ test.describe('live sharing', () => {
       await expect(
         anon.getByRole('heading', {name: created.title}),
       ).toBeVisible({timeout: 15_000});
-      await expect(anon.locator('a[href*="/signup"]').first()).toBeVisible({
-        timeout: 15_000,
-      });
+      // The public page's signed-out CTA is a 'Sign up free' button (the
+      // DS page's onSignUpPress callback navigates to /signup) — there is
+      // no /signup anchor on the page; the header's Sign in link is the
+      // only anchor. Assert both guest prompts.
+      await expect(
+        anon.getByRole('button', {name: 'Sign up free'}),
+      ).toBeVisible({timeout: 15_000});
+      await expect(anon.getByRole('link', {name: 'Sign in'})).toBeVisible();
     } finally {
       await context.close();
     }
