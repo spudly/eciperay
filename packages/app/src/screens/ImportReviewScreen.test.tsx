@@ -28,11 +28,20 @@ const mockAcceptImport = api.recipes.acceptImport as jest.Mock;
 const mockStartImportEdits = api.versions.startImportEdits as jest.Mock;
 const mockParentNavigate = jest.fn();
 const mockGetParent = jest.fn().mockReturnValue({navigate: mockParentNavigate});
+const mockDispatch = jest.fn();
+const mockGetState = jest.fn(() => ({
+  routes: [{key: 'ImportReview-test', name: 'ImportReview'}],
+}));
 const stackProps = makeStackProps<AddStackParamList, 'ImportReview'>(
   'ImportReview',
   {recipeId: 'recipe-uuid-1'},
-  {getParent: mockGetParent},
+  {getParent: mockGetParent, dispatch: mockDispatch, getState: mockGetState},
 );
+
+const addStackReset = {
+  type: 'RESET',
+  payload: {index: 0, routes: [{name: 'AddScreen'}]},
+};
 
 describe('ImportReviewScreen', () => {
   beforeEach(() => {
@@ -43,6 +52,11 @@ describe('ImportReviewScreen', () => {
       versionNumber: 2,
     });
     mockParentNavigate.mockReset();
+    mockDispatch.mockReset();
+    mockGetState.mockReset();
+    mockGetState.mockImplementation(() => ({
+      routes: [{key: 'ImportReview-test', name: 'ImportReview'}],
+    }));
   });
 
   test('accepts import and navigates to recipe detail', async () => {
@@ -58,6 +72,10 @@ describe('ImportReviewScreen', () => {
       screen: 'RecipeDetail',
       params: {recipeId: 'recipe-uuid-1'},
     });
+    // #533: the completed import session is cleared from the Add stack.
+    expect(mockDispatch).toHaveBeenCalledWith(
+      expect.objectContaining(addStackReset),
+    );
   });
 
   test('shows error when accept fails', async () => {
@@ -162,5 +180,30 @@ describe('ImportReviewScreen', () => {
       screen: 'EditVersion',
       params: {recipeId: 'recipe-uuid-1', versionId: 'version-draft-2'},
     });
+    // #533: the improve path also clears the completed import session.
+    expect(mockDispatch).toHaveBeenCalledWith(
+      expect.objectContaining(addStackReset),
+    );
+  });
+
+  test('stale accept completion does not reset a newer Add stack', async () => {
+    // The review left the Add stack while the accept was in flight (the
+    // user backed out and started something newer): the reset is skipped
+    // so the newer screen survives.
+    mockGetState.mockImplementation(() => ({
+      routes: [{key: 'ManualEntry-test', name: 'ManualEntry'}],
+    }));
+    const {findByText, getByText} = await renderWithProviders(
+      <ImportReviewScreen {...stackProps} />,
+    );
+    expect(await findByText('Review Import')).toBeTruthy();
+    await fireEvent.press(getByText('Looks good'));
+    await waitFor(() => {
+      expect(mockAcceptImport).toHaveBeenCalledWith('recipe-uuid-1');
+    });
+    await waitFor(() => {
+      expect(mockParentNavigate).toHaveBeenCalled();
+    });
+    expect(mockDispatch).not.toHaveBeenCalled();
   });
 });
