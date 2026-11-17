@@ -203,7 +203,7 @@ export const importFromText = async (
     // otherwise answer 504 — a later retry is still protected by the
     // pre-save duplicate guard above.
     const savePromise = saveNewRecipeFromInput(
-      {userId: req.userId, input, createdVia: 'import_text'},
+      {userId: req.userId, supabaseUid: req.supabaseUid, input, createdVia: 'import_text'},
       queryFn,
     );
     let saved: Awaited<typeof savePromise>;

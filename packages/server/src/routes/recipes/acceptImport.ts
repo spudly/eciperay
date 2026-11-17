@@ -6,6 +6,10 @@ import {
   isRecipeEditable,
   recipeEditBlockedError,
 } from '../../lib/assertRecipeEditable.js';
+import {
+  autoImageContextFromDetail,
+  scheduleAutoGenerateRecipeImage,
+} from '../../lib/autoGenerateRecipeImage.js';
 import {fetchRecipeDetail} from '../../lib/recipeQueries.js';
 import {getParam} from '../../lib/getParam.js';
 
@@ -36,5 +40,17 @@ export const acceptImport = async (
     res.status(404).json({error: 'Recipe not found'});
     return;
   }
+  // #535: accepting an import is the normal import save action — an
+  // imageless recipe gets an auto-generated image, scheduled from the
+  // refreshed detail after the lineage flip (the scheduler skips recipes
+  // that already carry an image).
+  scheduleAutoGenerateRecipeImage(
+    {
+      userId: req.userId,
+      supabaseUid: req.supabaseUid,
+      recipe: autoImageContextFromDetail(refreshed),
+    },
+    queryFn,
+  );
   res.json(refreshed);
 };

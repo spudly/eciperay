@@ -130,7 +130,7 @@ export const importFromImage = async (
       return;
     }
     const {recipeId, versionId, recipe} = await saveNewRecipeFromInput(
-      {userId: req.userId, input, createdVia: 'import_image'},
+      {userId: req.userId, supabaseUid: req.supabaseUid, input, createdVia: 'import_image'},
       queryFn,
     );
     res.status(201).json({...recipe, recipeId, versionId});

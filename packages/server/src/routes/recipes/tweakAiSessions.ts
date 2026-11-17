@@ -21,6 +21,10 @@ import {
   isRecipeEditable,
   recipeEditBlockedError,
 } from '../../lib/assertRecipeEditable.js';
+import {
+  autoImageContextFromDetail,
+  scheduleAutoGenerateRecipeImage,
+} from '../../lib/autoGenerateRecipeImage.js';
 import {buildTweakContext} from '../../lib/buildRecipeContext.js';
 import {fetchVersionDetail} from '../../lib/fetchVersionDetail.js';
 import {getParam} from '../../lib/getParam.js';
@@ -618,6 +622,18 @@ export const createVersionFromTweakAiSession = async (
     res.status(500).json({error: 'Failed to fetch created version'});
     return;
   }
+
+  // #535: a tweak-created version is also a recipe save — a still-imageless
+  // recipe gets an auto-generated image (once per recipe), mirroring
+  // putVersion.ts.
+  scheduleAutoGenerateRecipeImage(
+    {
+      userId: req.userId,
+      supabaseUid: req.supabaseUid,
+      recipe: autoImageContextFromDetail({...version, versionId: newVersionId}),
+    },
+    queryFn,
+  );
 
   const row = await queryFn(GET_SESSION_SQL, [sessionId, recipeId, req.userId]);
   const updatedSession = await persistSession(
