@@ -1,4 +1,5 @@
 import {useSortable} from '@dnd-kit/sortable';
+import {CSS} from '@dnd-kit/utilities';
 import {tokens} from '@spudly/ui';
 
 import {dragRowOpacity} from './sortableDrag.js';
@@ -15,8 +16,15 @@ type Props = {rowKey: string; label: string};
  * array via sortableDrag.ts.
  */
 export const SortableDragHandle = ({rowKey, label}: Props) => {
-  const {attributes, listeners, setNodeRef, setActivatorNodeRef, isDragging} =
-    useSortable({id: rowKey});
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({id: rowKey});
 
   return (
     <button
@@ -27,6 +35,8 @@ export const SortableDragHandle = ({rowKey, label}: Props) => {
       type="button"
       aria-label={label}
       style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
         cursor: 'grab',
         borderRadius: 2,
         border: `1px solid ${tokens.colors.gray.gray4}`,
