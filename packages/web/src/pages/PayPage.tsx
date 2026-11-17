@@ -1,3 +1,4 @@
+import {useLingui} from '@lingui/react';
 import {PayPage as PayPageView, type PayPageStatus} from '@spudly/ui';
 import {useEffect, useState} from 'react';
 import {useNavigate, useSearchParams} from 'react-router-dom';
@@ -24,9 +25,11 @@ type PayStatus = Extract<PayPageStatus, 'opening' | 'closed' | 'error'>;
  * opens the checkout window from the transaction it was handed and reports the
  * outcome as the page's `status` union. The way out of the terminal states is a
  * reload (re-running initialization), and home is the page's `homeHref` because
- * it navigates.
+ * it navigates. The home link's label is page-unique copy that flows through
+ * the Lingui catalogs (#465 tranche 2: explicit id `pay.homeLabel`).
  */
 export const PayPage = () => {
+  const {i18n} = useLingui();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const transactionId = searchParams.get('_ptxn');
@@ -91,7 +94,10 @@ export const PayPage = () => {
         window.location.reload();
       }}
       homeHref="/"
-      homeLabel="Go to Eciperay home"
+      homeLabel={i18n._({
+        id: 'pay.homeLabel',
+        message: 'Go to Eciperay home',
+      })}
     />
   );
 };
