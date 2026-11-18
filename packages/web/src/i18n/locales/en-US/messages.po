@@ -36,6 +36,11 @@ msgid "landing.featureTwoTitle"
 msgstr "Cook with confidence"
 
 #. js-lingui-explicit-id
+#: src/pages/AddPage.tsx:49
+msgid "add.generateAiDescription"
+msgstr "Describe the recipe you want and let AI create it"
+
+#. js-lingui-explicit-id
 #: src/pages/MarketingLandingPage.tsx:45
 msgid "landing.discoverCta"
 msgstr "Discover public recipes"
@@ -56,6 +61,11 @@ msgid "forgotPassword.confirmationTitle"
 msgstr "Email sent"
 
 #. js-lingui-explicit-id
+#: src/pages/AddPage.tsx:48
+msgid "add.generateAiLabel"
+msgstr "Generate with AI"
+
+#. js-lingui-explicit-id
 #: src/pages/MarketingLandingPage.tsx:56
 msgid "landing.mobileAppCta"
 msgstr "Get the mobile app"
@@ -71,6 +81,21 @@ msgid "landing.featureOneTitle"
 msgstr "Import from anywhere"
 
 #. js-lingui-explicit-id
+#: src/pages/AddPage.tsx:32
+msgid "add.importImageLabel"
+msgstr "Import from image"
+
+#. js-lingui-explicit-id
+#: src/pages/AddPage.tsx:40
+msgid "add.importTextLabel"
+msgstr "Import from text"
+
+#. js-lingui-explicit-id
+#: src/pages/AddPage.tsx:24
+msgid "add.importUrlLabel"
+msgstr "Import from URL"
+
+#. js-lingui-explicit-id
 #: src/pages/TermsOfServicePage.tsx:27
 msgid "termsOfService.lastUpdated"
 msgstr "June 18, 2026"
@@ -79,6 +104,11 @@ msgstr "June 18, 2026"
 #: src/pages/MarketingLandingPage.tsx:89
 msgid "landing.featureThreeDescription"
 msgstr "Keep recipes private, share unlisted links, or publish to the community."
+
+#. js-lingui-explicit-id
+#: src/pages/AddPage.tsx:16
+msgid "add.manualEntryLabel"
+msgstr "Manual entry"
 
 #. js-lingui-explicit-id
 #: src/pages/DiscoverPage.tsx:96
@@ -96,9 +126,19 @@ msgid "privacyPolicy.lastUpdated"
 msgstr "November 4, 2026"
 
 #. js-lingui-explicit-id
+#: src/pages/AddPage.tsx:25
+msgid "add.importUrlDescription"
+msgstr "Paste a recipe link"
+
+#. js-lingui-explicit-id
 #: src/pages/MarketingLandingPage.tsx:67
 msgid "landing.featureOneDescription"
 msgstr "Paste a URL, photo, or notes and let AI turn it into a structured recipe."
+
+#. js-lingui-explicit-id
+#: src/pages/AddPage.tsx:41
+msgid "add.importTextDescription"
+msgstr "Paste rich text from Word or the web"
 
 #. js-lingui-explicit-id
 #: src/pages/PrivacyPolicyPage.tsx:23
@@ -149,6 +189,16 @@ msgstr "Sign up free"
 #: src/pages/TermsOfServicePage.tsx:23
 msgid "termsOfService.title"
 msgstr "Terms of Service"
+
+#. js-lingui-explicit-id
+#: src/pages/AddPage.tsx:17
+msgid "add.manualEntryDescription"
+msgstr "Type in a recipe from scratch"
+
+#. js-lingui-explicit-id
+#: src/pages/AddPage.tsx:33
+msgid "add.importImageDescription"
+msgstr "Upload a photo of a recipe"
 
 #. js-lingui-explicit-id
 #: src/pages/DiscoverPage.tsx:102

@@ -8,6 +8,7 @@ import {VoiceProvider} from '@spudly/ui';
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 import React from 'react';
 import type {ViewStyle} from 'react-native';
+import {getLocales} from 'react-native-localize';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
 import {TamaguiProvider} from 'tamagui';
@@ -21,6 +22,13 @@ import {onAuthenticated, onSignedOut} from './src/lib/authSessionLifecycle';
 import {appTamaguiConfig} from './src/lib/tamaguiConfig';
 import {RootNavigator} from './src/navigation/RootNavigator';
 import {supabase} from './src/lib/supabase';
+
+const i18n = createI18n(
+  resolveLocale(
+    null,
+    getLocales().map(locale => locale.languageTag),
+  ),
+);
 
 const queryClient = new QueryClient();
 

@@ -24,6 +24,22 @@ describe('AddScreen', () => {
     openURLSpy.mockRestore();
   });
 
+  test('renders add options from the en-XA Lingui catalog (#465)', async () => {
+    const {getByRole} = await renderWithProviders(<AddScreen />, {
+      locale: 'en-XA',
+    });
+    expect(
+      getByRole('link', {
+        name: 'Manual entry~, Type your recipe from scratch~',
+      }),
+    ).toBeTruthy();
+    expect(
+      getByRole('link', {
+        name: 'Generate with AI~, Describe the recipe you want and let AI create it~',
+      }),
+    ).toBeTruthy();
+  });
+
   test('renders all add options', async () => {
     const {getByRole} = await renderWithProviders(<AddScreen />);
     expect(
