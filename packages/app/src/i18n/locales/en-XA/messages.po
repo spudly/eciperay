@@ -91,9 +91,19 @@ msgid "recipes.loadError"
 msgstr "Couldn't load your recipes.~"
 
 #. js-lingui-explicit-id
+#: src/screens/TweakAiScreen.tsx:89
+msgid "aiTweak.intro"
+msgstr "Describe how you want to change this recipe. AI will propose a plan for you to review before creating a draft.~"
+
+#. js-lingui-explicit-id
 #: src/screens/AddScreen.tsx:54
 msgid "add.generateAiDescription"
 msgstr "Describe the recipe you want and let AI create it~"
+
+#. js-lingui-explicit-id
+#: src/screens/GenerateAiScreen.tsx:84
+msgid "aiGenerate.intro"
+msgstr "Describe the recipe you want. AI will propose a plan for you to review before creating the recipe.~"
 
 #. js-lingui-explicit-id
 #: src/hosts/recipe/RecipeVisibilityControls.tsx:64
@@ -106,6 +116,21 @@ msgid "recipeDetail.versionRoleDraft"
 msgstr "Draft~"
 
 #. js-lingui-explicit-id
+#: src/screens/TweakAiScreen.tsx:103
+msgid "aiTweak.previewTitle"
+msgstr "Draft preview~"
+
+#. js-lingui-explicit-id
+#: src/screens/TweakAiScreen.tsx:20
+msgid "aiTweak.promptPlaceholder"
+msgstr "e.g. make it vegetarian, reduce sugar, add more spice~"
+
+#. js-lingui-explicit-id
+#: src/screens/GenerateAiScreen.tsx:20
+msgid "aiGenerate.promptPlaceholder"
+msgstr "e.g. quick weeknight vegetarian pasta for 4, under 30 minutes~"
+
+#. js-lingui-explicit-id
 #: src/hosts/recipe/RecipeForm.tsx:274
 msgid "recipeStatus.evolving"
 msgstr "Evolving~"
@@ -114,6 +139,11 @@ msgstr "Evolving~"
 #: src/hosts/recipe/RecipeVisibilityControls.tsx:211
 msgid "recipeSharing.generateLabel"
 msgstr "Generate share link~"
+
+#. js-lingui-explicit-id
+#: src/screens/GenerateAiScreen.tsx:83
+msgid "aiGenerate.title"
+msgstr "Generate with AI~"
 
 #. js-lingui-explicit-id
 #: src/screens/AddScreen.tsx:53
@@ -187,9 +217,25 @@ msgid "recipeStatus.perfected"
 msgstr "Perfected~"
 
 #. js-lingui-explicit-id
+#: src/screens/GenerateAiScreen.tsx:94
+#: src/screens/TweakAiScreen.tsx:99
+msgid "aiSession.startPendingLabel"
+msgstr "Planning…~"
+
+#. js-lingui-explicit-id
 #: src/hosts/recipe/RecipeDetailView.tsx:452
 msgid "recipeDetail.pleaseTryAgain"
 msgstr "Please try again.~"
+
+#. js-lingui-explicit-id
+#: src/screens/TweakAiScreen.tsx:35
+msgid "aiTweak.phasePreviewReadyLabel"
+msgstr "Preview ready — save as a draft version or go back to refine.~"
+
+#. js-lingui-explicit-id
+#: src/screens/GenerateAiScreen.tsx:35
+msgid "aiGenerate.phasePreviewReadyLabel"
+msgstr "Preview ready — save the recipe or go back to refine the plan.~"
 
 #. js-lingui-explicit-id
 #: src/hosts/recipe/RecipeVisibilityControls.tsx:167
@@ -222,9 +268,20 @@ msgid "home.recipesSectionTitle"
 msgstr "Recently viewed~"
 
 #. js-lingui-explicit-id
+#: src/screens/GenerateAiScreen.tsx:98
+msgid "aiGenerate.previewTitle"
+msgstr "Recipe preview~"
+
+#. js-lingui-explicit-id
 #: src/screens/HomeScreen.tsx:95
 msgid "home.emptyMessage"
 msgstr "Recipes you view will appear here.~"
+
+#. js-lingui-explicit-id
+#: src/screens/GenerateAiScreen.tsx:28
+#: src/screens/TweakAiScreen.tsx:28
+msgid "aiSession.phasePlanningLabel"
+msgstr "Review the plan and refine it, or approve to build a preview.~"
 
 #. js-lingui-explicit-id
 #: src/hosts/recipe/RecipeVisibilityControls.tsx:207
@@ -232,9 +289,25 @@ msgid "recipeSharing.rotateLabel"
 msgstr "Rotate share link~"
 
 #. js-lingui-explicit-id
+#: src/screens/TweakAiScreen.tsx:107
+msgid "aiTweak.finalizeLabel"
+msgstr "Save as draft~"
+
+#. js-lingui-explicit-id
+#: src/screens/GenerateAiScreen.tsx:102
+msgid "aiGenerate.finalizeLabel"
+msgstr "Save recipe~"
+
+#. js-lingui-explicit-id
 #: src/hosts/recipe/RecipeVisibilityControls.tsx:194
 msgid "recipeSharing.saveLabel"
 msgstr "Save sharing settings~"
+
+#. js-lingui-explicit-id
+#: src/screens/GenerateAiScreen.tsx:106
+#: src/screens/TweakAiScreen.tsx:111
+msgid "aiSession.finalizePendingLabel"
+msgstr "Saving…~"
 
 #. js-lingui-explicit-id
 #: src/hosts/recipe/RecipeVisibilityControls.tsx:221
@@ -267,6 +340,12 @@ msgid "recipeSharing.settingsUpdated"
 msgstr "Sharing settings updated~"
 
 #. js-lingui-explicit-id
+#: src/screens/GenerateAiScreen.tsx:90
+#: src/screens/TweakAiScreen.tsx:95
+msgid "aiSession.startLabel"
+msgstr "Start planning~"
+
+#. js-lingui-explicit-id
 #: src/screens/AddScreen.tsx:38
 msgid "add.importImageDescription"
 msgstr "Take a photo or use your library~"
@@ -280,6 +359,11 @@ msgstr "This comment was left on an earlier version of the recipe.~"
 #: src/hosts/recipe/RecipeVisibilityControls.tsx:141
 msgid "recipeSharing.publicWarning"
 msgstr "This recipe will be discoverable by anyone browsing Eciperay.~"
+
+#. js-lingui-explicit-id
+#: src/screens/TweakAiScreen.tsx:88
+msgid "aiTweak.title"
+msgstr "Tweak with AI~"
 
 #. js-lingui-explicit-id
 #: src/screens/AddScreen.tsx:22

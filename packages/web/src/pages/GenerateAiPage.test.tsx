@@ -78,6 +78,14 @@ describe('GenerateAiPage', () => {
     mockNavigate.mockReset();
   });
 
+  test('renders the start copy from the en-XA Lingui catalog (#465)', async () => {
+    await renderWithProviders(<GenerateAiPage />, {locale: 'en-XA'});
+    expect(
+      screen.getByRole('button', {name: 'Start planning~'}),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Generate with AI~')).toBeInTheDocument();
+  });
+
   test('starts session planning flow', async () => {
     mockStart.mockResolvedValue({session, plan: 'Plan for cookies'});
     const user = userEvent.setup();

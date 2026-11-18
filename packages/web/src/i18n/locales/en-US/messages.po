@@ -209,9 +209,19 @@ msgid "recipeDetail.deletingLabel"
 msgstr "Deleting…"
 
 #. js-lingui-explicit-id
+#: src/pages/TweakAiPage.tsx:108
+msgid "aiTweak.intro"
+msgstr "Describe how you want to change this recipe. AI will propose a plan for you to review before creating a draft."
+
+#. js-lingui-explicit-id
 #: src/pages/AddPage.tsx:49
 msgid "add.generateAiDescription"
 msgstr "Describe the recipe you want and let AI create it"
+
+#. js-lingui-explicit-id
+#: src/pages/GenerateAiPage.tsx:96
+msgid "aiGenerate.intro"
+msgstr "Describe the recipe you want. AI will propose a plan for you to review before creating the recipe."
 
 #. js-lingui-explicit-id
 #: src/pages/MarketingLandingPage.tsx:45
@@ -232,6 +242,26 @@ msgstr "Discoverable by anyone and may appear in search results."
 #: src/pages/RecipeDetailHost.tsx:108
 msgid "recipeDetail.versionRoleDraft"
 msgstr "Draft"
+
+#. js-lingui-explicit-id
+#: src/pages/TweakAiPage.tsx:122
+msgid "aiTweak.previewTitle"
+msgstr "Draft preview"
+
+#. js-lingui-explicit-id
+#: src/pages/TweakAiPage.tsx:43
+msgid "aiTweak.phaseCompletedLabel"
+msgstr "Draft saved."
+
+#. js-lingui-explicit-id
+#: src/pages/TweakAiPage.tsx:21
+msgid "aiTweak.promptPlaceholder"
+msgstr "e.g. make it vegetarian, reduce sugar, add more spice"
+
+#. js-lingui-explicit-id
+#: src/pages/GenerateAiPage.tsx:17
+msgid "aiGenerate.promptPlaceholder"
+msgstr "e.g. quick weeknight vegetarian pasta for 4, under 30 minutes"
 
 #. js-lingui-explicit-id
 #: src/pages/ConsentPreferencesPage.tsx:91
@@ -257,6 +287,11 @@ msgstr "Failed to delete entry"
 #: src/pages/useRecipeSharingProps.tsx:242
 msgid "recipeSharing.generateLabel"
 msgstr "Generate share link"
+
+#. js-lingui-explicit-id
+#: src/pages/GenerateAiPage.tsx:95
+msgid "aiGenerate.title"
+msgstr "Generate with AI"
 
 #. js-lingui-explicit-id
 #: src/pages/AddPage.tsx:48
@@ -391,6 +426,12 @@ msgid "recipeSharing.permalinkCopied"
 msgstr "Permalink copied"
 
 #. js-lingui-explicit-id
+#: src/pages/GenerateAiPage.tsx:106
+#: src/pages/TweakAiPage.tsx:118
+msgid "aiSession.startPendingLabel"
+msgstr "Planning…"
+
+#. js-lingui-explicit-id
 #: src/pages/RecipeDetailHost.tsx:376
 #: src/pages/useRecipeCommentsProps.ts:62
 #: src/pages/useRecipeSharingProps.tsx:46
@@ -398,13 +439,23 @@ msgid "recipeDetail.pleaseTryAgain"
 msgstr "Please try again."
 
 #. js-lingui-explicit-id
-#: src/pages/useRecipeSharingProps.tsx:198
-msgid "recipeSharing.privacyPolicyLinkLabel"
-msgstr "Privacy Policy"
+#: src/pages/TweakAiPage.tsx:36
+msgid "aiTweak.phasePreviewReadyLabel"
+msgstr "Preview ready — save as a draft version or go back to refine."
+
+#. js-lingui-explicit-id
+#: src/pages/GenerateAiPage.tsx:32
+msgid "aiGenerate.phasePreviewReadyLabel"
+msgstr "Preview ready — save the recipe or go back to refine the plan."
 
 #. js-lingui-explicit-id
 #: src/pages/PrivacyPolicyPage.tsx:23
 msgid "privacyPolicy.title"
+msgstr "Privacy Policy"
+
+#. js-lingui-explicit-id
+#: src/pages/useRecipeSharingProps.tsx:198
+msgid "recipeSharing.privacyPolicyLinkLabel"
 msgstr "Privacy Policy"
 
 #. js-lingui-explicit-id
@@ -443,6 +494,11 @@ msgid "recipeDetail.recipeDeletionFailed"
 msgstr "Recipe deletion failed"
 
 #. js-lingui-explicit-id
+#: src/pages/GenerateAiPage.tsx:110
+msgid "aiGenerate.previewTitle"
+msgstr "Recipe preview"
+
+#. js-lingui-explicit-id
 #: src/pages/RecipeDetailHost.tsx:871
 msgid "recipeDetail.recipeShared"
 msgstr "Recipe shared"
@@ -451,6 +507,12 @@ msgstr "Recipe shared"
 #: src/pages/HomePage.tsx:112
 msgid "home.emptyMessage"
 msgstr "Recipes you view will appear here."
+
+#. js-lingui-explicit-id
+#: src/pages/GenerateAiPage.tsx:25
+#: src/pages/TweakAiPage.tsx:29
+msgid "aiSession.phasePlanningLabel"
+msgstr "Review the plan and refine it, or approve to build a preview."
 
 #. js-lingui-explicit-id
 #: src/pages/useRecipeSharingProps.tsx:238
@@ -463,6 +525,16 @@ msgid "recipeDetail.cookLogSaveLabel"
 msgstr "Save"
 
 #. js-lingui-explicit-id
+#: src/pages/TweakAiPage.tsx:126
+msgid "aiTweak.finalizeLabel"
+msgstr "Save as draft"
+
+#. js-lingui-explicit-id
+#: src/pages/GenerateAiPage.tsx:114
+msgid "aiGenerate.finalizeLabel"
+msgstr "Save recipe"
+
+#. js-lingui-explicit-id
 #: src/pages/MarketingLandingPage.tsx:39
 msgid "landing.heroSubtitle"
 msgstr "Save recipes from anywhere, tweak them with AI, and share what you love with friends or the community."
@@ -471,6 +543,12 @@ msgstr "Save recipes from anywhere, tweak them with AI, and share what you love 
 #: src/pages/useRecipeSharingProps.tsx:225
 msgid "recipeSharing.saveLabel"
 msgstr "Save sharing settings"
+
+#. js-lingui-explicit-id
+#: src/pages/GenerateAiPage.tsx:118
+#: src/pages/TweakAiPage.tsx:130
+msgid "aiSession.finalizePendingLabel"
+msgstr "Saving…"
 
 #. js-lingui-explicit-id
 #: src/pages/MarketingLandingPage.tsx:78
@@ -528,6 +606,12 @@ msgid "recipeDetail.cookLogStarRatingLabel"
 msgstr "Star rating"
 
 #. js-lingui-explicit-id
+#: src/pages/GenerateAiPage.tsx:102
+#: src/pages/TweakAiPage.tsx:114
+msgid "aiSession.startLabel"
+msgstr "Start planning"
+
+#. js-lingui-explicit-id
 #: src/pages/TermsOfServicePage.tsx:23
 msgid "termsOfService.title"
 msgstr "Terms of Service"
@@ -541,6 +625,11 @@ msgstr "This comment was left on an earlier version of the recipe."
 #: src/pages/useRecipeSharingProps.tsx:170
 msgid "recipeSharing.publicWarning"
 msgstr "This recipe will be discoverable by anyone browsing Eciperay."
+
+#. js-lingui-explicit-id
+#: src/pages/TweakAiPage.tsx:107
+msgid "aiTweak.title"
+msgstr "Tweak with AI"
 
 #. js-lingui-explicit-id
 #: src/pages/AddPage.tsx:17

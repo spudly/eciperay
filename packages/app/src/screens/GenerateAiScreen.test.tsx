@@ -46,6 +46,15 @@ describe('GenerateAiScreen', () => {
     mockNavigate.mockReset();
   });
 
+  test('renders the start copy from the en-XA Lingui catalog (#465)', async () => {
+    const {getByText} = await renderWithProviders(
+      <GenerateAiScreen {...stackProps} />,
+      {locale: 'en-XA'},
+    );
+    expect(getByText('Generate with AI~')).toBeTruthy();
+    expect(getByText('Start planning~')).toBeTruthy();
+  });
+
   test('does not start when prompt is empty', async () => {
     const {getByText} = await renderWithProviders(
       <GenerateAiScreen {...stackProps} />,
