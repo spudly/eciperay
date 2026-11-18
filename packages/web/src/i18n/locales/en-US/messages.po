@@ -695,7 +695,7 @@ msgstr "Describe how you want to change this recipe. AI will propose a plan for 
 #. js-lingui-explicit-id
 #: src/pages/AddPage.tsx:49
 msgid "add.generateAiDescription"
-msgstr "Describe the recipe you want and let AI create it"
+msgstr "Describe what’s in your head (or your fridge) and let AI draft the recipe"
 
 #. js-lingui-explicit-id
 #: src/pages/GenerateAiPage.tsx:96
@@ -1027,7 +1027,7 @@ msgstr "June 18, 2026"
 #. js-lingui-explicit-id
 #: src/pages/MarketingLandingPage.tsx:89
 msgid "landing.featureThreeDescription"
-msgstr "Keep recipes private, share unlisted links, or publish to the community."
+msgstr "Keep a recipe to yourself, pass an unlisted link to a friend, or publish it for everyone — your call, every time."
 
 #. js-lingui-explicit-id
 #: src/components/profile/ProfileAccessTokensSection.tsx:368
@@ -1062,7 +1062,7 @@ msgstr "Never used"
 #. js-lingui-explicit-id
 #: src/pages/DiscoverPage.tsx:96
 msgid "discover.emptyMessage"
-msgstr "No public recipes match your search."
+msgstr "No public recipes match that search — try a broader craving."
 
 #. js-lingui-explicit-id
 #: src/pages/DiscoverPage.tsx:112
@@ -1139,7 +1139,7 @@ msgstr "Paste a recipe link"
 #. js-lingui-explicit-id
 #: src/pages/MarketingLandingPage.tsx:67
 msgid "landing.featureOneDescription"
-msgstr "Paste a URL, photo, or notes and let AI turn it into a structured recipe."
+msgstr "Paste a URL, snap a photo, or drop in your notes — AI turns the jumble into a proper recipe."
 
 #. js-lingui-explicit-id
 #: src/pages/AddPage.tsx:41
@@ -1338,7 +1338,7 @@ msgstr "Recipe sharing settings:"
 #. js-lingui-explicit-id
 #: src/pages/HomePage.tsx:112
 msgid "home.emptyMessage"
-msgstr "Recipes you view will appear here."
+msgstr "Nothing here yet — recipes you peek at will line up here for next time."
 
 #. js-lingui-explicit-id
 #: src/pages/auth/ResetPasswordPage.tsx:61
@@ -1420,7 +1420,7 @@ msgstr "Save recipe"
 #. js-lingui-explicit-id
 #: src/pages/MarketingLandingPage.tsx:39
 msgid "landing.heroSubtitle"
-msgstr "Save recipes from anywhere, tweak them with AI, and share what you love with friends or the community."
+msgstr "Clip a recipe from anywhere, make it your own with a little AI help, and share the keepers with friends or the whole community."
 
 #. js-lingui-explicit-id
 #: src/pages/useRecipeSharingProps.tsx:225
@@ -1436,7 +1436,7 @@ msgstr "Saving…"
 #. js-lingui-explicit-id
 #: src/pages/MarketingLandingPage.tsx:78
 msgid "landing.featureTwoDescription"
-msgstr "Scale servings, track versions, and follow step-by-step cooking mode."
+msgstr "Scale servings up or down, keep every version, and cook step by step when your hands are busy."
 
 #. js-lingui-explicit-id
 #: src/pages/DiscoverPage.tsx:92
@@ -1804,7 +1804,7 @@ msgstr "Your content"
 #. js-lingui-explicit-id
 #: src/pages/HomePage.tsx:95
 msgid "home.subtitle"
-msgstr "Your personal recipe collection"
+msgstr "Everything you’re cooking, all in one place"
 
 #. js-lingui-explicit-id
 #: src/pages/RecipesPage.tsx:617
@@ -1814,4 +1814,4 @@ msgstr "Your recipes"
 #. js-lingui-explicit-id
 #: src/pages/MarketingLandingPage.tsx:35
 msgid "landing.heroTitle"
-msgstr "Your recipes, organized and ready to cook"
+msgstr "Every recipe you love, in one place — ready when you are"

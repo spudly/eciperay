@@ -95,7 +95,7 @@ export const DiscoverPage = () => {
         })}
         emptyMessage={i18n._({
           id: 'discover.emptyMessage',
-          message: 'No public recipes match your search.',
+          message: 'No public recipes match that search — try a broader craving.',
         })}
         errorMessage={
           error

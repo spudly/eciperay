@@ -18,7 +18,7 @@ describe('MarketingLandingPage', () => {
       locale: 'en-XA',
     });
     expect(
-      screen.getByText('Your recipes, organized and ready to cook~'),
+      screen.getByText('Every recipe you love, in one place — ready when you are~'),
     ).toBeInTheDocument();
     expect(
       screen.getByRole('link', {name: 'Discover public recipes~'}),

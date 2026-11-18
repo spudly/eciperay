@@ -1,6 +1,7 @@
-export const LANDING_HERO_TITLE = 'Your recipes, organized and ready to cook';
+export const LANDING_HERO_TITLE =
+  'Every recipe you love, in one place — ready when you are';
 export const LANDING_HERO_SUBTITLE =
-  'Save recipes from anywhere, tweak them with AI, and share what you love with friends or the community.';
+  'Clip a recipe from anywhere, make it your own with a little AI help, and share the keepers with friends or the whole community.';
 export const LANDING_DISCOVER_CTA = 'Discover public recipes';
 export const LANDING_SIGNUP_CTA = 'Sign up free';
 export const LANDING_MOBILE_APP_CTA = 'Get the mobile app';
@@ -8,16 +9,16 @@ export const LANDING_FEATURES = [
   {
     title: 'Import from anywhere',
     description:
-      'Paste a URL, photo, or notes and let AI turn it into a structured recipe.',
+      'Paste a URL, snap a photo, or drop in your notes — AI turns the jumble into a proper recipe.',
   },
   {
     title: 'Cook with confidence',
     description:
-      'Scale servings, track versions, and follow step-by-step cooking mode.',
+      'Scale servings up or down, keep every version, and cook step by step when your hands are busy.',
   },
   {
     title: 'Share on your terms',
     description:
-      'Keep recipes private, share unlisted links, or publish to the community.',
+      'Keep a recipe to yourself, pass an unlisted link to a friend, or publish it for everyone — your call, every time.',
   },
 ] as const;

@@ -1,4 +1,4 @@
-import {DISCOVER_EMPTY_MESSAGE, RECIPE_LIST_PAGE_SIZE} from '@eciperay/client';
+import {RECIPE_LIST_PAGE_SIZE} from '@eciperay/client';
 import type {PublicRecipeDiscoveryItem} from '@eciperay/types';
 import {screen, waitFor, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -60,7 +60,9 @@ describe('DiscoverPage', () => {
     await renderWithProviders(<DiscoverPage />, {locale: 'en-XA'});
     await waitFor(() => {
       expect(
-        screen.getByText('No public recipes match your search.~'),
+        screen.getByText(
+          'No public recipes match that search — try a broader craving.~',
+        ),
       ).toBeInTheDocument();
     });
   });
@@ -119,7 +121,11 @@ describe('DiscoverPage', () => {
     );
     await renderWithProviders(<DiscoverPage />);
     await waitFor(() => {
-      expect(screen.getByText(DISCOVER_EMPTY_MESSAGE)).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          'No public recipes match that search — try a broader craving.',
+        ),
+      ).toBeInTheDocument();
     });
   });
 

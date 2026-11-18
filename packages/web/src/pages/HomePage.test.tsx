@@ -31,7 +31,7 @@ describe('HomePage', () => {
     expect(screen.getByText('Shared with me')).toBeInTheDocument();
     expect(screen.getByText('Recently viewed')).toBeInTheDocument();
     expect(
-      screen.getByText('Recipes you view will appear here.'),
+      screen.getByText('Nothing here yet — recipes you peek at will line up here for next time.'),
     ).toBeInTheDocument();
   });
 

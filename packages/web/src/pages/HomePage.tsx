@@ -94,7 +94,7 @@ export const HomePage = () => {
         title={i18n._({id: 'home.title', message: 'Welcome to Eciperay'})}
         subtitle={i18n._({
           id: 'home.subtitle',
-          message: 'Your personal recipe collection',
+          message: 'Everything you’re cooking, all in one place',
         })}
         browseLabel={i18n._({
           id: 'home.browseLabel',
@@ -111,7 +111,7 @@ export const HomePage = () => {
         })}
         emptyMessage={i18n._({
           id: 'home.emptyMessage',
-          message: 'Recipes you view will appear here.',
+          message: 'Nothing here yet — recipes you peek at will line up here for next time.',
         })}
         loading={isLoading}
         recipes={recipes.map(recipe => ({

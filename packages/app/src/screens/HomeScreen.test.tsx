@@ -148,7 +148,7 @@ describe('HomeScreen', () => {
 
   test('shows empty state when there is no view history', async () => {
     const {findByText} = await renderHome();
-    expect(await findByText(/Recipes you view will appear here/)).toBeTruthy();
+    expect(await findByText(/Nothing here yet — recipes you peek at will line up here for next time./)).toBeTruthy();
   });
 
   test('opens the recipe deep link when a recipe row is pressed', async () => {
