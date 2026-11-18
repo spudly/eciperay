@@ -1,6 +1,5 @@
 import {
   buildRecipePath,
-  DISCOVER_ERROR_MESSAGE,
   formatCondensedNutritionParts,
   formatDiscoveryListMeta,
   formatRecipeListSubtitle,
@@ -25,6 +24,7 @@ import type {
   RecipeListSort,
   RecipeListSortDir,
 } from '@eciperay/types';
+import {useLingui} from '@lingui/react';
 import {tokens} from '@spudly/ui';
 import {
   RecipesPage as RecipesPageView,
@@ -166,12 +166,13 @@ const formatDiscoveryAuthorName = (
 // plus the discovery meta line; the DS page only renders the string).
 const toDiscoveryItem = (
   recipe: PublicRecipeDiscoveryItem,
+  authorByline: (authorName: string) => string,
 ): RecipesPageDiscoveryItem => {
   const authorName = formatDiscoveryAuthorName(recipe.authorDisplayName);
   return {
     id: recipe.id,
     title: recipe.title,
-    subtitle: `${authorName ? `By ${authorName} · ` : ''}${formatDiscoveryListMeta(recipe)}`,
+    subtitle: `${authorName ? authorByline(authorName) : ''}${formatDiscoveryListMeta(recipe)}`,
     imageUrl: recipe.imageUrl,
     href: `/recipe/${recipe.id}/${recipe.slug}`,
   };
@@ -219,6 +220,7 @@ const toDiscoveryItem = (
  * browse itself still leaves in one step.
  */
 export const RecipesPage = () => {
+  const {i18n} = useLingui();
   const location = useLocation();
   const navigate = useNavigate();
   // Filter persistence across back-navigation (#468, Stephen's spec):
@@ -471,13 +473,19 @@ export const RecipesPage = () => {
   const ownRowCount = ownRecipes.length + sharedRecipes.length;
   const ownErrorMessage =
     ownSectionFailed && ownRowCount === 0
-      ? "Couldn't load your recipes."
+      ? i18n._({
+          id: 'recipes.loadError',
+          message: "Couldn't load your recipes.",
+        })
       : null;
   const ownLoadMoreErrorMessage =
     ownQuery.isFetchNextPageError ||
     sharedQuery.isFetchNextPageError ||
     (ownSectionFailed && ownRowCount > 0)
-      ? "Couldn't load more recipes."
+      ? i18n._({
+          id: 'recipes.loadMoreError',
+          message: "Couldn't load more recipes.",
+        })
       : null;
 
   const handleOwnLoadMoreRetry = useCallback(() => {
@@ -606,7 +614,7 @@ export const RecipesPage = () => {
         Recipes
       </h1>
       <RecipesPageView
-        ownTitle="Your recipes"
+        ownTitle={i18n._({id: 'recipes.ownTitle', message: 'Your recipes'})}
         ownRecipes={[...ownItems, ...sharedItems]}
         loadingOwn={ownQuery.isLoading || sharedQuery.isLoading}
         ownErrorMessage={ownErrorMessage}
@@ -616,11 +624,23 @@ export const RecipesPage = () => {
         ownLoadMoreErrorMessage={ownLoadMoreErrorMessage}
         onOwnLoadMoreRetry={handleOwnLoadMoreRetry}
         discoveryTitle="Discover"
-        discoveryRecipes={discoveryRecipes.map(toDiscoveryItem)}
+        discoveryRecipes={discoveryRecipes.map(recipe =>
+          toDiscoveryItem(recipe, authorName =>
+            i18n._({
+              id: 'recipes.authorByline',
+              message: 'By {authorName} · ',
+              values: {authorName},
+            }),
+          ),
+        )}
         loadingDiscovery={discoveryQuery.isLoading}
         discoveryErrorMessage={
           discoveryQuery.isError && discoveryRecipes.length === 0
-            ? DISCOVER_ERROR_MESSAGE
+            ? i18n._({
+                id: 'discover.errorMessage',
+                message:
+                  "We couldn't load public recipes. Check your connection and try again.",
+              })
             : null
         }
         isFetchingNextPage={discoveryQuery.isFetchingNextPage}

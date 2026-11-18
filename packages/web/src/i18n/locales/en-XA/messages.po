@@ -11,6 +11,11 @@ msgid "spike.recipeCount"
 msgstr "{count, plural, one {# recipe~} other {# recipes~~}}"
 
 #. js-lingui-explicit-id
+#: src/pages/RecipeFormHost.tsx:246
+msgid "recipeStatus.abandoned"
+msgstr "Abandoned~"
+
+#. js-lingui-explicit-id
 #: src/pages/HomePage.tsx:103
 msgid "home.addLabel"
 msgstr "Add Recipe~"
@@ -26,6 +31,11 @@ msgid "home.browseLabel"
 msgstr "Browse Recipes~"
 
 #. js-lingui-explicit-id
+#: src/pages/RecipesPage.tsx:629
+msgid "recipes.authorByline"
+msgstr "By {authorName} · ~"
+
+#. js-lingui-explicit-id
 #: src/pages/auth/ForgotPasswordPage.tsx:58
 msgid "forgotPassword.confirmationBody"
 msgstr "Check your inbox for a password reset link.~"
@@ -34,6 +44,16 @@ msgstr "Check your inbox for a password reset link.~"
 #: src/pages/MarketingLandingPage.tsx:74
 msgid "landing.featureTwoTitle"
 msgstr "Cook with confidence~"
+
+#. js-lingui-explicit-id
+#: src/pages/RecipesPage.tsx:485
+msgid "recipes.loadMoreError"
+msgstr "Couldn't load more recipes.~"
+
+#. js-lingui-explicit-id
+#: src/pages/RecipesPage.tsx:476
+msgid "recipes.loadError"
+msgstr "Couldn't load your recipes.~"
 
 #. js-lingui-explicit-id
 #: src/pages/AddPage.tsx:49
@@ -61,6 +81,11 @@ msgid "forgotPassword.confirmationTitle"
 msgstr "Email sent~"
 
 #. js-lingui-explicit-id
+#: src/pages/RecipeFormHost.tsx:241
+msgid "recipeStatus.evolving"
+msgstr "Evolving~"
+
+#. js-lingui-explicit-id
 #: src/pages/AddPage.tsx:48
 msgid "add.generateAiLabel"
 msgstr "Generate with AI~"
@@ -74,6 +99,11 @@ msgstr "Get the mobile app~"
 #: src/pages/PayPage.tsx:97
 msgid "pay.homeLabel"
 msgstr "Go to Eciperay home~"
+
+#. js-lingui-explicit-id
+#: src/pages/RecipeFormHost.tsx:240
+msgid "recipeStatus.idea"
+msgstr "Idea~"
 
 #. js-lingui-explicit-id
 #: src/pages/MarketingLandingPage.tsx:63
@@ -156,6 +186,11 @@ msgid "add.importTextDescription"
 msgstr "Paste rich text from Word or the web~"
 
 #. js-lingui-explicit-id
+#: src/pages/RecipeFormHost.tsx:242
+msgid "recipeStatus.perfected"
+msgstr "Perfected~"
+
+#. js-lingui-explicit-id
 #: src/pages/PrivacyPolicyPage.tsx:23
 msgid "privacyPolicy.title"
 msgstr "Privacy Policy~"
@@ -217,6 +252,7 @@ msgstr "Upload a photo of a recipe~"
 
 #. js-lingui-explicit-id
 #: src/pages/DiscoverPage.tsx:102
+#: src/pages/RecipesPage.tsx:639
 msgid "discover.errorMessage"
 msgstr "We couldn't load public recipes. Check your connection and try again.~"
 
@@ -234,6 +270,11 @@ msgstr "Withdrawing consent removes your stored choice and turns analytics off u
 #: src/pages/HomePage.tsx:95
 msgid "home.subtitle"
 msgstr "Your personal recipe collection~"
+
+#. js-lingui-explicit-id
+#: src/pages/RecipesPage.tsx:617
+msgid "recipes.ownTitle"
+msgstr "Your recipes~"
 
 #. js-lingui-explicit-id
 #: src/pages/MarketingLandingPage.tsx:35

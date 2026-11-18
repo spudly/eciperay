@@ -487,6 +487,16 @@ describe('RecipesPage', () => {
     expect(screen.getByText('Discover')).toBeInTheDocument();
   });
 
+  test('renders own title and author byline from the en-XA Lingui catalog (#465)', async () => {
+    await renderWithProviders(<RecipesPage />, {locale: 'en-XA'});
+    await waitFor(() => {
+      expect(screen.getByText('Your recipes~')).toBeInTheDocument();
+    });
+    await waitFor(() => {
+      expect(screen.getByText(/By Chef Alex · ~/)).toBeInTheDocument();
+    });
+  });
+
   test('omits the byline on discovery rows whose author has no display name (#498)', async () => {
     server.use(
       http.get('http://localhost:8080/api/public/recipes', () =>

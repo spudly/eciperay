@@ -1,10 +1,10 @@
 import {
-  DISCOVER_ERROR_MESSAGE,
   publicRecipeDiscoveryInfiniteQueryOptions,
   recipeListInfiniteQueryOptions,
   sharedWithMeInfiniteQueryOptions,
   useRecipeListFilters,
 } from '@eciperay/client';
+import {useLingui} from '@lingui/react';
 import {useInfiniteQuery} from '@tanstack/react-query';
 import {useCallback} from 'react';
 import {View} from 'react-native';
@@ -34,6 +34,7 @@ const screenStyle = {flex: 1} as const;
 // no shell header search on native (Stephen's Option A): the page's
 // own search field is the only search surface.
 export const RecipesScreen = () => {
+  const {i18n} = useLingui();
   const {filters, controls} = useRecipeListFilters();
 
   const ownQuery = useInfiniteQuery(
@@ -68,13 +69,19 @@ export const RecipesScreen = () => {
   const ownRowCount = recipes.length + sharedRecipes.length;
   const ownErrorMessage =
     ownSectionFailed && ownRowCount === 0
-      ? "Couldn't load your recipes."
+      ? i18n._({
+          id: 'recipes.loadError',
+          message: "Couldn't load your recipes.",
+        })
       : null;
   const loadMoreErrorMessage =
     ownQuery.isFetchNextPageError ||
     sharedQuery.isFetchNextPageError ||
     (ownSectionFailed && ownRowCount > 0)
-      ? "Couldn't load more recipes."
+      ? i18n._({
+          id: 'recipes.loadMoreError',
+          message: "Couldn't load more recipes.",
+        })
       : null;
 
   const handleOwnLoadMoreRetry = useCallback(() => {
@@ -138,7 +145,11 @@ export const RecipesScreen = () => {
         loadingDiscovery={discoveryQuery.isLoading}
         discoveryErrorMessage={
           discoveryQuery.isError && discoveryRecipes.length === 0
-            ? DISCOVER_ERROR_MESSAGE
+            ? i18n._({
+                id: 'discover.errorMessage',
+                message:
+                  "We couldn't load public recipes. Check your connection and try again.",
+              })
             : null
         }
         ownErrorMessage={ownErrorMessage}

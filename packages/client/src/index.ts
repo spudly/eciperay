@@ -420,6 +420,7 @@ export {
   RECIPE_STATUS_LABELS,
   RECIPE_STATUS_OPTIONS,
   normalizeRecipeStatus,
+  recipeStatusOptions,
 } from './recipeStatusCopy.js';
 export {
   DISCOVER_EMPTY_MESSAGE,

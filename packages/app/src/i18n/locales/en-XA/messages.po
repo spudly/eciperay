@@ -11,6 +11,11 @@ msgid "spike.recipeCount"
 msgstr "{count, plural, one {# recipe~} other {# recipes~~}}"
 
 #. js-lingui-explicit-id
+#: src/hosts/recipe/RecipeForm.tsx:278
+msgid "recipeStatus.abandoned"
+msgstr "Abandoned~"
+
+#. js-lingui-explicit-id
 #: src/screens/HomeScreen.tsx:86
 msgid "home.addLabel"
 msgstr "Add Recipe~"
@@ -21,14 +26,39 @@ msgid "home.browseLabel"
 msgstr "Browse Recipes~"
 
 #. js-lingui-explicit-id
+#: src/hosts/recipes/RecipesListView.tsx:394
+msgid "recipes.authorByline"
+msgstr "By {authorName} · ~"
+
+#. js-lingui-explicit-id
+#: src/screens/RecipesScreen.tsx:81
+msgid "recipes.loadMoreError"
+msgstr "Couldn't load more recipes.~"
+
+#. js-lingui-explicit-id
+#: src/screens/RecipesScreen.tsx:72
+msgid "recipes.loadError"
+msgstr "Couldn't load your recipes.~"
+
+#. js-lingui-explicit-id
 #: src/screens/AddScreen.tsx:54
 msgid "add.generateAiDescription"
 msgstr "Describe the recipe you want and let AI create it~"
 
 #. js-lingui-explicit-id
+#: src/hosts/recipe/RecipeForm.tsx:273
+msgid "recipeStatus.evolving"
+msgstr "Evolving~"
+
+#. js-lingui-explicit-id
 #: src/screens/AddScreen.tsx:53
 msgid "add.generateAiLabel"
 msgstr "Generate with AI~"
+
+#. js-lingui-explicit-id
+#: src/hosts/recipe/RecipeForm.tsx:272
+msgid "recipeStatus.idea"
+msgstr "Idea~"
 
 #. js-lingui-explicit-id
 #: src/screens/AddScreen.tsx:37
@@ -76,6 +106,11 @@ msgid "add.importTextDescription"
 msgstr "Paste rich text from Word or the web~"
 
 #. js-lingui-explicit-id
+#: src/hosts/recipe/RecipeForm.tsx:274
+msgid "recipeStatus.perfected"
+msgstr "Perfected~"
+
+#. js-lingui-explicit-id
 #: src/screens/HomeScreen.tsx:91
 msgid "home.recipesSectionTitle"
 msgstr "Recently viewed~"
@@ -106,6 +141,11 @@ msgid "add.manualEntryDescription"
 msgstr "Type your recipe from scratch~"
 
 #. js-lingui-explicit-id
+#: src/screens/RecipesScreen.tsx:148
+msgid "discover.errorMessage"
+msgstr "We couldn't load public recipes. Check your connection and try again.~"
+
+#. js-lingui-explicit-id
 #: src/screens/HomeScreen.tsx:77
 msgid "home.title"
 msgstr "Welcome to Eciperay~"
@@ -114,3 +154,8 @@ msgstr "Welcome to Eciperay~"
 #: src/screens/HomeScreen.tsx:78
 msgid "home.subtitle"
 msgstr "Your personal recipe collection~"
+
+#. js-lingui-explicit-id
+#: src/hosts/recipes/RecipesListView.tsx:382
+msgid "recipes.ownTitle"
+msgstr "Your recipes~"
