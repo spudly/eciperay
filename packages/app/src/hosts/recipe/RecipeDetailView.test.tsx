@@ -106,6 +106,7 @@ const renderView = async (
   overrides: Partial<RecipeDetail> = {},
   versions: RecipeVersionSummary[] = [makeRecipeVersionSummary()],
   initialServings?: number,
+  locale?: 'en-XA',
 ) => {
   const callbacks = makeCallbacks();
   const recipe = makeRecipeDetail(overrides);
@@ -117,6 +118,7 @@ const renderView = async (
       initialServings={initialServings}
     />,
     makeQueryClient(),
+    locale ? {locale} : undefined,
   );
   return {callbacks, recipe, ...utils};
 };
@@ -216,6 +218,48 @@ describe('RecipeDetailView', () => {
     expect(Linking.openURL).toHaveBeenCalledWith(recipeTweakAiHref(recipe.id));
     expect(getByLabelText('Print recipe')).toBeTruthy();
     expect(getByLabelText('Share recipe')).toBeTruthy();
+  });
+
+  test('renders the version-picker label from the en-XA Lingui catalog (#465)', async () => {
+    const active = makeRecipeVersionSummary({
+      versionNumber: 3,
+      derivedRole: 'active',
+    });
+    const {findByText} = await renderView({}, [active], undefined, 'en-XA');
+    // The picker label interpolates the translated role label, so the
+    // en-XA role ("Active~") and the label's own trailing "~" both show.
+    expect(await findByText('v3 — Active~~')).toBeTruthy();
+  });
+
+  test('renders the version-picker summary label from the en-XA Lingui catalog (#465)', async () => {
+    const active = makeRecipeVersionSummary({
+      versionNumber: 3,
+      derivedRole: 'active',
+      changeSummary: 'Less salt',
+    });
+    const {findByText} = await renderView({}, [active], undefined, 'en-XA');
+    expect(await findByText('v3 — Active~: Less salt~')).toBeTruthy();
+  });
+
+  test('renders the activation-candidate labels from the en-XA Lingui catalog (#465)', async () => {
+    const candidateWithSummary = makeRecipeVersionSummary({
+      id: 'version-candidate-1',
+      versionNumber: 3,
+      derivedRole: 'candidate',
+      changeSummary: 'Less salt',
+    });
+    const candidateWithoutSummary = makeRecipeVersionSummary({
+      id: 'version-candidate-2',
+      versionNumber: 4,
+      derivedRole: 'candidate',
+    });
+    const {findByText} = await renderView({}, [
+      makeRecipeVersionSummary(),
+      candidateWithSummary,
+      candidateWithoutSummary,
+    ], undefined, 'en-XA');
+    expect(await findByText('v3: Less salt~')).toBeTruthy();
+    expect(await findByText('v4~')).toBeTruthy();
   });
 
   test('tweak manually creates a version and hands it to onViewVersion', async () => {
