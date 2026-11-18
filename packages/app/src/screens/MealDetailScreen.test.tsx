@@ -194,4 +194,45 @@ describe('MealDetailScreen', () => {
       recipeHref({id: recipeId, title: 'Test Recipe'}),
     );
   });
+
+  test('renders member copy from the en-XA Lingui catalog (#465)', async () => {
+    mockGet.mockResolvedValue({
+      id: mealId,
+      userId: 'user-uuid-1',
+      title: 'Sunday Dinner',
+      notes: null,
+      memberCount: 1,
+      recipeCount: 1,
+      nutrition: null,
+      createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2024-01-01T00:00:00.000Z',
+      members: [
+        {
+          recipeId,
+          sortOrder: 0,
+          servingsToCook: 4,
+          servingsToEat: 4,
+          title: 'Test Recipe',
+          imageUrl: null,
+          recipeServings: 4,
+          accessLost: false,
+          satietyScore: 50,
+          nutritionStatus: 'ready',
+          calories: 100.4,
+          proteinG: 10,
+          carbsG: 25.6,
+          fatG: 5,
+        },
+      ],
+    });
+    const {findByRole} = await renderWithProviders(
+      <MealDetailScreen {...stackProps} />,
+      {locale: 'en-XA'},
+    );
+    expect(
+      await findByRole('link', {
+        name: 'Test Recipe, Servings to cook: 4 · Servings to eat: 4~ · 100 cal~ · 10g protein~ · 26g carbs~ · 5g fat~ · satiety 50~',
+      }),
+    ).toBeTruthy();
+  });
 });

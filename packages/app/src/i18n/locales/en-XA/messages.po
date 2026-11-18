@@ -11,14 +11,69 @@ msgid "spike.recipeCount"
 msgstr "{count, plural, one {# recipe~} other {# recipes~~}}"
 
 #. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeForm.tsx:278
+#: src/hosts/meals/MealPlanDetailView.tsx:154
+msgid "mealPlanDetail.goalQualifierPerDay"
+msgstr "(per-day avg)~"
+
+#. js-lingui-explicit-id
+#: src/hosts/meals/MealPlanDetailView.tsx:158
+msgid "mealPlanDetail.goalQualifierPlanTotal"
+msgstr "(plan total)~"
+
+#. js-lingui-explicit-id
+#: src/screens/MealsHubScreen.tsx:30
+msgid "mealsHub.entryCount"
+msgstr "{count, plural, one {# entry~} other {# entries~~}}"
+
+#. js-lingui-explicit-id
+#: src/screens/MealsHubScreen.tsx:89
+msgid "mealsHub.recipeCount"
+msgstr "{count, plural, one {# recipe~} other {# recipes~~}}"
+
+#. js-lingui-explicit-id
+#: src/screens/MealDetailScreen.tsx:31
+msgid "mealDetail.nutritionCalories"
+msgstr "{value} cal~"
+
+#. js-lingui-explicit-id
+#: src/screens/MealDetailScreen.tsx:49
+msgid "mealDetail.nutritionCarbs"
+msgstr "{value}g carbs~"
+
+#. js-lingui-explicit-id
+#: src/screens/MealDetailScreen.tsx:58
+msgid "mealDetail.nutritionFat"
+msgstr "{value}g fat~"
+
+#. js-lingui-explicit-id
+#: src/screens/MealDetailScreen.tsx:40
+msgid "mealDetail.nutritionProtein"
+msgstr "{value}g protein~"
+
+#. js-lingui-explicit-id
+#: src/hosts/recipe/RecipeForm.tsx:276
 msgid "recipeStatus.abandoned"
 msgstr "Abandoned~"
+
+#. js-lingui-explicit-id
+#: src/hosts/meals/MealPlanDetailView.tsx:85
+msgid "mealPlanDetail.goalBandAbove"
+msgstr "Above goal~"
 
 #. js-lingui-explicit-id
 #: src/screens/HomeScreen.tsx:86
 msgid "home.addLabel"
 msgstr "Add Recipe~"
+
+#. js-lingui-explicit-id
+#: src/hosts/meals/MealPlanDetailView.tsx:101
+msgid "mealPlanDetail.goalRangeAtLeast"
+msgstr "at least {min}~"
+
+#. js-lingui-explicit-id
+#: src/hosts/meals/MealPlanDetailView.tsx:82
+msgid "mealPlanDetail.goalBandBelow"
+msgstr "Below goal~"
 
 #. js-lingui-explicit-id
 #: src/screens/HomeScreen.tsx:82
@@ -29,6 +84,22 @@ msgstr "Browse Recipes~"
 #: src/hosts/recipes/RecipesListView.tsx:394
 msgid "recipes.authorByline"
 msgstr "By {authorName} · ~"
+
+#. js-lingui-explicit-id
+#: src/hosts/meals/MealPlanDetailView.tsx:168
+msgid "mealPlanDetail.goalCaloriesWord"
+msgstr "Calories~"
+
+#. js-lingui-explicit-id
+#: src/screens/MealEditScreen.tsx:239
+#: src/screens/MealPlanEditScreen.tsx:129
+msgid "mealForm.loadRecipesError"
+msgstr "Could not load recipes: {error}~"
+
+#. js-lingui-explicit-id
+#: src/screens/MealEditScreen.tsx:78
+msgid "mealForm.loadMealError"
+msgstr "Could not load this meal: {error}~"
 
 #. js-lingui-explicit-id
 #: src/screens/RecipesScreen.tsx:81
@@ -46,7 +117,7 @@ msgid "add.generateAiDescription"
 msgstr "Describe the recipe you want and let AI create it~"
 
 #. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeForm.tsx:273
+#: src/hosts/recipe/RecipeForm.tsx:274
 msgid "recipeStatus.evolving"
 msgstr "Evolving~"
 
@@ -56,7 +127,7 @@ msgid "add.generateAiLabel"
 msgstr "Generate with AI~"
 
 #. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeForm.tsx:272
+#: src/hosts/recipe/RecipeForm.tsx:273
 msgid "recipeStatus.idea"
 msgstr "Idea~"
 
@@ -96,6 +167,11 @@ msgid "cookingMode.cookLogNotesPlaceholder"
 msgstr "Notes from this cook (optional)~"
 
 #. js-lingui-explicit-id
+#: src/hosts/meals/MealPlanDetailView.tsx:87
+msgid "mealPlanDetail.goalBandOnTrack"
+msgstr "On track~"
+
+#. js-lingui-explicit-id
 #: src/screens/AddScreen.tsx:30
 msgid "add.importUrlDescription"
 msgstr "Paste a link to any recipe website~"
@@ -106,9 +182,14 @@ msgid "add.importTextDescription"
 msgstr "Paste rich text from Word or the web~"
 
 #. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeForm.tsx:274
+#: src/hosts/recipe/RecipeForm.tsx:275
 msgid "recipeStatus.perfected"
 msgstr "Perfected~"
+
+#. js-lingui-explicit-id
+#: src/hosts/meals/MealPlanDetailView.tsx:176
+msgid "mealPlanDetail.goalProteinWord"
+msgstr "Protein~"
 
 #. js-lingui-explicit-id
 #: src/screens/HomeScreen.tsx:91
@@ -119,6 +200,21 @@ msgstr "Recently viewed~"
 #: src/screens/HomeScreen.tsx:95
 msgid "home.emptyMessage"
 msgstr "Recipes you view will appear here.~"
+
+#. js-lingui-explicit-id
+#: src/hosts/meals/MealPlanDetailView.tsx:184
+msgid "mealPlanDetail.goalSatietyLabel"
+msgstr "Satiety (plan-wide score)~"
+
+#. js-lingui-explicit-id
+#: src/screens/MealDetailScreen.tsx:67
+msgid "mealDetail.nutritionSatiety"
+msgstr "satiety {value}~"
+
+#. js-lingui-explicit-id
+#: src/screens/MealDetailScreen.tsx:82
+msgid "mealDetail.servingsLabel"
+msgstr "Servings to cook: {cook} · Servings to eat: {eat}~"
 
 #. js-lingui-explicit-id
 #: src/screens/HomeScreen.tsx:87
@@ -141,6 +237,11 @@ msgid "add.manualEntryDescription"
 msgstr "Type your recipe from scratch~"
 
 #. js-lingui-explicit-id
+#: src/hosts/meals/MealPlanDetailView.tsx:108
+msgid "mealPlanDetail.goalRangeUpTo"
+msgstr "up to {max}~"
+
+#. js-lingui-explicit-id
 #: src/screens/RecipesScreen.tsx:148
 msgid "discover.errorMessage"
 msgstr "We couldn't load public recipes. Check your connection and try again.~"
@@ -159,53 +260,3 @@ msgstr "Your personal recipe collection~"
 #: src/hosts/recipes/RecipesListView.tsx:382
 msgid "recipes.ownTitle"
 msgstr "Your recipes~"
-
-#. js-lingui-explicit-id
-#: src/hosts/meals/MealPlanDetailView.tsx
-msgid "mealPlanDetail.goalBandBelow"
-msgstr "Below goal~"
-
-#. js-lingui-explicit-id
-#: src/hosts/meals/MealPlanDetailView.tsx
-msgid "mealPlanDetail.goalBandAbove"
-msgstr "Above goal~"
-
-#. js-lingui-explicit-id
-#: src/hosts/meals/MealPlanDetailView.tsx
-msgid "mealPlanDetail.goalBandOnTrack"
-msgstr "On track~"
-
-#. js-lingui-explicit-id
-#: src/hosts/meals/MealPlanDetailView.tsx
-msgid "mealPlanDetail.goalRangeAtLeast"
-msgstr "at least {min}~"
-
-#. js-lingui-explicit-id
-#: src/hosts/meals/MealPlanDetailView.tsx
-msgid "mealPlanDetail.goalRangeUpTo"
-msgstr "up to {max}~"
-
-#. js-lingui-explicit-id
-#: src/hosts/meals/MealPlanDetailView.tsx
-msgid "mealPlanDetail.goalQualifierPerDay"
-msgstr "(per-day avg)~"
-
-#. js-lingui-explicit-id
-#: src/hosts/meals/MealPlanDetailView.tsx
-msgid "mealPlanDetail.goalQualifierPlanTotal"
-msgstr "(plan total)~"
-
-#. js-lingui-explicit-id
-#: src/hosts/meals/MealPlanDetailView.tsx
-msgid "mealPlanDetail.goalCaloriesWord"
-msgstr "Calories~"
-
-#. js-lingui-explicit-id
-#: src/hosts/meals/MealPlanDetailView.tsx
-msgid "mealPlanDetail.goalProteinWord"
-msgstr "Protein~"
-
-#. js-lingui-explicit-id
-#: src/hosts/meals/MealPlanDetailView.tsx
-msgid "mealPlanDetail.goalSatietyLabel"
-msgstr "Satiety (plan-wide score)~"

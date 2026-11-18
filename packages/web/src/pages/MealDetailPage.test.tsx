@@ -341,4 +341,53 @@ describe('MealDetailPage', () => {
       onlineManager.setOnline(true);
     }
   });
+
+  test('renders member copy from the en-XA Lingui catalog (#465)', async () => {
+    server.use(
+      http.get(`http://localhost:8080/api/meals/${MEAL_ID}`, () =>
+        HttpResponse.json({
+          id: MEAL_ID,
+          userId: 'user-uuid-1',
+          title: 'Sunday Dinner',
+          notes: null,
+          memberCount: 1,
+          recipeCount: 1,
+          nutrition: null,
+          createdAt: '2024-01-01T00:00:00.000Z',
+          updatedAt: '2024-01-01T00:00:00.000Z',
+          members: [
+            {
+              recipeId: 'recipe-uuid-1',
+              sortOrder: 0,
+              servingsToCook: 4,
+              servingsToEat: 4,
+              title: 'Test Recipe',
+              imageUrl: null,
+              recipeServings: 4,
+              accessLost: false,
+              satietyScore: 50,
+              nutritionStatus: 'ready',
+              calories: 100.4,
+              proteinG: 10,
+              carbsG: 25.6,
+              fatG: 5,
+            },
+          ],
+        }),
+      ),
+    );
+    await renderWithProviders(
+      <Routes>
+        <Route path="/meals/:mealId" element={<MealDetailPage />} />
+      </Routes>,
+      {route: `/meals/${MEAL_ID}`, locale: 'en-XA'},
+    );
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          'Servings to cook: 4 · Servings to eat: 4~ · 100 cal~ · 10g protein~ · 26g carbs~ · 5g fat~ · satiety 50~',
+        ),
+      ).toBeInTheDocument();
+    });
+  });
 });

@@ -11,9 +11,54 @@ msgid "spike.recipeCount"
 msgstr "{count, plural, one {# recipe} other {# recipes}}"
 
 #. js-lingui-explicit-id
-#: src/pages/RecipeFormHost.tsx:246
+#: src/pages/MealPlanDetailPage.tsx:98
+msgid "mealPlanDetail.goalQualifierPerDay"
+msgstr "(per-day avg)"
+
+#. js-lingui-explicit-id
+#: src/pages/MealPlanDetailPage.tsx:102
+msgid "mealPlanDetail.goalQualifierPlanTotal"
+msgstr "(plan total)"
+
+#. js-lingui-explicit-id
+#: src/pages/MealsHubPage.tsx:28
+msgid "mealsHub.entryCount"
+msgstr "{count, plural, one {# entry} other {# entries}}"
+
+#. js-lingui-explicit-id
+#: src/pages/MealsHubPage.tsx:105
+msgid "mealsHub.recipeCount"
+msgstr "{count, plural, one {# recipe} other {# recipes}}"
+
+#. js-lingui-explicit-id
+#: src/pages/MealDetailPage.tsx:33
+msgid "mealDetail.nutritionCalories"
+msgstr "{value} cal"
+
+#. js-lingui-explicit-id
+#: src/pages/MealDetailPage.tsx:51
+msgid "mealDetail.nutritionCarbs"
+msgstr "{value}g carbs"
+
+#. js-lingui-explicit-id
+#: src/pages/MealDetailPage.tsx:60
+msgid "mealDetail.nutritionFat"
+msgstr "{value}g fat"
+
+#. js-lingui-explicit-id
+#: src/pages/MealDetailPage.tsx:42
+msgid "mealDetail.nutritionProtein"
+msgstr "{value}g protein"
+
+#. js-lingui-explicit-id
+#: src/pages/RecipeFormHost.tsx:244
 msgid "recipeStatus.abandoned"
 msgstr "Abandoned"
+
+#. js-lingui-explicit-id
+#: src/pages/MealPlanDetailPage.tsx:35
+msgid "mealPlanDetail.goalBandAbove"
+msgstr "Above goal"
 
 #. js-lingui-explicit-id
 #: src/pages/HomePage.tsx:103
@@ -21,9 +66,19 @@ msgid "home.addLabel"
 msgstr "Add Recipe"
 
 #. js-lingui-explicit-id
+#: src/pages/MealPlanDetailPage.tsx:51
+msgid "mealPlanDetail.goalRangeAtLeast"
+msgstr "at least {min}"
+
+#. js-lingui-explicit-id
 #: src/pages/auth/ForgotPasswordPage.tsx:62
 msgid "forgotPassword.backLabel"
 msgstr "Back to sign in"
+
+#. js-lingui-explicit-id
+#: src/pages/MealPlanDetailPage.tsx:32
+msgid "mealPlanDetail.goalBandBelow"
+msgstr "Below goal"
 
 #. js-lingui-explicit-id
 #: src/pages/HomePage.tsx:99
@@ -36,6 +91,11 @@ msgid "recipes.authorByline"
 msgstr "By {authorName} · "
 
 #. js-lingui-explicit-id
+#: src/pages/MealPlanDetailPage.tsx:112
+msgid "mealPlanDetail.goalCaloriesWord"
+msgstr "Calories"
+
+#. js-lingui-explicit-id
 #: src/pages/auth/ForgotPasswordPage.tsx:58
 msgid "forgotPassword.confirmationBody"
 msgstr "Check your inbox for a password reset link."
@@ -44,6 +104,12 @@ msgstr "Check your inbox for a password reset link."
 #: src/pages/MarketingLandingPage.tsx:74
 msgid "landing.featureTwoTitle"
 msgstr "Cook with confidence"
+
+#. js-lingui-explicit-id
+#: src/pages/MealEditPage.tsx:246
+#: src/pages/MealPlanEditPage.tsx:129
+msgid "mealForm.loadRecipesError"
+msgstr "Could not load recipes: {error}"
 
 #. js-lingui-explicit-id
 #: src/pages/RecipesPage.tsx:485
@@ -81,7 +147,7 @@ msgid "forgotPassword.confirmationTitle"
 msgstr "Email sent"
 
 #. js-lingui-explicit-id
-#: src/pages/RecipeFormHost.tsx:241
+#: src/pages/RecipeFormHost.tsx:242
 msgid "recipeStatus.evolving"
 msgstr "Evolving"
 
@@ -101,7 +167,7 @@ msgid "pay.homeLabel"
 msgstr "Go to Eciperay home"
 
 #. js-lingui-explicit-id
-#: src/pages/RecipeFormHost.tsx:240
+#: src/pages/RecipeFormHost.tsx:241
 msgid "recipeStatus.idea"
 msgstr "Idea"
 
@@ -171,6 +237,11 @@ msgid "privacyPolicy.lastUpdated"
 msgstr "November 4, 2026"
 
 #. js-lingui-explicit-id
+#: src/pages/MealPlanDetailPage.tsx:37
+msgid "mealPlanDetail.goalBandOnTrack"
+msgstr "On track"
+
+#. js-lingui-explicit-id
 #: src/pages/AddPage.tsx:25
 msgid "add.importUrlDescription"
 msgstr "Paste a recipe link"
@@ -186,7 +257,7 @@ msgid "add.importTextDescription"
 msgstr "Paste rich text from Word or the web"
 
 #. js-lingui-explicit-id
-#: src/pages/RecipeFormHost.tsx:242
+#: src/pages/RecipeFormHost.tsx:243
 msgid "recipeStatus.perfected"
 msgstr "Perfected"
 
@@ -194,6 +265,11 @@ msgstr "Perfected"
 #: src/pages/PrivacyPolicyPage.tsx:23
 msgid "privacyPolicy.title"
 msgstr "Privacy Policy"
+
+#. js-lingui-explicit-id
+#: src/pages/MealPlanDetailPage.tsx:120
+msgid "mealPlanDetail.goalProteinWord"
+msgstr "Protein"
 
 #. js-lingui-explicit-id
 #: src/pages/HomePage.tsx:108
@@ -204,6 +280,16 @@ msgstr "Recently viewed"
 #: src/pages/HomePage.tsx:112
 msgid "home.emptyMessage"
 msgstr "Recipes you view will appear here."
+
+#. js-lingui-explicit-id
+#: src/pages/MealPlanDetailPage.tsx:128
+msgid "mealPlanDetail.goalSatietyLabel"
+msgstr "Satiety (plan-wide score)"
+
+#. js-lingui-explicit-id
+#: src/pages/MealDetailPage.tsx:69
+msgid "mealDetail.nutritionSatiety"
+msgstr "satiety {value}"
 
 #. js-lingui-explicit-id
 #: src/pages/MarketingLandingPage.tsx:39
@@ -219,6 +305,11 @@ msgstr "Scale servings, track versions, and follow step-by-step cooking mode."
 #: src/pages/DiscoverPage.tsx:92
 msgid "discover.searchPlaceholder"
 msgstr "Search public recipes…"
+
+#. js-lingui-explicit-id
+#: src/pages/MealDetailPage.tsx:84
+msgid "mealDetail.servingsLabel"
+msgstr "Servings to cook: {cook} · Servings to eat: {eat}"
 
 #. js-lingui-explicit-id
 #: src/pages/MarketingLandingPage.tsx:85
@@ -244,6 +335,11 @@ msgstr "Terms of Service"
 #: src/pages/AddPage.tsx:17
 msgid "add.manualEntryDescription"
 msgstr "Type in a recipe from scratch"
+
+#. js-lingui-explicit-id
+#: src/pages/MealPlanDetailPage.tsx:58
+msgid "mealPlanDetail.goalRangeUpTo"
+msgstr "up to {max}"
 
 #. js-lingui-explicit-id
 #: src/pages/AddPage.tsx:33
@@ -280,53 +376,3 @@ msgstr "Your recipes"
 #: src/pages/MarketingLandingPage.tsx:35
 msgid "landing.heroTitle"
 msgstr "Your recipes, organized and ready to cook"
-
-#. js-lingui-explicit-id
-#: src/pages/MealPlanDetailPage.tsx
-msgid "mealPlanDetail.goalBandBelow"
-msgstr "Below goal"
-
-#. js-lingui-explicit-id
-#: src/pages/MealPlanDetailPage.tsx
-msgid "mealPlanDetail.goalBandAbove"
-msgstr "Above goal"
-
-#. js-lingui-explicit-id
-#: src/pages/MealPlanDetailPage.tsx
-msgid "mealPlanDetail.goalBandOnTrack"
-msgstr "On track"
-
-#. js-lingui-explicit-id
-#: src/pages/MealPlanDetailPage.tsx
-msgid "mealPlanDetail.goalRangeAtLeast"
-msgstr "at least {min}"
-
-#. js-lingui-explicit-id
-#: src/pages/MealPlanDetailPage.tsx
-msgid "mealPlanDetail.goalRangeUpTo"
-msgstr "up to {max}"
-
-#. js-lingui-explicit-id
-#: src/pages/MealPlanDetailPage.tsx
-msgid "mealPlanDetail.goalQualifierPerDay"
-msgstr "(per-day avg)"
-
-#. js-lingui-explicit-id
-#: src/pages/MealPlanDetailPage.tsx
-msgid "mealPlanDetail.goalQualifierPlanTotal"
-msgstr "(plan total)"
-
-#. js-lingui-explicit-id
-#: src/pages/MealPlanDetailPage.tsx
-msgid "mealPlanDetail.goalCaloriesWord"
-msgstr "Calories"
-
-#. js-lingui-explicit-id
-#: src/pages/MealPlanDetailPage.tsx
-msgid "mealPlanDetail.goalProteinWord"
-msgstr "Protein"
-
-#. js-lingui-explicit-id
-#: src/pages/MealPlanDetailPage.tsx
-msgid "mealPlanDetail.goalSatietyLabel"
-msgstr "Satiety (plan-wide score)"

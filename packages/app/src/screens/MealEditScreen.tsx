@@ -7,6 +7,7 @@ import {
   useDebouncedValue,
   type MealFormIngredient,
 } from '@eciperay/client';
+import {useLingui} from '@lingui/react';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {MealFormPage} from '@spudly/ui';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
@@ -21,6 +22,7 @@ type Props = NativeStackScreenProps<MealsStackParamList, 'MealEdit'>;
 type SelectedRecipe = {id: string; label: string; servings: number};
 
 export const MealEditScreen = ({route, navigation}: Props) => {
+  const {i18n} = useLingui();
   const mealId = route.params.mealId ?? '';
   const isEdit = mealId.length > 0;
   const queryClient = useQueryClient();
@@ -73,7 +75,11 @@ export const MealEditScreen = ({route, navigation}: Props) => {
   // present, so the form (and its edits) stays usable.
   const mealLoadFailed = isEdit && isMealLoadingError && !meal;
   const mealLoadErrorMessage = mealLoadFailed
-    ? `Could not load this meal: ${errorMessage(mealError)}`
+    ? i18n._({
+        id: 'mealForm.loadMealError',
+        message: 'Could not load this meal: {error}',
+        values: {error: errorMessage(mealError)},
+      })
     : null;
 
   const {
@@ -230,7 +236,11 @@ export const MealEditScreen = ({route, navigation}: Props) => {
           // Same picker-error surfacing as web (#359): a failed
           // search must not read as "no matches".
           (searchError
-            ? `Could not load recipes: ${errorMessage(searchError)}`
+            ? i18n._({
+                id: 'mealForm.loadRecipesError',
+                message: 'Could not load recipes: {error}',
+                values: {error: errorMessage(searchError)},
+              })
             : null)
         }
         onTitleChange={setTitle}

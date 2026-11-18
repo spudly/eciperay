@@ -187,4 +187,31 @@ describe('MealsHubPage', () => {
     });
     expect(screen.getByText('No meal plans yet.')).toBeInTheDocument();
   });
+
+  test('renders hub subtitles from the en-XA Lingui catalog (#465)', async () => {
+    server.use(
+      http.get('http://localhost:8080/api/meals', () =>
+        HttpResponse.json([makeMealSummary()]),
+      ),
+      http.get('http://localhost:8080/api/meal-plans', () =>
+        HttpResponse.json([makeMealPlanSummary({entryCount: 2})]),
+      ),
+    );
+    const first = await renderWithProviders(<MealsHubPage />, {
+      locale: 'en-XA',
+    });
+    await waitFor(() => {
+      expect(screen.getByText('1 recipe~')).toBeInTheDocument();
+    });
+    first.unmount();
+    await renderWithProviders(<MealsHubPage />, {
+      route: '/meals?tab=plans',
+      locale: 'en-XA',
+    });
+    await waitFor(() => {
+      expect(
+        screen.getByText('2 entries~~ · 2026-01-01 – 2026-01-07'),
+      ).toBeInTheDocument();
+    });
+  });
 });

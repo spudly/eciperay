@@ -4,6 +4,8 @@ import {
   type MealsHubTab,
 } from '@eciperay/client';
 import type {MealPlan} from '@eciperay/types';
+import type {I18n} from '@lingui/core';
+import {useLingui} from '@lingui/react';
 import {MealsHubPage, type MealPlansPageItem} from '@spudly/ui';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useMemo, useState} from 'react';
@@ -24,12 +26,17 @@ import {
  * pre-composed (the RecipesPage subtitle precedent): pluralization and the
  * nutrition formatter are the app's, so the pages only render it.
  */
-const formatMealPlanSubtitle = (plan: MealPlan) =>
-  `${plan.entryCount} entr${plan.entryCount === 1 ? 'y' : 'ies'}${
+const formatMealPlanSubtitle = (i18n: I18n, plan: MealPlan) =>
+  `${i18n._({
+    id: 'mealsHub.entryCount',
+    message: '{count, plural, one {# entry} other {# entries}}',
+    values: {count: plan.entryCount},
+  })}${
     plan.startsOn && plan.endsOn ? ` · ${plan.startsOn} – ${plan.endsOn}` : ''
   }${formatSimpleNutrition(plan.nutrition) ? ` · ${formatSimpleNutrition(plan.nutrition)}` : ''}`;
 
 export const MealsHubScreen = () => {
+  const {i18n} = useLingui();
   const queryClient = useQueryClient();
   // The hub opens on the Plans tab (#538): meal plans are the
   // primary surface, matching the web top bar's direct landing.
@@ -68,7 +75,7 @@ export const MealsHubScreen = () => {
     id: plan.id,
     href: mealPlanHref(plan.id),
     title: plan.title,
-    subtitle: formatMealPlanSubtitle(plan),
+    subtitle: formatMealPlanSubtitle(i18n, plan),
   }));
 
   return (
@@ -79,9 +86,11 @@ export const MealsHubScreen = () => {
         id: meal.id,
         href: mealHref(meal.id),
         title: meal.title,
-        subtitle: `${meal.recipeCount} recipe${
-          meal.recipeCount === 1 ? '' : 's'
-        }${
+        subtitle: `${i18n._({
+          id: 'mealsHub.recipeCount',
+          message: '{count, plural, one {# recipe} other {# recipes}}',
+          values: {count: meal.recipeCount},
+        })}${
           formatSimpleNutrition(meal.nutrition)
             ? ` · ${formatSimpleNutrition(meal.nutrition)}`
             : ''
