@@ -85,6 +85,33 @@ describe('CookingModeScreen', () => {
     expect(await findByText('Mix dry ingredients')).toBeTruthy();
   });
 
+  test('renders ingredients heading and cook-log placeholder from the en-XA Lingui catalog (#465)', async () => {
+    const {findByText, findByPlaceholderText} = await renderWithProviders(
+      <CookingModeScreen {...stackProps} />,
+      {locale: 'en-XA'},
+    );
+    expect(await findByText('Ingredients (4 servings)~')).toBeTruthy();
+    await fireEvent.press(await findByText('Done'));
+    expect(
+      await findByPlaceholderText('Notes from this cook (optional)~'),
+    ).toBeTruthy();
+  });
+
+  test('renders scaled ingredients heading from the en-XA Lingui catalog (#465)', async () => {
+    const scaledProps = makeStackProps<RecipesStackParamList, 'CookingMode'>(
+      'CookingMode',
+      {recipeId: 'recipe-uuid-1', versionId: VERSION_ID, servings: 8},
+      {goBack: mockGoBack},
+    );
+    const {findByText} = await renderWithProviders(
+      <CookingModeScreen {...scaledProps} />,
+      {locale: 'en-XA'},
+    );
+    expect(
+      await findByText('Ingredients (scaled to 8 servings)~'),
+    ).toBeTruthy();
+  });
+
   test('shows scaled ingredients when servings are provided', async () => {
     const scaledProps = makeStackProps<RecipesStackParamList, 'CookingMode'>(
       'CookingMode',
