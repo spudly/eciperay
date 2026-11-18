@@ -1,4 +1,5 @@
 import {LEGAL_CONTACT_EMAIL, LEGAL_OPERATOR_NAME} from '@eciperay/client';
+import type {I18n} from '@lingui/core';
 import type {
   BigFooterData,
   LegalDocumentBlock,
@@ -11,6 +12,14 @@ import type {
 // app-side as data. These helpers keep the two content files
 // readable — each document reads as its sections, paragraphs, and
 // list items, with the inline semantics named at the span.
+//
+// Since #465 tranche 21, the wording itself flows through the
+// Lingui catalogs: the content files are builder functions that
+// resolve every span's text through `i18n._` at render time, and
+// the shared frame/footer labels below resolve the same way. The
+// en-US constants (`sharedFooter`, `legalDocumentFrameProps`,
+// `legalOperatorIntroSpan`) remain as the locale-free defaults for
+// callers that do not resolve copy (the recipeStatusCopy pattern).
 
 export const textSpan = (text: string): LegalDocumentSpan => ({
   type: 'text',
@@ -50,6 +59,17 @@ export const legalOperatorIntroSpan: LegalDocumentSpan = textSpan(
   `Eciperay is operated by ${LEGAL_OPERATOR_NAME} ("we", "us", or "our"). Eciperay is not a registered legal entity.`,
 );
 
+/** The operator intro sentence, resolved through the Lingui catalogs. */
+export const buildLegalOperatorIntroSpan = (i18n: I18n): LegalDocumentSpan =>
+  textSpan(
+    i18n._({
+      id: 'legal.operatorIntro',
+      message:
+        'Eciperay is operated by {operatorName} ("we", "us", or "our"). Eciperay is not a registered legal entity.',
+      values: {operatorName: LEGAL_OPERATOR_NAME},
+    }),
+  );
+
 /**
  * The ONE shared BigFooter data object for every signed-out public surface
  * (#425): a DS page's own default footer omits the Do Not Sell link, so every
@@ -78,6 +98,38 @@ export const sharedFooter: BigFooterData = {
   socialLinks: [],
 };
 
+/** The shared footer with its labels resolved through the Lingui catalogs. */
+export const buildSharedFooter = (i18n: I18n): BigFooterData => ({
+  brand: {label: 'Eciperay', href: '/'},
+  columns: [
+    {
+      title: i18n._({id: 'legal.footerColumnTitle', message: 'Legal'}),
+      links: [
+        {
+          label: i18n._({id: 'privacyPolicy.title', message: 'Privacy Policy'}),
+          href: '/privacy',
+        },
+        {
+          label: i18n._({
+            id: 'termsOfService.title',
+            message: 'Terms of Service',
+          }),
+          href: '/terms',
+        },
+        {
+          label: i18n._({
+            id: 'legal.doNotSellLabel',
+            message: 'Do Not Sell or Share My Personal Information',
+          }),
+          href: '/privacy/consent',
+        },
+      ],
+    },
+  ],
+  storeLinks: [],
+  socialLinks: [],
+});
+
 /** The DS legal page's frame props, shared by both documents. */
 export const legalDocumentFrameProps: {
   brandLabel: string;
@@ -92,3 +144,14 @@ export const legalDocumentFrameProps: {
   signInHref: '/login',
   footer: sharedFooter,
 };
+
+/** The legal page's frame props, resolved through the Lingui catalogs. */
+export const buildLegalDocumentFrameProps = (
+  i18n: I18n,
+): typeof legalDocumentFrameProps => ({
+  brandLabel: 'Eciperay',
+  brandHref: '/',
+  signInLabel: i18n._({id: 'legal.signInLabel', message: 'Sign in'}),
+  signInHref: '/login',
+  footer: buildSharedFooter(i18n),
+});

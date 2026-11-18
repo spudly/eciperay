@@ -14,6 +14,12 @@ describe('TermsOfServicePage', () => {
     expect(
       screen.getByRole('heading', {name: 'Terms of Service~'}),
     ).toBeInTheDocument();
+    // Tranche 21: section bodies flow through the catalogs too —
+    // the pseudo-localized section heading proves the structured
+    // content is catalog-resolved, not hardcoded.
+    expect(
+      screen.getByRole('heading', {name: 'Acceptable use~'}),
+    ).toBeInTheDocument();
   });
 
   test('renders terms content without requiring auth', async () => {
