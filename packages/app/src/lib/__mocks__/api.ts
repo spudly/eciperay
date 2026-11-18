@@ -64,5 +64,10 @@ export const api = {
     delete: jest.fn(),
     shoppingList: jest.fn(),
   },
-  account: {getNutritionGoals: jest.fn(), putNutritionGoals: jest.fn()},
+  account: {
+    getNutritionGoals: jest.fn(),
+    putNutritionGoals: jest.fn(),
+    getAuthorDisplay: jest.fn(),
+    putAuthorDisplay: jest.fn(),
+  },
 };

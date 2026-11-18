@@ -293,4 +293,70 @@ describe('MealPlanDetailPage', () => {
       screen.getByText('500 / 1,800–2,200 · Below goal'),
     ).toBeInTheDocument();
   });
+
+  test('renders goal copy from the en-XA Lingui catalog (#465)', async () => {
+    // Lower-only calorie goal on an undated plan (perDay absent): the
+    // range qualifier, the band label, and the plan-total qualifier all
+    // come from the catalog, so under en-XA they render pseudo-localized.
+    server.use(
+      http.get(`http://localhost:8080/api/meal-plans/${PLAN_ID}`, () =>
+        HttpResponse.json({
+          id: PLAN_ID,
+          userId: 'user-uuid-1',
+          title: 'Someday',
+          notes: null,
+          startsOn: null,
+          endsOn: null,
+          entryCount: 0,
+          nutrition: {
+            calories: 500,
+            proteinG: 30,
+            carbsG: 40,
+            fatG: 10,
+            fiberG: 5,
+            sugarG: 8,
+            sodiumMg: 900,
+            preparedWeightG: 800,
+            satietyScore: 50,
+            status: 'ready',
+            perDay: null,
+          },
+          goalProgress: {
+            calories: {
+              min: 1800,
+              max: null,
+              actual: 500,
+              delta: -1300,
+              band: 'under',
+            },
+            proteinG: null,
+            carbsG: null,
+            fatG: null,
+            satietyScore: null,
+          },
+          createdAt: '2024-01-01T00:00:00.000Z',
+          updatedAt: '2024-01-01T00:00:00.000Z',
+          entries: [],
+        }),
+      ),
+    );
+
+    await renderWithProviders(
+      <Routes>
+        <Route
+          path="/meal-plans/:planId"
+          element={<MealPlanDetailPage />}
+        />
+      </Routes>,
+      {route: `/meal-plans/${PLAN_ID}`, locale: 'en-XA'},
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Someday')).toBeInTheDocument();
+    });
+    expect(screen.getByText('Calories~ (plan total)~')).toBeInTheDocument();
+    expect(
+      screen.getByText('500 / at least 1,800~ · Below goal~'),
+    ).toBeInTheDocument();
+  });
 });

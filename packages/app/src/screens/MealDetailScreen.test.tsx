@@ -163,6 +163,71 @@ describe('MealDetailScreen', () => {
     ).toBeTruthy();
   });
 
+  test('renders direct-ingredient servings from the en-XA catalog (#465)', async () => {
+    mockGet.mockResolvedValue({
+      id: mealId,
+      userId: 'user-uuid-1',
+      title: 'Sunday Dinner',
+      notes: null,
+      memberCount: 2,
+      recipeCount: 1,
+      nutrition: null,
+      createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2024-01-01T00:00:00.000Z',
+      members: [
+        {
+          recipeId,
+          sortOrder: 0,
+          servingsToCook: 4,
+          servingsToEat: 4,
+          title: 'Test Recipe',
+          imageUrl: null,
+          recipeServings: 4,
+          accessLost: false,
+          satietyScore: null,
+          nutritionStatus: null,
+          calories: null,
+          proteinG: null,
+          carbsG: null,
+          fatG: null,
+        },
+      ],
+      ingredients: [
+        {
+          name: 'Protein shake',
+          quantity: 1,
+          unit: 'bottle',
+          sortOrder: 0,
+          servingsToCook: 2,
+          servingsToEat: 2,
+          fiberG: null,
+          sugarG: null,
+          sodiumMg: null,
+          preparedWeightG: null,
+          satietyScore: null,
+          nutritionStatus: 'ready',
+          calories: 150,
+          proteinG: 30,
+          carbsG: 3,
+          fatG: 1,
+        },
+      ],
+    });
+    const {findByText} = await renderWithProviders(
+      <MealDetailScreen {...stackProps} />,
+      {locale: 'en-XA'},
+    );
+    expect(await findByText('Protein shake')).toBeTruthy();
+    // The direct-ingredient row's servings label resolves through the
+    // catalog: its trailing marker fails if the row reverts to the
+    // hard-coded English label.
+    expect(
+      await findByText(
+        '1 bottle · Servings to cook: 2 · Servings to eat: 2~ · 300 cal~ · 60g protein~ · 6g carbs~ · 2g fat~',
+      ),
+    ).toBeTruthy();
+  });
+
   test('renders meal detail', async () => {
     const {findByText} = await renderWithProviders(
       <MealDetailScreen {...stackProps} />,
@@ -193,5 +258,46 @@ describe('MealDetailScreen', () => {
     expect(Linking.openURL).toHaveBeenCalledWith(
       recipeHref({id: recipeId, title: 'Test Recipe'}),
     );
+  });
+
+  test('renders member copy from the en-XA Lingui catalog (#465)', async () => {
+    mockGet.mockResolvedValue({
+      id: mealId,
+      userId: 'user-uuid-1',
+      title: 'Sunday Dinner',
+      notes: null,
+      memberCount: 1,
+      recipeCount: 1,
+      nutrition: null,
+      createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2024-01-01T00:00:00.000Z',
+      members: [
+        {
+          recipeId,
+          sortOrder: 0,
+          servingsToCook: 4,
+          servingsToEat: 4,
+          title: 'Test Recipe',
+          imageUrl: null,
+          recipeServings: 4,
+          accessLost: false,
+          satietyScore: 50,
+          nutritionStatus: 'ready',
+          calories: 100.4,
+          proteinG: 10,
+          carbsG: 25.6,
+          fatG: 5,
+        },
+      ],
+    });
+    const {findByRole} = await renderWithProviders(
+      <MealDetailScreen {...stackProps} />,
+      {locale: 'en-XA'},
+    );
+    expect(
+      await findByRole('link', {
+        name: 'Test Recipe, Servings to cook: 4 · Servings to eat: 4~ · 100 cal~ · 10g protein~ · 26g carbs~ · 5g fat~ · satiety 50~',
+      }),
+    ).toBeTruthy();
   });
 });

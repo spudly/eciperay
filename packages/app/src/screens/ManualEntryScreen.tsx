@@ -4,6 +4,7 @@ import {
   useAnalytics,
   useAuth,
 } from '@eciperay/client';
+import {useLingui} from '@lingui/react';
 import {CommonActions} from '@react-navigation/native';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {ManualEntryPage} from '@spudly/ui';
@@ -28,6 +29,7 @@ const emptyInput: RecipeInput = {
 };
 
 export const ManualEntryScreen = ({navigation, route}: Props) => {
+  const {i18n} = useLingui();
   const queryClient = useQueryClient();
   const {session} = useAuth();
   const analytics = useAnalytics();
@@ -73,7 +75,10 @@ export const ManualEntryScreen = ({navigation, route}: Props) => {
     <ManualEntryPage>
       <RecipeForm
         initial={emptyInput}
-        submitLabel="Create Recipe"
+        submitLabel={i18n._({
+          id: 'recipeForm.submitCreateRecipe',
+          message: 'Create Recipe',
+        })}
         onSubmit={handleSubmit}
       />
     </ManualEntryPage>

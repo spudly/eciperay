@@ -51,6 +51,29 @@ describe('MealPlanEditPage', () => {
     expect(screen.queryByText('Recipe · Test Recipe')).not.toBeInTheDocument();
   });
 
+  test('surfaces a recipe search failure from the en-XA catalog (#465)', async () => {
+    server.use(
+      http.get('http://localhost:8080/api/recipes', () =>
+        HttpResponse.json({error: 'boom'}, {status: 500}),
+      ),
+    );
+    await renderWithProviders(<MealPlanEditPage />, {
+      route: '/meal-plans/new',
+      locale: 'en-XA',
+    });
+    fireEvent.change(screen.getByPlaceholderText(/Search meals & recipes/), {
+      target: {value: 'Test'},
+    });
+    await waitFor(
+      () => {
+        expect(
+          screen.getByText(/Could not load recipes: boom~/),
+        ).toBeInTheDocument();
+      },
+      {timeout: 5000},
+    );
+  });
+
   test('shows save errors', async () => {
     vi.spyOn(eciperay.mealPlans, 'create').mockRejectedValueOnce(
       new Error('Plan failed'),
