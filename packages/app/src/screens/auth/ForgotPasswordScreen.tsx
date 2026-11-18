@@ -1,4 +1,5 @@
 import {errorMessage, validateAuthEmail} from '@eciperay/client';
+import {useLingui} from '@lingui/react';
 import {useState} from 'react';
 import {Alert} from 'react-native';
 import {ForgotPasswordPage} from '@spudly/ui';
@@ -20,6 +21,7 @@ const sendReset = async (email: string) => {
 };
 
 export const ForgotPasswordScreen = ({navigation}: ForgotProps) => {
+  const {i18n} = useLingui();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
@@ -34,10 +36,22 @@ export const ForgotPasswordScreen = ({navigation}: ForgotProps) => {
     setLoading(true);
     try {
       await sendReset(normalizeAuthEmail(email));
-      Alert.alert('Check your email', 'A password reset link has been sent.');
+      Alert.alert(
+        i18n._({
+          id: 'forgotPassword.confirmationTitle',
+          message: 'Check your email',
+        }),
+        i18n._({
+          id: 'forgotPassword.confirmationBody',
+          message: 'A password reset link has been sent.',
+        }),
+      );
       navigation.goBack();
     } catch (error) {
-      Alert.alert('Error', errorMessage(error));
+      Alert.alert(
+        i18n._({id: 'authNative.errorTitle', message: 'Error'}),
+        errorMessage(error),
+      );
     } finally {
       setLoading(false);
     }

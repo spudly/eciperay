@@ -11,6 +11,11 @@ msgid "spike.recipeCount"
 msgstr "{count, plural, one {# recipe} other {# recipes}}"
 
 #. js-lingui-explicit-id
+#: src/screens/auth/ForgotPasswordScreen.tsx:44
+msgid "forgotPassword.confirmationBody"
+msgstr "A password reset link has been sent."
+
+#. js-lingui-explicit-id
 #: src/hosts/recipe/RecipeForm.tsx:276
 msgid "recipeStatus.abandoned"
 msgstr "Abandoned"
@@ -59,6 +64,21 @@ msgstr "By {authorName} · "
 #: src/hosts/recipe/RecipeDetailView.tsx:117
 msgid "recipeDetail.versionRoleCandidate"
 msgstr "Candidate"
+
+#. js-lingui-explicit-id
+#: src/screens/auth/ForgotPasswordScreen.tsx:40
+msgid "forgotPassword.confirmationTitle"
+msgstr "Check your email"
+
+#. js-lingui-explicit-id
+#: src/screens/auth/SignUpScreen.tsx:94
+msgid "signup.confirmationTitle"
+msgstr "Check your email"
+
+#. js-lingui-explicit-id
+#: src/screens/auth/SignUpScreen.tsx:98
+msgid "signup.confirmationBody"
+msgstr "Click the confirmation link we sent you, then sign in."
 
 #. js-lingui-explicit-id
 #: src/hosts/recipe/RecipeDetailView.tsx:277
@@ -129,6 +149,12 @@ msgstr "e.g. make it vegetarian, reduce sugar, add more spice"
 #: src/screens/GenerateAiScreen.tsx:20
 msgid "aiGenerate.promptPlaceholder"
 msgstr "e.g. quick weeknight vegetarian pasta for 4, under 30 minutes"
+
+#. js-lingui-explicit-id
+#: src/screens/auth/ForgotPasswordScreen.tsx:52
+#: src/screens/auth/ResetPasswordScreen.tsx:39
+msgid "authNative.errorTitle"
+msgstr "Error"
 
 #. js-lingui-explicit-id
 #: src/hosts/recipe/RecipeForm.tsx:274
@@ -210,6 +236,11 @@ msgstr "Notes from this cook (optional)"
 #: src/hosts/recipe/RecipeVisibilityControls.tsx:56
 msgid "recipeSharing.visibilityPrivateDescription"
 msgstr "Only you can view this recipe."
+
+#. js-lingui-explicit-id
+#: src/screens/auth/ResetPasswordScreen.tsx:28
+msgid "resetPassword.confirmationTitle"
+msgstr "Password updated"
 
 #. js-lingui-explicit-id
 #: src/screens/AddScreen.tsx:30
@@ -350,6 +381,16 @@ msgid "recipeSharing.settingsUpdated"
 msgstr "Sharing settings updated"
 
 #. js-lingui-explicit-id
+#: src/screens/auth/SignInScreen.tsx:42
+msgid "authNative.signInFailedTitle"
+msgstr "Sign in failed"
+
+#. js-lingui-explicit-id
+#: src/screens/auth/SignUpScreen.tsx:102
+msgid "authNative.signUpFailedTitle"
+msgstr "Sign up failed"
+
+#. js-lingui-explicit-id
 #: src/screens/GenerateAiScreen.tsx:90
 #: src/screens/TweakAiScreen.tsx:95
 msgid "aiSession.startLabel"
@@ -419,6 +460,11 @@ msgstr "We couldn't load public recipes. Check your connection and try again."
 #: src/screens/HomeScreen.tsx:77
 msgid "home.title"
 msgstr "Welcome to Eciperay"
+
+#. js-lingui-explicit-id
+#: src/screens/auth/ResetPasswordScreen.tsx:32
+msgid "resetPassword.confirmationBody"
+msgstr "You can now use your new password."
 
 #. js-lingui-explicit-id
 #: src/screens/HomeScreen.tsx:78

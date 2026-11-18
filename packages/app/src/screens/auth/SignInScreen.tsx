@@ -1,4 +1,5 @@
 import {errorMessage, validateAuthEmail} from '@eciperay/client';
+import {useLingui} from '@lingui/react';
 import {useState} from 'react';
 import {Alert} from 'react-native';
 import {SignInPage} from '@spudly/ui';
@@ -20,6 +21,7 @@ const signIn = async (email: string, password: string) => {
 };
 
 export const SignInScreen = () => {
+  const {i18n} = useLingui();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -36,7 +38,10 @@ export const SignInScreen = () => {
     try {
       await signIn(normalizeAuthEmail(email), normalizeAuthPassword(password));
     } catch (error) {
-      Alert.alert('Sign in failed', errorMessage(error));
+      Alert.alert(
+        i18n._({id: 'authNative.signInFailedTitle', message: 'Sign in failed'}),
+        errorMessage(error),
+      );
     } finally {
       setLoading(false);
     }

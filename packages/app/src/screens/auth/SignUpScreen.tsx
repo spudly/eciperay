@@ -1,4 +1,5 @@
 import {errorMessage, validateAuthEmail} from '@eciperay/client';
+import {useLingui} from '@lingui/react';
 import {useState} from 'react';
 import {Alert} from 'react-native';
 import {SignUpPage} from '@spudly/ui';
@@ -38,6 +39,11 @@ const runSignUp = async (
   displayName: string,
   setLoading: (v: boolean) => void,
   setEmailError: (v: string | null) => void,
+  messages: {
+    confirmationTitle: string;
+    confirmationBody: string;
+    failedTitle: string;
+  },
 ) => {
   const validationError = validateAuthEmail(email);
   if (validationError) {
@@ -53,19 +59,17 @@ const runSignUp = async (
       displayName.trim(),
     );
     if (result === 'confirm-email') {
-      Alert.alert(
-        'Check your email',
-        'Click the confirmation link we sent you, then sign in.',
-      );
+      Alert.alert(messages.confirmationTitle, messages.confirmationBody);
     }
   } catch (error) {
-    Alert.alert('Sign up failed', errorMessage(error));
+    Alert.alert(messages.failedTitle, errorMessage(error));
   } finally {
     setLoading(false);
   }
 };
 
 export const SignUpScreen = () => {
+  const {i18n} = useLingui();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
@@ -86,7 +90,20 @@ export const SignUpScreen = () => {
       loading={loading}
       emailError={emailError}
       onSubmit={() => {
-        void runSignUp(email, password, displayName, setLoading, setEmailError);
+        void runSignUp(email, password, displayName, setLoading, setEmailError, {
+          confirmationTitle: i18n._({
+            id: 'signup.confirmationTitle',
+            message: 'Check your email',
+          }),
+          confirmationBody: i18n._({
+            id: 'signup.confirmationBody',
+            message: 'Click the confirmation link we sent you, then sign in.',
+          }),
+          failedTitle: i18n._({
+            id: 'authNative.signUpFailedTitle',
+            message: 'Sign up failed',
+          }),
+        });
       }}
       signInHref={signInHref}
       legalNotice={<LegalLinks variant="inline" />}
