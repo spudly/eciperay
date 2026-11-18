@@ -72,6 +72,33 @@ describe('AccessTokensSection (app)', () => {
     expect(screen.queryByText('Create token')).toBeNull();
   });
 
+  test('renders token meta from the en-XA Lingui catalog (#465)', async () => {
+    mockEntitlement.mockResolvedValue(makeEntitlement('power'));
+    mockList.mockResolvedValue([
+      {
+        id: 'token-1',
+        name: 'My token',
+        tokenPrefix: 'eci_abc',
+        createdAt: '2026-01-02T00:00:00.000Z',
+        lastUsedAt: null,
+        revokedAt: null,
+      } as never,
+    ]);
+    const queryClient = new QueryClient({
+      defaultOptions: {queries: {retry: false}, mutations: {retry: false}},
+    });
+    await renderWithProviders(
+      <QueryClientProvider client={queryClient}>
+        <AccessTokensSection />
+      </QueryClientProvider>,
+      {locale: 'en-XA'},
+    );
+    await waitFor(() => {
+      expect(screen.getByText(/Never used~/)).toBeTruthy();
+    });
+    expect(screen.getByText(/Created .*~/)).toBeTruthy();
+  });
+
   test('falls back to the form when the entitlement fails to load', async () => {
     mockEntitlement.mockRejectedValue(new Error('entitlement down'));
     await renderSection();

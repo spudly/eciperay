@@ -747,3 +747,17 @@ describe('ProfilePage subscription account switch during refresh', () => {
     expect(screen.queryByText('Plus plan')).not.toBeInTheDocument();
   });
 });
+
+describe('ProfilePage en-XA (#465)', () => {
+  test('renders account data copy from the en-XA Lingui catalog', async () => {
+    await renderWithProviders(<ProfilePage />, {
+      withAuth: false,
+      locale: 'en-XA',
+    });
+    expect(
+      screen.getByText(
+        'Download a copy of your profile, recipes, share grants, ratings, and comments, or permanently delete your account.~',
+      ),
+    ).toBeInTheDocument();
+  });
+});

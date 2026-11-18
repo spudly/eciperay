@@ -31,6 +31,16 @@ msgid "mealsHub.recipeCount"
 msgstr "{count, plural, one {# recipe~} other {# recipes~~}}"
 
 #. js-lingui-explicit-id
+#: src/pages/ProfilePage.tsx:49
+msgid "profile.importFailed"
+msgstr "{count} failed.~"
+
+#. js-lingui-explicit-id
+#: src/components/profile/subscriptionData.ts:96
+msgid "profile.planLabel"
+msgstr "{plan} plan~"
+
+#. js-lingui-explicit-id
 #: src/pages/MealDetailPage.tsx:33
 msgid "mealDetail.nutritionCalories"
 msgstr "{value} cal~"
@@ -59,6 +69,26 @@ msgstr "Abandoned~"
 #: src/pages/MealPlanDetailPage.tsx:35
 msgid "mealPlanDetail.goalBandAbove"
 msgstr "Above goal~"
+
+#. js-lingui-explicit-id
+#: src/pages/ProfilePage.tsx:285
+msgid "profile.deleteAccountError"
+msgstr "Account deletion failed~"
+
+#. js-lingui-explicit-id
+#: src/pages/ProfilePage.tsx:253
+msgid "profile.exportAccountError"
+msgstr "Account export failed~"
+
+#. js-lingui-explicit-id
+#: src/components/profile/subscriptionData.ts:48
+msgid "profile.statusActive"
+msgstr "Active~"
+
+#. js-lingui-explicit-id
+#: src/components/profile/subscriptionData.ts:43
+msgid "profile.statusActiveRenews"
+msgstr "Active — renews {date}~"
 
 #. js-lingui-explicit-id
 #: src/pages/RecipeFormHost.tsx:558
@@ -116,9 +146,34 @@ msgid "recipeForm.cancelCrop"
 msgstr "Cancel crop~"
 
 #. js-lingui-explicit-id
+#: src/components/profile/subscriptionData.ts:57
+msgid "profile.statusCancelled"
+msgstr "Cancelled~"
+
+#. js-lingui-explicit-id
+#: src/components/profile/subscriptionData.ts:52
+msgid "profile.statusCancelledUntil"
+msgstr "Cancelled — access until {date}~"
+
+#. js-lingui-explicit-id
+#: src/components/profile/subscriptionData.ts:32
+msgid "profile.statusCancellingUntil"
+msgstr "Cancelling — access until {date}~"
+
+#. js-lingui-explicit-id
+#: src/components/profile/subscriptionData.ts:37
+msgid "profile.statusCancelling"
+msgstr "Cancelling — access until the end of the current period~"
+
+#. js-lingui-explicit-id
 #: src/pages/auth/ForgotPasswordPage.tsx:58
 msgid "forgotPassword.confirmationBody"
 msgstr "Check your inbox for a password reset link.~"
+
+#. js-lingui-explicit-id
+#: src/components/profile/subscriptionData.ts:113
+msgid "profile.reconciling"
+msgstr "Checking for the latest subscription status…~"
 
 #. js-lingui-explicit-id
 #: src/pages/MarketingLandingPage.tsx:74
@@ -147,6 +202,11 @@ msgid "recipeForm.submitCreateRecipe"
 msgstr "Create Recipe~"
 
 #. js-lingui-explicit-id
+#: src/components/profile/ProfileAccessTokensSection.tsx:360
+msgid "profile.tokenCreated"
+msgstr "Created {date}~"
+
+#. js-lingui-explicit-id
 #: src/pages/RecipeFormHost.tsx:1356
 msgid "recipeForm.cropAreaLabel"
 msgstr "Crop area. Arrow keys move the crop area; Shift plus arrow keys resize it.~"
@@ -172,6 +232,16 @@ msgid "recipeForm.cropping"
 msgstr "Cropping…~"
 
 #. js-lingui-explicit-id
+#: src/pages/ProfilePage.tsx:266
+msgid "profile.deleteAccountConfirm"
+msgstr "Delete your account and all associated data? This cannot be undone.~"
+
+#. js-lingui-explicit-id
+#: src/pages/ProfilePage.tsx:489
+msgid "profile.deleteAccountPending"
+msgstr "Deleting account…~"
+
+#. js-lingui-explicit-id
 #: src/pages/AddPage.tsx:49
 msgid "add.generateAiDescription"
 msgstr "Describe the recipe you want and let AI create it~"
@@ -192,6 +262,11 @@ msgid "discover.title"
 msgstr "Discover recipes~"
 
 #. js-lingui-explicit-id
+#: src/pages/ProfilePage.tsx:472
+msgid "profile.accountDataDescription"
+msgstr "Download a copy of your profile, recipes, share grants, ratings, and comments, or permanently delete your account.~"
+
+#. js-lingui-explicit-id
 #: src/pages/RecipeFormHost.tsx:1041
 msgid "recipeForm.imageEmptyMessage"
 msgstr "Drag and drop an image here, paste from your clipboard, browse or take a photo below, or generate one with AI~"
@@ -210,6 +285,21 @@ msgstr "Email sent~"
 #: src/pages/RecipeFormHost.tsx:242
 msgid "recipeStatus.evolving"
 msgstr "Evolving~"
+
+#. js-lingui-explicit-id
+#: src/components/profile/subscriptionData.ts:67
+msgid "profile.statusExpired"
+msgstr "Expired~"
+
+#. js-lingui-explicit-id
+#: src/pages/ProfilePage.tsx:346
+msgid "profile.exportRecipesError"
+msgstr "Export failed~"
+
+#. js-lingui-explicit-id
+#: src/pages/ProfilePage.tsx:458
+msgid "profile.exportLabel"
+msgstr "Export selected ({count})~"
 
 #. js-lingui-explicit-id
 #: src/pages/RecipeFormHost.tsx:362
@@ -242,6 +332,16 @@ msgid "recipeForm.uploadImageError"
 msgstr "Failed to upload image~"
 
 #. js-lingui-explicit-id
+#: src/pages/ProfilePage.tsx:30
+msgid "profile.importFileError"
+msgstr "File must contain a non-empty recipes array~"
+
+#. js-lingui-explicit-id
+#: src/components/profile/subscriptionData.ts:7
+msgid "profile.planFree"
+msgstr "Free~"
+
+#. js-lingui-explicit-id
 #: src/pages/AddPage.tsx:48
 msgid "add.generateAiLabel"
 msgstr "Generate with AI~"
@@ -267,6 +367,11 @@ msgid "recipeForm.imageToCropAlt"
 msgstr "Image to crop~"
 
 #. js-lingui-explicit-id
+#: src/pages/ProfilePage.tsx:378
+msgid "profile.importError"
+msgstr "Import failed~"
+
+#. js-lingui-explicit-id
 #: src/pages/MarketingLandingPage.tsx:63
 msgid "landing.featureOneTitle"
 msgstr "Import from anywhere~"
@@ -285,6 +390,11 @@ msgstr "Import from text~"
 #: src/pages/AddPage.tsx:24
 msgid "add.importUrlLabel"
 msgstr "Import from URL~"
+
+#. js-lingui-explicit-id
+#: src/pages/ProfilePage.tsx:41
+msgid "profile.importSummary"
+msgstr "Imported {count} recipe(s).~"
 
 #. js-lingui-explicit-id
 #: src/pages/CookingModePage.tsx:163
@@ -317,9 +427,19 @@ msgid "landing.featureThreeDescription"
 msgstr "Keep recipes private, share unlisted links, or publish to the community.~"
 
 #. js-lingui-explicit-id
+#: src/components/profile/ProfileAccessTokensSection.tsx:368
+msgid "profile.tokenLastUsed"
+msgstr "Last used {date}~"
+
+#. js-lingui-explicit-id
 #: src/pages/AddPage.tsx:16
 msgid "add.manualEntryLabel"
 msgstr "Manual entry~"
+
+#. js-lingui-explicit-id
+#: src/components/profile/ProfileAccessTokensSection.tsx:373
+msgid "profile.tokenNeverUsed"
+msgstr "Never used~"
 
 #. js-lingui-explicit-id
 #: src/pages/DiscoverPage.tsx:96
@@ -330,6 +450,11 @@ msgstr "No public recipes match your search.~"
 #: src/pages/DiscoverPage.tsx:112
 msgid "discover.noRatingsLabel"
 msgstr "No ratings yet~"
+
+#. js-lingui-explicit-id
+#: src/pages/ProfilePage.tsx:450
+msgid "profile.exportEmptyMessage"
+msgstr "No recipes found.~"
 
 #. js-lingui-explicit-id
 #: src/components/cooking/CookLogForm.tsx:126
@@ -362,14 +487,39 @@ msgid "add.importTextDescription"
 msgstr "Paste rich text from Word or the web~"
 
 #. js-lingui-explicit-id
+#: src/components/profile/subscriptionData.ts:60
+msgid "profile.statusPastDue"
+msgstr "Payment past due — update your payment method to keep your plan.~"
+
+#. js-lingui-explicit-id
 #: src/pages/RecipeFormHost.tsx:243
 msgid "recipeStatus.perfected"
 msgstr "Perfected~"
 
 #. js-lingui-explicit-id
+#: src/components/profile/subscriptionData.ts:8
+msgid "profile.planPlus"
+msgstr "Plus~"
+
+#. js-lingui-explicit-id
+#: src/components/profile/subscriptionData.ts:105
+msgid "profile.upsell"
+msgstr "Plus ($3.99/mo) adds meal planning and more AI help; Power ($8.99/mo) adds API access.~"
+
+#. js-lingui-explicit-id
+#: src/components/profile/subscriptionData.ts:9
+msgid "profile.planPower"
+msgstr "Power~"
+
+#. js-lingui-explicit-id
 #: src/pages/RecipeFormHost.tsx:880
 msgid "recipeForm.timesError"
 msgstr "Prep and cook times must be whole minutes, 0 or more.~"
+
+#. js-lingui-explicit-id
+#: src/pages/ProfilePage.tsx:481
+msgid "profile.exportDataPending"
+msgstr "Preparing export…~"
 
 #. js-lingui-explicit-id
 #: src/pages/PrivacyPolicyPage.tsx:23
@@ -440,6 +590,16 @@ msgstr "Scale servings, track versions, and follow step-by-step cooking mode.~"
 #: src/pages/DiscoverPage.tsx:92
 msgid "discover.searchPlaceholder"
 msgstr "Search public recipes…~"
+
+#. js-lingui-explicit-id
+#: src/pages/ProfilePage.tsx:413
+msgid "profile.exportSearchPlaceholder"
+msgstr "Search recipes to export…~"
+
+#. js-lingui-explicit-id
+#: src/pages/ProfilePage.tsx:405
+msgid "profile.transferHint"
+msgstr "Select recipes to export as JSON, then import them in another environment. Images and tags are included.~"
 
 #. js-lingui-explicit-id
 #: src/pages/RecipeFormHost.tsx:1184

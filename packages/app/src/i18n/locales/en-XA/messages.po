@@ -139,6 +139,11 @@ msgid "mealForm.loadMealError"
 msgstr "Could not load this meal: {error}~"
 
 #. js-lingui-explicit-id
+#: src/screens/ProfileScreen.tsx:125
+msgid "profile.authorDisplayLoadError"
+msgstr "Could not load your author display settings: {error}~"
+
+#. js-lingui-explicit-id
 #: src/screens/RecipesScreen.tsx:81
 msgid "recipes.loadMoreError"
 msgstr "Couldn't load more recipes.~"
@@ -152,6 +157,11 @@ msgstr "Couldn't load your recipes.~"
 #: src/screens/ManualEntryScreen.tsx:78
 msgid "recipeForm.submitCreateRecipe"
 msgstr "Create Recipe~"
+
+#. js-lingui-explicit-id
+#: src/hosts/profile/AccessTokensSection.tsx:27
+msgid "profile.tokenCreated"
+msgstr "Created {date}~"
 
 #. js-lingui-explicit-id
 #: src/hosts/recipe/RecipeForm.tsx:1137
@@ -286,6 +296,11 @@ msgid "recipeForm.instructionsChanged"
 msgstr "Instructions changed from parent version ({summary})~"
 
 #. js-lingui-explicit-id
+#: src/hosts/profile/AccessTokensSection.tsx:35
+msgid "profile.tokenLastUsed"
+msgstr "Last used {date}~"
+
+#. js-lingui-explicit-id
 #: src/screens/AddScreen.tsx:21
 msgid "add.manualEntryLabel"
 msgstr "Manual entry~"
@@ -319,6 +334,11 @@ msgstr "Move crop area right~"
 #: src/hosts/recipe/RecipeForm.tsx:1199
 msgid "recipeForm.moveCropUp"
 msgstr "Move crop area up~"
+
+#. js-lingui-explicit-id
+#: src/hosts/profile/AccessTokensSection.tsx:40
+msgid "profile.tokenNeverUsed"
+msgstr "Never used~"
 
 #. js-lingui-explicit-id
 #: src/screens/CookingModeScreen.tsx:124

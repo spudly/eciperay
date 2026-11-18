@@ -25,3 +25,11 @@ labels, the image empty message, the pending-image and crop dialog
 copy, the sortable-list reorder labels, and the create / edit /
 edit-version submit labels render in the active locale on web and
 native.
+
+The profile page now flows through the same catalogs (tranche 18):
+the subscription plan / status / upsell / reconciling copy, the
+recipe transfer hint, picker and account-data copy, the import /
+export / account error fallbacks and import summary, the
+delete-account confirmation, the access-token created / last-used
+meta labels, and the native author-display load error render in the
+active locale on web and native.

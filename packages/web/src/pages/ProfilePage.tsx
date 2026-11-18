@@ -1,6 +1,8 @@
 import type {BulkImportResult, RecipeExportBundle} from '@eciperay/types';
 import {errorMessage, queryKeys, useAnalytics, useAuth} from '@eciperay/client';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
+import type {I18n} from '@lingui/core';
+import {useLingui} from '@lingui/react';
 import {useEffect, useMemo, useRef, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
@@ -17,19 +19,39 @@ import {downloadRecipeExportBundle} from '../lib/downloadRecipeExport.js';
 import {eciperay} from '../lib/api.js';
 import {supabase} from '../lib/supabase.js';
 
-const parseImportFile = async (file: File): Promise<RecipeExportBundle> => {
+const parseImportFile = async (
+  file: File,
+  i18n: I18n,
+): Promise<RecipeExportBundle> => {
   const text = await file.text();
   const parsed = JSON.parse(text) as RecipeExportBundle;
   if (!Array.isArray(parsed.recipes) || parsed.recipes.length === 0) {
-    throw new Error('File must contain a non-empty recipes array');
+    throw new Error(
+      i18n._({
+        id: 'profile.importFileError',
+        message: 'File must contain a non-empty recipes array',
+      }),
+    );
   }
   return parsed;
 };
 
-const formatImportSummary = (result: BulkImportResult) => {
-  const parts = [`Imported ${result.created.length} recipe(s).`];
+const formatImportSummary = (i18n: I18n, result: BulkImportResult) => {
+  const parts = [
+    i18n._({
+      id: 'profile.importSummary',
+      message: 'Imported {count} recipe(s).',
+      values: {count: result.created.length},
+    }),
+  ];
   if (result.errors.length > 0) {
-    parts.push(`${result.errors.length} failed.`);
+    parts.push(
+      i18n._({
+        id: 'profile.importFailed',
+        message: '{count} failed.',
+        values: {count: result.errors.length},
+      }),
+    );
   }
   return parts.join(' ');
 };
@@ -50,6 +72,7 @@ const formatAccountError = (error: unknown, fallback: string) =>
 const RECONCILE_OFFSETS_MS = [3000, 8000, 15_000, 30_000];
 
 export const ProfilePage = () => {
+  const {i18n} = useLingui();
   const {session} = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -209,7 +232,7 @@ export const ProfilePage = () => {
       portalError ??
       refreshError ??
       (entitlementQuery.error ? errorMessage(entitlementQuery.error) : null),
-  });
+  }, i18n);
 
   // --- Account data (the page's `accountData` data prop) ---
 
@@ -224,7 +247,15 @@ export const ProfilePage = () => {
       const bundle = await eciperay.account.exportData();
       downloadAccountExportBundle(bundle);
     } catch (error) {
-      setAccountError(formatAccountError(error, 'Account export failed'));
+      setAccountError(
+        formatAccountError(
+          error,
+          i18n._({
+            id: 'profile.exportAccountError',
+            message: 'Account export failed',
+          }),
+        ),
+      );
     } finally {
       setExportingAccount(false);
     }
@@ -232,7 +263,11 @@ export const ProfilePage = () => {
 
   const handleDeleteAccount = async () => {
     const confirmed = window.confirm(
-      'Delete your account and all associated data? This cannot be undone.',
+      i18n._({
+        id: 'profile.deleteAccountConfirm',
+        message:
+          'Delete your account and all associated data? This cannot be undone.',
+      }),
     );
     if (!confirmed) {
       return;
@@ -244,7 +279,15 @@ export const ProfilePage = () => {
       await supabase.auth.signOut();
       void navigate('/login');
     } catch (error) {
-      setAccountError(formatAccountError(error, 'Account deletion failed'));
+      setAccountError(
+        formatAccountError(
+          error,
+          i18n._({
+            id: 'profile.deleteAccountError',
+            message: 'Account deletion failed',
+          }),
+        ),
+      );
     } finally {
       setDeletingAccount(false);
     }
@@ -298,7 +341,9 @@ export const ProfilePage = () => {
       downloadRecipeExportBundle(bundle);
     } catch (error) {
       setTransferError(
-        error instanceof Error ? error.message : 'Export failed',
+        error instanceof Error
+          ? error.message
+          : i18n._({id: 'profile.exportRecipesError', message: 'Export failed'}),
       );
     } finally {
       setExporting(false);
@@ -310,7 +355,7 @@ export const ProfilePage = () => {
     setTransferError(null);
     setImportSummary(null);
     try {
-      const bundle = await parseImportFile(file);
+      const bundle = await parseImportFile(file, i18n);
       const result = await eciperay.import.importBulk(bundle);
       for (const recipe of result.created) {
         analytics.track('recipe_imported', {
@@ -319,7 +364,7 @@ export const ProfilePage = () => {
         });
       }
       await queryClient.invalidateQueries({queryKey: queryKeys.recipeLists()});
-      setImportSummary(formatImportSummary(result));
+      setImportSummary(formatImportSummary(i18n, result));
       if (result.errors.length > 0) {
         const details = result.errors
           .map(error => `${error.title}: ${error.message}`)
@@ -328,7 +373,9 @@ export const ProfilePage = () => {
       }
     } catch (error) {
       setTransferError(
-        error instanceof Error ? error.message : 'Import failed',
+        error instanceof Error
+          ? error.message
+          : i18n._({id: 'profile.importError', message: 'Import failed'}),
       );
     } finally {
       setImporting(false);
@@ -355,11 +402,18 @@ export const ProfilePage = () => {
         }
         feedbackPreference={<ProfileFeedbackPreference />}
         transfer={{
-          hint: 'Select recipes to export as JSON, then import them in another environment. Images and tags are included.',
+          hint: i18n._({
+            id: 'profile.transferHint',
+            message:
+              'Select recipes to export as JSON, then import them in another environment. Images and tags are included.',
+          }),
           exportPicker: {
             search: exportSearch,
             onSearchChange: setExportSearch,
-            searchPlaceholder: 'Search recipes to export…',
+            searchPlaceholder: i18n._({
+              id: 'profile.exportSearchPlaceholder',
+              message: 'Search recipes to export…',
+            }),
             items: exportItems,
             selectedIds: [...selectedExportIds],
             onToggle: id => {
@@ -393,12 +447,19 @@ export const ProfilePage = () => {
             },
             disabled: importing,
             loading: exportRecipesLoading,
-            emptyMessage: 'No recipes found.',
+            emptyMessage: i18n._({
+              id: 'profile.exportEmptyMessage',
+              message: 'No recipes found.',
+            }),
             exporting,
             onExport: () => {
               void handleExportRecipes();
             },
-            exportLabel: `Export selected (${selectedExportIds.size})`,
+            exportLabel: i18n._({
+              id: 'profile.exportLabel',
+              message: 'Export selected ({count})',
+              values: {count: selectedExportIds.size},
+            }),
           },
           onImportPress: () => {
             fileInputRef.current?.click();
@@ -408,18 +469,27 @@ export const ProfilePage = () => {
           error: transferError,
         }}
         accountData={{
-          description:
-            'Download a copy of your profile, recipes, share grants, ratings, and comments, or permanently delete your account.',
+          description: i18n._({
+            id: 'profile.accountDataDescription',
+            message:
+              'Download a copy of your profile, recipes, share grants, ratings, and comments, or permanently delete your account.',
+          }),
           onExportData: () => {
             void handleExportAccount();
           },
           exportPending: exportingAccount,
-          exportPendingLabel: 'Preparing export…',
+          exportPendingLabel: i18n._({
+            id: 'profile.exportDataPending',
+            message: 'Preparing export…',
+          }),
           onDeleteAccount: () => {
             void handleDeleteAccount();
           },
           deletePending: deletingAccount,
-          deletePendingLabel: 'Deleting account…',
+          deletePendingLabel: i18n._({
+            id: 'profile.deleteAccountPending',
+            message: 'Deleting account…',
+          }),
           error: accountError,
         }}
         legalLinks={<LegalLinks variant="stacked" />}
