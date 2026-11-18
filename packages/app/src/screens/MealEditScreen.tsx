@@ -259,8 +259,10 @@ export const MealEditScreen = ({route, navigation}: Props) => {
           if (mealLoadFailed) {
             // Never submit the empty form over a meal that failed to
             // load — the full-replace save would wipe its stored
-            // recipes and direct ingredients.
-            setFormError(mealLoadErrorMessage);
+            // recipes and direct ingredients. The error slot already
+            // shows the derived load message, so just block: storing
+            // it in formError would freeze its text (and locale) past
+            // a successful refetch.
             return;
           }
           setFormError(null);

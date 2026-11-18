@@ -24,8 +24,12 @@ const parseImportFile = async (
   i18n: I18n,
 ): Promise<RecipeExportBundle> => {
   const text = await file.text();
-  const parsed = JSON.parse(text) as RecipeExportBundle;
-  if (!Array.isArray(parsed.recipes) || parsed.recipes.length === 0) {
+  const parsed = JSON.parse(text) as RecipeExportBundle | null;
+  if (
+    !parsed ||
+    !Array.isArray(parsed.recipes) ||
+    parsed.recipes.length === 0
+  ) {
     throw new Error(
       i18n._({
         id: 'profile.importFileError',

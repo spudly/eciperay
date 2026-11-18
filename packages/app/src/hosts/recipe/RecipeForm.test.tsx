@@ -138,6 +138,47 @@ describe('RecipeForm', () => {
     expect(getByLabelText('Reorder step 1~')).toBeTruthy();
   });
 
+  test('renders the pending-image action from the en-XA catalog (#465)', async () => {
+    const {launchImageLibrary} = require('react-native-image-picker');
+    launchImageLibrary.mockResolvedValue({
+      assets: [
+        {
+          uri: 'file://recipe.png',
+          base64: btoa('pixels'),
+          type: 'image/png',
+          fileSize: 6,
+          width: 1200,
+          height: 900,
+        },
+      ],
+    });
+    const queryClient = makeQueryClient();
+    await queryClient.prefetchQuery({
+      queryKey: queryKeys.tags(),
+      queryFn: () => mockListTags(),
+    });
+    const {getByLabelText, getByText, findByText} = await renderWithProviders(
+      <RecipeForm
+        initial={{
+          title: 'New Recipe',
+          servings: 4,
+          ingredients: [],
+          instructions: [],
+          tagIds: [],
+        }}
+        submitLabel="Create"
+        onSubmit={mockOnSubmit()}
+      />,
+      queryClient,
+      {locale: 'en-XA'},
+    );
+    await fireEvent.press(getByText('Browse images'));
+    // The pending-image action resolves through recipeForm.useImage:
+    // the en-XA marker fails if it reverts to the English literal.
+    expect(await findByText('Use image~')).toBeTruthy();
+    expect(getByLabelText('Use image~')).toBeTruthy();
+  });
+
   test('reorders ingredients before submit', async () => {
     const onSubmit = mockOnSubmit();
     const {getByLabelText, getByText} = await renderForm(
@@ -779,6 +820,100 @@ describe('RecipeForm', () => {
     const listRevertButtons = getAllByText('Revert');
     await fireEvent.press(listRevertButtons[0]);
     await fireEvent.press(listRevertButtons[1]);
+  });
+
+  test('renders parent list summaries from the en-XA catalog (#465)', async () => {
+    const parentVersion = makeRecipeVersionDetail({
+      ingredients: [
+        {
+          id: 'i-1',
+          recipeVersionId: 'v-1',
+          sortOrder: 0,
+          name: 'Flour',
+          quantity: 1,
+          unit: 'cup',
+          notes: null,
+          isOptional: false,
+        },
+        {
+          id: 'i-2',
+          recipeVersionId: 'v-1',
+          sortOrder: 1,
+          name: 'Sugar',
+          quantity: 2,
+          unit: 'tbsp',
+          notes: null,
+          isOptional: false,
+        },
+        {
+          id: 'i-3',
+          recipeVersionId: 'v-1',
+          sortOrder: 2,
+          name: 'Salt',
+          quantity: null,
+          unit: null,
+          notes: null,
+          isOptional: false,
+        },
+      ],
+      instructions: [
+        {
+          id: 's-1',
+          recipeVersionId: 'v-1',
+          stepNumber: 1,
+          body: 'Mix',
+          estimatedDurationMin: null,
+        },
+        {
+          id: 's-2',
+          recipeVersionId: 'v-1',
+          stepNumber: 2,
+          body: 'Bake',
+          estimatedDurationMin: null,
+        },
+      ],
+    });
+    const initial = {
+      ...recipeVersionDetailToInput(parentVersion),
+      ingredients: [
+        {
+          sortOrder: 0,
+          name: 'Changed flour',
+          quantity: 2,
+          unit: 'cups',
+          notes: null,
+          isOptional: false,
+        },
+      ],
+      instructions: [{stepNumber: 1, body: 'Changed step'}],
+    };
+    const queryClient = makeQueryClient();
+    await queryClient.prefetchQuery({
+      queryKey: queryKeys.tags(),
+      queryFn: () => mockListTags(),
+    });
+    const {getByText} = await renderWithProviders(
+      <RecipeForm
+        initial={initial}
+        parentVersion={parentVersion}
+        submitLabel="Save"
+        onSubmit={mockOnSubmit()}
+      />,
+      queryClient,
+      {locale: 'en-XA'},
+    );
+    // The summary prose (count sentence + overflow suffix) resolves
+    // through the catalog; only the parent's own names stay as entered.
+    expect(
+      getByText(
+        'Ingredients changed from parent version (Parent had 3 ingredients: Flour, Sugar (+1 more)~)~',
+      ),
+    ).toBeTruthy();
+    expect(
+      getByText(
+        'Instructions changed from parent version (Parent had 2 steps: Mix (+1 more)~)~',
+      ),
+    ).toBeTruthy();
   });
 
   test('uses fallback values when reverting null title and servings', async () => {

@@ -54,30 +54,65 @@ export const formatParentTagNames = (parent: RecipeVersionDetail): string => {
   return parent.tags.map(tag => tag.name).join(', ');
 };
 
-export const formatParentListSummary = (
+export type ParentListSummaryParts = {
+  /** Number of entries in the parent's list. */
+  count: number;
+  /** Comma-joined preview of the first entries, in the parent's own words. */
+  preview: string;
+  /** Entries beyond the preview, folded into the overflow suffix. */
+  overflowCount: number;
+};
+
+/**
+ * The parent list summary as structured parts, so hosts can compose the
+ * prose from their own Lingui catalogs (#465): the counts and overflow are
+ * host-localized, while the preview keeps the parent's ingredient names /
+ * instruction text exactly as entered. `formatParentListSummary` below is
+ * the en-US composition of these parts for locale-free callers.
+ */
+export const parentListSummaryParts = (
   parent: RecipeVersionDetail,
   list: 'ingredients' | 'instructions',
-): string => {
+): ParentListSummaryParts => {
   if (list === 'ingredients') {
     const names = [...parent.ingredients]
       .sort((a, b) => a.sortOrder - b.sortOrder)
       .map(ingredient => ingredient.name)
       .filter(Boolean);
-    if (names.length === 0) {
-      return 'Parent had no ingredients';
-    }
-    const preview = names.slice(0, 2).join(', ');
-    const suffix = names.length > 2 ? ` (+${names.length - 2} more)` : '';
-    return `Parent had ${names.length} ingredients: ${preview}${suffix}`;
+    return {
+      count: names.length,
+      preview: names.slice(0, 2).join(', '),
+      overflowCount: Math.max(0, names.length - 2),
+    };
   }
   const steps = [...parent.instructions]
     .sort((a, b) => a.stepNumber - b.stepNumber)
     .map(instruction => instruction.body.trim())
     .filter(Boolean);
-  if (steps.length === 0) {
+  return {
+    count: steps.length,
+    preview: steps.length > 0 ? steps[0] : '',
+    overflowCount: Math.max(0, steps.length - 1),
+  };
+};
+
+export const formatParentListSummary = (
+  parent: RecipeVersionDetail,
+  list: 'ingredients' | 'instructions',
+): string => {
+  const parts = parentListSummaryParts(parent, list);
+  if (list === 'ingredients') {
+    if (parts.count === 0) {
+      return 'Parent had no ingredients';
+    }
+    const suffix =
+      parts.overflowCount > 0 ? ` (+${parts.overflowCount} more)` : '';
+    return `Parent had ${parts.count} ingredients: ${parts.preview}${suffix}`;
+  }
+  if (parts.count === 0) {
     return 'Parent had no steps';
   }
-  const preview = steps[0];
-  const suffix = steps.length > 1 ? ` (+${steps.length - 1} more)` : '';
-  return `Parent had ${steps.length} steps: ${preview}${suffix}`;
+  const suffix =
+    parts.overflowCount > 0 ? ` (+${parts.overflowCount} more)` : '';
+  return `Parent had ${parts.count} steps: ${parts.preview}${suffix}`;
 };

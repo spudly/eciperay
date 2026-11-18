@@ -83,6 +83,14 @@ describe('AccessTokensSection (app)', () => {
         lastUsedAt: null,
         revokedAt: null,
       } as never,
+      {
+        id: 'token-2',
+        name: 'Used token',
+        tokenPrefix: 'eci_def',
+        createdAt: '2026-01-02T00:00:00.000Z',
+        lastUsedAt: '2026-02-03T00:00:00.000Z',
+        revokedAt: null,
+      } as never,
     ]);
     const queryClient = new QueryClient({
       defaultOptions: {queries: {retry: false}, mutations: {retry: false}},
@@ -93,10 +101,16 @@ describe('AccessTokensSection (app)', () => {
       </QueryClientProvider>,
       {locale: 'en-XA'},
     );
+    // The full-line anchors require the pseudo-locale marker on the
+    // created label itself, not just on the trailing last-used label.
     await waitFor(() => {
-      expect(screen.getByText(/Never used~/)).toBeTruthy();
+      expect(
+        screen.getByText(/^Created [^~]+~ · Never used~$/),
+      ).toBeTruthy();
     });
-    expect(screen.getByText(/Created .*~/)).toBeTruthy();
+    // The dated last-used branch is covered too: reverting it to
+    // English would drop its marker and fail this line.
+    expect(screen.getByText(/^Created [^~]+~ · Last used [^~]+~$/)).toBeTruthy();
   });
 
   test('falls back to the form when the entitlement fails to load', async () => {

@@ -417,6 +417,26 @@ msgid "recipeForm.instructionsChanged"
 msgstr "Instructions changed from parent version ({summary})~"
 
 #. js-lingui-explicit-id
+msgid "recipeForm.parentIngredientsSummary"
+msgstr "Parent had {count} ingredients: {preview}{more}~"
+
+#. js-lingui-explicit-id
+msgid "recipeForm.parentMoreSuffix"
+msgstr " (+{count} more)~"
+
+#. js-lingui-explicit-id
+msgid "recipeForm.parentNoIngredients"
+msgstr "Parent had no ingredients~"
+
+#. js-lingui-explicit-id
+msgid "recipeForm.parentNoSteps"
+msgstr "Parent had no steps~"
+
+#. js-lingui-explicit-id
+msgid "recipeForm.parentStepsSummary"
+msgstr "Parent had {count} steps: {preview}{more}~"
+
+#. js-lingui-explicit-id
 #: src/pages/TermsOfServicePage.tsx:27
 msgid "termsOfService.lastUpdated"
 msgstr "June 18, 2026~"

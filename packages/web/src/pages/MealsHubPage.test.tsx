@@ -189,19 +189,37 @@ describe('MealsHubPage', () => {
   });
 
   test('renders hub subtitles from the en-XA Lingui catalog (#465)', async () => {
+    const nutrition = {
+      calories: 500,
+      proteinG: 30,
+      carbsG: 40,
+      fatG: 10,
+      fiberG: 5,
+      sugarG: 5,
+      sodiumMg: 100,
+      preparedWeightG: 200,
+      satietyScore: null,
+      status: 'ready' as const,
+    };
     server.use(
       http.get('http://localhost:8080/api/meals', () =>
-        HttpResponse.json([makeMealSummary()]),
+        HttpResponse.json([makeMealSummary({nutrition})]),
       ),
       http.get('http://localhost:8080/api/meal-plans', () =>
-        HttpResponse.json([makeMealPlanSummary({entryCount: 2})]),
+        HttpResponse.json([makeMealPlanSummary({entryCount: 2, nutrition})]),
       ),
     );
     const first = await renderWithProviders(<MealsHubPage />, {
       locale: 'en-XA',
     });
+    // The nutrition suffix is localized too: every label carries the
+    // pseudo-locale marker, so an English suffix would fail this line.
     await waitFor(() => {
-      expect(screen.getByText('1 recipe~')).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          '1 recipe~ · 500 cal~ · 30g protein~ · 40g carbs~ · 10g fat~',
+        ),
+      ).toBeInTheDocument();
     });
     first.unmount();
     await renderWithProviders(<MealsHubPage />, {
@@ -210,7 +228,9 @@ describe('MealsHubPage', () => {
     });
     await waitFor(() => {
       expect(
-        screen.getByText('2 entries~~ · 2026-01-01 – 2026-01-07'),
+        screen.getByText(
+          '2 entries~~ · 2026-01-01 – 2026-01-07 · 500 cal~ · 30g protein~ · 40g carbs~ · 10g fat~',
+        ),
       ).toBeInTheDocument();
     });
   });

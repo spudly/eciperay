@@ -1,9 +1,5 @@
-import {
-  formatSimpleNutrition,
-  queryKeys,
-  type MealsHubTab,
-} from '@eciperay/client';
-import type {MealPlan} from '@eciperay/types';
+import {queryKeys, type MealsHubTab} from '@eciperay/client';
+import type {AggregatedNutrition, MealPlan} from '@eciperay/types';
 import {
   MealsHubPage as MealsHubPageView,
   type MealPlansPageItem,
@@ -24,6 +20,54 @@ import {eciperay} from '../lib/api.js';
  * pluralization and the nutrition formatter are the host's, so the page only
  * renders it. Mirrors the app screen's composition.
  */
+/**
+ * The nutrition suffix with locale-aware labels (#465): the same parts and
+ * rounding as the client's formatSimpleNutrition, composed through the
+ * shared mealDetail.nutrition* catalog messages so an en-XA subtitle does
+ * not trail English labels after its localized count. Null when the
+ * nutrition is missing or unavailable, so the suffix stays absent.
+ */
+const formatHubNutrition = (
+  i18n: I18n,
+  nutrition: AggregatedNutrition | null | undefined,
+): string | null => {
+  if (!nutrition || nutrition.status === 'unavailable') {
+    return null;
+  }
+  const parts = [
+    i18n._({
+      id: 'mealDetail.nutritionCalories',
+      message: '{value} cal',
+      values: {value: Math.round(nutrition.calories)},
+    }),
+    i18n._({
+      id: 'mealDetail.nutritionProtein',
+      message: '{value}g protein',
+      values: {value: Math.round(nutrition.proteinG)},
+    }),
+    i18n._({
+      id: 'mealDetail.nutritionCarbs',
+      message: '{value}g carbs',
+      values: {value: Math.round(nutrition.carbsG)},
+    }),
+    i18n._({
+      id: 'mealDetail.nutritionFat',
+      message: '{value}g fat',
+      values: {value: Math.round(nutrition.fatG)},
+    }),
+  ];
+  if (nutrition.satietyScore !== null) {
+    parts.push(
+      i18n._({
+        id: 'mealDetail.nutritionSatiety',
+        message: 'satiety {value}',
+        values: {value: Math.round(nutrition.satietyScore)},
+      }),
+    );
+  }
+  return parts.join(' · ');
+};
+
 const formatMealPlanSubtitle = (i18n: I18n, plan: MealPlan) =>
   `${i18n._({
     id: 'mealsHub.entryCount',
@@ -31,7 +75,7 @@ const formatMealPlanSubtitle = (i18n: I18n, plan: MealPlan) =>
     values: {count: plan.entryCount},
   })}${
     plan.startsOn && plan.endsOn ? ` · ${plan.startsOn} – ${plan.endsOn}` : ''
-  }${formatSimpleNutrition(plan.nutrition) ? ` · ${formatSimpleNutrition(plan.nutrition)}` : ''}`;
+  }${formatHubNutrition(i18n, plan.nutrition) ? ` · ${formatHubNutrition(i18n, plan.nutrition)}` : ''}`;
 
 export const MealsHubPage = () => {
   const {i18n} = useLingui();
@@ -107,8 +151,8 @@ export const MealsHubPage = () => {
           message: '{count, plural, one {# recipe} other {# recipes}}',
           values: {count: meal.recipeCount},
         })}${
-          formatSimpleNutrition(meal.nutrition)
-            ? ` · ${formatSimpleNutrition(meal.nutrition)}`
+          formatHubNutrition(i18n, meal.nutrition)
+            ? ` · ${formatHubNutrition(i18n, meal.nutrition)}`
             : ''
         }`,
       }))}

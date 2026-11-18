@@ -109,6 +109,39 @@ describe('MealEditScreen', () => {
     expect(rendered.queryByText('Pasta')).toBeNull();
   });
 
+  test('surfaces a recipe search failure from the en-XA catalog (#465)', async () => {
+    mockListRecipes.mockRejectedValue(new Error('boom'));
+    const rendered = await renderWithProviders(
+      <MealEditScreen {...createProps({})} />,
+      {locale: 'en-XA'},
+    );
+    await fireEvent.changeText(
+      rendered.getByPlaceholderText(/Search recipes/),
+      'Pasta',
+    );
+    expect(
+      await rendered.findByText(
+        'Could not load recipes: boom~',
+        {},
+        {timeout: 5000},
+      ),
+    ).toBeTruthy();
+  });
+
+  test('a failed meal load shows the en-XA catalog error (#465)', async () => {
+    mockGetMeal.mockRejectedValue(new Error('boom'));
+    const rendered = await renderWithProviders(
+      <MealEditScreen {...createProps({mealId})} />,
+      {locale: 'en-XA'},
+    );
+    expect(
+      await rendered.findByText('Could not load this meal: boom~'),
+    ).toBeTruthy();
+    await fireEvent.press(rendered.getByText(/Save meal/));
+    expect(mockPut).not.toHaveBeenCalled();
+    expect(mockCreate).not.toHaveBeenCalled();
+  });
+
   test('renders new meal form', async () => {
     const rendered = await renderWithProviders(
       <MealEditScreen {...createProps({})} />,

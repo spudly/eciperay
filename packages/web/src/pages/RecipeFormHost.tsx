@@ -4,7 +4,7 @@ import {
   createFormRowKey,
   ensureIngredientRowKeys,
   ensureInstructionRowKeys,
-  formatParentListSummary,
+  parentListSummaryParts,
   formatParentScalarHint,
   formatParentTagNames,
   parentIngredientsInput,
@@ -29,6 +29,7 @@ import type {
   RecipeStatus,
   RecipeVersionDetail,
 } from '@eciperay/types';
+import type {I18n} from '@lingui/core';
 import {useLingui} from '@lingui/react';
 import {
   eciperayTheme,
@@ -130,6 +131,51 @@ const toQuantity = (value: number | string | null): number | null => {
  * wrap this host in the DS shell pages (EditRecipePage / EditVersionPage /
  * ManualEntryPage).
  */
+/**
+ * The parent-version list summary, composed from the catalog (#465): the
+ * client helper supplies the structured counts/preview, and the prose —
+ * empty state, count sentence, and overflow suffix — resolves through
+ * Lingui here, so only the parent's own ingredient names / step text
+ * stay as entered.
+ */
+const parentListSummary = (
+  i18n: I18n,
+  parent: RecipeVersionDetail,
+  list: 'ingredients' | 'instructions',
+): string => {
+  const parts = parentListSummaryParts(parent, list);
+  if (parts.count === 0) {
+    return list === 'ingredients'
+      ? i18n._({
+          id: 'recipeForm.parentNoIngredients',
+          message: 'Parent had no ingredients',
+        })
+      : i18n._({
+          id: 'recipeForm.parentNoSteps',
+          message: 'Parent had no steps',
+        });
+  }
+  const more =
+    parts.overflowCount > 0
+      ? i18n._({
+          id: 'recipeForm.parentMoreSuffix',
+          message: ' (+{count} more)',
+          values: {count: parts.overflowCount},
+        })
+      : '';
+  return list === 'ingredients'
+    ? i18n._({
+        id: 'recipeForm.parentIngredientsSummary',
+        message: 'Parent had {count} ingredients: {preview}{more}',
+        values: {count: parts.count, preview: parts.preview, more},
+      })
+    : i18n._({
+        id: 'recipeForm.parentStepsSummary',
+        message: 'Parent had {count} steps: {preview}{more}',
+        values: {count: parts.count, preview: parts.preview, more},
+      });
+};
+
 export const RecipeFormHost = ({
   initial,
   recipeId,
@@ -989,7 +1035,8 @@ export const RecipeFormHost = ({
                     message:
                       'Ingredients changed from parent version ({summary})',
                     values: {
-                      summary: formatParentListSummary(
+                      summary: parentListSummary(
+                        i18n,
                         parentVersion,
                         'ingredients',
                       ),
@@ -1011,7 +1058,8 @@ export const RecipeFormHost = ({
                     message:
                       'Instructions changed from parent version ({summary})',
                     values: {
-                      summary: formatParentListSummary(
+                      summary: parentListSummary(
+                        i18n,
                         parentVersion,
                         'instructions',
                       ),

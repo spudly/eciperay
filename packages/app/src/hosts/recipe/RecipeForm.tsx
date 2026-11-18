@@ -3,7 +3,7 @@ import {
   compareVersionToParent,
   ensureIngredientRowKeys,
   ensureInstructionRowKeys,
-  formatParentListSummary,
+  parentListSummaryParts,
   formatParentScalarHint,
   formatParentTagNames,
   parentIngredientsInput,
@@ -27,6 +27,7 @@ import type {
   RecipeStatus,
   RecipeVersionDetail,
 } from '@eciperay/types';
+import type {I18n} from '@lingui/core';
 import {useLingui} from '@lingui/react';
 import {RecipeFormPage, tokens, type RecipeFormPageField} from '@spudly/ui';
 import {useQuery} from '@tanstack/react-query';
@@ -47,6 +48,7 @@ import {
 import {api} from '../../lib/api';
 import {
   deleteImagePreviewFile,
+  isRecipeImageReadError,
   type PendingRecipeImage,
   recipeImageFromAsset,
   stripImageCacheKey,
@@ -165,6 +167,51 @@ const toQuantity = (value: number | string | null): number | null => {
  * lists stay app-side). The screens wrap this host in the DS shell pages
  * (EditRecipePage / EditVersionPage / ManualEntryPage).
  */
+/**
+ * The parent-version list summary, composed from the catalog (#465): the
+ * client helper supplies the structured counts/preview, and the prose —
+ * empty state, count sentence, and overflow suffix — resolves through
+ * Lingui here, so only the parent's own ingredient names / step text
+ * stay as entered.
+ */
+const parentListSummary = (
+  i18n: I18n,
+  parent: RecipeVersionDetail,
+  list: 'ingredients' | 'instructions',
+): string => {
+  const parts = parentListSummaryParts(parent, list);
+  if (parts.count === 0) {
+    return list === 'ingredients'
+      ? i18n._({
+          id: 'recipeForm.parentNoIngredients',
+          message: 'Parent had no ingredients',
+        })
+      : i18n._({
+          id: 'recipeForm.parentNoSteps',
+          message: 'Parent had no steps',
+        });
+  }
+  const more =
+    parts.overflowCount > 0
+      ? i18n._({
+          id: 'recipeForm.parentMoreSuffix',
+          message: ' (+{count} more)',
+          values: {count: parts.overflowCount},
+        })
+      : '';
+  return list === 'ingredients'
+    ? i18n._({
+        id: 'recipeForm.parentIngredientsSummary',
+        message: 'Parent had {count} ingredients: {preview}{more}',
+        values: {count: parts.count, preview: parts.preview, more},
+      })
+    : i18n._({
+        id: 'recipeForm.parentStepsSummary',
+        message: 'Parent had {count} steps: {preview}{more}',
+        values: {count: parts.count, preview: parts.preview, more},
+      });
+};
+
 export const RecipeForm = ({
   initial,
   recipeId,
@@ -290,9 +337,13 @@ export const RecipeForm = ({
 
   const reportReadError = (error_: unknown) => {
     setImageError(
-      error_ instanceof Error
-        ? error_.message
-        : i18n._({id: 'recipeForm.readImageError', message: 'Failed to read image'}),
+      // The known missing-data failure resolves through the catalog
+      // instead of its English message; unrelated errors keep theirs.
+      isRecipeImageReadError(error_)
+        ? i18n._({id: 'recipeForm.readImageError', message: 'Failed to read image'})
+        : error_ instanceof Error
+          ? error_.message
+          : i18n._({id: 'recipeForm.readImageError', message: 'Failed to read image'}),
     );
   };
 
@@ -905,7 +956,11 @@ export const RecipeForm = ({
               id: 'recipeForm.ingredientsChanged',
               message: 'Ingredients changed from parent version ({summary})',
               values: {
-                summary: formatParentListSummary(parentVersion, 'ingredients'),
+                summary: parentListSummary(
+                  i18n,
+                  parentVersion,
+                  'ingredients',
+                ),
               },
             }),
             onRevertIngredients: () => {
@@ -922,7 +977,8 @@ export const RecipeForm = ({
               message:
                 'Instructions changed from parent version ({summary})',
               values: {
-                summary: formatParentListSummary(
+                summary: parentListSummary(
+                  i18n,
                   parentVersion,
                   'instructions',
                 ),

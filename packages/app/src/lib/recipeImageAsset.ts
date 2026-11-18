@@ -54,6 +54,28 @@ export const deleteImagePreviewFile = async (uri: string): Promise<void> => {
   }
 };
 
+export const RECIPE_IMAGE_READ_ERROR_CODE = 'recipe-image-read-failed';
+
+/**
+ * The known failure for a picker asset that carries no image data. It
+ * carries a stable code instead of relying on its (English) message, so
+ * hosts can resolve it through their Lingui catalog
+ * (`recipeForm.readImageError`) instead of showing the raw message.
+ */
+export class RecipeImageReadError extends Error {
+  readonly code = RECIPE_IMAGE_READ_ERROR_CODE;
+
+  constructor() {
+    super('Failed to read image');
+    this.name = 'RecipeImageReadError';
+  }
+}
+
+export const isRecipeImageReadError = (error_: unknown): boolean =>
+  error_ instanceof RecipeImageReadError ||
+  (error_ instanceof Error &&
+    (error_ as {code?: unknown}).code === RECIPE_IMAGE_READ_ERROR_CODE);
+
 export const recipeImageFromAsset = (asset: Asset): PendingRecipeImage => {
   const base64 = asset.base64;
   // react-native-image-picker reports iOS JPEGs as image/jpg, which the
@@ -61,7 +83,7 @@ export const recipeImageFromAsset = (asset: Asset): PendingRecipeImage => {
   const contentType =
     asset.type === 'image/jpg' ? 'image/jpeg' : (asset.type ?? 'image/jpeg');
   if (!base64) {
-    throw new Error('Failed to read image');
+    throw new RecipeImageReadError();
   }
   const byteLength = asset.fileSize ?? Math.floor((base64.length * 3) / 4);
   validateRecipeImageContent(contentType, byteLength);

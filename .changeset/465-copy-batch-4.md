@@ -1,6 +1,7 @@
 ---
 '@eciperay/web': patch
 '@eciperay/app': patch
+'@eciperay/client': patch
 ---
 
 Meal plan detail goal-progress copy now comes from the apps' Lingui
@@ -33,3 +34,11 @@ export / account error fallbacks and import summary, the
 delete-account confirmation, the access-token created / last-used
 meta labels, and the native author-display load error render in the
 active locale on web and native.
+
+Review follow-ups in the same batch: the recipe form's
+changed-from-parent summaries are now composed from the catalogs on
+web and native (the client helper supplies the structured counts and
+preview), the meals hub's nutrition suffix uses the localized nutrition
+labels on both tabs, the native missing-image-data error resolves
+through the catalog, and a `null` import file shows the localized
+validation message instead of a JavaScript error.
