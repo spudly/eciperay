@@ -359,7 +359,11 @@ export const RecipeFormHost = ({
       void processImageFile(cropped);
     } catch {
       setCropError(
-        'Failed to crop image — try again or cancel to use the original.',
+        i18n._({
+          id: 'recipeForm.cropError',
+          message:
+            'Failed to crop image — try again or cancel to use the original.',
+        }),
       );
       setCropBusy(false);
     }
@@ -384,7 +388,11 @@ export const RecipeFormHost = ({
   // otherwise leave Crop disabled with no explanation.
   const handlePendingPreviewError = () => {
     setPreviewError(
-      'That image could not be loaded — discard it and choose a different image.',
+      i18n._({
+        id: 'recipeForm.previewLoadError',
+        message:
+          'That image could not be loaded — discard it and choose a different image.',
+      }),
     );
   };
 
@@ -494,7 +502,9 @@ export const RecipeFormHost = ({
   const processImageFile = async (file: File) => {
     const userId = session?.user.id;
     if (!userId) {
-      setImageError('Sign in to upload images');
+      setImageError(
+        i18n._({id: 'recipeForm.signInToUpload', message: 'Sign in to upload images'}),
+      );
       return;
     }
     setImageError(null);
@@ -502,7 +512,9 @@ export const RecipeFormHost = ({
       validateRecipeImageFile(file);
     } catch (error_) {
       setImageError(
-        error_ instanceof Error ? error_.message : 'Failed to read image',
+        error_ instanceof Error
+          ? error_.message
+          : i18n._({id: 'recipeForm.readImageError', message: 'Failed to read image'}),
       );
       return;
     }
@@ -519,7 +531,12 @@ export const RecipeFormHost = ({
         setImageCacheKey(Date.now());
       } catch (error_) {
         setImageError(
-          error_ instanceof Error ? error_.message : 'Failed to upload image',
+          error_ instanceof Error
+            ? error_.message
+            : i18n._({
+                id: 'recipeForm.uploadImageError',
+                message: 'Failed to upload image',
+              }),
         );
       } finally {
         setImageUploading(false);
@@ -537,11 +554,21 @@ export const RecipeFormHost = ({
     const trimmedTitle = title.trim();
     /* c8 ignore next 4 -- generate button is disabled when title is empty */
     if (!trimmedTitle) {
-      setDescriptionError('Add a title before generating a description');
+      setDescriptionError(
+        i18n._({
+          id: 'recipeForm.addTitleForDescription',
+          message: 'Add a title before generating a description',
+        }),
+      );
       return;
     }
     if (!session?.user.id) {
-      setDescriptionError('Sign in to generate descriptions');
+      setDescriptionError(
+        i18n._({
+          id: 'recipeForm.signInForDescriptions',
+          message: 'Sign in to generate descriptions',
+        }),
+      );
       return;
     }
     setDescriptionError(null);
@@ -566,7 +593,10 @@ export const RecipeFormHost = ({
       setDescriptionError(
         error_ instanceof Error
           ? error_.message
-          : 'Failed to generate description',
+          : i18n._({
+              id: 'recipeForm.generateDescriptionError',
+              message: 'Failed to generate description',
+            }),
       );
     } finally {
       setDescriptionGenerating(false);
@@ -577,11 +607,21 @@ export const RecipeFormHost = ({
     const trimmedTitle = title.trim();
     /* c8 ignore next 4 -- generate button is disabled when title is empty */
     if (!trimmedTitle) {
-      setImageError('Add a title before generating an image');
+      setImageError(
+        i18n._({
+          id: 'recipeForm.addTitleForImage',
+          message: 'Add a title before generating an image',
+        }),
+      );
       return;
     }
     if (!session?.user.id) {
-      setImageError('Sign in to generate images');
+      setImageError(
+        i18n._({
+          id: 'recipeForm.signInForImages',
+          message: 'Sign in to generate images',
+        }),
+      );
       return;
     }
     setImageError(null);
@@ -609,7 +649,12 @@ export const RecipeFormHost = ({
       );
     } catch (error_) {
       setImageError(
-        error_ instanceof Error ? error_.message : 'Failed to generate image',
+        error_ instanceof Error
+          ? error_.message
+          : i18n._({
+              id: 'recipeForm.generateImageError',
+              message: 'Failed to generate image',
+            }),
       );
     } finally {
       setImageGenerating(false);
@@ -797,7 +842,12 @@ export const RecipeFormHost = ({
     // save could persist and leave the page while the pasted file is
     // still waiting to be staged, losing it silently.
     if (pendingFile || stagedPasteFile) {
-      setError('Use, crop, or discard the selected image before saving.');
+      setError(
+        i18n._({
+          id: 'recipeForm.pendingImageSaveError',
+          message: 'Use, crop, or discard the selected image before saving.',
+        }),
+      );
       return;
     }
     // The design-system page is not a DOM form, so the native
@@ -807,7 +857,11 @@ export const RecipeFormHost = ({
     const servingsCount = Number(servings);
     if (title === '' || !Number.isInteger(servingsCount) || servingsCount < 1) {
       setError(
-        'Title is required, and servings must be a positive whole number.',
+        i18n._({
+          id: 'recipeForm.titleServingsError',
+          message:
+            'Title is required, and servings must be a positive whole number.',
+        }),
       );
       return;
     }
@@ -822,7 +876,12 @@ export const RecipeFormHost = ({
       !isValidOptionalTime(prepTimeMin) ||
       !isValidOptionalTime(cookTimeMin)
     ) {
-      setError('Prep and cook times must be whole minutes, 0 or more.');
+      setError(
+        i18n._({
+          id: 'recipeForm.timesError',
+          message: 'Prep and cook times must be whole minutes, 0 or more.',
+        }),
+      );
       return;
     }
     setLoading(true);
@@ -830,7 +889,11 @@ export const RecipeFormHost = ({
     try {
       await onSubmit(buildInput(), pendingImageFile ?? undefined);
     } catch (error_) {
-      setError(error_ instanceof Error ? error_.message : 'Failed to save');
+      setError(
+        error_ instanceof Error
+          ? error_.message
+          : i18n._({id: 'recipeForm.saveError', message: 'Failed to save'}),
+      );
     } finally {
       setLoading(false);
     }
@@ -921,7 +984,17 @@ export const RecipeFormHost = ({
               : {})}
             {...(parentVersion && versionDiff?.ingredientsChanged
               ? {
-                  ingredientsChangedLabel: `Ingredients changed from parent version (${formatParentListSummary(parentVersion, 'ingredients')})`,
+                  ingredientsChangedLabel: i18n._({
+                    id: 'recipeForm.ingredientsChanged',
+                    message:
+                      'Ingredients changed from parent version ({summary})',
+                    values: {
+                      summary: formatParentListSummary(
+                        parentVersion,
+                        'ingredients',
+                      ),
+                    },
+                  }),
                   onRevertIngredients: () => {
                     setIngredients(
                       ensureIngredientRowKeys(
@@ -933,7 +1006,17 @@ export const RecipeFormHost = ({
               : {})}
             {...(parentVersion && versionDiff?.instructionsChanged
               ? {
-                  instructionsChangedLabel: `Instructions changed from parent version (${formatParentListSummary(parentVersion, 'instructions')})`,
+                  instructionsChangedLabel: i18n._({
+                    id: 'recipeForm.instructionsChanged',
+                    message:
+                      'Instructions changed from parent version ({summary})',
+                    values: {
+                      summary: formatParentListSummary(
+                        parentVersion,
+                        'instructions',
+                      ),
+                    },
+                  }),
                   onRevertInstructions: () => {
                     setInstructions(
                       ensureInstructionRowKeys(
@@ -955,8 +1038,11 @@ export const RecipeFormHost = ({
               isGenerating: imageGenerating,
               error: imageError,
               canGenerateImage: title.trim().length > 0,
-              emptyMessage:
-                'Drag and drop an image here, paste from your clipboard, browse or take a photo below, or generate one with AI',
+              emptyMessage: i18n._({
+                id: 'recipeForm.imageEmptyMessage',
+                message:
+                  'Drag and drop an image here, paste from your clipboard, browse or take a photo below, or generate one with AI',
+              }),
               onPickImageRequest: () => {
                 browseInputRef.current?.click();
               },
@@ -1016,7 +1102,11 @@ export const RecipeFormHost = ({
               renderDragHandle: (row, index) => (
                 <SortableDragHandle
                   rowKey={row.key}
-                  label={`Reorder ingredient ${index + 1}`}
+                  label={i18n._({
+                    id: 'recipeForm.reorderIngredient',
+                    message: 'Reorder ingredient {position}',
+                    values: {position: index + 1},
+                  })}
                 />
               ),
             }}
@@ -1043,7 +1133,11 @@ export const RecipeFormHost = ({
               renderDragHandle: (row, index) => (
                 <SortableDragHandle
                   rowKey={row.key}
-                  label={`Reorder step ${index + 1}`}
+                  label={i18n._({
+                    id: 'recipeForm.reorderStep',
+                    message: 'Reorder step {position}',
+                    values: {position: index + 1},
+                  })}
                 />
               ),
             }}
@@ -1087,7 +1181,10 @@ export const RecipeFormHost = ({
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="Selected recipe image"
+          aria-label={i18n._({
+            id: 'recipeForm.selectedImageLabel',
+            message: 'Selected recipe image',
+          })}
           style={{
             position: 'fixed',
             inset: 0,
@@ -1112,7 +1209,7 @@ export const RecipeFormHost = ({
           >
             <img
               src={pendingPreviewUrl}
-              alt="Recipe preview"
+              alt={i18n._({id: 'recipeForm.recipePreviewAlt', message: 'Recipe preview'})}
               onLoad={handlePendingImageLoad}
               onError={handlePendingPreviewError}
               style={{
@@ -1150,7 +1247,7 @@ export const RecipeFormHost = ({
                 style={dialogButtonStyle}
                 onClick={acceptPendingImage}
               >
-                Use image
+                {i18n._({id: 'recipeForm.useImage', message: 'Use image'})}
               </button>
               {/* Disabled until the preview loads: crop rectangles are
                   in the real image's pixel space, so a rect computed
@@ -1166,7 +1263,7 @@ export const RecipeFormHost = ({
                 disabled={!naturalSize}
                 onClick={openCrop}
               >
-                Crop image
+                {i18n._({id: 'recipeForm.cropImage', message: 'Crop image'})}
               </button>
               <button
                 type="button"
@@ -1177,7 +1274,10 @@ export const RecipeFormHost = ({
                 }}
                 onClick={clearPendingSelection}
               >
-                Discard selected image
+                {i18n._({
+                  id: 'recipeForm.discardSelectedImage',
+                  message: 'Discard selected image',
+                })}
               </button>
             </div>
           </div>
@@ -1187,7 +1287,10 @@ export const RecipeFormHost = ({
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="Crop recipe image"
+          aria-label={i18n._({
+            id: 'recipeForm.cropDialogLabel',
+            message: 'Crop recipe image',
+          })}
           onKeyDown={e => {
             if (e.key === 'Escape' && !cropBusy) {
               cancelCrop();
@@ -1224,8 +1327,11 @@ export const RecipeFormHost = ({
                 color: tokens.colors.gray.gray8,
               }}
             >
-              Crop image — drag the box to move it, drag its corner to resize,
-              or focus it and use the arrow keys (Shift + arrow keys resizes).
+              {i18n._({
+                id: 'recipeForm.cropInstructions',
+                message:
+                  'Crop image — drag the box to move it, drag its corner to resize, or focus it and use the arrow keys (Shift + arrow keys resizes).',
+              })}
             </p>
             <div
               style={{
@@ -1239,7 +1345,7 @@ export const RecipeFormHost = ({
               <img
                 ref={cropImageRef}
                 src={pendingPreviewUrl}
-                alt="Image to crop"
+                alt={i18n._({id: 'recipeForm.imageToCropAlt', message: 'Image to crop'})}
                 onLoad={handlePendingImageLoad}
                 style={{display: 'block', width: '100%'}}
               />
@@ -1247,7 +1353,11 @@ export const RecipeFormHost = ({
                 ref={cropBoxRef}
                 role="group"
                 tabIndex={0}
-                aria-label="Crop area. Arrow keys move the crop area; Shift plus arrow keys resize it."
+                aria-label={i18n._({
+                  id: 'recipeForm.cropAreaLabel',
+                  message:
+                    'Crop area. Arrow keys move the crop area; Shift plus arrow keys resize it.',
+                })}
                 onPointerDown={handleCropPointerDown('move')}
                 onPointerMove={handleCropPointerMove}
                 onPointerUp={handleCropPointerUp}
@@ -1314,7 +1424,9 @@ export const RecipeFormHost = ({
                   void applyCrop();
                 }}
               >
-                {cropBusy ? 'Cropping…' : 'Apply crop'}
+                {cropBusy
+                  ? i18n._({id: 'recipeForm.cropping', message: 'Cropping…'})
+                  : i18n._({id: 'recipeForm.applyCrop', message: 'Apply crop'})}
               </button>
               <button
                 type="button"
@@ -1326,7 +1438,7 @@ export const RecipeFormHost = ({
                 disabled={cropBusy}
                 onClick={cancelCrop}
               >
-                Cancel crop
+                {i18n._({id: 'recipeForm.cancelCrop', message: 'Cancel crop'})}
               </button>
             </div>
           </div>

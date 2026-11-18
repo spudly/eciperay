@@ -1,5 +1,6 @@
 import {createFormRowKey, type FormIngredientRow} from '@eciperay/client';
 import type {IngredientInput} from '@eciperay/types';
+import {useLingui} from '@lingui/react';
 import {eciperayTheme, RecipeIngredientRowView, tokens} from '@spudly/ui';
 import React from 'react';
 import {Text, TouchableOpacity, View} from 'react-native';
@@ -74,6 +75,7 @@ export const SortableIngredientList = ({
   onUpdate,
   onAdd,
 }: Props) => {
+  const {i18n} = useLingui();
   const renderItem = ({
     item,
     getIndex,
@@ -91,7 +93,11 @@ export const SortableIngredientList = ({
         index={index}
         dragHandle={
           <TouchableOpacity
-            accessibilityLabel={`Reorder ingredient ${index + 1}`}
+            accessibilityLabel={i18n._({
+              id: 'recipeForm.reorderIngredient',
+              message: 'Reorder ingredient {position}',
+              values: {position: index + 1},
+            })}
             style={styles.dragHandle}
             onLongPress={drag}
             delayLongPress={0}

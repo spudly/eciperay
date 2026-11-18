@@ -3,6 +3,7 @@ import {
   queryKeys,
   recipeDetailToInput,
 } from '@eciperay/client';
+import {useLingui} from '@lingui/react';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {EditRecipePage} from '@spudly/ui';
 import {useQuery, useQueryClient} from '@tanstack/react-query';
@@ -16,6 +17,7 @@ import type {RecipesStackParamList} from '../navigation/types';
 type Props = NativeStackScreenProps<RecipesStackParamList, 'EditRecipe'>;
 
 export const EditRecipeScreen = ({route, navigation}: Props) => {
+  const {i18n} = useLingui();
   const {recipeId} = route.params;
   const queryClient = useQueryClient();
 
@@ -41,7 +43,10 @@ export const EditRecipeScreen = ({route, navigation}: Props) => {
         initial={recipeDetailToInput(recipe)}
         recipeId={recipeId}
         contentLocked
-        submitLabel="Save Changes"
+        submitLabel={i18n._({
+          id: 'recipeForm.submitSaveChanges',
+          message: 'Save Changes',
+        })}
         onSubmit={handleSubmit}
       />
     </EditRecipePage>

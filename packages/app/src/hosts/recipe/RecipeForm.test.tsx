@@ -118,6 +118,26 @@ describe('RecipeForm', () => {
     expect(getByLabelText('Reorder step 1')).toBeTruthy();
   });
 
+  test('renders reorder labels from the en-XA Lingui catalog (#465)', async () => {
+    const queryClient = makeQueryClient();
+    await queryClient.prefetchQuery({
+      queryKey: queryKeys.tags(),
+      queryFn: () => mockListTags(),
+    });
+    const {getByLabelText} = await renderWithProviders(
+      <RecipeForm
+        initial={recipeDetailToInput(makeRecipeDetail())}
+        submitLabel="Save"
+        onSubmit={mockOnSubmit()}
+      />,
+      queryClient,
+      {locale: 'en-XA'},
+    );
+
+    expect(getByLabelText('Reorder ingredient 1~')).toBeTruthy();
+    expect(getByLabelText('Reorder step 1~')).toBeTruthy();
+  });
+
   test('reorders ingredients before submit', async () => {
     const onSubmit = mockOnSubmit();
     const {getByLabelText, getByText} = await renderForm(

@@ -17,3 +17,11 @@ subtitles, the meal detail servings composition ("Servings to cook /
 Servings to eat") and condensed member nutrition parts, and the meal /
 meal-plan form load-error messages render in the active locale on web
 and native.
+
+The recipe form now flows through the same catalogs (tranche 12): the
+form hosts' image crop / preview errors, sign-in and AI-generation
+errors, save-guard and validation messages, the changed-from-parent
+labels, the image empty message, the pending-image and crop dialog
+copy, the sortable-list reorder labels, and the create / edit /
+edit-version submit labels render in the active locale on web and
+native.

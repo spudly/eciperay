@@ -205,4 +205,17 @@ describe('ManualEntryPage', () => {
     expect(screen.queryByText('Recipe Created')).not.toBeInTheDocument();
     expect(mockUploadRecipeImage).not.toHaveBeenCalled();
   }, 15_000);
+  test('renders the submit label from the en-XA Lingui catalog (#465)', async () => {
+    await renderWithProviders(
+      <Routes>
+        <Route
+          path="/add/manual"
+          element={<ManualEntryPage />}
+        />
+      </Routes>,
+      {route: '/add/manual', locale: 'en-XA'},
+    );
+    expect(screen.getByText('Create Recipe~')).toBeInTheDocument();
+  });
+
 });

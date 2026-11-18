@@ -5,6 +5,7 @@ import {
   recipeVersionDetailToInput,
 } from '@eciperay/client';
 import {EditVersionPage as EditVersionShell} from '@spudly/ui';
+import {useLingui} from '@lingui/react';
 import {useQuery, useQueryClient} from '@tanstack/react-query';
 import {useNavigate, useParams} from 'react-router-dom';
 import type {RecipeVersionInput} from '@eciperay/types';
@@ -15,6 +16,7 @@ import {eciperay} from '../lib/api.js';
 import {RecipeFormHost} from './RecipeFormHost.js';
 
 export const EditVersionPage = () => {
+  const {i18n} = useLingui();
   const {recipeId = '', versionId = ''} = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -58,7 +60,10 @@ export const EditVersionPage = () => {
         initial={recipeVersionDetailToInput(version)}
         recipeId={recipeId}
         parentVersion={parentVersion}
-        submitLabel="Save Draft"
+        submitLabel={i18n._({
+          id: 'recipeForm.submitSaveDraft',
+          message: 'Save Draft',
+        })}
         onSubmit={handleSubmit}
       />
     </EditVersionShell>

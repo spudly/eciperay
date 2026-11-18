@@ -61,9 +61,24 @@ msgid "mealPlanDetail.goalBandAbove"
 msgstr "Above goal~"
 
 #. js-lingui-explicit-id
+#: src/pages/RecipeFormHost.tsx:558
+msgid "recipeForm.addTitleForDescription"
+msgstr "Add a title before generating a description~"
+
+#. js-lingui-explicit-id
+#: src/pages/RecipeFormHost.tsx:611
+msgid "recipeForm.addTitleForImage"
+msgstr "Add a title before generating an image~"
+
+#. js-lingui-explicit-id
 #: src/pages/HomePage.tsx:103
 msgid "home.addLabel"
 msgstr "Add Recipe~"
+
+#. js-lingui-explicit-id
+#: src/pages/RecipeFormHost.tsx:1429
+msgid "recipeForm.applyCrop"
+msgstr "Apply crop~"
 
 #. js-lingui-explicit-id
 #: src/pages/MealPlanDetailPage.tsx:51
@@ -96,6 +111,11 @@ msgid "mealPlanDetail.goalCaloriesWord"
 msgstr "Calories~"
 
 #. js-lingui-explicit-id
+#: src/pages/RecipeFormHost.tsx:1441
+msgid "recipeForm.cancelCrop"
+msgstr "Cancel crop~"
+
+#. js-lingui-explicit-id
 #: src/pages/auth/ForgotPasswordPage.tsx:58
 msgid "forgotPassword.confirmationBody"
 msgstr "Check your inbox for a password reset link.~"
@@ -122,9 +142,44 @@ msgid "recipes.loadError"
 msgstr "Couldn't load your recipes.~"
 
 #. js-lingui-explicit-id
+#: src/pages/ManualEntryPage.tsx:61
+msgid "recipeForm.submitCreateRecipe"
+msgstr "Create Recipe~"
+
+#. js-lingui-explicit-id
+#: src/pages/RecipeFormHost.tsx:1356
+msgid "recipeForm.cropAreaLabel"
+msgstr "Crop area. Arrow keys move the crop area; Shift plus arrow keys resize it.~"
+
+#. js-lingui-explicit-id
+#: src/pages/RecipeFormHost.tsx:1266
+msgid "recipeForm.cropImage"
+msgstr "Crop image~"
+
+#. js-lingui-explicit-id
+#: src/pages/RecipeFormHost.tsx:1330
+msgid "recipeForm.cropInstructions"
+msgstr "Crop image — drag the box to move it, drag its corner to resize, or focus it and use the arrow keys (Shift + arrow keys resizes).~"
+
+#. js-lingui-explicit-id
+#: src/pages/RecipeFormHost.tsx:1290
+msgid "recipeForm.cropDialogLabel"
+msgstr "Crop recipe image~"
+
+#. js-lingui-explicit-id
+#: src/pages/RecipeFormHost.tsx:1428
+msgid "recipeForm.cropping"
+msgstr "Cropping…~"
+
+#. js-lingui-explicit-id
 #: src/pages/AddPage.tsx:49
 msgid "add.generateAiDescription"
 msgstr "Describe the recipe you want and let AI create it~"
+
+#. js-lingui-explicit-id
+#: src/pages/RecipeFormHost.tsx:1277
+msgid "recipeForm.discardSelectedImage"
+msgstr "Discard selected image~"
 
 #. js-lingui-explicit-id
 #: src/pages/MarketingLandingPage.tsx:45
@@ -135,6 +190,11 @@ msgstr "Discover public recipes~"
 #: src/pages/DiscoverPage.tsx:91
 msgid "discover.title"
 msgstr "Discover recipes~"
+
+#. js-lingui-explicit-id
+#: src/pages/RecipeFormHost.tsx:1041
+msgid "recipeForm.imageEmptyMessage"
+msgstr "Drag and drop an image here, paste from your clipboard, browse or take a photo below, or generate one with AI~"
 
 #. js-lingui-explicit-id
 #: src/pages/ConsentPreferencesPage.tsx:91
@@ -150,6 +210,36 @@ msgstr "Email sent~"
 #: src/pages/RecipeFormHost.tsx:242
 msgid "recipeStatus.evolving"
 msgstr "Evolving~"
+
+#. js-lingui-explicit-id
+#: src/pages/RecipeFormHost.tsx:362
+msgid "recipeForm.cropError"
+msgstr "Failed to crop image — try again or cancel to use the original.~"
+
+#. js-lingui-explicit-id
+#: src/pages/RecipeFormHost.tsx:596
+msgid "recipeForm.generateDescriptionError"
+msgstr "Failed to generate description~"
+
+#. js-lingui-explicit-id
+#: src/pages/RecipeFormHost.tsx:654
+msgid "recipeForm.generateImageError"
+msgstr "Failed to generate image~"
+
+#. js-lingui-explicit-id
+#: src/pages/RecipeFormHost.tsx:517
+msgid "recipeForm.readImageError"
+msgstr "Failed to read image~"
+
+#. js-lingui-explicit-id
+#: src/pages/RecipeFormHost.tsx:895
+msgid "recipeForm.saveError"
+msgstr "Failed to save~"
+
+#. js-lingui-explicit-id
+#: src/pages/RecipeFormHost.tsx:536
+msgid "recipeForm.uploadImageError"
+msgstr "Failed to upload image~"
 
 #. js-lingui-explicit-id
 #: src/pages/AddPage.tsx:48
@@ -170,6 +260,11 @@ msgstr "Go to Eciperay home~"
 #: src/pages/RecipeFormHost.tsx:241
 msgid "recipeStatus.idea"
 msgstr "Idea~"
+
+#. js-lingui-explicit-id
+#: src/pages/RecipeFormHost.tsx:1348
+msgid "recipeForm.imageToCropAlt"
+msgstr "Image to crop~"
 
 #. js-lingui-explicit-id
 #: src/pages/MarketingLandingPage.tsx:63
@@ -200,6 +295,16 @@ msgstr "Ingredients ({label})~"
 #: src/pages/CookingModePage.tsx:168
 msgid "cookingMode.ingredientsHeadingScaled"
 msgstr "Ingredients (scaled to {label})~"
+
+#. js-lingui-explicit-id
+#: src/pages/RecipeFormHost.tsx:987
+msgid "recipeForm.ingredientsChanged"
+msgstr "Ingredients changed from parent version ({summary})~"
+
+#. js-lingui-explicit-id
+#: src/pages/RecipeFormHost.tsx:1009
+msgid "recipeForm.instructionsChanged"
+msgstr "Instructions changed from parent version ({summary})~"
 
 #. js-lingui-explicit-id
 #: src/pages/TermsOfServicePage.tsx:27
@@ -262,6 +367,11 @@ msgid "recipeStatus.perfected"
 msgstr "Perfected~"
 
 #. js-lingui-explicit-id
+#: src/pages/RecipeFormHost.tsx:880
+msgid "recipeForm.timesError"
+msgstr "Prep and cook times must be whole minutes, 0 or more.~"
+
+#. js-lingui-explicit-id
 #: src/pages/PrivacyPolicyPage.tsx:23
 msgid "privacyPolicy.title"
 msgstr "Privacy Policy~"
@@ -277,9 +387,24 @@ msgid "home.recipesSectionTitle"
 msgstr "Recently viewed~"
 
 #. js-lingui-explicit-id
+#: src/pages/RecipeFormHost.tsx:1212
+msgid "recipeForm.recipePreviewAlt"
+msgstr "Recipe preview~"
+
+#. js-lingui-explicit-id
 #: src/pages/HomePage.tsx:112
 msgid "home.emptyMessage"
 msgstr "Recipes you view will appear here.~"
+
+#. js-lingui-explicit-id
+#: src/pages/RecipeFormHost.tsx:1105
+msgid "recipeForm.reorderIngredient"
+msgstr "Reorder ingredient {position}~"
+
+#. js-lingui-explicit-id
+#: src/pages/RecipeFormHost.tsx:1136
+msgid "recipeForm.reorderStep"
+msgstr "Reorder step {position}~"
 
 #. js-lingui-explicit-id
 #: src/pages/MealPlanDetailPage.tsx:128
@@ -290,6 +415,16 @@ msgstr "Satiety (plan-wide score)~"
 #: src/pages/MealDetailPage.tsx:69
 msgid "mealDetail.nutritionSatiety"
 msgstr "satiety {value}~"
+
+#. js-lingui-explicit-id
+#: src/pages/EditRecipePage.tsx:48
+msgid "recipeForm.submitSaveChanges"
+msgstr "Save Changes~"
+
+#. js-lingui-explicit-id
+#: src/pages/EditVersionPage.tsx:63
+msgid "recipeForm.submitSaveDraft"
+msgstr "Save Draft~"
 
 #. js-lingui-explicit-id
 #: src/pages/MarketingLandingPage.tsx:39
@@ -307,6 +442,11 @@ msgid "discover.searchPlaceholder"
 msgstr "Search public recipes…~"
 
 #. js-lingui-explicit-id
+#: src/pages/RecipeFormHost.tsx:1184
+msgid "recipeForm.selectedImageLabel"
+msgstr "Selected recipe image~"
+
+#. js-lingui-explicit-id
 #: src/pages/MealDetailPage.tsx:84
 msgid "mealDetail.servingsLabel"
 msgstr "Servings to cook: {cook} · Servings to eat: {eat}~"
@@ -322,6 +462,21 @@ msgid "home.sharedWithMeLabel"
 msgstr "Shared with me~"
 
 #. js-lingui-explicit-id
+#: src/pages/RecipeFormHost.tsx:567
+msgid "recipeForm.signInForDescriptions"
+msgstr "Sign in to generate descriptions~"
+
+#. js-lingui-explicit-id
+#: src/pages/RecipeFormHost.tsx:620
+msgid "recipeForm.signInForImages"
+msgstr "Sign in to generate images~"
+
+#. js-lingui-explicit-id
+#: src/pages/RecipeFormHost.tsx:506
+msgid "recipeForm.signInToUpload"
+msgstr "Sign in to upload images~"
+
+#. js-lingui-explicit-id
 #: src/pages/MarketingLandingPage.tsx:52
 msgid "landing.signUpCta"
 msgstr "Sign up free~"
@@ -330,6 +485,16 @@ msgstr "Sign up free~"
 #: src/pages/TermsOfServicePage.tsx:23
 msgid "termsOfService.title"
 msgstr "Terms of Service~"
+
+#. js-lingui-explicit-id
+#: src/pages/RecipeFormHost.tsx:391
+msgid "recipeForm.previewLoadError"
+msgstr "That image could not be loaded — discard it and choose a different image.~"
+
+#. js-lingui-explicit-id
+#: src/pages/RecipeFormHost.tsx:860
+msgid "recipeForm.titleServingsError"
+msgstr "Title is required, and servings must be a positive whole number.~"
 
 #. js-lingui-explicit-id
 #: src/pages/AddPage.tsx:17
@@ -345,6 +510,16 @@ msgstr "up to {max}~"
 #: src/pages/AddPage.tsx:33
 msgid "add.importImageDescription"
 msgstr "Upload a photo of a recipe~"
+
+#. js-lingui-explicit-id
+#: src/pages/RecipeFormHost.tsx:1250
+msgid "recipeForm.useImage"
+msgstr "Use image~"
+
+#. js-lingui-explicit-id
+#: src/pages/RecipeFormHost.tsx:846
+msgid "recipeForm.pendingImageSaveError"
+msgstr "Use, crop, or discard the selected image before saving.~"
 
 #. js-lingui-explicit-id
 #: src/pages/DiscoverPage.tsx:102
