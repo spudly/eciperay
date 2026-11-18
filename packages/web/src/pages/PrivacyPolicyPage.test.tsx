@@ -14,6 +14,13 @@ describe('PrivacyPolicyPage', () => {
     expect(
       screen.getByRole('heading', {name: 'Privacy Policy~'}),
     ).toBeInTheDocument();
+    // Tranche 21: section bodies flow through the catalogs too —
+    // the pseudo-localized section heading and body copy prove the
+    // structured content is catalog-resolved, not hardcoded.
+    expect(
+      screen.getByRole('heading', {name: 'Information we collect~'}),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Account information:~?/)).toBeInTheDocument();
   });
 
   test('renders policy content without requiring auth', async () => {
