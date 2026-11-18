@@ -528,17 +528,18 @@ export const RecipeForm = ({
       return;
     }
     if (result.errorCode) {
+      // The picker's errorMessage is debug-only diagnostics, never
+      // user-facing copy: select the catalog message from errorCode.
       setImageError(
-        result.errorMessage ??
-          (result.errorCode === 'camera_unavailable'
-            ? i18n._({
-                id: 'recipeForm.cameraUnavailable',
-                message: 'Camera is unavailable on this device',
-              })
-            : i18n._({
-                id: 'recipeForm.readImageError',
-                message: 'Failed to read image',
-              })),
+        result.errorCode === 'camera_unavailable'
+          ? i18n._({
+              id: 'recipeForm.cameraUnavailable',
+              message: 'Camera is unavailable on this device',
+            })
+          : i18n._({
+              id: 'recipeForm.readImageError',
+              message: 'Failed to read image',
+            }),
       );
       return;
     }

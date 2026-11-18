@@ -92,15 +92,7 @@ describe('AccessTokensSection (app)', () => {
         revokedAt: null,
       } as never,
     ]);
-    const queryClient = new QueryClient({
-      defaultOptions: {queries: {retry: false}, mutations: {retry: false}},
-    });
-    await renderWithProviders(
-      <QueryClientProvider client={queryClient}>
-        <AccessTokensSection />
-      </QueryClientProvider>,
-      {locale: 'en-XA'},
-    );
+    await renderWithProviders(<AccessTokensSection />, {locale: 'en-XA'});
     // The full-line anchors require the pseudo-locale marker on the
     // created label itself, not just on the trailing last-used label.
     await waitFor(() => {

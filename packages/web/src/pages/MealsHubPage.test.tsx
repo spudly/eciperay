@@ -223,7 +223,7 @@ describe('MealsHubPage', () => {
       ).toBeInTheDocument();
     });
     first.unmount();
-    await renderWithProviders(<MealsHubPage />, {
+    const second = await renderWithProviders(<MealsHubPage />, {
       route: '/meals?tab=plans',
       locale: 'en-XA',
     });
@@ -231,6 +231,28 @@ describe('MealsHubPage', () => {
       expect(
         screen.getByText(
           '2 entries~~ · 2026-01-01 – 2026-01-07 · 500 cal~ · 30g protein~ · 40g carbs~ · 10g fat~',
+        ),
+      ).toBeInTheDocument();
+    });
+    second.unmount();
+    // A four-digit count keeps its plain form: the plural selector uses
+    // the numeric count, but the displayed value is interpolated as a
+    // plain string — ICU `#` would render '1,000'.
+    server.use(
+      http.get('http://localhost:8080/api/meal-plans', () =>
+        HttpResponse.json([
+          makeMealPlanSummary({entryCount: 1000, nutrition}),
+        ]),
+      ),
+    );
+    await renderWithProviders(<MealsHubPage />, {
+      route: '/meals?tab=plans',
+      locale: 'en-XA',
+    });
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          '1000 entries~~ · 2026-01-01 – 2026-01-07 · 500 cal~ · 30g protein~ · 40g carbs~ · 10g fat~',
         ),
       ).toBeInTheDocument();
     });

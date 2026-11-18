@@ -672,6 +672,31 @@ describe('RecipeForm', () => {
     expect(await findByText('Failed to read image')).toBeTruthy();
   });
 
+  test('shows image pick validation errors from the en-XA catalog (#465)', async () => {
+    const {launchImageLibrary} = require('react-native-image-picker');
+    launchImageLibrary.mockResolvedValue({
+      assets: [{uri: 'file://recipe.png', type: 'image/png'}],
+    });
+    const queryClient = makeQueryClient();
+    await queryClient.prefetchQuery({
+      queryKey: queryKeys.tags(),
+      queryFn: () => mockListTags(),
+    });
+    const {getByText, findByText} = await renderWithProviders(
+      <RecipeForm
+        initial={recipeDetailToInput(makeRecipeDetail())}
+        submitLabel="Save"
+        onSubmit={jest.fn()}
+      />,
+      queryClient,
+      {locale: 'en-XA'},
+    );
+    await fireEvent.press(getByText('Browse images'));
+    // The asset has no base64 data: the error must resolve through the
+    // catalog (en-XA marker), not the exception's English message.
+    expect(await findByText('Failed to read image~')).toBeTruthy();
+  });
+
   test('passes pending image to onSubmit when creating', async () => {
     const onSubmit = mockOnSubmit();
     const {getByLabelText, getByText} = await renderForm(

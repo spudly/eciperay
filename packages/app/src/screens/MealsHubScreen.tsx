@@ -26,14 +26,16 @@ import {
  * pre-composed (the RecipesPage subtitle precedent): pluralization and the
  * nutrition formatter are the app's, so the pages only render it.
  */
-const formatMealPlanSubtitle = (i18n: I18n, plan: MealPlan) =>
-  `${i18n._({
+const formatMealPlanSubtitle = (i18n: I18n, plan: MealPlan) => {
+  const nutrition = formatSimpleNutrition(plan.nutrition);
+  return `${i18n._({
     id: 'mealsHub.entryCount',
-    message: '{count, plural, one {# entry} other {# entries}}',
-    values: {count: plan.entryCount},
+    message: '{count, plural, one {{display} entry} other {{display} entries}}',
+    values: {count: plan.entryCount, display: String(plan.entryCount)},
   })}${
     plan.startsOn && plan.endsOn ? ` · ${plan.startsOn} – ${plan.endsOn}` : ''
-  }${formatSimpleNutrition(plan.nutrition) ? ` · ${formatSimpleNutrition(plan.nutrition)}` : ''}`;
+  }${nutrition ? ` · ${nutrition}` : ''}`;
+};
 
 export const MealsHubScreen = () => {
   const {i18n} = useLingui();
@@ -86,15 +88,15 @@ export const MealsHubScreen = () => {
         id: meal.id,
         href: mealHref(meal.id),
         title: meal.title,
-        subtitle: `${i18n._({
-          id: 'mealsHub.recipeCount',
-          message: '{count, plural, one {# recipe} other {# recipes}}',
-          values: {count: meal.recipeCount},
-        })}${
-          formatSimpleNutrition(meal.nutrition)
-            ? ` · ${formatSimpleNutrition(meal.nutrition)}`
-            : ''
-        }`,
+        subtitle: (() => {
+          const nutrition = formatSimpleNutrition(meal.nutrition);
+          return `${i18n._({
+            id: 'mealsHub.recipeCount',
+            message:
+              '{count, plural, one {{display} recipe} other {{display} recipes}}',
+            values: {count: meal.recipeCount, display: String(meal.recipeCount)},
+          })}${nutrition ? ` · ${nutrition}` : ''}`;
+        })(),
       }))}
       plans={planItems}
       loading={isLoading}

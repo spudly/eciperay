@@ -68,14 +68,16 @@ const formatHubNutrition = (
   return parts.join(' · ');
 };
 
-const formatMealPlanSubtitle = (i18n: I18n, plan: MealPlan) =>
-  `${i18n._({
+const formatMealPlanSubtitle = (i18n: I18n, plan: MealPlan) => {
+  const nutrition = formatHubNutrition(i18n, plan.nutrition);
+  return `${i18n._({
     id: 'mealsHub.entryCount',
-    message: '{count, plural, one {# entry} other {# entries}}',
-    values: {count: plan.entryCount},
+    message: '{count, plural, one {{display} entry} other {{display} entries}}',
+    values: {count: plan.entryCount, display: String(plan.entryCount)},
   })}${
     plan.startsOn && plan.endsOn ? ` · ${plan.startsOn} – ${plan.endsOn}` : ''
-  }${formatHubNutrition(i18n, plan.nutrition) ? ` · ${formatHubNutrition(i18n, plan.nutrition)}` : ''}`;
+  }${nutrition ? ` · ${nutrition}` : ''}`;
+};
 
 export const MealsHubPage = () => {
   const {i18n} = useLingui();
@@ -146,15 +148,15 @@ export const MealsHubPage = () => {
         id: meal.id,
         href: `/meals/${meal.id}`,
         title: meal.title,
-        subtitle: `${i18n._({
-          id: 'mealsHub.recipeCount',
-          message: '{count, plural, one {# recipe} other {# recipes}}',
-          values: {count: meal.recipeCount},
-        })}${
-          formatHubNutrition(i18n, meal.nutrition)
-            ? ` · ${formatHubNutrition(i18n, meal.nutrition)}`
-            : ''
-        }`,
+        subtitle: (() => {
+          const nutrition = formatHubNutrition(i18n, meal.nutrition);
+          return `${i18n._({
+            id: 'mealsHub.recipeCount',
+            message:
+              '{count, plural, one {{display} recipe} other {{display} recipes}}',
+            values: {count: meal.recipeCount, display: String(meal.recipeCount)},
+          })}${nutrition ? ` · ${nutrition}` : ''}`;
+        })(),
       }))}
       plans={planItems}
       loading={isLoading}

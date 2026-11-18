@@ -26,14 +26,14 @@ msgid "mealPlanDetail.goalQualifierPlanTotal"
 msgstr "(plan total)"
 
 #. js-lingui-explicit-id
-#: src/pages/MealsHubPage.tsx:72
+#: src/pages/MealsHubPage.tsx:73
 msgid "mealsHub.entryCount"
-msgstr "{count, plural, one {# entry} other {# entries}}"
+msgstr "{count, plural, one {{display} entry} other {{display} entries}}"
 
 #. js-lingui-explicit-id
-#: src/pages/MealsHubPage.tsx:149
+#: src/pages/MealsHubPage.tsx:153
 msgid "mealsHub.recipeCount"
-msgstr "{count, plural, one {# recipe} other {# recipes}}"
+msgstr "{count, plural, one {{display} recipe} other {{display} recipes}}"
 
 #. js-lingui-explicit-id
 #: src/pages/ProfilePage.tsx:53
@@ -125,13 +125,13 @@ msgid "mealPlanDetail.goalRangeAtLeast"
 msgstr "at least {min}"
 
 #. js-lingui-explicit-id
-#: src/pages/auth/SignupPage.tsx:83
-msgid "signup.backLabel"
+#: src/pages/auth/ForgotPasswordPage.tsx:62
+msgid "forgotPassword.backLabel"
 msgstr "Back to sign in"
 
 #. js-lingui-explicit-id
-#: src/pages/auth/ForgotPasswordPage.tsx:62
-msgid "forgotPassword.backLabel"
+#: src/pages/auth/SignupPage.tsx:83
+msgid "signup.backLabel"
 msgstr "Back to sign in"
 
 #. js-lingui-explicit-id

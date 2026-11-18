@@ -55,9 +55,17 @@ export const formatParentTagNames = (parent: RecipeVersionDetail): string => {
 };
 
 export type ParentListSummaryParts = {
-  /** Number of entries in the parent's list. */
+  /**
+   * Number of entries the summary counts: entries with an empty
+   * ingredient name, or an instruction body that is empty after
+   * trimming, are excluded — this is NOT the raw list length.
+   */
   count: number;
-  /** Comma-joined preview of the first entries, in the parent's own words. */
+  /**
+   * Comma-joined preview of the first counted entries. Ingredient names
+   * are kept as entered; instruction bodies are trimmed, so their
+   * preview is not the text exactly as entered.
+   */
   preview: string;
   /** Entries beyond the preview, folded into the overflow suffix. */
   overflowCount: number;
@@ -66,8 +74,9 @@ export type ParentListSummaryParts = {
 /**
  * The parent list summary as structured parts, so hosts can compose the
  * prose from their own Lingui catalogs (#465): the counts and overflow are
- * host-localized, while the preview keeps the parent's ingredient names /
- * instruction text exactly as entered. `formatParentListSummary` below is
+ * host-localized, while the preview keeps the parent's ingredient names
+ * as entered (instruction previews are trimmed — see the type above).
+ * `formatParentListSummary` below is
  * the en-US composition of these parts for locale-free callers.
  */
 export const parentListSummaryParts = (
