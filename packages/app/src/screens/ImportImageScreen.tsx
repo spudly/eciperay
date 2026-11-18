@@ -1,4 +1,5 @@
 import {isDuplicateRecipeError, useAnalytics} from '@eciperay/client';
+import {useLingui} from '@lingui/react';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useState} from 'react';
 import {Alert} from 'react-native';
@@ -18,6 +19,7 @@ type Props = NativeStackScreenProps<AddStackParamList, 'ImportImage'>;
 type PickSource = 'camera' | 'library';
 
 export const ImportImageScreen = ({navigation}: Props) => {
+  const {i18n} = useLingui();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Capture that already drew the duplicate warning (#296), retained so
@@ -47,10 +49,9 @@ export const ImportImageScreen = ({navigation}: Props) => {
       // this capture — a camera capture may not be re-creatable.
       setDuplicateWarnedCapture(null);
     } catch (error_) {
-      const message =
-        error_ instanceof Error ? error_.message : 'Import failed';
+      const message = error_ instanceof Error ? error_.message : i18n._({id: 'import.failed', message: 'Import failed'});
       setError(message);
-      Alert.alert('Import failed', message);
+      Alert.alert(i18n._({id: 'import.failed', message: 'Import failed'}), message);
     } finally {
       setLoading(false);
     }
@@ -102,8 +103,7 @@ export const ImportImageScreen = ({navigation}: Props) => {
       pickedBase64 = asset.base64 ?? '';
       await submitImage(pickedBase64, false);
     } catch (error_) {
-      const message =
-        error_ instanceof Error ? error_.message : 'Import failed';
+      const message = error_ instanceof Error ? error_.message : i18n._({id: 'import.failed', message: 'Import failed'});
       setError(message);
       if (isDuplicateRecipeError(error_) && pickedBase64 !== null) {
         setDuplicateWarnedCapture(pickedBase64);
@@ -112,7 +112,7 @@ export const ImportImageScreen = ({navigation}: Props) => {
         // capture), rather than the failure alert.
         return;
       }
-      Alert.alert('Import failed', message);
+      Alert.alert(i18n._({id: 'import.failed', message: 'Import failed'}), message);
     } finally {
       setLoading(false);
     }

@@ -1,4 +1,5 @@
 import {isDuplicateRecipeError, useAnalytics} from '@eciperay/client';
+import {useLingui} from '@lingui/react';
 import {useRef, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
@@ -6,7 +7,7 @@ import {ImportImagePage as ImportImagePageView} from '@spudly/ui';
 
 import {eciperay} from '../lib/api.js';
 
-const readFileAsBase64 = (file: File): Promise<string> =>
+const readFileAsBase64 = (file: File, failureMessage: string): Promise<string> =>
   new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
@@ -15,12 +16,13 @@ const readFileAsBase64 = (file: File): Promise<string> =>
       resolve(base64);
     };
     reader.onerror = () => {
-      reject(new Error('Failed to read file'));
+      reject(new Error(failureMessage));
     };
     reader.readAsDataURL(file);
   });
 
 export const ImportImagePage = () => {
+  const {i18n} = useLingui();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -36,7 +38,13 @@ export const ImportImagePage = () => {
     setError(null);
     let base64: string | null = null;
     try {
-      base64 = await readFileAsBase64(file);
+      base64 = await readFileAsBase64(
+        file,
+        i18n._({
+          id: 'importImage.readFileFailed',
+          message: 'Failed to read file',
+        }),
+      );
       const recipe = await eciperay.import.importImage(base64, {
         allowDuplicate: duplicateWarnedImageRef.current === base64,
       });
@@ -49,7 +57,7 @@ export const ImportImagePage = () => {
       if (base64 !== null && isDuplicateRecipeError(error_)) {
         duplicateWarnedImageRef.current = base64;
       }
-      setError(error_ instanceof Error ? error_.message : 'Import failed');
+      setError(error_ instanceof Error ? error_.message : i18n._({id: 'import.failed', message: 'Import failed'}));
     } finally {
       setLoading(false);
     }
@@ -80,7 +88,10 @@ export const ImportImagePage = () => {
         type="file"
         accept="image/*"
         capture="environment"
-        aria-label="Take a photo of a recipe"
+        aria-label={i18n._({
+          id: 'importImage.takePhotoLabel',
+          message: 'Take a photo of a recipe',
+        })}
         style={{display: 'none'}}
         onChange={handleFileChange}
       />
@@ -88,7 +99,10 @@ export const ImportImagePage = () => {
         ref={libraryInputRef}
         type="file"
         accept="image/*"
-        aria-label="Upload recipe image"
+        aria-label={i18n._({
+          id: 'importImage.uploadLabel',
+          message: 'Upload recipe image',
+        })}
         style={{display: 'none'}}
         onChange={handleFileChange}
       />

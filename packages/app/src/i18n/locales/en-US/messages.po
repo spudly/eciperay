@@ -141,13 +141,13 @@ msgid "recipeSharing.generateLabel"
 msgstr "Generate share link"
 
 #. js-lingui-explicit-id
-#: src/screens/GenerateAiScreen.tsx:83
-msgid "aiGenerate.title"
+#: src/screens/AddScreen.tsx:53
+msgid "add.generateAiLabel"
 msgstr "Generate with AI"
 
 #. js-lingui-explicit-id
-#: src/screens/AddScreen.tsx:53
-msgid "add.generateAiLabel"
+#: src/screens/GenerateAiScreen.tsx:83
+msgid "aiGenerate.title"
 msgstr "Generate with AI"
 
 #. js-lingui-explicit-id
@@ -159,6 +159,16 @@ msgstr "I understand this recipe may be viewed without signing in and I agree to
 #: src/hosts/recipe/RecipeForm.tsx:273
 msgid "recipeStatus.idea"
 msgstr "Idea"
+
+#. js-lingui-explicit-id
+#: src/screens/ImportImageScreen.tsx:52
+#: src/screens/ImportImageScreen.tsx:54
+#: src/screens/ImportImageScreen.tsx:106
+#: src/screens/ImportImageScreen.tsx:115
+#: src/screens/ImportTextScreen.tsx:39
+#: src/screens/ImportUrlScreen.tsx:41
+msgid "import.failed"
+msgstr "Import failed"
 
 #. js-lingui-explicit-id
 #: src/screens/AddScreen.tsx:37

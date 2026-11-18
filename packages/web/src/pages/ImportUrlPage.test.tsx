@@ -104,6 +104,22 @@ describe('ImportUrlPage', () => {
     });
   });
 
+  test('shows the generic error from the en-XA Lingui catalog for non-Error throws (#465)', async () => {
+    vi.spyOn(eciperay.import, 'importUrl').mockRejectedValueOnce('nope');
+    await renderWithProviders(<ImportUrlPage />, {
+      route: '/add/url',
+      locale: 'en-XA',
+    });
+    await userEvent.type(
+      screen.getByPlaceholderText('https://example.com/recipe'),
+      'https://example.com/recipe',
+    );
+    await userEvent.click(screen.getByText('Import'));
+    await waitFor(() => {
+      expect(screen.getByText('Import failed~')).toBeInTheDocument();
+    });
+  });
+
   test('shows generic error for non-Error throws', async () => {
     vi.spyOn(eciperay.import, 'importUrl').mockRejectedValueOnce('nope');
     await renderWithProviders(<ImportUrlPage />, {route: '/add/url'});

@@ -284,18 +284,23 @@ msgid "recipeDetail.deleteCookLogEntryFailed"
 msgstr "Failed to delete entry"
 
 #. js-lingui-explicit-id
+#: src/pages/ImportImagePage.tsx:43
+msgid "importImage.readFileFailed"
+msgstr "Failed to read file"
+
+#. js-lingui-explicit-id
 #: src/pages/useRecipeSharingProps.tsx:242
 msgid "recipeSharing.generateLabel"
 msgstr "Generate share link"
 
 #. js-lingui-explicit-id
-#: src/pages/GenerateAiPage.tsx:95
-msgid "aiGenerate.title"
+#: src/pages/AddPage.tsx:48
+msgid "add.generateAiLabel"
 msgstr "Generate with AI"
 
 #. js-lingui-explicit-id
-#: src/pages/AddPage.tsx:48
-msgid "add.generateAiLabel"
+#: src/pages/GenerateAiPage.tsx:95
+msgid "aiGenerate.title"
 msgstr "Generate with AI"
 
 #. js-lingui-explicit-id
@@ -322,6 +327,13 @@ msgstr "I understand this recipe may be viewed without signing in and I agree to
 #: src/pages/RecipeFormHost.tsx:241
 msgid "recipeStatus.idea"
 msgstr "Idea"
+
+#. js-lingui-explicit-id
+#: src/pages/ImportImagePage.tsx:60
+#: src/pages/ImportTextPage.tsx:38
+#: src/pages/ImportUrlPage.tsx:39
+msgid "import.failed"
+msgstr "Import failed"
 
 #. js-lingui-explicit-id
 #: src/pages/MarketingLandingPage.tsx:63
@@ -612,6 +624,11 @@ msgid "aiSession.startLabel"
 msgstr "Start planning"
 
 #. js-lingui-explicit-id
+#: src/pages/ImportImagePage.tsx:91
+msgid "importImage.takePhotoLabel"
+msgstr "Take a photo of a recipe"
+
+#. js-lingui-explicit-id
 #: src/pages/TermsOfServicePage.tsx:23
 msgid "termsOfService.title"
 msgstr "Terms of Service"
@@ -645,6 +662,11 @@ msgstr "Unlisted link"
 #: src/pages/AddPage.tsx:33
 msgid "add.importImageDescription"
 msgstr "Upload a photo of a recipe"
+
+#. js-lingui-explicit-id
+#: src/pages/ImportImagePage.tsx:102
+msgid "importImage.uploadLabel"
+msgstr "Upload recipe image"
 
 #. js-lingui-explicit-id
 #: src/pages/RecipeDetailHost.tsx:158
