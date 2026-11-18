@@ -1,3 +1,8 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+
+import {poCacheKey} from './jestPoCacheKey.cjs';
 import {messages as enXAMessages} from './jestPoFixtures/locales/en-XA/messages.po';
 
 // Regression test for jestPoTransformer.cjs (#588): importing the fixture
@@ -15,5 +20,38 @@ describe('jestPoTransformer', () => {
 
   it('keeps the target translation when one is present', () => {
     expect(enXAMessages['test.shared']).toEqual(['Shared source string~']);
+  });
+
+  it('changes the cache key when a sibling catalog changes but the target catalog does not', () => {
+    const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'po-cache-key-'));
+    const sourcePath = path.join(
+      rootDir,
+      'locales/en-XA',
+      'messages.po',
+    );
+    const siblingPath = path.join(
+      rootDir,
+      'locales/en-US',
+      'messages.po',
+    );
+    fs.mkdirSync(path.dirname(sourcePath), {recursive: true});
+    fs.mkdirSync(path.dirname(siblingPath), {recursive: true});
+    fs.writeFileSync(sourcePath, 'target catalog v1');
+    fs.writeFileSync(siblingPath, 'source catalog v1');
+
+    const before = poCacheKey('target catalog v1', sourcePath, 'transformer');
+    // Same target content, same path, same transformer: stable key.
+    expect(poCacheKey('target catalog v1', sourcePath, 'transformer')).toBe(
+      before,
+    );
+
+    fs.writeFileSync(siblingPath, 'source catalog v2');
+    expect(poCacheKey('target catalog v1', sourcePath, 'transformer')).not.toBe(
+      before,
+    );
+    // A transformer change also invalidates.
+    expect(poCacheKey('target catalog v1', sourcePath, 'transformer v2')).not.toBe(
+      before,
+    );
   });
 });

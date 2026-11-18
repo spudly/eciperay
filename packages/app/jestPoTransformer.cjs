@@ -14,13 +14,14 @@
 // target .po still ships, resolved through the fallback chain), and each
 // key resolves as target translation, fallback translation, source
 // translation, the message's default text, then the id itself.
-const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 
 const {getConfig} = require('@lingui/conf');
 const {createCompiledCatalog} = require('@lingui/cli/api');
 const {formatter} = require('@lingui/format-po');
+
+const {poCacheKey} = require('./jestPoCacheKey.cjs');
 
 const poFormatter = formatter();
 
@@ -115,22 +116,6 @@ module.exports = {
   process: (sourceText, sourcePath, options) => ({
     code: compilePoFile(sourceText, sourcePath, options.config.rootDir),
   }),
-  // Fallback and source locales mean one catalog's output can depend on
-  // the other locales' .po files, so the cache key covers every catalog
-  // in the same locales tree as the file being transformed (the real
-  // src/i18n/locales tree, or a fixture tree in tests) plus this
-  // transformer's own source.
-  getCacheKey: (sourceText, sourcePath) => {
-    const hash = crypto.createHash('sha256');
-    hash.update(sourceText);
-    hash.update(fs.readFileSync(__filename, 'utf8'));
-    const localesDir = path.dirname(path.dirname(sourcePath));
-    for (const locale of fs.readdirSync(localesDir).sort()) {
-      const poPath = path.join(localesDir, locale, 'messages.po');
-      if (fs.existsSync(poPath)) {
-        hash.update(fs.readFileSync(poPath, 'utf8'));
-      }
-    }
-    return hash.digest('hex');
-  },
+  getCacheKey: (sourceText, sourcePath) =>
+    poCacheKey(sourceText, sourcePath, fs.readFileSync(__filename, 'utf8')),
 };
