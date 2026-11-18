@@ -165,11 +165,7 @@ export const MealPlanDetailView = ({
           ...(progress.calories
             ? [
                 {
-                  label: i18n._({
-                    id: 'mealPlanDetail.goalCaloriesLabel',
-                    message: 'Calories {qualifier}',
-                    values: {qualifier: progressQualifier},
-                  }),
+                  label: `${i18n._({id: 'mealPlanDetail.goalCaloriesWord', message: 'Calories'})} ${progressQualifier}`,
                   valueLabel: goalValueLabel(i18n, progress.calories),
                 },
               ]
@@ -177,11 +173,7 @@ export const MealPlanDetailView = ({
           ...(progress.proteinG
             ? [
                 {
-                  label: i18n._({
-                    id: 'mealPlanDetail.goalProteinLabel',
-                    message: 'Protein {qualifier}',
-                    values: {qualifier: progressQualifier},
-                  }),
+                  label: `${i18n._({id: 'mealPlanDetail.goalProteinWord', message: 'Protein'})} ${progressQualifier}`,
                   valueLabel: goalValueLabel(i18n, progress.proteinG),
                 },
               ]

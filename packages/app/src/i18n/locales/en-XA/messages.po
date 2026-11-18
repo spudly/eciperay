@@ -197,13 +197,13 @@ msgstr "(plan total)~"
 
 #. js-lingui-explicit-id
 #: src/hosts/meals/MealPlanDetailView.tsx
-msgid "mealPlanDetail.goalCaloriesLabel"
-msgstr "Calories {qualifier}~"
+msgid "mealPlanDetail.goalCaloriesWord"
+msgstr "Calories~"
 
 #. js-lingui-explicit-id
 #: src/hosts/meals/MealPlanDetailView.tsx
-msgid "mealPlanDetail.goalProteinLabel"
-msgstr "Protein {qualifier}~"
+msgid "mealPlanDetail.goalProteinWord"
+msgstr "Protein~"
 
 #. js-lingui-explicit-id
 #: src/hosts/meals/MealPlanDetailView.tsx

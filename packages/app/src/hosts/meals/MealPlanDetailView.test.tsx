@@ -247,6 +247,35 @@ describe('MealPlanDetailView', () => {
     expect(queryByText('Satiety (plan total)')).toBeNull();
   });
 
+  test('renders goal copy from the en-XA Lingui catalog (#465)', async () => {
+    // Lower-only calorie goal with no per-day figure: the range
+    // qualifier, band label, and plan-total qualifier render
+    // pseudo-localized from the app catalog.
+    const plan = makePlan({
+      startsOn: null,
+      endsOn: null,
+      goalProgress: {
+        calories: {
+          min: 1800,
+          max: null,
+          actual: 500,
+          delta: -1300,
+          band: 'under',
+        },
+        proteinG: null,
+        carbsG: null,
+        fatG: null,
+        satietyScore: null,
+      },
+    });
+    const {findByText} = await renderWithProviders(
+      <MealPlanDetailView plan={plan} {...handlers()} />,
+      {locale: 'en-XA'},
+    );
+    expect(await findByText('Calories~ (plan total)~')).toBeTruthy();
+    expect(await findByText('500 / at least 1,800~ · Below goal~')).toBeTruthy();
+  });
+
   test('shows the set-goals hint when there is nutrition but no progress', async () => {
     const props = handlers();
     const {findByText} = await renderWithProviders(
