@@ -30,7 +30,10 @@ const mockRotateShareToken = jest.mocked(api.recipes.rotateShareToken);
  * the composed panel rendered them) and the mutation wiring the panel used to
  * own.
  */
-const renderSharingProps = async (recipe = makeRecipeDetail()) => {
+const renderSharingProps = async (
+  recipe = makeRecipeDetail(),
+  locale?: 'en-XA',
+) => {
   const queryClient = new QueryClient({
     defaultOptions: {queries: {retry: false}, mutations: {retry: false}},
   });
@@ -44,6 +47,7 @@ const renderSharingProps = async (recipe = makeRecipeDetail()) => {
     <QueryClientProvider client={queryClient}>
       <Probe />
     </QueryClientProvider>,
+    {locale},
   );
   return {
     onActionMessage,
@@ -68,6 +72,15 @@ describe('useRecipeSharingProps', () => {
       ...makeRecipeDetail({visibility: 'unlisted'}),
       shareToken: 'rotated-token',
     });
+  });
+
+  test('renders sharing options from the en-XA Lingui catalog (#465)', async () => {
+    const {props} = await renderSharingProps(makeRecipeDetail(), 'en-XA');
+    expect(props().options.map(option => option.label)).toEqual([
+      'Private~',
+      'Unlisted link~',
+      'Public~',
+    ]);
   });
 
   test('renders sharing options with no pending blocks', async () => {

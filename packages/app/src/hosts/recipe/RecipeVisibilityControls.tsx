@@ -1,10 +1,9 @@
+import {useLingui} from '@lingui/react';
 import {
   buildRecipePermalink,
   invalidateRecipeQueries,
   makeRecipeDetail,
   PRIVACY_POLICY_URL,
-  recipeVisibilityDescriptions,
-  recipeVisibilityLabels,
   requiresPublishingConsent,
   WEB_APP_BASE_URL,
 } from '@eciperay/client';
@@ -44,6 +43,29 @@ export const useRecipeSharingProps = (
   recipe: RecipeDetail,
   onActionMessage: (message: string) => void,
 ): RecipeDetailPageSharing => {
+  const {i18n} = useLingui();
+  const visibilityLabels: Record<RecipeVisibility, string> = {
+    private: i18n._({id: 'recipeSharing.visibilityPrivateLabel', message: 'Private'}),
+    unlisted: i18n._({
+      id: 'recipeSharing.visibilityUnlistedLabel',
+      message: 'Unlisted link',
+    }),
+    public: i18n._({id: 'recipeSharing.visibilityPublicLabel', message: 'Public'}),
+  };
+  const visibilityDescriptions: Record<RecipeVisibility, string> = {
+    private: i18n._({
+      id: 'recipeSharing.visibilityPrivateDescription',
+      message: 'Only you can view this recipe.',
+    }),
+    unlisted: i18n._({
+      id: 'recipeSharing.visibilityUnlistedDescription',
+      message: 'Anyone with the link can view without signing in.',
+    }),
+    public: i18n._({
+      id: 'recipeSharing.visibilityPublicDescription',
+      message: 'Discoverable by anyone and may appear in search results.',
+    }),
+  };
   const queryClient = useQueryClient();
   const [pendingVisibility, setPendingVisibility] =
     useState<RecipeVisibility | null>(null);
@@ -71,7 +93,12 @@ export const useRecipeSharingProps = (
       setPendingVisibility(null);
       setPublishingConsent(false);
       void invalidate();
-      onActionMessage('Sharing settings updated');
+      onActionMessage(
+        i18n._({
+          id: 'recipeSharing.settingsUpdated',
+          message: 'Sharing settings updated',
+        }),
+      );
     },
   });
 
@@ -80,7 +107,9 @@ export const useRecipeSharingProps = (
     onSuccess: result => {
       setShareToken(result.shareToken ?? null);
       void invalidate();
-      onActionMessage('Share link rotated');
+      onActionMessage(
+        i18n._({id: 'recipeSharing.linkRotated', message: 'Share link rotated'}),
+      );
     },
   });
 
@@ -99,8 +128,8 @@ export const useRecipeSharingProps = (
   return {
     options: visibilityOptions.map(option => ({
       value: option,
-      label: recipeVisibilityLabels[option],
-      description: recipeVisibilityDescriptions[option],
+      label: visibilityLabels[option],
+      description: visibilityDescriptions[option],
     })),
     value: pendingVisibility ?? recipe.visibility,
     onValueChange: (value: string) => {
@@ -109,15 +138,25 @@ export const useRecipeSharingProps = (
     pending: sharingMutation.isPending,
     publicWarning:
       pendingVisibility === 'public'
-        ? 'This recipe will be discoverable by anyone browsing Eciperay.'
+        ? i18n._({
+            id: 'recipeSharing.publicWarning',
+            message:
+              'This recipe will be discoverable by anyone browsing Eciperay.',
+          })
         : null,
     ...(consentRequired
       ? {
-          consentLabel: 'Publishing consent',
+          consentLabel: i18n._({
+            id: 'recipeSharing.consentLabel',
+            message: 'Publishing consent',
+          }),
           consentDescription: (
             <Text>
-              I understand this recipe may be viewed without signing in and I
-              agree to the{' '}
+              {i18n._({
+                id: 'recipeSharing.consentDescriptionStart',
+                message:
+                  'I understand this recipe may be viewed without signing in and I agree to the',
+              })}{' '}
               <Text
                 color="$primary"
                 textDecorationLine="underline"
@@ -125,7 +164,10 @@ export const useRecipeSharingProps = (
                   void safeOpenUrl(PRIVACY_POLICY_URL);
                 }}
               >
-                Privacy Policy
+                {i18n._({
+                  id: 'recipeSharing.privacyPolicyLinkLabel',
+                  message: 'Privacy Policy',
+                })}
               </Text>
               .
             </Text>
@@ -149,7 +191,10 @@ export const useRecipeSharingProps = (
               ...(consentRequired ? {publishingConsent: true} : {}),
             });
           },
-          saveLabel: 'Save sharing settings',
+          saveLabel: i18n._({
+            id: 'recipeSharing.saveLabel',
+            message: 'Save sharing settings',
+          }),
         }
       : {}),
     ...(activeVisibility === 'unlisted'
@@ -159,27 +204,42 @@ export const useRecipeSharingProps = (
             rotateMutation.mutate();
           },
           rotateShareLinkLabel: shareToken
-            ? 'Rotate share link'
-            : 'Generate share link',
+            ? i18n._({
+                id: 'recipeSharing.rotateLabel',
+                message: 'Rotate share link',
+              })
+            : i18n._({
+                id: 'recipeSharing.generateLabel',
+                message: 'Generate share link',
+              }),
           shareLinkPending: rotateMutation.isPending,
           ...(shareUrl
             ? {
                 onCopyShareLink: () => {
                   void Share.share({message: shareUrl});
                 },
-                copyShareLinkLabel: 'Share link',
+                copyShareLinkLabel: i18n._({
+                  id: 'recipeSharing.copyLinkLabel',
+                  message: 'Share link',
+                }),
               }
             : {}),
         }
       : {}),
     ...(activeVisibility === 'public'
       ? {
-          permalinkLabel: 'Public permalink',
+          permalinkLabel: i18n._({
+            id: 'recipeSharing.permalinkLabel',
+            message: 'Public permalink',
+          }),
           permalinkUrl: permalink,
           onCopyPermalink: () => {
             void Share.share({message: permalink});
           },
-          copyPermalinkLabel: 'Share permalink',
+          copyPermalinkLabel: i18n._({
+            id: 'recipeSharing.copyPermalinkLabel',
+            message: 'Share permalink',
+          }),
         }
       : {}),
   };

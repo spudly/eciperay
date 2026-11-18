@@ -38,7 +38,7 @@ const renderCommentsProps = async (
     shareToken?: string;
     publicList?: boolean;
   } = {},
-  renderOptions: {withAuth?: boolean} = {},
+  renderOptions: {withAuth?: boolean; locale?: 'en-XA'} = {},
 ) => {
   let captured: RecipeDetailPageComments | null = null;
   const Probe = () => {
@@ -62,6 +62,16 @@ const renderCommentsProps = async (
 };
 
 describe('useRecipeCommentsProps', () => {
+  test('renders comment copy from the en-XA Lingui catalog (#465)', async () => {
+    const {props} = await renderCommentsProps({}, {locale: 'en-XA'});
+    await waitFor(() => {
+      expect(props().staleHintLabel).toBe(
+        'This comment was left on an earlier version of the recipe.~',
+      );
+    });
+    expect(props().composerPlaceholder).toBe('Add a comment~');
+  });
+
   test('maps comments with stale flags and author eligibility', async () => {
     server.use(
       http.get(`${API}/api/recipes/:id/comments`, () =>

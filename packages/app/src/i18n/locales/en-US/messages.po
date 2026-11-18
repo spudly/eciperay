@@ -11,14 +11,39 @@ msgid "spike.recipeCount"
 msgstr "{count, plural, one {# recipe} other {# recipes}}"
 
 #. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeForm.tsx:278
+#: src/hosts/recipe/RecipeForm.tsx:276
 msgid "recipeStatus.abandoned"
 msgstr "Abandoned"
+
+#. js-lingui-explicit-id
+#: src/hosts/recipe/RecipeDetailView.tsx:108
+msgid "recipeDetail.versionRoleActive"
+msgstr "Active"
+
+#. js-lingui-explicit-id
+#: src/hosts/recipe/RecipeCommentsSection.tsx:131
+msgid "recipeComments.composerPlaceholder"
+msgstr "Add a comment"
 
 #. js-lingui-explicit-id
 #: src/screens/HomeScreen.tsx:86
 msgid "home.addLabel"
 msgstr "Add Recipe"
+
+#. js-lingui-explicit-id
+#: src/hosts/recipe/RecipeCommentsSection.tsx:82
+msgid "recipeComments.anonymousAuthor"
+msgstr "Anonymous"
+
+#. js-lingui-explicit-id
+#: src/hosts/recipe/RecipeVisibilityControls.tsx:60
+msgid "recipeSharing.visibilityUnlistedDescription"
+msgstr "Anyone with the link can view without signing in."
+
+#. js-lingui-explicit-id
+#: src/hosts/recipe/RecipeDetailView.tsx:110
+msgid "recipeDetail.versionRoleArchived"
+msgstr "Archived"
 
 #. js-lingui-explicit-id
 #: src/screens/HomeScreen.tsx:82
@@ -29,6 +54,31 @@ msgstr "Browse Recipes"
 #: src/hosts/recipes/RecipesListView.tsx:394
 msgid "recipes.authorByline"
 msgstr "By {authorName} · "
+
+#. js-lingui-explicit-id
+#: src/hosts/recipe/RecipeDetailView.tsx:117
+msgid "recipeDetail.versionRoleCandidate"
+msgstr "Candidate"
+
+#. js-lingui-explicit-id
+#: src/hosts/recipe/RecipeDetailView.tsx:277
+msgid "recipeDetail.couldNotCreateDraftSentence"
+msgstr "Could not create a draft. Please try again."
+
+#. js-lingui-explicit-id
+#: src/hosts/recipe/RecipeDetailView.tsx:448
+msgid "recipeDetail.couldNotRefreshNutrition"
+msgstr "Could not refresh nutrition"
+
+#. js-lingui-explicit-id
+#: src/hosts/recipe/RecipeDetailView.tsx:562
+msgid "recipeDetail.couldNotShareRecipe"
+msgstr "Could not share recipe"
+
+#. js-lingui-explicit-id
+#: src/hosts/recipe/RecipeCommentsSection.tsx:91
+msgid "recipeComments.loadError"
+msgstr "Couldn't load comments."
 
 #. js-lingui-explicit-id
 #: src/screens/RecipesScreen.tsx:81
@@ -46,9 +96,24 @@ msgid "add.generateAiDescription"
 msgstr "Describe the recipe you want and let AI create it"
 
 #. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeForm.tsx:273
+#: src/hosts/recipe/RecipeVisibilityControls.tsx:64
+msgid "recipeSharing.visibilityPublicDescription"
+msgstr "Discoverable by anyone and may appear in search results."
+
+#. js-lingui-explicit-id
+#: src/hosts/recipe/RecipeDetailView.tsx:115
+msgid "recipeDetail.versionRoleDraft"
+msgstr "Draft"
+
+#. js-lingui-explicit-id
+#: src/hosts/recipe/RecipeForm.tsx:274
 msgid "recipeStatus.evolving"
 msgstr "Evolving"
+
+#. js-lingui-explicit-id
+#: src/hosts/recipe/RecipeVisibilityControls.tsx:211
+msgid "recipeSharing.generateLabel"
+msgstr "Generate share link"
 
 #. js-lingui-explicit-id
 #: src/screens/AddScreen.tsx:53
@@ -56,7 +121,12 @@ msgid "add.generateAiLabel"
 msgstr "Generate with AI"
 
 #. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeForm.tsx:272
+#: src/hosts/recipe/RecipeVisibilityControls.tsx:155
+msgid "recipeSharing.consentDescriptionStart"
+msgstr "I understand this recipe may be viewed without signing in and I agree to the"
+
+#. js-lingui-explicit-id
+#: src/hosts/recipe/RecipeForm.tsx:273
 msgid "recipeStatus.idea"
 msgstr "Idea"
 
@@ -91,9 +161,15 @@ msgid "add.manualEntryLabel"
 msgstr "Manual entry"
 
 #. js-lingui-explicit-id
+#: src/hosts/recipe/RecipeDetailView.tsx:668
 #: src/screens/CookingModeScreen.tsx:124
 msgid "cookingMode.cookLogNotesPlaceholder"
 msgstr "Notes from this cook (optional)"
+
+#. js-lingui-explicit-id
+#: src/hosts/recipe/RecipeVisibilityControls.tsx:56
+msgid "recipeSharing.visibilityPrivateDescription"
+msgstr "Only you can view this recipe."
 
 #. js-lingui-explicit-id
 #: src/screens/AddScreen.tsx:30
@@ -106,9 +182,39 @@ msgid "add.importTextDescription"
 msgstr "Paste rich text from Word or the web"
 
 #. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeForm.tsx:274
+#: src/hosts/recipe/RecipeForm.tsx:275
 msgid "recipeStatus.perfected"
 msgstr "Perfected"
+
+#. js-lingui-explicit-id
+#: src/hosts/recipe/RecipeDetailView.tsx:452
+msgid "recipeDetail.pleaseTryAgain"
+msgstr "Please try again."
+
+#. js-lingui-explicit-id
+#: src/hosts/recipe/RecipeVisibilityControls.tsx:167
+msgid "recipeSharing.privacyPolicyLinkLabel"
+msgstr "Privacy Policy"
+
+#. js-lingui-explicit-id
+#: src/hosts/recipe/RecipeVisibilityControls.tsx:48
+msgid "recipeSharing.visibilityPrivateLabel"
+msgstr "Private"
+
+#. js-lingui-explicit-id
+#: src/hosts/recipe/RecipeVisibilityControls.tsx:53
+msgid "recipeSharing.visibilityPublicLabel"
+msgstr "Public"
+
+#. js-lingui-explicit-id
+#: src/hosts/recipe/RecipeVisibilityControls.tsx:231
+msgid "recipeSharing.permalinkLabel"
+msgstr "Public permalink"
+
+#. js-lingui-explicit-id
+#: src/hosts/recipe/RecipeVisibilityControls.tsx:149
+msgid "recipeSharing.consentLabel"
+msgstr "Publishing consent"
 
 #. js-lingui-explicit-id
 #: src/screens/HomeScreen.tsx:91
@@ -121,6 +227,31 @@ msgid "home.emptyMessage"
 msgstr "Recipes you view will appear here."
 
 #. js-lingui-explicit-id
+#: src/hosts/recipe/RecipeVisibilityControls.tsx:207
+msgid "recipeSharing.rotateLabel"
+msgstr "Rotate share link"
+
+#. js-lingui-explicit-id
+#: src/hosts/recipe/RecipeVisibilityControls.tsx:194
+msgid "recipeSharing.saveLabel"
+msgstr "Save sharing settings"
+
+#. js-lingui-explicit-id
+#: src/hosts/recipe/RecipeVisibilityControls.tsx:221
+msgid "recipeSharing.copyLinkLabel"
+msgstr "Share link"
+
+#. js-lingui-explicit-id
+#: src/hosts/recipe/RecipeVisibilityControls.tsx:111
+msgid "recipeSharing.linkRotated"
+msgstr "Share link rotated"
+
+#. js-lingui-explicit-id
+#: src/hosts/recipe/RecipeVisibilityControls.tsx:239
+msgid "recipeSharing.copyPermalinkLabel"
+msgstr "Share permalink"
+
+#. js-lingui-explicit-id
 #: src/screens/HomeScreen.tsx:87
 msgid "home.sharedWithMeLabel"
 msgstr "Shared with me"
@@ -131,14 +262,59 @@ msgid "sharedWithMe.title"
 msgstr "Shared with me"
 
 #. js-lingui-explicit-id
+#: src/hosts/recipe/RecipeVisibilityControls.tsx:97
+msgid "recipeSharing.settingsUpdated"
+msgstr "Sharing settings updated"
+
+#. js-lingui-explicit-id
 #: src/screens/AddScreen.tsx:38
 msgid "add.importImageDescription"
 msgstr "Take a photo or use your library"
 
 #. js-lingui-explicit-id
+#: src/hosts/recipe/RecipeCommentsSection.tsx:96
+msgid "recipeComments.staleHint"
+msgstr "This comment was left on an earlier version of the recipe."
+
+#. js-lingui-explicit-id
+#: src/hosts/recipe/RecipeVisibilityControls.tsx:141
+msgid "recipeSharing.publicWarning"
+msgstr "This recipe will be discoverable by anyone browsing Eciperay."
+
+#. js-lingui-explicit-id
 #: src/screens/AddScreen.tsx:22
 msgid "add.manualEntryDescription"
 msgstr "Type your recipe from scratch"
+
+#. js-lingui-explicit-id
+#: src/hosts/recipe/RecipeVisibilityControls.tsx:49
+msgid "recipeSharing.visibilityUnlistedLabel"
+msgstr "Unlisted link"
+
+#. js-lingui-explicit-id
+#: src/hosts/recipe/RecipeDetailView.tsx:165
+msgid "recipeDetail.candidateLabel"
+msgstr "v{versionNumber}"
+
+#. js-lingui-explicit-id
+#: src/hosts/recipe/RecipeDetailView.tsx:142
+msgid "recipeDetail.versionPickerLabel"
+msgstr "v{versionNumber} — {roleLabel}"
+
+#. js-lingui-explicit-id
+#: src/hosts/recipe/RecipeDetailView.tsx:133
+msgid "recipeDetail.versionPickerLabelWithSummary"
+msgstr "v{versionNumber} — {roleLabel}: {summary}"
+
+#. js-lingui-explicit-id
+#: src/hosts/recipe/RecipeDetailView.tsx:157
+msgid "recipeDetail.candidateLabelWithSummary"
+msgstr "v{versionNumber}: {summary}"
+
+#. js-lingui-explicit-id
+#: src/hosts/recipe/RecipeDetailView.tsx:246
+msgid "recipeDetail.versionActivated"
+msgstr "Version activated"
 
 #. js-lingui-explicit-id
 #: src/screens/RecipesScreen.tsx:148

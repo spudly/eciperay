@@ -54,6 +54,7 @@ const Harness = ({
 const renderHost = async (
   overrides: Partial<RecipeDetail> = {},
   versions: RecipeVersionSummary[] = [makeRecipeVersionSummary()],
+  locale?: 'en-XA',
 ) => {
   const recipe = makeRecipeDetail(overrides);
   const utils = await renderWithProviders(
@@ -61,6 +62,7 @@ const renderHost = async (
       recipe={recipe}
       versions={versions}
     />,
+    {locale},
   );
   return {recipe, ...utils};
 };
@@ -432,6 +434,18 @@ describe('RecipeDetailHost', () => {
       expect(await screen.findByText('Turned out great')).toBeInTheDocument();
       expect(screen.getByLabelText('4 stars')).toBeInTheDocument();
       expect(screen.getByText('Log a cook')).toBeInTheDocument();
+    });
+
+    test('renders the cook-log form heading from the en-XA Lingui catalog (#465)', async () => {
+      server.use(
+        http.get(
+          'http://localhost:8080/api/recipes/:id/versions/:versionId/cooks',
+          () => HttpResponse.json([]),
+        ),
+      );
+      await renderHost({}, [makeRecipeVersionSummary()], 'en-XA');
+      await userEvent.click(await screen.findByText('Log a cook'));
+      expect(await screen.findByText('How did it go?~')).toBeInTheDocument();
     });
 
     test('shows the empty state when no cooks exist', async () => {

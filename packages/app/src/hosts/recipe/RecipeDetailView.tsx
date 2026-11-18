@@ -31,6 +31,8 @@ import {
   tagColorNameForHex,
   type RecipeDetailPageNutritionProps,
 } from '@spudly/ui';
+import type {I18n} from '@lingui/core';
+import {useLingui} from '@lingui/react';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useState} from 'react';
 import {Alert} from 'react-native';
@@ -97,35 +99,74 @@ type RecipeDetailViewProps = {
  * instead of allowing a duplicate submit against an orphaned request.
  */
 
-const VERSION_ROLE_LABELS: Record<RecipeVersionSummary['derivedRole'], string> =
-  {
-    active: 'Active',
-    archived: 'Archived',
-    draft: 'Draft',
-    candidate: 'Candidate',
-  };
+const versionRoleLabel = (
+  i18n: I18n,
+  role: RecipeVersionSummary['derivedRole'],
+): string => {
+  switch (role) {
+    case 'active':
+      return i18n._({id: 'recipeDetail.versionRoleActive', message: 'Active'});
+    case 'archived':
+      return i18n._({
+        id: 'recipeDetail.versionRoleArchived',
+        message: 'Archived',
+      });
+    case 'draft':
+      return i18n._({id: 'recipeDetail.versionRoleDraft', message: 'Draft'});
+    case 'candidate':
+      return i18n._({
+        id: 'recipeDetail.versionRoleCandidate',
+        message: 'Candidate',
+      });
+  }
+};
 
 /**
  * The version picker's row label, formatted as the app's VersionPicker
  * formatted it ("v3 — Active: summary").
  */
-const versionPickerLabel = (version: RecipeVersionSummary): string =>
-  `v${version.versionNumber} — ${VERSION_ROLE_LABELS[version.derivedRole]}${
-    version.changeSummary
-      ? `: ${truncateChangeSummary(version.changeSummary)}`
-      : ''
-  }`;
+const versionPickerLabel = (
+  i18n: I18n,
+  version: RecipeVersionSummary,
+): string =>
+  version.changeSummary
+    ? i18n._({
+        id: 'recipeDetail.versionPickerLabelWithSummary',
+        message: 'v{versionNumber} — {roleLabel}: {summary}',
+        values: {
+          versionNumber: version.versionNumber,
+          roleLabel: versionRoleLabel(i18n, version.derivedRole),
+          summary: truncateChangeSummary(version.changeSummary),
+        },
+      })
+    : i18n._({
+        id: 'recipeDetail.versionPickerLabel',
+        message: 'v{versionNumber} — {roleLabel}',
+        values: {
+          versionNumber: version.versionNumber,
+          roleLabel: versionRoleLabel(i18n, version.derivedRole),
+        },
+      });
 
 /**
  * The activation candidate's label, formatted as the app's OverviewActions
  * formatted it ("v3: summary").
  */
-const candidateLabel = (version: RecipeVersionSummary): string =>
-  `v${version.versionNumber}${
-    version.changeSummary
-      ? `: ${truncateChangeSummary(version.changeSummary)}`
-      : ''
-  }`;
+const candidateLabel = (i18n: I18n, version: RecipeVersionSummary): string =>
+  version.changeSummary
+    ? i18n._({
+        id: 'recipeDetail.candidateLabelWithSummary',
+        message: 'v{versionNumber}: {summary}',
+        values: {
+          versionNumber: version.versionNumber,
+          summary: truncateChangeSummary(version.changeSummary),
+        },
+      })
+    : i18n._({
+        id: 'recipeDetail.candidateLabel',
+        message: 'v{versionNumber}',
+        values: {versionNumber: version.versionNumber},
+      });
 
 /**
  * The scale string the page shows as selected for a base/current servings pair
@@ -159,6 +200,7 @@ export const RecipeDetailView = ({
   onViewVersion,
   onEditVersion,
 }: RecipeDetailViewProps) => {
+  const {i18n} = useLingui();
   const queryClient = useQueryClient();
   const {session} = useAuth();
 
@@ -200,7 +242,12 @@ export const RecipeDetailView = ({
       api.versions.activate(displayRecipe.id, versionId),
     onSuccess: () => {
       void invalidate();
-      showActionMessage('Version activated');
+      showActionMessage(
+        i18n._({
+          id: 'recipeDetail.versionActivated',
+          message: 'Version activated',
+        }),
+      );
     },
   });
   const tweakManualMutation = useMutation({
@@ -226,7 +273,12 @@ export const RecipeDetailView = ({
       onEditVersion(version.id);
     },
     onError: () => {
-      showActionMessage('Could not create a draft. Please try again.');
+      showActionMessage(
+        i18n._({
+          id: 'recipeDetail.couldNotCreateDraftSentence',
+          message: 'Could not create a draft. Please try again.',
+        }),
+      );
     },
   });
 
@@ -245,7 +297,7 @@ export const RecipeDetailView = ({
           isActivationPending: activateMutation.isPending,
           candidates: candidates.map(version => ({
             id: version.id,
-            label: candidateLabel(version),
+            label: candidateLabel(i18n, version),
           })),
         }
       : null;
@@ -392,7 +444,13 @@ export const RecipeDetailView = ({
       // a user who pressed Estimate/Refresh there would likely never
       // see it. A native alert is viewport-visible regardless of
       // scroll position and stays up until dismissed.
-      Alert.alert('Could not refresh nutrition', 'Please try again.');
+      Alert.alert(
+        i18n._({
+          id: 'recipeDetail.couldNotRefreshNutrition',
+          message: 'Could not refresh nutrition',
+        }),
+        i18n._({id: 'recipeDetail.pleaseTryAgain', message: 'Please try again.'}),
+      );
     } finally {
       setIsRefreshingNutrition(false);
     }
@@ -461,7 +519,7 @@ export const RecipeDetailView = ({
       status={recipe.status}
       versions={versions.map(version => ({
         id: version.id,
-        label: versionPickerLabel(version),
+        label: versionPickerLabel(i18n, version),
         versionNumber: version.versionNumber,
       }))}
       selectedVersionId={selectedVersionId}
@@ -500,7 +558,12 @@ export const RecipeDetailView = ({
                       .shareToken;
               await shareRecipe(displayRecipe, {shareToken});
             } catch {
-              Alert.alert('Could not share recipe');
+              Alert.alert(
+                i18n._({
+                  id: 'recipeDetail.couldNotShareRecipe',
+                  message: 'Could not share recipe',
+                }),
+              );
             }
           })();
         },
@@ -602,7 +665,10 @@ export const RecipeDetailView = ({
           showCookLogForm ? (
             <CookLogForm
               variant="light"
-              notesPlaceholder="Notes from this cook (optional)"
+              notesPlaceholder={i18n._({
+                id: 'cookingMode.cookLogNotesPlaceholder',
+                message: 'Notes from this cook (optional)',
+              })}
               isPending={createCookLogMutation.isPending}
               onSkip={() => {
                 setShowCookLogForm(false);
