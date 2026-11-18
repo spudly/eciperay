@@ -8,6 +8,8 @@ import type {
   MealPlanEntry,
   NutritionGoalFieldProgress,
 } from '@eciperay/types';
+import type {I18n} from '@lingui/core';
+import {useLingui} from '@lingui/react';
 import {
   MealPlanDetailPage,
   type MealPlanDetailPageEntry,
@@ -72,35 +74,52 @@ type MealPlanDetailViewOwnProps = {
  * view.
  */
 
-const bandLabel = (band: NutritionGoalFieldProgress['band']): string => {
+const bandLabel = (
+  i18n: I18n,
+  band: NutritionGoalFieldProgress['band'],
+): string => {
   if (band === 'under') {
-    return 'Below goal';
+    return i18n._({id: 'mealPlanDetail.goalBandBelow', message: 'Below goal'});
   }
   if (band === 'over') {
-    return 'Above goal';
+    return i18n._({id: 'mealPlanDetail.goalBandAbove', message: 'Above goal'});
   }
-  return 'On track';
+  return i18n._({id: 'mealPlanDetail.goalBandOnTrack', message: 'On track'});
 };
 
 const formatGoalNumber = (value: number): string =>
   Math.round(value).toLocaleString('en-US');
 
-const goalRangeLabel = (field: NutritionGoalFieldProgress): string => {
+const goalRangeLabel = (
+  i18n: I18n,
+  field: NutritionGoalFieldProgress,
+): string => {
   if (field.min !== null && field.max !== null) {
     return `${formatGoalNumber(field.min)}–${formatGoalNumber(field.max)}`;
   }
   if (field.min !== null) {
-    return `at least ${formatGoalNumber(field.min)}`;
+    return i18n._({
+      id: 'mealPlanDetail.goalRangeAtLeast',
+      message: 'at least {min}',
+      values: {min: formatGoalNumber(field.min)},
+    });
   }
   if (field.max !== null) {
-    return `up to ${formatGoalNumber(field.max)}`;
+    return i18n._({
+      id: 'mealPlanDetail.goalRangeUpTo',
+      message: 'up to {max}',
+      values: {max: formatGoalNumber(field.max)},
+    });
   }
   // Unreachable: progress is produced only when a bound is set.
   return '';
 };
 
-const goalValueLabel = (field: NutritionGoalFieldProgress): string =>
-  `${formatGoalNumber(field.actual)} / ${goalRangeLabel(field)} · ${bandLabel(field.band)}`;
+const goalValueLabel = (
+  i18n: I18n,
+  field: NutritionGoalFieldProgress,
+): string =>
+  `${formatGoalNumber(field.actual)} / ${goalRangeLabel(i18n, field)} · ${bandLabel(i18n, field.band)}`;
 
 export const MealPlanDetailView = ({
   plan,
@@ -109,6 +128,7 @@ export const MealPlanDetailView = ({
   goalsHref,
   entryHref,
 }: MealPlanDetailViewOwnProps) => {
+  const {i18n} = useLingui();
   const nutritionLabel = formatSimpleNutrition(plan.nutrition) ?? undefined;
 
   const progress = plan.goalProgress;
@@ -131,32 +151,49 @@ export const MealPlanDetailView = ({
   // length does not change it. It is a plan-wide score, not an average
   // or a total (CodeRabbit on #272).
   const progressQualifier = plan.nutrition?.perDay
-    ? '(per-day avg)'
-    : '(plan total)';
+    ? i18n._({
+        id: 'mealPlanDetail.goalQualifierPerDay',
+        message: '(per-day avg)',
+      })
+    : i18n._({
+        id: 'mealPlanDetail.goalQualifierPlanTotal',
+        message: '(plan total)',
+      });
   const nutritionGoals: MealPlanDetailPageNutritionGoals | null = progress
     ? {
         rows: [
           ...(progress.calories
             ? [
                 {
-                  label: `Calories ${progressQualifier}`,
-                  valueLabel: goalValueLabel(progress.calories),
+                  label: i18n._({
+                    id: 'mealPlanDetail.goalCaloriesLabel',
+                    message: 'Calories {qualifier}',
+                    values: {qualifier: progressQualifier},
+                  }),
+                  valueLabel: goalValueLabel(i18n, progress.calories),
                 },
               ]
             : []),
           ...(progress.proteinG
             ? [
                 {
-                  label: `Protein ${progressQualifier}`,
-                  valueLabel: goalValueLabel(progress.proteinG),
+                  label: i18n._({
+                    id: 'mealPlanDetail.goalProteinLabel',
+                    message: 'Protein {qualifier}',
+                    values: {qualifier: progressQualifier},
+                  }),
+                  valueLabel: goalValueLabel(i18n, progress.proteinG),
                 },
               ]
             : []),
           ...(progress.satietyScore
             ? [
                 {
-                  label: 'Satiety (plan-wide score)',
-                  valueLabel: goalValueLabel(progress.satietyScore),
+                  label: i18n._({
+                    id: 'mealPlanDetail.goalSatietyLabel',
+                    message: 'Satiety (plan-wide score)',
+                  }),
+                  valueLabel: goalValueLabel(i18n, progress.satietyScore),
                 },
               ]
             : []),

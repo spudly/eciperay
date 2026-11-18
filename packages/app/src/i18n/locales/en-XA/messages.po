@@ -159,3 +159,53 @@ msgstr "Your personal recipe collection~"
 #: src/hosts/recipes/RecipesListView.tsx:382
 msgid "recipes.ownTitle"
 msgstr "Your recipes~"
+
+#. js-lingui-explicit-id
+#: src/hosts/meals/MealPlanDetailView.tsx
+msgid "mealPlanDetail.goalBandBelow"
+msgstr "Below goal~"
+
+#. js-lingui-explicit-id
+#: src/hosts/meals/MealPlanDetailView.tsx
+msgid "mealPlanDetail.goalBandAbove"
+msgstr "Above goal~"
+
+#. js-lingui-explicit-id
+#: src/hosts/meals/MealPlanDetailView.tsx
+msgid "mealPlanDetail.goalBandOnTrack"
+msgstr "On track~"
+
+#. js-lingui-explicit-id
+#: src/hosts/meals/MealPlanDetailView.tsx
+msgid "mealPlanDetail.goalRangeAtLeast"
+msgstr "at least {min}~"
+
+#. js-lingui-explicit-id
+#: src/hosts/meals/MealPlanDetailView.tsx
+msgid "mealPlanDetail.goalRangeUpTo"
+msgstr "up to {max}~"
+
+#. js-lingui-explicit-id
+#: src/hosts/meals/MealPlanDetailView.tsx
+msgid "mealPlanDetail.goalQualifierPerDay"
+msgstr "(per-day avg)~"
+
+#. js-lingui-explicit-id
+#: src/hosts/meals/MealPlanDetailView.tsx
+msgid "mealPlanDetail.goalQualifierPlanTotal"
+msgstr "(plan total)~"
+
+#. js-lingui-explicit-id
+#: src/hosts/meals/MealPlanDetailView.tsx
+msgid "mealPlanDetail.goalCaloriesLabel"
+msgstr "Calories {qualifier}~"
+
+#. js-lingui-explicit-id
+#: src/hosts/meals/MealPlanDetailView.tsx
+msgid "mealPlanDetail.goalProteinLabel"
+msgstr "Protein {qualifier}~"
+
+#. js-lingui-explicit-id
+#: src/hosts/meals/MealPlanDetailView.tsx
+msgid "mealPlanDetail.goalSatietyLabel"
+msgstr "Satiety (plan-wide score)~"
