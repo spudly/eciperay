@@ -3,11 +3,17 @@
 # pr-<number>-spudly-eciperay, so `app` below is only a placeholder.
 #
 # Deliberate differences from fly.toml (production):
-#   - NO [deploy] release_command: code from an unmerged PR must never run
-#     database migrations. Review apps share the Supabase QA dataset with
-#     the persistent preview (eciperay-next); that preview's deploys own
-#     migrating the dataset, so the schema a review app sees is the schema
-#     current master last migrated it to.
+#   - The [deploy] release_command matches production and the persistent
+#     preview (#596): review apps share the Supabase QA dataset with the
+#     preview, and until #596 only the preview's master deploys migrated
+#     that dataset — so a PR whose code selects a column its own migration
+#     adds (e.g. #581 selecting meal_plan_entries.day, migration 028) ran
+#     against an unmigrated schema and threw `column "day" does not
+#     exist`. Review-app deploys now migrate the QA dataset before the
+#     new code serves traffic, exactly like the other environments. This
+#     is safe only because the dataset is QA-only: review apps must never
+#     be pointed at production data, and repo migrations are additive and
+#     idempotent (`add column if not exists`, tracked in _migrations).
 #   - min_machines_running = 0: previews scale to zero when idle and are
 #     destroyed when the PR closes; they should cost as little as possible.
 
@@ -19,6 +25,9 @@ primary_region = 'iad'
 
   [build.args]
     VITE_API_BASE_URL = '/api'
+
+[deploy]
+  release_command = 'npm run migrate --workspace=packages/server'
 
 [env]
   NODE_ENV = 'production'
