@@ -25,11 +25,33 @@ const {
   getCatalogForFile,
   getCatalogs,
 } = require('@lingui/cli/api');
+// @lingui/cli's exports map does not expose ./package.json, so read the
+// installed version from disk, walking up from the resolved API entry.
+const findPackageVersion = (entryPath, packageName) => {
+  let dir = path.dirname(entryPath);
+  for (let depth = 0; depth < 6; depth++) {
+    const candidate = path.join(dir, 'package.json');
+    if (fs.existsSync(candidate)) {
+      const pkg = JSON.parse(fs.readFileSync(candidate, 'utf8'));
+      if (pkg.name === packageName) {
+        return pkg.version;
+      }
+    }
+    dir = path.dirname(dir);
+  }
+  return 'unknown';
+};
+const linguiCliVersion = findPackageVersion(
+  require.resolve('@lingui/cli/api'),
+  '@lingui/cli',
+);
 
 let catalogListPromise = null;
 const loadCatalogList = () => {
   catalogListPromise ??= (async () => {
-    const config = getConfig();
+    // Anchor the Lingui config lookup to this package rather than the
+    // process cwd (the Jest transformer does the same via rootDir).
+    const config = getConfig({cwd: __dirname});
     const allCatalogs = await getCatalogs(config);
     return {allCatalogs, config};
   })();
@@ -105,5 +127,9 @@ module.exports = {
   },
   getCacheKey: options =>
     `${upstreamTransformer.getCacheKey?.(options) ?? ''}` +
+    // Salt with the Lingui compiler version (as the upstream
+    // transformer did): a compiler upgrade must not reuse catalogs
+    // compiled by the previous version.
+    `$lingui-cli:${linguiCliVersion}` +
     `$lingui-po:${catalogsHash(options?.projectRoot)}`,
 };
