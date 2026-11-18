@@ -21,6 +21,11 @@ coverage
 *.tsbuildinfo
 packages/theme/logos/generated/
 
+# generated Lingui catalogs — the .po files are the source of truth and are
+# compiled on the fly by @lingui/vite-plugin / @lingui/metro-transformer (#588)
+packages/web/src/i18n/locales/*/messages.ts
+packages/app/src/i18n/locales/*/messages.ts
+
 # cache
 .turbo
 .eslintcache

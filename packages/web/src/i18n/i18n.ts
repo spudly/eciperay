@@ -1,7 +1,7 @@
 import {setupI18n, type I18n} from '@lingui/core';
 
-import {messages as enUSMessages} from './locales/en-US/messages';
-import {messages as enXAMessages} from './locales/en-XA/messages';
+import {messages as enUSMessages} from './locales/en-US/messages.po';
+import {messages as enXAMessages} from './locales/en-XA/messages.po';
 import type {SupportedLocale} from './locale';
 
 const catalogs: Record<SupportedLocale, typeof enUSMessages> = {
