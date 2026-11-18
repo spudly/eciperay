@@ -114,6 +114,10 @@ export const MealPlanEditPage = () => {
         quantityByKey={form.quantityByKey}
         servingsByRecipeId={form.servingsByRecipeId}
         servingsToEatByRecipeId={form.servingsToEatByRecipeId}
+        dayByKey={form.dayByKey}
+        onDayChange={(key, day) => {
+          form.setDayByKey(current => ({...current, [key]: day}));
+        }}
         onRecipeServingsToEatChange={(recipeId, servings) => {
           form.setServingsToEatByRecipeId(current => ({
             ...current,

@@ -186,6 +186,75 @@ describe('MealPlanEditPage', () => {
     });
   });
 
+  test('saves a per-entry day chosen in the editor (#582)', async () => {
+    let putBody: unknown = null;
+    server.use(
+      http.get(`http://localhost:8080/api/meal-plans/${PLAN_ID}`, () =>
+        HttpResponse.json(
+          makeMealPlanDetail({
+            entries: [
+              {
+                type: 'recipe',
+                id: 'entry-1',
+                recipeId: 'recipe-uuid-1',
+                sortOrder: 0,
+                quantity: 1,
+                day: null,
+                servingsToCook: 4,
+                servingsToEat: 4,
+                title: 'Test Recipe',
+                imageUrl: null,
+                recipeServings: 4,
+                accessLost: false,
+                nutrition: null,
+                satietyScore: null,
+                nutritionStatus: null,
+                calories: null,
+                proteinG: null,
+                carbsG: null,
+                fatG: null,
+              },
+            ],
+          }),
+        ),
+      ),
+      http.put(
+        `http://localhost:8080/api/meal-plans/${PLAN_ID}`,
+        async ({request}) => {
+          putBody = await request.json();
+          return HttpResponse.json(makeMealPlanDetail());
+        },
+      ),
+    );
+    await renderWithProviders(
+      <Routes>
+        <Route
+          path="/meal-plans/:planId/edit"
+          element={<MealPlanEditPage />}
+        />
+      </Routes>,
+      {route: `/meal-plans/${PLAN_ID}/edit`},
+    );
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('This week')).toBeInTheDocument();
+    });
+    // The per-entry Day field (@spudly/ui 11.2, DS #673) is the
+    // YYYY-MM-DD input that starts empty: startsOn/endsOn carry the
+    // plan's dates, the entry's day starts unset.
+    const dayInput = screen
+      .getAllByPlaceholderText('YYYY-MM-DD')
+      .find(input => (input as HTMLInputElement).value === '');
+    expect(dayInput).toBeDefined();
+    fireEvent.change(dayInput!, {target: {value: '2026-01-03'}});
+    fireEvent.click(screen.getByText('Save plan'));
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith(`/meal-plans/${PLAN_ID}`);
+    });
+    expect(putBody).toMatchObject({
+      entries: [{recipeId: 'recipe-uuid-1', day: '2026-01-03'}],
+    });
+  });
+
   test('preserves a divergent servings-to-eat when cook servings change (#363)', async () => {
     let putBody: unknown = null;
     server.use(

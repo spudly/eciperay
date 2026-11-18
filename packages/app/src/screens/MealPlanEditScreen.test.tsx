@@ -207,4 +207,71 @@ describe('MealPlanEditScreen', () => {
       expect(mockPut).toHaveBeenCalledWith(planId, expect.any(Object));
     });
   });
+
+  test('saves a per-entry day chosen in the editor (#582)', async () => {
+    mockGetPlan.mockResolvedValue({
+      id: planId,
+      userId: 'user-uuid-1',
+      title: 'This week',
+      notes: null,
+      startsOn: '2026-01-01',
+      endsOn: '2026-01-07',
+      entryCount: 1,
+      nutrition: null,
+      goalProgress: null,
+      createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2024-01-01T00:00:00.000Z',
+      entries: [
+        {
+          type: 'recipe',
+          id: 'entry-1',
+          recipeId: recipe.id,
+          sortOrder: 0,
+          quantity: 1,
+          day: null,
+          servingsToCook: 4,
+          servingsToEat: 4,
+          title: 'Pasta',
+          imageUrl: null,
+          recipeServings: 4,
+          accessLost: false,
+          nutrition: null,
+          satietyScore: null,
+          nutritionStatus: null,
+          calories: null,
+          proteinG: null,
+          carbsG: null,
+          fatG: null,
+        },
+      ],
+    });
+    mockPut.mockResolvedValue({id: planId});
+    const rendered = await renderWithProviders(
+      <MealPlanEditScreen {...createProps({planId})} />,
+    );
+    expect(await rendered.findByDisplayValue('This week')).toBeTruthy();
+    expect(await rendered.findByText('Day · Pasta')).toBeTruthy();
+    // The per-entry Day field (@spudly/ui 11.2, DS #673) is the
+    // YYYY-MM-DD input that starts empty: startsOn/endsOn carry the
+    // plan's dates, the entry's day starts unset.
+    const dayInput = rendered
+      .getAllByPlaceholderText('YYYY-MM-DD')
+      .find(input => input.props.value === '' || input.props.value == null);
+    expect(dayInput).toBeDefined();
+    await fireEvent.changeText(dayInput!, '2026-01-03');
+    await fireEvent.press(rendered.getByText('Save plan'));
+    await waitFor(() => {
+      expect(mockPut).toHaveBeenCalledWith(
+        planId,
+        expect.objectContaining({
+          entries: [
+            expect.objectContaining({
+              recipeId: recipe.id,
+              day: '2026-01-03',
+            }),
+          ],
+        }),
+      );
+    });
+  });
 });
