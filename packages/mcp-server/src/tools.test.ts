@@ -866,8 +866,14 @@ describe('meal and meal plan write tools', () => {
     });
     assert.notEqual(result.isError, true);
     assert.deepEqual(putBodies[0]?.['entries'], [
-      {recipeId: RECIPE_UUID, servingsToCook: 4, servingsToEat: 4, quantity: 1},
-      {mealId: MEAL_UUID, quantity: 1},
+      {
+        recipeId: RECIPE_UUID,
+        servingsToCook: 4,
+        servingsToEat: 4,
+        quantity: 1,
+        day: null,
+      },
+      {mealId: MEAL_UUID, quantity: 1, day: null},
     ]);
     await client.close();
   });

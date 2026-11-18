@@ -308,6 +308,13 @@ export {
 } from './mealPlanFormHelpers.js';
 export {useMealPlanEditForm} from './useMealPlanEditForm.js';
 export {
+  buildMealPlanDayTotals,
+  buildMealPlanWeekView,
+  groupMealPlanEntriesByDay,
+  mealPlanDayLabel,
+  type MealPlanDayGroup,
+} from './mealPlanWeek.js';
+export {
   DEBOUNCED_VALUE_DELAY_MS,
   useDebouncedValue,
 } from './useDebouncedValue.js';

@@ -106,12 +106,23 @@ const mealIngredientListSchema = z
   .max(50)
   .describe('Direct ingredients, in order');
 
+const planDateSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/)
+  .describe('Calendar date, YYYY-MM-DD');
+
 const mealPlanEntrySchema = z.union([
   z.strictObject({
     mealId: z.uuid().describe('Meal id, from list_meals'),
     quantity: pgIntSchema
       .optional()
       .describe('How many times the meal appears (default 1)'),
+    day: planDateSchema
+      .nullable()
+      .optional()
+      .describe(
+        'Day this entry belongs to, YYYY-MM-DD (#539); omit or null for no day assignment',
+      ),
   }),
   z.strictObject({
     recipeId: z.uuid().describe('Recipe id, from search_recipes'),
@@ -128,13 +139,14 @@ const mealPlanEntrySchema = z.union([
     quantity: pgIntSchema
       .optional()
       .describe('How many times the recipe appears (default 1)'),
+    day: planDateSchema
+      .nullable()
+      .optional()
+      .describe(
+        'Day this entry belongs to, YYYY-MM-DD (#539); omit or null for no day assignment',
+      ),
   }),
 ]);
-
-const planDateSchema = z
-  .string()
-  .regex(/^\d{4}-\d{2}-\d{2}$/)
-  .describe('Calendar date, YYYY-MM-DD');
 
 const ingredientSchema = z.object({
   name: z.string().min(1).describe('Ingredient name, e.g. "all-purpose flour"'),
@@ -651,6 +663,12 @@ export const registerTools = (
         quantity: pgIntSchema
           .optional()
           .describe('How many times the entry appears (default 1)'),
+        day: planDateSchema
+          .nullable()
+          .optional()
+          .describe(
+            'Day this entry belongs to, YYYY-MM-DD (#539); omit for no day assignment, null clears an existing entry’s day',
+          ),
       },
     },
     async ({
@@ -660,6 +678,7 @@ export const registerTools = (
       servingsToCook,
       servingsToEat,
       quantity,
+      day,
     }) => {
       if ((mealId === undefined) === (recipeId === undefined)) {
         throw new Error(
@@ -679,6 +698,7 @@ export const registerTools = (
           await client.addMealPlanEntry(mealPlanId, {
             mealId,
             ...(quantity !== undefined ? {quantity} : {}),
+            ...(day !== undefined ? {day} : {}),
           }),
         );
       }
@@ -688,6 +708,7 @@ export const registerTools = (
           ...(servingsToCook !== undefined ? {servingsToCook} : {}),
           ...(servingsToEat !== undefined ? {servingsToEat} : {}),
           ...(quantity !== undefined ? {quantity} : {}),
+          ...(day !== undefined ? {day} : {}),
         }),
       );
     },

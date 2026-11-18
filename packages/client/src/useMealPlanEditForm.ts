@@ -56,6 +56,7 @@ const createMealPlanEditFormActions = (
         quantityByKey: fields.quantityByKey,
         servingsByRecipeId: fields.servingsByRecipeId,
         servingsToEatByRecipeId: fields.servingsToEatByRecipeId,
+        dayByKey: fields.dayByKey,
       }),
   };
 };
@@ -165,6 +166,7 @@ export const useMealPlanEditForm = (args: {
     quantityByKey: fields.quantityByKey,
     servingsByRecipeId: fields.servingsByRecipeId,
     servingsToEatByRecipeId: fields.servingsToEatByRecipeId,
+    dayByKey: fields.dayByKey,
     setTitle: fields.setTitle,
     setNotes: fields.setNotes,
     setStartsOn: fields.setStartsOn,
@@ -174,6 +176,7 @@ export const useMealPlanEditForm = (args: {
     setQuantityByKey: fields.setQuantityByKey,
     setServingsByRecipeId: fields.setServingsByRecipeId,
     setServingsToEatByRecipeId: fields.setServingsToEatByRecipeId,
+    setDayByKey: fields.setDayByKey,
     buildInput: actions.buildInput,
   };
 };

@@ -26,6 +26,7 @@ describe('useMealPlanEditFormFields', () => {
           mealId: 'm1',
           sortOrder: 0,
           quantity: 1,
+          day: null,
           title: 'Dinner',
           memberCount: 1,
           recipeCount: 1,

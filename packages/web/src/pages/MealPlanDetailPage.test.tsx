@@ -71,6 +71,7 @@ describe('MealPlanDetailPage', () => {
               mealId: MEAL_ID,
               sortOrder: 0,
               quantity: 1,
+              day: null,
               title: 'Sunday Dinner',
               // 1 recipe + 1 direct ingredient (#498): the subtitle
               // must count recipes only, not every member.
@@ -84,6 +85,7 @@ describe('MealPlanDetailPage', () => {
               recipeId: 'recipe-uuid-1',
               sortOrder: 1,
               quantity: 1,
+              day: null,
               servingsToCook: 4,
               servingsToEat: 2,
               title: 'Test Recipe',
@@ -205,6 +207,11 @@ describe('MealPlanDetailPage', () => {
     expect(
       screen.getByText('Qty 1 · Servings to cook: 4 · Servings to eat: 2'),
     ).toBeInTheDocument();
+    // Week view (#539 / DS #660): the undated entries fall back to the
+    // plan's first day (2026-01-01, a Thursday) and the range's days
+    // render as columns.
+    expect(screen.getByText('Thursday')).toBeInTheDocument();
+    expect(screen.getByText('2026-01-01')).toBeInTheDocument();
     expect(screen.getByText('Calories · Weekly total')).toBeInTheDocument();
     expect(screen.getByText('500 cal')).toBeInTheDocument();
     expect(screen.getByText('Calories · Daily average')).toBeInTheDocument();

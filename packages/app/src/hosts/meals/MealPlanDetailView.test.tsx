@@ -59,6 +59,7 @@ const makePlan = (overrides: Partial<MealPlanDetail> = {}): MealPlanDetail => ({
       mealId: 'meal-1',
       sortOrder: 0,
       quantity: 2,
+      day: null,
       title: 'Sunday Dinner',
       // Distinct counts (#498): the subtitle labels recipes, so it
       // must read recipeCount (3), not the member total (4).
@@ -72,6 +73,7 @@ const makePlan = (overrides: Partial<MealPlanDetail> = {}): MealPlanDetail => ({
       recipeId: 'recipe-1',
       sortOrder: 1,
       quantity: 1,
+      day: null,
       servingsToCook: 4,
       servingsToEat: 4,
       title: 'Test Recipe',
@@ -135,6 +137,27 @@ describe('MealPlanDetailView', () => {
     ).toBeTruthy();
   });
 
+  test('renders the week view with per-day totals for dated entries (#539)', async () => {
+    const plan = makePlan();
+    // Pin both entries to the plan's first day (2026-10-19, a Monday):
+    // the week view replaces the flat list with a column per day of the
+    // range, and the day's totals come from servings eaten.
+    plan.entries = plan.entries.map(entry => ({...entry, day: '2026-10-19'}));
+    const {findByText} = await renderWithProviders(
+      <MealPlanDetailView
+        plan={plan}
+        {...handlers()}
+      />,
+    );
+    expect(await findByText('Monday')).toBeTruthy();
+    expect(await findByText('Tuesday')).toBeTruthy();
+    expect(await findByText('2026-10-19')).toBeTruthy();
+    // The day's Calories row comes from the host-provided dailyTotals:
+    // the meal entry's 300 cal scaled by its quantity of 2 (the recipe
+    // entry has no usable nutrition and contributes nothing).
+    expect(await findByText('600 cal')).toBeTruthy();
+  });
+
   test('omits the date range unless the plan has both dates', async () => {
     const {queryByText} = await renderWithProviders(
       <MealPlanDetailView
@@ -142,7 +165,9 @@ describe('MealPlanDetailView', () => {
         {...handlers()}
       />,
     );
-    expect(queryByText(/2026-10-19/)).toBeNull();
+    // The header date range is omitted; the week view may still show the
+    // plan's startsOn as its single day column (#539 fallback grouping).
+    expect(queryByText('2026-10-19 – 2026-10-25')).toBeNull();
   });
 
   test('composes goal rows with the app rounding and band wording', async () => {

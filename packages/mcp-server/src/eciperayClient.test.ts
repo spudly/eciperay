@@ -686,8 +686,14 @@ describe('buildMealPlanUpdatePayload', () => {
     assert.equal(payload.startsOn, '2026-11-02');
     assert.equal(payload.endsOn, '2026-11-08');
     assert.deepEqual(payload.entries, [
-      {mealId: 'meal-1', quantity: 2},
-      {recipeId: 'recipe-9', servingsToCook: 6, servingsToEat: 6, quantity: 1},
+      {mealId: 'meal-1', quantity: 2, day: null},
+      {
+        recipeId: 'recipe-9',
+        servingsToCook: 6,
+        servingsToEat: 6,
+        quantity: 1,
+        day: null,
+      },
     ]);
     assert.deepEqual(mealPlanEntryInputs(storedPlan), payload.entries);
   });
@@ -930,8 +936,14 @@ describe('client meal plan writes', () => {
     assert.equal(puts[0]?.['endsOn'], '2026-11-09');
     assert.equal(puts[0]?.['startsOn'], '2026-11-02');
     assert.deepEqual(puts[0]?.['entries'], [
-      {mealId: 'meal-1', quantity: 2},
-      {recipeId: 'recipe-9', servingsToCook: 6, servingsToEat: 6, quantity: 1},
+      {mealId: 'meal-1', quantity: 2, day: null},
+      {
+        recipeId: 'recipe-9',
+        servingsToCook: 6,
+        servingsToEat: 6,
+        quantity: 1,
+        day: null,
+      },
     ]);
   });
 
@@ -955,8 +967,14 @@ describe('client meal plan writes', () => {
     const calls = stubFetch(() => ({status: 200, body: storedPlan}));
     await client().addMealPlanEntry('plan-1', {mealId: 'meal-2'});
     assert.deepEqual(putBodies(calls)[0]?.['entries'], [
-      {mealId: 'meal-1', quantity: 2},
-      {recipeId: 'recipe-9', servingsToCook: 6, servingsToEat: 6, quantity: 1},
+      {mealId: 'meal-1', quantity: 2, day: null},
+      {
+        recipeId: 'recipe-9',
+        servingsToCook: 6,
+        servingsToEat: 6,
+        quantity: 1,
+        day: null,
+      },
       {mealId: 'meal-2'},
     ]);
   });
@@ -968,8 +986,14 @@ describe('client meal plan writes', () => {
       quantity: 3,
     });
     assert.deepEqual(putBodies(calls)[0]?.['entries'], [
-      {mealId: 'meal-1', quantity: 2},
-      {recipeId: 'recipe-9', servingsToCook: 6, servingsToEat: 6, quantity: 3},
+      {mealId: 'meal-1', quantity: 2, day: null},
+      {
+        recipeId: 'recipe-9',
+        servingsToCook: 6,
+        servingsToEat: 6,
+        quantity: 3,
+        day: null,
+      },
     ]);
   });
 
@@ -1029,8 +1053,14 @@ describe('client meal plan writes', () => {
       quantity: 3,
     });
     assert.deepEqual(putBodies(calls)[0]?.['entries'], [
-      {mealId: 'meal-1', quantity: 2},
-      {recipeId: 'recipe-9', servingsToCook: 6, servingsToEat: 6, quantity: 3},
+      {mealId: 'meal-1', quantity: 2, day: null},
+      {
+        recipeId: 'recipe-9',
+        servingsToCook: 6,
+        servingsToEat: 6,
+        quantity: 3,
+        day: null,
+      },
     ]);
   });
 
@@ -1038,7 +1068,13 @@ describe('client meal plan writes', () => {
     const calls = stubFetch(() => ({status: 200, body: storedPlan}));
     await client().removeMealPlanEntry('plan-1', 'entry-1');
     assert.deepEqual(putBodies(calls)[0]?.['entries'], [
-      {recipeId: 'recipe-9', servingsToCook: 6, servingsToEat: 6, quantity: 1},
+      {
+        recipeId: 'recipe-9',
+        servingsToCook: 6,
+        servingsToEat: 6,
+        quantity: 1,
+        day: null,
+      },
     ]);
   });
 
@@ -1055,8 +1091,14 @@ describe('client meal plan writes', () => {
     const calls = stubFetch(() => ({status: 200, body: storedPlan}));
     await client().reorderMealPlanEntries('plan-1', ['entry-2', 'entry-1']);
     assert.deepEqual(putBodies(calls)[0]?.['entries'], [
-      {recipeId: 'recipe-9', servingsToCook: 6, servingsToEat: 6, quantity: 1},
-      {mealId: 'meal-1', quantity: 2},
+      {
+        recipeId: 'recipe-9',
+        servingsToCook: 6,
+        servingsToEat: 6,
+        quantity: 1,
+        day: null,
+      },
+      {mealId: 'meal-1', quantity: 2, day: null},
     ]);
   });
 

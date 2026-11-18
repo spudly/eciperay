@@ -67,21 +67,6 @@ export const MealInputSchema = z
     },
   );
 
-export const MealPlanEntryInputSchema = z.union([
-  z.object({
-    mealId: z.uuid(),
-    quantity: z.number().int().positive().optional(),
-  }),
-  z.object({
-    recipeId: z.uuid(),
-    servingsToCook: z.number().int().nonnegative().optional(),
-    servingsToEat: z.number().nonnegative().optional(),
-    // Legacy pre-#363 alias for servingsToCook (see MealInputSchema).
-    servings: z.number().int().nonnegative().optional(),
-    quantity: z.number().int().positive().optional(),
-  }),
-]);
-
 const isLeapYear = (year: number): boolean =>
   year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
 
@@ -126,6 +111,26 @@ const MealPlanDateSchema = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/)
   .refine(isCalendarDate, {message: 'Must be a real calendar date'});
+
+export const MealPlanEntryInputSchema = z.union([
+  z.object({
+    mealId: z.uuid(),
+    quantity: z.number().int().positive().optional(),
+    // Optional day assignment (#539): a real calendar date, or null /
+    // omitted for no day (the host's fallback grouping applies).
+    day: MealPlanDateSchema.nullish(),
+  }),
+  z.object({
+    recipeId: z.uuid(),
+    servingsToCook: z.number().int().nonnegative().optional(),
+    servingsToEat: z.number().nonnegative().optional(),
+    // Legacy pre-#363 alias for servingsToCook (see MealInputSchema).
+    servings: z.number().int().nonnegative().optional(),
+    quantity: z.number().int().positive().optional(),
+    // Optional day assignment (#539), as on the meal variant.
+    day: MealPlanDateSchema.nullish(),
+  }),
+]);
 
 export const MealPlanInputSchema = z
   .object({

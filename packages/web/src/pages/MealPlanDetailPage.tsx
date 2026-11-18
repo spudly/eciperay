@@ -1,10 +1,15 @@
 import {
+  buildMealPlanWeekView,
   buildRecipePath,
   buildWeeklyTotalsBand,
   formatSimpleNutrition,
   queryKeys,
 } from '@eciperay/client';
-import type {MealPlanDetail, NutritionGoalFieldProgress} from '@eciperay/types';
+import type {
+  MealPlanDetail,
+  MealPlanEntry,
+  NutritionGoalFieldProgress,
+} from '@eciperay/types';
 import {
   MealPlanDetailPage as MealPlanDetailPageView,
   type MealPlanDetailPageEntry,
@@ -111,7 +116,7 @@ const planDetailViewProps = (plan: MealPlanDetail, planId: string) => {
       ? 'shown'
       : 'auto';
 
-  const entries: MealPlanDetailPageEntry[] = plan.entries.map(entry => {
+  const toDetailEntry = (entry: MealPlanEntry): MealPlanDetailPageEntry => {
     const entryNutrition = formatSimpleNutrition(entry.nutrition);
     const nutritionSuffix = entryNutrition ? ` · ${entryNutrition}` : '';
     if (entry.type === 'meal') {
@@ -133,7 +138,8 @@ const planDetailViewProps = (plan: MealPlanDetail, planId: string) => {
       subtitle: `Qty ${entry.quantity} · Servings to cook: ${entry.servingsToCook} · Servings to eat: ${entry.servingsToEat}${nutritionSuffix}`,
       isUnavailable: entry.accessLost,
     };
-  });
+  };
+  const entries: MealPlanDetailPageEntry[] = plan.entries.map(toDetailEntry);
 
   return {
     state: 'ready' as const,
@@ -148,6 +154,10 @@ const planDetailViewProps = (plan: MealPlanDetail, planId: string) => {
     // the plan's eaten nutrition (#363): totals from the plan totals,
     // averages from its per-day figure.
     weeklyTotals: buildWeeklyTotalsBand(plan.nutrition),
+    // Week view (#539 / DS #660): entries grouped by their day with
+    // per-day totals from servings eaten; null when the plan has no
+    // day anchor, in which case the page keeps its flat entry list.
+    weekView: buildMealPlanWeekView(plan, toDetailEntry),
     nutritionGoals,
     goalsSectionVisibility,
     goalsHref: '/profile',

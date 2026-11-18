@@ -11,6 +11,12 @@ export type MealPlanMealEntry = {
   mealId: string;
   sortOrder: number;
   quantity: number;
+  /**
+   * The calendar day (`YYYY-MM-DD`) this entry belongs to (#539), or null when
+   * the entry carries no day assignment — hosts then group it under the
+   * fallback (plan order from the plan's `startsOn`).
+   */
+  day: string | null;
   title: string;
   memberCount: number;
   /** Recipe members only — see `Meal.recipeCount` (#498). */
@@ -24,6 +30,8 @@ export type MealPlanRecipeEntry = {
   recipeId: string;
   sortOrder: number;
   quantity: number;
+  /** The day this entry belongs to (#539); see MealPlanMealEntry.day. */
+  day: string | null;
   /**
    * Servings of the recipe cooked for this plan entry (#363): the plan shopping
    * list scales from this number.
@@ -59,10 +67,17 @@ export type MealPlan = {
 
 export type MealPlanDetail = MealPlan & {entries: MealPlanEntry[]};
 
-export type MealPlanMealEntryInput = {mealId: string; quantity?: number};
+export type MealPlanMealEntryInput = {
+  mealId: string;
+  quantity?: number;
+  /** Optional day (`YYYY-MM-DD`) for this entry (#539). */
+  day?: string | null;
+};
 
 export type MealPlanRecipeEntryInput = {
   recipeId: string;
+  /** Optional day (`YYYY-MM-DD`) for this entry (#539). */
+  day?: string | null;
   /** Defaults to the recipe's own servings. */
   servingsToCook?: number;
   /** Defaults to servingsToCook (eat = cook). */

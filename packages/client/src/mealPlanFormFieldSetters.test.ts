@@ -13,6 +13,7 @@ const emptyDraft = (): MealPlanFormDraft => ({
   quantityByKey: {},
   servingsByRecipeId: {},
   servingsToEatByRecipeId: {},
+  dayByKey: {},
 });
 
 describe('createMealPlanFormFieldSetters', () => {
@@ -43,6 +44,7 @@ describe('createMealPlanFormFieldSetters', () => {
       quantityByKey: {'meal:m1': 2},
       servingsByRecipeId: {r1: 3},
       servingsToEatByRecipeId: {r1: 2},
+      dayByKey: {},
     });
   });
 

@@ -20,6 +20,12 @@ export type MealPlanFormDraft = {
   servingsByRecipeId: Record<string, number>;
   /** Servings to eat by recipe id (#363). */
   servingsToEatByRecipeId: Record<string, number>;
+  /**
+   * Day assignment by entry key (#539): `YYYY-MM-DD`, or '' for no day. The DS
+   * form page has no day control, so this rides the form state (set
+   * programmatically / by future host controls) into the payload.
+   */
+  dayByKey: Record<string, string>;
 };
 
 export const mealPlanFormDraftFromDetail = (
@@ -29,17 +35,20 @@ export const mealPlanFormDraftFromDetail = (
   const quantities: Record<string, number> = {};
   const servings: Record<string, number> = {};
   const servingsToEat: Record<string, number> = {};
+  const days: Record<string, string> = {};
   for (const entry of plan.entries) {
     if (entry.type === 'meal') {
       const key = mealPlanEntryKey('meal', entry.mealId);
       keys.push(key);
       quantities[key] = entry.quantity;
+      days[key] = entry.day ?? '';
     } else {
       const key = mealPlanEntryKey('recipe', entry.recipeId);
       keys.push(key);
       quantities[key] = entry.quantity;
       servings[entry.recipeId] = entry.servingsToCook;
       servingsToEat[entry.recipeId] = entry.servingsToEat;
+      days[key] = entry.day ?? '';
     }
   }
   return {
@@ -51,6 +60,7 @@ export const mealPlanFormDraftFromDetail = (
     quantityByKey: quantities,
     servingsByRecipeId: servings,
     servingsToEatByRecipeId: servingsToEat,
+    dayByKey: days,
   };
 };
 

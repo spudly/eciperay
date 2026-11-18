@@ -31,7 +31,7 @@ const PLAN_SQL = `
 `;
 
 const ENTRIES_SQL = `
-  select id, meal_plan_id, sort_order, quantity, meal_id, recipe_id, servings, servings_to_eat
+  select id, meal_plan_id, sort_order, quantity, meal_id, recipe_id, servings, servings_to_eat, day
   from meal_plan_entries
   where meal_plan_id = $1
   order by sort_order asc, id asc
@@ -62,6 +62,8 @@ type EntryRow = {
   // numeric since #541: node-postgres returns numeric columns as
   // strings, so the stored value may arrive as e.g. "0.5".
   servings_to_eat: number | string | null;
+  // DATE column (#539): arrives as a JS Date like starts_on (see dateOnly).
+  day: string | Date | null;
 };
 
 const dateOnly = (value: string | Date | null): string | null => {
@@ -145,6 +147,7 @@ export const loadMealPlanDetail = async (
         mealId: row.meal_id,
         sortOrder: row.sort_order,
         quantity: row.quantity,
+        day: dateOnly(row.day),
         title: meal.title,
         memberCount: meal.memberCount,
         recipeCount: meal.recipeCount,
@@ -204,6 +207,7 @@ export const loadMealPlanDetail = async (
       recipeId: row.recipe_id,
       sortOrder: row.sort_order,
       quantity: row.quantity,
+      day: dateOnly(row.day),
       servingsToCook,
       servingsToEat,
       title: raw?.title ?? 'Unavailable recipe',
@@ -230,12 +234,12 @@ export const loadMealPlanDetail = async (
 
   const startsOn = dateOnly(plan.starts_on);
   const endsOn = dateOnly(plan.ends_on);
-  // Per-day averages (#363): the approved denominator is the days that
-  // have entries, but plan entries carry no day assignment (a plan is a
-  // flat entry list — see docs/manual-tests.md), so a days-with-entries
-  // count cannot be derived from the stored data. The date-range day
-  // count stays the denominator, as before; the totals above are the
-  // eaten totals either way.
+  // Per-day averages (#363): the date-range day count stays the
+  // denominator for this plan-wide average, as before. Entries now carry
+  // an optional day (#539), but most stored entries have none, so a
+  // days-with-entries count still cannot be derived reliably; the
+  // per-day figures the week view shows are computed host-side from the
+  // grouped entries instead (see groupMealPlanEntriesByDay).
   const dayCount = planDayCount(startsOn, endsOn);
   const nutrition: MealPlanNutrition = aggregatePlanNutrition(
     planNutritionInputs,

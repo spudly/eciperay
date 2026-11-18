@@ -16,6 +16,7 @@ const emptyDraft = (): MealPlanFormDraft => ({
   quantityByKey: {},
   servingsByRecipeId: {},
   servingsToEatByRecipeId: {},
+  dayByKey: {},
 });
 
 export const useMealPlanEditFormFields = (plan?: MealPlanDetail | null) => {

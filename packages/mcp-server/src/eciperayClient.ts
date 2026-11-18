@@ -391,6 +391,9 @@ export const createClient = (config: EciperayClientConfig) => {
         if (entry.quantity !== undefined) {
           existing.quantity = entry.quantity;
         }
+        if (entry.day !== undefined) {
+          existing.day = entry.day;
+        }
         if ('recipeId' in entry && 'recipeId' in existing) {
           if (entry.servingsToCook !== undefined) {
             existing.servingsToCook = entry.servingsToCook;
@@ -775,12 +778,13 @@ export type MealUpdatePatch = {
 
 /** Entry shapes accepted by the REST meal-plan endpoints. */
 export type MealPlanEntryInput =
-  | {mealId: string; quantity?: number}
+  | {mealId: string; quantity?: number; day?: string | null}
   | {
       recipeId: string;
       servingsToCook?: number;
       servingsToEat?: number;
       quantity?: number;
+      day?: string | null;
     };
 
 export type MealPlanInput = {
@@ -839,6 +843,9 @@ type MealPlanEntryForUpdate =
       mealId: string;
       sortOrder: number;
       quantity: number;
+      // Optional day (#539); absent on detail responses from before
+      // the field existed.
+      day?: string | null;
     }
   | {
       type: 'recipe';
@@ -848,6 +855,7 @@ type MealPlanEntryForUpdate =
       quantity: number;
       servingsToCook: number;
       servingsToEat: number;
+      day?: string | null;
     };
 
 /** The meal-plan-detail shape returned by `GET /meal-plans/:id`. */
@@ -935,12 +943,13 @@ const mealPlanEntryInput = (
   entry: MealPlanEntryForUpdate,
 ): MealPlanEntryInput =>
   entry.type === 'meal'
-    ? {mealId: entry.mealId, quantity: entry.quantity}
+    ? {mealId: entry.mealId, quantity: entry.quantity, day: entry.day ?? null}
     : {
         recipeId: entry.recipeId,
         servingsToCook: entry.servingsToCook,
         servingsToEat: entry.servingsToEat,
         quantity: entry.quantity,
+        day: entry.day ?? null,
       };
 
 /** A stored plan's entries as full-replace PUT inputs, in stored order. */
