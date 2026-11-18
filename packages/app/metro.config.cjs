@@ -57,8 +57,13 @@ module.exports = withExpoSerializers({
   transformer: {
     ...config.transformer,
     // Compile Lingui .po catalogs on the fly (#588) instead of importing
-    // committed compiled messages.ts files.
-    babelTransformerPath: require.resolve('@lingui/metro-transformer/expo'),
+    // committed compiled messages.ts files. The transformer is composed
+    // locally (metroTransformer.cjs): @lingui/metro-transformer is
+    // hoisted to the monorepo root, so its bundled upstream babel
+    // transformer resolves to the root's older React Native toolchain,
+    // which cannot parse Flow syntax in this app's react-native version
+    // and broke the Android release bundle.
+    babelTransformerPath: path.resolve(projectRoot, 'metroTransformer.cjs'),
   },
   resolver: {
     ...config.resolver,
