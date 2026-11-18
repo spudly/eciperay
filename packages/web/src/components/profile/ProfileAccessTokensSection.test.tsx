@@ -61,6 +61,31 @@ describe('ProfileAccessTokensSection', () => {
     ).not.toBeInTheDocument();
   });
 
+  test('renders token meta from the en-XA Lingui catalog (#465)', async () => {
+    vi.spyOn(eciperay.account, 'listPersonalAccessTokens').mockResolvedValue([
+      {
+        id: 'token-1',
+        name: 'My token',
+        tokenPrefix: 'eci_abc',
+        createdAt: '2026-01-02T00:00:00.000Z',
+        lastUsedAt: null,
+        revokedAt: null,
+      } as never,
+    ]);
+    vi.spyOn(eciperay.account, 'getEntitlement').mockResolvedValue(
+      makeEntitlement('power'),
+    );
+    await renderWithProviders(<ProfileAccessTokensSection />, {
+      withAuth: false,
+      locale: 'en-XA',
+    });
+    // The full-line anchor requires the pseudo-locale marker on both
+    // the created and never-used labels; English metadata fails it.
+    expect(
+      await screen.findByText(/^Created [^~]+~ · Never used~$/),
+    ).toBeInTheDocument();
+  });
+
   test('falls back to the form when the entitlement fails to load', async () => {
     mockTokens();
     vi.spyOn(eciperay.account, 'getEntitlement').mockRejectedValue(

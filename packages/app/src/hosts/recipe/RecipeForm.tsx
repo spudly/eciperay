@@ -3,7 +3,7 @@ import {
   compareVersionToParent,
   ensureIngredientRowKeys,
   ensureInstructionRowKeys,
-  formatParentListSummary,
+  parentListSummaryParts,
   formatParentScalarHint,
   formatParentTagNames,
   parentIngredientsInput,
@@ -27,6 +27,7 @@ import type {
   RecipeStatus,
   RecipeVersionDetail,
 } from '@eciperay/types';
+import type {I18n} from '@lingui/core';
 import {useLingui} from '@lingui/react';
 import {RecipeFormPage, tokens, type RecipeFormPageField} from '@spudly/ui';
 import {useQuery} from '@tanstack/react-query';
@@ -47,6 +48,7 @@ import {
 import {api} from '../../lib/api';
 import {
   deleteImagePreviewFile,
+  isRecipeImageReadError,
   type PendingRecipeImage,
   recipeImageFromAsset,
   stripImageCacheKey,
@@ -165,6 +167,51 @@ const toQuantity = (value: number | string | null): number | null => {
  * lists stay app-side). The screens wrap this host in the DS shell pages
  * (EditRecipePage / EditVersionPage / ManualEntryPage).
  */
+/**
+ * The parent-version list summary, composed from the catalog (#465): the
+ * client helper supplies the structured counts/preview, and the prose —
+ * empty state, count sentence, and overflow suffix — resolves through
+ * Lingui here, so only the parent's own ingredient names / step text
+ * stay as entered.
+ */
+const parentListSummary = (
+  i18n: I18n,
+  parent: RecipeVersionDetail,
+  list: 'ingredients' | 'instructions',
+): string => {
+  const parts = parentListSummaryParts(parent, list);
+  if (parts.count === 0) {
+    return list === 'ingredients'
+      ? i18n._({
+          id: 'recipeForm.parentNoIngredients',
+          message: 'Parent had no ingredients',
+        })
+      : i18n._({
+          id: 'recipeForm.parentNoSteps',
+          message: 'Parent had no steps',
+        });
+  }
+  const more =
+    parts.overflowCount > 0
+      ? i18n._({
+          id: 'recipeForm.parentMoreSuffix',
+          message: ' (+{count} more)',
+          values: {count: parts.overflowCount},
+        })
+      : '';
+  return list === 'ingredients'
+    ? i18n._({
+        id: 'recipeForm.parentIngredientsSummary',
+        message: 'Parent had {count} ingredients: {preview}{more}',
+        values: {count: parts.count, preview: parts.preview, more},
+      })
+    : i18n._({
+        id: 'recipeForm.parentStepsSummary',
+        message: 'Parent had {count} steps: {preview}{more}',
+        values: {count: parts.count, preview: parts.preview, more},
+      });
+};
+
 export const RecipeForm = ({
   initial,
   recipeId,
@@ -290,7 +337,13 @@ export const RecipeForm = ({
 
   const reportReadError = (error_: unknown) => {
     setImageError(
-      error_ instanceof Error ? error_.message : 'Failed to read image',
+      // The known missing-data failure resolves through the catalog
+      // instead of its English message; unrelated errors keep theirs.
+      isRecipeImageReadError(error_)
+        ? i18n._({id: 'recipeForm.readImageError', message: 'Failed to read image'})
+        : error_ instanceof Error
+          ? error_.message
+          : i18n._({id: 'recipeForm.readImageError', message: 'Failed to read image'}),
     );
   };
 
@@ -371,7 +424,11 @@ export const RecipeForm = ({
       await deliverAsset(asset);
     } catch {
       setCropError(
-        'Failed to crop image — try again or cancel to use the original.',
+        i18n._({
+          id: 'recipeForm.cropError',
+          message:
+            'Failed to crop image — try again or cancel to use the original.',
+        }),
       );
       setCropBusy(false);
     }
@@ -471,11 +528,18 @@ export const RecipeForm = ({
       return;
     }
     if (result.errorCode) {
+      // The picker's errorMessage is debug-only diagnostics, never
+      // user-facing copy: select the catalog message from errorCode.
       setImageError(
-        result.errorMessage ??
-          (result.errorCode === 'camera_unavailable'
-            ? 'Camera is unavailable on this device'
-            : 'Failed to read image'),
+        result.errorCode === 'camera_unavailable'
+          ? i18n._({
+              id: 'recipeForm.cameraUnavailable',
+              message: 'Camera is unavailable on this device',
+            })
+          : i18n._({
+              id: 'recipeForm.readImageError',
+              message: 'Failed to read image',
+            }),
       );
       return;
     }
@@ -541,7 +605,9 @@ export const RecipeForm = ({
   const processImage = async (image: PendingRecipeImage, preview: string) => {
     const userId = session?.user.id;
     if (!userId) {
-      setImageError('Sign in to upload images');
+      setImageError(
+        i18n._({id: 'recipeForm.signInToUpload', message: 'Sign in to upload images'}),
+      );
       return;
     }
     setImageError(null);
@@ -565,7 +631,12 @@ export const RecipeForm = ({
         setImageCacheKey(Date.now());
       } catch (error_) {
         setImageError(
-          error_ instanceof Error ? error_.message : 'Failed to upload image',
+          error_ instanceof Error
+            ? error_.message
+            : i18n._({
+                id: 'recipeForm.uploadImageError',
+                message: 'Failed to upload image',
+              }),
         );
       } finally {
         setImageUploading(false);
@@ -583,11 +654,21 @@ export const RecipeForm = ({
     const trimmedTitle = title.trim();
     /* istanbul ignore next 3 -- generate button is disabled when title is empty */
     if (!trimmedTitle) {
-      setDescriptionError('Add a title before generating a description');
+      setDescriptionError(
+        i18n._({
+          id: 'recipeForm.addTitleForDescription',
+          message: 'Add a title before generating a description',
+        }),
+      );
       return;
     }
     if (!session?.user.id) {
-      setDescriptionError('Sign in to generate descriptions');
+      setDescriptionError(
+        i18n._({
+          id: 'recipeForm.signInForDescriptions',
+          message: 'Sign in to generate descriptions',
+        }),
+      );
       return;
     }
     setDescriptionError(null);
@@ -612,7 +693,10 @@ export const RecipeForm = ({
       setDescriptionError(
         error_ instanceof Error
           ? error_.message
-          : 'Failed to generate description',
+          : i18n._({
+              id: 'recipeForm.generateDescriptionError',
+              message: 'Failed to generate description',
+            }),
       );
     } finally {
       setDescriptionGenerating(false);
@@ -623,11 +707,21 @@ export const RecipeForm = ({
     const trimmedTitle = title.trim();
     /* istanbul ignore next 3 -- generate button is disabled when title is empty */
     if (!trimmedTitle) {
-      setImageError('Add a title before generating an image');
+      setImageError(
+        i18n._({
+          id: 'recipeForm.addTitleForImage',
+          message: 'Add a title before generating an image',
+        }),
+      );
       return;
     }
     if (!session?.user.id) {
-      setImageError('Sign in to generate images');
+      setImageError(
+        i18n._({
+          id: 'recipeForm.signInForImages',
+          message: 'Sign in to generate images',
+        }),
+      );
       return;
     }
     setImageError(null);
@@ -654,7 +748,12 @@ export const RecipeForm = ({
       await processImage(image, preview);
     } catch (error_) {
       setImageError(
-        error_ instanceof Error ? error_.message : 'Failed to generate image',
+        error_ instanceof Error
+          ? error_.message
+          : i18n._({
+              id: 'recipeForm.generateImageError',
+              message: 'Failed to generate image',
+            }),
       );
     } finally {
       setImageGenerating(false);
@@ -788,7 +887,12 @@ export const RecipeForm = ({
     // pending in the host's picker flow would otherwise be silently
     // dropped.
     if (pendingAsset) {
-      setError('Use, crop, or discard the selected image before saving.');
+      setError(
+        i18n._({
+          id: 'recipeForm.pendingImageSaveError',
+          message: 'Use, crop, or discard the selected image before saving.',
+        }),
+      );
       return;
     }
     setLoading(true);
@@ -796,7 +900,11 @@ export const RecipeForm = ({
     try {
       await onSubmit(buildInput(), pendingImage ?? undefined);
     } catch (error_) {
-      setError(error_ instanceof Error ? error_.message : 'Failed to save');
+      setError(
+        error_ instanceof Error
+          ? error_.message
+          : i18n._({id: 'recipeForm.saveError', message: 'Failed to save'}),
+      );
     } finally {
       setLoading(false);
     }
@@ -845,7 +953,17 @@ export const RecipeForm = ({
         : {})}
       {...(parentVersion && versionDiff?.ingredientsChanged
         ? {
-            ingredientsChangedLabel: `Ingredients changed from parent version (${formatParentListSummary(parentVersion, 'ingredients')})`,
+            ingredientsChangedLabel: i18n._({
+              id: 'recipeForm.ingredientsChanged',
+              message: 'Ingredients changed from parent version ({summary})',
+              values: {
+                summary: parentListSummary(
+                  i18n,
+                  parentVersion,
+                  'ingredients',
+                ),
+              },
+            }),
             onRevertIngredients: () => {
               setIngredients(
                 ensureIngredientRowKeys(parentIngredientsInput(parentVersion)),
@@ -855,7 +973,18 @@ export const RecipeForm = ({
         : {})}
       {...(parentVersion && versionDiff?.instructionsChanged
         ? {
-            instructionsChangedLabel: `Instructions changed from parent version (${formatParentListSummary(parentVersion, 'instructions')})`,
+            instructionsChangedLabel: i18n._({
+              id: 'recipeForm.instructionsChanged',
+              message:
+                'Instructions changed from parent version ({summary})',
+              values: {
+                summary: parentListSummary(
+                  i18n,
+                  parentVersion,
+                  'instructions',
+                ),
+              },
+            }),
             onRevertInstructions: () => {
               setInstructions(
                 ensureInstructionRowKeys(
@@ -945,12 +1074,15 @@ export const RecipeForm = ({
           fontWeight={tokens.typography.fontWeight.medium}
           color={tokens.colors.gray.gray8}
         >
-          Recipe image
+          {i18n._({id: 'recipeForm.recipeImageTitle', message: 'Recipe image'})}
         </Text>
         {pendingAsset?.uri ? (
           <View style={recipeImagePreviewStyles.frame}>
             <Image
-              accessibilityLabel="Recipe preview"
+              accessibilityLabel={i18n._({
+                id: 'recipeForm.recipePreviewAlt',
+                message: 'Recipe preview',
+              })}
               source={{uri: pendingAsset.uri}}
               resizeMode="contain"
               style={recipeImagePreviewStyles.image}
@@ -962,8 +1094,11 @@ export const RecipeForm = ({
           gap="$3"
         >
           <FieldButton
-            label="Use image"
-            accessibilityLabel="Use image"
+            label={i18n._({id: 'recipeForm.useImage', message: 'Use image'})}
+            accessibilityLabel={i18n._({
+              id: 'recipeForm.useImage',
+              message: 'Use image',
+            })}
             variant="primary"
             onPress={acceptPendingImage}
           />
@@ -972,15 +1107,21 @@ export const RecipeForm = ({
               always in real pixels. */}
           {canCrop ? (
             <FieldButton
-              label="Crop image"
-              accessibilityLabel="Crop image"
+              label={i18n._({id: 'recipeForm.cropImage', message: 'Crop image'})}
+              accessibilityLabel={i18n._({
+                id: 'recipeForm.cropImage',
+                message: 'Crop image',
+              })}
               variant="secondary"
               onPress={openCrop}
             />
           ) : null}
           <FieldButton
-            label="Discard"
-            accessibilityLabel="Discard selected image"
+            label={i18n._({id: 'recipeForm.discard', message: 'Discard'})}
+            accessibilityLabel={i18n._({
+              id: 'recipeForm.discardSelectedImage',
+              message: 'Discard selected image',
+            })}
             variant="secondary"
             onPress={clearPendingSelection}
           />
@@ -1010,8 +1151,11 @@ export const RecipeForm = ({
           fontWeight={tokens.typography.fontWeight.medium}
           color={tokens.colors.gray.gray8}
         >
-          Crop image — drag the box to move it, drag its corner to resize, or
-          use the move and resize buttons.
+          {i18n._({
+            id: 'recipeForm.cropInstructionsNative',
+            message:
+              'Crop image — drag the box to move it, drag its corner to resize, or use the move and resize buttons.',
+          })}
         </Text>
         {pendingAsset?.uri && effectiveCropRect ? (
           <View
@@ -1032,7 +1176,10 @@ export const RecipeForm = ({
             }}
           >
             <Image
-              accessibilityLabel="Image to crop"
+              accessibilityLabel={i18n._({
+                  id: 'recipeForm.imageToCropAlt',
+                  message: 'Image to crop',
+                })}
               source={{uri: pendingAsset.uri}}
               resizeMode="cover"
               style={{
@@ -1044,7 +1191,10 @@ export const RecipeForm = ({
               }}
             />
             <View
-              accessibilityLabel="Crop area"
+              accessibilityLabel={i18n._({
+                id: 'recipeForm.cropAreaShort',
+                message: 'Crop area',
+              })}
               {...movePanResponder.panHandlers}
               style={{
                 position: 'absolute',
@@ -1057,7 +1207,10 @@ export const RecipeForm = ({
               }}
             >
               <View
-                accessibilityLabel="Resize crop area handle"
+                accessibilityLabel={i18n._({
+                  id: 'recipeForm.resizeCropHandle',
+                  message: 'Resize crop area handle',
+                })}
                 {...resizePanResponder.panHandlers}
                 style={{
                   position: 'absolute',
@@ -1077,40 +1230,55 @@ export const RecipeForm = ({
           gap="$2"
         >
           <FieldButton
-            label="◀ Move"
-            accessibilityLabel="Move crop area left"
+            label={i18n._({id: 'recipeForm.moveLeftLabel', message: '◀ Move'})}
+            accessibilityLabel={i18n._({
+              id: 'recipeForm.moveCropLeft',
+              message: 'Move crop area left',
+            })}
             variant="secondary"
             onPress={() => {
               nudgeCrop(-Math.round(pendingWidth * 0.05), 0);
             }}
           />
           <FieldButton
-            label="Move ▶"
-            accessibilityLabel="Move crop area right"
+            label={i18n._({id: 'recipeForm.moveRightLabel', message: 'Move ▶'})}
+            accessibilityLabel={i18n._({
+              id: 'recipeForm.moveCropRight',
+              message: 'Move crop area right',
+            })}
             variant="secondary"
             onPress={() => {
               nudgeCrop(Math.round(pendingWidth * 0.05), 0);
             }}
           />
           <FieldButton
-            label="▲ Move"
-            accessibilityLabel="Move crop area up"
+            label={i18n._({id: 'recipeForm.moveUpLabel', message: '▲ Move'})}
+            accessibilityLabel={i18n._({
+              id: 'recipeForm.moveCropUp',
+              message: 'Move crop area up',
+            })}
             variant="secondary"
             onPress={() => {
               nudgeCrop(0, -Math.round(pendingHeight * 0.05));
             }}
           />
           <FieldButton
-            label="Move ▼"
-            accessibilityLabel="Move crop area down"
+            label={i18n._({id: 'recipeForm.moveDownLabel', message: 'Move ▼'})}
+            accessibilityLabel={i18n._({
+              id: 'recipeForm.moveCropDown',
+              message: 'Move crop area down',
+            })}
             variant="secondary"
             onPress={() => {
               nudgeCrop(0, Math.round(pendingHeight * 0.05));
             }}
           />
           <FieldButton
-            label="Grow"
-            accessibilityLabel="Grow crop area"
+            label={i18n._({id: 'recipeForm.growLabel', message: 'Grow'})}
+            accessibilityLabel={i18n._({
+              id: 'recipeForm.growCrop',
+              message: 'Grow crop area',
+            })}
             variant="secondary"
             onPress={() => {
               nudgeCrop(
@@ -1121,8 +1289,11 @@ export const RecipeForm = ({
             }}
           />
           <FieldButton
-            label="Shrink"
-            accessibilityLabel="Shrink crop area"
+            label={i18n._({id: 'recipeForm.shrinkLabel', message: 'Shrink'})}
+            accessibilityLabel={i18n._({
+              id: 'recipeForm.shrinkCrop',
+              message: 'Shrink crop area',
+            })}
             variant="secondary"
             onPress={() => {
               nudgeCrop(
@@ -1146,8 +1317,15 @@ export const RecipeForm = ({
           gap="$3"
         >
           <FieldButton
-            label={cropBusy ? 'Cropping…' : 'Apply crop'}
-            accessibilityLabel="Apply crop"
+            label={
+              cropBusy
+                ? i18n._({id: 'recipeForm.cropping', message: 'Cropping…'})
+                : i18n._({id: 'recipeForm.applyCrop', message: 'Apply crop'})
+            }
+            accessibilityLabel={i18n._({
+              id: 'recipeForm.applyCrop',
+              message: 'Apply crop',
+            })}
             variant="primary"
             disabled={cropBusy}
             onPress={() => {
@@ -1155,8 +1333,11 @@ export const RecipeForm = ({
             }}
           />
           <FieldButton
-            label="Cancel crop"
-            accessibilityLabel="Cancel crop"
+            label={i18n._({id: 'recipeForm.cancelCrop', message: 'Cancel crop'})}
+            accessibilityLabel={i18n._({
+              id: 'recipeForm.cancelCrop',
+              message: 'Cancel crop',
+            })}
             variant="secondary"
             disabled={cropBusy}
             onPress={cancelCrop}

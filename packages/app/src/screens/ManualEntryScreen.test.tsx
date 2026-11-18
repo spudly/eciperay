@@ -180,4 +180,14 @@ describe('ManualEntryScreen', () => {
     );
     expect(invalidateSpy).toHaveBeenCalled();
   });
+  test('renders the submit label from the en-XA Lingui catalog (#465)', async () => {
+    const {getByText} = await renderWithProviders(
+      <ManualEntryScreen {...stackProps} />,
+      makeQueryClient(),
+      {locale: 'en-XA'},
+    );
+
+    expect(getByText('Create Recipe~')).toBeTruthy();
+  });
+
 });

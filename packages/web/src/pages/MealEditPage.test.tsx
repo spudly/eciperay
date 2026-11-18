@@ -104,6 +104,32 @@ describe('MealEditPage', () => {
     expect(screen.queryByText('Test Recipe')).not.toBeInTheDocument();
   });
 
+  test('surfaces a recipe search failure from the en-XA catalog (#465)', async () => {
+    server.use(
+      http.get('http://localhost:8080/api/recipes', () =>
+        HttpResponse.json({error: 'boom'}, {status: 500}),
+      ),
+    );
+    await renderWithProviders(<MealEditPage />, {
+      route: '/meals/new',
+      locale: 'en-XA',
+    });
+    fireEvent.change(screen.getByPlaceholderText(/Search recipes/), {
+      target: {value: 'Test'},
+    });
+    // The prefix is identical in both locales; the catalog-only
+    // trailing marker after the retained error detail is what fails
+    // if the page falls back to the English template.
+    await waitFor(
+      () => {
+        expect(
+          screen.getByText(/Could not load recipes: boom~/),
+        ).toBeInTheDocument();
+      },
+      {timeout: 5000},
+    );
+  });
+
   test('creates a meal', async () => {
     server.use(
       http.post('http://localhost:8080/api/meals', async () =>

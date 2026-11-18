@@ -5,6 +5,7 @@ import {
   useAnalytics,
   useAuth,
 } from '@eciperay/client';
+import {useLingui} from '@lingui/react';
 import {ManualEntryPage as ManualEntryShell} from '@spudly/ui';
 import {useQueryClient} from '@tanstack/react-query';
 import {useNavigate} from 'react-router-dom';
@@ -24,6 +25,7 @@ const emptyInput: RecipeInput = {
 };
 
 export const ManualEntryPage = () => {
+  const {i18n} = useLingui();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const {session} = useAuth();
@@ -56,7 +58,10 @@ export const ManualEntryPage = () => {
     <ManualEntryShell>
       <RecipeFormHost
         initial={emptyInput}
-        submitLabel="Create Recipe"
+        submitLabel={i18n._({
+          id: 'recipeForm.submitCreateRecipe',
+          message: 'Create Recipe',
+        })}
         onSubmit={handleSubmit}
       />
     </ManualEntryShell>

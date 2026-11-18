@@ -117,4 +117,14 @@ describe('MealsHubScreen', () => {
     await fireEvent.press(await findByText('New meal'));
     expect(Linking.openURL).toHaveBeenCalledWith(mealEditHref());
   });
+
+  test('renders hub subtitles from the en-XA Lingui catalog (#465)', async () => {
+    const {findByLabelText, findByRole} = await renderWithProviders(
+      <MealsHubScreen />,
+      {locale: 'en-XA'},
+    );
+    expect(await findByLabelText('This week, 0 entries~~')).toBeTruthy();
+    await fireEvent.press(await findByRole('tab', {name: 'Meals'}));
+    expect(await findByLabelText('Sunday Dinner, 1 recipe~')).toBeTruthy();
+  });
 });

@@ -3,6 +3,7 @@ import {
   queryKeys,
   recipeVersionDetailToInput,
 } from '@eciperay/client';
+import {useLingui} from '@lingui/react';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {EditVersionPage} from '@spudly/ui';
 import {useQuery, useQueryClient} from '@tanstack/react-query';
@@ -17,6 +18,7 @@ import type {RecipesStackParamList} from '../navigation/types';
 type Props = NativeStackScreenProps<RecipesStackParamList, 'EditVersion'>;
 
 export const EditVersionScreen = ({route, navigation}: Props) => {
+  const {i18n} = useLingui();
   const {recipeId, versionId} = route.params;
   const queryClient = useQueryClient();
 
@@ -59,7 +61,10 @@ export const EditVersionScreen = ({route, navigation}: Props) => {
         initial={recipeVersionDetailToInput(version)}
         recipeId={recipeId}
         parentVersion={parentVersion}
-        submitLabel="Save Draft"
+        submitLabel={i18n._({
+          id: 'recipeForm.submitSaveDraft',
+          message: 'Save Draft',
+        })}
         onSubmit={handleSubmit}
       />
     </EditVersionPage>

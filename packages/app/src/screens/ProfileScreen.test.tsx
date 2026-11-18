@@ -30,6 +30,7 @@ jest.mock('../lib/api');
 
 const mockGetNutritionGoals = api.account.getNutritionGoals as jest.Mock;
 const mockPutNutritionGoals = api.account.putNutritionGoals as jest.Mock;
+const mockGetAuthorDisplay = api.account.getAuthorDisplay as jest.Mock;
 
 const renderProfileScreen = async () =>
   await renderWithProviders(
@@ -73,6 +74,24 @@ describe('ProfileScreen', () => {
   afterEach(() => {
     jest.restoreAllMocks();
   });
+  test('shows the author-display load error from the en-XA catalog (#465)', async () => {
+    mockGetAuthorDisplay.mockRejectedValue(new Error('offline'));
+    const {findByText} = await renderWithProviders(
+      <FeedbackPreferenceContextProvider
+        enabled={false}
+        setEnabled={jest.fn()}
+      >
+        <ProfileScreen />
+      </FeedbackPreferenceContextProvider>,
+      {locale: 'en-XA'},
+    );
+    expect(
+      await findByText(
+        'Could not load your author display settings: offline~',
+      ),
+    ).toBeTruthy();
+  });
+
   test('renders without email when session is missing', async () => {
     // mockReturnValueOnce is not reliable here: the async renderer may
     // render more than once before committing, consuming the one-off value.

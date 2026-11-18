@@ -747,3 +747,43 @@ describe('ProfilePage subscription account switch during refresh', () => {
     expect(screen.queryByText('Plus plan')).not.toBeInTheDocument();
   });
 });
+
+describe('ProfilePage en-XA (#465)', () => {
+  beforeEach(() => {
+    // This describe must initialize the auth mock itself: sibling
+    // describes' beforeEach hooks do not run when it is run alone,
+    // and an uninitialized mockUseAuth leaves useAuth() returning
+    // undefined, which ProfilePage cannot destructure.
+    mockUseAuth.mockReturnValue({session: null});
+  });
+
+  test('renders account data copy from the en-XA Lingui catalog', async () => {
+    await renderWithProviders(<ProfilePage />, {
+      withAuth: false,
+      locale: 'en-XA',
+    });
+    expect(
+      screen.getByText(
+        'Download a copy of your profile, recipes, share grants, ratings, and comments, or permanently delete your account.~',
+      ),
+    ).toBeInTheDocument();
+  });
+
+  test('shows the localized validation message for a null import file', async () => {
+    await renderWithProviders(<ProfilePage />, {
+      withAuth: false,
+      locale: 'en-XA',
+    });
+    const file = Object.assign(
+      new File(['null'], 'recipes.json', {type: 'application/json'}),
+      {text: async () => 'null'},
+    );
+    const fileInput = document.querySelector('input[type="file"]')!;
+    fireEvent.change(fileInput, {target: {files: [file]}});
+    await waitFor(() => {
+      expect(
+        screen.getByText('File must contain a non-empty recipes array~'),
+      ).toBeInTheDocument();
+    });
+  });
+});

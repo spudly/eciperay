@@ -1,6 +1,9 @@
 import type {SubscriptionViewProps} from '@eciperay/client';
+import {setupI18n} from '@lingui/core';
 import type {Entitlement} from '@eciperay/types';
 import {vi} from 'vitest';
+
+import {createI18n} from '../../i18n/i18n.js';
 
 import {buildSubscriptionData} from './subscriptionData.js';
 
@@ -15,15 +18,20 @@ const makeEntitlement = (overrides: Partial<Entitlement>): Entitlement => ({
   ...overrides,
 });
 
+const testI18n = setupI18n({locale: 'en-US'});
+
 const buildData = (props: Partial<SubscriptionViewProps>) =>
-  buildSubscriptionData({
-    entitlement: null,
-    isLoading: false,
-    isOpeningPortal: false,
-    onManage: () => {},
-    error: null,
-    ...props,
-  });
+  buildSubscriptionData(
+    {
+      entitlement: null,
+      isLoading: false,
+      isOpeningPortal: false,
+      onManage: () => {},
+      error: null,
+      ...props,
+    },
+    testI18n,
+  );
 
 describe('buildSubscriptionData', () => {
   test('passes the loading state through', () => {
@@ -230,4 +238,19 @@ describe('buildSubscriptionData', () => {
     });
     expect(data.managePending).toBe(true);
   });
+  test('renders subscription copy from the en-XA Lingui catalog (#465)', () => {
+    const data = buildSubscriptionData(
+      {
+        entitlement: makeEntitlement({}),
+        isLoading: false,
+        isOpeningPortal: false,
+        onManage: () => {},
+        error: null,
+      },
+      createI18n('en-XA'),
+    );
+    expect(data.planLabel).toBe('Free~ plan~');
+    expect(data.upsellText).toMatch(/Power \(\$8\.99\/mo\) adds API access\.~$/);
+  });
+
 });

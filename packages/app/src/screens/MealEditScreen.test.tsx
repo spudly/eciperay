@@ -109,6 +109,87 @@ describe('MealEditScreen', () => {
     expect(rendered.queryByText('Pasta')).toBeNull();
   });
 
+  test('surfaces a recipe search failure from the en-XA catalog (#465)', async () => {
+    mockListRecipes.mockRejectedValue(new Error('boom'));
+    const rendered = await renderWithProviders(
+      <MealEditScreen {...createProps({})} />,
+      {locale: 'en-XA'},
+    );
+    await fireEvent.changeText(
+      rendered.getByPlaceholderText(/Search recipes/),
+      'Pasta',
+    );
+    expect(
+      await rendered.findByText(
+        'Could not load recipes: boom~',
+        {},
+        {timeout: 5000},
+      ),
+    ).toBeTruthy();
+  });
+
+  test('a failed meal load shows the en-XA catalog error (#465)', async () => {
+    mockGetMeal.mockRejectedValue(new Error('boom'));
+    const client = makeQueryClient();
+    const rendered = await renderWithProviders(
+      <MealEditScreen {...createProps({mealId})} />,
+      client,
+      {locale: 'en-XA'},
+    );
+    expect(
+      await rendered.findByText('Could not load this meal: boom~'),
+    ).toBeTruthy();
+    await fireEvent.press(rendered.getByText(/Save meal/));
+    expect(mockPut).not.toHaveBeenCalled();
+    expect(mockCreate).not.toHaveBeenCalled();
+    // Recovery: the next fetch succeeds, the (derived, not stored) load
+    // error disappears while the screen stays mounted, and Save can
+    // update the loaded meal. Storing the load error in formError would
+    // freeze it past this refetch and fail the disappearance assertion.
+    mockGetMeal.mockResolvedValue({
+      id: mealId,
+      userId: 'user-uuid-1',
+      title: 'Sunday Dinner',
+      notes: 'Family night',
+      memberCount: 1,
+      recipeCount: 1,
+      nutrition: null,
+      createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2024-01-01T00:00:00.000Z',
+      members: [
+        {
+          recipeId: recipe.id,
+          sortOrder: 0,
+          servingsToCook: 4,
+          servingsToEat: 4,
+          title: 'Pasta',
+          imageUrl: null,
+          recipeServings: 4,
+          accessLost: false,
+          satietyScore: null,
+          nutritionStatus: null,
+          calories: null,
+          proteinG: null,
+          carbsG: null,
+          fatG: null,
+        },
+      ],
+    });
+    await act(async () => {
+      await client.invalidateQueries();
+    });
+    expect(
+      await rendered.findByDisplayValue('Sunday Dinner'),
+    ).toBeTruthy();
+    expect(
+      rendered.queryByText('Could not load this meal: boom~'),
+    ).toBeNull();
+    await fireEvent.press(rendered.getByText(/Save meal/));
+    await waitFor(() => {
+      expect(mockPut).toHaveBeenCalledWith(mealId, expect.any(Object));
+    });
+  });
+
   test('renders new meal form', async () => {
     const rendered = await renderWithProviders(
       <MealEditScreen {...createProps({})} />,

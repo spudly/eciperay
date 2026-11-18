@@ -72,6 +72,39 @@ describe('AccessTokensSection (app)', () => {
     expect(screen.queryByText('Create token')).toBeNull();
   });
 
+  test('renders token meta from the en-XA Lingui catalog (#465)', async () => {
+    mockEntitlement.mockResolvedValue(makeEntitlement('power'));
+    mockList.mockResolvedValue([
+      {
+        id: 'token-1',
+        name: 'My token',
+        tokenPrefix: 'eci_abc',
+        createdAt: '2026-01-02T00:00:00.000Z',
+        lastUsedAt: null,
+        revokedAt: null,
+      } as never,
+      {
+        id: 'token-2',
+        name: 'Used token',
+        tokenPrefix: 'eci_def',
+        createdAt: '2026-01-02T00:00:00.000Z',
+        lastUsedAt: '2026-02-03T00:00:00.000Z',
+        revokedAt: null,
+      } as never,
+    ]);
+    await renderWithProviders(<AccessTokensSection />, {locale: 'en-XA'});
+    // The full-line anchors require the pseudo-locale marker on the
+    // created label itself, not just on the trailing last-used label.
+    await waitFor(() => {
+      expect(
+        screen.getByText(/^Created [^~]+~ · Never used~$/),
+      ).toBeTruthy();
+    });
+    // The dated last-used branch is covered too: reverting it to
+    // English would drop its marker and fail this line.
+    expect(screen.getByText(/^Created [^~]+~ · Last used [^~]+~$/)).toBeTruthy();
+  });
+
   test('falls back to the form when the entitlement fails to load', async () => {
     mockEntitlement.mockRejectedValue(new Error('entitlement down'));
     await renderSection();

@@ -1,4 +1,5 @@
 import {createFormRowKey, type FormInstructionRow} from '@eciperay/client';
+import {useLingui} from '@lingui/react';
 import {eciperayTheme, RecipeInstructionRowView, tokens} from '@spudly/ui';
 import React from 'react';
 import {Text, TouchableOpacity, View} from 'react-native';
@@ -59,6 +60,7 @@ export const SortableInstructionList = ({
   onUpdate,
   onAdd,
 }: Props) => {
+  const {i18n} = useLingui();
   const renderItem = ({
     item,
     getIndex,
@@ -71,7 +73,11 @@ export const SortableInstructionList = ({
         index={index}
         dragHandle={
           <TouchableOpacity
-            accessibilityLabel={`Reorder step ${index + 1}`}
+            accessibilityLabel={i18n._({
+              id: 'recipeForm.reorderStep',
+              message: 'Reorder step {position}',
+              values: {position: index + 1},
+            })}
             style={styles.dragHandle}
             onLongPress={drag}
             delayLongPress={0}

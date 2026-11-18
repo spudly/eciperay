@@ -156,4 +156,6 @@ export {
   formatParentListSummary,
   formatParentScalarHint,
   formatParentTagNames,
+  parentListSummaryParts,
+  type ParentListSummaryParts,
 } from './parentHintFormatters.js';

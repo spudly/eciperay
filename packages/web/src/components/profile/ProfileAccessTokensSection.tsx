@@ -5,6 +5,8 @@ import {
   useAuth,
 } from '@eciperay/client';
 import type {PersonalAccessToken} from '@eciperay/types';
+import type {I18n} from '@lingui/core';
+import {useLingui} from '@lingui/react';
 import {tokens} from '@spudly/ui';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useId, useState} from 'react';
@@ -353,17 +355,28 @@ const formatDate = (iso: string): string =>
     year: 'numeric',
   });
 
-const describeToken = (token: PersonalAccessToken): string => {
-  const parts = [`Created ${formatDate(token.createdAt)}`];
+const describeToken = (i18n: I18n, token: PersonalAccessToken): string => {
+  const parts = [
+    i18n._({
+      id: 'profile.tokenCreated',
+      message: 'Created {date}',
+      values: {date: formatDate(token.createdAt)},
+    }),
+  ];
   parts.push(
     token.lastUsedAt
-      ? `Last used ${formatDate(token.lastUsedAt)}`
-      : 'Never used',
+      ? i18n._({
+          id: 'profile.tokenLastUsed',
+          message: 'Last used {date}',
+          values: {date: formatDate(token.lastUsedAt)},
+        })
+      : i18n._({id: 'profile.tokenNeverUsed', message: 'Never used'}),
   );
   return parts.join(' · ');
 };
 
 export const ProfileAccessTokensSection = () => {
+  const {i18n} = useLingui();
   const {session} = useAuth();
   const queryClient = useQueryClient();
   const [tokenName, setTokenName] = useState('');
@@ -424,7 +437,7 @@ export const ProfileAccessTokensSection = () => {
         id: token.id,
         name: token.name,
         prefix: token.tokenPrefix,
-        metaLabel: describeToken(token),
+        metaLabel: describeToken(i18n, token),
         revoked: Boolean(token.revokedAt),
       }))}
       isLoading={tokensQuery.isLoading}
