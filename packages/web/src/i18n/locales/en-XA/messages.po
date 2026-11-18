@@ -11,7 +11,7 @@ msgid "spike.recipeCount"
 msgstr "{count, plural, one {# recipe~} other {# recipes~~}}"
 
 #. js-lingui-explicit-id
-#: src/pages/RecipeFormHost.tsx:246
+#: src/pages/RecipeFormHost.tsx:244
 msgid "recipeStatus.abandoned"
 msgstr "Abandoned~"
 
@@ -19,6 +19,11 @@ msgstr "Abandoned~"
 #: src/pages/HomePage.tsx:103
 msgid "home.addLabel"
 msgstr "Add Recipe~"
+
+#. js-lingui-explicit-id
+#: src/pages/auth/SignupPage.tsx:83
+msgid "signup.backLabel"
+msgstr "Back to sign in~"
 
 #. js-lingui-explicit-id
 #: src/pages/auth/ForgotPasswordPage.tsx:62
@@ -34,6 +39,11 @@ msgstr "Browse Recipes~"
 #: src/pages/RecipesPage.tsx:629
 msgid "recipes.authorByline"
 msgstr "By {authorName} · ~"
+
+#. js-lingui-explicit-id
+#: src/pages/auth/SignupPage.tsx:73
+msgid "signup.confirmationTitle"
+msgstr "Check your email~"
 
 #. js-lingui-explicit-id
 #: src/pages/auth/ForgotPasswordPage.tsx:58
@@ -81,7 +91,7 @@ msgid "forgotPassword.confirmationTitle"
 msgstr "Email sent~"
 
 #. js-lingui-explicit-id
-#: src/pages/RecipeFormHost.tsx:241
+#: src/pages/RecipeFormHost.tsx:242
 msgid "recipeStatus.evolving"
 msgstr "Evolving~"
 
@@ -101,7 +111,7 @@ msgid "pay.homeLabel"
 msgstr "Go to Eciperay home~"
 
 #. js-lingui-explicit-id
-#: src/pages/RecipeFormHost.tsx:240
+#: src/pages/RecipeFormHost.tsx:241
 msgid "recipeStatus.idea"
 msgstr "Idea~"
 
@@ -171,6 +181,11 @@ msgid "privacyPolicy.lastUpdated"
 msgstr "November 4, 2026~"
 
 #. js-lingui-explicit-id
+#: src/pages/auth/ResetPasswordPage.tsx:57
+msgid "resetPassword.confirmationTitle"
+msgstr "Password updated~"
+
+#. js-lingui-explicit-id
 #: src/pages/AddPage.tsx:25
 msgid "add.importUrlDescription"
 msgstr "Paste a recipe link~"
@@ -186,7 +201,7 @@ msgid "add.importTextDescription"
 msgstr "Paste rich text from Word or the web~"
 
 #. js-lingui-explicit-id
-#: src/pages/RecipeFormHost.tsx:242
+#: src/pages/RecipeFormHost.tsx:243
 msgid "recipeStatus.perfected"
 msgstr "Perfected~"
 
@@ -204,6 +219,11 @@ msgstr "Recently viewed~"
 #: src/pages/HomePage.tsx:112
 msgid "home.emptyMessage"
 msgstr "Recipes you view will appear here.~"
+
+#. js-lingui-explicit-id
+#: src/pages/auth/ResetPasswordPage.tsx:61
+msgid "resetPassword.confirmationBody"
+msgstr "Redirecting…~"
 
 #. js-lingui-explicit-id
 #: src/pages/MarketingLandingPage.tsx:39
@@ -255,6 +275,11 @@ msgstr "Upload a photo of a recipe~"
 #: src/pages/RecipesPage.tsx:639
 msgid "discover.errorMessage"
 msgstr "We couldn't load public recipes. Check your connection and try again.~"
+
+#. js-lingui-explicit-id
+#: src/pages/auth/SignupPage.tsx:77
+msgid "signup.confirmationBody"
+msgstr "We sent a confirmation link to {email}. Sign in after confirming.~"
 
 #. js-lingui-explicit-id
 #: src/pages/HomePage.tsx:94
