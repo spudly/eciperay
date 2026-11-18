@@ -1,4 +1,5 @@
 import {errorMessage, useAuth, validateAuthEmail} from '@eciperay/client';
+import {useLingui} from '@lingui/react';
 import {useState} from 'react';
 import {Navigate, useNavigate} from 'react-router-dom';
 
@@ -10,7 +11,13 @@ import {supabase} from '../../lib/supabase.js';
 
 import {AuthConfirmation} from './AuthConfirmation.js';
 
+// The confirmation state's copy is page-unique and flows through the
+// Lingui catalogs (#465 tranche 19: explicit ids
+// `signup.confirmationTitle` / `signup.confirmationBody` /
+// `signup.backLabel`); the form itself is rendered by the design
+// system's SignUpPage, whose copy is DS-owned.
 export const SignupPage = () => {
+  const {i18n} = useLingui();
   const {session, isLoading} = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
@@ -63,9 +70,17 @@ export const SignupPage = () => {
   if (confirmationSent) {
     return (
       <AuthConfirmation
-        title="Check your email"
-        body={`We sent a confirmation link to ${email}. Sign in after confirming.`}
-        backLabel="Back to sign in"
+        title={i18n._({
+          id: 'signup.confirmationTitle',
+          message: 'Check your email',
+        })}
+        body={i18n._({
+          id: 'signup.confirmationBody',
+          message:
+            'We sent a confirmation link to {email}. Sign in after confirming.',
+          values: {email},
+        })}
+        backLabel={i18n._({id: 'signup.backLabel', message: 'Back to sign in'})}
         onBackPress={() => {
           void navigate('/login');
         }}
