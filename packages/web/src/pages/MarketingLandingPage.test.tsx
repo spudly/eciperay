@@ -12,6 +12,20 @@ import {renderWithProviders} from '../test/testUtils.js';
 import {MarketingLandingPage} from './MarketingLandingPage.js';
 
 describe('MarketingLandingPage', () => {
+  test('renders the hero title from the en-XA Lingui catalog (#465)', async () => {
+    await renderWithProviders(<MarketingLandingPage />, {
+      withAuth: false,
+      locale: 'en-XA',
+    });
+    expect(
+      screen.getByText('Your recipes, organized and ready to cook~'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', {name: 'Discover public recipes~'}),
+    ).toHaveAttribute('href', '/discover');
+    expect(screen.getByText('Import from anywhere~')).toBeInTheDocument();
+  });
+
   test('renders value prop, CTAs, and legal footer links', async () => {
     await renderWithProviders(<MarketingLandingPage />, {withAuth: false});
     expect(screen.getByText(LANDING_HERO_TITLE)).toBeInTheDocument();

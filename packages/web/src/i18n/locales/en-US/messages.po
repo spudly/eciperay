@@ -31,6 +31,16 @@ msgid "forgotPassword.confirmationBody"
 msgstr "Check your inbox for a password reset link."
 
 #. js-lingui-explicit-id
+#: src/pages/MarketingLandingPage.tsx:74
+msgid "landing.featureTwoTitle"
+msgstr "Cook with confidence"
+
+#. js-lingui-explicit-id
+#: src/pages/MarketingLandingPage.tsx:45
+msgid "landing.discoverCta"
+msgstr "Discover public recipes"
+
+#. js-lingui-explicit-id
 #: src/pages/DiscoverPage.tsx:91
 msgid "discover.title"
 msgstr "Discover recipes"
@@ -46,14 +56,29 @@ msgid "forgotPassword.confirmationTitle"
 msgstr "Email sent"
 
 #. js-lingui-explicit-id
+#: src/pages/MarketingLandingPage.tsx:56
+msgid "landing.mobileAppCta"
+msgstr "Get the mobile app"
+
+#. js-lingui-explicit-id
 #: src/pages/PayPage.tsx:97
 msgid "pay.homeLabel"
 msgstr "Go to Eciperay home"
 
 #. js-lingui-explicit-id
+#: src/pages/MarketingLandingPage.tsx:63
+msgid "landing.featureOneTitle"
+msgstr "Import from anywhere"
+
+#. js-lingui-explicit-id
 #: src/pages/TermsOfServicePage.tsx:27
 msgid "termsOfService.lastUpdated"
 msgstr "June 18, 2026"
+
+#. js-lingui-explicit-id
+#: src/pages/MarketingLandingPage.tsx:89
+msgid "landing.featureThreeDescription"
+msgstr "Keep recipes private, share unlisted links, or publish to the community."
 
 #. js-lingui-explicit-id
 #: src/pages/DiscoverPage.tsx:96
@@ -71,6 +96,11 @@ msgid "privacyPolicy.lastUpdated"
 msgstr "November 4, 2026"
 
 #. js-lingui-explicit-id
+#: src/pages/MarketingLandingPage.tsx:67
+msgid "landing.featureOneDescription"
+msgstr "Paste a URL, photo, or notes and let AI turn it into a structured recipe."
+
+#. js-lingui-explicit-id
 #: src/pages/PrivacyPolicyPage.tsx:23
 msgid "privacyPolicy.title"
 msgstr "Privacy Policy"
@@ -86,14 +116,34 @@ msgid "home.emptyMessage"
 msgstr "Recipes you view will appear here."
 
 #. js-lingui-explicit-id
+#: src/pages/MarketingLandingPage.tsx:39
+msgid "landing.heroSubtitle"
+msgstr "Save recipes from anywhere, tweak them with AI, and share what you love with friends or the community."
+
+#. js-lingui-explicit-id
+#: src/pages/MarketingLandingPage.tsx:78
+msgid "landing.featureTwoDescription"
+msgstr "Scale servings, track versions, and follow step-by-step cooking mode."
+
+#. js-lingui-explicit-id
 #: src/pages/DiscoverPage.tsx:92
 msgid "discover.searchPlaceholder"
 msgstr "Search public recipes…"
 
 #. js-lingui-explicit-id
+#: src/pages/MarketingLandingPage.tsx:85
+msgid "landing.featureThreeTitle"
+msgstr "Share on your terms"
+
+#. js-lingui-explicit-id
 #: src/pages/HomePage.tsx:104
 msgid "home.sharedWithMeLabel"
 msgstr "Shared with me"
+
+#. js-lingui-explicit-id
+#: src/pages/MarketingLandingPage.tsx:52
+msgid "landing.signUpCta"
+msgstr "Sign up free"
 
 #. js-lingui-explicit-id
 #: src/pages/TermsOfServicePage.tsx:23
@@ -119,3 +169,8 @@ msgstr "Withdrawing consent removes your stored choice and turns analytics off u
 #: src/pages/HomePage.tsx:95
 msgid "home.subtitle"
 msgstr "Your personal recipe collection"
+
+#. js-lingui-explicit-id
+#: src/pages/MarketingLandingPage.tsx:35
+msgid "landing.heroTitle"
+msgstr "Your recipes, organized and ready to cook"
