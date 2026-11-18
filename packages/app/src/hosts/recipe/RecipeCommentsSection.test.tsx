@@ -41,13 +41,14 @@ const sampleComment = {
 const renderCommentsProps = async (
   recipeId = 'recipe-uuid-1',
   ownerUserId = 'owner-uuid',
+  locale?: 'en-XA',
 ) => {
   let captured: RecipeDetailPageComments | null = null;
   const Probe = () => {
     captured = useRecipeCommentsProps(recipeId, ownerUserId);
     return null;
   };
-  await renderWithProviders(<Probe />);
+  await renderWithProviders(<Probe />, {locale});
   return {
     props: () => {
       if (!captured) {
@@ -59,6 +60,20 @@ const renderCommentsProps = async (
 };
 
 describe('useRecipeCommentsProps', () => {
+  test('renders comment copy from the en-XA Lingui catalog (#465)', async () => {
+    const {props} = await renderCommentsProps(
+      'recipe-uuid-1',
+      'owner-uuid',
+      'en-XA',
+    );
+    await waitFor(() => {
+      expect(props().staleHintLabel).toBe(
+        'This comment was left on an earlier version of the recipe.~',
+      );
+    });
+    expect(props().composerPlaceholder).toBe('Add a comment~');
+  });
+
   beforeEach(() => {
     mockUseAuth.mockReturnValue({
       session: {user: {id: 'user-uuid-1', email: 'test@example.com'}},

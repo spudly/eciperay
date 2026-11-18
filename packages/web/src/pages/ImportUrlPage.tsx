@@ -1,4 +1,5 @@
 import {isDuplicateRecipeError, useAnalytics} from '@eciperay/client';
+import {useLingui} from '@lingui/react';
 import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
@@ -7,6 +8,7 @@ import {ImportUrlPage as ImportUrlPageView} from '@spudly/ui';
 import {eciperay} from '../lib/api.js';
 
 export const ImportUrlPage = () => {
+  const {i18n} = useLingui();
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,7 +36,7 @@ export const ImportUrlPage = () => {
       if (isDuplicateRecipeError(error_)) {
         setDuplicateWarnedUrl(url);
       }
-      setError(error_ instanceof Error ? error_.message : 'Import failed');
+      setError(error_ instanceof Error ? error_.message : i18n._({id: 'import.failed', message: 'Import failed'}));
     } finally {
       setLoading(false);
     }

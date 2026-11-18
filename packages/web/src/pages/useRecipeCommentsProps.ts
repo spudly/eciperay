@@ -1,4 +1,5 @@
-import {queryKeys, STALE_COMMENT_HINT, useAuth} from '@eciperay/client';
+import {queryKeys, useAuth} from '@eciperay/client';
+import {useLingui} from '@lingui/react';
 import type {RecipeDetailPageComments} from '@spudly/ui';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useState} from 'react';
@@ -41,6 +42,7 @@ export const useRecipeCommentsProps = ({
   shareToken,
   publicList = false,
 }: UseRecipeCommentsPropsOptions): RecipeDetailPageComments => {
+  const {i18n} = useLingui();
   const {session} = useAuth();
   const queryClient = useQueryClient();
   const currentUserId = session?.user.id;
@@ -54,7 +56,14 @@ export const useRecipeCommentsProps = ({
   // the server's reason is shown through the view's error prop.
   const showCommentError = (action: string) => (error: Error) => {
     setCommentError(
-      `${action}: ${error instanceof Error ? error.message : 'Please try again.'}`,
+      `${action}: ${
+        error instanceof Error
+          ? error.message
+          : i18n._({
+              id: 'recipeDetail.pleaseTryAgain',
+              message: 'Please try again.',
+            })
+      }`,
     );
   };
 
@@ -90,7 +99,12 @@ export const useRecipeCommentsProps = ({
       setCommentError(null);
       invalidateComments();
     },
-    onError: showCommentError('Could not post comment'),
+    onError: showCommentError(
+      i18n._({
+        id: 'recipeComments.couldNotPost',
+        message: 'Could not post comment',
+      }),
+    ),
   });
 
   const updateMutation = useMutation({
@@ -102,7 +116,12 @@ export const useRecipeCommentsProps = ({
       setCommentError(null);
       invalidateComments();
     },
-    onError: showCommentError('Could not update comment'),
+    onError: showCommentError(
+      i18n._({
+        id: 'recipeComments.couldNotUpdate',
+        message: 'Could not update comment',
+      }),
+    ),
   });
 
   const deleteMutation = useMutation({
@@ -112,13 +131,20 @@ export const useRecipeCommentsProps = ({
       setCommentError(null);
       invalidateComments();
     },
-    onError: showCommentError('Could not delete comment'),
+    onError: showCommentError(
+      i18n._({
+        id: 'recipeComments.couldNotDelete',
+        message: 'Could not delete comment',
+      }),
+    ),
   });
 
   return {
     comments: comments.map(comment => ({
       id: comment.id,
-      authorName: comment.authorDisplayName?.trim() ?? 'Anonymous',
+      authorName:
+        comment.authorDisplayName?.trim() ??
+        i18n._({id: 'recipeComments.anonymousAuthor', message: 'Anonymous'}),
       body: comment.body,
       isStale: comment.isStale,
       canEdit: comment.authorUserId === currentUserId,
@@ -131,8 +157,18 @@ export const useRecipeCommentsProps = ({
           ownerUserId === currentUserId),
     })),
     loading: isLoading,
-    error: commentError ?? (queryError ? "Couldn't load comments." : null),
-    staleHintLabel: STALE_COMMENT_HINT,
+    error:
+      commentError ??
+      (queryError
+        ? i18n._({
+            id: 'recipeComments.loadError',
+            message: "Couldn't load comments.",
+          })
+        : null),
+    staleHintLabel: i18n._({
+      id: 'recipeComments.staleHint',
+      message: 'This comment was left on an earlier version of the recipe.',
+    }),
     editingCommentId: editingId,
     editDraft,
     isUpdatePending: updateMutation.isPending,
@@ -164,7 +200,10 @@ export const useRecipeCommentsProps = ({
             createMutation.mutate(draft.trim());
           },
           isPostPending: createMutation.isPending,
-          composerPlaceholder: 'Add a comment',
+          composerPlaceholder: i18n._({
+            id: 'recipeComments.composerPlaceholder',
+            message: 'Add a comment',
+          }),
         }
       : {}),
   };

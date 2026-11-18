@@ -3,6 +3,8 @@ import {
   invalidateRecipeQueries,
   useAuth,
 } from '@eciperay/client';
+import type {I18n} from '@lingui/core';
+import {useLingui} from '@lingui/react';
 import {useQueryClient} from '@tanstack/react-query';
 import {useNavigate, useParams} from 'react-router-dom';
 import type {TweakAiApproveResult, TweakAiPhase} from '@eciperay/types';
@@ -15,19 +17,30 @@ import {
   type AiSessionState,
 } from './AiSessionHost.js';
 
-const PROMPT_PLACEHOLDER =
-  'e.g. make it vegetarian, reduce sugar, add more spice';
+const promptPlaceholder = (i18n: I18n) =>
+  i18n._({
+    id: 'aiTweak.promptPlaceholder',
+    message: 'e.g. make it vegetarian, reduce sugar, add more spice',
+  });
 
-const phaseLabel = (phase: TweakAiPhase) => {
+const phaseLabel = (i18n: I18n, phase: TweakAiPhase) => {
   switch (phase) {
     case 'planning': {
-      return 'Review the plan and refine it, or approve to build a preview.';
+      return i18n._({
+        id: 'aiSession.phasePlanningLabel',
+        message:
+          'Review the plan and refine it, or approve to build a preview.',
+      });
     }
     case 'preview_ready': {
-      return 'Preview ready — save as a draft version or go back to refine.';
+      return i18n._({
+        id: 'aiTweak.phasePreviewReadyLabel',
+        message:
+          'Preview ready — save as a draft version or go back to refine.',
+      });
     }
     case 'completed': {
-      return 'Draft saved.';
+      return i18n._({id: 'aiTweak.phaseCompletedLabel', message: 'Draft saved.'});
     }
     default: {
       return '';
@@ -48,6 +61,7 @@ const mapSession = (session: {
 });
 
 export const TweakAiPage = () => {
+  const {i18n} = useLingui();
   const {recipeId = ''} = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -90,16 +104,34 @@ export const TweakAiPage = () => {
       // keeps the host's key-bound state on the settled key.
       key={storageKey}
       config={{
-        title: 'Tweak with AI',
-        intro:
-          'Describe how you want to change this recipe. AI will propose a plan for you to review before creating a draft.',
-        promptPlaceholder: PROMPT_PLACEHOLDER,
-        startLabel: 'Start planning',
-        startPendingLabel: 'Planning…',
-        previewTitle: 'Draft preview',
-        finalizeLabel: 'Save as draft',
-        finalizePendingLabel: 'Saving…',
-        phaseLabel,
+        title: i18n._({id: 'aiTweak.title', message: 'Tweak with AI'}),
+        intro: i18n._({
+          id: 'aiTweak.intro',
+          message:
+            'Describe how you want to change this recipe. AI will propose a plan for you to review before creating a draft.',
+        }),
+        promptPlaceholder: promptPlaceholder(i18n),
+        startLabel: i18n._({
+          id: 'aiSession.startLabel',
+          message: 'Start planning',
+        }),
+        startPendingLabel: i18n._({
+          id: 'aiSession.startPendingLabel',
+          message: 'Planning…',
+        }),
+        previewTitle: i18n._({
+          id: 'aiTweak.previewTitle',
+          message: 'Draft preview',
+        }),
+        finalizeLabel: i18n._({
+          id: 'aiTweak.finalizeLabel',
+          message: 'Save as draft',
+        }),
+        finalizePendingLabel: i18n._({
+          id: 'aiSession.finalizePendingLabel',
+          message: 'Saving…',
+        }),
+        phaseLabel: phase => phaseLabel(i18n, phase),
       }}
       api={api}
       // Partitioned by recipe and by account (see GenerateAiPage).

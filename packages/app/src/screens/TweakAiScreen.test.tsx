@@ -127,6 +127,42 @@ describe('TweakAiScreen', () => {
     });
   });
 
+  test('renders the aiTweak copy from the en-XA Lingui catalog (#465)', async () => {
+    const {getByPlaceholderText, getByText} = await renderWithProviders(
+      <TweakAiScreen {...stackProps} />,
+      {locale: 'en-XA'},
+    );
+    expect(getByText('Tweak with AI~')).toBeTruthy();
+    expect(
+      getByPlaceholderText(
+        'e.g. make it vegetarian, reduce sugar, add more spice~',
+      ),
+    ).toBeTruthy();
+    await fireEvent.changeText(
+      getByPlaceholderText(
+        'e.g. make it vegetarian, reduce sugar, add more spice~',
+      ),
+      'make it spicier',
+    );
+    await act(async () => {
+      await fireEvent.press(getByText('Start planning~'));
+    });
+    await waitFor(() => {
+      expect(getByText('Approve plan')).toBeTruthy();
+    });
+    await act(async () => {
+      await fireEvent.press(getByText('Approve plan'));
+    });
+    await waitFor(() => {
+      expect(
+        getByText(
+          'Preview ready — save as a draft version or go back to refine.~',
+        ),
+      ).toBeTruthy();
+      expect(getByText('Save as draft~')).toBeTruthy();
+    });
+  });
+
   test('shows error on failure', async () => {
     mockStart.mockRejectedValue(new Error('AI planning failed'));
     const {getByPlaceholderText, getByText, findByText} =

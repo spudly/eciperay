@@ -24,6 +24,7 @@ const API = 'http://localhost:8080';
  */
 const renderSharingProps = async (
   recipe: RecipeDetail = makeRecipeDetail(),
+  locale?: 'en-XA',
 ) => {
   const onActionMessage = vi.fn();
   let captured: RecipeDetailPageSharing | null = null;
@@ -31,7 +32,7 @@ const renderSharingProps = async (
     captured = useRecipeSharingProps(recipe, onActionMessage);
     return null;
   };
-  await renderWithProviders(<Probe />);
+  await renderWithProviders(<Probe />, {locale});
   return {
     onActionMessage,
     props: () => {
@@ -44,6 +45,20 @@ const renderSharingProps = async (
 };
 
 describe('useRecipeSharingProps', () => {
+  test('renders sharing options from the en-XA Lingui catalog (#465)', async () => {
+    const {props} = await renderSharingProps(makeRecipeDetail(), 'en-XA');
+    expect(props().options.map(option => option.label)).toEqual([
+      'Private~',
+      'Unlisted link~',
+      'Public~',
+    ]);
+    expect(props().options.map(option => option.description)).toEqual([
+      'Only you can view this recipe.~',
+      'Anyone with the link can view without signing in.~',
+      'Discoverable by anyone and may appear in search results.~',
+    ]);
+  });
+
   test('renders sharing options with no pending blocks', async () => {
     const {props} = await renderSharingProps();
     expect(props().options.map(option => option.label)).toEqual([

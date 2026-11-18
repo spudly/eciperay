@@ -365,6 +365,43 @@ describe('ImportImageScreen', () => {
     expect(alertSpy).toHaveBeenCalled();
   });
 
+  test('shows the generic error from the en-XA Lingui catalog on non-Error failure (#465)', async () => {
+    const alertSpy = jest.spyOn(Alert, 'alert').mockReturnValue();
+    mockImportImage.mockRejectedValue('nope');
+    const {getByText, findByText} = await renderWithProviders(
+      <ImportImageScreen {...stackProps} />,
+      {locale: 'en-XA'},
+    );
+    await fireEvent.press(getByText('Choose from Library'));
+    expect(await findByText('Import failed~')).toBeTruthy();
+    expect(alertSpy).toHaveBeenCalledWith('Import failed~', 'Import failed~');
+    alertSpy.mockRestore();
+  });
+
+  test('shows the generic failure from the en-XA Lingui catalog when the override import rejects with a non-Error (#465)', async () => {
+    const duplicateError = Object.assign(
+      new Error(
+        'This recipe already exists in your library as "Cake". Import anyway to create a second copy.',
+      ),
+      {code: 'duplicate_recipe'},
+    );
+    mockImportImage
+      .mockRejectedValueOnce(duplicateError)
+      .mockRejectedValueOnce('nope');
+    const alertSpy = jest.spyOn(Alert, 'alert').mockReturnValue();
+    const {getByText, findByText} = await renderWithProviders(
+      <ImportImageScreen {...stackProps} />,
+      {locale: 'en-XA'},
+    );
+    await fireEvent.press(getByText('Take Photo'));
+    expect(await findByText('Import anyway')).toBeTruthy();
+    await fireEvent.press(getByText('Import anyway'));
+    expect(await findByText('Import failed~')).toBeTruthy();
+    expect(alertSpy).toHaveBeenCalledWith('Import failed~', 'Import failed~');
+    expect(await findByText('Import anyway')).toBeTruthy();
+    alertSpy.mockRestore();
+  });
+
   test('shows alert on import failure', async () => {
     const alertSpy = jest.spyOn(Alert, 'alert').mockReturnValue();
     mockImportImage.mockRejectedValue(new Error('Import failed'));

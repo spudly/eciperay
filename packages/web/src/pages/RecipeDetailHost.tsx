@@ -33,6 +33,8 @@ import {
   tokens,
   type RecipeDetailPageNutritionProps,
 } from '@spudly/ui';
+import type {I18n} from '@lingui/core';
+import {useLingui} from '@lingui/react';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useRef, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
@@ -90,35 +92,74 @@ type RecipeDetailHostProps = {
  * silently.
  */
 
-const VERSION_ROLE_LABELS: Record<RecipeVersionSummary['derivedRole'], string> =
-  {
-    active: 'Active',
-    archived: 'Archived',
-    draft: 'Draft',
-    candidate: 'Candidate',
-  };
+const versionRoleLabel = (
+  i18n: I18n,
+  role: RecipeVersionSummary['derivedRole'],
+): string => {
+  switch (role) {
+    case 'active':
+      return i18n._({id: 'recipeDetail.versionRoleActive', message: 'Active'});
+    case 'archived':
+      return i18n._({
+        id: 'recipeDetail.versionRoleArchived',
+        message: 'Archived',
+      });
+    case 'draft':
+      return i18n._({id: 'recipeDetail.versionRoleDraft', message: 'Draft'});
+    case 'candidate':
+      return i18n._({
+        id: 'recipeDetail.versionRoleCandidate',
+        message: 'Candidate',
+      });
+  }
+};
 
 /**
  * The version picker's row label, formatted as the retired web VersionPicker
  * formatted it ("v3 — Active: summary").
  */
-const versionPickerLabel = (version: RecipeVersionSummary): string =>
-  `v${version.versionNumber} — ${VERSION_ROLE_LABELS[version.derivedRole]}${
-    version.changeSummary
-      ? `: ${truncateChangeSummary(version.changeSummary)}`
-      : ''
-  }`;
+const versionPickerLabel = (
+  i18n: I18n,
+  version: RecipeVersionSummary,
+): string =>
+  version.changeSummary
+    ? i18n._({
+        id: 'recipeDetail.versionPickerLabelWithSummary',
+        message: 'v{versionNumber} — {roleLabel}: {summary}',
+        values: {
+          versionNumber: version.versionNumber,
+          roleLabel: versionRoleLabel(i18n, version.derivedRole),
+          summary: truncateChangeSummary(version.changeSummary),
+        },
+      })
+    : i18n._({
+        id: 'recipeDetail.versionPickerLabel',
+        message: 'v{versionNumber} — {roleLabel}',
+        values: {
+          versionNumber: version.versionNumber,
+          roleLabel: versionRoleLabel(i18n, version.derivedRole),
+        },
+      });
 
 /**
  * The activation candidate's label, formatted as the retired OverviewActions
  * formatted it ("v3: summary").
  */
-const candidateLabel = (version: RecipeVersionSummary): string =>
-  `v${version.versionNumber}${
-    version.changeSummary
-      ? `: ${truncateChangeSummary(version.changeSummary)}`
-      : ''
-  }`;
+const candidateLabel = (i18n: I18n, version: RecipeVersionSummary): string =>
+  version.changeSummary
+    ? i18n._({
+        id: 'recipeDetail.candidateLabelWithSummary',
+        message: 'v{versionNumber}: {summary}',
+        values: {
+          versionNumber: version.versionNumber,
+          summary: truncateChangeSummary(version.changeSummary),
+        },
+      })
+    : i18n._({
+        id: 'recipeDetail.candidateLabel',
+        message: 'v{versionNumber}',
+        values: {versionNumber: version.versionNumber},
+      });
 
 /**
  * The scale string the page shows as selected for a base/current servings pair
@@ -168,6 +209,7 @@ type CookLogFormProps = {
  * the current rating).
  */
 const CookLogForm = ({isPending, onSkip, onSubmit}: CookLogFormProps) => {
+  const {i18n} = useLingui();
   const [rating, setRating] = useState<1 | 2 | 3 | 4 | 5 | null>(null);
   const [notes, setNotes] = useState('');
 
@@ -195,11 +237,14 @@ const CookLogForm = ({isPending, onSkip, onSubmit}: CookLogFormProps) => {
           color: tokens.colors.gray.gray10,
         }}
       >
-        How did it go?
+        {i18n._({id: 'recipeDetail.cookLogHeading', message: 'How did it go?'})}
       </h2>
       <div
         role="radiogroup"
-        aria-label="Star rating"
+        aria-label={i18n._({
+          id: 'recipeDetail.cookLogStarRatingLabel',
+          message: 'Star rating',
+        })}
         style={{
           marginBottom: tokens.spacing[4],
           display: 'flex',
@@ -213,7 +258,11 @@ const CookLogForm = ({isPending, onSkip, onSubmit}: CookLogFormProps) => {
             type="button"
             role="radio"
             aria-checked={rating !== null && star <= rating}
-            aria-label={`Rate ${star} out of 5 stars`}
+            aria-label={i18n._({
+              id: 'recipeDetail.cookLogRateLabel',
+              message: 'Rate {star} out of 5 stars',
+              values: {star},
+            })}
             style={{
               background: 'none',
               border: 'none',
@@ -251,8 +300,14 @@ const CookLogForm = ({isPending, onSkip, onSubmit}: CookLogFormProps) => {
           backgroundColor: eciperayTheme.semantic.surface,
           color: tokens.colors.gray.gray10,
         }}
-        placeholder="Notes from this cook (optional)"
-        aria-label="Notes from this cook (optional)"
+        placeholder={i18n._({
+          id: 'cookingMode.cookLogNotesPlaceholder',
+          message: 'Notes from this cook (optional)',
+        })}
+        aria-label={i18n._({
+          id: 'cookingMode.cookLogNotesPlaceholder',
+          message: 'Notes from this cook (optional)',
+        })}
         rows={3}
         value={notes}
         onChange={event => {
@@ -276,7 +331,7 @@ const CookLogForm = ({isPending, onSkip, onSubmit}: CookLogFormProps) => {
           }}
           onClick={onSkip}
         >
-          Skip
+          {i18n._({id: 'recipeDetail.cookLogSkipLabel', message: 'Skip'})}
         </button>
         <button
           type="button"
@@ -299,7 +354,7 @@ const CookLogForm = ({isPending, onSkip, onSubmit}: CookLogFormProps) => {
             onSubmit({rating, notes: notes.trim() || null});
           }}
         >
-          Save
+          {i18n._({id: 'recipeDetail.cookLogSaveLabel', message: 'Save'})}
         </button>
       </div>
     </div>
@@ -316,6 +371,9 @@ export const RecipeDetailHost = ({
   scaleFactor,
   onServingsChange,
 }: RecipeDetailHostProps) => {
+  const {i18n} = useLingui();
+  const tryAgain = () =>
+    i18n._({id: 'recipeDetail.pleaseTryAgain', message: 'Please try again.'});
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const analytics = useAnalytics();
@@ -382,16 +440,31 @@ export const RecipeDetailHost = ({
     onSuccess: () => {
       void invalidate();
     },
-    onError: showMutationError('Could not change status'),
+    onError: showMutationError(
+      i18n._({
+        id: 'recipeDetail.couldNotChangeStatus',
+        message: 'Could not change status',
+      }),
+    ),
   });
   const activateMutation = useMutation({
     mutationFn: (versionId: string) =>
       eciperay.versions.activate(displayRecipe.id, versionId),
     onSuccess: () => {
       void invalidate();
-      showActionMessage('Version activated');
+      showActionMessage(
+        i18n._({
+          id: 'recipeDetail.versionActivated',
+          message: 'Version activated',
+        }),
+      );
     },
-    onError: showMutationError('Could not activate version'),
+    onError: showMutationError(
+      i18n._({
+        id: 'recipeDetail.couldNotActivateVersion',
+        message: 'Could not activate version',
+      }),
+    ),
   });
   const tweakManualMutation = useMutation({
     mutationFn: () => eciperay.versions.create(displayRecipe.id),
@@ -399,7 +472,12 @@ export const RecipeDetailHost = ({
       void invalidate();
       onSelectVersion(version.id);
     },
-    onError: showMutationError('Could not create a new version'),
+    onError: showMutationError(
+      i18n._({
+        id: 'recipeDetail.couldNotCreateVersion',
+        message: 'Could not create a new version',
+      }),
+    ),
   });
 
   // A Perfected recipe's active version is locked, so creating a draft
@@ -429,9 +507,11 @@ export const RecipeDetailHost = ({
     },
     onError: error => {
       showActionMessage(
-        `Could not create a draft: ${
-          error instanceof Error ? error.message : 'Please try again.'
-        }`,
+        i18n._({
+          id: 'recipeDetail.couldNotCreateDraft',
+          message: 'Could not create a draft: {error}',
+          values: {error: error instanceof Error ? error.message : tryAgain()},
+        }),
       );
     },
   });
@@ -451,7 +531,7 @@ export const RecipeDetailHost = ({
           isActivationPending: activateMutation.isPending,
           candidates: candidates.map(version => ({
             id: version.id,
-            label: candidateLabel(version),
+            label: candidateLabel(i18n, version),
           })),
         }
       : null;
@@ -484,9 +564,19 @@ export const RecipeDetailHost = ({
     },
     onError: error => {
       setRecipeDeleteError(
-        `Could not delete recipe: ${
-          error instanceof Error ? error.message : 'Recipe deletion failed'
-        }`,
+        i18n._({
+          id: 'recipeDetail.couldNotDeleteRecipe',
+          message: 'Could not delete recipe: {error}',
+          values: {
+            error:
+              error instanceof Error
+                ? error.message
+                : i18n._({
+                    id: 'recipeDetail.recipeDeletionFailed',
+                    message: 'Recipe deletion failed',
+                  }),
+          },
+        }),
       );
     },
   });
@@ -505,7 +595,12 @@ export const RecipeDetailHost = ({
     onSuccess: data => {
       queryClient.setQueryData(queryKeys.recipe(recipe.id), data);
     },
-    onError: showMutationError('Could not save your rating'),
+    onError: showMutationError(
+      i18n._({
+        id: 'recipeDetail.couldNotSaveRating',
+        message: 'Could not save your rating',
+      }),
+    ),
   });
   const communityRating = ratingsSummary.communityRating;
   const ratings = {
@@ -628,9 +723,19 @@ export const RecipeDetailHost = ({
     },
     onError: error => {
       setCookLogDeleteError(
-        `Could not delete entry: ${
-          error instanceof Error ? error.message : 'Failed to delete entry'
-        }`,
+        i18n._({
+          id: 'recipeDetail.couldNotDeleteCookLogEntry',
+          message: 'Could not delete entry: {error}',
+          values: {
+            error:
+              error instanceof Error
+                ? error.message
+                : i18n._({
+                    id: 'recipeDetail.deleteCookLogEntryFailed',
+                    message: 'Failed to delete entry',
+                  }),
+          },
+        }),
       );
     },
   });
@@ -759,14 +864,22 @@ export const RecipeDetailHost = ({
       const result = await shareRecipe(displayRecipe, {shareToken});
       showActionMessage(
         result === 'copied'
-          ? 'Share link copied to clipboard'
-          : 'Recipe shared',
+          ? i18n._({
+              id: 'recipeDetail.shareLinkCopiedToClipboard',
+              message: 'Share link copied to clipboard',
+            })
+          : i18n._({id: 'recipeDetail.recipeShared', message: 'Recipe shared'}),
       );
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') {
         return;
       }
-      showActionMessage('Could not share recipe');
+      showActionMessage(
+        i18n._({
+          id: 'recipeDetail.couldNotShareRecipe',
+          message: 'Could not share recipe',
+        }),
+      );
     }
   };
 
@@ -776,7 +889,7 @@ export const RecipeDetailHost = ({
       status={recipe.status}
       versions={versions.map(version => ({
         id: version.id,
-        label: versionPickerLabel(version),
+        label: versionPickerLabel(i18n, version),
         versionNumber: version.versionNumber,
       }))}
       selectedVersionId={selectedVersionId}
@@ -928,17 +1041,33 @@ export const RecipeDetailHost = ({
             setRecipeDeleteError(null);
           }
         },
-        title: 'Delete recipe',
-        description: `Delete "${displayRecipe.title}"?`,
+        title: i18n._({
+          id: 'recipeDetail.deleteRecipeTitle',
+          message: 'Delete recipe',
+        }),
+        description: i18n._({
+          id: 'recipeDetail.deleteRecipeDescription',
+          message: 'Delete "{title}"?',
+          values: {title: displayRecipe.title},
+        }),
         error: recipeDeleteError,
-        confirmLabel: 'Confirm delete',
-        confirmPendingLabel: 'Deleting…',
+        confirmLabel: i18n._({
+          id: 'recipeDetail.confirmDeleteLabel',
+          message: 'Confirm delete',
+        }),
+        confirmPendingLabel: i18n._({
+          id: 'recipeDetail.deletingLabel',
+          message: 'Deleting…',
+        }),
         pending: deleteRecipeMutation.isPending,
         onConfirm: () => {
           setRecipeDeleteError(null);
           deleteRecipeMutation.mutate();
         },
-        cancelLabel: 'Cancel',
+        cancelLabel: i18n._({
+          id: 'recipeDetail.cancelLabel',
+          message: 'Cancel',
+        }),
       }}
       cookLogDeleteConfirmation={{
         open: confirmingCookLog !== undefined,
@@ -950,15 +1079,28 @@ export const RecipeDetailHost = ({
             setCookLogDeleteError(null);
           }
         },
-        title: 'Delete cook log entry',
+        title: i18n._({
+          id: 'recipeDetail.deleteCookLogTitle',
+          message: 'Delete cook log entry',
+        }),
         ...(confirmingCookLog
           ? {
-              description: `Delete the cook log from ${formatCookLogDate(confirmingCookLog.cookedAt)}?`,
+              description: i18n._({
+                id: 'recipeDetail.deleteCookLogDescription',
+                message: 'Delete the cook log from {date}?',
+                values: {date: formatCookLogDate(confirmingCookLog.cookedAt)},
+              }),
             }
           : {}),
         error: cookLogDeleteError,
-        confirmLabel: 'Confirm delete',
-        confirmPendingLabel: 'Deleting…',
+        confirmLabel: i18n._({
+          id: 'recipeDetail.confirmDeleteLabel',
+          message: 'Confirm delete',
+        }),
+        confirmPendingLabel: i18n._({
+          id: 'recipeDetail.deletingLabel',
+          message: 'Deleting…',
+        }),
         pending: deleteCookLogMutation.isPending,
         onConfirm: () => {
           if (confirmingCookLogDeleteId) {
@@ -966,7 +1108,10 @@ export const RecipeDetailHost = ({
             deleteCookLogMutation.mutate(confirmingCookLogDeleteId);
           }
         },
-        cancelLabel: 'Cancel',
+        cancelLabel: i18n._({
+          id: 'recipeDetail.cancelLabel',
+          message: 'Cancel',
+        }),
       }}
       nutritionNotice={{
         open: nutritionErrorVisible,
@@ -975,9 +1120,12 @@ export const RecipeDetailHost = ({
             setNutritionErrorVisible(false);
           }
         },
-        title: 'Could not refresh nutrition',
-        description: 'Please try again.',
-        confirmLabel: 'OK',
+        title: i18n._({
+          id: 'recipeDetail.couldNotRefreshNutrition',
+          message: 'Could not refresh nutrition',
+        }),
+        description: tryAgain(),
+        confirmLabel: i18n._({id: 'recipeDetail.okLabel', message: 'OK'}),
         confirmTone: 'primary',
         onConfirm: () => {
           setNutritionErrorVisible(false);

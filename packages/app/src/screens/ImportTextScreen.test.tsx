@@ -102,6 +102,20 @@ describe('ImportTextScreen', () => {
     expect(await findByText('Import failed')).toBeTruthy();
   });
 
+  test('shows the generic error from the en-XA Lingui catalog on non-Error failure (#465)', async () => {
+    mockImportText.mockRejectedValue('nope');
+    const {getByPlaceholderText, getByText, findByText} =
+      await renderWithProviders(<ImportTextScreen {...stackProps} />, {
+        locale: 'en-XA',
+      });
+    await fireEvent.changeText(
+      getByPlaceholderText('Paste your recipe here…'),
+      'bad',
+    );
+    await fireEvent.press(getByText('Import'));
+    expect(await findByText('Import failed~')).toBeTruthy();
+  });
+
   test('shows error on failure', async () => {
     mockImportText.mockRejectedValue(new Error('Parse failed'));
     const {getByPlaceholderText, getByText, findByText} =

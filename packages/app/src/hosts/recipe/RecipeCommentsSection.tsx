@@ -1,7 +1,7 @@
+import {useLingui} from '@lingui/react';
 import {
   makeRecipeDetail,
   queryKeys,
-  STALE_COMMENT_HINT,
   useAuth,
 } from '@eciperay/client';
 import type {RecipeDetailPageComments} from '@spudly/ui';
@@ -30,6 +30,7 @@ export const useRecipeCommentsProps = (
   recipeId: string,
   ownerUserId: string,
 ): RecipeDetailPageComments => {
+  const {i18n} = useLingui();
   const {session} = useAuth();
   const queryClient = useQueryClient();
   const currentUserId = session?.user.id;
@@ -76,7 +77,9 @@ export const useRecipeCommentsProps = (
   return {
     comments: comments.map(comment => ({
       id: comment.id,
-      authorName: comment.authorDisplayName?.trim() ?? 'Anonymous',
+      authorName:
+        comment.authorDisplayName?.trim() ??
+        i18n._({id: 'recipeComments.anonymousAuthor', message: 'Anonymous'}),
       body: comment.body,
       isStale: comment.isStale,
       canEdit: comment.authorUserId === currentUserId,
@@ -84,8 +87,16 @@ export const useRecipeCommentsProps = (
         comment.authorUserId === currentUserId || ownerUserId === currentUserId,
     })),
     loading: isLoading,
-    error: error ? "Couldn't load comments." : null,
-    staleHintLabel: STALE_COMMENT_HINT,
+    error: error
+      ? i18n._({
+          id: 'recipeComments.loadError',
+          message: "Couldn't load comments.",
+        })
+      : null,
+    staleHintLabel: i18n._({
+      id: 'recipeComments.staleHint',
+      message: 'This comment was left on an earlier version of the recipe.',
+    }),
     editingCommentId: editingId,
     editDraft,
     isUpdatePending: updateMutation.isPending,
@@ -117,7 +128,10 @@ export const useRecipeCommentsProps = (
             createMutation.mutate(draft.trim());
           },
           isPostPending: createMutation.isPending,
-          composerPlaceholder: 'Add a comment',
+          composerPlaceholder: i18n._({
+            id: 'recipeComments.composerPlaceholder',
+            message: 'Add a comment',
+          }),
         }
       : {}),
   };

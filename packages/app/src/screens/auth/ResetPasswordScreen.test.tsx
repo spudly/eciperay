@@ -41,6 +41,40 @@ describe('ResetPasswordScreen', () => {
     });
   });
 
+  test('shows the success alert from the en-XA Lingui catalog (#465)', async () => {
+    mockUpdateUser.mockResolvedValue({error: null});
+    const {getByLabelText, getByText} = await renderWithProviders(
+      <ResetPasswordScreen onComplete={mockOnComplete} />,
+      {locale: 'en-XA'},
+    );
+    await act(async () => {
+      await fireEvent.changeText(
+        getByLabelText('New password'),
+        'new-password',
+      );
+      await Promise.resolve();
+    });
+    await fireEvent.press(getByText('Update password'));
+    await waitFor(() => {
+      expect(mockAlert).toHaveBeenCalledWith(
+        'Password updated~',
+        'You can now use your new password.~',
+      );
+    });
+  });
+
+  test('shows the error alert title from the en-XA Lingui catalog (#465)', async () => {
+    mockUpdateUser.mockResolvedValue({error: new Error('Update failed')});
+    const {getByText} = await renderWithProviders(
+      <ResetPasswordScreen onComplete={mockOnComplete} />,
+      {locale: 'en-XA'},
+    );
+    await fireEvent.press(getByText('Update password'));
+    await waitFor(() => {
+      expect(mockAlert).toHaveBeenCalledWith('Error~', 'Update failed');
+    });
+  });
+
   test('shows error alert on failure', async () => {
     mockUpdateUser.mockResolvedValue({error: new Error('Update failed')});
     const {getByText} = await renderWithProviders(

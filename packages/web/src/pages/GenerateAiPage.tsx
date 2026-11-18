@@ -1,4 +1,6 @@
 import {invalidateRecipeQueries, useAnalytics, useAuth} from '@eciperay/client';
+import type {I18n} from '@lingui/core';
+import {useLingui} from '@lingui/react';
 import {useQueryClient} from '@tanstack/react-query';
 import {useNavigate} from 'react-router-dom';
 import type {CreateAiRecipeResult, TweakAiPhase} from '@eciperay/types';
@@ -11,16 +13,26 @@ import {
   type AiSessionState,
 } from './AiSessionHost.js';
 
-const PROMPT_PLACEHOLDER =
-  'e.g. quick weeknight vegetarian pasta for 4, under 30 minutes';
+const promptPlaceholder = (i18n: I18n) =>
+  i18n._({
+    id: 'aiGenerate.promptPlaceholder',
+    message: 'e.g. quick weeknight vegetarian pasta for 4, under 30 minutes',
+  });
 
-const phaseLabel = (phase: TweakAiPhase) => {
+const phaseLabel = (i18n: I18n, phase: TweakAiPhase) => {
   switch (phase) {
     case 'planning': {
-      return 'Review the plan and refine it, or approve to build a preview.';
+      return i18n._({
+        id: 'aiSession.phasePlanningLabel',
+        message:
+          'Review the plan and refine it, or approve to build a preview.',
+      });
     }
     case 'preview_ready': {
-      return 'Preview ready — save the recipe or go back to refine the plan.';
+      return i18n._({
+        id: 'aiGenerate.phasePreviewReadyLabel',
+        message: 'Preview ready — save the recipe or go back to refine the plan.',
+      });
     }
     default: {
       return '';
@@ -41,6 +53,7 @@ const mapSession = (session: {
 });
 
 export const GenerateAiPage = () => {
+  const {i18n} = useLingui();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const analytics = useAnalytics();
@@ -79,16 +92,34 @@ export const GenerateAiPage = () => {
       // page renders, so the key is stable from the first render.)
       key={storageKey}
       config={{
-        title: 'Generate with AI',
-        intro:
-          'Describe the recipe you want. AI will propose a plan for you to review before creating the recipe.',
-        promptPlaceholder: PROMPT_PLACEHOLDER,
-        startLabel: 'Start planning',
-        startPendingLabel: 'Planning…',
-        previewTitle: 'Recipe preview',
-        finalizeLabel: 'Save recipe',
-        finalizePendingLabel: 'Saving…',
-        phaseLabel,
+        title: i18n._({id: 'aiGenerate.title', message: 'Generate with AI'}),
+        intro: i18n._({
+          id: 'aiGenerate.intro',
+          message:
+            'Describe the recipe you want. AI will propose a plan for you to review before creating the recipe.',
+        }),
+        promptPlaceholder: promptPlaceholder(i18n),
+        startLabel: i18n._({
+          id: 'aiSession.startLabel',
+          message: 'Start planning',
+        }),
+        startPendingLabel: i18n._({
+          id: 'aiSession.startPendingLabel',
+          message: 'Planning…',
+        }),
+        previewTitle: i18n._({
+          id: 'aiGenerate.previewTitle',
+          message: 'Recipe preview',
+        }),
+        finalizeLabel: i18n._({
+          id: 'aiGenerate.finalizeLabel',
+          message: 'Save recipe',
+        }),
+        finalizePendingLabel: i18n._({
+          id: 'aiSession.finalizePendingLabel',
+          message: 'Saving…',
+        }),
+        phaseLabel: phase => phaseLabel(i18n, phase),
       }}
       api={api}
       // Partitioned by account: another account opening this flow in

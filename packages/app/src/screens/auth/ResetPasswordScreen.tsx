@@ -1,4 +1,5 @@
 import {errorMessage} from '@eciperay/client';
+import {useLingui} from '@lingui/react';
 import {useState} from 'react';
 import {Alert} from 'react-native';
 import {ResetPasswordPage} from '@spudly/ui';
@@ -9,6 +10,7 @@ import {supabase} from '../../lib/supabase';
 type ResetPasswordProps = {onComplete: () => void};
 
 export const ResetPasswordScreen = ({onComplete}: ResetPasswordProps) => {
+  const {i18n} = useLingui();
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -22,9 +24,21 @@ export const ResetPasswordScreen = ({onComplete}: ResetPasswordProps) => {
         throw error;
       }
       onComplete();
-      Alert.alert('Password updated', 'You can now use your new password.');
+      Alert.alert(
+        i18n._({
+          id: 'resetPassword.confirmationTitle',
+          message: 'Password updated',
+        }),
+        i18n._({
+          id: 'resetPassword.confirmationBody',
+          message: 'You can now use your new password.',
+        }),
+      );
     } catch (error) {
-      Alert.alert('Error', errorMessage(error));
+      Alert.alert(
+        i18n._({id: 'authNative.errorTitle', message: 'Error'}),
+        errorMessage(error),
+      );
     } finally {
       setLoading(false);
     }

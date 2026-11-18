@@ -45,6 +45,22 @@ describe('ForgotPasswordScreen', () => {
     });
   });
 
+  test('shows the success alert from the en-XA Lingui catalog (#465)', async () => {
+    mockReset.mockResolvedValue({error: null});
+    const {getByLabelText, getByText} = await renderWithProviders(
+      <ForgotPasswordScreen navigation={nav} />,
+      {locale: 'en-XA'},
+    );
+    await fireEvent.changeText(getByLabelText('Email'), 'a@b.com');
+    await fireEvent.press(getByText('Send Reset Link'));
+    await waitFor(() => {
+      expect(mockAlert).toHaveBeenCalledWith(
+        'Check your email~',
+        'A password reset link has been sent.~',
+      );
+    });
+  });
+
   test('shows success alert and goes back on success', async () => {
     mockReset.mockResolvedValue({error: null});
     const {getByLabelText, getByText} = await renderWithProviders(

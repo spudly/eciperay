@@ -44,6 +44,20 @@ describe('ImportUrlScreen', () => {
     });
   });
 
+  test('shows the generic error from the en-XA Lingui catalog on non-Error failure (#465)', async () => {
+    mockImportUrl.mockRejectedValue('nope');
+    const {getByPlaceholderText, getByText, findByText} =
+      await renderWithProviders(<ImportUrlScreen {...stackProps} />, {
+        locale: 'en-XA',
+      });
+    await fireEvent.changeText(
+      getByPlaceholderText('https://example.com/recipe'),
+      'https://bad.com',
+    );
+    await fireEvent.press(getByText('Import'));
+    expect(await findByText('Import failed~')).toBeTruthy();
+  });
+
   test('shows generic error on non-Error failure', async () => {
     mockImportUrl.mockRejectedValue('nope');
     const {getByPlaceholderText, getByText, findByText} =
