@@ -12,8 +12,7 @@
     "test": "jest",
     "test:coverage": "jest --coverage --maxWorkers=1",
     "link:fonts": "react-native-asset -a ./assets/fonts",
-    "i18n:extract": "lingui extract",
-    "i18n:compile": "lingui compile --typescript"
+    "i18n:extract": "lingui extract"
   },
   "dependencies": {
     "@eciperay/client": "*",
@@ -59,7 +58,9 @@
     "@formatjs/intl-locale": "^5.4.3",
     "@formatjs/intl-pluralrules": "^7.0.4",
     "@lingui/cli": "^6.12.0",
+    "@lingui/conf": "^6.12.0",
     "@lingui/core": "^6.12.0",
+    "@lingui/metro-transformer": "^6.12.0",
     "@posthog/cli": "~0.18.12",
     "@react-native-community/cli": "^21.0.0",
     "@react-native-community/cli-platform-android": "^21.0.0",

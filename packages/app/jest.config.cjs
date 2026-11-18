@@ -62,5 +62,9 @@ module.exports = {
     ],
     '^.+\\.(bmp|gif|jpg|jpeg|mp4|png|psd|svg|webp)$':
       '@react-native/jest-preset/jest/assetFileTransformer.js',
+    // Lingui catalogs are imported as .po files (#588); babel-jest cannot
+    // load them, so compile them through the same @lingui/cli API the
+    // Metro transformer uses (see jestPoTransformer.cjs).
+    '^.+\\.po$': '<rootDir>/jestPoTransformer.cjs',
   },
 };

@@ -2,6 +2,7 @@ import {readFileSync} from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 
+import {lingui} from '@lingui/vite-plugin';
 import posthog from '@posthog/rollup-plugin';
 import react from '@vitejs/plugin-react';
 import {defineConfig, loadEnv} from 'vite';
@@ -59,7 +60,9 @@ export default defineConfig(({mode}) => {
   const posthogPlugin = createPostHogSourceMapPlugin(mode);
 
   return {
-    plugins: [react(), ...(posthogPlugin ? [posthogPlugin] : [])],
+    // lingui() compiles the .po catalogs imported by src/i18n on the fly
+    // (#588) — there is no committed compiled messages.ts anymore.
+    plugins: [react(), lingui(), ...(posthogPlugin ? [posthogPlugin] : [])],
     define: {
       // Tamagui and its dependencies reference process.env at runtime.
       // Vite does not polyfill process by default, so provide a minimal stub.

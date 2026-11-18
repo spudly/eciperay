@@ -2,6 +2,7 @@ import path from 'node:path';
 import {readFileSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
 
+import {lingui} from '@lingui/vite-plugin';
 import react from '@vitejs/plugin-react';
 import {configDefaults, defineConfig} from 'vitest/config';
 
@@ -19,7 +20,9 @@ const pkgRoot = path.dirname(fileURLToPath(import.meta.url));
 const monoRoot = path.resolve(pkgRoot, '../..');
 
 export default defineConfig({
-  plugins: [react()],
+  // lingui() compiles the .po catalogs imported by src/i18n on the fly
+  // (#588); this config does not inherit vite.config.ts plugins.
+  plugins: [react(), lingui()],
   envDir: '../..',
   resolve: {
     dedupe: ['react', 'react-dom', '@tanstack/react-query'],

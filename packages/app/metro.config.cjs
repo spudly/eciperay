@@ -54,6 +54,16 @@ const config = mergeConfig(getDefaultConfig(projectRoot), {
 
 module.exports = withExpoSerializers({
   ...config,
+  transformer: {
+    ...config.transformer,
+    // Compile Lingui .po catalogs on the fly (#588) instead of importing
+    // committed compiled messages.ts files.
+    babelTransformerPath: require.resolve('@lingui/metro-transformer/expo'),
+  },
+  resolver: {
+    ...config.resolver,
+    sourceExts: [...(config.resolver?.sourceExts ?? []), 'po'],
+  },
   serializer: {
     ...config.serializer,
     unstable_beforeAssetSerializationPlugins: [
