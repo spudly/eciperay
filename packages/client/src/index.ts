@@ -371,6 +371,8 @@ export {createCreateAiApi} from './createAiApi.js';
 export {
   compareVersionToParent,
   formatParentListSummary,
+  parentListSummaryParts,
+  type ParentListSummaryParts,
   formatParentScalarHint,
   formatParentTagNames,
   parentIngredientsInput,

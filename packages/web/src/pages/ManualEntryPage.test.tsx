@@ -205,4 +205,51 @@ describe('ManualEntryPage', () => {
     expect(screen.queryByText('Recipe Created')).not.toBeInTheDocument();
     expect(mockUploadRecipeImage).not.toHaveBeenCalled();
   }, 15_000);
+  test('blocks saving with the en-XA pending-image error (#465)', async () => {
+    await renderWithProviders(
+      <Routes>
+        <Route
+          path="/add/manual"
+          element={<ManualEntryPage />}
+        />
+      </Routes>,
+      {route: '/add/manual', locale: 'en-XA'},
+    );
+    await userEvent.type(screen.getByLabelText(/Title/), 'New Recipe');
+    await userEvent.type(screen.getAllByPlaceholderText(/Name/)[0]!, 'Flour');
+    const textareas = screen.getAllByRole('textbox');
+    await userEvent.type(textareas.at(-1)!, 'Mix ingredients');
+    const file = new File(['pixels'], 'recipe.png', {type: 'image/png'});
+    await userEvent.upload(
+      document.querySelector('#recipe-image-upload') as HTMLElement,
+      file,
+    );
+    // The image is pending (no "Use image" click): saving must be
+    // guarded, and the guard's message resolves through the catalog.
+    expect(
+      screen.getByRole('button', {name: 'Use image~'}),
+    ).toBeInTheDocument();
+    await userEvent.click(screen.getByText('Create Recipe~'));
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          'Use, crop, or discard the selected image before saving.~',
+        ),
+      ).toBeInTheDocument();
+    });
+    expect(mockUploadRecipeImage).not.toHaveBeenCalled();
+  }, 15_000);
+  test('renders the submit label from the en-XA Lingui catalog (#465)', async () => {
+    await renderWithProviders(
+      <Routes>
+        <Route
+          path="/add/manual"
+          element={<ManualEntryPage />}
+        />
+      </Routes>,
+      {route: '/add/manual', locale: 'en-XA'},
+    );
+    expect(screen.getByText('Create Recipe~')).toBeInTheDocument();
+  });
+
 });

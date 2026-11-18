@@ -4,6 +4,7 @@ import {
   queryKeys,
   useAuth,
 } from '@eciperay/client';
+import {useLingui} from '@lingui/react';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useState} from 'react';
 import type {AuthorDisplaySettings, NutritionGoals} from '@eciperay/types';
@@ -20,6 +21,7 @@ import {tagsHref} from '../lib/deepLinks';
 import {supabase} from '../lib/supabase';
 
 export const ProfileScreen = () => {
+  const {i18n} = useLingui();
   const {session} = useAuth();
   const queryClient = useQueryClient();
   const [nutritionGoals, setNutritionGoals] = useState<NutritionGoals>(
@@ -120,7 +122,12 @@ export const ProfileScreen = () => {
             error={
               authorDisplayError ??
               (authorDisplayLoadFailed
-                ? `Could not load your author display settings: ${errorMessage(authorDisplayLoadError)}`
+                ? i18n._({
+                    id: 'profile.authorDisplayLoadError',
+                    message:
+                      'Could not load your author display settings: {error}',
+                    values: {error: errorMessage(authorDisplayLoadError)},
+                  })
                 : null)
             }
             onChange={setAuthorDisplay}

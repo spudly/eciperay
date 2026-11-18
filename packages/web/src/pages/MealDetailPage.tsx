@@ -4,6 +4,8 @@ import {
   queryKeys,
 } from '@eciperay/client';
 import type {RecipeNutritionSummary} from '@eciperay/types';
+import type {I18n} from '@lingui/core';
+import {useLingui} from '@lingui/react';
 import {MealDetailPage as MealDetailPageView} from '@spudly/ui';
 import {useQuery} from '@tanstack/react-query';
 import {useParams} from 'react-router-dom';
@@ -21,29 +23,72 @@ import {eciperay} from '../lib/api.js';
  * screen's composition.
  */
 const formatMemberNutrition = (
+  i18n: I18n,
   summary: RecipeNutritionSummary,
   scale = 1,
 ): string | null => {
   const parts: string[] = [];
   if (summary.calories !== null) {
-    parts.push(`${Math.round(summary.calories * scale)} cal`);
+    parts.push(
+      i18n._({
+        id: 'mealDetail.nutritionCalories',
+        message: '{value} cal',
+        values: {value: Math.round(summary.calories * scale)},
+      }),
+    );
   }
   if (summary.proteinG !== null) {
-    parts.push(`${Math.round(summary.proteinG * scale)}g protein`);
+    parts.push(
+      i18n._({
+        id: 'mealDetail.nutritionProtein',
+        message: '{value}g protein',
+        values: {value: Math.round(summary.proteinG * scale)},
+      }),
+    );
   }
   if (summary.carbsG !== null) {
-    parts.push(`${Math.round(summary.carbsG * scale)}g carbs`);
+    parts.push(
+      i18n._({
+        id: 'mealDetail.nutritionCarbs',
+        message: '{value}g carbs',
+        values: {value: Math.round(summary.carbsG * scale)},
+      }),
+    );
   }
   if (summary.fatG !== null) {
-    parts.push(`${Math.round(summary.fatG * scale)}g fat`);
+    parts.push(
+      i18n._({
+        id: 'mealDetail.nutritionFat',
+        message: '{value}g fat',
+        values: {value: Math.round(summary.fatG * scale)},
+      }),
+    );
   }
   if (summary.satietyScore !== null) {
-    parts.push(`satiety ${Math.round(summary.satietyScore)}`);
+    parts.push(
+      i18n._({
+        id: 'mealDetail.nutritionSatiety',
+        message: 'satiety {value}',
+        values: {value: Math.round(summary.satietyScore)},
+      }),
+    );
   }
   return parts.length > 0 ? parts.join(' · ') : null;
 };
 
+const servingsLabel = (
+  i18n: I18n,
+  servingsToCook: number,
+  servingsToEat: number,
+): string =>
+  i18n._({
+    id: 'mealDetail.servingsLabel',
+    message: 'Servings to cook: {cook} · Servings to eat: {eat}',
+    values: {cook: servingsToCook, eat: servingsToEat},
+  });
+
 export const MealDetailPage = () => {
+  const {i18n} = useLingui();
   const {mealId = ''} = useParams();
 
   const {
@@ -108,9 +153,9 @@ export const MealDetailPage = () => {
             recipeId: member.recipeId,
             href: buildRecipePath({id: member.recipeId, title: member.title}),
             title: member.title,
-            subtitle: `Servings to cook: ${member.servingsToCook} · Servings to eat: ${member.servingsToEat}${
-              formatMemberNutrition(member)
-                ? ` · ${formatMemberNutrition(member)}`
+            subtitle: `${servingsLabel(i18n, member.servingsToCook, member.servingsToEat)}${
+              formatMemberNutrition(i18n, member)
+                ? ` · ${formatMemberNutrition(i18n, member)}`
                 : ''
             }`,
             isUnavailable: member.accessLost,
@@ -128,6 +173,7 @@ export const MealDetailPage = () => {
             // The row's nutrition is what the owner eats (#363): the
             // per-serving macros scale by servings-to-eat.
             const nutritionLabel = formatMemberNutrition(
+              i18n,
               ingredient,
               ingredient.servingsToEat,
             );
@@ -136,7 +182,11 @@ export const MealDetailPage = () => {
               name: ingredient.name,
               subtitle: [
                 quantityLabel,
-                `Servings to cook: ${ingredient.servingsToCook} · Servings to eat: ${ingredient.servingsToEat}`,
+                servingsLabel(
+                  i18n,
+                  ingredient.servingsToCook,
+                  ingredient.servingsToEat,
+                ),
                 nutritionLabel,
               ]
                 .filter(Boolean)

@@ -6,6 +6,7 @@ import {
   useDebouncedValue,
   useMealPlanEditForm,
 } from '@eciperay/client';
+import {useLingui} from '@lingui/react';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {MealPlanFormPage} from '@spudly/ui';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
@@ -32,6 +33,7 @@ const toEntryOption = (option: {
 });
 
 export const MealPlanEditScreen = ({route, navigation}: Props) => {
+  const {i18n} = useLingui();
   const planId = route.params.planId ?? '';
   const isEdit = planId.length > 0;
   const queryClient = useQueryClient();
@@ -124,7 +126,11 @@ export const MealPlanEditScreen = ({route, navigation}: Props) => {
           // Same picker-error surfacing as web (#359): a failed
           // search must not read as "no matches".
           (searchError
-            ? `Could not load recipes: ${errorMessage(searchError)}`
+            ? i18n._({
+                id: 'mealForm.loadRecipesError',
+                message: 'Could not load recipes: {error}',
+                values: {error: errorMessage(searchError)},
+              })
             : null)
         }
         onTitleChange={form.setTitle}

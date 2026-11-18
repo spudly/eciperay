@@ -7,6 +7,7 @@ import {
   useDebouncedValue,
   type MealFormIngredient,
 } from '@eciperay/client';
+import {useLingui} from '@lingui/react';
 import {MealFormPage as MealFormPageView} from '@spudly/ui';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useRef, useState} from 'react';
@@ -19,6 +20,7 @@ import {eciperay} from '../lib/api.js';
 type SelectedRecipe = {id: string; label: string; servings: number};
 
 export const MealEditPage = () => {
+  const {i18n} = useLingui();
   const {mealId = ''} = useParams();
   const isEdit = mealId.length > 0;
   const navigate = useNavigate();
@@ -241,7 +243,11 @@ export const MealEditPage = () => {
           // A failed picker search must not read as "no matches":
           // surface it in the form's error slot instead (#359).
           (searchError
-            ? `Could not load recipes: ${errorMessage(searchError)}`
+            ? i18n._({
+                id: 'mealForm.loadRecipesError',
+                message: 'Could not load recipes: {error}',
+                values: {error: errorMessage(searchError)},
+              })
             : null)
         }
         onTitleChange={setTitle}

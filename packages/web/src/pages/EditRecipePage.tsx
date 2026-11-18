@@ -5,6 +5,7 @@ import {
   recipeDetailToInput,
 } from '@eciperay/client';
 import {EditRecipePage as EditRecipeShell} from '@spudly/ui';
+import {useLingui} from '@lingui/react';
 import {useQuery, useQueryClient} from '@tanstack/react-query';
 import {useNavigate, useParams} from 'react-router-dom';
 import type {RecipeInput} from '@eciperay/types';
@@ -15,6 +16,7 @@ import {eciperay} from '../lib/api.js';
 import {RecipeFormHost} from './RecipeFormHost.js';
 
 export const EditRecipePage = () => {
+  const {i18n} = useLingui();
   const {recipeId = ''} = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -43,7 +45,10 @@ export const EditRecipePage = () => {
         initial={recipeDetailToInput(recipe)}
         recipeId={recipeId}
         contentLocked
-        submitLabel="Save Changes"
+        submitLabel={i18n._({
+          id: 'recipeForm.submitSaveChanges',
+          message: 'Save Changes',
+        })}
         onSubmit={handleSubmit}
       />
     </EditRecipeShell>

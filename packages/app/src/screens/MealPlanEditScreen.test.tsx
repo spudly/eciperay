@@ -94,6 +94,25 @@ describe('MealPlanEditScreen', () => {
     expect(rendered.getByText('Recipe · Pasta')).toBeTruthy();
   });
 
+  test('surfaces a recipe search failure from the en-XA catalog (#465)', async () => {
+    mockListRecipes.mockRejectedValue(new Error('boom'));
+    const rendered = await renderWithProviders(
+      <MealPlanEditScreen {...createProps({})} />,
+      {locale: 'en-XA'},
+    );
+    await fireEvent.changeText(
+      rendered.getByPlaceholderText(/Search meals & recipes/),
+      'Pasta',
+    );
+    expect(
+      await rendered.findByText(
+        'Could not load recipes: boom~',
+        {},
+        {timeout: 5000},
+      ),
+    ).toBeTruthy();
+  });
+
   test('renders new meal plan form', async () => {
     const rendered = await renderWithProviders(
       <MealPlanEditScreen {...createProps({})} />,
