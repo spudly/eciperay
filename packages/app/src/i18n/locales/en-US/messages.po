@@ -11,7 +11,7 @@ msgid "spike.recipeCount"
 msgstr "{count, plural, one {# recipe} other {# recipes}}"
 
 #. js-lingui-explicit-id
-#: src/screens/HomeScreen.tsx:83
+#: src/screens/HomeScreen.tsx:86
 msgid "home.addLabel"
 msgstr "Add Recipe"
 
@@ -21,17 +21,57 @@ msgid "home.browseLabel"
 msgstr "Browse Recipes"
 
 #. js-lingui-explicit-id
-#: src/screens/HomeScreen.tsx:88
+#: src/screens/AddScreen.tsx:54
+msgid "add.generateAiDescription"
+msgstr "Describe the recipe you want and let AI create it"
+
+#. js-lingui-explicit-id
+#: src/screens/AddScreen.tsx:53
+msgid "add.generateAiLabel"
+msgstr "Generate with AI"
+
+#. js-lingui-explicit-id
+#: src/screens/AddScreen.tsx:37
+msgid "add.importImageLabel"
+msgstr "Import from image"
+
+#. js-lingui-explicit-id
+#: src/screens/AddScreen.tsx:45
+msgid "add.importTextLabel"
+msgstr "Import from text"
+
+#. js-lingui-explicit-id
+#: src/screens/AddScreen.tsx:29
+msgid "add.importUrlLabel"
+msgstr "Import from URL"
+
+#. js-lingui-explicit-id
+#: src/screens/AddScreen.tsx:21
+msgid "add.manualEntryLabel"
+msgstr "Manual entry"
+
+#. js-lingui-explicit-id
+#: src/screens/AddScreen.tsx:30
+msgid "add.importUrlDescription"
+msgstr "Paste a link to any recipe website"
+
+#. js-lingui-explicit-id
+#: src/screens/AddScreen.tsx:46
+msgid "add.importTextDescription"
+msgstr "Paste rich text from Word or the web"
+
+#. js-lingui-explicit-id
+#: src/screens/HomeScreen.tsx:91
 msgid "home.recipesSectionTitle"
 msgstr "Recently viewed"
 
 #. js-lingui-explicit-id
-#: src/screens/HomeScreen.tsx:92
+#: src/screens/HomeScreen.tsx:95
 msgid "home.emptyMessage"
 msgstr "Recipes you view will appear here."
 
 #. js-lingui-explicit-id
-#: src/screens/HomeScreen.tsx:84
+#: src/screens/HomeScreen.tsx:87
 msgid "home.sharedWithMeLabel"
 msgstr "Shared with me"
 
@@ -39,6 +79,16 @@ msgstr "Shared with me"
 #: src/screens/SharedWithMeScreen.tsx:33
 msgid "sharedWithMe.title"
 msgstr "Shared with me"
+
+#. js-lingui-explicit-id
+#: src/screens/AddScreen.tsx:38
+msgid "add.importImageDescription"
+msgstr "Take a photo or use your library"
+
+#. js-lingui-explicit-id
+#: src/screens/AddScreen.tsx:22
+msgid "add.manualEntryDescription"
+msgstr "Type your recipe from scratch"
 
 #. js-lingui-explicit-id
 #: src/screens/HomeScreen.tsx:77

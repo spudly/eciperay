@@ -5,6 +5,15 @@ import {renderWithProviders} from '../test/testUtils.js';
 import {AddPage} from './AddPage.js';
 
 describe('AddPage', () => {
+  test('renders add options from the en-XA Lingui catalog (#465)', async () => {
+    await renderWithProviders(<AddPage />, {locale: 'en-XA'});
+    expect(screen.getByText('Manual entry~')).toBeInTheDocument();
+    expect(
+      screen.getByText('Type in a recipe from scratch~'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Generate with AI~')).toBeInTheDocument();
+  });
+
   test('renders add options', async () => {
     await renderWithProviders(<AddPage />);
     expect(screen.getByText('Manual entry')).toBeInTheDocument();
