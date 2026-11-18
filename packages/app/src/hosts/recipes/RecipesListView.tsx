@@ -27,6 +27,7 @@ import {
   type RecipesPageDiscoveryItem,
   type RecipesPageItem,
 } from '@spudly/ui';
+import {useLingui} from '@lingui/react';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useRef, useState} from 'react';
 
@@ -125,12 +126,13 @@ const formatDiscoveryAuthorName = (
 // through Linking, the same treatment shared rows get.
 const toDiscoveryItem = (
   recipe: PublicRecipeDiscoveryItem,
+  authorByline: (authorName: string) => string,
 ): RecipesPageDiscoveryItem => {
   const authorName = formatDiscoveryAuthorName(recipe.authorDisplayName);
   return {
     id: recipe.id,
     title: recipe.title,
-    subtitle: `${authorName ? `By ${authorName} · ` : ''}${formatDiscoveryListMeta(recipe)}`,
+    subtitle: `${authorName ? authorByline(authorName) : ''}${formatDiscoveryListMeta(recipe)}`,
     imageUrl: recipe.imageUrl,
     href: buildRecipePermalink(WEB_APP_BASE_URL, recipe),
   };
@@ -285,6 +287,7 @@ export const RecipesListView = ({
   onLoadMoreRetry,
   ownErrorMessage,
 }: RecipesListViewOwnProps) => {
+  const {i18n} = useLingui();
   // The cook-log forms' open state: a set of recipe ids, so forms
   // open and close independently and several may be open at once —
   // the same semantics the cards' per-card state gave this screen.
@@ -376,7 +379,7 @@ export const RecipesListView = ({
   // coordinates which queries it continues).
   return (
     <RecipesPage
-      ownTitle="Your recipes"
+      ownTitle={i18n._({id: 'recipes.ownTitle', message: 'Your recipes'})}
       ownRecipes={[...items, ...sharedItems]}
       loadingOwn={isLoading}
       ownErrorMessage={ownErrorMessage ?? null}
@@ -386,7 +389,15 @@ export const RecipesListView = ({
       onOwnLoadMoreRetry={onLoadMoreRetry}
       ownLoadMoreRetryLabel="Try again"
       discoveryTitle="Discover"
-      discoveryRecipes={discoveryRecipes.map(toDiscoveryItem)}
+      discoveryRecipes={discoveryRecipes.map(recipe =>
+        toDiscoveryItem(recipe, authorName =>
+          i18n._({
+            id: 'recipes.authorByline',
+            message: 'By {authorName} · ',
+            values: {authorName},
+          }),
+        ),
+      )}
       loadingDiscovery={loadingDiscovery}
       discoveryErrorMessage={discoveryErrorMessage ?? null}
       onLogCookPress={openCookLog}

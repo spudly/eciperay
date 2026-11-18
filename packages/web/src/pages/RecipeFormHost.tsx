@@ -11,8 +11,7 @@ import {
   parentInstructionsInput,
   parentTagIds,
   queryKeys,
-  RECIPE_STATUS_LABELS,
-  RECIPE_STATUS_OPTIONS,
+  recipeStatusOptions,
   revertVersionScalar,
   toRecipeInputIngredients,
   toRecipeInputInstructions,
@@ -30,6 +29,7 @@ import type {
   RecipeStatus,
   RecipeVersionDetail,
 } from '@eciperay/types';
+import {useLingui} from '@lingui/react';
 import {
   eciperayTheme,
   RecipeFormPage,
@@ -138,6 +138,7 @@ export const RecipeFormHost = ({
   submitLabel,
   onSubmit,
 }: Props) => {
+  const {i18n} = useLingui();
   const {session} = useAuth();
   const [title, setTitle] = useState(initial.title);
   const [description, setDescription] = useState(initial.description ?? '');
@@ -236,11 +237,13 @@ export const RecipeFormHost = ({
   );
   const statusOptions = useMemo(
     () =>
-      RECIPE_STATUS_OPTIONS.map(value => ({
-        value,
-        label: RECIPE_STATUS_LABELS[value],
-      })),
-    [],
+      recipeStatusOptions({
+        idea: i18n._({id: 'recipeStatus.idea', message: 'Idea'}),
+        evolving: i18n._({id: 'recipeStatus.evolving', message: 'Evolving'}),
+        perfected: i18n._({id: 'recipeStatus.perfected', message: 'Perfected'}),
+        abandoned: i18n._({id: 'recipeStatus.abandoned', message: 'Abandoned'}),
+      }),
+    [i18n],
   );
 
   const clearPendingImage = () => {

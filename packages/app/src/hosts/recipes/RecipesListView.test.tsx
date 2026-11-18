@@ -689,6 +689,29 @@ describe('RecipesListView unified sections (#412)', () => {
     expect(getByText(/By Pat Public/)).toBeTruthy();
   });
 
+  test('renders own title and author byline from the en-XA Lingui catalog (#465)', async () => {
+    const {getByText} = await renderWithProviders(
+      <RecipesListView
+        {...controls}
+        isLoading={false}
+        recipes={[pasta]}
+        discoveryRecipes={[
+          makePublicRecipeDiscoveryItem({
+            id: 'public-1',
+            slug: 'public-pie',
+            title: 'Public Pie',
+          }),
+        ]}
+        isFetchingNextPage={false}
+        onLoadMore={jest.fn()}
+      />,
+      {locale: 'en-XA'},
+    );
+
+    expect(getByText('Your recipes~')).toBeTruthy();
+    expect(getByText(/By Pat Public · ~/)).toBeTruthy();
+  });
+
   test('omits the byline on discovery rows whose author has no display name (#498)', async () => {
     const {getByLabelText, queryByText} = await renderWithProviders(
       <RecipesListView

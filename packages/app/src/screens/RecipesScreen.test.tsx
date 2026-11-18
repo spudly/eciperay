@@ -707,6 +707,17 @@ describe('RecipesScreen unified browse (#412)', () => {
     expect(mockListViewProps?.loadMoreErrorMessage).toBeNull();
   });
 
+  test('a shared first-page failure shows the own-section error from the en-XA Lingui catalog (#465)', async () => {
+    mockListSharedWithMe.mockRejectedValue(new Error('Shared failed'));
+    await renderWithProviders(<RecipesScreen />, {locale: 'en-XA'});
+
+    await waitFor(() => {
+      expect(mockListViewProps?.ownErrorMessage).toBe(
+        "Couldn't load your recipes.~",
+      );
+    });
+  });
+
   test('a shared-only failure with own rows present shows the load-more error', async () => {
     mockList.mockResolvedValue([
       makeRecipeDetail({id: 'own-1', title: 'Pasta Night'}),
