@@ -225,7 +225,17 @@ describe('RecipeDetailView', () => {
       versionNumber: 3,
       derivedRole: 'active',
     });
-    const {findByText} = await renderView({}, [active], undefined, 'en-XA');
+    const archived = makeRecipeVersionSummary({
+      id: 'version-uuid-2',
+      versionNumber: 2,
+      derivedRole: 'archived',
+    });
+    const {findByText} = await renderView(
+      {},
+      [active, archived],
+      undefined,
+      'en-XA',
+    );
     // The picker label interpolates the translated role label, so the
     // en-XA role ("Active~") and the label's own trailing "~" both show.
     expect(await findByText('v3 — Active~~')).toBeTruthy();
@@ -237,7 +247,17 @@ describe('RecipeDetailView', () => {
       derivedRole: 'active',
       changeSummary: 'Less salt',
     });
-    const {findByText} = await renderView({}, [active], undefined, 'en-XA');
+    const archived = makeRecipeVersionSummary({
+      id: 'version-uuid-2',
+      versionNumber: 2,
+      derivedRole: 'archived',
+    });
+    const {findByText} = await renderView(
+      {},
+      [active, archived],
+      undefined,
+      'en-XA',
+    );
     expect(await findByText('v3 — Active~: Less salt~')).toBeTruthy();
   });
 
