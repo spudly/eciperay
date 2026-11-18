@@ -21,6 +21,11 @@ msgid "forgotPassword.confirmationBody"
 msgstr "Check your inbox for a password reset link.~"
 
 #. js-lingui-explicit-id
+#: src/pages/DiscoverPage.tsx:91
+msgid "discover.title"
+msgstr "Discover recipes~"
+
+#. js-lingui-explicit-id
 #: src/pages/ConsentPreferencesPage.tsx:91
 msgid "consentPreferences.description"
 msgstr "Eciperay uses cookies and product analytics (PostHog) to improve the service, only with your consent. You can change your choice at any time here — changes take effect immediately, without reloading the page.~"
@@ -41,6 +46,16 @@ msgid "termsOfService.lastUpdated"
 msgstr "June 18, 2026~"
 
 #. js-lingui-explicit-id
+#: src/pages/DiscoverPage.tsx:96
+msgid "discover.emptyMessage"
+msgstr "No public recipes match your search.~"
+
+#. js-lingui-explicit-id
+#: src/pages/DiscoverPage.tsx:112
+msgid "discover.noRatingsLabel"
+msgstr "No ratings yet~"
+
+#. js-lingui-explicit-id
 #: src/pages/PrivacyPolicyPage.tsx:27
 msgid "privacyPolicy.lastUpdated"
 msgstr "November 4, 2026~"
@@ -51,9 +66,19 @@ msgid "privacyPolicy.title"
 msgstr "Privacy Policy~"
 
 #. js-lingui-explicit-id
+#: src/pages/DiscoverPage.tsx:92
+msgid "discover.searchPlaceholder"
+msgstr "Search public recipes…~"
+
+#. js-lingui-explicit-id
 #: src/pages/TermsOfServicePage.tsx:23
 msgid "termsOfService.title"
 msgstr "Terms of Service~"
+
+#. js-lingui-explicit-id
+#: src/pages/DiscoverPage.tsx:102
+msgid "discover.errorMessage"
+msgstr "We couldn't load public recipes. Check your connection and try again.~"
 
 #. js-lingui-explicit-id
 #: src/pages/ConsentPreferencesPage.tsx:96

@@ -1,13 +1,10 @@
 import {
-  DISCOVER_EMPTY_MESSAGE,
-  DISCOVER_ERROR_MESSAGE,
-  DISCOVER_SEARCH_PLACEHOLDER,
-  DISCOVER_TITLE,
   formatDiscoveryListMeta,
   publicRecipeDiscoveryInfiniteQueryOptions,
   useRecipeListFilters,
   type RecipeStatusFilterValue,
 } from '@eciperay/client';
+import {useLingui} from '@lingui/react';
 import type {
   PublicRecipeDiscoveryItem,
   RecipeListSort,
@@ -34,19 +31,35 @@ const formatAuthorName = (authorDisplayName: string | null): string | null => {
 
 // The card's subtitle line, composed app-side (the author byline,
 // when there is one, plus the discovery meta) exactly as the retired
-// web card composed it; the DS page only renders the string.
-const toDiscoverItem = (recipe: PublicRecipeDiscoveryItem) => {
+// web card composed it; the DS page only renders the string. The
+// no-ratings label is resolved by the host (below) and passed into
+// the non-React `formatDiscoveryListMeta` helper, which otherwise
+// defaults to the shared `DISCOVER_NO_RATINGS_LABEL` constant for
+// its other (native / recipes-list) callers.
+const toDiscoverItem = (
+  recipe: PublicRecipeDiscoveryItem,
+  noRatingsLabel: string,
+) => {
   const authorName = formatAuthorName(recipe.authorDisplayName);
   return {
     id: recipe.id,
     title: recipe.title,
-    subtitle: `${authorName ? `By ${authorName} · ` : ''}${formatDiscoveryListMeta(recipe)}`,
+    subtitle: `${authorName ? `By ${authorName} · ` : ''}${formatDiscoveryListMeta(recipe, noRatingsLabel)}`,
     imageUrl: recipe.imageUrl,
     href: `/recipe/${recipe.id}/${recipe.slug}`,
   };
 };
 
+// This page's page-unique copy flows through the Lingui catalogs
+// (#465 tranche 7: explicit ids `discover.title` /
+// `discover.searchPlaceholder` / `discover.emptyMessage` /
+// `discover.errorMessage` / `discover.noRatingsLabel`) instead of
+// the shared `discoverCopy` constants. The constants remain in
+// @eciperay/client for their other consumers (the SEO page-head
+// title, the recipes-list error state, and the native screens),
+// which are separate tranches.
 export const DiscoverPage = () => {
+  const {i18n} = useLingui();
   const {filters, controls} = useRecipeListFilters({
     includeStatus: true,
     defaultSort: 'newest',
@@ -75,11 +88,33 @@ export const DiscoverPage = () => {
       <PublicHeader />
       <DiscoverPageView
         footer={sharedFooter}
-        title={DISCOVER_TITLE}
-        searchPlaceholder={DISCOVER_SEARCH_PLACEHOLDER}
-        emptyMessage={DISCOVER_EMPTY_MESSAGE}
-        errorMessage={error ? DISCOVER_ERROR_MESSAGE : null}
-        recipes={recipes.map(toDiscoverItem)}
+        title={i18n._({id: 'discover.title', message: 'Discover recipes'})}
+        searchPlaceholder={i18n._({
+          id: 'discover.searchPlaceholder',
+          message: 'Search public recipes…',
+        })}
+        emptyMessage={i18n._({
+          id: 'discover.emptyMessage',
+          message: 'No public recipes match your search.',
+        })}
+        errorMessage={
+          error
+            ? i18n._({
+                id: 'discover.errorMessage',
+                message:
+                  "We couldn't load public recipes. Check your connection and try again.",
+              })
+            : null
+        }
+        recipes={recipes.map(recipe =>
+          toDiscoverItem(
+            recipe,
+            i18n._({
+              id: 'discover.noRatingsLabel',
+              message: 'No ratings yet',
+            }),
+          ),
+        )}
         loading={isLoading}
         isFetchingNextPage={isFetchingNextPage}
         onLoadMore={() => {

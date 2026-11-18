@@ -42,6 +42,29 @@ const makeDiscoveryItem = (
 });
 
 describe('DiscoverPage', () => {
+  test('renders title and no-ratings label from the en-XA Lingui catalog (#465)', async () => {
+    await renderWithProviders(<DiscoverPage />, {locale: 'en-XA'});
+    await waitFor(() => {
+      expect(screen.getByText('Shared Pasta')).toBeInTheDocument();
+    });
+    expect(screen.getByText('Discover recipes~')).toBeInTheDocument();
+    expect(screen.getByText(/No ratings yet~/)).toBeInTheDocument();
+  });
+
+  test('renders the empty message from the en-XA Lingui catalog (#465)', async () => {
+    server.use(
+      http.get('http://localhost:8080/api/public/recipes', () =>
+        HttpResponse.json([]),
+      ),
+    );
+    await renderWithProviders(<DiscoverPage />, {locale: 'en-XA'});
+    await waitFor(() => {
+      expect(
+        screen.getByText('No public recipes match your search.~'),
+      ).toBeInTheDocument();
+    });
+  });
+
   test('lists public recipes linking to public pages', async () => {
     await renderWithProviders(<DiscoverPage />);
     await waitFor(() => {
