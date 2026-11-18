@@ -32,12 +32,6 @@ const i18n = createI18n(
 
 const queryClient = new QueryClient();
 
-// No stored or device locale source is wired on native yet, so
-// resolution falls through to the en-US default — the same
-// `resolveLocale` contract the web root uses with `navigator.languages`
-// (#465 tranche 6: first native I18nProvider, for the Home copy).
-const i18n = createI18n(resolveLocale(null, []));
-
 const rootViewStyle: ViewStyle = {flex: 1};
 
 const App = () => (
