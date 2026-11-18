@@ -34,6 +34,17 @@ const localeOf = sourcePath => {
   return match[1];
 };
 
+// The active (non-obsolete) entries of a parsed catalog, by message id.
+const activeEntries = catalog => {
+  const entries = new Map();
+  for (const [id, message] of Object.entries(catalog)) {
+    if (!message.obsolete) {
+      entries.set(id, message);
+    }
+  }
+  return entries;
+};
+
 const compilePoFile = (sourceText, sourcePath, rootDir) => {
   const config = getConfig({cwd: rootDir});
   const locale = localeOf(sourcePath);
@@ -57,15 +68,6 @@ const compilePoFile = (sourceText, sourcePath, rootDir) => {
       'messages.po',
     );
     return poFormatter.parse(fs.readFileSync(catalogPath, 'utf8'));
-  };
-  const activeEntries = catalog => {
-    const entries = new Map();
-    for (const [id, message] of Object.entries(catalog)) {
-      if (!message.obsolete) {
-        entries.set(id, message);
-      }
-    }
-    return entries;
   };
   const targetEntries = activeEntries(catalogFor(locale));
   const fallbackEntries =
