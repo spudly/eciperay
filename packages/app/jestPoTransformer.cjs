@@ -1,7 +1,7 @@
 // Jest transformer for Lingui .po catalogs (#588).
 //
-// At runtime the catalogs are compiled on the fly by
-// @lingui/metro-transformer, but Jest transforms modules with babel-jest,
+// At runtime the catalogs are compiled on the fly by the app's Metro
+// transformer (metroTransformer.cjs), but Jest transforms modules with babel-jest,
 // which cannot load a .po import — and Jest requires a synchronous
 // `process` export here, so the async @lingui/cli catalog API cannot be
 // used. This transformer therefore compiles synchronously with the same

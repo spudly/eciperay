@@ -61,7 +61,6 @@
     "@lingui/conf": "^6.12.0",
     "@lingui/core": "^6.12.0",
     "@lingui/format-po": "^6.12.0",
-    "@lingui/metro-transformer": "^6.12.0",
     "@posthog/cli": "~0.18.12",
     "@react-native-community/cli": "^21.0.0",
     "@react-native-community/cli-platform-android": "^21.0.0",
