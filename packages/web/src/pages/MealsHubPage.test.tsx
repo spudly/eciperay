@@ -200,6 +200,7 @@ describe('MealsHubPage', () => {
       preparedWeightG: 200,
       satietyScore: null,
       status: 'ready' as const,
+      perDay: null,
     };
     server.use(
       http.get('http://localhost:8080/api/meals', () =>
