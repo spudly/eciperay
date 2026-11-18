@@ -35,6 +35,11 @@ describe('HomePage', () => {
     ).toBeInTheDocument();
   });
 
+  test('renders the title from the en-XA Lingui catalog (#465)', async () => {
+    await renderWithProviders(<HomePage />, {locale: 'en-XA'});
+    expect(screen.getByText('Welcome to Eciperay~')).toBeInTheDocument();
+  });
+
   test('shows recently viewed recipes from local history', async () => {
     await recordRecipeView(recipeViewHistoryStorage, 'recipe-uuid-1');
     await renderWithProviders(<HomePage />);

@@ -11,9 +11,19 @@ msgid "spike.recipeCount"
 msgstr "{count, plural, one {# recipe} other {# recipes}}"
 
 #. js-lingui-explicit-id
+#: src/pages/HomePage.tsx:103
+msgid "home.addLabel"
+msgstr "Add Recipe"
+
+#. js-lingui-explicit-id
 #: src/pages/auth/ForgotPasswordPage.tsx:62
 msgid "forgotPassword.backLabel"
 msgstr "Back to sign in"
+
+#. js-lingui-explicit-id
+#: src/pages/HomePage.tsx:99
+msgid "home.browseLabel"
+msgstr "Browse Recipes"
 
 #. js-lingui-explicit-id
 #: src/pages/auth/ForgotPasswordPage.tsx:58
@@ -66,9 +76,24 @@ msgid "privacyPolicy.title"
 msgstr "Privacy Policy"
 
 #. js-lingui-explicit-id
+#: src/pages/HomePage.tsx:108
+msgid "home.recipesSectionTitle"
+msgstr "Recently viewed"
+
+#. js-lingui-explicit-id
+#: src/pages/HomePage.tsx:112
+msgid "home.emptyMessage"
+msgstr "Recipes you view will appear here."
+
+#. js-lingui-explicit-id
 #: src/pages/DiscoverPage.tsx:92
 msgid "discover.searchPlaceholder"
 msgstr "Search public recipes…"
+
+#. js-lingui-explicit-id
+#: src/pages/HomePage.tsx:104
+msgid "home.sharedWithMeLabel"
+msgstr "Shared with me"
 
 #. js-lingui-explicit-id
 #: src/pages/TermsOfServicePage.tsx:23
@@ -81,6 +106,16 @@ msgid "discover.errorMessage"
 msgstr "We couldn't load public recipes. Check your connection and try again."
 
 #. js-lingui-explicit-id
+#: src/pages/HomePage.tsx:94
+msgid "home.title"
+msgstr "Welcome to Eciperay"
+
+#. js-lingui-explicit-id
 #: src/pages/ConsentPreferencesPage.tsx:96
 msgid "consentPreferences.hint"
 msgstr "Withdrawing consent removes your stored choice and turns analytics off until you make a new choice; the consent banner will ask again, as it does for a new visitor. See our Privacy Policy for what analytics collects when it is on."
+
+#. js-lingui-explicit-id
+#: src/pages/HomePage.tsx:95
+msgid "home.subtitle"
+msgstr "Your personal recipe collection"

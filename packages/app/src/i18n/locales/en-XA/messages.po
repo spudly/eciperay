@@ -6,5 +6,46 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #. js-lingui-explicit-id
+#: src/i18n/i18n.ts:25
 msgid "spike.recipeCount"
 msgstr "{count, plural, one {# recipe~} other {# recipes~~}}"
+
+#. js-lingui-explicit-id
+#: src/screens/HomeScreen.tsx:83
+msgid "home.addLabel"
+msgstr "Add Recipe~"
+
+#. js-lingui-explicit-id
+#: src/screens/HomeScreen.tsx:82
+msgid "home.browseLabel"
+msgstr "Browse Recipes~"
+
+#. js-lingui-explicit-id
+#: src/screens/HomeScreen.tsx:88
+msgid "home.recipesSectionTitle"
+msgstr "Recently viewed~"
+
+#. js-lingui-explicit-id
+#: src/screens/HomeScreen.tsx:92
+msgid "home.emptyMessage"
+msgstr "Recipes you view will appear here.~"
+
+#. js-lingui-explicit-id
+#: src/screens/HomeScreen.tsx:84
+msgid "home.sharedWithMeLabel"
+msgstr "Shared with me~"
+
+#. js-lingui-explicit-id
+#: src/screens/SharedWithMeScreen.tsx:33
+msgid "sharedWithMe.title"
+msgstr "Shared with me~"
+
+#. js-lingui-explicit-id
+#: src/screens/HomeScreen.tsx:77
+msgid "home.title"
+msgstr "Welcome to Eciperay~"
+
+#. js-lingui-explicit-id
+#: src/screens/HomeScreen.tsx:78
+msgid "home.subtitle"
+msgstr "Your personal recipe collection~"
