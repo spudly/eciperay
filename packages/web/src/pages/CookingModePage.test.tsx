@@ -73,6 +73,40 @@ describe('CookingModePage', () => {
     expect(screen.getByText('Done')).toBeInTheDocument();
   });
 
+  test('renders ingredients headings from the en-XA Lingui catalog (#465)', async () => {
+    await renderWithProviders(
+      <Routes>
+        <Route
+          path="/recipes/:recipeId/cook"
+          element={<CookingModePage />}
+        />
+      </Routes>,
+      {route: '/recipes/recipe-uuid-1/cook', locale: 'en-XA'},
+    );
+    await waitFor(() => {
+      expect(
+        screen.getByText('Ingredients (4 servings)~'),
+      ).toBeInTheDocument();
+    });
+  });
+
+  test('renders scaled ingredients heading from the en-XA Lingui catalog (#465)', async () => {
+    await renderWithProviders(
+      <Routes>
+        <Route
+          path="/recipes/:recipeId/cook"
+          element={<CookingModePage />}
+        />
+      </Routes>,
+      {route: '/recipes/recipe-uuid-1/cook?servings=8', locale: 'en-XA'},
+    );
+    await waitFor(() => {
+      expect(
+        screen.getByText('Ingredients (scaled to 8 servings)~'),
+      ).toBeInTheDocument();
+    });
+  });
+
   test('shows scaled ingredients when servings are provided', async () => {
     await renderWithProviders(
       <Routes>

@@ -29,6 +29,16 @@ describe('CookLogForm', () => {
     });
   });
 
+  test('renders notes placeholder from the en-XA Lingui catalog (#465)', async () => {
+    await renderWithProviders(
+      <CookLogForm onSubmit={() => {}} onSkip={() => {}} isPending={false} />,
+      {locale: 'en-XA'},
+    );
+    expect(
+      screen.getByPlaceholderText('Notes from this cook (optional)~'),
+    ).toBeInTheDocument();
+  });
+
   test('submits rating without notes', async () => {
     const onSubmit = vi.fn();
     await renderWithProviders(

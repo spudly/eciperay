@@ -96,6 +96,16 @@ msgid "add.importUrlLabel"
 msgstr "Import from URL"
 
 #. js-lingui-explicit-id
+#: src/pages/CookingModePage.tsx:163
+msgid "cookingMode.ingredientsHeading"
+msgstr "Ingredients ({label})"
+
+#. js-lingui-explicit-id
+#: src/pages/CookingModePage.tsx:168
+msgid "cookingMode.ingredientsHeadingScaled"
+msgstr "Ingredients (scaled to {label})"
+
+#. js-lingui-explicit-id
 #: src/pages/TermsOfServicePage.tsx:27
 msgid "termsOfService.lastUpdated"
 msgstr "June 18, 2026"
@@ -119,6 +129,11 @@ msgstr "No public recipes match your search."
 #: src/pages/DiscoverPage.tsx:112
 msgid "discover.noRatingsLabel"
 msgstr "No ratings yet"
+
+#. js-lingui-explicit-id
+#: src/components/cooking/CookLogForm.tsx:126
+msgid "cookingMode.cookLogNotesPlaceholder"
+msgstr "Notes from this cook (optional)"
 
 #. js-lingui-explicit-id
 #: src/pages/PrivacyPolicyPage.tsx:27

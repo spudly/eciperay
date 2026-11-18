@@ -1,3 +1,4 @@
+import {useLingui} from '@lingui/react';
 import {eciperayTheme, tokens} from '@spudly/ui';
 import type {CSSProperties} from 'react';
 import {useState} from 'react';
@@ -23,6 +24,7 @@ export const CookLogForm = ({
   variant = 'dark',
   secondaryLabel = 'Skip',
 }: Props) => {
+  const {i18n} = useLingui();
   const [rating, setRating] = useState<1 | 2 | 3 | 4 | 5 | null>(null);
   const [notes, setNotes] = useState('');
   const isLight = variant === 'light';
@@ -121,7 +123,10 @@ export const CookLogForm = ({
         className="cook-log-notes"
         data-variant={isLight ? 'light' : 'dark'}
         style={notesStyle}
-        placeholder="Notes from this cook (optional)"
+        placeholder={i18n._({
+          id: 'cookingMode.cookLogNotesPlaceholder',
+          message: 'Notes from this cook (optional)',
+        })}
         rows={3}
         value={notes}
         onChange={e => {

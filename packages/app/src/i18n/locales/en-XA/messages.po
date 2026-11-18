@@ -46,9 +46,24 @@ msgid "add.importUrlLabel"
 msgstr "Import from URL~"
 
 #. js-lingui-explicit-id
+#: src/screens/CookingModeScreen.tsx:159
+msgid "cookingMode.ingredientsHeading"
+msgstr "Ingredients ({label})~"
+
+#. js-lingui-explicit-id
+#: src/screens/CookingModeScreen.tsx:164
+msgid "cookingMode.ingredientsHeadingScaled"
+msgstr "Ingredients (scaled to {label})~"
+
+#. js-lingui-explicit-id
 #: src/screens/AddScreen.tsx:21
 msgid "add.manualEntryLabel"
 msgstr "Manual entry~"
+
+#. js-lingui-explicit-id
+#: src/screens/CookingModeScreen.tsx:124
+msgid "cookingMode.cookLogNotesPlaceholder"
+msgstr "Notes from this cook (optional)~"
 
 #. js-lingui-explicit-id
 #: src/screens/AddScreen.tsx:30

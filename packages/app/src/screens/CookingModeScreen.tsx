@@ -7,6 +7,7 @@ import {
   scaleFactorFromServings,
   sortIngredientsByOrder,
 } from '@eciperay/client';
+import {useLingui} from '@lingui/react';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {CookingModePage} from '@spudly/ui';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
@@ -30,6 +31,7 @@ type CookingProps = NativeStackScreenProps<
 >;
 
 export const CookingModeScreen = ({route, navigation}: CookingProps) => {
+  const {i18n} = useLingui();
   const {
     recipeId,
     versionId: versionIdParam,
@@ -119,7 +121,10 @@ export const CookingModeScreen = ({route, navigation}: CookingProps) => {
       <CookingModeCookLogShell>
         <CookLogForm
           variant="dark"
-          notesPlaceholder="Notes from this cook (optional)"
+          notesPlaceholder={i18n._({
+            id: 'cookingMode.cookLogNotesPlaceholder',
+            message: 'Notes from this cook (optional)',
+          })}
           isPending={cookLogMutation.isPending}
           onSkip={navigation.goBack}
           onSubmit={values => {
@@ -151,8 +156,16 @@ export const CookingModeScreen = ({route, navigation}: CookingProps) => {
             ? {
                 heading:
                   scaleFactor === 1
-                    ? `Ingredients (${formatServingsLabel(servings)})`
-                    : `Ingredients (scaled to ${formatServingsLabel(servings)})`,
+                    ? i18n._({
+                        id: 'cookingMode.ingredientsHeading',
+                        message: 'Ingredients ({label})',
+                        values: {label: formatServingsLabel(servings)},
+                      })
+                    : i18n._({
+                        id: 'cookingMode.ingredientsHeadingScaled',
+                        message: 'Ingredients (scaled to {label})',
+                        values: {label: formatServingsLabel(servings)},
+                      }),
                 lines: sortIngredientsByOrder(displayRecipe.ingredients).map(
                   ingredient =>
                     formatScaledIngredientLine(ingredient, scaleFactor),
