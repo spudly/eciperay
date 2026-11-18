@@ -49,6 +49,23 @@ describe('SignupPage', () => {
     });
   });
 
+  test('renders the confirmation title from the en-XA Lingui catalog (#465)', async () => {
+    vi.mocked(supabase.auth.signUp).mockResolvedValueOnce({
+      data: {session: null, user: {id: '1', email: 'a@b.com'} as never},
+      error: null,
+    });
+    await renderWithProviders(<SignupPage />, {
+      withAuth: false,
+      locale: 'en-XA',
+    });
+    await userEvent.type(screen.getByLabelText('Email'), 'a@b.com');
+    await userEvent.type(screen.getByLabelText('Password'), 'pass1234');
+    await userEvent.click(screen.getByText('Create Account'));
+    await waitFor(() => {
+      expect(screen.getByText('Check your email~')).toBeInTheDocument();
+    });
+  });
+
   test('shows confirmation when no session', async () => {
     vi.mocked(supabase.auth.signUp).mockResolvedValueOnce({
       data: {session: null, user: {id: '1', email: 'a@b.com'} as never},

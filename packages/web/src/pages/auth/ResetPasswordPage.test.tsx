@@ -43,6 +43,22 @@ describe('ResetPasswordPage', () => {
     timeoutSpy.mockRestore();
   });
 
+  test('renders the confirmation title from the en-XA Lingui catalog (#465)', async () => {
+    mockUseAuth.mockReturnValue({
+      session: {access_token: 't'},
+      isLoading: false,
+    });
+    await renderWithProviders(<ResetPasswordPage />, {
+      withAuth: false,
+      locale: 'en-XA',
+    });
+    await userEvent.type(screen.getByLabelText('New password'), 'newpass');
+    await userEvent.click(screen.getByText('Update password'));
+    await waitFor(() => {
+      expect(screen.getByText('Password updated~')).toBeInTheDocument();
+    });
+  });
+
   test('shows error on failure', async () => {
     mockUseAuth.mockReturnValue({
       session: {access_token: 't'},
