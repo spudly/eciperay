@@ -8,9 +8,12 @@
 // pieces the CLI compile path uses: @lingui/format-po to parse the .po
 // file and @lingui/cli's createCompiledCatalog to compile the messages,
 // so tests run against the real catalog content — no stubbed or copied
-// strings. Fallback behaviour mirrors the CLI's getTranslations: an empty
-// translation falls back to the configured fallback locale's translation,
-// then to the message's default text.
+// strings. Key set and fallback behaviour mirror the CLI's
+// getTranslations: the catalog is built from the union of the source,
+// fallback, and target locales' active keys (a key missing from the
+// target .po still ships, resolved through the fallback chain), and each
+// key resolves as target translation, fallback translation, source
+// translation, the message's default text, then the id itself.
 const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -38,28 +41,57 @@ const compilePoFile = (sourceText, sourcePath, rootDir) => {
     config.fallbackLocales?.[locale] ??
     config.fallbackLocales?.default ??
     config.sourceLocale;
+  const sourceLocale = config.sourceLocale;
 
-  const catalog = poFormatter.parse(sourceText);
-  let fallbackCatalog = {};
-  if (fallbackLocale !== locale) {
-    const fallbackPath = path.join(
+  // Parse the active (non-obsolete) entries of every locale in the
+  // resolution chain; the target locale's content is the sourceText Jest
+  // handed us, the others are read from their sibling catalog files.
+  const catalogFor = otherLocale => {
+    if (otherLocale === locale) {
+      return poFormatter.parse(sourceText);
+    }
+    const catalogPath = path.join(
       path.dirname(sourcePath),
       '..',
-      fallbackLocale,
+      otherLocale,
       'messages.po',
     );
-    fallbackCatalog = poFormatter.parse(fs.readFileSync(fallbackPath, 'utf8'));
-  }
-
-  const messages = {};
-  for (const [id, message] of Object.entries(catalog)) {
-    if (message.obsolete) {
-      continue;
+    return poFormatter.parse(fs.readFileSync(catalogPath, 'utf8'));
+  };
+  const activeEntries = catalog => {
+    const entries = new Map();
+    for (const [id, message] of Object.entries(catalog)) {
+      if (!message.obsolete) {
+        entries.set(id, message);
+      }
     }
+    return entries;
+  };
+  const targetEntries = activeEntries(catalogFor(locale));
+  const fallbackEntries =
+    fallbackLocale === locale
+      ? targetEntries
+      : activeEntries(catalogFor(fallbackLocale));
+  const sourceEntries =
+    sourceLocale === locale
+      ? targetEntries
+      : sourceLocale === fallbackLocale
+        ? fallbackEntries
+        : activeEntries(catalogFor(sourceLocale));
+
+  const ids = new Set([
+    ...targetEntries.keys(),
+    ...fallbackEntries.keys(),
+    ...sourceEntries.keys(),
+  ]);
+  const messages = {};
+  for (const id of ids) {
     messages[id] =
-      message.translation ||
-      fallbackCatalog[id]?.translation ||
-      message.message ||
+      targetEntries.get(id)?.translation ||
+      fallbackEntries.get(id)?.translation ||
+      sourceEntries.get(id)?.translation ||
+      targetEntries.get(id)?.message ||
+      sourceEntries.get(id)?.message ||
       id;
   }
 

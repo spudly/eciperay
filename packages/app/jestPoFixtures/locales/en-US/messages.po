@@ -1,0 +1,14 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: eciperay-test-fixtures\n"
+"Language: en-US\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#. js-lingui-explicit-id
+msgid "test.shared"
+msgstr "Shared source string"
+
+#. js-lingui-explicit-id
+msgid "test.onlySource"
+msgstr "Source only string"
