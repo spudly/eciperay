@@ -54,7 +54,6 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const appRoot = process.argv[1];
-const transformer = require(path.join(appRoot, 'metroTransformer.cjs'));
 
 const options = {
   dev: false,
@@ -71,6 +70,15 @@ const options = {
 };
 
 (async () => {
+  // Load the transformer through the Metro configuration, exactly as
+  // Metro resolves it at bundle time: reverting the babelTransformerPath
+  // wiring in metro.config.cjs must fail this test, not just reverting
+  // the transformer file itself.
+  const metroConfig = await Promise.resolve(
+    require(path.join(appRoot, 'metro.config.cjs')),
+  );
+  const transformer = require(metroConfig.transformer.babelTransformerPath);
+
   const flow = await transformer.transform({
     filename: path.join(appRoot, 'src', 'metroTransformerFixture.js'),
     options,
