@@ -301,7 +301,7 @@ msgstr "Parent had {count} ingredients: {preview}{more}~"
 
 #. js-lingui-explicit-id
 msgid "recipeForm.parentMoreSuffix"
-msgstr " (+{count} more)~"
+msgstr " (+{count} more)"
 
 #. js-lingui-explicit-id
 msgid "recipeForm.parentNoIngredients"

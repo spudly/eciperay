@@ -13,7 +13,7 @@ msgstr "{count, plural, one {# recipe~} other {# recipes~~}}"
 #. js-lingui-explicit-id
 #: src/pages/RecipeFormHost.tsx:160
 msgid "recipeForm.parentMoreSuffix"
-msgstr " (+{count} more)~"
+msgstr " (+{count} more)"
 
 #. js-lingui-explicit-id
 #: src/pages/MealPlanDetailPage.tsx:98

@@ -91,7 +91,7 @@ export const parentListSummaryParts = (
     .filter(Boolean);
   return {
     count: steps.length,
-    preview: steps.length > 0 ? steps[0] : '',
+    preview: steps[0] ?? '',
     overflowCount: Math.max(0, steps.length - 1),
   };
 };
