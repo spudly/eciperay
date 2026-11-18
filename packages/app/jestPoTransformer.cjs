@@ -115,14 +115,16 @@ module.exports = {
   process: (sourceText, sourcePath, options) => ({
     code: compilePoFile(sourceText, sourcePath, options.config.rootDir),
   }),
-  // Fallback locales mean one catalog's output can depend on another
-  // locale's .po, so the cache key covers every .po in the locales tree
-  // plus this transformer's own source.
-  getCacheKey: (sourceText, sourcePath, options) => {
+  // Fallback and source locales mean one catalog's output can depend on
+  // the other locales' .po files, so the cache key covers every catalog
+  // in the same locales tree as the file being transformed (the real
+  // src/i18n/locales tree, or a fixture tree in tests) plus this
+  // transformer's own source.
+  getCacheKey: (sourceText, sourcePath) => {
     const hash = crypto.createHash('sha256');
     hash.update(sourceText);
     hash.update(fs.readFileSync(__filename, 'utf8'));
-    const localesDir = path.join(options.config.rootDir, 'src/i18n/locales');
+    const localesDir = path.dirname(path.dirname(sourcePath));
     for (const locale of fs.readdirSync(localesDir).sort()) {
       const poPath = path.join(localesDir, locale, 'messages.po');
       if (fs.existsSync(poPath)) {
