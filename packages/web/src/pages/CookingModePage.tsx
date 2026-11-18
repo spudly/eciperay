@@ -7,6 +7,7 @@ import {
   scaleFactorFromServings,
   sortIngredientsByOrder,
 } from '@eciperay/client';
+import {useLingui} from '@lingui/react';
 import {CookingModePage as CookingModePageView} from '@spudly/ui';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useState, type ReactNode} from 'react';
@@ -41,6 +42,7 @@ const CookingModeCookLogShell = ({children}: {children: ReactNode}) => (
 );
 
 export const CookingModePage = () => {
+  const {i18n} = useLingui();
   const {recipeId = ''} = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -156,11 +158,18 @@ export const CookingModePage = () => {
       ingredients={
         displayRecipe
           ? {
-              heading: `Ingredients${
+              heading:
                 scaleFactor === 1
-                  ? ` (${formatServingsLabel(servings)})`
-                  : ` (scaled to ${formatServingsLabel(servings)})`
-              }`,
+                  ? i18n._({
+                      id: 'cookingMode.ingredientsHeading',
+                      message: 'Ingredients ({label})',
+                      values: {label: formatServingsLabel(servings)},
+                    })
+                  : i18n._({
+                      id: 'cookingMode.ingredientsHeadingScaled',
+                      message: 'Ingredients (scaled to {label})',
+                      values: {label: formatServingsLabel(servings)},
+                    }),
               lines: sortIngredientsByOrder(displayRecipe.ingredients).map(
                 ingredient =>
                   formatScaledIngredientLine(ingredient, scaleFactor),
