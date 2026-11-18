@@ -34,12 +34,12 @@ export const MarketingLandingPage = () => {
         footer={sharedFooter}
         heroTitle={i18n._({
           id: 'landing.heroTitle',
-          message: 'Your recipes, organized and ready to cook',
+          message: 'Every recipe you love, in one place — ready when you are',
         })}
         heroSubtitle={i18n._({
           id: 'landing.heroSubtitle',
           message:
-            'Save recipes from anywhere, tweak them with AI, and share what you love with friends or the community.',
+            'Clip a recipe from anywhere, make it your own with a little AI help, and share the keepers with friends or the whole community.',
         })}
         discoverCta={{
           label: i18n._({
@@ -67,7 +67,7 @@ export const MarketingLandingPage = () => {
           description: i18n._({
             id: 'landing.featureOneDescription',
             message:
-              'Paste a URL, photo, or notes and let AI turn it into a structured recipe.',
+              'Paste a URL, snap a photo, or drop in your notes — AI turns the jumble into a proper recipe.',
           }),
         }}
         featureTwo={{
@@ -78,7 +78,7 @@ export const MarketingLandingPage = () => {
           description: i18n._({
             id: 'landing.featureTwoDescription',
             message:
-              'Scale servings, track versions, and follow step-by-step cooking mode.',
+              'Scale servings up or down, keep every version, and cook step by step when your hands are busy.',
           }),
         }}
         featureThree={{
@@ -89,7 +89,7 @@ export const MarketingLandingPage = () => {
           description: i18n._({
             id: 'landing.featureThreeDescription',
             message:
-              'Keep recipes private, share unlisted links, or publish to the community.',
+              'Keep a recipe to yourself, pass an unlisted link to a friend, or publish it for everyone — your call, every time.',
           }),
         }}
       />

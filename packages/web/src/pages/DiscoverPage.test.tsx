@@ -60,7 +60,7 @@ describe('DiscoverPage', () => {
     await renderWithProviders(<DiscoverPage />, {locale: 'en-XA'});
     await waitFor(() => {
       expect(
-        screen.getByText('No public recipes match your search.~'),
+        screen.getByText('No public recipes match that search — try a broader craving.~'),
       ).toBeInTheDocument();
     });
   });

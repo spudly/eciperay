@@ -53,7 +53,7 @@ export const AddScreen = () => {
       label: i18n._({id: 'add.generateAiLabel', message: 'Generate with AI'}),
       description: i18n._({
         id: 'add.generateAiDescription',
-        message: 'Describe the recipe you want and let AI create it',
+        message: 'Describe what’s in your head (or your fridge) and let AI draft the recipe',
       }),
       href: addOptionHrefs.ai,
     },

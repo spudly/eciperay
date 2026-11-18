@@ -35,7 +35,7 @@ describe('AddScreen', () => {
     ).toBeTruthy();
     expect(
       getByRole('link', {
-        name: 'Generate with AI~, Describe the recipe you want and let AI create it~',
+        name: 'Generate with AI~, Describe what’s in your head (or your fridge) and let AI draft the recipe~',
       }),
     ).toBeTruthy();
   });
@@ -62,7 +62,7 @@ describe('AddScreen', () => {
     ).toBeTruthy();
     expect(
       getByRole('link', {
-        name: 'Generate with AI, Describe the recipe you want and let AI create it',
+        name: 'Generate with AI, Describe what’s in your head (or your fridge) and let AI draft the recipe',
       }),
     ).toBeTruthy();
   });
@@ -109,7 +109,7 @@ describe('AddScreen', () => {
     const {getByRole} = await renderWithProviders(<AddScreen />);
     await fireEvent.press(
       getByRole('link', {
-        name: 'Generate with AI, Describe the recipe you want and let AI create it',
+        name: 'Generate with AI, Describe what’s in your head (or your fridge) and let AI draft the recipe',
       }),
     );
     expect(Linking.openURL).toHaveBeenCalledWith(addOptionHrefs.ai);

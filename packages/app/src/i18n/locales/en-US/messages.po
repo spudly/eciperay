@@ -267,7 +267,7 @@ msgstr "Describe how you want to change this recipe. AI will propose a plan for 
 #. js-lingui-explicit-id
 #: src/screens/AddScreen.tsx:54
 msgid "add.generateAiDescription"
-msgstr "Describe the recipe you want and let AI create it"
+msgstr "Describe what’s in your head (or your fridge) and let AI draft the recipe"
 
 #. js-lingui-explicit-id
 #: src/screens/GenerateAiScreen.tsx:84
@@ -612,7 +612,7 @@ msgstr "Recipe preview"
 #. js-lingui-explicit-id
 #: src/screens/HomeScreen.tsx:95
 msgid "home.emptyMessage"
-msgstr "Recipes you view will appear here."
+msgstr "Nothing here yet — recipes you peek at will line up here for next time."
 
 #. js-lingui-explicit-id
 #: src/components/recipe/SortableIngredientList.tsx:96
@@ -846,7 +846,7 @@ msgstr "You can now use your new password."
 #. js-lingui-explicit-id
 #: src/screens/HomeScreen.tsx:78
 msgid "home.subtitle"
-msgstr "Your personal recipe collection"
+msgstr "Everything you’re cooking, all in one place"
 
 #. js-lingui-explicit-id
 #: src/hosts/recipes/RecipesListView.tsx:382
