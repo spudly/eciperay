@@ -67,7 +67,9 @@ test.describe('live sharing', () => {
       await anon.goto('/discover');
       await anon.getByPlaceholder('Search public recipes…').fill(created.title);
       await expect(
-        anon.getByText('No public recipes match your search.'),
+        anon.getByText(
+          'No public recipes match that search — try a broader craving.',
+        ),
       ).toBeVisible({timeout: 15_000});
       await expect(anon.getByText(created.title)).toHaveCount(0);
 
