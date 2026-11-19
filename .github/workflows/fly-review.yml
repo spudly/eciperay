@@ -16,8 +16,8 @@ name: Fly Review App
 # PREVIEW_SUPABASE_URL, and PREVIEW_SUPABASE_SECRET_KEY feed the server
 # runtime; PREVIEW_VITE_SUPABASE_URL and PREVIEW_VITE_SUPABASE_ANON_KEY feed
 # the web build. All PR review apps share that one QA dataset (the schema is
-# migrated by the persistent preview's deploys — review apps themselves never
-# run migrations, see fly.review.toml), so data created while testing a PR
+# migrated by deploy release_commands — the persistent preview's and, since
+# #596, the review apps' own (see fly.review.toml), so data created while testing a PR
 # must follow the QA conventions (`QA —` name prefixes, cleanup at the end).
 # The PREVIEW_* secrets are REQUIRED — the server creates its Supabase client
 # at import time and will not start without them (validated below).
@@ -79,8 +79,9 @@ jobs:
         id: deploy
         uses: superfly/fly-pr-review-apps@1.6.0
         with:
-          # Review-specific config: no release_command (PR code must never
-          # run migrations) and machines may stop fully when idle.
+          # Review-specific config: machines may stop fully when idle.
+          # fly.review.toml carries the same migrate release_command as
+          # production/preview (#596) — QA dataset only.
           config: fly.review.toml
           memory: 512
           build_args: >-
