@@ -5,6 +5,7 @@ import {
   buildMealPlanUpdatePayload,
   buildMealUpdatePayload,
   buildRecipeUpdatePayload,
+  buildVersionEditPayload,
   createClient,
   EciperayApiError,
   mealPlanEntryInputs,
@@ -176,6 +177,35 @@ describe('buildRecipeUpdatePayload', () => {
       () => buildRecipeUpdatePayload(storedRecipe, {}),
       /at least one field/,
     );
+  });
+
+  test('a patched sourceUrl replaces the stored one; null clears it', () => {
+    const replaced = buildRecipeUpdatePayload(storedRecipe, {
+      sourceUrl: 'https://example.com/new-source',
+    });
+    assert.equal(replaced['sourceUrl'], 'https://example.com/new-source');
+    const cleared = buildRecipeUpdatePayload(storedRecipe, {sourceUrl: null});
+    assert.equal(cleared['sourceUrl'], null);
+  });
+
+  test('a sourceUrl-only patch counts as an update field', () => {
+    const payload = buildRecipeUpdatePayload(storedRecipe, {
+      sourceUrl: 'https://example.com/only-source',
+    });
+    assert.equal(payload['sourceUrl'], 'https://example.com/only-source');
+  });
+});
+
+describe('buildVersionEditPayload', () => {
+  test('a patched sourceUrl replaces the stored one; omitted preserves it', () => {
+    const replaced = buildVersionEditPayload(storedRecipe, {
+      sourceUrl: 'https://example.com/new-source',
+    });
+    assert.equal(replaced['sourceUrl'], 'https://example.com/new-source');
+    const preserved = buildVersionEditPayload(storedRecipe, {servings: 4});
+    assert.equal(preserved['sourceUrl'], 'https://example.com/source');
+    const cleared = buildVersionEditPayload(storedRecipe, {sourceUrl: null});
+    assert.equal(cleared['sourceUrl'], null);
   });
 });
 

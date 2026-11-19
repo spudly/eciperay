@@ -185,6 +185,45 @@ describe('update_recipe tool', () => {
     await client.close();
   });
 
+  test('updating sourceUrl forwards it, and null clears it', async () => {
+    const putBodies: Record<string, unknown>[] = [];
+    globalThis.fetch = (async (_url: string | URL, init?: RequestInit) => {
+      if (init?.method === 'PUT') {
+        const body = JSON.parse(String(init.body)) as Record<string, unknown>;
+        putBodies.push(body);
+        const current = {...storedRecipe, ...body};
+        return {
+          ok: true,
+          status: 200,
+          text: async () => JSON.stringify(current),
+          json: async () => current,
+        } as Response;
+      }
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify(storedRecipe),
+        json: async () => storedRecipe,
+      } as Response;
+    }) as typeof fetch;
+
+    const client = await connectClient();
+    const set = await client.callTool({
+      name: 'update_recipe',
+      arguments: {id: 'recipe-1', sourceUrl: 'https://example.com/source'},
+    });
+    assert.notEqual(set.isError, true);
+    const cleared = await client.callTool({
+      name: 'update_recipe',
+      arguments: {id: 'recipe-1', sourceUrl: null},
+    });
+    assert.notEqual(cleared.isError, true);
+    assert.equal(putBodies.length, 2);
+    assert.equal(putBodies[0]?.['sourceUrl'], 'https://example.com/source');
+    assert.equal(putBodies[1]?.['sourceUrl'], null);
+    await client.close();
+  });
+
   test('an unknown recipe id surfaces an error instead of a silent no-op', async () => {
     globalThis.fetch = (async () =>
       ({
@@ -200,6 +239,57 @@ describe('update_recipe tool', () => {
       arguments: {id: 'missing-id', servings: 40},
     });
     assert.equal(result.isError, true);
+    await client.close();
+  });
+});
+
+describe('create_recipe tool', () => {
+  const stubCreate = () => {
+    const postBodies: Record<string, unknown>[] = [];
+    globalThis.fetch = (async (_url: string | URL, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
+      postBodies.push(body);
+      const created = {id: 'recipe-new', ...body};
+      return {
+        ok: true,
+        status: 201,
+        text: async () => JSON.stringify(created),
+        json: async () => created,
+      } as Response;
+    }) as typeof fetch;
+    return postBodies;
+  };
+
+  const createArgs = {
+    title: 'Imported Soup',
+    servings: 4,
+    ingredients: [{name: 'water', quantity: 4, unit: 'cups'}],
+    instructions: ['Boil'],
+  };
+
+  test('create with a sourceUrl forwards it', async () => {
+    const postBodies = stubCreate();
+    const client = await connectClient();
+    const result = await client.callTool({
+      name: 'create_recipe',
+      arguments: {...createArgs, sourceUrl: 'https://example.com/soup'},
+    });
+    assert.notEqual(result.isError, true);
+    assert.equal(postBodies.length, 1);
+    assert.equal(postBodies[0]?.['sourceUrl'], 'https://example.com/soup');
+    await client.close();
+  });
+
+  test('create without a sourceUrl still sends null', async () => {
+    const postBodies = stubCreate();
+    const client = await connectClient();
+    const result = await client.callTool({
+      name: 'create_recipe',
+      arguments: createArgs,
+    });
+    assert.notEqual(result.isError, true);
+    assert.equal(postBodies.length, 1);
+    assert.equal(postBodies[0]?.['sourceUrl'], null);
     await client.close();
   });
 });
