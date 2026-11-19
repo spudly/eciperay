@@ -4,6 +4,7 @@ import {vi} from 'vitest';
 const mockSyncUser = vi.fn();
 const mockIdentifyAnalyticsUserIfConsented = vi.fn();
 const mockCaptureException = vi.fn();
+const mockLog = vi.fn();
 const mockReset = vi.fn();
 const mockSignOut = vi.fn();
 const mockGetSession = vi.fn();
@@ -16,6 +17,8 @@ vi.mock('./analytics.js', () => ({
   analytics: {
     reset: () => mockReset(),
     captureException: (error: unknown) => mockCaptureException(error),
+    log: (level: string, message: string, attributes?: unknown) =>
+      mockLog(level, message, attributes),
   },
   identifyAnalyticsUserIfConsented: (session: Session) =>
     mockIdentifyAnalyticsUserIfConsented(session),
@@ -45,6 +48,7 @@ describe('authSessionLifecycle', () => {
     mockSyncUser.mockReset();
     mockIdentifyAnalyticsUserIfConsented.mockReset();
     mockCaptureException.mockReset();
+    mockLog.mockReset();
     mockReset.mockReset();
     mockSignOut.mockReset();
     mockSignOut.mockResolvedValue({error: null});
@@ -378,10 +382,33 @@ describe('authSessionLifecycle', () => {
 
     await expect(onAuthenticated(session)).resolves.toBeUndefined();
 
-    expect(mockCaptureException).toHaveBeenCalledWith(failure);
+    expect(mockSyncUser).toHaveBeenCalledTimes(2);
+    expect(mockCaptureException).not.toHaveBeenCalled();
+    expect(mockLog).toHaveBeenCalledWith(
+      'warn',
+      'auth sync failed after one retry: network error',
+      {error: 'Network error: /auth/sync'},
+    );
     expect(mockSignOut).not.toHaveBeenCalled();
     expect(mockReset).not.toHaveBeenCalled();
     expect(mockIdentifyAnalyticsUserIfConsented).not.toHaveBeenCalled();
+  });
+
+  test('retries a network-level sync failure once and reports nothing when the retry succeeds (#344)', async () => {
+    const {onAuthenticated} = await import('./authSessionLifecycle.js');
+    const failure = Object.assign(new Error('Network error: /auth/sync'), {
+      code: 'network_error',
+      status: 0,
+    });
+    mockSyncUser.mockRejectedValueOnce(failure).mockResolvedValue(undefined);
+
+    await expect(onAuthenticated(session)).resolves.toBeUndefined();
+
+    expect(mockSyncUser).toHaveBeenCalledTimes(2);
+    expect(mockCaptureException).not.toHaveBeenCalled();
+    expect(mockLog).not.toHaveBeenCalled();
+    expect(mockSignOut).not.toHaveBeenCalled();
+    expect(mockIdentifyAnalyticsUserIfConsented).toHaveBeenCalledWith(session);
   });
 
   test('handles a raw Failed to fetch sync failure the same way (#378)', async () => {
@@ -391,7 +418,13 @@ describe('authSessionLifecycle', () => {
 
     await expect(onAuthenticated(session)).resolves.toBeUndefined();
 
-    expect(mockCaptureException).toHaveBeenCalledWith(failure);
+    expect(mockSyncUser).toHaveBeenCalledTimes(2);
+    expect(mockCaptureException).not.toHaveBeenCalled();
+    expect(mockLog).toHaveBeenCalledWith(
+      'warn',
+      'auth sync failed after one retry: network error',
+      {error: 'Failed to fetch'},
+    );
     expect(mockSignOut).not.toHaveBeenCalled();
   });
 
