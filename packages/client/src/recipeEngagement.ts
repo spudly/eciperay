@@ -5,7 +5,7 @@ export const STALE_VIEWER_RATING_HINT =
   'Your rating was left on an earlier version of the recipe. Tap a star to update it for the current version.';
 
 export const STALE_COMMENT_HINT =
-  'This comment was left on an earlier version of the recipe.';
+  'This comment dates from an earlier version — the recipe may have evolved since.';
 
 export const formatCommunityRatingLabel = (
   average: number,

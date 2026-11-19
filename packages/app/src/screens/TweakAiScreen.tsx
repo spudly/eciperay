@@ -19,7 +19,7 @@ type Props = NativeStackScreenProps<RecipesStackParamList, 'TweakAi'>;
 const promptPlaceholder = (i18n: I18n) =>
   i18n._({
     id: 'aiTweak.promptPlaceholder',
-    message: 'e.g. make it vegetarian, reduce sugar, add more spice',
+    message: 'e.g. make it vegetarian, ease up on the sugar, bring the heat',
   });
 
 const phaseLabel = (i18n: I18n, phase: TweakAiPhase) => {
@@ -28,14 +28,14 @@ const phaseLabel = (i18n: I18n, phase: TweakAiPhase) => {
       return i18n._({
         id: 'aiSession.phasePlanningLabel',
         message:
-          'Review the plan and refine it, or approve to build a preview.',
+          'Give the plan a once-over — refine it, or approve it and a preview gets built.',
       });
     }
     case 'preview_ready': {
       return i18n._({
         id: 'aiTweak.phasePreviewReadyLabel',
         message:
-          'Preview ready — save as a draft version or go back to refine.',
+          'Preview ready — save it as a draft version, or head back and refine.',
       });
     }
     default: {
@@ -89,7 +89,7 @@ export const TweakAiScreen = ({route, navigation}: Props) => {
         intro: i18n._({
           id: 'aiTweak.intro',
           message:
-            'Describe how you want to change this recipe. AI will propose a plan for you to review before creating a draft.',
+            'Say what you want different — AI drafts a plan for your review before a draft is created.',
         }),
         promptPlaceholder: promptPlaceholder(i18n),
         startLabel: i18n._({

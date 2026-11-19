@@ -71,7 +71,7 @@ describe('HomePage', () => {
     // host StarRatingInput's buttons, labelled "N stars".
     await userEvent.click(screen.getByLabelText('4 stars'));
     await userEvent.type(
-      screen.getByPlaceholderText('Notes from this cook (optional)'),
+      screen.getByPlaceholderText('Notes from this cook — what worked, what to change next time (optional)'),
       'Great',
     );
     await userEvent.click(screen.getByText('Save'));

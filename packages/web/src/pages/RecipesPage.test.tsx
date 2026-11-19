@@ -213,7 +213,7 @@ describe('RecipesPage', () => {
     });
     await userEvent.click(screen.getByLabelText('4 stars'));
     await userEvent.type(
-      screen.getByPlaceholderText('Notes from this cook (optional)'),
+      screen.getByPlaceholderText('Notes from this cook — what worked, what to change next time (optional)'),
       'Weeknight favorite',
     );
     await userEvent.click(screen.getByRole('button', {name: 'Save'}));

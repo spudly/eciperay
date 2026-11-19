@@ -16,7 +16,7 @@ const showcaseAiSession = {
 export const showcaseAiSessionConfig = {
   title: 'Generate with AI',
   intro:
-    'Describe the recipe you want. AI will propose a plan for you to review before creating the recipe.',
+    'Describe the dish you have in mind — AI drafts a plan for your review before the recipe comes together.',
   promptPlaceholder: 'e.g. quick weeknight vegetarian pasta',
   startLabel: 'Start planning',
   startPendingLabel: 'Planning…',
@@ -26,10 +26,10 @@ export const showcaseAiSessionConfig = {
   phaseLabel: (phase: TweakAiPhase) => {
     switch (phase) {
       case 'planning': {
-        return 'Review the plan and refine it, or approve to build a preview.';
+        return 'Give the plan a once-over — refine it, or approve it and a preview gets built.';
       }
       case 'preview_ready': {
-        return 'Preview ready — save the recipe or go back to refine the plan.';
+        return 'Preview ready — save the recipe as-is, or head back and refine the plan.';
       }
       default: {
         return '';

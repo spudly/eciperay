@@ -55,7 +55,7 @@ test.describe('live cook log', () => {
     await reachCookLogForm(page, created.id);
     await page.getByRole('button', {name: '4 stars'}).click();
     await page
-      .getByPlaceholder('Notes from this cook (optional)')
+      .getByPlaceholder('Notes from this cook — what worked, what to change next time (optional)')
       .fill('CI cook log notes');
     await page.getByRole('button', {name: 'Save', exact: true}).click();
 

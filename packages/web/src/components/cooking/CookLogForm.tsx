@@ -125,7 +125,7 @@ export const CookLogForm = ({
         style={notesStyle}
         placeholder={i18n._({
           id: 'cookingMode.cookLogNotesPlaceholder',
-          message: 'Notes from this cook (optional)',
+          message: 'Notes from this cook — what worked, what to change next time (optional)',
         })}
         rows={3}
         value={notes}

@@ -103,7 +103,7 @@ describe('GenerateAiScreen', () => {
       );
       expect(
         getByText(
-          /Review the plan and refine it, or approve to build a preview/,
+          /Give the plan a once-over/,
         ),
       ).toBeTruthy();
     });
@@ -111,7 +111,7 @@ describe('GenerateAiScreen', () => {
     await waitFor(() => {
       expect(
         getByText(
-          /Preview ready — save the recipe or go back to refine the plan/,
+          /Preview ready — save the recipe as-is, or head back and refine the plan/,
         ),
       ).toBeTruthy();
       expect(getByText('Save recipe')).toBeTruthy();

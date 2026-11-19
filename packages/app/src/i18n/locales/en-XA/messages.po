@@ -113,7 +113,7 @@ msgstr "Anonymous~"
 #. js-lingui-explicit-id
 #: src/hosts/recipe/RecipeVisibilityControls.tsx:60
 msgid "recipeSharing.visibilityUnlistedDescription"
-msgstr "Anyone with the link can view without signing in.~"
+msgstr "Anyone with the link can view it — no sign-in needed.~"
 
 #. js-lingui-explicit-id
 #: src/hosts/recipe/RecipeForm.tsx:1323
@@ -262,7 +262,7 @@ msgstr "Cropping…~"
 #. js-lingui-explicit-id
 #: src/screens/TweakAiScreen.tsx:89
 msgid "aiTweak.intro"
-msgstr "Describe how you want to change this recipe. AI will propose a plan for you to review before creating a draft.~"
+msgstr "Say what you want different — AI drafts a plan for your review before a draft is created.~"
 
 #. js-lingui-explicit-id
 #: src/screens/AddScreen.tsx:54
@@ -272,7 +272,7 @@ msgstr "Describe what’s in your head (or your fridge) and let AI draft the rec
 #. js-lingui-explicit-id
 #: src/screens/GenerateAiScreen.tsx:84
 msgid "aiGenerate.intro"
-msgstr "Describe the recipe you want. AI will propose a plan for you to review before creating the recipe.~"
+msgstr "Describe the dish you have in mind — AI drafts a plan for your review before the recipe comes together.~"
 
 #. js-lingui-explicit-id
 #: src/hosts/recipe/RecipeForm.tsx:1120
@@ -287,7 +287,7 @@ msgstr "Discard selected image~"
 #. js-lingui-explicit-id
 #: src/hosts/recipe/RecipeVisibilityControls.tsx:64
 msgid "recipeSharing.visibilityPublicDescription"
-msgstr "Discoverable by anyone and may appear in search results.~"
+msgstr "Out in the open — anyone can view it, and once it's past the idea stage, anyone can discover it and it may turn up in search results.~"
 
 #. js-lingui-explicit-id
 #: src/hosts/recipe/RecipeDetailView.tsx:115
@@ -302,7 +302,7 @@ msgstr "Draft preview~"
 #. js-lingui-explicit-id
 #: src/screens/TweakAiScreen.tsx:20
 msgid "aiTweak.promptPlaceholder"
-msgstr "e.g. make it vegetarian, reduce sugar, add more spice~"
+msgstr "e.g. make it vegetarian, ease up on the sugar, bring the heat~"
 
 #. js-lingui-explicit-id
 #: src/screens/GenerateAiScreen.tsx:20
@@ -486,7 +486,7 @@ msgstr "Never used~"
 #: src/hosts/recipe/RecipeDetailView.tsx:668
 #: src/screens/CookingModeScreen.tsx:124
 msgid "cookingMode.cookLogNotesPlaceholder"
-msgstr "Notes from this cook (optional)~"
+msgstr "Notes from this cook — what worked, what to change next time (optional)~"
 
 #. js-lingui-explicit-id
 #: src/hosts/meals/MealPlanDetailView.tsx:87
@@ -496,7 +496,7 @@ msgstr "On track~"
 #. js-lingui-explicit-id
 #: src/hosts/recipe/RecipeVisibilityControls.tsx:56
 msgid "recipeSharing.visibilityPrivateDescription"
-msgstr "Only you can view this recipe.~"
+msgstr "Just between you and your kitchen — only you can view this recipe, plus anyone you've already shared it with.~"
 
 #. js-lingui-explicit-id
 #: src/hosts/recipe/RecipeForm.tsx:203
@@ -552,12 +552,12 @@ msgstr "Please try again.~"
 #. js-lingui-explicit-id
 #: src/screens/TweakAiScreen.tsx:35
 msgid "aiTweak.phasePreviewReadyLabel"
-msgstr "Preview ready — save as a draft version or go back to refine.~"
+msgstr "Preview ready — save it as a draft version, or head back and refine.~"
 
 #. js-lingui-explicit-id
 #: src/screens/GenerateAiScreen.tsx:35
 msgid "aiGenerate.phasePreviewReadyLabel"
-msgstr "Preview ready — save the recipe or go back to refine the plan.~"
+msgstr "Preview ready — save the recipe as-is, or head back and refine the plan.~"
 
 #. js-lingui-explicit-id
 #: src/hosts/recipe/RecipeVisibilityControls.tsx:167
@@ -633,7 +633,7 @@ msgstr "Resize crop area handle~"
 #: src/screens/GenerateAiScreen.tsx:28
 #: src/screens/TweakAiScreen.tsx:28
 msgid "aiSession.phasePlanningLabel"
-msgstr "Review the plan and refine it, or approve to build a preview.~"
+msgstr "Give the plan a once-over — refine it, or approve it and a preview gets built.~"
 
 #. js-lingui-explicit-id
 #: src/hosts/recipe/RecipeVisibilityControls.tsx:207
@@ -765,12 +765,12 @@ msgstr "Take a photo or use your library~"
 #. js-lingui-explicit-id
 #: src/hosts/recipe/RecipeCommentsSection.tsx:96
 msgid "recipeComments.staleHint"
-msgstr "This comment was left on an earlier version of the recipe.~"
+msgstr "This comment dates from an earlier version — the recipe may have evolved since.~"
 
 #. js-lingui-explicit-id
 #: src/hosts/recipe/RecipeVisibilityControls.tsx:141
 msgid "recipeSharing.publicWarning"
-msgstr "This recipe will be discoverable by anyone browsing Eciperay.~"
+msgstr "Heads up — once public, anyone can view this recipe, and once it's past the idea stage, anyone browsing Eciperay can discover it.~"
 
 #. js-lingui-explicit-id
 #: src/screens/TweakAiScreen.tsx:88

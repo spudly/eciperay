@@ -46,7 +46,7 @@ describe('RecipeListCard', () => {
     await fireEvent.press(getByText('Log cook'));
     await fireEvent.press(getByLabelText('Rate 5 out of 5 stars'));
     await fireEvent.changeText(
-      getByPlaceholderText('Notes from this cook (optional)'),
+      getByPlaceholderText('Notes from this cook — what worked, what to change next time (optional)'),
       'Weeknight favorite',
     );
     await fireEvent.press(getByText('Save'));

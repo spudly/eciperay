@@ -25,13 +25,13 @@ const phaseLabel = (i18n: I18n, phase: TweakAiPhase) => {
       return i18n._({
         id: 'aiSession.phasePlanningLabel',
         message:
-          'Review the plan and refine it, or approve to build a preview.',
+          'Give the plan a once-over — refine it, or approve it and a preview gets built.',
       });
     }
     case 'preview_ready': {
       return i18n._({
         id: 'aiGenerate.phasePreviewReadyLabel',
-        message: 'Preview ready — save the recipe or go back to refine the plan.',
+        message: 'Preview ready — save the recipe as-is, or head back and refine the plan.',
       });
     }
     default: {
@@ -96,7 +96,7 @@ export const GenerateAiPage = () => {
         intro: i18n._({
           id: 'aiGenerate.intro',
           message:
-            'Describe the recipe you want. AI will propose a plan for you to review before creating the recipe.',
+            'Describe the dish you have in mind — AI drafts a plan for your review before the recipe comes together.',
         }),
         promptPlaceholder: promptPlaceholder(i18n),
         startLabel: i18n._({

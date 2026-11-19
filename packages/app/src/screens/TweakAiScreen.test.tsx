@@ -135,12 +135,12 @@ describe('TweakAiScreen', () => {
     expect(getByText('Tweak with AI~')).toBeTruthy();
     expect(
       getByPlaceholderText(
-        'e.g. make it vegetarian, reduce sugar, add more spice~',
+        'e.g. make it vegetarian, ease up on the sugar, bring the heat~',
       ),
     ).toBeTruthy();
     await fireEvent.changeText(
       getByPlaceholderText(
-        'e.g. make it vegetarian, reduce sugar, add more spice~',
+        'e.g. make it vegetarian, ease up on the sugar, bring the heat~',
       ),
       'make it spicier',
     );
@@ -156,7 +156,7 @@ describe('TweakAiScreen', () => {
     await waitFor(() => {
       expect(
         getByText(
-          'Preview ready — save as a draft version or go back to refine.~',
+          'Preview ready — save it as a draft version, or head back and refine.~',
         ),
       ).toBeTruthy();
       expect(getByText('Save as draft~')).toBeTruthy();
@@ -333,7 +333,7 @@ describe('TweakAiScreen', () => {
     );
     await fireEvent.press(getByText('Start planning'));
     await waitFor(() => {
-      expect(queryByText('Review the plan and refine it')).toBeNull();
+      expect(queryByText(/Give the plan a once-over/)).toBeNull();
     });
   });
 

@@ -237,7 +237,7 @@ export const InlineCookLogForm = ({
   return (
     <CookLogForm
       variant="light"
-      notesPlaceholder="Notes from this cook (optional)"
+      notesPlaceholder="Notes from this cook — what worked, what to change next time (optional)"
       isPending={createMutation.isPending}
       onSkip={() => {
         if (!createMutation.isPending) {
