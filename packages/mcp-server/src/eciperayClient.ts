@@ -506,6 +506,7 @@ export type RecipeUpdatePatch = {
   servings?: number;
   prepTimeMin?: number | null;
   cookTimeMin?: number | null;
+  sourceUrl?: string | null;
   ingredients?: RecipeIngredientInput[];
   instructions?: RecipeInstructionInput[];
   tagIds?: string[];
@@ -590,7 +591,8 @@ export const buildVersionEditPayload = (
     cookTimeMin:
       patch.cookTimeMin !== undefined ? patch.cookTimeMin : current.cookTimeMin,
     imageUrl: current.imageUrl,
-    sourceUrl: current.sourceUrl,
+    sourceUrl:
+      patch.sourceUrl !== undefined ? patch.sourceUrl : current.sourceUrl,
     ingredients: ingredientInputs(patch.ingredients ?? current.ingredients),
     instructions: instructionInputs(patch.instructions ?? current.instructions),
     tagIds: patch.tagIds ?? current.tags.map(tag => tag.id),
@@ -625,6 +627,7 @@ const PATCH_FIELDS: (keyof RecipeUpdatePatch)[] = [
   'servings',
   'prepTimeMin',
   'cookTimeMin',
+  'sourceUrl',
   'ingredients',
   'instructions',
   'tagIds',
@@ -709,8 +712,8 @@ export const hasRecipeUpdateFields = (patch: RecipeUpdatePatch): boolean =>
 /**
  * Merge a partial update over the stored recipe detail, producing the full
  * payload the REST `PUT /recipes/:id` endpoint expects. Fields the patch does
- * not provide are carried over from the stored recipe (including imageUrl,
- * sourceUrl, and status, which `update_recipe` cannot change), so a partial
+ * not provide are carried over from the stored recipe (including imageUrl
+ * and status, which `update_recipe` cannot change), so a partial
  * update never clears data it did not mention.
  */
 export const buildRecipeUpdatePayload = (
@@ -732,7 +735,8 @@ export const buildRecipeUpdatePayload = (
     cookTimeMin:
       patch.cookTimeMin !== undefined ? patch.cookTimeMin : current.cookTimeMin,
     imageUrl: current.imageUrl,
-    sourceUrl: current.sourceUrl,
+    sourceUrl:
+      patch.sourceUrl !== undefined ? patch.sourceUrl : current.sourceUrl,
     ...(current.status !== undefined ? {status: current.status} : {}),
     ingredients: ingredientInputs(patch.ingredients ?? current.ingredients),
     instructions: instructionInputs(patch.instructions ?? current.instructions),

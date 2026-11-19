@@ -236,6 +236,12 @@ export const registerTools = (
           .nonnegative()
           .optional()
           .describe('Cook time in minutes'),
+        sourceUrl: z
+          .url()
+          .optional()
+          .describe(
+            'Original source URL, e.g. the page a recipe was imported from',
+          ),
         tagIds: z
           .array(z.uuid())
           .optional()
@@ -251,7 +257,7 @@ export const registerTools = (
           prepTimeMin: args.prepTimeMin ?? null,
           cookTimeMin: args.cookTimeMin ?? null,
           imageUrl: null,
-          sourceUrl: null,
+          sourceUrl: args.sourceUrl ?? null,
           ingredients: args.ingredients.map((ingredient, index) => ({
             sortOrder: index,
             name: ingredient.name,
@@ -274,7 +280,7 @@ export const registerTools = (
     {
       title: 'Update recipe',
       description:
-        'Update an existing recipe in your Eciperay collection. Only the fields you provide change; omitted fields keep their stored values. Provide null for description, prepTimeMin, or cookTimeMin to clear them. Only your own recipes can be updated. To change ingredients or instructions, also pass versionId (from get_recipe) naming the version to edit: the edit is applied atomically — an editable draft version is edited in place, while naming the active version branches a new version from it, leaving the named version untouched in history. Any metadata fields in the same call are applied to that same version. The edited version becomes active only when you also pass activate: true; by default it stays a draft and get_recipe keeps showing the previously active version. The result of a content edit is the edited version, including its id and versionNumber. Pass that id as versionId to edit the same version again. Metadata-only updates need versionId only when they should land on a specific draft version instead of the active one.',
+        'Update an existing recipe in your Eciperay collection. Only the fields you provide change; omitted fields keep their stored values. Provide null for description, prepTimeMin, cookTimeMin, or sourceUrl to clear them. Only your own recipes can be updated. To change ingredients or instructions, also pass versionId (from get_recipe) naming the version to edit: the edit is applied atomically — an editable draft version is edited in place, while naming the active version branches a new version from it, leaving the named version untouched in history. Any metadata fields in the same call are applied to that same version. The edited version becomes active only when you also pass activate: true; by default it stays a draft and get_recipe keeps showing the previously active version. The result of a content edit is the edited version, including its id and versionNumber. Pass that id as versionId to edit the same version again. Metadata-only updates need versionId only when they should land on a specific draft version instead of the active one.',
       inputSchema: {
         id: z.string().describe('Recipe id, from search_recipes'),
         versionId: z
@@ -325,6 +331,13 @@ export const registerTools = (
           .nullable()
           .optional()
           .describe('Cook time in minutes, or null to clear it'),
+        sourceUrl: z
+          .url()
+          .nullable()
+          .optional()
+          .describe(
+            'Original source URL, e.g. the page a recipe was imported from, or null to clear it',
+          ),
         tagIds: z
           .array(z.uuid())
           .optional()
