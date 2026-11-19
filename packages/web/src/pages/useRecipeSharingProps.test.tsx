@@ -53,9 +53,9 @@ describe('useRecipeSharingProps', () => {
       'Public~',
     ]);
     expect(props().options.map(option => option.description)).toEqual([
-      'Just between you and your kitchen — only you can view this recipe.~',
+      'Just between you and your kitchen — only you can view this recipe, plus anyone you've already shared it with.~',
       'Anyone with the link can view it — no sign-in needed.~',
-      'Out in the open — anyone can discover it, and it may turn up in search results.~',
+      'Out in the open — anyone can view it, and once it's past the idea stage, anyone can discover it and it may turn up in search results.~',
     ]);
   });
 
@@ -212,7 +212,7 @@ describe('useRecipeSharingProps', () => {
       props().onValueChange('public');
     });
     expect(props().publicWarning).toMatch(
-      /once public, anyone browsing Eciperay can discover this recipe/i,
+      /once public, anyone can view this recipe/i,
     );
   });
 

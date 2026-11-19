@@ -730,7 +730,7 @@ msgstr "Discover recipes~"
 #. js-lingui-explicit-id
 #: src/pages/useRecipeSharingProps.tsx:64
 msgid "recipeSharing.visibilityPublicDescription"
-msgstr "Out in the open — anyone can discover it, and it may turn up in search results.~"
+msgstr "Out in the open — anyone can view it, and once it's past the idea stage, anyone can discover it and it may turn up in search results.~"
 
 #. js-lingui-explicit-id
 #: src/pages/legal/termsOfServiceContent.ts:148
@@ -1099,7 +1099,7 @@ msgstr "On track~"
 #. js-lingui-explicit-id
 #: src/pages/useRecipeSharingProps.tsx:56
 msgid "recipeSharing.visibilityPrivateDescription"
-msgstr "Just between you and your kitchen — only you can view this recipe.~"
+msgstr "Just between you and your kitchen — only you can view this recipe, plus anyone you've already shared it with.~"
 
 #. js-lingui-explicit-id
 #: src/pages/legal/privacyPolicyContent.ts:450
@@ -1598,7 +1598,7 @@ msgstr "This comment dates from an earlier version — the recipe may have evolv
 #. js-lingui-explicit-id
 #: src/pages/useRecipeSharingProps.tsx:170
 msgid "recipeSharing.publicWarning"
-msgstr "Heads up — once public, anyone browsing Eciperay can discover this recipe.~"
+msgstr "Heads up — once public, anyone can view this recipe, and once it's past the idea stage, anyone browsing Eciperay can discover it.~"
 
 #. js-lingui-explicit-id
 #: src/pages/RecipeFormHost.tsx:906
