@@ -229,43 +229,75 @@ const signOutAfterTokenRejection = async (
   );
 };
 
+const NETWORK_SYNC_RETRY_DELAY_MS = 1000;
+
 export const onAuthenticated = async (session: Session) => {
-  try {
-    await eciperay.auth.syncUser();
-  } catch (error) {
-    if (isNetworkError(error)) {
-      // Network-level failure (#378): the API was momentarily unreachable
-      // (the production burst was four simultaneous syncs during one
-      // reachability blip). The session is still valid and the sync is
-      // retried by the next auth event, so this is a handled failure:
-      // report it and resolve — rethrowing it surfaced as an unhandled
-      // exception in error tracking. No sign-out, no cleanup.
-      analytics.captureException(error);
+  let retriedSync = false;
+  for (let attempt = 0; ; attempt++) {
+    try {
+      await eciperay.auth.syncUser();
+    } catch (error) {
+      if (isNetworkError(error) && attempt === 0) {
+        // Transient network failure (#344): a single blip during /auth/sync
+        // was still reported to PostHog as an exception on the first failure
+        // (2026-11-17 production recurrence), even though the session is
+        // valid. Retry once after a short delay before reporting anything.
+        await new Promise(resolve =>
+          setTimeout(resolve, NETWORK_SYNC_RETRY_DELAY_MS),
+        );
+        if (await isStaleSessionFailure(session)) {
+          // A newer session signed in during the delay: its own lifecycle
+          // call owns the sync — do not retry (or later identify) for this
+          // superseded session.
+          return;
+        }
+        retriedSync = true;
+        continue;
+      }
+      if (isNetworkError(error)) {
+        // Network-level failure (#378), still failing after the retry: the
+        // API is unreachable, which says nothing about the session's
+        // validity. The sync is retried by the next auth event, so record
+        // this as a handled analytics message — not an exception — and
+        // resolve. No sign-out, no cleanup.
+        analytics.log(
+          'warn',
+          'auth sync failed after one retry: network error',
+          {error: error instanceof Error ? error.message : String(error)},
+        );
+        return;
+      }
+      if (!isInvalidOrExpiredTokenError(error)) {
+        // Ordinary sync failure (e.g. a transient 503 while the auth service
+        // is unavailable): the session's token was not rejected and the
+        // provider session is still valid. Report the failure and rethrow it
+        // untagged — AuthProvider preserves the session for untagged
+        // rejections and runs no signed-out cleanup.
+        analytics.captureException(error);
+        throw error;
+      }
+      if (await isStaleSessionFailure(session)) {
+        // The 401 belongs to a superseded token; the current session is a
+        // different (newer) one whose own lifecycle call handles it. Ignore
+        // the obsolete failure instead of signing the new session out.
+        return;
+      }
+      // Token expiry is an expected lifecycle event, not an error: end in
+      // the normal signed-out flow instead of surfacing an unhandled
+      // rejection. Signing out clears the stored Supabase session, which
+      // fires SIGNED_OUT — AuthProvider drops the session and runs
+      // onSignedOut, and the route guards return to the signed-out UI.
+      // (Supabase ignores the 401 its own logout call gets for an expired
+      // token and still removes the local session.)
+      await signOutAfterTokenRejection(session);
       return;
     }
-    if (!isInvalidOrExpiredTokenError(error)) {
-      // Ordinary sync failure (e.g. a transient 503 while the auth service
-      // is unavailable): the session's token was not rejected and the
-      // provider session is still valid. Report the failure and rethrow it
-      // untagged — AuthProvider preserves the session for untagged
-      // rejections and runs no signed-out cleanup.
-      analytics.captureException(error);
-      throw error;
-    }
-    if (await isStaleSessionFailure(session)) {
-      // The 401 belongs to a superseded token; the current session is a
-      // different (newer) one whose own lifecycle call handles it. Ignore
-      // the obsolete failure instead of signing the new session out.
-      return;
-    }
-    // Token expiry is an expected lifecycle event, not an error: end in
-    // the normal signed-out flow instead of surfacing an unhandled
-    // rejection. Signing out clears the stored Supabase session, which
-    // fires SIGNED_OUT — AuthProvider drops the session and runs
-    // onSignedOut, and the route guards return to the signed-out UI.
-    // (Supabase ignores the 401 its own logout call gets for an expired
-    // token and still removes the local session.)
-    await signOutAfterTokenRejection(session);
+    break;
+  }
+  if (retriedSync && (await isStaleSessionFailure(session))) {
+    // The retry succeeded, but a newer session took over while it was in
+    // flight: identifying this superseded session would overwrite the newer
+    // session's analytics identity.
     return;
   }
   identifyAnalyticsUserIfConsented(session);
