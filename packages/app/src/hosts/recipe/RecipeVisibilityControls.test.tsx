@@ -153,7 +153,7 @@ describe('useRecipeSharingProps', () => {
       props().onValueChange('public');
     });
     expect(props().publicWarning).toMatch(
-      /This recipe will be discoverable by anyone/i,
+      /once public, anyone browsing Eciperay can discover this recipe/i,
     );
   });
 

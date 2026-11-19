@@ -333,7 +333,7 @@ describe('TweakAiScreen', () => {
     );
     await fireEvent.press(getByText('Start planning'));
     await waitFor(() => {
-      expect(queryByText('Review the plan and refine it')).toBeNull();
+      expect(queryByText(/Give the plan a once-over/)).toBeNull();
     });
   });
 
