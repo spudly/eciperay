@@ -1451,7 +1451,7 @@ msgstr "Search recipes to export…"
 #. js-lingui-explicit-id
 #: src/pages/ProfilePage.tsx:409
 msgid "profile.transferHint"
-msgstr "Pick the recipes to export as JSON, then import them wherever you need them — images and tags come along."
+msgstr "Pick the recipes to export as JSON, then import them wherever you need them — tags come along."
 
 #. js-lingui-explicit-id
 #: src/pages/RecipeFormHost.tsx:1232

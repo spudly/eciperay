@@ -409,7 +409,7 @@ export const ProfilePage = () => {
           hint: i18n._({
             id: 'profile.transferHint',
             message:
-              'Pick the recipes to export as JSON, then import them wherever you need them — images and tags come along.',
+              'Pick the recipes to export as JSON, then import them wherever you need them — tags come along.',
           }),
           exportPicker: {
             search: exportSearch,
