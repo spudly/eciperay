@@ -58,7 +58,7 @@ describe('ResetPasswordScreen', () => {
     await waitFor(() => {
       expect(mockAlert).toHaveBeenCalledWith(
         'Password updated~',
-        'You can now use your new password.~',
+        'Your new password is set — use it to sign in from here on.~',
       );
     });
   });

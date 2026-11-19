@@ -77,6 +77,11 @@ describe('SignupPage', () => {
     await userEvent.click(screen.getByText('Create Account'));
     await waitFor(() => {
       expect(screen.getByText('Check your email')).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          'A confirmation link is headed to a@b.com — confirm there, then sign in.',
+        ),
+      ).toBeInTheDocument();
     });
   });
 

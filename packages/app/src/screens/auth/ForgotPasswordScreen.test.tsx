@@ -56,7 +56,7 @@ describe('ForgotPasswordScreen', () => {
     await waitFor(() => {
       expect(mockAlert).toHaveBeenCalledWith(
         'Check your email~',
-        'A password reset link has been sent.~',
+        'A password reset link is on its way to your inbox.~',
       );
     });
   });

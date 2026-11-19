@@ -764,7 +764,7 @@ describe('ProfilePage en-XA (#465)', () => {
     });
     expect(
       screen.getByText(
-        'Download a copy of your profile, recipes, share grants, ratings, and comments, or permanently delete your account.~',
+        'Take a copy of your profile, recipes, share grants, ratings, and comments with you — or permanently delete your account.~',
       ),
     ).toBeInTheDocument();
   });

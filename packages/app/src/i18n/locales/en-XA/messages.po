@@ -68,7 +68,7 @@ msgstr "◀ Move~"
 #. js-lingui-explicit-id
 #: src/screens/auth/ForgotPasswordScreen.tsx:44
 msgid "forgotPassword.confirmationBody"
-msgstr "A password reset link has been sent.~"
+msgstr "A password reset link is on its way to your inbox.~"
 
 #. js-lingui-explicit-id
 #: src/hosts/recipe/RecipeForm.tsx:323
@@ -180,7 +180,7 @@ msgstr "Check your email~"
 #. js-lingui-explicit-id
 #: src/screens/auth/SignUpScreen.tsx:98
 msgid "signup.confirmationBody"
-msgstr "Click the confirmation link we sent you, then sign in.~"
+msgstr "Click the confirmation link we sent you, then sign in — almost there.~"
 
 #. js-lingui-explicit-id
 #: src/hosts/recipe/RecipeDetailView.tsx:277
@@ -841,7 +841,7 @@ msgstr "Welcome to Eciperay~"
 #. js-lingui-explicit-id
 #: src/screens/auth/ResetPasswordScreen.tsx:32
 msgid "resetPassword.confirmationBody"
-msgstr "You can now use your new password.~"
+msgstr "Your new password is set — use it to sign in from here on.~"
 
 #. js-lingui-explicit-id
 #: src/screens/HomeScreen.tsx:78
