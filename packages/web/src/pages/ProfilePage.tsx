@@ -44,7 +44,7 @@ const formatImportSummary = (i18n: I18n, result: BulkImportResult) => {
   const parts = [
     i18n._({
       id: 'profile.importSummary',
-      message: 'Imported {count} recipe(s).',
+      message: 'Imported {count} recipe(s) — ready when you are.',
       values: {count: result.created.length},
     }),
   ];
@@ -409,7 +409,7 @@ export const ProfilePage = () => {
           hint: i18n._({
             id: 'profile.transferHint',
             message:
-              'Select recipes to export as JSON, then import them in another environment. Images and tags are included.',
+              'Pick the recipes to export as JSON, then import them wherever you need them — images and tags come along.',
           }),
           exportPicker: {
             search: exportSearch,
@@ -453,7 +453,7 @@ export const ProfilePage = () => {
             loading: exportRecipesLoading,
             emptyMessage: i18n._({
               id: 'profile.exportEmptyMessage',
-              message: 'No recipes found.',
+              message: 'No recipes match that search.',
             }),
             exporting,
             onExport: () => {
@@ -476,7 +476,7 @@ export const ProfilePage = () => {
           description: i18n._({
             id: 'profile.accountDataDescription',
             message:
-              'Download a copy of your profile, recipes, share grants, ratings, and comments, or permanently delete your account.',
+              'Take a copy of your profile, recipes, share grants, ratings, and comments with you — or permanently delete your account.',
           }),
           onExportData: () => {
             void handleExportAccount();

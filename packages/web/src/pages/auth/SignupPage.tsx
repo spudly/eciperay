@@ -77,7 +77,7 @@ export const SignupPage = () => {
         body={i18n._({
           id: 'signup.confirmationBody',
           message:
-            'We sent a confirmation link to {email}. Sign in after confirming.',
+            'A confirmation link is headed to {email} — confirm there, then sign in.',
           values: {email},
         })}
         backLabel={i18n._({id: 'signup.backLabel', message: 'Back to sign in'})}

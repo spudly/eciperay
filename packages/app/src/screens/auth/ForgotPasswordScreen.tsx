@@ -43,7 +43,7 @@ export const ForgotPasswordScreen = ({navigation}: ForgotProps) => {
         }),
         i18n._({
           id: 'forgotPassword.confirmationBody',
-          message: 'A password reset link has been sent.',
+          message: 'A password reset link is on its way to your inbox.',
         }),
       );
       navigation.goBack();

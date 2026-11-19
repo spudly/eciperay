@@ -97,7 +97,7 @@ export const SignUpScreen = () => {
           }),
           confirmationBody: i18n._({
             id: 'signup.confirmationBody',
-            message: 'Click the confirmation link we sent you, then sign in.',
+            message: 'Click the confirmation link we sent you, then sign in — almost there.',
           }),
           failedTitle: i18n._({
             id: 'authNative.signUpFailedTitle',

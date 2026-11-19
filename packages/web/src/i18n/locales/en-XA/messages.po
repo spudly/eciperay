@@ -457,7 +457,7 @@ msgstr "Check your email~"
 #. js-lingui-explicit-id
 #: src/pages/auth/ForgotPasswordPage.tsx:58
 msgid "forgotPassword.confirmationBody"
-msgstr "Check your inbox for a password reset link.~"
+msgstr "Check your inbox — a password reset link is on its way.~"
 
 #. js-lingui-explicit-id
 #: src/components/profile/subscriptionData.ts:113
@@ -760,7 +760,7 @@ msgstr "Do not use the service for unlawful purposes.~"
 #. js-lingui-explicit-id
 #: src/pages/ProfilePage.tsx:476
 msgid "profile.accountDataDescription"
-msgstr "Download a copy of your profile, recipes, share grants, ratings, and comments, or permanently delete your account.~"
+msgstr "Take a copy of your profile, recipes, share grants, ratings, and comments with you — or permanently delete your account.~"
 
 #. js-lingui-explicit-id
 #: src/pages/RecipeDetailHost.tsx:108
@@ -987,7 +987,7 @@ msgstr "Import from URL~"
 #. js-lingui-explicit-id
 #: src/pages/ProfilePage.tsx:45
 msgid "profile.importSummary"
-msgstr "Imported {count} recipe(s).~"
+msgstr "Imported {count} recipe(s) — ready when you are.~"
 
 #. js-lingui-explicit-id
 #: src/pages/legal/privacyPolicyContent.ts:45
@@ -1072,7 +1072,7 @@ msgstr "No ratings yet~"
 #. js-lingui-explicit-id
 #: src/pages/ProfilePage.tsx:454
 msgid "profile.exportEmptyMessage"
-msgstr "No recipes found.~"
+msgstr "No recipes match that search.~"
 
 #. js-lingui-explicit-id
 #: src/components/cooking/CookLogForm.tsx:126
@@ -1451,7 +1451,7 @@ msgstr "Search recipes to export…~"
 #. js-lingui-explicit-id
 #: src/pages/ProfilePage.tsx:409
 msgid "profile.transferHint"
-msgstr "Select recipes to export as JSON, then import them in another environment. Images and tags are included.~"
+msgstr "Pick the recipes to export as JSON, then import them wherever you need them — images and tags come along.~"
 
 #. js-lingui-explicit-id
 #: src/pages/RecipeFormHost.tsx:1232
@@ -1729,7 +1729,7 @@ msgstr "We retain your account and recipe data while your account is active. Whe
 #. js-lingui-explicit-id
 #: src/pages/auth/SignupPage.tsx:77
 msgid "signup.confirmationBody"
-msgstr "We sent a confirmation link to {email}. Sign in after confirming.~"
+msgstr "A confirmation link is headed to {email} — confirm there, then sign in.~"
 
 #. js-lingui-explicit-id
 #: src/pages/legal/privacyPolicyContent.ts:414

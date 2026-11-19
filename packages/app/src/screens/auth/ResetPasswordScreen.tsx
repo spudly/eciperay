@@ -31,7 +31,7 @@ export const ResetPasswordScreen = ({onComplete}: ResetPasswordProps) => {
         }),
         i18n._({
           id: 'resetPassword.confirmationBody',
-          message: 'You can now use your new password.',
+          message: 'Your new password is set — use it to sign in from here on.',
         }),
       );
     } catch (error) {

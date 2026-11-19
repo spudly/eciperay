@@ -57,7 +57,7 @@ export const ForgotPasswordPage = () => {
         })}
         body={i18n._({
           id: 'forgotPassword.confirmationBody',
-          message: 'Check your inbox for a password reset link.',
+          message: 'Check your inbox — a password reset link is on its way.',
         })}
         backLabel={i18n._({
           id: 'forgotPassword.backLabel',
