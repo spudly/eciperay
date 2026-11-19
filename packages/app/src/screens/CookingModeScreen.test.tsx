@@ -93,7 +93,7 @@ describe('CookingModeScreen', () => {
     expect(await findByText('Ingredients (4 servings)~')).toBeTruthy();
     await fireEvent.press(await findByText('Done'));
     expect(
-      await findByPlaceholderText('Notes from this cook (optional)~'),
+      await findByPlaceholderText('Notes from this cook — what worked, what to change next time (optional)~'),
     ).toBeTruthy();
   });
 

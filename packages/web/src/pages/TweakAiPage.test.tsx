@@ -10,7 +10,7 @@ import {renderWithProviders} from '../test/testUtils.js';
 
 import {TweakAiPage} from './TweakAiPage.js';
 
-const PROMPT = 'e.g. make it vegetarian, reduce sugar, add more spice';
+const PROMPT = 'e.g. make it vegetarian, ease up on the sugar, bring the heat';
 
 const baseSession = {
   id: 'session-1',

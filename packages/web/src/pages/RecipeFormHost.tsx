@@ -1089,7 +1089,7 @@ export const RecipeFormHost = ({
               emptyMessage: i18n._({
                 id: 'recipeForm.imageEmptyMessage',
                 message:
-                  'Drag and drop an image here, paste from your clipboard, browse or take a photo below, or generate one with AI',
+                  'Every keeper deserves a photo — drag and drop one here, paste from your clipboard, browse or take a photo below, or generate one with AI',
               }),
               onPickImageRequest: () => {
                 browseInputRef.current?.click();

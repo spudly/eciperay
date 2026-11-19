@@ -53,7 +53,7 @@ export const recipeVisibilityLabels: Record<RecipeVisibility, string> = {
 };
 
 export const recipeVisibilityDescriptions: Record<RecipeVisibility, string> = {
-  private: 'Only you can view this recipe.',
-  unlisted: 'Anyone with the link can view without signing in.',
-  public: 'Discoverable by anyone and may appear in search results.',
+  private: 'Just between you and your kitchen — only you can view this recipe.',
+  unlisted: 'Anyone with the link can view it — no sign-in needed.',
+  public: 'Out in the open — anyone can discover it, and it may turn up in search results.',
 };

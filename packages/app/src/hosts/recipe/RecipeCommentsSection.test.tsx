@@ -68,7 +68,7 @@ describe('useRecipeCommentsProps', () => {
     );
     await waitFor(() => {
       expect(props().staleHintLabel).toBe(
-        'This comment was left on an earlier version of the recipe.~',
+        'This comment dates from an earlier version — the recipe may have evolved since.~',
       );
     });
     expect(props().composerPlaceholder).toBe('Add a comment~');

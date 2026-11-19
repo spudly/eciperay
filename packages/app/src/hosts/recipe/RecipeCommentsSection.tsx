@@ -95,7 +95,7 @@ export const useRecipeCommentsProps = (
       : null,
     staleHintLabel: i18n._({
       id: 'recipeComments.staleHint',
-      message: 'This comment was left on an earlier version of the recipe.',
+      message: 'This comment dates from an earlier version — the recipe may have evolved since.',
     }),
     editingCommentId: editingId,
     editDraft,

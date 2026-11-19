@@ -485,7 +485,7 @@ describe('RecipeDetailHost', () => {
         form.getByRole('radio', {name: 'Rate 5 out of 5 stars'}),
       );
       await userEvent.type(
-        form.getByPlaceholderText('Notes from this cook (optional)'),
+        form.getByPlaceholderText('Notes from this cook — what worked, what to change next time (optional)'),
         'Quick weeknight cook',
       );
       await userEvent.click(form.getByText('Save'));

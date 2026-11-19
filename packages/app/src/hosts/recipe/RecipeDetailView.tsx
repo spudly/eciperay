@@ -667,7 +667,7 @@ export const RecipeDetailView = ({
               variant="light"
               notesPlaceholder={i18n._({
                 id: 'cookingMode.cookLogNotesPlaceholder',
-                message: 'Notes from this cook (optional)',
+                message: 'Notes from this cook — what worked, what to change next time (optional)',
               })}
               isPending={createCookLogMutation.isPending}
               onSkip={() => {

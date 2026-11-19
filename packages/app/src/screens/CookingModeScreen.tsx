@@ -123,7 +123,7 @@ export const CookingModeScreen = ({route, navigation}: CookingProps) => {
           variant="dark"
           notesPlaceholder={i18n._({
             id: 'cookingMode.cookLogNotesPlaceholder',
-            message: 'Notes from this cook (optional)',
+            message: 'Notes from this cook — what worked, what to change next time (optional)',
           })}
           isPending={cookLogMutation.isPending}
           onSkip={navigation.goBack}

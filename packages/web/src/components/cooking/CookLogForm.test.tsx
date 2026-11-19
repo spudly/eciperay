@@ -19,7 +19,7 @@ describe('CookLogForm', () => {
     );
     await userEvent.click(screen.getByLabelText('4 stars'));
     await userEvent.type(
-      screen.getByPlaceholderText('Notes from this cook (optional)'),
+      screen.getByPlaceholderText('Notes from this cook — what worked, what to change next time (optional)'),
       'Delicious',
     );
     await userEvent.click(screen.getByText('Save'));
@@ -35,7 +35,7 @@ describe('CookLogForm', () => {
       {locale: 'en-XA'},
     );
     expect(
-      screen.getByPlaceholderText('Notes from this cook (optional)~'),
+      screen.getByPlaceholderText('Notes from this cook — what worked, what to change next time (optional)~'),
     ).toBeInTheDocument();
   });
 

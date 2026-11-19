@@ -116,7 +116,7 @@ export const RecipeListCard = ({recipe, onPress, onDelete}: Props) => {
         <YStack marginBlockEnd="$3">
           <CookLogForm
             variant="light"
-            notesPlaceholder="Notes from this cook (optional)"
+            notesPlaceholder="Notes from this cook — what worked, what to change next time (optional)"
             isPending={createMutation.isPending}
             onSkip={() => {
               setShowForm(false);

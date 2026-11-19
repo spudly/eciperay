@@ -133,7 +133,7 @@ describe('RecipeListCard', () => {
     // buttons labelled "N stars".
     await userEvent.click(screen.getByLabelText('5 stars'));
     await userEvent.type(
-      screen.getByPlaceholderText('Notes from this cook (optional)'),
+      screen.getByPlaceholderText('Notes from this cook — what worked, what to change next time (optional)'),
       'Weeknight favorite',
     );
     await userEvent.click(screen.getByText('Save'));

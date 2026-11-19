@@ -53,9 +53,9 @@ describe('useRecipeSharingProps', () => {
       'Public~',
     ]);
     expect(props().options.map(option => option.description)).toEqual([
-      'Only you can view this recipe.~',
-      'Anyone with the link can view without signing in.~',
-      'Discoverable by anyone and may appear in search results.~',
+      'Just between you and your kitchen — only you can view this recipe.~',
+      'Anyone with the link can view it — no sign-in needed.~',
+      'Out in the open — anyone can discover it, and it may turn up in search results.~',
     ]);
   });
 

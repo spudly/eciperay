@@ -346,7 +346,7 @@ msgstr "Anthropic~"
 #. js-lingui-explicit-id
 #: src/pages/useRecipeSharingProps.tsx:60
 msgid "recipeSharing.visibilityUnlistedDescription"
-msgstr "Anyone with the link can view without signing in.~"
+msgstr "Anyone with the link can view it — no sign-in needed.~"
 
 #. js-lingui-explicit-id
 #: src/pages/RecipeFormHost.tsx:1477
@@ -690,7 +690,7 @@ msgstr "Deletion:~"
 #. js-lingui-explicit-id
 #: src/pages/TweakAiPage.tsx:108
 msgid "aiTweak.intro"
-msgstr "Describe how you want to change this recipe. AI will propose a plan for you to review before creating a draft.~"
+msgstr "Say what you want different — AI drafts a plan for your review before a draft is created.~"
 
 #. js-lingui-explicit-id
 #: src/pages/AddPage.tsx:49
@@ -700,7 +700,7 @@ msgstr "Describe what’s in your head (or your fridge) and let AI draft the rec
 #. js-lingui-explicit-id
 #: src/pages/GenerateAiPage.tsx:96
 msgid "aiGenerate.intro"
-msgstr "Describe the recipe you want. AI will propose a plan for you to review before creating the recipe.~"
+msgstr "Describe the dish you have in mind — AI drafts a plan for your review before the recipe comes together.~"
 
 #. js-lingui-explicit-id
 #: src/pages/legal/privacyPolicyContent.ts:344
@@ -730,7 +730,7 @@ msgstr "Discover recipes~"
 #. js-lingui-explicit-id
 #: src/pages/useRecipeSharingProps.tsx:64
 msgid "recipeSharing.visibilityPublicDescription"
-msgstr "Discoverable by anyone and may appear in search results.~"
+msgstr "Out in the open — anyone can discover it, and it may turn up in search results.~"
 
 #. js-lingui-explicit-id
 #: src/pages/legal/termsOfServiceContent.ts:148
@@ -780,12 +780,12 @@ msgstr "Draft saved.~"
 #. js-lingui-explicit-id
 #: src/pages/RecipeFormHost.tsx:1089
 msgid "recipeForm.imageEmptyMessage"
-msgstr "Drag and drop an image here, paste from your clipboard, browse or take a photo below, or generate one with AI~"
+msgstr "Every keeper deserves a photo — drag and drop one here, paste from your clipboard, browse or take a photo below, or generate one with AI~"
 
 #. js-lingui-explicit-id
 #: src/pages/TweakAiPage.tsx:21
 msgid "aiTweak.promptPlaceholder"
-msgstr "e.g. make it vegetarian, reduce sugar, add more spice~"
+msgstr "e.g. make it vegetarian, ease up on the sugar, bring the heat~"
 
 #. js-lingui-explicit-id
 #: src/pages/GenerateAiPage.tsx:17
@@ -1079,7 +1079,7 @@ msgstr "No recipes found.~"
 #: src/pages/RecipeDetailHost.tsx:303
 #: src/pages/RecipeDetailHost.tsx:307
 msgid "cookingMode.cookLogNotesPlaceholder"
-msgstr "Notes from this cook (optional)~"
+msgstr "Notes from this cook — what worked, what to change next time (optional)~"
 
 #. js-lingui-explicit-id
 #: src/pages/PrivacyPolicyPage.tsx:25
@@ -1099,7 +1099,7 @@ msgstr "On track~"
 #. js-lingui-explicit-id
 #: src/pages/useRecipeSharingProps.tsx:56
 msgid "recipeSharing.visibilityPrivateDescription"
-msgstr "Only you can view this recipe.~"
+msgstr "Just between you and your kitchen — only you can view this recipe.~"
 
 #. js-lingui-explicit-id
 #: src/pages/legal/privacyPolicyContent.ts:450
@@ -1212,12 +1212,12 @@ msgstr "Preparing export…~"
 #. js-lingui-explicit-id
 #: src/pages/TweakAiPage.tsx:36
 msgid "aiTweak.phasePreviewReadyLabel"
-msgstr "Preview ready — save as a draft version or go back to refine.~"
+msgstr "Preview ready — save it as a draft version, or head back and refine.~"
 
 #. js-lingui-explicit-id
 #: src/pages/GenerateAiPage.tsx:32
 msgid "aiGenerate.phasePreviewReadyLabel"
-msgstr "Preview ready — save the recipe or go back to refine the plan.~"
+msgstr "Preview ready — save the recipe as-is, or head back and refine the plan.~"
 
 #. js-lingui-explicit-id
 #: src/pages/legal/legalDocumentData.ts:109
@@ -1364,7 +1364,7 @@ msgstr "Respond to support requests, in-app feedback, and enforce our Terms of S
 #: src/pages/GenerateAiPage.tsx:25
 #: src/pages/TweakAiPage.tsx:29
 msgid "aiSession.phasePlanningLabel"
-msgstr "Review the plan and refine it, or approve to build a preview.~"
+msgstr "Give the plan a once-over — refine it, or approve it and a preview gets built.~"
 
 #. js-lingui-explicit-id
 #: src/pages/legal/privacyPolicyContent.ts:387
@@ -1593,12 +1593,12 @@ msgstr "Third-party services~"
 #. js-lingui-explicit-id
 #: src/pages/useRecipeCommentsProps.ts:168
 msgid "recipeComments.staleHint"
-msgstr "This comment was left on an earlier version of the recipe.~"
+msgstr "This comment dates from an earlier version — the recipe may have evolved since.~"
 
 #. js-lingui-explicit-id
 #: src/pages/useRecipeSharingProps.tsx:170
 msgid "recipeSharing.publicWarning"
-msgstr "This recipe will be discoverable by anyone browsing Eciperay.~"
+msgstr "Heads up — once public, anyone browsing Eciperay can discover this recipe.~"
 
 #. js-lingui-explicit-id
 #: src/pages/RecipeFormHost.tsx:906

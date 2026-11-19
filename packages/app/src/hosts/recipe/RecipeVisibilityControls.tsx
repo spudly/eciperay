@@ -55,15 +55,15 @@ export const useRecipeSharingProps = (
   const visibilityDescriptions: Record<RecipeVisibility, string> = {
     private: i18n._({
       id: 'recipeSharing.visibilityPrivateDescription',
-      message: 'Only you can view this recipe.',
+      message: 'Just between you and your kitchen — only you can view this recipe.',
     }),
     unlisted: i18n._({
       id: 'recipeSharing.visibilityUnlistedDescription',
-      message: 'Anyone with the link can view without signing in.',
+      message: 'Anyone with the link can view it — no sign-in needed.',
     }),
     public: i18n._({
       id: 'recipeSharing.visibilityPublicDescription',
-      message: 'Discoverable by anyone and may appear in search results.',
+      message: 'Out in the open — anyone can discover it, and it may turn up in search results.',
     }),
   };
   const queryClient = useQueryClient();
@@ -141,7 +141,7 @@ export const useRecipeSharingProps = (
         ? i18n._({
             id: 'recipeSharing.publicWarning',
             message:
-              'This recipe will be discoverable by anyone browsing Eciperay.',
+              'Heads up — once public, anyone browsing Eciperay can discover this recipe.',
           })
         : null,
     ...(consentRequired
