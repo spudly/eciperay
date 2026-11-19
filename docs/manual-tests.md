@@ -1104,6 +1104,14 @@ account (never production data — content edits create real versions).
 4. **Missing versionId refused.** Call `update_recipe` with a changed ingredient
    list and no `versionId`. **Expected:** a clear error naming `versionId`; no
    version is created and nothing changes.
+5. **Create with and without `sourceUrl`.** Call `create_recipe` with a
+   `sourceUrl`, then again without one. **Expected:** `get_recipe` on the first
+   shows the given `sourceUrl`; the second shows `sourceUrl: null`.
+6. **Set and clear `sourceUrl` on update.** Call `update_recipe` with only a
+   `sourceUrl`, then again with `sourceUrl: null`. **Expected:** the first call
+   succeeds as a metadata-only update (a `sourceUrl`-only patch counts as an
+   update field) and `get_recipe` shows the new value; the second clears it
+   back to `null`. No new version is created either time.
 
 **Run when:** `packages/mcp-server`,
 `packages/server/src/routes/recipes/editVersionContent.ts`, recipe version
