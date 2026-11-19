@@ -112,9 +112,19 @@ password-reset cases.
    Intent" failure and no unhandled-rejection error report. Fire `auth/callback`
    with a valid reset/confirmation payload. **Expected:** it completes the
    Supabase auth flow only — no navigation route claims it.
+8. **Auth sync network blip (#344).** Sign in while the API is briefly
+   unreachable (e.g. toggle the device/browser offline for a few seconds
+   around sign-in, then restore connectivity). **Expected:** the session
+   stays signed in with no error report for the blip — the sync retries once
+   after a short delay and a successful retry reports nothing; if the API is
+   still unreachable at the retry, a handled warning is logged (not an
+   exception) and the session is kept, with the sync retried on the next
+   auth event.
 
 **Run when:** `packages/app/src/screens/auth/**`,
 `packages/web/src/pages/auth/**`, `packages/client/src/authEmail.ts`,
+`packages/app/src/lib/authSessionLifecycle.ts`,
+`packages/web/src/lib/authSessionLifecycle.ts`,
 `packages/web/src/i18n/voice.ts`, `packages/app/src/i18n/voice.ts`,
 `packages/server/src/i18n/voice.ts`, `@spudly/ui` `SignInPage`, `SignUpPage`,
 `ForgotPasswordPage`, `ResetPasswordPage`, `packages/server` auth/session code,

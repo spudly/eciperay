@@ -416,4 +416,40 @@ describe('authSessionLifecycle', () => {
     expect(mockCaptureException).toHaveBeenCalledWith('sync failed');
     expect(mockSignOut).not.toHaveBeenCalled();
   });
+
+  test('does not retry or identify a superseded session after the retry delay (#344)', async () => {
+    const failure = Object.assign(new Error('Network error: /auth/sync'), {
+      code: 'network_error',
+      status: 0,
+    });
+    mockSyncUser.mockRejectedValue(failure);
+    mockGetSession.mockResolvedValue({
+      data: {session: {...session, access_token: 'token-b'}},
+    });
+
+    await expect(onAuthenticated(session)).resolves.toBeUndefined();
+
+    expect(mockSyncUser).toHaveBeenCalledTimes(1);
+    expect(mockLog).not.toHaveBeenCalled();
+    expect(mockCaptureException).not.toHaveBeenCalled();
+    expect(mockIdentifyAnalyticsUser).not.toHaveBeenCalled();
+  });
+
+  test('does not identify a session superseded while its retry was in flight (#344)', async () => {
+    const failure = Object.assign(new Error('Network error: /auth/sync'), {
+      code: 'network_error',
+      status: 0,
+    });
+    mockSyncUser.mockRejectedValueOnce(failure).mockResolvedValue(undefined);
+    mockGetSession
+      .mockResolvedValueOnce({data: {session}})
+      .mockResolvedValue({
+        data: {session: {...session, access_token: 'token-b'}},
+      });
+
+    await expect(onAuthenticated(session)).resolves.toBeUndefined();
+
+    expect(mockSyncUser).toHaveBeenCalledTimes(2);
+    expect(mockIdentifyAnalyticsUser).not.toHaveBeenCalled();
+  });
 });

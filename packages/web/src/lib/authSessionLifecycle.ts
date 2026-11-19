@@ -232,6 +232,7 @@ const signOutAfterTokenRejection = async (
 const NETWORK_SYNC_RETRY_DELAY_MS = 1000;
 
 export const onAuthenticated = async (session: Session) => {
+  let retriedSync = false;
   for (let attempt = 0; ; attempt++) {
     try {
       await eciperay.auth.syncUser();
@@ -244,6 +245,13 @@ export const onAuthenticated = async (session: Session) => {
         await new Promise(resolve =>
           setTimeout(resolve, NETWORK_SYNC_RETRY_DELAY_MS),
         );
+        if (await isStaleSessionFailure(session)) {
+          // A newer session signed in during the delay: its own lifecycle
+          // call owns the sync — do not retry (or later identify) for this
+          // superseded session.
+          return;
+        }
+        retriedSync = true;
         continue;
       }
       if (isNetworkError(error)) {
@@ -285,6 +293,12 @@ export const onAuthenticated = async (session: Session) => {
       return;
     }
     break;
+  }
+  if (retriedSync && (await isStaleSessionFailure(session))) {
+    // The retry succeeded, but a newer session took over while it was in
+    // flight: identifying this superseded session would overwrite the newer
+    // session's analytics identity.
+    return;
   }
   identifyAnalyticsUserIfConsented(session);
 };
