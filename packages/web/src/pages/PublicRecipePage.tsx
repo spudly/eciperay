@@ -265,7 +265,6 @@ const PublicRecipePageContent = () => {
           imageUrl: resizedImageUrl(recipe.imageUrl, 1200),
           title: recipe.title,
           description: recipe.description,
-          status: recipe.status,
           servingsLabel: String(currentServings),
           ...(recipe.prepTimeMin
             ? {prepTimeLabel: `${recipe.prepTimeMin}m`}

@@ -1,8 +1,4 @@
-import type {
-  RecipeListSort,
-  RecipeListSortDir,
-  RecipeStatus,
-} from '@eciperay/types';
+import type {RecipeListSort, RecipeListSortDir} from '@eciperay/types';
 
 import {parseSearchSyntax, type ParsedSearchQuery} from './searchQuery.js';
 
@@ -17,13 +13,6 @@ export {
 export const DEFAULT_RECIPE_LIST_LIMIT = 100;
 export const MAX_RECIPE_LIST_LIMIT = 500;
 
-const STATUS_FILTERS = [
-  'idea',
-  'evolving',
-  'perfected',
-  'abandoned',
-] as const satisfies readonly RecipeStatus[];
-
 const SORT_VALUES = [
   'newest',
   'rating',
@@ -36,7 +25,6 @@ export type RecipeListFilterParams = {
   offset: number;
   search: string | null;
   searchQuery: ParsedSearchQuery;
-  status: RecipeStatus | null | 'invalid';
   ingredient: string | null;
   minCalories: number | null;
   maxCalories: number | null;
@@ -83,21 +71,6 @@ export const parseOffset = (value?: unknown): number => {
     return 0;
   }
   return parsed;
-};
-
-export const parseStatusFilter = (
-  value?: unknown,
-): RecipeStatus | null | 'invalid' => {
-  if (value === undefined || value === '') {
-    return null;
-  }
-  if (
-    typeof value === 'string' &&
-    (STATUS_FILTERS as readonly string[]).includes(value)
-  ) {
-    return value as RecipeStatus;
-  }
-  return 'invalid';
 };
 
 export const parseOptionalNumber = (value?: unknown): number | null => {
@@ -152,7 +125,6 @@ export const parseRecipeListFilterParams = (
     offset: parseOffset(req.query['offset']),
     search,
     searchQuery: parseSearchSyntax(search),
-    status: parseStatusFilter(req.query['status']),
     ingredient: parseOptionalSearch(req.query['ingredient']),
     minCalories: parseOptionalNumber(req.query['minCalories']),
     maxCalories: parseOptionalNumber(req.query['maxCalories']),

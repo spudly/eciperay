@@ -1,14 +1,9 @@
-import type {
-  RecipeListSort,
-  RecipeListSortDir,
-  RecipeStatus,
-} from '@eciperay/types';
+import type {RecipeListSort, RecipeListSortDir} from '@eciperay/types';
 
 import {setOptionalSearchParams} from './setOptionalSearchParams.js';
 
 export type RecipeListParams = {
   search?: string;
-  status?: RecipeStatus;
   ingredient?: string;
   minCalories?: number;
   maxCalories?: number;
@@ -34,7 +29,6 @@ const appendListParams = (
 ) => {
   setOptionalSearchParams(search, {
     search: params.search,
-    status: params.status,
     ingredient: params.ingredient,
     minCalories: params.minCalories,
     maxCalories: params.maxCalories,

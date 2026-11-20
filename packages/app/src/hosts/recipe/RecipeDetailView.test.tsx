@@ -27,7 +27,6 @@ jest.mock('@eciperay/client', () => ({
 }));
 
 const mockUseAuth = useAuth as jest.Mock;
-const mockPatchStatus = api.recipes.patchStatus as jest.Mock;
 const mockPutRating = api.recipes.putRating as jest.Mock;
 const mockCreateVersion = api.versions.create as jest.Mock;
 const mockActivateVersion = api.versions.activate as jest.Mock;
@@ -177,7 +176,6 @@ describe('RecipeDetailView', () => {
       makeRecipeVersionSummary({id: 'version-draft-1'}),
     );
     mockActivateVersion.mockResolvedValue(undefined);
-    mockPatchStatus.mockResolvedValue(undefined);
     mockPutRating.mockResolvedValue({});
     mockCreateCookLog.mockResolvedValue({});
   });
@@ -195,8 +193,6 @@ describe('RecipeDetailView', () => {
     expect(await findByText('Delete')).toBeTruthy();
     expect(await findByText('Tweak manually')).toBeTruthy();
     expect(await findByText('Tweak with AI')).toBeTruthy();
-    expect(await findByText('Mark perfected')).toBeTruthy();
-    expect(await findByText('Abandon')).toBeTruthy();
     expect(await findByText('Sharing')).toBeTruthy();
     expect(await findByText('No community ratings yet')).toBeTruthy();
     expect(await findByText('Comments')).toBeTruthy();
@@ -293,13 +289,6 @@ describe('RecipeDetailView', () => {
     });
   });
 
-  test('mark perfected patches the recipe status', async () => {
-    const {recipe, findByText} = await renderView();
-    await fireEvent.press(await findByText('Mark perfected'));
-    await waitFor(() => {
-      expect(mockPatchStatus).toHaveBeenCalledWith(recipe.id, 'perfected');
-    });
-  });
 
   test('activates a candidate version and shows the action message', async () => {
     const candidate = makeRecipeVersionSummary({
@@ -324,94 +313,18 @@ describe('RecipeDetailView', () => {
     expect(await findByText('Version activated')).toBeTruthy();
   });
 
-  test('activates a draft version of a perfected recipe without a cook log (#417)', async () => {
-    const draft = makeRecipeVersionSummary({
-      id: 'version-draft-2',
-      versionNumber: 2,
-      derivedRole: 'draft',
-      changeSummary: 'Salsa split out',
-    });
-    const {recipe, findByText} = await renderView({status: 'perfected'}, [
-      makeRecipeVersionSummary(),
-      draft,
-    ]);
-    expect(await findByText('Ready to activate')).toBeTruthy();
-    await fireEvent.press(await findByText('Activate'));
-    await waitFor(() => {
-      expect(mockActivateVersion).toHaveBeenCalledWith(
-        recipe.id,
-        'version-draft-2',
-      );
-    });
-    expect(await findByText('Version activated')).toBeTruthy();
-  });
 
-  test('does not offer activation for archived or candidate versions of an abandoned recipe (#417)', async () => {
-    const archived = makeRecipeVersionSummary({
-      id: 'version-archived-1',
-      versionNumber: 1,
-      derivedRole: 'archived',
-    });
-    const candidate = makeRecipeVersionSummary({
-      id: 'version-candidate-1',
-      versionNumber: 2,
-      derivedRole: 'candidate',
-      changeSummary: 'Better crust',
-    });
-    const {findByText, queryByText} = await renderView({status: 'abandoned'}, [
-      archived,
-      candidate,
-    ]);
-    expect(await findByText('Test Recipe')).toBeTruthy();
-    expect(queryByText('Ready to activate')).toBeNull();
-    expect(queryByText('Activate')).toBeNull();
-  });
 
-  test('hides the lifecycle section for a perfected recipe', async () => {
-    const {findByText, queryByText} = await renderView({status: 'perfected'});
-    expect(await findByText('Test Recipe')).toBeTruthy();
-    expect(queryByText('Tweak manually')).toBeNull();
-    expect(queryByText('Tweak with AI')).toBeNull();
-  });
 
-  test('perfected recipe: Edit draft chip creates a draft and opens it in the editor (#264)', async () => {
-    // The #264 flow (the chip creates a draft, then opens it) is a
-    // mutation-then-navigate control; @spudly/ui 1.16.0 carries it as
-    // the onCreateDraftPress slot (design-system#357), rendered as
-    // the "Edit draft" button when no existing draft's editDraftHref
-    // is passed. (1.15.0 had no slot and the wiring was removed;
-    // opening an existing draft kept working through the href — the
-    // screen test covers it end to end.)
-    const {callbacks, recipe, findByText} = await renderView({
-      status: 'perfected',
-    });
-    expect(await findByText('Test Recipe')).toBeTruthy();
-    await fireEvent.press(await findByText('Edit draft'));
-    await waitFor(() => {
-      expect(mockCreateVersion).toHaveBeenCalledWith(recipe.id);
-    });
-    await waitFor(() => {
-      expect(callbacks.onEditVersion).toHaveBeenCalledWith('version-draft-1');
-    });
-  });
 
-  test('perfected recipe: a failed draft creation shows feedback and does not navigate (#264)', async () => {
-    mockCreateVersion.mockRejectedValue(new Error('Server exploded'));
-    const {callbacks, findByText} = await renderView({status: 'perfected'});
-    await fireEvent.press(await findByText('Edit draft'));
-    expect(
-      await findByText('Could not create a draft. Please try again.'),
-    ).toBeTruthy();
-    expect(callbacks.onEditVersion).not.toHaveBeenCalled();
-  });
 
-  test('perfected recipe viewed at an archived version has no Edit draft chip', async () => {
+  test('viewing an archived version has no Edit draft chip', async () => {
     const archived = makeRecipeVersionSummary({
       id: 'version-uuid-2',
       versionNumber: 2,
       derivedRole: 'archived',
     });
-    const {findByText, queryByText} = await renderView({status: 'perfected'}, [
+    const {findByText, queryByText} = await renderView({}, [
       makeRecipeVersionSummary(),
       archived,
     ]);
@@ -422,11 +335,6 @@ describe('RecipeDetailView', () => {
     expect(queryByText('Edit draft')).toBeNull();
   });
 
-  test('abandoned recipe has no Edit draft chip', async () => {
-    const {findByText, queryByText} = await renderView({status: 'abandoned'});
-    expect(await findByText('Test Recipe')).toBeTruthy();
-    expect(queryByText('Edit draft')).toBeNull();
-  });
 
   test('maps the community rating and sends viewer stars to the mutation', async () => {
     const {recipe, findByText, getByLabelText} = await renderView({

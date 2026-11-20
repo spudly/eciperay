@@ -10,17 +10,14 @@ import {lazyTestApp} from '../../test/lazyTestApp.js';
 const mockQuery = createMockQuery();
 const getApp = lazyTestApp({query: mockQuery});
 
-const mockCreateVersionFlow = (
-  status: 'idea' | 'evolving' | 'perfected' = 'idea',
-) => {
+const mockCreateVersionFlow = () => {
   mockQuery
-    .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow({status})]))
+    .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
     .mockResolvedValueOnce(makeQueryResult([{max: 1}]))
     .mockResolvedValueOnce(makeQueryResult([{id: 'version-uuid-2'}]))
     .mockResolvedValueOnce(makeQueryResult([]))
     .mockResolvedValueOnce(makeQueryResult([]))
     .mockResolvedValueOnce(makeQueryResult([]))
-    .mockResolvedValueOnce(makeQueryResult([{id: 'recipe-uuid-1'}]))
     .mockResolvedValue(
       makeQueryResult([
         makeVersionDetailRow({
@@ -50,16 +47,6 @@ describe('POST /recipes/:id/versions', () => {
     expect(res.body.derivedRole).toBe('draft');
   });
 
-  test('promotes idea lineage to evolving', async () => {
-    nockSupabaseGetUser('user-uuid-1');
-    mockCreateVersionFlow('idea');
-
-    const res = await request(getApp())
-      .post('/api/recipes/recipe-uuid-1/versions')
-      .set('Authorization', 'Bearer valid-token');
-
-    expect(res.status).toBe(201);
-  });
 
   test('returns 404 when recipe is not found', async () => {
     nockSupabaseGetUser('user-uuid-1');
@@ -72,76 +59,9 @@ describe('POST /recipes/:id/versions', () => {
     expect(res.status).toBe(404);
   });
 
-  test('creates a draft version from a perfected recipe', async () => {
-    nockSupabaseGetUser('user-uuid-1');
-    mockCreateVersionFlow('perfected');
 
-    const res = await request(getApp())
-      .post('/api/recipes/recipe-uuid-1/versions')
-      .set('Authorization', 'Bearer valid-token');
 
-    expect(res.status).toBe(201);
-    expect(res.body.versionNumber).toBe(2);
-    expect(res.body.derivedRole).toBe('draft');
-  });
 
-  test('reopens a perfected lineage to evolving when drafting', async () => {
-    nockSupabaseGetUser('user-uuid-1');
-    mockCreateVersionFlow('perfected');
-
-    const res = await request(getApp())
-      .post('/api/recipes/recipe-uuid-1/versions')
-      .set('Authorization', 'Bearer valid-token');
-
-    expect(res.status).toBe(201);
-    // The draft is only editable once the lineage leaves the locked
-    // Perfected status: a status update to Evolving must be issued.
-    const statusUpdate = mockQuery.mock.calls.find(
-      ([sql]) =>
-        typeof sql === 'string' && sql.includes('update recipes set status'),
-    );
-    expect(statusUpdate?.[1]).toEqual([
-      'recipe-uuid-1',
-      'user-uuid-1',
-      'evolving',
-      'perfected',
-    ]);
-  });
-
-  test('rolls back when a perfected lineage changed status mid-creation', async () => {
-    nockSupabaseGetUser('user-uuid-1');
-    mockQuery
-      .mockResolvedValueOnce(
-        makeQueryResult([makeRecipeDetailRow({status: 'perfected'})]),
-      )
-      .mockResolvedValueOnce(makeQueryResult([{max: 1}]))
-      .mockResolvedValueOnce(makeQueryResult([{id: 'version-uuid-2'}]))
-      .mockResolvedValueOnce(makeQueryResult([]))
-      .mockResolvedValueOnce(makeQueryResult([]))
-      .mockResolvedValueOnce(makeQueryResult([]))
-      // The conditional reopen matches no row: the status changed after
-      // the recipe was read, so creation aborts instead of resurrecting it.
-      .mockResolvedValueOnce(makeQueryResult([]));
-
-    const res = await request(getApp())
-      .post('/api/recipes/recipe-uuid-1/versions')
-      .set('Authorization', 'Bearer valid-token');
-
-    expect(res.status).toBe(500);
-  });
-
-  test('returns 409 when recipe is abandoned', async () => {
-    nockSupabaseGetUser('user-uuid-1');
-    mockQuery.mockResolvedValue(
-      makeQueryResult([makeRecipeDetailRow({status: 'abandoned'})]),
-    );
-
-    const res = await request(getApp())
-      .post('/api/recipes/recipe-uuid-1/versions')
-      .set('Authorization', 'Bearer valid-token');
-
-    expect(res.status).toBe(409);
-  });
 
   test('returns 500 when created version cannot be fetched', async () => {
     nockSupabaseGetUser('user-uuid-1');

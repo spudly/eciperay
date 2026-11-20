@@ -2,8 +2,6 @@ import type {Ingredient, IngredientInput} from './ingredient.js';
 import type {Instruction, InstructionInput} from './instruction.js';
 import type {Tag} from './tag.js';
 
-export type RecipeStatus = 'idea' | 'evolving' | 'perfected' | 'abandoned';
-
 export type DerivedVersionRole = 'active' | 'archived' | 'draft' | 'candidate';
 
 export type VersionCreatedVia =
@@ -34,7 +32,6 @@ export type RecipeVersionSummary = {
 };
 
 export type RecipeVersionDetail = RecipeVersionSummary & {
-  status: RecipeStatus;
   description: string | null;
   servings: number;
   prepTimeMin: number | null;
@@ -58,7 +55,6 @@ export type RecipeVersionInput = {
   ingredients: IngredientInput[];
   instructions: InstructionInput[];
   tagIds: string[];
-  status?: RecipeStatus;
   /**
    * Optional name for the edit (stored on a branched version's
    * `change_summary`). Internal/version-tracking only.

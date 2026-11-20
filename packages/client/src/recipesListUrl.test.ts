@@ -29,9 +29,6 @@ describe('buildListUrl', () => {
     );
   });
 
-  test('includes status when provided', () => {
-    expect(buildListUrl({status: 'evolving'})).toBe('/recipes?status=evolving');
-  });
 
   test('includes nutrition and satiety filters', () => {
     expect(

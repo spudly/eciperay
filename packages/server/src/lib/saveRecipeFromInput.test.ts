@@ -59,7 +59,7 @@ describe('saveRecipeFromInput', () => {
     const result = await saveRecipeFromInput(
       {
         userId: 'user-uuid-1',
-        input: makeRecipeInput({status: 'perfected'}),
+        input: makeRecipeInput(),
         recipeId: 'recipe-uuid-1',
         versionId: 'version-uuid-1',
       },
@@ -70,10 +70,6 @@ describe('saveRecipeFromInput', () => {
       expect.stringContaining('content_revision = content_revision + 1'),
       ['recipe-uuid-1'],
     );
-    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('status'), [
-      'recipe-uuid-1',
-      'perfected',
-    ]);
   });
 
   // Regression for #394: an editable-version save changes what meal
@@ -91,7 +87,7 @@ describe('saveRecipeFromInput', () => {
     const result = await saveRecipeFromInput(
       {
         userId: 'user-uuid-1',
-        input: makeRecipeInput({status: 'perfected'}),
+        input: makeRecipeInput(),
         recipeId: 'recipe-uuid-1',
         versionId: 'version-uuid-1',
       },
@@ -108,7 +104,7 @@ describe('saveRecipeFromInput', () => {
     expect(touchCall?.[1]).toEqual(['recipe-uuid-1']);
   });
 
-  test('preserves the lineage status when an update omits status (#275)', async () => {
+  test('does not write a lineage status on update (#610)', async () => {
     const mockQuery = createMockQuery();
     mockQuery
       .mockResolvedValueOnce({

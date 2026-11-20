@@ -19,7 +19,7 @@ import type {
 // the shared frame/footer labels below resolve the same way. The
 // en-US constants (`sharedFooter`, `legalDocumentFrameProps`,
 // `legalOperatorIntroSpan`) remain as the locale-free defaults for
-// callers that do not resolve copy (the recipeStatusCopy pattern).
+// callers that do not resolve copy.
 
 export const textSpan = (text: string): LegalDocumentSpan => ({
   type: 'text',

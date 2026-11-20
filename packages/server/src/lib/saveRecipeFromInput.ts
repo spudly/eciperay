@@ -25,7 +25,6 @@ import {
   updateRecipeSlug,
   updateVersion,
 } from '../routes/recipes/versionQueries.js';
-import {updateRecipeStatus} from '../routes/recipes/recipeStatusQueries.js';
 import {
   defaultVisibilityForProvenance,
   deriveRecipeProvenance,
@@ -37,7 +36,6 @@ import {
 } from './autoGenerateRecipeImage.js';
 import {mapRowToRecipeDetail} from './mapRowToRecipeDetail.js';
 import {scheduleNutritionRefresh} from './refreshRecipeNutrition.js';
-import {resolveStatus} from './resolveStatus.js';
 import {slugifyRecipeTitle} from './slugifyRecipeTitle.js';
 import {touchMealsForRecipe} from './touchMealsForRecipe.js';
 
@@ -94,7 +92,6 @@ const createLineageWithVersion = async (
   const lineage = await insertLineage(
     userId,
     slugifyRecipeTitle(input.title),
-    resolveStatus(input),
     queryFn,
   );
   const recipeId = lineage.rows[0]?.id;
@@ -142,14 +139,6 @@ const updateExistingVersion = async (
     throw new RecipeNotFoundError();
   }
   await updateRecipeSlug(recipeId, slugifyRecipeTitle(input.title), queryFn);
-  // Only a save that carries a status may change the lineage status: a
-  // version save that omits it (the version editor's payload type made
-  // status optional) must preserve the current status instead of
-  // resolveStatus's create-path default of 'idea' (#275 — saving a draft
-  // created from a Perfected recipe silently reverted it to Idea).
-  if (input.status !== undefined) {
-    await updateRecipeStatus(recipeId, input.status, queryFn);
-  }
   await incrementContentRevision(recipeId, queryFn);
   await replaceVersionChildren(versionId, input, queryFn);
   // An editable-version save changes what meal detail reads for each

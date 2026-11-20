@@ -27,7 +27,6 @@ describe('recipeDetailToInput', () => {
       body: 'Mix dry ingredients',
     });
     expect(input.tagIds).toEqual(['tag-1']);
-    expect(input.status).toBe('evolving');
   });
 
   test('sorts ingredients by sortOrder', () => {
@@ -113,13 +112,6 @@ describe('recipeDetailToInput', () => {
     const input = recipeVersionDetailToInput(makeRecipeVersionDetail());
     expect(input.title).toBe('Test Recipe');
     expect(input.tagIds).toEqual(['tag-1']);
-    expect(input.status).toBe('evolving');
   });
 
-  test('defaults status to idea when undefined', () => {
-    const input = recipeVersionDetailToInput(
-      makeRecipeVersionDetail({status: undefined}),
-    );
-    expect(input.status).toBe('idea');
-  });
 });

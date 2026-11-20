@@ -103,40 +103,16 @@ describe('POST /recipes/:id/versions/:versionId/activate', () => {
 
     expect(res.status).toBe(409);
     expect(res.body.error).toBe(
-      'Draft versions cannot be activated directly \u2014 mark the recipe Perfected first, or log a cook against the version',
+      'Draft versions cannot be activated directly \u2014 log a cook against the version',
     );
   });
 
-  test('activates a draft version of a Perfected recipe with no cook logs (#417)', async () => {
+
+  test('activates a candidate version (#417)', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery
       .mockResolvedValueOnce(
-        makeQueryResult([
-          makeVersionDetailRow({
-            version_id: 'version-uuid-2',
-            version_number: 2,
-            active_version_id: 'version-uuid-1',
-            active_version_number: 1,
-            cook_log_count: 0,
-            status: 'perfected',
-          }),
-        ]),
-      )
-      .mockResolvedValueOnce(makeQueryResult([]))
-      .mockResolvedValue(makeQueryResult([makeRecipeDetailRow()]));
-
-    const res = await request(getApp())
-      .post('/api/recipes/recipe-uuid-1/versions/version-uuid-2/activate')
-      .set('Authorization', 'Bearer valid-token');
-
-    expect(res.status).toBe(200);
-  });
-
-  test('activates a candidate version of a Perfected recipe (#417)', async () => {
-    nockSupabaseGetUser('user-uuid-1');
-    mockQuery
-      .mockResolvedValueOnce(
-        makeQueryResult([candidateVersionRow({status: 'perfected'})]),
+        makeQueryResult([candidateVersionRow()]),
       )
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValue(makeQueryResult([makeRecipeDetailRow()]));
@@ -194,21 +170,6 @@ describe('POST /recipes/:id/versions/:versionId/activate', () => {
     expect(res.body.error).toBe('This version is already active');
   });
 
-  test('returns 409 when the recipe is abandoned', async () => {
-    nockSupabaseGetUser('user-uuid-1');
-    mockQuery.mockResolvedValue(
-      makeQueryResult([candidateVersionRow({status: 'abandoned'})]),
-    );
-
-    const res = await request(getApp())
-      .post('/api/recipes/recipe-uuid-1/versions/version-uuid-2/activate')
-      .set('Authorization', 'Bearer valid-token');
-
-    expect(res.status).toBe(409);
-    expect(res.body.error).toBe(
-      'Recipe cannot be modified in its current status',
-    );
-  });
 
   test('returns 404 when recipe detail is missing after activation', async () => {
     nockSupabaseGetUser('user-uuid-1');

@@ -24,9 +24,6 @@ type VersionRowOverrides = Partial<RecipeVersionSummary> & {
   source_url?: string | null;
   derived_from_version_id?: string | null;
   user_id?: string;
-  status?: RecipeVersionDetail['derivedRole'] extends never
-    ? never
-    : import('@eciperay/types').RecipeStatus;
   ingredients?: RecipeVersionDetail['ingredients'];
   instructions?: RecipeVersionDetail['instructions'];
   tags?: RecipeVersionDetail['tags'];
@@ -48,7 +45,6 @@ export const makeVersionSummaryRow = (overrides: VersionRowOverrides = {}) => ({
   cook_log_count: overrides.cookLogCount ?? overrides.cook_log_count ?? 0,
   child_version_count:
     overrides.childVersionCount ?? overrides.child_version_count ?? 0,
-  status: overrides.status ?? 'evolving',
 });
 
 export const makeVersionDetailRow = (overrides: VersionRowOverrides = {}) => {
@@ -70,7 +66,6 @@ export const makeVersionDetailRow = (overrides: VersionRowOverrides = {}) => {
     created_at: summary.created_at,
     updated_at: summary.updated_at,
     user_id: overrides.user_id ?? 'user-uuid-1',
-    status: overrides.status ?? summary.status,
     active_version_id: summary.active_version_id,
     active_version_number: summary.active_version_number,
     ingredients: overrides.ingredients ?? [makeIngredient()],

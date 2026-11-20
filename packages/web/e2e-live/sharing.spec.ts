@@ -54,28 +54,6 @@ test.describe('live sharing', () => {
     );
     expect(slug).toBeTruthy();
 
-    // Discover excludes 'idea'-status recipes by design (the public list
-    // and sitemap filter `status <> 'idea'` — ideas are unfinished drafts),
-    // and a manual-entry recipe starts as an idea, so its public page
-    // renders signed-out but it is never listed. Promote it to 'perfected'
-    // via the lineage PATCH so the listing assertions below exercise
-    // visibility, not the idea exclusion.
-    const statusPatch = await page.evaluate(
-      async ({id, t}) => {
-        const res = await fetch(`/api/recipes/${id}`, {
-          method: 'PATCH',
-          headers: {
-            Authorization: `Bearer ${t}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({status: 'perfected'}),
-        });
-        return res.status;
-      },
-      {id: created.id, t: token},
-    );
-    expect(statusPatch).toBe(200);
-
     // A signed-out visitor context. browser.newContext() inherits the
     // live-auth project's storageState in Playwright, so the empty state
     // is passed explicitly — without it the "visitor" would silently be
@@ -86,8 +64,7 @@ test.describe('live sharing', () => {
     const anon = await context.newPage();
     try {
       // #609: a manually created recipe starts public, so signed-out the
-      // public page renders the recipe and (once perfected, above)
-      // Discover lists it.
+      // public page renders the recipe and Discover lists it.
       await anon.goto(`/recipe/${created.id}/${slug}`);
       await expect(
         anon.getByRole('heading', {name: created.title}),

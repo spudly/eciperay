@@ -4,7 +4,6 @@ import type {Response} from 'express';
 import {runTransactional} from '../../db/withTransaction.js';
 import {query as defaultQuery} from '../../db/query.js';
 import type {AuthedRequest} from '../../middleware/requireAuth.js';
-import {recipeEditBlockedError} from '../../lib/assertRecipeEditable.js';
 import {fetchVersionDetail} from '../../lib/fetchVersionDetail.js';
 import {getParam} from '../../lib/getParam.js';
 import {mapRowToRecipeDetail} from '../../lib/mapRowToRecipeDetail.js';
@@ -24,20 +23,13 @@ type QueryFn = typeof defaultQuery;
  *   unchanged.
  * - Archived: a version that was active before; the previously active version
  *   stays re-activatable.
- * - Any saved version of a Perfected recipe: marking a recipe Perfected is the
- *   owner's statement that its content is settled, so a newer saved version
- *   (still labelled Draft in the picker because it has no cook logs) can be
- *   promoted without pretending to cook it. This is the direct path #417 adds;
- *   it deliberately carves activation out of the Perfected content lock (#418),
- *   which still governs edits.
  *
- * A Draft version of a recipe that is not Perfected qualifies on no path: it
- * must be Perfected first, or cooked into a candidate.
+ * A plain Draft version qualifies on no path: it must be cooked into a
+ * candidate first.
  */
 const isActivatable = (version: RecipeVersionDetail): boolean =>
   (version.derivedRole === 'candidate' && version.cookLogCount > 0) ||
-  version.derivedRole === 'archived' ||
-  version.status === 'perfected';
+  version.derivedRole === 'archived';
 
 export const activateVersion = async (
   req: AuthedRequest,
@@ -60,16 +52,12 @@ export const activateVersion = async (
     res.status(409).json({error: 'This version is already active'});
     return;
   }
-  if (version.status === 'abandoned') {
-    res.status(409).json({error: recipeEditBlockedError()});
-    return;
-  }
   if (!isActivatable(version)) {
     res
       .status(409)
       .json({
         error:
-          'Draft versions cannot be activated directly — mark the recipe Perfected first, or log a cook against the version',
+          'Draft versions cannot be activated directly — log a cook against the version',
       });
     return;
   }

@@ -1,5 +1,4 @@
 import type {
-  RecipeStatusFilterValue,
   RecipesListViewProps,
 } from '@eciperay/client';
 import {
@@ -266,8 +265,6 @@ export const RecipesListView = ({
   onLoadMore,
   search,
   onSearchChange,
-  statusFilter,
-  onStatusFilterChange,
   ingredient,
   onIngredientChange,
   minCalories,
@@ -282,7 +279,6 @@ export const RecipesListView = ({
   onSortChange,
   sortDir,
   onSortDirChange,
-  showStatusFilter,
   loadMoreErrorMessage,
   onLoadMoreRetry,
   ownErrorMessage,
@@ -421,15 +417,6 @@ export const RecipesListView = ({
       onLoadMore={onLoadMore}
       search={search}
       onSearchChange={onSearchChange}
-      statusFilter={statusFilter}
-      onStatusFilterChange={
-        onStatusFilterChange
-          ? value => {
-              onStatusFilterChange(value as RecipeStatusFilterValue);
-            }
-          : undefined
-      }
-      showStatusFilter={showStatusFilter}
       ingredient={ingredient}
       onIngredientChange={onIngredientChange}
       minCalories={minCalories}

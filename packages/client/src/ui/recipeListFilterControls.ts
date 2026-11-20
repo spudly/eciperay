@@ -1,16 +1,8 @@
-import type {
-  RecipeListSort,
-  RecipeListSortDir,
-  RecipeStatus,
-} from '@eciperay/types';
-
-export type RecipeStatusFilterValue = 'all' | RecipeStatus;
+import type {RecipeListSort, RecipeListSortDir} from '@eciperay/types';
 
 export type RecipeListFilterControls = {
   search: string;
   onSearchChange: (value: string) => void;
-  statusFilter?: RecipeStatusFilterValue;
-  onStatusFilterChange?: (value: RecipeStatusFilterValue) => void;
   ingredient: string;
   onIngredientChange: (value: string) => void;
   minCalories: string;
@@ -25,5 +17,4 @@ export type RecipeListFilterControls = {
   onSortChange: (value: RecipeListSort) => void;
   sortDir: RecipeListSortDir;
   onSortDirChange: (value: RecipeListSortDir) => void;
-  showStatusFilter?: boolean;
 };

@@ -11,12 +11,10 @@ import {
   updateRecipeSlug,
   updateVersion,
 } from '../routes/recipes/versionQueries.js';
-import {updateRecipeStatus} from '../routes/recipes/recipeStatusQueries.js';
 
 import {mapRowToRecipeDetail} from './mapRowToRecipeDetail.js';
 import {scheduleNutritionRefresh} from './refreshRecipeNutrition.js';
 import {RecipeNotFoundError} from './saveRecipeFromInput.js';
-import {resolveStatus} from './resolveStatus.js';
 import {slugifyRecipeTitle} from './slugifyRecipeTitle.js';
 import {touchMealsForRecipe} from './touchMealsForRecipe.js';
 
@@ -54,7 +52,6 @@ const saveMetadata = async (
     slugifyRecipeTitle(opts.input.title),
     queryFn,
   );
-  await updateRecipeStatus(opts.recipeId, resolveStatus(opts.input), queryFn);
   await deleteRecipeTagsByVersionId(opts.versionId, queryFn);
   await linkTags(opts.versionId, opts.input.tagIds, queryFn);
   // A metadata-only edit changes what meal detail reads for each member

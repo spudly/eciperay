@@ -15,7 +15,6 @@ import {
   parseSearchQuery,
   parseSort,
   parseSortDir,
-  parseStatusFilter,
 } from './listFilterParams.js';
 
 describe('listFilterParams parsers', () => {
@@ -57,12 +56,6 @@ describe('listFilterParams parsers', () => {
     expect(parseOffset(12)).toBe(12);
   });
 
-  test('parseStatusFilter accepts known statuses', () => {
-    expect(parseStatusFilter()).toBeNull();
-    expect(parseStatusFilter('')).toBeNull();
-    expect(parseStatusFilter('idea')).toBe('idea');
-    expect(parseStatusFilter('nope')).toBe('invalid');
-  });
 
   test('parseOptionalNumber and sort parsers', () => {
     expect(parseOptionalNumber()).toBeNull();
@@ -87,7 +80,6 @@ describe('parseRecipeListFilterParams', () => {
       offset: 0,
       sort: 'newest',
       sortDir: 'desc',
-      status: null,
     });
     expect(
       parseRecipeListFilterParams(
@@ -96,7 +88,6 @@ describe('parseRecipeListFilterParams', () => {
             limit: '10',
             offset: '5',
             search: 'soup',
-            status: 'evolving',
             ingredient: 'onion',
             minCalories: '100',
             maxCalories: '500',
@@ -114,7 +105,6 @@ describe('parseRecipeListFilterParams', () => {
       limit: 10,
       offset: 5,
       search: 'soup',
-      status: 'evolving',
       ingredient: 'onion',
       minCalories: 100,
       maxCalories: 500,

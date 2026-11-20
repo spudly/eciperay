@@ -7,7 +7,6 @@ import {makeTag} from './tag.js';
 export const makeRecipe = (overrides: Partial<Recipe> = {}): Recipe => ({
   id: 'recipe-uuid-1',
   userId: 'user-uuid-1',
-  status: 'idea',
   visibility: 'private',
   slug: 'test-recipe',
   contentRevision: 1,

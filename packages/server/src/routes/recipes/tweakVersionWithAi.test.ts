@@ -78,7 +78,6 @@ describe('POST /recipes/:id/versions/ai', () => {
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([]))
-      .mockResolvedValueOnce(makeQueryResult([{id: 'recipe-uuid-1'}]))
       .mockResolvedValue(
         makeQueryResult([
           makeVersionDetailRow({
@@ -112,19 +111,6 @@ describe('POST /recipes/:id/versions/ai', () => {
     expect(res.status).toBe(404);
   });
 
-  test('returns 409 when recipe is perfected', async () => {
-    nockSupabaseGetUser('user-uuid-1');
-    mockQuery.mockResolvedValue(
-      makeQueryResult([makeRecipeDetailRow({status: 'perfected'})]),
-    );
-
-    const res = await request(getApp())
-      .post('/api/recipes/recipe-uuid-1/versions/ai')
-      .set('Authorization', 'Bearer valid-token')
-      .send({prompt: 'make this pasta creamier and easier to follow'});
-
-    expect(res.status).toBe(409);
-  });
 
   test('returns 400 when prompt is too short', async () => {
     nockSupabaseGetUser('user-uuid-1');
@@ -201,7 +187,6 @@ describe('POST /recipes/:id/versions/ai', () => {
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([]))
-      .mockResolvedValueOnce(makeQueryResult([{id: 'recipe-uuid-1'}]))
       .mockResolvedValue(makeQueryResult([]));
 
     const res = await request(getApp())

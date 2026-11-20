@@ -3,7 +3,7 @@ export const GET_VERSION_DETAIL_SQL = `
          rv.description, rv.servings, rv.prep_time_min, rv.cook_time_min,
          rv.image_url, rv.source_url, rv.created_via, rv.change_summary,
          rv.derived_from_version_id, rv.created_at, rv.updated_at,
-         r.user_id, r.status, r.active_version_id, av.version_number as active_version_number,
+         r.user_id, r.active_version_id, av.version_number as active_version_number,
     coalesce((
       select json_agg(
         jsonb_build_object(
@@ -45,7 +45,6 @@ export const LIST_VERSIONS_SQL = `
   select rv.id, rv.recipe_id, rv.version_number, rv.title, rv.created_via,
          rv.change_summary, rv.created_at, rv.updated_at,
          r.active_version_id, av.version_number as active_version_number,
-         r.status,
          (select count(*)::int from cook_logs cl where cl.recipe_version_id = rv.id) as cook_log_count,
          (select count(*)::int from recipe_versions cv where cv.derived_from_version_id = rv.id) as child_version_count
   from recipe_versions rv
