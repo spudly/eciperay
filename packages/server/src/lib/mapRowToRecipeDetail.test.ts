@@ -137,6 +137,7 @@ describe('mapRowToPublicRecipeDiscoveryItem', () => {
       proteinG: null,
       carbsG: null,
       fatG: null,
+      fiberG: null,
       communityRating: {average: 4, count: 3, hasStaleRatings: false},
     });
   });

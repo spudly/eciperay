@@ -25,4 +25,6 @@ export type RecipeNutritionSummary = {
   proteinG: number | null;
   carbsG: number | null;
   fatG: number | null;
+  /** Present on server-built summaries; net carbs = carbsG − fiberG (#613). */
+  fiberG?: number | null;
 };

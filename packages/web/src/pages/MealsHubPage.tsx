@@ -1,4 +1,4 @@
-import {queryKeys, type MealsHubTab} from '@eciperay/client';
+import {netCarbsG, queryKeys, type MealsHubTab} from '@eciperay/client';
 import type {AggregatedNutrition, MealPlan} from '@eciperay/types';
 import {
   MealsHubPage as MealsHubPageView,
@@ -56,6 +56,20 @@ const formatHubNutrition = (
       values: {value: Math.round(nutrition.fatG)},
     }),
   ];
+  // Net carbs after total carbs (#613) via the canonical helper; omitted
+  // when the plan's fiber is unknown.
+  const net = netCarbsG(nutrition);
+  if (net !== null) {
+    parts.splice(
+      3,
+      0,
+      i18n._({
+        id: 'mealDetail.nutritionNetCarbs',
+        message: '{value}g net carbs',
+        values: {value: Math.round(net)},
+      }),
+    );
+  }
   if (nutrition.satietyScore !== null) {
     parts.push(
       i18n._({

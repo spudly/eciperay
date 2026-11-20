@@ -62,7 +62,7 @@ describe('mealUiHelpers', () => {
         satietyScore: 55,
         status: 'ready',
       }),
-    ).toBe('500 cal · 20g protein · 40g carbs · 10g fat · satiety 55');
+    ).toBe('500 cal · 20g protein · 40g carbs · 40g net carbs · 10g fat · satiety 55');
   });
 
   test('builds meal and plan inputs', () => {
@@ -484,12 +484,14 @@ describe('mealUiHelpers', () => {
         {label: 'Calories', valueLabel: '1400 cal'},
         {label: 'Protein', valueLabel: '70g protein'},
         {label: 'Carbs', valueLabel: '140g carbs'},
+        {label: 'Net carbs', valueLabel: '126g net carbs'},
         {label: 'Fat', valueLabel: '35g fat'},
       ],
       averages: [
         {label: 'Calories', valueLabel: '200 cal'},
         {label: 'Protein', valueLabel: '10g protein'},
         {label: 'Carbs', valueLabel: '20g carbs'},
+        {label: 'Net carbs', valueLabel: '18g net carbs'},
         {label: 'Fat', valueLabel: '5g fat'},
       ],
     });

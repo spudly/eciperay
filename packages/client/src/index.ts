@@ -286,7 +286,11 @@ export {
   formatServingsLabel,
   getDisplayRating,
 } from './recipeListDisplay.js';
-export {nutritionTabRows, type NutritionTabRow} from './nutritionTabRows.js';
+export {
+  netCarbsG,
+  nutritionTabRows,
+  type NutritionTabRow,
+} from './nutritionTabRows.js';
 export {
   buildMealInputFromForm,
   buildWeeklyTotalsBand,

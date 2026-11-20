@@ -31,6 +31,7 @@ export const makeRecipe = (overrides: Partial<Recipe> = {}): Recipe => ({
   proteinG: null,
   carbsG: null,
   fatG: null,
+  fiberG: null,
   ...overrides,
 });
 

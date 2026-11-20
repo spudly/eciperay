@@ -49,7 +49,7 @@ describe('aggregateRecipePortionsNutrition', () => {
     const result = aggregateRecipePortionsNutrition([
       {...readyPortion, fiberG: null, sugarG: null, sodiumMg: null},
     ]);
-    expect(result.fiberG).toBe(0);
+    expect(result.fiberG).toBeNull();
     expect(result.sugarG).toBe(0);
     expect(result.sodiumMg).toBe(0);
   });
@@ -74,11 +74,21 @@ describe('aggregateRecipePortionsNutrition', () => {
       proteinG: 0,
       carbsG: 0,
       fatG: 0,
-      fiberG: 0,
+      fiberG: null,
+      fiberKnownG: 0,
       sugarG: 0,
       sodiumMg: 0,
       preparedWeightG: 0,
     });
+  });
+
+  test('a zero-servings portion with unknown fiber does not poison the aggregate fiber (#613 review)', () => {
+    const result = aggregateRecipePortionsNutrition([
+      {...readyPortion, servings: 0, fiberG: null},
+      readyPortion,
+    ]);
+    // readyPortion carries 2 g fiber per serving × 2 servings.
+    expect(result.fiberG).toBe(4);
   });
 
   test('scalePortion guards a zero recipeServings basis (#540)', () => {

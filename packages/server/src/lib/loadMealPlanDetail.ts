@@ -221,6 +221,7 @@ export const loadMealPlanDetail = async (
       proteinG: readableRecipe?.protein_g ?? null,
       carbsG: readableRecipe?.carbs_g ?? null,
       fatG: readableRecipe?.fat_g ?? null,
+      fiberG: readableRecipe?.fiber_g ?? null,
     });
 
     if (nutrition) {

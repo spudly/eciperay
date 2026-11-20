@@ -1,6 +1,7 @@
 import {
   buildRecipePath,
   formatSimpleNutrition,
+  netCarbsG,
   queryKeys,
 } from '@eciperay/client';
 import type {RecipeNutritionSummary} from '@eciperay/types';
@@ -54,6 +55,17 @@ const formatMemberNutrition = (
         values: {value: Math.round(summary.carbsG * scale)},
       }),
     );
+    // Net carbs beside total carbs (#613); omitted when fiber is unknown.
+    const net = netCarbsG(summary);
+    if (net !== null) {
+      parts.push(
+        i18n._({
+          id: 'mealDetail.nutritionNetCarbs',
+          message: '{value}g net carbs',
+          values: {value: Math.round(net * scale)},
+        }),
+      );
+    }
   }
   if (summary.fatG !== null) {
     parts.push(
