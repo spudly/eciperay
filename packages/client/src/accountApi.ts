@@ -2,6 +2,7 @@ import type {
   AccountExportBundle,
   AuthorDisplaySettings,
   Entitlement,
+  FamilyShareGrant,
   NutritionGoals,
   PersonalAccessToken,
   PersonalAccessTokenWithSecret,
@@ -38,6 +39,20 @@ export const createAccountApi = (client: ApiClient) => ({
     ),
   revokePersonalAccessToken: (id: string) =>
     client.fetch<undefined>(`/account/personal-access-tokens/${id}`, {
+      method: 'DELETE',
+    }),
+  // Family sharing (#617): the owner's standing designations. Creating
+  // one designates by the recipient's account email — the server looks
+  // the account up and errors when no account has that email.
+  listFamilySharing: () =>
+    client.fetch<FamilyShareGrant[]>('/account/family-sharing'),
+  createFamilySharing: (email: string) =>
+    client.fetch<FamilyShareGrant>('/account/family-sharing', {
+      method: 'POST',
+      body: JSON.stringify({email}),
+    }),
+  deleteFamilySharing: (recipientUserId: string) =>
+    client.fetch<undefined>(`/account/family-sharing/${recipientUserId}`, {
       method: 'DELETE',
     }),
 });

@@ -65,4 +65,30 @@ describe('createAccountApi', () => {
       {method: 'DELETE'},
     );
   });
+
+  test('calls family sharing endpoints', async () => {
+    const grant = {
+      ownerUserId: 'owner-1',
+      recipientUserId: 'recipient-1',
+      recipientEmail: 'family@example.com',
+      recipientDisplayName: null,
+      createdAt: '2026-11-20T00:00:00.000Z',
+    };
+    const fetch = jest.fn().mockResolvedValue([grant]);
+    const api = createAccountApi({fetch});
+
+    await expect(api.listFamilySharing()).resolves.toEqual([grant]);
+    await api.createFamilySharing('family@example.com');
+    await api.deleteFamilySharing('recipient-1');
+
+    expect(fetch).toHaveBeenCalledWith('/account/family-sharing');
+    expect(fetch).toHaveBeenCalledWith('/account/family-sharing', {
+      method: 'POST',
+      body: JSON.stringify({email: 'family@example.com'}),
+    });
+    expect(fetch).toHaveBeenCalledWith(
+      '/account/family-sharing/recipient-1',
+      {method: 'DELETE'},
+    );
+  });
 });

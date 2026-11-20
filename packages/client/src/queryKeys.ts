@@ -79,5 +79,6 @@ export const queryKeys = {
   nutritionGoals: () => ['nutritionGoals'] as const,
   authorDisplay: (userId: string) => ['authorDisplay', userId] as const,
   personalAccessTokens: () => ['personalAccessTokens'] as const,
+  familySharing: (userId: string) => ['familySharing', userId] as const,
   entitlement: (userId: string) => ['entitlement', userId] as const,
 };

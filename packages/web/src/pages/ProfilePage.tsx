@@ -12,6 +12,7 @@ import {LegalLinks} from '../components/LegalLinks.js';
 import {ProfileAccessTokensSection} from '../components/profile/ProfileAccessTokensSection.js';
 import {ProfileAuthorDisplaySection} from '../components/profile/ProfileAuthorDisplaySection.js';
 import {ProfileFeedbackPreference} from '../components/ProfileFeedbackPreference.js';
+import {ProfileFamilySharingSection} from '../components/profile/ProfileFamilySharingSection.js';
 import {ProfileNutritionGoalsSection} from '../components/profile/ProfileNutritionGoalsSection.js';
 import {buildSubscriptionData} from '../components/profile/subscriptionData.js';
 import {downloadAccountExportBundle} from '../lib/downloadAccountExport.js';
@@ -401,6 +402,7 @@ export const ProfilePage = () => {
           <>
             <ProfileNutritionGoalsSection />
             <ProfileAuthorDisplaySection />
+            <ProfileFamilySharingSection />
             <ProfileAccessTokensSection />
           </>
         }

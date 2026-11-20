@@ -69,5 +69,8 @@ export const api = {
     putNutritionGoals: jest.fn(),
     getAuthorDisplay: jest.fn(),
     putAuthorDisplay: jest.fn(),
+    listFamilySharing: jest.fn().mockResolvedValue([]),
+    createFamilySharing: jest.fn(),
+    deleteFamilySharing: jest.fn(),
   },
 };

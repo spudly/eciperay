@@ -598,7 +598,11 @@ export const RecipesPage = () => {
     title: recipe.title,
     subtitle: formatRecipeListSubtitle(recipe),
     imageUrl: resizedImageUrl(recipe.imageUrl, 400),
-    badgeLabel: 'Shared',
+    // Family-shared rows (#617) carry the "Family" badge so the
+    // recipient can tell them from individually shared recipes; the
+    // server marks them `sharedVia: 'family'` (an individual grant
+    // wins the marker when both exist).
+    badgeLabel: recipe.sharedVia === 'family' ? 'Family' : 'Shared',
   }));
 
   return (

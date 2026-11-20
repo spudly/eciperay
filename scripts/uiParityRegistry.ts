@@ -95,6 +95,12 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
       'Web profile section for the author-display setting (#411); the app renders its own AuthorDisplayForm host component in hosts/profile.',
   },
   {
+    path: 'profile/ProfileFamilySharingSection.tsx',
+    platform: 'web',
+    reason:
+      'Web profile section for family sharing (#617); the app renders its own FamilySharingForm host component in hosts/profile.',
+  },
+  {
     path: 'DiscoverPageHead.tsx',
     platform: 'web',
     reason:

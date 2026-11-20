@@ -366,7 +366,9 @@ export const RecipesListView = ({
     title: recipe.title,
     subtitle: formatRecipeListSubtitle(recipe),
     imageUrl: recipe.imageUrl,
-    badgeLabel: 'Shared',
+    // Family-shared rows (#617) carry the "Family" badge, mirroring
+    // the web host; the server marks them `sharedVia: 'family'`.
+    badgeLabel: recipe.sharedVia === 'family' ? 'Family' : 'Shared',
     canLogCook: false,
   }));
 

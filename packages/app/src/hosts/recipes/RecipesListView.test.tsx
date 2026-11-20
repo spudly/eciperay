@@ -620,6 +620,31 @@ describe('RecipesListView unified sections (#412)', () => {
     expect(sharedIndex).toBeGreaterThan(pastaIndex);
   });
 
+  test('renders a family-shared row with the Family badge (#617)', async () => {
+    const familySoup = makeRecipeDetail({
+      id: 'family-1',
+      slug: 'family-soup',
+      title: 'Family Soup',
+      userId: 'other-user',
+      sharedVia: 'family',
+    });
+    const {getByLabelText} = await renderWithProviders(
+      <RecipesListView
+        {...controls}
+        isLoading={false}
+        recipes={[pasta]}
+        sharedRecipes={[familySoup]}
+        isFetchingNextPage={false}
+        onLoadMore={jest.fn()}
+      />,
+    );
+
+    expect(getByLabelText('Family Soup')).toBeTruthy();
+    // The badge folds into the row's composite accessible label, as
+    // with the Shared badge above.
+    expect(getByLabelText(/, Family$/)).toBeTruthy();
+  });
+
   // A created row's card is an href surface (#491): pressing it must
   // open the recipe's scheme deep link, which the navigation linking
   // config routes to RecipeDetail (see navigation/linking.test.ts).
