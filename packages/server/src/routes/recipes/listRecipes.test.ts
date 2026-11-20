@@ -11,6 +11,7 @@ import {
   parseStatusFilter,
   parseListParams,
 } from './listRecipes.js';
+import {EMPTY_SEARCH_QUERY, parseSearchSyntax} from './searchQuery.js';
 
 const mockQuery = createMockQuery();
 const getApp = lazyTestApp({query: mockQuery});
@@ -21,6 +22,7 @@ const defaultParsedListParams = {
   limit: DEFAULT_RECIPE_LIST_LIMIT,
   offset: 0,
   search: null,
+  searchQuery: EMPTY_SEARCH_QUERY,
   status: null,
   ingredient: null,
   minCalories: null,
@@ -48,6 +50,7 @@ describe('parseListParams', () => {
       limit: MAX_RECIPE_LIST_LIMIT,
       offset: 5,
       search: 'pasta',
+      searchQuery: parseSearchSyntax('pasta'),
     });
   });
 
@@ -149,7 +152,6 @@ describe('GET /recipes', () => {
       DEFAULT_RECIPE_LIST_LIMIT,
       0,
       null,
-      null,
       ...emptyFilterBinds,
     ]);
   });
@@ -166,13 +168,13 @@ describe('GET /recipes', () => {
       'user-uuid-1',
       DEFAULT_RECIPE_LIST_LIMIT,
       0,
-      'pasta',
       null,
       ...emptyFilterBinds,
+      '%pasta%',
     ]);
   });
 
-  test('passes a multi-word search to the query unchanged (#385)', async () => {
+  test('passes a multi-word search to the query as per-word patterns (#611)', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue(makeQueryResult([]));
     const res = await request(getApp())
@@ -184,29 +186,29 @@ describe('GET /recipes', () => {
       'user-uuid-1',
       DEFAULT_RECIPE_LIST_LIMIT,
       0,
-      'First Soup',
       null,
       ...emptyFilterBinds,
+      '%First%',
+      '%Soup%',
     ]);
   });
 
-  test('searches titles word by word, not as one contiguous phrase (#385)', async () => {
+  test('searches free words across title, description, and ingredients (#611)', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValue(makeQueryResult([]));
     const res = await request(getApp())
       .get('/api/recipes')
       .query({search: 'First Soup'})
-      .set('Authorization', 'Bearer valid-token');
+      .set('Authorization', 'Bearer <redacted>');
     expect(res.status).toBe(200);
     const sql = mockQuery.mock.calls[mockQuery.mock.calls.length - 1]?.[0];
-    // Every word of the search must appear somewhere in the title, so
-    // "First" / "First Soup" match "QA — First Soup": the SQL splits
-    // the search into words and rejects a title only when a word is
-    // absent from it.
-    expect(sql).toContain("regexp_split_to_array($4, '\\s+')");
-    expect(sql).toContain('rv.title not ilike');
-    expect(sql).toContain('search_token.token');
-    expect(sql).not.toContain("rv.title ilike '%' || $4 || '%'");
+    // Each word compiles to its own parameterized condition that may match
+    // the title, the description, or an ingredient name (#611 broadening
+    // the #385 word-by-word title rule).
+    expect(sql).toContain("rv.title ilike $12 escape '\\'");
+    expect(sql).toContain("coalesce(rv.description, '') ilike $12");
+    expect(sql).toContain('exists (select 1 from ingredients i');
+    expect(sql).toContain("rv.title ilike $13 escape '\\'");
   });
 
   test('passes status filter to the query', async () => {
@@ -221,7 +223,6 @@ describe('GET /recipes', () => {
       'user-uuid-1',
       DEFAULT_RECIPE_LIST_LIMIT,
       0,
-      null,
       'evolving',
       ...emptyFilterBinds,
     ]);
@@ -268,7 +269,6 @@ describe('GET /recipes', () => {
       500,
       40,
       null,
-      null,
       ...emptyFilterBinds,
     ]);
   });
@@ -283,7 +283,6 @@ describe('GET /recipes', () => {
       'user-uuid-1',
       500,
       0,
-      null,
       null,
       ...emptyFilterBinds,
     ]);
