@@ -96,6 +96,7 @@ export const RecipeVersionInputSchema = z.object({
 
 export const RecipeVersionEditInputSchema = RecipeVersionInputSchema.extend({
   activate: z.boolean().optional(),
+  changeSummary: z.string().trim().min(1).max(200).optional(),
   expectedContentRevision: z.number().int().nonnegative().optional(),
 });
 
