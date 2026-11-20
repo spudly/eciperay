@@ -113,13 +113,12 @@ password-reset cases.
    with a valid reset/confirmation payload. **Expected:** it completes the
    Supabase auth flow only — no navigation route claims it.
 8. **Auth sync network blip (#344).** Sign in while the API is briefly
-   unreachable (e.g. toggle the device/browser offline for a few seconds
-   around sign-in, then restore connectivity). **Expected:** the session
-   stays signed in with no error report for the blip — the sync retries once
-   after a short delay and a successful retry reports nothing; if the API is
-   still unreachable at the retry, a handled warning is logged (not an
-   exception) and the session is kept, with the sync retried on the next
-   auth event.
+   unreachable (e.g. toggle the device/browser offline for a few seconds around
+   sign-in, then restore connectivity). **Expected:** the session stays signed
+   in with no error report for the blip — the sync retries once after a short
+   delay and a successful retry reports nothing; if the API is still unreachable
+   at the retry, a handled warning is logged (not an exception) and the session
+   is kept, with the sync retried on the next auth event.
 
 **Run when:** `packages/app/src/screens/auth/**`,
 `packages/web/src/pages/auth/**`, `packages/client/src/authEmail.ts`,
@@ -270,6 +269,19 @@ without); one recipe may be created fresh in case 1.
     true 301 awaits SSR, #304). Rename the recipe and revisit its previous
     slugged URL. **Expected:** it lands on the new canonical URL for the new
     title.
+19. **GitHub-style search syntax (#611).** On `/recipes`, search with each of: a
+    plain word that appears only in a recipe's description or ingredient list
+    (not its title); a quoted phrase (`"chicken soup"`); field qualifiers
+    (`title:soup`, `ingredient:garlic`, `tag:dinner,quick`); a negation
+    (`-ingredient:peanuts`); a status/scope qualifier (`status:perfected`,
+    `is:public`); and a numeric qualifier (`calories:<600`). **Expected:** every
+    search narrows the list exactly as the qualifier states — plain words now
+    find description/ingredient matches, negated terms disappear, and
+    `tag:dinner,quick` matches either tag. Repeat the plain-word and qualifier
+    searches on Discover and on Shared with me: **Expected:** the syntax behaves
+    identically on all three surfaces. Search for a literal `50%`: **Expected:**
+    only recipes containing the literal text match (the `%` is not treated as a
+    wildcard).
 
 **Run when:**
 `packages/app/src/screens/{Recipes,RecipeDetail,EditRecipe,EditVersion,ManualEntry,SharedWithMe,Home}Screen.tsx`,
@@ -289,6 +301,7 @@ page components, `packages/server` recipe routes,
 `packages/server/src/lib/saveRecipeFromInput.ts`,
 `packages/server/src/lib/mapRowToRecipeDetail.ts`,
 `packages/server/src/lib/recipeProvenance.ts`,
+`packages/server/src/routes/recipes/searchQuery.ts`,
 `packages/server/src/routes/ssr/**`,
 `packages/server/src/lib/renderPublicRecipe.tsx`,
 `packages/server/src/lib/loadPublicRecipe.ts`, the SSR route registration in
@@ -1039,7 +1052,14 @@ where analytics (PostHog) is configured._
    the feedback shortcut is on. **Expected:** the shortcut is forced off with
    the explanatory message; re-enabling it re-presents the consent prompt.
 
+6. **Served head carries the noindex directive (#614).** Load
+   `/privacy/consent` with scripting disabled (or view the served HTML
+   source). **Expected:** the page head contains
+   `<meta name="robots" content="noindex, nofollow">` in the initial
+   HTML, before any client code runs.
+
 **Run when:** `packages/client/src/analyticsConsent.ts`,
+`packages/client/src/pageHead.ts`, `packages/server/src/staticWeb.ts`,
 `packages/web/src/i18n/voice.ts`, `packages/app/src/i18n/voice.ts`,
 `packages/web/src/pages/ConsentPreferencesPage.tsx`,
 `packages/web/src/components/AnalyticsConsentBanner.tsx`,
@@ -1113,8 +1133,8 @@ account (never production data — content edits create real versions).
 6. **Set and clear `sourceUrl` on update.** Call `update_recipe` with only a
    `sourceUrl`, then again with `sourceUrl: null`. **Expected:** the first call
    succeeds as a metadata-only update (a `sourceUrl`-only patch counts as an
-   update field) and `get_recipe` shows the new value; the second clears it
-   back to `null`. No new version is created either time.
+   update field) and `get_recipe` shows the new value; the second clears it back
+   to `null`. No new version is created either time.
 
 **Run when:** `packages/mcp-server`,
 `packages/server/src/routes/recipes/editVersionContent.ts`, recipe version

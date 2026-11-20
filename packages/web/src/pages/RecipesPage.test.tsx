@@ -101,6 +101,25 @@ describe('RecipesPage', () => {
     });
   });
 
+  test('discovery section shows the empty-feed title when the public feed is empty and no search was entered (#616)', async () => {
+    server.use(
+      http.get('http://localhost:8080/api/public/recipes', () =>
+        HttpResponse.json([]),
+      ),
+    );
+    await renderWithProviders(<RecipesPage />);
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          'No public recipes yet — new dishes show up here as cooks share them.',
+        ),
+      ).toBeInTheDocument();
+    });
+    expect(
+      screen.queryByText('No public recipes match your search.'),
+    ).not.toBeInTheDocument();
+  });
+
   // Pagination is the DS page's end-reached signal now (its FlatList
   // fires onLoadMore when scrolled to the end); jsdom has no layout,
   // so the signal cannot be driven here — the browser-level flow is

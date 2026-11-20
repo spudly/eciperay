@@ -46,6 +46,10 @@ msgid "mealDetail.nutritionCarbs"
 msgstr "{value}g carbs~"
 
 #. js-lingui-explicit-id
+msgid "mealDetail.nutritionNetCarbs"
+msgstr "{value}g net carbs~"
+
+#. js-lingui-explicit-id
 #: src/screens/MealDetailScreen.tsx:58
 msgid "mealDetail.nutritionFat"
 msgstr "{value}g fat~"

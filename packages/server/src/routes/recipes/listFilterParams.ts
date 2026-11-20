@@ -4,6 +4,16 @@ import type {
   RecipeStatus,
 } from '@eciperay/types';
 
+import {parseSearchSyntax, type ParsedSearchQuery} from './searchQuery.js';
+
+export {
+  buildSearchQuerySql,
+  escapeLikePattern,
+  parseSearchSyntax,
+  type ParsedSearchQuery,
+  type SearchScope,
+} from './searchQuery.js';
+
 export const DEFAULT_RECIPE_LIST_LIMIT = 100;
 export const MAX_RECIPE_LIST_LIMIT = 500;
 
@@ -25,6 +35,7 @@ export type RecipeListFilterParams = {
   limit: number;
   offset: number;
   search: string | null;
+  searchQuery: ParsedSearchQuery;
   status: RecipeStatus | null | 'invalid';
   ingredient: string | null;
   minCalories: number | null;
@@ -46,12 +57,12 @@ export const parseOptionalSearch = (value?: unknown): string | null => {
 };
 
 /**
- * The title `search` value, with every run of whitespace collapsed to a single
- * space (JS `\s` also covers non-breaking and other unicode spaces): a search
- * typed or pasted with irregular spacing must denote the same words as its
- * normally-spaced form for the word-by-word title match (#385). Only the title
- * search is normalized this way — the `ingredient` filter phrase-matches stored
- * ingredient names verbatim, so it keeps the trim-only parsing above.
+ * The `search` value, with every run of whitespace collapsed to a single space
+ * (JS `\s` also covers non-breaking and other unicode spaces): a search typed
+ * or pasted with irregular spacing must denote the same terms as its
+ * normally-spaced form for the GitHub-style search parser (#611). Only the
+ * search value is normalized this way — the `ingredient` filter phrase-matches
+ * stored ingredient names verbatim, so it keeps the trim-only parsing above.
  */
 export const parseSearchQuery = (value?: unknown): string | null => {
   const parsed = parseOptionalSearch(value);
@@ -134,24 +145,28 @@ type QueryBag = {query: Record<string, unknown>};
 export const parseRecipeListFilterParams = (
   req: QueryBag,
   options?: {defaultSort?: RecipeListSort; defaultSortDir?: RecipeListSortDir},
-): RecipeListFilterParams => ({
-  limit: parseLimit(req.query['limit']),
-  offset: parseOffset(req.query['offset']),
-  search: parseSearchQuery(req.query['search']),
-  status: parseStatusFilter(req.query['status']),
-  ingredient: parseOptionalSearch(req.query['ingredient']),
-  minCalories: parseOptionalNumber(req.query['minCalories']),
-  maxCalories: parseOptionalNumber(req.query['maxCalories']),
-  minProteinG: parseOptionalNumber(req.query['minProteinG']),
-  maxProteinG: parseOptionalNumber(req.query['maxProteinG']),
-  minSatiety: parseOptionalNumber(req.query['minSatiety']),
-  maxSatiety: parseOptionalNumber(req.query['maxSatiety']),
-  sort: parseSort(req.query['sort'], options?.defaultSort ?? 'newest'),
-  sortDir: parseSortDir(
-    req.query['sortDir'],
-    options?.defaultSortDir ?? 'desc',
-  ),
-});
+): RecipeListFilterParams => {
+  const search = parseSearchQuery(req.query['search']);
+  return {
+    limit: parseLimit(req.query['limit']),
+    offset: parseOffset(req.query['offset']),
+    search,
+    searchQuery: parseSearchSyntax(search),
+    status: parseStatusFilter(req.query['status']),
+    ingredient: parseOptionalSearch(req.query['ingredient']),
+    minCalories: parseOptionalNumber(req.query['minCalories']),
+    maxCalories: parseOptionalNumber(req.query['maxCalories']),
+    minProteinG: parseOptionalNumber(req.query['minProteinG']),
+    maxProteinG: parseOptionalNumber(req.query['maxProteinG']),
+    minSatiety: parseOptionalNumber(req.query['minSatiety']),
+    maxSatiety: parseOptionalNumber(req.query['maxSatiety']),
+    sort: parseSort(req.query['sort'], options?.defaultSort ?? 'newest'),
+    sortDir: parseSortDir(
+      req.query['sortDir'],
+      options?.defaultSortDir ?? 'desc',
+    ),
+  };
+};
 
 export const nutritionFilterSql = (paramOffset: number) => `
     and ($${paramOffset}::float8 is null or rv.calories >= $${paramOffset})
@@ -160,56 +175,6 @@ export const nutritionFilterSql = (paramOffset: number) => `
     and ($${paramOffset + 3}::float8 is null or rv.protein_g <= $${paramOffset + 3})
     and ($${paramOffset + 4}::float8 is null or rv.satiety_score >= $${paramOffset + 4})
     and ($${paramOffset + 5}::float8 is null or rv.satiety_score <= $${paramOffset + 5})
-`;
-
-/**
- * Title search (#385): the search text is matched word by word — every
- * whitespace-separated word must appear somewhere in the title as a
- * case-insensitive substring. A single word therefore behaves exactly like the
- * old contiguous `%word%` match (a word in the middle of the title matches, not
- * only a title prefix), and a multi-word search such as "First Soup" matches
- * "QA — First Soup" even when the words are not contiguous in the title, are
- * separated by different spacing or punctuation, or appear in a different order
- * — the old single-phrase `%First Soup%` match required the words to appear in
- * the title as one contiguous phrase in the same order and spacing, and found
- * nothing otherwise (the #385 picker miss). Implemented as "no search word is
- * absent from the title" so the one search bind value keeps its position in
- * every list query's parameter layout.
- */
-/**
- * A search word with the ILIKE pattern metacharacters escaped (backslash first,
- * then `%` and `_`), so a word is matched literally: without this, searching
- * "50%" would also match "50g" and "a_b" would match "axb".
- */
-const escapedSearchTokenSql = `replace(replace(replace(search_token.token, '\\', '\\\\'), '%', '\\%'), '_', '\\_')`;
-
-export const titleSearchFilterSql = (paramIndex: number) => `
-    and (
-      $${paramIndex}::text is null
-      or not exists (
-        select 1
-        from unnest(regexp_split_to_array($${paramIndex}, '\\s+')) as search_token(token)
-        where rv.title not ilike '%' || ${escapedSearchTokenSql} || '%'
-      )
-    )
-`;
-
-/**
- * Public-discovery variant of {@link titleSearchFilterSql}: each search word
- * must appear in the title or the description (per word, either field),
- * preserving the old phrase match's title-or-description scope under the same
- * word-by-word semantics (#385).
- */
-export const titleOrDescriptionSearchFilterSql = (paramIndex: number) => `
-    and (
-      $${paramIndex}::text is null
-      or not exists (
-        select 1
-        from unnest(regexp_split_to_array($${paramIndex}, '\\s+')) as search_token(token)
-        where rv.title not ilike '%' || ${escapedSearchTokenSql} || '%'
-          and coalesce(rv.description, '') not ilike '%' || ${escapedSearchTokenSql} || '%'
-      )
-    )
 `;
 
 export const ingredientFilterSql = (paramIndex: number) => `

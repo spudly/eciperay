@@ -127,12 +127,12 @@ describe('MealPlanDetailView', () => {
     // the goals section as its Plan total line.
     expect(
       await findByText(
-        '500 cal · 30g protein · 40g carbs · 10g fat · satiety 50',
+        '500 cal · 30g protein · 40g carbs · 35g net carbs · 10g fat · satiety 50',
       ),
     ).toBeTruthy();
     expect(
       await findByText(
-        'Plan total: 500 cal · 30g protein · 40g carbs · 10g fat · satiety 50',
+        'Plan total: 500 cal · 30g protein · 40g carbs · 35g net carbs · 10g fat · satiety 50',
       ),
     ).toBeTruthy();
   });
@@ -371,7 +371,7 @@ describe('MealPlanDetailView', () => {
     ).toBeTruthy();
     fireEvent.press(
       await findByLabelText(
-        'Meal · Sunday Dinner, Qty 2 · 3 recipes · 300 cal · 20g protein · 40g carbs · 10g fat',
+        'Meal · Sunday Dinner, Qty 2 · 3 recipes · 300 cal · 20g protein · 40g carbs · 35g net carbs · 10g fat',
       ),
     );
     expect(Linking.openURL).toHaveBeenCalledWith('app://meals/meal-1');

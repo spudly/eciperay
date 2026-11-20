@@ -38,6 +38,7 @@ export const mapNutritionSummary = (
     | 'protein_g'
     | 'carbs_g'
     | 'fat_g'
+    | 'fiber_g'
     | 'satiety_score'
     | 'nutrition_status'
   >,
@@ -48,6 +49,7 @@ export const mapNutritionSummary = (
   proteinG: row.protein_g ?? null,
   carbsG: row.carbs_g ?? null,
   fatG: row.fat_g ?? null,
+  fiberG: row.fiber_g ?? null,
 });
 
 export const mapNutritionInfoFromDetailRow = (

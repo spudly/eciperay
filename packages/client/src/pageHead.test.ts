@@ -38,6 +38,22 @@ describe('pageHead', () => {
     }
   });
 
+  test('the consent preferences page gets a noindex head and stays out of the sitemap set', () => {
+    const head = buildPublicPageHead(
+      DEFAULT_WEB_BASE_URL,
+      '/privacy/consent',
+    );
+    expect(head).toBeDefined();
+    expect(head?.robots).toBe('noindex, nofollow');
+    expect(head?.title).toBe('Consent Preferences | Eciperay');
+    expect(head?.canonicalUrl).toBeUndefined();
+    expect(head?.openGraph).toBeUndefined();
+    expect(head?.twitter).toBeUndefined();
+    expect(
+      STATIC_PUBLIC_PAGES.some(page => page.path === '/privacy/consent'),
+    ).toBe(false);
+  });
+
   test('unknown paths have no public head config', () => {
     expect(
       buildPublicPageHead(DEFAULT_WEB_BASE_URL, '/recipes'),

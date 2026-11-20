@@ -5,6 +5,7 @@ import type {AuthedRequest} from '../../middleware/requireAuth.js';
 import {mapRowToRecipeListItem} from '../../lib/mapRowToRecipeDetail.js';
 
 import {
+  buildSearchQuerySql,
   filterBindValues,
   parseRecipeListFilterParams,
 } from './listFilterParams.js';
@@ -41,16 +42,21 @@ export const listRecipes = async (
     return;
   }
 
+  const baseValues = [
+    req.userId,
+    params.limit,
+    params.offset,
+    params.status,
+    ...filterBindValues(params),
+  ];
+  const searchQuerySql = buildSearchQuerySql(
+    params.searchQuery,
+    baseValues.length + 1,
+    'mine',
+  );
   const result = await queryFn(
-    buildListRecipesSql(params.sort, params.sortDir),
-    [
-      req.userId,
-      params.limit,
-      params.offset,
-      params.search,
-      params.status,
-      ...filterBindValues(params),
-    ],
+    buildListRecipesSql(params.sort, params.sortDir, searchQuerySql.sql),
+    [...baseValues, ...searchQuerySql.values],
   );
   res.json(
     result.rows.map(row =>
