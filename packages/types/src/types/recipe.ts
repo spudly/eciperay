@@ -50,6 +50,8 @@ export type Recipe = {
   imageUrl: string | null;
   sourceUrl: string | null;
   createdVia: VersionCreatedVia;
+  /** Recipe-level provenance (#609); null only for legacy rows the backfill could not classify. Absent on surfaces that do not select the provenance columns. */
+  provenance?: RecipeProvenance | null;
   createdAt: string;
   updatedAt: string;
 } & RecipeNutritionSummary;

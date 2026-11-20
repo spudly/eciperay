@@ -232,7 +232,7 @@ describe('saveNewRecipeFromInput', () => {
       {
         userId: 'user-uuid-1',
         supabaseUid: 'supabase-uid-1',
-        input: makeRecipeInput(),
+        input: makeRecipeInput({sourceUrl: 'https://example.com/recipe'}),
         createdVia: 'import_url',
       },
       mockQuery,
@@ -266,7 +266,7 @@ describe('saveNewRecipeFromInput', () => {
       {
         userId: 'user-uuid-1',
         supabaseUid: 'supabase-uid-1',
-        input: makeRecipeInput(),
+        input: makeRecipeInput({sourceUrl: 'https://example.com/recipe'}),
         createdVia: 'import_url',
       },
       mockQuery,

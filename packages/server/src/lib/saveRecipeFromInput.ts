@@ -26,6 +26,10 @@ import {
   updateVersion,
 } from '../routes/recipes/versionQueries.js';
 import {updateRecipeStatus} from '../routes/recipes/recipeStatusQueries.js';
+import {
+  defaultVisibilityForProvenance,
+  deriveRecipeProvenance,
+} from './recipeProvenance.js';
 
 import {
   autoImageContextFromDetail,
@@ -46,6 +50,8 @@ type SaveRecipeFromInputOptions = {
   recipeId?: string;
   versionId?: string;
   createdVia?: VersionCreatedVia;
+  /** Explicit provenance detail where the creation path collects one (e.g. cookbook identification for a photo import, #609). */
+  provenanceDetail?: string | null;
 };
 
 export class RecipeNotFoundError extends Error {
@@ -68,12 +74,23 @@ const replaceVersionChildren = async (
   await linkTags(versionId, input.tagIds, queryFn);
 };
 
+const SET_PROVENANCE_SQL = `
+  update recipes
+  set provenance_source = $2, provenance_detail = $3, visibility = $4
+  where id = $1
+`;
+
 const createLineageWithVersion = async (
   input: RecipeInput,
   userId: string,
   createdVia: VersionCreatedVia,
   queryFn: QueryFn,
+  provenanceDetail?: string | null,
 ): Promise<CreateRecipeResult> => {
+  // #609: every new recipe records its provenance at creation (derived
+  // from the creation path; validated per type) and takes the
+  // public-by-default visibility for that provenance.
+  const provenance = deriveRecipeProvenance(createdVia, input, provenanceDetail);
   const lineage = await insertLineage(
     userId,
     slugifyRecipeTitle(input.title),
@@ -84,6 +101,12 @@ const createLineageWithVersion = async (
   if (!recipeId) {
     throw new Error('Failed to create recipe lineage');
   }
+  await queryFn(SET_PROVENANCE_SQL, [
+    recipeId,
+    provenance.source,
+    provenance.detail,
+    defaultVisibilityForProvenance(provenance),
+  ]);
   const version = await insertVersion(
     buildVersionOptions({input, recipeId, versionNumber: 1, createdVia}),
     queryFn,
@@ -158,6 +181,7 @@ const saveRecipe = async (
     opts.userId,
     opts.createdVia ?? 'manual',
     queryFn,
+    opts.provenanceDetail,
   );
 };
 
@@ -187,7 +211,7 @@ export const saveNewRecipeFromInput = async (
   queryFn: QueryFn,
 ): Promise<CreateRecipeResult & {recipe: RecipeDetail}> => {
   const ids = await runTransactional(queryFn, q =>
-    createLineageWithVersion(opts.input, opts.userId, opts.createdVia, q),
+    createLineageWithVersion(opts.input, opts.userId, opts.createdVia, q, opts.provenanceDetail),
   );
   scheduleNutritionRefresh(ids.versionId, queryFn);
   const detail = await queryFn(GET_RECIPE_DETAIL_SQL, [

@@ -2,6 +2,7 @@
 import type {
   PublicRecipeDetail,
   RecipeDetail,
+  RecipeProvenanceSource,
   RecipeStatus,
   RecipeVersionDetail,
   RecipeVersionSummary,
@@ -31,6 +32,8 @@ type RecipeDetailRow = {
   share_token_hash: string | null;
   content_revision: number;
   cloned_from_recipe_id: string | null;
+  provenance_source?: RecipeProvenanceSource | null;
+  provenance_detail?: string | null;
   star_rating: RecipeDetail['starRating'];
   active_version_id: string;
   version_id: string;
@@ -203,6 +206,14 @@ export const mapRowToRecipeDetail = (row: RecipeDetailRow): RecipeDetail => ({
   imageUrl: row.image_url,
   sourceUrl: row.source_url,
   createdVia: row.created_via,
+  ...(row.provenance_source
+    ? {
+        provenance: {
+          source: row.provenance_source,
+          detail: row.provenance_detail ?? null,
+        },
+      }
+    : {}),
   createdAt: row.created_at,
   updatedAt: row.updated_at,
   ...mapNutritionSummary(row),
