@@ -46,7 +46,6 @@ describe('GET /recipes/shared-with-me', () => {
       null,
       null,
       null,
-      null,
     ]);
   });
 
@@ -84,14 +83,10 @@ describe('GET /recipes/shared-with-me', () => {
     );
   });
 
-  test('searches titles word by word, not as one contiguous phrase (#385)', () => {
+  test('leaves search conditions to the compiled search query (#611)', () => {
+    expect(LIST_SHARED_WITH_ME_SQL).not.toContain('search_token');
     expect(LIST_SHARED_WITH_ME_SQL).toContain(
-      "regexp_split_to_array($4, '\\s+')",
-    );
-    expect(LIST_SHARED_WITH_ME_SQL).toContain('rv.title not ilike');
-    expect(LIST_SHARED_WITH_ME_SQL).toContain('search_token.token');
-    expect(LIST_SHARED_WITH_ME_SQL).not.toContain(
-      "rv.title ilike '%' || $4 || '%'",
+      'and ($4::text is null or r.status = $4)',
     );
   });
 

@@ -3,6 +3,7 @@ import type {Response, Request} from 'express';
 import {query as defaultQuery} from '../../db/query.js';
 import {mapRowToPublicRecipeDiscoveryItem} from '../../lib/mapRowToRecipeDetail.js';
 import {
+  buildSearchQuerySql,
   filterBindValues,
   parseRecipeListFilterParams,
 } from '../recipes/listFilterParams.js';
@@ -29,15 +30,20 @@ export const listPublicRecipes = async (
     return;
   }
 
+  const baseValues = [
+    params.limit,
+    params.offset,
+    params.status,
+    ...filterBindValues(params),
+  ];
+  const searchQuerySql = buildSearchQuerySql(
+    params.searchQuery,
+    baseValues.length + 1,
+    'public',
+  );
   const result = await queryFn(
-    buildListPublicRecipesSql(params.sort, params.sortDir),
-    [
-      params.limit,
-      params.offset,
-      params.search,
-      params.status,
-      ...filterBindValues(params),
-    ],
+    buildListPublicRecipesSql(params.sort, params.sortDir, searchQuerySql.sql),
+    [...baseValues, ...searchQuerySql.values],
   );
   res.json(
     result.rows.map(row =>

@@ -7,6 +7,10 @@ import {
   MAX_RECIPE_LIST_LIMIT,
 } from '../recipes/listRecipes.js';
 import {
+  buildSearchQuerySql,
+  parseSearchSyntax,
+} from '../recipes/listFilterParams.js';
+import {
   LIST_PUBLIC_RECIPES_SQL,
   buildListPublicRecipesSql,
 } from '../recipes/sqlConstants.js';
@@ -85,7 +89,6 @@ describe('GET /public/recipes', () => {
       DEFAULT_RECIPE_LIST_LIMIT,
       0,
       null,
-      null,
       ...emptyFilterBinds,
     ]);
   });
@@ -99,8 +102,12 @@ describe('GET /public/recipes', () => {
 
     expect(res.status).toBe(200);
     expect(mockQuery).toHaveBeenCalledWith(
-      buildListPublicRecipesSql('rating', 'desc'),
-      [25, 10, 'pasta', null, ...emptyFilterBinds],
+      buildListPublicRecipesSql(
+        'rating',
+        'desc',
+        buildSearchQuerySql(parseSearchSyntax('pasta'), 11, 'public').sql,
+      ),
+      [25, 10, null, ...emptyFilterBinds, '%pasta%'],
     );
   });
 
@@ -111,7 +118,6 @@ describe('GET /public/recipes', () => {
       MAX_RECIPE_LIST_LIMIT,
       0,
       null,
-      null,
       ...emptyFilterBinds,
     ]);
   });
@@ -120,14 +126,12 @@ describe('GET /public/recipes', () => {
     expect(LIST_PUBLIC_RECIPES_SQL).toContain("r.status <> 'idea'");
   });
 
-  test('searches title/description word by word, not as one phrase (#385)', () => {
+  test('leaves search conditions to the compiled search query (#611)', () => {
+    // With no search terms the builder adds no search conditions; the
+    // endpoint appends the parsed query's conditions instead.
+    expect(LIST_PUBLIC_RECIPES_SQL).not.toContain('search_token');
     expect(LIST_PUBLIC_RECIPES_SQL).toContain(
-      "regexp_split_to_array($3, '\\s+')",
-    );
-    expect(LIST_PUBLIC_RECIPES_SQL).toContain('rv.title not ilike');
-    expect(LIST_PUBLIC_RECIPES_SQL).toContain('search_token.token');
-    expect(LIST_PUBLIC_RECIPES_SQL).not.toContain(
-      "rv.title ilike '%' || $3 || '%'",
+      'and ($3::text is null or r.status = $3)',
     );
   });
 
