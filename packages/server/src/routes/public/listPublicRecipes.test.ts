@@ -79,6 +79,7 @@ describe('GET /public/recipes', () => {
       proteinG: null,
       carbsG: null,
       fatG: null,
+      fiberG: null,
       communityRating: {average: 4.5, count: 2, hasStaleRatings: false},
     });
     expect(mockQuery).toHaveBeenCalledWith(LIST_PUBLIC_RECIPES_SQL, [

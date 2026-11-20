@@ -10,8 +10,8 @@ export type NutritionTabRow = {label: string; value: number; unit: string};
  * from the summed values, never averaged from per-recipe nets.
  */
 export const netCarbsG = (nutrition: {
-  carbsG: number | null | undefined;
-  fiberG: number | null | undefined;
+  carbsG?: number | null;
+  fiberG?: number | null;
 }): number | null =>
   typeof nutrition.carbsG === 'number' &&
   typeof nutrition.fiberG === 'number'
