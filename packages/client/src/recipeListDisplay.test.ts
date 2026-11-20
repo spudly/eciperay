@@ -123,6 +123,18 @@ describe('recipeListDisplay', () => {
     ).toBe('4.2 (8) · 300 cal · 15g protein · 30g carbs · 5g fat · Satiety 55');
   });
 
+  test('condensed meta adds net carbs beside carbs when fiber is known (#613)', () => {
+    expect(
+      formatCondensedNutritionParts({
+        calories: 400,
+        proteinG: 20,
+        carbsG: 40,
+        fatG: 10,
+        fiberG: 5,
+      }),
+    ).toEqual(['400 cal', '20g protein', '40g carbs', '35g net carbs', '10g fat']);
+  });
+
   test('pluralizes servings and formats the card subtitle (#278)', () => {
     expect(formatServingsLabel(1)).toBe('1 serving');
     expect(formatServingsLabel(2)).toBe('2 servings');

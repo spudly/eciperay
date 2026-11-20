@@ -218,7 +218,7 @@ describe('MealsHubPage', () => {
     await waitFor(() => {
       expect(
         screen.getByText(
-          '1 recipe~ · 500 cal~ · 30g protein~ · 40g carbs~ · 10g fat~',
+          '1 recipe~ · 500 cal~ · 30g protein~ · 40g carbs~ · 35g net carbs~ · 10g fat~',
         ),
       ).toBeInTheDocument();
     });
@@ -230,7 +230,7 @@ describe('MealsHubPage', () => {
     await waitFor(() => {
       expect(
         screen.getByText(
-          '2 entries~~ · 2026-01-01 – 2026-01-07 · 500 cal~ · 30g protein~ · 40g carbs~ · 10g fat~',
+          '2 entries~~ · 2026-01-01 – 2026-01-07 · 500 cal~ · 30g protein~ · 40g carbs~ · 35g net carbs~ · 10g fat~',
         ),
       ).toBeInTheDocument();
     });
@@ -252,7 +252,7 @@ describe('MealsHubPage', () => {
     await waitFor(() => {
       expect(
         screen.getByText(
-          '1000 entries~~ · 2026-01-01 – 2026-01-07 · 500 cal~ · 30g protein~ · 40g carbs~ · 10g fat~',
+          '1000 entries~~ · 2026-01-01 – 2026-01-07 · 500 cal~ · 30g protein~ · 40g carbs~ · 35g net carbs~ · 10g fat~',
         ),
       ).toBeInTheDocument();
     });

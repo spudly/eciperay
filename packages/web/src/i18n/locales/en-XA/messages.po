@@ -222,6 +222,10 @@ msgid "mealDetail.nutritionCarbs"
 msgstr "{value}g carbs~"
 
 #. js-lingui-explicit-id
+msgid "mealDetail.nutritionNetCarbs"
+msgstr "{value}g net carbs~"
+
+#. js-lingui-explicit-id
 #: src/pages/MealDetailPage.tsx:60
 #: src/pages/MealsHubPage.tsx:53
 msgid "mealDetail.nutritionFat"

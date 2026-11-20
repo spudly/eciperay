@@ -51,6 +51,11 @@ const formatHubNutrition = (
       values: {value: Math.round(nutrition.carbsG)},
     }),
     i18n._({
+      id: 'mealDetail.nutritionNetCarbs',
+      message: '{value}g net carbs',
+      values: {value: Math.round(nutrition.carbsG - nutrition.fiberG)},
+    }),
+    i18n._({
       id: 'mealDetail.nutritionFat',
       message: '{value}g fat',
       values: {value: Math.round(nutrition.fatG)},

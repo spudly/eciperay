@@ -172,6 +172,10 @@ export const buildMealPlanDayTotals = (
       {label: 'Calories', valueLabel: `${Math.round(totals.calories)} cal`},
       {label: 'Protein', valueLabel: `${Math.round(totals.proteinG)}g protein`},
       {label: 'Carbs', valueLabel: `${Math.round(totals.carbsG)}g carbs`},
+      {
+        label: 'Net carbs',
+        valueLabel: `${Math.round(totals.carbsG - totals.fiberG)}g net carbs`,
+      },
       {label: 'Fat', valueLabel: `${Math.round(totals.fatG)}g fat`},
     ],
     ...(totals.satietyScore !== null

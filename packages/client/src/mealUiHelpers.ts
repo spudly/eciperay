@@ -109,6 +109,9 @@ export const formatSimpleNutrition = (
     `${Math.round(nutrition.calories)} cal`,
     `${Math.round(nutrition.proteinG)}g protein`,
     `${Math.round(nutrition.carbsG)}g carbs`,
+    // Aggregates always carry summed fiber, so net carbs (from the summed
+    // values, #613) always renders beside total carbs here.
+    `${Math.round(nutrition.carbsG - nutrition.fiberG)}g net carbs`,
     `${Math.round(nutrition.fatG)}g fat`,
   ];
   if (nutrition.satietyScore !== null) {
@@ -250,6 +253,13 @@ export const buildWeeklyTotalsBand = (
       label: 'Carbs',
       pick: n => n.carbsG,
       format: v => `${Math.round(v)}g carbs`,
+    },
+    {
+      // Net carbs from the summed values (#613): the same pick runs on the
+      // totals and on the per-day average, both AggregatedNutrition.
+      label: 'Net carbs',
+      pick: n => n.carbsG - n.fiberG,
+      format: v => `${Math.round(v)}g net carbs`,
     },
     {label: 'Fat', pick: n => n.fatG, format: v => `${Math.round(v)}g fat`},
   ];
