@@ -134,6 +134,9 @@ describe('GET /public/recipes/:id', () => {
       if (sql === INSERT_SHARE_GRANT_SQL) {
         return Promise.resolve(makeQueryResult([]));
       }
+      if (sql.includes('family_share_grants')) {
+        return Promise.resolve(makeQueryResult([]));
+      }
       if (sql.includes('recipe_share_grants')) {
         return Promise.resolve(makeQueryResult([]));
       }
@@ -232,6 +235,9 @@ describe('GET /public/recipes/:id', () => {
       if (sql === INSERT_SHARE_GRANT_SQL) {
         return Promise.resolve(makeQueryResult([]));
       }
+      if (sql.includes('family_share_grants')) {
+        return Promise.resolve(makeQueryResult([]));
+      }
       if (sql.includes('recipe_share_grants')) {
         return Promise.resolve(makeQueryResult([]));
       }
@@ -263,6 +269,13 @@ describe('GET /public/recipes/:id', () => {
     mockQuery.mockImplementation(((sql: string) => {
       if (sql.includes('recipe_ratings rr')) {
         return Promise.resolve(makeQueryResult([]));
+      }
+      if (sql.includes('has_family_grant')) {
+        return Promise.resolve(
+          makeQueryResult([
+            {has_individual_grant: true, has_family_grant: false},
+          ]),
+        );
       }
       if (sql.includes('recipe_share_grants') && sql.includes('exists')) {
         return Promise.resolve(makeQueryResult([{exists: 1}]));

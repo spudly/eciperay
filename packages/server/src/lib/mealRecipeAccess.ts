@@ -1,7 +1,7 @@
 import {query as defaultQuery} from '../db/query.js';
 
 import {canReadRecipe, toRecipeAccessRecord} from './recipeAccess.js';
-import {userHasShareGrant} from './shareGrant.js';
+import {userHasShareAccess} from './shareGrant.js';
 
 type QueryFn = typeof defaultQuery;
 
@@ -48,7 +48,7 @@ export const loadAccessibleRecipe = async (
   if (!row) {
     return null;
   }
-  const hasShareGrant = await userHasShareGrant(recipeId, userId, queryFn);
+  const hasShareGrant = await userHasShareAccess(recipeId, userId, queryFn);
   if (!canReadRecipe(toRecipeAccessRecord(row), {userId, hasShareGrant})) {
     return null;
   }

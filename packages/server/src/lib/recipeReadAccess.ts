@@ -12,7 +12,7 @@ import {
   withIssuedShareTokenHashes,
   type RecipeAccessRecord,
 } from './recipeAccess.js';
-import {userHasShareGrant} from './shareGrant.js';
+import {userHasShareAccess} from './shareGrant.js';
 
 type QueryFn = typeof defaultQuery;
 
@@ -29,7 +29,7 @@ export const loadReadableRecipeRow = async (
     return null;
   }
 
-  const hasShareGrant = await userHasShareGrant(recipeId, userId, queryFn);
+  const hasShareGrant = await userHasShareAccess(recipeId, userId, queryFn);
   if (!canReadRecipe(toRecipeAccessRecord(row), {userId, hasShareGrant})) {
     return null;
   }
@@ -59,7 +59,7 @@ export const loadPublicReadableRecipeRow = async (
     shareToken ? await loadIssuedShareTokenHashes(recipeId, queryFn) : [],
   );
   const hasShareGrant = req.userId
-    ? await userHasShareGrant(recipeId, req.userId, queryFn)
+    ? await userHasShareAccess(recipeId, req.userId, queryFn)
     : false;
 
   const denial = resolvePublicRecipeAccess(accessRecord, {

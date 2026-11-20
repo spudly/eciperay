@@ -54,6 +54,7 @@ export type Recipe = {
   provenance?: RecipeProvenance | null;
   createdAt: string;
   updatedAt: string;
+  sharedVia?: RecipeSharedVia;
 } & RecipeNutritionSummary;
 
 export type RecipeDetail = Recipe & {
@@ -98,6 +99,9 @@ export type RecipeSharingUpdateInput = {
 export type RecipeSharingUpdateResult = RecipeDetail & {shareToken?: string};
 
 export type RecipeShareGrantVia = 'link' | 'explicit';
+
+/** Set only on Shared With Me list items: how the recipe was shared. */
+export type RecipeSharedVia = 'individual' | 'family';
 
 /**
  * Recipe detail safe for anonymous viewers (no owner identifiers).

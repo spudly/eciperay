@@ -1,5 +1,6 @@
 import type {NutritionGoals} from './nutritionGoals.js';
 import type {RecipeExportRecord} from './recipeExport.js';
+import type {AccountExportFamilyShareGrant} from './familySharing.js';
 import type {RecipeShareGrantVia} from './recipe.js';
 import type {RecipeStarRating} from './recipeRating.js';
 
@@ -32,6 +33,7 @@ export type AccountExportBundle = {
   nutritionGoals: NutritionGoals;
   recipes: RecipeExportRecord[];
   shareGrants: AccountExportShareGrant[];
+  familyShareGrants: AccountExportFamilyShareGrant[];
   communityRatings: AccountExportCommunityRating[];
   comments: AccountExportComment[];
 };

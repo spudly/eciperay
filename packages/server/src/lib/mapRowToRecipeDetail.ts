@@ -76,6 +76,7 @@ export type RecipeListRow = {
   created_via: VersionCreatedVia;
   created_at: string;
   updated_at: string;
+  shared_via?: RecipeDetail['sharedVia'];
   tags: RecipeDetail['tags'];
 } & NutritionColumns &
   CommunityRatingColumns;
@@ -124,6 +125,7 @@ type VersionSummaryRow = {
 };
 
 export const mapRowToRecipeListItem = (row: RecipeListRow): RecipeDetail => ({
+  ...(row.shared_via ? {sharedVia: row.shared_via} : {}),
   id: row.id,
   userId: '',
   status: row.status,

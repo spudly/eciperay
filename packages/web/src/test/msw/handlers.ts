@@ -697,6 +697,7 @@ export const handlers = [
       },
       recipes: [],
       shareGrants: [],
+      familyShareGrants: [],
       communityRatings: [],
       comments: [],
     }),

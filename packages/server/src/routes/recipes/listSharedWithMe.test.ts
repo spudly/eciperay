@@ -80,7 +80,7 @@ describe('GET /recipes/shared-with-me', () => {
       expect.any(Array),
     );
     expect(buildListSharedWithMeSql('newest', 'asc')).toContain(
-      'g.granted_at asc',
+      'shared_granted_at asc',
     );
   });
 
@@ -144,5 +144,24 @@ describe('GET /recipes/shared-with-me', () => {
       .set('Authorization', 'Bearer valid-token');
     expect(badDir.status).toBe(400);
     expect(mockQuery).not.toHaveBeenCalled();
+  });
+});
+
+describe('Shared With Me family union (#617)', () => {
+  test('unions family-shared recipes with a family marker', () => {
+    const sql = buildListSharedWithMeSql('newest', 'desc');
+    expect(sql).toContain('family_share_grants');
+    expect(sql).toContain("'family'");
+    expect(sql).toContain('shared_via');
+  });
+
+  test('individual grants win the badge when both grants exist', () => {
+    const sql = buildListSharedWithMeSql('newest', 'desc');
+    // One row per recipe (left joins, not a UNION of duplicates), and the
+    // case prefers the per-recipe grant over the family grant.
+    expect(sql).toContain(
+      "case when g.recipe_id is not null then 'individual' else 'family' end",
+    );
+    expect(sql).not.toContain('union');
   });
 });

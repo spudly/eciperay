@@ -20,7 +20,7 @@ import {
 } from './mealRecipeAccess.js';
 import {fetchNutritionGoals} from './nutritionGoalsQueries.js';
 import {canReadRecipe, toRecipeAccessRecord} from './recipeAccess.js';
-import {userHasShareGrant} from './shareGrant.js';
+import {userHasShareAccess} from './shareGrant.js';
 
 type QueryFn = typeof defaultQuery;
 
@@ -174,7 +174,7 @@ export const loadMealPlanDetail = async (
     );
     const raw =
       accessible ?? (await loadRecipeRowIgnoringAccess(row.recipe_id, queryFn));
-    const hasShareGrant = await userHasShareGrant(
+    const hasShareGrant = await userHasShareAccess(
       row.recipe_id,
       userId,
       queryFn,

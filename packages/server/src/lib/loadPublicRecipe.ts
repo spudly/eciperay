@@ -13,9 +13,9 @@ import {
   type PublicReadDenial,
 } from './recipeAccess.js';
 import {
+  getShareAccessBasis,
   recordShareGrant,
   shouldAutoRecordShareGrant,
-  userHasShareGrant,
 } from './shareGrant.js';
 
 type QueryFn = typeof defaultQuery;
@@ -57,9 +57,13 @@ export const loadPublicRecipe = async (
     toRecipeAccessRecord(row),
     shareToken ? await loadIssuedShareTokenHashes(id, queryFn) : [],
   );
-  const hasShareGrant = userId
-    ? await userHasShareGrant(id, userId, queryFn)
-    : false;
+  // One query, one snapshot: the access decision and the grant-recording
+  // decision below share the same basis, so a family revocation landing
+  // mid-request cannot split them (#617).
+  const basis = userId
+    ? await getShareAccessBasis(id, userId, queryFn)
+    : {hasIndividualGrant: false, hasFamilyGrant: false};
+  const hasShareGrant = basis.hasIndividualGrant || basis.hasFamilyGrant;
 
   const denial = resolvePublicRecipeAccess(accessRecord, {
     shareToken,
@@ -71,7 +75,10 @@ export const loadPublicRecipe = async (
     return {kind: 'denied', denial};
   }
 
-  if (shouldAutoRecordShareGrant(userId, row.user_id)) {
+  if (shouldAutoRecordShareGrant(userId, row.user_id) && !basis.hasFamilyGrant) {
+    // A family recipient's access must end when the designation is revoked
+    // (#617), so a family visit never mints a per-recipe grant that would
+    // survive revocation.
     await recordShareGrant(id, userId, 'link', queryFn);
   }
 
