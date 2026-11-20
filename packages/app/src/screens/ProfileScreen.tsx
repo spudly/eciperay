@@ -208,8 +208,14 @@ export const ProfileScreen = () => {
           <FamilySharingForm
             grants={familyGrants}
             isLoading={familyLoading}
+            loadFailed={familyLoadFailed}
             email={familyEmail}
-            onEmailChange={setFamilyEmail}
+            onEmailChange={next => {
+              setFamilyEmail(next);
+              // Editing the address after a failure clears the stale
+              // mutation error (query-load errors stay separate).
+              setFamilyError(null);
+            }}
             adding={addFamilyMutation.isPending}
             removingId={
               removeFamilyMutation.isPending
@@ -225,6 +231,8 @@ export const ProfileScreen = () => {
             onAdd={() => {
               const nextEmail = familyEmail.trim();
               if (nextEmail) {
+                // A retry starts clean, mirroring the web section.
+                setFamilyError(null);
                 addFamilyMutation.mutate(nextEmail);
               }
             }}

@@ -52,6 +52,26 @@ describe('FamilySharingForm', () => {
     expect(onRemove).toHaveBeenCalledWith(grant);
   });
 
+  test('does not show the empty state when the load failed', async () => {
+    const {queryByText, getByText} = await renderWithProviders(
+      <FamilySharingForm
+        grants={[]}
+        loadFailed
+        email=""
+        onEmailChange={jest.fn()}
+        onAdd={jest.fn()}
+        onRemove={jest.fn()}
+        error="Could not load your family sharing designations: offline"
+      />,
+    );
+    expect(
+      getByText('Could not load your family sharing designations: offline'),
+    ).toBeTruthy();
+    expect(
+      queryByText('You have not designated anyone for family sharing yet.'),
+    ).toBeNull();
+  });
+
   test('shows an error alert', async () => {
     const {getByText} = await renderWithProviders(
       <FamilySharingForm

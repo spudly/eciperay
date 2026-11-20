@@ -506,6 +506,29 @@ describe('RecipesPage', () => {
     expect(screen.getByText('Discover')).toBeInTheDocument();
   });
 
+  test('badges a family-shared row as Family, not Shared (#617)', async () => {
+    server.use(
+      http.get('http://localhost:8080/api/recipes/shared-with-me', () =>
+        HttpResponse.json([
+          makeRecipeDetail({
+            id: 'family-recipe-1',
+            userId: 'other-user',
+            title: 'Family Pasta',
+            slug: 'family-pasta',
+            visibility: 'private',
+            sharedVia: 'family',
+          }),
+        ]),
+      ),
+    );
+    await renderWithProviders(<RecipesPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Family Pasta')).toBeInTheDocument();
+    });
+    expect(screen.getByText('Family')).toBeInTheDocument();
+    expect(screen.queryByText('Shared')).not.toBeInTheDocument();
+  });
+
   test('renders own title and author byline from the en-XA Lingui catalog (#465)', async () => {
     await renderWithProviders(<RecipesPage />, {locale: 'en-XA'});
     await waitFor(() => {

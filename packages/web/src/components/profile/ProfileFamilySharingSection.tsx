@@ -93,8 +93,17 @@ export const ProfileFamilySharingSection = () => {
   const handleAdd = () => {
     const nextEmail = email.trim();
     if (nextEmail) {
+      // A retry starts clean: the previous attempt's error must not
+      // sit over the new request (it returns via onError if it fails).
+      setActionError(null);
       createMutation.mutate(nextEmail);
     }
+  };
+
+  const handleEmailChange = (next: string) => {
+    setEmail(next);
+    // Editing the address after a failure clears the stale error.
+    setActionError(null);
   };
 
   const handleRemove = (grant: FamilyShareGrant) => {
@@ -145,7 +154,7 @@ export const ProfileFamilySharingSection = () => {
           <FieldInput
             id={emailFieldId}
             value={email}
-            onChangeText={setEmail}
+            onChangeText={handleEmailChange}
             placeholder="family@example.com"
             placeholderTextColor="$textMuted"
           />
@@ -207,7 +216,7 @@ export const ProfileFamilySharingSection = () => {
           >
             Loading family sharing…
           </Text>
-        ) : grants.length === 0 ? (
+        ) : loadFailed ? null : grants.length === 0 ? (
           <Text
             fontSize={tokens.typography.fontSize.sm}
             color="$textMuted"

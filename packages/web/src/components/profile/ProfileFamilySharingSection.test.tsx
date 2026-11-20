@@ -98,6 +98,47 @@ describe('ProfileFamilySharingSection', () => {
     });
   });
 
+  test('does not show the empty state when the initial load fails', async () => {
+    vi.spyOn(eciperay.account, 'listFamilySharing').mockRejectedValue(
+      new Error('offline'),
+    );
+    await renderWithProviders(<ProfileFamilySharingSection />);
+
+    expect(
+      await screen.findByText(/Could not load your family sharing/),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        'You have not designated anyone for family sharing yet.',
+      ),
+    ).not.toBeInTheDocument();
+  });
+
+  test('clears the previous error when the email is edited', async () => {
+    vi.spyOn(eciperay.account, 'listFamilySharing').mockResolvedValue([]);
+    vi.spyOn(eciperay.account, 'createFamilySharing').mockRejectedValue(
+      new Error('No account found for that email address'),
+    );
+    await renderWithProviders(<ProfileFamilySharingSection />);
+
+    await screen.findByText(
+      'You have not designated anyone for family sharing yet.',
+    );
+    const field = screen.getByLabelText('Email address');
+    await userEvent.type(field, 'nobody@example.com');
+    await userEvent.click(
+      screen.getByRole('button', {name: 'Add family sharing'}),
+    );
+    expect(
+      await screen.findByText('No account found for that email address'),
+    ).toBeInTheDocument();
+
+    await userEvent.type(field, 'x');
+    expect(
+      screen.queryByText('No account found for that email address'),
+    ).not.toBeInTheDocument();
+  });
+
   test('surfaces the server error for an unknown email', async () => {
     vi.spyOn(eciperay.account, 'listFamilySharing').mockResolvedValue([]);
     vi.spyOn(eciperay.account, 'createFamilySharing').mockRejectedValue(

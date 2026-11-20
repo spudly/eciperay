@@ -23,6 +23,8 @@ import {
 export type FamilySharingFormProps = {
   grants: FamilyShareGrant[];
   isLoading?: boolean;
+  /** The initial load failed: the list is unknown, not empty. */
+  loadFailed?: boolean;
   email: string;
   onEmailChange: (email: string) => void;
   adding?: boolean;
@@ -47,6 +49,7 @@ export const grantLabel = (grant: FamilyShareGrant): string =>
 export const FamilySharingForm = ({
   grants,
   isLoading = false,
+  loadFailed = false,
   email,
   onEmailChange,
   adding = false,
@@ -90,7 +93,7 @@ export const FamilySharingForm = ({
       >
         Loading family sharing…
       </Text>
-    ) : grants.length === 0 ? (
+    ) : loadFailed ? null : grants.length === 0 ? (
       <Text
         fontSize={tokens.typography.fontSize.sm}
         color="$textMuted"
