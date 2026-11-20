@@ -101,12 +101,6 @@ const createLineageWithVersion = async (
   if (!recipeId) {
     throw new Error('Failed to create recipe lineage');
   }
-  await queryFn(SET_PROVENANCE_SQL, [
-    recipeId,
-    provenance.source,
-    provenance.detail,
-    defaultVisibilityForProvenance(provenance),
-  ]);
   const version = await insertVersion(
     buildVersionOptions({input, recipeId, versionNumber: 1, createdVia}),
     queryFn,
@@ -115,6 +109,12 @@ const createLineageWithVersion = async (
   if (!versionId) {
     throw new Error('Failed to create recipe version');
   }
+  await queryFn(SET_PROVENANCE_SQL, [
+    recipeId,
+    provenance.source,
+    provenance.detail,
+    defaultVisibilityForProvenance(provenance),
+  ]);
   await setActiveVersion(recipeId, versionId, queryFn);
   await insertIngredients(versionId, input.ingredients, queryFn);
   await insertInstructions(versionId, input.instructions, queryFn);

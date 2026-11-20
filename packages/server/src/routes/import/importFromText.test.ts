@@ -618,10 +618,12 @@ describe('POST /recipes/import/text', () => {
       .mockResolvedValueOnce(makeQueryResult([]))
       // Duplicate check (#296): no candidates in the user's library.
       .mockResolvedValueOnce(makeQueryResult([]))
-      // Save: lineage, version, active version, ingredients,
-      // instructions, then the save's own detail query.
+      // Save: lineage, version, provenance update (#609), active
+      // version, ingredients, instructions, then the save's own
+      // detail query.
       .mockResolvedValueOnce(makeQueryResult([{id: 'recipe-uuid-1'}]))
       .mockResolvedValueOnce(makeQueryResult([{id: 'version-uuid-1'}]))
+      .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([]))
