@@ -1036,7 +1036,14 @@ where analytics (PostHog) is configured._
    the feedback shortcut is on. **Expected:** the shortcut is forced off with
    the explanatory message; re-enabling it re-presents the consent prompt.
 
+6. **Served head carries the noindex directive (#614).** Load
+   `/privacy/consent` with scripting disabled (or view the served HTML
+   source). **Expected:** the page head contains
+   `<meta name="robots" content="noindex, nofollow">` in the initial
+   HTML, before any client code runs.
+
 **Run when:** `packages/client/src/analyticsConsent.ts`,
+`packages/client/src/pageHead.ts`, `packages/server/src/staticWeb.ts`,
 `packages/web/src/i18n/voice.ts`, `packages/app/src/i18n/voice.ts`,
 `packages/web/src/pages/ConsentPreferencesPage.tsx`,
 `packages/web/src/components/AnalyticsConsentBanner.tsx`,
