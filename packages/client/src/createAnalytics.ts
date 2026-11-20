@@ -91,10 +91,10 @@ const buildContextProperties = (
 ): Record<string, unknown> => {
   const properties: Record<string, unknown> = {};
   if (context?.appVersion) {
-    properties.app_version = context.appVersion;
+    properties['app_version'] = context.appVersion;
   }
   if (context?.appBuild) {
-    properties.app_build = context.appBuild;
+    properties['app_build'] = context.appBuild;
   }
   return properties;
 };

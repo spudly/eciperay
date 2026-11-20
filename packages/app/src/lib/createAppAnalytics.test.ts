@@ -254,6 +254,14 @@ describe('createAppAnalytics', () => {
       app_version: '1.34.4',
       app_build: '123',
     });
+    // PostHog clears super properties on reset; the adapter re-registers
+    // the app metadata so autocaptured events keep carrying it.
+    client.reset();
+    expect(register).toHaveBeenCalledTimes(2);
+    expect(register).toHaveBeenLastCalledWith({
+      app_version: '1.34.4',
+      app_build: '123',
+    });
     client.captureException(new Error('boom'));
     expect(captureException).toHaveBeenCalledWith(expect.any(Error), {
       app_version: '1.34.4',
@@ -289,6 +297,8 @@ describe('createAppAnalytics', () => {
       'https://us.i.posthog.com',
       'android',
     );
+    expect(register).not.toHaveBeenCalled();
+    client.reset();
     expect(register).not.toHaveBeenCalled();
     client.captureException(new Error('boom'));
     expect(captureException).toHaveBeenCalledWith(

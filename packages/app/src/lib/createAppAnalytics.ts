@@ -66,7 +66,10 @@ const getAppFeatureFlagPayload = (client: PostHog, key: string): unknown => {
   return client.getFeatureFlagPayload(key);
 };
 
-const createAppPostHogAdapter = (client: PostHog): AnalyticsAdapter => ({
+const createAppPostHogAdapter = (
+  client: PostHog,
+  superProperties?: Record<string, unknown>,
+): AnalyticsAdapter => ({
   capture: (event, properties) => {
     client.capture(event, castPostHogProperties(properties));
   },
@@ -75,6 +78,11 @@ const createAppPostHogAdapter = (client: PostHog): AnalyticsAdapter => ({
   },
   reset: () => {
     client.reset();
+    // PostHog clears registered super properties on reset; re-register the
+    // app metadata so automatically captured events keep carrying it.
+    if (superProperties && Object.keys(superProperties).length > 0) {
+      client.register?.(castPostHogProperties(superProperties));
+    }
   },
   isFeatureEnabled: key => client.isFeatureEnabled(key),
   getFeatureFlag: key => client.getFeatureFlag(key),
@@ -135,10 +143,10 @@ const buildSuperProperties = (
 ): Record<string, unknown> => {
   const properties: Record<string, unknown> = {};
   if (context.appVersion) {
-    properties.app_version = context.appVersion;
+    properties['app_version'] = context.appVersion;
   }
   if (context.appBuild) {
-    properties.app_build = context.appBuild;
+    properties['app_build'] = context.appBuild;
   }
   return properties;
 };
@@ -154,7 +162,7 @@ const createPostHogAdapter = (
   if (Object.keys(superProperties).length > 0) {
     client.register?.(castPostHogProperties(superProperties));
   }
-  return createAppPostHogAdapter(client);
+  return createAppPostHogAdapter(client, superProperties);
 };
 
 export const createAppAnalytics = (
