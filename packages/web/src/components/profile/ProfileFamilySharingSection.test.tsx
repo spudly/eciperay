@@ -1,4 +1,4 @@
-import {screen, waitFor} from '@testing-library/react';
+import {act, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {vi} from 'vitest';
 
@@ -149,8 +149,10 @@ describe('ProfileFamilySharingSection', () => {
     let resolveDelete: (() => void) | undefined;
     vi.spyOn(eciperay.account, 'deleteFamilySharing').mockImplementation(
       () =>
-        new Promise<void>(resolve => {
-          resolveDelete = resolve;
+        new Promise<undefined>(resolve => {
+          resolveDelete = () => {
+            resolve(undefined);
+          };
         }),
     );
     vi.spyOn(window, 'confirm').mockReturnValue(true);
@@ -178,7 +180,9 @@ describe('ProfileFamilySharingSection', () => {
         screen.queryByText('No account found for that email address'),
       ).not.toBeInTheDocument();
     });
-    resolveDelete?.();
+    await act(async () => {
+      resolveDelete?.();
+    });
   });
 
   test('surfaces the server error for an unknown email', async () => {
