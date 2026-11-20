@@ -7,6 +7,8 @@ export type {
   RecipeDetail,
   RecipeInput,
   RecipeListSort,
+  RecipeProvenance,
+  RecipeProvenanceSource,
   RecipeListSortDir,
   RecipeMetadataInput,
   PublicRecipeDetail,

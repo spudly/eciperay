@@ -50,8 +50,8 @@ export const insertLineage = (
 ) => queryFn<{id: string}>(INSERT_LINEAGE_SQL, [userId, slug, status]);
 
 const INSERT_CLONED_LINEAGE_SQL = `
-  insert into recipes (user_id, status, slug, cloned_from_recipe_id, visibility)
-  values ($1, 'idea', $2, $3, 'private')
+  insert into recipes (user_id, status, slug, cloned_from_recipe_id, visibility, provenance_source)
+  values ($1, 'idea', $2, $3, 'private', 'shared_clone')
   returning id
 `;
 
