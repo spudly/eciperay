@@ -8,6 +8,8 @@ import type {
   NutritionGoals,
 } from '@eciperay/types';
 
+import {netCarbsG} from './nutritionTabRows.js';
+
 /**
  * One direct-ingredient row of the meal form (#362 tranche 2), mirroring the DS
  * MealFormPage ingredient shape: quantity / unit / servings cross the DS
@@ -109,11 +111,15 @@ export const formatSimpleNutrition = (
     `${Math.round(nutrition.calories)} cal`,
     `${Math.round(nutrition.proteinG)}g protein`,
     `${Math.round(nutrition.carbsG)}g carbs`,
-    // Aggregates always carry summed fiber, so net carbs (from the summed
-    // values, #613) always renders beside total carbs here.
-    `${Math.round(nutrition.carbsG - nutrition.fiberG)}g net carbs`,
     `${Math.round(nutrition.fatG)}g fat`,
   ];
+  // Net carbs beside total carbs (#613), computed by the canonical helper
+  // from the summed values; omitted when any contributor's fiber is
+  // unknown (the aggregate fiber is then null).
+  const net = netCarbsG(nutrition);
+  if (net !== null) {
+    parts.splice(3, 0, `${Math.round(net)}g net carbs`);
+  }
   if (nutrition.satietyScore !== null) {
     parts.push(`satiety ${Math.round(nutrition.satietyScore)}`);
   }
@@ -254,13 +260,6 @@ export const buildWeeklyTotalsBand = (
       pick: n => n.carbsG,
       format: v => `${Math.round(v)}g carbs`,
     },
-    {
-      // Net carbs from the summed values (#613): the same pick runs on the
-      // totals and on the per-day average, both AggregatedNutrition.
-      label: 'Net carbs',
-      pick: n => n.carbsG - n.fiberG,
-      format: v => `${Math.round(v)}g net carbs`,
-    },
     {label: 'Fat', pick: n => n.fatG, format: v => `${Math.round(v)}g fat`},
   ];
   const totals = fields.map(field => ({
@@ -275,5 +274,25 @@ export const buildWeeklyTotalsBand = (
         ),
       }))
     : [];
+  // Net carbs row (#613) sits immediately after Carbs in both bands, via
+  // the canonical helper on the summed values; omitted when fiber is
+  // unknown. The DS pairs totals/averages by label, and both bands omit
+  // together because per-day fiber is unknown exactly when total fiber is.
+  const netTotal = netCarbsG(nutrition);
+  if (netTotal !== null) {
+    const carbsIndex = totals.findIndex(row => row.label === 'Carbs');
+    totals.splice(carbIndex + 1, 0, {
+      label: 'Net carbs',
+      valueLabel: `${Math.round(netTotal)}g net carbs`,
+    });
+    const netAverage = nutrition.perDay ? netCarbsG(nutrition.perDay) : null;
+    if (netAverage !== null) {
+      const avgCarbsIndex = averages.findIndex(row => row.label === 'Carbs');
+      averages.splice(avgCarbsIndex + 1, 0, {
+        label: 'Net carbs',
+        valueLabel: `${Math.round(netAverage)}g net carbs`,
+      });
+    }
+  }
   return {totals, averages};
 };

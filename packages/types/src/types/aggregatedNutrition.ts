@@ -9,7 +9,9 @@ export type AggregatedNutrition = {
   proteinG: number;
   carbsG: number;
   fatG: number;
-  fiberG: number;
+  /** Null when any contributing recipe's fiber is unknown — an aggregate
+   * must not present a partial fiber total as complete (#613 review). */
+  fiberG: number | null;
   sugarG: number;
   sodiumMg: number;
   preparedWeightG: number;

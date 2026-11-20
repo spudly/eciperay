@@ -4,6 +4,8 @@ import type {
   MealPlanEntry,
 } from '@eciperay/types';
 
+import {netCarbsG} from './nutritionTabRows.js';
+
 /**
  * Week-view grouping for a meal plan (#539): the host side of the DS
  * MealPlanDetailPage week view (DS #660). Entries may carry an explicit `day`
@@ -53,7 +55,7 @@ const sumDayTotals = (entries: MealPlanEntry[]): AggregatedNutrition | null => {
     proteinG: 0,
     carbsG: 0,
     fatG: 0,
-    fiberG: 0,
+    fiberG: 0 as number | null,
     sugarG: 0,
     sodiumMg: 0,
     preparedWeightG: 0,
@@ -75,7 +77,12 @@ const sumDayTotals = (entries: MealPlanEntry[]): AggregatedNutrition | null => {
     totals.proteinG += nutrition.proteinG * scale;
     totals.carbsG += nutrition.carbsG * scale;
     totals.fatG += nutrition.fatG * scale;
-    totals.fiberG += nutrition.fiberG * scale;
+    // Unknown fiber (any contributor) makes the day's fiber unknown, so
+    // net carbs is omitted for the day rather than overstated (#613).
+    totals.fiberG =
+      totals.fiberG === null || nutrition.fiberG === null
+        ? null
+        : totals.fiberG + nutrition.fiberG * scale;
     totals.sugarG += nutrition.sugarG * scale;
     totals.sodiumMg += nutrition.sodiumMg * scale;
     totals.preparedWeightG += nutrition.preparedWeightG * scale;
@@ -172,10 +179,19 @@ export const buildMealPlanDayTotals = (
       {label: 'Calories', valueLabel: `${Math.round(totals.calories)} cal`},
       {label: 'Protein', valueLabel: `${Math.round(totals.proteinG)}g protein`},
       {label: 'Carbs', valueLabel: `${Math.round(totals.carbsG)}g carbs`},
-      {
-        label: 'Net carbs',
-        valueLabel: `${Math.round(totals.carbsG - totals.fiberG)}g net carbs`,
-      },
+      // Net carbs via the canonical helper (#613); the row is omitted
+      // when the day's fiber is unknown.
+      ...(() => {
+        const net = netCarbsG(totals);
+        return net === null
+          ? []
+          : [
+              {
+                label: 'Net carbs',
+                valueLabel: `${Math.round(net)}g net carbs`,
+              },
+            ];
+      })(),
       {label: 'Fat', valueLabel: `${Math.round(totals.fatG)}g fat`},
     ],
     ...(totals.satietyScore !== null

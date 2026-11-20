@@ -49,7 +49,7 @@ describe('aggregateRecipePortionsNutrition', () => {
     const result = aggregateRecipePortionsNutrition([
       {...readyPortion, fiberG: null, sugarG: null, sodiumMg: null},
     ]);
-    expect(result.fiberG).toBe(0);
+    expect(result.fiberG).toBeNull();
     expect(result.sugarG).toBe(0);
     expect(result.sodiumMg).toBe(0);
   });
