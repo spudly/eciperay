@@ -134,6 +134,9 @@ describe('GET /public/recipes/:id', () => {
       if (sql === INSERT_SHARE_GRANT_SQL) {
         return Promise.resolve(makeQueryResult([]));
       }
+      if (sql.includes('family_share_grants')) {
+        return Promise.resolve(makeQueryResult([]));
+      }
       if (sql.includes('recipe_share_grants')) {
         return Promise.resolve(makeQueryResult([]));
       }
@@ -230,6 +233,9 @@ describe('GET /public/recipes/:id', () => {
         return Promise.resolve(makeQueryResult([]));
       }
       if (sql === INSERT_SHARE_GRANT_SQL) {
+        return Promise.resolve(makeQueryResult([]));
+      }
+      if (sql.includes('family_share_grants')) {
         return Promise.resolve(makeQueryResult([]));
       }
       if (sql.includes('recipe_share_grants')) {

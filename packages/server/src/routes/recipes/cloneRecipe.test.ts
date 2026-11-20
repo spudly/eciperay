@@ -1,7 +1,7 @@
 import request from 'supertest';
 
 import {FILTER_CLONABLE_TAG_IDS_SQL} from '../../lib/cloneRecipe.js';
-import {HAS_SHARE_GRANT_SQL} from '../../lib/shareGrant.js';
+import {HAS_SHARE_ACCESS_SQL} from '../../lib/shareGrant.js';
 import {hashShareToken} from '../../lib/shareToken.js';
 import {makeRecipeDetailRow} from '../../test/fixtures/recipeRow.js';
 import {makeQueryResult} from '../../test/fixtures/queryResult.js';
@@ -41,6 +41,7 @@ const mockCloneFlow = (
       ]),
     )
     .mockResolvedValueOnce(makeQueryResult([]))
+    .mockResolvedValueOnce(makeQueryResult([]))
     .mockResolvedValueOnce(makeQueryResult([{id: 'tag-owned'}]))
     .mockResolvedValueOnce(makeQueryResult([{id: 'cloned-recipe-id'}]))
     .mockResolvedValue(
@@ -75,7 +76,7 @@ describe('POST /recipes/:id/clone', () => {
     expect(res.body.clonedFromRecipeId).toBe('recipe-uuid-1');
     expect(res.body.visibility).toBe('private');
     expect(res.body.userId).toBe('user-uuid-1');
-    expect(mockQuery).toHaveBeenCalledWith(HAS_SHARE_GRANT_SQL, [
+    expect(mockQuery).toHaveBeenCalledWith(HAS_SHARE_ACCESS_SQL, [
       'recipe-uuid-1',
       'user-uuid-1',
     ]);
@@ -112,6 +113,7 @@ describe('POST /recipes/:id/clone', () => {
           }),
         ]),
       )
+      .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([]));
 
     const res = await request(getApp())
@@ -144,6 +146,8 @@ describe('POST /recipes/:id/clone', () => {
     mockQuery.mockResolvedValueOnce(
       makeQueryResult([makeRecipeDetailRow({visibility: 'private'})]),
     );
+    // Family-grant check (#617): no designation, so the private gate holds.
+    mockQuery.mockResolvedValueOnce(makeQueryResult([]));
 
     const res = await request(getApp())
       .post('/api/recipes/recipe-uuid-1/clone')
