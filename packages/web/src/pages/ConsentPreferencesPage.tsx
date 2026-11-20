@@ -12,6 +12,7 @@ import {useLingui} from '@lingui/react';
 import {ConsentPreferencesPage as ConsentPreferencesPageView} from '@spudly/ui';
 import {useEffect, useState} from 'react';
 
+import {StaticPageHead} from '../components/StaticPageHead.js';
 import {analytics, disablePostHog, enablePostHog} from '../lib/analytics.js';
 
 /**
@@ -83,7 +84,9 @@ export const ConsentPreferencesPage = () => {
   };
 
   return (
-    <ConsentPreferencesPageView
+    <>
+      <StaticPageHead path="/privacy/consent" />
+      <ConsentPreferencesPageView
       currentChoice={consent}
       onAccept={accept}
       onDecline={decline}
@@ -98,6 +101,7 @@ export const ConsentPreferencesPage = () => {
         message:
           'Withdrawing consent removes your stored choice and turns analytics off until you make a new choice; the consent banner will ask again, as it does for a new visitor. See our Privacy Policy for what analytics collects when it is on.',
       })}
-    />
+      />
+    </>
   );
 };

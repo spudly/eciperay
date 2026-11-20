@@ -6,8 +6,6 @@ import {
   nutritionFilterSql,
   nutritionSelectSql,
   orderBySql,
-  titleOrDescriptionSearchFilterSql,
-  titleSearchFilterSql,
 } from './listFilterParams.js';
 
 const listNutritionAndRatingSelect = `
@@ -18,6 +16,7 @@ const listNutritionAndRatingSelect = `
 export const buildListRecipesSql = (
   sort: RecipeListSort,
   sortDir: RecipeListSortDir,
+  searchSql = '',
 ) => `
   select r.id, r.status, r.visibility, r.slug, r.content_revision,
          r.cloned_from_recipe_id, r.star_rating, r.active_version_id,
@@ -36,10 +35,9 @@ export const buildListRecipesSql = (
   left join recipe_tags rt on rt.recipe_version_id = rv.id
   left join tags t on t.id = rt.tag_id
   where r.user_id = $1
-    ${titleSearchFilterSql(4)}
-    and ($5::text is null or r.status = $5)
-    ${ingredientFilterSql(6)}
-    ${nutritionFilterSql(7)}
+    and ($4::text is null or r.status = $4)
+    ${ingredientFilterSql(5)}
+    ${nutritionFilterSql(6)}${searchSql}
   group by r.id, rv.id
   order by ${orderBySql(sort, sortDir)}
   limit $2 offset $3
@@ -48,6 +46,7 @@ export const buildListRecipesSql = (
 export const buildListSharedWithMeSql = (
   sort: RecipeListSort,
   sortDir: RecipeListSortDir,
+  searchSql = '',
 ) => `
   select r.id, r.status, r.visibility, r.slug, r.content_revision,
          r.cloned_from_recipe_id, r.star_rating, r.active_version_id,
@@ -73,10 +72,9 @@ export const buildListSharedWithMeSql = (
   left join tags t on t.id = rt.tag_id
   where r.user_id <> $1
     and (g.recipe_id is not null or fg.recipient_user_id is not null)
-    ${titleSearchFilterSql(4)}
-    and ($5::text is null or r.status = $5)
-    ${ingredientFilterSql(6)}
-    ${nutritionFilterSql(7)}
+    and ($4::text is null or r.status = $4)
+    ${ingredientFilterSql(5)}
+    ${nutritionFilterSql(6)}${searchSql}
   group by r.id, rv.id, g.recipe_id, g.granted_at, fg.created_at
   order by ${
     sort === 'newest'
@@ -91,6 +89,7 @@ export const buildListSharedWithMeSql = (
 export const buildListPublicRecipesSql = (
   sort: RecipeListSort,
   sortDir: RecipeListSortDir,
+  searchSql = '',
 ) => `
   select r.id, r.slug, r.visibility,
          rv.title, rv.description, rv.servings, rv.prep_time_min,
@@ -111,10 +110,9 @@ export const buildListPublicRecipesSql = (
   left join tags t on t.id = rt.tag_id
   where r.visibility = 'public'
     and r.status <> 'idea'
-    ${titleOrDescriptionSearchFilterSql(3)}
-    and ($4::text is null or r.status = $4)
-    ${ingredientFilterSql(5)}
-    ${nutritionFilterSql(6)}
+    and ($3::text is null or r.status = $3)
+    ${ingredientFilterSql(4)}
+    ${nutritionFilterSql(5)}${searchSql}
   group by r.id, rv.id, u.display_name, u.show_author_on_public_recipes
   order by ${orderBySql(sort, sortDir)}
   limit $1 offset $2

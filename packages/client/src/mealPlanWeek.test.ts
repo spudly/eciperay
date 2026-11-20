@@ -228,6 +228,7 @@ describe('groupMealPlanEntriesByDay (#539)', () => {
       {label: 'Calories', valueLabel: '1000 cal'},
       {label: 'Protein', valueLabel: '60g protein'},
       {label: 'Carbs', valueLabel: '100g carbs'},
+      {label: 'Net carbs', valueLabel: '90g net carbs'},
       {label: 'Fat', valueLabel: '40g fat'},
     ]);
     // Prepared-weight-weighted: (80×100 + 40×300) / 400 = 50.

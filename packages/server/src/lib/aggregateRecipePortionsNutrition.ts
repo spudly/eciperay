@@ -26,7 +26,12 @@ type MacroTotals = {
   proteinG: number;
   carbsG: number;
   fatG: number;
-  fiberG: number;
+  fiberG: number | null;
+  // Sum of the KNOWN fiber contributions only (unknown counts as 0).
+  // Internal: feeds satiety, which historically used the known total
+  // even when the aggregate fiberG is unknown (null). Never exposed
+  // through the public aggregate output.
+  fiberKnownG: number;
   sugarG: number;
   sodiumMg: number;
   preparedWeightG: number;
@@ -38,6 +43,7 @@ const emptyTotals = (): MacroTotals => ({
   carbsG: 0,
   fatG: 0,
   fiberG: 0,
+  fiberKnownG: 0,
   sugarG: 0,
   sodiumMg: 0,
   preparedWeightG: 0,
@@ -71,7 +77,15 @@ export const scalePortion = (
     proteinG: (portion.proteinG ?? 0) * portion.servings,
     carbsG: (portion.carbsG ?? 0) * portion.servings,
     fatG: (portion.fatG ?? 0) * portion.servings,
-    fiberG: (portion.fiberG ?? 0) * portion.servings,
+    // Unknown fiber stays unknown (#613 review): treating it as 0 would
+    // overstate net carbs computed from the aggregate.
+    fiberG:
+      portion.servings === 0
+        ? 0
+        : portion.fiberG === null
+          ? null
+          : portion.fiberG * portion.servings,
+    fiberKnownG: (portion.fiberG ?? 0) * portion.servings,
     sugarG: (portion.sugarG ?? 0) * portion.servings,
     sodiumMg: (portion.sodiumMg ?? 0) * portion.servings,
     preparedWeightG: (portion.preparedWeightG ?? 0) * weightScale,
@@ -83,7 +97,9 @@ const addTotals = (a: MacroTotals, b: MacroTotals): MacroTotals => ({
   proteinG: a.proteinG + b.proteinG,
   carbsG: a.carbsG + b.carbsG,
   fatG: a.fatG + b.fatG,
-  fiberG: a.fiberG + b.fiberG,
+  fiberG:
+    a.fiberG === null || b.fiberG === null ? null : a.fiberG + b.fiberG,
+  fiberKnownG: a.fiberKnownG + b.fiberKnownG,
   sugarG: a.sugarG + b.sugarG,
   sodiumMg: a.sodiumMg + b.sodiumMg,
   preparedWeightG: a.preparedWeightG + b.preparedWeightG,
@@ -97,7 +113,8 @@ const multiplyTotals = (
   proteinG: totals.proteinG * quantity,
   carbsG: totals.carbsG * quantity,
   fatG: totals.fatG * quantity,
-  fiberG: totals.fiberG * quantity,
+  fiberG: totals.fiberG === null ? null : totals.fiberG * quantity,
+  fiberKnownG: totals.fiberKnownG * quantity,
   sugarG: totals.sugarG * quantity,
   sodiumMg: totals.sodiumMg * quantity,
   preparedWeightG: totals.preparedWeightG * quantity,
@@ -132,7 +149,7 @@ const satietyForTotals = (totals: MacroTotals): number | null => {
     protein: totals.proteinG,
     fat: totals.fatG,
     totalCarbs: totals.carbsG,
-    fiber: totals.fiberG,
+    fiber: totals.fiberKnownG,
     sugar: totals.sugarG,
     sodium: totals.sodiumMg,
     weight: totals.preparedWeightG,
@@ -142,11 +159,14 @@ const satietyForTotals = (totals: MacroTotals): number | null => {
 export const toAggregatedNutrition = (
   totals: MacroTotals,
   status: AggregatedNutritionStatus,
-): AggregatedNutrition => ({
-  ...totals,
-  satietyScore: status === 'unavailable' ? null : satietyForTotals(totals),
-  status,
-});
+): AggregatedNutrition => {
+  const {fiberKnownG: _fiberKnownG, ...publicTotals} = totals;
+  return {
+    ...publicTotals,
+    satietyScore: status === 'unavailable' ? null : satietyForTotals(totals),
+    status,
+  };
+};
 
 const totalsFromAggregated = (nutrition: AggregatedNutrition): MacroTotals => ({
   calories: nutrition.calories,
@@ -154,6 +174,7 @@ const totalsFromAggregated = (nutrition: AggregatedNutrition): MacroTotals => ({
   carbsG: nutrition.carbsG,
   fatG: nutrition.fatG,
   fiberG: nutrition.fiberG,
+  fiberKnownG: nutrition.fiberG ?? 0,
   sugarG: nutrition.sugarG,
   sodiumMg: nutrition.sodiumMg,
   preparedWeightG: nutrition.preparedWeightG,

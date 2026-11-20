@@ -7,6 +7,7 @@ import type {
 } from '@eciperay/types';
 
 import {DISCOVER_NO_RATINGS_LABEL} from './discoverCopy.js';
+import {netCarbsG} from './nutritionTabRows.js';
 import {formatCommunityRatingLabel} from './recipeEngagement.js';
 
 type RatingSource = {
@@ -70,7 +71,7 @@ export const formatServingsLabel = (servings: number): string =>
 export const formatCondensedNutritionParts = (
   nutrition: Pick<
     RecipeNutritionSummary,
-    'calories' | 'proteinG' | 'carbsG' | 'fatG'
+    'calories' | 'proteinG' | 'carbsG' | 'fatG' | 'fiberG'
   >,
 ): string[] => {
   const parts: string[] = [];
@@ -82,6 +83,12 @@ export const formatCondensedNutritionParts = (
   }
   if (typeof nutrition.carbsG === 'number') {
     parts.push(`${Math.round(nutrition.carbsG)}g carbs`);
+    // Net carbs beside total carbs wherever carbs render (#613); omitted
+    // when fiber is unknown.
+    const net = netCarbsG(nutrition);
+    if (net !== null) {
+      parts.push(`${Math.round(net)}g net carbs`);
+    }
   }
   if (typeof nutrition.fatG === 'number') {
     parts.push(`${Math.round(nutrition.fatG)}g fat`);
@@ -100,6 +107,7 @@ export const formatRecipeListMeta = (
     | 'proteinG'
     | 'carbsG'
     | 'fatG'
+    | 'fiberG'
   >,
 ): string =>
   [
@@ -127,6 +135,7 @@ export const formatRecipeListSubtitle = (
     | 'proteinG'
     | 'carbsG'
     | 'fatG'
+    | 'fiberG'
   >,
 ): string =>
   `${formatServingsLabel(recipe.servings)}${recipe.cookTimeMin ? ` · ${recipe.cookTimeMin} min` : ''} · ${formatRecipeListMeta(recipe)}`;
@@ -141,6 +150,7 @@ export const formatDiscoveryListMeta = (
     | 'proteinG'
     | 'carbsG'
     | 'fatG'
+    | 'fiberG'
   >,
   noRatingsLabel?: string,
 ): string =>

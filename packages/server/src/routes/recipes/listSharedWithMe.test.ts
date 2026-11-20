@@ -6,6 +6,7 @@ import {createMockQuery} from '../../test/mockQuery.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
 import {lazyTestApp} from '../../test/lazyTestApp.js';
 
+import {buildSearchQuerySql, parseSearchSyntax} from './searchQuery.js';
 import {
   buildListSharedWithMeSql,
   LIST_SHARED_WITH_ME_SQL,
@@ -38,7 +39,6 @@ describe('GET /recipes/shared-with-me', () => {
       'user-uuid-1',
       25,
       5,
-      null,
       null,
       null,
       null,
@@ -84,14 +84,44 @@ describe('GET /recipes/shared-with-me', () => {
     );
   });
 
-  test('searches titles word by word, not as one contiguous phrase (#385)', () => {
-    expect(LIST_SHARED_WITH_ME_SQL).toContain(
-      "regexp_split_to_array($4, '\\s+')",
+  test('applies the compiled search query for search requests (#611)', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockQuery.mockResolvedValue(makeQueryResult([]));
+    const res = await request(getApp())
+      .get('/api/recipes/shared-with-me?search=garlic')
+      .set('Authorization', 'Bearer valid-token');
+    expect(res.status).toBe(200);
+    // Base binds mirror the handler: user, limit, offset, status, then
+    // the seven filter binds (ingredient + nutrition ranges), all null.
+    const baseValues: (string | number | null)[] = [
+      'user-uuid-1',
+      100,
+      0,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+    ];
+    const compiled = buildSearchQuerySql(
+      parseSearchSyntax('garlic'),
+      baseValues.length + 1,
+      'shared',
     );
-    expect(LIST_SHARED_WITH_ME_SQL).toContain('rv.title not ilike');
-    expect(LIST_SHARED_WITH_ME_SQL).toContain('search_token.token');
-    expect(LIST_SHARED_WITH_ME_SQL).not.toContain(
-      "rv.title ilike '%' || $4 || '%'",
+    expect(compiled.values).toEqual(['%garlic%']);
+    expect(mockQuery).toHaveBeenCalledWith(
+      buildListSharedWithMeSql('newest', 'desc', compiled.sql),
+      [...baseValues, ...compiled.values],
+    );
+  });
+
+  test('leaves search conditions to the compiled search query (#611)', () => {
+    expect(LIST_SHARED_WITH_ME_SQL).not.toContain('search_token');
+    expect(LIST_SHARED_WITH_ME_SQL).toContain(
+      'and ($4::text is null or r.status = $4)',
     );
   });
 
