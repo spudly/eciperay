@@ -4,6 +4,8 @@ import {createMockQuery} from '../test/mockQuery.js';
 
 import {hashShareToken} from './shareToken.js';
 
+import {GET_PUBLIC_RECIPE_DETAIL_SQL} from '../routes/recipes/sqlConstants.js';
+
 import {loadPublicRecipe} from './loadPublicRecipe.js';
 
 const mockQuery = createMockQuery();
@@ -108,5 +110,67 @@ describe('loadPublicRecipe', () => {
     );
 
     expect(result).toEqual({kind: 'denied', denial: 'not_found'});
+  });
+});
+
+describe('loadPublicRecipe family sharing (#617)', () => {
+  beforeEach(() => {
+    mockQuery.mockReset();
+  });
+
+  const mockPrivateWithFamily = (hasFamily: boolean) => {
+    const row = makeRecipeDetailRow({
+      visibility: 'private',
+      slug: 'secret-pasta',
+      user_id: 'owner-uuid',
+    });
+    mockQuery.mockImplementation(((sql: string) => {
+      if (sql === GET_PUBLIC_RECIPE_DETAIL_SQL) {
+        return Promise.resolve(makeQueryResult([row]));
+      }
+      if (sql.includes('recipe_ratings rr')) {
+        return Promise.resolve(makeQueryResult([]));
+      }
+      if (
+        sql.includes('family_share_grants') ||
+        sql.includes('recipe_share_grants')
+      ) {
+        return Promise.resolve(
+          hasFamily ? makeQueryResult([{exists: 1}]) : makeQueryResult([]),
+        );
+      }
+      return Promise.resolve(makeQueryResult([]));
+    }) as typeof mockQuery);
+    return row;
+  };
+
+  test('a family grant gives read access to a private recipe', async () => {
+    mockPrivateWithFamily(true);
+    const result = await loadPublicRecipe(
+      {id: 'recipe-uuid-1', userId: 'viewer-uuid'},
+      mockQuery,
+    );
+    expect(result.kind).toBe('ok');
+  });
+
+  test('a non-designated user gets nothing from a private recipe', async () => {
+    mockPrivateWithFamily(false);
+    const result = await loadPublicRecipe(
+      {id: 'recipe-uuid-1', userId: 'stranger-uuid'},
+      mockQuery,
+    );
+    expect(result.kind).toBe('denied');
+  });
+
+  test('a family visit does not mint a surviving per-recipe grant', async () => {
+    mockPrivateWithFamily(true);
+    await loadPublicRecipe(
+      {id: 'recipe-uuid-1', userId: 'viewer-uuid'},
+      mockQuery,
+    );
+    const calls = mockQuery.mock.calls.map(([sql]) => String(sql));
+    expect(
+      calls.some(sql => sql.includes('insert into recipe_share_grants')),
+    ).toBe(false);
   });
 });

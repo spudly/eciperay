@@ -27,6 +27,14 @@ const LIST_SHARE_GRANTS_SQL = `
   order by granted_at desc
 `;
 
+const LIST_FAMILY_SHARE_GRANTS_SQL = `
+  select fg.recipient_user_id, fg.created_at, u.email as recipient_email
+  from family_share_grants fg
+  join users u on u.id = fg.recipient_user_id
+  where fg.owner_user_id = $1
+  order by fg.created_at desc
+`;
+
 const LIST_RATINGS_SQL = `
   select recipe_id, stars, content_revision, created_at
   from recipe_ratings
@@ -64,6 +72,9 @@ export const exportAccount = async (
   );
 
   const grantsResult = await queryFn(LIST_SHARE_GRANTS_SQL, [req.userId]);
+  const familyGrantsResult = await queryFn(LIST_FAMILY_SHARE_GRANTS_SQL, [
+    req.userId,
+  ]);
   const ratingsResult = await queryFn(LIST_RATINGS_SQL, [req.userId]);
   const commentsResult = await queryFn(LIST_COMMENTS_SQL, [req.userId]);
   const nutritionGoals = await fetchNutritionGoals(req.userId, queryFn);
@@ -88,6 +99,18 @@ export const exportAccount = async (
         recipeId: grant.recipe_id,
         grantedAt: grant.granted_at,
         via: grant.via,
+      };
+    }),
+    familyShareGrants: familyGrantsResult.rows.map(row => {
+      const grant = row as {
+        recipient_user_id: string;
+        recipient_email: string;
+        created_at: string;
+      };
+      return {
+        recipientUserId: grant.recipient_user_id,
+        recipientEmail: grant.recipient_email,
+        createdAt: grant.created_at,
       };
     }),
     communityRatings: ratingsResult.rows.map(row => {

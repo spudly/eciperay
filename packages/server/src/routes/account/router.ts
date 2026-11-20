@@ -14,6 +14,11 @@ import {exportAccount} from './exportAccount.js';
 import {getEntitlement} from './getEntitlement.js';
 import {refreshEntitlement} from './refreshEntitlement.js';
 import {getAuthorDisplay, putAuthorDisplay} from './authorDisplay.js';
+import {
+  deleteFamilySharing,
+  getFamilySharing,
+  postFamilySharing,
+} from './familySharing.js';
 import {getNutritionGoals, putNutritionGoals} from './nutritionGoals.js';
 
 type QueryFn = typeof defaultQuery;
@@ -47,6 +52,15 @@ export const createAccountRouter = (queryFn: QueryFn) => {
   );
   router.put('/author-display', requireAuth, (req, res) =>
     putAuthorDisplay(req as AuthedRequest, res, queryFn),
+  );
+  router.get('/family-sharing', requireAuth, (req, res) =>
+    getFamilySharing(req as AuthedRequest, res, queryFn),
+  );
+  router.post('/family-sharing', requireAuth, (req, res) =>
+    postFamilySharing(req as AuthedRequest, res, queryFn),
+  );
+  router.delete('/family-sharing/:recipientUserId', requireAuth, (req, res) =>
+    deleteFamilySharing(req as AuthedRequest, res, queryFn),
   );
   router.delete('/', requireAuth, (req, res) =>
     deleteAccount(req as AuthedRequest, res, queryFn),

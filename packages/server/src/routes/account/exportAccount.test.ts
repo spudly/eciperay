@@ -29,6 +29,7 @@ describe('GET /account/export', () => {
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(
         makeQueryResult([
           {
@@ -100,6 +101,7 @@ describe('GET /account/export', () => {
           },
         ]),
       )
+      .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(
         makeQueryResult([
           {
@@ -156,6 +158,7 @@ describe('GET /account/export', () => {
       satietyScoreMin: 70,
       satietyScoreMax: null,
     });
+    expect(res.body.familyShareGrants).toEqual([]);
     expect(res.body.shareGrants).toEqual([
       {
         recipeId: 'recipe-uuid-1',

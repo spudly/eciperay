@@ -24,7 +24,10 @@ import {
   withIssuedShareTokenHashes,
 } from './recipeAccess.js';
 import {RecipeNotFoundError} from './saveRecipeFromInput.js';
-import {userHasShareGrant} from './shareGrant.js';
+import {
+  userHasFamilyShareGrantForRecipe,
+  userHasShareAccess,
+} from './shareGrant.js';
 import {slugifyRecipeTitle} from './slugifyRecipeTitle.js';
 
 type QueryFn = typeof defaultQuery;
@@ -107,11 +110,19 @@ const assertCanCloneRecipe = async (
     shareToken ? await loadIssuedShareTokenHashes(row.id, queryFn) : [],
   );
 
-  if (accessRecord.visibility === 'private') {
+  const hasFamilyGrant = await userHasFamilyShareGrantForRecipe(
+    row.id,
+    clonerUserId,
+    queryFn,
+  );
+
+  // Private recipes stay invisible to everyone but the owner, except a
+  // designated family recipient (#617), who may view and clone them.
+  if (accessRecord.visibility === 'private' && !hasFamilyGrant) {
     throw new RecipeNotFoundError();
   }
 
-  const hasShareGrant = await userHasShareGrant(row.id, clonerUserId, queryFn);
+  const hasShareGrant = await userHasShareAccess(row.id, clonerUserId, queryFn);
 
   if (
     !canReadRecipe(accessRecord, {

@@ -28,6 +28,7 @@ describe('downloadAccountExportBundle', () => {
       },
       recipes: [],
       shareGrants: [],
+      familyShareGrants: [],
       communityRatings: [],
       comments: [],
       nutritionGoals: {

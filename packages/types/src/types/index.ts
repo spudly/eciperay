@@ -16,6 +16,7 @@ export type {
   RecipeSharingUpdateInput,
   RecipeSharingUpdateResult,
   RecipeShareGrantVia,
+  RecipeSharedVia,
   RecipeVisibility,
 } from './recipe.js';
 export type {
@@ -96,6 +97,11 @@ export type {
   AccountExportCommunityRating,
   AccountExportShareGrant,
 } from './accountExport.js';
+export type {
+  AccountExportFamilyShareGrant,
+  CreateFamilyShareInput,
+  FamilyShareGrant,
+} from './familySharing.js';
 export type {AuthorDisplaySettings, User} from './user.js';
 export type {
   PersonalAccessToken,

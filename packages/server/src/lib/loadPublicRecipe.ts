@@ -15,7 +15,8 @@ import {
 import {
   recordShareGrant,
   shouldAutoRecordShareGrant,
-  userHasShareGrant,
+  userHasFamilyShareGrantForRecipe,
+  userHasShareAccess,
 } from './shareGrant.js';
 
 type QueryFn = typeof defaultQuery;
@@ -58,7 +59,7 @@ export const loadPublicRecipe = async (
     shareToken ? await loadIssuedShareTokenHashes(id, queryFn) : [],
   );
   const hasShareGrant = userId
-    ? await userHasShareGrant(id, userId, queryFn)
+    ? await userHasShareAccess(id, userId, queryFn)
     : false;
 
   const denial = resolvePublicRecipeAccess(accessRecord, {
@@ -72,7 +73,13 @@ export const loadPublicRecipe = async (
   }
 
   if (shouldAutoRecordShareGrant(userId, row.user_id)) {
-    await recordShareGrant(id, userId, 'link', queryFn);
+    // A family recipient's access must end when the designation is revoked
+    // (#617), so a family visit never mints a per-recipe grant that would
+    // survive revocation.
+    const viaFamily = await userHasFamilyShareGrantForRecipe(id, userId, queryFn);
+    if (!viaFamily) {
+      await recordShareGrant(id, userId, 'link', queryFn);
+    }
   }
 
   const recipe = mapRowToPublicRecipeDetail(row);

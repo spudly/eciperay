@@ -52,3 +52,71 @@ export const shouldAutoRecordShareGrant = (
 ): userId is string => {
   return Boolean(userId && userId !== ownerUserId);
 };
+
+export const HAS_FAMILY_SHARE_GRANT_SQL = `
+  select 1
+  from family_share_grants
+  where owner_user_id = $1 and recipient_user_id = $2
+  limit 1
+`;
+
+export const HAS_FAMILY_SHARE_GRANT_FOR_RECIPE_SQL = `
+  select 1
+  from family_share_grants fg
+  join recipes r on r.user_id = fg.owner_user_id
+  where r.id = $1 and fg.recipient_user_id = $2
+  limit 1
+`;
+
+/**
+ * Either sharing path: a per-recipe grant on this recipe, or a standing
+ * family grant from the recipe's owner to this user (#617). This is the
+ * check the central read-access layer uses, so family recipients get the
+ * same view/clone access as individual grantees.
+ */
+export const HAS_SHARE_ACCESS_SQL = `
+  select 1
+  where exists (
+    select 1 from recipe_share_grants
+    where recipe_id = $1 and user_id = $2
+  ) or exists (
+    select 1
+    from family_share_grants fg
+    join recipes r on r.user_id = fg.owner_user_id
+    where r.id = $1 and fg.recipient_user_id = $2
+  )
+  limit 1
+`;
+
+export const userHasFamilyShareGrant = async (
+  ownerUserId: string,
+  recipientUserId: string,
+  queryFn: QueryFn,
+): Promise<boolean> => {
+  const result = await queryFn(HAS_FAMILY_SHARE_GRANT_SQL, [
+    ownerUserId,
+    recipientUserId,
+  ]);
+  return (result.rowCount ?? 0) > 0;
+};
+
+export const userHasFamilyShareGrantForRecipe = async (
+  recipeId: string,
+  userId: string,
+  queryFn: QueryFn,
+): Promise<boolean> => {
+  const result = await queryFn(HAS_FAMILY_SHARE_GRANT_FOR_RECIPE_SQL, [
+    recipeId,
+    userId,
+  ]);
+  return (result.rowCount ?? 0) > 0;
+};
+
+export const userHasShareAccess = async (
+  recipeId: string,
+  userId: string,
+  queryFn: QueryFn,
+): Promise<boolean> => {
+  const result = await queryFn(HAS_SHARE_ACCESS_SQL, [recipeId, userId]);
+  return (result.rowCount ?? 0) > 0;
+};

@@ -54,6 +54,8 @@ export const buildListSharedWithMeSql = (
          rv.id as version_id, rv.version_number, rv.title, rv.description,
          rv.servings, rv.prep_time_min, rv.cook_time_min, rv.image_url,
          rv.source_url, rv.created_via, rv.created_at, rv.updated_at,
+         case when g.recipe_id is not null then 'individual' else 'family' end as shared_via,
+         coalesce(g.granted_at, fg.created_at) as shared_granted_at,
          ${listNutritionAndRatingSelect},
          coalesce(
            json_agg(
@@ -61,23 +63,26 @@ export const buildListSharedWithMeSql = (
            ) filter (where t.id is not null),
            '[]'
          ) as tags
-  from recipe_share_grants g
-  join recipes r on r.id = g.recipe_id
+  from recipes r
   join recipe_versions rv on rv.id = r.active_version_id
+  left join recipe_share_grants g
+    on g.recipe_id = r.id and g.user_id = $1
+  left join family_share_grants fg
+    on fg.owner_user_id = r.user_id and fg.recipient_user_id = $1
   left join recipe_tags rt on rt.recipe_version_id = rv.id
   left join tags t on t.id = rt.tag_id
-  where g.user_id = $1
-    and r.user_id <> $1
+  where r.user_id <> $1
+    and (g.recipe_id is not null or fg.recipient_user_id is not null)
     ${titleSearchFilterSql(4)}
     and ($5::text is null or r.status = $5)
     ${ingredientFilterSql(6)}
     ${nutritionFilterSql(7)}
-  group by r.id, rv.id, g.granted_at
+  group by r.id, rv.id, g.recipe_id, g.granted_at, fg.created_at
   order by ${
     sort === 'newest'
       ? // Same total-order requirement as orderBySql (#359): granted_at
         // ties need the unique r.id tie-breaker for offset pagination.
-        `g.granted_at ${sortDir === 'asc' ? 'asc' : 'desc'}, r.id ${sortDir === 'asc' ? 'asc' : 'desc'}`
+        `shared_granted_at ${sortDir === 'asc' ? 'asc' : 'desc'}, r.id ${sortDir === 'asc' ? 'asc' : 'desc'}`
       : orderBySql(sort, sortDir)
   }
   limit $2 offset $3

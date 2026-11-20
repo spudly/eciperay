@@ -14,7 +14,7 @@ import {
   type AccessibleRecipeRow,
 } from './mealRecipeAccess.js';
 import {canReadRecipe, toRecipeAccessRecord} from './recipeAccess.js';
-import {userHasShareGrant} from './shareGrant.js';
+import {userHasShareAccess} from './shareGrant.js';
 
 type QueryFn = typeof defaultQuery;
 
@@ -239,7 +239,7 @@ export const loadMealDetail = async (
     if (raw) {
       recipesById.set(row.recipe_id, raw);
     }
-    const hasShareGrant = await userHasShareGrant(
+    const hasShareGrant = await userHasShareAccess(
       row.recipe_id,
       userId,
       queryFn,

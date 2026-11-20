@@ -210,6 +210,10 @@ export const SyncUserSchema = z.object({
   displayName: z.string().max(100).optional(),
 });
 
+export const FamilySharingCreateSchema = z.object({
+  email: z.email(),
+});
+
 export const AuthorDisplaySchema = z.object({
   displayName: z.string().max(100).nullable(),
   showOnPublicRecipes: z.boolean(),
