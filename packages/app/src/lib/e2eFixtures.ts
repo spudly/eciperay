@@ -93,7 +93,6 @@ type FixtureRecipeSpec = {
 const buildFixtureRecipe = (spec: FixtureRecipeSpec): RecipeDetail => ({
   id: spec.id,
   userId: E2E_FIXTURE_USER_ID,
-  status: 'evolving',
   visibility: 'private',
   slug: spec.slug,
   contentRevision: 1,

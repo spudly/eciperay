@@ -18,7 +18,7 @@ export const buildListRecipesSql = (
   sortDir: RecipeListSortDir,
   searchSql = '',
 ) => `
-  select r.id, r.status, r.visibility, r.slug, r.content_revision,
+  select r.id, r.visibility, r.slug, r.content_revision,
          r.cloned_from_recipe_id, r.star_rating, r.active_version_id,
          rv.id as version_id, rv.version_number, rv.title, rv.description,
          rv.servings, rv.prep_time_min, rv.cook_time_min, rv.image_url,
@@ -35,9 +35,8 @@ export const buildListRecipesSql = (
   left join recipe_tags rt on rt.recipe_version_id = rv.id
   left join tags t on t.id = rt.tag_id
   where r.user_id = $1
-    and ($4::text is null or r.status = $4)
-    ${ingredientFilterSql(5)}
-    ${nutritionFilterSql(6)}${searchSql}
+    ${ingredientFilterSql(4)}
+    ${nutritionFilterSql(5)}${searchSql}
   group by r.id, rv.id
   order by ${orderBySql(sort, sortDir)}
   limit $2 offset $3
@@ -48,7 +47,7 @@ export const buildListSharedWithMeSql = (
   sortDir: RecipeListSortDir,
   searchSql = '',
 ) => `
-  select r.id, r.status, r.visibility, r.slug, r.content_revision,
+  select r.id, r.visibility, r.slug, r.content_revision,
          r.cloned_from_recipe_id, r.star_rating, r.active_version_id,
          rv.id as version_id, rv.version_number, rv.title, rv.description,
          rv.servings, rv.prep_time_min, rv.cook_time_min, rv.image_url,
@@ -72,9 +71,8 @@ export const buildListSharedWithMeSql = (
   left join tags t on t.id = rt.tag_id
   where r.user_id <> $1
     and (g.recipe_id is not null or fg.recipient_user_id is not null)
-    and ($4::text is null or r.status = $4)
-    ${ingredientFilterSql(5)}
-    ${nutritionFilterSql(6)}${searchSql}
+    ${ingredientFilterSql(4)}
+    ${nutritionFilterSql(5)}${searchSql}
   group by r.id, rv.id, g.recipe_id, g.granted_at, fg.created_at
   order by ${
     sort === 'newest'
@@ -109,10 +107,8 @@ export const buildListPublicRecipesSql = (
   left join recipe_tags rt on rt.recipe_version_id = rv.id
   left join tags t on t.id = rt.tag_id
   where r.visibility = 'public'
-    and r.status <> 'idea'
-    and ($3::text is null or r.status = $3)
-    ${ingredientFilterSql(4)}
-    ${nutritionFilterSql(5)}${searchSql}
+    ${ingredientFilterSql(3)}
+    ${nutritionFilterSql(4)}${searchSql}
   group by r.id, rv.id, u.display_name, u.show_author_on_public_recipes
   order by ${orderBySql(sort, sortDir)}
   limit $1 offset $2
@@ -135,12 +131,11 @@ export const LIST_PUBLIC_RECIPES_SITEMAP_SQL = `
   from recipes r
   join recipe_versions rv on rv.id = r.active_version_id
   where r.visibility = 'public'
-    and r.status <> 'idea'
   order by rv.updated_at desc
 `;
 
 export const GET_RECIPE_DETAIL_SQL = `
-  select r.id, r.user_id, r.status, r.visibility, r.slug, r.share_token_hash,
+  select r.id, r.user_id, r.visibility, r.slug, r.share_token_hash,
          r.content_revision, r.cloned_from_recipe_id,
          r.provenance_source, r.provenance_detail,
          r.star_rating, r.active_version_id,
@@ -183,7 +178,7 @@ export const GET_RECIPE_DETAIL_SQL = `
 `;
 
 export const GET_PUBLIC_RECIPE_DETAIL_SQL = `
-  select r.id, r.user_id, r.status, r.visibility, r.slug, r.share_token_hash,
+  select r.id, r.user_id, r.visibility, r.slug, r.share_token_hash,
          r.content_revision, r.cloned_from_recipe_id,
          r.provenance_source, r.provenance_detail,
          r.star_rating, r.active_version_id,

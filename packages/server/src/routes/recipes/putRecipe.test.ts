@@ -191,21 +191,6 @@ describe('PUT /recipes/:id', () => {
     expect(res.status).toBe(500);
   });
 
-  test('returns 409 when recipe lifecycle is perfected', async () => {
-    nockSupabaseGetUser('user-uuid-1');
-    mockQuery
-      .mockResolvedValueOnce(
-        makeQueryResult([makeRecipeDetailRow({status: 'perfected'})]),
-      )
-      .mockResolvedValueOnce(
-        makeQueryResult([makeVersionDetailRow({status: 'perfected'})]),
-      );
-    const res = await request(getApp())
-      .put('/api/recipes/recipe-uuid-1')
-      .set('Authorization', 'Bearer valid-token')
-      .send(makeRecipeInput());
-    expect(res.status).toBe(409);
-  });
 
   test('returns 401 without auth token', async () => {
     const res = await request(getApp())

@@ -11,7 +11,6 @@ import {
   parentInstructionsInput,
   parentTagIds,
   queryKeys,
-  recipeStatusOptions,
   revertVersionScalar,
   toRecipeInputIngredients,
   toRecipeInputInstructions,
@@ -26,7 +25,6 @@ import {
 import type {
   IngredientInput,
   RecipeInput,
-  RecipeStatus,
   RecipeVersionDetail,
 } from '@eciperay/types';
 import type {I18n} from '@lingui/core';
@@ -220,7 +218,6 @@ export const RecipeFormHost = ({
     return [createEmptyInstructionRow(1)];
   });
   const [tagIds, setTagIds] = useState<string[]>(initial.tagIds);
-  const [status, setStatus] = useState<RecipeStatus>(initial.status ?? 'idea');
   const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
   // Crop step (#406): a picked file becomes the pending selection first.
   // The user can crop it, use it as-is (skip), or discard it; only then
@@ -280,16 +277,6 @@ export const RecipeFormHost = ({
   const tagOptions = useMemo(
     () => tags.map(tag => ({value: tag.id, label: tag.name})),
     [tags],
-  );
-  const statusOptions = useMemo(
-    () =>
-      recipeStatusOptions({
-        idea: i18n._({id: 'recipeStatus.idea', message: 'Idea'}),
-        evolving: i18n._({id: 'recipeStatus.evolving', message: 'Evolving'}),
-        perfected: i18n._({id: 'recipeStatus.perfected', message: 'Perfected'}),
-        abandoned: i18n._({id: 'recipeStatus.abandoned', message: 'Abandoned'}),
-      }),
-    [i18n],
   );
 
   const clearPendingImage = () => {
@@ -793,7 +780,6 @@ export const RecipeFormHost = ({
       ? initial.instructions
       : toRecipeInputInstructions(instructions),
     tagIds,
-    status,
   });
 
   const versionDiff = useMemo(() => {
@@ -816,7 +802,6 @@ export const RecipeFormHost = ({
     instructions,
     tagIds,
     pendingImageFile,
-    status,
   ]);
 
   // The diff crosses to the DS page as presentation data: which fields
@@ -1008,11 +993,6 @@ export const RecipeFormHost = ({
             onCookTimeMinChange={setCookTimeMin}
             sourceUrl={sourceUrl}
             onSourceUrlChange={setSourceUrl}
-            statusOptions={statusOptions}
-            status={status}
-            onStatusChange={value => {
-              setStatus(value as RecipeStatus);
-            }}
             tagOptions={tagOptions}
             tagIds={tagIds}
             onTagIdsChange={setTagIds}

@@ -25,15 +25,9 @@ export const listPublicRecipes = async (
     res.status(400).json({error: 'Invalid sortDir parameter'});
     return;
   }
-  if (params.status === 'invalid') {
-    res.status(400).json({error: 'Invalid status filter'});
-    return;
-  }
-
   const baseValues = [
     params.limit,
     params.offset,
-    params.status,
     ...filterBindValues(params),
   ];
   const searchQuerySql = buildSearchQuerySql(

@@ -75,11 +75,6 @@ msgid "forgotPassword.confirmationBody"
 msgstr "A password reset link is on its way to your inbox."
 
 #. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeForm.tsx:323
-msgid "recipeStatus.abandoned"
-msgstr "Abandoned"
-
-#. js-lingui-explicit-id
 #: src/hosts/meals/MealPlanDetailView.tsx:85
 msgid "mealPlanDetail.goalBandAbove"
 msgstr "Above goal"
@@ -185,11 +180,6 @@ msgstr "Check your email"
 #: src/screens/auth/SignUpScreen.tsx:98
 msgid "signup.confirmationBody"
 msgstr "Click the confirmation link we sent you, then sign in — almost there."
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeDetailView.tsx:277
-msgid "recipeDetail.couldNotCreateDraftSentence"
-msgstr "Could not create a draft. Please try again."
 
 #. js-lingui-explicit-id
 #: src/screens/MealEditScreen.tsx:239
@@ -320,11 +310,6 @@ msgid "authNative.errorTitle"
 msgstr "Error"
 
 #. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeForm.tsx:321
-msgid "recipeStatus.evolving"
-msgstr "Evolving"
-
-#. js-lingui-explicit-id
 #: src/hosts/recipe/RecipeForm.tsx:427
 msgid "recipeForm.cropError"
 msgstr "Failed to crop image — try again or cancel to use the original."
@@ -385,11 +370,6 @@ msgstr "Grow crop area"
 #: src/hosts/recipe/RecipeVisibilityControls.tsx:155
 msgid "recipeSharing.consentDescriptionStart"
 msgstr "I understand this recipe may be viewed without signing in and I agree to the"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeForm.tsx:320
-msgid "recipeStatus.idea"
-msgstr "Idea"
 
 #. js-lingui-explicit-id
 #: src/hosts/recipe/RecipeForm.tsx:1179
@@ -536,11 +516,6 @@ msgstr "Paste a link to any recipe website"
 #: src/screens/AddScreen.tsx:46
 msgid "add.importTextDescription"
 msgstr "Paste rich text from Word or the web"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeForm.tsx:322
-msgid "recipeStatus.perfected"
-msgstr "Perfected"
 
 #. js-lingui-explicit-id
 #: src/screens/GenerateAiScreen.tsx:94

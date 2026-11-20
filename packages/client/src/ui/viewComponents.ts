@@ -3,10 +3,7 @@ import type {RecipeDetail, Tag} from '@eciperay/types';
 
 import type {RecipeListFilterControls} from './recipeListFilterControls.js';
 
-export type {
-  RecipeListFilterControls,
-  RecipeStatusFilterValue,
-} from './recipeListFilterControls.js';
+export type {RecipeListFilterControls} from './recipeListFilterControls.js';
 
 export type HomeViewProps = {
   isLoading: boolean;

@@ -10,7 +10,6 @@ import {
   parentInstructionsInput,
   parentTagIds,
   queryKeys,
-  recipeStatusOptions,
   revertVersionScalar,
   toRecipeInputIngredients,
   toRecipeInputInstructions,
@@ -24,7 +23,6 @@ import {
 import type {
   IngredientInput,
   RecipeInput,
-  RecipeStatus,
   RecipeVersionDetail,
 } from '@eciperay/types';
 import type {I18n} from '@lingui/core';
@@ -256,7 +254,6 @@ export const RecipeForm = ({
     return [createEmptyInstructionRow(1)];
   });
   const [tagIds, setTagIds] = useState<string[]>(initial.tagIds);
-  const [status, setStatus] = useState<RecipeStatus>(initial.status ?? 'idea');
   const [pendingImage, setPendingImage] = useState<PendingRecipeImage | null>(
     null,
   );
@@ -313,16 +310,6 @@ export const RecipeForm = ({
   const tagOptions = useMemo(
     () => tags.map(tag => ({value: tag.id, label: tag.name})),
     [tags],
-  );
-  const statusOptions = useMemo(
-    () =>
-      recipeStatusOptions({
-        idea: i18n._({id: 'recipeStatus.idea', message: 'Idea'}),
-        evolving: i18n._({id: 'recipeStatus.evolving', message: 'Evolving'}),
-        perfected: i18n._({id: 'recipeStatus.perfected', message: 'Perfected'}),
-        abandoned: i18n._({id: 'recipeStatus.abandoned', message: 'Abandoned'}),
-      }),
-    [i18n],
   );
 
   const clearPendingImage = () => {
@@ -796,7 +783,6 @@ export const RecipeForm = ({
       ? initial.instructions
       : toRecipeInputInstructions(instructions),
     tagIds,
-    status,
   });
 
   const versionDiff = useMemo(() => {
@@ -819,7 +805,6 @@ export const RecipeForm = ({
     instructions,
     tagIds,
     pendingImage,
-    status,
   ]);
 
   // The diff crosses to the DS page as presentation data: which
@@ -931,11 +916,6 @@ export const RecipeForm = ({
       onCookTimeMinChange={setCookTimeMin}
       sourceUrl={sourceUrl}
       onSourceUrlChange={setSourceUrl}
-      statusOptions={statusOptions}
-      status={status}
-      onStatusChange={value => {
-        setStatus(value as RecipeStatus);
-      }}
       tagOptions={tagOptions}
       tagIds={tagIds}
       onTagIdsChange={setTagIds}

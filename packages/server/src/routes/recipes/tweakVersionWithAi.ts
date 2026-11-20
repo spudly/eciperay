@@ -10,10 +10,6 @@ import {
 } from '../../lib/aiMetering.js';
 import type {EntitledRequest} from '../../middleware/loadEntitlement.js';
 import {anthropic, SONNET} from '../../lib/anthropic.js';
-import {
-  isRecipeEditable,
-  recipeEditBlockedError,
-} from '../../lib/assertRecipeEditable.js';
 import {buildTweakContext} from '../../lib/buildRecipeContext.js';
 import {fetchVersionDetail} from '../../lib/fetchVersionDetail.js';
 import {getParam} from '../../lib/getParam.js';
@@ -37,7 +33,6 @@ import {
   buildVersionOptions,
   getNextVersionNumber,
   insertVersion,
-  setLineageStatus,
 } from './versionQueries.js';
 
 type QueryFn = typeof defaultQuery;
@@ -133,10 +128,6 @@ export const tweakVersionWithAi = async (
     res.status(404).json({error: 'Recipe not found'});
     return;
   }
-  if (!isRecipeEditable(recipe.status)) {
-    res.status(409).json({error: recipeEditBlockedError()});
-    return;
-  }
 
   const activeVersion = await fetchVersionDetail(
     recipe.versionId,
@@ -216,9 +207,6 @@ export const tweakVersionWithAi = async (
     await insertIngredients(id, input.ingredients, q);
     await insertInstructions(id, input.instructions, q);
     await linkTags(id, input.tagIds, q);
-    if (recipe.status === 'idea') {
-      await setLineageStatus(recipeId, req.userId, 'evolving', q);
-    }
     return id;
   });
 

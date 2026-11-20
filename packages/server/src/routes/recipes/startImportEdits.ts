@@ -3,10 +3,6 @@ import type {Response} from 'express';
 import {runTransactional} from '../../db/withTransaction.js';
 import {query as defaultQuery} from '../../db/query.js';
 import type {AuthedRequest} from '../../middleware/requireAuth.js';
-import {
-  isRecipeEditable,
-  recipeEditBlockedError,
-} from '../../lib/assertRecipeEditable.js';
 import {fetchVersionDetail} from '../../lib/fetchVersionDetail.js';
 import {getParam} from '../../lib/getParam.js';
 import {mapRowToRecipeDetail} from '../../lib/mapRowToRecipeDetail.js';
@@ -16,7 +12,6 @@ import {
   cloneVersionChildren,
   getNextVersionNumber,
   insertVersion,
-  setLineageStatus,
 } from './versionQueries.js';
 
 type QueryFn = typeof defaultQuery;
@@ -39,10 +34,6 @@ export const startImportEdits = async (
   const recipe = mapRowToRecipeDetail(
     recipeRow as Parameters<typeof mapRowToRecipeDetail>[0],
   );
-  if (!isRecipeEditable(recipe.status)) {
-    res.status(409).json({error: recipeEditBlockedError()});
-    return;
-  }
 
   const activeVersionId = recipe.versionId;
   const newVersionId = await runTransactional(queryFn, async q => {
@@ -69,9 +60,6 @@ export const startImportEdits = async (
       throw new Error('Failed to create version');
     }
     await cloneVersionChildren(activeVersionId, id, q);
-    if (recipe.status === 'idea') {
-      await setLineageStatus(recipeId, req.userId, 'evolving', q);
-    }
     return id;
   });
 

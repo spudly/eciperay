@@ -242,9 +242,6 @@ const setupSessionFlowMocks = () => {
     if (sql.includes('update recipes set active_version_id')) {
       return Promise.resolve(makeQueryResult([]));
     }
-    if (sql.includes('update recipes set status')) {
-      return Promise.resolve(makeQueryResult([{id: 'recipe-uuid-1'}]));
-    }
     return Promise.resolve(makeQueryResult([]));
   }) as typeof mockQuery);
 
@@ -308,19 +305,6 @@ describe('POST /recipes/:id/tweak-ai-sessions', () => {
     expect(res.status).toBe(404);
   });
 
-  test('returns 409 when recipe is perfected', async () => {
-    nockSupabaseGetUser('user-uuid-1');
-    mockQuery.mockResolvedValue(
-      makeQueryResult([makeRecipeDetailRow({status: 'perfected'})]),
-    );
-
-    const res = await request(getApp())
-      .post('/api/recipes/recipe-uuid-1/tweak-ai-sessions')
-      .set('Authorization', 'Bearer valid-token')
-      .send({prompt: PROMPT});
-
-    expect(res.status).toBe(409);
-  });
 
   test('returns 404 when active version is not found', async () => {
     nockSupabaseGetUser('user-uuid-1');
@@ -851,40 +835,6 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/create-version', () => 
     expect(res.status).toBe(201);
   });
 
-  test('promotes idea lineage to evolving', async () => {
-    nockSupabaseGetUser('user-uuid-1');
-    mockQuery
-      .mockResolvedValueOnce(makeQueryResult([previewSession()]))
-      .mockResolvedValueOnce(
-        makeQueryResult([makeRecipeDetailRow({status: 'idea'})]),
-      )
-      .mockResolvedValueOnce(makeQueryResult([{max: 1}]))
-      .mockResolvedValueOnce(makeQueryResult([{id: 'version-uuid-2'}]))
-      .mockResolvedValueOnce(makeQueryResult([]))
-      .mockResolvedValueOnce(makeQueryResult([]))
-      .mockResolvedValueOnce(makeQueryResult([]))
-      .mockResolvedValueOnce(
-        makeQueryResult([
-          makeVersionDetailRow({
-            id: 'version-uuid-2',
-            version_id: 'version-uuid-2',
-            version_number: 2,
-          }),
-        ]),
-      )
-      .mockResolvedValueOnce(makeQueryResult([previewSession()]))
-      .mockResolvedValueOnce(
-        makeQueryResult([makeSessionRow({phase: 'completed'})]),
-      );
-
-    const res = await request(getApp())
-      .post(
-        `/api/recipes/recipe-uuid-1/tweak-ai-sessions/${SESSION_ID}/create-version`,
-      )
-      .set('Authorization', 'Bearer valid-token');
-
-    expect(res.status).toBe(201);
-  });
 
   test('returns 404 when session is not found', async () => {
     nockSupabaseGetUser('user-uuid-1');
@@ -1413,13 +1363,11 @@ describe('#536 imported-recipe implement', () => {
   );
   const importedRecipeRow = () =>
     makeRecipeDetailRow({
-      status: 'idea',
       ingredients: longIngredients,
       instructions: longInstructions,
     });
   const importedVersionRow = () =>
     makeVersionDetailRow({
-      status: 'evolving',
       ingredients: longIngredients,
       instructions: longInstructions,
       cook_log_count: 0,

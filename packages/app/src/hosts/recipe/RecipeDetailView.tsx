@@ -1,7 +1,6 @@
 /* eslint-disable max-lines -- detail host: every section's queries, mutations, and view-model mapping */
 import {
   activationCandidates,
-  canCreateDraftVersion,
   canEditActiveRecipeMetadata,
   canEditDraftVersion,
   formatCommunityRatingLabel,
@@ -74,7 +73,7 @@ type RecipeDetailViewProps = {
  * labels formatted with the same helpers the old VersionPicker and
  * OverviewActions used, ingredient lines scaled by the app's formatter,
  * nutrition rows composed by the client's row builder), and every mutation
- * (status, activation, tweak-manually, create-a-draft, rating, cook log) plus
+ * (activation, tweak-manually, rating, cook log) plus
  * the sharing and comments sections keep their state and API calls app-side —
  * sharing and comments cross as the page's data props (#438 Part 3; their host
  * logic lives in useRecipeSharingProps / useRecipeCommentsProps), and the
@@ -228,15 +227,8 @@ export const RecipeDetailView = ({
   const sharingProps = useRecipeSharingProps(displayRecipe, showActionMessage);
   const commentsProps = useRecipeCommentsProps(recipe.id, recipe.userId);
 
-  // Lifecycle mutations (the old OverviewActions): status changes,
-  // candidate activation, and tweak-manually version creation.
-  const statusMutation = useMutation({
-    mutationFn: (status: RecipeDetail['status']) =>
-      api.recipes.patchStatus(displayRecipe.id, status),
-    onSuccess: () => {
-      void invalidate();
-    },
-  });
+  // Lifecycle mutations (the old OverviewActions): candidate
+  // activation and tweak-manually version creation.
   const activateMutation = useMutation({
     mutationFn: (versionId: string) =>
       api.versions.activate(displayRecipe.id, versionId),
@@ -257,43 +249,15 @@ export const RecipeDetailView = ({
       onViewVersion(version.id);
     },
   });
-  // A Perfected recipe's active version is locked, so its Edit draft
-  // chip creates the draft first and then opens it in the version
-  // editor (#264). Creating a draft is a mutation-then-navigate
-  // control (exempt from the href rule by the #248 borderline ruling),
-  // so @spudly/ui 1.16.0 carries it as the onCreateDraftPress callback
-  // slot (design-system#357); the page renders it as the "Edit draft"
-  // button whenever no existing draft's editDraftHref is passed. The
-  // wiring was removed while the page had no slot for it (1.15.0) and
-  // returns here with the slot.
-  const createDraftMutation = useMutation({
-    mutationFn: () => api.versions.create(displayRecipe.id),
-    onSuccess: version => {
-      void invalidate();
-      onEditVersion(version.id);
-    },
-    onError: () => {
-      showActionMessage(
-        i18n._({
-          id: 'recipeDetail.couldNotCreateDraftSentence',
-          message: 'Could not create a draft. Please try again.',
-        }),
-      );
-    },
-  });
-
-  const isEditable =
-    displayRecipe.status !== 'perfected' &&
-    displayRecipe.status !== 'abandoned';
+  const isEditable = true;
   // Activation (#417): the shared client rule decides what the page
   // offers; the server enforces the same rule.
-  const candidates = activationCandidates(displayRecipe.status, versions);
+  const candidates = activationCandidates(versions);
   const lifecycle =
     isEditable || candidates.length > 0
       ? {
           isEditable,
           isTweakPending: tweakManualMutation.isPending,
-          isStatusChangePending: statusMutation.isPending,
           isActivationPending: activateMutation.isPending,
           candidates: candidates.map(version => ({
             id: version.id,
@@ -502,12 +466,7 @@ export const RecipeDetailView = ({
   // the window where an archived version is selected but its detail has
   // not replaced displayRecipe yet (still loading, or the fetch failed):
   // the display alone would still read as the active version then.
-  const canCreateDraft =
-    canCreateDraftVersion(displayRecipe.status) &&
-    displayRecipe.versionId === recipe.versionId &&
-    selectedVersionId === recipe.versionId;
   const canEditMetadata = canEditActiveRecipeMetadata(
-    displayRecipe.status,
     displayRecipe.versionId,
     recipe.versionId,
     versions,
@@ -516,7 +475,6 @@ export const RecipeDetailView = ({
   return (
     <RecipeDetailPage
       state="ready"
-      status={recipe.status}
       versions={versions.map(version => ({
         id: version.id,
         label: versionPickerLabel(i18n, version),
@@ -571,25 +529,12 @@ export const RecipeDetailView = ({
         editDraftHref: canEditDraft
           ? recipeVersionEditHref(recipe.id, displayRecipe.versionId)
           : undefined,
-        onCreateDraftPress: canCreateDraft
-          ? () => {
-              if (!createDraftMutation.isPending) {
-                createDraftMutation.mutate();
-              }
-            }
-          : undefined,
         onDeletePress: onDelete,
         lifecycle,
         onTweakManuallyPress: () => {
           tweakManualMutation.mutate();
         },
         tweakAiHref: recipeTweakAiHref(recipe.id),
-        onMarkPerfectedPress: () => {
-          statusMutation.mutate('perfected');
-        },
-        onAbandonPress: () => {
-          statusMutation.mutate('abandoned');
-        },
         onActivateCandidatePress: (versionId: string) => {
           activateMutation.mutate(versionId);
         },

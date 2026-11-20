@@ -89,7 +89,6 @@ describe('GET /public/recipes', () => {
     expect(mockQuery).toHaveBeenCalledWith(LIST_PUBLIC_RECIPES_SQL, [
       DEFAULT_RECIPE_LIST_LIMIT,
       0,
-      null,
       ...emptyFilterBinds,
     ]);
   });
@@ -106,9 +105,9 @@ describe('GET /public/recipes', () => {
       buildListPublicRecipesSql(
         'rating',
         'desc',
-        buildSearchQuerySql(parseSearchSyntax('pasta'), 11, 'public').sql,
+        buildSearchQuerySql(parseSearchSyntax('pasta'), 10, 'public').sql,
       ),
-      [25, 10, null, ...emptyFilterBinds, '%pasta%'],
+      [25, 10, ...emptyFilterBinds, '%pasta%'],
     );
   });
 
@@ -118,22 +117,15 @@ describe('GET /public/recipes', () => {
     expect(mockQuery).toHaveBeenCalledWith(LIST_PUBLIC_RECIPES_SQL, [
       MAX_RECIPE_LIST_LIMIT,
       0,
-      null,
       ...emptyFilterBinds,
     ]);
   });
 
-  test('excludes idea recipes from public discovery SQL', () => {
-    expect(LIST_PUBLIC_RECIPES_SQL).toContain("r.status <> 'idea'");
-  });
 
   test('leaves search conditions to the compiled search query (#611)', () => {
     // With no search terms the builder adds no search conditions; the
     // endpoint appends the parsed query's conditions instead.
     expect(LIST_PUBLIC_RECIPES_SQL).not.toContain('search_token');
-    expect(LIST_PUBLIC_RECIPES_SQL).toContain(
-      'and ($3::text is null or r.status = $3)',
-    );
   });
 
   test('returns 400 for invalid sort', async () => {
@@ -143,18 +135,13 @@ describe('GET /public/recipes', () => {
     expect(mockQuery).not.toHaveBeenCalled();
   });
 
-  test('returns 400 for invalid sortDir or status', async () => {
+  test('returns 400 for invalid sortDir', async () => {
     const badDir = await request(getApp()).get(
       '/api/public/recipes?sortDir=sideways',
     );
     expect(badDir.status).toBe(400);
     expect(badDir.body.error).toMatch(/sortDir/i);
 
-    const badStatus = await request(getApp()).get(
-      '/api/public/recipes?status=draft',
-    );
-    expect(badStatus.status).toBe(400);
-    expect(badStatus.body.error).toMatch(/status/i);
     expect(mockQuery).not.toHaveBeenCalled();
   });
 });

@@ -1,4 +1,4 @@
-import {act, fireEvent, screen, waitFor} from '@testing-library/react';
+import {act, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {http, HttpResponse} from 'msw';
 import {StrictMode} from 'react';
@@ -31,7 +31,6 @@ describe('RecipesPage', () => {
             description: null,
             prepTimeMin: null,
             imageUrl: 'https://cdn.example/cake.jpg',
-            status: 'evolving',
             versionId: 'version-1',
             versionNumber: 1,
             createdVia: 'manual',
@@ -66,7 +65,6 @@ describe('RecipesPage', () => {
             description: null,
             prepTimeMin: null,
             imageUrl: null,
-            status: 'evolving',
             versionId: 'version-1',
             versionNumber: 1,
             createdVia: 'manual',
@@ -136,7 +134,6 @@ describe('RecipesPage', () => {
       description: null,
       prepTimeMin: null,
       imageUrl: null,
-      status: 'evolving' as const,
       versionId: 'version-1',
       versionNumber: 1,
       createdVia: 'manual' as const,
@@ -245,50 +242,6 @@ describe('RecipesPage', () => {
     });
   });
 
-  test('filters recipes by status', async () => {
-    const perfected = makeRecipeDetail({
-      id: 'perfected-id',
-      title: 'Perfected Soup',
-      status: 'perfected',
-    });
-    const idea = makeRecipeDetail({
-      id: 'idea-id',
-      title: 'Idea Soup',
-      status: 'idea',
-    });
-    server.use(
-      http.get('http://localhost:8080/api/recipes', ({request}) => {
-        const status = new URL(request.url).searchParams.get('status');
-        const items = [perfected, idea];
-        if (status) {
-          return HttpResponse.json(
-            items.filter(recipe => recipe.status === status),
-          );
-        }
-        return HttpResponse.json(items);
-      }),
-    );
-    const user = userEvent.setup();
-    await renderWithProviders(<RecipesPage />);
-    await waitFor(() => {
-      expect(screen.getByText('Perfected Soup')).toBeInTheDocument();
-      expect(screen.getByText('Idea Soup')).toBeInTheDocument();
-    });
-    // The status control renders only once its filter is added from
-    // the page's filter chooser.
-    await user.type(screen.getByPlaceholderText('Search recipes…'), 'Soup');
-    await user.click(screen.getByRole('button', {name: 'Add a filter'}));
-    await user.click(screen.getByRole('button', {name: 'Add Status filter'}));
-    await user.click(await screen.findByRole('combobox'));
-    // The DS select's options carry pointer-events: none under
-    // jsdom's CSS handling, so user-event's pointer checks reject
-    // the click; fireEvent dispatches the same click directly.
-    fireEvent.click(await screen.findByRole('option', {name: 'Perfected'}));
-    await waitFor(() => {
-      expect(screen.getByText('Perfected Soup')).toBeInTheDocument();
-      expect(screen.queryByText('Idea Soup')).not.toBeInTheDocument();
-    });
-  });
 
   // The retired list view rendered the screen's heading itself; the
   // DS page renders none, so the host restores it — heading
@@ -790,21 +743,17 @@ describe('RecipesPage', () => {
     const perfected = makeRecipeDetail({
       id: 'perfected-id',
       title: 'Perfected Soup',
-      status: 'perfected',
     });
     const idea = makeRecipeDetail({
       id: 'idea-id',
       title: 'Idea Soup',
-      status: 'idea',
     });
     server.use(
       http.get('http://localhost:8080/api/recipes', ({request}) => {
-        const status = new URL(request.url).searchParams.get('status');
+        const ingredient = new URL(request.url).searchParams.get('ingredient');
         const items = [perfected, idea];
-        if (status) {
-          return HttpResponse.json(
-            items.filter(recipe => recipe.status === status),
-          );
+        if (ingredient) {
+          return HttpResponse.json([perfected]);
         }
         return HttpResponse.json(items);
       }),
@@ -841,9 +790,13 @@ describe('RecipesPage', () => {
     });
     await user.type(screen.getByPlaceholderText('Search recipes…'), 'Soup');
     await user.click(screen.getByRole('button', {name: 'Add a filter'}));
-    await user.click(screen.getByRole('button', {name: 'Add Status filter'}));
-    await user.click(await screen.findByRole('combobox'));
-    fireEvent.click(await screen.findByRole('option', {name: 'Perfected'}));
+    await user.click(
+      screen.getByRole('button', {name: 'Add Ingredient filter'}),
+    );
+    await user.type(
+      await screen.findByRole('textbox', {name: /ingredient/i}),
+      'truffle',
+    );
     await waitFor(() => {
       expect(screen.getByText('Perfected Soup')).toBeInTheDocument();
       expect(screen.queryByText('Idea Soup')).not.toBeInTheDocument();

@@ -1,5 +1,3 @@
-import type {RecipeStatus} from '@eciperay/types';
-
 /**
  * GitHub-style recipe search syntax (#611).
  *
@@ -19,8 +17,7 @@ import type {RecipeStatus} from '@eciperay/types';
  *   substring matches; comma-separated values are ORed within the qualifier
  *   (`tag:dinner,quick`)
  * - `-term`, `-ingredient:peanuts`, `-tag:spicy`: negation of any term
- * - `status:perfected`, `is:public` / `is:shared` / `is:mine`: state and scope
- *   qualifiers (`is:` also accepts a recipe status)
+ * - `is:public` / `is:shared` / `is:mine`: scope qualifiers
  * - `rating:>=4`, `calories:<600`, `protein:>30`, `satiety:>=7`: numeric
  *   comparisons against the same columns the range filters use
  *
@@ -40,13 +37,7 @@ export type SearchComparison = '>=' | '<=' | '>' | '<' | '=';
 export type ParsedSearchQuery = {
   freeText: {value: string; phrase: boolean; negated: boolean}[];
   fieldFilters: {field: SearchTextField; values: string[]; negated: boolean}[];
-  statuses: {values: RecipeStatus[]; negated: boolean}[];
   scopes: {values: SearchScope[]; negated: boolean}[];
-  combinedGroups: {
-    statuses: RecipeStatus[];
-    scopes: SearchScope[];
-    negated: boolean;
-  }[];
   numeric: {
     field: SearchNumericField;
     comparison: SearchComparison;
@@ -59,19 +50,10 @@ export type ParsedSearchQuery = {
 export const EMPTY_SEARCH_QUERY: ParsedSearchQuery = {
   freeText: [],
   fieldFilters: [],
-  statuses: [],
   scopes: [],
-  combinedGroups: [],
   numeric: [],
   hints: [],
 };
-
-const STATUS_VALUES: readonly RecipeStatus[] = [
-  'idea',
-  'evolving',
-  'perfected',
-  'abandoned',
-];
 
 const SCOPE_VALUES: readonly SearchScope[] = ['mine', 'shared', 'public'];
 
@@ -156,9 +138,7 @@ export const parseSearchSyntax = (
   const parsed: ParsedSearchQuery = {
     freeText: [],
     fieldFilters: [],
-    statuses: [],
     scopes: [],
-    combinedGroups: [],
     numeric: [],
     hints: [],
   };
@@ -179,7 +159,6 @@ export const parseSearchSyntax = (
     const rawValue = qualifierMatch[2] ?? '';
     const isKnownQualifier =
       Object.hasOwn(TEXT_FIELD_QUALIFIERS, qualifier) ||
-      qualifier === 'status' ||
       qualifier === 'is' ||
       (NUMERIC_QUALIFIERS as readonly string[]).includes(qualifier);
     if (!isKnownQualifier) {
@@ -211,44 +190,27 @@ export const parseSearchSyntax = (
       continue;
     }
 
-    if (qualifier === 'status' || qualifier === 'is') {
+    if (qualifier === 'is') {
       const values = splitValues(rawValue.toLowerCase());
       if (values.length === 0) {
         parsed.hints.push(`Search qualifier "${qualifier}:" needs a value.`);
         continue;
       }
-      const statusValues = values.filter((value): value is RecipeStatus =>
-        (STATUS_VALUES as readonly string[]).includes(value),
-      );
       const scopeValues = values.filter((value): value is SearchScope =>
         (SCOPE_VALUES as readonly string[]).includes(value),
       );
       const invalidValues = values.filter(
-        value =>
-          !(STATUS_VALUES as readonly string[]).includes(value) &&
-          !(SCOPE_VALUES as readonly string[]).includes(value),
+        value => !(SCOPE_VALUES as readonly string[]).includes(value),
       );
       for (const invalid of invalidValues) {
         parsed.hints.push(
-          `Unknown ${qualifier}: value "${invalid}" — try ${qualifier}:${qualifier === 'is' ? 'public' : 'perfected'}.`,
+          `Unknown is: value "${invalid}" — try is:public.`,
         );
       }
-      if (statusValues.length === 0 && scopeValues.length === 0) {
+      if (scopeValues.length === 0) {
         continue;
       }
-      if (statusValues.length > 0 && scopeValues.length > 0) {
-        // Mixed alternatives in ONE token are ORed together, so they form
-        // a single combined group rather than separate ANDed terms.
-        parsed.combinedGroups.push({
-          statuses: statusValues,
-          scopes: scopeValues,
-          negated: token.negated,
-        });
-      } else if (statusValues.length > 0) {
-        parsed.statuses.push({values: statusValues, negated: token.negated});
-      } else {
-        parsed.scopes.push({values: scopeValues, negated: token.negated});
-      }
+      parsed.scopes.push({values: scopeValues, negated: token.negated});
       continue;
     }
 
@@ -350,16 +312,6 @@ export const buildSearchQuerySql = (
     conditions.push(maybeNegate(condition, filter.negated));
   }
 
-  for (const statusFilter of parsed.statuses) {
-    const params = statusFilter.values.map(value => {
-      values.push(value);
-      return `$${startIndex + values.length - 1}`;
-    });
-    conditions.push(
-      maybeNegate(`r.status in (${params.join(', ')})`, statusFilter.negated),
-    );
-  }
-
   // Positive condition for one scope alternative, relative to this
   // endpoint: `null` means it matches every row on the endpoint (TRUE),
   // 'false' means it matches none, otherwise a visibility condition.
@@ -396,38 +348,6 @@ export const buildSearchQuerySql = (
       continue;
     }
     conditions.push(maybeNegate(group, scopeTerm.negated));
-  }
-
-  for (const group of parsed.combinedGroups) {
-    const scopeParts = group.scopes.map(scopeCondition);
-    if (scopeParts.some(part => part === null)) {
-      // One scope alternative already matches every row here, so the
-      // whole OR group is TRUE: no condition (or FALSE when negated),
-      // and no status bind values are consumed.
-      if (group.negated) {
-        conditions.push('false');
-      }
-      continue;
-    }
-    const params = group.statuses.map(value => {
-      values.push(value);
-      return `$${startIndex + values.length - 1}`;
-    });
-    const parts: (string | null)[] = [
-      `r.status in (${params.join(', ')})`,
-      ...scopeParts,
-    ];
-    const combined = orGroup(parts);
-    if (combined === null) {
-      if (group.negated) {
-        conditions.push('false');
-      }
-      continue;
-    }
-    if (combined === 'false' && group.negated) {
-      continue;
-    }
-    conditions.push(maybeNegate(combined, group.negated));
   }
 
   for (const term of parsed.numeric) {

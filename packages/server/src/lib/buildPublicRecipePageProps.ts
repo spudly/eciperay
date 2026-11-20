@@ -56,7 +56,6 @@ export const buildPublicRecipePageProps = (
       imageUrl: recipe.imageUrl,
       title: recipe.title,
       description: recipe.description,
-      status: recipe.status,
       servingsLabel: String(recipe.servings),
       ...(recipe.prepTimeMin ? {prepTimeLabel: `${recipe.prepTimeMin}m`} : {}),
       ...(recipe.cookTimeMin ? {cookTimeLabel: `${recipe.cookTimeMin}m`} : {}),

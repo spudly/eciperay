@@ -1,8 +1,4 @@
-import type {RecipeStatus} from '@eciperay/types';
-
-import {RECIPE_STATUS_FILTER_ALL} from './recipeStatusCopy.js';
 import type {RecipeListFilters} from './recipesListUrl.js';
-import type {RecipeStatusFilterValue} from './ui/recipeListFilterControls.js';
 import type {FilterFieldState} from './useFilterFieldState.js';
 
 const parseOptionalNumberInput = (value: string): number | undefined => {
@@ -17,21 +13,10 @@ const parseOptionalNumberInput = (value: string): number | undefined => {
   return parsed;
 };
 
-const resolveStatusFilter = (
-  includeStatus: boolean,
-  statusFilter: RecipeStatusFilterValue,
-): RecipeStatus | undefined => {
-  if (!includeStatus || statusFilter === RECIPE_STATUS_FILTER_ALL) {
-    return undefined;
-  }
-  return statusFilter;
-};
-
 export const buildRecipeListFilters = (
   fields: FilterFieldState,
   deferredSearch: string,
   deferredIngredient: string,
-  includeStatus: boolean,
 ): RecipeListFilters => {
   const filters: RecipeListFilters = {
     minCalories: parseOptionalNumberInput(fields.minCalories),
@@ -46,10 +31,6 @@ export const buildRecipeListFilters = (
   }
   if (deferredIngredient) {
     filters.ingredient = deferredIngredient;
-  }
-  const status = resolveStatusFilter(includeStatus, fields.statusFilter);
-  if (status) {
-    filters.status = status;
   }
   return filters;
 };

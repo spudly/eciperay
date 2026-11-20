@@ -2,9 +2,7 @@ import {
   formatDiscoveryListMeta,
   publicRecipeDiscoveryInfiniteQueryOptions,
   resizedImageUrl,
-  RECIPE_STATUS_FILTER_ALL,
   useRecipeListFilters,
-  type RecipeStatusFilterValue,
 } from '@eciperay/client';
 import {useLingui} from '@lingui/react';
 import type {
@@ -64,7 +62,6 @@ const toDiscoverItem = (
 export const DiscoverPage = () => {
   const {i18n} = useLingui();
   const {filters, controls} = useRecipeListFilters({
-    includeStatus: true,
     defaultSort: 'newest',
   });
 
@@ -104,8 +101,6 @@ export const DiscoverPage = () => {
                   'No public recipes match that search — try a broader craving.',
               })
             : controls.ingredient.trim() ||
-                (controls.statusFilter &&
-                  controls.statusFilter !== RECIPE_STATUS_FILTER_ALL) ||
                 controls.minCalories.trim() ||
                 controls.maxCalories.trim() ||
                 controls.minSatiety.trim() ||
@@ -148,11 +143,6 @@ export const DiscoverPage = () => {
         }}
         search={controls.search}
         onSearchChange={controls.onSearchChange}
-        statusFilter={controls.statusFilter}
-        onStatusFilterChange={value => {
-          controls.onStatusFilterChange?.(value as RecipeStatusFilterValue);
-        }}
-        showStatusFilter={controls.showStatusFilter}
         ingredient={controls.ingredient}
         onIngredientChange={controls.onIngredientChange}
         minCalories={controls.minCalories}
