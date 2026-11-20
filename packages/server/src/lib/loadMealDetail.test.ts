@@ -298,13 +298,14 @@ describe('loadMealDetail direct ingredients (#362)', () => {
     expect(meal?.recipeCount).toBe(1);
     // Recipe: 100 cal/serving × 4 servings = 400 cal, 40 protein,
     // 20 carbs, 8 fat, 400 g. Direct: 400 cal, 8 protein, 88 carbs,
-    // 2 fat, 2 fiber, 10 sodium, 300 g (see fixture).
+    // 2 fat, 2 fiber, 10 sodium, 300 g (see fixture). The recipe member's
+    // fiber is unknown, so the aggregate fiber stays unknown (#613).
     expect(meal?.nutrition).toMatchObject({
       calories: 800,
       proteinG: 48,
       carbsG: 108,
       fatG: 10,
-      fiberG: 2,
+      fiberG: null,
       sugarG: 0,
       sodiumMg: 10,
       preparedWeightG: 700,

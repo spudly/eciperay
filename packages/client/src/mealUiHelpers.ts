@@ -281,7 +281,7 @@ export const buildWeeklyTotalsBand = (
   const netTotal = netCarbsG(nutrition);
   if (netTotal !== null) {
     const carbsIndex = totals.findIndex(row => row.label === 'Carbs');
-    totals.splice(carbIndex + 1, 0, {
+    totals.splice(carbsIndex + 1, 0, {
       label: 'Net carbs',
       valueLabel: `${Math.round(netTotal)}g net carbs`,
     });

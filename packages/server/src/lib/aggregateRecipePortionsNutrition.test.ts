@@ -74,7 +74,7 @@ describe('aggregateRecipePortionsNutrition', () => {
       proteinG: 0,
       carbsG: 0,
       fatG: 0,
-      fiberG: 0,
+      fiberG: null,
       sugarG: 0,
       sodiumMg: 0,
       preparedWeightG: 0,
