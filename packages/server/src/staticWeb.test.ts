@@ -42,6 +42,26 @@ describe('attachWebStatic', () => {
     expect(root.text).toContain('spa');
   });
 
+  test('serves the consent page with its noindex directive in the initial HTML', async () => {
+    const distDir = mkdtempSync(path.join(tmpdir(), 'eciperay-web-dist-'));
+    writeFileSync(
+      path.join(distDir, 'index.html'),
+      '<!DOCTYPE html><html><head><title>Eciperay</title></head><body>spa</body></html>',
+    );
+    const app = express();
+    attachWebStatic(app, distDir);
+
+    const consent = await request(app).get('/privacy/consent');
+    expect(consent.status).toBe(200);
+    expect(consent.text).toContain(
+      '<meta name="robots" content="noindex, nofollow" />',
+    );
+
+    const other = await request(app).get('/recipes');
+    expect(other.status).toBe(200);
+    expect(other.text).not.toContain('name="robots"');
+  });
+
   test('does not serve SPA fallback for /api paths', async () => {
     const distDir = makeFixtureDist();
     const app = express();
