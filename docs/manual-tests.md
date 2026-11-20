@@ -286,6 +286,9 @@ without); one recipe may be created fresh in case 1.
 `packages/web/src/components/{recipe,recipes}/**`,
 `packages/web/src/lib/recipeImageCrop.ts`, `@spudly/ui` recipe form or recipe
 page components, `packages/server` recipe routes,
+`packages/server/src/lib/saveRecipeFromInput.ts`,
+`packages/server/src/lib/mapRowToRecipeDetail.ts`,
+`packages/server/src/lib/recipeProvenance.ts`,
 `packages/server/src/routes/ssr/**`,
 `packages/server/src/lib/renderPublicRecipe.tsx`,
 `packages/server/src/lib/loadPublicRecipe.ts`, the SSR route registration in

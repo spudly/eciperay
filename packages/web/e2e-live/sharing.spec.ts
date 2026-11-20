@@ -13,9 +13,12 @@ import {
 } from './qa.js';
 
 /**
- * Sharing-visibility basics (issue #233): a recipe starts private; making it
- * public lets a signed-out visitor open its public page. Search coverage lives
- * in recipes.spec.ts (signed-in) and public.spec.ts (Discover render).
+ * Sharing-visibility basics (issue #233; default flipped by #609): a recipe
+ * created manually now starts PUBLIC (public-by-default by provenance), so a
+ * signed-out visitor can open its public page immediately; flipping it to
+ * Private in the Sharing section takes it back out of public view. Search
+ * coverage lives in recipes.spec.ts (signed-in) and public.spec.ts (Discover
+ * render).
  */
 test.skip(!hasQaAccount, QA_SKIP_REASON);
 
@@ -60,10 +63,28 @@ test.describe('live sharing', () => {
     });
     const anon = await context.newPage();
     try {
-      // While the recipe is still private it is not listed publicly: a
-      // Discover search for its (unique) title finds nothing. The
-      // empty-search message is the settle anchor — it proves the search
-      // actually ran before the absence is asserted.
+      // #609: a manually created recipe starts public, so signed-out the
+      // public page renders the recipe and Discover lists it.
+      await anon.goto(`/recipe/${created.id}/${slug}`);
+      await expect(
+        anon.getByRole('heading', {name: created.title}),
+      ).toBeVisible({timeout: 15_000});
+      await anon.goto('/discover');
+      await anon.getByPlaceholder('Search public recipes…').fill(created.title);
+      await expect(anon.getByText(created.title).first()).toBeVisible({
+        timeout: 15_000,
+      });
+
+      // Flip visibility to Private in the detail page's Sharing section.
+      await page.goto(`/recipes/${created.id}`);
+      await expect(page.getByText('Sharing', {exact: true})).toBeVisible();
+      await page.getByText('Private', {exact: true}).click();
+      await page.getByRole('button', {name: 'Save sharing settings'}).click();
+
+      // Now the recipe is not listed publicly: a Discover search for its
+      // (unique) title finds nothing. The empty-search message is the
+      // settle anchor — it proves the search actually ran before the
+      // absence is asserted. The public page no longer renders it either.
       await anon.goto('/discover');
       await anon.getByPlaceholder('Search public recipes…').fill(created.title);
       await expect(
@@ -72,26 +93,10 @@ test.describe('live sharing', () => {
         ),
       ).toBeVisible({timeout: 15_000});
       await expect(anon.getByText(created.title)).toHaveCount(0);
-
-      // Flip visibility to Public in the detail page's Sharing section.
-      await page.goto(`/recipes/${created.id}`);
-      await expect(page.getByText('Sharing', {exact: true})).toBeVisible();
-      await page.getByText('Public', {exact: true}).click();
-      const consent = page.getByLabel(/Publishing consent/);
-      if (await consent.isVisible({timeout: 3_000}).catch(() => false)) {
-        await consent.check();
-      }
-      await page.getByRole('button', {name: 'Save sharing settings'}).click();
-      // The permalink row appears once the recipe is public.
-      await expect(page.getByText(`/recipe/${created.id}/${slug}`)).toBeVisible(
-        {timeout: 15_000},
-      );
-
-      // Signed-out, the public page renders the recipe.
       await anon.goto(`/recipe/${created.id}/${slug}`);
-      await expect(
-        anon.getByRole('heading', {name: created.title}),
-      ).toBeVisible({timeout: 15_000});
+      await expect(anon.getByText('Recipe not found')).toBeVisible({
+        timeout: 15_000,
+      });
     } finally {
       await context.close();
     }
@@ -109,9 +114,27 @@ test.describe('live sharing', () => {
       },
     );
 
+    // #609: the recipe starts public, and the share-link endpoint mints no
+    // token for a public recipe — set it private first via the sharing API.
+    const token = await getAccessToken(page);
+    const patchStatus = await page.evaluate(
+      async ({id, t}) => {
+        const res = await fetch(`/api/recipes/${id}/sharing`, {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${t}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({visibility: 'private'}),
+        });
+        return res.status;
+      },
+      {id: created.id, t: token},
+    );
+    expect(patchStatus).toBe(200);
+
     // The recipe stays private. Obtain its share link the way the Share
     // action does: the share-link endpoint mints a token on first use.
-    const token = await getAccessToken(page);
     const link = await page.evaluate(
       async ({id, t}) => {
         const detailRes = await fetch(`/api/recipes/${id}`, {
