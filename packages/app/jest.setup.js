@@ -59,6 +59,11 @@ jest.mock('expo-image-manipulator', () => ({
   SaveFormat: {JPEG: 'jpeg', PNG: 'png', WEBP: 'webp'},
 }));
 
+jest.mock('expo-application', () => ({
+  nativeApplicationVersion: '1.34.4',
+  nativeBuildVersion: '123',
+}));
+
 jest.mock('posthog-react-native', () => ({
   __esModule: true,
   default: jest

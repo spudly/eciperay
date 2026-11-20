@@ -9,9 +9,23 @@ import {
 
 const MockPostHog = PostHog as jest.MockedClass<typeof PostHog>;
 
+let mockNativeApplicationVersion: string | null = '1.34.4';
+let mockNativeBuildVersion: string | null = '123';
+
+jest.mock('expo-application', () => ({
+  get nativeApplicationVersion() {
+    return mockNativeApplicationVersion;
+  },
+  get nativeBuildVersion() {
+    return mockNativeBuildVersion;
+  },
+}));
+
 describe('createAppAnalytics', () => {
   beforeEach(() => {
     MockPostHog.mockClear();
+    mockNativeApplicationVersion = '1.34.4';
+    mockNativeBuildVersion = '123';
   });
 
   test('returns a noop client when PostHog key is unset', () => {
@@ -98,15 +112,30 @@ describe('createAppAnalytics', () => {
     client.captureException(new Error('boom'));
     expect(captureException).toHaveBeenCalled();
     client.log('info', 'ready');
-    expect(logger.info).toHaveBeenCalledWith('ready', undefined);
+    expect(logger.info).toHaveBeenCalledWith('ready', {
+      app_version: '1.34.4',
+      app_build: '123',
+    });
     client.log('warn', 'slow');
-    expect(logger.warn).toHaveBeenCalledWith('slow', undefined);
+    expect(logger.warn).toHaveBeenCalledWith('slow', {
+      app_version: '1.34.4',
+      app_build: '123',
+    });
     client.log('error', 'failed');
-    expect(logger.error).toHaveBeenCalledWith('failed', undefined);
+    expect(logger.error).toHaveBeenCalledWith('failed', {
+      app_version: '1.34.4',
+      app_build: '123',
+    });
     client.log('debug', 'debugging');
-    expect(logger.debug).toHaveBeenCalledWith('debugging', undefined);
+    expect(logger.debug).toHaveBeenCalledWith('debugging', {
+      app_version: '1.34.4',
+      app_build: '123',
+    });
     client.log('trace', 'tracing');
-    expect(logger.trace).toHaveBeenCalledWith('tracing', undefined);
+    expect(logger.trace).toHaveBeenCalledWith('tracing', {
+      app_version: '1.34.4',
+      app_build: '123',
+    });
     await client.submitUserFeedback({
       message: 'Import screen hangs on my phone.',
       is_bug: true,
@@ -198,6 +227,76 @@ describe('createAppAnalytics', () => {
       }),
     );
     (globalThis as {__DEV__?: boolean}).__DEV__ = previousDev;
+  });
+
+  test('registers app version and build as super properties and carries them in context', () => {
+    const register = jest.fn();
+    const captureException = jest.fn();
+    const logger = {info: jest.fn(), warn: jest.fn(), error: jest.fn()};
+    MockPostHog.mockImplementation(
+      () =>
+        ({
+          capture: jest.fn(),
+          identify: jest.fn(),
+          reset: jest.fn(),
+          onFeatureFlags: jest.fn(() => jest.fn()),
+          register,
+          captureException,
+          logger,
+        }) as unknown as PostHog,
+    );
+    const client = createAppAnalytics(
+      'phc_test',
+      'https://us.i.posthog.com',
+      'ios',
+    );
+    expect(register).toHaveBeenCalledWith({
+      app_version: '1.34.4',
+      app_build: '123',
+    });
+    client.captureException(new Error('boom'));
+    expect(captureException).toHaveBeenCalledWith(expect.any(Error), {
+      app_version: '1.34.4',
+      app_build: '123',
+    });
+    client.log('info', 'ready');
+    expect(logger.info).toHaveBeenCalledWith('ready', {
+      app_version: '1.34.4',
+      app_build: '123',
+    });
+  });
+
+  test('omits super properties and context when version and build are null', () => {
+    mockNativeApplicationVersion = null;
+    mockNativeBuildVersion = null;
+    const register = jest.fn();
+    const captureException = jest.fn();
+    const logger = {info: jest.fn(), warn: jest.fn(), error: jest.fn()};
+    MockPostHog.mockImplementation(
+      () =>
+        ({
+          capture: jest.fn(),
+          identify: jest.fn(),
+          reset: jest.fn(),
+          onFeatureFlags: jest.fn(() => jest.fn()),
+          register,
+          captureException,
+          logger,
+        }) as unknown as PostHog,
+    );
+    const client = createAppAnalytics(
+      'phc_test',
+      'https://us.i.posthog.com',
+      'android',
+    );
+    expect(register).not.toHaveBeenCalled();
+    client.captureException(new Error('boom'));
+    expect(captureException).toHaveBeenCalledWith(
+      expect.any(Error),
+      undefined,
+    );
+    client.log('info', 'ready');
+    expect(logger.info).toHaveBeenCalledWith('ready', undefined);
   });
 
   test('maps the React Native platform to analytics platform', () => {

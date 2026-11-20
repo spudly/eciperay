@@ -81,25 +81,64 @@ const createGetExperimentVariant = (adapter: AnalyticsAdapter) => {
   };
 };
 
-const createCaptureException = (adapter: AnalyticsAdapter) => {
+export type AnalyticsContext = {
+  appVersion?: string | null;
+  appBuild?: string | null;
+};
+
+const buildContextProperties = (
+  context?: AnalyticsContext,
+): Record<string, unknown> => {
+  const properties: Record<string, unknown> = {};
+  if (context?.appVersion) {
+    properties.app_version = context.appVersion;
+  }
+  if (context?.appBuild) {
+    properties.app_build = context.appBuild;
+  }
+  return properties;
+};
+
+const createCaptureException = (
+  adapter: AnalyticsAdapter,
+  context?: AnalyticsContext,
+) => {
+  const contextProperties = buildContextProperties(context);
   return (error: unknown, properties?: Record<string, unknown>) => {
-    adapter.captureException?.(error, sanitizeAnalyticsProperties(properties));
+    const sanitized = sanitizeAnalyticsProperties(properties);
+    if (Object.keys(contextProperties).length === 0) {
+      adapter.captureException?.(error, sanitized);
+      return;
+    }
+    adapter.captureException?.(error, {
+      ...contextProperties,
+      ...(sanitized ?? {}),
+    });
   };
 };
 
-const createLog = (adapter: AnalyticsAdapter) => {
+const createLog = (adapter: AnalyticsAdapter, context?: AnalyticsContext) => {
+  const contextProperties = buildContextProperties(context);
   return (
     level: LogLevel,
     message: string,
     attributes?: Record<string, unknown>,
   ) => {
-    adapter.log?.(level, message, attributes);
+    if (Object.keys(contextProperties).length === 0) {
+      adapter.log?.(level, message, attributes);
+      return;
+    }
+    adapter.log?.(level, message, {
+      ...contextProperties,
+      ...(attributes ?? {}),
+    });
   };
 };
 
 export const createAnalytics = (
   adapter: AnalyticsAdapter,
   platform: AnalyticsPlatform,
+  context?: AnalyticsContext,
 ) => ({
   track: createTrack(adapter, platform),
   identifyUser: createIdentifyUser(adapter),
@@ -113,8 +152,8 @@ export const createAnalytics = (
   reloadFeatureFlags: () => {
     adapter.reloadFeatureFlags?.();
   },
-  captureException: createCaptureException(adapter),
-  log: createLog(adapter),
+  captureException: createCaptureException(adapter, context),
+  log: createLog(adapter, context),
   submitUserFeedback: (input: SubmitUserFeedbackInput) =>
     submitUserFeedbackImpl(adapter, platform, input),
 });

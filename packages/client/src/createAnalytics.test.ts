@@ -84,6 +84,112 @@ describe('createAnalytics', () => {
     }).not.toThrow();
   });
 
+  test('merges context app version and build into captureException and log', () => {
+    const captureException = jest.fn();
+    const log = jest.fn();
+    const analytics = createAnalytics(
+      {
+        capture: jest.fn(),
+        identify: jest.fn(),
+        reset: jest.fn(),
+        captureException,
+        log,
+      },
+      'ios',
+      {appVersion: '1.34.4', appBuild: '123'},
+    );
+    analytics.captureException(new Error('boom'), {route: '/recipes'});
+    expect(captureException).toHaveBeenCalledWith(new Error('boom'), {
+      app_version: '1.34.4',
+      app_build: '123',
+      route: '/recipes',
+    });
+    analytics.captureException(new Error('solo'));
+    expect(captureException).toHaveBeenLastCalledWith(new Error('solo'), {
+      app_version: '1.34.4',
+      app_build: '123',
+    });
+    analytics.log('info', 'hello', {count: 1});
+    expect(log).toHaveBeenCalledWith('info', 'hello', {
+      app_version: '1.34.4',
+      app_build: '123',
+      count: 1,
+    });
+    analytics.log('warn', 'no-attrs');
+    expect(log).toHaveBeenLastCalledWith('warn', 'no-attrs', {
+      app_version: '1.34.4',
+      app_build: '123',
+    });
+  });
+
+  test('caller-supplied app version and build win over context', () => {
+    const captureException = jest.fn();
+    const log = jest.fn();
+    const analytics = createAnalytics(
+      {
+        capture: jest.fn(),
+        identify: jest.fn(),
+        reset: jest.fn(),
+        captureException,
+        log,
+      },
+      'android',
+      {appVersion: '1.34.4', appBuild: '123'},
+    );
+    analytics.captureException(new Error('boom'), {
+      app_version: '9.9.9',
+      app_build: '999',
+    });
+    expect(captureException).toHaveBeenCalledWith(new Error('boom'), {
+      app_version: '9.9.9',
+      app_build: '999',
+    });
+    analytics.log('error', 'failed', {app_version: '9.9.9'});
+    expect(log).toHaveBeenCalledWith('error', 'failed', {
+      app_version: '9.9.9',
+      app_build: '123',
+    });
+  });
+
+  test('no-context captureException and log are unchanged', () => {
+    const captureException = jest.fn();
+    const log = jest.fn();
+    const analytics = createAnalytics(
+      {
+        capture: jest.fn(),
+        identify: jest.fn(),
+        reset: jest.fn(),
+        captureException,
+        log,
+      },
+      'web',
+    );
+    analytics.captureException(new Error('boom'));
+    expect(captureException).toHaveBeenCalledWith(new Error('boom'), undefined);
+    analytics.log('info', 'hello');
+    expect(log).toHaveBeenCalledWith('info', 'hello', undefined);
+  });
+
+  test('null context values are omitted', () => {
+    const captureException = jest.fn();
+    const log = jest.fn();
+    const analytics = createAnalytics(
+      {
+        capture: jest.fn(),
+        identify: jest.fn(),
+        reset: jest.fn(),
+        captureException,
+        log,
+      },
+      'ios',
+      {appVersion: null, appBuild: null},
+    );
+    analytics.captureException(new Error('boom'));
+    expect(captureException).toHaveBeenCalledWith(new Error('boom'), undefined);
+    analytics.log('info', 'hello');
+    expect(log).toHaveBeenCalledWith('info', 'hello', undefined);
+  });
+
   test('createNoopAnalyticsAdapter does not throw', () => {
     const adapter = createNoopAnalyticsAdapter();
     const analytics = createAnalytics(adapter, 'android');

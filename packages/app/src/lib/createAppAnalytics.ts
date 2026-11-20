@@ -3,10 +3,12 @@ import {
   createNoopAnalyticsAdapter,
   type AnalyticsAdapter,
   type AnalyticsClient,
+  type AnalyticsContext,
   type AnalyticsPlatform,
   type LogLevel,
 } from '@eciperay/client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Application from 'expo-application';
 import PostHog from 'posthog-react-native';
 import {Platform} from 'react-native';
 
@@ -117,12 +119,41 @@ const createAppPostHogClient = (
   });
 };
 
+export const getAppAnalyticsContext = (): AnalyticsContext => {
+  const context: AnalyticsContext = {};
+  if (Application.nativeApplicationVersion) {
+    context.appVersion = Application.nativeApplicationVersion;
+  }
+  if (Application.nativeBuildVersion) {
+    context.appBuild = Application.nativeBuildVersion;
+  }
+  return context;
+};
+
+const buildSuperProperties = (
+  context: AnalyticsContext,
+): Record<string, unknown> => {
+  const properties: Record<string, unknown> = {};
+  if (context.appVersion) {
+    properties.app_version = context.appVersion;
+  }
+  if (context.appBuild) {
+    properties.app_build = context.appBuild;
+  }
+  return properties;
+};
+
 const createPostHogAdapter = (
   apiKey: string,
   apiHost: string,
   platform: AnalyticsPlatform,
+  context: AnalyticsContext,
 ): AnalyticsAdapter => {
   const client = createAppPostHogClient(apiKey, apiHost, platform);
+  const superProperties = buildSuperProperties(context);
+  if (Object.keys(superProperties).length > 0) {
+    client.register?.(castPostHogProperties(superProperties));
+  }
   return createAppPostHogAdapter(client);
 };
 
@@ -131,12 +162,19 @@ export const createAppAnalytics = (
   apiHost: string,
   platform: AnalyticsPlatform,
 ): AnalyticsClient => {
+  const context = getAppAnalyticsContext();
   if (apiKey.length === 0) {
-    return createAnalytics(createNoopAnalyticsAdapter(), platform);
+    return createAnalytics(createNoopAnalyticsAdapter(), platform, context);
   }
   return createAnalytics(
-    createPostHogAdapter(apiKey, apiHost || DEFAULT_POSTHOG_HOST, platform),
+    createPostHogAdapter(
+      apiKey,
+      apiHost || DEFAULT_POSTHOG_HOST,
+      platform,
+      context,
+    ),
     platform,
+    context,
   );
 };
 
