@@ -1,5 +1,6 @@
 import {supabase} from '../supabase.js';
 
+import {deleteResizedVariants} from './imageResizer.js';
 import {downloadRemoteImage} from './remoteImageDownload.js';
 import {withTimeoutOrNull} from './withTimeout.js';
 
@@ -37,6 +38,9 @@ export const uploadRecipeImageBuffer = async (
   if (error) {
     throw error;
   }
+  // Replacing an image invalidates its cached resized variants (#618);
+  // failures inside are logged, never fatal.
+  await deleteResizedVariants(path);
   const {data} = supabase.storage.from(RECIPE_IMAGES_BUCKET).getPublicUrl(path);
   return data.publicUrl;
 };

@@ -98,12 +98,21 @@ const replaceChildren = async (
  * - Any other version (archived, candidate, or a draft with cook logs or
  *   children) is not editable and returns 409.
  *
- * Activation is opt-in (`activate: true`); by default the edited version stays
- * a draft and the active version is untouched. When the owner asks for
- * activation here, it is applied directly: this endpoint is the owner's own
+ * Activation (#610 tranche 1): when an edit branches from the ACTIVE
+ * version, the new version becomes current in the same transaction by
+ * default — editing the current recipe makes the edit go live immediately.
+ * Callers may opt out with an explicit `activate: false`, in which case the
+ * branched version stays a draft and the active version is untouched.
+ * Draft-version in-place edits keep the previous behavior: they activate
+ * only when the caller sends `activate: true`. When activation happens
+ * here, it is applied directly: this endpoint is the owner's own
  * authenticated edit path, so the cook-log gate that guards the app-facing
  * activate endpoint does not apply (general owner activation in the app is
  * #417).
+ *
+ * An optional `changeSummary` names the edit; on a branched edit it is
+ * stored on the new version's `change_summary` (internal/version-tracking
+ * only).
  *
  * Concurrency: the transaction locks the named version's row first (a
  * concurrent cook-log insert waits on it), then — when the caller sends
@@ -148,8 +157,12 @@ export const editVersionContent = async (
     res.status(404).json({error: 'Version not found'});
     return;
   }
-  const activate = input.activate ?? false;
   const branchesFromActive = target.id === recipe.versionId;
+  // Branched edits activate by default (#610); in-place draft edits only
+  // activate on an explicit `activate: true`.
+  const activate = branchesFromActive
+    ? (input.activate ?? true)
+    : (input.activate ?? false);
   if (branchesFromActive) {
     // Mirrors createVersion: branching is the one change allowed on a
     // Perfected recipe; Abandoned stays terminal.
@@ -237,6 +250,7 @@ export const editVersionContent = async (
             imageUrl: input.imageUrl ?? null,
             sourceUrl: input.sourceUrl ?? null,
             createdVia: 'tweak_manual',
+            changeSummary: input.changeSummary ?? null,
             derivedFromVersionId: target.id,
           },
           q,

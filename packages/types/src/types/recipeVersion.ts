@@ -59,4 +59,9 @@ export type RecipeVersionInput = {
   instructions: InstructionInput[];
   tagIds: string[];
   status?: RecipeStatus;
+  /**
+   * Optional name for the edit (stored on a branched version's
+   * `change_summary`). Internal/version-tracking only.
+   */
+  changeSummary?: string | null;
 };

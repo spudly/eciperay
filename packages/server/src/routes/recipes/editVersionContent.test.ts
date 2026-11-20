@@ -180,9 +180,9 @@ const mockEditFlow = (options: MockOptions = {}) => {
 const SET_ACTIVE_SQL = 'update recipes set active_version_id';
 
 describe('POST /recipes/:id/versions/:versionId/edit', () => {
-  test('branches a new version from the active version without activating it', async () => {
+  test('branches a new version from the active version and activates it by default', async () => {
     nockSupabaseGetUser('user-uuid-1');
-    const executed = mockEditFlow();
+    const executed = mockEditFlow({branchActive: true});
 
     const res = await request(getApp())
       .post('/api/recipes/recipe-uuid-1/versions/version-uuid-1/edit')
@@ -192,6 +192,26 @@ describe('POST /recipes/:id/versions/:versionId/edit', () => {
     expect(res.status).toBe(201);
     expect(res.body.id).toBe('version-uuid-3');
     expect(res.body.versionNumber).toBe(3);
+    expect(res.body.derivedRole).toBe('active');
+    expect(
+      executed.some(sql => sql.includes('insert into recipe_versions')),
+    ).toBe(true);
+    expect(executed.some(sql => sql.includes(SET_ACTIVE_SQL))).toBe(true);
+    // Activation moves the lineage slug to the new version's title.
+    expect(executed.some(sql => sql.includes('set slug'))).toBe(true);
+  });
+
+  test('branches without activating when activate is explicitly false', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    const executed = mockEditFlow();
+
+    const res = await request(getApp())
+      .post('/api/recipes/recipe-uuid-1/versions/version-uuid-1/edit')
+      .set('Authorization', 'Bearer <redacted>')
+      .send(editBody({activate: false}));
+
+    expect(res.status).toBe(201);
+    expect(res.body.id).toBe('version-uuid-3');
     expect(res.body.derivedRole).toBe('draft');
     expect(
       executed.some(sql => sql.includes('insert into recipe_versions')),
@@ -200,6 +220,24 @@ describe('POST /recipes/:id/versions/:versionId/edit', () => {
     // An unactivated branch must not move the lineage slug off the active
     // version's title; it catches up when the version is later activated.
     expect(executed.some(sql => sql.includes('set slug'))).toBe(false);
+  });
+
+  test('stores changeSummary on a branched edit', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockEditFlow({branchActive: true});
+
+    const res = await request(getApp())
+      .post('/api/recipes/recipe-uuid-1/versions/version-uuid-1/edit')
+      .set('Authorization', 'Bearer <redacted>')
+      .send(editBody({changeSummary: 'Make it spicier'}));
+
+    expect(res.status).toBe(201);
+    const insert = mockQuery.mock.calls.find(([sql]) =>
+      String(sql).includes('insert into recipe_versions'),
+    );
+    const insertParams = insert?.[1] as unknown[];
+    // change_summary is the 11th insert parameter ($11).
+    expect(insertParams[10]).toBe('Make it spicier');
   });
 
   test('branches and activates in one request when activate is true', async () => {

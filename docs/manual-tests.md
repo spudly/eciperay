@@ -282,6 +282,15 @@ without); one recipe may be created fresh in case 1.
     identically on all three surfaces. Search for a literal `50%`: **Expected:**
     only recipes containing the literal text match (the `%` is not treated as a
     wildcard).
+20. **Resized recipe images (#618).** On `/recipes`, Discover (`/discover`),
+    and Home, check recipe cards with images, then open a recipe detail and a
+    public recipe page. **Expected:** card thumbnails load through the image
+    resizer at the smaller width and render sharp and correctly oriented; the
+    detail/public hero loads the larger resized variant, not the thumbnail.
+    A recipe whose image URL is external (not the recipe-images bucket) still
+    loads its original image untouched. Replace a recipe's image with a new
+    one and reload the list and detail views. **Expected:** the new image
+    shows everywhere — no stale thumbnail or hero from the old image.
 
 **Run when:**
 `packages/app/src/screens/{Recipes,RecipeDetail,EditRecipe,EditVersion,ManualEntry,SharedWithMe,Home}Screen.tsx`,
@@ -315,7 +324,14 @@ bundle build (`packages/server/scripts/buildSsrBundle.mjs`),
 `packages/web/src/routes/router.tsx`,
 `packages/client/src/useRecipeListFilters.ts`,
 `packages/client/src/useFilterFieldState.ts`, recipe nutrition summary fields in
-`packages/types` / `packages/server` nutrition mapping.
+`packages/types` / `packages/server` nutrition mapping,
+`packages/client/src/resizedImageUrl.ts`,
+`packages/server/src/routes/images/**`,
+`packages/server/src/lib/imageResizer.ts`,
+`packages/server/src/lib/uploadRecipeImageServer.ts`,
+`packages/web/src/pages/DiscoverPage.tsx`,
+`packages/web/src/pages/HomePage.tsx`,
+`packages/web/src/pages/PublicRecipePage.tsx`.
 
 ---
 

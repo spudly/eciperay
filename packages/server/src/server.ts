@@ -23,6 +23,7 @@ import {StageTimeoutError} from './lib/withTimeout.js';
 import {createAccountRouter} from './routes/account/router.js';
 import {createAuthRouter} from './routes/auth/router.js';
 import {createBillingRouter} from './routes/billing/router.js';
+import {createImageResizerRouter} from './routes/images/router.js';
 import {createImportRouter} from './routes/import/router.js';
 import {createMealPlansRouter} from './routes/mealPlans/router.js';
 import {createMealsRouter} from './routes/meals/router.js';
@@ -82,6 +83,7 @@ export const createApp = ({
   api.use('/account', createAccountRouter(queryFn));
   api.use('/billing', createBillingRouter(queryFn));
   api.use('/recipes/import', createImportRouter(queryFn));
+  api.use('/images', createImageResizerRouter());
   api.use('/public/recipes', createPublicRecipesRouter(queryFn));
   api.use('/recipes', createRecipesRouter(queryFn));
   api.use('/meals', createMealsRouter(queryFn));
