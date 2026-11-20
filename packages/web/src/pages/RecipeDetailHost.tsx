@@ -12,6 +12,7 @@ import {
   queryKeys,
   RECIPE_SCALE_MULTIPLIERS,
   removeRecipeView,
+  resizedImageUrl,
   servingsForMultiplier,
   sortIngredientsByOrder,
   truncateChangeSummary,
@@ -895,7 +896,7 @@ export const RecipeDetailHost = ({
       selectedVersionId={selectedVersionId}
       onSelectVersion={onSelectVersion}
       overview={{
-        imageUrl: displayRecipe.imageUrl,
+        imageUrl: resizedImageUrl(displayRecipe.imageUrl, 1200),
         title: displayRecipe.title,
         description: displayRecipe.description,
         servingsLabel: String(currentServings),

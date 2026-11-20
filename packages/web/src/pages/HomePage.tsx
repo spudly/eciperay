@@ -6,6 +6,7 @@ import {
   getDisplayRating,
   homeRecentlyViewedRecipesQueryOptions,
   invalidateRecipeQueries,
+  resizedImageUrl,
 } from '@eciperay/client';
 import type {CookLogInput, RecipeDetail} from '@eciperay/types';
 import {useLingui} from '@lingui/react';
@@ -120,7 +121,7 @@ export const HomePage = () => {
           title: recipe.title,
           subtitle: formatHomeRecipeSubtitle(recipe),
           rating: getDisplayRating(recipe),
-          imageUrl: recipe.imageUrl,
+          imageUrl: resizedImageUrl(recipe.imageUrl, 400),
         }))}
         onLogCookPress={recipeId => {
           setOpenCookLogId(recipeId);
