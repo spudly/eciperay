@@ -211,6 +211,7 @@ export {
   createNoopAnalyticsAdapter,
   type AnalyticsAdapter,
   type AnalyticsClient,
+  type AnalyticsContext,
   type FeatureFlagValue,
   type LogLevel,
 } from './createAnalytics.js';

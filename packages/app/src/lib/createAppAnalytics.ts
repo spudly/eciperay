@@ -3,10 +3,12 @@ import {
   createNoopAnalyticsAdapter,
   type AnalyticsAdapter,
   type AnalyticsClient,
+  type AnalyticsContext,
   type AnalyticsPlatform,
   type LogLevel,
 } from '@eciperay/client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Application from 'expo-application';
 import PostHog from 'posthog-react-native';
 import {Platform} from 'react-native';
 
@@ -64,7 +66,10 @@ const getAppFeatureFlagPayload = (client: PostHog, key: string): unknown => {
   return client.getFeatureFlagPayload(key);
 };
 
-const createAppPostHogAdapter = (client: PostHog): AnalyticsAdapter => ({
+const createAppPostHogAdapter = (
+  client: PostHog,
+  superProperties?: Record<string, unknown>,
+): AnalyticsAdapter => ({
   capture: (event, properties) => {
     client.capture(event, castPostHogProperties(properties));
   },
@@ -73,6 +78,11 @@ const createAppPostHogAdapter = (client: PostHog): AnalyticsAdapter => ({
   },
   reset: () => {
     client.reset();
+    // PostHog clears registered super properties on reset; re-register the
+    // app metadata so automatically captured events keep carrying it.
+    if (superProperties && Object.keys(superProperties).length > 0) {
+      client.register?.(castPostHogProperties(superProperties));
+    }
   },
   isFeatureEnabled: key => client.isFeatureEnabled(key),
   getFeatureFlag: key => client.getFeatureFlag(key),
@@ -117,13 +127,42 @@ const createAppPostHogClient = (
   });
 };
 
+export const getAppAnalyticsContext = (): AnalyticsContext => {
+  const context: AnalyticsContext = {};
+  if (Application.nativeApplicationVersion) {
+    context.appVersion = Application.nativeApplicationVersion;
+  }
+  if (Application.nativeBuildVersion) {
+    context.appBuild = Application.nativeBuildVersion;
+  }
+  return context;
+};
+
+const buildSuperProperties = (
+  context: AnalyticsContext,
+): Record<string, unknown> => {
+  const properties: Record<string, unknown> = {};
+  if (context.appVersion) {
+    properties['app_version'] = context.appVersion;
+  }
+  if (context.appBuild) {
+    properties['app_build'] = context.appBuild;
+  }
+  return properties;
+};
+
 const createPostHogAdapter = (
   apiKey: string,
   apiHost: string,
   platform: AnalyticsPlatform,
+  context: AnalyticsContext,
 ): AnalyticsAdapter => {
   const client = createAppPostHogClient(apiKey, apiHost, platform);
-  return createAppPostHogAdapter(client);
+  const superProperties = buildSuperProperties(context);
+  if (Object.keys(superProperties).length > 0) {
+    client.register?.(castPostHogProperties(superProperties));
+  }
+  return createAppPostHogAdapter(client, superProperties);
 };
 
 export const createAppAnalytics = (
@@ -131,12 +170,19 @@ export const createAppAnalytics = (
   apiHost: string,
   platform: AnalyticsPlatform,
 ): AnalyticsClient => {
+  const context = getAppAnalyticsContext();
   if (apiKey.length === 0) {
-    return createAnalytics(createNoopAnalyticsAdapter(), platform);
+    return createAnalytics(createNoopAnalyticsAdapter(), platform, context);
   }
   return createAnalytics(
-    createPostHogAdapter(apiKey, apiHost || DEFAULT_POSTHOG_HOST, platform),
+    createPostHogAdapter(
+      apiKey,
+      apiHost || DEFAULT_POSTHOG_HOST,
+      platform,
+      context,
+    ),
     platform,
+    context,
   );
 };
 
