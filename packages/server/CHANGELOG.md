@@ -1,5 +1,64 @@
 # @eciperay/server
 
+## 1.34.4
+
+### Patch Changes
+
+- 2a252b0: Adopt @spudly/ui 10.0.0 and supply the Eciperay voice at the app
+  root: shared design-system screens and controls now speak in Eciperay's own
+  warm, encouraging voice — plain where a label should be plain, and plain in
+  errors — on both web and native. The temporary ScreenContainer patch is gone,
+  replaced by the design system's durable fix.
+- 6ffeb33: Fix imported recipes never getting an auto-generated image: the
+  auto-image trigger now fires from the shared save layer, so imports (URL,
+  text, photo, bulk, and AI create sessions), accepting an import, and AI
+  tweak-created versions all generate an image for imageless recipes. A failed
+  or quota-blocked generation attempt no longer burns the recipe's one attempt —
+  a later save can retry.
+- b2f49e6: Allow servings-to-eat of 0 and fractional servings (such as 0.5 or
+  1.5) for meal members, direct ingredients, and meal-plan recipe entries, so an
+  entry someone eats none of — or only part of a serving of — no longer has to
+  be entered as a whole serving. Nutrition now scales by the exact amount eaten:
+  an entry set to eat 0 contributes nothing, and eating half a serving
+  contributes half.
+- 526150f: Allow servings-to-cook of 0 for meal members and meal-plan recipe
+  entries, so a leftover meal cooks nothing and no longer inflates the shopping
+  list. Shopping-list generation skips 0-cook entries, and the editors let 0 be
+  entered with servings-to-eat staying positive.
+- 6059349: Meal plan entries can carry a calendar day, and the meal plan detail
+  views (web and native) now render the week view: one column per day of the
+  plan's range with per-day totals computed from servings eaten. Entries without
+  a day group under the plan's first day; plans with no dates keep the flat
+  entry list.
+- 48b855e: Share a link instead of the recipe: tapping Share on a recipe now
+  shares its Eciperay link (with the recipe title) rather than the full recipe
+  text, and never links to the source the recipe was imported from. The link
+  works even for private recipes — opening it shows the full recipe to a guest
+  with a sign-in option, and a signed-in recipient finds the recipe under
+  "Shared with me". Private recipes stay private without the link: a guest, or a
+  signed-in recipient who does not already hold a share grant, needs a valid
+  link to open one. Sharing again never revokes links already sent — only
+  rotating the link does, and rotation revokes the old links, not a recipient's
+  existing share grant. Returning a recipe to private revokes both its issued
+  links and its existing share grants.
+- df6ddd8: Fix "Tweak with AI" failing with a generic 502 when approving a plan
+  on long imported recipes: the implement step now gets a larger token budget
+  (16384 instead of 4096), a response that still truncates returns a specific
+  "Recipe too large to implement in one pass" error instead of the generic
+  failure, and tweak planning/implementation failures are now logged with the
+  session and recipe ids so the next failure is diagnosable.
+- Updated dependencies [b1c387e]
+- Updated dependencies [bb690d4]
+- Updated dependencies [14b44b2]
+- Updated dependencies [2a252b0]
+- Updated dependencies [b2f49e6]
+- Updated dependencies [526150f]
+- Updated dependencies [6059349]
+- Updated dependencies [48b855e]
+  - @eciperay/client@1.34.4
+  - @eciperay/mcp-server@1.34.4
+  - @eciperay/types@1.34.4
+
 ## 1.34.3
 
 ### Patch Changes

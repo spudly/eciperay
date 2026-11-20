@@ -1,5 +1,87 @@
 # @eciperay/client
 
+## 1.34.4
+
+### Patch Changes
+
+- b1c387e: Meal plan detail goal-progress copy now comes from the apps' Lingui
+  catalogs: the below-goal / above-goal / on-track band labels, the at-least /
+  up-to goal range qualifiers, the per-day-average and plan-total row
+  qualifiers, and the satiety row label render in the active locale (including
+  the en-XA pseudo-locale), laying the groundwork for translated page copy. This
+  is batch 4 of the #465 copy migration (tranche 17); the remaining batch-4
+  tranches follow in the same pull request.
+
+  The meals cluster remainder now flows through the same catalogs (tranche 16):
+  the meals hub's entry-count and recipe-count plural subtitles, the meal detail
+  servings composition ("Servings to cook / Servings to eat") and condensed
+  member nutrition parts, and the meal / meal-plan form load-error messages
+  render in the active locale on web and native.
+
+  The recipe form now flows through the same catalogs (tranche 12): the form
+  hosts' image crop / preview errors, sign-in and AI-generation errors,
+  save-guard and validation messages, the changed-from-parent labels, the image
+  empty message, the pending-image and crop dialog copy, the sortable-list
+  reorder labels, and the create / edit / edit-version submit labels render in
+  the active locale on web and native.
+
+  The profile page now flows through the same catalogs (tranche 18): the
+  subscription plan / status / upsell / reconciling copy, the recipe transfer
+  hint, picker and account-data copy, the import / export / account error
+  fallbacks and import summary, the delete-account confirmation, the
+  access-token created / last-used meta labels, and the native author-display
+  load error render in the active locale on web and native.
+
+  Review follow-ups in the same batch: the recipe form's changed-from-parent
+  summaries are now composed from the catalogs on web and native (the client
+  helper supplies the structured counts and preview), the meals hub's nutrition
+  suffix uses the localized nutrition labels on both tabs, the native
+  missing-image-data error resolves through the catalog, and a `null` import
+  file shows the localized validation message instead of a JavaScript error.
+
+- bb690d4: Recipes list: the "Your recipes" section title, the discovery author
+  byline, the load and load-more error messages, and the recipe status labels
+  (Idea / Evolving / Perfected / Abandoned, shared with the recipe form) now
+  flow through the app's Lingui catalogs (en-US and en-XA pseudo-locale) instead
+  of hardcoded strings, on web and native.
+- 14b44b2: Discover page: the title, search placeholder, empty and error
+  messages, and the no-ratings label now flow through the app's Lingui catalogs
+  (en-US and en-XA pseudo-locale) instead of hardcoded strings. The shared
+  discovery formatting helpers accept a caller-supplied no-ratings label,
+  defaulting to the existing constant for their other callers.
+- 2a252b0: Adopt @spudly/ui 10.0.0 and supply the Eciperay voice at the app
+  root: shared design-system screens and controls now speak in Eciperay's own
+  warm, encouraging voice — plain where a label should be plain, and plain in
+  errors — on both web and native. The temporary ScreenContainer patch is gone,
+  replaced by the design system's durable fix.
+- b2f49e6: Allow servings-to-eat of 0 and fractional servings (such as 0.5 or
+  1.5) for meal members, direct ingredients, and meal-plan recipe entries, so an
+  entry someone eats none of — or only part of a serving of — no longer has to
+  be entered as a whole serving. Nutrition now scales by the exact amount eaten:
+  an entry set to eat 0 contributes nothing, and eating half a serving
+  contributes half.
+- 526150f: Allow servings-to-cook of 0 for meal members and meal-plan recipe
+  entries, so a leftover meal cooks nothing and no longer inflates the shopping
+  list. Shopping-list generation skips 0-cook entries, and the editors let 0 be
+  entered with servings-to-eat staying positive.
+- 6059349: Meal plan entries can carry a calendar day, and the meal plan detail
+  views (web and native) now render the week view: one column per day of the
+  plan's range with per-day totals computed from servings eaten. Entries without
+  a day group under the plan's first day; plans with no dates keep the flat
+  entry list.
+- 48b855e: Share a link instead of the recipe: tapping Share on a recipe now
+  shares its Eciperay link (with the recipe title) rather than the full recipe
+  text, and never links to the source the recipe was imported from. The link
+  works even for private recipes — opening it shows the full recipe to a guest
+  with a sign-in option, and a signed-in recipient finds the recipe under
+  "Shared with me". Private recipes stay private without the link: a guest, or a
+  signed-in recipient who does not already hold a share grant, needs a valid
+  link to open one. Sharing again never revokes links already sent — only
+  rotating the link does, and rotation revokes the old links, not a recipient's
+  existing share grant. Returning a recipe to private revokes both its issued
+  links and its existing share grants.
+- @eciperay/types@1.34.4
+
 ## 1.34.3
 
 ### Patch Changes
