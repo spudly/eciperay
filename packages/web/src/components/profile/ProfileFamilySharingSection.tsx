@@ -111,6 +111,8 @@ export const ProfileFamilySharingSection = () => {
       `Remove family sharing for ${grantLabel(grant)}? They will no longer see your private recipes unless a recipe was shared with them individually.`,
     );
     if (confirmed) {
+      // Same retry rule as Add: the new request starts clean.
+      setActionError(null);
       removeMutation.mutate(grant.recipientUserId);
     }
   };

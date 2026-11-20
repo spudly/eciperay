@@ -36,6 +36,37 @@ describe('FamilySharingForm', () => {
     expect(onEmailChange).toHaveBeenCalledWith('sister@example.com');
   });
 
+  test('pressing Add with a nonempty email calls onAdd once', async () => {
+    const onAdd = jest.fn();
+    const {getByText} = await renderWithProviders(
+      <FamilySharingForm
+        grants={[]}
+        email="sister@example.com"
+        onEmailChange={jest.fn()}
+        onAdd={onAdd}
+        onRemove={jest.fn()}
+      />,
+    );
+    await fireEvent.press(getByText('Add family sharing'));
+    expect(onAdd).toHaveBeenCalledTimes(1);
+  });
+
+  test('Add is disabled while adding', async () => {
+    const onAdd = jest.fn();
+    const {getByText} = await renderWithProviders(
+      <FamilySharingForm
+        grants={[]}
+        email="sister@example.com"
+        onEmailChange={jest.fn()}
+        onAdd={onAdd}
+        onRemove={jest.fn()}
+        adding
+      />,
+    );
+    await fireEvent.press(getByText('Adding…'));
+    expect(onAdd).not.toHaveBeenCalled();
+  });
+
   test('lists grants and reports remove presses', async () => {
     const onRemove = jest.fn();
     const {getByText} = await renderWithProviders(

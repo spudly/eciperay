@@ -159,6 +159,8 @@ export const ProfileScreen = () => {
           text: 'Remove',
           style: 'destructive',
           onPress: () => {
+            // Same retry rule as Add: the new request starts clean.
+            setFamilyError(null);
             removeFamilyMutation.mutate(grant.recipientUserId);
           },
         },

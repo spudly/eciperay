@@ -139,6 +139,48 @@ describe('ProfileFamilySharingSection', () => {
     ).not.toBeInTheDocument();
   });
 
+  test('clears the previous error when a remove starts', async () => {
+    vi.spyOn(eciperay.account, 'listFamilySharing').mockResolvedValue([
+      grant,
+    ]);
+    vi.spyOn(eciperay.account, 'createFamilySharing').mockRejectedValue(
+      new Error('No account found for that email address'),
+    );
+    let resolveDelete: (() => void) | undefined;
+    vi.spyOn(eciperay.account, 'deleteFamilySharing').mockImplementation(
+      () =>
+        new Promise<void>(resolve => {
+          resolveDelete = resolve;
+        }),
+    );
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    await renderWithProviders(<ProfileFamilySharingSection />);
+
+    await screen.findByText('Sister (sister@example.com)');
+    await userEvent.type(
+      screen.getByLabelText('Email address'),
+      'nobody@example.com',
+    );
+    await userEvent.click(
+      screen.getByRole('button', {name: 'Add family sharing'}),
+    );
+    expect(
+      await screen.findByText('No account found for that email address'),
+    ).toBeInTheDocument();
+
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: 'Remove family sharing for Sister (sister@example.com)',
+      }),
+    );
+    await waitFor(() => {
+      expect(
+        screen.queryByText('No account found for that email address'),
+      ).not.toBeInTheDocument();
+    });
+    resolveDelete?.();
+  });
+
   test('surfaces the server error for an unknown email', async () => {
     vi.spyOn(eciperay.account, 'listFamilySharing').mockResolvedValue([]);
     vi.spyOn(eciperay.account, 'createFamilySharing').mockRejectedValue(
