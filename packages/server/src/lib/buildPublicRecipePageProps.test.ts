@@ -16,7 +16,6 @@ describe('buildPublicRecipePageProps', () => {
       imageUrl: null,
       title: 'Test Recipe',
       description: 'A test recipe',
-      status: 'idea',
       servingsLabel: '4',
       prepTimeLabel: '15m',
       cookTimeLabel: '30m',

@@ -1,6 +1,4 @@
-import type {RecipeStatus, RecipeVersionDetail} from '@eciperay/types';
-
-import {isRecipeEditable} from './assertRecipeEditable.js';
+import type {RecipeVersionDetail} from '@eciperay/types';
 
 export const versionEditBlockedError = () =>
   'This version can no longer be edited';
@@ -13,11 +11,7 @@ export const isVersionEditable = (
     RecipeVersionDetail,
     'derivedRole' | 'childVersionCount' | 'cookLogCount'
   >,
-  status: RecipeStatus,
 ): boolean => {
-  if (!isRecipeEditable(status)) {
-    return false;
-  }
   if (version.derivedRole !== 'draft') {
     return false;
   }
@@ -35,5 +29,4 @@ export const isVersionContentLocked = (
     RecipeVersionDetail,
     'derivedRole' | 'childVersionCount' | 'cookLogCount'
   >,
-  status: RecipeStatus,
-): boolean => !isVersionEditable(version, status);
+): boolean => !isVersionEditable(version);

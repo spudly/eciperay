@@ -22,7 +22,6 @@ const storedRecipe = {
   cookTimeMin: 30,
   imageUrl: 'https://example.com/taffy.jpg',
   sourceUrl: 'https://example.com/source',
-  status: 'evolving',
   ingredients: [
     {
       id: 'ing-1',
@@ -106,7 +105,6 @@ describe('buildRecipeUpdatePayload', () => {
     assert.equal(payload['cookTimeMin'], 30);
     assert.equal(payload['imageUrl'], 'https://example.com/taffy.jpg');
     assert.equal(payload['sourceUrl'], 'https://example.com/source');
-    assert.equal(payload['status'], 'evolving');
     // Stored ingredient ids/version ids are stripped to the input shape.
     assert.deepEqual(payload['ingredients'], [
       {

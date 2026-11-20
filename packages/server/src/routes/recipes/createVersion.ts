@@ -3,10 +3,6 @@ import type {Response} from 'express';
 import {runTransactional} from '../../db/withTransaction.js';
 import {query as defaultQuery} from '../../db/query.js';
 import type {AuthedRequest} from '../../middleware/requireAuth.js';
-import {
-  isRecipeEditable,
-  recipeEditBlockedError,
-} from '../../lib/assertRecipeEditable.js';
 import {fetchVersionDetail} from '../../lib/fetchVersionDetail.js';
 import {getParam} from '../../lib/getParam.js';
 import {mapRowToRecipeDetail} from '../../lib/mapRowToRecipeDetail.js';
@@ -16,8 +12,6 @@ import {
   cloneVersionChildren,
   getNextVersionNumber,
   insertVersion,
-  reopenPerfectedLineage,
-  setLineageStatus,
 } from './versionQueries.js';
 
 type QueryFn = typeof defaultQuery;
@@ -40,15 +34,8 @@ export const createVersion = async (
   const recipe = mapRowToRecipeDetail(
     recipeRow as Parameters<typeof mapRowToRecipeDetail>[0],
   );
-  // Creating a draft version is the one change allowed on a Perfected
-  // recipe (#264): it clones the locked active version without modifying
-  // it, and the lineage reopens to Evolving below so the new draft is
-  // itself editable. Abandoned recipes stay terminal.
-  if (!isRecipeEditable(recipe.status) && recipe.status !== 'perfected') {
-    res.status(409).json({error: recipeEditBlockedError()});
-    return;
-  }
-
+  // Creating a draft version clones the active version without
+  // modifying it.
   const activeVersionId = recipe.versionId;
   const newVersionId = await runTransactional(queryFn, async q => {
     const versionNumber = await getNextVersionNumber(recipeId, q);
@@ -73,19 +60,6 @@ export const createVersion = async (
       throw new Error('Failed to create version');
     }
     await cloneVersionChildren(activeVersionId, id, q);
-    if (recipe.status === 'idea') {
-      await setLineageStatus(recipeId, req.userId, 'evolving', q);
-    }
-    if (recipe.status === 'perfected') {
-      // Conditional on the lineage still being Perfected: if its status
-      // changed after the read above (e.g. a concurrent Abandon), the
-      // update matches no row and the whole draft creation rolls back
-      // rather than resurrecting the recipe to Evolving.
-      const reopened = await reopenPerfectedLineage(recipeId, req.userId, q);
-      if (!reopened.rows[0]) {
-        throw new Error('Recipe status changed while creating a draft version');
-      }
-    }
     return id;
   });
 

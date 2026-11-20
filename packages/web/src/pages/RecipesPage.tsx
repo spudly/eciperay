@@ -8,7 +8,6 @@ import {
   getDisplayRating,
   invalidateRecipeQueries,
   parseRecipeListFilterValues,
-  RECIPE_STATUS_FILTER_ALL,
   useDebouncedValue,
   publicRecipeDiscoveryInfiniteQueryOptions,
   recipeListInfiniteQueryOptions,
@@ -17,7 +16,6 @@ import {
   useAuth,
   useRecipeListFilters,
   type RecipeListFilterValues,
-  type RecipeStatusFilterValue,
 } from '@eciperay/client';
 import type {
   CookLogInput,
@@ -187,7 +185,6 @@ const SignedInRecipesPage = () => {
     // saved filters are handled above and by the POP restore below.
     const c = controlsRef.current;
     c.onSearchChange(headerSearch);
-    c.onStatusFilterChange?.(RECIPE_STATUS_FILTER_ALL);
     c.onIngredientChange('');
     c.onMinCaloriesChange('');
     c.onMaxCaloriesChange('');
@@ -231,7 +228,6 @@ const SignedInRecipesPage = () => {
     }
     const restored: RecipeListFilterValues = {
       search: '',
-      statusFilter: RECIPE_STATUS_FILTER_ALL,
       ingredient: '',
       minCalories: '',
       maxCalories: '',
@@ -251,7 +247,6 @@ const SignedInRecipesPage = () => {
     pendingRestoreRef.current = {key: location.key, serialized};
     const c = controlsRef.current;
     c.onSearchChange(restored.search);
-    c.onStatusFilterChange?.(restored.statusFilter);
     c.onIngredientChange(restored.ingredient);
     c.onMinCaloriesChange(restored.minCalories);
     c.onMaxCaloriesChange(restored.maxCalories);
@@ -573,8 +568,6 @@ const SignedInRecipesPage = () => {
                 message: 'No public recipes match your search.',
               })
             : controls.ingredient.trim() ||
-                (controls.statusFilter &&
-                  controls.statusFilter !== RECIPE_STATUS_FILTER_ALL) ||
                 controls.minCalories.trim() ||
                 controls.maxCalories.trim() ||
                 controls.minSatiety.trim() ||
@@ -639,11 +632,6 @@ const SignedInRecipesPage = () => {
         onLoadMore={handleLoadMore}
         search={controls.search}
         onSearchChange={controls.onSearchChange}
-        statusFilter={controls.statusFilter}
-        onStatusFilterChange={value => {
-          controls.onStatusFilterChange?.(value as RecipeStatusFilterValue);
-        }}
-        showStatusFilter={controls.showStatusFilter}
         ingredient={controls.ingredient}
         onIngredientChange={controls.onIngredientChange}
         minCalories={controls.minCalories}

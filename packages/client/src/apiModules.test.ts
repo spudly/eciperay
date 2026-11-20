@@ -39,7 +39,6 @@ describe('createEciperayClient', () => {
       instructions: [],
       tagIds: [],
     });
-    await client.recipes.patchStatus('r1', 'perfected');
     await client.recipes.patchSharing('r1', {
       visibility: 'unlisted',
       publishingConsent: true,
@@ -87,10 +86,6 @@ describe('createEciperayClient', () => {
     expect(api.fetch).toHaveBeenCalledWith(
       '/recipes/r1',
       expect.objectContaining({method: 'PUT'}),
-    );
-    expect(api.fetch).toHaveBeenCalledWith(
-      '/recipes/r1',
-      expect.objectContaining({method: 'PATCH'}),
     );
     expect(api.fetch).toHaveBeenCalledWith(
       '/recipes/r1/sharing',

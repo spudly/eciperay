@@ -1,6 +1,5 @@
 import {act, renderHook} from '@testing-library/react';
 
-import {RECIPE_STATUS_FILTER_ALL} from './recipeStatusCopy.js';
 import {
   parseRecipeListFilterValues,
   useFilterFieldState,
@@ -11,13 +10,11 @@ describe('useFilterFieldState', () => {
     const {result} = renderHook(() => useFilterFieldState('rating'));
 
     expect(result.current.search).toBe('');
-    expect(result.current.statusFilter).toBe(RECIPE_STATUS_FILTER_ALL);
     expect(result.current.sort).toBe('rating');
     expect(result.current.sortDir).toBe('desc');
 
     act(() => {
       result.current.setSearch('soup');
-      result.current.setStatusFilter('idea');
       result.current.setIngredient('egg');
       result.current.setMinCalories('100');
       result.current.setMaxCalories('400');
@@ -28,7 +25,6 @@ describe('useFilterFieldState', () => {
     });
 
     expect(result.current.search).toBe('soup');
-    expect(result.current.statusFilter).toBe('idea');
     expect(result.current.ingredient).toBe('egg');
     expect(result.current.minCalories).toBe('100');
     expect(result.current.maxCalories).toBe('400');
@@ -42,14 +38,12 @@ describe('useFilterFieldState', () => {
     const {result} = renderHook(() =>
       useFilterFieldState('newest', {
         search: 'soup',
-        statusFilter: 'perfected',
         sort: 'satiety',
         sortDir: 'asc',
       }),
     );
 
     expect(result.current.search).toBe('soup');
-    expect(result.current.statusFilter).toBe('perfected');
     expect(result.current.ingredient).toBe('');
     expect(result.current.sort).toBe('satiety');
     expect(result.current.sortDir).toBe('asc');
@@ -75,7 +69,6 @@ describe('parseRecipeListFilterValues', () => {
       parseRecipeListFilterValues({
         recipeListFilters: {
           search: 'soup',
-          statusFilter: 'evolving',
           ingredient: 'bean',
           minCalories: '100',
           maxCalories: 900,
@@ -88,7 +81,6 @@ describe('parseRecipeListFilterValues', () => {
       }),
     ).toEqual({
       search: 'soup',
-      statusFilter: 'evolving',
       ingredient: 'bean',
       minCalories: '100',
       minSatiety: '2',
@@ -102,7 +94,6 @@ describe('parseRecipeListFilterValues', () => {
     expect(
       parseRecipeListFilterValues({
         recipeListFilters: {
-          statusFilter: 'bogus',
           sort: 'oldest',
           sortDir: 'sideways',
         },

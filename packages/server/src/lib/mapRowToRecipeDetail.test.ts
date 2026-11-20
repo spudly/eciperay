@@ -68,7 +68,6 @@ describe('mapRowToRecipeListItem', () => {
   test('maps list row fields including imageUrl', () => {
     const mapped = mapRowToRecipeListItem({
       id: 'recipe-uuid-1',
-      status: 'idea',
       visibility: 'private',
       slug: 'pasta',
       content_revision: 1,

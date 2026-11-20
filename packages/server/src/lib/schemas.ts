@@ -18,13 +18,6 @@ const InstructionInputSchema = z.object({
   body: z.string().min(1),
 });
 
-const RecipeStatusSchema = z.enum([
-  'idea',
-  'evolving',
-  'perfected',
-  'abandoned',
-]);
-
 // ─── Recipe import (from URL or image) ────────────────────────────────────────
 
 export const RecipeImportSchema = z.object({
@@ -59,7 +52,6 @@ export const RecipeInputSchema = z.object({
   ingredients: z.array(IngredientInputSchema),
   instructions: z.array(InstructionInputSchema),
   tagIds: z.array(z.uuid()),
-  status: RecipeStatusSchema.optional(),
 });
 
 export const RecipeMetadataInputSchema = z.object({
@@ -71,7 +63,6 @@ export const RecipeMetadataInputSchema = z.object({
   imageUrl: z.url().nullish(),
   sourceUrl: z.url().nullish(),
   tagIds: z.array(z.uuid()),
-  status: RecipeStatusSchema.optional(),
 });
 
 export const RecipeRatingInputSchema = z.object({stars: StarRating});
@@ -91,7 +82,6 @@ export const RecipeVersionInputSchema = z.object({
   ingredients: z.array(IngredientInputSchema),
   instructions: z.array(InstructionInputSchema),
   tagIds: z.array(z.uuid()),
-  status: RecipeStatusSchema.optional(),
 });
 
 export const RecipeVersionEditInputSchema = RecipeVersionInputSchema.extend({
@@ -99,8 +89,6 @@ export const RecipeVersionEditInputSchema = RecipeVersionInputSchema.extend({
   changeSummary: z.string().trim().min(1).max(200).optional(),
   expectedContentRevision: z.number().int().nonnegative().optional(),
 });
-
-export const RecipeStatusPatchSchema = z.object({status: RecipeStatusSchema});
 
 export const RecipeSharingPatchSchema = z.object({
   visibility: z.enum(['private', 'unlisted', 'public']),

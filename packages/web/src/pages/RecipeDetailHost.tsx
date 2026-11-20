@@ -1,7 +1,6 @@
 /* eslint-disable max-lines -- detail host: every section's queries, mutations, and view-model mapping */
 import {
   activationCandidates,
-  canCreateDraftVersion,
   canEditActiveRecipeMetadata,
   canEditDraftVersion,
   formatCommunityRatingLabel,
@@ -69,7 +68,7 @@ type RecipeDetailHostProps = {
  * view-models at this boundary (picker and candidate labels formatted with the
  * same helpers the retired VersionPicker and OverviewActions used, ingredient
  * lines scaled by the client's formatter, nutrition rows composed by the
- * client's row builder), and every mutation (status, activation,
+ * client's row builder), and every mutation (activation,
  * tweak-manually, create-a-draft, rating, cook log, recipe delete) plus the
  * sharing and comments sections keep their state and API calls web-side —
  * sharing and comments cross as the page's data props (B7 T1, #552; their host
@@ -251,29 +250,14 @@ export const RecipeDetailHost = ({
     ownerUserId: recipe.userId,
   });
 
-  // Lifecycle mutations (the retired OverviewActions): status changes,
-  // candidate activation, and tweak-manually version creation.
+  // Lifecycle mutations (the retired OverviewActions): candidate
+  // activation and tweak-manually version creation.
   // Every lifecycle mutation surfaces a rejection through the action
-  // message (#418): the server refuses edits to a locked/Perfected
-  // recipe with a 409 ("Recipe cannot be modified in its current
-  // status"), and without an onError that failure was silent — the
+  // message (#418): without an onError a failure was silent — the
   // user believed the change had landed.
   const showMutationError = (action: string) => (error: Error) => {
     showActionMessage(`${action}: ${error.message}`);
   };
-  const statusMutation = useMutation({
-    mutationFn: (status: RecipeDetail['status']) =>
-      eciperay.recipes.patchStatus(displayRecipe.id, status),
-    onSuccess: () => {
-      void invalidate();
-    },
-    onError: showMutationError(
-      i18n._({
-        id: 'recipeDetail.couldNotChangeStatus',
-        message: 'Could not change status',
-      }),
-    ),
-  });
   const activateMutation = useMutation({
     mutationFn: (versionId: string) =>
       eciperay.versions.activate(displayRecipe.id, versionId),
@@ -307,54 +291,15 @@ export const RecipeDetailHost = ({
     ),
   });
 
-  // A Perfected recipe's active version is locked, so creating a draft
-  // is its only path to changes (#264): the draft opens directly in
-  // the version editor, where it can actually be edited and saved. The
-  // @spudly/ui 1.16.0 page contract carries the flow as
-  // onCreateDraftPress — a mutation-then-navigate control, exempt from
-  // the href rule by the #248 borderline ruling — and renders it as
-  // the "Edit draft" button whenever no existing draft's editDraftHref
-  // is passed. Creating a draft clones the ACTIVE version (the
-  // server's createVersion always clones it), so the action is only
-  // offered while the active version is the one on display — on an
-  // archived version it would silently draft from a version the user
-  // is not looking at. The selection check closes the window where an
-  // archived version is selected but its detail has not replaced
-  // displayRecipe yet (still loading, or the fetch failed): the
-  // display alone would still read as the active version then.
-  const canCreateDraft =
-    canCreateDraftVersion(displayRecipe.status) &&
-    displayRecipe.versionId === recipe.versionId &&
-    selectedVersionId === recipe.versionId;
-  const createDraftMutation = useMutation({
-    mutationFn: () => eciperay.versions.create(recipe.id),
-    onSuccess: version => {
-      void invalidate();
-      void navigate(`/recipes/${recipe.id}/versions/${version.id}/edit`);
-    },
-    onError: error => {
-      showActionMessage(
-        i18n._({
-          id: 'recipeDetail.couldNotCreateDraft',
-          message: 'Could not create a draft: {error}',
-          values: {error: error instanceof Error ? error.message : tryAgain()},
-        }),
-      );
-    },
-  });
-
-  const isEditable =
-    displayRecipe.status !== 'perfected' &&
-    displayRecipe.status !== 'abandoned';
+  const isEditable = true;
   // Activation (#417): the shared client rule decides what the page
   // offers; the server enforces the same rule.
-  const candidates = activationCandidates(displayRecipe.status, versions);
+  const candidates = activationCandidates(versions);
   const lifecycle =
     isEditable || candidates.length > 0
       ? {
           isEditable,
           isTweakPending: tweakManualMutation.isPending,
-          isStatusChangePending: statusMutation.isPending,
           isActivationPending: activateMutation.isPending,
           candidates: candidates.map(version => ({
             id: version.id,
@@ -669,7 +614,6 @@ export const RecipeDetailHost = ({
 
   const canEditDraft = canEditDraftVersion(displayRecipe.versionId, versions);
   const canEditMetadata = canEditActiveRecipeMetadata(
-    displayRecipe.status,
     displayRecipe.versionId,
     recipe.versionId,
     versions,
@@ -710,7 +654,6 @@ export const RecipeDetailHost = ({
   return (
     <RecipeDetailPage
       state="ready"
-      status={recipe.status}
       versions={versions.map(version => ({
         id: version.id,
         label: versionPickerLabel(i18n, version),
@@ -746,13 +689,6 @@ export const RecipeDetailHost = ({
         editDraftHref: canEditDraft
           ? `/recipes/${recipe.id}/versions/${displayRecipe.versionId}/edit`
           : undefined,
-        onCreateDraftPress: canCreateDraft
-          ? () => {
-              if (!createDraftMutation.isPending) {
-                createDraftMutation.mutate();
-              }
-            }
-          : undefined,
         onDeletePress: () => {
           setRecipeDeleteError(null);
           setConfirmingRecipeDelete(true);
@@ -762,12 +698,6 @@ export const RecipeDetailHost = ({
           tweakManualMutation.mutate();
         },
         tweakAiHref: `/recipes/${recipe.id}/tweak-ai`,
-        onMarkPerfectedPress: () => {
-          statusMutation.mutate('perfected');
-        },
-        onAbandonPress: () => {
-          statusMutation.mutate('abandoned');
-        },
         onActivateCandidatePress: (versionId: string) => {
           activateMutation.mutate(versionId);
         },

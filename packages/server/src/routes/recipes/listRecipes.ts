@@ -20,7 +20,6 @@ export {
   parseLimit,
   parseOffset,
   parseOptionalSearch,
-  parseStatusFilter,
   parseRecipeListFilterParams as parseListParams,
 } from './listFilterParams.js';
 
@@ -30,10 +29,6 @@ export const listRecipes = async (
   queryFn: QueryFn,
 ) => {
   const params = parseRecipeListFilterParams(req);
-  if (params.status === 'invalid') {
-    res.status(400).json({error: 'Invalid status filter'});
-    return;
-  }
   if (params.sort === 'invalid') {
     res.status(400).json({error: 'Invalid sort parameter'});
     return;
@@ -47,7 +42,6 @@ export const listRecipes = async (
     req.userId,
     params.limit,
     params.offset,
-    params.status,
     ...filterBindValues(params),
   ];
   const searchQuerySql = buildSearchQuerySql(

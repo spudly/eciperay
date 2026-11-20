@@ -75,12 +75,6 @@ describe('RecipeDetailHost', () => {
       expect(screen.getByText('Tweak with AI')).toBeInTheDocument();
     });
 
-    test('hides the lifecycle section for abandoned recipes without candidates', async () => {
-      await renderHost({status: 'abandoned'}, []);
-      expect(await screen.findByText('Test Recipe')).toBeInTheDocument();
-      expect(screen.queryByText('Tweak manually')).not.toBeInTheDocument();
-      expect(screen.queryByText('Tweak with AI')).not.toBeInTheDocument();
-    });
 
     test('activates candidate versions and shows the action message', async () => {
       const activate = vi
@@ -99,22 +93,6 @@ describe('RecipeDetailHost', () => {
       expect(await screen.findByText('Version activated')).toBeInTheDocument();
     });
 
-    test('activates a draft version of a perfected recipe without a cook log (#417)', async () => {
-      const activate = vi
-        .spyOn(eciperay.versions, 'activate')
-        .mockResolvedValue(makeRecipeDetail());
-      await renderHost({status: 'perfected'}, [
-        makeRecipeVersionSummary({
-          id: 'v2',
-          versionNumber: 2,
-          derivedRole: 'draft',
-          changeSummary: 'Salsa split out',
-        }),
-      ]);
-      await userEvent.click(await screen.findByText('Activate'));
-      expect(activate).toHaveBeenCalledWith('recipe-uuid-1', 'v2');
-      expect(await screen.findByText('Version activated')).toBeInTheDocument();
-    });
 
     test('offers re-activation for a previously active version (#417)', async () => {
       const activate = vi
@@ -131,22 +109,6 @@ describe('RecipeDetailHost', () => {
       expect(activate).toHaveBeenCalledWith('recipe-uuid-1', 'v1');
     });
 
-    test('does not offer activation for archived or candidate versions of an abandoned recipe (#417)', async () => {
-      await renderHost({status: 'abandoned'}, [
-        makeRecipeVersionSummary({
-          id: 'v1',
-          versionNumber: 1,
-          derivedRole: 'archived',
-        }),
-        makeRecipeVersionSummary({
-          id: 'v2',
-          versionNumber: 2,
-          derivedRole: 'candidate',
-        }),
-      ]);
-      expect(await screen.findByText('Test Recipe')).toBeInTheDocument();
-      expect(screen.queryByText('Activate')).not.toBeInTheDocument();
-    });
 
     test('does not offer activation for a draft version of an evolving recipe (#417)', async () => {
       await renderHost({}, [
@@ -162,7 +124,7 @@ describe('RecipeDetailHost', () => {
 
     test('shows the server error when activating a candidate fails (#418)', async () => {
       vi.spyOn(eciperay.versions, 'activate').mockRejectedValue(
-        new Error('Recipe cannot be modified in its current status'),
+        new Error('Server rejected the change'),
       );
       await renderHost({}, [
         makeRecipeVersionSummary({
@@ -175,27 +137,15 @@ describe('RecipeDetailHost', () => {
       await userEvent.click(await screen.findByText('Activate'));
       expect(
         await screen.findByText(
-          'Could not activate version: Recipe cannot be modified in its current status',
+          'Could not activate version: Server rejected the change',
         ),
       ).toBeInTheDocument();
     });
 
-    test('shows the server error when a status change fails (#418)', async () => {
-      vi.spyOn(eciperay.recipes, 'patchStatus').mockRejectedValue(
-        new Error('Recipe cannot be modified in its current status'),
-      );
-      await renderHost();
-      await userEvent.click(await screen.findByText('Mark perfected'));
-      expect(
-        await screen.findByText(
-          'Could not change status: Recipe cannot be modified in its current status',
-        ),
-      ).toBeInTheDocument();
-    });
 
     test('shows the server error when saving a rating fails (#418)', async () => {
       vi.spyOn(eciperay.recipes, 'putRating').mockRejectedValue(
-        new Error('Recipe cannot be modified in its current status'),
+        new Error('Server rejected the change'),
       );
       await renderHost();
       await userEvent.click(
@@ -203,7 +153,7 @@ describe('RecipeDetailHost', () => {
       );
       expect(
         await screen.findByText(
-          'Could not save your rating: Recipe cannot be modified in its current status',
+          'Could not save your rating: Server rejected the change',
         ),
       ).toBeInTheDocument();
     });
@@ -214,7 +164,7 @@ describe('RecipeDetailHost', () => {
         .spyOn(eciperay.versions, 'activate')
         .mockRejectedValue(new Error('first failure'));
       const patchStatus = vi
-        .spyOn(eciperay.recipes, 'patchStatus')
+        .spyOn(eciperay.versions, 'create')
         .mockRejectedValue(new Error('second failure'));
       try {
         const user = userEvent.setup({advanceTimers: vi.advanceTimersByTime});
@@ -233,9 +183,11 @@ describe('RecipeDetailHost', () => {
         act(() => {
           vi.advanceTimersByTime(2000);
         });
-        await user.click(screen.getByText('Mark perfected'));
+        await user.click(screen.getByText('Tweak manually'));
         expect(
-          await screen.findByText('Could not change status: second failure'),
+          await screen.findByText(
+            'Could not create a new version: second failure',
+          ),
         ).toBeInTheDocument();
         // Past the first message's 2.5s dismissal deadline but before
         // the second message's own: the second message must survive —
@@ -244,13 +196,13 @@ describe('RecipeDetailHost', () => {
           vi.advanceTimersByTime(1000);
         });
         expect(
-          screen.getByText('Could not change status: second failure'),
+          screen.getByText('Could not create a new version: second failure'),
         ).toBeInTheDocument();
         act(() => {
           vi.advanceTimersByTime(1600);
         });
         expect(
-          screen.queryByText('Could not change status: second failure'),
+          screen.queryByText('Could not create a new version: second failure'),
         ).not.toBeInTheDocument();
       } finally {
         activate.mockRestore();
@@ -259,16 +211,6 @@ describe('RecipeDetailHost', () => {
       }
     });
 
-    test('marks recipe perfected and abandoned', async () => {
-      const patchStatus = vi
-        .spyOn(eciperay.recipes, 'patchStatus')
-        .mockResolvedValue(makeRecipeDetail());
-      await renderHost();
-      await userEvent.click(await screen.findByText('Mark perfected'));
-      await userEvent.click(screen.getByText('Abandon'));
-      expect(patchStatus).toHaveBeenCalledWith('recipe-uuid-1', 'perfected');
-      expect(patchStatus).toHaveBeenCalledWith('recipe-uuid-1', 'abandoned');
-    });
 
     test('tweak manually creates a version and selects it', async () => {
       server.use(
@@ -309,13 +251,13 @@ describe('RecipeDetailHost', () => {
       const create = vi
         .spyOn(eciperay.versions, 'create')
         .mockRejectedValue(
-          new Error('Recipe cannot be modified in its current status'),
+          new Error('Server rejected the change'),
         );
       await renderHost();
       await userEvent.click(await screen.findByText('Tweak manually'));
       expect(
         await screen.findByText(
-          'Could not create a new version: Recipe cannot be modified in its current status',
+          'Could not create a new version: Server rejected the change',
         ),
       ).toBeInTheDocument();
       // The create-draft tests below share this method through MSW.
@@ -323,110 +265,6 @@ describe('RecipeDetailHost', () => {
     });
   });
 
-  describe('create-a-draft (#264)', () => {
-    test('offers only the create-draft action for perfected recipes without candidates', async () => {
-      await renderHost({status: 'perfected'}, []);
-      expect(await screen.findByText('Edit draft')).toBeInTheDocument();
-      expect(screen.queryByText('Tweak manually')).not.toBeInTheDocument();
-      expect(screen.queryByText('Tweak with AI')).not.toBeInTheDocument();
-      expect(screen.queryByText('Mark perfected')).not.toBeInTheDocument();
-      expect(screen.queryByText('Abandon')).not.toBeInTheDocument();
-    });
-
-    test('create draft opens the new draft in the version editor', async () => {
-      server.use(
-        http.post('http://localhost:8080/api/recipes/:id/versions', () =>
-          HttpResponse.json(
-            makeRecipeVersionSummary({
-              id: 'version-draft-1',
-              versionNumber: 2,
-              derivedRole: 'draft',
-              isEditable: true,
-              childVersionCount: 0,
-            }),
-            {status: 201},
-          ),
-        ),
-      );
-      const recipe = makeRecipeDetail({status: 'perfected'});
-      await renderWithProviders(
-        <Routes>
-          <Route
-            path="/"
-            element={
-              <RecipeDetailHost
-                recipe={recipe}
-                displayRecipe={recipe}
-                versions={[makeRecipeVersionSummary()]}
-                selectedVersionId={recipe.versionId}
-                onSelectVersion={() => {}}
-                currentServings={recipe.servings}
-                scaleFactor={1}
-                onServingsChange={() => {}}
-              />
-            }
-          />
-          <Route
-            path="/recipes/:recipeId/versions/:versionId/edit"
-            element={<div>Edit draft page</div>}
-          />
-        </Routes>,
-        {route: '/'},
-      );
-      await userEvent.click(await screen.findByText('Edit draft'));
-      expect(await screen.findByText('Edit draft page')).toBeInTheDocument();
-    });
-
-    test('hides create draft when a non-active version is displayed', async () => {
-      const recipe = makeRecipeDetail({status: 'perfected'});
-      const displayRecipe = makeRecipeDetail({
-        status: 'perfected',
-        versionId: 'v-old',
-      });
-      await renderWithProviders(
-        <RecipeDetailHost
-          recipe={recipe}
-          displayRecipe={displayRecipe}
-          versions={[makeRecipeVersionSummary()]}
-          selectedVersionId="v-old"
-          onSelectVersion={() => {}}
-          currentServings={displayRecipe.servings}
-          scaleFactor={1}
-          onServingsChange={() => {}}
-        />,
-      );
-      expect(await screen.findByText('Test Recipe')).toBeInTheDocument();
-      expect(screen.queryByText('Edit draft')).not.toBeInTheDocument();
-    });
-
-    test('shows candidates alongside create draft for perfected recipes', async () => {
-      await renderHost({status: 'perfected'}, [
-        makeRecipeVersionSummary({
-          id: 'v2',
-          versionNumber: 2,
-          derivedRole: 'candidate',
-        }),
-      ]);
-      expect(await screen.findByText('Edit draft')).toBeInTheDocument();
-      expect(screen.getByText('Activate')).toBeInTheDocument();
-      expect(screen.queryByText('Tweak manually')).not.toBeInTheDocument();
-    });
-
-    test('shows feedback when creating a draft fails', async () => {
-      server.use(
-        http.post('http://localhost:8080/api/recipes/:id/versions', () =>
-          HttpResponse.json({error: 'Server exploded'}, {status: 500}),
-        ),
-      );
-      await renderHost({status: 'perfected'}, []);
-      await userEvent.click(await screen.findByText('Edit draft'));
-      expect(
-        await screen.findByText('Could not create a draft: Server exploded'),
-      ).toBeInTheDocument();
-      // No navigation happened: the detail page is still shown.
-      expect(screen.getByText('Test Recipe')).toBeInTheDocument();
-    });
-  });
 
   describe('cook history', () => {
     test('renders cook log entries with their ratings', async () => {

@@ -30,7 +30,6 @@ import {listRecipeCommentsRoute} from './listRecipeComments.js';
 import {listRecipes} from './listRecipes.js';
 import {listSharedWithMe} from './listSharedWithMe.js';
 import {listVersions} from './listVersions.js';
-import {patchRecipeLineage} from './patchRecipeLineage.js';
 import {patchRecipeSharing} from './patchRecipeSharing.js';
 import {putRecipe} from './putRecipe.js';
 import {deleteRecipeRating, putRecipeRating} from './putRecipeRating.js';
@@ -109,9 +108,6 @@ export const createRecipesRouter = (queryFn: QueryFn) => {
   );
   router.post('/:id/clone', requireAuth, loadEntitlement(queryFn), (req, res) =>
     cloneRecipe(e(req), res, queryFn),
-  );
-  router.patch('/:id', requireAuth, (req, res) =>
-    patchRecipeLineage(a(req), res, queryFn),
   );
   // Sharing is a Plus feature, but revoking sharing (going back to private)
   // is always allowed: it is a privacy operation, not a paid feature.

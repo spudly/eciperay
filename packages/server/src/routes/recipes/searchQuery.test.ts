@@ -61,16 +61,17 @@ describe('parseSearchSyntax', () => {
     ]);
   });
 
-  test('status: and is: qualifiers map statuses and scopes', () => {
+  test('is: qualifiers map scopes; status: degrades to free text', () => {
     const parsed = parseSearchSyntax('status:perfected is:public is:mine');
-    expect(parsed.statuses).toEqual([{values: ['perfected'], negated: false}]);
+    expect(parsed.freeText).toEqual([
+      {value: 'status:perfected', phrase: false, negated: false},
+    ]);
     expect(parsed.scopes).toEqual([
       {values: ['public'], negated: false},
       {values: ['mine'], negated: false},
     ]);
-    expect(parseSearchSyntax('is:evolving').statuses).toEqual([
-      {values: ['evolving'], negated: false},
-    ]);
+    expect(parseSearchSyntax('is:evolving').scopes).toEqual([]);
+    expect(parseSearchSyntax('is:evolving').hints).toHaveLength(1);
   });
 
   test('numeric qualifiers parse every comparison operator', () => {
@@ -115,23 +116,20 @@ describe('parseSearchSyntax', () => {
   });
 
   test('partially valid qualifier lists hint each invalid member', () => {
-    const parsed = parseSearchSyntax('status:perfected,typo is:mine,bogus');
-    expect(parsed.statuses).toEqual([{values: ['perfected'], negated: false}]);
+    const parsed = parseSearchSyntax('is:mine,bogus');
     expect(parsed.scopes).toEqual([{values: ['mine'], negated: false}]);
-    expect(parsed.hints).toHaveLength(2);
-    expect(parsed.hints[0]).toContain('typo');
-    expect(parsed.hints[1]).toContain('bogus');
+    expect(parsed.hints).toHaveLength(1);
+    expect(parsed.hints[0]).toContain('bogus');
     // Wholly invalid lists still produce hints and no filters.
-    const wholly = parseSearchSyntax('status:nope,nah');
-    expect(wholly.statuses).toEqual([]);
+    const wholly = parseSearchSyntax('is:nope,nah');
     expect(wholly.scopes).toEqual([]);
     expect(wholly.hints).toHaveLength(2);
   });
 
   test('invalid qualifier values become hints, not filters', () => {
-    const parsed = parseSearchSyntax('calories:lots status:unknown title:');
+    const parsed = parseSearchSyntax('calories:lots is:unknown title:');
     expect(parsed.numeric).toEqual([]);
-    expect(parsed.statuses).toEqual([]);
+    expect(parsed.scopes).toEqual([]);
     expect(parsed.fieldFilters).toEqual([]);
     expect(parsed.hints).toHaveLength(3);
   });
@@ -250,14 +248,13 @@ describe('buildSearchQuerySql', () => {
     expect(sql).toContain('i.name ilike $12');
   });
 
-  test('status and scope qualifiers compile to status/visibility conditions', () => {
+  test('scope qualifiers compile to visibility conditions', () => {
     const {sql, values} = buildSearchQuerySql(
-      parseSearchSyntax('status:perfected is:public'),
+      parseSearchSyntax('is:public'),
       12,
       'mine',
     );
-    expect(values).toEqual(['perfected']);
-    expect(sql).toContain('r.status in ($12)');
+    expect(values).toEqual([]);
     expect(sql).toContain("r.visibility = 'public'");
   });
 
@@ -287,25 +284,14 @@ describe('buildSearchQuerySql', () => {
     expect(sql).not.toContain('false');
     // Separate tokens stay ANDed.
     const separate = buildSearchQuerySql(
-      parseSearchSyntax('is:public status:perfected'),
+      parseSearchSyntax('is:public title:soup'),
       12,
       'mine',
     );
     expect(separate.sql).toContain("r.visibility = 'public'");
-    expect(separate.sql).toContain('r.status in ($12)');
+    expect(separate.sql).toContain('rv.title ilike $12');
   });
 
-  test('mixed status/scope alternatives in one token form one OR group', () => {
-    const {sql, values} = buildSearchQuerySql(
-      parseSearchSyntax('is:perfected,public'),
-      12,
-      'mine',
-    );
-    expect(values).toEqual(['perfected']);
-    expect(sql).toContain("(r.status in ($12) or r.visibility = 'public')");
-    // Exactly one ANDed condition for the whole token.
-    expect(sql.match(/and \(/g)).toHaveLength(1);
-  });
 
   test('numeric qualifiers compile to comparisons on the range columns', () => {
     const {sql, values} = buildSearchQuerySql(

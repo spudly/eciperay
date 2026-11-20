@@ -7,7 +7,6 @@ import type {
   RecipeDetail,
   RecipeExportBundle,
   RecipeInput,
-  RecipeStatus,
   RecipeRatingInput,
   RecipeRatingSummary,
   RecipeSharingUpdateInput,
@@ -64,11 +63,6 @@ export const createRecipesApi = (client: ApiClient) => ({
     client.fetch<RecipeDetail>(`/recipes/${id}`, {
       method: 'PUT',
       body: JSON.stringify(input),
-    }),
-  patchStatus: (id: string, status: RecipeStatus) =>
-    client.fetch<RecipeDetail>(`/recipes/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify({status}),
     }),
   patchSharing: (id: string, input: RecipeSharingUpdateInput) =>
     client.fetch<RecipeSharingUpdateResult>(`/recipes/${id}/sharing`, {

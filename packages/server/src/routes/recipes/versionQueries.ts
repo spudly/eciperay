@@ -1,8 +1,4 @@
-import type {
-  RecipeStatus,
-  RecipeInput,
-  VersionCreatedVia,
-} from '@eciperay/types';
+import type {RecipeInput, VersionCreatedVia} from '@eciperay/types';
 
 import {query as defaultQuery} from '../../db/query.js';
 
@@ -24,8 +20,8 @@ export type InsertVersionOptions = {
 };
 
 const INSERT_LINEAGE_SQL = `
-  insert into recipes (user_id, status, slug)
-  values ($1, $3, $2)
+  insert into recipes (user_id, slug)
+  values ($1, $2)
   returning id
 `;
 
@@ -42,16 +38,12 @@ const SET_ACTIVE_VERSION_SQL = `
   update recipes set active_version_id = $2 where id = $1
 `;
 
-export const insertLineage = (
-  userId: string,
-  slug: string,
-  status: RecipeStatus,
-  queryFn: QueryFn,
-) => queryFn<{id: string}>(INSERT_LINEAGE_SQL, [userId, slug, status]);
+export const insertLineage = (userId: string, slug: string, queryFn: QueryFn) =>
+  queryFn<{id: string}>(INSERT_LINEAGE_SQL, [userId, slug]);
 
 const INSERT_CLONED_LINEAGE_SQL = `
-  insert into recipes (user_id, status, slug, cloned_from_recipe_id, visibility, provenance_source)
-  values ($1, 'idea', $2, $3, 'private', 'shared_clone')
+  insert into recipes (user_id, slug, cloned_from_recipe_id, visibility, provenance_source)
+  values ($1, $2, $3, 'private', 'shared_clone')
   returning id
 `;
 
@@ -146,34 +138,6 @@ export const updateVersion = (
       opts.imageUrl,
       opts.sourceUrl,
     ],
-  );
-
-export const setLineageStatus = (
-  recipeId: string,
-  userId: string,
-  status: string,
-  queryFn: QueryFn,
-) =>
-  queryFn(
-    'update recipes set status = $3 where id = $1 and user_id = $2 returning id',
-    [recipeId, userId, status],
-  );
-
-/**
- * Reopens a Perfected lineage to Evolving when a draft is created from it
- * (#264). The update is conditional on the lineage still being Perfected, so a
- * status change that lands after the caller's read (e.g. a concurrent Abandon)
- * is not overwritten: it matches no row, and the caller rolls the draft
- * creation back instead.
- */
-export const reopenPerfectedLineage = (
-  recipeId: string,
-  userId: string,
-  queryFn: QueryFn,
-) =>
-  queryFn(
-    'update recipes set status = $3 where id = $1 and user_id = $2 and status = $4 returning id',
-    [recipeId, userId, 'evolving', 'perfected'],
   );
 
 export const updateRecipeSlug = (

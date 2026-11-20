@@ -209,14 +209,7 @@ export const handlers = [
     const body = (await request.json()) as object;
     return HttpResponse.json({...recipe, id: params['id'], ...body});
   }),
-  http.patch(`${API}/api/recipes/:id`, async ({params, request}) => {
-    const body = (await request.json()) as {status?: string};
-    return HttpResponse.json({
-      ...recipe,
-      id: params['id'],
-      status: body.status ?? recipe.status,
-    });
-  }),
+
   http.delete(
     `${API}/api/recipes/:id`,
     () => new HttpResponse(null, {status: 204}),
@@ -570,7 +563,7 @@ export const handlers = [
       ),
   ),
   http.post(`${API}/api/recipes/:id/import/accept`, ({params}) =>
-    HttpResponse.json({...recipe, id: params['id'], status: 'evolving'}),
+    HttpResponse.json({...recipe, id: params['id']}),
   ),
   http.post(`${API}/api/recipes/:id/import/start-edits`, () => {
     const version = makeRecipeVersionDetail({

@@ -2,7 +2,6 @@ import type {RecipeListFilters} from './recipesListUrl.js';
 
 const normalizeFilters = (filters: RecipeListFilters = {}) => ({
   search: filters.search ?? '',
-  status: filters.status ?? '',
   ingredient: filters.ingredient ?? '',
   minCalories: filters.minCalories ?? null,
   maxCalories: filters.maxCalories ?? null,
@@ -16,9 +15,9 @@ const normalizeFilters = (filters: RecipeListFilters = {}) => ({
 
 export const queryKeys = {
   recipeLists: () => ['recipes'] as const,
-  recipes: (filters: RecipeListFilters | string = {}, status = '') => {
+  recipes: (filters: RecipeListFilters | string = {}) => {
     if (typeof filters === 'string') {
-      return ['recipes', {search: filters, status}] as const;
+      return ['recipes', {search: filters}] as const;
     }
     return ['recipes', normalizeFilters(filters)] as const;
   },

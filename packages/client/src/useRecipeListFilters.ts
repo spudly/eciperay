@@ -11,12 +11,9 @@ import {
 
 const toControls = (
   fields: FilterFieldState,
-  includeStatus: boolean,
 ): RecipeListFilterControls => ({
   search: fields.search,
   onSearchChange: fields.setSearch,
-  statusFilter: fields.statusFilter,
-  onStatusFilterChange: fields.setStatusFilter,
   ingredient: fields.ingredient,
   onIngredientChange: fields.setIngredient,
   minCalories: fields.minCalories,
@@ -31,15 +28,12 @@ const toControls = (
   onSortChange: fields.setSort,
   sortDir: fields.sortDir,
   onSortDirChange: fields.setSortDir,
-  showStatusFilter: includeStatus,
 });
 
 export const useRecipeListFilters = (options?: {
-  includeStatus?: boolean;
   defaultSort?: RecipeListSort;
   initialValues?: Partial<RecipeListFilterValues>;
 }) => {
-  const includeStatus = options?.includeStatus ?? true;
   const fields = useFilterFieldState(
     options?.defaultSort ?? 'newest',
     options?.initialValues,
@@ -49,13 +43,8 @@ export const useRecipeListFilters = (options?: {
 
   const filters = useMemo(
     () =>
-      buildRecipeListFilters(
-        fields,
-        deferredSearch,
-        deferredIngredient,
-        includeStatus,
-      ),
-    [deferredIngredient, deferredSearch, fields, includeStatus],
+      buildRecipeListFilters(fields, deferredSearch, deferredIngredient),
+    [deferredIngredient, deferredSearch, fields],
   );
 
   // The current raw field values, for hosts that persist them across
@@ -63,7 +52,6 @@ export const useRecipeListFilters = (options?: {
   // the `initialValues` option.
   const values: RecipeListFilterValues = {
     search: fields.search,
-    statusFilter: fields.statusFilter,
     ingredient: fields.ingredient,
     minCalories: fields.minCalories,
     maxCalories: fields.maxCalories,
@@ -73,5 +61,5 @@ export const useRecipeListFilters = (options?: {
     sortDir: fields.sortDir,
   };
 
-  return {filters, controls: toControls(fields, includeStatus), values};
+  return {filters, controls: toControls(fields), values};
 };

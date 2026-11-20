@@ -70,7 +70,6 @@ type MockOptions = {
   inTxTargetMissing?: boolean;
   insertReturnsNoId?: boolean;
   updateReturnsNoRow?: boolean;
-  reopenSucceeds?: boolean;
   finalFetchMissing?: boolean;
 };
 
@@ -85,11 +84,6 @@ const mockEditFlow = (options: MockOptions = {}) => {
   let recipeFetches = 0;
   mockQuery.mockImplementation(((sql: string, params?: unknown[]) => {
     executed.push(sql);
-    if (sql.includes('and status = $4')) {
-      return Promise.resolve(
-        makeQueryResult(options.reopenSucceeds ? [{id: 'recipe-uuid-1'}] : []),
-      );
-    }
     if (sql.includes('and content_revision')) {
       return Promise.resolve(
         makeQueryResult(
@@ -311,17 +305,6 @@ describe('POST /recipes/:id/versions/:versionId/edit', () => {
     expect(res.status).toBe(409);
   });
 
-  test('returns 409 when branching from the active version of an abandoned recipe', async () => {
-    nockSupabaseGetUser('user-uuid-1');
-    mockEditFlow({recipeRow: makeRecipeDetailRow({status: 'abandoned'})});
-
-    const res = await request(getApp())
-      .post('/api/recipes/recipe-uuid-1/versions/version-uuid-1/edit')
-      .set('Authorization', 'Bearer <redacted>')
-      .send(editBody());
-
-    expect(res.status).toBe(409);
-  });
 
   test('returns 409 for a candidate version with cook logs', async () => {
     nockSupabaseGetUser('user-uuid-1');
@@ -450,22 +433,6 @@ describe('POST /recipes/:id/versions/:versionId/edit', () => {
     expect(updateParams[5]).toBeNull();
   });
 
-  test('applies a lineage status change sent with an in-place edit', async () => {
-    nockSupabaseGetUser('user-uuid-1');
-    const executed = mockEditFlow();
-
-    const res = await request(getApp())
-      .post('/api/recipes/recipe-uuid-1/versions/version-uuid-2/edit')
-      .set('Authorization', 'Bearer <redacted>')
-      .send(editBody({status: 'evolving'}));
-
-    expect(res.status).toBe(200);
-    expect(
-      executed.some(
-        sql => sql === 'update recipes set status = $2 where id = $1',
-      ),
-    ).toBe(true);
-  });
 
   test('returns 409 when the recipe vanishes inside the transaction', async () => {
     nockSupabaseGetUser('user-uuid-1');
@@ -521,52 +488,8 @@ describe('POST /recipes/:id/versions/:versionId/edit', () => {
     expect(res.body.error).toContain('The active version changed');
   });
 
-  test('returns 409 when the lineage becomes uneditable inside the transaction', async () => {
-    nockSupabaseGetUser('user-uuid-1');
-    mockEditFlow({
-      recipeRow: makeRecipeDetailRow({status: 'perfected'}),
-      inTxRecipeRow: makeRecipeDetailRow({status: 'abandoned'}),
-    });
 
-    const res = await request(getApp())
-      .post('/api/recipes/recipe-uuid-1/versions/version-uuid-1/edit')
-      .set('Authorization', 'Bearer <redacted>')
-      .send(editBody());
 
-    expect(res.status).toBe(409);
-  });
-
-  test('branches from a perfected recipe and reopens the lineage', async () => {
-    nockSupabaseGetUser('user-uuid-1');
-    const executed = mockEditFlow({
-      recipeRow: makeRecipeDetailRow({status: 'perfected'}),
-      reopenSucceeds: true,
-      branchActive: false,
-    });
-
-    const res = await request(getApp())
-      .post('/api/recipes/recipe-uuid-1/versions/version-uuid-1/edit')
-      .set('Authorization', 'Bearer <redacted>')
-      .send(editBody());
-
-    expect(res.status).toBe(201);
-    expect(executed.some(sql => sql.includes('and status = $4'))).toBe(true);
-  });
-
-  test('returns 409 when reopening a perfected lineage matches no row', async () => {
-    nockSupabaseGetUser('user-uuid-1');
-    mockEditFlow({recipeRow: makeRecipeDetailRow({status: 'perfected'})});
-
-    const res = await request(getApp())
-      .post('/api/recipes/recipe-uuid-1/versions/version-uuid-1/edit')
-      .set('Authorization', 'Bearer <redacted>')
-      .send(editBody());
-
-    expect(res.status).toBe(409);
-    expect(res.body.error).toContain(
-      'Recipe status changed while creating a draft version',
-    );
-  });
 
   test('returns 500 when branching creates no version row', async () => {
     nockSupabaseGetUser('user-uuid-1');

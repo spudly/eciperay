@@ -8,7 +8,6 @@ import {lazyTestApp} from '../../test/lazyTestApp.js';
 import {
   DEFAULT_RECIPE_LIST_LIMIT,
   MAX_RECIPE_LIST_LIMIT,
-  parseStatusFilter,
   parseListParams,
 } from './listRecipes.js';
 import {EMPTY_SEARCH_QUERY, parseSearchSyntax} from './searchQuery.js';
@@ -23,7 +22,6 @@ const defaultParsedListParams = {
   offset: 0,
   search: null,
   searchQuery: EMPTY_SEARCH_QUERY,
-  status: null,
   ingredient: null,
   minCalories: null,
   maxCalories: null,
@@ -67,12 +65,6 @@ describe('parseListParams', () => {
     );
   });
 
-  test('parses status filter', () => {
-    expect(parseStatusFilter('perfected')).toBe('perfected');
-    expect(parseStatusFilter('evolving')).toBe('evolving');
-    expect(parseStatusFilter('')).toBeNull();
-    expect(parseStatusFilter('draft')).toBe('invalid');
-  });
 
   test('parses nutrition and sort filters', () => {
     expect(
@@ -102,7 +94,6 @@ describe('GET /recipes', () => {
       makeQueryResult([
         {
           id: 'recipe-uuid-1',
-          status: 'evolving',
           visibility: 'private',
           slug: 'test-recipe',
           content_revision: 1,
@@ -153,7 +144,6 @@ describe('GET /recipes', () => {
       'user-uuid-1',
       DEFAULT_RECIPE_LIST_LIMIT,
       0,
-      null,
       ...emptyFilterBinds,
     ]);
   });
@@ -170,7 +160,6 @@ describe('GET /recipes', () => {
       'user-uuid-1',
       DEFAULT_RECIPE_LIST_LIMIT,
       0,
-      null,
       ...emptyFilterBinds,
       // Search condition: LIKE pattern + raw word for fuzzy similarity.
       '%pasta%',
@@ -234,7 +223,6 @@ describe('GET /recipes', () => {
       'user-uuid-1',
       DEFAULT_RECIPE_LIST_LIMIT,
       0,
-      null,
       ...emptyFilterBinds,
       // Per word: LIKE pattern + raw fuzzy word; then the relevance
       // score's pattern / whole-word / raw binds per word (#612).
@@ -263,40 +251,15 @@ describe('GET /recipes', () => {
     // Each word compiles to its own parameterized condition that may match
     // the title, the description, or an ingredient name (#611 broadening
     // the #385 word-by-word title rule).
-    expect(sql).toContain("rv.title ilike $12 escape '\\'");
-    expect(sql).toContain("coalesce(rv.description, '') ilike $12");
+    expect(sql).toContain("rv.title ilike $11 escape '\\'");
+    expect(sql).toContain("coalesce(rv.description, '') ilike $11");
     expect(sql).toContain('exists (select 1 from ingredients i');
-    // $13 is the first word's raw fuzzy bind; the second word's pattern
-    // follows at $14 (#612).
-    expect(sql).toContain("rv.title ilike $14 escape '\\'");
+    // $12 is the first word's raw fuzzy bind; the second word's pattern
+    // follows at $13 (#612).
+    expect(sql).toContain("rv.title ilike $13 escape '\\\\'");
   });
 
-  test('passes status filter to the query', async () => {
-    nockSupabaseGetUser('user-uuid-1');
-    mockQuery.mockResolvedValue(makeQueryResult([]));
-    const res = await request(getApp())
-      .get('/api/recipes')
-      .query({status: 'evolving'})
-      .set('Authorization', 'Bearer valid-token');
-    expect(res.status).toBe(200);
-    expect(mockQuery).toHaveBeenCalledWith(expect.any(String), [
-      'user-uuid-1',
-      DEFAULT_RECIPE_LIST_LIMIT,
-      0,
-      'evolving',
-      ...emptyFilterBinds,
-    ]);
-  });
 
-  test('returns 400 for invalid status filter', async () => {
-    nockSupabaseGetUser('user-uuid-1');
-    const res = await request(getApp())
-      .get('/api/recipes')
-      .query({status: 'draft'})
-      .set('Authorization', 'Bearer valid-token');
-    expect(res.status).toBe(400);
-    expect(mockQuery).not.toHaveBeenCalled();
-  });
 
   test('returns 400 for invalid sort or sortDir', async () => {
     nockSupabaseGetUser('user-uuid-1');
@@ -343,7 +306,6 @@ describe('GET /recipes', () => {
       'user-uuid-1',
       500,
       0,
-      null,
       ...emptyFilterBinds,
     ]);
   });

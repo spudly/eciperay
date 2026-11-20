@@ -36,10 +36,8 @@ export {
 } from './recipeDetailToInput.js';
 export {
   activationCandidates,
-  canCreateDraftVersion,
   canEditActiveRecipeMetadata,
   canEditDraftVersion,
-  isRecipeStatusEditable,
 } from './recipeEditActions.js';
 export {
   buildRecipeCanonicalUrl,
@@ -196,7 +194,6 @@ export type {
   ProfileViewProps,
   RecipeListFilterControls,
   RecipesListViewProps,
-  RecipeStatusFilterValue,
   SharedWithMeViewProps,
   SubscriptionViewProps,
   TagsViewProps,
@@ -436,14 +433,6 @@ export {
   shouldShowMobileAppInstallPrompt,
   writeMobileAppInstallDismissal,
 } from './mobileWebInstall.js';
-export {
-  RECIPE_STATUS_FILTER_ALL,
-  RECIPE_STATUS_FILTER_LABEL,
-  RECIPE_STATUS_LABELS,
-  RECIPE_STATUS_OPTIONS,
-  normalizeRecipeStatus,
-  recipeStatusOptions,
-} from './recipeStatusCopy.js';
 export {
   DISCOVER_EMPTY_MESSAGE,
   DISCOVER_ERROR_MESSAGE,

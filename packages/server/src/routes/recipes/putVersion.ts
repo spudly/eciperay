@@ -41,7 +41,7 @@ export const putVersion = async (
     res.status(404).json({error: 'Version not found'});
     return;
   }
-  if (!isVersionEditable(existing, existing.status)) {
+  if (!isVersionEditable(existing)) {
     res.status(409).json({error: versionEditBlockedError()});
     return;
   }
