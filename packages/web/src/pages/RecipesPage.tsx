@@ -634,6 +634,18 @@ export const RecipesPage = () => {
           ),
         )}
         loadingDiscovery={discoveryQuery.isLoading}
+        discoveryEmptyTitle={
+          controls.search.trim()
+            ? i18n._({
+                id: 'discover.emptySearchTitle',
+                message: 'No public recipes match your search.',
+              })
+            : i18n._({
+                id: 'discover.emptyFeedMessage',
+                message:
+                  'No public recipes yet — new dishes show up here as cooks share them.',
+              })
+        }
         discoveryErrorMessage={
           discoveryQuery.isError && discoveryRecipes.length === 0
             ? i18n._({

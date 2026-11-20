@@ -53,7 +53,8 @@ const toDiscoverItem = (
 // This page's page-unique copy flows through the Lingui catalogs
 // (#465 tranche 7: explicit ids `discover.title` /
 // `discover.searchPlaceholder` / `discover.emptyMessage` /
-// `discover.errorMessage` / `discover.noRatingsLabel`) instead of
+// `discover.emptyFeedMessage` / `discover.errorMessage` /
+// `discover.noRatingsLabel`) instead of
 // the shared `discoverCopy` constants. The constants remain in
 // @eciperay/client for their other consumers (the SEO page-head
 // title, the recipes-list error state, and the native screens),
@@ -93,10 +94,19 @@ export const DiscoverPage = () => {
           id: 'discover.searchPlaceholder',
           message: 'Search public recipes…',
         })}
-        emptyMessage={i18n._({
-          id: 'discover.emptyMessage',
-          message: 'No public recipes match that search — try a broader craving.',
-        })}
+        emptyMessage={
+          controls.search.trim()
+            ? i18n._({
+                id: 'discover.emptyMessage',
+                message:
+                  'No public recipes match that search — try a broader craving.',
+              })
+            : i18n._({
+                id: 'discover.emptyFeedMessage',
+                message:
+                  'No public recipes yet — new dishes show up here as cooks share them.',
+              })
+        }
         errorMessage={
           error
             ? i18n._({

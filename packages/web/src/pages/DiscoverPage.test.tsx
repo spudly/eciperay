@@ -51,7 +51,7 @@ describe('DiscoverPage', () => {
     expect(screen.getByText(/No ratings yet~/)).toBeInTheDocument();
   });
 
-  test('renders the empty message from the en-XA Lingui catalog (#465)', async () => {
+  test('renders the empty-feed message from the en-XA Lingui catalog (#465, #616)', async () => {
     server.use(
       http.get('http://localhost:8080/api/public/recipes', () =>
         HttpResponse.json([]),
@@ -61,7 +61,7 @@ describe('DiscoverPage', () => {
     await waitFor(() => {
       expect(
         screen.getByText(
-          'No public recipes match that search — try a broader craving.~',
+          'No public recipes yet — new dishes show up here as cooks share them.~',
         ),
       ).toBeInTheDocument();
     });
@@ -113,13 +113,37 @@ describe('DiscoverPage', () => {
     expect(screen.queryByText(/^By /)).not.toBeInTheDocument();
   });
 
-  test('shows empty state when no public recipes match', async () => {
+  test('shows the empty-feed state when the feed is empty and no search was entered (#616)', async () => {
     server.use(
       http.get('http://localhost:8080/api/public/recipes', () =>
         HttpResponse.json([]),
       ),
     );
     await renderWithProviders(<DiscoverPage />);
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          'No public recipes yet — new dishes show up here as cooks share them.',
+        ),
+      ).toBeInTheDocument();
+    });
+    expect(
+      screen.queryByText(/match that search/),
+    ).not.toBeInTheDocument();
+  });
+
+  test('shows the no-match state when a search was entered and nothing matches (#616)', async () => {
+    server.use(
+      http.get('http://localhost:8080/api/public/recipes', () =>
+        HttpResponse.json([]),
+      ),
+    );
+    const user = userEvent.setup();
+    await renderWithProviders(<DiscoverPage />);
+    await user.type(
+      screen.getByPlaceholderText(/Search public recipes/i),
+      'zzz',
+    );
     await waitFor(() => {
       expect(
         screen.getByText(
