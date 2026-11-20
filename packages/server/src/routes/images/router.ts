@@ -70,13 +70,28 @@ export const handleResizeImage = async (
 
   try {
     const resized = await deps.resize(original.buffer, width);
-    // Upload the variant in the same request lifecycle; failure is not fatal.
+    // Deliver the resized image BEFORE waiting on the cache upload (#618:
+    // the response must not wait for variant persistence).
+    sendImage(res, resized.buffer, resized.contentType);
     try {
+      // Stale-variant guard: if the original was replaced while this resize
+      // was in flight, do not publish the now-stale variant — a completed
+      // replacement invalidation (deleteResizedVariants) must not be undone
+      // by an older resize landing afterwards.
+      let current: Awaited<ReturnType<ImageStorage['download']>> = null;
+      try {
+        current = await deps.storage.download(key);
+      } catch (error) {
+        logger.warn({err: error, key}, 'Original image re-check failed; skipping variant cache upload');
+      }
+      if (!current || !current.buffer.equals(original.buffer)) {
+        logger.warn({key, variantKey}, 'Original image changed during resize; skipping stale variant cache upload');
+        return;
+      }
       await deps.storage.upload(variantKey, resized.buffer, resized.contentType);
     } catch (error) {
       logger.warn({err: error, key: variantKey}, 'Failed to cache resized image variant');
     }
-    sendImage(res, resized.buffer, resized.contentType);
   } catch (error) {
     // Never error the image: fall back to the original bytes.
     logger.warn({err: error, key}, 'Image resize failed; serving original');

@@ -53,11 +53,55 @@ describe('GET /api/images/resize', () => {
     expect(res.status).toBe(200);
     expect(res.body.toString()).toBe('resized-bytes');
     expect(res.headers['cache-control']).toContain('immutable');
+    // The response is sent before the cache upload, so wait a tick for it.
+    await new Promise(resolve => setImmediate(resolve));
     expect(upload).toHaveBeenCalledWith(
       'user-1/recipe-1__w400',
       resized.buffer,
       'image/jpeg',
     );
+  });
+
+  test('response is delivered before a deferred cache upload resolves', async () => {
+    let releaseUpload: () => void = () => {};
+    const uploadPromise = new Promise<void>(resolve => {
+      releaseUpload = resolve;
+    });
+    const upload = jest.fn(() => uploadPromise);
+    const storage = makeStorage({upload: upload as never});
+    // If the handler awaited the upload before sending, this request could
+    // only complete after releaseUpload() — it must complete while the
+    // upload is still pending.
+    const res = await request(makeApp(storage)).get(
+      '/api/images/resize?path=user-1/recipe-1&w=400',
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.toString()).toBe('resized-bytes');
+    await new Promise(resolve => setImmediate(resolve));
+    expect(upload).toHaveBeenCalled();
+    releaseUpload();
+    await new Promise(resolve => setImmediate(resolve));
+  });
+
+  test('replacement during resize prevents stale variant publication', async () => {
+    const upload = jest.fn(async () => {});
+    let current = original;
+    const storage = makeStorage({
+      download: async key =>
+        key.endsWith('__w400') ? null : current,
+      upload,
+    });
+    const resize = async () => {
+      // The image is replaced (and its variants invalidated) mid-resize.
+      current = {buffer: Buffer.from('replacement-bytes'), contentType: 'image/jpeg'};
+      return resized;
+    };
+    const res = await request(makeApp(storage, resize)).get(
+      '/api/images/resize?path=user-1/recipe-1&w=400',
+    );
+    expect(res.status).toBe(200);
+    await new Promise(resolve => setImmediate(resolve));
+    expect(upload).not.toHaveBeenCalled();
   });
 
   test('invalid w is rejected', async () => {

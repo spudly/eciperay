@@ -62,6 +62,7 @@ export type ResizeFn = (
 
 export const sharpResize: ResizeFn = async (buffer, width) => {
   const {data, info} = await sharp(buffer)
+    .autoOrient()
     .resize({width, withoutEnlargement: true})
     .toBuffer({resolveWithObject: true});
   return {buffer: data, contentType: contentTypeForFormat(info.format)};
@@ -90,13 +91,32 @@ export const supabaseImageStorage: ImageStorage = {
     }
   },
   list: async (folder, search) => {
-    const {data, error} = await supabase.storage
-      .from(RECIPE_IMAGES_BUCKET)
-      .list(folder, {search});
-    if (error || !data) {
-      return [];
+    // Supabase list() defaults to (and caps a page at) 100 results: page
+    // through ALL results before returning, so callers deleting variants
+    // never miss entries beyond the first page. Nothing is deleted between
+    // page reads (deletion happens in the caller, after this returns).
+    const pageSize = 100;
+    const entries: {name: string}[] = [];
+    let offset = 0;
+    for (;;) {
+      const {data, error} = await supabase.storage
+        .from(RECIPE_IMAGES_BUCKET)
+        .list(folder, {search, limit: pageSize, offset});
+      if (error) {
+        // Throw so the caller's catch logs it; returning [] would silently
+        // look like "no variants to delete".
+        throw error;
+      }
+      if (!data || data.length === 0) {
+        break;
+      }
+      entries.push(...data);
+      if (data.length < pageSize) {
+        break;
+      }
+      offset += pageSize;
     }
-    return data.map(entry => (folder ? `${folder}/${entry.name}` : entry.name));
+    return entries.map(entry => (folder ? `${folder}/${entry.name}` : entry.name));
   },
   remove: async keys => {
     if (keys.length === 0) {
@@ -153,6 +173,17 @@ export const deleteResizedVariantsForPublicUrl = async (
   imageUrl: string | null | undefined,
   storage: ImageStorage = supabaseImageStorage,
 ): Promise<string[]> => {
-  const key = imageKeyFromPublicUrl(imageUrl);
+  let key: string | null;
+  try {
+    key = imageKeyFromPublicUrl(imageUrl);
+  } catch (error) {
+    // Malformed percent sequences make decodeURIComponent throw; variant
+    // invalidation is best-effort and must never break the caller.
+    logger.warn(
+      {err: error, imageUrl},
+      'Failed to extract image key for resized variant invalidation',
+    );
+    return [];
+  }
   return key ? deleteResizedVariants(key, storage) : [];
 };

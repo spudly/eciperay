@@ -49,6 +49,23 @@ describe('helpers', () => {
     const notEnlarged = await sharpResize(input, 1600);
     expect((await sharp(notEnlarged.buffer).metadata()).width).toBe(100);
   });
+
+  test('sharpResize applies EXIF orientation before resizing', async () => {
+    const sharp = (await import('sharp')).default;
+    // Stored pixels are 100x50, but EXIF orientation 6 means the image
+    // displays rotated: its oriented dimensions are 50 wide x 100 tall.
+    const input = await sharp({
+      create: {width: 100, height: 50, channels: 3, background: '#888888'},
+    })
+      .jpeg()
+      .withMetadata({orientation: 6})
+      .toBuffer();
+    const out = await sharpResize(input, 50);
+    const meta = await sharp(out.buffer).metadata();
+    // Without autoOrient this would be 50x25 (stored pixels resized as-is).
+    expect(meta.width).toBe(50);
+    expect(meta.height).toBe(100);
+  });
 });
 
 describe('deleteResizedVariants', () => {
@@ -107,5 +124,16 @@ describe('deleteResizedVariants', () => {
     await expect(
       deleteResizedVariantsForPublicUrl('https://cdn.example/x.jpg', storage),
     ).resolves.toEqual([]);
+  });
+
+  test('malformed percent sequence in a bucket URL is nonfatal', async () => {
+    const storage = makeStorage(['u/r__w400']);
+    await expect(
+      deleteResizedVariantsForPublicUrl(
+        'https://x/storage/v1/object/public/recipe-images/u/%FF',
+        storage,
+      ),
+    ).resolves.toEqual([]);
+    expect(storage.removed).toEqual([]);
   });
 });

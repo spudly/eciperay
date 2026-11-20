@@ -23,6 +23,28 @@ describe('resizedImageUrl', () => {
     );
   });
 
+  test('marker text in an external URL query string passes through untouched', () => {
+    const external =
+      'https://cdn.example/photo.jpg?source=/storage/v1/object/public/recipe-images/user/photo.jpg';
+    expect(resizedImageUrl(external, 400)).toBe(external);
+  });
+
+  test('malformed percent sequence returns the original URL', () => {
+    const malformed = `${bucketUrl}%FF`;
+    expect(resizedImageUrl(malformed, 400)).toBe(malformed);
+  });
+
+  test('carries the v revision into the resize URL', () => {
+    expect(resizedImageUrl(`${bucketUrl}?v=123`, 400)).toBe(
+      '/api/images/resize?path=user-1%2Frecipe-1&w=400&v=123',
+    );
+    // Other query params are not carried.
+    expect(resizedImageUrl(`${bucketUrl}?token=1&v=7`, 400)).toBe(
+      '/api/images/resize?path=user-1%2Frecipe-1&w=400&v=7',
+    );
+    expect(resizedImageUrl(`${bucketUrl}?token=1`, 400)).not.toContain('v=');
+  });
+
   test('null and undefined stay null', () => {
     expect(resizedImageUrl(null, 400)).toBeNull();
     expect(resizedImageUrl(undefined, 400)).toBeNull();
