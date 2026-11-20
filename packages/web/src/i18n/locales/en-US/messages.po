@@ -1069,6 +1069,22 @@ msgid "discover.emptyMessage"
 msgstr "No public recipes match that search — try a broader craving."
 
 #. js-lingui-explicit-id
+msgid "discover.emptyFeedMessage"
+msgstr "No public recipes yet — new dishes show up here as cooks share them."
+
+#. js-lingui-explicit-id
+msgid "discover.emptySearchTitle"
+msgstr "No public recipes match your search."
+
+#. js-lingui-explicit-id
+msgid "discover.emptyFilterMessage"
+msgstr "No public recipes match those filters — try broadening them."
+
+#. js-lingui-explicit-id
+msgid "discover.emptyFilterTitle"
+msgstr "No public recipes match those filters."
+
+#. js-lingui-explicit-id
 #: src/pages/DiscoverPage.tsx:112
 msgid "discover.noRatingsLabel"
 msgstr "No ratings yet"
