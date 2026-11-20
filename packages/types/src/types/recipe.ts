@@ -11,6 +11,23 @@ import type {RecipeStatus, VersionCreatedVia} from './recipeVersion.js';
 
 export type RecipeVisibility = 'private' | 'unlisted' | 'public';
 
+export type RecipeProvenanceSource =
+  | 'original'
+  | 'ai_generated'
+  | 'import_url'
+  | 'import_cookbook_photo'
+  | 'import_text'
+  | 'import_bulk'
+  | 'shared_clone'
+  | 'other';
+
+export type RecipeProvenance = {
+  source: RecipeProvenanceSource;
+  /** Source URL for import_url, cookbook identification for
+   * import_cookbook_photo, free text for other; null otherwise. */
+  detail: string | null;
+};
+
 export type RecipeListSort = 'newest' | 'rating' | 'satiety' | 'calories';
 export type RecipeListSortDir = 'asc' | 'desc';
 
