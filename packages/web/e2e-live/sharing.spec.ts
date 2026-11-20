@@ -99,10 +99,24 @@ test.describe('live sharing', () => {
       });
 
       // Flip visibility to Private in the detail page's Sharing section.
+      // Wait for the sharing PATCH to complete before the signed-out
+      // assertions: without this settle anchor the anon Discover search
+      // races the in-flight PATCH, reads the still-public recipe, and
+      // never refetches (CI trace for 2bf4ef4d: search ran ~130ms after
+      // the PATCH started; the card then stayed for the full timeout).
       await page.goto(`/recipes/${created.id}`);
       await expect(page.getByText('Sharing', {exact: true})).toBeVisible();
       await page.getByText('Private', {exact: true}).click();
+      const sharingSavePromise = page.waitForResponse(response => {
+        const url = new URL(response.url());
+        return (
+          response.request().method() === 'PATCH' &&
+          url.pathname === `/api/recipes/${created.id}/sharing`
+        );
+      });
       await page.getByRole('button', {name: 'Save sharing settings'}).click();
+      const sharingSave = await sharingSavePromise;
+      expect(sharingSave.status()).toBe(200);
 
       // Now the recipe is not listed publicly: a Discover search for its
       // (unique) title finds nothing. The empty-search message is the
