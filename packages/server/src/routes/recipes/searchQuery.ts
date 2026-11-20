@@ -41,7 +41,12 @@ export type ParsedSearchQuery = {
   freeText: {value: string; phrase: boolean; negated: boolean}[];
   fieldFilters: {field: SearchTextField; values: string[]; negated: boolean}[];
   statuses: {values: RecipeStatus[]; negated: boolean}[];
-  scopes: {value: SearchScope; negated: boolean}[];
+  scopes: {values: SearchScope[]; negated: boolean}[];
+  combinedGroups: {
+    statuses: RecipeStatus[];
+    scopes: SearchScope[];
+    negated: boolean;
+  }[];
   numeric: {
     field: SearchNumericField;
     comparison: SearchComparison;
@@ -56,6 +61,7 @@ export const EMPTY_SEARCH_QUERY: ParsedSearchQuery = {
   fieldFilters: [],
   statuses: [],
   scopes: [],
+  combinedGroups: [],
   numeric: [],
   hints: [],
 };
@@ -152,6 +158,7 @@ export const parseSearchSyntax = (
     fieldFilters: [],
     statuses: [],
     scopes: [],
+    combinedGroups: [],
     numeric: [],
     hints: [],
   };
@@ -159,27 +166,37 @@ export const parseSearchSyntax = (
     return parsed;
   }
   for (const token of tokenize(raw)) {
-    if (token.phrase) {
-      parsed.freeText.push({
-        value: token.text,
-        phrase: true,
-        negated: token.negated,
-      });
-      continue;
-    }
     const qualifierMatch = /^([A-Za-z]+):(.*)$/.exec(token.text);
     if (!qualifierMatch) {
       parsed.freeText.push({
         value: token.text,
-        phrase: false,
+        phrase: token.phrase,
         negated: token.negated,
       });
       continue;
     }
     const qualifier = (qualifierMatch[1] ?? '').toLowerCase();
     const rawValue = qualifierMatch[2] ?? '';
+    const isKnownQualifier =
+      Object.hasOwn(TEXT_FIELD_QUALIFIERS, qualifier) ||
+      qualifier === 'status' ||
+      qualifier === 'is' ||
+      (NUMERIC_QUALIFIERS as readonly string[]).includes(qualifier);
+    if (!isKnownQualifier) {
+      // Unknown qualifier: GitHub-lenient fallback to a free-text term,
+      // colon included, so nothing the user typed is silently dropped.
+      // This also preserves a quoted phrase with no known qualifier.
+      parsed.freeText.push({
+        value: token.text,
+        phrase: token.phrase,
+        negated: token.negated,
+      });
+      continue;
+    }
 
-    const textField = TEXT_FIELD_QUALIFIERS[qualifier];
+    const textField = Object.hasOwn(TEXT_FIELD_QUALIFIERS, qualifier)
+      ? TEXT_FIELD_QUALIFIERS[qualifier]
+      : undefined;
     if (textField) {
       const values = splitValues(rawValue);
       if (values.length === 0) {
@@ -206,17 +223,31 @@ export const parseSearchSyntax = (
       const scopeValues = values.filter((value): value is SearchScope =>
         (SCOPE_VALUES as readonly string[]).includes(value),
       );
-      if (statusValues.length === 0 && scopeValues.length === 0) {
+      const invalidValues = values.filter(
+        value =>
+          !(STATUS_VALUES as readonly string[]).includes(value) &&
+          !(SCOPE_VALUES as readonly string[]).includes(value),
+      );
+      for (const invalid of invalidValues) {
         parsed.hints.push(
-          `Unknown ${qualifier}: value "${values.join(',')}" — try ${qualifier}:${qualifier === 'is' ? 'public' : 'perfected'}.`,
+          `Unknown ${qualifier}: value "${invalid}" — try ${qualifier}:${qualifier === 'is' ? 'public' : 'perfected'}.`,
         );
+      }
+      if (statusValues.length === 0 && scopeValues.length === 0) {
         continue;
       }
-      if (statusValues.length > 0) {
+      if (statusValues.length > 0 && scopeValues.length > 0) {
+        // Mixed alternatives in ONE token are ORed together, so they form
+        // a single combined group rather than separate ANDed terms.
+        parsed.combinedGroups.push({
+          statuses: statusValues,
+          scopes: scopeValues,
+          negated: token.negated,
+        });
+      } else if (statusValues.length > 0) {
         parsed.statuses.push({values: statusValues, negated: token.negated});
-      }
-      for (const scope of scopeValues) {
-        parsed.scopes.push({value: scope, negated: token.negated});
+      } else {
+        parsed.scopes.push({values: scopeValues, negated: token.negated});
       }
       continue;
     }
@@ -329,20 +360,74 @@ export const buildSearchQuerySql = (
     );
   }
 
-  for (const scopeTerm of parsed.scopes) {
-    if (scopeTerm.value === 'public') {
-      conditions.push(
-        scopeTerm.negated
-          ? `r.visibility <> 'public'`
-          : `r.visibility = 'public'`,
-      );
-    } else if ((scopeTerm.value === scope) === !scopeTerm.negated) {
-      // Positive match on this endpoint's own scope (or a negation of a
-      // different scope) adds no constraint; the opposite excludes all rows.
-      continue;
-    } else {
-      conditions.push('false');
+  // Positive condition for one scope alternative, relative to this
+  // endpoint: `null` means it matches every row on the endpoint (TRUE),
+  // 'false' means it matches none, otherwise a visibility condition.
+  const scopeCondition = (value: SearchScope): string | null => {
+    if (value === 'public') {
+      return `r.visibility = 'public'`;
     }
+    return value === scope ? null : 'false';
+  };
+  // OR a token's alternatives into one condition: `null` = no constraint.
+  // A 'false' alternative is dropped when others remain (false OR x = x);
+  // it survives only when every alternative is false.
+  const orGroup = (parts: (string | null)[]): string | null => {
+    if (parts.some(part => part === null)) {
+      return null;
+    }
+    const concrete = parts as string[];
+    const nonFalse = concrete.filter(part => part !== 'false');
+    const effective = nonFalse.length > 0 ? nonFalse : concrete;
+    return effective.length === 1
+      ? (effective[0] as string)
+      : `(${effective.join(' or ')})`;
+  };
+
+  for (const scopeTerm of parsed.scopes) {
+    const group = orGroup(scopeTerm.values.map(scopeCondition));
+    if (group === null) {
+      if (scopeTerm.negated) {
+        conditions.push('false');
+      }
+      continue;
+    }
+    if (group === 'false' && scopeTerm.negated) {
+      continue;
+    }
+    conditions.push(maybeNegate(group, scopeTerm.negated));
+  }
+
+  for (const group of parsed.combinedGroups) {
+    const scopeParts = group.scopes.map(scopeCondition);
+    if (scopeParts.some(part => part === null)) {
+      // One scope alternative already matches every row here, so the
+      // whole OR group is TRUE: no condition (or FALSE when negated),
+      // and no status bind values are consumed.
+      if (group.negated) {
+        conditions.push('false');
+      }
+      continue;
+    }
+    const params = group.statuses.map(value => {
+      values.push(value);
+      return `$${startIndex + values.length - 1}`;
+    });
+    const parts: (string | null)[] = [
+      `r.status in (${params.join(', ')})`,
+      ...scopeParts,
+    ];
+    const combined = orGroup(parts);
+    if (combined === null) {
+      if (group.negated) {
+        conditions.push('false');
+      }
+      continue;
+    }
+    if (combined === 'false' && group.negated) {
+      continue;
+    }
+    conditions.push(maybeNegate(combined, group.negated));
   }
 
   for (const term of parsed.numeric) {

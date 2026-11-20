@@ -62,8 +62,8 @@ describe('parseSearchSyntax', () => {
     const parsed = parseSearchSyntax('status:perfected is:public is:mine');
     expect(parsed.statuses).toEqual([{values: ['perfected'], negated: false}]);
     expect(parsed.scopes).toEqual([
-      {value: 'public', negated: false},
-      {value: 'mine', negated: false},
+      {values: ['public'], negated: false},
+      {values: ['mine'], negated: false},
     ]);
     expect(parseSearchSyntax('is:evolving').statuses).toEqual([
       {values: ['evolving'], negated: false},
@@ -87,6 +87,42 @@ describe('parseSearchSyntax', () => {
       {value: 'color:red', phrase: false, negated: false},
       {value: 'soup', phrase: false, negated: false},
     ]);
+  });
+
+  test('quoted qualifier values parse as qualifiers, not free text', () => {
+    expect(parseSearchSyntax('title:"chicken soup"').fieldFilters).toEqual([
+      {field: 'title', values: ['chicken soup'], negated: false},
+    ]);
+    expect(parseSearchSyntax('-title:"chicken soup"').fieldFilters).toEqual([
+      {field: 'title', values: ['chicken soup'], negated: true},
+    ]);
+    // A quoted value with no qualifier stays an unqualified phrase.
+    expect(parseSearchSyntax('"chicken soup"').freeText).toEqual([
+      {value: 'chicken soup', phrase: true, negated: false},
+    ]);
+  });
+
+  test('inherited object names are not qualifiers (constructor: falls back)', () => {
+    expect(parseSearchSyntax('constructor:soup').freeText).toEqual([
+      {value: 'constructor:soup', phrase: false, negated: false},
+    ]);
+    expect(parseSearchSyntax('title:soup').fieldFilters).toEqual([
+      {field: 'title', values: ['soup'], negated: false},
+    ]);
+  });
+
+  test('partially valid qualifier lists hint each invalid member', () => {
+    const parsed = parseSearchSyntax('status:perfected,typo is:mine,bogus');
+    expect(parsed.statuses).toEqual([{values: ['perfected'], negated: false}]);
+    expect(parsed.scopes).toEqual([{values: ['mine'], negated: false}]);
+    expect(parsed.hints).toHaveLength(2);
+    expect(parsed.hints[0]).toContain('typo');
+    expect(parsed.hints[1]).toContain('bogus');
+    // Wholly invalid lists still produce hints and no filters.
+    const wholly = parseSearchSyntax('status:nope,nah');
+    expect(wholly.statuses).toEqual([]);
+    expect(wholly.scopes).toEqual([]);
+    expect(wholly.hints).toHaveLength(2);
   });
 
   test('invalid qualifier values become hints, not filters', () => {
@@ -177,6 +213,43 @@ describe('buildSearchQuerySql', () => {
     expect(
       buildSearchQuerySql(parseSearchSyntax('is:shared'), 12, 'shared').sql,
     ).not.toContain('false');
+  });
+
+  test('scope alternatives in one token are ORed, not ANDed', () => {
+    // mine matches every row on the mine endpoint, so the group adds
+    // no constraint — it must not exclude private owned recipes.
+    expect(
+      buildSearchQuerySql(parseSearchSyntax('is:mine,public'), 12, 'mine'),
+    ).toEqual({sql: '', values: []});
+    // On public, shared matches nothing and public is the visibility
+    // condition: the OR group is just the visibility condition.
+    const {sql} = buildSearchQuerySql(
+      parseSearchSyntax('is:shared,public'),
+      12,
+      'public',
+    );
+    expect(sql).toContain("r.visibility = 'public'");
+    expect(sql).not.toContain('false');
+    // Separate tokens stay ANDed.
+    const separate = buildSearchQuerySql(
+      parseSearchSyntax('is:public status:perfected'),
+      12,
+      'mine',
+    );
+    expect(separate.sql).toContain("r.visibility = 'public'");
+    expect(separate.sql).toContain('r.status in ($12)');
+  });
+
+  test('mixed status/scope alternatives in one token form one OR group', () => {
+    const {sql, values} = buildSearchQuerySql(
+      parseSearchSyntax('is:perfected,public'),
+      12,
+      'mine',
+    );
+    expect(values).toEqual(['perfected']);
+    expect(sql).toContain("(r.status in ($12) or r.visibility = 'public')");
+    // Exactly one ANDed condition for the whole token.
+    expect(sql.match(/and \(/g)).toHaveLength(1);
   });
 
   test('numeric qualifiers compile to comparisons on the range columns', () => {

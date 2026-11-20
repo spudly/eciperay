@@ -6,6 +6,7 @@ import {createMockQuery} from '../../test/mockQuery.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
 import {lazyTestApp} from '../../test/lazyTestApp.js';
 
+import {buildSearchQuerySql, parseSearchSyntax} from './searchQuery.js';
 import {
   buildListSharedWithMeSql,
   LIST_SHARED_WITH_ME_SQL,
@@ -80,6 +81,40 @@ describe('GET /recipes/shared-with-me', () => {
     );
     expect(buildListSharedWithMeSql('newest', 'asc')).toContain(
       'g.granted_at asc',
+    );
+  });
+
+  test('applies the compiled search query for search requests (#611)', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockQuery.mockResolvedValue(makeQueryResult([]));
+    const res = await request(getApp())
+      .get('/api/recipes/shared-with-me?search=garlic')
+      .set('Authorization', 'Bearer valid-token');
+    expect(res.status).toBe(200);
+    // Base binds mirror the handler: user, limit, offset, status, then
+    // the seven filter binds (ingredient + nutrition ranges), all null.
+    const baseValues: (string | number | null)[] = [
+      'user-uuid-1',
+      100,
+      0,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+    ];
+    const compiled = buildSearchQuerySql(
+      parseSearchSyntax('garlic'),
+      baseValues.length + 1,
+      'shared',
+    );
+    expect(compiled.values).toEqual(['%garlic%']);
+    expect(mockQuery).toHaveBeenCalledWith(
+      buildListSharedWithMeSql('newest', 'desc', compiled.sql),
+      [...baseValues, ...compiled.values],
     );
   });
 
