@@ -9,6 +9,7 @@ import {
   MOBILE_APP_INSTALL_URL,
   queryKeys,
   RECIPE_SCALE_MULTIPLIERS,
+  resizedImageUrl,
   servingsForMultiplier,
   sortIngredientsByOrder,
   useAuth,
@@ -261,7 +262,7 @@ const PublicRecipePageContent = () => {
       {frame({
         state: 'ready',
         overview: {
-          imageUrl: recipe.imageUrl,
+          imageUrl: resizedImageUrl(recipe.imageUrl, 1200),
           title: recipe.title,
           description: recipe.description,
           status: recipe.status,

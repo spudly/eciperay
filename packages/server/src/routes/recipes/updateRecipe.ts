@@ -4,6 +4,7 @@ import {query as defaultQuery} from '../../db/query.js';
 import type {AuthedRequest} from '../../middleware/requireAuth.js';
 import {getParam} from '../../lib/getParam.js';
 import {fetchRecipeDetail} from '../../lib/recipeQueries.js';
+import {deleteResizedVariantsForPublicUrl} from '../../lib/imageResizer.js';
 import {RecipeUpdateSchema, validate} from '../../lib/schemas.js';
 
 import {setVersionImageUrl} from './queries.js';
@@ -26,6 +27,10 @@ export const updateRecipe = async (
     return;
   }
   await setVersionImageUrl(recipe.versionId, body.data.imageUrl, queryFn);
+  // A replaced image invalidates cached resized variants (#618).
+  if (body.data.imageUrl) {
+    await deleteResizedVariantsForPublicUrl(body.data.imageUrl);
+  }
   const refreshed = await fetchRecipeDetail(recipeId, req.userId, queryFn);
   if (!refreshed) {
     res.status(404).json({error: 'Recipe not found'});

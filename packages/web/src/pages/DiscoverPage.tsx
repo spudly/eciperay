@@ -1,6 +1,7 @@
 import {
   formatDiscoveryListMeta,
   publicRecipeDiscoveryInfiniteQueryOptions,
+  resizedImageUrl,
   RECIPE_STATUS_FILTER_ALL,
   useRecipeListFilters,
   type RecipeStatusFilterValue,
@@ -46,7 +47,7 @@ const toDiscoverItem = (
     id: recipe.id,
     title: recipe.title,
     subtitle: `${authorName ? `By ${authorName} · ` : ''}${formatDiscoveryListMeta(recipe, noRatingsLabel)}`,
-    imageUrl: recipe.imageUrl,
+    imageUrl: resizedImageUrl(recipe.imageUrl, 400),
     href: `/recipe/${recipe.id}/${recipe.slug}`,
   };
 };

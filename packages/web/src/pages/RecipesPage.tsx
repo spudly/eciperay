@@ -12,6 +12,7 @@ import {
   useDebouncedValue,
   publicRecipeDiscoveryInfiniteQueryOptions,
   recipeListInfiniteQueryOptions,
+  resizedImageUrl,
   sharedWithMeInfiniteQueryOptions,
   useRecipeListFilters,
   type RecipeListFilterValues,
@@ -173,7 +174,7 @@ const toDiscoveryItem = (
     id: recipe.id,
     title: recipe.title,
     subtitle: `${authorName ? authorByline(authorName) : ''}${formatDiscoveryListMeta(recipe)}`,
-    imageUrl: recipe.imageUrl,
+    imageUrl: resizedImageUrl(recipe.imageUrl, 400),
     href: `/recipe/${recipe.id}/${recipe.slug}`,
   };
 };
@@ -583,7 +584,7 @@ export const RecipesPage = () => {
     title: recipe.title,
     subtitle: formatRecipesPageSubtitle(recipe),
     rating: getDisplayRating(recipe),
-    imageUrl: recipe.imageUrl,
+    imageUrl: resizedImageUrl(recipe.imageUrl, 400),
   }));
 
   // Shared-with-me rows, in the shared query's order after the user's
@@ -596,7 +597,7 @@ export const RecipesPage = () => {
     href: `/recipe/${recipe.id}/${recipe.slug}`,
     title: recipe.title,
     subtitle: formatRecipeListSubtitle(recipe),
-    imageUrl: recipe.imageUrl,
+    imageUrl: resizedImageUrl(recipe.imageUrl, 400),
     badgeLabel: 'Shared',
   }));
 
