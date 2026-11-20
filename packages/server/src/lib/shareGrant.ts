@@ -120,3 +120,42 @@ export const userHasShareAccess = async (
   const result = await queryFn(HAS_SHARE_ACCESS_SQL, [recipeId, userId]);
   return (result.rowCount ?? 0) > 0;
 };
+
+export const SHARE_ACCESS_BASIS_SQL = `
+  select
+    exists (
+      select 1 from recipe_share_grants
+      where recipe_id = $1 and user_id = $2
+    ) as has_individual_grant,
+    exists (
+      select 1
+      from family_share_grants fg
+      join recipes r on r.user_id = fg.owner_user_id
+      where r.id = $1 and fg.recipient_user_id = $2
+    ) as has_family_grant
+`;
+
+export type ShareAccessBasis = {
+  hasIndividualGrant: boolean;
+  hasFamilyGrant: boolean;
+};
+
+/**
+ * Both sharing bases from ONE query — a single statement sees a single
+ * snapshot, so a revocation cannot land between the access decision and
+ * the basis a caller acts on (e.g. loadPublicRecipe's grant recording).
+ */
+export const getShareAccessBasis = async (
+  recipeId: string,
+  userId: string,
+  queryFn: QueryFn,
+): Promise<ShareAccessBasis> => {
+  const result = await queryFn(SHARE_ACCESS_BASIS_SQL, [recipeId, userId]);
+  const row = result.rows[0] as
+    | {has_individual_grant: boolean; has_family_grant: boolean}
+    | undefined;
+  return {
+    hasIndividualGrant: Boolean(row?.has_individual_grant),
+    hasFamilyGrant: Boolean(row?.has_family_grant),
+  };
+};

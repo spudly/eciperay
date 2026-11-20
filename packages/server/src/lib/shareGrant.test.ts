@@ -9,6 +9,8 @@ import {
   INSERT_SHARE_GRANT_SQL,
   recordShareGrant,
   shouldAutoRecordShareGrant,
+  getShareAccessBasis,
+  SHARE_ACCESS_BASIS_SQL,
   userHasFamilyShareGrant,
   userHasFamilyShareGrantForRecipe,
   userHasShareAccess,
@@ -122,5 +124,32 @@ describe('family share grants (#617)', () => {
     await expect(
       userHasShareAccess('recipe-uuid-1', 'viewer-uuid', mockQuery),
     ).resolves.toBe(false);
+  });
+});
+
+describe('getShareAccessBasis (#617)', () => {
+  beforeEach(() => {
+    mockQuery.mockReset();
+  });
+
+  test('reads both bases from one query', async () => {
+    mockQuery.mockResolvedValue(
+      makeQueryResult([{has_individual_grant: false, has_family_grant: true}]),
+    );
+    await expect(
+      getShareAccessBasis('recipe-uuid-1', 'viewer-uuid', mockQuery),
+    ).resolves.toEqual({hasIndividualGrant: false, hasFamilyGrant: true});
+    expect(mockQuery).toHaveBeenCalledTimes(1);
+    expect(mockQuery).toHaveBeenCalledWith(SHARE_ACCESS_BASIS_SQL, [
+      'recipe-uuid-1',
+      'viewer-uuid',
+    ]);
+  });
+
+  test('defaults both bases to false when no row comes back', async () => {
+    mockQuery.mockResolvedValue(makeQueryResult([]));
+    await expect(
+      getShareAccessBasis('recipe-uuid-1', 'viewer-uuid', mockQuery),
+    ).resolves.toEqual({hasIndividualGrant: false, hasFamilyGrant: false});
   });
 });

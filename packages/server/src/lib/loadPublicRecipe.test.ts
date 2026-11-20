@@ -131,13 +131,23 @@ describe('loadPublicRecipe family sharing (#617)', () => {
       if (sql.includes('recipe_ratings rr')) {
         return Promise.resolve(makeQueryResult([]));
       }
-      if (
-        sql.includes('family_share_grants') ||
-        sql.includes('recipe_share_grants')
-      ) {
+      if (sql.includes('has_family_grant')) {
+        // The combined basis query: family basis only — an individual-only
+        // lookup must NOT see a grant in this fixture, so reverting the
+        // read check to per-recipe grants alone fails this suite.
+        return Promise.resolve(
+          makeQueryResult([
+            {has_individual_grant: false, has_family_grant: hasFamily},
+          ]),
+        );
+      }
+      if (sql.includes('family_share_grants')) {
         return Promise.resolve(
           hasFamily ? makeQueryResult([{exists: 1}]) : makeQueryResult([]),
         );
+      }
+      if (sql.includes('recipe_share_grants')) {
+        return Promise.resolve(makeQueryResult([]));
       }
       return Promise.resolve(makeQueryResult([]));
     }) as typeof mockQuery);

@@ -186,6 +186,62 @@ describe('GET /account/export', () => {
     ]);
   });
 
+  test('maps owned family share designations (#617)', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockQuery
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          {
+            email: 'test@example.com',
+            display_name: null,
+            created_at: '2024-01-01T00:00:00.000Z',
+          },
+        ]),
+      )
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          {
+            recipient_user_id: 'viewer-uuid',
+            recipient_email: 'viewer@example.com',
+            created_at: '2024-01-06T00:00:00.000Z',
+          },
+        ]),
+      )
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(makeQueryResult([]))
+      .mockResolvedValueOnce(
+        makeQueryResult([
+          {
+            goal_calories_min: null,
+            goal_calories_max: null,
+            goal_protein_g_min: null,
+            goal_protein_g_max: null,
+            goal_carbs_g_min: null,
+            goal_carbs_g_max: null,
+            goal_fat_g_min: null,
+            goal_fat_g_max: null,
+            goal_satiety_score_min: null,
+            goal_satiety_score_max: null,
+          },
+        ]),
+      );
+
+    const res = await request(getApp())
+      .get('/api/account/export')
+      .set('Authorization', 'Bearer <redacted>');
+
+    expect(res.status).toBe(200);
+    expect(res.body.familyShareGrants).toEqual([
+      {
+        recipientUserId: 'viewer-uuid',
+        recipientEmail: 'viewer@example.com',
+        createdAt: '2024-01-06T00:00:00.000Z',
+      },
+    ]);
+  });
+
   test('returns 404 when the user record is missing', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery.mockResolvedValueOnce(makeQueryResult([]));
