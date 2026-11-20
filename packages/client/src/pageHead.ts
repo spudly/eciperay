@@ -101,10 +101,24 @@ export const buildStaticPageHead = (
   };
 };
 
+// Publicly reachable utility pages that must stay out of search
+// indexes (#614): they resolve through this same public head lookup —
+// the one source the client head components and the SSR layer share —
+// but carry a noindex directive with no canonical or social cards,
+// and they are NOT sitemap entries: STATIC_PUBLIC_PAGES remains the
+// indexable set, so the sitemap keeps excluding them.
+export const CONSENT_PREFERENCES_PATH = '/privacy/consent';
+
 export const buildPublicPageHead = (
   baseUrl: string,
   path: string,
 ): PageHeadConfig | undefined => {
+  if (path === CONSENT_PREFERENCES_PATH) {
+    return {
+      title: buildPageTitle('Consent Preferences'),
+      robots: 'noindex, nofollow',
+    };
+  }
   const page = STATIC_PUBLIC_PAGES.find(candidate => candidate.path === path);
   return page ? buildStaticPageHead(baseUrl, page) : undefined;
 };
