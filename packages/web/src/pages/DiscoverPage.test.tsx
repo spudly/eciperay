@@ -127,9 +127,7 @@ describe('DiscoverPage', () => {
         ),
       ).toBeInTheDocument();
     });
-    expect(
-      screen.queryByText(/match that search/),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/match that search/)).not.toBeInTheDocument();
   });
 
   test('shows the no-match state when a search was entered and nothing matches (#616)', async () => {
@@ -151,6 +149,32 @@ describe('DiscoverPage', () => {
         ),
       ).toBeInTheDocument();
     });
+  });
+
+  test('shows the filter no-match state when a non-search filter is active and nothing matches (#616)', async () => {
+    server.use(
+      http.get('http://localhost:8080/api/public/recipes', () =>
+        HttpResponse.json([]),
+      ),
+    );
+    const user = userEvent.setup();
+    await renderWithProviders(<DiscoverPage />);
+    await user.click(screen.getByRole('button', {name: 'Add a filter'}));
+    await user.click(
+      screen.getByRole('button', {name: 'Add Ingredient filter'}),
+    );
+    await user.type(
+      await screen.findByRole('textbox', {name: /ingredient/i}),
+      'truffle',
+    );
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          'No public recipes match those filters — try broadening them.',
+        ),
+      ).toBeInTheDocument();
+    });
+    expect(screen.queryByText(/No public recipes yet/)).not.toBeInTheDocument();
   });
 
   test('filters recipes by search query', async () => {

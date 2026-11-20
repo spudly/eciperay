@@ -1,6 +1,7 @@
 import {
   formatDiscoveryListMeta,
   publicRecipeDiscoveryInfiniteQueryOptions,
+  RECIPE_STATUS_FILTER_ALL,
   useRecipeListFilters,
   type RecipeStatusFilterValue,
 } from '@eciperay/client';
@@ -101,11 +102,23 @@ export const DiscoverPage = () => {
                 message:
                   'No public recipes match that search — try a broader craving.',
               })
-            : i18n._({
-                id: 'discover.emptyFeedMessage',
-                message:
-                  'No public recipes yet — new dishes show up here as cooks share them.',
-              })
+            : controls.ingredient.trim() ||
+                (controls.statusFilter &&
+                  controls.statusFilter !== RECIPE_STATUS_FILTER_ALL) ||
+                controls.minCalories.trim() ||
+                controls.maxCalories.trim() ||
+                controls.minSatiety.trim() ||
+                controls.maxSatiety.trim()
+              ? i18n._({
+                  id: 'discover.emptyFilterMessage',
+                  message:
+                    'No public recipes match those filters — try broadening them.',
+                })
+              : i18n._({
+                  id: 'discover.emptyFeedMessage',
+                  message:
+                    'No public recipes yet — new dishes show up here as cooks share them.',
+                })
         }
         errorMessage={
           error

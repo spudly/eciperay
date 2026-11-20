@@ -640,11 +640,22 @@ export const RecipesPage = () => {
                 id: 'discover.emptySearchTitle',
                 message: 'No public recipes match your search.',
               })
-            : i18n._({
-                id: 'discover.emptyFeedMessage',
-                message:
-                  'No public recipes yet — new dishes show up here as cooks share them.',
-              })
+            : controls.ingredient.trim() ||
+                (controls.statusFilter &&
+                  controls.statusFilter !== RECIPE_STATUS_FILTER_ALL) ||
+                controls.minCalories.trim() ||
+                controls.maxCalories.trim() ||
+                controls.minSatiety.trim() ||
+                controls.maxSatiety.trim()
+              ? i18n._({
+                  id: 'discover.emptyFilterTitle',
+                  message: 'No public recipes match those filters.',
+                })
+              : i18n._({
+                  id: 'discover.emptyFeedMessage',
+                  message:
+                    'No public recipes yet — new dishes show up here as cooks share them.',
+                })
         }
         discoveryErrorMessage={
           discoveryQuery.isError && discoveryRecipes.length === 0
