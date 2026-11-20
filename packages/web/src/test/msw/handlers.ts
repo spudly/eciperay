@@ -776,6 +776,29 @@ export const handlers = [
     `${API}/api/account/personal-access-tokens/:id`,
     () => new HttpResponse(null, {status: 204}),
   ),
+  http.get(`${API}/api/account/family-sharing`, () =>
+    HttpResponse.json([]),
+  ),
+  http.post(`${API}/api/account/family-sharing`, async ({request}) => {
+    const body = (await request.json()) as {email?: string};
+    if (!body.email?.trim()) {
+      return HttpResponse.json({error: 'Validation failed'}, {status: 400});
+    }
+    return HttpResponse.json(
+      {
+        ownerUserId: 'user-uuid-1',
+        recipientUserId: 'recipient-uuid-1',
+        recipientEmail: body.email,
+        recipientDisplayName: null,
+        createdAt: '2026-11-20T00:00:00.000Z',
+      },
+      {status: 201},
+    );
+  }),
+  http.delete(
+    `${API}/api/account/family-sharing/:recipientUserId`,
+    () => new HttpResponse(null, {status: 204}),
+  ),
   http.get(`${API}/api/meals`, () => HttpResponse.json([])),
   http.get(`${API}/api/meals/:id`, ({params}) =>
     HttpResponse.json({

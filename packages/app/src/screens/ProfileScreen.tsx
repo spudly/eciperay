@@ -7,13 +7,22 @@ import {
 import {useLingui} from '@lingui/react';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useState} from 'react';
-import type {AuthorDisplaySettings, NutritionGoals} from '@eciperay/types';
+import {Alert} from 'react-native';
+import type {
+  AuthorDisplaySettings,
+  FamilyShareGrant,
+  NutritionGoals,
+} from '@eciperay/types';
 
 import {ProfilePage} from '@spudly/ui';
 
 import {LegalLinks} from '../components/LegalLinks';
 import {AccessTokensSection} from '../hosts/profile/AccessTokensSection';
 import {AuthorDisplayForm} from '../hosts/profile/AuthorDisplayForm';
+import {
+  FamilySharingForm,
+  grantLabel,
+} from '../hosts/profile/FamilySharingForm';
 import {NutritionGoalsForm} from '../hosts/profile/NutritionGoalsForm';
 import {ProfileFeedbackPreference} from '../hosts/profile/ProfileFeedbackPreference';
 import {api} from '../lib/api';
@@ -96,6 +105,67 @@ export const ProfileScreen = () => {
     },
   });
 
+  // --- Family sharing (#617) ---
+  const familySharingUserId = session?.user.id ?? 'anonymous';
+  const [familyEmail, setFamilyEmail] = useState('');
+  const [familyError, setFamilyError] = useState<string | null>(null);
+
+  const {
+    data: familyGrants = [],
+    isLoading: familyLoading,
+    isError: familyLoadFailed,
+    error: familyLoadError,
+  } = useQuery({
+    queryKey: queryKeys.familySharing(familySharingUserId),
+    queryFn: () => api.account.listFamilySharing(),
+  });
+
+  const invalidateFamily = () =>
+    queryClient.invalidateQueries({
+      queryKey: queryKeys.familySharing(familySharingUserId),
+    });
+
+  const addFamilyMutation = useMutation({
+    mutationFn: (email: string) => api.account.createFamilySharing(email),
+    onSuccess: () => {
+      setFamilyEmail('');
+      setFamilyError(null);
+      void invalidateFamily();
+    },
+    onError: error => {
+      setFamilyError(errorMessage(error));
+    },
+  });
+
+  const removeFamilyMutation = useMutation({
+    mutationFn: (recipientUserId: string) =>
+      api.account.deleteFamilySharing(recipientUserId),
+    onSuccess: () => {
+      setFamilyError(null);
+      void invalidateFamily();
+    },
+    onError: error => {
+      setFamilyError(errorMessage(error));
+    },
+  });
+
+  const handleRemoveFamily = (grant: FamilyShareGrant) => {
+    Alert.alert(
+      'Remove family sharing',
+      `Remove family sharing for ${grantLabel(grant)}? They will no longer see your private recipes unless a recipe was shared with them individually.`,
+      [
+        {text: 'Cancel', style: 'cancel'},
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: () => {
+            removeFamilyMutation.mutate(grant.recipientUserId);
+          },
+        },
+      ],
+    );
+  };
+
   return (
     <ProfilePage
       email={session?.user.email ?? null}
@@ -134,6 +204,31 @@ export const ProfileScreen = () => {
             onSave={() => {
               saveAuthorDisplayMutation.mutate();
             }}
+          />
+          <FamilySharingForm
+            grants={familyGrants}
+            isLoading={familyLoading}
+            email={familyEmail}
+            onEmailChange={setFamilyEmail}
+            adding={addFamilyMutation.isPending}
+            removingId={
+              removeFamilyMutation.isPending
+                ? removeFamilyMutation.variables
+                : null
+            }
+            error={
+              familyError ??
+              (familyLoadFailed
+                ? `Could not load your family sharing designations: ${errorMessage(familyLoadError)}`
+                : null)
+            }
+            onAdd={() => {
+              const nextEmail = familyEmail.trim();
+              if (nextEmail) {
+                addFamilyMutation.mutate(nextEmail);
+              }
+            }}
+            onRemove={handleRemoveFamily}
           />
           <AccessTokensSection />
         </>
