@@ -1,7 +1,7 @@
 import {queryKeys, useAuth} from '@eciperay/client';
+import {RouteErrorPage} from '@spudly/ui';
 import {useQuery} from '@tanstack/react-query';
 import {Navigate, Outlet} from 'react-router-dom';
-import {Button, Text, YStack} from 'tamagui';
 
 import {eciperay} from '../lib/api.js';
 
@@ -19,7 +19,6 @@ export const AdminGuard = () => {
     data: me,
     isLoading,
     isError,
-    refetch,
   } = useQuery({
     // Account-scoped key (#650 review): a shared QueryClient outlives
     // an account switch, so an unscoped key could render the previous
@@ -33,26 +32,19 @@ export const AdminGuard = () => {
   }
 
   // A failed /auth/me is not a non-admin verdict (#650 review): show an
-  // explicit error with a retry instead of redirecting an admin away as
-  // if the server had confirmed they are not an admin.
+  // explicit error instead of redirecting an admin away as if the
+  // server had confirmed they are not an admin. The error surface is
+  // the DS RouteErrorPage (Stephen, 2026-11-21: app code never styles
+  // its own panels — DS #119); RouteErrorPage has no retry action yet,
+  // so the way forward is its home link until the DS gap
+  // (design-system #765) adds an action slot.
   if (isError) {
     return (
-      <YStack
-        flex={1}
-        alignItems="center"
-        justifyContent="center"
-        gap="$3"
-        padding="$4"
-      >
-        <Text>Something went wrong loading your profile.</Text>
-        <Button
-          onPress={() => {
-            void refetch();
-          }}
-        >
-          Try again
-        </Button>
-      </YStack>
+      <RouteErrorPage
+        variant="error"
+        title="Something went wrong"
+        message="Something went wrong loading your profile."
+      />
     );
   }
 

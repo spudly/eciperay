@@ -1,4 +1,4 @@
-import {fireEvent, screen} from '@testing-library/react';
+import {screen} from '@testing-library/react';
 import {http, HttpResponse} from 'msw';
 import {Route, Routes} from 'react-router-dom';
 
@@ -48,22 +48,26 @@ describe('AdminGuard (#621)', () => {
     expect(await screen.findByText('Tags Admin Page')).toBeInTheDocument();
   });
 
-  test('shows an error with retry when the profile load fails, then renders for an admin after retry', async () => {
+  test('shows the DS error page when the profile load fails', async () => {
     server.use(
       http.get(`${API}/api/auth/me`, () =>
         HttpResponse.json({message: 'boom'}, {status: 500}),
       ),
     );
     await renderGuarded();
-    // A failed load is not a non-admin verdict: no redirect, an
-    // explicit error with a retry action instead.
+    // A failed load is not a non-admin verdict: no redirect — the DS
+    // RouteErrorPage renders instead (app code never styles its own
+    // error panels, DS #119), with the profile-error copy as its
+    // message and its home link as the way forward. A retry action
+    // slot on RouteErrorPage is the DS gap design-system #765.
     expect(
       await screen.findByText('Something went wrong loading your profile.'),
     ).toBeInTheDocument();
     expect(screen.queryByText('Recipes Page')).not.toBeInTheDocument();
-    mockMe(true);
-    fireEvent.click(screen.getByRole('button', {name: 'Try again'}));
-    expect(await screen.findByText('Tags Admin Page')).toBeInTheDocument();
+    expect(screen.queryByText('Tags Admin Page')).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('link', {name: 'Go to the home page'}),
+    ).toHaveAttribute('href', '/');
   });
 
   test('redirects a non-admin to /recipes', async () => {

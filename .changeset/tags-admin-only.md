@@ -15,4 +15,7 @@ tag names server-side and is unaffected). The new `GET /auth/me` profile
 response exposes the server-computed `isAdmin` flag on the shared `User` type
 and client auth API. On web, the Tags nav entry is hidden for non-admins and the
 `/tags` route redirects non-admins to `/recipes`; on native, the Tags screen is
-not registered and the profile Tags link is hidden for non-admins.
+not registered and the profile Tags link is hidden for non-admins. On web, a
+failed profile load renders through design-system composition only (the DS error
+page in the admin guard; a DS header retry action in the signed-in shell) — no
+app-styled error panels.

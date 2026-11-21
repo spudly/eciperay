@@ -9,8 +9,6 @@ import {
   useSearchParams,
 } from 'react-router-dom';
 
-import {Button, Text, YStack} from 'tamagui';
-
 import {eciperay} from '../lib/api.js';
 import {sharedFooter} from '../pages/legal/legalDocumentData.js';
 
@@ -96,25 +94,28 @@ export const AuthenticatedShell = ({children}: AuthenticatedShellProps) => {
       {/* The authenticated head (#414) the retired host shell
           applied: title + noindex for every signed-in page. */}
       <AuthenticatedPageHead />
-      {meLoadFailed ? (
-        <YStack
-          alignItems="center"
-          gap="$2"
-          padding="$3"
-        >
-          <Text>Something went wrong loading your profile.</Text>
-          <Button
-            onPress={() => {
-              void refetchMe();
-            }}
-          >
-            Try again
-          </Button>
-        </YStack>
-      ) : null}
       <AppShellPage
         brand={{label: 'Eciperay', href: '/'}}
         navItems={visibleNavItems}
+        // A failed /auth/me is not a non-admin verdict (#650 review):
+        // the failure surfaces as a DS-rendered header action (data +
+        // callback only — app code never styles its own panels,
+        // Stephen 2026-11-21 / DS #119) that retries the load, while
+        // Tags stays hidden and the rest of the shell keeps working.
+        // A proper shell notice slot is the DS gap design-system #765.
+        actions={
+          meLoadFailed
+            ? [
+                {
+                  id: 'profile-load-retry',
+                  label: 'Try again',
+                  onPress: () => {
+                    void refetchMe();
+                  },
+                },
+              ]
+            : undefined
+        }
         navLabel="Eciperay sections"
         activeItemId={activeItemIdFor(pathname)}
         search={{

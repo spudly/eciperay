@@ -77,11 +77,13 @@ describe('AuthenticatedShell', () => {
         </Route>
       </Routes>,
     );
-    // A failed /auth/me is not a non-admin verdict (#650 review): an
-    // explicit error with retry, Tags stays hidden, and the rest of
+    // A failed /auth/me is not a non-admin verdict (#650 review): the
+    // failure surfaces as a DS-rendered header retry action (data +
+    // callback only — no app-styled panel, DS #119; a shell notice
+    // slot is design-system #765), Tags stays hidden, and the rest of
     // the shell keeps working.
     expect(
-      await screen.findByText('Something went wrong loading your profile.'),
+      await screen.findByRole('button', {name: 'Try again'}),
     ).toBeInTheDocument();
     expect(screen.getByText('Page Content')).toBeInTheDocument();
     expect(screen.queryByRole('link', {name: 'Tags'})).not.toBeInTheDocument();
