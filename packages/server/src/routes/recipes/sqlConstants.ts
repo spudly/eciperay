@@ -17,7 +17,7 @@ export const buildListRecipesSql = (
   sort: RecipeListSort,
   sortDir: RecipeListSortDir,
   searchSql = '',
-  relevanceScore = '0',
+  relevanceScore = '(0)',
 ) => `
   select r.id, r.status, r.visibility, r.slug, r.content_revision,
          r.cloned_from_recipe_id, r.star_rating, r.active_version_id,
@@ -48,7 +48,7 @@ export const buildListSharedWithMeSql = (
   sort: RecipeListSort,
   sortDir: RecipeListSortDir,
   searchSql = '',
-  relevanceScore = '0',
+  relevanceScore = '(0)',
 ) => `
   select r.id, r.status, r.visibility, r.slug, r.content_revision,
          r.cloned_from_recipe_id, r.star_rating, r.active_version_id,
@@ -92,7 +92,7 @@ export const buildListPublicRecipesSql = (
   sort: RecipeListSort,
   sortDir: RecipeListSortDir,
   searchSql = '',
-  relevanceScore = '0',
+  relevanceScore = '(0)',
 ) => `
   select r.id, r.slug, r.visibility,
          rv.title, rv.description, rv.servings, rv.prep_time_min,

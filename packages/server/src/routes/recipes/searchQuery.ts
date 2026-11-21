@@ -369,7 +369,7 @@ export const buildSearchQuerySql = (
       // LIKE pattern).
       values.push(term.value);
       const rawParam = `$${startIndex + values.length - 1}`;
-      const fuzzy = `(similarity(rv.title, ${rawParam}) > ${FUZZY_SIMILARITY_THRESHOLD} or exists (select 1 from ingredients i where i.recipe_version_id = rv.id and similarity(i.name, ${rawParam}) > ${FUZZY_SIMILARITY_THRESHOLD}))`;
+      const fuzzy = `(similarity(rv.title, ${rawParam}::text) > ${FUZZY_SIMILARITY_THRESHOLD} or exists (select 1 from ingredients i where i.recipe_version_id = rv.id and similarity(i.name, ${rawParam}::text) > ${FUZZY_SIMILARITY_THRESHOLD}))`;
       conditions.push(`(${condition} or ${fuzzy})`);
       continue;
     }
@@ -478,15 +478,18 @@ export const buildSearchQuerySql = (
 
 // Relevance weights (#612): a title whole-word exact match outranks a title
 // substring, which outranks an ingredient match, which outranks a
-// description match; trigram similarity contributes at most
-// RELEVANCE_SIMILARITY_WEIGHT per field, so a fuzzy-only match always scores
-// below every exact match.
+// description match. Trigram similarity contributes at most
+// RELEVANCE_SIMILARITY_WEIGHT per field (title + best ingredient), so the
+// total bonus is at most 8 — below the smallest gap between tiers (10,
+// ingredient vs description) — which keeps the tier order strict: a
+// fuzzy-only match always scores below every exact match, and the bonus can
+// never lift a lower tier above a higher one.
 const RELEVANCE_TITLE_WHOLE_WORD = 100;
 const RELEVANCE_TITLE_SUBSTRING = 50;
 const RELEVANCE_INGREDIENT = 30;
 const RELEVANCE_TAG = 30;
 const RELEVANCE_DESCRIPTION = 20;
-const RELEVANCE_SIMILARITY_WEIGHT = 10;
+const RELEVANCE_SIMILARITY_WEIGHT = 4;
 
 const FIELD_RELEVANCE_WEIGHTS: Record<SearchTextField, number> = {
   title: RELEVANCE_TITLE_SUBSTRING,
@@ -547,7 +550,7 @@ export const relevanceScoreSql = (
     if (!term.phrase) {
       const wholeWord = param(`\\y${escapeRegExp(term.value)}\\y`);
       branches.push(
-        `when rv.title ~* ${wholeWord} then ${RELEVANCE_TITLE_WHOLE_WORD}`,
+        `when rv.title ~* ${wholeWord}::text then ${RELEVANCE_TITLE_WHOLE_WORD}`,
       );
     }
     branches.push(
@@ -558,7 +561,7 @@ export const relevanceScoreSql = (
     let score = `(case ${branches.join(' ')} else 0 end)`;
     if (isFuzzyEligible(term)) {
       const raw = param(term.value);
-      score += ` + similarity(rv.title, ${raw}) * ${RELEVANCE_SIMILARITY_WEIGHT} + coalesce((select max(similarity(i.name, ${raw})) from ingredients i where i.recipe_version_id = rv.id), 0) * ${RELEVANCE_SIMILARITY_WEIGHT}`;
+      score += ` + similarity(rv.title, ${raw}::text) * ${RELEVANCE_SIMILARITY_WEIGHT} + coalesce((select max(similarity(i.name, ${raw}::text)) from ingredients i where i.recipe_version_id = rv.id), 0) * ${RELEVANCE_SIMILARITY_WEIGHT}`;
     }
     terms.push(score);
   }
@@ -576,7 +579,9 @@ export const relevanceScoreSql = (
   }
 
   return {
-    sql: terms.length > 0 ? `(${terms.join(' + ')})` : '0',
+    // Parenthesized even for the zero score: a bare `0` in ORDER BY is a
+    // select-list position reference in Postgres, not a constant.
+    sql: terms.length > 0 ? `(${terms.join(' + ')})` : '(0)',
     values,
   };
 };

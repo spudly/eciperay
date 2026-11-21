@@ -176,10 +176,10 @@ describe('buildSearchQuerySql', () => {
     );
     expect(values).toEqual(['%chiken%', 'chiken']);
     expect(sql).toContain(
-      `similarity(rv.title, $13) > ${FUZZY_SIMILARITY_THRESHOLD}`,
+      `similarity(rv.title, $13::text) > ${FUZZY_SIMILARITY_THRESHOLD}`,
     );
     expect(sql).toContain(
-      `similarity(i.name, $13) > ${FUZZY_SIMILARITY_THRESHOLD}`,
+      `similarity(i.name, $13::text) > ${FUZZY_SIMILARITY_THRESHOLD}`,
     );
     // The exact ILIKE condition is still present and ORed, never replaced.
     expect(sql).toContain("rv.title ilike $12 escape '\\'");
@@ -334,7 +334,7 @@ describe('buildSearchQuerySql', () => {
 describe('relevanceScoreSql (#612)', () => {
   test('empty query scores every row 0 with no bind values', () => {
     expect(relevanceScoreSql(EMPTY_SEARCH_QUERY, 12)).toEqual({
-      sql: '0',
+      sql: '(0)',
       values: [],
     });
   });
@@ -346,21 +346,21 @@ describe('relevanceScoreSql (#612)', () => {
     );
     // Bind order: substring pattern, whole-word regex, raw word (similarity).
     expect(values).toEqual(['%chicken%', '\\ychicken\\y', 'chicken']);
-    expect(sql).toContain('rv.title ~* $13 then 100');
+    expect(sql).toContain('rv.title ~* $13::text then 100');
     expect(sql).toContain("rv.title ilike $12 escape '\\' then 50");
     expect(sql).toContain('i.name ilike $12');
     expect(sql).toContain('then 30');
     expect(sql).toContain("coalesce(rv.description, '') ilike $12");
     expect(sql).toContain('then 20');
     // Similarity contributes a bounded bonus, weighted by the score itself.
-    expect(sql).toContain('similarity(rv.title, $14) * 10');
-    expect(sql).toContain('max(similarity(i.name, $14))');
+    expect(sql).toContain('similarity(rv.title, $14::text) * 4');
+    expect(sql).toContain('max(similarity(i.name, $14::text))');
   });
 
   test('negated terms contribute nothing', () => {
     expect(
       relevanceScoreSql(parseSearchSyntax('-chicken'), 12),
-    ).toEqual({sql: '0', values: []});
+    ).toEqual({sql: '(0)', values: []});
   });
 
   test('field qualifiers contribute their field weight', () => {

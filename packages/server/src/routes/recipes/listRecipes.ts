@@ -61,7 +61,7 @@ export const listRecipes = async (
           params.searchQuery,
           baseValues.length + searchQuerySql.values.length + 1,
         )
-      : {sql: '0', values: [] as (string | number)[]};
+      : {sql: '(0)', values: [] as (string | number)[]};
   const result = await queryFn(
     buildListRecipesSql(
       params.sort,

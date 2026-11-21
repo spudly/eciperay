@@ -9,6 +9,7 @@ import {
 import {
   buildSearchQuerySql,
   parseSearchSyntax,
+  relevanceScoreSql,
 } from '../recipes/listFilterParams.js';
 import {
   LIST_PUBLIC_RECIPES_SQL,
@@ -111,6 +112,35 @@ describe('GET /public/recipes', () => {
       // Explicit sort=rating wins over the relevance default (#612); the
       // search binds are the LIKE pattern plus the raw fuzzy word.
       [25, 10, null, ...emptyFilterBinds, '%pasta%', 'pasta'],
+    );
+  });
+
+  test('a search with no explicit sort uses the relevance default (#612)', async () => {
+    mockQuery.mockResolvedValue(makeQueryResult([]));
+
+    const res = await request(getApp()).get(
+      '/api/public/recipes?search=pasta',
+    );
+
+    expect(res.status).toBe(200);
+    const baseBinds = [DEFAULT_RECIPE_LIST_LIMIT, 0, null, ...emptyFilterBinds];
+    const compiled = buildSearchQuerySql(
+      parseSearchSyntax('pasta'),
+      baseBinds.length + 1,
+      'public',
+    );
+    const relevance = relevanceScoreSql(
+      parseSearchSyntax('pasta'),
+      baseBinds.length + compiled.values.length + 1,
+    );
+    expect(mockQuery).toHaveBeenCalledWith(
+      buildListPublicRecipesSql(
+        'relevance',
+        'desc',
+        compiled.sql,
+        relevance.sql,
+      ),
+      [...baseBinds, ...compiled.values, ...relevance.values],
     );
   });
 

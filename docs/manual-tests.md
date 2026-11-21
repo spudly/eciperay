@@ -291,6 +291,18 @@ without); one recipe may be created fresh in case 1.
     loads its original image untouched. Replace a recipe's image with a new
     one and reload the list and detail views. **Expected:** the new image
     shows everywhere — no stale thumbnail or hero from the old image.
+21. **Fuzzy search and relevance ranking (#612).** On `/recipes`, search with
+    a one-letter typo of a word in a recipe's title (e.g. `chiken` for a
+    chicken recipe). **Expected:** the intended recipe appears, below any
+    exact matches — an exact-match search (e.g. `chicken`) lists exact title
+    matches first, then ingredient matches, then description matches, with
+    fuzzy near-misses last, never flooding the top of the list. Search with
+    an explicit sort (Newest or Rating) while a search term is present:
+    **Expected:** the chosen sort wins and results are no longer
+    relevance-ordered. Repeat the typo search on Discover and on Shared
+    with me: **Expected:** the typo finds the intended recipe on all three
+    surfaces. Search with only a qualifier (`status:perfected`):
+    **Expected:** the filtered list loads normally (no error).
 
 **Run when:**
 `packages/app/src/screens/{Recipes,RecipeDetail,EditRecipe,EditVersion,ManualEntry,SharedWithMe,Home}Screen.tsx`,
@@ -311,6 +323,8 @@ page components, `packages/server` recipe routes,
 `packages/server/src/lib/mapRowToRecipeDetail.ts`,
 `packages/server/src/lib/recipeProvenance.ts`,
 `packages/server/src/routes/recipes/searchQuery.ts`,
+`packages/server/src/routes/recipes/{listFilterParams,sqlConstants}.ts`,
+`packages/server/src/db/migrations/031_search_trgm.sql`,
 `packages/server/src/routes/ssr/**`,
 `packages/server/src/lib/renderPublicRecipe.tsx`,
 `packages/server/src/lib/loadPublicRecipe.ts`, the SSR route registration in
@@ -538,7 +552,8 @@ mode; there is no Playwright coverage of meals. The cases below are manual._
 `packages/server/src/lib/conditionalWrite.ts`,
 `packages/server/src/lib/mealSchemas.ts`, `packages/mcp-server/src/tools.ts`,
 `packages/mcp-server/src/eciperayClient.ts`, `packages/server` recipe search
-(`packages/server/src/routes/recipes/{listFilterParams,sqlConstants}.ts`),
+(`packages/server/src/routes/recipes/{listFilterParams,searchQuery,sqlConstants}.ts`,
+`packages/server/src/db/migrations/031_search_trgm.sql`),
 `packages/client/src/useMealPlanEditForm.ts`,
 `packages/server/src/lib/saveRecipeMetadata.ts`,
 `packages/server/src/lib/saveRecipeFromInput.ts`,
@@ -663,6 +678,8 @@ routes, `packages/server/src/lib/saveMealPlan.ts`,
 `packages/server/src/db/migrations/024_nutrition_goal_ranges.sql`,
 `packages/server/src/db/migrations/025_eat_servings_fractional.sql`,
 `packages/client/src/mealPlanWeek.ts`,
+`packages/server/src/routes/recipes/{listFilterParams,searchQuery,sqlConstants}.ts`,
+`packages/server/src/db/migrations/031_search_trgm.sql`,
 `packages/server/src/db/migrations/028_meal_plan_entry_day.sql`.
 
 ---

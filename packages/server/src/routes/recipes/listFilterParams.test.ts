@@ -16,6 +16,7 @@ import {
   parseSort,
   parseSortDir,
   parseStatusFilter,
+  relevanceScoreSql,
 } from './listFilterParams.js';
 
 describe('listFilterParams parsers', () => {
@@ -157,12 +158,27 @@ describe('relevance defaulting (#612)', () => {
     ).toBe('rating');
   });
 
+  test('a qualifier-only search scores (0), never a bare ORDER BY 0', () => {
+    // search=status:perfected has no positive text terms: it still
+    // defaults to relevance, and Postgres would reject `order by 0`
+    // (a bare integer is a select-list position there).
+    const params = parseRecipeListFilterParams({
+      query: {search: 'status:perfected'},
+    });
+    expect(params.sort).toBe('relevance');
+    const score = relevanceScoreSql(params.searchQuery, 1);
+    expect(score).toEqual({sql: '(0)', values: []});
+    expect(orderBySql('relevance', 'desc', {relevanceScore: score.sql})).toBe(
+      '(0) desc, rv.updated_at desc, rv.id desc',
+    );
+  });
+
   test('orderBySql orders by the relevance score, then newest, then id', () => {
     expect(orderBySql('relevance', 'desc', {relevanceScore: '(case)'})).toBe(
       '(case) desc, rv.updated_at desc, rv.id desc',
     );
     expect(orderBySql('relevance', 'desc')).toBe(
-      '0 desc, rv.updated_at desc, rv.id desc',
+      '(0) desc, rv.updated_at desc, rv.id desc',
     );
   });
 });

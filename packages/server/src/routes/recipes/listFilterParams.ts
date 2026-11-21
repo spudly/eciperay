@@ -238,7 +238,7 @@ export const orderBySql = (
       // Best match first (#612); ties fall back to newest, then the unique
       // rv.id tie-breaker. sortDir does not apply: relevance is inherently
       // descending.
-      return `${options?.relevanceScore ?? '0'} desc, rv.updated_at desc, rv.id desc`;
+      return `${options?.relevanceScore ?? '(0)'} desc, rv.updated_at desc, rv.id desc`;
     }
     case 'rating': {
       return `community_rating_average ${dir} ${nulls}, rv.updated_at desc, rv.id desc`;

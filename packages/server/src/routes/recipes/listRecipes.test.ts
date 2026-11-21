@@ -182,7 +182,7 @@ describe('GET /recipes', () => {
       'pasta',
     ]);
     const sql = mockQuery.mock.calls[mockQuery.mock.calls.length - 1]?.[0];
-    expect(sql).toContain('similarity(rv.title, $13)');
+    expect(sql).toContain('similarity(rv.title, $13::text)');
     expect(sql).toContain('desc, rv.updated_at desc, rv.id desc');
   });
 
@@ -195,8 +195,8 @@ describe('GET /recipes', () => {
       .set('Authorization', 'Bearer valid-token');
     expect(res.status).toBe(200);
     const sql = mockQuery.mock.calls[mockQuery.mock.calls.length - 1]?.[0];
-    expect(sql).toContain('similarity(rv.title, $13) > 0.3');
-    expect(sql).toContain('similarity(i.name, $13) > 0.3');
+    expect(sql).toContain('similarity(rv.title, $13::text) > 0.3');
+    expect(sql).toContain('similarity(i.name, $13::text) > 0.3');
   });
 
   test('an explicit sort with a search still orders by that sort (#612)', async () => {
@@ -209,7 +209,7 @@ describe('GET /recipes', () => {
     expect(res.status).toBe(200);
     const sql = mockQuery.mock.calls[mockQuery.mock.calls.length - 1]?.[0];
     expect(sql).toContain('order by rv.updated_at desc, rv.id desc');
-    expect(sql).not.toContain('similarity(rv.title, $14)');
+    expect(sql).not.toContain('~*');
     // Only the search condition's own fuzzy bind is present.
     expect(mockQuery).toHaveBeenCalledWith(expect.any(String), [
       'user-uuid-1',
