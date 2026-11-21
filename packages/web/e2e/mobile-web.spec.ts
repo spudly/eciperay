@@ -21,6 +21,9 @@ test.describe('mobile web layout (390px)', () => {
   test('every nav destination is reachable and no label is clipped', async ({
     page,
   }) => {
+    // The all-destinations list includes Tags, which is admin-only
+    // (#621): install the admin fixture so the shell offers it.
+    await installMocks(page, {signedIn: true, admin: true});
     await page.goto('/recipes');
     await expect(page.getByText('E2E Tomato Pasta')).toBeVisible();
 
@@ -28,9 +31,8 @@ test.describe('mobile web layout (390px)', () => {
     // the host's navLabel, not as a <nav> inside a <header>.
     const nav = page.getByRole('navigation', {name: 'Eciperay sections'});
     // No 'Shared with me': it lives on the unified Recipes browse
-    // now (#409) instead of taking a nav slot. No 'Tags' either: the
-    // Tags page is admin-only (#621) and the mock user is not an admin.
-    const labels = ['Home', 'Recipes', 'Meals', 'Add', 'Profile'];
+    // now (#409) instead of taking a nav slot.
+    const labels = ['Home', 'Recipes', 'Meals', 'Add', 'Tags', 'Profile'];
     for (const label of labels) {
       const link = nav.getByRole('link', {name: label});
       await expect(link).toBeVisible();
@@ -45,6 +47,15 @@ test.describe('mobile web layout (390px)', () => {
       () => document.documentElement.scrollWidth,
     );
     expect(scrollWidth).toBeLessThanOrEqual(390);
+  });
+
+  test('the Tags nav destination is hidden for a non-admin', async ({page}) => {
+    // Default fixture is a non-admin (#621): the shell must not offer
+    // the admin-only Tags destination at all.
+    await page.goto('/recipes');
+    await expect(page.getByText('E2E Tomato Pasta')).toBeVisible();
+    const nav = page.getByRole('navigation', {name: 'Eciperay sections'});
+    await expect(nav.getByRole('link', {name: 'Tags'})).toHaveCount(0);
   });
 
   test('recipe cards span the list width and titles get a usable column', async ({

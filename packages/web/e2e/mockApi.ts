@@ -65,7 +65,7 @@ const versionSummary = {
 
 export const installMocks = async (
   page: Page,
-  options: {signedIn: boolean},
+  options: {signedIn: boolean; admin?: boolean},
 ): Promise<{pageErrors: string[]}> => {
   const pageErrors: string[] = [];
   page.on('pageerror', error => {
@@ -121,7 +121,7 @@ export const installMocks = async (
           supabaseUid: 'user-1',
           email: 'test@example.com',
           displayName: 'Test User',
-          isAdmin: false,
+          isAdmin: options.admin ?? false,
           createdAt: '2024-01-01T00:00:00.000Z',
         }),
       );

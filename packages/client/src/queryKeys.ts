@@ -45,7 +45,7 @@ export const queryKeys = {
     ['cookLogs', recipeId, versionId] as const,
   nutrition: (id: string) => ['nutrition', id] as const,
   tags: () => ['tags'] as const,
-  currentUser: () => ['currentUser'] as const,
+  currentUser: (userId: string) => ['currentUser', userId] as const,
   publicRecipe: (id: string, slug?: string, shareToken?: string) =>
     [
       'publicRecipe',

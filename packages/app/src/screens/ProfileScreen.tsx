@@ -46,7 +46,7 @@ export const ProfileScreen = () => {
   // Tag management is admin-only (#621): the Tags link on the profile
   // page is only offered to admins.
   const {data: me} = useQuery({
-    queryKey: queryKeys.currentUser(),
+    queryKey: queryKeys.currentUser(session?.user?.id ?? 'anonymous'),
     queryFn: () => api.auth.me(),
   });
 
@@ -81,7 +81,7 @@ export const ProfileScreen = () => {
 
   // Scope the cache entry to the account, as the web profile does for
   // its account-scoped keys: a shared QueryClient outlives a switch.
-  const authorDisplayUserId = session?.user.id ?? 'anonymous';
+  const authorDisplayUserId = session?.user?.id ?? 'anonymous';
   const {
     data: savedAuthorDisplay,
     isError: authorDisplayLoadFailed,
@@ -113,7 +113,7 @@ export const ProfileScreen = () => {
   });
 
   // --- Family sharing (#617) ---
-  const familySharingUserId = session?.user.id ?? 'anonymous';
+  const familySharingUserId = session?.user?.id ?? 'anonymous';
   const [familyEmail, setFamilyEmail] = useState('');
   const [familyError, setFamilyError] = useState<string | null>(null);
 

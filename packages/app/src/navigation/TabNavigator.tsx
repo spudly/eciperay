@@ -1,5 +1,5 @@
 /* eslint-disable max-lines -- tab navigator registers multiple nested stacks */
-import {queryKeys, useFeedbackShortcutEnabled} from '@eciperay/client';
+import {queryKeys, useAuth, useFeedbackShortcutEnabled} from '@eciperay/client';
 import {useLingui} from '@lingui/react';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
@@ -181,8 +181,9 @@ const ProfileStackNavigator = () => {
   // Tag management is admin-only (#621): the Tags screen is not even
   // registered for non-admins (server-computed isAdmin from /auth/me),
   // so the route is unreachable for them.
+  const {session} = useAuth();
   const {data: me} = useQuery({
-    queryKey: queryKeys.currentUser(),
+    queryKey: queryKeys.currentUser(session?.user?.id ?? 'anonymous'),
     queryFn: () => api.auth.me(),
   });
   return (

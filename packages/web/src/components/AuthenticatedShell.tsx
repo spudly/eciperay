@@ -1,5 +1,5 @@
 import {useEffect, useState, type ReactNode} from 'react';
-import {queryKeys} from '@eciperay/client';
+import {queryKeys, useAuth} from '@eciperay/client';
 import {AppShellPage, type AppShellPageNavItem} from '@spudly/ui';
 import {useQuery} from '@tanstack/react-query';
 import {
@@ -61,8 +61,12 @@ export const AuthenticatedShell = ({children}: AuthenticatedShellProps) => {
   // offered to admins (server-computed isAdmin from /auth/me). While
   // the profile loads the entry stays hidden rather than flashing an
   // admin surface at non-admins.
+  const {session} = useAuth();
   const {data: me} = useQuery({
-    queryKey: queryKeys.currentUser(),
+    // Account-scoped key (#650 review): a shared QueryClient outlives
+    // an account switch, so an unscoped key could render the previous
+    // account's isAdmin.
+    queryKey: queryKeys.currentUser(session?.user?.id ?? 'anonymous'),
     queryFn: () => eciperay.auth.me(),
   });
   const visibleNavItems = me?.isAdmin
