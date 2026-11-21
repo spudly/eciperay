@@ -1,5 +1,68 @@
 # @eciperay/client
 
+## 1.35.0
+
+### Minor Changes
+
+- 695ba21: Family sharing, Profile UI (#617, tranche 2): the Profile page (web
+  and native) gains a Family sharing section — designate another Eciperay user
+  by account email, see current designations, and remove one with confirmation
+  (removal ends that person's automatic access immediately). The client account
+  API gains list/create/delete family-sharing calls against the tranche-1
+  endpoints. Recipes shared via a family designation now carry a "Family" badge
+  in Shared With Me / the unified Recipes browse instead of the generic "Shared"
+  badge.
+- 7ee7ff6: Net carbs (carbs − fiber) now render beside total carbs everywhere a
+  recipe's carbs are shown: the recipe-detail nutrition rows, recipe card/list
+  summaries, meal and meal-plan totals and per-day rows, and meal member lines
+  on web and native. Net carbs is omitted where fiber is unknown — including
+  meal/plan totals when any contributing recipe's fiber is unknown (aggregate
+  fiber now propagates unknown instead of treating it as zero) — and plan/meal
+  totals compute it from the summed carbs and fiber via the one canonical
+  helper.
+- caf3abb: Tag management is admin-only (#621, option B): migration 031 adds a
+  `users.is_admin` boolean (default false) that defines admin. A new server
+  `requireAdmin` middleware gates `POST /tags`, `PATCH /tags/:id`, and
+  `DELETE /tags/:id` with 403 for non-admins, while `GET /tags` stays available
+  to every signed-in user (tag pickers and filtering read it; recipe save
+  resolves tag names server-side and is unaffected). The new `GET /auth/me`
+  profile response exposes the server-computed `isAdmin` flag on the shared
+  `User` type and client auth API. On web, the Tags nav entry is hidden for
+  non-admins and the `/tags` route redirects non-admins to `/recipes`; on
+  native, the Tags screen is not registered and the profile Tags link is hidden
+  for non-admins. On web, a failed profile load renders through design-system
+  composition only (the DS error page in the admin guard; a DS header retry
+  action in the signed-in shell) — no app-styled error panels.
+
+### Patch Changes
+
+- 8192961: The consent preferences page (`/privacy/consent`) now carries a
+  `noindex, nofollow` robots directive from the shared page-head builder: the
+  client head renders it, and the server injects the same directive into the
+  served HTML for that path, so crawlers are told not to index the utility page
+  even without executing JavaScript. It remains excluded from the sitemap, and
+  the public pages and public recipes stay indexable.
+- 4ee9f5e: Recipe images now load through a generic on-the-fly image resizer:
+  the server serves bucket-cached resized variants at a requested width (aspect
+  preserved, original format kept, immutable cache headers, original-image
+  fallback on any failure), replacing a recipe image deletes its cached
+  variants, and recipe cards, discovery/home thumbnails, the recipe detail hero,
+  and the public recipe page request appropriately sized images instead of
+  full-size originals.
+- 506a166: PostHog error reports and log records from the native app now carry
+  the app version and build: the app reads them from expo-application at
+  analytics creation, registers them as PostHog super properties, and the shared
+  analytics layer merges them explicitly into every captureException and log
+  call (caller-supplied values win), so error triage can tell current-build
+  errors from outdated-app noise.
+- Updated dependencies [caf2177]
+- Updated dependencies [799cdba]
+- Updated dependencies [7ee7ff6]
+- Updated dependencies [8b6dd07]
+- Updated dependencies [7075f8b]
+- Updated dependencies [caf3abb]
+  - @eciperay/types@1.35.0
+
 ## 1.34.4
 
 ### Patch Changes

@@ -1,5 +1,67 @@
 # @eciperay/types
 
+## 1.35.0
+
+### Minor Changes
+
+- caf2177: Discovery models, server core (#622, tranche 1): migration 030 adds
+  `saved_recipes` (bookmark saves), `recipe_disinterest` (hard hide — excluded
+  from every discovery surface until unhidden), `user_follows`, and
+  `recipe_interest_signals` (soft engagement signals from Stephen's approval
+  amendment: dwell/engagement records interest, not a save; a quick swipe-past
+  records disinterest, not a hide). New authenticated `/discovery` routes cover
+  save/unsave, hide/unhide plus the hidden list, follow/unfollow plus the
+  following list, recording an interest signal, and a discovery feed query that
+  excludes the requester's hidden recipes, respects recipe visibility (public
+  only), and ranks followee-authored, followee-saved, and followee-highly-rated
+  recipes and interest-signaled recipes higher while deprioritising recipes the
+  requester last signaled quick disinterest in.
+- 799cdba: Family sharing, server core (#617, tranche 1): owners can designate
+  one other account for family sharing via GET/POST/DELETE
+  /account/family-sharing. A standing family_share_grants row gives the
+  recipient view/clone access to the owner's whole recipe library — existing and
+  future recipes, private included — through the central share-access check, and
+  the Shared With Me list unions family-shared recipes with a `family` marker
+  (an individual grant wins the badge when both exist). Revoking the designation
+  deletes the row and ends family access immediately; per-recipe grants are
+  unaffected. Account export now includes family share designations.
+- 7ee7ff6: Net carbs (carbs − fiber) now render beside total carbs everywhere a
+  recipe's carbs are shown: the recipe-detail nutrition rows, recipe card/list
+  summaries, meal and meal-plan totals and per-day rows, and meal member lines
+  on web and native. Net carbs is omitted where fiber is unknown — including
+  meal/plan totals when any contributing recipe's fiber is unknown (aggregate
+  fiber now propagates unknown instead of treating it as zero) — and plan/meal
+  totals compute it from the summed carbs and fiber via the one canonical
+  helper.
+- 8b6dd07: Track recipe provenance at creation (#609, tranche 1): migration 029
+  adds `recipes.provenance_source`/`provenance_detail` with a backfill from each
+  recipe's first version; the shared save path now derives and validates
+  provenance from the creation path (URL imports must record a valid source URL)
+  and applies public-by-default visibility for new recipes (shared clones and
+  unattributed `other` stay private). Recipe detail responses now carry the
+  recipe's provenance.
+- 7075f8b: Simplify recipe versioning (#610, tranche 1): an edit that branches
+  from the active version now becomes the current version in the same
+  transaction by default, so editing the current recipe goes live immediately
+  (an explicit `activate: false` still keeps the branched version as a draft;
+  draft-version in-place edits are unchanged). Edits also accept an optional
+  `changeSummary` naming the edit, stored on the branched version's
+  `change_summary` for internal version tracking; `RecipeVersionInput` in
+  `@eciperay/types` gains the optional `changeSummary` field.
+- caf3abb: Tag management is admin-only (#621, option B): migration 031 adds a
+  `users.is_admin` boolean (default false) that defines admin. A new server
+  `requireAdmin` middleware gates `POST /tags`, `PATCH /tags/:id`, and
+  `DELETE /tags/:id` with 403 for non-admins, while `GET /tags` stays available
+  to every signed-in user (tag pickers and filtering read it; recipe save
+  resolves tag names server-side and is unaffected). The new `GET /auth/me`
+  profile response exposes the server-computed `isAdmin` flag on the shared
+  `User` type and client auth API. On web, the Tags nav entry is hidden for
+  non-admins and the `/tags` route redirects non-admins to `/recipes`; on
+  native, the Tags screen is not registered and the profile Tags link is hidden
+  for non-admins. On web, a failed profile load renders through design-system
+  composition only (the DS error page in the admin guard; a DS header retry
+  action in the signed-in shell) — no app-styled error panels.
+
 ## 1.34.4
 
 No changes in this release.
