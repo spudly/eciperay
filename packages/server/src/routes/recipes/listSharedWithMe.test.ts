@@ -6,7 +6,11 @@ import {createMockQuery} from '../../test/mockQuery.js';
 import {nockSupabaseGetUser} from '../../test/mockNockSupabase.js';
 import {lazyTestApp} from '../../test/lazyTestApp.js';
 
-import {buildSearchQuerySql, parseSearchSyntax} from './searchQuery.js';
+import {
+  buildSearchQuerySql,
+  parseSearchSyntax,
+  relevanceScoreSql,
+} from './searchQuery.js';
 import {
   buildListSharedWithMeSql,
   LIST_SHARED_WITH_ME_SQL,
@@ -111,10 +115,22 @@ describe('GET /recipes/shared-with-me', () => {
       baseValues.length + 1,
       'shared',
     );
-    expect(compiled.values).toEqual(['%garlic%']);
+    // 'garlic' is fuzzy-eligible (#612): pattern + raw word.
+    expect(compiled.values).toEqual(['%garlic%', 'garlic']);
+    // A search with no explicit sort defaults to relevance (#612), so the
+    // handler also appends the relevance score's binds.
+    const relevance = relevanceScoreSql(
+      parseSearchSyntax('garlic'),
+      baseValues.length + compiled.values.length + 1,
+    );
     expect(mockQuery).toHaveBeenCalledWith(
-      buildListSharedWithMeSql('newest', 'desc', compiled.sql),
-      [...baseValues, ...compiled.values],
+      buildListSharedWithMeSql(
+        'relevance',
+        'desc',
+        compiled.sql,
+        relevance.sql,
+      ),
+      [...baseValues, ...compiled.values, ...relevance.values],
     );
   });
 

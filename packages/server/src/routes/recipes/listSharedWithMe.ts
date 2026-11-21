@@ -8,6 +8,7 @@ import {
   buildSearchQuerySql,
   filterBindValues,
   parseRecipeListFilterParams,
+  relevanceScoreSql,
 } from './listFilterParams.js';
 import {buildListSharedWithMeSql} from './sqlConstants.js';
 
@@ -44,9 +45,21 @@ export const listSharedWithMe = async (
     baseValues.length + 1,
     'shared',
   );
+  const relevance =
+    params.sort === 'relevance'
+      ? relevanceScoreSql(
+          params.searchQuery,
+          baseValues.length + searchQuerySql.values.length + 1,
+        )
+      : {sql: '0', values: [] as (string | number)[]};
   const result = await queryFn(
-    buildListSharedWithMeSql(params.sort, params.sortDir, searchQuerySql.sql),
-    [...baseValues, ...searchQuerySql.values],
+    buildListSharedWithMeSql(
+      params.sort,
+      params.sortDir,
+      searchQuerySql.sql,
+      relevance.sql,
+    ),
+    [...baseValues, ...searchQuerySql.values, ...relevance.values],
   );
   res.json(
     result.rows.map(row =>

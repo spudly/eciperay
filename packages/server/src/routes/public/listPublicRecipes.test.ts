@@ -108,7 +108,9 @@ describe('GET /public/recipes', () => {
         'desc',
         buildSearchQuerySql(parseSearchSyntax('pasta'), 11, 'public').sql,
       ),
-      [25, 10, null, ...emptyFilterBinds, '%pasta%'],
+      // Explicit sort=rating wins over the relevance default (#612); the
+      // search binds are the LIKE pattern plus the raw fuzzy word.
+      [25, 10, null, ...emptyFilterBinds, '%pasta%', 'pasta'],
     );
   });
 

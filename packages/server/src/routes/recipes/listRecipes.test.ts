@@ -51,6 +51,8 @@ describe('parseListParams', () => {
       offset: 5,
       search: 'pasta',
       searchQuery: parseSearchSyntax('pasta'),
+      // A search with no explicit sort defaults to relevance (#612).
+      sort: 'relevance',
     });
   });
 
@@ -170,7 +172,53 @@ describe('GET /recipes', () => {
       0,
       null,
       ...emptyFilterBinds,
+      // Search condition: LIKE pattern + raw word for fuzzy similarity.
       '%pasta%',
+      'pasta',
+      // Relevance score (the default sort while searching, #612): pattern,
+      // whole-word regex, raw word.
+      '%pasta%',
+      '\\ypasta\\y',
+      'pasta',
+    ]);
+    const sql = mockQuery.mock.calls[mockQuery.mock.calls.length - 1]?.[0];
+    expect(sql).toContain('similarity(rv.title, $13)');
+    expect(sql).toContain('desc, rv.updated_at desc, rv.id desc');
+  });
+
+  test('a typo search compiles to the similarity condition (#612)', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockQuery.mockResolvedValue(makeQueryResult([]));
+    const res = await request(getApp())
+      .get('/api/recipes')
+      .query({search: 'chiken'})
+      .set('Authorization', 'Bearer valid-token');
+    expect(res.status).toBe(200);
+    const sql = mockQuery.mock.calls[mockQuery.mock.calls.length - 1]?.[0];
+    expect(sql).toContain('similarity(rv.title, $13) > 0.3');
+    expect(sql).toContain('similarity(i.name, $13) > 0.3');
+  });
+
+  test('an explicit sort with a search still orders by that sort (#612)', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockQuery.mockResolvedValue(makeQueryResult([]));
+    const res = await request(getApp())
+      .get('/api/recipes')
+      .query({search: 'pasta', sort: 'newest'})
+      .set('Authorization', 'Bearer valid-token');
+    expect(res.status).toBe(200);
+    const sql = mockQuery.mock.calls[mockQuery.mock.calls.length - 1]?.[0];
+    expect(sql).toContain('order by rv.updated_at desc, rv.id desc');
+    expect(sql).not.toContain('similarity(rv.title, $14)');
+    // Only the search condition's own fuzzy bind is present.
+    expect(mockQuery).toHaveBeenCalledWith(expect.any(String), [
+      'user-uuid-1',
+      DEFAULT_RECIPE_LIST_LIMIT,
+      0,
+      null,
+      ...emptyFilterBinds,
+      '%pasta%',
+      'pasta',
     ]);
   });
 
@@ -188,8 +236,18 @@ describe('GET /recipes', () => {
       0,
       null,
       ...emptyFilterBinds,
+      // Per word: LIKE pattern + raw fuzzy word; then the relevance
+      // score's pattern / whole-word / raw binds per word (#612).
       '%First%',
+      'First',
       '%Soup%',
+      'Soup',
+      '%First%',
+      '\\yFirst\\y',
+      'First',
+      '%Soup%',
+      '\\ySoup\\y',
+      'Soup',
     ]);
   });
 
@@ -208,7 +266,9 @@ describe('GET /recipes', () => {
     expect(sql).toContain("rv.title ilike $12 escape '\\'");
     expect(sql).toContain("coalesce(rv.description, '') ilike $12");
     expect(sql).toContain('exists (select 1 from ingredients i');
-    expect(sql).toContain("rv.title ilike $13 escape '\\'");
+    // $13 is the first word's raw fuzzy bind; the second word's pattern
+    // follows at $14 (#612).
+    expect(sql).toContain("rv.title ilike $14 escape '\\'");
   });
 
   test('passes status filter to the query', async () => {

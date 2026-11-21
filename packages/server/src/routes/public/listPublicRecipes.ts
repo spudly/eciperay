@@ -6,6 +6,7 @@ import {
   buildSearchQuerySql,
   filterBindValues,
   parseRecipeListFilterParams,
+  relevanceScoreSql,
 } from '../recipes/listFilterParams.js';
 import {buildListPublicRecipesSql} from '../recipes/sqlConstants.js';
 
@@ -41,9 +42,21 @@ export const listPublicRecipes = async (
     baseValues.length + 1,
     'public',
   );
+  const relevance =
+    params.sort === 'relevance'
+      ? relevanceScoreSql(
+          params.searchQuery,
+          baseValues.length + searchQuerySql.values.length + 1,
+        )
+      : {sql: '0', values: [] as (string | number)[]};
   const result = await queryFn(
-    buildListPublicRecipesSql(params.sort, params.sortDir, searchQuerySql.sql),
-    [...baseValues, ...searchQuerySql.values],
+    buildListPublicRecipesSql(
+      params.sort,
+      params.sortDir,
+      searchQuerySql.sql,
+      relevance.sql,
+    ),
+    [...baseValues, ...searchQuerySql.values, ...relevance.values],
   );
   res.json(
     result.rows.map(row =>

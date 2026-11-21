@@ -72,6 +72,7 @@ describe('listFilterParams parsers', () => {
     expect(parseSort()).toBe('newest');
     expect(parseSort('', 'rating')).toBe('rating');
     expect(parseSort('satiety')).toBe('satiety');
+    expect(parseSort('relevance')).toBe('relevance');
     expect(parseSort('bad')).toBe('invalid');
     expect(parseSortDir()).toBe('desc');
     expect(parseSortDir('', 'asc')).toBe('asc');
@@ -125,6 +126,44 @@ describe('parseRecipeListFilterParams', () => {
       sort: 'calories',
       sortDir: 'asc',
     });
+  });
+});
+
+describe('relevance defaulting (#612)', () => {
+  test('a search with no explicit sort defaults to relevance', () => {
+    expect(
+      parseRecipeListFilterParams({query: {search: 'soup'}}).sort,
+    ).toBe('relevance');
+  });
+
+  test('an explicit sort always wins over the relevance default', () => {
+    expect(
+      parseRecipeListFilterParams({query: {search: 'soup', sort: 'newest'}})
+        .sort,
+    ).toBe('newest');
+    expect(
+      parseRecipeListFilterParams({query: {search: 'soup', sort: 'rating'}})
+        .sort,
+    ).toBe('rating');
+  });
+
+  test('no search keeps the newest default; a caller default still wins', () => {
+    expect(parseRecipeListFilterParams({query: {}}).sort).toBe('newest');
+    expect(
+      parseRecipeListFilterParams(
+        {query: {search: 'soup'}},
+        {defaultSort: 'rating'},
+      ).sort,
+    ).toBe('rating');
+  });
+
+  test('orderBySql orders by the relevance score, then newest, then id', () => {
+    expect(orderBySql('relevance', 'desc', {relevanceScore: '(case)'})).toBe(
+      '(case) desc, rv.updated_at desc, rv.id desc',
+    );
+    expect(orderBySql('relevance', 'desc')).toBe(
+      '0 desc, rv.updated_at desc, rv.id desc',
+    );
   });
 });
 
