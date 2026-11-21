@@ -28,8 +28,9 @@ test.describe('mobile web layout (390px)', () => {
     // the host's navLabel, not as a <nav> inside a <header>.
     const nav = page.getByRole('navigation', {name: 'Eciperay sections'});
     // No 'Shared with me': it lives on the unified Recipes browse
-    // now (#409) instead of taking a nav slot.
-    const labels = ['Home', 'Recipes', 'Meals', 'Add', 'Tags', 'Profile'];
+    // now (#409) instead of taking a nav slot. No 'Tags' either: the
+    // Tags page is admin-only (#621) and the mock user is not an admin.
+    const labels = ['Home', 'Recipes', 'Meals', 'Add', 'Profile'];
     for (const label of labels) {
       const link = nav.getByRole('link', {name: label});
       await expect(link).toBeVisible();
