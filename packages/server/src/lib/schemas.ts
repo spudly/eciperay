@@ -211,8 +211,11 @@ export const SyncUserSchema = z.object({
   displayName: z.string().max(100).optional(),
 });
 
-export const FamilySharingCreateSchema = z.object({
-  email: z.email(),
+export const FamilySharingCreateSchema = z.object({email: z.email()});
+
+export const InterestSignalInputSchema = z.object({
+  signal: z.enum(['interest', 'disinterest']),
+  dwellMs: z.number().int().nonnegative().nullable().optional(),
 });
 
 export const AuthorDisplaySchema = z.object({

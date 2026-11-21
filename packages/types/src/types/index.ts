@@ -122,3 +122,14 @@ export type {
   PlanName,
   SubscriptionStatus,
 } from './entitlement.js';
+export type {
+  DiscoveryFeedItem,
+  HiddenRecipeItem,
+  RecipeDisinterest,
+  RecipeInterestSignal,
+  RecipeInterestSignalKind,
+  RecordInterestSignalInput,
+  SavedRecipe,
+  SavedRecipeItem,
+  UserFollow,
+} from './discovery.js';
