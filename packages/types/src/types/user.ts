@@ -3,6 +3,8 @@ export type User = {
   supabaseUid: string;
   email: string;
   displayName: string | null;
+  /** Admin (#621): gates tag management; defined by users.is_admin. */
+  isAdmin: boolean;
   createdAt: string;
 };
 

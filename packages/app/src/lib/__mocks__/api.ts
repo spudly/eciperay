@@ -25,7 +25,7 @@ export const api = {
     createRecipe: jest.fn(),
     cancel: jest.fn(),
   },
-  auth: {syncUser: jest.fn()},
+  auth: {syncUser: jest.fn(), me: jest.fn(async () => ({isAdmin: false}))},
   tags: {
     list: jest.fn(),
     create: jest.fn(),

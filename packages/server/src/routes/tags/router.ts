@@ -3,6 +3,7 @@ import {Router} from 'express';
 import {z} from 'zod';
 
 import {query as defaultQuery} from '../../db/query.js';
+import {requireAdmin} from '../../middleware/requireAdmin.js';
 import {requireAuth, type AuthedRequest} from '../../middleware/requireAuth.js';
 import {getParam} from '../../lib/getParam.js';
 
@@ -110,13 +111,18 @@ export const createTagsRouter = (queryFn: QueryFn) => {
   router.get('/', requireAuth, (req, res) =>
     listTags(asAuthed(req), res, queryFn),
   );
-  router.post('/', requireAuth, (req, res) =>
+  // Tag management is admin-only (#621): mutations sit behind
+  // requireAdmin; GET stays requireAuth-only because tag pickers and
+  // filtering read it for every signed-in user. Recipe save resolves
+  // tag names server-side (resolveTagIdsByNames) and never calls
+  // these endpoints, so normal users' recipe flows are unaffected.
+  router.post('/', requireAuth, requireAdmin(queryFn), (req, res) =>
     createTag(asAuthed(req), res, queryFn),
   );
-  router.patch('/:id', requireAuth, (req, res) =>
+  router.patch('/:id', requireAuth, requireAdmin(queryFn), (req, res) =>
     updateTag(asAuthed(req), res, queryFn),
   );
-  router.delete('/:id', requireAuth, (req, res) =>
+  router.delete('/:id', requireAuth, requireAdmin(queryFn), (req, res) =>
     deleteTag(asAuthed(req), res, queryFn),
   );
   return router;

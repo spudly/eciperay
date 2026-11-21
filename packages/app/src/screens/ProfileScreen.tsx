@@ -25,6 +25,7 @@ import {
 } from '../hosts/profile/FamilySharingForm';
 import {NutritionGoalsForm} from '../hosts/profile/NutritionGoalsForm';
 import {ProfileFeedbackPreference} from '../hosts/profile/ProfileFeedbackPreference';
+import {SectionAlert, SectionButton} from '../hosts/profile/profileSection';
 import {api} from '../lib/api';
 import {tagsHref} from '../lib/deepLinks';
 import {supabase} from '../lib/supabase';
@@ -41,6 +42,18 @@ export const ProfileScreen = () => {
   const {data: savedGoals} = useQuery({
     queryKey: queryKeys.nutritionGoals(),
     queryFn: () => api.account.getNutritionGoals(),
+  });
+
+  // Tag management is admin-only (#621): the Tags link on the profile
+  // page is only offered to admins.
+  const {
+    data: me,
+    isError: meLoadFailed,
+    error: meLoadError,
+    refetch: refetchMe,
+  } = useQuery({
+    queryKey: queryKeys.currentUser(session?.user?.id ?? 'anonymous'),
+    queryFn: () => api.auth.me(),
   });
 
   useEffect(() => {
@@ -74,7 +87,7 @@ export const ProfileScreen = () => {
 
   // Scope the cache entry to the account, as the web profile does for
   // its account-scoped keys: a shared QueryClient outlives a switch.
-  const authorDisplayUserId = session?.user.id ?? 'anonymous';
+  const authorDisplayUserId = session?.user?.id ?? 'anonymous';
   const {
     data: savedAuthorDisplay,
     isError: authorDisplayLoadFailed,
@@ -106,7 +119,7 @@ export const ProfileScreen = () => {
   });
 
   // --- Family sharing (#617) ---
-  const familySharingUserId = session?.user.id ?? 'anonymous';
+  const familySharingUserId = session?.user?.id ?? 'anonymous';
   const [familyEmail, setFamilyEmail] = useState('');
   const [familyError, setFamilyError] = useState<string | null>(null);
 
@@ -171,13 +184,28 @@ export const ProfileScreen = () => {
   return (
     <ProfilePage
       email={session?.user.email ?? null}
-      tagsHref={tagsHref}
+      tagsHref={me?.isAdmin ? tagsHref : undefined}
       onSignOut={() => {
         void supabase.auth.signOut();
       }}
       legalLinks={<LegalLinks />}
       sectionsBeforeFeedback={
         <>
+          {meLoadFailed ? (
+            <>
+              <SectionAlert
+                severity="error"
+                message={`Could not load your profile: ${errorMessage(meLoadError)}`}
+              />
+              <SectionButton
+                onPress={() => {
+                  void refetchMe();
+                }}
+              >
+                Try again
+              </SectionButton>
+            </>
+          ) : null}
           <NutritionGoalsForm
             goals={nutritionGoals}
             saving={saveGoalsMutation.isPending}
