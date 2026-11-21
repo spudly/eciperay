@@ -1,5 +1,115 @@
 # @eciperay/server
 
+## 1.35.0
+
+### Minor Changes
+
+- caf2177: Discovery models, server core (#622, tranche 1): migration 030 adds
+  `saved_recipes` (bookmark saves), `recipe_disinterest` (hard hide — excluded
+  from every discovery surface until unhidden), `user_follows`, and
+  `recipe_interest_signals` (soft engagement signals from Stephen's approval
+  amendment: dwell/engagement records interest, not a save; a quick swipe-past
+  records disinterest, not a hide). New authenticated `/discovery` routes cover
+  save/unsave, hide/unhide plus the hidden list, follow/unfollow plus the
+  following list, recording an interest signal, and a discovery feed query that
+  excludes the requester's hidden recipes, respects recipe visibility (public
+  only), and ranks followee-authored, followee-saved, and followee-highly-rated
+  recipes and interest-signaled recipes higher while deprioritising recipes the
+  requester last signaled quick disinterest in.
+- 799cdba: Family sharing, server core (#617, tranche 1): owners can designate
+  one other account for family sharing via GET/POST/DELETE
+  /account/family-sharing. A standing family_share_grants row gives the
+  recipient view/clone access to the owner's whole recipe library — existing and
+  future recipes, private included — through the central share-access check, and
+  the Shared With Me list unions family-shared recipes with a `family` marker
+  (an individual grant wins the badge when both exist). Revoking the designation
+  deletes the row and ends family access immediately; per-recipe grants are
+  unaffected. Account export now includes family share designations.
+- e7d6339: Recipe search now speaks GitHub-style syntax: plain words match the
+  title, description, or an ingredient name, and the search box accepts quoted
+  phrases, field qualifiers (`title:`, `desc:`, `ingredient:`, `tag:`), negation
+  (`-ingredient:peanuts`), status/scope qualifiers (`status:`, `is:public`), and
+  numeric comparisons (`calories:<600`, `rating:>=4`) — identically across your
+  recipes, shared-with-me, and public discovery.
+- 7ee7ff6: Net carbs (carbs − fiber) now render beside total carbs everywhere a
+  recipe's carbs are shown: the recipe-detail nutrition rows, recipe card/list
+  summaries, meal and meal-plan totals and per-day rows, and meal member lines
+  on web and native. Net carbs is omitted where fiber is unknown — including
+  meal/plan totals when any contributing recipe's fiber is unknown (aggregate
+  fiber now propagates unknown instead of treating it as zero) — and plan/meal
+  totals compute it from the summed carbs and fiber via the one canonical
+  helper.
+- 8b6dd07: Track recipe provenance at creation (#609, tranche 1): migration 029
+  adds `recipes.provenance_source`/`provenance_detail` with a backfill from each
+  recipe's first version; the shared save path now derives and validates
+  provenance from the creation path (URL imports must record a valid source URL)
+  and applies public-by-default visibility for new recipes (shared clones and
+  unattributed `other` stay private). Recipe detail responses now carry the
+  recipe's provenance.
+- 7075f8b: Simplify recipe versioning (#610, tranche 1): an edit that branches
+  from the active version now becomes the current version in the same
+  transaction by default, so editing the current recipe goes live immediately
+  (an explicit `activate: false` still keeps the branched version as a draft;
+  draft-version in-place edits are unchanged). Edits also accept an optional
+  `changeSummary` naming the edit, stored on the branched version's
+  `change_summary` for internal version tracking; `RecipeVersionInput` in
+  `@eciperay/types` gains the optional `changeSummary` field.
+- a974118: Recipe search now tolerates typos and ranks by relevance: free-text
+  words of four or more characters also match on trigram similarity against
+  recipe titles and ingredient names (backed by a new `pg_trgm` migration), so
+  "chiken" finds chicken recipes without flooding exact-match results, and while
+  a search is present with no explicit sort chosen, results order
+  best-match-first — title and whole-word matches above ingredient, description,
+  and fuzzy matches. An explicit sort (newest, rating, satiety, calories) still
+  wins, identically across your recipes, shared-with-me, and public discovery.
+- caf3abb: Tag management is admin-only (#621, option B): migration 031 adds a
+  `users.is_admin` boolean (default false) that defines admin. A new server
+  `requireAdmin` middleware gates `POST /tags`, `PATCH /tags/:id`, and
+  `DELETE /tags/:id` with 403 for non-admins, while `GET /tags` stays available
+  to every signed-in user (tag pickers and filtering read it; recipe save
+  resolves tag names server-side and is unaffected). The new `GET /auth/me`
+  profile response exposes the server-computed `isAdmin` flag on the shared
+  `User` type and client auth API. On web, the Tags nav entry is hidden for
+  non-admins and the `/tags` route redirects non-admins to `/recipes`; on
+  native, the Tags screen is not registered and the profile Tags link is hidden
+  for non-admins. On web, a failed profile load renders through design-system
+  composition only (the DS error page in the admin guard; a DS header retry
+  action in the signed-in shell) — no app-styled error panels.
+
+### Patch Changes
+
+- 8192961: The consent preferences page (`/privacy/consent`) now carries a
+  `noindex, nofollow` robots directive from the shared page-head builder: the
+  client head renders it, and the server injects the same directive into the
+  served HTML for that path, so crawlers are told not to index the utility page
+  even without executing JavaScript. It remains excluded from the sitemap, and
+  the public pages and public recipes stay indexable.
+- 4ee9f5e: Recipe images now load through a generic on-the-fly image resizer:
+  the server serves bucket-cached resized variants at a requested width (aspect
+  preserved, original format kept, immutable cache headers, original-image
+  fallback on any failure), replacing a recipe image deletes its cached
+  variants, and recipe cards, discovery/home thumbnails, the recipe detail hero,
+  and the public recipe page request appropriately sized images instead of
+  full-size originals.
+- 89c1228: Meal Plans list no longer loads full plan details per plan:
+  `GET /meal-plans` now builds plan summaries (including entry counts,
+  nutrition, and goal progress, identical to before) from a small constant
+  number of batched queries instead of a sequential per-plan, per-entry N+1, so
+  the list stays fast no matter how many plans and entries a user has.
+- Updated dependencies [8192961]
+- Updated dependencies [caf2177]
+- Updated dependencies [695ba21]
+- Updated dependencies [799cdba]
+- Updated dependencies [4ee9f5e]
+- Updated dependencies [7ee7ff6]
+- Updated dependencies [506a166]
+- Updated dependencies [8b6dd07]
+- Updated dependencies [7075f8b]
+- Updated dependencies [caf3abb]
+  - @eciperay/client@1.35.0
+  - @eciperay/types@1.35.0
+  - @eciperay/mcp-server@1.35.0
+
 ## 1.34.4
 
 ### Patch Changes
