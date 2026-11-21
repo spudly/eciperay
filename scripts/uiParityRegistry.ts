@@ -136,6 +136,12 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
       'React Router outlet guard for authenticated routes; app uses navigation auth flow instead.',
   },
   {
+    path: 'DiscoverRoute.tsx',
+    platform: 'web',
+    reason:
+      'React Router auth-aware route element unifying /discover with the Recipes browse (#622); app uses navigation auth flow instead.',
+  },
+  {
     path: 'FeedbackBubble.tsx',
     platform: 'web',
     reason:
