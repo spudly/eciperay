@@ -52,6 +52,10 @@ module.exports = {
     '^@eciperay/types$': '<rootDir>/../types/src/index.ts',
     '^@eciperay/client/sanitizeAnalyticsProperties$':
       '<rootDir>/../client/src/sanitizeAnalyticsProperties.ts',
+    '^@eciperay/client/recipeListDisplay$':
+      '<rootDir>/../client/src/recipeListDisplay.ts',
+    '^@eciperay/client/resizedImageUrl$':
+      '<rootDir>/../client/src/resizedImageUrl.ts',
   },
   transform: {
     '^.+\\.[tj]s$': [

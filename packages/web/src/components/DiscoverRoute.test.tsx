@@ -1,5 +1,5 @@
 import {act, screen} from '@testing-library/react';
-import {Route, Routes} from 'react-router-dom';
+import {Route, Routes, useLocation} from 'react-router-dom';
 import {afterEach, beforeEach, vi} from 'vitest';
 
 import {renderWithProviders} from '../test/testUtils.js';
@@ -15,6 +15,24 @@ vi.mock('@eciperay/client', async importOriginal => {
 
 vi.mock('../pages/DiscoverPage.js', () => ({
   DiscoverPage: () => <div>Public discover</div>,
+}));
+
+vi.mock('../pages/RecipesPage.js', () => ({
+  RecipesPage: () => <div>Unified recipes</div>,
+}));
+
+const LocationProbe = () => {
+  const location = useLocation();
+  return <div>{`path:${location.pathname}`}</div>;
+};
+
+vi.mock('./AuthenticatedShell.js', () => ({
+  AuthenticatedShell: ({children}: {children?: import('react').ReactNode}) => (
+    <div>
+      <div>Authenticated shell</div>
+      {children}
+    </div>
+  ),
 }));
 
 describe('DiscoverRoute (#622 unified browse)', () => {
@@ -43,25 +61,31 @@ describe('DiscoverRoute (#622 unified browse)', () => {
     expect(screen.getByRole('status')).toBeInTheDocument();
   });
 
-  test('redirects signed-in viewers to the unified Recipes browse', async () => {
+  test('renders the unified Recipes browse in place at /discover for signed-in viewers (no redirect)', async () => {
     mockUseAuth.mockReturnValue({
       session: {user: {id: 'u1'}},
       isLoading: false,
     });
+    // No /recipes route is registered: if DiscoverRoute redirected
+    // there (the pre-rework behavior Stephen rejected 2026-11-21),
+    // nothing would render. The unified browse must appear at the
+    // /discover URL itself, inside the authenticated shell.
     await renderWithProviders(
-      <Routes>
-        <Route
-          element={<DiscoverRoute />}
-          path="/discover"
-        />
-        <Route
-          element={<div>Unified recipes</div>}
-          path="/recipes"
-        />
-      </Routes>,
+      <>
+        <LocationProbe />
+        <Routes>
+          <Route
+            element={<DiscoverRoute />}
+            path="/discover"
+          />
+        </Routes>
+      </>,
       {withAuth: false, route: '/discover'},
     );
     expect(screen.getByText('Unified recipes')).toBeInTheDocument();
+    expect(screen.getByText('Authenticated shell')).toBeInTheDocument();
+    expect(screen.queryByText('Public discover')).not.toBeInTheDocument();
+    expect(screen.getByText('path:/discover')).toBeInTheDocument();
   });
 
   test('renders the public Discover treatment for signed-out viewers', async () => {

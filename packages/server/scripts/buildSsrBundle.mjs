@@ -11,7 +11,10 @@
 // resulting self-contained ESM file with bare Node (see attachSsrRoutes).
 //
 // Usage: node scripts/buildSsrBundle.mjs
-// Output: packages/server/dist-ssr/renderPublicRecipe.mjs
+// Output: packages/server/dist-ssr/renderPublicRecipe.mjs and
+// packages/server/dist-ssr/renderDiscover.mjs (the #622 /discover
+// renderer, loaded as the recipe bundle's sibling — see
+// attachSsrRoutes).
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 
@@ -34,9 +37,7 @@ const svgSoundModuleStub = {
   },
 };
 
-await build({
-  entryPoints: [path.join(serverRoot, 'src/lib/renderPublicRecipe.tsx')],
-  outfile: path.join(serverRoot, 'dist-ssr/renderPublicRecipe.mjs'),
+const buildOptions = {
   bundle: true,
   platform: 'node',
   format: 'esm',
@@ -66,4 +67,16 @@ await build({
     js: "import {createRequire as __ssrCreateRequire} from 'node:module'; const require = __ssrCreateRequire(import.meta.url);",
   },
   logLevel: 'info',
+};
+
+await build({
+  ...buildOptions,
+  entryPoints: [path.join(serverRoot, 'src/lib/renderPublicRecipe.tsx')],
+  outfile: path.join(serverRoot, 'dist-ssr/renderPublicRecipe.mjs'),
+});
+
+await build({
+  ...buildOptions,
+  entryPoints: [path.join(serverRoot, 'src/lib/renderDiscover.tsx')],
+  outfile: path.join(serverRoot, 'dist-ssr/renderDiscover.mjs'),
 });
