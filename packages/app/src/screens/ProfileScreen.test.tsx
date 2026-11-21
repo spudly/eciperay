@@ -143,6 +143,18 @@ describe('ProfileScreen', () => {
     expect(queryByText('Manage Tags')).toBeNull();
   });
 
+  test('shows a profile load error with retry, then renders the tags link for an admin after retry', async () => {
+    mockMe.mockRejectedValueOnce(new Error('boom'));
+    mockMe.mockResolvedValue({isAdmin: true});
+    const {findByText} = await renderProfileScreen();
+    // A failed /auth/me is not a non-admin verdict (#650 review): an
+    // explicit error with a retry action instead of silently hiding
+    // Manage Tags as if non-admin were confirmed.
+    expect(await findByText('Could not load your profile: boom')).toBeTruthy();
+    await fireEvent.press(await findByText('Try again'));
+    expect(await findByText('Manage Tags')).toBeTruthy();
+  });
+
   test('opens legal document URLs', async () => {
     const {findByText} = await renderProfileScreen();
     await fireEvent.press(await findByText('Privacy Policy'));

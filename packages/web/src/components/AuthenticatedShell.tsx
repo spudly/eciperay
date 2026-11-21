@@ -9,6 +9,8 @@ import {
   useSearchParams,
 } from 'react-router-dom';
 
+import {Button, Text, YStack} from 'tamagui';
+
 import {eciperay} from '../lib/api.js';
 import {sharedFooter} from '../pages/legal/legalDocumentData.js';
 
@@ -62,7 +64,11 @@ export const AuthenticatedShell = ({children}: AuthenticatedShellProps) => {
   // the profile loads the entry stays hidden rather than flashing an
   // admin surface at non-admins.
   const {session} = useAuth();
-  const {data: me} = useQuery({
+  const {
+    data: me,
+    isError: meLoadFailed,
+    refetch: refetchMe,
+  } = useQuery({
     // Account-scoped key (#650 review): a shared QueryClient outlives
     // an account switch, so an unscoped key could render the previous
     // account's isAdmin.
@@ -90,6 +96,22 @@ export const AuthenticatedShell = ({children}: AuthenticatedShellProps) => {
       {/* The authenticated head (#414) the retired host shell
           applied: title + noindex for every signed-in page. */}
       <AuthenticatedPageHead />
+      {meLoadFailed ? (
+        <YStack
+          alignItems="center"
+          gap="$2"
+          padding="$3"
+        >
+          <Text>Something went wrong loading your profile.</Text>
+          <Button
+            onPress={() => {
+              void refetchMe();
+            }}
+          >
+            Try again
+          </Button>
+        </YStack>
+      ) : null}
       <AppShellPage
         brand={{label: 'Eciperay', href: '/'}}
         navItems={visibleNavItems}

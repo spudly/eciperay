@@ -25,6 +25,7 @@ import {
 } from '../hosts/profile/FamilySharingForm';
 import {NutritionGoalsForm} from '../hosts/profile/NutritionGoalsForm';
 import {ProfileFeedbackPreference} from '../hosts/profile/ProfileFeedbackPreference';
+import {SectionAlert, SectionButton} from '../hosts/profile/profileSection';
 import {api} from '../lib/api';
 import {tagsHref} from '../lib/deepLinks';
 import {supabase} from '../lib/supabase';
@@ -45,7 +46,12 @@ export const ProfileScreen = () => {
 
   // Tag management is admin-only (#621): the Tags link on the profile
   // page is only offered to admins.
-  const {data: me} = useQuery({
+  const {
+    data: me,
+    isError: meLoadFailed,
+    error: meLoadError,
+    refetch: refetchMe,
+  } = useQuery({
     queryKey: queryKeys.currentUser(session?.user?.id ?? 'anonymous'),
     queryFn: () => api.auth.me(),
   });
@@ -185,6 +191,21 @@ export const ProfileScreen = () => {
       legalLinks={<LegalLinks />}
       sectionsBeforeFeedback={
         <>
+          {meLoadFailed ? (
+            <>
+              <SectionAlert
+                severity="error"
+                message={`Could not load your profile: ${errorMessage(meLoadError)}`}
+              />
+              <SectionButton
+                onPress={() => {
+                  void refetchMe();
+                }}
+              >
+                Try again
+              </SectionButton>
+            </>
+          ) : null}
           <NutritionGoalsForm
             goals={nutritionGoals}
             saving={saveGoalsMutation.isPending}
