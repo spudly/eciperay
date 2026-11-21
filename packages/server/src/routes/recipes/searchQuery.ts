@@ -287,6 +287,26 @@ export const parseSearchSyntax = (
 export const escapeLikePattern = (value: string): string =>
   value.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
 
+const escapeRegExp = (value: string): string =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * Fuzzy / typo tolerance (#612). A positive, non-phrase free-text word of at
+ * least this length also matches on pg_trgm trigram similarity, so "chiken"
+ * finds chicken recipes. Short words, quoted phrases, negated terms, and
+ * field qualifiers stay exact-only — exclusions never widen, and short words
+ * are too ambiguous for similarity to help.
+ */
+export const FUZZY_MIN_WORD_LENGTH = 4;
+
+/** Minimum pg_trgm `similarity()` score for a fuzzy title/ingredient match. */
+export const FUZZY_SIMILARITY_THRESHOLD = 0.3;
+
+type FreeTextTerm = ParsedSearchQuery['freeText'][number];
+
+export const isFuzzyEligible = (term: FreeTextTerm): boolean =>
+  !term.negated && !term.phrase && term.value.length >= FUZZY_MIN_WORD_LENGTH;
+
 const NUMERIC_COLUMNS: Record<SearchNumericField, string> = {
   rating: 'r.star_rating',
   calories: 'rv.calories',
@@ -340,6 +360,19 @@ export const buildSearchQuerySql = (
   for (const term of parsed.freeText) {
     const param = patternParam(term.value);
     const condition = `(${like('rv.title', param)} or ${like(`coalesce(rv.description, '')`, param)} or ${ingredientExists(param)})`;
+    if (isFuzzyEligible(term)) {
+      // Hybrid exact-or-similar (#612): exact matches always satisfy the
+      // condition the same way they did before; the similarity clauses only
+      // ADD near-miss rows, and the relevance score ranks them below every
+      // exact match so they never flood exact results. The raw word travels
+      // as its own bind parameter (similarity compares plain text, not a
+      // LIKE pattern).
+      values.push(term.value);
+      const rawParam = `$${startIndex + values.length - 1}`;
+      const fuzzy = `(similarity(rv.title, ${rawParam}::text) > ${FUZZY_SIMILARITY_THRESHOLD} or exists (select 1 from ingredients i where i.recipe_version_id = rv.id and similarity(i.name, ${rawParam}::text) > ${FUZZY_SIMILARITY_THRESHOLD}))`;
+      conditions.push(`(${condition} or ${fuzzy})`);
+      continue;
+    }
     conditions.push(maybeNegate(condition, term.negated));
   }
 
@@ -439,6 +472,116 @@ export const buildSearchQuerySql = (
 
   return {
     sql: conditions.map(condition => `\n    and (${condition})`).join(''),
+    values,
+  };
+};
+
+// Relevance weights (#612): a title whole-word exact match outranks a title
+// substring, which outranks an ingredient match, which outranks a
+// description match. Trigram similarity contributes at most
+// RELEVANCE_SIMILARITY_WEIGHT per field (title + best ingredient), so the
+// total bonus is at most 8 — below the smallest gap between tiers (10,
+// ingredient vs description) — which keeps the tier order strict: a
+// fuzzy-only match always scores below every exact match, and the bonus can
+// never lift a lower tier above a higher one.
+const RELEVANCE_TITLE_WHOLE_WORD = 100;
+const RELEVANCE_TITLE_SUBSTRING = 50;
+const RELEVANCE_INGREDIENT = 30;
+const RELEVANCE_TAG = 30;
+const RELEVANCE_DESCRIPTION = 20;
+const RELEVANCE_SIMILARITY_WEIGHT = 4;
+
+const FIELD_RELEVANCE_WEIGHTS: Record<SearchTextField, number> = {
+  title: RELEVANCE_TITLE_SUBSTRING,
+  ingredient: RELEVANCE_INGREDIENT,
+  tag: RELEVANCE_TAG,
+  description: RELEVANCE_DESCRIPTION,
+};
+
+/**
+ * Compile the relevance score expression for a parsed query (#612): the sum,
+ * over every positive search term, of the best field weight that term earns,
+ * plus a similarity bonus for fuzzy-eligible free-text words. Field-qualifier
+ * terms contribute their field's weight. No positive terms → score 0 for
+ * every row. All user values travel as bind parameters, in placeholder order
+ * from `startIndex`, exactly like {@link buildSearchQuerySql}.
+ */
+export const relevanceScoreSql = (
+  parsed: ParsedSearchQuery,
+  startIndex: number,
+): {sql: string; values: (string | number)[]} => {
+  const values: (string | number)[] = [];
+  const param = (value: string): string => {
+    values.push(value);
+    return `$${startIndex + values.length - 1}`;
+  };
+  const patternParam = (value: string): string =>
+    param(`%${escapeLikePattern(value)}%`);
+  const like = (column: string, pattern: string): string =>
+    `${column} ilike ${pattern} escape '\\'`;
+  const ingredientExists = (pattern: string): string =>
+    `exists (select 1 from ingredients i where i.recipe_version_id = rv.id and ${like('i.name', pattern)})`;
+  const tagExists = (pattern: string): string =>
+    `exists (select 1 from recipe_tags srt join tags st on st.id = srt.tag_id where srt.recipe_version_id = rv.id and ${like('st.name', pattern)})`;
+  const fieldCondition = (field: SearchTextField, pattern: string): string => {
+    switch (field) {
+      case 'title': {
+        return like('rv.title', pattern);
+      }
+      case 'description': {
+        return like(`coalesce(rv.description, '')`, pattern);
+      }
+      case 'ingredient': {
+        return ingredientExists(pattern);
+      }
+      case 'tag': {
+        return tagExists(pattern);
+      }
+    }
+  };
+
+  const terms: string[] = [];
+  for (const term of parsed.freeText) {
+    if (term.negated) {
+      continue;
+    }
+    const pattern = patternParam(term.value);
+    const branches: string[] = [];
+    if (!term.phrase) {
+      const wholeWord = param(`\\y${escapeRegExp(term.value)}\\y`);
+      branches.push(
+        `when rv.title ~* ${wholeWord}::text then ${RELEVANCE_TITLE_WHOLE_WORD}`,
+      );
+    }
+    branches.push(
+      `when ${like('rv.title', pattern)} then ${RELEVANCE_TITLE_SUBSTRING}`,
+      `when ${ingredientExists(pattern)} then ${RELEVANCE_INGREDIENT}`,
+      `when ${like(`coalesce(rv.description, '')`, pattern)} then ${RELEVANCE_DESCRIPTION}`,
+    );
+    let score = `(case ${branches.join(' ')} else 0 end)`;
+    if (isFuzzyEligible(term)) {
+      const raw = param(term.value);
+      score += ` + similarity(rv.title, ${raw}::text) * ${RELEVANCE_SIMILARITY_WEIGHT} + coalesce((select max(similarity(i.name, ${raw}::text)) from ingredients i where i.recipe_version_id = rv.id), 0) * ${RELEVANCE_SIMILARITY_WEIGHT}`;
+    }
+    terms.push(score);
+  }
+
+  for (const filter of parsed.fieldFilters) {
+    if (filter.negated) {
+      continue;
+    }
+    for (const value of filter.values) {
+      const pattern = patternParam(value);
+      terms.push(
+        `(case when ${fieldCondition(filter.field, pattern)} then ${FIELD_RELEVANCE_WEIGHTS[filter.field]} else 0 end)`,
+      );
+    }
+  }
+
+  return {
+    // Parenthesized even for the zero score: a bare `0` in ORDER BY is a
+    // select-list position reference in Postgres, not a constant.
+    sql: terms.length > 0 ? `(${terms.join(' + ')})` : '(0)',
     values,
   };
 };

@@ -9,7 +9,11 @@ import {parseSearchSyntax, type ParsedSearchQuery} from './searchQuery.js';
 export {
   buildSearchQuerySql,
   escapeLikePattern,
+  FUZZY_MIN_WORD_LENGTH,
+  FUZZY_SIMILARITY_THRESHOLD,
+  isFuzzyEligible,
   parseSearchSyntax,
+  relevanceScoreSql,
   type ParsedSearchQuery,
   type SearchScope,
 } from './searchQuery.js';
@@ -29,6 +33,7 @@ const SORT_VALUES = [
   'rating',
   'satiety',
   'calories',
+  'relevance',
 ] as const satisfies readonly RecipeListSort[];
 
 export type RecipeListFilterParams = {
@@ -160,7 +165,14 @@ export const parseRecipeListFilterParams = (
     maxProteinG: parseOptionalNumber(req.query['maxProteinG']),
     minSatiety: parseOptionalNumber(req.query['minSatiety']),
     maxSatiety: parseOptionalNumber(req.query['maxSatiety']),
-    sort: parseSort(req.query['sort'], options?.defaultSort ?? 'newest'),
+    // Relevance defaulting (#612): while a search is present and the request
+    // carries no explicit sort (and the caller named no default), results
+    // order best-match-first. An explicit sort always wins, exactly as
+    // before; with no search the default stays 'newest'.
+    sort: parseSort(
+      req.query['sort'],
+      options?.defaultSort ?? (search !== null ? 'relevance' : 'newest'),
+    ),
     sortDir: parseSortDir(
       req.query['sortDir'],
       options?.defaultSortDir ?? 'desc',
@@ -210,7 +222,7 @@ export const nutritionSelectSql = `
 export const orderBySql = (
   sort: RecipeListSort,
   sortDir: RecipeListSortDir,
-  options?: {fallback?: string},
+  options?: {fallback?: string; relevanceScore?: string},
 ): string => {
   const dir = sortDir === 'asc' ? 'asc' : 'desc';
   const nulls = sortDir === 'asc' ? 'nulls first' : 'nulls last';
@@ -222,6 +234,12 @@ export const orderBySql = (
   // recipe list, and the meal picker's sequential page fetch, #359)
   // could see duplicates or never see a tied recipe at all.
   switch (sort) {
+    case 'relevance': {
+      // Best match first (#612); ties fall back to newest, then the unique
+      // rv.id tie-breaker. sortDir does not apply: relevance is inherently
+      // descending.
+      return `${options?.relevanceScore ?? '(0)'} desc, rv.updated_at desc, rv.id desc`;
+    }
     case 'rating': {
       return `community_rating_average ${dir} ${nulls}, rv.updated_at desc, rv.id desc`;
     }

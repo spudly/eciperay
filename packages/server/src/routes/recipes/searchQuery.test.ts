@@ -2,7 +2,10 @@ import {
   buildSearchQuerySql,
   EMPTY_SEARCH_QUERY,
   escapeLikePattern,
+  FUZZY_MIN_WORD_LENGTH,
+  FUZZY_SIMILARITY_THRESHOLD,
   parseSearchSyntax,
+  relevanceScoreSql,
 } from './searchQuery.js';
 
 describe('parseSearchSyntax', () => {
@@ -156,11 +159,63 @@ describe('buildSearchQuerySql', () => {
       12,
       'mine',
     );
-    expect(values).toEqual(['%garlic%']);
+    // 'garlic' is fuzzy-eligible (#612), so the raw word is bound again for
+    // the similarity clauses.
+    expect(values).toEqual(['%garlic%', 'garlic']);
     expect(sql).toContain("rv.title ilike $12 escape '\\'");
     expect(sql).toContain("coalesce(rv.description, '') ilike $12");
     expect(sql).toContain('exists (select 1 from ingredients i');
     expect(sql).toContain('i.name ilike $12');
+  });
+
+  test('fuzzy similarity widens eligible words only (#612)', () => {
+    const {sql, values} = buildSearchQuerySql(
+      parseSearchSyntax('chiken'),
+      12,
+      'mine',
+    );
+    expect(values).toEqual(['%chiken%', 'chiken']);
+    expect(sql).toContain(
+      `similarity(rv.title, $13::text) > ${FUZZY_SIMILARITY_THRESHOLD}`,
+    );
+    expect(sql).toContain(
+      `similarity(i.name, $13::text) > ${FUZZY_SIMILARITY_THRESHOLD}`,
+    );
+    // The exact ILIKE condition is still present and ORed, never replaced.
+    expect(sql).toContain("rv.title ilike $12 escape '\\'");
+  });
+
+  test('short words, phrases, negations, and qualifiers stay exact-only (#612)', () => {
+    // Short word (< FUZZY_MIN_WORD_LENGTH).
+    expect(FUZZY_MIN_WORD_LENGTH).toBe(4);
+    const short = buildSearchQuerySql(parseSearchSyntax('egg'), 12, 'mine');
+    expect(short.values).toEqual(['%egg%']);
+    expect(short.sql).not.toContain('similarity');
+    // Quoted phrase.
+    const phrase = buildSearchQuerySql(
+      parseSearchSyntax('"chicken soup"'),
+      12,
+      'mine',
+    );
+    expect(phrase.values).toEqual(['%chicken soup%']);
+    expect(phrase.sql).not.toContain('similarity');
+    // Negated word: exclusions never widen.
+    const negated = buildSearchQuerySql(
+      parseSearchSyntax('-chicken'),
+      12,
+      'mine',
+    );
+    expect(negated.values).toEqual(['%chicken%']);
+    expect(negated.sql).not.toContain('similarity');
+    expect(negated.sql).toContain('not (');
+    // Field qualifier.
+    const qualifier = buildSearchQuerySql(
+      parseSearchSyntax('title:chicken'),
+      12,
+      'mine',
+    );
+    expect(qualifier.values).toEqual(['%chicken%']);
+    expect(qualifier.sql).not.toContain('similarity');
   });
 
   test('a phrase binds as one contiguous pattern', () => {
@@ -265,7 +320,7 @@ describe('buildSearchQuerySql', () => {
     expect(sql).toContain('rv.satiety_score >= $15');
   });
 
-  test('percent and underscore in values are escaped in the bind pattern', () => {
+  test('percent and underscore in values are escaped in the bind pattern (short words stay exact)', () => {
     const {sql, values} = buildSearchQuerySql(
       parseSearchSyntax('50% a_b'),
       12,
@@ -273,5 +328,60 @@ describe('buildSearchQuerySql', () => {
     );
     expect(values).toEqual(['%50\\%%', '%a\\_b%']);
     expect(sql).toContain("escape '\\'");
+  });
+});
+
+describe('relevanceScoreSql (#612)', () => {
+  test('empty query scores every row 0 with no bind values', () => {
+    expect(relevanceScoreSql(EMPTY_SEARCH_QUERY, 12)).toEqual({
+      sql: '(0)',
+      values: [],
+    });
+  });
+
+  test('title whole-word outranks substring, ingredient, then description', () => {
+    const {sql, values} = relevanceScoreSql(
+      parseSearchSyntax('chicken'),
+      12,
+    );
+    // Bind order: substring pattern, whole-word regex, raw word (similarity).
+    expect(values).toEqual(['%chicken%', '\\ychicken\\y', 'chicken']);
+    expect(sql).toContain('rv.title ~* $13::text then 100');
+    expect(sql).toContain("rv.title ilike $12 escape '\\' then 50");
+    expect(sql).toContain('i.name ilike $12');
+    expect(sql).toContain('then 30');
+    expect(sql).toContain("coalesce(rv.description, '') ilike $12");
+    expect(sql).toContain('then 20');
+    // Similarity contributes a bounded bonus, weighted by the score itself.
+    expect(sql).toContain('similarity(rv.title, $14::text) * 4');
+    expect(sql).toContain('max(similarity(i.name, $14::text))');
+  });
+
+  test('negated terms contribute nothing', () => {
+    expect(
+      relevanceScoreSql(parseSearchSyntax('-chicken'), 12),
+    ).toEqual({sql: '(0)', values: []});
+  });
+
+  test('field qualifiers contribute their field weight', () => {
+    const {sql, values} = relevanceScoreSql(
+      parseSearchSyntax('title:soup ingredient:garlic'),
+      12,
+    );
+    expect(values).toEqual(['%soup%', '%garlic%']);
+    expect(sql).toContain("rv.title ilike $12 escape '\\' then 50");
+    expect(sql).toContain('i.name ilike $13');
+    expect(sql).toContain('then 30');
+    expect(sql).not.toContain('similarity');
+  });
+
+  test('phrases score as substring matches without whole-word or fuzzy parts', () => {
+    const {sql, values} = relevanceScoreSql(
+      parseSearchSyntax('"chicken soup"'),
+      12,
+    );
+    expect(values).toEqual(['%chicken soup%']);
+    expect(sql).not.toContain('~*');
+    expect(sql).not.toContain('similarity');
   });
 });

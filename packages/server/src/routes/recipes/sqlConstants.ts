@@ -17,6 +17,7 @@ export const buildListRecipesSql = (
   sort: RecipeListSort,
   sortDir: RecipeListSortDir,
   searchSql = '',
+  relevanceScore = '(0)',
 ) => `
   select r.id, r.status, r.visibility, r.slug, r.content_revision,
          r.cloned_from_recipe_id, r.star_rating, r.active_version_id,
@@ -39,7 +40,7 @@ export const buildListRecipesSql = (
     ${ingredientFilterSql(5)}
     ${nutritionFilterSql(6)}${searchSql}
   group by r.id, rv.id
-  order by ${orderBySql(sort, sortDir)}
+  order by ${orderBySql(sort, sortDir, {relevanceScore})}
   limit $2 offset $3
 `;
 
@@ -47,6 +48,7 @@ export const buildListSharedWithMeSql = (
   sort: RecipeListSort,
   sortDir: RecipeListSortDir,
   searchSql = '',
+  relevanceScore = '(0)',
 ) => `
   select r.id, r.status, r.visibility, r.slug, r.content_revision,
          r.cloned_from_recipe_id, r.star_rating, r.active_version_id,
@@ -81,7 +83,7 @@ export const buildListSharedWithMeSql = (
       ? // Same total-order requirement as orderBySql (#359): granted_at
         // ties need the unique r.id tie-breaker for offset pagination.
         `shared_granted_at ${sortDir === 'asc' ? 'asc' : 'desc'}, r.id ${sortDir === 'asc' ? 'asc' : 'desc'}`
-      : orderBySql(sort, sortDir)
+      : orderBySql(sort, sortDir, {relevanceScore})
   }
   limit $2 offset $3
 `;
@@ -90,6 +92,7 @@ export const buildListPublicRecipesSql = (
   sort: RecipeListSort,
   sortDir: RecipeListSortDir,
   searchSql = '',
+  relevanceScore = '(0)',
 ) => `
   select r.id, r.slug, r.visibility,
          rv.title, rv.description, rv.servings, rv.prep_time_min,
@@ -114,7 +117,7 @@ export const buildListPublicRecipesSql = (
     ${ingredientFilterSql(4)}
     ${nutritionFilterSql(5)}${searchSql}
   group by r.id, rv.id, u.display_name, u.show_author_on_public_recipes
-  order by ${orderBySql(sort, sortDir)}
+  order by ${orderBySql(sort, sortDir, {relevanceScore})}
   limit $1 offset $2
 `;
 
