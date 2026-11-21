@@ -136,6 +136,12 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
       'React Router outlet guard for authenticated routes; app uses navigation auth flow instead.',
   },
   {
+    path: 'AdminGuard.tsx',
+    platform: 'web',
+    reason:
+      'React Router outlet guard for admin-only routes (#621); app instead unregisters the Tags screen in its Profile stack for non-admins.',
+  },
+  {
     path: 'FeedbackBubble.tsx',
     platform: 'web',
     reason:

@@ -1,5 +1,7 @@
 import {useEffect, useState, type ReactNode} from 'react';
+import {queryKeys} from '@eciperay/client';
 import {AppShellPage, type AppShellPageNavItem} from '@spudly/ui';
+import {useQuery} from '@tanstack/react-query';
 import {
   Outlet,
   useLocation,
@@ -7,6 +9,7 @@ import {
   useSearchParams,
 } from 'react-router-dom';
 
+import {eciperay} from '../lib/api.js';
 import {sharedFooter} from '../pages/legal/legalDocumentData.js';
 
 import {AuthenticatedPageHead} from './AuthenticatedPageHead.js';
@@ -54,6 +57,17 @@ type AuthenticatedShellProps = {children?: ReactNode};
 // Outlet; HomeEntry (the `/` route, which sits outside the auth
 // layout) passes its signed-in home page as children instead.
 export const AuthenticatedShell = ({children}: AuthenticatedShellProps) => {
+  // Tag management is admin-only (#621): the Tags nav entry is only
+  // offered to admins (server-computed isAdmin from /auth/me). While
+  // the profile loads the entry stays hidden rather than flashing an
+  // admin surface at non-admins.
+  const {data: me} = useQuery({
+    queryKey: queryKeys.currentUser(),
+    queryFn: () => eciperay.auth.me(),
+  });
+  const visibleNavItems = me?.isAdmin
+    ? navItems
+    : navItems.filter(item => item.id !== 'tags');
   const {pathname} = useLocation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -74,7 +88,7 @@ export const AuthenticatedShell = ({children}: AuthenticatedShellProps) => {
       <AuthenticatedPageHead />
       <AppShellPage
         brand={{label: 'Eciperay', href: '/'}}
-        navItems={navItems}
+        navItems={visibleNavItems}
         navLabel="Eciperay sections"
         activeItemId={activeItemIdFor(pathname)}
         search={{

@@ -43,6 +43,13 @@ export const ProfileScreen = () => {
     queryFn: () => api.account.getNutritionGoals(),
   });
 
+  // Tag management is admin-only (#621): the Tags link on the profile
+  // page is only offered to admins.
+  const {data: me} = useQuery({
+    queryKey: queryKeys.currentUser(),
+    queryFn: () => api.auth.me(),
+  });
+
   useEffect(() => {
     if (savedGoals) {
       setNutritionGoals(savedGoals);
@@ -171,7 +178,7 @@ export const ProfileScreen = () => {
   return (
     <ProfilePage
       email={session?.user.email ?? null}
-      tagsHref={tagsHref}
+      tagsHref={me?.isAdmin ? tagsHref : undefined}
       onSignOut={() => {
         void supabase.auth.signOut();
       }}

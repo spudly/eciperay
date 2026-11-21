@@ -31,6 +31,7 @@ jest.mock('../lib/api');
 const mockGetNutritionGoals = api.account.getNutritionGoals as jest.Mock;
 const mockPutNutritionGoals = api.account.putNutritionGoals as jest.Mock;
 const mockGetAuthorDisplay = api.account.getAuthorDisplay as jest.Mock;
+const mockMe = api.auth.me as jest.Mock;
 
 const renderProfileScreen = async () =>
   await renderWithProviders(
@@ -86,9 +87,7 @@ describe('ProfileScreen', () => {
       {locale: 'en-XA'},
     );
     expect(
-      await findByText(
-        'Could not load your author display settings: offline~',
-      ),
+      await findByText('Could not load your author display settings: offline~'),
     ).toBeTruthy();
   });
 
@@ -127,10 +126,21 @@ describe('ProfileScreen', () => {
   // Manage Tags is an href now (#248): a press opens the deep link
   // through Linking and the container's linking config routes it to
   // the Tags screen the old callback navigated to.
-  test('opens the tags deep link', async () => {
+  test('opens the tags deep link for an admin', async () => {
+    // Tag management is admin-only (#621): the link appears only
+    // when /auth/me reports isAdmin.
+    mockMe.mockResolvedValue({isAdmin: true});
     const {findByText} = await renderProfileScreen();
     await fireEvent.press(await findByText('Manage Tags'));
     expect(Linking.openURL).toHaveBeenCalledWith(tagsHref);
+  });
+
+  test('hides the tags link for a non-admin', async () => {
+    mockMe.mockResolvedValue({isAdmin: false});
+    const {queryByText, findByText} = await renderProfileScreen();
+    // Wait for the profile to render, then the link must be absent.
+    await findByText('Daily nutrition goals');
+    expect(queryByText('Manage Tags')).toBeNull();
   });
 
   test('opens legal document URLs', async () => {

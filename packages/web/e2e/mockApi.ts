@@ -114,6 +114,19 @@ export const installMocks = async (
       await route.fulfill({status: 204, body: ''});
       return;
     }
+    if (path === '/api/auth/me' && method === 'GET') {
+      await route.fulfill(
+        json({
+          id: 'user-1',
+          supabaseUid: 'user-1',
+          email: 'test@example.com',
+          displayName: 'Test User',
+          isAdmin: false,
+          createdAt: '2024-01-01T00:00:00.000Z',
+        }),
+      );
+      return;
+    }
     if (path === '/api/recipes' && method === 'GET') {
       const search = url.searchParams.get('search')?.trim().toLowerCase();
       const filtered = search

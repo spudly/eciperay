@@ -9,22 +9,22 @@ import type {Session, SupabaseClient, User} from '@supabase/supabase-js';
 /**
  * Fixture mode for the Android emulator use-case suite (#183 Phase 2).
  *
- * This module is only reachable when E2E_FIXTURE_MODE is baked into the
- * bundle (see lib/env): lib/supabase and lib/api swap their real clients
- * for the two factories below, so the app boots already signed in as a
- * fixture user and every API call is answered from the in-memory data
- * here. The suite therefore runs with seeded data, no production
- * backend, and no real account. The emulator workflow job is the only
- * build that sets the flag; release and preview builds never do.
+ * This module is only reachable when E2E_FIXTURE_MODE is baked into the bundle
+ * (see lib/env): lib/supabase and lib/api swap their real clients for the two
+ * factories below, so the app boots already signed in as a fixture user and
+ * every API call is answered from the in-memory data here. The suite therefore
+ * runs with seeded data, no production backend, and no real account. The
+ * emulator workflow job is the only build that sets the flag; release and
+ * preview builds never do.
  *
- * The routes mirror the paths in @eciperay/client's API modules
- * (recipesApi, versionsApi, cookLogsApi, aiApi, authApi) for the screens
- * the suite exercises: Home, Recipes, Shared with me, and recipe
- * detail. Reads of unlisted GET paths return an empty list so unrelated
- * queries on those screens settle benignly; any other unlisted request
- * (every mutation, and reads of unknown recipe ids) throws, so a flow
- * that reaches for behavior the fixture does not model fails loudly
- * instead of silently passing against fake success.
+ * The routes mirror the paths in @eciperay/client's API modules (recipesApi,
+ * versionsApi, cookLogsApi, aiApi, authApi) for the screens the suite
+ * exercises: Home, Recipes, Shared with me, and recipe detail. Reads of
+ * unlisted GET paths return an empty list so unrelated queries on those screens
+ * settle benignly; any other unlisted request (every mutation, and reads of
+ * unknown recipe ids) throws, so a flow that reaches for behavior the fixture
+ * does not model fails loudly instead of silently passing against fake
+ * success.
  */
 
 export const E2E_FIXTURE_USER_ID = 'e2e-fixture-user';
@@ -254,10 +254,9 @@ const NUTRITION_PATH = /^\/recipes\/([^/]+)\/ai\/nutrition$/;
 const SUBSTITUTIONS_PATH = /^\/recipes\/([^/]+)\/ai\/substitutions$/;
 
 /**
- * An ApiClient (the single-fetch shape from @eciperay/client) backed by
- * the fixture data above. Returned values are the exact payloads the
- * typed API modules expect, so createEciperayClient works unchanged on
- * top of it.
+ * An ApiClient (the single-fetch shape from @eciperay/client) backed by the
+ * fixture data above. Returned values are the exact payloads the typed API
+ * modules expect, so createEciperayClient works unchanged on top of it.
  */
 export const createFixtureApiClient = (): ApiClient => {
   const fetchFixture = async <T>(
@@ -269,6 +268,18 @@ export const createFixtureApiClient = (): ApiClient => {
 
     if (method === 'POST' && pathname === '/auth/sync') {
       return undefined as unknown as T;
+    }
+
+    if (method === 'GET' && pathname === '/auth/me') {
+      // The fixture user is a non-admin (#621): no Tags UI in e2e mode.
+      return {
+        id: E2E_FIXTURE_USER_ID,
+        supabaseUid: E2E_FIXTURE_USER_ID,
+        email: 'e2e@eciperay.invalid',
+        displayName: null,
+        isAdmin: false,
+        createdAt: FIXTURE_CREATED_AT,
+      } as unknown as T;
     }
 
     if (method === 'GET' && pathname === '/recipes') {
@@ -368,14 +379,13 @@ export const E2E_FIXTURE_SESSION: Session = {
 } as Session;
 
 /**
- * The slice of the Supabase client the app touches before and during
- * the exercised screens: AuthProvider restores the session with
- * getSession and subscribes with onAuthStateChange (which never fires
- * — the fixture session is permanent), api.ts reads the token from
- * getSession, and the auth deep-link hook subscribes the same way.
- * Anything else on the real client is unreachable in fixture mode
- * because the exercised screens talk to the fixture API client, so the
- * stub intentionally implements nothing more.
+ * The slice of the Supabase client the app touches before and during the
+ * exercised screens: AuthProvider restores the session with getSession and
+ * subscribes with onAuthStateChange (which never fires — the fixture session is
+ * permanent), api.ts reads the token from getSession, and the auth deep-link
+ * hook subscribes the same way. Anything else on the real client is unreachable
+ * in fixture mode because the exercised screens talk to the fixture API client,
+ * so the stub intentionally implements nothing more.
  */
 export const createFixtureSupabaseClient = (): SupabaseClient => {
   const stub = {
