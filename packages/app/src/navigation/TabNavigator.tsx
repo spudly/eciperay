@@ -1,8 +1,9 @@
 /* eslint-disable max-lines -- tab navigator registers multiple nested stacks */
-import {useFeedbackShortcutEnabled} from '@eciperay/client';
+import {queryKeys, useAuth, useFeedbackShortcutEnabled} from '@eciperay/client';
 import {useLingui} from '@lingui/react';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
+import {useQuery} from '@tanstack/react-query';
 import {useTheme} from 'tamagui';
 
 import {Icon} from '../components/Icon';
@@ -34,6 +35,7 @@ import {
 } from '../screens/SharedWithMeScreen';
 import {TagsScreen} from '../screens/TagsScreen';
 import {TweakAiScreen} from '../screens/TweakAiScreen';
+import {api} from '../lib/api';
 import {POSTHOG_KEY} from '../lib/env';
 
 import {tabIcons} from './tabIcons';
@@ -175,20 +177,32 @@ const AddStackNavigator = () => (
   </AddStack.Navigator>
 );
 
-const ProfileStackNavigator = () => (
-  <ProfileStack.Navigator>
-    <ProfileStack.Screen
-      name="ProfileHome"
-      component={ProfileScreen}
-      options={{title: 'Profile'}}
-    />
-    <ProfileStack.Screen
-      name="Tags"
-      component={TagsScreen}
-      options={{title: 'Tags'}}
-    />
-  </ProfileStack.Navigator>
-);
+const ProfileStackNavigator = () => {
+  // Tag management is admin-only (#621): the Tags screen is not even
+  // registered for non-admins (server-computed isAdmin from /auth/me),
+  // so the route is unreachable for them.
+  const {session} = useAuth();
+  const {data: me} = useQuery({
+    queryKey: queryKeys.currentUser(session?.user?.id ?? 'anonymous'),
+    queryFn: () => api.auth.me(),
+  });
+  return (
+    <ProfileStack.Navigator>
+      <ProfileStack.Screen
+        name="ProfileHome"
+        component={ProfileScreen}
+        options={{title: 'Profile'}}
+      />
+      {me?.isAdmin ? (
+        <ProfileStack.Screen
+          name="Tags"
+          component={TagsScreen}
+          options={{title: 'Tags'}}
+        />
+      ) : null}
+    </ProfileStack.Navigator>
+  );
+};
 
 export const TabNavigator = () => {
   const {enabled: feedbackShortcutEnabled} = useFeedbackShortcutEnabled();

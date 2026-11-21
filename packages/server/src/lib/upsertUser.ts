@@ -14,7 +14,7 @@ const UPSERT_USER_SQL = `
   on conflict (supabase_uid)
   do update set email        = excluded.email,
                 display_name = coalesce(excluded.display_name, users.display_name)
-  returning id, supabase_uid, email, display_name, created_at
+  returning id, supabase_uid, email, display_name, is_admin, created_at
 `;
 
 // The insert sets both `id` and `supabase_uid` from the same value, but

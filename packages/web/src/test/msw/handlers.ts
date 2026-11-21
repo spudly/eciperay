@@ -674,6 +674,19 @@ export const handlers = [
     `${API}/api/auth/sync`,
     () => new HttpResponse(null, {status: 204}),
   ),
+  // The test user is an admin (#621) so the Tags UI stays reachable
+  // in the suites that exercise it; admin-gate tests override this
+  // handler with isAdmin: false.
+  http.get(`${API}/api/auth/me`, () =>
+    HttpResponse.json({
+      id: 'user-1',
+      supabaseUid: 'user-1',
+      email: 'test@example.com',
+      displayName: 'Test User',
+      isAdmin: true,
+      createdAt: '2024-01-01T00:00:00.000Z',
+    }),
+  ),
   http.get(`${API}/api/account/export`, () =>
     HttpResponse.json({
       formatVersion: 1,
@@ -776,9 +789,7 @@ export const handlers = [
     `${API}/api/account/personal-access-tokens/:id`,
     () => new HttpResponse(null, {status: 204}),
   ),
-  http.get(`${API}/api/account/family-sharing`, () =>
-    HttpResponse.json([]),
-  ),
+  http.get(`${API}/api/account/family-sharing`, () => HttpResponse.json([])),
   http.post(`${API}/api/account/family-sharing`, async ({request}) => {
     const body = (await request.json()) as {email?: string};
     if (!body.email?.trim()) {

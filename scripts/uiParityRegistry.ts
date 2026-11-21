@@ -142,6 +142,12 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
       'React Router auth-aware route element unifying /discover with the Recipes browse (#622); app uses navigation auth flow instead.',
   },
   {
+    path: 'AdminGuard.tsx',
+    platform: 'web',
+    reason:
+      'React Router outlet guard for admin-only routes (#621); app instead unregisters the Tags screen in its Profile stack for non-admins.',
+  },
+  {
     path: 'FeedbackBubble.tsx',
     platform: 'web',
     reason:

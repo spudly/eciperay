@@ -28,7 +28,12 @@ export type RecipeProvenance = {
   detail: string | null;
 };
 
-export type RecipeListSort = 'newest' | 'rating' | 'satiety' | 'calories';
+export type RecipeListSort =
+  | 'newest'
+  | 'rating'
+  | 'satiety'
+  | 'calories'
+  | 'relevance';
 export type RecipeListSortDir = 'asc' | 'desc';
 
 export type Recipe = {

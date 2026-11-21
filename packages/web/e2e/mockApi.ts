@@ -65,7 +65,7 @@ const versionSummary = {
 
 export const installMocks = async (
   page: Page,
-  options: {signedIn: boolean},
+  options: {signedIn: boolean; admin?: boolean},
 ): Promise<{pageErrors: string[]}> => {
   const pageErrors: string[] = [];
   page.on('pageerror', error => {
@@ -112,6 +112,19 @@ export const installMocks = async (
 
     if (path === '/api/auth/sync' && method === 'POST') {
       await route.fulfill({status: 204, body: ''});
+      return;
+    }
+    if (path === '/api/auth/me' && method === 'GET') {
+      await route.fulfill(
+        json({
+          id: 'user-1',
+          supabaseUid: 'user-1',
+          email: 'test@example.com',
+          displayName: 'Test User',
+          isAdmin: options.admin ?? false,
+          createdAt: '2024-01-01T00:00:00.000Z',
+        }),
+      );
       return;
     }
     if (path === '/api/recipes' && method === 'GET') {

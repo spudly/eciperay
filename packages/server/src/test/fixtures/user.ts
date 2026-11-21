@@ -5,6 +5,7 @@ export const makeUser = (overrides: Partial<User> = {}): User => ({
   supabaseUid: 'supabase-uid-1',
   email: 'test@example.com',
   displayName: 'Test User',
+  isAdmin: false,
   createdAt: '2024-01-01T00:00:00.000Z',
   ...overrides,
 });

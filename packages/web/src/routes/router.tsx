@@ -1,5 +1,6 @@
 import {createBrowserRouter, Navigate} from 'react-router-dom';
 
+import {AdminGuard} from '../components/AdminGuard.js';
 import {AuthenticatedShell} from '../components/AuthenticatedShell.js';
 import {AuthGuard} from '../components/AuthGuard.js';
 import {RootLayout} from '../components/RootLayout.js';
@@ -93,7 +94,12 @@ const authenticatedAppRoutes = [
   {path: '/add/ai', element: <GenerateAiPage />},
   {path: '/import/review/:recipeId', element: <ImportReviewPage />},
   {path: '/profile', element: <ProfilePage />},
-  {path: '/tags', element: <TagsPage />},
+];
+
+// Tag management is admin-only (#621): /tags sits behind AdminGuard,
+// which redirects non-admins to /recipes.
+const adminRoutes = [
+  {element: <AdminGuard />, children: [{path: '/tags', element: <TagsPage />}]},
 ];
 
 export const router = createBrowserRouter([
@@ -115,7 +121,10 @@ export const router = createBrowserRouter([
       {
         element: <AuthGuard />,
         children: [
-          {element: <AuthenticatedShell />, children: authenticatedAppRoutes},
+          {
+            element: <AuthenticatedShell />,
+            children: [...authenticatedAppRoutes, ...adminRoutes],
+          },
         ],
       },
     ],

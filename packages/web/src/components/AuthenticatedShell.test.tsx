@@ -1,7 +1,9 @@
-import {screen, waitFor} from '@testing-library/react';
+import {fireEvent, screen, waitFor} from '@testing-library/react';
+import {http, HttpResponse} from 'msw';
 import userEvent from '@testing-library/user-event';
 import {Route, Routes, useLocation} from 'react-router-dom';
 
+import {server} from '../test/msw/server.js';
 import {renderWithProviders} from '../test/testUtils.js';
 
 import {AuthenticatedShell} from './AuthenticatedShell.js';
@@ -53,6 +55,52 @@ describe('AuthenticatedShell', () => {
         name: 'Do Not Sell or Share My Personal Information',
       }),
     ).toHaveAttribute('href', '/privacy/consent');
+  });
+
+  test('shows a profile load error with retry and keeps other destinations usable', async () => {
+    const API = 'http://localhost:8080';
+    server.use(
+      http.get(`${API}/api/auth/me`, () =>
+        HttpResponse.json({message: 'boom'}, {status: 500}),
+      ),
+    );
+    await renderWithProviders(
+      <Routes>
+        <Route
+          element={<AuthenticatedShell />}
+          path="/"
+        >
+          <Route
+            index
+            element={<div>Page Content</div>}
+          />
+        </Route>
+      </Routes>,
+    );
+    // A failed /auth/me is not a non-admin verdict (#650 review): the
+    // failure surfaces as a DS-rendered header retry action (data +
+    // callback only — no app-styled panel, DS #119; a shell notice
+    // slot is design-system #765), Tags stays hidden, and the rest of
+    // the shell keeps working.
+    expect(
+      await screen.findByRole('button', {name: 'Try again'}),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Page Content')).toBeInTheDocument();
+    expect(screen.queryByRole('link', {name: 'Tags'})).not.toBeInTheDocument();
+    server.use(
+      http.get(`${API}/api/auth/me`, () =>
+        HttpResponse.json({
+          id: 'user-1',
+          supabaseUid: 'user-1',
+          email: 'test@example.com',
+          displayName: 'Test User',
+          isAdmin: true,
+          createdAt: '2024-01-01T00:00:00.000Z',
+        }),
+      ),
+    );
+    fireEvent.click(screen.getByRole('button', {name: 'Try again'}));
+    expect(await screen.findByRole('link', {name: 'Tags'})).toBeInTheDocument();
   });
 
   test('applies the authenticated page head: site title and noindex (#414)', async () => {
