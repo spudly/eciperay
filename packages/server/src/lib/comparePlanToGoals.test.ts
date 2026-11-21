@@ -84,8 +84,43 @@ describe('comparePlanToGoals', () => {
     });
     // Over: delta is actual - max.
     expect(progress?.proteinG?.delta).toBe(10);
-    // Under: delta is actual - min.
-    expect(progress?.carbsG?.delta).toBe(-25);
+    // Under: delta is actual - min. Carbs actual is NET carbs (#648):
+    // 200 total − 20 fiber = 180, so delta is 180 − 225.
+    expect(progress?.carbsG?.delta).toBe(-45);
+  });
+
+  test('carbs goal evaluates net carbs, not total carbs (#648)', () => {
+    const goals = goalsWith({carbsGMin: 225, carbsGMax: 275});
+    // Total carbs (300) are over the max, but net carbs (300 − 60 = 240)
+    // are within the goal range.
+    const onTrack = comparePlanToGoals(
+      {...nutrition, carbsG: 300, fiberG: 60},
+      goals,
+    );
+    expect(onTrack?.carbsG).toEqual({
+      min: 225,
+      max: 275,
+      actual: 240,
+      delta: 0,
+      band: 'onTrack',
+    });
+    // Net carbs over the max band as over.
+    const over = comparePlanToGoals(
+      {...nutrition, carbsG: 300, fiberG: 10},
+      goals,
+    );
+    expect(over?.carbsG?.actual).toBe(290);
+    expect(over?.carbsG?.band).toBe('over');
+    expect(over?.carbsG?.delta).toBe(15);
+  });
+
+  test('carbs goal is omitted when fiber is unknown (#648)', () => {
+    const progress = comparePlanToGoals(
+      {...nutrition, fiberG: null},
+      goalsWith({carbsGMax: 50, caloriesMin: 1800, caloriesMax: 2200}),
+    );
+    expect(progress?.carbsG).toBeNull();
+    expect(progress?.calories?.band).toBe('onTrack');
   });
 
   test('min-only and max-only goals band on the set side only', () => {
