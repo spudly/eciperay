@@ -83,6 +83,21 @@ export const sharedFooter: BigFooterData = {
   brand: {label: 'Eciperay', href: '/'},
   columns: [
     {
+      title: 'Explore',
+      links: [
+        {label: 'Discover', href: '/discover'},
+        {label: 'Home', href: '/'},
+      ],
+    },
+    {
+      title: 'Account',
+      links: [
+        {label: 'Sign in', href: '/login'},
+        {label: 'Create account', href: '/signup'},
+        {label: 'Pricing', href: '/pay'},
+      ],
+    },
+    {
       title: 'Legal',
       links: [
         {label: 'Privacy Policy', href: '/privacy'},
@@ -102,6 +117,39 @@ export const sharedFooter: BigFooterData = {
 export const buildSharedFooter = (i18n: I18n): BigFooterData => ({
   brand: {label: 'Eciperay', href: '/'},
   columns: [
+    {
+      title: i18n._({id: 'legal.footerExploreColumnTitle', message: 'Explore'}),
+      links: [
+        {
+          label: i18n._({id: 'legal.footerDiscoverLabel', message: 'Discover'}),
+          href: '/discover',
+        },
+        {
+          label: i18n._({id: 'legal.footerHomeLabel', message: 'Home'}),
+          href: '/',
+        },
+      ],
+    },
+    {
+      title: i18n._({id: 'legal.footerAccountColumnTitle', message: 'Account'}),
+      links: [
+        {
+          label: i18n._({id: 'legal.signInLabel', message: 'Sign in'}),
+          href: '/login',
+        },
+        {
+          label: i18n._({
+            id: 'legal.footerCreateAccountLabel',
+            message: 'Create account',
+          }),
+          href: '/signup',
+        },
+        {
+          label: i18n._({id: 'legal.footerPricingLabel', message: 'Pricing'}),
+          href: '/pay',
+        },
+      ],
+    },
     {
       title: i18n._({id: 'legal.footerColumnTitle', message: 'Legal'}),
       links: [
