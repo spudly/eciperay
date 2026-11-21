@@ -98,7 +98,14 @@ export const comparePlanToGoals = (
       goals.proteinGMin,
       goals.proteinGMax,
     ),
-    carbsG: fieldProgress(actual.carbsG, goals.carbsGMin, goals.carbsGMax),
+    // The carbs goal evaluates NET carbs (#648): the #613 derivation —
+    // carbs − fiber, omitted (null) when fiber is unknown, so an unknown
+    // fiber never falls back to a misleading total-carbs comparison.
+    carbsG: fieldProgress(
+      actual.fiberG === null ? null : actual.carbsG - actual.fiberG,
+      goals.carbsGMin,
+      goals.carbsGMax,
+    ),
     fatG: fieldProgress(actual.fatG, goals.fatGMin, goals.fatGMax),
     satietyScore: fieldProgress(
       actual.satietyScore,
