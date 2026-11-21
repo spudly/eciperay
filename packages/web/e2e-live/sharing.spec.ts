@@ -222,7 +222,11 @@ test.describe('live sharing', () => {
       await expect(
         anon.getByRole('button', {name: 'Sign up free'}),
       ).toBeVisible({timeout: 15_000});
-      await expect(anon.getByRole('link', {name: 'Sign in'})).toBeVisible();
+      // Scoped to the banner: the shared footer also carries a Sign in
+      // link (#619), so an unscoped query is ambiguous.
+      await expect(
+        anon.getByRole('banner').getByRole('link', {name: 'Sign in'}),
+      ).toBeVisible();
     } finally {
       await context.close();
     }
