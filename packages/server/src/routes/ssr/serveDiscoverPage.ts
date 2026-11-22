@@ -11,13 +11,14 @@ export type DiscoverStreamRenderer = typeof renderDiscoverStreamDeterministic;
 
 /**
  * Serve the unified browse page as streamed server-rendered HTML at GET
- * /discover (#622, Stephen's 2026-11-21 directive): /discover is the SAME page
- * as /recipes, served at this URL — never a redirect.
+ * /recipes (#622, Stephen's 2026-11-21 decision: /recipes survives, /discover
+ * is removed entirely): the one unified browse page, served at this URL — never
+ * a redirect.
  *
  * Anonymous only, mirroring servePublicRecipePage: the HTML is publicly
  * cacheable and carries only the public browse content, so a request carrying
  * an Authorization header returns `false` here and the caller falls through to
- * the SPA, which renders the same page at /discover and applies signed-in
+ * the SPA, which renders the same page at /recipes and applies signed-in
  * personalization client-side once auth resolves.
  *
  * Returns true when the request was handled (HTML streamed or an error sent),

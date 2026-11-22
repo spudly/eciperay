@@ -46,7 +46,7 @@ export const MarketingLandingPage = () => {
             id: 'landing.discoverCta',
             message: 'Discover public recipes',
           }),
-          href: '/discover',
+          href: '/recipes',
         }}
         signUpCta={{
           label: i18n._({id: 'landing.signUpCta', message: 'Sign up free'}),

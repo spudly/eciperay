@@ -86,7 +86,7 @@ export const DiscoverPage = () => {
 
   return (
     <>
-      <StaticPageHead path="/discover" />
+      <StaticPageHead path="/recipes" />
       <DiscoverPageHead recipes={recipes} />
       <PublicHeader />
       <DiscoverPageView
@@ -133,10 +133,7 @@ export const DiscoverPage = () => {
         recipes={recipes.map(recipe =>
           toDiscoverItem(
             recipe,
-            i18n._({
-              id: 'discover.noRatingsLabel',
-              message: 'No ratings yet',
-            }),
+            i18n._({id: 'discover.noRatingsLabel', message: 'No ratings yet'}),
           ),
         )}
         loading={isLoading}

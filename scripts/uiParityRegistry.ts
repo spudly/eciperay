@@ -136,10 +136,10 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
       'React Router outlet guard for authenticated routes; app uses navigation auth flow instead.',
   },
   {
-    path: 'DiscoverRoute.tsx',
+    path: 'RecipesRoute.tsx',
     platform: 'web',
     reason:
-      'React Router auth-aware route element unifying /discover with the Recipes browse (#622); app uses navigation auth flow instead.',
+      'React Router auth-aware route element for the one unified browse at /recipes (#622); app uses navigation auth flow instead.',
   },
   {
     path: 'AdminGuard.tsx',

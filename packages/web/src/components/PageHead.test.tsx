@@ -10,9 +10,9 @@ import {PageHead} from './PageHead.js';
 
 describe('PageHead', () => {
   test('applies a public page config: title, description, canonical, social cards', async () => {
-    const config = buildPublicPageHead('https://www.eciperay.com', '/discover');
+    const config = buildPublicPageHead('https://www.eciperay.com', '/recipes');
     if (!config) {
-      throw new Error('expected a head config for /discover');
+      throw new Error('expected a head config for /recipes');
     }
 
     await renderWithProviders(<PageHead config={config} />, {withAuth: false});
@@ -29,7 +29,7 @@ describe('PageHead', () => {
     );
     expect(
       document.head.querySelector('link[rel="canonical"]'),
-    ).toHaveAttribute('href', 'https://www.eciperay.com/discover');
+    ).toHaveAttribute('href', 'https://www.eciperay.com/recipes');
     expect(
       document.head.querySelector('meta[property="og:title"]'),
     ).toHaveAttribute('content', 'Discover recipes | Eciperay');
@@ -53,9 +53,9 @@ describe('PageHead', () => {
     canonical.href = 'https://www.eciperay.com/';
     document.head.appendChild(canonical);
 
-    const config = buildPublicPageHead('https://www.eciperay.com', '/discover');
+    const config = buildPublicPageHead('https://www.eciperay.com', '/recipes');
     if (!config) {
-      throw new Error('expected a head config for /discover');
+      throw new Error('expected a head config for /recipes');
     }
     const {unmount} = await renderWithProviders(<PageHead config={config} />, {
       withAuth: false,
@@ -65,7 +65,7 @@ describe('PageHead', () => {
     });
     expect(
       document.head.querySelector('link[rel="canonical"]'),
-    ).toHaveAttribute('href', 'https://www.eciperay.com/discover');
+    ).toHaveAttribute('href', 'https://www.eciperay.com/recipes');
 
     unmount();
 

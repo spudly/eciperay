@@ -60,7 +60,7 @@ export type StaticPublicPage = {
 export const STATIC_PUBLIC_PAGES: readonly StaticPublicPage[] = [
   {path: '/', pageTitle: null, description: LANDING_HERO_SUBTITLE},
   {
-    path: '/discover',
+    path: '/recipes',
     pageTitle: DISCOVER_TITLE,
     description:
       'Browse public recipes shared by the Eciperay community and find your next meal.',

@@ -13,7 +13,7 @@ import {
 import {getWebAppBaseUrl} from './seoUrls.js';
 
 /**
- * Server renderer for the unified browse page at /discover (#622), mirroring
+ * Server renderer for the unified browse page at /recipes (#622), mirroring
  * renderPublicRecipe.tsx: the DS DiscoverPage (the public variant of the
  * unified RecipesPage, #547) renders inside the Express process with
  * react-dom/server, fed by the server's own data access (loadPublicDiscover) —
@@ -21,7 +21,7 @@ import {getWebAppBaseUrl} from './seoUrls.js';
  * renderServerPage.tsx.
  *
  * The page declares its own canonical URL (React hoists the link into the
- * document head) so crawlers resolve /discover as the canonical browse address.
+ * document head) so crawlers resolve /recipes as the canonical browse address.
  * Production loads this module through the bundled SSR runtime
  * (scripts/buildSsrBundle.mjs → dist-ssr/renderDiscover.mjs, wired in
  * attachSsrRoutes).
@@ -34,7 +34,7 @@ export const renderDiscoverStream = (
     <>
       <link
         rel="canonical"
-        href={new URL('/discover', getWebAppBaseUrl()).toString()}
+        href={new URL('/recipes', getWebAppBaseUrl()).toString()}
       />
       <DiscoverPage {...buildDiscoverPageProps(recipes)} />
     </>,

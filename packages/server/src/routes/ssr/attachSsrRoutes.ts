@@ -65,7 +65,7 @@ const loadDiscoverRenderer = async (): Promise<DiscoverStreamRenderer> => {
 };
 
 /**
- * Attach the #304 SSR routes, plus the #622 /discover SSR route. Gated on
+ * Attach the #304 SSR routes, plus the #622 /recipes SSR route. Gated on
  * SSR_PUBLIC_RECIPE=1 (default off) so the routes stay dark until the
  * deployment enables them. The renderers are imported lazily inside the
  * handlers: a static import would load the DS graph on every server start,
@@ -104,11 +104,12 @@ export const attachSsrRoutes = (
     run().catch(next);
   });
 
-  // /discover is the unified browse page itself (#622): served here
-  // with the public browse content for SEO, never redirected. The
-  // client renders the same page at this URL and applies signed-in
-  // personalization once auth resolves.
-  app.get('/discover', (req, res, next) => {
+  // /recipes is the ONE unified browse page (#622, Stephen's
+  // 2026-11-21 decision: /recipes survives, /discover is removed):
+  // served here with the public browse content for SEO, never
+  // redirected. The client renders the same page at this URL and
+  // applies signed-in personalization once auth resolves.
+  app.get('/recipes', (req, res, next) => {
     const run = async (): Promise<void> => {
       const render = injected.discover ?? (await loadDiscoverRenderer());
       const handled = await serveDiscoverPage(req, res, queryFn, render);

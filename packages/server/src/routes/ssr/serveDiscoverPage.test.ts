@@ -64,7 +64,7 @@ describe('GET /discover (SSR, #622)', () => {
   test('streams the unified browse SSR HTML at /discover with a short public cache TTL (no redirect)', async () => {
     mockPublicDiscoverQueries();
 
-    const res = await request(buildApp()).get('/discover');
+    const res = await request(buildApp()).get('/recipes');
 
     expect(res.status).toBe(200);
     expect(res.headers['content-type']).toContain('text/html');
@@ -76,7 +76,7 @@ describe('GET /discover (SSR, #622)', () => {
   test('renders an empty feed as the page empty state, not an error', async () => {
     mockQuery.mockResolvedValue(makeQueryResult([]));
 
-    const res = await request(buildApp()).get('/discover');
+    const res = await request(buildApp()).get('/recipes');
 
     expect(res.status).toBe(200);
     expect(res.text).toContain('<html><body></body></html>');
@@ -85,7 +85,7 @@ describe('GET /discover (SSR, #622)', () => {
   test('sends a non-cacheable 500 when the render shell fails', async () => {
     mockPublicDiscoverQueries();
 
-    const res = await request(buildApp(fakeShellErrorRender)).get('/discover');
+    const res = await request(buildApp(fakeShellErrorRender)).get('/recipes');
 
     expect(res.status).toBe(500);
     expect(res.headers['cache-control']).toContain('no-store');
@@ -95,7 +95,7 @@ describe('GET /discover (SSR, #622)', () => {
   test('marks the response no-store when the renderer rejects before returning a stream', async () => {
     mockPublicDiscoverQueries();
 
-    const res = await request(buildApp(fakeRejectingRender)).get('/discover');
+    const res = await request(buildApp(fakeRejectingRender)).get('/recipes');
 
     expect(res.status).toBe(500);
     expect(res.headers['cache-control']).toContain('no-store');
@@ -106,7 +106,7 @@ describe('GET /discover (SSR, #622)', () => {
     mockPublicDiscoverQueries();
 
     const res = await request(buildApp())
-      .get('/discover')
+      .get('/recipes')
       .set('Authorization', 'Bearer token');
 
     expect(res.status).toBe(200);

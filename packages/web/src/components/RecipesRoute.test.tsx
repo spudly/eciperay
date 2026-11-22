@@ -4,7 +4,7 @@ import {afterEach, beforeEach, vi} from 'vitest';
 
 import {renderWithProviders} from '../test/testUtils.js';
 
-import {DiscoverRoute} from './DiscoverRoute.js';
+import {RecipesRoute} from './RecipesRoute.js';
 
 const mockUseAuth = vi.fn();
 
@@ -35,7 +35,7 @@ vi.mock('./AuthenticatedShell.js', () => ({
   ),
 }));
 
-describe('DiscoverRoute (#622 unified browse)', () => {
+describe('RecipesRoute (#622 unified browse)', () => {
   beforeEach(() => {
     vi.useFakeTimers();
   });
@@ -49,11 +49,11 @@ describe('DiscoverRoute (#622 unified browse)', () => {
     await renderWithProviders(
       <Routes>
         <Route
-          element={<DiscoverRoute />}
-          path="/discover"
+          element={<RecipesRoute />}
+          path="/recipes"
         />
       </Routes>,
-      {withAuth: false, route: '/discover'},
+      {withAuth: false, route: '/recipes'},
     );
     act(() => {
       vi.advanceTimersByTime(100);
@@ -66,7 +66,7 @@ describe('DiscoverRoute (#622 unified browse)', () => {
       session: {user: {id: 'u1'}},
       isLoading: false,
     });
-    // No /recipes route is registered: if DiscoverRoute redirected
+    // No /recipes route is registered: if RecipesRoute redirected
     // there (the pre-rework behavior Stephen rejected 2026-11-21),
     // nothing would render. The unified browse must appear at the
     // /discover URL itself, inside the authenticated shell.
@@ -75,17 +75,17 @@ describe('DiscoverRoute (#622 unified browse)', () => {
         <LocationProbe />
         <Routes>
           <Route
-            element={<DiscoverRoute />}
-            path="/discover"
+            element={<RecipesRoute />}
+            path="/recipes"
           />
         </Routes>
       </>,
-      {withAuth: false, route: '/discover'},
+      {withAuth: false, route: '/recipes'},
     );
     expect(screen.getByText('Unified recipes')).toBeInTheDocument();
     expect(screen.getByText('Authenticated shell')).toBeInTheDocument();
     expect(screen.queryByText('Public discover')).not.toBeInTheDocument();
-    expect(screen.getByText('path:/discover')).toBeInTheDocument();
+    expect(screen.getByText('path:/recipes')).toBeInTheDocument();
   });
 
   test('renders the public Discover treatment for signed-out viewers', async () => {
@@ -93,11 +93,11 @@ describe('DiscoverRoute (#622 unified browse)', () => {
     await renderWithProviders(
       <Routes>
         <Route
-          element={<DiscoverRoute />}
-          path="/discover"
+          element={<RecipesRoute />}
+          path="/recipes"
         />
       </Routes>,
-      {withAuth: false, route: '/discover'},
+      {withAuth: false, route: '/recipes'},
     );
     expect(screen.getByText('Public discover')).toBeInTheDocument();
   });

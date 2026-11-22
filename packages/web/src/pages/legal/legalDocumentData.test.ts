@@ -6,7 +6,7 @@ const expectedColumns = [
   {
     title: 'Explore',
     links: [
-      {label: 'Discover', href: '/discover'},
+      {label: 'Discover', href: '/recipes'},
       {label: 'Home', href: '/'},
     ],
   },
@@ -65,16 +65,13 @@ describe('sharedFooter', () => {
       'legal.footerColumnTitle': 'Legal',
       'privacyPolicy.title': 'Privacy Policy',
       'termsOfService.title': 'Terms of Service',
-      'legal.doNotSellLabel':
-        'Do Not Sell or Share My Personal Information',
+      'legal.doNotSellLabel': 'Do Not Sell or Share My Personal Information',
     };
-    const messages = Object.fromEntries(
-      ids.map((id) => [id, `${english[id]}~`]),
-    );
+    const messages = Object.fromEntries(ids.map(id => [id, `${english[id]}~`]));
     const i18n = setupI18n({locale: 'en-XA', messages: {'en-XA': messages}});
-    const translated = expectedColumns.map((column) => ({
+    const translated = expectedColumns.map(column => ({
       title: `${column.title}~`,
-      links: column.links.map((link) => ({
+      links: column.links.map(link => ({
         label: `${link.label}~`,
         href: link.href,
       })),

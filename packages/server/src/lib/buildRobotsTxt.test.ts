@@ -4,7 +4,7 @@ describe('buildRobotsTxt', () => {
   test('allows public routes and points to the sitemap', () => {
     const robots = buildRobotsTxt('https://www.eciperay.com/sitemap.xml');
     expect(robots).toContain('Allow: /recipe/');
-    expect(robots).toContain('Allow: /discover');
+    expect(robots).toContain('Allow: /recipes');
     expect(robots).toContain('Allow: /privacy');
     expect(robots).toContain('Allow: /terms');
     expect(robots).toContain('Disallow: /api/');

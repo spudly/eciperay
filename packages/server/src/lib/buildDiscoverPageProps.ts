@@ -4,7 +4,7 @@ import type {PublicRecipeDiscoveryItem} from '@eciperay/types';
 import type {DiscoverPageProps} from '@spudly/ui';
 
 /**
- * SSR view-model for the unified browse page at /discover (#622).
+ * SSR view-model for the unified browse page at /recipes (#622).
  *
  * Maps the public discovery feed's first page (loadPublicDiscover) to the
  * design system's DiscoverPage props — the public variant of the unified
@@ -26,7 +26,7 @@ const discoverFooter: NonNullable<DiscoverPageProps['footer']> = {
     {
       title: 'Explore',
       links: [
-        {label: 'Discover', href: '/discover'},
+        {label: 'Discover', href: '/recipes'},
         {label: 'Home', href: '/'},
       ],
     },

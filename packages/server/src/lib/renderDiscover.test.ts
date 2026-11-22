@@ -40,12 +40,12 @@ describe('renderDiscoverStream', () => {
     expect(html).toContain('Discover recipes');
   });
 
-  test('renders a canonical link tag for /discover', async () => {
+  test('renders a canonical link tag for /recipes', async () => {
     const html = await renderStreamToHtml(options =>
       renderDiscoverStream([makeDiscoveryItem()], options),
     );
 
     expect(html).toContain('rel="canonical"');
-    expect(html).toContain('href="https://www.eciperay.com/discover"');
+    expect(html).toContain('href="https://www.eciperay.com/recipes"');
   });
 });

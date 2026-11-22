@@ -51,7 +51,7 @@ test.describe('live, signed out', () => {
     const pageErrors: string[] = [];
     page.on('pageerror', error => pageErrors.push(String(error)));
 
-    await page.goto('/discover');
+    await page.goto('/recipes');
 
     // The QA dataset's public recipes are data, not fixtures: assert the
     // page itself renders (its title and search chrome are always

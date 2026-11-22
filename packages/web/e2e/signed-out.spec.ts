@@ -23,7 +23,7 @@ test.describe('signed out', () => {
   }) => {
     const {pageErrors} = await installMocks(page, {signedIn: false});
 
-    await page.goto('/discover');
+    await page.goto('/recipes');
 
     await expect(page.getByText('E2E Public Pancakes')).toBeVisible();
     await expect(page.getByText(/By E2E Chef/)).toBeVisible();
@@ -114,7 +114,7 @@ test.describe('signed out', () => {
       });
     });
 
-    await page.goto('/discover');
+    await page.goto('/recipes');
     await expect(page.getByText('E2E Discover Recipe 0')).toBeVisible();
     await expect(page.getByText('E2E Discover Recipe 20')).toHaveCount(0);
 

@@ -61,7 +61,7 @@ describe('attachSeoRoutes', () => {
     const res = await request(getApp()).get('/sitemap.xml');
     expect(res.status).toBe(200);
     expect(res.text).toContain('<loc>https://www.eciperay.com/</loc>');
-    expect(res.text).toContain('<loc>https://www.eciperay.com/discover</loc>');
+    expect(res.text).toContain('<loc>https://www.eciperay.com/recipes</loc>');
     expect(res.text).toContain('<loc>https://www.eciperay.com/privacy</loc>');
     expect(res.text).toContain('<loc>https://www.eciperay.com/terms</loc>');
   });
