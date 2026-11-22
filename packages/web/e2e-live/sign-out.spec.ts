@@ -24,6 +24,7 @@ test('sign out returns to a signed-out state', async ({page}) => {
   await page.getByRole('button', {name: 'Sign Out'}).click();
 
   // Signed-out: an authenticated route bounces to /login again.
-  await page.goto('/recipes');
+  // (/recipes is the public unified browse now, #622, so it no longer bounces.)
+  await page.goto('/profile');
   await expect(page).toHaveURL(/\/login$/, {timeout: 15_000});
 });

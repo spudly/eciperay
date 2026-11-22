@@ -9,7 +9,9 @@ test.describe('signed out', () => {
   }) => {
     const {pageErrors} = await installMocks(page, {signedIn: false});
 
-    await page.goto('/recipes');
+    // /recipes is the public unified browse now (#622) — use a genuinely
+    // authenticated-only route for the redirect check.
+    await page.goto('/profile');
 
     await expect(page).toHaveURL(/\/login$/);
     await expect(page.getByLabel('Email')).toBeVisible();

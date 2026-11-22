@@ -22,7 +22,9 @@ test.describe('live, signed out', () => {
   test('an authenticated route redirects to sign-in, which renders', async ({
     page,
   }) => {
-    await page.goto('/recipes');
+    // /recipes is the public unified browse now (#622) — use a genuinely
+    // authenticated-only route for the redirect check.
+    await page.goto('/profile');
 
     await expect(page).toHaveURL(/\/login$/);
     await expect(page.getByLabel('Email')).toBeVisible();
