@@ -20,7 +20,7 @@
     "@eciperay/mcp-server": "*",
     "@eciperay/types": "*",
     "@opentelemetry/api-logs": "^0.223.0",
-    "@opentelemetry/exporter-logs-otlp-http": "^0.301.2",
+    "@opentelemetry/exporter-logs-otlp-http": "^0.300.0",
     "@opentelemetry/resources": "^3.0.0",
     "@opentelemetry/sdk-logs": "^3.0.0",
     "@spudly/ui": "^11.0.0",
