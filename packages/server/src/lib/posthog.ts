@@ -33,11 +33,10 @@ export const captureServerException = (
   if (!posthog) {
     return;
   }
-  posthog.captureException(
-    error,
+  posthog.captureException(error, {
     distinctId,
-    sanitizeAnalyticsProperties(properties),
-  );
+    properties: sanitizeAnalyticsProperties(properties),
+  });
 };
 
 export const attachPostHogExpress = (app: {
