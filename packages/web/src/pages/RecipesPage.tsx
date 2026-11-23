@@ -14,6 +14,7 @@ import {
   recipeListInfiniteQueryOptions,
   resizedImageUrl,
   sharedWithMeInfiniteQueryOptions,
+  useAuth,
   useRecipeListFilters,
   type RecipeListFilterValues,
   type RecipeStatusFilterValue,
@@ -46,6 +47,8 @@ import {
 } from 'react-router-dom';
 
 import {CookLogForm} from '../components/cooking/CookLogForm.js';
+import {RecipesPageHead} from '../components/RecipesPageHead.js';
+import {StaticPageHead} from '../components/StaticPageHead.js';
 import {eciperay} from '../lib/api.js';
 
 /**
@@ -220,7 +223,7 @@ const toDiscoveryItem = (
  * and pressing Back restores the filters exactly as left, while Back from the
  * browse itself still leaves in one step.
  */
-export const RecipesPage = () => {
+const SignedInRecipesPage = () => {
   const {i18n} = useLingui();
   const location = useLocation();
   const navigate = useNavigate();
@@ -717,4 +720,158 @@ export const RecipesPage = () => {
       />
     </>
   );
+};
+
+// ---------------------------------------------------------------------------
+// The signed-out (public) rendering of this same page (#622): the
+// public-feed logic that used to live in the deleted host Discover
+// page folds in here. It drives the DS RecipesPage's public variant
+// directly (no DS Discover wrapper), with the public infinite query,
+// the author-byline item mapping, and the discover copy. It renders
+// inside the one AppShell (see RecipesRoute) — no PublicHeader, no
+// page-level footer: the shell supplies both the header and the
+// shared footer. Its head is the public one: StaticPageHead plus
+// the ItemList JSON-LD head.
+const formatPublicAuthorName = (
+  authorDisplayName: string | null,
+): string | null => {
+  const trimmed = authorDisplayName?.trim();
+  return trimmed ? trimmed : null;
+};
+
+const toPublicItem = (
+  recipe: PublicRecipeDiscoveryItem,
+  noRatingsLabel: string,
+) => {
+  const authorName = formatPublicAuthorName(recipe.authorDisplayName);
+  return {
+    id: recipe.id,
+    title: recipe.title,
+    subtitle: `${authorName ? `By ${authorName} \u00b7 ` : ''}${formatDiscoveryListMeta(recipe, noRatingsLabel)}`,
+    imageUrl: resizedImageUrl(recipe.imageUrl, 400),
+    href: `/recipe/${recipe.id}/${recipe.slug}`,
+  };
+};
+
+const PublicRecipesPage = () => {
+  const {i18n} = useLingui();
+  const {filters, controls} = useRecipeListFilters({
+    includeStatus: true,
+    defaultSort: 'newest',
+  });
+
+  const {
+    data,
+    isLoading,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+    error,
+  } = useInfiniteQuery(
+    publicRecipeDiscoveryInfiniteQueryOptions(
+      params => eciperay.recipes.listPublic(params),
+      filters,
+    ),
+  );
+
+  const recipes = data?.pages.flat() ?? [];
+
+  return (
+    <>
+      <StaticPageHead path="/recipes" />
+      <RecipesPageHead recipes={recipes} />
+      <RecipesPageView
+        variant="public"
+        title={i18n._({id: 'discover.title', message: 'Discover recipes'})}
+        searchPlaceholder={i18n._({
+          id: 'discover.searchPlaceholder',
+          message: 'Search public recipes\u2026',
+        })}
+        emptyMessage={
+          controls.search.trim()
+            ? i18n._({
+                id: 'discover.emptyMessage',
+                message:
+                  'No public recipes match that search \u2014 try a broader craving.',
+              })
+            : controls.ingredient.trim() ||
+                (controls.statusFilter &&
+                  controls.statusFilter !== RECIPE_STATUS_FILTER_ALL) ||
+                controls.minCalories.trim() ||
+                controls.maxCalories.trim() ||
+                controls.minSatiety.trim() ||
+                controls.maxSatiety.trim()
+              ? i18n._({
+                  id: 'discover.emptyFilterMessage',
+                  message:
+                    'No public recipes match those filters \u2014 try broadening them.',
+                })
+              : i18n._({
+                  id: 'discover.emptyFeedMessage',
+                  message:
+                    'No public recipes yet \u2014 new dishes show up here as cooks share them.',
+                })
+        }
+        errorMessage={
+          error
+            ? i18n._({
+                id: 'discover.errorMessage',
+                message:
+                  "We couldn't load public recipes. Check your connection and try again.",
+              })
+            : null
+        }
+        recipes={recipes.map(recipe =>
+          toPublicItem(
+            recipe,
+            i18n._({id: 'discover.noRatingsLabel', message: 'No ratings yet'}),
+          ),
+        )}
+        loading={isLoading}
+        isFetchingNextPage={isFetchingNextPage}
+        onLoadMore={() => {
+          if (hasNextPage) {
+            void fetchNextPage();
+          }
+        }}
+        search={controls.search}
+        onSearchChange={controls.onSearchChange}
+        statusFilter={controls.statusFilter}
+        onStatusFilterChange={value => {
+          controls.onStatusFilterChange?.(value as RecipeStatusFilterValue);
+        }}
+        showStatusFilter={controls.showStatusFilter}
+        ingredient={controls.ingredient}
+        onIngredientChange={controls.onIngredientChange}
+        minCalories={controls.minCalories}
+        onMinCaloriesChange={controls.onMinCaloriesChange}
+        maxCalories={controls.maxCalories}
+        onMaxCaloriesChange={controls.onMaxCaloriesChange}
+        minSatiety={controls.minSatiety}
+        onMinSatietyChange={controls.onMinSatietyChange}
+        maxSatiety={controls.maxSatiety}
+        onMaxSatietyChange={controls.onMaxSatietyChange}
+        sort={controls.sort}
+        onSortChange={value => {
+          controls.onSortChange(value as RecipeListSort);
+        }}
+        sortDir={controls.sortDir}
+        onSortDirChange={value => {
+          controls.onSortDirChange(value as RecipeListSortDir);
+        }}
+      />
+    </>
+  );
+};
+
+/**
+ * The ONE Recipes browse page (#622, Stephen's 2026-11-23 rework): a single
+ * host page that branches on auth. Signed-in viewers get the unified browse
+ * (own + shared + discovery sections); signed-out viewers get the public-only
+ * rendering of the same page. Both render inside the one AppShell (see
+ * RecipesRoute).
+ */
+export const RecipesPage = () => {
+  const {session} = useAuth();
+  return session ? <SignedInRecipesPage /> : <PublicRecipesPage />;
 };

@@ -282,27 +282,27 @@ without); one recipe may be created fresh in case 1.
     identically on all three surfaces. Search for a literal `50%`: **Expected:**
     only recipes containing the literal text match (the `%` is not treated as a
     wildcard).
-20. **Resized recipe images (#618).** On `/recipes`, Discover (`/discover`),
-    and Home, check recipe cards with images, then open a recipe detail and a
-    public recipe page. **Expected:** card thumbnails load through the image
-    resizer at the smaller width and render sharp and correctly oriented; the
-    detail/public hero loads the larger resized variant, not the thumbnail.
-    A recipe whose image URL is external (not the recipe-images bucket) still
-    loads its original image untouched. Replace a recipe's image with a new
-    one and reload the list and detail views. **Expected:** the new image
-    shows everywhere — no stale thumbnail or hero from the old image.
-21. **Fuzzy search and relevance ranking (#612).** On `/recipes`, search with
-    a one-letter typo of a word in a recipe's title (e.g. `chiken` for a
-    chicken recipe). **Expected:** the intended recipe appears, below any
-    exact matches — an exact-match search (e.g. `chicken`) lists exact title
-    matches first, then ingredient matches, then description matches, with
-    fuzzy near-misses last, never flooding the top of the list. Search with
-    an explicit sort (Newest or Rating) while a search term is present:
-    **Expected:** the chosen sort wins and results are no longer
-    relevance-ordered. Repeat the typo search on Discover and on Shared
-    with me: **Expected:** the typo finds the intended recipe on all three
-    surfaces. Search with only a qualifier (`status:perfected`):
-    **Expected:** the filtered list loads normally (no error).
+20. **Resized recipe images (#618).** On `/recipes`, Discover (`/discover`), and
+    Home, check recipe cards with images, then open a recipe detail and a public
+    recipe page. **Expected:** card thumbnails load through the image resizer at
+    the smaller width and render sharp and correctly oriented; the detail/public
+    hero loads the larger resized variant, not the thumbnail. A recipe whose
+    image URL is external (not the recipe-images bucket) still loads its
+    original image untouched. Replace a recipe's image with a new one and reload
+    the list and detail views. **Expected:** the new image shows everywhere — no
+    stale thumbnail or hero from the old image.
+21. **Fuzzy search and relevance ranking (#612).** On `/recipes`, search with a
+    one-letter typo of a word in a recipe's title (e.g. `chiken` for a chicken
+    recipe). **Expected:** the intended recipe appears, below any exact matches
+    — an exact-match search (e.g. `chicken`) lists exact title matches first,
+    then ingredient matches, then description matches, with fuzzy near-misses
+    last, never flooding the top of the list. Search with an explicit sort
+    (Newest or Rating) while a search term is present: **Expected:** the chosen
+    sort wins and results are no longer relevance-ordered. Repeat the typo
+    search on Discover and on Shared with me: **Expected:** the typo finds the
+    intended recipe on all three surfaces. Search with only a qualifier
+    (`status:perfected`): **Expected:** the filtered list loads normally (no
+    error).
 
 **Run when:**
 `packages/app/src/screens/{Recipes,RecipeDetail,EditRecipe,EditVersion,ManualEntry,SharedWithMe,Home}Screen.tsx`,
@@ -343,7 +343,6 @@ bundle build (`packages/server/scripts/buildSsrBundle.mjs`),
 `packages/server/src/routes/images/**`,
 `packages/server/src/lib/imageResizer.ts`,
 `packages/server/src/lib/uploadRecipeImageServer.ts`,
-`packages/web/src/pages/DiscoverPage.tsx`,
 `packages/web/src/pages/HomePage.tsx`,
 `packages/web/src/pages/PublicRecipePage.tsx`.
 
@@ -887,12 +886,12 @@ account (viewer); one QA recipe.
 `packages/app/src/hosts/{recipes,recipe/RecipeVisibilityControls}*`,
 `packages/app/src/lib/deepLinks.ts`,
 `packages/web/src/pages/useRecipeSharingProps.tsx`,
-`packages/web/src/pages/{Recipes,Discover,PublicRecipe}Page.tsx`,
-`packages/web/src/components/AuthenticatedShell.tsx`,
+`packages/web/src/pages/{Recipes,PublicRecipe}Page.tsx`,
+`packages/web/src/components/AppShell.tsx`,
 `packages/web/src/routes/router.tsx`,
 `packages/web/src/pages/MarketingLandingPage.tsx`,
 `packages/web/src/pages/legal/**`, `packages/web/src/components/shared/**`,
-`@spudly/ui` `DiscoverPage`, `PublicRecipePage`, `RecipesPage`, `AppShellPage`,
+`@spudly/ui` `PublicRecipePage`, `RecipesPage`, `AppShellPage`,
 `packages/web/src/components/PublicHeader.tsx`, `packages/server`
 sharing/visibility routes (including `sharing/share-link` and the share-token
 rotation route),
@@ -1085,11 +1084,10 @@ where analytics (PostHog) is configured._
    the feedback shortcut is on. **Expected:** the shortcut is forced off with
    the explanatory message; re-enabling it re-presents the consent prompt.
 
-6. **Served head carries the noindex directive (#614).** Load
-   `/privacy/consent` with scripting disabled (or view the served HTML
-   source). **Expected:** the page head contains
-   `<meta name="robots" content="noindex, nofollow">` in the initial
-   HTML, before any client code runs.
+6. **Served head carries the noindex directive (#614).** Load `/privacy/consent`
+   with scripting disabled (or view the served HTML source). **Expected:** the
+   page head contains `<meta name="robots" content="noindex, nofollow">` in the
+   initial HTML, before any client code runs.
 
 **Run when:** `packages/client/src/analyticsConsent.ts`,
 `packages/client/src/pageHead.ts`, `packages/server/src/staticWeb.ts`,

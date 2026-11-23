@@ -18,11 +18,13 @@ describe('MarketingLandingPage', () => {
       locale: 'en-XA',
     });
     expect(
-      screen.getByText('Every recipe you love, in one place — ready when you are~'),
+      screen.getByText(
+        'Every recipe you love, in one place — ready when you are~',
+      ),
     ).toBeInTheDocument();
     expect(
       screen.getByRole('link', {name: 'Discover public recipes~'}),
-    ).toHaveAttribute('href', '/discover');
+    ).toHaveAttribute('href', '/recipes');
     expect(screen.getByText('Import from anywhere~')).toBeInTheDocument();
   });
 
@@ -43,7 +45,7 @@ describe('MarketingLandingPage', () => {
     );
     expect(
       screen.getByRole('link', {name: LANDING_DISCOVER_CTA}),
-    ).toHaveAttribute('href', '/discover');
+    ).toHaveAttribute('href', '/recipes');
     expect(
       screen.getByRole('link', {name: LANDING_SIGNUP_CTA}),
     ).toHaveAttribute('href', '/signup');

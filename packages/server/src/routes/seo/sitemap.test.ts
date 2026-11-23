@@ -70,7 +70,7 @@ describe('serveSitemap', () => {
 
     expect(calls.send[0]).toContain('<loc>https://www.eciperay.com/</loc>');
     expect(calls.send[0]).toContain(
-      '<loc>https://www.eciperay.com/discover</loc>',
+      '<loc>https://www.eciperay.com/recipes</loc>',
     );
     expect(calls.send[0]).toContain(
       '<loc>https://www.eciperay.com/privacy</loc>',

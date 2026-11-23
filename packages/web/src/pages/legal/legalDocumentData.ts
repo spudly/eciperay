@@ -85,7 +85,7 @@ export const sharedFooter: BigFooterData = {
     {
       title: 'Explore',
       links: [
-        {label: 'Discover', href: '/discover'},
+        {label: 'Discover', href: '/recipes'},
         {label: 'Home', href: '/'},
       ],
     },
@@ -122,7 +122,7 @@ export const buildSharedFooter = (i18n: I18n): BigFooterData => ({
       links: [
         {
           label: i18n._({id: 'legal.footerDiscoverLabel', message: 'Discover'}),
-          href: '/discover',
+          href: '/recipes',
         },
         {
           label: i18n._({id: 'legal.footerHomeLabel', message: 'Home'}),

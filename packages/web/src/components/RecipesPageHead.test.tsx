@@ -3,7 +3,7 @@ import {waitFor} from '@testing-library/react';
 
 import {renderWithProviders} from '../test/testUtils.js';
 
-import {DiscoverPageHead} from './DiscoverPageHead.js';
+import {RecipesPageHead} from './RecipesPageHead.js';
 
 const makeDiscoveryItem = (
   overrides: Partial<PublicRecipeDiscoveryItem> = {},
@@ -30,10 +30,10 @@ const makeDiscoveryItem = (
   ...overrides,
 });
 
-describe('DiscoverPageHead', () => {
+describe('RecipesPageHead', () => {
   test('injects an ItemList JSON-LD for the listed public recipes', async () => {
     await renderWithProviders(
-      <DiscoverPageHead
+      <RecipesPageHead
         recipes={[
           makeDiscoveryItem(),
           makeDiscoveryItem({
@@ -75,7 +75,7 @@ describe('DiscoverPageHead', () => {
 
   test('injects nothing when only one recipe is listed', async () => {
     await renderWithProviders(
-      <DiscoverPageHead recipes={[makeDiscoveryItem()]} />,
+      <RecipesPageHead recipes={[makeDiscoveryItem()]} />,
       {withAuth: false},
     );
 
@@ -85,7 +85,7 @@ describe('DiscoverPageHead', () => {
   });
 
   test('injects nothing when no recipes are listed', async () => {
-    await renderWithProviders(<DiscoverPageHead recipes={[]} />, {
+    await renderWithProviders(<RecipesPageHead recipes={[]} />, {
       withAuth: false,
     });
 

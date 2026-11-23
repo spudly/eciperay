@@ -8,7 +8,9 @@
     "./sanitizeAnalyticsProperties": "./src/sanitizeAnalyticsProperties.ts",
     "./pageHead": "./src/pageHead.ts",
     "./recipeScaling": "./src/recipeScaling.ts",
-    "./recipeEngagement": "./src/recipeEngagement.ts"
+    "./recipeEngagement": "./src/recipeEngagement.ts",
+    "./recipeListDisplay": "./src/recipeListDisplay.ts",
+    "./resizedImageUrl": "./src/resizedImageUrl.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit --incremental",

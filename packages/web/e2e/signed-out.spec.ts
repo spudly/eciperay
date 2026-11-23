@@ -9,7 +9,9 @@ test.describe('signed out', () => {
   }) => {
     const {pageErrors} = await installMocks(page, {signedIn: false});
 
-    await page.goto('/recipes');
+    // /recipes is the public unified browse now (#622) — use a genuinely
+    // authenticated-only route for the redirect check.
+    await page.goto('/profile');
 
     await expect(page).toHaveURL(/\/login$/);
     await expect(page.getByLabel('Email')).toBeVisible();
@@ -23,7 +25,7 @@ test.describe('signed out', () => {
   }) => {
     const {pageErrors} = await installMocks(page, {signedIn: false});
 
-    await page.goto('/discover');
+    await page.goto('/recipes');
 
     await expect(page.getByText('E2E Public Pancakes')).toBeVisible();
     await expect(page.getByText(/By E2E Chef/)).toBeVisible();
@@ -114,7 +116,7 @@ test.describe('signed out', () => {
       });
     });
 
-    await page.goto('/discover');
+    await page.goto('/recipes');
     await expect(page.getByText('E2E Discover Recipe 0')).toBeVisible();
     await expect(page.getByText('E2E Discover Recipe 20')).toHaveCount(0);
 

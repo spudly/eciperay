@@ -11,8 +11,8 @@ import {makeRecipeDetail} from './test/fixtures/recipe.js';
 
 describe('pageHead', () => {
   test('builds canonical URLs from the shared builder', () => {
-    expect(buildCanonicalUrl(DEFAULT_WEB_BASE_URL, '/discover')).toBe(
-      'https://www.eciperay.com/discover',
+    expect(buildCanonicalUrl(DEFAULT_WEB_BASE_URL, '/recipes')).toBe(
+      'https://www.eciperay.com/recipes',
     );
     expect(buildCanonicalUrl(DEFAULT_WEB_BASE_URL, '/')).toBe(
       'https://www.eciperay.com/',
@@ -39,10 +39,7 @@ describe('pageHead', () => {
   });
 
   test('the consent preferences page gets a noindex head and stays out of the sitemap set', () => {
-    const head = buildPublicPageHead(
-      DEFAULT_WEB_BASE_URL,
-      '/privacy/consent',
-    );
+    const head = buildPublicPageHead(DEFAULT_WEB_BASE_URL, '/privacy/consent');
     expect(head).toBeDefined();
     expect(head?.robots).toBe('noindex, nofollow');
     expect(head?.title).toBe('Consent Preferences | Eciperay');
@@ -56,7 +53,7 @@ describe('pageHead', () => {
 
   test('unknown paths have no public head config', () => {
     expect(
-      buildPublicPageHead(DEFAULT_WEB_BASE_URL, '/recipes'),
+      buildPublicPageHead(DEFAULT_WEB_BASE_URL, '/discover'),
     ).toBeUndefined();
   });
 

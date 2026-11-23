@@ -2,6 +2,7 @@ import {buildRecipePath} from '@eciperay/client';
 import type {JSX} from 'react';
 import {matchRoutes, type RouteObject} from 'react-router-dom';
 
+import {RecipesRoute} from '../components/RecipesRoute.js';
 import {CookingModePage} from '../pages/CookingModePage.js';
 import {EditRecipePage} from '../pages/EditRecipePage.js';
 import {RecipeDetailPage} from '../pages/RecipeDetailPage.js';
@@ -29,6 +30,14 @@ describe('router', () => {
   test('exports browser router', () => {
     expect(router).toBeDefined();
     expect(typeof router.subscribe).toBe('function');
+  });
+
+  test('/recipes resolves through the unified browse route (eciperay#622)', () => {
+    expect(leafElementType('/recipes')).toBe(RecipesRoute);
+  });
+
+  test('/discover is not a route (eciperay#622: /recipes survives, /discover removed)', () => {
+    expect(collectPaths(router.routes)).not.toContain('/discover');
   });
 
   test('routes the bare /meal-plans list path (eciperay#257)', () => {

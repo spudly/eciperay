@@ -22,7 +22,9 @@ test.describe('live, signed out', () => {
   test('an authenticated route redirects to sign-in, which renders', async ({
     page,
   }) => {
-    await page.goto('/recipes');
+    // /recipes is the public unified browse now (#622) — use a genuinely
+    // authenticated-only route for the redirect check.
+    await page.goto('/profile');
 
     await expect(page).toHaveURL(/\/login$/);
     await expect(page.getByLabel('Email')).toBeVisible();
@@ -51,7 +53,7 @@ test.describe('live, signed out', () => {
     const pageErrors: string[] = [];
     page.on('pageerror', error => pageErrors.push(String(error)));
 
-    await page.goto('/discover');
+    await page.goto('/recipes');
 
     // The QA dataset's public recipes are data, not fixtures: assert the
     // page itself renders (its title and search chrome are always

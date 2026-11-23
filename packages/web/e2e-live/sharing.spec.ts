@@ -65,7 +65,7 @@ test.describe('live sharing', () => {
         const res = await fetch(`/api/recipes/${id}`, {
           method: 'PATCH',
           headers: {
-            Authorization: `Bearer ${t}`,
+            'Authorization': `Bearer ${t}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({status: 'perfected'}),
@@ -92,7 +92,7 @@ test.describe('live sharing', () => {
       await expect(
         anon.getByRole('heading', {name: created.title}),
       ).toBeVisible({timeout: 15_000});
-      await anon.goto('/discover');
+      await anon.goto('/recipes');
       await anon.getByPlaceholder('Search public recipes…').fill(created.title);
       await expect(anon.getByText(created.title).first()).toBeVisible({
         timeout: 15_000,
@@ -122,7 +122,7 @@ test.describe('live sharing', () => {
       // (unique) title finds nothing. The empty-search message is the
       // settle anchor — it proves the search actually ran before the
       // absence is asserted. The public page no longer renders it either.
-      await anon.goto('/discover');
+      await anon.goto('/recipes');
       await anon.getByPlaceholder('Search public recipes…').fill(created.title);
       await expect(
         anon.getByText(
@@ -159,7 +159,7 @@ test.describe('live sharing', () => {
         const res = await fetch(`/api/recipes/${id}/sharing`, {
           method: 'PATCH',
           headers: {
-            Authorization: `Bearer ${t}`,
+            'Authorization': `Bearer ${t}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({visibility: 'private'}),

@@ -1,7 +1,7 @@
 import {createBrowserRouter, Navigate} from 'react-router-dom';
 
 import {AdminGuard} from '../components/AdminGuard.js';
-import {AuthenticatedShell} from '../components/AuthenticatedShell.js';
+import {AppShell} from '../components/AppShell.js';
 import {AuthGuard} from '../components/AuthGuard.js';
 import {RootLayout} from '../components/RootLayout.js';
 import {AddPage} from '../pages/AddPage.js';
@@ -9,7 +9,7 @@ import {CookingModePage} from '../pages/CookingModePage.js';
 import {EditRecipePage} from '../pages/EditRecipePage.js';
 import {EditVersionPage} from '../pages/EditVersionPage.js';
 import {TweakAiPage} from '../pages/TweakAiPage.js';
-import {DiscoverPage} from '../pages/DiscoverPage.js';
+import {RecipesRoute} from '../components/RecipesRoute.js';
 import {ForgotPasswordPage} from '../pages/auth/ForgotPasswordPage.js';
 import {GenerateAiPage} from '../pages/GenerateAiPage.js';
 import {HomeEntry} from '../pages/HomeEntry.js';
@@ -24,7 +24,6 @@ import {PrivacyPolicyPage} from '../pages/PrivacyPolicyPage.js';
 import {ProfilePage} from '../pages/ProfilePage.js';
 import {PublicRecipePage} from '../pages/PublicRecipePage.js';
 import {RecipeDetailPage} from '../pages/RecipeDetailPage.js';
-import {RecipesPage} from '../pages/RecipesPage.js';
 import {RouteErrorPage} from '../pages/RouteErrorPage.js';
 import {ResetPasswordPage} from '../pages/auth/ResetPasswordPage.js';
 import {SignupPage} from '../pages/auth/SignupPage.js';
@@ -40,7 +39,6 @@ import {TagsPage} from '../pages/TagsPage.js';
 import {TermsOfServicePage} from '../pages/TermsOfServicePage.js';
 
 const authenticatedAppRoutes = [
-  {path: '/recipes', element: <RecipesPage />},
   {path: '/meals', element: <MealsHubPage />},
   {path: '/meals/new', element: <MealEditPage />},
   {path: '/meals/:mealId', element: <MealDetailPage />},
@@ -116,13 +114,13 @@ export const router = createBrowserRouter([
       {path: '/privacy/consent', element: <ConsentPreferencesPage />},
       {path: '/terms', element: <TermsOfServicePage />},
       {path: '/recipe/:id/:slug', element: <PublicRecipePage />},
-      {path: '/discover', element: <DiscoverPage />},
+      {path: '/recipes', element: <RecipesRoute />},
       {path: '/', element: <HomeEntry />},
       {
         element: <AuthGuard />,
         children: [
           {
-            element: <AuthenticatedShell />,
+            element: <AppShell />,
             children: [...authenticatedAppRoutes, ...adminRoutes],
           },
         ],
