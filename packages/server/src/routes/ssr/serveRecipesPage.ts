@@ -2,12 +2,12 @@ import type {Request, Response} from 'express';
 import type {PipeableStream} from 'react-dom/server';
 
 import {query as defaultQuery} from '../../db/query.js';
-import {loadPublicDiscover} from '../../lib/loadPublicDiscover.js';
-import type {renderDiscoverStreamDeterministic} from '../../lib/renderDiscover.js';
+import {loadPublicRecipes} from '../../lib/loadPublicRecipes.js';
+import type {renderRecipesStreamDeterministic} from '../../lib/renderRecipes.js';
 
 type QueryFn = typeof defaultQuery;
 
-export type DiscoverStreamRenderer = typeof renderDiscoverStreamDeterministic;
+export type RecipesStreamRenderer = typeof renderRecipesStreamDeterministic;
 
 /**
  * Serve the unified browse page as streamed server-rendered HTML at GET
@@ -24,17 +24,17 @@ export type DiscoverStreamRenderer = typeof renderDiscoverStreamDeterministic;
  * Returns true when the request was handled (HTML streamed or an error sent),
  * false when the caller should fall through to the SPA.
  */
-export const serveDiscoverPage = async (
+export const serveRecipesPage = async (
   req: Request,
   res: Response,
   queryFn: QueryFn,
-  render: DiscoverStreamRenderer,
+  render: RecipesStreamRenderer,
 ): Promise<boolean> => {
   if (req.headers.authorization !== undefined) {
     return false;
   }
 
-  const recipes = await loadPublicDiscover(queryFn);
+  const recipes = await loadPublicRecipes(queryFn);
 
   res.status(200).type('text/html');
   res.set('Cache-Control', 'public, max-age=60');

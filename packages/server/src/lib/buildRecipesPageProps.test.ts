@@ -1,6 +1,6 @@
 import type {PublicRecipeDiscoveryItem} from '@eciperay/types';
 
-import {buildDiscoverPageProps} from './buildDiscoverPageProps.js';
+import {buildRecipesPageProps} from './buildRecipesPageProps.js';
 
 const makeDiscoveryItem = (
   overrides: Partial<PublicRecipeDiscoveryItem> = {},
@@ -28,10 +28,11 @@ const makeDiscoveryItem = (
   ...overrides,
 });
 
-describe('buildDiscoverPageProps', () => {
+describe('buildRecipesPageProps', () => {
   test('maps the public first paint: title, defaults, and permalink hrefs', () => {
-    const props = buildDiscoverPageProps([makeDiscoveryItem()]);
+    const props = buildRecipesPageProps([makeDiscoveryItem()]);
 
+    expect(props.variant).toBe('public');
     expect(props.title).toBe('Discover recipes');
     expect(props.loading).toBe(false);
     expect(props.errorMessage).toBeNull();
@@ -39,24 +40,24 @@ describe('buildDiscoverPageProps', () => {
     expect(props.sort).toBe('newest');
     expect(props.sortDir).toBe('desc');
     expect(props.recipes).toHaveLength(1);
-    expect(props.recipes[0]?.id).toBe('recipe-uuid-1');
-    expect(props.recipes[0]?.title).toBe('Test Recipe');
-    expect(props.recipes[0]?.href).toBe('/recipe/recipe-uuid-1/pasta');
+    expect(props.recipes?.[0]?.id).toBe('recipe-uuid-1');
+    expect(props.recipes?.[0]?.title).toBe('Test Recipe');
+    expect(props.recipes?.[0]?.href).toBe('/recipe/recipe-uuid-1/pasta');
     expect(props.footer?.brand).toEqual({label: 'Eciperay', href: '/'});
   });
 
   test('includes the author byline only when the author has a display name', () => {
-    const named = buildDiscoverPageProps([
+    const named = buildRecipesPageProps([
       makeDiscoveryItem({authorDisplayName: '  Ada Cook  '}),
     ]);
-    expect(named.recipes[0]?.subtitle).toContain('By Ada Cook · ');
+    expect(named.recipes?.[0]?.subtitle).toContain('By Ada Cook · ');
 
-    const anonymous = buildDiscoverPageProps([makeDiscoveryItem()]);
-    expect(anonymous.recipes[0]?.subtitle).not.toContain('By ');
+    const anonymous = buildRecipesPageProps([makeDiscoveryItem()]);
+    expect(anonymous.recipes?.[0]?.subtitle).not.toContain('By ');
   });
 
   test('an empty feed maps to no recipes (the page renders its empty state)', () => {
-    const props = buildDiscoverPageProps([]);
+    const props = buildRecipesPageProps([]);
     expect(props.recipes).toEqual([]);
     expect(props.emptyMessage).toContain('No public recipes yet');
   });

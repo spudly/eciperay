@@ -6,14 +6,14 @@ import {Route, Routes, useLocation} from 'react-router-dom';
 import {server} from '../test/msw/server.js';
 import {renderWithProviders} from '../test/testUtils.js';
 
-import {AuthenticatedShell} from './AuthenticatedShell.js';
+import {AppShell} from './AppShell.js';
 
-describe('AuthenticatedShell', () => {
+describe('AppShell', () => {
   test('renders the DS shell nav and outlet', async () => {
     await renderWithProviders(
       <Routes>
         <Route
-          element={<AuthenticatedShell />}
+          element={<AppShell />}
           path="/"
         >
           <Route
@@ -67,7 +67,7 @@ describe('AuthenticatedShell', () => {
     await renderWithProviders(
       <Routes>
         <Route
-          element={<AuthenticatedShell />}
+          element={<AppShell />}
           path="/"
         >
           <Route
@@ -107,7 +107,7 @@ describe('AuthenticatedShell', () => {
     await renderWithProviders(
       <Routes>
         <Route
-          element={<AuthenticatedShell />}
+          element={<AppShell />}
           path="/"
         >
           <Route
@@ -118,7 +118,7 @@ describe('AuthenticatedShell', () => {
       </Routes>,
     );
     // The head the retired host AppShell applied on master (#488)
-    // must survive the move to AuthenticatedShell.
+    // must survive the move to AppShell.
     await waitFor(() => {
       expect(document.title).toBe('Eciperay');
     });
@@ -136,7 +136,7 @@ describe('AuthenticatedShell', () => {
     await renderWithProviders(
       <Routes>
         <Route
-          element={<AuthenticatedShell />}
+          element={<AppShell />}
           path="/"
         >
           <Route
@@ -163,7 +163,7 @@ describe('AuthenticatedShell', () => {
     await renderWithProviders(
       <Routes>
         <Route
-          element={<AuthenticatedShell />}
+          element={<AppShell />}
           path="/recipes"
         >
           <Route
@@ -175,5 +175,45 @@ describe('AuthenticatedShell', () => {
       {route: '/recipes?q=pasta'},
     );
     expect(screen.getByPlaceholderText('Search recipes…')).toHaveValue('pasta');
+  });
+});
+
+describe('AppShell (signed-out)', () => {
+  test('renders the public nav and a Sign in action, with no authenticated head', async () => {
+    await renderWithProviders(
+      <Routes>
+        <Route
+          element={<AppShell />}
+          path="/"
+        >
+          <Route
+            index
+            element={<div>Page Content</div>}
+          />
+        </Route>
+      </Routes>,
+      {withAuth: false},
+    );
+    expect(screen.getByText('Page Content')).toBeInTheDocument();
+    expect(screen.getByRole('link', {name: 'Recipes'})).toHaveAttribute(
+      'href',
+      '/recipes',
+    );
+    // The Sign in action is a real link to the login route (#248) —
+    // the shared footer's Account column carries the same link, so
+    // there are two, and both point at /login.
+    const signInLinks = screen.getAllByRole('link', {name: 'Sign in'});
+    expect(signInLinks.length).toBeGreaterThanOrEqual(1);
+    for (const link of signInLinks) {
+      expect(link).toHaveAttribute('href', '/login');
+    }
+    // Signed-in-only destinations are not offered signed-out.
+    expect(screen.queryByRole('link', {name: 'Meals'})).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', {name: 'Profile'}),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', {name: 'Tags'})).not.toBeInTheDocument();
+    // No noindex authenticated head for the public render.
+    expect(document.head.querySelector('meta[name="robots"]')).toBeNull();
   });
 });

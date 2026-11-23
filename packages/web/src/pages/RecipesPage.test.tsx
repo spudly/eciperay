@@ -5,6 +5,9 @@ import {StrictMode} from 'react';
 
 import {Route, Routes, useNavigate} from 'react-router-dom';
 
+import {RECIPE_LIST_PAGE_SIZE} from '@eciperay/client';
+import type {PublicRecipeDiscoveryItem} from '@eciperay/types';
+
 import {makeCookLog, makeRecipeDetail} from '../test/fixtures/recipe.js';
 import {server} from '../test/msw/server.js';
 import {renderWithProviders} from '../test/testUtils.js';
@@ -232,7 +235,9 @@ describe('RecipesPage', () => {
     });
     await userEvent.click(screen.getByLabelText('4 stars'));
     await userEvent.type(
-      screen.getByPlaceholderText('Notes from this cook — what worked, what to change next time (optional)'),
+      screen.getByPlaceholderText(
+        'Notes from this cook — what worked, what to change next time (optional)',
+      ),
       'Weeknight favorite',
     );
     await userEvent.click(screen.getByRole('button', {name: 'Save'}));
@@ -1054,6 +1059,238 @@ describe('RecipesPage', () => {
     });
     await waitFor(() => {
       expect(screen.getByText('Test Recipe')).toBeInTheDocument();
+    });
+  });
+});
+
+// The signed-out rendering of this same page (#622): the public-feed
+// coverage that used to live in the deleted host Discover page's
+// tests folds in here. These render with no auth session, so the
+// page takes its public branch — the DS RecipesPage public variant
+// driven by the public infinite query.
+describe('RecipesPage (signed-out public browse)', () => {
+  const makeDiscoveryItem = (
+    overrides: Partial<PublicRecipeDiscoveryItem> = {},
+  ): PublicRecipeDiscoveryItem => ({
+    id: 'public-recipe-1',
+    slug: 'shared-pasta',
+    title: 'Shared Pasta',
+    description: 'A public recipe',
+    servings: 4,
+    prepTimeMin: 10,
+    cookTimeMin: 25,
+    imageUrl: null,
+    visibility: 'public',
+    authorDisplayName: 'Chef Alex',
+    updatedAt: '2024-01-01T00:00:00.000Z',
+    tags: [],
+    communityRating: null,
+    satietyScore: null,
+    nutritionStatus: null,
+    calories: null,
+    proteinG: null,
+    carbsG: null,
+    fatG: null,
+    ...overrides,
+  });
+
+  test('renders title and no-ratings label from the en-XA Lingui catalog (#465)', async () => {
+    await renderWithProviders(<RecipesPage />, {
+      locale: 'en-XA',
+      withAuth: false,
+    });
+    await waitFor(() => {
+      expect(screen.getByText('Shared Pasta')).toBeInTheDocument();
+    });
+    expect(screen.getByText('Discover recipes~')).toBeInTheDocument();
+    expect(screen.getByText(/No ratings yet~/)).toBeInTheDocument();
+  });
+
+  test('renders the empty-feed message from the en-XA Lingui catalog (#465, #616)', async () => {
+    server.use(
+      http.get('http://localhost:8080/api/public/recipes', () =>
+        HttpResponse.json([]),
+      ),
+    );
+    await renderWithProviders(<RecipesPage />, {
+      locale: 'en-XA',
+      withAuth: false,
+    });
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          'No public recipes yet \u2014 new dishes show up here as cooks share them.~',
+        ),
+      ).toBeInTheDocument();
+    });
+  });
+
+  test('lists public recipes linking to public pages', async () => {
+    await renderWithProviders(<RecipesPage />, {withAuth: false});
+    await waitFor(() => {
+      expect(screen.getByText('Shared Pasta')).toBeInTheDocument();
+    });
+    const link = screen.getByRole('link', {name: /Shared Pasta/i});
+    expect(link).toHaveAttribute(
+      'href',
+      '/recipe/public-recipe-1/shared-pasta',
+    );
+    expect(screen.getByText(/By Chef Alex/)).toBeInTheDocument();
+  });
+
+  test('omits the author byline when the author has no display name (#498)', async () => {
+    server.use(
+      http.get('http://localhost:8080/api/public/recipes', () =>
+        HttpResponse.json([makeDiscoveryItem({authorDisplayName: null})]),
+      ),
+    );
+    await renderWithProviders(<RecipesPage />, {withAuth: false});
+    await waitFor(() => {
+      expect(screen.getByText('Shared Pasta')).toBeInTheDocument();
+    });
+    expect(screen.queryByText(/Anonymous/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^By /)).not.toBeInTheDocument();
+  });
+
+  test('shows the empty-feed state when the feed is empty and no search was entered (#616)', async () => {
+    server.use(
+      http.get('http://localhost:8080/api/public/recipes', () =>
+        HttpResponse.json([]),
+      ),
+    );
+    await renderWithProviders(<RecipesPage />, {withAuth: false});
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          'No public recipes yet \u2014 new dishes show up here as cooks share them.',
+        ),
+      ).toBeInTheDocument();
+    });
+    expect(screen.queryByText(/match that search/)).not.toBeInTheDocument();
+  });
+
+  test('shows the no-match state when a search was entered and nothing matches (#616)', async () => {
+    server.use(
+      http.get('http://localhost:8080/api/public/recipes', () =>
+        HttpResponse.json([]),
+      ),
+    );
+    const user = userEvent.setup();
+    await renderWithProviders(<RecipesPage />, {withAuth: false});
+    await user.type(
+      screen.getByPlaceholderText(/Search public recipes/i),
+      'zzz',
+    );
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          'No public recipes match that search \u2014 try a broader craving.',
+        ),
+      ).toBeInTheDocument();
+    });
+  });
+
+  test('shows the filter no-match state when a non-search filter is active and nothing matches (#616)', async () => {
+    server.use(
+      http.get('http://localhost:8080/api/public/recipes', () =>
+        HttpResponse.json([]),
+      ),
+    );
+    const user = userEvent.setup();
+    await renderWithProviders(<RecipesPage />, {withAuth: false});
+    await user.click(screen.getByRole('button', {name: 'Add a filter'}));
+    await user.click(
+      screen.getByRole('button', {name: 'Add Ingredient filter'}),
+    );
+    await user.type(
+      await screen.findByRole('textbox', {name: /ingredient/i}),
+      'truffle',
+    );
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          'No public recipes match those filters \u2014 try broadening them.',
+        ),
+      ).toBeInTheDocument();
+    });
+    expect(screen.queryByText(/No public recipes yet/)).not.toBeInTheDocument();
+  });
+
+  test('filters recipes by search query', async () => {
+    server.use(
+      http.get('http://localhost:8080/api/public/recipes', ({request}) => {
+        const search = new URL(request.url).searchParams.get('search');
+        if (search === 'curry') {
+          return HttpResponse.json([
+            makeDiscoveryItem({
+              id: 'curry-1',
+              slug: 'curry',
+              title: 'Public Curry',
+            }),
+          ]);
+        }
+        return HttpResponse.json([]);
+      }),
+    );
+    const user = userEvent.setup();
+    await renderWithProviders(<RecipesPage />, {withAuth: false});
+    await user.type(
+      screen.getByPlaceholderText(/Search public recipes/i),
+      'curry',
+    );
+    await waitFor(() => {
+      expect(screen.getByText('Public Curry')).toBeInTheDocument();
+    });
+  });
+
+  test('renders the first page without fetching the next one unprompted', async () => {
+    const firstPage = Array.from({length: RECIPE_LIST_PAGE_SIZE}, (_, index) =>
+      makeDiscoveryItem({
+        id: `public-${index}`,
+        slug: `public-${index}`,
+        title: `Public ${index}`,
+      }),
+    );
+    const secondPage = [
+      makeDiscoveryItem({
+        id: 'public-extra',
+        slug: 'public-extra',
+        title: 'Extra Public',
+      }),
+    ];
+    let callCount = 0;
+    server.use(
+      http.get('http://localhost:8080/api/public/recipes', ({request}) => {
+        const offset = Number(
+          new URL(request.url).searchParams.get('offset') ?? 0,
+        );
+        callCount += 1;
+        if (offset === 0) {
+          return HttpResponse.json(firstPage);
+        }
+        return HttpResponse.json(secondPage);
+      }),
+    );
+
+    await renderWithProviders(<RecipesPage />, {withAuth: false});
+    await waitFor(() => {
+      expect(screen.getByText('Public 0')).toBeInTheDocument();
+    });
+    expect(callCount).toBe(1);
+    expect(screen.queryByText('Extra Public')).not.toBeInTheDocument();
+  });
+
+  test('shows the error state when the first load fails', async () => {
+    server.use(
+      http.get('http://localhost:8080/api/public/recipes', () =>
+        HttpResponse.json({error: 'boom'}, {status: 500}),
+      ),
+    );
+    await renderWithProviders(<RecipesPage />, {withAuth: false});
+    await waitFor(() => {
+      expect(
+        screen.getByText(/couldn't load public recipes/i),
+      ).toBeInTheDocument();
     });
   });
 });

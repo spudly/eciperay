@@ -101,10 +101,10 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
       'Web profile section for family sharing (#617); the app renders its own FamilySharingForm host component in hosts/profile.',
   },
   {
-    path: 'DiscoverPageHead.tsx',
+    path: 'RecipesPageHead.tsx',
     platform: 'web',
     reason:
-      'Injects the Discover ItemList JSON-LD (#411) into the document head; no native equivalent.',
+      'Injects the public browse ItemList JSON-LD (#411) into the document head; no native equivalent.',
   },
   {
     path: 'profile/ProfileAccessTokensSection.tsx',
@@ -118,10 +118,10 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
     reason: 'Browser cookie/consent banner; no native equivalent.',
   },
   {
-    path: 'AuthenticatedShell.tsx',
+    path: 'AppShell.tsx',
     platform: 'web',
     reason:
-      'Web routed shell layout adopting the DS AppShellPage (#451); app uses React Navigation tab and stack navigators.',
+      'Web routed shell layout adopting the DS AppShellPage (#451), handling both signed-in and signed-out users (#622); app uses React Navigation tab and stack navigators.',
   },
   {
     path: 'PublicHeader.tsx',

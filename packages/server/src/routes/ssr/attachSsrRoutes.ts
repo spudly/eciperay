@@ -6,9 +6,9 @@ import type {Express} from 'express';
 import {query as defaultQuery} from '../../db/query.js';
 
 import {
-  serveDiscoverPage,
-  type DiscoverStreamRenderer,
-} from './serveDiscoverPage.js';
+  serveRecipesPage,
+  type RecipesStreamRenderer,
+} from './serveRecipesPage.js';
 import {
   servePublicRecipePage,
   type PublicRecipeStreamRenderer,
@@ -18,7 +18,7 @@ type QueryFn = typeof defaultQuery;
 
 export type SsrRenderers = {
   recipe?: PublicRecipeStreamRenderer;
-  discover?: DiscoverStreamRenderer;
+  recipes?: RecipesStreamRenderer;
 };
 
 /**
@@ -43,25 +43,25 @@ const loadRenderer = async (): Promise<PublicRecipeStreamRenderer> => {
 };
 
 /**
- * Load the real discover renderer, mirroring loadRenderer: in production it is
- * the sibling bundle file the same build produces (dist-ssr/renderDiscover.mjs,
+ * Load the real recipes renderer, mirroring loadRenderer: in production it is
+ * the sibling bundle file the same build produces (dist-ssr/renderRecipes.mjs,
  * next to the recipe bundle named by SSR_RENDERER_BUNDLE_PATH); elsewhere the
  * source module is imported directly.
  */
-const loadDiscoverRenderer = async (): Promise<DiscoverStreamRenderer> => {
+const loadRecipesRenderer = async (): Promise<RecipesStreamRenderer> => {
   const bundlePath = process.env['SSR_RENDERER_BUNDLE_PATH'];
   if (bundlePath !== undefined) {
-    const discoverBundlePath = path.join(
+    const recipesBundlePath = path.join(
       path.dirname(bundlePath),
-      'renderDiscover.mjs',
+      'renderRecipes.mjs',
     );
-    const bundle = (await import(pathToFileURL(discoverBundlePath).href)) as {
-      renderDiscoverStreamDeterministic: DiscoverStreamRenderer;
+    const bundle = (await import(pathToFileURL(recipesBundlePath).href)) as {
+      renderRecipesStreamDeterministic: RecipesStreamRenderer;
     };
-    return bundle.renderDiscoverStreamDeterministic;
+    return bundle.renderRecipesStreamDeterministic;
   }
-  return (await import('../../lib/renderDiscover.js'))
-    .renderDiscoverStreamDeterministic;
+  return (await import('../../lib/renderRecipes.js'))
+    .renderRecipesStreamDeterministic;
 };
 
 /**
@@ -70,7 +70,7 @@ const loadDiscoverRenderer = async (): Promise<DiscoverStreamRenderer> => {
  * deployment enables them. The renderers are imported lazily inside the
  * handlers: a static import would load the DS graph on every server start,
  * including API-only runs. Tests inject renderers directly — either a single
- * recipe renderer (the original shape) or a {recipe, discover} pair.
+ * recipe renderer (the original shape) or a {recipe, recipes} pair.
  */
 export const attachSsrRoutes = (
   app: Express,
@@ -83,7 +83,7 @@ export const attachSsrRoutes = (
       : (injectedRender ?? {});
   if (
     injected.recipe === undefined &&
-    injected.discover === undefined &&
+    injected.recipes === undefined &&
     process.env['SSR_PUBLIC_RECIPE'] !== '1'
   ) {
     return;
@@ -111,8 +111,8 @@ export const attachSsrRoutes = (
   // applies signed-in personalization once auth resolves.
   app.get('/recipes', (req, res, next) => {
     const run = async (): Promise<void> => {
-      const render = injected.discover ?? (await loadDiscoverRenderer());
-      const handled = await serveDiscoverPage(req, res, queryFn, render);
+      const render = injected.recipes ?? (await loadRecipesRenderer());
+      const handled = await serveRecipesPage(req, res, queryFn, render);
       if (!handled) {
         next();
       }

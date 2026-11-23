@@ -1,16 +1,16 @@
 import {formatDiscoveryListMeta} from '@eciperay/client/recipeListDisplay';
 import {resizedImageUrl} from '@eciperay/client/resizedImageUrl';
 import type {PublicRecipeDiscoveryItem} from '@eciperay/types';
-import type {DiscoverPageProps} from '@spudly/ui';
+import type {RecipesPageProps} from '@spudly/ui';
 
 /**
  * SSR view-model for the unified browse page at /recipes (#622).
  *
- * Maps the public discovery feed's first page (loadPublicDiscover) to the
- * design system's DiscoverPage props — the public variant of the unified
- * RecipesPage — for the anonymous, first-paint render. The mapping mirrors the
- * web host's signed-out mapping (packages/web/src/pages/DiscoverPage.tsx) so
- * the server HTML and the client-rendered page agree: same subtitle composition
+ * Maps the public discovery feed's first page (loadPublicRecipes) to the design
+ * system's RecipesPage props in its public variant — the one unified browse
+ * page — for the anonymous, first-paint render. The mapping mirrors the web
+ * host's signed-out mapping (packages/web/src/pages/RecipesPage.tsx) so the
+ * server HTML and the client-rendered page agree: same subtitle composition
  * (author byline when there is one, plus the discovery meta), same 400px image
  * resize, same permalink hrefs, default filter state, and the shared footer
  * data (mirrored here, as in buildPublicRecipePageProps, because the server
@@ -20,7 +20,7 @@ import type {DiscoverPageProps} from '@spudly/ui';
  */
 
 // The web host's shared footer data (legalDocumentData.ts sharedFooter).
-const discoverFooter: NonNullable<DiscoverPageProps['footer']> = {
+const recipesFooter: NonNullable<RecipesPageProps['footer']> = {
   brand: {label: 'Eciperay', href: '/'},
   columns: [
     {
@@ -61,10 +61,11 @@ const formatAuthorName = (authorDisplayName: string | null): string | null => {
   return trimmed ? trimmed : null;
 };
 
-export const buildDiscoverPageProps = (
+export const buildRecipesPageProps = (
   recipes: PublicRecipeDiscoveryItem[],
-): DiscoverPageProps => ({
-  footer: discoverFooter,
+): RecipesPageProps => ({
+  variant: 'public',
+  footer: recipesFooter,
   title: 'Discover recipes',
   searchPlaceholder: 'Search public recipes…',
   emptyMessage:

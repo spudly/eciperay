@@ -2,11 +2,11 @@ import {makeQueryResult} from '../test/fixtures/queryResult.js';
 import {makeRecipeDetailRow} from '../test/fixtures/recipeRow.js';
 import {createMockQuery} from '../test/mockQuery.js';
 
-import {loadPublicDiscover} from './loadPublicDiscover.js';
+import {loadPublicRecipes} from './loadPublicRecipes.js';
 
 const mockQuery = createMockQuery();
 
-describe('loadPublicDiscover', () => {
+describe('loadPublicRecipes', () => {
   test('loads the public feed first page and maps rows to discovery items', async () => {
     mockQuery.mockResolvedValue(
       makeQueryResult([
@@ -19,7 +19,7 @@ describe('loadPublicDiscover', () => {
       ]),
     );
 
-    const items = await loadPublicDiscover(mockQuery);
+    const items = await loadPublicRecipes(mockQuery);
 
     expect(items).toHaveLength(1);
     expect(items[0]).toMatchObject({
@@ -41,6 +41,6 @@ describe('loadPublicDiscover', () => {
   test('returns an empty feed when there are no public recipes', async () => {
     mockQuery.mockResolvedValue(makeQueryResult([]));
 
-    await expect(loadPublicDiscover(mockQuery)).resolves.toEqual([]);
+    await expect(loadPublicRecipes(mockQuery)).resolves.toEqual([]);
   });
 });

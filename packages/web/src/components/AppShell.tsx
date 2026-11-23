@@ -14,12 +14,17 @@ import {sharedFooter} from '../pages/legal/legalDocumentData.js';
 
 import {AuthenticatedPageHead} from './AuthenticatedPageHead.js';
 
-// The signed-in shell (#451): the design system owns the shell's
-// design via AppShellPage (#437) — the host supplies only content
-// and routing: the brand, the nav as data with DS icon registry
+// The ONE app shell (#451; unified in #622 at Stephen's direction
+// 2026-11-23): the design system owns the shell's design via
+// AppShellPage (#437) — the host supplies only content and
+// routing: the brand, the nav as data with DS icon registry
 // NAMES (never components), the active item derived from the
 // route, the header search as data (#542), and the one shared
 // BigFooter data object every public surface passes (#425).
+// This shell handles BOTH signed-in and signed-out users: a
+// signed-out viewer gets the public nav plus a Sign in action,
+// no /auth/me query runs, and no noindex authenticated head is
+// applied — the public pages supply their own public head.
 const navItems: AppShellPageNavItem[] = [
   {id: 'home', label: 'Home', href: '/', icon: 'home'},
   {id: 'recipes', label: 'Recipes', href: '/recipes', icon: 'recipes'},
@@ -51,17 +56,24 @@ const activeItemIdFor = (pathname: string): string | null => {
   return best?.id ?? null;
 };
 
-type AuthenticatedShellProps = {children?: ReactNode};
+// The nav a signed-out viewer gets: the public destinations only
+// (Home lands on the marketing page, Recipes is the public browse).
+const publicNavItemIds: ReadonlySet<string> = new Set(['home', 'recipes']);
+
+type AppShellProps = {children?: ReactNode};
 
 // As the authenticated layout route the shell renders the router
 // Outlet; HomeEntry (the `/` route, which sits outside the auth
-// layout) passes its signed-in home page as children instead.
-export const AuthenticatedShell = ({children}: AuthenticatedShellProps) => {
+// layout) passes its signed-in home page as children instead, and
+// RecipesRoute renders the unified browse inside it for both
+// signed-in and signed-out viewers.
+export const AppShell = ({children}: AppShellProps) => {
   // Tag management is admin-only (#621): the Tags nav entry is only
   // offered to admins (server-computed isAdmin from /auth/me). While
   // the profile loads the entry stays hidden rather than flashing an
   // admin surface at non-admins.
   const {session} = useAuth();
+  const isSignedIn = session !== null && session !== undefined;
   const {
     data: me,
     isError: meLoadFailed,
@@ -72,10 +84,15 @@ export const AuthenticatedShell = ({children}: AuthenticatedShellProps) => {
     // account's isAdmin.
     queryKey: queryKeys.currentUser(session?.user?.id ?? 'anonymous'),
     queryFn: () => eciperay.auth.me(),
+    // Signed-out viewers have no account to load: never fire the
+    // /auth/me query for them (#622 shell unification).
+    enabled: isSignedIn,
   });
-  const visibleNavItems = me?.isAdmin
-    ? navItems
-    : navItems.filter(item => item.id !== 'tags');
+  const visibleNavItems = !isSignedIn
+    ? navItems.filter(item => publicNavItemIds.has(item.id))
+    : me?.isAdmin
+      ? navItems
+      : navItems.filter(item => item.id !== 'tags');
   const {pathname} = useLocation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -91,9 +108,10 @@ export const AuthenticatedShell = ({children}: AuthenticatedShellProps) => {
 
   return (
     <>
-      {/* The authenticated head (#414) the retired host shell
-          applied: title + noindex for every signed-in page. */}
-      <AuthenticatedPageHead />
+      {/* The authenticated head (#414): title + noindex for every
+          signed-in page. Signed-out renders skip it — their pages
+          carry their own public, indexable head. */}
+      {isSignedIn ? <AuthenticatedPageHead /> : null}
       <AppShellPage
         brand={{label: 'Eciperay', href: '/'}}
         navItems={visibleNavItems}
@@ -104,17 +122,19 @@ export const AuthenticatedShell = ({children}: AuthenticatedShellProps) => {
         // Tags stays hidden and the rest of the shell keeps working.
         // A proper shell notice slot is the DS gap design-system #765.
         actions={
-          meLoadFailed
-            ? [
-                {
-                  id: 'profile-load-retry',
-                  label: 'Try again',
-                  onPress: () => {
-                    void refetchMe();
+          !isSignedIn
+            ? [{id: 'sign-in', label: 'Sign in', href: '/login'}]
+            : meLoadFailed
+              ? [
+                  {
+                    id: 'profile-load-retry',
+                    label: 'Try again',
+                    onPress: () => {
+                      void refetchMe();
+                    },
                   },
-                },
-              ]
-            : undefined
+                ]
+              : undefined
         }
         navLabel="Eciperay sections"
         activeItemId={activeItemIdFor(pathname)}

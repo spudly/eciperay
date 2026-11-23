@@ -91,7 +91,7 @@ const AREA_MAPPINGS: AreaMapping[] = [
     patterns: [
       'packages/web/src/pages/recipes/**',
       'packages/web/src/pages/*RecipePage*',
-      'packages/web/src/pages/DiscoverPage*',
+      'packages/web/src/pages/RecipesPage*',
       'packages/web/src/pages/EditVersionPage*',
       'packages/client/src/**/recipe*',
       'packages/server/src/**/recipe*',
@@ -100,12 +100,13 @@ const AREA_MAPPINGS: AreaMapping[] = [
     live: ['e2e-live/recipes.spec.ts'],
   },
   {
-    // Discover is exercised by the signed-out specs, not the recipes specs:
-    // the mocked signed-out spec covers its rendering and pagination, and
-    // the live public spec covers its render against the QA dataset. This
-    // mapping unions with the recipes mapping above (DiscoverPage also
-    // matches it), so a Discover change runs both sets.
-    patterns: ['packages/web/src/pages/DiscoverPage*'],
+    // The signed-out (public) rendering of the unified Recipes page
+    // (#622) is exercised by the signed-out specs, not only the recipes
+    // specs: the mocked signed-out spec covers its rendering and
+    // pagination, and the live public spec covers its render against
+    // the QA dataset. This mapping unions with the recipes mapping
+    // above, so a RecipesPage change runs both sets.
+    patterns: ['packages/web/src/pages/RecipesPage*'],
     mocked: ['e2e/signed-out.spec.ts'],
     live: ['e2e-live/public.spec.ts'],
   },

@@ -2,11 +2,13 @@ import {buildDiscoverItemListJsonLd} from '@eciperay/client';
 import type {PublicRecipeDiscoveryItem} from '@eciperay/types';
 import {useEffect} from 'react';
 
-type DiscoverPageHeadProps = {recipes: PublicRecipeDiscoveryItem[]};
+type RecipesPageHeadProps = {recipes: PublicRecipeDiscoveryItem[]};
 
-// Emits the Discover ItemList JSON-LD (#411) through the same
+// Emits the public browse ItemList JSON-LD (#411) through the same
 // head-injection path RecipePageHead uses for the Recipe JSON-LD.
-export const DiscoverPageHead = ({recipes}: DiscoverPageHeadProps) => {
+// It is part of the unified Recipes page's head (#622): the signed-out
+// browse renders it alongside StaticPageHead.
+export const RecipesPageHead = ({recipes}: RecipesPageHeadProps) => {
   useEffect(() => {
     // Google's carousel markup needs at least two listed recipes.
     if (recipes.filter(recipe => recipe.visibility === 'public').length < 2) {

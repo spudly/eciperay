@@ -1,7 +1,7 @@
 import {createBrowserRouter, Navigate} from 'react-router-dom';
 
 import {AdminGuard} from '../components/AdminGuard.js';
-import {AuthenticatedShell} from '../components/AuthenticatedShell.js';
+import {AppShell} from '../components/AppShell.js';
 import {AuthGuard} from '../components/AuthGuard.js';
 import {RootLayout} from '../components/RootLayout.js';
 import {AddPage} from '../pages/AddPage.js';
@@ -120,7 +120,7 @@ export const router = createBrowserRouter([
         element: <AuthGuard />,
         children: [
           {
-            element: <AuthenticatedShell />,
+            element: <AppShell />,
             children: [...authenticatedAppRoutes, ...adminRoutes],
           },
         ],

@@ -2,7 +2,7 @@ import type {PublicRecipeDiscoveryItem} from '@eciperay/types';
 
 import {renderStreamToHtml} from '../test/renderStreamToHtml.js';
 
-import {renderDiscoverStream} from './renderDiscover.js';
+import {renderRecipesStream} from './renderRecipes.js';
 
 const makeDiscoveryItem = (
   overrides: Partial<PublicRecipeDiscoveryItem> = {},
@@ -30,10 +30,10 @@ const makeDiscoveryItem = (
   ...overrides,
 });
 
-describe('renderDiscoverStream', () => {
+describe('renderRecipesStream', () => {
   test('renders the public browse page to HTML in-process', async () => {
     const html = await renderStreamToHtml(options =>
-      renderDiscoverStream([makeDiscoveryItem()], options),
+      renderRecipesStream([makeDiscoveryItem()], options),
     );
 
     expect(html).toContain('Test Recipe');
@@ -42,7 +42,7 @@ describe('renderDiscoverStream', () => {
 
   test('renders a canonical link tag for /recipes', async () => {
     const html = await renderStreamToHtml(options =>
-      renderDiscoverStream([makeDiscoveryItem()], options),
+      renderRecipesStream([makeDiscoveryItem()], options),
     );
 
     expect(html).toContain('rel="canonical"');

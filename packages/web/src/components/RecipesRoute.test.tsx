@@ -13,10 +13,6 @@ vi.mock('@eciperay/client', async importOriginal => {
   return {...actual, useAuth: () => mockUseAuth()};
 });
 
-vi.mock('../pages/DiscoverPage.js', () => ({
-  DiscoverPage: () => <div>Public discover</div>,
-}));
-
 vi.mock('../pages/RecipesPage.js', () => ({
   RecipesPage: () => <div>Unified recipes</div>,
 }));
@@ -26,10 +22,10 @@ const LocationProbe = () => {
   return <div>{`path:${location.pathname}`}</div>;
 };
 
-vi.mock('./AuthenticatedShell.js', () => ({
-  AuthenticatedShell: ({children}: {children?: import('react').ReactNode}) => (
+vi.mock('./AppShell.js', () => ({
+  AppShell: ({children}: {children?: import('react').ReactNode}) => (
     <div>
-      <div>Authenticated shell</div>
+      <div>App shell</div>
       {children}
     </div>
   ),
@@ -61,15 +57,11 @@ describe('RecipesRoute (#622 unified browse)', () => {
     expect(screen.getByRole('status')).toBeInTheDocument();
   });
 
-  test('renders the unified Recipes browse in place at /discover for signed-in viewers (no redirect)', async () => {
+  test('renders the one Recipes page in the one shell at /recipes for signed-in viewers (no redirect)', async () => {
     mockUseAuth.mockReturnValue({
       session: {user: {id: 'u1'}},
       isLoading: false,
     });
-    // No /recipes route is registered: if RecipesRoute redirected
-    // there (the pre-rework behavior Stephen rejected 2026-11-21),
-    // nothing would render. The unified browse must appear at the
-    // /discover URL itself, inside the authenticated shell.
     await renderWithProviders(
       <>
         <LocationProbe />
@@ -83,12 +75,11 @@ describe('RecipesRoute (#622 unified browse)', () => {
       {withAuth: false, route: '/recipes'},
     );
     expect(screen.getByText('Unified recipes')).toBeInTheDocument();
-    expect(screen.getByText('Authenticated shell')).toBeInTheDocument();
-    expect(screen.queryByText('Public discover')).not.toBeInTheDocument();
+    expect(screen.getByText('App shell')).toBeInTheDocument();
     expect(screen.getByText('path:/recipes')).toBeInTheDocument();
   });
 
-  test('renders the public Discover treatment for signed-out viewers', async () => {
+  test('renders the same page in the same shell for signed-out viewers', async () => {
     mockUseAuth.mockReturnValue({session: null, isLoading: false});
     await renderWithProviders(
       <Routes>
@@ -99,6 +90,7 @@ describe('RecipesRoute (#622 unified browse)', () => {
       </Routes>,
       {withAuth: false, route: '/recipes'},
     );
-    expect(screen.getByText('Public discover')).toBeInTheDocument();
+    expect(screen.getByText('Unified recipes')).toBeInTheDocument();
+    expect(screen.getByText('App shell')).toBeInTheDocument();
   });
 });

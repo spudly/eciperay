@@ -14,13 +14,13 @@ type QueryFn = typeof defaultQuery;
 
 /**
  * The public discovery feed's first page, loaded through the server's own data
- * access for the /discover SSR render (#622) — no internal HTTP hop. It mirrors
+ * access for the /recipes SSR render (#622) — no internal HTTP hop. It mirrors
  * the anonymous listPublicRecipes handler exactly: same SQL builder, same
  * filter parsing, with the client's first-page size (RECIPE_LIST_PAGE_SIZE =
  * 20, sort newest) so the server-rendered first paint and the client's first
  * query agree.
  */
-export const loadPublicDiscover = async (
+export const loadPublicRecipes = async (
   queryFn: QueryFn = defaultQuery,
 ): Promise<PublicRecipeDiscoveryItem[]> => {
   const params = parseRecipeListFilterParams({query: {limit: '20'}});

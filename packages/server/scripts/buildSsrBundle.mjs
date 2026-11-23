@@ -12,7 +12,7 @@
 //
 // Usage: node scripts/buildSsrBundle.mjs
 // Output: packages/server/dist-ssr/renderPublicRecipe.mjs and
-// packages/server/dist-ssr/renderDiscover.mjs (the #622 /discover
+// packages/server/dist-ssr/renderRecipes.mjs (the #622 /recipes
 // renderer, loaded as the recipe bundle's sibling — see
 // attachSsrRoutes).
 import path from 'node:path';
@@ -77,6 +77,6 @@ await build({
 
 await build({
   ...buildOptions,
-  entryPoints: [path.join(serverRoot, 'src/lib/renderDiscover.tsx')],
-  outfile: path.join(serverRoot, 'dist-ssr/renderDiscover.mjs'),
+  entryPoints: [path.join(serverRoot, 'src/lib/renderRecipes.tsx')],
+  outfile: path.join(serverRoot, 'dist-ssr/renderRecipes.mjs'),
 });

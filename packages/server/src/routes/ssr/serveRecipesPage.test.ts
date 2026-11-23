@@ -7,11 +7,11 @@ import {makeRecipeDetailRow} from '../../test/fixtures/recipeRow.js';
 import {createMockQuery} from '../../test/mockQuery.js';
 
 import {attachSsrRoutes} from './attachSsrRoutes.js';
-import type {DiscoverStreamRenderer} from './serveDiscoverPage.js';
+import type {RecipesStreamRenderer} from './serveRecipesPage.js';
 
 const mockQuery = createMockQuery();
 
-const fakeRender: DiscoverStreamRenderer = async (recipes, options) => {
+const fakeRender: RecipesStreamRenderer = async (recipes, options) => {
   queueMicrotask(() => options.onShellReady?.());
   return {
     pipe(dest: NodeJS.WritableStream) {
@@ -23,7 +23,7 @@ const fakeRender: DiscoverStreamRenderer = async (recipes, options) => {
   } as unknown as PipeableStream;
 };
 
-const fakeShellErrorRender: DiscoverStreamRenderer = async (
+const fakeShellErrorRender: RecipesStreamRenderer = async (
   _recipes,
   options,
 ) => {
@@ -35,20 +35,20 @@ const fakeShellErrorRender: DiscoverStreamRenderer = async (
   } as unknown as PipeableStream;
 };
 
-const fakeRejectingRender: DiscoverStreamRenderer = async () => {
+const fakeRejectingRender: RecipesStreamRenderer = async () => {
   throw new Error('warm-up render failed');
 };
 
-const buildApp = (render: DiscoverStreamRenderer = fakeRender) => {
+const buildApp = (render: RecipesStreamRenderer = fakeRender) => {
   const app = express();
-  attachSsrRoutes(app, mockQuery, {discover: render});
+  attachSsrRoutes(app, mockQuery, {recipes: render});
   app.use((_req, res) => {
     res.status(200).type('text/html').send('<html>SPA fallback</html>');
   });
   return app;
 };
 
-const mockPublicDiscoverQueries = () => {
+const mockPublicRecipesQueries = () => {
   mockQuery.mockResolvedValue(
     makeQueryResult([
       makeRecipeDetailRow({
@@ -60,9 +60,9 @@ const mockPublicDiscoverQueries = () => {
   );
 };
 
-describe('GET /discover (SSR, #622)', () => {
-  test('streams the unified browse SSR HTML at /discover with a short public cache TTL (no redirect)', async () => {
-    mockPublicDiscoverQueries();
+describe('GET /recipes (SSR, #622)', () => {
+  test('streams the unified browse SSR HTML at /recipes with a short public cache TTL (no redirect)', async () => {
+    mockPublicRecipesQueries();
 
     const res = await request(buildApp()).get('/recipes');
 
@@ -83,7 +83,7 @@ describe('GET /discover (SSR, #622)', () => {
   });
 
   test('sends a non-cacheable 500 when the render shell fails', async () => {
-    mockPublicDiscoverQueries();
+    mockPublicRecipesQueries();
 
     const res = await request(buildApp(fakeShellErrorRender)).get('/recipes');
 
@@ -93,7 +93,7 @@ describe('GET /discover (SSR, #622)', () => {
   });
 
   test('marks the response no-store when the renderer rejects before returning a stream', async () => {
-    mockPublicDiscoverQueries();
+    mockPublicRecipesQueries();
 
     const res = await request(buildApp(fakeRejectingRender)).get('/recipes');
 
@@ -103,7 +103,7 @@ describe('GET /discover (SSR, #622)', () => {
   });
 
   test('falls through to the SPA when an Authorization header is present', async () => {
-    mockPublicDiscoverQueries();
+    mockPublicRecipesQueries();
 
     const res = await request(buildApp())
       .get('/recipes')
