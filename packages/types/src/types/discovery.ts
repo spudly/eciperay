@@ -25,6 +25,22 @@ export type RecipeDisinterest = {
 /** A hidden recipe joined with its title for the Hidden recipes list. */
 export type HiddenRecipeItem = RecipeDisinterest & {title: string};
 
+/**
+ * Soft negative signal ("show less like this", #623): the user picked this
+ * source recipe and discovery down-ranks — never excludes — other recipes
+ * similar to it (shared tags or same author) until the user undoes the
+ * entry. Distinct from the hard hide above, which excludes one exact
+ * recipe. Entries persist until undone; there is no decay in v1.
+ */
+export type RecipeShowLess = {
+  userId: string;
+  sourceRecipeId: string;
+  createdAt: string;
+};
+
+/** A show-less source joined with its title for the Settings list. */
+export type ShowLessItem = RecipeShowLess & {title: string};
+
 /** A follow relationship: followerId follows followeeId. */
 export type UserFollow = {
   followerId: string;

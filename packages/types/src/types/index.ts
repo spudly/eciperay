@@ -128,8 +128,10 @@ export type {
   RecipeDisinterest,
   RecipeInterestSignal,
   RecipeInterestSignalKind,
+  RecipeShowLess,
   RecordInterestSignalInput,
   SavedRecipe,
   SavedRecipeItem,
+  ShowLessItem,
   UserFollow,
 } from './discovery.js';

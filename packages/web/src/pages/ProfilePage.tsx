@@ -14,6 +14,7 @@ import {ProfileAuthorDisplaySection} from '../components/profile/ProfileAuthorDi
 import {ProfileFeedbackPreference} from '../components/ProfileFeedbackPreference.js';
 import {ProfileFamilySharingSection} from '../components/profile/ProfileFamilySharingSection.js';
 import {ProfileNutritionGoalsSection} from '../components/profile/ProfileNutritionGoalsSection.js';
+import {ProfileShowLessSection} from '../components/profile/ProfileShowLessSection.js';
 import {buildSubscriptionData} from '../components/profile/subscriptionData.js';
 import {downloadAccountExportBundle} from '../lib/downloadAccountExport.js';
 import {downloadRecipeExportBundle} from '../lib/downloadRecipeExport.js';
@@ -401,6 +402,7 @@ export const ProfilePage = () => {
         sectionsBeforeFeedback={
           <>
             <ProfileNutritionGoalsSection />
+            <ProfileShowLessSection />
             <ProfileAuthorDisplaySection />
             <ProfileFamilySharingSection />
             <ProfileAccessTokensSection />

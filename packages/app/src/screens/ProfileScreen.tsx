@@ -24,6 +24,7 @@ import {
   grantLabel,
 } from '../hosts/profile/FamilySharingForm';
 import {NutritionGoalsForm} from '../hosts/profile/NutritionGoalsForm';
+import {ShowLessForm} from '../hosts/profile/ShowLessForm';
 import {ProfileFeedbackPreference} from '../hosts/profile/ProfileFeedbackPreference';
 import {SectionAlert, SectionButton} from '../hosts/profile/profileSection';
 import {api} from '../lib/api';
@@ -115,6 +116,37 @@ export const ProfileScreen = () => {
     },
     onError: error => {
       setAuthorDisplayError(errorMessage(error));
+    },
+  });
+
+  // --- Show less like this (#623) ---
+  const showLessUserId = session?.user?.id ?? 'anonymous';
+  const [showLessError, setShowLessError] = useState<string | null>(null);
+
+  const {
+    data: showLessEntries = [],
+    isLoading: showLessLoading,
+    isError: showLessLoadFailed,
+  } = useQuery({
+    queryKey: queryKeys.showLess(showLessUserId),
+    queryFn: () => api.discovery.listShowLess(),
+  });
+
+  const undoShowLessMutation = useMutation({
+    mutationFn: (sourceRecipeId: string) =>
+      api.discovery.undoShowLess(sourceRecipeId),
+    onSuccess: () => {
+      setShowLessError(null);
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.showLess(showLessUserId),
+      });
+      // The undo restores similar recipes' ranking in discovery.
+      void queryClient.invalidateQueries({
+        queryKey: ['publicRecipeDiscovery'],
+      });
+    },
+    onError: error => {
+      setShowLessError(errorMessage(error));
     },
   });
 
@@ -233,6 +265,20 @@ export const ProfileScreen = () => {
             onChange={setAuthorDisplay}
             onSave={() => {
               saveAuthorDisplayMutation.mutate();
+            }}
+          />
+          <ShowLessForm
+            entries={showLessEntries}
+            isLoading={showLessLoading}
+            loadFailed={showLessLoadFailed}
+            undoingId={
+              undoShowLessMutation.isPending
+                ? undoShowLessMutation.variables
+                : null
+            }
+            error={showLessError}
+            onUndo={sourceRecipeId => {
+              undoShowLessMutation.mutate(sourceRecipeId);
             }}
           />
           <FamilySharingForm

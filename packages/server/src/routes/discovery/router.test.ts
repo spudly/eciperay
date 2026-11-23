@@ -29,4 +29,17 @@ describe('discovery router wiring', () => {
     const res = await request(getApp()).get('/api/discovery/saved');
     expect(res.status).toBe(401);
   });
+
+  test('show-less routes return 401 without auth', async () => {
+    const list = await request(getApp()).get('/api/discovery/show-less');
+    expect(list.status).toBe(401);
+    const post = await request(getApp()).post(
+      '/api/discovery/recipes/recipe-uuid-1/show-less',
+    );
+    expect(post.status).toBe(401);
+    const del = await request(getApp()).delete(
+      '/api/discovery/recipes/recipe-uuid-1/show-less',
+    );
+    expect(del.status).toBe(401);
+  });
 });

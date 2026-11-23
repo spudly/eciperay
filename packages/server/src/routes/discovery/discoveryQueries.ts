@@ -2,8 +2,10 @@ import type {
   HiddenRecipeItem,
   RecipeInterestSignal,
   RecipeInterestSignalKind,
+  RecipeShowLess,
   SavedRecipe,
   SavedRecipeItem,
+  ShowLessItem,
   UserFollow,
 } from '@eciperay/types';
 
@@ -146,6 +148,78 @@ export const listHiddenRecipes = async (
   return (result.rows as SavedItemRow[]).map(row => ({
     userId: row.user_id,
     recipeId: row.recipe_id,
+    createdAt: row.created_at,
+    title: row.title,
+  }));
+};
+
+// ─── Show less like this (recipe_show_less, soft negative) ───────────────────
+
+export const SHOW_LESS_SQL = `
+  insert into recipe_show_less (user_id, source_recipe_id)
+  values ($1, $2)
+  on conflict (user_id, source_recipe_id) do update
+    set created_at = recipe_show_less.created_at
+  returning user_id, source_recipe_id, created_at
+`;
+
+export const UNDO_SHOW_LESS_SQL = `
+  delete from recipe_show_less
+  where user_id = $1 and source_recipe_id = $2
+`;
+
+export const LIST_SHOW_LESS_SQL = `
+  select rsl.user_id, rsl.source_recipe_id, rsl.created_at, rv.title
+  from recipe_show_less rsl
+  join recipes r on r.id = rsl.source_recipe_id
+  join recipe_versions rv on rv.id = r.active_version_id
+  where rsl.user_id = $1
+  order by rsl.created_at desc
+  limit $2 offset $3
+`;
+
+type ShowLessRow = {
+  user_id: string;
+  source_recipe_id: string;
+  created_at: string;
+};
+
+type ShowLessItemRow = ShowLessRow & {title: string};
+
+export const showLessLikeThis = async (
+  userId: string,
+  sourceRecipeId: string,
+  queryFn: QueryFn,
+): Promise<RecipeShowLess> => {
+  const result = await queryFn(SHOW_LESS_SQL, [userId, sourceRecipeId]);
+  const row = result.rows[0] as ShowLessRow;
+  return {
+    userId: row.user_id,
+    sourceRecipeId: row.source_recipe_id,
+    createdAt: row.created_at,
+  };
+};
+
+/** Returns false when the recipe was not a show-less source. */
+export const undoShowLess = async (
+  userId: string,
+  sourceRecipeId: string,
+  queryFn: QueryFn,
+): Promise<boolean> => {
+  const result = await queryFn(UNDO_SHOW_LESS_SQL, [userId, sourceRecipeId]);
+  return (result.rowCount ?? 0) > 0;
+};
+
+export const listShowLess = async (
+  userId: string,
+  limit: number,
+  offset: number,
+  queryFn: QueryFn,
+): Promise<ShowLessItem[]> => {
+  const result = await queryFn(LIST_SHOW_LESS_SQL, [userId, limit, offset]);
+  return (result.rows as ShowLessItemRow[]).map(row => ({
+    userId: row.user_id,
+    sourceRecipeId: row.source_recipe_id,
     createdAt: row.created_at,
     title: row.title,
   }));
@@ -313,7 +387,7 @@ export const recordInterestSignal = async (
  * Discovery_score = 3 * (author is followed by the requester) + 2 * (a followee
  * saved this recipe) + 1 * (a followee rated this recipe 4+ stars) + net
  * interest signals for this recipe from ALL users ('interest' count -
- * 'disinterest' count, scaled by 0.1)
+ * 'disinterest' count, scaled by 0.1) - show-less penalty (below)
  *
  * Hard rules, applied before ranking:
  *
@@ -325,6 +399,19 @@ export const recordInterestSignal = async (
  * - The requester's own quick-disinterest signals do NOT exclude a recipe; they
  *   deprioritise it via an extra -5 penalty when the requester's latest signal
  *   for the recipe is 'disinterest'.
+ *
+ * Show-less penalty (#623, soft negative signal): -2 for each of the
+ * requester's recipe_show_less sources that is similar to the candidate,
+ * capped at -6 total (least(6, 2 * matching sources)). A source is similar
+ * when it shares at least one tag with the candidate or has the same
+ * author. (There is no structured category field on a recipe version, so
+ * v1 similarity is tags + author only.) The penalty demotes but never
+ * excludes. Two carve-outs:
+ *
+ * - The source recipe itself is NOT penalised (and never excluded by
+ *   show-less) — hard hide remains the exclusion tool.
+ * - An explicit save or cook of the candidate by the requester cancels
+ *   its penalty entirely: a save/cook outweighs a soft down-rank.
  *
  * Ordering: discovery_score desc, then most recently updated.
  */
@@ -384,6 +471,35 @@ export const DISCOVERY_FEED_SQL = `
                     order by ris2.created_at desc
                     limit 1
                   ) = 'disinterest' then 1 else 0 end)
+           - (case when exists (
+                    select 1 from saved_recipes sr3
+                    where sr3.recipe_id = r.id and sr3.user_id = $1
+                  ) or exists (
+                    select 1 from cook_logs cl
+                    join recipe_versions clv
+                      on clv.id = cl.recipe_version_id
+                    where clv.recipe_id = r.id and cl.user_id = $1
+                  )
+               then 0
+               else least(6, 2 * (
+                 select count(*)
+                 from recipe_show_less rsl
+                 join recipes sr on sr.id = rsl.source_recipe_id
+                 join recipe_versions srv on srv.id = sr.active_version_id
+                 where rsl.user_id = $1
+                   and rsl.source_recipe_id <> r.id
+                   and (
+                     sr.user_id = r.user_id
+                     or exists (
+                       select 1
+                       from recipe_tags srt
+                       join recipe_tags crt
+                         on crt.tag_id = srt.tag_id
+                       where srt.recipe_version_id = srv.id
+                         and crt.recipe_version_id = rv.id
+                     )
+                   )
+               )) end)
          )::double precision as discovery_score
   from recipes r
   join recipe_versions rv on rv.id = r.active_version_id

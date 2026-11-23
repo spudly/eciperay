@@ -377,6 +377,7 @@ export {createTagsApi} from './tagsApi.js';
 export {createAiApi} from './aiApi.js';
 export {createVersionsApi, type TweakWithAiResult} from './versionsApi.js';
 export {createCookLogsApi} from './cookLogsApi.js';
+export {createDiscoveryApi} from './discoveryApi.js';
 export {createTweakAiApi} from './tweakAiApi.js';
 export {createCreateAiApi} from './createAiApi.js';
 export {

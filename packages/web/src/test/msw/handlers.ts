@@ -789,6 +789,10 @@ export const handlers = [
     `${API}/api/account/personal-access-tokens/:id`,
     () => new HttpResponse(null, {status: 204}),
   ),
+  http.get(`${API}/api/discovery/show-less`, () => HttpResponse.json([])),
+  http.delete(`${API}/api/discovery/recipes/:id/show-less`, () =>
+    HttpResponse.json(null, {status: 204}),
+  ),
   http.get(`${API}/api/account/family-sharing`, () => HttpResponse.json([])),
   http.post(`${API}/api/account/family-sharing`, async ({request}) => {
     const body = (await request.json()) as {email?: string};
