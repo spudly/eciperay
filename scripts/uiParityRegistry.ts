@@ -101,6 +101,12 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
       'Web profile section for family sharing (#617); the app renders its own FamilySharingForm host component in hosts/profile.',
   },
   {
+    path: 'profile/ProfileShowLessSection.tsx',
+    platform: 'web',
+    reason:
+      'Web profile section for "show less like this" (#623); the app renders its own ShowLessForm host component in hosts/profile.',
+  },
+  {
     path: 'RecipesPageHead.tsx',
     platform: 'web',
     reason:
@@ -111,6 +117,12 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
     platform: 'web',
     reason:
       'Web ProfilePage extract for max-lines; app ProfileScreen uses AccessTokensSection.',
+  },
+  {
+    path: 'profile/ProfileShowLessSection.tsx',
+    platform: 'web',
+    reason:
+      'Web profile section for the show-less review/reset surface (#623); the soft-negative signal is web discovery-only, no app equivalent yet.',
   },
   {
     path: 'AnalyticsConsentBanner.tsx',
