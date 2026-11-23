@@ -15,7 +15,7 @@
     "migrate": "tsx src/db/migrate.ts"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^1.6.0",
+    "@anthropic-ai/sdk": "^1.12.0",
     "@eciperay/client": "*",
     "@eciperay/mcp-server": "*",
     "@eciperay/types": "*",
@@ -24,11 +24,11 @@
     "@opentelemetry/resources": "^3.0.0",
     "@opentelemetry/sdk-logs": "^3.0.0",
     "@spudly/ui": "^11.0.0",
-    "@supabase/supabase-js": "^2.118.0",
+    "@supabase/supabase-js": "^2.119.2",
     "@tamagui/core": "^3.1.9",
     "cheerio": "^1.2.0",
     "cors": "^2.8.6",
-    "dotenv": "^18.0.9",
+    "dotenv": "^18.0.10",
     "express": "^5.3.0",
     "pg": "^8.23.1",
     "pino": "^10.4.0",
@@ -45,22 +45,22 @@
   },
   "devDependencies": {
     "@jest/globals": "^30.5.2",
-    "@swc/core": "^1.16.20",
+    "@swc/core": "^1.16.22",
     "@swc/jest": "^0.2.39",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/jest": "^30.0.0",
-    "@types/node": "^26.6.5",
+    "@types/node": "^26.6.6",
     "@types/pg": "^8.23.1",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@types/supertest": "^7.2.1",
-    "esbuild": "^0.28.1",
+    "esbuild": "^0.28.2",
     "istanbul-lib-coverage": "^3.2.2",
     "istanbul-lib-report": "^3.0.1",
     "istanbul-reports": "^3.2.0",
     "nock": "^14.0.15",
-    "supertest": "^7.3.1"
+    "supertest": "^7.3.2"
   },
   "engines": {
     "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
