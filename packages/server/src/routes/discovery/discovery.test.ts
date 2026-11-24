@@ -70,6 +70,67 @@ describe('/discovery (#622 tranche 1)', () => {
     expect(res.body[0].title).toBe('Soup');
   });
 
+  test('POST show-less returns 201 with the entry', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockQuery.mockResolvedValue(
+      makeQueryResult([
+        {
+          user_id: 'user-uuid-1',
+          source_recipe_id: 'recipe-uuid-1',
+          created_at: '2026-11-23T00:00:00.000Z',
+        },
+      ]),
+    );
+    const res = await request(getApp())
+      .post('/api/discovery/recipes/recipe-uuid-1/show-less')
+      .set('Authorization', AUTH);
+    expect(res.status).toBe(201);
+    expect(res.body).toEqual({
+      userId: 'user-uuid-1',
+      sourceRecipeId: 'recipe-uuid-1',
+      createdAt: '2026-11-23T00:00:00.000Z',
+    });
+  });
+
+  test('DELETE show-less returns 404 when there is no entry to undo', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockQuery.mockResolvedValue({...makeQueryResult([]), rowCount: 0});
+    const res = await request(getApp())
+      .delete('/api/discovery/recipes/recipe-uuid-1/show-less')
+      .set('Authorization', AUTH);
+    expect(res.status).toBe(404);
+  });
+
+  test('DELETE show-less returns 204 when an entry is undone', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockQuery.mockResolvedValue({...makeQueryResult([]), rowCount: 1});
+    const res = await request(getApp())
+      .delete('/api/discovery/recipes/recipe-uuid-1/show-less')
+      .set('Authorization', AUTH);
+    expect(res.status).toBe(204);
+  });
+
+  test('GET show-less lists sources with titles', async () => {
+    nockSupabaseGetUser('user-uuid-1');
+    mockQuery.mockResolvedValue(
+      makeQueryResult([
+        {
+          user_id: 'user-uuid-1',
+          source_recipe_id: 'recipe-uuid-1',
+          created_at: '2026-11-23T00:00:00.000Z',
+          title: 'Soup',
+        },
+      ]),
+    );
+    const res = await request(getApp())
+      .get('/api/discovery/show-less')
+      .set('Authorization', AUTH);
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveLength(1);
+    expect(res.body[0].title).toBe('Soup');
+    expect(res.body[0].sourceRecipeId).toBe('recipe-uuid-1');
+  });
+
   test('PUT following yourself returns 400', async () => {
     nockSupabaseGetUser('user-uuid-1');
     const res = await request(getApp())

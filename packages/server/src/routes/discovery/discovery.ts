@@ -17,8 +17,11 @@ import {
   listFollows,
   listHiddenRecipes,
   listSavedRecipes,
+  listShowLess,
   recordInterestSignal,
   saveRecipe,
+  showLessLikeThis,
+  undoShowLess,
   unfollowUser,
   unhideRecipe,
   unsaveRecipe,
@@ -141,6 +144,51 @@ export const deleteHidden = async (
   );
   if (!removed) {
     res.status(404).json({error: 'Hidden recipe not found'});
+    return;
+  }
+  res.status(204).send();
+};
+
+export const listShowLessEntries = async (
+  req: AuthedRequest,
+  res: Response,
+  queryFn: QueryFn,
+) => {
+  res.json(
+    await listShowLess(
+      req.userId,
+      parseLimit(req.query['limit']),
+      parseOffset(req.query['offset']),
+      queryFn,
+    ),
+  );
+};
+
+export const postShowLess = async (
+  req: AuthedRequest,
+  res: Response,
+  queryFn: QueryFn,
+) => {
+  const entry = await showLessLikeThis(
+    req.userId,
+    getParam(req, 'recipeId'),
+    queryFn,
+  );
+  res.status(201).json(entry);
+};
+
+export const deleteShowLess = async (
+  req: AuthedRequest,
+  res: Response,
+  queryFn: QueryFn,
+) => {
+  const removed = await undoShowLess(
+    req.userId,
+    getParam(req, 'recipeId'),
+    queryFn,
+  );
+  if (!removed) {
+    res.status(404).json({error: 'Show less entry not found'});
     return;
   }
   res.status(204).send();

@@ -43,6 +43,7 @@ export const queryKeys = {
     ['version', recipeId, versionId] as const,
   cookLogs: (recipeId: string, versionId: string) =>
     ['cookLogs', recipeId, versionId] as const,
+  showLess: (userId: string) => ['showLess', userId] as const,
   nutrition: (id: string) => ['nutrition', id] as const,
   tags: () => ['tags'] as const,
   currentUser: (userId: string) => ['currentUser', userId] as const,

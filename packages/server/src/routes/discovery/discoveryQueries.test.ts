@@ -9,8 +9,11 @@ import {
   listFollows,
   listHiddenRecipes,
   listSavedRecipes,
+  listShowLess,
   recordInterestSignal,
   saveRecipe,
+  showLessLikeThis,
+  undoShowLess,
   unfollowUser,
   unhideRecipe,
   unsaveRecipe,
@@ -233,6 +236,105 @@ describe('discoveryQueries', () => {
       'interest',
       4200,
     ]);
+  });
+
+  test('show-less records, undoes, and lists sources with titles', async () => {
+    const mockQuery = createMockQuery();
+    mockQuery.mockResolvedValue(
+      makeQueryResult([
+        {
+          user_id: 'user-uuid-1',
+          source_recipe_id: 'recipe-uuid-1',
+          created_at: '2026-11-23T00:00:00.000Z',
+        },
+      ]),
+    );
+    await expect(
+      showLessLikeThis('user-uuid-1', 'recipe-uuid-1', mockQuery),
+    ).resolves.toEqual({
+      userId: 'user-uuid-1',
+      sourceRecipeId: 'recipe-uuid-1',
+      createdAt: '2026-11-23T00:00:00.000Z',
+    });
+    expect(mockQuery).toHaveBeenCalledWith(
+      expect.stringContaining('recipe_show_less'),
+      ['user-uuid-1', 'recipe-uuid-1'],
+    );
+    mockQuery.mockResolvedValue({...makeQueryResult([]), rowCount: 1});
+    await expect(
+      undoShowLess('user-uuid-1', 'recipe-uuid-1', mockQuery),
+    ).resolves.toBe(true);
+    mockQuery.mockResolvedValue({...makeQueryResult([]), rowCount: 0});
+    await expect(
+      undoShowLess('user-uuid-1', 'recipe-uuid-1', mockQuery),
+    ).resolves.toBe(false);
+    mockQuery.mockResolvedValue(
+      makeQueryResult([
+        {
+          user_id: 'user-uuid-1',
+          source_recipe_id: 'recipe-uuid-1',
+          created_at: '2026-11-23T00:00:00.000Z',
+          title: 'Soup',
+        },
+      ]),
+    );
+    await expect(
+      listShowLess('user-uuid-1', 100, 0, mockQuery),
+    ).resolves.toEqual([
+      {
+        userId: 'user-uuid-1',
+        sourceRecipeId: 'recipe-uuid-1',
+        createdAt: '2026-11-23T00:00:00.000Z',
+        title: 'Soup',
+      },
+    ]);
+  });
+
+  test('discovery feed SQL applies the show-less penalty per matching source, capped', () => {
+    // Penalty counts the requester's show-less sources…
+    expect(DISCOVERY_FEED_SQL).toContain('recipe_show_less');
+    // …at -2 per matching source…
+    expect(DISCOVERY_FEED_SQL).toContain('2 * (');
+    // …capped at -6 so it demotes but never buries.
+    expect(DISCOVERY_FEED_SQL).toContain('least(6,');
+    // Similarity = shared tag (recipe_tags join on tag_id)…
+    expect(DISCOVERY_FEED_SQL).toContain('recipe_tags');
+    expect(DISCOVERY_FEED_SQL).toContain('crt.tag_id = srt.tag_id');
+    // …or same author.
+    expect(DISCOVERY_FEED_SQL).toContain('sr.user_id = r.user_id');
+    // Non-matching recipes are unaffected: the count subquery only counts
+    // sources satisfying the similarity condition above.
+  });
+
+  test('discovery feed SQL does not penalise the show-less source itself', () => {
+    // The source recipe is excluded from its own penalty count, and
+    // show-less never adds an exclusion — only recipe_disinterest does.
+    expect(DISCOVERY_FEED_SQL).toContain(
+      'rsl.source_recipe_id <> r.id',
+    );
+    expect(DISCOVERY_FEED_SQL).not.toMatch(
+      /not exists \(\s+select 1 from recipe_show_less/,
+    );
+  });
+
+  test('discovery feed SQL cancels the show-less penalty on save or cook', () => {
+    // An explicit save by the requester cancels the penalty…
+    expect(DISCOVERY_FEED_SQL).toContain('saved_recipes sr3');
+    expect(DISCOVERY_FEED_SQL).toContain(
+      'sr3.user_id = $1',
+    );
+    // …and so does a cook (cook_logs via the cooked version's recipe).
+    expect(DISCOVERY_FEED_SQL).toContain('cook_logs');
+    expect(DISCOVERY_FEED_SQL).toContain('cl.user_id = $1');
+    // The cancellation zeroes the penalty term.
+    expect(DISCOVERY_FEED_SQL).toContain('then 0');
+  });
+
+  test('discovery feed SQL keeps hard hide winning over show-less', () => {
+    // Hard hide still excludes outright, before any ranking/penalty.
+    expect(DISCOVERY_FEED_SQL).toContain(
+      'select 1 from recipe_disinterest rd',
+    );
   });
 
   test('discovery feed SQL enforces visibility and hard-hide exclusion', () => {

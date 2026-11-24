@@ -7,11 +7,14 @@ import {
   deleteFollowing,
   deleteHidden,
   deleteSaved,
+  deleteShowLess,
   getDiscoveryFeed,
   listFollowing,
   listHidden,
   listSaved,
+  listShowLessEntries,
   postInterestSignal,
+  postShowLess,
   putFollowing,
   putHidden,
   putSaved,
@@ -43,6 +46,15 @@ export const createDiscoveryRouter = (queryFn: QueryFn) => {
   );
   router.delete('/hidden/:recipeId', requireAuth, (req, res) =>
     deleteHidden(a(req), res, queryFn),
+  );
+  router.get('/show-less', requireAuth, (req, res) =>
+    listShowLessEntries(a(req), res, queryFn),
+  );
+  router.post('/recipes/:recipeId/show-less', requireAuth, (req, res) =>
+    postShowLess(a(req), res, queryFn),
+  );
+  router.delete('/recipes/:recipeId/show-less', requireAuth, (req, res) =>
+    deleteShowLess(a(req), res, queryFn),
   );
   router.get('/following', requireAuth, (req, res) =>
     listFollowing(a(req), res, queryFn),
