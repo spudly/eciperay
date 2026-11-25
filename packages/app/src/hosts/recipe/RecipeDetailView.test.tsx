@@ -188,8 +188,9 @@ describe('RecipeDetailView', () => {
     // The single-scroll page shows the label twice: the overview stat and
     // the ingredients section's servings control.
     expect(getAllByText('Servings').length).toBeGreaterThan(0);
-    expect(await findByText('15m')).toBeTruthy();
-    expect(await findByText('30m')).toBeTruthy();
+    // DS 14: the header pill carries the total time (prep 15 + cook
+    // 30) and servings; the separate prep/cook stats are gone.
+    expect(await findByText('45 min • Serves 4')).toBeTruthy();
     expect(await findByText('Start Cooking')).toBeTruthy();
     expect(await findByText('Edit')).toBeTruthy();
     expect(await findByText('Delete')).toBeTruthy();
@@ -273,11 +274,16 @@ describe('RecipeDetailView', () => {
       versionNumber: 4,
       derivedRole: 'candidate',
     });
-    const {findByText} = await renderView({}, [
-      makeRecipeVersionSummary(),
-      candidateWithSummary,
-      candidateWithoutSummary,
-    ], undefined, 'en-XA');
+    const {findByText} = await renderView(
+      {},
+      [
+        makeRecipeVersionSummary(),
+        candidateWithSummary,
+        candidateWithoutSummary,
+      ],
+      undefined,
+      'en-XA',
+    );
     expect(await findByText('v3: Less salt~')).toBeTruthy();
     expect(await findByText('v4~')).toBeTruthy();
   });

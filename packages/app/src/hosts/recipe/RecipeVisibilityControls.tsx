@@ -45,17 +45,24 @@ export const useRecipeSharingProps = (
 ): RecipeDetailPageSharing => {
   const {i18n} = useLingui();
   const visibilityLabels: Record<RecipeVisibility, string> = {
-    private: i18n._({id: 'recipeSharing.visibilityPrivateLabel', message: 'Private'}),
+    private: i18n._({
+      id: 'recipeSharing.visibilityPrivateLabel',
+      message: 'Private',
+    }),
     unlisted: i18n._({
       id: 'recipeSharing.visibilityUnlistedLabel',
       message: 'Unlisted link',
     }),
-    public: i18n._({id: 'recipeSharing.visibilityPublicLabel', message: 'Public'}),
+    public: i18n._({
+      id: 'recipeSharing.visibilityPublicLabel',
+      message: 'Public',
+    }),
   };
   const visibilityDescriptions: Record<RecipeVisibility, string> = {
     private: i18n._({
       id: 'recipeSharing.visibilityPrivateDescription',
-      message: 'Just between you and your kitchen — only you can view this recipe, plus anyone you\'ve already shared it with.',
+      message:
+        "Just between you and your kitchen — only you can view this recipe, plus anyone you've already shared it with.",
     }),
     unlisted: i18n._({
       id: 'recipeSharing.visibilityUnlistedDescription',
@@ -63,7 +70,8 @@ export const useRecipeSharingProps = (
     }),
     public: i18n._({
       id: 'recipeSharing.visibilityPublicDescription',
-      message: 'Out in the open — anyone can view it, and once it\'s past the idea stage, anyone can discover it and it may turn up in search results.',
+      message:
+        "Out in the open — anyone can view it, and once it's past the idea stage, anyone can discover it and it may turn up in search results.",
     }),
   };
   const queryClient = useQueryClient();
@@ -108,7 +116,10 @@ export const useRecipeSharingProps = (
       setShareToken(result.shareToken ?? null);
       void invalidate();
       onActionMessage(
-        i18n._({id: 'recipeSharing.linkRotated', message: 'Share link rotated'}),
+        i18n._({
+          id: 'recipeSharing.linkRotated',
+          message: 'Share link rotated',
+        }),
       );
     },
   });
@@ -141,7 +152,7 @@ export const useRecipeSharingProps = (
         ? i18n._({
             id: 'recipeSharing.publicWarning',
             message:
-              'Heads up — once public, anyone can view this recipe, and once it\'s past the idea stage, anyone browsing Eciperay can discover it.',
+              "Heads up — once public, anyone can view this recipe, and once it's past the idea stage, anyone browsing Eciperay can discover it.",
           })
         : null,
     ...(consentRequired
@@ -150,28 +161,26 @@ export const useRecipeSharingProps = (
             id: 'recipeSharing.consentLabel',
             message: 'Publishing consent',
           }),
-          consentDescription: (
-            <Text>
-              {i18n._({
+          consentDescription: [
+            {
+              type: 'text',
+              text: i18n._({
                 id: 'recipeSharing.consentDescriptionStart',
                 message:
                   'I understand this recipe may be viewed without signing in and I agree to the',
-              })}{' '}
-              <Text
-                color="$primary"
-                textDecorationLine="underline"
-                onPress={() => {
-                  void safeOpenUrl(PRIVACY_POLICY_URL);
-                }}
-              >
-                {i18n._({
-                  id: 'recipeSharing.privacyPolicyLinkLabel',
-                  message: 'Privacy Policy',
-                })}
-              </Text>
-              .
-            </Text>
-          ),
+              }),
+            },
+            {type: 'text', text: ' '},
+            {
+              type: 'link',
+              label: i18n._({
+                id: 'recipeSharing.privacyPolicyLinkLabel',
+                message: 'Privacy Policy',
+              }),
+              href: PRIVACY_POLICY_URL,
+            },
+            {type: 'text', text: '.'},
+          ],
           consentChecked: publishingConsent,
           onConsentCheckedChange: setPublishingConsent,
           consentRequired: true,

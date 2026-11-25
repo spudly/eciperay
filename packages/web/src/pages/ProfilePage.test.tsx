@@ -104,9 +104,14 @@ describe('ProfilePage', () => {
     const fileInput = document.querySelector('input[type="file"]')!;
     fireEvent.change(fileInput, {target: {files: [file]}});
 
-    await waitFor(() => {
-      expect(screen.getByText(/non-empty recipes array/i)).toBeInTheDocument();
-    });
+    await waitFor(
+      () => {
+        expect(
+          screen.getByText(/non-empty recipes array/i),
+        ).toBeInTheDocument();
+      },
+      {timeout: 5000},
+    );
   });
 
   test('shows a generic import error for unexpected failures', async () => {
@@ -145,9 +150,12 @@ describe('ProfilePage', () => {
     const fileInput = document.querySelector('input[type="file"]')!;
     fireEvent.change(fileInput, {target: {files: [file]}});
 
-    await waitFor(() => {
-      expect(screen.getByText('Import failed')).toBeInTheDocument();
-    });
+    await waitFor(
+      () => {
+        expect(screen.getByText('Import failed')).toBeInTheDocument();
+      },
+      {timeout: 5000},
+    );
   });
 
   test('imports recipes from a JSON file', async () => {
@@ -187,9 +195,15 @@ describe('ProfilePage', () => {
     const fileInput = document.querySelector('input[type="file"]')!;
     fireEvent.change(fileInput, {target: {files: [file]}});
 
-    await waitFor(() => {
-      expect(screen.getByText(/Imported 1 recipe/i)).toBeInTheDocument();
-    });
+    // Explicit timeout (the MealEditPage precedent): the DS 14 page
+    // tree makes the import round-trip exceed waitFor's 1s default
+    // under full-suite load, though it completes in ~2s.
+    await waitFor(
+      () => {
+        expect(screen.getByText(/Imported 1 recipe/i)).toBeInTheDocument();
+      },
+      {timeout: 5000},
+    );
   });
 
   test('shows import errors returned by the API', async () => {
@@ -229,9 +243,12 @@ describe('ProfilePage', () => {
     const fileInput = document.querySelector('input[type="file"]')!;
     fireEvent.change(fileInput, {target: {files: [file]}});
 
-    await waitFor(() => {
-      expect(screen.getByText(/Validation failed/i)).toBeInTheDocument();
-    });
+    await waitFor(
+      () => {
+        expect(screen.getByText(/Validation failed/i)).toBeInTheDocument();
+      },
+      {timeout: 5000},
+    );
   });
 
   test('downloads account data export', async () => {

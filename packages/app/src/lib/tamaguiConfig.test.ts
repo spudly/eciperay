@@ -12,7 +12,7 @@ describe('appTamaguiConfig', () => {
       string,
       {val?: string} | undefined
     >;
-    expect(light['primary']?.val).toBe('#c2410c');
+    expect(light['primary']?.val).toBe('#b13f13');
     expect(light['background']?.val).toBe('#faf6f0');
   });
 });

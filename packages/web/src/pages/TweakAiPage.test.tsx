@@ -134,7 +134,7 @@ describe('TweakAiPage', () => {
       await screen.findByText(/Plan for: make it spicier/),
     ).toBeInTheDocument();
     await userEvent.click(screen.getByText('Approve plan'));
-    expect(await screen.findByText('Cook pasta')).toBeInTheDocument();
+    expect(await screen.findByText('1. Cook pasta')).toBeInTheDocument();
     await userEvent.click(screen.getByText('Save as draft'));
     expect(await screen.findByText('Edit version')).toBeInTheDocument();
   });
@@ -364,7 +364,7 @@ describe('TweakAiPage', () => {
     );
     await userEvent.click(screen.getByText('Start planning'));
     await userEvent.click(screen.getByText('Approve plan'));
-    await screen.findByText('Cook pasta');
+    await screen.findByText('1. Cook pasta');
     vi.spyOn(eciperay.tweakAi, 'createVersion').mockRejectedValueOnce(
       new Error('Save failed hard'),
     );
@@ -380,7 +380,7 @@ describe('TweakAiPage', () => {
     );
     await userEvent.click(screen.getByText('Start planning'));
     await userEvent.click(screen.getByText('Approve plan'));
-    await screen.findByText('Cook pasta');
+    await screen.findByText('1. Cook pasta');
     vi.spyOn(eciperay.tweakAi, 'createVersion').mockRejectedValueOnce('nope');
     await userEvent.click(screen.getByText('Save as draft'));
     expect(

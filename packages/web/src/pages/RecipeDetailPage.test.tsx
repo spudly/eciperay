@@ -75,6 +75,42 @@ describe('RecipeDetailPage', () => {
     });
   });
 
+  test('renders the metadata pill with category and total time (#640)', async () => {
+    await renderDetailAt('/recipes/recipe-uuid-1');
+    await waitFor(() => {
+      expect(screen.getByText('Test Recipe')).toBeInTheDocument();
+    });
+    // The fixture carries the Dinner category tag and 15m prep +
+    // 30m cook: the pill joins category \u2022 total time \u2022 serves.
+    expect(
+      screen.getByText('Dinner \u2022 45 min \u2022 Serves 4'),
+    ).toBeInTheDocument();
+  });
+
+  test('omits category and total time from the pill when absent (#640)', async () => {
+    // The default view's pill reads the recipe payload itself (the
+    // version-detail query only feeds alternate-version views), so
+    // the absent case overrides the recipe endpoint.
+    server.use(
+      http.get('http://localhost:8080/api/recipes/:id', ({params}) =>
+        HttpResponse.json(
+          makeRecipeDetail({
+            id: params['id'] as string,
+            tags: [],
+            prepTimeMin: null,
+            cookTimeMin: null,
+          }),
+        ),
+      ),
+    );
+    await renderDetailAt('/recipes/recipe-uuid-1');
+    await waitFor(() => {
+      expect(screen.getByText('Test Recipe')).toBeInTheDocument();
+    });
+    expect(screen.getByText('Serves 4')).toBeInTheDocument();
+    expect(screen.queryByText(/45 min/)).not.toBeInTheDocument();
+  });
+
   test('deletes the recipe from the detail page and returns to the list', async () => {
     await renderWithProviders(
       <Routes>

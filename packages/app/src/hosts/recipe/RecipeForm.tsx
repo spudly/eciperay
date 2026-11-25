@@ -10,7 +10,6 @@ import {
   parentInstructionsInput,
   parentTagIds,
   queryKeys,
-  recipeStatusOptions,
   revertVersionScalar,
   toRecipeInputIngredients,
   toRecipeInputInstructions,
@@ -65,14 +64,8 @@ import {
 import {supabase} from '../../lib/supabase';
 
 import {recipeImagePreviewStyles} from '../../components/recipe/recipeImagePreviewStyles';
-import {
-  createEmptyIngredientRow,
-  SortableIngredientList,
-} from '../../components/recipe/SortableIngredientList';
-import {
-  createEmptyInstructionRow,
-  SortableInstructionList,
-} from '../../components/recipe/SortableInstructionList';
+import {createEmptyIngredientRow} from '../../components/recipe/SortableIngredientList';
+import {createEmptyInstructionRow} from '../../components/recipe/SortableInstructionList';
 
 type Props = {
   initial: RecipeFormInitial;
@@ -160,19 +153,18 @@ const toQuantity = (value: number | string | null): number | null => {
  * component owns everything the B2 audit leaves in the app — the form state,
  * the tags query, image processing and upload, the AI description/image calls,
  * parent-version diffing, and building the RecipeInput — and renders the DS
- * page with the `image` data prop (B7 T3, eciperay#554: the DS
- * RecipeImageView renders the preview and action row from data; the picker
- * invocation and the pending-selection crop flow stay app-side in this host,
- * per the #124 contract) and the sortable lists in its render slots (the drag
- * lists stay app-side). The screens wrap this host in the DS shell pages
- * (EditRecipePage / EditVersionPage / ManualEntryPage).
+ * page with the `image` data prop (B7 T3, eciperay#554: the DS RecipeImageView
+ * renders the preview and action row from data; the picker invocation and the
+ * pending-selection crop flow stay app-side in this host, per the #124
+ * contract) and the sortable lists in its render slots (the drag lists stay
+ * app-side). The screens wrap this host in the DS shell pages (EditRecipePage /
+ * EditVersionPage / ManualEntryPage).
  */
 /**
- * The parent-version list summary, composed from the catalog (#465): the
- * client helper supplies the structured counts/preview, and the prose —
- * empty state, count sentence, and overflow suffix — resolves through
- * Lingui here, so only the parent's own ingredient names / step text
- * stay as entered.
+ * The parent-version list summary, composed from the catalog (#465): the client
+ * helper supplies the structured counts/preview, and the prose — empty state,
+ * count sentence, and overflow suffix — resolves through Lingui here, so only
+ * the parent's own ingredient names / step text stay as entered.
  */
 const parentListSummary = (
   i18n: I18n,
@@ -256,7 +248,7 @@ export const RecipeForm = ({
     return [createEmptyInstructionRow(1)];
   });
   const [tagIds, setTagIds] = useState<string[]>(initial.tagIds);
-  const [status, setStatus] = useState<RecipeStatus>(initial.status ?? 'idea');
+  const [status] = useState<RecipeStatus>(initial.status ?? 'idea');
   const [pendingImage, setPendingImage] = useState<PendingRecipeImage | null>(
     null,
   );
@@ -314,17 +306,6 @@ export const RecipeForm = ({
     () => tags.map(tag => ({value: tag.id, label: tag.name})),
     [tags],
   );
-  const statusOptions = useMemo(
-    () =>
-      recipeStatusOptions({
-        idea: i18n._({id: 'recipeStatus.idea', message: 'Idea'}),
-        evolving: i18n._({id: 'recipeStatus.evolving', message: 'Evolving'}),
-        perfected: i18n._({id: 'recipeStatus.perfected', message: 'Perfected'}),
-        abandoned: i18n._({id: 'recipeStatus.abandoned', message: 'Abandoned'}),
-      }),
-    [i18n],
-  );
-
   const clearPendingImage = () => {
     setPreviewUri(current => {
       if (current) {
@@ -340,10 +321,16 @@ export const RecipeForm = ({
       // The known missing-data failure resolves through the catalog
       // instead of its English message; unrelated errors keep theirs.
       isRecipeImageReadError(error_)
-        ? i18n._({id: 'recipeForm.readImageError', message: 'Failed to read image'})
+        ? i18n._({
+            id: 'recipeForm.readImageError',
+            message: 'Failed to read image',
+          })
         : error_ instanceof Error
           ? error_.message
-          : i18n._({id: 'recipeForm.readImageError', message: 'Failed to read image'}),
+          : i18n._({
+              id: 'recipeForm.readImageError',
+              message: 'Failed to read image',
+            }),
     );
   };
 
@@ -606,7 +593,10 @@ export const RecipeForm = ({
     const userId = session?.user.id;
     if (!userId) {
       setImageError(
-        i18n._({id: 'recipeForm.signInToUpload', message: 'Sign in to upload images'}),
+        i18n._({
+          id: 'recipeForm.signInToUpload',
+          message: 'Sign in to upload images',
+        }),
       );
       return;
     }
@@ -918,433 +908,478 @@ export const RecipeForm = ({
 
   return (
     <>
-    <RecipeFormPage
-      title={title}
-      onTitleChange={setTitle}
-      description={description}
-      onDescriptionChange={setDescription}
-      servings={servings}
-      onServingsChange={setServings}
-      prepTimeMin={prepTimeMin}
-      onPrepTimeMinChange={setPrepTimeMin}
-      cookTimeMin={cookTimeMin}
-      onCookTimeMinChange={setCookTimeMin}
-      sourceUrl={sourceUrl}
-      onSourceUrlChange={setSourceUrl}
-      statusOptions={statusOptions}
-      status={status}
-      onStatusChange={value => {
-        setStatus(value as RecipeStatus);
-      }}
-      tagOptions={tagOptions}
-      tagIds={tagIds}
-      onTagIdsChange={setTagIds}
-      loadingTags={isLoadingTags}
-      changedFields={changedFields}
-      revertLabels={revertLabels}
-      onRevertField={handleRevertField}
-      {...(parentVersion && versionDiff?.tagsChanged
-        ? {
-            tagsRevertLabel: formatParentTagNames(parentVersion),
-            onRevertTags: () => {
-              setTagIds(parentTagIds(parentVersion));
-            },
-          }
-        : {})}
-      {...(parentVersion && versionDiff?.ingredientsChanged
-        ? {
-            ingredientsChangedLabel: i18n._({
-              id: 'recipeForm.ingredientsChanged',
-              message: 'Ingredients changed from parent version ({summary})',
-              values: {
-                summary: parentListSummary(
-                  i18n,
-                  parentVersion,
-                  'ingredients',
-                ),
+      <RecipeFormPage
+        title={title}
+        onTitleChange={setTitle}
+        description={description}
+        onDescriptionChange={setDescription}
+        servings={servings}
+        onServingsChange={setServings}
+        prepTimeMin={prepTimeMin}
+        onPrepTimeMinChange={setPrepTimeMin}
+        cookTimeMin={cookTimeMin}
+        onCookTimeMinChange={setCookTimeMin}
+        sourceUrl={sourceUrl}
+        onSourceUrlChange={setSourceUrl}
+        tagOptions={tagOptions}
+        tagIds={tagIds}
+        onTagIdsChange={setTagIds}
+        loadingTags={isLoadingTags}
+        changedFields={changedFields}
+        revertLabels={revertLabels}
+        onRevertField={handleRevertField}
+        {...(parentVersion && versionDiff?.tagsChanged
+          ? {
+              tagsRevertLabel: formatParentTagNames(parentVersion),
+              onRevertTags: () => {
+                setTagIds(parentTagIds(parentVersion));
               },
-            }),
-            onRevertIngredients: () => {
-              setIngredients(
-                ensureIngredientRowKeys(parentIngredientsInput(parentVersion)),
-              );
-            },
-          }
-        : {})}
-      {...(parentVersion && versionDiff?.instructionsChanged
-        ? {
-            instructionsChangedLabel: i18n._({
-              id: 'recipeForm.instructionsChanged',
-              message:
-                'Instructions changed from parent version ({summary})',
-              values: {
-                summary: parentListSummary(
-                  i18n,
-                  parentVersion,
-                  'instructions',
-                ),
+            }
+          : {})}
+        {...(parentVersion && versionDiff?.ingredientsChanged
+          ? {
+              ingredientsChangedLabel: i18n._({
+                id: 'recipeForm.ingredientsChanged',
+                message: 'Ingredients changed from parent version ({summary})',
+                values: {
+                  summary: parentListSummary(
+                    i18n,
+                    parentVersion,
+                    'ingredients',
+                  ),
+                },
+              }),
+              onRevertIngredients: () => {
+                setIngredients(
+                  ensureIngredientRowKeys(
+                    parentIngredientsInput(parentVersion),
+                  ),
+                );
               },
-            }),
-            onRevertInstructions: () => {
-              setInstructions(
-                ensureInstructionRowKeys(
-                  parentInstructionsInput(parentVersion),
-                ),
-              );
-            },
-          }
-        : {})}
-      onGenerateDescription={() => {
-        void handleGenerateDescription();
-      }}
-      isGeneratingDescription={descriptionGenerating}
-      descriptionError={descriptionError}
-      contentLocked={contentLocked}
-      image={{
-        imagePreviewUri: imagePreview || null,
-        isUploading: imageUploading,
-        isGenerating: imageGenerating,
-        error: imageError,
-        canGenerateImage: title.trim().length > 0,
-        onPickImageRequest: () => {
-          void handlePick();
-        },
-        onTakePhotoRequest: () => {
-          void handleTakePhoto();
-        },
-        onGenerateImageRequest: () => {
-          void handleGenerateImage();
-        },
-        onRemoveImage: () => {
-          clearPendingImage();
-          setImageUrl('');
-          setImageCacheKey(0);
-          setImageError(null);
-        },
-      }}
-      renderIngredientsSection={() => (
-        <SortableIngredientList
-          ingredients={ingredients}
-          onChange={setIngredients}
-          onUpdate={updateIngredient}
-          onAdd={() => {
+            }
+          : {})}
+        {...(parentVersion && versionDiff?.instructionsChanged
+          ? {
+              instructionsChangedLabel: i18n._({
+                id: 'recipeForm.instructionsChanged',
+                message: 'Instructions changed from parent version ({summary})',
+                values: {
+                  summary: parentListSummary(
+                    i18n,
+                    parentVersion,
+                    'instructions',
+                  ),
+                },
+              }),
+              onRevertInstructions: () => {
+                setInstructions(
+                  ensureInstructionRowKeys(
+                    parentInstructionsInput(parentVersion),
+                  ),
+                );
+              },
+            }
+          : {})}
+        onGenerateDescription={() => {
+          void handleGenerateDescription();
+        }}
+        isGeneratingDescription={descriptionGenerating}
+        descriptionError={descriptionError}
+        contentLocked={contentLocked}
+        image={{
+          imagePreviewUri: imagePreview || null,
+          isUploading: imageUploading,
+          isGenerating: imageGenerating,
+          error: imageError,
+          canGenerateImage: title.trim().length > 0,
+          onPickImageRequest: () => {
+            void handlePick();
+          },
+          onTakePhotoRequest: () => {
+            void handleTakePhoto();
+          },
+          onGenerateImageRequest: () => {
+            void handleGenerateImage();
+          },
+          onRemoveImage: () => {
+            clearPendingImage();
+            setImageUrl('');
+            setImageCacheKey(0);
+            setImageError(null);
+          },
+        }}
+        ingredients={{
+          rows: ingredients.map(ingredient => ({
+            key: ingredient.key,
+            quantity:
+              ingredient.quantity === null ? '' : String(ingredient.quantity),
+            unit: ingredient.unit ?? '',
+            name: ingredient.name,
+          })),
+          onFieldChange: (rowKey, field, value) => {
+            const index = ingredients.findIndex(row => row.key === rowKey);
+            if (index === -1) {
+              return;
+            }
+            // Preserve the retired host row's fold: an emptied quantity
+            // or unit crosses to the form state as null, never "".
+            updateIngredient(
+              index,
+              field,
+              value === '' && field !== 'name' ? null : value,
+            );
+          },
+          onRemove: rowKey => {
+            setIngredients(prev => prev.filter(row => row.key !== rowKey));
+          },
+          onAdd: () => {
             setIngredients(prev => [
               ...prev,
               createEmptyIngredientRow(prev.length),
             ]);
-          }}
-        />
-      )}
-      renderInstructionsSection={() => (
-        <SortableInstructionList
-          instructions={instructions}
-          onChange={setInstructions}
-          onUpdate={updateInstruction}
-          onAdd={() => {
+          },
+          // DS 14 renders the list itself from this data prop (#683);
+          // the host drag handle has no DraggableFlatList container to
+          // bind to in this contract (the web host binds dnd-kit the
+          // same way), so no renderDragHandle is passed on native —
+          // drag reorder in the form is a DS follow-up.
+        }}
+        instructions={{
+          rows: instructions.map(instruction => ({
+            key: instruction.key,
+            body: instruction.body,
+          })),
+          onBodyChange: (rowKey, value) => {
+            const index = instructions.findIndex(row => row.key === rowKey);
+            if (index !== -1) {
+              updateInstruction(index, value);
+            }
+          },
+          onRemove: rowKey => {
+            setInstructions(prev => prev.filter(row => row.key !== rowKey));
+          },
+          onAdd: () => {
             setInstructions(prev => [
               ...prev,
               createEmptyInstructionRow(prev.length + 1),
             ]);
-          }}
-        />
-      )}
-      submitLabel={submitLabel}
-      isSubmitting={loading}
-      submitError={error}
-      onSubmit={() => {
-        void handleSubmit();
-      }}
-    />
-    {/* The pending-selection flow (#406): a picked asset waits here
+          },
+        }}
+        submitLabel={submitLabel}
+        isSubmitting={loading}
+        submitError={error}
+        onSubmit={() => {
+          void handleSubmit();
+        }}
+      />
+      {/* The pending-selection flow (#406): a picked asset waits here
         for its use / crop / discard decision before it uploads. The
         DS image view never sees a pending selection. */}
-    <Modal
-      visible={pendingAsset !== null && !cropOpen}
-      animationType="slide"
-      onRequestClose={clearPendingSelection}
-    >
-      <YStack
-        flex={1}
-        padding="$4"
-        gap="$3"
-        backgroundColor="$surface"
+      <Modal
+        visible={pendingAsset !== null && !cropOpen}
+        animationType="slide"
+        onRequestClose={clearPendingSelection}
       >
-        <Text
-          fontSize={tokens.typography.fontSize.sm}
-          fontWeight={tokens.typography.fontWeight.medium}
-          color={tokens.colors.gray.gray8}
-        >
-          {i18n._({id: 'recipeForm.recipeImageTitle', message: 'Recipe image'})}
-        </Text>
-        {pendingAsset?.uri ? (
-          <View style={recipeImagePreviewStyles.frame}>
-            <Image
-              accessibilityLabel={i18n._({
-                id: 'recipeForm.recipePreviewAlt',
-                message: 'Recipe preview',
-              })}
-              source={{uri: pendingAsset.uri}}
-              resizeMode="contain"
-              style={recipeImagePreviewStyles.image}
-            />
-          </View>
-        ) : null}
-        <XStack
-          flexWrap="wrap"
+        <YStack
+          flex={1}
+          padding="$4"
           gap="$3"
+          backgroundColor="$surface"
         >
-          <FieldButton
-            label={i18n._({id: 'recipeForm.useImage', message: 'Use image'})}
-            accessibilityLabel={i18n._({
-              id: 'recipeForm.useImage',
-              message: 'Use image',
+          <Text
+            fontSize={tokens.typography.fontSize.sm}
+            fontWeight={tokens.typography.fontWeight.medium}
+            color={tokens.colors.gray.gray8}
+          >
+            {i18n._({
+              id: 'recipeForm.recipeImageTitle',
+              message: 'Recipe image',
             })}
-            variant="primary"
-            onPress={acceptPendingImage}
-          />
-          {/* The app only offers crop once the picker asset's
+          </Text>
+          {pendingAsset?.uri ? (
+            <View style={recipeImagePreviewStyles.frame}>
+              <Image
+                accessibilityLabel={i18n._({
+                  id: 'recipeForm.recipePreviewAlt',
+                  message: 'Recipe preview',
+                })}
+                source={{uri: pendingAsset.uri}}
+                resizeMode="contain"
+                style={recipeImagePreviewStyles.image}
+              />
+            </View>
+          ) : null}
+          <XStack
+            flexWrap="wrap"
+            gap="$3"
+          >
+            <FieldButton
+              label={i18n._({id: 'recipeForm.useImage', message: 'Use image'})}
+              accessibilityLabel={i18n._({
+                id: 'recipeForm.useImage',
+                message: 'Use image',
+              })}
+              variant="primary"
+              onPress={acceptPendingImage}
+            />
+            {/* The app only offers crop once the picker asset's
               dimensions are known (canCrop), so crop rectangles are
               always in real pixels. */}
-          {canCrop ? (
+            {canCrop ? (
+              <FieldButton
+                label={i18n._({
+                  id: 'recipeForm.cropImage',
+                  message: 'Crop image',
+                })}
+                accessibilityLabel={i18n._({
+                  id: 'recipeForm.cropImage',
+                  message: 'Crop image',
+                })}
+                variant="secondary"
+                onPress={openCrop}
+              />
+            ) : null}
             <FieldButton
-              label={i18n._({id: 'recipeForm.cropImage', message: 'Crop image'})}
+              label={i18n._({id: 'recipeForm.discard', message: 'Discard'})}
               accessibilityLabel={i18n._({
-                id: 'recipeForm.cropImage',
-                message: 'Crop image',
+                id: 'recipeForm.discardSelectedImage',
+                message: 'Discard selected image',
               })}
               variant="secondary"
-              onPress={openCrop}
+              onPress={clearPendingSelection}
             />
-          ) : null}
-          <FieldButton
-            label={i18n._({id: 'recipeForm.discard', message: 'Discard'})}
-            accessibilityLabel={i18n._({
-              id: 'recipeForm.discardSelectedImage',
-              message: 'Discard selected image',
-            })}
-            variant="secondary"
-            onPress={clearPendingSelection}
-          />
-        </XStack>
-      </YStack>
-    </Modal>
-    <Modal
-      visible={cropOpen && pendingAsset !== null}
-      animationType="slide"
-      onRequestClose={() => {
-        // Guarded like the Cancel button: a back press mid-crop must
-        // not deliver the original while applyCrop is still in flight,
-        // or the picked image would be delivered twice.
-        if (!cropBusy) {
-          cancelCrop();
-        }
-      }}
-    >
-      <YStack
-        flex={1}
-        padding="$4"
-        gap="$3"
-        backgroundColor="$surface"
+          </XStack>
+        </YStack>
+      </Modal>
+      <Modal
+        visible={cropOpen && pendingAsset !== null}
+        animationType="slide"
+        onRequestClose={() => {
+          // Guarded like the Cancel button: a back press mid-crop must
+          // not deliver the original while applyCrop is still in flight,
+          // or the picked image would be delivered twice.
+          if (!cropBusy) {
+            cancelCrop();
+          }
+        }}
       >
-        <Text
-          fontSize={tokens.typography.fontSize.sm}
-          fontWeight={tokens.typography.fontWeight.medium}
-          color={tokens.colors.gray.gray8}
+        <YStack
+          flex={1}
+          padding="$4"
+          gap="$3"
+          backgroundColor="$surface"
         >
-          {i18n._({
-            id: 'recipeForm.cropInstructionsNative',
-            message:
-              'Crop image — drag the box to move it, drag its corner to resize, or use the move and resize buttons.',
-          })}
-        </Text>
-        {pendingAsset?.uri && effectiveCropRect ? (
-          <View
-            onLayout={e => {
-              cropFrameSizeRef.current = {
-                width: e.nativeEvent.layout.width,
-                height: e.nativeEvent.layout.height,
-              };
-            }}
-            style={{
-              width: '100%',
-              aspectRatio:
-                pendingWidth > 0 && pendingHeight > 0
-                  ? pendingWidth / pendingHeight
-                  : 4 / 3,
-              position: 'relative',
-              backgroundColor: tokens.colors.gray.gray2,
-            }}
+          <Text
+            fontSize={tokens.typography.fontSize.sm}
+            fontWeight={tokens.typography.fontWeight.medium}
+            color={tokens.colors.gray.gray8}
           >
-            <Image
-              accessibilityLabel={i18n._({
+            {i18n._({
+              id: 'recipeForm.cropInstructionsNative',
+              message:
+                'Crop image — drag the box to move it, drag its corner to resize, or use the move and resize buttons.',
+            })}
+          </Text>
+          {pendingAsset?.uri && effectiveCropRect ? (
+            <View
+              onLayout={e => {
+                cropFrameSizeRef.current = {
+                  width: e.nativeEvent.layout.width,
+                  height: e.nativeEvent.layout.height,
+                };
+              }}
+              style={{
+                width: '100%',
+                aspectRatio:
+                  pendingWidth > 0 && pendingHeight > 0
+                    ? pendingWidth / pendingHeight
+                    : 4 / 3,
+                position: 'relative',
+                backgroundColor: tokens.colors.gray.gray2,
+              }}
+            >
+              <Image
+                accessibilityLabel={i18n._({
                   id: 'recipeForm.imageToCropAlt',
                   message: 'Image to crop',
                 })}
-              source={{uri: pendingAsset.uri}}
-              resizeMode="cover"
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-              }}
-            />
-            <View
-              accessibilityLabel={i18n._({
-                id: 'recipeForm.cropAreaShort',
-                message: 'Crop area',
-              })}
-              {...movePanResponder.panHandlers}
-              style={{
-                position: 'absolute',
-                left: `${(effectiveCropRect.x / pendingWidth) * 100}%`,
-                top: `${(effectiveCropRect.y / pendingHeight) * 100}%`,
-                width: `${(effectiveCropRect.width / pendingWidth) * 100}%`,
-                height: `${(effectiveCropRect.height / pendingHeight) * 100}%`,
-                borderWidth: 2,
-                borderColor: tokens.colors.primary.primary7,
-              }}
-            >
-              <View
-                accessibilityLabel={i18n._({
-                  id: 'recipeForm.resizeCropHandle',
-                  message: 'Resize crop area handle',
-                })}
-                {...resizePanResponder.panHandlers}
+                source={{uri: pendingAsset.uri}}
+                resizeMode="cover"
                 style={{
                   position: 'absolute',
-                  right: -10,
-                  bottom: -10,
-                  width: 24,
-                  height: 24,
-                  borderRadius: 6,
-                  backgroundColor: tokens.colors.primary.primary7,
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
                 }}
               />
+              <View
+                accessibilityLabel={i18n._({
+                  id: 'recipeForm.cropAreaShort',
+                  message: 'Crop area',
+                })}
+                {...movePanResponder.panHandlers}
+                style={{
+                  position: 'absolute',
+                  left: `${(effectiveCropRect.x / pendingWidth) * 100}%`,
+                  top: `${(effectiveCropRect.y / pendingHeight) * 100}%`,
+                  width: `${(effectiveCropRect.width / pendingWidth) * 100}%`,
+                  height: `${(effectiveCropRect.height / pendingHeight) * 100}%`,
+                  borderWidth: 2,
+                  borderColor: tokens.colors.primary.primary7,
+                }}
+              >
+                <View
+                  accessibilityLabel={i18n._({
+                    id: 'recipeForm.resizeCropHandle',
+                    message: 'Resize crop area handle',
+                  })}
+                  {...resizePanResponder.panHandlers}
+                  style={{
+                    position: 'absolute',
+                    right: -10,
+                    bottom: -10,
+                    width: 24,
+                    height: 24,
+                    borderRadius: 6,
+                    backgroundColor: tokens.colors.primary.primary7,
+                  }}
+                />
+              </View>
             </View>
-          </View>
-        ) : null}
-        <XStack
-          flexWrap="wrap"
-          gap="$2"
-        >
-          <FieldButton
-            label={i18n._({id: 'recipeForm.moveLeftLabel', message: '◀ Move'})}
-            accessibilityLabel={i18n._({
-              id: 'recipeForm.moveCropLeft',
-              message: 'Move crop area left',
-            })}
-            variant="secondary"
-            onPress={() => {
-              nudgeCrop(-Math.round(pendingWidth * 0.05), 0);
-            }}
-          />
-          <FieldButton
-            label={i18n._({id: 'recipeForm.moveRightLabel', message: 'Move ▶'})}
-            accessibilityLabel={i18n._({
-              id: 'recipeForm.moveCropRight',
-              message: 'Move crop area right',
-            })}
-            variant="secondary"
-            onPress={() => {
-              nudgeCrop(Math.round(pendingWidth * 0.05), 0);
-            }}
-          />
-          <FieldButton
-            label={i18n._({id: 'recipeForm.moveUpLabel', message: '▲ Move'})}
-            accessibilityLabel={i18n._({
-              id: 'recipeForm.moveCropUp',
-              message: 'Move crop area up',
-            })}
-            variant="secondary"
-            onPress={() => {
-              nudgeCrop(0, -Math.round(pendingHeight * 0.05));
-            }}
-          />
-          <FieldButton
-            label={i18n._({id: 'recipeForm.moveDownLabel', message: 'Move ▼'})}
-            accessibilityLabel={i18n._({
-              id: 'recipeForm.moveCropDown',
-              message: 'Move crop area down',
-            })}
-            variant="secondary"
-            onPress={() => {
-              nudgeCrop(0, Math.round(pendingHeight * 0.05));
-            }}
-          />
-          <FieldButton
-            label={i18n._({id: 'recipeForm.growLabel', message: 'Grow'})}
-            accessibilityLabel={i18n._({
-              id: 'recipeForm.growCrop',
-              message: 'Grow crop area',
-            })}
-            variant="secondary"
-            onPress={() => {
-              nudgeCrop(
-                Math.round(pendingWidth * 0.05),
-                Math.round(pendingHeight * 0.05),
-                true,
-              );
-            }}
-          />
-          <FieldButton
-            label={i18n._({id: 'recipeForm.shrinkLabel', message: 'Shrink'})}
-            accessibilityLabel={i18n._({
-              id: 'recipeForm.shrinkCrop',
-              message: 'Shrink crop area',
-            })}
-            variant="secondary"
-            onPress={() => {
-              nudgeCrop(
-                -Math.round(pendingWidth * 0.05),
-                -Math.round(pendingHeight * 0.05),
-                true,
-              );
-            }}
-          />
-        </XStack>
-        {cropError ? (
-          <Text
-            fontSize={tokens.typography.fontSize.sm}
-            color="$errorText"
+          ) : null}
+          <XStack
+            flexWrap="wrap"
+            gap="$2"
           >
-            {cropError}
-          </Text>
-        ) : null}
-        <XStack
-          flexWrap="wrap"
-          gap="$3"
-        >
-          <FieldButton
-            label={
-              cropBusy
-                ? i18n._({id: 'recipeForm.cropping', message: 'Cropping…'})
-                : i18n._({id: 'recipeForm.applyCrop', message: 'Apply crop'})
-            }
-            accessibilityLabel={i18n._({
-              id: 'recipeForm.applyCrop',
-              message: 'Apply crop',
-            })}
-            variant="primary"
-            disabled={cropBusy}
-            onPress={() => {
-              void applyCrop();
-            }}
-          />
-          <FieldButton
-            label={i18n._({id: 'recipeForm.cancelCrop', message: 'Cancel crop'})}
-            accessibilityLabel={i18n._({
-              id: 'recipeForm.cancelCrop',
-              message: 'Cancel crop',
-            })}
-            variant="secondary"
-            disabled={cropBusy}
-            onPress={cancelCrop}
-          />
-        </XStack>
-      </YStack>
-    </Modal>
+            <FieldButton
+              label={i18n._({
+                id: 'recipeForm.moveLeftLabel',
+                message: '◀ Move',
+              })}
+              accessibilityLabel={i18n._({
+                id: 'recipeForm.moveCropLeft',
+                message: 'Move crop area left',
+              })}
+              variant="secondary"
+              onPress={() => {
+                nudgeCrop(-Math.round(pendingWidth * 0.05), 0);
+              }}
+            />
+            <FieldButton
+              label={i18n._({
+                id: 'recipeForm.moveRightLabel',
+                message: 'Move ▶',
+              })}
+              accessibilityLabel={i18n._({
+                id: 'recipeForm.moveCropRight',
+                message: 'Move crop area right',
+              })}
+              variant="secondary"
+              onPress={() => {
+                nudgeCrop(Math.round(pendingWidth * 0.05), 0);
+              }}
+            />
+            <FieldButton
+              label={i18n._({id: 'recipeForm.moveUpLabel', message: '▲ Move'})}
+              accessibilityLabel={i18n._({
+                id: 'recipeForm.moveCropUp',
+                message: 'Move crop area up',
+              })}
+              variant="secondary"
+              onPress={() => {
+                nudgeCrop(0, -Math.round(pendingHeight * 0.05));
+              }}
+            />
+            <FieldButton
+              label={i18n._({
+                id: 'recipeForm.moveDownLabel',
+                message: 'Move ▼',
+              })}
+              accessibilityLabel={i18n._({
+                id: 'recipeForm.moveCropDown',
+                message: 'Move crop area down',
+              })}
+              variant="secondary"
+              onPress={() => {
+                nudgeCrop(0, Math.round(pendingHeight * 0.05));
+              }}
+            />
+            <FieldButton
+              label={i18n._({id: 'recipeForm.growLabel', message: 'Grow'})}
+              accessibilityLabel={i18n._({
+                id: 'recipeForm.growCrop',
+                message: 'Grow crop area',
+              })}
+              variant="secondary"
+              onPress={() => {
+                nudgeCrop(
+                  Math.round(pendingWidth * 0.05),
+                  Math.round(pendingHeight * 0.05),
+                  true,
+                );
+              }}
+            />
+            <FieldButton
+              label={i18n._({id: 'recipeForm.shrinkLabel', message: 'Shrink'})}
+              accessibilityLabel={i18n._({
+                id: 'recipeForm.shrinkCrop',
+                message: 'Shrink crop area',
+              })}
+              variant="secondary"
+              onPress={() => {
+                nudgeCrop(
+                  -Math.round(pendingWidth * 0.05),
+                  -Math.round(pendingHeight * 0.05),
+                  true,
+                );
+              }}
+            />
+          </XStack>
+          {cropError ? (
+            <Text
+              fontSize={tokens.typography.fontSize.sm}
+              color="$errorText"
+            >
+              {cropError}
+            </Text>
+          ) : null}
+          <XStack
+            flexWrap="wrap"
+            gap="$3"
+          >
+            <FieldButton
+              label={
+                cropBusy
+                  ? i18n._({id: 'recipeForm.cropping', message: 'Cropping…'})
+                  : i18n._({id: 'recipeForm.applyCrop', message: 'Apply crop'})
+              }
+              accessibilityLabel={i18n._({
+                id: 'recipeForm.applyCrop',
+                message: 'Apply crop',
+              })}
+              variant="primary"
+              disabled={cropBusy}
+              onPress={() => {
+                void applyCrop();
+              }}
+            />
+            <FieldButton
+              label={i18n._({
+                id: 'recipeForm.cancelCrop',
+                message: 'Cancel crop',
+              })}
+              accessibilityLabel={i18n._({
+                id: 'recipeForm.cancelCrop',
+                message: 'Cancel crop',
+              })}
+              variant="secondary"
+              disabled={cropBusy}
+              onPress={cancelCrop}
+            />
+          </XStack>
+        </YStack>
+      </Modal>
     </>
   );
 };

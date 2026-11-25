@@ -22,7 +22,8 @@ function SignUpRoute() {
   return <div>{`Sign up route${search}`}</div>;
 }
 
-// The host renders the design system's PublicRecipePage under its
+// The host renders the design system's RecipeDetailPage (guest form,
+// #640) under its
 // own PublicHeader, with the page rendering its footer from the
 // shared footer data (B7 cluster 11; #452 retired the DS
 // PublicPageFrame); these tests drive that page's real DOM: the

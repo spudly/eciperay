@@ -11,7 +11,6 @@ import {
   parentInstructionsInput,
   parentTagIds,
   queryKeys,
-  recipeStatusOptions,
   revertVersionScalar,
   toRecipeInputIngredients,
   toRecipeInputInstructions,
@@ -132,11 +131,10 @@ const toQuantity = (value: number | string | null): number | null => {
  * ManualEntryPage).
  */
 /**
- * The parent-version list summary, composed from the catalog (#465): the
- * client helper supplies the structured counts/preview, and the prose —
- * empty state, count sentence, and overflow suffix — resolves through
- * Lingui here, so only the parent's own ingredient names / step text
- * stay as entered.
+ * The parent-version list summary, composed from the catalog (#465): the client
+ * helper supplies the structured counts/preview, and the prose — empty state,
+ * count sentence, and overflow suffix — resolves through Lingui here, so only
+ * the parent's own ingredient names / step text stay as entered.
  */
 const parentListSummary = (
   i18n: I18n,
@@ -220,7 +218,7 @@ export const RecipeFormHost = ({
     return [createEmptyInstructionRow(1)];
   });
   const [tagIds, setTagIds] = useState<string[]>(initial.tagIds);
-  const [status, setStatus] = useState<RecipeStatus>(initial.status ?? 'idea');
+  const [status] = useState<RecipeStatus>(initial.status ?? 'idea');
   const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
   // Crop step (#406): a picked file becomes the pending selection first.
   // The user can crop it, use it as-is (skip), or discard it; only then
@@ -281,17 +279,6 @@ export const RecipeFormHost = ({
     () => tags.map(tag => ({value: tag.id, label: tag.name})),
     [tags],
   );
-  const statusOptions = useMemo(
-    () =>
-      recipeStatusOptions({
-        idea: i18n._({id: 'recipeStatus.idea', message: 'Idea'}),
-        evolving: i18n._({id: 'recipeStatus.evolving', message: 'Evolving'}),
-        perfected: i18n._({id: 'recipeStatus.perfected', message: 'Perfected'}),
-        abandoned: i18n._({id: 'recipeStatus.abandoned', message: 'Abandoned'}),
-      }),
-    [i18n],
-  );
-
   const clearPendingImage = () => {
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl);
@@ -549,7 +536,10 @@ export const RecipeFormHost = ({
     const userId = session?.user.id;
     if (!userId) {
       setImageError(
-        i18n._({id: 'recipeForm.signInToUpload', message: 'Sign in to upload images'}),
+        i18n._({
+          id: 'recipeForm.signInToUpload',
+          message: 'Sign in to upload images',
+        }),
       );
       return;
     }
@@ -560,7 +550,10 @@ export const RecipeFormHost = ({
       setImageError(
         error_ instanceof Error
           ? error_.message
-          : i18n._({id: 'recipeForm.readImageError', message: 'Failed to read image'}),
+          : i18n._({
+              id: 'recipeForm.readImageError',
+              message: 'Failed to read image',
+            }),
       );
       return;
     }
@@ -1008,11 +1001,6 @@ export const RecipeFormHost = ({
             onCookTimeMinChange={setCookTimeMin}
             sourceUrl={sourceUrl}
             onSourceUrlChange={setSourceUrl}
-            statusOptions={statusOptions}
-            status={status}
-            onStatusChange={value => {
-              setStatus(value as RecipeStatus);
-            }}
             tagOptions={tagOptions}
             tagIds={tagIds}
             onTagIdsChange={setTagIds}
@@ -1257,7 +1245,10 @@ export const RecipeFormHost = ({
           >
             <img
               src={pendingPreviewUrl}
-              alt={i18n._({id: 'recipeForm.recipePreviewAlt', message: 'Recipe preview'})}
+              alt={i18n._({
+                id: 'recipeForm.recipePreviewAlt',
+                message: 'Recipe preview',
+              })}
               onLoad={handlePendingImageLoad}
               onError={handlePendingPreviewError}
               style={{
@@ -1393,7 +1384,10 @@ export const RecipeFormHost = ({
               <img
                 ref={cropImageRef}
                 src={pendingPreviewUrl}
-                alt={i18n._({id: 'recipeForm.imageToCropAlt', message: 'Image to crop'})}
+                alt={i18n._({
+                  id: 'recipeForm.imageToCropAlt',
+                  message: 'Image to crop',
+                })}
                 onLoad={handlePendingImageLoad}
                 style={{display: 'block', width: '100%'}}
               />

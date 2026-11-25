@@ -24,7 +24,7 @@ import {TamaguiProvider, Text, View, YStack} from 'tamagui';
 import {appTamaguiConfig} from '../lib/tamaguiConfig';
 
 // Warm Harvest (Eciperay) values from @spudly/ui tokens/themes.
-const TERRACOTTA_PRIMARY = '#c2410c';
+const TERRACOTTA_PRIMARY = '#b13f13';
 const ON_PRIMARY = '#fff7ed';
 const WARM_CREAM_BACKGROUND = '#faf6f0';
 const SECONDARY_LABEL = '#171717';

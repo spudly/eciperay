@@ -5,7 +5,6 @@ import {Navigate, useNavigate} from 'react-router-dom';
 
 import {SignUpPage as SignUpPageView} from '@spudly/ui';
 
-import {LegalLinks} from '../../components/LegalLinks.js';
 import {eciperay} from '../../lib/api.js';
 import {supabase} from '../../lib/supabase.js';
 
@@ -106,11 +105,13 @@ export const SignupPage = () => {
         void handleSignUp();
       }}
       signInHref="/login"
-      legalNotice={
-        <div style={{marginTop: 24}}>
-          <LegalLinks />
-        </div>
-      }
+      legalNotice={[
+        {type: 'text', text: 'By creating an account, you agree to our '},
+        {type: 'link', label: 'Terms of Service', href: '/terms'},
+        {type: 'text', text: ' and '},
+        {type: 'link', label: 'Privacy Policy', href: '/privacy'},
+        {type: 'text', text: '.'},
+      ]}
     />
   );
 };

@@ -1,10 +1,14 @@
-import {errorMessage, queryKeys, recipeDetailToInput} from '@eciperay/client';
+import {
+  errorMessage,
+  queryKeys,
+  recipeDetailToInput,
+  recipePreviewViewData,
+} from '@eciperay/client';
 import {CommonActions} from '@react-navigation/native';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
 import {ImportReviewPage} from '@spudly/ui';
-import {RecipeInputPreview} from '../components/recipe/RecipeInputPreview';
 import {ScreenLoadingGate} from '../components/ScreenLoadingGate';
 import {api} from '../lib/api';
 import type {AddStackParamList} from '../navigation/types';
@@ -85,7 +89,7 @@ export const ImportReviewScreen = ({route, navigation}: Props) => {
     <ImportReviewPage
       versionLabel={versionLabel}
       imageUrl={recipe.imageUrl}
-      preview={<RecipeInputPreview recipe={preview} />}
+      preview={recipePreviewViewData(preview)}
       error={error}
       busy={busy}
       acceptPending={acceptMutation.isPending}

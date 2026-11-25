@@ -1,4 +1,9 @@
-import {errorMessage, validateAuthEmail} from '@eciperay/client';
+import {
+  errorMessage,
+  PRIVACY_POLICY_URL,
+  TERMS_OF_SERVICE_URL,
+  validateAuthEmail,
+} from '@eciperay/client';
 import {useLingui} from '@lingui/react';
 import {useState} from 'react';
 import {Alert} from 'react-native';
@@ -6,7 +11,6 @@ import {SignUpPage} from '@spudly/ui';
 
 import {AUTH_DEEP_LINK_REDIRECT_URL} from '../../lib/authDeepLink';
 import {signInHref} from '../../lib/deepLinks';
-import {LegalLinks} from '../../components/LegalLinks';
 import {api} from '../../lib/api';
 import {
   normalizeAuthEmail,
@@ -90,23 +94,37 @@ export const SignUpScreen = () => {
       loading={loading}
       emailError={emailError}
       onSubmit={() => {
-        void runSignUp(email, password, displayName, setLoading, setEmailError, {
-          confirmationTitle: i18n._({
-            id: 'signup.confirmationTitle',
-            message: 'Check your email',
-          }),
-          confirmationBody: i18n._({
-            id: 'signup.confirmationBody',
-            message: 'Click the confirmation link we sent you, then sign in — almost there.',
-          }),
-          failedTitle: i18n._({
-            id: 'authNative.signUpFailedTitle',
-            message: 'Sign up failed',
-          }),
-        });
+        void runSignUp(
+          email,
+          password,
+          displayName,
+          setLoading,
+          setEmailError,
+          {
+            confirmationTitle: i18n._({
+              id: 'signup.confirmationTitle',
+              message: 'Check your email',
+            }),
+            confirmationBody: i18n._({
+              id: 'signup.confirmationBody',
+              message:
+                'Click the confirmation link we sent you, then sign in — almost there.',
+            }),
+            failedTitle: i18n._({
+              id: 'authNative.signUpFailedTitle',
+              message: 'Sign up failed',
+            }),
+          },
+        );
       }}
       signInHref={signInHref}
-      legalNotice={<LegalLinks variant="inline" />}
+      legalNotice={[
+        {type: 'text', text: 'By creating an account, you agree to our '},
+        {type: 'link', label: 'Terms of Service', href: TERMS_OF_SERVICE_URL},
+        {type: 'text', text: ' and '},
+        {type: 'link', label: 'Privacy Policy', href: PRIVACY_POLICY_URL},
+        {type: 'text', text: '.'},
+      ]}
     />
   );
 };

@@ -178,12 +178,8 @@ describe('MealEditScreen', () => {
     await act(async () => {
       await client.invalidateQueries();
     });
-    expect(
-      await rendered.findByDisplayValue('Sunday Dinner'),
-    ).toBeTruthy();
-    expect(
-      rendered.queryByText('Could not load this meal: boom~'),
-    ).toBeNull();
+    expect(await rendered.findByDisplayValue('Sunday Dinner')).toBeTruthy();
+    expect(rendered.queryByText('Could not load this meal: boom~')).toBeNull();
     await fireEvent.press(rendered.getByText(/Save meal/));
     await waitFor(() => {
       expect(mockPut).toHaveBeenCalledWith(mealId, expect.any(Object));
@@ -360,7 +356,9 @@ describe('MealEditScreen', () => {
     // Two steppers render now (cook and eat, DS #659): press the
     // first one's '+'.
     await fireEvent.press(rendered.getAllByText('+')[0]!);
-    await fireEvent.press(rendered.getByText('Remove'));
+    // DS 14: the selected recipe renders as an in-field chip
+    // (DS #805) whose remove control is labelled for the item.
+    await fireEvent.press(rendered.getByLabelText('Remove Pasta'));
     expect(rendered.queryByText('Servings to cook · Pasta')).toBeNull();
   });
 

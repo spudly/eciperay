@@ -1,10 +1,12 @@
-import {errorMessage, parseProposedRecipe} from '@eciperay/client';
+import {
+  errorMessage,
+  parseProposedRecipe,
+  recipePreviewViewData,
+} from '@eciperay/client';
 import {AiSessionPage} from '@spudly/ui';
 import {useMutation} from '@tanstack/react-query';
 import React, {useState} from 'react';
 import type {TweakAiMessage, TweakAiPhase} from '@eciperay/types';
-
-import {RecipeInputPreview} from '../../components/recipe/RecipeInputPreview';
 
 export type AiSessionState = {
   id: string;
@@ -49,10 +51,9 @@ type Props = {
  * keeps the session state machine, the five session mutations, and the error
  * mapping, and maps the session to the page's view-model — the phase resolved
  * to its label string, the stage booleans derived from the phase, and the
- * parsed proposed recipe rendered through RecipeInputPreview into the page's
- * preview slot. The page renders display state and reports bare intents; the
- * trims the old view applied before mutating happen here, at the same call
- * sites.
+ * parsed proposed recipe rendered through the page's preview data prop preview
+ * slot. The page renders display state and reports bare intents; the trims the
+ * old view applied before mutating happen here, at the same call sites.
  */
 export const AiSessionFlow = ({
   config,
@@ -153,9 +154,9 @@ export const AiSessionFlow = ({
           : null
       }
       preview={
-        session?.phase === 'preview_ready' && previewRecipe ? (
-          <RecipeInputPreview recipe={previewRecipe} />
-        ) : undefined
+        session?.phase === 'preview_ready' && previewRecipe
+          ? recipePreviewViewData(previewRecipe)
+          : undefined
       }
       prompt={prompt}
       onPromptChange={setPrompt}

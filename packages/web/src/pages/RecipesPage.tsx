@@ -46,7 +46,6 @@ import {
   useSearchParams,
 } from 'react-router-dom';
 
-import {CookLogForm} from '../components/cooking/CookLogForm.js';
 import {RecipesPageHead} from '../components/RecipesPageHead.js';
 import {StaticPageHead} from '../components/StaticPageHead.js';
 import {eciperay} from '../lib/api.js';
@@ -65,96 +64,6 @@ const formatRecipesPageSubtitle = (recipe: RecipeDetail) =>
     ...formatCondensedNutritionParts(recipe),
     formatSatietyLabel(recipe.satietyScore, recipe.nutritionStatus),
   ].join(' · ')}`;
-
-/**
- * One row's inline cook-log form, rendered through the page's per-row accessory
- * slot — the composition the app host established for this page. The form is
- * the host's own CookLogForm (the design system's generalized RatingForm is
- * gone in @spudly/ui 6.x, so the accessory is the web cook-log form that serves
- * the recipe detail cook-history tab, driven by the relocated host
- * StarRatingInput). Its submit values are already a CookLogInput, so they cross
- * to the mutation unchanged.
- *
- * The lifetime guards mirror the app host's, for the same reasons: this
- * component unmounts with the slot, so a cancel during a pending save would
- * orphan the in-flight request and let a reopened form save a duplicate — Skip
- * is inert while the save is pending. The list can likewise unmount a row that
- * scrolls far off screen, and the lifted open set would survive the unmount, so
- * the form reconciles on the way out (its unmount cleanup closes it) and a row
- * that scrolls back returns closed. And a save completing after its form was
- * replaced must not close the replacement, so the success close is guarded by
- * this form's mounted lifetime (invalidation itself always runs).
- *
- * One web-only divergence from the app host: the unmount reconcile is deferred
- * a tick and cancelled if the effect re-runs, because the web app renders under
- * StrictMode, whose development replay (setup, cleanup, setup on one mount)
- * would otherwise reconcile a form that never truly unmounted and close it
- * immediately.
- */
-const InlineCookLogForm = ({
-  recipe,
-  onClose,
-}: {
-  recipe: RecipeDetail;
-  onClose: () => void;
-}) => {
-  const queryClient = useQueryClient();
-
-  const createMutation = useMutation({
-    mutationFn: (input: CookLogInput) =>
-      eciperay.cookLogs.create(recipe.id, recipe.versionId, input),
-    onSuccess: async () => {
-      await invalidateRecipeQueries(queryClient, recipe.id, recipe.versionId);
-      if (isMountedRef.current) {
-        onClose();
-      }
-    },
-  });
-
-  // The latest onClose, for the unmount cleanup below: the host
-  // passes a fresh closure on every render, so the cleanup cannot
-  // depend on the prop itself without firing on every render.
-  const onCloseRef = useRef(onClose);
-  useEffect(() => {
-    onCloseRef.current = onClose;
-  });
-
-  // This form's mounted lifetime: set on mount, cleared by the
-  // unmount cleanup, which also reconciles the open flag (see the
-  // doc comment). The reconcile is deferred one tick and cancelled
-  // if the effect re-runs first (the StrictMode replay — see the
-  // doc comment); a true unmount is never followed by a re-run.
-  const isMountedRef = useRef(false);
-  const reconcileTimerRef = useRef<number | undefined>(undefined);
-  useEffect(() => {
-    isMountedRef.current = true;
-    if (reconcileTimerRef.current !== undefined) {
-      window.clearTimeout(reconcileTimerRef.current);
-      reconcileTimerRef.current = undefined;
-    }
-    return () => {
-      isMountedRef.current = false;
-      reconcileTimerRef.current = window.setTimeout(() => {
-        onCloseRef.current();
-      }, 0);
-    };
-  }, []);
-
-  return (
-    <CookLogForm
-      variant="light"
-      isPending={createMutation.isPending}
-      onSkip={() => {
-        if (!createMutation.isPending) {
-          onClose();
-        }
-      }}
-      onSubmit={input => {
-        createMutation.mutate(input);
-      }}
-    />
-  );
-};
 
 // The author byline is omitted entirely when the author has no
 // display name (#498) — see the Discover host's formatAuthorName.
@@ -529,57 +438,72 @@ const SignedInRecipesPage = () => {
     }
   }, [ownQuery, sharedQuery, discoveryQuery]);
 
-  // The cook-log forms' open state: a set of recipe ids, so forms
-  // open and close independently and several may be open at once —
-  // the same semantics the old cards' per-card state gave this
-  // screen. The page hides the log-cook control of any row whose
-  // accessory renders content, so opening a form here reproduces
-  // the card's control-hides-while-open behavior.
-  const [openCookLogIds, setOpenCookLogIds] = useState<ReadonlySet<string>>(
-    () => new Set(),
-  );
-
+  // The cook-log form's open state: DS 14's RecipesPage renders ONE
+  // expanded form from the `cookLogForm` data prop (#687), so a single
+  // open recipe id replaces the old per-row accessory set — opening a
+  // second row's form closes the first. Shared rows are link-only
+  // (cook logs are owner-only); the page renders the log-cook control
+  // for every own-section row, so presses on shared rows are ignored.
+  const [openCookLogId, setOpenCookLogId] = useState<string | null>(null);
+  const queryClient = useQueryClient();
   const ownRecipesById = new Map(ownRecipes.map(recipe => [recipe.id, recipe]));
 
   const openCookLog = (recipeId: string) => {
-    // Shared rows are link-only (cook logs are owner-only); the page
-    // renders the log-cook control for every own-section row, so
-    // presses on shared rows land here and are ignored.
     if (!ownRecipesById.has(recipeId)) {
       return;
     }
-    setOpenCookLogIds(current => new Set(current).add(recipeId));
+    openFormSessionRef.current += 1;
+    setOpenCookLogId(recipeId);
   };
 
-  const closeCookLog = (recipeId: string) => {
-    setOpenCookLogIds(current => {
-      if (!current.has(recipeId)) {
-        return current;
-      }
-      const next = new Set(current);
-      next.delete(recipeId);
-      return next;
-    });
+  const closeCookLog = () => {
+    setOpenCookLogId(null);
   };
 
-  // Reconcile the open set with the rows actually in the list: when
-  // a recipe leaves the list (filtered out, or the loading-to-empty
-  // transition), its open id goes with it, so a recipe that later
-  // returns comes back closed. The cards got this for free —
-  // unmounting a card discarded its open state — but the lifted set
-  // has to prune explicitly.
-  useEffect(() => {
-    setOpenCookLogIds(current => {
-      if (current.size === 0) {
-        return current;
-      }
-      const present = new Set(ownRecipes.map(recipe => recipe.id));
-      const next = new Set(
-        [...current].filter(recipeId => present.has(recipeId)),
+  const openCookLogRecipe = openCookLogId
+    ? ownRecipesById.get(openCookLogId)
+    : undefined;
+
+  // A form-session token: each opening of the form mints one, and a
+  // save carries the token of the form that submitted it. A save
+  // completing after its form was replaced (the row left and
+  // returned, a fresh form opened) must not close the replacement —
+  // the mounted-lifetime guard the old per-row form component had,
+  // re-expressed for the lifted state (invalidation always runs).
+  const openFormSessionRef = useRef(0);
+  const createCookLogMutation = useMutation({
+    mutationFn: ({
+      input,
+      recipe,
+    }: {
+      input: CookLogInput;
+      recipe: RecipeDetail;
+      session: number;
+    }) => eciperay.cookLogs.create(recipe.id, recipe.versionId, input),
+    onSuccess: async (_data, variables) => {
+      await invalidateRecipeQueries(
+        queryClient,
+        variables.recipe.id,
+        variables.recipe.versionId,
       );
-      return next.size === current.size ? current : next;
-    });
-  }, [ownRecipes]);
+      if (openFormSessionRef.current === variables.session) {
+        closeCookLog();
+      }
+    },
+  });
+
+  // Reconcile the open form with the rows actually in the list: when
+  // its recipe leaves the list (filtered out, or the loading-to-empty
+  // transition), the form closes, so a recipe that later returns
+  // comes back closed.
+  useEffect(() => {
+    if (
+      openCookLogId !== null &&
+      !ownRecipes.some(recipe => recipe.id === openCookLogId)
+    ) {
+      setOpenCookLogId(null);
+    }
+  }, [ownRecipes, openCookLogId]);
 
   const ownItems: RecipesPageItem[] = ownRecipes.map(recipe => ({
     id: recipe.id,
@@ -676,21 +600,42 @@ const SignedInRecipesPage = () => {
         }
         isFetchingNextPage={discoveryQuery.isFetchingNextPage}
         onLogCookPress={openCookLog}
-        renderRecipeAccessory={recipeId => {
-          const recipe = ownRecipesById.get(recipeId);
-          if (!recipe || !openCookLogIds.has(recipeId)) {
-            return null;
-          }
-          return (
-            <InlineCookLogForm
-              key={recipeId}
-              recipe={recipe}
-              onClose={() => {
-                closeCookLog(recipeId);
-              }}
-            />
-          );
-        }}
+        cookLogForm={
+          openCookLogRecipe
+            ? {
+                recipeId: openCookLogRecipe.id,
+                title: i18n._({
+                  id: 'recipeDetail.cookLogHeading',
+                  message: 'How did it go?',
+                }),
+                notesPlaceholder: i18n._({
+                  id: 'cookingMode.cookLogNotesPlaceholder',
+                  message:
+                    'Notes from this cook — what worked, what to change next time (optional)',
+                }),
+                secondaryLabel: i18n._({
+                  id: 'recipeDetail.cookLogSkipLabel',
+                  message: 'Skip',
+                }),
+                isPending: createCookLogMutation.isPending,
+                onSkip: () => {
+                  if (!createCookLogMutation.isPending) {
+                    closeCookLog();
+                  }
+                },
+                onSubmit: values => {
+                  createCookLogMutation.mutate({
+                    input: {
+                      authorStarRating: values.rating,
+                      notes: values.notes,
+                    },
+                    recipe: openCookLogRecipe,
+                    session: openFormSessionRef.current,
+                  });
+                },
+              }
+            : null
+        }
         onLoadMore={handleLoadMore}
         search={controls.search}
         onSearchChange={controls.onSearchChange}

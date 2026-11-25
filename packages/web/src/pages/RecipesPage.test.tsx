@@ -203,10 +203,10 @@ describe('RecipesPage', () => {
   });
 
   test('logs a cook from the row without opening the recipe', async () => {
-    // Capture the create request: the accessory is the host's
-    // CookLogForm (@spudly/ui 6.x has no RatingForm), whose submit
-    // values are already a CookLogInput — a regression in the posted
-    // body must fail here, not just the close.
+    // Capture the create request: DS 14 renders the form from the
+    // cookLogForm data prop (the DS RatingForm); the host maps its
+    // {rating, notes} values to a CookLogInput — a regression in the
+    // posted body must fail here, not just the close.
     let postedBody: unknown;
     server.use(
       http.post(
@@ -233,7 +233,9 @@ describe('RecipesPage', () => {
     await waitFor(() => {
       expect(screen.getByText('How did it go?')).toBeInTheDocument();
     });
-    await userEvent.click(screen.getByLabelText('4 stars'));
+    await userEvent.click(
+      screen.getByRole('radio', {name: 'Rate 4 out of 5 stars'}),
+    );
     await userEvent.type(
       screen.getByPlaceholderText(
         'Notes from this cook — what worked, what to change next time (optional)',
@@ -399,7 +401,9 @@ describe('RecipesPage', () => {
     await waitFor(() => {
       expect(screen.getByText('How did it go?')).toBeInTheDocument();
     });
-    await userEvent.click(screen.getByLabelText('4 stars'));
+    await userEvent.click(
+      screen.getByRole('radio', {name: 'Rate 4 out of 5 stars'}),
+    );
     await userEvent.click(screen.getByRole('button', {name: 'Save'}));
     // The row leaves (its pending form unmounts with it) and returns.
     await userEvent.type(
@@ -462,7 +466,9 @@ describe('RecipesPage', () => {
     await waitFor(() => {
       expect(screen.getByText('How did it go?')).toBeInTheDocument();
     });
-    await userEvent.click(screen.getByLabelText('4 stars'));
+    await userEvent.click(
+      screen.getByRole('radio', {name: 'Rate 4 out of 5 stars'}),
+    );
     await userEvent.click(screen.getByRole('button', {name: 'Save'}));
     // Let the save get fully in flight (the create handler is
     // gated on the promise above), then try to skip out of it.

@@ -13,7 +13,9 @@ import {useLingui} from '@lingui/react';
 
 import {api} from '../../lib/api';
 
-import {AccessTokensPanel} from './AccessTokensPanel';
+// DS 14: ProfilePage renders the AccessTokensPanel itself from the
+// `accessTokens` data prop (#511), so this module is the section's
+// host logic as a hook returning that prop's view-model.
 
 const formatDate = (iso: string): string =>
   new Date(iso).toLocaleDateString(undefined, {
@@ -42,7 +44,7 @@ const describeToken = (i18n: I18n, token: PersonalAccessToken): string => {
   return parts.join(' · ');
 };
 
-export const AccessTokensSection = () => {
+export const useAccessTokensProps = () => {
   const {i18n} = useLingui();
   const {session} = useAuth();
   const queryClient = useQueryClient();
@@ -94,37 +96,34 @@ export const AccessTokensSection = () => {
     },
   });
 
-  return (
-    <AccessTokensPanel
-      tokens={(tokensQuery.data ?? []).map(token => ({
-        id: token.id,
-        name: token.name,
-        prefix: token.tokenPrefix,
-        metaLabel: describeToken(i18n, token),
-        revoked: Boolean(token.revokedAt),
-      }))}
-      loading={tokensQuery.isLoading}
-      tokenName={tokenName}
-      onTokenNameChange={setTokenName}
-      onCreate={() => {
-        const name = tokenName.trim();
-        if (name) {
-          createMutation.mutate(name);
-        }
-      }}
-      isCreating={createMutation.isPending}
-      createdSecret={createdSecret}
-      onDismissSecret={() => {
-        setCreatedSecret(null);
-      }}
-      revokingId={revokeMutation.isPending ? revokeMutation.variables : null}
-      onRevoke={(id: string) => {
-        revokeMutation.mutate(id);
-      }}
-      error={
-        error ?? (tokensQuery.error ? errorMessage(tokensQuery.error) : null)
+  return {
+    tokens: (tokensQuery.data ?? []).map(token => ({
+      id: token.id,
+      name: token.name,
+      prefix: token.tokenPrefix,
+      metaLabel: describeToken(i18n, token),
+      revoked: Boolean(token.revokedAt),
+    })),
+    loading: tokensQuery.isLoading,
+    tokenName,
+    onTokenNameChange: setTokenName,
+    onCreate: () => {
+      const name = tokenName.trim();
+      if (name) {
+        createMutation.mutate(name);
       }
-      planNotice={planNotice}
-    />
-  );
+    },
+    isCreating: createMutation.isPending,
+    createdSecret,
+    onDismissSecret: () => {
+      setCreatedSecret(null);
+    },
+    revokingId: revokeMutation.isPending ? revokeMutation.variables : null,
+    onRevoke: (id: string) => {
+      revokeMutation.mutate(id);
+    },
+    error:
+      error ?? (tokensQuery.error ? errorMessage(tokensQuery.error) : null),
+    planNotice,
+  };
 };

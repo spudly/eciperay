@@ -5,12 +5,14 @@ import {
   canEditActiveRecipeMetadata,
   canEditDraftVersion,
   formatCommunityRatingLabel,
+  formatTotalTimeLabel,
   formatScaledIngredientLine,
   invalidateRecipeQueries,
   isActiveScaleMultiplier,
-  nutritionTabRows,
+  nutritionFacts,
   queryKeys,
   RECIPE_SCALE_MULTIPLIERS,
+  recipeCategoryLabel,
   removeRecipeView,
   resizedImageUrl,
   servingsForMultiplier,
@@ -28,10 +30,8 @@ import type {
   RecipeVersionSummary,
 } from '@eciperay/types';
 import {
-  eciperayTheme,
   RecipeDetailPage,
   tagColorNameForHex,
-  tokens,
   type RecipeDetailPageNutritionProps,
 } from '@spudly/ui';
 import type {I18n} from '@lingui/core';
@@ -187,180 +187,6 @@ const formatCookLogDate = (cookedAt: string): string =>
     month: 'short',
     day: 'numeric',
   });
-
-type CookLogFormValues = {
-  rating: 1 | 2 | 3 | 4 | 5 | null;
-  notes: string | null;
-};
-
-type CookLogFormProps = {
-  isPending: boolean;
-  onSkip: () => void;
-  onSubmit: (values: CookLogFormValues) => void;
-};
-
-/**
- * The cook-log form for the history slot: the host re-expression of the design
- * system's retired RatingForm (light variant), which @spudly/ui 6.x no longer
- * exports. Behavior is the form's own, preserved exactly: the rating and notes
- * are internal state, pressing the current star clears the rating, notes cross
- * trimmed (empty as null), Save is inert while a save is pending, and the host
- * keeps Skip inert while a save is pending. The star controls keep the form's
- * radiogroup semantics ("Rate N out of 5 stars", aria-checked by position up to
- * the current rating).
- */
-const CookLogForm = ({isPending, onSkip, onSubmit}: CookLogFormProps) => {
-  const {i18n} = useLingui();
-  const [rating, setRating] = useState<1 | 2 | 3 | 4 | 5 | null>(null);
-  const [notes, setNotes] = useState('');
-
-  return (
-    <div
-      style={{
-        marginLeft: 'auto',
-        marginRight: 'auto',
-        borderRadius: 16,
-        padding: tokens.spacing[6],
-        width: '100%',
-        maxWidth: 448,
-        boxSizing: 'border-box',
-        border: `1px solid ${tokens.colors.gray.gray3}`,
-        backgroundColor: tokens.colors.gray.gray1,
-      }}
-    >
-      <h2
-        style={{
-          margin: 0,
-          marginBottom: tokens.spacing[4],
-          fontSize: tokens.typography.fontSize.xl,
-          fontWeight: tokens.typography.fontWeight.semibold,
-          fontFamily: tokens.typography.fontFamily.sans,
-          color: tokens.colors.gray.gray10,
-        }}
-      >
-        {i18n._({id: 'recipeDetail.cookLogHeading', message: 'How did it go?'})}
-      </h2>
-      <div
-        role="radiogroup"
-        aria-label={i18n._({
-          id: 'recipeDetail.cookLogStarRatingLabel',
-          message: 'Star rating',
-        })}
-        style={{
-          marginBottom: tokens.spacing[4],
-          display: 'flex',
-          justifyContent: 'center',
-          gap: tokens.spacing[2],
-        }}
-      >
-        {[1, 2, 3, 4, 5].map(star => (
-          <button
-            key={star}
-            type="button"
-            role="radio"
-            aria-checked={rating !== null && star <= rating}
-            aria-label={i18n._({
-              id: 'recipeDetail.cookLogRateLabel',
-              message: 'Rate {star} out of 5 stars',
-              values: {star},
-            })}
-            style={{
-              background: 'none',
-              border: 'none',
-              padding: 0,
-              cursor: 'pointer',
-              fontSize: tokens.typography.fontSize['3xl'],
-              lineHeight: 1,
-              color:
-                rating !== null && star <= rating
-                  ? tokens.colors.warning.warning6
-                  : tokens.colors.gray.gray4,
-            }}
-            onClick={() => {
-              setRating(current =>
-                current === star ? null : (star as 1 | 2 | 3 | 4 | 5),
-              );
-            }}
-          >
-            ★
-          </button>
-        ))}
-      </div>
-      <textarea
-        className="cook-log-notes"
-        data-variant="light"
-        style={{
-          marginBottom: tokens.spacing[4],
-          borderRadius: 12,
-          padding: '12px 16px',
-          fontSize: tokens.typography.fontSize.md,
-          fontFamily: tokens.typography.fontFamily.sans,
-          width: '100%',
-          boxSizing: 'border-box',
-          border: `1px solid ${tokens.colors.gray.gray4}`,
-          backgroundColor: eciperayTheme.semantic.surface,
-          color: tokens.colors.gray.gray10,
-        }}
-        placeholder={i18n._({
-          id: 'cookingMode.cookLogNotesPlaceholder',
-          message: 'Notes from this cook — what worked, what to change next time (optional)',
-        })}
-        aria-label={i18n._({
-          id: 'cookingMode.cookLogNotesPlaceholder',
-          message: 'Notes from this cook — what worked, what to change next time (optional)',
-        })}
-        rows={3}
-        value={notes}
-        onChange={event => {
-          setNotes(event.target.value);
-        }}
-      />
-      <div style={{display: 'flex', gap: tokens.spacing[3]}}>
-        <button
-          type="button"
-          style={{
-            flex: 1,
-            borderRadius: 12,
-            paddingTop: 12,
-            paddingBottom: 12,
-            fontSize: tokens.typography.fontSize.md,
-            fontFamily: tokens.typography.fontFamily.sans,
-            cursor: 'pointer',
-            border: `1px solid ${tokens.colors.gray.gray3}`,
-            backgroundColor: '#ffffff',
-            color: tokens.colors.gray.gray8,
-          }}
-          onClick={onSkip}
-        >
-          {i18n._({id: 'recipeDetail.cookLogSkipLabel', message: 'Skip'})}
-        </button>
-        <button
-          type="button"
-          style={{
-            flex: 1,
-            borderRadius: 12,
-            border: 'none',
-            paddingTop: 12,
-            paddingBottom: 12,
-            fontSize: tokens.typography.fontSize.md,
-            fontFamily: tokens.typography.fontFamily.sans,
-            fontWeight: tokens.typography.fontWeight.semibold,
-            backgroundColor: eciperayTheme.semantic.primary,
-            color: '#ffffff',
-            cursor: 'pointer',
-            opacity: isPending ? 0.5 : 1,
-          }}
-          disabled={isPending}
-          onClick={() => {
-            onSubmit({rating, notes: notes.trim() || null});
-          }}
-        >
-          {i18n._({id: 'recipeDetail.cookLogSaveLabel', message: 'Save'})}
-        </button>
-      </div>
-    </div>
-  );
-};
 
 export const RecipeDetailHost = ({
   recipe,
@@ -804,10 +630,7 @@ export const RecipeDetailHost = ({
         }
       : {
           state: 'ready',
-          rows: nutritionTabRows(nutrition).map(row => ({
-            label: row.label,
-            valueLabel: `${row.value}${row.unit}`,
-          })),
+          facts: nutritionFacts(nutrition),
           disclaimer: nutrition.disclaimer,
           isRefreshing: isRefreshingNutrition,
           isFetching: isFetchingNutrition,
@@ -900,6 +723,11 @@ export const RecipeDetailHost = ({
         title: displayRecipe.title,
         description: displayRecipe.description,
         servingsLabel: String(currentServings),
+        categoryLabel: recipeCategoryLabel(displayRecipe.tags),
+        totalTimeLabel: formatTotalTimeLabel(
+          displayRecipe.prepTimeMin,
+          displayRecipe.cookTimeMin,
+        ),
         prepTimeLabel: displayRecipe.prepTimeMin
           ? `${displayRecipe.prepTimeMin}m`
           : undefined,
@@ -1011,23 +839,35 @@ export const RecipeDetailHost = ({
           setCookLogDeleteError(null);
           setConfirmingCookLogDeleteId(cookLogId);
         },
-        renderCookLogForm: () =>
-          showCookLogForm ? (
-            <CookLogForm
-              isPending={createCookLogMutation.isPending}
-              onSkip={() => {
+        cookLogForm: showCookLogForm
+          ? {
+              title: i18n._({
+                id: 'recipeDetail.cookLogHeading',
+                message: 'How did it go?',
+              }),
+              notesPlaceholder: i18n._({
+                id: 'cookingMode.cookLogNotesPlaceholder',
+                message:
+                  'Notes from this cook — what worked, what to change next time (optional)',
+              }),
+              secondaryLabel: i18n._({
+                id: 'recipeDetail.cookLogSkipLabel',
+                message: 'Skip',
+              }),
+              isPending: createCookLogMutation.isPending,
+              onSkip: () => {
                 if (!createCookLogMutation.isPending) {
                   setShowCookLogForm(false);
                 }
-              }}
-              onSubmit={(values: CookLogFormValues) => {
+              },
+              onSubmit: values => {
                 createCookLogMutation.mutate({
                   authorStarRating: values.rating,
                   notes: values.notes,
                 });
-              }}
-            />
-          ) : null,
+              },
+            }
+          : null,
       }}
       nutrition={nutritionProps}
       recipeDeleteConfirmation={{

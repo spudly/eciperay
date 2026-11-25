@@ -179,7 +179,9 @@ describe('MealEditPage', () => {
     // Two steppers render now (cook and eat, DS #659): press the
     // first one's '+'.
     fireEvent.click(screen.getAllByText('+')[0]!);
-    fireEvent.click(screen.getByText('Remove'));
+    // DS 14: the selected recipe renders as an in-field chip
+    // (DS #805) whose remove control is a button named for the item.
+    fireEvent.click(screen.getByRole('button', {name: 'Remove Test Recipe'}));
     expect(
       screen.queryByText('Servings to cook · Test Recipe'),
     ).not.toBeInTheDocument();
