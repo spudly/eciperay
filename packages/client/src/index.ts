@@ -221,6 +221,15 @@ export {
   type LogLevel,
 } from './createAnalytics.js';
 export {
+  castPostHogProperties,
+  createPostHogAdapter,
+  createPosthogLog,
+  DEFAULT_POSTHOG_HOST,
+  type PostHogAdapterBindings,
+  type PostHogLogger,
+  type PostHogProperties,
+} from './posthogAdapter.js';
+export {
   useExperimentVariant,
   useFeatureFlag,
   useFeatureFlagEnabled,
