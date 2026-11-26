@@ -364,6 +364,15 @@ export {
   removeRecipeView,
   type RecipeViewHistoryStorage,
 } from './recipeViewHistory.js';
+export {
+  clampCropRect,
+  defaultCropRect,
+  MIN_CROP_SIZE,
+  moveCropRect,
+  RECIPE_CROP_ASPECT,
+  resizeCropRect,
+  type CropRect,
+} from './recipeImageCrop.js';
 export {invalidateRecipeQueries} from './invalidateRecipeQueries.js';
 export {createRecipesApi} from './recipesApi.js';
 export {
