@@ -39,14 +39,16 @@ jest.mock('./supabase', () => ({
   supabase: {auth: {getSession: jest.fn(), signOut: jest.fn()}},
 }));
 
-import {analytics} from './analytics';
-import {api} from './api';
-import {
-  authSessionStorage,
-  onAuthenticated,
-  onSignedOut,
-} from './authSessionLifecycle';
-import {supabase} from './supabase';
+// Required lazily (after the mock factories above are registered and the
+// mock* consts are initialized): a static import of the module under test
+// would run the '@eciperay/client' factory before mockCreateClearStoredSession
+// is assigned, failing with "mockCreateClearStoredSession is not a function".
+// Same pattern as supabase.test.ts.
+const {analytics} = require('./analytics') as typeof import('./analytics');
+const {api} = require('./api') as typeof import('./api');
+const {authSessionStorage, onAuthenticated, onSignedOut} =
+  require('./authSessionLifecycle') as typeof import('./authSessionLifecycle');
+const {supabase} = require('./supabase') as typeof import('./supabase');
 
 const session = {
   access_token: 'token-a',
