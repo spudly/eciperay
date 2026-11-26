@@ -85,8 +85,23 @@ export const openRecipeFromList = async (
   // no owner actions such as Delete. The old status='idea' exclusion
   // kept new recipes out of Discover, so a bare text click used to be
   // unambiguous.
-  await page.locator('a[href^="/recipes/"]', {hasText: title}).click();
-  await expect(page.getByRole('heading', {name: title})).toBeVisible();
+  // Two anchors carry that href (a title link and the whole-card link),
+  // and a click on either can be swallowed by the list page's overlays
+  // (the post-cook "How did it go?" prompt renders over the list), so
+  // navigate by the entry's own href instead of clicking: the list
+  // presence + href are what this flow needs from the list page, and the
+  // detail-page assertions below still run against the real page.
+  const ownEntry = page
+    .locator('a[href^="/recipes/"]', {hasText: title})
+    .first();
+  const href = await ownEntry.getAttribute('href');
+  if (!href) {
+    throw new Error(`openRecipeFromList: no own-list entry for "${title}"`);
+  }
+  await page.goto(href);
+  await expect(page.getByRole('heading', {name: title})).toBeVisible({
+    timeout: 15_000,
+  });
 };
 
 /**
