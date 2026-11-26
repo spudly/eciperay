@@ -1,46 +1,20 @@
 import {
   createAnalytics,
   createNoopAnalyticsAdapter,
+  createPostHogAdapter as createSharedPostHogAdapter,
+  DEFAULT_POSTHOG_HOST,
   sanitizePostHogEventProperties,
   type AnalyticsAdapter,
   type AnalyticsClient,
-  type LogLevel,
 } from '@eciperay/client';
 import posthog from 'posthog-js';
 
-const DEFAULT_POSTHOG_HOST = 'https://us.i.posthog.com';
 const POSTHOG_UI_HOST = 'https://us.posthog.com';
 
 type PostHogFlagResult = {value?: boolean | string; payload?: unknown};
 
 const getPostHogFlagResult = (key: string): PostHogFlagResult | undefined => {
   return posthog.getFeatureFlagResult(key);
-};
-
-const posthogLog = (
-  level: LogLevel,
-  message: string,
-  attributes?: Record<string, unknown>,
-) => {
-  const logAttributes = attributes as Record<string, string | number | boolean>;
-  const logger = posthog.logger;
-  if (level === 'trace' && typeof logger.trace === 'function') {
-    logger.trace(message, logAttributes);
-    return;
-  }
-  if (level === 'debug' && typeof logger.debug === 'function') {
-    logger.debug(message, logAttributes);
-    return;
-  }
-  if (level === 'info') {
-    logger.info(message, logAttributes);
-    return;
-  }
-  if (level === 'warn') {
-    logger.warn(message, logAttributes);
-    return;
-  }
-  logger.error(message, logAttributes);
 };
 
 const initWebPostHog = (apiKey: string, apiHost: string) => {
@@ -109,33 +83,34 @@ export const resumeWebSessionRecording = () => {
 const getWebSessionReplayUrl = () =>
   posthog.get_session_replay_url({withTimestamp: true, timestampLookBack: 30});
 
-const createWebPostHogAdapter = (): AnalyticsAdapter => ({
-  capture: (event, properties) => {
-    posthog.capture(event, properties);
-  },
-  identify: (userId, properties) => {
-    posthog.identify(userId, properties);
-  },
-  reset: () => {
-    posthog.reset();
-  },
-  isFeatureEnabled: key => posthog.isFeatureEnabled(key) ?? false,
-  getFeatureFlag: key => getPostHogFlagResult(key)?.value,
-  getFeatureFlagPayload: key => getPostHogFlagResult(key)?.payload,
-  onFeatureFlags: callback => posthog.onFeatureFlags(callback),
-  reloadFeatureFlags: () => {
-    posthog.reloadFeatureFlags();
-  },
-  captureException: (error, properties) => {
-    posthog.captureException(error, properties);
-  },
-  log: posthogLog,
-  ensureSessionRecordingForFeedback: () => {
-    posthog.startSessionRecording(true);
-  },
-  getSessionId: () => posthog.get_session_id(),
-  getSessionReplayUrl: getWebSessionReplayUrl,
-});
+const createWebPostHogAdapter = (): AnalyticsAdapter =>
+  createSharedPostHogAdapter({
+    capture: (event, properties) => {
+      posthog.capture(event, properties);
+    },
+    identify: (userId, properties) => {
+      posthog.identify(userId, properties);
+    },
+    reset: () => {
+      posthog.reset();
+    },
+    isFeatureEnabled: key => posthog.isFeatureEnabled(key) ?? false,
+    getFeatureFlag: key => getPostHogFlagResult(key)?.value,
+    getFeatureFlagPayload: key => getPostHogFlagResult(key)?.payload,
+    onFeatureFlags: callback => posthog.onFeatureFlags(callback),
+    reloadFeatureFlags: () => {
+      posthog.reloadFeatureFlags();
+    },
+    captureException: (error, properties) => {
+      posthog.captureException(error, properties);
+    },
+    logger: () => posthog.logger,
+    ensureSessionRecordingForFeedback: () => {
+      posthog.startSessionRecording(true);
+    },
+    getSessionId: () => posthog.get_session_id(),
+    getSessionReplayUrl: getWebSessionReplayUrl,
+  });
 
 export const createPostHogAdapter = (
   apiKey: string,
