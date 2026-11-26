@@ -9,11 +9,12 @@ import {
 } from './recipeDetailToInput.js';
 
 describe('recipeDetailToInput', () => {
-  test('maps detail to input without nested ids', () => {
+  test('maps detail to input, carrying ingredient ids and instruction links', () => {
     const input = recipeDetailToInput(makeRecipeDetail());
     expect(input.title).toBe('Test Recipe');
     expect(input.ingredients[0]).toEqual({
       key: 'i-1',
+      id: 'i-1',
       sortOrder: 0,
       name: 'Flour',
       quantity: 2,
@@ -25,6 +26,7 @@ describe('recipeDetailToInput', () => {
       key: 'ins-1',
       stepNumber: 1,
       body: 'Mix dry ingredients',
+      ingredientReferences: [],
     });
     expect(input.tagIds).toEqual(['tag-1']);
   });

@@ -35,6 +35,17 @@ export {
   recipeVersionDetailToInput,
 } from './recipeDetailToInput.js';
 export {
+  applyIngredientLinkProposal,
+  formIngredientLinkId,
+  ingredientRowIdForKey,
+  orderedIngredientReferences,
+  toggleIngredientReference,
+  unreferencedFormIngredients,
+  withInstructionReferences,
+  withoutIngredientReference,
+  type IngredientLinkProposal,
+} from './ingredientLinking.js';
+export {
   activationCandidates,
   canEditActiveRecipeMetadata,
   canEditDraftVersion,
@@ -406,7 +417,11 @@ export {createAccountApi} from './accountApi.js';
 export {createMealsApi} from './mealsApi.js';
 export {createMealPlansApi} from './mealPlansApi.js';
 export {createTagsApi} from './tagsApi.js';
-export {createAiApi} from './aiApi.js';
+export {
+  createAiApi,
+  type LinkIngredientsInput,
+  type LinkIngredientsResult,
+} from './aiApi.js';
 export {createVersionsApi, type TweakWithAiResult} from './versionsApi.js';
 export {createCookLogsApi} from './cookLogsApi.js';
 export {createDiscoveryApi} from './discoveryApi.js';

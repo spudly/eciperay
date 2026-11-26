@@ -133,6 +133,9 @@ export const parentIngredientsInput = (
   parent: RecipeVersionDetail,
 ): IngredientInput[] =>
   parent.ingredients.map(ingredient => ({
+    // Preserve the parent's ingredient IDs (#643) so the parent's
+    // instruction references stay valid when the lists are reverted.
+    id: ingredient.id,
     sortOrder: ingredient.sortOrder,
     name: ingredient.name,
     quantity: ingredient.quantity,
@@ -147,6 +150,7 @@ export const parentInstructionsInput = (
   parent.instructions.map(instruction => ({
     stepNumber: instruction.stepNumber,
     body: instruction.body,
+    ingredientReferences: [...instruction.ingredientReferences],
   }));
 
 export const parentTagIds = (parent: RecipeVersionDetail): string[] =>
