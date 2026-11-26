@@ -1,8 +1,9 @@
 /**
- * Pure crop geometry for the recipe image crop step (#406), plus the
+ * App execution step for the recipe image crop (#406): the
  * expo-image-manipulator step that turns a crop rectangle in natural-image
- * pixels into a cropped image. Mirrors the web helper in
- * packages/web/src/lib/recipeImageCrop.ts.
+ * pixels into a cropped image. The pure crop geometry lives in
+ * @eciperay/client (#677) and is re-exported here so existing app imports
+ * keep working.
  *
  * Expo native modules are registered through Expo autolinking (#453: the
  * iOS Podfile's use_expo_modules! and the Android expo-autolinking-settings
@@ -10,86 +11,17 @@
  */
 import {manipulateAsync, SaveFormat} from 'expo-image-manipulator';
 
-export type CropRect = {x: number; y: number; width: number; height: number};
+import type {CropRect} from '@eciperay/client';
 
-/** Recipe photos render in a 4:3 frame, so the default crop box uses it. */
-export const RECIPE_CROP_ASPECT = 4 / 3;
-
-export const MIN_CROP_SIZE = 24;
-
-const clamp = (value: number, min: number, max: number): number =>
-  Math.min(Math.max(value, min), Math.max(min, max));
-
-/** Largest centered rectangle of `aspect` (width / height) inside the image. */
-export const defaultCropRect = (
-  imageWidth: number,
-  imageHeight: number,
-  aspect: number = RECIPE_CROP_ASPECT,
-): CropRect => {
-  const safeWidth = Math.max(1, Math.floor(imageWidth));
-  const safeHeight = Math.max(1, Math.floor(imageHeight));
-  let width = safeWidth;
-  let height = Math.round(width / aspect);
-  if (height > safeHeight) {
-    height = safeHeight;
-    width = Math.round(height * aspect);
-  }
-  return {
-    x: Math.floor((safeWidth - width) / 2),
-    y: Math.floor((safeHeight - height) / 2),
-    width,
-    height,
-  };
-};
-
-/** Clamp a crop rectangle so it stays fully inside the image. */
-export const clampCropRect = (
-  rect: CropRect,
-  imageWidth: number,
-  imageHeight: number,
-): CropRect => {
-  const minWidth = Math.min(MIN_CROP_SIZE, imageWidth);
-  const minHeight = Math.min(MIN_CROP_SIZE, imageHeight);
-  const width = clamp(Math.round(rect.width), minWidth, imageWidth);
-  const height = clamp(Math.round(rect.height), minHeight, imageHeight);
-  return {
-    x: clamp(Math.round(rect.x), 0, imageWidth - width),
-    y: clamp(Math.round(rect.y), 0, imageHeight - height),
-    width,
-    height,
-  };
-};
-
-export const moveCropRect = (
-  rect: CropRect,
-  deltaX: number,
-  deltaY: number,
-  imageWidth: number,
-  imageHeight: number,
-): CropRect =>
-  clampCropRect(
-    {...rect, x: rect.x + deltaX, y: rect.y + deltaY},
-    imageWidth,
-    imageHeight,
-  );
-
-/** Resize from the bottom-right corner, keeping the top-left anchored. */
-export const resizeCropRect = (
-  rect: CropRect,
-  deltaWidth: number,
-  deltaHeight: number,
-  imageWidth: number,
-  imageHeight: number,
-): CropRect =>
-  clampCropRect(
-    {
-      ...rect,
-      width: rect.width + deltaWidth,
-      height: rect.height + deltaHeight,
-    },
-    imageWidth,
-    imageHeight,
-  );
+export {
+  clampCropRect,
+  defaultCropRect,
+  MIN_CROP_SIZE,
+  moveCropRect,
+  RECIPE_CROP_ASPECT,
+  resizeCropRect,
+  type CropRect,
+} from '@eciperay/client';
 
 export type CroppedRecipeImage = {
   base64: string;

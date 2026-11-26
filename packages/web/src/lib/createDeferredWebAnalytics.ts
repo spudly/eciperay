@@ -1,6 +1,7 @@
 import {
   createAnalytics,
   createNoopAnalyticsAdapter,
+  DEFAULT_POSTHOG_HOST,
   type AnalyticsClient,
 } from '@eciperay/client';
 
@@ -11,7 +12,6 @@ import {
 } from './createWebAnalytics.js';
 import {createSwitchableAnalyticsAdapter} from './switchableAnalyticsAdapter.js';
 
-const DEFAULT_POSTHOG_HOST = 'https://us.i.posthog.com';
 
 export const createDeferredWebAnalytics = (
   apiKey: string,

@@ -1,10 +1,11 @@
-import {FeedbackPreferenceContextProvider} from '@eciperay/client';
-import {useCallback, useEffect, useState, type ReactNode} from 'react';
-
 import {
+  FeedbackPreferenceContextProvider,
   readFeedbackShortcutEnabled,
   writeFeedbackShortcutEnabled,
-} from '../lib/feedbackPreference.js';
+} from '@eciperay/client';
+import {useCallback, useEffect, useState, type ReactNode} from 'react';
+
+import {feedbackShortcutStorage} from '../lib/feedbackShortcutStorage.js';
 
 export const AppFeedbackPreferenceProvider = ({
   children,
@@ -15,14 +16,14 @@ export const AppFeedbackPreferenceProvider = ({
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    void readFeedbackShortcutEnabled().then(value => {
+    void readFeedbackShortcutEnabled(feedbackShortcutStorage).then(value => {
       setEnabledState(value);
       setReady(true);
     });
   }, []);
 
   const setEnabled = useCallback((nextEnabled: boolean) => {
-    void writeFeedbackShortcutEnabled(nextEnabled).then(() => {
+    void writeFeedbackShortcutEnabled(feedbackShortcutStorage, nextEnabled).then(() => {
       setEnabledState(nextEnabled);
     });
   }, []);

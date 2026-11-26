@@ -1,23 +1,18 @@
 import {
+  castPostHogProperties,
   createAnalytics,
   createNoopAnalyticsAdapter,
+  createPostHogAdapter as createSharedPostHogAdapter,
+  DEFAULT_POSTHOG_HOST,
   type AnalyticsAdapter,
   type AnalyticsClient,
   type AnalyticsContext,
   type AnalyticsPlatform,
-  type LogLevel,
 } from '@eciperay/client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Application from 'expo-application';
 import PostHog from 'posthog-react-native';
 import {Platform} from 'react-native';
-
-const DEFAULT_POSTHOG_HOST = 'https://us.i.posthog.com';
-
-const castPostHogProperties = (
-  properties?: Record<string, unknown>,
-): Record<string, string | number | boolean> =>
-  properties as Record<string, string | number | boolean>;
 
 export const resolveAppAnalyticsPlatform = (
   os: typeof Platform.OS,
@@ -26,33 +21,6 @@ export const resolveAppAnalyticsPlatform = (
     return 'ios';
   }
   return 'android';
-};
-
-const posthogLog = (
-  client: PostHog,
-  level: LogLevel,
-  message: string,
-  attributes?: Record<string, unknown>,
-) => {
-  const logAttributes = attributes as Record<string, string | number | boolean>;
-  const logger = client.logger;
-  if (level === 'trace' && typeof logger.trace === 'function') {
-    logger.trace(message, logAttributes);
-    return;
-  }
-  if (level === 'debug' && typeof logger.debug === 'function') {
-    logger.debug(message, logAttributes);
-    return;
-  }
-  if (level === 'info') {
-    logger.info(message, logAttributes);
-    return;
-  }
-  if (level === 'warn') {
-    logger.warn(message, logAttributes);
-    return;
-  }
-  logger.error(message, logAttributes);
 };
 
 const getAppFeatureFlagPayload = (client: PostHog, key: string): unknown => {
@@ -69,39 +37,38 @@ const getAppFeatureFlagPayload = (client: PostHog, key: string): unknown => {
 const createAppPostHogAdapter = (
   client: PostHog,
   superProperties?: Record<string, unknown>,
-): AnalyticsAdapter => ({
-  capture: (event, properties) => {
-    client.capture(event, castPostHogProperties(properties));
-  },
-  identify: (userId, properties) => {
-    client.identify(userId, castPostHogProperties(properties));
-  },
-  reset: () => {
-    client.reset();
-    // PostHog clears registered super properties on reset; re-register the
-    // app metadata so automatically captured events keep carrying it.
-    if (superProperties && Object.keys(superProperties).length > 0) {
-      client.register?.(castPostHogProperties(superProperties));
-    }
-  },
-  isFeatureEnabled: key => client.isFeatureEnabled(key),
-  getFeatureFlag: key => client.getFeatureFlag(key),
-  getFeatureFlagPayload: key => getAppFeatureFlagPayload(client, key),
-  onFeatureFlags: callback => client.onFeatureFlags(callback),
-  reloadFeatureFlags: () => {
-    client.reloadFeatureFlags();
-  },
-  captureException: (error, properties) => {
-    client.captureException(error, castPostHogProperties(properties));
-  },
-  log: (level, message, attributes) => {
-    posthogLog(client, level, message, attributes);
-  },
-  ensureSessionRecordingForFeedback: async () => {
-    await client.startSessionRecording(true);
-  },
-  getSessionId: () => client.getSessionId(),
-});
+): AnalyticsAdapter =>
+  createSharedPostHogAdapter({
+    capture: (event, properties) => {
+      client.capture(event, properties);
+    },
+    identify: (userId, properties) => {
+      client.identify(userId, properties);
+    },
+    reset: () => {
+      client.reset();
+      // PostHog clears registered super properties on reset; re-register the
+      // app metadata so automatically captured events keep carrying it.
+      if (superProperties && Object.keys(superProperties).length > 0) {
+        client.register?.(castPostHogProperties(superProperties));
+      }
+    },
+    isFeatureEnabled: key => client.isFeatureEnabled(key),
+    getFeatureFlag: key => client.getFeatureFlag(key),
+    getFeatureFlagPayload: key => getAppFeatureFlagPayload(client, key),
+    onFeatureFlags: callback => client.onFeatureFlags(callback),
+    reloadFeatureFlags: () => {
+      client.reloadFeatureFlags();
+    },
+    captureException: (error, properties) => {
+      client.captureException(error, properties);
+    },
+    logger: () => client.logger,
+    ensureSessionRecordingForFeedback: async () => {
+      await client.startSessionRecording(true);
+    },
+    getSessionId: () => client.getSessionId(),
+  });
 
 const createAppPostHogClient = (
   apiKey: string,

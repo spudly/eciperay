@@ -1,6 +1,7 @@
 import {
   createContext,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -9,6 +10,7 @@ import {
 import {
   readFeedbackShortcutEnabled,
   writeFeedbackShortcutEnabled,
+  type FeedbackShortcutStorage,
 } from './feedbackPreference.js';
 
 type FeedbackPreferenceContextValue = {
@@ -37,17 +39,54 @@ export const FeedbackPreferenceContextProvider = ({
   );
 };
 
+// Web hosts that mount the provider without an injected storage keep the
+// pre-#678 behavior: persist to localStorage. Platforms without a global
+// localStorage (the native app) must inject their own storage — there the
+// fallback is undefined and setEnabled only updates in-memory state.
+const localStorageFallback: FeedbackShortcutStorage | undefined =
+  typeof localStorage === 'undefined'
+    ? undefined
+    : {
+        getItem: (key: string) => localStorage.getItem(key),
+        setItem: (key: string, value: string) => {
+          localStorage.setItem(key, value);
+        },
+        removeItem: (key: string) => {
+          localStorage.removeItem(key);
+        },
+      };
+
 export const FeedbackPreferenceProvider = ({
   children,
-  initialEnabled = readFeedbackShortcutEnabled(),
+  storage,
+  initialEnabled,
 }: {
   children: ReactNode;
+  storage?: FeedbackShortcutStorage;
   initialEnabled?: boolean;
 }) => {
-  const [enabled, setEnabledState] = useState(initialEnabled);
+  const effectiveStorage = storage ?? localStorageFallback;
+  const [enabled, setEnabledState] = useState(initialEnabled ?? false);
+
+  useEffect(() => {
+    if (initialEnabled !== undefined || !effectiveStorage) {
+      return;
+    }
+    let cancelled = false;
+    void readFeedbackShortcutEnabled(effectiveStorage).then(value => {
+      if (!cancelled) {
+        setEnabledState(value);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [initialEnabled, effectiveStorage]);
 
   const setEnabled = (nextEnabled: boolean) => {
-    writeFeedbackShortcutEnabled(nextEnabled);
+    if (effectiveStorage) {
+      void writeFeedbackShortcutEnabled(effectiveStorage, nextEnabled);
+    }
     setEnabledState(nextEnabled);
   };
 

@@ -117,13 +117,16 @@ export {
   resizedImageUrl,
   resizedRecipeImageUrl,
 } from './resizedImageUrl.js';
+export {
+  stripImageCacheKey,
+  withImageCacheKey,
+} from './recipeImageCacheKey.js';
 export {DEFAULT_LOADING_DELAY_MS, useDelayedTrue} from './useDelayedTrue.js';
 export type {
   BookLoadingSpinnerProps,
   InlineLoadingIndicatorProps,
   ScreenLoadingGateProps,
 } from './ui/loadingComponents.js';
-export type {LegalLinksProps} from './ui/legalLinks.js';
 export type {
   ForgotPasswordViewProps,
   ResetPasswordViewProps,
@@ -155,7 +158,6 @@ export type {
   CheckboxSelectListProps,
   TabBarProps,
   TabBarTab,
-  ThumbnailListCardProps,
   ToggleChipGroupProps,
   ToggleChipOption,
 } from './ui/selectionComponents.js';
@@ -170,8 +172,6 @@ export type {
   RadioOption,
   RadioOptionGroupProps,
   SectionCardProps,
-  SelectFieldOption,
-  SelectFieldProps,
   StarRatingInputProps,
   StatBadgeProps,
   StatBadgeRowProps,
@@ -209,6 +209,16 @@ export {
   isAuthSessionRejectedError,
   useAuth,
 } from './AuthProvider.js';
+export {
+  createAuthSessionLifecycle,
+  createClearStoredSession,
+  supabaseAuthStorageKeys,
+  type AuthSessionLifecycle,
+  type AuthSessionLifecycleBindings,
+  type AuthSessionStorage,
+  type AuthSessionSupabase,
+  type ClearStoredSession,
+} from './authSessionLifecycle.js';
 export {AnalyticsErrorBoundaryProvider} from './AnalyticsErrorBoundary.js';
 export {AnalyticsProvider, useAnalytics} from './AnalyticsProvider.js';
 export {
@@ -220,6 +230,15 @@ export {
   type FeatureFlagValue,
   type LogLevel,
 } from './createAnalytics.js';
+export {
+  castPostHogProperties,
+  createPostHogAdapter,
+  createPosthogLog,
+  DEFAULT_POSTHOG_HOST,
+  type PostHogAdapterBindings,
+  type PostHogLogger,
+  type PostHogProperties,
+} from './posthogAdapter.js';
 export {
   useExperimentVariant,
   useFeatureFlag,
@@ -251,6 +270,7 @@ export {
   FEEDBACK_SHORTCUT_STORAGE_KEY,
   readFeedbackShortcutEnabled,
   writeFeedbackShortcutEnabled,
+  type FeedbackShortcutStorage,
 } from './feedbackPreference.js';
 export {
   readShoppingListCheckedKeys,
@@ -364,6 +384,15 @@ export {
   removeRecipeView,
   type RecipeViewHistoryStorage,
 } from './recipeViewHistory.js';
+export {
+  clampCropRect,
+  defaultCropRect,
+  MIN_CROP_SIZE,
+  moveCropRect,
+  RECIPE_CROP_ASPECT,
+  resizeCropRect,
+  type CropRect,
+} from './recipeImageCrop.js';
 export {invalidateRecipeQueries} from './invalidateRecipeQueries.js';
 export {createRecipesApi} from './recipesApi.js';
 export {
