@@ -170,7 +170,7 @@ describe('GET /recipes', () => {
       'pasta',
     ]);
     const sql = mockQuery.mock.calls[mockQuery.mock.calls.length - 1]?.[0];
-    expect(sql).toContain('similarity(rv.title, $13::text)');
+    expect(sql).toContain('similarity(rv.title, $12::text)');
     expect(sql).toContain('desc, rv.updated_at desc, rv.id desc');
   });
 
@@ -183,8 +183,8 @@ describe('GET /recipes', () => {
       .set('Authorization', 'Bearer valid-token');
     expect(res.status).toBe(200);
     const sql = mockQuery.mock.calls[mockQuery.mock.calls.length - 1]?.[0];
-    expect(sql).toContain('similarity(rv.title, $13::text) > 0.3');
-    expect(sql).toContain('similarity(i.name, $13::text) > 0.3');
+    expect(sql).toContain('similarity(rv.title, $12::text) > 0.3');
+    expect(sql).toContain('similarity(i.name, $12::text) > 0.3');
   });
 
   test('an explicit sort with a search still orders by that sort (#612)', async () => {
@@ -203,7 +203,6 @@ describe('GET /recipes', () => {
       'user-uuid-1',
       DEFAULT_RECIPE_LIST_LIMIT,
       0,
-      null,
       ...emptyFilterBinds,
       '%pasta%',
       'pasta',

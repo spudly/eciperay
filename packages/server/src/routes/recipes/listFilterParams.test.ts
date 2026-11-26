@@ -149,11 +149,11 @@ describe('relevance defaulting (#612)', () => {
   });
 
   test('a qualifier-only search scores (0), never a bare ORDER BY 0', () => {
-    // search=status:perfected has no positive text terms: it still
+    // search=is:public has no positive text terms: it still
     // defaults to relevance, and Postgres would reject `order by 0`
     // (a bare integer is a select-list position there).
     const params = parseRecipeListFilterParams({
-      query: {search: 'status:perfected'},
+      query: {search: 'is:public'},
     });
     expect(params.sort).toBe('relevance');
     const score = relevanceScoreSql(params.searchQuery, 1);
