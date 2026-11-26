@@ -230,8 +230,8 @@ describe('POST /recipes/:id/versions/:versionId/edit', () => {
       String(sql).includes('insert into recipe_versions'),
     );
     const insertParams = insert?.[1] as unknown[];
-    // change_summary is the 11th insert parameter ($11).
-    expect(insertParams[10]).toBe('Make it spicier');
+    // change_summary is the 12th insert parameter ($12) — tips is $10.
+    expect(insertParams[11]).toBe('Make it spicier');
   });
 
   test('branches and activates in one request when activate is true', async () => {
