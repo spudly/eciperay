@@ -1,122 +1,72 @@
 import type {
-  CookLog,
   PublicRecipeDiscoveryItem,
   RecipeDetail,
   RecipeVersionDetail,
-  RecipeVersionSummary,
 } from '@eciperay/types';
+import {
+  makeRecipeDetail as makeSharedRecipeDetail,
+  makeRecipeVersionDetail as makeSharedRecipeVersionDetail,
+  VERSION_ID,
+} from '@eciperay/client/test/fixtures/recipe';
 
-export const VERSION_ID = 'version-uuid-1';
+export {
+  makeCookLog,
+  makeRecipeVersionSummary,
+  VERSION_ID,
+} from '@eciperay/client/test/fixtures/recipe';
+
+// The app's fixture extends the shared @eciperay/client fixture (#679): a
+// second ingredient and instruction, and no tags. Host overrides replace
+// these extension defaults wholesale, exactly as the old full copy behaved.
+const shared = makeSharedRecipeDetail();
 
 export const makeRecipeDetail = (
   overrides: Partial<RecipeDetail> = {},
-): RecipeDetail => ({
-  id: 'recipe-uuid-1',
-  userId: 'user-uuid-1',
-  visibility: 'private',
-  slug: 'test-recipe',
-  contentRevision: 1,
-  clonedFromRecipeId: null,
-  starRating: null,
-  versionId: VERSION_ID,
-  versionNumber: 1,
-  title: 'Test Recipe',
-  description: 'A test recipe',
-  servings: 4,
-  prepTimeMin: 15,
-  cookTimeMin: 30,
-  imageUrl: null,
-  sourceUrl: 'https://example.com',
-  createdVia: 'manual',
-  createdAt: '2024-01-01T00:00:00.000Z',
-  updatedAt: '2024-01-01T00:00:00.000Z',
-  satietyScore: null,
-  nutritionStatus: null,
-  calories: null,
-  proteinG: null,
-  carbsG: null,
-  fatG: null,
-  nutrition: null,
-  communityRating: null,
-  ingredients: [
-    {
-      id: 'i-1',
-      recipeVersionId: VERSION_ID,
-      sortOrder: 0,
-      name: 'Flour',
-      quantity: 2,
-      unit: 'cups',
-      notes: null,
-      isOptional: false,
-    },
-    {
-      id: 'i-2',
-      recipeVersionId: VERSION_ID,
-      sortOrder: 1,
-      name: 'Salt',
-      quantity: null,
-      unit: null,
-      notes: null,
-      isOptional: false,
-    },
-  ],
-  instructions: [
-    {
-      id: 'ins-1',
-      recipeVersionId: VERSION_ID,
-      stepNumber: 1,
-      body: 'Mix dry ingredients',
-      estimatedDurationMin: null,
-    },
-    {
-      id: 'ins-2',
-      recipeVersionId: VERSION_ID,
-      stepNumber: 2,
-      body: 'Bake at 350°F',
-      estimatedDurationMin: null,
-    },
-  ],
-  tags: [],
-  ...overrides,
-});
-
-export const makeRecipeVersionSummary = (
-  overrides: Partial<RecipeVersionSummary> = {},
-): RecipeVersionSummary => ({
-  id: VERSION_ID,
-  recipeId: 'recipe-uuid-1',
-  versionNumber: 1,
-  title: 'Test Recipe',
-  derivedRole: 'active',
-  cookLogCount: 0,
-  childVersionCount: 0,
-  isEditable: false,
-  isContentLocked: true,
-  createdVia: 'manual',
-  changeSummary: null,
-  createdAt: '2024-01-01T00:00:00.000Z',
-  updatedAt: '2024-01-01T00:00:00.000Z',
-  ...overrides,
-});
+): RecipeDetail =>
+  makeSharedRecipeDetail({
+    ingredients: [
+      ...shared.ingredients,
+      {
+        id: 'i-2',
+        recipeVersionId: VERSION_ID,
+        sortOrder: 1,
+        name: 'Salt',
+        quantity: null,
+        unit: null,
+        notes: null,
+        isOptional: false,
+      },
+    ],
+    instructions: [
+      ...shared.instructions,
+      {
+        id: 'ins-2',
+        recipeVersionId: VERSION_ID,
+        stepNumber: 2,
+        body: 'Bake at 350°F',
+        estimatedDurationMin: null,
+      },
+    ],
+    tags: [],
+    ...overrides,
+  });
 
 export const makeRecipeVersionDetail = (
   overrides: Partial<RecipeVersionDetail> = {},
 ): RecipeVersionDetail => {
   const recipe = makeRecipeDetail();
-  return {
-    ...makeRecipeVersionSummary(),
+  return makeSharedRecipeVersionDetail({
     description: recipe.description,
     servings: recipe.servings,
     prepTimeMin: recipe.prepTimeMin,
     cookTimeMin: recipe.cookTimeMin,
     imageUrl: recipe.imageUrl,
     sourceUrl: recipe.sourceUrl,
-    derivedFromVersionId: null,
     ingredients: recipe.ingredients,
     instructions: recipe.instructions,
     tags: recipe.tags,
     ...overrides,
-  };
+  });
 };
 
 export const makePublicRecipeDiscoveryItem = (
@@ -141,16 +91,5 @@ export const makePublicRecipeDiscoveryItem = (
   proteinG: null,
   carbsG: null,
   fatG: null,
-  ...overrides,
-});
-
-export const makeCookLog = (overrides: Partial<CookLog> = {}): CookLog => ({
-  id: 'cook-log-1',
-  recipeVersionId: VERSION_ID,
-  userId: 'user-uuid-1',
-  cookedAt: '2024-01-15T12:00:00.000Z',
-  authorStarRating: 4,
-  notes: 'Turned out great',
-  createdAt: '2024-01-15T12:00:00.000Z',
   ...overrides,
 });

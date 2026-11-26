@@ -10,7 +10,8 @@
     "./recipeScaling": "./src/recipeScaling.ts",
     "./recipeEngagement": "./src/recipeEngagement.ts",
     "./recipeListDisplay": "./src/recipeListDisplay.ts",
-    "./resizedImageUrl": "./src/resizedImageUrl.ts"
+    "./resizedImageUrl": "./src/resizedImageUrl.ts",
+    "./test/fixtures/recipe": "./src/test/fixtures/recipe.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit --incremental",
