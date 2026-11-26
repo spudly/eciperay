@@ -199,10 +199,15 @@ test.describe('live sharing', () => {
       await expect(
         anon.getByRole('button', {name: 'Sign up free'}),
       ).toBeVisible({timeout: 15_000});
-      // Scoped to the banner: the shared footer also carries a Sign in
-      // link (#619), so an unscoped query is ambiguous.
+      // The header's Sign in link is the FIRST Sign in link on the
+      // page: the shared footer also carries one (#619), so an
+      // unscoped query is ambiguous. The old PublicHeader was a
+      // banner landmark the test scoped to; the DS AppShellPage
+      // top bar that replaced it (#620) renders no banner landmark
+      // (the same chrome the signed-in shell has always used), so
+      // document order is the header scope now.
       await expect(
-        anon.getByRole('banner').getByRole('link', {name: 'Sign in'}),
+        anon.getByRole('link', {name: 'Sign in'}).first(),
       ).toBeVisible();
     } finally {
       await context.close();
