@@ -216,15 +216,18 @@ export const cloneVersionChildren = async (
   targetVersionId: string,
   queryFn: QueryFn,
 ) => {
+  // Ingredient IDs are carried over verbatim so instruction
+  // ingredient_references (#643) keep pointing at the cloned version's
+  // own ingredients instead of dangling at the source version's rows.
   await queryFn(
-    `insert into ingredients (recipe_version_id, sort_order, name, quantity, unit, notes, is_optional)
-     select $2, sort_order, name, quantity, unit, notes, is_optional
+    `insert into ingredients (id, recipe_version_id, sort_order, name, quantity, unit, notes, is_optional)
+     select id, $2, sort_order, name, quantity, unit, notes, is_optional
      from ingredients where recipe_version_id = $1`,
     [sourceVersionId, targetVersionId],
   );
   await queryFn(
-    `insert into instructions (recipe_version_id, step_number, body)
-     select $2, step_number, body
+    `insert into instructions (recipe_version_id, step_number, body, ingredient_references)
+     select $2, step_number, body, ingredient_references
      from instructions where recipe_version_id = $1`,
     [sourceVersionId, targetVersionId],
   );

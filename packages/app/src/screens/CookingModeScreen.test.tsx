@@ -172,6 +172,7 @@ describe('CookingModeScreen', () => {
             stepNumber: 1,
             body: 'Alternate step',
             estimatedDurationMin: null,
+            ingredientReferences: [],
           },
         ],
       }),

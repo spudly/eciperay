@@ -139,6 +139,7 @@ describe('CookingModePage', () => {
                   stepNumber: 1,
                   body: 'Alternate step',
                   estimatedDurationMin: null,
+                  ingredientReferences: [],
                 },
               ],
             }),

@@ -41,6 +41,7 @@ export const makeRecipeDetail = (
         stepNumber: 2,
         body: 'Bake at 350°F',
         estimatedDurationMin: null,
+        ingredientReferences: [],
       },
     ],
     tags: shared.tags.map((tag) => ({...tag, userId: null})),

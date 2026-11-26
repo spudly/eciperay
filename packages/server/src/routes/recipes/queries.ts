@@ -16,11 +16,12 @@ type IngredientData = {
   unit: string | null;
   notes: string | null;
   isOptional: boolean;
+  id: string | null;
 };
 
 const INGREDIENT_SQL = `insert into ingredients
-     (recipe_version_id, sort_order, name, quantity, unit, notes, is_optional)
-   values ($1,$2,$3,$4,$5,$6,$7)`;
+     (id, recipe_version_id, sort_order, name, quantity, unit, notes, is_optional)
+   values (coalesce($8, gen_random_uuid()), $1,$2,$3,$4,$5,$6,$7)`;
 
 const ingredientParams = (
   versionId: string,
@@ -34,6 +35,7 @@ const ingredientParams = (
   data.unit,
   data.notes,
   data.isOptional,
+  data.id,
 ];
 
 const toIngredientData = (
@@ -44,6 +46,7 @@ const toIngredientData = (
   unit: ing.unit ?? null,
   notes: ing.notes ?? null,
   isOptional: ing.isOptional,
+  id: ing.id ?? null,
 });
 
 const insertIngredient = (
@@ -73,23 +76,61 @@ const insertInstruction = (
   versionId: string,
   stepNumber: number,
   body: string,
+  ingredientReferences: string[],
   queryFn: QueryFn,
 ) =>
   queryFn(
-    'insert into instructions (recipe_version_id, step_number, body) values ($1,$2,$3)',
-    [versionId, stepNumber, body],
+    'insert into instructions (recipe_version_id, step_number, body, ingredient_references) values ($1,$2,$3,$4)',
+    [versionId, stepNumber, body, JSON.stringify(ingredientReferences)],
   );
 
-export const insertInstructions = (
+/**
+ * Every referenced ingredient ID must belong to this version (#643):
+ * references are host-generated from the version's own ingredient list,
+ * so a dangling ID is a contract violation, not user input to sanitize.
+ * Callers insert ingredients before instructions in the same
+ * transaction, so the version's ingredient IDs are readable here.
+ */
+const assertReferencesBelongToVersion = async (
   versionId: string,
   instructions: RecipeInput['instructions'],
   queryFn: QueryFn,
-) =>
-  Promise.all(
+) => {
+  const referenced = [
+    ...new Set(instructions.flatMap(ins => ins.ingredientReferences ?? [])),
+  ];
+  if (referenced.length === 0) return;
+  const rows = (await queryFn(
+    'select id from ingredients where recipe_version_id = $1 and id = any($2)',
+    [versionId, referenced],
+  )) as unknown as {id: string}[];
+  const found = new Set(rows.map(row => row.id));
+  const dangling = referenced.filter(id => !found.has(id));
+  if (dangling.length > 0) {
+    throw new Error(
+      `instruction ingredientReferences must belong to the same recipe version; unknown ingredient ids: ${dangling.join(', ')}`,
+    );
+  }
+};
+
+export const insertInstructions = async (
+  versionId: string,
+  instructions: RecipeInput['instructions'],
+  queryFn: QueryFn,
+) => {
+  await assertReferencesBelongToVersion(versionId, instructions, queryFn);
+  await Promise.all(
     instructions.map(ins =>
-      insertInstruction(versionId, ins.stepNumber, ins.body, queryFn),
+      insertInstruction(
+        versionId,
+        ins.stepNumber,
+        ins.body,
+        ins.ingredientReferences ?? [],
+        queryFn,
+      ),
     ),
   );
+};
 
 const linkTag = (versionId: string, tagId: string, queryFn: QueryFn) =>
   queryFn(

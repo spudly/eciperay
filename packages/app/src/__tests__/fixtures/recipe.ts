@@ -45,6 +45,7 @@ export const makeRecipeDetail = (
         stepNumber: 2,
         body: 'Bake at 350°F',
         estimatedDurationMin: null,
+        ingredientReferences: [],
       },
     ],
     tags: [],

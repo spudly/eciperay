@@ -163,7 +163,8 @@ export const GET_RECIPE_DETAIL_SQL = `
         jsonb_build_object(
           'id', ins.id, 'recipeVersionId', ins.recipe_version_id,
           'stepNumber', ins.step_number, 'body', ins.body,
-          'estimatedDurationMin', ins.estimated_duration_min
+          'estimatedDurationMin', ins.estimated_duration_min,
+          'ingredientReferences', ins.ingredient_references
         ) order by ins.step_number
       )
       from instructions ins
@@ -208,7 +209,8 @@ export const GET_PUBLIC_RECIPE_DETAIL_SQL = `
         jsonb_build_object(
           'id', ins.id, 'recipeVersionId', ins.recipe_version_id,
           'stepNumber', ins.step_number, 'body', ins.body,
-          'estimatedDurationMin', ins.estimated_duration_min
+          'estimatedDurationMin', ins.estimated_duration_min,
+          'ingredientReferences', ins.ingredient_references
         ) order by ins.step_number
       )
       from instructions ins

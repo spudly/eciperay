@@ -14,7 +14,7 @@ const normalizeIngredient = (ingredient: IngredientInput) =>
   ].join('|');
 
 const normalizeInstruction = (instruction: InstructionInput) =>
-  `${instruction.stepNumber}:${instruction.body}`;
+  `${instruction.stepNumber}:${instruction.body}:${(instruction.ingredientReferences ?? []).join(',')}`;
 
 const serializeIngredients = (
   ingredients: IngredientInput[] | RecipeVersionDetail['ingredients'],
