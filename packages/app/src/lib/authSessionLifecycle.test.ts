@@ -50,6 +50,14 @@ const {authSessionStorage, onAuthenticated, onSignedOut} =
   require('./authSessionLifecycle') as typeof import('./authSessionLifecycle');
 const {supabase} = require('./supabase') as typeof import('./supabase');
 
+// The app jest config sets resetMocks: true, which wipes mock call history
+// before every test — and the factory calls above happen once, at module
+// load. Capture them now, at module scope, for the binding assertions.
+const clearStoredSessionCall = mockCreateClearStoredSession.mock.calls[0]?.[0];
+const lifecycleBindings = mockCreateAuthSessionLifecycle.mock.calls[0]?.[0] as
+  | {identify: (s: Session) => void}
+  | undefined;
+
 const session = {
   access_token: 'token-a',
   user: {id: 'user-1', email: 'test@example.com'},
@@ -66,10 +74,8 @@ describe('authSessionLifecycle app binding', () => {
   });
 
   test('binds the app supabase, api, analytics, and clear to the factory', () => {
-    expect(mockCreateClearStoredSession).toHaveBeenCalledWith(
-      authSessionStorage,
-    );
-    expect(mockCreateAuthSessionLifecycle).toHaveBeenCalledWith(
+    expect(clearStoredSessionCall).toBe(authSessionStorage);
+    expect(lifecycleBindings).toEqual(
       expect.objectContaining({
         supabase,
         api,
@@ -80,11 +86,7 @@ describe('authSessionLifecycle app binding', () => {
   });
 
   test('the identify binding identifies through the app analytics', () => {
-    const bindings = mockCreateAuthSessionLifecycle.mock.calls[0]?.[0] as {
-      identify: (s: Session) => void;
-    };
-
-    bindings.identify(session);
+    lifecycleBindings?.identify(session);
 
     expect(mockIdentifyAnalyticsUser).toHaveBeenCalledWith(analytics, session);
   });
