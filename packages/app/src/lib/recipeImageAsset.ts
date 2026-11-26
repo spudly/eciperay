@@ -89,13 +89,3 @@ export const recipeImageFromAsset = (asset: Asset): PendingRecipeImage => {
   validateRecipeImageContent(contentType, byteLength);
   return {base64, contentType};
 };
-
-export const stripImageCacheKey = (url: string): string => {
-  const [withoutQuery] = url.split('?');
-  return withoutQuery;
-};
-
-export const withImageCacheKey = (url: string, cacheKey: number): string => {
-  const base = stripImageCacheKey(url);
-  return `${base}?v=${cacheKey}`;
-};

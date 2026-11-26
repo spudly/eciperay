@@ -1,11 +1,10 @@
+import {stripImageCacheKey, withImageCacheKey} from '@eciperay/client';
 import ReactNativeBlobUtil from 'react-native-blob-util';
 
 import {
   base64ImagePreviewUri,
   deleteImagePreviewFile,
   recipeImageFromAsset,
-  stripImageCacheKey,
-  withImageCacheKey,
   writeBase64ImagePreview,
 } from './recipeImageAsset';
 
