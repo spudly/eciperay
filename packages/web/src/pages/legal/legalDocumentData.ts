@@ -80,7 +80,7 @@ export const buildLegalOperatorIntroSpan = (i18n: I18n): LegalDocumentSpan =>
  * matching what the legal pages render now.
  */
 export const sharedFooter: BigFooterData = {
-  brand: {label: 'Eciperay', href: '/'},
+  brand: {label: 'Eciperay', href: '/', mark: 'eciperay'},
   columns: [
     {
       title: 'Explore',
@@ -115,7 +115,7 @@ export const sharedFooter: BigFooterData = {
 
 /** The shared footer with its labels resolved through the Lingui catalogs. */
 export const buildSharedFooter = (i18n: I18n): BigFooterData => ({
-  brand: {label: 'Eciperay', href: '/'},
+  brand: {label: 'Eciperay', href: '/', mark: 'eciperay'},
   columns: [
     {
       title: i18n._({id: 'legal.footerExploreColumnTitle', message: 'Explore'}),

@@ -113,7 +113,7 @@ export const AppShell = ({children}: AppShellProps) => {
           carry their own public, indexable head. */}
       {isSignedIn ? <AuthenticatedPageHead /> : null}
       <AppShellPage
-        brand={{label: 'Eciperay', href: '/'}}
+        brand={{label: 'Eciperay', href: '/', mark: 'eciperay'}}
         navItems={visibleNavItems}
         // A failed /auth/me is not a non-admin verdict (#650 review):
         // the failure surfaces as a DS-rendered header action (data +
