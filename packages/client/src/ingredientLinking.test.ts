@@ -41,8 +41,10 @@ const instruction = (
 
 describe('formIngredientLinkId', () => {
   test('prefers the persisted id, falls back to the row key', () => {
-    expect(formIngredientLinkId(ingredients[0])).toBe('i-flour');
-    expect(formIngredientLinkId(ingredients[1])).toBe('k-sugar');
+    expect(
+      formIngredientLinkId(ingredient({key: 'k-flour', id: 'i-flour'})),
+    ).toBe('i-flour');
+    expect(formIngredientLinkId(ingredient({key: 'k-sugar'}))).toBe('k-sugar');
   });
 });
 
@@ -90,8 +92,10 @@ describe('withInstructionReferences / withoutIngredientReference', () => {
 
   test('sets references on the targeted row only', () => {
     const next = withInstructionReferences(instructions, 's-2', ['i-salt']);
-    expect(next[0].ingredientReferences).toEqual(['i-flour']);
-    expect(next[1].ingredientReferences).toEqual(['i-salt']);
+    expect(next.map(row => row.ingredientReferences)).toEqual([
+      ['i-flour'],
+      ['i-salt'],
+    ]);
   });
 
   test('removing an ingredient strips its id from every step', () => {
@@ -123,8 +127,10 @@ describe('applyIngredientLinkProposal', () => {
       ],
       unreferencedIngredientIds: ['k-sugar'],
     });
-    expect(next[0].ingredientReferences).toEqual(['i-flour', 'i-salt']);
-    // Steps the proposal omits keep their current references.
-    expect(next[1].ingredientReferences).toEqual(['i-salt']);
+    expect(next.map(row => row.ingredientReferences)).toEqual([
+      ['i-flour', 'i-salt'],
+      // Steps the proposal omits keep their current references.
+      ['i-salt'],
+    ]);
   });
 });
