@@ -39,6 +39,23 @@ export const FeedbackPreferenceContextProvider = ({
   );
 };
 
+// Web hosts that mount the provider without an injected storage keep the
+// pre-#678 behavior: persist to localStorage. Platforms without a global
+// localStorage (the native app) must inject their own storage — there the
+// fallback is undefined and setEnabled only updates in-memory state.
+const localStorageFallback: FeedbackShortcutStorage | undefined =
+  typeof localStorage === 'undefined'
+    ? undefined
+    : {
+        getItem: (key: string) => localStorage.getItem(key),
+        setItem: (key: string, value: string) => {
+          localStorage.setItem(key, value);
+        },
+        removeItem: (key: string) => {
+          localStorage.removeItem(key);
+        },
+      };
+
 export const FeedbackPreferenceProvider = ({
   children,
   storage,
@@ -48,14 +65,15 @@ export const FeedbackPreferenceProvider = ({
   storage?: FeedbackShortcutStorage;
   initialEnabled?: boolean;
 }) => {
+  const effectiveStorage = storage ?? localStorageFallback;
   const [enabled, setEnabledState] = useState(initialEnabled ?? false);
 
   useEffect(() => {
-    if (initialEnabled !== undefined || !storage) {
+    if (initialEnabled !== undefined || !effectiveStorage) {
       return;
     }
     let cancelled = false;
-    void readFeedbackShortcutEnabled(storage).then(value => {
+    void readFeedbackShortcutEnabled(effectiveStorage).then(value => {
       if (!cancelled) {
         setEnabledState(value);
       }
@@ -63,11 +81,11 @@ export const FeedbackPreferenceProvider = ({
     return () => {
       cancelled = true;
     };
-  }, [initialEnabled, storage]);
+  }, [initialEnabled, effectiveStorage]);
 
   const setEnabled = (nextEnabled: boolean) => {
-    if (storage) {
-      void writeFeedbackShortcutEnabled(storage, nextEnabled);
+    if (effectiveStorage) {
+      void writeFeedbackShortcutEnabled(effectiveStorage, nextEnabled);
     }
     setEnabledState(nextEnabled);
   };
