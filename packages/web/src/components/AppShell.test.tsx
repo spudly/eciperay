@@ -36,7 +36,7 @@ describe('AppShell', () => {
     // the anchor; the BigFooter renders its mark beside its anchor,
     // inside the footer landmark. The mark is decorative — the
     // links' accessible name stays 'Eciperay', as asserted above.
-    expect(brandLinks[0].querySelector('svg')).not.toBeNull();
+    expect(brandLinks[0]?.querySelector('svg') ?? null).not.toBeNull();
     expect(
       screen.getByRole('contentinfo').querySelector('svg'),
     ).not.toBeNull();
