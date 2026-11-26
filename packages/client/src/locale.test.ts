@@ -1,4 +1,4 @@
-import {DEFAULT_LOCALE, resolveLocale} from './locale';
+import {DEFAULT_LOCALE, resolveLocale} from './locale.js';
 
 describe('resolveLocale', () => {
   it('defaults to en-US when nothing matches', () => {

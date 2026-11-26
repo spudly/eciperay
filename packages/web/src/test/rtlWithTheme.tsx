@@ -14,8 +14,8 @@ import {VoiceProvider} from '@spudly/ui';
 import type {ReactElement, ReactNode} from 'react';
 import {TamaguiProvider} from 'tamagui';
 
-import {eciperayVoice} from '../i18n/voice.js';
-import {webTamaguiConfig} from '../lib/tamaguiConfig.js';
+import {eciperayVoice} from '@eciperay/client';
+import {eciperayTamaguiConfig} from '@eciperay/client';
 
 // Use Node resolution (bypasses the Vite alias) to get the real package.
 /* eslint-disable import-x/no-commonjs -- intentional: bypass Vite alias to reach the real package */
@@ -28,7 +28,7 @@ function ThemeWrapper({children}: {children: ReactNode}) {
   return (
     <VoiceProvider voice={eciperayVoice}>
       <TamaguiProvider
-        config={webTamaguiConfig}
+        config={eciperayTamaguiConfig}
         defaultTheme="light"
       >
         {children}

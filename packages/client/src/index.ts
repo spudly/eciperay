@@ -527,3 +527,9 @@ export {
   VERSION_ID,
 } from './dev/showcaseFixtures.js';
 export {type ShowcaseFrameProps} from './dev/showcaseComponent.js';
+export {SUPPORTED_LOCALES, DEFAULT_LOCALE, resolveLocale, type SupportedLocale} from './locale.js';
+export {eciperayVoice} from './voice.js';
+export {createI18n, recipeCountLabel, type I18nCatalogs} from './i18n.js';
+export {mergeVersionIntoRecipe} from './mergeVersionIntoRecipe.js';
+export {TAG_COLOR_OPTIONS, TAG_COLOR_NAME_OPTIONS} from './tagColors.js';
+export {eciperayTamaguiConfig} from './tamaguiConfig.js';

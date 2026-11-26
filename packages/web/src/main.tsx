@@ -13,12 +13,11 @@ import {RouterProvider} from 'react-router-dom';
 import {TamaguiProvider} from 'tamagui';
 
 import {createI18n} from './i18n/i18n.js';
-import {resolveLocale} from './i18n/locale.js';
-import {eciperayVoice} from './i18n/voice.js';
+import {eciperayVoice, resolveLocale} from '@eciperay/client';
 import {onAuthenticated, onSignedOut} from './lib/authSessionLifecycle.js';
 import {analytics} from './lib/analytics.js';
 import {feedbackShortcutStorage} from './lib/feedbackShortcutStorage.js';
-import {webTamaguiConfig} from './lib/tamaguiConfig.js';
+import {eciperayTamaguiConfig} from '@eciperay/client';
 import {router} from './routes/router.js';
 import {supabase} from './lib/supabase.js';
 
@@ -37,7 +36,7 @@ if (root) {
       <I18nProvider i18n={i18n}>
         <VoiceProvider voice={eciperayVoice}>
           <TamaguiProvider
-            config={webTamaguiConfig}
+            config={eciperayTamaguiConfig}
             defaultTheme="light"
           >
             <QueryClientProvider client={queryClient}>

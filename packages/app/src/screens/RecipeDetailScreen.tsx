@@ -13,7 +13,7 @@ import {Alert} from 'react-native';
 import {RecipeDetailView} from '../hosts/recipe/RecipeDetailView';
 import {ScreenLoadingGate} from '../components/ScreenLoadingGate';
 import {eciperay} from '../lib/api';
-import {mergeVersionIntoRecipe} from '../lib/mergeVersionIntoRecipe';
+import {mergeVersionIntoRecipe} from '@eciperay/client';
 import {recipeViewHistoryStorage} from '../lib/recipeViewHistoryStorage';
 import type {RecipesStackParamList} from '../navigation/types';
 
