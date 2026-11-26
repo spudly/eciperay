@@ -123,7 +123,6 @@ export type {
   InlineLoadingIndicatorProps,
   ScreenLoadingGateProps,
 } from './ui/loadingComponents.js';
-export type {LegalLinksProps} from './ui/legalLinks.js';
 export type {
   ForgotPasswordViewProps,
   ResetPasswordViewProps,
@@ -155,7 +154,6 @@ export type {
   CheckboxSelectListProps,
   TabBarProps,
   TabBarTab,
-  ThumbnailListCardProps,
   ToggleChipGroupProps,
   ToggleChipOption,
 } from './ui/selectionComponents.js';
@@ -170,8 +168,6 @@ export type {
   RadioOption,
   RadioOptionGroupProps,
   SectionCardProps,
-  SelectFieldOption,
-  SelectFieldProps,
   StarRatingInputProps,
   StatBadgeProps,
   StatBadgeRowProps,

@@ -11,12 +11,8 @@ export type PlatformOnlyEntry = {
 export const MIRROR_PAIRS = [
   'Icon.tsx',
   'InlineLoadingIndicator.tsx',
-  'LegalLinks.tsx',
-  'RecipeListCard.tsx',
   'ScreenLoadingGate.tsx',
-  'SharedRecipeListCard.tsx',
   'BookLoadingSpinner.tsx',
-  'recipe/RecipeInputPreview.tsx',
 ] as const;
 
 export type MirrorPairPath = (typeof MIRROR_PAIRS)[number];
@@ -45,12 +41,6 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
     platform: 'app',
     reason:
       'App cook-log form, created in the @spudly/ui 6.x migration as the host replacement for the design system RatingForm (an internal view in 6.x); web has its own implementation at cooking/CookLogForm.tsx.',
-  },
-  {
-    path: 'ThumbnailListCard.tsx',
-    platform: 'app',
-    reason:
-      'App list-card component, relocated out of the retired ui/ wrapper library in the @spudly/ui 6.x migration; web composes its card rows inline in RecipeListCard instead.',
   },
   {
     path: 'recipe/SortableIngredientList.tsx',
@@ -217,12 +207,6 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
     platform: 'web',
     reason:
       'Web hint remains via the comments and ratings sections (public recipe page; the signed-in detail page renders stale hints from the design system page since B7 C7); the app copy was deleted with RecipeCommentItem — its stale marker is the design system CommentItem marker now. Removed in B6 (design-system#129). Web retirement is B7 (C11).',
-  },
-  {
-    path: 'SelectField.tsx',
-    platform: 'web',
-    reason:
-      'Web select field used by production pickers and filter bars, relocated out of the retired ui/ wrapper library in the @spudly/ui 6.x migration; the app copy was removed earlier (design-system#129).',
   },
   {
     path: 'ProfileFeedbackPreference.tsx',
