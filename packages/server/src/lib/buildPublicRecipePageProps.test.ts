@@ -16,7 +16,9 @@ describe('buildPublicRecipePageProps', () => {
       imageUrl: null,
       title: 'Test Recipe',
       description: 'A test recipe',
-      status: 'idea',
+      // DS11 SSR placeholder — recipe status was removed in #610; see
+      // buildPublicRecipePageProps.ts (goes away with #649).
+      status: '',
       servingsLabel: '4',
       prepTimeLabel: '15m',
       cookTimeLabel: '30m',

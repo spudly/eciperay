@@ -2,7 +2,6 @@ import {queryKeys} from './queryKeys.js';
 
 const emptyFilters = {
   search: '',
-  status: '',
   ingredient: '',
   minCalories: null,
   maxCalories: null,
@@ -18,14 +17,7 @@ describe('queryKeys', () => {
   test('returns stable key tuples', () => {
     expect(queryKeys.recipeLists()).toEqual(['recipes']);
     expect(queryKeys.recipes()).toEqual(['recipes', emptyFilters]);
-    expect(queryKeys.recipes('pasta')).toEqual([
-      'recipes',
-      {search: 'pasta', status: ''},
-    ]);
-    expect(queryKeys.recipes('pasta', 'perfected')).toEqual([
-      'recipes',
-      {search: 'pasta', status: 'perfected'},
-    ]);
+    expect(queryKeys.recipes('pasta')).toEqual(['recipes', {search: 'pasta'}]);
     expect(queryKeys.recipes({search: 'pasta', sort: 'satiety'})).toEqual([
       'recipes',
       {...emptyFilters, search: 'pasta', sort: 'satiety'},

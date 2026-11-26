@@ -66,7 +66,6 @@ const toListParams = (
     offset: pageParam,
   };
   assignDefined(params, {
-    status: filters.status,
     minCalories: filters.minCalories,
     maxCalories: filters.maxCalories,
     minProteinG: filters.minProteinG,

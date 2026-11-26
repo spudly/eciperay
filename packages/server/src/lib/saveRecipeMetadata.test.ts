@@ -75,10 +75,6 @@ describe('saveRecipeMetadata', () => {
     );
 
     expect(detail.title).toBe('Updated');
-    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('status'), [
-      'recipe-uuid-1',
-      'idea',
-    ]);
   });
 
   // Regression for #394 (b): a metadata-only edit changes what meal

@@ -56,7 +56,12 @@ export const buildPublicRecipePageProps = (
       imageUrl: recipe.imageUrl,
       title: recipe.title,
       description: recipe.description,
-      status: recipe.status,
+      // Recipe status was removed in #610, but the server is pinned to
+      // @spudly/ui 11, whose PublicRecipePageOverviewProps still requires
+      // a status string (unknown values fall back to its "idea" badge).
+      // The hydrated DS14 page renders no status badge; this prop goes
+      // away when the SSR public page migrates in #649.
+      status: '',
       servingsLabel: String(recipe.servings),
       ...(recipe.prepTimeMin ? {prepTimeLabel: `${recipe.prepTimeMin}m`} : {}),
       ...(recipe.cookTimeMin ? {cookTimeLabel: `${recipe.cookTimeMin}m`} : {}),

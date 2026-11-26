@@ -615,7 +615,6 @@ type RecipeDetailForUpdate = {
   cookTimeMin: number | null;
   imageUrl: string | null;
   sourceUrl: string | null;
-  status?: string;
   ingredients: (RecipeIngredientInput & Record<string, unknown>)[];
   instructions: (RecipeInstructionInput & Record<string, unknown>)[];
   tags: {id: string}[];
@@ -699,7 +698,6 @@ const recipeSnapshot = (recipe: RecipeDetailForUpdate): string =>
     cookTimeMin: recipe.cookTimeMin,
     imageUrl: recipe.imageUrl,
     sourceUrl: recipe.sourceUrl,
-    status: recipe.status ?? null,
     ingredients: serializeIngredients(recipe.ingredients),
     instructions: serializeInstructions(recipe.instructions),
     tagIds: recipe.tags.map(tag => tag.id),
@@ -712,8 +710,8 @@ export const hasRecipeUpdateFields = (patch: RecipeUpdatePatch): boolean =>
 /**
  * Merge a partial update over the stored recipe detail, producing the full
  * payload the REST `PUT /recipes/:id` endpoint expects. Fields the patch does
- * not provide are carried over from the stored recipe (including imageUrl
- * and status, which `update_recipe` cannot change), so a partial
+ * not provide are carried over from the stored recipe (including imageUrl,
+ * which `update_recipe` cannot change), so a partial
  * update never clears data it did not mention.
  */
 export const buildRecipeUpdatePayload = (
@@ -737,7 +735,6 @@ export const buildRecipeUpdatePayload = (
     imageUrl: current.imageUrl,
     sourceUrl:
       patch.sourceUrl !== undefined ? patch.sourceUrl : current.sourceUrl,
-    ...(current.status !== undefined ? {status: current.status} : {}),
     ingredients: ingredientInputs(patch.ingredients ?? current.ingredients),
     instructions: instructionInputs(patch.instructions ?? current.instructions),
     tagIds: patch.tagIds ?? current.tags.map(tag => tag.id),

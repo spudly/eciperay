@@ -10,15 +10,14 @@ import {lazyTestApp} from '../../test/lazyTestApp.js';
 const mockQuery = createMockQuery();
 const getApp = lazyTestApp({query: mockQuery});
 
-const mockStartImportEditsFlow = (status: 'idea' | 'evolving' = 'idea') => {
+const mockStartImportEditsFlow = () => {
   mockQuery
-    .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow({status})]))
+    .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
     .mockResolvedValueOnce(makeQueryResult([{max: 1}]))
     .mockResolvedValueOnce(makeQueryResult([{id: 'version-uuid-2'}]))
     .mockResolvedValueOnce(makeQueryResult([]))
     .mockResolvedValueOnce(makeQueryResult([]))
     .mockResolvedValueOnce(makeQueryResult([]))
-    .mockResolvedValueOnce(makeQueryResult([{id: 'recipe-uuid-1'}]))
     .mockResolvedValue(
       makeQueryResult([
         makeVersionDetailRow({
@@ -62,24 +61,12 @@ describe('POST /recipes/:id/import/start-edits', () => {
     expect(res.status).toBe(404);
   });
 
-  test('returns 409 when recipe is perfected', async () => {
-    nockSupabaseGetUser('user-uuid-1');
-    mockQuery.mockResolvedValueOnce(
-      makeQueryResult([makeRecipeDetailRow({status: 'perfected'})]),
-    );
-
-    const res = await request(getApp())
-      .post('/api/recipes/recipe-uuid-1/import/start-edits')
-      .set('Authorization', 'Bearer valid-token');
-
-    expect(res.status).toBe(409);
-  });
 
   test('returns 500 when version insert fails', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery
       .mockResolvedValueOnce(
-        makeQueryResult([makeRecipeDetailRow({status: 'idea'})]),
+        makeQueryResult([makeRecipeDetailRow()]),
       )
       .mockResolvedValueOnce(makeQueryResult([{max: 1}]))
       .mockResolvedValueOnce(makeQueryResult([]));
@@ -95,14 +82,13 @@ describe('POST /recipes/:id/import/start-edits', () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery
       .mockResolvedValueOnce(
-        makeQueryResult([makeRecipeDetailRow({status: 'idea'})]),
+        makeQueryResult([makeRecipeDetailRow()]),
       )
       .mockResolvedValueOnce(makeQueryResult([{max: 1}]))
       .mockResolvedValueOnce(makeQueryResult([{id: 'version-uuid-2'}]))
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([]))
-      .mockResolvedValueOnce(makeQueryResult([{id: 'recipe-uuid-1'}]))
       .mockResolvedValueOnce(makeQueryResult([]));
 
     const res = await request(getApp())

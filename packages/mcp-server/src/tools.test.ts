@@ -17,7 +17,6 @@ const storedRecipe = {
   cookTimeMin: null,
   imageUrl: null,
   sourceUrl: null,
-  status: 'evolving',
   ingredients: [
     {
       sortOrder: 0,

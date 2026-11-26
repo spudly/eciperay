@@ -36,33 +36,30 @@ describe('POST /recipes/:id/import/accept', () => {
     mockScheduleAutoGenerateRecipeImage.mockReset();
   });
 
-  test('accepts import and moves idea to evolving', async () => {
+  test('accepts import', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery
       .mockResolvedValueOnce(
-        makeQueryResult([makeRecipeDetailRow({status: 'idea'})]),
+        makeQueryResult([makeRecipeDetailRow()]),
       )
-      .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(
-        makeQueryResult([makeRecipeDetailRow({status: 'evolving'})]),
+        makeQueryResult([makeRecipeDetailRow()]),
       );
     const res = await request(getApp())
       .post('/api/recipes/recipe-uuid-1/import/accept')
       .set('Authorization', 'Bearer valid-token')
       .send();
     expect(res.status).toBe(200);
-    expect(res.body.status).toBe('evolving');
   });
 
-  test('schedules auto-image generation from the refreshed detail after the lineage flip (#535)', async () => {
+  test('schedules auto-image generation from the refreshed detail (#535)', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery
       .mockResolvedValueOnce(
-        makeQueryResult([makeRecipeDetailRow({status: 'idea'})]),
+        makeQueryResult([makeRecipeDetailRow()]),
       )
-      .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(
-        makeQueryResult([makeRecipeDetailRow({status: 'evolving'})]),
+        makeQueryResult([makeRecipeDetailRow()]),
       );
     const res = await request(getApp())
       .post('/api/recipes/recipe-uuid-1/import/accept')
@@ -93,23 +90,12 @@ describe('POST /recipes/:id/import/accept', () => {
     expect(res.status).toBe(404);
   });
 
-  test('returns 409 when recipe lifecycle is locked', async () => {
-    nockSupabaseGetUser('user-uuid-1');
-    mockQuery.mockResolvedValueOnce(
-      makeQueryResult([makeRecipeDetailRow({status: 'perfected'})]),
-    );
-    const res = await request(getApp())
-      .post('/api/recipes/recipe-uuid-1/import/accept')
-      .set('Authorization', 'Bearer valid-token')
-      .send();
-    expect(res.status).toBe(409);
-  });
 
   test('returns 404 when refreshed recipe is missing', async () => {
     nockSupabaseGetUser('user-uuid-1');
     mockQuery
       .mockResolvedValueOnce(
-        makeQueryResult([makeRecipeDetailRow({status: 'evolving'})]),
+        makeQueryResult([makeRecipeDetailRow()]),
       )
       .mockResolvedValueOnce(makeQueryResult([]));
     const res = await request(getApp())

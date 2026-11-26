@@ -13,7 +13,6 @@ export const makeRecipeDetail = (
 ): RecipeDetail => ({
   id: 'recipe-uuid-1',
   userId: 'user-uuid-1',
-  status: 'evolving',
   visibility: 'private',
   slug: 'test-recipe',
   contentRevision: 1,
@@ -106,7 +105,6 @@ export const makeRecipeVersionDetail = (
   const recipe = makeRecipeDetail();
   return {
     ...makeRecipeVersionSummary(),
-    status: 'evolving',
     description: recipe.description,
     servings: recipe.servings,
     prepTimeMin: recipe.prepTimeMin,

@@ -78,8 +78,30 @@ export const openRecipeFromList = async (
   // field is named 'Search recipes' (its label, #542) while the page
   // field's name is its placeholder text.
   await page.getByRole('textbox', {name: 'Search recipes…'}).fill(title);
-  await page.getByText(title).click();
-  await expect(page.getByRole('heading', {name: title})).toBeVisible();
+  // Click the OWN-list entry (href /recipes/<id>/<slug>), not just any
+  // text match: since #610 removed recipe status, a public-by-default
+  // recipe also appears in the page's Discover section, whose entry
+  // links to the public guest page (/recipe/<id>/<slug>) — which has
+  // no owner actions such as Delete. The old status='idea' exclusion
+  // kept new recipes out of Discover, so a bare text click used to be
+  // unambiguous.
+  // Two anchors carry that href (a title link and the whole-card link),
+  // and a click on either can be swallowed by the list page's overlays
+  // (the post-cook "How did it go?" prompt renders over the list), so
+  // navigate by the entry's own href instead of clicking: the list
+  // presence + href are what this flow needs from the list page, and the
+  // detail-page assertions below still run against the real page.
+  const ownEntry = page
+    .locator('a[href^="/recipes/"]', {hasText: title})
+    .first();
+  const href = await ownEntry.getAttribute('href');
+  if (!href) {
+    throw new Error(`openRecipeFromList: no own-list entry for "${title}"`);
+  }
+  await page.goto(href);
+  await expect(page.getByRole('heading', {name: title})).toBeVisible({
+    timeout: 15_000,
+  });
 };
 
 /**

@@ -1,8 +1,6 @@
 import type {RecipeListSort, RecipeListSortDir} from '@eciperay/types';
 import {useState} from 'react';
 
-import {RECIPE_STATUS_FILTER_ALL} from './recipeStatusCopy.js';
-import type {RecipeStatusFilterValue} from './ui/recipeListFilterControls.js';
 
 /**
  * The raw, serializable values of the recipe-list filter fields — the shape
@@ -12,7 +10,6 @@ import type {RecipeStatusFilterValue} from './ui/recipeListFilterControls.js';
  */
 export type RecipeListFilterValues = {
   search: string;
-  statusFilter: RecipeStatusFilterValue;
   ingredient: string;
   minCalories: string;
   maxCalories: string;
@@ -21,14 +18,6 @@ export type RecipeListFilterValues = {
   sort: RecipeListSort;
   sortDir: RecipeListSortDir;
 };
-
-const STATUS_FILTER_VALUES: readonly RecipeStatusFilterValue[] = [
-  RECIPE_STATUS_FILTER_ALL,
-  'idea',
-  'evolving',
-  'perfected',
-  'abandoned',
-];
 
 const SORT_VALUES: readonly RecipeListSort[] = [
   'newest',
@@ -73,14 +62,6 @@ export const parseRecipeListFilterValues = (
     }
   }
   if (
-    typeof raw['statusFilter'] === 'string' &&
-    STATUS_FILTER_VALUES.includes(
-      raw['statusFilter'] as RecipeStatusFilterValue,
-    )
-  ) {
-    values.statusFilter = raw['statusFilter'] as RecipeStatusFilterValue;
-  }
-  if (
     typeof raw['sort'] === 'string' &&
     SORT_VALUES.includes(raw['sort'] as RecipeListSort)
   ) {
@@ -98,8 +79,6 @@ export const parseRecipeListFilterValues = (
 export type FilterFieldState = {
   search: string;
   setSearch: (value: string) => void;
-  statusFilter: RecipeStatusFilterValue;
-  setStatusFilter: (value: RecipeStatusFilterValue) => void;
   ingredient: string;
   setIngredient: (value: string) => void;
   minCalories: string;
@@ -123,9 +102,6 @@ export const useFilterFieldState = (
   initialValues?: Partial<RecipeListFilterValues>,
 ): FilterFieldState => {
   const [search, setSearch] = useState(initialValues?.search ?? '');
-  const [statusFilter, setStatusFilter] = useState<RecipeStatusFilterValue>(
-    initialValues?.statusFilter ?? RECIPE_STATUS_FILTER_ALL,
-  );
   const [ingredient, setIngredient] = useState(initialValues?.ingredient ?? '');
   const [minCalories, setMinCalories] = useState(
     initialValues?.minCalories ?? '',
@@ -145,8 +121,6 @@ export const useFilterFieldState = (
   return {
     search,
     setSearch,
-    statusFilter,
-    setStatusFilter,
     ingredient,
     setIngredient,
     minCalories,

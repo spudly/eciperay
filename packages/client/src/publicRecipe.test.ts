@@ -6,7 +6,6 @@ describe('publicRecipeToRecipeDetail', () => {
   test('adds empty userId for components that expect RecipeDetail', () => {
     const publicRecipe: PublicRecipeDetail = {
       id: 'recipe-1',
-      status: 'idea',
       visibility: 'public',
       slug: 'pasta',
       contentRevision: 1,

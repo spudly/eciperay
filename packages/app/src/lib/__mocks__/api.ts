@@ -6,7 +6,6 @@ export const api = {
     get: jest.fn(),
     create: jest.fn(),
     put: jest.fn(),
-    patchStatus: jest.fn(),
     delete: jest.fn(),
     clone: jest.fn(),
     acceptImport: jest.fn(),

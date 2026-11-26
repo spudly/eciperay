@@ -238,11 +238,6 @@ msgid "mealDetail.nutritionProtein"
 msgstr "{value}g protein"
 
 #. js-lingui-explicit-id
-#: src/pages/RecipeFormHost.tsx:290
-msgid "recipeStatus.abandoned"
-msgstr "Abandoned"
-
-#. js-lingui-explicit-id
 #: src/pages/MealPlanDetailPage.tsx:35
 msgid "mealPlanDetail.goalBandAbove"
 msgstr "Above goal"
@@ -523,16 +518,6 @@ msgstr "Copy share link"
 #: src/pages/RecipeDetailHost.tsx:463
 msgid "recipeDetail.couldNotActivateVersion"
 msgstr "Could not activate version"
-
-#. js-lingui-explicit-id
-#: src/pages/RecipeDetailHost.tsx:444
-msgid "recipeDetail.couldNotChangeStatus"
-msgstr "Could not change status"
-
-#. js-lingui-explicit-id
-#: src/pages/RecipeDetailHost.tsx:510
-msgid "recipeDetail.couldNotCreateDraft"
-msgstr "Could not create a draft: {error}"
 
 #. js-lingui-explicit-id
 #: src/pages/RecipeDetailHost.tsx:476
@@ -827,11 +812,6 @@ msgid "forgotPassword.confirmationTitle"
 msgstr "Email sent"
 
 #. js-lingui-explicit-id
-#: src/pages/RecipeFormHost.tsx:288
-msgid "recipeStatus.evolving"
-msgstr "Evolving"
-
-#. js-lingui-explicit-id
 #: src/components/profile/subscriptionData.ts:67
 msgid "profile.statusExpired"
 msgstr "Expired"
@@ -940,11 +920,6 @@ msgstr "How we use your information"
 #: src/pages/useRecipeSharingProps.tsx:184
 msgid "recipeSharing.consentDescriptionStart"
 msgstr "I understand this recipe may be viewed without signing in and I agree to the"
-
-#. js-lingui-explicit-id
-#: src/pages/RecipeFormHost.tsx:287
-msgid "recipeStatus.idea"
-msgstr "Idea"
 
 #. js-lingui-explicit-id
 #: src/pages/RecipeFormHost.tsx:1396
@@ -1200,11 +1175,6 @@ msgstr "Paste rich text from Word or the web"
 #: src/components/profile/subscriptionData.ts:60
 msgid "profile.statusPastDue"
 msgstr "Payment past due — update your payment method to keep your plan."
-
-#. js-lingui-explicit-id
-#: src/pages/RecipeFormHost.tsx:289
-msgid "recipeStatus.perfected"
-msgstr "Perfected"
 
 #. js-lingui-explicit-id
 #: src/pages/useRecipeSharingProps.tsx:276

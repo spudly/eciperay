@@ -6,11 +6,9 @@ import {Linking} from 'react-native';
 import {useQuery} from '@tanstack/react-query';
 import {
   DISCOVER_ERROR_MESSAGE,
-  RECIPE_STATUS_FILTER_ALL,
   WEB_APP_BASE_URL,
   demoRecipeListFilters,
   queryKeys,
-  type RecipeStatusFilterValue,
 } from '@eciperay/client';
 
 import {
@@ -42,13 +40,9 @@ const mockCreateCookLog = api.cookLogs.create as jest.Mock;
  * design-system source scan pins the style half.
  */
 describe('RecipesListView element presence (#162)', () => {
-  const controls = {
-    ...demoRecipeListFilters(),
-    statusFilter: RECIPE_STATUS_FILTER_ALL as RecipeStatusFilterValue,
-    onStatusFilterChange: () => undefined,
-  };
+  const controls = demoRecipeListFilters();
 
-  test('renders the search input, all three select triggers, and the first recipe card', async () => {
+  test('renders the search input, the sort select triggers, and the first recipe card', async () => {
     const {findByText, getByLabelText, getByPlaceholderText, getByText} =
       await renderWithProviders(
         <RecipesListView
@@ -66,11 +60,6 @@ describe('RecipesListView element presence (#162)', () => {
     // the Filters chooser, so add each filter to render its select —
     // the presence contract below is unchanged.
     expect(getByText('Filters')).toBeTruthy();
-    await fireEvent.press(getByText('Filters'));
-    await fireEvent.press(getByLabelText('Add Status filter'));
-    // The three select triggers: label + currently selected value.
-    expect(await findByText('Status')).toBeTruthy();
-    expect(await findByText('All statuses')).toBeTruthy();
     await fireEvent.press(getByText('Filters'));
     await fireEvent.press(getByLabelText('Add Sort filter'));
     expect(await findByText('Sort by')).toBeTruthy();
@@ -98,11 +87,7 @@ describe('RecipesListView element presence (#162)', () => {
  * list content padding (spacing 4 / 8).
  */
 describe('RecipesListView list scrollability (#188)', () => {
-  const controls = {
-    ...demoRecipeListFilters(),
-    statusFilter: RECIPE_STATUS_FILTER_ALL as RecipeStatusFilterValue,
-    onStatusFilterChange: () => undefined,
-  };
+  const controls = demoRecipeListFilters();
 
   test('bounds the FlatList and renders the filters as its scrollable header', async () => {
     const {container} = await renderWithProviders(
@@ -185,11 +170,7 @@ describe('RecipesListView list scrollability (#188)', () => {
  * form.
  */
 describe('RecipesListView cook-log accessory (#49 stage 2)', () => {
-  const controls = {
-    ...demoRecipeListFilters(),
-    statusFilter: RECIPE_STATUS_FILTER_ALL as RecipeStatusFilterValue,
-    onStatusFilterChange: () => undefined,
-  };
+  const controls = demoRecipeListFilters();
   const pasta = makeRecipeDetail({id: 'pasta-id', title: 'Pasta Night'});
   const salad = makeRecipeDetail({id: 'salad-id', title: 'Salad Days'});
 
@@ -513,11 +494,7 @@ describe('InlineCookLogForm unmount reconciliation (#49 stage 2)', () => {
  * beyond the virtualized list's rendered window in Jest.
  */
 describe('RecipesListView load-more error row', () => {
-  const controls = {
-    ...demoRecipeListFilters(),
-    statusFilter: RECIPE_STATUS_FILTER_ALL as RecipeStatusFilterValue,
-    onStatusFilterChange: () => undefined,
-  };
+  const controls = demoRecipeListFilters();
 
   test('renders the load-more error and fires the retry', async () => {
     const onLoadMoreRetry = jest.fn();
@@ -562,11 +539,7 @@ describe('RecipesListView load-more error row', () => {
  * SharedWithMeView.
  */
 describe('RecipesListView unified sections (#412)', () => {
-  const controls = {
-    ...demoRecipeListFilters(),
-    statusFilter: RECIPE_STATUS_FILTER_ALL as RecipeStatusFilterValue,
-    onStatusFilterChange: () => undefined,
-  };
+  const controls = demoRecipeListFilters();
   const pasta = makeRecipeDetail({id: 'pasta-id', title: 'Pasta Night'});
   const sharedSoup = makeRecipeDetail({
     id: 'shared-1',

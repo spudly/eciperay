@@ -18,10 +18,6 @@ import type {EntitledRequest} from '../../middleware/loadEntitlement.js';
 import type {AuthedRequest} from '../../middleware/requireAuth.js';
 import {anthropic, SONNET} from '../../lib/anthropic.js';
 import {
-  isRecipeEditable,
-  recipeEditBlockedError,
-} from '../../lib/assertRecipeEditable.js';
-import {
   autoImageContextFromDetail,
   scheduleAutoGenerateRecipeImage,
 } from '../../lib/autoGenerateRecipeImage.js';
@@ -50,7 +46,6 @@ import {
   buildVersionOptions,
   getNextVersionNumber,
   insertVersion,
-  setLineageStatus,
 } from './versionQueries.js';
 
 type QueryFn = typeof defaultQuery;
@@ -183,9 +178,6 @@ const loadSessionContext = async (
   const recipe = await fetchRecipeDetail(recipeId, userId, queryFn);
   if (!recipe) {
     return {error: 'Recipe not found' as const, status: 404};
-  }
-  if (!isRecipeEditable(recipe.status)) {
-    return {error: recipeEditBlockedError(), status: 409};
   }
   const parentVersion = await fetchVersionDetail(
     recipe.versionId,
@@ -653,9 +645,6 @@ export const createVersionFromTweakAiSession = async (
     await insertIngredients(id, input.ingredients, q);
     await insertInstructions(id, input.instructions, q);
     await linkTags(id, input.tagIds, q);
-    if (recipe.status === 'idea') {
-      await setLineageStatus(recipeId, req.userId, 'evolving', q);
-    }
     return id;
   });
 

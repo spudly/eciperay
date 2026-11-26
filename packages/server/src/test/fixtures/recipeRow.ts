@@ -8,7 +8,6 @@ import {makeRecipeDetail} from './recipe.js';
 export const makeRecipeDetailRow = (
   overrides: Partial<RecipeDetail> & {
     user_id?: string;
-    status?: RecipeDetail['status'];
     visibility?: RecipeDetail['visibility'];
     slug?: string;
     share_token_hash?: string | null;
@@ -32,7 +31,6 @@ export const makeRecipeDetailRow = (
   return {
     id: detail.id,
     user_id: overrides.user_id ?? detail.userId,
-    status: overrides.status ?? detail.status,
     visibility: overrides.visibility ?? detail.visibility,
     slug: overrides.slug ?? detail.slug,
     share_token_hash: overrides.share_token_hash ?? null,

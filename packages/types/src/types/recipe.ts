@@ -7,7 +7,7 @@ import type {
   RecipeRatingSummary,
   RecipeStarRating,
 } from './recipeRating.js';
-import type {RecipeStatus, VersionCreatedVia} from './recipeVersion.js';
+import type {VersionCreatedVia} from './recipeVersion.js';
 
 export type RecipeVisibility = 'private' | 'unlisted' | 'public';
 
@@ -39,7 +39,6 @@ export type RecipeListSortDir = 'asc' | 'desc';
 export type Recipe = {
   id: string;
   userId: string;
-  status: RecipeStatus;
   visibility: RecipeVisibility;
   slug: string;
   contentRevision: number;
@@ -81,7 +80,6 @@ export type RecipeInput = {
   ingredients: IngredientInput[];
   instructions: InstructionInput[];
   tagIds: string[];
-  status?: RecipeStatus;
 };
 
 export type RecipeMetadataInput = {
@@ -93,7 +91,6 @@ export type RecipeMetadataInput = {
   imageUrl?: string | null;
   sourceUrl?: string | null;
   tagIds: string[];
-  status?: RecipeStatus;
 };
 
 export type RecipeSharingUpdateInput = {

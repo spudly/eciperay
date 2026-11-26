@@ -3,10 +3,6 @@ import type {Response} from 'express';
 import {runTransactional} from '../../db/withTransaction.js';
 import {query as defaultQuery} from '../../db/query.js';
 import type {AuthedRequest} from '../../middleware/requireAuth.js';
-import {
-  isRecipeEditable,
-  recipeEditBlockedError,
-} from '../../lib/assertRecipeEditable.js';
 import {fetchVersionDetail} from '../../lib/fetchVersionDetail.js';
 import {getParam} from '../../lib/getParam.js';
 import {
@@ -32,14 +28,11 @@ import {
   insertInstructions,
   linkTags,
 } from './queries.js';
-import {updateRecipeStatus} from './recipeStatusQueries.js';
 import {
   getNextVersionNumber,
   incrementContentRevision,
   insertVersion,
-  reopenPerfectedLineage,
   setActiveVersion,
-  setLineageStatus,
   updateRecipeSlug,
   updateVersion,
 } from './versionQueries.js';
@@ -163,14 +156,7 @@ export const editVersionContent = async (
   const activate = branchesFromActive
     ? (input.activate ?? true)
     : (input.activate ?? false);
-  if (branchesFromActive) {
-    // Mirrors createVersion: branching is the one change allowed on a
-    // Perfected recipe; Abandoned stays terminal.
-    if (!isRecipeEditable(recipe.status) && recipe.status !== 'perfected') {
-      res.status(409).json({error: recipeEditBlockedError()});
-      return;
-    }
-  } else if (!isVersionEditable(target, recipe.status)) {
+  if (!branchesFromActive && !isVersionEditable(target)) {
     res.status(409).json({error: versionEditBlockedError()});
     return;
   }
@@ -223,14 +209,7 @@ export const editVersionContent = async (
           'The active version changed since the recipe was read; re-read the recipe and retry the edit.',
         );
       }
-      if (freshBranches) {
-        if (
-          !isRecipeEditable(freshRecipe.status) &&
-          freshRecipe.status !== 'perfected'
-        ) {
-          throw new VersionEditConflictError(recipeEditBlockedError());
-        }
-      } else if (!isVersionEditable(freshTarget, freshRecipe.status)) {
+      if (!freshBranches && !isVersionEditable(freshTarget)) {
         throw new VersionEditConflictError(versionEditBlockedError());
       }
       if (input.expectedContentRevision === undefined) {
@@ -262,21 +241,6 @@ export const editVersionContent = async (
         await insertIngredients(newVersionId, input.ingredients, q);
         await insertInstructions(newVersionId, input.instructions, q);
         await linkTags(newVersionId, input.tagIds, q);
-        if (freshRecipe.status === 'idea') {
-          await setLineageStatus(recipeId, req.userId, 'evolving', q);
-        }
-        if (freshRecipe.status === 'perfected') {
-          const reopened = await reopenPerfectedLineage(
-            recipeId,
-            req.userId,
-            q,
-          );
-          if (!reopened.rows[0]) {
-            throw new VersionEditConflictError(
-              'Recipe status changed while creating a draft version',
-            );
-          }
-        }
         if (activate) {
           await setActiveVersion(recipeId, newVersionId, q);
           // The lineage slug follows the active version's title.
@@ -300,9 +264,6 @@ export const editVersionContent = async (
       );
       if (!updated.rows[0]) {
         throw new Error('Failed to update version');
-      }
-      if (input.status !== undefined) {
-        await updateRecipeStatus(recipeId, input.status, q);
       }
       await replaceChildren(versionId, input, q);
       await touchMealsForRecipe(recipeId, q);

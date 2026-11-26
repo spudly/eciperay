@@ -23,7 +23,6 @@ import {
 import type {
   IngredientInput,
   RecipeInput,
-  RecipeStatus,
   RecipeVersionDetail,
 } from '@eciperay/types';
 import type {I18n} from '@lingui/core';
@@ -248,7 +247,6 @@ export const RecipeForm = ({
     return [createEmptyInstructionRow(1)];
   });
   const [tagIds, setTagIds] = useState<string[]>(initial.tagIds);
-  const [status] = useState<RecipeStatus>(initial.status ?? 'idea');
   const [pendingImage, setPendingImage] = useState<PendingRecipeImage | null>(
     null,
   );
@@ -306,6 +304,7 @@ export const RecipeForm = ({
     () => tags.map(tag => ({value: tag.id, label: tag.name})),
     [tags],
   );
+
   const clearPendingImage = () => {
     setPreviewUri(current => {
       if (current) {
@@ -786,7 +785,6 @@ export const RecipeForm = ({
       ? initial.instructions
       : toRecipeInputInstructions(instructions),
     tagIds,
-    status,
   });
 
   const versionDiff = useMemo(() => {
@@ -809,7 +807,6 @@ export const RecipeForm = ({
     instructions,
     tagIds,
     pendingImage,
-    status,
   ]);
 
   // The diff crosses to the DS page as presentation data: which

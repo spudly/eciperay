@@ -1,4 +1,3 @@
-import {RECIPE_STATUS_FILTER_ALL} from './recipeStatusCopy.js';
 import {buildRecipeListFilters} from './buildRecipeListFilters.js';
 import type {FilterFieldState} from './useFilterFieldState.js';
 
@@ -7,8 +6,6 @@ const fields = (
 ): FilterFieldState => ({
   search: '',
   setSearch: () => {},
-  statusFilter: RECIPE_STATUS_FILTER_ALL,
-  setStatusFilter: () => {},
   ingredient: '',
   setIngredient: () => {},
   minCalories: '',
@@ -31,7 +28,6 @@ describe('buildRecipeListFilters', () => {
     expect(
       buildRecipeListFilters(
         fields({
-          statusFilter: 'evolving',
           minCalories: '100',
           maxCalories: '500',
           minSatiety: '40',
@@ -41,12 +37,10 @@ describe('buildRecipeListFilters', () => {
         }),
         'pasta',
         'chicken',
-        true,
       ),
     ).toEqual({
       search: 'pasta',
       ingredient: 'chicken',
-      status: 'evolving',
       minCalories: 100,
       maxCalories: 500,
       minSatiety: 40,
@@ -56,13 +50,12 @@ describe('buildRecipeListFilters', () => {
     });
   });
 
-  test('omits status when disabled or all, and skips invalid numbers', () => {
+  test('skips invalid numbers', () => {
     expect(
       buildRecipeListFilters(
-        fields({statusFilter: 'perfected', minCalories: '  ', maxSatiety: 'x'}),
+        fields({minCalories: '  ', maxSatiety: 'x'}),
         '',
         '',
-        false,
       ),
     ).toEqual({
       minCalories: undefined,
@@ -72,9 +65,5 @@ describe('buildRecipeListFilters', () => {
       sort: 'newest',
       sortDir: 'desc',
     });
-    expect(
-      buildRecipeListFilters(fields({statusFilter: 'idea'}), '', '', true)
-        .status,
-    ).toBe('idea');
   });
 });

@@ -3,7 +3,6 @@ import type {
   PublicRecipeDetail,
   RecipeDetail,
   RecipeProvenanceSource,
-  RecipeStatus,
   RecipeVersionDetail,
   RecipeVersionSummary,
   RecipeVisibility,
@@ -26,7 +25,6 @@ import {
 type RecipeDetailRow = {
   id: string;
   user_id: string;
-  status: RecipeStatus;
   visibility: RecipeVisibility;
   slug: string;
   share_token_hash: string | null;
@@ -57,7 +55,6 @@ type RecipeDetailRow = {
 
 export type RecipeListRow = {
   id: string;
-  status: RecipeStatus;
   visibility: RecipeVisibility;
   slug: string;
   content_revision: number;
@@ -98,7 +95,6 @@ type VersionDetailRow = {
   created_at: string;
   updated_at: string;
   user_id: string;
-  status: RecipeStatus;
   active_version_id: string;
   active_version_number: number;
   ingredients: RecipeDetail['ingredients'];
@@ -121,14 +117,12 @@ type VersionSummaryRow = {
   active_version_number: number;
   cook_log_count: number;
   child_version_count: number;
-  status: RecipeStatus;
 };
 
 export const mapRowToRecipeListItem = (row: RecipeListRow): RecipeDetail => ({
   ...(row.shared_via ? {sharedVia: row.shared_via} : {}),
   id: row.id,
   userId: '',
-  status: row.status,
   visibility: row.visibility,
   slug: row.slug,
   contentRevision: row.content_revision,
@@ -192,7 +186,6 @@ export const mapRowToPublicRecipeDiscoveryItem = (
 export const mapRowToRecipeDetail = (row: RecipeDetailRow): RecipeDetail => ({
   id: row.id,
   userId: row.user_id,
-  status: row.status,
   visibility: row.visibility,
   slug: row.slug,
   contentRevision: row.content_revision,
@@ -250,22 +243,16 @@ export const mapRowToVersionSummary = (
     derivedRole,
     cookLogCount: row.cook_log_count,
     childVersionCount: row.child_version_count,
-    isEditable: isVersionEditable(
-      {
-        derivedRole,
-        cookLogCount: row.cook_log_count,
-        childVersionCount: row.child_version_count,
-      },
-      row.status,
-    ),
-    isContentLocked: isVersionContentLocked(
-      {
-        derivedRole,
-        cookLogCount: row.cook_log_count,
-        childVersionCount: row.child_version_count,
-      },
-      row.status,
-    ),
+    isEditable: isVersionEditable({
+      derivedRole,
+      cookLogCount: row.cook_log_count,
+      childVersionCount: row.child_version_count,
+    }),
+    isContentLocked: isVersionContentLocked({
+      derivedRole,
+      cookLogCount: row.cook_log_count,
+      childVersionCount: row.child_version_count,
+    }),
     createdVia: row.created_via,
     changeSummary: row.change_summary,
     createdAt: row.created_at,
@@ -289,8 +276,7 @@ export const mapRowToVersionDetail = (
     active_version_number: row.active_version_number,
     cook_log_count: row.cook_log_count,
     child_version_count: row.child_version_count,
-    status: row.status,
-  }),
+    }),
   description: row.description,
   servings: row.servings,
   prepTimeMin: row.prep_time_min,
@@ -298,7 +284,6 @@ export const mapRowToVersionDetail = (
   imageUrl: row.image_url,
   sourceUrl: row.source_url,
   derivedFromVersionId: row.derived_from_version_id,
-  status: row.status,
   ingredients: row.ingredients,
   instructions: row.instructions,
   tags: row.tags,

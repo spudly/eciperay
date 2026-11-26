@@ -16,7 +16,6 @@ export const VERSION_ID = 'e2e-version-uuid-1';
 
 const baseRecipe = {
   userId: E2E_USER_ID,
-  status: 'evolving',
   visibility: 'private',
   contentRevision: 1,
   clonedFromRecipeId: null,

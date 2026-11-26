@@ -24,17 +24,12 @@ export const loadPublicRecipes = async (
   queryFn: QueryFn = defaultQuery,
 ): Promise<PublicRecipeDiscoveryItem[]> => {
   const params = parseRecipeListFilterParams({query: {limit: '20'}});
-  if (
-    params.sort === 'invalid' ||
-    params.sortDir === 'invalid' ||
-    params.status === 'invalid'
-  ) {
+  if (params.sort === 'invalid' || params.sortDir === 'invalid') {
     return [];
   }
   const baseValues = [
     params.limit,
     params.offset,
-    params.status,
     ...filterBindValues(params),
   ];
   const searchQuerySql = buildSearchQuerySql(

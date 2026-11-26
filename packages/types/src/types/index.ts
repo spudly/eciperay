@@ -23,7 +23,6 @@ export type {
 } from './recipe.js';
 export type {
   DerivedVersionRole,
-  RecipeStatus,
   RecipeVersionDetail,
   RecipeVersionInput,
   RecipeVersionSummary,

@@ -9,11 +9,6 @@ describe('msw handlers', () => {
       'version-uuid-1',
     );
     expect(activated.id).toBe('recipe-uuid-1');
-    const perfected = await eciperay.recipes.patchStatus(
-      'recipe-uuid-1',
-      'perfected',
-    );
-    expect(perfected.status).toBe('perfected');
     const started = await eciperay.createAi.start('quick pasta');
     expect(started.session.id).toBeTruthy();
     const createApproved =
@@ -22,7 +17,7 @@ describe('msw handlers', () => {
     const created = await eciperay.createAi.createRecipe('create-session-1');
     expect(created.recipeId).toBeTruthy();
     const accepted = await eciperay.recipes.acceptImport('recipe-uuid-1');
-    expect(accepted.status).toBe('evolving');
+    expect(accepted.id).toBe('recipe-uuid-1');
     const draft = await eciperay.versions.startImportEdits('recipe-uuid-1');
     expect(draft.versionNumber).toBe(2);
     const cookLog = await eciperay.cookLogs.create(
@@ -87,19 +82,6 @@ describe('msw handlers', () => {
     expect(cloned.visibility).toBe('private');
   });
 
-  test('covers lifecycle patch without an explicit status', async () => {
-    const response = await fetch(
-      'http://localhost:8080/api/recipes/recipe-uuid-1',
-      {
-        method: 'PATCH',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({}),
-      },
-    );
-    expect(response.ok).toBe(true);
-    const recipe = (await response.json()) as {status: string};
-    expect(recipe.status).toBe('evolving');
-  });
 
   test('covers meals and nutrition goal endpoints', async () => {
     const meals = await eciperay.meals.list();

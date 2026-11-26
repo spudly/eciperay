@@ -3,10 +3,6 @@ import type {Response} from 'express';
 import {query as defaultQuery} from '../../db/query.js';
 import type {AuthedRequest} from '../../middleware/requireAuth.js';
 import {
-  isRecipeEditable,
-  recipeEditBlockedError,
-} from '../../lib/assertRecipeEditable.js';
-import {
   autoImageContextFromDetail,
   scheduleAutoGenerateRecipeImage,
 } from '../../lib/autoGenerateRecipeImage.js';
@@ -60,15 +56,7 @@ export const putRecipe = async (
     res.status(404).json({error: 'Recipe not found'});
     return;
   }
-  if (!isRecipeEditable(activeVersion.status)) {
-    res.status(409).json({error: recipeEditBlockedError()});
-    return;
-  }
-
-  const contentLocked = isVersionContentLocked(
-    activeVersion,
-    activeVersion.status,
-  );
+  const contentLocked = isVersionContentLocked(activeVersion);
 
   if (contentLocked) {
     if (!recipeContentUnchanged(activeVersion, body.data)) {
@@ -106,7 +94,7 @@ export const putRecipe = async (
     return;
   }
 
-  if (!isVersionEditable(activeVersion, activeVersion.status)) {
+  if (!isVersionEditable(activeVersion)) {
     res.status(409).json({error: versionContentLockedError()});
     return;
   }

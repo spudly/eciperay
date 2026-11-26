@@ -19,7 +19,6 @@ const makeListItem = (id: string): RecipeDetail =>
 
 const emptyKeyFilters = {
   search: '',
-  status: '',
   ingredient: '',
   minCalories: null,
   maxCalories: null,
@@ -71,20 +70,6 @@ describe('recipeListQuery', () => {
     });
   });
 
-  test('passes status filter to list requests', async () => {
-    const list = jest.fn().mockResolvedValue([]);
-    const options = recipeListInfiniteQueryOptions(list, {status: 'perfected'});
-    expect(options.queryKey).toEqual([
-      'recipes',
-      {...emptyKeyFilters, status: 'perfected'},
-    ]);
-    await options.queryFn({pageParam: 0});
-    expect(list).toHaveBeenCalledWith({
-      status: 'perfected',
-      limit: RECIPE_LIST_PAGE_SIZE,
-      offset: 0,
-    });
-  });
 
   test('passes ingredient filter to list requests', async () => {
     const list = jest.fn().mockResolvedValue([]);
@@ -409,7 +394,7 @@ describe('recipeListQuery', () => {
 
     expect(options.queryKey).toEqual([
       'recipes',
-      {search: 'home-recently-viewed', status: ''},
+      {search: 'home-recently-viewed'},
     ]);
     const recipes = await options.queryFn();
     expect(getRecipe).toHaveBeenCalledWith('recipe-b');
