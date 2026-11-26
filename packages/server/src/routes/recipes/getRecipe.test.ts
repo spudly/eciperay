@@ -1,5 +1,6 @@
 import request from 'supertest';
 
+import {hashShareToken} from '../../lib/shareToken.js';
 import {makeRecipeDetail} from '../../test/fixtures/recipe.js';
 import {makeRecipeDetailRow} from '../../test/fixtures/recipeRow.js';
 import {makeQueryResult} from '../../test/fixtures/queryResult.js';
@@ -73,5 +74,121 @@ describe('GET /recipes/:id', () => {
       '/api/recipes/11111111-1111-4111-8111-111111111111',
     );
     expect(res.status).toBe(401);
+  });
+
+  describe('shared (unlisted) recipes, #649', () => {
+    const recipeId = '33333333-3333-4333-8333-333333333333';
+    const shareToken = 'share-token';
+    const unlistedRow = () =>
+      makeRecipeDetailRow({
+        id: recipeId,
+        user_id: 'owner-uuid',
+        visibility: 'unlisted',
+        share_token_hash: hashShareToken(shareToken),
+      });
+
+    const mockAccess = ({
+      row,
+      hasGrant,
+    }: {
+      row: ReturnType<typeof makeRecipeDetailRow>;
+      hasGrant: boolean;
+    }) => {
+      mockQuery.mockImplementation(((sql: string) => {
+        if (sql.includes('recipe_ratings rr')) {
+          return Promise.resolve(makeQueryResult([]));
+        }
+        if (sql.includes('insert into recipe_share_grants')) {
+          return Promise.resolve(makeQueryResult([]));
+        }
+        if (sql.includes('from recipe_share_tokens')) {
+          return Promise.resolve(makeQueryResult([]));
+        }
+        if (sql.includes('recipe_share_grants')) {
+          return Promise.resolve(makeQueryResult(hasGrant ? [{found: 1}] : []));
+        }
+        return Promise.resolve(makeQueryResult([row]));
+      }) as typeof mockQuery);
+    };
+
+    test('returns 200 for a non-owner holding a share grant', async () => {
+      nockSupabaseGetUser('user-uuid-1');
+      mockAccess({row: unlistedRow(), hasGrant: true});
+      const res = await request(getApp())
+        .get(`/api/recipes/${recipeId}`)
+        .set('Authorization', 'Bearer <redacted>');
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({id: recipeId});
+    });
+
+    test('returns 200 with a valid share token and records a grant', async () => {
+      nockSupabaseGetUser('user-uuid-1');
+      mockAccess({row: unlistedRow(), hasGrant: false});
+      const res = await request(getApp())
+        .get(`/api/recipes/${recipeId}?t=${shareToken}`)
+        .set('Authorization', 'Bearer <redacted>');
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({id: recipeId});
+      expect(mockQuery).toHaveBeenCalledWith(
+        expect.stringContaining('insert into recipe_share_grants'),
+        [recipeId, 'user-uuid-1', 'link'],
+      );
+    });
+
+    test('returns 404 with an invalid share token and no grant', async () => {
+      nockSupabaseGetUser('user-uuid-1');
+      mockAccess({row: unlistedRow(), hasGrant: false});
+      const res = await request(getApp())
+        .get(`/api/recipes/${recipeId}?t=wrong-token`)
+        .set('Authorization', 'Bearer <redacted>');
+      expect(res.status).toBe(404);
+      expect(res.body).toMatchObject({error: 'Recipe not found'});
+    });
+
+    test('returns 404 for a non-owner with no token and no grant', async () => {
+      nockSupabaseGetUser('user-uuid-1');
+      mockAccess({row: unlistedRow(), hasGrant: false});
+      const res = await request(getApp())
+        .get(`/api/recipes/${recipeId}`)
+        .set('Authorization', 'Bearer <redacted>');
+      expect(res.status).toBe(404);
+      expect(res.body).toMatchObject({error: 'Recipe not found'});
+    });
+
+    test('returns 200 for a private recipe with a valid share token (#534 bearer grant)', async () => {
+      nockSupabaseGetUser('user-uuid-1');
+      mockAccess({
+        row: makeRecipeDetailRow({
+          id: recipeId,
+          user_id: 'owner-uuid',
+          visibility: 'private',
+          share_token_hash: hashShareToken(shareToken),
+        }),
+        hasGrant: false,
+      });
+      const res = await request(getApp())
+        .get(`/api/recipes/${recipeId}?t=${shareToken}`)
+        .set('Authorization', 'Bearer <redacted>');
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({id: recipeId});
+    });
+
+    test('returns 404 for a private recipe with an invalid share token', async () => {
+      nockSupabaseGetUser('user-uuid-1');
+      mockAccess({
+        row: makeRecipeDetailRow({
+          id: recipeId,
+          user_id: 'owner-uuid',
+          visibility: 'private',
+          share_token_hash: hashShareToken(shareToken),
+        }),
+        hasGrant: false,
+      });
+      const res = await request(getApp())
+        .get(`/api/recipes/${recipeId}?t=wrong-token`)
+        .set('Authorization', 'Bearer <redacted>');
+      expect(res.status).toBe(404);
+      expect(res.body).toMatchObject({error: 'Recipe not found'});
+    });
   });
 });
