@@ -894,6 +894,7 @@ describe('RecipeForm', () => {
           stepNumber: 1,
           body: 'Mix',
           estimatedDurationMin: null,
+          ingredientReferences: [],
         },
         {
           id: 's-2',
@@ -901,6 +902,7 @@ describe('RecipeForm', () => {
           stepNumber: 2,
           body: 'Bake',
           estimatedDurationMin: null,
+          ingredientReferences: [],
         },
       ],
     });

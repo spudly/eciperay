@@ -132,6 +132,7 @@ const buildFixtureRecipe = (spec: FixtureRecipeSpec): RecipeDetail => ({
     stepNumber: index + 1,
     body,
     estimatedDurationMin: null,
+    ingredientReferences: [],
   })),
   tags: [],
   nutrition: spec.nutrition,
