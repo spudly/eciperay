@@ -16,7 +16,7 @@ import {
 import {RouteErrorView} from '../components/RouteErrorView.js';
 import {ScreenLoadingGate} from '../components/ScreenLoadingGate.js';
 import {eciperay} from '../lib/api.js';
-import {mergeVersionIntoRecipe} from '../lib/mergeVersionIntoRecipe.js';
+import {mergeVersionIntoRecipe} from '@eciperay/client';
 import {recipeViewHistoryStorage} from '../lib/recipeViewHistoryStorage.js';
 
 import {RecipeDetailHost} from './RecipeDetailHost.js';

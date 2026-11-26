@@ -14,7 +14,7 @@ import type {
 } from 'react-dom/server';
 import {renderToPipeableStream} from 'react-dom/server';
 
-import {eciperayVoice} from '../i18n/voice.js';
+import {eciperayVoice} from '@eciperay/client';
 
 /**
  * Shared server-side rendering for DS pages rendered inside the Express process

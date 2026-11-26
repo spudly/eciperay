@@ -6,7 +6,7 @@ import {useCallback, useEffect, useMemo, useState} from 'react';
 import {RecipeDetailView} from '../hosts/recipe/RecipeDetailView';
 import {ScreenLoadingGate} from '../components/ScreenLoadingGate';
 import {api} from '../lib/api';
-import {mergeVersionIntoRecipe} from '../lib/mergeVersionIntoRecipe';
+import {mergeVersionIntoRecipe} from '@eciperay/client';
 import {recipeViewHistoryStorage} from '../lib/recipeViewHistoryStorage';
 import {useDeleteRecipe} from '../lib/useDeleteRecipe';
 import type {RecipesStackParamList} from '../navigation/types';

@@ -7,7 +7,7 @@
  * `createTamagui()` globally — `TamaguiProvider`'s `config` prop does not
  * install its config — and @spudly/ui creates several configs at module scope.
  * The app therefore creates its own config via the DS factory in
- * `src/lib/tamaguiConfig.ts`; this suite renders themed Tamagui primitives
+ * `src/tamaguiConfig` in @eciperay/client (#673); this suite renders themed Tamagui primitives
  * under that production config module and asserts the resolved colors are Warm
  * Harvest values. (@spudly/ui 6.x exports no Button widget — pages compose
  * their own — so the subject is now a Tamagui stack + text pair carrying the
@@ -21,7 +21,7 @@ import {render} from '@testing-library/react-native';
 import React from 'react';
 import {TamaguiProvider, Text, View, YStack} from 'tamagui';
 
-import {appTamaguiConfig} from '../lib/tamaguiConfig';
+import {eciperayTamaguiConfig} from '@eciperay/client';
 
 // Warm Harvest (Eciperay) values from @spudly/ui tokens/themes.
 const TERRACOTTA_PRIMARY = '#b13f13';
@@ -41,7 +41,7 @@ describe('app Tamagui theme resolution (regression #149)', () => {
   it('resolves Warm Harvest colors for the Home buttons and background', async () => {
     const {getByText, getByTestId} = await render(
       <TamaguiProvider
-        config={appTamaguiConfig}
+        config={eciperayTamaguiConfig}
         defaultTheme="light"
       >
         <View

@@ -10,7 +10,7 @@ import {useState} from 'react';
 import {TagsPage as TagsPageView, type TagsPageTag} from '@spudly/ui';
 
 import {eciperay} from '../lib/api.js';
-import {TAG_COLOR_NAME_OPTIONS} from '../lib/tagColors.js';
+import {TAG_COLOR_NAME_OPTIONS} from '@eciperay/client';
 
 export const TagsPage = () => {
   const [name, setName] = useState('');

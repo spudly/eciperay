@@ -15,11 +15,10 @@ import {TamaguiProvider} from 'tamagui';
 
 import {AppFeedbackPreferenceProvider} from './src/context/AppFeedbackPreferenceProvider';
 import {createI18n} from './src/i18n/i18n';
-import {resolveLocale} from './src/i18n/locale';
-import {eciperayVoice} from './src/i18n/voice';
+import {eciperayVoice, resolveLocale} from '@eciperay/client';
 import {analytics} from './src/lib/analytics';
 import {onAuthenticated, onSignedOut} from './src/lib/authSessionLifecycle';
-import {appTamaguiConfig} from './src/lib/tamaguiConfig';
+import {eciperayTamaguiConfig} from '@eciperay/client';
 import {RootNavigator} from './src/navigation/RootNavigator';
 import {supabase} from './src/lib/supabase';
 
@@ -38,7 +37,7 @@ const App = () => (
   <I18nProvider i18n={i18n}>
     <VoiceProvider voice={eciperayVoice}>
       <TamaguiProvider
-        config={appTamaguiConfig}
+        config={eciperayTamaguiConfig}
         defaultTheme="light"
       >
         <GestureHandlerRootView style={rootViewStyle}>

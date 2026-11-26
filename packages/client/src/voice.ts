@@ -12,10 +12,9 @@ import type {Voice} from '@spudly/ui';
  * and safety copy stays plain too: when something goes wrong, clarity beats
  * personality.
  *
- * This file is duplicated in packages/web, packages/app, and packages/server
- * (the server copy feeds the SSR renderer for the public recipe page; the same
- * pattern PR1 used for src/i18n/locale.ts and src/i18n/i18n.ts) — keep the
- * copies identical.
+ * Single implementation in @eciperay/client (#673): web, app, and server
+ * (whose copy feeds the SSR renderer for the public recipe page) all import
+ * this one object.
  */
 export const eciperayVoice: Voice = {
   common: {
@@ -144,6 +143,8 @@ export const eciperayVoice: Voice = {
   signInForm: {
     emailLabel: 'Email',
     passwordLabel: 'Password',
+    showPasswordLabel: 'Show password',
+    hidePasswordLabel: 'Hide password',
     submitLabel: 'Sign In',
     submitPendingLabel: 'Signing in\u2026',
     createAccountLabel: 'Create an account',
@@ -153,6 +154,8 @@ export const eciperayVoice: Voice = {
     nameLabel: 'Your name',
     emailLabel: 'Email',
     passwordLabel: 'Password',
+    showPasswordLabel: 'Show password',
+    hidePasswordLabel: 'Hide password',
     submitLabel: 'Create Account',
     submitPendingLabel: 'Creating account\u2026',
     signInLabel: 'Already have an account? Sign in',
@@ -165,6 +168,8 @@ export const eciperayVoice: Voice = {
   },
   resetPasswordForm: {
     passwordLabel: 'New password',
+    showPasswordLabel: 'Show password',
+    hidePasswordLabel: 'Hide password',
     submitLabel: 'Update password',
     submitPendingLabel: 'Updating\u2026',
   },
@@ -190,7 +195,7 @@ export const eciperayVoice: Voice = {
     title: 'Daily nutrition goals',
     caloriesLabel: 'Calories',
     proteinLabel: 'Protein (g)',
-    carbsLabel: 'Carbs (g)',
+    netCarbsLabel: 'Net carbs (g)',
     fatLabel: 'Fat (g)',
     satietyScoreLabel: 'Satiety score',
     minLabel: 'min',
@@ -337,5 +342,28 @@ export const eciperayVoice: Voice = {
     refreshingLabel: 'Refreshing\u2026',
     estimateLabel: 'Estimate nutrition',
     unavailableLabel: 'Nutrition is not available yet.',
+    titleLabel: 'Nutrition Facts',
+    caloriesLabel: 'Calories',
+    servingSizeLabel: 'Serving size',
+    dailyValueHeaderLabel: '% Daily Value*',
+    dailyValueFootnote:
+      '* The % Daily Value (DV) tells you how much a nutrient in a serving of food contributes to a daily diet. 2,000 calories a day is used for general nutrition advice.',
+    factLabels: {
+      totalFat: 'Total Fat',
+      saturatedFat: 'Saturated Fat',
+      transFat: 'Trans Fat',
+      cholesterol: 'Cholesterol',
+      sodium: 'Sodium',
+      totalCarbohydrate: 'Total Carbohydrate',
+      dietaryFiber: 'Dietary Fiber',
+      totalSugars: 'Total Sugars',
+      addedSugars: 'Added Sugars',
+      protein: 'Protein',
+      netCarbs: 'Net Carbs',
+      vitaminD: 'Vitamin D',
+      calcium: 'Calcium',
+      iron: 'Iron',
+      potassium: 'Potassium',
+    },
   },
 };

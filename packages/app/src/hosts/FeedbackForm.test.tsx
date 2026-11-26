@@ -8,9 +8,9 @@ import {
   createNoopAnalyticsAdapter,
 } from '@eciperay/client';
 import {VoiceProvider} from '@spudly/ui';
-import {appTamaguiConfig} from '../lib/tamaguiConfig';
+import {eciperayTamaguiConfig} from '@eciperay/client';
 
-import {eciperayVoice} from '../i18n/voice';
+import {eciperayVoice} from '@eciperay/client';
 import {APP_VERSION} from '../lib/env';
 
 import {FeedbackForm} from './FeedbackForm';
@@ -52,7 +52,7 @@ describe('FeedbackForm', () => {
       wrapper: ({children}) => (
         <VoiceProvider voice={eciperayVoice}>
           <TamaguiProvider
-            config={appTamaguiConfig}
+            config={eciperayTamaguiConfig}
             defaultTheme="light"
           >
             <AnalyticsProvider analytics={analytics}>
