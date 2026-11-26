@@ -1,6 +1,7 @@
 import {
   createContext,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -9,6 +10,7 @@ import {
 import {
   readFeedbackShortcutEnabled,
   writeFeedbackShortcutEnabled,
+  type FeedbackShortcutStorage,
 } from './feedbackPreference.js';
 
 type FeedbackPreferenceContextValue = {
@@ -39,15 +41,34 @@ export const FeedbackPreferenceContextProvider = ({
 
 export const FeedbackPreferenceProvider = ({
   children,
-  initialEnabled = readFeedbackShortcutEnabled(),
+  storage,
+  initialEnabled,
 }: {
   children: ReactNode;
+  storage?: FeedbackShortcutStorage;
   initialEnabled?: boolean;
 }) => {
-  const [enabled, setEnabledState] = useState(initialEnabled);
+  const [enabled, setEnabledState] = useState(initialEnabled ?? false);
+
+  useEffect(() => {
+    if (initialEnabled !== undefined || !storage) {
+      return;
+    }
+    let cancelled = false;
+    void readFeedbackShortcutEnabled(storage).then(value => {
+      if (!cancelled) {
+        setEnabledState(value);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [initialEnabled, storage]);
 
   const setEnabled = (nextEnabled: boolean) => {
-    writeFeedbackShortcutEnabled(nextEnabled);
+    if (storage) {
+      void writeFeedbackShortcutEnabled(storage, nextEnabled);
+    }
     setEnabledState(nextEnabled);
   };
 

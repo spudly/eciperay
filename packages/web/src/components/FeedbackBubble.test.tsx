@@ -1,7 +1,6 @@
 import {
   FEEDBACK_SHORTCUT_STORAGE_KEY,
   FeedbackPreferenceProvider,
-  readFeedbackShortcutEnabled,
   writeFeedbackShortcutEnabled,
   readAnalyticsConsent,
   createAnalytics,
@@ -12,6 +11,7 @@ import {screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {beforeEach, describe, expect, test, vi} from 'vitest';
 
+import {feedbackShortcutStorage} from '../lib/feedbackShortcutStorage.js';
 import {renderWithProviders} from '../test/testUtils.js';
 
 import {FeedbackBubble} from './FeedbackBubble.js';
@@ -55,7 +55,7 @@ describe('FeedbackBubble', () => {
   });
 
   test('opens the feedback form when enabled and consent is accepted', async () => {
-    writeFeedbackShortcutEnabled(true);
+    await writeFeedbackShortcutEnabled(feedbackShortcutStorage, true);
     const user = userEvent.setup();
     await renderWithProviders(
       <FeedbackPreferenceProvider initialEnabled>
@@ -68,11 +68,10 @@ describe('FeedbackBubble', () => {
       screen.getByRole('dialog', {name: 'Send feedback'}),
     ).toBeInTheDocument();
     expect(localStorage.getItem(FEEDBACK_SHORTCUT_STORAGE_KEY)).toBe('true');
-    expect(readFeedbackShortcutEnabled()).toBe(true);
   });
 
   test('panel is viewport-height constrained and scrollable', async () => {
-    writeFeedbackShortcutEnabled(true);
+    await writeFeedbackShortcutEnabled(feedbackShortcutStorage, true);
     const user = userEvent.setup();
     await renderWithProviders(
       <FeedbackPreferenceProvider initialEnabled>
@@ -91,7 +90,7 @@ describe('FeedbackBubble', () => {
   });
 
   test('closes the dialog after submit or cancel', async () => {
-    writeFeedbackShortcutEnabled(true);
+    await writeFeedbackShortcutEnabled(feedbackShortcutStorage, true);
     const user = userEvent.setup();
     const analytics = {
       ...createAnalytics(createNoopAnalyticsAdapter(), 'web'),

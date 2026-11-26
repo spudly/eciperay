@@ -17,6 +17,7 @@ import {resolveLocale} from './i18n/locale.js';
 import {eciperayVoice} from './i18n/voice.js';
 import {onAuthenticated, onSignedOut} from './lib/authSessionLifecycle.js';
 import {analytics} from './lib/analytics.js';
+import {feedbackShortcutStorage} from './lib/feedbackShortcutStorage.js';
 import {webTamaguiConfig} from './lib/tamaguiConfig.js';
 import {router} from './routes/router.js';
 import {supabase} from './lib/supabase.js';
@@ -47,7 +48,7 @@ if (root) {
                   onSignedOut={onSignedOut}
                 >
                   <AnalyticsErrorBoundaryProvider>
-                    <FeedbackPreferenceProvider>
+                    <FeedbackPreferenceProvider storage={feedbackShortcutStorage}>
                       <RouterProvider router={router} />
                     </FeedbackPreferenceProvider>
                   </AnalyticsErrorBoundaryProvider>
