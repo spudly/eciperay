@@ -1,6 +1,5 @@
 import {
   clampCropRect,
-  cropImageFile,
   defaultCropRect,
   moveCropRect,
   RECIPE_CROP_ASPECT,
