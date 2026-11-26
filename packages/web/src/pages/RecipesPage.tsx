@@ -689,7 +689,6 @@ const toPublicItem = (
 const PublicRecipesPage = () => {
   const {i18n} = useLingui();
   const {filters, controls} = useRecipeListFilters({
-    includeStatus: true,
     defaultSort: 'newest',
   });
 
@@ -728,8 +727,6 @@ const PublicRecipesPage = () => {
                   'No public recipes match that search \u2014 try a broader craving.',
               })
             : controls.ingredient.trim() ||
-                (controls.statusFilter &&
-                  controls.statusFilter !== RECIPE_STATUS_FILTER_ALL) ||
                 controls.minCalories.trim() ||
                 controls.maxCalories.trim() ||
                 controls.minSatiety.trim() ||
@@ -769,11 +766,6 @@ const PublicRecipesPage = () => {
         }}
         search={controls.search}
         onSearchChange={controls.onSearchChange}
-        statusFilter={controls.statusFilter}
-        onStatusFilterChange={value => {
-          controls.onStatusFilterChange?.(value as RecipeStatusFilterValue);
-        }}
-        showStatusFilter={controls.showStatusFilter}
         ingredient={controls.ingredient}
         onIngredientChange={controls.onIngredientChange}
         minCalories={controls.minCalories}
