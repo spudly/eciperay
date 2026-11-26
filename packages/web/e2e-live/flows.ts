@@ -78,7 +78,14 @@ export const openRecipeFromList = async (
   // field is named 'Search recipes' (its label, #542) while the page
   // field's name is its placeholder text.
   await page.getByRole('textbox', {name: 'Search recipes…'}).fill(title);
-  await page.getByText(title).click();
+  // Click the OWN-list entry (href /recipes/<id>/<slug>), not just any
+  // text match: since #610 removed recipe status, a public-by-default
+  // recipe also appears in the page's Discover section, whose entry
+  // links to the public guest page (/recipe/<id>/<slug>) — which has
+  // no owner actions such as Delete. The old status='idea' exclusion
+  // kept new recipes out of Discover, so a bare text click used to be
+  // unambiguous.
+  await page.locator('a[href^="/recipes/"]', {hasText: title}).click();
   await expect(page.getByRole('heading', {name: title})).toBeVisible();
 };
 
