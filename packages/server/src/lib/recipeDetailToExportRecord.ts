@@ -28,6 +28,10 @@ export const recipeDetailToExportRecord = (
     })),
   instructions: [...detail.instructions]
     .sort((a, b) => a.stepNumber - b.stepNumber)
-    .map(({stepNumber, body}) => ({stepNumber, body})),
+    .map(({stepNumber, body, ingredientReferences}) => ({
+      stepNumber,
+      body,
+      ingredientReferences,
+    })),
   ...(image ? {image} : {}),
 });

@@ -8,6 +8,7 @@ export const makeInstruction = (
   stepNumber: 1,
   body: 'Mix the ingredients together.',
   estimatedDurationMin: null,
+  ingredientReferences: [],
   ...overrides,
 });
 

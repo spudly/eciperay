@@ -83,6 +83,7 @@ describe('recipeDetailToInput', () => {
             stepNumber: 3,
             body: 'Serve',
             estimatedDurationMin: null,
+            ingredientReferences: [],
           },
           {
             id: 'ins-1',
@@ -90,6 +91,7 @@ describe('recipeDetailToInput', () => {
             stepNumber: 1,
             body: 'Prep',
             estimatedDurationMin: null,
+            ingredientReferences: [],
           },
           {
             id: 'ins-2',
@@ -97,6 +99,7 @@ describe('recipeDetailToInput', () => {
             stepNumber: 2,
             body: 'Cook',
             estimatedDurationMin: null,
+            ingredientReferences: [],
           },
         ],
       }),

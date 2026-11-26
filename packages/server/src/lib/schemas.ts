@@ -5,6 +5,9 @@ export {validate, parseAiJson} from './validate.js';
 // ─── Ingredient / Instruction primitives ──────────────────────────────────────
 
 const IngredientInputSchema = z.object({
+  // Optional existing ID (#643): preserving it across a version rewrite
+  // keeps instruction ingredientReferences pointing at live rows.
+  id: z.string().min(1).optional(),
   sortOrder: z.number().int().nonnegative(),
   name: z.string().min(1),
   quantity: z.number().nullable(),
@@ -16,6 +19,9 @@ const IngredientInputSchema = z.object({
 const InstructionInputSchema = z.object({
   stepNumber: z.number().int().positive(),
   body: z.string().min(1),
+  // #643: IDs of this version's ingredients the step uses; validated
+  // against the version's ingredients again on write.
+  ingredientReferences: z.array(z.string().min(1)).optional(),
 });
 
 // ─── Recipe import (from URL or image) ────────────────────────────────────────

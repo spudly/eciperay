@@ -122,6 +122,7 @@ describe('formatParentListSummary', () => {
           stepNumber: 1,
           body: 'Mix',
           estimatedDurationMin: null,
+          ingredientReferences: [],
         },
         {
           id: 's-2',
@@ -129,6 +130,7 @@ describe('formatParentListSummary', () => {
           stepNumber: 2,
           body: 'Bake',
           estimatedDurationMin: null,
+          ingredientReferences: [],
         },
       ],
     });
@@ -171,6 +173,7 @@ describe('formatParentListSummary', () => {
           stepNumber: 1,
           body: 'Stir',
           estimatedDurationMin: null,
+          ingredientReferences: [],
         },
       ],
     });
