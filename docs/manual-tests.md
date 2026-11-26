@@ -892,7 +892,7 @@ account (viewer); one QA recipe.
 `packages/web/src/pages/MarketingLandingPage.tsx`,
 `packages/web/src/pages/legal/**`, `packages/web/src/components/shared/**`,
 `@spudly/ui` `PublicRecipePage`, `RecipesPage`, `AppShellPage`,
-`packages/web/src/components/PublicHeader.tsx`, `packages/server`
+`packages/server`
 sharing/visibility routes (including `sharing/share-link` and the share-token
 rotation route),
 `packages/server/src/lib/{recipeAccess,shareGrant,shareToken}.ts`,
