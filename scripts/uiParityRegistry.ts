@@ -103,12 +103,6 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
       'Injects the public browse ItemList JSON-LD (#411) into the document head; no native equivalent.',
   },
   {
-    path: 'profile/ProfileAccessTokensSection.tsx',
-    platform: 'web',
-    reason:
-      'Web ProfilePage extract for max-lines; app ProfileScreen uses AccessTokensSection.',
-  },
-  {
     path: 'profile/ProfileShowLessSection.tsx',
     platform: 'web',
     reason:
