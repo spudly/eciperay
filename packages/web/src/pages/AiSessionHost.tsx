@@ -1,11 +1,13 @@
-import {errorMessage, parseProposedRecipe} from '@eciperay/client';
+import {
+  errorMessage,
+  parseProposedRecipe,
+  recipePreviewViewData,
+} from '@eciperay/client';
 import {useMutation} from '@tanstack/react-query';
 import {useEffect, useRef, useState} from 'react';
 import type {TweakAiMessage, TweakAiPhase} from '@eciperay/types';
 
 import {AiSessionPage} from '@spudly/ui';
-
-import {RecipeInputPreview} from '../components/recipe/RecipeInputPreview.js';
 
 export type AiSessionState = {
   id: string;
@@ -383,11 +385,7 @@ export const AiSessionHost = ({
             }
           : null
       }
-      preview={
-        previewRecipe ? (
-          <RecipeInputPreview recipe={previewRecipe} />
-        ) : undefined
-      }
+      preview={previewRecipe ? recipePreviewViewData(previewRecipe) : undefined}
       prompt={prompt}
       onPromptChange={setPrompt}
       followUp={followUp}

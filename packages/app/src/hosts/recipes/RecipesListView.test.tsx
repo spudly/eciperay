@@ -175,7 +175,7 @@ describe('RecipesListView list scrollability (#188)', () => {
  * holds the open set and renders the app's form through the accessory slot.
  * These tests pin the behavior the per-card state used to give this screen — a
  * form expands under the tapped row, its row's control hides while it is open,
- * and forms open and close independently (several may be open at once).
+ * one form is open at a time (DS 14's single cookLogForm).
  *
  * Row contract at @spudly/ui 1.8.0: there is no "Log cook" text button and no
  * Delete on list rows. A rated recipe's stars are the control (label "Log a
@@ -261,25 +261,26 @@ describe('RecipesListView cook-log accessory (#49 stage 2)', () => {
     expect(getByText('How did it go?')).toBeTruthy();
   });
 
-  test('forms open and close independently — a second form opens while the first stays open', async () => {
+  test('one form at a time — opening a second replaces the first (DS 14)', async () => {
     const {getAllByText, getByLabelText, queryByLabelText, queryByText} =
       await renderView();
 
     await fireEvent.press(getByLabelText('Log a cook of Pasta Night'));
     await fireEvent.press(getByLabelText('Log a cook of Salad Days'));
 
-    expect(getAllByText('How did it go?')).toHaveLength(2);
-    expect(queryByLabelText('Log a cook of Pasta Night')).toBeNull();
-    expect(queryByLabelText('Log a cook of Salad Days')).toBeNull();
-    expect(queryByText('Log cook')).toBeNull();
-
-    // Cancelling one form leaves the other open and restores only
-    // the cancelled row's control.
-    await fireEvent.press(getAllByText('Skip')[0]);
-
+    // DS 14's cookLogForm data prop expands a single row: the second
+    // opening replaced the first form, restoring the first row's
+    // log-cook control.
     expect(getAllByText('How did it go?')).toHaveLength(1);
     expect(getByLabelText('Log a cook of Pasta Night')).toBeTruthy();
     expect(queryByLabelText('Log a cook of Salad Days')).toBeNull();
+    expect(queryByText('Log cook')).toBeNull();
+
+    // Cancelling the open form restores its row's control.
+    await fireEvent.press(getAllByText('Skip')[0]);
+
+    expect(queryByText('How did it go?')).toBeNull();
+    expect(getByLabelText('Log a cook of Salad Days')).toBeTruthy();
   });
 
   test('saves the cook log through the slot form and closes it', async () => {

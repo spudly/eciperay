@@ -288,16 +288,13 @@ export const RecipesListView = ({
   ownErrorMessage,
 }: RecipesListViewOwnProps) => {
   const {i18n} = useLingui();
-  // The cook-log forms' open state: a set of recipe ids, so forms
-  // open and close independently and several may be open at once —
-  // the same semantics the cards' per-card state gave this screen.
-  // The page hides the log-cook control (the row's stars, or the
-  // icon-only button for an unrated recipe) of any row whose accessory
-  // renders content, so opening a form here is all it takes to
-  // reproduce the card's button-hides-while-open behavior.
-  const [openCookLogIds, setOpenCookLogIds] = useState<ReadonlySet<string>>(
-    () => new Set(),
-  );
+  // The cook-log form's open state: DS 14's RecipesPage renders ONE
+  // expanded form from the `cookLogForm` data prop (#687), so a single
+  // open recipe id replaces the old per-row accessory set — opening a
+  // second row's form closes the first. (InlineCookLogForm above
+  // remains for the Home list, which is not a DS page.)
+  const [openCookLogId, setOpenCookLogId] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
   const recipesById = new Map(recipes.map(recipe => [recipe.id, recipe]));
 
@@ -309,39 +306,55 @@ export const RecipesListView = ({
     if (!recipesById.has(recipeId)) {
       return;
     }
-    setOpenCookLogIds(current => new Set(current).add(recipeId));
+    openFormSessionRef.current += 1;
+    setOpenCookLogId(recipeId);
   };
 
-  const closeCookLog = (recipeId: string) => {
-    setOpenCookLogIds(current => {
-      if (!current.has(recipeId)) {
-        return current;
-      }
-      const next = new Set(current);
-      next.delete(recipeId);
-      return next;
-    });
+  const closeCookLog = () => {
+    setOpenCookLogId(null);
   };
 
-  // Reconcile the open set with the rows actually in the list: when a
-  // recipe leaves the list (filtered out, or the loading-to-empty
-  // transition), its open id goes with it, so a recipe that later
-  // returns comes back closed. The cards got this for free — unmounting
-  // a card discarded its open state — but the lifted set has to prune
-  // explicitly, or a returning row would reopen a fresh empty form and
-  // hide its log-cook control.
-  useEffect(() => {
-    setOpenCookLogIds(current => {
-      if (current.size === 0) {
-        return current;
-      }
-      const present = new Set(recipes.map(recipe => recipe.id));
-      const next = new Set(
-        [...current].filter(recipeId => present.has(recipeId)),
+  const openCookLogRecipe = openCookLogId
+    ? recipesById.get(openCookLogId)
+    : undefined;
+
+  // A form-session token, mirroring the web host: a save completing
+  // after its form was replaced must not close the replacement
+  // (invalidation always runs).
+  const openFormSessionRef = useRef(0);
+  const createCookLogMutation = useMutation({
+    mutationFn: ({
+      input,
+      recipe,
+    }: {
+      input: CookLogInput;
+      recipe: RecipeDetail;
+      session: number;
+    }) => api.cookLogs.create(recipe.id, recipe.versionId, input),
+    onSuccess: async (_data, variables) => {
+      await invalidateRecipeQueries(
+        queryClient,
+        variables.recipe.id,
+        variables.recipe.versionId,
       );
-      return next.size === current.size ? current : next;
-    });
-  }, [recipes]);
+      if (openFormSessionRef.current === variables.session) {
+        closeCookLog();
+      }
+    },
+  });
+
+  // Reconcile the open form with the rows actually in the list: when
+  // its recipe leaves the list (filtered out, or the loading-to-empty
+  // transition), the form closes, so a recipe that later returns
+  // comes back closed.
+  useEffect(() => {
+    if (
+      openCookLogId !== null &&
+      !recipes.some(recipe => recipe.id === openCookLogId)
+    ) {
+      setOpenCookLogId(null);
+    }
+  }, [recipes, openCookLogId]);
 
   const items: RecipesPageItem[] = recipes.map(recipe => ({
     id: recipe.id,
@@ -403,21 +416,26 @@ export const RecipesListView = ({
       loadingDiscovery={loadingDiscovery}
       discoveryErrorMessage={discoveryErrorMessage ?? null}
       onLogCookPress={openCookLog}
-      renderRecipeAccessory={recipeId => {
-        const recipe = recipesById.get(recipeId);
-        if (!recipe || !openCookLogIds.has(recipeId)) {
-          return null;
-        }
-        return (
-          <InlineCookLogForm
-            key={recipeId}
-            recipe={recipe}
-            onClose={() => {
-              closeCookLog(recipeId);
-            }}
-          />
-        );
-      }}
+      cookLogForm={
+        openCookLogRecipe
+          ? {
+              recipeId: openCookLogRecipe.id,
+              isPending: createCookLogMutation.isPending,
+              onSkip: () => {
+                if (!createCookLogMutation.isPending) {
+                  closeCookLog();
+                }
+              },
+              onSubmit: values => {
+                createCookLogMutation.mutate({
+                  input: {authorStarRating: values.rating, notes: values.notes},
+                  recipe: openCookLogRecipe,
+                  session: openFormSessionRef.current,
+                });
+              },
+            }
+          : null
+      }
       onLoadMore={onLoadMore}
       search={search}
       onSearchChange={onSearchChange}

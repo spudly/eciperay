@@ -26,7 +26,7 @@ import {
 const signIn = async (page: Page): Promise<void> => {
   await page.goto('/login');
   await page.getByLabel('Email').fill(qaEmail);
-  await page.getByLabel('Password').fill(qaPassword);
+  await page.getByLabel('Password', {exact: true}).fill(qaPassword);
   await page.getByRole('button', {name: 'Sign In'}).click();
 
   // A successful sign-in leaves /login for the signed-in app.

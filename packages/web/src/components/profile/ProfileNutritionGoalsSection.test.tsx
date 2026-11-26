@@ -1,13 +1,16 @@
 import type {NutritionGoals} from '@eciperay/types';
-import {screen, waitFor} from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import {act, renderHook, waitFor} from '@testing-library/react';
 import {vi} from 'vitest';
 
 import {eciperay} from '../../lib/api.js';
-import {renderWithProviders} from '../../test/testUtils.js';
+import {createWrapper} from '../../test/testUtils.js';
 
-import {ProfileNutritionGoalsSection} from './ProfileNutritionGoalsSection.js';
+import {useProfileNutritionGoalsProps} from './ProfileNutritionGoalsSection.js';
 
+// DS 14: the section is a hook returning ProfilePage's nutritionGoals
+// data prop; the DS form owns field rendering/parsing, so the tests
+// pin the host logic — saved goals load into the prop and onSave
+// persists the whole-goals state the prop's onChange accumulated.
 const emptyGoals: NutritionGoals = {
   caloriesMin: null,
   caloriesMax: null,
@@ -21,31 +24,55 @@ const emptyGoals: NutritionGoals = {
   satietyScoreMax: null,
 };
 
-describe('ProfileNutritionGoalsSection', () => {
+describe('useProfileNutritionGoalsProps', () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  test('allows typing a decimal goal and saves the decimal value', async () => {
-    const user = userEvent.setup();
+  test('loads saved goals and saves an edited decimal value', async () => {
     vi.spyOn(eciperay.account, 'getNutritionGoals').mockResolvedValue(
       emptyGoals,
     );
     const putSpy = vi
       .spyOn(eciperay.account, 'putNutritionGoals')
       .mockImplementation(async goals => goals);
-    await renderWithProviders(<ProfileNutritionGoalsSection />, {
-      withAuth: false,
+    const {Wrapper} = createWrapper({withAuth: false});
+    const {result} = renderHook(() => useProfileNutritionGoalsProps(), {
+      wrapper: Wrapper,
     });
 
-    const caloriesField = await screen.findByLabelText('Calories min');
-    await user.type(caloriesField, '1.5');
-    expect(caloriesField).toHaveValue('1.5');
+    await waitFor(() => {
+      expect(result.current.goals).toEqual(emptyGoals);
+    });
 
-    await user.click(screen.getByRole('button', {name: 'Save goals'}));
+    act(() => {
+      result.current.onChange({...emptyGoals, caloriesMin: 1.5});
+    });
+    act(() => {
+      result.current.onSave();
+    });
     await waitFor(() => {
       expect(putSpy).toHaveBeenCalledWith({...emptyGoals, caloriesMin: 1.5});
     });
-    expect(caloriesField).toHaveValue('1.5');
+    expect(result.current.error).toBeNull();
+  });
+
+  test('surfaces a save error on the prop', async () => {
+    vi.spyOn(eciperay.account, 'getNutritionGoals').mockResolvedValue(
+      emptyGoals,
+    );
+    vi.spyOn(eciperay.account, 'putNutritionGoals').mockRejectedValue(
+      new Error('Goals failed'),
+    );
+    const {Wrapper} = createWrapper({withAuth: false});
+    const {result} = renderHook(() => useProfileNutritionGoalsProps(), {
+      wrapper: Wrapper,
+    });
+    act(() => {
+      result.current.onSave();
+    });
+    await waitFor(() => {
+      expect(result.current.error).toBe('Goals failed');
+    });
   });
 });

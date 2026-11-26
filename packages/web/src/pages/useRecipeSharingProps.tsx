@@ -5,7 +5,7 @@ import {
   requiresPublishingConsent,
 } from '@eciperay/client';
 import type {RecipeDetail, RecipeVisibility} from '@eciperay/types';
-import {eciperayTheme, type RecipeDetailPageSharing} from '@spudly/ui';
+import type {RecipeDetailPageSharing} from '@spudly/ui';
 import {useLingui} from '@lingui/react';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useState} from 'react';
@@ -45,17 +45,24 @@ export const useRecipeSharingProps = (
   const tryAgain = () =>
     i18n._({id: 'recipeDetail.pleaseTryAgain', message: 'Please try again.'});
   const visibilityLabels: Record<RecipeVisibility, string> = {
-    private: i18n._({id: 'recipeSharing.visibilityPrivateLabel', message: 'Private'}),
+    private: i18n._({
+      id: 'recipeSharing.visibilityPrivateLabel',
+      message: 'Private',
+    }),
     unlisted: i18n._({
       id: 'recipeSharing.visibilityUnlistedLabel',
       message: 'Unlisted link',
     }),
-    public: i18n._({id: 'recipeSharing.visibilityPublicLabel', message: 'Public'}),
+    public: i18n._({
+      id: 'recipeSharing.visibilityPublicLabel',
+      message: 'Public',
+    }),
   };
   const visibilityDescriptions: Record<RecipeVisibility, string> = {
     private: i18n._({
       id: 'recipeSharing.visibilityPrivateDescription',
-      message: 'Just between you and your kitchen — only you can view this recipe, plus anyone you\'ve already shared it with.',
+      message:
+        "Just between you and your kitchen — only you can view this recipe, plus anyone you've already shared it with.",
     }),
     unlisted: i18n._({
       id: 'recipeSharing.visibilityUnlistedDescription',
@@ -63,7 +70,8 @@ export const useRecipeSharingProps = (
     }),
     public: i18n._({
       id: 'recipeSharing.visibilityPublicDescription',
-      message: 'Out in the open — anyone can view it, and once it\'s past the idea stage, anyone can discover it and it may turn up in search results.',
+      message:
+        "Out in the open — anyone can view it, and once it's past the idea stage, anyone can discover it and it may turn up in search results.",
     }),
   };
   const queryClient = useQueryClient();
@@ -110,9 +118,7 @@ export const useRecipeSharingProps = (
         i18n._({
           id: 'recipeSharing.couldNotUpdate',
           message: 'Could not update sharing settings: {error}',
-          values: {
-            error: error instanceof Error ? error.message : tryAgain(),
-          },
+          values: {error: error instanceof Error ? error.message : tryAgain()},
         }),
       );
     },
@@ -126,7 +132,10 @@ export const useRecipeSharingProps = (
       }
       void invalidate();
       onActionMessage(
-        i18n._({id: 'recipeSharing.linkRotated', message: 'Share link rotated'}),
+        i18n._({
+          id: 'recipeSharing.linkRotated',
+          message: 'Share link rotated',
+        }),
       );
     },
     onError: error => {
@@ -134,9 +143,7 @@ export const useRecipeSharingProps = (
         i18n._({
           id: 'recipeSharing.couldNotRotate',
           message: 'Could not rotate the share link: {error}',
-          values: {
-            error: error instanceof Error ? error.message : tryAgain(),
-          },
+          values: {error: error instanceof Error ? error.message : tryAgain()},
         }),
       );
     },
@@ -170,7 +177,7 @@ export const useRecipeSharingProps = (
         ? i18n._({
             id: 'recipeSharing.publicWarning',
             message:
-              'Heads up — once public, anyone can view this recipe, and once it\'s past the idea stage, anyone browsing Eciperay can discover it.',
+              "Heads up — once public, anyone can view this recipe, and once it's past the idea stage, anyone browsing Eciperay can discover it.",
           })
         : null,
     ...(consentRequired
@@ -179,30 +186,26 @@ export const useRecipeSharingProps = (
             id: 'recipeSharing.consentLabel',
             message: 'Publishing consent',
           }),
-          consentDescription: (
-            <>
-              {i18n._({
+          consentDescription: [
+            {
+              type: 'text',
+              text: i18n._({
                 id: 'recipeSharing.consentDescriptionStart',
                 message:
                   'I understand this recipe may be viewed without signing in and I agree to the',
-              })}{' '}
-              <a
-                href={PRIVACY_POLICY_URL}
-                style={{
-                  color: eciperayTheme.semantic.primary,
-                  textDecoration: 'underline',
-                }}
-                target="_blank"
-                rel="noreferrer"
-              >
-                {i18n._({
-                  id: 'recipeSharing.privacyPolicyLinkLabel',
-                  message: 'Privacy Policy',
-                })}
-              </a>
-              .
-            </>
-          ),
+              }),
+            },
+            {type: 'text', text: ' '},
+            {
+              type: 'link',
+              label: i18n._({
+                id: 'recipeSharing.privacyPolicyLinkLabel',
+                message: 'Privacy Policy',
+              }),
+              href: PRIVACY_POLICY_URL,
+            },
+            {type: 'text', text: '.'},
+          ],
           consentChecked: publishingConsent,
           onConsentCheckedChange: setPublishingConsent,
           consentRequired: true,

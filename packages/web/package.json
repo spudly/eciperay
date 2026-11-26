@@ -22,7 +22,7 @@
     "@eciperay/client": "*",
     "@eciperay/types": "*",
     "@lingui/react": "^6.12.0",
-    "@spudly/ui": "^11.0.0",
+    "@spudly/ui": "^14.0.0",
     "@supabase/supabase-js": "^2.118.0",
     "@tanstack/react-query": "^5.104.5",
     "clsx": "^2.1.1",

@@ -63,6 +63,8 @@ export {
   buildRecipePageTitle,
   buildRecipeSocialMeta,
   formatSchemaDuration,
+  formatTotalTimeLabel,
+  recipeCategoryLabel,
   RECIPE_SEO_SITE_NAME,
   type RecipeCommunityRating,
   type RecipeSocialMeta,
@@ -295,7 +297,11 @@ export {
 } from './recipeListDisplay.js';
 export {
   netCarbsG,
+  nutritionFacts,
   nutritionTabRows,
+  type NutritionFact,
+  type NutritionFactKind,
+  type NutritionFacts,
   type NutritionTabRow,
 } from './nutritionTabRows.js';
 export {
@@ -396,8 +402,10 @@ export {
 } from './compareVersionToParent.js';
 export {
   parseProposedRecipe,
+  recipePreviewViewData,
   sortedPreviewIngredients,
   sortedPreviewInstructions,
+  type RecipePreviewViewData,
 } from './recipeInputPreview.js';
 export {truncateChangeSummary} from './truncateChangeSummary.js';
 export {

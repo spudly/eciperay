@@ -126,6 +126,40 @@ const RECIPE_CUISINE_TAGS: ReadonlySet<string> = new Set([
   'mexican',
 ]);
 
+/**
+ * The recipe's category label for the detail page's metadata pill (#640 / DS
+ * #721): the first tag that names a preset course category, in its stored
+ * (display) form, or undefined when the recipe carries no category tag.
+ */
+export const recipeCategoryLabel = (
+  tags: readonly {name: string}[],
+): string | undefined =>
+  tags
+    .map(tag => tag.name.trim())
+    .find(name => RECIPE_CATEGORY_TAGS.has(name.toLowerCase()));
+
+/**
+ * The total-time label for the detail page's metadata pill (#640 / DS #721):
+ * prep + cook summed host-side (the design system never sums label strings),
+ * formatted as "45 min" / "1 h 15 min". Undefined when neither time is
+ * recorded.
+ */
+export const formatTotalTimeLabel = (
+  prepTimeMin?: number | null,
+  cookTimeMin?: number | null,
+): string | undefined => {
+  const total = (prepTimeMin ?? 0) + (cookTimeMin ?? 0);
+  if (total <= 0) {
+    return undefined;
+  }
+  if (total < 60) {
+    return `${total} min`;
+  }
+  const hours = Math.floor(total / 60);
+  const minutes = total % 60;
+  return minutes === 0 ? `${hours} h` : `${hours} h ${minutes} min`;
+};
+
 const applyCategoryCuisineKeywords = (
   jsonLd: Record<string, unknown>,
   recipe: PublicRecipeDetail,

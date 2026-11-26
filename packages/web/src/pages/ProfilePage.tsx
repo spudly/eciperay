@@ -8,12 +8,11 @@ import {useNavigate} from 'react-router-dom';
 
 import {ProfilePage as ProfilePageView} from '@spudly/ui';
 
-import {LegalLinks} from '../components/LegalLinks.js';
-import {ProfileAccessTokensSection} from '../components/profile/ProfileAccessTokensSection.js';
+import {useProfileAccessTokensProps} from '../components/profile/ProfileAccessTokensSection.js';
 import {ProfileAuthorDisplaySection} from '../components/profile/ProfileAuthorDisplaySection.js';
 import {ProfileFeedbackPreference} from '../components/ProfileFeedbackPreference.js';
 import {ProfileFamilySharingSection} from '../components/profile/ProfileFamilySharingSection.js';
-import {ProfileNutritionGoalsSection} from '../components/profile/ProfileNutritionGoalsSection.js';
+import {useProfileNutritionGoalsProps} from '../components/profile/ProfileNutritionGoalsSection.js';
 import {ProfileShowLessSection} from '../components/profile/ProfileShowLessSection.js';
 import {buildSubscriptionData} from '../components/profile/subscriptionData.js';
 import {downloadAccountExportBundle} from '../lib/downloadAccountExport.js';
@@ -225,20 +224,23 @@ export const ProfilePage = () => {
       });
   };
 
-  const subscription = buildSubscriptionData({
-    entitlement: entitlementQuery.data ?? null,
-    isLoading: entitlementQuery.isLoading,
-    isOpeningPortal: portalMutation.isPending,
-    onManage: handleManage,
-    portalUrl,
-    isReconciling,
-    onRefresh: handleRefresh,
-    isRefreshing: refreshMutation.isPending,
-    error:
-      portalError ??
-      refreshError ??
-      (entitlementQuery.error ? errorMessage(entitlementQuery.error) : null),
-  }, i18n);
+  const subscription = buildSubscriptionData(
+    {
+      entitlement: entitlementQuery.data ?? null,
+      isLoading: entitlementQuery.isLoading,
+      isOpeningPortal: portalMutation.isPending,
+      onManage: handleManage,
+      portalUrl,
+      isReconciling,
+      onRefresh: handleRefresh,
+      isRefreshing: refreshMutation.isPending,
+      error:
+        portalError ??
+        refreshError ??
+        (entitlementQuery.error ? errorMessage(entitlementQuery.error) : null),
+    },
+    i18n,
+  );
 
   // --- Account data (the page's `accountData` data prop) ---
 
@@ -349,7 +351,10 @@ export const ProfilePage = () => {
       setTransferError(
         error instanceof Error
           ? error.message
-          : i18n._({id: 'profile.exportRecipesError', message: 'Export failed'}),
+          : i18n._({
+              id: 'profile.exportRecipesError',
+              message: 'Export failed',
+            }),
       );
     } finally {
       setExporting(false);
@@ -391,6 +396,9 @@ export const ProfilePage = () => {
     }
   };
 
+  const nutritionGoals = useProfileNutritionGoalsProps();
+  const accessTokens = useProfileAccessTokensProps();
+
   return (
     <>
       <ProfilePageView
@@ -399,16 +407,8 @@ export const ProfilePage = () => {
           void handleSignOut();
         }}
         subscription={subscription}
-        sectionsBeforeFeedback={
-          <>
-            <ProfileNutritionGoalsSection />
-            <ProfileShowLessSection />
-            <ProfileAuthorDisplaySection />
-            <ProfileFamilySharingSection />
-            <ProfileAccessTokensSection />
-          </>
-        }
-        feedbackPreference={<ProfileFeedbackPreference />}
+        nutritionGoals={nutritionGoals}
+        accessTokens={accessTokens}
         transfer={{
           hint: i18n._({
             id: 'profile.transferHint',
@@ -500,8 +500,24 @@ export const ProfilePage = () => {
           }),
           error: accountError,
         }}
-        legalLinks={<LegalLinks variant="stacked" />}
+        legalLinks={[
+          {label: 'Privacy Policy', href: '/privacy'},
+          {label: 'Terms of Service', href: '/terms'},
+          {
+            label: 'Do Not Sell or Share My Personal Information',
+            href: '/privacy/consent',
+          },
+        ]}
       />
+      {/* Host-only sections DS 14's ProfilePage has no data prop
+          for (the generic section slots were removed in #685):
+          they render as siblings below the page, in their old
+          relative order. Feedback stays host-composed for the
+          reason recorded on ProfileFeedbackPreference itself. */}
+      <ProfileShowLessSection />
+      <ProfileAuthorDisplaySection />
+      <ProfileFamilySharingSection />
+      <ProfileFeedbackPreference />
       <input
         ref={fileInputRef}
         type="file"

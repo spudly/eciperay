@@ -1,5 +1,7 @@
 import type {RecipeVersionInput} from '@eciperay/types';
 
+import {formatScaledIngredientLine} from './recipeScaling.js';
+
 const isProposedRecipeRecord = (
   value: unknown,
 ): value is Record<string, unknown> =>
@@ -45,3 +47,37 @@ export const sortedPreviewIngredients = (input: RecipeVersionInput) =>
 
 export const sortedPreviewInstructions = (input: RecipeVersionInput) =>
   [...input.instructions].sort((a, b) => a.stepNumber - b.stepNumber);
+
+export type RecipePreviewViewData = {
+  title: string;
+  metaLabel?: string;
+  ingredients?: string[];
+  instructions?: string[];
+};
+
+/**
+ * The DS 14 RecipePreviewView data (#684 contract): the parsed recipe as plain
+ * data — title, one app-formatted meta line, the scaled ingredient lines, and
+ * the instruction lines — replacing the hosts' rendered RecipeInputPreview
+ * element. The meta line mirrors that component's line ("Serves 4 · Prep 10 min
+ * · Cook 20 min").
+ */
+export const recipePreviewViewData = (
+  input: RecipeVersionInput,
+): RecipePreviewViewData => {
+  const metaParts = [`Serves ${input.servings}`];
+  if (input.prepTimeMin !== null && input.prepTimeMin !== undefined) {
+    metaParts.push(`Prep ${input.prepTimeMin} min`);
+  }
+  if (input.cookTimeMin !== null && input.cookTimeMin !== undefined) {
+    metaParts.push(`Cook ${input.cookTimeMin} min`);
+  }
+  return {
+    title: input.title,
+    metaLabel: metaParts.join(' · '),
+    ingredients: sortedPreviewIngredients(input).map(ingredient =>
+      formatScaledIngredientLine(ingredient, 1),
+    ),
+    instructions: sortedPreviewInstructions(input).map(step => step.body),
+  };
+};

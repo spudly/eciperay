@@ -1,7 +1,10 @@
 import {
+  CONSENT_PREFERENCES_URL,
   defaultNutritionGoals,
   errorMessage,
+  PRIVACY_POLICY_URL,
   queryKeys,
+  TERMS_OF_SERVICE_URL,
   useAuth,
 } from '@eciperay/client';
 import {useLingui} from '@lingui/react';
@@ -16,14 +19,12 @@ import type {
 
 import {ProfilePage} from '@spudly/ui';
 
-import {LegalLinks} from '../components/LegalLinks';
-import {AccessTokensSection} from '../hosts/profile/AccessTokensSection';
+import {useAccessTokensProps} from '../hosts/profile/AccessTokensSection';
 import {AuthorDisplayForm} from '../hosts/profile/AuthorDisplayForm';
 import {
   FamilySharingForm,
   grantLabel,
 } from '../hosts/profile/FamilySharingForm';
-import {NutritionGoalsForm} from '../hosts/profile/NutritionGoalsForm';
 import {ShowLessForm} from '../hosts/profile/ShowLessForm';
 import {ProfileFeedbackPreference} from '../hosts/profile/ProfileFeedbackPreference';
 import {SectionAlert, SectionButton} from '../hosts/profile/profileSection';
@@ -141,9 +142,7 @@ export const ProfileScreen = () => {
         queryKey: queryKeys.showLess(showLessUserId),
       });
       // The undo restores similar recipes' ranking in discovery.
-      void queryClient.invalidateQueries({
-        queryKey: ['publicRecipeDiscovery'],
-      });
+      void queryClient.invalidateQueries({queryKey: ['publicRecipeDiscovery']});
     },
     onError: error => {
       setShowLessError(errorMessage(error));
@@ -213,111 +212,118 @@ export const ProfileScreen = () => {
     );
   };
 
+  const accessTokens = useAccessTokensProps();
+
+  // DS 14's ProfilePage has no generic section slots (#685): the
+  // sections it covers cross as data props (nutritionGoals,
+  // accessTokens, legalLinks below), and the host-only sections
+  // (profile-load alert, author display, show-less, family sharing,
+  // feedback preference) render as siblings after the page.
   return (
-    <ProfilePage
-      email={session?.user.email ?? null}
-      tagsHref={me?.isAdmin ? tagsHref : undefined}
-      onSignOut={() => {
-        void supabase.auth.signOut();
-      }}
-      legalLinks={<LegalLinks />}
-      sectionsBeforeFeedback={
+    <>
+      <ProfilePage
+        email={session?.user.email ?? null}
+        tagsHref={me?.isAdmin ? tagsHref : undefined}
+        onSignOut={() => {
+          void supabase.auth.signOut();
+        }}
+        legalLinks={[
+          {label: 'Privacy Policy', href: PRIVACY_POLICY_URL},
+          {label: 'Terms of Service', href: TERMS_OF_SERVICE_URL},
+          {
+            label: 'Do Not Sell or Share My Personal Information',
+            href: CONSENT_PREFERENCES_URL,
+          },
+        ]}
+        nutritionGoals={{
+          goals: nutritionGoals,
+          saving: saveGoalsMutation.isPending,
+          error: goalsError,
+          onChange: setNutritionGoals,
+          onSave: () => {
+            saveGoalsMutation.mutate();
+          },
+        }}
+        accessTokens={accessTokens}
+      />
+      {meLoadFailed ? (
         <>
-          {meLoadFailed ? (
-            <>
-              <SectionAlert
-                severity="error"
-                message={`Could not load your profile: ${errorMessage(meLoadError)}`}
-              />
-              <SectionButton
-                onPress={() => {
-                  void refetchMe();
-                }}
-              >
-                Try again
-              </SectionButton>
-            </>
-          ) : null}
-          <NutritionGoalsForm
-            goals={nutritionGoals}
-            saving={saveGoalsMutation.isPending}
-            error={goalsError}
-            onChange={setNutritionGoals}
-            onSave={() => {
-              saveGoalsMutation.mutate();
-            }}
+          <SectionAlert
+            severity="error"
+            message={`Could not load your profile: ${errorMessage(meLoadError)}`}
           />
-          <AuthorDisplayForm
-            settings={authorDisplay}
-            saving={saveAuthorDisplayMutation.isPending}
-            saveDisabled={!savedAuthorDisplay}
-            error={
-              authorDisplayError ??
-              (authorDisplayLoadFailed
-                ? i18n._({
-                    id: 'profile.authorDisplayLoadError',
-                    message:
-                      'Could not load your author display settings: {error}',
-                    values: {error: errorMessage(authorDisplayLoadError)},
-                  })
-                : null)
-            }
-            onChange={setAuthorDisplay}
-            onSave={() => {
-              saveAuthorDisplayMutation.mutate();
+          <SectionButton
+            onPress={() => {
+              void refetchMe();
             }}
-          />
-          <ShowLessForm
-            entries={showLessEntries}
-            isLoading={showLessLoading}
-            loadFailed={showLessLoadFailed}
-            undoingId={
-              undoShowLessMutation.isPending
-                ? undoShowLessMutation.variables
-                : null
-            }
-            error={showLessError}
-            onUndo={sourceRecipeId => {
-              undoShowLessMutation.mutate(sourceRecipeId);
-            }}
-          />
-          <FamilySharingForm
-            grants={familyGrants}
-            isLoading={familyLoading}
-            loadFailed={familyLoadFailed}
-            email={familyEmail}
-            onEmailChange={next => {
-              setFamilyEmail(next);
-              // Editing the address after a failure clears the stale
-              // mutation error (query-load errors stay separate).
-              setFamilyError(null);
-            }}
-            adding={addFamilyMutation.isPending}
-            removingId={
-              removeFamilyMutation.isPending
-                ? removeFamilyMutation.variables
-                : null
-            }
-            error={
-              familyError ??
-              (familyLoadFailed
-                ? `Could not load your family sharing designations: ${errorMessage(familyLoadError)}`
-                : null)
-            }
-            onAdd={() => {
-              const nextEmail = familyEmail.trim();
-              if (nextEmail) {
-                // A retry starts clean, mirroring the web section.
-                setFamilyError(null);
-                addFamilyMutation.mutate(nextEmail);
-              }
-            }}
-            onRemove={handleRemoveFamily}
-          />
-          <AccessTokensSection />
+          >
+            Try again
+          </SectionButton>
         </>
-      }
-      feedbackPreference={<ProfileFeedbackPreference />}
-    />
+      ) : null}
+      <AuthorDisplayForm
+        settings={authorDisplay}
+        saving={saveAuthorDisplayMutation.isPending}
+        saveDisabled={!savedAuthorDisplay}
+        error={
+          authorDisplayError ??
+          (authorDisplayLoadFailed
+            ? i18n._({
+                id: 'profile.authorDisplayLoadError',
+                message: 'Could not load your author display settings: {error}',
+                values: {error: errorMessage(authorDisplayLoadError)},
+              })
+            : null)
+        }
+        onChange={setAuthorDisplay}
+        onSave={() => {
+          saveAuthorDisplayMutation.mutate();
+        }}
+      />
+      <ShowLessForm
+        entries={showLessEntries}
+        isLoading={showLessLoading}
+        loadFailed={showLessLoadFailed}
+        undoingId={
+          undoShowLessMutation.isPending ? undoShowLessMutation.variables : null
+        }
+        error={showLessError}
+        onUndo={sourceRecipeId => {
+          undoShowLessMutation.mutate(sourceRecipeId);
+        }}
+      />
+      <FamilySharingForm
+        grants={familyGrants}
+        isLoading={familyLoading}
+        loadFailed={familyLoadFailed}
+        email={familyEmail}
+        onEmailChange={next => {
+          setFamilyEmail(next);
+          // Editing the address after a failure clears the stale
+          // mutation error (query-load errors stay separate).
+          setFamilyError(null);
+        }}
+        adding={addFamilyMutation.isPending}
+        removingId={
+          removeFamilyMutation.isPending ? removeFamilyMutation.variables : null
+        }
+        error={
+          familyError ??
+          (familyLoadFailed
+            ? `Could not load your family sharing designations: ${errorMessage(familyLoadError)}`
+            : null)
+        }
+        onAdd={() => {
+          const nextEmail = familyEmail.trim();
+          if (nextEmail) {
+            // A retry starts clean, mirroring the web section.
+            setFamilyError(null);
+            addFamilyMutation.mutate(nextEmail);
+          }
+        }}
+        onRemove={handleRemoveFamily}
+      />
+      <ProfileFeedbackPreference />
+    </>
   );
 };

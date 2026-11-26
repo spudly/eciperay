@@ -35,7 +35,7 @@ describe('SelectField', () => {
     );
 
     const select = screen.getByLabelText('Status');
-    // The DS Warm Harvest field surface (#fffdf8), not plain white.
-    expect(select.style.backgroundColor).toBe('rgb(255, 253, 248)');
+    // The DS Warm Harvest field surface (#fbf4e8), not plain white.
+    expect(select.style.backgroundColor).toBe('rgb(251, 244, 232)');
   });
 });

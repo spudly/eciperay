@@ -17,10 +17,7 @@ import {
 } from '@eciperay/client';
 import type {RecipeStarRating} from '@eciperay/types';
 import {tagColorNameForHex} from '@spudly/ui';
-import {
-  PublicRecipePage as PublicRecipePageView,
-  type PublicRecipePageProps,
-} from '@spudly/ui';
+import {RecipeDetailPage, type RecipeDetailPageProps} from '@spudly/ui';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useState} from 'react';
 import {
@@ -39,17 +36,18 @@ import {useRecipeCommentsProps} from './useRecipeCommentsProps.js';
 
 /**
  * The public recipe route's host (B7 cluster 11): the design system's
- * PublicRecipePage renders the surface — a single scroll holding the overview,
- * ingredients, instructions, and engagement sections (#169) — and this
- * component keeps everything the page must not own: the getPublic query and the
- * slug-canonical redirect, the document head (RecipePageHead), the clone and
- * rating mutations, and the per-section view-model mapping (servings/scale
- * selection, the missing-ingredient set and the substitutions lookup it drives,
- * the ratings view-model), which mirrors the app detail host's mapping for
- * RecipeDetailPage. Every state of the page renders under the host's
- * PublicHeader with the page's own footer from the shared footer data (#452 —
- * the DS PublicPageFrame that used to wrap it was retired in @spudly/ui
- * 7.0.0).
+ * RecipeDetailPage renders the surface in its guest form (#640 — DS #757 merged
+ * PublicRecipePage into RecipeDetailPage; there is no separate public page) — a
+ * single scroll holding the overview, ingredients, instructions, and engagement
+ * sections (#169) — and this component keeps everything the page must not own:
+ * the getPublic query and the slug-canonical redirect, the document head
+ * (RecipePageHead), the clone and rating mutations, and the per-section
+ * view-model mapping (servings/scale selection, the missing-ingredient set and
+ * the substitutions lookup it drives, the ratings view-model), which mirrors
+ * the app detail host's mapping for RecipeDetailPage. Every state of the page
+ * renders under the host's PublicHeader with the page's own footer from the
+ * shared footer data (#452 — the DS PublicPageFrame that used to wrap it was
+ * retired in @spudly/ui 7.0.0).
  */
 
 /**
@@ -176,10 +174,10 @@ const PublicRecipePageContent = () => {
       enabled: missingNames.length > 0 && Boolean(session),
     });
 
-  const frame = (props: PublicRecipePageProps) => (
+  const frame = (props: RecipeDetailPageProps) => (
     <>
       <PublicHeader />
-      <PublicRecipePageView
+      <RecipeDetailPage
         {...props}
         footer={sharedFooter}
       />
@@ -261,11 +259,11 @@ const PublicRecipePageContent = () => {
       />
       {frame({
         state: 'ready',
+        viewer: session ? 'signedIn' : 'signedOut',
         overview: {
           imageUrl: resizedImageUrl(recipe.imageUrl, 1200),
           title: recipe.title,
           description: recipe.description,
-          status: recipe.status,
           servingsLabel: String(currentServings),
           ...(recipe.prepTimeMin
             ? {prepTimeLabel: `${recipe.prepTimeMin}m`}

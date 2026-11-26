@@ -28,7 +28,7 @@ test.describe('live, signed out', () => {
 
     await expect(page).toHaveURL(/\/login$/);
     await expect(page.getByLabel('Email')).toBeVisible();
-    await expect(page.getByLabel('Password')).toBeVisible();
+    await expect(page.getByLabel('Password', {exact: true})).toBeVisible();
     await expect(page.getByRole('button', {name: 'Sign In'})).toBeVisible();
   });
 
@@ -37,7 +37,9 @@ test.describe('live, signed out', () => {
   }) => {
     await page.goto('/login');
     await page.getByLabel('Email').fill('ci-nonexistent@example.invalid');
-    await page.getByLabel('Password').fill('definitely-wrong-password');
+    await page
+      .getByLabel('Password', {exact: true})
+      .fill('definitely-wrong-password');
     await page.getByRole('button', {name: 'Sign In'}).click();
 
     // Supabase answers and the form surfaces the failure; we stay on /login.

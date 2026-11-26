@@ -5,14 +5,16 @@ import {
   canEditActiveRecipeMetadata,
   canEditDraftVersion,
   formatCommunityRatingLabel,
+  formatTotalTimeLabel,
   formatScaledIngredientLine,
   invalidateRecipeQueries,
   isActiveScaleMultiplier,
   makeRecipeDetail,
   makeRecipeVersionSummary,
-  nutritionTabRows,
+  nutritionFacts,
   queryKeys,
   RECIPE_SCALE_MULTIPLIERS,
+  recipeCategoryLabel,
   servingsForMultiplier,
   sortIngredientsByOrder,
   truncateChangeSummary,
@@ -37,7 +39,6 @@ import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useState} from 'react';
 import {Alert} from 'react-native';
 
-import {CookLogForm} from '../../components/CookLogForm';
 import {api} from '../../lib/api';
 import {
   recipeCookHref,
@@ -449,7 +450,10 @@ export const RecipeDetailView = ({
           id: 'recipeDetail.couldNotRefreshNutrition',
           message: 'Could not refresh nutrition',
         }),
-        i18n._({id: 'recipeDetail.pleaseTryAgain', message: 'Please try again.'}),
+        i18n._({
+          id: 'recipeDetail.pleaseTryAgain',
+          message: 'Please try again.',
+        }),
       );
     } finally {
       setIsRefreshingNutrition(false);
@@ -467,10 +471,7 @@ export const RecipeDetailView = ({
         }
       : {
           state: 'ready',
-          rows: nutritionTabRows(nutrition).map(row => ({
-            label: row.label,
-            valueLabel: `${row.value}${row.unit}`,
-          })),
+          facts: nutritionFacts(nutrition),
           disclaimer: nutrition.disclaimer,
           isRefreshing: isRefreshingNutrition,
           isFetching: isFetchingNutrition,
@@ -529,6 +530,11 @@ export const RecipeDetailView = ({
         title: displayRecipe.title,
         description: displayRecipe.description,
         servingsLabel: String(currentServings),
+        categoryLabel: recipeCategoryLabel(displayRecipe.tags),
+        totalTimeLabel: formatTotalTimeLabel(
+          displayRecipe.prepTimeMin,
+          displayRecipe.cookTimeMin,
+        ),
         prepTimeLabel: displayRecipe.prepTimeMin
           ? `${displayRecipe.prepTimeMin}m`
           : undefined,
@@ -661,26 +667,25 @@ export const RecipeDetailView = ({
         onLogCookPress: () => {
           setShowCookLogForm(true);
         },
-        renderCookLogForm: () =>
-          showCookLogForm ? (
-            <CookLogForm
-              variant="light"
-              notesPlaceholder={i18n._({
+        cookLogForm: showCookLogForm
+          ? {
+              notesPlaceholder: i18n._({
                 id: 'cookingMode.cookLogNotesPlaceholder',
-                message: 'Notes from this cook — what worked, what to change next time (optional)',
-              })}
-              isPending={createCookLogMutation.isPending}
-              onSkip={() => {
+                message:
+                  'Notes from this cook — what worked, what to change next time (optional)',
+              }),
+              isPending: createCookLogMutation.isPending,
+              onSkip: () => {
                 setShowCookLogForm(false);
-              }}
-              onSubmit={values => {
+              },
+              onSubmit: values => {
                 createCookLogMutation.mutate({
                   authorStarRating: values.rating,
                   notes: values.notes,
                 });
-              }}
-            />
-          ) : null,
+              },
+            }
+          : null,
       }}
       nutrition={nutritionProps}
     />
