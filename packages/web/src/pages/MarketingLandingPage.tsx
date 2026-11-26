@@ -2,17 +2,17 @@ import {MOBILE_APP_INSTALL_URL} from '@eciperay/client';
 import {useLingui} from '@lingui/react';
 import {LandingPage} from '@spudly/ui';
 
-import {PublicHeader} from '../components/PublicHeader.js';
 import {StaticPageHead} from '../components/StaticPageHead.js';
 
-import {sharedFooter} from './legal/legalDocumentData.js';
-
 // The signed-out landing's host (B7 cluster 11): the design
-// system's LandingPage renders the surface (#171) and its own
-// footer from the shared footer data (#452 — the DS frame that
-// used to wrap it was retired in @spudly/ui 7.0.0); the host
-// supplies the header band (PublicHeader) the frame used to
-// provide. The copy and the CTA destinations stay app-owned
+// system's LandingPage renders the surface (#171); the chrome
+// around it — header and footer — is the one DS AppShellPage
+// shell the host's AppShell composes (HomeEntry renders this page
+// inside it, #620), which renders the DS-owned brand mark
+// (mark: 'eciperay'), the public nav, the Sign in action, and the
+// shared BigFooter. The host PublicHeader that used to supply the
+// header band is deleted: DS-owned chrome does not live in this
+// repo. The copy and the CTA destinations stay app-owned
 // content, passed in as data — the three CTAs as {label, href}
 // pairs (rendered as link buttons) and the three features in
 // the page's fixed slots. The page-unique copy flows through
@@ -29,9 +29,7 @@ export const MarketingLandingPage = () => {
   return (
     <>
       <StaticPageHead path="/" />
-      <PublicHeader />
       <LandingPage
-        footer={sharedFooter}
         heroTitle={i18n._({
           id: 'landing.heroTitle',
           message: 'Every recipe you love, in one place — ready when you are',

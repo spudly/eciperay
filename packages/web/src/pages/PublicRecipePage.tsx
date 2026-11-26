@@ -27,11 +27,10 @@ import {
   useSearchParams,
 } from 'react-router-dom';
 
-import {PublicHeader} from '../components/PublicHeader.js';
+import {AppShell} from '../components/AppShell.js';
 import {RecipePageHead} from '../components/RecipePageHead.js';
 import {eciperay} from '../lib/api.js';
 
-import {sharedFooter} from './legal/legalDocumentData.js';
 import {useRecipeCommentsProps} from './useRecipeCommentsProps.js';
 
 /**
@@ -45,9 +44,12 @@ import {useRecipeCommentsProps} from './useRecipeCommentsProps.js';
  * view-model mapping (servings/scale selection, the missing-ingredient set and
  * the substitutions lookup it drives, the ratings view-model), which mirrors
  * the app detail host's mapping for RecipeDetailPage. Every state of the page
- * renders under the host's PublicHeader with the page's own footer from the
- * shared footer data (#452 — the DS PublicPageFrame that used to wrap it was
- * retired in @spudly/ui 7.0.0).
+ * renders inside the one AppShell (#620): the DS AppShellPage chrome renders
+ * the DS-owned brand mark (mark: 'eciperay'), the public nav, the Sign in
+ * action, and the shared BigFooter — the host PublicHeader that used to
+ * supply the header band is deleted (DS-owned chrome does not live in this
+ * repo), and the page no longer passes its own footer, since the shell
+ * supplies the shared one.
  */
 
 /**
@@ -175,13 +177,9 @@ const PublicRecipePageContent = () => {
     });
 
   const frame = (props: RecipeDetailPageProps) => (
-    <>
-      <PublicHeader />
-      <RecipeDetailPage
-        {...props}
-        footer={sharedFooter}
-      />
-    </>
+    <AppShell>
+      <RecipeDetailPage {...props} />
+    </AppShell>
   );
 
   if (!id || !slug) {

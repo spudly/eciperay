@@ -21,5 +21,13 @@ export const HomeEntry = () => {
     );
   }
 
-  return <MarketingLandingPage />;
+  // Signed-out visitors get the marketing landing inside the one
+  // AppShell too (#620): the DS AppShellPage chrome (brand mark,
+  // public nav, Sign in action, shared footer) replaces the retired
+  // host PublicHeader — there is no host-owned header component.
+  return (
+    <AppShell>
+      <MarketingLandingPage />
+    </AppShell>
+  );
 };

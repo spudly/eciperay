@@ -1,5 +1,5 @@
 import {buildRecipePageTitle} from '@eciperay/client';
-import {screen, waitFor, within} from '@testing-library/react';
+import {screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as ReactQuery from '@tanstack/react-query';
 import {http, HttpResponse} from 'msw';
@@ -23,10 +23,9 @@ function SignUpRoute() {
 }
 
 // The host renders the design system's RecipeDetailPage (guest form,
-// #640) under its
-// own PublicHeader, with the page rendering its footer from the
-// shared footer data (B7 cluster 11; #452 retired the DS
-// PublicPageFrame); these tests drive that page's real DOM: the
+// #640) inside the one AppShell (B7 cluster 11; #620 — the DS
+// AppShellPage chrome supplies the header and the shared BigFooter;
+// the host PublicHeader is deleted); these tests drive that page's real DOM: the
 // sections stack in a single scroll (no tabs), and the CTA bar's
 // intents are buttons whose callbacks the host wires to navigation
 // and the clone mutation.
@@ -59,18 +58,22 @@ describe('PublicRecipePage', () => {
       'href',
       '/privacy',
     );
-    // The header the retired DS frame supplied is host chrome now
-    // (#452): the brand wordmark links home and Sign in links to
-    // the login route.
-    const header = within(screen.getByRole('banner'));
-    expect(header.getByRole('link', {name: 'Eciperay'})).toHaveAttribute(
-      'href',
-      '/',
-    );
-    expect(header.getByRole('link', {name: 'Sign in'})).toHaveAttribute(
-      'href',
-      '/login',
-    );
+    // The header is the DS AppShellPage chrome via the one AppShell
+    // (#620): the brand link home (header and shared-footer brand
+    // links) carries the DS-owned 'eciperay' mark — an svg beside
+    // the wordmark in the header link, the #620 regression — and
+    // Sign in is a real link to the login route.
+    const brandLinks = screen.getAllByRole('link', {name: 'Eciperay'});
+    expect(brandLinks).toHaveLength(2);
+    for (const brandLink of brandLinks) {
+      expect(brandLink).toHaveAttribute('href', '/');
+    }
+    expect(brandLinks[0]?.querySelector('svg') ?? null).not.toBeNull();
+    const signInLinks = screen.getAllByRole('link', {name: 'Sign in'});
+    expect(signInLinks.length).toBeGreaterThanOrEqual(1);
+    for (const link of signInLinks) {
+      expect(link).toHaveAttribute('href', '/login');
+    }
 
     // Single scroll: ingredients and instructions render with the
     // overview — no tab switch is involved.
