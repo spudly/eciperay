@@ -1,6 +1,5 @@
 import {
   CONSENT_PREFERENCES_URL,
-  defaultNutritionGoals,
   errorMessage,
   PRIVACY_POLICY_URL,
   queryKeys,
@@ -11,15 +10,12 @@ import {useLingui} from '@lingui/react';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useState} from 'react';
 import {Alert} from 'react-native';
-import type {
-  AuthorDisplaySettings,
-  FamilyShareGrant,
-  NutritionGoals,
-} from '@eciperay/types';
+import type {AuthorDisplaySettings, FamilyShareGrant} from '@eciperay/types';
 
 import {ProfilePage} from '@spudly/ui';
 
 import {useAccessTokensProps} from '../hosts/profile/AccessTokensSection';
+import {useNutritionGoalsProps} from '../hosts/profile/NutritionGoalsSection';
 import {AuthorDisplayForm} from '../hosts/profile/AuthorDisplayForm';
 import {
   FamilySharingForm,
@@ -36,15 +32,6 @@ export const ProfileScreen = () => {
   const {i18n} = useLingui();
   const {session} = useAuth();
   const queryClient = useQueryClient();
-  const [nutritionGoals, setNutritionGoals] = useState<NutritionGoals>(
-    defaultNutritionGoals(),
-  );
-  const [goalsError, setGoalsError] = useState<string | null>(null);
-
-  const {data: savedGoals} = useQuery({
-    queryKey: queryKeys.nutritionGoals(),
-    queryFn: () => api.account.getNutritionGoals(),
-  });
 
   // Tag management is admin-only (#621): the Tags link on the profile
   // page is only offered to admins.
@@ -56,27 +43,6 @@ export const ProfileScreen = () => {
   } = useQuery({
     queryKey: queryKeys.currentUser(session?.user?.id ?? 'anonymous'),
     queryFn: () => api.auth.me(),
-  });
-
-  useEffect(() => {
-    if (savedGoals) {
-      setNutritionGoals(savedGoals);
-    }
-  }, [savedGoals]);
-
-  const saveGoalsMutation = useMutation({
-    mutationFn: () => api.account.putNutritionGoals(nutritionGoals),
-    onSuccess: data => {
-      setNutritionGoals(data);
-      setGoalsError(null);
-      void queryClient.invalidateQueries({
-        queryKey: queryKeys.nutritionGoals(),
-      });
-      void queryClient.invalidateQueries({queryKey: queryKeys.mealPlans()});
-    },
-    onError: error => {
-      setGoalsError(errorMessage(error));
-    },
   });
 
   const [authorDisplay, setAuthorDisplay] = useState<AuthorDisplaySettings>({
@@ -213,6 +179,7 @@ export const ProfileScreen = () => {
   };
 
   const accessTokens = useAccessTokensProps();
+  const nutritionGoals = useNutritionGoalsProps();
 
   // DS 14's ProfilePage has no generic section slots (#685): the
   // sections it covers cross as data props (nutritionGoals,
@@ -235,15 +202,7 @@ export const ProfileScreen = () => {
             href: CONSENT_PREFERENCES_URL,
           },
         ]}
-        nutritionGoals={{
-          goals: nutritionGoals,
-          saving: saveGoalsMutation.isPending,
-          error: goalsError,
-          onChange: setNutritionGoals,
-          onSave: () => {
-            saveGoalsMutation.mutate();
-          },
-        }}
+        nutritionGoals={nutritionGoals}
         accessTokens={accessTokens}
       />
       {meLoadFailed ? (

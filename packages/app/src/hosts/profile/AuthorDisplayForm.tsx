@@ -13,9 +13,9 @@ import {
 /**
  * Author display on public recipes (#411): the owner chooses the name shown as
  * the author of their published recipes — and whether it is shown at all. The
- * name also feeds the Recipe JSON-LD `author`. Mirrors NutritionGoalsForm's
- * contract: the screen keeps the query, the form state as a whole, and the save
- * mutation.
+ * name also feeds the Recipe JSON-LD `author`. Mirrors the nutrition-goals
+ * section's contract: the screen keeps the query, the form state as a whole,
+ * and the save mutation.
  */
 
 export type AuthorDisplayFormProps = {
