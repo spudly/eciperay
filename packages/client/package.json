@@ -38,7 +38,9 @@
     "@types/react": "^19.3.0",
     "jest-environment-jsdom": "^30.5.2",
     "react": "^19.3.1",
-    "react-dom": "19.3.1"
+    "react-dom": "19.3.1",
+    "react-native-svg": "^15.15.1",
+    "react-native-web": "^0.21.4"
   },
   "engines": {
     "node": "^22.22.2 || ^24.15.0 || >=26.0.0"

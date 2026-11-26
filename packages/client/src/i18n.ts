@@ -1,4 +1,4 @@
-import {setupI18n, type I18n} from '@lingui/core';
+import {setupI18n, type I18n, type Messages} from '@lingui/core';
 
 import type {SupportedLocale} from './locale.js';
 
@@ -8,7 +8,7 @@ import type {SupportedLocale} from './locale.js';
  * host-local until #681 shares them; this factory is the single
  * implementation both hosts (and their tests) create instances through.
  */
-export type I18nCatalogs = Record<SupportedLocale, Record<string, string>>;
+export type I18nCatalogs = Record<SupportedLocale, Messages>;
 
 /** Create an i18n instance with the injected catalog for `locale` active. */
 export const createI18n = (locale: SupportedLocale, catalogs: I18nCatalogs): I18n => {
