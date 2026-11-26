@@ -95,6 +95,36 @@ export type RecipeMetadataInput = {
   tagIds: string[];
 };
 
+/**
+ * The subset of recipe fields `update_recipe` may change. A field left
+ * `undefined` is preserved from the stored recipe; a field set to `null` (where
+ * nullable) clears it.
+ */
+export type RecipeUpdatePatch = {
+  title?: string;
+  description?: string | null;
+  servings?: number;
+  prepTimeMin?: number | null;
+  cookTimeMin?: number | null;
+  sourceUrl?: string | null;
+  /** Version tips (#635); providing the list replaces the stored one. */
+  tips?: string[];
+  ingredients?: IngredientInput[];
+  instructions?: InstructionInput[];
+  tagIds?: string[];
+  /**
+   * The version a content edit applies to (#410). Required when
+   * ingredients/instructions change; naming a non-active version routes the
+   * whole patch to that version. Not itself an update field.
+   */
+  versionId?: string;
+  /**
+   * With a version-path edit, make the edited version active. Defaults to
+   * false: the edited version stays a draft. Not itself an update field.
+   */
+  activate?: boolean;
+};
+
 export type RecipeSharingUpdateInput = {
   visibility: RecipeVisibility;
   publishingConsent?: boolean;

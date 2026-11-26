@@ -11,6 +11,7 @@ export type {
   RecipeProvenanceSource,
   RecipeListSortDir,
   RecipeMetadataInput,
+  RecipeUpdatePatch,
   PublicRecipeDetail,
   PublicRecipeDiscoveryItem,
   PublicRecipeDiscoverySort,
