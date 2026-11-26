@@ -247,6 +247,7 @@ export {
   FEEDBACK_SHORTCUT_STORAGE_KEY,
   readFeedbackShortcutEnabled,
   writeFeedbackShortcutEnabled,
+  type FeedbackShortcutStorage,
 } from './feedbackPreference.js';
 export {
   readShoppingListCheckedKeys,

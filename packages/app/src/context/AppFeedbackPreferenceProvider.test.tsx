@@ -1,4 +1,5 @@
-import {useFeedbackShortcutEnabled} from '@eciperay/client';
+import {FEEDBACK_SHORTCUT_STORAGE_KEY, useFeedbackShortcutEnabled} from '@eciperay/client';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   fireEvent,
   render,
@@ -7,8 +8,6 @@ import {
 } from '@testing-library/react-native';
 import {Text, TouchableOpacity} from 'react-native';
 import React from 'react';
-
-import * as feedbackPreference from '../lib/feedbackPreference.js';
 
 import {AppFeedbackPreferenceProvider} from './AppFeedbackPreferenceProvider';
 
@@ -23,17 +22,9 @@ const Probe = ({
 };
 
 describe('AppFeedbackPreferenceProvider', () => {
-  beforeEach(() => {
-    jest
-      .spyOn(feedbackPreference, 'readFeedbackShortcutEnabled')
-      .mockResolvedValue(true);
-    jest
-      .spyOn(feedbackPreference, 'writeFeedbackShortcutEnabled')
-      .mockResolvedValue();
-  });
-
-  afterEach(() => {
-    jest.restoreAllMocks();
+  beforeEach(async () => {
+    await AsyncStorage.clear();
+    await AsyncStorage.setItem(FEEDBACK_SHORTCUT_STORAGE_KEY, 'true');
   });
 
   test('loads the stored feedback shortcut preference', async () => {
@@ -72,10 +63,10 @@ describe('AppFeedbackPreferenceProvider', () => {
 
     await fireEvent.press(screen.getByLabelText('Disable feedback shortcut'));
 
-    await waitFor(() => {
-      expect(
-        feedbackPreference.writeFeedbackShortcutEnabled,
-      ).toHaveBeenCalledWith(false);
+    await waitFor(async () => {
+      await expect(
+        AsyncStorage.getItem(FEEDBACK_SHORTCUT_STORAGE_KEY),
+      ).resolves.toBeNull();
     });
   });
 });
