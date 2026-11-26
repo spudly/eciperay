@@ -261,6 +261,15 @@ const AiSubstitutionSchema = z.object({
 
 export const AiSubstitutionsResponseSchema = z.array(AiSubstitutionSchema);
 
+export const AiIngredientLinksResponseSchema = z.object({
+  links: z.array(
+    z.object({
+      instructionId: z.string(),
+      ingredientIds: z.array(z.string()),
+    }),
+  ),
+});
+
 export const AiNutritionResponseSchema = z.object({
   calories: z.number().nonnegative(),
   proteinG: z.number().nonnegative(),
