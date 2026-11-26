@@ -2,6 +2,7 @@ import {
   buildMealPlanWeekView,
   buildWeeklyTotalsBand,
   formatSimpleNutrition,
+  mealPlanEntryClientKey,
 } from '@eciperay/client';
 import type {
   MealPlanDetail,
@@ -13,8 +14,11 @@ import {useLingui} from '@lingui/react';
 import {
   MealPlanDetailPage,
   type MealPlanDetailPageEntry,
+  type MealPlanDetailPageEntryMember,
   type MealPlanDetailPageNutritionGoals,
 } from '@spudly/ui';
+
+import type {MealPlanInlineEditing} from './useMealPlanInlineEditing';
 
 /**
  * The app host's own props. The shared client view-props type keeps the
@@ -34,6 +38,15 @@ type MealPlanDetailViewOwnProps = {
     targetId: string,
     title: string,
   ) => string;
+  /**
+   * Inline editing (#646, tranche 1): the screen's
+   * useMealPlanInlineEditing result. When present, the view
+   * passes the DS page its editing handlers, the day view's
+   * focused day, and each meal entry's members (from the meals
+   * API details the hook loads); when absent the page renders
+   * read-only exactly as before.
+   */
+  inlineEditing?: MealPlanInlineEditing;
 };
 
 /**
@@ -127,6 +140,7 @@ export const MealPlanDetailView = ({
   shoppingListHref,
   goalsHref,
   entryHref,
+  inlineEditing,
 }: MealPlanDetailViewOwnProps) => {
   const {i18n} = useLingui();
   const nutritionLabel = formatSimpleNutrition(plan.nutrition) ?? undefined;
@@ -206,24 +220,57 @@ export const MealPlanDetailView = ({
   const toDetailEntry = (entry: MealPlanEntry): MealPlanDetailPageEntry => {
     const entryNutrition = formatSimpleNutrition(entry.nutrition);
     const nutritionSuffix = entryNutrition ? ` · ${entryNutrition}` : '';
+    // Inline editing keys entries client-side (#646, tranche
+    // 1): server entry ids churn on every whole-plan save, so
+    // the DS entry id is the client key (`meal:<id>` /
+    // `recipe:<id>` + day) and the editing handlers address
+    // entries by it.
+    const clientKey = mealPlanEntryClientKey(entry);
     if (entry.type === 'meal') {
+      const mealDetail = inlineEditing?.mealDetailsByMealId.get(entry.mealId);
+      const members: MealPlanDetailPageEntryMember[] | undefined = mealDetail
+        ? mealDetail.members.map(member => ({
+            id: `recipe:${member.recipeId}`,
+            targetId: member.recipeId,
+            href: entryHref('recipe', member.recipeId, member.title),
+            title: member.title,
+            subtitle: `Servings to cook: ${member.servingsToCook} · Servings to eat: ${member.servingsToEat}`,
+            servingsToCook: member.servingsToCook,
+            servingsToEat: member.servingsToEat,
+            isUnavailable: member.accessLost,
+          }))
+        : undefined;
       return {
-        id: entry.id,
+        id: clientKey,
         kind: 'meal',
         targetId: entry.mealId,
         href: entryHref('meal', entry.mealId, entry.title),
         title: entry.title,
         subtitle: `Qty ${entry.quantity} · ${entry.recipeCount} recipe${entry.recipeCount === 1 ? '' : 's'}${nutritionSuffix}`,
+        quantity: entry.quantity,
+        ...(members ? {members} : {}),
+        // Meal-member edits edit the shared meal everywhere
+        // it is used — labeled, per the approved lean on
+        // #646's open question 1.
+        ...(members && members.length > 0
+          ? {
+              sharedMealNote:
+                "Editing this meal updates it everywhere it's used.",
+            }
+          : {}),
       };
     }
     return {
-      id: entry.id,
+      id: clientKey,
       kind: 'recipe',
       targetId: entry.recipeId,
       href: entryHref('recipe', entry.recipeId, entry.title),
       title: entry.title,
       subtitle: `Qty ${entry.quantity} · Servings to cook: ${entry.servingsToCook} · Servings to eat: ${entry.servingsToEat}${nutritionSuffix}`,
       isUnavailable: entry.accessLost,
+      quantity: entry.quantity,
+      servingsToCook: entry.servingsToCook,
+      servingsToEat: entry.servingsToEat,
     };
   };
   const entries: MealPlanDetailPageEntry[] = plan.entries.map(toDetailEntry);
@@ -247,6 +294,13 @@ export const MealPlanDetailView = ({
       shoppingListHref={shoppingListHref}
       editHref={editHref}
       entries={entries}
+      {...(inlineEditing
+        ? {
+            editingError: inlineEditing.editingError,
+            focusedDayId: inlineEditing.focusedDayId,
+            ...inlineEditing.handlers,
+          }
+        : {})}
     />
   );
 };

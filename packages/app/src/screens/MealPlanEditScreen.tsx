@@ -1,12 +1,10 @@
 import {
   errorMessage,
-  mealPlanEntryKey,
   queryKeys,
   recipeFormSearchQueryOptions,
   useDebouncedValue,
   useMealPlanEditForm,
 } from '@eciperay/client';
-import {useLingui} from '@lingui/react';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {MealPlanFormPage} from '@spudly/ui';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
@@ -18,27 +16,12 @@ import type {MealsStackParamList} from '../navigation/types';
 
 type Props = NativeStackScreenProps<MealsStackParamList, 'MealPlanEdit'>;
 
-const toEntryOption = (option: {
-  kind: 'meal' | 'recipe';
-  id: string;
-  title: string;
-  servings?: number;
-}) => ({
-  key: mealPlanEntryKey(option.kind, option.id),
-  kind: option.kind,
-  title: option.title,
-  ...(option.kind === 'recipe'
-    ? {recipeId: option.id, servings: option.servings}
-    : {}),
-});
-
 export const MealPlanEditScreen = ({route, navigation}: Props) => {
-  const {i18n} = useLingui();
   const planId = route.params.planId ?? '';
   const isEdit = planId.length > 0;
   const queryClient = useQueryClient();
   const [formError, setFormError] = useState<string | null>(null);
-  const [searchText, setSearchText] = useState('');
+  const [searchText] = useState('');
   const debouncedSearch = useDebouncedValue(searchText);
 
   const {data: plan, isLoading: planLoading} = useQuery({
@@ -56,11 +39,7 @@ export const MealPlanEditScreen = ({route, navigation}: Props) => {
   // the entry list is matched against the same text in the form hook
   // (the meals endpoint has no search), and the selected entries are
   // tracked separately in the hook, so no full recipe library is loaded.
-  const {
-    data: searchedRecipes = [],
-    isFetching: isSearching,
-    error: searchError,
-  } = useQuery({
+  const {data: searchedRecipes = []} = useQuery({
     ...recipeFormSearchQueryOptions(
       (params, signal) => api.recipes.list(params, signal),
       debouncedSearch,
@@ -101,59 +80,25 @@ export const MealPlanEditScreen = ({route, navigation}: Props) => {
 
   return (
     <ScreenLoadingGate pending={isEdit && planLoading}>
+      {/* Details-only form (#646, tranche 1): title, notes, and
+          dates. Entries are added and edited on the plan's view
+          page now — the form hook's state still carries the
+          plan's existing entries into buildInput, so saving
+          details preserves them; creating a plan saves it empty
+          and lands on the view page to fill it (the save
+          mutation's onSuccess already replaces this screen with
+          the plan detail). */}
       <MealPlanFormPage
         title={form.title}
         notes={form.notes}
         startsOn={form.startsOn}
         endsOn={form.endsOn}
-        searchText={searchText}
-        onSearchTextChange={setSearchText}
-        searchResults={form.entryOptions.map(toEntryOption)}
-        isSearching={isSearching || debouncedSearch !== searchText}
-        selectedEntries={form.selectedEntries.map(toEntryOption)}
-        quantityByKey={form.quantityByKey}
-        servingsByRecipeId={form.servingsByRecipeId}
-        servingsToEatByRecipeId={form.servingsToEatByRecipeId}
-        dayByKey={form.dayByKey}
-        onDayChange={(key, day) => {
-          form.setDayByKey(current => ({...current, [key]: day}));
-        }}
-        onRecipeServingsToEatChange={(recipeId, servings) => {
-          form.setServingsToEatByRecipeId(current => ({
-            ...current,
-            [recipeId]: Math.max(0, servings),
-          }));
-        }}
         isSaving={saveMutation.isPending}
-        error={
-          formError ??
-          // Same picker-error surfacing as web (#359): a failed
-          // search must not read as "no matches".
-          (searchError
-            ? i18n._({
-                id: 'mealForm.loadRecipesError',
-                message: 'Could not load recipes: {error}',
-                values: {error: errorMessage(searchError)},
-              })
-            : null)
-        }
+        error={formError}
         onTitleChange={form.setTitle}
         onNotesChange={form.setNotes}
         onStartsOnChange={form.setStartsOn}
         onEndsOnChange={form.setEndsOn}
-        onSelectEntry={form.handleSelectEntry}
-        onRemoveEntry={form.handleRemoveEntry}
-        onQuantityChange={(key, quantity) => {
-          form.setQuantityByKey(current => ({...current, [key]: quantity}));
-        }}
-        onRecipeServingsChange={(recipeId, servings) => {
-          // Eat is edited through its own stepper now (ui 11,
-          // DS #659) and no longer follows cook edits.
-          form.setServingsByRecipeId(current => ({
-            ...current,
-            [recipeId]: Math.max(0, servings),
-          }));
-        }}
         onSubmit={() => {
           setFormError(null);
           saveMutation.mutate();

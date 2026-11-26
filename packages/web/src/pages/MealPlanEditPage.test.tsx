@@ -19,59 +19,26 @@ vi.mock('react-router-dom', async importOriginal => {
   return {...actual, useNavigate: () => mockNavigate};
 });
 
-// The picker is a search autocomplete (#359): entry results only appear
-// after typing in the search field and the debounced search returning.
-const searchFor = async (text: string, resultLabel: string) => {
-  fireEvent.change(screen.getByPlaceholderText('Search meals & recipes…'), {
-    target: {value: text},
-  });
-  await waitFor(
-    () => {
-      expect(screen.getByText(resultLabel)).toBeInTheDocument();
-    },
-    {timeout: 5000},
-  );
-};
-
+// The form is details-only since #646 tranche 1: title, notes,
+// and dates. Entries are added and edited on the plan's view
+// page; this form's save carries the plan's existing entries
+// through untouched (the form hook's state), and creating a
+// plan saves it with no entries and lands on the view page.
 describe('MealPlanEditPage', () => {
   beforeEach(() => {
     mockNavigate.mockReset();
   });
 
-  test('renders new meal plan form', async () => {
+  test('renders the details-only form for a new plan', async () => {
     await renderWithProviders(<MealPlanEditPage />);
     await waitFor(() => {
       expect(screen.getByText('Meal plan')).toBeInTheDocument();
     });
     expect(screen.getByText('Save plan')).toBeInTheDocument();
+    // No entry picker on the form anymore (#646, tranche 1).
     expect(
-      screen.getByPlaceholderText('Search meals & recipes…'),
-    ).toBeInTheDocument();
-    // No entries are listed before a search is typed.
-    expect(screen.queryByText('Recipe · Test Recipe')).not.toBeInTheDocument();
-  });
-
-  test('surfaces a recipe search failure from the en-XA catalog (#465)', async () => {
-    server.use(
-      http.get('http://localhost:8080/api/recipes', () =>
-        HttpResponse.json({error: 'boom'}, {status: 500}),
-      ),
-    );
-    await renderWithProviders(<MealPlanEditPage />, {
-      route: '/meal-plans/new',
-      locale: 'en-XA',
-    });
-    fireEvent.change(screen.getByPlaceholderText(/Search meals & recipes/), {
-      target: {value: 'Test'},
-    });
-    await waitFor(
-      () => {
-        expect(
-          screen.getByText(/Could not load recipes: boom~/),
-        ).toBeInTheDocument();
-      },
-      {timeout: 5000},
-    );
+      screen.queryByPlaceholderText('Search meals & recipes…'),
+    ).not.toBeInTheDocument();
   });
 
   test('shows save errors', async () => {
@@ -79,36 +46,37 @@ describe('MealPlanEditPage', () => {
       new Error('Plan failed'),
     );
     await renderWithProviders(<MealPlanEditPage />, {route: '/meal-plans/new'});
-    await searchFor('Test', 'Recipe · Test Recipe');
     fireEvent.change(screen.getByPlaceholderText('Plan title'), {
       target: {value: 'Week'},
     });
-    fireEvent.click(screen.getByText('Recipe · Test Recipe'));
     fireEvent.click(screen.getByText('Save plan'));
     await waitFor(() => {
       expect(screen.getByText('Plan failed')).toBeInTheDocument();
     });
   });
 
-  test('creates a meal plan', async () => {
+  test('creates an empty meal plan and lands on its view page', async () => {
+    let postBody: unknown = null;
     server.use(
-      http.post('http://localhost:8080/api/meal-plans', () =>
-        HttpResponse.json(makeMealPlanDetail(), {status: 201}),
-      ),
+      http.post('http://localhost:8080/api/meal-plans', async ({request}) => {
+        postBody = await request.json();
+        return HttpResponse.json(makeMealPlanDetail(), {status: 201});
+      }),
     );
     await renderWithProviders(<MealPlanEditPage />, {route: '/meal-plans/new'});
-    await searchFor('Test', 'Recipe · Test Recipe');
     fireEvent.change(screen.getByPlaceholderText('Plan title'), {
       target: {value: 'Week'},
     });
-    fireEvent.click(screen.getByText('Recipe · Test Recipe'));
     fireEvent.click(screen.getByText('Save plan'));
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith(`/meal-plans/${PLAN_ID}`);
     });
+    // The create flow creates the plan EMPTY (#646, tranche 1):
+    // entries are added on the view page it lands on.
+    expect(postBody).toMatchObject({title: 'Week', entries: []});
   });
 
-  test('loads and updates an existing plan', async () => {
+  test('loads an existing plan and preserves its entries on a details save', async () => {
     let putBody: unknown = null;
     server.use(
       http.get(`http://localhost:8080/api/meal-plans/${PLAN_ID}`, () =>
@@ -121,154 +89,7 @@ describe('MealPlanEditPage', () => {
                 recipeId: 'recipe-uuid-1',
                 sortOrder: 0,
                 quantity: 1,
-                day: null,
-                servingsToCook: 4,
-                servingsToEat: 4,
-                title: 'Test Recipe',
-                imageUrl: null,
-                recipeServings: 4,
-                accessLost: false,
-                nutrition: null,
-                satietyScore: null,
-                nutritionStatus: null,
-                calories: null,
-                proteinG: null,
-                carbsG: null,
-                fatG: null,
-              },
-            ],
-          }),
-        ),
-      ),
-      http.put(
-        `http://localhost:8080/api/meal-plans/${PLAN_ID}`,
-        async ({request}) => {
-          putBody = await request.json();
-          return HttpResponse.json(makeMealPlanDetail());
-        },
-      ),
-    );
-    await renderWithProviders(
-      <Routes>
-        <Route
-          path="/meal-plans/:planId/edit"
-          element={<MealPlanEditPage />}
-        />
-      </Routes>,
-      {route: `/meal-plans/${PLAN_ID}/edit`},
-    );
-    await waitFor(() => {
-      expect(screen.getByDisplayValue('This week')).toBeInTheDocument();
-    });
-    // The plan's recipe entry is already selected — its quantity and
-    // servings steppers render without any search.
-    fireEvent.click(screen.getAllByText('+')[0]!);
-    fireEvent.click(screen.getAllByText('+')[1]!);
-    // The eat stepper is its own control since @spudly/ui 11
-    // (DS #659): raising eat to match the new cook value is a
-    // separate click on the third stepper.
-    fireEvent.click(screen.getAllByText('+')[2]!);
-    fireEvent.click(screen.getByText('Save plan'));
-    await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith(`/meal-plans/${PLAN_ID}`);
-    });
-    // The cook stepper edits servings-to-cook (4 -> 5) and the eat
-    // stepper edits servings-to-eat independently (4 -> 5) (#363).
-    expect(putBody).toMatchObject({
-      entries: [
-        {
-          recipeId: 'recipe-uuid-1',
-          quantity: 2,
-          servingsToCook: 5,
-          servingsToEat: 5,
-        },
-      ],
-    });
-  });
-
-  test('saves a per-entry day chosen in the editor (#582)', async () => {
-    let putBody: unknown = null;
-    server.use(
-      http.get(`http://localhost:8080/api/meal-plans/${PLAN_ID}`, () =>
-        HttpResponse.json(
-          makeMealPlanDetail({
-            entries: [
-              {
-                type: 'recipe',
-                id: 'entry-1',
-                recipeId: 'recipe-uuid-1',
-                sortOrder: 0,
-                quantity: 1,
-                day: null,
-                servingsToCook: 4,
-                servingsToEat: 4,
-                title: 'Test Recipe',
-                imageUrl: null,
-                recipeServings: 4,
-                accessLost: false,
-                nutrition: null,
-                satietyScore: null,
-                nutritionStatus: null,
-                calories: null,
-                proteinG: null,
-                carbsG: null,
-                fatG: null,
-              },
-            ],
-          }),
-        ),
-      ),
-      http.put(
-        `http://localhost:8080/api/meal-plans/${PLAN_ID}`,
-        async ({request}) => {
-          putBody = await request.json();
-          return HttpResponse.json(makeMealPlanDetail());
-        },
-      ),
-    );
-    await renderWithProviders(
-      <Routes>
-        <Route
-          path="/meal-plans/:planId/edit"
-          element={<MealPlanEditPage />}
-        />
-      </Routes>,
-      {route: `/meal-plans/${PLAN_ID}/edit`},
-    );
-    await waitFor(() => {
-      expect(screen.getByDisplayValue('This week')).toBeInTheDocument();
-    });
-    // The per-entry Day field (@spudly/ui 11.2, DS #673) is the
-    // YYYY-MM-DD input that starts empty: startsOn/endsOn carry the
-    // plan's dates, the entry's day starts unset.
-    const dayInput = screen
-      .getAllByPlaceholderText('YYYY-MM-DD')
-      .find(input => (input as HTMLInputElement).value === '');
-    expect(dayInput).toBeDefined();
-    fireEvent.change(dayInput!, {target: {value: '2026-01-03'}});
-    fireEvent.click(screen.getByText('Save plan'));
-    await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith(`/meal-plans/${PLAN_ID}`);
-    });
-    expect(putBody).toMatchObject({
-      entries: [{recipeId: 'recipe-uuid-1', day: '2026-01-03'}],
-    });
-  });
-
-  test('preserves a divergent servings-to-eat when cook servings change (#363)', async () => {
-    let putBody: unknown = null;
-    server.use(
-      http.get(`http://localhost:8080/api/meal-plans/${PLAN_ID}`, () =>
-        HttpResponse.json(
-          makeMealPlanDetail({
-            entries: [
-              {
-                type: 'recipe',
-                id: 'entry-1',
-                recipeId: 'recipe-uuid-1',
-                sortOrder: 0,
-                quantity: 1,
-                day: null,
+                day: '2026-01-03',
                 servingsToCook: 4,
                 servingsToEat: 2,
                 title: 'Test Recipe',
@@ -307,20 +128,25 @@ describe('MealPlanEditPage', () => {
     await waitFor(() => {
       expect(screen.getByDisplayValue('This week')).toBeInTheDocument();
     });
-    // Only the servings stepper ([1]; [0] is quantity): cook 4 -> 5,
-    // and the stored eat of 2 must survive the save untouched.
-    fireEvent.click(screen.getAllByText('+')[1]!);
+    fireEvent.change(screen.getByPlaceholderText('Plan title'), {
+      target: {value: 'Next week'},
+    });
     fireEvent.click(screen.getByText('Save plan'));
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith(`/meal-plans/${PLAN_ID}`);
     });
+    // The details save must not drop or alter the plan's
+    // entries: quantity, divergent servings-to-eat (#363), and
+    // the per-entry day (#539) all ride through untouched.
     expect(putBody).toMatchObject({
+      title: 'Next week',
       entries: [
         {
           recipeId: 'recipe-uuid-1',
           quantity: 1,
-          servingsToCook: 5,
+          servingsToCook: 4,
           servingsToEat: 2,
+          day: '2026-01-03',
         },
       ],
     });
@@ -353,8 +179,6 @@ describe('MealPlanEditPage', () => {
     await waitFor(() => {
       expect(screen.getByDisplayValue('This week')).toBeInTheDocument();
     });
-    await searchFor('Test', 'Recipe · Test Recipe');
-    fireEvent.click(screen.getByText('Recipe · Test Recipe'));
     fireEvent.click(screen.getByText('Save plan'));
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith(`/meal-plans/${PLAN_ID}`);
