@@ -34,9 +34,10 @@ const actualPrepareModule =
 const actualValidateModule = await import('../../lib/validate.js');
 
 type ServerLogAttributes = Record<string, string | number | boolean>;
-const mockServerLog = jest.fn<
-  (level: string, message: string, attributes?: ServerLogAttributes) => void
->();
+const mockServerLog =
+  jest.fn<
+    (level: string, message: string, attributes?: ServerLogAttributes) => void
+  >();
 
 jest.unstable_mockModule('../../lib/posthogLogs.js', () => ({
   initPostHogLogs: () => {},
@@ -304,7 +305,6 @@ describe('POST /recipes/:id/tweak-ai-sessions', () => {
 
     expect(res.status).toBe(404);
   });
-
 
   test('returns 404 when active version is not found', async () => {
     nockSupabaseGetUser('user-uuid-1');
@@ -759,7 +759,6 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/create-version', () => 
       .mockResolvedValueOnce(makeQueryResult([{id: 'version-uuid-2'}]))
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([]))
-      .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(
         makeQueryResult([
           makeVersionDetailRow({
@@ -803,7 +802,6 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/create-version', () => 
       .mockResolvedValueOnce(makeQueryResult([{id: 'version-uuid-2'}]))
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([]))
-      .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(
         makeQueryResult([
           makeVersionDetailRow({
@@ -834,7 +832,6 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/create-version', () => 
 
     expect(res.status).toBe(201);
   });
-
 
   test('returns 404 when session is not found', async () => {
     nockSupabaseGetUser('user-uuid-1');
@@ -884,7 +881,6 @@ describe('POST /recipes/:id/tweak-ai-sessions/:sessionId/create-version', () => 
       .mockResolvedValueOnce(makeQueryResult([makeRecipeDetailRow()]))
       .mockResolvedValueOnce(makeQueryResult([{max: 1}]))
       .mockResolvedValueOnce(makeQueryResult([{id: 'version-uuid-2'}]))
-      .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValueOnce(makeQueryResult([]))
       .mockResolvedValue(mockQueryResultEmpty());
@@ -1327,9 +1323,7 @@ describe('implementTweakAiSession parse errors', () => {
     );
 
     expect(res.statusCode).toBe(502);
-    expect(res.json).toHaveBeenCalledWith({
-      error: 'AI implementation failed',
-    });
+    expect(res.json).toHaveBeenCalledWith({error: 'AI implementation failed'});
     expect(mockServerLog).toHaveBeenCalledWith(
       'warn',
       'AI tweak implementation failed',

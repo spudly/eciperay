@@ -65,7 +65,6 @@ describe('parseListParams', () => {
     );
   });
 
-
   test('parses nutrition and sort filters', () => {
     expect(
       parseListParams({
@@ -256,10 +255,8 @@ describe('GET /recipes', () => {
     expect(sql).toContain('exists (select 1 from ingredients i');
     // $12 is the first word's raw fuzzy bind; the second word's pattern
     // follows at $13 (#612).
-    expect(sql).toContain("rv.title ilike $13 escape '\\\\'");
+    expect(sql).toContain("rv.title ilike $13 escape '\\'");
   });
-
-
 
   test('returns 400 for invalid sort or sortDir', async () => {
     nockSupabaseGetUser('user-uuid-1');
@@ -291,7 +288,6 @@ describe('GET /recipes', () => {
       'user-uuid-1',
       500,
       40,
-      null,
       ...emptyFilterBinds,
     ]);
   });

@@ -50,7 +50,6 @@ describe('GET /recipes/shared-with-me', () => {
       null,
       null,
       null,
-      null,
     ]);
   });
 
@@ -138,12 +137,6 @@ describe('GET /recipes/shared-with-me', () => {
   });
 
   test('returns 400 for invalid filter params', async () => {
-    nockSupabaseGetUser('user-uuid-1');
-    const badStatus = await request(getApp())
-      .get('/api/recipes/shared-with-me?status=draft')
-      .set('Authorization', 'Bearer valid-token');
-    expect(badStatus.status).toBe(400);
-
     nockSupabaseGetUser('user-uuid-1');
     const badSort = await request(getApp())
       .get('/api/recipes/shared-with-me?sort=popular')
