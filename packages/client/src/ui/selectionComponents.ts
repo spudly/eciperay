@@ -44,12 +44,3 @@ export type TabBarProps = {
   onTabChange: (key: string) => void;
 };
 
-export type ThumbnailListCardProps = {
-  imageUrl?: string | null;
-  title: string;
-  subtitle?: string;
-  onPress?: () => void;
-  trailing?: ReactNode;
-  /** Web: react-router destination */
-  linkTo?: string;
-};
