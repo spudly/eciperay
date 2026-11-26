@@ -30,6 +30,16 @@ describe('AppShell', () => {
     for (const brandLink of brandLinks) {
       expect(brandLink).toHaveAttribute('href', '/');
     }
+    // The brand mark renders beside the wordmark (#620): the shell
+    // and footer brand data name the DS-owned 'eciperay' mark. The
+    // header's BrandLink carries the mark's graphic (an svg) inside
+    // the anchor; the BigFooter renders its mark beside its anchor,
+    // inside the footer landmark. The mark is decorative — the
+    // links' accessible name stays 'Eciperay', as asserted above.
+    expect(brandLinks[0].querySelector('svg')).not.toBeNull();
+    expect(
+      screen.getByRole('contentinfo').querySelector('svg'),
+    ).not.toBeNull();
     // Nav items cross as data with DS icon names; every item is a
     // real link with its href.
     expect(screen.getByRole('link', {name: 'Recipes'})).toHaveAttribute(

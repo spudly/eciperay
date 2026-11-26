@@ -34,7 +34,11 @@ const expectedColumns = [
 describe('sharedFooter', () => {
   test('orders Explore, Account, then Legal with the approved links (#619)', () => {
     expect(sharedFooter.columns).toEqual(expectedColumns);
-    expect(sharedFooter.brand).toEqual({label: 'Eciperay', href: '/'});
+    expect(sharedFooter.brand).toEqual({
+      label: 'Eciperay',
+      href: '/',
+      mark: 'eciperay',
+    });
   });
 
   test('buildSharedFooter resolves its labels through i18n, not literals', () => {
