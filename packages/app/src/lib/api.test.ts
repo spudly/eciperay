@@ -37,4 +37,14 @@ describe('api', () => {
       }),
     );
   });
+
+  test('propagates a getSession error instead of sending the request without a token', async () => {
+    const refreshFailure = new Error('refresh failed');
+    mockGetSession.mockResolvedValue({
+      data: {session: null},
+      error: refreshFailure,
+    });
+    await expect(api.auth.syncUser()).rejects.toBe(refreshFailure);
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
 });

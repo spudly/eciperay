@@ -209,6 +209,16 @@ export {
   isAuthSessionRejectedError,
   useAuth,
 } from './AuthProvider.js';
+export {
+  createAuthSessionLifecycle,
+  createClearStoredSession,
+  supabaseAuthStorageKeys,
+  type AuthSessionLifecycle,
+  type AuthSessionLifecycleBindings,
+  type AuthSessionStorage,
+  type AuthSessionSupabase,
+  type ClearStoredSession,
+} from './authSessionLifecycle.js';
 export {AnalyticsErrorBoundaryProvider} from './AnalyticsErrorBoundary.js';
 export {AnalyticsProvider, useAnalytics} from './AnalyticsProvider.js';
 export {
