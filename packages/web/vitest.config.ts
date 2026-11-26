@@ -65,6 +65,13 @@ export default defineConfig({
         replacement: 'react-native-svg/lib/module/index.js',
       },
       {
+        find: /^@eciperay\/client\/test\/fixtures\/recipe$/,
+        replacement: path.join(
+          monoRoot,
+          'packages/client/src/test/fixtures/recipe.ts',
+        ),
+      },
+      {
         find: '@eciperay/client',
         replacement: path.join(monoRoot, 'packages/client/src/index.ts'),
       },

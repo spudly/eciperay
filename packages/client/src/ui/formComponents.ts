@@ -16,16 +16,6 @@ export type SectionCardProps = {
   children: ReactNode;
 };
 
-export type SelectFieldOption = {value: string; label: string};
-
-export type SelectFieldProps = {
-  label?: string;
-  value: string;
-  onChange: (value: string) => void;
-  options: SelectFieldOption[];
-  disabled?: boolean;
-  id?: string;
-};
 
 export type NumberStepperProps = {
   label: string;

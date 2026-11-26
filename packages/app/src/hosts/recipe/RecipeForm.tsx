@@ -11,6 +11,8 @@ import {
   parentTagIds,
   queryKeys,
   revertVersionScalar,
+  stripImageCacheKey,
+  withImageCacheKey,
   toRecipeInputIngredients,
   toRecipeInputInstructions,
   uploadRecipeImageFromBase64,
@@ -49,8 +51,6 @@ import {
   isRecipeImageReadError,
   type PendingRecipeImage,
   recipeImageFromAsset,
-  stripImageCacheKey,
-  withImageCacheKey,
   writeBase64ImagePreview,
 } from '../../lib/recipeImageAsset';
 import {

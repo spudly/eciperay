@@ -12,6 +12,8 @@ import {
   parentTagIds,
   queryKeys,
   revertVersionScalar,
+  stripImageCacheKey,
+  withImageCacheKey,
   toRecipeInputIngredients,
   toRecipeInputInstructions,
   uploadRecipeImage,
@@ -66,10 +68,6 @@ import {
   getImageFileFromDataTransfer,
   shouldIgnoreImagePaste,
 } from '../lib/recipeImageInput.js';
-import {
-  stripImageCacheKey,
-  withImageCacheKey,
-} from '../lib/recipeImagePreviewUrl.js';
 import {supabase} from '../lib/supabase.js';
 
 import {SortableDragHandle} from '../components/recipe/SortableDragHandle.js';
