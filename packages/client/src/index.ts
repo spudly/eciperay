@@ -340,6 +340,20 @@ export {
   type MealPlanEditRecipeOption,
   type MealPlanFormDraft,
 } from './mealPlanFormHelpers.js';
+export {
+  applyMealPlanEdit,
+  applyMealPlanEntryEdit,
+  buildMealInputFromDetail,
+  buildMealInputWithAddedRecipe,
+  buildMealInputWithMemberServings,
+  buildMealInputWithoutMember,
+  buildMealPlanInputFromDetail,
+  isConflictError,
+  mealPlanEntryClientKey,
+  saveMealEdit,
+  saveMealPlanEdit,
+  type MealPlanEntryEdit,
+} from './mealPlanInlineEdits.js';
 export {useMealPlanEditForm} from './useMealPlanEditForm.js';
 export {
   buildMealPlanDayTotals,

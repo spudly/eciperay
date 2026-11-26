@@ -1,9 +1,6 @@
 import React from 'react';
 import {fireEvent, waitFor} from '@testing-library/react-native';
 
-import {recipeListInfiniteQueryOptions} from '@eciperay/client';
-
-import {makeRecipeDetail} from '../__tests__/fixtures/recipe';
 import {
   makeQueryClient,
   makeStackProps,
@@ -23,94 +20,38 @@ const mockCreate = api.mealPlans.create as jest.Mock;
 const mockPut = api.mealPlans.put as jest.Mock;
 const mockReplace = jest.fn();
 const planId = '00000000-0000-4000-8000-000000000003';
-const recipe = makeRecipeDetail({title: 'Pasta'});
 
 const createProps = (params: MealsStackParamList['MealPlanEdit']) =>
   makeStackProps<MealsStackParamList, 'MealPlanEdit'>('MealPlanEdit', params, {
     replace: mockReplace,
   });
 
-// The picker is a search autocomplete (#359): entry results only appear
-// after typing in the search field and the debounced search returning.
-type Rendered = Awaited<ReturnType<typeof renderWithProviders>>;
-const searchForRecipe = async (rendered: Rendered): Promise<void> => {
-  await fireEvent.changeText(
-    rendered.getByPlaceholderText('Search meals & recipes…'),
-    'Pasta',
-  );
-  await rendered.findByText('Recipe · Pasta', {}, {timeout: 5000});
+const savedPlan = {
+  id: planId,
+  userId: 'user-uuid-1',
+  title: 'Week',
+  notes: null,
+  startsOn: null,
+  endsOn: null,
+  entryCount: 0,
+  nutrition: null,
+  goalProgress: null,
+  createdAt: '2024-01-01T00:00:00.000Z',
+  updatedAt: '2024-01-01T00:00:00.000Z',
+  entries: [],
 };
 
+// The form is details-only since #646 tranche 1: title, notes,
+// and dates. Entries are added and edited on the plan's view
+// page; creating a plan saves it empty and lands on the view
+// page, and a details save preserves the plan's entries.
 describe('MealPlanEditScreen', () => {
   beforeEach(() => {
     mockReplace.mockReset();
     mockListMeals.mockResolvedValue([]);
-    mockListRecipes.mockResolvedValue([recipe]);
-    mockCreate.mockResolvedValue({
-      id: planId,
-      userId: 'user-uuid-1',
-      title: 'Week',
-      notes: null,
-      startsOn: null,
-      endsOn: null,
-      entryCount: 1,
-      nutrition: null,
-      goalProgress: null,
-      createdAt: '2024-01-01T00:00:00.000Z',
-      updatedAt: '2024-01-01T00:00:00.000Z',
-      entries: [],
-    });
-    mockPut.mockResolvedValue({
-      id: planId,
-      userId: 'user-uuid-1',
-      title: 'Updated',
-      notes: null,
-      startsOn: null,
-      endsOn: null,
-      entryCount: 1,
-      nutrition: null,
-      goalProgress: null,
-      createdAt: '2024-01-01T00:00:00.000Z',
-      updatedAt: '2024-01-01T00:00:00.000Z',
-      entries: [],
-    });
-  });
-
-  test('renders picker results when the list cache holds infinite-query data', async () => {
-    // Regression (#171): the recipe list caches {pages, pageParams} under
-    // its key; the form picker search must not read that shape as a flat
-    // array.
-    const client = makeQueryClient();
-    client.setQueryData(
-      recipeListInfiniteQueryOptions(params => api.recipes.list(params), {})
-        .queryKey,
-      {pages: [[recipe]], pageParams: [0]},
-    );
-    const rendered = await renderWithProviders(
-      <MealPlanEditScreen {...createProps({})} />,
-      client,
-    );
-    await searchForRecipe(rendered);
-    expect(rendered.getByText('Recipe · Pasta')).toBeTruthy();
-  });
-
-  test('surfaces a recipe search failure from the en-XA catalog (#465)', async () => {
-    mockListRecipes.mockRejectedValue(new Error('boom'));
-    const rendered = await renderWithProviders(
-      <MealPlanEditScreen {...createProps({})} />,
-      {locale: 'en-XA'},
-    );
-    await fireEvent.changeText(
-      rendered.getByPlaceholderText(/Search meals & recipes/),
-      'Pasta',
-    );
-    expect(
-      await rendered.findByText(
-        'Could not load recipes: boom~',
-        {},
-        {timeout: 5000},
-      ),
-    ).toBeTruthy();
+    mockListRecipes.mockResolvedValue([]);
+    mockCreate.mockResolvedValue(savedPlan);
+    mockPut.mockResolvedValue(savedPlan);
   });
 
   test('renders new meal plan form', async () => {
@@ -120,65 +61,59 @@ describe('MealPlanEditScreen', () => {
     expect(await rendered.findByText('Meal plan')).toBeTruthy();
     expect(await rendered.findByText('Title')).toBeTruthy();
     expect(await rendered.findByText('Save plan')).toBeTruthy();
+    // No entry picker on the form anymore (#646, tranche 1).
+    expect(
+      rendered.queryByPlaceholderText('Search meals & recipes…'),
+    ).toBeNull();
   });
 
-  test('creates plan with recipe entry', async () => {
+  test('creates an empty plan and lands on its view page', async () => {
     const rendered = await renderWithProviders(
       <MealPlanEditScreen {...createProps({})} />,
     );
-    await searchForRecipe(rendered);
     await fireEvent.changeText(
       rendered.getByPlaceholderText('Plan title'),
       'Week',
     );
-    await fireEvent.press(rendered.getByText('Recipe · Pasta'));
     await fireEvent.press(rendered.getByText('Save plan'));
     await waitFor(() => {
-      expect(mockCreate).toHaveBeenCalled();
+      expect(mockCreate).toHaveBeenCalledWith(
+        expect.objectContaining({title: 'Week', entries: []}),
+      );
       expect(mockReplace).toHaveBeenCalledWith('MealPlanDetail', {planId});
     });
   });
 
-  test('adjusts entry quantity and shows save errors', async () => {
+  test('shows save errors', async () => {
     mockCreate.mockRejectedValue(new Error('Plan failed'));
     const rendered = await renderWithProviders(
       <MealPlanEditScreen {...createProps({})} />,
     );
-    await searchForRecipe(rendered);
     await fireEvent.changeText(
       rendered.getByPlaceholderText('Plan title'),
       'Week',
     );
-    await fireEvent.press(rendered.getByText('Recipe · Pasta'));
-    await fireEvent.press(rendered.getAllByText('+')[0]!);
-    await fireEvent.press(rendered.getAllByText('+')[1]!);
     await fireEvent.press(rendered.getByText('Save plan'));
     expect(await rendered.findByText('Plan failed')).toBeTruthy();
   });
 
-  test('loads existing plan for edit', async () => {
+  test('loads existing plan and preserves its entries on a details save', async () => {
     mockGetPlan.mockResolvedValue({
-      id: planId,
-      userId: 'user-uuid-1',
+      ...savedPlan,
       title: 'This week',
-      notes: null,
       startsOn: '2026-01-01',
       endsOn: '2026-01-07',
       entryCount: 1,
-      nutrition: null,
-      goalProgress: null,
-      createdAt: '2024-01-01T00:00:00.000Z',
-      updatedAt: '2024-01-01T00:00:00.000Z',
       entries: [
         {
           type: 'recipe',
           id: 'entry-1',
-          recipeId: recipe.id,
+          recipeId: 'recipe-uuid-1',
           sortOrder: 0,
           quantity: 1,
-          day: null,
+          day: '2026-01-03',
           servingsToCook: 4,
-          servingsToEat: 4,
+          servingsToEat: 2,
           title: 'Pasta',
           imageUrl: null,
           recipeServings: 4,
@@ -195,70 +130,9 @@ describe('MealPlanEditScreen', () => {
     });
     const rendered = await renderWithProviders(
       <MealPlanEditScreen {...createProps({planId})} />,
+      makeQueryClient(),
     );
     expect(await rendered.findByDisplayValue('This week')).toBeTruthy();
-    // The plan's recipe entry is already selected — its steppers render
-    // without any search.
-    // @spudly/ui 11 renders separate cook and eat steppers (DS #659).
-    expect(await rendered.findByText('Servings to cook · Pasta')).toBeTruthy();
-    expect(await rendered.findByText('Servings to eat · Pasta')).toBeTruthy();
-    await fireEvent.press(rendered.getByText('Save plan'));
-    await waitFor(() => {
-      expect(mockPut).toHaveBeenCalledWith(planId, expect.any(Object));
-    });
-  });
-
-  test('saves a per-entry day chosen in the editor (#582)', async () => {
-    mockGetPlan.mockResolvedValue({
-      id: planId,
-      userId: 'user-uuid-1',
-      title: 'This week',
-      notes: null,
-      startsOn: '2026-01-01',
-      endsOn: '2026-01-07',
-      entryCount: 1,
-      nutrition: null,
-      goalProgress: null,
-      createdAt: '2024-01-01T00:00:00.000Z',
-      updatedAt: '2024-01-01T00:00:00.000Z',
-      entries: [
-        {
-          type: 'recipe',
-          id: 'entry-1',
-          recipeId: recipe.id,
-          sortOrder: 0,
-          quantity: 1,
-          day: null,
-          servingsToCook: 4,
-          servingsToEat: 4,
-          title: 'Pasta',
-          imageUrl: null,
-          recipeServings: 4,
-          accessLost: false,
-          nutrition: null,
-          satietyScore: null,
-          nutritionStatus: null,
-          calories: null,
-          proteinG: null,
-          carbsG: null,
-          fatG: null,
-        },
-      ],
-    });
-    mockPut.mockResolvedValue({id: planId});
-    const rendered = await renderWithProviders(
-      <MealPlanEditScreen {...createProps({planId})} />,
-    );
-    expect(await rendered.findByDisplayValue('This week')).toBeTruthy();
-    expect(await rendered.findByText('Day · Pasta')).toBeTruthy();
-    // The per-entry Day field (@spudly/ui 11.2, DS #673) is the
-    // YYYY-MM-DD input that starts empty: startsOn/endsOn carry the
-    // plan's dates, the entry's day starts unset.
-    const dayInput = rendered
-      .getAllByPlaceholderText('YYYY-MM-DD')
-      .find(input => input.props.value === '' || input.props.value == null);
-    expect(dayInput).toBeDefined();
-    await fireEvent.changeText(dayInput!, '2026-01-03');
     await fireEvent.press(rendered.getByText('Save plan'));
     await waitFor(() => {
       expect(mockPut).toHaveBeenCalledWith(
@@ -266,7 +140,10 @@ describe('MealPlanEditScreen', () => {
         expect.objectContaining({
           entries: [
             expect.objectContaining({
-              recipeId: recipe.id,
+              recipeId: 'recipe-uuid-1',
+              quantity: 1,
+              servingsToCook: 4,
+              servingsToEat: 2,
               day: '2026-01-03',
             }),
           ],

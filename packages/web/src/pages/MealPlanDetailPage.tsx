@@ -3,6 +3,7 @@ import {
   buildRecipePath,
   buildWeeklyTotalsBand,
   formatSimpleNutrition,
+  mealPlanEntryClientKey,
   queryKeys,
 } from '@eciperay/client';
 import type {
@@ -13,6 +14,7 @@ import type {
 import {
   MealPlanDetailPage as MealPlanDetailPageView,
   type MealPlanDetailPageEntry,
+  type MealPlanDetailPageEntryMember,
   type MealPlanDetailPageNutritionGoals,
 } from '@spudly/ui';
 import type {I18n} from '@lingui/core';
@@ -20,9 +22,14 @@ import {useLingui} from '@lingui/react';
 import {useQuery} from '@tanstack/react-query';
 import {useParams} from 'react-router-dom';
 
+import {MealPlanEntryPicker} from '../components/MealPlanEntryPicker.js';
 import {RouteErrorView} from '../components/RouteErrorView.js';
 import {ScreenLoadingGate} from '../components/ScreenLoadingGate.js';
 import {eciperay} from '../lib/api.js';
+import {
+  useMealPlanInlineEditing,
+  type MealPlanInlineEditing,
+} from './useMealPlanInlineEditing.js';
 
 const bandLabel = (
   i18n: I18n,
@@ -90,7 +97,12 @@ const goalValueLabel = (
  * hint card. `goalsSectionVisibility` (DS #78) passes "shown" for exactly that
  * case and "auto" otherwise.
  */
-const planDetailViewProps = (i18n: I18n, plan: MealPlanDetail, planId: string) => {
+const planDetailViewProps = (
+  i18n: I18n,
+  plan: MealPlanDetail,
+  planId: string,
+  inlineEditing?: MealPlanInlineEditing,
+) => {
   const nutritionLabel = formatSimpleNutrition(plan.nutrition) ?? undefined;
 
   const progress = plan.goalProgress;
@@ -147,24 +159,53 @@ const planDetailViewProps = (i18n: I18n, plan: MealPlanDetail, planId: string) =
   const toDetailEntry = (entry: MealPlanEntry): MealPlanDetailPageEntry => {
     const entryNutrition = formatSimpleNutrition(entry.nutrition);
     const nutritionSuffix = entryNutrition ? ` · ${entryNutrition}` : '';
+    // Inline editing keys entries client-side (#646, tranche
+    // 1): server entry ids churn on every whole-plan save, so
+    // the DS entry id is the client key and the editing
+    // handlers address entries by it.
+    const clientKey = mealPlanEntryClientKey(entry);
     if (entry.type === 'meal') {
+      const mealDetail = inlineEditing?.mealDetailsByMealId.get(entry.mealId);
+      const members: MealPlanDetailPageEntryMember[] | undefined = mealDetail
+        ? mealDetail.members.map(member => ({
+            id: `recipe:${member.recipeId}`,
+            targetId: member.recipeId,
+            href: buildRecipePath({id: member.recipeId, title: member.title}),
+            title: member.title,
+            subtitle: `Servings to cook: ${member.servingsToCook} · Servings to eat: ${member.servingsToEat}`,
+            servingsToCook: member.servingsToCook,
+            servingsToEat: member.servingsToEat,
+            isUnavailable: member.accessLost,
+          }))
+        : undefined;
       return {
-        id: entry.id,
+        id: clientKey,
         kind: 'meal',
         targetId: entry.mealId,
         href: `/meals/${entry.mealId}`,
         title: entry.title,
         subtitle: `Qty ${entry.quantity} · ${entry.recipeCount} recipe${entry.recipeCount === 1 ? '' : 's'}${nutritionSuffix}`,
+        quantity: entry.quantity,
+        ...(members ? {members} : {}),
+        ...(members && members.length > 0
+          ? {
+              sharedMealNote:
+                "Editing this meal updates it everywhere it's used.",
+            }
+          : {}),
       };
     }
     return {
-      id: entry.id,
+      id: clientKey,
       kind: 'recipe',
       targetId: entry.recipeId,
       href: buildRecipePath({id: entry.recipeId, title: entry.title}),
       title: entry.title,
       subtitle: `Qty ${entry.quantity} · Servings to cook: ${entry.servingsToCook} · Servings to eat: ${entry.servingsToEat}${nutritionSuffix}`,
       isUnavailable: entry.accessLost,
+      quantity: entry.quantity,
+      servingsToCook: entry.servingsToCook,
+      servingsToEat: entry.servingsToEat,
     };
   };
   const entries: MealPlanDetailPageEntry[] = plan.entries.map(toDetailEntry);
@@ -192,6 +233,13 @@ const planDetailViewProps = (i18n: I18n, plan: MealPlanDetail, planId: string) =
     shoppingListHref: `/meal-plans/${planId}/shopping-list`,
     editHref: `/meal-plans/${planId}/edit`,
     entries,
+    ...(inlineEditing
+      ? {
+          editingError: inlineEditing.editingError,
+          focusedDayId: inlineEditing.focusedDayId,
+          ...inlineEditing.handlers,
+        }
+      : {}),
   };
 };
 
@@ -236,9 +284,42 @@ export const MealPlanDetailPage = () => {
 
   return (
     <ScreenLoadingGate pending={isLoading}>
-      {plan ? (
-        <MealPlanDetailPageView {...planDetailViewProps(i18n, plan, planId)} />
-      ) : null}
+      {plan ? <MealPlanDetailContent plan={plan} planId={planId} /> : null}
     </ScreenLoadingGate>
+  );
+};
+
+/**
+ * The loaded plan's content: the DS detail view wired for
+ * inline editing (#646, tranche 1) plus the entry picker panel
+ * when an Add intent is open. Split from the page so the
+ * editing hook only runs with a loaded plan.
+ */
+const MealPlanDetailContent = ({
+  plan,
+  planId,
+}: {
+  plan: MealPlanDetail;
+  planId: string;
+}) => {
+  const {i18n} = useLingui();
+  const inlineEditing = useMealPlanInlineEditing(plan);
+  return (
+    <>
+      <MealPlanDetailPageView
+        {...planDetailViewProps(i18n, plan, planId, inlineEditing)}
+      />
+      {inlineEditing.picker ? (
+        <MealPlanEntryPicker
+          request={inlineEditing.picker}
+          searchText={inlineEditing.searchText}
+          onSearchTextChange={inlineEditing.setSearchText}
+          isSearching={inlineEditing.isSearching}
+          options={inlineEditing.pickerOptions}
+          onSelect={inlineEditing.selectPickerOption}
+          onClose={inlineEditing.closePicker}
+        />
+      ) : null}
+    </>
   );
 };
