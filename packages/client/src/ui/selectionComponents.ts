@@ -1,5 +1,3 @@
-import type {ReactNode} from 'react';
-
 export type CheckboxSelectItem = {id: string; label: string};
 
 export type CheckboxSelectListProps = {
