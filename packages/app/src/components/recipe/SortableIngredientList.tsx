@@ -1,4 +1,8 @@
-import {createFormRowKey, type FormIngredientRow} from '@eciperay/client';
+import {
+  createFormRowKey,
+  ingredientRowIdForKey,
+  type FormIngredientRow,
+} from '@eciperay/client';
 import type {IngredientInput} from '@eciperay/types';
 import {useLingui} from '@lingui/react';
 import {eciperayTheme, RecipeIngredientRowView, tokens} from '@spudly/ui';
@@ -148,12 +152,19 @@ export const SortableIngredientList = ({
 
 export const createEmptyIngredientRow = (
   sortOrder: number,
-): FormIngredient => ({
-  key: createFormRowKey(),
-  sortOrder,
-  name: '',
-  quantity: null,
-  unit: null,
-  notes: null,
-  isOptional: false,
-});
+): FormIngredient => {
+  const key = createFormRowKey();
+  return {
+    key,
+    // Stamp the row key as the ingredient's ID (#643) so steps can
+    // link to a not-yet-saved ingredient and the references resolve
+    // on save; undefined for non-UUID fallback keys.
+    id: ingredientRowIdForKey(key),
+    sortOrder,
+    name: '',
+    quantity: null,
+    unit: null,
+    notes: null,
+    isOptional: false,
+  };
+};

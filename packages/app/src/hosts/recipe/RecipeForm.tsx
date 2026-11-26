@@ -1,8 +1,14 @@
 /* eslint-disable max-lines -- shared recipe form host with dynamic ingredient/instruction lists */
 import {
+  applyIngredientLinkProposal,
   compareVersionToParent,
   ensureIngredientRowKeys,
   ensureInstructionRowKeys,
+  formIngredientLinkId,
+  toggleIngredientReference,
+  unreferencedFormIngredients,
+  withInstructionReferences,
+  withoutIngredientReference,
   parentListSummaryParts,
   formatParentScalarHint,
   formatParentTagNames,
@@ -292,6 +298,15 @@ export const RecipeForm = ({
   const [imageCacheKey, setImageCacheKey] = useState(0);
   const [descriptionGenerating, setDescriptionGenerating] = useState(false);
   const [descriptionError, setDescriptionError] = useState<string | null>(null);
+  // Ingredient linking (#643 tranche 2c): the walk-through modal's
+  // current step (null = closed) and the AI proposal call's state.
+  // Links live on the instruction rows (ingredientReferences), so
+  // they persist through buildInput's normal save path.
+  const [linkingStepIndex, setLinkingStepIndex] = useState<number | null>(
+    null,
+  );
+  const [aiLinking, setAiLinking] = useState(false);
+  const [aiLinkError, setAiLinkError] = useState<string | null>(null);
 
   // The tags query lived in the TagPicker container before the
   // split; the DS page takes the options as view-models, so the
@@ -765,6 +780,81 @@ export const RecipeForm = ({
     );
   };
 
+  const toggleInstructionIngredient = (
+    instructionKey: string,
+    ingredientId: string,
+  ) => {
+    const instruction = instructions.find(row => row.key === instructionKey);
+    if (!instruction) {
+      return;
+    }
+    setInstructions(
+      withInstructionReferences(
+        instructions,
+        instructionKey,
+        toggleIngredientReference(
+          ingredients,
+          instruction.ingredientReferences,
+          ingredientId,
+        ),
+      ),
+    );
+  };
+
+  const handleAiLinkIngredients = async () => {
+    if (!recipeId) {
+      return;
+    }
+    const linkableIngredients = ingredients.filter(
+      ingredient => ingredient.name.trim().length > 0,
+    );
+    const linkableInstructions = instructions.filter(
+      instruction => instruction.body.trim().length > 0,
+    );
+    if (linkableIngredients.length === 0 || linkableInstructions.length === 0) {
+      setAiLinkError(
+        i18n._({
+          id: 'recipeForm.linkIngredientsNeedsContent',
+          message:
+            'Add ingredient names and step text before suggesting links.',
+        }),
+      );
+      return;
+    }
+    setAiLinkError(null);
+    setAiLinking(true);
+    try {
+      // The proposal is keyed by the IDs sent: instruction row keys
+      // and ingredient link IDs, which applyIngredientLinkProposal
+      // maps back onto the rows. Nothing is stored server-side — the
+      // proposal lands in form state and persists on save.
+      const proposal = await api.ai.linkIngredients(recipeId, {
+        ingredients: linkableIngredients.map(ingredient => ({
+          id: formIngredientLinkId(ingredient),
+          name: ingredient.name.trim(),
+        })),
+        instructions: linkableInstructions.map(instruction => ({
+          id: instruction.key,
+          body: instruction.body.trim(),
+        })),
+      });
+      setInstructions(
+        applyIngredientLinkProposal(ingredients, instructions, proposal),
+      );
+    } catch (error_) {
+      setAiLinkError(
+        error_ instanceof Error
+          ? error_.message
+          : i18n._({
+              id: 'recipeForm.linkIngredientsError',
+              message: 'Failed to suggest ingredient links',
+            }),
+      );
+    } finally {
+      setAiLinking(false);
+    }
+  };
+
   const buildInput = (): RecipeInput => ({
     title,
     description: description || null,
@@ -903,8 +993,157 @@ export const RecipeForm = ({
       ? withImageCacheKey(imageUrl, imageCacheKey)
       : imageUrl);
 
+  // Ingredient linking (#643 tranche 2c): the DS form page has no
+  // slot for per-step linking, so — like the pending-image flow —
+  // the linking section and its walk-through modal are host-rendered.
+  // Hidden while content is locked (the form submits the initial
+  // instructions untouched in that mode).
+  const namedIngredients = ingredients.filter(
+    ingredient => ingredient.name.trim().length > 0,
+  );
+  const unreferencedIngredients = contentLocked
+    ? []
+    : unreferencedFormIngredients(ingredients, instructions);
+  const linkingInstruction =
+    linkingStepIndex === null
+      ? null
+      : (instructions[linkingStepIndex] ?? null);
+  const linkedIngredientNames = (instruction: FormInstructionRow): string[] =>
+    (instruction.ingredientReferences ?? [])
+      .map(
+        id =>
+          ingredients.find(
+            ingredient => formIngredientLinkId(ingredient) === id,
+          )?.name,
+      )
+      .filter((name): name is string => Boolean(name?.trim()));
+
   return (
     <>
+      {contentLocked ? null : (
+        <YStack
+          padding="$4"
+          gap="$2"
+          backgroundColor="$surface"
+        >
+          <Text
+            fontSize={tokens.typography.fontSize.md}
+            fontWeight={tokens.typography.fontWeight.semibold}
+            color={tokens.colors.gray.gray10}
+          >
+            {i18n._({
+              id: 'recipeForm.ingredientLinksHeading',
+              message: 'Ingredient links',
+            })}
+          </Text>
+          <Text
+            fontSize={tokens.typography.fontSize.sm}
+            color={tokens.colors.gray.gray8}
+          >
+            {i18n._({
+              id: 'recipeForm.ingredientLinksIntro',
+              message:
+                'Link each step to the ingredients it uses so cook mode can show only what a step needs.',
+            })}
+          </Text>
+          {instructions.map((instruction, index) => {
+            const names = linkedIngredientNames(instruction);
+            return (
+              <Text
+                key={instruction.key}
+                fontSize={tokens.typography.fontSize.sm}
+                color={tokens.colors.gray.gray8}
+              >
+                {i18n._({
+                  id: 'recipeForm.stepLinkSummary',
+                  message: 'Step {step}: {names}',
+                  values: {
+                    step: index + 1,
+                    names:
+                      names.length > 0
+                        ? names.join(', ')
+                        : i18n._({
+                            id: 'recipeForm.stepLinkNone',
+                            message: 'no ingredients linked',
+                          }),
+                  },
+                })}
+              </Text>
+            );
+          })}
+          {unreferencedIngredients.length > 0 ? (
+            <Text
+              fontSize={tokens.typography.fontSize.sm}
+              color="$errorText"
+            >
+              {i18n._({
+                id: 'recipeForm.unreferencedIngredientsWarning',
+                message:
+                  'Not linked to any step: {names}. Link them so cook mode does not miss them.',
+                values: {
+                  names: unreferencedIngredients
+                    .map(ingredient => ingredient.name.trim())
+                    .join(', '),
+                },
+              })}
+            </Text>
+          ) : null}
+          {aiLinkError ? (
+            <Text
+              fontSize={tokens.typography.fontSize.sm}
+              color="$errorText"
+            >
+              {aiLinkError}
+            </Text>
+          ) : null}
+          <XStack
+            flexWrap="wrap"
+            gap="$3"
+          >
+            <FieldButton
+              label={i18n._({
+                id: 'recipeForm.linkIngredients',
+                message: 'Link ingredients',
+              })}
+              accessibilityLabel={i18n._({
+                id: 'recipeForm.linkIngredients',
+                message: 'Link ingredients',
+              })}
+              variant="primary"
+              disabled={
+                namedIngredients.length === 0 || instructions.length === 0
+              }
+              onPress={() => {
+                setLinkingStepIndex(0);
+              }}
+            />
+            {recipeId ? (
+              <FieldButton
+                label={
+                  aiLinking
+                    ? i18n._({
+                        id: 'recipeForm.suggestingLinks',
+                        message: 'Suggesting links…',
+                      })
+                    : i18n._({
+                        id: 'recipeForm.suggestLinksWithAi',
+                        message: 'Suggest links with AI',
+                      })
+                }
+                accessibilityLabel={i18n._({
+                  id: 'recipeForm.suggestLinksWithAi',
+                  message: 'Suggest links with AI',
+                })}
+                variant="secondary"
+                disabled={aiLinking}
+                onPress={() => {
+                  void handleAiLinkIngredients();
+                }}
+              />
+            ) : null}
+          </XStack>
+        </YStack>
+      )}
       <RecipeFormPage
         title={title}
         onTitleChange={setTitle}
@@ -1027,7 +1266,15 @@ export const RecipeForm = ({
             );
           },
           onRemove: rowKey => {
+            const removed = ingredients.find(row => row.key === rowKey);
             setIngredients(prev => prev.filter(row => row.key !== rowKey));
+            if (removed) {
+              // A removed ingredient's links go with it — a reference
+              // to a row that no longer exists would dangle (#643).
+              setInstructions(prev =>
+                withoutIngredientReference(prev, formIngredientLinkId(removed)),
+              );
+            }
           },
           onAdd: () => {
             setIngredients(prev => [
@@ -1373,6 +1620,148 @@ export const RecipeForm = ({
               variant="secondary"
               disabled={cropBusy}
               onPress={cancelCrop}
+            />
+          </XStack>
+        </YStack>
+      </Modal>
+      {/* The ingredient-linking walk-through (#643 tranche 2c):
+        one step at a time, check the ingredients it uses, Next
+        walks to the following step (Mealie's flow). Edits land on
+        the instruction rows immediately and persist on save. */}
+      <Modal
+        visible={linkingInstruction !== null}
+        animationType="slide"
+        onRequestClose={() => {
+          setLinkingStepIndex(null);
+        }}
+      >
+        <YStack
+          flex={1}
+          padding="$4"
+          gap="$3"
+          backgroundColor="$surface"
+        >
+          <Text
+            fontSize={tokens.typography.fontSize.md}
+            fontWeight={tokens.typography.fontWeight.semibold}
+            color={tokens.colors.gray.gray10}
+          >
+            {linkingStepIndex !== null
+              ? i18n._({
+                  id: 'recipeForm.linkStepHeading',
+                  message: 'Step {step} of {total}',
+                  values: {
+                    step: linkingStepIndex + 1,
+                    total: instructions.length,
+                  },
+                })
+              : ''}
+          </Text>
+          <Text
+            fontSize={tokens.typography.fontSize.sm}
+            color={tokens.colors.gray.gray8}
+          >
+            {linkingInstruction?.body.trim() ||
+              i18n._({
+                id: 'recipeForm.linkStepNoText',
+                message: '(This step has no text yet)',
+              })}
+          </Text>
+          <Text
+            fontSize={tokens.typography.fontSize.sm}
+            fontWeight={tokens.typography.fontWeight.medium}
+            color={tokens.colors.gray.gray8}
+          >
+            {i18n._({
+              id: 'recipeForm.linkStepPrompt',
+              message: 'Check the ingredients this step uses:',
+            })}
+          </Text>
+          {linkingInstruction
+            ? namedIngredients.map(ingredient => {
+                const ingredientId = formIngredientLinkId(ingredient);
+                const checked = (
+                  linkingInstruction.ingredientReferences ?? []
+                ).includes(ingredientId);
+                return (
+                  <YStack
+                    key={ingredient.key}
+                    paddingVertical={tokens.spacing[2]}
+                    accessibilityRole="checkbox"
+                    accessibilityLabel={ingredient.name.trim()}
+                    accessibilityState={{checked}}
+                    onPress={() => {
+                      toggleInstructionIngredient(
+                        linkingInstruction.key,
+                        ingredientId,
+                      );
+                    }}
+                    cursor="pointer"
+                  >
+                    <Text
+                      fontSize={tokens.typography.fontSize.sm}
+                      color={tokens.colors.gray.gray10}
+                    >
+                      {checked ? '☑ ' : '☐ '}
+                      {ingredient.name.trim()}
+                    </Text>
+                  </YStack>
+                );
+              })
+            : null}
+          <XStack
+            flexWrap="wrap"
+            gap="$3"
+          >
+            <FieldButton
+              label={i18n._({
+                id: 'recipeForm.linkPreviousStep',
+                message: 'Previous step',
+              })}
+              accessibilityLabel={i18n._({
+                id: 'recipeForm.linkPreviousStep',
+                message: 'Previous step',
+              })}
+              variant="secondary"
+              disabled={linkingStepIndex === null || linkingStepIndex === 0}
+              onPress={() => {
+                if (linkingStepIndex !== null && linkingStepIndex > 0) {
+                  setLinkingStepIndex(linkingStepIndex - 1);
+                }
+              }}
+            />
+            {linkingStepIndex !== null &&
+            linkingStepIndex < instructions.length - 1 ? (
+              <FieldButton
+                label={i18n._({
+                  id: 'recipeForm.linkNextStep',
+                  message: 'Next step',
+                })}
+                accessibilityLabel={i18n._({
+                  id: 'recipeForm.linkNextStep',
+                  message: 'Next step',
+                })}
+                variant="primary"
+                onPress={() => {
+                  setLinkingStepIndex(linkingStepIndex + 1);
+                }}
+              />
+            ) : null}
+            <FieldButton
+              label={i18n._({id: 'recipeForm.linkDone', message: 'Done'})}
+              accessibilityLabel={i18n._({
+                id: 'recipeForm.linkDone',
+                message: 'Done',
+              })}
+              variant={
+                linkingStepIndex !== null &&
+                linkingStepIndex < instructions.length - 1
+                  ? 'secondary'
+                  : 'primary'
+              }
+              onPress={() => {
+                setLinkingStepIndex(null);
+              }}
             />
           </XStack>
         </YStack>

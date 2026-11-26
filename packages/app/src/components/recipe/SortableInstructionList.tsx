@@ -118,4 +118,9 @@ export const SortableInstructionList = ({
 
 export const createEmptyInstructionRow = (
   stepNumber: number,
-): FormInstructionRow => ({key: createFormRowKey(), stepNumber, body: ''});
+): FormInstructionRow => ({
+  key: createFormRowKey(),
+  stepNumber,
+  body: '',
+  ingredientReferences: [],
+});

@@ -36,6 +36,16 @@ const createGenerateDescription =
       {method: 'POST', body: JSON.stringify(input)},
     );
 
+export type LinkIngredientsInput = {
+  ingredients: {id: string; name: string}[];
+  instructions: {id: string; body: string}[];
+};
+
+export type LinkIngredientsResult = {
+  links: {instructionId: string; ingredientIds: string[]}[];
+  unreferencedIngredientIds: string[];
+};
+
 export const createAiApi = (client: ApiClient) => ({
   nutrition: (recipeId: string, options?: {refresh?: boolean}) => {
     const params = new URLSearchParams();
@@ -62,4 +72,15 @@ export const createAiApi = (client: ApiClient) => ({
       body: JSON.stringify(input),
     }),
   generateDescription: createGenerateDescription(client),
+  /**
+   * AI ingredient-linking proposal (#643 tranche 2b endpoint, editor
+   * use in tranche 2c): returns the proposed per-step ingredient IDs
+   * for the version being edited. A proposal only — the editor
+   * applies it to form state and it persists on the normal save.
+   */
+  linkIngredients: (recipeId: string, input: LinkIngredientsInput) =>
+    client.fetch<LinkIngredientsResult>(
+      `/recipes/${recipeId}/ai/link-ingredients`,
+      {method: 'POST', body: JSON.stringify(input)},
+    ),
 });
