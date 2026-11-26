@@ -103,7 +103,7 @@ const assertReferencesBelongToVersion = async (
   const rows = (await queryFn(
     'select id from ingredients where recipe_version_id = $1 and id = any($2)',
     [versionId, referenced],
-  )) as {id: string}[];
+  )) as unknown as {id: string}[];
   const found = new Set(rows.map(row => row.id));
   const dangling = referenced.filter(id => !found.has(id));
   if (dangling.length > 0) {
