@@ -9,6 +9,7 @@ import {requireAuth} from '../../middleware/requireAuth.js';
 
 import {getNutrition} from './getNutrition.js';
 import {getSubstitutions} from './getSubstitutions.js';
+import {postLinkIngredients} from './postLinkIngredients.js';
 
 type QueryFn = typeof defaultQuery;
 
@@ -24,6 +25,12 @@ export const createAiRouter = (queryFn: QueryFn) => {
     requireAuth,
     loadEntitlement(queryFn),
     (req, res) => getSubstitutions(e(req), res, queryFn),
+  );
+  router.post(
+    '/link-ingredients',
+    requireAuth,
+    loadEntitlement(queryFn),
+    (req, res) => postLinkIngredients(e(req), res, queryFn),
   );
   return router;
 };
