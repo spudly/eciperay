@@ -1027,7 +1027,7 @@ export const RecipeForm = ({
           backgroundColor="$surface"
         >
           <Text
-            fontSize={tokens.typography.fontSize.base}
+            fontSize={tokens.typography.fontSize.md}
             fontWeight={tokens.typography.fontWeight.semibold}
             color={tokens.colors.gray.gray10}
           >
@@ -1642,7 +1642,7 @@ export const RecipeForm = ({
           backgroundColor="$surface"
         >
           <Text
-            fontSize={tokens.typography.fontSize.base}
+            fontSize={tokens.typography.fontSize.md}
             fontWeight={tokens.typography.fontWeight.semibold}
             color={tokens.colors.gray.gray10}
           >

@@ -1112,7 +1112,7 @@ export const RecipeFormHost = ({
           <h2
             style={{
               margin: 0,
-              fontSize: tokens.typography.fontSize.base,
+              fontSize: tokens.typography.fontSize.md,
               fontWeight: tokens.typography.fontWeight.semibold,
               color: tokens.colors.gray.gray10,
             }}
@@ -1825,7 +1825,7 @@ export const RecipeFormHost = ({
             <h2
               style={{
                 margin: 0,
-                fontSize: tokens.typography.fontSize.base,
+                fontSize: tokens.typography.fontSize.md,
                 fontWeight: tokens.typography.fontWeight.semibold,
                 color: tokens.colors.gray.gray10,
               }}
