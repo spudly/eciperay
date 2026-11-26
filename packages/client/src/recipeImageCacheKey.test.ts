@@ -1,9 +1,9 @@
 import {
   stripImageCacheKey,
   withImageCacheKey,
-} from './recipeImagePreviewUrl.js';
+} from './recipeImageCacheKey.js';
 
-describe('recipeImagePreviewUrl', () => {
+describe('recipeImageCacheKey', () => {
   test('appends a cache-busting query parameter', () => {
     expect(withImageCacheKey('https://cdn.example/recipe.png', 1234)).toBe(
       'https://cdn.example/recipe.png?v=1234',
@@ -16,10 +16,22 @@ describe('recipeImagePreviewUrl', () => {
     );
   });
 
+  test('preserves other query parameters when adding the cache key', () => {
+    expect(
+      withImageCacheKey('https://cdn.example/recipe.png?w=100', 2),
+    ).toBe('https://cdn.example/recipe.png?w=100&v=2');
+  });
+
   test('strips the cache-busting query parameter', () => {
     expect(stripImageCacheKey('https://cdn.example/recipe.png?v=1234')).toBe(
       'https://cdn.example/recipe.png',
     );
+  });
+
+  test('preserves other query parameters when stripping the cache key', () => {
+    expect(
+      stripImageCacheKey('https://cdn.example/recipe.png?w=100&v=1234'),
+    ).toBe('https://cdn.example/recipe.png?w=100');
   });
 
   test('returns invalid URLs unchanged', () => {

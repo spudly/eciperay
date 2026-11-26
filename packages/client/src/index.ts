@@ -117,6 +117,10 @@ export {
   resizedImageUrl,
   resizedRecipeImageUrl,
 } from './resizedImageUrl.js';
+export {
+  stripImageCacheKey,
+  withImageCacheKey,
+} from './recipeImageCacheKey.js';
 export {DEFAULT_LOADING_DELAY_MS, useDelayedTrue} from './useDelayedTrue.js';
 export type {
   BookLoadingSpinnerProps,
