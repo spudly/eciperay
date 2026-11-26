@@ -42,6 +42,8 @@ module.exports = {
   },
   moduleNameMapper: {
     '^@env$': '<rootDir>/env-shim.test.js',
+    '^@eciperay/client/test/fixtures/recipe$':
+      '<rootDir>/../client/src/test/fixtures/recipe.ts',
     '^@eciperay/client$': '<rootDir>/../client/src/index.ts',
     '^react$': '<rootDir>/node_modules/react',
     '^(\\.{1,2}/.*)\\.js$': '$1',
