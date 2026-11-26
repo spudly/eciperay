@@ -1,4 +1,4 @@
-import { matchInstructionIngredients } from './matchInstructionIngredients';
+import { matchInstructionIngredients } from './matchInstructionIngredients.js';
 
 const ingredients = [
   { id: 'ing-onion', name: 'yellow onion' },

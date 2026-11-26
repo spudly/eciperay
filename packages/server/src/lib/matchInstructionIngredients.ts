@@ -13,8 +13,9 @@
  * - Both sides are normalized (lowercase, punctuation stripped,
  *   whitespace collapsed) before comparison.
  * - Ingredient names are reduced to their significant tokens: leading
- *   preparation words ("finely chopped", "minced", …) are dropped so
- *   "finely chopped onion" matches instruction text saying "onion".
+ *   preparation words ("finely chopped", "minced", …) and color/variety
+ *   qualifiers ("yellow", "red", …) are dropped so "finely chopped
+ *   onion" and "yellow onion" match instruction text saying "onion".
  * - Singular/plural tolerant: a token matches its singular or plural
  *   form ("onion" ↔ "onions", "tomato" ↔ "tomatoes").
  * - An ingredient matches an instruction when ALL of its significant
@@ -63,6 +64,22 @@ const PREPARATION_WORDS = new Set([
   'washed',
 ]);
 
+/**
+ * Color/variety qualifiers that distinguish a variant of an ingredient,
+ * not a different ingredient ("yellow onion", "red bell pepper").
+ */
+const QUALIFIER_WORDS = new Set([
+  'black',
+  'brown',
+  'golden',
+  'green',
+  'orange',
+  'purple',
+  'red',
+  'white',
+  'yellow',
+]);
+
 function normalizeText(text: string): string {
   return text
     .toLowerCase()
@@ -94,9 +111,11 @@ function tokenForms(token: string): Set<string> {
   return new Set([token, singularize(token)]);
 }
 
-/** Significant tokens of an ingredient name: preparation words removed. */
+/** Significant tokens of an ingredient name: preparation and qualifier words removed. */
 export function ingredientNameTokens(name: string): string[] {
-  const tokens = tokenize(name).filter((token) => !PREPARATION_WORDS.has(token));
+  const tokens = tokenize(name).filter(
+    (token) => !PREPARATION_WORDS.has(token) && !QUALIFIER_WORDS.has(token),
+  );
   // A name that is only preparation words (degenerate) falls back to all tokens.
   return tokens.length > 0 ? tokens : tokenize(name);
 }
