@@ -8,6 +8,12 @@
 
 import {createHash} from 'node:crypto';
 
+import type {
+  IngredientInput,
+  InstructionInput,
+  RecipeUpdatePatch,
+} from '@eciperay/types';
+
 export type EciperayClientConfig = {apiUrl: string; apiToken: string};
 
 export const loadConfig = (): EciperayClientConfig => {
@@ -483,48 +489,6 @@ export const createClient = (config: EciperayClientConfig) => {
   };
 };
 
-/** Ingredient/instruction shapes accepted by the REST recipe endpoints. */
-export type RecipeIngredientInput = {
-  sortOrder: number;
-  name: string;
-  quantity: number | null;
-  unit: string | null;
-  notes: string | null;
-  isOptional: boolean;
-};
-
-export type RecipeInstructionInput = {stepNumber: number; body: string};
-
-/**
- * The subset of recipe fields `update_recipe` may change. A field left
- * `undefined` is preserved from the stored recipe; a field set to `null` (where
- * nullable) clears it.
- */
-export type RecipeUpdatePatch = {
-  title?: string;
-  description?: string | null;
-  servings?: number;
-  prepTimeMin?: number | null;
-  cookTimeMin?: number | null;
-  sourceUrl?: string | null;
-  /** Version tips (#635); providing the list replaces the stored one. */
-  tips?: string[];
-  ingredients?: RecipeIngredientInput[];
-  instructions?: RecipeInstructionInput[];
-  tagIds?: string[];
-  /**
-   * The version a content edit applies to (#410). Required when
-   * ingredients/instructions change; naming a non-active version routes the
-   * whole patch to that version. Not itself an update field.
-   */
-  versionId?: string;
-  /**
-   * With a version-path edit, make the edited version active. Defaults to
-   * false: the edited version stays a draft. Not itself an update field.
-   */
-  activate?: boolean;
-};
-
 /**
  * The version-detail shape returned by `GET /recipes/:id/versions/:versionId`,
  * as read here.
@@ -540,16 +504,16 @@ type VersionDetailForUpdate = {
   sourceUrl: string | null;
   /** Version tips (#635); absent on version details from before the field existed. */
   tips?: string[];
-  ingredients: (RecipeIngredientInput & Record<string, unknown>)[];
-  instructions: (RecipeInstructionInput & Record<string, unknown>)[];
+  ingredients: (IngredientInput & Record<string, unknown>)[];
+  instructions: (InstructionInput & Record<string, unknown>)[];
   tags: {id: string}[];
 };
 
 /** Stored or patched ingredients normalized to the REST input shape. */
 const ingredientInputs = (
-  ingredients: readonly (Partial<RecipeIngredientInput> &
+  ingredients: readonly (Partial<IngredientInput> &
     Record<string, unknown>)[],
-): RecipeIngredientInput[] =>
+): IngredientInput[] =>
   ingredients.map((ingredient, index) => ({
     sortOrder: ingredient.sortOrder ?? index,
     name: ingredient.name as string,
@@ -561,9 +525,9 @@ const ingredientInputs = (
 
 /** Stored or patched instructions normalized to the REST input shape. */
 const instructionInputs = (
-  instructions: readonly (Partial<RecipeInstructionInput> &
+  instructions: readonly (Partial<InstructionInput> &
     Record<string, unknown>)[],
-): RecipeInstructionInput[] =>
+): InstructionInput[] =>
   instructions.map((instruction, index) => ({
     stepNumber: instruction.stepNumber ?? index + 1,
     body: instruction.body as string,
@@ -620,8 +584,8 @@ type RecipeDetailForUpdate = {
   cookTimeMin: number | null;
   imageUrl: string | null;
   sourceUrl: string | null;
-  ingredients: (RecipeIngredientInput & Record<string, unknown>)[];
-  instructions: (RecipeInstructionInput & Record<string, unknown>)[];
+  ingredients: (IngredientInput & Record<string, unknown>)[];
+  instructions: (InstructionInput & Record<string, unknown>)[];
   tags: {id: string}[];
 };
 
@@ -639,7 +603,7 @@ const PATCH_FIELDS: (keyof RecipeUpdatePatch)[] = [
 ];
 
 const serializeIngredients = (
-  ingredients: readonly (Partial<RecipeIngredientInput> &
+  ingredients: readonly (Partial<IngredientInput> &
     Record<string, unknown>)[],
 ): string =>
   [...ingredients]
@@ -656,7 +620,7 @@ const serializeIngredients = (
     .join(';');
 
 const serializeInstructions = (
-  instructions: readonly (Partial<RecipeInstructionInput> &
+  instructions: readonly (Partial<InstructionInput> &
     Record<string, unknown>)[],
 ): string =>
   [...instructions]
@@ -666,8 +630,8 @@ const serializeInstructions = (
 
 /** The content lists of a stored recipe or version detail, as read here. */
 type ContentLists = {
-  ingredients: (RecipeIngredientInput & Record<string, unknown>)[];
-  instructions: (RecipeInstructionInput & Record<string, unknown>)[];
+  ingredients: (IngredientInput & Record<string, unknown>)[];
+  instructions: (InstructionInput & Record<string, unknown>)[];
   /** Version tips (#635); recipe details do not carry them, so a provided tips list always reads as a change there. */
   tips?: readonly string[];
 };
