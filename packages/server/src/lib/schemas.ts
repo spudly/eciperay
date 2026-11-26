@@ -1,5 +1,7 @@
 import {z} from 'zod';
 
+import {MAX_RECIPE_TIP_LENGTH, MAX_RECIPE_TIPS} from './recipeTips.js';
+
 export {validate, parseAiJson} from './validate.js';
 
 // ─── Ingredient / Instruction primitives ──────────────────────────────────────
@@ -23,6 +25,15 @@ const InstructionInputSchema = z.object({
   // against the version's ingredients again on write.
   ingredientReferences: z.array(z.string().min(1)).optional(),
 });
+
+/**
+ * Recipe version tips (#635): at most MAX_RECIPE_TIPS entries, each at
+ * most MAX_RECIPE_TIP_LENGTH chars. Empty/whitespace entries are dropped
+ * at save time (lib/recipeTips.ts), not rejected here.
+ */
+const RecipeTipsSchema = z
+  .array(z.string().max(MAX_RECIPE_TIP_LENGTH))
+  .max(MAX_RECIPE_TIPS);
 
 // ─── Recipe import (from URL or image) ────────────────────────────────────────
 
@@ -55,6 +66,7 @@ export const RecipeInputSchema = z.object({
   cookTimeMin: z.number().int().nonnegative().nullish(),
   imageUrl: z.url().nullish(),
   sourceUrl: z.url().nullish(),
+  tips: RecipeTipsSchema.optional(),
   ingredients: z.array(IngredientInputSchema),
   instructions: z.array(InstructionInputSchema),
   tagIds: z.array(z.uuid()),
@@ -85,6 +97,7 @@ export const RecipeVersionInputSchema = z.object({
   cookTimeMin: z.number().int().nonnegative().nullish(),
   imageUrl: z.url().nullish(),
   sourceUrl: z.url().nullish(),
+  tips: RecipeTipsSchema.optional(),
   ingredients: z.array(IngredientInputSchema),
   instructions: z.array(InstructionInputSchema),
   tagIds: z.array(z.uuid()),
@@ -189,6 +202,7 @@ const RecipeExportRecordSchema = z.object({
   cookTimeMin: z.number().int().nonnegative().nullable(),
   starRating: StarRating.nullable(),
   sourceUrl: z.url().nullable(),
+  tips: RecipeTipsSchema.optional(),
   tags: z.array(RecipeExportTagSchema),
   ingredients: z.array(IngredientInputSchema),
   instructions: z.array(InstructionInputSchema),

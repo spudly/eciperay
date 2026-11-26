@@ -34,6 +34,9 @@ export const startImportEdits = async (
   const recipe = mapRowToRecipeDetail(
     recipeRow as Parameters<typeof mapRowToRecipeDetail>[0],
   );
+  // Tips live on the version, not RecipeDetail, so they are read from
+  // the detail row directly (#635).
+  const activeTips = (recipeRow as {tips?: string[] | null}).tips ?? [];
 
   const activeVersionId = recipe.versionId;
   const newVersionId = await runTransactional(queryFn, async q => {
@@ -49,6 +52,7 @@ export const startImportEdits = async (
         cookTimeMin: recipe.cookTimeMin,
         imageUrl: recipe.imageUrl,
         sourceUrl: recipe.sourceUrl,
+        tips: activeTips,
         createdVia: 'import_review',
         changeSummary: 'Import review edits',
         derivedFromVersionId: activeVersionId,

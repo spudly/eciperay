@@ -291,6 +291,93 @@ describe('create_recipe tool', () => {
     assert.equal(postBodies[0]?.['sourceUrl'], null);
     await client.close();
   });
+
+  test('create with tips forwards the list to the API (#635)', async () => {
+    const postBodies = stubCreate();
+    const client = await connectClient();
+    const result = await client.callTool({
+      name: 'create_recipe',
+      arguments: {...createArgs, tips: ['Chill the dough', 'Rest 10 min']},
+    });
+    assert.notEqual(result.isError, true);
+    assert.equal(postBodies.length, 1);
+    assert.deepEqual(postBodies[0]?.['tips'], [
+      'Chill the dough',
+      'Rest 10 min',
+    ]);
+    await client.close();
+  });
+
+  test('create without tips sends an empty list (#635)', async () => {
+    const postBodies = stubCreate();
+    const client = await connectClient();
+    const result = await client.callTool({
+      name: 'create_recipe',
+      arguments: createArgs,
+    });
+    assert.notEqual(result.isError, true);
+    assert.equal(postBodies.length, 1);
+    assert.deepEqual(postBodies[0]?.['tips'], []);
+    await client.close();
+  });
+});
+
+describe('update_recipe tips (#635)', () => {
+  const stubVersionEdit = () => {
+    const posts: {url: string; body: Record<string, unknown>}[] = [];
+    globalThis.fetch = (async (url: string | URL, init?: RequestInit) => {
+      if (init?.method === 'POST') {
+        const body = JSON.parse(String(init.body)) as Record<string, unknown>;
+        posts.push({url: String(url), body});
+        const edited = {...storedRecipe, versionId: 'version-2', ...body};
+        return {
+          ok: true,
+          status: 201,
+          text: async () => JSON.stringify(edited),
+          json: async () => edited,
+        } as Response;
+      }
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify(storedRecipe),
+        json: async () => storedRecipe,
+      } as Response;
+    }) as typeof fetch;
+    return posts;
+  };
+
+  test('updating tips with a versionId posts them to the version edit endpoint', async () => {
+    const posts = stubVersionEdit();
+    const client = await connectClient();
+    const result = await client.callTool({
+      name: 'update_recipe',
+      arguments: {
+        id: 'recipe-1',
+        versionId: 'version-1',
+        tips: ['Season early', 'Taste as you go'],
+      },
+    });
+    assert.notEqual(result.isError, true);
+    assert.equal(posts.length, 1);
+    assert.ok(posts[0]?.url.includes('/recipes/recipe-1/versions/version-1/edit'));
+    assert.deepEqual(posts[0]?.body['tips'], [
+      'Season early',
+      'Taste as you go',
+    ]);
+    await client.close();
+  });
+
+  test('updating tips without a versionId is rejected', async () => {
+    stubVersionEdit();
+    const client = await connectClient();
+    const result = await client.callTool({
+      name: 'update_recipe',
+      arguments: {id: 'recipe-1', tips: ['Season early']},
+    });
+    assert.equal(result.isError, true);
+    await client.close();
+  });
 });
 
 const MEAL_UUID = '11111111-1111-4111-8111-111111111111';

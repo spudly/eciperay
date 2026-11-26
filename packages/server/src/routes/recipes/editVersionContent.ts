@@ -228,6 +228,9 @@ export const editVersionContent = async (
             cookTimeMin: input.cookTimeMin ?? null,
             imageUrl: input.imageUrl ?? null,
             sourceUrl: input.sourceUrl ?? null,
+            // An edit that omits tips branches with the named version's
+            // stored tips (#635); a provided list replaces them.
+            tips: input.tips ?? freshTarget.tips,
             createdVia: 'tweak_manual',
             changeSummary: input.changeSummary ?? null,
             derivedFromVersionId: target.id,
@@ -259,6 +262,7 @@ export const editVersionContent = async (
           cookTimeMin: input.cookTimeMin ?? null,
           imageUrl: input.imageUrl ?? null,
           sourceUrl: input.sourceUrl ?? null,
+          tips: input.tips,
         },
         q,
       );

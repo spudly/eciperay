@@ -1,7 +1,8 @@
 export const GET_VERSION_DETAIL_SQL = `
   select rv.id as version_id, rv.recipe_id, rv.version_number, rv.title,
          rv.description, rv.servings, rv.prep_time_min, rv.cook_time_min,
-         rv.image_url, rv.source_url, rv.created_via, rv.change_summary,
+         rv.image_url, rv.source_url, coalesce(rv.tips, '[]'::jsonb) as tips,
+         rv.created_via, rv.change_summary,
          rv.derived_from_version_id, rv.created_at, rv.updated_at,
          r.user_id, r.active_version_id, av.version_number as active_version_number,
     coalesce((

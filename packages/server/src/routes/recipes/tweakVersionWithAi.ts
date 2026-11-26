@@ -109,6 +109,9 @@ const recipeInputFromTweak = async (
   return {
     ...prepared,
     imageUrl: context.activeVersion.imageUrl,
+    // Tips are authored content the AI tweak does not regenerate (#635):
+    // the new version inherits the parent version's list.
+    tips: context.activeVersion.tips,
     tagIds: context.activeVersion.tags.map(t => t.id),
   };
 };

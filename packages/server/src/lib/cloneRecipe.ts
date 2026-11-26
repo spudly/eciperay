@@ -64,6 +64,7 @@ export const filterClonableTagIds = async (
 export const recipeDetailToCloneInput = (
   recipe: RecipeDetail,
   tagIds: string[],
+  tips: string[] = [],
 ): RecipeInput => ({
   title: recipe.title,
   description: recipe.description,
@@ -72,6 +73,7 @@ export const recipeDetailToCloneInput = (
   cookTimeMin: recipe.cookTimeMin,
   imageUrl: recipe.imageUrl,
   sourceUrl: recipe.sourceUrl,
+  tips,
   tagIds,
   ingredients: recipe.ingredients.map(
     ({sortOrder, name, quantity, unit, notes, isOptional}) => ({
@@ -150,7 +152,13 @@ export const cloneRecipeForUser = async (
     clonerUserId,
     queryFn,
   );
-  const input = recipeDetailToCloneInput(source, tagIds);
+  // Tips live on the version, not RecipeDetail, so they are read from
+  // the source detail row directly (#635).
+  const input = recipeDetailToCloneInput(
+    source,
+    tagIds,
+    sourceRow.tips ?? [],
+  );
 
   const {recipeId} = await runTransactional(queryFn, async q => {
     const lineage = await insertClonedLineage(

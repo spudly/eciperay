@@ -207,7 +207,7 @@ export const createClient = (config: EciperayClientConfig) => {
       if (recipeContentChanged(current, patch)) {
         if (patch.versionId === undefined) {
           throw new Error(
-            'update_recipe: changing ingredients or instructions requires versionId (the versionId from get_recipe), so the edit lands on the version you name. The changed content is written atomically to that version — a draft is edited in place; the active version is branched, leaving the original untouched — and becomes active only with activate: true (default false). No changes were written.',
+            'update_recipe: changing ingredients, instructions, or tips requires versionId (the versionId from get_recipe), so the edit lands on the version you name. The changed content is written atomically to that version — a draft is edited in place; the active version is branched, leaving the original untouched — and becomes active only with activate: true (default false). No changes were written.',
           );
         }
         return request<unknown>(
@@ -507,6 +507,8 @@ export type RecipeUpdatePatch = {
   prepTimeMin?: number | null;
   cookTimeMin?: number | null;
   sourceUrl?: string | null;
+  /** Version tips (#635); providing the list replaces the stored one. */
+  tips?: string[];
   ingredients?: RecipeIngredientInput[];
   instructions?: RecipeInstructionInput[];
   tagIds?: string[];
@@ -536,6 +538,8 @@ type VersionDetailForUpdate = {
   cookTimeMin: number | null;
   imageUrl: string | null;
   sourceUrl: string | null;
+  /** Version tips (#635); absent on version details from before the field existed. */
+  tips?: string[];
   ingredients: (RecipeIngredientInput & Record<string, unknown>)[];
   instructions: (RecipeInstructionInput & Record<string, unknown>)[];
   tags: {id: string}[];
@@ -593,6 +597,7 @@ export const buildVersionEditPayload = (
     imageUrl: current.imageUrl,
     sourceUrl:
       patch.sourceUrl !== undefined ? patch.sourceUrl : current.sourceUrl,
+    tips: patch.tips ?? current.tips ?? [],
     ingredients: ingredientInputs(patch.ingredients ?? current.ingredients),
     instructions: instructionInputs(patch.instructions ?? current.instructions),
     tagIds: patch.tagIds ?? current.tags.map(tag => tag.id),
@@ -627,6 +632,7 @@ const PATCH_FIELDS: (keyof RecipeUpdatePatch)[] = [
   'prepTimeMin',
   'cookTimeMin',
   'sourceUrl',
+  'tips',
   'ingredients',
   'instructions',
   'tagIds',
@@ -662,13 +668,15 @@ const serializeInstructions = (
 type ContentLists = {
   ingredients: (RecipeIngredientInput & Record<string, unknown>)[];
   instructions: (RecipeInstructionInput & Record<string, unknown>)[];
+  /** Version tips (#635); recipe details do not carry them, so a provided tips list always reads as a change there. */
+  tips?: readonly string[];
 };
 
 /**
- * True when the patch's ingredients or instructions differ from the stored
- * lists. Lists identical to the stored ones are not a content change: they keep
- * the update on its metadata-only path. Mirrors the comparison in the server's
- * recipeContentEquals.
+ * True when the patch's ingredients, instructions, or tips differ from the
+ * stored lists. Lists identical to the stored ones are not a content change:
+ * they keep the update on its metadata-only path. Mirrors the comparison in
+ * the server's recipeContentEquals.
  */
 export const recipeContentChanged = (
   current: ContentLists,
@@ -679,7 +687,9 @@ export const recipeContentChanged = (
       serializeIngredients(current.ingredients)) ||
   (patch.instructions !== undefined &&
     serializeInstructions(patch.instructions) !==
-      serializeInstructions(current.instructions));
+      serializeInstructions(current.instructions)) ||
+  (patch.tips !== undefined &&
+    JSON.stringify(patch.tips) !== JSON.stringify(current.tips ?? null));
 
 /**
  * The fields a merged PUT would carry over from a stored recipe, serialized for
@@ -735,6 +745,10 @@ export const buildRecipeUpdatePayload = (
     imageUrl: current.imageUrl,
     sourceUrl:
       patch.sourceUrl !== undefined ? patch.sourceUrl : current.sourceUrl,
+    // Tips are sent only when the patch provides them (#635): this payload
+    // also feeds the version-edit endpoint, where an omitted list preserves
+    // the named version's stored tips.
+    ...(patch.tips !== undefined ? {tips: patch.tips} : {}),
     ingredients: ingredientInputs(patch.ingredients ?? current.ingredients),
     instructions: instructionInputs(patch.instructions ?? current.instructions),
     tagIds: patch.tagIds ?? current.tags.map(tag => tag.id),

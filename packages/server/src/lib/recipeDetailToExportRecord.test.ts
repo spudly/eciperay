@@ -27,6 +27,7 @@ describe('recipeDetailToExportRecord', () => {
       cookTimeMin: detail.cookTimeMin,
       starRating: null,
       sourceUrl: detail.sourceUrl,
+      tips: [],
       tags: [{name: 'Dinner', color: '#6366f1'}],
       ingredients: [
         expect.objectContaining({sortOrder: 0, name: 'Flour'}),
@@ -37,6 +38,15 @@ describe('recipeDetailToExportRecord', () => {
         expect.objectContaining({stepNumber: 2, body: 'Bake'}),
       ],
     });
+  });
+
+  test('includes tips when provided (#635)', () => {
+    expect(
+      recipeDetailToExportRecord(makeRecipeDetail(), undefined, [
+        'Tip A',
+        'Tip B',
+      ]).tips,
+    ).toEqual(['Tip A', 'Tip B']);
   });
 
   test('includes image when provided', () => {
