@@ -476,6 +476,12 @@ export const RecipeDetailView = ({
   return (
     <RecipeDetailPage
       state="ready"
+      // Recipe status was removed in #610, but @spudly/ui 14's
+      // RecipeDetailPageOwnerReadyProps still requires a status string
+      // (unknown values fall back to its "idea" badge). This prop goes
+      // away when the DS drops status from RecipeDetailPage — the
+      // design-system follow-up already noted on PR #641.
+      status=""
       versions={versions.map(version => ({
         id: version.id,
         label: versionPickerLabel(i18n, version),
