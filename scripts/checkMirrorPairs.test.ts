@@ -87,18 +87,18 @@ describe('validateAllComponentsRegistered', () => {
 describe('validateChangedMirrorPairs', () => {
   test('flags mirror updates that touch only one platform', () => {
     const errors = validateChangedMirrorPairs([
-      'packages/app/src/components/LegalLinks.tsx',
+      'packages/app/src/components/Icon.tsx',
     ]);
 
     expect(errors).toEqual([
-      'Mirror pair changed on one platform only: LegalLinks.tsx (update both app and web)',
+      'Mirror pair changed on one platform only: Icon.tsx (update both app and web)',
     ]);
   });
 
   test('passes when both platforms change together', () => {
     const errors = validateChangedMirrorPairs([
-      'packages/app/src/components/LegalLinks.tsx',
-      'packages/web/src/components/LegalLinks.tsx',
+      'packages/app/src/components/Icon.tsx',
+      'packages/web/src/components/Icon.tsx',
     ]);
 
     expect(errors).toEqual([]);
@@ -157,8 +157,8 @@ describe('validateChangedComponentsRegistered', () => {
 
   test('allows registered mirror and platform-only paths', () => {
     const errors = validateChangedComponentsRegistered(root, [
-      'packages/app/src/components/LegalLinks.tsx',
-      'packages/web/src/components/LegalLinks.tsx',
+      'packages/app/src/components/Icon.tsx',
+      'packages/web/src/components/Icon.tsx',
       'packages/app/src/components/cooking/CookingModeParts.tsx',
     ]);
 
