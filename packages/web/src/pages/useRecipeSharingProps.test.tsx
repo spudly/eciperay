@@ -9,7 +9,8 @@ import {makeRecipeDetail} from '../test/fixtures/recipe.js';
 import {server} from '../test/msw/server.js';
 import {renderWithProviders} from '../test/testUtils.js';
 
-import {useRecipeSharingProps} from './useRecipeSharingProps.js';
+import {useRecipeSharingProps} from '@eciperay/client';
+import {useLingui} from '@lingui/react';
 
 const API = 'http://localhost:8080';
 
@@ -29,7 +30,23 @@ const renderSharingProps = async (
   const onActionMessage = vi.fn();
   let captured: RecipeDetailPageSharing | null = null;
   const Probe = () => {
-    captured = useRecipeSharingProps(recipe, onActionMessage);
+    const {i18n} = useLingui();
+    captured = useRecipeSharingProps(eciperay, recipe, onActionMessage, {
+      baseUrl: window.location.origin,
+      shareUrl: (url: string) => {
+        void navigator.clipboard.writeText(url);
+      },
+      copyShareLinkLabel: i18n._({
+        id: 'recipeSharing.copyLinkLabel',
+        message: 'Copy share link',
+      }),
+      copyPermalinkLabel: i18n._({
+        id: 'recipeSharing.copyPermalinkLabel',
+        message: 'Copy',
+      }),
+      notifyOnShare: true,
+      surfaceMutationErrors: true,
+    });
     return null;
   };
   await renderWithProviders(<Probe />, {locale});

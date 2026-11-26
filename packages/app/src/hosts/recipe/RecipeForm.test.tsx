@@ -15,12 +15,12 @@ import {
   makeRecipeVersionDetail,
 } from '../../__tests__/fixtures/recipe';
 import {makeQueryClient, renderWithProviders} from '../../__tests__/testUtils';
-import {api} from '../../lib/api';
+import {eciperay} from '../../lib/api';
 
 import {RecipeForm} from './RecipeForm';
 
 jest.mock('../../lib/api', () => ({
-  api: {
+  eciperay: {
     tags: {list: jest.fn()},
     ai: {generateImage: jest.fn(), generateDescription: jest.fn()},
   },
@@ -48,9 +48,9 @@ jest.mock('@eciperay/client', () => {
   };
 });
 
-const mockListTags = api.tags.list as jest.Mock;
-const mockGenerateImage = api.ai.generateImage as jest.Mock;
-const mockGenerateDescription = api.ai.generateDescription as jest.Mock;
+const mockListTags = eciperay.tags.list as jest.Mock;
+const mockGenerateImage = eciperay.ai.generateImage as jest.Mock;
+const mockGenerateDescription = eciperay.ai.generateDescription as jest.Mock;
 const mockUploadRecipeImageFromBase64 =
   uploadRecipeImageFromBase64 as jest.Mock;
 const mockRevertVersionScalar = revertVersionScalar as jest.Mock;

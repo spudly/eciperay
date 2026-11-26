@@ -10,7 +10,7 @@ import {MealsHubPage, type MealPlansPageItem} from '@spudly/ui';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useMemo, useState} from 'react';
 
-import {api} from '../lib/api';
+import {eciperay} from '../lib/api';
 import {
   mealEditHref,
   mealHref,
@@ -46,12 +46,12 @@ export const MealsHubScreen = () => {
 
   const {data: meals = [], isLoading: mealsLoading} = useQuery({
     queryKey: queryKeys.meals(),
-    queryFn: () => api.meals.list(),
+    queryFn: () => eciperay.meals.list(),
   });
 
   const {data: plans = [], isLoading: plansLoading} = useQuery({
     queryKey: queryKeys.mealPlans(),
-    queryFn: () => api.mealPlans.list(),
+    queryFn: () => eciperay.mealPlans.list(),
   });
 
   const isLoading = useMemo(
@@ -60,14 +60,14 @@ export const MealsHubScreen = () => {
   );
 
   const deleteMealMutation = useMutation({
-    mutationFn: (id: string) => api.meals.delete(id),
+    mutationFn: (id: string) => eciperay.meals.delete(id),
     onSuccess: () => {
       void queryClient.invalidateQueries({queryKey: queryKeys.meals()});
     },
   });
 
   const deletePlanMutation = useMutation({
-    mutationFn: (id: string) => api.mealPlans.delete(id),
+    mutationFn: (id: string) => eciperay.mealPlans.delete(id),
     onSuccess: () => {
       void queryClient.invalidateQueries({queryKey: queryKeys.mealPlans()});
     },

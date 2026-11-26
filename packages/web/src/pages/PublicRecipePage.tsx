@@ -13,6 +13,7 @@ import {
   servingsForMultiplier,
   sortIngredientsByOrder,
   useAuth,
+  useRecipeCommentsProps,
   type RecipeScaleMultiplier,
 } from '@eciperay/client';
 import type {RecipeStarRating} from '@eciperay/types';
@@ -30,8 +31,6 @@ import {
 import {AppShell} from '../components/AppShell.js';
 import {RecipePageHead} from '../components/RecipePageHead.js';
 import {eciperay} from '../lib/api.js';
-
-import {useRecipeCommentsProps} from './useRecipeCommentsProps.js';
 
 /**
  * The public recipe route's host (B7 cluster 11): the design system's
@@ -94,10 +93,11 @@ const PublicRecipePageContent = () => {
   // recipe loads with an empty id; the hook's query stays disabled
   // until the id exists. No ownerUserId: on the public page delete
   // eligibility is author-only, as the composed section behaved.
-  const commentsProps = useRecipeCommentsProps({
+  const commentsProps = useRecipeCommentsProps(eciperay, {
     recipeId: recipe?.id ?? '',
     shareToken,
     publicList: true,
+    surfaceMutationErrors: true,
   });
 
   // Ratings (the old RecipeRatingsSection, in its public context):

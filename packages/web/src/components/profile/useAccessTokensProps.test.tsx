@@ -5,7 +5,7 @@ import {vi} from 'vitest';
 import {eciperay} from '../../lib/api.js';
 import {createWrapper} from '../../test/testUtils.js';
 
-import {useProfileAccessTokensProps} from './ProfileAccessTokensSection.js';
+import {useAccessTokensProps} from '@eciperay/client';
 
 // DS 14: the section is a hook returning ProfilePage's accessTokens
 // data prop, so the tests assert the view-model the DS panel will
@@ -20,7 +20,7 @@ const makeEntitlement = (plan: Entitlement['plan']): Entitlement => ({
   cancelAtPeriodEnd: false,
 });
 
-describe('useProfileAccessTokensProps', () => {
+describe('useAccessTokensProps', () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
@@ -33,7 +33,7 @@ describe('useProfileAccessTokensProps', () => {
 
   const renderProps = (locale?: 'en-XA') => {
     const {Wrapper} = createWrapper({withAuth: false, locale});
-    return renderHook(() => useProfileAccessTokensProps(), {wrapper: Wrapper});
+    return renderHook(() => useAccessTokensProps(eciperay), {wrapper: Wrapper});
   };
 
   test('no plan notice for a Power user', async () => {

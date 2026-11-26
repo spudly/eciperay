@@ -10,7 +10,7 @@ import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
 import {ImportReviewPage} from '@spudly/ui';
 import {ScreenLoadingGate} from '../components/ScreenLoadingGate';
-import {api} from '../lib/api';
+import {eciperay} from '../lib/api';
 import type {AddStackParamList} from '../navigation/types';
 
 type Props = NativeStackScreenProps<AddStackParamList, 'ImportReview'>;
@@ -21,7 +21,7 @@ export const ImportReviewScreen = ({route, navigation}: Props) => {
 
   const {data: recipe, isLoading} = useQuery({
     queryKey: queryKeys.recipe(recipeId),
-    queryFn: () => api.recipes.get(recipeId),
+    queryFn: () => eciperay.recipes.get(recipeId),
     enabled: recipeId.length > 0,
   });
 
@@ -44,7 +44,7 @@ export const ImportReviewScreen = ({route, navigation}: Props) => {
   };
 
   const acceptMutation = useMutation({
-    mutationFn: () => api.recipes.acceptImport(recipeId),
+    mutationFn: () => eciperay.recipes.acceptImport(recipeId),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: queryKeys.recipe(recipeId),
@@ -57,7 +57,7 @@ export const ImportReviewScreen = ({route, navigation}: Props) => {
   });
 
   const startEditsMutation = useMutation({
-    mutationFn: () => api.versions.startImportEdits(recipeId),
+    mutationFn: () => eciperay.versions.startImportEdits(recipeId),
     onSuccess: async version => {
       await queryClient.invalidateQueries({
         queryKey: queryKeys.recipe(recipeId),

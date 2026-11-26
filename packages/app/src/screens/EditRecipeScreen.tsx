@@ -11,7 +11,7 @@ import type {RecipeInput} from '@eciperay/types';
 
 import {RecipeForm} from '../hosts/recipe/RecipeForm';
 import {ScreenLoadingGate} from '../components/ScreenLoadingGate';
-import {api} from '../lib/api';
+import {eciperay} from '../lib/api';
 import type {RecipesStackParamList} from '../navigation/types';
 
 type Props = NativeStackScreenProps<RecipesStackParamList, 'EditRecipe'>;
@@ -23,12 +23,12 @@ export const EditRecipeScreen = ({route, navigation}: Props) => {
 
   const {data: recipe, isLoading} = useQuery({
     queryKey: queryKeys.recipe(recipeId),
-    queryFn: () => api.recipes.get(recipeId),
+    queryFn: () => eciperay.recipes.get(recipeId),
     enabled: recipeId.length > 0,
   });
 
   const handleSubmit = async (input: RecipeInput) => {
-    await api.recipes.put(recipeId, input);
+    await eciperay.recipes.put(recipeId, input);
     await invalidateRecipeQueries(queryClient, recipeId, recipe?.versionId);
     navigation.navigate('RecipeDetail', {recipeId});
   };

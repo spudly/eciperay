@@ -22,7 +22,7 @@ import {
   CookingModeShell,
   useSwipeNav,
 } from '../components/cooking/CookingModeParts';
-import {api} from '../lib/api';
+import {eciperay} from '../lib/api';
 import type {RecipesStackParamList} from '../navigation/types';
 
 type CookingProps = NativeStackScreenProps<
@@ -43,14 +43,14 @@ export const CookingModeScreen = ({route, navigation}: CookingProps) => {
 
   const {data: recipe, isLoading} = useQuery({
     queryKey: queryKeys.recipe(recipeId),
-    queryFn: () => api.recipes.get(recipeId),
+    queryFn: () => eciperay.recipes.get(recipeId),
   });
 
   const versionId = versionIdParam ?? recipe?.versionId ?? '';
 
   const {data: versionRecipe} = useQuery({
     queryKey: queryKeys.version(recipeId, versionId),
-    queryFn: () => api.versions.get(recipeId, versionId),
+    queryFn: () => eciperay.versions.get(recipeId, versionId),
     enabled:
       recipeId.length > 0 &&
       versionId.length > 0 &&
@@ -93,7 +93,7 @@ export const CookingModeScreen = ({route, navigation}: CookingProps) => {
 
   const cookLogMutation = useMutation({
     mutationFn: (input: CookLogInput) =>
-      api.cookLogs.create(recipeId, versionId, input),
+      eciperay.cookLogs.create(recipeId, versionId, input),
     onSuccess: async () => {
       await invalidateRecipeQueries(queryClient, recipeId, versionId);
       navigation.goBack();

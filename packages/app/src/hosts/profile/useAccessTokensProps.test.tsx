@@ -4,12 +4,12 @@ import {screen, waitFor} from '@testing-library/react-native';
 import {Text} from 'react-native';
 
 import {renderWithProviders} from '../../__tests__/testUtils';
-import {api} from '../../lib/api';
+import {eciperay} from '../../lib/api';
 
-import {useAccessTokensProps} from './AccessTokensSection';
+import {useAccessTokensProps} from '@eciperay/client';
 
 jest.mock('../../lib/api', () => ({
-  api: {
+  eciperay: {
     account: {
       listPersonalAccessTokens: jest.fn(),
       createPersonalAccessToken: jest.fn(),
@@ -19,8 +19,8 @@ jest.mock('../../lib/api', () => ({
   },
 }));
 
-const mockList = jest.mocked(api.account.listPersonalAccessTokens);
-const mockEntitlement = jest.mocked(api.account.getEntitlement);
+const mockList = jest.mocked(eciperay.account.listPersonalAccessTokens);
+const mockEntitlement = jest.mocked(eciperay.account.getEntitlement);
 
 const makeEntitlement = (plan: Entitlement['plan']): Entitlement => ({
   plan,
@@ -37,7 +37,7 @@ const makeEntitlement = (plan: Entitlement['plan']): Entitlement => ({
 // renders from (the plan notice replaces the create form when set;
 // token rows carry their meta line as data).
 const Probe = () => {
-  const props = useAccessTokensProps();
+  const props = useAccessTokensProps(eciperay);
   return (
     <>
       <Text>{props.planNotice ?? 'NO_PLAN_NOTICE'}</Text>

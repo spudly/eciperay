@@ -3,7 +3,7 @@ import {Linking} from 'react-native';
 import {fireEvent, waitFor} from '@testing-library/react-native';
 
 import {renderWithProviders} from '../__tests__/testUtils';
-import {api} from '../lib/api';
+import {eciperay} from '../lib/api';
 import {
   mealEditHref,
   mealHref,
@@ -15,10 +15,10 @@ import {MealsHubScreen} from './MealsHubScreen';
 
 jest.mock('../lib/api');
 
-const mockListMeals = api.meals.list as jest.Mock;
-const mockListPlans = api.mealPlans.list as jest.Mock;
-const mockDeleteMeal = api.meals.delete as jest.Mock;
-const mockDeletePlan = api.mealPlans.delete as jest.Mock;
+const mockListMeals = eciperay.meals.list as jest.Mock;
+const mockListPlans = eciperay.mealPlans.list as jest.Mock;
+const mockDeleteMeal = eciperay.meals.delete as jest.Mock;
+const mockDeletePlan = eciperay.mealPlans.delete as jest.Mock;
 const mealId = '00000000-0000-4000-8000-000000000001';
 const planId = '00000000-0000-4000-8000-000000000003';
 

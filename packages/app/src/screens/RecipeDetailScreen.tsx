@@ -1,14 +1,20 @@
-import {queryKeys, recordRecipeView} from '@eciperay/client';
+import {
+  queryKeys,
+  recordRecipeView,
+  removeRecipeView,
+  useDeleteRecipe,
+} from '@eciperay/client';
+import type {RecipeDetail} from '@eciperay/types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useQuery, useQueryClient} from '@tanstack/react-query';
 import {useCallback, useEffect, useMemo, useState} from 'react';
+import {Alert} from 'react-native';
 
 import {RecipeDetailView} from '../hosts/recipe/RecipeDetailView';
 import {ScreenLoadingGate} from '../components/ScreenLoadingGate';
-import {api} from '../lib/api';
+import {eciperay} from '../lib/api';
 import {mergeVersionIntoRecipe} from '../lib/mergeVersionIntoRecipe';
 import {recipeViewHistoryStorage} from '../lib/recipeViewHistoryStorage';
-import {useDeleteRecipe} from '../lib/useDeleteRecipe';
 import type {RecipesStackParamList} from '../navigation/types';
 
 type DetailProps = NativeStackScreenProps<
@@ -23,9 +29,27 @@ export const RecipeDetailScreen = ({route, navigation}: DetailProps) => {
     initialVersionId ?? null,
   );
   const queryClient = useQueryClient();
-  const {confirmDelete} = useDeleteRecipe(recipeId, () => {
-    navigation.navigate('RecipesList');
+  // Deletion itself is the shared useDeleteRecipe (#676); the RN
+  // Alert confirmation stays here at the host's edge.
+  const {deleteRecipe} = useDeleteRecipe(eciperay, recipeId, {
+    onDeleted: () => {
+      navigation.navigate('RecipesList');
+    },
+    removeFromHistory: () =>
+      removeRecipeView(recipeViewHistoryStorage, recipeId),
   });
+  const confirmDelete = (recipe: RecipeDetail) => {
+    Alert.alert('Delete recipe', `Delete "${recipe.title}"?`, [
+      {text: 'Cancel', style: 'cancel'},
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: () => {
+          deleteRecipe();
+        },
+      },
+    ]);
+  };
 
   const invalidateRecentlyViewed = useCallback(() => {
     void queryClient.invalidateQueries({
@@ -41,14 +65,14 @@ export const RecipeDetailScreen = ({route, navigation}: DetailProps) => {
 
   const {data: recipe, isLoading} = useQuery({
     queryKey: queryKeys.recipe(recipeId),
-    queryFn: () => api.recipes.get(recipeId),
+    queryFn: () => eciperay.recipes.get(recipeId),
   });
 
   const activeVersionId = selectedVersionId ?? recipe?.versionId ?? '';
 
   const {data: versions = []} = useQuery({
     queryKey: queryKeys.versions(recipeId),
-    queryFn: () => api.versions.list(recipeId),
+    queryFn: () => eciperay.versions.list(recipeId),
     enabled: recipeId.length > 0,
   });
 
@@ -57,7 +81,7 @@ export const RecipeDetailScreen = ({route, navigation}: DetailProps) => {
 
   const {data: versionDetail} = useQuery({
     queryKey: queryKeys.version(recipeId, activeVersionId),
-    queryFn: () => api.versions.get(recipeId, activeVersionId),
+    queryFn: () => eciperay.versions.get(recipeId, activeVersionId),
     enabled: recipeId.length > 0 && viewingAlternateVersion,
   });
 

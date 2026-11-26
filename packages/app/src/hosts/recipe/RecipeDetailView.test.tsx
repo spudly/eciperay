@@ -11,7 +11,7 @@ import {
   VERSION_ID,
 } from '../../__tests__/fixtures/recipe';
 import {makeQueryClient, renderWithProviders} from '../../__tests__/testUtils';
-import {api} from '../../lib/api';
+import {eciperay} from '../../lib/api';
 import {
   recipeCookHref,
   recipeEditHref,
@@ -27,14 +27,14 @@ jest.mock('@eciperay/client', () => ({
 }));
 
 const mockUseAuth = useAuth as jest.Mock;
-const mockPutRating = api.recipes.putRating as jest.Mock;
-const mockCreateVersion = api.versions.create as jest.Mock;
-const mockActivateVersion = api.versions.activate as jest.Mock;
-const mockSubstitutions = api.ai.substitutions as jest.Mock;
-const mockNutrition = api.ai.nutrition as jest.Mock;
-const mockListCookLogs = api.cookLogs.list as jest.Mock;
-const mockCreateCookLog = api.cookLogs.create as jest.Mock;
-const mockListComments = api.recipes.listComments as jest.Mock;
+const mockPutRating = eciperay.recipes.putRating as jest.Mock;
+const mockCreateVersion = eciperay.versions.create as jest.Mock;
+const mockActivateVersion = eciperay.versions.activate as jest.Mock;
+const mockSubstitutions = eciperay.ai.substitutions as jest.Mock;
+const mockNutrition = eciperay.ai.nutrition as jest.Mock;
+const mockListCookLogs = eciperay.cookLogs.list as jest.Mock;
+const mockCreateCookLog = eciperay.cookLogs.create as jest.Mock;
+const mockListComments = eciperay.recipes.listComments as jest.Mock;
 
 // The view's remaining screen callbacks: navigation left the prop
 // surface with @spudly/ui 1.15.0 (#248) — the overview's navigation

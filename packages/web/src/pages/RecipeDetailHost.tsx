@@ -17,8 +17,10 @@ import {
   servingsForMultiplier,
   sortIngredientsByOrder,
   truncateChangeSummary,
-  useAnalytics,
   useAuth,
+  useDeleteRecipe,
+  useRecipeCommentsProps,
+  useRecipeSharingProps,
   type RecipeScaleMultiplier,
 } from '@eciperay/client';
 import type {
@@ -43,9 +45,6 @@ import {eciperay} from '../lib/api.js';
 import {printRecipe} from '../lib/printRecipe.js';
 import {recipeViewHistoryStorage} from '../lib/recipeViewHistoryStorage.js';
 import {shareRecipe} from '../lib/shareRecipe.js';
-
-import {useRecipeCommentsProps} from './useRecipeCommentsProps.js';
-import {useRecipeSharingProps} from './useRecipeSharingProps.js';
 
 type RecipeDetailHostProps = {
   recipe: RecipeDetail;
@@ -202,7 +201,6 @@ export const RecipeDetailHost = ({
     i18n._({id: 'recipeDetail.pleaseTryAgain', message: 'Please try again.'});
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const analytics = useAnalytics();
   const {session} = useAuth();
 
   // Transient action feedback ("Version activated", "Sharing settings
@@ -244,10 +242,35 @@ export const RecipeDetailHost = ({
   // Sharing and comments (B7 T1, #552): their queries, drafts, and
   // mutations live in the section hooks; the sections cross into the
   // page as data props at the render below.
-  const sharingProps = useRecipeSharingProps(displayRecipe, showActionMessage);
-  const commentsProps = useRecipeCommentsProps({
+  const sharingProps = useRecipeSharingProps(
+    eciperay,
+    displayRecipe,
+    showActionMessage,
+    {
+      baseUrl: window.location.origin,
+      // The web share actions write to the clipboard; the hook
+      // confirms through the action message ("Share link copied" /
+      // "Permalink copied") and surfaces rejected mutations the same
+      // way (#418).
+      shareUrl: (url: string) => {
+        void navigator.clipboard.writeText(url);
+      },
+      copyShareLinkLabel: i18n._({
+        id: 'recipeSharing.copyLinkLabel',
+        message: 'Copy share link',
+      }),
+      copyPermalinkLabel: i18n._({
+        id: 'recipeSharing.copyPermalinkLabel',
+        message: 'Copy',
+      }),
+      notifyOnShare: true,
+      surfaceMutationErrors: true,
+    },
+  );
+  const commentsProps = useRecipeCommentsProps(eciperay, {
     recipeId: recipe.id,
     ownerUserId: recipe.userId,
+    surfaceMutationErrors: true,
   });
 
   // Lifecycle mutations (the retired OverviewActions): candidate
@@ -309,25 +332,22 @@ export const RecipeDetailHost = ({
       : null;
 
   // Recipe deletion (#263): the page's Delete press opens the host's
-  // confirmation dialog; the mutation itself is the retired
-  // OverviewTab's — history cleanup is best-effort (the server delete
-  // already succeeded, so a storage failure must not route to
-  // onError), and success drops the deleted recipe's detail cache so
-  // navigating back to its URL cannot render the stale cached recipe
-  // (#273).
+  // confirmation dialog; the mutation is the shared useDeleteRecipe
+  // (#676) — history cleanup is best-effort (the server delete already
+  // succeeded, so a storage failure must not route to onError), and
+  // success drops the deleted recipe's detail cache so navigating
+  // back to its URL cannot render the stale cached recipe (#273).
   const [confirmingRecipeDelete, setConfirmingRecipeDelete] = useState(false);
   const [recipeDeleteError, setRecipeDeleteError] = useState<string | null>(
     null,
   );
-  const deleteRecipeMutation = useMutation({
-    mutationFn: async () => {
-      await eciperay.recipes.delete(recipe.id);
-      await removeRecipeView(recipeViewHistoryStorage, recipe.id).catch(
+  const {deleteRecipe, isDeletePending} = useDeleteRecipe(eciperay, recipe.id, {
+    removeFromHistory: () =>
+      removeRecipeView(recipeViewHistoryStorage, recipe.id).catch(
         () => undefined,
-      );
-    },
-    onSuccess: () => {
-      analytics.track('recipe_deleted', {recipe_id: recipe.id});
+      ),
+    invalidateLists: false,
+    onDeleted: () => {
       void invalidateRecipeQueries(queryClient, recipe.id, recipe.versionId);
       void navigate('/recipes');
       // Runs after navigate so this page does not flash its not-found
@@ -813,7 +833,7 @@ export const RecipeDetailHost = ({
           // must not tear down the dialog's state under it. The view
           // also swallows close requests while pending; this guard is
           // the host's own record of the same rule.
-          if (!open && !deleteRecipeMutation.isPending) {
+          if (!open && !isDeletePending) {
             setConfirmingRecipeDelete(false);
             setRecipeDeleteError(null);
           }
@@ -836,10 +856,10 @@ export const RecipeDetailHost = ({
           id: 'recipeDetail.deletingLabel',
           message: 'Deleting…',
         }),
-        pending: deleteRecipeMutation.isPending,
+        pending: isDeletePending,
         onConfirm: () => {
           setRecipeDeleteError(null);
-          deleteRecipeMutation.mutate();
+          deleteRecipe();
         },
         cancelLabel: i18n._({
           id: 'recipeDetail.cancelLabel',

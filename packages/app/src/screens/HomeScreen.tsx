@@ -16,7 +16,7 @@ import type {RecipeDetail} from '@eciperay/types';
 import {HomePage} from '@spudly/ui';
 
 import {InlineCookLogForm} from '../hosts/recipes/RecipesListView';
-import {api} from '../lib/api';
+import {eciperay} from '../lib/api';
 import {
   addHref,
   recipeHref,
@@ -60,7 +60,7 @@ export const HomeScreen = (_props: Props) => {
 
   const {data: recipes = [], isLoading} = useQuery(
     homeRecentlyViewedRecipesQueryOptions(
-      id => api.recipes.get(id),
+      id => eciperay.recipes.get(id),
       recipeViewHistoryStorage,
     ),
   );

@@ -6,15 +6,15 @@ import {
   makeStackProps,
   renderWithProviders,
 } from '../__tests__/testUtils';
-import {api} from '../lib/api';
+import {eciperay} from '../lib/api';
 import type {MealsStackParamList} from '../navigation/types';
 
 import {MealCookingModeScreen} from './MealCookingModeScreen';
 
 jest.mock('../lib/api');
 
-const mockGetMeal = api.meals.get as jest.Mock;
-const mockCookPlan = api.meals.cookPlan as jest.Mock;
+const mockGetMeal = eciperay.meals.get as jest.Mock;
+const mockCookPlan = eciperay.meals.cookPlan as jest.Mock;
 const mealId = '00000000-0000-4000-8000-000000000001';
 const mockNavigate = jest.fn();
 const stackProps = makeStackProps<MealsStackParamList, 'MealCookingMode'>(

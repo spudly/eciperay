@@ -3,7 +3,7 @@ import {Linking} from 'react-native';
 import {fireEvent} from '@testing-library/react-native';
 
 import {makeStackProps, renderWithProviders} from '../__tests__/testUtils';
-import {api} from '../lib/api';
+import {eciperay} from '../lib/api';
 import {mealCookHref, mealEditHref, recipeHref} from '../lib/deepLinks';
 import type {MealsStackParamList} from '../navigation/types';
 
@@ -11,7 +11,7 @@ import {MealDetailScreen} from './MealDetailScreen';
 
 jest.mock('../lib/api');
 
-const mockGet = api.meals.get as jest.Mock;
+const mockGet = eciperay.meals.get as jest.Mock;
 const mealId = '00000000-0000-4000-8000-000000000001';
 const recipeId = '00000000-0000-4000-8000-000000000002';
 const mockNavigate = jest.fn();

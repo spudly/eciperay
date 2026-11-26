@@ -8,13 +8,13 @@ import {
   makeStackProps,
   renderWithProviders,
 } from '../__tests__/testUtils';
-import {api} from '../lib/api';
+import {eciperay} from '../lib/api';
 import type {AddStackParamList} from '../navigation/types';
 
 import {ManualEntryScreen} from './ManualEntryScreen';
 
 jest.mock('../lib/api', () => ({
-  api: {
+  eciperay: {
     recipes: {create: jest.fn(), put: jest.fn()},
     tags: {list: jest.fn()},
     ai: {
@@ -46,9 +46,9 @@ jest.mock('@eciperay/client', () => {
   };
 });
 
-const mockCreate = api.recipes.create as jest.Mock;
-const mockPut = api.recipes.put as jest.Mock;
-const mockListTags = api.tags.list as jest.Mock;
+const mockCreate = eciperay.recipes.create as jest.Mock;
+const mockPut = eciperay.recipes.put as jest.Mock;
+const mockListTags = eciperay.tags.list as jest.Mock;
 const mockUploadRecipeImageFromBase64 =
   uploadRecipeImageFromBase64 as jest.Mock;
 const mockParentNavigate = jest.fn();

@@ -31,7 +31,7 @@ import {useMutation, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useRef, useState} from 'react';
 
 import {CookLogForm} from '../../components/CookLogForm';
-import {api} from '../../lib/api';
+import {eciperay} from '../../lib/api';
 import {recipeHref} from '../../lib/deepLinks';
 
 /**
@@ -199,7 +199,7 @@ export const InlineCookLogForm = ({
 
   const createMutation = useMutation({
     mutationFn: (input: CookLogInput) =>
-      api.cookLogs.create(recipe.id, recipe.versionId, input),
+      eciperay.cookLogs.create(recipe.id, recipe.versionId, input),
     onSuccess: async () => {
       await invalidateRecipeQueries(queryClient, recipe.id, recipe.versionId);
       // The close is guarded by this form's mounted lifetime: the save
@@ -326,7 +326,7 @@ export const RecipesListView = ({
       input: CookLogInput;
       recipe: RecipeDetail;
       session: number;
-    }) => api.cookLogs.create(recipe.id, recipe.versionId, input),
+    }) => eciperay.cookLogs.create(recipe.id, recipe.versionId, input),
     onSuccess: async (_data, variables) => {
       await invalidateRecipeQueries(
         queryClient,

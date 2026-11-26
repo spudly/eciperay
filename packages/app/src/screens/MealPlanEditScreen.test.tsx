@@ -9,18 +9,18 @@ import {
   makeStackProps,
   renderWithProviders,
 } from '../__tests__/testUtils';
-import {api} from '../lib/api';
+import {eciperay} from '../lib/api';
 import type {MealsStackParamList} from '../navigation/types';
 
 import {MealPlanEditScreen} from './MealPlanEditScreen';
 
 jest.mock('../lib/api');
 
-const mockListMeals = api.meals.list as jest.Mock;
-const mockListRecipes = api.recipes.list as jest.Mock;
-const mockGetPlan = api.mealPlans.get as jest.Mock;
-const mockCreate = api.mealPlans.create as jest.Mock;
-const mockPut = api.mealPlans.put as jest.Mock;
+const mockListMeals = eciperay.meals.list as jest.Mock;
+const mockListRecipes = eciperay.recipes.list as jest.Mock;
+const mockGetPlan = eciperay.mealPlans.get as jest.Mock;
+const mockCreate = eciperay.mealPlans.create as jest.Mock;
+const mockPut = eciperay.mealPlans.put as jest.Mock;
 const mockReplace = jest.fn();
 const planId = '00000000-0000-4000-8000-000000000003';
 const recipe = makeRecipeDetail({title: 'Pasta'});
@@ -82,7 +82,7 @@ describe('MealPlanEditScreen', () => {
     // array.
     const client = makeQueryClient();
     client.setQueryData(
-      recipeListInfiniteQueryOptions(params => api.recipes.list(params), {})
+      recipeListInfiniteQueryOptions(params => eciperay.recipes.list(params), {})
         .queryKey,
       {pages: [[recipe]], pageParams: [0]},
     );

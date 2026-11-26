@@ -13,7 +13,7 @@ import {
   makeTabProps,
   renderWithProviders,
 } from '../__tests__/testUtils';
-import {api} from '../lib/api';
+import {eciperay} from '../lib/api';
 import {
   addHref,
   recipeHref,
@@ -53,8 +53,8 @@ jest.mock('@react-navigation/native', () => {
   };
 });
 
-const mockGet = api.recipes.get as jest.Mock;
-const mockDelete = api.recipes.delete as jest.Mock;
+const mockGet = eciperay.recipes.get as jest.Mock;
+const mockDelete = eciperay.recipes.delete as jest.Mock;
 const mockNavigate = jest.fn();
 
 const homeProps = makeTabProps<RootTabParamList, 'Home'>('Home', undefined, {

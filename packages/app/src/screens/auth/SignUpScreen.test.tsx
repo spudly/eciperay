@@ -4,7 +4,7 @@ import {act, fireEvent, waitFor} from '@testing-library/react-native';
 
 import {renderWithProviders} from '../../__tests__/testUtils';
 import {signInHref} from '../../lib/deepLinks';
-import {api} from '../../lib/api';
+import {eciperay} from '../../lib/api';
 import {supabase} from '../../lib/supabase';
 
 import {SignUpScreen} from './SignUpScreen';
@@ -15,7 +15,7 @@ jest.mock('../../lib/supabase', () => ({
 jest.mock('../../lib/api');
 
 const mockSignUp = supabase.auth.signUp as jest.Mock;
-const mockSyncUser = api.auth.syncUser as jest.Mock;
+const mockSyncUser = eciperay.auth.syncUser as jest.Mock;
 const mockAlert = jest.spyOn(Alert, 'alert').mockReturnValue();
 jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
 

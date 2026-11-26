@@ -8,16 +8,16 @@ import {
   VERSION_ID,
 } from '../__tests__/fixtures/recipe';
 import {makeStackProps, renderWithProviders} from '../__tests__/testUtils';
-import {api} from '../lib/api';
+import {eciperay} from '../lib/api';
 import type {RecipesStackParamList} from '../navigation/types';
 
 import {CookingModeScreen} from './CookingModeScreen';
 
 jest.mock('../lib/api');
 
-const mockGet = api.recipes.get as jest.Mock;
-const mockGetVersion = api.versions.get as jest.Mock;
-const mockCreateCookLog = api.cookLogs.create as jest.Mock;
+const mockGet = eciperay.recipes.get as jest.Mock;
+const mockGetVersion = eciperay.versions.get as jest.Mock;
+const mockCreateCookLog = eciperay.cookLogs.create as jest.Mock;
 const mockGoBack = jest.fn();
 const stackProps = makeStackProps<RecipesStackParamList, 'CookingMode'>(
   'CookingMode',

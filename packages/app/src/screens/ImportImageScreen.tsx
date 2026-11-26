@@ -7,7 +7,7 @@ import {Alert} from 'react-native';
 import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 
 import {ImportImagePage} from '@spudly/ui';
-import {api} from '../lib/api';
+import {eciperay} from '../lib/api';
 import {
   confirmPhotoLibraryAccess,
   ensureCameraPermission,
@@ -34,7 +34,7 @@ export const ImportImageScreen = ({navigation}: Props) => {
   const analytics = useAnalytics();
 
   const submitImage = async (base64: string, allowDuplicate: boolean) => {
-    const recipe = await api.import.importImage(base64, {allowDuplicate});
+    const recipe = await eciperay.import.importImage(base64, {allowDuplicate});
     analytics.track('recipe_imported', {recipe_id: recipe.id, source: 'image'});
     navigation.navigate('ImportReview', {recipeId: recipe.id});
   };

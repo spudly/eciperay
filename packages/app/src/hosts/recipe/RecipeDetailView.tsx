@@ -18,6 +18,9 @@ import {
   sortIngredientsByOrder,
   truncateChangeSummary,
   useAuth,
+  useRecipeCommentsProps,
+  useRecipeSharingProps,
+  WEB_APP_BASE_URL,
   type RecipeScaleMultiplier,
 } from '@eciperay/client';
 import type {
@@ -36,9 +39,9 @@ import type {I18n} from '@lingui/core';
 import {useLingui} from '@lingui/react';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useState} from 'react';
-import {Alert} from 'react-native';
+import {Alert, Share} from 'react-native';
 
-import {api} from '../../lib/api';
+import {eciperay} from '../../lib/api';
 import {
   recipeCookHref,
   recipeEditHref,
@@ -47,9 +50,6 @@ import {
 } from '../../lib/deepLinks';
 import {printRecipe} from '../../lib/printRecipe';
 import {shareRecipe} from '../../lib/shareRecipe';
-
-import {useRecipeCommentsProps} from './RecipeCommentsSection';
-import {useRecipeSharingProps} from './RecipeVisibilityControls';
 
 type RecipeDetailViewProps = {
   recipe: RecipeDetail;
@@ -225,14 +225,38 @@ export const RecipeDetailView = ({
   // Sharing and comments (#438 Part 3): their queries, drafts,
   // and mutations live in the section hooks; the sections cross
   // into the page as data props at the render below.
-  const sharingProps = useRecipeSharingProps(displayRecipe, showActionMessage);
-  const commentsProps = useRecipeCommentsProps(recipe.id, recipe.userId);
+  const sharingProps = useRecipeSharingProps(
+    eciperay,
+    displayRecipe,
+    showActionMessage,
+    {
+      baseUrl: WEB_APP_BASE_URL,
+      // The native share actions stay native: the view's copy intents
+      // are wired to RN's Share sheet, with the labels the panel used
+      // ("Share link" / "Share permalink").
+      shareUrl: (url: string) => {
+        void Share.share({message: url});
+      },
+      copyShareLinkLabel: i18n._({
+        id: 'recipeSharing.copyLinkLabel',
+        message: 'Share link',
+      }),
+      copyPermalinkLabel: i18n._({
+        id: 'recipeSharing.copyPermalinkLabel',
+        message: 'Share permalink',
+      }),
+    },
+  );
+  const commentsProps = useRecipeCommentsProps(eciperay, {
+    recipeId: recipe.id,
+    ownerUserId: recipe.userId,
+  });
 
   // Lifecycle mutations (the old OverviewActions): candidate
   // activation and tweak-manually version creation.
   const activateMutation = useMutation({
     mutationFn: (versionId: string) =>
-      api.versions.activate(displayRecipe.id, versionId),
+      eciperay.versions.activate(displayRecipe.id, versionId),
     onSuccess: () => {
       void invalidate();
       showActionMessage(
@@ -244,7 +268,7 @@ export const RecipeDetailView = ({
     },
   });
   const tweakManualMutation = useMutation({
-    mutationFn: () => api.versions.create(displayRecipe.id),
+    mutationFn: () => eciperay.versions.create(displayRecipe.id),
     onSuccess: version => {
       void invalidate();
       onViewVersion(version.id);
@@ -274,9 +298,9 @@ export const RecipeDetailView = ({
   const ratingMutation = useMutation({
     mutationFn: async (stars: RecipeStarRating | null) => {
       if (stars === null) {
-        return api.recipes.deleteRating(recipe.id);
+        return eciperay.recipes.deleteRating(recipe.id);
       }
-      return api.recipes.putRating(recipe.id, {stars});
+      return eciperay.recipes.putRating(recipe.id, {stars});
     },
     onSuccess: data => {
       queryClient.setQueryData(queryKeys.recipe(recipe.id), data);
@@ -326,7 +350,7 @@ export const RecipeDetailView = ({
   const {data: substitutions = [], isFetching: isLoadingSubstitutions} =
     useQuery({
       queryKey: [...queryKeys.recipe(recipe.id), 'substitutions', missingNames],
-      queryFn: () => api.ai.substitutions(recipe.id, missingNames),
+      queryFn: () => eciperay.ai.substitutions(recipe.id, missingNames),
       enabled: missingNames.length > 0,
     });
 
@@ -367,11 +391,11 @@ export const RecipeDetailView = ({
   const [showCookLogForm, setShowCookLogForm] = useState(false);
   const {data: cookLogs = [], isLoading: isLoadingCookLogs} = useQuery({
     queryKey: queryKeys.cookLogs(recipe.id, displayRecipe.versionId),
-    queryFn: () => api.cookLogs.list(recipe.id, displayRecipe.versionId),
+    queryFn: () => eciperay.cookLogs.list(recipe.id, displayRecipe.versionId),
   });
   const createCookLogMutation = useMutation({
     mutationFn: (input: CookLogInput) =>
-      api.cookLogs.create(recipe.id, displayRecipe.versionId, input),
+      eciperay.cookLogs.create(recipe.id, displayRecipe.versionId, input),
     onSuccess: async () => {
       await invalidateRecipeQueries(
         queryClient,
@@ -391,12 +415,12 @@ export const RecipeDetailView = ({
     isFetching: isFetchingNutrition,
   } = useQuery({
     queryKey: queryKeys.nutrition(recipe.id),
-    queryFn: () => api.ai.nutrition(recipe.id),
+    queryFn: () => eciperay.ai.nutrition(recipe.id),
   });
   const handleNutritionRefresh = async () => {
     setIsRefreshingNutrition(true);
     try {
-      const next = await api.ai.nutrition(recipe.id, {refresh: true});
+      const next = await eciperay.ai.nutrition(recipe.id, {refresh: true});
       queryClient.setQueryData(queryKeys.nutrition(recipe.id), next);
       void queryClient.invalidateQueries({
         queryKey: queryKeys.recipe(recipe.id),
@@ -524,7 +548,7 @@ export const RecipeDetailView = ({
               const shareToken =
                 displayRecipe.visibility === 'public'
                   ? undefined
-                  : (await api.recipes.getShareLink(displayRecipe.id))
+                  : (await eciperay.recipes.getShareLink(displayRecipe.id))
                       .shareToken;
               await shareRecipe(displayRecipe, {shareToken});
             } catch {

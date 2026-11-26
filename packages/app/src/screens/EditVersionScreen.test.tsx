@@ -7,7 +7,7 @@ import {
   VERSION_ID,
 } from '../__tests__/fixtures/recipe';
 import {makeStackProps, renderWithProviders} from '../__tests__/testUtils';
-import {api} from '../lib/api';
+import {eciperay} from '../lib/api';
 import {recipeHref} from '../lib/deepLinks';
 import type {RecipesStackParamList} from '../navigation/types';
 
@@ -28,9 +28,9 @@ jest.mock('@eciperay/client', () => {
   };
 });
 
-const mockGet = api.versions.get as jest.Mock;
-const mockPut = api.versions.put as jest.Mock;
-const mockListTags = api.tags.list as jest.Mock;
+const mockGet = eciperay.versions.get as jest.Mock;
+const mockPut = eciperay.versions.put as jest.Mock;
+const mockListTags = eciperay.tags.list as jest.Mock;
 const mockNavigate = jest.fn();
 const stackProps = makeStackProps<RecipesStackParamList, 'EditVersion'>(
   'EditVersion',

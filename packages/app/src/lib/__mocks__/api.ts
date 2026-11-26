@@ -1,4 +1,4 @@
-export const api = {
+export const eciperay = {
   recipes: {
     list: jest.fn(),
     listSharedWithMe: jest.fn(),

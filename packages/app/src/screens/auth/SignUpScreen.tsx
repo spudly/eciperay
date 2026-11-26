@@ -11,7 +11,7 @@ import {SignUpPage} from '@spudly/ui';
 
 import {AUTH_DEEP_LINK_REDIRECT_URL} from '../../lib/authDeepLink';
 import {signInHref} from '../../lib/deepLinks';
-import {api} from '../../lib/api';
+import {eciperay} from '../../lib/api';
 import {
   normalizeAuthEmail,
   normalizeAuthPassword,
@@ -31,7 +31,7 @@ const signUp = async (email: string, password: string, displayName: string) => {
     throw error;
   }
   if (data.session) {
-    await api.auth.syncUser();
+    await eciperay.auth.syncUser();
   } else {
     return 'confirm-email';
   }

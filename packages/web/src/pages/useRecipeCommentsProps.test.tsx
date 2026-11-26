@@ -1,14 +1,12 @@
 import {act, waitFor} from '@testing-library/react';
 import {http, HttpResponse} from 'msw';
 import {vi} from 'vitest';
-import {STALE_COMMENT_HINT} from '@eciperay/client';
+import {STALE_COMMENT_HINT, useRecipeCommentsProps} from '@eciperay/client';
 import type {RecipeDetailPageComments} from '@spudly/ui';
 
 import {eciperay} from '../lib/api.js';
 import {server} from '../test/msw/server.js';
 import {renderWithProviders} from '../test/testUtils.js';
-
-import {useRecipeCommentsProps} from './useRecipeCommentsProps.js';
 
 const API = 'http://localhost:8080';
 
@@ -42,11 +40,12 @@ const renderCommentsProps = async (
 ) => {
   let captured: RecipeDetailPageComments | null = null;
   const Probe = () => {
-    captured = useRecipeCommentsProps({
+    captured = useRecipeCommentsProps(eciperay, {
       recipeId: options.recipeId ?? 'recipe-uuid-1',
       ownerUserId: options.ownerUserId,
       shareToken: options.shareToken,
       publicList: options.publicList,
+      surfaceMutationErrors: true,
     });
     return null;
   };

@@ -13,7 +13,7 @@ import type {RecipeInput} from '@eciperay/types';
 
 import {RecipeForm} from '../hosts/recipe/RecipeForm';
 import type {PendingRecipeImage} from '../lib/recipeImageAsset';
-import {api} from '../lib/api';
+import {eciperay} from '../lib/api';
 import {supabase} from '../lib/supabase';
 import type {AddStackParamList} from '../navigation/types';
 
@@ -37,7 +37,7 @@ export const ManualEntryScreen = ({navigation, route}: Props) => {
     input: RecipeInput,
     pendingImage?: PendingRecipeImage,
   ) => {
-    const recipe = await api.recipes.create(input);
+    const recipe = await eciperay.recipes.create(input);
     analytics.track('recipe_created', {
       recipe_id: recipe.recipeId,
       source: 'manual',
@@ -50,7 +50,7 @@ export const ManualEntryScreen = ({navigation, route}: Props) => {
         pendingImage.contentType,
         {userId: session.user.id, recipeId},
       );
-      await api.recipes.put(recipeId, {...input, imageUrl});
+      await eciperay.recipes.put(recipeId, {...input, imageUrl});
     }
     await invalidateRecipeQueries(queryClient, recipeId, recipe.versionId);
     // Same Add-stack reset as ImportReviewScreen (#533): leaving for the

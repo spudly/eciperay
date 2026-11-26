@@ -1,24 +1,27 @@
 import React from 'react';
 import {act, waitFor} from '@testing-library/react-native';
-import {STALE_COMMENT_HINT, useAuth} from '@eciperay/client';
+import {STALE_COMMENT_HINT} from '@eciperay/client';
 import type {RecipeDetailPageComments} from '@spudly/ui';
 
 import {renderWithProviders} from '../../__tests__/testUtils';
-import {api} from '../../lib/api';
+import {eciperay} from '../../lib/api';
 
-import {useRecipeCommentsProps} from './RecipeCommentsSection';
+import {useRecipeCommentsProps} from '@eciperay/client';
+
+// The shared hook reads auth from the client package's own
+// AuthProvider module, so the mock targets that module directly.
+import {useAuth} from '../../../../client/src/AuthProvider';
 
 jest.mock('../../lib/api');
-jest.mock('@eciperay/client', () => ({
-  ...jest.requireActual('@eciperay/client'),
+jest.mock('../../../../client/src/AuthProvider', () => ({
   useAuth: jest.fn(),
 }));
 
 const mockUseAuth = useAuth as jest.Mock;
-const mockListComments = api.recipes.listComments as jest.Mock;
-const mockCreateComment = api.recipes.createComment as jest.Mock;
-const mockUpdateComment = api.recipes.updateComment as jest.Mock;
-const mockDeleteComment = api.recipes.deleteComment as jest.Mock;
+const mockListComments = eciperay.recipes.listComments as jest.Mock;
+const mockCreateComment = eciperay.recipes.createComment as jest.Mock;
+const mockUpdateComment = eciperay.recipes.updateComment as jest.Mock;
+const mockDeleteComment = eciperay.recipes.deleteComment as jest.Mock;
 
 const sampleComment = {
   id: 'comment-1',
@@ -45,7 +48,7 @@ const renderCommentsProps = async (
 ) => {
   let captured: RecipeDetailPageComments | null = null;
   const Probe = () => {
-    captured = useRecipeCommentsProps(recipeId, ownerUserId);
+    captured = useRecipeCommentsProps(eciperay, {recipeId, ownerUserId});
     return null;
   };
   await renderWithProviders(<Probe />, {locale});

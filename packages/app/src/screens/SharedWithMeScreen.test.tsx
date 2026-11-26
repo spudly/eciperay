@@ -1,7 +1,7 @@
 import React from 'react';
 
 import {makeStackProps, renderWithProviders} from '../__tests__/testUtils';
-import {api} from '../lib/api';
+import {eciperay} from '../lib/api';
 import type {RecipesStackParamList} from '../navigation/types';
 
 import {createI18n} from '../i18n/i18n';
@@ -13,7 +13,7 @@ import {
 
 jest.mock('../lib/api');
 
-const mockListSharedWithMe = api.recipes.listSharedWithMe as jest.Mock;
+const mockListSharedWithMe = eciperay.recipes.listSharedWithMe as jest.Mock;
 const mockReplace = jest.fn();
 
 const screenProps = makeStackProps<RecipesStackParamList, 'SharedWithMe'>(

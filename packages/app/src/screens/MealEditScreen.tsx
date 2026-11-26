@@ -14,7 +14,7 @@ import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useRef, useState} from 'react';
 
 import {ScreenLoadingGate} from '../components/ScreenLoadingGate';
-import {api} from '../lib/api';
+import {eciperay} from '../lib/api';
 import type {MealsStackParamList} from '../navigation/types';
 
 type Props = NativeStackScreenProps<MealsStackParamList, 'MealEdit'>;
@@ -62,7 +62,7 @@ export const MealEditScreen = ({route, navigation}: Props) => {
     isLoadingError: isMealLoadingError,
   } = useQuery({
     queryKey: queryKeys.meal(mealId),
-    queryFn: () => api.meals.get(mealId),
+    queryFn: () => eciperay.meals.get(mealId),
     enabled: isEdit,
   });
 
@@ -88,7 +88,7 @@ export const MealEditScreen = ({route, navigation}: Props) => {
     error: searchError,
   } = useQuery({
     ...recipeFormSearchQueryOptions(
-      (params, signal) => api.recipes.list(params, signal),
+      (params, signal) => eciperay.recipes.list(params, signal),
       debouncedSearch,
     ),
     enabled: debouncedSearch.trim().length > 0,
@@ -131,9 +131,9 @@ export const MealEditScreen = ({route, navigation}: Props) => {
         formIngredients,
       });
       if (isEdit && mealId) {
-        return api.meals.put(mealId, input);
+        return eciperay.meals.put(mealId, input);
       }
-      return api.meals.create(input);
+      return eciperay.meals.create(input);
     },
     onSuccess: saved => {
       void queryClient.invalidateQueries({queryKey: queryKeys.meals()});

@@ -15,7 +15,7 @@ import {
   flushQueryClient,
   renderWithProviders,
 } from '../__tests__/testUtils';
-import {api} from '../lib/api';
+import {eciperay} from '../lib/api';
 import {
   recipeCookHref,
   recipeEditHref,
@@ -28,13 +28,13 @@ import {RecipeDetailScreen} from './RecipeDetailScreen';
 
 jest.mock('../lib/api');
 
-const mockGet = api.recipes.get as jest.Mock;
-const mockDelete = api.recipes.delete as jest.Mock;
-const mockListVersions = api.versions.list as jest.Mock;
-const mockGetVersion = api.versions.get as jest.Mock;
-const mockCreateVersion = api.versions.create as jest.Mock;
-const mockNutrition = api.ai.nutrition as jest.Mock;
-const mockListCookLogs = api.cookLogs.list as jest.Mock;
+const mockGet = eciperay.recipes.get as jest.Mock;
+const mockDelete = eciperay.recipes.delete as jest.Mock;
+const mockListVersions = eciperay.versions.list as jest.Mock;
+const mockGetVersion = eciperay.versions.get as jest.Mock;
+const mockCreateVersion = eciperay.versions.create as jest.Mock;
+const mockNutrition = eciperay.ai.nutrition as jest.Mock;
+const mockListCookLogs = eciperay.cookLogs.list as jest.Mock;
 const mockNavigate = jest.fn();
 const stackProps = makeStackProps<RecipesStackParamList, 'RecipeDetail'>(
   'RecipeDetail',

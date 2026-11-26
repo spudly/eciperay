@@ -4,6 +4,7 @@ import {
   PRIVACY_POLICY_URL,
   queryKeys,
   TERMS_OF_SERVICE_URL,
+  useAccessTokensProps,
   useAuth,
 } from '@eciperay/client';
 import {useLingui} from '@lingui/react';
@@ -14,7 +15,6 @@ import type {AuthorDisplaySettings, FamilyShareGrant} from '@eciperay/types';
 
 import {ProfilePage} from '@spudly/ui';
 
-import {useAccessTokensProps} from '../hosts/profile/AccessTokensSection';
 import {useNutritionGoalsProps} from '../hosts/profile/NutritionGoalsSection';
 import {AuthorDisplayForm} from '../hosts/profile/AuthorDisplayForm';
 import {
@@ -24,7 +24,7 @@ import {
 import {ShowLessForm} from '../hosts/profile/ShowLessForm';
 import {ProfileFeedbackPreference} from '../hosts/profile/ProfileFeedbackPreference';
 import {SectionAlert, SectionButton} from '../hosts/profile/profileSection';
-import {api} from '../lib/api';
+import {eciperay} from '../lib/api';
 import {tagsHref} from '../lib/deepLinks';
 import {supabase} from '../lib/supabase';
 
@@ -42,7 +42,7 @@ export const ProfileScreen = () => {
     refetch: refetchMe,
   } = useQuery({
     queryKey: queryKeys.currentUser(session?.user?.id ?? 'anonymous'),
-    queryFn: () => api.auth.me(),
+    queryFn: () => eciperay.auth.me(),
   });
 
   const [authorDisplay, setAuthorDisplay] = useState<AuthorDisplaySettings>({
@@ -62,7 +62,7 @@ export const ProfileScreen = () => {
     error: authorDisplayLoadError,
   } = useQuery({
     queryKey: queryKeys.authorDisplay(authorDisplayUserId),
-    queryFn: () => api.account.getAuthorDisplay(),
+    queryFn: () => eciperay.account.getAuthorDisplay(),
   });
 
   useEffect(() => {
@@ -72,7 +72,7 @@ export const ProfileScreen = () => {
   }, [savedAuthorDisplay]);
 
   const saveAuthorDisplayMutation = useMutation({
-    mutationFn: () => api.account.putAuthorDisplay(authorDisplay),
+    mutationFn: () => eciperay.account.putAuthorDisplay(authorDisplay),
     onSuccess: data => {
       setAuthorDisplay(data);
       setAuthorDisplayError(null);
@@ -96,12 +96,12 @@ export const ProfileScreen = () => {
     isError: showLessLoadFailed,
   } = useQuery({
     queryKey: queryKeys.showLess(showLessUserId),
-    queryFn: () => api.discovery.listShowLess(),
+    queryFn: () => eciperay.discovery.listShowLess(),
   });
 
   const undoShowLessMutation = useMutation({
     mutationFn: (sourceRecipeId: string) =>
-      api.discovery.undoShowLess(sourceRecipeId),
+      eciperay.discovery.undoShowLess(sourceRecipeId),
     onSuccess: () => {
       setShowLessError(null);
       void queryClient.invalidateQueries({
@@ -127,7 +127,7 @@ export const ProfileScreen = () => {
     error: familyLoadError,
   } = useQuery({
     queryKey: queryKeys.familySharing(familySharingUserId),
-    queryFn: () => api.account.listFamilySharing(),
+    queryFn: () => eciperay.account.listFamilySharing(),
   });
 
   const invalidateFamily = () =>
@@ -136,7 +136,7 @@ export const ProfileScreen = () => {
     });
 
   const addFamilyMutation = useMutation({
-    mutationFn: (email: string) => api.account.createFamilySharing(email),
+    mutationFn: (email: string) => eciperay.account.createFamilySharing(email),
     onSuccess: () => {
       setFamilyEmail('');
       setFamilyError(null);
@@ -149,7 +149,7 @@ export const ProfileScreen = () => {
 
   const removeFamilyMutation = useMutation({
     mutationFn: (recipientUserId: string) =>
-      api.account.deleteFamilySharing(recipientUserId),
+      eciperay.account.deleteFamilySharing(recipientUserId),
     onSuccess: () => {
       setFamilyError(null);
       void invalidateFamily();
@@ -178,7 +178,7 @@ export const ProfileScreen = () => {
     );
   };
 
-  const accessTokens = useAccessTokensProps();
+  const accessTokens = useAccessTokensProps(eciperay);
   const nutritionGoals = useNutritionGoalsProps();
 
   // DS 14's ProfilePage has no generic section slots (#685): the

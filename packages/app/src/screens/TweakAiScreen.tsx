@@ -11,7 +11,7 @@ import {
   type AiSessionFlowApi,
   type AiSessionState,
 } from '../hosts/ai/AiSessionFlow';
-import {api} from '../lib/api';
+import {eciperay} from '../lib/api';
 import type {RecipesStackParamList} from '../navigation/types';
 
 type Props = NativeStackScreenProps<RecipesStackParamList, 'TweakAi'>;
@@ -63,11 +63,11 @@ export const TweakAiScreen = ({route, navigation}: Props) => {
 
   const flowApi: AiSessionFlowApi = {
     start: async prompt => {
-      const result = await api.tweakAi.start(recipeId, prompt);
+      const result = await eciperay.tweakAi.start(recipeId, prompt);
       return {session: mapSession(result.session)};
     },
     sendMessage: async (sessionId, content) => {
-      const result = await api.tweakAi.sendMessage(
+      const result = await eciperay.tweakAi.sendMessage(
         recipeId,
         sessionId,
         content,
@@ -75,11 +75,11 @@ export const TweakAiScreen = ({route, navigation}: Props) => {
       return {session: mapSession(result.session)};
     },
     approvePlan: async sessionId => {
-      const result = await api.tweakAi.approvePlan(recipeId, sessionId);
+      const result = await eciperay.tweakAi.approvePlan(recipeId, sessionId);
       return {session: mapSession(result.session)};
     },
-    finalize: sessionId => api.tweakAi.createVersion(recipeId, sessionId),
-    cancel: sessionId => api.tweakAi.cancel(recipeId, sessionId),
+    finalize: sessionId => eciperay.tweakAi.createVersion(recipeId, sessionId),
+    cancel: sessionId => eciperay.tweakAi.cancel(recipeId, sessionId),
   };
 
   return (

@@ -13,7 +13,7 @@ import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useState} from 'react';
 
 import {ScreenLoadingGate} from '../components/ScreenLoadingGate';
-import {api} from '../lib/api';
+import {eciperay} from '../lib/api';
 import type {MealsStackParamList} from '../navigation/types';
 
 type Props = NativeStackScreenProps<MealsStackParamList, 'MealPlanEdit'>;
@@ -43,13 +43,13 @@ export const MealPlanEditScreen = ({route, navigation}: Props) => {
 
   const {data: plan, isLoading: planLoading} = useQuery({
     queryKey: queryKeys.mealPlan(planId),
-    queryFn: () => api.mealPlans.get(planId),
+    queryFn: () => eciperay.mealPlans.get(planId),
     enabled: isEdit,
   });
 
   const {data: meals = []} = useQuery({
     queryKey: queryKeys.meals(),
-    queryFn: () => api.meals.list(),
+    queryFn: () => eciperay.meals.list(),
   });
 
   // Server-side recipe search for the picker (#359): the meals half of
@@ -62,7 +62,7 @@ export const MealPlanEditScreen = ({route, navigation}: Props) => {
     error: searchError,
   } = useQuery({
     ...recipeFormSearchQueryOptions(
-      (params, signal) => api.recipes.list(params, signal),
+      (params, signal) => eciperay.recipes.list(params, signal),
       debouncedSearch,
     ),
     enabled: debouncedSearch.trim().length > 0,
@@ -83,9 +83,9 @@ export const MealPlanEditScreen = ({route, navigation}: Props) => {
     mutationFn: () => {
       const input = form.buildInput();
       if (isEdit && planId) {
-        return api.mealPlans.put(planId, input);
+        return eciperay.mealPlans.put(planId, input);
       }
-      return api.mealPlans.create(input);
+      return eciperay.mealPlans.create(input);
     },
     onSuccess: saved => {
       void queryClient.invalidateQueries({queryKey: queryKeys.mealPlans()});

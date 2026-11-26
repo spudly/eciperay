@@ -3,7 +3,7 @@ import {Alert, Linking} from 'react-native';
 import {act, fireEvent, waitFor} from '@testing-library/react-native';
 
 import {renderWithProviders} from '../../__tests__/testUtils';
-import {api} from '../../lib/api';
+import {eciperay} from '../../lib/api';
 import {forgotPasswordHref, signUpHref} from '../../lib/deepLinks';
 import {supabase} from '../../lib/supabase';
 
@@ -15,7 +15,7 @@ jest.mock('../../lib/supabase', () => ({
 jest.mock('../../lib/api');
 
 const mockSignIn = supabase.auth.signInWithPassword as jest.Mock;
-const mockSyncUser = api.auth.syncUser as jest.Mock;
+const mockSyncUser = eciperay.auth.syncUser as jest.Mock;
 const mockAlert = jest.spyOn(Alert, 'alert').mockReturnValue();
 jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
 

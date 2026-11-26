@@ -2,16 +2,16 @@ import React from 'react';
 import {fireEvent, waitFor} from '@testing-library/react-native';
 
 import {renderWithProviders} from '../__tests__/testUtils';
-import {api} from '../lib/api';
+import {eciperay} from '../lib/api';
 
 import {TagsScreen} from './TagsScreen';
 
 jest.mock('../lib/api');
 
-const mockList = api.tags.list as jest.Mock;
-const mockCreate = api.tags.create as jest.Mock;
-const mockUpdate = api.tags.update as jest.Mock;
-const mockDelete = api.tags.delete as jest.Mock;
+const mockList = eciperay.tags.list as jest.Mock;
+const mockCreate = eciperay.tags.create as jest.Mock;
+const mockUpdate = eciperay.tags.update as jest.Mock;
+const mockDelete = eciperay.tags.delete as jest.Mock;
 
 describe('TagsScreen', () => {
   beforeEach(() => {
