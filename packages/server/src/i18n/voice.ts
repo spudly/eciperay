@@ -12,10 +12,14 @@ import type {Voice} from '@spudly/ui';
  * and safety copy stays plain too: when something goes wrong, clarity beats
  * personality.
  *
- * This file is duplicated in packages/web, packages/app, and packages/server
- * (the server copy feeds the SSR renderer for the public recipe page; the same
- * pattern PR1 used for src/i18n/locale.ts and src/i18n/i18n.ts) — keep the
- * copies identical.
+ * The server keeps its OWN copy of this object (it feeds the SSR renderer
+ * for the public recipe page) while web/app share the canonical one in
+ * @eciperay/client (#673): this package still depends on @spudly/ui v11,
+ * whose Voice type differs from v14's — v11 requires
+ * nutritionGoalsForm.carbsLabel and has no show/hide-password labels or
+ * nutritionFacts slot, where v14 requires netCarbsLabel and carries both.
+ * The copies are therefore NOT identical, by type necessity; fold this one
+ * into the shared module when the server adopts @spudly/ui v14.
  */
 export const eciperayVoice: Voice = {
   common: {

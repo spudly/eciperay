@@ -1,9 +1,9 @@
 import {
   makeRecipeDetail,
   makeRecipeVersionDetail,
-} from '../__tests__/fixtures/recipe';
+} from './test/fixtures/recipe.js';
 
-import {mergeVersionIntoRecipe} from './mergeVersionIntoRecipe';
+import {mergeVersionIntoRecipe} from './mergeVersionIntoRecipe.js';
 
 describe('mergeVersionIntoRecipe', () => {
   test('overlays version fields onto recipe detail', () => {
@@ -11,6 +11,7 @@ describe('mergeVersionIntoRecipe', () => {
     const version = makeRecipeVersionDetail({title: 'Updated'});
     const merged = mergeVersionIntoRecipe(recipe, version);
     expect(merged.title).toBe('Updated');
+    expect(merged.id).toBe(recipe.id);
     expect(merged.versionId).toBe(version.id);
   });
 });

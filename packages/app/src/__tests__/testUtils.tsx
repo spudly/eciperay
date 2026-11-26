@@ -23,9 +23,9 @@ import React from 'react';
 import {TamaguiProvider} from 'tamagui';
 
 import {createI18n} from '../i18n/i18n';
-import type {SupportedLocale} from '../i18n/locale';
-import {eciperayVoice} from '../i18n/voice';
-import {appTamaguiConfig} from '../lib/tamaguiConfig';
+import type {SupportedLocale} from '@eciperay/client';
+import {eciperayVoice} from '@eciperay/client';
+import {eciperayTamaguiConfig} from '@eciperay/client';
 
 const testAnalytics = createAnalytics(createNoopAnalyticsAdapter(), 'android');
 
@@ -133,7 +133,7 @@ export const renderWithProviders = async (
       <I18nProvider i18n={createI18n(options?.locale ?? 'en-US')}>
         <VoiceProvider voice={eciperayVoice}>
           <TamaguiProvider
-            config={appTamaguiConfig}
+            config={eciperayTamaguiConfig}
             defaultTheme="light"
           >
             <QueryClientProvider client={client}>

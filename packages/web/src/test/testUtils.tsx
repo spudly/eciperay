@@ -18,8 +18,8 @@ import type {ReactElement, ReactNode} from 'react';
 import {MemoryRouter, type MemoryRouterProps} from 'react-router-dom';
 
 import {createI18n} from '../i18n/i18n.js';
-import type {SupportedLocale} from '../i18n/locale.js';
-import {eciperayVoice} from '../i18n/voice.js';
+import type {SupportedLocale} from '@eciperay/client';
+import {eciperayVoice} from '@eciperay/client';
 import {supabase} from '../lib/supabase.js';
 
 const testAnalytics = createAnalytics(createNoopAnalyticsAdapter(), 'web');

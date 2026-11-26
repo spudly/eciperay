@@ -1,4 +1,4 @@
-import {eciperayVoice} from './voice';
+import {eciperayVoice} from './voice.js';
 
 describe('eciperayVoice', () => {
   it('fills the plain shared labels', () => {

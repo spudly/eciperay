@@ -12,6 +12,10 @@ module.exports = {
     ? {}
     : {maxWorkers: Math.max(1, Math.min(2, os.availableParallelism() - 1))}),
   testEnvironment: 'jsdom',
+  // Web-first platform extensions, mirroring the server package's jest
+  // config: the react-native-svg graph ships .web.js variants that avoid
+  // the native fabric codegen specs react-native-web does not export.
+  moduleFileExtensions: ['web.js', 'ts', 'tsx', 'js', 'mjs', 'json', 'node'],
   roots: ['<rootDir>/src'],
   testMatch: ['**/*.test.ts', '**/*.test.tsx'],
   setupFiles: ['<rootDir>/jest.setup.cjs'],
@@ -37,6 +41,13 @@ module.exports = {
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
     '^@eciperay/types$': '<rootDir>/../types/src/index.ts',
+    // #673: the moved-in modules (tagColors, tamaguiConfig) import
+    // @spudly/ui at runtime, whose module graph reaches react-native;
+    // in Node the web substitution applies, exactly as the server
+    // package's jest config maps it for its SSR graph (#304).
+    '^react-native$': 'react-native-web',
+    '^react-native-svg$': 'react-native-svg/lib/module/index.js',
+    'NativeSvgSoundModule(\\.js)?$': '<rootDir>/src/test/svgSoundModuleStub.ts',
   },
   transform: {
     // @swc/jest (transpile-only) replaces ts-jest: ts-jest needs the
@@ -67,5 +78,25 @@ module.exports = {
         module: {type: 'es6'},
       },
     ],
+    // Plain .js/.mjs files only arrive from the transformed node_modules
+    // packages below (@spudly/ui, Tamagui, react-native-web/-svg ship
+    // untranspiled ESM); src/ itself is all TypeScript.
+    '^.+\\.m?js$': [
+      '@swc/jest',
+      {
+        jsc: {
+          parser: {syntax: 'ecmascript', jsx: true, importMeta: true},
+          transform: {react: {runtime: 'automatic'}},
+          target: 'es2022',
+        },
+        module: {type: 'es6'},
+      },
+    ],
   },
+  // #673: the @spudly/ui module graph (react-native-web, react-native-svg,
+  // Tamagui) ships untranspiled ESM that plain Node cannot load; transpile
+  // those packages like the server package's jest config does (#304).
+  transformIgnorePatterns: [
+    '/node_modules/(?!(@spudly|@tamagui|tamagui|react-native-web|react-native-svg|@react-native)/)',
+  ],
 };

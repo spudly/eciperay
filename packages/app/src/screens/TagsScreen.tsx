@@ -9,7 +9,7 @@ import React, {useState} from 'react';
 
 import {TagsPage, type TagsPageTag} from '@spudly/ui';
 
-import {TAG_COLOR_NAME_OPTIONS} from '../lib/tagColors';
+import {TAG_COLOR_NAME_OPTIONS} from '@eciperay/client';
 import {api} from '../lib/api';
 
 export const TagsScreen = (): React.JSX.Element => {
