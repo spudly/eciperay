@@ -38,7 +38,8 @@ export const buildRecipeExportRecords = async (
       );
       image = fetched ?? undefined;
     }
-    recipes.push(recipeDetailToExportRecord(detail, image));
+    const tips = (detailRow as {tips?: string[] | null}).tips ?? [];
+    recipes.push(recipeDetailToExportRecord(detail, image, tips));
   }
 
   return recipes;

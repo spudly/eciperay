@@ -38,6 +38,8 @@ export type RecipeVersionDetail = RecipeVersionSummary & {
   cookTimeMin: number | null;
   imageUrl: string | null;
   sourceUrl: string | null;
+  /** Authored cooking tips (#635), in display order; empty when none. */
+  tips: string[];
   derivedFromVersionId: string | null;
   ingredients: Ingredient[];
   instructions: Instruction[];
@@ -52,6 +54,8 @@ export type RecipeVersionInput = {
   cookTimeMin?: number | null;
   imageUrl?: string | null;
   sourceUrl?: string | null;
+  /** Authored cooking tips (#635), in display order; omit to leave unchanged on edit endpoints that preserve omitted fields. */
+  tips?: string[];
   ingredients: IngredientInput[];
   instructions: InstructionInput[];
   tagIds: string[];

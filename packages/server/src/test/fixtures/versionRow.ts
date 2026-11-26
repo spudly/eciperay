@@ -22,6 +22,7 @@ type VersionRowOverrides = Partial<RecipeVersionSummary> & {
   cook_time_min?: number | null;
   image_url?: string | null;
   source_url?: string | null;
+  tips?: string[];
   derived_from_version_id?: string | null;
   user_id?: string;
   ingredients?: RecipeVersionDetail['ingredients'];
@@ -60,6 +61,7 @@ export const makeVersionDetailRow = (overrides: VersionRowOverrides = {}) => {
     cook_time_min: overrides.cook_time_min ?? 30,
     image_url: overrides.image_url ?? null,
     source_url: overrides.source_url ?? null,
+    tips: overrides.tips ?? [],
     created_via: summary.created_via,
     change_summary: summary.change_summary,
     derived_from_version_id: overrides.derived_from_version_id ?? null,

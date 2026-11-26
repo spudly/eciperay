@@ -242,6 +242,13 @@ export const registerTools = (
           .describe(
             'Original source URL, e.g. the page a recipe was imported from',
           ),
+        tips: z
+          .array(z.string().max(280))
+          .max(10)
+          .optional()
+          .describe(
+            'Short cooking tips for the recipe (up to 10, each up to 280 characters), in display order',
+          ),
         tagIds: z
           .array(z.uuid())
           .optional()
@@ -258,6 +265,7 @@ export const registerTools = (
           cookTimeMin: args.cookTimeMin ?? null,
           imageUrl: null,
           sourceUrl: args.sourceUrl ?? null,
+          tips: args.tips ?? [],
           ingredients: args.ingredients.map((ingredient, index) => ({
             sortOrder: index,
             name: ingredient.name,
@@ -337,6 +345,13 @@ export const registerTools = (
           .optional()
           .describe(
             'Original source URL, e.g. the page a recipe was imported from, or null to clear it',
+          ),
+        tips: z
+          .array(z.string().max(280))
+          .max(10)
+          .optional()
+          .describe(
+            'Cooking tips (up to 10, each up to 280 characters), in display order; replaces the stored list, so pass an empty list to clear all tips. Like ingredients and instructions, changing tips requires versionId',
           ),
         tagIds: z
           .array(z.uuid())

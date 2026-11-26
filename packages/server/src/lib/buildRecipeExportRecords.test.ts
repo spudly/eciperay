@@ -58,6 +58,23 @@ describe('buildRecipeExportRecords', () => {
     );
   });
 
+  test('passes the version tips from the detail row to the record builder (#635)', async () => {
+    const detail = makeRecipeDetail();
+    mockQuery.mockResolvedValueOnce(
+      makeQueryResult([{id: detail.id, tips: ['Tip A', 'Tip B']}]),
+    );
+    mockMapRowToRecipeDetail.mockReturnValue(detail);
+    mockRecipeDetailToExportRecord.mockReturnValue({title: detail.title});
+
+    await buildRecipeExportRecords([detail.id], 'user-uuid-1', mockQuery);
+
+    expect(mockRecipeDetailToExportRecord).toHaveBeenCalledWith(
+      detail,
+      undefined,
+      ['Tip A', 'Tip B'],
+    );
+  });
+
   test('skips missing recipe rows', async () => {
     mockQuery.mockResolvedValueOnce(makeQueryResult([]));
 

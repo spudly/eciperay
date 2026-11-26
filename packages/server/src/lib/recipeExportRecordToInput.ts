@@ -10,6 +10,7 @@ export const recipeExportRecordToInput = (
   prepTimeMin: record.prepTimeMin,
   cookTimeMin: record.cookTimeMin,
   sourceUrl: record.sourceUrl,
+  tips: record.tips,
   ingredients: record.ingredients,
   instructions: record.instructions,
   tagIds,

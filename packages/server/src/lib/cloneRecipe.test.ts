@@ -56,6 +56,45 @@ describe('cloneRecipe helpers', () => {
     expect(input.instructions[0]).not.toHaveProperty('id');
   });
 
+  test('carries the source version tips onto the cloned version (#635)', async () => {
+    const source = {
+      ...makeRecipeDetailRow({
+        visibility: 'public',
+        user_id: 'owner-uuid',
+        tags: [],
+      }),
+      tips: ['Clone tip A', 'Clone tip B'],
+    };
+    let insertParams: unknown[] = [];
+    mockQuery.mockImplementation(((sql: string, params?: unknown[]) => {
+      if (sql === GET_PUBLIC_RECIPE_DETAIL_SQL) {
+        return Promise.resolve(makeQueryResult([source]));
+      }
+      if (sql.includes('insert into recipe_versions')) {
+        insertParams = params ?? [];
+        return Promise.resolve(makeQueryResult([{id: 'version-id'}]));
+      }
+      if (sql.includes('insert into recipes')) {
+        return Promise.resolve(makeQueryResult([{id: 'cloned-recipe-id'}]));
+      }
+      if (sql === GET_RECIPE_DETAIL_SQL) {
+        return Promise.resolve(
+          makeQueryResult([makeRecipeDetailRow({tags: []})]),
+        );
+      }
+      return Promise.resolve(makeQueryResult([]));
+    }) as typeof mockQuery);
+
+    await cloneRecipeForUser('recipe-uuid-1', 'user-uuid-1', undefined, mockQuery);
+
+    expect(insertParams[9]).toBe('["Clone tip A","Clone tip B"]');
+  });
+
+  test('passes tips through recipeDetailToCloneInput (#635)', () => {
+    const input = recipeDetailToCloneInput(makeRecipeDetail(), [], ['Tip A']);
+    expect(input.tips).toEqual(['Tip A']);
+  });
+
   test('throws when cloned recipe detail is missing after create', async () => {
     const source = makeRecipeDetailRow({
       visibility: 'public',

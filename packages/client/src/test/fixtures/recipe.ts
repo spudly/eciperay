@@ -101,6 +101,7 @@ export const makeRecipeVersionDetail = (
     cookTimeMin: recipe.cookTimeMin,
     imageUrl: recipe.imageUrl,
     sourceUrl: recipe.sourceUrl,
+    tips: [],
     derivedFromVersionId: null,
     ingredients: recipe.ingredients,
     instructions: recipe.instructions,

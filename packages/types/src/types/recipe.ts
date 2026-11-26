@@ -77,6 +77,8 @@ export type RecipeInput = {
   cookTimeMin?: number | null;
   imageUrl?: string | null;
   sourceUrl?: string | null;
+  /** Authored cooking tips (#635), in display order; omit to leave the stored tips unchanged on update. */
+  tips?: string[];
   ingredients: IngredientInput[];
   instructions: InstructionInput[];
   tagIds: string[];

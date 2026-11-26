@@ -43,6 +43,8 @@ type RecipeDetailRow = {
   cook_time_min: number | null;
   image_url: string | null;
   source_url: string | null;
+  /** Active version's tips (#635); read by clone/export, not mapped onto RecipeDetail (display is a later tranche). */
+  tips?: string[] | null;
   created_via: VersionCreatedVia;
   created_at: string;
   updated_at: string;
@@ -89,6 +91,8 @@ type VersionDetailRow = {
   cook_time_min: number | null;
   image_url: string | null;
   source_url: string | null;
+  /** Version tips (#635); absent/null on rows from before the column existed. */
+  tips?: string[] | null;
   created_via: VersionCreatedVia;
   change_summary: string | null;
   derived_from_version_id: string | null;
@@ -283,6 +287,7 @@ export const mapRowToVersionDetail = (
   cookTimeMin: row.cook_time_min,
   imageUrl: row.image_url,
   sourceUrl: row.source_url,
+  tips: row.tips ?? [],
   derivedFromVersionId: row.derived_from_version_id,
   ingredients: row.ingredients,
   instructions: row.instructions,

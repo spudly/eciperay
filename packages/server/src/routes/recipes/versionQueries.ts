@@ -1,6 +1,7 @@
 import type {RecipeInput, VersionCreatedVia} from '@eciperay/types';
 
 import {query as defaultQuery} from '../../db/query.js';
+import {normalizeRecipeTips} from '../../lib/recipeTips.js';
 
 type QueryFn = typeof defaultQuery;
 
@@ -14,6 +15,8 @@ export type InsertVersionOptions = {
   cookTimeMin: number | null;
   imageUrl: string | null;
   sourceUrl: string | null;
+  /** Version tips (#635); omitted on insert means no tips, on update it preserves the stored list. */
+  tips?: string[];
   createdVia: VersionCreatedVia;
   changeSummary?: string | null;
   derivedFromVersionId?: string | null;
@@ -28,9 +31,9 @@ const INSERT_LINEAGE_SQL = `
 const INSERT_VERSION_SQL = `
   insert into recipe_versions (
     recipe_id, version_number, title, description, servings,
-    prep_time_min, cook_time_min, image_url, source_url,
+    prep_time_min, cook_time_min, image_url, source_url, tips,
     created_via, change_summary, derived_from_version_id
-  ) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+  ) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
   returning id
 `;
 
@@ -70,6 +73,7 @@ export const insertVersion = (opts: InsertVersionOptions, queryFn: QueryFn) =>
     opts.cookTimeMin,
     opts.imageUrl,
     opts.sourceUrl,
+    JSON.stringify(normalizeRecipeTips(opts.tips)),
     opts.createdVia,
     opts.changeSummary ?? null,
     opts.derivedFromVersionId ?? null,
@@ -103,6 +107,7 @@ export const buildVersionOptions = ({
   cookTimeMin: input.cookTimeMin ?? null,
   imageUrl: input.imageUrl ?? null,
   sourceUrl: input.sourceUrl ?? null,
+  tips: input.tips,
   createdVia,
   ...extras,
 });
@@ -126,7 +131,8 @@ export const updateVersion = (
   queryFn(
     `update recipe_versions set
        title = $2, description = $3, servings = $4,
-       prep_time_min = $5, cook_time_min = $6, image_url = $7, source_url = $8
+       prep_time_min = $5, cook_time_min = $6, image_url = $7, source_url = $8,
+       tips = coalesce($9::jsonb, tips)
      where id = $1 returning id`,
     [
       versionId,
@@ -137,6 +143,11 @@ export const updateVersion = (
       opts.cookTimeMin,
       opts.imageUrl,
       opts.sourceUrl,
+      // An omitted tips list preserves the stored one (metadata-only
+      // saves); a provided list replaces it, normalized.
+      opts.tips === undefined
+        ? null
+        : JSON.stringify(normalizeRecipeTips(opts.tips)),
     ],
   );
 

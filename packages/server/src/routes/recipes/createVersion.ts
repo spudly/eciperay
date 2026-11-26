@@ -35,7 +35,9 @@ export const createVersion = async (
     recipeRow as Parameters<typeof mapRowToRecipeDetail>[0],
   );
   // Creating a draft version clones the active version without
-  // modifying it.
+  // modifying it. Tips live on the version, not RecipeDetail, so they
+  // are read from the detail row directly (#635).
+  const activeTips = (recipeRow as {tips?: string[] | null}).tips ?? [];
   const activeVersionId = recipe.versionId;
   const newVersionId = await runTransactional(queryFn, async q => {
     const versionNumber = await getNextVersionNumber(recipeId, q);
@@ -50,6 +52,7 @@ export const createVersion = async (
         cookTimeMin: recipe.cookTimeMin,
         imageUrl: recipe.imageUrl,
         sourceUrl: recipe.sourceUrl,
+        tips: activeTips,
         createdVia: 'tweak_manual',
         derivedFromVersionId: activeVersionId,
       },

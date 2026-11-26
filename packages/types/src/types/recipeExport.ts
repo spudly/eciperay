@@ -13,6 +13,8 @@ export type RecipeExportRecord = {
   cookTimeMin: number | null;
   starRating: 1 | 2 | 3 | 4 | 5 | null;
   sourceUrl: string | null;
+  /** Authored cooking tips (#635), in display order; absent in bundles exported before tips existed. */
+  tips?: string[];
   tags: RecipeExportTag[];
   ingredients: IngredientInput[];
   instructions: InstructionInput[];
