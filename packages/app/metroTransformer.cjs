@@ -99,18 +99,22 @@ const compilePoFile = async ({filename}) => {
 // tree; hash them all into the cache key (same approach as
 // jestPoCacheKey.cjs).
 const catalogsHash = projectRoot => {
-  const localesDir = path.join(
-    projectRoot ?? __dirname,
-    'src',
-    'i18n',
-    'locales',
-  );
+  const appRoot = projectRoot ?? __dirname;
+  // The app's own locales tree plus the shared core catalog tree in
+  // @eciperay/client (#681): a core .po change must invalidate compiled
+  // catalogs exactly like a host .po change.
+  const localesDirs = [
+    path.join(appRoot, 'src', 'i18n', 'locales'),
+    path.join(appRoot, '..', 'client', 'src', 'i18n', 'locales'),
+  ];
   const hash = crypto.createHash('sha256');
-  if (fs.existsSync(localesDir)) {
-    for (const locale of fs.readdirSync(localesDir).sort()) {
-      const catalogPath = path.join(localesDir, locale, 'messages.po');
-      if (fs.existsSync(catalogPath)) {
-        hash.update(fs.readFileSync(catalogPath, 'utf8'));
+  for (const localesDir of localesDirs) {
+    if (fs.existsSync(localesDir)) {
+      for (const locale of fs.readdirSync(localesDir).sort()) {
+        const catalogPath = path.join(localesDir, locale, 'messages.po');
+        if (fs.existsSync(catalogPath)) {
+          hash.update(fs.readFileSync(catalogPath, 'utf8'));
+        }
       }
     }
   }

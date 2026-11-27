@@ -44,6 +44,11 @@ module.exports = {
     '^@env$': '<rootDir>/env-shim.test.js',
     '^@eciperay/client/test/fixtures/recipe$':
       '<rootDir>/../client/src/test/fixtures/recipe.ts',
+    // Shared core .po catalogs (#681): Jest's resolver cannot follow the
+    // client's exports map to a .po file, so map them to the source
+    // files directly (the .po transform below compiles them).
+    '^@eciperay/client/i18n/locales/([^/]+)/messages\\.po$':
+      '<rootDir>/../client/src/i18n/locales/$1/messages.po',
     '^@eciperay/client$': '<rootDir>/../client/src/index.ts',
     '^react$': '<rootDir>/node_modules/react',
     '^(\\.{1,2}/.*)\\.js$': '$1',

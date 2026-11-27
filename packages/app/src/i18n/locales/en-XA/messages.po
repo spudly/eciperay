@@ -6,60 +6,6 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #. js-lingui-explicit-id
-#: src/i18n/i18n.ts:25
-msgid "spike.recipeCount"
-msgstr "{count, plural, one {# recipe~} other {# recipes~~}}"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeForm.tsx:196
-msgid "recipeForm.parentMoreSuffix"
-msgstr " (+{count} more)~"
-
-#. js-lingui-explicit-id
-#: src/hosts/meals/MealPlanDetailView.tsx:154
-msgid "mealPlanDetail.goalQualifierPerDay"
-msgstr "(per-day avg)~"
-
-#. js-lingui-explicit-id
-#: src/hosts/meals/MealPlanDetailView.tsx:158
-msgid "mealPlanDetail.goalQualifierPlanTotal"
-msgstr "(plan total)~"
-
-#. js-lingui-explicit-id
-#: src/screens/MealsHubScreen.tsx:31
-msgid "mealsHub.entryCount"
-msgstr "{count, plural, one {{display} entry~} other {{display} entries~~}}"
-
-#. js-lingui-explicit-id
-#: src/screens/MealsHubScreen.tsx:93
-msgid "mealsHub.recipeCount"
-msgstr "{count, plural, one {{display} recipe~} other {{display} recipes~~}}"
-
-#. js-lingui-explicit-id
-#: src/screens/MealDetailScreen.tsx:31
-msgid "mealDetail.nutritionCalories"
-msgstr "{value} cal~"
-
-#. js-lingui-explicit-id
-#: src/screens/MealDetailScreen.tsx:49
-msgid "mealDetail.nutritionCarbs"
-msgstr "{value}g carbs~"
-
-#. js-lingui-explicit-id
-msgid "mealDetail.nutritionNetCarbs"
-msgstr "{value}g net carbs~"
-
-#. js-lingui-explicit-id
-#: src/screens/MealDetailScreen.tsx:58
-msgid "mealDetail.nutritionFat"
-msgstr "{value}g fat~"
-
-#. js-lingui-explicit-id
-#: src/screens/MealDetailScreen.tsx:40
-msgid "mealDetail.nutritionProtein"
-msgstr "{value}g protein~"
-
-#. js-lingui-explicit-id
 #: src/hosts/recipe/RecipeForm.tsx:1255
 msgid "recipeForm.moveUpLabel"
 msgstr "▲ Move~"
@@ -75,96 +21,9 @@ msgid "forgotPassword.confirmationBody"
 msgstr "A password reset link is on its way to your inbox.~"
 
 #. js-lingui-explicit-id
-#: src/hosts/meals/MealPlanDetailView.tsx:85
-msgid "mealPlanDetail.goalBandAbove"
-msgstr "Above goal~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeDetailView.tsx:108
-msgid "recipeDetail.versionRoleActive"
-msgstr "Active~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeCommentsSection.tsx:131
-msgid "recipeComments.composerPlaceholder"
-msgstr "Add a comment~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeForm.tsx:658
-msgid "recipeForm.addTitleForDescription"
-msgstr "Add a title before generating a description~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeForm.tsx:711
-msgid "recipeForm.addTitleForImage"
-msgstr "Add a title before generating an image~"
-
-#. js-lingui-explicit-id
-#: src/screens/HomeScreen.tsx:86
-msgid "home.addLabel"
-msgstr "Add Recipe~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeCommentsSection.tsx:82
-msgid "recipeComments.anonymousAuthor"
-msgstr "Anonymous~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeVisibilityControls.tsx:60
-msgid "recipeSharing.visibilityUnlistedDescription"
-msgstr "Anyone with the link can view it — no sign-in needed.~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeForm.tsx:1323
-#: src/hosts/recipe/RecipeForm.tsx:1325
-msgid "recipeForm.applyCrop"
-msgstr "Apply crop~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeDetailView.tsx:110
-msgid "recipeDetail.versionRoleArchived"
-msgstr "Archived~"
-
-#. js-lingui-explicit-id
-#: src/hosts/meals/MealPlanDetailView.tsx:101
-msgid "mealPlanDetail.goalRangeAtLeast"
-msgstr "at least {min}~"
-
-#. js-lingui-explicit-id
-#: src/hosts/meals/MealPlanDetailView.tsx:82
-msgid "mealPlanDetail.goalBandBelow"
-msgstr "Below goal~"
-
-#. js-lingui-explicit-id
-#: src/screens/HomeScreen.tsx:82
-msgid "home.browseLabel"
-msgstr "Browse Recipes~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipes/RecipesListView.tsx:394
-msgid "recipes.authorByline"
-msgstr "By {authorName} · ~"
-
-#. js-lingui-explicit-id
-#: src/hosts/meals/MealPlanDetailView.tsx:168
-msgid "mealPlanDetail.goalCaloriesWord"
-msgstr "Calories~"
-
-#. js-lingui-explicit-id
 #: src/hosts/recipe/RecipeForm.tsx:535
 msgid "recipeForm.cameraUnavailable"
 msgstr "Camera is unavailable on this device~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeForm.tsx:1336
-#: src/hosts/recipe/RecipeForm.tsx:1337
-msgid "recipeForm.cancelCrop"
-msgstr "Cancel crop~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeDetailView.tsx:117
-msgid "recipeDetail.versionRoleCandidate"
-msgstr "Candidate~"
 
 #. js-lingui-explicit-id
 #: src/screens/auth/ForgotPasswordScreen.tsx:40
@@ -172,20 +31,9 @@ msgid "forgotPassword.confirmationTitle"
 msgstr "Check your email~"
 
 #. js-lingui-explicit-id
-#: src/screens/auth/SignUpScreen.tsx:94
-msgid "signup.confirmationTitle"
-msgstr "Check your email~"
-
-#. js-lingui-explicit-id
 #: src/screens/auth/SignUpScreen.tsx:98
 msgid "signup.confirmationBody"
 msgstr "Click the confirmation link we sent you, then sign in — almost there.~"
-
-#. js-lingui-explicit-id
-#: src/screens/MealEditScreen.tsx:239
-#: src/screens/MealPlanEditScreen.tsx:129
-msgid "mealForm.loadRecipesError"
-msgstr "Could not load recipes: {error}~"
 
 #. js-lingui-explicit-id
 #: src/screens/MealEditScreen.tsx:78
@@ -198,50 +46,9 @@ msgid "profile.authorDisplayLoadError"
 msgstr "Could not load your author display settings: {error}~"
 
 #. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeDetailView.tsx:448
-msgid "recipeDetail.couldNotRefreshNutrition"
-msgstr "Could not refresh nutrition~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeDetailView.tsx:562
-msgid "recipeDetail.couldNotShareRecipe"
-msgstr "Could not share recipe~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeCommentsSection.tsx:91
-msgid "recipeComments.loadError"
-msgstr "Couldn't load comments.~"
-
-#. js-lingui-explicit-id
-#: src/screens/RecipesScreen.tsx:81
-msgid "recipes.loadMoreError"
-msgstr "Couldn't load more recipes.~"
-
-#. js-lingui-explicit-id
-#: src/screens/RecipesScreen.tsx:72
-msgid "recipes.loadError"
-msgstr "Couldn't load your recipes.~"
-
-#. js-lingui-explicit-id
-#: src/screens/ManualEntryScreen.tsx:78
-msgid "recipeForm.submitCreateRecipe"
-msgstr "Create Recipe~"
-
-#. js-lingui-explicit-id
-#: src/hosts/profile/AccessTokensSection.tsx:27
-msgid "profile.tokenCreated"
-msgstr "Created {date}~"
-
-#. js-lingui-explicit-id
 #: src/hosts/recipe/RecipeForm.tsx:1194
 msgid "recipeForm.cropAreaShort"
 msgstr "Crop area~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeForm.tsx:1110
-#: src/hosts/recipe/RecipeForm.tsx:1111
-msgid "recipeForm.cropImage"
-msgstr "Crop image~"
 
 #. js-lingui-explicit-id
 #: src/hosts/recipe/RecipeForm.tsx:1154
@@ -249,112 +56,15 @@ msgid "recipeForm.cropInstructionsNative"
 msgstr "Crop image — drag the box to move it, drag its corner to resize, or use the move and resize buttons.~"
 
 #. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeForm.tsx:1322
-msgid "recipeForm.cropping"
-msgstr "Cropping…~"
-
-#. js-lingui-explicit-id
-#: src/screens/TweakAiScreen.tsx:89
-msgid "aiTweak.intro"
-msgstr "Say what you want different — AI drafts a plan for your review before a draft is created.~"
-
-#. js-lingui-explicit-id
-#: src/screens/AddScreen.tsx:54
-msgid "add.generateAiDescription"
-msgstr "Describe what’s in your head (or your fridge) and let AI draft the recipe~"
-
-#. js-lingui-explicit-id
-#: src/screens/GenerateAiScreen.tsx:84
-msgid "aiGenerate.intro"
-msgstr "Describe the dish you have in mind — AI drafts a plan for your review before the recipe comes together.~"
-
-#. js-lingui-explicit-id
 #: src/hosts/recipe/RecipeForm.tsx:1120
 msgid "recipeForm.discard"
 msgstr "Discard~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeForm.tsx:1121
-msgid "recipeForm.discardSelectedImage"
-msgstr "Discard selected image~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeVisibilityControls.tsx:64
-msgid "recipeSharing.visibilityPublicDescription"
-msgstr "Out in the open — anyone can view it, and once it's past the idea stage, anyone can discover it and it may turn up in search results.~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeDetailView.tsx:115
-msgid "recipeDetail.versionRoleDraft"
-msgstr "Draft~"
-
-#. js-lingui-explicit-id
-#: src/screens/TweakAiScreen.tsx:103
-msgid "aiTweak.previewTitle"
-msgstr "Draft preview~"
-
-#. js-lingui-explicit-id
-#: src/screens/TweakAiScreen.tsx:20
-msgid "aiTweak.promptPlaceholder"
-msgstr "e.g. make it vegetarian, ease up on the sugar, bring the heat~"
-
-#. js-lingui-explicit-id
-#: src/screens/GenerateAiScreen.tsx:20
-msgid "aiGenerate.promptPlaceholder"
-msgstr "e.g. quick weeknight vegetarian pasta for 4, under 30 minutes~"
 
 #. js-lingui-explicit-id
 #: src/screens/auth/ForgotPasswordScreen.tsx:52
 #: src/screens/auth/ResetPasswordScreen.tsx:39
 msgid "authNative.errorTitle"
 msgstr "Error~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeForm.tsx:427
-msgid "recipeForm.cropError"
-msgstr "Failed to crop image — try again or cancel to use the original.~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeForm.tsx:696
-msgid "recipeForm.generateDescriptionError"
-msgstr "Failed to generate description~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeForm.tsx:753
-msgid "recipeForm.generateImageError"
-msgstr "Failed to generate image~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeForm.tsx:343
-#: src/hosts/recipe/RecipeForm.tsx:346
-#: src/hosts/recipe/RecipeForm.tsx:539
-msgid "recipeForm.readImageError"
-msgstr "Failed to read image~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeForm.tsx:906
-msgid "recipeForm.saveError"
-msgstr "Failed to save~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeForm.tsx:636
-msgid "recipeForm.uploadImageError"
-msgstr "Failed to upload image~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeVisibilityControls.tsx:211
-msgid "recipeSharing.generateLabel"
-msgstr "Generate share link~"
-
-#. js-lingui-explicit-id
-#: src/screens/AddScreen.tsx:53
-msgid "add.generateAiLabel"
-msgstr "Generate with AI~"
-
-#. js-lingui-explicit-id
-#: src/screens/GenerateAiScreen.tsx:83
-msgid "aiGenerate.title"
-msgstr "Generate with AI~"
 
 #. js-lingui-explicit-id
 #: src/hosts/recipe/RecipeForm.tsx:1277
@@ -365,71 +75,6 @@ msgstr "Grow~"
 #: src/hosts/recipe/RecipeForm.tsx:1278
 msgid "recipeForm.growCrop"
 msgstr "Grow crop area~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeVisibilityControls.tsx:155
-msgid "recipeSharing.consentDescriptionStart"
-msgstr "I understand this recipe may be viewed without signing in and I agree to the~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeForm.tsx:1179
-msgid "recipeForm.imageToCropAlt"
-msgstr "Image to crop~"
-
-#. js-lingui-explicit-id
-#: src/screens/ImportImageScreen.tsx:52
-#: src/screens/ImportImageScreen.tsx:54
-#: src/screens/ImportImageScreen.tsx:106
-#: src/screens/ImportImageScreen.tsx:115
-#: src/screens/ImportTextScreen.tsx:39
-#: src/screens/ImportUrlScreen.tsx:41
-msgid "import.failed"
-msgstr "Import failed~"
-
-#. js-lingui-explicit-id
-#: src/screens/AddScreen.tsx:37
-msgid "add.importImageLabel"
-msgstr "Import from image~"
-
-#. js-lingui-explicit-id
-#: src/screens/AddScreen.tsx:45
-msgid "add.importTextLabel"
-msgstr "Import from text~"
-
-#. js-lingui-explicit-id
-#: src/screens/AddScreen.tsx:29
-msgid "add.importUrlLabel"
-msgstr "Import from URL~"
-
-#. js-lingui-explicit-id
-#: src/screens/CookingModeScreen.tsx:159
-msgid "cookingMode.ingredientsHeading"
-msgstr "Ingredients ({label})~"
-
-#. js-lingui-explicit-id
-#: src/screens/CookingModeScreen.tsx:164
-msgid "cookingMode.ingredientsHeadingScaled"
-msgstr "Ingredients (scaled to {label})~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeForm.tsx:956
-msgid "recipeForm.ingredientsChanged"
-msgstr "Ingredients changed from parent version ({summary})~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeForm.tsx:976
-msgid "recipeForm.instructionsChanged"
-msgstr "Instructions changed from parent version ({summary})~"
-
-#. js-lingui-explicit-id
-#: src/hosts/profile/AccessTokensSection.tsx:35
-msgid "profile.tokenLastUsed"
-msgstr "Last used {date}~"
-
-#. js-lingui-explicit-id
-#: src/screens/AddScreen.tsx:21
-msgid "add.manualEntryLabel"
-msgstr "Manual entry~"
 
 #. js-lingui-explicit-id
 #: src/hosts/recipe/RecipeForm.tsx:1244
@@ -462,116 +107,9 @@ msgid "recipeForm.moveCropUp"
 msgstr "Move crop area up~"
 
 #. js-lingui-explicit-id
-#: src/hosts/profile/AccessTokensSection.tsx:40
-msgid "profile.tokenNeverUsed"
-msgstr "Never used~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeDetailView.tsx:668
-#: src/screens/CookingModeScreen.tsx:124
-msgid "cookingMode.cookLogNotesPlaceholder"
-msgstr "Notes from this cook — what worked, what to change next time (optional)~"
-
-#. js-lingui-explicit-id
-#: src/hosts/meals/MealPlanDetailView.tsx:87
-msgid "mealPlanDetail.goalBandOnTrack"
-msgstr "On track~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeVisibilityControls.tsx:56
-msgid "recipeSharing.visibilityPrivateDescription"
-msgstr "Just between you and your kitchen — only you can view this recipe, plus anyone you've already shared it with.~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeForm.tsx:203
-msgid "recipeForm.parentIngredientsSummary"
-msgstr "Parent had {count} ingredients: {preview}{more}"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeForm.tsx:208
-msgid "recipeForm.parentStepsSummary"
-msgstr "Parent had {count} steps: {preview}{more}"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeForm.tsx:185
-msgid "recipeForm.parentNoIngredients"
-msgstr "Parent had no ingredients~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeForm.tsx:189
-msgid "recipeForm.parentNoSteps"
-msgstr "Parent had no steps~"
-
-#. js-lingui-explicit-id
-#: src/screens/auth/ResetPasswordScreen.tsx:28
-msgid "resetPassword.confirmationTitle"
-msgstr "Password updated~"
-
-#. js-lingui-explicit-id
 #: src/screens/AddScreen.tsx:30
 msgid "add.importUrlDescription"
 msgstr "Paste a link to any recipe website~"
-
-#. js-lingui-explicit-id
-#: src/screens/AddScreen.tsx:46
-msgid "add.importTextDescription"
-msgstr "Paste rich text from Word or the web~"
-
-#. js-lingui-explicit-id
-#: src/screens/GenerateAiScreen.tsx:94
-#: src/screens/TweakAiScreen.tsx:99
-msgid "aiSession.startPendingLabel"
-msgstr "Planning…~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeDetailView.tsx:452
-msgid "recipeDetail.pleaseTryAgain"
-msgstr "Please try again.~"
-
-#. js-lingui-explicit-id
-#: src/screens/TweakAiScreen.tsx:35
-msgid "aiTweak.phasePreviewReadyLabel"
-msgstr "Preview ready — save it as a draft version, or head back and refine.~"
-
-#. js-lingui-explicit-id
-#: src/screens/GenerateAiScreen.tsx:35
-msgid "aiGenerate.phasePreviewReadyLabel"
-msgstr "Preview ready — save the recipe as-is, or head back and refine the plan.~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeVisibilityControls.tsx:167
-msgid "recipeSharing.privacyPolicyLinkLabel"
-msgstr "Privacy Policy~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeVisibilityControls.tsx:48
-msgid "recipeSharing.visibilityPrivateLabel"
-msgstr "Private~"
-
-#. js-lingui-explicit-id
-#: src/hosts/meals/MealPlanDetailView.tsx:176
-msgid "mealPlanDetail.goalProteinWord"
-msgstr "Protein~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeVisibilityControls.tsx:53
-msgid "recipeSharing.visibilityPublicLabel"
-msgstr "Public~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeVisibilityControls.tsx:231
-msgid "recipeSharing.permalinkLabel"
-msgstr "Public permalink~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeVisibilityControls.tsx:149
-msgid "recipeSharing.consentLabel"
-msgstr "Publishing consent~"
-
-#. js-lingui-explicit-id
-#: src/screens/HomeScreen.tsx:91
-msgid "home.recipesSectionTitle"
-msgstr "Recently viewed~"
 
 #. js-lingui-explicit-id
 #: src/hosts/recipe/RecipeForm.tsx:1077
@@ -579,91 +117,9 @@ msgid "recipeForm.recipeImageTitle"
 msgstr "Recipe image~"
 
 #. js-lingui-explicit-id
-#: src/screens/GenerateAiScreen.tsx:98
-msgid "aiGenerate.previewTitle"
-msgstr "Recipe preview~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeForm.tsx:1082
-msgid "recipeForm.recipePreviewAlt"
-msgstr "Recipe preview~"
-
-#. js-lingui-explicit-id
-#: src/screens/HomeScreen.tsx:95
-msgid "home.emptyMessage"
-msgstr "Nothing here yet — recipes you peek at will line up here for next time.~"
-
-#. js-lingui-explicit-id
-#: src/components/recipe/SortableIngredientList.tsx:96
-msgid "recipeForm.reorderIngredient"
-msgstr "Reorder ingredient {position}~"
-
-#. js-lingui-explicit-id
-#: src/components/recipe/SortableInstructionList.tsx:76
-msgid "recipeForm.reorderStep"
-msgstr "Reorder step {position}~"
-
-#. js-lingui-explicit-id
 #: src/hosts/recipe/RecipeForm.tsx:1210
 msgid "recipeForm.resizeCropHandle"
 msgstr "Resize crop area handle~"
-
-#. js-lingui-explicit-id
-#: src/screens/GenerateAiScreen.tsx:28
-#: src/screens/TweakAiScreen.tsx:28
-msgid "aiSession.phasePlanningLabel"
-msgstr "Give the plan a once-over — refine it, or approve it and a preview gets built.~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeVisibilityControls.tsx:207
-msgid "recipeSharing.rotateLabel"
-msgstr "Rotate share link~"
-
-#. js-lingui-explicit-id
-#: src/hosts/meals/MealPlanDetailView.tsx:184
-msgid "mealPlanDetail.goalSatietyLabel"
-msgstr "Satiety (plan-wide score)~"
-
-#. js-lingui-explicit-id
-#: src/screens/MealDetailScreen.tsx:67
-msgid "mealDetail.nutritionSatiety"
-msgstr "satiety {value}~"
-
-#. js-lingui-explicit-id
-#: src/screens/TweakAiScreen.tsx:107
-msgid "aiTweak.finalizeLabel"
-msgstr "Save as draft~"
-
-#. js-lingui-explicit-id
-#: src/screens/EditRecipeScreen.tsx:46
-msgid "recipeForm.submitSaveChanges"
-msgstr "Save Changes~"
-
-#. js-lingui-explicit-id
-#: src/screens/EditVersionScreen.tsx:64
-msgid "recipeForm.submitSaveDraft"
-msgstr "Save Draft~"
-
-#. js-lingui-explicit-id
-#: src/screens/GenerateAiScreen.tsx:102
-msgid "aiGenerate.finalizeLabel"
-msgstr "Save recipe~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeVisibilityControls.tsx:194
-msgid "recipeSharing.saveLabel"
-msgstr "Save sharing settings~"
-
-#. js-lingui-explicit-id
-#: src/screens/GenerateAiScreen.tsx:106
-#: src/screens/TweakAiScreen.tsx:111
-msgid "aiSession.finalizePendingLabel"
-msgstr "Saving…~"
-
-#. js-lingui-explicit-id
-#: src/screens/MealDetailScreen.tsx:82
-msgid "mealDetail.servingsLabel"
-msgstr "Servings to cook: {cook} · Servings to eat: {eat}~"
 
 #. js-lingui-explicit-id
 #: src/hosts/recipe/RecipeVisibilityControls.tsx:221
@@ -671,29 +127,14 @@ msgid "recipeSharing.copyLinkLabel"
 msgstr "Share link~"
 
 #. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeVisibilityControls.tsx:111
-msgid "recipeSharing.linkRotated"
-msgstr "Share link rotated~"
-
-#. js-lingui-explicit-id
 #: src/hosts/recipe/RecipeVisibilityControls.tsx:239
 msgid "recipeSharing.copyPermalinkLabel"
 msgstr "Share permalink~"
 
 #. js-lingui-explicit-id
-#: src/screens/HomeScreen.tsx:87
-msgid "home.sharedWithMeLabel"
-msgstr "Shared with me~"
-
-#. js-lingui-explicit-id
 #: src/screens/SharedWithMeScreen.tsx:33
 msgid "sharedWithMe.title"
 msgstr "Shared with me~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeVisibilityControls.tsx:97
-msgid "recipeSharing.settingsUpdated"
-msgstr "Sharing settings updated~"
 
 #. js-lingui-explicit-id
 #: src/hosts/recipe/RecipeForm.tsx:1292
@@ -711,30 +152,9 @@ msgid "authNative.signInFailedTitle"
 msgstr "Sign in failed~"
 
 #. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeForm.tsx:667
-msgid "recipeForm.signInForDescriptions"
-msgstr "Sign in to generate descriptions~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeForm.tsx:720
-msgid "recipeForm.signInForImages"
-msgstr "Sign in to generate images~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeForm.tsx:609
-msgid "recipeForm.signInToUpload"
-msgstr "Sign in to upload images~"
-
-#. js-lingui-explicit-id
 #: src/screens/auth/SignUpScreen.tsx:102
 msgid "authNative.signUpFailedTitle"
 msgstr "Sign up failed~"
-
-#. js-lingui-explicit-id
-#: src/screens/GenerateAiScreen.tsx:90
-#: src/screens/TweakAiScreen.tsx:95
-msgid "aiSession.startLabel"
-msgstr "Start planning~"
 
 #. js-lingui-explicit-id
 #: src/screens/AddScreen.tsx:38
@@ -742,92 +162,12 @@ msgid "add.importImageDescription"
 msgstr "Take a photo or use your library~"
 
 #. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeCommentsSection.tsx:96
-msgid "recipeComments.staleHint"
-msgstr "This comment dates from an earlier version — the recipe may have evolved since.~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeVisibilityControls.tsx:141
-msgid "recipeSharing.publicWarning"
-msgstr "Heads up — once public, anyone can view this recipe, and once it's past the idea stage, anyone browsing Eciperay can discover it.~"
-
-#. js-lingui-explicit-id
-#: src/screens/TweakAiScreen.tsx:88
-msgid "aiTweak.title"
-msgstr "Tweak with AI~"
-
-#. js-lingui-explicit-id
 #: src/screens/AddScreen.tsx:22
 msgid "add.manualEntryDescription"
 msgstr "Type your recipe from scratch~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeVisibilityControls.tsx:49
-msgid "recipeSharing.visibilityUnlistedLabel"
-msgstr "Unlisted link~"
-
-#. js-lingui-explicit-id
-#: src/hosts/meals/MealPlanDetailView.tsx:108
-msgid "mealPlanDetail.goalRangeUpTo"
-msgstr "up to {max}~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeForm.tsx:1097
-#: src/hosts/recipe/RecipeForm.tsx:1098
-msgid "recipeForm.useImage"
-msgstr "Use image~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeForm.tsx:891
-msgid "recipeForm.pendingImageSaveError"
-msgstr "Use, crop, or discard the selected image before saving.~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeDetailView.tsx:165
-msgid "recipeDetail.candidateLabel"
-msgstr "v{versionNumber}~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeDetailView.tsx:142
-msgid "recipeDetail.versionPickerLabel"
-msgstr "v{versionNumber} — {roleLabel}~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeDetailView.tsx:133
-msgid "recipeDetail.versionPickerLabelWithSummary"
-msgstr "v{versionNumber} — {roleLabel}: {summary}~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeDetailView.tsx:157
-msgid "recipeDetail.candidateLabelWithSummary"
-msgstr "v{versionNumber}: {summary}~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipe/RecipeDetailView.tsx:246
-msgid "recipeDetail.versionActivated"
-msgstr "Version activated~"
-
-#. js-lingui-explicit-id
-#: src/screens/RecipesScreen.tsx:148
-msgid "discover.errorMessage"
-msgstr "We couldn't load public recipes. Check your connection and try again.~"
-
-#. js-lingui-explicit-id
-#: src/screens/HomeScreen.tsx:77
-msgid "home.title"
-msgstr "Welcome to Eciperay~"
 
 #. js-lingui-explicit-id
 #: src/screens/auth/ResetPasswordScreen.tsx:32
 msgid "resetPassword.confirmationBody"
 msgstr "Your new password is set — use it to sign in from here on.~"
 
-#. js-lingui-explicit-id
-#: src/screens/HomeScreen.tsx:78
-msgid "home.subtitle"
-msgstr "Everything you’re cooking, all in one place~"
-
-#. js-lingui-explicit-id
-#: src/hosts/recipes/RecipesListView.tsx:382
-msgid "recipes.ownTitle"
-msgstr "Your recipes~"
