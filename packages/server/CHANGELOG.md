@@ -1,5 +1,218 @@
 # @eciperay/server
 
+## 1.35.0
+
+### Minor Changes
+
+- caf2177: Discovery models, server core (#622, tranche 1): migration 030 adds
+  `saved_recipes` (bookmark saves), `recipe_disinterest` (hard hide — excluded
+  from every discovery surface until unhidden), `user_follows`, and
+  `recipe_interest_signals` (soft engagement signals from Stephen's approval
+  amendment: dwell/engagement records interest, not a save; a quick swipe-past
+  records disinterest, not a hide). New authenticated `/discovery` routes cover
+  save/unsave, hide/unhide plus the hidden list, follow/unfollow plus the
+  following list, recording an interest signal, and a discovery feed query that
+  excludes the requester's hidden recipes, respects recipe visibility (public
+  only), and ranks followee-authored, followee-saved, and followee-highly-rated
+  recipes and interest-signaled recipes higher while deprioritising recipes the
+  requester last signaled quick disinterest in.
+- 799cdba: Family sharing, server core (#617, tranche 1): owners can designate
+  one other account for family sharing via GET/POST/DELETE
+  /account/family-sharing. A standing family_share_grants row gives the
+  recipient view/clone access to the owner's whole recipe library — existing and
+  future recipes, private included — through the central share-access check, and
+  the Shared With Me list unions family-shared recipes with a `family` marker
+  (an individual grant wins the badge when both exist). Revoking the designation
+  deletes the row and ends family access immediately; per-recipe grants are
+  unaffected. Account export now includes family share designations.
+- e7d6339: Recipe search now speaks GitHub-style syntax: plain words match the
+  title, description, or an ingredient name, and the search box accepts quoted
+  phrases, field qualifiers (`title:`, `desc:`, `ingredient:`, `tag:`), negation
+  (`-ingredient:peanuts`), status/scope qualifiers (`status:`, `is:public`), and
+  numeric comparisons (`calories:<600`, `rating:>=4`) — identically across your
+  recipes, shared-with-me, and public discovery.
+- f3ffa78: Cook-mode per-step ingredients, data/API tranche (#643): instructions
+  gain `ingredientReferences` — the ordered IDs of the same version's
+  ingredients each step uses (Mealie-style references; the flat ingredient list
+  stays canonical for scaling, shopping, and nutrition). Migration 033 adds the
+  `instructions.ingredient_references` JSONB column (empty array for legacy
+  recipes, which keep rendering the full list). Recipe detail, public detail,
+  and version detail responses now include the references; create/edit/clone/
+  import/export write paths round-trip them, ingredient IDs supplied on input
+  are preserved across version rewrites so references never dangle, clones carry
+  both ingredient IDs and references over, and a write whose references name
+  ingredients outside the version is rejected.
+- 7ee7ff6: Net carbs (carbs − fiber) now render beside total carbs everywhere a
+  recipe's carbs are shown: the recipe-detail nutrition rows, recipe card/list
+  summaries, meal and meal-plan totals and per-day rows, and meal member lines
+  on web and native. Net carbs is omitted where fiber is unknown — including
+  meal/plan totals when any contributing recipe's fiber is unknown (aggregate
+  fiber now propagates unknown instead of treating it as zero) — and plan/meal
+  totals compute it from the summed carbs and fiber via the one canonical
+  helper.
+- 8b6dd07: Track recipe provenance at creation (#609, tranche 1): migration 029
+  adds `recipes.provenance_source`/`provenance_detail` with a backfill from each
+  recipe's first version; the shared save path now derives and validates
+  provenance from the creation path (URL imports must record a valid source URL)
+  and applies public-by-default visibility for new recipes (shared clones and
+  unattributed `other` stay private). Recipe detail responses now carry the
+  recipe's provenance.
+- 3ac1d11: Remove the recipe status entirely (#610, tranche 2): recipes no
+  longer carry an idea/evolving/perfected/abandoned status. The `RecipeStatus`
+  type and the status field are gone from `@eciperay/types` recipe inputs and
+  details, recipe detail pages and cards no longer show a status badge, the
+  recipe forms and the recipe-list status filter no longer offer a status
+  control, and the `PATCH /recipes/:id` status endpoint is removed. Because
+  perfected/abandoned no longer lock a recipe, every recipe stays editable, and
+  version activation follows the cook-log/archived rule only. The server drops
+  the `recipes.status` column (migration 030), and the MCP recipe-update payload
+  no longer carries a status field.
+- 81d315f: Recipe tips UI (#635, tranche 2): the recipe version edit form (web
+  and native) gains a repeatable tips editor — add, edit, reorder, and remove
+  the version's tips, saved through the normal version save path — and the
+  recipe detail now shows the version's tips at the bottom of the overview.
+  `RecipeDetail` gains the displayed version's `tips` (the server detail mapping
+  now carries the active version's list, and viewing another version overlays
+  its tips), so the detail hosts pass them to the design system's
+  `cookingTipLabel` line under Start Cooking. @spudly/ui 14 carries only the
+  singular label, so multiple tips render as one italic line with each tip's
+  "Tip: " lead-in preserved, in array order; a plural DS prop (one line per tip)
+  remains a design-system follow-up.
+- ed6abf2: Recipe version tips, data/server/MCP (#635, tranche 1): a recipe
+  version now carries a list of short authored cooking tips.
+  `RecipeVersionDetail` gains `tips: string[]` and the version/recipe inputs
+  gain optional `tips`, stored in a new `recipe_versions.tips` JSONB column
+  (migration 033, default empty). Version create/update/clone/restore paths read
+  and write the list — each tip capped at 280 characters, at most 10 per
+  version, empty entries dropped — and bulk export/import records carry it. The
+  MCP `create_recipe` and `update_recipe` tools accept a `tips` list (updates
+  replace the stored list and, like ingredient/instruction changes, require a
+  versionId). The edit-form UI and detail-page display land in later tranches.
+- 7075f8b: Simplify recipe versioning (#610, tranche 1): an edit that branches
+  from the active version now becomes the current version in the same
+  transaction by default, so editing the current recipe goes live immediately
+  (an explicit `activate: false` still keeps the branched version as a draft;
+  draft-version in-place edits are unchanged). Edits also accept an optional
+  `changeSummary` naming the edit, stored on the branched version's
+  `change_summary` for internal version tracking; `RecipeVersionInput` in
+  `@eciperay/types` gains the optional `changeSummary` field.
+- a974118: Recipe search now tolerates typos and ranks by relevance: free-text
+  words of four or more characters also match on trigram similarity against
+  recipe titles and ingredient names (backed by a new `pg_trgm` migration), so
+  "chiken" finds chicken recipes without flooding exact-match results, and while
+  a search is present with no explicit sort chosen, results order
+  best-match-first — title and whole-word matches above ingredient, description,
+  and fuzzy matches. An explicit sort (newest, rating, satiety, calories) still
+  wins, identically across your recipes, shared-with-me, and public discovery.
+- aa849a6: "Show less like this" (#623): a new soft negative signal for
+  discovery. Migration 032 adds `recipe_show_less` (user + source recipe,
+  mirroring the hard-hide `recipe_disinterest` shape). Choosing "Show less like
+  this" on a recipe records it as a source, and the discovery feed now
+  down-ranks other recipes similar to a source — sharing a tag or the same
+  author — by 2 points per matching source, capped at 6, so similar recipes
+  appear less often but are never removed. The source recipe itself is not
+  penalised, an explicit save or cook of a recipe cancels its penalty, and hard
+  hide still excludes outright. New authenticated routes
+  (`POST`/`DELETE /discovery/recipes/:id/show-less`, `GET /discovery/show-less`)
+  back a new Settings "Show less like this" list in the web and native profile
+  screens, next to Hidden recipes, where each entry can be undone — entries
+  persist until undone, with no decay. The card-menu action itself is pending a
+  design-system slot for discovery-card actions (the DS discovery item carries
+  no action props today); the client API (`eciperay.discovery`) ships ready for
+  it.
+- caf3abb: Tag management is admin-only (#621, option B): migration 031 adds a
+  `users.is_admin` boolean (default false) that defines admin. A new server
+  `requireAdmin` middleware gates `POST /tags`, `PATCH /tags/:id`, and
+  `DELETE /tags/:id` with 403 for non-admins, while `GET /tags` stays available
+  to every signed-in user (tag pickers and filtering read it; recipe save
+  resolves tag names server-side and is unaffected). The new `GET /auth/me`
+  profile response exposes the server-computed `isAdmin` flag on the shared
+  `User` type and client auth API. On web, the Tags nav entry is hidden for
+  non-admins and the `/tags` route redirects non-admins to `/recipes`; on
+  native, the Tags screen is not registered and the profile Tags link is hidden
+  for non-admins. On web, a failed profile load renders through design-system
+  composition only (the DS error page in the admin guard; a DS header retry
+  action in the signed-in shell) — no app-styled error panels.
+- 1af3b9b: Unified browse route (#622, tranche 2a, reworked 2026-11-21): there
+  is ONE unified, auth-aware browse page and it lives at /recipes only —
+  /discover is removed entirely (no route, no redirect, no sitemap entry). A
+  signed-in viewer sees the personalized unified browse (own recipes with
+  preferred placement plus the embedded public discovery feed) at /recipes; a
+  signed-out viewer sees the public browse at the same URL. The server
+  server-renders /recipes with the public browse content and its SEO head
+  (canonical /recipes), and the client takes over at the same URL, applying
+  signed-in personalization once auth resolves. The client package gains
+  recipeListDisplay / resizedImageUrl subpath exports so the server SSR
+  view-model shares the web host's formatting helpers.
+
+### Patch Changes
+
+- a34a19b: Add the deterministic ingredient-to-instruction matcher (#643 tranche
+  2a): normalized, preparation-word-tolerant, singular/plural-tolerant text
+  matching that proposes the baseline `ingredientReferences` link map for a
+  recipe version, plus the list of ingredients no step referenced.
+- b67a32b: Add the AI ingredient-linking pass (#643 tranche 2b):
+  `POST /recipes/:id/ai/link-ingredients` takes a version's ingredients and
+  instructions, seeds Claude with the deterministic matcher's baseline map, and
+  returns a validated proposal — the union of matcher and AI links, with
+  collective/pronoun references ("add the vegetables") completed by the model,
+  unknown ids dropped, and unreferenced ingredients reported. Proposals are
+  never stored silently; the author accepts them through the normal save path.
+- 8192961: The consent preferences page (`/privacy/consent`) now carries a
+  `noindex, nofollow` robots directive from the shared page-head builder: the
+  client head renders it, and the server injects the same directive into the
+  served HTML for that path, so crawlers are told not to index the utility page
+  even without executing JavaScript. It remains excluded from the sitemap, and
+  the public pages and public recipes stay indexable.
+- 4ee9f5e: Recipe images now load through a generic on-the-fly image resizer:
+  the server serves bucket-cached resized variants at a requested width (aspect
+  preserved, original format kept, immutable cache headers, original-image
+  fallback on any failure), replacing a recipe image deletes its cached
+  variants, and recipe cards, discovery/home thumbnails, the recipe detail hero,
+  and the public recipe page request appropriately sized images instead of
+  full-size originals.
+- 89c1228: Meal Plans list no longer loads full plan details per plan:
+  `GET /meal-plans` now builds plan summaries (including entry counts,
+  nutrition, and goal progress, identical to before) from a small constant
+  number of batched queries instead of a sequential per-plan, per-entry N+1, so
+  the list stays fast no matter how many plans and entries a user has.
+- 74ac76c: Nutrition goals: the carbs goal now evaluates net carbs (total carbs
+  minus fiber, following the #613 derivation) instead of total carbs. When fiber
+  is unknown for the aggregated nutrition, the carbs goal progress is omitted
+  rather than compared against total carbs. Stored goal values are unchanged and
+  now mean net carbs.
+- 9b5cb59: Public recipe loads now return a clean not-found for a non-UUID
+  recipe id instead of surfacing a Postgres "invalid input syntax for type uuid"
+  error: `loadPublicRecipe` validates the id before querying, so both
+  `GET /api/public/recipes/:id/:slug` and the server-rendered
+  `/recipe/:id/:slug` page answer 404 for malformed ids such as
+  `/api/public/recipes/999999999/no-such-recipe`.
+- Updated dependencies [2474422]
+- Updated dependencies [5366e11]
+- Updated dependencies [8192961]
+- Updated dependencies [caf2177]
+- Updated dependencies [695ba21]
+- Updated dependencies [799cdba]
+- Updated dependencies [4c529b9]
+- Updated dependencies [4ee9f5e]
+- Updated dependencies [f3ffa78]
+- Updated dependencies [7ee7ff6]
+- Updated dependencies [506a166]
+- Updated dependencies [8b6dd07]
+- Updated dependencies [3ac1d11]
+- Updated dependencies [81d315f]
+- Updated dependencies [ed6abf2]
+- Updated dependencies [7075f8b]
+- Updated dependencies [98e8e7c]
+- Updated dependencies [8e662cd]
+- Updated dependencies [aa849a6]
+- Updated dependencies [caf3abb]
+- Updated dependencies [1af3b9b]
+- Updated dependencies [c4d3376]
+  - @eciperay/client@1.35.0
+  - @eciperay/types@1.35.0
+  - @eciperay/mcp-server@1.35.0
+
 ## 1.34.4
 
 ### Patch Changes

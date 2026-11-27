@@ -1,5 +1,167 @@
 # @eciperay/client
 
+## 1.35.0
+
+### Minor Changes
+
+- 695ba21: Family sharing, Profile UI (#617, tranche 2): the Profile page (web
+  and native) gains a Family sharing section — designate another Eciperay user
+  by account email, see current designations, and remove one with confirmation
+  (removal ends that person's automatic access immediately). The client account
+  API gains list/create/delete family-sharing calls against the tranche-1
+  endpoints. Recipes shared via a family designation now carry a "Family" badge
+  in Shared With Me / the unified Recipes browse instead of the generic "Shared"
+  badge.
+- 7ee7ff6: Net carbs (carbs − fiber) now render beside total carbs everywhere a
+  recipe's carbs are shown: the recipe-detail nutrition rows, recipe card/list
+  summaries, meal and meal-plan totals and per-day rows, and meal member lines
+  on web and native. Net carbs is omitted where fiber is unknown — including
+  meal/plan totals when any contributing recipe's fiber is unknown (aggregate
+  fiber now propagates unknown instead of treating it as zero) — and plan/meal
+  totals compute it from the summed carbs and fiber via the one canonical
+  helper.
+- 3ac1d11: Remove the recipe status entirely (#610, tranche 2): recipes no
+  longer carry an idea/evolving/perfected/abandoned status. The `RecipeStatus`
+  type and the status field are gone from `@eciperay/types` recipe inputs and
+  details, recipe detail pages and cards no longer show a status badge, the
+  recipe forms and the recipe-list status filter no longer offer a status
+  control, and the `PATCH /recipes/:id` status endpoint is removed. Because
+  perfected/abandoned no longer lock a recipe, every recipe stays editable, and
+  version activation follows the cook-log/archived rule only. The server drops
+  the `recipes.status` column (migration 030), and the MCP recipe-update payload
+  no longer carries a status field.
+- aa849a6: "Show less like this" (#623): a new soft negative signal for
+  discovery. Migration 032 adds `recipe_show_less` (user + source recipe,
+  mirroring the hard-hide `recipe_disinterest` shape). Choosing "Show less like
+  this" on a recipe records it as a source, and the discovery feed now
+  down-ranks other recipes similar to a source — sharing a tag or the same
+  author — by 2 points per matching source, capped at 6, so similar recipes
+  appear less often but are never removed. The source recipe itself is not
+  penalised, an explicit save or cook of a recipe cancels its penalty, and hard
+  hide still excludes outright. New authenticated routes
+  (`POST`/`DELETE /discovery/recipes/:id/show-less`, `GET /discovery/show-less`)
+  back a new Settings "Show less like this" list in the web and native profile
+  screens, next to Hidden recipes, where each entry can be undone — entries
+  persist until undone, with no decay. The card-menu action itself is pending a
+  design-system slot for discovery-card actions (the DS discovery item carries
+  no action props today); the client API (`eciperay.discovery`) ships ready for
+  it.
+- caf3abb: Tag management is admin-only (#621, option B): migration 031 adds a
+  `users.is_admin` boolean (default false) that defines admin. A new server
+  `requireAdmin` middleware gates `POST /tags`, `PATCH /tags/:id`, and
+  `DELETE /tags/:id` with 403 for non-admins, while `GET /tags` stays available
+  to every signed-in user (tag pickers and filtering read it; recipe save
+  resolves tag names server-side and is unaffected). The new `GET /auth/me`
+  profile response exposes the server-computed `isAdmin` flag on the shared
+  `User` type and client auth API. On web, the Tags nav entry is hidden for
+  non-admins and the `/tags` route redirects non-admins to `/recipes`; on
+  native, the Tags screen is not registered and the profile Tags link is hidden
+  for non-admins. On web, a failed profile load renders through design-system
+  composition only (the DS error page in the admin guard; a DS header retry
+  action in the signed-in shell) — no app-styled error panels.
+
+### Patch Changes
+
+- 2474422: Add the editor ingredient-linking correction UI (#643 tranche 2c):
+  the recipe editor (web and native) now shows which ingredients each
+  instruction step references, warns about named ingredients no step references,
+  and offers a Mealie-style per-step checklist walk-through to add or remove
+  links, plus a "Suggest links with AI" action that applies the tranche 2b
+  linking proposal to the form. Links persist through the normal recipe save
+  path; recipe detail now round-trips ingredient IDs and instruction
+  `ingredientReferences` into the form so existing links survive an edit, and
+  removing an ingredient strips its links from every step.
+- 5366e11: Add recipe warnings (#643 warnings tranche): a shared
+  `computeRecipeWarnings` in `@eciperay/client` detects the two warning kinds
+  from Stephen's 2026-11-21 amendments — an ingredient on the list that the
+  instructions never mention (by stored link or by text mention), and an
+  instruction mentioning a common ingredient that is not on the list (curated
+  lexicon). Recipe owners see the warnings in a banner whenever they view a
+  recipe (web and app detail hosts), and their recipe lists show a very small ⚠
+  indicator at the end of a warned recipe's subtitle. Non-owners never see
+  warnings.
+- 8192961: The consent preferences page (`/privacy/consent`) now carries a
+  `noindex, nofollow` robots directive from the shared page-head builder: the
+  client head renders it, and the server injects the same directive into the
+  served HTML for that path, so crawlers are told not to index the utility page
+  even without executing JavaScript. It remains excluded from the sitemap, and
+  the public pages and public recipes stay indexable.
+- 4c529b9: Move the profile/recipe data hooks into @eciperay/client (#676): the
+  access-tokens, recipe sharing, and recipe comments props hooks and
+  useDeleteRecipe now live once in the client package, taking the typed client
+  as a parameter, with hosts keeping only surface-specific extras (share
+  execution, confirmation dialogs, navigation) at the edges. The app's typed
+  client export is renamed from `api` to `eciperay`, matching web. No behavior
+  change on either platform.
+- 4ee9f5e: Recipe images now load through a generic on-the-fly image resizer:
+  the server serves bucket-cached resized variants at a requested width (aspect
+  preserved, original format kept, immutable cache headers, original-image
+  fallback on any failure), replacing a recipe image deletes its cached
+  variants, and recipe cards, discovery/home thumbnails, the recipe detail hero,
+  and the public recipe page request appropriately sized images instead of
+  full-size originals.
+- 506a166: PostHog error reports and log records from the native app now carry
+  the app version and build: the app reads them from expo-application at
+  analytics creation, registers them as PostHog super properties, and the shared
+  analytics layer merges them explicitly into every captureException and log
+  call (caller-supplied values win), so error triage can tell current-build
+  errors from outdated-app noise.
+- 81d315f: Recipe tips UI (#635, tranche 2): the recipe version edit form (web
+  and native) gains a repeatable tips editor — add, edit, reorder, and remove
+  the version's tips, saved through the normal version save path — and the
+  recipe detail now shows the version's tips at the bottom of the overview.
+  `RecipeDetail` gains the displayed version's `tips` (the server detail mapping
+  now carries the active version's list, and viewing another version overlays
+  its tips), so the detail hosts pass them to the design system's
+  `cookingTipLabel` line under Start Cooking. @spudly/ui 14 carries only the
+  singular label, so multiple tips render as one italic line with each tip's
+  "Tip: " lead-in preserved, in array order; a plural DS prop (one line per tip)
+  remains a design-system follow-up.
+- 8e662cd: Share the core Lingui catalog: the strings both hosts render
+  identically now live once in @eciperay/client's core .po catalog, each host's
+  catalog keeps only its host-specific strings, and both hosts merge core + host
+  catalogs at runtime. No copy changes.
+- 1af3b9b: Unified browse route (#622, tranche 2a, reworked 2026-11-21): there
+  is ONE unified, auth-aware browse page and it lives at /recipes only —
+  /discover is removed entirely (no route, no redirect, no sitemap entry). A
+  signed-in viewer sees the personalized unified browse (own recipes with
+  preferred placement plus the embedded public discovery feed) at /recipes; a
+  signed-out viewer sees the public browse at the same URL. The server
+  server-renders /recipes with the public browse content and its SEO head
+  (canonical /recipes), and the client takes over at the same URL, applying
+  signed-in personalization once auth resolves. The client package gains
+  recipeListDisplay / resizedImageUrl subpath exports so the server SSR
+  view-model shares the web host's formatting helpers.
+- c4d3376: One unified recipe page host (#649, tranche 2): the public permalink
+  `/recipe/:id/:slug` and the app route `/recipes/:recipeId[/:slug]` now render
+  the same host, which renders the design system's single RecipeDetailPage for
+  every viewer — the owner form for the owner (edit, versions, sharing, delete,
+  tweak), the guest form's signed-in variant for a signed-in non-owner
+  (save-a-copy, ratings, comments where access allows), and the guest form's
+  signed-out variant for a signed-out visitor (sign-in CTA, no actions). A
+  private recipe the viewer cannot access, or a missing recipe, renders the DS
+  page's notFound / unavailable treatment, keyed only off the fetch result. The
+  retired PublicRecipePage host is deleted; canonical/SEO is unchanged (the
+  canonical link and sitemap keep pointing at `/recipe/:id/:slug`, no redirects
+  added). A signed-in user following a public link now stays on the recipe with
+  the signed-in treatment instead of a sign-in detour. The client's
+  authenticated recipe fetch gains an optional share token, so the `t` token on
+  a shared link is honored on the unified page's data path as it already was on
+  the public route.
+- Updated dependencies [caf2177]
+- Updated dependencies [799cdba]
+- Updated dependencies [f3ffa78]
+- Updated dependencies [7ee7ff6]
+- Updated dependencies [8b6dd07]
+- Updated dependencies [3ac1d11]
+- Updated dependencies [81d315f]
+- Updated dependencies [ed6abf2]
+- Updated dependencies [7075f8b]
+- Updated dependencies [98e8e7c]
+- Updated dependencies [aa849a6]
+- Updated dependencies [caf3abb]
+  - @eciperay/types@1.35.0
+
 ## 1.34.4
 
 ### Patch Changes
