@@ -1,4 +1,5 @@
 import type {PublicRecipeResponse} from '@eciperay/types';
+import {z} from 'zod';
 
 import {query as defaultQuery} from '../db/query.js';
 import {GET_PUBLIC_RECIPE_DETAIL_SQL} from '../routes/recipes/sqlConstants.js';
@@ -44,6 +45,14 @@ export const loadPublicRecipe = async (
   queryFn: QueryFn,
 ): Promise<LoadPublicRecipeResult> => {
   const {id, requestedSlug, shareToken, userId} = args;
+
+  // recipes.id is a uuid column: a malformed id would otherwise surface as
+  // a Postgres "invalid input syntax for type uuid" error instead of a
+  // clean not_found (#707 — same guard as getRecipe #313, applied here so
+  // both the API handler and the SSR page route are covered).
+  if (!z.uuid().safeParse(id).success) {
+    return {kind: 'denied', denial: 'not_found'};
+  }
 
   const result = await queryFn(GET_PUBLIC_RECIPE_DETAIL_SQL, [id]);
   const row = result.rows[0] as

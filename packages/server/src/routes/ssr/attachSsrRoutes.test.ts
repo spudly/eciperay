@@ -64,7 +64,7 @@ describe('attachSsrRoutes gate', () => {
       res.status(200).type('text/html').send('<html>SPA fallback</html>');
     });
 
-    const res = await request(app).get('/recipe/recipe-uuid-1/pasta');
+    const res = await request(app).get('/recipe/11111111-1111-4111-8111-111111111111/pasta');
 
     expect(res.status).toBe(200);
     expect(res.text).toContain('SPA fallback');
@@ -86,7 +86,7 @@ describe('attachSsrRoutes renderer loading', () => {
     mockPublicRecipeQueries();
 
     const res = await request(buildGateApp()).get(
-      '/recipe/recipe-uuid-1/pasta',
+      '/recipe/11111111-1111-4111-8111-111111111111/pasta',
     );
 
     expect(res.status).toBe(200);
@@ -99,7 +99,7 @@ describe('attachSsrRoutes renderer loading', () => {
     mockPublicRecipeQueries();
 
     const res = await request(buildGateApp()).get(
-      '/recipe/recipe-uuid-1/pasta',
+      '/recipe/11111111-1111-4111-8111-111111111111/pasta',
     );
 
     expect(res.status).toBe(200);

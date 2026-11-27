@@ -30,7 +30,7 @@ describe('loadPublicRecipe', () => {
     mockPublicRecipeQueries();
 
     const result = await loadPublicRecipe(
-      {id: 'recipe-uuid-1', requestedSlug: 'pasta'},
+      {id: '11111111-1111-4111-8111-111111111111', requestedSlug: 'pasta'},
       mockQuery,
     );
 
@@ -48,7 +48,7 @@ describe('loadPublicRecipe', () => {
     mockPublicRecipeQueries();
 
     const result = await loadPublicRecipe(
-      {id: 'recipe-uuid-1', requestedSlug: 'old-slug'},
+      {id: '11111111-1111-4111-8111-111111111111', requestedSlug: 'old-slug'},
       mockQuery,
     );
 
@@ -67,12 +67,19 @@ describe('loadPublicRecipe', () => {
     expect(result).toEqual({kind: 'denied', denial: 'not_found'});
   });
 
+  test('denies a non-uuid id as not_found without querying (#707)', async () => {
+    const result = await loadPublicRecipe({id: '999999999'}, mockQuery);
+
+    expect(result).toEqual({kind: 'denied', denial: 'not_found'});
+    expect(mockQuery).not.toHaveBeenCalled();
+  });
+
   test('denies a private recipe as not_found', async () => {
     mockQuery.mockResolvedValue(
       makeQueryResult([makeRecipeDetailRow({visibility: 'private'})]),
     );
 
-    const result = await loadPublicRecipe({id: 'recipe-uuid-1'}, mockQuery);
+    const result = await loadPublicRecipe({id: '11111111-1111-4111-8111-111111111111'}, mockQuery);
 
     expect(result).toEqual({kind: 'denied', denial: 'not_found'});
   });
@@ -87,7 +94,7 @@ describe('loadPublicRecipe', () => {
     );
 
     const result = await loadPublicRecipe(
-      {id: 'recipe-uuid-1', requestedSlug: 'pasta', shareToken: 'share-token'},
+      {id: '11111111-1111-4111-8111-111111111111', requestedSlug: 'pasta', shareToken: 'share-token'},
       mockQuery,
     );
 
@@ -105,7 +112,7 @@ describe('loadPublicRecipe', () => {
     );
 
     const result = await loadPublicRecipe(
-      {id: 'recipe-uuid-1', shareToken: 'bad-token'},
+      {id: '11111111-1111-4111-8111-111111111111', shareToken: 'bad-token'},
       mockQuery,
     );
 
@@ -157,7 +164,7 @@ describe('loadPublicRecipe family sharing (#617)', () => {
   test('a family grant gives read access to a private recipe', async () => {
     mockPrivateWithFamily(true);
     const result = await loadPublicRecipe(
-      {id: 'recipe-uuid-1', userId: 'viewer-uuid'},
+      {id: '11111111-1111-4111-8111-111111111111', userId: 'viewer-uuid'},
       mockQuery,
     );
     expect(result.kind).toBe('ok');
@@ -166,7 +173,7 @@ describe('loadPublicRecipe family sharing (#617)', () => {
   test('a non-designated user gets nothing from a private recipe', async () => {
     mockPrivateWithFamily(false);
     const result = await loadPublicRecipe(
-      {id: 'recipe-uuid-1', userId: 'stranger-uuid'},
+      {id: '11111111-1111-4111-8111-111111111111', userId: 'stranger-uuid'},
       mockQuery,
     );
     expect(result.kind).toBe('denied');
@@ -175,7 +182,7 @@ describe('loadPublicRecipe family sharing (#617)', () => {
   test('a family visit does not mint a surviving per-recipe grant', async () => {
     mockPrivateWithFamily(true);
     await loadPublicRecipe(
-      {id: 'recipe-uuid-1', userId: 'viewer-uuid'},
+      {id: '11111111-1111-4111-8111-111111111111', userId: 'viewer-uuid'},
       mockQuery,
     );
     const calls = mockQuery.mock.calls.map(([sql]) => String(sql));

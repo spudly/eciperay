@@ -83,7 +83,7 @@ describe('GET /recipe/:id/:slug (SSR)', () => {
   test('streams SSR HTML with a short public cache TTL for a public recipe', async () => {
     mockPublicRecipeQueries();
 
-    const res = await request(buildApp()).get('/recipe/recipe-uuid-1/pasta');
+    const res = await request(buildApp()).get('/recipe/11111111-1111-4111-8111-111111111111/pasta');
 
     expect(res.status).toBe(200);
     expect(res.headers['content-type']).toContain('text/html');
@@ -94,7 +94,7 @@ describe('GET /recipe/:id/:slug (SSR)', () => {
   test('streams SSR HTML when the slug is omitted (slug is optional)', async () => {
     mockPublicRecipeQueries();
 
-    const res = await request(buildApp()).get('/recipe/recipe-uuid-1');
+    const res = await request(buildApp()).get('/recipe/11111111-1111-4111-8111-111111111111');
 
     expect(res.status).toBe(200);
     expect(res.headers['content-type']).toContain('text/html');
@@ -104,10 +104,10 @@ describe('GET /recipe/:id/:slug (SSR)', () => {
   test('redirects a slug mismatch to the canonical slug', async () => {
     mockPublicRecipeQueries();
 
-    const res = await request(buildApp()).get('/recipe/recipe-uuid-1/wrong');
+    const res = await request(buildApp()).get('/recipe/11111111-1111-4111-8111-111111111111/wrong');
 
     expect(res.status).toBe(301);
-    expect(res.headers['location']).toBe('/recipe/recipe-uuid-1/pasta');
+    expect(res.headers['location']).toBe('/recipe/11111111-1111-4111-8111-111111111111/pasta');
   });
 
   test('returns a real 404 for a missing recipe', async () => {
@@ -128,7 +128,7 @@ describe('GET /recipe/:id/:slug (SSR)', () => {
       }),
     );
 
-    const res = await request(buildApp()).get('/recipe/recipe-uuid-1/pasta');
+    const res = await request(buildApp()).get('/recipe/11111111-1111-4111-8111-111111111111/pasta');
 
     expect(res.status).toBe(404);
   });
@@ -137,7 +137,7 @@ describe('GET /recipe/:id/:slug (SSR)', () => {
     mockPublicRecipeQueries();
 
     const res = await request(buildApp(fakeShellErrorRender)).get(
-      '/recipe/recipe-uuid-1/pasta',
+      '/recipe/11111111-1111-4111-8111-111111111111/pasta',
     );
 
     expect(res.status).toBe(500);
@@ -149,7 +149,7 @@ describe('GET /recipe/:id/:slug (SSR)', () => {
     mockPublicRecipeQueries();
 
     const res = await request(buildApp(fakeOnErrorRender)).get(
-      '/recipe/recipe-uuid-1/pasta',
+      '/recipe/11111111-1111-4111-8111-111111111111/pasta',
     );
 
     expect(res.status).toBe(500);
@@ -161,7 +161,7 @@ describe('GET /recipe/:id/:slug (SSR)', () => {
     mockPublicRecipeQueries();
 
     const res = await request(buildApp(fakeRejectingRender)).get(
-      '/recipe/recipe-uuid-1/pasta',
+      '/recipe/11111111-1111-4111-8111-111111111111/pasta',
     );
 
     expect(res.status).toBe(500);
@@ -173,7 +173,7 @@ describe('GET /recipe/:id/:slug (SSR)', () => {
     mockPublicRecipeQueries();
 
     const res = await request(buildApp())
-      .get('/recipe/recipe-uuid-1/pasta')
+      .get('/recipe/11111111-1111-4111-8111-111111111111/pasta')
       .set('Authorization', 'Bearer token');
 
     expect(res.status).toBe(200);
