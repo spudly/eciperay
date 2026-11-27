@@ -117,8 +117,27 @@ export default defineConfig(({mode}) => {
           find: /^react-native-svg$/,
           replacement: 'react-native-svg/lib/module/index.js',
         },
+        // The shared core .po catalogs (#681) are subpath imports of
+        // @eciperay/client: resolve them to the client source files
+        // explicitly. The bare-package alias below is anchored — an
+        // unanchored string alias prefix-matches every subpath and
+        // rewrites it to src/index.ts/<subpath>, which does not exist.
         {
-          find: '@eciperay/client',
+          find: /^@eciperay\/client\/i18n\/locales\/en-US\/messages\.po$/,
+          replacement: path.join(
+            monoRoot,
+            'packages/client/src/i18n/locales/en-US/messages.po',
+          ),
+        },
+        {
+          find: /^@eciperay\/client\/i18n\/locales\/en-XA\/messages\.po$/,
+          replacement: path.join(
+            monoRoot,
+            'packages/client/src/i18n/locales/en-XA/messages.po',
+          ),
+        },
+        {
+          find: /^@eciperay\/client$/,
           replacement: path.join(monoRoot, 'packages/client/src/index.ts'),
         },
         {

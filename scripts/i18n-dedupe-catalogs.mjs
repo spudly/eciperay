@@ -37,7 +37,13 @@ const readField = (block, field) => {
 
 /** Parse .po text into {header, entries: [{msgid, msgstr, block}]}. */
 export const parsePo = (text) => {
-  const blocks = text.split('\n\n').filter((block) => block.trim() !== '');
+  // Trim each block: the file's trailing newline would otherwise stick
+  // to the last block, so serializePo(parsePo(file)) would append an
+  // extra blank line on every round-trip.
+  const blocks = text
+    .split('\n\n')
+    .map((block) => block.trim())
+    .filter((block) => block !== '');
   let header = '';
   const entries = [];
   for (const block of blocks) {

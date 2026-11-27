@@ -9,6 +9,18 @@ const config: LinguiConfig = {
       path: '<rootDir>/src/i18n/locales/{locale}/messages',
       include: ['src'],
     },
+    {
+      // Shared core catalog in @eciperay/client (#681): registering its
+      // path is what lets the Metro transformer (metroTransformer.cjs,
+      // via getCatalogs/getCatalogForFile) compile the core .po imports
+      // in src/i18n/i18n.ts. Its include deliberately covers no
+      // translatable source (the catalog folder itself), so
+      // `lingui extract` never assigns host messages to the core
+      // catalog — core membership is managed by
+      // scripts/i18n-dedupe-catalogs.mjs after extraction.
+      path: '<rootDir>/../client/src/i18n/locales/{locale}/messages',
+      include: ['../client/src/i18n'],
+    },
   ],
 };
 

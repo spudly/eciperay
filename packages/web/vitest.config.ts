@@ -71,8 +71,25 @@ export default defineConfig({
           'packages/client/src/test/fixtures/recipe.ts',
         ),
       },
+      // Same shared-core .po subpath aliases as vite.config.ts (#681):
+      // explicit entries for the core catalogs, and the bare-package
+      // alias anchored so it cannot prefix-match subpath imports.
       {
-        find: '@eciperay/client',
+        find: /^@eciperay\/client\/i18n\/locales\/en-US\/messages\.po$/,
+        replacement: path.join(
+          monoRoot,
+          'packages/client/src/i18n/locales/en-US/messages.po',
+        ),
+      },
+      {
+        find: /^@eciperay\/client\/i18n\/locales\/en-XA\/messages\.po$/,
+        replacement: path.join(
+          monoRoot,
+          'packages/client/src/i18n/locales/en-XA/messages.po',
+        ),
+      },
+      {
+        find: /^@eciperay\/client$/,
         replacement: path.join(monoRoot, 'packages/client/src/index.ts'),
       },
       {

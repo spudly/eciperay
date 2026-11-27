@@ -101,10 +101,36 @@ const options = {
     src: fs.readFileSync(catalogPath, 'utf8'),
   });
 
+  // The shared core catalog (#681) lives in @eciperay/client, outside
+  // this package: home.title moved there from the app catalog, and the
+  // transformer must compile that file too (it is registered in
+  // lingui.config.ts alongside the host catalog).
+  const coreCatalogPath = path.join(
+    appRoot,
+    '..',
+    'client',
+    'src',
+    'i18n',
+    'locales',
+    'en-US',
+    'messages.po',
+  );
+  const coreCatalog = await transformer.transform({
+    filename: coreCatalogPath,
+    options,
+    plugins: [],
+    src: fs.readFileSync(coreCatalogPath, 'utf8'),
+  });
+
   console.log(
     JSON.stringify({
       flowBodyLength: flow.ast?.program.body.length ?? 0,
-      catalogHasHomeTitle: JSON.stringify(catalog.ast).includes(
+      // forgotPassword.confirmationTitle, a host-only string that stayed
+      // in the app's en-US catalog after the #681 split.
+      catalogHasHostString: JSON.stringify(catalog.ast).includes(
+        'Check your email',
+      ),
+      catalogHasHomeTitle: JSON.stringify(coreCatalog.ast).includes(
         'Welcome to Eciperay',
       ),
       cacheKey: transformer.getCacheKey({projectRoot: appRoot}),
@@ -141,7 +167,10 @@ describe('metroTransformer', () => {
     );
     const result = JSON.parse(stdout.trim().split('\n').at(-1));
     expect(result.flowBodyLength).toBeGreaterThan(0);
-    // home.title from the en-US catalog, compiled on the fly.
+    // A host-only string from the app's en-US catalog, compiled on the fly.
+    expect(result.catalogHasHostString).toBe(true);
+    // home.title from the shared core en-US catalog (#681), compiled on
+    // the fly from @eciperay/client.
     expect(result.catalogHasHomeTitle).toBe(true);
     // A Lingui compiler upgrade must change the cache key.
     expect(result.cacheKey).toContain(`lingui-cli:${result.linguiCliVersion}`);
