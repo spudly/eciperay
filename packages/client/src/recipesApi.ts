@@ -48,8 +48,12 @@ export const createRecipesApi = (client: ApiClient) => ({
   listSharedWithMe: (params?: RecipeListParams) =>
     client.fetch<RecipeDetail[]>(buildSharedWithMeUrl(params)),
   listAll: () => fetchAllRecipePages(client),
-  get: (id: string) =>
-    client.fetch<RecipeDetail & RecipeRatingSummary>(`/recipes/${id}`),
+  get: (id: string, opts?: {shareToken?: string}) =>
+    client.fetch<RecipeDetail & RecipeRatingSummary>(
+      opts?.shareToken
+        ? `/recipes/${id}?t=${encodeURIComponent(opts.shareToken)}`
+        : `/recipes/${id}`,
+    ),
   getPublic: (id: string, opts?: PublicRecipeRequest) =>
     client.fetch<PublicRecipeResponse>(buildPublicRecipePath(id, opts)),
   listPublic: (params?: PublicRecipeDiscoveryParams) =>
