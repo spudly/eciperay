@@ -84,6 +84,8 @@ const QUALIFIER_WORDS = new Set([
   'orange',
   'purple',
   'red',
+  'salted',
+  'unsalted',
   'white',
   'yellow',
 ]);

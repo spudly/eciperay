@@ -21,7 +21,7 @@ export const RecipeWarningsBanner = ({heading, lines}: Props) => (
     style={{
       border: `1px solid ${tokens.colors.warning.warning6}`,
       background: tokens.colors.warning.warning3,
-      color: tokens.colors.warning.warning11,
+      color: tokens.colors.warning.warning10,
       borderRadius: tokens.radii.md,
       padding: tokens.spacing[3],
       marginBottom: tokens.spacing[4],
