@@ -34,7 +34,7 @@ describe('GET /public/recipes/:id', () => {
     mockPublicRecipeQueries();
 
     const res = await request(getApp()).get(
-      '/api/public/recipes/recipe-uuid-1',
+      '/api/public/recipes/11111111-1111-4111-8111-111111111111',
     );
 
     expect(res.status).toBe(200);
@@ -58,7 +58,7 @@ describe('GET /public/recipes/:id', () => {
     );
 
     const res = await request(getApp()).get(
-      '/api/public/recipes/recipe-uuid-1',
+      '/api/public/recipes/11111111-1111-4111-8111-111111111111',
     );
 
     expect(res.status).toBe(200);
@@ -71,7 +71,7 @@ describe('GET /public/recipes/:id', () => {
     );
 
     const res = await request(getApp()).get(
-      '/api/public/recipes/recipe-uuid-1/old-slug',
+      '/api/public/recipes/11111111-1111-4111-8111-111111111111/old-slug',
     );
 
     expect(res.status).toBe(200);
@@ -85,7 +85,7 @@ describe('GET /public/recipes/:id', () => {
     );
 
     const res = await request(getApp()).get(
-      '/api/public/recipes/recipe-uuid-1',
+      '/api/public/recipes/11111111-1111-4111-8111-111111111111',
     );
 
     expect(res.status).toBe(404);
@@ -102,7 +102,7 @@ describe('GET /public/recipes/:id', () => {
     );
 
     const res = await request(getApp()).get(
-      `/api/public/recipes/recipe-uuid-1/secret-pasta?t=${shareToken}`,
+      `/api/public/recipes/11111111-1111-4111-8111-111111111111/secret-pasta?t=${shareToken}`,
     );
 
     expect(res.status).toBe(200);
@@ -119,7 +119,7 @@ describe('GET /public/recipes/:id', () => {
     );
 
     const res = await request(getApp()).get(
-      '/api/public/recipes/recipe-uuid-1?t=bad-token',
+      '/api/public/recipes/11111111-1111-4111-8111-111111111111?t=bad-token',
     );
 
     expect(res.status).toBe(404);
@@ -153,12 +153,12 @@ describe('GET /public/recipes/:id', () => {
     }) as typeof mockQuery);
 
     const res = await request(getApp())
-      .get(`/api/public/recipes/recipe-uuid-1/secret-pasta?t=${shareToken}`)
+      .get(`/api/public/recipes/11111111-1111-4111-8111-111111111111/secret-pasta?t=${shareToken}`)
       .set('Authorization', 'Bearer valid-token');
 
     expect(res.status).toBe(200);
     expect(mockQuery).toHaveBeenCalledWith(INSERT_SHARE_GRANT_SQL, [
-      'recipe-uuid-1',
+      '11111111-1111-4111-8111-111111111111',
       'viewer-uuid',
       'link',
     ]);
@@ -172,6 +172,16 @@ describe('GET /public/recipes/:id', () => {
     expect(res.status).toBe(404);
   });
 
+  test('returns 404 for a non-uuid id without querying the database (#707)', async () => {
+    const res = await request(getApp()).get(
+      '/api/public/recipes/999999999/no-such-recipe',
+    );
+
+    expect(res.status).toBe(404);
+    expect(res.body).toMatchObject({error: 'Recipe not found'});
+    expect(mockQuery).not.toHaveBeenCalled();
+  });
+
   test('returns 403 for unlisted recipe without token', async () => {
     mockQuery.mockResolvedValue(
       makeQueryResult([
@@ -183,7 +193,7 @@ describe('GET /public/recipes/:id', () => {
     );
 
     const res = await request(getApp()).get(
-      '/api/public/recipes/recipe-uuid-1',
+      '/api/public/recipes/11111111-1111-4111-8111-111111111111',
     );
 
     expect(res.status).toBe(403);
@@ -201,7 +211,7 @@ describe('GET /public/recipes/:id', () => {
     );
 
     const res = await request(getApp()).get(
-      '/api/public/recipes/recipe-uuid-1?t=bad-token',
+      '/api/public/recipes/11111111-1111-4111-8111-111111111111?t=bad-token',
     );
 
     expect(res.status).toBe(403);
@@ -217,7 +227,7 @@ describe('GET /public/recipes/:id', () => {
     );
 
     const res = await request(getApp()).get(
-      `/api/public/recipes/recipe-uuid-1/secret-pasta?t=${shareToken}`,
+      `/api/public/recipes/11111111-1111-4111-8111-111111111111/secret-pasta?t=${shareToken}`,
     );
 
     expect(res.status).toBe(200);
@@ -253,12 +263,12 @@ describe('GET /public/recipes/:id', () => {
     }) as typeof mockQuery);
 
     const res = await request(getApp())
-      .get('/api/public/recipes/recipe-uuid-1/pasta')
+      .get('/api/public/recipes/11111111-1111-4111-8111-111111111111/pasta')
       .set('Authorization', 'Bearer valid-token');
 
     expect(res.status).toBe(200);
     expect(mockQuery).toHaveBeenCalledWith(INSERT_SHARE_GRANT_SQL, [
-      'recipe-uuid-1',
+      '11111111-1111-4111-8111-111111111111',
       'viewer-uuid',
       'link',
     ]);
@@ -292,7 +302,7 @@ describe('GET /public/recipes/:id', () => {
     }) as typeof mockQuery);
 
     const res = await request(getApp())
-      .get('/api/public/recipes/recipe-uuid-1/test-recipe')
+      .get('/api/public/recipes/11111111-1111-4111-8111-111111111111/test-recipe')
       .set('Authorization', 'Bearer valid-token');
 
     expect(res.status).toBe(200);

@@ -20,10 +20,10 @@ describe('createPublicRecipesRouter', () => {
     }) as typeof mockQuery);
 
     const byId = await request(getApp()).get(
-      '/api/public/recipes/recipe-uuid-1',
+      '/api/public/recipes/11111111-1111-4111-8111-111111111111',
     );
     const bySlug = await request(getApp()).get(
-      '/api/public/recipes/recipe-uuid-1/pasta',
+      '/api/public/recipes/11111111-1111-4111-8111-111111111111/pasta',
     );
 
     expect(byId.status).toBe(200);
