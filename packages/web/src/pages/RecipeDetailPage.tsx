@@ -1,11 +1,17 @@
+/* eslint-disable max-lines -- unified recipe host: both routes' fetch paths, viewer-mode derivation, and state mapping */
 import {
   buildRecipePath,
+  buildRecipePermalink,
+  mergeVersionIntoRecipe,
   queryKeys,
   recipeSlugFor,
   recordRecipeView,
+  useAuth,
 } from '@eciperay/client';
+import type {PublicRecipeDetail} from '@eciperay/types';
+import {RecipeDetailPage as DsRecipeDetailPage} from '@spudly/ui';
 import {useQuery, useQueryClient} from '@tanstack/react-query';
-import {useCallback, useEffect, useMemo, useState} from 'react';
+import {useCallback, useEffect, useMemo, useState, type ReactNode} from 'react';
 import {
   Navigate,
   useLocation,
@@ -13,18 +19,54 @@ import {
   useSearchParams,
 } from 'react-router-dom';
 
+import {AppShell} from '../components/AppShell.js';
+import {RecipePageHead} from '../components/RecipePageHead.js';
 import {RouteErrorView} from '../components/RouteErrorView.js';
 import {ScreenLoadingGate} from '../components/ScreenLoadingGate.js';
 import {eciperay} from '../lib/api.js';
-import {mergeVersionIntoRecipe} from '@eciperay/client';
 import {recipeViewHistoryStorage} from '../lib/recipeViewHistoryStorage.js';
 
 import {RecipeDetailHost} from './RecipeDetailHost.js';
+import {RecipeGuestHost} from './RecipeGuestHost.js';
 
-export const RecipeDetailPage = () => {
-  const {recipeId = '', slug} = useParams();
+/**
+ * The ONE recipe page host (#649 tranche 2): both recipe routes — the
+ * public permalink `/recipe/:id/:slug` and the app route
+ * `/recipes/:recipeId[/:slug]` — render this component, and it renders
+ * the design system's single RecipeDetailPage for every viewer. What
+ * changes with auth and access is only the form and the actions:
+ *
+ * - Owner → the owner form (RecipeDetailHost: edit, versions, sharing,
+ *   delete, tweak, history, nutrition).
+ * - Signed-in non-owner (public recipe, or one shared with them —
+ *   including a share grant or the `t` share token, which the
+ *   authenticated fetch now carries so a signed-in viewer following a
+ *   public link stays on the recipe with the signed-in treatment
+ *   instead of bouncing through sign-in or 404ing) → the guest form's
+ *   signed-in variant (RecipeGuestHost: save-a-copy, ratings, comments
+ *   where access allows).
+ * - Signed-out → the guest form's signed-out variant (read-only recipe,
+ *   sign-in CTA, no actions), loaded through the public fetch.
+ * - No access (a private recipe the viewer cannot access, or a missing
+ *   recipe) → the DS page's notFound / unavailable treatment on the
+ *   public route, keyed only off the fetch result (the server withholds
+ *   private recipe data, so nothing leaks); on the app route the same
+ *   fetch result renders the route's not-found view, as before.
+ *
+ * Canonical/SEO is unchanged: RecipePageHead and the canonical link
+ * keep pointing at `/recipe/:id/:slug` (the sitemap does too), and both
+ * routes serve this page with no redirects added — the only redirects
+ * are the pre-existing slug-canonical ones, which keep each route
+ * family's own URL shape.
+ */
+const UnifiedRecipePage = ({publicRoute}: {publicRoute: boolean}) => {
+  const params = useParams();
+  const recipeId = publicRoute ? (params['id'] ?? '') : (params['recipeId'] ?? '');
+  const slug = params['slug'];
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
+  const shareToken = searchParams.get('t') ?? undefined;
+  const {session} = useAuth();
   const [servings, setServings] = useState<number | null>(null);
   const [selectedVersionId, setSelectedVersionId] = useState<string | null>(
     () => searchParams.get('versionId'),
@@ -38,34 +80,52 @@ export const RecipeDetailPage = () => {
   }, [queryClient]);
 
   useEffect(() => {
-    if (!recipeId) {
+    if (!recipeId || !session) {
       return;
     }
     void recordRecipeView(recipeViewHistoryStorage, recipeId).then(() => {
       invalidateRecentlyViewed();
     });
-  }, [recipeId, invalidateRecentlyViewed]);
+  }, [recipeId, session, invalidateRecentlyViewed]);
 
-  const {
-    data: recipe,
-    isPending,
-    error,
-  } = useQuery({
-    queryKey: queryKeys.recipe(recipeId),
-    queryFn: () => eciperay.recipes.get(recipeId),
-    enabled: recipeId.length > 0,
+  // The public fetch: the signed-out viewer's only path, and the
+  // public route's source of the canonical slug and the document
+  // head's data for every viewer.
+  const publicQuery = useQuery({
+    queryKey: queryKeys.publicRecipe(recipeId, slug, shareToken),
+    queryFn: () =>
+      eciperay.recipes.getPublic(recipeId, {slug, shareToken}),
+    enabled: publicRoute && recipeId.length > 0 && Boolean(slug),
+    retry: false,
   });
 
-  const activeVersionId = selectedVersionId ?? recipe?.versionId ?? '';
+  // The authenticated fetch (tranche 1 made it honor share grants and
+  // share tokens server-side): a signed-in viewer's path on both
+  // routes. Its result is what decides owner vs signed-in non-owner —
+  // never a client-side guess.
+  const authedQuery = useQuery({
+    queryKey: queryKeys.recipe(recipeId),
+    queryFn: () => eciperay.recipes.get(recipeId, {shareToken}),
+    enabled: recipeId.length > 0 && Boolean(session),
+  });
+
+  const authedRecipe = authedQuery.data;
+  const isOwner =
+    session !== null &&
+    session !== undefined &&
+    authedRecipe !== undefined &&
+    authedRecipe.userId === session.user.id;
+
+  const activeVersionId = selectedVersionId ?? authedRecipe?.versionId ?? '';
 
   const {data: versions = []} = useQuery({
     queryKey: queryKeys.versions(recipeId),
     queryFn: () => eciperay.versions.list(recipeId),
-    enabled: recipeId.length > 0,
+    enabled: recipeId.length > 0 && isOwner,
   });
 
   const viewingAlternateVersion =
-    recipe !== undefined && activeVersionId !== recipe.versionId;
+    authedRecipe !== undefined && activeVersionId !== authedRecipe.versionId;
 
   const {data: versionDetail} = useQuery({
     queryKey: queryKeys.version(recipeId, activeVersionId),
@@ -74,14 +134,14 @@ export const RecipeDetailPage = () => {
   });
 
   const displayRecipe = useMemo(() => {
-    if (!recipe) {
+    if (!authedRecipe) {
       return null;
     }
     if (viewingAlternateVersion && versionDetail) {
-      return mergeVersionIntoRecipe(recipe, versionDetail);
+      return mergeVersionIntoRecipe(authedRecipe, versionDetail);
     }
-    return recipe;
-  }, [recipe, viewingAlternateVersion, versionDetail]);
+    return authedRecipe;
+  }, [authedRecipe, viewingAlternateVersion, versionDetail]);
 
   useEffect(() => {
     setServings(null);
@@ -98,76 +158,229 @@ export const RecipeDetailPage = () => {
     setSearchParams(next, {replace: true});
   }, [recipeId, searchParams, setSearchParams]);
 
-  // The recipes route answers a missing recipe with 404 and
-  // `{error: 'Recipe not found'}`, which the API client throws as that
-  // message (a body without an `error` field falls back to
-  // `API error <status>:`); either shape reads as not found.
-  const isNotFoundError =
-    error instanceof Error &&
-    (error.message === 'Recipe not found' ||
-      error.message.startsWith('API error 404'));
+  // The public route renders every state inside the one AppShell
+  // (#620); the app route's shell comes from the router layout.
+  const wrapPublic = (content: ReactNode) =>
+    publicRoute ? <AppShell>{content}</AppShell> : content;
 
-  // A 404 wins over a cached recipe: after a recipe is deleted elsewhere,
-  // a detail refetch answers 404 while TanStack Query retains the cached
-  // data, so gating only on `!recipe` would keep showing the deleted
-  // recipe.
-  if (isNotFoundError) {
-    return <RouteErrorView isNotFound />;
+  const dsState = (state: 'loading' | 'notFound' | 'unavailable') =>
+    wrapPublic(<DsRecipeDetailPage state={state} />);
+
+  // No recipe id (or, on the public route, no slug): nothing can load,
+  // so it reads as not found rather than a disabled query's endless
+  // pending state.
+  if (!recipeId || (publicRoute && !slug)) {
+    return publicRoute ? dsState('notFound') : <RouteErrorView isNotFound />;
   }
 
-  // No recipe id in the route: nothing can load, so it reads as not
-  // found rather than a disabled query's endless pending state.
-  if (!recipeId) {
-    return <RouteErrorView isNotFound />;
-  }
-
-  // A settled query with no recipe means the recipe does not exist
-  // (deleted or a bad link): show a not-found state instead of gating on
-  // `!recipe` forever, which left the page on the loading skeleton
-  // indefinitely (#273). No error at all also reads as not found;
-  // anything else is a generic load failure. `isPending`, not
-  // `isLoading`: a paused (offline) fetch has isLoading false while the
-  // query is still pending, and must stay on the loading gate.
-  if (!isPending && !recipe) {
-    return <RouteErrorView isNotFound={!error} />;
-  }
-
-  if (isPending || !recipe || !displayRecipe) {
-    return <ScreenLoadingGate pending>{null}</ScreenLoadingGate>;
-  }
-
-  // Canonicalization (#419): the ID alone resolved the recipe, and its
-  // stored slug is the canonical final segment. A bare-ID URL or a
-  // wrong/stale slug (e.g. the pre-rename slug after a rename) replaces
-  // to the canonical slugged URL — client-side, since a true 301 needs
-  // the SSR layer (#304); a correct slug renders in place with no
-  // redirect, so there is no loop. The comparison goes through the
-  // shared helper's canonical slug (stored slug, title-derived as a
-  // fallback) so the target of the redirect is exactly the value that
-  // stops it. The search string rides along (the versionId effect
-  // above consumes it as before).
-  if (slug !== recipeSlugFor(recipe)) {
+  if (publicRoute) {
+    // Slug-canonical redirect (from the retired public host): the
+    // public response names the canonical slug; a stale slug replaces
+    // to it, preserving the share token and any other query params.
+    if (publicQuery.data?.slugMismatch && publicQuery.data.canonicalSlug !== slug) {
+      const nextParams = new URLSearchParams(searchParams);
+      const query = nextParams.toString();
+      return (
+        <Navigate
+          to={`/recipe/${recipeId}/${publicQuery.data.canonicalSlug}${query ? `?${query}` : ''}`}
+          replace
+        />
+      );
+    }
+    // With an authenticated recipe in hand its stored slug is the
+    // canonical one (the public query may still be in flight).
+    if (authedRecipe && !publicQuery.data && slug !== recipeSlugFor(authedRecipe)) {
+      const nextParams = new URLSearchParams(searchParams);
+      const query = nextParams.toString();
+      return (
+        <Navigate
+          to={`/recipe/${recipeId}/${recipeSlugFor(authedRecipe)}${query ? `?${query}` : ''}`}
+          replace
+        />
+      );
+    }
+  } else if (authedRecipe && slug !== recipeSlugFor(authedRecipe)) {
+    // Canonicalization (#419), as before on the app route: a bare-ID
+    // URL or a wrong/stale slug replaces to the canonical slugged URL.
     return (
       <Navigate
         replace
-        to={`${buildRecipePath(recipe)}${location.search}`}
+        to={`${buildRecipePath(authedRecipe)}${location.search}`}
       />
     );
   }
 
-  const currentServings = servings ?? displayRecipe.servings;
-  const scaleFactor = currentServings / displayRecipe.servings;
+  const headRecipe: PublicRecipeDetail | null = publicQuery.data
+    ? publicQuery.data.recipe
+    : authedRecipe
+      ? (() => {
+          const {userId: _userId, ...rest} = authedRecipe;
+          return {...rest, authorDisplayName: null};
+        })()
+      : null;
+  const headSlug = headRecipe
+    ? (publicQuery.data?.canonicalSlug ?? recipeSlugFor(headRecipe))
+    : null;
+  const head = publicRoute && headRecipe && headSlug ? (
+    <RecipePageHead
+      recipe={headRecipe}
+      canonicalUrl={buildRecipePermalink(window.location.origin, {
+        id: headRecipe.id,
+        slug: headSlug,
+      })}
+      communityRating={
+        publicQuery.data?.communityRating ?? authedRecipe?.communityRating ?? null
+      }
+    />
+  ) : null;
 
+  const withHead = (content: ReactNode) => (
+    <>
+      {head}
+      {wrapPublic(content)}
+    </>
+  );
+
+  // Loading: the fetch that will decide this viewer's treatment is
+  // still in flight. A signed-in viewer's public data alone never
+  // settles the treatment (they may be the owner), so the
+  // authenticated fetch decides for them; a signed-out viewer settles
+  // on the public fetch (the app route's AuthGuard has already
+  // resolved auth before this page renders there).
+  const decidingPending = session
+    ? authedQuery.isPending
+    : publicRoute
+      ? publicQuery.isLoading
+      : authedQuery.isPending && !authedRecipe;
+  if (decidingPending) {
+    return publicRoute ? (
+      dsState('loading')
+    ) : (
+      <ScreenLoadingGate pending>{null}</ScreenLoadingGate>
+    );
+  }
+
+  // App route only: a settled 404 from the authenticated fetch wins
+  // over a cached recipe (a recipe deleted elsewhere must not keep
+  // rendering from cache) — checked before any branch that would
+  // render the cached data. On the public route the public fetch
+  // governs instead.
+  if (!publicRoute) {
+    const appError = authedQuery.error;
+    if (
+      appError instanceof Error &&
+      (appError.message === 'Recipe not found' ||
+        appError.message.startsWith('API error 404'))
+    ) {
+      return <RouteErrorView isNotFound />;
+    }
+  }
+
+  // Owner: the full owner form, with versions and every action.
+  if (isOwner && authedRecipe && displayRecipe) {
+    const currentServings = servings ?? displayRecipe.servings;
+    return withHead(
+      <RecipeDetailHost
+        recipe={authedRecipe}
+        displayRecipe={displayRecipe}
+        versions={versions}
+        selectedVersionId={activeVersionId}
+        onSelectVersion={setSelectedVersionId}
+        currentServings={currentServings}
+        scaleFactor={currentServings / displayRecipe.servings}
+        onServingsChange={setServings}
+      />,
+    );
+  }
+
+  // Signed-in non-owner with access (the authenticated fetch succeeded
+  // for a recipe they do not own): the guest form's signed-in variant,
+  // fed by the authenticated data.
+  if (session && authedRecipe) {
+    return withHead(
+      <RecipeGuestHost
+        key={authedRecipe.id}
+        recipe={authedRecipe}
+        communityRating={authedRecipe.communityRating}
+        viewerRating={authedRecipe.viewerRating}
+        viewerRatingIsStale={authedRecipe.viewerRatingIsStale}
+        shareToken={shareToken}
+        slug={slug}
+        publicList={publicRoute}
+      />,
+    );
+  }
+
+  if (publicRoute) {
+    // Signed-out (or a signed-in viewer the authenticated fetch could
+    // not serve but the public fetch can): the guest form fed by the
+    // public data, in the variant the viewer's auth state selects.
+    if (publicQuery.data?.recipe) {
+      const data = publicQuery.data;
+      return withHead(
+        <RecipeGuestHost
+          key={data.recipe.id}
+          recipe={data.recipe}
+          communityRating={data.communityRating}
+          viewerRating={data.viewerRating}
+          viewerRatingIsStale={data.viewerRatingIsStale}
+          shareToken={shareToken}
+          slug={slug}
+          publicList
+        />,
+      );
+    }
+    if (publicQuery.isLoading) {
+      return dsState('loading');
+    }
+    // No-access / missing, keyed off the fetch result only: an access
+    // denial renders the unavailable treatment; anything else (404, a
+    // settled query with no data) renders not found.
+    if (publicQuery.error) {
+      const message =
+        publicQuery.error instanceof Error
+          ? publicQuery.error.message
+          : 'Unknown error';
+      return dsState(
+        message.toLowerCase().includes('denied') ? 'unavailable' : 'notFound',
+      );
+    }
+    return dsState('notFound');
+  }
+
+  // App route, signed-in, no recipe: the authenticated fetch's result
+  // decides, exactly as the pre-unification page behaved. A 404 wins
+  // over a cached recipe (a recipe deleted elsewhere must not keep
+  // rendering from cache).
+  const error = authedQuery.error;
+  const isNotFoundError =
+    error instanceof Error &&
+    (error.message === 'Recipe not found' ||
+      error.message.startsWith('API error 404'));
+  if (isNotFoundError) {
+    return <RouteErrorView isNotFound />;
+  }
+  if (!authedQuery.isPending && !authedRecipe) {
+    return <RouteErrorView isNotFound={!error} />;
+  }
+  return <ScreenLoadingGate pending>{null}</ScreenLoadingGate>;
+};
+
+/**
+ * Route entry for both recipe routes: the public permalink route
+ * (`/recipe/:id/:slug`, outside the app layout, so the unified page
+ * supplies its own shell) and the app route
+ * (`/recipes/:recipeId[/:slug]`, inside the layout's shell). Both
+ * render the one unified host above.
+ */
+export const RecipeDetailPage = () => {
+  const params = useParams();
+  const publicRoute = params['id'] !== undefined;
+  const routeId = publicRoute ? params['id'] : params['recipeId'];
   return (
-    <RecipeDetailHost
-      recipe={recipe}
-      displayRecipe={displayRecipe}
-      versions={versions}
-      selectedVersionId={activeVersionId}
-      onSelectVersion={setSelectedVersionId}
-      currentServings={currentServings}
-      scaleFactor={scaleFactor}
-      onServingsChange={setServings}
+    <UnifiedRecipePage
+      key={`${publicRoute ? 'public' : 'app'}:${routeId ?? ''}`}
+      publicRoute={publicRoute}
     />
   );
 };

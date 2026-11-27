@@ -36,6 +36,16 @@ describe('router', () => {
     expect(leafElementType('/recipes')).toBe(RecipesRoute);
   });
 
+  test('both recipe routes render the one unified recipe host (eciperay#649)', () => {
+    expect(leafElementType('/recipe/recipe-1/test-recipe')).toBe(
+      RecipeDetailPage,
+    );
+    expect(leafElementType('/recipes/recipe-1')).toBe(RecipeDetailPage);
+    expect(leafElementType('/recipes/recipe-1/test-recipe')).toBe(
+      RecipeDetailPage,
+    );
+  });
+
   test('/discover is not a route (eciperay#622: /recipes survives, /discover removed)', () => {
     expect(collectPaths(router.routes)).not.toContain('/discover');
   });

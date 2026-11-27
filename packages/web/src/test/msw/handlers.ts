@@ -95,10 +95,16 @@ export const handlers = [
     });
     return HttpResponse.json([sharedRecipe].slice(offset, offset + limit));
   }),
+  // The authenticated detail endpoint serves the signed-in test
+  // session's own recipe (#649: the unified host decides owner vs
+  // non-owner from recipe.userId vs the session user, and the test
+  // session is user-1 — see test/setup.ts), so the detail response
+  // carries the session's user id as its owner.
   http.get(`${API}/api/recipes/:id`, ({params}) =>
     HttpResponse.json({
       ...recipe,
       id: params['id'],
+      userId: 'user-1',
       communityRating: null,
       viewerRating: null,
       viewerRatingIsStale: false,
@@ -113,6 +119,7 @@ export const handlers = [
     return HttpResponse.json({
       ...recipe,
       id: params['id'],
+      userId: 'user-1',
       viewerRating: body.stars,
       viewerRatingIsStale: false,
       communityRating: null,
@@ -122,6 +129,7 @@ export const handlers = [
     HttpResponse.json({
       ...recipe,
       id: params['id'],
+      userId: 'user-1',
       viewerRating: null,
       viewerRatingIsStale: false,
       communityRating: null,

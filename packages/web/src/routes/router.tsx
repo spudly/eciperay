@@ -22,7 +22,6 @@ import {ManualEntryPage} from '../pages/ManualEntryPage.js';
 import {ConsentPreferencesPage} from '../pages/ConsentPreferencesPage.js';
 import {PrivacyPolicyPage} from '../pages/PrivacyPolicyPage.js';
 import {ProfilePage} from '../pages/ProfilePage.js';
-import {PublicRecipePage} from '../pages/PublicRecipePage.js';
 import {RecipeDetailPage} from '../pages/RecipeDetailPage.js';
 import {RouteErrorPage} from '../pages/RouteErrorPage.js';
 import {ResetPasswordPage} from '../pages/auth/ResetPasswordPage.js';
@@ -113,7 +112,12 @@ export const router = createBrowserRouter([
       {path: '/privacy', element: <PrivacyPolicyPage />},
       {path: '/privacy/consent', element: <ConsentPreferencesPage />},
       {path: '/terms', element: <TermsOfServicePage />},
-      {path: '/recipe/:id/:slug', element: <PublicRecipePage />},
+      // The public permalink and the app detail routes below render
+      // the ONE unified recipe page host (#649): viewer treatment is
+      // decided inside it from auth + access, so a signed-in viewer
+      // following a public link gets the signed-in treatment of the
+      // same page instead of a separate public page.
+      {path: '/recipe/:id/:slug', element: <RecipeDetailPage />},
       {path: '/recipes', element: <RecipesRoute />},
       {path: '/', element: <HomeEntry />},
       {

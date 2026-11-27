@@ -1,5 +1,6 @@
-import {queryKeys} from '@eciperay/client';
-import {onlineManager} from '@tanstack/react-query';
+import {buildRecipePageTitle, queryKeys} from '@eciperay/client';
+import * as ReactQuery from '@tanstack/react-query';
+import {vi} from 'vitest';
 import {act, fireEvent, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {http, HttpResponse} from 'msw';
@@ -57,8 +58,9 @@ describe('RecipeDetailPage', () => {
       expect(screen.getByText('Test Recipe')).toBeInTheDocument();
     });
     // The design-system page is single-scroll (B7 C7): every section
-    // renders on the page — no tab switching.
-    expect(screen.getByText(/Flour/)).toBeInTheDocument();
+    // renders on the page — no tab switching. (The ingredient line is
+    // matched exactly: the #643 owner warnings also name Flour.)
+    expect(screen.getByText(/2 cups Flour/)).toBeInTheDocument();
     expect(screen.getByText('Mix dry ingredients')).toBeInTheDocument();
     await waitFor(() => {
       expect(screen.getByText('Turned out great')).toBeInTheDocument();
@@ -91,6 +93,9 @@ describe('RecipeDetailPage', () => {
         HttpResponse.json(
           makeRecipeDetail({
             id: params['id'] as string,
+            // The test session (user-1) owns this recipe: the unified
+            // host renders the owner form for it (#649).
+            userId: 'user-1',
             tags: [],
             prepTimeMin: null,
             cookTimeMin: null,
@@ -205,7 +210,7 @@ describe('RecipeDetailPage', () => {
   });
 
   test('stays on the loading gate while a recipe fetch is paused offline', async () => {
-    onlineManager.setOnline(false);
+    ReactQuery.onlineManager.setOnline(false);
     try {
       const queryClient = makeQueryClient();
       await renderWithProviders(
@@ -234,7 +239,7 @@ describe('RecipeDetailPage', () => {
       // proves the page is on the loading gate, not just blank.
       await screen.findByRole('status', {name: 'Loading'});
     } finally {
-      onlineManager.setOnline(true);
+      ReactQuery.onlineManager.setOnline(true);
     }
   });
 
@@ -398,7 +403,7 @@ describe('RecipeDetailPage', () => {
     expect(screen.getByTestId('location')).toHaveTextContent(
       '/recipes/recipe-uuid-1/test-recipe',
     );
-    expect(screen.getByText(/Flour/)).toBeInTheDocument();
+    expect(screen.getByText(/2 cups Flour/)).toBeInTheDocument();
   });
 
   test("lands a renamed recipe's old URL on the new canonical URL (#419)", async () => {
@@ -416,5 +421,347 @@ describe('RecipeDetailPage', () => {
     expect(screen.getByTestId('location')).toHaveTextContent(
       '/recipes/recipe-uuid-1/renamed-recipe',
     );
+  });
+
+  test('renders the guest signed-in treatment for a signed-in non-owner (#649)', async () => {
+    server.use(
+      http.get('http://localhost:8080/api/recipes/:id', ({params}) =>
+        HttpResponse.json({
+          ...makeRecipeDetail({
+            id: params['id'] as string,
+            userId: 'other-user',
+          }),
+          communityRating: null,
+          viewerRating: null,
+          viewerRatingIsStale: false,
+        }),
+      ),
+    );
+    await renderDetailAt('/recipes/recipe-uuid-1/test-recipe');
+    await waitFor(() => {
+      expect(screen.getByText('Test Recipe')).toBeInTheDocument();
+    });
+    // The DS guest form's signed-in variant: save-a-copy, no owner
+    // actions (no Delete, no version picker).
+    expect(
+      screen.getByRole('button', {name: 'Save a copy'}),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', {name: 'Delete'}),
+    ).not.toBeInTheDocument();
+  });
+});
+
+// The sign-up stub echoes its search string so the clone test can
+// assert the navigation carried the clone target, not just that
+// the route rendered.
+function SignUpRoute() {
+  const {search} = useLocation();
+  return <div>{`Sign up route${search}`}</div>;
+}
+
+const API = 'http://localhost:8080';
+
+const renderPublicAt = async (
+  route: string,
+  options: {withAuth?: boolean} = {},
+) =>
+  renderWithProviders(
+    <Routes>
+      <Route
+        path="/recipe/:id/:slug"
+        element={<RecipeDetailPage />}
+      />
+      <Route
+        path="/recipe/:id"
+        element={<RecipeDetailPage />}
+      />
+      <Route
+        path="/signup"
+        element={<SignUpRoute />}
+      />
+    </Routes>,
+    {route, withAuth: options.withAuth ?? false},
+  );
+
+// The public permalink route renders the SAME unified host (#649
+// tranche 2 — these cases are ported from the retired
+// PublicRecipePage.test.tsx): the DS page's guest form inside the one
+// AppShell for signed-out viewers, and the signed-in / owner
+// treatments of the same page for signed-in viewers.
+describe('RecipeDetailPage on the public route (#649 unified host)', () => {
+  test('renders public recipe sections in a single scroll without auth', async () => {
+    await renderPublicAt('/recipe/recipe-uuid-1/test-recipe');
+
+    await waitFor(() => {
+      expect(screen.getByText('Test Recipe')).toBeInTheDocument();
+    });
+    expect(
+      screen.getByRole('button', {name: 'Sign up free'}),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', {name: 'Get the mobile app'}),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('link', {name: 'Privacy Policy'})).toHaveAttribute(
+      'href',
+      '/privacy',
+    );
+    const brandLinks = screen.getAllByRole('link', {name: 'Eciperay'});
+    expect(brandLinks).toHaveLength(2);
+    for (const brandLink of brandLinks) {
+      expect(brandLink).toHaveAttribute('href', '/');
+    }
+    expect(brandLinks[0]?.querySelector('svg') ?? null).not.toBeNull();
+    const signInLinks = screen.getAllByRole('link', {name: 'Sign in'});
+    expect(signInLinks.length).toBeGreaterThanOrEqual(1);
+    for (const link of signInLinks) {
+      expect(link).toHaveAttribute('href', '/login');
+    }
+
+    // Single scroll: ingredients and instructions render with the
+    // overview — no tab switch is involved.
+    expect(screen.getByText(/Flour/)).toBeInTheDocument();
+    expect(screen.getByText('Mix dry ingredients')).toBeInTheDocument();
+
+    // Signed out, Clone routes to sign-up carrying the clone target.
+    await userEvent.click(
+      screen.getByRole('button', {name: 'Clone this recipe'}),
+    );
+    await waitFor(() => {
+      expect(
+        screen.getByText('Sign up route?cloneRecipe=recipe-uuid-1'),
+      ).toBeInTheDocument();
+    });
+  });
+
+  test('sets SEO metadata for public recipe pages', async () => {
+    await renderPublicAt('/recipe/recipe-uuid-1/test-recipe');
+
+    await waitFor(() => {
+      expect(document.title).toBe(buildRecipePageTitle('Test Recipe'));
+    });
+    expect(
+      document.head.querySelector('meta[property="og:url"]'),
+    ).toHaveAttribute(
+      'content',
+      'http://localhost:3000/recipe/recipe-uuid-1/test-recipe',
+    );
+    expect(
+      document.head.querySelector('script[type="application/ld+json"]')
+        ?.textContent,
+    ).toContain('"@type":"Recipe"');
+  });
+
+  test('redirects to canonical slug when API reports slug mismatch', async () => {
+    await renderPublicAt('/recipe/recipe-uuid-1/stale-slug');
+
+    await waitFor(() => {
+      expect(screen.getByText('Test Recipe')).toBeInTheDocument();
+    });
+  });
+
+  test('preserves share token when redirecting stale slug', async () => {
+    let requestUrl = '';
+    server.use(
+      http.get(`${API}/api/public/recipes/:id/:slug`, ({request}) => {
+        if (request.url.includes('/comments')) {
+          return HttpResponse.json([]);
+        }
+        requestUrl = request.url;
+        const {userId: _userId, ...publicRecipe} = makeRecipeDetail({
+          visibility: 'public',
+        });
+        const slug = request.url.split('/').pop()?.split('?')[0] ?? '';
+        return HttpResponse.json({
+          recipe: publicRecipe,
+          canonicalSlug: 'test-recipe',
+          ...(slug === 'test-recipe' ? {} : {slugMismatch: true}),
+        });
+      }),
+    );
+
+    await renderPublicAt('/recipe/recipe-uuid-1/stale-slug?t=keep-token');
+
+    await waitFor(() => {
+      expect(requestUrl).toContain('t=keep-token');
+      expect(screen.getByText('Test Recipe')).toBeInTheDocument();
+    });
+  });
+
+  test('shows not found when query resolves without data', async () => {
+    const useQuerySpy = vi
+      .spyOn(ReactQuery, 'useQuery')
+      .mockReturnValue({
+        data: undefined,
+        error: null,
+        isError: false,
+        isLoading: false,
+        isPending: false,
+        status: 'success',
+      } as unknown as ReactQuery.UseQueryResult);
+
+    try {
+      await renderPublicAt('/recipe/recipe-uuid-1/test-recipe');
+      expect(screen.getByText('Recipe not found')).toBeInTheDocument();
+    } finally {
+      useQuerySpy.mockRestore();
+    }
+  });
+
+  test('shows generic not found message for non-error failures', async () => {
+    const useQuerySpy = vi
+      .spyOn(ReactQuery, 'useQuery')
+      .mockReturnValue({
+        data: undefined,
+        error: 'failed',
+        isError: true,
+        isLoading: false,
+        isPending: false,
+        status: 'error',
+      } as unknown as ReactQuery.UseQueryResult);
+
+    try {
+      await renderPublicAt('/recipe/recipe-uuid-1/test-recipe');
+      expect(screen.getByText('Recipe not found')).toBeInTheDocument();
+    } finally {
+      useQuerySpy.mockRestore();
+    }
+  });
+
+  test('shows not found when slug param is missing', async () => {
+    await renderPublicAt('/recipe/recipe-uuid-1');
+    expect(screen.getByText('Recipe not found')).toBeInTheDocument();
+  });
+
+  test('shows loading state while fetching', async () => {
+    server.use(
+      http.get(`${API}/api/public/recipes/:id/:slug`, async () => {
+        await new Promise(resolve => {
+          setTimeout(resolve, 50);
+        });
+        const {userId: _userId, ...publicRecipe} = makeRecipeDetail({
+          visibility: 'public',
+        });
+        return HttpResponse.json({
+          recipe: publicRecipe,
+          canonicalSlug: 'test-recipe',
+        });
+      }),
+    );
+
+    await renderPublicAt('/recipe/recipe-uuid-1/test-recipe');
+
+    expect(screen.getByText('Ingredients')).toBeInTheDocument();
+    expect(screen.getByText('Instructions')).toBeInTheDocument();
+    expect(screen.queryByText('Test Recipe')).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('Test Recipe')).toBeInTheDocument();
+    });
+  });
+
+  test('shows not found message for missing recipes', async () => {
+    server.use(
+      http.get(`${API}/api/public/recipes/:id/:slug`, () =>
+        HttpResponse.json({error: 'Recipe not found'}, {status: 404}),
+      ),
+    );
+
+    await renderPublicAt('/recipe/missing-id/any-slug');
+
+    await waitFor(() => {
+      expect(screen.getByText('Recipe not found')).toBeInTheDocument();
+    });
+  });
+
+  test('shows access denied message for invalid unlisted links', async () => {
+    server.use(
+      http.get(`${API}/api/public/recipes/:id/:slug`, () =>
+        HttpResponse.json({error: 'Recipe access denied'}, {status: 403}),
+      ),
+    );
+
+    await renderPublicAt('/recipe/recipe-uuid-1/test-recipe');
+
+    await waitFor(() => {
+      expect(screen.getByText('Recipe unavailable')).toBeInTheDocument();
+    });
+  });
+
+  test('passes share token query param to public API', async () => {
+    let requestUrl = '';
+    server.use(
+      http.get(`${API}/api/public/recipes/:id/:slug`, ({request}) => {
+        if (request.url.includes('/comments')) {
+          return HttpResponse.json([]);
+        }
+        requestUrl = request.url;
+        const {userId: _userId, ...publicRecipe} = makeRecipeDetail({
+          visibility: 'unlisted',
+        });
+        return HttpResponse.json({
+          recipe: publicRecipe,
+          canonicalSlug: 'test-recipe',
+        });
+      }),
+    );
+
+    await renderPublicAt('/recipe/recipe-uuid-1/test-recipe?t=share-token');
+
+    await waitFor(() => {
+      expect(requestUrl).toContain('t=share-token');
+    });
+  });
+
+  test('gives a signed-in non-owner the signed-in treatment of the same page (#649)', async () => {
+    server.use(
+      http.get(`${API}/api/recipes/:id`, ({params}) =>
+        HttpResponse.json({
+          ...makeRecipeDetail({
+            id: params['id'] as string,
+            userId: 'other-user',
+          }),
+          communityRating: null,
+          viewerRating: null,
+          viewerRatingIsStale: false,
+        }),
+      ),
+    );
+
+    await renderPublicAt('/recipe/recipe-uuid-1/test-recipe', {
+      withAuth: true,
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Test Recipe')).toBeInTheDocument();
+    });
+    // Signed-in treatment on the public link itself: save-a-copy
+    // instead of the sign-up CTA, and no owner actions.
+    expect(
+      screen.getByRole('button', {name: 'Save a copy'}),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', {name: 'Sign up free'}),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', {name: 'Delete'}),
+    ).not.toBeInTheDocument();
+  });
+
+  test('gives the owner the owner treatment on a public link (#649)', async () => {
+    // The default authenticated detail handler serves the test
+    // session's own recipe (userId user-1).
+    await renderPublicAt('/recipe/recipe-uuid-1/test-recipe', {
+      withAuth: true,
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Test Recipe')).toBeInTheDocument();
+    });
+    expect(
+      await screen.findByRole('button', {name: 'Delete'}),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', {name: 'Save a copy'}),
+    ).not.toBeInTheDocument();
   });
 });
