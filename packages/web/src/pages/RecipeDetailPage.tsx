@@ -218,12 +218,15 @@ const UnifiedRecipePage = ({publicRoute}: {publicRoute: boolean}) => {
           return {...rest, authorDisplayName: null};
         })()
       : null;
-  const head = publicRoute && headRecipe ? (
+  const headSlug = headRecipe
+    ? (publicQuery.data?.canonicalSlug ?? recipeSlugFor(headRecipe))
+    : null;
+  const head = publicRoute && headRecipe && headSlug ? (
     <RecipePageHead
       recipe={headRecipe}
       canonicalUrl={buildRecipePermalink(window.location.origin, {
         id: headRecipe.id,
-        slug: publicQuery.data?.canonicalSlug ?? recipeSlugFor(headRecipe),
+        slug: headSlug,
       })}
       communityRating={
         publicQuery.data?.communityRating ?? authedRecipe?.communityRating ?? null
@@ -255,6 +258,22 @@ const UnifiedRecipePage = ({publicRoute}: {publicRoute: boolean}) => {
     ) : (
       <ScreenLoadingGate pending>{null}</ScreenLoadingGate>
     );
+  }
+
+  // App route only: a settled 404 from the authenticated fetch wins
+  // over a cached recipe (a recipe deleted elsewhere must not keep
+  // rendering from cache) — checked before any branch that would
+  // render the cached data. On the public route the public fetch
+  // governs instead.
+  if (!publicRoute) {
+    const appError = authedQuery.error;
+    if (
+      appError instanceof Error &&
+      (appError.message === 'Recipe not found' ||
+        appError.message.startsWith('API error 404'))
+    ) {
+      return <RouteErrorView isNotFound />;
+    }
   }
 
   // Owner: the full owner form, with versions and every action.

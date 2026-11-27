@@ -58,8 +58,9 @@ describe('RecipeDetailPage', () => {
       expect(screen.getByText('Test Recipe')).toBeInTheDocument();
     });
     // The design-system page is single-scroll (B7 C7): every section
-    // renders on the page — no tab switching.
-    expect(screen.getByText(/Flour/)).toBeInTheDocument();
+    // renders on the page — no tab switching. (The ingredient line is
+    // matched exactly: the #643 owner warnings also name Flour.)
+    expect(screen.getByText(/2 cups Flour/)).toBeInTheDocument();
     expect(screen.getByText('Mix dry ingredients')).toBeInTheDocument();
     await waitFor(() => {
       expect(screen.getByText('Turned out great')).toBeInTheDocument();
@@ -402,7 +403,7 @@ describe('RecipeDetailPage', () => {
     expect(screen.getByTestId('location')).toHaveTextContent(
       '/recipes/recipe-uuid-1/test-recipe',
     );
-    expect(screen.getByText(/Flour/)).toBeInTheDocument();
+    expect(screen.getByText(/2 cups Flour/)).toBeInTheDocument();
   });
 
   test("lands a renamed recipe's old URL on the new canonical URL (#419)", async () => {
