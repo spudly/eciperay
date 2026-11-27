@@ -10,7 +10,7 @@ import React, {useState} from 'react';
 import {TagsPage, type TagsPageTag} from '@spudly/ui';
 
 import {TAG_COLOR_NAME_OPTIONS} from '@eciperay/client';
-import {api} from '../lib/api';
+import {eciperay} from '../lib/api';
 
 export const TagsScreen = (): React.JSX.Element => {
   const [name, setName] = useState('');
@@ -42,11 +42,11 @@ export const TagsScreen = (): React.JSX.Element => {
 
   const {data: tags = [], isLoading} = useQuery({
     queryKey: queryKeys.tags(),
-    queryFn: () => api.tags.list(),
+    queryFn: () => eciperay.tags.list(),
   });
 
   const createMutation = useMutation({
-    mutationFn: () => api.tags.create(name, warmHarvestTagColors[color]),
+    mutationFn: () => eciperay.tags.create(name, warmHarvestTagColors[color]),
     onSuccess: () => {
       setName('');
       void queryClient.invalidateQueries({queryKey: queryKeys.tags()});
@@ -54,7 +54,7 @@ export const TagsScreen = (): React.JSX.Element => {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => api.tags.delete(id),
+    mutationFn: (id: string) => eciperay.tags.delete(id),
     onSuccess: () => {
       void queryClient.invalidateQueries({queryKey: queryKeys.tags()});
     },
@@ -62,7 +62,7 @@ export const TagsScreen = (): React.JSX.Element => {
 
   const updateMutation = useMutation({
     mutationFn: () =>
-      api.tags.update(editingTagId!, {
+      eciperay.tags.update(editingTagId!, {
         ...(editNameChanged ? {name: editName} : {}),
         ...(editColorChanged ? {color: warmHarvestTagColors[editColor]} : {}),
       }),

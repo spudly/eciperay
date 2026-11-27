@@ -3,14 +3,14 @@ import {fireEvent, waitFor} from '@testing-library/react-native';
 
 import {makeRecipeDetail} from '../__tests__/fixtures/recipe';
 import {makeStackProps, renderWithProviders} from '../__tests__/testUtils';
-import {api} from '../lib/api';
+import {eciperay} from '../lib/api';
 import type {AddStackParamList} from '../navigation/types';
 
 import {ImportUrlScreen} from './ImportUrlScreen';
 
 jest.mock('../lib/api');
 
-const mockImportUrl = api.import.importUrl as jest.Mock;
+const mockImportUrl = eciperay.import.importUrl as jest.Mock;
 const mockNavigate = jest.fn();
 const stackProps = makeStackProps<AddStackParamList, 'ImportUrl'>(
   'ImportUrl',

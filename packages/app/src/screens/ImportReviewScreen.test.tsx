@@ -3,7 +3,7 @@ import {act, fireEvent, waitFor} from '@testing-library/react-native';
 
 import {makeRecipeDetail} from '../__tests__/fixtures/recipe';
 import {makeStackProps, renderWithProviders} from '../__tests__/testUtils';
-import {api} from '../lib/api';
+import {eciperay} from '../lib/api';
 import type {AddStackParamList} from '../navigation/types';
 
 import {ImportReviewScreen} from './ImportReviewScreen';
@@ -23,9 +23,9 @@ jest.mock('@eciperay/client', () => {
   };
 });
 
-const mockGet = api.recipes.get as jest.Mock;
-const mockAcceptImport = api.recipes.acceptImport as jest.Mock;
-const mockStartImportEdits = api.versions.startImportEdits as jest.Mock;
+const mockGet = eciperay.recipes.get as jest.Mock;
+const mockAcceptImport = eciperay.recipes.acceptImport as jest.Mock;
+const mockStartImportEdits = eciperay.versions.startImportEdits as jest.Mock;
 const mockParentNavigate = jest.fn();
 const mockGetParent = jest.fn().mockReturnValue({navigate: mockParentNavigate});
 const mockDispatch = jest.fn();

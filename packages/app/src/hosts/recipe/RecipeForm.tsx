@@ -51,7 +51,7 @@ import {
   confirmPhotoLibraryAccess,
   ensureCameraPermission,
 } from '../../lib/androidPermissions';
-import {api} from '../../lib/api';
+import {eciperay} from '../../lib/api';
 import {
   deleteImagePreviewFile,
   isRecipeImageReadError,
@@ -313,7 +313,7 @@ export const RecipeForm = ({
   // query moves here with the rest of the form's data.
   const {data: tags = [], isLoading: isLoadingTags} = useQuery({
     queryKey: queryKeys.tags(),
-    queryFn: () => api.tags.list(),
+    queryFn: () => eciperay.tags.list(),
   });
   const tagOptions = useMemo(
     () => tags.map(tag => ({value: tag.id, label: tag.name})),
@@ -685,7 +685,7 @@ export const RecipeForm = ({
         .map(instruction => instruction.body.trim())
         .filter(Boolean);
       const {description: generatedDescription} =
-        await api.ai.generateDescription({
+        await eciperay.ai.generateDescription({
           title: trimmedTitle,
           ingredients: ingredientNames,
           instructions: instructionBodies,
@@ -741,7 +741,7 @@ export const RecipeForm = ({
       const instructionBodies = instructions
         .map(instruction => instruction.body.trim())
         .filter(Boolean);
-      const {imageBase64, contentType} = await api.ai.generateImage({
+      const {imageBase64, contentType} = await eciperay.ai.generateImage({
         title: trimmedTitle,
         description: description || null,
         ingredients: imageIngredients,
@@ -828,7 +828,7 @@ export const RecipeForm = ({
       // and ingredient link IDs, which applyIngredientLinkProposal
       // maps back onto the rows. Nothing is stored server-side — the
       // proposal lands in form state and persists on save.
-      const proposal = await api.ai.linkIngredients(recipeId, {
+      const proposal = await eciperay.ai.linkIngredients(recipeId, {
         ingredients: linkableIngredients.map(ingredient => ({
           id: formIngredientLinkId(ingredient),
           name: ingredient.name.trim(),

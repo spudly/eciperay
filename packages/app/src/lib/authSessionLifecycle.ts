@@ -8,7 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type {Session} from '@supabase/supabase-js';
 
 import {analytics} from './analytics';
-import {api} from './api';
+import {eciperay} from './api';
 import {supabase} from './supabase';
 
 /**
@@ -26,7 +26,7 @@ const clearStoredSession = createClearStoredSession(authSessionStorage);
 
 export const {onAuthenticated, onSignedOut} = createAuthSessionLifecycle({
   supabase,
-  api,
+  api: eciperay,
   analytics,
   identify: (session: Session) => {
     identifyAnalyticsUser(analytics, session);

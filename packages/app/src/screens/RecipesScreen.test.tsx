@@ -16,7 +16,7 @@ import {
   makeQueryClient,
   renderWithProviders,
 } from '../__tests__/testUtils';
-import {api} from '../lib/api';
+import {eciperay} from '../lib/api';
 import {recipeHref} from '../lib/deepLinks';
 
 import {RecipesScreen} from './RecipesScreen';
@@ -59,10 +59,10 @@ jest.mock('../hosts/recipes/RecipesListView', () => {
   };
 });
 
-const mockList = api.recipes.list as jest.Mock;
-const mockListSharedWithMe = api.recipes.listSharedWithMe as jest.Mock;
-const mockListPublic = api.recipes.listPublic as jest.Mock;
-const mockDelete = api.recipes.delete as jest.Mock;
+const mockList = eciperay.recipes.list as jest.Mock;
+const mockListSharedWithMe = eciperay.recipes.listSharedWithMe as jest.Mock;
+const mockListPublic = eciperay.recipes.listPublic as jest.Mock;
+const mockDelete = eciperay.recipes.delete as jest.Mock;
 
 // RNTL v14 renders host elements only: the list is the host scroll view
 // that receives the FlatList onEndReached prop.

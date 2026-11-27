@@ -5,7 +5,7 @@ import {useQuery} from '@tanstack/react-query';
 import {useState} from 'react';
 
 import type {MealsStackParamList} from '../navigation/types';
-import {api} from '../lib/api';
+import {eciperay} from '../lib/api';
 
 type Props = NativeStackScreenProps<MealsStackParamList, 'ShoppingList'>;
 
@@ -15,7 +15,7 @@ export const ShoppingListScreen = ({route}: Props) => {
 
   const {data: lines = [], isLoading} = useQuery({
     queryKey: queryKeys.mealPlanShoppingList(planId),
-    queryFn: () => api.mealPlans.shoppingList(planId),
+    queryFn: () => eciperay.mealPlans.shoppingList(planId),
   });
 
   return (

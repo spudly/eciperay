@@ -4,7 +4,7 @@ import {useEffect, useState} from 'react';
 
 import type {NutritionGoals} from '@eciperay/types';
 
-import {api} from '../../lib/api';
+import {eciperay} from '../../lib/api';
 
 // DS 14: ProfilePage renders the NutritionGoalsForm itself from the
 // `nutritionGoals` data prop (#511), so this module is the section's
@@ -20,7 +20,7 @@ export const useNutritionGoalsProps = () => {
 
   const {data: savedGoals} = useQuery({
     queryKey: queryKeys.nutritionGoals(),
-    queryFn: () => api.account.getNutritionGoals(),
+    queryFn: () => eciperay.account.getNutritionGoals(),
   });
 
   useEffect(() => {
@@ -30,7 +30,7 @@ export const useNutritionGoalsProps = () => {
   }, [savedGoals]);
 
   const saveGoalsMutation = useMutation({
-    mutationFn: () => api.account.putNutritionGoals(nutritionGoals),
+    mutationFn: () => eciperay.account.putNutritionGoals(nutritionGoals),
     onSuccess: data => {
       setNutritionGoals(data);
       setGoalsError(null);

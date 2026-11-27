@@ -210,6 +210,26 @@ export type {
   TagsViewProps,
 } from './ui/viewComponents.js';
 export {useRecipeListFilters} from './useRecipeListFilters.js';
+export {useAccessTokensProps} from './useAccessTokensProps.js';
+export {
+  useRecipeSharingProps,
+  type RecipeSharingPlatform,
+} from './useRecipeSharingProps.js';
+export {
+  useRecipeCommentsProps,
+  type UseRecipeCommentsPropsOptions,
+} from './useRecipeCommentsProps.js';
+export {
+  useDeleteRecipe,
+  type UseDeleteRecipeOptions,
+} from './useDeleteRecipe.js';
+export type {
+  RecipeCommentsViewComment,
+  RecipeCommentsViewProps,
+  RecipeSharingConsentSpan,
+  RecipeSharingOption,
+  RecipeSharingViewProps,
+} from './ui/recipeDetailViewComponents.js';
 export {parseRecipeListFilterValues} from './useFilterFieldState.js';
 export type {RecipeListFilterValues} from './useFilterFieldState.js';
 export {demoRecipeListFilters} from './demoRecipeListFilters.js';

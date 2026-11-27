@@ -1,4 +1,4 @@
-import {api} from './api';
+import {eciperay} from './api';
 import {supabase} from './supabase';
 
 jest.mock('./supabase', () => ({supabase: {auth: {getSession: jest.fn()}}}));
@@ -16,7 +16,7 @@ describe('api', () => {
   });
 
   test('recipes.list calls API with auth header', async () => {
-    await api.recipes.list();
+    await eciperay.recipes.list();
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining('/recipes'),
       expect.objectContaining({
@@ -27,7 +27,7 @@ describe('api', () => {
 
   test('getToken returns null without session', async () => {
     mockGetSession.mockResolvedValue({data: {session: null}});
-    await api.recipes.list();
+    await eciperay.recipes.list();
     expect(mockFetch).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({
@@ -44,7 +44,7 @@ describe('api', () => {
       data: {session: null},
       error: refreshFailure,
     });
-    await expect(api.auth.syncUser()).rejects.toBe(refreshFailure);
+    await expect(eciperay.auth.syncUser()).rejects.toBe(refreshFailure);
     expect(mockFetch).not.toHaveBeenCalled();
   });
 });

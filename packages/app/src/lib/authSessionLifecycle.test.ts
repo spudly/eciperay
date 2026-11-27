@@ -28,7 +28,7 @@ jest.mock('@eciperay/client', () => ({
 }));
 
 jest.mock('./api', () => ({
-  api: {auth: {syncUser: jest.fn()}},
+  eciperay: {auth: {syncUser: jest.fn()}},
 }));
 
 jest.mock('./analytics', () => ({
@@ -45,7 +45,7 @@ jest.mock('./supabase', () => ({
 // is assigned, failing with "mockCreateClearStoredSession is not a function".
 // Same pattern as supabase.test.ts.
 const {analytics} = require('./analytics') as typeof import('./analytics');
-const {api} = require('./api') as typeof import('./api');
+const {eciperay} = require('./api') as typeof import('./api');
 const {authSessionStorage, onAuthenticated, onSignedOut} =
   require('./authSessionLifecycle') as typeof import('./authSessionLifecycle');
 const {supabase} = require('./supabase') as typeof import('./supabase');
@@ -73,12 +73,12 @@ describe('authSessionLifecycle app binding', () => {
     expect(onSignedOut).toBe(mockOnSignedOut);
   });
 
-  test('binds the app supabase, api, analytics, and clear to the factory', () => {
+  test('binds the app supabase, eciperay client, analytics, and clear to the factory', () => {
     expect(clearStoredSessionCall).toBe(authSessionStorage);
     expect(lifecycleBindings).toEqual(
       expect.objectContaining({
         supabase,
-        api,
+        api: eciperay,
         analytics,
         clearStoredSession: mockClearStoredSession,
       }),

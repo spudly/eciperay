@@ -5,7 +5,7 @@ import {useQuery} from '@tanstack/react-query';
 import {useState} from 'react';
 
 import {ScreenLoadingGate} from '../components/ScreenLoadingGate';
-import {api} from '../lib/api';
+import {eciperay} from '../lib/api';
 import type {MealsStackParamList} from '../navigation/types';
 
 type Props = NativeStackScreenProps<MealsStackParamList, 'MealCookingMode'>;
@@ -20,7 +20,7 @@ export const MealCookingModeScreen = ({route, navigation}: Props) => {
     isLoadingError: isMealLoadingError,
   } = useQuery({
     queryKey: queryKeys.meal(mealId),
-    queryFn: () => api.meals.get(mealId),
+    queryFn: () => eciperay.meals.get(mealId),
   });
 
   const {
@@ -30,7 +30,7 @@ export const MealCookingModeScreen = ({route, navigation}: Props) => {
     isLoadingError: isPlanLoadingError,
   } = useQuery({
     queryKey: queryKeys.mealCookPlan(mealId),
-    queryFn: () => api.meals.cookPlan(mealId),
+    queryFn: () => eciperay.meals.cookPlan(mealId),
   });
 
   const onDone = () => {

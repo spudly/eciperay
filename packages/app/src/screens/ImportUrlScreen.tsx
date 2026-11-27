@@ -4,7 +4,7 @@ import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useState} from 'react';
 
 import {ImportUrlPage} from '@spudly/ui';
-import {api} from '../lib/api';
+import {eciperay} from '../lib/api';
 import type {AddStackParamList} from '../navigation/types';
 
 type Props = NativeStackScreenProps<AddStackParamList, 'ImportUrl'>;
@@ -29,7 +29,7 @@ export const ImportUrlScreen = ({navigation}: Props) => {
     setLoading(true);
     setError(null);
     try {
-      const recipe = await api.import.importUrl(url, {
+      const recipe = await eciperay.import.importUrl(url, {
         allowDuplicate: duplicateWarnedUrl === url,
       });
       analytics.track('recipe_imported', {recipe_id: recipe.id, source: 'url'});

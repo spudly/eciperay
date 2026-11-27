@@ -1,46 +1,68 @@
-import {
-  buildRecipePermalink,
-  invalidateRecipeQueries,
-  PRIVACY_POLICY_URL,
-  requiresPublishingConsent,
-} from '@eciperay/client';
 import type {RecipeDetail, RecipeVisibility} from '@eciperay/types';
-import type {RecipeDetailPageSharing} from '@spudly/ui';
 import {useLingui} from '@lingui/react';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useState} from 'react';
 
-import {eciperay} from '../lib/api.js';
+import type {EciperayClient} from './createEciperayClient.js';
+import {invalidateRecipeQueries} from './invalidateRecipeQueries.js';
+import {PRIVACY_POLICY_URL} from './legalUrls.js';
+import {
+  buildRecipePermalink,
+  requiresPublishingConsent,
+} from './recipeVisibility.js';
+import type {RecipeSharingViewProps} from './ui/recipeDetailViewComponents.js';
 
 const visibilityOptions: RecipeVisibility[] = ['private', 'unlisted', 'public'];
 
 /**
- * The recipe sharing/visibility panel's web host logic (B7 T1, eciperay#552):
- * the pending-selection state, the publishing-consent flow, the share-token
- * state, and the two mutations stay web-side, and the panel crosses into
- * RecipeDetailPage as its `sharing` data prop (RecipeSharingView's view-model)
- * — the native app's useRecipeSharingProps (packages/app/src/hosts/recipe) is
- * the template, adapted for the web panel's own behavior: permalinks compose
- * from the page's origin, the copy actions write to the clipboard and confirm
- * through the action message ("Share link copied" / "Permalink copied"), and
- * rejected mutations surface through the action message too (#418 — a rejected
- * sharing change also drops its pending selection so the controls match the
- * server's visibility again).
+ * The platform edges of the sharing hook, supplied by each host: the
+ * base the permalinks compose from (the web page's origin on web,
+ * WEB_APP_BASE_URL in the app), how a URL is handed to the user (the
+ * clipboard on web, RN's Share sheet in the app), the already-localized
+ * labels for that action, and whether sharing/copy outcomes surface
+ * through the action message (web) or stay silent (app).
+ */
+export type RecipeSharingPlatform = {
+  baseUrl: string;
+  shareUrl: (url: string) => void;
+  copyShareLinkLabel: string;
+  copyPermalinkLabel: string;
+  notifyOnShare?: boolean;
+  surfaceMutationErrors?: boolean;
+};
+
+/**
+ * The recipe sharing/visibility panel's host logic, shared by both
+ * hosts since #676 (B7 T1, eciperay#552; #438 Part 3 in the app): the
+ * pending-selection state, the publishing-consent flow, the share-token
+ * state, and the two mutations live here, and the panel crosses into
+ * RecipeDetailPage as its `sharing` data prop (RecipeSharingView's
+ * view-model). The typed client is passed in by the host; share
+ * execution stays at the host's edge (see RecipeSharingPlatform).
  *
- * The conditional composition is preserved by passing each block only when the
- * old panel rendered it: Save crosses only while a changed selection is
- * pending, the consent block only while the pending transition requires
- * consent, the share-link block only for unlisted recipes, and the permalink
- * block only for public ones. The consent gate itself (Save disabled until
- * consent is checked) is the view's presentation of `consentRequired`, and the
- * hook's own onSave re-checks it. One presentation delta rides with the view:
- * the share-link block carries the view's hint line ("Anyone with this link can
- * view this recipe.") above its actions.
+ * The conditional composition is preserved by passing each block only
+ * when the old panel rendered it: Save crosses only while a changed
+ * selection is pending, the consent block only while the pending
+ * transition requires consent, the share-link block only for unlisted
+ * recipes, and the permalink block only for public ones. The consent
+ * gate itself (Save disabled until consent is checked) is the view's
+ * presentation of `consentRequired`, and the hook's own onSave
+ * re-checks it. One presentation delta rides with the view: the
+ * share-link block carries the view's hint line ("Anyone with this
+ * link can view this recipe.") above its actions.
+ *
+ * With `surfaceMutationErrors` (web), a rejected sharing change drops
+ * its pending selection so the controls match the server's visibility
+ * again (#418) and rejected mutations surface through the action
+ * message; without it (app) mutation failures stay silent, as the
+ * app's panel behaved.
  */
 export const useRecipeSharingProps = (
+  client: EciperayClient,
   recipe: RecipeDetail,
   onActionMessage: (message: string) => void,
-): RecipeDetailPageSharing => {
+  platform: RecipeSharingPlatform,
+): RecipeSharingViewProps => {
   const {i18n} = useLingui();
   const tryAgain = () =>
     i18n._({id: 'recipeDetail.pleaseTryAgain', message: 'Please try again.'});
@@ -92,7 +114,7 @@ export const useRecipeSharingProps = (
     mutationFn: (input: {
       visibility: RecipeVisibility;
       publishingConsent?: boolean;
-    }) => eciperay.recipes.patchSharing(recipe.id, input),
+    }) => client.recipes.patchSharing(recipe.id, input),
     onSuccess: result => {
       setActiveVisibility(result.visibility);
       if (result.shareToken) {
@@ -108,24 +130,31 @@ export const useRecipeSharingProps = (
         }),
       );
     },
-    onError: error => {
-      // A rejected sharing change must not stay selected as if it had
-      // saved (#418): drop the pending selection so the controls match
-      // the server's visibility again, and surface the reason.
-      setPendingVisibility(null);
-      setPublishingConsent(false);
-      onActionMessage(
-        i18n._({
-          id: 'recipeSharing.couldNotUpdate',
-          message: 'Could not update sharing settings: {error}',
-          values: {error: error instanceof Error ? error.message : tryAgain()},
-        }),
-      );
-    },
+    ...(platform.surfaceMutationErrors
+      ? {
+          onError: (error: Error) => {
+            // A rejected sharing change must not stay selected as if it
+            // had saved (#418): drop the pending selection so the
+            // controls match the server's visibility again, and surface
+            // the reason.
+            setPendingVisibility(null);
+            setPublishingConsent(false);
+            onActionMessage(
+              i18n._({
+                id: 'recipeSharing.couldNotUpdate',
+                message: 'Could not update sharing settings: {error}',
+                values: {
+                  error: error instanceof Error ? error.message : tryAgain(),
+                },
+              }),
+            );
+          },
+        }
+      : {}),
   });
 
   const rotateMutation = useMutation({
-    mutationFn: () => eciperay.recipes.rotateShareToken(recipe.id),
+    mutationFn: () => client.recipes.rotateShareToken(recipe.id),
     onSuccess: result => {
       if (result.shareToken) {
         setShareToken(result.shareToken);
@@ -138,21 +167,27 @@ export const useRecipeSharingProps = (
         }),
       );
     },
-    onError: error => {
-      onActionMessage(
-        i18n._({
-          id: 'recipeSharing.couldNotRotate',
-          message: 'Could not rotate the share link: {error}',
-          values: {error: error instanceof Error ? error.message : tryAgain()},
-        }),
-      );
-    },
+    ...(platform.surfaceMutationErrors
+      ? {
+          onError: (error: Error) => {
+            onActionMessage(
+              i18n._({
+                id: 'recipeSharing.couldNotRotate',
+                message: 'Could not rotate the share link: {error}',
+                values: {
+                  error: error instanceof Error ? error.message : tryAgain(),
+                },
+              }),
+            );
+          },
+        }
+      : {}),
   });
 
-  const permalink = buildRecipePermalink(window.location.origin, recipe);
+  const permalink = buildRecipePermalink(platform.baseUrl, recipe);
   const shareUrl =
     activeVisibility === 'unlisted' && shareToken
-      ? buildRecipePermalink(window.location.origin, recipe, shareToken)
+      ? buildRecipePermalink(platform.baseUrl, recipe, shareToken)
       : activeVisibility === 'public'
         ? permalink
         : null;
@@ -250,18 +285,17 @@ export const useRecipeSharingProps = (
           ...(shareUrl
             ? {
                 onCopyShareLink: () => {
-                  void navigator.clipboard.writeText(shareUrl);
-                  onActionMessage(
-                    i18n._({
-                      id: 'recipeSharing.linkCopied',
-                      message: 'Share link copied',
-                    }),
-                  );
+                  platform.shareUrl(shareUrl);
+                  if (platform.notifyOnShare) {
+                    onActionMessage(
+                      i18n._({
+                        id: 'recipeSharing.linkCopied',
+                        message: 'Share link copied',
+                      }),
+                    );
+                  }
                 },
-                copyShareLinkLabel: i18n._({
-                  id: 'recipeSharing.copyLinkLabel',
-                  message: 'Copy share link',
-                }),
+                copyShareLinkLabel: platform.copyShareLinkLabel,
               }
             : {}),
         }
@@ -274,18 +308,17 @@ export const useRecipeSharingProps = (
           }),
           permalinkUrl: permalink,
           onCopyPermalink: () => {
-            void navigator.clipboard.writeText(permalink);
-            onActionMessage(
-              i18n._({
-                id: 'recipeSharing.permalinkCopied',
-                message: 'Permalink copied',
-              }),
-            );
+            platform.shareUrl(permalink);
+            if (platform.notifyOnShare) {
+              onActionMessage(
+                i18n._({
+                  id: 'recipeSharing.permalinkCopied',
+                  message: 'Permalink copied',
+                }),
+              );
+            }
           },
-          copyPermalinkLabel: i18n._({
-            id: 'recipeSharing.copyPermalinkLabel',
-            message: 'Copy',
-          }),
+          copyPermalinkLabel: platform.copyPermalinkLabel,
         }
       : {}),
   };

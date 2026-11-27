@@ -5,7 +5,7 @@ import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 
 import {makeRecipeDetail} from '../__tests__/fixtures/recipe';
 import {makeStackProps, renderWithProviders} from '../__tests__/testUtils';
-import {api} from '../lib/api';
+import {eciperay} from '../lib/api';
 import {
   confirmPhotoLibraryAccess,
   ensureCameraPermission,
@@ -20,7 +20,7 @@ jest.mock('../lib/androidPermissions', () => ({
   confirmPhotoLibraryAccess: jest.fn().mockResolvedValue(true),
 }));
 
-const mockImportImage = api.import.importImage as jest.Mock;
+const mockImportImage = eciperay.import.importImage as jest.Mock;
 const mockEnsureCameraPermission = ensureCameraPermission as jest.Mock;
 const mockConfirmPhotoLibraryAccess = confirmPhotoLibraryAccess as jest.Mock;
 const mockLaunchCamera = launchCamera as jest.Mock;

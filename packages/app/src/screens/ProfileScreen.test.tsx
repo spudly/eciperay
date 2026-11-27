@@ -8,7 +8,7 @@ import {
 } from '@eciperay/client';
 
 import {makeStackProps, renderWithProviders} from '../__tests__/testUtils';
-import {api} from '../lib/api';
+import {eciperay} from '../lib/api';
 import {tagsHref} from '../lib/deepLinks';
 import type {ProfileStackParamList} from '../navigation/types';
 
@@ -28,10 +28,10 @@ jest.mock('@eciperay/client', () => ({
 jest.mock('../lib/supabase', () => ({supabase: {auth: {signOut: jest.fn()}}}));
 jest.mock('../lib/api');
 
-const mockGetNutritionGoals = api.account.getNutritionGoals as jest.Mock;
-const mockPutNutritionGoals = api.account.putNutritionGoals as jest.Mock;
-const mockGetAuthorDisplay = api.account.getAuthorDisplay as jest.Mock;
-const mockMe = api.auth.me as jest.Mock;
+const mockGetNutritionGoals = eciperay.account.getNutritionGoals as jest.Mock;
+const mockPutNutritionGoals = eciperay.account.putNutritionGoals as jest.Mock;
+const mockGetAuthorDisplay = eciperay.account.getAuthorDisplay as jest.Mock;
+const mockMe = eciperay.auth.me as jest.Mock;
 
 const renderProfileScreen = async () =>
   await renderWithProviders(

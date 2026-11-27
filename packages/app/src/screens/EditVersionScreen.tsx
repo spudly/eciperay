@@ -11,7 +11,7 @@ import type {RecipeVersionInput} from '@eciperay/types';
 
 import {RecipeForm} from '../hosts/recipe/RecipeForm';
 import {ScreenLoadingGate} from '../components/ScreenLoadingGate';
-import {api} from '../lib/api';
+import {eciperay} from '../lib/api';
 import {recipeHref} from '../lib/deepLinks';
 import type {RecipesStackParamList} from '../navigation/types';
 
@@ -24,7 +24,7 @@ export const EditVersionScreen = ({route, navigation}: Props) => {
 
   const {data: version, isLoading} = useQuery({
     queryKey: queryKeys.version(recipeId, versionId),
-    queryFn: () => api.versions.get(recipeId, versionId),
+    queryFn: () => eciperay.versions.get(recipeId, versionId),
     enabled: recipeId.length > 0 && versionId.length > 0,
   });
 
@@ -32,12 +32,12 @@ export const EditVersionScreen = ({route, navigation}: Props) => {
 
   const {data: parentVersion} = useQuery({
     queryKey: queryKeys.version(recipeId, parentVersionId),
-    queryFn: () => api.versions.get(recipeId, parentVersionId),
+    queryFn: () => eciperay.versions.get(recipeId, parentVersionId),
     enabled: recipeId.length > 0 && parentVersionId.length > 0,
   });
 
   const handleSubmit = async (input: RecipeVersionInput) => {
-    await api.versions.put(recipeId, versionId, input);
+    await eciperay.versions.put(recipeId, versionId, input);
     await invalidateRecipeQueries(queryClient, recipeId, versionId);
     navigation.navigate('RecipeDetail', {recipeId, versionId});
   };

@@ -9,17 +9,17 @@ import {
   makeStackProps,
   renderWithProviders,
 } from '../__tests__/testUtils';
-import {api} from '../lib/api';
+import {eciperay} from '../lib/api';
 import type {MealsStackParamList} from '../navigation/types';
 
 import {MealEditScreen} from './MealEditScreen';
 
 jest.mock('../lib/api');
 
-const mockListRecipes = api.recipes.list as jest.Mock;
-const mockGetMeal = api.meals.get as jest.Mock;
-const mockCreate = api.meals.create as jest.Mock;
-const mockPut = api.meals.put as jest.Mock;
+const mockListRecipes = eciperay.recipes.list as jest.Mock;
+const mockGetMeal = eciperay.meals.get as jest.Mock;
+const mockCreate = eciperay.meals.create as jest.Mock;
+const mockPut = eciperay.meals.put as jest.Mock;
 const mockReplace = jest.fn();
 const mealId = '00000000-0000-4000-8000-000000000001';
 const recipe = makeRecipeDetail({title: 'Pasta'});
@@ -78,7 +78,7 @@ describe('MealEditScreen', () => {
     // the search query must not read the infinite list's cached shape.
     const client = makeQueryClient();
     client.setQueryData(
-      recipeListInfiniteQueryOptions(params => api.recipes.list(params), {})
+      recipeListInfiniteQueryOptions(params => eciperay.recipes.list(params), {})
         .queryKey,
       {pages: [[recipe]], pageParams: [0]},
     );

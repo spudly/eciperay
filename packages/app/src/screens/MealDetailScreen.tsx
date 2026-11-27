@@ -11,7 +11,7 @@ import {MealDetailPage} from '@spudly/ui';
 import {useQuery} from '@tanstack/react-query';
 
 import {ScreenLoadingGate} from '../components/ScreenLoadingGate';
-import {api} from '../lib/api';
+import {eciperay} from '../lib/api';
 import {mealCookHref, mealEditHref, recipeHref} from '../lib/deepLinks';
 import type {MealsStackParamList} from '../navigation/types';
 
@@ -106,7 +106,7 @@ export const MealDetailScreen = ({route}: Props) => {
 
   const {data: meal, isLoading} = useQuery({
     queryKey: queryKeys.meal(mealId),
-    queryFn: () => api.meals.get(mealId),
+    queryFn: () => eciperay.meals.get(mealId),
   });
 
   return (

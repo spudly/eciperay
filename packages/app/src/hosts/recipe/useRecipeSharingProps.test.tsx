@@ -6,9 +6,13 @@ import type {RecipeDetailPageSharing} from '@spudly/ui';
 
 import {renderWithProviders} from '../../__tests__/testUtils';
 import {makeRecipeDetail} from '../../__tests__/fixtures/recipe';
-import {api} from '../../lib/api';
+import {eciperay} from '../../lib/api';
 
-import {useRecipeSharingProps} from './RecipeVisibilityControls';
+import {
+  useRecipeSharingProps,
+  WEB_APP_BASE_URL,
+} from '@eciperay/client';
+import {useLingui} from '@lingui/react';
 
 jest.spyOn(Linking, 'openURL').mockImplementation(() => Promise.resolve());
 jest
@@ -16,11 +20,11 @@ jest
   .mockResolvedValue({action: 'sharedAction', activityType: undefined});
 
 jest.mock('../../lib/api', () => ({
-  api: {recipes: {patchSharing: jest.fn(), rotateShareToken: jest.fn()}},
+  eciperay: {recipes: {patchSharing: jest.fn(), rotateShareToken: jest.fn()}},
 }));
 
-const mockPatchSharing = jest.mocked(api.recipes.patchSharing);
-const mockRotateShareToken = jest.mocked(api.recipes.rotateShareToken);
+const mockPatchSharing = jest.mocked(eciperay.recipes.patchSharing);
+const mockRotateShareToken = jest.mocked(eciperay.recipes.rotateShareToken);
 
 /**
  * The sharing panel crosses into RecipeDetailPage as data props (#438 Part 3),
@@ -40,7 +44,21 @@ const renderSharingProps = async (
   const onActionMessage = jest.fn();
   let captured: RecipeDetailPageSharing | null = null;
   const Probe = () => {
-    captured = useRecipeSharingProps(recipe, onActionMessage);
+    const {i18n} = useLingui();
+    captured = useRecipeSharingProps(eciperay, recipe, onActionMessage, {
+      baseUrl: WEB_APP_BASE_URL,
+      shareUrl: (url: string) => {
+        void Share.share({message: url});
+      },
+      copyShareLinkLabel: i18n._({
+        id: 'recipeSharing.copyLinkLabel',
+        message: 'Share link',
+      }),
+      copyPermalinkLabel: i18n._({
+        id: 'recipeSharing.copyPermalinkLabel',
+        message: 'Share permalink',
+      }),
+    });
     return null;
   };
   await renderWithProviders(

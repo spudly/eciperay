@@ -3,13 +3,13 @@ import {fireEvent, waitFor, act} from '@testing-library/react-native';
 
 import {makeRecipeVersionSummary} from '../__tests__/fixtures/recipe';
 import {makeStackProps, renderWithProviders} from '../__tests__/testUtils';
-import {api} from '../lib/api';
+import {eciperay} from '../lib/api';
 import type {RecipesStackParamList} from '../navigation/types';
 
 import {TweakAiScreen} from './TweakAiScreen';
 
 jest.mock('../lib/api', () => ({
-  api: {
+  eciperay: {
     tweakAi: {
       start: jest.fn(),
       sendMessage: jest.fn(),
@@ -20,11 +20,11 @@ jest.mock('../lib/api', () => ({
   },
 }));
 
-const mockStart = api.tweakAi.start as jest.Mock;
-const mockSendMessage = api.tweakAi.sendMessage as jest.Mock;
-const mockApprove = api.tweakAi.approvePlan as jest.Mock;
-const mockCreateVersion = api.tweakAi.createVersion as jest.Mock;
-const mockCancel = api.tweakAi.cancel as jest.Mock;
+const mockStart = eciperay.tweakAi.start as jest.Mock;
+const mockSendMessage = eciperay.tweakAi.sendMessage as jest.Mock;
+const mockApprove = eciperay.tweakAi.approvePlan as jest.Mock;
+const mockCreateVersion = eciperay.tweakAi.createVersion as jest.Mock;
+const mockCancel = eciperay.tweakAi.cancel as jest.Mock;
 const mockNavigate = jest.fn();
 const mockGoBack = jest.fn();
 const stackProps = makeStackProps<RecipesStackParamList, 'TweakAi'>(

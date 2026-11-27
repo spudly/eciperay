@@ -1,5 +1,11 @@
 import type {BulkImportResult, RecipeExportBundle} from '@eciperay/types';
-import {errorMessage, queryKeys, useAnalytics, useAuth} from '@eciperay/client';
+import {
+  errorMessage,
+  queryKeys,
+  useAccessTokensProps,
+  useAnalytics,
+  useAuth,
+} from '@eciperay/client';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import type {I18n} from '@lingui/core';
 import {useLingui} from '@lingui/react';
@@ -8,7 +14,6 @@ import {useNavigate} from 'react-router-dom';
 
 import {ProfilePage as ProfilePageView} from '@spudly/ui';
 
-import {useProfileAccessTokensProps} from '../components/profile/ProfileAccessTokensSection.js';
 import {ProfileAuthorDisplaySection} from '../components/profile/ProfileAuthorDisplaySection.js';
 import {ProfileFeedbackPreference} from '../components/ProfileFeedbackPreference.js';
 import {ProfileFamilySharingSection} from '../components/profile/ProfileFamilySharingSection.js';
@@ -397,7 +402,7 @@ export const ProfilePage = () => {
   };
 
   const nutritionGoals = useProfileNutritionGoalsProps();
-  const accessTokens = useProfileAccessTokensProps();
+  const accessTokens = useAccessTokensProps(eciperay);
 
   return (
     <>

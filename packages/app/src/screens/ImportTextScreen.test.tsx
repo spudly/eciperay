@@ -3,14 +3,14 @@ import {fireEvent, waitFor} from '@testing-library/react-native';
 
 import {makeRecipeDetail} from '../__tests__/fixtures/recipe';
 import {makeStackProps, renderWithProviders} from '../__tests__/testUtils';
-import {api} from '../lib/api';
+import {eciperay} from '../lib/api';
 import type {AddStackParamList} from '../navigation/types';
 
 import {ImportTextScreen} from './ImportTextScreen';
 
 jest.mock('../lib/api');
 
-const mockImportText = api.import.importText as jest.Mock;
+const mockImportText = eciperay.import.importText as jest.Mock;
 const mockNavigate = jest.fn();
 const stackProps = makeStackProps<AddStackParamList, 'ImportText'>(
   'ImportText',

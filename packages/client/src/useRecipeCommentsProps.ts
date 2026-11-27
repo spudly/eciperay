@@ -1,47 +1,57 @@
-import {queryKeys, useAuth} from '@eciperay/client';
 import {useLingui} from '@lingui/react';
-import type {RecipeDetailPageComments} from '@spudly/ui';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useState} from 'react';
 
-import {eciperay} from '../lib/api.js';
+import {useAuth} from './AuthProvider.js';
+import type {EciperayClient} from './createEciperayClient.js';
+import {queryKeys} from './queryKeys.js';
+import type {RecipeCommentsViewProps} from './ui/recipeDetailViewComponents.js';
 
-type UseRecipeCommentsPropsOptions = {
+export type UseRecipeCommentsPropsOptions = {
   recipeId: string;
   ownerUserId?: string;
   shareToken?: string;
   publicList?: boolean;
+  /**
+   * Web (#418): a rejected create, update, or delete keeps its
+   * draft/edit text and surfaces the server's reason through the
+   * view's `error` prop. The app leaves mutation failures silent, as
+   * its section behaved — only the list query's error crosses.
+   */
+  surfaceMutationErrors?: boolean;
 };
 
 /**
- * The recipe comments section's web host logic (B7 T1, eciperay#552): the
- * section's query, compose/edit draft state, and three mutations stay web-side,
- * and the section crosses into RecipeDetailPage as its `comments` data prop
- * (RecipeCommentsView's view-model) — the native app's useRecipeCommentsProps
- * (packages/app/src/hosts/recipe) is the template. Since B7 T7 (eciperay#557,
- * @spudly/ui 10.0.0) the public recipe page uses this hook too, with
- * `publicList` set: its list query goes through the public comments endpoint
- * carrying the page's share token, and no ownerUserId is passed, so delete
+ * The recipe comments section's host logic, shared by both hosts since
+ * #676 (B7 T1, eciperay#552; #438 Part 3 in the app): the section's
+ * query, compose/edit draft state, and three mutations live here, and
+ * the section crosses into RecipeDetailPage as its `comments` data
+ * prop (RecipeCommentsView's view-model). The typed client is passed
+ * in by the host. Since B7 T7 (eciperay#557, @spudly/ui 10.0.0) the
+ * public recipe page uses this hook too, with `publicList` set: its
+ * list query goes through the public comments endpoint carrying the
+ * page's share token, and no ownerUserId is passed, so delete
  * eligibility stays author-only there, exactly as the retired composed
  * RecipeCommentsSection behaved on that page.
  *
- * The web section's #418 error handling carries over: a rejected create,
- * update, or delete keeps its draft/edit text and surfaces the server's reason
- * through the view's `error` prop ("Could not post comment: …"), clearing on
- * the next success; a failed list query reports the app hook's "Couldn't load
- * comments." One presentation delta rides with the view: while an error is
- * showing, the view renders its alert in place of the comment list (the
- * composed section rendered the message above the list). Every other mapping is
- * the one the composed section rendered: the author fallback, the stale hint,
- * the edit/delete eligibility (author, or the recipe owner for delete), and the
- * composer offered only to signed-in viewers.
+ * Every mapping is the one the composed sections rendered: the author
+ * fallback, the stale hint, the edit/delete eligibility (author, or
+ * the recipe owner for delete), and the composer offered only to
+ * signed-in viewers. One presentation delta rides with the view: while
+ * an error is showing, the view renders its alert in place of the
+ * comment list (the composed section rendered the message above the
+ * list).
  */
-export const useRecipeCommentsProps = ({
-  recipeId,
-  ownerUserId,
-  shareToken,
-  publicList = false,
-}: UseRecipeCommentsPropsOptions): RecipeDetailPageComments => {
+export const useRecipeCommentsProps = (
+  client: EciperayClient,
+  {
+    recipeId,
+    ownerUserId,
+    shareToken,
+    publicList = false,
+    surfaceMutationErrors = false,
+  }: UseRecipeCommentsPropsOptions,
+): RecipeCommentsViewProps => {
   const {i18n} = useLingui();
   const {session} = useAuth();
   const queryClient = useQueryClient();
@@ -52,9 +62,13 @@ export const useRecipeCommentsProps = ({
   const [commentError, setCommentError] = useState<string | null>(null);
 
   // Comment mutations surface rejections instead of failing silently
-  // (#418): the draft/edit text stays in place so nothing is lost, and
-  // the server's reason is shown through the view's error prop.
+  // (#418, web): the draft/edit text stays in place so nothing is
+  // lost, and the server's reason is shown through the view's error
+  // prop.
   const showCommentError = (action: string) => (error: Error) => {
+    if (!surfaceMutationErrors) {
+      return;
+    }
     setCommentError(
       `${action}: ${
         error instanceof Error
@@ -79,10 +93,10 @@ export const useRecipeCommentsProps = ({
     queryKey: commentsQueryKey,
     queryFn: () =>
       publicList
-        ? eciperay.recipes.listPublicComments(recipeId, {shareToken})
-        : eciperay.recipes.listComments(recipeId),
+        ? client.recipes.listPublicComments(recipeId, {shareToken})
+        : client.recipes.listComments(recipeId),
     // The public page calls this hook before its recipe has loaded
-    // (empty id); the detail host always has an id.
+    // (empty id); the detail hosts always have an id.
     enabled: recipeId.length > 0,
   });
   const comments = Array.isArray(data) ? data : [];
@@ -93,7 +107,7 @@ export const useRecipeCommentsProps = ({
 
   const createMutation = useMutation({
     mutationFn: (body: string) =>
-      eciperay.recipes.createComment(recipeId, {body}),
+      client.recipes.createComment(recipeId, {body}),
     onSuccess: () => {
       setDraft('');
       setCommentError(null);
@@ -109,7 +123,7 @@ export const useRecipeCommentsProps = ({
 
   const updateMutation = useMutation({
     mutationFn: ({commentId, body}: {commentId: string; body: string}) =>
-      eciperay.recipes.updateComment(recipeId, commentId, {body}),
+      client.recipes.updateComment(recipeId, commentId, {body}),
     onSuccess: () => {
       setEditingId(null);
       setEditDraft('');
@@ -126,7 +140,7 @@ export const useRecipeCommentsProps = ({
 
   const deleteMutation = useMutation({
     mutationFn: (commentId: string) =>
-      eciperay.recipes.deleteComment(recipeId, commentId),
+      client.recipes.deleteComment(recipeId, commentId),
     onSuccess: () => {
       setCommentError(null);
       invalidateComments();

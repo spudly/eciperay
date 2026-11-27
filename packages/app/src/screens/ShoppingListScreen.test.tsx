@@ -2,14 +2,14 @@ import React from 'react';
 import {fireEvent} from '@testing-library/react-native';
 
 import {makeStackProps, renderWithProviders} from '../__tests__/testUtils';
-import {api} from '../lib/api';
+import {eciperay} from '../lib/api';
 import type {MealsStackParamList} from '../navigation/types';
 
 import {ShoppingListScreen} from './ShoppingListScreen';
 
 jest.mock('../lib/api');
 
-const mockShoppingList = api.mealPlans.shoppingList as jest.Mock;
+const mockShoppingList = eciperay.mealPlans.shoppingList as jest.Mock;
 const planId = '00000000-0000-4000-8000-000000000003';
 const stackProps = makeStackProps<MealsStackParamList, 'ShoppingList'>(
   'ShoppingList',

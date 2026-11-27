@@ -3,7 +3,7 @@ import {act, fireEvent, waitFor} from '@testing-library/react-native';
 
 import {makeRecipeDetail} from '../__tests__/fixtures/recipe';
 import {makeStackProps, renderWithProviders} from '../__tests__/testUtils';
-import {api} from '../lib/api';
+import {eciperay} from '../lib/api';
 import type {RecipesStackParamList} from '../navigation/types';
 
 import {EditRecipeScreen} from './EditRecipeScreen';
@@ -23,9 +23,9 @@ jest.mock('@eciperay/client', () => {
   };
 });
 
-const mockGet = api.recipes.get as jest.Mock;
-const mockPut = api.recipes.put as jest.Mock;
-const mockListTags = api.tags.list as jest.Mock;
+const mockGet = eciperay.recipes.get as jest.Mock;
+const mockPut = eciperay.recipes.put as jest.Mock;
+const mockListTags = eciperay.tags.list as jest.Mock;
 const mockNavigate = jest.fn();
 const stackProps = makeStackProps<RecipesStackParamList, 'EditRecipe'>(
   'EditRecipe',

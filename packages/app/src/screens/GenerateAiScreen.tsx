@@ -11,7 +11,7 @@ import {
   type AiSessionFlowApi,
   type AiSessionState,
 } from '../hosts/ai/AiSessionFlow';
-import {api} from '../lib/api';
+import {eciperay} from '../lib/api';
 import type {AddStackParamList} from '../navigation/types';
 
 type Props = NativeStackScreenProps<AddStackParamList, 'GenerateAi'>;
@@ -62,19 +62,19 @@ export const GenerateAiScreen = ({navigation}: Props) => {
 
   const flowApi: AiSessionFlowApi = {
     start: async prompt => {
-      const result = await api.createAi.start(prompt);
+      const result = await eciperay.createAi.start(prompt);
       return {session: mapSession(result.session)};
     },
     sendMessage: async (sessionId, content) => {
-      const result = await api.createAi.sendMessage(sessionId, content);
+      const result = await eciperay.createAi.sendMessage(sessionId, content);
       return {session: mapSession(result.session)};
     },
     approvePlan: async sessionId => {
-      const result = await api.createAi.approvePlan(sessionId);
+      const result = await eciperay.createAi.approvePlan(sessionId);
       return {session: mapSession(result.session)};
     },
-    finalize: sessionId => api.createAi.createRecipe(sessionId),
-    cancel: sessionId => api.createAi.cancel(sessionId),
+    finalize: sessionId => eciperay.createAi.createRecipe(sessionId),
+    cancel: sessionId => eciperay.createAi.cancel(sessionId),
   };
 
   return (

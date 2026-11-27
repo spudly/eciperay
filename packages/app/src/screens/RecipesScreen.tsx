@@ -10,7 +10,7 @@ import {useCallback} from 'react';
 import {View} from 'react-native';
 
 import {RecipesListView} from '../hosts/recipes/RecipesListView';
-import {api} from '../lib/api';
+import {eciperay} from '../lib/api';
 
 // The list host must be bounded inside this column: RecipesPage's
 // ScreenContainer is a non-scrollable shell with flex: 1 and
@@ -38,17 +38,17 @@ export const RecipesScreen = () => {
   const {filters, controls} = useRecipeListFilters();
 
   const ownQuery = useInfiniteQuery(
-    recipeListInfiniteQueryOptions(params => api.recipes.list(params), filters),
+    recipeListInfiniteQueryOptions(params => eciperay.recipes.list(params), filters),
   );
   const sharedQuery = useInfiniteQuery(
     sharedWithMeInfiniteQueryOptions(
-      params => api.recipes.listSharedWithMe(params),
+      params => eciperay.recipes.listSharedWithMe(params),
       filters,
     ),
   );
   const discoveryQuery = useInfiniteQuery(
     publicRecipeDiscoveryInfiniteQueryOptions(
-      params => api.recipes.listPublic(params),
+      params => eciperay.recipes.listPublic(params),
       filters,
     ),
   );

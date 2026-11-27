@@ -1,24 +1,22 @@
-import {
-  apiTokensPowerNotice,
-  errorMessage,
-  queryKeys,
-  useAuth,
-} from '@eciperay/client';
 import type {PersonalAccessToken} from '@eciperay/types';
 import type {I18n} from '@lingui/core';
 import {useLingui} from '@lingui/react';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useState} from 'react';
 
-import {eciperay} from '../../lib/api.js';
+import {useAuth} from './AuthProvider.js';
+import {apiTokensPowerNotice} from './billingCopy.js';
+import type {EciperayClient} from './createEciperayClient.js';
+import {errorMessage} from './errorMessage.js';
+import {queryKeys} from './queryKeys.js';
 
 // DS 14: ProfilePage renders the AccessTokensPanel itself from the
-// `accessTokens` data prop (#511), so this module is now the
-// section's host logic as a hook — the token and entitlement
-// queries and the create/revoke mutations — returning the
-// data-prop view-model. (The host-side Tamagui mirror of the panel
-// is retired with the slot it filled; the security rule stands:
-// token handling stays app-side, only display state crosses.)
+// `accessTokens` data prop (#511), so this hook is the section's host
+// logic — the token and entitlement queries and the create/revoke
+// mutations — returning the data-prop view-model. Shared by both
+// hosts since #676 (the web and app copies were mirrors); the typed
+// client is passed in by the host. The security rule stands: token
+// handling stays host-side via the client, only display state crosses.
 
 const formatDate = (iso: string): string =>
   new Date(iso).toLocaleDateString(undefined, {
@@ -47,7 +45,7 @@ const describeToken = (i18n: I18n, token: PersonalAccessToken): string => {
   return parts.join(' · ');
 };
 
-export const useProfileAccessTokensProps = () => {
+export const useAccessTokensProps = (client: EciperayClient) => {
   const {i18n} = useLingui();
   const {session} = useAuth();
   const queryClient = useQueryClient();
@@ -57,7 +55,7 @@ export const useProfileAccessTokensProps = () => {
 
   const tokensQuery = useQuery({
     queryKey: queryKeys.personalAccessTokens(),
-    queryFn: () => eciperay.account.listPersonalAccessTokens(),
+    queryFn: () => client.account.listPersonalAccessTokens(),
   });
 
   // Token creation is Power-gated server-side. When the entitlement is
@@ -68,7 +66,7 @@ export const useProfileAccessTokensProps = () => {
   const userId = session?.user.id ?? 'anonymous';
   const entitlementQuery = useQuery({
     queryKey: queryKeys.entitlement(userId),
-    queryFn: () => eciperay.account.getEntitlement(),
+    queryFn: () => client.account.getEntitlement(),
   });
   const planNotice =
     entitlementQuery.data && entitlementQuery.data.plan !== 'power'
@@ -80,7 +78,7 @@ export const useProfileAccessTokensProps = () => {
 
   const createMutation = useMutation({
     mutationFn: (name: string) =>
-      eciperay.account.createPersonalAccessToken(name),
+      client.account.createPersonalAccessToken(name),
     onSuccess: data => {
       setCreatedSecret(data.token);
       setTokenName('');
@@ -93,7 +91,7 @@ export const useProfileAccessTokensProps = () => {
   });
 
   const revokeMutation = useMutation({
-    mutationFn: (id: string) => eciperay.account.revokePersonalAccessToken(id),
+    mutationFn: (id: string) => client.account.revokePersonalAccessToken(id),
     onSuccess: () => {
       setError(null);
       void invalidateTokens();

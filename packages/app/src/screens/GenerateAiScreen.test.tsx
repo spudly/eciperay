@@ -2,18 +2,18 @@ import React from 'react';
 import {fireEvent, waitFor} from '@testing-library/react-native';
 
 import {makeStackProps, renderWithProviders} from '../__tests__/testUtils';
-import {api} from '../lib/api';
+import {eciperay} from '../lib/api';
 import type {AddStackParamList} from '../navigation/types';
 
 import {GenerateAiScreen} from './GenerateAiScreen';
 
 jest.mock('../lib/api');
 
-const mockStart = api.createAi.start as jest.Mock;
-const mockSendMessage = api.createAi.sendMessage as jest.Mock;
-const mockApprovePlan = api.createAi.approvePlan as jest.Mock;
-const mockCreateRecipe = api.createAi.createRecipe as jest.Mock;
-const mockCancel = api.createAi.cancel as jest.Mock;
+const mockStart = eciperay.createAi.start as jest.Mock;
+const mockSendMessage = eciperay.createAi.sendMessage as jest.Mock;
+const mockApprovePlan = eciperay.createAi.approvePlan as jest.Mock;
+const mockCreateRecipe = eciperay.createAi.createRecipe as jest.Mock;
+const mockCancel = eciperay.createAi.cancel as jest.Mock;
 const mockNavigate = jest.fn();
 const mockGoBack = jest.fn();
 const stackProps = makeStackProps<AddStackParamList, 'GenerateAi'>(

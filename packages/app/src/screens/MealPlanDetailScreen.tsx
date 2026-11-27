@@ -4,7 +4,7 @@ import {useQuery} from '@tanstack/react-query';
 
 import {MealPlanDetailView} from '../hosts/meals/MealPlanDetailView';
 import {ScreenLoadingGate} from '../components/ScreenLoadingGate';
-import {api} from '../lib/api';
+import {eciperay} from '../lib/api';
 import {
   mealHref,
   mealPlanEditHref,
@@ -24,7 +24,7 @@ export const MealPlanDetailScreen = ({route}: Props) => {
 
   const {data: plan, isLoading} = useQuery({
     queryKey: queryKeys.mealPlan(planId),
-    queryFn: () => api.mealPlans.get(planId),
+    queryFn: () => eciperay.mealPlans.get(planId),
   });
 
   return (

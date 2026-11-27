@@ -17,14 +17,14 @@ import {
   makeRecipeDetail,
 } from '../../__tests__/fixtures/recipe';
 import {makeQueryClient, renderWithProviders} from '../../__tests__/testUtils';
-import {api} from '../../lib/api';
+import {eciperay} from '../../lib/api';
 import {recipeHref} from '../../lib/deepLinks';
 
 import {InlineCookLogForm, RecipesListView} from './RecipesListView';
 
 jest.mock('../../lib/api');
 
-const mockCreateCookLog = api.cookLogs.create as jest.Mock;
+const mockCreateCookLog = eciperay.cookLogs.create as jest.Mock;
 
 /**
  * Regression test for #162 (Android 1.25.0: this screen rendered one giant

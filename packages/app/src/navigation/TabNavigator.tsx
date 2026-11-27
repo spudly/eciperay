@@ -35,7 +35,7 @@ import {
 } from '../screens/SharedWithMeScreen';
 import {TagsScreen} from '../screens/TagsScreen';
 import {TweakAiScreen} from '../screens/TweakAiScreen';
-import {api} from '../lib/api';
+import {eciperay} from '../lib/api';
 import {POSTHOG_KEY} from '../lib/env';
 
 import {tabIcons} from './tabIcons';
@@ -184,7 +184,7 @@ const ProfileStackNavigator = () => {
   const {session} = useAuth();
   const {data: me} = useQuery({
     queryKey: queryKeys.currentUser(session?.user?.id ?? 'anonymous'),
-    queryFn: () => api.auth.me(),
+    queryFn: () => eciperay.auth.me(),
   });
   return (
     <ProfileStack.Navigator>

@@ -14,14 +14,14 @@ jest.mock('./env', () => ({
 }));
 
 describe('fixture mode client selection', () => {
-  it('api serves the fixture recipes without a backend', async () => {
-    const {api} = require('./api') as typeof import('./api');
-    const own = await api.recipes.list();
+  it('eciperay serves the fixture recipes without a backend', async () => {
+    const {eciperay} = require('./api') as typeof import('./api');
+    const own = await eciperay.recipes.list();
     expect(own.map(recipe => recipe.title)).toEqual([
       'E2E Weeknight Pasta',
       'E2E Garden Salad',
     ]);
-    const shared = await api.recipes.listSharedWithMe();
+    const shared = await eciperay.recipes.listSharedWithMe();
     expect(shared.map(recipe => recipe.title)).toEqual([
       'E2E Shared Tomato Soup',
     ]);

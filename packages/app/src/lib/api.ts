@@ -27,4 +27,4 @@ const client = E2E_FIXTURE_MODE
       },
     });
 
-export const api = createEciperayClient(client);
+export const eciperay = createEciperayClient(client);

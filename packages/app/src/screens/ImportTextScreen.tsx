@@ -4,7 +4,7 @@ import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useState} from 'react';
 
 import {ImportTextPage} from '@spudly/ui';
-import {api} from '../lib/api';
+import {eciperay} from '../lib/api';
 import type {AddStackParamList} from '../navigation/types';
 
 type Props = NativeStackScreenProps<AddStackParamList, 'ImportText'>;
@@ -24,7 +24,7 @@ export const ImportTextScreen = ({navigation}: Props) => {
     setLoading(true);
     setError(null);
     try {
-      const recipe = await api.import.importText(text, {
+      const recipe = await eciperay.import.importText(text, {
         allowDuplicate: duplicateWarnedText === text,
       });
       analytics.track('recipe_imported', {
