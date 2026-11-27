@@ -5,6 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./i18n/locales/en-US/messages.po": "./src/i18n/locales/en-US/messages.po",
+    "./i18n/locales/en-XA/messages.po": "./src/i18n/locales/en-XA/messages.po",
     "./sanitizeAnalyticsProperties": "./src/sanitizeAnalyticsProperties.ts",
     "./pageHead": "./src/pageHead.ts",
     "./recipeScaling": "./src/recipeScaling.ts",

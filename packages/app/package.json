@@ -12,7 +12,7 @@
     "test": "jest",
     "test:coverage": "jest --coverage --maxWorkers=1",
     "link:fonts": "react-native-asset -a ./assets/fonts",
-    "i18n:extract": "lingui extract"
+    "i18n:extract": "lingui extract && node ../../scripts/i18n-dedupe-catalogs.mjs"
   },
   "dependencies": {
     "@eciperay/client": "*",

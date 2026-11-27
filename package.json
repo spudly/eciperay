@@ -56,7 +56,8 @@
     "test:coverage": "npm run test:scripts && TURBO_TELEMETRY_DISABLED=1 turbo test:coverage",
     "start:server": "npm run start --workspace=packages/server",
     "postinstall": "patch-package",
-    "prepare": "husky"
+    "prepare": "husky",
+    "i18n:dedupe": "node scripts/i18n-dedupe-catalogs.mjs"
   },
   "lint-staged": {
     "*.{js,jsx,cjs,mjs,mts,cts,ts,tsx}": [
