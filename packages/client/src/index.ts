@@ -46,6 +46,12 @@ export {
   type IngredientLinkProposal,
 } from './ingredientLinking.js';
 export {
+  computeRecipeWarnings,
+  hasRecipeWarnings,
+  RECIPE_WARNING_INDICATOR,
+  type RecipeWarning,
+} from './recipeWarnings.js';
+export {
   activationCandidates,
   canEditActiveRecipeMetadata,
   canEditDraftVersion,

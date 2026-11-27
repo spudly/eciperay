@@ -3,6 +3,7 @@ import {
   activationCandidates,
   canEditActiveRecipeMetadata,
   canEditDraftVersion,
+  computeRecipeWarnings,
   formatCommunityRatingLabel,
   formatTotalTimeLabel,
   formatScaledIngredientLine,
@@ -39,8 +40,9 @@ import type {I18n} from '@lingui/core';
 import {useLingui} from '@lingui/react';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useState} from 'react';
-import {Alert, Share} from 'react-native';
+import {Alert, Share, View} from 'react-native';
 
+import {RecipeWarningsBanner} from '../../components/recipe/RecipeWarningsBanner';
 import {eciperay} from '../../lib/api';
 import {
   recipeCookHref,
@@ -497,9 +499,43 @@ export const RecipeDetailView = ({
     versions,
   );
 
+  // Recipe warnings (#643 warnings tranche): owners see warnings
+  // about a recipe whenever they view it; non-owners never see them.
+  const isOwner =
+    session?.user.id !== undefined && session.user.id === recipe.userId;
+  const recipeWarnings = isOwner ? computeRecipeWarnings(displayRecipe) : [];
+  const recipeWarningLines = recipeWarnings.map(warning =>
+    warning.kind === 'unmentioned-ingredient'
+      ? i18n._({
+          id: 'recipeWarnings.unmentionedIngredient',
+          message:
+            '{name} is on the ingredient list, but no step mentions it.',
+          values: {name: warning.ingredientName},
+        })
+      : i18n._({
+          id: 'recipeWarnings.missingIngredient',
+          message:
+            'Step {stepNumber} mentions {name}, which is not on the ingredient list.',
+          values: {
+            stepNumber: warning.stepNumber,
+            name: warning.ingredientName,
+          },
+        }),
+  );
+
   return (
-    <RecipeDetailPage
-      state="ready"
+    <View style={{flex: 1}}>
+      {recipeWarningLines.length > 0 ? (
+        <RecipeWarningsBanner
+          heading={i18n._({
+            id: 'recipeWarnings.heading',
+            message: 'Recipe warnings',
+          })}
+          lines={recipeWarningLines}
+        />
+      ) : null}
+      <RecipeDetailPage
+        state="ready"
       // Recipe status was removed in #610, but @spudly/ui 14's
       // RecipeDetailPageOwnerReadyProps still requires a status string
       // (unknown values fall back to its "idea" badge). This prop goes
@@ -662,7 +698,8 @@ export const RecipeDetailView = ({
             }
           : null,
       }}
-      nutrition={nutritionProps}
-    />
+        nutrition={nutritionProps}
+      />
+    </View>
   );
 };
