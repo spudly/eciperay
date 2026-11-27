@@ -21,6 +21,7 @@ export const makeRecipeDetailRow = (
     cook_time_min?: number | null;
     image_url?: string | null;
     source_url?: string | null;
+    tips?: string[];
     created_via?: RecipeDetail['createdVia'];
     created_at?: string;
     updated_at?: string;
@@ -48,6 +49,7 @@ export const makeRecipeDetailRow = (
     cook_time_min: overrides.cook_time_min ?? detail.cookTimeMin,
     image_url: overrides.image_url ?? detail.imageUrl,
     source_url: overrides.source_url ?? detail.sourceUrl,
+    tips: overrides.tips ?? detail.tips ?? [],
     created_via: overrides.created_via ?? detail.createdVia,
     created_at: overrides.created_at ?? detail.updatedAt,
     updated_at: overrides.updated_at ?? detail.updatedAt,

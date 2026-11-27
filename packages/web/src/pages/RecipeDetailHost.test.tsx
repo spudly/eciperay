@@ -67,6 +67,25 @@ const renderHost = async (
 };
 
 describe('RecipeDetailHost', () => {
+  describe('tips (#635)', () => {
+    test('shows the version tips under Start Cooking', async () => {
+      await renderHost({
+        tips: ['Let it rest for juicier meat', 'Season generously'],
+      });
+      expect(
+        await screen.findByText(
+          'Tip: Let it rest for juicier meat Tip: Season generously',
+        ),
+      ).toBeInTheDocument();
+    });
+
+    test('renders no tip line when the version has no tips', async () => {
+      await renderHost();
+      expect(await screen.findByText('Start Cooking')).toBeInTheDocument();
+      expect(screen.queryByText(/^Tip:/)).not.toBeInTheDocument();
+    });
+  });
+
   describe('lifecycle actions', () => {
     test('shows tweak actions for editable recipes', async () => {
       await renderHost();

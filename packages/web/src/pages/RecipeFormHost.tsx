@@ -230,6 +230,11 @@ export const RecipeFormHost = ({
     return [createEmptyInstructionRow(1)];
   });
   const [tagIds, setTagIds] = useState<string[]>(initial.tagIds);
+  // Tips (#635 tranche 2): the DS form page has no tips slot, so —
+  // like the ingredient-links section below — the repeatable tips
+  // editor is host-rendered and the list rides buildInput's normal
+  // save path. Array order is display order.
+  const [tips, setTips] = useState<string[]>(initial.tips ?? []);
   const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
   // Crop step (#406): a picked file becomes the pending selection first.
   // The user can crop it, use it as-is (skip), or discard it; only then
@@ -768,6 +773,23 @@ export const RecipeFormHost = ({
     );
   };
 
+  const updateTip = (index: number, value: string) => {
+    setTips(prev => prev.map((tip, i) => (i === index ? value : tip)));
+  };
+
+  const moveTip = (index: number, direction: -1 | 1) => {
+    setTips(prev => {
+      const target = index + direction;
+      if (target < 0 || target >= prev.length) {
+        return prev;
+      }
+      const next = [...prev];
+      const [moved] = next.splice(index, 1);
+      next.splice(target, 0, moved as string);
+      return next;
+    });
+  };
+
   const toggleInstructionIngredient = (
     instructionKey: string,
     ingredientId: string,
@@ -871,6 +893,11 @@ export const RecipeFormHost = ({
     cookTimeMin: cookTimeMin === '' ? null : Number(cookTimeMin),
     imageUrl: pendingImageFile ? null : stripImageCacheKey(imageUrl) || null,
     sourceUrl: sourceUrl || null,
+    // Blank rows are editing scaffolding, never content: the server
+    // normalizes the same way (trim + drop blanks) on every save path.
+    tips: contentLocked
+      ? (initial.tips ?? [])
+      : tips.map(tip => tip.trim()).filter(tip => tip.length > 0),
     ingredients: contentLocked
       ? initial.ingredients
       : toRecipeInputIngredients(
@@ -901,6 +928,7 @@ export const RecipeFormHost = ({
     cookTimeMin,
     imageUrl,
     sourceUrl,
+    tips,
     ingredients,
     instructions,
     tagIds,
@@ -1266,6 +1294,167 @@ export const RecipeFormHost = ({
                     })}
               </button>
             ) : null}
+          </div>
+        </section>
+      )}
+      {contentLocked ? null : (
+        <section
+          aria-label={i18n._({
+            id: 'recipeForm.tipsLabel',
+            message: 'Tips',
+          })}
+          style={{
+            border: `1px solid ${tokens.colors.gray.gray4}`,
+            borderRadius: 8,
+            padding: tokens.spacing[3],
+            marginBottom: tokens.spacing[3],
+          }}
+        >
+          <h2
+            style={{
+              margin: 0,
+              fontSize: tokens.typography.fontSize.md,
+              fontWeight: tokens.typography.fontWeight.semibold,
+              color: tokens.colors.gray.gray10,
+            }}
+          >
+            {i18n._({
+              id: 'recipeForm.tipsHeading',
+              message: 'Tips',
+            })}
+          </h2>
+          <p
+            style={{
+              margin: 0,
+              marginTop: tokens.spacing[1],
+              fontSize: tokens.typography.fontSize.sm,
+              color: tokens.colors.gray.gray8,
+            }}
+          >
+            {i18n._({
+              id: 'recipeForm.tipsIntro',
+              message:
+                'Short tips shown at the bottom of the recipe, in the order listed. Up to 10 tips, 280 characters each.',
+            })}
+          </p>
+          {tips.length === 0 ? (
+            <p
+              style={{
+                margin: 0,
+                marginTop: tokens.spacing[2],
+                fontSize: tokens.typography.fontSize.sm,
+                color: tokens.colors.gray.gray8,
+              }}
+            >
+              {i18n._({
+                id: 'recipeForm.tipsEmpty',
+                message: 'No tips yet.',
+              })}
+            </p>
+          ) : (
+            <ul
+              style={{
+                listStyle: 'none',
+                margin: 0,
+                marginTop: tokens.spacing[2],
+                padding: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: tokens.spacing[2],
+              }}
+            >
+              {tips.map((tip, index) => (
+                <li
+                  key={index}
+                  style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: tokens.spacing[2],
+                    alignItems: 'center',
+                  }}
+                >
+                  <input
+                    type="text"
+                    aria-label={i18n._({
+                      id: 'recipeForm.tipFieldLabel',
+                      message: 'Tip {position}',
+                      values: {position: index + 1},
+                    })}
+                    value={tip}
+                    maxLength={280}
+                    onChange={e => {
+                      updateTip(index, e.target.value);
+                    }}
+                    style={{
+                      flex: '1 1 240px',
+                      border: `1px solid ${tokens.colors.gray.gray4}`,
+                      borderRadius: 8,
+                      padding: '8px 12px',
+                      fontSize: tokens.typography.fontSize.sm,
+                      fontFamily: tokens.typography.fontFamily.sans,
+                    }}
+                  />
+                  <button
+                    type="button"
+                    style={dialogSecondaryButtonStyle}
+                    disabled={index === 0}
+                    onClick={() => {
+                      moveTip(index, -1);
+                    }}
+                  >
+                    {i18n._({
+                      id: 'recipeForm.moveTipUp',
+                      message: 'Move tip {position} up',
+                      values: {position: index + 1},
+                    })}
+                  </button>
+                  <button
+                    type="button"
+                    style={dialogSecondaryButtonStyle}
+                    disabled={index === tips.length - 1}
+                    onClick={() => {
+                      moveTip(index, 1);
+                    }}
+                  >
+                    {i18n._({
+                      id: 'recipeForm.moveTipDown',
+                      message: 'Move tip {position} down',
+                      values: {position: index + 1},
+                    })}
+                  </button>
+                  <button
+                    type="button"
+                    style={dialogSecondaryButtonStyle}
+                    onClick={() => {
+                      setTips(prev =>
+                        prev.filter((_, i) => i !== index),
+                      );
+                    }}
+                  >
+                    {i18n._({
+                      id: 'recipeForm.removeTip',
+                      message: 'Remove tip {position}',
+                      values: {position: index + 1},
+                    })}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <div style={{marginTop: tokens.spacing[3]}}>
+            <button
+              type="button"
+              style={dialogSecondaryButtonStyle}
+              disabled={tips.length >= 10}
+              onClick={() => {
+                setTips(prev => [...prev, '']);
+              }}
+            >
+              {i18n._({
+                id: 'recipeForm.addTip',
+                message: 'Add tip',
+              })}
+            </button>
           </div>
         </section>
       )}

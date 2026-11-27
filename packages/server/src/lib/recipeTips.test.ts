@@ -1,6 +1,10 @@
+import {makeRecipeDetailRow} from '../test/fixtures/recipeRow.js';
 import {makeVersionDetailRow} from '../test/fixtures/versionRow.js';
 
-import {mapRowToVersionDetail} from './mapRowToRecipeDetail.js';
+import {
+  mapRowToRecipeDetail,
+  mapRowToVersionDetail,
+} from './mapRowToRecipeDetail.js';
 import {normalizeRecipeTips} from './recipeTips.js';
 
 // #635: the normalization every version save path applies, and the
@@ -36,6 +40,24 @@ describe('mapRowToVersionDetail tips (#635)', () => {
       ...row,
       tips: undefined,
     } as Parameters<typeof mapRowToVersionDetail>[0]);
+    expect(detail.tips).toEqual([]);
+  });
+});
+
+describe('mapRowToRecipeDetail tips (#635 tranche 2)', () => {
+  test('maps the active version tips onto the recipe detail', () => {
+    const detail = mapRowToRecipeDetail(
+      makeRecipeDetailRow({tips: ['Tip A', 'Tip B']}),
+    );
+    expect(detail.tips).toEqual(['Tip A', 'Tip B']);
+  });
+
+  test('defaults to an empty list when the row carries no tips', () => {
+    const row = makeRecipeDetailRow();
+    const detail = mapRowToRecipeDetail({
+      ...row,
+      tips: undefined,
+    } as Parameters<typeof mapRowToRecipeDetail>[0]);
     expect(detail.tips).toEqual([]);
   });
 });

@@ -213,4 +213,51 @@ describe('EditVersionPage', () => {
     });
     expect(submittedBody?.title).toBe('Parent title');
   });
+
+  test('edits, reorders, removes and saves version tips (#635)', async () => {
+    let submittedBody: {tips?: string[]} | undefined;
+    server.use(
+      http.get(
+        'http://localhost:8080/api/recipes/:id/versions/:versionId',
+        () =>
+          HttpResponse.json(
+            makeRecipeVersionDetail({
+              id: 'version-draft-1',
+              derivedRole: 'draft',
+              isEditable: true,
+              versionNumber: 2,
+              tips: ['First tip', 'Second tip'],
+            }),
+          ),
+      ),
+      http.put(
+        'http://localhost:8080/api/recipes/:id/versions/:versionId',
+        async ({request}) => {
+          submittedBody = (await request.json()) as {tips?: string[]};
+          return HttpResponse.json(
+            makeRecipeVersionDetail({id: 'version-draft-1'}),
+          );
+        },
+      ),
+    );
+    await renderEditVersion();
+    await waitFor(() => {
+      expect(screen.getByLabelText('Tip 1')).toHaveValue('First tip');
+      expect(screen.getByLabelText('Tip 2')).toHaveValue('Second tip');
+    });
+    await userEvent.click(
+      screen.getByRole('button', {name: 'Move tip 2 up'}),
+    );
+    expect(screen.getByLabelText('Tip 1')).toHaveValue('Second tip');
+    await userEvent.click(screen.getByRole('button', {name: 'Add tip'}));
+    await userEvent.type(screen.getByLabelText('Tip 3'), 'Third tip');
+    await userEvent.click(
+      screen.getByRole('button', {name: 'Remove tip 1'}),
+    );
+    await userEvent.click(screen.getByText('Save Draft'));
+    await waitFor(() => {
+      expect(screen.getByText('Saved')).toBeInTheDocument();
+    });
+    expect(submittedBody?.tips).toEqual(['First tip', 'Third tip']);
+  });
 });
