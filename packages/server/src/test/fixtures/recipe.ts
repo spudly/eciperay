@@ -40,6 +40,7 @@ export const makeRecipeDetail = (
   ...makeRecipe(),
   ingredients: [makeIngredient()],
   instructions: [makeInstruction()],
+  tips: [],
   tags: [makeTag()],
   nutrition: null,
   communityRating: null,
