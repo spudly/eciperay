@@ -1,5 +1,51 @@
 # @eciperay/mcp-server
 
+## 1.35.0
+
+### Minor Changes
+
+- 3ac1d11: Remove the recipe status entirely (#610, tranche 2): recipes no
+  longer carry an idea/evolving/perfected/abandoned status. The `RecipeStatus`
+  type and the status field are gone from `@eciperay/types` recipe inputs and
+  details, recipe detail pages and cards no longer show a status badge, the
+  recipe forms and the recipe-list status filter no longer offer a status
+  control, and the `PATCH /recipes/:id` status endpoint is removed. Because
+  perfected/abandoned no longer lock a recipe, every recipe stays editable, and
+  version activation follows the cook-log/archived rule only. The server drops
+  the `recipes.status` column (migration 030), and the MCP recipe-update payload
+  no longer carries a status field.
+- ed6abf2: Recipe version tips, data/server/MCP (#635, tranche 1): a recipe
+  version now carries a list of short authored cooking tips.
+  `RecipeVersionDetail` gains `tips: string[]` and the version/recipe inputs
+  gain optional `tips`, stored in a new `recipe_versions.tips` JSONB column
+  (migration 033, default empty). Version create/update/clone/restore paths read
+  and write the list — each tip capped at 280 characters, at most 10 per
+  version, empty entries dropped — and bulk export/import records carry it. The
+  MCP `create_recipe` and `update_recipe` tools accept a `tips` list (updates
+  replace the stored list and, like ingredient/instruction changes, require a
+  versionId). The edit-form UI and detail-page display land in later tranches.
+
+### Patch Changes
+
+- 98e8e7c: Share @eciperay/types with mcp-server (#682): `RecipeUpdatePatch` now
+  lives in `@eciperay/types` (composed from the shared
+  `IngredientInput`/`InstructionInput`), and mcp-server depends on
+  `@eciperay/types` and imports the shared types instead of re-declaring them
+  locally. The payload/diff logic stays in mcp-server; no behavior changes.
+- Updated dependencies [caf2177]
+- Updated dependencies [799cdba]
+- Updated dependencies [f3ffa78]
+- Updated dependencies [7ee7ff6]
+- Updated dependencies [8b6dd07]
+- Updated dependencies [3ac1d11]
+- Updated dependencies [81d315f]
+- Updated dependencies [ed6abf2]
+- Updated dependencies [7075f8b]
+- Updated dependencies [98e8e7c]
+- Updated dependencies [aa849a6]
+- Updated dependencies [caf3abb]
+  - @eciperay/types@1.35.0
+
 ## 1.34.4
 
 ### Patch Changes

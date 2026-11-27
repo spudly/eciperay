@@ -1,5 +1,133 @@
 # @eciperay/types
 
+## 1.35.0
+
+### Minor Changes
+
+- caf2177: Discovery models, server core (#622, tranche 1): migration 030 adds
+  `saved_recipes` (bookmark saves), `recipe_disinterest` (hard hide — excluded
+  from every discovery surface until unhidden), `user_follows`, and
+  `recipe_interest_signals` (soft engagement signals from Stephen's approval
+  amendment: dwell/engagement records interest, not a save; a quick swipe-past
+  records disinterest, not a hide). New authenticated `/discovery` routes cover
+  save/unsave, hide/unhide plus the hidden list, follow/unfollow plus the
+  following list, recording an interest signal, and a discovery feed query that
+  excludes the requester's hidden recipes, respects recipe visibility (public
+  only), and ranks followee-authored, followee-saved, and followee-highly-rated
+  recipes and interest-signaled recipes higher while deprioritising recipes the
+  requester last signaled quick disinterest in.
+- 799cdba: Family sharing, server core (#617, tranche 1): owners can designate
+  one other account for family sharing via GET/POST/DELETE
+  /account/family-sharing. A standing family_share_grants row gives the
+  recipient view/clone access to the owner's whole recipe library — existing and
+  future recipes, private included — through the central share-access check, and
+  the Shared With Me list unions family-shared recipes with a `family` marker
+  (an individual grant wins the badge when both exist). Revoking the designation
+  deletes the row and ends family access immediately; per-recipe grants are
+  unaffected. Account export now includes family share designations.
+- f3ffa78: Cook-mode per-step ingredients, data/API tranche (#643): instructions
+  gain `ingredientReferences` — the ordered IDs of the same version's
+  ingredients each step uses (Mealie-style references; the flat ingredient list
+  stays canonical for scaling, shopping, and nutrition). Migration 033 adds the
+  `instructions.ingredient_references` JSONB column (empty array for legacy
+  recipes, which keep rendering the full list). Recipe detail, public detail,
+  and version detail responses now include the references; create/edit/clone/
+  import/export write paths round-trip them, ingredient IDs supplied on input
+  are preserved across version rewrites so references never dangle, clones carry
+  both ingredient IDs and references over, and a write whose references name
+  ingredients outside the version is rejected.
+- 7ee7ff6: Net carbs (carbs − fiber) now render beside total carbs everywhere a
+  recipe's carbs are shown: the recipe-detail nutrition rows, recipe card/list
+  summaries, meal and meal-plan totals and per-day rows, and meal member lines
+  on web and native. Net carbs is omitted where fiber is unknown — including
+  meal/plan totals when any contributing recipe's fiber is unknown (aggregate
+  fiber now propagates unknown instead of treating it as zero) — and plan/meal
+  totals compute it from the summed carbs and fiber via the one canonical
+  helper.
+- 8b6dd07: Track recipe provenance at creation (#609, tranche 1): migration 029
+  adds `recipes.provenance_source`/`provenance_detail` with a backfill from each
+  recipe's first version; the shared save path now derives and validates
+  provenance from the creation path (URL imports must record a valid source URL)
+  and applies public-by-default visibility for new recipes (shared clones and
+  unattributed `other` stay private). Recipe detail responses now carry the
+  recipe's provenance.
+- 3ac1d11: Remove the recipe status entirely (#610, tranche 2): recipes no
+  longer carry an idea/evolving/perfected/abandoned status. The `RecipeStatus`
+  type and the status field are gone from `@eciperay/types` recipe inputs and
+  details, recipe detail pages and cards no longer show a status badge, the
+  recipe forms and the recipe-list status filter no longer offer a status
+  control, and the `PATCH /recipes/:id` status endpoint is removed. Because
+  perfected/abandoned no longer lock a recipe, every recipe stays editable, and
+  version activation follows the cook-log/archived rule only. The server drops
+  the `recipes.status` column (migration 030), and the MCP recipe-update payload
+  no longer carries a status field.
+- 81d315f: Recipe tips UI (#635, tranche 2): the recipe version edit form (web
+  and native) gains a repeatable tips editor — add, edit, reorder, and remove
+  the version's tips, saved through the normal version save path — and the
+  recipe detail now shows the version's tips at the bottom of the overview.
+  `RecipeDetail` gains the displayed version's `tips` (the server detail mapping
+  now carries the active version's list, and viewing another version overlays
+  its tips), so the detail hosts pass them to the design system's
+  `cookingTipLabel` line under Start Cooking. @spudly/ui 14 carries only the
+  singular label, so multiple tips render as one italic line with each tip's
+  "Tip: " lead-in preserved, in array order; a plural DS prop (one line per tip)
+  remains a design-system follow-up.
+- ed6abf2: Recipe version tips, data/server/MCP (#635, tranche 1): a recipe
+  version now carries a list of short authored cooking tips.
+  `RecipeVersionDetail` gains `tips: string[]` and the version/recipe inputs
+  gain optional `tips`, stored in a new `recipe_versions.tips` JSONB column
+  (migration 033, default empty). Version create/update/clone/restore paths read
+  and write the list — each tip capped at 280 characters, at most 10 per
+  version, empty entries dropped — and bulk export/import records carry it. The
+  MCP `create_recipe` and `update_recipe` tools accept a `tips` list (updates
+  replace the stored list and, like ingredient/instruction changes, require a
+  versionId). The edit-form UI and detail-page display land in later tranches.
+- 7075f8b: Simplify recipe versioning (#610, tranche 1): an edit that branches
+  from the active version now becomes the current version in the same
+  transaction by default, so editing the current recipe goes live immediately
+  (an explicit `activate: false` still keeps the branched version as a draft;
+  draft-version in-place edits are unchanged). Edits also accept an optional
+  `changeSummary` naming the edit, stored on the branched version's
+  `change_summary` for internal version tracking; `RecipeVersionInput` in
+  `@eciperay/types` gains the optional `changeSummary` field.
+- aa849a6: "Show less like this" (#623): a new soft negative signal for
+  discovery. Migration 032 adds `recipe_show_less` (user + source recipe,
+  mirroring the hard-hide `recipe_disinterest` shape). Choosing "Show less like
+  this" on a recipe records it as a source, and the discovery feed now
+  down-ranks other recipes similar to a source — sharing a tag or the same
+  author — by 2 points per matching source, capped at 6, so similar recipes
+  appear less often but are never removed. The source recipe itself is not
+  penalised, an explicit save or cook of a recipe cancels its penalty, and hard
+  hide still excludes outright. New authenticated routes
+  (`POST`/`DELETE /discovery/recipes/:id/show-less`, `GET /discovery/show-less`)
+  back a new Settings "Show less like this" list in the web and native profile
+  screens, next to Hidden recipes, where each entry can be undone — entries
+  persist until undone, with no decay. The card-menu action itself is pending a
+  design-system slot for discovery-card actions (the DS discovery item carries
+  no action props today); the client API (`eciperay.discovery`) ships ready for
+  it.
+- caf3abb: Tag management is admin-only (#621, option B): migration 031 adds a
+  `users.is_admin` boolean (default false) that defines admin. A new server
+  `requireAdmin` middleware gates `POST /tags`, `PATCH /tags/:id`, and
+  `DELETE /tags/:id` with 403 for non-admins, while `GET /tags` stays available
+  to every signed-in user (tag pickers and filtering read it; recipe save
+  resolves tag names server-side and is unaffected). The new `GET /auth/me`
+  profile response exposes the server-computed `isAdmin` flag on the shared
+  `User` type and client auth API. On web, the Tags nav entry is hidden for
+  non-admins and the `/tags` route redirects non-admins to `/recipes`; on
+  native, the Tags screen is not registered and the profile Tags link is hidden
+  for non-admins. On web, a failed profile load renders through design-system
+  composition only (the DS error page in the admin guard; a DS header retry
+  action in the signed-in shell) — no app-styled error panels.
+
+### Patch Changes
+
+- 98e8e7c: Share @eciperay/types with mcp-server (#682): `RecipeUpdatePatch` now
+  lives in `@eciperay/types` (composed from the shared
+  `IngredientInput`/`InstructionInput`), and mcp-server depends on
+  `@eciperay/types` and imports the shared types instead of re-declaring them
+  locally. The payload/diff logic stays in mcp-server; no behavior changes.
+
 ## 1.34.4
 
 No changes in this release.

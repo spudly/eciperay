@@ -1,5 +1,143 @@
 # @eciperay/app
 
+## 1.35.0
+
+### Minor Changes
+
+- 695ba21: Family sharing, Profile UI (#617, tranche 2): the Profile page (web
+  and native) gains a Family sharing section — designate another Eciperay user
+  by account email, see current designations, and remove one with confirmation
+  (removal ends that person's automatic access immediately). The client account
+  API gains list/create/delete family-sharing calls against the tranche-1
+  endpoints. Recipes shared via a family designation now carry a "Family" badge
+  in Shared With Me / the unified Recipes browse instead of the generic "Shared"
+  badge.
+- e7d6339: Recipe search now speaks GitHub-style syntax: plain words match the
+  title, description, or an ingredient name, and the search box accepts quoted
+  phrases, field qualifiers (`title:`, `desc:`, `ingredient:`, `tag:`), negation
+  (`-ingredient:peanuts`), status/scope qualifiers (`status:`, `is:public`), and
+  numeric comparisons (`calories:<600`, `rating:>=4`) — identically across your
+  recipes, shared-with-me, and public discovery.
+- 7ee7ff6: Net carbs (carbs − fiber) now render beside total carbs everywhere a
+  recipe's carbs are shown: the recipe-detail nutrition rows, recipe card/list
+  summaries, meal and meal-plan totals and per-day rows, and meal member lines
+  on web and native. Net carbs is omitted where fiber is unknown — including
+  meal/plan totals when any contributing recipe's fiber is unknown (aggregate
+  fiber now propagates unknown instead of treating it as zero) — and plan/meal
+  totals compute it from the summed carbs and fiber via the one canonical
+  helper.
+- 3ac1d11: Remove the recipe status entirely (#610, tranche 2): recipes no
+  longer carry an idea/evolving/perfected/abandoned status. The `RecipeStatus`
+  type and the status field are gone from `@eciperay/types` recipe inputs and
+  details, recipe detail pages and cards no longer show a status badge, the
+  recipe forms and the recipe-list status filter no longer offer a status
+  control, and the `PATCH /recipes/:id` status endpoint is removed. Because
+  perfected/abandoned no longer lock a recipe, every recipe stays editable, and
+  version activation follows the cook-log/archived rule only. The server drops
+  the `recipes.status` column (migration 030), and the MCP recipe-update payload
+  no longer carries a status field.
+- aa849a6: "Show less like this" (#623): a new soft negative signal for
+  discovery. Migration 032 adds `recipe_show_less` (user + source recipe,
+  mirroring the hard-hide `recipe_disinterest` shape). Choosing "Show less like
+  this" on a recipe records it as a source, and the discovery feed now
+  down-ranks other recipes similar to a source — sharing a tag or the same
+  author — by 2 points per matching source, capped at 6, so similar recipes
+  appear less often but are never removed. The source recipe itself is not
+  penalised, an explicit save or cook of a recipe cancels its penalty, and hard
+  hide still excludes outright. New authenticated routes
+  (`POST`/`DELETE /discovery/recipes/:id/show-less`, `GET /discovery/show-less`)
+  back a new Settings "Show less like this" list in the web and native profile
+  screens, next to Hidden recipes, where each entry can be undone — entries
+  persist until undone, with no decay. The card-menu action itself is pending a
+  design-system slot for discovery-card actions (the DS discovery item carries
+  no action props today); the client API (`eciperay.discovery`) ships ready for
+  it.
+- caf3abb: Tag management is admin-only (#621, option B): migration 031 adds a
+  `users.is_admin` boolean (default false) that defines admin. A new server
+  `requireAdmin` middleware gates `POST /tags`, `PATCH /tags/:id`, and
+  `DELETE /tags/:id` with 403 for non-admins, while `GET /tags` stays available
+  to every signed-in user (tag pickers and filtering read it; recipe save
+  resolves tag names server-side and is unaffected). The new `GET /auth/me`
+  profile response exposes the server-computed `isAdmin` flag on the shared
+  `User` type and client auth API. On web, the Tags nav entry is hidden for
+  non-admins and the `/tags` route redirects non-admins to `/recipes`; on
+  native, the Tags screen is not registered and the profile Tags link is hidden
+  for non-admins. On web, a failed profile load renders through design-system
+  composition only (the DS error page in the admin guard; a DS header retry
+  action in the signed-in shell) — no app-styled error panels.
+
+### Patch Changes
+
+- 2474422: Add the editor ingredient-linking correction UI (#643 tranche 2c):
+  the recipe editor (web and native) now shows which ingredients each
+  instruction step references, warns about named ingredients no step references,
+  and offers a Mealie-style per-step checklist walk-through to add or remove
+  links, plus a "Suggest links with AI" action that applies the tranche 2b
+  linking proposal to the form. Links persist through the normal recipe save
+  path; recipe detail now round-trips ingredient IDs and instruction
+  `ingredientReferences` into the form so existing links survive an edit, and
+  removing an ingredient strips its links from every step.
+- 6adb307: Adopt @spudly/ui 14.0.0 across the web and app hosts: the recipe
+  detail nutrition section now renders the DS Nutrition Facts label from
+  structured facts, cook-log forms on the recipe detail and browse pages render
+  through the DS RatingForm data props, the parsed-recipe preview, profile legal
+  links, sign-up legal notice, and sharing consent cross as data spans, the
+  profile page takes its nutrition-goals and access-tokens sections as data
+  props, and the recipe form drops its status field (the DS form no longer
+  carries one; the status still saves with the recipe).
+- 4c529b9: Move the profile/recipe data hooks into @eciperay/client (#676): the
+  access-tokens, recipe sharing, and recipe comments props hooks and
+  useDeleteRecipe now live once in the client package, taking the typed client
+  as a parameter, with hosts keeping only surface-specific extras (share
+  execution, confirmation dialogs, navigation) at the edges. The app's typed
+  client export is renamed from `api` to `eciperay`, matching web. No behavior
+  change on either platform.
+- 506a166: PostHog error reports and log records from the native app now carry
+  the app version and build: the app reads them from expo-application at
+  analytics creation, registers them as PostHog super properties, and the shared
+  analytics layer merges them explicitly into every captureException and log
+  call (caller-supplied values win), so error triage can tell current-build
+  errors from outdated-app noise.
+- 81d315f: Recipe tips UI (#635, tranche 2): the recipe version edit form (web
+  and native) gains a repeatable tips editor — add, edit, reorder, and remove
+  the version's tips, saved through the normal version save path — and the
+  recipe detail now shows the version's tips at the bottom of the overview.
+  `RecipeDetail` gains the displayed version's `tips` (the server detail mapping
+  now carries the active version's list, and viewing another version overlays
+  its tips), so the detail hosts pass them to the design system's
+  `cookingTipLabel` line under Start Cooking. @spudly/ui 14 carries only the
+  singular label, so multiple tips render as one italic line with each tip's
+  "Tip: " lead-in preserved, in array order; a plural DS prop (one line per tip)
+  remains a design-system follow-up.
+- 8e662cd: Share the core Lingui catalog: the strings both hosts render
+  identically now live once in @eciperay/client's core .po catalog, each host's
+  catalog keeps only its host-specific strings, and both hosts merge core + host
+  catalogs at runtime. No copy changes.
+- Updated dependencies [2474422]
+- Updated dependencies [5366e11]
+- Updated dependencies [8192961]
+- Updated dependencies [caf2177]
+- Updated dependencies [695ba21]
+- Updated dependencies [799cdba]
+- Updated dependencies [4c529b9]
+- Updated dependencies [4ee9f5e]
+- Updated dependencies [f3ffa78]
+- Updated dependencies [7ee7ff6]
+- Updated dependencies [506a166]
+- Updated dependencies [8b6dd07]
+- Updated dependencies [3ac1d11]
+- Updated dependencies [81d315f]
+- Updated dependencies [ed6abf2]
+- Updated dependencies [7075f8b]
+- Updated dependencies [98e8e7c]
+- Updated dependencies [8e662cd]
+- Updated dependencies [aa849a6]
+- Updated dependencies [caf3abb]
+- Updated dependencies [1af3b9b]
+- Updated dependencies [c4d3376]
+  - @eciperay/client@1.35.0
+  - @eciperay/types@1.35.0
+
 ## 1.34.4
 
 ### Patch Changes
