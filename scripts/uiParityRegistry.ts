@@ -197,6 +197,18 @@ export const PLATFORM_ONLY: PlatformOnlyEntry[] = [
       'Web hint remains via the comments and ratings sections (public recipe page; the signed-in detail page renders stale hints from the design system page since B7 C7); the app copy was deleted with RecipeCommentItem — its stale marker is the design system CommentItem marker now. Removed in B6 (design-system#129). Web retirement is B7 (C11).',
   },
   {
+    path: 'recipe/RecipeWarningsBanner.tsx',
+    platform: 'web',
+    reason:
+      'Web owner recipe-warnings banner (#643 warnings tranche) rendering the shared computeRecipeWarnings lines with DOM + DS warning tokens; the app has its own React Native implementation (also platform-only).',
+  },
+  {
+    path: 'recipe/RecipeWarningsBanner.tsx',
+    platform: 'app',
+    reason:
+      'React Native owner recipe-warnings banner (#643 warnings tranche) rendering the shared computeRecipeWarnings lines; web has its own DOM implementation (also platform-only).',
+  },
+  {
     path: 'ProfileFeedbackPreference.tsx',
     platform: 'web',
     reason:

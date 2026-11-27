@@ -4,6 +4,8 @@ import {
   formatDiscoveryListMeta,
   formatRecipeListSubtitle,
   formatSatietyLabel,
+  hasRecipeWarnings,
+  RECIPE_WARNING_INDICATOR,
   formatServingsLabel,
   getDisplayRating,
   invalidateRecipeQueries,
@@ -504,7 +506,13 @@ const SignedInRecipesPage = () => {
     id: recipe.id,
     href: buildRecipePath(recipe),
     title: recipe.title,
-    subtitle: formatRecipesPageSubtitle(recipe),
+    // Very small warning indicator (#643 warnings tranche): a warned
+    // owner's recipe carries ⚠ at the end of its subtitle; the
+    // detail page lists the actual warnings. Shared/discovery rows
+    // are not the viewer's recipes and never carry it.
+    subtitle: hasRecipeWarnings(recipe)
+      ? `${formatRecipesPageSubtitle(recipe)} · ${RECIPE_WARNING_INDICATOR}`
+      : formatRecipesPageSubtitle(recipe),
     rating: getDisplayRating(recipe),
     imageUrl: resizedImageUrl(recipe.imageUrl, 400),
   }));

@@ -8,6 +8,8 @@ import {
   formatDiscoveryListMeta,
   formatRecipeListSubtitle,
   formatSatietyLabel,
+  hasRecipeWarnings,
+  RECIPE_WARNING_INDICATOR,
   formatServingsLabel,
   getDisplayRating,
   invalidateRecipeQueries,
@@ -356,7 +358,11 @@ export const RecipesListView = ({
     id: recipe.id,
     href: recipeHref(recipe),
     title: recipe.title,
-    subtitle: formatRecipesPageSubtitle(recipe),
+    // Very small warning indicator (#643 warnings tranche), mirroring
+    // the web list: ⚠ at the end of a warned owner's recipe subtitle.
+    subtitle: hasRecipeWarnings(recipe)
+      ? `${formatRecipesPageSubtitle(recipe)} · ${RECIPE_WARNING_INDICATOR}`
+      : formatRecipesPageSubtitle(recipe),
     rating: getDisplayRating(recipe),
     imageUrl: recipe.imageUrl,
   }));
