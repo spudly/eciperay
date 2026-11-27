@@ -67,6 +67,13 @@ export type RecipeDetail = Recipe & {
   tags: Tag[];
   nutrition: NutritionInfo | null;
   communityRating: RecipeCommunityRating | null;
+  /**
+   * The displayed version's authored cooking tips (#635), in display
+   * order; empty when the version carries none. Optional because the
+   * list-item mapping (which also produces RecipeDetail) does not
+   * select the version's tips — detail responses always carry it.
+   */
+  tips?: string[];
 };
 
 export type RecipeInput = {

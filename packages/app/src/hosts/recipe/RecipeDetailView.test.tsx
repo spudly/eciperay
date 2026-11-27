@@ -180,6 +180,17 @@ describe('RecipeDetailView', () => {
     mockCreateCookLog.mockResolvedValue({});
   });
 
+  test('shows the version tips under Start Cooking (#635)', async () => {
+    const {findByText} = await renderView({
+      tips: ['Let it rest for juicier meat', 'Season generously'],
+    });
+    expect(
+      await findByText(
+        'Tip: Let it rest for juicier meat Tip: Season generously',
+      ),
+    ).toBeTruthy();
+  });
+
   test('renders the overview mapping: stats, chips, lifecycle, engagement', async () => {
     const {findByText, queryByText, getAllByText} = await renderView();
     expect(await findByText('Test Recipe')).toBeTruthy();

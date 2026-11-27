@@ -14,4 +14,13 @@ describe('mergeVersionIntoRecipe', () => {
     expect(merged.id).toBe(recipe.id);
     expect(merged.versionId).toBe(version.id);
   });
+
+  test('overlays the version tips onto the recipe detail (#635)', () => {
+    const recipe = makeRecipeDetail({tips: ['Recipe tip']});
+    const version = makeRecipeVersionDetail({
+      tips: ['Version tip A', 'Version tip B'],
+    });
+    const merged = mergeVersionIntoRecipe(recipe, version);
+    expect(merged.tips).toEqual(['Version tip A', 'Version tip B']);
+  });
 });

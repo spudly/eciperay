@@ -119,4 +119,16 @@ describe('recipeDetailToInput', () => {
     expect(input.tagIds).toEqual(['tag-1']);
   });
 
+  test('maps tips onto the form initial (#635)', () => {
+    const versionInput = recipeVersionDetailToInput(
+      makeRecipeVersionDetail({tips: ['Tip A', 'Tip B']}),
+    );
+    expect(versionInput.tips).toEqual(['Tip A', 'Tip B']);
+    const recipeInput = recipeDetailToInput(
+      makeRecipeDetail({tips: ['Recipe tip']}),
+    );
+    expect(recipeInput.tips).toEqual(['Recipe tip']);
+    expect(recipeDetailToInput(makeRecipeDetail()).tips).toEqual([]);
+  });
+
 });

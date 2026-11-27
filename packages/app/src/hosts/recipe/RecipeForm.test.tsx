@@ -1020,4 +1020,58 @@ describe('RecipeForm', () => {
     await fireEvent.press(getByText('Revert to: (none)'));
     expect(getByLabelText('Cook (min)')).toHaveProp('value', '');
   });
+
+  test('edits, reorders, removes and saves tips (#635)', async () => {
+    const onSubmit = mockOnSubmit();
+    const {getByLabelText, getByText} = await renderForm(
+      <RecipeForm
+        initial={recipeVersionDetailToInput(
+          makeRecipeVersionDetail({tips: ['First tip', 'Second tip']}),
+        )}
+        submitLabel="Save"
+        onSubmit={onSubmit}
+      />,
+    );
+    expect(getByLabelText('Tip 1')).toHaveProp('value', 'First tip');
+    expect(getByLabelText('Tip 2')).toHaveProp('value', 'Second tip');
+    await fireEvent.press(getByLabelText('Move tip 2 up'));
+    expect(getByLabelText('Tip 1')).toHaveProp('value', 'Second tip');
+    await fireEvent.changeText(
+      getByLabelText('Tip 2'),
+      '  First tip edited  ',
+    );
+    await fireEvent.press(getByLabelText('Add tip'));
+    await fireEvent.changeText(getByLabelText('Tip 3'), 'Third tip');
+    await fireEvent.press(getByLabelText('Remove tip 1'));
+    await fireEvent.press(getByText('Save'));
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tips: ['First tip edited', 'Third tip'],
+        }),
+        undefined,
+      );
+    });
+  });
+
+  test('adds a first tip to a tipless version (#635)', async () => {
+    const onSubmit = mockOnSubmit();
+    const {getByLabelText, getByText, findByText} = await renderForm(
+      <RecipeForm
+        initial={recipeVersionDetailToInput(makeRecipeVersionDetail())}
+        submitLabel="Save"
+        onSubmit={onSubmit}
+      />,
+    );
+    expect(await findByText('No tips yet.')).toBeTruthy();
+    await fireEvent.press(getByLabelText('Add tip'));
+    await fireEvent.changeText(getByLabelText('Tip 1'), 'Rest the meat');
+    await fireEvent.press(getByText('Save'));
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({tips: ['Rest the meat']}),
+        undefined,
+      );
+    });
+  });
 });

@@ -15,6 +15,7 @@ export const mergeVersionIntoRecipe = (
   versionId: version.id,
   versionNumber: version.versionNumber,
   createdVia: version.createdVia,
+  tips: version.tips,
   ingredients: version.ingredients,
   instructions: version.instructions,
   tags: version.tags,

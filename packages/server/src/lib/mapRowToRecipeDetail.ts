@@ -43,7 +43,7 @@ type RecipeDetailRow = {
   cook_time_min: number | null;
   image_url: string | null;
   source_url: string | null;
-  /** Active version's tips (#635); read by clone/export, not mapped onto RecipeDetail (display is a later tranche). */
+  /** Active version's tips (#635); mapped onto RecipeDetail for display (tranche 2) and read by clone/export. */
   tips?: string[] | null;
   created_via: VersionCreatedVia;
   created_at: string;
@@ -218,6 +218,7 @@ export const mapRowToRecipeDetail = (row: RecipeDetailRow): RecipeDetail => ({
   ...mapNutritionSummary(row),
   nutrition: mapNutritionInfoFromDetailRow(row),
   communityRating: mapCommunityRatingFromRow(row),
+  tips: row.tips ?? [],
   ingredients: row.ingredients,
   instructions: row.instructions,
   tags: row.tags,

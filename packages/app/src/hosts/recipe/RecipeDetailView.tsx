@@ -529,6 +529,23 @@ export const RecipeDetailView = ({
         cookTimeLabel: displayRecipe.cookTimeMin
           ? `${displayRecipe.cookTimeMin}m`
           : undefined,
+        // Tips (#635 tranche 2): @spudly/ui 14's overview carries a
+        // singular cookingTipLabel (DS #721), so the version's tips
+        // cross as one label — each tip keeps its "Tip: " lead-in, in
+        // array order; omitted entirely when the version has none. A
+        // plural DS prop (one line per tip) is the DS follow-up.
+        cookingTipLabel:
+          displayRecipe.tips && displayRecipe.tips.length > 0
+            ? displayRecipe.tips
+                .map(tip =>
+                  i18n._({
+                    id: 'recipeDetail.tipLabel',
+                    message: 'Tip: {tip}',
+                    values: {tip},
+                  }),
+                )
+                .join(' ')
+            : undefined,
         actionMessage,
         cookingHref: recipeCookHref(
           recipe.id,

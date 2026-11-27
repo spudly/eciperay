@@ -45,7 +45,7 @@ import {
   type Asset,
   type ImagePickerResponse,
 } from 'react-native-image-picker';
-import {Text, XStack, YStack} from 'tamagui';
+import {Input, Text, XStack, YStack} from 'tamagui';
 
 import {
   confirmPhotoLibraryAccess,
@@ -253,6 +253,11 @@ export const RecipeForm = ({
     return [createEmptyInstructionRow(1)];
   });
   const [tagIds, setTagIds] = useState<string[]>(initial.tagIds);
+  // Tips (#635 tranche 2): the DS form page has no tips slot, so —
+  // like the ingredient-links section below — the repeatable tips
+  // editor is host-rendered and the list rides buildInput's normal
+  // save path. Array order is display order.
+  const [tips, setTips] = useState<string[]>(initial.tips ?? []);
   const [pendingImage, setPendingImage] = useState<PendingRecipeImage | null>(
     null,
   );
@@ -780,6 +785,23 @@ export const RecipeForm = ({
     );
   };
 
+  const updateTip = (index: number, value: string) => {
+    setTips(prev => prev.map((tip, i) => (i === index ? value : tip)));
+  };
+
+  const moveTip = (index: number, direction: -1 | 1) => {
+    setTips(prev => {
+      const target = index + direction;
+      if (target < 0 || target >= prev.length) {
+        return prev;
+      }
+      const next = [...prev];
+      const [moved] = next.splice(index, 1);
+      next.splice(target, 0, moved as string);
+      return next;
+    });
+  };
+
   const toggleInstructionIngredient = (
     instructionKey: string,
     ingredientId: string,
@@ -863,6 +885,11 @@ export const RecipeForm = ({
     cookTimeMin: cookTimeMin === '' ? null : Number(cookTimeMin),
     imageUrl: pendingImage ? null : stripImageCacheKey(imageUrl) || null,
     sourceUrl: sourceUrl || null,
+    // Blank rows are editing scaffolding, never content: the server
+    // normalizes the same way (trim + drop blanks) on every save path.
+    tips: contentLocked
+      ? (initial.tips ?? [])
+      : tips.map(tip => tip.trim()).filter(tip => tip.length > 0),
     ingredients: contentLocked
       ? initial.ingredients
       : toRecipeInputIngredients(
@@ -893,6 +920,7 @@ export const RecipeForm = ({
     cookTimeMin,
     imageUrl,
     sourceUrl,
+    tips,
     ingredients,
     instructions,
     tagIds,
@@ -1141,6 +1169,145 @@ export const RecipeForm = ({
                 }}
               />
             ) : null}
+          </XStack>
+        </YStack>
+      )}
+      {contentLocked ? null : (
+        <YStack
+          padding="$4"
+          gap="$2"
+          backgroundColor="$surface"
+        >
+          <Text
+            fontSize={tokens.typography.fontSize.md}
+            fontWeight={tokens.typography.fontWeight.semibold}
+            color={tokens.colors.gray.gray10}
+          >
+            {i18n._({
+              id: 'recipeForm.tipsHeading',
+              message: 'Tips',
+            })}
+          </Text>
+          <Text
+            fontSize={tokens.typography.fontSize.sm}
+            color={tokens.colors.gray.gray8}
+          >
+            {i18n._({
+              id: 'recipeForm.tipsIntro',
+              message:
+                'Short tips shown at the bottom of the recipe, in the order listed. Up to 10 tips, 280 characters each.',
+            })}
+          </Text>
+          {tips.length === 0 ? (
+            <Text
+              fontSize={tokens.typography.fontSize.sm}
+              color={tokens.colors.gray.gray8}
+            >
+              {i18n._({
+                id: 'recipeForm.tipsEmpty',
+                message: 'No tips yet.',
+              })}
+            </Text>
+          ) : (
+            tips.map((tip, index) => (
+              <YStack
+                key={index}
+                gap="$2"
+              >
+                <Input
+                  aria-label={i18n._({
+                    id: 'recipeForm.tipFieldLabel',
+                    message: 'Tip {position}',
+                    values: {position: index + 1},
+                  })}
+                  value={tip}
+                  maxLength={280}
+                  onChangeText={value => {
+                    updateTip(index, value);
+                  }}
+                  backgroundColor="$surface"
+                  borderWidth={1}
+                  borderColor="$textMuted"
+                  borderRadius={tokens.radii.md}
+                  paddingHorizontal={tokens.spacing[3]}
+                  minHeight={44}
+                  fontSize={tokens.typography.fontSize.md}
+                  color="$color"
+                />
+                <XStack
+                  flexWrap="wrap"
+                  gap="$3"
+                >
+                  <FieldButton
+                    label={i18n._({
+                      id: 'recipeForm.moveTipUpLabel',
+                      message: 'Move up',
+                    })}
+                    accessibilityLabel={i18n._({
+                      id: 'recipeForm.moveTipUp',
+                      message: 'Move tip {position} up',
+                      values: {position: index + 1},
+                    })}
+                    variant="secondary"
+                    disabled={index === 0}
+                    onPress={() => {
+                      moveTip(index, -1);
+                    }}
+                  />
+                  <FieldButton
+                    label={i18n._({
+                      id: 'recipeForm.moveTipDownLabel',
+                      message: 'Move down',
+                    })}
+                    accessibilityLabel={i18n._({
+                      id: 'recipeForm.moveTipDown',
+                      message: 'Move tip {position} down',
+                      values: {position: index + 1},
+                    })}
+                    variant="secondary"
+                    disabled={index === tips.length - 1}
+                    onPress={() => {
+                      moveTip(index, 1);
+                    }}
+                  />
+                  <FieldButton
+                    label={i18n._({
+                      id: 'recipeForm.removeTipLabel',
+                      message: 'Remove',
+                    })}
+                    accessibilityLabel={i18n._({
+                      id: 'recipeForm.removeTip',
+                      message: 'Remove tip {position}',
+                      values: {position: index + 1},
+                    })}
+                    variant="secondary"
+                    onPress={() => {
+                      setTips(prev => prev.filter((_, i) => i !== index));
+                    }}
+                  />
+                </XStack>
+              </YStack>
+            ))
+          )}
+          <XStack
+            flexWrap="wrap"
+            gap="$3"
+          >
+            <FieldButton
+              label={i18n._({
+                id: 'recipeForm.addTip',
+                message: 'Add tip',
+              })}
+              accessibilityLabel={i18n._({
+                id: 'recipeForm.addTip',
+                message: 'Add tip',
+              })}
+              variant="primary"
+              disabled={tips.length >= 10}
+              onPress={() => {
+                setTips(prev => [...prev, '']);
+              }}
+            />
           </XStack>
         </YStack>
       )}
