@@ -126,6 +126,41 @@ export const eciperayVoice: Voice = {
     choicesHintBefore: 'Manage your choice at any time on the ',
     choicesLinkLabel: 'privacy choices page',
   },
+  authorDisplayView: {
+    title: 'Author name on public recipes',
+    displayNameLabel: 'Display name',
+    displayNamePlaceholder: 'Your name as recipe author',
+    hint: 'This name will be displayed on published recipes as their author.',
+    showNameLabel: 'Show my name as the author on my published recipes',
+    saveLabel: 'Save author display',
+  },
+  familySharingView: {
+    title: 'Family sharing',
+    description:
+      'Designate another Eciperay user and they will automatically see all of your recipes — including private ones and any you add later — in their Shared With Me list. They can view and clone recipes, but not edit yours. Removing a person ends that access right away.',
+    emailLabel: 'Email address',
+    emailPlaceholder: 'family@example.com',
+    addLabel: 'Add family sharing',
+    addingLabel: 'Adding\u2026',
+    loadingLabel: 'Loading family sharing\u2026',
+    emptyMessage: 'You have not designated anyone for family sharing yet.',
+    removeLabel: 'Remove',
+    removingLabel: 'Removing\u2026',
+    addedLabel: (date: string) => `Added ${date}`,
+    removeLabelFor: (grantLabel: string) =>
+      `Remove family sharing for ${grantLabel}`,
+  },
+  showLessView: {
+    title: 'Show less like this',
+    description:
+      'Recipes you marked \u201cShow less like this\u201d. You\u2019ll see fewer recipes like each one — similar recipes are shown less often, never removed. Undo an entry to restore them.',
+    loadingLabel: 'Loading\u2026',
+    emptyMessage:
+      'You haven\u2019t marked any recipes yet. When you choose \u201cShow less like this\u201d on a recipe, it will appear here.',
+    undoLabel: 'Undo',
+    loadFailedMessage: 'Could not load your show-less list. Try again later.',
+    undoLabelFor: (recipeTitle: string) => `Undo show less for ${recipeTitle}`,
+  },
   subscriptionView: {
     title: 'Subscription',
     manageLabel: 'Manage subscription',
