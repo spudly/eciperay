@@ -271,25 +271,19 @@ describe('FeedbackForm', () => {
     expect(onCancel).toHaveBeenCalled();
   });
 
-  test('lays out the page and Cancel in a column that reserves Cancel space (#330)', () => {
+  test('hides Cancel once feedback is submitted (#670)', async () => {
     const submitUserFeedback = vi.fn().mockResolvedValue({error: null});
     renderForm(submitUserFeedback, {onCancel: vi.fn()});
 
-    // The DS page's ScrollView claims min-height: 100% of the bubble panel;
-    // without the flex column, Cancel flowed below the panel's fold and was
-    // clipped. The column root fills the panel, the page wrapper flexes and
-    // may shrink, and Cancel stays in flow below it. (Tamagui renders the
-    // button inside display:contents theme spans, so the layout root is
-    // the nearest ancestor div, not the direct parent.)
-    const cancel = screen.getByRole('button', {name: 'Cancel'});
-    const root = cancel.closest('div');
-    expect(root).not.toBeNull();
-    expect(root?.style.height).toBe('100%');
-    expect(root?.style.display).toBe('flex');
-    expect(root?.style.flexDirection).toBe('column');
-    const pageWrapper = root?.firstElementChild as HTMLElement | null;
-    expect(pageWrapper?.style.flexGrow).toBe('1');
-    expect(pageWrapper?.style.minHeight).toBe('0px');
-    expect(pageWrapper?.style.flexDirection).toBe('column');
+    fireEvent.change(screen.getByPlaceholderText(/Tell us what happened/i), {
+      target: {value: 'The export button is hard to find.'},
+    });
+    fireEvent.click(screen.getByRole('button', {name: 'Submit feedback'}));
+    expect(
+      await screen.findByText(/we got your feedback/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', {name: 'Cancel'}),
+    ).not.toBeInTheDocument();
   });
 });

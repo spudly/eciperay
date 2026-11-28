@@ -17,23 +17,24 @@ import {AuthenticatedPageHead} from './AuthenticatedPageHead.js';
 // The ONE app shell (#451; unified in #622 at Stephen's direction
 // 2026-11-23): the design system owns the shell's design via
 // AppShellPage (#437) — the host supplies only content and
-// routing: the brand, the nav as data with DS icon registry
-// NAMES (never components), the active item derived from the
-// route, the header search as data (#542), and the one shared
+// routing: the brand, the nav as data with each item's DS
+// section KIND (never components; @spudly/ui 14.1.0, DS #880),
+// the active item derived from the route, the header search as
+// data (#542), and the one shared
 // BigFooter data object every public surface passes (#425).
 // This shell handles BOTH signed-in and signed-out users: a
 // signed-out viewer gets the public nav plus a Sign in action,
 // no /auth/me query runs, and no noindex authenticated head is
 // applied — the public pages supply their own public head.
 const navItems: AppShellPageNavItem[] = [
-  {id: 'home', label: 'Home', href: '/', icon: 'home'},
-  {id: 'recipes', label: 'Recipes', href: '/recipes', icon: 'recipes'},
+  {id: 'home', label: 'Home', href: '/', kind: 'home'},
+  {id: 'recipes', label: 'Recipes', href: '/recipes', kind: 'recipes'},
   // The Meals item lands on the hub's Plans tab (#538): meal plans
   // are the primary surface, so the top bar goes straight there.
-  {id: 'meals', label: 'Meals', href: '/meals?tab=plans', icon: 'meals'},
-  {id: 'add', label: 'Add', href: '/add', icon: 'add'},
-  {id: 'tags', label: 'Tags', href: '/tags', icon: 'tags'},
-  {id: 'profile', label: 'Profile', href: '/profile', icon: 'profile'},
+  {id: 'meals', label: 'Meals', href: '/meals?tab=plans', kind: 'meals'},
+  {id: 'add', label: 'Add', href: '/add', kind: 'add'},
+  {id: 'tags', label: 'Tags', href: '/tags', kind: 'tags'},
+  {id: 'profile', label: 'Profile', href: '/profile', kind: 'profile'},
 ];
 
 // The active nav item: exact match for Home, longest-prefix match

@@ -40,8 +40,8 @@ describe('AppShell', () => {
     expect(
       screen.getByRole('contentinfo').querySelector('svg'),
     ).not.toBeNull();
-    // Nav items cross as data with DS icon names; every item is a
-    // real link with its href.
+    // Nav items cross as data with DS section kinds; every item
+    // is a real link with its href.
     expect(screen.getByRole('link', {name: 'Recipes'})).toHaveAttribute(
       'href',
       '/recipes',
