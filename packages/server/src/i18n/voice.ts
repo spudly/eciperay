@@ -232,7 +232,6 @@ export const eciperayVoice: Voice = {
     description:
       "Share ideas, confusion, or problems. We'll include session context to help us investigate.",
     submittedMessage: 'Thanks — we got your feedback, and it genuinely helps.',
-    submittedActionLabel: 'Send more feedback',
     messageLabel: "What's on your mind?",
     messagePlaceholder:
       "Tell us what happened or what you'd like to see improved.",
